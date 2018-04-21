@@ -6,7 +6,7 @@ License: at the moment Floyd is closed software, (c) Marcus Zetterquist. Plan is
 
 Floyd is a new programming language designed to have ready made answers for how to do great, robust and composable programs, both small programs and huge systems.
 
-It feels familiar to Javascript / C / Java / C++ programmers but gets rid of a lot of the troublesome features and replaces it with new and better ways.
+It feels familiar to Javascript / C / Java / C++ programmers but gets rid of a lot of the troublesome features and replaces it with new and better ways. Floyd prioritises solving the bigger questions: how to make big composable software the really works, rather on dweilling on neat syntactic details on the expression and statement level.
 
 **FEATURES:** Functions, structs as immutable value objects, immutable strings, immutable vectors, immutable dictionaries, deep and immutable JSON integration, static typing, type deducing, automatic deep behaviour of all types, like comparison and copying.
 

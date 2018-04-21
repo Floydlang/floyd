@@ -548,6 +548,7 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_lookup_element_dict_obj, { "lookup_element_dict_obj", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_lookup_element_dict_pod64, { "lookup_element_dict_pod64", opcode_info_t::encoding::k_o_0rrr } },
 
+	{ bc_opcode::k_get_size_vector_obj, { "get_size_vector_obj", opcode_info_t::encoding::k_q_0rr0 } },
 	{ bc_opcode::k_get_size_vector_pod64, { "get_size_vector_pod64", opcode_info_t::encoding::k_q_0rr0 } },
 	{ bc_opcode::k_pushback_vector_pod64, { "pushback_vector_pod64", opcode_info_t::encoding::k_o_0rrr } },
 
@@ -1717,18 +1718,10 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_lookup_element_vector_obj: {
 			ASSERT(vm.check_invariant());
-			ASSERT(stack.check_reg_any(i._a));
-			ASSERT(stack.check_reg_vector(i._b));
+			ASSERT(stack.check_reg_obj(i._a));
+			ASSERT(stack.check_reg_vector_obj(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
-			//	Always use symbol table as TRUTH about the register's type. ??? fix all code.
-			ASSERT(frame_ptr->_exts[i._a]);
-
-#if DEBUG
-			const auto& vector_type = frame_ptr->_symbols[i._b].second._value_type;
-			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == false);
-			const auto& element_type = vector_type.get_vector_element_type();
-#endif
 			const auto& vec = regs[i._b]._ext->_vector_objects;
 			const auto lookup_index = regs[i._c]._pod64._int64;
 			if(lookup_index < 0 || lookup_index >= vec.size()){
@@ -1746,12 +1739,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		case bc_opcode::k_lookup_element_vector_pod64: {
 			ASSERT(vm.check_invariant());
 			ASSERT(stack.check_reg_int(i._a));
-			ASSERT(stack.check_reg_vector(i._b));
+			ASSERT(stack.check_reg_vector_pod64(i._b));
 			ASSERT(stack.check_reg_int(i._c));
-#if DEBUG
-			const auto& vector_type = frame_ptr->_symbols[i._b].second._value_type;
-			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == true);
-#endif
 
 			const auto& vec = regs[i._b]._ext->_vector_pod64;
 			const auto lookup_index = regs[i._c]._pod64._int64;
@@ -1767,7 +1756,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_lookup_element_dict_obj: {
 			ASSERT(stack.check_reg_obj(i._a));
-			ASSERT(stack.check_reg_dict(i._b));
+			ASSERT(stack.check_reg_dict_obj(i._b));
 			ASSERT(stack.check_reg_string(i._c));
 
 			const auto& entries = regs[i._b]._ext->_dict_objects;
@@ -1786,7 +1775,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 		case bc_opcode::k_lookup_element_dict_pod64: {
 			ASSERT(stack.check_reg_any(i._a));
-			ASSERT(stack.check_reg_dict(i._b));
+			ASSERT(stack.check_reg_dict_pod64(i._b));
 			ASSERT(stack.check_reg_string(i._c));
 
 			const auto& entries = regs[i._b]._ext->_dict_pod64;
@@ -1802,15 +1791,21 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 
+		case bc_opcode::k_get_size_vector_obj: {
+			ASSERT(vm.check_invariant());
+			ASSERT(stack.check_reg_int(i._a));
+			ASSERT(stack.check_reg_vector_obj(i._b));
+			ASSERT(i._c == 0);
+
+			regs[i._a]._pod64._int64 = regs[i._b]._ext->_vector_objects.size();
+			ASSERT(vm.check_invariant());
+			break;
+		}
 		case bc_opcode::k_get_size_vector_pod64: {
 			ASSERT(vm.check_invariant());
 			ASSERT(stack.check_reg_int(i._a));
-			ASSERT(stack.check_reg_vector(i._b));
+			ASSERT(stack.check_reg_vector_pod64(i._b));
 			ASSERT(i._c == 0);
-#if DEBUG
-			const auto& vector_type = frame_ptr->_symbols[i._b].second._value_type;
-			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == true);
-#endif
 
 			regs[i._a]._pod64._int64 = regs[i._b]._ext->_vector_pod64.size();
 			ASSERT(vm.check_invariant());
@@ -1819,15 +1814,15 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_pushback_vector_pod64: {
 			ASSERT(vm.check_invariant());
-			ASSERT(stack.check_reg_vector(i._a));
-			ASSERT(stack.check_reg_vector(i._b));
+			ASSERT(stack.check_reg_vector_pod64(i._a));
+			ASSERT(stack.check_reg_vector_pod64(i._b));
 			ASSERT(stack.check_reg(i._c));
-#if DEBUG
-			const auto& vector_type = frame_ptr->_symbols[i._b].second._value_type;
-			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == true);
-			const auto& element_type = vector_type.get_vector_element_type();
-#endif
 
+			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
+			const auto& element_type = type.get_vector_element_type();
+
+
+			//??? optimize - bypass bc_value_t
 			auto elements2 = regs[i._b]._ext->_vector_pod64.push_back(regs[i._c]._pod64);
 			const auto vec = make_vector_int64_value(element_type, elements2);
 			vm._stack.write_register_obj(i._a, vec);
@@ -1941,7 +1936,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 		case bc_opcode::k_new_vector_obj: {
-			ASSERT(stack.check_reg_vector(i._a));
+			ASSERT(stack.check_reg_vector_obj(i._a));
 			ASSERT(i._b >= 0);
 			ASSERT(i._c >= 0);
 
@@ -1958,7 +1953,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_new_vector_pod64: {
 			ASSERT(vm.check_invariant());
-			ASSERT(stack.check_reg_vector(i._a));
+			ASSERT(stack.check_reg_vector_pod64(i._a));
 			ASSERT(i._b == 0);
 			ASSERT(i._c >= 0);
 
@@ -2152,11 +2147,10 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		//??? Use itypes.
 		case bc_opcode::k_concat_vectors_obj: {
-			ASSERT(stack.check_reg_vector(i._a));
-			ASSERT(stack.check_reg_vector(i._b));
-			ASSERT(stack.check_reg_vector(i._c));
+			ASSERT(stack.check_reg_vector_obj(i._a));
+			ASSERT(stack.check_reg_vector_obj(i._b));
+			ASSERT(stack.check_reg_vector_obj(i._c));
 
 			const auto& vector_type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto& element_type = vector_type.get_vector_element_type();
@@ -2174,9 +2168,9 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 		case bc_opcode::k_concat_vectors_pod64: {
-			ASSERT(stack.check_reg_vector(i._a));
-			ASSERT(stack.check_reg_vector(i._b));
-			ASSERT(stack.check_reg_vector(i._c));
+			ASSERT(stack.check_reg_vector_pod64(i._a));
+			ASSERT(stack.check_reg_vector_pod64(i._b));
+			ASSERT(stack.check_reg_vector_pod64(i._c));
 
 			const auto& vector_type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto& element_type = vector_type.get_vector_element_type();

@@ -701,6 +701,31 @@ int get_host_function_id(bcgenerator_t& vm, const expression_t& e){
 	}
 }
 
+//	a = size(b)
+bc_opcode convert_call_to_sizeopcode(const typeid_t& arg1_type){
+	QUARK_ASSERT(arg1_type.check_invariant());
+
+	if(arg1_type.is_vector()){
+		if(encode_as_vector_pod64(arg1_type)){
+			return bc_opcode::k_get_size_vector_pod64;
+		}
+		else{
+			return bc_opcode::k_get_size_vector_obj;
+		}
+	}
+	else if(arg1_type.is_dict()){
+		return bc_opcode::k_nop;
+	}
+	else if(arg1_type.is_string()){
+		return bc_opcode::k_nop;
+	}
+	else{
+		return bc_opcode::k_nop;
+	}
+}
+
+
+
 expr_info_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -722,22 +747,21 @@ expr_info_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& t
 	int host_function_id = get_host_function_id(vm, e);
 
 	//	a = size(b)
-	if(host_function_id == 1007 && encode_as_vector_pod64(e._input_exprs[1].get_output_type())){
-		QUARK_ASSERT(arg_count == 1);
+	if(host_function_id == 1007 && arg_count == 1){
+		const auto arg1_type = e._input_exprs[1].get_output_type();
 
-		const auto& arg1_expr = bcgen_expression(vm, {}, e._input_exprs[1], body_acc);
-		body_acc = arg1_expr._body;
+		bc_opcode opcode = convert_call_to_sizeopcode(arg1_type);
+		if(opcode != bc_opcode::k_nop){
+			const auto& arg1_expr = bcgen_expression(vm, {}, e._input_exprs[1], body_acc);
+			body_acc = arg1_expr._body;
 
-		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: result for k_get_size_vector_pod64") : target_reg;
-
-		body_acc._instrs.push_back(bcgen_instruction_t(
-			bc_opcode::k_get_size_vector_pod64,
-			target_reg2,
-			arg1_expr._out,
-			make_imm_int(0)
-		));
-		QUARK_ASSERT(body_acc.check_invariant());
-		return { body_acc, target_reg2, intern_type(vm, return_type) };
+			const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: result for k_get_size_vector_x") : target_reg;
+			body_acc._instrs.push_back(bcgen_instruction_t(opcode, target_reg2, arg1_expr._out, make_imm_int(0)));
+			QUARK_ASSERT(body_acc.check_invariant());
+			return { body_acc, target_reg2, intern_type(vm, return_type) };
+		}
+		else{
+		}
 	}
 
 	//	a = push_back(b, c)
@@ -764,8 +788,9 @@ expr_info_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& t
 		return { body_acc, target_reg2, intern_type(vm, return_type) };
 	}
 
+
 	//	Normal function call.
-	else{
+	{
 		body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_frame_ptr, {}, {}, {} ));
 
 		const auto& callee_expr = bcgen_expression(vm, {}, e._input_exprs[0], body_acc);

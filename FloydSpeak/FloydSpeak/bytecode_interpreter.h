@@ -921,6 +921,7 @@ namespace floyd {
 			B: Register: object
 			C: 0
 		*/
+		k_get_size_vector_obj,
 		k_get_size_vector_pod64,
 
 		/*
@@ -1556,112 +1557,107 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		#if DEBUG
+#if DEBUG
 		public: bool check_reg_any(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			return true;
 		}
-		#endif
 
-		#if DEBUG
 		public: bool check_reg_bool(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_bool());
 			return true;
 		}
-		#endif
 
-		#if DEBUG
 		public: bool check_reg_int(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_int());
 			return true;
 		}
-		#endif
 
-		#if DEBUG
 		public: bool check_reg_float(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_float());
 			return true;
 		}
-		#endif
 
-		#if DEBUG
 		public: bool check_reg_string(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_string());
 			return true;
 		}
-		#endif
 
-		#if DEBUG
 		public: bool check_reg_json(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_json_value());
 			return true;
 		}
-		#endif
 
-		#if DEBUG
-		public: bool check_reg_vector(const int reg) const{
+		public: bool check_reg_vector_obj(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_vector());
+			QUARK_ASSERT(encode_as_vector_pod64(_current_frame_ptr->_symbols[reg].second._value_type) == false);
 			return true;
 		}
-		#endif
 
-		#if DEBUG
-		public: bool check_reg_dict(const int reg) const{
+		public: bool check_reg_vector_pod64(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+			QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_vector());
+			QUARK_ASSERT(encode_as_vector_pod64(_current_frame_ptr->_symbols[reg].second._value_type) == true);
+			return true;
+		}
+
+		public: bool check_reg_dict_obj(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_dict());
+			QUARK_ASSERT(encode_as_dict_pod64(_current_frame_ptr->_symbols[reg].second._value_type) == false);
 			return true;
 		}
-		#endif
+		public: bool check_reg_dict_pod64(const int reg) const{
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(check_reg(reg));
+			QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_dict());
+			QUARK_ASSERT(encode_as_dict_pod64(_current_frame_ptr->_symbols[reg].second._value_type) == true);
+			return true;
+		}
 
-		#if DEBUG
 		public: bool check_reg_struct(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_struct());
 			return true;
 		}
-		#endif
-		#if DEBUG
+
 		public: bool check_reg_function(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_function());
 			return true;
 		}
-		#endif
 
-
-		#if DEBUG
 		public: bool check_reg_obj(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_current_frame_ptr->_exts[reg] == true);
 			return true;
 		}
-		#endif
 
-		#if DEBUG
 		public: bool check_reg_intern(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 			QUARK_ASSERT(_current_frame_ptr->_exts[reg] == false);
 			return true;
 		}
-		#endif
+#endif
 
 		public: void save_frame(){
 			const auto frame_pos = bc_value_t::make_int(get_current_frame_start());
