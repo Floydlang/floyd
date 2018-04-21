@@ -714,10 +714,18 @@ bc_opcode convert_call_to_sizeopcode(const typeid_t& arg1_type){
 		}
 	}
 	else if(arg1_type.is_dict()){
-		return bc_opcode::k_nop;
+		if(encode_as_dict_pod64(arg1_type)){
+			return bc_opcode::k_get_size_dict_pod64;
+		}
+		else{
+			return bc_opcode::k_get_size_dict_obj;
+		}
 	}
 	else if(arg1_type.is_string()){
 		return bc_opcode::k_get_size_string;
+	}
+	else if(arg1_type.is_json_value()){
+		return bc_opcode::k_get_size_jsonvalue;
 	}
 	else{
 		return bc_opcode::k_nop;

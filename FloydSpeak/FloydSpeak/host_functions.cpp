@@ -476,10 +476,12 @@ bc_value_t host__size(interpreter_t& vm, const bc_value_t args[], int arg_count)
 
 	const auto obj = args[0];
 	if(obj._type.is_string()){
+		QUARK_ASSERT(false);
 		const auto size = obj.get_string_value().size();
 		return bc_value_t::make_int(static_cast<int>(size));
 	}
 	else if(obj._type.is_json_value()){
+		QUARK_ASSERT(false);
 		const auto value = obj.get_json_value();
 		if(value.is_object()){
 			const auto size = value.get_object_size();
@@ -498,6 +500,7 @@ bc_value_t host__size(interpreter_t& vm, const bc_value_t args[], int arg_count)
 		}
 	}
 	else if(obj._type.is_vector()){
+		QUARK_ASSERT(false);
 		if(encode_as_vector_pod64(obj._type)){
 			const auto size = obj._pod._ext->_vector_pod64.size();
 			return bc_value_t::make_int(static_cast<int>(size));
@@ -508,6 +511,7 @@ bc_value_t host__size(interpreter_t& vm, const bc_value_t args[], int arg_count)
 		}
 	}
 	else if(obj._type.is_dict()){
+		QUARK_ASSERT(false);
 		if(encode_as_dict_pod64(obj._type)){
 			const auto size = obj._pod._ext->_dict_pod64.size();
 			return bc_value_t::make_int(static_cast<int>(size));

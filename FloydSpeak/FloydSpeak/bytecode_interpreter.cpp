@@ -550,7 +550,10 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 	{ bc_opcode::k_get_size_vector_obj, { "get_size_vector_obj", opcode_info_t::encoding::k_q_0rr0 } },
 	{ bc_opcode::k_get_size_vector_pod64, { "get_size_vector_pod64", opcode_info_t::encoding::k_q_0rr0 } },
+	{ bc_opcode::k_get_size_dict_obj, { "get_size_dict_obj", opcode_info_t::encoding::k_q_0rr0 } },
+	{ bc_opcode::k_get_size_dict_pod64, { "get_size_dict_pod64", opcode_info_t::encoding::k_q_0rr0 } },
 	{ bc_opcode::k_get_size_string, { "get_size_string", opcode_info_t::encoding::k_q_0rr0 } },
+	{ bc_opcode::k_get_size_jsonvalue, { "get_size_jsonvalue", opcode_info_t::encoding::k_q_0rr0 } },
 
 	{ bc_opcode::k_pushback_vector_pod64, { "pushback_vector_pod64", opcode_info_t::encoding::k_o_0rrr } },
 
@@ -1814,6 +1817,29 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
+
+		case bc_opcode::k_get_size_dict_obj: {
+			ASSERT(vm.check_invariant());
+			ASSERT(stack.check_reg_int(i._a));
+			ASSERT(stack.check_reg_dict_obj(i._b));
+			ASSERT(i._c == 0);
+
+			regs[i._a]._pod64._int64 = regs[i._b]._ext->_dict_objects.size();
+			ASSERT(vm.check_invariant());
+			break;
+		}
+		case bc_opcode::k_get_size_dict_pod64: {
+			ASSERT(vm.check_invariant());
+			ASSERT(stack.check_reg_int(i._a));
+			ASSERT(stack.check_reg_dict_pod64(i._b));
+			ASSERT(i._c == 0);
+
+			regs[i._a]._pod64._int64 = regs[i._b]._ext->_dict_pod64.size();
+			ASSERT(vm.check_invariant());
+			break;
+		}
+
+
 		case bc_opcode::k_get_size_string: {
 			ASSERT(vm.check_invariant());
 			ASSERT(stack.check_reg_int(i._a));
@@ -1821,6 +1847,28 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(i._c == 0);
 
 			regs[i._a]._pod64._int64 = regs[i._b]._ext->_string.size();
+			ASSERT(vm.check_invariant());
+			break;
+		}
+		case bc_opcode::k_get_size_jsonvalue: {
+			ASSERT(vm.check_invariant());
+			ASSERT(stack.check_reg_int(i._a));
+			ASSERT(stack.check_reg_json(i._b));
+			ASSERT(i._c == 0);
+
+			const auto& json_value = *regs[i._b]._ext->_json_value;
+			if(json_value.is_object()){
+				regs[i._a]._pod64._int64 = json_value.get_object_size();
+			}
+			else if(json_value.is_array()){
+				regs[i._a]._pod64._int64 = json_value.get_array_size();
+			}
+			else if(json_value.is_string()){
+				regs[i._a]._pod64._int64 = json_value.get_string().size();
+			}
+			else{
+				throw std::runtime_error("Calling size() on unsupported type of value.");
+			}
 			ASSERT(vm.check_invariant());
 			break;
 		}
