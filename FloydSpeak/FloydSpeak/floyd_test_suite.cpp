@@ -1519,8 +1519,8 @@ QUARK_UNIT_TEST("string", "push_back()", "string", "correct final vector"){
 
 QUARK_UNIT_TEST("string", "update()", "string", "correct final string"){
 	const auto vm = test__run_global(R"(
-		a = update("hello", 1, "z");
-		assert(a == "hzllo");
+		a = update("hello", 1, 98);
+		assert(a == "hbllo");
 	)");
 }
 

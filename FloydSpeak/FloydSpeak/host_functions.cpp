@@ -346,8 +346,8 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 				const auto obj = obj1;
 				const auto v = obj.get_string_value();
 
-				if((new_value._type.is_string() && new_value.get_string_value().size() == 1) == false){
-					throw std::runtime_error("Update element must be a 1-character string.");
+				if(new_value._type.is_int() == false){
+					throw std::runtime_error("Update element must be a character in an int.");
 				}
 				else{
 					const auto lookup_index = lookup_key.get_int_value();
@@ -356,7 +356,7 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 					}
 					else{
 						string v2 = v;
-						v2[lookup_index] = new_value.get_string_value()[0];
+						v2[lookup_index] = static_cast<char>(new_value.get_int_value());
 						const auto s2 = value_t::make_string(v2);
 						return value_to_bc(s2);
 					}
