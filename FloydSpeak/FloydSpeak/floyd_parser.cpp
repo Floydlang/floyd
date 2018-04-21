@@ -155,10 +155,10 @@ const std::string k_test_program_1_parserout = R"(
 
 
 const char k_test_program_100_source[] = R"(
-	struct pixel { float red; float green; float blue; }
-	float get_grey(pixel p){ return (p.red + p.green + p.blue) / 3.0; }
+	struct pixel { double red; double green; double blue; }
+	double get_grey(pixel p){ return (p.red + p.green + p.blue) / 3.0; }
 
-	float main(){
+	double main(){
 		pixel p = pixel(1, 0, 0);
 		return get_grey(p);
 	}
@@ -169,9 +169,9 @@ const char k_test_program_100_parserout[] = R"(
 			"def-struct",
 			{
 				"members": [
-					{ "name": "red", "type": "^float" },
-					{ "name": "green", "type": "^float" },
-					{ "name": "blue", "type": "^float" }
+					{ "name": "red", "type": "^double" },
+					{ "name": "green", "type": "^double" },
+					{ "name": "blue", "type": "^double" }
 				],
 				"name": "pixel"
 			}
@@ -181,7 +181,7 @@ const char k_test_program_100_parserout[] = R"(
 			{
 				"args": [{ "name": "p", "type": "#pixel" }],
 				"name": "get_grey",
-				"return_type": "^float",
+				"return_type": "^double",
 				"statements": [
 					[
 						"return",
@@ -192,7 +192,7 @@ const char k_test_program_100_parserout[] = R"(
 								["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]],
 								["->", ["@", "p"], "blue"]
 							],
-							["k", 3.0, "^float"]
+							["k", 3.0, "^double"]
 						]
 					]
 				]
@@ -203,7 +203,7 @@ const char k_test_program_100_parserout[] = R"(
 			{
 				"args": [],
 				"name": "main",
-				"return_type": "^float",
+				"return_type": "^double",
 				"statements": [
 					[
 						"bind",

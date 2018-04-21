@@ -72,9 +72,9 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 			throw std::runtime_error("Invalid json schema, expected number.");
 		}
 	}
-	else if(target_type.is_float()){
+	else if(target_type.is_double()){
 		if(v.is_number()){
-			return value_t::make_float((float)v.get_number());
+			return value_t::make_double((double)v.get_number());
 		}
 		else{
 			throw std::runtime_error("Invalid json schema, expected number.");
@@ -569,11 +569,11 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 			int result = index == size ? -1 : static_cast<int>(index);
 			return bc_value_t::make_int(result);
 		}
-		else if(obj._type.get_vector_element_type().is_float()){
+		else if(obj._type.get_vector_element_type().is_double()){
 			const auto& vec = obj._pod._ext->_vector_pod64;
 			int index = 0;
 			const auto size = vec.size();
-			while(index < size && vec[index]._float != wanted._pod._pod64._float){
+			while(index < size && vec[index]._double != wanted._pod._pod64._double){
 				index++;
 			}
 			int result = index == size ? -1 : static_cast<int>(index);

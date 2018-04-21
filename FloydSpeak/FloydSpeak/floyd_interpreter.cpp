@@ -60,8 +60,8 @@ value_t bc_to_value(const bc_value_t& value){
 	else if(basetype == base_type::k_int){
 		return value_t::make_int(value.get_int_value());
 	}
-	else if(basetype == base_type::k_float){
-		return value_t::make_float(value.get_float_value());
+	else if(basetype == base_type::k_double){
+		return value_t::make_double(value.get_double_value());
 	}
 	else if(basetype == base_type::k_string){
 		return value_t::make_string(value.get_string_value());
@@ -97,9 +97,9 @@ value_t bc_to_value(const bc_value_t& value){
 				vec2.push_back(value_t::make_int(e._int64));
 			}
 		}
-		else if(element_type.is_float()){
+		else if(element_type.is_double()){
 			for(const auto e: value._pod._ext->_vector_pod64){
-				vec2.push_back(value_t::make_float(e._float));
+				vec2.push_back(value_t::make_double(e._double));
 			}
 		}
 		else{
@@ -122,9 +122,9 @@ value_t bc_to_value(const bc_value_t& value){
 				entries2.insert({ e.first, value_t::make_int(e.second._int64) });
 			}
 		}
-		else if(value_type.is_float()){
+		else if(value_type.is_double()){
 			for(const auto e: value._pod._ext->_dict_pod64){
-				entries2.insert({ e.first, value_t::make_float(e.second._float) });
+				entries2.insert({ e.first, value_t::make_double(e.second._double) });
 			}
 		}
 		else{
@@ -165,8 +165,8 @@ bc_value_t value_to_bc(const value_t& value){
 	else if(basetype == base_type::k_int){
 		return bc_value_t::make_int(value.get_int_value());
 	}
-	else if(basetype == base_type::k_float){
-		return bc_value_t::make_float(value.get_float_value());
+	else if(basetype == base_type::k_double){
+		return bc_value_t::make_double(value.get_double_value());
 	}
 
 	else if(basetype == base_type::k_string){
@@ -199,9 +199,9 @@ bc_value_t value_to_bc(const value_t& value){
 					vec2.push_back(bc_pod64_t{._int64 = e.get_int_value()});
 				}
 			}
-			else if(element_type.is_float()){
+			else if(element_type.is_double()){
 				for(const auto e: vec){
-					vec2.push_back(bc_pod64_t{._float = e.get_float_value()});
+					vec2.push_back(bc_pod64_t{._double = e.get_double_value()});
 				}
 			}
 			return make_vector_int64_value(element_type, vec2);
@@ -220,7 +220,7 @@ bc_value_t value_to_bc(const value_t& value){
 	else if(basetype == base_type::k_dict){
 		const auto dict_type = value.get_type();
 		const auto value_type = dict_type.get_dict_value_type();
-//??? add handling for int, bool, float
+//??? add handling for int, bool, double
 		const auto elements = value.get_dict_value();
 		immer::map<std::string, bc_object_handle_t> entries2;
 		for(const auto e: elements){
@@ -256,7 +256,7 @@ bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, 
 		const auto value = value_to_ast_json(arg, json_tags::k_plain);
 		return bc_value_t::make_json_value(value._value);
 	}
-	else if(type.is_bool() || type.is_int() || type.is_float() || type.is_string() || type.is_typeid()){
+	else if(type.is_bool() || type.is_int() || type.is_double() || type.is_string() || type.is_typeid()){
 		QUARK_ASSERT(arg_values.size() == 1);
 
 		const auto& arg = arg_values[0];

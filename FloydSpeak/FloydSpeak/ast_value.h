@@ -335,22 +335,22 @@ static value_t make_int(int64_t value){
 			return _value_internals._int;
 		}
 
-		//------------------------------------------------		float
+		//------------------------------------------------		double
 
 
-		public: static value_t make_float(float value);
-		public: bool is_float() const {
+		public: static value_t make_double(double value);
+		public: bool is_double() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _basetype == base_type::k_float;
+			return _basetype == base_type::k_double;
 		}
-		public: float get_float_value() const{
+		public: double get_double_value() const{
 			QUARK_ASSERT(check_invariant());
-			if(!is_float()){
+			if(!is_double()){
 				throw std::runtime_error("Type mismatch!");
 			}
 
-			return _value_internals._float;
+			return _value_internals._double;
 		}
 
 
@@ -458,15 +458,7 @@ static value_t make_int(int64_t value){
 		}
 
 		private: bool is_ext(base_type basetype) const{
-		/*
-				k_internal_undefined,
-				k_internal_dynamic,
-				k_void,
-				k_bool,
-				k_int,
-				k_float,
-		*/
-			bool ext = basetype > base_type::k_float;
+			bool ext = basetype > base_type::k_double;
 
 			//	Make sure above assumtion about order of base types is valid.
 			QUARK_ASSERT(ext == is_ext_slow(basetype));
@@ -540,8 +532,8 @@ static value_t make_int(int64_t value){
 			else if(_basetype == base_type::k_int){
 				return _value_internals._int == other._value_internals._int;
 			}
-			else if(_basetype == base_type::k_float){
-				return _value_internals._float == other._value_internals._float;
+			else if(_basetype == base_type::k_double){
+				return _value_internals._double == other._value_internals._double;
 			}
 			else{
 				QUARK_ASSERT(is_ext(_basetype));
@@ -607,10 +599,10 @@ static value_t make_int(int64_t value){
 			QUARK_ASSERT(check_invariant());
 		}
 
-		private: value_t(float value) :
-			_basetype(base_type::k_float)
+		private: value_t(double value) :
+			_basetype(base_type::k_double)
 		{
-			_value_internals._float = value;
+			_value_internals._double = value;
 #if DEBUG
 			DEBUG_STR = make_value_debug_str(*this);
 #endif
@@ -634,7 +626,7 @@ static value_t make_int(int64_t value){
 		private: union value_internals_t {
 			bool _bool;
 			int64_t _int;
-			float _float;
+			double _double;
 			value_ext_t* _ext;
 		};
 

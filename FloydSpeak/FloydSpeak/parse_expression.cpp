@@ -74,8 +74,8 @@ ast_json_t expr_to_json(const expr_t& e){
 		else if(value._type == constant_value_t::etype::k_int){
 			return ast_json_t{make_array_skip_nulls({ json_t("k"), json_t((double)value._int), typeid_to_ast_json(typeid_t::make_int(), json_tags::k_tag_resolve_state)._value })};
 		}
-		else if(value._type == constant_value_t::etype::k_float){
-			return ast_json_t{make_array_skip_nulls({ json_t("k"), json_t(value._float), typeid_to_ast_json(typeid_t::make_float(), json_tags::k_tag_resolve_state)._value })};
+		else if(value._type == constant_value_t::etype::k_double){
+			return ast_json_t{make_array_skip_nulls({ json_t("k"), json_t(value._double), typeid_to_ast_json(typeid_t::make_double(), json_tags::k_tag_resolve_state)._value })};
 		}
 		else if(value._type == constant_value_t::etype::k_string){
 			//	 Use k_0_string_literal!

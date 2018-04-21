@@ -949,8 +949,8 @@ expr_info_t bcgen_arithmetic_unary_minus_expression(bcgenerator_t& vm, const var
 		const auto e2 = expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), e._input_exprs[0], e._output_type);
 		return bcgen_expression(vm, target_reg, e2, body);
 	}
-	else if(type.is_float()){
-		const auto e2 = expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_float(0), e._input_exprs[0], e._output_type);
+	else if(type.is_double()){
+		const auto e2 = expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_double(0), e._input_exprs[0], e._output_type);
 		return bcgen_expression(vm, target_reg, e2, body);
 	}
 	else{
@@ -1142,16 +1142,16 @@ expr_info_t bcgen_arithmetic_expression(bcgenerator_t& vm, const variable_addres
 			};
 			return conv_opcode.at(e._operation);
 		}
-		else if(type.is_float()){
+		else if(type.is_double()){
 			static const std::map<expression_type, bc_opcode> conv_opcode = {
-				{ expression_type::k_arithmetic_add__2, bc_opcode::k_add_float },
-				{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_subtract_float },
-				{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_multiply_float },
-				{ expression_type::k_arithmetic_divide__2, bc_opcode::k_divide_float },
+				{ expression_type::k_arithmetic_add__2, bc_opcode::k_add_double },
+				{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_subtract_double },
+				{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_multiply_double },
+				{ expression_type::k_arithmetic_divide__2, bc_opcode::k_divide_double },
 				{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
 
-				{ expression_type::k_logical_and__2, bc_opcode::k_logical_and_float },
-				{ expression_type::k_logical_or__2, bc_opcode::k_logical_or_float }
+				{ expression_type::k_logical_and__2, bc_opcode::k_logical_and_double },
+				{ expression_type::k_logical_or__2, bc_opcode::k_logical_or_double }
 			};
 			return conv_opcode.at(e._operation);
 		}

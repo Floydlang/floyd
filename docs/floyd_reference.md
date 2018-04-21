@@ -70,7 +70,7 @@ These are the primitive data types built into the language itself. The goals is 
 |---				|---	
 |__bool__			|__true__ or __false__
 |__int__			| Signed 64 bit integer
-|__float__		| 32-bit floating point number
+|__double__		| 64-bit floating point number
 |__string__		| Built-in string type. 8-bit pure (supports embedded zeros). Use for machine strings, basic UI. Not localizable.
 |__typeid__		| Describes the *type* of a value.
 |__function__		| A function value. Functions can be Floyd functions or C functions. They are callable.
@@ -195,7 +195,7 @@ Example function definitions:
 Function types:
 
 ```
-	bool (string, float)
+	bool (string, double)
 ```
 
 
@@ -408,7 +408,7 @@ When you reference one of the built in primitive types by name, you are accessin
 
 - bool
 - int
-- float
+- double
 - string
 
 	assert(typeid("hello") == string);
@@ -593,7 +593,7 @@ You can also calculate elements:
 	a = [ calc_pi(4), 2.1, calc_bounds() ];
 
 
-You can put ANY type of value into a vector: integers, floats, strings, structs, other vectors etc. But all elements must be the same type inside a specific vector.
+You can put ANY type of value into a vector: integers, doubles, strings, structs, other vectors etc. But all elements must be the same type inside a specific vector.
 
 You can copy vectors using =. All comparison expressions work, like a == b, a < b, a >= b, a != b etc. Comparisons will compare each element of the two vectors.
 
@@ -686,8 +686,8 @@ Example:
 ```
 	//	Make simple, ready-for use struct.
 	struct rect {
-		float width;
-		float height;
+		double width;
+		double height;
 	};
 
 	//	Try the new struct:
@@ -717,8 +717,8 @@ b = update(a, member, value);
 ```
 	//	Make simple, ready-for use struct.
 	struct rect {
-		float width;
-		float height;
+		double width;
+		double height;
 	};
 
 	a = rect(0, 3);
@@ -793,7 +793,7 @@ This outputs one line of text to the default output of the application. It can p
 | print("Number four: " + to_string(4))			| Number four: 4
 | print(int)									| int
 | print([int])									| [int]
-| print({string: float})						| {string:float}
+| print({string: double})						| {string:double}
 | print([7, 8, 9])								| [7, 8, 9]
 | print({"a": 1})								| {"a": 1}
 | print(json_value("b"))						| b

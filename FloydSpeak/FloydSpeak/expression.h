@@ -69,8 +69,8 @@ namespace floyd {
 		public: static expression_t make_literal_bool(const bool i){
 			return make_literal(value_t::make_bool(i));
 		}
-		public: static expression_t make_literal_float(const float i){
-			return make_literal(value_t::make_float(i));
+		public: static expression_t make_literal_double(const double i){
+			return make_literal(value_t::make_double(i));
 		}
 		public: static expression_t make_literal_string(const std::string& s){
 			return make_literal(value_t::make_string(s));

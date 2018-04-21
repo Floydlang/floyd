@@ -43,7 +43,7 @@ namespace floyd {
 	union bc_pod64_t {
 		bool _bool;
 		int64_t _int64;
-		float _float;
+		double _double;
 
 		int _function_id;
 		const bc_frame_t* _frame_ptr;
@@ -70,7 +70,7 @@ namespace floyd {
 		k_none,
 		k_inline_bool,
 		k_inline_int_as_uint64,
-		k_inline_float,
+		k_inline_double,
 		k_ext_string,
 		k_ext_json_value,
 
@@ -86,7 +86,7 @@ namespace floyd {
 
 
 	inline bool encode_as_pod64(const typeid_t& type){
-		return type.is_bool() || type.is_int() || type.is_float();
+		return type.is_bool() || type.is_int() || type.is_double();
 	}
 	inline bool encode_as_vector_pod64(const typeid_t& type){
 		return type.is_vector() && encode_as_pod64(type.get_vector_element_type());
@@ -115,8 +115,8 @@ namespace floyd {
 		else if(basetype == base_type::k_int){
 			return value_runtime_encoding::k_inline_int_as_uint64;
 		}
-		else if(basetype == base_type::k_float){
-			return value_runtime_encoding::k_inline_float;
+		else if(basetype == base_type::k_double){
+			return value_runtime_encoding::k_inline_double;
 		}
 		else if(basetype == base_type::k_string){
 			return value_runtime_encoding::k_ext_string;
@@ -138,7 +138,7 @@ namespace floyd {
 			else if(element_type == base_type::k_int){
 				return value_runtime_encoding::k_ext_vector_pod64;
 			}
-			else if(element_type == base_type::k_float){
+			else if(element_type == base_type::k_double){
 				return value_runtime_encoding::k_ext_vector_pod64;
 			}
 			else{
@@ -332,21 +332,21 @@ namespace floyd {
 		}
 
 
-		//////////////////////////////////////		float
+		//////////////////////////////////////		double
 
 
-		public: inline  static bc_value_t make_float(float v){
+		public: inline  static bc_value_t make_double(double v){
 			return bc_value_t{ v };
 		}
-		public: float get_float_value() const {
+		public: double get_double_value() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _pod._pod64._float;
+			return _pod._pod64._double;
 		}
-		private: inline  explicit bc_value_t(float value) :
-			_type(typeid_t::make_float())
+		private: inline  explicit bc_value_t(double value) :
+			_type(typeid_t::make_double())
 		{
-			_pod._pod64._float = value;
+			_pod._pod64._double = value;
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -956,7 +956,7 @@ namespace floyd {
 		*/
 		k_add_bool,
 		k_add_int,
-		k_add_float,
+		k_add_double,
 		k_add_string,
 
 		//	appends two vectors of object-elements.
@@ -965,21 +965,21 @@ namespace floyd {
 		//	appends two vectors of pod64 elements.
 		k_concat_vectors_pod64,
 
-		k_subtract_float,
+		k_subtract_double,
 		k_subtract_int,
-		k_multiply_float,
+		k_multiply_double,
 		k_multiply_int,
-		k_divide_float,
+		k_divide_double,
 		k_divide_int,
 		k_remainder,
 		k_remainder_int,
 
 		k_logical_and_bool,
 		k_logical_and_int,
-		k_logical_and_float,
+		k_logical_and_double,
 		k_logical_or_bool,
 		k_logical_or_int,
-		k_logical_or_float,
+		k_logical_or_double,
 
 
 		//////////////////////////////////////		COMPARISON
@@ -1047,7 +1047,7 @@ namespace floyd {
 
 				Gives:
 
-				B: itype with [string, float]
+				B: itype with [string, double]
 				C: 6
 				Stack: "chewie", 10.0, "leia", 20.0, "luke", 30.0
 		*/
@@ -1584,10 +1584,10 @@ namespace floyd {
 			return true;
 		}
 
-		public: bool check_reg_float(const int reg) const{
+		public: bool check_reg_double(const int reg) const{
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
-			QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_float());
+			QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_double());
 			return true;
 		}
 

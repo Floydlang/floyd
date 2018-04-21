@@ -31,6 +31,7 @@ std::string concat_strings_with_divider(const std::vector<std::string>& v, const
 std::string quote(const std::string& s);
 
 float parse_float(const std::string& pos);
+double parse_double(const std::string& pos);
 
 std::string float_to_string(float value);
 std::string double_to_string(double value);

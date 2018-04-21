@@ -65,14 +65,14 @@ const std::vector<test> testsxyz = {
 	},
 	{
 		"3 args of different types",
-		"int printf(string a, float barry, int c){ return 3; }",
+		"int printf(string a, double barry, int c){ return 3; }",
 		R"(
 			[
 				"def-func",
 				{
 					"args": [
 						{ "name": "a", "type": "^string" },
-						{ "name": "barry", "type": "^float" },
+						{ "name": "barry", "type": "^double" },
 						{ "name": "c", "type": "^int" },
 					],
 					"name": "printf",
@@ -84,14 +84,14 @@ const std::vector<test> testsxyz = {
 	},
 	{
 		"Max whitespace",
-		" \t int \t printf( \t string \t a \t , \t float \t b \t ){ \t return \t 3 \t ; \t } \t ",
+		" \t int \t printf( \t string \t a \t , \t double \t b \t ){ \t return \t 3 \t ; \t } \t ",
 		R"(
 			[
 				"def-func",
 				{
 					"args": [
 						{ "name": "a", "type": "^string" },
-						{ "name": "b", "type": "^float" }
+						{ "name": "b", "type": "^double" }
 					],
 					"name": "printf",
 					"return_type": "^int",
@@ -102,14 +102,14 @@ const std::vector<test> testsxyz = {
 	},
 	{
 		"Min whitespace",
-		"int printf(string a,float b){return 3;}",
+		"int printf(string a,double b){return 3;}",
 		R"(
 			[
 				"def-func",
 				{
 					"args": [
 						{ "name": "a", "type": "^string" },
-						{ "name": "b", "type": "^float" }
+						{ "name": "b", "type": "^double" }
 					],
 					"name": "printf",
 					"return_type": "^int",

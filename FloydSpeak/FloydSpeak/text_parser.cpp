@@ -119,6 +119,14 @@ float parse_float(const std::string& pos){
 	}
 	return res;
 }
+double parse_double(const std::string& pos){
+	size_t end = -1;
+	auto res = std::stod(pos, &end);
+	if(isnan(res) || end == 0){
+		throw std::runtime_error("EEE_WRONG_CHAR");
+	}
+	return res;
+}
 
 std::string float_to_string(float value){
 	std::stringstream s;

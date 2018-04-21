@@ -43,8 +43,8 @@ const char tag_resolved_type_char = '^';
 		else if(t == base_type::k_int){
 			return keyword_t::k_int;
 		}
-		else if(t == base_type::k_float){
-			return keyword_t::k_float;
+		else if(t == base_type::k_double){
+			return keyword_t::k_double;
 		}
 		else if(t == base_type::k_string){
 			return keyword_t::k_string;
@@ -85,7 +85,7 @@ const char tag_resolved_type_char = '^';
 	QUARK_UNIT_TESTQ("base_type_to_string(base_type)", ""){
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_bool) == keyword_t::k_bool);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_int) == keyword_t::k_int);
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_float) == keyword_t::k_float);
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_double) == keyword_t::k_double);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_string) == keyword_t::k_string);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_json_value) == keyword_t::k_json_value);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_typeid) == "typeid");
@@ -119,7 +119,7 @@ const char tag_resolved_type_char = '^';
 		else if(_base_type == floyd::base_type::k_int){
 			QUARK_ASSERT(!_ext);
 		}
-		else if(_base_type == floyd::base_type::k_float){
+		else if(_base_type == floyd::base_type::k_double){
 			QUARK_ASSERT(!_ext);
 		}
 		else if(_base_type == floyd::base_type::k_string){
@@ -266,7 +266,7 @@ const char tag_resolved_type_char = '^';
 			|| b == base_type::k_void
 			|| b == base_type::k_bool
 			|| b == base_type::k_int
-			|| b == base_type::k_float
+			|| b == base_type::k_double
 			|| b == base_type::k_string
 			|| b == base_type::k_json_value
 			|| b == base_type::k_typeid
@@ -338,8 +338,8 @@ const char tag_resolved_type_char = '^';
 				else if(s == keyword_t::k_int){
 					return typeid_t::make_int();
 				}
-				else if(s == keyword_t::k_float){
-					return typeid_t::make_float();
+				else if(s == keyword_t::k_double){
+					return typeid_t::make_double();
 				}
 				else if(s == keyword_t::k_string){
 					return typeid_t::make_string();
@@ -426,7 +426,7 @@ const char tag_resolved_type_char = '^';
 			{ typeid_t::make_undefined(), quote(keyword_t::k_internal_undefined), keyword_t::k_internal_undefined },
 			{ typeid_t::make_bool(), quote(keyword_t::k_bool), keyword_t::k_bool },
 			{ typeid_t::make_int(), quote(keyword_t::k_int), keyword_t::k_int },
-			{ typeid_t::make_float(), quote(keyword_t::k_float), keyword_t::k_float },
+			{ typeid_t::make_double(), quote(keyword_t::k_double), keyword_t::k_double },
 			{ typeid_t::make_string(), quote(keyword_t::k_string), keyword_t::k_string},
 
 			//	Typeid
@@ -444,20 +444,20 @@ const char tag_resolved_type_char = '^';
 					std::make_shared<struct_definition_t>(struct_definition_t(
 						vector<member_t>{
 							member_t(typeid_t::make_int(), "a"),
-							member_t(typeid_t::make_float(), "b")
+							member_t(typeid_t::make_double(), "b")
 						}
 					))
 				),
-				R"(["struct", [[{ "type": "int", "name": "a"}, {"type": "float", "name": "b"}]]])",
-				"struct {int a;float b;}"
+				R"(["struct", [[{ "type": "int", "name": "a"}, {"type": "double", "name": "b"}]]])",
+				"struct {int a;double b;}"
 			},
 
 
 			//	Function
 			{
-				typeid_t::make_function(typeid_t::make_bool(), vector<typeid_t>{ typeid_t::make_int(), typeid_t::make_float() }),
-				R"(["function", "bool", [ "int", "float"]])",
-				"function bool(int,float)"
+				typeid_t::make_function(typeid_t::make_bool(), vector<typeid_t>{ typeid_t::make_int(), typeid_t::make_double() }),
+				R"(["function", "bool", [ "int", "double"]])",
+				"function bool(int,double)"
 			},
 
 

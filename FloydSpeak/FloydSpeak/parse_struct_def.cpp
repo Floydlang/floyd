@@ -55,7 +55,7 @@ namespace floyd {
 		return parse_struct_definition_body(s2, struct_name_pos.first);
 	}
 
-	const std::string k_test_struct0 = "struct a {int x; string y; float z;}";
+	const std::string k_test_struct0 = "struct a {int x; string y; double z;}";
 
 
 	QUARK_UNIT_TESTQ("parse_struct_definition", ""){
@@ -69,7 +69,7 @@ namespace floyd {
 				{ "members", json_t::make_array({
 					json_t::make_object({ { "name", "x"}, { "type", "^int"} }),
 					json_t::make_object({ { "name", "y"}, { "type", "^string"} }),
-					json_t::make_object({ { "name", "z"}, { "type", "^float"} })
+					json_t::make_object({ { "name", "z"}, { "type", "^double"} })
 				}) },
 			})
 		});

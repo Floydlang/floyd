@@ -48,8 +48,8 @@ expression_t astjson_to_expression(const quark::trace_context_t& tracer, const j
 		else if(type2.get_base_type() == base_type::k_int){
 			return expression_t::make_literal_int((int)value.get_number());
 		}
-		else if(type2.get_base_type() == base_type::k_float){
-			return expression_t::make_literal_float((float)value.get_number());
+		else if(type2.get_base_type() == base_type::k_double){
+			return expression_t::make_literal_double((double)value.get_number());
 		}
 		else if(type2.get_base_type() == base_type::k_string){
 			return expression_t::make_literal_string(value.get_string());
@@ -144,7 +144,7 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		return statement_t::make__return_statement(expr);
 	}
 
-	//	[ "bind", "float", "x", EXPRESSION, {} ]
+	//	[ "bind", "double", "x", EXPRESSION, {} ]
 	//	Last element is a list of meta info, like "mutable" etc.
 	else if(type == "bind"){
 		QUARK_ASSERT(statement.get_array_size() == 4 || statement.get_array_size() == 5);

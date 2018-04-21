@@ -351,9 +351,9 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	else if(left.is_int()){
 		return limit(left.get_int_value() - right.get_int_value(), -1, 1);
 	}
-	else if(left.is_float()){
-		const auto a = left.get_float_value();
-		const auto b = right.get_float_value();
+	else if(left.is_double()){
+		const auto a = left.get_double_value();
+		const auto b = right.get_double_value();
 		if(a > b){
 			return 1;
 		}
@@ -439,7 +439,7 @@ bool value_t::check_invariant() const{
 	}
 	else if(type_int == base_type::k_int){
 	}
-	else if(type_int == base_type::k_float){
+	else if(type_int == base_type::k_double){
 	}
 	else if(type_int == base_type::k_string){
 		QUARK_ASSERT(_value_internals._ext && _value_internals._ext->check_invariant());
@@ -490,8 +490,8 @@ std::string to_compact_string2(const value_t& value) {
 		sprintf(temp, "%" PRId64, value.get_int_value());
 		return std::string(temp);
 	}
-	else if(base_type == base_type::k_float){
-		return float_to_string(value.get_float_value());
+	else if(base_type == base_type::k_double){
+		return double_to_string(value.get_double_value());
 	}
 	else if(base_type == base_type::k_string){
 		return value.get_string_value();
@@ -744,7 +744,7 @@ QUARK_UNIT_TESTQ("value_t::make_undefined()", "**undef**"){
 	QUARK_TEST_VERIFY(!a.is_void());
 	QUARK_TEST_VERIFY(!a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
-	QUARK_TEST_VERIFY(!a.is_float());
+	QUARK_TEST_VERIFY(!a.is_double());
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
@@ -765,7 +765,7 @@ QUARK_UNIT_TESTQ("value_t::make_internal_dynamic()", "**dynamic**"){
 	QUARK_TEST_VERIFY(!a.is_void());
 	QUARK_TEST_VERIFY(!a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
-	QUARK_TEST_VERIFY(!a.is_float());
+	QUARK_TEST_VERIFY(!a.is_double());
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
@@ -786,7 +786,7 @@ QUARK_UNIT_TESTQ("value_t::make_void()", "void"){
 	QUARK_TEST_VERIFY(a.is_void());
 	QUARK_TEST_VERIFY(!a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
-	QUARK_TEST_VERIFY(!a.is_float());
+	QUARK_TEST_VERIFY(!a.is_double());
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
@@ -807,7 +807,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - true"){
 	QUARK_TEST_VERIFY(!a.is_void());
 	QUARK_TEST_VERIFY(a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
-	QUARK_TEST_VERIFY(!a.is_float());
+	QUARK_TEST_VERIFY(!a.is_double());
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
@@ -827,7 +827,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - false"){
 	QUARK_TEST_VERIFY(!a.is_void());
 	QUARK_TEST_VERIFY(a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
-	QUARK_TEST_VERIFY(!a.is_float());
+	QUARK_TEST_VERIFY(!a.is_double());
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
@@ -848,7 +848,7 @@ QUARK_UNIT_TESTQ("value_t()", "int"){
 	QUARK_TEST_VERIFY(!a.is_void());
 	QUARK_TEST_VERIFY(!a.is_bool());
 	QUARK_TEST_VERIFY(a.is_int());
-	QUARK_TEST_VERIFY(!a.is_float());
+	QUARK_TEST_VERIFY(!a.is_double());
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
@@ -861,24 +861,24 @@ QUARK_UNIT_TESTQ("value_t()", "int"){
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "int: 13");
 }
 
-QUARK_UNIT_TESTQ("value_t()", "float"){
-	const auto a = value_t::make_float(13.5f);
+QUARK_UNIT_TESTQ("value_t()", "double"){
+	const auto a = value_t::make_double(13.5f);
 	QUARK_TEST_VERIFY(!a.is_undefined());
 	QUARK_TEST_VERIFY(!a.is_internal_dynamic());
 	QUARK_TEST_VERIFY(!a.is_void());
 	QUARK_TEST_VERIFY(!a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
-	QUARK_TEST_VERIFY(a.is_float());
+	QUARK_TEST_VERIFY(a.is_double());
 	QUARK_TEST_VERIFY(!a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
 	QUARK_TEST_VERIFY(!a.is_dict());
 	QUARK_TEST_VERIFY(!a.is_function());
 
-	QUARK_TEST_VERIFY(a == value_t::make_float(13.5f));
-	QUARK_TEST_VERIFY(a != value_t::make_float(14.0f));
+	QUARK_TEST_VERIFY(a == value_t::make_double(13.5f));
+	QUARK_TEST_VERIFY(a != value_t::make_double(14.0f));
 	QUARK_TEST_VERIFY(to_compact_string2(a) == "13.5");
-	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "float: 13.5");
+	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "double: 13.5");
 }
 
 QUARK_UNIT_TESTQ("value_t()", "string"){
@@ -888,7 +888,7 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 	QUARK_TEST_VERIFY(!a.is_void());
 	QUARK_TEST_VERIFY(!a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
-	QUARK_TEST_VERIFY(!a.is_float());
+	QUARK_TEST_VERIFY(!a.is_double());
 	QUARK_TEST_VERIFY(a.is_string());
 	QUARK_TEST_VERIFY(!a.is_struct());
 	QUARK_TEST_VERIFY(!a.is_vector());
@@ -935,8 +935,8 @@ ast_json_t value_to_ast_json(const value_t& v, json_tags tags){
 	else if(v.is_int()){
 		return ast_json_t{json_t(static_cast<double>(v.get_int_value()))};
 	}
-	else if(v.is_float()){
-		return ast_json_t{json_t(static_cast<double>(v.get_float_value()))};
+	else if(v.is_double()){
+		return ast_json_t{json_t(static_cast<double>(v.get_double_value()))};
 	}
 	else if(v.is_string()){
 		return ast_json_t{json_t(v.get_string_value())};
@@ -1044,8 +1044,8 @@ QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
 			else if(_basetype == base_type::k_int){
 				return typeid_t::make_int();
 			}
-			else if(_basetype == base_type::k_float){
-				return typeid_t::make_float();
+			else if(_basetype == base_type::k_double){
+				return typeid_t::make_double();
 			}
 			else{
 				QUARK_ASSERT(_value_internals._ext);
@@ -1059,7 +1059,7 @@ value_t value_t::make_bool(bool value){
 }
 
 
-value_t value_t::make_float(float value){
+value_t value_t::make_double(double value){
 	return value_t(value);
 }
 
@@ -1117,8 +1117,8 @@ value_t make_def(const typeid_t& type){
 	else if(bt == base_type::k_int){
 		return value_t::make_int(0);
 	}
-	else if(bt == base_type::k_float){
-		return value_t::make_float(0.0f);
+	else if(bt == base_type::k_double){
+		return value_t::make_double(0.0f);
 	}
 	else if(bt == base_type::k_string){
 		return value_t::make_string("");

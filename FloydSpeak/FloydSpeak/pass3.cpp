@@ -123,7 +123,7 @@ typeid_t resolve_type_int(const analyser_t& vm, const typeid_t& type){
 	else if(basetype == base_type::k_int){
 		return type;
 	}
-	else if(basetype == base_type::k_float){
+	else if(basetype == base_type::k_double){
 		return type;
 	}
 	else if(basetype == base_type::k_string){
@@ -775,7 +775,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(co
 
 	//??? We could simplify here and return [ "-", 0, expr]
 	const auto type = expr2.second.get_output_type();
-	if(type.is_int() || type.is_float()){
+	if(type.is_int() || type.is_double()){
 		return {vm_acc, expression_t::make_unary_minus(expr2.second, make_shared<typeid_t>(type))  };
 	}
 	else{
@@ -931,8 +931,8 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			return {vm_acc, expression_t::make_simple_expression__2(e.get_operation(), left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
-		//	float
-		else if(shared_type.is_float()){
+		//	double
+		else if(shared_type.is_double()){
 			if(op == expression_type::k_arithmetic_add__2){
 			}
 			else if(op == expression_type::k_arithmetic_subtract__2){
@@ -942,7 +942,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			else if(op == expression_type::k_arithmetic_divide__2){
 			}
 			else if(op == expression_type::k_arithmetic_remainder__2){
-				throw std::runtime_error("Modulo operation on float not allowed.");
+				throw std::runtime_error("Modulo operation on double not allowed.");
 			}
 
 			else if(op == expression_type::k_logical_and__2){
@@ -1399,7 +1399,7 @@ expression_t auto_cast_expression_type(const expression_t& e, const floyd::typei
 		}
 	}
 	else if(wanted_type.is_json_value()){
-		if(current_type.is_int() || current_type.is_float() || current_type.is_string() || current_type.is_bool()){
+		if(current_type.is_int() || current_type.is_double() || current_type.is_string() || current_type.is_bool()){
 			return expression_t::make_construct_value_expr(wanted_type, { e });
 		}
 		else if(current_type.is_vector()){
@@ -1573,7 +1573,7 @@ ast_t analyse(const analyser_t& a){
 	symbol_map.push_back({keyword_t::k_void, symbol_t::make_constant(value_t::make_void())});
 	symbol_map.push_back({keyword_t::k_bool, symbol_t::make_type(typeid_t::make_bool())});
 	symbol_map.push_back({keyword_t::k_int, symbol_t::make_type(typeid_t::make_int())});
-	symbol_map.push_back({keyword_t::k_float, symbol_t::make_type(typeid_t::make_float())});
+	symbol_map.push_back({keyword_t::k_double, symbol_t::make_type(typeid_t::make_double())});
 	symbol_map.push_back({keyword_t::k_string, symbol_t::make_type(typeid_t::make_string())});
 	symbol_map.push_back({keyword_t::k_typeid, symbol_t::make_type(typeid_t::make_typeid())});
 	symbol_map.push_back({keyword_t::k_json_value, symbol_t::make_type(typeid_t::make_json_value())});

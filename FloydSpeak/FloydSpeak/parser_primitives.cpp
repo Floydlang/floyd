@@ -359,8 +359,8 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_basic_type(const seq_t& s){
 	else if(pos1.first == keyword_t::k_int){
 		return { make_shared<typeid_t>(typeid_t::make_int()), pos1.second };
 	}
-	else if(pos1.first == keyword_t::k_float){
-		return { make_shared<typeid_t>(typeid_t::make_float()), pos1.second };
+	else if(pos1.first == keyword_t::k_double){
+		return { make_shared<typeid_t>(typeid_t::make_double()), pos1.second };
 	}
 	//??? typeid_t
 	else if(pos1.first == keyword_t::k_string){
@@ -400,10 +400,10 @@ QUARK_UNIT_TEST("", "parse_functiondef_arguments2()", "", ""){
 	QUARK_TEST_VERIFY((		parse_functiondef_arguments2("(int a)") == vector<member_t>{ { typeid_t::make_int(), "a" }}		));
 }
 QUARK_UNIT_TEST("", "parse_functiondef_arguments2()", "", ""){
-	QUARK_TEST_VERIFY((		parse_functiondef_arguments2("(int x, string y, float z)") == vector<member_t>{
+	QUARK_TEST_VERIFY((		parse_functiondef_arguments2("(int x, string y, double z)") == vector<member_t>{
 		{ typeid_t::make_int(), "x" },
 		{ typeid_t::make_string(), "y" },
-		{ typeid_t::make_float(), "z" }
+		{ typeid_t::make_double(), "z" }
 
 	}		));
 }
@@ -506,7 +506,7 @@ QUARK_UNIT_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("int")).first == typeid_t::make_int());
 }
 QUARK_UNIT_TEST("", "read_type()", "", ""){
-	QUARK_TEST_VERIFY(*read_type(seq_t("float")).first == typeid_t::make_float());
+	QUARK_TEST_VERIFY(*read_type(seq_t("double")).first == typeid_t::make_double());
 }
 QUARK_UNIT_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("string")).first == typeid_t::make_string());
@@ -541,22 +541,22 @@ QUARK_UNIT_TEST("", "read_type()", "", ""){
 }
 
 QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
-	const auto r = read_type(seq_t("string (float a, float b)"));
-	QUARK_TEST_VERIFY(	*r.first ==  typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_float(), typeid_t::make_float() })	);
+	const auto r = read_type(seq_t("string (double a, double b)"));
+	QUARK_TEST_VERIFY(	*r.first ==  typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_double(), typeid_t::make_double() })	);
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
-	const auto r = read_type(seq_t("int (float a) ()"));
+	const auto r = read_type(seq_t("int (double a) ()"));
 
 	QUARK_TEST_VERIFY( *r.first == typeid_t::make_function(
-			typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_float() }),
+			typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_double() }),
 			{}
 		)
 	);
 	QUARK_TEST_VERIFY(	r.second == seq_t("") );
 }
 QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
-	const auto r = read_type(seq_t("bool (int (float a) b)"));
+	const auto r = read_type(seq_t("bool (int (double a) b)"));
 
 	QUARK_TEST_VERIFY(
 		*r.first
@@ -564,7 +564,7 @@ QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
 		typeid_t::make_function(
 			typeid_t::make_bool(),
 			{
-				typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_float() })
+				typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_double() })
 			}
 		)
 	);
@@ -573,7 +573,7 @@ QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
 }
 /*
 QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
-	QUARK_TEST_VERIFY(read_type_identifier(seq_t("int (float a) g(int(float b))")).first == "int (float a) g(int(float b))");
+	QUARK_TEST_VERIFY(read_type_identifier(seq_t("int (double a) g(int(double b))")).first == "int (double a) g(int(double b))");
 }
 
 -	TYPE-IDENTIFIER (TYPE-IDENTIFIER a, TYPE-IDENTIFIER b, ...)

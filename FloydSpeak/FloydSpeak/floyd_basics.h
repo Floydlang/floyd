@@ -35,7 +35,7 @@ namespace floyd {
 		static const std::string k_true;
 		static const std::string k_bool;
 		static const std::string k_int;
-		static const std::string k_float;
+		static const std::string k_double;
 		static const std::string k_string;
 		static const std::string k_typeid;
 		static const std::string k_json_value;
@@ -88,7 +88,7 @@ namespace floyd {
 	const std::vector<std::string> basic_types {
 		"char",
 		code_point",
-		double",
+		"float",
 		"float32",
 		"float80",
 		hash",

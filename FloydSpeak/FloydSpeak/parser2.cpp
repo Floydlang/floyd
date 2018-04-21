@@ -391,9 +391,9 @@ std::pair<constant_value_t, seq_t> parse_numeric_constant(const seq_t& p) {
 		throw std::runtime_error("EEE_WRONG_CHAR");
 	}
 
-	//	If it contains a "." its a float, else an int.
+	//	If it contains a "." its a double, else an int.
 	if(number_pos.first.find('.') != std::string::npos){
-		const auto number = parse_float(number_pos.first);
+		const auto number = parse_double(number_pos.first);
 		return { constant_value_t(number), number_pos.second };
 	}
 	else{
@@ -416,7 +416,7 @@ QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 
 QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
 	const auto a = parse_numeric_constant(seq_t("0.5 xxx"));
-	QUARK_UT_VERIFY(a.first._type == constant_value_t::etype::k_float && a.first._float == 0.5f);
+	QUARK_UT_VERIFY(a.first._type == constant_value_t::etype::k_double && a.first._double == 0.5f);
 	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
 }
 
@@ -827,8 +827,8 @@ std::string expr_to_string(const expr_t& e){
 		else if(value._type == constant_value_t::etype::k_int){
 			return make3("\"k\"", "\"int\"", std::to_string(value._int));
 		}
-		else if(value._type == constant_value_t::etype::k_float){
-			return make3("\"k\"", "\"float\"", float_to_string(value._float));
+		else if(value._type == constant_value_t::etype::k_double){
+			return make3("\"k\"", "\"double\"", double_to_string(value._double));
 		}
 		else if(value._type == constant_value_t::etype::k_string){
 			//	 Use k_0_string_literal!
@@ -983,13 +983,13 @@ QUARK_UNIT_1("parse_terminal()", "identifier", test__parse_terminal(
 
 QUARK_UNIT_1("parse_terminal()", "identifier", test__parse_terminal(
 	"123.5 xxx",
-	R"(["k", "float", 123.5])",
+	R"(["k", "double", 123.5])",
 	" xxx"
 ));
 
 QUARK_UNIT_1("parse_terminal()", "identifier", test__parse_terminal(
 	"0.0 xxx",
-	R"(["k", "float", 0])",
+	R"(["k", "double", 0])",
 	" xxx"
 ));
 

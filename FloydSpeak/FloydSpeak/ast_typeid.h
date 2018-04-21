@@ -63,7 +63,7 @@ namespace floyd {
 
 		k_bool,
 		k_int,
-		k_float,
+		k_double,
 		k_string,
 		k_json_value,
 
@@ -156,14 +156,14 @@ namespace floyd {
 			return _base_type == base_type::k_int;
 		}
 
-		public: static typeid_t make_float(){
-			return { floyd::base_type::k_float, {} };
+		public: static typeid_t make_double(){
+			return { floyd::base_type::k_double, {} };
 		}
 
-		public: bool is_float() const {
+		public: bool is_double() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _base_type == base_type::k_float;
+			return _base_type == base_type::k_double;
 		}
 
 		public: static typeid_t make_string(){
@@ -382,7 +382,7 @@ namespace floyd {
 		null						k_internal_undefined
 		bool						k_bool
 		int							k_int
-		float						k_float
+		double						k_double
 		string						k_string
 		json_value					k_json_value
 
@@ -396,7 +396,7 @@ namespace floyd {
 
 		int ()						k_function				return = k_int, args = []
 
-		int (float, [string])		k_function				return = k_int, args = [ k_float, typeid_t(k_vector, string) ]
+		int (double, [string])		k_function				return = k_int, args = [ k_double, typeid_t(k_vector, string) ]
 
 		randomize_player			k_internal_unresolved_type_identifier	"randomize_player"
 		- When parsing we find identifiers that we don't know what they mean. Stored as k_internal_unresolved_type_identifier with identifier
@@ -477,7 +477,7 @@ namespace floyd {
 			_interns[(int)base_type::k_internal_undefined] = typeid_t::make_null();
 			_interns[(int)base_type::k_bool] = typeid_t::make_bool();
 			_interns[(int)base_type::k_int] = typeid_t::make_int();
-			_interns[(int)base_type::k_float] = typeid_t::make_float();
+			_interns[(int)base_type::k_double] = typeid_t::make_double();
 			_interns[(int)base_type::k_string] = typeid_t::make_string();
 			_interns[(int)base_type::k_json_value] = typeid_t::make_json_value();
 			_interns[(int)base_type::k_typeid] = typeid_t::make_typeid();
@@ -509,8 +509,8 @@ namespace floyd {
 		public: static itypeid_t make_int(){
 			return { (int)base_type::k_int };
 		}
-		public: static itypeid_t make_float(){
-			return { (int)base_type::k_float };
+		public: static itypeid_t make_double(){
+			return { (int)base_type::k_double };
 		}
 		public: static itypeid_t make_string(){
 			return { (int)base_type::k_string };

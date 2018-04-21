@@ -81,10 +81,10 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_ASSERT(immer_vec_string_size == 32);
 
 
-	const auto immer_stringkey_map_size = sizeof(immer::map<std::string, float>);
+	const auto immer_stringkey_map_size = sizeof(immer::map<std::string, double>);
 	QUARK_ASSERT(immer_stringkey_map_size == 16);
 
-	const auto immer_intkey_map_size = sizeof(immer::map<uint32_t, float>);
+	const auto immer_intkey_map_size = sizeof(immer::map<uint32_t, double>);
 	QUARK_ASSERT(immer_intkey_map_size == 16);
 }
 
@@ -180,11 +180,11 @@ int compare_ints(const bc_pod64_t& left, const bc_pod64_t& right){
 		return 0;
 	}
 }
-int compare_floats(const bc_pod64_t& left, const bc_pod64_t& right){
-	if(left._float < right._float){
+int compare_doubles(const bc_pod64_t& left, const bc_pod64_t& right){
+	if(left._double < right._double){
 		return -1;
 	}
-	else if(left._float > right._float){
+	else if(left._double > right._double){
 		return 1;
 	}
 	else{
@@ -236,10 +236,10 @@ int bc_compare_vectors_int(const immer::vector<bc_pod64_t>& left, const immer::v
 		return +1;
 	}
 }
-int bc_compare_vectors_float(const immer::vector<bc_pod64_t>& left, const immer::vector<bc_pod64_t>& right){
+int bc_compare_vectors_double(const immer::vector<bc_pod64_t>& left, const immer::vector<bc_pod64_t>& right){
 	const auto& shared_count = std::min(left.size(), right.size());
 	for(int i = 0 ; i < shared_count ; i++){
-		int result = compare_floats(left[i], right[i]);
+		int result = compare_doubles(left[i], right[i]);
 		if(result != 0){
 			return result;
 		}
@@ -378,7 +378,7 @@ int bc_compare_dicts_int(const immer::map<std::string, bc_pod64_t>& left, const 
 	QUARK_ASSERT(false)
 	throw std::exception();
 }
-int bc_compare_dicts_float(const immer::map<std::string, bc_pod64_t>& left, const immer::map<std::string, bc_pod64_t>& right){
+int bc_compare_dicts_double(const immer::map<std::string, bc_pod64_t>& left, const immer::map<std::string, bc_pod64_t>& right){
 	auto left_it = left.begin();
 	auto left_end_it = left.end();
 
@@ -394,7 +394,7 @@ int bc_compare_dicts_float(const immer::map<std::string, bc_pod64_t>& left, cons
 			return key_result;
 		}
 
-		int result = compare_floats((*left_it).second, (*right_it).second);
+		int result = compare_doubles((*left_it).second, (*right_it).second);
 		if(result != 0){
 			return result;
 		}
@@ -450,9 +450,9 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 	else if(type.is_int()){
 		return compare(left.get_int_value() - right.get_int_value());
 	}
-	else if(type.is_float()){
-		const auto a = left.get_float_value();
-		const auto b = right.get_float_value();
+	else if(type.is_double()){
+		const auto a = left.get_double_value();
+		const auto b = right.get_double_value();
 		if(a > b){
 			return 1;
 		}
@@ -490,8 +490,8 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 		else if(type.get_vector_element_type().is_int()){
 			return bc_compare_vectors_int(left._pod._ext->_vector_pod64, right._pod._ext->_vector_pod64);
 		}
-		else if(type.get_vector_element_type().is_float()){
-			return bc_compare_vectors_float(left._pod._ext->_vector_pod64, right._pod._ext->_vector_pod64);
+		else if(type.get_vector_element_type().is_double()){
+			return bc_compare_vectors_double(left._pod._ext->_vector_pod64, right._pod._ext->_vector_pod64);
 		}
 		else{
 			const auto& left_vec = get_vector_value(left);
@@ -508,8 +508,8 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 		else if(type.get_dict_value_type().is_int()){
 			return bc_compare_dicts_int(left._pod._ext->_dict_pod64, right._pod._ext->_dict_pod64);
 		}
-		else if(type.get_dict_value_type().is_float()){
-			return bc_compare_dicts_float(left._pod._ext->_dict_pod64, right._pod._ext->_dict_pod64);
+		else if(type.get_dict_value_type().is_double()){
+			return bc_compare_dicts_double(left._pod._ext->_dict_pod64, right._pod._ext->_dict_pod64);
 		}
 		else  {
 			const auto& left2 = get_dict_value(left);
@@ -563,24 +563,24 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 	{ bc_opcode::k_add_bool, { "add_bool", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_add_int, { "add_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_add_float, { "add_float", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_add_double, { "add_double", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_add_string, { "add_string", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_concat_vectors_obj, { "concat_vectors_obj", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_concat_vectors_pod64, { "concat_vectors_pod64", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_subtract_float, { "subtract_float", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_subtract_double, { "subtract_double", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_subtract_int, { "subtract_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_multiply_float, { "multiply_float", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_multiply_double, { "multiply_double", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_multiply_int, { "multiply_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_divide_float, { "divide_float", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_divide_double, { "divide_double", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_divide_int, { "divide_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_remainder_int, { "remainder_int", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_logical_and_bool, { "logical_and_bool", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_logical_and_int, { "logical_and_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_logical_and_float, { "logical_and_float", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_logical_and_double, { "logical_and_double", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_logical_or_bool, { "logical_or_bool", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_logical_or_int, { "logical_or_int", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_logical_or_float, { "logical_or_float", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_logical_or_double, { "logical_or_double", opcode_info_t::encoding::k_o_0rrr } },
 
 
 	{ bc_opcode::k_comparison_smaller_or_equal, { "comparison_smaller_or_equal", opcode_info_t::encoding::k_o_0rrr } },
@@ -987,8 +987,8 @@ json_t bcvalue_to_json(const bc_value_t& v){
 	else if(v._type.is_int()){
 		return json_t(static_cast<double>(v.get_int_value()));
 	}
-	else if(v._type.is_float()){
-		return json_t(static_cast<double>(v.get_float_value()));
+	else if(v._type.is_double()){
+		return json_t(static_cast<double>(v.get_double_value()));
 	}
 	else if(v._type.is_string()){
 		return json_t(v.get_string_value());
@@ -1029,9 +1029,9 @@ json_t bcvalue_to_json(const bc_value_t& v){
 				result.push_back(json_t(element_value2));
 			}
 		}
-		else if(element_type.is_float()){
+		else if(element_type.is_double()){
 			for(int i = 0 ; i < v._pod._ext->_vector_pod64.size() ; i++){
-				const auto element_value2 = v._pod._ext->_vector_pod64[i]._float;
+				const auto element_value2 = v._pod._ext->_vector_pod64[i]._double;
 				result.push_back(json_t(element_value2));
 			}
 		}
@@ -1182,7 +1182,7 @@ void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, in
 	const auto input_value = vm._stack.load_value(arg0_stack_pos + 0, input_value_type);
 
 	const bc_value_t result = [&]{
-		if(target_type.is_bool() || target_type.is_int() || target_type.is_float() || target_type.is_typeid()){
+		if(target_type.is_bool() || target_type.is_int() || target_type.is_double() || target_type.is_typeid()){
 			return input_value;
 		}
 		else if(target_type.is_string()){
@@ -1310,8 +1310,8 @@ void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t target_ityp
 
 
 QUARK_UNIT_TEST("", "", "", ""){
-	float a = 10.0f;
-	float b = 23.3f;
+	double a = 10.0f;
+	double b = 23.3f;
 
 	bool r = a && b;
 	QUARK_UT_VERIFY(r == true);
@@ -2215,12 +2215,12 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			regs[i._a]._pod64._int64 = regs[i._b]._pod64._int64 + regs[i._c]._pod64._int64;
 			break;
 		}
-		case bc_opcode::k_add_float: {
-			ASSERT(stack.check_reg_float(i._a));
-			ASSERT(stack.check_reg_float(i._b));
-			ASSERT(stack.check_reg_float(i._c));
+		case bc_opcode::k_add_double: {
+			ASSERT(stack.check_reg_double(i._a));
+			ASSERT(stack.check_reg_double(i._b));
+			ASSERT(stack.check_reg_double(i._c));
 
-			regs[i._a]._pod64._float = regs[i._b]._pod64._float + regs[i._c]._pod64._float;
+			regs[i._a]._pod64._double = regs[i._b]._pod64._double + regs[i._c]._pod64._double;
 			break;
 		}
 		case bc_opcode::k_add_string: {
@@ -2279,12 +2279,12 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		case bc_opcode::k_subtract_float: {
-			ASSERT(stack.check_reg_float(i._a));
-			ASSERT(stack.check_reg_float(i._b));
-			ASSERT(stack.check_reg_float(i._c));
+		case bc_opcode::k_subtract_double: {
+			ASSERT(stack.check_reg_double(i._a));
+			ASSERT(stack.check_reg_double(i._b));
+			ASSERT(stack.check_reg_double(i._c));
 
-			regs[i._a]._pod64._float = regs[i._b]._pod64._float - regs[i._c]._pod64._float;
+			regs[i._a]._pod64._double = regs[i._b]._pod64._double - regs[i._c]._pod64._double;
 			break;
 		}
 		case bc_opcode::k_subtract_int: {
@@ -2295,12 +2295,12 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			regs[i._a]._pod64._int64 = regs[i._b]._pod64._int64 - regs[i._c]._pod64._int64;
 			break;
 		}
-		case bc_opcode::k_multiply_float: {
-			ASSERT(stack.check_reg_float(i._a));
-			ASSERT(stack.check_reg_float(i._c));
-			ASSERT(stack.check_reg_float(i._c));
+		case bc_opcode::k_multiply_double: {
+			ASSERT(stack.check_reg_double(i._a));
+			ASSERT(stack.check_reg_double(i._c));
+			ASSERT(stack.check_reg_double(i._c));
 
-			regs[i._a]._pod64._float = regs[i._b]._pod64._float * regs[i._c]._pod64._float;
+			regs[i._a]._pod64._double = regs[i._b]._pod64._double * regs[i._c]._pod64._double;
 			break;
 		}
 		case bc_opcode::k_multiply_int: {
@@ -2311,16 +2311,16 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			regs[i._a]._pod64._int64 = regs[i._b]._pod64._int64 * regs[i._c]._pod64._int64;
 			break;
 		}
-		case bc_opcode::k_divide_float: {
-			ASSERT(stack.check_reg_float(i._a));
-			ASSERT(stack.check_reg_float(i._b));
-			ASSERT(stack.check_reg_float(i._c));
+		case bc_opcode::k_divide_double: {
+			ASSERT(stack.check_reg_double(i._a));
+			ASSERT(stack.check_reg_double(i._b));
+			ASSERT(stack.check_reg_double(i._c));
 
-			const auto right = regs[i._c]._pod64._float;
+			const auto right = regs[i._c]._pod64._double;
 			if(right == 0.0f){
 				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
-			regs[i._a]._pod64._float = regs[i._b]._pod64._float / right;
+			regs[i._a]._pod64._double = regs[i._b]._pod64._double / right;
 			break;
 		}
 		case bc_opcode::k_divide_int: {
@@ -2366,12 +2366,12 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			regs[i._a]._pod64._bool = (regs[i._b]._pod64._int64 != 0) && (regs[i._c]._pod64._int64 != 0);
 			break;
 		}
-		case bc_opcode::k_logical_and_float: {
+		case bc_opcode::k_logical_and_double: {
 			ASSERT(stack.check_reg_bool(i._a));
-			ASSERT(stack.check_reg_float(i._b));
-			ASSERT(stack.check_reg_float(i._c));
+			ASSERT(stack.check_reg_double(i._b));
+			ASSERT(stack.check_reg_double(i._c));
 
-			regs[i._a]._pod64._bool = (regs[i._b]._pod64._float != 0) && (regs[i._c]._pod64._float != 0);
+			regs[i._a]._pod64._bool = (regs[i._b]._pod64._double != 0) && (regs[i._c]._pod64._double != 0);
 			break;
 		}
 
@@ -2391,12 +2391,12 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			regs[i._a]._pod64._bool = (regs[i._b]._pod64._int64 != 0) || (regs[i._c]._pod64._int64 != 0);
 			break;
 		}
-		case bc_opcode::k_logical_or_float: {
+		case bc_opcode::k_logical_or_double: {
 			ASSERT(stack.check_reg_bool(i._a));
-			ASSERT(stack.check_reg_float(i._b));
-			ASSERT(stack.check_reg_float(i._c));
+			ASSERT(stack.check_reg_double(i._b));
+			ASSERT(stack.check_reg_double(i._c));
 
-			regs[i._a]._pod64._bool = (regs[i._b]._pod64._float != 0.0f) || (regs[i._c]._pod64._float != 0.0f);
+			regs[i._a]._pod64._bool = (regs[i._b]._pod64._double != 0.0f) || (regs[i._c]._pod64._double != 0.0f);
 			break;
 		}
 

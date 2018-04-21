@@ -165,9 +165,9 @@ struct constant_value_t {
 	{
 	}
 
-	explicit constant_value_t(float value) :
-		_type(etype::k_float),
-		_float(value)
+	explicit constant_value_t(double value) :
+		_type(etype::k_double),
+		_double(value)
 	{
 	}
 
@@ -186,7 +186,7 @@ struct constant_value_t {
 	enum class etype {
 		k_bool,
 		k_int,
-		k_float,
+		k_double,
 		k_string
 	};
 
@@ -196,7 +196,7 @@ struct constant_value_t {
 
 	bool _bool = false;
 	int _int = 0;
-	float _float = 0.0f;
+	double _double = 0.0f;
 	std::string _string;
 };
 
@@ -204,7 +204,7 @@ inline bool operator==(const constant_value_t& a, const constant_value_t& b){
 	return a._type == b._type
 		&& a._bool == b._bool
 		&& a._int == b._int
-		&& a._float == b._float
+		&& a._double == b._double
 		&& a._string == b._string;
 }
 

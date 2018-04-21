@@ -30,7 +30,7 @@ const std::string keyword_t::k_true = "true";
 const std::string keyword_t::k_bool = "bool";
 
 const std::string keyword_t::k_int = "int";
-const std::string keyword_t::k_float = "float";
+const std::string keyword_t::k_double = "double";
 const std::string keyword_t::k_string = "string";
 const std::string keyword_t::k_typeid = "typeid";
 const std::string keyword_t::k_json_value = "json_value";

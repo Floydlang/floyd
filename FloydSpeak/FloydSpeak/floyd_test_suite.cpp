@@ -136,8 +136,8 @@ QUARK_UNIT_TESTQ("Floyd test suite", "int constant expression"){
 	test__run_init__check_result("int result = 123;", value_t::make_int(123));
 }
 
-QUARK_UNIT_TESTQ("Floyd test suite", "float constant expression"){
-	test__run_init__check_result("float result = 3.5;", value_t::make_float(float(3.5)));
+QUARK_UNIT_TESTQ("Floyd test suite", "double constant expression"){
+	test__run_init__check_result("double result = 3.5;", value_t::make_double(double(3.5)));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "string constant expression", "", ""){
@@ -185,7 +185,7 @@ QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
 	test__run_init__check_result("int result = false ? 1 : 2;", value_t::make_int(2));
 }
 
-//??? Test truthness off all variable types: strings, floats
+//??? Test truthness off all variable types: strings, doubles
 
 QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
 	test__run_init__check_result("string result = true ? \"yes\" : \"no\";", value_t::make_string("yes"));
@@ -230,26 +230,26 @@ QUARK_UNIT_TESTQ("execute_expression()", "Spaces") {
 }
 
 
-//////////////////////////////////////////		BASIC EXPRESSIONS - FLOAT
+//////////////////////////////////////////		BASIC EXPRESSIONS - double
 
 
 QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
-	test__run_init__check_result("float result = 5.5/5.0;", value_t::make_float(1.1f));
+	test__run_init__check_result("double result = 5.5/5.0;", value_t::make_double(1.1f));
 }
 QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
 //	test__run_init__check_result("int result = 1/5e10") == 2e-11);
 }
 QUARK_UNIT_TEST("execute_expression()", "Fractional numbers", "", "") {
-	test__run_init__check_result("float result = (4.0-3.0)/(4.0*4.0);", value_t::make_float(0.0625f));
+	test__run_init__check_result("double result = (4.0-3.0)/(4.0*4.0);", value_t::make_double(0.0625f));
 }
 QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
-	test__run_init__check_result("float result = 1.0/2.0/2.0;", value_t::make_float(0.25f));
+	test__run_init__check_result("double result = 1.0/2.0/2.0;", value_t::make_double(0.25f));
 }
 QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
-	test__run_init__check_result("float result = 0.25 * .5 * 0.5;", value_t::make_float(0.0625f));
+	test__run_init__check_result("double result = 0.25 * .5 * 0.5;", value_t::make_double(0.0625f));
 }
 QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
-	test__run_init__check_result("float result = .25 / 2.0 * .5;", value_t::make_float(0.0625f));
+	test__run_init__check_result("double result = .25 / 2.0 * .5;", value_t::make_double(0.0625f));
 }
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - EDGE CASES
@@ -565,11 +565,11 @@ QUARK_UNIT_TEST("", "bool()", "", ""){
 QUARK_UNIT_TEST("", "int()", "", ""){
 	test__run_init__check_result("result = int(123);", value_t::make_int(123));
 }
-QUARK_UNIT_TEST("", "float()", "", ""){
-	test__run_init__check_result("result = float(0.0);", value_t::make_float(0.0));
+QUARK_UNIT_TEST("", "double()", "", ""){
+	test__run_init__check_result("result = double(0.0);", value_t::make_double(0.0));
 }
-QUARK_UNIT_TEST("", "float()", "", ""){
-	test__run_init__check_result("result = float(123.456);", value_t::make_float(123.456f));
+QUARK_UNIT_TEST("", "double()", "", ""){
+	test__run_init__check_result("result = double(123.456);", value_t::make_double(123.456f));
 }
 
 QUARK_UNIT_TEST("", "string()", "", ""){
@@ -1158,11 +1158,11 @@ QUARK_UNIT_TEST("run_global()", "", "", ""){
 
 OFF_QUARK_UNIT_TEST("", "instantiate_from_typeid", "Make struct, make sure it works too", ""){
 	const auto result = test__run_return_result(R"(
-		struct pos_t { float x; float y; }
+		struct pos_t { double x; double y; }
 		a = instantiate_from_typeid(pos_t, 100.0, 3.0);
 		result = a.x + a.y;
 	)", {});
-	ut_compare_values(result, value_t::make_float(103.0f));
+	ut_compare_values(result, value_t::make_double(103.0f));
 }
 
 
@@ -1756,38 +1756,38 @@ QUARK_UNIT_TEST("vector-int", "push_back()", "", ""){
 }
 
 
-//////////////////////////////////////////		vector-float
+//////////////////////////////////////////		vector-double
 
 
-QUARK_UNIT_TEST("vector-float", "literal expression", "", ""){
-	test_result(R"(		[float] result = [10.5, 20.5, 30.5];		)", R"(		[[ "vector", "^float" ], [10.5, 20.5, 30.5]]		)");
+QUARK_UNIT_TEST("vector-double", "literal expression", "", ""){
+	test_result(R"(		[double] result = [10.5, 20.5, 30.5];		)", R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)");
 }
-QUARK_UNIT_TEST("vector-float", "=", "copy", ""){
-	test_result(R"(		a = [10.5, 20.5, 30.5]; result = a;		)", R"(		[[ "vector", "^float" ], [10.5, 20.5, 30.5]]		)");
+QUARK_UNIT_TEST("vector-double", "=", "copy", ""){
+	test_result(R"(		a = [10.5, 20.5, 30.5]; result = a;		)", R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)");
 }
-QUARK_UNIT_TEST("vector-float", "==", "same values", ""){
+QUARK_UNIT_TEST("vector-double", "==", "same values", ""){
 	test_result(R"(		result = [1.5, 2.5] == [1.5, 2.5];		)", R"(		[ "^bool", true]		)");
 }
-QUARK_UNIT_TEST("vector-float", "==", "different values", ""){
+QUARK_UNIT_TEST("vector-double", "==", "different values", ""){
 	test_result(R"(		result = [1.5, 3.5] == [1.5, 2.5];		)", R"(		[ "^bool", false]		)");
 }
-QUARK_UNIT_TEST("vector-float", "<", "", ""){
+QUARK_UNIT_TEST("vector-double", "<", "", ""){
 	test_result(R"(		result = [1.5, 2.5] < [1.5, 2.5];		)", R"(		[ "^bool", false]	)");
 }
-QUARK_UNIT_TEST("vector-float", "<", "different values", ""){
+QUARK_UNIT_TEST("vector-double", "<", "different values", ""){
 	test_result(R"(		result = [1.5, 2.5] < [1.5, 3.5];		)", R"(		[ "^bool", true]		)");
 }
-QUARK_UNIT_TEST("vector-float", "size()", "empty", "0"){
-	test_result(R"(		[float] a = []; result = size(a);		)", R"(		[ "^int", 0]		)");
+QUARK_UNIT_TEST("vector-double", "size()", "empty", "0"){
+	test_result(R"(		[double] a = []; result = size(a);		)", R"(		[ "^int", 0]		)");
 }
-QUARK_UNIT_TEST("vector-float", "size()", "2", ""){
-	test_result(R"(		[float] a = [1.5, 2.5, 3.5]; result = size(a);		)", R"(		[ "^int", 3]		)");
+QUARK_UNIT_TEST("vector-double", "size()", "2", ""){
+	test_result(R"(		[double] a = [1.5, 2.5, 3.5]; result = size(a);		)", R"(		[ "^int", 3]		)");
 }
-QUARK_UNIT_TEST("vector-float", "+", "non-empty vectors", ""){
-	test_result(R"(		[float] result = [1.5, 2.5] + [3.5, 4.5];		)", R"(		[[ "vector", "^float" ], [1.5, 2.5, 3.5, 4.5]]		)");
+QUARK_UNIT_TEST("vector-double", "+", "non-empty vectors", ""){
+	test_result(R"(		[double] result = [1.5, 2.5] + [3.5, 4.5];		)", R"(		[[ "vector", "^double" ], [1.5, 2.5, 3.5, 4.5]]		)");
 }
-QUARK_UNIT_TEST("vector-float", "push_back()", "", ""){
-	test_result(R"(		[float] result = push_back([1.5, 2.5], 3.5);		)", R"(		[[ "vector", "^float" ], [1.5, 2.5, 3.5]]		)");
+QUARK_UNIT_TEST("vector-double", "push_back()", "", ""){
+	test_result(R"(		[double] result = push_back([1.5, 2.5], 3.5);		)", R"(		[[ "vector", "^double" ], [1.5, 2.5, 3.5]]		)");
 }
 
 
@@ -2596,27 +2596,27 @@ QUARK_UNIT_TEST("", "get_json_type()", "DOCUMENTATION SNIPPET", ""){
 
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto result = test__run_return_result(R"(
-		struct pixel_t { float x; float y; }
+		struct pixel_t { double x; double y; }
 		a = pixel_t(100.0, 200.0);
 		result = a.x;
 	)", {});
-	ut_compare_values(result, value_t::make_float(100.0));
+	ut_compare_values(result, value_t::make_double(100.0));
 }
 
 
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto result = test__run_return_result(R"(
-		struct pixel_t { float x; float y; }
+		struct pixel_t { double x; double y; }
 		c = [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)];
 		result = c[1].y
 	)", {});
-	ut_compare_values(result, value_t::make_float(201.0));
+	ut_compare_values(result, value_t::make_double(201.0));
 }
 
 QUARK_UNIT_TEST("", "", "", ""){
 	try{
 		const auto result = test__run_return_result(R"(
-			struct pixel_t { float x; float y; }
+			struct pixel_t { double x; double y; }
 
 			//	c is a json_value::object
 			c = { "version": "1.0", "image": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] };
@@ -2706,7 +2706,7 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "int", ""){
 	ut_compare_values(result, value_t::make_json_value(json_t(-987.0)));
 }
 
-QUARK_UNIT_TEST("", "flatten_to_json()", "float", ""){
+QUARK_UNIT_TEST("", "flatten_to_json()", "double", ""){
 	const auto result = test__run_return_result(R"(
 		result = flatten_to_json(-0.125);
 	)", {});
@@ -2748,7 +2748,7 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "{}", ""){
 
 QUARK_UNIT_TEST("", "flatten_to_json()", "pixel_t", ""){
 	const auto result = test__run_return_result(R"(
-		struct pixel_t { float x; float y; }
+		struct pixel_t { double x; double y; }
 		c = pixel_t(100.0, 200.0);
 		a = flatten_to_json(c);
 		result = encode_json(a);
@@ -2758,7 +2758,7 @@ QUARK_UNIT_TEST("", "flatten_to_json()", "pixel_t", ""){
 
 QUARK_UNIT_TEST("", "flatten_to_json()", "[pixel_t]", ""){
 	const auto result = test__run_return_result(R"(
-		struct pixel_t { float x; float y; }
+		struct pixel_t { double x; double y; }
 		c = [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)];
 		a = flatten_to_json(c);
 		result = encode_json(a);
@@ -2790,11 +2790,11 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "int", ""){
 	ut_compare_values(result, value_t::make_int(91));
 }
 
-QUARK_UNIT_TEST("", "unflatten_from_json()", "float", ""){
+QUARK_UNIT_TEST("", "unflatten_from_json()", "double", ""){
 	const auto result = test__run_return_result(R"(
-		result = unflatten_from_json(flatten_to_json(-0.125), float);
+		result = unflatten_from_json(flatten_to_json(-0.125), double);
 	)", {});
-	ut_compare_values(result, value_t::make_float(-0.125));
+	ut_compare_values(result, value_t::make_double(-0.125));
 }
 
 QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
@@ -2829,15 +2829,15 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "[]", ""){
 QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
 	const auto point_t_def = std::make_shared<floyd::struct_definition_t>(
 		std::vector<member_t>{
-			member_t(typeid_t::make_float(), "x"),
-			member_t(typeid_t::make_float(), "y")
+			member_t(typeid_t::make_double(), "x"),
+			member_t(typeid_t::make_double(), "y")
 		}
 	);
 	const auto result = test__run_return_result(R"(
-		struct point_t { float x; float y; }
+		struct point_t { double x; double y; }
 		result = unflatten_from_json(flatten_to_json(point_t(1.0, 3.0)), point_t);
 	)", {});
-	ut_compare_values(result, value_t::make_struct_value(typeid_t::make_struct(point_t_def), vector<value_t>{ value_t::make_float(1), value_t::make_float(3)}));
+	ut_compare_values(result, value_t::make_struct_value(typeid_t::make_struct(point_t_def), vector<value_t>{ value_t::make_double(1), value_t::make_double(3)}));
 }
 
 
@@ -2981,7 +2981,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments in function call", "
 QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to struct-constructor", "exception"){
 	try{
 		const auto result = test__run_return_result(R"(
-			struct pos { float x; float y;}
+			struct pos { double x; double y;}
 			a = pos(3);
 		)", {});
 		QUARK_TEST_VERIFY(false);
@@ -2994,7 +2994,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to struct-constructo
 QUARK_UNIT_TEST("Edge case", "", "Wrong TYPE of arguments to struct-constructor", "exception"){
 	try{
 		const auto result = test__run_return_result(R"(
-			struct pos { float x; float y;}
+			struct pos { double x; double y;}
 			a = pos(3, "hello");
 		)", {});
 		QUARK_TEST_VERIFY(false);
