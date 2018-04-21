@@ -1918,7 +1918,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			ASSERT(stack.check_reg_string(i._c));
 
 			std::string str2 = regs[i._b]._ext->_string;
-			std::string add = regs[i._c]._ext->_string;
+			const std::string& add = regs[i._c]._ext->_string;
 			str2.insert(str2.end(), add.begin(), add.end());
 
 			//??? optimize - bypass bc_value_t
