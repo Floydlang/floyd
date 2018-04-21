@@ -39,9 +39,6 @@ std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
 	return result;
 }
 
-
-
-
 value_t bc_to_value(const bc_value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 
@@ -89,41 +86,51 @@ value_t bc_to_value(const bc_value_t& value){
 	}
 	else if(basetype == base_type::k_vector){
 		const auto& element_type  = type.get_vector_element_type();
+		std::vector<value_t> vec2;
 		if(element_type.is_bool()){
-			std::vector<value_t> vec2;
 			for(const auto e: value._pod._ext->_vector_pod64){
 				vec2.push_back(value_t::make_bool(e._bool));
 			}
-			return value_t::make_vector_value(element_type, vec2);
 		}
 		else if(element_type.is_int()){
-			std::vector<value_t> vec2;
 			for(const auto e: value._pod._ext->_vector_pod64){
 				vec2.push_back(value_t::make_int(e._int64));
 			}
-			return value_t::make_vector_value(element_type, vec2);
 		}
 		else if(element_type.is_float()){
-			std::vector<value_t> vec2;
 			for(const auto e: value._pod._ext->_vector_pod64){
 				vec2.push_back(value_t::make_float(e._float));
 			}
-			return value_t::make_vector_value(element_type, vec2);
 		}
 		else{
-			std::vector<value_t> vec2;
 			for(const auto e: value._pod._ext->_vector_objects){
 				vec2.push_back(bc_to_value(bc_value_t(element_type, e)));
 			}
-			return value_t::make_vector_value(element_type, vec2);
 		}
+		return value_t::make_vector_value(element_type, vec2);
 	}
 	else if(basetype == base_type::k_dict){
-		const auto value_type = type.get_dict_value_type();
-		const auto entries = get_dict_value(value);
+		const auto& value_type  = type.get_dict_value_type();
 		std::map<std::string, value_t> entries2;
-		for(const auto& e: entries){
-			entries2.insert({e.first, bc_to_value(e.second)});
+		if(value_type.is_bool()){
+			for(const auto e: value._pod._ext->_dict_pod64){
+				entries2.insert({ e.first, value_t::make_bool(e.second._bool) });
+			}
+		}
+		else if(value_type.is_int()){
+			for(const auto e: value._pod._ext->_dict_pod64){
+				entries2.insert({ e.first, value_t::make_int(e.second._int64) });
+			}
+		}
+		else if(value_type.is_float()){
+			for(const auto e: value._pod._ext->_dict_pod64){
+				entries2.insert({ e.first, value_t::make_float(e.second._float) });
+			}
+		}
+		else{
+			for(const auto e: value._pod._ext->_dict_objects){
+				entries2.insert({ e.first, bc_to_value(bc_value_t(value_type, e.second)) });
+			}
 		}
 		return value_t::make_dict_value(value_type, entries2);
 	}
@@ -176,16 +183,31 @@ bc_value_t value_to_bc(const value_t& value){
 	}
 
 	else if(basetype == base_type::k_vector){
-		const auto element_type = value.get_type().get_vector_element_type();
-		const auto& vec = value.get_vector_value();
-		if(element_type.is_int()){
+		const auto vector_type = value.get_type();
+		const auto element_type = vector_type.get_vector_element_type();
+
+		if(encode_as_vector_pod64(vector_type)){
+			const auto& vec = value.get_vector_value();
 			immer::vector<bc_pod64_t> vec2;
-			for(const auto e: vec){
-				vec2.push_back(bc_pod64_t{._int64 = e.get_int_value()});
+			if(element_type.is_bool()){
+				for(const auto e: vec){
+					vec2.push_back(bc_pod64_t{._bool = e.get_bool_value()});
+				}
+			}
+			else if(element_type.is_int()){
+				for(const auto e: vec){
+					vec2.push_back(bc_pod64_t{._int64 = e.get_int_value()});
+				}
+			}
+			else if(element_type.is_float()){
+				for(const auto e: vec){
+					vec2.push_back(bc_pod64_t{._float = e.get_float_value()});
+				}
 			}
 			return make_vector_int64_value(element_type, vec2);
 		}
 		else{
+			const auto& vec = value.get_vector_value();
 			immer::vector<bc_object_handle_t> vec2;
 			for(const auto e: vec){
 				const auto bc = value_to_bc(e);
@@ -196,12 +218,15 @@ bc_value_t value_to_bc(const value_t& value){
 		}
 	}
 	else if(basetype == base_type::k_dict){
+		const auto dict_type = value.get_type();
+		const auto value_type = dict_type.get_dict_value_type();
+//??? add handling for int, bool, float
 		const auto elements = value.get_dict_value();
-		immer::map<std::string, bc_value_t> entries2;
+		immer::map<std::string, bc_object_handle_t> entries2;
 		for(const auto e: elements){
-			entries2.insert({e.first, value_to_bc(e.second)});
+			entries2.insert({e.first, bc_object_handle_t(value_to_bc(e.second))});
 		}
-		return make_dict_value(value.get_type().get_dict_value_type(), entries2);
+		return make_dict_value(value_type, entries2);
 	}
 	else if(basetype == base_type::k_function){
 		return bc_value_t::make_function_value(value.get_type(), value.get_function_value());
@@ -211,6 +236,8 @@ bc_value_t value_to_bc(const value_t& value){
 		throw std::exception();
 	}
 }
+
+//??? add tests!
 
 
 

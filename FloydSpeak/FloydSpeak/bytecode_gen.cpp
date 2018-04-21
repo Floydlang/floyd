@@ -543,7 +543,12 @@ expr_info_t bcgen_lookup_element_expression(bcgenerator_t& vm, const variable_ad
 			}
 		}
 		else if(parent_type.is_dict()){
-			return bc_opcode::k_lookup_element_dict;
+			if(encode_as_dict_pod64(parent_type)){
+				return bc_opcode::k_lookup_element_dict_pod64;
+			}
+			else{
+				return bc_opcode::k_lookup_element_dict_obj;
+			}
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -835,12 +840,22 @@ expr_info_t bcgen_construct_value_expression(bcgenerator_t& vm, const variable_a
 		}
 	}
 	else if(target_type.is_dict()){
-		body_acc._instrs.push_back(bcgen_instruction_t(
-			bc_opcode::k_new_dict,
-			target_reg2,
-			make_imm_int(target_itype),
-			make_imm_int(arg_count)
-		));
+		if(encode_as_dict_pod64(target_type)){
+			body_acc._instrs.push_back(bcgen_instruction_t(
+				bc_opcode::k_new_dict_pod64,
+				target_reg2,
+				make_imm_int(target_itype),
+				make_imm_int(arg_count)
+			));
+		}
+		else{
+			body_acc._instrs.push_back(bcgen_instruction_t(
+				bc_opcode::k_new_dict_obj,
+				target_reg2,
+				make_imm_int(target_itype),
+				make_imm_int(arg_count)
+			));
+		}
 	}
 	else if(target_type.is_struct()){
 		body_acc._instrs.push_back(bcgen_instruction_t(

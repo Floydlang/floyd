@@ -424,16 +424,23 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 			}
 			else{
 				const auto obj = obj1;
-				const auto entries = get_dict_value(obj);
 				const auto value_type = obj._type.get_dict_value_type();
 				if(value_type != new_value._type){
 					throw std::runtime_error("Update element must match dict value type.");
 				}
 				else{
 					const string key = lookup_key.get_string_value();
-					auto entries2 = entries.set(key, new_value);
-					const auto value2 = make_dict_value(value_type, entries2);
-					return value2;
+					if(encode_as_dict_pod64(obj1._type)){
+						auto entries2 = obj._pod._ext->_dict_pod64.set(key, new_value._pod._pod64);
+						const auto value2 = make_dict_value(value_type, entries2);
+						return value2;
+					}
+					else{
+						const auto entries = get_dict_value(obj);
+						auto entries2 = entries.set(key, bc_object_handle_t(new_value));
+						const auto value2 = make_dict_value(value_type, entries2);
+						return value2;
+					}
 				}
 			}
 		}
@@ -501,8 +508,14 @@ bc_value_t host__size(interpreter_t& vm, const bc_value_t args[], int arg_count)
 		}
 	}
 	else if(obj._type.is_dict()){
-		const auto size = get_dict_value(obj).size();
-		return bc_value_t::make_int(static_cast<int>(size));
+		if(encode_as_dict_pod64(obj._type)){
+			const auto size = obj._pod._ext->_dict_pod64.size();
+			return bc_value_t::make_int(static_cast<int>(size));
+		}
+		else{
+			const auto size = get_dict_value(obj).size();
+			return bc_value_t::make_int(static_cast<int>(size));
+		}
 	}
 	else{
 		throw std::runtime_error("Calling size() on unsupported type of value.");
@@ -593,11 +606,16 @@ bc_value_t host__exists(interpreter_t& vm, const bc_value_t args[], int arg_coun
 			throw std::runtime_error("Key must be string.");
 		}
 		const auto key_string = key.get_string_value();
-		const auto entries = get_dict_value(obj);
 
-		const auto found_ptr = entries.find(key_string);
-		const bool exists = found_ptr != nullptr;
-		return bc_value_t::make_bool(exists);
+		if(encode_as_dict_pod64(obj._type)){
+			const auto found_ptr = obj._pod._ext->_dict_pod64.find(key_string);
+			return bc_value_t::make_bool(found_ptr != nullptr);
+		}
+		else{
+			const auto entries = get_dict_value(obj);
+			const auto found_ptr = entries.find(key_string);
+			return bc_value_t::make_bool(found_ptr != nullptr);
+		}
 	}
 	else{
 		throw std::runtime_error("Calling exist() on unsupported type of value.");
@@ -619,11 +637,19 @@ bc_value_t host__erase(interpreter_t& vm, const bc_value_t args[], int arg_count
 			throw std::runtime_error("Key must be string.");
 		}
 		const auto key_string = key.get_string_value();
-		auto entries2 = get_dict_value(obj);
-		entries2 = entries2.erase(key_string);
+
 		const auto value_type = obj._type.get_dict_value_type();
-		const auto value2 = make_dict_value(value_type, entries2);
-		return value2;
+		if(encode_as_dict_pod64(obj._type)){
+			auto entries2 = obj._pod._ext->_dict_pod64.erase(key_string);
+			const auto value2 = make_dict_value(value_type, entries2);
+			return value2;
+		}
+		else{
+			auto entries2 = get_dict_value(obj);
+			entries2 = entries2.erase(key_string);
+			const auto value2 = make_dict_value(value_type, entries2);
+			return value2;
+		}
 	}
 	else{
 		throw std::runtime_error("Calling exist() on unsupported type of value.");

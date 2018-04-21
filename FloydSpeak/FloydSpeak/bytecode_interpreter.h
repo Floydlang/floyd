@@ -92,6 +92,10 @@ namespace floyd {
 		return type.is_vector() && encode_as_pod64(type.get_vector_element_type());
 	}
 
+	inline bool encode_as_dict_pod64(const typeid_t& type){
+		return type.is_dict() && encode_as_pod64(type.get_dict_value_type());
+	}
+
 	inline value_runtime_encoding type_to_encoding(const typeid_t& type){
 		const auto basetype = type.get_base_type();
 		if(false){
@@ -461,7 +465,8 @@ namespace floyd {
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_objects.empty());
 				QUARK_ASSERT(_vector_pod64.empty());
-				QUARK_ASSERT(_dict_entries.size() == 0);
+				QUARK_ASSERT(_dict_objects.size() == 0);
+				QUARK_ASSERT(_dict_pod64.size() == 0);
 			}
 			else if(encoding == value_runtime_encoding::k_ext_json_value){
 				QUARK_ASSERT(_string.empty());
@@ -470,7 +475,8 @@ namespace floyd {
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_objects.empty());
 				QUARK_ASSERT(_vector_pod64.empty());
-				QUARK_ASSERT(_dict_entries.size() == 0);
+				QUARK_ASSERT(_dict_objects.size() == 0);
+				QUARK_ASSERT(_dict_pod64.size() == 0);
 
 				QUARK_ASSERT(_json_value->check_invariant());
 			}
@@ -481,7 +487,8 @@ namespace floyd {
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_objects.empty());
 				QUARK_ASSERT(_vector_pod64.empty());
-				QUARK_ASSERT(_dict_entries.size() == 0);
+				QUARK_ASSERT(_dict_objects.size() == 0);
+				QUARK_ASSERT(_dict_pod64.size() == 0);
 
 				QUARK_ASSERT(_typeid_value.check_invariant());
 			}
@@ -492,7 +499,8 @@ namespace floyd {
 //				QUARK_ASSERT(_struct != nullptr);
 				QUARK_ASSERT(_vector_objects.empty());
 				QUARK_ASSERT(_vector_pod64.empty());
-				QUARK_ASSERT(_dict_entries.size() == 0);
+				QUARK_ASSERT(_dict_objects.size() == 0);
+				QUARK_ASSERT(_dict_pod64.size() == 0);
 
 //				QUARK_ASSERT(_struct && _struct->check_invariant());
 			}
@@ -503,7 +511,8 @@ namespace floyd {
 				QUARK_ASSERT(_struct_members.empty());
 		//		QUARK_ASSERT(_vector_objects.empty());
 				QUARK_ASSERT(_vector_pod64.empty());
-				QUARK_ASSERT(_dict_entries.size() == 0);
+				QUARK_ASSERT(_dict_objects.size() == 0);
+				QUARK_ASSERT(_dict_pod64.size() == 0);
 			}
 			else if(encoding == value_runtime_encoding::k_ext_vector_pod64){
 				QUARK_ASSERT(_string.empty());
@@ -511,7 +520,8 @@ namespace floyd {
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_objects.empty());
-				QUARK_ASSERT(_dict_entries.size() == 0);
+				QUARK_ASSERT(_dict_objects.size() == 0);
+				QUARK_ASSERT(_dict_pod64.size() == 0);
 			}
 			else if(encoding == value_runtime_encoding::k_ext_dict){
 				QUARK_ASSERT(_string.empty());
@@ -520,7 +530,8 @@ namespace floyd {
 				QUARK_ASSERT(_struct_members.empty());
 				QUARK_ASSERT(_vector_objects.empty());
 				QUARK_ASSERT(_vector_pod64.empty());
-		//		QUARK_ASSERT(_dict_entries.empty());
+//				QUARK_ASSERT(_dict_objects.size() == 0);
+//				QUARK_ASSERT(_dict_pod64.size() == 0);
 			}
 			else {
 				QUARK_ASSERT(false);
@@ -578,10 +589,17 @@ namespace floyd {
 		{
 			QUARK_ASSERT(check_invariant());
 		}
-		public: bc_value_object_t(const typeid_t& type, const immer::map<std::string, bc_value_t>& s) :
+		public: bc_value_object_t(const typeid_t& type, const immer::map<std::string, bc_object_handle_t>& s) :
 			_rc(1),
 			_debug_type(type),
-			_dict_entries(s)
+			_dict_objects(s)
+		{
+			QUARK_ASSERT(check_invariant());
+		}
+		public: bc_value_object_t(const typeid_t& type, const immer::map<std::string, bc_pod64_t>& s) :
+			_rc(1),
+			_debug_type(type),
+			_dict_pod64(s)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
@@ -600,7 +618,8 @@ namespace floyd {
 		public: std::vector<bc_value_t> _struct_members;
 		public: immer::vector<bc_object_handle_t> _vector_objects;
 		public: immer::vector<bc_pod64_t> _vector_pod64;
-		public: immer::map<std::string, bc_value_t> _dict_entries;
+		public: immer::map<std::string, bc_object_handle_t> _dict_objects;
+		public: immer::map<std::string, bc_pod64_t> _dict_pod64;
 	};
 
 
@@ -763,13 +782,20 @@ namespace floyd {
 		}
 
 
-		inline const immer::map<std::string, bc_value_t>& get_dict_value(const bc_value_t& value){
+		inline const immer::map<std::string, bc_object_handle_t>& get_dict_value(const bc_value_t& value){
 			QUARK_ASSERT(value.check_invariant());
 
-			return value._pod._ext->_dict_entries;
+			return value._pod._ext->_dict_objects;
 		}
 
-		inline bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_value_t>& entries){
+		inline bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_object_handle_t>& entries){
+			bc_value_t temp;
+			temp._type = typeid_t::make_dict(value_type);
+			temp._pod._ext = new bc_value_object_t{typeid_t::make_dict(value_type), entries};
+			QUARK_ASSERT(temp.check_invariant());
+			return temp;
+		}
+		inline bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_pod64_t>& entries){
 			bc_value_t temp;
 			temp._type = typeid_t::make_dict(value_type);
 			temp._pod._ext = new bc_value_object_t{typeid_t::make_dict(value_type), entries};
@@ -886,7 +912,8 @@ namespace floyd {
 		k_lookup_element_json_value,
 		k_lookup_element_vector_obj,
 		k_lookup_element_vector_pod64,
-		k_lookup_element_dict,
+		k_lookup_element_dict_obj,
+		k_lookup_element_dict_pod64,
 
 		/*
 			TYPE: itype of object
@@ -1017,7 +1044,8 @@ namespace floyd {
 				C: 6
 				Stack: "chewie", 10.0, "leia", 20.0, "luke", 30.0
 		*/
-		k_new_dict,
+		k_new_dict_obj,
+		k_new_dict_pod64,
 
 		/*
 			A: Register: where to put resulting value

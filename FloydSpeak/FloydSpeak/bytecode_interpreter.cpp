@@ -133,7 +133,7 @@ int bc_compare_struct_true_deep(const std::vector<bc_value_t>& left, const std::
 	return 0;
 }
 
-int bc_compare_vectors(const immer::vector<bc_object_handle_t>& left, const immer::vector<bc_object_handle_t>& right, const typeid_t& type){
+int bc_compare_vectors_obj(const immer::vector<bc_object_handle_t>& left, const immer::vector<bc_object_handle_t>& right, const typeid_t& type){
 	QUARK_ASSERT(type.is_vector());
 
 	const auto& shared_count = std::min(left.size(), right.size());
@@ -155,6 +155,44 @@ int bc_compare_vectors(const immer::vector<bc_object_handle_t>& left, const imme
 	}
 }
 
+int compare_bools(const bc_pod64_t& left, const bc_pod64_t& right){
+	auto left2 = left._bool ? 1 : 0;
+	auto right2 = right._bool ? 1 : 0;
+	if(left2 < right2){
+		return -1;
+	}
+	else if(left2 > right2){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+int compare_ints(const bc_pod64_t& left, const bc_pod64_t& right){
+	if(left._int64 < right._int64){
+		return -1;
+	}
+	else if(left._int64 > right._int64){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+int compare_floats(const bc_pod64_t& left, const bc_pod64_t& right){
+	if(left._float < right._float){
+		return -1;
+	}
+	else if(left._float > right._float){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+
 /*
 	const auto encoding = type_to_encoding(type);
 	QUARK_ASSERT(encoding == value_runtime_encoding::k_ext_vector || encoding == value_runtime_encoding::k_ext_vector_int);
@@ -162,16 +200,12 @@ int bc_compare_vectors(const immer::vector<bc_object_handle_t>& left, const imme
 	if(encoding == value_runtime_encoding::k_ext_vector){
 */
 
-int bc_compare_vector_bools(const immer::vector<bc_pod64_t>& left, const immer::vector<bc_pod64_t>& right){
+int bc_compare_vectors_bool(const immer::vector<bc_pod64_t>& left, const immer::vector<bc_pod64_t>& right){
 	const auto& shared_count = std::min(left.size(), right.size());
 	for(int i = 0 ; i < shared_count ; i++){
-		auto left2 = left[i]._bool ? 1 : 0;
-		auto right2 = right[i]._bool ? 1 : 0;
-		if(left2 < right2){
-			return -1;
-		}
-		else if(left2 > right2){
-			return 1;
+		int result = compare_bools(left[i], right[i]);
+		if(result != 0){
+			return result;
 		}
 	}
 	if(left.size() == right.size()){
@@ -184,16 +218,12 @@ int bc_compare_vector_bools(const immer::vector<bc_pod64_t>& left, const immer::
 		return +1;
 	}
 }
-int bc_compare_vector_ints(const immer::vector<bc_pod64_t>& left, const immer::vector<bc_pod64_t>& right){
+int bc_compare_vectors_int(const immer::vector<bc_pod64_t>& left, const immer::vector<bc_pod64_t>& right){
 	const auto& shared_count = std::min(left.size(), right.size());
 	for(int i = 0 ; i < shared_count ; i++){
-		auto left2 = left[i]._int64;
-		auto right2 = right[i]._int64;
-		if(left2 < right2){
-			return -1;
-		}
-		else if(left2 > right2){
-			return 1;
+		int result = compare_ints(left[i], right[i]);
+		if(result != 0){
+			return result;
 		}
 	}
 	if(left.size() == right.size()){
@@ -206,16 +236,12 @@ int bc_compare_vector_ints(const immer::vector<bc_pod64_t>& left, const immer::v
 		return +1;
 	}
 }
-int bc_compare_vector_floats(const immer::vector<bc_pod64_t>& left, const immer::vector<bc_pod64_t>& right){
+int bc_compare_vectors_float(const immer::vector<bc_pod64_t>& left, const immer::vector<bc_pod64_t>& right){
 	const auto& shared_count = std::min(left.size(), right.size());
 	for(int i = 0 ; i < shared_count ; i++){
-		auto left2 = left[i]._float;
-		auto right2 = right[i]._float;
-		if(left2 < right2){
-			return -1;
-		}
-		else if(left2 > right2){
-			return 1;
+		int result = compare_floats(left[i], right[i]);
+		if(result != 0){
+			return result;
 		}
 	}
 	if(left.size() == right.size()){
@@ -237,7 +263,7 @@ bool bc_map_compare (Map const &lhs, Map const &rhs) {
 	return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
-int bc_compare_dict_true_deep(const immer::map<std::string, bc_value_t>& left, const immer::map<std::string, bc_value_t>& right, const typeid_t& type){
+int bc_compare_dicts_obj(const immer::map<std::string, bc_object_handle_t>& left, const immer::map<std::string, bc_object_handle_t>& right, const typeid_t& type){
 	const auto& element_type = typeid_t(type.get_dict_value_type());
 
 	auto left_it = left.begin();
@@ -255,7 +281,7 @@ int bc_compare_dict_true_deep(const immer::map<std::string, bc_value_t>& left, c
 			return key_result;
 		}
 
-		const auto element_result = bc_compare_value_true_deep((*left_it).second, (*right_it).second, element_type);
+		const auto element_result = bc_compare_value_true_deep(bc_value_t(element_type, (*left_it).second), bc_value_t(element_type, (*right_it).second), element_type);
 		if(element_result != 0){
 			return element_result;
 		}
@@ -276,6 +302,124 @@ int bc_compare_dict_true_deep(const immer::map<std::string, bc_value_t>& left, c
 	QUARK_ASSERT(false)
 	throw std::exception();
 }
+
+//??? make template.
+int bc_compare_dicts_bool(const immer::map<std::string, bc_pod64_t>& left, const immer::map<std::string, bc_pod64_t>& right){
+	auto left_it = left.begin();
+	auto left_end_it = left.end();
+
+	auto right_it = right.begin();
+	auto right_end_it = right.end();
+
+	while(left_it != left_end_it && right_it != right_end_it){
+		auto left_key = (*left_it).first;
+		auto right_key = (*right_it).first;
+
+		const auto key_result = bc_compare_string(left_key, right_key);
+		if(key_result != 0){
+			return key_result;
+		}
+
+		int result = compare_bools((*left_it).second, (*right_it).second);
+		if(result != 0){
+			return result;
+		}
+
+		left_it++;
+		right_it++;
+	}
+
+	if(left_it == left_end_it && right_it == right_end_it){
+		return 0;
+	}
+	else if(left_it == left_end_it && right_it != right_end_it){
+		return 1;
+	}
+	else if(left_it != left_end_it && right_it == right_end_it){
+		return -1;
+	}
+	QUARK_ASSERT(false)
+	throw std::exception();
+}
+int bc_compare_dicts_int(const immer::map<std::string, bc_pod64_t>& left, const immer::map<std::string, bc_pod64_t>& right){
+	auto left_it = left.begin();
+	auto left_end_it = left.end();
+
+	auto right_it = right.begin();
+	auto right_end_it = right.end();
+
+	while(left_it != left_end_it && right_it != right_end_it){
+		auto left_key = (*left_it).first;
+		auto right_key = (*right_it).first;
+
+		const auto key_result = bc_compare_string(left_key, right_key);
+		if(key_result != 0){
+			return key_result;
+		}
+
+		int result = compare_ints((*left_it).second, (*right_it).second);
+		if(result != 0){
+			return result;
+		}
+
+		left_it++;
+		right_it++;
+	}
+
+	if(left_it == left_end_it && right_it == right_end_it){
+		return 0;
+	}
+	else if(left_it == left_end_it && right_it != right_end_it){
+		return 1;
+	}
+	else if(left_it != left_end_it && right_it == right_end_it){
+		return -1;
+	}
+	QUARK_ASSERT(false)
+	throw std::exception();
+}
+int bc_compare_dicts_float(const immer::map<std::string, bc_pod64_t>& left, const immer::map<std::string, bc_pod64_t>& right){
+	auto left_it = left.begin();
+	auto left_end_it = left.end();
+
+	auto right_it = right.begin();
+	auto right_end_it = right.end();
+
+	while(left_it != left_end_it && right_it != right_end_it){
+		auto left_key = (*left_it).first;
+		auto right_key = (*right_it).first;
+
+		const auto key_result = bc_compare_string(left_key, right_key);
+		if(key_result != 0){
+			return key_result;
+		}
+
+		int result = compare_floats((*left_it).second, (*right_it).second);
+		if(result != 0){
+			return result;
+		}
+
+		left_it++;
+		right_it++;
+	}
+
+	if(left_it == left_end_it && right_it == right_end_it){
+		return 0;
+	}
+	else if(left_it == left_end_it && right_it != right_end_it){
+		return 1;
+	}
+	else if(left_it != left_end_it && right_it == right_end_it){
+		return -1;
+	}
+	QUARK_ASSERT(false)
+	throw std::exception();
+}
+
+
+
+
+
 
 int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
 	if(lhs == rhs){
@@ -341,24 +485,37 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 		if(false){
 		}
 		else if(type.get_vector_element_type().is_bool()){
-			return bc_compare_vector_bools(left._pod._ext->_vector_pod64, right._pod._ext->_vector_pod64);
+			return bc_compare_vectors_bool(left._pod._ext->_vector_pod64, right._pod._ext->_vector_pod64);
 		}
 		else if(type.get_vector_element_type().is_int()){
-			return bc_compare_vector_ints(left._pod._ext->_vector_pod64, right._pod._ext->_vector_pod64);
+			return bc_compare_vectors_int(left._pod._ext->_vector_pod64, right._pod._ext->_vector_pod64);
 		}
 		else if(type.get_vector_element_type().is_float()){
-			return bc_compare_vector_floats(left._pod._ext->_vector_pod64, right._pod._ext->_vector_pod64);
+			return bc_compare_vectors_float(left._pod._ext->_vector_pod64, right._pod._ext->_vector_pod64);
 		}
 		else{
 			const auto& left_vec = get_vector_value(left);
 			const auto& right_vec = get_vector_value(right);
-			return bc_compare_vectors(*left_vec, *right_vec, type0);
+			return bc_compare_vectors_obj(*left_vec, *right_vec, type0);
 		}
 	}
 	else if(type.is_dict()){
-		const auto& left2 = get_dict_value(left);
-		const auto& right2 = get_dict_value(right);
-		return bc_compare_dict_true_deep(left2, right2, type0);
+		if(false){
+		}
+		else if(type.get_dict_value_type().is_bool()){
+			return bc_compare_dicts_bool(left._pod._ext->_dict_pod64, right._pod._ext->_dict_pod64);
+		}
+		else if(type.get_dict_value_type().is_int()){
+			return bc_compare_dicts_int(left._pod._ext->_dict_pod64, right._pod._ext->_dict_pod64);
+		}
+		else if(type.get_dict_value_type().is_float()){
+			return bc_compare_dicts_float(left._pod._ext->_dict_pod64, right._pod._ext->_dict_pod64);
+		}
+		else  {
+			const auto& left2 = get_dict_value(left);
+			const auto& right2 = get_dict_value(right);
+			return bc_compare_dicts_obj(left2, right2, type0);
+		}
 	}
 	else if(type.is_function()){
 		QUARK_ASSERT(false);
@@ -388,7 +545,8 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_lookup_element_json_value, { "lookup_element_jsonvalue", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_lookup_element_vector_obj, { "lookup_element_vector_obj", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_lookup_element_vector_pod64, { "lookup_element_vector_pod64", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_lookup_element_dict, { "lookup_element_dict", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_lookup_element_dict_obj, { "lookup_element_dict_obj", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_lookup_element_dict_pod64, { "lookup_element_dict_pod64", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_get_size_vector_pod64, { "get_size_vector_pod64", opcode_info_t::encoding::k_q_0rr0 } },
 	{ bc_opcode::k_pushback_vector_pod64, { "pushback_vector_pod64", opcode_info_t::encoding::k_o_0rrr } },
@@ -433,7 +591,8 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_new_1, { "new_1", opcode_info_t::encoding::k_t_0rii } },
 	{ bc_opcode::k_new_vector_obj, { "new_vector_obj", opcode_info_t::encoding::k_t_0rii } },
 	{ bc_opcode::k_new_vector_pod64, { "new_vector_pod64", opcode_info_t::encoding::k_t_0rii } },
-	{ bc_opcode::k_new_dict, { "new_dict", opcode_info_t::encoding::k_t_0rii } },
+	{ bc_opcode::k_new_dict_obj, { "new_dict_obj", opcode_info_t::encoding::k_t_0rii } },
+	{ bc_opcode::k_new_dict_pod64, { "new_dict_pod64", opcode_info_t::encoding::k_t_0rii } },
 	{ bc_opcode::k_new_struct, { "new_struct", opcode_info_t::encoding::k_t_0rii } },
 
 	{ bc_opcode::k_return, { "return", opcode_info_t::encoding::k_p_0r00 } },
@@ -804,7 +963,6 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 	}
 }
 
-
 json_t bcvalue_to_json(const bc_value_t& v){
 	if(v._type.is_undefined()){
 		return json_t();
@@ -848,47 +1006,44 @@ json_t bcvalue_to_json(const bc_value_t& v){
 		return json_t::make_object(obj2);
 	}
 	else if(v._type.is_vector()){
-		if(v._type.get_vector_element_type().is_bool()){
-			std::vector<json_t> result;
+		const auto element_type = v._type.get_vector_element_type();
+
+		std::vector<json_t> result;
+		if(element_type.is_bool()){
 			for(int i = 0 ; i < v._pod._ext->_vector_pod64.size() ; i++){
 				const auto element_value2 = v._pod._ext->_vector_pod64[i]._bool;
 				result.push_back(json_t(element_value2));
 			}
-			return result;
 		}
-		else if(v._type.get_vector_element_type().is_int()){
-			std::vector<json_t> result;
+		else if(element_type.is_int()){
 			for(int i = 0 ; i < v._pod._ext->_vector_pod64.size() ; i++){
 				const auto element_value2 = v._pod._ext->_vector_pod64[i]._int64;
 				result.push_back(json_t(element_value2));
 			}
-			return result;
 		}
-		else if(v._type.get_vector_element_type().is_float()){
-			std::vector<json_t> result;
+		else if(element_type.is_float()){
 			for(int i = 0 ; i < v._pod._ext->_vector_pod64.size() ; i++){
 				const auto element_value2 = v._pod._ext->_vector_pod64[i]._float;
 				result.push_back(json_t(element_value2));
 			}
-			return result;
 		}
 		else{
-			const auto element_type = v._type.get_vector_element_type();
 			const auto vec = get_vector_value(v);
-			std::vector<json_t> result;
 			for(int i = 0 ; i < vec->size() ; i++){
 				const auto element_value2 = vec->operator[](i);
 				result.push_back(bcvalue_to_json(bc_value_t(element_type, element_value2)));
 			}
-			return result;
 		}
+		return result;
 	}
 	else if(v._type.is_dict()){
+		const auto value_type = v._type.get_dict_value_type();
 		const auto entries = get_dict_value(v);
 		std::map<string, json_t> result;
 		for(const auto& e: entries){
 			const auto value2 = e.second;
-			result[e.first] = bcvalue_to_json(value2);
+			//??? works for all types? Use that technique in all thunking! Slower but less code.
+			result[e.first] = bcvalue_to_json(bc_value_t(value_type, value2));
 		}
 		return result;
 	}
@@ -1044,7 +1199,7 @@ void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, in
 
 
 //	IMPORTANT: NO arguments are passed as DYN arguments.
-void execute_new_vector(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
+void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& target_type = lookup_full_type(vm, target_itype);
@@ -1070,9 +1225,7 @@ void execute_new_vector(interpreter_t& vm, int16_t dest_reg, int16_t target_ityp
 	vm._stack.write_register_obj(dest_reg, result);
 }
 
-
-//	IMPORTANT: NO arguments are passed as DYN arguments.
-void execute_new_dict(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
+void execute_new_dict_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& target_type = lookup_full_type(vm, target_itype);
@@ -1086,13 +1239,39 @@ void execute_new_dict(interpreter_t& vm, int16_t dest_reg, int16_t target_itype,
 
 	const auto string_type = typeid_t::make_string();
 
-	immer::map<string, bc_value_t> elements2;
+	immer::map<string, bc_object_handle_t> elements2;
 	int dict_element_count = arg_count / 2;
 	for(auto i = 0 ; i < dict_element_count ; i++){
 		const auto key = vm._stack.load_value(arg0_stack_pos + i * 2 + 0, string_type);
 		const auto value = vm._stack.load_value(arg0_stack_pos + i * 2 + 1, element_type);
 		const auto key2 = key.get_string_value();
-		elements2 = elements2.insert({ key2, value });
+		elements2 = elements2.insert({ key2, bc_object_handle_t(value) });
+	}
+
+	const auto result = make_dict_value(element_type, elements2);
+	vm._stack.write_register_obj(dest_reg, result);
+}
+void execute_new_dict_pod64(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	const auto& target_type = lookup_full_type(vm, target_itype);
+	QUARK_ASSERT(target_type.is_dict());
+
+	const int arg0_stack_pos = vm._stack.size() - arg_count;
+
+	const auto& element_type = target_type.get_dict_value_type();
+	QUARK_ASSERT(target_type.is_undefined() == false);
+	QUARK_ASSERT(element_type.is_undefined() == false);
+
+	const auto string_type = typeid_t::make_string();
+
+	immer::map<string, bc_pod64_t> elements2;
+	int dict_element_count = arg_count / 2;
+	for(auto i = 0 ; i < dict_element_count ; i++){
+		const auto key = vm._stack.load_value(arg0_stack_pos + i * 2 + 0, string_type);
+		const auto value = vm._stack.load_value(arg0_stack_pos + i * 2 + 1, element_type);
+		const auto key2 = key.get_string_value();
+		elements2 = elements2.insert({ key2, value._pod._pod64 });
 	}
 
 	const auto result = make_dict_value(element_type, elements2);
@@ -1586,27 +1765,38 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		//??? Make obj/intern version.
-		case bc_opcode::k_lookup_element_dict: {
-			ASSERT(stack.check_reg_any(i._a));
+		case bc_opcode::k_lookup_element_dict_obj: {
+			ASSERT(stack.check_reg_obj(i._a));
 			ASSERT(stack.check_reg_dict(i._b));
 			ASSERT(stack.check_reg_string(i._c));
 
-			const auto& entries = regs[i._b]._ext->_dict_entries;
+			const auto& entries = regs[i._b]._ext->_dict_objects;
 			const auto& lookup_key = regs[i._c]._ext->_string;
 			const auto found_ptr = entries.find(lookup_key);
 			if(found_ptr == nullptr){
 				throw std::runtime_error("Lookup in dict: key not found.");
 			}
 			else{
-				const bc_value_t& value = *found_ptr;
+				const auto& handle = *found_ptr;
+				handle._ext->_rc++;
+				regs[i._a]._ext = handle._ext;
+				bc_value_t::release_ext_pod(regs[i._a]);
+			}
+			break;
+		}
+		case bc_opcode::k_lookup_element_dict_pod64: {
+			ASSERT(stack.check_reg_any(i._a));
+			ASSERT(stack.check_reg_dict(i._b));
+			ASSERT(stack.check_reg_string(i._c));
 
-				bool is_ext = frame_ptr->_exts[i._a];
-				if(is_ext){
-					bc_value_t::release_ext_pod(regs[i._a]);
-					value._pod._ext->_rc++;
-				}
-				regs[i._a] = value._pod;
+			const auto& entries = regs[i._b]._ext->_dict_pod64;
+			const auto& lookup_key = regs[i._c]._ext->_string;
+			const auto found_ptr = entries.find(lookup_key);
+			if(found_ptr == nullptr){
+				throw std::runtime_error("Lookup in dict: key not found.");
+			}
+			else{
+				regs[i._a]._pod64 = *found_ptr;
 			}
 			break;
 		}
@@ -1762,7 +1952,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vector_type.is_vector());
 			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == false);
 
-			execute_new_vector(vm, dest_reg, target_itype, arg_count);
+			execute_new_vector_obj(vm, dest_reg, target_itype, arg_count);
 			break;
 		}
 
@@ -1793,13 +1983,22 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		case bc_opcode::k_new_dict: {
+		case bc_opcode::k_new_dict_obj: {
 			const auto dest_reg = i._a;
 			const auto target_itype = i._b;
 			const auto arg_count = i._c;
 			const auto& target_type = lookup_full_type(vm, target_itype);
 			QUARK_ASSERT(target_type.is_dict());
-			execute_new_dict(vm, dest_reg, target_itype, arg_count);
+			execute_new_dict_obj(vm, dest_reg, target_itype, arg_count);
+			break;
+		}
+		case bc_opcode::k_new_dict_pod64: {
+			const auto dest_reg = i._a;
+			const auto target_itype = i._b;
+			const auto arg_count = i._c;
+			const auto& target_type = lookup_full_type(vm, target_itype);
+			QUARK_ASSERT(target_type.is_dict());
+			execute_new_dict_pod64(vm, dest_reg, target_itype, arg_count);
 			break;
 		}
 		case bc_opcode::k_new_struct: {
