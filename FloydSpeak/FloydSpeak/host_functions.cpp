@@ -665,6 +665,7 @@ bc_value_t host__erase(interpreter_t& vm, const bc_value_t args[], int arg_count
 bc_value_t host__push_back(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
+	QUARK_ASSERT(false);
 	if(arg_count != 2){
 		throw std::runtime_error("find requires 2 arguments");
 	}
@@ -678,6 +679,7 @@ bc_value_t host__push_back(interpreter_t& vm, const bc_value_t args[], int arg_c
 		return bc_value_t::make_string(str2);
 	}
 	else if(obj._type.is_vector()){
+		QUARK_ASSERT(false);
 		const auto element_type = obj._type.get_vector_element_type();
 		if(element._type != element_type){
 			throw std::runtime_error("Type mismatch.");

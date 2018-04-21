@@ -934,7 +934,9 @@ namespace floyd {
 			B: Register: object
 			C: Register: value
 		*/
+		k_pushback_vector_obj,
 		k_pushback_vector_pod64,
+		k_pushback_string,
 
 		/*
 			TYPE: itype of function output

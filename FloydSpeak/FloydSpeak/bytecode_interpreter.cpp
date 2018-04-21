@@ -555,7 +555,9 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_get_size_string, { "get_size_string", opcode_info_t::encoding::k_q_0rr0 } },
 	{ bc_opcode::k_get_size_jsonvalue, { "get_size_jsonvalue", opcode_info_t::encoding::k_q_0rr0 } },
 
+	{ bc_opcode::k_pushback_vector_obj, { "pushback_vector_obj", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_pushback_vector_pod64, { "pushback_vector_pod64", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_pushback_string, { "pushback_string", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_s_0rri } },
 
@@ -1873,6 +1875,23 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
+
+		case bc_opcode::k_pushback_vector_obj: {
+			ASSERT(vm.check_invariant());
+			ASSERT(stack.check_reg_vector_obj(i._a));
+			ASSERT(stack.check_reg_vector_obj(i._b));
+			ASSERT(stack.check_reg_obj(i._c));
+
+			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
+			const auto& element_type = type.get_vector_element_type();
+
+			auto elements2 = regs[i._b]._ext->_vector_objects.push_back(bc_object_handle_t(regs[i._c]._ext));
+			//??? always allocates a new bc_value_object_t!
+			const auto vec2 = make_vector_value(element_type, elements2);
+			vm._stack.write_register_obj(i._a, vec2);
+			ASSERT(vm.check_invariant());
+			break;
+		}
 		case bc_opcode::k_pushback_vector_pod64: {
 			ASSERT(vm.check_invariant());
 			ASSERT(stack.check_reg_vector_pod64(i._a));
@@ -1882,11 +1901,30 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto& element_type = type.get_vector_element_type();
 
-
 			//??? optimize - bypass bc_value_t
+			//??? always allocates a new bc_value_object_t!
 			auto elements2 = regs[i._b]._ext->_vector_pod64.push_back(regs[i._c]._pod64);
 			const auto vec = make_vector_int64_value(element_type, elements2);
 			vm._stack.write_register_obj(i._a, vec);
+			ASSERT(vm.check_invariant());
+			break;
+		}
+
+		//??? Use char inside integer, not a string.
+		case bc_opcode::k_pushback_string: {
+			ASSERT(vm.check_invariant());
+			ASSERT(stack.check_reg_string(i._a));
+			ASSERT(stack.check_reg_string(i._b));
+			ASSERT(stack.check_reg_string(i._c));
+
+			std::string str2 = regs[i._b]._ext->_string;
+			std::string add = regs[i._c]._ext->_string;
+			str2.insert(str2.end(), add.begin(), add.end());
+
+			//??? optimize - bypass bc_value_t
+			//??? always allocates a new bc_value_object_t!
+			const auto str3 = bc_value_t::make_string(str2);
+			vm._stack.write_register_obj(i._a, str3);
 			ASSERT(vm.check_invariant());
 			break;
 		}
