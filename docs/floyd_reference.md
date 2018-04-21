@@ -381,7 +381,7 @@ You can access a random character in the string, using its integer position.
 	assert(a == "e")
 
 Notice 1: You cannot modify the string using [], only read. Use update() to change a character.
-Notice 2: Floyd returns the character in a new string.
+Notice 2: Floyd returns the character as an int, which is 64 bit signed.
 
 You can append to strings together using the + operation.
 
@@ -395,7 +395,7 @@ You can append to strings together using the + operation.
 - __update()__: changes one character of the string and returns a new string.
 - __size()__: returns the number of characters in the string, as an integer.
 - __find()__: searches from left to right after a substring and returns its index or -1
-- __push_back()__: appends a character or string to the right side of the string.
+- __push_back()__: appends a character or string to the right side of the string. The character is stored in an int.
 - __subset__: extracts a range of characters from the string, as specified by start and end indexes. aka substr()
 - __replace()__: replaces a range of a string with another string. Can also be used to erase or insert.
 
@@ -854,7 +854,7 @@ This is how you modify a field of a struct, an element in a vector or string or 
 
 |Type		  	| Example						| Result |
 |---			|---							| ---
-| string		| update("hello", 3, "x")		| "helxo"
+| string		| update("hello", 3, 120)		| "helxo"
 | vector		| update([1,2,3,4], 2, 33)		| [1,2,33,4]
 | dictionary	| update({"a": 1, "b": 2, "c": 3}, "a", 11) | {"a":11,"b":2,"c":3}
 | struct		| update(pixel,"red", 123)		| pixel(123,---,---)
@@ -935,8 +935,7 @@ Appends an element to the end of a collection. A new collecton is returned, the 
 
 |Type		  	| Example						| Result |
 |---			|---							| ---
-| string		| push_back("hello", "3")		| hello3
-| string		| push_back("hello", "!?")		| hello!?
+| string		| push_back("hello", 120)		| hellox
 | vector		| push_back([1,2,3], 7)			| [1,2,3,7]
 | dictionary	| 								|
 | struct		|								|

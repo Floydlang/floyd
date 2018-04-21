@@ -1646,10 +1646,9 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		//??? Better to return uint8 or int than a new string.
 		case bc_opcode::k_lookup_element_string: {
 			ASSERT(vm.check_invariant());
-			ASSERT(stack.check_reg_string(i._a));
+			ASSERT(stack.check_reg_int(i._a));
 			ASSERT(stack.check_reg_string(i._b));
 			ASSERT(stack.check_reg_int(i._c));
 
@@ -1659,13 +1658,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				throw std::runtime_error("Lookup in string: out of bounds.");
 			}
 			else{
-				const char ch = s[lookup_index];
-				const auto str2 = string(1, ch);
-				const auto value2 = bc_value_t::make_string(str2);
-
-				value2._pod._ext->_rc++;
-				bc_value_t::release_ext_pod(regs[i._a]);
-				regs[i._a] = value2._pod;
+				regs[i._a]._pod64._int64 = s[lookup_index];
 			}
 			ASSERT(vm.check_invariant());
 			break;
@@ -1910,16 +1903,15 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		//??? Use char inside integer, not a string.
 		case bc_opcode::k_pushback_string: {
 			ASSERT(vm.check_invariant());
 			ASSERT(stack.check_reg_string(i._a));
 			ASSERT(stack.check_reg_string(i._b));
-			ASSERT(stack.check_reg_string(i._c));
+			ASSERT(stack.check_reg_int(i._c));
 
 			std::string str2 = regs[i._b]._ext->_string;
-			const std::string& add = regs[i._c]._ext->_string;
-			str2.insert(str2.end(), add.begin(), add.end());
+			const auto ch = regs[i._c]._pod64._int64;
+			str2.push_back(static_cast<char>(ch));
 
 			//??? optimize - bypass bc_value_t
 			//??? always allocates a new bc_value_object_t!

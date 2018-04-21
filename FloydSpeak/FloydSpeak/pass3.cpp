@@ -586,7 +586,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 			throw std::runtime_error("Lookup in string by index-only.");
 		}
 		else{
-			return { vm_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(typeid_t::make_string())) };
+			return { vm_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(typeid_t::make_int())) };
 		}
 	}
 	else if(parent_type.is_json_value()){

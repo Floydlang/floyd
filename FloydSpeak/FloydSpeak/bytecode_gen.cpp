@@ -797,6 +797,11 @@ expr_info_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& t
 		const auto arg1_type = e._input_exprs[1].get_output_type();
 		bc_opcode opcode = convert_call_to_pushback_opcode(arg1_type);
 		if(opcode != bc_opcode::k_nop){
+			//	push_back() used DYN-arguments which are resolved at runtime. When we make opcodes we need to check at compile time = now.
+			if(arg1_type.is_string() && e._input_exprs[2].get_output_type().is_int() == false){
+				throw std::runtime_error("Bad element to push_back(). Require push_back(string, int)");
+			}
+
 			const auto& arg1_expr = bcgen_expression(vm, {}, e._input_exprs[1], body_acc);
 			body_acc = arg1_expr._body;
 

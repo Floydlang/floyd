@@ -1490,12 +1490,12 @@ QUARK_UNIT_TEST("null", "", "", "0"){
 
 QUARK_UNIT_TEST("string", "[]", "string", "0"){
 	const auto vm = test__run_global(R"(
-		assert("hello"[0] == "h");
+		assert("hello"[0] == 104);
 	)");
 }
 QUARK_UNIT_TEST("string", "[]", "string", "0"){
 	const auto vm = test__run_global(R"(
-		assert("hello"[4] == "o");
+		assert("hello"[4] == 111);
 	)");
 }
 
@@ -1512,8 +1512,8 @@ QUARK_UNIT_TEST("string", "size()", "string", "24"){
 
 QUARK_UNIT_TEST("string", "push_back()", "string", "correct final vector"){
 	const auto vm = test__run_global(R"(
-		a = push_back("one", "two");
-		assert(a == "onetwo");
+		a = push_back("one", 111);
+		assert(a == "oneo");
 	)");
 }
 
