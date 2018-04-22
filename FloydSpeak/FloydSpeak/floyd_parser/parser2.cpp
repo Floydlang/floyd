@@ -17,6 +17,7 @@
 #include "floyd_basics.h"
 #include "ast_basics.h"
 #include "parse_struct_def.h"
+#include "parser_primitives.h"
 
 
 #include "parser2.h"
@@ -47,7 +48,7 @@ QUARK_UNIT_TESTQ("C++ enum class()", ""){
 
 
 bool is_valid_expr_chars(const std::string& s){
-	const auto allowed = k_c99_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[](){}.?:=!<>&,|#$\\";
+	const auto allowed = k_c99_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[](){}.?:=!<>&,|#$\\;";
 	for(auto i = 0 ; i < s.size() ; i++){
 		const char ch = s[i];
 		if(allowed.find(ch) == string::npos){
@@ -61,7 +62,8 @@ bool is_valid_expr_chars(const std::string& s){
 seq_t skip_expr_whitespace(const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
 
-	return read_while(p, k_c99_whitespace_chars).second;
+	return floyd::skip_whitespace(p);
+//	return read_while(p, k_c99_whitespace_chars).second;
 }
 
 
@@ -436,6 +438,11 @@ std::pair<expr_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 		if(op1 == ")" && precedence > eoperator_precedence::k_parentesis){
 			return { lhs, p0 };
 		}
+/*
+		else if(op2 == "//" || op2 == "/*"){
+			return { lhs, p0 };
+		}
+*/
 
 		else if(op1 == "]" && precedence > eoperator_precedence::k_parentesis){
 			return { lhs, p0 };

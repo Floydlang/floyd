@@ -175,19 +175,19 @@ A function without return value usually makes no sense since function cannot hav
 Example function definitions:
 
 ```
-	int f1(string x){
+	func int f1(string x){
 		return 3;
 	}
 
-	int f2(int a, int b){
+	func int f2(int a, int b){
 		return 5
 	}
 
-	int f3(){	
+	func int f3(){	
 		return 100;
 	}
 
-	string f4(string x, bool y){
+	func string f4(string x, bool y){
 		return "<" + x + ">";
 	}
 ```
@@ -195,20 +195,20 @@ Example function definitions:
 Function types:
 
 ```
-	bool (string, double)
+	func bool (string, double)
 ```
 
 
 This is a function that takes a function value as argument:
 
 ```
-	int f5(bool (string, string))
+	int f5(func bool (string, string))
 ```
 
 This is a function that returns a function value:
 
 ```
-	bool (string, string) f5(int x)
+	func bool (string, string) f5(int x)
 ```
 
 
@@ -256,7 +256,7 @@ Used to compare two values. The result is true or false:
 When the condition is true, this entire expression has the value of a. Else it has the value of b. Condition, a and b can all be complex expressions, with function calls etc.
 
 ```
-	bool is_polite(string x){
+	func bool is_polite(string x){
 		return x == "hello" ? "polite" : "rude"
 	}
 	assert(is_polity("hiya!") == false);
@@ -411,8 +411,10 @@ When you reference one of the built in primitive types by name, you are accessin
 - double
 - string
 
+```
 	assert(typeid("hello") == string);
 	assert(to_string(typeid([1,2,3])) == "[int]");
+```
 
 A typeid is a propery Floyd value - you can copy it, compare it, convert it to strings, store it in dictionaries or whatever.
 
@@ -503,7 +505,7 @@ This is how you check the type of json value and reads their different values.
 Demo snippet, that checks type of a json_value:
 
 ```
-	string get_name(json_value value){
+	func string get_name(json_value value){
 		t = get_json_type(value);
 		if(t == json_object){
 			return "json_object";

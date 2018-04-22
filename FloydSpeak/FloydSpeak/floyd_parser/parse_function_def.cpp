@@ -25,7 +25,8 @@ namespace floyd {
 
 
 std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos){
-	const auto return_type_pos = read_required_type(pos);
+	const auto func_pos = read_required(skip_whitespace(pos), keyword_t::k_func);
+	const auto return_type_pos = read_required_type(func_pos);
 	const auto function_name_pos = read_required_identifier(return_type_pos.second);
 	const auto args_pos = read_function_arg_parantheses(function_name_pos.second);
 	const auto body = parse_statement_body(args_pos.second);
@@ -54,7 +55,7 @@ struct test {
 const std::vector<test> testsxyz = {
 	{
 		"Minimal function",
-		"int f(){ return 3; }",
+		"func int f(){ return 3; }",
 
 		R"(
 			[
@@ -65,7 +66,7 @@ const std::vector<test> testsxyz = {
 	},
 	{
 		"3 args of different types",
-		"int printf(string a, double barry, int c){ return 3; }",
+		"func int printf(string a, double barry, int c){ return 3; }",
 		R"(
 			[
 				"def-func",
@@ -84,7 +85,7 @@ const std::vector<test> testsxyz = {
 	},
 	{
 		"Max whitespace",
-		" \t int \t printf( \t string \t a \t , \t double \t b \t ){ \t return \t 3 \t ; \t } \t ",
+		" func  \t int \t printf( \t string \t a \t , \t double \t b \t ){ \t return \t 3 \t ; \t } \t ",
 		R"(
 			[
 				"def-func",
@@ -102,7 +103,7 @@ const std::vector<test> testsxyz = {
 	},
 	{
 		"Min whitespace",
-		"int printf(string a,double b){return 3;}",
+		"func int printf(string a,double b){return 3;}",
 		R"(
 			[
 				"def-func",

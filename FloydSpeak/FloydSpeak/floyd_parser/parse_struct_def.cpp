@@ -31,7 +31,7 @@ namespace floyd {
 			const auto member_type = read_required_type(pos);
 			const auto member_name = read_required_identifier(member_type.second);
 			members.push_back(member_t(member_type.first, member_name.first));
-			pos = read_required_char(skip_whitespace(member_name.second), ';');
+			pos = read_optional_char(skip_whitespace(member_name.second), ';').second;
 			pos = skip_whitespace(pos);
 		}
 

@@ -43,16 +43,19 @@ std::pair<ast_json_t, seq_t> parse_statement(const seq_t& s){
 		return parse_return_statement(pos);
 	}
 	else if(is_first(pos, keyword_t::k_struct)){
-		return parse_struct_definition(seq_t(pos));
+		return parse_struct_definition(pos);
 	}
 	else if(is_first(pos, keyword_t::k_if)){
-		return  parse_if_statement(seq_t(pos));
+		return  parse_if_statement(pos);
 	}
 	else if(is_first(pos, keyword_t::k_for)){
-		return parse_for_statement(seq_t(pos));
+		return parse_for_statement(pos);
 	}
 	else if(is_first(pos, keyword_t::k_while)){
-		return parse_while_statement(seq_t(pos));
+		return parse_while_statement(pos);
+	}
+	else if(is_first(pos, keyword_t::k_func)){
+		return parse_function_definition2(pos);
 	}
 	else {
 		return parse_prefixless_statement(pos);
@@ -67,7 +70,7 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 }
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_compare_jsons(
-		parse_statement(seq_t("int f(string name){ return 13; }")).first._value,
+		parse_statement(seq_t("func int f(string name){ return 13; }")).first._value,
 		parse_json(seq_t(R"(
 			[
 				"def-func",
@@ -99,6 +102,10 @@ std::pair<ast_json_t, seq_t> parse_statements(const seq_t& s){
 		const auto statement_pos = parse_statement(pos);
 		statements.push_back(statement_pos.first._value);
 		pos = skip_whitespace(statement_pos.second);
+		while(pos.empty() == false && pos.first1_char() == ';'){
+			pos = pos.rest1();
+			pos = skip_whitespace(pos);
+		}
 	}
 	return { ast_json_t{json_t::make_array(statements)}, pos };
 }
@@ -113,7 +120,7 @@ ast_json_t parse_program2(const parser_context_t& context, const string& program
 //////////////////////////////////////////////////		Test programs
 
 
-const std::string k_test_program_0_source = "int main(){ return 3; }";
+const std::string k_test_program_0_source = "func int main(){ return 3; }";
 const std::string k_test_program_0_parserout = R"(
 	[
 		[
@@ -132,7 +139,7 @@ const std::string k_test_program_0_parserout = R"(
 
 
 const std::string k_test_program_1_source =
-	"int main(string args){\n"
+	"func int main(string args){\n"
 	"	return 3;\n"
 	"}\n";
 const std::string k_test_program_1_parserout = R"(
@@ -156,9 +163,9 @@ const std::string k_test_program_1_parserout = R"(
 
 const char k_test_program_100_source[] = R"(
 	struct pixel { double red; double green; double blue; }
-	double get_grey(pixel p){ return (p.red + p.green + p.blue) / 3.0; }
+	func double get_grey(pixel p){ return (p.red + p.green + p.blue) / 3.0; }
 
-	double main(){
+	func double main(){
 		pixel p = pixel(1, 0, 0);
 		return get_grey(p);
 	}

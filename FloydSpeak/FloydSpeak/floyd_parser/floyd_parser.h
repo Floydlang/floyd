@@ -20,7 +20,12 @@ https://en.wikipedia.org/wiki/Parsing_expression_grammar
 http://craftinginterpreters.com/representing-code.html
 
 # FLOYD SYNTAX
-	??? add chaining to more expressions
+	LITERAL:
+		STRING = "+any+"
+		INTEGER [0123456789]
+		FLOAT [0123456789.]
+
+		VARIABLE = IDENTIFIER_CHARS
 
 	TYPE:
 		NULL				"null"
@@ -70,6 +75,7 @@ http://craftinginterpreters.com/representing-code.html
 
 		RETURN							"return" EXPRESSION
 		DEFINE-STRUCT					"struct" IDENTIFIER "{" TYPE-NAME-SEMICOLON-LIST "}"
+		DEFINE-FUNCTION				 	"func" TYPE IDENTIFIER "(" TYPE-NAME-COMMA-LIST ")" BODY
 		IF								"if" "(" EXPRESSION ")" BODY "else" BODY
 		IF-ELSE							"if" "(" EXPRESSION ")" BODY "else" "if"(EXPRESSION) BODY "else" BODY
 		FOR								"for" "(" IDENTIFIER "in" EXPRESSION "..." EXPRESSION ")" BODY
@@ -77,52 +83,23 @@ http://craftinginterpreters.com/representing-code.html
 		WHILE 							"while" "(" EXPRESSOIN ")" BODY
 
  		BIND							TYPE IDENTIFIER "=" EXPRESSION
-		DEFINE-FUNCTION				 	TYPE IDENTIFIER "(" TYPE-NAME-COMMA-LIST ")" BODY
+ 		BIND-MUTABLE					"mutable" TYPE IDENTIFIER "=" EXPRESSION
+ 		BIND-DEDUCE_TYPE				IDENTIFIER "=" EXPRESSION
+ 		BIND-MUTABLE-DEDUCE_TYPE		"mutable" IDENTIFIER "=" EXPRESSION
 		EXPRESSION-STATEMENT 			EXPRESSION
- 		ASSIGNMENT	 					SYMBOL = EXPRESSION
+ 		ASSIGNMENT	 					IDENTIFIER = EXPRESSION
+
+		mutable int a = 10
+		let int b = 11
+		a = 20
+
+	SWIFT:
+ 		BIND							"let" IDENTIFIER ":" TYPE "=" EXPRESSION
+ 		BIND-DEDUCE-TYPE				"let" IDENTIFIER "=" EXPRESSION
+		EXPRESSION-STATEMENT 			EXPRESSION
+ 		ASSIGNMENT	 					IDENTIFIER = EXPRESSION
 */
-
-
-/*
-Found this in sep file. Redundant?
-
-PROGRAM = STATEMENT ";" +
-STATEMENT = BIND | RETURN | DEFINE_STRUCT | DEFINE_FUNCTION
-
-IDENTIFIER = ["abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789"]
-
-BIND = TYPE IDENTIFIER "=" EXPRESSION
-RETURN = "return" EXPRESSION
-DEFINE_FUNCTION = TYPE IDENTIFIER "(" ARGUMENT [, ARGUMENT] ")" "{" [STATEMENT ";"]+ "}"
-DEFINE_STRUCT = "struct" IDENTIFIER "{" [STRUCT_MEMBER ";"]+ "}
-ARGUMENT = TYPE IDENTIFIER
-
-EXPRESSION
-	CALL = $name "(" EXPRESSION + ["," EXPRESSION] ")"
-	EQUAL = EXPRESSION "==" EXPRESSION
-	LESS = EXPRESSION "<" EXPRESSION
-	LARGER = EXPRESSION ">" EXPRESSION
-	LESS_OR_EQUAL = EXPRESSION "<=" EXPRESSION
-	LARGER_OR_EQUAL = EXPRESSION ">=" EXPRESSION
-
-	COMPARE_OPERATOR = EXPRESSION ? EXPRESSION : EXPRESSION
-	AND = EXPRESSION "&&" EXPRESSION
-	OR = EXPRESSION "||" EXPRESSION
-
-	CONSTANT
-		STRING = "+any+"
-		INTEGER [0123456789]
-		FLOAT [0123456789.]
-
-		VARIABLE = IDENTIFIER_CHARS
-
-
-		int myfunc(string a, int b){
-			...
-			return b + 1;
-		}
-*/
- 
+//??? check TYPE in symbol table to parse BIND.
 
 namespace floyd {
 	struct ast_json_t;
