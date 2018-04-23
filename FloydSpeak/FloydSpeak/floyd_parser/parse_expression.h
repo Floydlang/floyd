@@ -31,28 +31,6 @@ namespace floyd {
 		- Supports nesting, full paths, like "my_global[10 + f(selector)].lookup("asd").next"
 		- Supports function calls-
 		- No optimization or evalution of any constant expressions etc. Must be non-lossy = cannot optimize.
-
-		Example input:
-			"0"
-			"3"
-			"(3)"
-			"(1 + 2) * 3"
-			\""test"\"
-			\""test number: "\"
-
-			"x"
-			"x + y"
-
-			"f()"
-			"f(10, 122)"
-
-			"(my_fun1("hello, 3) + 4) * my_fun2(10))"
-
-			"hello[\"troll\"].kitty[10].cat xxx"
-
-			"condition_expr ? result_true_expr : result_false_expr"
-			"condition_expr ? result_true_expr : result_false_expr"
-			"a == 1 ? "one" : ”some other number""
 	*/
 	ast_json_t parse_expression_all(const seq_t& expression);
 

@@ -38,6 +38,7 @@ const std::string keyword_t::k_json_value = "json_value";
 const std::string keyword_t::k_struct = "struct";
 
 const std::string keyword_t::k_mutable = "mutable";
+const std::string keyword_t::k_let = "let";
 
 const std::string keyword_t::k_json_object = "json_object";
 const std::string keyword_t::k_json_array = "json_array";

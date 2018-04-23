@@ -20,13 +20,6 @@ namespace floyd {
 	struct ast_json_t;
 
 	/*
-		INPUT
-			"struct a {}"
-			"struct b { int a; }"
-			"struct c { int a = 13; }"
-			"struct pixel { int red; int green; int blue; }"
-			"struct pixel { int red = 255; int green = 255; int blue = 255; }"
-
 		OUTPUT
 
 		[

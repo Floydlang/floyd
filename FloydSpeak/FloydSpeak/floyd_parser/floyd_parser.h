@@ -19,87 +19,7 @@ PEG
 https://en.wikipedia.org/wiki/Parsing_expression_grammar
 http://craftinginterpreters.com/representing-code.html
 
-# FLOYD SYNTAX
-	LITERAL:
-		STRING = "+any+"
-		INTEGER [0123456789]
-		FLOAT [0123456789.]
-
-		VARIABLE = IDENTIFIER_CHARS
-
-	TYPE:
-		NULL				"null"
-		BOOL				"bool"
-		INT					"int"
-		FLOAT				"float"
-		STRING				"string"
-		TYPEID				???
-		VECTOR				"[" TYPE "]"
-		DICTIONARY			"{" TYPE ":" TYPE" "}"
-		FUNCTION-TYPE		TYPE "(" ARGUMENT ","* ")" "{" BODY "}"
-			ARGUMENT		TYPE identifier
-		STRUCT-DEF			"struct" IDENTIFIER "{" MEMBER* "}"
-			MEMBER			 TYPE IDENTIFIER
-		UNNAMED-STRUCT		"struct" "{" TYPE* "}"
-
-		UNRESOLVED-TYPE		IDENTIFIER-CHARS, like "hello"
-
-	EXPRESSION:
-		EXPRESSION-COMMA-LIST			EXPRESSION | EXPRESSION "," EXPRESSION-COMMA-LIST
-		NAME-EXPRESSION					IDENTIFIER ":" EXPRESSION
-		NAME-COLON-EXPRESSION-LIST		NAME-EXPRESSION | NAME-EXPRESSION "," NAME-COLON-EXPRESSION-LIST
-
-		TYPE-NAME						TYPE IDENTIFIER
-		TYPE-NAME-COMMA-LIST			TYPE-NAME | TYPE-NAME "," TYPE-NAME-COMMA-LIST
-		TYPE-NAME-SEMICOLON-LIST		TYPE-NAME ";" | TYPE-NAME ";" TYPE-NAME-SEMICOLON-LIST
-
-		NUMERIC-LITERAL					"0123456789" +++
-		RESOLVE-IDENTIFIER				IDENTIFIER +++
-
-		CONSTRUCTOR-CALL				TYPE "(" EXPRESSION-COMMA-LIST ")" +++
-
-		VECTOR-DEFINITION				"[" EXPRESSION-COMMA-LIST "]" +++
-		DICT-DEFINITION					"[" NAME-COLON-EXPRESSION-LIST "]" +++
-		ADD								EXPRESSION "+" EXPRESSION +++
-		SUB								EXPRESSION "-" EXPRESSION +++
-										EXPRESSION "&&" EXPRESSION +++
-		RESOLVE-MEMBER					EXPRESSION "." EXPRESSION +++
-		GROUP							"(" EXPRESSION ")"" +++
-		LOOKUP							EXPRESSION "[" EXPRESSION "]"" +++
-		CALL							EXPRESSION "(" EXPRESSION-COMMA-LIST ")" +++
-		UNARY-MINUS						"-" EXPRESSION
-		CONDITIONAL-OPERATOR			EXPRESSION ? EXPRESSION : EXPRESSION +++
-
-	STATEMENT:
-		BODY = "{" STATEMENT* "}"
-
-		RETURN							"return" EXPRESSION
-		DEFINE-STRUCT					"struct" IDENTIFIER "{" TYPE-NAME-SEMICOLON-LIST "}"
-		DEFINE-FUNCTION				 	"func" TYPE IDENTIFIER "(" TYPE-NAME-COMMA-LIST ")" BODY
-		IF								"if" "(" EXPRESSION ")" BODY "else" BODY
-		IF-ELSE							"if" "(" EXPRESSION ")" BODY "else" "if"(EXPRESSION) BODY "else" BODY
-		FOR								"for" "(" IDENTIFIER "in" EXPRESSION "..." EXPRESSION ")" BODY
-		FOR								"for" "(" IDENTIFIER "in" EXPRESSION "..<" EXPRESSION ")" BODY
-		WHILE 							"while" "(" EXPRESSOIN ")" BODY
-
- 		BIND							TYPE IDENTIFIER "=" EXPRESSION
- 		BIND-MUTABLE					"mutable" TYPE IDENTIFIER "=" EXPRESSION
- 		BIND-DEDUCE_TYPE				IDENTIFIER "=" EXPRESSION
- 		BIND-MUTABLE-DEDUCE_TYPE		"mutable" IDENTIFIER "=" EXPRESSION
-		EXPRESSION-STATEMENT 			EXPRESSION
- 		ASSIGNMENT	 					IDENTIFIER = EXPRESSION
-
-		mutable int a = 10
-		let int b = 11
-		a = 20
-
-	SWIFT:
- 		BIND							"let" IDENTIFIER ":" TYPE "=" EXPRESSION
- 		BIND-DEDUCE-TYPE				"let" IDENTIFIER "=" EXPRESSION
-		EXPRESSION-STATEMENT 			EXPRESSION
- 		ASSIGNMENT	 					IDENTIFIER = EXPRESSION
 */
-//??? check TYPE in symbol table to parse BIND.
 
 namespace floyd {
 	struct ast_json_t;
@@ -116,43 +36,13 @@ namespace floyd {
 			- struct-definition
 			- function-definition
 			- define constant, with initializating.
-
-		Never simplifes expressions- the parser is non-lossy.
-
-
-		RETURN
-
-		"return 3;"
-		"return myfunc(myfunc() + 3);"
-
-
-		DEFINE STRUCT
-
-		"struct mytype_t { float a; float b; };
-
-
-		BIND
-
-		"int x = 10;"
-
-
-		FUNCTION DEFINITION
-
-		"int f(string name){ return 13; }"
-
-
-		IF-ELSE
-		Notice: not trailing semicolon
-
-		"if(true){ return 1000; }else { return 1001;}
-
+			etc
 
 		OUTPUT
-
-		["return", EXPRESSION ]
-		["bind", "string", "local_name", EXPRESSION ]
-		["def_struct", STRUCT_DEF ]
-		["define_function", FUNCTION_DEF ]
+			["return", EXPRESSION ]
+			["bind", "string", "local_name", EXPRESSION ]
+			["def_struct", STRUCT_DEF ]
+			["define_function", FUNCTION_DEF ]
 	*/
 
 	std::pair<ast_json_t, seq_t> parse_statement(const seq_t& pos0);

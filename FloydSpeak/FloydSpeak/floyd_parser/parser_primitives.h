@@ -114,23 +114,6 @@ namespace floyd {
 		Validates that this is a legal string, with legal characters. Exception.
 		Does NOT make sure this a known type-identifier.
 		String must not be empty.
-
-
-		int
-		[int]
-		[string:int]
-		int ()
-		int (float a, string b)
-	 	[int (float a, string b)]
-
-		my_global
-		[my_global]
-		mything (mything a, mything b)
-
-		TYPE
-		[TYPE]
-		[TYPE:TYPE]
-		TYPE<whitespace>(TYPE,TYPE*)
 	*/
 	std::pair<std::shared_ptr<typeid_t>, seq_t> read_type(const seq_t& s);
 	std::pair<typeid_t, seq_t> read_required_type(const seq_t& s);

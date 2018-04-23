@@ -57,6 +57,12 @@ std::pair<ast_json_t, seq_t> parse_statement(const seq_t& s){
 	else if(is_first(pos, keyword_t::k_func)){
 		return parse_function_definition2(pos);
 	}
+	else if(is_first(pos, keyword_t::k_let)){
+		return parse_bind_statement(pos);
+	}
+	else if(is_first(pos, keyword_t::k_mutable)){
+		return parse_bind_statement(pos);
+	}
 	else {
 		return parse_prefixless_statement(pos);
 	}
@@ -64,7 +70,7 @@ std::pair<ast_json_t, seq_t> parse_statement(const seq_t& s){
 
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_compare_jsons(
-		parse_statement(seq_t("int x = 10;")).first._value,
+		parse_statement(seq_t("let int x = 10;")).first._value,
 		parse_json(seq_t(R"(["bind", "^int", "x", ["k", 10, "^int"]])")).first
 	);
 }
@@ -89,7 +95,7 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_compare_jsons(
-		parse_statement(seq_t("int x = f(3);")).first._value,
+		parse_statement(seq_t("let int x = f(3);")).first._value,
 		parse_json(seq_t(R"(["bind", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first
 	);
 }
@@ -161,15 +167,6 @@ const std::string k_test_program_1_parserout = R"(
 )";
 
 
-const char k_test_program_100_source[] = R"(
-	struct pixel { double red; double green; double blue; }
-	func double get_grey(pixel p){ return (p.red + p.green + p.blue) / 3.0; }
-
-	func double main(){
-		pixel p = pixel(1, 0, 0);
-		return get_grey(p);
-	}
-)";
 const char k_test_program_100_parserout[] = R"(
 	[
 		[
@@ -241,7 +238,18 @@ QUARK_UNIT_TEST("", "parse_program1()", "k_test_program_1_source", ""){
 
 QUARK_UNIT_TEST("", "parse_program2()", "k_test_program_100_source", ""){
 	ut_compare_jsons(
-		parse_program2(test_context, k_test_program_100_source)._value,
+		parse_program2(
+			test_context,
+			R"(
+				struct pixel { double red; double green; double blue; }
+				func double get_grey(pixel p){ return (p.red + p.green + p.blue) / 3.0; }
+
+				func double main(){
+					let pixel p = pixel(1, 0, 0);
+					return get_grey(p);
+				}
+			)"
+		)._value,
 		parse_json(seq_t(k_test_program_100_parserout)).first
 	);
 }

@@ -385,6 +385,9 @@ vector<member_t> parse_functiondef_arguments2(const string& s){
 	while(!pos.empty()){
 		const auto arg_type = read_required_type(pos);
 		const auto arg_name = read_identifier(arg_type.second);
+		if(arg_name.first.empty()){
+			throw std::runtime_error("Invalid function definition.");
+		}
 		const auto optional_comma = read_optional_char(skip_whitespace(arg_name.second), ',');
 		args.push_back({ arg_type.first, arg_name.first });
 		pos = skip_whitespace(optional_comma.second);

@@ -81,9 +81,8 @@ pair<string, string> split_at_tail_identifier(const std::string& s){
 
 
 enum class implicit_statement {
-//	k_function_definition = 10,
+	k_error,
 	k_expression_statement,
-	k_bind,
 	k_assign
 };
 
@@ -122,117 +121,52 @@ implicit_statement BACKUP___detect_implicit_statement_lookahead(const seq_t& s){
 }
 #endif
 
-/*
-		DEFINE-FUNCTION				 	TYPE IDENTIFIER "(" TYPE-NAME-COMMA-LIST ")" BODY
-
- 		BIND							TYPE IDENTIFIER "=" EXPRESSION
-		EXPRESSION-STATEMENT 			EXPRESSION
- 		ASSIGNMENT	 					SYMBOL = EXPRESSION
-
-	FUNCTION-DEFINITION			TYPE IDENTIFIER "(" ARGUMENTS ")" "{" ... "}"
-		int print(float a) { ... }
-		int print (float a) { ... }
-		int f(string name)
-		int (string a) f(string name)
-
-	EXPRESSION-STATEMENT		EXPRESSION;
-		print(3);
-		print (3);
-		3 + 4;
-		hello + 3;
-		print ("Hello, World!");
-		print("Hello, World!" + f(3) == 2);
-
-	ASSIGN						IDENTIFIER = EXPRESSION;
-		x = 10;
-		x = "hello";
-		x = f(3) == 2;
-		mutable x = 10;
-
-	BIND						TYPE IDENTIFIER = EXPRESSION;
-		int x = {"a": 1, "b": 2};
-		int x = 10;
-		int (string a) x = f(4 == 5);
-		mutable int x = 10;
-*/
-implicit_statement detect_implicit_statement_lookahead(const seq_t& s){
-	auto bite_fr = read_until_toplevel_match(skip_whitespace(s), ";{");
-	const auto equal_sign_pos = read_until_toplevel_match(seq_t(bite_fr.first), "=");
-	if(equal_sign_pos.second.empty()){
-		return implicit_statement::k_expression_statement;
+bool is_identifier_and_equal(const seq_t& s){
+	const auto identifier_fr = read_identifier(s);
+	const auto next_seq = skip_whitespace(identifier_fr.second);
+	if(identifier_fr.first.empty() == false && next_seq.first1() == "="){
+		return true;
 	}
 	else{
-		const auto statement_pos = read_until_toplevel_match(skip_whitespace(s), ";");
-		const auto equal_sign_pos2 = read_until_toplevel_match(seq_t(statement_pos.first), "=");
-		const auto rhs_expression1 = skip_whitespace(equal_sign_pos2.second.rest1()).str();
-		const auto identifier_fr = split_at_tail_identifier(equal_sign_pos2.first);
-		const auto pre_identifier = identifier_fr.first;
-		if(pre_identifier == ""){
-			return implicit_statement::k_assign;
+		return false;
+	}
+}
+
+implicit_statement detect_implicit_statement_lookahead(const seq_t& s){
+	if(is_identifier_and_equal(s)){
+		return implicit_statement::k_assign;
+	}
+	else{
+		//	Detect "int test = 123" which is common illegal syntax, where you forgot "mutable" or "let".
+
+		try {
+			const auto maybe_type = read_type(s);
+			if(maybe_type.first){
+				if(is_identifier_and_equal(maybe_type.second)){
+					return implicit_statement::k_error;
+				}
+			}
 		}
-		else{
-			return implicit_statement::k_bind;
+		catch(...){
 		}
+		return implicit_statement::k_expression_statement;
 	}
 }
 
 //#define DETECT_TEST QUARK_UNIT_TEST_VIP
 #define DETECT_TEST QUARK_UNIT_TEST
 
+DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "ERROR"){
+	QUARK_ASSERT(detect_implicit_statement_lookahead(seq_t(R"(	int test = 123 xyz	)")) == implicit_statement::k_error);
+}
+
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "EXPRESSION-STATEMENT"){
 	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(R"(	print("B:" + to_string(x))	{ print(3) int x = 4 } xyz	)")) == implicit_statement::k_expression_statement);
 }
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "EXPRESSION-STATEMENT"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(R"(	print(3) ; int x = 4	xyz	)")) == implicit_statement::k_expression_statement);
+	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(R"(	print(3) int x = 4	xyz	)")) == implicit_statement::k_expression_statement);
 }
 
-
-
-DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "BIND"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" int x = 10		xyz")) == implicit_statement::k_bind);
-}
-DETECT_TEST("", "detect_implicit_statement_lookahead()", "function defs", "BIND"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" int ( string a ) x = f ( 4 == 5 )		xyz")) == implicit_statement::k_bind);
-}
-DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "BIND"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" mutable int x = 10		xyz")) == implicit_statement::k_bind);
-}
-DETECT_TEST("", "detect_implicit_statement_lookahead()", "mutable", "BIND"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" mutable x = 10		xyz")) == implicit_statement::k_bind);
-}
-DETECT_TEST("", "detect_implicit_statement_lookahead()", "vector", "BIND"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t("[int] a = [1,2,3]		xyz")) == implicit_statement::k_bind);
-}
-DETECT_TEST("", "detect_implicit_statement_lookahead()", "dict", "BIND"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(R"([string:int] a = {"uno": 1, "duo": 2}		xyz)")) == implicit_statement::k_bind);
-}
-
-/*
-DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "FUNCTION-DEFINITION"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" int f ( ) { return 0 } xyz")) == implicit_statement::k_function_definition);
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" int f ( string name ) { return 13 }xyz")) == implicit_statement::k_function_definition);
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" int ( string a ) f ( string name ) { return 100 == 101 }xyz")) == implicit_statement::k_function_definition);
-}
-DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "FUNCTION-DEFINITION"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" int f ( ) { return 0 } xyz")) == implicit_statement::k_function_definition);
-}
-DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "FUNCTION-DEFINITION"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" int f ( string name ) { return 13 }xyz")) == implicit_statement::k_function_definition);
-}
-DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "FUNCTION-DEFINITION"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" int ( string a ) f ( string name ) { return 100 == 101 }xyz")) == implicit_statement::k_function_definition);
-}
-
-DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "FUNCTION-DEFINITION"){
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t("print(3)")) != implicit_statement::k_function_definition);
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t("print ( \"Hello, World!\" )		xyz")) != implicit_statement::k_function_definition);
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t("print(3)		xyz")) != implicit_statement::k_function_definition);
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t("3	xyz")) != implicit_statement::k_function_definition);
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t("3 + 4	xyz")) != implicit_statement::k_function_definition);
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t("3 + f(1) + f(2)	xyz")) != implicit_statement::k_function_definition);
-	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t("3")) != implicit_statement::k_function_definition);
-}
-*/
 
 DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "EXPRESSION-STATEMENT"){
 	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" print ( \"Hello, World!\" )		xyz")) == implicit_statement::k_expression_statement);
@@ -254,19 +188,19 @@ DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "EXPRESSION-STATEME
 }
 
 
-DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "store"){
+DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "assign"){
 	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" x = 10		xyz")) == implicit_statement::k_assign);
 }
-DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "store"){
+DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "assign"){
 	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" x = \"hello\"		xyz")) == implicit_statement::k_assign);
 }
-DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "store"){
+DETECT_TEST("", "detect_implicit_statement_lookahead()", "", "assign"){
 	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(" x = f ( 3 ) == 2		xyz")) == implicit_statement::k_assign);
 }
-DETECT_TEST("", "detect_implicit_statement_lookahead()", "vector", "store"){
+DETECT_TEST("", "detect_implicit_statement_lookahead()", "vector", "assign"){
 	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t("a = [1,2,3]		xyz")) == implicit_statement::k_assign);
 }
-DETECT_TEST("", "detect_implicit_statement_lookahead()", "dict", "store"){
+DETECT_TEST("", "detect_implicit_statement_lookahead()", "dict", "assign"){
 	QUARK_UT_VERIFY(detect_implicit_statement_lookahead(seq_t(R"(a = {"uno": 1, "duo": 2}		xyz)")) == implicit_statement::k_assign);
 }
 
@@ -274,19 +208,25 @@ DETECT_TEST("", "detect_implicit_statement_lookahead()", "dict", "store"){
 //////////////////////////////////////////////////		parse_bind_statement()
 
 
-//	BIND:			int x = 10
-//	BIND:			int (string a) x = f(4 == 5)
+//	BIND:			let int x = 10
+//	BIND:			let x = 10
+//	BIND:			let int (string a) x = f(4 == 5)
 //	BIND:			mutable int x = 10
+//	BIND:			mutable x = 10
 pair<ast_json_t, seq_t> parse_bind_statement(const seq_t& s){
-	const auto equal_sign_fr = read_until_toplevel_match(s, "=");
+	const auto let_pos = if_first(skip_whitespace(s), keyword_t::k_let);
+	const auto mutable_pos = if_first(skip_whitespace(s), keyword_t::k_mutable);
+	if(let_pos.first == false && mutable_pos.first == false){
+		throw std::runtime_error("Bind syntax error");
+	}
+	const auto pos = let_pos.first ? let_pos.second : mutable_pos.second;
+	const auto equal_sign_fr = read_until_toplevel_match(pos, "=");
 	const auto rhs = skip_whitespace(equal_sign_fr.second.rest1());
 	const auto lhs_pair = split_at_tail_identifier(equal_sign_fr.first);
-	const auto type_seq = seq_t(lhs_pair.first);
 	const auto identifier = lhs_pair.second;
 
-	const auto mutable_pos = if_first(skip_whitespace(type_seq), keyword_t::k_mutable);
 	const bool mutable_flag = mutable_pos.first;
-	const auto type_pos = skip_whitespace(mutable_pos.second);
+	const auto type_pos = seq_t(lhs_pair.first);;
 
 	const auto type = type_pos.empty() ? typeid_t::make_undefined() : read_required_type(type_pos).first;
 
@@ -310,11 +250,11 @@ void ut_compare_json_and_rest(const pair<ast_json_t, seq_t>& result_pair, const 
 
 QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 	ut_compare_json_and_rest(
-		parse_bind_statement(seq_t("int test = 123 int a = 4 ")),
+		parse_bind_statement(seq_t("let int test = 123 let int a = 4 ")),
 		R"(
 			[ "bind", "^int", "test", ["k", 123, "^int"]]
 		)",
-		" int a = 4 "
+		" let int a = 4 "
 	);
 }
 
@@ -322,7 +262,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 
 QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 	ut_compare_jsons(
-		parse_bind_statement(seq_t("bool bb = true")).first._value,
+		parse_bind_statement(seq_t("let bool bb = true")).first._value,
 		parse_json(seq_t(
 			R"(
 				[ "bind", "^bool", "bb", ["k", true, "^bool"]]
@@ -332,7 +272,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 }
 QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 	ut_compare_jsons(
-		parse_bind_statement(seq_t("int hello = 3")).first._value,
+		parse_bind_statement(seq_t("let int hello = 3")).first._value,
 		parse_json(seq_t(
 			R"(
 				[ "bind", "^int", "hello", ["k", 3, "^int"]]
@@ -420,31 +360,24 @@ QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
 std::pair<ast_json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 	const auto pos = skip_whitespace(s);
 	const auto implicit_type = detect_implicit_statement_lookahead(pos);
-	if(implicit_type == implicit_statement::k_bind){
-		return parse_bind_statement(pos);
-	}
-/*
-	else if(implicit_type == implicit_statement::k_function_definition){
-		return parse_function_definition2(pos);
-	}
-*/
-	else if(implicit_type == implicit_statement::k_expression_statement){
+	if(implicit_type == implicit_statement::k_expression_statement){
 		return parse_expression_statement(pos);
 	}
 	else if(implicit_type == implicit_statement::k_assign){
 		return parse_assign_statement(pos);
 	}
 	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
+		throw std::runtime_error("Use 'mutable' or 'let' syntax.");
 	}
 }
 
+/*
 QUARK_UNIT_TEST("", "parse_prefixless_statement()", "", ""){
 	ut_compare_jsons(
-		parse_prefixless_statement(seq_t("int x = f(3);")).first._value,
+		parse_prefixless_statement(seq_t("x = f(3);")).first._value,
 		parse_json(seq_t(R"(["bind", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first
 	);
 }
+*/
 
 }	//	floyd

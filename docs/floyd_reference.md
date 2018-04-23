@@ -124,13 +124,13 @@ When defining a variable you can often skip telling which type it is, since the 
 Explicit
 
 ```
-	int x = 10;
+	let int x = 10;
 ```
 
 Implicit
 
 ```
-	y = 11;
+	let y = 11;
 ```
 
 
@@ -138,7 +138,7 @@ Example:
 
 ```
 	int main(){
-		a = "hello";
+		let a = "hello";
 		a = "goodbye";	//	Runtime error - you cannot change variable a.
 		return 3;
 	}
@@ -335,7 +335,7 @@ Above snippet simulates the for loop of the C language but it works a little dif
 The result is the equivalent to
 
 ```
-	b = 3
+	let b = 3
 	{ a = 0; print(a + b); }
 	{ a = 1; print(a + b); }
 	{ a = 2; print(a + b); }
@@ -369,7 +369,7 @@ The encoding of the characters in the string is undefined. You can put 7-bit ASC
 
 You can make string literals directly in the source code like this:
 
-	a = "Hello, world!";
+	let a = "Hello, world!";
 
 Notice: You cannot use any escape characters, like in the C-language.
 
@@ -377,7 +377,7 @@ All comparison expressions work, like a == b, a < b, a >= b, a != b etc.
 
 You can access a random character in the string, using its integer position.
 
-	a = "Hello"[1];
+	let a = "Hello"[1];
 	assert(a == "e")
 
 Notice 1: You cannot modify the string using [], only read. Use update() to change a character.
@@ -385,7 +385,7 @@ Notice 2: Floyd returns the character as an int, which is 64 bit signed.
 
 You can append to strings together using the + operation.
 
-	a = "Hello" + ", world!"
+	let a = "Hello" + ", world!"
 	assert(a == "Hello, world!"
 
 
@@ -456,10 +456,10 @@ This all means you can write Floyd code that at runtime creates all or parts of 
 
 Example json:
 
-	json_value a = 13;
-	json_value b = "Hello!";
-	json_value c = {"hello": 1, "bye": 3};
-	json_value d = { "pigcount": 3, "pigcolor": "pink" };
+	let json_value a = 13;
+	let json_value b = "Hello!";
+	let json_value c = {"hello": 1, "bye": 3};
+	let json_value d = { "pigcount": 3, "pigcolor": "pink" };
 
 	assert(a == 13);
 	assert(b == "Hello!");
@@ -467,7 +467,7 @@ Example json:
 	assert(c["bye"] == 3);
 	assert(size(c) == 2);
 
-	test_json2 = json_value(
+	let test_json2 = json_value(
 		{
 			"one": 1,
 			"two": 2,
@@ -506,7 +506,7 @@ Demo snippet, that checks type of a json_value:
 
 ```
 	func string get_name(json_value value){
-		t = get_json_type(value);
+		let t = get_json_type(value);
 		if(t == json_object){
 			return "json_object";
 		}
@@ -588,11 +588,11 @@ A vector is a collection of values where you lookup the values using an index be
 
 You can make a new vector and specify its elements directly, like this:
 
-	a = [ 1, 2, 3];
+	let a = [ 1, 2, 3];
 
 You can also calculate elements:
 
-	a = [ calc_pi(4), 2.1, calc_bounds() ];
+	let a = [ calc_pi(4), 2.1, calc_bounds() ];
 
 
 You can put ANY type of value into a vector: integers, doubles, strings, structs, other vectors etc. But all elements must be the same type inside a specific vector.
@@ -601,14 +601,14 @@ You can copy vectors using =. All comparison expressions work, like a == b, a < 
 
 This lets you access a random element in the vector, using its integer position.
 
-	a = [10, 20, 30][1];
+	let a = [10, 20, 30][1];
 	assert(a == 20)
 
 Notice: You cannot modify the vector using [], only read. Use update() to change an element.
 
 You can append to vector together using the + operation.
 
-	a = [ 10, 20, 30 ] + [ 40, 50 ];
+	let a = [ 10, 20, 30 ] + [ 40, 50 ];
 	assert(a == [ 10, 20, 30, 40, 50 ]);
 
 ### CORE FUNCTIONS
@@ -629,7 +629,7 @@ A collection that maps a key to a value. Unsorted. Like a C++ map.
 
 You make a new dictionary and specify its elements like this:
 
-	[string: int] a = {"red": 0, "blue": 100,"green": 255};
+	let [string: int] a = {"red": 0, "blue": 100,"green": 255};
 
 or shorter:
 
@@ -694,12 +694,12 @@ Example:
 
 	//	Try the new struct:
 
-	a = rect(0, 3);
+	let a = rect(0, 3);
 	assert(a.width == 0);
 	assert(a.height == 3);
 
-	b = rect(0, 3);
-	c = rect(1, 3);
+	let b = rect(0, 3);
+	let c = rect(1, 3);
 
 	asset(a == a);
 	asset(a == b);
@@ -712,7 +712,7 @@ A simple struct works almost like a collection with fixed number of named elemen
 
 ### UPDATE()
 
-b = update(a, member, value);
+let b = update(a, member, value);
 
 
 
@@ -723,14 +723,14 @@ b = update(a, member, value);
 		double height;
 	};
 
-	a = rect(0, 3);
+	let a = rect(0, 3);
 
 	//	Nothing happens! Setting width to 100 returns us a new rect but we we don't keep it.
 	update(a,"width", 100);
 	assert(a.width == 0);
 
 	//	Modifying a member creates a new instance, we assign it to b
-	b = update(a,"width", 100);
+	let b = update(a,"width", 100);
 
 	//	Now we have the original, unmodified a and the new, updated b.
 	assert(a.width == 0);
@@ -744,12 +744,12 @@ This works with nested values too:
 	//	Define an image-struct that holds some stuff, including a pixel struct.
 	struct image { string name; rect size; };
 
-	a = image("Cat image.png", rect(512, 256));
+	let a = image("Cat image.png", rect(512, 256));
 
 	assert(a.size.width == 512);
 
 	//	Update the width-member inside the image's size-member. The result is a brand new image, b!
-	b = update(a, "size.width", 100);
+	let b = update(a, "size.width", 100);
 	assert(a.size.width == 512);
 	assert(b.size.width == 100);
 ```
@@ -771,7 +771,7 @@ You can wrap many lines with "/*...*/" to make a big section of documentation or
 Everything between // and newline is a comment:
 
 	//	This is an end-of line comment
-	a = "hello"; //	This is an end of line comment.
+	let a = "hello"; //	This is an end of line comment.
 
 
 
@@ -851,7 +851,7 @@ Returns the computer's realtime clock, expressed in the number of milliseconds s
 
 This is how you modify a field of a struct, an element in a vector or string or a dictionary. It replaces the value of the specified key and returns a completely new object. The original object (struct, vector etc) is unchanged.
 
-	obj_b = update(obj_a, key, new_value);
+	let obj_b = update(obj_a, key, new_value);
 
 
 |Type		  	| Example						| Result |
@@ -928,7 +928,7 @@ Checks if the dictionary has an element with this key. Returns true or false.
 Erase an element in a dictionary, as specified using its key.
 
 
-	erase(dict, string key)
+	dict erase(dict, string key)
 
 
 ### push_back()
@@ -1011,3 +1011,181 @@ Write a string to the file system as a text file.
 
 	void write_text_file(string path, string data)
 
+
+
+# FLOYD SYNTAX
+Here is the DAG for the complete syntax of Floyd.
+
+	IDENTIFIER_CHARS: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
+	WHITESPACE: " \n\t"
+
+	LITERAL:
+		BOOL_LITERAL: "true" or "false"
+		INTEGER_LITERAL: [0123456789]
+		DOUBLE_LITERAL: [0123456789.]
+		STRING_LITERAL: "?"
+	IDENTIFIER: IDENTIFIER_CHARS*
+
+	TYPE:
+		NULL							"null"
+		BOOL							"bool"
+		INT								"int"
+		DOUBLE							"double"
+		STRING							"string"
+		TYPEID							???
+		VECTOR							"[" TYPE "]"
+		DICTIONARY						"{" TYPE ":" TYPE" "}"
+		FUNCTION-TYPE					TYPE "(" ARGUMENT ","* ")" "{" BODY "}"
+			ARGUMENT					TYPE identifier
+		STRUCT-DEF						"struct" IDENTIFIER "{" MEMBER* "}"
+			MEMBER						 TYPE IDENTIFIER
+		UNNAMED-STRUCT					"struct" "{" TYPE* "}"
+
+		UNRESOLVED-TYPE					IDENTIFIER-CHARS, like "hello"
+
+	EXPRESSION:
+		EXPRESSION-COMMA-LIST			EXPRESSION | EXPRESSION "," EXPRESSION-COMMA-LIST
+		NAME-EXPRESSION					IDENTIFIER ":" EXPRESSION
+		NAME-COLON-EXPRESSION-LIST		NAME-EXPRESSION | NAME-EXPRESSION "," NAME-COLON-EXPRESSION-LIST
+
+		TYPE-NAME						TYPE IDENTIFIER
+		TYPE-NAME-COMMA-LIST			TYPE-NAME | TYPE-NAME "," TYPE-NAME-COMMA-LIST
+		TYPE-NAME-SEMICOLON-LIST		TYPE-NAME ";" | TYPE-NAME ";" TYPE-NAME-SEMICOLON-LIST
+
+		NUMERIC-LITERAL					"0123456789" +++
+		RESOLVE-IDENTIFIER				IDENTIFIER +++
+
+		CONSTRUCTOR-CALL				TYPE "(" EXPRESSION-COMMA-LIST ")" +++
+
+		VECTOR-DEFINITION				"[" EXPRESSION-COMMA-LIST "]" +++
+		DICT-DEFINITION					"[" NAME-COLON-EXPRESSION-LIST "]" +++
+		ADD								EXPRESSION "+" EXPRESSION +++
+		SUB								EXPRESSION "-" EXPRESSION +++
+										EXPRESSION "&&" EXPRESSION +++
+		RESOLVE-MEMBER					EXPRESSION "." EXPRESSION +++
+		GROUP							"(" EXPRESSION ")"" +++
+		LOOKUP							EXPRESSION "[" EXPRESSION "]"" +++
+		CALL							EXPRESSION "(" EXPRESSION-COMMA-LIST ")" +++
+		UNARY-MINUS						"-" EXPRESSION
+		CONDITIONAL-OPERATOR			EXPRESSION ? EXPRESSION : EXPRESSION +++
+
+	STATEMENT:
+		BODY							"{" STATEMENT* "}"
+
+		RETURN							"return" EXPRESSION
+		DEFINE-STRUCT					"struct" IDENTIFIER "{" TYPE-NAME-SEMICOLON-LIST "}"
+		DEFINE-FUNCTION				 	"func" TYPE IDENTIFIER "(" TYPE-NAME-COMMA-LIST ")" BODY
+		IF								"if" "(" EXPRESSION ")" BODY "else" BODY
+		IF-ELSE							"if" "(" EXPRESSION ")" BODY "else" "if"(EXPRESSION) BODY "else" BODY
+		FOR								"for" "(" IDENTIFIER "in" EXPRESSION "..." EXPRESSION ")" BODY
+		FOR								"for" "(" IDENTIFIER "in" EXPRESSION "..<" EXPRESSION ")" BODY
+		WHILE 							"while" "(" EXPRESSION ")" BODY
+
+ 		BIND-IMMUTABLE-TYPED			"let" TYPE IDENTIFIER "=" EXPRESSION
+ 		BIND-IMMUTABLE-DEDUCETYPE		"let" IDENTIFIER "=" EXPRESSION
+ 		BIND-MUTABLE-TYPED				"mutable" TYPE IDENTIFIER "=" EXPRESSION
+ 		BIND-MUTABLE-DEDUCETYPE			"mutable" IDENTIFIER "=" EXPRESSION
+		EXPRESSION-STATEMENT 			EXPRESSION
+ 		ASSIGNMENT	 					IDENTIFIER "=" EXPRESSION
+
+
+### EXAMPLE BIND AND STATEMENTS
+
+|Source		| Meaning
+|:---		|:---	
+| mutable int a = 10				| Allocate a mutable local int "a" and initialize it with 10
+| let int b = 11				| Allocate an immutable local int "b" and initialize it with 11
+| let c = 11				| Allocate an immutable local "b" and initialize it with 11. Type will be deduced to int.
+| a = 12						| Assign 12 to local mutable "a".
+| let d = 8.5				| Allocate an immutable local "d" and initialize it with 8.5. Type will be deduced to double.
+| let e = "hello"				| Allocate an immutable local "e" and initialize it with "hello". Type will be deduced to string.
+| let f = f(3) == 2		| Allocate an immutable local "f" and initialize it true/false. Type will be bool.
+
+| let pixel x = 20 |
+| let int x = {"a": 1, "b": 2} |
+| let  int x = 10 |
+| let int (string a) x = f(4 == 5) |
+| mutable int x = 10 |
+
+### EXAMPLE RETURN STATEMENTS
+
+|Source		| Meaning
+|:---	|:---	
+| return 3						|
+| return myfunc(myfunc() + 3) |
+
+
+### EXAMPLE FUNCTION DEFINITION STATEMENTS
+
+|Source		| Meaning
+|:---	|:---	
+| func int f(string name){ return 13 |
+| func int print(float a) { ... }			|
+| func int print (float a) { ... }			|
+| func int f(string name)					|
+
+### EXAMPLE IF STATEMENTS
+
+|Source		| Meaning
+|:---	|:---	
+| if(true){ return 1000 } else { return 1001 } [
+
+
+### EXAMPLE STRUCT DEFINITION STATEMENTS
+
+|Source		| Meaning
+|:---	|:---	
+| struct mytype_t { float a float b } | 
+| struct a {} 						|
+| struct b { int a }					|
+| struct c { int a = 13 }				|
+| struct pixel { int red int green int blue }		|
+| struct pixel { int red = 255 int green = 255 int blue = 255 }|
+
+
+### EXAMPLE EXPRESSIONS (ALSO EXPRESSION-STATEMENTS)
+
+|Source		| Meaning
+|:---	|:---	
+| 0											|
+| 3											|
+| 3.5										|
+| (3)										|
+| 3 + 4										|
+| (1 + 2) * 3									|
+| x											|
+| x + y										|
+| hello + 3									|
+| "test"										|
+| "test number"								|
+| f()										|
+| f(10, 122)									|
+| print(3)									|
+| print (3) 									|
+| print ("Hello, World!")						|
+| print("Hello, World!" + f(3) == 2)				|
+| (my\_fun1("hello, 3) + 4) * my_fun2(10))		|	
+| hello[\"troll\"].kitty[10].cat					|
+| condition_expr ? yesexpr : noexpr				|
+| condition_expr ? yesexpr : noexpr				|
+| a == 1 ? "one" : ”some other number"			|
+
+
+### EXAMPLE TYPES
+
+|Source		| Meaning
+|:---	|:---	
+| bool								| Bool type
+| int								| Int type
+| string								| String type
+| [int]								| Vector of ints
+| [[int]]								| Vector of int-vectors
+| [string:int]						| Dictionary of ints
+| int ()								| Function returning int, no arguments
+| int (double a, string b)				| Function returning int, arguments are double and string
+| [int (double a, string b)]			| vector of functions, were function returns int and takes double and string arg.
+| int (double a) ()					| Function A with no arguments, that returns a function B. B returns int and has a double argument.
+| my_global							| name of custom type
+| [my_global]							| vector of custom type
+| mything (mything a, mything b)			| function returning mything-type, with two mything arguments
+| bool (int (double a) b)				| function returns bool and takes argument of type: function that returns in and take double-argument.

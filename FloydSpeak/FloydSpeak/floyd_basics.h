@@ -43,6 +43,7 @@ namespace floyd {
 		static const std::string k_struct;
 
 		static const std::string k_mutable;
+		static const std::string k_let;
 
 		static const std::string k_json_object;
 		static const std::string k_json_array;
