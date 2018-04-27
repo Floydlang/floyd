@@ -1157,7 +1157,7 @@ expr_info_t bcgen_arithmetic_expression(bcgenerator_t& vm, const variable_addres
 		}
 		else if(type.is_string()){
 			static const std::map<expression_type, bc_opcode> conv_opcode = {
-				{ expression_type::k_arithmetic_add__2, bc_opcode::k_add_string },
+				{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_strings },
 				{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
 				{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
 				{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },

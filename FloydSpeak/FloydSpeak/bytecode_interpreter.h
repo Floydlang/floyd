@@ -916,7 +916,6 @@ namespace floyd {
 		k_lookup_element_dict_pod64,
 
 		/*
-			TYPE: itype of object
 			A: Register: where to put result: integer
 			B: Register: object
 			C: 0
@@ -929,7 +928,6 @@ namespace floyd {
 		k_get_size_jsonvalue,
 
 		/*
-			TYPE: itype of object
 			A: Register: where to put result: integer
 			B: Register: object
 			C: Register: value
@@ -939,7 +937,6 @@ namespace floyd {
 		k_pushback_string,
 
 		/*
-			TYPE: itype of function output
 			A: Register: tells where to put function return
 			B: Register: function value to call
 			C: IMMEDIATE: argument count. Values are put on stack. Notice that DYN arguments pushes itype first.
@@ -957,12 +954,9 @@ namespace floyd {
 		k_add_bool,
 		k_add_int,
 		k_add_double,
-		k_add_string,
 
-		//	appends two vectors of object-elements.
+		k_concat_strings,
 		k_concat_vectors_obj,
-
-		//	appends two vectors of pod64 elements.
 		k_concat_vectors_pod64,
 
 		k_subtract_double,
