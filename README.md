@@ -10,9 +10,9 @@ It feels familiar to Javascript / C / Java / C++ programmers but gets rid of a l
 
 **FEATURES:** Functions, structs as immutable value objects, immutable strings, immutable vectors, immutable dictionaries, deep and immutable JSON integration, static typing, type deducing, automatic deep behaviour of all types, like comparison and copying.
 
-**REMOVED:** Pointers and references and aliasing, null, classes with mutation and aliasing, inheritance, memory management, header files, constructors and manual lifetime operators, dynamic types, dynamic members of objects.
+**REMOVED:** Pointers and references and aliasing, null, classes with mutation and aliasing, inheritance, memory management, header files, constructors and manual lifetime operators (like copy-constructors and assignment operatorsetc), dynamic types, dynamic members of objects.
 
-**COMING SOON:** protocols, sumtype, double-type, file system access, clocks & channels.
+**COMING SOON:** file system access, clocks & channels, protocols, sumtype.
 
 Floyd consists of the language specification, a compiler and a byte code interpreter. Floyd is written in portable C++ 11.
 
@@ -32,13 +32,13 @@ For details, read the [Floyd reference docs](./docs/floyd_reference.md).
 	};
 
 	//  Try the new struct.
-	a = photo(1, 3, [ 0.0, 1.0, 2.0 ]);
+	let a = photo(1, 3, [ 0.0, 1.0, 2.0 ]);
 	assert(a.width == 1);
 	assert(a.height == 3);
 	assert(a.pixels[2] == 2.0);
 
-	b = photo(0, 3, []);
-	c = photo(1, 3, [ 0.0, 1.0, 2.0 ]);
+	let b = photo(0, 3, []);
+	let c = photo(1, 3, [ 0.0, 1.0, 2.0 ]);
 
 	//	Try automatic features for equality
 	asset(a == a);
