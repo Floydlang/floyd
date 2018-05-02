@@ -54,19 +54,22 @@ Floyd is distributed as C++ source code.
 
 # PLANNED LANGUAGE FEATURES
 
+- Channels / clocks - for time / concurrency.
+- High-level constructs, for system, component, client.
+- Add runtime-concepts -- a way to layer systems on top of others.
+- Protocol mechanism, instead of inheritance.
 - Map, filter, reduce, lambda.
-- Struct encapsulation
+- Struct encapsulation.
 - Bit manipulation.
 - Text type and basic toolkit.
 - Support integers with range.
-- Add explicit language features for binary / text protocols. Protocol buffers.
-- High-level constructs, also generates docs. https://trello.com/c/cIYePtrb/669-impose-high-level-structure-of-the-code-base-above-classes
-- Add runtime-concepts -- a way to layer systems on top of others.
+- Protocol buffers-style features.
 - Closures
 
 # PLANNED TOOLS & RUNTIME
 
 - Playground-like system around Floyd. With visual help. Interactive, graphs, tests, docs.
+- File system runtime
 - Interactive motherboard designer / debugger / profiler where you assemble Floyd apps that interacts with the world and runs over time, from pure parts and libraries written in Floyd.
 - Tweaks, tracing & dynamic collection backends selection.
 - LLVM backend for making native code.
