@@ -27,7 +27,7 @@ uint32_t		typedef int32(
 
 
 
-# FUTURE
+# FUTURE FEATURES
 - **protocol**		polymorhpism. Like an interface class.
 
 - **rights**		Communicates between function and caller what access rights
@@ -93,8 +93,6 @@ a	->		1	0	0	0
 b	->			1		0
 c	->				1	0
 x	<-		1	2	2	3
-
-
 
 
 
@@ -168,33 +166,6 @@ You can use dicts, vector and functions the same way. Since dicts and vectors ar
 
 
 
-# RIGHTS
-Communicates between function and caller what access rights and what layer int the system this functions operates on.
-- This gives function can take one or several rights as argument. These are protocols that gives your function access to functions and privileges it doesn't otherwize have. A large composite program consists of layers of runtimes and _rights_ is the way for a function to communicate it requires access. This makes sure layring is consistent and explicit. You can easily make composite rights by listing several or using +
-
-//	Requires the core functionallity to be available. Cannot be called from low-level init.
-int f2(rights<core>, int a, int b){
-}
-
-//	Requires the UI system to be up and running, pumping Window system events etc.
-int f3(rights<core, ui>, int a, int b){
-}
-
-int f4(rights<core, ui>, int a, int b){
-}
-
-rights ui {
-	ui_state show_alert(ui_state ui, text title, text message, text button);
-	ui_state show_alert(ui_state ui, text title, text message, text button1, text button2);
-	ui_state show_progress(ui_state ui, text title);
-}
-
-rights core {
-	log(string message);
-	log_indent(string message);
-	log_deintent();
-	make_world();
-}
 
 ## Function Internals
 	function definition:
@@ -271,17 +242,6 @@ struct my_window {
 
 # TEMPLATES
 
-
-# EXTERNALS
-
-
-# CLOCKS
-
-
-# CONCURRENCY
-
-
-# FILE SYSTEM FEATURES
 
 
 # OPTIONALS VALUES, NULL AND ?
@@ -441,14 +401,6 @@ Comments & docs is one concept, disabling code is another concept. All code is a
 	]
 
 
-
-
-# IMPORT / DEFINE LIBRARIES
-
-# RUNTIME ERRORS / EXCEPTIONS
-Principles and policies.
-Functions.
-	??? Only support this in mutating parts and externals?
 
 
 # C GLUE

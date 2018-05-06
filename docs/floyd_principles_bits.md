@@ -1,5 +1,79 @@
-# RISKY CODE
 
+# NORMALIZED CODE
+This is coded in Floyd Script. This is the normal code. Try to have as much of your code normalized. It is composable, easy to understand and write. It is pure, have no side effects. No optimizations are done here (like lookups, lazy evaluation, batching). It's perfect to create complex logic, control states etc.
+You cannot do callbacks or interfaces. You cannot read or affect the world.
+
+
+# CLOCKS, CHANNELS, MOTHERBOARD
+
+In the real world, normalized code isn't enough. Normalized code can be used to make a simple input -> program -> output program, like a simple terminal app.
+
+Most programs in the world are processes that handles inputs, updates its state and controls side effects. In Floyd, this type of code is done in a motherboard and uses clocks and channels to advance time and communicate to the world.
+
+
+# SIMULATION, SIDE EFFECTS & PURETIMES
+
+Floyd functions are pure and can have no side effects. There are of course always side effects when running code on hardware. When a pure function runs, the CPU:s caches change state, the CPU:s registers change, memory is allocated and freed etc. Logging happens. CPU cycles are consumed, heat is generated etc.
+
+In Floyd we make a distinction between inside-simulation and outside simulation.
+
+### Inside simulation
+This is what the world looks from within the simulation, where pure Floyd functions run in an ideal world:
+
+- All functions executes in zero real-world time.
+- All functions are completely side effect free.
+- All functions executes as specified by source code.
+- No functions fail because of external or exotic problems.
+- Nothing around the code every changes -- the world is frozen while the functions execute (well they are run inifinitely fast).
+
+
+### Outside simulation
+But outside the simulation the real world happens. This is *hidden* from the simulation:
+- Exceptions are thrown when running out of simulation memory, when exotic things or external events happens. Inside the simulation you cannot observer this.
+- Functions can be precomputed or lazely computed instead of called as specified in source code.
+- Functions have all sorts of side effects outside the simulation, that cannot be observed from within the simulation.
+
+
+# Runtimes ("puretimes")
+This is a Floyd mechanism that lets you build stacks of systems and run pure functions on top. Just like you can run a pure function ontop of a physical CPU and mutable RAM-memory and ontop of malloc() and free().
+
+Goals:
+
+- Allow you to cleanly compose sub-systems ontop of eachother to build huge and reliable software = composability.
+- Explicit dependencies between systems.
+- Allow Floyd to be used to create mechanisms like a photo cache, resource caches, memory pooling, background processes, logging.
+- Explicit access control to systems: you can only allocate an image if your function has been handed that puretime.
+
+ 
+
+These are systems that provide basic services to normalized code. Just like a memory manager does. Normalized code uses these but cannot observe any side effects (but there really are side-effects).
+
+Runtimes are done outside of simulation and cannot be observed inside the simulation. Examples:
+- Memory allocation. All normalized code assumes there is unlimited memory and cannot measure the memory pools. In out-of-memory conditions, the runtimes will roll back normalized code. The normalized code never knows this happens.
+- Logging. Normalized code can log, but can never observe the logs or be affected by the logs.
+- Optimizations (see list)
+
+Runtimes are not globals / singletones -- you can run several at the same time. In realtime apps you might want a separate memory runtime to avoid blocking the threads.
+
+A client needs to supply runtimes to all pure functions, often done by grouping them together into a meta-runtime.
+You can create your own runtimes too. Use to make your own image caching.
+
+**A runtime is run in its own environment and cannot leak details into the simulation. It contains its own clock.**
+
+
+
+
+
+
+
+
+-----------------------------------------
+
+
+
+
+
+# RISKY CODE
 
 - Store reference to mutable data as optimization
 - Caching, precalculating, lazy evaluation. Keep cache correct.
@@ -15,7 +89,6 @@
 - Pointers and backlinks. Weak and strong.
 
 - Many mediators making independant decisions.
-
 
 
 
@@ -40,7 +113,6 @@ Markdown-style with ASCII art?
 
 
 
-
 # TIME AND PLACE & MOTHERBOARD
 
 # Why circuit boards?
@@ -54,8 +126,29 @@ Markdown-style with ASCII art?
 
 
 
+# motherboard code
+This is where time and externals and concurrency is handled.
+
+Not composable, not usually reusable (copy & modify). This code takes application-level decisions. Has side-effects. Here all performance decisions are made, like memory vs CPU performance.
 
 
+
+#ABI
+All communication is done via immutable values. Conceptually they are JSON-values. C-ABI
+
+
+#Floyd Runtime optimizations
+- Lazy evaluation
+- Caching recent data
+- Batching
+- Amortising
+- Pooling
+- Precalculating
+- Paralellization
+- Accellerate on GPUs
+
+
+Amazon S3-persistens
 
 # THE LONG STICK
 
@@ -68,75 +161,3 @@ Markdown-style with ASCII art?
 4) Program makes instances of objects and connects together in graphics, mutating graph and nodes through out runtime.
 
 5) Program uses operating system to present parts of its state and mutations on the screen, or via TCP etc. 
-
-
-
-
-
-
-# RUNTIME
-
-Jag har en design för floyd som kallas "runtime" tills vidare. Det är en sorts kontext man skickar med funktioner. Man kan aggregera runtimes. Klientkoden kan inte observera förändringar i runtimen, den vet bara att runtimens features är tillgängliga. Tänkt att användas för att loggning, heaps och sådant, trots a Floyd är pure. Också tänk för att ersätta subsystem med singletons, som är ett helvete i större program.
-Man kan t.ex. dra igång en runtime för bildcachning, eller för att paga ljud till/från disk asynkront eller för att hantera resursfiler eller för att göra interning på värden etc.
-
-
-RUNTIME INSTEAD OF INTRUSIVE CALL GRAPHS
-
-The runtime evaluates the flow of function calls can chose to cache calls etc.
-
-This is different to traditional languages where functions of the program directly call eachother without any supervising runtime being involved at all.
-
-
-
-
-
-
-
-# NORMALIZED CODE
-This is coded in Floyd Script.
-This is the normal code. Try to have as much of your code normalized.
-
-It is composable, easy to understand and write.
-It is pure, have no side effects. No optimizations are done here (like lookups, lazy evaluation, batching).
-
-You cannot do callbacks or interfaces. You cannot read or affect the world.
-
-
-
-# motherboard code
-This is where time and externals and concurrency is handled.
-
-Not composable, not usually reusable (copy & modify). This code takes application-level decisions. Has side-effects. Here all performance decisions are made, like memory vs CPU performance.
-
-
-# Runtimes ("puretimes")
-These are systems that provide basic services to normalized code. Just like a memory manager does. Normalized code uses these but cannot observe any side effects (but there really are side-effects).
-
-Runtimes are done outside of simulation and cannot be observed inside the simulation. Examples:
-- Memory allocation. All normalized code assumes there is unlimited memory and cannot measure the memory pools. In out-of-memory conditions, the runtimes will roll back normalized code. The normalized code never knows this happens.
-- Logging. Normalized code can log, but can never observe the logs or be affected by the logs.
-- Optimizations (see list)
-
-Runtimes are not globals / singletones -- you can run several at the same time. In realtime apps you might want a separate memory runtime to avoid blocking the threads.
-
-A client needs to supply runtimes to all pure functions, often done by grouping them together into a meta-runtime.
-You can create your own runtimes too. Use to make your own image caching. A runtime is run in its own environment and cannot leak details into the simulation.
-
-
-
-#ABI
-All communication is done via immutable values. Conceptually they are JSON-values. C-ABI
-
-
-#Runtime optimizations
-- Lazy evaluation
-- Caching recent data
-- Batching
-- Amortising
-- Pooling
-- Precalculating
-- Paralellization
-- Accellerate on GPUs
-
-
-Amazon S3-persistens
