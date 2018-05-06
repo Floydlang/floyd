@@ -1,12 +1,6 @@
 
 
 
-
-
-
-
-
-
 REFS
 - hjson?
 - DOT http://www.graphviz.org/doc/info/lang.html
@@ -41,7 +35,6 @@ digraph G {
 	8: main -> printf;
 	9: execute -> compare
 }
-
 
 
 
