@@ -10,7 +10,7 @@ Scenario: reading and writing to local file system, no races with other processe
 A) Mutate directly, propagate to world
 B) Work in stable copy then top-level code merges with world. Possible 
 C) Top-level code use normal mutation.
-D) Top-level mutatation happens usng HW-metaphore
+D) Top-level mutatation happens using HW-metaphore
 E) 
 
 
@@ -130,21 +130,6 @@ F) _RETURN-OBJECT-DESCRIBING-UNPURE-OPERATIONS_.
 }
 
 
-# Floyd Runtimes
-
-- PRINCIPLE: Define "side effect": layers of illusions of side-effect free: malloc, using CPU resources, consuming COW time to execute, recording stats / profiling etc. Side effects? No: there are mutable mechanisms hidden in the runtime that the simulation cannot observe = OK and considered side-effect free. Reading from internet server is a pure operation, even if server records log files.
-
-- Runtimes: with every function is a secret argument specifying the runtime. It use used for allocating new values and other runtime things. It has a type. You can make your own runtime-types and add capabilities. A function can only be called if you have the proper typ of runtime object.
-
-	<simulator_runtime>
-	core_runtime: memory allocation (for values), debug, log, exceptions.
-	file_system_runtime
-	Default is *core_runtime*.
-	*file_runtime* provides (core_support and file_system_support).
-	You can make your own combinations. Example of custom runtime could be renderer_runtime for game.
-
-	//	This means this function requires a renderer_runtime to be used.
-	auto my_function[renderer_runtime](int a)
 
 # Clients
 

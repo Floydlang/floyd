@@ -194,45 +194,49 @@ You can make a path through nested data structures. The path is a built-in opaqu
 
 
 # PROTOCOLS
-A protocol is a type that introduces zero to many functions signatures without having any implementation. The protocols have no state and no functionallity.
+A protocol is a type that introduces zero to many functions signatures without having any implementation. The protocols defines no state and has no actual functionality.
 
-A struct can chose to implement one or several protocols.
+A struct can chose to implement one or several protocols. This gives an implementation of the protocol functions.
+
+When a protocol is supplied
 A protocol does NOT mean an is-a hiearchy. It is rather a supports-a. An optional feature.
 
-protocol tooltip_support {
-	text get_text(this)
-	color get_color(this)
-	text_style get_style(this)
-}
+```
+	protocol tooltip_support {
+		text get_text(this)
+		color get_color(this)
+		text_style get_style(this)
+	}
+	
+	protocol mouse_support {
+		T on_click(float x, float y)
+		T on_release(float x, float y)
+	}
+	
+	protocol seq {
+		T first()
+		seq rest()
+	}
+```
 
-protocol mouse_support {
-	T on_click(float x, float y)
-	T on_release(float x, float y)
-}
+```
 
-protocol seq {
-	T first()
-	seq rest()
-}
-
-//	Implements mouse_support and tooltip_support
-struct my_window {
-	mouse_support {
-		T on_click(this, float x, float y){
+	//	Implements mouse_support and tooltip_support
+	struct my_window: mouse_support, tooltip_support {
+		T mouse_support::on_click(this, float x, float y){
 			return this;
 		}
-		T on_release(this, float x, float y){
+		T mouse_support::on_release(this, float x, float y){
+		}
+
+		text tooltip_support::get_text(this){
+		}
+		color tooltip_support::get_color(this){
+		}
+		text_style tooltip_support::get_style(this){
 		}
 	}
-	tooltip_support {
-		text get_text(this){
-		}
-		color get_color(this){
-		}
-		text_style get_style(this){
-		}
-	}
-}
+```
 
 
 # sha1 type
