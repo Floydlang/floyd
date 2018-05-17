@@ -63,6 +63,38 @@ State is never kept / mutated on the board - it is kept in the clock.
 
 
 
+??? BIG DEAL IN GAMING: MAKING DEPENDENCY GRAPH OF JOBS TO PARALLELAIZE
+
+
+
+# BLOCKING AND ASYNC
+
+
+def_clock magic_state_t {
+	magic_state_t init(){
+	}
+
+
+	magic_state_t on_select(){
+
+	}
+}
+
+
+
+
+
+Wait on timer
+Wait on message from socket
+Send message, await reply
+Make sequence of calls, block on each
+
+
+
+
+
+
+
 
 
 ??????????????????????????????
