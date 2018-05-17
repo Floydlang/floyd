@@ -72,11 +72,6 @@ All signals and values use Floyd's immutable types, provided by the Floyd runtim
 
 
 
-
-
-
-
-
 # FILE SYSTEM-part
 ??? Simple file API or use channels?
 
