@@ -43,9 +43,10 @@ D) Clock result will contain list of pending operations, as completions. Now cli
 			let b = transform_a.read()	//	Will sample / block,  depending on transformer mode.
 			let c = a * b
 			transform_b.store(c)	//	Will push on tranformer / block, depending on transformer mode.
-	
+
 			//	Runs each task in parallell and returns when all are complete. Returns a vector of values of type T.
 			//	Use return to finish a task with a value. Use break to finish and abort any other non-complete tasks.
+			//??? Split to parallell_tasks_race() and parallell_tasks_all().
 			let d = parallell_tasks<T>(timeout: 10000) {
 				1:
 					sleep(3)
@@ -56,11 +57,10 @@ D) Clock result will contain list of pending operations, as completions. Now cli
 				3:
 					sleep(1)
 					return 99
-			}
-	
-			let e = map_parallell(seq(i: 0..<1000)){
-				return $0 * 2
-			}
+			}	
+			let e = map_parallell(seq(i: 0..<1000)){ return $0 * 2 }
+			let f = fold_parallell(0, seq(i: 0..<1000)){ return $0 * 2 }
+			let g = filter_parallell(seq(i: 0..<1000)){ return $0 == 1 }
 		}
 	}
 
@@ -118,7 +118,8 @@ D) Clock result will contain list of pending operations, as completions. Now cli
 16. Send message, await reply
 17. Make sequence of calls, block on each
 18. Simple command line app, with only one clock.
-
+19. Small server
+20. Fan-in fan-out
 
 Modelling concurrent processess are done using clocks. Accelerating computations (parallellism) is done using tweaks — a separate mechanism.
 
