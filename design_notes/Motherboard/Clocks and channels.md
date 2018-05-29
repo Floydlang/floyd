@@ -1,37 +1,43 @@
+# REFERENCES
+- CSP
+- Erlang
+- Go routies and channels
+- Clojure Core.Async
 
-CSP
-Erlang
-Go routies and channels
-Clojure Core.Async?
+# IDEA
+- Split concept of go routine and channel into several more specific concepts.
 
+- Idea: Channels: pure code can communicate with sockets using channels. When waiting for a reply, the pure code's coroutine is paused and returned to motherboard level. Motherboard resumes coroutine when socket responds. This hides time from the pure code - sockets appear to be instantantoues + no inversion of control. ??? Still breaks rule about referenctial transparency. ### Use rules for REST-com that requires REST-commands to be referential transparent = it's enough we only hide time. ??? more?
 
-??? Allow allocate "channel" live or static.
+- Use golang for motherboards. Visual editor/debugger. Use FloydScript for logic. Use vec/map/seq/struct for data.
+
+# OPEN
+
 ??? Go func + channels REPLACES Erlang processes.
-
-??? Split concept of go routine and channel into several more specific concepts.
-
-??? Can pure function create a socket? Token socket is OK. Or create socket with clock at top level?! This allows simple asynchronous programming: blocking-style-only. Make chips with common patterns: fan-in etc.
-
-??? Channels: pure code can communicate with sockets using channels. When waiting for a reply, the pure code's coroutine is paused and returned to motherboard level. Motherboard resumes coroutine when socket responds. This hides time from the pure code - sockets appear to be instantantoues + no inversion of control. ??? Still breaks rule about referenctial transparency. ### Use rules for REST-com that requires REST-commands to be referential transparent = it's enough we only hide time. ??? more?
-
-Make chip and dynamically instantiate chips with internal processes, channels and vthreads
-- low-priority, long running background thread
-
-
-??? Use golang for motherboards. Visual editor/debugger. Use FloydScript for logic. Use vec/map/seq/struct for data.
+??? Make chip and dynamically instantiate chips with internal processes, channels and vthreads
+??? low-priority, long running background thread
 
 
 # INSIGHTS
 
 - Synchronization points between systems (state or concurrent) always breaks composition. Move to top level of product. ONE super-mediator per complete server-spanning solution.
 
-- Ex: communicate with a read-only server using REST. No side effects, just time.
+- A system requires a master controller that may use and control sub-processes.
+
+- A system can be statically layed out on a top-level. Some processes may be dynamically created / deleted -- this is shown using 1-2-3-many.
+
+- Initialization often instances and connects parts together. In Floyd this is done using declaration / visual design outside of runtime.
+
+- Sometimes we introduce concurreny to allow parallellism: multithreading a game engine is taking a non-concurrent design and making it concurrent to improve throughput. This is different to using concurrency to model real-world concurrency like UI vs background cloud com vs realtime audio processing. Maybe have different concepts for this?
+
+# DIFERENT APPROACHES TO CONCURRENCY
 
 A) Use futures and promises, completions.
 B) Block clock thread, hide time from program. This makes run_clock() a continuation!!!
 C) clock
 D) Clock result will contain list of pending operations, as completions. Now client decides what to do with them. This means do_clock() only makes one tick.
 
+# EXAMPLE
 
 	defclock mytype1_t myclock1(mytype1_t prev, read_transformer<mytype2_t> transform_a, write_transformer<mytype2_t> transform_b){
 		... init stuff.
@@ -126,33 +132,29 @@ Modelling concurrent processess are done using clocks. Accelerating computations
 
 # CLOCK & CLOCK CIRCUITS
 
-A clock is a little virtual process that perform a sequence of operations, call FloydScript, read and write to channels and other i/o. The clock-part introduces *time* and *mutation* to an otherwise pure and timeless program.
+A clock is a little virtual process that reads messages from its single input queue and acts on those inputs. To have time pass inside your system you need to have a clock, or a number of clocks. A clock is equivalent to an Erlang process.
 
-Simple apps, like a basic command line apps, have only one clock that gathers input from the command line arguments, maybe calls some pure FloydScript functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
-
-A clock is an object that controls the advancement of time. This is how you mutate values in an otherwise immutable process. You can also think about a clock step as a transaction, or even a commit to Git.
-
-You can have several clocks running in parallell, even on separate hardware. These forms separate clock circuits that are independent of eachother.
-
-**You cannot send data between clock circuits -- only inside of them -- you need to use a clock-transformer.**
-
-Each section on the board is part of exactly one clock circuit.
-
-Use a transformer to send data between clock circuits.
-
-A clock holds ONE value - the complete state of the clock circuit. When advancing time, this value is sent into the clock-circuit and a new value is generated and stored in the clock.
-
-The clock records a LOG of all generations of its value, in a forever-growing vector of states. In practice, those older generations are not kept or just kept for a short time.
-
-A clock is equivalent to an Erlang process.
-
-Code running inside a clock can affect the world / externals. It can also BLOCK its execution, for example when reading from a file.
+The input queue holds message values of one specific type, as specified by the clock. This value can be an enum of different messages to handle different types of server requests or user input events etc.
 
 A clock represents a series of discrete time increments / transformations. The output is always an immutable value. If you want concurrency you need to have several clocks, each running at their own rate.
 
-Clocks is how mutatation / memory is handled in the motherboard.
+- Each section on the board is part of exactly one clock circuit.
+- A clock is not pure -- it can have side effects.
+- A clock can send messages to other clocks.
+- A clock has ONE internal value that represents its state aka memory. This is usually a big nested struct.
+- A clock can communicate with the outside world, with file systems, sockets etc.
+- A clock can call functions that block. This may cause the clock execution to be paused and some other code run.
+- The clocks state-value is owned by its supervisor, not the clock itself.
 
-A clock has one or more inputs and ONE output. The motherboard defines when the clock is advanced. At this moment, all its inputs are frozen and it's clock-function is called. This function is referenctial transparent. When the clock function is done it returns the result, which is stored in a log of all outputs. The previous output of a clock-function is always passed in as first argument to the clock-function the next time.
+Simple apps, like a basic command line apps, have only one clock that gathers input from the command line arguments, maybe calls some pure FloydScript functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
+
+You can think about a handling a messages as a transaction, or even a commit to Git.
+
+You can have several clocks running in parallell, even on separate hardware. These forms separate clock circuits that are independent of eachother.
+
+The clock records a LOG of all generations of its value, in a forever-growing vector of states. In practice, those older generations are not kept or just kept for a short time.
+
+??? A clock has one or more inputs and ONE output. The motherboard defines when the clock is advanced. At this moment, all its inputs are frozen and it's clock-function is called. This function is referenctial transparent. When the clock function is done it returns the result, which is stored in a log of all outputs. The previous output of a clock-function is always passed in as first argument to the clock-function the next time.
 
 
 ??? Replace this with a my_ui_process() that can contain a sequence of stuff and several blockings. No need to have clock.
