@@ -1,3 +1,46 @@
+static clock graph | dynamic clocks vector
+programmed layout | declarative layout
+
+Like shaders
+
+|A|B|C
+|---|---|---
+|yes	|yes	|Can call pure functions (runtime may throw exceptions, can use CPU, RAM, battery)
+|yes	|yes	| Can call blocking functions
+||			| Can have external sideffects -- file system, sockets
+||			Can mutate global state
+||			Can call functions that are unpure
+||			Can call functions that throw exceptions (in addition to normal runtime exceptions)
+||			Can manage clocks.
+			
+supervisor	--	Manages clocks, sets them up, reboots, allocate clocks etc. Motherboard.
+clock<T, M>	--	A clock, holding a specific type of state, consuming a specific type of message.
+effects_t	--	used as token to call file system, sockets etc.
+
+clock<my_clock_state_t> tick(clock<my_clock_state_t> s, message<my_clock_message_t> m){
+	... 
+}
+
+
+
+
+# CURRENT DESIGN
+
+- Clock-concept. A clock is an object with a typed input state, typed input message and types output state. By returning a changed state it advances time. Only the runtime can call the clock-function.
+- Clock function also gets input token with access rights to systems.
+- Using its rights, a clock can call unpure functions, control outside world and send messages to other clocks.
+- Supervisor: this is a function that creates and tracks and restarts clocks.
+- The concept of clocks represents a top-level node that has its own state = concept of time.
+- System provices clocks for timers, ui-inputs etc. When setup, these receive user input messages etc.
+- A clock can send messages and block until it gets a reply.
+- To make a background one-time thing: create a supervisor and set it up to spawn worker clocks, then delete them when they are done with task.
+- Clocks runs as M x N threads.
+- A supervisor can place clocks on different cores and processors or servers.
+- A supervisor can 
+- You can create clocks programmatically.
+- You can create clocks and their routings using a JSON motherabord = supports interactive design by human,
+
+
 # REFERENCES
 - CSP
 - Erlang
@@ -5,7 +48,7 @@
 - Clojure Core.Async
 
 # IDEA
-- Split concept of go routine and channel into several more specific concepts.
+- Split concept of go routine and channel / Erlang processes etc into several more specific concepts.
 
 - Idea: Channels: pure code can communicate with sockets using channels. When waiting for a reply, the pure code's coroutine is paused and returned to motherboard level. Motherboard resumes coroutine when socket responds. This hides time from the pure code - sockets appear to be instantantoues + no inversion of control. ??? Still breaks rule about referenctial transparency. ### Use rules for REST-com that requires REST-commands to be referential transparent = it's enough we only hide time. ??? more?
 
@@ -13,7 +56,6 @@
 
 # OPEN
 
-??? Go func + channels REPLACES Erlang processes.
 ??? Make chip and dynamically instantiate chips with internal processes, channels and vthreads
 ??? low-priority, long running background thread
 
