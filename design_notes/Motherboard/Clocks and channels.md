@@ -41,6 +41,24 @@ clock<my_clock_state_t> tick(clock<my_clock_state_t> s, message<my_clock_message
 - You can create clocks and their routings using a JSON motherabord = supports interactive design by human,
 
 
+
+	struct clock_xyz_state_t {
+		int timestamp
+		[xyz_record_t] recs
+	}
+
+	struct clock_xyz_message_st {
+		int timestamp
+		int mouse_x
+		int mouse_y
+		case stop: struct { int duration }
+		case on_mouse_move:
+		case on_click: struct { int button_index }
+	}
+	clock_xyz_state_t tick_clock_xyz([clock_xyz_state_t] history, clock_xyz_message_st message){
+	}
+
+
 # REFERENCES
 - CSP
 - Erlang
