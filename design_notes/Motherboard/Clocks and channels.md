@@ -1,10 +1,89 @@
+
+# GOALS
+- Small set of explicit and focused and restricted tools. Avoid general-purpose!
+- No explicit instantiation of processes via code — they are declared statically inside a top-level process. All dynamic allocation of processes are done implicitly via pmap(), via build-in parallelism-setting on process.
+
+
+- Composable
+- Handle blocking, threading, concurrency, parallellism, async, distributed into OS processes, machines.
+- Declarative and easy to understand.
+- No DSL like nested completions -- all code should be regular code. No callback, no inversion of control or futures.
+
+
+
+# SCENARIOS
+
+1. Move data between concurrent modules (instead of atomic operation / queue / mutex)
+2. Do blocking call, like REST request.
+3. Start non-blocking lambda operations - referential transparent - like calculating high-quality image in the background.
+4. Start non-blocking unpure background calculation (auto save doc)
+5. Start lengthy operation, non-blocking using passive future
+6. Run process concurrently, like analyze game world to prefetch assets
+7. handle requests from OS quickly, like call to audio buffer switch process()
+8. Implement a generator / seq / iterator for lazy calculation during foreach
+9. Enable parallelization by hiding function behind channel (allows it to be parallellized)
+10. Coroutines let you time slice heavy computation so that it runs a little bit in each frame.
+11. Concept: State-less lambda. Takes time but is referential transparent. These can be callable from pure code. Not true!! This introduces cow time.
+12. Model a process, like Erlang. UI process, realtime audio process etc.
+13. Supply a service that runs all the time, like GO netpoller. Hmm. Maybe and audio thread works like this too?
+14. Wait on timer
+15. Wait on message from socket
+16. Send message, await reply
+17. Make sequence of calls, block on each
+18. Simple command line app, with only one clock.
+19. Small server
+20. Fan-in fan-out
+21. low-priority, long running background thread
+
+Modelling concurrent processess are done using clocks. Accelerating computations (parallellism) is done using tweaks — a separate mechanism.
+
+
+# Toplevel
+Process that CAN find resources and assets and configures other processes.
+
+# Process
+Concurrent lightweight process with separate address space.
+Has inbox for values.
+Keeps 1 state variable
+Advances time
+Is an “object”, not a dynamic ID.
+Can mutate world.
+Cannot find assets / ports / resources — those are handed to it.
+Has parallellism setting: increase > 1 to put on more threads with multiplex + merge. Built in supervision.
+Can call seqfunctions & core functions
+??? idea: code it as a shader / main() that is run once for each message? Alt: have closed loop and select() which allows the modes of operation.
+
+# Supervisor
+A special type of process that mediates life and death and com of child processes. ??? Declarative?
+
+# Seqfunction
+A function that can communicate with world, block och external calls. Non-pure.
+Gets all runtimes as argument.
+
+# Corefunc
+A pure function.
+Does logic, uses values only.
+Cannot call blocking functions
+Cannot access world
+The bulk of the logic.
+
+
+
+# Parafunc
+Aka shader
+A pure function that can run in parallell. Maybe just use pmap()?
+
+
+
+===============================
+
 static clock graph | dynamic clocks vector
 programmed layout | declarative layout
 
 Like shaders
 
-|A|B|C
-|---|---|---
+|A		|B		|C
+|---	|---	|---
 |yes	|yes	|Can call pure functions (runtime may throw exceptions, can use CPU, RAM, battery)
 |yes	|yes	| Can call blocking functions
 ||			| Can have external sideffects -- file system, sockets
@@ -65,17 +144,15 @@ clock<my_clock_state_t> tick(clock<my_clock_state_t> s, message<my_clock_message
 - Go routies and channels
 - Clojure Core.Async
 
-# IDEA
+
+
+# IDEAS
 - Split concept of go routine and channel / Erlang processes etc into several more specific concepts.
 
 - Idea: Channels: pure code can communicate with sockets using channels. When waiting for a reply, the pure code's coroutine is paused and returned to motherboard level. Motherboard resumes coroutine when socket responds. This hides time from the pure code - sockets appear to be instantantoues + no inversion of control. ??? Still breaks rule about referenctial transparency. ### Use rules for REST-com that requires REST-commands to be referential transparent = it's enough we only hide time. ??? more?
 
 - Use golang for motherboards. Visual editor/debugger. Use FloydScript for logic. Use vec/map/seq/struct for data.
 
-# OPEN
-
-??? Make chip and dynamically instantiate chips with internal processes, channels and vthreads
-??? low-priority, long running background thread
 
 
 # INSIGHTS
@@ -156,38 +233,6 @@ D) Clock result will contain list of pending operations, as completions. Now cli
 	}
 	
 
-# GOALS
-
-- One well-defined and composable method of async.
-- No DSL like nested completions -- all code should be regular code.
-- Avoid the concept of threads -- too low level.
-- Avoid callback hell or inversion of control, futures.
-
-
-# SCENARIOS
-
-1. Move data between clocks (instead of atomic operation / queue / mutex)
-2. Do blocking call, like REST request.
-3. Start non-blocking lambda operations - referential transparent - like calculating high-quality image in the background.
-4. Start non-blocking unpure background calculation (auto save doc)
-5. Start lengthy operation, non-blocking using passive future
-6. Run process concurrently, like analyze game world to prefetch assets
-7. handle requests from OS quickly, like call to audio buffer switch process()
-8. Implement a generator / seq / iterator for lazy calculation during foreach
-9. Enable parallelization by hiding function behind channel (allows it to be parallellized)
-10. Coroutines let you time slice heavy computation so that it runs a little bit in each frame.
-11. Concept: State-less lambda. Takes time but is referential transparent. These can be callable from pure code. Not true!! This introduces cow time.
-12. Model a process, like Erlang. UI process, realtime audio process etc.
-13. Supply a service that runs all the time, like GO netpoller. Hmm. Maybe and audio thread works like this too?
-14. Wait on timer
-15. Wait on message from socket
-16. Send message, await reply
-17. Make sequence of calls, block on each
-18. Simple command line app, with only one clock.
-19. Small server
-20. Fan-in fan-out
-
-Modelling concurrent processess are done using clocks. Accelerating computations (parallellism) is done using tweaks — a separate mechanism.
 
 
 # CLOCK & CLOCK CIRCUITS
