@@ -3,7 +3,6 @@
 - Small set of explicit and focused and restricted tools. Avoid general-purpose!
 - No explicit instantiation of processes via code — they are declared statically inside a top-level process. All dynamic allocation of processes are done implicitly via pmap(), via build-in parallelism-setting on process.
 
-
 - Composable
 - Handle blocking, threading, concurrency, parallellism, async, distributed into OS processes, machines.
 - Declarative and easy to understand.
@@ -37,24 +36,35 @@
 
 Modelling concurrent processess are done using clocks. Accelerating computations (parallellism) is done using tweaks — a separate mechanism.
 
+Processes are only used for mutable things, not for straight pure parallellism (like a shader).
 
 # Toplevel
 Process that CAN find resources and assets and configures other processes.
 
-# Process
+# Work-Process
 Concurrent lightweight process with separate address space.
 Has inbox for values.
 Keeps 1 state variable
-Advances time
+Advances time.
+State and inbox are owned by runtime, not process.
+Has a unique adress in the world.
 Is an “object”, not a dynamic ID.
 Can mutate world.
 Cannot find assets / ports / resources — those are handed to it.
-Has parallellism setting: increase > 1 to put on more threads with multiplex + merge. Built in supervision.
 Can call seqfunctions & core functions
-??? idea: code it as a shader / main() that is run once for each message? Alt: have closed loop and select() which allows the modes of operation.
+DO NOT USE FOR PMAP ETC.
+Cannot create other processes!
 
-# Supervisor
-A special type of process that mediates life and death and com of child processes. ??? Declarative?
+# Process-function
+A function that has the correct signature to be plugged into a work-process. It handles events, can wait for different events in different parts of its callstack. (It can be a state machine using its callstack).
+
+# Fan-in-fan-out Process
+Has parallellism setting: increase > 1 to put on more threads with multiplex + merge. Built in supervision.
+Declarative - only settings, no code.
+
+# Supervisor-Process
+A special type of process that mediates life and death and com of child processes.
+Declarative - only settings, no code.
 
 # Seqfunction
 A function that can communicate with world, block och external calls. Non-pure.
@@ -66,12 +76,6 @@ Does logic, uses values only.
 Cannot call blocking functions
 Cannot access world
 The bulk of the logic.
-
-
-
-# Parafunc
-Aka shader
-A pure function that can run in parallell. Maybe just use pmap()?
 
 
 
