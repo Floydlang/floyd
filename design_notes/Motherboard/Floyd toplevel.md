@@ -2,6 +2,12 @@
 C4 model
 https://c4model.com/
 
+### GOALS
+1. Generate code base diagrams: use in code too,
+2. Organise code after what it *is* not how it's used.
+3. Organize components and containers after what they solve, not how they are built.
+4. Match terminology: have component, runtime, helper be real keywords = helps communicate to humans and compiler. Every important architecture concept needs to have explicit equivalent in source code. In most languages there are no keywords for "cache", "API", "runtime" and other fundamental terms.
+
 ### Person
 various human users of your software system
 
