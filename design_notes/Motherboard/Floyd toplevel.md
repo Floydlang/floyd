@@ -1,6 +1,46 @@
+# SYSTEM STRUCTURE
+C4 model
+https://c4model.com/
+
+### Person
+various human users of your software system
+
+### Software System
+highest level of abstraction and describes something that delivers value to its users, whether they are human or not. 
+
+Floyd file: **software-system.floyd**
+
+### Container
+A container represents something that hosts code or data. A container is something that needs to be running in order for the overall software system to work.
+Mobile app, Server-side web application, Client-side web application, Microservice
+
+This is usually a single OS-process, with mutation, time, several threads. It looks for resources and knows how to string things together inside the container.
+
+### Component
+Grouping of related functionality encapsulated behind a well-defined interface. Executes in one process - process agnostic. Requires using container to do mutation / concurrency.
+JPEGLib, JSON lib. Custom component for syncing with your server.
+Passive, pure.
+
+	jpeglib.component.floyd -- declares a component, including docs and exposed API
+
+### Code
+Classes. Instance diagram. Examples.
+Passive. Pure.
+
+	jpeg_quantizer.floyd, colortab.floyd -- implementation source files for the jpeglib
 
 
-# MOTHERBOARD
+# DIAGRAMS
+Level 1: System Context diagram
+Level 2: Container diagram
+Level 3: Component diagram
+Level 4: Code
+
+Notice: a component used in several components or a piece of code that appears in several components = appears as duplicates. The perspective is: logic dependencies. There is no diagram for showing which source files or libraries that depends on eachother.
+
+
+
+# MOTHERBOARD = CONTAINER
 The motherboard is the top-level design that connects all code together into a product / app / executable.
 
 WORLD: The exposition between client code and the outside world. This includes sockets, file systems, messages, screens, UI.

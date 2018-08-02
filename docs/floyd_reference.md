@@ -1089,7 +1089,7 @@ Here is the DAG for the complete syntax of Floyd.
  		ASSIGNMENT	 					IDENTIFIER "=" EXPRESSION
 
 
-### EXAMPLE BIND AND STATEMENTS
+### EXAMPLE BIND AND ASSIGNMENT STATEMENTS
 
 |Source		| Meaning
 |:---		|:---	
@@ -1131,7 +1131,7 @@ Here is the DAG for the complete syntax of Floyd.
 | if(true){ return 1000 } else { return 1001 } [
 
 
-### EXAMPLE STRUCT DEFINITION STATEMENTS
+### EXAMPLE OF STRUCT DEFINITION STATEMENTS
 
 |Source		| Meaning
 |:---	|:---	
@@ -1143,7 +1143,7 @@ Here is the DAG for the complete syntax of Floyd.
 | struct pixel { int red = 255 int green = 255 int blue = 255 }|
 
 
-### EXAMPLE EXPRESSIONS (ALSO EXPRESSION-STATEMENTS)
+### EXAMPLE EXPRESSIONS
 
 |Source		| Meaning
 |:---	|:---	
@@ -1171,7 +1171,7 @@ Here is the DAG for the complete syntax of Floyd.
 | a == 1 ? "one" : ”some other number"			|
 
 
-### EXAMPLE TYPES
+### EXAMPLE TYPE DECLARATIONS
 
 |Source		| Meaning
 |:---	|:---	
