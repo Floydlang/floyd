@@ -109,50 +109,25 @@ A motherboard is usually its own OS process.
 			}
 		}
 
-??? Dynamic instancing. Create more HW-sockets and custom parts on demand. (*)-setting.
-- Adapter, splitter, merger: expression that filters a signal
 
 
----------------
+- ??? Dynamic instancing. Create more HW-sockets and custom parts on demand. (*)-setting.
+
+- ??? Adapter, splitter, merger: expression that filters a signal
+
+- ??? Also: a clock is similar to an iterator / generator and can be used the same way.
+
+
+### MOTHERBOARD Q & A
 
 Q: External state when serveral mutable bits? One for each?
 
 A: A motherboard has one state per clock. These states are internal to the motherboard, but external to each clock.
 
 
----------------
-
-
 Q: Can you use and hide a board with clocks inside a pure function?
 
 A: Yes, local mutation is fine but it cannot leak out of function. Unit tests are pure functions and they can make a board, test it, then dispose it.
-
-Also: a board is similar to an iterator / generator and can be used the same way.
-
-
------
-
-
-MOTHERBOARDS
-
-Boards behave very similar to functions except for a couple of important things:
-
-1) they introduce time (observable by the user’s program itself) and therefore mutability. The keys to this are clocks and transformers.
-
-2) They introduce several concurrent concepts of time = concurrency.
-
-
-A board is a 2D surface that exposes pins of different types.
-
-Inside you use chips, sub-boards, functions, constants, wires and time-transformers to implement your board.
-
-A board always comes with a suite of tests.
-
-You can package a board for general, shared reuse - this creates a “chip”.
-
-
-
----------------
 
 
 
@@ -168,6 +143,9 @@ Does UI_Part support several instances of VST plugin? Is plugin instance a value
 
 
 ??? CAN ONE PART HAVE SEVERAL PATHS FOR DIFFERENT CLOCKS? VST-HOST PART?
+??? Who advances the clocks? Runtime advances a clock when it has at least one message in its inbox. Runtime settings controls how runtime prioritizes the clocks when many have waiting messages.
+
+
 
 ---------------
 
@@ -175,11 +153,6 @@ Does UI_Part support several instances of VST plugin? Is plugin instance a value
 
 
 INSIGHT: We know in what context, motherboard, thread, callstack a function is called. It is in THIS context we can do tweaks. Not per static function.
-
-
-
-
-
 
 
 
@@ -201,24 +174,6 @@ Tag sections to work in “diff space”. Keyboard input etc. This is done via t
 
 
 
-**Work process**
-
-Can only be created declaratively.
-Cannot go find resources, processes etc. These must be handed to it.
-
-Uses a mutable process function to handle messages in inbox. It stays in loop. On return it is exited.
-
-
-**Top level function**
-
-Will find and connect all resources, runtimes and other dependencies.
-
-
-** map(), fold() filter() **
-
-Expose possible parallelism of pure function, like shaders.
-
-
 ** Work team **
 
 Runs function F in parallell.
@@ -226,6 +181,28 @@ Runs function F in parallell.
 
 
 ???? fan-out, fan-in, thread team. Thread slider 
+
+
+
+**Work process**
+
+Can only be created declaratively.
+Cannot go find resources, processes etc. These must be handed to it.
+Uses a mutable process function to handle messages in inbox. Function returns when it has handled its message.
+
+
+**Top level function**
+
+motherboard_main()
+
+This is the motherboard's start function. It will find, create and and connect all resources, runtimes and other dependencies to boot up the motherboard and to do executibe decisions and balancing for the motherboard.
+
+
+** map(), fold() filter() **
+
+Expose possible parallelism of pure function, like shaders, at the code level (not declarative).
+
+
 
 
 ---------------
@@ -246,6 +223,7 @@ Runs function F in parallell.
 - Handle blocking, threading, concurrency, parallellism, async, distributed into OS processes, machines.
 - Declarative and easy to understand.
 - No DSL like nested completions -- all code should be regular code. No callback, no inversion of control or futures.
+- No threads or mutaxes -- operate at a higher level where it's possible to reason about concurrency.
 
 
 ### CLOCKS
