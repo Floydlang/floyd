@@ -58,6 +58,10 @@ Notice: a component used in several components or a piece of code that appears i
 
 
 
+--------------
+??? Add "proxy-containers": for S3, for local FS cache etc.
+
+
 # MOTHERBOARD = CONTAINER
 The motherboard is how you implement a Floyd-based container. Other containers in your system may be implemented some other way and will be represented using a placeholder instead. The motherboard connects all code together into a product / app / executable. WORLD: The exposition between client code and the outside world. This includes sockets, file systems, messages, screens, UI.
 
