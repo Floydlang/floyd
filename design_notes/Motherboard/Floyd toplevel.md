@@ -1,18 +1,29 @@
-# SYSTEM STRUCTURE
-C4 model
-https://c4model.com/
+# FLOYD TOP-LEVEL MANUAL
+
+Floyd Script is the basic way to create logic. The code is isolated from the noise and troubles of the real world: everything is immutable and pure. Time does not advance. There is no concurrency of communication with other systems etc.
+
+Floyd toplevel is how you make software that lives in the real world, where all those things happens all the time. Floyd allows you create huge software systems spanning computers and processes, handling communication and time advancing.
+
+Floyd uses the C4 model to organize all of this. C4 model https://c4model.com/
 
 ### GOALS
-1. Generate code base diagrams: use in code too,
-2. Organise code after what it *is* not how it's used.
-3. Organize components and containers after what they solve, not how they are built.
-4. Match terminology: have component, runtime, helper be real keywords = helps communicate to humans and compiler. Every important architecture concept needs to have explicit equivalent in source code. In most languages there are no keywords for "cache", "API", "runtime" and other fundamental terms.
+
+1. A high-level way to organise huge code bases and systems with many threads, processes and computer, beyond functions, classes and modules.
+2. Represent those high level concepts at the code level too, not just on whiteboards. 
+3. Automatically visualize the system visually in tools like profilers, code navigators, debuggers and IDEs.
+
+### NON-GOALS
+1. Have notation like UML for all the details.
+
+
+# Top-LEVEL CONCEPTS
+
 
 ### Person
-various human users of your software system
+Various human users of your software system
 
 ### Software System
-highest level of abstraction and describes something that delivers value to its users, whether they are human or not. 
+Highest level of abstraction and describes something that delivers value to its users, whether they are human or not. 
 
 Floyd file: **software-system.floyd**
 
@@ -36,7 +47,7 @@ Passive. Pure.
 	jpeg_quantizer.floyd, colortab.floyd -- implementation source files for the jpeglib
 
 
-# DIAGRAMS
+### DIAGRAMS
 Level 1: System Context diagram
 Level 2: Container diagram
 Level 3: Component diagram
@@ -47,11 +58,9 @@ Notice: a component used in several components or a piece of code that appears i
 
 
 # MOTHERBOARD = CONTAINER
-The motherboard is the top-level design that connects all code together into a product / app / executable.
+The motherboard is how you implement a Floyd-based container. Other containers in your system may be implemented some other way and will be represented using a placeholder instead. The motherboard connects all code together into a product / app / executable. WORLD: The exposition between client code and the outside world. This includes sockets, file systems, messages, screens, UI.
 
-WORLD: The exposition between client code and the outside world. This includes sockets, file systems, messages, screens, UI.
-
-### Responsibilities:
+### RESPONSIBILITIES:
 - Instantiate all parts of the final product and connect them together.
 - Introduce time and mutation into the system.
 - Use Floyd-script modules
@@ -59,32 +68,23 @@ WORLD: The exposition between client code and the outside world. This includes s
 - Connect to the outside world, communicating with sockets, reading / writing files etc.
 - Profile control and optimize performance of system.
 - There are limits to how advanced logic code you can do in motherboard -- force programmer to do advanced coding in Floyd Script.
+- Handle comuncation and timeouts.
+- Handle errors
+- Control performance by balancing memory, CPU and other resources.
 
-### Non-goal
+### NON-GOALS
 - Be reusable.
 - To be composable
 - Pure / free of side effects
 
 The motherboard is a declarative system, based on JSON. Real-world performance decisions, profiling, optimizations, caching etc.
 
-Most logic is done using Floyd Script, which is a pure, referential transparent language.
-
-- **pin** (alt port)	-- where you can attach a wire
-- **wire** -- a connection between to pins
-- **channel** -- an object where producers can store elements and consumer can read them. Optionally non-blocking, 1...many elements big
-- **part** -- a node in the diagram. There are channel-parts, custom-parts etc.
-- **pure-function**
-- **unpure-function**
-- **value** -- an immutable value, either a primitive like a float or a collection or a struct. Can be big data.
+A motherboard is usually its own OS process.
 
 
-# VALUES AND SIGNALS
-All signals and values use Floyd's immutable types, provided by the Floyd runtime. Whenever a value, queue element or signal is mentioned, *any* of Floyd's types can be used -- even huge nested structs or collections.
 
-# MOTHERBOARD PARTS
+#### MOTHERBOARD PARTS
 - Clock
-- Channel
-- Adapter, splitter, merger: expression that filters a signal
 - Glue expressions, calling FLoyd functions
 - File system access: Read and write files, rename directory, swap temp files
 - Socket access: Send REST command and handle it's response.
@@ -109,28 +109,42 @@ All signals and values use Floyd's immutable types, provided by the Floyd runtim
 		}
 
 ??? Dynamic instancing. Create more HW-sockets and custom parts on demand. (*)-setting.
+- Adapter, splitter, merger: expression that filters a signal
 
 
 
 
+# CONCURRENCY AND CLOCKS
 
-
-
-
-
-
-# CONCURRENCY GOALS
+### GOALS
 - Small set of explicit and focused and restricted tools. Avoid general-purpose!
 - No explicit instantiation of processes via code — they are declared statically inside a top-level process. All dynamic allocation of processes are done implicitly via pmap(), via build-in parallelism-setting on process.
-
 - Composable
 - Handle blocking, threading, concurrency, parallellism, async, distributed into OS processes, machines.
 - Declarative and easy to understand.
 - No DSL like nested completions -- all code should be regular code. No callback, no inversion of control or futures.
 
 
+### CLOCKS
+Floyd uses a simple way to model concurreny, threading and timing losely based on the Erlangs processes, called a "Clock".
 
-# CONCURRENCY SCENARIOS
+A clock has a function, an input queue with values (can be big objects or primitives) an address and a previous-state value. Clients send values into a clocks input queue using its address. At some world-time, the function will be called with the first value in the queue and the clock's previous-state. Clocks consume messages one at a time.
+
+The clock's function can either be pure or unpure.
+
+Clocks are inexpensive, you can use 100.000-ands of clocks.
+They may be run from the main thread, a thread team or cooperatively.
+
+An unpure clock function may block on sync calls.
+
+### PARRALLELLISM
+Clocks are only used for mutable things, that tracks their own time separately from other clocks in the system. They are not for straight parallellism (like a graphics shader).
+Accelerating computations (parallellism) is done using tweaks — a separate mechanism. It supports moving computations in time (lazy, eager, caching) and running work in parallell.
+Often clocks are introduced in a system to expose oppotunity for parallellism.
+
+
+
+### CONCURRENCY SCENARIOS
 
 1. Move data between concurrent modules (instead of atomic operation / queue / mutex)
 2. Do blocking call, like REST request.
@@ -154,12 +168,12 @@ All signals and values use Floyd's immutable types, provided by the Floyd runtim
 20. Fan-in fan-out
 21. low-priority, long running background thread
 
-Modelling concurrent processess are done using clocks. Accelerating computations (parallellism) is done using tweaks — a separate mechanism.
 
-Processes are only used for mutable things, not for straight pure parallellism (like a shader).
+# VALUES AND SIGNALS
+All signals and values use Floyd's immutable types, provided by the Floyd runtime. Whenever a value, queue element or signal is mentioned, *any* of Floyd's types can be used -- even huge multi-gigabyte nested structs or collections.
 
-### Toplevel
-Process that CAN find resources and assets and configures other processes.
+
+
 
 ### Work-Process
 Concurrent lightweight process with separate address space.
@@ -227,7 +241,7 @@ clock<my_clock_state_t> tick(clock<my_clock_state_t> s, message<my_clock_message
 
 
 
-# CONCURRENCY CURRENT DESIGN
+### CONCURRENCY CURRENT DESIGN
 
 - Clock-concept. A clock is an object with a typed input state, typed input message and types output state. By returning a changed state it advances time. Only the runtime can call the clock-function.
 - Clock function also gets input token with access rights to systems.
@@ -455,22 +469,26 @@ Future: add job-graph for parallellising more complex jobs with dependencies.
 
 
 
-# FILE SYSTEM-part
+
+# OTHER MOTHERBOARD FEATURES
+
+
+### FILE SYSTEM-part
 ??? Simple file API or use channels?
 
-# REST-part
+### REST-part
 Channels?
 
-# LOG-probe
+### LOG-probe
 - Pulse everytime a function is called
 - Pulse everytime a clock ticks
 - Record value of all clocks at all time, including process PC. Oscilloscope & log
 
-# Profiler-probe
+### Profiler-probe
 
-# Command-line-part
+### Command-line-part
 
-# Tweaks - Optimizations
+### Tweaks - Optimizations
 These are settings you apply on wires.
 
 - Insert read cache
@@ -489,18 +507,6 @@ These are settings you apply on wires.
 - Batching: make 64 value each time?
 - Speculative batching with rewind.
 
-# Floyd Script
-All scripts are pure, cannot do file handling or communication at all. They need to return data so script in motherboard has enough info to perform mutations / communication. Return queues with commands / work on snapshots of the world, then let motherboard code diff / merge snapshot into world.
-
-
-# ISSUES
-
-1. Floyd script is referential transparent. Cannot access the world -- read files, write files, do socket communication etc.
-2. Floys script is composable: cannot support completion callbacks, futures (as composition solution) or blocking. Instead the scripts works on big, composite snapshots.
-
-
-# DIFF AND MERGE
-Diff and merge are important to Motherboard code to detect what changes needs to be performed in the world.
 
 
 
@@ -702,11 +708,7 @@ This is a declarative file that describes the top-level structure of an app.
 			
 			]
 
-	
-=============================================================================
 
-
-
-This design solves how Floyd handles time, mutation, concurrency on the boards. Pure functions cannot do this stuff.
-
+# IDEA: DIFF AND MERGE
+Diff and merge are important to Motherboard code to detect what changes needs to be performed in the world.
 
