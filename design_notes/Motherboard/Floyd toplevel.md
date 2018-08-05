@@ -10,7 +10,8 @@ Floyd uses the C4 model to organize all of this. C4 model https://c4model.com/
 
 1. A high-level way to organise huge code bases and systems with many threads, processes and computer, beyond functions, classes and modules.
 2. Represent those high level concepts at the code level too, not just on whiteboards. 
-3. Automatically visualize the system visually in tools like profilers, code navigators, debuggers and IDEs.
+3. Automatically visualize the system in tools like profilers, code navigators, debuggers and IDEs.
+4. Visual design of the system at the top level.
 
 ### NON-GOALS
 1. Have notation like UML for all the details.
@@ -110,6 +111,128 @@ A motherboard is usually its own OS process.
 
 ??? Dynamic instancing. Create more HW-sockets and custom parts on demand. (*)-setting.
 - Adapter, splitter, merger: expression that filters a signal
+
+
+---------------
+
+Q: External state when serveral mutable bits? One for each?
+
+A: A motherboard has one state per clock. These states are internal to the motherboard, but external to each clock.
+
+
+---------------
+
+
+Q: Can you use and hide a board with clocks inside a pure function?
+
+A: Yes, local mutation is fine but it cannot leak out of function. Unit tests are pure functions and they can make a board, test it, then dispose it.
+
+Also: a board is similar to an iterator / generator and can be used the same way.
+
+
+-----
+
+
+MOTHERBOARDS
+
+Boards behave very similar to functions except for a couple of important things:
+
+1) they introduce time (observable by the user’s program itself) and therefore mutability. The keys to this are clocks and transformers.
+
+2) They introduce several concurrent concepts of time = concurrency.
+
+
+A board is a 2D surface that exposes pins of different types.
+
+Inside you use chips, sub-boards, functions, constants, wires and time-transformers to implement your board.
+
+A board always comes with a suite of tests.
+
+You can package a board for general, shared reuse - this creates a “chip”.
+
+
+
+---------------
+
+
+
+?????????
+
+CORE DESIGN QUESTION: What is dynamic data, what is static data, what is static code?
+
+Does UI_Part support several instances of VST plugin? Is plugin instance a value? Or do we make several instances of the board? When how can design know about all boards to do communication between them, for example sample-caching?
+
+
+---------------
+
+
+
+??? CAN ONE PART HAVE SEVERAL PATHS FOR DIFFERENT CLOCKS? VST-HOST PART?
+
+---------------
+
+
+
+
+INSIGHT: We know in what context, motherboard, thread, callstack a function is called. It is in THIS context we can do tweaks. Not per static function.
+
+
+
+
+
+
+
+
+
+
+---------------
+
+
+
+Boards are statically designed, new / delete are not possible. Instead collections of objects are used
+
+No dynamic allocation - introduce concept of fixed set of infinity instances, using indexes, like a pool / collection of instances.
+
+
+Tag sections to work in “diff space”. Keyboard input etc. This is done via time-axises.
+
+---------------
+
+
+
+
+**Work process**
+
+Can only be created declaratively.
+Cannot go find resources, processes etc. These must be handed to it.
+
+Uses a mutable process function to handle messages in inbox. It stays in loop. On return it is exited.
+
+
+**Top level function**
+
+Will find and connect all resources, runtimes and other dependencies.
+
+
+** map(), fold() filter() **
+
+Expose possible parallelism of pure function, like shaders.
+
+
+** Work team **
+
+Runs function F in parallell.
+
+
+
+???? fan-out, fan-in, thread team. Thread slider 
+
+
+---------------
+
+
+
+
 
 
 
