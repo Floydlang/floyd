@@ -106,21 +106,34 @@ A motherboard is usually its own OS process.
 Dynamic instancing. Create more HW-sockets and custom parts on demand. (*)-setting.
 
 
-### MOTHERBOARD PARTS
+
+### MOTHERBOARD FEATURES
 
 - Clocks
+- Component instances (see parts library below)
 - Glue expressions, calling FLoyd functions
-- File system access: Read and write files, rename directory, swap temp files
-- Socket access: Send REST command and handle it's response.
-- UI access
-- Non-pure OS features
-- Interfaces with command line arguments / returns.
 - Tweaks
 - Performance probes
 - Log probes
-- Timeout
-- Perform background work using another thread / clock / process
-- Audio output buffers
+- Timeout, watchdogs
+
+
+### MOTHERBOARD PARTS LIBRARY
+Notice: these are all non-singletons - you can make many instances in one container
+
+- A component written in Floyd Script.
+- Built in pipeline component
+- Built in local FS component: Read and write files, rename directory, swap temp files
+- Built in S3 component
+- Built in socket component
+- Built in REST-component
+- Built in UI-component
+- Built in cache-component
+- Built in command line component: Interfaces with command line arguments / returns.
+- VST-component
+- A component written in C
+- Background worker component - perform background work using another thread / clock / process
+- Audio component
 
 		my first design.mboard
 
@@ -141,7 +154,6 @@ Top level function
 motherboard_main()
 ```
 
-
 This is the motherboard's start function. It will find, create and and connect all resources, runtimes and other dependencies to boot up the motherboard and to do executibe decisions and balancing for the motherboard.
 
 
@@ -152,9 +164,9 @@ All signals and values use Floyd's immutable types, provided by the Floyd runtim
 
 ### CLOCKS
 
-This it the means of implement time / mutation / concurrency. Can only be created declaratively. Cannot go find resources, processes etc. These must be handed to it. Uses a mutable process function to handle messages in inbox. Function returns when it has handled its message.
+This it the means of implement time / mutation / concurrency.
 
-	
+
 ### PARALLISABLE FUNCTIONS
 
 map(), fold() filter()
@@ -162,36 +174,8 @@ map(), fold() filter()
 Expose possible parallelism of pure function, like shaders, at the code level (not declarative). The supplied function must be pure.
 
 
-
-
-
-
-
-
-
-
-
-
-		
-		??? All OS-services are implemented as clock: you send them messages and they execute asynchronously.??? Nah, better to have blocking calls.
-
-		- ??? Adapter, splitter, merger: expression that filters a signal
-
-		- ???	CORE DESIGN QUESTION: What is dynamic data, what is static data, what is static code?
-
-		- ??? Also: a clock is similar to an iterator / generator and can be used the same way.
-		
-		- ??? Does UI_Part support several instances of VST plugin? Is plugin instance a value? Or do we make several instances of the board? When how can design know about all boards to do communication between them, for example sample-caching?
-		
-		- ??? CAN ONE PART HAVE SEVERAL PATHS FOR DIFFERENT CLOCKS? VST-HOST PART?
-		
-		- ??? Who advances the clocks? Runtime advances a clock when it has at least one message in its inbox. Runtime settings controls how runtime prioritizes the clocks when many have waiting messages.
-		
-		** Work team **
-		Runs function F in parallell.
-		
-		???? fan-out, fan-in, thread team. Thread slider 
-
+??? What if you want a motherboard-like setup for each document?
+??? make pipeline part. https://blog.golang.org/pipelines
 
 
 # CLOCKS AND CONCURRENCY
@@ -212,6 +196,82 @@ Expose possible parallelism of pure function, like shaders, at the code level (n
 ### NON-GOALS
 
 - Detailed control over individual OS threads
+
+
+
+### CLOCKS
+
+A clock is statically instantiated in a motherboard -- you cannot allocate them at runtime.
+
+Uses a mutable process function to handle messages in inbox. Function returns when it has handled its message.
+
+The clock function is called once per input value, then returns when that value has been processed. It CAN chose to block on further input values, which makes it a small state machine.
+
+Floyd uses a simple way to model concurreny, threading and timing losely based on the Erlangs processes, called a "Clock".
+
+A clock has:
+	1. a function
+	2. an inbox of 0...any values. This is an input queue with values. The values can be big objects or primitives.
+	3. an address, unique in the worl
+	4. a previous-state value
+	5. Its own address space
+
+
+Clients send values into a clocks input queue using its address. At some world-time, the clock's function will be called with the first value in the queue and the clock's previous-state. When the clock function returns, it provides the next current-value. Only the runtime can call the clock-function.
+
+Clocks consume messages one at a time, in series.
+
+Clocks tracks their own time separately from other clocks in the system.
+
+The clock's function is unpure. The function can call OS-function, block on writes to disk, use sockets etc. Clocks needs to take all runtimes they require as arguments. Clock function also gets input token with access rights to systems.
+
+A clock can send messages to other clocks, optionally blocking on a reply, handling replies via its inbox or not use replies.
+
+The runtime can place clocks on different cores and processors or servers. You can have several clocks running in parallell, even on separate hardware. These forms separate clock circuits that are independent of eachother.
+
+Clocks are inexpensive, you can use 100.000-ands of clocks. Clocks typically runs as M x N threads. They may be run from the main thread, a thread team or cooperatively.
+
+
+Who advances the clocks? Runtime advances a clock when it has at least one message in its inbox. Runtime settings controls how runtime prioritizes the clocks when many have waiting messages.
+
+### CLOCK LIMITATIONS
+
+Cannot find assets / ports / resources — those are handed to it.
+Cannot go find resources, processes etc. These must be handed to it.
+Clocks cannot be created or deleted at runtime.
+Cannot create other clocks!
+
+
+- ??? Supervisor: this is a function that creates and tracks and restarts clocks.
+- ??? System provices clocks for timers, ui-inputs etc. When setup, these receive user input messages etc.
+
+
+### STATIC DEFINITION
+
+```
+	struct clock_xyz_state_t {
+		int timestamp
+		[xyz_record_t] recs
+	}
+
+	struct clock_xyz_message_st {
+		int timestamp
+		int mouse_x
+		int mouse_y
+		case stop: struct { int duration }
+		case on_mouse_move:
+		case on_click: struct { int button_index }
+	}
+	clock_xyz_state_t tick_clock_xyz([clock_xyz_state_t] history, clock_xyz_message_st message){
+	}
+```
+
+
+
+### Ex: Simple app
+
+This is a basic command line app, have only one clock that gathers ONE input value from the command line arguments, calls some pure Floyd Script functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
+
 
 
 ### CONCURRENCY SCENARIOS
@@ -237,9 +297,8 @@ Expose possible parallelism of pure function, like shaders, at the code level (n
 19. Small server
 20. Fan-in fan-out
 21. low-priority, long running background thread
-
-
-
+22. Processing pipeline with many stages
+23. 
 
 ### EXAMPLE CLOCK
 
@@ -275,108 +334,28 @@ Expose possible parallelism of pure function, like shaders, at the code level (n
 	}
 
 
+# IDEA: FAN-IN-FAN-OUT PART
 
-### CLOCKS
+Like a clock but distributes messages on a number of paralell threads, then records the (out of order) results as they happen.
 
-A clock is statically instantiated in a motherboard -- you cannot allocate them at runtime.
-
-Floyd uses a simple way to model concurreny, threading and timing losely based on the Erlangs processes, called a "Clock".
-
-A clock has:
-	1. a function
-	2. an inbox of 0...any values. This is an input queue with values. The values can be big objects or primitives.
-	3. an address, unique in the worl
-	4. a previous-state value
-	5. Its own address space
+Has parallelism setting: increase > 1 to put on more threads with multiplex + merge. Built in supervision. Declarative - only settings, no code.
 
 
-Clients send values into a clocks input queue using its address. At some world-time, the clock's function will be called with the first value in the queue and the clock's previous-state. When the clock function returns, it provides the next current-value.
+# IDEA: PIPELINE PART
 
-Clocks tracks their own time separately from other clocks in the system.
+This allows you to configure a number of steps with queues between them. You supply a function for each step. All settings can be altered via UI or programatically.
 
-Clocks consume messages one at a time, in series.
-
-The clock's function is unpure. The function can call OS-function, block on writes to disk etc. Clocks are inexpensive, you can use 100.000-ands of clocks. They may be run from the main thread, a thread team or cooperatively.
+This setting allows you to process more than one message in the inbox at once. If you set it to 100, up to 100 messages can be processed at the same time. Each message will be stamped 
 
 
-Cannot find assets / ports / resources — those are handed to it.
-Cannot create other clocks!
 
-The clock function is called once per input value, then returns when that value has been processed. It CAN chose to block on further input values, which makes it a small state machine.
-
-The clock function can communicate with world, block och external calls. Non-pure.
-Gets all runtimes as argument.
-
-- A clock can call functions that block. This may cause the clock execution to be paused and some other code run.
-
-- Only the runtime can call the clock-function.
-- Clock function also gets input token with access rights to systems.
-- Using its rights, a clock can call unpure functions, control outside world and send messages to other clocks.
-- Supervisor: this is a function that creates and tracks and restarts clocks.
-- System provices clocks for timers, ui-inputs etc. When setup, these receive user input messages etc.
-- A clock can send messages to other clocks, optionally blocking on a reply, handling replies via its inbox or not use replies.
-
-- Clocks runs as M x N threads.
-- The runtime can place clocks on different cores and processors or servers.
-
-	struct clock_xyz_state_t {
-		int timestamp
-		[xyz_record_t] recs
-	}
-
-	struct clock_xyz_message_st {
-		int timestamp
-		int mouse_x
-		int mouse_y
-		case stop: struct { int duration }
-		case on_mouse_move:
-		case on_click: struct { int button_index }
-	}
-	clock_xyz_state_t tick_clock_xyz([clock_xyz_state_t] history, clock_xyz_message_st message){
-	}
-
-You can have several clocks running in parallell, even on separate hardware. These forms separate clock circuits that are independent of eachother.
-
-- Each section on the board is part of exactly one clock circuit.
-
-Ex: Simple app, a basic command line app, have only one clock that gathers ONE input value from the command line arguments, calls some pure Floyd Script functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
+	
+	??? All OS-services are implemented as clock: you send them messages and they execute asynchronously.??? Nah, better to have blocking calls.
 
 
-The clock records a LOG of all generations of its value, in a forever-growing vector of states. In practice, those older generations are not kept or just kept for a short time.
+	- ??? Does UI_Part support several instances of VST plugin? Is plugin instance a value? Or do we make several instances of the board? When how can design know about all boards to do communication between them, for example sample-caching?
 
-
-This is how you connect wires between two different clock circuits. This is the ONLY way to send data beween clocks circuits. Use as few transformers as possible - prefer making a composite value out of smaller values and transform that as ONE signal.
-
-Transformers have settings specifying how it moves values from one clock to another. The default is that it samples the current input of the transformer. Alternatively you can get a vector of every change to the input since the last.
-
-Notice that a transformer is NOT a queue. It holds ONE value and may records its history.
-
-These are setup to one of these:
-
-1. sample-value: Make snapshot of current value. If no current value, returns none.
-
-2. get-new-writes: Get a vector with every value that has been written (including double-writes) since last read of the transformer.
-
-3. get-all-writes: Get a vector of EVERY value EVER written to the transformer. This includes double-writes. Doesn't reset the history.
-
-4. block-until-value: Block execution until a value exists in the transformer. Pops the value. If value already exists: returns immediately.
-
-
-READER modes:
-- Default: reader blocks until new value is written be writer.
-- Sample the latest value in the optocoupler, don't block.
-- Sample queue of all values since last read.
-Notice that the value can be a huge struct with all app state or just a message or a UI event etc.
-
-Notice: pure functions cannot access optocouplers. They would not be referential transparent.
-
-
-??? External clocks - these are clocks for different clients that communicate at different rates (think UI-event vs realtime output vs socket-input). Programmer uses clocks-concept to do this.
-
-
-??? Channels should be built into vsthost. Also ins to vsthost for ui param requests. This mapes vsthost a highlevel chip.
-
-State is never kept / mutated on the board - it is kept in the clock.
+	- ??? CAN ONE PART HAVE SEVERAL PATHS FOR DIFFERENT CLOCKS? VST-HOST PART?
 
 
 
@@ -394,7 +373,6 @@ Future: add job-graph for parallellising more complex jobs with dependencies.
 - parallelism: runtime can chose to use many threads to accelerate the processing. This cannot be observed in any way by the user or programmer, except program is faster. Programmer controls this using tweakers. Threading problems eliminated.
 
 ??? BIG DEAL IN GAMING: MAKING DEPENDENCY GRAPH OF JOBS TO PARALLELIZE
-
 
 
 # OTHER MOTHERBOARD FEATURES
@@ -440,7 +418,6 @@ These are settings you apply on wires.
 
 
 
-
 # MOTHERBOARD EXAMPLES
 
 ## "Halo 4"
@@ -461,7 +438,6 @@ A video game may have several clocks:
 - parameters -- separate clocks since it's undefined which thread it runs on.
 - midi input
 - transport
-
 
 
 ## Basic console app
@@ -636,10 +612,6 @@ This is a declarative file that describes the top-level structure of an app.
 
 # NOTES AND IDEAS FOR FUTURE
 
-### IDEA: FAN-IN-FAN-OUT CLOCK
-
-Has parallelism setting: increase > 1 to put on more threads with multiplex + merge. Built in supervision.
-Declarative - only settings, no code.
 
 
 ### IDEA: SUPERVISOR CLOCK
@@ -668,6 +640,8 @@ Diff and merge are important to Motherboard code to detect what changes needs to
 
 ### IDEAS
 
+- ??? The clock records a LOG of all generations of its value, in a forever-growing vector of states. In practice, those older generations are not kept or just kept for a short time. RESULT: this is not done automatically. It can be implemented as a vector in clock's state.
+
 - Add preset-containers": for S3, for local FS cache etc. Has settings. Can do static initialization and also update settings from code.
 
 - Split concept of go routine and channel / Erlang processes etc into several more specific concepts.
@@ -675,7 +649,6 @@ Diff and merge are important to Motherboard code to detect what changes needs to
 - Idea: Channels: pure code can communicate with sockets using channels. When waiting for a reply, the pure code's coroutine is paused and returned to motherboard level. Motherboard resumes coroutine when socket responds. This hides time from the pure code - sockets appear to be instantantoues + no inversion of control. ??? Still breaks rule about referenctial transparency. ### Use rules for REST-com that requires REST-commands to be referential transparent = it's enough we only hide time. ??? more?
 
 - Use golang for motherboards. Visual editor/debugger. Use FloydScript for logic. Use vec/map/seq/struct for data.
-
 
 
 ### INSIGHTS
@@ -714,4 +687,33 @@ Diff and merge are important to Motherboard code to detect what changes needs to
 			}
 		}
 	}
-	
+
+
+
+### IDEA: TRANSFORMER / OPTO-COUPLER WITH MODES
+
+
+
+- ??? This is how you connect wires between two different clock circuits. This is the ONLY way to send data beween clocks circuits. Use as few transformers as possible - prefer making a composite value out of smaller values and transform that as ONE signal.
+
+- ??? Transformers have settings specifying how it moves values from one clock to another. The default is that it samples the current input of the transformer. Alternatively you can get a vector of every change to the input since the last. Notice that a transformer is NOT a queue. It holds ONE value and may records its history.
+
+
+These are setup to one of these:
+
+1. sample-value: Make snapshot of current value. If no current value, returns none.
+
+2. get-new-writes: Get a vector with every value that has been written (including double-writes) since last read of the transformer.
+
+3. get-all-writes: Get a vector of EVERY value EVER written to the transformer. This includes double-writes. Doesn't reset the history.
+
+4. block-until-value: Block execution until a value exists in the transformer. Pops the value. If value already exists: returns immediately.
+
+
+READER modes:
+- Default: reader blocks until new value is written be writer.
+- Sample the latest value in the optocoupler, don't block.
+- Sample queue of all values since last read.
+Notice that the value can be a huge struct with all app state or just a message or a UI event etc.
+
+Notice: pure functions cannot access optocouplers. They would not be referential transparent.
