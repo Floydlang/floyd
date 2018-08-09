@@ -20,6 +20,17 @@ Floyd uses the C4 model to organize all of this. C4 model https://c4model.com/
 1. Have notation like UML for all the details.
 
 
+# PERFORMANCE
+
+Floyd is designed to make it practical to make big systems with performance better than what you get with average optimized C code.
+
+It does this by splitting the design into two different concepts:
+
+1. Encourage your logic and processing code to be simple and correct and to declare where there is opportunity to execute code independely of eachother.
+
+2. At the top level profile execution and make high-level improvements that dramatically alter how the code is executed on the available hardware -- caching things, working batches, running in thread teams, running in parallell, ordering work for different localities, memory layouts and access patterns.
+
+
 # TOP-LEVEL CONCEPTS
 
 
@@ -109,13 +120,20 @@ Dynamic instancing. Create more HW-sockets and custom parts on demand. (*)-setti
 
 ### MOTHERBOARD FEATURES
 
+The motherboard consists of a discrete number of parts connected together with wires. The wires carries messages. A message is a Floyd value, usually a an enum. The messages can carry an integer or a string or a huge value describing an entire document or database.
+
+Parts:
 - Clocks
+- States (memory)
 - Component instances (see parts library below)
 - Glue expressions, calling FLoyd functions
-- Tweaks
-- Performance probes
+- Profiling probe
 - Log probes
-- Timeout, watchdogs
+- Watchdogs
+- Pipeline part
+- Multiplexer part
+
+??? parts vs components?
 
 
 ### MOTHERBOARD PARTS LIBRARY
@@ -178,6 +196,44 @@ Expose possible parallelism of pure function, like shaders, at the code level (n
 ??? make pipeline part. https://blog.golang.org/pipelines
 
 
+### STATE
+
+This is an independant memory on the motherboard. It is used to implement a controller or mediator and often used inside clocks to give them independent state.
+???
+
+
+
+	
+	# CLOCKS
+	
+	Main-thread clock
+		Floyd GUI clock ---^
+		My GUI ---^
+	Buffer-switch clock
+		vst_instance ---^
+		My Audio Engine ---^
+	Background sample-loader clock
+	
+	
+	
+	# STATES
+	
+	Clock 1 -- main
+		Floyd GUI
+		My GUI
+		vst_instance::GUI
+	Clock 2 -- buffer-switch
+		vst_instance::buffer-switch
+		My Audio Engine
+	Clock 3 -- background loader
+		Background Sample Loading
+	
+
+
+
+
+
+
 # CLOCKS AND CONCURRENCY
 
 
@@ -234,6 +290,7 @@ Clocks are inexpensive, you can use 100.000-ands of clocks. Clocks typically run
 
 Who advances the clocks? Runtime advances a clock when it has at least one message in its inbox. Runtime settings controls how runtime prioritizes the clocks when many have waiting messages.
 
+
 ### CLOCK LIMITATIONS
 
 Cannot find assets / ports / resources — those are handed to it.
@@ -266,6 +323,12 @@ Cannot create other clocks!
 	}
 ```
 
+
+### CLOCK SYNC
+
+A clock can be synced to another clock. All posts to the inbox will be sync calls, that blocks.
+
+These types of clock still have their own state and can be used as controllers / mediators -- even when it doesnt need its own thread.
 
 
 ### Ex: Simple app
@@ -349,7 +412,15 @@ This setting allows you to process more than one message in the inbox at once. I
 
 
 
-	
+
+# IDEA: TASK DISPATCHER
+
+This part lets you queue up tasks that have dependencies between them, and it will r
+??? This only increases performance = part of optimization. Make this something you declare to expose potential for paralell task processing. Supports a stream of jobs, like a game engine does.
+
+
+# ??? OPEN ISSUES
+
 	??? All OS-services are implemented as clock: you send them messages and they execute asynchronously.??? Nah, better to have blocking calls.
 
 
