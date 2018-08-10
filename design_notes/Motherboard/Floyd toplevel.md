@@ -185,15 +185,9 @@ All signals and values use Floyd's immutable types, provided by the Floyd runtim
 This it the means of implement time / mutation / concurrency.
 
 
-### PARALLISABLE FUNCTIONS
-
-map(), fold() filter()
-
-Expose possible parallelism of pure function, like shaders, at the code level (not declarative). The supplied function must be pure.
 
 
-??? What if you want a motherboard-like setup for each document?
-??? make pipeline part. https://blog.golang.org/pipelines
+
 
 
 ### STATE
@@ -444,6 +438,56 @@ Future: add job-graph for parallellising more complex jobs with dependencies.
 - parallelism: runtime can chose to use many threads to accelerate the processing. This cannot be observed in any way by the user or programmer, except program is faster. Programmer controls this using tweakers. Threading problems eliminated.
 
 ??? BIG DEAL IN GAMING: MAKING DEPENDENCY GRAPH OF JOBS TO PARALLELIZE
+
+
+### PARALLISABLE FUNCTIONS
+
+map(), fold() filter()
+
+Expose possible parallelism of pure function, like shaders, at the code level (not declarative). The supplied function must be pure.
+
+
+??? What if you want a motherboard-like setup for each document?
+??? make pipeline part. https://blog.golang.org/pipelines
+
+
+
+### SUPERMAP FUNCTION
+
+	[int:R] supermap(tasks: [T, [int], f: R (T, [R]))
+
+This function runs a bunch of tasks with dependencies between them and waits for them all to complete.
+
+- Tasks can block.
+- Tasks cannot generate new tasks. A task *can* call supermap.
+
+Notice: supermap() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
+
+- **tasks**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The task will not be executed until those tasks have been run. The indexes are the indexes into the tasks-vector.
+
+- **f**: this is your function that processes one T and returns a result R. The function must not depend on the order in which tasks execute. When f is called, all the tasks dependency tasks have already been executed and you get their results in [R].
+
+- **result**: a vector with one element for each element in the tasks-argument. The order of the elements are undefined. The int specifies which task, the R is its result.
+
+When supermap() returns all tasks have been completed.
+
+Notice: your function f can send messages to a clock — this means another clock can start consuming results while supermap() is still running.
+
+
+??? IDEA: Make this a two-step process. First analyse tasks into an execution description. Then use that description to run the tasks.
+
+This lets you keep the execution description for next time, if tasks are the same.
+
+Also lets you inspect the execution description & improve it or create one for scratch.
+
+
+- If IO is bottleneck, try to spread out IO over time. If IO blocks is bottleneck, try to start IO ASAP.
+
+- Try to keep instructions and data in CPU caches.
+
+
+
+
 
 
 # OTHER MOTHERBOARD FEATURES
