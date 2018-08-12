@@ -2,26 +2,21 @@
 ![alt text](./floyd_logo.png "Floyd Logo")
 
 
-# FLOYD TOP-LEVEL MANUAL
+# FLOYD SYSTEMS MANUAL
 
-Floyd Script is the basic way to create logic. The code is isolated from the noise and troubles of the real world: everything is immutable and pure. Time does not advance. There is no concurrency of communication with other systems etc.
+Floyd Script is the basic way to create logic. The code is isolated from the noise and troubles of the real world: everything is immutable and pure. Time does not advance. There is no concurrency or communication with other systems, no runtime errors.
 
-Floyd toplevel is how you make software that lives in the real world, where all those things happens all the time. Floyd allows you create huge software systems spanning computers and processes, handling communication and time advancing.
+Floyd Systems is how you make software that lives in the real world, where all those things happens all the time. Floyd allows you create huge software systems spanning computers and processes, handling communication and time advancing.
 
 Floyd uses the C4 model to organize all of this. C4 model https://c4model.com/
 
 
 ### GOALS
 
-1. A high-level way to organise huge code bases and systems with many threads, processes and computer, beyond functions, classes and modules.
-2. Represent those high level concepts at the code level too, not just on whiteboards. 
-3. Automatically visualize the system in tools like profilers, code navigators, debuggers and IDEs.
-4. Visual design of the system at the top level.
-
-
-### NON-GOALS
-
-1. Have notation like UML for all the details.
+1. A high-level way to organise huge code bases and systems with many threads, processes and computers, beyond functions, classes and modules and also represent those concepts through out: at the code level, in debugger, in profiler etc.
+2. A simple and robust method for doing concurrency, communication etc.
+3. Allow extreme performance and profiling as a separate thing done ONTOP of the correct logic.
+4. Support visual design of the system.
 
 
 # PERFORMANCE
@@ -35,7 +30,12 @@ It does this by splitting the design into two different concepts:
 2. At the top level profile execution and make high-level improvements that dramatically alter how the code is executed on the available hardware -- caching things, working batches, running in thread teams, running in parallell, ordering work for different localities, memory layouts and access patterns.
 
 
-# TOP-LEVEL CONCEPTS
+# C4 CONCEPTS
+
+A complete system is organised into parts like this:
+
+
+![alt text](./floyd_systems_software_system.png "Software System")
 
 
 ### PERSON
@@ -77,49 +77,40 @@ Passive. Pure.
 	jpeg_quantizer.floyd, colortab.floyd -- implementation source files for the jpeglib
 
 
-### DIAGRAMS
+# C4 DIAGRAMS
 
+There is a set of standard diagram views for explaining and reasoning about your software:
+
+![alt text](./floyd_systems_level1_diagram.png "Software System")
 Level 1: System Context diagram
+
+
+![alt text](./floyd_systems_level2_diagram.png "Software System")
 Level 2: Container diagram
+
+
+![alt text](./floyd_systems_level3_diagram.png "Software System")
 Level 3: Component diagram
+
+![alt text](./floyd_systems_level4_diagram.png "Software System")
 Level 4: Code
+
 
 Notice: a component used in several components or a piece of code that appears in several components = appears as duplicates. The perspective is: logic dependencies. There is no diagram for showing which source files or libraries that depends on eachother.
 
 
-# MOTHERBOARD OVERVIEW
+# MOTHERBOARD
+
 ??? What if you want a motherboard-like setup for each document?
 
-The motherboard is how you implement a Floyd-based container. Other containers in your system may be implemented some other way and will be represented using a placeholder instead. The motherboard connects all code together into a product / app / executable. WORLD: The exposition between client code and the outside world. This includes sockets, file systems, messages, screens, UI.
+The motherboard is how you implement a Floyd-based container. Other containers in your system may be implemented some other way and will be represented using a proxy in the Software System.
 
+1. The motherboard connects all code together using wires into a product / app / executable using a declaration file.
+2. It completely defines: concurrency, state, communication with ourside world and runtime errors of the container. This includes sockets, file systems, messages, screens, UI. Depndency components that are unpure are also shown.
+3. Container clearly defines *all* independent *state*. All non-pure components.
+4. Control performance by balancing memory, CPU and other resources. Profile control and optimize performance of system.
 
-All time and state is modelled here, in one central place. Implicit components that are unpure are also shown.
-	
-Container clearly defines *all* independent *state*. All non-pure components.
-	
-Container instantiates its components statically.
-	
-Container defines new concurrency via clock generators.
-	
-Container inherits states and clocks from components. Exposes their clocks. A component also represents all its dependencies too (if a dependency is unsure, so is the user of it).
-	
-
-
-
-
-### RESPONSIBILITIES
-
-- Instantiate all parts of the final product and connects them together.
-- Encapsulates all time, state and mutation in the motherboard.
-- Use Floyd-script modules
-- Call C functions
-- Connect to the outside world, communicating with sockets, reading / writing files etc.
-- Profile control and optimize performance of system.
-- There are limits to how advanced logic code you can do in motherboard -- force programmer to do advanced coding in Floyd Script.
-- Handle communication
-- Handle runtime errors
-- Timeouts
-- Control performance by balancing memory, CPU and other resources.
+A motherboard is usually its own OS process. Since the motherboard is statically defined, things like new / delete of components are not possible.
 
 
 ### NON-GOALS
@@ -129,29 +120,22 @@ Container inherits states and clocks from components. Exposes their clocks. A co
 - Pure / free of side effects
 
 
-The motherboard is a declarative and statically designed. New / delete are not possible - instead collections of objects are used and addressed using ids or indexes.
+The motherboard consists of a discrete number of components connected together with wires. The wires carries messages. A message is a Floyd value, usually an enum. Whenever a value, queue element or signal is mentioned, *any* of Floyd's types can be used -- even huge multi-gigabyte nested structs or collections.
 
-A motherboard is usually its own OS process.
-
-
-
-### MOTHERBOARD FEATURES
-
-The motherboard consists of a discrete number of components connected together with wires. The wires carries messages. A message is a Floyd value, usually an enum. The messages can carry an integer or a string or a huge value describing an entire document or database.
 
 Example components:
 
-- Multiplexer part
-- Mediator component: a component written in Floyd Script that has its own state & inbox.
+- Clock component: a component written in Floyd Script that has its own state & inbox.
+- Multiplexer part: contains internal pool of clocks and distributes incoming messages to them to run in parallell.
 - Built in local FS component: Read and write files, rename directory, swap temp files
 - Built in S3 component
 - Built in socket component
 - Built in REST-component
 - Built in UI-component
 - Built in command line component: Interfaces with command line arguments / returns.
-- VST-component
+- Audio component that uses Direct X
+- VST-plugin component
 - A component written in C
-- Audio component
 
 Notice: these are all non-singletons - you can make many instances in one container
 
@@ -160,7 +144,15 @@ You can also connect wires, add tweakers and notes.
 ??? IDEA: Glue expressions, calling FLoyd functions
 
 
+### CONCURRENCY: CLOCK, STATE AND THE INBOX
+
+This it how to express time / mutation / concurrency in Floyd. For each independant state or "thread" you want in your container, you need to insert a clock-component and write its processing function.
+
+
 ### MOTHERBOARD FILE FORMAT
+
+helloworld.board
+This is a declarative file that describes the top-level structure of an app. Its contents looks like this:
 
 		my first design.mboard
 
@@ -184,88 +176,58 @@ motherboard_main()
 This is the motherboard's start function. It will find, create and and connect all resources, runtimes and other dependencies to boot up the motherboard and to do executibe decisions and balancing for the motherboard.
 
 
-### VALUES AND SIGNALS
+# CONCURRENCY AND TIME IN DETAIL
 
-All signals and values use Floyd's immutable types, provided by the Floyd runtime. Whenever a value, queue element or signal is mentioned, *any* of Floyd's types can be used -- even huge multi-gigabyte nested structs or collections.
+The goal with Floyd's concurrency model is to be:
+
+1. Simple and robust pre-made mechanisms for each concurrency needs. Avoid general-purpose!
+2. Composable
+3. Allow you to make a static design of your concurrency.
+4. Separate out parallellism into a separate mechanism.
+5. Avoid problematic constructs like threads, locks, callback hell, nested futures and await/asyc -- dead ends of concurrecy.
+6. Supply means to expose execution parallellism for the separate parallisation features.
+7. Let you control/tune how many threads and cores to use for what parts of the system independantly of the code.
+
+The building block for this is the actor (similar to Erlang's or Elexir's processes) - using an inbox, a state value and a function.
+
+The actor represents a little standalone process that listens to messages from other actors. Those actors may run in the same or other hardware threads or green threads or even synchronously.
 
 
-### CLOCK, STATE AND THE INBOX
+When an actor receieves a message, its function is called (now or later) with that message and the actor's previous state. The actor does some work - something simple or a big call tree and it ends by returning its new state, which completes the message handling.
 
-This it the how to express time / mutation / concurrency.
+The actor function may be called synchronously when client posts it a message, or it may be run on a green thread, a hardware thread etc. It may be run the next hardware cycle or at some later time.
+
+This is the only way to keep state in Floyd.
 
 
-
-# CLOCK, STATE and THE INBOX -- THE DETAILS
-
-A clock allows the code to block and other code can still execute (like a thread) and it allows the code to run on another hardware thread.
-
-States are independant memory on the motherboard. It is used to implement a controller or mediator and often used inside clocks to give them independent state.
-
-Every state needs to be attached to a clock.
+The inbox has two purposes:
 	
-Inboxes have two purposes:
-	
-1. Allow component to *wait* for external messages.
+1. Allow component to *wait* for external messages using the select() call.
 	
 2. Move messages between different clock-bases -- they are thread safe and atomic.
 
+You can always post a message to *any* clock-component, even when it runs on another clock.
 
-### GOALS
-
-- Small set of explicit and focused and restricted tools. Avoid general-purpose!
-- No explicit instantiation of processes via code — they are declared statically inside a top-level process. All dynamic allocation of processes are done implicitly via pmap(), via build-in parallelism-setting on process.
-- Composable
-- Handle blocking, threading, concurrency, parallelism, async, distributed into OS processes, machines.
-- Declarative and easy to understand.
-- No DSL like nested completions -- all code should be regular code. No callback, no inversion of control or futures.
-- No threads or mutaxes -- operate at a higher level where it's possible to reason about concurrency.
-- OS threading hidden.
-- Allow decoupling system into separate clocks to allow for performance improvements via parallellism.
-
-
-### NON-GOALS
-
-- Detailed control over individual OS threads
-- Express parallelism to improve performance
-
-
-### CLOCKS
 
 A clock is statically instantiated in a motherboard -- you cannot allocate them at runtime.
 
-Uses a mutable process function to handle messages in inbox. Function returns when it has handled its message.
+The actor function CAN chose to have several selects() which makes it work as a small state machine.
 
-The clock function is called once per input value, then returns when that value has been processed. It CAN chose to block on further input values, which makes it a small state machine.
-
-Floyd uses a simple way to model concurreny, threading and timing losely based on the Erlangs processes, called a "Clock".
-
-A clock has:
-	1. a function
-	2. an inbox of 0...any values. This is an input queue with values. The values can be big objects or primitives.
-	3. an address, unique in the worl
-	4. a previous-state value
-	5. Its own address space
-
-
-Clients send values into a clocks input queue using its address. At some world-time, the clock's function will be called with the first value in the queue and the clock's previous-state. When the clock function returns, it provides the next current-value. Only the runtime can call the clock-function.
-
-Clocks consume messages one at a time, in series.
-
-Clocks tracks their own time separately from other clocks in the system.
+The actors cannot change any other state than its own, excep sending messages to other actors or call unpure functions.
+A clock can send messages to other clocks, optionally blocking on a reply, handling replies via its inbox or not use replies.
 
 The clock's function is unpure. The function can call OS-function, block on writes to disk, use sockets etc. Clocks needs to take all runtimes they require as arguments. Clock function also gets input token with access rights to systems.
-
-A clock can send messages to other clocks, optionally blocking on a reply, handling replies via its inbox or not use replies.
 
 The runtime can place clocks on different cores and processors or servers. You can have several clocks running in parallell, even on separate hardware. These forms separate clock circuits that are independent of eachother.
 
 Clocks are inexpensive, you can use 100.000-ands of clocks. Clocks typically runs as M x N threads. They may be run from the main thread, a thread team or cooperatively.
 
+Who decides when to advances the clocks? Runtime advances a clock when it has at least one message in its inbox. Runtime settings controls how runtime prioritizes the clocks when many have waiting messages.
 
-Who advances the clocks? Runtime advances a clock when it has at least one message in its inbox. Runtime settings controls how runtime prioritizes the clocks when many have waiting messages.
+An actor can be synced to another actor's clock. All posts to the inbox will then be synchrnous and blocking calls. These types of clock still have their own state and can be used as controllers / mediators -- even when it doesnt need its own thread.
 
 
-### CLOCK LIMITATIONS
+### LIMITATIONS
 
 Cannot find assets / ports / resources — those are handed to it.
 Cannot go find resources, processes etc. These must be handed to it.
@@ -274,35 +236,6 @@ Cannot create other clocks!
 
 - ??? IDEA: Supervisors: this is a function that creates and tracks and restarts clocks.
 - ??? System provices clocks for timers, ui-inputs etc. When setup, these receive user input messages etc.
-
-
-
-### STATIC DEFINITION
-
-```
-	struct clock_xyz_state_t {
-		int timestamp
-		[xyz_record_t] recs
-	}
-
-	struct clock_xyz_message_st {
-		int timestamp
-		int mouse_x
-		int mouse_y
-		case stop: struct { int duration }
-		case on_mouse_move:
-		case on_click: struct { int button_index }
-	}
-	clock_xyz_state_t tick_clock_xyz([clock_xyz_state_t] history, clock_xyz_message_st message){
-	}
-```
-
-
-### CLOCK SYNC
-
-A clock can be synced to another clock. All posts to the inbox will be sync calls, that blocks.
-
-These types of clock still have their own state and can be used as controllers / mediators -- even when it doesnt need its own thread.
 
 
 
@@ -330,7 +263,28 @@ These types of clock still have their own state and can be used as controllers /
 20. Fan-in fan-out
 21. low-priority, long running background thread
 22. Processing pipeline with many stages
-23. 
+
+
+### STATIC DEFINITION
+
+```
+	struct clock_xyz_state_t {
+		int timestamp
+		[xyz_record_t] recs
+	}
+
+	struct clock_xyz_message_st {
+		int timestamp
+		int mouse_x
+		int mouse_y
+		case stop: struct { int duration }
+		case on_mouse_move:
+		case on_click: struct { int button_index }
+	}
+	clock_xyz_state_t tick_clock_xyz([clock_xyz_state_t] history, clock_xyz_message_st message){
+	}
+```
+
 
 ### EXAMPLE CLOCK
 
@@ -371,104 +325,27 @@ These types of clock still have their own state and can be used as controllers /
 
 This is a basic command line app, have only one clock that gathers ONE input value from the command line arguments, calls some pure Floyd Script functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
 
-### Ex: VST-plugin
-
-
-
-![alt text](./floyd_toplevel.png "VST-plugin")
-
-
-
-# PARALLELISM
-
-They are not for straight parallelism (like a graphics shader).
-Accelerating computations (parallelism) is done using tweaks — a separate mechanism. It supports moving computations in time (lazy, eager, caching) and running work in parallell.
-Often clocks are introduced in a system to expose oppotunity for parallelism.
-
-
-Making software faster by using distributing work to all CPUs and cores.
-
-Future: add job-graph for parallellising more complex jobs with dependencies.
-
-- parallelism: runtime can chose to use many threads to accelerate the processing. This cannot be observed in any way by the user or programmer, except program is faster. Programmer controls this using tweakers. Threading problems eliminated.
-
-??? BIG DEAL IN GAMING: MAKING DEPENDENCY GRAPH OF JOBS TO PARALLELIZE
-
-
-### PARALLISABLE FUNCTIONS
-
-map(), fold() filter()
-
-Expose possible parallelism of pure function, like shaders, at the code level (not declarative). The supplied function must be pure.
-
-
-??? make pipeline part. https://blog.golang.org/pipelines
-
-
-### SUPERMAP FUNCTION
-
-	[int:R] supermap(tasks: [T, [int], f: R (T, [R]))
-
-This function runs a bunch of tasks with dependencies between them and waits for them all to complete.
-
-- Tasks can block.
-- Tasks cannot generate new tasks. A task *can* call supermap.
-
-Notice: supermap() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
-
-- **tasks**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The task will not be executed until those tasks have been run. The indexes are the indexes into the tasks-vector.
-
-- **f**: this is your function that processes one T and returns a result R. The function must not depend on the order in which tasks execute. When f is called, all the tasks dependency tasks have already been executed and you get their results in [R].
-
-- **result**: a vector with one element for each element in the tasks-argument. The order of the elements are undefined. The int specifies which task, the R is its result.
-
-When supermap() returns all tasks have been completed.
-
-Notice: your function f can send messages to a clock — this means another clock can start consuming results while supermap() is still running.
-
-
-??? IDEA: Make this a two-step process. First analyse tasks into an execution description. Then use that description to run the tasks.
-
-This lets you keep the execution description for next time, if tasks are the same.
-
-Also lets you inspect the execution description & improve it or create one for scratch.
-
-
-- If IO is bottleneck, try to spread out IO over time. If IO blocks is bottleneck, try to start IO ASAP.
-
-- Try to keep instructions and data in CPU caches.
-
-
-
-
-
-
-
-
-# helloworld.board
-This is a declarative file that describes the top-level structure of an app.
-
-
 
 
 # THE FILE SYSTEM PART
 
+All file system functions are blocking. If you want to do something else while waiting, run the file system calls in a separate clock. There are no futures, callbacks, async / await etc. It is very easy to write a function that does lots of processing and conditional file system calls etc and run it concurrently with other things.
+
 ??? Simple file API
-		file_handle open_fileread(string path) unpure
-		file_handle make_file(string path) unpure
-		void close_file(file_handle h) unpure
+	file_handle open_fileread(string path) unpure
+	file_handle make_file(string path) unpure
+	void close_file(file_handle h) unpure
 
-		vec<ubyte> v = readfile(file_handle h, int start = 0, int size = 100) unpure
-		delete_fsnode(string path) unpure
+	vec<ubyte> v = readfile(file_handle h, int start = 0, int size = 100) unpure
+	delete_fsnode(string path) unpure
 
-		make_dir(string path, string name) unpure
-		make_file(string path, string name) unpure
+	make_dir(string path, string name) unpure
+	make_file(string path, string name) unpure
 
 
-# THE REST PART
+# THE REST-API PART
 
 ??? TBD
-
 
 
 
@@ -540,40 +417,17 @@ These are settings you apply on wires.
 
 
 
-# MOTHERBOARD EXAMPLES
-
-## "Halo 4"
-A video game may have several clocks:
-
-- UI event loop clock
-- Prefetch assets clock
-- World-simulation / physics clock
-- Rendering pass 1 clock
-- Commit to OpenGL clock
-- Audio streaming clock
+# MORE EXAMPLES
 
 
-## VST-plug
+### Ex: VST-plugin
 
-- process() callback
-- main ui()
-- parameters -- separate clocks since it's undefined which thread it runs on.
-- midi input
-- transport
+??? example Software System diagram.
+
+![alt text](./floyd_systems_vst.png "VST-plugin")
 
 
-# Basic console app
-- main() one clock only.
-
-
-# Instagram app
-- main ui thread()
-- rendering / scaling clock
-- server comm clock
-
-
-
-# VST Plug -- my_vst_plug.board
+Source file: my_vst_plug.board
 
 		//	IMPORTED FROM GUI
 		struct uievent {
@@ -709,6 +563,92 @@ A video game may have several clocks:
 				}
 			
 			]
+
+
+
+## Destiny game
+A video game may have several clocks:
+
+- UI event loop clock
+- Prefetch assets clock
+- World-simulation / physics clock
+- Rendering pass 1 clock
+- Commit to OpenGL clock
+- Audio streaming clock
+
+
+# Basic console app
+- main() one clock only.
+
+
+# Instagram app
+- main ui thread()
+- rendering / scaling clock
+- server comm clock
+
+
+
+
+
+
+# PARALLELISM
+
+They are not for straight parallelism (like a graphics shader).
+Accelerating computations (parallelism) is done using tweaks — a separate mechanism. It supports moving computations in time (lazy, eager, caching) and running work in parallell.
+Often clocks are introduced in a system to expose oppotunity for parallelism.
+
+
+Making software faster by using distributing work to all CPUs and cores.
+
+Future: add job-graph for parallellising more complex jobs with dependencies.
+
+- parallelism: runtime can chose to use many threads to accelerate the processing. This cannot be observed in any way by the user or programmer, except program is faster. Programmer controls this using tweakers. Threading problems eliminated.
+
+??? BIG DEAL IN GAMING: MAKING DEPENDENCY GRAPH OF JOBS TO PARALLELIZE
+
+
+### PARALLISABLE FUNCTIONS
+
+map(), fold() filter()
+
+Expose possible parallelism of pure function, like shaders, at the code level (not declarative). The supplied function must be pure.
+
+
+??? make pipeline part. https://blog.golang.org/pipelines
+
+
+### SUPERMAP FUNCTION
+
+	[int:R] supermap(tasks: [T, [int], f: R (T, [R]))
+
+This function runs a bunch of tasks with dependencies between them and waits for them all to complete.
+
+- Tasks can block.
+- Tasks cannot generate new tasks. A task *can* call supermap.
+
+Notice: supermap() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
+
+- **tasks**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The task will not be executed until those tasks have been run. The indexes are the indexes into the tasks-vector.
+
+- **f**: this is your function that processes one T and returns a result R. The function must not depend on the order in which tasks execute. When f is called, all the tasks dependency tasks have already been executed and you get their results in [R].
+
+- **result**: a vector with one element for each element in the tasks-argument. The order of the elements are undefined. The int specifies which task, the R is its result.
+
+When supermap() returns all tasks have been completed.
+
+Notice: your function f can send messages to a clock — this means another clock can start consuming results while supermap() is still running.
+
+
+??? IDEA: Make this a two-step process. First analyse tasks into an execution description. Then use that description to run the tasks.
+
+This lets you keep the execution description for next time, if tasks are the same.
+
+Also lets you inspect the execution description & improve it or create one for scratch.
+
+
+- If IO is bottleneck, try to spread out IO over time. If IO blocks is bottleneck, try to start IO ASAP.
+
+- Try to keep instructions and data in CPU caches.
 
 
 
