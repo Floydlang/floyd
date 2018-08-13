@@ -1,4 +1,4 @@
-<img src="floyd_logo.png" alt="drawing" width="600px"/>
+	<img src="floyd_logo.png" alt="drawing" width="600px"/>
 
 # FLOYD SYSTEMS MANUAL
 
@@ -35,7 +35,9 @@ It is also simple to introduce concurrency to create more opportunities to run c
 A complete system is organised into parts like this:
 
 
-<img src="floyd_systems_software_system.png" alt="drawing" width="600px"/>
+	<img src="floyd_systems_software_system.png" alt="drawing" width="600px"/>
+
+![alt text](./floyd_systems_software_system.png)
 
 
 ### PERSON
@@ -83,24 +85,28 @@ Classes. Instance diagram. Examples. Passive. Pure.
 There is a set of standard diagram views for explaining and reasoning about your software:
 
 
-<img src="floyd_systems_level1_diagram.png" alt="drawing" width="600px"/>
+	<img src="floyd_systems_level1_diagram.png" alt="drawing" width="600px"/>
+![alt text](./floyd_systems_level1_diagram.png)
 
 Above, level 1: System Context diagram
 
 
 
-<img src="floyd_systems_level2_diagram.png" alt="drawing" width="600px"/>
+	<img src="floyd_systems_level2_diagram.png" alt="drawing" width="600px"/>
+![alt text](./floyd_systems_level2_diagram.png)
 
 Above, level 2: Container diagram
 
 
 
-<img src="floyd_systems_level3_diagram.png" alt="drawing" width="600px"/>
+	<img src="floyd_systems_level3_diagram.png" alt="drawing" width="600px"/>
+![alt text](./floyd_systems_level3_diagram.png)
 
 Above, level 3: Component diagram
 
 
-<img src="floyd_systems_level4_diagram.png" alt="drawing" width="600px"/>
+	<img src="floyd_systems_level4_diagram.png" alt="drawing" width="600px"/>
+![alt text](./floyd_systems_level4_diagram.png)
 
 Above, level 4: Code
 
@@ -110,26 +116,19 @@ Notice: a component used in several containers or a piece of code that appears i
 
 # ABOUT CONTAINERS
 
-Containers are how you make a mobile app or server, by writing code, stringning together existing components and deciding how to relate to the world around the container. There are often other containers in your system, for example a server for your mobile game. Containers may be implemented some other way but should still be represented in Floyd Systems using a proxy.
+Containers are how you make a mobile app or server. By writing code, stringing together existing components and deciding how to relate to the world around the container. There are often other, sibling containers in your system, for example a server for your mobile game. Containers may be implemented some other way but should still be represented in Floyd Systems, in this case by using a proxy.
 
-1. The container connects components together using wires into a product / app / executable using a declaration file. Wires carry messages, which is a Floyd value and typically an enum. Notice that the message can carry *any* of Floyd's types -- even huge multi-gigabyte nested structs or collections. Sincce they are immutable they can be passed around efficiently (internally using their ID or hardware address).
+The container connects components together using wires using a declaration file. Wires carry messages, which is a Floyd value and typically an enum. Notice that the message can carry *any* of Floyd's types -- even huge multi-gigabyte nested structs or collections. Sincce they are immutable they can be passed around efficiently (internally this is done using their ID or hardware address).
 
-2. It completely defines: concurrency, state, communication with ourside world and runtime errors of the container. This includes sockets, file systems, messages, screens, UI. Depndency components that are unpure are also shown. WHen you design a container the focus is on the unpure components.
+The container completely defines: concurrency, state, communication with ourside world and runtime errors of the container. This includes sockets, file systems, messages, screens, UI.
 
-3. Container clearly defines *all* independent *state*. All non-pure components.
+When you design a container the focus is on the unpure components. Components on which your used components depend upon are automatically shown too, if they are unpure. This makes *all* unpure components visible in the same view -- no unpureness goes on anywhere out of sight.
 
-4. Control performance by balancing memory, CPU and other resources. Profile control and optimize performance of system.
+Probes and tweakers are added ontop of a design. They allow you to augument a design with logging, profiling, breakpoints and do advanced performance optimizations, all without altering the code or design itself. The tweakers cannot affect the behaviour of the logic, only timing and hardware utilisation etc.
 
 A container is typically run as its own OS process.
 
 ??? Give separate names to unpure component vs pure component. Only unpure components are important when designing the container.
-
-
-NON-GOALS:
-
-- Be reusable.
-- To be composable
-- Pure / free of side effects
 
 
 Example of components you drop into your container:
@@ -148,48 +147,49 @@ Example of components you drop into your container:
 
 Notice: these components are all non-singletons - you can make many instances in one container
 
-Appart from adding components and wiring them together, you can also add tweakers and notes.
-
 ??? IDEA: Glue expressions, calling FLoyd functions
 ??? What if you want a container-like setup for each "document"? Allow making sub-container that can be instantiated in a container? Or a tree of stuff inside a container.
 
 
-# ABOUT PROBES AND TWEAKERS
+**NON-GOALS**
 
-Probes and tweakers are added ontop of a design. They allow you to augument a design with logging, profiling, breakpoints and do advanced performance optimizations, all without altering the code or design itself. The tweakers cannot affect the behaviour of the logic, only timing and hardware utilisation etc.
+- Be reusable.
+- To be composable
+- Pure / free of side effects
 
 
 
 # ABOUT CONCURRENCY AND TIME IN DETAIL
 
-This it important. This is how to express time / mutation / concurrency in Floyd. For each independant state or "thread" you want in your container, you need to insert an Actor component and write its processing function.
-CONCURRENCY: ACTOR, CLOCK, INBOX AND STATE
+This section describes how to express time / mutation / concurrency in Floyd. These things are related and they are all setup at the top level of the container. This is the main **purpose** of the container.
+
+The goal with Floyd's concurrency model is to be:
+
+1. Simple and robust pre-made mechanisms for real-world concurrency need. Avoid general-purpose primitives.
+2. Composable.
+3. Allow you to make a static design of your container and its concurrency and state.
+4. Separate out parallelism into a separate mechanism.
+5. Avoid problematic constructs like threads, locks, callback hell, nested futures and await/async -- dead ends of concurrency.
+6. Let you control/tune how many threads and cores to use for what parts of the system, independantly of the code.
 
 Inspirations for Floyd's concurrency model are CSP, Erlang, Go routies and channels and Clojure Core.Async.
 
 
-The goal with Floyd's concurrency model is to be:
+ACTORS: INBOX, STATE, FUNCTION
 
-1. Simple and robust pre-made mechanisms for each concurrency needs. Avoid general-purpose!
-2. Composable
-3. Allow you to make a static design of your concurrency.
-4. Separate out parallelism into a separate mechanism.
-5. Avoid problematic constructs like threads, locks, callback hell, nested futures and await/asyc -- dead ends of concurrecy.
-6. Supply means to expose execution parallelism for the separate parallisation features.
-7. Let you control/tune how many threads and cores to use for what parts of the system independantly of the code.
-
-The building block for this is the actor (similar to Erlang's or Elexir's processes) - using an inbox, a state value and a function.
+For each independant state or "thread" you want in your container, you need to insert an Actor component. You need to write its processing function and define its mutable state. An actor receives messages via its inbox. The inbox is threadsafe and it's THE way to communicate across actors.
 
 The actor represents a little standalone process that listens to messages from other actors. Those actors may run in the same or other hardware threads or green threads or even synchronously.
 
-
-When an actor receieves a message, its function is called (now or later) with that message and the actor's previous state. The actor does some work - something simple or a big call tree and it ends by returning its new state, which completes the message handling.
+When an actor receieves a message in its inbox, its function is called (now or soon) with that message and the actor's previous state. The actor does some work - something simple or a maybe call a big call tree and it ends by returning its new state, which completes the message handling.
 
 The actor function may be called synchronously when client posts it a message, or it may be run on a green thread, a hardware thread etc. It may be run the next hardware cycle or at some later time.
 
-This is the only way to keep state in Floyd.
 
-- Synchronization points between systems (state or concurrent) always breaks composition. Move these to top level of container.
+**Actors is the only way to keep state in Floyd.**
+
+
+Insight: synchronization points between systems (state or concurrent) always breaks composition. Move these to top level of container.
 
 
 The inbox has two purposes:
@@ -200,17 +200,16 @@ The inbox has two purposes:
 
 You can always post a message to *any* clock-component, even when it runs on another clock.
 
-
 A clock is statically instantiated in a container -- you cannot allocate them at runtime.
 
-The actor function CAN chose to have several selects() which makes it work as a small state machine.
+The actor function CAN chose to have several select()-statements which makes it work as a small state machine.
 
 The actors cannot change any other state than its own, excep sending messages to other actors or call unpure functions.
 A clock can send messages to other clocks, optionally blocking on a reply, handling replies via its inbox or not use replies.
 
 The clock's function is unpure. The function can call OS-function, block on writes to disk, use sockets etc. Clocks needs to take all runtimes they require as arguments. Clock function also gets input token with access rights to systems.
 
-The runtime can place clocks on different cores and processors or servers. You can have several clocks running in parallel, even on separate hardware. These forms separate clock circuits that are independent of eachother.
+The runtime can chose to place clocks on different cores and processors or servers. You can have several clocks running in parallel, even on separate hardware. These forms separate clock circuits that are independent of eachother. You have control over this via tweakers.
 
 Clocks are inexpensive, you can use 100.000-ands of clocks. Clocks typically runs as M x N threads. They may be run from the main thread, a thread team or cooperatively.
 
@@ -232,7 +231,8 @@ ACTOR LIMITATIONS:
 
 ### GAIN PERFORMANCE VIA CONCURRENCY
 
-Sometimes we introduce concurreny to allow parallelism: multithreading a game engine is taking a non-concurrent design and making it concurrent to improve throughput. This is different to using concurrency to model real-world concurrency like UI vs background cloud com vs realtime audio processing. Maybe have different concepts for this?
+Sometimes we introduce concurreny to make more parallelism possible: multithreading a game engine is taking a non-concurrent design and making it concurrent to be able to improve throughput by running many tasks in parallel. This is different to using concurrency to model real-world concurrency like UI vs background cloud com vs realtime audio processing.
+
 
 
 ### CONCURRENCY SCENARIOS
@@ -356,7 +356,6 @@ This is the container's start function. It will find, create and and connect all
 
 
 
-
 ### COMMAND LINE COMPONENT REFERENCE
 
 ??? TBD
@@ -377,7 +376,6 @@ This is the container's start function. It will find, create and and connect all
 
 
 ### PROFILE PROBE REFERENCE
-
 
 
 
