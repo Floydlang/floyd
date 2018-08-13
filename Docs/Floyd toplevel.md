@@ -4,7 +4,7 @@
 
 Floyd Script is the basic way to create logic. The code is isolated from the noise and troubles of the real world: everything is immutable and pure. Time does not advance. There is no concurrency or communication with other systems, no runtime errors.
 
-Floyd Systems is how you make software that lives in the real world, where all those things happens all the time. Floyd allows you create huge software systems spanning computers and processes, handling communication and time advancing.
+Floyd Systems is how you make software that lives in the real world, where all those things happens all the time. Floyd allows you create huge, robust software systems that you can reason about, spanning computers and processes, handling communication and time advancing and faults.
 
 Floyd uses the C4 model to organize all of this. C4 model https://c4model.com/
 
@@ -14,7 +14,7 @@ Floyd uses the C4 model to organize all of this. C4 model https://c4model.com/
 1. A high-level way to organise huge code bases and systems with many threads, processes and computers, beyond functions, classes and modules and also represent those concepts through out: at the code level, in debugger, in profiler etc.
 2. A simple and robust method for doing concurrency, communication etc.
 3. Allow extreme performance and profiling as a separate thing done ONTOP of the correct logic.
-4. Support visual design of the system.
+4. Support nextgen visual programming and interactions.
 
 
 # ABOUT PERFORMANCE
@@ -25,9 +25,9 @@ It does this by splitting the design into two different concepts:
 
 1. Encourage your logic and processing code to be simple and correct and to declare where there is opportunity to execute code independely of eachother.
 
-2. At the top level profile execution and make high-level improvements that dramatically alter how the code is *generated* and executed to run on the available hardware. Caching things, working batches, running in parallel, ordering work for different localities, memory layouts and access patterns.
+2. At the top level, profile execution and make high-level improvements that dramatically alter how the code is *generated* and executed to run on the available hardware. Caching things, working in batches, running in parallel, ordering work for different localities, memory layouts and access patterns.
 
-It is also simple to introduce concurrency to expose more opportunities to run in parallel.
+It is also simple to introduce concurrency to create more opportunities to run computations in parallel.
 
 
 # ABOUT C4 CONCEPTS
@@ -53,23 +53,21 @@ Floyd file: **software-system.floyd**
 ### CONTAINER
 
 A container represents something that hosts code or data. A container is something that needs to be running in order for the overall software system to work.
-Mobile app, Server-side web application, Client-side web application, Microservice
+Mobile app, Server-side web application, Client-side web application, a microservice are all examples of containers.
 
 This is usually a single OS-process, with mutation, time, several threads. It looks for resources and knows how to string things together inside the container.
 
+The container wires together a bunch of unpure components.
 
 ### COMPONENT
 
-Grouping of related functionality encapsulated behind a well-defined interface. Executes in one process - process agnostic. JPEGLib, JSON lib. Custom component for syncing with your server.
+Grouping of related functionality encapsulated behind a well-defined interface. Like a software integrated circuit or a code library. Does not span processes. JPEG Librart, JSON lib. Custom component for syncing with your server. Amazon S3 library, socket library.
 
 There are two types of components: pure and unpure.
 
 - Pure components have no side effects, like a ZIP library or a matrix-math library. They are also passive.
+
 - Unpure components may be active (detecting mouse clicks and calling your code) and may affect the world around you or give different results for each call. get_time() and get_mouse_pos(), on_mouse_click(). read_directory_elements().
-
-	jpeglib.component.floyd -- declares a component, including docs and exposed API
-
-Requires using container to do mutation / concurrency.
 
 
 ### CODE
@@ -112,30 +110,32 @@ Notice: a component used in several containers or a piece of code that appears i
 
 # ABOUT CONTAINERS
 
-Containers are how you make an app or server, by writing code, stringning together existing components and deciding how to relate to the world around the container. Other containers in your system may be implemented some other way and will be represented using a proxy in the Software System.
+Containers are how you make a mobile app or server, by writing code, stringning together existing components and deciding how to relate to the world around the container. There are often other containers in your system, for example a server for your mobile game. Containers may be implemented some other way but should still be represented in Floyd Systems using a proxy.
 
-1. The container connects all code together using wires into a product / app / executable using a declaration file.
-2. It completely defines: concurrency, state, communication with ourside world and runtime errors of the container. This includes sockets, file systems, messages, screens, UI. Depndency components that are unpure are also shown.
+1. The container connects components together using wires into a product / app / executable using a declaration file. Wires carry messages, which is a Floyd value and typically an enum. Notice that the message can carry *any* of Floyd's types -- even huge multi-gigabyte nested structs or collections. Sincce they are immutable they can be passed around efficiently (internally using their ID or hardware address).
+
+2. It completely defines: concurrency, state, communication with ourside world and runtime errors of the container. This includes sockets, file systems, messages, screens, UI. Depndency components that are unpure are also shown. WHen you design a container the focus is on the unpure components.
+
 3. Container clearly defines *all* independent *state*. All non-pure components.
+
 4. Control performance by balancing memory, CPU and other resources. Profile control and optimize performance of system.
 
-A container is usually its own OS process. Since the container is statically defined, things like new / delete of components are not possible.
+A container is typically run as its own OS process.
+
+??? Give separate names to unpure component vs pure component. Only unpure components are important when designing the container.
 
 
-### NON-GOALS
+NON-GOALS:
 
 - Be reusable.
 - To be composable
 - Pure / free of side effects
 
 
-The container consists of a discrete number of components connected together with wires. The wires carries messages. A message is a Floyd value, usually an enum. Whenever a value, queue element or signal is mentioned, *any* of Floyd's types can be used -- even huge multi-gigabyte nested structs or collections.
+Example of components you drop into your container:
 
-
-Example components:
-
-- Clock component: a component written in Floyd Script that has its own state & inbox.
-- Multiplexer part: contains internal pool of clocks and distributes incoming messages to them to run in parallel.
+- Actor component: an unure component written in Floyd Script that has its own state & inbox.
+- Multiplexer componenet: contains internal pool of clocks and distributes incoming messages to them to run messages in parallel.
 - Built in local FS component: Read and write files, rename directory, swap temp files
 - Built in S3 component
 - Built in socket component
@@ -146,21 +146,18 @@ Example components:
 - VST-plugin component
 - A component written in C
 
-Notice: these are all non-singletons - you can make many instances in one container
+Notice: these components are all non-singletons - you can make many instances in one container
 
-You can also connect wires, add tweakers and notes.
+Appart from adding components and wiring them together, you can also add tweakers and notes.
 
 ??? IDEA: Glue expressions, calling FLoyd functions
-??? What if you want a container-like setup for each document?
-
-
-### CONCURRENCY: ACTOR, CLOCK, INBOX AND STATE
-
-This it how to express time / mutation / concurrency in Floyd. For each independant state or "thread" you want in your container, you need to insert a clock-component and write its processing function.
-
+??? What if you want a container-like setup for each "document"? Allow making sub-container that can be instantiated in a container? Or a tree of stuff inside a container.
 
 
 # ABOUT CONCURRENCY AND TIME IN DETAIL
+
+This it important. This is how to express time / mutation / concurrency in Floyd. For each independant state or "thread" you want in your container, you need to insert an Actor component and write its processing function.
+CONCURRENCY: ACTOR, CLOCK, INBOX AND STATE
 
 Inspirations for Floyd's concurrency model are CSP, Erlang, Go routies and channels and Clojure Core.Async.
 
@@ -187,6 +184,7 @@ The actor function may be called synchronously when client posts it a message, o
 This is the only way to keep state in Floyd.
 
 - Synchronization points between systems (state or concurrent) always breaks composition. Move these to top level of container.
+
 
 The inbox has two purposes:
 	
@@ -215,9 +213,10 @@ Who decides when to advances the clocks? Runtime advances a clock when it has at
 An actor can be synced to another actor's clock. All posts to the inbox will then be synchrnous and blocking calls. These types of clock still have their own state and can be used as controllers / mediators -- even when it doesnt need its own thread.
 
 
-### LIMITATIONS
 
-- Cannot find assets / ports / resources — those are handed to it.
+ACTOR LIMITATIONS:
+
+- Cannot find assets / ports / resources — those are handed to it via the container's wiring.
 - Cannot go find resources, processes etc. These must be handed to it.
 - Clocks cannot be created or deleted at runtime.
 - Cannot create other clocks!
@@ -226,35 +225,33 @@ An actor can be synced to another actor's clock. All posts to the inbox will the
 
 
 
-### CONCURRENCY SCENARIOS
-
-1. Move data between concurrent modules (instead of atomic operation / queue / mutex)
-2. Do blocking call, like REST request.
-3. Start non-blocking lambda operations - referential transparent - like calculating high-quality image in the background.
-4. Start non-blocking unpure background calculation (auto save doc)
-5. Start lengthy operation, non-blocking using passive future
-6. Run process concurrently, like analyze game world to prefetch assets
-7. handle requests from OS quickly, like call to audio buffer switch process()
-8. Implement a generator / seq / iterator for lazy calculation during foreach
-9. Enable parallelisation by hiding function behind channel (allows it to be parallelised)
-10. Coroutines let you time slice heavy computation so that it runs a little bit in each frame.
-11. Concept: State-less lambda. Takes time but is referential transparent. These can be callable from pure code. Not true!! This introduces cow time.
-12. Model a process, like Erlang. UI process, realtime audio process etc.
-13. Supply a service that runs all the time, like GO netpoller. Hmm. Maybe and audio thread works like this too?
-14. Wait on timer
-15. Wait on message from socket
-16. Send message, await reply
-17. Make sequence of calls, block on each
-18. Simple command line app, with only one clock.
-19. Small server
-20. Fan-in fan-out
-21. low-priority, long running background thread
-22. Processing pipeline with many stages
-
-
 ### GAIN PERFORMANCE VIA CONCURRENCY
 
 Sometimes we introduce concurreny to allow parallelism: multithreading a game engine is taking a non-concurrent design and making it concurrent to improve throughput. This is different to using concurrency to model real-world concurrency like UI vs background cloud com vs realtime audio processing. Maybe have different concepts for this?
+
+
+
+
+
+
+### CONCURRENCY SCENARIOS
+
+
+
+|#	|Need		|Traditional	|Floyd
+|---	|---				|---		|---
+|1	| Move data between concurrent modules 		| Mutexes, locks, atomic queues,  | Post message to actor inbox
+|2	| Make a blocking call, like a REST request	| Block entire thread / nested callbacks / futures / async-await | Just block. Make call from Actor to keep caller running
+|3	| Start non-blocking lambda operations - referential transparent - like calculating high-quality image in the background.| Use worker thread with a task queue | Use actor, use data directly
+|4	| Start non-blocking unpure background calculation (auto save doc) | Copy document, create worker thread | Use actor, use data directly
+|5	| Run process concurrently, like analyze game world to prefetch assets | Manually synchronize all shared data, use separate thread | Use actor -- data is immutable
+|6	| Handle requests from OS quickly, like call to audio buffer switch process() | Use callback function | Use actor and set its clock to sync to clock of buffer switch
+|7	| Improve performance using concurrency + parallelism / fan-in-fan-out / processing pipeline | Split work into small tasks that are independant, queue them to a thread team, resolve dependencies some how, use end-fence with completetionnotification | call map() or supermap() from an Actor.
+|8	| Spread heavy work across time (do some processing each game frame) | Use coroutine or thread that sleeps after doing some work. Wake it next frame. | Actor does work. It calls select() inside a loop to wait on next trigger to continue work.
+|9	| Do work regularly, independant of other threads (like a timer interrupt) | Call timer with callback / make thread that sleeps on event | Use Actor that calls post_at_time(now() + 100) to itself
+|10	| Small server | Write loop that listens to socket | Use Actor that waits for messages
+
+
 
 
 
@@ -276,6 +273,7 @@ This is a basic command line app, have only one clock that gathers ONE input val
 
 ## DESTINY GAME
 
+
 ??? TBD
 
 A video game may have several clocks:
@@ -286,6 +284,7 @@ A video game may have several clocks:
 - Rendering pass 1 clock
 - Commit to OpenGL clock
 - Audio streaming clock
+
 
 
 # Instagram app
@@ -543,6 +542,11 @@ Use to save a value to local file system efficiently. Only diffs are stored / lo
 
 
 
+### THE ABI PART
+
+??? TBD
+
+This is a way to create a component from the C language, using the C ABI.
 
 
 
@@ -790,6 +794,27 @@ you send them messages and they execute asynchronously? Nah, better to have bloc
 ...in a forever-growing vector of states. In practice, those older generations are not kept or just kept for a short time. RESULT: this is not done automatically. It can be implemented as a vector in clock's state.
 
 ### IDEA: ADD SIMD FEATURES
+
+
+### IDEA: MAP() CAN RUN FUNCTION WITH SIMD INSTRUCTIONS
+
+	let pixel2 = map(pixels1, func (rgba p){ return rgba(p.red * 0.1, p.green * 0.2, p.blue * 0.3, 1.0) })
+
+Turns into
+
+	let count = size(pixels)
+	let batches = count / 4
+	var pos = 0
+	for(i in 0 .. batches){
+		let vec factors = { pixels[pos].red, pixels[pos + 1].red, pixels[pos + 2].red, pixels[pos + 3].red }
+		let vec reds = { pixels[pos].red, pixels[pos + 1].red, pixels[pos + 2].red, pixels[pos + 3].red }
+		let vec greens = { pixels[pos].green, pixels[pos + 1].green, pixels[pos + 2].green, pixels[pos + 3].green }
+		let vec blues = { pixels[pos].blue, pixels[pos + 1].blue, pixels[pos + 2].blue, pixels[pos + 3].blue }
+		let vec alphas = { pixels[pos].alpha, pixels[pos + 1].alpha, pixels[pos + 2].alpha, pixels[pos + 3].alpha }
+
+		let vec result = reds * 
+		pos = pos + 4
+	}
 
 
 ### IDEA: TRANSFORMER MODES
