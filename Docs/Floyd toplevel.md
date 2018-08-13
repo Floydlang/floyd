@@ -9,7 +9,7 @@ Floyd Systems is how you make software that lives in the real world, where all t
 Floyd uses the C4 model to organize all of this. C4 model https://c4model.com/
 
 
-### GOALS
+GOALS
 
 1. A high-level way to organise huge code bases and systems with many threads, processes and computers, beyond functions, classes and modules and also represent those concepts through out: at the code level, in debugger, in profiler etc.
 2. A simple and robust method for doing concurrency, communication etc.
@@ -43,7 +43,7 @@ A complete system is organised into parts like this:
 Various human users of your software system
 
 
-### Software System
+### SOFTWARE SYSTEM
 
 Highest level of abstraction and describes something that delivers value to its users, whether they are human or not. 
 
@@ -154,6 +154,12 @@ Appart from adding components and wiring them together, you can also add tweaker
 ??? What if you want a container-like setup for each "document"? Allow making sub-container that can be instantiated in a container? Or a tree of stuff inside a container.
 
 
+# ABOUT PROBES AND TWEAKERS
+
+Probes and tweakers are added ontop of a design. They allow you to augument a design with logging, profiling, breakpoints and do advanced performance optimizations, all without altering the code or design itself. The tweakers cannot affect the behaviour of the logic, only timing and hardware utilisation etc.
+
+
+
 # ABOUT CONCURRENCY AND TIME IN DETAIL
 
 This it important. This is how to express time / mutation / concurrency in Floyd. For each independant state or "thread" you want in your container, you need to insert an Actor component and write its processing function.
@@ -213,7 +219,6 @@ Who decides when to advances the clocks? Runtime advances a clock when it has at
 An actor can be synced to another actor's clock. All posts to the inbox will then be synchrnous and blocking calls. These types of clock still have their own state and can be used as controllers / mediators -- even when it doesnt need its own thread.
 
 
-
 ACTOR LIMITATIONS:
 
 - Cannot find assets / ports / resources — those are handed to it via the container's wiring.
@@ -230,70 +235,19 @@ ACTOR LIMITATIONS:
 Sometimes we introduce concurreny to allow parallelism: multithreading a game engine is taking a non-concurrent design and making it concurrent to improve throughput. This is different to using concurrency to model real-world concurrency like UI vs background cloud com vs realtime audio processing. Maybe have different concepts for this?
 
 
-
-
-
-
 ### CONCURRENCY SCENARIOS
 
-
-
 |#	|Need		|Traditional	|Floyd
-|---	|---				|---		|---
-|1	| Move data between concurrent modules 		| Mutexes, locks, atomic queues,  | Post message to actor inbox
-|2	| Make a blocking call, like a REST request	| Block entire thread / nested callbacks / futures / async-await | Just block. Make call from Actor to keep caller running
-|3	| Start non-blocking lambda operations - referential transparent - like calculating high-quality image in the background.| Use worker thread with a task queue | Use actor, use data directly
-|4	| Start non-blocking unpure background calculation (auto save doc) | Copy document, create worker thread | Use actor, use data directly
-|5	| Run process concurrently, like analyze game world to prefetch assets | Manually synchronize all shared data, use separate thread | Use actor -- data is immutable
-|6	| Handle requests from OS quickly, like call to audio buffer switch process() | Use callback function | Use actor and set its clock to sync to clock of buffer switch
-|7	| Improve performance using concurrency + parallelism / fan-in-fan-out / processing pipeline | Split work into small tasks that are independant, queue them to a thread team, resolve dependencies some how, use end-fence with completetionnotification | call map() or supermap() from an Actor.
-|8	| Spread heavy work across time (do some processing each game frame) | Use coroutine or thread that sleeps after doing some work. Wake it next frame. | Actor does work. It calls select() inside a loop to wait on next trigger to continue work.
-|9	| Do work regularly, independant of other threads (like a timer interrupt) | Call timer with callback / make thread that sleeps on event | Use Actor that calls post_at_time(now() + 100) to itself
-|10	| Small server | Write loop that listens to socket | Use Actor that waits for messages
-
-
-
-
-
-# ABOUT PROBES AND TWEAKERS
-
-Probes and tweakers are added ontop of a design. They allow you to augument a design with logging, profiling, breakpoints and do advanced performance optimizations, all without altering the code or design itself. The tweakers cannot affect the behaviour of the logic, only timing and hardware utilisation etc.
-
-
-
-# EXAMPLE SETUPS FOR SOME APPLICATIONS
-
-### SIMPLE CONSOLE PROGRAM
-
-??? TBD
-
-This is a basic command line app, have only one clock that gathers ONE input value from the command line arguments, calls some pure Floyd Script functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
-- main() one clock only.
-
-
-## DESTINY GAME
-
-
-??? TBD
-
-A video game may have several clocks:
-
-- UI event loop clock
-- Prefetch assets clock
-- World-simulation / physics clock
-- Rendering pass 1 clock
-- Commit to OpenGL clock
-- Audio streaming clock
-
-
-
-# Instagram app
-
-??? TBD
-
-- main ui thread()
-- rendering / scaling clock
-- server comm clock
+|---	|---			|---			|---
+|1	| Make a REST request	| Block entire thread / nested callbacks / futures / async-await | Just block. Make call from Actor to keep caller running
+|2	| Make a sequence of back and forths with a REST server | Make separate thread and block on each step then notify main thread on completion / nested futures or callbacks / await-async | Make an Actor that makes blocking calls
+|3	| Perform non-blocking unpure background calculation (auto save doc) | Copy document, create worker thread | Use actor, use data directly
+|4	| Run process concurrently, like analyze game world to prefetch assets | Manually synchronize all shared data, use separate thread | Use actor -- data is immutable
+|5	| Handle requests from OS quickly, like call to audio buffer switch process() | Use callback function | Use actor and set its clock to sync to clock of buffer switch
+|6	| Improve performance using concurrency + parallelism / fan-in-fan-out / processing pipeline | Split work into small tasks that are independant, queue them to a thread team, resolve dependencies some how, use end-fence with completetionnotification | call map() or supermap() from an Actor.
+|7	| Spread heavy work across time (do some processing each game frame) | Use coroutine or thread that sleeps after doing some work. Wake it next frame. | Actor does work. It calls select() inside a loop to wait on next trigger to continue work.
+|8	| Do work regularly, independant of other threads (like a timer interrupt) | Call timer with callback / make thread that sleeps on event | Use Actor that calls post_at_time(now() + 100) to itself
+|9	| Small server | Write loop that listens to socket | Use Actor that waits for messages
 
 
 
@@ -321,6 +275,53 @@ let image2 = map(image1, my_pixel_shader) and the pixels can be processed in par
 **Task** - this is a work item that takes usually approx 0.5 - 10 ms to execute and has an end. The runtime generates these when it wants to run map() elements in parallel. All tasks in the entire container are schedueled together.
 
 
+# EXAMPLE SETUPS FOR SOME APPLICATIONS
+
+### SIMPLE CONSOLE PROGRAM
+
+??? TBD
+
+This is a basic command line app, have only one clock that gathers ONE input value from the command line arguments, calls some pure Floyd Script functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
+main() one clock only.
+
+
+
+### EXAMPLE: VST-plugin
+
+??? example Software System diagram and other diagrams.
+
+![alt text](./floyd_systems_vst.png)
+
+
+### FIRST PERSON SHOOTER GAME
+
+
+![alt text](./floyd_systems_1st_person_shooter.png)
+
+
+https://www.youtube.com/watch?v=v2Q_zHG3vqg
+
+A video game may have several clocks:
+
+- UI event loop clock
+- Prefetch assets clock
+- World-simulation / physics clock
+- Rendering pass 1 clock
+- Commit to OpenGL clock
+- Audio streaming clock
+
+This game does audio and Open GL graphics. It runs many different clocks. It uses supermap() to render Open GL commands in parallel.
+
+
+### Instagram app
+
+??? TBD
+
+- main ui thread()
+- rendering / scaling clock
+- server comm clock
+
+??? IDEA: Assigning things to physical threads -- algorithmically
 
 
 
