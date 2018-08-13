@@ -25,7 +25,9 @@ It does this by splitting the design into two different concepts:
 
 1. Encourage your logic and processing code to be simple and correct and to declare where there is opportunity to execute code independely of eachother.
 
-2. At the top level profile execution and make high-level improvements that dramatically alter how the code is executed on the available hardware -- caching things, working batches, running in thread teams, running in parallel, ordering work for different localities, memory layouts and access patterns.
+2. At the top level profile execution and make high-level improvements that dramatically alter how the code is *generated* and executed to run on the available hardware. Caching things, working batches, running in parallel, ordering work for different localities, memory layouts and access patterns.
+
+It is also simple to introduce concurrency to expose more opportunities to run in parallel.
 
 
 # ABOUT C4 CONCEPTS
@@ -105,12 +107,10 @@ Above, level 3: Component diagram
 Above, level 4: Code
 
 
-Notice: a component used in several components or a piece of code that appears in several components = appears as duplicates. The perspective is: logic dependencies. There is no diagram for showing which source files or libraries that depends on eachother.
+Notice: a component used in several containers or a piece of code that appears in several components will appears in each, seamingly like duplicates. The perspective is **logic dependencies**. There is no diagram for showing the physical dependencies -- which source files or libraries that depends on eachother.
 
 
 # ABOUT CONTAINERS
-
-??? What if you want a container-like setup for each document?
 
 Containers are how you make an app or server, by writing code, stringning together existing components and deciding how to relate to the world around the container. Other containers in your system may be implemented some other way and will be represented using a proxy in the Software System.
 
@@ -151,6 +151,7 @@ Notice: these are all non-singletons - you can make many instances in one contai
 You can also connect wires, add tweakers and notes.
 
 ??? IDEA: Glue expressions, calling FLoyd functions
+??? What if you want a container-like setup for each document?
 
 
 ### CONCURRENCY: ACTOR, CLOCK, INBOX AND STATE
@@ -259,15 +260,13 @@ Sometimes we introduce concurreny to allow parallelism: multithreading a game en
 
 # ABOUT PROBES AND TWEAKERS
 
-??? TBD
-
 Probes and tweakers are added ontop of a design. They allow you to augument a design with logging, profiling, breakpoints and do advanced performance optimizations, all without altering the code or design itself. The tweakers cannot affect the behaviour of the logic, only timing and hardware utilisation etc.
 
 
 
 # EXAMPLE SETUPS FOR SOME APPLICATIONS
 
-### Ex: Simple app
+### SIMPLE CONSOLE PROGRAM
 
 ??? TBD
 
@@ -275,7 +274,7 @@ This is a basic command line app, have only one clock that gathers ONE input val
 - main() one clock only.
 
 
-## Destiny game
+## DESTINY GAME
 
 ??? TBD
 
