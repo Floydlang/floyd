@@ -25,7 +25,7 @@ It does this by splitting the design into two different concepts:
 
 1. Encourage your logic and processing code to be simple and correct and to declare where there is opportunity to execute code independely of eachother.
 
-2. At the top level profile execution and make high-level improvements that dramatically alter how the code is executed on the available hardware -- caching things, working batches, running in thread teams, running in parallell, ordering work for different localities, memory layouts and access patterns.
+2. At the top level profile execution and make high-level improvements that dramatically alter how the code is executed on the available hardware -- caching things, working batches, running in thread teams, running in parallel, ordering work for different localities, memory layouts and access patterns.
 
 
 # ABOUT C4 CONCEPTS
@@ -58,19 +58,21 @@ This is usually a single OS-process, with mutation, time, several threads. It lo
 
 ### COMPONENT
 
-Grouping of related functionality encapsulated behind a well-defined interface. Executes in one process - process agnostic. Requires using container to do mutation / concurrency.
-JPEGLib, JSON lib. Custom component for syncing with your server.
-Passive, pure.
+Grouping of related functionality encapsulated behind a well-defined interface. Executes in one process - process agnostic. JPEGLib, JSON lib. Custom component for syncing with your server.
+
+There are two types of components: pure and unpure.
+
+- Pure components have no side effects, like a ZIP library or a matrix-math library. They are also passive.
+- Unpure components may be active (detecting mouse clicks and calling your code) and may affect the world around you or give different results for each call. get_time() and get_mouse_pos(), on_mouse_click(). read_directory_elements().
 
 	jpeglib.component.floyd -- declares a component, including docs and exposed API
 
-??? Components can be UNPURE!!
+Requires using container to do mutation / concurrency.
 
 
 ### CODE
 
-Classes. Instance diagram. Examples.
-Passive. Pure.
+Classes. Instance diagram. Examples. Passive. Pure.
 
 	jpeg_quantizer.floyd, colortab.floyd -- implementation source files for the jpeglib
 
@@ -133,7 +135,7 @@ The container consists of a discrete number of components connected together wit
 Example components:
 
 - Clock component: a component written in Floyd Script that has its own state & inbox.
-- Multiplexer part: contains internal pool of clocks and distributes incoming messages to them to run in parallell.
+- Multiplexer part: contains internal pool of clocks and distributes incoming messages to them to run in parallel.
 - Built in local FS component: Read and write files, rename directory, swap temp files
 - Built in S3 component
 - Built in socket component
@@ -167,9 +169,9 @@ The goal with Floyd's concurrency model is to be:
 1. Simple and robust pre-made mechanisms for each concurrency needs. Avoid general-purpose!
 2. Composable
 3. Allow you to make a static design of your concurrency.
-4. Separate out parallellism into a separate mechanism.
+4. Separate out parallelism into a separate mechanism.
 5. Avoid problematic constructs like threads, locks, callback hell, nested futures and await/asyc -- dead ends of concurrecy.
-6. Supply means to expose execution parallellism for the separate parallisation features.
+6. Supply means to expose execution parallelism for the separate parallisation features.
 7. Let you control/tune how many threads and cores to use for what parts of the system independantly of the code.
 
 The building block for this is the actor (similar to Erlang's or Elexir's processes) - using an inbox, a state value and a function.
@@ -203,7 +205,7 @@ A clock can send messages to other clocks, optionally blocking on a reply, handl
 
 The clock's function is unpure. The function can call OS-function, block on writes to disk, use sockets etc. Clocks needs to take all runtimes they require as arguments. Clock function also gets input token with access rights to systems.
 
-The runtime can place clocks on different cores and processors or servers. You can have several clocks running in parallell, even on separate hardware. These forms separate clock circuits that are independent of eachother.
+The runtime can place clocks on different cores and processors or servers. You can have several clocks running in parallel, even on separate hardware. These forms separate clock circuits that are independent of eachother.
 
 Clocks are inexpensive, you can use 100.000-ands of clocks. Clocks typically runs as M x N threads. They may be run from the main thread, a thread team or cooperatively.
 
@@ -214,11 +216,10 @@ An actor can be synced to another actor's clock. All posts to the inbox will the
 
 ### LIMITATIONS
 
-Cannot find assets / ports / resources — those are handed to it.
-Cannot go find resources, processes etc. These must be handed to it.
-Clocks cannot be created or deleted at runtime.
-Cannot create other clocks!
-
+- Cannot find assets / ports / resources — those are handed to it.
+- Cannot go find resources, processes etc. These must be handed to it.
+- Clocks cannot be created or deleted at runtime.
+- Cannot create other clocks!
 - ??? IDEA: Supervisors: this is a function that creates and tracks and restarts clocks.
 - ??? System provices clocks for timers, ui-inputs etc. When setup, these receive user input messages etc.
 
@@ -234,7 +235,7 @@ Cannot create other clocks!
 6. Run process concurrently, like analyze game world to prefetch assets
 7. handle requests from OS quickly, like call to audio buffer switch process()
 8. Implement a generator / seq / iterator for lazy calculation during foreach
-9. Enable parallelization by hiding function behind channel (allows it to be parallellized)
+9. Enable parallelisation by hiding function behind channel (allows it to be parallelised)
 10. Coroutines let you time slice heavy computation so that it runs a little bit in each frame.
 11. Concept: State-less lambda. Takes time but is referential transparent. These can be callable from pure code. Not true!! This introduces cow time.
 12. Model a process, like Erlang. UI process, realtime audio process etc.
@@ -259,6 +260,7 @@ Sometimes we introduce concurreny to allow parallelism: multithreading a game en
 # ABOUT PROBES AND TWEAKERS
 
 ??? TBD
+
 Probes and tweakers are added ontop of a design. They allow you to augument a design with logging, profiling, breakpoints and do advanced performance optimizations, all without altering the code or design itself. The tweakers cannot affect the behaviour of the logic, only timing and hardware utilisation etc.
 
 
@@ -268,6 +270,7 @@ Probes and tweakers are added ontop of a design. They allow you to augument a de
 ### Ex: Simple app
 
 ??? TBD
+
 This is a basic command line app, have only one clock that gathers ONE input value from the command line arguments, calls some pure Floyd Script functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
 - main() one clock only.
 
@@ -275,6 +278,7 @@ This is a basic command line app, have only one clock that gathers ONE input val
 ## Destiny game
 
 ??? TBD
+
 A video game may have several clocks:
 
 - UI event loop clock
@@ -288,35 +292,164 @@ A video game may have several clocks:
 # Instagram app
 
 ??? TBD
+
 - main ui thread()
 - rendering / scaling clock
 - server comm clock
 
 
 
+# ABOUT PARALLELISM
+
+In floyd you accellerate the performance of your code by making it expose where there are dependencies between computations and where there are not. Then you can orcestrate how to best execute your container from the top level -- using tweak probes and profiling probes, affecting how the hardware is mapped to your logic.
+
+Easy ways to expose parlellism is by writing pure functions (their results can be cached or precomputed) and by using functions like map(), fold(), filter() and supermap(). These function work on individual elements of a collection and each computation is independant of the others. This lets the runtime process the different elements on parallel hardware.
+
+map() processes each element in a collection using a function and returns a new collection with the results.
+supermap() works like map(), but each element also has dependencies to other elements in the collection.
+
+Accelerating computations (parallelism) is done using tweaks — a separate mechanism. It supports moving computations in time (lazy, eager, caching) and running work in parallel.
+
+
+Often actors and concurrency is introduced into a system to *expose opportunity* for parallelism.
+
+The optimizations using tweaks in no way affect the logic of your program, only the timing and order where those don't matter.
+
+To make something like a software graphics shaders, you would do
+
+let image2 = map(image1, my_pixel_shader) and the pixels can be processed in parallel.
+
+
+**Task** - this is a work item that takes usually approx 0.5 - 10 ms to execute and has an end. The runtime generates these when it wants to run map() elements in parallel. All tasks in the entire container are schedueled together.
 
 
 
 
-# PARALLELISM
 
-Task: this is a work item that takes usually approx 0.5 - 10 ms to execute and has an end.
-
-They are not for straight parallelism (like a graphics shader).
-Accelerating computations (parallelism) is done using tweaks — a separate mechanism. It supports moving computations in time (lazy, eager, caching) and running work in parallell.
-Often clocks are introduced in a system to expose oppotunity for parallelism.
+# FLOYD SYSTEM REFERENCE
 
 
-Making software faster by using distributing work to all CPUs and cores.
+### CONTAINER FILE FORMAT REFERENCE
 
-Future: add job-graph for parallellising more complex jobs with dependencies.
+helloworld.container
+This is a declarative file that describes the top-level structure of an app. Its contents looks like this:
 
-- parallelism: runtime can chose to use many threads to accelerate the processing. This cannot be observed in any way by the user or programmer, except program is faster. Programmer controls this using tweakers. Threading problems eliminated.
+		my first design.container
 
-??? BIG DEAL IN GAMING: MAKING DEPENDENCY GRAPH OF JOBS TO PARALLELIZE
+		{
+			"major_version": 1,
+			"minior_version": 0,
+
+			"nodes": {
+			}
+		}
 
 
-### PARALLISABLE FUNCTIONS
+### CONTAINER MAIN REFERENCE
+
+Top level function
+
+```
+container_main()
+```
+
+This is the container's start function. It will find, create and and connect all resources, runtimes and other dependencies to boot up the container and to do executibe decisions and balancing for the container.
+
+
+
+
+### COMMAND LINE COMPONENT REFERENCE
+
+??? TBD
+
+	int on_commandline_input(string args) unpure
+	void print(string text) unpure
+	string readline() unpure
+
+
+
+### LOG PROBE REFERENCE
+
+??? TBD
+
+- Pulse everytime a function is called
+- Pulse everytime a clock ticks
+- Record value of all clocks at all time, including process PC. Oscilloscope & log
+
+
+### PROFILE PROBE REFERENCE
+
+
+
+
+### CACHE TWEAKER REFERENCE
+
+??? TBD
+
+A cache will store the result of a previous computation and if a future computation uses the same function and same inputs, the execution is skipped and the previous value is returned directly.
+
+A cache is always a shortcut for a (pure) function. You can decide if the cache works for *every* invocation of a function or limit the cache to invocations of the function within specified parent part.
+
+
+### EAGER TWEAKER REFERENCE
+
+??? TBD
+
+Like a cache, but calculates its values *before* clients call the function. It can be used to create a static lookup table at app startup.
+
+
+### BATCH TWEAKER REFERENCE
+
+??? TBD
+
+When a function is called, this part calls the function with similar parameters while the functions instructions and its data sits in the CPU caches.
+
+You supply a function that takes the parameters and make variations of them.
+
+
+### LAZY TWEAKER REFERENCE
+
+??? TBD
+
+Make the function return a future and don't calculate the real value until client accesses it.
+
+
+### WATCHDOG PROBE REFERENCE
+
+??? TBD
+
+
+### BREAKPOINT PROBE REFERENCE
+
+??? TBD
+
+
+### TWEAKS - OPTIMIZATIONS REFERENCE
+
+??? TBD
+
+- Insert read cache
+- Insert write cache
+- Precalculate / prefetch, eager
+- Lazy-buffer
+- Content de-duplication
+- Cache in local file system
+- Cache on Amazon S3
+- Parallelize pure function
+- Increase mutability
+- Increase random access speed
+- Increase forward read speed, stride
+- Increase backward read speed, stride
+- Rearrange nested composite (turn vec<pixel> to struct{ vec<red>, vec<green>, vec<blue> }
+- Batching: make 64 value each time?
+- Speculative batching with rewind.
+
+
+
+
+
+
+### MAP FUNCTION REFERENCE
 
 map(), fold() filter()
 
@@ -329,7 +462,8 @@ The functions map() and supermap() replaces FAN-IN-FAN-OUT-mechanisms.
 
 You can inspect in code and visually how the elements are distributed as tasks.
 
-### SUPERMAP FUNCTION
+
+### SUPERMAP FUNCTION REFERENCE
 
 	[int:R] supermap(tasks: [T, [int], f: R (T, [R]))
 
@@ -371,133 +505,6 @@ This allows you to configure a number of steps with queues between them. You sup
 Notice: supermap() has a fence at end. If you do a game pipeline you can spill things with proper dependencies over the fences.
 
 
-
-
-
-
-# FLOYD SYSTEM REFERENCE
-
-
-
-
-
-
-
-
-
-
-
-
-
-### CONTAINER FILE FORMAT REFERENCE
-
-helloworld.container
-This is a declarative file that describes the top-level structure of an app. Its contents looks like this:
-
-		my first design.container
-
-		{
-			"major_version": 1,
-			"minior_version": 0,
-
-			"nodes": {
-			}
-		}
-
-
-### CONTAINER MAIN REFERENCE
-
-Top level function
-
-```
-container_main()
-```
-
-This is the container's start function. It will find, create and and connect all resources, runtimes and other dependencies to boot up the container and to do executibe decisions and balancing for the container.
-
-
-
-
-# LOG-probe REFERENCE
-
-??? TBD
-- Pulse everytime a function is called
-- Pulse everytime a clock ticks
-- Record value of all clocks at all time, including process PC. Oscilloscope & log
-
-
-### Profiler-probe REFERENCE
-
-
-### Command-line-part REFERENCE
-
-??? TBD
-	int on_commandline_input(string args) unpure
-	void print(string text) unpure
-	string readline() unpure
-
-
-### CACHE TWEAKER REFERENCE
-
-??? TBD
-A cache will store the result of a previous computation and if a future computation uses the same function and same inputs, the execution is skipped and the previous value is returned directly.
-
-A cache is always a shortcut for a (pure) function. You can decide if the cache works for *every* invocation of a function or limit the cache to invocations of the function within specified parent part.
-
-
-### EAGER TWEAKER REFERENCE
-
-??? TBD
-Like a cache, but calculates its values *before* clients call the function. It can be used to create a static lookup table at app startup.
-
-
-### BATCH TWEAKER REFERENCE
-
-??? TBD
-When a function is called, this part calls the function with similar parameters while the functions instructions and its data sits in the CPU caches.
-
-You supply a function that takes the parameters and make variations of them.
-
-
-### LAZY TWEAKER REFERENCE
-
-??? TBD
-Make the function return a future and don't calculate the real value until client accesses it.
-
-
-### Watchdog probe REFERENCE
-
-??? TBD
-
-
-### Breakpoint probe REFERENCE
-
-??? TBD
-
-
-### Tweaks - Optimizations REFERENCE
-
-??? TBD
-
-
-### IDEAS
-
-??? TBD
-- Insert read cache
-- Insert write cache
-- Precalculate / prefetch, eager
-- Lazy-buffer
-- Content de-duplication
-- Cache in local file system
-- Cache on Amazon S3
-- Parallellize pure function
-- Increase mutability
-- Increase random access speed
-- Increase forward read speed, stride
-- Increase backward read speed, stride
-- Rearrange nested composite (turn vec<pixel> to struct{ vec<red>, vec<green>, vec<blue> }
-- Batching: make 64 value each time?
-- Speculative batching with rewind.
 
 
 ### THE FILE SYSTEM PART
@@ -580,10 +587,10 @@ Use to save a value to local file system efficiently. Only diffs are stored / lo
 			let c = a * b
 			transform_b.store(c)	//	Will push on tranformer / block, depending on transformer mode.
 
-			//	Runs each task in parallell and returns when all are complete. Returns a vector of values of type T.
+			//	Runs each task in parallel and returns when all are complete. Returns a vector of values of type T.
 			//	Use return to finish a task with a value. Use break to finish and abort any other non-complete tasks.
-			//??? Split to parallell_tasks_race() and parallell_tasks_all().
-			let d = parallell_tasks<T>(timeout: 10000) {
+			//??? Split to parallel_tasks_race() and parallel_tasks_all().
+			let d = parallel_tasks<T>(timeout: 10000) {
 				1:
 					sleep(3)
 					return 2
@@ -594,9 +601,9 @@ Use to save a value to local file system efficiently. Only diffs are stored / lo
 					sleep(1)
 					return 99
 			}	
-			let e = map_parallell(seq(i: 0..<1000)){ return $0 * 2 }
-			let f = fold_parallell(0, seq(i: 0..<1000)){ return $0 * 2 }
-			let g = filter_parallell(seq(i: 0..<1000)){ return $0 == 1 }
+			let e = map_parallel(seq(i: 0..<1000)){ return $0 * 2 }
+			let f = fold_parallel(0, seq(i: 0..<1000)){ return $0 * 2 }
+			let g = filter_parallel(seq(i: 0..<1000)){ return $0 == 1 }
 		}
 	}
 
@@ -761,7 +768,7 @@ Source file: *my_vst\_plug.container*
 ### IDEA: TASK DISPATCHER
 
 This part lets you queue up tasks that have dependencies between them, and it will r
-??? This only increases performance = part of optimization. Make this something you declare to expose potential for paralell task processing. Supports a stream of jobs, like a game engine does.
+??? This only increases performance = part of optimization. Make this something you declare to expose potential for parallel task processing. Supports a stream of jobs, like a game engine does.
 
 
 ### IDEA: SUPERVISORS
