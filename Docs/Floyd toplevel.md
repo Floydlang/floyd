@@ -1,6 +1,4 @@
-
-![alt text](./floyd_logo.png "Floyd Logo")
-
+<img src="floyd_logo.png" alt="drawing" width="600px"/>
 
 # FLOYD SYSTEMS MANUAL
 
@@ -19,7 +17,7 @@ Floyd uses the C4 model to organize all of this. C4 model https://c4model.com/
 4. Support visual design of the system.
 
 
-# PERFORMANCE
+# ABOUT PERFORMANCE
 
 Floyd is designed to make it practical to make big systems with performance better than what you get with average optimized C code.
 
@@ -30,12 +28,12 @@ It does this by splitting the design into two different concepts:
 2. At the top level profile execution and make high-level improvements that dramatically alter how the code is executed on the available hardware -- caching things, working batches, running in thread teams, running in parallell, ordering work for different localities, memory layouts and access patterns.
 
 
-# C4 CONCEPTS
+# ABOUT C4 CONCEPTS
 
 A complete system is organised into parts like this:
 
 
-![alt text](./floyd_systems_software_system.png "Software System")
+<img src="floyd_systems_software_system.png" alt="drawing" width="600px"/>
 
 
 ### PERSON
@@ -77,29 +75,38 @@ Passive. Pure.
 	jpeg_quantizer.floyd, colortab.floyd -- implementation source files for the jpeglib
 
 
-# C4 DIAGRAMS
+# ABOUT C4 DIAGRAMS
+
 
 There is a set of standard diagram views for explaining and reasoning about your software:
 
-![alt text](./floyd_systems_level1_diagram.png "Software System")
-Level 1: System Context diagram
+
+<img src="floyd_systems_level1_diagram.png" alt="drawing" width="600px"/>
+
+Above, level 1: System Context diagram
 
 
-![alt text](./floyd_systems_level2_diagram.png "Software System")
-Level 2: Container diagram
+
+<img src="floyd_systems_level2_diagram.png" alt="drawing" width="600px"/>
+
+Above, level 2: Container diagram
 
 
-![alt text](./floyd_systems_level3_diagram.png "Software System")
-Level 3: Component diagram
 
-![alt text](./floyd_systems_level4_diagram.png "Software System")
-Level 4: Code
+<img src="floyd_systems_level3_diagram.png" alt="drawing" width="600px"/>
+
+Above, level 3: Component diagram
+
+
+<img src="floyd_systems_level4_diagram.png" alt="drawing" width="600px"/>
+
+Above, level 4: Code
 
 
 Notice: a component used in several components or a piece of code that appears in several components = appears as duplicates. The perspective is: logic dependencies. There is no diagram for showing which source files or libraries that depends on eachother.
 
 
-# MOTHERBOARD
+# ABOUT MOTHERBOARD
 
 ??? What if you want a motherboard-like setup for each document?
 
@@ -144,39 +151,16 @@ You can also connect wires, add tweakers and notes.
 ??? IDEA: Glue expressions, calling FLoyd functions
 
 
-### CONCURRENCY: CLOCK, STATE AND THE INBOX
+### CONCURRENCY: ACTOR, CLOCK, INBOX AND STATE
 
 This it how to express time / mutation / concurrency in Floyd. For each independant state or "thread" you want in your container, you need to insert a clock-component and write its processing function.
 
 
-### MOTHERBOARD FILE FORMAT
 
-helloworld.board
-This is a declarative file that describes the top-level structure of an app. Its contents looks like this:
+# ABOUT CONCURRENCY AND TIME IN DETAIL
 
-		my first design.mboard
+Inspirations for Floyd's concurrency model are CSP, Erlang, Go routies and channels and Clojure Core.Async.
 
-		{
-			"major_version": 1,
-			"minior_version": 0,
-
-			"nodes": {
-			}
-		}
-
-
-### MOTHERBOARD MAIN
-
-Top level function
-
-```
-motherboard_main()
-```
-
-This is the motherboard's start function. It will find, create and and connect all resources, runtimes and other dependencies to boot up the motherboard and to do executibe decisions and balancing for the motherboard.
-
-
-# CONCURRENCY AND TIME IN DETAIL
 
 The goal with Floyd's concurrency model is to be:
 
@@ -199,6 +183,7 @@ The actor function may be called synchronously when client posts it a message, o
 
 This is the only way to keep state in Floyd.
 
+- Synchronization points between systems (state or concurrent) always breaks composition. Move these to top level of container.
 
 The inbox has two purposes:
 	
@@ -265,7 +250,299 @@ Cannot create other clocks!
 22. Processing pipeline with many stages
 
 
-### STATIC DEFINITION
+### GAIN PERFORMANCE VIA CONCURRENCY
+
+Sometimes we introduce concurreny to allow parallelism: multithreading a game engine is taking a non-concurrent design and making it concurrent to improve throughput. This is different to using concurrency to model real-world concurrency like UI vs background cloud com vs realtime audio processing. Maybe have different concepts for this?
+
+
+
+# ABOUT PROBES AND TWEAKERS
+
+??? TBD
+Probes and tweakers are added ontop of a design. They allow you to augument a design with logging, profiling, breakpoints and do advanced performance optimizations, all without altering the code or design itself. The tweakers cannot affect the behaviour of the logic, only timing and hardware utilisation etc.
+
+
+
+# EXAMPLE SETUPS FOR SOME APPLICATIONS
+
+### Ex: Simple app
+
+??? TBD
+This is a basic command line app, have only one clock that gathers ONE input value from the command line arguments, calls some pure Floyd Script functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
+- main() one clock only.
+
+
+## Destiny game
+
+??? TBD
+A video game may have several clocks:
+
+- UI event loop clock
+- Prefetch assets clock
+- World-simulation / physics clock
+- Rendering pass 1 clock
+- Commit to OpenGL clock
+- Audio streaming clock
+
+
+# Instagram app
+
+??? TBD
+- main ui thread()
+- rendering / scaling clock
+- server comm clock
+
+
+
+
+
+
+
+# PARALLELISM
+
+Task: this is a work item that takes usually approx 0.5 - 10 ms to execute and has an end.
+
+They are not for straight parallelism (like a graphics shader).
+Accelerating computations (parallelism) is done using tweaks — a separate mechanism. It supports moving computations in time (lazy, eager, caching) and running work in parallell.
+Often clocks are introduced in a system to expose oppotunity for parallelism.
+
+
+Making software faster by using distributing work to all CPUs and cores.
+
+Future: add job-graph for parallellising more complex jobs with dependencies.
+
+- parallelism: runtime can chose to use many threads to accelerate the processing. This cannot be observed in any way by the user or programmer, except program is faster. Programmer controls this using tweakers. Threading problems eliminated.
+
+??? BIG DEAL IN GAMING: MAKING DEPENDENCY GRAPH OF JOBS TO PARALLELIZE
+
+
+### PARALLISABLE FUNCTIONS
+
+map(), fold() filter()
+
+Expose possible parallelism of pure function, like shaders, at the code level (not declarative). The supplied function must be pure.
+
+
+??? make pipeline part. https://blog.golang.org/pipelines
+
+The functions map() and supermap() replaces FAN-IN-FAN-OUT-mechanisms.
+
+You can inspect in code and visually how the elements are distributed as tasks.
+
+### SUPERMAP FUNCTION
+
+	[int:R] supermap(tasks: [T, [int], f: R (T, [R]))
+
+This function runs a bunch of tasks with dependencies between them and waits for them all to complete.
+
+- Tasks can block.
+- Tasks cannot generate new tasks. A task *can* call supermap.
+
+Notice: supermap() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
+
+- **tasks**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The task will not be executed until those tasks have been run. The indexes are the indexes into the tasks-vector.
+
+- **f**: this is your function that processes one T and returns a result R. The function must not depend on the order in which tasks execute. When f is called, all the tasks dependency tasks have already been executed and you get their results in [R].
+
+- **result**: a vector with one element for each element in the tasks-argument. The order of the elements are undefined. The int specifies which task, the R is its result.
+
+When supermap() returns all tasks have been completed.
+
+Notice: your function f can send messages to a clock — this means another clock can start consuming results while supermap() is still running.
+
+
+??? IDEA: Make this a two-step process. First analyse tasks into an execution description. Then use that description to run the tasks.
+
+This lets you keep the execution description for next time, if tasks are the same.
+
+Also lets you inspect the execution description & improve it or create one for scratch.
+
+
+- If IO is bottleneck, try to spread out IO over time. If IO blocks is bottleneck, try to start IO ASAP.
+
+- Try to keep instructions and data in CPU caches.
+
+
+??? Have pipeline-part instead of supermap()?
+??? No, supermap() is a better solution.
+
+This allows you to configure a number of steps with queues between them. You supply a function for each step. All settings can be altered via UI or programatically.
+
+Notice: supermap() has a fence at end. If you do a game pipeline you can spill things with proper dependencies over the fences.
+
+
+
+
+
+
+# FLOYD SYSTEM REFERENCE
+
+
+
+
+
+
+
+
+
+
+
+
+
+### MOTHERBOARD FILE FORMAT REFERENCE
+
+helloworld.board
+This is a declarative file that describes the top-level structure of an app. Its contents looks like this:
+
+		my first design.mboard
+
+		{
+			"major_version": 1,
+			"minior_version": 0,
+
+			"nodes": {
+			}
+		}
+
+
+### MOTHERBOARD MAIN REFERENCE
+
+Top level function
+
+```
+motherboard_main()
+```
+
+This is the motherboard's start function. It will find, create and and connect all resources, runtimes and other dependencies to boot up the motherboard and to do executibe decisions and balancing for the motherboard.
+
+
+
+
+# LOG-probe REFERENCE
+
+??? TBD
+- Pulse everytime a function is called
+- Pulse everytime a clock ticks
+- Record value of all clocks at all time, including process PC. Oscilloscope & log
+
+
+### Profiler-probe REFERENCE
+
+
+### Command-line-part REFERENCE
+
+??? TBD
+	int on_commandline_input(string args) unpure
+	void print(string text) unpure
+	string readline() unpure
+
+
+### CACHE TWEAKER REFERENCE
+
+??? TBD
+A cache will store the result of a previous computation and if a future computation uses the same function and same inputs, the execution is skipped and the previous value is returned directly.
+
+A cache is always a shortcut for a (pure) function. You can decide if the cache works for *every* invocation of a function or limit the cache to invocations of the function within specified parent part.
+
+
+### EAGER TWEAKER REFERENCE
+
+??? TBD
+Like a cache, but calculates its values *before* clients call the function. It can be used to create a static lookup table at app startup.
+
+
+### BATCH TWEAKER REFERENCE
+
+??? TBD
+When a function is called, this part calls the function with similar parameters while the functions instructions and its data sits in the CPU caches.
+
+You supply a function that takes the parameters and make variations of them.
+
+
+### LAZY TWEAKER REFERENCE
+
+??? TBD
+Make the function return a future and don't calculate the real value until client accesses it.
+
+
+### Watchdog probe REFERENCE
+
+??? TBD
+
+
+### Breakpoint probe REFERENCE
+
+??? TBD
+
+
+### Tweaks - Optimizations REFERENCE
+
+??? TBD
+
+
+### IDEAS
+
+??? TBD
+- Insert read cache
+- Insert write cache
+- Precalculate / prefetch, eager
+- Lazy-buffer
+- Content de-duplication
+- Cache in local file system
+- Cache on Amazon S3
+- Parallellize pure function
+- Increase mutability
+- Increase random access speed
+- Increase forward read speed, stride
+- Increase backward read speed, stride
+- Rearrange nested composite (turn vec<pixel> to struct{ vec<red>, vec<green>, vec<blue> }
+- Batching: make 64 value each time?
+- Speculative batching with rewind.
+
+
+### THE FILE SYSTEM PART
+
+??? TBD
+All file system functions are blocking. If you want to do something else while waiting, run the file system calls in a separate clock. There are no futures, callbacks, async / await etc. It is very easy to write a function that does lots of processing and conditional file system calls etc and run it concurrently with other things.
+
+??? Simple file API
+	file_handle open_fileread(string path) unpure
+	file_handle make_file(string path) unpure
+	void close_file(file_handle h) unpure
+
+	vec<ubyte> v = readfile(file_handle h, int start = 0, int size = 100) unpure
+	delete_fsnode(string path) unpure
+
+	make_dir(string path, string name) unpure
+	make_file(string path, string name) unpure
+
+
+### THE REST-API PART
+
+??? TBD
+
+
+### THE S3 BLOB PART
+
+??? TBD
+
+Use to save a value to local file system efficiently. Only diffs are stored / loaded. Allows cross-session persistance. Uses SHA1 and content deduplication.
+
+
+### THE LOCAL FS BLOB PART
+
+??? TBD
+
+Use to save a value to local file system efficiently. Only diffs are stored / loaded. Allows cross-session persistance. Uses SHA1 and content deduplication.
+
+
+
+
+
+
+# STATIC DEFINITION
+
+??? TBD
 
 ```
 	struct clock_xyz_state_t {
@@ -286,8 +563,12 @@ Cannot create other clocks!
 ```
 
 
-### EXAMPLE CLOCK
 
+# EXAMPLE ACTOR
+
+??? TBD
+
+```
 	defclock mytype1_t myclock1(mytype1_t prev, read_transformer<mytype2_t> transform_a, write_transformer<mytype2_t> transform_b){
 		... init stuff.
 		...	state is local variable.
@@ -319,116 +600,23 @@ Cannot create other clocks!
 		}
 	}
 
-
-
-### Ex: Simple app
-
-This is a basic command line app, have only one clock that gathers ONE input value from the command line arguments, calls some pure Floyd Script functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
+```
 
 
 
-# THE FILE SYSTEM PART
-
-All file system functions are blocking. If you want to do something else while waiting, run the file system calls in a separate clock. There are no futures, callbacks, async / await etc. It is very easy to write a function that does lots of processing and conditional file system calls etc and run it concurrently with other things.
-
-??? Simple file API
-	file_handle open_fileread(string path) unpure
-	file_handle make_file(string path) unpure
-	void close_file(file_handle h) unpure
-
-	vec<ubyte> v = readfile(file_handle h, int start = 0, int size = 100) unpure
-	delete_fsnode(string path) unpure
-
-	make_dir(string path, string name) unpure
-	make_file(string path, string name) unpure
 
 
-# THE REST-API PART
+### EXAMPLE: VST-plugin
 
-??? TBD
-
-
-
-# PROBES AND TWEAKERS
-
-
-### LOG-probe
-
-- Pulse everytime a function is called
-- Pulse everytime a clock ticks
-- Record value of all clocks at all time, including process PC. Oscilloscope & log
-
-
-### Profiler-probe
-
-
-### Command-line-part
-		int on_commandline_input(string args) unpure
-		void print(string text) unpure
-		string readline() unpure
-
-
-### CACHE TWEAKER
-
-A cache will store the result of a previous computation and if a future computation uses the same function and same inputs, the execution is skipped and the previous value is returned directly.
-
-A cache is always a shortcut for a (pure) function. You can decide if the cache works for *every* invocation of a function or limit the cache to invocations of the function within specified parent part.
-
-
-### EAGER TWEAKER
-
-Like a cache, but calculates its values *before* clients call the function. It can be used to create a static lookup table at app startup.
-
-
-### BATCH TWEAKER
-
-When a function is called, this part calls the function with similar parameters while the functions instructions and its data sits in the CPU caches.
-
-You supply a function that takes the parameters and make variations of them.
-
-
-### LAZY TWEAKER
-
-Make the function return a future and don't calculate the real value until client accesses it.
-
-### Watchdog probe
-
-### Breakpoint probe
-
-### Tweaks - Optimizations
-
-These are settings you apply on wires.
-
-- Insert read cache
-- Insert write cache
-- Precalculate / prefetch, eager
-- Lazy-buffer
-- Content de-duplication
-- Cache in local file system
-- Cache on Amazon S3
-- Parallellize pure function
-- Increase mutability
-- Increase random access speed
-- Increase forward read speed, stride
-- Increase backward read speed, stride
-- Rearrange nested composite (turn vec<pixel> to struct{ vec<red>, vec<green>, vec<blue> }
-- Batching: make 64 value each time?
-- Speculative batching with rewind.
-
-
-
-# MORE EXAMPLES
-
-
-### Ex: VST-plugin
-
-??? example Software System diagram.
+??? example Software System diagram and other diagrams.
 
 ![alt text](./floyd_systems_vst.png "VST-plugin")
 
 
-Source file: my_vst_plug.board
+Source file: *my_vst\_plug.board*
 
+
+```
 		//	IMPORTED FROM GUI
 		struct uievent {
 			time timestamp;
@@ -563,115 +751,11 @@ Source file: my_vst_plug.board
 				}
 			
 			]
-
-
-
-## Destiny game
-A video game may have several clocks:
-
-- UI event loop clock
-- Prefetch assets clock
-- World-simulation / physics clock
-- Rendering pass 1 clock
-- Commit to OpenGL clock
-- Audio streaming clock
-
-
-# Basic console app
-- main() one clock only.
-
-
-# Instagram app
-- main ui thread()
-- rendering / scaling clock
-- server comm clock
-
-
-
-
-
-
-# PARALLELISM
-
-They are not for straight parallelism (like a graphics shader).
-Accelerating computations (parallelism) is done using tweaks — a separate mechanism. It supports moving computations in time (lazy, eager, caching) and running work in parallell.
-Often clocks are introduced in a system to expose oppotunity for parallelism.
-
-
-Making software faster by using distributing work to all CPUs and cores.
-
-Future: add job-graph for parallellising more complex jobs with dependencies.
-
-- parallelism: runtime can chose to use many threads to accelerate the processing. This cannot be observed in any way by the user or programmer, except program is faster. Programmer controls this using tweakers. Threading problems eliminated.
-
-??? BIG DEAL IN GAMING: MAKING DEPENDENCY GRAPH OF JOBS TO PARALLELIZE
-
-
-### PARALLISABLE FUNCTIONS
-
-map(), fold() filter()
-
-Expose possible parallelism of pure function, like shaders, at the code level (not declarative). The supplied function must be pure.
-
-
-??? make pipeline part. https://blog.golang.org/pipelines
-
-
-### SUPERMAP FUNCTION
-
-	[int:R] supermap(tasks: [T, [int], f: R (T, [R]))
-
-This function runs a bunch of tasks with dependencies between them and waits for them all to complete.
-
-- Tasks can block.
-- Tasks cannot generate new tasks. A task *can* call supermap.
-
-Notice: supermap() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
-
-- **tasks**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The task will not be executed until those tasks have been run. The indexes are the indexes into the tasks-vector.
-
-- **f**: this is your function that processes one T and returns a result R. The function must not depend on the order in which tasks execute. When f is called, all the tasks dependency tasks have already been executed and you get their results in [R].
-
-- **result**: a vector with one element for each element in the tasks-argument. The order of the elements are undefined. The int specifies which task, the R is its result.
-
-When supermap() returns all tasks have been completed.
-
-Notice: your function f can send messages to a clock — this means another clock can start consuming results while supermap() is still running.
-
-
-??? IDEA: Make this a two-step process. First analyse tasks into an execution description. Then use that description to run the tasks.
-
-This lets you keep the execution description for next time, if tasks are the same.
-
-Also lets you inspect the execution description & improve it or create one for scratch.
-
-
-- If IO is bottleneck, try to spread out IO over time. If IO blocks is bottleneck, try to start IO ASAP.
-
-- Try to keep instructions and data in CPU caches.
+```
 
 
 
 # NOTES AND IDEAS FOR FUTURE
-
-
-
-
-
-
-### IDEA: FAN-IN-FAN-OUT PART
-
-Like a clock but distributes messages on a number of paralell threads, then records the (out of order) results as they happen.
-
-Has parallelism setting: increase > 1 to put on more threads with multiplex + merge. Built in supervision. Declarative - only settings, no code.
-
-
-### IDEA: PIPELINE PART
-??? No, supermap() is a better solution.
-
-This allows you to configure a number of steps with queues between them. You supply a function for each step. All settings can be altered via UI or programatically.
-
-This setting allows you to process more than one message in the inbox at once. If you set it to 100, up to 100 messages can be processed at the same time. Each message will be stamped 
 
 
 ### IDEA: TASK DISPATCHER
@@ -680,98 +764,29 @@ This part lets you queue up tasks that have dependencies between them, and it wi
 ??? This only increases performance = part of optimization. Make this something you declare to expose potential for paralell task processing. Supports a stream of jobs, like a game engine does.
 
 
-### IDEA: SUPERVISOR CLOCK
+### IDEA: SUPERVISORS
 
-A special type of process that mediates life and death and com of child processes.
-Declarative - only settings, no code.
-
-
-clock<my_clock_state_t> tick(clock<my_clock_state_t> s, message<my_clock_message_t> m){
-	... 
-}
+See Erlang. These start, monitor and fix containers and actors.
 
 
 ### IDEA: DIFF AND MERGE
 
 Diff and merge are important to Motherboard code to detect what changes needs to be performed in the world.
 
-### REFERENCES
 
-- CSP
-- Erlang
-- Go routies and channels
-- Clojure Core.Async
+### IDEA: All OS-services are implemented as clock:
+
+you send them messages and they execute asynchronously? Nah, better to have blocking calls.
 
 
+### IDEA: The clock records a LOG of all generations of its state
 
-# ??? OPEN ISSUES
+...in a forever-growing vector of states. In practice, those older generations are not kept or just kept for a short time. RESULT: this is not done automatically. It can be implemented as a vector in clock's state.
 
-	??? All OS-services are implemented as clock: you send them messages and they execute asynchronously.??? Nah, better to have blocking calls.
-
-
-	- ??? Does UI_Part support several instances of VST plugin? Is plugin instance a value? Or do we make several instances of the board? When how can design know about all boards to do communication between them, for example sample-caching?
-
-	- ??? CAN ONE PART HAVE SEVERAL PATHS FOR DIFFERENT CLOCKS? VST-HOST PART?
-
-- ??? The clock records a LOG of all generations of its value, in a forever-growing vector of states. In practice, those older generations are not kept or just kept for a short time. RESULT: this is not done automatically. It can be implemented as a vector in clock's state.
-
-- Add preset-containers": for S3, for local FS cache etc. Has settings. Can do static initialization and also update settings from code.
-
-- Split concept of go routine and channel / Erlang processes etc into several more specific concepts.
-
-- Idea: Channels: pure code can communicate with sockets using channels. When waiting for a reply, the pure code's coroutine is paused and returned to motherboard level. Motherboard resumes coroutine when socket responds. This hides time from the pure code - sockets appear to be instantantoues + no inversion of control. ??? Still breaks rule about referenctial transparency. ### Use rules for REST-com that requires REST-commands to be referential transparent = it's enough we only hide time. ??? more?
-
-- Use golang for motherboards. Visual editor/debugger. Use FloydScript for logic. Use vec/map/seq/struct for data.
+### IDEA: ADD SIMD FEATURES
 
 
-### INSIGHTS
-
-- Synchronization points between systems (state or concurrent) always breaks composition. Move to top level of product. ONE super-mediator per complete server-spanning solution.
-
-- A system requires a master controller that may use and control sub-processes.
-
-- A system can be statically layed out on a top-level. Some processes may be dynamically created / deleted -- this is shown using 1-2-3-many.
-
-- Initialization often instances and connects parts together. In Floyd this is done using declaration / visual design outside of runtime.
-
-- Sometimes we introduce concurreny to allow parallelism: multithreading a game engine is taking a non-concurrent design and making it concurrent to improve throughput. This is different to using concurrency to model real-world concurrency like UI vs background cloud com vs realtime audio processing. Maybe have different concepts for this?
-
-
-
-### GOLANG
-	
-	func main() {
-		c1 := make(chan string)
-		c2 := make(chan string)
-		go func() {
-			time.Sleep(1 * time.Second)
-			c1 <- "one"
-		}()
-		go func() {
-			time.Sleep(2 * time.Second)
-			c2 <- "two"
-		}()
-		for i := 0; i < 2; i++ {
-			select {
-			case msg1 := <-c1:
-				fmt.Println("received", msg1)
-			case msg2 := <-c2:
-				fmt.Println("received", msg2)
-			}
-		}
-	}
-
-
-
-### IDEA: TRANSFORMER / OPTO-COUPLER WITH MODES
-
-
-- ??? This is how you connect wires between two different clock circuits. This is the ONLY way to send data beween clocks circuits. Use as few transformers as possible - prefer making a composite value out of smaller values and transform that as ONE signal.
-
-- ??? Transformers have settings specifying how it moves values from one clock to another. The default is that it samples the current input of the transformer. Alternatively you can get a vector of every change to the input since the last. Notice that a transformer is NOT a queue. It holds ONE value and may records its history.
-
-
-These are setup to one of these:
+### IDEA: TRANSFORMER MODES
 
 1. sample-value: Make snapshot of current value. If no current value, returns none.
 
@@ -781,11 +796,10 @@ These are setup to one of these:
 
 4. block-until-value: Block execution until a value exists in the transformer. Pops the value. If value already exists: returns immediately.
 
-
 READER modes:
+
 - Default: reader blocks until new value is written be writer.
 - Sample the latest value in the optocoupler, don't block.
 - Sample queue of all values since last read.
-Notice that the value can be a huge struct with all app state or just a message or a UI event etc.
 
-Notice: pure functions cannot access optocouplers. They would not be referential transparent.
+
