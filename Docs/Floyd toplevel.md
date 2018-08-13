@@ -106,18 +106,18 @@ Above, level 4: Code
 Notice: a component used in several components or a piece of code that appears in several components = appears as duplicates. The perspective is: logic dependencies. There is no diagram for showing which source files or libraries that depends on eachother.
 
 
-# ABOUT MOTHERBOARD
+# ABOUT CONTAINERS
 
-??? What if you want a motherboard-like setup for each document?
+??? What if you want a container-like setup for each document?
 
-The motherboard is how you implement a Floyd-based container. Other containers in your system may be implemented some other way and will be represented using a proxy in the Software System.
+Containers are how you make an app or server, by writing code, stringning together existing components and deciding how to relate to the world around the container. Other containers in your system may be implemented some other way and will be represented using a proxy in the Software System.
 
-1. The motherboard connects all code together using wires into a product / app / executable using a declaration file.
+1. The container connects all code together using wires into a product / app / executable using a declaration file.
 2. It completely defines: concurrency, state, communication with ourside world and runtime errors of the container. This includes sockets, file systems, messages, screens, UI. Depndency components that are unpure are also shown.
 3. Container clearly defines *all* independent *state*. All non-pure components.
 4. Control performance by balancing memory, CPU and other resources. Profile control and optimize performance of system.
 
-A motherboard is usually its own OS process. Since the motherboard is statically defined, things like new / delete of components are not possible.
+A container is usually its own OS process. Since the container is statically defined, things like new / delete of components are not possible.
 
 
 ### NON-GOALS
@@ -127,7 +127,7 @@ A motherboard is usually its own OS process. Since the motherboard is statically
 - Pure / free of side effects
 
 
-The motherboard consists of a discrete number of components connected together with wires. The wires carries messages. A message is a Floyd value, usually an enum. Whenever a value, queue element or signal is mentioned, *any* of Floyd's types can be used -- even huge multi-gigabyte nested structs or collections.
+The container consists of a discrete number of components connected together with wires. The wires carries messages. A message is a Floyd value, usually an enum. Whenever a value, queue element or signal is mentioned, *any* of Floyd's types can be used -- even huge multi-gigabyte nested structs or collections.
 
 
 Example components:
@@ -194,7 +194,7 @@ The inbox has two purposes:
 You can always post a message to *any* clock-component, even when it runs on another clock.
 
 
-A clock is statically instantiated in a motherboard -- you cannot allocate them at runtime.
+A clock is statically instantiated in a container -- you cannot allocate them at runtime.
 
 The actor function CAN chose to have several selects() which makes it work as a small state machine.
 
@@ -389,12 +389,12 @@ Notice: supermap() has a fence at end. If you do a game pipeline you can spill t
 
 
 
-### MOTHERBOARD FILE FORMAT REFERENCE
+### CONTAINER FILE FORMAT REFERENCE
 
-helloworld.board
+helloworld.container
 This is a declarative file that describes the top-level structure of an app. Its contents looks like this:
 
-		my first design.mboard
+		my first design.container
 
 		{
 			"major_version": 1,
@@ -405,15 +405,15 @@ This is a declarative file that describes the top-level structure of an app. Its
 		}
 
 
-### MOTHERBOARD MAIN REFERENCE
+### CONTAINER MAIN REFERENCE
 
 Top level function
 
 ```
-motherboard_main()
+container_main()
 ```
 
-This is the motherboard's start function. It will find, create and and connect all resources, runtimes and other dependencies to boot up the motherboard and to do executibe decisions and balancing for the motherboard.
+This is the container's start function. It will find, create and and connect all resources, runtimes and other dependencies to boot up the container and to do executibe decisions and balancing for the container.
 
 
 
@@ -613,7 +613,7 @@ Use to save a value to local file system efficiently. Only diffs are stored / lo
 ![alt text](./floyd_systems_vst.png "VST-plugin")
 
 
-Source file: *my_vst\_plug.board*
+Source file: *my_vst\_plug.container*
 
 
 ```
@@ -700,7 +700,7 @@ Source file: *my_vst\_plug.board*
 			}
 		}
 
-		board = JSON
+		container = JSON
 			[
 				{
 					"doc": "you need to import pins.",
@@ -771,7 +771,7 @@ See Erlang. These start, monitor and fix containers and actors.
 
 ### IDEA: DIFF AND MERGE
 
-Diff and merge are important to Motherboard code to detect what changes needs to be performed in the world.
+Diff and merge are important to container code to detect what changes needs to be performed in the world.
 
 
 ### IDEA: All OS-services are implemented as clock:
