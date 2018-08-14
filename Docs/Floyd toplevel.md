@@ -195,9 +195,9 @@ A thread can consume world time because:
 
 Add an actor if
 
-1. You want to be able to run work in parallel
+1. You want to be able to run work in parallel, like loading data in the background
 2. You want a mutable state / memory
-3. You want to model a system where
+3. You want to model a system where things happens concurrently, like audio streaming vs main thread.
 
 **Actors is the only way to keep state in Floyd.**
 
