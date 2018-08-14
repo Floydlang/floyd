@@ -1,4 +1,4 @@
-	<img src="floyd_logo.png" alt="drawing" width="600px"/>
+![alt text](./floyd_logo.png)
 
 # FLOYD SYSTEMS MANUAL
 
@@ -34,8 +34,6 @@ It is also simple to introduce concurrency to create more opportunities to run c
 
 A complete system is organised into parts like this:
 
-
-	<img src="floyd_systems_software_system.png" alt="drawing" width="600px"/>
 
 ![alt text](./floyd_systems_software_system.png)
 
