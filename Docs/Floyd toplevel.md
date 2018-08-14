@@ -2,32 +2,32 @@
 
 # FLOYD SYSTEMS MANUAL
 
-Floyd Script is the basic way to create logic. The code is isolated from the noise and troubles of the real world: everything is immutable and pure. Time does not advance. There is no concurrency or communication with other systems, no runtime errors.
+Floyd Script: this is the basic way to create logic. The code is isolated from the noise and troubles of the real world: everything is immutable and pure. Time does not advance. There is no concurrency or communication with other systems, no runtime errors.
 
-Floyd Systems is how you make software that lives in the real world, where all those things happens all the time. Floyd allows you create huge, robust software systems that you can reason about, spanning computers and processes, handling communication and time advancing and faults.
+Floyd Systems: this is how you make software that lives in the real world, where all those things happens all the time. Floyd allows you create huge, robust software systems that you can reason about, spanning computers and processes, handling communication and time advancing and faults. Floyd Systems are built ontop of Floyd Script logic.
 
 Floyd uses the C4 model to organize all of this. C4 model https://c4model.com/
 
 
 GOALS
 
-1. A high-level way to organise huge code bases and systems with many threads, processes and computers, beyond functions, classes and modules and also represent those concepts through out: at the code level, in debugger, in profiler etc.
-2. A simple and robust method for doing concurrency, communication etc.
-3. Allow extreme performance and profiling as a separate thing done ONTOP of the correct logic.
+1. Allow you design reliable systems and reason about them. Systems with many computers, processes and threads -- concepts beyond functions, classes and modules. It represent those concepts through out: at the source code level, in debugger, in profiler etc.
+2. Provide simple and robust methods for doing concurrency, communication, parallelisation, errors handling etc.
+3. Allow extreme performance and profiling.
 4. Support nextgen visual programming and interactions.
 
 
 # ABOUT PERFORMANCE
 
-Floyd is designed to make it practical to make big systems with performance better than what you get with average optimized C code.
+Floyd is designed to make it simple and practical to make big systems with performance better than what you get with average optimized C code.
 
 It does this by splitting the design into two different concepts:
 
-1. Encourage your logic and processing code to be simple and correct and to declare where there is opportunity to execute code independely of eachother.
+1. Encourage your logic and processing code to be simple and correct and to declare where there is opportunity to execute code independely of eachother. This type of code is ideal to run in parallel or cache etc, like a shader in a graphics API.
 
-2. At the top level, profile execution and make high-level improvements that dramatically alter how the code is *generated* and executed to run on the available hardware. Caching things, working in batches, running in parallel, ordering work for different localities, memory layouts and access patterns.
+2. At the top level, profile execution and make high-level improvements that dramatically alter how the code is *generated* and executed to run on the available hardware. Caching, collection type selection, batching, parallelisation, ordering work for different localities, memory layouts and access patterns.
 
-It is also simple to introduce concurrency to create more opportunities to run computations in parallel.
+It is also simple to introduce more concurrency to create more opportunities to run computations in parallel.
 
 
 # ABOUT C4 CONCEPTS
@@ -40,113 +40,113 @@ A complete system is organised into parts like this:
 
 ### PERSON
 
-Various human users of your software system
+Various human users of your software system. Uses some sort of user interface to the Software System. For example a UI on an iPhone.
 
 
 ### SOFTWARE SYSTEM
 
-Highest level of abstraction and describes something that delivers value to its users, whether they are human or not. 
+Highest level of abstraction and describes something that delivers value to its users, whether they are human or not, can be composed of many computers working together.
 
-Floyd file: **software-system.floyd**
 
 
 ### CONTAINER
 
-A container represents something that hosts code or data. A container is something that needs to be running in order for the overall software system to work.
-Mobile app, Server-side web application, Client-side web application, a microservice are all examples of containers.
+A container represents something that hosts code or data. A container is something that needs to be running in order for the overall software system to work. A mobile app, a server-side web application, a client-side web application, a microservice - all examples of containers.
 
-This is usually a single OS-process, with mutation, time, several threads. It looks for resources and knows how to string things together inside the container.
+This is usually a single OS-process, with internal mutation, time, several threads. It looks for resources and knows how to string things together inside the container. The basic building blocks are unpure-components, built in ones and ones you program yourself.
 
-The container wires together a bunch of unpure components.
 
 ### COMPONENT
 
-Grouping of related functionality encapsulated behind a well-defined interface. Like a software integrated circuit or a code library. Does not span processes. JPEG Librart, JSON lib. Custom component for syncing with your server. Amazon S3 library, socket library.
+Grouping of related functionality encapsulated behind a well-defined interface. Like a software integrated circuit or a code library. Does not span processes. JPEG library, JSON lib. Custom component for syncing with your server. Amazon S3 library, socket library.
 
 There are two types of components: pure and unpure.
 
-- Pure components have no side effects, like a ZIP library or a matrix-math library. They are also passive.
+- Pure components have no side effects, have no internal state and are passive - like a ZIP library or a matrix-math library.
 
-- Unpure components may be active (detecting mouse clicks and calling your code) and may affect the world around you or give different results for each call. get_time() and get_mouse_pos(), on_mouse_click(). read_directory_elements().
+- Unpure components may be active (detecting mouse clicks and calling your code) and may affect the world around you or give different results for each call and keeps their own internal state. get_time() and get_mouse_pos(), on_mouse_click(). read_directory_elements().
+
+Pure components are preferable when possible. Sometimes you can 
+
+??? TBD -- more details
 
 
 ### CODE
 
 Classes. Instance diagram. Examples. Passive. Pure.
 
-	jpeg_quantizer.floyd, colortab.floyd -- implementation source files for the jpeglib
 
 
 # ABOUT C4 DIAGRAMS
 
+There is a set of standard diagram views for explaining and reasoning about your software. These lets you have a complete overview over your entire system and how users interact with it, then drill down to individual containers and further down to components and the code itself.
 
-There is a set of standard diagram views for explaining and reasoning about your software:
 
 
-	<img src="floyd_systems_level1_diagram.png" alt="drawing" width="600px"/>
 ![alt text](./floyd_systems_level1_diagram.png)
 
-Above, level 1: System Context diagram
+**Above, level 1: System Context diagram**
 
 
 
-	<img src="floyd_systems_level2_diagram.png" alt="drawing" width="600px"/>
 ![alt text](./floyd_systems_level2_diagram.png)
 
 Above, level 2: Container diagram
 
 
 
-	<img src="floyd_systems_level3_diagram.png" alt="drawing" width="600px"/>
 ![alt text](./floyd_systems_level3_diagram.png)
 
 Above, level 3: Component diagram
 
 
-	<img src="floyd_systems_level4_diagram.png" alt="drawing" width="600px"/>
 ![alt text](./floyd_systems_level4_diagram.png)
 
 Above, level 4: Code
 
 
-Notice: a component used in several containers or a piece of code that appears in several components will appears in each, seamingly like duplicates. The perspective is **logic dependencies**. There is no diagram for showing the physical dependencies -- which source files or libraries that depends on eachother.
+Notice: a component used in several containers or a piece of code that appears in several components will *appear in each*, seamingly like duplicates. The perspective of the diagrams is **logic dependencies**. These diagrams don't show the physical dependencies -- which source files or libraries that depends on each other.
 
 
-# ABOUT CONTAINERS
 
-Containers are how you make a mobile app or server. By writing code, stringing together existing components and deciding how to relate to the world around the container. There are often other, sibling containers in your system, for example a server for your mobile game. Containers may be implemented some other way but should still be represented in Floyd Systems, in this case by using a proxy.
+# HELLO WORLD
 
-The container connects components together using wires using a declaration file. Wires carry messages, which is a Floyd value and typically an enum. Notice that the message can carry *any* of Floyd's types -- even huge multi-gigabyte nested structs or collections. Sincce they are immutable they can be passed around efficiently (internally this is done using their ID or hardware address).
+??? TBD - code, all source files, mockup all diagrams.
+
+
+
+# MORE ABOUT CONTAINERS
+
+Containers are where you spend most of your time along with writing Floyd Script code. A mobile app is a container, so is the Django server on Hedoku. You write code, wire together existing components and deciding how to relate to the world around the container.
 
 The container completely defines: concurrency, state, communication with ourside world and runtime errors of the container. This includes sockets, file systems, messages, screens, UI.
 
+A container is typically run as its own OS process.
+
+There are often sibling containers in your system, like a server for your mobile game or data on Amazon S3. Containers may be implemented some other way but should still be represented in Floyd Systems.
+
+Containers are data files: they list the needed unpure-containers and wires them together.
+
 When you design a container the focus is on the unpure components. Components on which your used components depend upon are automatically shown too, if they are unpure. This makes *all* unpure components visible in the same view -- no unpureness goes on anywhere out of sight.
+
+Wires carry messages encoded as a Floyd value, typically a Floyd enum. Notice that the message can carry *any* of Floyd's types -- even huge multi-gigabyte nested structs or collections. Since they are immutable they can be passed around efficiently (internally this is done using their ID or hardware address).
 
 Probes and tweakers are added ontop of a design. They allow you to augument a design with logging, profiling, breakpoints and do advanced performance optimizations, all without altering the code or design itself. The tweakers cannot affect the behaviour of the logic, only timing and hardware utilisation etc.
 
-A container is typically run as its own OS process.
-
-??? Give separate names to unpure component vs pure component. Only unpure components are important when designing the container.
-
-
 Example of components you drop into your container:
 
-- Actor component: an unure component written in Floyd Script that has its own state & inbox.
-- Multiplexer componenet: contains internal pool of clocks and distributes incoming messages to them to run messages in parallel.
-- Built in local FS component: Read and write files, rename directory, swap temp files
-- Built in S3 component
-- Built in socket component
-- Built in REST-component
-- Built in UI-component
-- Built in command line component: Interfaces with command line arguments / returns.
-- Audio component that uses Direct X
-- VST-plugin component
+- An unpure Actor component: an unure component written in Floyd Script that has its own mutable state and receives messages via its inbox.
 - A component written in C
+- Built in local file system component: Read and write files, rename directory, swap temp files (unpure)
+- SVG Lib component (pure)
+- ImageLib component (pure)
+- Built in S3 component (unpure)
+- Built in socket component (unpure)
+- Built in UI-component (unpure)
+- Built in command line component: Interfaces with command line arguments / returns (unpure)
+- Audio component that uses Direct X (unpure)
 
 Notice: these components are all non-singletons - you can make many instances in one container
-
-??? IDEA: Glue expressions, calling FLoyd functions
-??? What if you want a container-like setup for each "document"? Allow making sub-container that can be instantiated in a container? Or a tree of stuff inside a container.
 
 
 **NON-GOALS**
@@ -157,34 +157,57 @@ Notice: these components are all non-singletons - you can make many instances in
 
 
 
-# ABOUT CONCURRENCY AND TIME IN DETAIL
+# MORE ABOUT CONCURRENCY AND TIME
 
 This section describes how to express time / mutation / concurrency in Floyd. These things are related and they are all setup at the top level of the container. This is the main **purpose** of the container.
 
-The goal with Floyd's concurrency model is to be:
+The goal with Floyd's concurrency model is:
 
 1. Simple and robust pre-made mechanisms for real-world concurrency need. Avoid general-purpose primitives.
 2. Composable.
 3. Allow you to make a static design of your container and its concurrency and state.
 4. Separate out parallelism into a separate mechanism.
 5. Avoid problematic constructs like threads, locks, callback hell, nested futures and await/async -- dead ends of concurrency.
-6. Let you control/tune how many threads and cores to use for what parts of the system, independantly of the code.
+6. Let you control/tune how many threads and cores to use for what parts of the system, independantly of the actual code.
 
 Inspirations for Floyd's concurrency model are CSP, Erlang, Go routies and channels and Clojure Core.Async.
 
 
-ACTORS: INBOX, STATE, FUNCTION
+##### THREADING BACKGROUND
 
-For each independant state or "thread" you want in your container, you need to insert an Actor component. You need to write its processing function and define its mutable state. An actor receives messages via its inbox. The inbox is threadsafe and it's THE way to communicate across actors.
+- **Hardware thread** - separate physical transistors that can execute code with a call stack. Typically 1 - 16 are available on a machine. They run all the time.
 
-The actor represents a little standalone process that listens to messages from other actors. Those actors may run in the same or other hardware threads or green threads or even synchronously.
+- **OS thread** - a separate thread of execution provided by the operating system. They are expensive, you typically should have less than 100 and they are expensive to schedule onto hardware threads by the OS. The OS schedules the OS threads onto available hardware threads and preemptively interrupts them regularly to give the hardware thread to another OS thread.
 
-When an actor receieves a message in its inbox, its function is called (now or soon) with that message and the actor's previous state. The actor does some work - something simple or a maybe call a big call tree and it ends by returning its new state, which completes the message handling.
+- **Green thread** -- virtual threads, each with their own callstack. These model the software concurreny and each represents something that can be run on a separate OS thread or hardware thread. How to actually run green threads is up to the runtime -- you don't know or care. This is a way to *expose* concurrency from your code. Green threads are mapped to OS threads by the Floyd runtime. It uses cooperative multitrasking to do this switching. Remember that 
 
-The actor function may be called synchronously when client posts it a message, or it may be run on a green thread, a hardware thread etc. It may be run the next hardware cycle or at some later time.
+- **Task** - a function that can execute independently when all its inputs are available. It can run on any type of thread.
 
+
+A thread can consume world time because:
+
+1. It is executing lots of instructions
+2. It blocks on something external - waiting for data to arrive from the internet, slow RAM memory
+3. It doesn't get clock cycles from the system
+
+
+##### ACTORS: INBOX, STATE, FUNCTION
+
+Add an actor if
+
+1. You want to be able to run work in parallel
+2. You want a mutable state / memory
+3. You want to model a system where
 
 **Actors is the only way to keep state in Floyd.**
+
+For each independant mutable state and/or "thread" you want in your container, you need to insert an Actor component. You need to write its processing function and define its mutable state. An actor receives messages via its inbox. The inbox is thread safe and it's THE way to communicate across actors.
+
+The actor represents a little standalone process that listens to messages from other actors. When an actor receieves a message in its inbox, its function is called (now or later) with that message and the actor's previous state. The actor does some work - something simple or a maybe call a big call tree and it ends by returning its new state, which completes the message handling.
+
+The posting actors may run in the same or other hardware threads or green threads or even synchronously (internally, the thread posting a message to actor's inbox then continues by executing the actor's function to receive and handle the message).
+
+The actor function may be called synchronously when client posts it a message, or it may be run on a green thread, a hardware thread etc. It may be run the next hardware cycle or at some later time.
 
 
 Insight: synchronization points between systems (state or concurrent) always breaks composition. Move these to top level of container.
@@ -216,14 +239,15 @@ Who decides when to advances the clocks? Runtime advances a clock when it has at
 An actor can be synced to another actor's clock. All posts to the inbox will then be synchrnous and blocking calls. These types of clock still have their own state and can be used as controllers / mediators -- even when it doesnt need its own thread.
 
 
+Code running on the same clock shares the same virtual thread of execution. ??? Use "green-thread" to describe this?
+
+
 ACTOR LIMITATIONS:
 
 - Cannot find assets / ports / resources — those are handed to it via the container's wiring.
 - Cannot go find resources, processes etc. These must be handed to it.
 - Clocks cannot be created or deleted at runtime.
 - Cannot create other clocks!
-- ??? IDEA: Supervisors: this is a function that creates and tracks and restarts clocks.
-- ??? System provices clocks for timers, ui-inputs etc. When setup, these receive user input messages etc.
 
 
 
@@ -286,13 +310,14 @@ main() one clock only.
 
 ### EXAMPLE: VST-plugin
 
-??? example Software System diagram and other diagrams.
+??? TBD: make example of *all* the diagrams, including Software System diagram.
 
 ![alt text](./floyd_systems_vst.png)
 
 
 ### FIRST PERSON SHOOTER GAME
 
+??? TBD: make example of *all* the diagrams, including Software System diagram.
 
 ![alt text](./floyd_systems_1st_person_shooter.png)
 
@@ -311,22 +336,23 @@ A video game may have several clocks:
 This game does audio and Open GL graphics. It runs many different clocks. It uses supermap() to render Open GL commands in parallel.
 
 
-### Instagram app
-
-??? TBD
-
-- main ui thread()
-- rendering / scaling clock
-- server comm clock
-
-??? IDEA: Assigning things to physical threads -- algorithmically
-
-
 
 # FLOYD SYSTEM REFERENCE
 
 
-### CONTAINER FILE FORMAT REFERENCE
+
+
+### SOFTWARE SYSTEM REFERENCE
+
+Highest level of abstraction and describes something that delivers value to its users, whether they are human or not, can be composed of many computers working together.
+
+Floyd file: **software-system.floyd**
+
+### CONTAINER REFERENCE
+
+
+	jpeg_quantizer.floyd, colortab.floyd -- implementation source files for the jpeglib
+
 
 helloworld.container
 This is a declarative file that describes the top-level structure of an app. Its contents looks like this:
@@ -341,9 +367,6 @@ This is a declarative file that describes the top-level structure of an app. Its
 			}
 		}
 
-
-### CONTAINER MAIN REFERENCE
-
 Top level function
 
 ```
@@ -353,8 +376,16 @@ container_main()
 This is the container's start function. It will find, create and and connect all resources, runtimes and other dependencies to boot up the container and to do executibe decisions and balancing for the container.
 
 
+### COMPONENT REFERENCE
 
-### COMMAND LINE COMPONENT REFERENCE
+### CODE REFERENCE
+
+
+
+### BUILT-IN COMPONENTS - REFERENCE
+
+
+##### COMMAND LINE COMPONENT REFERENCE
 
 ??? TBD
 
@@ -363,8 +394,16 @@ This is the container's start function. It will find, create and and connect all
 	string readline() unpure
 
 
+##### MULTIPLEXER COMPONENT
 
-### LOG PROBE REFERENCE
+Contains internal pool of actors and distributes incoming messages to them to run messages in parallel.
+
+
+
+### PROBES REFERENCE
+
+
+##### LOG PROBE REFERENCE
 
 ??? TBD
 
@@ -373,11 +412,34 @@ This is the container's start function. It will find, create and and connect all
 - Record value of all clocks at all time, including process PC. Oscilloscope & log
 
 
-### PROFILE PROBE REFERENCE
+##### PROFILE PROBE REFERENCE
+
+
+##### WATCHDOG PROBE REFERENCE
+
+??? TBD
+
+
+##### BREAKPOINT PROBE REFERENCE
+
+??? TBD
+
+
+##### ASSERT PROBE REFERENCE
 
 
 
-### CACHE TWEAKER REFERENCE
+### TWEAKERS REFERECE
+
+
+##### COLLECTION SELECTOR TWEAKER - REFERENCE
+
+??? TBD
+
+Defines rules for which collection backend to use when.
+
+
+##### CACHE TWEAKER REFERENCE
 
 ??? TBD
 
@@ -385,15 +447,21 @@ A cache will store the result of a previous computation and if a future computat
 
 A cache is always a shortcut for a (pure) function. You can decide if the cache works for *every* invocation of a function or limit the cache to invocations of the function within specified parent part.
 
+- Insert read cache
+- Insert write cache
+- Increase random access speed for dictionary
+- Increase forward read speed, stride
+- Increase backward read speed, stride
 
-### EAGER TWEAKER REFERENCE
+
+##### EAGER TWEAKER REFERENCE
 
 ??? TBD
 
 Like a cache, but calculates its values *before* clients call the function. It can be used to create a static lookup table at app startup.
 
 
-### BATCH TWEAKER REFERENCE
+##### BATCH TWEAKER REFERENCE
 
 ??? TBD
 
@@ -401,43 +469,42 @@ When a function is called, this part calls the function with similar parameters 
 
 You supply a function that takes the parameters and make variations of them.
 
+- Batching: make 64 value each time?
+- Speculative batching with rewind.
 
-### LAZY TWEAKER REFERENCE
+
+##### LAZY TWEAKER REFERENCE
 
 ??? TBD
 
 Make the function return a future and don't calculate the real value until client accesses it.
-
-
-### WATCHDOG PROBE REFERENCE
-
-??? TBD
-
-
-### BREAKPOINT PROBE REFERENCE
-
-??? TBD
-
-
-### TWEAKS - OPTIMIZATIONS REFERENCE
-
-??? TBD
-
-- Insert read cache
-- Insert write cache
-- Precalculate / prefetch, eager
 - Lazy-buffer
+
+
+##### PRECALC TWEAKER REFERENCE
+
+Prefaclucate at compile time and store statically in executable.
+Precalculate at container startup time, store in FS.
+- Precalculate / prefetch, eager
+
+
+##### CONTENT DE-DUPLICATION TWEAKER REFERENCE
+
 - Content de-duplication
 - Cache in local file system
 - Cache on Amazon S3
-- Parallelize pure function
-- Increase mutability
-- Increase random access speed
-- Increase forward read speed, stride
-- Increase backward read speed, stride
+
+
+##### TRANSFORM MEMORY LAYOUT TWEAKER REFERENCE
+
+??? TBD
+
+Turn array of structs to struct of arrays etc.
 - Rearrange nested composite (turn vec<pixel> to struct{ vec<red>, vec<green>, vec<blue> }
-- Batching: make 64 value each time?
-- Speculative batching with rewind.
+
+
+##### SET THREAD COUNT & PRIO TWEAKER REFERENCE
+- Parallelize pure function
 
 
 
@@ -610,10 +677,7 @@ This is a way to create a component from the C language, using the C ABI.
 ```
 
 
-
-
-
-### EXAMPLE: VST-plugin
+# EXAMPLE: VST-plugin
 
 ??? example Software System diagram and other diagrams.
 
@@ -764,6 +828,12 @@ Source file: *my_vst\_plug.container*
 
 # NOTES AND IDEAS FOR FUTURE
 
+??? IDEA: Supervisors: this is a function that creates and tracks and restarts clocks.
+??? Give separate names to unpure component vs pure component. Only unpure components are important when designing the container.
+??? IDEA: Glue expressions, calling FLoyd functions
+??? What if you want a container-like setup for each "document"? Allow making sub-container that can be instantiated in a container? Or a tree of stuff inside a container.
+??? make unpure and pure components two different concepts? Or use containers instead of unpure components?
+
 
 ### IDEA: TASK DISPATCHER
 
@@ -831,3 +901,13 @@ READER modes:
 - Sample queue of all values since last read.
 
 
+	<img src="floyd_systems_level3_diagram.png" alt="drawing" width="600px"/>
+
+
+### IDEA: MAKE EXAMPLE OF INSTRAGRAM APP
+
+- main ui thread()
+- rendering / scaling clock
+- server comm clock
+
+??? IDEA: Assigning things to physical threads -- algorithmically
