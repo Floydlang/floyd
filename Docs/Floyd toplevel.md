@@ -911,3 +911,5 @@ READER modes:
 - server comm clock
 
 ??? IDEA: Assigning things to physical threads -- algorithmically
+
+??? rename "Actor" to "green process". "Clock"? "Mediator", "State".
