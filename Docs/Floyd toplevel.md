@@ -216,6 +216,7 @@ The actor function CAN chose to have several select()-statements which makes it 
 
 Actors are very inexpensive.
 
+
 **Synchronization points between systems (state or concurrent) always breaks all attempts to composition. That's why Floyd has moved these to top level of container.**
 
 
@@ -331,6 +332,51 @@ Highest level of abstraction and describes something that delivers value to its 
 
 Floyd file: **software-system.floyd**
 
+
+-- how to enter glue code directly in component?
+
+```
+source-files
+	my-system.fss
+	my-game-app.container
+	my-django-server.container
+	
+	game-simulation.component
+	game-renderer.component
+	
+	jpeglib.component
+	3math.component
+	rest.component
+	
+	quantize.floyd
+	game-state.floyd
+	game-renderer.floyd
+	game-simulation.floyd
+	match-maker.floyd
+```	
+
+
+
+```
+{
+	"items": [
+		"musician": {
+			"type": "person",
+			"desc": "uses the mobile app to record music ontop of backing track"
+		},
+		"Voxtracker": {
+			"type": "container",
+			"desc": "mobile app with recording feature" 		}
+	},
+	"connections": [
+		{ "source": "musician", "interaction": "uses", "tech": "", "dest": "voxtracker" },
+	}
+
+	"containers": [
+		
+	]
+}
+```
 
 ### CONTAINER REFERENCE
 
