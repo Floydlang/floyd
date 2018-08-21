@@ -24738,7 +24738,7 @@
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2018-08-13 21:13:19 +0000</string>
+	<string>2018-08-21 19:27:46 +0000</string>
 	<key>Modifier</key>
 	<string>Marcus Zetterquist</string>
 	<key>MovementHandleVisible</key>
@@ -24774,7 +24774,7 @@
 		<key>NSPaperName</key>
 		<array>
 			<string>string</string>
-			<string>B7607210-1C8D-44BA-BBC9-247BAED02042</string>
+			<string>iso-a3</string>
 		</array>
 		<key>NSPaperSize</key>
 		<array>
@@ -26724,6 +26724,248 @@
 			</array>
 			<key>GraphicsList</key>
 			<array>
+				<dict>
+					<key>Class</key>
+					<string>Group</string>
+					<key>Graphics</key>
+					<array>
+						<dict>
+							<key>Bounds</key>
+							<string>{{960.00000000000011, 226.28571428571377}, {11.999999999999911, 27.428571428571431}}</string>
+							<key>Class</key>
+							<string>ShapedGraphic</string>
+							<key>ID</key>
+							<integer>2880</integer>
+							<key>Scaling</key>
+							<integer>4</integer>
+							<key>Style</key>
+							<dict>
+								<key>fill</key>
+								<dict>
+									<key>Color</key>
+									<dict>
+										<key>b</key>
+										<real>0.52549000000000001</real>
+										<key>g</key>
+										<real>0.31949300000000003</real>
+										<key>r</key>
+										<real>0.15294099999999999</real>
+										<key>space</key>
+										<string>srgb</string>
+									</dict>
+								</dict>
+							</dict>
+						</dict>
+						<dict>
+							<key>Bounds</key>
+							<string>{{924, 226.28571428571377}, {11.999999999999911, 27.428571428571431}}</string>
+							<key>Class</key>
+							<string>ShapedGraphic</string>
+							<key>ID</key>
+							<integer>2881</integer>
+							<key>Scaling</key>
+							<integer>4</integer>
+							<key>Style</key>
+							<dict>
+								<key>fill</key>
+								<dict>
+									<key>Color</key>
+									<dict>
+										<key>b</key>
+										<real>0.26666699999999999</real>
+										<key>g</key>
+										<real>0.66274500000000003</real>
+										<key>r</key>
+										<real>0.30588199999999999</real>
+										<key>space</key>
+										<string>srgb</string>
+									</dict>
+								</dict>
+							</dict>
+						</dict>
+						<dict>
+							<key>Bounds</key>
+							<string>{{927.00000000000011, 216}, {41.999999999999694, 48.000000000000007}}</string>
+							<key>Class</key>
+							<string>ShapedGraphic</string>
+							<key>ID</key>
+							<integer>2882</integer>
+							<key>Scaling</key>
+							<integer>4</integer>
+							<key>Shape</key>
+							<string>62EC9510-9143-4222-A97D-7F075D20DC4B-93985-0004FD29632C2B43</string>
+							<key>Style</key>
+							<dict>
+								<key>fill</key>
+								<dict>
+									<key>Color</key>
+									<dict>
+										<key>b</key>
+										<real>0.92144099999999995</real>
+										<key>g</key>
+										<real>0.92145299999999997</real>
+										<key>r</key>
+										<real>0.921431</real>
+										<key>space</key>
+										<string>srgb</string>
+									</dict>
+								</dict>
+								<key>stroke</key>
+								<dict>
+									<key>CornerRadius</key>
+									<real>8</real>
+								</dict>
+							</dict>
+							<key>TextRelativeArea</key>
+							<string>{{0, 0}, {1, 1}}</string>
+						</dict>
+					</array>
+					<key>ID</key>
+					<integer>2879</integer>
+					<key>Layer</key>
+					<integer>0</integer>
+					<key>Scaling</key>
+					<integer>4</integer>
+					<key>Style</key>
+					<dict>
+						<key>fill</key>
+						<dict>
+							<key>Draws</key>
+							<string>NO</string>
+						</dict>
+						<key>shadow</key>
+						<dict>
+							<key>Draws</key>
+							<string>NO</string>
+						</dict>
+						<key>stroke</key>
+						<dict>
+							<key>Draws</key>
+							<string>NO</string>
+						</dict>
+					</dict>
+				</dict>
+				<dict>
+					<key>Class</key>
+					<string>Group</string>
+					<key>Graphics</key>
+					<array>
+						<dict>
+							<key>Bounds</key>
+							<string>{{948.00000000000011, 418.28571428571377}, {11.999999999999911, 27.428571428571431}}</string>
+							<key>Class</key>
+							<string>ShapedGraphic</string>
+							<key>ID</key>
+							<integer>2876</integer>
+							<key>Scaling</key>
+							<integer>4</integer>
+							<key>Style</key>
+							<dict>
+								<key>fill</key>
+								<dict>
+									<key>Color</key>
+									<dict>
+										<key>b</key>
+										<real>0.52549000000000001</real>
+										<key>g</key>
+										<real>0.31949300000000003</real>
+										<key>r</key>
+										<real>0.15294099999999999</real>
+										<key>space</key>
+										<string>srgb</string>
+									</dict>
+								</dict>
+							</dict>
+						</dict>
+						<dict>
+							<key>Bounds</key>
+							<string>{{912, 418.28571428571377}, {11.999999999999911, 27.428571428571431}}</string>
+							<key>Class</key>
+							<string>ShapedGraphic</string>
+							<key>ID</key>
+							<integer>2877</integer>
+							<key>Scaling</key>
+							<integer>4</integer>
+							<key>Style</key>
+							<dict>
+								<key>fill</key>
+								<dict>
+									<key>Color</key>
+									<dict>
+										<key>b</key>
+										<real>0.26666699999999999</real>
+										<key>g</key>
+										<real>0.66274500000000003</real>
+										<key>r</key>
+										<real>0.30588199999999999</real>
+										<key>space</key>
+										<string>srgb</string>
+									</dict>
+								</dict>
+							</dict>
+						</dict>
+						<dict>
+							<key>Bounds</key>
+							<string>{{915.00000000000011, 408}, {41.999999999999694, 48.000000000000007}}</string>
+							<key>Class</key>
+							<string>ShapedGraphic</string>
+							<key>ID</key>
+							<integer>2878</integer>
+							<key>Scaling</key>
+							<integer>4</integer>
+							<key>Shape</key>
+							<string>62EC9510-9143-4222-A97D-7F075D20DC4B-93985-0004FD29632C2B43</string>
+							<key>Style</key>
+							<dict>
+								<key>fill</key>
+								<dict>
+									<key>Color</key>
+									<dict>
+										<key>b</key>
+										<real>0.92144099999999995</real>
+										<key>g</key>
+										<real>0.92145299999999997</real>
+										<key>r</key>
+										<real>0.921431</real>
+										<key>space</key>
+										<string>srgb</string>
+									</dict>
+								</dict>
+								<key>stroke</key>
+								<dict>
+									<key>CornerRadius</key>
+									<real>8</real>
+								</dict>
+							</dict>
+							<key>TextRelativeArea</key>
+							<string>{{0, 0}, {1, 1}}</string>
+						</dict>
+					</array>
+					<key>ID</key>
+					<integer>2875</integer>
+					<key>Layer</key>
+					<integer>0</integer>
+					<key>Scaling</key>
+					<integer>4</integer>
+					<key>Style</key>
+					<dict>
+						<key>fill</key>
+						<dict>
+							<key>Draws</key>
+							<string>NO</string>
+						</dict>
+						<key>shadow</key>
+						<dict>
+							<key>Draws</key>
+							<string>NO</string>
+						</dict>
+						<key>stroke</key>
+						<dict>
+							<key>Draws</key>
+							<string>NO</string>
+						</dict>
+					</dict>
+				</dict>
 				<dict>
 					<key>Bounds</key>
 					<string>{{1476, 3201.5000000372529}, {180, 392}}</string>
@@ -42752,7 +42994,7 @@ Level 2: Container diagram}</string>
 				</dict>
 				<dict>
 					<key>Bounds</key>
-					<string>{{480, 768}, {144, 48}}</string>
+					<string>{{468, 768}, {144, 48}}</string>
 					<key>Class</key>
 					<string>ShapedGraphic</string>
 					<key>FontInfo</key>
@@ -42973,62 +43215,6 @@ Level 2: Container diagram}</string>
 					<integer>0</integer>
 				</dict>
 				<dict>
-					<key>Bounds</key>
-					<string>{{972, 768}, {240, 84}}</string>
-					<key>Class</key>
-					<string>ShapedGraphic</string>
-					<key>FontInfo</key>
-					<dict>
-						<key>Color</key>
-						<dict>
-							<key>space</key>
-							<string>gg22</string>
-							<key>w</key>
-							<string>0</string>
-						</dict>
-						<key>Size</key>
-						<real>14</real>
-					</dict>
-					<key>ID</key>
-					<integer>2200</integer>
-					<key>Layer</key>
-					<integer>0</integer>
-					<key>Style</key>
-					<dict>
-						<key>fill</key>
-						<dict>
-							<key>Draws</key>
-							<string>NO</string>
-						</dict>
-						<key>shadow</key>
-						<dict>
-							<key>Draws</key>
-							<string>NO</string>
-						</dict>
-						<key>stroke</key>
-						<dict>
-							<key>Draws</key>
-							<string>NO</string>
-						</dict>
-					</dict>
-					<key>Text</key>
-					<dict>
-						<key>Align</key>
-						<integer>0</integer>
-						<key>Text</key>
-						<string>{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf600
-{\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\deftab720
-\pard\pardeftab720\partightenfactor0
-
-\f0\fs28 \cf0 A state-function can block without blocking the component that posted the message into its inbox.}</string>
-					</dict>
-					<key>TextPlacement</key>
-					<integer>0</integer>
-				</dict>
-				<dict>
 					<key>Class</key>
 					<string>Group</string>
 					<key>Graphics</key>
@@ -43206,6 +43392,10 @@ Level 2: Container diagram}</string>
 							<string>FilledArrow</string>
 							<key>HeadScale</key>
 							<real>0.69999999999999996</real>
+							<key>HopLines</key>
+							<true/>
+							<key>HopType</key>
+							<integer>1</integer>
 							<key>Legacy</key>
 							<false/>
 							<key>LineType</key>
@@ -43308,8 +43498,8 @@ Level 2: Container diagram}</string>
 					<integer>0</integer>
 					<key>Points</key>
 					<array>
-						<string>{883.20000000000005, 360}</string>
-						<string>{864.46507761066562, 367.39536410105302}</string>
+						<string>{960, 336}</string>
+						<string>{864.47087095579741, 370.1175460872152}</string>
 					</array>
 					<key>Style</key>
 					<dict>
@@ -43367,8 +43557,8 @@ Level 2: Container diagram}</string>
 					<integer>0</integer>
 					<key>Points</key>
 					<array>
-						<string>{657, 684}</string>
-						<string>{624.43412157106218, 665.39092661203551}</string>
+						<string>{684, 696}</string>
+						<string>{612.44721359549999, 660.22360679774999}</string>
 					</array>
 					<key>Style</key>
 					<dict>
@@ -43398,7 +43588,7 @@ Level 2: Container diagram}</string>
 				</dict>
 				<dict>
 					<key>Bounds</key>
-					<string>{{648, 684}, {228, 120}}</string>
+					<string>{{648, 696}, {288, 108}}</string>
 					<key>Class</key>
 					<string>ShapedGraphic</string>
 					<key>FontInfo</key>
@@ -43447,7 +43637,9 @@ Level 2: Container diagram}</string>
 \deftab720
 \pard\pardeftab720\partightenfactor0
 
-\f0\fs28 \cf0 Messages posted to inbox with the same clock are processed synchronously. Any existing messages are processed first, also synchronously.}</string>
+\f0\fs28 \cf0 Messages posted to inbox with the same clock are processed synchronously.\
+\
+Any existing messages are processed first, also synchronously.}</string>
 					</dict>
 					<key>TextPlacement</key>
 					<integer>0</integer>
@@ -43482,8 +43674,8 @@ Level 2: Container diagram}</string>
 					<integer>0</integer>
 					<key>Points</key>
 					<array>
-						<string>{1224, 495.42857142857144}</string>
-						<string>{1176.4874292532859, 484.56855525789393}</string>
+						<string>{1212, 507.27272727272725}</string>
+						<string>{1176.4698967117442, 494.35268971336154}</string>
 					</array>
 					<key>Style</key>
 					<dict>
@@ -43513,7 +43705,7 @@ Level 2: Container diagram}</string>
 				</dict>
 				<dict>
 					<key>Bounds</key>
-					<string>{{1200, 612}, {168, 132}}</string>
+					<string>{{1212, 636}, {168, 132}}</string>
 					<key>Class</key>
 					<string>ShapedGraphic</string>
 					<key>FontInfo</key>
@@ -43755,7 +43947,7 @@ There are automatically shown, to make *all* state/time visible in the view.}</s
 				</dict>
 				<dict>
 					<key>Bounds</key>
-					<string>{{1224, 444}, {180, 144}}</string>
+					<string>{{1212, 480}, {180, 120}}</string>
 					<key>Class</key>
 					<string>ShapedGraphic</string>
 					<key>FontInfo</key>
@@ -43919,7 +44111,7 @@ Blocks while file is loaded, then unpacks the WAVE file and sends back the resul
 				</dict>
 				<dict>
 					<key>Bounds</key>
-					<string>{{876, 444}, {144, 84}}</string>
+					<string>{{876, 456}, {144, 84}}</string>
 					<key>Class</key>
 					<string>ShapedGraphic</string>
 					<key>FontInfo</key>
@@ -43975,7 +44167,7 @@ Blocks while file is loaded, then unpacks the WAVE file and sends back the resul
 				</dict>
 				<dict>
 					<key>Bounds</key>
-					<string>{{648, 600}, {168, 84}}</string>
+					<string>{{672, 576}, {168, 84}}</string>
 					<key>Class</key>
 					<string>ShapedGraphic</string>
 					<key>FontInfo</key>
@@ -44186,7 +44378,7 @@ Blocks while file is loaded, then unpacks the WAVE file and sends back the resul
 					<real>-1</real>
 					<key>Points</key>
 					<array>
-						<string>{612, 588}</string>
+						<string>{600, 588}</string>
 						<string>{660, 588}</string>
 						<string>{660, 360}</string>
 						<string>{660, 324}</string>
@@ -44225,7 +44417,7 @@ Blocks while file is loaded, then unpacks the WAVE file and sends back the resul
 				</dict>
 				<dict>
 					<key>Bounds</key>
-					<string>{{600, 576}, {24, 24}}</string>
+					<string>{{588, 576}, {24, 24}}</string>
 					<key>Class</key>
 					<string>ShapedGraphic</string>
 					<key>FontInfo</key>
@@ -44278,7 +44470,7 @@ Blocks while file is loaded, then unpacks the WAVE file and sends back the resul
 				</dict>
 				<dict>
 					<key>Bounds</key>
-					<string>{{288, 528}, {108, 48}}</string>
+					<string>{{300, 612}, {108, 48}}</string>
 					<key>Class</key>
 					<string>ShapedGraphic</string>
 					<key>FontInfo</key>
@@ -44336,7 +44528,7 @@ Blocks while file is loaded, then unpacks the WAVE file and sends back the resul
 				</dict>
 				<dict>
 					<key>Bounds</key>
-					<string>{{372, 372}, {264, 48}}</string>
+					<string>{{360, 372}, {264, 48}}</string>
 					<key>Class</key>
 					<string>ShapedGraphic</string>
 					<key>FontInfo</key>
@@ -44998,7 +45190,7 @@ Blocks while file is loaded, then unpacks the WAVE file and sends back the resul
 				</dict>
 				<dict>
 					<key>Bounds</key>
-					<string>{{876, 252}, {288, 108}}</string>
+					<string>{{876, 276}, {336, 60}}</string>
 					<key>Class</key>
 					<string>ShapedGraphic</string>
 					<key>FontInfo</key>
@@ -45047,9 +45239,7 @@ Blocks while file is loaded, then unpacks the WAVE file and sends back the resul
 \deftab720
 \pard\pardeftab720\partightenfactor0
 
-\f0\fs28 \cf0 Handle UI, user drags sliders, open patches, load and save.\
-\
-Uses select() to wait on GUI events, feedback from realtime engine or from background loader}</string>
+\f0\fs28 \cf0 Handle UI, user drags sliders, open patches, load and save. Handles feedback from realtime engine or from background loader}</string>
 					</dict>
 					<key>TextPlacement</key>
 					<integer>0</integer>
@@ -45058,7 +45248,7 @@ Uses select() to wait on GUI events, feedback from realtime engine or from backg
 				</dict>
 				<dict>
 					<key>Bounds</key>
-					<string>{{360, 276}, {216, 48}}</string>
+					<string>{{360, 264}, {216, 48}}</string>
 					<key>Class</key>
 					<string>ShapedGraphic</string>
 					<key>FontInfo</key>
@@ -47107,7 +47297,7 @@ Uses select() to wait on GUI events, feedback from realtime engine or from backg
 				</dict>
 				<dict>
 					<key>Bounds</key>
-					<string>{{528, 552}, {48, 24}}</string>
+					<string>{{516, 552}, {48, 24}}</string>
 					<key>Class</key>
 					<string>ShapedGraphic</string>
 					<key>FontInfo</key>
@@ -47120,7 +47310,7 @@ Uses select() to wait on GUI events, feedback from realtime engine or from backg
 							<string>0</string>
 						</dict>
 						<key>Size</key>
-						<real>8</real>
+						<real>10</real>
 					</dict>
 					<key>ID</key>
 					<integer>2079</integer>
@@ -47156,21 +47346,46 @@ Uses select() to wait on GUI events, feedback from realtime engine or from backg
 					<dict>
 						<key>Pad</key>
 						<real>0.0</real>
+						<key>RTFD</key>
+						<data>
+						BAtzdHJlYW10eXBlZIHoA4QBQISE
+						hBJOU0F0dHJpYnV0ZWRTdHJpbmcA
+						hIQITlNPYmplY3QAhZKEhIQITlNT
+						dHJpbmcBlIQBKwVJTkJPWIaEAmlJ
+						AQWShISEDE5TRGljdGlvbmFyeQCU
+						hAFpA5KElpYHTlNDb2xvcoaShISE
+						B05TQ29sb3IAlIQBYwOEAmZmAAGG
+						koSWlhBOU1BhcmFncmFwaFN0eWxl
+						hpKEhIQXTlNNdXRhYmxlUGFyYWdy
+						YXBoU3R5bGUAhIQQTlNQYXJhZ3Jh
+						cGhTdHlsZQCUhARDQ0BTAgCEhIQH
+						TlNBcnJheQCUmQyShISECU5TVGV4
+						dFRhYgCUhAJDZgAchpKEo6IAOIaS
+						hKOiAFSGkoSjogBwhpKEo6IAgYwA
+						hpKEo6IAgagAhpKEo6IAgcQAhpKE
+						o6IAgeAAhpKEo6IAgfwAhpKEo6IA
+						gRgBhpKEo6IAgTQBhpKEo6IAgVAB
+						hoYAhpKElpYGTlNGb250hpKEhIQG
+						TlNGb250HpSZJIQFWzM2Y10GAAAA
+						HAAAAP/+SABlAGwAdgBlAHQAaQBj
+						AGEATgBlAHUAZQCEAWYKmwCbAZsA
+						mwCGhoY=
+						</data>
 						<key>Text</key>
 						<string>{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf600
 {\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\csgray\c0;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
-\f0\fs16 \cf0 INBOX}</string>
+\f0\fs20 \cf2 INBOX}</string>
 					</dict>
 					<key>TextRelativeArea</key>
 					<string>{{0.10000000000000001, 0}, {0.80000000000000004, 1}}</string>
 				</dict>
 				<dict>
 					<key>Bounds</key>
-					<string>{{528, 624}, {48, 48}}</string>
+					<string>{{516, 624}, {48, 48}}</string>
 					<key>Class</key>
 					<string>ShapedGraphic</string>
 					<key>FontInfo</key>
@@ -47230,7 +47445,7 @@ Uses select() to wait on GUI events, feedback from realtime engine or from backg
 				</dict>
 				<dict>
 					<key>Bounds</key>
-					<string>{{528, 576}, {48, 24}}</string>
+					<string>{{516, 576}, {48, 24}}</string>
 					<key>Class</key>
 					<string>ShapedGraphic</string>
 					<key>FontInfo</key>
@@ -47247,7 +47462,7 @@ Uses select() to wait on GUI events, feedback from realtime engine or from backg
 							<string>srgb</string>
 						</dict>
 						<key>Size</key>
-						<real>8</real>
+						<real>10</real>
 					</dict>
 					<key>ID</key>
 					<integer>2077</integer>
@@ -47290,7 +47505,7 @@ Uses select() to wait on GUI events, feedback from realtime engine or from backg
 {\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
-\f0\fs16 \cf2 STATE}</string>
+\f0\fs20 \cf2 STATE}</string>
 					</dict>
 					<key>TextRelativeArea</key>
 					<string>{{0, 0.20000000000000001}, {1, 0.69999999999999996}}</string>
@@ -47310,7 +47525,7 @@ Uses select() to wait on GUI events, feedback from realtime engine or from backg
 							<string>0</string>
 						</dict>
 						<key>Size</key>
-						<real>8</real>
+						<real>10</real>
 					</dict>
 					<key>ID</key>
 					<integer>2076</integer>
@@ -47353,7 +47568,7 @@ Uses select() to wait on GUI events, feedback from realtime engine or from backg
 {\*\expandedcolortbl;;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
-\f0\fs16 \cf0 INBOX}</string>
+\f0\fs20 \cf0 INBOX}</string>
 					</dict>
 					<key>TextRelativeArea</key>
 					<string>{{0.10000000000000001, 0}, {0.80000000000000004, 1}}</string>
@@ -47377,7 +47592,7 @@ Uses select() to wait on GUI events, feedback from realtime engine or from backg
 							<string>srgb</string>
 						</dict>
 						<key>Size</key>
-						<real>8</real>
+						<real>10</real>
 					</dict>
 					<key>ID</key>
 					<integer>2075</integer>
@@ -47420,7 +47635,7 @@ Uses select() to wait on GUI events, feedback from realtime engine or from backg
 {\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
-\f0\fs16 \cf2 STATE}</string>
+\f0\fs20 \cf2 STATE}</string>
 					</dict>
 					<key>TextRelativeArea</key>
 					<string>{{0, 0.20000000000000001}, {1, 0.69999999999999996}}</string>
@@ -47440,7 +47655,7 @@ Uses select() to wait on GUI events, feedback from realtime engine or from backg
 							<string>0</string>
 						</dict>
 						<key>Size</key>
-						<real>8</real>
+						<real>10</real>
 					</dict>
 					<key>ID</key>
 					<integer>2074</integer>
@@ -47476,15 +47691,42 @@ Uses select() to wait on GUI events, feedback from realtime engine or from backg
 					<dict>
 						<key>Pad</key>
 						<real>0.0</real>
+						<key>RTFD</key>
+						<data>
+						BAtzdHJlYW10eXBlZIHoA4QBQISE
+						hBJOU0F0dHJpYnV0ZWRTdHJpbmcA
+						hIQITlNPYmplY3QAhZKEhIQITlNT
+						dHJpbmcBlIQBKwVJTkJPWIaEAmlJ
+						AQWShISEDE5TRGljdGlvbmFyeQCU
+						hAFpA5KElpYHTlNDb2xvcoaShISE
+						B05TQ29sb3IAlIQBYwOEAmZmAAGG
+						koSWlhBOU1BhcmFncmFwaFN0eWxl
+						hpKEhIQXTlNNdXRhYmxlUGFyYWdy
+						YXBoU3R5bGUAhIQQTlNQYXJhZ3Jh
+						cGhTdHlsZQCUhARDQ0BTAgCEhIQH
+						TlNBcnJheQCUmQyShISECU5TVGV4
+						dFRhYgCUhAJDZgAchpKEo6IAOIaS
+						hKOiAFSGkoSjogBwhpKEo6IAgYwA
+						hpKEo6IAgagAhpKEo6IAgcQAhpKE
+						o6IAgeAAhpKEo6IAgfwAhpKEo6IA
+						gRgBhpKEo6IAgTQBhpKEo6IAgVAB
+						hoYAhpKElpYGTlNGb250hpKEhIQG
+						TlNGb250HpSZJIQFWzM2Y10GAAAA
+						HAAAAP/+SABlAGwAdgBlAHQAaQBj
+						AGEATgBlAHUAZQCEAWYKmwCbAZsA
+						mwCGhoY=
+						</data>
 						<key>Text</key>
 						<string>{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf600
 {\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\csgray\c0;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
-\f0\fs16 \cf0 INBOX}</string>
+\f0\fs20 \cf2 INBOX}</string>
 					</dict>
+					<key>TextRelativeArea</key>
+					<string>{{0.10000000000000001, 0}, {0.80000000000000004, 1}}</string>
 				</dict>
 				<dict>
 					<key>Bounds</key>
@@ -47542,7 +47784,7 @@ Uses select() to wait on GUI events, feedback from realtime engine or from backg
 \pard\pardeftab720\qc\partightenfactor0
 
 \f0\fs72 \cf0 \expnd0\expndtw0\kerning0
-VST PLUGIN\
+AUDIO PLUGIN\
 CONTAINER TIME-STATE VIEW: ALL THE UNPURE COMPONENTS}</string>
 					</dict>
 					<key>TextRelativeArea</key>
@@ -47567,7 +47809,7 @@ CONTAINER TIME-STATE VIEW: ALL THE UNPURE COMPONENTS}</string>
 							<string>srgb</string>
 						</dict>
 						<key>Size</key>
-						<real>8</real>
+						<real>10</real>
 					</dict>
 					<key>ID</key>
 					<integer>2072</integer>
@@ -47610,7 +47852,7 @@ CONTAINER TIME-STATE VIEW: ALL THE UNPURE COMPONENTS}</string>
 {\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
-\f0\fs16 \cf2 STATE}</string>
+\f0\fs20 \cf2 STATE}</string>
 					</dict>
 					<key>TextRelativeArea</key>
 					<string>{{0, 0.20000000000000001}, {1, 0.69999999999999996}}</string>
@@ -47680,7 +47922,7 @@ CONTAINER TIME-STATE VIEW: ALL THE UNPURE COMPONENTS}</string>
 				</dict>
 				<dict>
 					<key>Bounds</key>
-					<string>{{480, 576}, {24, 24}}</string>
+					<string>{{468, 576}, {24, 24}}</string>
 					<key>Class</key>
 					<string>ShapedGraphic</string>
 					<key>FontInfo</key>
@@ -47729,7 +47971,7 @@ CONTAINER TIME-STATE VIEW: ALL THE UNPURE COMPONENTS}</string>
 				</dict>
 				<dict>
 					<key>Bounds</key>
-					<string>{{480, 528}, {144, 192}}</string>
+					<string>{{468, 528}, {144, 192}}</string>
 					<key>Class</key>
 					<string>ShapedGraphic</string>
 					<key>FontInfo</key>
@@ -48036,7 +48278,7 @@ CONTAINER TIME-STATE VIEW: ALL THE UNPURE COMPONENTS}</string>
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
 \f0\fs28 \cf0 \expnd0\expndtw0\kerning0
-VST Instance}</string>
+Plugin Instance}</string>
 					</dict>
 					<key>TextPlacement</key>
 					<integer>2</integer>
@@ -48146,13 +48388,13 @@ VST Instance}</string>
 					<key>OrthogonalBarAutomatic</key>
 					<true/>
 					<key>OrthogonalBarPoint</key>
-					<string>{434.50000899999998, 588}</string>
+					<string>{431.50000899999998, 588}</string>
 					<key>OrthogonalBarPosition</key>
 					<real>-1</real>
 					<key>Points</key>
 					<array>
 						<string>{384, 588}</string>
-						<string>{492, 588}</string>
+						<string>{480, 588}</string>
 					</array>
 					<key>Style</key>
 					<dict>
@@ -48485,7 +48727,7 @@ VST Instance}</string>
 		<key>CurrentSheet</key>
 		<integer>0</integer>
 		<key>Frame</key>
-		<string>{{10, -0}, {2493, 1417}}</string>
+		<string>{{52, 0}, {2493, 1417}}</string>
 		<key>ShowInfo</key>
 		<true/>
 		<key>Sidebar</key>
@@ -48495,7 +48737,7 @@ VST Instance}</string>
 		<key>Sidebar_Tab</key>
 		<integer>3</integer>
 		<key>VisibleRegion</key>
-		<string>{{389.06057344286836, 2804.3515595145282}, {2721.2499594502165, 1614.9999759346247}}</string>
+		<string>{{-287.49999571591621, -154.99999769032004}, {2739.9999591708188, 1633.7499756552281}}</string>
 		<key>ZoomValues</key>
 		<array>
 			<array>
