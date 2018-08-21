@@ -1,3 +1,5 @@
+This document describes how to think about software the Floyd way. It also explains why Floyd have some choices made for you.
+
 
 # NORMALIZED CODE
 This is coded in Floyd Script. This is the normal code. Try to have as much of your code normalized. It is composable, easy to understand and write. It is pure, have no side effects. No optimizations are done here (like lookups, lazy evaluation, batching). It's perfect to create complex logic, control states etc.
