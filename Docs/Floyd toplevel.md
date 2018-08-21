@@ -577,7 +577,7 @@ When supermap() returns all tasks have been completed.
 Notice: your function f can send messages to a clock — this means another clock can start consuming results while supermap() is still running.
 
 
-??? IDEA: Make this a two-step process. First analyse tasks into an execution description. Then use that description to run the tasks.
+??? IDEA: Make this a two-step process. First analyse tasks into an execution description. Then use that description to run the tasks. ??? IDEA: Allows grouping small tasks into lumps. Allow you to reuse the dependency graph but tag some tasks NOP
 
 This lets you keep the execution description for next time, if tasks are the same.
 
@@ -588,9 +588,6 @@ Also lets you inspect the execution description & improve it or create one for s
 
 - Try to keep instructions and data in CPU caches.
 
-
-??? Have pipeline-part instead of supermap()?
-??? No, supermap() is a better solution.
 
 This allows you to configure a number of steps with queues between them. You supply a function for each step. All settings can be altered via UI or programatically.
 
