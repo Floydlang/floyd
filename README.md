@@ -137,7 +137,7 @@ You string together components with actor
 
 # IN THE BOX
 
-1. **Floyd Speak Reference Manual**: [Floyd Speak Reference Manual](docs/Floyd Speak.md).
+1. **Floyd Speak Reference Manual**: [Floyd Speak Reference Manual](docs/Floyd_Speak.md).
 
 2. **Floyd Speak compiler**, that compiles Floyd Speak source code to byte code.
 
