@@ -78,6 +78,11 @@ These are the primitive data types built into the language itself. The goals is 
 |__vector__		| A continous array of elements addressed via indexes.
 |__dictionary__	| Lookup values using string keys.
 |__json_value__	| A value that holds a json-compatible value, can be a big JSON tree.
+|TODO POC: __sum-type__		| Tagged union.
+|TODO 1.0: __float__		| 32-bit floating point number
+|TODO 1.0: __int8__		| 8-bit signed integer
+|TODO 1.0: __int16__		| 16-bit signed integer
+|TODO 1.0: __int32__		| 32-bit signed integer
 
 Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [] etc.
 
@@ -303,6 +308,10 @@ In each body you can write any statements. There is no "break" keyword.
 
 
 
+# MATCH
+
+TODO POC
+
 
 # FOR LOOPS
 
@@ -499,7 +508,7 @@ This is how you check the type of json value and reads their different values.
 | json_value(13)			| json_number	| 4
 | json_value(true)			| json_true		| 5
 | json_value(false)			| json_false	| 6
-| ???						| json_null		| 7
+| 							| json_null		| 7
 
 
 Demo snippet, that checks type of a json_value:
@@ -755,6 +764,24 @@ This works with nested values too:
 ```
 
 
+# PROTOCOLS
+
+TODO 1.0
+
+
+# UPDATE
+
+TODO 1.0
+Update nested collections and structs.
+
+
+# EXCEPTIONS
+
+TODO 1.0
+Throw exception. Built in types, free noun. Refine, final.
+
+
+
 # COMMENTS AND DOCUMENTATION
 
 
@@ -779,6 +806,40 @@ Everything between // and newline is a comment:
 # FUNCTION TOOLBOX
 
 These are built in primitves you can always rely on being available.
+
+
+### map()
+
+TODO POC: Implement
+
+Expose possible parallelism of pure function, like shaders, at the code level (not declarative). The supplied function must be pure.
+
+
+### TODO 1.0: filter()
+
+### TODO 1.0: reduce()
+
+### TODO 1.0: supermap()
+
+	[int:R] supermap(tasks: [T, [int], f: R (T, [R]))
+
+This function runs a bunch of tasks with dependencies between them. When supermap() returns, all tasks have been executed.
+
+- Tasks can block.
+- Tasks cannot generate new tasks. A task *can* call supermap.
+- Task will not start until all its dependencies have been finished.
+
+- **tasks**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The indexes are the indexes into the tasks-vector.
+
+- **f**: this is your function that processes one T and returns a result R. The function must not depend on the order in which tasks execute. When f is called, all the tasks dependency tasks have already been executed and you get their results in [R].
+
+- **result**: a vector with one element for each element in the tasks-argument. The order of the elements are undefined. The int specifies which task, the R is its result.
+
+Notice: your function f can send messages to a clock — this means another clock can start consuming results while supermap() is still running.
+
+Notice: using this function exposes potential for parallelism.
+
+??? IDEA: Make this a two-step process. First analyse tasks into an execution description. Then use that description to run the tasks. ??? IDEA: Allows grouping small tasks into lumps. Allow you to reuse the dependency graph but tag some tasks NOP. This lets you keep the execution description for next time, if tasks are the same. Also lets you inspect the execution description & improve it or create one for scratch.
 
 
 ### print()
@@ -860,8 +921,8 @@ This is how you modify a field of a struct, an element in a vector or string or 
 | vector		| update([1,2,3,4], 2, 33)		| [1,2,33,4]
 | dictionary	| update({"a": 1, "b": 2, "c": 3}, "a", 11) | {"a":11,"b":2,"c":3}
 | struct		| update(pixel,"red", 123)		| pixel(123,---,---)
-| json_value:array		| TBD???
-| json_value:object		| TBD???
+| json_value:array		| 
+| json_value:object		| 
 
 For dictionaries it can be used to add completely new elements too.
 
@@ -1189,3 +1250,4 @@ Here is the DAG for the complete syntax of Floyd.
 | [my_global]							| vector of custom type
 | mything (mything a, mything b)			| function returning mything-type, with two mything arguments
 | bool (int (double a) b)				| function returns bool and takes argument of type: function that returns in and take double-argument.
+

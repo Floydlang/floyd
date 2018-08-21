@@ -262,9 +262,14 @@ Sometimes we introduce concurreny to make more parallelism possible: multithread
 
 In floyd you accellerate the performance of your code by making it expose where there are dependencies between computations and where there are not. Then you can orcestrate how to best execute your container from the top level -- using tweak probes and profiling probes, affecting how the hardware is mapped to your logic.
 
-Easy ways to expose parlellism is by writing pure functions (their results can be cached or precomputed) and by using functions like map(), fold(), filter() and supermap(). These function work on individual elements of a collection and each computation is independant of the others. This lets the runtime process the different elements on parallel hardware.
+Easy ways to expose parallelism is by writing pure functions (their results can be cached or precomputed) and by using functions like map(), fold(), filter() and supermap(). These function work on individual elements of a collection and each computation is independant of the others. This lets the runtime process the different elements on parallel hardware.
 
-map() processes each element in a collection using a function and returns a new collection with the results.
+??? make pipeline part. https://blog.golang.org/pipelines
+
+The functions map() and supermap() replaces FAN-IN-FAN-OUT-mechanisms.
+
+You can inspect in code and visually how the elements are distributed as tasks.
+
 supermap() works like map(), but each element also has dependencies to other elements in the collection.
 
 Accelerating computations (parallelism) is done using tweaks — a separate mechanism. It supports moving computations in time (lazy, eager, caching) and running work in parallel.
@@ -280,6 +285,8 @@ let image2 = map(image1, my_pixel_shader) and the pixels can be processed in par
 
 
 **Task** - this is a work item that takes usually approx 0.5 - 10 ms to execute and has an end. The runtime generates these when it wants to run map() elements in parallel. All tasks in the entire container are schedueled together.
+
+Notice: map() and supermap() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
 
 
 
@@ -537,61 +544,6 @@ Turn array of structs to struct of arrays etc.
 
 ##### SET THREAD COUNT & PRIO TWEAKER REFERENCE
 - Parallelize pure function
-
-
-
-### MAP FUNCTION REFERENCE
-
-map(), fold() filter()
-
-Expose possible parallelism of pure function, like shaders, at the code level (not declarative). The supplied function must be pure.
-
-
-??? make pipeline part. https://blog.golang.org/pipelines
-
-The functions map() and supermap() replaces FAN-IN-FAN-OUT-mechanisms.
-
-You can inspect in code and visually how the elements are distributed as tasks.
-
-
-
-### SUPERMAP FUNCTION REFERENCE
-
-	[int:R] supermap(tasks: [T, [int], f: R (T, [R]))
-
-This function runs a bunch of tasks with dependencies between them and waits for them all to complete.
-
-- Tasks can block.
-- Tasks cannot generate new tasks. A task *can* call supermap.
-
-Notice: supermap() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
-
-- **tasks**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The task will not be executed until those tasks have been run. The indexes are the indexes into the tasks-vector.
-
-- **f**: this is your function that processes one T and returns a result R. The function must not depend on the order in which tasks execute. When f is called, all the tasks dependency tasks have already been executed and you get their results in [R].
-
-- **result**: a vector with one element for each element in the tasks-argument. The order of the elements are undefined. The int specifies which task, the R is its result.
-
-When supermap() returns all tasks have been completed.
-
-Notice: your function f can send messages to a clock — this means another clock can start consuming results while supermap() is still running.
-
-
-??? IDEA: Make this a two-step process. First analyse tasks into an execution description. Then use that description to run the tasks. ??? IDEA: Allows grouping small tasks into lumps. Allow you to reuse the dependency graph but tag some tasks NOP
-
-This lets you keep the execution description for next time, if tasks are the same.
-
-Also lets you inspect the execution description & improve it or create one for scratch.
-
-
-- If IO is bottleneck, try to spread out IO over time. If IO blocks is bottleneck, try to start IO ASAP.
-
-- Try to keep instructions and data in CPU caches.
-
-
-This allows you to configure a number of steps with queues between them. You supply a function for each step. All settings can be altered via UI or programatically.
-
-Notice: supermap() has a fence at end. If you do a game pipeline you can spill things with proper dependencies over the fences.
 
 
 

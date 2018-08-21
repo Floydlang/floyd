@@ -48727,7 +48727,7 @@ Plugin Instance}</string>
 		<key>CurrentSheet</key>
 		<integer>0</integer>
 		<key>Frame</key>
-		<string>{{52, 0}, {2493, 1417}}</string>
+		<string>{{55, 0}, {2493, 1417}}</string>
 		<key>ShowInfo</key>
 		<true/>
 		<key>Sidebar</key>
@@ -48737,7 +48737,7 @@ Plugin Instance}</string>
 		<key>Sidebar_Tab</key>
 		<integer>3</integer>
 		<key>VisibleRegion</key>
-		<string>{{-287.49999571591621, -154.99999769032004}, {2739.9999591708188, 1633.7499756552281}}</string>
+		<string>{{-287.49999571591553, -154.99999769032004}, {2739.9999591708192, 1633.7499756552281}}</string>
 		<key>ZoomValues</key>
 		<array>
 			<array>
@@ -48759,7 +48759,7 @@ Plugin Instance}</string>
 	<real>0.8871038556098938</real>
 	<key>exportSizesKey</key>
 	<array>
-		<real>1</real>
+		<real>0.60000002384185791</real>
 		<string></string>
 	</array>
 	<key>fileFormatKey</key>
@@ -48767,7 +48767,7 @@ Plugin Instance}</string>
 	<key>htmlImageTypeKey</key>
 	<integer>0</integer>
 	<key>includeBackgroundGraphicKey</key>
-	<true/>
+	<false/>
 	<key>includeNonPrintingLayersKey</key>
 	<false/>
 	<key>lastExportTypeKey</key>
@@ -48785,7 +48785,7 @@ Plugin Instance}</string>
 	<key>resolutionForJPGKey</key>
 	<real>1</real>
 	<key>resolutionForPNGKey</key>
-	<real>1</real>
+	<real>2</real>
 	<key>resolutionForTIFFKey</key>
 	<real>1</real>
 	<key>resolutionUnitsKey</key>
