@@ -1,4 +1,4 @@
-![alt text](./floyd_logo.png "Floyd Logo")
+![Floyd Logo](floyd_logo2.png)
 
 # FLOYD SCRIPT REFERENCE
 

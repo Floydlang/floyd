@@ -138,7 +138,7 @@ You string together components with actor
 
 # IN THE BOX
 
-1. **Floyd Speak Reference Manual**: [Floyd Speak Reference Manual](Floyd Speak.md).
+1. **Floyd Speak Reference Manual**: [Floyd Speak Reference Manual](Floyd%20Speak.md).
 
 2. **Floyd Speak compiler**, that compiles Floyd Speak source code to byte code.
 
@@ -146,7 +146,7 @@ You string together components with actor
 
 	TODO 1.0: The compiler can also compile to ".ast.json" files, which is the AST of the program in JSON format, then compile ".ast.json" to byte code. Great for making cool tools that analyses, manipulates the AST or generates code.
 
-4. **Floyd Systems Reference Manual**: [Floyd Systems Reference Manual](Floyd Systems.md).
+4. **Floyd Systems Reference Manual**: [Floyd Systems Reference Manual](Floyd%20Systems.md).
 
 5. **TODO POC: Floyd Systems compiler**, compiles floyd systems and containers etc to byte code.
 

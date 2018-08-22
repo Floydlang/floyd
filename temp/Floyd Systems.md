@@ -1,4 +1,4 @@
-![alt text](./floyd_logo.png)
+![Floyd Logo](./floyd_logo2.png)
 
 # FLOYD SYSTEMS MANUAL
 
@@ -37,7 +37,7 @@ It is also simple to introduce more concurrency to create more opportunities to 
 A complete system is organised into parts like this:
 
 
-![alt text](./floyd_systems_software_system.png)
+![Software Systems](floyd_systems_software_system.png)
 
 
 ### PERSON
@@ -84,24 +84,24 @@ There is a set of standard diagram views for explaining and reasoning about your
 
 
 
-![alt text](./floyd_systems_level1_diagram.png)
+![Level1](floyd_systems_level1_diagram.png)
 
 **Above, level 1: System Context diagram**
 
 
 
-![alt text](./floyd_systems_level2_diagram.png)
+![Level2](floyd_systems_level2_diagram.png)
 
 Above, level 2: Container diagram
 
 
 
-![alt text](./floyd_systems_level3_diagram.png)
+![Level3](floyd_systems_level3_diagram.png)
 
 Above, level 3: Component diagram
 
 
-![alt text](./floyd_systems_level4_diagram.png)
+![Level4](floyd_systems_level4_diagram.png)
 
 Above, level 4: Code
 
@@ -305,14 +305,14 @@ main() one clock only.
 
 ??? TBD: make example of *all* the diagrams, including Software System diagram.
 
-![alt text](./floyd_systems_vst.png)
+![VST](floyd_systems_vst.png)
 
 
 ### FIRST PERSON SHOOTER GAME
 
 ??? TBD: make example of *all* the diagrams, including Software System diagram.
 
-![alt text](./floyd_systems_1st_person_shooter.png)
+![Shooter](floyd_systems_1st_person_shooter.png)
 
 
 https://www.youtube.com/watch?v=v2Q_zHG3vqg
@@ -659,7 +659,7 @@ This is a way to create a component from the C language, using the C ABI.
 
 ??? example Software System diagram and other diagrams.
 
-![alt text](./floyd_systems_vst.png "VST-plugin")
+![VST](floyd_systems_vst.png "VST-plugin")
 
 
 Source file: *my_vst\_plug.container*
