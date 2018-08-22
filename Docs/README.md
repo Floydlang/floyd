@@ -1,4 +1,4 @@
-![Floyd logo](./docs/floyd_logo.png)
+![Floyd logo](floyd_logo.png)
 
 License: at the moment Floyd is closed software, (c) Marcus Zetterquist. Plan is to change license to MIT or similar.
 
@@ -49,7 +49,7 @@ Floyd separates the logic (written in Floyd Speak) from the processing part. Pro
 
 ##### CHEAT SHEET
 
-![alt text](./docs/floyd_cheat_sheet.png "Floyd Cheat Sheet")
+![alt text](floyd_cheat_sheet.png "Floyd Cheat Sheet")
 
 ##### EXAMPLE
 
@@ -131,13 +131,13 @@ The concurrency is done in a very clean way by actors, inspired by Erlang proces
 
 ##### CONTAINER EDITOR
 You string together components with actor
-![Floyd logo](./docs/floyd_systems_vst.png)
+![Floyd logo](floyd_systems_vst.png)
 
 
 
 # IN THE BOX
 
-1. **Floyd Speak Reference Manual**: [Floyd Speak Reference Manual](docs/Floyd_Speak.md).
+1. **Floyd Speak Reference Manual**: [Floyd Speak Reference Manual](Floyd Speak.md).
 
 2. **Floyd Speak compiler**, that compiles Floyd Speak source code to byte code.
 
@@ -145,7 +145,7 @@ You string together components with actor
 
 	TODO 1.0: The compiler can also compile to ".ast.json" files, which is the AST of the program in JSON format, then compile ".ast.json" to byte code. Great for making cool tools that analyses, manipulates the AST or generates code.
 
-4. **Floyd Systems Reference Manual**: [Floyd Systems Reference Manual](./docs/Floyd Systems.md).
+4. **Floyd Systems Reference Manual**: [Floyd Systems Reference Manual](Floyd Systems.md).
 
 5. **TODO POC: Floyd Systems compiler**, compiles floyd systems and containers etc to byte code.
 
