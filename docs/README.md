@@ -136,7 +136,7 @@ You string together components with actor
 ![VST](floyd_systems_vst.png)
 
 
-**TODO POC: Floyd Studio Manual**: [Floyd Studio Manual](Floyd%20Studio.md).
+**Floyd Studio Manual**: [Floyd Studio Manual](Floyd%20Studio.md).
 
 
 
