@@ -8,9 +8,7 @@ The Floyd Studio is browser based and runs inside a web browser, like Google Chr
 # SCENARIOS
 You can run all the development tools locally or using a cloud service.
 
-![Scenarios](./floyd_studio_scenarios.png)
-
-
+![Scenarios](floyd_studio_scenarios.png)
 
 
 

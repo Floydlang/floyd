@@ -45,6 +45,7 @@ Floyd separates the logic (written in Floyd Speak) from the processing part. Pro
 8. Pure functions, imperative. Encapsulation and protocols but not OOP
 9. Visual playground
 
+**Floyd Speak Manual:** [Floyd Speak Manual](Floyd%20Speak.md).
 
 
 ##### CHEAT SHEET
@@ -116,7 +117,7 @@ Your software system is composed of containers (apps, servers and other programs
 
 The concurrency is done in a very clean way by actors, inspired by Erlang processes. There are no threads, locks, atomics, await-async, nested callback hell etc.
 
-
+**Floyd Systems Manual**: [Floyd Systems Manual](Floyd%20Systems.md).
 
 # FLOYD STUDIO
 
@@ -135,10 +136,13 @@ You string together components with actor
 ![VST](floyd_systems_vst.png)
 
 
+**TODO POC: Floyd Studio Manual**: [Floyd Studio Manual](Floyd%20Studio.md).
+
+
 
 # IN THE BOX
 
-1. **Floyd Speak Reference Manual**: [Floyd Speak Reference Manual](Floyd%20Speak.md).
+1. **Floyd Speak Manual**: [Floyd Speak Manual](Floyd%20Speak.md).
 
 2. **Floyd Speak compiler**, that compiles Floyd Speak source code to byte code.
 
@@ -146,11 +150,13 @@ You string together components with actor
 
 	TODO 1.0: The compiler can also compile to ".ast.json" files, which is the AST of the program in JSON format, then compile ".ast.json" to byte code. Great for making cool tools that analyses, manipulates the AST or generates code.
 
-4. **Floyd Systems Reference Manual**: [Floyd Systems Reference Manual](Floyd%20Systems.md).
+4. **Floyd Systems Manual**: [Floyd Systems Manual](Floyd%20Systems.md).
 
 5. **TODO POC: Floyd Systems compiler**, compiles floyd systems and containers etc to byte code.
 
-6. **TODO POC: Floyd Studios**, a web-based interactive IDE for Floyd Systems and Floyd Script.
+6. **TODO POC: Floyd Studio Manual**: [Floyd Studio Manual](Floyd%20Studio.md).
+
+7. **TODO POC: Floyd Studios**, a web-based interactive IDE for Floyd Systems and Floyd Script.
 
 Floyd compilers and tools are written in portable C++11.
 
@@ -159,14 +165,22 @@ Floyd compilers and tools are written in portable C++11.
 # TODO
 
 TODO POC: Floyd Speak - sum-type with match-expression
+
 TODO POC: Floyd Speak - implement map()
 
+
 TODO 1.0: Floyd Speak - implement filter(), reduce()
+
 TODO 1.0: Floyd Speak - shortcut && and ||
+
 TODO 1.0: Floyd Speak - float, int8, int16, int32, int64
+
 TODO 1.0: Floyd Speak - nested update
+
 TODO 1.0: Floyd Speak - protocols
+
 TODO 1.0: Floyd Speak - implement supermap()
+
 TODO 1.0: Floyd Speak - implement floyd exceptions
 
 
