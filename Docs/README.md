@@ -49,7 +49,7 @@ Floyd separates the logic (written in Floyd Speak) from the processing part. Pro
 
 ##### CHEAT SHEET
 
-![alt text](floyd_cheat_sheet.png "Floyd Cheat Sheet")
+![Floyd Speak Cheat Sheet](floyd_cheat_sheet.png)
 
 ##### EXAMPLE
 
@@ -132,7 +132,7 @@ The concurrency is done in a very clean way by actors, inspired by Erlang proces
 ##### CONTAINER EDITOR
 You string together components with actor
 
-![Floyd logo](floyd_systems_vst.png)
+![VST](floyd_systems_vst.png)
 
 
 
