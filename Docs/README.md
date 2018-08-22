@@ -1,4 +1,4 @@
-![Floyd logo](floyd_logo.png)
+![Floyd logo](floyd_logo2.png)
 
 License: at the moment Floyd is closed software, (c) Marcus Zetterquist. Plan is to change license to MIT or similar.
 
@@ -131,6 +131,7 @@ The concurrency is done in a very clean way by actors, inspired by Erlang proces
 
 ##### CONTAINER EDITOR
 You string together components with actor
+
 ![Floyd logo](floyd_systems_vst.png)
 
 
