@@ -1,0 +1,73 @@
+{
+	"component": {
+		"version": {
+			"major": 1,
+			"minor": 0
+		},
+		"dependencies": [],
+		"desc": [
+			"The Song Component is basic building block to ",
+			"creating a music player / recorder"
+		]
+	},
+	"nodes": [
+		{
+			"type": "struct",
+			"name": "song_t",
+			"def": {
+				"desc": "A song has a beginning and an end and a number of tracks of music",
+				"members": [
+					{
+						"type": "int",
+						"name": "start_pos",
+						"desc": "Where song starts, relative to the world-ppq",
+						"invariant": "start_pos >= 0 && start_pos <= end_pos"
+					},
+					{
+						"type": "int",
+						"name": "end_pos",
+						"desc": "Where ends starts, relative to the world-ppq",
+						"invariant": "end_pos >= start_pos && end_pos <= max_ppq"
+					}
+				],
+				"invariants": [
+					"start_pos >= 0 && start_pos <= end_pos",
+					"start_pos >= 0 && start_pos <= end_pos"
+				]
+			},
+			"examples" : [
+				{ "name": "empty0", "desc": "An empty song with no tracks. Range is zero too.", "expression": "make_def_song(0, 0)" },
+				{ "name": "one_track_song", "desc": "A one-track song. Range is zero.", "expression": "make_def_song(0, 0)" }
+			],
+			"visualizers": [
+				{ "name": "Textal summary", "expression": "dot make_song_text_summary(true, true)" }
+			]
+		},
+		{
+			"type": "function",
+			"name": "scale_song",
+			"def": {
+				"desc": "Delete the track from the song, as specified by track index",
+				"inputs": [
+					{
+						"type": "song",
+						"name": "original",
+						"desc": "The original song. The track must exists.",
+						"contract": "original.count_tracks() > 0"
+					},
+					{
+						"type": "int",
+						"name": "track_index",
+						"desc": "The track to delete, specified as a track index inside the original song.",
+						"contract": "track_index >= 0 && track_index < original.count_tracks()"
+					}
+				],
+				"result": {
+					"type": "song",
+					"desc": "The new song, where the track track_index has been removed.",
+					"contract": "original.count_tracks() == result.count_tracks() - 1"
+				}
+			}
+		}
+	]
+}
