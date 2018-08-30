@@ -1,0 +1,444 @@
+################	COMPONENT
+
+
+COMPONENT
+
+{
+	"component": {
+		"version": {
+			"major": 1,
+			"minor": 0
+		},
+		"dependencies": [],
+		"desc": [
+			"The Song Component is basic building block to ",
+			"creating a music player / recorder"
+		]
+	},
+	"nodes": [
+		{
+			"type": "struct",
+			"name": "song_t",
+			"def": {
+				"desc": "A song has a beginning and an end and a number of tracks of music",
+				"members": [
+					{
+						"type": "int",
+						"name": "start_pos",
+						"desc": "Where song starts, relative to the world-ppq",
+						"invariant": "start_pos >= 0 && start_pos <= end_pos"
+					},
+					{
+						"type": "int",
+						"name": "end_pos",
+						"desc": "Where ends starts, relative to the world-ppq",
+						"invariant": "end_pos >= start_pos && end_pos <= max_ppq"
+					}
+				],
+				"invariants": [
+					"start_pos >= 0 && start_pos <= end_pos",
+					"start_pos >= 0 && start_pos <= end_pos"
+				]
+			},
+			"example_values": [
+				{
+					"name": "empty0",
+					"desc": "An empty song with no tracks. Range is zero too.",
+					"expression": "make_def_song(0, 0)"
+				},
+				{
+					"name": "one_track_song",
+					"desc": "A one-track song. Range is zero.",
+					"expression": "make_def_song(0, 0)"
+				}
+			],
+			"visualizers": [
+				{
+					"name": "Textal summary",
+					"expression": "dot make_song_text_summary(true, true)"
+				}
+			]
+		},
+		{
+			"type": "example_value",
+			"name": "big_song",
+			"expression": "make_song(12345)"
+		},
+		{
+			"type": "example_value",
+			"name": "zigzag_song",
+			"expression": "make_song(12345)"
+		},
+		{
+			"type": "function",
+			"name": "scale_song",
+			"def": {
+				"desc": "Delete the track from the song, as specified by track index",
+				"inputs": [
+					{
+						"type": "song",
+						"name": "original",
+						"desc": "The original song. The track must exists.",
+						"contract": "original.count_tracks() > 0"
+					},
+					{
+						"type": "int",
+						"name": "track_index",
+						"desc": "The track to delete, specified as a track index inside the original song.",
+						"contract": "track_index >= 0 && track_index < original.count_tracks()"
+					},
+				],
+				"result": {
+					"type": "song",
+					"desc": "The new song, where the track track_index has been removed.",
+					"contract": "original.count_tracks() == result.count_tracks() - 1"
+				},
+				"implementation": [
+					"song scale_song(song original, int track_index) {",
+					"probe(original, \"The new song, where the track track_index has been removed.\", \"key2\")",
+					"\tint temp = 3",
+					"}"
+				],
+				"proofs": [
+					{
+						"scenario": "delete only track in song",
+						"expected": "empty song",
+						"result": "empty0",
+						"inputs": [
+							"song1track",
+							0
+						]
+					},
+					{
+						"scenario": "delete one of 2 tracks",
+						"expected": "1-track song",
+						"result": "song1track",
+						"inputs": [
+							"song2track",
+							0
+						]
+					}
+				],
+				"demos": [
+					{
+						"name": "delete only track in song",
+						"expected": "empty song",
+						"result": "empty0",
+						"inputs": [
+							"song1track",
+							0
+						]
+					}
+				]
+			}
+		},
+		{
+			"type": "presentor",
+			"name": "song_presentor_summary",
+			"expression": "make_dot_diagram(_.tracks.count)"
+		}
+	]
+}
+
+
+
+################	FUNCTION
+
+
+
+desc "Delete the track from the song, as specified by track index"
+
+func scale_song {
+	result {
+		type song
+		desc "The new song, where the track track_index has been removed."
+		contract: original.count_tracks() == result.count_tracks() - 1
+	},
+	inputs [
+		{
+			song original
+			desc "The original song. The track must exists."
+			contract original.count_tracks() > 0
+		},
+		{
+			int track_index
+			desc "The track to delete, specified as a track index inside the original song."
+			contract track_index >= 0 && track_index < original.count_tracks()
+		}
+	],
+
+
+	int temp = 3
+	probe(temp, "Intermediate result", "key-1")
+
+
+	proofs [
+		{
+			"Delete only track in song" => "empty song"
+			(song1track, 0) => empty0
+		},
+		{
+			"Delete one of 2 tracks" => "1-track song"
+			(song2track, 0) => song1track
+		}
+	],
+}
+
+
+
+	demos [
+		{
+			"scenario": "Scale different tracks"
+
+			count = slider(0, 20), "Number of tracks"
+			track_index = slider(0, 20), "Track to scale"
+
+			test_song = make_test_song(count)
+			test_song = scale_song(test_song, track_index)
+			(test_song, track_index) => _
+		}
+	]
+
+
+
+
+################	SOFTWARE SYSTEM
+
+
+
+Floyd file: **software-system.floyd**
+
+
+-- how to enter glue code directly in component?
+
+
+source-files
+	my-system.fss
+	my-game-app.container
+	my-django-server.container
+	
+	game-simulation.component
+	game-renderer.component
+	
+	jpeglib.component
+	3math.component
+	rest.component
+	
+	quantize.floyd
+	game-state.floyd
+	game-renderer.floyd
+	game-simulation.floyd
+	match-maker.floyd
+
+
+{
+	"items": [
+		"musician": {
+			"type": "person",
+			"desc": "uses the mobile app to record music ontop of backing track"
+		},
+		"Voxtracker": {
+			"type": "container",
+			"desc": "mobile app with recording feature" 		}
+	},
+	"connections": [
+		{ "source": "musician", "interaction": "uses", "tech": "", "dest": "voxtracker" },
+	}
+
+	"containers": [
+		
+	]
+}
+
+
+
+##############################################		CONTAINER
+
+
+container_main()
+
+
+
+		my first design.container
+
+		{
+			"major_version": 1,
+			"minior_version": 0,
+
+			"nodes": {
+			}
+		}
+
+
+	jpeg_quantizer.floyd, colortab.floyd -- implementation source files for the jpeglib
+
+helloworld.container
+
+
+Containers define actors:
+
+	struct clock_xyz_state_t {
+		int timestamp
+		[xyz_record_t] recs
+	}
+
+	struct clock_xyz_message_st {
+		int timestamp
+		int mouse_x
+		int mouse_y
+		case stop: struct { int duration }
+		case on_mouse_move:
+		case on_click: struct { int button_index }
+	}
+	clock_xyz_state_t tick_clock_xyz([clock_xyz_state_t] history, clock_xyz_message_st message){
+	}
+
+
+
+
+##############################################	COMPONENT
+
+
+
+component = json {
+	version: {
+		major: 1,
+		minor: 0
+	},
+	dependencies: []
+	desc: [
+		"The Song Component is basic building block to ",
+		"creating a music player / recorder"
+	]
+}
+
+
+//	song_t	============================================================================================
+
+
+struct song_t {
+	desc "A song has a beginning and an end and a number of tracks of music"
+
+
+	desc "Where song starts, relative to the world-ppq"
+	invariant start_pos >= 0 && start_pos <= end_pos
+	int start_pos
+
+	desc "Where ends starts, relative to the world-ppq",
+	invariant end_pos >= start_pos && end_pos <= max_ppq
+	int end_pos
+
+	invariant: [
+		start_pos >= 0 && start_pos <= end_pos
+		end_pos >= start_pos && end_pos <= max_ppq
+	]
+}
+
+example_value empty0 {
+	desc "An empty song with no tracks. Range is zero too."
+	expression make_def_song(0, 0)
+}
+
+example_value one_track_song {
+	desc "A one-track song. Range is zero."
+	expression make_def_song(0, 0)
+}
+
+visualizer textual_summary {
+	expression dot make_song_text_summary(true, true)
+}
+
+example_value big_song {
+	expression make_song(12345)
+}
+
+example_value zigzag_song {
+	expression make_song(12345)
+}
+
+
+
+desc "Delete the track from the song, as specified by track index"
+song func scale_song(song original, int track_index){
+
+	"inputs": [
+		{
+			"type": "song",
+			"name": "original",
+			desc "The original song. The track must exists.",
+			"contract": "original.count_tracks() > 0"
+		},
+		{
+			"type": "int",
+			"name": "track_index",
+			desc "The track to delete, specified as a track index inside the original song.",
+			"contract": "track_index >= 0 && track_index < original.count_tracks()"
+		},
+		{
+			"type": "int",
+			"name": "probe_log_level",
+			desc "debug probe"
+		}
+	],
+
+	"result": {
+		"type": "song",
+		desc "The new song, where the track track_index has been removed.",
+		"contract": "original.count_tracks() == result.count_tracks() - 1"
+	},
+	"probe_results": [
+		{
+			"type": "song",
+			#desc: "The new song, where the track track_index has been removed.",
+			"contract": "original.count_tracks() == result.count_tracks() - 1"
+		}
+	],
+	"implementation": [
+		"song scale_song(song original, int track_index) {",
+		"\tint temp = 3",
+		"}"
+	],
+	"probes": [
+		{
+			"line": 3,
+			"type": "collection-access-probe"
+		}
+	],
+
+	"proofs": [
+		{
+			"scenario": "delete only track in song",
+			"expected": "empty song",
+			"result": "empty0",
+			"inputs": [
+				"song1track",
+				0
+			]
+		},
+		{
+			"scenario": "delete one of 2 tracks",
+			"expected": "1-track song",
+			"result": "song1track",
+			"inputs": [
+				"song2track",
+				0
+			]
+		}
+	],
+	"demos": [
+		{
+			"name": "delete only track in song",
+			"expected": "empty song",
+			"result": "empty0",
+			"inputs": [
+				"song1track",
+				0
+			]
+		}
+	]
+}
+
+
+presentor song_presentor_summary {
+	"expression": "make_dot_diagram(_.tracks.count)"
+}
