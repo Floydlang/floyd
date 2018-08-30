@@ -881,6 +881,11 @@ Used this to check your code for programming errors, and check the inputs of you
 If the expression evaluates to false, the program will log to the output, then be aborted via an exception.
 
 
+### probe()
+
+In your code you write probe(my_temp, "My intermediate value", "key-1") to let clients log my_temp. The probe will appear as a hook in tools and you can chose to log the value and make stats etc. Argument 2 is a descriptive name, argument 3 is a string-key that is scoped to the function and used to know if several probe()-statements log to the same signal or not.
+
+
 ### to_string()
 
 Converts its input to a string. This works with any type of values. It also works with types, which is useful for debugging.

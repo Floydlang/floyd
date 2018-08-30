@@ -1,7 +1,353 @@
+
+software-system: "My magic product"
+	desc: "Helpdesk with mobile device support for hedgehog farmers."
+	people:
+		Personal Banking Customer
+		Personal Banker
+		Admin
+
+	containers:
+		<container> iphone app
+			tech: Swift, iOS, Xcode
+
+			nodes:
+				<clock> main
+					a = <actor> "My GUI", Hedgehog-iphone-app
+					b = iphone-ux
+					b -> a	//	b sends messages to a
+					b -> c	//	b also sends messages to c, which is another clock
+				<clock> com-clock
+					c = <actor> "My Com", Hedgehog-servercom
+
+			component-list:
+				Hedgehog-iphone-app
+				Hedgehog-engine
+				Hedgehog-servercom
+				jpeg-component
+
+		<container> android app
+			tech: Kotlin, Javalib, Android OS
+
+			nodes:
+				<clock> main
+					<actor> "My GUI", Hedgehog-Android-app
+				<clock> com-clock
+					<actor> "My Com", <effect-component> Hedgehog-servercom
+
+			component-list:
+				Hedgehog-Android-app
+				Hedgehog-engine
+				Hedgehog-servercom
+				jpeg-component
+
+		<container> server with database & admin web
+			tech: Django, Pythong, Heroku, Postgres
+
+			nodes:
+				<clock> main
+					<actor> "My GUI", <effect-component> Hedgehog-serverimpl
+
+			component-list:
+				Hedgehog-engine
+				Hedgehog-serverimpl
+				Stripe-hook component
+				jpeg-component
+
+
+custom components:
+	<effect-component> Hedgehog-iphone-app
+	<effect-component> Hedgehog-Android-app
+	<pure-component> Hedgehog-app-logic
+	<pure-component> Hedgehog-engine
+	<pure-component> Hedgehog-servercom
+	<effect-component> Hedgehog-serverimpl
+
+...used components
+	<pure-component> Hedgehog-app-logic
+	<pure-component> Hedgehog-engine
+	<effect-component> Hedgehog-servercom
+	<effect-component> iphone-ux
+	<pure-component> jpeg-component
+
+
+
+################	SOFTWARE SYSTEM
+
+
+
+Floyd file: **software-system.floyd**
+
+
+-- how to enter glue code directly in component?
+
+
+source-files
+	my-system.fss
+	my-game-app.container
+	my-django-server.container
+	
+	game-simulation.component
+	game-renderer.component
+	
+	jpeglib.component
+	3math.component
+	rest.component
+	
+	quantize.floyd
+	game-state.floyd
+	game-renderer.floyd
+	game-simulation.floyd
+	match-maker.floyd
+
+
+```
+{
+	"items": [
+		"musician": {
+			"type": "person",
+			"desc": "uses the mobile app to record music ontop of backing track"
+		},
+		"Voxtracker": {
+			"type": "container",
+			"desc": "mobile app with recording feature" 		}
+	},
+	"connections": [
+		{ "source": "musician", "interaction": "uses", "tech": "", "dest": "voxtracker" },
+	}
+
+	"containers": [
+		
+	]
+}
+```
+
+
+##############################################		CONTAINER
+
+
+container_main()
+
+	my first design.container
+
+	{
+		"major_version": 1,
+		"minior_version": 0,
+
+		"nodes": {
+		}
+	}
+
+jpeg_quantizer.floyd
+colortab.floyd -- implementation source files for the jpeglib
+
+
+helloworld.container
+
+
+Containers define actors:
+
+	struct clock_xyz_state_t {
+		int timestamp
+		[xyz_record_t] recs
+	}
+
+	struct clock_xyz_message_st {
+		int timestamp
+		int mouse_x
+		int mouse_y
+		case stop: struct { int duration }
+		case on_mouse_move:
+		case on_click: struct { int button_index }
+	}
+	clock_xyz_state_t tick_clock_xyz([clock_xyz_state_t] history, clock_xyz_message_st message){
+	}
+
+
+# EXAMPLE ACTOR
+
+??? TBD
+
+
+	defclock mytype1_t myclock1(mytype1_t prev, read_transformer<mytype2_t> transform_a, write_transformer<mytype2_t> transform_b){
+		... init stuff.
+		...	state is local variable.
+
+		let a = readfile()	//	blocking
+
+		while(true){	
+			let b = transform_a.read()	//	Will sample / block,  depending on transformer mode.
+			let c = a * b
+			transform_b.store(c)	//	Will push on tranformer / block, depending on transformer mode.
+
+			//	Runs each task in parallel and returns when all are complete. Returns a vector of values of type T.
+			//	Use return to finish a task with a value. Use break to finish and abort any other non-complete tasks.
+			//??? Split to parallel_tasks_race() and parallel_tasks_all().
+			let d = parallel_tasks<T>(timeout: 10000) {
+				1:
+					sleep(3)
+					return 2
+				2:
+					sleep(4)
+					break 100
+				3:
+					sleep(1)
+					return 99
+			}	
+			let e = map_parallel(seq(i: 0..<1000)){ return $0 * 2 }
+			let f = fold_parallel(0, seq(i: 0..<1000)){ return $0 * 2 }
+			let g = filter_parallel(seq(i: 0..<1000)){ return $0 == 1 }
+		}
+	}
+
+
+
+# EXAMPLE VST-PLUG CONTAINER
+
+Source file: *my_vst\_plug.container*
+
+
+
+		//	IMPORTED FROM GUI
+		struct uievent {
+			time timestamp;
+			variant<>
+				struct {
+					int x;
+					int y;
+					int mouse_button
+					uint32 mods
+				} click;
+				struct {
+					int keycode;
+					int x;
+					int y;
+					uint32 mods;
+				} key;
+				struct {
+					rect dirty
+					channel<obuf> reply
+				} draw;
+				struct {} activate;
+				struct {} deactivate;
+			} type;
+		}
+
+
+		struct ibuf {
+			time timestamp;
+			[float] left_input;
+			[float] right_input;
+			channel<obuf> reply;
+		}
+
+		struct obuf {
+			[float] left_output;
+			[float] right_output;
+		}
+
+		struct param {
+			int param_id;
+			float time;
+			float value;
+		}
+
+		int ui_process(){
+			m = ui_state()
+			while(){
+				select {
+					case events.pop() {
+						r = on_uievent(m, _)
+						if(_.data.type == draw){
+							_.reply.push(r._paint_image)
+							m = r.m
+						}
+						else{
+							control.push_vec(r.control_params)
+							m = r.m
+						}
+					}
+					case close {
+						return nil
+					}
+				}
+			}
+		}
+	
+		int audio_stream_part(){
+			m = audio_stream_ds(2, 44100)
+			while(){
+				select {
+					case audiostream.pop() {
+						m = process(m, _)
+					}
+					case control.pop {
+						return nil
+					}
+					case close {
+						return nil
+					}
+				}
+			}
+		}
+
+		container = JSON
+			[
+				{
+					"doc": "you need to import pins.",
+					"label": "vsthost",
+					"type": "vsthost",
+					"def_pins" : [
+						[ "outpin", "request_param", "request_parameter()" ],
+						[ "inpin", "midi_in", "on_midi_input()" ],
+						[ "inpin", "set_param", "on_set_parameter()" ],
+						[ "inpin", "process", "process()" ]
+					]
+				},
+			
+				{
+					"doc": "A channel always have an input pin called *in* and an output port called *out*",
+					"label": "events",
+					"type": "channel", 
+					"element": "uievent",
+					"mode": "block"
+				},
+				{
+					"label": "control", "type": "channel", "element": "param", "mode": "block"
+				},
+				{
+					"label": "audiostream", "type": "channel", "element": "ibuf", "mode": "block"
+				},
+			
+				{
+					"type": "ui_part", "process": "ui_process"
+				},
+			
+				{
+					"type": "audio_stream_part", "process": "ui_process"
+				},
+			
+				{
+					"type": "wires",
+					"wires": [
+						[ "vsthost.midi", "control.in" ],
+						[ "vsthost.gui", "events.in" ],
+						[ "events.out", "ui_part.uievent" ],
+						[ "ui_part.control", "control.in" ],
+						[ "vsthost.set_param", "control.in" ],
+						[ "vsthost.process", "audiostream.in" ],
+						[ "control.out", "audio_stream_part.control" ],
+						[ "audiostream.out", "audio_stream_part.audio" ]
+					]
+				}
+			
+			]
+
+
+
+
 ################	COMPONENT
 
 
-COMPONENT
 
 {
 	"component": {
@@ -185,7 +531,6 @@ func scale_song {
 }
 
 
-
 	demos [
 		{
 			"scenario": "Scale different tracks"
@@ -198,101 +543,6 @@ func scale_song {
 			(test_song, track_index) => _
 		}
 	]
-
-
-
-
-################	SOFTWARE SYSTEM
-
-
-
-Floyd file: **software-system.floyd**
-
-
--- how to enter glue code directly in component?
-
-
-source-files
-	my-system.fss
-	my-game-app.container
-	my-django-server.container
-	
-	game-simulation.component
-	game-renderer.component
-	
-	jpeglib.component
-	3math.component
-	rest.component
-	
-	quantize.floyd
-	game-state.floyd
-	game-renderer.floyd
-	game-simulation.floyd
-	match-maker.floyd
-
-
-{
-	"items": [
-		"musician": {
-			"type": "person",
-			"desc": "uses the mobile app to record music ontop of backing track"
-		},
-		"Voxtracker": {
-			"type": "container",
-			"desc": "mobile app with recording feature" 		}
-	},
-	"connections": [
-		{ "source": "musician", "interaction": "uses", "tech": "", "dest": "voxtracker" },
-	}
-
-	"containers": [
-		
-	]
-}
-
-
-
-##############################################		CONTAINER
-
-
-container_main()
-
-
-
-		my first design.container
-
-		{
-			"major_version": 1,
-			"minior_version": 0,
-
-			"nodes": {
-			}
-		}
-
-
-	jpeg_quantizer.floyd, colortab.floyd -- implementation source files for the jpeglib
-
-helloworld.container
-
-
-Containers define actors:
-
-	struct clock_xyz_state_t {
-		int timestamp
-		[xyz_record_t] recs
-	}
-
-	struct clock_xyz_message_st {
-		int timestamp
-		int mouse_x
-		int mouse_y
-		case stop: struct { int duration }
-		case on_mouse_move:
-		case on_click: struct { int button_index }
-	}
-	clock_xyz_state_t tick_clock_xyz([clock_xyz_state_t] history, clock_xyz_message_st message){
-	}
-
 
 
 
