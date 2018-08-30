@@ -1,0 +1,183 @@
+Built in tags:
+
+#todo
+#defect
+#desc
+#my-tag
+#doc
+
+#pragma
+
+Use # with any string to make custom tags.
+
+@marcusz -- 
+
+# TITLE
+## SUBTITLE
+
+??? a component file can't hold ALL functions and structs -- must support including other source files!?
+
+datetime
+
+!""#$%&/\[]|()=?+-?`´^~*'<>;:,.
+
+
+let cities = csv(split = ",", titles = true, quoted = true) = {
+	"LatD", "LatM", "LatS", "NS", "LonD", "LonM", "LonS", "EW", "City", "State"
+   41,    5,   59, "N",     80,   39,    0, "W", "Youngstown", OH
+   42,   52,   48, "N",     97,   23,   23, "W", "Yankton", SD
+   46,   35,   59, "N",    120,   30,   36, "W", "Yakima", WA
+   42,   16,   12, "N",     71,   48,    0, "W", "Worcester", MA
+   43,   37,   48, "N",     89,   46,   11, "W", "Wisconsin Dells", WI
+   36,    5,   59, "N",     80,   15,    0, "W", "Winston-Salem", NC
+   49,   52,   48, "N",     97,    9,    0, "W", "Winnipeg", MB
+   39,   11,   23, "N",     78,    9,   36, "W", "Winchester", VA
+   34,   14,   24, "N",     77,   55,   11, "W", "Wilmington", NC
+}
+
+
+//	component	============================================================================================
+
+
+component = json {
+	version: {
+		major: 1,
+		minor: 0
+	},
+	dependencies: []
+	desc: [
+		"The Song Component is basic building block to ",
+		"creating a music player / recorder"
+	]
+}
+
+
+//	song_t	============================================================================================
+
+
+struct song_t {
+	desc "A song has a beginning and an end and a number of tracks of music"
+
+
+	desc "Where song starts, relative to the world-ppq"
+	invariant start_pos >= 0 && start_pos <= end_pos
+	int start_pos
+
+	desc "Where ends starts, relative to the world-ppq",
+	invariant end_pos >= start_pos && end_pos <= max_ppq
+	int end_pos
+
+	invariant: [
+		start_pos >= 0 && start_pos <= end_pos
+		end_pos >= start_pos && end_pos <= max_ppq
+	]
+}
+
+example_value empty0 {
+	desc "An empty song with no tracks. Range is zero too."
+	expression make_def_song(0, 0)
+}
+
+example_value one_track_song {
+	desc "A one-track song. Range is zero."
+	expression make_def_song(0, 0)
+}
+
+visualizer textual_summary {
+	expression dot make_song_text_summary(true, true)
+}
+
+example_value big_song {
+	expression make_song(12345)
+}
+
+example_value zigzag_song {
+	expression make_song(12345)
+}
+
+
+
+desc "Delete the track from the song, as specified by track index"
+song func scale_song(song original, int track_index){
+
+	"inputs": [
+		{
+			"type": "song",
+			"name": "original",
+			desc "The original song. The track must exists.",
+			"contract": "original.count_tracks() > 0"
+		},
+		{
+			"type": "int",
+			"name": "track_index",
+			desc "The track to delete, specified as a track index inside the original song.",
+			"contract": "track_index >= 0 && track_index < original.count_tracks()"
+		},
+		{
+			"type": "int",
+			"name": "probe_log_level",
+			desc "debug probe"
+		}
+	],
+
+	"result": {
+		"type": "song",
+		desc "The new song, where the track track_index has been removed.",
+		"contract": "original.count_tracks() == result.count_tracks() - 1"
+	},
+	"probe_results": [
+		{
+			"type": "song",
+			#desc: "The new song, where the track track_index has been removed.",
+			"contract": "original.count_tracks() == result.count_tracks() - 1"
+		}
+	],
+	"implementation": [
+		"song scale_song(song original, int track_index) {",
+		"\tint temp = 3",
+		"}"
+	],
+	"probes": [
+		{
+			"line": 3,
+			"type": "collection-access-probe"
+		}
+	],
+
+	"proofs": [
+		{
+			"scenario": "delete only track in song",
+			"expected": "empty song",
+			"result": "empty0",
+			"inputs": [
+				"song1track",
+				0
+			]
+		},
+		{
+			"scenario": "delete one of 2 tracks",
+			"expected": "1-track song",
+			"result": "song1track",
+			"inputs": [
+				"song2track",
+				0
+			]
+		}
+	],
+	"demos": [
+		{
+			"name": "delete only track in song",
+			"expected": "empty song",
+			"result": "empty0",
+			"inputs": [
+				"song1track",
+				0
+			]
+		}
+	]
+}
+
+
+presentor song_presentor_summary {
+	"expression": "make_dot_diagram(_.tracks.count)"
+}
