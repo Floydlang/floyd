@@ -1,29 +1,120 @@
 
+??? how to enter glue code directly in component?
+
+
+# FILE FORMATS
+
+# Files
+
+example.floydsys -- stores the top of the system including people, connections etc. It also *fully* defines every component and how they are implemented with actors and wires, the setup of tweakers and so on.
+
+example.fecomp -- defined a reusable component that has *effects* -- that is can call mutating functions. It cannot keep its own state but state may be stored in OS or file system or servers.
+
+example.fpcomp -- defines a pure component where every function is pure and has no side effects.
+
+Components store all their functions and enums etc. They list which other components they need.
+
+
+# visualiser
+
+A visualiser is a function that takes an input value and returns a value representing the value is graph nodes, for showing in tools. You can have several visualisers for the same type of input value.
+
+Example 1:
+- file_visualiser1 returns the name of the file
+- file_visualiser2 returns the name and path and meta info about the file
+- file_visualiser3 returns the name + snippet of the file contents as text etc.
+
+It's important that a visualiser thinks about the value in its entirety, even if it only returns very litte info.
+
+
+
+# measurement_rig
+
+This is a specification how to setup visualisation tools to observe proves over time. Think about it as setting up all those ekgs and paper plots in the hospital that helps doctors figure out what is going on. A rig can be connected directly to specific probes.
+
+Idea: allow you to make generic rigs.
+??? a rig is very similair to an actor: consumes data and has its own state.
+
+
+# desc-tag
+
+A desc is a summary of *why* you want a feature. It should be one or a few sentences long. A desc can be a text field or an *array of fields* to allow for longer texts and still be stored OK as JSON.
+
+
+
+
+# FLOYD SOFTWARE SYSTEM FILE - .floydsys
+
+Example: "my_magic_product.floydsys"
+
+```
 software-system: "My magic product"
 	desc: "Helpdesk with mobile device support for hedgehog farmers."
 	people:
-		Personal Banking Customer
-		Personal Banker
-		Admin
+		"Personal Banking Customer": "uses the mobile app to record music ontop of backing track",
+		"Personal Banker": "mobile app with recording feature",
+		"Admin": "mobile app with recording feature",
 
+		"Voxtracker": {
+			"type": "container",
+			"desc": "mobile app with recording feature" 		}
+	},
+	"connections": [
+		{ "source": "musician", "interaction": "uses", "tech": "", "dest": "voxtracker" },
+	}
+	
+	
 	containers:
 		<container> iphone app
 			tech: Swift, iOS, Xcode
 
 			nodes:
 				<clock> main
-					a = <actor> "My GUI", Hedgehog-iphone-app
+					struct hedgehog_gui_state_t {
+						int timestamp
+						[xyz_record_t] recs
+					}
+
+					struct hedgehog_gui_message_t {
+						int timestamp
+						int mouse_x
+						int mouse_y
+						case stop: struct { int duration }
+						case on_mouse_move:
+						case on_click: struct { int button_index }
+					}
+					??? specify outputs too: gui can have several outputs. They have different message-types.
+					hedgehog_gui_state_t tick_gui_state_actor([hedgehog_gui_state_t] history, hedgehog_gui_message_t message){
+						if(message.type: on_mouse_move){
+						}
+						else if(message.type: stop){
+							b.send(quit_to_homescreen)
+						}
+						else{
+						}
+					}
+
+					a = <actor> "My GUI", tick_gui_state_actor,
 					b = iphone-ux
-					b -> a	//	b sends messages to a
-					b -> c	//	b also sends messages to c, which is another clock
+
+					??? allow circular references at compile time.
+
 				<clock> com-clock
 					c = <actor> "My Com", Hedgehog-servercom
+
+			connections:
+				b -> a	//	b sends messages to a
+				b -> c	//	b also sends messages to c, which is another clock
 
 			component-list:
 				Hedgehog-iphone-app
 				Hedgehog-engine
 				Hedgehog-servercom
 				jpeg-component
+
+			probes_and_tweakers:	//	These are stored as a list inside the container definition itself.
+			measurement_rigs:		//	presentations of how the systems works and uses hardware, like profiling setups.
+
 
 		<container> android app
 			tech: Kotlin, Javalib, Android OS
@@ -54,116 +145,28 @@ software-system: "My magic product"
 				jpeg-component
 
 
-custom components:
+import-custom-components:
 	<effect-component> Hedgehog-iphone-app
 	<effect-component> Hedgehog-Android-app
 	<pure-component> Hedgehog-app-logic
 	<pure-component> Hedgehog-engine
 	<pure-component> Hedgehog-servercom
 	<effect-component> Hedgehog-serverimpl
+```
 
+/*
 ...used components
 	<pure-component> Hedgehog-app-logic
 	<pure-component> Hedgehog-engine
 	<effect-component> Hedgehog-servercom
 	<effect-component> iphone-ux
 	<pure-component> jpeg-component
+*/
 
 
 
-################	SOFTWARE SYSTEM
 
-
-
-Floyd file: **software-system.floyd**
-
-
--- how to enter glue code directly in component?
-
-
-source-files
-	my-system.fss
-	my-game-app.container
-	my-django-server.container
-	
-	game-simulation.component
-	game-renderer.component
-	
-	jpeglib.component
-	3math.component
-	rest.component
-	
-	quantize.floyd
-	game-state.floyd
-	game-renderer.floyd
-	game-simulation.floyd
-	match-maker.floyd
-
-
-```
-{
-	"items": [
-		"musician": {
-			"type": "person",
-			"desc": "uses the mobile app to record music ontop of backing track"
-		},
-		"Voxtracker": {
-			"type": "container",
-			"desc": "mobile app with recording feature" 		}
-	},
-	"connections": [
-		{ "source": "musician", "interaction": "uses", "tech": "", "dest": "voxtracker" },
-	}
-
-	"containers": [
-		
-	]
-}
-```
-
-
-##############################################		CONTAINER
-
-
-container_main()
-
-	my first design.container
-
-	{
-		"major_version": 1,
-		"minior_version": 0,
-
-		"nodes": {
-		}
-	}
-
-jpeg_quantizer.floyd
-colortab.floyd -- implementation source files for the jpeglib
-
-
-helloworld.container
-
-
-Containers define actors:
-
-	struct clock_xyz_state_t {
-		int timestamp
-		[xyz_record_t] recs
-	}
-
-	struct clock_xyz_message_st {
-		int timestamp
-		int mouse_x
-		int mouse_y
-		case stop: struct { int duration }
-		case on_mouse_move:
-		case on_click: struct { int button_index }
-	}
-	clock_xyz_state_t tick_clock_xyz([clock_xyz_state_t] history, clock_xyz_message_st message){
-	}
-
-
-# EXAMPLE ACTOR
+### EXAMPLE ACTOR
 
 ??? TBD
 
@@ -201,170 +204,115 @@ Containers define actors:
 
 
 
-# EXAMPLE VST-PLUG CONTAINER
+### EXAMPLE VST-PLUG CONTAINER
 
 Source file: *my_vst\_plug.container*
 
 
+```
+//	IMPORTED FROM GUI
+struct uievent {
+	time timestamp;
+	variant<>
+		struct {
+			int x;
+			int y;
+			int mouse_button
+			uint32 mods
+		} click;
+		struct {
+			int keycode;
+			int x;
+			int y;
+			uint32 mods;
+		} key;
+		struct {
+			rect dirty
+			channel<obuf> reply
+		} draw;
+		struct {} activate;
+		struct {} deactivate;
+	} type;
+}
 
-		//	IMPORTED FROM GUI
-		struct uievent {
-			time timestamp;
-			variant<>
-				struct {
-					int x;
-					int y;
-					int mouse_button
-					uint32 mods
-				} click;
-				struct {
-					int keycode;
-					int x;
-					int y;
-					uint32 mods;
-				} key;
-				struct {
-					rect dirty
-					channel<obuf> reply
-				} draw;
-				struct {} activate;
-				struct {} deactivate;
-			} type;
-		}
 
+struct ibuf {
+	time timestamp;
+	[float] left_input;
+	[float] right_input;
+	channel<obuf> reply;
+}
 
-		struct ibuf {
-			time timestamp;
-			[float] left_input;
-			[float] right_input;
-			channel<obuf> reply;
-		}
+struct obuf {
+	[float] left_output;
+	[float] right_output;
+}
 
-		struct obuf {
-			[float] left_output;
-			[float] right_output;
-		}
+struct param {
+	int param_id;
+	float time;
+	float value;
+}
 
-		struct param {
-			int param_id;
-			float time;
-			float value;
-		}
-
-		int ui_process(){
-			m = ui_state()
-			while(){
-				select {
-					case events.pop() {
-						r = on_uievent(m, _)
-						if(_.data.type == draw){
-							_.reply.push(r._paint_image)
-							m = r.m
-						}
-						else{
-							control.push_vec(r.control_params)
-							m = r.m
-						}
-					}
-					case close {
-						return nil
-					}
+int ui_process(){
+	m = ui_state()
+	while(){
+		select {
+			case events.pop() {
+				r = on_uievent(m, _)
+				if(_.data.type == draw){
+					_.reply.push(r._paint_image)
+					m = r.m
+				}
+				else{
+					control.push_vec(r.control_params)
+					m = r.m
 				}
 			}
+			case close {
+				return nil
+			}
 		}
+	}
+}
 	
-		int audio_stream_part(){
-			m = audio_stream_ds(2, 44100)
-			while(){
-				select {
-					case audiostream.pop() {
-						m = process(m, _)
-					}
-					case control.pop {
-						return nil
-					}
-					case close {
-						return nil
-					}
-				}
+int audio_stream_part(){
+	m = audio_stream_ds(2, 44100)
+	while(){
+		select {
+			case audiostream.pop() {
+				m = process(m, _)
+			}
+			case control.pop {
+				return nil
+			}
+			case close {
+				return nil
 			}
 		}
+	}
+}
+```
 
-		container = JSON
-			[
-				{
-					"doc": "you need to import pins.",
-					"label": "vsthost",
-					"type": "vsthost",
-					"def_pins" : [
-						[ "outpin", "request_param", "request_parameter()" ],
-						[ "inpin", "midi_in", "on_midi_input()" ],
-						[ "inpin", "set_param", "on_set_parameter()" ],
-						[ "inpin", "process", "process()" ]
-					]
-				},
-			
-				{
-					"doc": "A channel always have an input pin called *in* and an output port called *out*",
-					"label": "events",
-					"type": "channel", 
-					"element": "uievent",
-					"mode": "block"
-				},
-				{
-					"label": "control", "type": "channel", "element": "param", "mode": "block"
-				},
-				{
-					"label": "audiostream", "type": "channel", "element": "ibuf", "mode": "block"
-				},
-			
-				{
-					"type": "ui_part", "process": "ui_process"
-				},
-			
-				{
-					"type": "audio_stream_part", "process": "ui_process"
-				},
-			
-				{
-					"type": "wires",
-					"wires": [
-						[ "vsthost.midi", "control.in" ],
-						[ "vsthost.gui", "events.in" ],
-						[ "events.out", "ui_part.uievent" ],
-						[ "ui_part.control", "control.in" ],
-						[ "vsthost.set_param", "control.in" ],
-						[ "vsthost.process", "audiostream.in" ],
-						[ "control.out", "audio_stream_part.control" ],
-						[ "audiostream.out", "audio_stream_part.audio" ]
-					]
-				}
-			
-			]
+
+# FLOYD COMPONENT FILE FORMATS .fecomp and .fpcomp
 
 
 
-
-################	COMPONENT
-
-
-
+```
 {
 	"component": {
-		"version": {
-			"major": 1,
-			"minor": 0
-		},
 		"dependencies": [],
 		"desc": [
 			"The Song Component is basic building block to ",
 			"creating a music player / recorder"
 		]
 	},
+
+	//	Ordered list of global things: constants, function definitions, struct definitions and enum definitions etc.
 	"nodes": [
 		{
-			"type": "struct",
-			"name": "song_t",
+			"type": "struct",	"name": "song_t",
 			"def": {
 				"desc": "A song has a beginning and an end and a number of tracks of music",
 				"members": [
@@ -479,21 +427,178 @@ Source file: *my_vst\_plug.container*
 			}
 		},
 		{
+			"type": "visualiser",
+			"name": "song_presentor_summary",
+			"expression": "make_dot_diagram(_.tracks.count)"
+		}
+	]
+}
+```
+
+
+##### COMPONENT AS JSON
+
+```
+{
+	"component": {
+		"version": {
+			"major": 1,
+			"minor": 0
+		},
+		"dependencies": [],
+		"desc": [
+			"The Song Component is basic building block to ",
+			"creating a music player / recorder"
+		]
+	},
+	"nodes": [
+		{
+			"type": "struct",
+			"name": "song_t",
+			"def": {
+				"desc": "A song has a beginning and an end and a number of tracks of music",
+				"members": [
+					{
+						"type": "int",
+						"name": "start_pos",
+						"desc": "Where song starts, relative to the world-ppq",
+						"invariant": "start_pos >= 0 && start_pos <= end_pos"
+					},
+					{
+						"type": "int",
+						"name": "end_pos",
+						"desc": "Where ends starts, relative to the world-ppq",
+						"invariant": "end_pos >= start_pos && end_pos <= max_ppq"
+					}
+				],
+				"invariants": [
+					"start_pos >= 0 && start_pos <= end_pos",
+					"start_pos >= 0 && start_pos <= end_pos"
+				]
+			},
+			"example_values": [
+				{
+					"name": "empty0",
+					"desc": "An empty song with no tracks. Range is zero too.",
+					"expression": "make_def_song(0, 0)"
+				},
+				{
+					"name": "one_track_song",
+					"desc": "A one-track song. Range is zero.",
+					"expression": "make_def_song(0, 0)"
+				}
+			],
+			"visualizers": [
+				{
+					"name": "Textal summary",
+					"expression": "dot make_song_text_summary(true, true)"
+				}
+			]
+		},
+		{
+			"type": "example_value",
+			"name": "big_song",
+			"expression": "make_song(12345)"
+		},
+		{
+			"type": "example_value",
+			"name": "zigzag_song",
+			"expression": "make_song(12345)"
+		},
+		{
+			"type": "function",
+			"name": "scale_song",
+			"def": {
+				"desc": "Delete the track from the song, as specified by track index",
+				"inputs": [
+					{
+						"type": "song",
+						"name": "original",
+						"desc": "The original song. The track must exists.",
+						"contract": "original.count_tracks() > 0"
+					},
+					{
+						"type": "int",
+						"name": "track_index",
+						"desc": "The track to delete, specified as a track index inside the original song.",
+						"contract": "track_index >= 0 && track_index < original.count_tracks()"
+					},
+					{
+						"type": "int",
+						"name": "probe_log_level",
+						"desc": "debug probe"
+					}
+				],
+				"result": {
+					"type": "song",
+					"desc": "The new song, where the track track_index has been removed.",
+					"contract": "original.count_tracks() == result.count_tracks() - 1"
+				},
+				"probe_results": [
+					{
+						"type": "song",
+						"desc": "The new song, where the track track_index has been removed.",
+						"contract": "original.count_tracks() == result.count_tracks() - 1"
+					}
+				],
+				"implementation": [
+					"song scale_song(song original, int track_index) {",
+					"\tint temp = 3",
+					"}"
+				],
+				"probes": [
+					{
+						"line": 3,
+						"type": "collection-access-probe"
+					}
+				],
+				"proofs": [
+					{
+						"scenario": "delete only track in song",
+						"expected": "empty song",
+						"result": "empty0",
+						"inputs": [
+							"song1track",
+							0
+						]
+					},
+					{
+						"scenario": "delete one of 2 tracks",
+						"expected": "1-track song",
+						"result": "song1track",
+						"inputs": [
+							"song2track",
+							0
+						]
+					}
+				],
+				"demos": [
+					{
+						"name": "delete only track in song",
+						"expected": "empty song",
+						"result": "empty0",
+						"inputs": [
+							"song1track",
+							0
+						]
+					}
+				]
+			}
+		},
+		{
 			"type": "presentor",
 			"name": "song_presentor_summary",
 			"expression": "make_dot_diagram(_.tracks.count)"
 		}
 	]
 }
+```
 
+##### VARIATION ON FUNC
 
-
-################	FUNCTION
-
-
-
+```
 desc "Delete the track from the song, as specified by track index"
-
+	
 func scale_song {
 	result {
 		type song
@@ -512,12 +617,12 @@ func scale_song {
 			contract track_index >= 0 && track_index < original.count_tracks()
 		}
 	],
-
-
+	
+	
 	int temp = 3
 	probe(temp, "Intermediate result", "key-1")
-
-
+	
+	
 	proofs [
 		{
 			"Delete only track in song" => "empty song"
@@ -527,29 +632,27 @@ func scale_song {
 			"Delete one of 2 tracks" => "1-track song"
 			(song2track, 0) => song1track
 		}
-	],
-}
-
-
-	demos [
-		{
-			"scenario": "Scale different tracks"
-
-			count = slider(0, 20), "Number of tracks"
-			track_index = slider(0, 20), "Track to scale"
-
-			test_song = make_test_song(count)
-			test_song = scale_song(test_song, track_index)
-			(test_song, track_index) => _
-		}
 	]
+},
 
+demos [
+	{
+		"scenario": "Scale different tracks"
+
+		count = slider(0, 20), "Number of tracks"
+		track_index = slider(0, 20), "Track to scale"
+
+		test_song = make_test_song(count)
+		test_song = scale_song(test_song, track_index)
+		(test_song, track_index) => _
+	}
+]
+```
 
 
 ##############################################	COMPONENT
 
-
-
+```
 component = json {
 	version: {
 		major: 1,
@@ -561,56 +664,55 @@ component = json {
 		"creating a music player / recorder"
 	]
 }
-
-
+	
+	
 //	song_t	============================================================================================
-
-
+	
+	
 struct song_t {
 	desc "A song has a beginning and an end and a number of tracks of music"
-
-
+	
+	
 	desc "Where song starts, relative to the world-ppq"
 	invariant start_pos >= 0 && start_pos <= end_pos
 	int start_pos
-
+	
 	desc "Where ends starts, relative to the world-ppq",
 	invariant end_pos >= start_pos && end_pos <= max_ppq
 	int end_pos
-
+	
 	invariant: [
 		start_pos >= 0 && start_pos <= end_pos
 		end_pos >= start_pos && end_pos <= max_ppq
 	]
 }
-
+	
 example_value empty0 {
 	desc "An empty song with no tracks. Range is zero too."
 	expression make_def_song(0, 0)
 }
-
+	
 example_value one_track_song {
 	desc "A one-track song. Range is zero."
 	expression make_def_song(0, 0)
 }
-
+	
 visualizer textual_summary {
 	expression dot make_song_text_summary(true, true)
 }
-
+	
 example_value big_song {
 	expression make_song(12345)
 }
-
+	
 example_value zigzag_song {
 	expression make_song(12345)
 }
-
-
-
+	
+	
 desc "Delete the track from the song, as specified by track index"
 song func scale_song(song original, int track_index){
-
+	
 	"inputs": [
 		{
 			"type": "song",
@@ -630,7 +732,7 @@ song func scale_song(song original, int track_index){
 			desc "debug probe"
 		}
 	],
-
+	
 	"result": {
 		"type": "song",
 		desc "The new song, where the track track_index has been removed.",
@@ -654,7 +756,7 @@ song func scale_song(song original, int track_index){
 			"type": "collection-access-probe"
 		}
 	],
-
+	
 	"proofs": [
 		{
 			"scenario": "delete only track in song",
@@ -687,8 +789,10 @@ song func scale_song(song original, int track_index){
 		}
 	]
 }
-
-
+	
+	
+	
 presentor song_presentor_summary {
 	"expression": "make_dot_diagram(_.tracks.count)"
 }
+```
