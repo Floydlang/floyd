@@ -36,3 +36,4 @@ let cities = csv(split = ",", titles = true, quoted = true) = {
    39,   11,   23, "N",     78,    9,   36, "W", "Winchester", VA
    34,   14,   24, "N",     77,   55,   11, "W", "Wilmington", NC
 }
+˛
