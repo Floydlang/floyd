@@ -24826,7 +24826,7 @@
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2018-09-03 14:34:32 +0000</string>
+	<string>2018-09-03 18:32:45 +0000</string>
 	<key>Modifier</key>
 	<string>Marcus Zetterquist</string>
 	<key>MovementHandleVisible</key>
@@ -27760,9 +27760,9 @@
 							<key>Color</key>
 							<dict>
 								<key>b</key>
-								<real>0.75</real>
-								<key>g</key>
 								<real>1</real>
+								<key>g</key>
+								<real>0.75</real>
 								<key>r</key>
 								<real>0.75</real>
 								<key>space</key>
@@ -28469,14 +28469,39 @@
 					</dict>
 					<key>Text</key>
 					<dict>
+						<key>RTFD</key>
+						<data>
+						BAtzdHJlYW10eXBlZIHoA4QBQISE
+						hBJOU0F0dHJpYnV0ZWRTdHJpbmcA
+						hIQITlNPYmplY3QAhZKEhIQITlNT
+						dHJpbmcBlIQBKw1teV9wcmVzZW50
+						ZXIyhoQCaUkBDZKEhIQMTlNEaWN0
+						aW9uYXJ5AJSEAWkDkoSWlgdOU0Nv
+						bG9yhpKEhIQHTlNDb2xvcgCUhAFj
+						A4QCZmYAAYaShJaWEE5TUGFyYWdy
+						YXBoU3R5bGWGkoSEhBdOU011dGFi
+						bGVQYXJhZ3JhcGhTdHlsZQCEhBBO
+						U1BhcmFncmFwaFN0eWxlAJSEBEND
+						QFMCAISEhAdOU0FycmF5AJSZDJKE
+						hIQJTlNUZXh0VGFiAJSEAkNmAByG
+						koSjogA4hpKEo6IAVIaShKOiAHCG
+						koSjogCBjACGkoSjogCBqACGkoSj
+						ogCBxACGkoSjogCB4ACGkoSjogCB
+						/ACGkoSjogCBGAGGkoSjogCBNAGG
+						koSjogCBUAGGhgCGkoSWlgZOU0Zv
+						bnSGkoSEhAZOU0ZvbnQelJkkhAVb
+						MzZjXQYAAAAcAAAA//5IAGUAbAB2
+						AGUAdABpAGMAYQBOAGUAdQBlAIQB
+						ZhCbAJsBmwCbAIaGhg==
+						</data>
 						<key>Text</key>
 						<string>{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf600
 {\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\csgray\c0;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
-\f0\fs32 \cf0 my_presenter2}</string>
+\f0\fs32 \cf2 my_presenter2}</string>
 					</dict>
 				</dict>
 				<dict>
@@ -28743,11 +28768,11 @@
 							<key>Color</key>
 							<dict>
 								<key>b</key>
-								<real>0.75</real>
+								<real>0.47320600000000002</real>
 								<key>g</key>
-								<real>1</real>
+								<real>0.83234600000000003</real>
 								<key>r</key>
-								<real>0.75</real>
+								<real>1</real>
 								<key>space</key>
 								<string>srgb</string>
 							</dict>
@@ -28774,16 +28799,45 @@
 					</dict>
 					<key>Text</key>
 					<dict>
+						<key>RTFD</key>
+						<data>
+						BAtzdHJlYW10eXBlZIHoA4QBQISE
+						hBJOU0F0dHJpYnV0ZWRTdHJpbmcA
+						hIQITlNPYmplY3QAhZKEhIQITlNT
+						dHJpbmcBlIQBKy5FeGFtcGxlIGZ1
+						bmN0aW9uIGNhbGwKKElucHV0cyBh
+						cmUgZXhwcmVzc2lvbnMphoQCaUkB
+						LpKEhIQMTlNEaWN0aW9uYXJ5AJSE
+						AWkDkoSWlgdOU0NvbG9yhpKEhIQH
+						TlNDb2xvcgCUhAFjA4QCZmYAAYaS
+						hJaWEE5TUGFyYWdyYXBoU3R5bGWG
+						koSEhBdOU011dGFibGVQYXJhZ3Jh
+						cGhTdHlsZQCEhBBOU1BhcmFncmFw
+						aFN0eWxlAJSEBENDQFMCAISEhAdO
+						U0FycmF5AJSZDJKEhIQJTlNUZXh0
+						VGFiAJSEAkNmAByGkoSjogA4hpKE
+						o6IAVIaShKOiAHCGkoSjogCBjACG
+						koSjogCBqACGkoSjogCBxACGkoSj
+						ogCB4ACGkoSjogCB/ACGkoSjogCB
+						GAGGkoSjogCBNAGGkoSjogCBUAGG
+						hgCGkoSWlgZOU0ZvbnSGkoSEhAZO
+						U0ZvbnQelJkkhAVbMzZjXQYAAAAc
+						AAAA//5IAGUAbAB2AGUAdABpAGMA
+						YQBOAGUAdQBlAIQBZhCbAJsBmwCb
+						AIaGhg==
+						</data>
 						<key>Text</key>
 						<string>{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf600
 {\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\csgray\c0;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
-\f0\fs32 \cf0 Example function call\
+\f0\fs32 \cf2 Example function call\
 (Inputs are expressions)}</string>
 					</dict>
+					<key>TextRelativeArea</key>
+					<string>{{0, 0}, {1, 1}}</string>
 				</dict>
 				<dict>
 					<key>Bounds</key>
@@ -28868,11 +28922,11 @@
 							<key>Color</key>
 							<dict>
 								<key>b</key>
-								<real>0.75</real>
+								<real>0.47320586440000001</real>
 								<key>g</key>
-								<real>1</real>
+								<real>0.83234566450000003</real>
 								<key>r</key>
-								<real>0.75</real>
+								<real>1</real>
 								<key>space</key>
 								<string>srgb</string>
 							</dict>
@@ -29049,11 +29103,11 @@
 							<key>Color</key>
 							<dict>
 								<key>b</key>
-								<real>0.75</real>
+								<real>0.47320600000000002</real>
 								<key>g</key>
-								<real>1</real>
+								<real>0.83234600000000003</real>
 								<key>r</key>
-								<real>0.75</real>
+								<real>1</real>
 								<key>space</key>
 								<string>srgb</string>
 							</dict>
@@ -29080,15 +29134,43 @@
 					</dict>
 					<key>Text</key>
 					<dict>
+						<key>RTFD</key>
+						<data>
+						BAtzdHJlYW10eXBlZIHoA4QBQISE
+						hBJOU0F0dHJpYnV0ZWRTdHJpbmcA
+						hIQITlNPYmplY3QAhZKEhIQITlNT
+						dHJpbmcBlIQBKxxFeHBlY3RlZCBv
+						dXRwdXQgKGV4cHJlc3Npb24phoQC
+						aUkBHJKEhIQMTlNEaWN0aW9uYXJ5
+						AJSEAWkDkoSWlgdOU0NvbG9yhpKE
+						hIQHTlNDb2xvcgCUhAFjA4QCZmYA
+						AYaShJaWEE5TUGFyYWdyYXBoU3R5
+						bGWGkoSEhBdOU011dGFibGVQYXJh
+						Z3JhcGhTdHlsZQCEhBBOU1BhcmFn
+						cmFwaFN0eWxlAJSEBENDQFMCAISE
+						hAdOU0FycmF5AJSZDJKEhIQJTlNU
+						ZXh0VGFiAJSEAkNmAByGkoSjogA4
+						hpKEo6IAVIaShKOiAHCGkoSjogCB
+						jACGkoSjogCBqACGkoSjogCBxACG
+						koSjogCB4ACGkoSjogCB/ACGkoSj
+						ogCBGAGGkoSjogCBNAGGkoSjogCB
+						UAGGhgCGkoSWlgZOU0ZvbnSGkoSE
+						hAZOU0ZvbnQelJkkhAVbMzZjXQYA
+						AAAcAAAA//5IAGUAbAB2AGUAdABp
+						AGMAYQBOAGUAdQBlAIQBZhCbAJsB
+						mwCbAIaGhg==
+						</data>
 						<key>Text</key>
 						<string>{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf600
 {\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\csgray\c0;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
-\f0\fs32 \cf0 Expected output (expression)}</string>
+\f0\fs32 \cf2 Expected output (expression)}</string>
 					</dict>
+					<key>TextRelativeArea</key>
+					<string>{{0, 0}, {1, 1}}</string>
 				</dict>
 				<dict>
 					<key>Bounds</key>
@@ -29111,11 +29193,11 @@
 							<key>Color</key>
 							<dict>
 								<key>b</key>
-								<real>0.75</real>
+								<real>0.47320600000000002</real>
 								<key>g</key>
-								<real>1</real>
+								<real>0.83234600000000003</real>
 								<key>r</key>
-								<real>0.75</real>
+								<real>1</real>
 								<key>space</key>
 								<string>srgb</string>
 							</dict>
@@ -29142,15 +29224,43 @@
 					</dict>
 					<key>Text</key>
 					<dict>
+						<key>RTFD</key>
+						<data>
+						BAtzdHJlYW10eXBlZIHoA4QBQISE
+						hBJOU0F0dHJpYnV0ZWRTdHJpbmcA
+						hIQITlNPYmplY3QAhZKEhIQITlNT
+						dHJpbmcBlIQBKxtpbnB1dHMsIGxp
+						c3Qgb2YgZXhwcmVzc2lvbnOGhAJp
+						SQEbkoSEhAxOU0RpY3Rpb25hcnkA
+						lIQBaQOShJaWB05TQ29sb3KGkoSE
+						hAdOU0NvbG9yAJSEAWMDhAJmZgAB
+						hpKElpYQTlNQYXJhZ3JhcGhTdHls
+						ZYaShISEF05TTXV0YWJsZVBhcmFn
+						cmFwaFN0eWxlAISEEE5TUGFyYWdy
+						YXBoU3R5bGUAlIQEQ0NAUwIAhISE
+						B05TQXJyYXkAlJkMkoSEhAlOU1Rl
+						eHRUYWIAlIQCQ2YAHIaShKOiADiG
+						koSjogBUhpKEo6IAcIaShKOiAIGM
+						AIaShKOiAIGoAIaShKOiAIHEAIaS
+						hKOiAIHgAIaShKOiAIH8AIaShKOi
+						AIEYAYaShKOiAIE0AYaShKOiAIFQ
+						AYaGAIaShJaWBk5TRm9udIaShISE
+						Bk5TRm9udB6UmSSEBVszNmNdBgAA
+						ABwAAAD//kgAZQBsAHYAZQB0AGkA
+						YwBhAE4AZQB1AGUAhAFmEJsAmwGb
+						AJsAhoaG
+						</data>
 						<key>Text</key>
 						<string>{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf600
 {\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\csgray\c0;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
-\f0\fs32 \cf0 inputs, list of expressions}</string>
+\f0\fs32 \cf2 inputs, list of expressions}</string>
 					</dict>
+					<key>TextRelativeArea</key>
+					<string>{{0, 0}, {1, 1}}</string>
 				</dict>
 				<dict>
 					<key>Bounds</key>
@@ -29359,11 +29469,11 @@
 							<key>Color</key>
 							<dict>
 								<key>b</key>
-								<real>0.75</real>
+								<real>0.47320600000000002</real>
 								<key>g</key>
-								<real>1</real>
+								<real>0.83234600000000003</real>
 								<key>r</key>
-								<real>0.75</real>
+								<real>1</real>
 								<key>space</key>
 								<string>srgb</string>
 							</dict>
@@ -29390,15 +29500,42 @@
 					</dict>
 					<key>Text</key>
 					<dict>
+						<key>RTFD</key>
+						<data>
+						BAtzdHJlYW10eXBlZIHoA4QBQISE
+						hBJOU0F0dHJpYnV0ZWRTdHJpbmcA
+						hIQITlNPYmplY3QAhZKEhIQITlNT
+						dHJpbmcBlIQBKwZwcm9vZnOGhAJp
+						SQEGkoSEhAxOU0RpY3Rpb25hcnkA
+						lIQBaQOShJaWB05TQ29sb3KGkoSE
+						hAdOU0NvbG9yAJSEAWMDhAJmZgAB
+						hpKElpYQTlNQYXJhZ3JhcGhTdHls
+						ZYaShISEF05TTXV0YWJsZVBhcmFn
+						cmFwaFN0eWxlAISEEE5TUGFyYWdy
+						YXBoU3R5bGUAlIQEQ0NAUwIAhISE
+						B05TQXJyYXkAlJkMkoSEhAlOU1Rl
+						eHRUYWIAlIQCQ2YAHIaShKOiADiG
+						koSjogBUhpKEo6IAcIaShKOiAIGM
+						AIaShKOiAIGoAIaShKOiAIHEAIaS
+						hKOiAIHgAIaShKOiAIH8AIaShKOi
+						AIEYAYaShKOiAIE0AYaShKOiAIFQ
+						AYaGAIaShJaWBk5TRm9udIaShISE
+						Bk5TRm9udB6UmSSEBVszNmNdBgAA
+						ABwAAAD//kgAZQBsAHYAZQB0AGkA
+						YwBhAE4AZQB1AGUAhAFmEJsAmwGb
+						AJsAhoaG
+						</data>
 						<key>Text</key>
 						<string>{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf600
 {\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\csgray\c0;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
-\f0\fs32 \cf0 proofs}</string>
+\f0\fs32 \cf2 proofs}</string>
 					</dict>
+					<key>TextRelativeArea</key>
+					<string>{{0, 0}, {1, 1}}</string>
 				</dict>
 				<dict>
 					<key>Bounds</key>
@@ -29421,9 +29558,9 @@
 							<key>Color</key>
 							<dict>
 								<key>b</key>
-								<real>0.75</real>
-								<key>g</key>
 								<real>1</real>
+								<key>g</key>
+								<real>0.75</real>
 								<key>r</key>
 								<real>0.75</real>
 								<key>space</key>
@@ -29452,15 +29589,43 @@
 					</dict>
 					<key>Text</key>
 					<dict>
+						<key>RTFD</key>
+						<data>
+						BAtzdHJlYW10eXBlZIHoA4QBQISE
+						hBJOU0F0dHJpYnV0ZWRTdHJpbmcA
+						hIQITlNPYmplY3QAhZKEhIQITlNT
+						dHJpbmcBlIQBKydJbXBsZW1lbnRh
+						dGlvbiBib2R5LCBpbmNsdWRpbmcg
+						cHJvYmVzKCmGhAJpSQEnkoSEhAxO
+						U0RpY3Rpb25hcnkAlIQBaQOShJaW
+						B05TQ29sb3KGkoSEhAdOU0NvbG9y
+						AJSEAWMDhAJmZgABhpKElpYQTlNQ
+						YXJhZ3JhcGhTdHlsZYaShISEF05T
+						TXV0YWJsZVBhcmFncmFwaFN0eWxl
+						AISEEE5TUGFyYWdyYXBoU3R5bGUA
+						lIQEQ0NAUwIAhISEB05TQXJyYXkA
+						lJkMkoSEhAlOU1RleHRUYWIAlIQC
+						Q2YAHIaShKOiADiGkoSjogBUhpKE
+						o6IAcIaShKOiAIGMAIaShKOiAIGo
+						AIaShKOiAIHEAIaShKOiAIHgAIaS
+						hKOiAIH8AIaShKOiAIEYAYaShKOi
+						AIE0AYaShKOiAIFQAYaGAIaShJaW
+						Bk5TRm9udIaShISEBk5TRm9udB6U
+						mSSEBVszNmNdBgAAABwAAAD//kgA
+						ZQBsAHYAZQB0AGkAYwBhAE4AZQB1
+						AGUAhAFmEJsAmwGbAJsAhoaG
+						</data>
 						<key>Text</key>
 						<string>{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf600
 {\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\csgray\c0;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
-\f0\fs32 \cf0 Implementation body, including probes()}</string>
+\f0\fs32 \cf2 Implementation body, including probes()}</string>
 					</dict>
+					<key>TextRelativeArea</key>
+					<string>{{0, 0}, {1, 1}}</string>
 				</dict>
 				<dict>
 					<key>Bounds</key>
@@ -29659,11 +29824,11 @@
 							<key>Color</key>
 							<dict>
 								<key>b</key>
-								<real>0.75</real>
+								<real>0.47320600000000002</real>
 								<key>g</key>
-								<real>1</real>
+								<real>0.83234600000000003</real>
 								<key>r</key>
-								<real>0.75</real>
+								<real>1</real>
 								<key>space</key>
 								<string>srgb</string>
 							</dict>
@@ -29690,15 +29855,42 @@
 					</dict>
 					<key>Text</key>
 					<dict>
+						<key>RTFD</key>
+						<data>
+						BAtzdHJlYW10eXBlZIHoA4QBQISE
+						hBJOU0F0dHJpYnV0ZWRTdHJpbmcA
+						hIQITlNPYmplY3QAhZKEhIQITlNT
+						dHJpbmcBlIQBKxVDb250cmFjdCAo
+						ZXhwcmVzc2lvbimGhAJpSQEVkoSE
+						hAxOU0RpY3Rpb25hcnkAlIQBaQOS
+						hJaWB05TQ29sb3KGkoSEhAdOU0Nv
+						bG9yAJSEAWMDhAJmZgABhpKElpYQ
+						TlNQYXJhZ3JhcGhTdHlsZYaShISE
+						F05TTXV0YWJsZVBhcmFncmFwaFN0
+						eWxlAISEEE5TUGFyYWdyYXBoU3R5
+						bGUAlIQEQ0NAUwIAhISEB05TQXJy
+						YXkAlJkMkoSEhAlOU1RleHRUYWIA
+						lIQCQ2YAHIaShKOiADiGkoSjogBU
+						hpKEo6IAcIaShKOiAIGMAIaShKOi
+						AIGoAIaShKOiAIHEAIaShKOiAIHg
+						AIaShKOiAIH8AIaShKOiAIEYAYaS
+						hKOiAIE0AYaShKOiAIFQAYaGAIaS
+						hJaWBk5TRm9udIaShISEBk5TRm9u
+						dB6UmSSEBVszNmNdBgAAABwAAAD/
+						/kgAZQBsAHYAZQB0AGkAYwBhAE4A
+						ZQB1AGUAhAFmEJsAmwGbAJsAhoaG
+						</data>
 						<key>Text</key>
 						<string>{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf600
 {\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\csgray\c0;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
-\f0\fs32 \cf0 Contract (expression)}</string>
+\f0\fs32 \cf2 Contract (expression)}</string>
 					</dict>
+					<key>TextRelativeArea</key>
+					<string>{{0, 0}, {1, 1}}</string>
 				</dict>
 				<dict>
 					<key>Bounds</key>
@@ -29845,11 +30037,11 @@
 							<key>Color</key>
 							<dict>
 								<key>b</key>
-								<real>0.75</real>
+								<real>0.47320600000000002</real>
 								<key>g</key>
-								<real>1</real>
+								<real>0.83234600000000003</real>
 								<key>r</key>
-								<real>0.75</real>
+								<real>1</real>
 								<key>space</key>
 								<string>srgb</string>
 							</dict>
@@ -29876,15 +30068,42 @@
 					</dict>
 					<key>Text</key>
 					<dict>
+						<key>RTFD</key>
+						<data>
+						BAtzdHJlYW10eXBlZIHoA4QBQISE
+						hBJOU0F0dHJpYnV0ZWRTdHJpbmcA
+						hIQITlNPYmplY3QAhZKEhIQITlNT
+						dHJpbmcBlIQBKwZyZXN1bHSGhAJp
+						SQEGkoSEhAxOU0RpY3Rpb25hcnkA
+						lIQBaQOShJaWB05TQ29sb3KGkoSE
+						hAdOU0NvbG9yAJSEAWMDhAJmZgAB
+						hpKElpYQTlNQYXJhZ3JhcGhTdHls
+						ZYaShISEF05TTXV0YWJsZVBhcmFn
+						cmFwaFN0eWxlAISEEE5TUGFyYWdy
+						YXBoU3R5bGUAlIQEQ0NAUwIAhISE
+						B05TQXJyYXkAlJkMkoSEhAlOU1Rl
+						eHRUYWIAlIQCQ2YAHIaShKOiADiG
+						koSjogBUhpKEo6IAcIaShKOiAIGM
+						AIaShKOiAIGoAIaShKOiAIHEAIaS
+						hKOiAIHgAIaShKOiAIH8AIaShKOi
+						AIEYAYaShKOiAIE0AYaShKOiAIFQ
+						AYaGAIaShJaWBk5TRm9udIaShISE
+						Bk5TRm9udB6UmSSEBVszNmNdBgAA
+						ABwAAAD//kgAZQBsAHYAZQB0AGkA
+						YwBhAE4AZQB1AGUAhAFmEJsAmwGb
+						AJsAhoaG
+						</data>
 						<key>Text</key>
 						<string>{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf600
 {\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\csgray\c0;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
-\f0\fs32 \cf0 result}</string>
+\f0\fs32 \cf2 result}</string>
 					</dict>
+					<key>TextRelativeArea</key>
+					<string>{{0, 0}, {1, 1}}</string>
 				</dict>
 				<dict>
 					<key>Bounds</key>
@@ -29907,11 +30126,11 @@
 							<key>Color</key>
 							<dict>
 								<key>b</key>
-								<real>0.75</real>
+								<real>0.47320600000000002</real>
 								<key>g</key>
-								<real>1</real>
+								<real>0.83234600000000003</real>
 								<key>r</key>
-								<real>0.75</real>
+								<real>1</real>
 								<key>space</key>
 								<string>srgb</string>
 							</dict>
@@ -29938,15 +30157,42 @@
 					</dict>
 					<key>Text</key>
 					<dict>
+						<key>RTFD</key>
+						<data>
+						BAtzdHJlYW10eXBlZIHoA4QBQISE
+						hBJOU0F0dHJpYnV0ZWRTdHJpbmcA
+						hIQITlNPYmplY3QAhZKEhIQITlNT
+						dHJpbmcBlIQBKxVDb250cmFjdCAo
+						ZXhwcmVzc2lvbimGhAJpSQEVkoSE
+						hAxOU0RpY3Rpb25hcnkAlIQBaQOS
+						hJaWB05TQ29sb3KGkoSEhAdOU0Nv
+						bG9yAJSEAWMDhAJmZgABhpKElpYQ
+						TlNQYXJhZ3JhcGhTdHlsZYaShISE
+						F05TTXV0YWJsZVBhcmFncmFwaFN0
+						eWxlAISEEE5TUGFyYWdyYXBoU3R5
+						bGUAlIQEQ0NAUwIAhISEB05TQXJy
+						YXkAlJkMkoSEhAlOU1RleHRUYWIA
+						lIQCQ2YAHIaShKOiADiGkoSjogBU
+						hpKEo6IAcIaShKOiAIGMAIaShKOi
+						AIGoAIaShKOiAIHEAIaShKOiAIHg
+						AIaShKOiAIH8AIaShKOiAIEYAYaS
+						hKOiAIE0AYaShKOiAIFQAYaGAIaS
+						hJaWBk5TRm9udIaShISEBk5TRm9u
+						dB6UmSSEBVszNmNdBgAAABwAAAD/
+						/kgAZQBsAHYAZQB0AGkAYwBhAE4A
+						ZQB1AGUAhAFmEJsAmwGbAJsAhoaG
+						</data>
 						<key>Text</key>
 						<string>{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf600
 {\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\csgray\c0;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
-\f0\fs32 \cf0 Contract (expression)}</string>
+\f0\fs32 \cf2 Contract (expression)}</string>
 					</dict>
+					<key>TextRelativeArea</key>
+					<string>{{0, 0}, {1, 1}}</string>
 				</dict>
 				<dict>
 					<key>Bounds</key>
@@ -30155,11 +30401,11 @@
 							<key>Color</key>
 							<dict>
 								<key>b</key>
-								<real>0.75</real>
+								<real>0.47320600000000002</real>
 								<key>g</key>
-								<real>1</real>
+								<real>0.83234600000000003</real>
 								<key>r</key>
-								<real>0.75</real>
+								<real>1</real>
 								<key>space</key>
 								<string>srgb</string>
 							</dict>
@@ -30186,15 +30432,42 @@
 					</dict>
 					<key>Text</key>
 					<dict>
+						<key>RTFD</key>
+						<data>
+						BAtzdHJlYW10eXBlZIHoA4QBQISE
+						hBJOU0F0dHJpYnV0ZWRTdHJpbmcA
+						hIQITlNPYmplY3QAhZKEhIQITlNT
+						dHJpbmcBlIQBKwZpbnB1dHOGhAJp
+						SQEGkoSEhAxOU0RpY3Rpb25hcnkA
+						lIQBaQOShJaWB05TQ29sb3KGkoSE
+						hAdOU0NvbG9yAJSEAWMDhAJmZgAB
+						hpKElpYQTlNQYXJhZ3JhcGhTdHls
+						ZYaShISEF05TTXV0YWJsZVBhcmFn
+						cmFwaFN0eWxlAISEEE5TUGFyYWdy
+						YXBoU3R5bGUAlIQEQ0NAUwIAhISE
+						B05TQXJyYXkAlJkMkoSEhAlOU1Rl
+						eHRUYWIAlIQCQ2YAHIaShKOiADiG
+						koSjogBUhpKEo6IAcIaShKOiAIGM
+						AIaShKOiAIGoAIaShKOiAIHEAIaS
+						hKOiAIHgAIaShKOiAIH8AIaShKOi
+						AIEYAYaShKOiAIE0AYaShKOiAIFQ
+						AYaGAIaShJaWBk5TRm9udIaShISE
+						Bk5TRm9udB6UmSSEBVszNmNdBgAA
+						ABwAAAD//kgAZQBsAHYAZQB0AGkA
+						YwBhAE4AZQB1AGUAhAFmEJsAmwGb
+						AJsAhoaG
+						</data>
 						<key>Text</key>
 						<string>{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf600
 {\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\csgray\c0;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
-\f0\fs32 \cf0 inputs}</string>
+\f0\fs32 \cf2 inputs}</string>
 					</dict>
+					<key>TextRelativeArea</key>
+					<string>{{0, 0}, {1, 1}}</string>
 				</dict>
 				<dict>
 					<key>Bounds</key>
@@ -31111,14 +31384,39 @@
 					</dict>
 					<key>Text</key>
 					<dict>
+						<key>RTFD</key>
+						<data>
+						BAtzdHJlYW10eXBlZIHoA4QBQISE
+						hBJOU0F0dHJpYnV0ZWRTdHJpbmcA
+						hIQITlNPYmplY3QAhZKEhIQITlNT
+						dHJpbmcBlIQBKw1teV9wcmVzZW50
+						ZXIxhoQCaUkBDZKEhIQMTlNEaWN0
+						aW9uYXJ5AJSEAWkDkoSWlgdOU0Nv
+						bG9yhpKEhIQHTlNDb2xvcgCUhAFj
+						A4QCZmYAAYaShJaWEE5TUGFyYWdy
+						YXBoU3R5bGWGkoSEhBdOU011dGFi
+						bGVQYXJhZ3JhcGhTdHlsZQCEhBBO
+						U1BhcmFncmFwaFN0eWxlAJSEBEND
+						QFMCAISEhAdOU0FycmF5AJSZDJKE
+						hIQJTlNUZXh0VGFiAJSEAkNmAByG
+						koSjogA4hpKEo6IAVIaShKOiAHCG
+						koSjogCBjACGkoSjogCBqACGkoSj
+						ogCBxACGkoSjogCB4ACGkoSjogCB
+						/ACGkoSjogCBGAGGkoSjogCBNAGG
+						koSjogCBUAGGhgCGkoSWlgZOU0Zv
+						bnSGkoSEhAZOU0ZvbnQelJkkhAVb
+						MzZjXQYAAAAcAAAA//5IAGUAbAB2
+						AGUAdABpAGMAYQBOAGUAdQBlAIQB
+						ZhCbAJsBmwCbAIaGhg==
+						</data>
 						<key>Text</key>
 						<string>{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf600
 {\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\csgray\c0;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc\partightenfactor0
 
-\f0\fs32 \cf0 my_presenter1}</string>
+\f0\fs32 \cf2 my_presenter1}</string>
 					</dict>
 				</dict>
 				<dict>
@@ -54276,7 +54574,7 @@ Plugin Instance}</string>
 		<key>CurrentSheet</key>
 		<integer>0</integer>
 		<key>Frame</key>
-		<string>{{954, 0}, {1586, 1417}}</string>
+		<string>{{940, 0}, {1519, 1417}}</string>
 		<key>ShowInfo</key>
 		<true/>
 		<key>Sidebar</key>
@@ -54286,12 +54584,12 @@ Plugin Instance}</string>
 		<key>Sidebar_Tab</key>
 		<integer>1</integer>
 		<key>VisibleRegion</key>
-		<string>{{333.89772551591511, 7794.6250165309639}, {1216.8560424734928, 1237.6893754963849}}</string>
+		<string>{{-371.59468821385337, 7794.1515316895347}, {2306.8181474439125, 2475.3787509927715}}</string>
 		<key>ZoomValues</key>
 		<array>
 			<array>
 				<string>Canvas 1</string>
-				<real>1.3200000000000001</real>
+				<real>0.66000000000000003</real>
 				<real>1</real>
 			</array>
 		</array>

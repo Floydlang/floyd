@@ -4,6 +4,7 @@
 
 # FILE FORMATS
 
+
 # Files
 
 example.floydsys -- stores the top of the system including people, connections etc. It also *fully* defines every component and how they are implemented with actors and wires, the setup of tweakers and so on.
@@ -16,6 +17,7 @@ Components store all their functions and enums etc. They list which other compon
 
 
 # presenter
+
 ??? presenter == convention for a function, or use special keyword? "preso" instead of "func"?
 
 A presenter is a function that takes an input value and returns a value representing the value is graph nodes, for showing in tools. You can have several presenters for the same type of input value.
@@ -68,7 +70,6 @@ When you write a function you also supply a number of proofs that shows that the
 # DEMO
 
 THis is an object that can be used to setup an interactive demonstration of a function. It has desc, can define some sliders and settings, defines expressions to execute. Can recommend what type of information in preso:s to show and how. Show a time-axis and use a slider to zoom?
-
 
 
 
