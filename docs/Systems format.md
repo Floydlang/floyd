@@ -16,6 +16,31 @@ example.fpcomp -- defines a pure component where every function is pure and has 
 Components store all their functions and enums etc. They list which other components they need.
 
 
+
+# Documentation and comments
+
+// and /* */ are used for comments.
+
+All comments before a statement are collapsed and becomes docs for that statement. First line of comment becomes the *summary*. Any additional lines of comments becomes the *details*.
+
+A desc is a summary of *why* you want a feature. It should be one or a few sentences long. A desc can be a text field or an *array of fields* to allow for longer texts and still be stored OK as JSON.
+
+
+
+# struct invariant
+
+Invariants are defined per data member of a struct. They are used to verify input argument to automatic constructor (int start_pos, int end_pos). There is no way to *ever* create an instance of song_t that breaks the invariant. If you add special maker-functions, those can have other invariants but the song_t variants are always there.
+
+All aggregate values will automatically have their invariants checked deeply.
+
+
+# function contracts
+
+A function specifies possible input arguments, ranges etc. These are validated at runtime and used for documentation.
+A function also specifies the possible values of its result. You can define the results using the original inputs values.
+
+
+
 # presenter
 
 ??? presenter == convention for a function, or use special keyword? "preso" instead of "func"?
@@ -35,7 +60,7 @@ Presenters are used extensively by the IDE and the runtime and debuggers etc to 
 
 # preso
 
-This is a value that lists the contenst of a value of a specific type.
+This is a value that lists the contents of a value of a specific type.
 
 
 This is a concerete type, designed to hold a string, a list of strings, a tree of nodes etc. Like a high-level SVG but without layout information, only the data.
@@ -51,10 +76,6 @@ Idea: allow you to make generic rigs.
 ??? a rig is very similair to an actor: consumes data and has its own state.
 
 
-# desc-tag
-
-A desc is a summary of *why* you want a feature. It should be one or a few sentences long. A desc can be a text field or an *array of fields* to allow for longer texts and still be stored OK as JSON.
-
 
 # RUNTIMES
 
@@ -66,10 +87,19 @@ At the container level you can instantiate different runtimes, like memory alloc
 When you write a function you also supply a number of proofs that shows that the function works as advertised. These are unit tests and will always run at startup and other times.
 
 
+# EXAMPLE_VALUE
+
+These are used to define good example values for a struct to be used for demoing, making tests for this struct, functions working on the struct values and for all clients.
+
+	example_value one_track_song = song_t(1)
+
+Example values are automatically available in other modules.
+
+
 
 # DEMO
 
-THis is an object that can be used to setup an interactive demonstration of a function. It has desc, can define some sliders and settings, defines expressions to execute. Can recommend what type of information in preso:s to show and how. Show a time-axis and use a slider to zoom?
+This is an object that can be used to setup an interactive demonstration of a function. It has desc, can define some sliders and settings, defines expressions to execute. Can recommend what type of information in preso:s to show and how. Show a time-axis and use a slider to zoom?
 
 
 
@@ -96,33 +126,8 @@ Example: "my_magic_product.floydsys"
 
 			"clocks": {
 				"main": [
-					"struct hedgehog_gui_state_t {",
-					"\tint timestamp",
-					"\t[xyz_record_t] recs",
-					"}",
-					"",
-					"struct hedgehog_gui_message_t {",
-					"\tint timestamp",
-					"\tint mouse_x",
-					"\tint mouse_y",
-					"\tcase stop: struct { int duration }",
-					"\tcase on_mouse_move:",
-					"case on_click: struct { int button_index }",
-					"}",
-					"??? specify outputs too: gui can have several outputs. They have different message-types.",
-					"hedgehog_gui_state_t tick_gui_state_actor([hedgehog_gui_state_t] history, hedgehog_gui_message_t message){",
-					"\tif(message.type: on_mouse_move){",
-					"\t}",
-					"\telse if(message.type: stop){",
-					"\t\tb.send(quit_to_homescreen)",
-					"\t}",
-					"\telse{",
-					"\t}",
-					"}",
-					"",
-
-					"a = <actor> My GUI, tick_gui_state_actor",
-					"b = iphone-ux",
+					"a": "my_gui",
+					"b": "iphone-ux",
 					"??? allow circular references at compile time."
 				],
 
@@ -180,39 +185,42 @@ Example: "my_magic_product.floydsys"
 		"<effect-component> Hedgehog-serverimpl"
 	]
 }
-```
 
 
-### EXAMPLE ACTOR
 
-```
-	defclock mytype1_t myclock1(mytype1_t prev, read_transformer<mytype2_t> transform_a, write_transformer<mytype2_t> transform_b){
-		... init stuff.
-		...	state is local variable.
+actor my_gui {
+	struct hedgehog_gui_state_t {
+		int timestamp
+		[xyz_record_t] recs
+	}
 
-		let a = readfile()	//	blocking
+	struct hedgehog_gui_message_t {
+		int timestamp
+		int mouse_x
+		int mouse_y
+		case stop: struct { int duration }
+		case on_mouse_move:
+		case on_click: struct { int button_index }
+	}
 
-		while(true){	
-			let b = transform_a.read()	//	Will sample / block,  depending on transformer mode.
-			let c = a * b
-			transform_b.store(c)	//	Will push on tranformer / block, depending on transformer mode.
+	//??? specify outputs too: gui can have several outputs. They have different message-types.
 
-			//	Runs each task in parallel and returns when all are complete. Returns a vector of values of type T.
-			//	Use return to finish a task with a value. Use break to finish and abort any other non-complete tasks.
-			//??? Split to parallel_tasks_race() and parallel_tasks_all().
-			let d = parallel_tasks<T>(timeout: 10000) {
-				1:
-					sleep(3)
-					return 2
-				2:
-					sleep(4)
-					break 100
-				3:
-					sleep(1)
-					return 99
-			}	
-			let e = map_parallel(seq(i: 0..<1000)){ return $0 * 2 }
+	hedgehog_gui_state_t tick_gui_state_actor([hedgehog_gui_state_t] history, hedgehog_gui_message_t essage){
+		if(message.type: on_mouse_move){
+		}
+		else if(message.type: stop){
+			b.send(quit_to_homescreen)
+		}
+		else{
 		}
 	}
+
+	state: hedgehog_gui_state_t
+	message: hedgehog_gui_message_t
+	function: tick_gui_state_actor
+}
+
+
 ```
+
 
