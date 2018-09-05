@@ -78,8 +78,8 @@ THis is an object that can be used to setup an interactive demonstration of a fu
 Example: "my_magic_product.floydsys"
 
 ```
-{
-	"software-system": "My magic product",
+"software-system": {
+	"name": "My magic product",
 	"desc": "Helpdesk with mobile device support for hedgehog farmers.",
 	"people": {
 		"Personal Banking Customer": "uses the mobile app to record music ontop of backing track",
