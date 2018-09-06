@@ -1,4 +1,4 @@
-![Floyd Logo](./floyd_logo2.png)
+![](floyd_systems_logo.png)
 
 # FLOYD SYSTEMS MANUAL
 
@@ -290,7 +290,7 @@ Notice: map() and supermap() shares threads with other mechanisms in the Floyd r
 
 
 
-# EXAMPLE SETUPS FOR SOME APPLICATIONS
+# EXAMPLE SETUPS
 
 ### SIMPLE CONSOLE PROGRAM
 

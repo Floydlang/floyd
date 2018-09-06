@@ -157,7 +157,7 @@ This is a webbased interactive tool for making, exploring and tuning complete so
 Floyd compilers and tools are written in portable C++11.
 
 
-# TODO
+# BACKLOG
 These are upcoming features, listed here to give you an idea of what the plan is.
 
 ## POC - PROOF OF CONCEPT
