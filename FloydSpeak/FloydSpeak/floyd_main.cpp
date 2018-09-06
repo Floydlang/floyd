@@ -13,9 +13,6 @@
 #include <string>
 
 #include "quark.h"
-#include "game_of_life1.h"
-#include "game_of_life2.h"
-#include "game_of_life3.h"
 
 #include "floyd_interpreter.h"
 #include "floyd_parser/floyd_parser.h"

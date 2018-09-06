@@ -1,6 +1,4 @@
 
-??? how to enter glue code directly in container?
-
 
 # SYNTAX
 
@@ -44,33 +42,36 @@ It can used from "clocks" sections to instantiate an actor based on that functio
 
 # EXAMPLE FLOYD SOFTWARE SYSTEM FILE - test.floydsys
 
+. ??? allow circular references at compile time.
 
 ```
 software-system: {
-	"name": "My magic product",
-	"desc": "Helpdesk with mobile device support for hedgehog farmers.",
+	"name": "My Arcade Game",
+	"desc": "Space shooter for mobile devices, with connection to a server.",
 	"people": {
-		"Personal Banking Customer": "uses the mobile app to record music ontop of backing track",
-		"Personal Banker": "mobile app with recording feature",
-		"Admin": "mobile app with recording feature"
+		"Gamer": "Plays the game on one of the mobile apps",
+		"Curator": "Updates achievements, competitions, make custom on-off maps",
+		"Admin": "Keeps the system running"
 	},
 	"connections": [
-		{ "source": "musician", "interaction": "uses", "tech": "", "dest": "voxtracker" }
+		{ "source": "Game", "dest": "iphone app", "interaction": "plays", "tech": "" }
 	],
 	"containers": {
 		"iphone app": {
-			"tech": "Swift, iOS, Xcode",
-			"desc": "Mobile app with buttons for hedgehogs.",
+			"tech": "Swift, iOS, Xcode, Open GL",
+			"desc": "Mobile shooter game for iOS.",
 
 			"clocks": {
 				"main": [
 					"a": "my_gui_main",
-					"b": "iphone-ux",
-					"??? allow circular references at compile time."
+					"b": "iphone-ux"
 				],
 
 				"com-clock": [
-					"c = <actor> My Com, Hedgehog-servercom"
+					"c": "server_com"
+				],
+				"opengl_feeder": [
+					"d": "renderer"
 				]
 			},
 			"connections": [
@@ -78,40 +79,55 @@ software-system: {
 				{ "b", "c",	"b also sends messages to c, which is another clock" }
 			],
 			"probes_and_tweakers": [],
-			"measurement_rigs": [],
 			"components": [
-				"Hedgehog-iphone-app", 	"Hedgehog-engine", "Hedgehog-servercom", "jpeg-component"
+				"My Arcade Game-iphone-app",
+				"My Arcade Game-logic",
+				"My Arcade Game-servercom",
+				"OpenGL-component",
+				"Free Game Engine-component",
+				"iphone-ux-component"
 			]
 		},
 
 		"Android app": {
-			"tech": "Kotlin, Javalib, Android OS",
-			"desc": "Android app with google integration.",
+			"tech": "Kotlin, Javalib, Android OS, OpenGL",
+			"desc": "Mobile shooter game for Android OS.",
 	
 			"clocks": {
 				"main": [
-					"<actor> My GUI, Hedgehog-Android-app"
+					"a": "my_gui_main",
+					"b": "iphone-ux"
 				],
 				"com-clock": [
-					"<actor> My Com, <effect-component> Hedgehog-servercom"
+					"c": "server_com"
+				],
+				"opengl_feeder": [
+					"d": "renderer"
 				]
 			},
-			"components": [ "Hedgehog-Android-app", "Hedgehog-engine", "Hedgehog-servercom", "jpeg-component" ],
 			"probes_and_tweakers": [],
-			"measurement_rigs": []
+			"components": [
+				"My Arcade Game-android-app",
+				"My Arcade Game-logic",
+				"My Arcade Game-servercom",
+				"OpenGL-component",
+				"Free Game Engine-component",
+				"Android-ux-component"
+			]
 		},
-		"Server with database & admin web": {
+		"Game Server with players & admin web": {
 			"tech": "Django, Pythong, Heroku, Postgres",
-			"desc": "The database that stores all user accounts, talks to the mobile apps and handles admin tasks.",
+			"desc": "The database that stores all user accounts, levels and talks to the mobile apps and handles admin tasks.",
 
 			"clocks": {
 				"main": [
-					"<actor> My GUI, <effect-component> Hedgehog-serverimpl"
 				]
 			},
-			"components": [ "Hedgehog-engine", "Hedgehog-serverimpl", "Stripe-hook component", "jpeg-component" ],
 			"probes_and_tweakers": [],
-			"measurement_rigs": []
+			"components": [
+				"My Arcade Game-logic",
+				"My Arcade Game server logic"
+			]
 		}
 	},
 	"import-custom-components": [
