@@ -51,12 +51,12 @@ A programming language that feels familiar to Javascript / C(++) / Javaprogramme
 **Floyd Speak Manual:** [Floyd Speak Manual](floyd_speak.md).
 
 
-##### CHEAT SHEET
+## CHEAT SHEET
 
 ![Floyd Speak Cheat Sheet](readme_cheat_sheet.png)
 
 
-##### EXAMPLE
+## EXAMPLE CODE
 
 	//  Make simple, ready-for use struct.
 	struct photo {
@@ -82,9 +82,9 @@ A programming language that feels familiar to Javascript / C(++) / Javaprogramme
 
 
 
-##### FEATURES LEFT OUT OF FLOYD SPEAK
+## UNSUPPORTED
 
-You ain't gonna need them.
+There feature have been excluded from Floyd on purpose, because they are a bad idea:
 
 1. Aliasing
 2. Pointers & references
@@ -155,7 +155,7 @@ This is a webbased interactive tool for making, exploring and tuning complete so
 
 
 
-# IN THE BOX
+# FLOYD - IN THE BOX
 
 |Item				| Feature					| Link
 |:---				|:---					|:---
