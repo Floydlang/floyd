@@ -173,13 +173,13 @@
 		2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = sha1_class.cpp; sourceTree = "<group>"; };
 		2CBCA7DD1D569C6D000FAE81 /* sha1_class.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sha1_class.h; sourceTree = "<group>"; };
 		2CBF330C202143BD0030AE98 /* libncurses.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libncurses.tbd; path = usr/lib/libncurses.tbd; sourceTree = SDKROOT; };
+		2CCC0D222141DCC700788BCB /* immer-master */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "immer-master"; sourceTree = "<group>"; };
 		2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_main.cpp; sourceTree = "<group>"; };
 		2CD68C5F1D5A71610070892A /* pass2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pass2.cpp; sourceTree = "<group>"; };
 		2CD68C601D5A71610070892A /* pass2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pass2.h; sourceTree = "<group>"; };
 		2CEB5744207106560005AC7A /* benchmark_game_of_life.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = benchmark_game_of_life.cpp; sourceTree = "<group>"; };
 		2CEB57462071069B0005AC7A /* benchmark_basics.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = benchmark_basics.cpp; sourceTree = "<group>"; };
 		2CEB5748207106C60005AC7A /* benchmark_basics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = benchmark_basics.h; sourceTree = "<group>"; };
-		2CFD2EE12088AF0900774170 /* immer */ = {isa = PBXFileReference; lastKnownFileType = folder; name = immer; path = "immer-master/immer"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -243,7 +243,7 @@
 		2C1D84D41CA765A90042F0A8 = {
 			isa = PBXGroup;
 			children = (
-				2C1D84DF1CA765A90042F0A8 /* FloydSpeak */,
+				2C1D84DF1CA765A90042F0A8 /* floyd_speak */,
 				2CBF330B202143BC0030AE98 /* Frameworks */,
 				2C1D84DE1CA765A90042F0A8 /* Products */,
 			);
@@ -258,7 +258,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		2C1D84DF1CA765A90042F0A8 /* FloydSpeak */ = {
+		2C1D84DF1CA765A90042F0A8 /* floyd_speak */ = {
 			isa = PBXGroup;
 			children = (
 				2C574E48203107D80035EA62 /* ast_typeid.cpp */,
@@ -292,12 +292,13 @@
 				2CB2A515203D642B0001A19E /* pass3.cpp */,
 				2CB2A514203D64210001A19E /* pass3.h */,
 			);
-			path = FloydSpeak;
+			path = floyd_speak;
 			sourceTree = SOURCE_ROOT;
 		};
 		2CBCA7D81D569C6D000FAE81 /* parts */ = {
 			isa = PBXGroup;
 			children = (
+				2CCC0D222141DCC700788BCB /* immer-master */,
 				2C180457208B917400F62480 /* json_parser.cpp */,
 				2C180458208B917400F62480 /* json_parser.h */,
 				2C18045B208B917500F62480 /* json_support.cpp */,
@@ -310,7 +311,6 @@
 				2C180447208B90E800F62480 /* text_parser.h */,
 				2C180448208B90E800F62480 /* utils.cpp */,
 				2C180449208B90E800F62480 /* utils.h */,
-				2CFD2EE12088AF0900774170 /* immer */,
 				2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */,
 				2C40A71E1D76E179003245E3 /* immutable_ref_value.h */,
 				2C5F60CC1D5E3345006E0A89 /* json_for_modern_cpp.h */,
@@ -532,7 +532,7 @@
 				GCC_WARN_UNUSED_PARAMETER = NO;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_PROFILING_CODE = YES;
-				HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/FloydSpeak/parts/immer-master/**";
+				HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/floyd_speak/parts/immer-master/**";
 				LLVM_LTO = YES;
 				SDKROOT = macosx;
 			};
@@ -545,6 +545,7 @@
 					"QUARK_ASSERT_ON=0",
 					"QUARK_TRACE_ON=0",
 				);
+				HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/floyd_speak/parts/immer-master/**";
 				PRODUCT_NAME = floyd;
 			};
 			name = "Release - Profiling";
@@ -584,7 +585,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_PARAMETER = NO;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/FloydSpeak/parts/immer-master/**";
+				HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/floyd_speak/parts/immer-master/**";
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 			};
@@ -622,7 +623,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_PARAMETER = NO;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/FloydSpeak/parts/immer-master/**";
+				HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/floyd_speak/parts/immer-master/**";
 				LLVM_LTO = YES;
 				SDKROOT = macosx;
 			};
@@ -636,6 +637,7 @@
 					"QUARK_TRACE_ON=1",
 					"$(inherited)",
 				);
+				HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/floyd_speak/parts/immer-master/**";
 				PRODUCT_NAME = floyd;
 			};
 			name = Debug;
@@ -647,6 +649,7 @@
 					"QUARK_ASSERT_ON=0",
 					"QUARK_TRACE_ON=0",
 				);
+				HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/floyd_speak/parts/immer-master/**";
 				PRODUCT_NAME = floyd;
 			};
 			name = Release;
