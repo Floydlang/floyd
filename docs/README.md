@@ -81,7 +81,10 @@ A programming language that feels familiar to Javascript / C(++) / Javaprogramme
 	asset(c > b);
 
 
+
 ##### FEATURES LEFT OUT OF FLOYD SPEAK
+
+You ain't gonna need them.
 
 1. Aliasing
 2. Pointers & references
@@ -98,10 +101,11 @@ A programming language that feels familiar to Javascript / C(++) / Javaprogramme
 13. Header files
 14. Error codes
 15. Local optimisation, caching 
-16. Local threading decisions
+16. Local threading decisions and assumptions
 17. Shared mutable state
 18. “Express your self in code”
 19. Make your own linked list
+
 
 
 # FLOYD SYSTEMS
@@ -118,19 +122,28 @@ This is a language that defines your complete software system and its internal i
 
 5. Visual profiling and editing
 
-Your software system is composed of containers (apps, servers and other programs), components (libraries) and code.
 
+
+## SYSTEM STRUCTURE
+
+Your software system is composed of containers (apps, servers and other programs), components (libraries) and code.
 
 ![](readme_software_system.png)
 
 
-Concurrency is done using actors -- small processes inspired by Erlang processes. There are no threads, locks, atomics, await-async, nested callback hell etc.
 
-**Floyd Systems Manual**: [Floyd Systems Manual](floyd_systems.md).
+## EXAMPLE CONTAINER
 
-##### A container with a bunch of actors wired together:
+This is a container with a bunch of actors wired together:
 
 ![VST](readme_floyd_systems_vst.png)
+
+Concurrency is done using actors -- small processes inspired by Erlang processes. There are no threads, locks, atomics, await-async, nested callback hell etc.
+
+
+Read more here: **Floyd Systems Manual**: [Floyd Systems Manual](floyd_systems.md), **Floyd Systems Reference**: [Floyd Systems Reference](floyd_systems_ref.md).
+
+
 
 
 # FLOYD STUDIO
@@ -144,17 +157,18 @@ This is a webbased interactive tool for making, exploring and tuning complete so
 
 # IN THE BOX
 
-1. **Floyd Speak Manual**: [Floyd Speak Manual](floyd_speak.md).
-
-2. **Floyd Speak compiler**, that compiles Floyd Speak source code to byte code.
-
-3. **Floyd Speak interpreter** runs your programs at approx 10% of native speeds.
-
-4. **Floyd Systems Manual**: [Floyd Systems Manual](floyd_systems.md).
-
-5. **TODO POC: Floyd Systems compiler**, compiles floyd systems and containers etc to byte code.
+|Item				| Feature					| Link
+|:---				|:---					|:---
+| **Floyd Speak Manual**		|				|[Floyd Speak Manual](floyd_speak.md)
+| **Floyd Speak compiler**		|Compiles Floyd Speak source code to byte code.
+| **Floyd Speak interpreter**	|Runs your programs at approx 10% of native speeds.
+| **Floyd Systems Manual**		|				|[Floyd Systems Manual](floyd_systems.md)
+| **Floyd Systems Reference**	|				|[Floyd Systems Reference](floyd_systems_ref.md)
+| **TODO POC: Floyd Systems compiler**			|compiles floyd systems and containers etc to byte code.|
+| Standard library				|A number of basic components|
 
 Floyd compilers and tools are written in portable C++11.
+
 
 
 # BACKLOG

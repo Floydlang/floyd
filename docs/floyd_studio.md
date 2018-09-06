@@ -1,3 +1,7 @@
+![](floyd_speak_logo.png)
+
+# FLOYD STUDIO
+
 TODO: This is a rough mockup of the interactive tool.
 
 This document describes the visual and interactive development environment for Floyd.
