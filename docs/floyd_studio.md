@@ -1,3 +1,5 @@
+TODO: This is a rough mockup of the interactive tool.
+
 This document describes the visual and interactive development environment for Floyd.
 
 You need to learn about Floyd Speak and Floyd Systems in their respective manuals. This document is only about the developent editor itself.
@@ -8,7 +10,7 @@ The Floyd Studio is browser based and runs inside a web browser, like Google Chr
 # SCENARIOS
 You can run all the development tools locally or using a cloud service.
 
-![Scenarios](floyd_studio_scenarios.png)
+![](floyd_studio_scenarios.png)
 
 
 
@@ -20,11 +22,11 @@ You can run all the development tools locally or using a cloud service.
 - Systems profiler & debugger
 - Software System Navigator
 
-# FUNCTION PLAYGROUND
+# COMPONENT PLAYGROUND
 
 Here you work on or several Floyd Speak functions. You edit the code, add some documentation. You add your tests and make some examples. You can step through the code, show values as visual graphs etc.
 
-![Scenarios](./floyd_studio_function_playground.png)
+![](floyd_studio_component.png)
 
 
 
@@ -33,7 +35,7 @@ Here you work on or several Floyd Speak functions. You edit the code, add some d
 Here you drag unpure components, make your own Actors and wire them together into a concurrent system.
 
 
-![Scenarios](./floyd_studio_container_designer.png)
+![](./floyd_studio_container_designer.png)
 
 You can edit it while it is running, interactively. You can add probes to trace stats and diagrams.
 
@@ -43,7 +45,7 @@ You can add tweakers to optimize performance.
 
 Profile, debug, add tweaks, explore.
 
-![Scenarios](./floyd_studio_analyser.png)
+![](./floyd_studio_analyser.png)
 
 
 
@@ -51,4 +53,4 @@ Profile, debug, add tweaks, explore.
 # SOFTWARE SYSTEM NAVIGATOR
 Explore the system from top to bottom, in a meaningful way.
 
-![Scenarios](./floyd_studio_navigator.png)
+![](./floyd_studio_navigator.png)

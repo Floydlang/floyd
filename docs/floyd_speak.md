@@ -1,6 +1,6 @@
 ![Floyd Logo](floyd_speak_logo.png)
 
-# FLOYD SPEAK REFERENCE
+# FLOYD SPEAK
 
 Floyd Speak is a fast and modern C-like program language that makes writing correct programs simpler and faster than any other programming language.
 
