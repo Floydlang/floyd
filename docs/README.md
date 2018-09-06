@@ -1,4 +1,4 @@
-![Floyd logo](floyd_logo2.png)
+![Floyd logo](readme_floyd_logo.png)
 
 License: at the moment Floyd is closed software, (c) Marcus Zetterquist. Plan is to change license to MIT or similar.
 
@@ -50,7 +50,7 @@ Floyd separates the logic (written in Floyd Speak) from the processing part. Pro
 
 ##### CHEAT SHEET
 
-![Floyd Speak Cheat Sheet](floyd_cheat_sheet.png)
+![Floyd Speak Cheat Sheet](readme_cheat_sheet.png)
 
 ##### EXAMPLE
 
@@ -133,7 +133,7 @@ The concurrency is done in a very clean way by actors, inspired by Erlang proces
 ##### CONTAINER EDITOR
 You string together components with actor
 
-![VST](floyd_systems_vst.png)
+![VST](readme_floyd_systems_vst.png)
 
 
 **Floyd Studio Manual**: [Floyd Studio Manual](Floyd%20Studio.md).
