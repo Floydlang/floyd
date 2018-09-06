@@ -1,4 +1,4 @@
-![Floyd Logo](floyd_logo2.png)
+![Floyd Logo](floyd_speak_logo.png)
 
 # FLOYD SCRIPT REFERENCE
 
