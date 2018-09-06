@@ -156,7 +156,7 @@ You string together components with actor
 
 6. **TODO POC: Floyd Studio Manual**: [Floyd Studio Manual](Floyd%20Studio.md).
 
-7. **TODO POC: Floyd Studios**, a web-based interactive IDE for Floyd Systems and Floyd Script.
+7. **TODO POC: Floyd Studios**, a web-based interactive IDE for Floyd Systems and Floyd Speak.
 
 Floyd compilers and tools are written in portable C++11.
 

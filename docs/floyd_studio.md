@@ -1,6 +1,6 @@
 This document describes the visual and interactive development environment for Floyd.
 
-You need to learn about Floyd Script and Floyd Systems in their respective manuals. This document is only about the developent editor itself.
+You need to learn about Floyd Speak and Floyd Systems in their respective manuals. This document is only about the developent editor itself.
 
 The Floyd Studio is browser based and runs inside a web browser, like Google Chrome.
 

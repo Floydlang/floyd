@@ -2,9 +2,9 @@
 
 # FLOYD SYSTEMS MANUAL
 
-Floyd Script: this is the basic way to create logic. The code is isolated from the noise and troubles of the real world: everything is immutable and pure. Time does not advance. There is no concurrency or communication with other systems, no runtime errors.
+Floyd Speak: this is the basic way to create logic. The code is isolated from the noise and troubles of the real world: everything is immutable and pure. Time does not advance. There is no concurrency or communication with other systems, no runtime errors.
 
-Floyd Systems: this is how you make software that lives in the real world, where all those things happens all the time. Floyd allows you create huge, robust software systems that you can reason about, spanning computers and processes, handling communication and time advancing and faults. Floyd Systems are built ontop of Floyd Script logic.
+Floyd Systems: this is how you make software that lives in the real world, where all those things happens all the time. Floyd allows you create huge, robust software systems that you can reason about, spanning computers and processes, handling communication and time advancing and faults. Floyd Systems are built ontop of Floyd Speak logic.
 
 Floyd uses the C4 model to organize all of this. C4 model https://c4model.com/
 
@@ -118,7 +118,7 @@ Notice: a component used in several containers or a piece of code that appears i
 
 # MORE ABOUT CONTAINERS
 
-Containers are where you spend most of your time - along with writing the Floyd Script code.
+Containers are where you spend most of your time - along with writing the Floyd Speak code.
 
 A mobile app is a container, so is the Django server on Heroku. A container is typically run as its own OS process.
 
@@ -296,7 +296,7 @@ Notice: map() and supermap() shares threads with other mechanisms in the Floyd r
 
 ??? TBD
 
-This is a basic command line app, have only one clock that gathers ONE input value from the command line arguments, calls some pure Floyd Script functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
+This is a basic command line app, have only one clock that gathers ONE input value from the command line arguments, calls some pure Floyd Speak functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
 main() one clock only.
 
 

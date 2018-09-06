@@ -1,8 +1,8 @@
 ![Floyd Logo](floyd_speak_logo.png)
 
-# FLOYD SCRIPT REFERENCE
+# FLOYD SPEAK REFERENCE
 
-Floyd Script is a fast and modern C-like program language that makes writing correct programs simpler and faster than any other programming language.
+Floyd Speak is a fast and modern C-like program language that makes writing correct programs simpler and faster than any other programming language.
 
 It's focus is composability, minimalism and robust programming techniques, like pure functions and immutability.
 
@@ -111,7 +111,7 @@ These are features built into every type: integer, string, struct, dictionary et
 
 # ENCODING
 
-Floyd script files are always utf-8 files with no BOM.
+Floyd Speak files are always utf-8 files with no BOM.
 
 
 # VALUES, VARIABLES AND CONSTANTS

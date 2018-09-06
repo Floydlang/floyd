@@ -192,7 +192,7 @@ pure-component {
 }
 ```
 
-The rest of the component file is normal Floyd Script code: structs, enums, function definitions and constants etc.
+The rest of the component file is normal Floyd Speak code: structs, enums, function definitions and constants etc.
 
 
 
@@ -393,7 +393,7 @@ Precalculate at container startup time, store in FS.
 
 ## CONTENT DE-DUPLICATION TWEAKER
 
-Uses built-in hash-mechanism that exists for all values in Floyd Script
+Uses built-in hash-mechanism that exists for all values in Floyd Speak
 
 - Content de-duplication
 - Cache in local file system
