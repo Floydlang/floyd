@@ -16,8 +16,8 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2C1D84DC1CA765A90042F0A8"
                BuildableName = "floyd"
-               BlueprintName = "FloydSpeak"
-               ReferencedContainer = "container:FloydSpeak.xcodeproj">
+               BlueprintName = "floyd_speak"
+               ReferencedContainer = "container:floyd_speak.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -26,35 +26,18 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      codeCoverageEnabled = "YES"
-      shouldUseLaunchSchemeArgsEnv = "NO">
+      shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "2C5372CA207B4EB200647AD1"
-               BuildableName = "2222.xctest"
-               BlueprintName = "2222"
-               ReferencedContainer = "container:FloydSpeak.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2C1D84DC1CA765A90042F0A8"
             BuildableName = "floyd"
-            BlueprintName = "FloydSpeak"
-            ReferencedContainer = "container:FloydSpeak.xcodeproj">
+            BlueprintName = "floyd_speak"
+            ReferencedContainer = "container:floyd_speak.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
-      <CommandLineArguments>
-         <CommandLineArgument
-            argument = "runtests"
-            isEnabled = "YES">
-         </CommandLineArgument>
-      </CommandLineArguments>
       <AdditionalOptions>
       </AdditionalOptions>
    </TestAction>
@@ -74,23 +57,17 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2C1D84DC1CA765A90042F0A8"
             BuildableName = "floyd"
-            BlueprintName = "FloydSpeak"
-            ReferencedContainer = "container:FloydSpeak.xcodeproj">
+            BlueprintName = "floyd_speak"
+            ReferencedContainer = "container:floyd_speak.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-         <CommandLineArgument
-            argument = "runtests"
-            isEnabled = "NO">
-         </CommandLineArgument>
-      </CommandLineArguments>
       <AdditionalOptions>
       </AdditionalOptions>
    </LaunchAction>
    <ProfileAction
-      buildConfiguration = "Release - Profiling"
-      shouldUseLaunchSchemeArgsEnv = "NO"
-      savedToolIdentifier = "/Applications/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/Time Profiler.tracetemplate"
+      buildConfiguration = "Release"
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
       <BuildableProductRunnable
@@ -99,16 +76,10 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2C1D84DC1CA765A90042F0A8"
             BuildableName = "floyd"
-            BlueprintName = "FloydSpeak"
-            ReferencedContainer = "container:FloydSpeak.xcodeproj">
+            BlueprintName = "floyd_speak"
+            ReferencedContainer = "container:floyd_speak.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-         <CommandLineArgument
-            argument = "benchmark"
-            isEnabled = "YES">
-         </CommandLineArgument>
-      </CommandLineArguments>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

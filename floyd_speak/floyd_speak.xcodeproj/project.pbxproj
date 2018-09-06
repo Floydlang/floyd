@@ -293,7 +293,7 @@
 				2CB2A514203D64210001A19E /* pass3.h */,
 			);
 			path = FloydSpeak;
-			sourceTree = "<group>";
+			sourceTree = SOURCE_ROOT;
 		};
 		2CBCA7D81D569C6D000FAE81 /* parts */ = {
 			isa = PBXGroup;
@@ -342,9 +342,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		2C1D84DC1CA765A90042F0A8 /* FloydSpeak */ = {
+		2C1D84DC1CA765A90042F0A8 /* floyd_speak */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 2C1D84E41CA765A90042F0A8 /* Build configuration list for PBXNativeTarget "FloydSpeak" */;
+			buildConfigurationList = 2C1D84E41CA765A90042F0A8 /* Build configuration list for PBXNativeTarget "floyd_speak" */;
 			buildPhases = (
 				2C1D84D91CA765A90042F0A8 /* Sources */,
 				2C1D84DA1CA765A90042F0A8 /* Frameworks */,
@@ -354,14 +354,14 @@
 			);
 			dependencies = (
 			);
-			name = FloydSpeak;
+			name = floyd_speak;
 			productName = FloydSpeak;
 			productReference = 2C1D84DD1CA765A90042F0A8 /* floyd */;
 			productType = "com.apple.product-type.tool";
 		};
-		2C78AD40207B50AB00839E3E /* FloydSpeak UT */ = {
+		2C78AD40207B50AB00839E3E /* floyd_speak UT */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 2C78AD6F207B50AB00839E3E /* Build configuration list for PBXNativeTarget "FloydSpeak UT" */;
+			buildConfigurationList = 2C78AD6F207B50AB00839E3E /* Build configuration list for PBXNativeTarget "floyd_speak UT" */;
 			buildPhases = (
 				2C78AD41207B50AB00839E3E /* Sources */,
 				2C78AD6C207B50AB00839E3E /* Frameworks */,
@@ -371,7 +371,7 @@
 			);
 			dependencies = (
 			);
-			name = "FloydSpeak UT";
+			name = "floyd_speak UT";
 			productName = FloydSpeak;
 			productReference = 2C78AD73207B50AB00839E3E /* floydut */;
 			productType = "com.apple.product-type.tool";
@@ -391,7 +391,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 2C1D84D81CA765A90042F0A8 /* Build configuration list for PBXProject "FloydSpeak" */;
+			buildConfigurationList = 2C1D84D81CA765A90042F0A8 /* Build configuration list for PBXProject "floyd_speak" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
@@ -403,8 +403,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				2C1D84DC1CA765A90042F0A8 /* FloydSpeak */,
-				2C78AD40207B50AB00839E3E /* FloydSpeak UT */,
+				2C1D84DC1CA765A90042F0A8 /* floyd_speak */,
+				2C78AD40207B50AB00839E3E /* floyd_speak UT */,
 			);
 		};
 /* End PBXProject section */
@@ -688,7 +688,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		2C1D84D81CA765A90042F0A8 /* Build configuration list for PBXProject "FloydSpeak" */ = {
+		2C1D84D81CA765A90042F0A8 /* Build configuration list for PBXProject "floyd_speak" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				2C1D84E21CA765A90042F0A8 /* Debug */,
@@ -698,7 +698,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		2C1D84E41CA765A90042F0A8 /* Build configuration list for PBXNativeTarget "FloydSpeak" */ = {
+		2C1D84E41CA765A90042F0A8 /* Build configuration list for PBXNativeTarget "floyd_speak" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				2C1D84E51CA765A90042F0A8 /* Debug */,
@@ -708,7 +708,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		2C78AD6F207B50AB00839E3E /* Build configuration list for PBXNativeTarget "FloydSpeak UT" */ = {
+		2C78AD6F207B50AB00839E3E /* Build configuration list for PBXNativeTarget "floyd_speak UT" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				2C78AD70207B50AB00839E3E /* Debug */,

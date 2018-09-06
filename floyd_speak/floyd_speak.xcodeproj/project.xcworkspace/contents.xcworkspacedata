@@ -2,6 +2,6 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "self:FloydSpeak.xcodeproj">
+      location = "self:/Users/marcus/Documents/GitHub/Floyd/floyd_speak/floyd_speak.xcodeproj">
    </FileRef>
 </Workspace>
