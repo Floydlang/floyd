@@ -2,64 +2,7 @@
 
 # FLOYD SPEAK
 
-Floyd Speak is a fast and modern C-like program language that makes writing correct programs simpler and faster than any other programming language.
-
-It's focus is composability, minimalism and robust programming techniques, like pure functions and immutability.
-
-It has a unique concept to handle mutation of data, control over the outside world (files, network, UI) and controlling time.
-
-Functions and classes are pure. A pure function can only call pure functions. Mutable data can exist locally inside a function, but never leak out of the function. 
-
-This delegates all mutation / time to the top levels of your program. Here you need to call non-pure functions to affect the world around the program. You must tag your functions with "nonpure" to be able to call other nonpure functions.
-
-	But programming is NOT math!
-
-This makes those functions a risk. Have as little nonpure code as possible. Try to not have any conditional code inside nonpure code - this makes testing easier. Put all logic into the pure functions.
-
-
-Here is hello world, as expected:
-
-	print("Hello, World!");
-
-
-Executing a floyd program:
-
-	marcus$ floyd my_program.floyd file1.txt file2.txt
-
-This will run the program my_program.floyd and call it's main(string args) with the arguments ["file1.txt", "file2.text"].
-
-
-### GOALS
-
-1. Be precisely the set of features needed to make excellent software. No more, no less.
-- Have one explict and solid way to do every important thing - no need for developer to invent basics.
-- Guide developer to designing great software, instead of struggling / tinkering with language stuff.
-- Remove everyday timesinks like threading, aliasing problems, sideffects, serializing data, boiler plate code, optimizing the wrong code.
-- Promote robust software and development practices.
-- Promote composable software and million-line-of-code products.
-- Make finished program execute extremely quickly.
-- Make it easy and fast to pick up and use for smaller things, then be contagious.
-- Make language fun and easy to adopt for new developers, rather than existing developers.
-- Make language minimal, small and focused - easy to master for a human.
-
-
-### NON-GOALS
-
-1. Have neat and concenitnt features that do not improve final product.
-- Be multiparadigm.
-- Be a "real" functional language.
-- Be object oriented.
-- Provide choice and expressing yourself
-- Let programmer be 100% in control of the hardware.
-- Be interesting to master the language itself.
-
-
-
-### COMPOSABILITY
-
-Features that break composabiity is limited and carefully controlled in the language. Things like threading and synchronisation, error responses, file handling, optimization choices. Normal Floyd code lives free, outside of time and the real world and can be used in many contexts.
-
-To easy composability, the basic wiring between libraries and subsystems is built-in and standardized - this like common datatypes, error propagation between libraries, logging and asserts, memory handling and streaming data. All built-in and composable.
+Floyd Speak is the programming langage part of Floyd. It's an alternative to Java or Javascript or C++. Using Floyd Speak you write functions and data structures.
 
 
 # TYPES
@@ -808,18 +751,16 @@ Everything between // and newline is a comment:
 These are built in primitves you can always rely on being available.
 
 
-### map()
+### map(), filter(), reduce()
 
 TODO POC: Implement
 
 Expose possible parallelism of pure function, like shaders, at the code level (not declarative). The supplied function must be pure.
 
 
-### TODO 1.0: filter()
+### supermap()
 
-### TODO 1.0: reduce()
-
-### TODO 1.0: supermap()
+TODO 1.0
 
 	[int:R] supermap(tasks: [T, [int], f: R (T, [R]))
 
@@ -839,7 +780,8 @@ Notice: your function f can send messages to a clock — this means another cloc
 
 Notice: using this function exposes potential for parallelism.
 
-??? IDEA: Make this a two-step process. First analyse tasks into an execution description. Then use that description to run the tasks. ??? IDEA: Allows grouping small tasks into lumps. Allow you to reuse the dependency graph but tag some tasks NOP. This lets you keep the execution description for next time, if tasks are the same. Also lets you inspect the execution description & improve it or create one for scratch.
+??? IDEA: Make this a two-step process. First analyse tasks into an execution description. Then use that description to run the tasks. ??? IDEA: Allows grouping small tasks into lumps. Allow you to reuse the dependency graph but tag some tasks NOP. This lets you keep the execution description for next time, if tasks are the same. Also lets you inspect the execution descriptio
+n & improve it or create one for scratch.
 
 
 ### print()
@@ -869,8 +811,6 @@ This outputs one line of text to the default output of the application. It can p
 
 
 
-
-
 ### assert()
 
 Used this to check your code for programming errors, and check the inputs of your function for miss use by its callers.
@@ -881,9 +821,13 @@ Used this to check your code for programming errors, and check the inputs of you
 If the expression evaluates to false, the program will log to the output, then be aborted via an exception.
 
 
+
 ### probe()
 
+TODO POC
+
 In your code you write probe(my_temp, "My intermediate value", "key-1") to let clients log my_temp. The probe will appear as a hook in tools and you can chose to log the value and make stats etc. Argument 2 is a descriptive name, argument 3 is a string-key that is scoped to the function and used to know if several probe()-statements log to the same signal or not.
+
 
 
 ### to_string()
@@ -895,9 +839,11 @@ Converts its input to a string. This works with any type of values. It also work
 You often use this function to convert numbers to strings.
 
 
+
 ### to\_pretty\_string()
 
 Converts its input to a string of json data that is formatted nicely with indentations. It works with any Floyd value.
+
 
 
 #### typeof()
@@ -911,6 +857,7 @@ Return the type of its input value. The returned typeid-value is a complete Floy
 Returns the computer's realtime clock, expressed in the number of milliseconds since system start. Useful to measure program execution. Sample get_time_of_day() before and after execution and compare them to see duration.
 
 	int get_time_of_day()
+
 
 
 ### update()
@@ -934,6 +881,7 @@ For dictionaries it can be used to add completely new elements too.
 |Type		  	| Example						| Result
 |---			|---							| ---
 | dictionary	| update({"a": 1}, "b", 2] | {"a":1,"b":2}
+
 
 
 ### size()
@@ -970,6 +918,7 @@ Searched for a value in a colletion and returns its index or -1.
 | json_value:object	| 							|
 
 
+
 ### exists()
 
 Checks if the dictionary has an element with this key. Returns true or false.
@@ -985,7 +934,6 @@ Checks if the dictionary has an element with this key. Returns true or false.
 | struct		|								|
 | json_value:array	|							|
 | json_value:object	| 							|
-
 
 
 
@@ -1033,6 +981,7 @@ end: 0 or larger. If it is larger than the collection, it will be clipped to the
 | json_value:object	| 							|
 
 
+
 ### replace()
 
 Replaces a range of a collection with the contents of another collection.
@@ -1056,7 +1005,6 @@ Notice: by specifying the same index in *start* and *length* you will __insert__
 
 
 
-
 ### get\_env\_path()
 
 Returns user's home directory, like "/Volumes/Bob".
@@ -1064,11 +1012,13 @@ Returns user's home directory, like "/Volumes/Bob".
 	string get_env_path()
 
 
+
 ### read\_text\_file()
 
 Reads a text file from the file system and returns it as a string.
 
 	string read_text_file(string path)
+
 
 
 ### write\_text\_file()
@@ -1155,6 +1105,7 @@ Here is the DAG for the complete syntax of Floyd.
  		ASSIGNMENT	 					IDENTIFIER "=" EXPRESSION
 
 
+
 ### EXAMPLE BIND AND ASSIGNMENT STATEMENTS
 
 |Source		| Meaning
@@ -1173,12 +1124,15 @@ Here is the DAG for the complete syntax of Floyd.
 | let int (string a) x = f(4 == 5) |
 | mutable int x = 10 |
 
+
+
 ### EXAMPLE RETURN STATEMENTS
 
 |Source		| Meaning
 |:---	|:---	
 | return 3						|
 | return myfunc(myfunc() + 3) |
+
 
 
 ### EXAMPLE FUNCTION DEFINITION STATEMENTS
@@ -1190,11 +1144,14 @@ Here is the DAG for the complete syntax of Floyd.
 | func int print (float a) { ... }			|
 | func int f(string name)					|
 
+
+
 ### EXAMPLE IF STATEMENTS
 
 |Source		| Meaning
 |:---	|:---	
 | if(true){ return 1000 } else { return 1001 } [
+
 
 
 ### EXAMPLE OF STRUCT DEFINITION STATEMENTS
@@ -1207,6 +1164,7 @@ Here is the DAG for the complete syntax of Floyd.
 | struct c { int a = 13 }				|
 | struct pixel { int red int green int blue }		|
 | struct pixel { int red = 255 int green = 255 int blue = 255 }|
+
 
 
 ### EXAMPLE EXPRESSIONS
@@ -1235,6 +1193,7 @@ Here is the DAG for the complete syntax of Floyd.
 | condition_expr ? yesexpr : noexpr				|
 | condition_expr ? yesexpr : noexpr				|
 | a == 1 ? "one" : ”some other number"			|
+
 
 
 ### EXAMPLE TYPE DECLARATIONS
