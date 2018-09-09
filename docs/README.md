@@ -2,11 +2,21 @@
 
 License: MIT
 
+# FLOYD
+
+Floyd is a general-purpose static and compiled programming language with strong opinions on how to write complex and robust software products with minimum pain and minimum waste of time. Fast programs. It's tools are visual and interactive.
+
+Floyd replaces languages like C++, C#, Rust, Swift and Java -- but also scripting languages like Python and Javascript.
+
+It's designed to allow you to write the next Photoshop and Grand Theft Auto and mobile apps.
+
+The end goal is always to ship great *products* that execute extremely well on the hardware and that are a delight to develop further.
+
+Floyd has a bunch of novel concepts, how it separates the programming work in new ways, imposes a clean system-wide structure and has simple built in ways to do processing and concurrency.
+
 # WHAT IS THE PROBLEM?
 
 Most software sucks. Both to use and to improve. There is already a lot of dogma and conservatism that holds programming back.
-
-Floyd intends to move the discussion.
 
 While hardware designers have grown from thousands of transistors to billions over the last 40 years, programmers are still programming exactly the same way - typing individual if-statements and for-loops in emacs into 7 bit ASCII files. Exactly like our parents and grandparents did in the 60ies and 70ies.
 
@@ -14,9 +24,9 @@ While hardware designers have grown from thousands of transistors to billions ov
 
 Programming at this levels is the software equivalent of building the nextgen NVIDIA graphis card by placing NAND-gates onto the silicon, one by one.
 
-From the other side, hardware designers have spent decades and enormous amount of on-chip transistors to try to work around the software industry's lack of progress. The hardware today tries to figure out the intent and structure of your code *from the machine code while executing it* to boost performance. These are things the software already knows!
+From their end, hardware designers have spent decades and enormous amount of on-chip transistors to try to work around the software industry's lack of progress. The hardware today tries to figure out the intent and structure of your code *from the machine code while executing it* to boost performance. This is information the software already has!
 
-Floyd will help us solve this.
+Floyd wants to improve the world and make it simpler to make big programs and make them them efficent. This requires some changed habits.
 
 BUT:
 
@@ -37,16 +47,10 @@ Floyd is intolerant of programming religion and conservativsm, tired of all dist
 
 Floyd knows programming is about engineering and making insightful compromises about how your *system* works and performs. About exploring your system from different angles and try improvements and learn what works.
 
-Your code needs to be reshaped during its lifetime and Floyd makes sure this is smooth.
-
 - You have limited brainpower, limited time, limited hardware -- great design is about figuring out how to spend these where it has maximum impact for the *product*.
 
-Also at all cost avoid getting "design lumps" into your system that constantly limits how you can improve the software. "It can't be changed".
+Also at all cost avoid getting "design lumps" into your system that constantly limits how you can improve the software. "It can't be changed". A single well-placed mutex will break the composability of the entire system - google "win16 mutex". Your code needs to be reshaped during its lifetime and Floyd makes sure this is smooth.
 
-- Typing code into a function is **not** the right place to express yourself or do clever things.
-- Programming is **not** math, programming is engineering.
-- The new neat language syntax won't help you a bit.
-- You don't make programs fast by trying to optimise the hell out of every single function in isolation. You don't make multithreaded programs by sprinkling thread-stuff all over your code.
 - If you can't on request draw a clear overview picture how your system is structured -- then you can't possibly make system-wide decisions like which functions to optimize, what to cache and how to do *anything* with concurreny.
 
 Floyd solves much of this by setting a simple but clear structure for how big systems (and small) needs to be organised and *enforces* this structure in the language from top to bottom to make us concentrate on making good software. All while trying not to scare conservative programmers with too big changes to their source code typing.
@@ -56,13 +60,7 @@ Just like structured programming replaced goto hell with more specific but limit
 
 # SO EXACTLY WHAT IS FLOYD?
 
-Floyd is a general-purpose programming language with strong opinions on how to write complex and robust software products with minimum pain and minimum waste of time.
-
-Floyd replaces languages like C++, C# and Java but also scripting languages like Python and Javascript. You can write something like Photoshop or Grand Theft Auto V or mobile apps using Floyd.
-
-The end goal is *always* to ship great *products* that are a delight to develop further.
-
-Floyd consists of a small and elegant toolkit of features built into the language that all go together to support you in this work. Every feature has been carefully picked, polished and adopted as a first class feature in the language. The goal is to have *one* simple way to do each common thing.
+Floyd consists of a small and elegant toolkit of features built directly into the language that all go together to support you to make great products. Every feature has been carefully picked, polished and adopted as a first class feature in the language. The goal is to have *one* simple way to do each common thing.
 
 **What's *not* included and what you *can't* do is one of Floyds best features**
 
@@ -74,28 +72,29 @@ Floyd consists of a small and elegant toolkit of features built into the languag
 
 3. Introduce high-level features needed for large scale software
 
-4. Extreme execution speed, faster than practical in C systems
+4. Extreme execution speed, faster than practical in majority of C systems
 
-5. Nextgen visual and interactive tools
+5. Nextgen visual and interactive tools to support exploration and experimentation
+
 
 # UNIQUE FEATURES
 
 1. Floyd splits your system into three areas: a) your program's logic, b) your program's processing and c) mapping its execution to the hardware.
 
-2. Built-in structure for *complete* software systems including processes, people, concurrency and communication between processes
+2. Floyd as a clean built-in structure skeleton for *complete* software systems including processes, people, concurrency and communication between processes
 
 3. Visual and interactive tools
 
 4. Carefully destilled set of syntactical features to move focus to the *system* rather than the inside of functions
 
-5. Fusion of imperative programming but with the best bits of functional programming sneaked in discretely
+5. Feels like simple imperative programming but with the best bits of functional programming sneaked in discretely
 
 
 Floyd has three big parts:
 
 1. **Floyd Speak** - a neat new programming language for doing logic. It's statically typed with inference, compiles to byte code or native code. Here you program the bulk of your system.
 
-2. **Floyd Systems** - does two things: defines your complete software system and its internal interactions and processes and concurrencyand B) Use Tweakers to map your software onto the hardware resources (cores, caches, RAM) 
+2. **Floyd Systems** - does two things: A) defines your complete software system and its internal interactions and processes and concurrency, and B) Allows you to use Tweakers to map your software onto the hardware resources (cores, caches, RAM) 
 
 3. **Floyd Studio** - a fast interactive and visual tool to play around with your code and visually wire things together, profile your system and apply heavy optimizations to it
 
@@ -221,7 +220,7 @@ The second important feature of Floyd Systems is to configures how the system ma
 
 ## SYSTEM STRUCTURE
 
-Your software system is composed of containers (apps, servers and other programs), components (libraries) and code.
+Your **software system** is composed of **containers** (apps, servers and other programs), **components** (libraries) **and** code.
 
 ![](readme_software_system.png)
 
@@ -233,7 +232,9 @@ This is a container with a bunch of actors wired together:
 
 ![](readme_floyd_systems_vst.png)
 
-Concurrency is done using actors -- small processes inspired by Erlang processes. Those are the blue green and red boxes in the picture above. There are no threads, locks, atomics, await-async, nested callback hell etc.
+Concurrency is done at the top level of a container by wiring up actors -- small processes. This is inspired by Erlang processes. The actors are the blue, green and red boxes in the picture above.
+
+There are no threads, locks, atomics, await-async, nested callback hell etc.
 
 
 Read more here: **Floyd Systems Manual**: [Floyd Systems Manual](floyd_systems.md), **Floyd Systems Reference**: [Floyd Systems Reference](floyd_systems_ref.md).
