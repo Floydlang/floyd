@@ -54,9 +54,9 @@ These are features built into every type: integer, string, struct, dictionary et
 |__a >= b__ 		| a larger or equal to b
 
 
-# ENCODING
+# SOURCE CODE FILES
 
-Floyd Speak files are always utf-8 files with no BOM.
+Floyd Speak files are always utf-8 files with no BOM. Their extension is ".floyd".
 
 
 # VALUES, VARIABLES AND CONSTANTS
