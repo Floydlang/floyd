@@ -2,7 +2,7 @@
 
 License: MIT
 
-Status: Language spec for 1.0 almost done. Compiles to byte code and interprets it. Not ready for production yet. Please 
+Status: Language spec for 1.0 almost done. Compiles to byte code and interprets it. Not ready for production yet. 
 
 # FLOYD
 
@@ -103,7 +103,7 @@ Floyd has three big parts:
 This sounds really complicated and heavy-weight but it's not, as you'll see.
 
 
-# SOLUTION PART 1/2 - FLOYD SPEAK
+# SOLUTION PART 1/3 - FLOYD SPEAK
 
 Floyd Speak is a fast and modern C-like program language that makes writing correct programs simpler and faster than any other programming language.
 
