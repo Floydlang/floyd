@@ -2,6 +2,8 @@
 
 License: MIT
 
+Status: Language spec for 1.0 almost done. Compiles to byte code and interprets it. Not ready for production yet. Please 
+
 # FLOYD
 
 Floyd is a general-purpose static and compiled programming language with strong opinions on how to write complex and robust software products with minimum pain and minimum waste of time. Fast programs. It's tools are visual and interactive.
@@ -250,13 +252,21 @@ This is a webbased interactive tool for making, exploring and tuning complete so
 
 
 
-# FLOYD - IN THE BOX
+# STATUS
+
+The core of the Floyd Speak language is up and running. The compiler compiles the source code to byte code that runs quite fast on an interpreter. There are approximately 750 tests the make sure compiler is solid. The manual is complete.
+A handful small but critical features needs to be implemented before it's truly useful for real world programming.
+
+Floyd Systems finally has its design in place but needs to be implemented in the compiler and runtime.
+
+The details on Tweakers, probes and Floyd Studio are on the drawing board.
+
 
 |Item				| Feature					| Link
 |:---				|:---					|:---
 | **Floyd Speak Manual**		|				|[Floyd Speak Manual](floyd_speak.md)
 | **Floyd Speak compiler**		|Compiles Floyd Speak source code to byte code.
-| **Floyd Speak interpreter**	|Runs your programs at approx 10% of native speeds.
+| **Floyd Speak interpreter**	|Runs your programs at approx 7-15% of native speeds.
 | **Floyd Systems Manual**		|				|[Floyd Systems Manual](floyd_systems.md)
 | **Floyd Systems Reference**	|				|[Floyd Systems Reference](floyd_systems_ref.md)
 | **TODO POC: Floyd Systems compiler**			|compiles floyd systems and containers etc to byte code.|
@@ -265,5 +275,5 @@ This is a webbased interactive tool for making, exploring and tuning complete so
 Floyd compilers and tools are written in portable C++11.
 
 
-# BACKLOG
+##### BACKLOG
 These are upcoming features, listed here to give you an idea of what the plan is: [Floyd Backlog](backlog.md)
