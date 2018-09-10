@@ -24,16 +24,16 @@ While hardware designers have grown from thousands of transistors to billions ov
 
 ![](readme_emacs.png)
 
-Programming at this levels is the software equivalent of building the nextgen NVIDIA graphis card by placing NAND-gates onto the silicon, one by one.
+Programming at this levels is the software equivalent of building the next-gen NVIDIA graphics card by placing NAND-gates onto the silicon, one by one.
 
 From their end, hardware designers have spent decades and enormous amount of on-chip transistors to try to work around the software industry's lack of progress. The hardware today tries to figure out the intent and structure of your code *from the machine code while executing it* to boost performance. This is information the software already has!
 
-Floyd wants to improve the world and make it simpler to make big programs and make them them efficent. This requires some changed habits.
+Floyd wants to improve the world and make it simpler to make big programs and make them them efficient. This requires some changed habits.
 
 
 # WHAT FLOYD WANTS TO DO
 
-Floyd is intolerant of programming religion and conservativsm, tired of all distractions with shiny new language syntax.
+Floyd is intolerant of programming religion and conservatism, tired of all distractions with shiny new language syntax.
 
 Floyd knows programming is about engineering and making insightful compromises about how your *system* works and performs. About exploring your system from different angles and try improvements and learn what works.
 
@@ -41,9 +41,9 @@ Floyd knows programming is about engineering and making insightful compromises a
 
 Also at all cost avoid getting "design lumps" into your system that constantly limits how you can improve the software. "It can't be changed". A single well-placed mutex will break the composability of the entire system - google "win16 mutex". Your code needs to be reshaped during its lifetime and Floyd makes sure this is smooth.
 
-- If you can't on request draw a clear overview picture how your system is structured -- then you can't possibly make system-wide decisions like which functions to optimize, what to cache and how to do *anything* with concurreny.
+- If you can't on request draw a clear overview picture how your system is structured -- then you can't possibly make system-wide decisions like which functions to optimize, what to cache and how to do *anything* with concurrency.
 
-Floyd solves much of this by setting a simple but clear structure for how big systems (and small) needs to be organised and *enforces* this structure in the language from top to bottom to make us concentrate on the real engineering problems that needs to be solved. All while trying not to scare conservative programmers with too big changes to their source code typing.
+Floyd solves much of this by setting a simple but clear structure for how big systems (and small) needs to be organized and *enforces* this structure in the language from top to bottom to make us concentrate on the real engineering problems that needs to be solved. All while trying not to scare conservative programmers with too big changes to their source code typing.
 
 Just like structured programming replaced goto hell with more specific but limited if-else and while loops, Floyd tries to name and impose another structure on systems and how they interact and are composed.
 
@@ -64,7 +64,7 @@ Floyd consists of a small and elegant toolkit of features built directly into th
 
 4. Extreme execution speed, faster than practical in majority of C systems
 
-5. Nextgen visual and interactive tools to support exploration and experimentation
+5. Next-gen visual and interactive tools to support exploration and experimentation
 
 
 # UNIQUE FEATURES
@@ -75,7 +75,7 @@ Floyd consists of a small and elegant toolkit of features built directly into th
 
 3. Visual and interactive tools
 
-4. Carefully destilled set of syntactical features to move focus to the *system* rather than the inside of functions
+4. Carefully distilled set of syntactical features to move focus to the *system* rather than the inside of functions
 
 5. Feels like simple imperative programming but with the best bits of functional programming sneaked in discretely
 
@@ -95,7 +95,7 @@ This sounds really complicated and heavy-weight but it's not, as you'll see.
 
 Floyd Speak is a fast and modern C-like program language that makes writing correct programs simpler and faster than any other programming language.
 
-It's focus is composability (avoid lumbs in your system), simplicity and robust programming techniques.
+It's focus is composability (avoid lumps in your system), simplicity and robust programming techniques.
 
 ##### FEATURES
 
@@ -120,7 +120,7 @@ Floyd is not a functional language. You write statements, change local variables
 #### NON-GOALS
 
 - Have neat syntactical features that do not improve final product.
-- Be multiparadigm
+- Be multi-paradigm
 - Be a real functional language
 - Be a real object oriented
 - Provide choice and expressing yourself
@@ -184,7 +184,7 @@ There feature have been excluded from Floyd on purpose, because they are a bad i
 12. Find your resources
 13. Header files
 14. Error codes
-15. Local optimisation, caching 
+15. Local optimization, caching 
 16. Local threading decisions and assumptions
 17. Shared mutable state
 18. “Express your self in code”
@@ -234,7 +234,7 @@ Read more here: **Floyd Systems Manual**: [Floyd Systems Manual](floyd_systems.m
 # SOLUTION PART 3/3 - FLOYD STUDIO
 
 TODO 1.0
-This is a webbased interactive tool for making, exploring and tuning complete software systems.
+This is a web-based interactive tool for making, exploring and tuning complete software systems.
 
 **Floyd Studio Manual**: [Floyd Studio Manual](floyd_studio.md).
 
@@ -254,7 +254,7 @@ The details on Tweakers, probes and Floyd Studio are on the drawing board.
 |:---				|:---					|:---
 | **Floyd Speak Manual**		|				|[Floyd Speak Manual](floyd_speak.md)
 | **Floyd Speak compiler**		|Compiles Floyd Speak source code to byte code.
-| **Floyd Speak interpreter**	|Runs your programs at approx 7-15% of native speeds.
+| **Floyd Speak interpreter**	|Runs your programs at approx. 7-15% of native speeds.
 | **Floyd Systems Manual**		|				|[Floyd Systems Manual](floyd_systems.md)
 | **Floyd Systems Reference**	|				|[Floyd Systems Reference](floyd_systems_ref.md)
 | **TODO POC: Floyd Systems compiler**			|compiles floyd systems and containers etc to byte code.|
