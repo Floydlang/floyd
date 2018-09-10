@@ -30,18 +30,6 @@ From their end, hardware designers have spent decades and enormous amount of on-
 
 Floyd wants to improve the world and make it simpler to make big programs and make them them efficent. This requires some changed habits.
 
-BUT:
-
-- If you love spending brainpower creating your own clever string classes, exploring new ways to think about software, feel strongly about *expressing yourself* in your code or just love the bad-ass feeling of *finally* tracking down an exciting threading problem -- then C++ is for you, not Floyd. Eventually you too may stumble across the finishing line of releasing a product.
-
-- If you need intellectual rushes from mastering clever theoretical programming concepts, go read about set theory and monads or something, you are clearly not into programming to make great products.
-
-- If you are obsessed about getting the compiler to generate optimal CPU instructions for every function no matter the cost - but don't care to learn how CPUs and caches actually work and how to best structure your *entire* program for best results -- use C++ with turned-off exceptions and no RTTI and make your own collection classes. You may be able to release a product at some point, but everyone will hate working on that code base.
-
-- If you love emacs or vi and the only keyboard you care to use weights 2 kg and sounds like klockety-klock -- well maybe your children may be ready for Floyd.
-
-When you've gotten all above crap out of your system and feel ready to make great and solid products that execute *extremely fast* you are welcome to Floyd!
-
 
 # WHAT FLOYD WANTS TO DO
 
