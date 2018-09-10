@@ -1,8 +1,10 @@
-![Floyd Logo](floyd_speak_logo.png)
+![](floyd_speak_logo.png)
 
 # FLOYD SPEAK
 
 Floyd Speak is the programming langage part of Floyd. It's an alternative to Java or Javascript or C++. Using Floyd Speak you write functions and data structures.
+
+![](floyd_speak_cheat_sheet.png)
 
 
 # TYPES
@@ -352,186 +354,6 @@ You can append to strings together using the + operation.
 - __replace()__: replaces a range of a string with another string. Can also be used to erase or insert.
 
 
-# TYPEID
-
-A typeid is tells the type of a value.
-
-When you reference one of the built in primitive types by name, you are accessing a variable of type typeid.
-
-- bool
-- int
-- double
-- string
-
-```
-	assert(typeid("hello") == string);
-	assert(to_string(typeid([1,2,3])) == "[int]");
-```
-
-A typeid is a propery Floyd value - you can copy it, compare it, convert it to strings, store it in dictionaries or whatever.
-
-
-
-# JSON_VALUE
-
-JSON is very central to Floyd. JSON is a way to store composite values in a tree-shap in a simple and standardazied way. Since Floyd mainly works with values this is a perfect match for serialzing any Floyd value to text and back. It is built directly into the language as the default serialized format for Floyd values. If can be used for custom file format and protocol and to interface with other JSON-based systems. All structs also automatically are serializable to and from JSON automatically.
-
-JSON format is also used by the compiler and language itself to store intermediate Floyd program code, for all logging and for debugging features.
-
-- Floyd has built in support for JSON in the language. It has a a JSON type called __json_value__ and functions to pack & unpack strings / json files into the json-type.
-
-- Floyd has support for json literals: you can put json data directly into a Floyd file. Great for copy-pasting snippets for tests etc.
-
-Read more about JSON here: www.json.org
-
-
-This value can contain any of the 6 JSON-compatible value:
-
-- string
-- number
-- object
-- array
-- true / false
-- null
-
-
-__json_value__: 	This is an immutable value containing any JSON. You can query it for its contents and alter it (you get new values).
-
-Notice that json_value can contain an entire huge json file, with a big tree of json objects and arrays etc. A json_value can also also contain just a string or a number or a single json array of strings. The json_value is used for every node in the json_value tree.
-
-
-### JSON LITERALS
-
-You can directly embedd json inside source code file. Simple / no escaping needed. Just paste a snippet into the Floyd source code. Use this for test values etc. Round trip. Since the JSON code is not a string literal but actual Floyd syntax, there are not problems with escaping strings etc. The Floyd parser will create floyd strings, dictionaries and so on for the JSON data. Then it will create a json_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown.
-
-This all means you can write Floyd code that at runtime creates all or parts of a composite JSON value. Also: you can nest JSONs in eachother.
-
-Example json:
-
-	let json_value a = 13;
-	let json_value b = "Hello!";
-	let json_value c = {"hello": 1, "bye": 3};
-	let json_value d = { "pigcount": 3, "pigcolor": "pink" };
-
-	assert(a == 13);
-	assert(b == "Hello!");
-	assert(c["hello"] == 1);
-	assert(c["bye"] == 3);
-	assert(size(c) == 2);
-
-	let test_json2 = json_value(
-		{
-			"one": 1,
-			"two": 2,
-			"three": "three",
-			"four": [ 1, 2, 3, 4 ],
-			"five": { "alpha": 1000, "beta": 2000 },
-			"six": true,
-			"seven": false,
-		}
-	)
-
-Notice that json objects are more lax than Floyd: you can mix different types of values in the same object or array. Floyd is stricter: a vector can only hold one type of element, same with dictionaries.
-
-
-
-### __get\_json\_type()__:
-
-Returns the actual type of this value stores inside the json_value. It can be one of the types supported by JSON.
-
-	typeid get_json_type(json_value v)
-
-This is how you check the type of json value and reads their different values.
-
-|Input						| Result 		| Int
-|---						| ---			|---
-| json_value({"a": 1})		| json_object	| 1
-| json_value([1, 2, 3])		| json_array	| 2
-| json_value("hi")			| json_string	| 3
-| json_value(13)			| json_number	| 4
-| json_value(true)			| json_true		| 5
-| json_value(false)			| json_false	| 6
-| 							| json_null		| 7
-
-
-Demo snippet, that checks type of a json_value:
-
-```
-	func string get_name(json_value value){
-		let t = get_json_type(value);
-		if(t == json_object){
-			return "json_object";
-		}
-		else if(t == json_array){
-			return "json_array";
-		}
-		else if(t == json_string){
-			return "json_string";
-		}
-		else if(t == json_number){
-			return "json_number";
-		}
-		else if(t == json_true){
-			return "json_true";
-		}
-		else if(t == json_false){
-			return "json_false";
-		}
-		else if(t == json_null){
-			return "json_null";
-		}
-		else {
-			assert(false);
-		}
-	}
-	
-	assert(get_name(json_value({"a": 1, "b": 2})) == "json_object");
-	assert(get_name(json_value([1,2,3])) == "json_array");
-	assert(get_name(json_value("crash")) == "json_string");
-	assert(get_name(json_value(0.125)) == "json_number");
-	assert(get_name(json_value(true)) == "json_true");
-	assert(get_name(json_value(false)) == "json_false");
-```
-
-
-
-### CORE FUNCTIONS
-
-Many of the core functions work with json_value, but it often depends on the actual type of json_value. Example: size() works for strings, arrays and object only.
-
-- __get\_json\_type()__
-- __pretty_string()__
-- __size()__
-- __encode_json()__
-- __decode_json()__
-- __flatten\_to\_json()__
-- __unflatten\_from\_json()__
-
-
-
-# JSON_VALUE, SERIALIZATION / DESERIALIZATION
-
-Serializing any Floyd value is a built in mechanism. It is always true-deep. The result is always a normalized JSON text file in a Floyd string.
-
-
-Converting a floyd json_value to a json string and back. The json-string can be directly read or written to a text file, sent via a protocol etc.
-
-	string encode_json(json_value v)
-	json_value decode_json(string s)
-
-
-Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json_value, using unflatten_from_json().
-
-	json_value flatten_to_json(any v)
-	any unflatten_from_json(json_value v)
-
-
-- __encode_json()__
-- __decode_json()__
-- __flatten\_to\_json()__
-- __unflatten\_from\_json()__
-
-
 
 # VECTOR
 
@@ -742,6 +564,186 @@ Everything between // and newline is a comment:
 
 	//	This is an end-of line comment
 	let a = "hello"; //	This is an end of line comment.
+
+
+# TYPEID
+
+A typeid is tells the type of a value.
+
+When you reference one of the built in primitive types by name, you are accessing a variable of type typeid.
+
+- bool
+- int
+- double
+- string
+
+```
+	assert(typeid("hello") == string);
+	assert(to_string(typeid([1,2,3])) == "[int]");
+```
+
+A typeid is a propery Floyd value - you can copy it, compare it, convert it to strings, store it in dictionaries or whatever.
+
+
+
+# JSON_VALUE
+
+JSON is very central to Floyd. JSON is a way to store composite values in a tree-shap in a simple and standardazied way. Since Floyd mainly works with values this is a perfect match for serialzing any Floyd value to text and back. It is built directly into the language as the default serialized format for Floyd values. If can be used for custom file format and protocol and to interface with other JSON-based systems. All structs also automatically are serializable to and from JSON automatically.
+
+JSON format is also used by the compiler and language itself to store intermediate Floyd program code, for all logging and for debugging features.
+
+- Floyd has built in support for JSON in the language. It has a a JSON type called __json_value__ and functions to pack & unpack strings / json files into the json-type.
+
+- Floyd has support for json literals: you can put json data directly into a Floyd file. Great for copy-pasting snippets for tests etc.
+
+Read more about JSON here: www.json.org
+
+
+This value can contain any of the 6 JSON-compatible value:
+
+- string
+- number
+- object
+- array
+- true / false
+- null
+
+
+__json_value__: 	This is an immutable value containing any JSON. You can query it for its contents and alter it (you get new values).
+
+Notice that json_value can contain an entire huge json file, with a big tree of json objects and arrays etc. A json_value can also also contain just a string or a number or a single json array of strings. The json_value is used for every node in the json_value tree.
+
+
+### JSON LITERALS
+
+You can directly embedd json inside source code file. Simple / no escaping needed. Just paste a snippet into the Floyd source code. Use this for test values etc. Round trip. Since the JSON code is not a string literal but actual Floyd syntax, there are not problems with escaping strings etc. The Floyd parser will create floyd strings, dictionaries and so on for the JSON data. Then it will create a json_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown.
+
+This all means you can write Floyd code that at runtime creates all or parts of a composite JSON value. Also: you can nest JSONs in eachother.
+
+Example json:
+
+	let json_value a = 13;
+	let json_value b = "Hello!";
+	let json_value c = {"hello": 1, "bye": 3};
+	let json_value d = { "pigcount": 3, "pigcolor": "pink" };
+
+	assert(a == 13);
+	assert(b == "Hello!");
+	assert(c["hello"] == 1);
+	assert(c["bye"] == 3);
+	assert(size(c) == 2);
+
+	let test_json2 = json_value(
+		{
+			"one": 1,
+			"two": 2,
+			"three": "three",
+			"four": [ 1, 2, 3, 4 ],
+			"five": { "alpha": 1000, "beta": 2000 },
+			"six": true,
+			"seven": false,
+		}
+	)
+
+Notice that json objects are more lax than Floyd: you can mix different types of values in the same object or array. Floyd is stricter: a vector can only hold one type of element, same with dictionaries.
+
+
+
+### __get\_json\_type()__:
+
+Returns the actual type of this value stores inside the json_value. It can be one of the types supported by JSON.
+
+	typeid get_json_type(json_value v)
+
+This is how you check the type of json value and reads their different values.
+
+|Input						| Result 		| Int
+|---						| ---			|---
+| json_value({"a": 1})		| json_object	| 1
+| json_value([1, 2, 3])		| json_array	| 2
+| json_value("hi")			| json_string	| 3
+| json_value(13)			| json_number	| 4
+| json_value(true)			| json_true		| 5
+| json_value(false)			| json_false	| 6
+| 							| json_null		| 7
+
+
+Demo snippet, that checks type of a json_value:
+
+```
+	func string get_name(json_value value){
+		let t = get_json_type(value);
+		if(t == json_object){
+			return "json_object";
+		}
+		else if(t == json_array){
+			return "json_array";
+		}
+		else if(t == json_string){
+			return "json_string";
+		}
+		else if(t == json_number){
+			return "json_number";
+		}
+		else if(t == json_true){
+			return "json_true";
+		}
+		else if(t == json_false){
+			return "json_false";
+		}
+		else if(t == json_null){
+			return "json_null";
+		}
+		else {
+			assert(false);
+		}
+	}
+	
+	assert(get_name(json_value({"a": 1, "b": 2})) == "json_object");
+	assert(get_name(json_value([1,2,3])) == "json_array");
+	assert(get_name(json_value("crash")) == "json_string");
+	assert(get_name(json_value(0.125)) == "json_number");
+	assert(get_name(json_value(true)) == "json_true");
+	assert(get_name(json_value(false)) == "json_false");
+```
+
+
+
+### CORE FUNCTIONS
+
+Many of the core functions work with json_value, but it often depends on the actual type of json_value. Example: size() works for strings, arrays and object only.
+
+- __get\_json\_type()__
+- __pretty_string()__
+- __size()__
+- __encode_json()__
+- __decode_json()__
+- __flatten\_to\_json()__
+- __unflatten\_from\_json()__
+
+
+
+# AUTOMATIC SERIALIZATION
+
+Serializing any Floyd value is a built in mechanism. It is always true-deep. The result is always a normalized JSON text file in a Floyd string.
+
+
+Converting a floyd json_value to a json string and back. The json-string can be directly read or written to a text file, sent via a protocol etc.
+
+	string encode_json(json_value v)
+	json_value decode_json(string s)
+
+
+Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json_value, using unflatten_from_json().
+
+	json_value flatten_to_json(any v)
+	any unflatten_from_json(json_value v)
+
+
+- __encode_json()__
+- __decode_json()__
+- __flatten\_to\_json()__
+- __unflatten\_from\_json()__
 
 
 
