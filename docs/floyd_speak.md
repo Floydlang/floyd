@@ -74,13 +74,13 @@ When defining a variable you can often skip telling which type it is, since the 
 Explicit
 
 ```
-	let int x = 10;
+	let int x = 10
 ```
 
 Implicit
 
 ```
-	let y = 11;
+	let y = 11
 ```
 
 
@@ -88,9 +88,9 @@ Example:
 
 ```
 	int main(){
-		let a = "hello";
-		a = "goodbye";	//	Runtime error - you cannot change variable a.
-		return 3;
+		let a = "hello"
+		a = "goodbye"	//	Runtime error - you cannot change variable a.
+		return 3
 	}
 ```
 
@@ -98,9 +98,9 @@ You can use "mutable" to make a local variable changeable.
 
 ```
 	int main(){
-		mutable a = "hello";
-		a = "goodbye";	//	Changes variable a to "goodbye".
-		return 3;
+		mutable a = "hello"
+		a = "goodbye"	//	Changes variable a to "goodbye".
+		return 3
 	}
 ```
 
@@ -126,7 +126,7 @@ Example function definitions:
 
 ```
 	func int f1(string x){
-		return 3;
+		return 3
 	}
 
 	func int f2(int a, int b){
@@ -134,11 +134,11 @@ Example function definitions:
 	}
 
 	func int f3(){	
-		return 100;
+		return 100
 	}
 
 	func string f4(string x, bool y){
-		return "<" + x + ">";
+		return "<" + x + ">"
 	}
 ```
 
@@ -209,8 +209,8 @@ When the condition is true, this entire expression has the value of a. Else it h
 	func bool is_polite(string x){
 		return x == "hello" ? "polite" : "rude"
 	}
-	assert(is_polity("hiya!") == false);
-	assert(is_polity("hello") == true);
+	assert(is_polity("hiya!") == false)
+	assert(is_polity("hello") == true)
 ```
 
 
@@ -220,7 +220,7 @@ This is a normal if-elseif-else feature, like in most languages. Brackets are re
 
 ```
 		if (s == "one"){
-			return 1;
+			return 1
 		}
 ```
 
@@ -228,10 +228,10 @@ You can add an else body like this:
 
 ```
 		if(s == "one"){
-			return 1;
+			return 1
 		}
 		else{
-			return -1;
+			return -1
 		}
 ```
 
@@ -239,13 +239,13 @@ Else-if lets you avoid big nested if-else statements and do this:
 
 ```
 		if(s == "one"){
-			return 1;
+			return 1
 		}
 		else if(s == "two"){
-			return 2;
+			return 2
 		}
 		else{
-			return -1;
+			return -1
 		}
 ```
 
@@ -266,7 +266,7 @@ Closed range that starts with 1 and ends with 5:
 
 ```
 	for (index in 1...5) {
-		print(index);
+		print(index)
 	}
 ```
 
@@ -323,7 +323,7 @@ The encoding of the characters in the string is undefined. You can put 7-bit ASC
 
 You can make string literals directly in the source code like this:
 
-	let a = "Hello, world!";
+	let a = "Hello, world!"
 
 Notice: You cannot use any escape characters, like in the C-language.
 
@@ -331,7 +331,7 @@ All comparison expressions work, like a == b, a < b, a >= b, a != b etc.
 
 You can access a random character in the string, using its integer position.
 
-	let a = "Hello"[1];
+	let a = "Hello"[1]
 	assert(a == "e")
 
 Notice 1: You cannot modify the string using [], only read. Use update() to change a character.
@@ -362,11 +362,11 @@ A vector is a collection of values where you lookup the values using an index be
 
 You can make a new vector and specify its elements directly, like this:
 
-	let a = [ 1, 2, 3];
+	let a = [ 1, 2, 3]
 
 You can also calculate elements:
 
-	let a = [ calc_pi(4), 2.1, calc_bounds() ];
+	let a = [ calc_pi(4), 2.1, calc_bounds() ]
 
 
 You can put ANY type of value into a vector: integers, doubles, strings, structs, other vectors etc. But all elements must be the same type inside a specific vector.
@@ -375,15 +375,15 @@ You can copy vectors using =. All comparison expressions work, like a == b, a < 
 
 This lets you access a random element in the vector, using its integer position.
 
-	let a = [10, 20, 30][1];
+	let a = [10, 20, 30][1]
 	assert(a == 20)
 
 Notice: You cannot modify the vector using [], only read. Use update() to change an element.
 
 You can append to vector together using the + operation.
 
-	let a = [ 10, 20, 30 ] + [ 40, 50 ];
-	assert(a == [ 10, 20, 30, 40, 50 ]);
+	let a = [ 10, 20, 30 ] + [ 40, 50 ]
+	assert(a == [ 10, 20, 30, 40, 50 ])
 
 ### CORE FUNCTIONS
 
@@ -403,16 +403,16 @@ A collection that maps a key to a value. Unsorted. Like a C++ map.
 
 You make a new dictionary and specify its elements like this:
 
-	let [string: int] a = {"red": 0, "blue": 100,"green": 255};
+	let [string: int] a = {"red": 0, "blue": 100,"green": 255}
 
 or shorter:
 
-	b = {"red": 0, "blue": 100,"green": 255};
+	b = {"red": 0, "blue": 100,"green": 255}
 
 Dictionaries always use string-keys. When you specify the type of dictionary you must always include "string".
 
 	struct test {
-		{string: int} _my_dict;
+		{string: int} _my_dict
 	}
 
 You can put any type of value into the dictionary (but not mix inside the same dictionary).
@@ -453,7 +453,7 @@ This all makes simple structs extremely simple to create and use.
 - You cannot make constructors. There is only *one* way to initialize the members, via the constructor - which always takes *all* members
 - There is no way to directly initialize a member when defining the struct.
 - There is no way to have several different constructors, instead create explicit functions like make_square().
-- If you want a default constructor, implement one yourself: ```rect make_zero_rect(){ return rect(0, 0); }```.
+- If you want a default constructor, implement one yourself: ```rect make_zero_rect(){ return rect(0, 0) }```.
 - There is no aliasing of structs -- changing a struct is always invisible to all other code that has copies of that struct.
 
 
@@ -462,23 +462,23 @@ Example:
 ```
 	//	Make simple, ready-for use struct.
 	struct rect {
-		double width;
-		double height;
-	};
+		double width
+		double height
+	}
 
 	//	Try the new struct:
 
-	let a = rect(0, 3);
-	assert(a.width == 0);
-	assert(a.height == 3);
+	let a = rect(0, 3)
+	assert(a.width == 0)
+	assert(a.height == 3)
 
-	let b = rect(0, 3);
-	let c = rect(1, 3);
+	let b = rect(0, 3)
+	let c = rect(1, 3)
 
-	asset(a == a);
-	asset(a == b);
-	asset(a != c);
-	asset(c > a);
+	asset(a == a)
+	asset(a == b)
+	asset(a != c)
+	asset(c > a)
 ```
 
 A simple struct works almost like a collection with fixed number of named elements. It is only possible to make new instances by specifying every member or copying / modifying an existing one.
@@ -486,29 +486,29 @@ A simple struct works almost like a collection with fixed number of named elemen
 
 ### UPDATE()
 
-let b = update(a, member, value);
+let b = update(a, member, value)
 
 
 
 ```
 	//	Make simple, ready-for use struct.
 	struct rect {
-		double width;
-		double height;
-	};
+		double width
+		double height
+	}
 
-	let a = rect(0, 3);
+	let a = rect(0, 3)
 
 	//	Nothing happens! Setting width to 100 returns us a new rect but we we don't keep it.
-	update(a,"width", 100);
-	assert(a.width == 0);
+	update(a,"width", 100)
+	assert(a.width == 0)
 
 	//	Modifying a member creates a new instance, we assign it to b
-	let b = update(a,"width", 100);
+	let b = update(a,"width", 100)
 
 	//	Now we have the original, unmodified a and the new, updated b.
-	assert(a.width == 0);
-	assert(b.width == 100);
+	assert(a.width == 0)
+	assert(b.width == 100)
 ```
 
 This works with nested values too:
@@ -518,14 +518,14 @@ This works with nested values too:
 	//	Define an image-struct that holds some stuff, including a pixel struct.
 	struct image { string name; rect size; };
 
-	let a = image("Cat image.png", rect(512, 256));
+	let a = image("Cat image.png", rect(512, 256))
 
-	assert(a.size.width == 512);
+	assert(a.size.width == 512)
 
 	//	Update the width-member inside the image's size-member. The result is a brand new image, b!
-	let b = update(a, "size.width", 100);
-	assert(a.size.width == 512);
-	assert(b.size.width == 100);
+	let b = update(a, "size.width", 100)
+	assert(a.size.width == 512)
+	assert(b.size.width == 100)
 ```
 
 
@@ -563,7 +563,7 @@ You can wrap many lines with "/*...*/" to make a big section of documentation or
 Everything between // and newline is a comment:
 
 	//	This is an end-of line comment
-	let a = "hello"; //	This is an end of line comment.
+	let a = "hello" //	This is an end of line comment.
 
 
 # TYPEID
@@ -578,8 +578,8 @@ When you reference one of the built in primitive types by name, you are accessin
 - string
 
 ```
-	assert(typeid("hello") == string);
-	assert(to_string(typeid([1,2,3])) == "[int]");
+	assert(typeid("hello") == string)
+	assert(to_string(typeid([1,2,3])) == "[int]")
 ```
 
 A typeid is a propery Floyd value - you can copy it, compare it, convert it to strings, store it in dictionaries or whatever.
@@ -622,16 +622,16 @@ This all means you can write Floyd code that at runtime creates all or parts of 
 
 Example json:
 
-	let json_value a = 13;
-	let json_value b = "Hello!";
-	let json_value c = {"hello": 1, "bye": 3};
-	let json_value d = { "pigcount": 3, "pigcolor": "pink" };
+	let json_value a = 13
+	let json_value b = "Hello!"
+	let json_value c = {"hello": 1, "bye": 3}
+	let json_value d = { "pigcount": 3, "pigcolor": "pink" }
 
-	assert(a == 13);
-	assert(b == "Hello!");
-	assert(c["hello"] == 1);
-	assert(c["bye"] == 3);
-	assert(size(c) == 2);
+	assert(a == 13)
+	assert(b == "Hello!")
+	assert(c["hello"] == 1)
+	assert(c["bye"] == 3)
+	assert(size(c) == 2)
 
 	let test_json2 = json_value(
 		{
@@ -672,39 +672,39 @@ Demo snippet, that checks type of a json_value:
 
 ```
 	func string get_name(json_value value){
-		let t = get_json_type(value);
+		let t = get_json_type(value)
 		if(t == json_object){
-			return "json_object";
+			return "json_object"
 		}
 		else if(t == json_array){
-			return "json_array";
+			return "json_array"
 		}
 		else if(t == json_string){
-			return "json_string";
+			return "json_string"
 		}
 		else if(t == json_number){
-			return "json_number";
+			return "json_number"
 		}
 		else if(t == json_true){
-			return "json_true";
+			return "json_true"
 		}
 		else if(t == json_false){
-			return "json_false";
+			return "json_false"
 		}
 		else if(t == json_null){
-			return "json_null";
+			return "json_null"
 		}
 		else {
-			assert(false);
+			assert(false)
 		}
 	}
 	
-	assert(get_name(json_value({"a": 1, "b": 2})) == "json_object");
-	assert(get_name(json_value([1,2,3])) == "json_array");
-	assert(get_name(json_value("crash")) == "json_string");
-	assert(get_name(json_value(0.125)) == "json_number");
-	assert(get_name(json_value(true)) == "json_true");
-	assert(get_name(json_value(false)) == "json_false");
+	assert(get_name(json_value({"a": 1, "b": 2})) == "json_object")
+	assert(get_name(json_value([1,2,3])) == "json_array")
+	assert(get_name(json_value("crash")) == "json_string")
+	assert(get_name(json_value(0.125)) == "json_number")
+	assert(get_name(json_value(true)) == "json_true")
+	assert(get_name(json_value(false)) == "json_false")
 ```
 
 
@@ -866,7 +866,7 @@ Returns the computer's realtime clock, expressed in the number of milliseconds s
 
 This is how you modify a field of a struct, an element in a vector or string or a dictionary. It replaces the value of the specified key and returns a completely new object. The original object (struct, vector etc) is unchanged.
 
-	let obj_b = update(obj_a, key, new_value);
+	let obj_b = update(obj_a, key, new_value)
 
 
 |Type		  	| Example						| Result |
