@@ -20,7 +20,7 @@ Floyd has a bunch of novel concepts, how it separates the programming work in ne
 
 Most software sucks. Both to use and to improve. There is already a lot of dogma and conservatism that holds programming back.
 
-While hardware designers have grown from thousands of transistors to billions over the last 40 years, programmers are still programming exactly the same way - typing individual if-statements and for-loops in emacs into 7 bit ASCII files. Exactly like our parents and grandparents did in the 60ies and 70ies.
+While hardware designers have grown from thousands of transistors to billions over the last 40 years, programmers are still programming exactly the same way: typing individual if-statements and for-loops in emacs into 7 bit ASCII files. Exactly like our parents and grandparents did in the 60ies and 70ies.
 
 ![](readme_emacs.png)
 
@@ -28,7 +28,7 @@ Programming at this levels is the software equivalent of building the next-gen N
 
 From their end, hardware designers have spent decades and enormous amount of on-chip transistors to try to work around the software industry's lack of progress. The hardware today tries to figure out the intent and structure of your code *from the machine code while executing it* to boost performance. This is information the software already has!
 
-Floyd wants to improve the world and make it simpler to make big programs and make them them efficient. This requires some changed habits.
+Floyd wants to improve the world and make it simpler to make big programs and make them efficient. This requires some changed habits.
 
 
 # WHAT FLOYD WANTS TO DO
@@ -39,7 +39,7 @@ Floyd knows programming is about engineering and making insightful compromises a
 
 - You have limited brainpower, limited time, limited hardware -- great design is about figuring out how to spend these where it has maximum impact for the *product*.
 
-Also at all cost avoid getting "design lumps" into your system that constantly limits how you can improve the software. "It can't be changed". A single well-placed mutex will break the composability of the entire system - google "win16 mutex". Your code needs to be reshaped during its lifetime and Floyd makes sure this is smooth.
+Also at all cost avoid getting "design lumps" into your system that constantly limits how you can improve the software. "It can't be changed". A single well-placed mutex will break the composability of the entire system: google "win16 mutex". Your code needs to be reshaped during its lifetime and Floyd makes sure this is smooth.
 
 - If you can't on request draw a clear overview picture how your system is structured -- then you can't possibly make system-wide decisions like which functions to optimize, what to cache and how to do *anything* with concurrency.
 
@@ -113,9 +113,9 @@ It's focus is composability (avoid lumps in your system), simplicity and robust 
 ##### COMPOSABILITY
 Normally, Floyd Speak functions don't have side effects or write to files etc -- they are only doing logic (aka Pure functions). This makes them composable!
 
-But when a function needs to call the OS or have other types of side effects they are called "unpure" functions. An unpure function can't just decide to access the OS - it needs to have one or several Toolboxes provided as argument(s) so it can get to those features. This makes those side effects explicit and part of the static signature of the function. You can't accidentally call an unpure function because you won't have the correct toolbox.
+But when a function needs to call the OS or have other types of side effects they are called "impure" functions. An impure function can't just decide to access the OS - it needs to have one or several Toolboxes provided as argument(s) so it can get to those features. This makes those side effects explicit and part of the static signature of the function. You can't accidentally call an impure function because you won't have the correct toolbox.
 
-Floyd is not a functional language. You write statements, change local variables etc. But those changes cannot escape the function -- the are hidden inside the function. All to make the functions composable.
+Floyd is not a functional language. You write statements, change local variables and so on. But those changes cannot escape the function -- the are hidden inside the function. All to make the functions composable.
 
 #### NON-GOALS
 
@@ -168,7 +168,7 @@ Floyd is not a functional language. You write statements, change local variables
 
 ## BAD IDEAS
 
-There feature have been excluded from Floyd on purpose, because they are a bad idea:
+These feature have been excluded from Floyd on purpose, because they are too complicated and or breaks composability. Some of these are programming constructs, some are attitudes:
 
 1. Aliasing
 2. Pointers & references
@@ -186,9 +186,8 @@ There feature have been excluded from Floyd on purpose, because they are a bad i
 14. Error codes
 15. Local optimization, caching 
 16. Local threading decisions and assumptions
-17. Shared mutable state
-18. “Express your self in code”
-19. Make your own linked list
+17. “Express your self in code”
+18. Make your own linked list
 
 
 
@@ -206,7 +205,7 @@ This is a language that defines your complete software system and its internal i
 
 5. Visual profiling and editing
 
-The second important feature of Floyd Systems is to configures how the system maps to the available hardware -- things like cores and threads, caches and RAM.
+The second important feature of Floyd Systems is to configure how the system maps to the available hardware -- things like cores and threads, caches and RAM.
 
 ## SYSTEM STRUCTURE
 

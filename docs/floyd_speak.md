@@ -2,14 +2,14 @@
 
 # FLOYD SPEAK
 
-Floyd Speak is the programming langage part of Floyd. It's an alternative to Java or Javascript or C++. Using Floyd Speak you write functions and data structures.
+Floyd Speak is the programming language part of Floyd. It's an alternative to Java or Javascript or C++. Using Floyd Speak you write functions and data structures.
 
 ![](floyd_speak_cheat_sheet.png)
 
 
 # TYPES
 
-These are the primitive data types built into the language itself. The goals is that all the basics you need are already there in the language. This makes it easy to start making useful programs, you don't need to chose or build the basics. It allows composability since all libraries can rely on these types and communicate bewteen themselves using them. Reduces need for custom types and glue code.
+These are the primitive data types built into the language itself. The goal is that all the basics you need are already there in the language. This makes it easy to start making useful programs, you don't need to choose or build the basics. It allows composability since all libraries can rely on these types and communicate between themselves using them. Reduces need for custom types and glue code.
 
 |Type		  	| Use
 |---				|---	
@@ -20,16 +20,16 @@ These are the primitive data types built into the language itself. The goals is 
 |__typeid__		| Describes the *type* of a value.
 |__function__		| A function value. Functions can be Floyd functions or C functions. They are callable.
 |__struct__		| Like C struct or classes or tuples. A value object.
-|__vector__		| A continous array of elements addressed via indexes.
+|__vector__		| A continuous array of elements addressed via indexes.
 |__dictionary__	| Lookup values using string keys.
-|__json_value__	| A value that holds a json-compatible value, can be a big JSON tree.
+|__json_value__	| A value that holds a JSON-compatible value, can be a big JSON tree.
 |TODO POC: __sum-type__		| Tagged union.
 |TODO 1.0: __float__		| 32-bit floating point number
 |TODO 1.0: __int8__		| 8-bit signed integer
 |TODO 1.0: __int16__		| 16-bit signed integer
 |TODO 1.0: __int32__		| 32-bit signed integer
 
-Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [] etc.
+Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [], etc.
 
 
 # TRUE DEEP
@@ -41,7 +41,7 @@ The order of the members inside the struct (or collection) is important for sort
 
 # CORE TYPE FEATURES
 
-These are features built into every type: integer, string, struct, dictionary etc. They are true-deep.
+These are features built into every type: integer, string, struct, dictionary, etc. They are true-deep.
 
 |Expression		| Explanation
 |---				|---	
@@ -64,8 +64,8 @@ Floyd Speak files are always utf-8 files with no BOM. Their extension is ".floyd
 All "variables" aka values are immutable.
 
 - Function arguments
-- Local function variables
-- Member variables of structs etc.
+- Function local variables
+- Member variables of structs, etc.
 
 Floyd is statically typed, which means every variable only supports a specific type of value.
 
@@ -114,7 +114,7 @@ __main()__ This function is called by the host when program starts. You get the 
 
 # FUNCTIONS
 
-Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants, never read or modify anything - not global variables, not by calling another, unpure function. It's not possible to call a function with a set of arguments and later call it with the same argument and get a different result. A function like get_time() is unpure.
+Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants, never read or modify anything: not global variables, not by calling another, impure function. It's not possible to call a function with a set of arguments and later call it with the same argument and get a different result. A function like get_time() is impure.
 
 While a function executes, it perceives the outside world to stand still.
 
@@ -122,7 +122,7 @@ Functions always return exactly one value. Use a struct to return more values.
 
 A function without return value usually makes no sense since function cannot have side effects. Possible uses would be logging, asserting or throwing exceptions.
 
-Example function definitions:
+Example definitions of functions:
 
 ```
 	func int f1(string x){
@@ -165,7 +165,7 @@ This is a function that returns a function value:
 # EXPRESSIONS
 
 Reference: http://www.tutorialspoint.com/cprogramming/c_operators.htm
-Comparisons are true-deep - they consider all members and also member structs and collections.
+Comparisons are true-deep: they consider all members and also member structs and collections.
 
 ### Arithmetic Operators
 How to add and combine values:
@@ -203,7 +203,7 @@ Used to compare two values. The result is true or false:
 	condition ? a : b
 ```
 
-When the condition is true, this entire expression has the value of a. Else it has the value of b. Condition, a and b can all be complex expressions, with function calls etc.
+When the condition is true, this entire expression has the value of a. Else it has the value of b. Condition, a and b can all be complex expressions, with function calls, etc.
 
 ```
 	func bool is_polite(string x){
@@ -295,11 +295,11 @@ The result is the equivalent to
 	{ a = 2; print(a + b); }
 ```
 
-The loop is expanded before the first time the body is called. There is no way to have any other kind of condition expression, that relies on the result of the body etc.
+The loop is expanded before the first time the body is called. There is no way to have any other kind of condition expression, that relies on the result of the body, etc.
 
 - init: must be an assignment statement for variable X.
 - condition: Must be a bool expression with only variable X. Is executed before each time body is executed. 
-- advance-statement: must be an assignement statement to X.
+- advance-statement: must be an assignment statement to X.
 - body: this is required and must have brackets. Brackets can be empty, like "{}".
 
 
@@ -319,7 +319,7 @@ The loop is expanded before the first time the body is called. There is no way t
 
 This is a pure 8-bit string type. It is immutable. You can compare with other strings, copy it using = and so on. There is a small kit of functions for changing and processing strings.
 
-The encoding of the characters in the string is undefined. You can put 7-bit ASCII in them. Or UTF-8 etc. You can also use them as fast arrays of bytes.
+The encoding of the characters in the string is undefined. You can put 7-bit ASCII in them or UTF-8 or something else. You can also use them as fast arrays of bytes.
 
 You can make string literals directly in the source code like this:
 
@@ -327,7 +327,7 @@ You can make string literals directly in the source code like this:
 
 Notice: You cannot use any escape characters, like in the C-language.
 
-All comparison expressions work, like a == b, a < b, a >= b, a != b etc.
+All comparison expressions work, like a == b, a < b, a >= b, a != b and so on.
 
 You can access a random character in the string, using its integer position.
 
@@ -369,9 +369,9 @@ You can also calculate elements:
 	let a = [ calc_pi(4), 2.1, calc_bounds() ]
 
 
-You can put ANY type of value into a vector: integers, doubles, strings, structs, other vectors etc. But all elements must be the same type inside a specific vector.
+You can put ANY type of value into a vector: integers, doubles, strings, structs, other vectors and so on. But all elements must be the same type inside a specific vector.
 
-You can copy vectors using =. All comparison expressions work, like a == b, a < b, a >= b, a != b etc. Comparisons will compare each element of the two vectors.
+You can copy vectors using =. All comparison expressions work, like a == b, a < b, a >= b, a != b and similar. Comparisons will compare each element of the two vectors.
 
 This lets you access a random element in the vector, using its integer position.
 
@@ -390,7 +390,7 @@ You can append to vector together using the + operation.
 - __print()__: prints a vector to the default output of the app.
 - __update()__: changes one element of the vector and returns a new vector.
 - __size()__: returns the number of elements in the vector, as an integer.
-- __find()__: searches from left to right after a subvector and returns its index or -1
+- __find()__: searches from left to right after a sub-vector and returns its index or -1
 - __push_back()__: appends an element to the right side of the vector.
 - __subset__: extracts a range of elements from the vector, as specified by start and end indexes.
 - __replace()__: replaces a range of a vector with another vector. Can also be used to erase or insert.
@@ -399,7 +399,7 @@ You can append to vector together using the + operation.
 
 # DICTIONARY
 
-A collection that maps a key to a value. Unsorted. Like a C++ map. 
+A collection that maps a key to a value. It is not sorted. Like a C++ map. 
 
 You make a new dictionary and specify its elements like this:
 
@@ -428,7 +428,7 @@ You copy dictionaries using = and all comparison expressions work.
 - __update()__: changes one element of the dictionary and returns a new dictionary
 - __size()__: returns the number of elements in the dictionary, as an integer.
 - __exists()__: checks to see if the dictionary holds a specific key
-- __erase()__: erase a specific key from the dictionar and returns a new dictionary
+- __erase()__: erase a specific key from the dictionary and returns a new dictionary
 
 
 
@@ -450,7 +450,7 @@ This all makes simple structs extremely simple to create and use.
 
 #### Not possible:
 
-- You cannot make constructors. There is only *one* way to initialize the members, via the constructor - which always takes *all* members
+- You cannot make constructors. There is only *one* way to initialize the members, via the constructor, which always takes *all* members
 - There is no way to directly initialize a member when defining the struct.
 - There is no way to have several different constructors, instead create explicit functions like make_square().
 - If you want a default constructor, implement one yourself: ```rect make_zero_rect(){ return rect(0, 0) }```.
@@ -582,19 +582,19 @@ When you reference one of the built in primitive types by name, you are accessin
 	assert(to_string(typeid([1,2,3])) == "[int]")
 ```
 
-A typeid is a propery Floyd value - you can copy it, compare it, convert it to strings, store it in dictionaries or whatever.
+A typeid is a proper Floyd value: you can copy it, compare it, convert it to strings, store it in dictionaries or whatever.
 
 
 
 # JSON_VALUE
 
-JSON is very central to Floyd. JSON is a way to store composite values in a tree-shap in a simple and standardazied way. Since Floyd mainly works with values this is a perfect match for serialzing any Floyd value to text and back. It is built directly into the language as the default serialized format for Floyd values. If can be used for custom file format and protocol and to interface with other JSON-based systems. All structs also automatically are serializable to and from JSON automatically.
+JSON is very central to Floyd. JSON is a way to store composite values in a tree shape in a simple and standardized way. Since Floyd mainly works with values this is a perfect match for serializing any Floyd value to text and back. It is built directly into the language as the default serialized format for Floyd values. If can be used for custom file format and protocol and to interface with other JSON-based systems. All structs also automatically are serializable to and from JSON automatically.
 
 JSON format is also used by the compiler and language itself to store intermediate Floyd program code, for all logging and for debugging features.
 
-- Floyd has built in support for JSON in the language. It has a a JSON type called __json_value__ and functions to pack & unpack strings / json files into the json-type.
+- Floyd has built in support for JSON in the language. It has a JSON type called __json_value__ and functions to pack & unpack strings / JSON files into the JSON type.
 
-- Floyd has support for json literals: you can put json data directly into a Floyd file. Great for copy-pasting snippets for tests etc.
+- Floyd has support for JSON literals: you can put JSON data directly into a Floyd file. Great for copy-pasting snippets for tests.
 
 Read more about JSON here: www.json.org
 
@@ -611,16 +611,16 @@ This value can contain any of the 6 JSON-compatible value:
 
 __json_value__: 	This is an immutable value containing any JSON. You can query it for its contents and alter it (you get new values).
 
-Notice that json_value can contain an entire huge json file, with a big tree of json objects and arrays etc. A json_value can also also contain just a string or a number or a single json array of strings. The json_value is used for every node in the json_value tree.
+Notice that json_value can contain an entire huge JSON file, with a big tree of JSON objects and arrays and so on. A json_value can also contain just a string or a number or a single JSON array of strings. The json_value is used for every node in the json_value tree.
 
 
 ### JSON LITERALS
 
-You can directly embedd json inside source code file. Simple / no escaping needed. Just paste a snippet into the Floyd source code. Use this for test values etc. Round trip. Since the JSON code is not a string literal but actual Floyd syntax, there are not problems with escaping strings etc. The Floyd parser will create floyd strings, dictionaries and so on for the JSON data. Then it will create a json_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown.
+You can directly embed JSON inside source code file. Simple / no escaping needed. Just paste a snippet into the Floyd source code. Use this for test values. Round trip. Since the JSON code is not a string literal but actual Floyd syntax, there are not problems with escaping strings. The Floyd parser will create floyd strings, dictionaries and so on for the JSON data. Then it will create a json_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown.
 
-This all means you can write Floyd code that at runtime creates all or parts of a composite JSON value. Also: you can nest JSONs in eachother.
+This all means you can write Floyd code that at runtime creates all or parts of a composite JSON value. Also: you can nest JSONs in each other.
 
-Example json:
+Example JSON:
 
 	let json_value a = 13
 	let json_value b = "Hello!"
@@ -645,7 +645,7 @@ Example json:
 		}
 	)
 
-Notice that json objects are more lax than Floyd: you can mix different types of values in the same object or array. Floyd is stricter: a vector can only hold one type of element, same with dictionaries.
+Notice that JSON objects are more lax than Floyd: you can mix different types of values in the same object or array. Floyd is stricter: a vector can only hold one type of element, same with dictionaries.
 
 
 
@@ -655,7 +655,7 @@ Returns the actual type of this value stores inside the json_value. It can be on
 
 	typeid get_json_type(json_value v)
 
-This is how you check the type of json value and reads their different values.
+This is how you check the type of JSON value and reads their different values.
 
 |Input						| Result 		| Int
 |---						| ---			|---
@@ -728,7 +728,7 @@ Many of the core functions work with json_value, but it often depends on the act
 Serializing any Floyd value is a built in mechanism. It is always true-deep. The result is always a normalized JSON text file in a Floyd string.
 
 
-Converting a floyd json_value to a json string and back. The json-string can be directly read or written to a text file, sent via a protocol etc.
+Converting a floyd json_value to a JSON string and back. The JSON-string can be directly read or written to a text file, sent via a protocol and so on.
 
 	string encode_json(json_value v)
 	json_value decode_json(string s)
@@ -750,7 +750,7 @@ Converts any Floyd value, (including any type of nesting of custom structs, coll
 
 # FUNCTION TOOLBOX
 
-These are built in primitves you can always rely on being available.
+These are built in primitives you can always rely on being available.
 
 
 ### map(), filter(), reduce()
@@ -782,8 +782,7 @@ Notice: your function f can send messages to a clock — this means another cloc
 
 Notice: using this function exposes potential for parallelism.
 
-??? IDEA: Make this a two-step process. First analyse tasks into an execution description. Then use that description to run the tasks. ??? IDEA: Allows grouping small tasks into lumps. Allow you to reuse the dependency graph but tag some tasks NOP. This lets you keep the execution description for next time, if tasks are the same. Also lets you inspect the execution descriptio
-n & improve it or create one for scratch.
+??? IDEA: Make this a two-step process. First analyze the tasks into an execution description. Then use that description to run the tasks. ??? IDEA: Allows grouping small tasks into lumps. Allow you to reuse the dependency graph but tag some tasks NOP. This lets you keep the execution description for next time, if tasks are the same. Also lets you inspect the execution description and improve it or create one for scratch.
 
 
 ### print()
@@ -828,7 +827,7 @@ If the expression evaluates to false, the program will log to the output, then b
 
 TODO POC
 
-In your code you write probe(my_temp, "My intermediate value", "key-1") to let clients log my_temp. The probe will appear as a hook in tools and you can chose to log the value and make stats etc. Argument 2 is a descriptive name, argument 3 is a string-key that is scoped to the function and used to know if several probe()-statements log to the same signal or not.
+In your code you write probe(my_temp, "My intermediate value", "key-1") to let clients log my_temp. The probe will appear as a hook in tools and you can chose to log the value and make stats and so on. Argument 2 is a descriptive name, argument 3 is a string-key that is scoped to the function and used to know if several probe()-statements log to the same signal or not.
 
 
 
@@ -844,12 +843,13 @@ You often use this function to convert numbers to strings.
 
 ### to\_pretty\_string()
 
-Converts its input to a string of json data that is formatted nicely with indentations. It works with any Floyd value.
+Converts its input to a string of JSON data that is formatted nicely with indentations. It works with any Floyd value.
 
 
 
 #### typeof()
-Return the type of its input value. The returned typeid-value is a complete Floyd type and can be stored, compared etc.
+
+Return the type of its input value. The returned typeid-value is a complete Floyd type and can be stored, compared and so on.
 
 	typeid typeof(any)
 
@@ -905,7 +905,7 @@ Returns the size of a collection -- the number of elements.
 
 ### find()
 
-Searched for a value in a colletion and returns its index or -1.
+Searched for a value in a collection and returns its index or -1.
 
 	int find(obj, value)
 
@@ -949,7 +949,7 @@ Erase an element in a dictionary, as specified using its key.
 
 ### push_back()
 
-Appends an element to the end of a collection. A new collecton is returned, the original unaffected.
+Appends an element to the end of a collection. A new collection is returned, the original unaffected.
 
 |Type		  	| Example						| Result |
 |---			|---							| ---

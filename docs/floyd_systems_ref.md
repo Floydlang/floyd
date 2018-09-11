@@ -12,13 +12,13 @@ Highest level of abstraction and describes something that delivers value to its 
 
 ## SOURCE FILES
 
-**example.floydsys** -- stores the top of the system including people, connections etc. It also *fully* defines every component and how they are implemented with actors and wires, the setup of tweakers and so on.
+**example.floydsys** -- stores the top of the system including people, connections and so on. It also *fully* defines every component and how they are implemented with actors and wires, the setup of tweakers and so on.
 
 **example.fecomp** -- effect-component source file. Defines a reusable component that has *effects* -- that is can call mutating functions. It cannot keep its own state but state may be stored in OS or file system or servers.
 
 **example.fpcomp** -- defines a pure component where every function is pure and has no side effects.
 
-Component source files store all their functions and enums etc. They list which other components they need.
+Component source files store all their functions and enums and so on. They list which other components they need.
 
 
 
@@ -27,16 +27,16 @@ Component source files store all their functions and enums etc. They list which 
 
 You only have one of these in a software system. Extension is .floydsys.
 
-There is only one dedicated keyword: **software-system**. Its contents is encoded as JSON object and designed to be either handcoded or processed by tools.
+There is only one dedicated keyword: **software-system**. Its contents is encoded as JSON object and designed to be either hand-coded or processed by tools.
 
 
 |Key		| Meaning
 |:---	|:---	
 |**name**		| name of your software system. Something short. JSON String.
 |**desc**		| longer description of your software system. JSON String.
-|**people**	| personas involved in using or maintainging your system. Don't go crazy. JSON object.
+|**people**	| personas involved in using or maintaining your system. Don't go crazy. JSON object.
 |**connections**	| the most important relationships between people and the containers. Be specific "user sends email using gmail" or "user plays game on device" or "mobile app pulls user account from server based on login". JSON array.
-|**containers**	| named. Your iOS app, your server, the email system. Notice that you map gmail-server as a container, even though its a gigantic software system by itself. JSON object.
+|**containers**	| named. Your iOS app, your server, the email system. Notice that you map gmail-server as a container, even though it's a gigantic software system by itself. JSON object.
 
 
 
@@ -145,7 +145,7 @@ An actor is a function with this signature:
 	x_state_t my_actor_main([x_state_t] history, y_message message){
 	}
 
-It can used from "clocks" sections to instantiate an actor based on that function. Ususally actor functions are one-offs and not reusable several time.
+It can used from "clocks" sections to instantiate an actor based on that function. Usually actor functions are one-offs and not reusable several time.
 
 ??? allow circular references at compile time.
 
@@ -155,7 +155,7 @@ It can used from "clocks" sections to instantiate an actor based on that functio
 # RUNTIMES
 TBD
 
-At the container level you can instantiate different runtimes, like memory allocators, memory pools, file system support, image caches, background loaders etc. These can then be accessed inside the actor functions and passed to the functions they call.
+At the container level you can instantiate different runtimes, like memory allocators, memory pools, file system support, image caches, background loaders and so on. These can then be accessed inside the actor functions and passed to the functions they call.
 
 
 
@@ -167,7 +167,7 @@ There is pure components and effect components. Keywords are **pure-component** 
 
 ??? define external interface of component? Versions?
 
-A pure component has no side effects, have no state and can't talk to the outside world. Pure logic. They can use other pure components but never effect-components.
+A pure component has no side effects, have no state and can't talk to the outside world. They can use other pure components but never effect-components.
 
 An effect component *can* have side effects. It cannot keep its own state -- only state in the outside world. It can use both pure-components and effect-components.
 
@@ -192,7 +192,7 @@ pure-component {
 }
 ```
 
-The rest of the component file is normal Floyd Speak code: structs, enums, function definitions and constants etc.
+The rest of the component file is normal Floyd Speak code: structs, enums, function definitions and constants and so on.
 
 
 
@@ -206,18 +206,18 @@ A bunch of standard components come with Floyd.
 ## LOCAL FILE SYSTEM COMPONENT
 
 ??? TBD
-All file system functions are blocking. If you want to do something else while waiting, run the file system calls in a separate clock. There are no futures, callbacks, async / await etc. It is very easy to write a function that does lots of processing and conditional file system calls etc and run it concurrently with other things.
+All file system functions are blocking. If you want to do something else while waiting, run the file system calls in a separate actor. There are no futures, callbacks, async / await or equivalents. It is very easy to write a function that does lots of processing and conditional file system calls etc and run it concurrently with other things.
 
 ??? Simple file API
-	file_handle open_fileread(string path) unpure
-	file_handle make_file(string path) unpure
-	void close_file(file_handle h) unpure
+	file_handle open_fileread(string path) impure
+	file_handle make_file(string path) impure
+	void close_file(file_handle h) impure
 
-	vec<ubyte> v = readfile(file_handle h, int start = 0, int size = 100) unpure
-	delete_fsnode(string path) unpure
+	vec<ubyte> v = readfile(file_handle h, int start = 0, int size = 100) impure
+	delete_fsnode(string path) impure
 
-	make_dir(string path, string name) unpure
-	make_file(string path, string name) unpure
+	make_dir(string path, string name) impure
+	make_file(string path, string name) impure
 
 
 
@@ -225,9 +225,9 @@ All file system functions are blocking. If you want to do something else while w
 
 ??? TBD
 
-	int on_commandline_input(string args) unpure
-	void print(string text) unpure
-	string readline() unpure
+	int on_commandline_input(string args) impure
+	void print(string text) impure
+	string readline() impure
 
 
 
@@ -249,7 +249,7 @@ This is a way to create a component from the C language, using the C ABI.
 
 ??? TBD
 
-Use to save a value to local file system efficiently. Only diffs are stored / loaded. Allows cross-session persistance. Uses SHA1 and content deduplication.
+Use to save a value to local file system efficiently. Only diffs are stored / loaded. Allows cross-session persistence. Uses SHA1 and content deduplication.
 
 
 
@@ -257,7 +257,7 @@ Use to save a value to local file system efficiently. Only diffs are stored / lo
 
 ??? TBD
 
-Use to save a value to local file system efficiently. Only diffs are stored / loaded. Allows cross-session persistance. Uses SHA1 and content deduplication.
+Use to save a value to local file system efficiently. Only diffs are stored / loaded. Allows cross-session persistence. Uses SHA1 and content deduplication.
 
 
 
@@ -275,8 +275,8 @@ You add probes to wires, actors and individual functions and expressions. They g
 
 ??? TBD
 
-- Pulse everytime a function is called
-- Pulse everytime a clock ticks
+- Pulse every time a function is called
+- Pulse every time a clock ticks
 - Record value of all clocks at all time, including process PC. Oscilloscope & log
 
 
@@ -300,7 +300,7 @@ You add probes to wires, actors and individual functions and expressions. They g
 
 # TWEAKERS
 
-Tweakers are inserted onto the wires and clocks and functions and expressions of the code and affect how the runtime and language executes that code, without changing its logic. Caching, batching, precalculation, parallelisation, hardware allocation, collection-type selection etc are the tools.
+Tweakers are inserted onto the wires and clocks and functions and expressions of the code and affect how the runtime and language executes that code, without changing its logic. Caching, batching, pre-calculation, parallelization, hardware allocation, collection-type selection are examples of what's possible.
 
 
 
@@ -318,14 +318,14 @@ Control which collection to use on a per-value instance basis.
 
 vector
 	c-array
-	hamt
+	HAMT
 	linear-write cache
 	linear-read cache
 	scatter-gather cache
 
 dictionary
 	c-array with binary search
-	hamt
+	HAMT
 	binary tree
 	hash
 	unsorted vector with searching
@@ -385,9 +385,9 @@ Make the function return a future and don't calculate the real value until clien
 
 ## PRECALC TWEAKER
 
-Prefaclucate at compile time and store statically in executable.
-Precalculate at container startup time, store in FS.
-- Precalculate / prefetch, eager
+Pre-calculate at compile time and store statically in executable.
+Pre-calculate at container startup time, store in FS.
+- Pre-calculate / prefetch, eager
 
 
 
