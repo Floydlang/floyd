@@ -475,10 +475,10 @@ Example:
 	let b = rect(0, 3)
 	let c = rect(1, 3)
 
-	asset(a == a)
-	asset(a == b)
-	asset(a != c)
-	asset(c > a)
+	assert(a == a)
+	assert(a == b)
+	assert(a != c)
+	assert(c > a)
 ```
 
 A simple struct works almost like a collection with fixed number of named elements. It is only possible to make new instances by specifying every member or copying / modifying an existing one.

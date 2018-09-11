@@ -153,10 +153,10 @@ Floyd is not a functional language. You write statements, change local variables
 	let c = photo(1, 3, [ 0.0, 1.0, 2.0 ]);
 
 	//	Try automatic features for equality
-	asset(a == a);
-	asset(a != b);
-	asset(a == c);
-	asset(c > b);
+	assert(a == a);
+	assert(a != b);
+	assert(a == c);
+	assert(c > b);
 
 
 
