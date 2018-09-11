@@ -138,25 +138,25 @@ Floyd is not a functional language. You write statements, change local variables
 
 	//  Make simple, ready-for use struct.
 	struct photo {
-		int width;
-		int height;
-		[float] pixels;
-	};
+		int width
+		int height
+		[float] pixels
+	}
 
 	//  Try the new struct.
-	let a = photo(1, 3, [ 0.0, 1.0, 2.0 ]);
-	assert(a.width == 1);
-	assert(a.height == 3);
-	assert(a.pixels[2] == 2.0);
+	let a = photo(1, 3, [ 0.0, 1.0, 2.0 ])
+	assert(a.width == 1)
+	assert(a.height == 3)
+	assert(a.pixels[2] == 2.0)
 
-	let b = photo(0, 3, []);
-	let c = photo(1, 3, [ 0.0, 1.0, 2.0 ]);
+	let b = photo(0, 3, [])
+	let c = photo(1, 3, [ 0.0, 1.0, 2.0 ])
 
 	//	Try automatic features for equality
-	assert(a == a);
-	assert(a != b);
-	assert(a == c);
-	assert(c > b);
+	assert(a == a)
+	assert(a != b)
+	assert(a == c)
+	assert(c > b)
 
 
 

@@ -290,9 +290,9 @@ The result is the equivalent to
 
 ```
 	let b = 3
-	{ a = 0; print(a + b); }
-	{ a = 1; print(a + b); }
-	{ a = 2; print(a + b); }
+	{ a = 0; print(a + b) }
+	{ a = 1; print(a + b) }
+	{ a = 2; print(a + b) }
 ```
 
 The loop is expanded before the first time the body is called. There is no way to have any other kind of condition expression, that relies on the result of the body, etc.
@@ -516,7 +516,7 @@ This works with nested values too:
 
 ```
 	//	Define an image-struct that holds some stuff, including a pixel struct.
-	struct image { string name; rect size; };
+	struct image { string name; rect size }
 
 	let a = image("Cat image.png", rect(512, 256))
 
