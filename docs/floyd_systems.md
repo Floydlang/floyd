@@ -168,23 +168,6 @@ The goal with Floyd's concurrency model is:
 Inspirations for Floyd's concurrency model are CSP, Erlang, Go routines and channels and Clojure Core.Async.
 
 
-##### THREADING BACKGROUND
-
-- **Hardware thread** - separate physical transistors that can execute code with a call stack. Typically 1 - 16 are available on a machine. They run all the time.
-
-- **OS thread** - a separate thread of execution provided by the operating system. They are expensive, you typically should have less than 100 and they are expensive to schedule onto hardware threads by the OS. The OS schedules the OS threads onto available hardware threads and preemptively interrupts them regularly to give the hardware thread to another OS thread.
-
-- **Green thread** -- virtual threads, each with their own call-stack. These model the software concurrency and each represents something that can be run on a separate OS thread or hardware thread. How to actually run green threads is up to the runtime -- you don't know or care. This is a way to *expose* concurrency from your code. Green threads are mapped to OS threads by the Floyd runtime. It uses cooperative multitasking to do this switching. Remember that 
-
-- **Task** - a function that can execute independently when all its inputs are available. It can run on any type of thread.
-
-A thread can take time to finish its work because:
-
-1. It is executing lots of instructions
-2. It blocks on something external - waiting for data to arrive from the internet, slow RAM memory
-3. It doesn't get clock cycles from the system
-
-
 ##### ACTORS: INBOX, STATE, PROCESSING FUNCTION
 
 For each independent mutable state and/or "thread" you want in your container, you need to insert an Actor. Actors are statically instantiated in a container -- you cannot allocate them at runtime.
