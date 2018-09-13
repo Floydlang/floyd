@@ -3169,3 +3169,123 @@ OFF_QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//	FLOYD SYSTEMS TESTS
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+const auto test_ss = R"(
+
+	software-system {
+		"name": "My Arcade Game",
+		"desc": "Space shooter for mobile devices, with connection to a server.",
+
+		"people": {
+			"Gamer": "Plays the game on one of the mobile apps",
+			"Curator": "Updates achievements, competitions, make custom on-off maps",
+			"Admin": "Keeps the system running"
+		},
+		"connections": [
+			{ "source": "Game", "dest": "iphone app", "interaction": "plays", "tech": "" }
+		],
+		"containers": {
+			"gmail mail server": {},
+
+			"iphone app": {
+				"tech": "Swift, iOS, Xcode, Open GL",
+				"desc": "Mobile shooter game for iOS.",
+
+				"clocks": {
+					"main": {
+						"a": "my_gui_main",
+						"b": "iphone-ux"
+					},
+
+					"com-clock": {
+						"c": "server_com"
+					},
+					"opengl_feeder": {
+						"d": "renderer"
+					}
+				},
+				"connections": [
+					{ "source": "b", "dest": "a", "interaction": "b sends messages to a", "tech": "OS call" },
+					{ "source": "b", "dest": "c", "interaction": "b also sends messages to c, which is another clock", "tech": "OS call" }
+				],
+				"components": [
+					"My Arcade Game-iphone-app",
+					"My Arcade Game-logic",
+					"My Arcade Game-servercom",
+					"OpenGL-component",
+					"Free Game Engine-component",
+					"iphone-ux-component"
+				]
+			},
+
+			"Android app": {
+				"tech": "Kotlin, Javalib, Android OS, OpenGL",
+				"desc": "Mobile shooter game for Android OS.",
+ 
+				"clocks": {
+					"main": {
+						"a": "my_gui_main",
+						"b": "iphone-ux"
+					},
+					"com-clock": {
+						"c": "server_com"
+					},
+					"opengl_feeder": {
+						"d": "renderer"
+					}
+				},
+				"components": [
+					"My Arcade Game-android-app",
+					"My Arcade Game-logic",
+					"My Arcade Game-servercom",
+					"OpenGL-component",
+					"Free Game Engine-component",
+					"Android-ux-component"
+				]
+			},
+			"Game Server with players & admin web": {
+				"tech": "Django, Pythong, Heroku, Postgres",
+				"desc": "The database that stores all user accounts, levels and talks to the mobile apps and handles admin tasks.",
+
+				"clocks": {
+					"main": [
+					]
+				},
+				"components": [
+					"My Arcade Game-logic",
+					"My Arcade Game server logic"
+				]
+			}
+		}
+	}
+	result = 123
+)";
+
+
+
+QUARK_UNIT_TEST_VIP("software-system", "", "", ""){
+	const auto result = test__run_return_result(test_ss, {});
+	ut_compare_values(result, value_t::make_int(123));
+}
+
+

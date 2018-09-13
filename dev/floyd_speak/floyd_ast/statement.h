@@ -401,6 +401,28 @@ namespace floyd {
 		}
 
 
+		//////////////////////////////////////		software_system_statement_t
+
+
+		struct software_system_statement_t {
+			bool operator==(const software_system_statement_t& other) const {
+				return _json_data == other._json_data;
+			}
+
+			const json_t _json_data;
+		};
+
+        public: statement_t(const software_system_statement_t& value) :
+			_software_system(std::make_shared<software_system_statement_t>(value))
+		{
+		}
+		public: static statement_t make__software_system_statement(
+			json_t json_data
+		){
+			return statement_t(software_system_statement_t{ json_data });
+		}
+
+
 		//////////////////////////////////////		expression_statement_t
 
 
@@ -454,6 +476,9 @@ namespace floyd {
 			else if(_while){
 				return compare_shared_values(_while, other._while);
 			}
+			else if(_software_system){
+				return compare_shared_values(_while, other._while);
+			}
 			else{
 				QUARK_ASSERT(false);
 				return false;
@@ -472,6 +497,7 @@ namespace floyd {
 			count = count + (_if != nullptr ? 1 : 0);
 			count = count + (_for != nullptr ? 1 : 0);
 			count = count + (_while != nullptr ? 1 : 0);
+			count = count + (_software_system != nullptr ? 1 : 0);
 			count = count + (_expression != nullptr ? 1 : 0);
 			QUARK_ASSERT(count == 1);
 
@@ -494,6 +520,8 @@ namespace floyd {
 			else if(_for){
 			}
 			else if(_while){
+			}
+			else if(_software_system){
 			}
 			else if(_expression){
 			}
@@ -559,6 +587,9 @@ namespace floyd {
 					&& _while->_body.check_types_resolved()
 					;
 			}
+			else if(_software_system){
+				return true;
+			}
 			else if(_expression){
 				return _expression->_expression.check_types_resolved();
 			}
@@ -583,6 +614,7 @@ namespace floyd {
 		public: const std::shared_ptr<ifelse_statement_t> _if;
 		public: const std::shared_ptr<for_statement_t> _for;
 		public: const std::shared_ptr<while_statement_t> _while;
+		public: const std::shared_ptr<software_system_statement_t> _software_system;
 		public: const std::shared_ptr<expression_statement_t> _expression;
 	};
 

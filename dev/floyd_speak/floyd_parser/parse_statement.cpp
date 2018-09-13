@@ -425,7 +425,7 @@ std::pair<ast_json_t, seq_t> parse_while_statement(const seq_t& pos){
 //	return std::pair<json_t, seq_t>(json_t(), seq_t(""));
 }
 
-QUARK_UNIT_TEST("", "parse_while_statement()", "for(){}", ""){
+QUARK_UNIT_TEST("", "parse_while_statement()", "while(){}", ""){
 	ut_compare_jsons(
 		parse_while_statement(seq_t("while (a < 10) { print(a) }")).first._value,
 		parse_json(seq_t(
@@ -448,6 +448,32 @@ QUARK_UNIT_TEST("", "parse_while_statement()", "for(){}", ""){
 		)).first
 	);
 }
+
+
+//////////////////////////////////////////////////		parse_software_system()
+
+
+/*
+	software_system: JSON
+*/
+
+
+
+pair<ast_json_t, seq_t> parse_software_system(const seq_t& s){
+	const auto ss_pos = if_first(skip_whitespace(s), keyword_t::k_software_system);
+	if(ss_pos.first == false){
+		throw std::runtime_error("Syntax error");
+	}
+
+	//??? Instead of parsing a static JSON literal, we could parse a Floyd expression that results in a JSON value = use variables etc.
+//	const auto expr = parse_expression_seq(ss_pos.second);
+	std::pair<json_t, seq_t> json_pos = parse_json(ss_pos.second);
+
+	const auto r = ast_json_t{json_t::make_array({ keyword_t::k_software_system, json_pos.first })};
+	return { r, json_pos.second };
+}
+
+
 
 
 }	//	floyd

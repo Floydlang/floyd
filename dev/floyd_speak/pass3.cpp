@@ -528,6 +528,10 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const anal
 		QUARK_ASSERT(e.second.check_types_resolved());
 		return { e.first, std::make_shared<statement_t>(e.second) };
 	}
+	else if(statement._software_system){
+		return { vm, std::make_shared<statement_t>(statement
+		) };
+	}
 	else if(statement._expression){
 		const auto e = analyse_expression_statement(vm, *statement._expression);
 		QUARK_ASSERT(e.second.check_types_resolved());
@@ -642,7 +646,7 @@ std::pair<analyser_t, expression_t> analyse_load2(const analyser_t& vm, const ex
 	Case B:
 		b = { "one": 1, "two": "zwei" };
 
-	rhs is an invalid dict construction -- you can't mix string/int values in a floyd dift. BUT: it's a valid JSON!
+	rhs is an invalid dict construction -- you can't mix string/int values in a floyd dict. BUT: it's a valid JSON!
 */
 std::pair<analyser_t, expression_t> analyse_construct_value_expression(const analyser_t& vm, const expression_t& e, const typeid_t& target_type){
 	QUARK_ASSERT(vm.check_invariant());
@@ -1378,7 +1382,7 @@ std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analys
 
 
 /*
-	- Inserta automatic type-conversions from string -> json_value etc.
+	- Insert automatic type-conversions from string -> json_value etc.
 */
 expression_t auto_cast_expression_type(const expression_t& e, const floyd::typeid_t& wanted_type){
 	QUARK_ASSERT(e.check_invariant());

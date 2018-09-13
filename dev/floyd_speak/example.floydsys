@@ -1,0 +1,117 @@
+software-system {
+	"name": "My Arcade Game",
+	"desc": "Space shooter for mobile devices, with connection to a server.",
+	"people": {
+		"Gamer": "Plays the game on one of the mobile apps",
+		"Curator": "Updates achievements, competitions, make custom on-off maps",
+		"Admin": "Keeps the system running"
+	},
+	"connections": [
+		{ "source": "Game", "dest": "iphone app", "interaction": "plays", "tech": "" }
+	],
+	"containers": {
+		"gmail mail server": {},
+
+		"iphone app": {
+			"tech": "Swift, iOS, Xcode, Open GL",
+			"desc": "Mobile shooter game for iOS.",
+
+			"clocks": {
+				"main": [
+					"a": "my_gui_main",
+					"b": "iphone-ux"
+				],
+
+				"com-clock": [
+					"c": "server_com"
+				],
+				"opengl_feeder": [
+					"d": "renderer"
+				]
+			},
+			"connections": [
+				{ "b", "a", "b sends messages to a" },
+				{ "b", "c", "b also sends messages to c, which is another clock" }
+			],
+			"probes_and_tweakers": [],
+			"components": [
+				"My Arcade Game-iphone-app",
+				"My Arcade Game-logic",
+				"My Arcade Game-servercom",
+				"OpenGL-component",
+				"Free Game Engine-component",
+				"iphone-ux-component"
+			]
+		},
+
+		"Android app": {
+			"tech": "Kotlin, Javalib, Android OS, OpenGL",
+			"desc": "Mobile shooter game for Android OS.",
+			
+			"clocks": {
+				"main": [
+					"a": "my_gui_main",
+					"b": "iphone-ux"
+				],
+				"com-clock": [
+					"c": "server_com"
+				],
+				"opengl_feeder": [
+					"d": "renderer"
+				]
+			},
+			"probes_and_tweakers": [],
+			"components": [
+				"My Arcade Game-android-app",
+				"My Arcade Game-logic",
+				"My Arcade Game-servercom",
+				"OpenGL-component",
+				"Free Game Engine-component",
+				"Android-ux-component"
+			]
+		},
+		"Game Server with players & admin web": {
+			"tech": "Django, Pythong, Heroku, Postgres",
+			"desc": "The database that stores all user accounts, levels and talks to the mobile apps and handles admin tasks.",
+
+			"clocks": {
+				"main": [
+				]
+			},
+			"probes_and_tweakers": [],
+			"components": [
+				"My Arcade Game-logic",
+				"My Arcade Game server logic"
+			]
+		}
+	}
+}
+
+//////////////////      My GUI actor code
+
+struct hedgehog_gui_state_t {
+	int timestamp
+	[xyz_record_t] recs
+}
+
+struct hedgehog_gui_message_t {
+	int timestamp
+	int mouse_x
+	int mouse_y
+	case stop: struct { int duration }
+	case on_mouse_move:
+	case on_click: struct { int button_index }
+}
+
+//??? specify outputs too: gui can have several outputs. They have different message-types.
+
+hedgehog_gui_state_t my_gui_main([hedgehog_gui_state_t] history, hedgehog_gui_message_t message){
+	if(message.type: on_mouse_move){
+	}
+	else if(message.type: stop){
+		b.send(quit_to_homescreen)
+	}
+	else{
+	}
+}
+

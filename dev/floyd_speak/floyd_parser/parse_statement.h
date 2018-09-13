@@ -125,6 +125,9 @@ namespace floyd {
 	std::pair<ast_json_t, seq_t> parse_while_statement(const seq_t& pos);
 
 
+
+	std::pair<ast_json_t, seq_t> parse_software_system(const seq_t& s);
+
 }	//	floyd
 
 

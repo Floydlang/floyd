@@ -63,6 +63,9 @@ std::pair<ast_json_t, seq_t> parse_statement(const seq_t& s){
 	else if(is_first(pos, keyword_t::k_mutable)){
 		return parse_bind_statement(pos);
 	}
+	else if(is_first(pos, keyword_t::k_software_system)){
+		return parse_software_system(pos);
+	}
 	else {
 		return parse_prefixless_statement(pos);
 	}

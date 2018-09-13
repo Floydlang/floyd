@@ -276,6 +276,12 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 
 		return statement_t::make__while_statement(expression2, body_t{body_statements2});
 	}
+	else if(type == keyword_t::k_software_system){
+		QUARK_ASSERT(statement.get_array_size() == 2);
+		const auto json_data = statement.get_array_n(1);
+
+		return statement_t::make__software_system_statement(json_data);
+	}
 
 	//	[ "expression-statement", EXPRESSION ]
 	else if(type == "expression-statement"){
@@ -456,6 +462,12 @@ ast_json_t statement_to_json(const statement_t& e){
 			json_t(keyword_t::k_while),
 			expression_to_json(e._while->_condition)._value,
 			body_to_json(e._while->_body)._value
+		})};
+	}
+	else if(e._software_system){
+		return ast_json_t{json_t::make_array({
+			json_t(keyword_t::k_software_system),
+			e._software_system->_json_data
 		})};
 	}
 	else if(e._expression){

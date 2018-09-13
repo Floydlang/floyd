@@ -450,6 +450,10 @@ bcgen_body_t bcgen_body_block(bcgenerator_t& vm, const body_t& body){
 				body_acc = bcgen_while_statement(vm, *statement._while, body_acc);
 				QUARK_ASSERT(body_acc.check_invariant());
 			}
+			else if(statement._software_system){
+				body_acc = body_acc;//bcgen_while_statement(vm, *statement._while, body_acc);
+				QUARK_ASSERT(body_acc.check_invariant());
+			}
 			else if(statement._expression){
 				body_acc = bcgen_expression_statement(vm, *statement._expression, body_acc);
 				QUARK_ASSERT(body_acc.check_invariant());
