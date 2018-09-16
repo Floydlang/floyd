@@ -479,6 +479,14 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_optional_trailing_function_args(cons
 		return { make_shared<typeid_t>(type), s };
 	}
 }
+
+std::pair<bool, seq_t> read_type_verify(const seq_t& s){
+	QUARK_ASSERT(s.check_invariant());
+
+	const auto a = read_type(s);
+	return { a.first != nullptr, a.second };
+}
+
 std::pair<std::shared_ptr<typeid_t>, seq_t> read_type(const seq_t& s){
 	const auto type_pos = read_basic_or_vector(s);
 	if(type_pos.first == nullptr){
@@ -542,12 +550,12 @@ QUARK_UNIT_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 
-QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
+QUARK_UNIT_TEST("", "read_type()", "", ""){
 	const auto r = read_type(seq_t("string (double a, double b)"));
 	QUARK_TEST_VERIFY(	*r.first ==  typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_double(), typeid_t::make_double() })	);
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
-QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
+QUARK_UNIT_TEST("", "read_type()", "", ""){
 	const auto r = read_type(seq_t("int (double a) ()"));
 
 	QUARK_TEST_VERIFY( *r.first == typeid_t::make_function(
@@ -557,7 +565,7 @@ QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
 	);
 	QUARK_TEST_VERIFY(	r.second == seq_t("") );
 }
-QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
+QUARK_UNIT_TEST("", "read_type()", "", ""){
 	const auto r = read_type(seq_t("bool (int (double a) b)"));
 
 	QUARK_TEST_VERIFY(

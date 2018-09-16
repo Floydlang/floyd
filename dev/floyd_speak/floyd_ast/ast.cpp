@@ -16,7 +16,6 @@
 
 namespace floyd {
 
-
 	////////////////////////			ast_t
 
 
@@ -37,6 +36,5 @@ namespace floyd {
 			}
 		)};
 	}
-
 
 } //	floyd

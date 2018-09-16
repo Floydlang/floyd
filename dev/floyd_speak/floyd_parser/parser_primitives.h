@@ -109,6 +109,7 @@ namespace floyd {
 
 
 	/*
+??? move this out of this file -- parser should not know about typeid_t.
 		Skip leading whitespace, get string while type-char.
 		See language reference
 		Validates that this is a legal string, with legal characters. Exception.
@@ -117,6 +118,8 @@ namespace floyd {
 	*/
 	std::pair<std::shared_ptr<typeid_t>, seq_t> read_type(const seq_t& s);
 	std::pair<typeid_t, seq_t> read_required_type(const seq_t& s);
+
+	std::pair<bool, seq_t> read_type_verify(const seq_t& s);
 
 
 	//////////////////////////////////////		HIGH LEVEL

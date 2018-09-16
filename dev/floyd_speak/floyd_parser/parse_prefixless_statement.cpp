@@ -105,7 +105,7 @@ implicit_statement detect_implicit_statement_lookahead(const seq_t& s){
 		//	Detect "int test = 123" which is common illegal syntax, where you forgot "mutable" or "let".
 
 		try {
-			const auto maybe_type = read_type(s);
+			const auto maybe_type = read_type_verify(s);
 			if(maybe_type.first){
 				if(is_identifier_and_equal(maybe_type.second)){
 					return implicit_statement::k_error;
