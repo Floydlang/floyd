@@ -1384,22 +1384,22 @@ bc_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_t>& arg
 	return bc_frame_t(instrs2, symbols2, args);
 }
 
-bc_program_t generate_bytecode(const quark::trace_context_t& tracer, const semantic_ast_t& pass3){
-	QUARK_ASSERT(pass3.check_invariant());
+bc_program_t generate_bytecode(const quark::trace_context_t& tracer, const semantic_ast_t& ast){
+	QUARK_ASSERT(ast.check_invariant());
 
 	QUARK_CONTEXT_SCOPED_TRACE(tracer, "generate_bytecode");
 
-	QUARK_CONTEXT_TRACE_SS(tracer, "INPUT:  " << json_to_pretty_string(ast_to_json(pass3._checked_ast)._value));
+	QUARK_CONTEXT_TRACE_SS(tracer, "INPUT:  " << json_to_pretty_string(ast_to_json(ast._checked_ast)._value));
 
-	bcgenerator_t a(pass3._checked_ast);
+	bcgenerator_t a(ast._checked_ast);
 
 	const auto global_body = bcgen_body_top(a, a._imm->_ast_pass3._globals);
 	const auto globals2 = make_frame(global_body, {});
 	a._call_stack.push_back(bcgen_environment_t{ &global_body });
 
 	std::vector<const bc_function_definition_t> function_defs2;
-	for(int function_id = 0 ; function_id < pass3._checked_ast._function_defs.size() ; function_id++){
-		const auto& function_def = *pass3._checked_ast._function_defs[function_id];
+	for(int function_id = 0 ; function_id < ast._checked_ast._function_defs.size() ; function_id++){
+		const auto& function_def = *ast._checked_ast._function_defs[function_id];
 
 		if(function_def._host_function_id){
 			const auto function_def2 = bc_function_definition_t{
@@ -1423,7 +1423,7 @@ bc_program_t generate_bytecode(const quark::trace_context_t& tracer, const seman
 		}
 	}
 
-	const auto result = bc_program_t{ globals2, function_defs2, a._types, pass3._software_system };
+	const auto result = bc_program_t{ globals2, function_defs2, a._types, ast._checked_ast._software_system };
 
 	QUARK_CONTEXT_TRACE_SS(tracer, "OUTPUT: " << json_to_pretty_string(bcprogram_to_json(result)));
 

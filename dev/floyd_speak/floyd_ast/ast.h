@@ -12,6 +12,7 @@
 #include <vector>
 #include "quark.h"
 #include "statement.h"
+#include "software_system.h"
 
 struct json_t;
 
@@ -36,6 +37,7 @@ namespace floyd {
 		/////////////////////////////		STATE
 		public: body_t _globals;
 		public: std::vector<std::shared_ptr<const floyd::function_definition_t>> _function_defs;
+		public: software_system_t _software_system;
 	};
 
 

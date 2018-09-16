@@ -28,7 +28,6 @@
 #include <map>
 #include "ast.h"
 #include "ast_value.h"
-#include "software_system.h"
 
 
 namespace floyd {
@@ -70,12 +69,11 @@ namespace floyd {
 		The semantic_ast_t is a ready-to-run program,
 	*/
 	struct semantic_ast_t {
-		semantic_ast_t(const floyd::ast_t& checked_ast, const software_system_t& software_system){
+		semantic_ast_t(const floyd::ast_t& checked_ast){
 			QUARK_ASSERT(checked_ast.check_invariant());
 			QUARK_ASSERT(check_types_resolved(checked_ast));
 
 			_checked_ast = checked_ast;
-			_software_system = software_system;
 		}
 #if DEBUG
 		public: bool check_invariant() const{
@@ -86,7 +84,6 @@ namespace floyd {
 #endif
 
 		public: floyd::ast_t _checked_ast;
-		public: software_system_t _software_system;
 	};
 
 

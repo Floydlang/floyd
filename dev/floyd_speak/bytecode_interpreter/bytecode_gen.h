@@ -149,7 +149,7 @@ namespace floyd {
 	//////////////////////////		generate_bytecode()
 
 
-	bc_program_t generate_bytecode(const quark::trace_context_t& tracer, const semantic_ast_t& pass3);
+	bc_program_t generate_bytecode(const quark::trace_context_t& tracer, const semantic_ast_t& ast);
 
 
 } //	floyd

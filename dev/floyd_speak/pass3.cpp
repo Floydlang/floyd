@@ -1599,13 +1599,11 @@ semantic_ast_t analyse(const analyser_t& a){
 	const auto result = analyse_body(analyser2, body);
 	const auto result_ast0 = ast_t{
 		._globals = result. second,
-		._function_defs = result.first._function_defs
+		._function_defs = result.first._function_defs,
+		._software_system = result.first._software_system
 	};
-	const auto result_ast1 = semantic_ast_t(
-		result_ast0,
-		result.first._software_system
-	);
 
+	const auto result_ast1 = semantic_ast_t(result_ast0);
 	QUARK_ASSERT(result_ast1._checked_ast.check_invariant());
 	QUARK_ASSERT(check_types_resolved(result_ast1._checked_ast));
 	return result_ast1;

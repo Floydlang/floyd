@@ -66,7 +66,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
 
 
 
-ast_json_t expression_to_json_xyz(const expression_t& e){
+ast_json_t expression_to_json_internal(const expression_t& e){
 	const auto opcode = e.get_operation();
 
 	if(opcode == expression_type::k_literal){
@@ -162,7 +162,7 @@ ast_json_t expressions_to_json(const std::vector<expression_t> v){
 }
 
 ast_json_t expression_to_json(const expression_t& e){
-	const auto a = expression_to_json_xyz(e);
+	const auto a = expression_to_json_internal(e);
 
 	//	Add annotated-type element to json?
 	if(e.is_annotated_shallow() && e.has_builtin_type() == false){
