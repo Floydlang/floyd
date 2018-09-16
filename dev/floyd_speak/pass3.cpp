@@ -308,7 +308,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 
 	//	Setup temporary simply so function definition can find itself = recursive.
 	//	Notice: the final type may not be correct yet, but for function defintions it is.
-	//	This logicl should be available for deduced binds too, in analyse_store_statement().
+	//	This logic should be available for deduced binds too, in analyse_store_statement().
 	vm_acc._call_stack.back()->_symbols.push_back({
 		new_local_name,
 		bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type) : symbol_t::make_immutable_local(lhs_type)
@@ -1657,13 +1657,13 @@ bool analyser_t::check_invariant() const {
 #endif
 
 
-semantic_ast_t run_pass3(const quark::trace_context_t& tracer, const floyd::ast_t& ast_pass2){
-	QUARK_ASSERT(ast_pass2.check_invariant());
+semantic_ast_t run_semantic_analysis(const quark::trace_context_t& tracer, const floyd::ast_t& ast){
+	QUARK_ASSERT(ast.check_invariant());
 
 	QUARK_CONTEXT_SCOPED_TRACE(tracer, "pass3");
 
-	QUARK_CONTEXT_TRACE_SS(tracer, "INPUT:  " << json_to_pretty_string(ast_to_json(ast_pass2)._value));
-	analyser_t a(ast_pass2);
+	QUARK_CONTEXT_TRACE_SS(tracer, "INPUT:  " << json_to_pretty_string(ast_to_json(ast)._value));
+	analyser_t a(ast);
 	const auto pass3_result = analyse(a);
 
 	QUARK_CONTEXT_TRACE_SS(tracer, "OUTPUT: " << json_to_pretty_string(ast_to_json(pass3_result._checked_ast)._value));

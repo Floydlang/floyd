@@ -519,7 +519,7 @@ ast_json_t statement_to_json(const statement_t& e){
 
 
 
-ast_t run_pass2(const quark::trace_context_t& tracer, const ast_json_t& parse_tree){
+ast_t json_to_ast(const quark::trace_context_t& tracer, const ast_json_t& parse_tree){
 	QUARK_CONTEXT_TRACE(tracer, json_to_pretty_string(parse_tree._value));
 
 	const auto program_body = astjson_to_statements(tracer, parse_tree);

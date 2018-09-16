@@ -364,8 +364,8 @@ bc_program_t compile_to_bytecode(const interpreter_context_t& context, const str
 //	QUARK_CONTEXT_TRACE(context._tracer, "Hello");
 
 	const auto& pass1 = parse_program2(context2, program);
-	const auto& pass2 = run_pass2(context2._tracer, pass1);
-	const auto& pass3 = run_pass3(context2._tracer, pass2);
+	const auto& pass2 = json_to_ast(context2._tracer, pass1);
+	const auto& pass3 = run_semantic_analysis(context2._tracer, pass2);
 	const auto bc = generate_bytecode(context2._tracer, pass3);
 
 	return bc;

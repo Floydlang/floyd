@@ -153,7 +153,7 @@ namespace floyd {
 	/*
 		Semantic Analysis -> SYMBOL TABLE + annotated AST
 	*/
-	semantic_ast_t run_pass3(const quark::trace_context_t& tracer, const floyd::ast_t& ast_pass2);
+	semantic_ast_t run_semantic_analysis(const quark::trace_context_t& tracer, const floyd::ast_t& ast);
 }
 #endif /* pass3_hpp */
 
