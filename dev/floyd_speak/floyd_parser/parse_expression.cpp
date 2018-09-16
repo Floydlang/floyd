@@ -11,7 +11,7 @@
 #include "floyd_basics.h"
 #include "parser2.h"
 #include "json_support.h"
-#include "ast_typeid.h"
+#include "ast_typeid.h"		//???	 remove -- instead use hardcoded strings.
 
 namespace floyd {
 
@@ -21,6 +21,7 @@ using std::string;
 using std::vector;
 
 using namespace parser2;
+
 
 
 /////////////////////////////////		TO JSON

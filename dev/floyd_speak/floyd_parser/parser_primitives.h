@@ -16,7 +16,6 @@
 #include "quark.h"
 #include "text_parser.h"
 #include "floyd_basics.h"
-#include "ast_typeid.h"
 
 #include <string>
 #include <vector>
@@ -26,6 +25,12 @@
 struct json_t;
 
 namespace floyd {
+	//??? move this out of this file -- parser should not know about typeid_t.
+	struct typeid_t;
+
+	//??? move this out of this file -- parser should not know about member_t.
+	struct member_t;
+
 
 	const std::string whitespace_chars = " \n\t";
 	const std::string identifier_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";

@@ -19,12 +19,13 @@
 #include "json_support.h"
 #include "json_parser.h"
 
+#include "ast_typeid.h"
+
 #include <string>
 #include <memory>
 #include <map>
 #include <iostream>
 #include <cmath>
-#include "ast_basics.h"
 
 
 namespace quark {

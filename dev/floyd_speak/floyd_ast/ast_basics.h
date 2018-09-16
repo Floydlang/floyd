@@ -16,13 +16,6 @@
 
 namespace floyd {
 
-	//////////////////////////////////////		ast_json_t
-
-
-	struct ast_json_t {
-		json_t _value;
-	};
-
 
 
 	//////////////////////////////////////		variable_address_t

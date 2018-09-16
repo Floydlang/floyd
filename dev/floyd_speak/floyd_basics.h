@@ -10,15 +10,25 @@
 #define floyd_basics_hpp
 
 #include <string>
-#include <vector>
+//#include <vector>
 
 #include "json_support.h"
 
 
 namespace floyd {
-	struct value_t;
-	struct typeid_t;
 
+
+	//////////////////////////////////////		ast_json_t
+
+	//	Used to hold an AST encoded as a JSON. Allows forward declaration.
+	//	Has no further invariant than it's a JSON.
+	struct ast_json_t {
+		json_t _value;
+	};
+
+
+
+//??? move operation codes here.
 
 	//	Keywords in source code.
 	struct keyword_t {
