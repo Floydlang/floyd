@@ -49,7 +49,10 @@ std::map<std::string, clock_bus_t> unpack_clock_busses(const json_t& clocks_obj)
 	return result;
 }
 container_t unpack_container(const json_t& container_obj){
-	return container_t{
+	return container_obj.get_object_size() == 0 ?
+		container_t{}
+	:
+		container_t{
 		._tech = container_obj.get_object_element("tech").get_string(),
 		._desc = container_obj.get_object_element("desc").get_string(),
 		._clock_busses = unpack_clock_busses(container_obj.get_object_element("clocks")),

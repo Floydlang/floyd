@@ -1423,7 +1423,7 @@ bc_program_t generate_bytecode(const quark::trace_context_t& tracer, const seman
 		}
 	}
 
-	const auto result = bc_program_t{ globals2, function_defs2, a._types };
+	const auto result = bc_program_t{ globals2, function_defs2, a._types, pass3._software_system };
 
 	QUARK_CONTEXT_TRACE_SS(tracer, "OUTPUT: " << json_to_pretty_string(bcprogram_to_json(result)));
 

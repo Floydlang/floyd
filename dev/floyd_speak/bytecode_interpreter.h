@@ -18,6 +18,7 @@
 #include <map>
 #include "ast_typeid.h"
 #include "json_support.h"
+#include "software_system.h"
 
 //??? remove usage of typeid_t. Use itype & types[]?
 
@@ -1316,6 +1317,7 @@ namespace floyd {
 		public: const bc_frame_t _globals;
 		public: std::vector<const bc_function_definition_t> _function_defs;
 		public: std::vector<const typeid_t> _types;
+		public: software_system_t _software_system;
 	};
 
 	json_t bcprogram_to_json(const bc_program_t& program);

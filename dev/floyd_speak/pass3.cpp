@@ -39,7 +39,7 @@ namespace floyd {
 	using floyd::body_t;
 
 std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const analyser_t& vm, const statement_t& statement);
-	floyd::ast_t analyse(const analyser_t& a);
+floyd::semantic_ast_t analyse(const analyser_t& a);
 
 
 const function_definition_t& function_id_to_def(const analyser_t& vm, int function_id){
@@ -529,7 +529,9 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const anal
 		return { e.first, std::make_shared<statement_t>(e.second) };
 	}
 	else if(statement._software_system){
-		return { vm, std::make_shared<statement_t>(statement
+		analyser_t temp = vm;
+		temp._software_system = parse_software_system_json(statement._software_system->_json_data);
+		return { temp, std::make_shared<statement_t>(statement
 		) };
 	}
 	else if(statement._expression){
@@ -1533,7 +1535,7 @@ analyser_t::analyser_t(const ast_t& ast){
 	_imm = make_shared<analyzer_imm_t>(analyzer_imm_t{ast, host_functions});
 }
 
-ast_t analyse(const analyser_t& a){
+semantic_ast_t analyse(const analyser_t& a){
 	QUARK_ASSERT(a.check_invariant());
 
 	/*
@@ -1595,11 +1597,18 @@ ast_t analyse(const analyser_t& a){
 
 	const auto body = body_t(analyser2._imm->_ast._globals._statements, symbol_map);
 	const auto result = analyse_body(analyser2, body);
-	const auto result_ast = ast_t{result.second, result.first._function_defs};
+	const auto result_ast0 = ast_t{
+		._globals = result. second,
+		._function_defs = result.first._function_defs
+	};
+	const auto result_ast1 = semantic_ast_t(
+		result_ast0,
+		result.first._software_system
+	);
 
-	QUARK_ASSERT(result_ast.check_invariant());
-	QUARK_ASSERT(check_types_resolved(result_ast));
-	return result_ast;
+	QUARK_ASSERT(result_ast1._checked_ast.check_invariant());
+	QUARK_ASSERT(check_types_resolved(result_ast1._checked_ast));
+	return result_ast1;
 }
 
 
@@ -1620,7 +1629,8 @@ bool check_types_resolved(const ast_t& ast){
 analyser_t::analyser_t(const analyser_t& other) :
 	_imm(other._imm),
 	_call_stack(other._call_stack),
-	_function_defs(other._function_defs)
+	_function_defs(other._function_defs),
+	_software_system(other._software_system)
 {
 	QUARK_ASSERT(other.check_invariant());
 	QUARK_ASSERT(check_invariant());
@@ -1630,6 +1640,7 @@ void analyser_t::swap(analyser_t& other) throw() {
 	_imm.swap(other._imm);
 	_call_stack.swap(other._call_stack);
 	_function_defs.swap(other._function_defs);
+	std::swap(_software_system, other._software_system);
 }
 
 const analyser_t& analyser_t::operator=(const analyser_t& other){
@@ -1655,7 +1666,7 @@ semantic_ast_t run_pass3(const quark::trace_context_t& tracer, const floyd::ast_
 	analyser_t a(ast_pass2);
 	const auto pass3_result = analyse(a);
 
-	QUARK_CONTEXT_TRACE_SS(tracer, "OUTPUT: " << json_to_pretty_string(ast_to_json(pass3_result)._value));
+	QUARK_CONTEXT_TRACE_SS(tracer, "OUTPUT: " << json_to_pretty_string(ast_to_json(pass3_result._checked_ast)._value));
 	return pass3_result;
 }
 

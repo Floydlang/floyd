@@ -3268,8 +3268,7 @@ const auto test_ss = R"(
 				"desc": "The database that stores all user accounts, levels and talks to the mobile apps and handles admin tasks.",
 
 				"clocks": {
-					"main": [
-					]
+					"main": {}
 				},
 				"components": [
 					"My Arcade Game-logic",
@@ -3284,6 +3283,16 @@ const auto test_ss = R"(
 
 
 QUARK_UNIT_TEST_VIP("software-system", "", "", ""){
+/*	const auto r = test__run_global(
+		R"(
+			prin
+			for (i in 0...2) {
+				print("xyz")
+			}
+		)"
+	);
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "xyz", "xyz", "xyz" }));
+*/
 	const auto result = test__run_return_result(test_ss, {});
 	ut_compare_values(result, value_t::make_int(123));
 }

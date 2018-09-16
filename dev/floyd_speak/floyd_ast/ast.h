@@ -12,7 +12,6 @@
 #include <vector>
 #include "quark.h"
 #include "statement.h"
-//#include "pass3.h"
 
 namespace floyd {
 	struct ast_json_t;

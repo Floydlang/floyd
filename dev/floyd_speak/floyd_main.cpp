@@ -132,6 +132,9 @@ void example8(){
 //    QUARK_TRACE_SS("Extra storage requried for a + b: inodes: " << extra_inodes << ", leaf nodes: " << extra_leaf_nodes);
 }
 
+QUARK_UNIT_TEST("","", "", ""){
+	example8();
+}
 
 
 static const int k_hardware_thread_count = 8;
