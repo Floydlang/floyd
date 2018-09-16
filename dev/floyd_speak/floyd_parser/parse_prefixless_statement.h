@@ -26,8 +26,14 @@ namespace floyd {
 	std::pair<ast_json_t, seq_t> parse_expression_statement(const seq_t& s);
 
 	//	Main function: detects each of the other implicit statements and parses them.
-	std::pair<ast_json_t, seq_t> parse_prefixless_statement(const seq_t& s);
 
+
+	/*
+		a = EXPRESSIONm like "a = sin(1.3)"
+		or
+		EXPRESSION, like "print(3)"
+	*/
+	std::pair<ast_json_t, seq_t> parse_prefixless_statement(const seq_t& s);
 }
 
 #endif /* parse_implicit_statement_hpp */

@@ -8,8 +8,8 @@
 
 #include "floyd_interpreter.h"
 
-#include "floyd_parser/parser_primitives.h"
-#include "floyd_parser/floyd_parser.h"
+#include "parser_primitives.h"
+#include "floyd_parser.h"
 
 #include "pass2.h"
 #include "pass3.h"

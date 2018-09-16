@@ -86,41 +86,6 @@ enum class implicit_statement {
 	k_assign
 };
 
-
-#if 0
-//	NOTICE: This function is very complex -- let's keep it FOCUSED just on figuring out the type of statement.
-implicit_statement BACKUP___detect_implicit_statement_lookahead(const seq_t& s){
-	auto pos = read_until_toplevel_match(skip_whitespace(s), ";{");
-	if(pos.second.first1() == ";"){
-		pos.first.push_back(';');
-		pos.second = pos.second.rest1();
-	}
-	const auto equal_sign_pos = read_until_toplevel_match(seq_t(pos.first), "=");
-	if(equal_sign_pos.second.empty()){
-		const auto posx = read_until_toplevel_match(skip_whitespace(s), ";{");
-		if(posx.second.first() == "{"){
-			return implicit_statement::k_function_definition;
-		}
-		else{
-			return implicit_statement::k_expression_statement;
-		}
-	}
-	else{
-		const auto statement_pos = read_until_toplevel_match(skip_whitespace(s), ";");
-		const auto equal_sign_pos2 = read_until_toplevel_match(seq_t(statement_pos.first), "=");
-		const auto rhs_expression1 = skip_whitespace(equal_sign_pos2.second.rest1()).str();
-		const auto identifier_fr = split_at_tail_identifier(equal_sign_pos2.first);
-		const auto pre_identifier = identifier_fr.first;
-		if(pre_identifier == ""){
-			return implicit_statement::k_assign;
-		}
-		else{
-			return implicit_statement::k_bind;
-		}
-	}
-}
-#endif
-
 bool is_identifier_and_equal(const seq_t& s){
 	const auto identifier_fr = read_identifier(s);
 	const auto next_seq = skip_whitespace(identifier_fr.second);

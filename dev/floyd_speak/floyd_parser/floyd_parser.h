@@ -9,6 +9,12 @@
 #ifndef floyd_parser_h
 #define floyd_parser_h
 
+/*
+	Converts source code to an AST, encoded in a JSON.
+	Not much validation is going on, except the syntax itself.
+	Result may contain unresolvable references to indentifers, illegal names etc.
+*/
+
 #include "quark.h"
 #include <string>
 
