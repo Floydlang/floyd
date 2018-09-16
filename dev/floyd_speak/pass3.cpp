@@ -38,8 +38,84 @@ namespace floyd {
 	using floyd::symbol_t;
 	using floyd::body_t;
 
+
+
+
+
+	//////////////////////////////////////		analyser_t
+
+	/*
+		Complete state of the semantic analyser.
+		MUTABLE
+	*/
+
+
+	//////////////////////////////////////		lexical_scope_t
+
+
+	struct lexical_scope_t {
+		public: std::vector<std::pair<std::string, floyd::symbol_t>> _symbols;
+	};
+
+	struct analyzer_imm_t {
+		//??? Remove _ast so we don't confuse it with real statements.
+		public: floyd::ast_t _ast;
+
+		public: std::map<std::string, floyd::host_function_signature_t> _host_functions;
+	};
+
+	struct analyser_t {
+		public: analyser_t(const floyd::ast_t& ast);
+		public: analyser_t(const analyser_t& other);
+		public: const analyser_t& operator=(const analyser_t& other);
+#if DEBUG
+		public: bool check_invariant() const;
+#endif
+		public: void swap(analyser_t& other) throw();
+
+
+		////////////////////////		STATE
+
+		public: std::shared_ptr<const analyzer_imm_t> _imm;
+
+
+		//	Non-constant. Last scope is the current one. First scope is the root.
+		public: std::vector<std::shared_ptr<lexical_scope_t>> _call_stack;
+
+		public: std::vector<std::shared_ptr<const floyd::function_definition_t>> _function_defs;
+
+		public: software_system_t _software_system;
+	};
+
+	json_t analyser_to_json(const analyser_t& vm);
+
+
+
+
+
 std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const analyser_t& vm, const statement_t& statement);
 floyd::semantic_ast_t analyse(const analyser_t& a);
+
+	/*
+		Return value:
+			null = statements were all executed through.
+			value = return statement returned a value.
+	*/
+	std::pair<analyser_t, std::vector<std::shared_ptr<floyd::statement_t>> > analyse_statements(const analyser_t& vm, const std::vector<std::shared_ptr<floyd::statement_t>>& statements);
+
+	floyd::symbol_t find_global_symbol(const analyser_t& vm, const std::string& s);
+
+
+
+	/*
+		analyses an expression as far as possible.
+		return == _constant != nullptr:	the expression was completely analysed and resulted in a constant value.
+		return == _constant == nullptr: the expression was partially analyse.
+	*/
+	std::pair<analyser_t, floyd::expression_t> analyse_expression_to_target(const analyser_t& vm, const floyd::expression_t& e, const floyd::typeid_t& target_type);
+	std::pair<analyser_t, floyd::expression_t> analyse_expression_no_target(const analyser_t& vm, const floyd::expression_t& e);
+
+
 
 
 const function_definition_t& function_id_to_def(const analyser_t& vm, int function_id){
