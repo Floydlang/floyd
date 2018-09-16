@@ -10,7 +10,6 @@
 
 #include "statement.h"
 #include "text_parser.h"
-#include "pass2.h"
 #include <cinttypes>
 
 using std::string;
@@ -98,7 +97,7 @@ namespace floyd {
 			"func-def",
 			typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state)._value,
 			members_to_json(v._args),
-			v._body ? body_to_json(*v._body)._value : json_t(),
+			/***v._body ? body_to_json(*v._body)._value :***/ json_t(),
 
 			json_t(v._host_function_id),
 

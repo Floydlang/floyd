@@ -15,7 +15,6 @@
 #include "floyd_basics.h"
 
 #include "ast_value.h"
-#include "pass2.h"
 
 
 namespace floyd {
@@ -23,6 +22,16 @@ namespace floyd {
 	struct value_t;
 	struct statement_t;
 	struct expression_t;
+
+
+	/*
+		An expression is a json array where entries may be other json arrays.
+		["+", ["+", 1, 2], ["k", 10]]
+	*/
+	ast_json_t expression_to_json(const expression_t& e);
+
+	std::string expression_to_json_string(const expression_t& e);
+
 
 
 	//	"+", "<=", "&&" etc.
@@ -388,6 +397,7 @@ namespace floyd {
 		public: std::string _variable_name;
 		public: variable_address_t _address;
 	};
+
 
 
 }	//	floyd

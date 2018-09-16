@@ -437,11 +437,12 @@ std::pair<expr_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 		if(op1 == ")" && precedence > eoperator_precedence::k_parentesis){
 			return { lhs, p0 };
 		}
-/*
+
+#if 0
 		else if(op2 == "//" || op2 == "/*"){
 			return { lhs, p0 };
 		}
-*/
+#endif
 
 		else if(op1 == "]" && precedence > eoperator_precedence::k_parentesis){
 			return { lhs, p0 };
