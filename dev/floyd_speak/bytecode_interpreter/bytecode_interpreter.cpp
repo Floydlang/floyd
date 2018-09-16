@@ -8,8 +8,6 @@
 
 #include "bytecode_interpreter.h"
 
-#include "ast_value.h"
-#include "json_support.h"
 #include "host_functions.h"
 #include "text_parser.h"
 
@@ -170,8 +168,9 @@ bc_value_t update_string_char(interpreter_t& vm, const bc_value_t s, int64_t loo
 	}
 	else{
 		s2[lookup_index] = static_cast<char>(ch);
-		const auto s3 = value_t::make_string(s2);
-		return value_to_bc(s3);
+//		const auto s3 = value_t::make_string(s2);
+//		return value_to_bc(s3);
+		return bc_value_t::make_string(s2);
 	}
 }
 

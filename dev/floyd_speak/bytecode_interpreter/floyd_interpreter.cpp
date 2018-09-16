@@ -12,7 +12,7 @@
 #include "floyd_parser.h"
 
 #include "pass3.h"
-#include "bytecode_gen.h"
+#include "bytecode_generator.h"
 
 namespace floyd {
 
