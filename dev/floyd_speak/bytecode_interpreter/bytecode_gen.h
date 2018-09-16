@@ -16,16 +16,13 @@
 #include "ast.h"
 #include "ast_typeid.h"
 #include "ast_value.h"
+#include "pass3.h"
 #include "floyd_interpreter.h"
 
 
 namespace floyd {
 	struct semantic_ast_t;
 
-
-	enum {
-		k_no_bctypeid = -3
-	};
 
 
 	//	Replace by int when we have flattened local bodies.
@@ -116,7 +113,7 @@ namespace floyd {
 
 	struct bgen_imm_t {
 		////////////////////////		STATE
-		public: const ast_t _ast_pass3;
+		public: const semantic_ast_t _ast;
 	};
 
 
@@ -128,7 +125,7 @@ namespace floyd {
 	*/
 
 	struct bcgenerator_t {
-		public: explicit bcgenerator_t(const ast_t& pass3);
+		public: explicit bcgenerator_t(const semantic_ast_t& ast);
 		public: bcgenerator_t(const bcgenerator_t& other);
 		public: const bcgenerator_t& operator=(const bcgenerator_t& other);
 #if DEBUG

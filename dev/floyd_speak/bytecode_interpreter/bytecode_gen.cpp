@@ -25,8 +25,6 @@ using std::make_shared;
 struct semantic_ast_t;
 
 
-//??? Shortcut evaluation of conditions!
-//?? registers should ALWAYS bein current stack frame. What about upvalues?
 
 struct expr_info_t {
 	bcgen_body_t _body;
@@ -693,7 +691,7 @@ int get_host_function_id(bcgenerator_t& vm, const expression_t& e){
 		const auto& global_symbol = vm._call_stack[0]._body_ptr->_symbols[global_index];
 		if(global_symbol.second._const_value.is_function()){
 			const auto function_id = global_symbol.second._const_value.get_function_value();
-			const auto& function_def = vm._imm->_ast_pass3._function_defs[function_id];
+			const auto& function_def = vm._imm->_ast._checked_ast._function_defs[function_id];
 			return function_def->_host_function_id;
 		}
 		else{
@@ -1296,10 +1294,10 @@ void test__bcgen_expression(const expression_t& e, const expression_t& expected_
 }
 */
 
-bcgenerator_t::bcgenerator_t(const ast_t& pass3){
-	QUARK_ASSERT(pass3.check_invariant());
+bcgenerator_t::bcgenerator_t(const semantic_ast_t& ast){
+	QUARK_ASSERT(ast.check_invariant());
 
-	_imm = std::make_shared<bgen_imm_t>(bgen_imm_t{pass3});
+	_imm = std::make_shared<bgen_imm_t>(bgen_imm_t{ast});
 	QUARK_ASSERT(check_invariant());
 }
 
@@ -1326,7 +1324,7 @@ const bcgenerator_t& bcgenerator_t::operator=(const bcgenerator_t& other){
 
 #if DEBUG
 bool bcgenerator_t::check_invariant() const {
-	QUARK_ASSERT(_imm->_ast_pass3.check_invariant());
+	QUARK_ASSERT(_imm->_ast.check_invariant());
 	return true;
 }
 #endif
@@ -1393,7 +1391,7 @@ bc_program_t generate_bytecode(const quark::trace_context_t& tracer, const seman
 
 	bcgenerator_t a(ast._checked_ast);
 
-	const auto global_body = bcgen_body_top(a, a._imm->_ast_pass3._globals);
+	const auto global_body = bcgen_body_top(a, a._imm->_ast._checked_ast._globals);
 	const auto globals2 = make_frame(global_body, {});
 	a._call_stack.push_back(bcgen_environment_t{ &global_body });
 
