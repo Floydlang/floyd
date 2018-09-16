@@ -265,7 +265,7 @@ namespace floyd {
 
 		//////////////////////////////////////		store2_t
 
-
+		//	Resolved store-operation.
 		struct store2_t {
 			bool operator==(const store2_t& other) const {
 				return _dest_variable == other._dest_variable

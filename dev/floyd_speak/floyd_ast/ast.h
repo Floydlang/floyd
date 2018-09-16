@@ -22,6 +22,7 @@ namespace floyd {
 
 	/*
 		The Abstract Syntax Tree. It may contain unresolved symbols.
+		It can optionally be annotated with all expression types OR NOT.
 		Immutable
 	*/
 	struct ast_t {

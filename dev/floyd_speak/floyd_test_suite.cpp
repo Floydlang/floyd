@@ -3282,7 +3282,7 @@ const auto test_ss = R"(
 
 
 
-QUARK_UNIT_TEST_VIP("software-system", "", "", ""){
+QUARK_UNIT_TEST("software-system", "", "", ""){
 /*	const auto r = test__run_global(
 		R"(
 			prin
