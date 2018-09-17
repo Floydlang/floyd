@@ -9,6 +9,54 @@
 #ifndef ast_typeid_hpp
 #define ast_typeid_hpp
 
+/*
+	# base_type
+
+	An enum with all the base-types of types. Int, struct etc.
+	Struct needs more information to define its type but Int is done.
+
+
+	# typeid_t
+
+	Specifies an exact Floyd type. Both for base types like "int" and "string" and composit types like "struct { [float] p; string s }
+	It can hold *any Floyd type*. It can also hold unresolved type identifiers and a few types internal to compiler.
+	typeid_t can be convert to/from JSON and is written in source code according to Floyd source syntax, see table below.
+	Immutable value object.
+	The values are normalized and can be compared.
+	Composite types can form trees of types,
+		like:
+			"[string: struct {int x; int y}]"
+		This is a dictionary with structs, each holding two integers.
+
+
+	Source code						base_type								AST JSON
+	================================================================================================================
+	null							k_internal_undefined					"null"
+	bool							k_bool									"bool"
+	int								k_int									"int"
+	double							k_double								"double"
+	string							k_string								"string"
+	json_value						k_json_value							"json_value"
+	"typeid"						k_typeid								[target type id]
+	struct red { int x;float y}		k_struct								["struct", [{"type": "in", "name": "x"}, {"type": "float", "name": "y"}]]
+	[int]							k_vector								["vector", "int"]
+	[string: int]					k_dict									["dict", "int"]
+	int ()							k_function								["function", "int", []]
+	int (double, [string])			k_function								["function", "int", ["double", ["vector", "string"]]]
+	randomize_player			k_internal_unresolved_type_identifier		["internal_unresolved_type_identifier", "randomize_player"]
+
+
+
+	AST JSON
+	This is the JSON format we use to pass AST around. Use typeid_to_ast_json() and typeid_from_ast_json().
+
+	COMPACT_STRING
+	This is a nice user-visible representation of the typeid_t. It may be lossy. It's for REPLs etc. UI.
+
+	SOURCE CODE TYPE
+	Use read_type(), read_required_type()
+*/
+
 #include "quark.h"
 #include "utils.h"
 
@@ -18,10 +66,11 @@
 struct json_t;
 
 namespace floyd {
-
+	struct struct_definition_t;
 	struct ast_json_t;
 	struct typeid_t;
 	struct member_t;
+
 	std::string typeid_to_compact_string(const typeid_t& t);
 
 
@@ -50,6 +99,7 @@ namespace floyd {
 	int find_struct_member_index(const struct_definition_t& def, const std::string& name);
 
 
+
 	//////////////////////////////////////		base_type
 
 	/*
@@ -76,13 +126,18 @@ namespace floyd {
 		k_function,
 
 		//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
+		//	Keep the identifier so it can be resolved later
 		k_internal_unresolved_type_identifier
 	};
 
 	std::string base_type_to_string(const base_type t);
 
 
-	struct struct_definition_t;
+
+	//////////////////////////////////////		typeid_ext_imm_t
+
+
+	//	Stores extra information for those types that need more than just a base_type.
 
 	struct typeid_ext_imm_t {
 		public: bool operator==(const typeid_ext_imm_t& other) const{
@@ -99,7 +154,9 @@ namespace floyd {
 	};
 
 
+
 	//////////////////////////////////////		typeid_t
+
 
 
 	struct typeid_t {
@@ -302,21 +359,6 @@ namespace floyd {
 			return _ext->_unresolved_type_identifier;
 		}
 
-/*
-		public: typeid_t(const typeid_t& other) :
-			_DEBUG(other._DEBUG),
-			_base_type(other._base_type),
-			_ext(other._ext)
-		{
-//			for(const auto e: parts){ QUARK_ASSERT(e.check_invariant()); }
-//			QUARK_ASSERT(struct_def == nullptr || struct_def->check_invariant());
-
-			_DEBUG = typeid_to_compact_string(*this);
-
-			QUARK_ASSERT(check_invariant());
-		}
-*/
-
 
 		public: bool operator==(const typeid_t& other) const{
 			QUARK_ASSERT(check_invariant());
@@ -364,61 +406,26 @@ namespace floyd {
 		private: std::shared_ptr<const typeid_ext_imm_t> _ext;
 	};
 
-	//	A dynamic function has one or several arguments of type internal-dynamic.
-	//	The argument types for internal-dyanamic arguments must be supplied for each invocation.
+	std::string typeid_to_compact_string(const typeid_t& t);
+
+
+
+	//////////////////////////////////////		dynamic function
+
+
+
+	//	A dynamic function has one or several arguments of type k_internal_dynamic.
+	//	The argument types for k_internal_dynamic arguments must be supplied for each function invocation.
 	bool is_dynamic_function(const typeid_t& function_type);
 
 	int count_function_dynamic_args(const std::vector<typeid_t>& args);
 	int count_function_dynamic_args(const typeid_t& function_type);
 
 
-	//////////////////////////////////////		FORMATS
 
-	/*
-		typeid_t --- formats: json, source code etc.
-
-		in-code						base					More								notes
-		================================================================================================================
-		null						k_internal_undefined
-		bool						k_bool
-		int							k_int
-		double						k_double
-		string						k_string
-		json_value					k_json_value
+	//////////////////////////////////////		JSON
 
 
-		-							k_typeid				[target type id]
-
-		struct red { int x;}		k_struct				struct_definition_t (name = "red", { "x", k_int })
-
-		[int]						k_vector				k_int
-		[string: int]				k_dict					k_int
-
-		int ()						k_function				return = k_int, args = []
-
-		int (double, [string])		k_function				return = k_int, args = [ k_double, typeid_t(k_vector, string) ]
-
-		randomize_player			k_internal_unresolved_type_identifier	"randomize_player"
-		- When parsing we find identifiers that we don't know what they mean. Stored as k_internal_unresolved_type_identifier with identifier
-
-		AST JSON
-		This is the JSON format we use to pass AST around. Use typeid_to_ast_json() and typeid_from_ast_json().
-
-		COMPACT_STRING
-		This is a nice user-visible representation of the typeid_t. It may be lossy. It's for REPLs etc. UI.
-
-
-		SOURCE CODE TYPE
-		Use read_required_type()
-
-
-		??? Remove concept of typeid_t make_unresolved_type_identifier, instead use typeid_t OR identifier-string.
-	*/
-
-	/*
-		int -> "int"
-		[int] -> [ "vector", "int" ]
-	*/
 
 	enum class json_tags{
 		k_plain,
@@ -430,11 +437,9 @@ namespace floyd {
 	ast_json_t typeid_to_ast_json(const typeid_t& t, json_tags tags);
 	typeid_t typeid_from_ast_json(const ast_json_t& t);
 
-	std::string typeid_to_compact_string(const typeid_t& t);
-
-
 	std::vector<json_t> typeids_to_json_array(const std::vector<typeid_t>& m);
 	std::vector<typeid_t> typeids_from_json_array(const std::vector<json_t>& m);
+
 
 
 	//////////////////////////////////////		member_t
@@ -454,7 +459,6 @@ namespace floyd {
 
 		public: std::string _name;
 	};
-
 
 	std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m);
 	json_t members_to_json(const std::vector<member_t>& members);

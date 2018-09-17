@@ -13,7 +13,7 @@
 	value_t
 
 	Hold a Floyd value with an explicit type.
-	Immutable
+	Immutable value.
 
 	The value_t is completely standalone and is not coupled to the runtime etc.
 
@@ -31,7 +31,7 @@
 		Int
 		String
 		Float
-		struct instance
+		GameObject struct instance
 		function pointer
 		Vector instance
 		Dictionary instance

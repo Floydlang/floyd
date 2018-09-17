@@ -9,10 +9,9 @@
 #include "ast_typeid.h"
 
 #include "floyd_parser/parser_primitives.h"
-#include "ast_value.h"
+#include "floyd_basics.h"
 #include "json_parser.h"
 #include "utils.h"
-#include "ast_basics.h"
 
 using std::string;
 using std::vector;
