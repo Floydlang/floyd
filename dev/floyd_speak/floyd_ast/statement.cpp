@@ -10,12 +10,13 @@
 
 
 namespace floyd {
+
 bool body_t::check_invariant() const {
-			for(const auto i: _statements){
-				QUARK_ASSERT(i->check_invariant());
-			};
-			return true;
-		}
+	for(const auto i: _statements){
+		QUARK_ASSERT(i->check_invariant());
+	};
+	return true;
+}
 
 
 int add_constant_literal(symbol_table_t& symbols, const std::string& name, const floyd::value_t& value){
@@ -31,5 +32,11 @@ int add_temp(symbol_table_t& symbols, const std::string& name, const floyd::type
 	return static_cast<int>(symbols._symbols.size() - 1);
 }
 
+
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto a = statement_t::make__block_statement({});
+	const auto b = statement_t::make__block_statement({});
+	QUARK_UT_VERIFY(a == b);
+}
 
 }

@@ -413,110 +413,112 @@ ast_json_t symbol_to_json(const symbol_t& e){
 	}
 }
 
+
 ast_json_t statement_to_json(const statement_t& e){
 	QUARK_ASSERT(e.check_invariant());
 
-	if(e._return){
-		return ast_json_t{json_t::make_array({
-			json_t(keyword_t::k_return),
-			expression_to_json(e._return->_expression)._value
-		})};
-	}
-	else if(e._def_struct){
-		return ast_json_t{json_t::make_array({
-			json_t("def-struct"),
-			json_t(e._def_struct->_name),
-			struct_definition_to_ast_json(*e._def_struct->_def)._value
-		})};
-	}
-	else if(e._def_function){
-		return ast_json_t{json_t::make_array({
-			json_t("def-func"),
-			json_t(e._def_function->_name),
-			function_def_to_ast_json(*e._def_function->_def)._value
-		})};
-	}
-	else if(e._bind_local){
-		bool mutable_flag = e._bind_local->_locals_mutable_mode == statement_t::bind_local_t::k_mutable;
-		const auto meta = mutable_flag
-			? json_t::make_object({
-				std::pair<std::string, json_t>{"mutable", mutable_flag}
-			})
-			: json_t();
+	struct visitor_t {
+		ast_json_t operator()(const statement_t::return_statement_t& s) const{
+			return ast_json_t{json_t::make_array({
+				json_t(keyword_t::k_return),
+				expression_to_json(s._expression)._value
+			})};
+		}
+		ast_json_t operator()(const statement_t::define_struct_statement_t& s) const{
+			return ast_json_t{json_t::make_array({
+				json_t("def-struct"),
+				json_t(s._name),
+				struct_definition_to_ast_json(*s._def)._value
+			})};
+		}
+		ast_json_t operator()(const statement_t::define_function_statement_t& s) const{
+			return ast_json_t{json_t::make_array({
+				json_t("def-func"),
+				json_t(s._name),
+				function_def_to_ast_json(*s._def)._value
+			})};
+		}
 
-		return ast_json_t{make_array_skip_nulls({
-			json_t("bind"),
-			e._bind_local->_new_local_name,
-			typeid_to_ast_json(e._bind_local->_bindtype, json_tags::k_tag_resolve_state)._value,
-			expression_to_json(e._bind_local->_expression)._value,
-			meta
-		})};
-	}
-	else if(e._store){
-		return ast_json_t{make_array_skip_nulls({
-			json_t("store"),
-			e._store->_local_name,
-			expression_to_json(e._store->_expression)._value
-		})};
-	}
-	else if(e._store2){
-		return ast_json_t{make_array_skip_nulls({
-			json_t("store2"),
-			e._store2->_dest_variable._parent_steps,
-			e._store2->_dest_variable._index,
-			expression_to_json(e._store2->_expression)._value
-		})};
-	}
-	else if(e._block){
-		return ast_json_t{json_t::make_array({
-			json_t("block"),
-			body_to_json(e._block->_body)._value
-		})};
-	}
-	else if(e._if){
-		return ast_json_t{json_t::make_array({
-			json_t(keyword_t::k_if),
-			expression_to_json(e._if->_condition)._value,
-			body_to_json(e._if->_then_body)._value,
-			body_to_json(e._if->_else_body)._value
-		})};
-	}
-	else if(e._for){
-		return ast_json_t{json_t::make_array({
-			json_t(keyword_t::k_for),
-			json_t("closed_range"),
-			expression_to_json(e._for->_start_expression)._value,
-			expression_to_json(e._for->_end_expression)._value,
-			body_to_json(e._for->_body)._value
-		})};
-	}
-	else if(e._while){
-		return ast_json_t{json_t::make_array({
-			json_t(keyword_t::k_while),
-			expression_to_json(e._while->_condition)._value,
-			body_to_json(e._while->_body)._value
-		})};
-	}
-	else if(e._software_system){
-		return ast_json_t{json_t::make_array({
-			json_t(keyword_t::k_software_system),
-			e._software_system->_json_data
-		})};
-	}
-	else if(e._expression){
-		return ast_json_t{json_t::make_array({
-			json_t("expression-statement"),
-			expression_to_json(e._expression->_expression)._value
-		})};
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
+		ast_json_t operator()(const statement_t::bind_local_t& s) const{
+			bool mutable_flag = s._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
+			const auto meta = mutable_flag
+				? json_t::make_object({
+					std::pair<std::string, json_t>{"mutable", mutable_flag}
+				})
+				: json_t();
+
+			return ast_json_t{make_array_skip_nulls({
+				json_t("bind"),
+				s._new_local_name,
+				typeid_to_ast_json(s._bindtype, json_tags::k_tag_resolve_state)._value,
+				expression_to_json(s._expression)._value,
+				meta
+			})};
+		}
+		ast_json_t operator()(const statement_t::store_t& s) const{
+			return ast_json_t{make_array_skip_nulls({
+				json_t("store"),
+				s._local_name,
+				expression_to_json(s._expression)._value
+			})};
+		}
+		ast_json_t operator()(const statement_t::store2_t& s) const{
+			return ast_json_t{make_array_skip_nulls({
+				json_t("store2"),
+				s._dest_variable._parent_steps,
+				s._dest_variable._index,
+				expression_to_json(s._expression)._value
+			})};
+		}
+		ast_json_t operator()(const statement_t::block_statement_t& s) const{
+			return ast_json_t{json_t::make_array({
+				json_t("block"),
+				body_to_json(s._body)._value
+			})};
+		}
+
+		ast_json_t operator()(const statement_t::ifelse_statement_t& s) const{
+			return ast_json_t{json_t::make_array({
+				json_t(keyword_t::k_if),
+				expression_to_json(s._condition)._value,
+				body_to_json(s._then_body)._value,
+				body_to_json(s._else_body)._value
+			})};
+		}
+		ast_json_t operator()(const statement_t::for_statement_t& s) const{
+			return ast_json_t{json_t::make_array({
+				json_t(keyword_t::k_for),
+				json_t("closed_range"),
+				expression_to_json(s._start_expression)._value,
+				expression_to_json(s._end_expression)._value,
+				body_to_json(s._body)._value
+			})};
+		}
+		ast_json_t operator()(const statement_t::while_statement_t& s) const{
+			return ast_json_t{json_t::make_array({
+				json_t(keyword_t::k_while),
+				expression_to_json(s._condition)._value,
+				body_to_json(s._body)._value
+			})};
+		}
+
+
+		ast_json_t operator()(const statement_t::expression_statement_t& s) const{
+			return ast_json_t{json_t::make_array({
+				json_t("expression-statement"),
+				expression_to_json(s._expression)._value
+			})};
+		}
+		ast_json_t operator()(const statement_t::software_system_statement_t& s) const{
+			return ast_json_t{json_t::make_array({
+				json_t(keyword_t::k_software_system),
+				s._json_data
+			})};
+		}
+	};
+
+	return std::visit(visitor_t{}, e._contents);
 }
-
-
-
 
 
 ast_t json_to_ast(const quark::trace_context_t& tracer, const ast_json_t& parse_tree){

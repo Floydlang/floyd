@@ -306,7 +306,7 @@ std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& a, 
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
-	const auto statement = *s._store;
+	const auto statement = std::get<statement_t::store_t>(s._contents);
 	const auto local_name = statement._local_name;
 	const auto existing_value_deep_ptr = find_symbol_by_name(a_acc, local_name);
 
@@ -356,7 +356,7 @@ Ex:
 std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t& a, const statement_t& s){
 	QUARK_ASSERT(a.check_invariant());
 
-	const auto statement = *s._bind_local;
+	const auto statement = std::get<statement_t::bind_local_t>(s._contents);
 	auto a_acc = a;
 
 	const auto new_local_name = statement._new_local_name;
@@ -414,7 +414,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& a, const statement_t& s){
 	QUARK_ASSERT(a.check_invariant());
 
-	const auto statement = *s._block;
+	const auto statement = std::get<statement_t::block_statement_t>(s._contents);
 	const auto e = analyse_body(a, statement._body);
 	return {e.first, statement_t::make__block_statement(e.second)};
 }
@@ -422,7 +422,7 @@ std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& a, 
 std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a, const statement_t& s){
 	QUARK_ASSERT(a.check_invariant());
 
-	const auto statement = *s._return;
+	const auto statement = std::get<statement_t::return_statement_t>(s._contents);
 	auto a_acc = a;
 	const auto expr = statement._expression;
 	const auto result = analyse_expression_no_target(a_acc, expr);
@@ -455,7 +455,7 @@ analyser_t analyse_def_struct_statement(const analyser_t& a, const statement_t::
 std::pair<analyser_t, statement_t> analyse_def_function_statement(const analyser_t& a, const statement_t& s){
 	QUARK_ASSERT(a.check_invariant());
 
-	const auto& statement = *s._def_function;
+	const auto statement = std::get<statement_t::define_function_statement_t>(s._contents);
 
 	auto a_acc = a;
 
@@ -548,64 +548,79 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const anal
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
 
-	if(statement._bind_local){
-		const auto e = analyse_bind_local_statement(a, statement);
-		QUARK_ASSERT(e.second.check_types_resolved());
-		return { e.first, std::make_shared<statement_t>(e.second) };
-	}
-	else if(statement._store){
-		const auto e = analyse_store_statement(a, statement);
-		QUARK_ASSERT(e.second.check_types_resolved());
-		return { e.first, std::make_shared<statement_t>(e.second) };
-	}
-	else if(statement._block){
-		const auto e = analyse_block_statement(a, statement);
-		QUARK_ASSERT(e.second.check_types_resolved());
-		return { e.first, std::make_shared<statement_t>(e.second) };
-	}
-	else if(statement._return){
-		const auto e = analyse_return_statement(a, statement);
-		QUARK_ASSERT(e.second.check_types_resolved());
-		return { e.first, std::make_shared<statement_t>(e.second) };
-	}
-	else if(statement._def_struct){
-		const auto e = analyse_def_struct_statement(a, *statement._def_struct);
-		return { e, {} };
-	}
-	else if(statement._def_function){
-		const auto e = analyse_def_function_statement(a, statement);
-		return { e.first, std::make_shared<statement_t>(e.second) };
-	}
-	else if(statement._if){
-		const auto e = analyse_ifelse_statement(a, *statement._if);
-		QUARK_ASSERT(e.second.check_types_resolved());
-		return { e.first, std::make_shared<statement_t>(e.second) };
-	}
-	else if(statement._for){
-		const auto e = analyse_for_statement(a, *statement._for);
-		QUARK_ASSERT(e.second.check_types_resolved());
-		return { e.first, std::make_shared<statement_t>(e.second) };
-	}
-	else if(statement._while){
-		const auto e = analyse_while_statement(a, *statement._while);
-		QUARK_ASSERT(e.second.check_types_resolved());
-		return { e.first, std::make_shared<statement_t>(e.second) };
-	}
-	else if(statement._software_system){
-		analyser_t temp = a;
-		temp._software_system = parse_software_system_json(statement._software_system->_json_data);
-		return { temp, std::make_shared<statement_t>(statement
-		) };
-	}
-	else if(statement._expression){
-		const auto e = analyse_expression_statement(a, *statement._expression);
-		QUARK_ASSERT(e.second.check_types_resolved());
-		return { e.first, std::make_shared<statement_t>(e.second) };
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
+
+
+	typedef std::pair<analyser_t, std::shared_ptr<statement_t>> return_type;
+
+
+	struct visitor_t {
+		const analyser_t& a;
+		const statement_t& statement;
+
+		return_type operator()(const statement_t::return_statement_t& s) const{
+			const auto e = analyse_return_statement(a, statement);
+			QUARK_ASSERT(e.second.check_types_resolved());
+			return { e.first, std::make_shared<statement_t>(e.second) };
+		}
+		return_type operator()(const statement_t::define_struct_statement_t& s) const{
+			const auto e = analyse_def_struct_statement(a, s);
+			return { e, {} };
+		}
+		return_type operator()(const statement_t::define_function_statement_t& s) const{
+			const auto e = analyse_def_function_statement(a, statement);
+			return { e.first, std::make_shared<statement_t>(e.second) };
+		}
+
+		return_type operator()(const statement_t::bind_local_t& s) const{
+			const auto e = analyse_bind_local_statement(a, statement);
+			QUARK_ASSERT(e.second.check_types_resolved());
+			return { e.first, std::make_shared<statement_t>(e.second) };
+		}
+		return_type operator()(const statement_t::store_t& s) const{
+			const auto e = analyse_store_statement(a, statement);
+			QUARK_ASSERT(e.second.check_types_resolved());
+			return { e.first, std::make_shared<statement_t>(e.second) };
+		}
+		return_type operator()(const statement_t::store2_t& s) const{
+			QUARK_ASSERT(false);
+		}
+		return_type operator()(const statement_t::block_statement_t& s) const{
+			const auto e = analyse_block_statement(a, statement);
+			QUARK_ASSERT(e.second.check_types_resolved());
+			return { e.first, std::make_shared<statement_t>(e.second) };
+		}
+
+		return_type operator()(const statement_t::ifelse_statement_t& s) const{
+			const auto e = analyse_ifelse_statement(a, s);
+			QUARK_ASSERT(e.second.check_types_resolved());
+			return { e.first, std::make_shared<statement_t>(e.second) };
+		}
+		return_type operator()(const statement_t::for_statement_t& s) const{
+			const auto e = analyse_for_statement(a, s);
+			QUARK_ASSERT(e.second.check_types_resolved());
+			return { e.first, std::make_shared<statement_t>(e.second) };
+		}
+		return_type operator()(const statement_t::while_statement_t& s) const{
+			const auto e = analyse_while_statement(a, s);
+			QUARK_ASSERT(e.second.check_types_resolved());
+			return { e.first, std::make_shared<statement_t>(e.second) };
+		}
+
+
+		return_type operator()(const statement_t::expression_statement_t& s) const{
+			const auto e = analyse_expression_statement(a, s);
+			QUARK_ASSERT(e.second.check_types_resolved());
+			return { e.first, std::make_shared<statement_t>(e.second) };
+		}
+		return_type operator()(const statement_t::software_system_statement_t& s) const{
+			analyser_t temp = a;
+			temp._software_system = parse_software_system_json(s._json_data);
+			return { temp, std::make_shared<statement_t>(statement
+			) };
+		}
+	};
+
+	return std::visit(visitor_t{a, statement}, statement._contents);
 }
 
 

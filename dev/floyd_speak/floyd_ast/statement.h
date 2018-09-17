@@ -13,6 +13,7 @@
 #include "quark.h"
 #include <vector>
 #include <string>
+#include "../parts/xcode-libcxx-xcode9/variant"	//	https://github.com/youknowone/xcode-libcxx
 
 #include "expression.h"
 
@@ -61,6 +62,15 @@ namespace floyd {
 		floyd::value_t _const_value;
 
 
+
+		bool operator==(const symbol_t& other) const {
+			return true
+				&& _symbol_type == other._symbol_type
+				&& _value_type == other._value_type
+				&& _const_value == other._const_value
+				;
+		}
+
 		public: bool check_invariant() const {
 			QUARK_ASSERT(_const_value.is_undefined() || _const_value.get_type() == _value_type);
 			return true;
@@ -107,6 +117,11 @@ namespace floyd {
 
 
 	struct symbol_table_t {
+			bool operator==(const symbol_table_t& other) const {
+				return _symbols == other._symbols;
+			}
+
+
 		public: std::vector<std::pair<std::string, floyd::symbol_t>> _symbols;
 	};
 
@@ -144,8 +159,10 @@ namespace floyd {
 		symbol_table_t _symbols;
 	};
 
-	inline bool operator==(const body_t& lhs, const body_t& rhs){
-		return compare_shared_value_vectors(lhs._statements, rhs._statements);
+	static inline bool operator==(const body_t& lhs, const body_t& rhs){
+		return
+			compare_shared_value_vectors(lhs._statements, rhs._statements) == true
+			&& lhs._symbols == rhs._symbols;
 	}
 
 
@@ -156,11 +173,9 @@ namespace floyd {
 		Immutable
 	*/
 	struct statement_t {
-		public: statement_t(const statement_t& other) = default;
-		public: statement_t& operator=(const statement_t& other) = default;
-
 
 		//////////////////////////////////////		return_statement_t
+
 
 
 		struct return_statement_t {
@@ -170,12 +185,8 @@ namespace floyd {
 
 			const expression_t _expression;
 		};
-        public: statement_t(const return_statement_t& value) :
-			_return(std::make_shared<return_statement_t>(value))
-		{
-		}
 		public: static statement_t make__return_statement(const expression_t& expression){
-			return statement_t(return_statement_t{ expression });
+			return statement_t{ ._contents = {return_statement_t{expression}} };
 		}
 
 
@@ -190,12 +201,8 @@ namespace floyd {
 			const std::string _name;
 			const std::shared_ptr<const struct_definition_t> _def;
 		};
-        public: statement_t(const define_struct_statement_t& value) :
-			_def_struct(std::make_shared<define_struct_statement_t>(value))
-		{
-		}
 		public: static statement_t make__define_struct_statement(const define_struct_statement_t& value){
-			return statement_t(value);
+			return statement_t{ ._contents = {define_struct_statement_t{value}} };
 		}
 
 
@@ -210,12 +217,8 @@ namespace floyd {
 			const std::string _name;
 			const std::shared_ptr<const function_definition_t> _def;
 		};
-        public: statement_t(const define_function_statement_t& value) :
-			_def_function(std::make_shared<define_function_statement_t>(value))
-		{
-		}
 		public: static statement_t make__define_function_statement(const define_function_statement_t& value){
-			return statement_t(value);
+			return statement_t{ ._contents = {define_function_statement_t{value}} };
 		}
 
 
@@ -240,12 +243,8 @@ namespace floyd {
 			const expression_t _expression;
 			const mutable_mode _locals_mutable_mode;
 		};
-        public: statement_t(const bind_local_t& value) :
-			_bind_local(std::make_shared<bind_local_t>(value))
-		{
-		}
 		public: static statement_t make__bind_local(const std::string& new_local_name, const typeid_t& bindtype, const expression_t& expression, bind_local_t::mutable_mode locals_mutable_mode){
-			return statement_t(bind_local_t{ new_local_name, bindtype, expression, locals_mutable_mode });
+			return statement_t{ ._contents = {bind_local_t{ new_local_name, bindtype, expression, locals_mutable_mode}} };
 		}
 
 
@@ -261,12 +260,8 @@ namespace floyd {
 			const std::string _local_name;
 			const expression_t _expression;
 		};
-        public: statement_t(const store_t& value) :
-			_store(std::make_shared<store_t>(value))
-		{
-		}
 		public: static statement_t make__store(const std::string& local_name, const expression_t& expression){
-			return statement_t(store_t{ local_name, expression });
+			return statement_t{ ._contents = {store_t{ local_name, expression}} };
 		}
 
 
@@ -283,12 +278,8 @@ namespace floyd {
 			const expression_t _expression;
 		};
 
-        public: statement_t(const store2_t& value) :
-			_store2(std::make_shared<store2_t>(value))
-		{
-		}
 		public: static statement_t make__store2(const variable_address_t& dest_variable, const expression_t& expression){
-			return statement_t(store2_t{ dest_variable, expression });
+			return statement_t{ ._contents = {store2_t{ dest_variable, expression}} };
 		}
 
 
@@ -302,13 +293,9 @@ namespace floyd {
 
 			const body_t _body;
 		};
-        public: statement_t(const block_statement_t& value) :
-			_block(std::make_shared<block_statement_t>(value))
-		{
-		}
 
 		public: static statement_t make__block_statement(const body_t& body){
-			return statement_t(block_statement_t{ body });
+			return statement_t{ ._contents = {block_statement_t{ body}} };
 		}
 
 
@@ -329,16 +316,12 @@ namespace floyd {
 			const body_t _then_body;
 			const body_t _else_body;
 		};
-        public: statement_t(const ifelse_statement_t& value) :
-			_if(std::make_shared<ifelse_statement_t>(value))
-		{
-		}
 		public: static statement_t make__ifelse_statement(
 			const expression_t& condition,
 			const body_t& then_body,
 			const body_t& else_body
 		){
-			return statement_t(ifelse_statement_t{ condition, then_body, else_body });
+			return statement_t{ ._contents = {ifelse_statement_t{ condition, then_body, else_body}} };
 		}
 
 
@@ -367,10 +350,6 @@ namespace floyd {
 			const body_t _body;
 			const range_type _range_type;
 		};
-        public: statement_t(const for_statement_t& value) :
-			_for(std::make_shared<for_statement_t>(value))
-		{
-		}
 		public: static statement_t make__for_statement(
 			const std::string iterator_name,
 			const expression_t& start_expression,
@@ -378,7 +357,25 @@ namespace floyd {
 			const body_t& body,
 			for_statement_t::range_type range_type
 		){
-			return statement_t(for_statement_t{ iterator_name, start_expression, end_expression, body, range_type });
+			return statement_t{ ._contents = {for_statement_t{ iterator_name, start_expression, end_expression, body, range_type }} };
+		}
+
+
+		//////////////////////////////////////		software_system_statement_t
+
+
+		struct software_system_statement_t {
+			bool operator==(const software_system_statement_t& other) const {
+				return _json_data == other._json_data;
+			}
+
+			const json_t _json_data;
+		};
+
+		public: static statement_t make__software_system_statement(
+			json_t json_data
+		){
+			return statement_t{ ._contents = {software_system_statement_t{ json_data }} };
 		}
 
 
@@ -396,37 +393,11 @@ namespace floyd {
 			const body_t _body;
 		};
 
-        public: statement_t(const while_statement_t& value) :
-			_while(std::make_shared<while_statement_t>(value))
-		{
-		}
 		public: static statement_t make__while_statement(
 			const expression_t& condition,
 			const body_t& body
 		){
-			return statement_t(while_statement_t{ condition, body });
-		}
-
-
-		//////////////////////////////////////		software_system_statement_t
-
-
-		struct software_system_statement_t {
-			bool operator==(const software_system_statement_t& other) const {
-				return _json_data == other._json_data;
-			}
-
-			const json_t _json_data;
-		};
-
-        public: statement_t(const software_system_statement_t& value) :
-			_software_system(std::make_shared<software_system_statement_t>(value))
-		{
-		}
-		public: static statement_t make__software_system_statement(
-			json_t json_data
-		){
-			return statement_t(software_system_statement_t{ json_data });
+			return statement_t{ ._contents = {while_statement_t{ condition, body }} };
 		}
 
 
@@ -440,104 +411,19 @@ namespace floyd {
 
 			const expression_t _expression;
 		};
-        public: statement_t(const expression_statement_t& value) :
-			_expression(std::make_shared<expression_statement_t>(value))
-		{
-		}
 		public: static statement_t make__expression_statement(const expression_t& expression){
-			return statement_t(expression_statement_t{ expression });
+			return statement_t{ ._contents = {expression_statement_t{ expression }} };
 		}
 
 
 		//////////////////////////////////////		statement_t
 
 
-		public: bool operator==(const statement_t& other) const {
-			if(_return){
-				return compare_shared_values(_return, other._return);
-			}
-			else if(_def_struct){
-				return compare_shared_values(_def_struct, other._def_struct);
-			}
-			else if(_def_function){
-				return compare_shared_values(_def_function, other._def_function);
-			}
-			else if(_bind_local){
-				return compare_shared_values(_bind_local, other._bind_local);
-			}
-			else if(_store){
-				return compare_shared_values(_store, other._store);
-			}
-			else if(_store2){
-				return compare_shared_values(_store2, other._store2);
-			}
-			else if(_block){
-				return compare_shared_values(_block, other._block);
-			}
-			else if(_if){
-				return compare_shared_values(_if, other._if);
-			}
-			else if(_for){
-				return compare_shared_values(_for, other._for);
-			}
-			else if(_while){
-				return compare_shared_values(_while, other._while);
-			}
-			else if(_software_system){
-				return compare_shared_values(_while, other._while);
-			}
-			else{
-				QUARK_ASSERT(false);
-				return false;
-			}
-		}
-
 		bool check_invariant() const {
-			int count = 0;
-			count = count + (_return != nullptr ? 1 : 0);
-			count = count + (_def_struct != nullptr ? 1 : 0);
-			count = count + (_def_function != nullptr ? 1 : 0);
-			count = count + (_bind_local != nullptr ? 1 : 0);
-			count = count + (_store != nullptr ? 1 : 0);
-			count = count + (_store2 != nullptr ? 1 : 0);
-			count = count + (_block != nullptr ? 1 : 0);
-			count = count + (_if != nullptr ? 1 : 0);
-			count = count + (_for != nullptr ? 1 : 0);
-			count = count + (_while != nullptr ? 1 : 0);
-			count = count + (_software_system != nullptr ? 1 : 0);
-			count = count + (_expression != nullptr ? 1 : 0);
-			QUARK_ASSERT(count == 1);
-
-			if(_return != nullptr){
-			}
-			else if(_def_struct != nullptr){
-			}
-			else if(_def_function != nullptr){
-			}
-			else if(_bind_local){
-			}
-			else if(_store){
-			}
-			else if(_store2){
-			}
-			else if(_block){
-			}
-			else if(_if){
-			}
-			else if(_for){
-			}
-			else if(_while){
-			}
-			else if(_software_system){
-			}
-			else if(_expression){
-			}
-			else{
-				QUARK_ASSERT(false);
-			}
 			return true;
 		}
 
+		//??? make into free function
  		public: static bool check_types_resolved(const std::vector<std::shared_ptr<statement_t>>& s){
 			for(const auto& e: s){
 				if(e->check_types_resolved() == false){
@@ -550,80 +436,89 @@ namespace floyd {
 		public: bool check_types_resolved() const{
 			QUARK_ASSERT(check_invariant());
 
-			if(_return != nullptr){
-				return _return->_expression.check_types_resolved();
-			}
-			else if(_def_struct != nullptr){
-				return _def_struct->_def->check_types_resolved();
-			}
-			else if(_def_function != nullptr){
-				return _def_function->_def->check_types_resolved();
-			}
-			else if(_bind_local){
-				return true
-					&& _bind_local->_bindtype.check_types_resolved()
-					&& _bind_local->_expression.check_types_resolved()
-					;
-			}
-			else if(_store){
-				return _store->_expression.check_types_resolved();
-			}
-			else if(_store2){
-				return _store2->_expression.check_types_resolved();
-			}
-			else if(_block){
-				return _block->_body.check_types_resolved();
-			}
-			else if(_if){
-				return true
-					&& _if->_condition.check_types_resolved()
-					&& _if->_then_body.check_types_resolved()
-					&& _if->_else_body.check_types_resolved()
-					;
-			}
-			else if(_for){
-				return true
-					&& _for->_start_expression.check_types_resolved()
-					&& _for->_end_expression.check_types_resolved()
-					&& _for->_body.check_types_resolved()
-					;
-			}
-			else if(_while){
-				return true
-					&& _while->_condition.check_types_resolved()
-					&& _while->_body.check_types_resolved()
-					;
-			}
-			else if(_software_system){
-				return true;
-			}
-			else if(_expression){
-				return _expression->_expression.check_types_resolved();
-			}
-			else{
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
+			struct visitor_t {
+				bool operator()(const return_statement_t& s) const{
+					return s._expression.check_types_resolved();
+				}
+				bool operator()(const define_struct_statement_t& s) const{
+					return s._def->check_types_resolved();
+				}
+				bool operator()(const define_function_statement_t& s) const{
+					return s._def->check_types_resolved();
+				}
+
+				bool operator()(const bind_local_t& s) const{
+					return true
+						&& s._bindtype.check_types_resolved()
+						&& s._expression.check_types_resolved()
+						;
+				}
+				bool operator()(const store_t& s) const{
+					return s._expression.check_types_resolved();
+				}
+				bool operator()(const store2_t& s) const{
+					return s._expression.check_types_resolved();
+				}
+				bool operator()(const block_statement_t& s) const{
+					return s._body.check_types_resolved();
+				}
+
+				bool operator()(const ifelse_statement_t& s) const{
+					return true
+						&& s._condition.check_types_resolved()
+						&& s._then_body.check_types_resolved()
+						&& s._else_body.check_types_resolved()
+						;
+				}
+				bool operator()(const for_statement_t& s) const{
+					return true
+						&& s._start_expression.check_types_resolved()
+						&& s._end_expression.check_types_resolved()
+						&& s._body.check_types_resolved()
+						;
+				}
+				bool operator()(const while_statement_t& s) const{
+					return true
+						&& s._condition.check_types_resolved()
+						&& s._body.check_types_resolved()
+						;
+				}
+
+				bool operator()(const expression_statement_t& s) const{
+					return s._expression.check_types_resolved();
+				}
+				bool operator()(const software_system_statement_t& s) const{
+					return true;
+				}
+			};
+
+			return std::visit(visitor_t{}, _contents);
 		}
+
 
 
 		//////////////////////////////////////		STATE
 
 
-		//	Only *one* of these are used for each instance.
-		public: const std::shared_ptr<return_statement_t> _return;
-		public: const std::shared_ptr<define_struct_statement_t> _def_struct;
-		public: const std::shared_ptr<define_function_statement_t> _def_function;
-		public: const std::shared_ptr<bind_local_t> _bind_local;
-		public: const std::shared_ptr<store_t> _store;
-		public: const std::shared_ptr<store2_t> _store2;
-		public: const std::shared_ptr<block_statement_t> _block;
-		public: const std::shared_ptr<ifelse_statement_t> _if;
-		public: const std::shared_ptr<for_statement_t> _for;
-		public: const std::shared_ptr<while_statement_t> _while;
-		public: const std::shared_ptr<software_system_statement_t> _software_system;
-		public: const std::shared_ptr<expression_statement_t> _expression;
+		std::variant<
+			return_statement_t,
+			define_struct_statement_t,
+			define_function_statement_t,
+			bind_local_t,
+			store_t,
+			store2_t,
+			block_statement_t,
+			ifelse_statement_t,
+			for_statement_t,
+			while_statement_t,
+			expression_statement_t,
+			software_system_statement_t
+		> _contents;
 	};
+
+	static bool operator==(const statement_t& lhs, const statement_t& rhs){
+		return lhs._contents == rhs._contents;
+	}
 
 	inline bool body_t::check_types_resolved() const{
 		for(const auto& e: _statements){
@@ -641,6 +536,7 @@ namespace floyd {
 		}
 		return true;
 	}
+
 
 
 }	//	floyd
