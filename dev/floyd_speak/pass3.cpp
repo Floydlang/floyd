@@ -37,7 +37,7 @@ namespace floyd {
 
 	struct analyzer_imm_t {
 		//??? Remove _ast so we don't confuse it with real statements.
-		public: floyd::ast_t _ast;
+		public: ast_t _ast;
 
 		public: std::map<std::string, floyd::host_function_signature_t> _host_functions;
 	};
@@ -48,7 +48,7 @@ namespace floyd {
 
 
 	struct analyser_t {
-		public: analyser_t(const floyd::ast_t& ast);
+		public: analyser_t(const ast_t& ast);
 		public: analyser_t(const analyser_t& other);
 		public: const analyser_t& operator=(const analyser_t& other);
 #if DEBUG
@@ -69,6 +69,8 @@ namespace floyd {
 
 		public: software_system_t _software_system;
 	};
+
+
 
 	json_t analyser_to_json(const analyser_t& a);
 
@@ -1736,7 +1738,7 @@ bool analyser_t::check_invariant() const {
 //////////////////////////////////////		run_semantic_analysis()
 
 
-semantic_ast_t run_semantic_analysis(const quark::trace_context_t& tracer, const floyd::ast_t& ast){
+semantic_ast_t run_semantic_analysis(const quark::trace_context_t& tracer, const ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	QUARK_CONTEXT_SCOPED_TRACE(tracer, "pass3");
