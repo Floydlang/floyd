@@ -19,77 +19,86 @@
 
 namespace floyd {
 
-	using namespace std;
+using namespace std;
 
 
 
 
 
-	//////////////////////////////////////		analyzer_imm_t
+//////////////////////////////////////		analyzer_imm_t
 
-	//	Immutable data used by analyser.
+//	Immutable data used by analyser.
 
-	struct analyzer_imm_t {
-		//??? Remove _ast so we don't confuse it with real statements.
-		public: ast_t _ast;
-
-		public: std::map<std::string, floyd::host_function_signature_t> _host_functions;
-	};
+struct analyzer_imm_t {
+	public: ast_t _ast;
+	public: std::map<std::string, floyd::host_function_signature_t> _host_functions;
+};
 
 
 
-	//////////////////////////////////////		analyser_t
+//////////////////////////////////////		analyser_t
 
+/*
+	Value object (MUTABLE!) that represents one step of the semantic analysis. It is passed around.
+*/
 
-	struct analyser_t {
-		public: analyser_t(const ast_t& ast);
-		public: analyser_t(const analyser_t& other);
-		public: const analyser_t& operator=(const analyser_t& other);
+struct analyser_t {
+	public: analyser_t(const ast_t& ast);
+	public: analyser_t(const analyser_t& other);
+	public: const analyser_t& operator=(const analyser_t& other);
 #if DEBUG
-		public: bool check_invariant() const;
+	public: bool check_invariant() const;
 #endif
-		public: void swap(analyser_t& other) throw();
-
-
-		////////////////////////		STATE
-
-		public: std::shared_ptr<const analyzer_imm_t> _imm;
-
-
-		//	Non-constant. Last scope is the current one. First scope is the root.
-		public: std::vector<std::shared_ptr<symbol_table_t>> _call_stack;
-
-		public: std::vector<std::shared_ptr<const floyd::function_definition_t>> _function_defs;
-
-		public: software_system_t _software_system;
-	};
+	public: void swap(analyser_t& other) throw();
 
 
 
-	json_t analyser_to_json(const analyser_t& a);
+	////////////////////////		STATE
 
-	std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement);
-	floyd::semantic_ast_t analyse(const analyser_t& a);
-	typeid_t resolve_type(const analyser_t& a, const typeid_t& type);
-
-	/*
-		Return value:
-			null = statements were all executed through.
-			value = return statement returned a value.
-	*/
-	std::pair<analyser_t, std::vector<std::shared_ptr<floyd::statement_t>> > analyse_statements(const analyser_t& a, const std::vector<std::shared_ptr<floyd::statement_t>>& statements);
-
-	floyd::symbol_t find_global_symbol(const analyser_t& a, const std::string& s);
+	public: std::shared_ptr<const analyzer_imm_t> _imm;
 
 
+	//	Non-constant. Last scope is the current one. First scope is the root.
+	public: std::vector<std::shared_ptr<symbol_table_t>> _call_stack;
 
-	/*
-		analyses an expression as far as possible.
-		return == _constant != nullptr:	the expression was completely analysed and resulted in a constant value.
-		return == _constant == nullptr: the expression was partially analyse.
-	*/
-	std::pair<analyser_t, floyd::expression_t> analyse_expression_to_target(const analyser_t& a, const floyd::expression_t& e, const floyd::typeid_t& target_type);
-	std::pair<analyser_t, floyd::expression_t> analyse_expression_no_target(const analyser_t& a, const floyd::expression_t& e);
+	//	These are output functions, that have been fixed.
+	public: std::vector<std::shared_ptr<const floyd::function_definition_t>> _function_defs;
+
+	public: software_system_t _software_system;
+};
+
+
+
+//////////////////////////////////////		forward
+
+
+std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement);
+floyd::semantic_ast_t analyse(const analyser_t& a);
+typeid_t resolve_type(const analyser_t& a, const typeid_t& type);
+
+/*
+	Return value:
+		null = statements were all executed through.
+		value = return statement returned a value.
+*/
+std::pair<analyser_t, std::vector<std::shared_ptr<floyd::statement_t>> > analyse_statements(const analyser_t& a, const std::vector<std::shared_ptr<floyd::statement_t>>& statements);
+
+floyd::symbol_t find_global_symbol(const analyser_t& a, const std::string& s);
+
+
+/*
+	analyses an expression as far as possible.
+	return == _constant != nullptr:	the expression was completely analysed and resulted in a constant value.
+	return == _constant == nullptr: the expression was partially analyse.
+*/
+std::pair<analyser_t, floyd::expression_t> analyse_expression_to_target(const analyser_t& a, const floyd::expression_t& e, const floyd::typeid_t& target_type);
+std::pair<analyser_t, floyd::expression_t> analyse_expression_no_target(const analyser_t& a, const floyd::expression_t& e);
+
+
+
+
+
+//////////////////////////////////////		IMPLEMENTATION
 
 
 
@@ -99,6 +108,11 @@ const function_definition_t& function_id_to_def(const analyser_t& a, int functio
 
 	return *a._function_defs[function_id];
 }
+
+
+
+/////////////////////////////////////////			TYPES AND SYMBOLS
+
 
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
@@ -150,9 +164,7 @@ symbol_t find_global_symbol(const analyser_t& a, const string& s){
 	return *t.first;
 }
 
-
-
-typeid_t resolve_type_int(const analyser_t& a, const typeid_t& type){
+typeid_t resolve_type_internal(const analyser_t& a, const typeid_t& type){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -235,12 +247,17 @@ typeid_t resolve_type_int(const analyser_t& a, const typeid_t& type){
 	}
 }
 typeid_t resolve_type(const analyser_t& a, const typeid_t& type){
-	const auto result = resolve_type_int(a, type);
+	const auto result = resolve_type_internal(a, type);
 	if(result.check_types_resolved() == false){
 		throw std::runtime_error("Cannot resolve type.");
 	}
 	return result;
 }
+
+
+
+/////////////////////////////////////////			STATEMENTS
+
 
 
 std::pair<analyser_t, vector<shared_ptr<statement_t>>> analyse_statements(const analyser_t& a, const vector<shared_ptr<statement_t>>& statements){
@@ -280,10 +297,6 @@ std::pair<analyser_t, body_t > analyse_body(const analyser_t& a, const floyd::bo
 	a_acc._call_stack.pop_back();
 	return { a_acc, body2 };
 }
-
-
-/////////////////////////////////////////			STATEMENTS
-
 
 /*
 	- Can update an existing local (if local is mutable).
@@ -457,7 +470,6 @@ std::pair<analyser_t, statement_t> analyse_def_function_statement(const analyser
 	return s3;
 }
 
-
 std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a, const statement_t::ifelse_statement_t& statement){
 	QUARK_ASSERT(a.check_invariant());
 
@@ -597,7 +609,9 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const anal
 }
 
 
+
 /////////////////////////////////////////			EXPRESSIONS
+
 
 
 std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const analyser_t& a, const expression_t& e){
@@ -1096,6 +1110,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			return {a_acc, expression_t::make_simple_expression__2(e.get_operation(), left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
+		//	vector
 		else if(shared_type.is_vector()){
 			const auto element_type = shared_type.get_vector_element_type();
 			if(op == expression_type::k_arithmetic_add__2){
@@ -1127,6 +1142,8 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			}
 			return {a_acc, expression_t::make_simple_expression__2(e.get_operation(), left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
+
+		//	function
 		else if(shared_type.is_function()){
 			throw std::runtime_error("Cannot perform operations on two function values.");
 		}
@@ -1137,7 +1154,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 }
 
 /*
-	Magic: a function taking ONE argument of type NULL: variable arguments count of any type. Like c-lang (...).
+	Magic support variable argument functions ,like c-lang (...). Use a function taking ONE argument of type internal_dynamic.
 */
 std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& a, const vector<expression_t>& call_args, const std::vector<typeid_t>& callee_args){
 	if(callee_args.size() == 1 && callee_args[0].is_internal_dynamic()){
@@ -1391,7 +1408,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 }
 
 
-std::pair<analyser_t, expression_t> analyse_expression__op_specific(const analyser_t& a, const expression_t& e, const typeid_t& target_type){
+std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const analyser_t& a, const expression_t& e, const typeid_t& target_type){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -1498,7 +1515,7 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 	QUARK_ASSERT(target_type.check_types_resolved());
 
 	auto a_acc = a;
-	const auto e2_pair = analyse_expression__op_specific(a_acc, e, target_type);
+	const auto e2_pair = analyse_expression__operation_specific(a_acc, e, target_type);
 	a_acc = e2_pair.first;
 	const auto e2b = e2_pair.second;
 	if(e2b.check_types_resolved() == false){
@@ -1531,7 +1548,7 @@ std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_
 	return analyse_expression_to_target(a, e, typeid_t::make_internal_dynamic());
 }
 
-
+/*
 json_t analyser_to_json(const analyser_t& a){
 	vector<json_t> callstack;
 	for(const auto& e: a._call_stack){
@@ -1559,7 +1576,7 @@ json_t analyser_to_json(const analyser_t& a){
 		{ "callstack", json_t::make_array(callstack) }
 	});
 }
-
+*/
 
 void test__analyse_expression(const expression_t& e, const expression_t& expected){
 	const ast_t ast;
@@ -1641,8 +1658,6 @@ semantic_ast_t analyse(const analyser_t& a){
 
 		symbol_map.push_back({function_name, symbol_t::make_constant(function_value)});
 	}
-
-	//??? hide internal types from client code?
 
 	//	"null" is equivalent to json_value::null
 	symbol_map.push_back({"null", symbol_t::make_constant(value_t::make_json_value(json_t()))});
