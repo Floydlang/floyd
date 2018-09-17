@@ -72,7 +72,7 @@ struct analyser_t {
 //////////////////////////////////////		forward
 
 
-std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement);
+std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement);
 floyd::semantic_ast_t analyse(const analyser_t& a);
 typeid_t resolve_type(const analyser_t& a, const typeid_t& type);
 
@@ -260,22 +260,22 @@ typeid_t resolve_type(const analyser_t& a, const typeid_t& type){
 
 
 
-std::pair<analyser_t, vector<shared_ptr<statement_t>>> analyse_statements(const analyser_t& a, const vector<shared_ptr<statement_t>>& statements){
+std::pair<analyser_t, vector<statement_t>> analyse_statements(const analyser_t& a, const vector<statement_t>& statements){
 	QUARK_ASSERT(a.check_invariant());
-	for(const auto i: statements){ QUARK_ASSERT(i->check_invariant()); };
+	for(const auto i: statements){ QUARK_ASSERT(i.check_invariant()); };
 
 	auto a_acc = a;
 
-	vector<shared_ptr<statement_t>> statements2;
+	vector<statement_t> statements2;
 	int statement_index = 0;
 	while(statement_index < statements.size()){
 		const auto statement = statements[statement_index];
-		const auto& r = analyse_statement(a_acc, *statement);
+		const auto& r = analyse_statement(a_acc, statement);
 		a_acc = r.first;
 
 		if(r.second){
 			QUARK_ASSERT(r.second->check_types_resolved());
-			statements2.push_back(r.second);
+			statements2.push_back(*r.second);
 		}
 		statement_index++;
 	}
@@ -544,13 +544,13 @@ std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t
 }
 
 //	Output is the RETURN VALUE of the analysed statement, if any.
-std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement){
+std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
 
 
 
-	typedef std::pair<analyser_t, std::shared_ptr<statement_t>> return_type;
+	typedef std::pair<analyser_t, shared_ptr<statement_t>> return_type;
 
 
 	struct visitor_t {

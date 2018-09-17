@@ -548,8 +548,7 @@ bcgen_body_t bcgen_body_block(bcgenerator_t& vm, const body_t& body){
 	if(body._statements.empty() == false){
 		vm._call_stack.push_back(bcgen_environment_t{ &body_acc });
 
-		for(const auto& s: body._statements){
-			const auto& statement = *s;
+		for(const auto& statement: body._statements){
 			QUARK_ASSERT(statement.check_invariant());
 
 			struct visitor_t {

@@ -13,7 +13,7 @@ namespace floyd {
 
 bool body_t::check_invariant() const {
 	for(const auto i: _statements){
-		QUARK_ASSERT(i->check_invariant());
+		QUARK_ASSERT(i.check_invariant());
 	};
 	return true;
 }

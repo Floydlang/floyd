@@ -140,13 +140,13 @@ namespace floyd {
 //		body_t& operator=(const body_t& oth) = default;
 
 
-		body_t(const std::vector<std::shared_ptr<statement_t>>& s) :
+		body_t(const std::vector<statement_t>& s) :
 			_statements(s),
 			_symbols{}
 		{
 		}
 
-		body_t(const std::vector<std::shared_ptr<statement_t>>& statements, const symbol_table_t& symbols) :
+		body_t(const std::vector<statement_t>& statements, const symbol_table_t& symbols) :
 			_statements(statements),
 			_symbols(symbols)
 		{
@@ -155,13 +155,13 @@ namespace floyd {
 
 		bool check_invariant() const;
 
-		std::vector<std::shared_ptr<statement_t>> _statements;
+		std::vector<statement_t> _statements;
 		symbol_table_t _symbols;
 	};
 
 	static inline bool operator==(const body_t& lhs, const body_t& rhs){
 		return
-			compare_shared_value_vectors(lhs._statements, rhs._statements) == true
+			lhs._statements == rhs._statements
 			&& lhs._symbols == rhs._symbols;
 	}
 
@@ -183,7 +183,7 @@ namespace floyd {
 				return _expression == other._expression;
 			}
 
-			const expression_t _expression;
+			expression_t _expression;
 		};
 		public: static statement_t make__return_statement(const expression_t& expression){
 			return statement_t{ ._contents = {return_statement_t{expression}} };
@@ -198,8 +198,8 @@ namespace floyd {
 				return _name == other._name && _def == other._def;
 			}
 
-			const std::string _name;
-			const std::shared_ptr<const struct_definition_t> _def;
+			std::string _name;
+			std::shared_ptr<const struct_definition_t> _def;
 		};
 		public: static statement_t make__define_struct_statement(const define_struct_statement_t& value){
 			return statement_t{ ._contents = {define_struct_statement_t{value}} };
@@ -214,8 +214,8 @@ namespace floyd {
 				return _name == other._name && _def == other._def;
 			}
 
-			const std::string _name;
-			const std::shared_ptr<const function_definition_t> _def;
+			std::string _name;
+			std::shared_ptr<const function_definition_t> _def;
 		};
 		public: static statement_t make__define_function_statement(const define_function_statement_t& value){
 			return statement_t{ ._contents = {define_function_statement_t{value}} };
@@ -238,10 +238,10 @@ namespace floyd {
 					&& _locals_mutable_mode == other._locals_mutable_mode;
 			}
 
-			const std::string _new_local_name;
-			const typeid_t _bindtype;
-			const expression_t _expression;
-			const mutable_mode _locals_mutable_mode;
+			std::string _new_local_name;
+			typeid_t _bindtype;
+			expression_t _expression;
+			mutable_mode _locals_mutable_mode;
 		};
 		public: static statement_t make__bind_local(const std::string& new_local_name, const typeid_t& bindtype, const expression_t& expression, bind_local_t::mutable_mode locals_mutable_mode){
 			return statement_t{ ._contents = {bind_local_t{ new_local_name, bindtype, expression, locals_mutable_mode}} };
@@ -257,8 +257,8 @@ namespace floyd {
 					&& _expression == other._expression;
 			}
 
-			const std::string _local_name;
-			const expression_t _expression;
+			std::string _local_name;
+			expression_t _expression;
 		};
 		public: static statement_t make__store(const std::string& local_name, const expression_t& expression){
 			return statement_t{ ._contents = {store_t{ local_name, expression}} };
@@ -274,8 +274,8 @@ namespace floyd {
 					&& _expression == other._expression;
 			}
 
-			const variable_address_t _dest_variable;
-			const expression_t _expression;
+			variable_address_t _dest_variable;
+			expression_t _expression;
 		};
 
 		public: static statement_t make__store2(const variable_address_t& dest_variable, const expression_t& expression){
@@ -291,7 +291,7 @@ namespace floyd {
 				return _body == other._body;
 			}
 
-			const body_t _body;
+			body_t _body;
 		};
 
 		public: static statement_t make__block_statement(const body_t& body){
@@ -312,9 +312,9 @@ namespace floyd {
 					;
 			}
 
-			const expression_t _condition;
-			const body_t _then_body;
-			const body_t _else_body;
+			expression_t _condition;
+			body_t _then_body;
+			body_t _else_body;
 		};
 		public: static statement_t make__ifelse_statement(
 			const expression_t& condition,
@@ -344,11 +344,11 @@ namespace floyd {
 					;
 			}
 
-			const std::string _iterator_name;
-			const expression_t _start_expression;
-			const expression_t _end_expression;
-			const body_t _body;
-			const range_type _range_type;
+			std::string _iterator_name;
+			expression_t _start_expression;
+			expression_t _end_expression;
+			body_t _body;
+			range_type _range_type;
 		};
 		public: static statement_t make__for_statement(
 			const std::string iterator_name,
@@ -369,7 +369,7 @@ namespace floyd {
 				return _json_data == other._json_data;
 			}
 
-			const json_t _json_data;
+			json_t _json_data;
 		};
 
 		public: static statement_t make__software_system_statement(
@@ -389,8 +389,8 @@ namespace floyd {
 					&& _body == other._body;
 			}
 
-			const expression_t _condition;
-			const body_t _body;
+			expression_t _condition;
+			body_t _body;
 		};
 
 		public: static statement_t make__while_statement(
@@ -409,7 +409,7 @@ namespace floyd {
 				return _expression == other._expression;
 			}
 
-			const expression_t _expression;
+			expression_t _expression;
 		};
 		public: static statement_t make__expression_statement(const expression_t& expression){
 			return statement_t{ ._contents = {expression_statement_t{ expression }} };
@@ -522,7 +522,7 @@ namespace floyd {
 
 	inline bool body_t::check_types_resolved() const{
 		for(const auto& e: _statements){
-			if(e->check_types_resolved() == false){
+			if(e.check_types_resolved() == false){
 				return false;
 			}
 		}

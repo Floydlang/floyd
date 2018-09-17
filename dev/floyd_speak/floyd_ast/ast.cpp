@@ -25,7 +25,7 @@ namespace floyd {
 
 using namespace std;
 
-const std::vector<std::shared_ptr<statement_t> > astjson_to_statements(const quark::trace_context_t& tracer, const ast_json_t& p);
+const std::vector<statement_t > astjson_to_statements(const quark::trace_context_t& tracer, const ast_json_t& p);
 ast_json_t statement_to_json(const statement_t& e);
 
 
@@ -329,16 +329,16 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 	}
 }
 
-const std::vector<std::shared_ptr<statement_t> > astjson_to_statements(const quark::trace_context_t& tracer, const ast_json_t& p){
+const std::vector<statement_t> astjson_to_statements(const quark::trace_context_t& tracer, const ast_json_t& p){
 	QUARK_CONTEXT_SCOPED_TRACE(tracer, "astjson_to_statements()");
 	QUARK_ASSERT(p._value.check_invariant());
 	QUARK_ASSERT(p._value.is_array());
 
-	vector<shared_ptr<statement_t>> statements2;
+	vector<statement_t> statements2;
 	for(const auto statement: p._value.get_array()){
 		const auto type = statement.get_array_n(0);
 		const auto s2 = astjson_to_statement__nonlossy(tracer, ast_json_t{ statement });
-		statements2.push_back(make_shared<statement_t>(s2));
+		statements2.push_back(s2);
 	}
 	return statements2;
 }
@@ -380,7 +380,7 @@ std::vector<json_t> symbols_to_json(const std::vector<std::pair<std::string, sym
 ast_json_t body_to_json(const body_t& e){
 	std::vector<json_t> statements;
 	for(const auto& i: e._statements){
-		statements.push_back(statement_to_json(*i)._value);
+		statements.push_back(statement_to_json(i)._value);
 	}
 
 	const auto symbols = symbols_to_json(e._symbols._symbols);
