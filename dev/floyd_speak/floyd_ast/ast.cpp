@@ -383,7 +383,7 @@ ast_json_t body_to_json(const body_t& e){
 		statements.push_back(statement_to_json(*i)._value);
 	}
 
-	const auto symbols = symbols_to_json(e._symbols);
+	const auto symbols = symbols_to_json(e._symbols._symbols);
 
 	return ast_json_t{
 		json_t::make_object({

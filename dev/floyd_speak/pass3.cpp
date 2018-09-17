@@ -22,12 +22,6 @@ namespace floyd {
 	using namespace std;
 
 
-	//////////////////////////////////////		lexical_scope_t
-
-
-	struct lexical_scope_t {
-		public: std::vector<std::pair<std::string, floyd::symbol_t>> _symbols;
-	};
 
 
 
@@ -63,7 +57,7 @@ namespace floyd {
 
 
 		//	Non-constant. Last scope is the current one. First scope is the root.
-		public: std::vector<std::shared_ptr<lexical_scope_t>> _call_stack;
+		public: std::vector<std::shared_ptr<symbol_table_t>> _call_stack;
 
 		public: std::vector<std::shared_ptr<const floyd::function_definition_t>> _function_defs;
 
@@ -276,12 +270,12 @@ std::pair<analyser_t, body_t > analyse_body(const analyser_t& a, const floyd::bo
 
 	auto a_acc = a;
 
-	auto new_environment = lexical_scope_t{ body._symbols };
-	a_acc._call_stack.push_back(make_shared<lexical_scope_t>(new_environment));
+	auto new_environment = symbol_table_t{ body._symbols };
+	a_acc._call_stack.push_back(make_shared<symbol_table_t>(new_environment));
 	const auto result = analyse_statements(a_acc, body._statements);
 	a_acc = result.first;
 
-	const auto body2 = body_t(result.second, result.first._call_stack.back()->_symbols);
+	const auto body2 = body_t(result.second, *result.first._call_stack.back());
 
 	a_acc._call_stack.pop_back();
 	return { a_acc, body2 };
@@ -505,7 +499,7 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 
 	//	Add the iterator as a symbol to the body of the for-loop.
 	auto symbols = statement._body._symbols;
-	symbols.push_back({ statement._iterator_name, iterator_symbol});
+	symbols._symbols.push_back({ statement._iterator_name, iterator_symbol});
 	const auto body_injected = body_t(statement._body._statements, symbols);
 	const auto result = analyse_body(a_acc, body_injected);
 	a_acc = result.first;
@@ -1376,7 +1370,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	//	Make function body with arguments injected FIRST in body as local symbols.
 	auto symbol_vec = function_def->_body->_symbols;
 	for(const auto arg: args2){
-		symbol_vec.push_back({arg._name , symbol_t::make_immutable_local(arg._type)});
+		symbol_vec._symbols.push_back({arg._name , symbol_t::make_immutable_local(arg._type)});
 	}
 	const auto function_body2 = body_t(function_def->_body->_statements, symbol_vec);
 
@@ -1675,7 +1669,7 @@ semantic_ast_t analyse(const analyser_t& a){
 	auto analyser2 = a;
 	analyser2._function_defs.swap(function_defs);
 
-	const auto body = body_t(analyser2._imm->_ast._globals._statements, symbol_map);
+	const auto body = body_t(analyser2._imm->_ast._globals._statements, symbol_table_t{symbol_map});
 	const auto result = analyse_body(analyser2, body);
 	const auto result_ast0 = ast_t{
 		._globals = result. second,

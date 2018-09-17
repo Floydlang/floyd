@@ -20,15 +20,15 @@ bool body_t::check_invariant() const {
 
 int add_constant_literal(symbol_table_t& symbols, const std::string& name, const floyd::value_t& value){
 	const auto s = symbol_t::make_constant(value);
-	symbols.push_back(std::pair<std::string, symbol_t>(name, s));
-	return static_cast<int>(symbols.size() - 1);
+	symbols._symbols.push_back(std::pair<std::string, symbol_t>(name, s));
+	return static_cast<int>(symbols._symbols.size() - 1);
 }
 
 
 int add_temp(symbol_table_t& symbols, const std::string& name, const floyd::typeid_t& value_type){
 	const auto s = symbol_t::make_immutable_local(value_type);
-	symbols.push_back(std::pair<std::string, symbol_t>(name, s));
-	return static_cast<int>(symbols.size() - 1);
+	symbols._symbols.push_back(std::pair<std::string, symbol_t>(name, s));
+	return static_cast<int>(symbols._symbols.size() - 1);
 }
 
 

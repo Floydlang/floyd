@@ -77,7 +77,7 @@ struct semantic_ast_t;
 			QUARK_ASSERT(check_invariant());
 		}
 
-		bcgen_body_t(const std::vector<bcgen_instruction_t>& instructions, const std::vector<std::pair<std::string, symbol_t>>& symbols) :
+		bcgen_body_t(const std::vector<bcgen_instruction_t>& instructions, const symbol_table_t& symbols) :
 			_instrs(instructions),
 			_symbols(symbols)
 		{
@@ -89,7 +89,7 @@ struct semantic_ast_t;
 
 		//////////////////////////////////////		STATE
 
-		std::vector<std::pair<std::string, symbol_t>> _symbols;
+		symbol_table_t _symbols;
 		std::vector<bcgen_instruction_t> _instrs;
 	};
 
@@ -273,7 +273,7 @@ bool check_register__local(const reg_t& reg, bool is_reg){
 		QUARK_ASSERT(check_register_nonlocal(e._reg_b, reg_flags._b));
 		QUARK_ASSERT(check_register_nonlocal(e._reg_c, reg_flags._c));
 	}
-	for(const auto& e: _symbols){
+	for(const auto& e: _symbols._symbols){
 		QUARK_ASSERT(e.first != "");
 		QUARK_ASSERT(e.second.check_invariant());
 	}
@@ -306,7 +306,7 @@ bcgen_body_t flatten_body(bcgenerator_t& vm, const bcgen_body_t& dest, const bcg
 	QUARK_ASSERT(source.check_invariant());
 
 	std::vector<bcgen_instruction_t> instructions;
-	int offset = static_cast<int>(dest._symbols.size());
+	int offset = static_cast<int>(dest._symbols._symbols.size());
 	for(int i = 0 ; i < source._instrs.size() ; i++){
 		//	Decrese parent-step for all local register accesses.
 		auto s = source._instrs[i];
@@ -326,7 +326,7 @@ bcgen_body_t flatten_body(bcgenerator_t& vm, const bcgen_body_t& dest, const bcg
 
 	auto body_acc = dest;
 	body_acc._instrs.insert(body_acc._instrs.end(), instructions.begin(), instructions.end());
-	body_acc._symbols.insert(body_acc._symbols.end(), source._symbols.begin(), source._symbols.end());
+	body_acc._symbols._symbols.insert(body_acc._symbols._symbols.end(), source._symbols._symbols.begin(), source._symbols._symbols.end());
 	return body_acc;
 }
 
@@ -491,7 +491,7 @@ bcgen_body_t bcgen_for_statement(bcgenerator_t& vm, const statement_t::for_state
 	const auto condition_opcode = statement._range_type == statement_t::for_statement_t::k_closed_range ? bc_opcode::k_branch_smaller_or_equal_int : bc_opcode::k_branch_smaller_int;
 
 	//	IMPORTANT: Iterator register is the FIRST symbol of the loop body's symbol table.
-	const auto counter_reg = variable_address_t::make_variable_address(0, static_cast<int>(body_acc._symbols.size()));
+	const auto counter_reg = variable_address_t::make_variable_address(0, static_cast<int>(body_acc._symbols._symbols.size()));
 	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_copy_reg_intern, counter_reg, start_expr._out, {}));
 
 	// Reuse start value as our counter.
@@ -816,7 +816,7 @@ call_setup_t gen_call_setup(bcgenerator_t& vm, const std::vector<typeid_t>& func
 int get_host_function_id(bcgenerator_t& vm, const expression_t& e){
 	if(e._input_exprs[0]._operation == expression_type::k_load2 && e._input_exprs[0]._address._parent_steps == -1){
 		const auto global_index = e._input_exprs[0]._address._index;
-		const auto& global_symbol = vm._call_stack[0]._body_ptr->_symbols[global_index];
+		const auto& global_symbol = vm._call_stack[0]._body_ptr->_symbols._symbols[global_index];
 		if(global_symbol.second._const_value.is_function()){
 			const auto function_id = global_symbol.second._const_value.get_function_value();
 			const auto& function_def = vm._imm->_ast._checked_ast._function_defs[function_id];
@@ -1495,7 +1495,7 @@ bc_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_t>& arg
 	}
 
 	std::vector<std::pair<std::string, bc_symbol_t>> symbols2;
-	for(const auto& e: body._symbols){
+	for(const auto& e: body._symbols._symbols){
 		const auto e2 = std::pair<std::string, bc_symbol_t>{
 			e.first,
 			bc_symbol_t{

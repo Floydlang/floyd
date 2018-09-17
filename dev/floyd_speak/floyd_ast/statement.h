@@ -101,7 +101,14 @@ namespace floyd {
 		}
 	};
 
-	typedef std::vector<std::pair<std::string, symbol_t>> symbol_table_t;
+
+
+	//////////////////////////////////////		symbol_table_t
+
+
+	struct symbol_table_t {
+		public: std::vector<std::pair<std::string, floyd::symbol_t>> _symbols;
+	};
 
 	int add_constant_literal(symbol_table_t& symbols, const std::string& name, const floyd::value_t& value);
 	int add_temp(symbol_table_t& symbols, const std::string& name, const floyd::typeid_t& value_type);
@@ -124,7 +131,7 @@ namespace floyd {
 		{
 		}
 
-		body_t(const std::vector<std::shared_ptr<statement_t>>& statements, const std::vector<std::pair<std::string, symbol_t>>& symbols) :
+		body_t(const std::vector<std::shared_ptr<statement_t>>& statements, const symbol_table_t& symbols) :
 			_statements(statements),
 			_symbols(symbols)
 		{
@@ -134,7 +141,7 @@ namespace floyd {
 		bool check_invariant() const;
 
 		std::vector<std::shared_ptr<statement_t>> _statements;
-		std::vector<std::pair<std::string, symbol_t>> _symbols;
+		symbol_table_t _symbols;
 	};
 
 	inline bool operator==(const body_t& lhs, const body_t& rhs){
@@ -624,7 +631,7 @@ namespace floyd {
 				return false;
 			}
 		}
-		for(const auto& s: _symbols){
+		for(const auto& s: _symbols._symbols){
 			if(s.first != "**undef**" && s.second._value_type.check_types_resolved() == false){
 				return false;
 			}
