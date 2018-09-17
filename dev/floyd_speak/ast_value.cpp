@@ -18,10 +18,10 @@ using std::make_shared;
 namespace floyd {
 
 
-	//////////////////////////////////////////////////		struct_instance_t
+	//////////////////////////////////////////////////		struct_value_t
 
 
-	bool struct_instance_t::check_invariant() const{
+	bool struct_value_t::check_invariant() const{
 		QUARK_ASSERT(_def && _def->check_invariant());
 
 		for(const auto& m: _member_values){
@@ -30,14 +30,14 @@ namespace floyd {
 		return true;
 	}
 
-	bool struct_instance_t::operator==(const struct_instance_t& other) const{
+	bool struct_value_t::operator==(const struct_value_t& other) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(other.check_invariant());
 
 		return *_def == *other._def && _member_values == other._member_values;
 	}
 
-	std::string struct_instance_to_compact_string(const struct_instance_t& v){
+	std::string struct_instance_to_compact_string(const struct_value_t& v){
 		std::vector<std::string> members;
 		for(int i = 0 ; i < v._def->_members.size() ; i++){
 			const auto& def = v._def->_members[i];
@@ -134,7 +134,7 @@ namespace floyd {
 		}
 
 
-		value_ext_t::value_ext_t(const typeid_t& type, std::shared_ptr<struct_instance_t>& s) :
+		value_ext_t::value_ext_t(const typeid_t& type, std::shared_ptr<struct_value_t>& s) :
 			_rc(1),
 			_type(type),
 			_struct(s)
@@ -230,7 +230,7 @@ QUARK_UNIT_TESTQ("compare_string()", ""){
 }
 
 
-int compare_struct_true_deep(const struct_instance_t& left, const struct_instance_t& right){
+int compare_struct_true_deep(const struct_value_t& left, const struct_value_t& right){
 	QUARK_ASSERT(left.check_invariant());
 	QUARK_ASSERT(right.check_invariant());
 
@@ -582,7 +582,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 
-		std::shared_ptr<struct_instance_t> value_t::get_struct_value() const{
+		std::shared_ptr<struct_value_t> value_t::get_struct_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_struct()){
 				throw std::runtime_error("Type mismatch!");
@@ -678,7 +678,7 @@ std::string value_and_type_to_string(const value_t& value) {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		value_t::value_t(const typeid_t& struct_type, std::shared_ptr<struct_instance_t>& instance) :
+		value_t::value_t(const typeid_t& struct_type, std::shared_ptr<struct_value_t>& instance) :
 			_basetype(base_type::k_struct)
 		{
 			QUARK_ASSERT(struct_type.get_base_type() == base_type::k_struct);
@@ -1076,7 +1076,7 @@ value_t value_t::make_struct_value(const typeid_t& struct_type, const std::vecto
 	QUARK_ASSERT(struct_type.check_invariant());
 	QUARK_ASSERT(struct_type.get_base_type() != base_type::k_internal_unresolved_type_identifier);
 
-	auto instance = std::make_shared<struct_instance_t>(struct_instance_t{struct_type.get_struct_ref(), values});
+	auto instance = std::make_shared<struct_value_t>(struct_value_t{struct_type.get_struct_ref(), values});
 	return value_t(struct_type, instance);
 }
 

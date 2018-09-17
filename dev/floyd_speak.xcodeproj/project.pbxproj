@@ -280,8 +280,6 @@
 				2C180464208B939700F62480 /* floyd_parser */,
 				2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */,
 				2C02667B2014CAF000A82AD6 /* floyd_test_suite.hpp */,
-				2C557C362040173E006F6818 /* host_functions.cpp */,
-				2C557C372040173E006F6818 /* host_functions.h */,
 				2CB2A511203C4AA80001A19E /* interpretator_benchmark.cpp */,
 				2CB2A513203C4ACB0001A19E /* interpretator_benchmark.h */,
 				2CBCA7D81D569C6D000FAE81 /* parts */,
@@ -302,6 +300,8 @@
 				2C5372B7207A9EAD00647AD1 /* bytecode_interpreter.h */,
 				2C81894B1D47B62400030C96 /* floyd_interpreter.cpp */,
 				2C81894C1D47B62400030C96 /* floyd_interpreter.h */,
+				2C557C362040173E006F6818 /* host_functions.cpp */,
+				2C557C372040173E006F6818 /* host_functions.h */,
 			);
 			path = bytecode_interpreter;
 			sourceTree = "<group>";

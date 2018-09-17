@@ -15,7 +15,7 @@
 	- All language-level syntax checks passed.
 	- Builds symbol tables, resolves all symbols.
 	- Checks types.
-	- Inferes types when not specified.
+	- Infers types when not specified.
 	- Replaces operations with other, equivalent operations.
 	- has the ast_t and symbol tables for all lexical scopes.
 	- Inserts host functions.

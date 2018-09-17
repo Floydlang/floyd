@@ -9,6 +9,34 @@
 #ifndef parser_value_hpp
 #define parser_value_hpp
 
+/*
+	value_t
+
+	Hold a Floyd value with an explicit type.
+	Immutable
+
+	The value_t is completely standalone and is not coupled to the runtime etc.
+
+	A value of type *struct* can hold a huge, deeply nested struct containing dictionaries and so on.
+	It will be deep-copied alternatively some internal immutable state may be shared with other code.
+
+
+	value_t is mostly used in the API:s of the compiler.
+	It is not extremely efficient.
+
+	Can hold *any* value that is legal in Floyd.
+	Also supports a handful of types used internally in tools.
+
+	Example values:
+		Int
+		String
+		Float
+		struct instance
+		function pointer
+		Vector instance
+		Dictionary instance
+*/
+
 #include "quark.h"
 #include <vector>
 #include <string>
@@ -27,13 +55,13 @@ namespace floyd {
 #endif
 
 
-	//////////////////////////////////////////////////		struct_instance_t
+	//////////////////////////////////////////////////		struct_value_t
 
 	/*
 		An instance of a struct-type = a value of this struct.
 	*/
-	struct struct_instance_t {
-		public: struct_instance_t(const std::shared_ptr<const struct_definition_t>& def, const std::vector<value_t>& member_values) :
+	struct struct_value_t {
+		public: struct_value_t(const std::shared_ptr<const struct_definition_t>& def, const std::vector<value_t>& member_values) :
 			_def(def),
 			_member_values(member_values)
 		{
@@ -42,7 +70,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 		public: bool check_invariant() const;
-		public: bool operator==(const struct_instance_t& other) const;
+		public: bool operator==(const struct_value_t& other) const;
 
 
 		public: std::shared_ptr<const struct_definition_t> _def;
@@ -80,6 +108,10 @@ namespace floyd {
 
 	//////////////////////////////////////////////////		value_ext_t
 
+
+	/*
+		Holds data that can't be fit directly inlined into the value_t itself (which would be preferred).
+	*/
 
 	struct value_ext_t {
 		public: bool check_invariant() const{
@@ -185,7 +217,7 @@ namespace floyd {
 
 		public: value_ext_t(const typeid_t& s);
 
-		public: value_ext_t(const typeid_t& type, std::shared_ptr<struct_instance_t>& s);
+		public: value_ext_t(const typeid_t& type, std::shared_ptr<struct_value_t>& s);
 		public: value_ext_t(const typeid_t& type, const std::vector<value_t>& s);
 		public: value_ext_t(const typeid_t& type, const std::map<std::string, value_t>& s);
 		public: value_ext_t(const typeid_t& type, int function_id);
@@ -196,7 +228,7 @@ namespace floyd {
 		public: std::string _string;
 		public: std::shared_ptr<json_t> _json_value;
 		public: typeid_t _typeid_value = typeid_t::make_undefined();
-		public: std::shared_ptr<struct_instance_t> _struct;
+		public: std::shared_ptr<struct_value_t> _struct;
 		public: std::vector<value_t> _vector_elements;
 		public: std::map<std::string, value_t> _dict_entries;
 		public: int _function_id = -1;
@@ -404,7 +436,7 @@ static value_t make_int(int64_t value){
 
 			return _basetype == base_type::k_struct;
 		}
-		public: std::shared_ptr<struct_instance_t> get_struct_value() const;
+		public: std::shared_ptr<struct_value_t> get_struct_value() const;
 
 
 		//------------------------------------------------		vector
@@ -615,7 +647,7 @@ static value_t make_int(int64_t value){
 
 		private: explicit value_t(const std::shared_ptr<json_t>& s);
 		private: explicit value_t(const typeid_t& type);
-		private: explicit value_t(const typeid_t& struct_type, std::shared_ptr<struct_instance_t>& instance);
+		private: explicit value_t(const typeid_t& struct_type, std::shared_ptr<struct_value_t>& instance);
 		private: explicit value_t(const typeid_t& element_type, const std::vector<value_t>& elements);
 		private: explicit value_t(const typeid_t& value_type, const std::map<std::string, value_t>& entries);
 		private: explicit value_t(const typeid_t& type, int function_id);

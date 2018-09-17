@@ -31,7 +31,7 @@ namespace floyd {
 
 
 		# Host functions
-		Host functions are added as constant values, with the propery _value_type (function signature) and _const_value (function value to that host function ID).
+		Host functions are added as constant values, with the proper _value_type (function signature) and _const_value (function value to that host function ID).
 
 
 		# Functions

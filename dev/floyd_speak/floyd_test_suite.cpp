@@ -9,7 +9,7 @@
 #include "floyd_test_suite.hpp"
 
 
-#include "floyd_interpreter.h"
+#include "bytecode_interpreter/floyd_interpreter.h"
 #include "ast_value.h"
 #include "expression.h"
 #include "json_parser.h"
