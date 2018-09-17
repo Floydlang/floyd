@@ -78,34 +78,6 @@ namespace floyd {
 	};
 
 
-	//////////////////////////////////////////////////		function_definition_t
-
-
-	struct function_definition_t {
-		public: bool check_invariant() const {
-			if(_host_function_id != 0){
-				QUARK_ASSERT(!_body);
-			}
-			else{
-				QUARK_ASSERT(_body);
-			}
-			return true;
-		}
-
-		public: bool check_types_resolved() const;
-
-
-		const typeid_t _function_type;
-		const std::vector<member_t> _args;
-		const std::shared_ptr<body_t> _body;
-		const int _host_function_id;
-	};
-
-	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);
-	ast_json_t function_def_to_ast_json(const function_definition_t& v);
-	const typeid_t& get_function_type(const function_definition_t& f);
-
-
 	//////////////////////////////////////////////////		value_ext_t
 
 
@@ -223,6 +195,7 @@ namespace floyd {
 		public: value_ext_t(const typeid_t& type, int function_id);
 
 
+		//	NOTICE: Use std::variant.
 		public: int _rc;
 		public: typeid_t _type;
 		public: std::string _string;
@@ -237,18 +210,6 @@ namespace floyd {
 
 	//////////////////////////////////////////////////		value_t
 
-	/*
-		Hold a value with an explicit type.
-		Immutable
-
-		- Values of basic types like ints and strings
-		- Struct instances
-		- Vector instances
-		- Dictionary instances
-		- Function "pointers"
-
-		NOTICE: Encoding is very inefficient at the moment.
-	*/
 
 	struct value_t {
 
@@ -346,9 +307,9 @@ namespace floyd {
 		//------------------------------------------------		int
 
 
-static value_t make_int(int64_t value){
-	return value_t(value);
-}
+		static value_t make_int(int64_t value){
+			return value_t(value);
+		}
 		public: bool is_int() const {
 			QUARK_ASSERT(check_invariant());
 

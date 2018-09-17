@@ -43,6 +43,36 @@ namespace floyd {
 	}
 
 
+
+	//////////////////////////////////////////////////		function_definition_t
+
+
+	struct function_definition_t {
+		public: bool check_invariant() const {
+			if(_host_function_id != 0){
+				QUARK_ASSERT(!_body);
+			}
+			else{
+				QUARK_ASSERT(_body);
+			}
+			return true;
+		}
+
+		public: bool check_types_resolved() const;
+
+
+		const typeid_t _function_type;
+		const std::vector<member_t> _args;
+		const std::shared_ptr<body_t> _body;
+		const int _host_function_id;
+	};
+
+	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);
+	ast_json_t function_def_to_ast_json(const function_definition_t& v);
+	const typeid_t& get_function_type(const function_definition_t& f);
+
+
+
 	//////////////////////////////////////////////////		expression_t
 
 	/*

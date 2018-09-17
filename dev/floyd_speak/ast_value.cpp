@@ -75,55 +75,6 @@ namespace floyd {
 	}
 
 
-	//////////////////////////////////////////////////		function_definition_t
-
-
-	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs){
-		return true
-			&& lhs._function_type == rhs._function_type
-			&& lhs._args == rhs._args
-			&& compare_shared_values(lhs._body, rhs._body)
-			&& lhs._host_function_id == rhs._host_function_id
-			;
-	}
-
-	const typeid_t& get_function_type(const function_definition_t& f){
-		return f._function_type;
-	}
-
-	ast_json_t function_def_to_ast_json(const function_definition_t& v) {
-		typeid_t function_type = get_function_type(v);
-		return ast_json_t{json_t::make_array({
-			"func-def",
-			typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state)._value,
-			members_to_json(v._args),
-			/***v._body ? body_to_json(*v._body)._value :***/ json_t(),
-
-			json_t(v._host_function_id),
-
-			//	Duplicate info -- we have convered this using function_type above.
-			typeid_to_ast_json(v._function_type.get_function_return(), json_tags::k_tag_resolve_state)._value
-		})};
-	}
-
-	 bool function_definition_t::check_types_resolved() const{
-		bool result = _function_type.check_types_resolved();
-		if(result == false){
-			return false;
-		}
-
-		for(const auto& e: _args){
-			bool result2 = e._type.check_types_resolved();
-			if(result2 == false){
-				return false;
-			}
-		}
-		if(_body && _body->check_types_resolved() == false){
-			return false;
-		}
-		return true;
-	}
-
 
 		value_ext_t::value_ext_t(const typeid_t& s) :
 			_rc(1),
