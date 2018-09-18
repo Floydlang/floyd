@@ -15,7 +15,11 @@
 #include "bytecode_generator.h"
 
 #include <thread>
+#include <deque>
 #include <future>
+
+#include <pthread.h>
+#include <condition_variable>
 
 namespace floyd {
 
@@ -32,8 +36,8 @@ using std::make_shared;
 
 
 
-std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
-	std::vector<bc_value_t> result;
+vector<bc_value_t> values_to_bcs(const vector<value_t>& values){
+	vector<bc_value_t> result;
 	for(const auto& e: values){
 		result.push_back(value_to_bc(e));
 	}
@@ -76,7 +80,7 @@ value_t bc_to_value(const bc_value_t& value){
 	else if(basetype == base_type::k_struct){
 		const auto& struct_def = type.get_struct();
 		const auto& members = value.get_struct_value();
-		std::vector<value_t> members2;
+		vector<value_t> members2;
 		for(int i = 0 ; i < members.size() ; i++){
 			const auto& member_type = struct_def._members[i]._type;
 			const auto& member_value = members[i];
@@ -87,7 +91,7 @@ value_t bc_to_value(const bc_value_t& value){
 	}
 	else if(basetype == base_type::k_vector){
 		const auto& element_type  = type.get_vector_element_type();
-		std::vector<value_t> vec2;
+		vector<value_t> vec2;
 		if(element_type.is_bool()){
 			for(const auto e: value._pod._ext->_vector_pod64){
 				vec2.push_back(value_t::make_bool(e._bool));
@@ -112,7 +116,7 @@ value_t bc_to_value(const bc_value_t& value){
 	}
 	else if(basetype == base_type::k_dict){
 		const auto& value_type  = type.get_dict_value_type();
-		std::map<std::string, value_t> entries2;
+		std::map<string, value_t> entries2;
 		if(value_type.is_bool()){
 			for(const auto& e: value._pod._ext->_dict_pod64){
 				entries2.insert({ e.first, value_t::make_bool(e.second._bool) });
@@ -223,7 +227,7 @@ bc_value_t value_to_bc(const value_t& value){
 		const auto value_type = dict_type.get_dict_value_type();
 //??? add handling for int, bool, double
 		const auto elements = value.get_dict_value();
-		immer::map<std::string, bc_object_handle_t> entries2;
+		immer::map<string, bc_object_handle_t> entries2;
 		for(const auto& e: elements){
 			entries2.insert({e.first, bc_object_handle_t(value_to_bc(e.second))});
 		}
@@ -331,7 +335,7 @@ floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
 	return get_global(vm, s);
 }
 
-value_t get_global(const interpreter_t& vm, const std::string& name){
+value_t get_global(const interpreter_t& vm, const string& name){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& result = find_global_symbol2(vm, name);
@@ -399,15 +403,15 @@ std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(const interpreter_co
 	auto program = compile_to_bytecode(context, source);
 
 	//	Runs global code.
-	auto vm = make_shared<interpreter_t>(program);
+	auto interpreter = make_shared<interpreter_t>(program);
 
-	const auto& main_function = find_global_symbol2(*vm, "main");
+	const auto& main_function = find_global_symbol2(*interpreter, "main");
 	if(main_function != nullptr){
-		const auto& result = call_function(*vm, bc_to_value(main_function->_value), args);
-		return { vm, result };
+		const auto& result = call_function(*interpreter, bc_to_value(main_function->_value), args);
+		return { interpreter, result };
 	}
 	else{
-		return {vm, value_t::make_undefined()};
+		return { interpreter, value_t::make_undefined() };
 	}
 }
 
@@ -428,63 +432,234 @@ void print_vm_printlog(const interpreter_t& vm){
 //////////////////////////////////////		container_runner_t
 
 
-void call_from_thread(int tid) {
-	std::cout << tid << std::endl;
+
+#if 0
+https://en.cppreference.com/w/cpp/thread/condition_variable/wait
+
+std::condition_variable cv;
+std::mutex cv_m; // This mutex is used for three purposes:
+                 // 1) to synchronize accesses to i
+                 // 2) to synchronize accesses to std::cerr
+                 // 3) for the condition variable cv
+int i = 0;
+	
+void waits()
+{
+    std::unique_lock<std::mutex> lk(cv_m);
+    std::cerr << "Waiting... \n";
+    cv.wait(lk, []{return i == 1;});
+    std::cerr << "...finished waiting. i == 1\n";
+}
+	
+void signals()
+{
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    {
+        std::lock_guard<std::mutex> lk(cv_m);
+        std::cerr << "Notifying...\n";
+    }
+    cv.notify_all();
+	
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+	
+    {
+        std::lock_guard<std::mutex> lk(cv_m);
+        i = 1;
+        std::cerr << "Notifying again...\n";
+    }
+    cv.notify_all();
+}
+	
+int main()
+{
+    std::thread t1(waits), t2(waits), t3(waits), t4(signals);
+    t1.join();
+    t2.join();
+    t3.join();
+    t4.join();
 }
 
-struct container_runner_t {
-	std::vector<std::thread> _worker_threads;
+#endif
+
+string get_current_thread_name(){
+	char name[16];
+
+	//pthread_setname_np(pthread_self(), s.c_str()); // set the name (pthread_self() returns the pthread_t of the current thread)
+	pthread_getname_np(pthread_self(), &name[0], sizeof(name));
+	if(strlen(name) == 0){
+		return "main";
+	}
+	else{
+		return string(name);
+	}
+}
 
 
-	container_runner_t(int thread_count){
-		//	Remember that current thread (main) is also a thread.
-		for(int i = 0 ; i < thread_count - 1 ; i++){
-			_worker_threads.push_back(std::thread(call_from_thread, i));
-		}
-	}
-	~container_runner_t(){
-		for(auto &t: _worker_threads){
-			t.join();
-		}
-	}
+struct actor_processor_interface {
+	virtual ~actor_processor_interface(){};
+	virtual void on_message(const json_t& message) = 0;
+	virtual void on_init() = 0;
 };
 
 
+//	NOTICE: Each actor inbox has its own mutex + condition variable. No mutex protects cout.
+struct actor_t {
+	std::condition_variable _inbox_condition_variable;
+	std::mutex _inbox_mutex;
+	std::deque<json_t> _inbox;
+
+	string _name_key;
+	string _function_key;
+	std::thread::id _thread_id;
+
+	std::shared_ptr<actor_processor_interface> _processor;
+};
+
+struct actor_runtime_t {
+	container_t _container;
+	std::map<std::string, std::string> _actor_infos;
+	std::thread::id _main_thread_id;
+
+	vector<std::shared_ptr<actor_t>> _actors;
+	vector<std::thread> _worker_threads;
+};
+
 /*
-??? create one stackframe for each
 ??? have ONE runtime PER computer or one per interpreter?
 ??? Separate system-interpreter (all actors and many clock busses) vs ONE thread of execution?
 */
 
-std::pair<std::shared_ptr<interpreter_t>, value_t> run_container(const interpreter_context_t& context, const string& source, const vector<floyd::value_t>& args){
-	auto program = compile_to_bytecode(context, source);
+void send_message(actor_runtime_t& runtime, int actor_id, const json_t& message){
+	auto& actor = *runtime._actors[actor_id];
 
+    {
+        std::lock_guard<std::mutex> lk(actor._inbox_mutex);
+        actor._inbox.push_front(message);
+        std::cout << "Notifying...\n";
+    }
+    actor._inbox_condition_variable.notify_one();
+//    actor._inbox_condition_variable.notify_all();
+}
+
+void process_actor(actor_runtime_t& runtime, int actor_id){
+	auto& actor = *runtime._actors[actor_id];
+	bool stop = false;
+
+	const auto thread_name = get_current_thread_name();
+
+	if(actor._processor){
+		actor._processor->on_init();
+	}
+
+	while(stop == false){
+		json_t message;
+		{
+			std::unique_lock<std::mutex> lk(actor._inbox_mutex);
+
+			std::cout << thread_name << ": waiting... \n";
+			actor._inbox_condition_variable.wait(lk, [&]{ return actor._inbox.empty() == false; });
+			std::cout << thread_name << ": continue... \n";
+
+			//	Pop message.
+			QUARK_ASSERT(actor._inbox.empty() == false);
+			message = actor._inbox.back();
+			actor._inbox.pop_back();
+		}
+		QUARK_TRACE_SS("RECEIVED: " << json_to_pretty_string(message));
+
+		if(message.is_string() && message.get_string() == "stop"){
+			stop = true;
+			std::cout << thread_name << ": STOP \n";
+		}
+		else{
+			if(actor._processor){
+				actor._processor->on_message(message);
+			}
+		}
+	}
+}
+
+pair<std::shared_ptr<interpreter_t>, value_t> run_container(const interpreter_context_t& context, const string& source, const vector<floyd::value_t>& args){
+	actor_runtime_t runtime;
+	runtime._main_thread_id = std::this_thread::get_id();
+
+	auto program = compile_to_bytecode(context, source);
 	if(program._software_system._name == ""){
 		throw std::exception();
 	}
+	runtime._container = program._software_system._containers.at("iphone app");
+	runtime._actor_infos = fold(runtime._container._clock_busses, std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const pair<string, clock_bus_t>& e){
+		auto acc2 = acc;
+		acc2.insert(e.second._actors.begin(), e.second._actors.end());
+		return acc2;
+	});
 
-	const auto& container = program._software_system._containers.at("ios");
-	
-	const auto actor_count = fold(container._clock_busses, 0, [](int acc, const std::pair<std::string, clock_bus_t>& e){ return acc + 1;});
-/*
-auto lambda_echo = [](int i ) { QUARK_TRACE_SS(i); };
+	for(const auto& t: runtime._actor_infos){
+		auto actor = std::make_shared<actor_t>();
+		actor->_name_key = t.first;
+		actor->_function_key = t.second;
+		runtime._actors.push_back(actor);
+	}
 
+	struct my_processor : public actor_processor_interface {
+		my_processor(actor_runtime_t& runtime) : _runtime(runtime) {}
 
-	const auto runner = container_runner_t(actor_count);
+		actor_runtime_t& _runtime;
 
+		virtual void on_message(const json_t& message){
+			if(message.is_string() && message.get_string() == "hello me!"){
+				send_message(_runtime, 0, json_t("stop"));
+				send_message(_runtime, 1, json_t("stop"));
+				send_message(_runtime, 2, json_t("stop"));
+				send_message(_runtime, 3, json_t("stop"));
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
+		}
+		virtual void on_init(){
+    		std::this_thread::sleep_for(std::chrono::seconds(1));
+			send_message(_runtime, 1, json_t("hello!"));
+    		std::this_thread::sleep_for(std::chrono::seconds(1));
+			send_message(_runtime, 2, json_t("hello me!"));
+		}
+	};
 
+	runtime._actors[2]->_processor = std::make_shared<my_processor>(runtime);
 
-*/	auto vm = make_shared<interpreter_t>(program);
+	//	Remember that current thread (main) is also a thread, no need to create a worker thread for one actor.
+	runtime._actors[0]->_thread_id = runtime._main_thread_id;
 
-	const auto& main_function = find_global_symbol2(*vm, "main");
+	for(int actor_id = 1 ; actor_id < runtime._actors.size() ; actor_id++){
+		runtime._worker_threads.push_back(std::thread([&](int actor_id){
+
+//			const auto native_thread = thread::native_handle();
+
+			std::stringstream thread_name;
+			thread_name << string() << "actor " << actor_id << " thread";
+			pthread_setname_np(/*pthread_self(),*/ thread_name.str().c_str());
+
+			process_actor(runtime, actor_id);
+		}, actor_id));
+	}
+
+	process_actor(runtime, 0);
+
+	for(auto &t: runtime._worker_threads){
+		t.join();
+	}
+
+	auto interpreter = make_shared<interpreter_t>(program);
+	const auto& main_function = find_global_symbol2(*interpreter, "main");
 	if(main_function != nullptr){
-		const auto& result = call_function(*vm, bc_to_value(main_function->_value), args);
-		return { vm, result };
+		const auto& result = call_function(*interpreter, bc_to_value(main_function->_value), args);
+		return { interpreter, result };
 	}
 	else{
-		return {vm, value_t::make_undefined()};
+		return {interpreter, value_t::make_undefined()};
 	}
 }
+
 
 
 
