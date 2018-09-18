@@ -14,6 +14,9 @@
 #include "pass3.h"
 #include "bytecode_generator.h"
 
+#include <thread>
+#include <future>
+
 namespace floyd {
 
 using std::vector;
@@ -418,6 +421,71 @@ void print_vm_printlog(const interpreter_t& vm){
 		}
 	}
 }
+
+
+
+
+//////////////////////////////////////		container_runner_t
+
+
+void call_from_thread(int tid) {
+	std::cout << tid << std::endl;
+}
+
+struct container_runner_t {
+	std::vector<std::thread> _worker_threads;
+
+
+	container_runner_t(int thread_count){
+		//	Remember that current thread (main) is also a thread.
+		for(int i = 0 ; i < thread_count - 1 ; i++){
+			_worker_threads.push_back(std::thread(call_from_thread, i));
+		}
+	}
+	~container_runner_t(){
+		for(auto &t: _worker_threads){
+			t.join();
+		}
+	}
+};
+
+
+/*
+??? create one stackframe for each
+??? have ONE runtime PER computer or one per interpreter?
+??? Separate system-interpreter (all actors and many clock busses) vs ONE thread of execution?
+*/
+
+std::pair<std::shared_ptr<interpreter_t>, value_t> run_container(const interpreter_context_t& context, const string& source, const vector<floyd::value_t>& args){
+	auto program = compile_to_bytecode(context, source);
+
+	if(program._software_system._name == ""){
+		throw std::exception();
+	}
+
+	const auto& container = program._software_system._containers.at("ios");
+	
+	const auto actor_count = fold(container._clock_busses, 0, [](int acc, const std::pair<std::string, clock_bus_t>& e){ return acc + 1;});
+/*
+auto lambda_echo = [](int i ) { QUARK_TRACE_SS(i); };
+
+
+	const auto runner = container_runner_t(actor_count);
+
+
+
+*/	auto vm = make_shared<interpreter_t>(program);
+
+	const auto& main_function = find_global_symbol2(*vm, "main");
+	if(main_function != nullptr){
+		const auto& result = call_function(*vm, bc_to_value(main_function->_value), args);
+		return { vm, result };
+	}
+	else{
+		return {vm, value_t::make_undefined()};
+	}
+}
+
 
 
 }	//	floyd

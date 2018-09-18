@@ -14,7 +14,7 @@
 #include <cmath>
 #include <sys/time.h>
 
-#include <thread>
+//#include <thread>
 #include <chrono>
 #include <algorithm>
 
@@ -1327,11 +1327,6 @@ json_t bcvalue_and_type_to_json(const bc_value_t& v){
 //////////////////////////////////////////		interpreter_t
 
 
-/*
-??? create one stackframe for each
-??? have ONE runtime PER computer or one per interpreter?
-??? Separate system-interpreter (all actors and many clock busses) vs ONE thread of execution?
-*/
 
 interpreter_t::interpreter_t(const bc_program_t& program) :
 	_stack(nullptr)

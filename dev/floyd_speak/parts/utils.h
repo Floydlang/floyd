@@ -53,30 +53,44 @@ template <typename T> std::vector<T> operator+(const std::vector<T>& lhs, const 
 
 // BETTER WAY: https://yongweiwu.wordpress.com/2014/12/07/study-notes-functional-programming-with-cplusplus/
 
-template <typename Collection,typename unop>
-void for_each(Collection col, unop op){
+template <typename COLLECTION, typename UNARY_OPERATION>
+void for_each_col(COLLECTION col, UNARY_OPERATION op){
 	std::for_each(col.begin(),col.end(),op);
 }
 
-template <typename Collection,typename unop>
-Collection mapf(Collection col, unop op) {
-	Collection result;
-	std::transform(col.begin(),col.end(),result.begin(),op);
+template <typename COLLECTION, typename UNARY_OPERATION>
+COLLECTION mapf(const COLLECTION& col, const UNARY_OPERATION& operation) {
+	COLLECTION result;
+	result.reserve(col.size());
+
+	//	Notice that transform() *writes* to output collection, it doesn't append.
+	std::transform(col.begin(), col.end(), std::back_inserter(result), operation);
 	return result;
 }
 
-template <typename Collection,typename Predicate>
+/*
+template <typename Collection, typename Predicate>
 Collection filterNot(Collection col,Predicate predicate ) {
 	auto returnIterator = std::remove_if(col.begin(),col.end(),predicate);
 	col.erase(returnIterator,std::end(col));
 	return col;
 }
 
-template <typename Collection,typename Predicate>
+template <typename Collection, typename Predicate>
 Collection filter(Collection col,Predicate predicate) {
 	//capture the predicate in order to be used inside function
 	auto fnCol = filterNot(col,[predicate](typename Collection::value_type i) { return !predicate(i);});
 	return fnCol;
+}
+*/
+
+template <typename COLLECTION, typename VALUE, typename BINARY_OPERATION>
+VALUE fold(COLLECTION col, const VALUE& init, const BINARY_OPERATION op) {
+	auto acc = init;
+	for(const auto& e: col){
+		acc = op(acc, e);
+	}
+	return acc;
 }
 
 

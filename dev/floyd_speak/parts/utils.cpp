@@ -39,23 +39,70 @@ auto lambda_echo = [](int i ) { QUARK_TRACE_SS(i); };
 std::vector<int> test_collection{20,24,37,42,23,45,37};
 
 QUARK_UNIT_TEST("", "lambda_echo()", "", "") {
-	for_each(test_collection,lambda_echo);
+	for_each_col(test_collection, lambda_echo);
 }
 
 auto addOne = [](int i) { return i+1;};
 
+
+
 /*
+https://stackoverflow.com/questions/14945223/map-function-with-c11-constructs
+
+#include <vector>
+#include <algorithm>
+#include <type_traits>
+
+//
+// Takes an iterable, applies a function to every element,
+// and returns a vector of the results
+//
+template <typename T, typename Func>
+auto map_container(const T& iterable, Func&& func) ->
+    std::vector<decltype(func(std::declval<typename T::value_type>()))>
+{
+    // Some convenience type definitions
+    typedef decltype(func(std::declval<typename T::value_type>())) value_type;
+    typedef std::vector<value_type> result_type;
+
+    // Prepares an output vector of the appropriate size
+    result_type res(iterable.size());
+
+    // Let std::transform apply `func` to all elements
+    // (use perfect forwarding for the function object)
+    std::transform(
+        begin(iterable), end(iterable), res.begin(),
+        std::forward<Func>(func)
+        );
+
+    return res;
+}
+*/
+
 QUARK_UNIT_TEST("", "mapf()", "", "") {
-	auto returnCol = mapf(test_collection, addOne);
-	for_each(returnCol,lambda_echo);
+	auto result = mapf(std::vector<int>{ 20, 21, 22, 23 }, [](int e){ return e + 100; });
+	QUARK_UT_VERIFY(result == (std::vector<int>{ 120, 121, 122, 123 }));
 }
 
-
+/*
 QUARK_UNIT_TEST("", "filter()", "", "") {
 	auto filteredCol = filter(test_collection,[](int value){ return value > 30;});
 	for_each(filteredCol,lambda_echo);
 }
 */
+
+
+
+QUARK_UNIT_TEST("", "fold()", "", "") {
+	const auto result = fold(std::vector<int>{ 1, 2, 3 }, 1000, [](int acc, int e){ return acc + e; });
+	QUARK_UT_VERIFY(result == (1000 + 1 + 2 + 3));
+}
+QUARK_UNIT_TEST("", "fold()", "", "") {
+	const auto result = fold(std::vector<std::string>{ "a", "b", "c", "b", "d" }, 100, [](int acc, std::string e){ return e == "b" ? acc + 1 : acc; });
+	QUARK_UT_VERIFY(result == 102);
+}
+
+
 
 
 #if 0
@@ -72,16 +119,16 @@ std::string float_to_string_no_trailing_zeros(float v){
 
 
 QUARK_UNIT_TEST("", "", "", ""){
-	QUARK_ASSERT(float_to_string_no_trailing_zeros(0) == "0");
+	QUARK_UT_VERIFY(float_to_string_no_trailing_zeros(0) == "0");
 }
 QUARK_UNIT_TEST("", "", "", ""){
-	QUARK_ASSERT(float_to_string_no_trailing_zeros(123) == "123");
+	QUARK_UT_VERIFY(float_to_string_no_trailing_zeros(123) == "123");
 }
 QUARK_UNIT_TEST("", "", "", ""){
-	QUARK_ASSERT(float_to_string_no_trailing_zeros(1.123) == "1.123");
+	QUARK_UT_VERIFY(float_to_string_no_trailing_zeros(1.123) == "1.123");
 }
 QUARK_UNIT_TEST("", "", "", ""){
-	QUARK_ASSERT(float_to_string_no_trailing_zeros(1.5) == "1.5");
+	QUARK_UT_VERIFY(float_to_string_no_trailing_zeros(1.5) == "1.5");
 }
 #endif
 
