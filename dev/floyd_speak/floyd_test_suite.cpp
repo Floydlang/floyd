@@ -3291,9 +3291,55 @@ QUARK_UNIT_TEST("software-system", "", "", ""){
 
 
 
-QUARK_UNIT_TEST("software-system", "", "", ""){
-	program_recording.push_back(test_ss);
+
+
+const auto test_ss2 = R"(
+
+	software-system {
+		"name": "My Arcade Game",
+		"desc": "Space shooter for mobile devices, with connection to a server.",
+
+		"people": {},
+		"connections": [],
+
+		"containers": {
+			"iphone app": {
+				"tech": "Swift, iOS, Xcode, Open GL",
+				"desc": "Mobile shooter game for iOS.",
+
+				"clocks": {
+					"main": {
+						"a": "my_gui_main",
+					}
+				}
+			}
+		}
+	}
+
+	struct my_gui_state_t {
+		int _count
+	}
+
+	func my_gui_state_t my_gui_main__init(){
+		return my_gui_state_t(1000)
+	}
+
+	func my_gui_state_t my_gui_main(my_gui_state_t state, json_value message){
+		if(message == "inc"){
+			return update(state, "_count", state._count + 1)
+		}
+		else if(message == "dec"){
+			return update(state, "_count", state._count - 1)
+		}
+		else{
+			assert(false)
+		}
+	}
+)";
+
+
+QUARK_UNIT_TEST_VIP("software-system", "", "", ""){
+	program_recording.push_back(test_ss2);
 	const auto context = make_test_interpreter_context();
-	const auto r = run_container(context, test_ss, {});
-	print_vm_printlog(*r.first);
+	run_container(context, test_ss2, {}, "iphone app");
 }

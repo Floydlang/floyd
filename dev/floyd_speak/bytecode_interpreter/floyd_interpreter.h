@@ -60,10 +60,11 @@ namespace floyd {
 		const std::vector<value_t>& args
 	);
 
-	std::pair<std::shared_ptr<interpreter_t>, value_t> run_container(
+	void run_container(
 		const interpreter_context_t& context,
 		const std::string& source,
-		const std::vector<value_t>& args
+		const std::vector<value_t>& args,
+		const std::string& container_key
 	);
 
 	void print_vm_printlog(const interpreter_t& vm);

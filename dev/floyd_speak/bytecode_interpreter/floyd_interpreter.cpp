@@ -512,6 +512,12 @@ struct actor_t {
 	string _function_key;
 	std::thread::id _thread_id;
 
+	std::shared_ptr<interpreter_t> _interpreter;
+	std::shared_ptr<value_entry_t> _init_function;
+	std::shared_ptr<value_entry_t> _process_function;
+	value_t _actor_state;
+
+
 	std::shared_ptr<actor_processor_interface> _processor;
 };
 
@@ -551,6 +557,11 @@ void process_actor(actor_runtime_t& runtime, int actor_id){
 		actor._processor->on_init();
 	}
 
+	if(actor._init_function != nullptr){
+		const vector<value_t> args = {};
+		actor._actor_state = call_function(*actor._interpreter, bc_to_value(actor._init_function->_value), args);
+	}
+
 	while(stop == false){
 		json_t message;
 		{
@@ -575,11 +586,17 @@ void process_actor(actor_runtime_t& runtime, int actor_id){
 			if(actor._processor){
 				actor._processor->on_message(message);
 			}
+
+			if(actor._process_function != nullptr){
+				const vector<value_t> args = { actor._actor_state, value_t::make_json_value(message) };
+				const auto& state2 = call_function(*actor._interpreter, bc_to_value(actor._process_function->_value), args);
+				actor._actor_state = state2;
+			}
 		}
 	}
 }
 
-pair<std::shared_ptr<interpreter_t>, value_t> run_container(const interpreter_context_t& context, const string& source, const vector<floyd::value_t>& args){
+void run_container(const interpreter_context_t& context, const string& source, const vector<floyd::value_t>& args, const std::string& container_key){
 	actor_runtime_t runtime;
 	runtime._main_thread_id = std::this_thread::get_id();
 
@@ -587,7 +604,7 @@ pair<std::shared_ptr<interpreter_t>, value_t> run_container(const interpreter_co
 	if(program._software_system._name == ""){
 		throw std::exception();
 	}
-	runtime._container = program._software_system._containers.at("iphone app");
+	runtime._container = program._software_system._containers.at(container_key);
 	runtime._actor_infos = fold(runtime._container._clock_busses, std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const pair<string, clock_bus_t>& e){
 		auto acc2 = acc;
 		acc2.insert(e.second._actors.begin(), e.second._actors.end());
@@ -598,9 +615,14 @@ pair<std::shared_ptr<interpreter_t>, value_t> run_container(const interpreter_co
 		auto actor = std::make_shared<actor_t>();
 		actor->_name_key = t.first;
 		actor->_function_key = t.second;
+		actor->_interpreter = make_shared<interpreter_t>(program);
+		actor->_init_function = find_global_symbol2(*actor->_interpreter, t.second + "__init");
+		actor->_process_function = find_global_symbol2(*actor->_interpreter, t.second);
+
 		runtime._actors.push_back(actor);
 	}
 
+/*
 	struct my_processor : public actor_processor_interface {
 		my_processor(actor_runtime_t& runtime) : _runtime(runtime) {}
 
@@ -626,6 +648,7 @@ pair<std::shared_ptr<interpreter_t>, value_t> run_container(const interpreter_co
 	};
 
 	runtime._actors[2]->_processor = std::make_shared<my_processor>(runtime);
+*/
 
 	//	Remember that current thread (main) is also a thread, no need to create a worker thread for one actor.
 	runtime._actors[0]->_thread_id = runtime._main_thread_id;
@@ -643,21 +666,19 @@ pair<std::shared_ptr<interpreter_t>, value_t> run_container(const interpreter_co
 		}, actor_id));
 	}
 
+	send_message(runtime, 0, json_t("inc"));
+	send_message(runtime, 0, json_t("inc"));
+	send_message(runtime, 0, json_t("dec"));
+	send_message(runtime, 0, json_t("inc"));
+	send_message(runtime, 0, json_t("stop"));
+
 	process_actor(runtime, 0);
 
 	for(auto &t: runtime._worker_threads){
 		t.join();
 	}
 
-	auto interpreter = make_shared<interpreter_t>(program);
-	const auto& main_function = find_global_symbol2(*interpreter, "main");
-	if(main_function != nullptr){
-		const auto& result = call_function(*interpreter, bc_to_value(main_function->_value), args);
-		return { interpreter, result };
-	}
-	else{
-		return {interpreter, value_t::make_undefined()};
-	}
+	QUARK_UT_VERIFY(runtime._actors[0]->_actor_state.get_struct_value()->_member_values[0].get_int_value() == 1002);
 }
 
 

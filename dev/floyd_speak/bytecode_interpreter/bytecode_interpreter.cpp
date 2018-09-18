@@ -665,7 +665,32 @@ int bc_compare_dicts_double(const immer::map<std::string, bc_pod64_t>& left, con
 
 
 
-
+int json_value_type_to_int(const json_t& value){
+	if(value.is_object()){
+		return 0;
+	}
+	else if(value.is_array()){
+		return 1;
+	}
+	else if(value.is_string()){
+		return 2;
+	}
+	else if(value.is_number()){
+		return 4;
+	}
+	else if(value.is_true()){
+		return 5;
+	}
+	else if(value.is_false()){
+		return 6;
+	}
+	else if(value.is_null()){
+		return 7;
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
 
 
 int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
@@ -673,8 +698,41 @@ int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
 		return 0;
 	}
 	else{
-		// ??? implement compare.
-		assert(false);
+		const auto lhs_type = json_value_type_to_int(lhs);
+		const auto rhs_type = json_value_type_to_int(rhs);
+		int type_diff = rhs_type - lhs_type;
+		if(type_diff != 0){
+			return type_diff;
+		}
+		else{
+			if(lhs.is_object()){
+				QUARK_ASSERT(false);
+			}
+			else if(lhs.is_array()){
+				QUARK_ASSERT(false);
+			}
+			else if(lhs.is_string()){
+				const auto diff = std::strcmp(lhs.get_string().c_str(), rhs.get_string().c_str());
+				return diff < 0 ? -1 : 1;
+			}
+			else if(lhs.is_number()){
+				const auto lhs_number = lhs.get_number();
+				const auto rhs_number = rhs.get_number();
+				return lhs_number < rhs_number ? -1 : 1;
+			}
+			else if(lhs.is_true()){
+				QUARK_ASSERT(false);
+			}
+			else if(lhs.is_false()){
+				QUARK_ASSERT(false);
+			}
+			else if(lhs.is_null()){
+				QUARK_ASSERT(false);
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
+		}
 	}
 }
 
