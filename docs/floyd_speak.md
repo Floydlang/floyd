@@ -209,8 +209,8 @@ When the condition is true, this entire expression has the value of a. Else it h
 	func bool is_polite(string x){
 		return x == "hello" ? "polite" : "rude"
 	}
-	assert(is_polity("hiya!") == false)
-	assert(is_polity("hello") == true)
+	assert(is_polite("hiya!") == false)
+	assert(is_polite("hello") == true)
 ```
 
 
