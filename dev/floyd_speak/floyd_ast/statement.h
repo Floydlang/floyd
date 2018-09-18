@@ -13,7 +13,8 @@
 #include "quark.h"
 #include <vector>
 #include <string>
-#include "../parts/xcode-libcxx-xcode9/variant"	//	https://github.com/youknowone/xcode-libcxx
+//#include "../parts/xcode-libcxx-xcode9/variant"	//	https://github.com/youknowone/xcode-libcxx
+#include <variant>
 
 #include "expression.h"
 

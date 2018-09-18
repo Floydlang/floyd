@@ -11,7 +11,8 @@
 #include <thread>
 #include <future>
 #include "immer/vector.hpp"
-#include "parts/xcode-libcxx-xcode9/variant"	//	https://github.com/youknowone/xcode-libcxx
+//#include "parts/xcode-libcxx-xcode9/variant"	//	https://github.com/youknowone/xcode-libcxx
+#include <variant>
 #include <cmath>
 
 using namespace std;
