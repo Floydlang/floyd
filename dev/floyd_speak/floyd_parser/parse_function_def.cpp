@@ -123,7 +123,7 @@ const std::vector<test> testsxyz = {
 
 
 QUARK_UNIT_TEST("", "parse_function_definition2()", "BATCH", "Correct output JSON"){
-	for(const auto e: testsxyz){
+	for(const auto& e: testsxyz){
 		QUARK_SCOPED_TRACE(e.desc);
 		ut_compare_jsons(parse_function_definition2(seq_t(e.input)).first._value, parse_json(seq_t(e.output)).first);
 	}

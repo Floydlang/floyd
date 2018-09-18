@@ -262,7 +262,7 @@ typeid_t resolve_type(const analyser_t& a, const typeid_t& type){
 
 std::pair<analyser_t, vector<statement_t>> analyse_statements(const analyser_t& a, const vector<statement_t>& statements){
 	QUARK_ASSERT(a.check_invariant());
-	for(const auto i: statements){ QUARK_ASSERT(i.check_invariant()); };
+	for(const auto& i: statements){ QUARK_ASSERT(i.check_invariant()); };
 
 	auto a_acc = a;
 
@@ -743,7 +743,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			const auto element_type = typeid_t::make_json_value();
 
 			std::vector<expression_t> elements2;
-			for(const auto m: e._input_exprs){
+			for(const auto& m: e._input_exprs){
 				const auto element_expr = analyse_expression_to_target(a_acc, m, element_type);
 				a_acc = element_expr.first;
 				elements2.push_back(element_expr.second);
@@ -763,7 +763,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 		else {
 			const auto element_type = current_type.get_vector_element_type();
 			std::vector<expression_t> elements2;
-			for(const auto m: e._input_exprs){
+			for(const auto& m: e._input_exprs){
 				const auto element_expr = analyse_expression_no_target(a_acc, m);
 				a_acc = element_expr.first;
 				elements2.push_back(element_expr.second);
@@ -777,7 +777,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				throw std::runtime_error("Cannot resolve type.");
 			}
 
-			for(const auto m: elements2){
+			for(const auto& m: elements2){
 				if(m.get_output_type() != element_type2){
 					throw std::runtime_error("Vector can not hold elements of different types.");
 				}
@@ -1373,7 +1373,7 @@ std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const a
 
 	//	Resolve member types in this scope.
 	std::vector<member_t> members2;
-	for(const auto e: struct_def._members){
+	for(const auto& e: struct_def._members){
 		const auto name = e._name;
 		const auto type = e._type;
 		const auto type2 = resolve_type(a_acc, type);
@@ -1394,14 +1394,14 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	const auto function_type2 = resolve_type(a_acc, function_def->_function_type);
 
 	vector<member_t> args2;
-	for(const auto arg: function_def->_args){
+	for(const auto& arg: function_def->_args){
 		const auto arg_type2 = resolve_type(a_acc, arg._type);
 		args2.push_back(member_t(arg_type2, arg._name));
 	}
 
 	//	Make function body with arguments injected FIRST in body as local symbols.
 	auto symbol_vec = function_def->_body->_symbols;
-	for(const auto arg: args2){
+	for(const auto& arg: args2){
 		symbol_vec._symbols.push_back({arg._name , symbol_t::make_immutable_local(arg._type)});
 	}
 	const auto function_body2 = body_t(function_def->_body->_statements, symbol_vec);
@@ -1658,7 +1658,7 @@ semantic_ast_t analyse(const analyser_t& a){
 
 		const auto args = [&](){
 			vector<member_t> result;
-			for(const auto e: signature._function_type.get_function_args()){
+			for(const auto& e: signature._function_type.get_function_args()){
 				result.push_back(member_t(e, "dummy"));
 			}
 			return result;

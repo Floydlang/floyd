@@ -290,7 +290,7 @@ void run_file(const std::vector<std::string>& args){
 //	std::cout << "Preparing arguments..." << std::endl;
 
 	std::vector<floyd::value_t> args3;
-	for(const auto e: args2){
+	for(const auto& e: args2){
 		args3.push_back(floyd::value_t::make_string(e));
 	}
 

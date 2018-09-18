@@ -129,7 +129,7 @@ std::string object_to_compact_string(const std::map<std::string, json_t>& object
 	}
 	else{
 		string members;
-		for(const auto m: object){
+		for(const auto& m: object){
 			const auto s = (quote_fields ? quote(m.first) : m.first) + ": " + json_to_compact_string2(m.second, quote_fields) + ", ";
 			members = members + s;
 		}

@@ -210,7 +210,7 @@ ast_json_t expression_to_json_internal(const expression_t& e){
 
 ast_json_t expressions_to_json(const std::vector<expression_t> v){
 	std::vector<json_t> r;
-	for(const auto e: v){
+	for(const auto& e: v){
 		r.push_back(expression_to_json(e)._value);
 	}
 	return ast_json_t{json_t::make_array(r)};

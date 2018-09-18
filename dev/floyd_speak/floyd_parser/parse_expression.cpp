@@ -60,7 +60,7 @@ static ast_json_t op2_to_json(eoperation op, const expr_t& expr0, const expr_t& 
 
 ast_json_t expr_vector_to_json_array(const vector<expr_t>& v){
 	vector<json_t> v2;
-	for(const auto e: v){
+	for(const auto& e: v){
 		v2.push_back(expr_to_json(e)._value);
 	}
 	return ast_json_t{v2};

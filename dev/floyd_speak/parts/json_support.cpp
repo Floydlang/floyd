@@ -268,7 +268,7 @@ QUARK_UNIT_TESTQ("make_vec()", ""){
 json_t make_object(const std::vector<std::pair<std::string, json_t>>& entries){
 	std::map<string, json_t> result;
 
-	for(const auto i: entries){
+	for(const auto& i: entries){
 		if(i.second.is_null()){
 		}
 		else{
@@ -361,7 +361,7 @@ json_t make_mixed_test_tree(){
 bool exists_in(const json_t& parent, const std::vector<json_t>& path){
 	QUARK_ASSERT(parent.check_invariant());
 	QUARK_ASSERT(!path.empty());
-	for(const auto n: path){ QUARK_ASSERT(n.check_invariant()); QUARK_ASSERT(n.is_string() || n.is_number()); }
+	for(const auto& n: path){ QUARK_ASSERT(n.check_invariant()); QUARK_ASSERT(n.is_string() || n.is_number()); }
 
 	if(parent.is_object()){
 		QUARK_ASSERT(path[0].is_string());
@@ -444,7 +444,7 @@ QUARK_UNIT_TESTQ("exists_in()", "mixed arrays and trees - lost & found"){
 json_t get_in(const json_t& parent, const std::vector<json_t>& path){
 	QUARK_ASSERT(parent.check_invariant());
 	QUARK_ASSERT(!path.empty());
-	for(const auto n: path){ QUARK_ASSERT(n.check_invariant()); QUARK_ASSERT(n.is_string() || n.is_number()); }
+	for(const auto& n: path){ QUARK_ASSERT(n.check_invariant()); QUARK_ASSERT(n.is_string() || n.is_number()); }
 
 	if(parent.is_object()){
 		const auto member_name = path[0].get_string();
@@ -659,7 +659,7 @@ json_t assoc_in(const json_t& parent, const std::vector<json_t>& path, const jso
 	QUARK_ASSERT(parent.check_invariant());
 	QUARK_ASSERT(new_element.check_invariant());
 	QUARK_ASSERT(!path.empty());
-	for(const auto n: path){ QUARK_ASSERT(n.check_invariant()); QUARK_ASSERT(n.is_string() || n.is_number()); }
+	for(const auto& n: path){ QUARK_ASSERT(n.check_invariant()); QUARK_ASSERT(n.is_string() || n.is_number()); }
 
 	if(parent.is_null()){
 		const auto empty = json_t::make_object();
@@ -786,7 +786,7 @@ std::vector<std::string> to_string_vec(const json_t& json){
 
 json_t from_string_vec(const std::vector<std::string>& vec){
 	vector<json_t> str;
-	for(const auto e: vec){
+	for(const auto& e: vec){
 		str.push_back(e);
 	}
 	return json_t::make_array(str);

@@ -20,6 +20,15 @@ using namespace std;
 #include "quark.h"
 
 
+
+QUARK_UNIT_TEST("", "", "", ""){
+	double a = 10.0f;
+	double b = 23.3f;
+
+	bool r = a && b;
+	QUARK_UT_VERIFY(r == true);
+}
+
 struct test_cpp_value_class_a {
 	int _a = 10;
 	int _b = 10;

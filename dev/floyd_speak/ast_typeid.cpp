@@ -159,7 +159,7 @@ const char tag_resolved_type_char = '^';
 			QUARK_ASSERT(_ext->_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_ext->_struct_def);
 
-			for(const auto e: _ext->_parts){
+			for(const auto& e: _ext->_parts){
 				QUARK_ASSERT(e.check_invariant());
 			}
 		}
@@ -236,7 +236,7 @@ const char tag_resolved_type_char = '^';
 			const auto args = t.get_function_args();
 
 			vector<string> args_str;
-			for(const auto a: args){
+			for(const auto& a: args){
 				args_str.push_back(typeid_to_compact_string(a));
 			}
 
@@ -512,14 +512,14 @@ const char tag_resolved_type_char = '^';
 
 	std::vector<json_t> typeids_to_json_array(const std::vector<typeid_t>& m){
 		vector<json_t> r;
-		for(const auto a: m){
+		for(const auto& a: m){
 			r.push_back(typeid_to_ast_json(a, json_tags::k_tag_resolve_state)._value);
 		}
 		return r;
 	}
 	std::vector<typeid_t> typeids_from_json_array(const std::vector<json_t>& m){
 		vector<typeid_t> r;
-		for(const auto a: m){
+		for(const auto& a: m){
 			r.push_back(typeid_from_ast_json(ast_json_t{a}));
 		}
 		return r;
@@ -532,7 +532,7 @@ const char tag_resolved_type_char = '^';
 	bool struct_definition_t::check_invariant() const{
 //		QUARK_ASSERT(_struct!type.is_undefined() && _struct_type.check_invariant());
 
-		for(const auto m: _members){
+		for(const auto& m: _members){
 			QUARK_ASSERT(m.check_invariant());
 		}
 		return true;
@@ -558,7 +558,7 @@ const char tag_resolved_type_char = '^';
 
 	std::string to_compact_string(const struct_definition_t& v){
 		auto s = string() + "struct {";
-		for(const auto e: v._members){
+		for(const auto& e: v._members){
 			s = s + typeid_to_compact_string(e._type) + " " + e._name + ";";
 		}
 		s = s + "}";
@@ -617,7 +617,7 @@ const char tag_resolved_type_char = '^';
 
 	std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m){
 		vector<floyd::typeid_t> r;
-		for(const auto a: m){
+		for(const auto& a: m){
 			r.push_back(a._type);
 		}
 		return r;
@@ -625,7 +625,7 @@ const char tag_resolved_type_char = '^';
 
 	json_t members_to_json(const std::vector<member_t>& members){
 		std::vector<json_t> r;
-		for(const auto i: members){
+		for(const auto& i: members){
 			const auto member = make_object({
 				{ "type", typeid_to_ast_json(i._type, json_tags::k_tag_resolve_state)._value },
 				{ "name", json_t(i._name) }
@@ -639,7 +639,7 @@ const char tag_resolved_type_char = '^';
 		QUARK_ASSERT(members.check_invariant());
 
 		std::vector<member_t> r;
-		for(const auto i: members.get_array()){
+		for(const auto& i: members.get_array()){
 			const auto m = member_t(
 				typeid_from_ast_json(ast_json_t{i.get_object_element("type")}),
 				i.get_object_element("name").get_string()

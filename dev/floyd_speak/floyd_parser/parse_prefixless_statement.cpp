@@ -55,7 +55,7 @@ std::string concat_strings(const vector<string>& v){
 	}
 	else{
 		string result;
-		for(const auto e: v){
+		for(const auto& e: v){
 			result += "\t|\t" + e;
 		}
 		return result;

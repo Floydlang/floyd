@@ -31,7 +31,7 @@ using std::make_shared;
 
 std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
 	std::vector<bc_value_t> result;
-	for(const auto e: values){
+	for(const auto& e: values){
 		result.push_back(value_to_bc(e));
 	}
 	return result;
@@ -101,7 +101,7 @@ value_t bc_to_value(const bc_value_t& value){
 			}
 		}
 		else{
-			for(const auto e: value._pod._ext->_vector_objects){
+			for(const auto& e: value._pod._ext->_vector_objects){
 				vec2.push_back(bc_to_value(bc_value_t(element_type, e)));
 			}
 		}
@@ -111,22 +111,22 @@ value_t bc_to_value(const bc_value_t& value){
 		const auto& value_type  = type.get_dict_value_type();
 		std::map<std::string, value_t> entries2;
 		if(value_type.is_bool()){
-			for(const auto e: value._pod._ext->_dict_pod64){
+			for(const auto& e: value._pod._ext->_dict_pod64){
 				entries2.insert({ e.first, value_t::make_bool(e.second._bool) });
 			}
 		}
 		else if(value_type.is_int()){
-			for(const auto e: value._pod._ext->_dict_pod64){
+			for(const auto& e: value._pod._ext->_dict_pod64){
 				entries2.insert({ e.first, value_t::make_int(e.second._int64) });
 			}
 		}
 		else if(value_type.is_double()){
-			for(const auto e: value._pod._ext->_dict_pod64){
+			for(const auto& e: value._pod._ext->_dict_pod64){
 				entries2.insert({ e.first, value_t::make_double(e.second._double) });
 			}
 		}
 		else{
-			for(const auto e: value._pod._ext->_dict_objects){
+			for(const auto& e: value._pod._ext->_dict_objects){
 				entries2.insert({ e.first, bc_to_value(bc_value_t(value_type, e.second)) });
 			}
 		}
@@ -188,17 +188,17 @@ bc_value_t value_to_bc(const value_t& value){
 			const auto& vec = value.get_vector_value();
 			immer::vector<bc_pod64_t> vec2;
 			if(element_type.is_bool()){
-				for(const auto e: vec){
+				for(const auto& e: vec){
 					vec2.push_back(bc_pod64_t{._bool = e.get_bool_value()});
 				}
 			}
 			else if(element_type.is_int()){
-				for(const auto e: vec){
+				for(const auto& e: vec){
 					vec2.push_back(bc_pod64_t{._int64 = e.get_int_value()});
 				}
 			}
 			else if(element_type.is_double()){
-				for(const auto e: vec){
+				for(const auto& e: vec){
 					vec2.push_back(bc_pod64_t{._double = e.get_double_value()});
 				}
 			}
@@ -207,7 +207,7 @@ bc_value_t value_to_bc(const value_t& value){
 		else{
 			const auto& vec = value.get_vector_value();
 			immer::vector<bc_object_handle_t> vec2;
-			for(const auto e: vec){
+			for(const auto& e: vec){
 				const auto bc = value_to_bc(e);
 				const auto hand = bc_object_handle_t(bc);
 				vec2.push_back(hand);
@@ -221,7 +221,7 @@ bc_value_t value_to_bc(const value_t& value){
 //??? add handling for int, bool, double
 		const auto elements = value.get_dict_value();
 		immer::map<std::string, bc_object_handle_t> entries2;
-		for(const auto e: elements){
+		for(const auto& e: elements){
 			entries2.insert({e.first, bc_object_handle_t(value_to_bc(e.second))});
 		}
 		return make_dict_value(value_type, entries2);
@@ -344,7 +344,7 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 #if DEBUG
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
-	for(const auto i: args){ QUARK_ASSERT(i.check_invariant()); };
+	for(const auto& i: args){ QUARK_ASSERT(i.check_invariant()); };
 	QUARK_ASSERT(f.is_function());
 #endif
 

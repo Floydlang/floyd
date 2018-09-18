@@ -91,7 +91,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 		if(v.is_object()){
 			const auto struct_def = target_type.get_struct();
 			vector<value_t> members2;
-			for(const auto member: struct_def._members){
+			for(const auto& member: struct_def._members){
 				const auto member_value0 = v.get_object_element(member._name);
 				const auto member_value1 = unflatten_json_to_specific_type(member_value0, member._type);
 				members2.push_back(member_value1);
@@ -125,7 +125,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 			const auto value_type = target_type.get_dict_value_type();
 			const auto source_obj = v.get_object();
 			std::map<std::string, value_t> obj2;
-			for(const auto member: source_obj){
+			for(const auto& member: source_obj){
 				const auto member_name = member.first;
 				const auto member_value0 = member.second;
 				const auto member_value1 = unflatten_json_to_specific_type(member_value0, value_type);
@@ -894,7 +894,7 @@ std::map<int,  host_function_t> get_host_functions(){
 
 	const auto lookup = [&](){
 		std::map<int,  host_function_t> result;
-		for(const auto e: lookup0){
+		for(const auto& e: lookup0){
 			const auto function_name = e.first;
 			const auto f_ptr = e.second;
 			const auto hf = host_functions.at(function_name);

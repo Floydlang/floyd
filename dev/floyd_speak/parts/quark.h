@@ -816,7 +816,7 @@ inline int run_test_list(const std::vector<unit_test_def>& tests){
 
 inline std::vector<unit_test_def> prepare_test_list(const std::vector<unit_test_def>& tests, const std::vector<std::string>& source_file_order){
 	std::vector<unit_test_def> vip_tests;
-	for(const auto e: tests){
+	for(const auto& e: tests){
 		if(e._vip){
 			vip_tests.push_back(e);
 		}
@@ -831,7 +831,7 @@ inline std::vector<unit_test_def> prepare_test_list(const std::vector<unit_test_
 		std::vector<unit_test_def> ordered_tests;
 		std::vector<unit_test_def> remaining_tests = tests;
 
-		for(const auto f: source_file_order){
+		for(const auto& f: source_file_order){
 
 			//	Make list of all tests for this source file.
 			auto it = remaining_tests.begin();

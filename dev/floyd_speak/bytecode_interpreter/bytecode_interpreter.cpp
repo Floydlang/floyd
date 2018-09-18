@@ -1562,13 +1562,6 @@ void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t target_ityp
 }
 
 
-QUARK_UNIT_TEST("", "", "", ""){
-	double a = 10.0f;
-	double b = 23.3f;
-
-	bool r = a && b;
-	QUARK_UT_VERIFY(r == true);
-}
 
 
 #if 0

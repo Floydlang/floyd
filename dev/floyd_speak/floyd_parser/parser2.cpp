@@ -271,7 +271,7 @@ bool are_keys_used(const collection_def_t& c){
 
 vector<expr_t> get_values(const collection_def_t& c){
 	vector<expr_t> result;
-	for(const auto e: c._elements){
+	for(const auto& e: c._elements){
 		result.push_back(e._value);
 	}
 	return result;
@@ -714,7 +714,7 @@ std::pair<expr_t, seq_t> parse_lhs_atom(const seq_t& p){
 			throw std::runtime_error("Dictionary needs keys!");
 		}
 		vector<expr_t> flat_dict;
-		for(const auto b: a.first._elements){
+		for(const auto& b: a.first._elements){
 			if(b._key == nullptr){
 				throw std::runtime_error("Dictionary definition misses element key(s)!");
 			}

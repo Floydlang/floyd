@@ -50,7 +50,7 @@ static std::map<expression_type, string> operation_to_string_lookup = {
 
 std::map<string, expression_type> make_reverse(const std::map<expression_type, string>& m){
 	std::map<string, expression_type> temp;
-	for(const auto e: m){
+	for(const auto& e: m){
 		temp[e.second] = e.first;
 	}
 	return temp;

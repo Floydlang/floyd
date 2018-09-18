@@ -150,7 +150,7 @@ expression_t astjson_to_expression(const quark::trace_context_t& tracer, const j
 		const auto args = e.get_array_n(2).get_array();
 
 		std::vector<expression_t> args2;
-		for(const auto m: args){
+		for(const auto& m: args){
 			args2.push_back(astjson_to_expression(tracer, m));
 		}
 
@@ -335,7 +335,7 @@ const std::vector<statement_t> astjson_to_statements(const quark::trace_context_
 	QUARK_ASSERT(p._value.is_array());
 
 	vector<statement_t> statements2;
-	for(const auto statement: p._value.get_array()){
+	for(const auto& statement: p._value.get_array()){
 		const auto type = statement.get_array_n(0);
 		const auto s2 = astjson_to_statement__nonlossy(tracer, ast_json_t{ statement });
 		statements2.push_back(s2);
