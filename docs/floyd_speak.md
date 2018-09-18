@@ -337,7 +337,7 @@ You can access a random character in the string, using its integer position.
 Notice 1: You cannot modify the string using [], only read. Use update() to change a character.
 Notice 2: Floyd returns the character as an int, which is 64 bit signed.
 
-You can append to strings together using the + operation.
+You can append two strings together using the + operation.
 
 	let a = "Hello" + ", world!"
 	assert(a == "Hello, world!")
@@ -380,7 +380,7 @@ This lets you access a random element in the vector, using its integer position.
 
 Notice: You cannot modify the vector using [], only read. Use update() to change an element.
 
-You can append to vector together using the + operation.
+You can append two vectors together using the + operation.
 
 	let a = [ 10, 20, 30 ] + [ 40, 50 ]
 	assert(a == [ 10, 20, 30, 40, 50 ])
