@@ -152,7 +152,7 @@ Function types:
 This is a function that takes a function value as argument:
 
 ```
-	int f5(func bool (string, string))
+	func int f5(func bool (string, string))
 ```
 
 This is a function that returns a function value:
@@ -209,8 +209,8 @@ When the condition is true, this entire expression has the value of a. Else it h
 	func bool is_polite(string x){
 		return x == "hello" ? "polite" : "rude"
 	}
-	assert(is_polity("hiya!") == false)
-	assert(is_polity("hello") == true)
+	assert(is_polite("hiya!") == false)
+	assert(is_polite("hello") == true)
 ```
 
 
@@ -337,10 +337,10 @@ You can access a random character in the string, using its integer position.
 Notice 1: You cannot modify the string using [], only read. Use update() to change a character.
 Notice 2: Floyd returns the character as an int, which is 64 bit signed.
 
-You can append to strings together using the + operation.
+You can append two strings together using the + operation.
 
 	let a = "Hello" + ", world!"
-	assert(a == "Hello, world!"
+	assert(a == "Hello, world!")
 
 
 ### CORE FUNCTIONS
@@ -380,7 +380,7 @@ This lets you access a random element in the vector, using its integer position.
 
 Notice: You cannot modify the vector using [], only read. Use update() to change an element.
 
-You can append to vector together using the + operation.
+You can append two vectors together using the + operation.
 
 	let a = [ 10, 20, 30 ] + [ 40, 50 ]
 	assert(a == [ 10, 20, 30, 40, 50 ])
