@@ -152,7 +152,7 @@ Function types:
 This is a function that takes a function value as argument:
 
 ```
-	int f5(func bool (string, string))
+	func int f5(func bool (string, string))
 ```
 
 This is a function that returns a function value:
