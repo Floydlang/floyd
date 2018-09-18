@@ -340,7 +340,7 @@ Notice 2: Floyd returns the character as an int, which is 64 bit signed.
 You can append to strings together using the + operation.
 
 	let a = "Hello" + ", world!"
-	assert(a == "Hello, world!"
+	assert(a == "Hello, world!")
 
 
 ### CORE FUNCTIONS
