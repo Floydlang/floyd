@@ -433,6 +433,80 @@ void print_vm_printlog(const interpreter_t& vm){
 
 
 
+/*
+
+std::packaged_task
+
+
+
+
+#include <thread>
+#incude <cstddef>
+
+// Can't be used, they are compiler-time constants.
+std::hardware_destructive_interference_size, std::hardware_constructive_interference_size
+
+
+
+
+const auto a = hardware_info_t {
+	._l1_cache_line_size = xxx,
+	._scalar_align = alignof(std::max_align_t),
+	._hardware_thread_count = hardware_concurrency()
+};
+
+
+
+https://www.unix.com/man-page/osx/3/sysconf/
+
+https://www.freebsd.org/cgi/man.cgi?query=sysctlbyname&apropos=0&sektion=0&manpath=FreeBSD+10.1-RELEASE&arch=default&format=html
+
+*/
+
+
+
+/*
+	Model Name:	iMac
+	Model Identifier:	iMac15,1
+	Processor Name:	Intel Core i7
+	Processor Speed:	4 GHz
+	Number of Processors:	1
+	Total Number of Cores:	4
+	L2 Cache (per Core):	256 KB
+	L3 Cache:	8 MB
+	Memory:	16 GB
+	Boot ROM Version:	IM151.0217.B00
+	SMC Version (system):	2.23f11
+	Serial Number (system):	C02NR292FY14
+	Hardware UUID:	6CC8669B-7ADB-583F-BEB7-251C0199F0EE
+*/
+
+/*
+sysctl -n machdep.cpu.brand_string
+Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz
+
+https://ark.intel.com/products/80807/Intel-Core-i7-4790K-Processor-8M-Cache-up-to-4_40-GHz
+
+*/
+
+struct hardware_info_t {
+	std::size_t _l1_cacheline_size;
+
+	//	Usually depends on "long double".
+	std::size_t _scalar_align;
+	unsigned int _hardware_thread_count;
+};
+
+hardware_info_t read_hardware_info(){
+	return {
+		._l1_cacheline_size = 64,
+		._scalar_align = 16,
+		._hardware_thread_count = 4 * 2,
+	};
+}
+
+
+
 #if 0
 https://en.cppreference.com/w/cpp/thread/condition_variable/wait
 
