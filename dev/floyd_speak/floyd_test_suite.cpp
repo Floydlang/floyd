@@ -3190,240 +3190,308 @@ OFF_QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
 
 
 
-const auto test_ss = R"(
+QUARK_UNIT_TEST("software-system", "test parsing all data", "", ""){
+	const auto test_ss = R"(
+		software-system {
+			"name": "My Arcade Game",
+			"desc": "Space shooter for mobile devices, with connection to a server.",
 
-	software-system {
-		"name": "My Arcade Game",
-		"desc": "Space shooter for mobile devices, with connection to a server.",
-
-		"people": {
-			"Gamer": "Plays the game on one of the mobile apps",
-			"Curator": "Updates achievements, competitions, make custom on-off maps",
-			"Admin": "Keeps the system running"
-		},
-		"connections": [
-			{ "source": "Game", "dest": "iphone app", "interaction": "plays", "tech": "" }
-		],
-		"containers": {
-			"gmail mail server": {},
-
-			"iphone app": {
-				"tech": "Swift, iOS, Xcode, Open GL",
-				"desc": "Mobile shooter game for iOS.",
-
-				"clocks": {
-					"main": {
-						"a": "my_gui_main",
-						"b": "iphone-ux"
-					},
-
-					"com-clock": {
-						"c": "server_com"
-					},
-					"opengl_feeder": {
-						"d": "renderer"
-					}
-				},
-				"connections": [
-					{ "source": "b", "dest": "a", "interaction": "b sends messages to a", "tech": "OS call" },
-					{ "source": "b", "dest": "c", "interaction": "b also sends messages to c, which is another clock", "tech": "OS call" }
-				],
-				"components": [
-					"My Arcade Game-iphone-app",
-					"My Arcade Game-logic",
-					"My Arcade Game-servercom",
-					"OpenGL-component",
-					"Free Game Engine-component",
-					"iphone-ux-component"
-				]
+			"people": {
+				"Gamer": "Plays the game on one of the mobile apps",
+				"Curator": "Updates achievements, competitions, make custom on-off maps",
+				"Admin": "Keeps the system running"
 			},
+			"connections": [
+				{ "source": "Game", "dest": "iphone app", "interaction": "plays", "tech": "" }
+			],
+			"containers": {
+				"gmail mail server": {},
 
-			"Android app": {
-				"tech": "Kotlin, Javalib, Android OS, OpenGL",
-				"desc": "Mobile shooter game for Android OS.",
- 
-				"clocks": {
-					"main": {
-						"a": "my_gui_main",
-						"b": "iphone-ux"
-					},
-					"com-clock": {
-						"c": "server_com"
-					},
-					"opengl_feeder": {
-						"d": "renderer"
-					}
-				},
-				"components": [
-					"My Arcade Game-android-app",
-					"My Arcade Game-logic",
-					"My Arcade Game-servercom",
-					"OpenGL-component",
-					"Free Game Engine-component",
-					"Android-ux-component"
-				]
-			},
-			"Game Server with players & admin web": {
-				"tech": "Django, Pythong, Heroku, Postgres",
-				"desc": "The database that stores all user accounts, levels and talks to the mobile apps and handles admin tasks.",
+				"iphone app": {
+					"tech": "Swift, iOS, Xcode, Open GL",
+					"desc": "Mobile shooter game for iOS.",
 
-				"clocks": {
-					"main": {}
+					"clocks": {
+						"main": {
+							"a": "my_gui_main",
+							"b": "iphone-ux"
+						},
+
+						"com-clock": {
+							"c": "server_com"
+						},
+						"opengl_feeder": {
+							"d": "renderer"
+						}
+					},
+					"connections": [
+						{ "source": "b", "dest": "a", "interaction": "b sends messages to a", "tech": "OS call" },
+						{ "source": "b", "dest": "c", "interaction": "b also sends messages to c, which is another clock", "tech": "OS call" }
+					],
+					"components": [
+						"My Arcade Game-iphone-app",
+						"My Arcade Game-logic",
+						"My Arcade Game-servercom",
+						"OpenGL-component",
+						"Free Game Engine-component",
+						"iphone-ux-component"
+					]
 				},
-				"components": [
-					"My Arcade Game-logic",
-					"My Arcade Game server logic"
-				]
+
+				"Android app": {
+					"tech": "Kotlin, Javalib, Android OS, OpenGL",
+					"desc": "Mobile shooter game for Android OS.",
+	 
+					"clocks": {
+						"main": {
+							"a": "my_gui_main",
+							"b": "iphone-ux"
+						},
+						"com-clock": {
+							"c": "server_com"
+						},
+						"opengl_feeder": {
+							"d": "renderer"
+						}
+					},
+					"components": [
+						"My Arcade Game-android-app",
+						"My Arcade Game-logic",
+						"My Arcade Game-servercom",
+						"OpenGL-component",
+						"Free Game Engine-component",
+						"Android-ux-component"
+					]
+				},
+				"Game Server with players & admin web": {
+					"tech": "Django, Pythong, Heroku, Postgres",
+					"desc": "The database that stores all user accounts, levels and talks to the mobile apps and handles admin tasks.",
+
+					"clocks": {
+						"main": {}
+					},
+					"components": [
+						"My Arcade Game-logic",
+						"My Arcade Game server logic"
+					]
+				}
 			}
 		}
-	}
-	result = 123
-)";
+		result = 123
+	)";
 
-
-
-QUARK_UNIT_TEST("software-system", "", "", ""){
 	const auto result = test__run_return_result(test_ss, {});
 	ut_compare_values(result, value_t::make_int(123));
 }
 
-
-
-
-
-
-
-const auto test_ss2 = R"(
-
-	software-system {
-		"name": "My Arcade Game",
-		"desc": "Space shooter for mobile devices, with connection to a server.",
-		"people": {},
-		"connections": [],
-		"containers": {
-			"iphone app": {
-				"tech": "Swift, iOS, Xcode, Open GL",
-				"desc": "Mobile shooter game for iOS.",
-
-				"clocks": {
-					"main": {
-						"a": "my_gui",
+QUARK_UNIT_TEST("software-system", "run one actor", "", ""){
+	const auto test_ss2 = R"(
+		software-system {
+			"name": "My Arcade Game",
+			"desc": "Space shooter for mobile devices, with connection to a server.",
+			"people": {},
+			"connections": [],
+			"containers": {
+				"iphone app": {
+					"tech": "Swift, iOS, Xcode, Open GL",
+					"desc": "Mobile shooter game for iOS.",
+					"clocks": {
+						"main": {
+							"a": "my_gui",
+						}
 					}
 				}
 			}
 		}
-	}
 
-	struct my_gui_state_t {
-		int _count
-	}
-
-	func my_gui_state_t my_gui__init(){
-		send("a", "dec")
-		send("a", "dec")
-		send("a", "stop")
-		return my_gui_state_t(1000)
-	}
-
-	func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
-		if(message == "inc"){
-			return update(st_VIPate, "_count", state._count + 1)
+		struct my_gui_state_t {
+			int _count
 		}
-		else if(message == "dec"){
-			return update(state, "_count", state._count - 1)
-		}
-		else{
-			assert(false)
-		}
-	}
-)";
 
-QUARK_UNIT_TEST("software-system", "", "", ""){
+		func my_gui_state_t my_gui__init(){
+			send("a", "dec")
+			send("a", "dec")
+			send("a", "stop")
+			return my_gui_state_t(1000)
+		}
+
+		func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
+			if(message == "inc"){
+				return update(st_VIPate, "_count", state._count + 1)
+			}
+			else if(message == "dec"){
+				return update(state, "_count", state._count - 1)
+			}
+			else{
+				assert(false)
+			}
+		}
+	)";
+
 	program_recording.push_back(test_ss2);
 	const auto context = make_test_interpreter_context();
 	run_container(context, test_ss2, {}, "iphone app");
 }
 
-
-
-const auto test_ss3 = R"(
-
-	software-system {
-		"name": "My Arcade Game",
-		"desc": "Space shooter for mobile devices, with connection to a server.",
-		"people": {},
-		"connections": [],
-		"containers": {
-			"iphone app": {
-				"tech": "Swift, iOS, Xcode, Open GL",
-				"desc": "Mobile shooter game for iOS.",
-
-				"clocks": {
-					"main": {
-						"a": "my_gui",
-						"b": "my_audio",
+QUARK_UNIT_TEST_VIP("software-system", "run two unconnected actors", "", ""){
+	const auto test_ss3 = R"(
+		software-system {
+			"name": "My Arcade Game",
+			"desc": "Space shooter for mobile devices, with connection to a server.",
+			"people": {},
+			"connections": [],
+			"containers": {
+				"iphone app": {
+					"tech": "Swift, iOS, Xcode, Open GL",
+					"desc": "Mobile shooter game for iOS.",
+					"clocks": {
+						"main": {
+							"a": "my_gui",
+							"b": "my_audio",
+						}
 					}
 				}
 			}
 		}
-	}
 
 
-	////////////////////////////////	my_gui -- actor
+		////////////////////////////////	my_gui -- actor
 
-	struct my_gui_state_t {
-		int _count
-	}
-
-	func my_gui_state_t my_gui__init(){
-		send("a", "dec")
-		send("a", "dec")
-		send("a", "dec")
-		send("a", "stop")
-		return my_gui_state_t(1000)
-	}
-
-	func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
-		if(message == "inc"){
-			return update(state, "_count", state._count + 1)
+		struct my_gui_state_t {
+			int _count
 		}
-		else if(message == "dec"){
-			return update(state, "_count", state._count - 1)
+
+		func my_gui_state_t my_gui__init(){
+			send("a", "dec")
+			send("a", "dec")
+			send("a", "dec")
+			send("a", "stop")
+			return my_gui_state_t(1000)
 		}
-		else{
-			assert(false)
+
+		func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
+			if(message == "inc"){
+				return update(state, "_count", state._count + 1)
+			}
+			else if(message == "dec"){
+				return update(state, "_count", state._count - 1)
+			}
+			else{
+				assert(false)
+			}
 		}
-	}
 
 
-	////////////////////////////////	my_audio -- actor
+		////////////////////////////////	my_audio -- actor
 
-	struct my_audio_state_t {
-		int _audio
-	}
-
-	func my_audio_state_t my_audio__init(){
-		send("b", "process")
-		send("b", "process")
-		send("b", "stop")
-		return my_audio_state_t(0)
-	}
-
-	func my_audio_state_t my_audio(my_audio_state_t state, json_value message){
-		if(message == "process"){
-			return update(state, "_audio", state._audio + 1)
+		struct my_audio_state_t {
+			int _audio
 		}
-		else{
-			assert(false)
-		}
-	}
-)";
 
-QUARK_UNIT_TEST_VIP("software-system", "", "", ""){
+		func my_audio_state_t my_audio__init(){
+			send("b", "process")
+			send("b", "process")
+			send("b", "stop")
+			return my_audio_state_t(0)
+		}
+
+		func my_audio_state_t my_audio(my_audio_state_t state, json_value message){
+			if(message == "process"){
+				return update(state, "_audio", state._audio + 1)
+			}
+			else{
+				assert(false)
+			}
+		}
+	)";
+
 	program_recording.push_back(test_ss3);
 	const auto context = make_test_interpreter_context();
 	const auto result = run_container(context, test_ss3, {}, "iphone app");
 	QUARK_UT_VERIFY(result.size() == 2);
 	QUARK_UT_VERIFY(result.at("a").get_struct_value()->_member_values[0].get_int_value() == 997);
 	QUARK_UT_VERIFY(result.at("b").get_struct_value()->_member_values[0].get_int_value() == 2);
+}
+
+
+QUARK_UNIT_TEST_VIP("software-system", "run two CONNECTED actors", "", ""){
+	const auto test_ss3 = R"(
+		software-system {
+			"name": "My Arcade Game",
+			"desc": "Space shooter for mobile devices, with connection to a server.",
+			"people": {},
+			"connections": [],
+			"containers": {
+				"iphone app": {
+					"tech": "Swift, iOS, Xcode, Open GL",
+					"desc": "Mobile shooter game for iOS.",
+					"clocks": {
+						"main": {
+							"a": "my_gui",
+							"b": "my_audio",
+						}
+					}
+				}
+			}
+		}
+
+
+		////////////////////////////////	my_gui -- actor
+
+		struct my_gui_state_t {
+			int _count
+		}
+
+		func my_gui_state_t my_gui__init(){
+			return my_gui_state_t(1000)
+		}
+
+		func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
+			if(message == "2"){
+				send("b", "3")
+				return update(state, "_count", state._count + 1)
+			}
+			else if(message == "4"){
+				send("a", "stop")
+				send("b", "stop")
+				return update(state, "_count", state._count + 10)
+			}
+			else{
+				assert(false)
+			}
+		}
+
+
+		////////////////////////////////	my_audio -- actor
+
+		struct my_audio_state_t {
+			int _audio
+		}
+
+		func my_audio_state_t my_audio__init(){
+			send("b", "1")
+			return my_audio_state_t(0)
+		}
+
+		func my_audio_state_t my_audio(my_audio_state_t state, json_value message){
+			if(message == "1"){
+				send("a", "2")
+				return update(state, "_audio", state._audio + 1)
+			}
+			else if(message == "3"){
+				send("a", "4")
+				return update(state, "_audio", state._audio + 4)
+			}
+			else{
+				assert(false)
+			}
+		}
+	)";
+
+	program_recording.push_back(test_ss3);
+	const auto context = make_test_interpreter_context();
+	const auto result = run_container(context, test_ss3, {}, "iphone app");
+	QUARK_UT_VERIFY(result.size() == 2);
+	QUARK_UT_VERIFY(result.at("a").get_struct_value()->_member_values[0].get_int_value() == 1011);
+	QUARK_UT_VERIFY(result.at("b").get_struct_value()->_member_values[0].get_int_value() == 5);
 }
