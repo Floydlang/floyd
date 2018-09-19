@@ -126,41 +126,36 @@ QUARK_UNIT_TEST("","", "", ""){
 QUARK_UNIT_TEST_VIP("","", "", ""){
 	unsigned num_cpus = std::thread::hardware_concurrency();
 
+//	QUARK_TRACE_SS(num_cpus);
 
-	QUARK_TRACE_SS(num_cpus);
+	//          std::cout << "Thread #" << i << ": on CPU " << sched_getcpu() << "\n";
 
+	#define CPUID(INFO, LEAF, SUBLEAF) __cpuid_count(LEAF, SUBLEAF, INFO[0], INFO[1], INFO[2], INFO[3])
 
+	#define GETCPU(CPU) {                              \
+			uint32_t CPUInfo[4];                           \
+			CPUID(CPUInfo, 1, 0);                          \
+			/* CPUInfo[1] is EBX, bits 24-31 are APIC ID */ \
+			if ( (CPUInfo[3] & (1 << 9)) == 0) {           \
+			  CPU = -1;  /* no APIC on chip */             \
+			}                                              \
+			else {                                         \
+			  CPU = (unsigned)CPUInfo[1] >> 24;                    \
+			}                                              \
+			if (CPU < 0) CPU = 0;                          \
+		  }
 
-//          std::cout << "Thread #" << i << ": on CPU " << sched_getcpu() << "\n";
+		int cpu = -1;
+		GETCPU(cpu);
 
-#define CPUID(INFO, LEAF, SUBLEAF) __cpuid_count(LEAF, SUBLEAF, INFO[0], INFO[1], INFO[2], INFO[3])
-
-#define GETCPU(CPU) {                              \
-        uint32_t CPUInfo[4];                           \
-        CPUID(CPUInfo, 1, 0);                          \
-        /* CPUInfo[1] is EBX, bits 24-31 are APIC ID */ \
-        if ( (CPUInfo[3] & (1 << 9)) == 0) {           \
-          CPU = -1;  /* no APIC on chip */             \
-        }                                              \
-        else {                                         \
-          CPU = (unsigned)CPUInfo[1] >> 24;                    \
-        }                                              \
-        if (CPU < 0) CPU = 0;                          \
-      }
-
-	int cpu = -1;
-	GETCPU(cpu);
-
-	QUARK_TRACE_SS(cpu);
-}
+//		QUARK_TRACE_SS(cpu);
+	}
 
 
 }
 
 
-
-
-
+/*
 unsigned int get_freq() {
 	int mib[2];
 	unsigned int freq;
@@ -180,7 +175,7 @@ QUARK_UNIT_TEST_VIP("","", "", ""){
 	const auto a = get_freq();
 	QUARK_UT_VERIFY(a > 0);
 }
-
+*/
 
 
 

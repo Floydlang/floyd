@@ -3333,7 +3333,7 @@ QUARK_UNIT_TEST("software-system", "run one actor", "", ""){
 	run_container(context, test_ss2, {}, "iphone app");
 }
 
-QUARK_UNIT_TEST_VIP("software-system", "run two unconnected actors", "", ""){
+QUARK_UNIT_TEST("software-system", "run two unconnected actors", "", ""){
 	const auto test_ss3 = R"(
 		software-system {
 			"name": "My Arcade Game",
@@ -3414,7 +3414,7 @@ QUARK_UNIT_TEST_VIP("software-system", "run two unconnected actors", "", ""){
 }
 
 
-QUARK_UNIT_TEST_VIP("software-system", "run two CONNECTED actors", "", ""){
+QUARK_UNIT_TEST("software-system", "run two CONNECTED actors", "", ""){
 	const auto test_ss3 = R"(
 		software-system {
 			"name": "My Arcade Game",
