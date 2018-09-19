@@ -558,7 +558,7 @@ void process_actor(actor_runtime_t& runtime, int actor_id){
 	}
 }
 
-void run_container(const interpreter_context_t& context, const string& source, const vector<floyd::value_t>& args, const std::string& container_key){
+std::map<std::string, value_t> run_container(const interpreter_context_t& context, const string& source, const vector<floyd::value_t>& args, const std::string& container_key){
 	actor_runtime_t runtime;
 	runtime._main_thread_id = std::this_thread::get_id();
 
@@ -659,7 +659,18 @@ void run_container(const interpreter_context_t& context, const string& source, c
 		t.join();
 	}
 
-	QUARK_UT_VERIFY(runtime._actors[0]->_actor_state.get_struct_value()->_member_values[0].get_int_value() == 998);
+	const auto result_vec = mapf<pair<string, value_t>>(
+		runtime._actors,
+		[](const auto& actor){ return pair<string, value_t>{ actor->_name_key, actor->_actor_state };}
+	);
+	std::map<string, value_t> result_map;
+	for(const auto& e: result_vec){
+		const pair<string, value_t> v(e.first, e.second);
+		result_map.insert(v);
+	}
+
+	return result_map;
+//	QUARK_UT_VERIFY(runtime._actors[0]->_actor_state.get_struct_value()->_member_values[0].get_int_value() == 998);
 }
 
 

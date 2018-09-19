@@ -60,7 +60,7 @@ namespace floyd {
 		const std::vector<value_t>& args
 	);
 
-	void run_container(
+	std::map<std::string, value_t> run_container(
 		const interpreter_context_t& context,
 		const std::string& source,
 		const std::vector<value_t>& args,

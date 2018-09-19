@@ -861,10 +861,10 @@ ast_json_t value_and_type_to_ast_json(const value_t& v){
 
 #if DEBUG
 std::string make_value_debug_str(const value_t& value){
-//	return value_and_type_to_string(v);
+	return value_and_type_to_string(value);
 
-	std::string type_string = floyd::typeid_to_compact_string(value.get_type());
-	return type_string;
+//	std::string type_string = floyd::typeid_to_compact_string(value.get_type());
+//	return type_string;
 }
 #endif
 

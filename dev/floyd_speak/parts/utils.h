@@ -58,9 +58,9 @@ void for_each_col(COLLECTION col, UNARY_OPERATION op){
 	std::for_each(col.begin(),col.end(),op);
 }
 
-template <typename COLLECTION, typename UNARY_OPERATION>
-COLLECTION mapf(const COLLECTION& col, const UNARY_OPERATION& operation) {
-	COLLECTION result;
+template <typename DEST_ELEMENT_TYPE, typename COLLECTION, typename UNARY_OPERATION>
+std::vector<DEST_ELEMENT_TYPE> mapf(const COLLECTION& col, const UNARY_OPERATION& operation) {
+	std::vector<DEST_ELEMENT_TYPE> result;
 	result.reserve(col.size());
 
 	//	Notice that transform() *writes* to output collection, it doesn't append.

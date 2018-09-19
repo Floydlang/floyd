@@ -3298,10 +3298,8 @@ const auto test_ss2 = R"(
 	software-system {
 		"name": "My Arcade Game",
 		"desc": "Space shooter for mobile devices, with connection to a server.",
-
 		"people": {},
 		"connections": [],
-
 		"containers": {
 			"iphone app": {
 				"tech": "Swift, iOS, Xcode, Open GL",
@@ -3309,7 +3307,7 @@ const auto test_ss2 = R"(
 
 				"clocks": {
 					"main": {
-						"a": "my_gui_main",
+						"a": "my_gui",
 					}
 				}
 			}
@@ -3320,14 +3318,14 @@ const auto test_ss2 = R"(
 		int _count
 	}
 
-	func my_gui_state_t my_gui_main__init(){
+	func my_gui_state_t my_gui__init(){
 		send("a", "dec")
 		send("a", "dec")
 		send("a", "stop")
 		return my_gui_state_t(1000)
 	}
 
-	func my_gui_state_t my_gui_main(my_gui_state_t state, json_value message){
+	func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
 		if(message == "inc"){
 			return update(st_VIPate, "_count", state._count + 1)
 		}
@@ -3340,9 +3338,92 @@ const auto test_ss2 = R"(
 	}
 )";
 
-
 QUARK_UNIT_TEST("software-system", "", "", ""){
 	program_recording.push_back(test_ss2);
 	const auto context = make_test_interpreter_context();
 	run_container(context, test_ss2, {}, "iphone app");
+}
+
+
+
+const auto test_ss3 = R"(
+
+	software-system {
+		"name": "My Arcade Game",
+		"desc": "Space shooter for mobile devices, with connection to a server.",
+		"people": {},
+		"connections": [],
+		"containers": {
+			"iphone app": {
+				"tech": "Swift, iOS, Xcode, Open GL",
+				"desc": "Mobile shooter game for iOS.",
+
+				"clocks": {
+					"main": {
+						"a": "my_gui",
+						"b": "my_audio",
+					}
+				}
+			}
+		}
+	}
+
+
+	////////////////////////////////	my_gui -- actor
+
+	struct my_gui_state_t {
+		int _count
+	}
+
+	func my_gui_state_t my_gui__init(){
+		send("a", "dec")
+		send("a", "dec")
+		send("a", "dec")
+		send("a", "stop")
+		return my_gui_state_t(1000)
+	}
+
+	func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
+		if(message == "inc"){
+			return update(state, "_count", state._count + 1)
+		}
+		else if(message == "dec"){
+			return update(state, "_count", state._count - 1)
+		}
+		else{
+			assert(false)
+		}
+	}
+
+
+	////////////////////////////////	my_audio -- actor
+
+	struct my_audio_state_t {
+		int _audio
+	}
+
+	func my_audio_state_t my_audio__init(){
+		send("b", "process")
+		send("b", "process")
+		send("b", "stop")
+		return my_audio_state_t(0)
+	}
+
+	func my_audio_state_t my_audio(my_audio_state_t state, json_value message){
+		if(message == "process"){
+			return update(state, "_audio", state._audio + 1)
+		}
+		else{
+			assert(false)
+		}
+	}
+)";
+
+QUARK_UNIT_TEST_VIP("software-system", "", "", ""){
+	program_recording.push_back(test_ss3);
+	const auto context = make_test_interpreter_context();
+	const auto result = run_container(context, test_ss3, {}, "iphone app");
+	QUARK_UT_VERIFY(result.size() == 2);
+	QUARK_UT_VERIFY(result.at("a").get_struct_value()->_member_values[0].get_int_value() == 997);
+	QUARK_UT_VERIFY(result.at("b").get_struct_value()->_member_values[0].get_int_value() == 2);
 }

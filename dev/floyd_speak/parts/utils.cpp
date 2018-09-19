@@ -11,6 +11,9 @@
 #include <string>
 
 
+using std::vector;
+using std::string;
+
 //	template <typename T> bool compare_shared_values(const T& ptr_a, const T& ptr_b){
 
 
@@ -80,9 +83,17 @@ auto map_container(const T& iterable, Func&& func) ->
 */
 
 QUARK_UNIT_TEST("", "mapf()", "", "") {
-	auto result = mapf(std::vector<int>{ 20, 21, 22, 23 }, [](int e){ return e + 100; });
+	auto result = mapf<int>(std::vector<int>{ 20, 21, 22, 23 }, [](int e){ return e + 100; });
 	QUARK_UT_VERIFY(result == (std::vector<int>{ 120, 121, 122, 123 }));
 }
+
+QUARK_UNIT_TEST("", "mapf()", "", "") {
+	auto result = mapf<string>(std::vector<int>{ 20, 21, 22, 23 }, [](int e){ return std::to_string(e + 100); });
+	QUARK_UT_VERIFY(result == (std::vector<string>{ "120", "121", "122", "123" }));
+}
+
+
+
 
 /*
 QUARK_UNIT_TEST("", "filter()", "", "") {
