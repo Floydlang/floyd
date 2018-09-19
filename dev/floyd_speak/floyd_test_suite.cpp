@@ -3329,7 +3329,7 @@ const auto test_ss2 = R"(
 
 	func my_gui_state_t my_gui_main(my_gui_state_t state, json_value message){
 		if(message == "inc"){
-			return update(state, "_count", state._count + 1)
+			return update(st_VIPate, "_count", state._count + 1)
 		}
 		else if(message == "dec"){
 			return update(state, "_count", state._count - 1)
@@ -3341,7 +3341,7 @@ const auto test_ss2 = R"(
 )";
 
 
-QUARK_UNIT_TEST_VIP("software-system", "", "", ""){
+QUARK_UNIT_TEST("software-system", "", "", ""){
 	program_recording.push_back(test_ss2);
 	const auto context = make_test_interpreter_context();
 	run_container(context, test_ss2, {}, "iphone app");
