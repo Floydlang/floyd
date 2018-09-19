@@ -168,6 +168,23 @@ bc_value_t host__print(interpreter_t& vm, const bc_value_t args[], int arg_count
 
 	return bc_value_t::make_undefined();
 }
+bc_value_t host__send(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 2){
+		throw std::runtime_error("send() requires 2 arguments!");
+	}
+
+	const auto& actor_id = args[0].get_string_value();
+	const auto& message_json = args[1].get_json_value();
+
+	QUARK_TRACE_SS("send(\"" << actor_id << "\"," << json_to_pretty_string(message_json) <<")");
+
+
+	vm._handler->on_send(actor_id, message_json);
+
+	return bc_value_t::make_undefined();
+}
 
 bc_value_t host__assert(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -826,6 +843,7 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 
 	const std::map<std::string, host_function_signature_t> temp {
 		{ "print", host_function_signature_t{ 1000, typeid_t::make_function(VOID, { DYN }) } },
+		{ "send", host_function_signature_t{ 1022, typeid_t::make_function(VOID, { typeid_t::make_string(), typeid_t::make_json_value() }) } },
 		{ "assert", host_function_signature_t{ 1001, typeid_t::make_function(VOID, { DYN }) } },
 		{ "to_string", host_function_signature_t{ 1002, typeid_t::make_function(typeid_t::make_string(), { DYN }) } },
 		{ "to_pretty_string", host_function_signature_t{ 1003, typeid_t::make_function(typeid_t::make_string(), { DYN }) }},
@@ -851,9 +869,6 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 		{ "unflatten_from_json", host_function_signature_t{ 1020, typeid_t::make_function(DYN, { typeid_t::make_json_value(), typeid_t::make_typeid() }) }},
 		{ "get_json_type", host_function_signature_t{ 1021, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}) }}
 		,
-
-//		{ "instantiate_from_typeid", host_function_signature_t{ 1022, typeid_t::make_function(VOID, { DYN }) }}
-
 	};
 	return temp;
 }
@@ -864,6 +879,7 @@ std::map<int,  host_function_t> get_host_functions(){
 
 	const std::map<string, HOST_FUNCTION_PTR> lookup0 = {
 		{ "print", host__print },
+		{ "send", host__send },
 		{ "assert", host__assert },
 		{ "to_string", host__to_string },
 		{ "to_pretty_string", host__to_pretty_string },

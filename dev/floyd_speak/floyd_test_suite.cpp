@@ -3321,6 +3321,9 @@ const auto test_ss2 = R"(
 	}
 
 	func my_gui_state_t my_gui_main__init(){
+		send("a", "dec")
+		send("a", "dec")
+		send("a", "stop")
 		return my_gui_state_t(1000)
 	}
 

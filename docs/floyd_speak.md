@@ -811,6 +811,18 @@ This outputs one line of text to the default output of the application. It can p
 | print(json_value(null))						| null
 
 
+### send()
+
+Sends a message to an actor.
+
+The actor may run on a different OS thread but send() is thread safe.
+
+	send(string actor_key, json_value message)
+
+
+If the expression evaluates to false, the program will log to the output, then be aborted via an exception.
+
+
 
 ### assert()
 

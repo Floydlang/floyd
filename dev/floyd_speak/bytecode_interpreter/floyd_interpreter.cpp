@@ -685,11 +685,27 @@ void run_container(const interpreter_context_t& context, const string& source, c
 		return acc2;
 	});
 
+	struct my_interpreter_handler_t : public interpreter_handler_i {
+		my_interpreter_handler_t(actor_runtime_t& runtime) : _runtime(runtime) {}
+
+		virtual void on_send(const std::string& actor_id, const json_t& message){
+			const auto it = std::find_if(_runtime._actors.begin(), _runtime._actors.end(), [&](const std::shared_ptr<actor_t>& actor){ return actor->_name_key == actor_id; });
+			if(it != _runtime._actors.end()){
+				const auto actor_index = it - _runtime._actors.begin();
+				send_message(_runtime, static_cast<int>(actor_index), message);
+			}
+		}
+
+		actor_runtime_t& _runtime;
+	};
+	auto my_interpreter_handler = my_interpreter_handler_t{runtime};
+
+
 	for(const auto& t: runtime._actor_infos){
 		auto actor = std::make_shared<actor_t>();
 		actor->_name_key = t.first;
 		actor->_function_key = t.second;
-		actor->_interpreter = make_shared<interpreter_t>(program);
+		actor->_interpreter = make_shared<interpreter_t>(program, &my_interpreter_handler);
 		actor->_init_function = find_global_symbol2(*actor->_interpreter, t.second + "__init");
 		actor->_process_function = find_global_symbol2(*actor->_interpreter, t.second);
 
@@ -724,6 +740,7 @@ void run_container(const interpreter_context_t& context, const string& source, c
 	runtime._actors[2]->_processor = std::make_shared<my_processor>(runtime);
 */
 
+
 	//	Remember that current thread (main) is also a thread, no need to create a worker thread for one actor.
 	runtime._actors[0]->_thread_id = runtime._main_thread_id;
 
@@ -740,11 +757,13 @@ void run_container(const interpreter_context_t& context, const string& source, c
 		}, actor_id));
 	}
 
+/*
 	send_message(runtime, 0, json_t("inc"));
 	send_message(runtime, 0, json_t("inc"));
 	send_message(runtime, 0, json_t("dec"));
 	send_message(runtime, 0, json_t("inc"));
 	send_message(runtime, 0, json_t("stop"));
+*/
 
 	process_actor(runtime, 0);
 
@@ -752,7 +771,7 @@ void run_container(const interpreter_context_t& context, const string& source, c
 		t.join();
 	}
 
-	QUARK_UT_VERIFY(runtime._actors[0]->_actor_state.get_struct_value()->_member_values[0].get_int_value() == 1002);
+	QUARK_UT_VERIFY(runtime._actors[0]->_actor_state.get_struct_value()->_member_values[0].get_int_value() == 998);
 }
 
 

@@ -1386,8 +1386,9 @@ json_t bcvalue_and_type_to_json(const bc_value_t& v){
 
 
 
-interpreter_t::interpreter_t(const bc_program_t& program) :
-	_stack(nullptr)
+interpreter_t::interpreter_t(const bc_program_t& program, interpreter_handler_i* handler) :
+	_stack(nullptr),
+	_handler(handler)
 {
 	QUARK_ASSERT(program.check_invariant());
 
@@ -1412,6 +1413,7 @@ interpreter_t::interpreter_t(const bc_program_t& program) :
 	/*const auto& r =*/ execute_instructions(*this, _imm->_program._globals._instrs2);
 	QUARK_ASSERT(check_invariant());
 }
+interpreter_t::interpreter_t(const bc_program_t& program) : interpreter_t(program, nullptr) {}
 
 /*
 interpreter_t::interpreter_t(const interpreter_t& other) :
@@ -1427,6 +1429,7 @@ interpreter_t::interpreter_t(const interpreter_t& other) :
 
 void interpreter_t::swap(interpreter_t& other) throw(){
 	other._imm.swap(this->_imm);
+	std::swap(other._handler, this->_handler);
 	other._stack.swap(this->_stack);
 	other._print_output.swap(this->_print_output);
 }
