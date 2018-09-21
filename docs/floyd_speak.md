@@ -813,15 +813,21 @@ This outputs one line of text to the default output of the application. It can p
 
 ### send()
 
-Sends a message to an actor.
+Sends a message to a Floyd process.
 
-The actor may run on a different OS thread but send() is thread safe.
+The process may run on a different OS thread but send() is thread safe.
 
-	send(string actor_key, json_value message)
+	send(string process_key, json_value message)
 
 
 If the expression evaluates to false, the program will log to the output, then be aborted via an exception.
 
+
+### select()
+
+TBD POC
+
+Called from a process function to read its inbox. It will block until a message is received or it times out.
 
 
 ### assert()

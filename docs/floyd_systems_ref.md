@@ -12,7 +12,7 @@ Highest level of abstraction and describes something that delivers value to its 
 
 ## SOURCE FILES
 
-**example.floydsys** -- stores the top of the system including people, connections and so on. It also *fully* defines every component and how they are implemented with actors and wires, the setup of tweakers and so on.
+**example.floydsys** -- stores the top of the system including people, connections and so on. It also *fully* defines every component and how they are implemented with process and wires, the setup of tweakers and so on.
 
 **example.fecomp** -- effect-component source file. Defines a reusable component that has *effects* -- that is can call mutating functions. It cannot keep its own state but state may be stored in OS or file system or servers.
 
@@ -85,8 +85,8 @@ Defines every container in the system. They are named.
 |:---	|:---	
 |**tech**		| short string that lists the most important technologies, languages, toolkits.
 |**desc**		| short string that tells what this component is and does.
-|**clocks**		| defines every clock (concurrent process) in this container and lists which actors are synced to each clock
-|**connections**		| connects the actors together using virtual wires. Source-actor-name, dest-actor-name, interaction-description.
+|**clocks**		| defines every clock (concurrent process) in this container and lists which processes that are synced to each clock
+|**connections**		| connects the processes together using virtual wires. Source-process-name, dest-process-name, interaction-description.
 |**probes\_and\_tweakers**		| lists all probes and tweakers used in this container. Notice that the same function or component can have a different set of probes and tweakers per container or share them.
 |**components**		| lists all imported components needed for this container
 
@@ -138,24 +138,32 @@ or
 
 
 
-# ACTORS
+# PROCESSES
 
-An actor is a function with this signature:
+Floyd processes are not the same as OS-processes. Floyd processes lives inside a Floyd container and are very light weight.
 
-	x_state_t my_actor_main([x_state_t] history, y_message message){
+A process is a function with this signature:
+
+	x_state_t my_process_main([x_state_t] history, y_message message){
 	}
 
-It can used from "clocks" sections to instantiate an actor based on that function. Usually actor functions are one-offs and not reusable several time.
+It can used from "clocks" sections to instantiate an process based on that function. Usually process functions are one-offs and not reusable several time.
 
 ??? allow circular references at compile time.
 
+You need to define an initialization function for each process. It has the same name but with "__init" at the end:
+
+	x_state_t my_process_main__int(){
+	}
+
+It has no arguments and returns the initial state of the process.
 
 
 
 # RUNTIMES
 TBD
 
-At the container level you can instantiate different runtimes, like memory allocators, memory pools, file system support, image caches, background loaders and so on. These can then be accessed inside the actor functions and passed to the functions they call.
+At the container level you can instantiate different runtimes, like memory allocators, memory pools, file system support, image caches, background loaders and so on. These can then be accessed inside the process functions and passed to the functions they call.
 
 
 
@@ -206,7 +214,7 @@ A bunch of standard components come with Floyd.
 ## LOCAL FILE SYSTEM COMPONENT
 
 ??? TBD
-All file system functions are blocking. If you want to do something else while waiting, run the file system calls in a separate actor. There are no futures, callbacks, async / await or equivalents. It is very easy to write a function that does lots of processing and conditional file system calls etc and run it concurrently with other things.
+All file system functions are blocking. If you want to do something else while waiting, run the file system calls in a separate process. There are no futures, callbacks, async / await or equivalents. It is very easy to write a function that does lots of processing and conditional file system calls etc and run it concurrently with other things.
 
 ??? Simple file API
 	file_handle open_fileread(string path) impure
@@ -265,7 +273,7 @@ Use to save a value to local file system efficiently. Only diffs are stored / lo
 
 # PROBES
 
-You add probes to wires, actors and individual functions and expressions. They gather intel on how your program runs on the hardware, let's you explore your running code and profile its hardware use.
+You add probes to wires, processes and individual functions and expressions. They gather intel on how your program runs on the hardware, let's you explore your running code and profile its hardware use.
 
 
 ## TRACE PROBE
@@ -307,7 +315,7 @@ Tweakers are inserted onto the wires and clocks and functions and expressions of
 ## SET THREAD COUNT & PRIO TWEAKER
 
 - Parallelize pure function
-- Increase thread priority for an actor or clock.
+- Increase thread priority for an process or clock.
 
 
 ## COLLECTION SELECTOR TWEAKER
@@ -519,7 +527,7 @@ software-system {
 	}
 }
 
-//////////////////		My GUI actor code
+//////////////////		My GUI process code
 
 struct hedgehog_gui_state_t {
 	int timestamp
@@ -536,6 +544,10 @@ struct hedgehog_gui_message_t {
 }
 
 //??? specify outputs too: gui can have several outputs. They have different message-types.
+
+hedgehog_gui_state_t my_gui_main__int(){
+	return hedgehog_gui_state_t()
+}
 
 hedgehog_gui_state_t my_gui_main([hedgehog_gui_state_t] history, hedgehog_gui_message_t message){
 	if(message.type: on_mouse_move){

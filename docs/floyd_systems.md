@@ -126,12 +126,12 @@ The container *completely* defines *all* its: concurrency, state, communication 
 
 There are often sibling containers in your system, like a server for your mobile game or data on Amazon S3. Containers may be implemented some other way or maybe canned solutions like Amazon S3, but should still be represented in Floyd Systems.
 
-Containers are data files: they list the needed impure containers and wires them together and adds a few other types of parts, like clocks actors. When you design a container the focus is on the *impure components*. Other components on which your used components depend upon are automatically shown too, if they are impure. This makes *all* impure components visible in the same view -- no impureness goes on anywhere out of sight.
+Containers are data files: they list the needed impure containers and wires them together and adds a few other types of parts, like clocks and processes. When you design a container the focus is on the *impure components*. Other components on which your used components depend upon are automatically shown too, if they are impure. This makes *all* impure components visible in the same view -- no impureness goes on anywhere out of sight.
 
 **Wires**: carry messages encoded as a Floyd value, typically a Floyd enum. Notice that the message can carry *any* of Floyd's types -- even huge multi-gigabyte nested structs or collections. Since they are immutable they can be passed around efficiently (internally this is done using their ID or hardware address).
 
 
-**Actors** and **Clocks**: builtin mechanisms to define time and state.
+**Processs** and **Clocks**: builtin mechanisms to define time and state.
 **Probes** and **Tweakers**: these are added on top of a design. They allow you to augment a design with logging, profiling, breakpoints and do advanced performance optimizations.
 
 Example of components you drop into your container:
@@ -152,15 +152,17 @@ The container's design is usually a one-off and cannot be composed into other co
 
 
 
-# MORE ABOUT CONCURRENCY AND TIME - INTRODUCING ACTORS
+# MORE ABOUT CONCURRENCY AND TIME - INTRODUCING PROCESSES
 
 This is how you express time / mutation / concurrency in Floyd. These concepts are related and they are all setup at the top level of a container. In fact, this is the main **purpose** of a container.
 
+A Floyd process is not the same thing as an OS process. A Floyd process is extremely light weight. It is sandboxed like an OS process since it cannot access data in other Floyd processes.
+
 The goal with Floyd's concurrency model is:
 
-1. Simple and robust pre-made mechanisms for real-world concurrency need. Avoid general-purpose primitives.
+1. Simple and robust pre-made mechanisms for real-world concurrency need. Avoid general-purpose primitives, have a ready made solution that works.
 2. Composable.
-3. Allow you to make a static design of your container and its concurrency and state.
+3. Allow you to make a *static design* of your container and its concurrency and state.
 4. Separate out parallelism into a separate mechanism.
 5. Avoid problematic constructs like threads, locks, callback hell, nested futures and await/async -- dead ends of concurrency.
 6. Let you control/tune how many threads and cores to use for what parts of the system, independently of the actual code.
@@ -168,54 +170,66 @@ The goal with Floyd's concurrency model is:
 Inspirations for Floyd's concurrency model are CSP, Erlang, Go routines and channels and Clojure Core.Async.
 
 
-##### ACTORS: INBOX, STATE, PROCESSING FUNCTION
+##### PROCESSES: INBOX, STATE, PROCESSING FUNCTION
 
-For each independent mutable state and/or "thread" you want in your container, you need to insert an Actor. Actors are statically instantiated in a container -- you cannot allocate them at runtime.
+For each independent mutable state and/or "thread" you want in your container, you need to insert a process. Processes are statically instantiated in a container -- you cannot allocate them at runtime.
 
-The actor represents a little standalone process with its own call stack that listens to messages from other actors. When an actor receives a message in its inbox, its function is called (now or later) with the message and the actor's previous state. The actor does some work - something simple or a maybe call a big call tree or do blocking calls to the file system, and then it ends by returning its new state, which completes the message handling.
+The process represents a little standalone program with its own call stack that listens to messages from other processes. When a process receives a message in its inbox, its function is called (now or some time later) with the message and the process's previous state. The process does some work - something simple or a maybe call a big call tree or do blocking calls to the file system, and then it ends by returning its new state, which completes the message handling.
 
-**The actor feature is the only way to keep state in Floyd.**
+**The process feature is the only way to keep state in Floyd.**
 
-Use an actor if:
+Use a process if:
 
-1. You want to be able to run work in parallel, like loading data in the background
+1. You want to be able to run work concurrently, like loading data in the background
 2. You want a mutable state / memory
 3. You want to model a system where things happens concurrently, like audio streaming vs main thread
 
 
-The inbox is thread safe and it's THE way to communicate across actors. The inbox has these purposes:
+The inbox is thread safe and it's THE way to communicate across processes. The inbox has these purposes:
 	
-1. Allow actor to *wait* for external messages using the select() call
+1. Allow process to *wait* for external messages using the select() call
 2. Transform messages between different clock-bases -- the inbox is thread safe
 3. Allow buffering of messages, that is moving them in time
 
-You need to implement your actor's processing function and define its mutable state. The processing function is impure. It can call OS-functions, block on writes to disk, use sockets etc. Each API you want to use needs to be passed as an argument into the processing function, it cannot go find them - or anything else.
+You need to implement your process's processing function and define its mutable state. The processing function is impure. It can call OS-functions, block on writes to disk, use sockets etc. Each API you want to use needs to be passed as an argument into the processing function, it cannot go find them - or anything else.
 
-Actors cannot change any other state than its own, they run in their own virtual address space.
+Processes cannot change any other state than its own, they run in their own virtual address space.
 
-When you send messages to other actors you can block until you get a reply, get replies via your inbox or just don't use replies.
+When you send messages to other process you can block until you get a reply, get replies via your inbox or just don't use replies.
 
-The actor function CAN chose to have several select()-statements which makes it work as a small state machine.
+The process function CAN chose to have several select()-statements which makes it work as a small state machine.
 
-Actors are very inexpensive.
+Processes are very inexpensive.
 
 
 **Synchronization points between systems (state or concurrent) always breaks all attempts to composition. That's why Floyd has moved these to top level of container.**
 
 
-The runtime can chose to execute actors on different cores or servers. You have control over this via tweakers. Tweakers also controls the priority of actors vs hardware.
+The runtime can chose to execute processes on different cores or servers. You have control over this via tweakers. Tweakers also controls the priority of processes vs hardware.
 
 
-Actor limitations:
+Floyd process limitations:
 
 - Cannot find assets / ports / resources — those are handed to it via the container's wiring
 - Cannot be created or deleted at runtime
-- Cannot access any global state or other actors
+- Cannot access any global state or other processes
 
 
-##### SYNCHRONOUS ACTORS
+##### SYNCHRONOUS PROCESES
 
-If the actors are running on the same clock, the message post - receive - processing is synchronously in the same thread, like a function call. Internally, the thread posting a message to actor's inbox then continues by executing the actor's function to receive and handle the message). These types of actors still have their own state and can be used as controllers / mediators -- even when it doesn't need its own thread *or you want it to run synchronously*.
+If the processes are running on the same clock, the sequence of:
+
+- process A posts message to process B
+- process B receives the message
+- process B processes the message
+- process B completes and updates its state
+- process A continues
+
+...is done synchronously without any schedueling or OS-level context switching - just like a function call from A to B.
+
+You synchronise processes when it's important that the receiving process handles the messages *right away*. 
+
+Synced processes still have their own state and can be used as controllers / mediators.
 
 
 
@@ -229,15 +243,15 @@ Sometimes we introduce concurrency to make more parallelism possible: multithrea
 
 |#	|Need		|Traditional	|Floyd
 |---	|---			|---			|---
-|1	| Make a REST request	| Block entire thread / nested callbacks / futures / async-await | Just block. Make call from Actor to keep caller running
-|2	| Make a sequence of back and forth communication with a REST server | Make separate thread and block on each step then notify main thread on completion / nested futures or callbacks / await-async | Make an Actor that makes blocking calls
-|3	| Perform non-blocking impure background calculation (auto save doc) | Copy document, create worker thread | Use actor, use data directly
-|4	| Run process concurrently, like analyze game world to prefetch assets | Manually synchronize all shared data, use separate thread | Use actor -- data is immutable
-|5	| Handle requests from OS quickly, like call to audio buffer switch process() | Use callback function | Use actor and set its clock to sync to clock of buffer switch
-|6	| Improve performance using concurrency + parallelism / fan-in-fan-out / processing pipeline | Split work into small tasks that are independent, queue them to a thread team, resolve dependencies somehow, use end-fence with completetion notification | call map() or supermap() from an Actor.
-|7	| Spread heavy work across time (do some processing each game frame) | Use coroutine or thread that sleeps after doing some work. Wake it next frame. | Actor does work. It calls select() inside a loop to wait on next trigger to continue work.
-|8	| Do work regularly, independent of other threads (like a timer interrupt) | Call timer with callback / make thread that sleeps on event | Use Actor that calls post_at_time(now() + 100) to itself
-|9	| Small server | Write loop that listens to socket | Use Actor that waits for messages
+|1	| Make a REST request	| Block entire thread / nested callbacks / futures / async-await | Just block. Make call from process to keep caller running
+|2	| Make a sequence of back and forth communication with a REST server | Make separate thread and block on each step then notify main thread on completion / nested futures or callbacks / await-async | Make an process that makes blocking calls
+|3	| Perform non-blocking impure background calculation (auto save doc) | Copy document, create worker thread | Use process, use data directly
+|4	| Run process concurrently, like analyze game world to prefetch assets | Manually synchronize all shared data, use separate thread | Use process -- data is immutable
+|5	| Handle requests from OS quickly, like call to audio buffer switch process() | Use callback function | Use process and set its clock to sync to clock of buffer switch
+|6	| Improve performance using concurrency + parallelism / fan-in-fan-out / processing pipeline | Split work into small tasks that are independent, queue them to a thread team, resolve dependencies somehow, use end-fence with completetion notification | call map() or supermap() from a process.
+|7	| Spread heavy work across time (do some processing each game frame) | Use coroutine or thread that sleeps after doing some work. Wake it next frame. | Process does work. It calls select() inside a loop to wait on next trigger to continue work.
+|8	| Do work regularly, independent of other threads (like a timer interrupt) | Call timer with callback / make thread that sleeps on event | Use process that calls post_at_time(now() + 100) to itself
+|9	| Small server | Write loop that listens to socket | Use process that waits for messages
 
 
 
@@ -258,7 +272,7 @@ supermap() works like map(), but each element also has dependencies to other ele
 Accelerating computations (parallelism) is done using tweaks — a separate mechanism. It supports moving computations in time (lazy, eager, caching) and running work in parallel.
 
 
-Often actors and concurrency is introduced into a system to *expose opportunity* for parallelism.
+Often processes and concurrency is introduced into a system to *expose opportunity* for parallelism.
 
 The optimizations using tweaks in no way affect the logic of your program, only the timing and order where those don't matter.
 

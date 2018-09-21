@@ -1,13 +1,16 @@
 # BACKLOG
 These are upcoming features, listed here to give you an idea of what the plan is.
 
+## IN PROGRESS
+
+|Floyd Systems		| clocks and processes
+|Floyd Systems		| software-systems, components, components
+
+
 ## POC - PROOF OF CONCEPT
 
 |Area				| Feature
 |:---				|:---
-|Floyd Systems		| clocks and actors
-|Floyd Systems		| software-systems, components, components
-|Floyd Speak			| sum-type with match-expression
 |Floyd Systems		| 3 most important tweakers
 |Floyd Systems		| 3 most important probes
 |Floyd Systems		| file system component
@@ -18,6 +21,7 @@ These are upcoming features, listed here to give you an idea of what the plan is
 
 |Area				| Feature
 |:---				|:---
+|Floyd Speak			| sum-type with match-expression
 |Floyd Speak			| float, int8, int16, int32, int64
 |Floyd Speak			| floyd exceptions
 |Floyd Systems		| socket component

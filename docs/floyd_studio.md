@@ -36,7 +36,7 @@ Here you work on or several Floyd Speak functions. You edit the code, add some d
 
 # CONTAINER DESIGNER
 
-Here you drag impure components, make your own Actors and wire them together into a concurrent system.
+Here you drag impure components, make your own processes and wire them together into a concurrent system.
 
 
 ![](./floyd_studio_container_designer.png)
