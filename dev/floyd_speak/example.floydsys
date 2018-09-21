@@ -84,7 +84,7 @@ software-system {
 	}
 }
 
-//////////////////      My GUI actor code
+//////////////////      My GUI process code
 
 struct hedgehog_gui_state_t {
 	int timestamp

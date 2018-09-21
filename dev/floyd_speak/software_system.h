@@ -29,8 +29,8 @@ struct connection_t {
 };
 
 struct clock_bus_t {
-	//	Right now an actor is the name of the actor-function, will probably get more members.
-	std::map<std::string, std::string> _actors;
+	//	Right now an process is the name of the process-function, will probably get more members.
+	std::map<std::string, std::string> _processes;
 };
 
 struct container_t {

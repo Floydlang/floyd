@@ -175,13 +175,13 @@ bc_value_t host__send(interpreter_t& vm, const bc_value_t args[], int arg_count)
 		throw std::runtime_error("send() requires 2 arguments!");
 	}
 
-	const auto& actor_id = args[0].get_string_value();
+	const auto& process_id = args[0].get_string_value();
 	const auto& message_json = args[1].get_json_value();
 
-	QUARK_TRACE_SS("send(\"" << actor_id << "\"," << json_to_pretty_string(message_json) <<")");
+	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
 
 
-	vm._handler->on_send(actor_id, message_json);
+	vm._handler->on_send(process_id, message_json);
 
 	return bc_value_t::make_undefined();
 }

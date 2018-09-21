@@ -27,15 +27,15 @@ vector<person_t> unpack_persons(const json_t& persons_obj){
 
 
 clock_bus_t unpack_clock_bus(const json_t& clock_bus_obj){
-	std::map<std::string, std::string> actors;
+	std::map<std::string, std::string> processes;
 
-	const auto actors_map = clock_bus_obj.get_object();
-	for(const auto& actor_pair: actors_map){
-		const auto name_key = actor_pair.first;
-		const auto actor_function_key = actor_pair.second.get_string();
-		actors.insert({name_key, actor_function_key} );
+	const auto processes_map = clock_bus_obj.get_object();
+	for(const auto& process_pair: processes_map){
+		const auto name_key = process_pair.first;
+		const auto process_function_key = process_pair.second.get_string();
+		processes.insert({name_key, process_function_key} );
 	}
-	return clock_bus_t{._actors = actors};
+	return clock_bus_t{._processes = processes};
 }
 
 std::map<std::string, clock_bus_t> unpack_clock_busses(const json_t& clocks_obj){

@@ -1841,7 +1841,7 @@ namespace floyd {
 
 	struct interpreter_handler_i {
 		virtual ~interpreter_handler_i(){};
-		virtual void on_send(const std::string& actor_id, const json_t& message) = 0;
+		virtual void on_send(const std::string& process_id, const json_t& message) = 0;
 	};
 
 

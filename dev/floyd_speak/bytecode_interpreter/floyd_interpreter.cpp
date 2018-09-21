@@ -457,15 +457,15 @@ string get_current_thread_name(){
 }
 
 
-struct actor_processor_interface {
-	virtual ~actor_processor_interface(){};
+struct process_interface {
+	virtual ~process_interface(){};
 	virtual void on_message(const json_t& message) = 0;
 	virtual void on_init() = 0;
 };
 
 
-//	NOTICE: Each actor inbox has its own mutex + condition variable. No mutex protects cout.
-struct actor_t {
+//	NOTICE: Each process inbox has its own mutex + condition variable. No mutex protects cout.
+struct process_t {
 	std::condition_variable _inbox_condition_variable;
 	std::mutex _inbox_mutex;
 	std::deque<json_t> _inbox;
@@ -477,66 +477,66 @@ struct actor_t {
 	std::shared_ptr<interpreter_t> _interpreter;
 	std::shared_ptr<value_entry_t> _init_function;
 	std::shared_ptr<value_entry_t> _process_function;
-	value_t _actor_state;
+	value_t _process_state;
 
 
-	std::shared_ptr<actor_processor_interface> _processor;
+	std::shared_ptr<process_interface> _processor;
 };
 
-struct actor_runtime_t {
+struct process_runtime_t {
 	container_t _container;
-	std::map<std::string, std::string> _actor_infos;
+	std::map<std::string, std::string> _process_infos;
 	std::thread::id _main_thread_id;
 
-	vector<std::shared_ptr<actor_t>> _actors;
+	vector<std::shared_ptr<process_t>> _processes;
 	vector<std::thread> _worker_threads;
 };
 
 /*
 ??? have ONE runtime PER computer or one per interpreter?
-??? Separate system-interpreter (all actors and many clock busses) vs ONE thread of execution?
+??? Separate system-interpreter (all processes and many clock busses) vs ONE thread of execution?
 */
 
-void send_message(actor_runtime_t& runtime, int actor_id, const json_t& message){
-	auto& actor = *runtime._actors[actor_id];
+void send_message(process_runtime_t& runtime, int process_id, const json_t& message){
+	auto& process = *runtime._processes[process_id];
 
     {
-        std::lock_guard<std::mutex> lk(actor._inbox_mutex);
-        actor._inbox.push_front(message);
+        std::lock_guard<std::mutex> lk(process._inbox_mutex);
+        process._inbox.push_front(message);
         std::cout << "Notifying...\n";
     }
-    actor._inbox_condition_variable.notify_one();
-//    actor._inbox_condition_variable.notify_all();
+    process._inbox_condition_variable.notify_one();
+//    process._inbox_condition_variable.notify_all();
 }
 
-void process_actor(actor_runtime_t& runtime, int actor_id){
-	auto& actor = *runtime._actors[actor_id];
+void process_process(process_runtime_t& runtime, int process_id){
+	auto& process = *runtime._processes[process_id];
 	bool stop = false;
 
 	const auto thread_name = get_current_thread_name();
 
-	if(actor._processor){
-		actor._processor->on_init();
+	if(process._processor){
+		process._processor->on_init();
 	}
 
-	if(actor._init_function != nullptr){
+	if(process._init_function != nullptr){
 		const vector<value_t> args = {};
-		actor._actor_state = call_function(*actor._interpreter, bc_to_value(actor._init_function->_value), args);
+		process._process_state = call_function(*process._interpreter, bc_to_value(process._init_function->_value), args);
 	}
 
 	while(stop == false){
 		json_t message;
 		{
-			std::unique_lock<std::mutex> lk(actor._inbox_mutex);
+			std::unique_lock<std::mutex> lk(process._inbox_mutex);
 
 			std::cout << thread_name << ": waiting... \n";
-			actor._inbox_condition_variable.wait(lk, [&]{ return actor._inbox.empty() == false; });
+			process._inbox_condition_variable.wait(lk, [&]{ return process._inbox.empty() == false; });
 			std::cout << thread_name << ": continue... \n";
 
 			//	Pop message.
-			QUARK_ASSERT(actor._inbox.empty() == false);
-			message = actor._inbox.back();
-			actor._inbox.pop_back();
+			QUARK_ASSERT(process._inbox.empty() == false);
+			message = process._inbox.back();
+			process._inbox.pop_back();
 		}
 		QUARK_TRACE_SS("RECEIVED: " << json_to_pretty_string(message));
 
@@ -545,21 +545,21 @@ void process_actor(actor_runtime_t& runtime, int actor_id){
 			std::cout << thread_name << ": STOP \n";
 		}
 		else{
-			if(actor._processor){
-				actor._processor->on_message(message);
+			if(process._processor){
+				process._processor->on_message(message);
 			}
 
-			if(actor._process_function != nullptr){
-				const vector<value_t> args = { actor._actor_state, value_t::make_json_value(message) };
-				const auto& state2 = call_function(*actor._interpreter, bc_to_value(actor._process_function->_value), args);
-				actor._actor_state = state2;
+			if(process._process_function != nullptr){
+				const vector<value_t> args = { process._process_state, value_t::make_json_value(message) };
+				const auto& state2 = call_function(*process._interpreter, bc_to_value(process._process_function->_value), args);
+				process._process_state = state2;
 			}
 		}
 	}
 }
 
 std::map<std::string, value_t> run_container(const interpreter_context_t& context, const string& source, const vector<floyd::value_t>& args, const std::string& container_key){
-	actor_runtime_t runtime;
+	process_runtime_t runtime;
 	runtime._main_thread_id = std::this_thread::get_id();
 
 	auto program = compile_to_bytecode(context, source);
@@ -567,44 +567,44 @@ std::map<std::string, value_t> run_container(const interpreter_context_t& contex
 		throw std::exception();
 	}
 	runtime._container = program._software_system._containers.at(container_key);
-	runtime._actor_infos = fold(runtime._container._clock_busses, std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const pair<string, clock_bus_t>& e){
+	runtime._process_infos = fold(runtime._container._clock_busses, std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const pair<string, clock_bus_t>& e){
 		auto acc2 = acc;
-		acc2.insert(e.second._actors.begin(), e.second._actors.end());
+		acc2.insert(e.second._processes.begin(), e.second._processes.end());
 		return acc2;
 	});
 
 	struct my_interpreter_handler_t : public interpreter_handler_i {
-		my_interpreter_handler_t(actor_runtime_t& runtime) : _runtime(runtime) {}
+		my_interpreter_handler_t(process_runtime_t& runtime) : _runtime(runtime) {}
 
-		virtual void on_send(const std::string& actor_id, const json_t& message){
-			const auto it = std::find_if(_runtime._actors.begin(), _runtime._actors.end(), [&](const std::shared_ptr<actor_t>& actor){ return actor->_name_key == actor_id; });
-			if(it != _runtime._actors.end()){
-				const auto actor_index = it - _runtime._actors.begin();
-				send_message(_runtime, static_cast<int>(actor_index), message);
+		virtual void on_send(const std::string& process_id, const json_t& message){
+			const auto it = std::find_if(_runtime._processes.begin(), _runtime._processes.end(), [&](const std::shared_ptr<process_t>& process){ return process->_name_key == process_id; });
+			if(it != _runtime._processes.end()){
+				const auto process_index = it - _runtime._processes.begin();
+				send_message(_runtime, static_cast<int>(process_index), message);
 			}
 		}
 
-		actor_runtime_t& _runtime;
+		process_runtime_t& _runtime;
 	};
 	auto my_interpreter_handler = my_interpreter_handler_t{runtime};
 
 
-	for(const auto& t: runtime._actor_infos){
-		auto actor = std::make_shared<actor_t>();
-		actor->_name_key = t.first;
-		actor->_function_key = t.second;
-		actor->_interpreter = make_shared<interpreter_t>(program, &my_interpreter_handler);
-		actor->_init_function = find_global_symbol2(*actor->_interpreter, t.second + "__init");
-		actor->_process_function = find_global_symbol2(*actor->_interpreter, t.second);
+	for(const auto& t: runtime._process_infos){
+		auto process = std::make_shared<process_t>();
+		process->_name_key = t.first;
+		process->_function_key = t.second;
+		process->_interpreter = make_shared<interpreter_t>(program, &my_interpreter_handler);
+		process->_init_function = find_global_symbol2(*process->_interpreter, t.second + "__init");
+		process->_process_function = find_global_symbol2(*process->_interpreter, t.second);
 
-		runtime._actors.push_back(actor);
+		runtime._processes.push_back(process);
 	}
 
 /*
-	struct my_processor : public actor_processor_interface {
-		my_processor(actor_runtime_t& runtime) : _runtime(runtime) {}
+	struct my_processor : public process_interface {
+		my_processor(process_runtime_t& runtime) : _runtime(runtime) {}
 
-		actor_runtime_t& _runtime;
+		process_runtime_t& _runtime;
 
 		virtual void on_message(const json_t& message){
 			if(message.is_string() && message.get_string() == "hello me!"){
@@ -625,24 +625,24 @@ std::map<std::string, value_t> run_container(const interpreter_context_t& contex
 		}
 	};
 
-	runtime._actors[2]->_processor = std::make_shared<my_processor>(runtime);
+	runtime._processes[2]->_processor = std::make_shared<my_processor>(runtime);
 */
 
 
-	//	Remember that current thread (main) is also a thread, no need to create a worker thread for one actor.
-	runtime._actors[0]->_thread_id = runtime._main_thread_id;
+	//	Remember that current thread (main) is also a thread, no need to create a worker thread for one process.
+	runtime._processes[0]->_thread_id = runtime._main_thread_id;
 
-	for(int actor_id = 1 ; actor_id < runtime._actors.size() ; actor_id++){
-		runtime._worker_threads.push_back(std::thread([&](int actor_id){
+	for(int process_id = 1 ; process_id < runtime._processes.size() ; process_id++){
+		runtime._worker_threads.push_back(std::thread([&](int process_id){
 
 //			const auto native_thread = thread::native_handle();
 
 			std::stringstream thread_name;
-			thread_name << string() << "actor " << actor_id << " thread";
+			thread_name << string() << "process " << process_id << " thread";
 			pthread_setname_np(/*pthread_self(),*/ thread_name.str().c_str());
 
-			process_actor(runtime, actor_id);
-		}, actor_id));
+			process_process(runtime, process_id);
+		}, process_id));
 	}
 
 /*
@@ -653,15 +653,15 @@ std::map<std::string, value_t> run_container(const interpreter_context_t& contex
 	send_message(runtime, 0, json_t("stop"));
 */
 
-	process_actor(runtime, 0);
+	process_process(runtime, 0);
 
 	for(auto &t: runtime._worker_threads){
 		t.join();
 	}
 
 	const auto result_vec = mapf<pair<string, value_t>>(
-		runtime._actors,
-		[](const auto& actor){ return pair<string, value_t>{ actor->_name_key, actor->_actor_state };}
+		runtime._processes,
+		[](const auto& process){ return pair<string, value_t>{ process->_name_key, process->_process_state };}
 	);
 	std::map<string, value_t> result_map;
 	for(const auto& e: result_vec){
@@ -670,7 +670,7 @@ std::map<std::string, value_t> run_container(const interpreter_context_t& contex
 	}
 
 	return result_map;
-//	QUARK_UT_VERIFY(runtime._actors[0]->_actor_state.get_struct_value()->_member_values[0].get_int_value() == 998);
+//	QUARK_UT_VERIFY(runtime._processes[0]->_process_state.get_struct_value()->_member_values[0].get_int_value() == 998);
 }
 
 

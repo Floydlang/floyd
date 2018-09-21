@@ -3284,7 +3284,7 @@ QUARK_UNIT_TEST("software-system", "test parsing all data", "", ""){
 	ut_compare_values(result, value_t::make_int(123));
 }
 
-QUARK_UNIT_TEST("software-system", "run one actor", "", ""){
+QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 	const auto test_ss2 = R"(
 		software-system {
 			"name": "My Arcade Game",
@@ -3333,7 +3333,7 @@ QUARK_UNIT_TEST("software-system", "run one actor", "", ""){
 	run_container(context, test_ss2, {}, "iphone app");
 }
 
-QUARK_UNIT_TEST("software-system", "run two unconnected actors", "", ""){
+QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 	const auto test_ss3 = R"(
 		software-system {
 			"name": "My Arcade Game",
@@ -3355,7 +3355,7 @@ QUARK_UNIT_TEST("software-system", "run two unconnected actors", "", ""){
 		}
 
 
-		////////////////////////////////	my_gui -- actor
+		////////////////////////////////	my_gui -- process
 
 		struct my_gui_state_t {
 			int _count
@@ -3382,7 +3382,7 @@ QUARK_UNIT_TEST("software-system", "run two unconnected actors", "", ""){
 		}
 
 
-		////////////////////////////////	my_audio -- actor
+		////////////////////////////////	my_audio -- process
 
 		struct my_audio_state_t {
 			int _audio
@@ -3414,7 +3414,7 @@ QUARK_UNIT_TEST("software-system", "run two unconnected actors", "", ""){
 }
 
 
-QUARK_UNIT_TEST("software-system", "run two CONNECTED actors", "", ""){
+QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 	const auto test_ss3 = R"(
 		software-system {
 			"name": "My Arcade Game",
@@ -3436,7 +3436,7 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED actors", "", ""){
 		}
 
 
-		////////////////////////////////	my_gui -- actor
+		////////////////////////////////	my_gui -- process
 
 		struct my_gui_state_t {
 			int _count
@@ -3462,7 +3462,7 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED actors", "", ""){
 		}
 
 
-		////////////////////////////////	my_audio -- actor
+		////////////////////////////////	my_audio -- process
 
 		struct my_audio_state_t {
 			int _audio
