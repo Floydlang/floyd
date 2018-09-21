@@ -123,7 +123,7 @@ QUARK_UNIT_TEST("","", "", ""){
 }
 
 
-QUARK_UNIT_TEST_VIP("","", "", ""){
+QUARK_UNIT_TEST("","", "", ""){
 	unsigned num_cpus = std::thread::hardware_concurrency();
 
 //	QUARK_TRACE_SS(num_cpus);
@@ -171,7 +171,7 @@ unsigned int get_freq() {
 	return freq;
 }
 
-QUARK_UNIT_TEST_VIP("","", "", ""){
+QUARK_UNIT_TEST("","", "", ""){
 	const auto a = get_freq();
 	QUARK_UT_VERIFY(a > 0);
 }

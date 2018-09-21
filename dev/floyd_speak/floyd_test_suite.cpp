@@ -3317,7 +3317,7 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 
 		func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
 			if(message == "inc"){
-				return update(st_VIPate, "_count", state._count + 1)
+				return update(state, "_count", state._count + 1)
 			}
 			else if(message == "dec"){
 				return update(state, "_count", state._count - 1)

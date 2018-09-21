@@ -54,6 +54,7 @@ namespace floyd {
 	std::string make_value_debug_str(const value_t& v);
 #endif
 
+//??? make internal class tht can be used in struct_value_t and protocol_value_t.
 
 	//////////////////////////////////////////////////		struct_value_t
 
@@ -74,6 +75,29 @@ namespace floyd {
 
 
 		public: std::shared_ptr<const struct_definition_t> _def;
+		public: std::vector<value_t> _member_values;
+	};
+
+
+	//////////////////////////////////////////////////		protocol_value_t
+
+	/*
+		An instance of a protocol-type.
+	*/
+	struct protocol_value_t {
+		public: protocol_value_t(const std::shared_ptr<const protocol_definition_t>& def, const std::vector<value_t>& member_values) :
+			_def(def),
+			_member_values(member_values)
+		{
+			QUARK_ASSERT(_def && _def->check_invariant());
+
+			QUARK_ASSERT(check_invariant());
+		}
+		public: bool check_invariant() const;
+		public: bool operator==(const protocol_value_t& other) const;
+
+
+		public: std::shared_ptr<const protocol_definition_t> _def;
 		public: std::vector<value_t> _member_values;
 	};
 
@@ -190,6 +214,7 @@ namespace floyd {
 		public: value_ext_t(const typeid_t& s);
 
 		public: value_ext_t(const typeid_t& type, std::shared_ptr<struct_value_t>& s);
+		public: value_ext_t(const typeid_t& type, std::shared_ptr<protocol_value_t>& s);
 		public: value_ext_t(const typeid_t& type, const std::vector<value_t>& s);
 		public: value_ext_t(const typeid_t& type, const std::map<std::string, value_t>& s);
 		public: value_ext_t(const typeid_t& type, int function_id);
@@ -202,6 +227,7 @@ namespace floyd {
 		public: std::shared_ptr<json_t> _json_value;
 		public: typeid_t _typeid_value = typeid_t::make_undefined();
 		public: std::shared_ptr<struct_value_t> _struct;
+		public: std::shared_ptr<protocol_value_t> _protocol;
 		public: std::vector<value_t> _vector_elements;
 		public: std::map<std::string, value_t> _dict_entries;
 		public: int _function_id = -1;
@@ -400,6 +426,18 @@ namespace floyd {
 		public: std::shared_ptr<struct_value_t> get_struct_value() const;
 
 
+		//------------------------------------------------		protocol
+
+
+		public: static value_t make_protocol_value(const typeid_t& protocol_type, const std::vector<value_t>& values);
+		public: bool is_protocol() const {
+			QUARK_ASSERT(check_invariant());
+
+			return _basetype == base_type::k_protocol;
+		}
+		public: std::shared_ptr<protocol_value_t> get_protocol_value() const;
+
+
 		//------------------------------------------------		vector
 
 
@@ -445,6 +483,7 @@ namespace floyd {
 				|| basetype == base_type::k_json_value
 				|| basetype == base_type::k_typeid
 				|| basetype == base_type::k_struct
+				|| basetype == base_type::k_protocol
 				|| basetype == base_type::k_vector
 				|| basetype == base_type::k_dict
 				|| basetype == base_type::k_function;
@@ -609,6 +648,7 @@ namespace floyd {
 		private: explicit value_t(const std::shared_ptr<json_t>& s);
 		private: explicit value_t(const typeid_t& type);
 		private: explicit value_t(const typeid_t& struct_type, std::shared_ptr<struct_value_t>& instance);
+		private: explicit value_t(const typeid_t& protocol_type, std::shared_ptr<protocol_value_t>& instance);
 		private: explicit value_t(const typeid_t& element_type, const std::vector<value_t>& elements);
 		private: explicit value_t(const typeid_t& value_type, const std::map<std::string, value_t>& entries);
 		private: explicit value_t(const typeid_t& type, int function_id);

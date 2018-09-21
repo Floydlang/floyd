@@ -36,6 +36,7 @@ const std::string keyword_t::k_string = "string";
 const std::string keyword_t::k_typeid = "typeid";
 const std::string keyword_t::k_json_value = "json_value";
 const std::string keyword_t::k_struct = "struct";
+const std::string keyword_t::k_protocol = "protocol";
 
 const std::string keyword_t::k_mutable = "mutable";
 const std::string keyword_t::k_let = "let";

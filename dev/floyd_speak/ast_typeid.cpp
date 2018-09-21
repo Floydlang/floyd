@@ -59,6 +59,9 @@ const char tag_resolved_type_char = '^';
 		else if(t == base_type::k_struct){
 			return keyword_t::k_struct;
 		}
+		else if(t == base_type::k_protocol){
+			return keyword_t::k_protocol;
+		}
 		else if(t == base_type::k_vector){
 			return "vector";
 		}
@@ -89,6 +92,7 @@ const char tag_resolved_type_char = '^';
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_json_value) == keyword_t::k_json_value);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_typeid) == "typeid");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_struct) == keyword_t::k_struct);
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_protocol) == keyword_t::k_protocol);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_vector) == "vector");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_dict) == "dict");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_function) == "fun");
@@ -134,14 +138,22 @@ const char tag_resolved_type_char = '^';
 			QUARK_ASSERT(_ext);
 			QUARK_ASSERT(_ext->_parts.empty());
 			QUARK_ASSERT(_ext->_unresolved_type_identifier.empty());
-			QUARK_ASSERT(_ext->_struct_def);
-			QUARK_ASSERT(_ext->_struct_def->check_invariant());
+			QUARK_ASSERT(_ext->_struct_def && _ext->_struct_def->check_invariant());
+			QUARK_ASSERT(!_ext->_protocol_def);
+		}
+		else if(_base_type == floyd::base_type::k_protocol){
+			QUARK_ASSERT(_ext);
+			QUARK_ASSERT(_ext->_parts.empty());
+			QUARK_ASSERT(_ext->_unresolved_type_identifier.empty());
+			QUARK_ASSERT(!_ext->_struct_def);
+			QUARK_ASSERT(_ext->_protocol_def && _ext->_protocol_def->check_invariant());
 		}
 		else if(_base_type == floyd::base_type::k_vector){
 			QUARK_ASSERT(_ext);
 			QUARK_ASSERT(_ext->_parts.size() == 1);
 			QUARK_ASSERT(_ext->_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_ext->_struct_def);
+			QUARK_ASSERT(!_ext->_protocol_def);
 
 			QUARK_ASSERT(_ext->_parts[0].check_invariant());
 		}
@@ -150,6 +162,7 @@ const char tag_resolved_type_char = '^';
 			QUARK_ASSERT(_ext->_parts.size() == 1);
 			QUARK_ASSERT(_ext->_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_ext->_struct_def);
+			QUARK_ASSERT(!_ext->_protocol_def);
 
 			QUARK_ASSERT(_ext->_parts[0].check_invariant());
 		}
@@ -158,6 +171,7 @@ const char tag_resolved_type_char = '^';
 			QUARK_ASSERT(_ext->_parts.size() >= 1);
 			QUARK_ASSERT(_ext->_unresolved_type_identifier.empty());
 			QUARK_ASSERT(!_ext->_struct_def);
+			QUARK_ASSERT(!_ext->_protocol_def);
 
 			for(const auto& e: _ext->_parts){
 				QUARK_ASSERT(e.check_invariant());
@@ -168,6 +182,7 @@ const char tag_resolved_type_char = '^';
 			QUARK_ASSERT(_ext->_parts.empty());
 			QUARK_ASSERT(_ext->_unresolved_type_identifier.empty() == false);
 			QUARK_ASSERT(!_ext->_struct_def);
+			QUARK_ASSERT(!_ext->_protocol_def);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -223,6 +238,10 @@ const char tag_resolved_type_char = '^';
 			const auto struct_def = t.get_struct();
 			return floyd::to_compact_string(struct_def);
 		}
+		else if(basetype == floyd::base_type::k_protocol){
+			const auto protocol_def = t.get_protocol();
+			return floyd::to_compact_string(protocol_def);
+		}
 		else if(basetype == floyd::base_type::k_vector){
 			const auto e = t.get_vector_element_type();
 			return "[" + typeid_to_compact_string(e) + "]";
@@ -277,6 +296,13 @@ const char tag_resolved_type_char = '^';
 			return ast_json_t{json_t::make_array({
 				json_t(basetype_str_tagged),
 				struct_definition_to_ast_json(struct_def)._value
+			})};
+		}
+		else if(b == base_type::k_protocol){
+			const auto protocol_def = t.get_protocol();
+			return ast_json_t{json_t::make_array({
+				json_t(basetype_str_tagged),
+				protocol_definition_to_ast_json(protocol_def)._value
 			})};
 		}
 		else if(b == base_type::k_vector){
@@ -372,12 +398,20 @@ const char tag_resolved_type_char = '^';
 */
 			if(s == keyword_t::k_struct){
 				const auto struct_def_array = a[1].get_array();
-//				const auto struct_name = struct_def_array[0].get_string();
 				const auto member_array = struct_def_array[0].get_array();
 
 				const vector<member_t> struct_members = members_from_json(member_array);
 				return typeid_t::make_struct(
 					std::make_shared<struct_definition_t>(struct_definition_t(struct_members))
+				);
+			}
+			if(s == keyword_t::k_protocol){
+				const auto protocol_def_array = a[1].get_array();
+				const auto member_array = protocol_def_array[0].get_array();
+
+				const vector<member_t> protocol_members = members_from_json(member_array);
+				return typeid_t::make_protocol(
+					std::make_shared<protocol_definition_t>(protocol_definition_t(protocol_members))
 				);
 			}
 			else if(s == "vector"){
@@ -588,6 +622,60 @@ const char tag_resolved_type_char = '^';
 	}
 
 
+
+	//////////////////////////////////////////////////		protocol_definition_t
+
+
+	bool protocol_definition_t::check_invariant() const{
+//		QUARK_ASSERT(_struct!type.is_undefined() && _struct_type.check_invariant());
+
+		for(const auto& m: _members){
+			QUARK_ASSERT(m.check_invariant());
+		}
+		return true;
+	}
+
+	bool protocol_definition_t::operator==(const protocol_definition_t& other) const{
+		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(other.check_invariant());
+
+		return _members == other._members;
+	}
+
+	bool protocol_definition_t::check_types_resolved() const{
+		for(const auto& e: _members){
+			bool result = e._type.check_types_resolved();
+			if(result == false){
+				return false;
+			}
+		}
+		return true;
+	}
+
+
+	std::string to_compact_string(const protocol_definition_t& v){
+		auto s = string() + "protocol {";
+		for(const auto& e: v._members){
+			s = s + typeid_to_compact_string(e._type) + " " + e._name + ";";
+		}
+		s = s + "}";
+		return s;
+	}
+
+	ast_json_t protocol_definition_to_ast_json(const protocol_definition_t& v){
+		QUARK_ASSERT(v.check_invariant());
+
+		return ast_json_t{json_t::make_array({
+			members_to_json(v._members)
+		})};
+	}
+
+
+
+
+
+
+
 	////////////////////////			member_t
 
 
@@ -669,6 +757,12 @@ bool typeid_t::check_types_resolved() const{
 
 			if(_ext->_struct_def){
 				bool result = _ext->_struct_def->check_types_resolved();
+				if(result == false){
+					return false;
+				}
+			}
+			else if(_ext->_protocol_def){
+				bool result = _ext->_protocol_def->check_types_resolved();
 				if(result == false){
 					return false;
 				}
