@@ -2318,6 +2318,33 @@ QUARK_UNIT_TEST("run_main()", "struct definition expression", "", ""){
 */
 
 
+
+//////////////////////////////////////////		STRUCT - TYPE
+
+
+QUARK_UNIT_TESTQ("run_main()", "protocol"){
+	const auto vm = test__run_global(R"(
+		protocol t {}
+	)");
+}
+
+QUARK_UNIT_TESTQ("run_main()", "protocol"){
+	const auto vm = test__run_global(R"(
+		protocol t { int a }
+	)");
+}
+
+QUARK_UNIT_TEST("run_main()", "protocol - check protocol's type", "", ""){
+	const auto vm = test__run_global(R"(
+		protocol t { int a }
+		print(t)
+	)");
+	ut_compare_stringvects(vm->_print_output, vector<string>{
+		"protocol {int a;}"
+	});
+}
+
+
 //////////////////////////////////////////
 
 
