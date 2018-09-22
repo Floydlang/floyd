@@ -146,7 +146,7 @@ struct semantic_ast_t;
 		//	Holds all values for all environments.
 		public: std::vector<bcgen_environment_t> _call_stack;
 
-		public: std::vector<const typeid_t> _types;
+		public: std::vector<typeid_t> _types;
 	};
 
 
@@ -1534,7 +1534,7 @@ bc_program_t generate_bytecode(const quark::trace_context_t& tracer, const seman
 	const auto globals2 = make_frame(global_body, {});
 	a._call_stack.push_back(bcgen_environment_t{ &global_body });
 
-	std::vector<const bc_function_definition_t> function_defs2;
+	std::vector<bc_function_definition_t> function_defs2;
 	for(int function_id = 0 ; function_id < ast._checked_ast._function_defs.size() ; function_id++){
 		const auto& function_def = *ast._checked_ast._function_defs[function_id];
 

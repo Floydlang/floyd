@@ -1315,8 +1315,8 @@ namespace floyd {
 #endif
 
 		public: const bc_frame_t _globals;
-		public: std::vector<const bc_function_definition_t> _function_defs;
-		public: std::vector<const typeid_t> _types;
+		public: std::vector<bc_function_definition_t> _function_defs;
+		public: std::vector<typeid_t> _types;
 		public: software_system_t _software_system;
 	};
 

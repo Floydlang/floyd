@@ -2830,7 +2830,7 @@ json_t frame_to_json(const bc_frame_t& frame){
 	});
 }
 
-json_t types_to_json(const std::vector<const typeid_t>& types){
+json_t types_to_json(const std::vector<typeid_t>& types){
 	vector<json_t> r;
 	int id = 0;
 	for(const auto& e: types){
