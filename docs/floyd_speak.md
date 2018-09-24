@@ -530,88 +530,11 @@ This works with nested values too:
 ```
 
 
+
+
 # PROTOCOL
 
 TODO 1.0
-
-??? Protocol related to internal state.
-
-
-A protocol describes a set of callable functions. When you have access to a protocol you can call those functions but you don't know who implements the functions. There can be many implementations of the protocol and you don't need to 
-
-	protocol reader_t {
-		[int] read()
-		int get_size()
-	}
-
-This allows you to write functions like this, that work via the protocol which works for *any implementation of the protocol.
-
-	document_t read_document(reader_t reader){
-		let data = read(reader)
-	}
-
-You implement a protocol like this:
-
-	protocol read_t {
-		[int] read(self){
-			FILE* file = fopen("cache.txt2, "r")
-			if(file != nullptr){
-				int error1 = fseek(file, 0L, SEEK_END)
-				int sz = ftell(file)
-				int error2 = fseek(file, 0L, SEEK_SET);
-				size_t read_count = fread(void *ptr, size_t size_of_elements, size_t number_of_elements, FILE *a_file);
-				int error1 = fread()
-				int error 2 = fclose(file)
-				file = nullptr
-			}
-		}
-	}
-
-
-A protocol is a type that introduces zero to many functions signatures without having any implementation. The protocols defines no state and has no actual functionality.
-
-A struct can chose to implement one or several protocols. This gives an implementation of the protocol functions.
-
-When a protocol is supplied
-A protocol does NOT mean an is-a hiearchy. It is rather a supports-a. An optional feature.
-
-```
-	protocol tooltip_support {
-		text get_text(this)
-		color get_color(this)
-		text_style get_style(this)
-	}
-	
-	protocol mouse_support {
-		T on_click(float x, float y)
-		T on_release(float x, float y)
-	}
-	
-	protocol seq {
-		T first()
-		seq rest()
-	}
-```
-
-```
-
-	//	Implements mouse_support and tooltip_support
-	struct my_window: mouse_support, tooltip_support {
-		T mouse_support::on_click(this, float x, float y){
-			return this;
-		}
-		T mouse_support::on_release(this, float x, float y){
-		}
-
-		text tooltip_support::get_text(this){
-		}
-		color tooltip_support::get_color(this){
-		}
-		text_style tooltip_support::get_style(this){
-		}
-	}
-```
-
 
 
 
