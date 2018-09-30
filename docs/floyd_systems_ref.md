@@ -8,18 +8,14 @@ Here are all the details you need to use Floyd Systems. Every single feature. Fl
 
 Highest level of abstraction and describes something that delivers value to its users, whether they are human or not, can be composed of many computers working together.
 
+There is no support for package management built into Floyd 1.0.
 
 
 ## SOURCE FILES
 
 **example.floydsys** -- stores the top of the system including people, connections and so on. It also *fully* defines every component and how they are implemented with process and wires, the setup of tweakers and so on.
 
-**example.fecomp** -- effect-component source file. Defines a reusable component that has *effects* -- that is can call mutating functions. It cannot keep its own state but state may be stored in OS or file system or servers.
-
-**example.fpcomp** -- defines a pure component where every function is pure and has no side effects.
-
-Component source files store all their functions and enums and so on. They list which other components they need.
-
+**example.floydcomp** -- component source file. Defines a reusable component 
 
 
 # SOFTWARE SYSTEM FILE
@@ -27,7 +23,7 @@ Component source files store all their functions and enums and so on. They list 
 
 You only have one of these in a software system. Extension is .floydsys.
 
-There is only one dedicated keyword: **software-system**. Its contents is encoded as JSON object and designed to be either hand-coded or processed by tools.
+There is only one dedicated keyword for software systems: **software-system**. It's contents is encoded as a JSON object and designed to be either hand-coded or processed by tools.
 
 
 |Key		| Meaning
@@ -40,7 +36,7 @@ There is only one dedicated keyword: **software-system**. Its contents is encode
 
 
 
-## PEOPLE
+### software-system - PEOPLE
 
 This is an object where each key is the name of a persona and a short description of that persona.
 
@@ -54,7 +50,7 @@ This is an object where each key is the name of a persona and a short descriptio
 
 
 
-## CONNECTIONS
+### software-system - CONNECTIONS
 
 ```
 "connections": [
@@ -77,7 +73,7 @@ This is an object where each key is the name of a persona and a short descriptio
 
 
 
-# CONTAINERS
+### software-system - CONTAINERS
 
 Defines every container in the system. They are named.
 
@@ -85,7 +81,7 @@ Defines every container in the system. They are named.
 |:---	|:---	
 |**tech**		| short string that lists the most important technologies, languages, toolkits.
 |**desc**		| short string that tells what this component is and does.
-|**clocks**		| defines every clock (concurrent process) in this container and lists which processes that are synced to each clock
+|**clocks**		| defines every clock (concurrent process) in this container and lists which processes that are synced to each of these clocks
 |**connections**		| connects the processes together using virtual wires. Source-process-name, dest-process-name, interaction-description.
 |**probes\_and\_tweakers**		| lists all probes and tweakers used in this container. Notice that the same function or component can have a different set of probes and tweakers per container or share them.
 |**components**		| lists all imported components needed for this container
@@ -94,32 +90,40 @@ Defines every container in the system. They are named.
 Example container:
 
 ```
-	"iphone app": {
-		"tech": "Swift, iOS, Xcode, Open GL",
-		"desc": "Mobile shooter game for iOS.",
+			"iphone app": {
+				"tech": "Swift, iOS, Xcode, Open GL",
+				"desc": "Mobile shooter game for iOS.",
 
-		"clocks": {
-			"main": [ "my_gui_main", "iphone-ux" ],
-			"com-clock": [ "server_com" ],
-			"opengl_feeder": [ "renderer" ]
-		},
-		"connections": [
-			[ "iphone-ux", "my_gui_main",	"Handle requests from iOS for our app" ],
-			[ "my_gui_main", "server_com",	"Our app queues server commands" ]
-		],
-		"probes_and_tweakers": [],
-		"components": [
-			"My Arcade Game-iphone-app",
-			"My Arcade Game-logic",
-			"My Arcade Game-servercom",
-			"OpenGL-component",
-			"Free Game Engine-component",
-			"iphone-ux-component"
-		]
-	}
+				"clocks": {
+					"main": {
+						"a": "my_gui_main",
+						"b": "iphone-ux"
+					},
+
+					"com-clock": {
+						"c": "server_com"
+					},
+					"opengl_feeder": {
+						"d": "renderer"
+					}
+				},
+				"connections": [
+					{ "source": "b", "dest": "a", "interaction": "b sends messages to a", "tech": "OS call" },
+					{ "source": "b", "dest": "c", "interaction": "b also sends messages to c, which is another clock", "tech": "OS call" }
+				],
+				"components": [
+					"My Arcade Game-iphone-app",
+					"My Arcade Game-logic",
+					"My Arcade Game-servercom",
+					"OpenGL-component",
+					"Free Game Engine-component",
+					"iphone-ux-component"
+				]
+			},
 ```
 
-## PROXY CONTAINER
+
+### software-system - PROXY CONTAINER
 
 If you use an external component or software system, like for example gmail, you list it here so we can represent it, as a proxy.
 
@@ -137,70 +141,250 @@ or
 ```
 
 
-
-# PROCESSES
+# PROCESSES AND RUNTIMES
 
 Floyd processes are not the same as OS-processes. Floyd processes lives inside a Floyd container and are very light weight.
 
-A process is a function with this signature:
+A process is defined by:
 
-	x_state_t my_process_main([x_state_t] history, y_message message){
+1. a struct for its memory / state
+
+2. an initialisation function that instantiates needed components and returns the intial state
+
+3. a process function that repeatedly handles messages. It can do do impure calls, send messages to other processes but ends each call by returning an updated version of its state struct.
+
+Usually process functions are one-offs and not reusable.
+
+Avoid having logic inside the process functions - move that logic to separate, pure functions.
+
+
+Example process code:
+
+```
+struct my_gui_state_t {
+	mac_logging_impure logging
+	mac_files_impure files
+	text_packing_impl text_packing
+	image_cache_impl thumbnail_cache
+	image_cache_impl fullrez_cache
+
+	int _count
+}
+
+func my_gui_state_t my_gui__init(){
+	send("a", "dec")
+
+	return my_gui_state_t(
+		mac_logging_impure(),
+		mac_files_impure(),
+		image_cache_impl(),
+		image_cache_impl(),
+
+		0
+	);
+}
+
+func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
+	if(message == "inc"){
+		return update(state, "_count", state._count + 1)
 	}
-
-It can used from "clocks" sections to instantiate an process based on that function. Usually process functions are one-offs and not reusable several time.
-
-??? allow circular references at compile time.
-
-You need to define an initialization function for each process. It has the same name but with "__init" at the end:
-
-	x_state_t my_process_main__int(){
+	else if(message == "dec"){
+		return update(state, "_count", state._count - 1)
 	}
+	else{
+		assert(false)
+	}
+}
+```
 
-It has no arguments and returns the initial state of the process.
+
+**my\_gui\_state_t**: this is a struct that holds the mutable memory of this process and any component instances needed by the container.
+
+**my\_gui()**: this function is specified in the software-system/"containers"/"my_iphone_app"/"clocks". The message is always a json_value. You can decide how encode the message into that.
+
+**my\_gui__init()**: this is the init function -- it has the same name with "__init" at the end. It has no arguments and returns the initial state of the process.
 
 
+In the init function you instantiate all components (aka libraries) you need to use in this container.
 
-# RUNTIMES
-TBD
+**No code in the container can access any other libraries or API:s but those specified here.**
 
-At the container level you can instantiate different runtimes, like memory allocators, memory pools, file system support, image caches, background loaders and so on. These can then be accessed inside the process functions and passed to the functions they call.
+??? add names socket as destinations for send().
+
+
+### Context feature
+
+```
+func a(): b("hello")
+func b(string message): context.trace(message)
+```
+
+??? Contexts don't need to be an actual argument passed between all functions. It is mostly static. It can sit on separate stack - only push/pop when changed. Or be a parameter in the interpreter. Go all the way to Lua environment?
+
+Function context: All functions have access to small set of basic infrastructure. A built-in context is automatically passed as argument to every function implicitly. It has features like logging, memory and error handling (like Quark). A function can add more protocols to it or replace protocol implementations when calling a child function, at any position in the callstack (??? or just at top level?). This is a way to add new infrastructure without introducing globals. Top-level function can add a special pool-feature and a low-level function can pick it up.
+
+
+Protocol member functions can be tagged "impure" which allows it to be implemented so it saves or uses state, modifies the world. There is no way to do these things in the implementation of pure protocol function memembers.
+
 
 
 
 
 # FLOYD COMPONENT FILES
 
-There is pure components and effect components. Keywords are **pure-component** and **effect-component**.
+There is a keyword for defining components, called "component-api". It specify the exported features of this component.
+
+Floyd wants to make it explicit what is the API of a component. Functions, structs, version, tests, docs. Every library needs this to export API.
+
+It's also important to make the component-API syntax compact - no need to duplicate or reformat like headers in C++. No implementation possible in "header".
+
+API: defines one version of a component's exported interface. Functions, protocols, structs, tests and docs. Similar to a C++ namespace.
 
 
-??? define external interface of component? Versions?
+Tag every element with "export" that shall be part of component-api.
 
-A pure component has no side effects, have no state and can't talk to the outside world. They can use other pure components but never effect-components.
+Keyword "impure" is used to tag functions that can have side effects. You cannot call these functions from a pure function.
 
-An effect component *can* have side effects. It cannot keep its own state -- only state in the outside world. It can use both pure-components and effect-components.
+??? What is a component instance?
 
-Both pure-component and effect-component are followed by a JSON objects that holds their data. It's a small header.
+??? Future: add contracts to API.
+??? Future: add tests to API.
 
-Only one component can be defined per source file.
+```
+component-api {
+	"name": "PNGLib",
+	"minor_version": 4,
+	"dependencies": [],
+	"desc": "Library for packing and unpacking PNGs of all 3 modes: gray scale, RGB and RGBA"
+}
+```
+
+Only one component can be defined per source file and a component needs to export all its features from that source file. It can call functions in other source files.
 
 
 |Key		| Meaning
 |:---	|:---	
-|**version**		| array with two numbers: major and minor
-|**dependencies**		| list of components needed by your component
+|**name**		| Short name of the component API
+|**minor_version**		| Minor version as a number
+|**dependencies**		| List of components needed by your component
 |**desc**			| Short description what this component is about.
 
 
+The rest of the source file is normal Floyd Speak, but tags functions and other elements that should be exported via API.
 
 ```
-pure-component {
-	"version": [ 1, 0 ],
-	"dependencies": [],
-	"desc": "The Song Component is basic building block to creating a music player / recorder"
+export struct png_lib_t {
+}
+
+export png_lib_t init()
+export void deinit(png_lib_t)
+
+/*
+	Describes any PNG as loading into RAM. It holds its pixel data.
+	There are three types, depending on how many color channels are used in image.
+	It is possible to convert any PNG into rgba-mode, but that wastes memory.
+*/
+export struct png_t {
+	int width
+	int height
+	enum {
+		grayscale: [[byte]] gray_lines
+		rgb: [[struct { byte red, byte green, byte blue } ]] rgb_lines
+		rgba: [[struct { byte alpha, byte red, byte green, byte blue } ]] rgba_lines
+	}
+}
+
+//	Will use the PNG mode that is most economical depending on the fill-color.
+export png_t make_fill(int width, int height, byte red, byte green, byte blue, byte alpha){
+	...
+	...
+	...
+}
+
+export png_t make_example1_black_32x32(){
+	return make_fill(32, 32, 0, 0, 0, 255)
+}
+
+export png_t make_example2_white_32x32(){
+	return make_fill(32, 32, 0, 0, 0, 255)
+}
+
+export png_t make_example3_checker_alpha_32x32(){
+	return make_fill(32, 32, 0, 0, 0, 255)
+}
+
+export png_t unpack_png([byte] binary_png){
+	...
+	...
+	...
+}
+export [byte] pack_png(png_t a){
+	...
+	...
+	...
+}
+export png_t scale(png_t a, float scale){
+	...
+	...
+	...
 }
 ```
 
-The rest of the component file is normal Floyd Speak code: structs, enums, function definitions and constants and so on.
+
+
+Functions take protocols or component APIs as arguments.
+
+Future: syntax to thunk protocol packs easily -- where protocols aren't 1:1 or have different types.
+
+
+
+
+
+
+### COMPONENT VERSIONS
+
+You cannot change an API so it break existing clients. ??? Future: add unit tests to API.
+
+If you need to do breaking changes, make a completely new API but call it something similar: "Pixelib" becomes "Pixelib 2". This makes sure a new version of a component doesn't break existing clients. A client always needs to explicitly migrate to a new version of the API.
+
+But there is a number of things you *can* change to your API without breaking clients.
+- Fix defects (that don't change API).
+- Add more tests to API.
+- Add more documentation to API.
+- Add new functions or types to an API.
+
+It is OK and even preferable to keep the same component API and just add new version of functions, like this:
+
+```
+func void draw_text(float x, float y, string text)
+```
+
+Later on you can add a better draw-text function that does antialiasing:
+
+```
+func void draw_text_antialized(float x, float y, string text)
+```
+
+This does not break old code either and a client can chose to migrate calls one by one.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -356,11 +540,6 @@ A cache is always a shortcut for a (pure) function. You can decide if the cache 
 - Increase backward read speed, stride
 
 
-
-
-
-
-
 ## EAGER TWEAKER
 
 ??? TBD
@@ -421,11 +600,9 @@ Turn array of structs to struct of arrays etc.
 
 # SYNTAX
 
-
 ```
 STATEMENT "software-system" JSON_BODY
-STATEMENT "effect-component" JSON_BODY
-STATEMENT "pure-component" JSON_BODY
+STATEMENT "component-API" JSON_BODY
 ```
 
 
@@ -441,6 +618,7 @@ STATEMENT "pure-component" JSON_BODY
 software-system {
 	"name": "My Arcade Game",
 	"desc": "Space shooter for mobile devices, with connection to a server.",
+
 	"people": {
 		"Gamer": "Plays the game on one of the mobile apps",
 		"Curator": "Updates achievements, competitions, make custom on-off maps",
@@ -457,23 +635,22 @@ software-system {
 			"desc": "Mobile shooter game for iOS.",
 
 			"clocks": {
-				"main": [
+				"main": {
 					"a": "my_gui_main",
 					"b": "iphone-ux"
-				],
+				},
 
-				"com-clock": [
+				"com-clock": {
 					"c": "server_com"
-				],
-				"opengl_feeder": [
+				},
+				"opengl_feeder": {
 					"d": "renderer"
-				]
+				}
 			},
 			"connections": [
-				{ "b", "a",	"b sends messages to a" },
-				{ "b", "c",	"b also sends messages to c, which is another clock" }
+				{ "source": "b", "dest": "a", "interaction": "b sends messages to a", "tech": "OS call" },
+				{ "source": "b", "dest": "c", "interaction": "b also sends messages to c, which is another clock", "tech": "OS call" }
 			],
-			"probes_and_tweakers": [],
 			"components": [
 				"My Arcade Game-iphone-app",
 				"My Arcade Game-logic",
@@ -487,20 +664,19 @@ software-system {
 		"Android app": {
 			"tech": "Kotlin, Javalib, Android OS, OpenGL",
 			"desc": "Mobile shooter game for Android OS.",
-	
+ 
 			"clocks": {
-				"main": [
+				"main": {
 					"a": "my_gui_main",
 					"b": "iphone-ux"
-				],
-				"com-clock": [
+				},
+				"com-clock": {
 					"c": "server_com"
-				],
-				"opengl_feeder": [
+				},
+				"opengl_feeder": {
 					"d": "renderer"
-				]
+				}
 			},
-			"probes_and_tweakers": [],
 			"components": [
 				"My Arcade Game-android-app",
 				"My Arcade Game-logic",
@@ -515,10 +691,8 @@ software-system {
 			"desc": "The database that stores all user accounts, levels and talks to the mobile apps and handles admin tasks.",
 
 			"clocks": {
-				"main": [
-				]
+				"main": {}
 			},
-			"probes_and_tweakers": [],
 			"components": [
 				"My Arcade Game-logic",
 				"My Arcade Game server logic"
@@ -527,36 +701,31 @@ software-system {
 	}
 }
 
-//////////////////		My GUI process code
+////////////////////////////////	my_gui -- process
 
-struct hedgehog_gui_state_t {
-	int timestamp
-	[xyz_record_t] recs
+struct my_gui_state_t {
+	int _count
 }
 
-struct hedgehog_gui_message_t {
-	int timestamp
-	int mouse_x
-	int mouse_y
-	case stop: struct { int duration }
-	case on_mouse_move:
-	case on_click: struct { int button_index }
+func my_gui_state_t my_gui__init(){
+	send("a", "dec")
+	send("a", "dec")
+	send("a", "dec")
+	send("a", "stop")
+	return my_gui_state_t(1000)
 }
 
-//??? specify outputs too: gui can have several outputs. They have different message-types.
-
-hedgehog_gui_state_t my_gui_main__int(){
-	return hedgehog_gui_state_t()
-}
-
-hedgehog_gui_state_t my_gui_main([hedgehog_gui_state_t] history, hedgehog_gui_message_t message){
-	if(message.type: on_mouse_move){
+func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
+	if(message == "inc"){
+		return update(state, "_count", state._count + 1)
 	}
-	else if(message.type: stop){
-		b.send(quit_to_homescreen)
+	else if(message == "dec"){
+		return update(state, "_count", state._count - 1)
 	}
 	else{
+		assert(false)
 	}
 }
+
 
 ```

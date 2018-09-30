@@ -54,22 +54,19 @@ Highest level of abstraction and describes something that delivers value to its 
 
 A container represents something that hosts code or data. A container is something that needs to be running in order for the overall software system to work. A mobile app, a server-side web application, a client-side web application, a micro service: all examples of containers.
 
-This is usually a single OS-process, with internal mutation, time, several threads. It looks for resources and knows how to string things together inside the container. The basic building blocks are impure-components, built in ones and ones you program yourself.
+This is usually a single OS-process, with internal mutation, time, several threads. It looks for resources and knows how to string things together inside the container. The basic building blocks are components, built in ones and ones you program yourself.
 
 
 ### COMPONENT
 
 Grouping of related functionality encapsulated behind a well-defined interface. Like a software integrated circuit or a code library. Does not span processes. JPEG library, JSON lib. Custom component for syncing with your server. Amazon S3 library, socket library.
 
-There are two types of components: pure and impure.
+A component can be fully pure. Pure components have no side effects, have no internal state and are passive, like a ZIP library or a matrix-math library.
 
-- Pure components have no side effects, have no internal state and are passive, like a ZIP library or a matrix-math library.
+Or they can be impure. Impure components may be active (detecting mouse clicks and calling your code) and may affect the world around you or give different results for each call and keeps their own internal state. get_time() and get_mouse_pos(), on_mouse_click(). read_directory_elements().
 
-- Impure components may be active (detecting mouse clicks and calling your code) and may affect the world around you or give different results for each call and keeps their own internal state. get_time() and get_mouse_pos(), on_mouse_click(). read_directory_elements().
+Pure components are preferable when possible.
 
-Pure components are preferable when possible. Sometimes you can 
-
-??? TBD -- more details
 
 
 ### CODE
@@ -126,7 +123,7 @@ The container *completely* defines *all* its: concurrency, state, communication 
 
 There are often sibling containers in your system, like a server for your mobile game or data on Amazon S3. Containers may be implemented some other way or maybe canned solutions like Amazon S3, but should still be represented in Floyd Systems.
 
-Containers are data files: they list the needed impure containers and wires them together and adds a few other types of parts, like clocks and processes. When you design a container the focus is on the *impure components*. Other components on which your used components depend upon are automatically shown too, if they are impure. This makes *all* impure components visible in the same view -- no impureness goes on anywhere out of sight.
+Containers are data files: they list the needed containers and wires them together and adds a few other types of parts, like clocks and processes.
 
 **Wires**: carry messages encoded as a Floyd value, typically a Floyd enum. Notice that the message can carry *any* of Floyd's types -- even huge multi-gigabyte nested structs or collections. Since they are immutable they can be passed around efficiently (internally this is done using their ID or hardware address).
 
@@ -152,7 +149,7 @@ The container's design is usually a one-off and cannot be composed into other co
 
 
 
-# MORE ABOUT CONCURRENCY AND TIME - INTRODUCING PROCESSES
+# MORE ABOUT CONCURRENCY AND TIME - INTRODUCING FLOYD PROCESSES
 
 This is how you express time / mutation / concurrency in Floyd. These concepts are related and they are all setup at the top level of a container. In fact, this is the main **purpose** of a container.
 
@@ -252,6 +249,56 @@ Sometimes we introduce concurrency to make more parallelism possible: multithrea
 |7	| Spread heavy work across time (do some processing each game frame) | Use coroutine or thread that sleeps after doing some work. Wake it next frame. | Process does work. It calls select() inside a loop to wait on next trigger to continue work.
 |8	| Do work regularly, independent of other threads (like a timer interrupt) | Call timer with callback / make thread that sleeps on event | Use process that calls post_at_time(now() + 100) to itself
 |9	| Small server | Write loop that listens to socket | Use process that waits for messages
+
+
+
+
+# ABOUT FLOYD'S LAYERS OF REALITY
+
+### 1 - REALITY / WORLD
+
+This is where your cat lives. Were it hurts to step on LEGO.
+
+More things that lives here: networks, Internet, files, gravity, RAM memory, CPUs and graphics cards.
+Also someone unconnecting a cable, a backup services temporarily locking some files, time-outs.
+
+Your program needs to live in this mess.
+
+
+### 2 - INSIDE FLOYD RUNTIME
+
+The workings of the Floyd system. It runs in the real world and upholds the Floyd simulation, like the MATRIX.
+
+
+### 3 - INSIDE FLOYD PROCESSES
+
+Here your code runs like small independent programs. They still need to deal with the mess in the real world, but the Floyd runtime has hidden lots of complexity of the hardware your code runs on. There is no multi-threading or aliasing. You don't do logic here, focus is gluing things together into on-going processes and coordinating the reality vs your logic code.
+
+A process uses a bunch of libraries aka components aka packages. Your own or other people's. Only the top level of a Floyd process can instantiate components.
+
+
+### 4 - INSIDE THE SIMULATION / THE MATRIX
+
+This is where your logic lives. This should be the bulk of the code you write.
+
+This is a fantastic place to write code.
+
+- CPUs are infinitely fast.
+- You work on a snapshot of reality that can't change - the worlds stands still.
+- You don't need to think about caching and memory access patterns.
+- You have unlimited memory (if memory runs out, the runtime will hide that from the simulation).
+
+
+
+# FLOYD'S EFFECT LEVELS
+
+- Level 0: Pure function -- referential transparent inside the simulation. In reality calling pure functions has some side effects: function execution uses real-world time, it heats up your CPU and spins the CPU fan, drains your battery, disturbes execution of other programs, allocates stack memory and heap memory etc. These happens *outside* the simulation and cannot be observed by the functions running inside.
+
+- Level 1: External output-only effects. These effects cannot be observed by pure functions in the simulation. Example: tracing to the log file.
+
+- Level 2: No external effects but internal state: keep a mutable variable in your process. In Floyd you can only do this inside processes and inside impure functions in components.
+
+- Level 3: Externa input & output = impure: reading from file, writing to file. These things have state, state can be observed and mutated by other programs. If a resource is written to by more than one program we can get data races. These things can fail.
 
 
 

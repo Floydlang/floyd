@@ -20,7 +20,7 @@ These are the primitive data types built into the language itself. The goal is t
 |__typeid__		| Describes the *type* of a value.
 |__function__	| A function value. Functions can be Floyd functions or C functions. They are callable.
 |__struct__		| Like C struct or classes or tuples. A value object.
-|__protocol__	| A value that hold a number of callable functions. Also called interface or abstract base class
+|__protocol__	| A value that hold a number of callable functions. Also called interface or abstract base class.
 |__vector__		| A continuous array of elements addressed via indexes.
 |__dictionary__	| Lookup values using string keys.
 |__json_value__	| A value that holds a JSON-compatible value, can be a big JSON tree.
@@ -750,6 +750,15 @@ Converts any Floyd value, (including any type of nesting of custom structs, coll
 - __unflatten\_from\_json()__
 
 
+# SOFTWARE-SYSTEM
+
+This keyword is part of Floyd Systems -- a way to define how all the containers and components and processes are interfacting.
+
+	software-system {
+		"name": "My Arcade Game",
+		"desc": "Space shooter for mobile devices, with connection to a server.",
+		"containers": {}
+	}
 
 
 # FUNCTION TOOLBOX
