@@ -86,7 +86,7 @@ The details on Tweakers, probes and Floyd Studio are on the drawing board.
 | **TODO POC: Floyd Systems compiler**			|compiles floyd systems and containers etc to byte code.|
 | Standard library				|A number of basic components|
 
-Floyd compilers and tools are written in portable C++11.
+Floyd compilers and tools are written in portable C++17.
 
 
 ##### BACKLOG
