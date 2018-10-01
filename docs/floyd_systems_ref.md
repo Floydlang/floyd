@@ -209,7 +209,7 @@ In the init function you instantiate all components (aka libraries) you need to 
 
 **No code in the container can access any other libraries or API:s but those specified here.**
 
-??? add names socket as destinations for send().
+[//]: # (??? add names socket as destinations for send())
 
 
 ### Context feature
@@ -219,7 +219,9 @@ func a(): b("hello")
 func b(string message): context.trace(message)
 ```
 
-??? Contexts don't need to be an actual argument passed between all functions. It is mostly static. It can sit on separate stack - only push/pop when changed. Or be a parameter in the interpreter. Go all the way to Lua environment?
+[//]: # (???)
+
+Contexts don't need to be an actual argument passed between all functions. It is mostly static. It can sit on separate stack - only push/pop when changed. Or be a parameter in the interpreter. Go all the way to Lua environment?
 
 Function context: All functions have access to small set of basic infrastructure. A built-in context is automatically passed as argument to every function implicitly. It has features like logging, memory and error handling (like Quark). A function can add more protocols to it or replace protocol implementations when calling a child function, at any position in the callstack (??? or just at top level?). This is a way to add new infrastructure without introducing globals. Top-level function can add a special pool-feature and a low-level function can pick it up.
 
@@ -245,10 +247,11 @@ Tag every element with "export" that shall be part of component-api.
 
 Keyword "impure" is used to tag functions that can have side effects. You cannot call these functions from a pure function.
 
-??? What is a component instance?
+[//]: # (??? What is a component instance?)
 
-??? Future: add contracts to API.
-??? Future: add tests to API.
+[//]: # (??? Future: add contracts to API.)
+
+[//]: # (??? Future: add tests to API.)
 
 ```
 component-api {
@@ -343,7 +346,9 @@ Future: syntax to thunk protocol packs easily -- where protocols aren't 1:1 or h
 
 ### COMPONENT VERSIONS
 
-You cannot change an API so it break existing clients. ??? Future: add unit tests to API.
+You cannot change an API so it break existing clients.
+
+[//]: # (??? Future: add unit tests to API.)
 
 If you need to do breaking changes, make a completely new API but call it something similar: "Pixelib" becomes "Pixelib 2". This makes sure a new version of a component doesn't break existing clients. A client always needs to explicitly migrate to a new version of the API.
 
@@ -397,10 +402,14 @@ A bunch of standard components come with Floyd.
 
 ## LOCAL FILE SYSTEM COMPONENT
 
-??? TBD
+[//]: # (???)
+
+TBD
 All file system functions are blocking. If you want to do something else while waiting, run the file system calls in a separate process. There are no futures, callbacks, async / await or equivalents. It is very easy to write a function that does lots of processing and conditional file system calls etc and run it concurrently with other things.
 
-??? Simple file API
+[//]: # (???)
+
+Simple file API
 	file_handle open_fileread(string path) impure
 	file_handle make_file(string path) impure
 	void close_file(file_handle h) impure
@@ -415,7 +424,9 @@ All file system functions are blocking. If you want to do something else while w
 
 ## COMMAND LINE COMPONENT
 
-??? TBD
+[//]: # (???)
+
+TBD
 
 	int on_commandline_input(string args) impure
 	void print(string text) impure
@@ -425,7 +436,9 @@ All file system functions are blocking. If you want to do something else while w
 
 ## THE C-ABI COMPONENT
 
-??? TBD
+[//]: # (???)
+
+TBD
 
 This is a way to create a component from the C language, using the C ABI.
 
@@ -433,13 +446,17 @@ This is a way to create a component from the C language, using the C ABI.
 
 ## THE REST-API COMPONENT
 
-??? TBD
+[//]: # (???)
+
+TBD
 
 
 
 ## THE S3 BLOB COMPONENT
 
-??? TBD
+[//]: # (???)
+
+TBD
 
 Use to save a value to local file system efficiently. Only diffs are stored / loaded. Allows cross-session persistence. Uses SHA1 and content deduplication.
 
@@ -447,7 +464,9 @@ Use to save a value to local file system efficiently. Only diffs are stored / lo
 
 ## THE LOCAL FS BLOB COMPONENT
 
-??? TBD
+[//]: # (???)
+
+TBD
 
 Use to save a value to local file system efficiently. Only diffs are stored / loaded. Allows cross-session persistence. Uses SHA1 and content deduplication.
 
@@ -465,7 +484,9 @@ You add probes to wires, processes and individual functions and expressions. The
 
 ## LOG PROBE
 
-??? TBD
+[//]: # (???)
+
+TBD
 
 - Pulse every time a function is called
 - Pulse every time a clock ticks
@@ -475,12 +496,16 @@ You add probes to wires, processes and individual functions and expressions. The
 
 ## WATCHDOG PROBE
 
-??? TBD
+[//]: # (???)
+
+TBD
 
 
 ## BREAKPOINT PROBE
 
-??? TBD
+[//]: # (???)
+
+TBD
 
 
 ## ASSERT PROBE
@@ -504,7 +529,9 @@ Tweakers are inserted onto the wires and clocks and functions and expressions of
 
 ## COLLECTION SELECTOR TWEAKER
 
-??? TBD
+[//]: # (???)
+
+TBD
 
 Control which collection to use on a per-value instance basis.
 
@@ -527,7 +554,9 @@ Defines rules for which collection backend to use when. How large must collectio
 
 ## CACHE TWEAKER
 
-??? TBD
+[//]: # (???)
+
+TBD
 
 A cache will store the result of a previous computation and if a future computation uses the same function and same inputs, the execution is skipped and the previous value is returned directly.
 
@@ -542,7 +571,9 @@ A cache is always a shortcut for a (pure) function. You can decide if the cache 
 
 ## EAGER TWEAKER
 
-??? TBD
+[//]: # (???)
+
+TBD
 
 Like a cache, but calculates its values *before* clients call the function. It can be used to create a static lookup table at app startup.
 
@@ -550,7 +581,9 @@ Like a cache, but calculates its values *before* clients call the function. It c
 
 ## BATCH TWEAKER
 
-??? TBD
+[//]: # (???)
+
+TBD
 
 When a function is called, this part calls the function with similar parameters while the functions instructions and its data sits in the CPU caches.
 
@@ -563,7 +596,9 @@ You supply a function that takes the parameters and make variations of them.
 
 ## LAZY TWEAKER
 
-??? TBD
+[//]: # (???)
+
+TBD
 
 Make the function return a future and don't calculate the real value until client accesses it.
 - Lazy-buffer
@@ -590,7 +625,9 @@ Uses built-in hash-mechanism that exists for all values in Floyd Speak
 
 ## TRANSFORM MEMORY LAYOUT TWEAKER
 
-??? TBD
+[//]: # (???)
+
+TBD
 
 Turn array of structs to struct of arrays etc.
 - Rearrange nested composite (turn vec<pixel> to struct{ vec<red>, vec<green>, vec<blue> }

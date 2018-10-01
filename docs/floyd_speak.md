@@ -795,7 +795,10 @@ Notice: your function f can send messages to a clock — this means another cloc
 
 Notice: using this function exposes potential for parallelism.
 
-??? IDEA: Make this a two-step process. First analyze the tasks into an execution description. Then use that description to run the tasks. ??? IDEA: Allows grouping small tasks into lumps. Allow you to reuse the dependency graph but tag some tasks NOP. This lets you keep the execution description for next time, if tasks are the same. Also lets you inspect the execution description and improve it or create one for scratch.
+
+[//]: # (???)
+
+IDEA: Make this a two-step process. First analyze the tasks into an execution description. Then use that description to run the tasks. This allows grouping small tasks into lumps. Allow you to reuse the dependency graph but tag some tasks NOP. This lets you keep the execution description for next time, if tasks are the same. Also lets you inspect the execution description and improve it or create one for scratch.
 
 
 ### print()

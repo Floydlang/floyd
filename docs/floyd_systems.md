@@ -18,6 +18,9 @@ GOALS
 
 
 
+
+
+
 # ABOUT PERFORMANCE
 
 Floyd is designed to make it simple and practical to make big systems with performance better than what you get with average optimized C code.
@@ -105,11 +108,6 @@ Above, level 4: Code
 
 Notice: a component used in several containers or a piece of code that appears in several components will *appear in each*, appearing like they are duplicates. The perspective of the diagrams is **logic dependencies**. These diagrams don't show the physical dependencies -- which source files or libraries that depends on each other.
 
-
-
-# HELLO WORLD
-
-??? TBD - code, all source files, mockup all diagrams.
 
 
 
@@ -308,7 +306,7 @@ In Floyd you accelerate the performance of your code by making it expose where t
 
 Easy ways to expose parallelism is by writing pure functions (their results can be cached or precomputed) and by using functions like map(), fold(), filter() and supermap(). These function work on individual elements of a collection and each computation is independent of the others. This lets the runtime process the different elements on parallel hardware.
 
-??? make pipeline part. https://blog.golang.org/pipelines
+[//]: # (??? make pipeline part. https://blog.golang.org/pipelines)
 
 The functions map() and supermap() replaces FAN-IN-FAN-OUT-mechanisms.
 
@@ -338,7 +336,7 @@ Notice: map() and supermap() shares threads with other mechanisms in the Floyd r
 
 ### SIMPLE CONSOLE PROGRAM
 
-??? TBD
+[//]: # (???)
 
 This is a basic command line app, have only one clock that gathers ONE input value from the command line arguments, calls some pure Floyd Speak functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
 main() one clock only.
@@ -347,14 +345,18 @@ main() one clock only.
 
 ### EXAMPLE: VST-plugin
 
-??? TBD: make example of *all* the diagrams, including Software System diagram.
+[//]: # (???)
+
+TBD: make example of *all* the diagrams, including Software System diagram.
 
 ![VST](floyd_systems_vst.png)
 
 
 ### FIRST PERSON SHOOTER GAME
 
-??? TBD: make example of *all* the diagrams, including Software System diagram.
+[//]: # (???)
+
+TBD: make example of *all* the diagrams, including Software System diagram.
 
 ![Shooter](floyd_systems_1st_person_shooter.png)
 
