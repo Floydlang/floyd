@@ -3,25 +3,26 @@
 
 # FLOYD SYSTEM REFERENCE
 
-Here are all the details you need to use Floyd Systems. Every single feature. Floyd Speak is the building block for the logic.
-
+Here are all the details you need to use Floyd Systems. Every single feature. Floyd Speak is the building block for the logic used by the Floyd System.
 
 Highest level of abstraction and describes something that delivers value to its users, whether they are human or not, can be composed of many computers working together.
 
 There is no support for package management built into Floyd 1.0.
 
+Floyd System defines what people use the system, which servers and programs and applications that are involved, how each program does its internal processing, which components its uses and so on. It's a lot. But the bulk of code is not included here - the program logic. The program logic is written in Floyd Speak and stored inside one or many components.
 
-## SOURCE FILES
+
+##### SOURCE FILES
 
 **example.floydsys** -- stores the top of the system including people, connections and so on. It also *fully* defines every component and how they are implemented with process and wires, the setup of tweakers and so on.
 
 **example.floydcomp** -- component source file. Defines a reusable component 
 
 
+
 # SOFTWARE SYSTEM FILE
 
-
-You only have one of these in a software system. Extension is .floydsys.
+You only have one of these in a software system. Extension is ".floydsys".
 
 There is only one dedicated keyword for software systems: **software-system**. It's contents is encoded as a JSON object and designed to be either hand-coded or processed by tools.
 
@@ -35,8 +36,11 @@ There is only one dedicated keyword for software systems: **software-system**. I
 |**containers**	| named. Your iOS app, your server, the email system. Notice that you map gmail-server as a container, even though it's a gigantic software system by itself. JSON object.
 
 
+You also put the code for your processes inside the ".floydsys" file. They instantiate the components they need, handle messages, stores its mutable state, does all communication with the real world. Again, keep the logic code out of here as much as possible.
 
-### software-system - PEOPLE
+
+
+### SOFTWARE SYSTEM - PEOPLE
 
 This is an object where each key is the name of a persona and a short description of that persona.
 
@@ -50,7 +54,7 @@ This is an object where each key is the name of a persona and a short descriptio
 
 
 
-### software-system - CONNECTIONS
+### SOFTWARE SYSTEM - CONNECTIONS
 
 ```
 "connections": [
@@ -73,7 +77,7 @@ This is an object where each key is the name of a persona and a short descriptio
 
 
 
-### software-system - CONTAINERS
+### SOFTWARE SYSTEM - CONTAINERS
 
 Defines every container in the system. They are named.
 
@@ -123,7 +127,8 @@ Example container:
 ```
 
 
-### software-system - PROXY CONTAINER
+
+### SOFTWARE SYSTEM - PROXY CONTAINER
 
 If you use an external component or software system, like for example gmail, you list it here so we can represent it, as a proxy.
 
@@ -141,6 +146,7 @@ or
 ```
 
 
+
 # PROCESSES AND RUNTIMES
 
 Floyd processes are not the same as OS-processes. Floyd processes lives inside a Floyd container and are very light weight.
@@ -151,9 +157,9 @@ A process is defined by:
 
 2. an initialisation function that instantiates needed components and returns the intial state
 
-3. a process function that repeatedly handles messages. It can do do impure calls, send messages to other processes but ends each call by returning an updated version of its state struct.
+3. a process function that repeatedly handles messages. It can make impure calls, send messages to other processes and block for a long time. The process function ends each call by returning an updated version of its state - this is the only mutable memory in Floyd.
 
-Usually process functions are one-offs and not reusable.
+Usually process functions are one-offs and not reusable, they are the glue that binds your program together.
 
 Avoid having logic inside the process functions - move that logic to separate, pure functions.
 
@@ -197,38 +203,37 @@ func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
 }
 ```
 
-
-**my\_gui\_state_t**: this is a struct that holds the mutable memory of this process and any component instances needed by the container.
-
-**my\_gui()**: this function is specified in the software-system/"containers"/"my_iphone_app"/"clocks". The message is always a json_value. You can decide how encode the message into that.
-
-**my\_gui__init()**: this is the init function -- it has the same name with "__init" at the end. It has no arguments and returns the initial state of the process.
+|Part		| Details
+|:---	|:---	
+|**my\_gui\_state_t**		| this is a struct that holds the mutable memory of this process and any component instances needed by the container.
+|**my\_gui()**				| this function is specified in the software-system/"containers"/"my_iphone_app"/"clocks". The message is always a json_value. You can decide how encode the message into that.
+|**my\_gui__init()**		| this is the init function -- it has the same name with "__init" at the end. It has no arguments and returns the initial state of the process.
 
 
 In the init function you instantiate all components (aka libraries) you need to use in this container.
 
-**No code in the container can access any other libraries or API:s but those specified here.**
+**No code run inside the container (or any of the components it uses) can access any other libraries or API:s - only those specified here.**
 
 [//]: # (??? add names socket as destinations for send())
 
 
-### Context feature
+
+### FUNCTION CONTEXT
+
+TODO 1.0
+
+Every function has access to a small set of basic infrastructure functions. A built-in context is automatically passed as argument to every function implicitly. It has features like logging, memory and error handling.
+
+A function can replace protocol implementations when calling a child function at any position in the callstack. This is a way to add new infrastructure without introducing global variables. Example: a top-level function can add a special pool-feature and a low-level function can pick it up.
 
 ```
-func a(): b("hello")
-func b(string message): context.trace(message)
+func void a(){ b("hello") }
+func void b(string message){ context.trace(message)} // Uses the trace function in the context to trace to the console. The context is passed from function a() to function b() as an invisible argument.	
 ```
 
 [//]: # (???)
 
-Contexts don't need to be an actual argument passed between all functions. It is mostly static. It can sit on separate stack - only push/pop when changed. Or be a parameter in the interpreter. Go all the way to Lua environment?
-
-Function context: All functions have access to small set of basic infrastructure. A built-in context is automatically passed as argument to every function implicitly. It has features like logging, memory and error handling (like Quark). A function can add more protocols to it or replace protocol implementations when calling a child function, at any position in the callstack (??? or just at top level?). This is a way to add new infrastructure without introducing globals. Top-level function can add a special pool-feature and a low-level function can pick it up.
-
-
-Protocol member functions can be tagged "impure" which allows it to be implemented so it saves or uses state, modifies the world. There is no way to do these things in the implementation of pure protocol function memembers.
-
-
+Internals: Contexts don't need to be an actual argument passed between all functions. It is mostly static. Or it can sit on separate stack - only push/pop when changed. Or be a parameter in the interpreter. Go all the way to Lua environment?
 
 
 

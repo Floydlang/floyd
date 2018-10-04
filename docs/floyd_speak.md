@@ -536,6 +536,8 @@ This works with nested values too:
 
 TODO 1.0
 
+Protocol member functions can be tagged "impure" which allows it to be implemented so it saves or uses state, modifies the world. There is no way to do these things in the implementation of pure protocol function memembers.
+
 
 
 # UPDATE
