@@ -277,6 +277,10 @@ Only one component can be defined per source file and a component needs to expor
 |**dependencies**		| List of components needed by your component
 |**desc**			| Short description what this component is about.
 
+???
+https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
 
 The rest of the source file is normal Floyd Speak, but tags functions and other elements that should be exported via API.
 
