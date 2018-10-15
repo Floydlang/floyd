@@ -251,7 +251,7 @@ Sometimes we introduce concurrency to make more parallelism possible: multithrea
 
 
 
-# ABOUT FLOYD'S LAYERS OF REALITY
+# SIMULATION - ABOUT FLOYD'S LAYERS OF REALITY
 
 ### 1 - REALITY / WORLD
 
@@ -270,9 +270,9 @@ The workings of the Floyd system. It runs in the real world and upholds the Floy
 
 ### 3 - INSIDE FLOYD PROCESSES
 
-Here your code runs like small independent programs. They still need to deal with the mess in the real world, but the Floyd runtime has hidden lots of complexity of the hardware your code runs on. There is no multi-threading or aliasing. You don't do logic here, focus is gluing things together into on-going processes and coordinating the reality vs your logic code.
+Here your code runs like small independent programs. They still need to deal with the mess in the real world, but the Floyd runtime has hidden lots of complexity of the hardware your code runs on. There is no multi-threading or aliasing. You don't do logic here, focus is wiring things together into on-going processes and coordinating the reality vs your logic code.
 
-A process uses a bunch of libraries aka components aka packages. Your own or other people's. Only the top level of a Floyd process can instantiate components.
+A process uses a bunch of components (aka libraries aka, aka packages). Your own components or other people's. Only the top level of a Floyd process can instantiate components.
 
 
 ### 4 - INSIDE THE SIMULATION / THE MATRIX
@@ -282,10 +282,10 @@ This is where your logic lives. This should be the bulk of the code you write.
 This is a fantastic place to write code.
 
 - CPUs are infinitely fast.
-- You work on a snapshot of reality that can't change - the worlds stands still.
-- You don't need to think about caching and memory access patterns.
-- You have unlimited memory (if memory runs out, the runtime will hide that from the simulation).
-
+- You work on a snapshot of reality that can't change - the worlds stands still while your function executes.
+- You don't need to think about caching and memory access patterns or decide on which type of dictionary implementation to use.
+- You have unlimited memory.
+- There are no unexpected side effects or ripple effects. No callbacks or event pumps.
 
 
 # FLOYD'S EFFECT LEVELS

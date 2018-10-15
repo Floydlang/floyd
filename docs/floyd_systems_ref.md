@@ -14,9 +14,11 @@ Floyd System defines what people use the system, which servers and programs and 
 
 ##### SOURCE FILES
 
-**example.floydsys** -- stores the top of the system including people, connections and so on. It also *fully* defines every component and how they are implemented with process and wires, the setup of tweakers and so on.
+**example.floydsys** -- stores the top of the system including people, connections and so on. It also *fully* defines every container and how they are implemented with process and wires, the setup of tweakers and so on.
 
 **example.floydcomp** -- component source file. Defines a reusable component 
+
+**example.floyd** -- normal Floyd Speak code 
 
 
 
@@ -24,7 +26,7 @@ Floyd System defines what people use the system, which servers and programs and 
 
 You only have one of these in a software system. Extension is ".floydsys".
 
-There is only one dedicated keyword for software systems: **software-system**. It's contents is encoded as a JSON object and designed to be either hand-coded or processed by tools.
+There is only one dedicated keyword for defining software systems: **software-system**. It's contents is encoded as a JSON object and designed to be either hand-coded or processed by tools.
 
 
 |Key		| Meaning
@@ -35,8 +37,7 @@ There is only one dedicated keyword for software systems: **software-system**. I
 |**connections**	| the most important relationships between people and the containers. Be specific "user sends email using gmail" or "user plays game on device" or "mobile app pulls user account from server based on login". JSON array.
 |**containers**	| named. Your iOS app, your server, the email system. Notice that you map gmail-server as a container, even though it's a gigantic software system by itself. JSON object.
 
-
-You also put the code for your processes inside the ".floydsys" file. They instantiate the components they need, handle messages, stores its mutable state, does all communication with the real world. Again, keep the logic code out of here as much as possible.
+The ".floydsys"-file also contains all code for your processes: they instantiate the components they need, handle messages, stores their mutable state, does all communication with the real world. Again, keep the logic code out of here as much as possible.
 
 
 
