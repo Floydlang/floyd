@@ -2318,8 +2318,8 @@ QUARK_UNIT_TEST("run_main()", "struct definition expression", "", ""){
 */
 
 
-
-//////////////////////////////////////////		STRUCT - TYPE
+#if 0
+//////////////////////////////////////////		PROTOCOL - TYPE
 
 
 QUARK_UNIT_TESTQ("run_main()", "protocol"){
@@ -2343,6 +2343,7 @@ QUARK_UNIT_TEST("run_main()", "protocol - check protocol's type", "", ""){
 		"protocol {int a;}"
 	});
 }
+#endif
 
 
 //////////////////////////////////////////
