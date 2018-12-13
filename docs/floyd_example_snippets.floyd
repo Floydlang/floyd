@@ -17,17 +17,15 @@ print("Hello, world!")
 
 
 
-	test__run_init__check_result("let int result = true ? 1 : 2", value_t::make_int(1));
+let int result = true ? 1 : 2
 
 
 	test__run_init__check_result("let bool result = \"adwark\" < \"boat\"", value_t::make_bool(true));
 }
 
-		R"(
-			func string main(string args){
-				return "123" + "456"
-			}
-		)",
+func string main(string args){
+	return "123" + "456"
+}
 
 
 
@@ -233,44 +231,38 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 
 
 
-		R"(
-			for (i in 0...2) {
-				print("Iteration: " + to_string(i))
-			}
-		)"
-	);
+for (i in 0...2) {
+	print("Iteration: " + to_string(i))
+}
 
 
-		R"(
-			for (i in 0..<2) {
-				print("Iteration: " + to_string(i))
-			}
-		)"
+for (i in 0..<2) {
+	print("Iteration: " + to_string(i))
+}
 
 
 
 
+func int fibonacci(int n) {
+	if (n <= 1){
+		return n
+	}
+	return fibonacci(n - 2) + fibonacci(n - 1)
+}
 
-		func int fibonacci(int n) {
-			if (n <= 1){
-				return n
-			}
-			return fibonacci(n - 2) + fibonacci(n - 1)
-		}
-
-		for (i in 0...10) {
-			print(fibonacci(i))
-		}
+for (i in 0...10) {
+	print(fibonacci(i))
+}
 
 
 
 
 
-		mutable a = 100
-		while(a < 105){
-			print(to_string(a))
-			a = a + 1
-		}
+mutable a = 100
+while(a < 105){
+	print(to_string(a))
+	a = a + 1
+}
 
 
 
@@ -315,10 +307,8 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 
 //////////////////////////////////////////		vector-string
 
-	test_result(R"(		let [string] result = ["alpha", "beta"]		)", R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)");
+let [string] result = ["alpha", "beta"]
 
-
-}
 
 
 func string get_beta(){ return "beta" }
@@ -425,16 +415,12 @@ print(a)
 
 
 
-QUARK_UNIT_TEST("dict", "{}", "", ""){
-	const auto vm = test__run_global(R"(
 		mutable [string:int] a = {}
 		a = {}
 		print(a)
-	)");
-	ut_compare_stringvects(vm->_print_output, vector<string>{
-		R"({})",
-	});
-}
+
+
+
 
 QUARK_UNIT_TEST("dict", "==", "", ""){
 	const auto vm = test__run_global(R"(
@@ -1917,84 +1903,84 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 }
 
 
+
+
+
+
 QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 	const auto test_ss3 = R"(
-		software-system {
-			"name": "My Arcade Game",
-			"desc": "Space shooter for mobile devices, with connection to a server.",
-			"people": {},
-			"connections": [],
-			"containers": {
-				"iphone app": {
-					"tech": "Swift, iOS, Xcode, Open GL",
-					"desc": "Mobile shooter game for iOS.",
-					"clocks": {
-						"main": {
-							"a": "my_gui",
-							"b": "my_audio",
-						}
-					}
+
+
+
+software-system {
+	"name": "My Arcade Game",
+	"desc": "Space shooter for mobile devices, with connection to a server.",
+	"people": {},
+	"connections": [],
+	"containers": {
+		"iphone app": {
+			"tech": "Swift, iOS, Xcode, Open GL",
+			"desc": "Mobile shooter game for iOS.",
+			"clocks": {
+				"main": {
+					"a": "my_gui",
+					"b": "my_audio",
 				}
 			}
 		}
-
-
-		////////////////////////////////	my_gui -- process
-
-		struct my_gui_state_t {
-			int _count
-		}
-
-		func my_gui_state_t my_gui__init(){
-			return my_gui_state_t(1000)
-		}
-
-		func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
-			if(message == "2"){
-				send("b", "3")
-				return update(state, "_count", state._count + 1)
-			}
-			else if(message == "4"){
-				send("a", "stop")
-				send("b", "stop")
-				return update(state, "_count", state._count + 10)
-			}
-			else{
-				assert(false)
-			}
-		}
-
-
-		////////////////////////////////	my_audio -- process
-
-		struct my_audio_state_t {
-			int _audio
-		}
-
-		func my_audio_state_t my_audio__init(){
-			send("b", "1")
-			return my_audio_state_t(0)
-		}
-
-		func my_audio_state_t my_audio(my_audio_state_t state, json_value message){
-			if(message == "1"){
-				send("a", "2")
-				return update(state, "_audio", state._audio + 1)
-			}
-			else if(message == "3"){
-				send("a", "4")
-				return update(state, "_audio", state._audio + 4)
-			}
-			else{
-				assert(false)
-			}
-		}
-	)";
-
-	program_recording.push_back(test_ss3);
-	const auto context = make_test_interpreter_context();
-	const auto result = run_container(context, test_ss3, {}, "iphone app");
-	QUARK_UT_VERIFY(result.size() == 2);
-	QUARK_UT_VERIFY(result.at("a").get_struct_value()->_member_values[0].get_int_value() == 1011);
-	QUARK_UT_VERIFY(result.at("b").get_struct_value()->_member_values[0].get_int_value() == 5);
+	}
 }
+
+
+////////////////////////////////	my_gui -- process
+
+struct my_gui_state_t {
+	int _count
+}
+
+func my_gui_state_t my_gui__init(){
+	return my_gui_state_t(1000)
+}
+
+func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
+	if(message == "2"){
+		send("b", "3")
+		return update(state, "_count", state._count + 1)
+	}
+	else if(message == "4"){
+		send("a", "stop")
+		send("b", "stop")
+		return update(state, "_count", state._count + 10)
+	}
+	else{
+		assert(false)
+	}
+}
+
+
+////////////////////////////////	my_audio -- process
+
+struct my_audio_state_t {
+	int _audio
+}
+
+func my_audio_state_t my_audio__init(){
+	send("b", "1")
+	return my_audio_state_t(0)
+}
+
+func my_audio_state_t my_audio(my_audio_state_t state, json_value message){
+	if(message == "1"){
+		send("a", "2")
+		return update(state, "_audio", state._audio + 1)
+	}
+	else if(message == "3"){
+		send("a", "4")
+		return update(state, "_audio", state._audio + 4)
+	}
+	else{
+		assert(false)
+	}
+}
+
+
