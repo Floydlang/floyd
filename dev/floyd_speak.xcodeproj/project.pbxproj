@@ -45,6 +45,10 @@
 		2C180493208B947C00F62480 /* expression.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18048A208B947C00F62480 /* expression.cpp */; };
 		2C180494208B947C00F62480 /* statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18048C208B947C00F62480 /* statement.cpp */; };
 		2C180495208B947C00F62480 /* statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18048C208B947C00F62480 /* statement.cpp */; };
+		2C2625DA21E0D59900B41841 /* network_api.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C2625D821E0D59900B41841 /* network_api.cpp */; };
+		2C2625DB21E0D59900B41841 /* network_api.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C2625D821E0D59900B41841 /* network_api.cpp */; };
+		2C2625DE21E0D65E00B41841 /* core_api.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C2625DC21E0D65E00B41841 /* core_api.cpp */; };
+		2C2625DF21E0D65E00B41841 /* core_api.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C2625DC21E0D65E00B41841 /* core_api.cpp */; };
 		2C384AD41F3B604E0028C742 /* floyd_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C384AD21F3B604E0028C742 /* floyd_basics.cpp */; };
 		2C40A71F1D76E179003245E3 /* immutable_ref_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */; };
 		2C4F355F1D4794CD0061CA93 /* ast_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4F355D1D4794CD0061CA93 /* ast_value.cpp */; };
@@ -148,6 +152,10 @@
 		2C18048C208B947C00F62480 /* statement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = statement.cpp; sourceTree = "<group>"; };
 		2C18048D208B947C00F62480 /* statement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = statement.h; sourceTree = "<group>"; };
 		2C1D84DD1CA765A90042F0A8 /* floyd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = floyd; sourceTree = BUILT_PRODUCTS_DIR; };
+		2C2625D821E0D59900B41841 /* network_api.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = network_api.cpp; sourceTree = "<group>"; };
+		2C2625D921E0D59900B41841 /* network_api.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = network_api.h; sourceTree = "<group>"; };
+		2C2625DC21E0D65E00B41841 /* core_api.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = core_api.cpp; sourceTree = "<group>"; };
+		2C2625DD21E0D65E00B41841 /* core_api.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = core_api.h; sourceTree = "<group>"; };
 		2C384AD21F3B604E0028C742 /* floyd_basics.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_basics.cpp; sourceTree = "<group>"; };
 		2C384AD31F3B604E0028C742 /* floyd_basics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = floyd_basics.h; sourceTree = "<group>"; };
 		2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = immutable_ref_value.cpp; sourceTree = "<group>"; };
@@ -268,6 +276,7 @@
 		2C1D84DF1CA765A90042F0A8 /* floyd_speak */ = {
 			isa = PBXGroup;
 			children = (
+				2C2625D721E0D57700B41841 /* core_api */,
 				2C574E48203107D80035EA62 /* ast_typeid.cpp */,
 				2C574E49203107D80035EA62 /* ast_typeid.h */,
 				2C4F355D1D4794CD0061CA93 /* ast_value.cpp */,
@@ -296,6 +305,17 @@
 			);
 			path = floyd_speak;
 			sourceTree = SOURCE_ROOT;
+		};
+		2C2625D721E0D57700B41841 /* core_api */ = {
+			isa = PBXGroup;
+			children = (
+				2C2625DC21E0D65E00B41841 /* core_api.cpp */,
+				2C2625DD21E0D65E00B41841 /* core_api.h */,
+				2C2625D821E0D59900B41841 /* network_api.cpp */,
+				2C2625D921E0D59900B41841 /* network_api.h */,
+			);
+			path = core_api;
+			sourceTree = "<group>";
 		};
 		2C4699AC214EC97A007216BE /* bytecode_interpreter */ = {
 			isa = PBXGroup;
@@ -438,6 +458,7 @@
 				2CB30739214ACF09007D2732 /* software_system.cpp in Sources */,
 				2C180475208B939800F62480 /* floyd_parser.cpp in Sources */,
 				2C574E4A203107D80035EA62 /* ast_typeid.cpp in Sources */,
+				2C2625DE21E0D65E00B41841 /* core_api.cpp in Sources */,
 				2C180483208B939800F62480 /* parser_primitives.cpp in Sources */,
 				2C18045D208B917500F62480 /* json_parser.cpp in Sources */,
 				2CB2A516203D642B0001A19E /* pass3.cpp in Sources */,
@@ -455,6 +476,7 @@
 				2C180461208B917500F62480 /* json_writer.cpp in Sources */,
 				2C384AD41F3B604E0028C742 /* floyd_basics.cpp in Sources */,
 				2C180481208B939800F62480 /* parser2.cpp in Sources */,
+				2C2625DA21E0D59900B41841 /* network_api.cpp in Sources */,
 				2C18045F208B917500F62480 /* json_support.cpp in Sources */,
 				2CB30736214A9B35007D2732 /* example.floydsys in Sources */,
 				2C18048E208B947C00F62480 /* ast.cpp in Sources */,
@@ -487,6 +509,7 @@
 				2C18047A208B939800F62480 /* parse_function_def.cpp in Sources */,
 				2C18044E208B90E900F62480 /* text_parser.cpp in Sources */,
 				2C18044C208B90E900F62480 /* utils.cpp in Sources */,
+				2C2625DB21E0D59900B41841 /* network_api.cpp in Sources */,
 				2C78AD51207B50AB00839E3E /* floyd_test_suite.cpp in Sources */,
 				2CB3073A214AD336007D2732 /* software_system.cpp in Sources */,
 				2C78AD53207B50AB00839E3E /* sha1.cpp in Sources */,
@@ -507,6 +530,7 @@
 				2C180493208B947C00F62480 /* expression.cpp in Sources */,
 				2C18047E208B939800F62480 /* parse_statement.cpp in Sources */,
 				2C78AD60207B50AB00839E3E /* floyd_interpreter.cpp in Sources */,
+				2C2625DF21E0D65E00B41841 /* core_api.cpp in Sources */,
 				2C78AD63207B50AB00839E3E /* sha1_class.cpp in Sources */,
 				2C5E343D21527C6700B02262 /* hardware_caps.cpp in Sources */,
 				2C78AD64207B50AB00839E3E /* ast_value.cpp in Sources */,
