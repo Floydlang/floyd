@@ -168,6 +168,20 @@ private static void OnFinished(HTTPRequest request, HTTPResponse response){
 		}
 	}
 }
+/*
+	404 för resource not found
+	406 för felformaterad input
+	304 not modified är det
+
+
+	kOK = 1000,
+	kTimeout,
+	kMissingResponseDefect,	//	??? This is not a problem now that we use Parse.com, right?
+	kNotFound,
+	kUnknownError,
+	kBadRequest
+*/
+
 
 #if 0
 public const string kParseBaseURL = "https://api.parse.com/";

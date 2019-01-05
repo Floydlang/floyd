@@ -22,6 +22,7 @@
 
 //////////////////////////////////////		URLS
 
+
 //??? needed? Better to hide all escaping etc in highlevel function.
 std::string escape_string_to_url(const std::string& s);
 std::string unescape_string_from_url(const std::string& s);
@@ -37,13 +38,11 @@ struct url_parts_t {
 	std::string parameters;
 };
 
-
 url_parts_t split_url(const url_t& url);
 url_t make_urls(const url_parts_t& parts);
 
 
-
-//////////////////////////////		SOCKETS
+//////////////////////////////		TCP SOCKETS
 
 
 /*
@@ -58,59 +57,41 @@ url_t make_urls(const url_parts_t& parts);
  	These functions are called "queue()". At a future time when there is a reply, your green-process will receive a special message in its INBOX.
 */
 
-struct oauth2_token_t {
-	std::string token_string;
-};
-
-struct message_t {
-	binary_t payload;
-};
-
-struct socket_reply_t {
+struct tcp_reply_t {
 	binary_t payload;
 };
 
 
-struct server_socket_t {
+struct tcp_server_t {
 	int id;
 };
 
-server_socket_t open_server_socket(const url_t& url, int port, const inbox_tag_t& inbox_tag);
-void close_server_socket(const server_socket_t& s);
-
-
-
-
-struct client_socket_t {
-	int id;
-};
-
-client_socket_t open_client_socket(const url_t& url, int port);
-void close_client_socket(const client_socket_t& s);
+//	domain: 1 = AF_INET (IPv4 protocol), 2 = AF_INET6 (IPv6 protocol)
+tcp_server_t open_tcp_server(const url_t& url, int port, int domain, const inbox_tag_t& inbox_tag);
+void close_tcp_server(const tcp_server_t& s);
 
 //	Blocks until IO is complete.
-socket_reply_t send(const client_socket_t& s, const message_t& message);
+tcp_reply_t read(const tcp_server_t& s);
 
-//	Returns at once. When later a reply is received, you will get a message with a socket_reply_t in your green-process INBOX.
-void queue(const client_socket_t& s, const message_t& message, const inbox_tag_t& inbox_tag);
+
+
+
+struct tcp_client_t {
+	int id;
+};
+
+tcp_client_t open_tcp_client_socket(const url_t& url, int port);
+void close_tcp_client_socket(const tcp_client_t& s);
+
+//	Blocks until IO is complete.
+tcp_reply_t send(const tcp_client_t& s, const binary_t& payload);
+
+//	Returns at once. When later a reply is received, you will get a message with a tcp_reply_t in your green-process INBOX.
+void queue(const tcp_client_t& s, const binary_t& payload, const inbox_tag_t& inbox_tag);
 
 
 //////////////////////////////////////		REST
 
-
-/*
-	404 för resource not found
-	406 för felformaterad input
-	304 not modified är det
-
-
-	kOK = 1000,
-	kTimeout,
-	kMissingResponseDefect,	//	??? This is not a problem now that we use Parse.com, right?
-	kNotFound,
-	kUnknownError,
-	kBadRequest
-*/
 
 struct rest_request_t {
 	//	"GET", "POST", "PUT"
@@ -120,7 +101,8 @@ struct rest_request_t {
 	std::map<std::string, std::string> params;
 	binary_t raw_data;
 
-	oauth2_token_t session_token;
+	//	 If not "", then will be inserted in HTTP request header as XYZ.
+	std::string optional_session_token;
 };
 
 struct rest_reply_t {
