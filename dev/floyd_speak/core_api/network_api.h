@@ -42,7 +42,7 @@ url_parts_t split_url(const url_t& url);
 url_t make_urls(const url_parts_t& parts);
 
 
-//////////////////////////////		TCP SOCKETS
+//////////////////////////////////////		TCP
 
 
 /*
@@ -57,22 +57,33 @@ url_t make_urls(const url_parts_t& parts);
  	These functions are called "queue()". At a future time when there is a reply, your green-process will receive a special message in its INBOX.
 */
 
-struct tcp_reply_t {
-	binary_t payload;
-};
-
-
 struct tcp_server_t {
 	int id;
 };
 
-//	domain: 1 = AF_INET (IPv4 protocol), 2 = AF_INET6 (IPv6 protocol)
-tcp_server_t open_tcp_server(const url_t& url, int port, int domain, const inbox_tag_t& inbox_tag);
+struct tcp_request_t {
+	tcp_server_t server;
+	binary_t payload;
+};
+
+struct tcp_reply_t {
+	binary_t payload;
+};
+
+struct tcp_server_settings_t {
+	url_t url;
+	int port;
+
+	//	domain: 1 = AF_INET (IPv4 protocol), 2 = AF_INET6 (IPv6 protocol). Requests arrive in INBOX as tcp_request_t.
+	int domain;
+	inbox_tag_t inbox_tag;
+};
+
+tcp_server_t open_tcp_server(const tcp_server_settings_t& s);
+tcp_server_settings_t get_settings(const tcp_server_t& s);
 void close_tcp_server(const tcp_server_t& s);
 
-//	Blocks until IO is complete.
-tcp_reply_t read(const tcp_server_t& s);
-
+void reply(const tcp_request_t& request, const tcp_reply_t& reply);
 
 
 
@@ -106,6 +117,7 @@ struct rest_request_t {
 };
 
 struct rest_reply_t {
+	rest_request_t request;
 	int html_status_code;
 	std::string response;
 	std::string internal_exception;
