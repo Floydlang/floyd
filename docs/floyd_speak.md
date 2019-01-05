@@ -722,13 +722,20 @@ This keyword is part of Floyd Systems -- a way to define how all the containers 
 
 
 
+# CORE LANGAGE FUNCTIONS
+These functions are built into the language and are always available to your code. They are all pure so can be used in pure functions.
 
 
 
+### assert()
 
-# FUNCTION TOOLBOX
+Used this to check your code for programming errors, and check the inputs of your function for miss use by its callers.
 
-These are built in primitives you can always rely on being available.
+	assert(bool)
+
+
+If the expression evaluates to false, the program will log to the output, then be aborted via an exception.
+
 
 
 ### map(), filter(), reduce()
@@ -736,6 +743,7 @@ These are built in primitives you can always rely on being available.
 TODO POC: Implement
 
 Expose possible parallelism of pure function, like shaders, at the code level (not declarative). The supplied function must be pure.
+
 
 
 ### supermap()
@@ -766,69 +774,6 @@ Notice: using this function exposes potential for parallelism.
 IDEA: Make this a two-step process. First analyze the tasks into an execution description. Then use that description to run the tasks. This allows grouping small tasks into lumps. Allow you to reuse the dependency graph but tag some tasks NOP. This lets you keep the execution description for next time, if tasks are the same. Also lets you inspect the execution description and improve it or create one for scratch.
 
 
-### print()
-
-This outputs one line of text to the default output of the application. It can print any type of value. If you want to compose output of many parts you need to convert them to strings and add them. Also works with types, like a struct-type.
-
-	print(any)
-
-
-| Example										| Result |
-|---											| ---
-| print(3)										| 3
-| print("shark")								| shark
-| print("Number four: " + to_string(4))			| Number four: 4
-| print(int)									| int
-| print([int])									| [int]
-| print({string: double})						| {string:double}
-| print([7, 8, 9])								| [7, 8, 9]
-| print({"a": 1})								| {"a": 1}
-| print(json_value("b"))						| b
-| print(json_value(5.3))						| 5.3
-| print(json_value({"x": 0, "y": -1}))			| {"a": 0, "b": -1}
-| print(json_value(["q", "u", "v"]))			| ["q", "u", "v"]
-| print(json_value(true))						| true
-| print(json_value(false))						| false
-| print(json_value(null))						| null
-
-
-### send()
-
-Sends a message to a Floyd process.
-
-The process may run on a different OS thread but send() is thread safe.
-
-	send(string process_key, json_value message)
-
-
-If the expression evaluates to false, the program will log to the output, then be aborted via an exception.
-
-
-### select()
-
-TBD POC
-
-Called from a process function to read its inbox. It will block until a message is received or it times out.
-
-
-### assert()
-
-Used this to check your code for programming errors, and check the inputs of your function for miss use by its callers.
-
-	assert(bool)
-
-
-If the expression evaluates to false, the program will log to the output, then be aborted via an exception.
-
-
-
-### probe()
-
-TODO POC
-
-In your code you write probe(my_temp, "My intermediate value", "key-1") to let clients log my_temp. The probe will appear as a hook in tools and you can chose to log the value and make stats and so on. Argument 2 is a descriptive name, argument 3 is a string-key that is scoped to the function and used to know if several probe()-statements log to the same signal or not.
-
-
 
 ### to_string()
 
@@ -851,13 +796,6 @@ Converts its input to a string of JSON data that is formatted nicely with indent
 Return the type of its input value. The returned typeid-value is a complete Floyd type and can be stored, compared and so on.
 
 	typeid typeof(any)
-
-
-### get\_time\_of\_day()
-
-Returns the computer's realtime clock, expressed in the number of milliseconds since system start. Useful to measure program execution. Sample get_time_of_day() before and after execution and compare them to see duration.
-
-	int get_time_of_day()
 
 
 
@@ -1006,33 +944,10 @@ Notice: by specifying the same index in *start* and *length* you will __insert__
 
 
 
-### get\_env\_path()
-
-Returns user's home directory, like "/Volumes/Bob".
-
-	string get_env_path()
-
-
-
-### read\_text\_file()
-
-Reads a text file from the file system and returns it as a string.
-
-	string read_text_file(string path)
-
-
-
-### write\_text\_file()
-
-Write a string to the file system as a text file.
-
-	void write_text_file(string path, string data)
-
-
-
 ### encode_json():
 
 	string encode_json(json_value v)
+
 
 
 ### decode_json():
@@ -1040,12 +955,15 @@ Write a string to the file system as a text file.
 	json_value decode_json(string s)
 
 
+
 ### flatten_to_json():
 	json_value flatten_to_json(any v)
 
 
+
 ### unflatten_from_json():
 	any unflatten_from_json(json_value v)
+
 
 
 ### __get\_json\_type()__:
@@ -1105,6 +1023,103 @@ Demo snippet, that checks type of a json_value:
 	assert(get_name(json_value(true)) == "json_true")
 	assert(get_name(json_value(false)) == "json_false")
 ```
+
+
+
+# CORE WORLD FUNCTIONS
+
+
+These are built in primitives you can always rely on being available.
+
+### print()
+
+This outputs one line of text to the default output of the application. It can print any type of value. If you want to compose output of many parts you need to convert them to strings and add them. Also works with types, like a struct-type.
+
+	print(any)
+
+
+| Example										| Result |
+|---											| ---
+| print(3)										| 3
+| print("shark")								| shark
+| print("Number four: " + to_string(4))			| Number four: 4
+| print(int)									| int
+| print([int])									| [int]
+| print({string: double})						| {string:double}
+| print([7, 8, 9])								| [7, 8, 9]
+| print({"a": 1})								| {"a": 1}
+| print(json_value("b"))						| b
+| print(json_value(5.3))						| 5.3
+| print(json_value({"x": 0, "y": -1}))			| {"a": 0, "b": -1}
+| print(json_value(["q", "u", "v"]))			| ["q", "u", "v"]
+| print(json_value(true))						| true
+| print(json_value(false))						| false
+| print(json_value(null))						| null
+
+
+### send()
+
+Sends a message to a Floyd process.
+
+The process may run on a different OS thread but send() is thread safe.
+
+	send(string process_key, json_value message)
+
+
+If the expression evaluates to false, the program will log to the output, then be aborted via an exception.
+
+
+### select()
+
+TBD POC
+
+Called from a process function to read its inbox. It will block until a message is received or it times out.
+
+
+
+
+
+### probe()
+
+TODO POC
+
+In your code you write probe(my_temp, "My intermediate value", "key-1") to let clients log my_temp. The probe will appear as a hook in tools and you can chose to log the value and make stats and so on. Argument 2 is a descriptive name, argument 3 is a string-key that is scoped to the function and used to know if several probe()-statements log to the same signal or not.
+
+
+
+
+
+### get\_time\_of\_day()
+
+Returns the computer's realtime clock, expressed in the number of milliseconds since system start. Useful to measure program execution. Sample get_time_of_day() before and after execution and compare them to see duration.
+
+	int get_time_of_day()
+
+
+
+### get\_env\_path()
+
+Returns user's home directory, like "/Volumes/Bob".
+
+	string get_env_path()
+
+
+
+### read\_text\_file()
+
+Reads a text file from the file system and returns it as a string.
+
+	string read_text_file(string path)
+
+
+
+### write\_text\_file()
+
+Write a string to the file system as a text file.
+
+	void write_text_file(string path, string data)
+
+
 
 
 # FLOYD SYNTAX

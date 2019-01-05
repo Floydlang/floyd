@@ -284,7 +284,6 @@ sha1_t sha1_from_string_taggeed(string iString)
 
 
 
-string test_whitespace_chars = " \n\t\r"
 
 string trim_ends(string s)
 string quote(string s)
