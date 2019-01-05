@@ -736,43 +736,6 @@ If the expression evaluates to false, the program will log to the output, then b
 
 
 
-## map(), filter(), reduce()
-
-TODO POC: Implement
-
-Expose possible parallelism of pure function, like shaders, at the code level (not declarative). The supplied function must be pure.
-
-
-
-## supermap()
-
-TODO 1.0
-
-	[int:R] supermap(tasks: [T, [int], f: R (T, [R]))
-
-This function runs a bunch of tasks with dependencies between them. When supermap() returns, all tasks have been executed.
-
-- Tasks can block.
-- Tasks cannot generate new tasks. A task *can* call supermap.
-- Task will not start until all its dependencies have been finished.
-
-- **tasks**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The indexes are the indexes into the tasks-vector.
-
-- **f**: this is your function that processes one T and returns a result R. The function must not depend on the order in which tasks execute. When f is called, all the tasks dependency tasks have already been executed and you get their results in [R].
-
-- **result**: a vector with one element for each element in the tasks-argument. The order of the elements are undefined. The int specifies which task, the R is its result.
-
-Notice: your function f can send messages to a clock — this means another clock can start consuming results while supermap() is still running.
-
-Notice: using this function exposes potential for parallelism.
-
-
-[//]: # (???)
-
-IDEA: Make this a two-step process. First analyze the tasks into an execution description. Then use that description to run the tasks. This allows grouping small tasks into lumps. Allow you to reuse the dependency graph but tag some tasks NOP. This lets you keep the execution description for next time, if tasks are the same. Also lets you inspect the execution description and improve it or create one for scratch.
-
-
-
 ## to_string()
 
 Converts its input to a string. This works with any type of values. It also works with types, which is useful for debugging.
@@ -789,11 +752,63 @@ Converts its input to a string of JSON data that is formatted nicely with indent
 
 
 
-## typeof()
+## __get\_json_type()__
 
-Return the type of its input value. The returned typeid-value is a complete Floyd type and can be stored, compared and so on.
+Returns the actual type of this value stores inside the json\_value. It can be one of the types supported by JSON.
 
-	typeid typeof(any)
+	typeid get_json_type(json_value v)
+
+This is how you check the type of JSON value and reads their different values.
+
+|Input						| Result 		| Int
+|---						| ---			|---
+| json_value({"a": 1})		| json_object	| 1
+| json_value([1, 2, 3])		| json_array	| 2
+| json_value("hi")			| json_string	| 3
+| json_value(13)			| json_number	| 4
+| json_value(true)			| json_true		| 5
+| json_value(false)			| json_false	| 6
+| 							| json_null		| 7
+
+
+Demo snippet, that checks type of a json\_value:
+
+```
+	func string get_name(json_value value){
+		let t = get_json_type(value)
+		if(t == json_object){
+			return "json_object"
+		}
+		else if(t == json_array){
+			return "json_array"
+		}
+		else if(t == json_string){
+			return "json_string"
+		}
+		else if(t == json_number){
+			return "json_number"
+		}
+		else if(t == json_true){
+			return "json_true"
+		}
+		else if(t == json_false){
+			return "json_false"
+		}
+		else if(t == json_null){
+			return "json_null"
+		}
+		else {
+			assert(false)
+		}
+	}
+	
+	assert(get_name(json_value({"a": 1, "b": 2})) == "json_object")
+	assert(get_name(json_value([1,2,3])) == "json_array")
+	assert(get_name(json_value("crash")) == "json_string")
+	assert(get_name(json_value(0.125)) == "json_number")
+	assert(get_name(json_value(true)) == "json_true")
+	assert(get_name(json_value(false)) == "json_false")
+```
 
 
 
@@ -946,6 +961,51 @@ Notice: by specifying the same index in *start* and *length* you will __insert__
 
 
 
+## map(), filter(), reduce()
+
+TODO POC: Implement
+
+Expose possible parallelism of pure function, like shaders, at the code level (not declarative). The supplied function must be pure.
+
+
+
+## supermap()
+
+TODO 1.0
+
+	[int:R] supermap(tasks: [T, [int], f: R (T, [R]))
+
+This function runs a bunch of tasks with dependencies between them. When supermap() returns, all tasks have been executed.
+
+- Tasks can block.
+- Tasks cannot generate new tasks. A task *can* call supermap.
+- Task will not start until all its dependencies have been finished.
+
+- **tasks**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The indexes are the indexes into the tasks-vector.
+
+- **f**: this is your function that processes one T and returns a result R. The function must not depend on the order in which tasks execute. When f is called, all the tasks dependency tasks have already been executed and you get their results in [R].
+
+- **result**: a vector with one element for each element in the tasks-argument. The order of the elements are undefined. The int specifies which task, the R is its result.
+
+Notice: your function f can send messages to a clock — this means another clock can start consuming results while supermap() is still running.
+
+Notice: using this function exposes potential for parallelism.
+
+
+[//]: # (???)
+
+IDEA: Make this a two-step process. First analyze the tasks into an execution description. Then use that description to run the tasks. This allows grouping small tasks into lumps. Allow you to reuse the dependency graph but tag some tasks NOP. This lets you keep the execution description for next time, if tasks are the same. Also lets you inspect the execution description and improve it or create one for scratch.
+
+
+
+## typeof()
+
+Return the type of its input value. The returned typeid-value is a complete Floyd type and can be stored, compared and so on.
+
+	typeid typeof(any)
+
+
+
 ## encode_json()
 
 Pack a JSON value to a JSON script string, ready to write to a file, send via protocol etc.
@@ -975,6 +1035,7 @@ These are the different shapes a JSON can have in Floyd:
 Different destinations have different limitations on characters and may need different escaping -- this is not really a JSON-related issue.
 
 
+
 ## decode_json()
 
 Make a new Floyd JSON value from a JSON-script string. If the string is malformed, exceptions will be thrown.
@@ -995,63 +1056,6 @@ Make a new Floyd JSON value from a JSON-script string. If the string is malforme
 
 
 
-## __get\_json_type()__
-
-Returns the actual type of this value stores inside the json\_value. It can be one of the types supported by JSON.
-
-	typeid get_json_type(json_value v)
-
-This is how you check the type of JSON value and reads their different values.
-
-|Input						| Result 		| Int
-|---						| ---			|---
-| json_value({"a": 1})		| json_object	| 1
-| json_value([1, 2, 3])		| json_array	| 2
-| json_value("hi")			| json_string	| 3
-| json_value(13)			| json_number	| 4
-| json_value(true)			| json_true		| 5
-| json_value(false)			| json_false	| 6
-| 							| json_null		| 7
-
-
-Demo snippet, that checks type of a json\_value:
-
-```
-	func string get_name(json_value value){
-		let t = get_json_type(value)
-		if(t == json_object){
-			return "json_object"
-		}
-		else if(t == json_array){
-			return "json_array"
-		}
-		else if(t == json_string){
-			return "json_string"
-		}
-		else if(t == json_number){
-			return "json_number"
-		}
-		else if(t == json_true){
-			return "json_true"
-		}
-		else if(t == json_false){
-			return "json_false"
-		}
-		else if(t == json_null){
-			return "json_null"
-		}
-		else {
-			assert(false)
-		}
-	}
-	
-	assert(get_name(json_value({"a": 1, "b": 2})) == "json_object")
-	assert(get_name(json_value([1,2,3])) == "json_array")
-	assert(get_name(json_value("crash")) == "json_string")
-	assert(get_name(json_value(0.125)) == "json_number")
-	assert(get_name(json_value(true)) == "json_true")
-	assert(get_name(json_value(false)) == "json_false")
-```
 
 
 
@@ -1090,6 +1094,16 @@ This outputs one line of text to the default output of the application. It can p
 
 
 
+## probe()
+
+TODO POC
+
+	probe(value, description_string, probe_tag)
+
+In your code you write probe(my_temp, "My intermediate value", "key-1") to let clients log my_temp. The probe will appear as a hook in tools and you can chose to log the value and make stats and so on. Argument 2 is a descriptive name, argument 3 is a string-key that is scoped to the function and used to know if several probe()-statements log to the same signal or not.
+
+
+
 ## send()
 
 Sends a message to a Floyd process.
@@ -1109,15 +1123,6 @@ TBD POC
 
 Called from a process function to read its inbox. It will block until a message is received or it times out.
 
-
-
-## probe()
-
-TODO POC
-
-	probe(value, description_string, probe_tag)
-
-In your code you write probe(my_temp, "My intermediate value", "key-1") to let clients log my_temp. The probe will appear as a hook in tools and you can chose to log the value and make stats and so on. Argument 2 is a descriptive name, argument 3 is a string-key that is scoped to the function and used to know if several probe()-statements log to the same signal or not.
 
 
 
