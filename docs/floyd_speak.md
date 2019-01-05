@@ -168,7 +168,7 @@ This is a function that returns a function value:
 Reference: http://www.tutorialspoint.com/cprogramming/c_operators.htm
 Comparisons are true-deep: they consider all members and also member structs and collections.
 
-### Arithmetic Operators
+## Arithmetic Operators
 How to add and combine values:
 
 ```
@@ -179,7 +179,7 @@ How to add and combine values:
 %	Modulus Operator and remainder of after an integer division: "a = b / c", "a = b / c / d"
 ```
 
-#### Relational Operators
+## Relational Operators
 Used to compare two values. The result is true or false:
 
 ```
@@ -191,7 +191,7 @@ Used to compare two values. The result is true or false:
 	a <= b
 ```
 
-### Logical Operators
+## Logical Operators
 Used to compare two values. The result is true or false:
 
 ```
@@ -199,7 +199,7 @@ Used to compare two values. The result is true or false:
 	a || b
 ```
 
-### Conditional Operator
+## Conditional Operator
 ```
 	condition ? a : b
 ```
@@ -344,7 +344,7 @@ You can append two strings together using the + operation.
 	assert(a == "Hello, world!")
 
 
-### CORE FUNCTIONS
+##### CORE FUNCTIONS
 
 - __print()__: prints a string to the default output of the app.
 - __update()__: changes one character of the string and returns a new string.
@@ -386,7 +386,7 @@ You can append two vectors together using the + operation.
 	let a = [ 10, 20, 30 ] + [ 40, 50 ]
 	assert(a == [ 10, 20, 30, 40, 50 ])
 
-### CORE FUNCTIONS
+##### CORE FUNCTIONS
 
 - __print()__: prints a vector to the default output of the app.
 - __update()__: changes one element of the vector and returns a new vector.
@@ -423,7 +423,7 @@ Use [] to look up elements using a key. It throws an exception is the key not fo
 You copy dictionaries using = and all comparison expressions work.
 
 
-### CORE FUNCTIONS
+##### CORE FUNCTIONS
 
 - __print()__: prints a vector to the default output of the app.
 - __update()__: changes one element of the dictionary and returns a new dictionary
@@ -437,7 +437,7 @@ You copy dictionaries using = and all comparison expressions work.
 
 Structs are the central building block for composing data in Floyd. They are used in place of structs and classes in other programming languages. Structs are always values and immutable. They are still fast and compact: behind the curtains copied structs  shares state between them, even when partially modified.
 
-#### Automatic features of every struct:
+##### Automatic features of every struct:
 
 - constructor -- this is the only function that can create a value of the struct. It always requires every struct member, in the order they are listed in the struct definition. Make explicit function that makes making values more convenient.
 - destructor -- will destroy the value including member values, when no longer needed. There are no custom destructors.
@@ -449,7 +449,7 @@ There is no concept of pointers or references or shared structs so there are no 
 
 This all makes simple structs extremely simple to create and use.
 
-#### Not possible:
+##### Not possible:
 
 - You cannot make constructors. There is only *one* way to initialize the members, via the constructor, which always takes *all* members
 - There is no way to directly initialize a member when defining the struct.
@@ -485,7 +485,7 @@ Example:
 A simple struct works almost like a collection with fixed number of named elements. It is only possible to make new instances by specifying every member or copying / modifying an existing one.
 
 
-### UPDATE()
+##### UPDATE()
 
 let b = update(a, member, value)
 
@@ -537,12 +537,6 @@ TODO 1.0
 
 Protocol member functions can be tagged "impure" which allows it to be implemented so it saves or uses state, modifies the world. There is no way to do these things in the implementation of pure protocol function memembers.
 
-
-
-# UPDATE
-
-TODO 1.0
-Update nested collections and structs.
 
 
 # EXCEPTIONS
@@ -597,31 +591,35 @@ JSON is very central to Floyd. JSON is a way to store composite values in a tree
 
 JSON format is also used by the compiler and language itself to store intermediate Floyd program code, for all logging and for debugging features.
 
-- Floyd has built in support for JSON in the language. It has a JSON type called __json_value__ and functions to pack & unpack strings / JSON files into the JSON type.
+- Floyd has built in support for JSON in the language. It has a JSON type called __json\_value__ and functions to pack & unpack strings / JSON files into the JSON type.
 
 - Floyd has support for JSON literals: you can put JSON data directly into a Floyd file. Great for copy-pasting snippets for tests.
 
 Read more about JSON here: www.json.org
 
 
-This value can contain any of the 6 JSON-compatible value:
+This value can contain any of the 7 JSON-compatible types:
 
 - string
 - number
 - object
 - array
-- true / false
+- true
+- false
 - null
 
+This is the only situation were Floyd supports null.
 
-__json_value__: 	This is an immutable value containing any JSON. You can query it for its contents and alter it (you get new values).
+Notice that Floyd stores true/false as a bool type with the values true / false, not as two types called "true" and "false".
 
-Notice that json_value can contain an entire huge JSON file, with a big tree of JSON objects and arrays and so on. A json_value can also contain just a string or a number or a single JSON array of strings. The json_value is used for every node in the json_value tree.
+__json\_value__: 	This is an immutable value containing any JSON. You can query it for its contents and alter it (you get new values).
+
+Notice that json\_value can contain an entire huge JSON file, with a big tree of JSON objects and arrays and so on. A json\_value can also contain just a string or a number or a single JSON array of strings. The json\_value is used for every node in the json\_value tree.
 
 
-### JSON LITERALS
+##### JSON LITERALS
 
-You can directly embed JSON inside source code file. Simple / no escaping needed. Just paste a snippet into the Floyd source code. Use this for test values. Round trip. Since the JSON code is not a string literal but actual Floyd syntax, there are not problems with escaping strings. The Floyd parser will create floyd strings, dictionaries and so on for the JSON data. Then it will create a json_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown.
+You can directly embed JSON inside source code file. Simple / no escaping needed. Just paste a snippet into the Floyd source code. Use this for test values. Round trip. Since the JSON code is not a string literal but actual Floyd syntax, there are not problems with escaping strings. The Floyd parser will create floyd strings, dictionaries and so on for the JSON data. Then it will create a json\_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown.
 
 This all means you can write Floyd code that at runtime creates all or parts of a composite JSON value. Also: you can nest JSONs in each other.
 
@@ -654,16 +652,16 @@ Notice that JSON objects are more lax than Floyd: you can mix different types of
 
 
 
-### __get\_json\_type()__:
+##### __get\_json\_type()__:
 
-Returns the actual type of this value stores inside the json_value. It can be one of the types supported by JSON.
+Returns the actual type of this value stores inside the json\_value. It can be one of the types supported by JSON.
 
 	typeid get_json_type(json_value v)
 
 
-### CORE FUNCTIONS
+##### CORE FUNCTIONS
 
-Many of the core functions work with json_value, but it often depends on the actual type of json_value. Example: size() works for strings, arrays and object only.
+Many of the core functions work with json\_value, but it often depends on the actual type of json\_value. Example: size() works for strings, arrays and object only.
 
 - __get\_json\_type()__
 - __pretty_string()__
@@ -685,13 +683,13 @@ Many of the core functions work with json_value, but it often depends on the act
 Serializing any Floyd value is a built in mechanism. It is always true-deep. The result is always a normalized JSON text file in a Floyd string.
 
 
-Converting a floyd json_value to a JSON string and back. The JSON-string can be directly read or written to a text file, sent via a protocol and so on.
+Converting a floyd json\_value to a JSON string and back. The JSON-string can be directly read or written to a text file, sent via a protocol and so on.
 
 	string encode_json(json_value v)
 	json_value decode_json(string s)
 
 
-Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json_value, using unflatten_from_json().
+Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json\_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json\_value, using unflatten_from_json().
 
 	json_value flatten_to_json(any v)
 	any unflatten_from_json(json_value v)
@@ -727,7 +725,7 @@ These functions are built into the language and are always available to your cod
 
 
 
-### assert()
+## assert()
 
 Used this to check your code for programming errors, and check the inputs of your function for miss use by its callers.
 
@@ -738,7 +736,7 @@ If the expression evaluates to false, the program will log to the output, then b
 
 
 
-### map(), filter(), reduce()
+## map(), filter(), reduce()
 
 TODO POC: Implement
 
@@ -746,7 +744,7 @@ Expose possible parallelism of pure function, like shaders, at the code level (n
 
 
 
-### supermap()
+## supermap()
 
 TODO 1.0
 
@@ -775,7 +773,7 @@ IDEA: Make this a two-step process. First analyze the tasks into an execution de
 
 
 
-### to_string()
+## to_string()
 
 Converts its input to a string. This works with any type of values. It also works with types, which is useful for debugging.
 
@@ -785,13 +783,13 @@ You often use this function to convert numbers to strings.
 
 
 
-### to\_pretty\_string()
+## to\_pretty\_string()
 
 Converts its input to a string of JSON data that is formatted nicely with indentations. It works with any Floyd value.
 
 
 
-#### typeof()
+## typeof()
 
 Return the type of its input value. The returned typeid-value is a complete Floyd type and can be stored, compared and so on.
 
@@ -799,7 +797,7 @@ Return the type of its input value. The returned typeid-value is a complete Floy
 
 
 
-### update()
+## update()
 
 This is how you modify a field of a struct, an element in a vector or string or a dictionary. It replaces the value of the specified key and returns a completely new object. The original object (struct, vector etc) is unchanged.
 
@@ -823,7 +821,11 @@ For dictionaries it can be used to add completely new elements too.
 
 
 
-### size()
+TODO 1.0 - Update nested collections and structs.
+
+
+
+## size()
 
 Returns the size of a collection -- the number of elements.
 
@@ -840,7 +842,7 @@ Returns the size of a collection -- the number of elements.
 
 
 
-### find()
+## find()
 
 Searched for a value in a collection and returns its index or -1.
 
@@ -858,7 +860,7 @@ Searched for a value in a collection and returns its index or -1.
 
 
 
-### exists()
+## exists()
 
 Checks if the dictionary has an element with this key. Returns true or false.
 
@@ -876,7 +878,7 @@ Checks if the dictionary has an element with this key. Returns true or false.
 
 
 
-### erase()
+## erase()
 
 Erase an element in a dictionary, as specified using its key.
 
@@ -884,7 +886,7 @@ Erase an element in a dictionary, as specified using its key.
 	dict erase(dict, string key)
 
 
-### push_back()
+## push_back()
 
 Appends an element to the end of a collection. A new collection is returned, the original unaffected.
 
@@ -899,7 +901,7 @@ Appends an element to the end of a collection. A new collection is returned, the
 
 
 
-### subset()
+## subset()
 
 This returns a range of elements from the collection.
 
@@ -921,7 +923,7 @@ end: 0 or larger. If it is larger than the collection, it will be clipped to the
 
 
 
-### replace()
+## replace()
 
 Replaces a range of a collection with the contents of another collection.
 
@@ -944,31 +946,54 @@ Notice: by specifying the same index in *start* and *length* you will __insert__
 
 
 
-### encode_json():
+## encode_json():
+Pack a JSON value to a JSON script string, ready to write to a file, send via protocol etc.
 
 	string encode_json(json_value v)
 
+The result is a valid JSON script string that can be handed to another system to be unpacked.
+
+##### JSON data shapes, escaping
+
+Notice that the string is *unescaped* - it contains the quotation character an so on. This is fine for storing it in a file or other use that supports the full 8 bit characters, but you cannot use it directly inside a URL or store it as a value in another JSON or paste it into the source code of most programming languages. Floyd has special support for unescaped JSON literals.
+
+These are the different shapes a JSON can have in Floyd:
+
+- Floyd value: a normal Floyd value - struct or a vector or a number etc.
+
+- json\_value: data is JSON compatible, stored in the 7 different value types supported by json\_value. It holds one JSON value or a JSON object or a JSON array, that in turn can hold other json\_value:s.
+
+- JSON-script string: JSON data encoded as a string of characters, as stored in a text file.
+
+	Example string: {"name":"John", "age":31, "city":"New York"}
+
+- Escaped string: the string is prepared to be stuffed in some more restricted format, like inside a parameter in a URL, as a string-literal inside another JSON or inside a REST command.
+
+	Example string: {\"name\":\"John\", \"age\":31, \"city\":\"New York\"}
+
+Different destinations have different limitations on characters and may need different escaping -- this is not really a JSON-related issue.
 
 
-### decode_json():
-
+## decode_json():
+Make a new Floyd JSON value from a JSON-script string. If the string is malformed, exceptions will be thrown.
+ 
 	json_value decode_json(string s)
 
 
 
-### flatten_to_json():
+## flatten\_to_json():
 	json_value flatten_to_json(any v)
 
 
 
-### unflatten_from_json():
+## unflatten\_from_json():
 	any unflatten_from_json(json_value v)
 
 
 
-### __get\_json\_type()__:
+## __get\_json_type()__:
 
-Returns the actual type of this value stores inside the json_value. It can be one of the types supported by JSON.
+Returns the actual type of this value stores inside the json\_value. It can be one of the types supported by JSON.
 
 	typeid get_json_type(json_value v)
 
@@ -985,7 +1010,7 @@ This is how you check the type of JSON value and reads their different values.
 | 							| json_null		| 7
 
 
-Demo snippet, that checks type of a json_value:
+Demo snippet, that checks type of a json\_value:
 
 ```
 	func string get_name(json_value value){
@@ -1030,8 +1055,11 @@ Demo snippet, that checks type of a json_value:
 
 
 These are built in primitives you can always rely on being available.
+They are used to interact with the world around your program and communicate with other Floyd green-processes. They are not pure. These functions can only be called at the container level, not in pure Floyd code.
 
-### print()
+
+
+## print()
 
 This outputs one line of text to the default output of the application. It can print any type of value. If you want to compose output of many parts you need to convert them to strings and add them. Also works with types, like a struct-type.
 
@@ -1057,7 +1085,8 @@ This outputs one line of text to the default output of the application. It can p
 | print(json_value(null))						| null
 
 
-### send()
+
+## send()
 
 Sends a message to a Floyd process.
 
@@ -1069,7 +1098,8 @@ The process may run on a different OS thread but send() is thread safe.
 If the expression evaluates to false, the program will log to the output, then be aborted via an exception.
 
 
-### select()
+
+## select()
 
 TBD POC
 
@@ -1077,19 +1107,17 @@ Called from a process function to read its inbox. It will block until a message 
 
 
 
-
-
-### probe()
+## probe()
 
 TODO POC
+
+	probe(value, description_string, probe_tag)
 
 In your code you write probe(my_temp, "My intermediate value", "key-1") to let clients log my_temp. The probe will appear as a hook in tools and you can chose to log the value and make stats and so on. Argument 2 is a descriptive name, argument 3 is a string-key that is scoped to the function and used to know if several probe()-statements log to the same signal or not.
 
 
 
-
-
-### get\_time\_of\_day()
+## get\_time\_of\_day()
 
 Returns the computer's realtime clock, expressed in the number of milliseconds since system start. Useful to measure program execution. Sample get_time_of_day() before and after execution and compare them to see duration.
 
@@ -1097,7 +1125,7 @@ Returns the computer's realtime clock, expressed in the number of milliseconds s
 
 
 
-### get\_env\_path()
+## get\_env\_path()
 
 Returns user's home directory, like "/Volumes/Bob".
 
@@ -1105,7 +1133,7 @@ Returns user's home directory, like "/Volumes/Bob".
 
 
 
-### read\_text\_file()
+## read\_text\_file()
 
 Reads a text file from the file system and returns it as a string.
 
@@ -1113,7 +1141,7 @@ Reads a text file from the file system and returns it as a string.
 
 
 
-### write\_text\_file()
+## write\_text\_file()
 
 Write a string to the file system as a text file.
 
@@ -1199,7 +1227,7 @@ Here is the DAG for the complete syntax of Floyd.
 
 
 
-### EXAMPLE BIND AND ASSIGNMENT STATEMENTS
+## EXAMPLE BIND AND ASSIGNMENT STATEMENTS
 
 |Source		| Meaning
 |:---		|:---	
@@ -1219,7 +1247,7 @@ Here is the DAG for the complete syntax of Floyd.
 
 
 
-### EXAMPLE RETURN STATEMENTS
+## EXAMPLE RETURN STATEMENTS
 
 |Source		| Meaning
 |:---	|:---	
@@ -1228,7 +1256,7 @@ Here is the DAG for the complete syntax of Floyd.
 
 
 
-### EXAMPLE FUNCTION DEFINITION STATEMENTS
+## EXAMPLE FUNCTION DEFINITION STATEMENTS
 
 |Source		| Meaning
 |:---	|:---	
@@ -1239,7 +1267,7 @@ Here is the DAG for the complete syntax of Floyd.
 
 
 
-### EXAMPLE IF STATEMENTS
+## EXAMPLE IF STATEMENTS
 
 |Source		| Meaning
 |:---	|:---	
@@ -1247,7 +1275,7 @@ Here is the DAG for the complete syntax of Floyd.
 
 
 
-### EXAMPLE OF STRUCT DEFINITION STATEMENTS
+## EXAMPLE OF STRUCT DEFINITION STATEMENTS
 
 |Source		| Meaning
 |:---	|:---	
@@ -1260,7 +1288,7 @@ Here is the DAG for the complete syntax of Floyd.
 
 
 
-### EXAMPLE EXPRESSIONS
+## EXAMPLE EXPRESSIONS
 
 |Source		| Meaning
 |:---	|:---	
@@ -1289,7 +1317,7 @@ Here is the DAG for the complete syntax of Floyd.
 
 
 
-### EXAMPLE TYPE DECLARATIONS
+## EXAMPLE TYPE DECLARATIONS
 
 |Source		| Meaning
 |:---	|:---	
