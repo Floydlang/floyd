@@ -946,7 +946,8 @@ Notice: by specifying the same index in *start* and *length* you will __insert__
 
 
 
-## encode_json():
+## encode_json()
+
 Pack a JSON value to a JSON script string, ready to write to a file, send via protocol etc.
 
 	string encode_json(json_value v)
@@ -974,24 +975,27 @@ These are the different shapes a JSON can have in Floyd:
 Different destinations have different limitations on characters and may need different escaping -- this is not really a JSON-related issue.
 
 
-## decode_json():
+## decode_json()
+
 Make a new Floyd JSON value from a JSON-script string. If the string is malformed, exceptions will be thrown.
  
 	json_value decode_json(string s)
 
 
 
-## flatten\_to_json():
+## flatten\_to_json()
+
 	json_value flatten_to_json(any v)
 
 
 
-## unflatten\_from_json():
+## unflatten\_from_json()
+
 	any unflatten_from_json(json_value v)
 
 
 
-## __get\_json_type()__:
+## __get\_json_type()__
 
 Returns the actual type of this value stores inside the json\_value. It can be one of the types supported by JSON.
 
