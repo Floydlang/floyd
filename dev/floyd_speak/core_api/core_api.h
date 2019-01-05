@@ -9,18 +9,50 @@
 #ifndef core_api_hpp
 #define core_api_hpp
 
+#include <string>
+#include <vector>
+
+/*
+	This is the IMPLEMENTATION of the Floyd runtime's core API. The VM calls these functions.
+*/
+
+
+
+struct core_api_runtime_t {
+	core_api_runtime_t(int64_t os_process_id) :
+		os_process_id(os_process_id)
+	{
+	}
+
+	int64_t os_process_id;
+};
+
+struct green_process_runtime_t {
+	green_process_runtime_t() :
+		random_seed(234782348723)
+	{
+	}
+
+
+
+
+	//////////////////////		STATE
+	int64_t random_seed;
+};
+
+struct runtime_t {
+	std::vector<green_process_runtime_t> process_runtimes;
+};
+
 
 
 #if 0
-# CORE 0.1
-print()
-send()
-assert()
+//////////////////////////		CORE 0.1
+
+//-----------------		language / interpreter / compiler
 to_string()
 to_pretty_string()
 typeof()
-get_time_of_day()
-
 update()
 size()
 find()
@@ -29,101 +61,58 @@ erase()
 push_back()
 subset()
 replace()
+flatten_to_json()
+unflatten_from_json()
+get_json_type()
+decode_json()
+encode_json()
+#endif
+
+#if 0
+//-----------------		language / interpreter / compiler
+
+print()
+send()
+assert()
+
+get_time_of_day()
 
 get_env_path()
 read_text_file()
 write_text_file()
 
-decode_json()
-encode_json()
-flatten_to_json()
-unflatten_from_json()
-get_json_type()
-
-
-
-# POC
 select()
 probe()
+#endif
 
+
+
+//////////////////////////		MORE COLLECTION OPERATIONS
+
+
+#if 0
 
 # 1.5
 sort()
 
-
 DT diff(T v0, T v1)
 T merge(T v0, T v1)
 T update(T v0, DT changes)
+#endif
 
 
-//	A universally unique identifier (UUID) is a 128-bit number used to identify information in computer systems. The term globally unique identifier (GUID) is also used.
-struct uuid_t {
-	int high64
-	int low64
-}
+#if 0
 
 
-struct uri_t {
-	string path
-}
 
-//	Efficent keying using 64-bit hash instead of a string. Hash can often be computed from string-key at compile time.
-struct key_t {
-	quick_hash_t hash
-}
 
-struct image_t {
-	int id
-}
 
-struct text_t {
-	int id
-}
-
-struct text_resource_id {
-	quick_hash_t id
-}
 text_t lookup_text(text_resource_id id)
 
 //	"Press $1 button  with $2!", [ "$1",
 text_t populate_text_variables(text_resource_id id, [struct { string aky, string s}])
 
 
-
-
-
-struct date_t {
-	string utd_date;
-}
-
-struct source_code_location {
-	absolute_path_t source_file
-	int _line_number
-}
-
-struct sha1_t {
-	string ascii40
-}
-
-struct quick_hash_t {
-	int hash
-}
-
-struct relative_path_t {
-	string fRelativePath
-}
-
-struct absolute_path_t {
-	string fAbsolutePath
-}
-
-struct binary_t {
-	string bytes
-}
-
-typedef int cpu_address_t
-typedef cpu_address_t size_t
-typedef int file_pos_t
 
 
 ////////////////////////////////////////////////////////////////////			MATH
@@ -408,6 +397,11 @@ std::pair<bool, seq_t> read_optional_char(seq_t s, char ch)
 
 
 
+
+////////////////////////////////		COLLECTION OPERATIONS, PARALLELLISM
+
+
+
 [int:R] supermap(tasks: [T, [int], f: R (T, [R]))
 [T] map([T] elements, f)
 [T] reduce([T], F f)
@@ -416,7 +410,11 @@ R fold([T], R init, F f)
 
 
 
+
+
 //////////////////////////////		SOCKETS
+
+
 
 
 
@@ -447,7 +445,12 @@ Non-blocking operations post result as custom message to green-process.
 */
 
 
+
+
+
 //////////////////////////////		FILE HANDLING
+
+
 
 
 
@@ -486,8 +489,13 @@ absolute_path_t get_test_write_dir()
 
 void create_directories_deep(absolute_path_t path)
 
-absolute_path_t get_parent_directory(absolute_path_t path)
+//	Deletes a file or directory. If the entry has children those are deleted too = delete folder also deletes is contents.
+void delete_fs_entry_deep(absolute_path_t path)
 
+void rename_entry(absolute_path_t path, string n)
+
+
+absolute_path_t get_parent_directory(absolute_path_t path)
 
 struct directory_entry_info_t {
 	enum EType {
@@ -558,27 +566,10 @@ absolute_path_t make_path(path_parts_t parts)
 
 
 
-??? temp file support. Always store to temp files.
+//??? temp file support. Always store to temp files.
 
 
-
-//////////////////////////////		MISC
-
-
-
-os.clock ()
-Returns an approximation of the amount in seconds of CPU time used by the program.
-
-os.date ([format [, time]])
-
-
-os.remove (filename)
-Deletes the file (or empty directory, on POSIX systems) with the given name. If this function fails, it returns nil, plus a string describing the error and the error code. Otherwise, it returns true.
-
-os.rename (oldname, newname)
 
 #endif
-
-
 
 #endif /* core_api_hpp */
