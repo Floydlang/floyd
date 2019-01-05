@@ -1106,14 +1106,11 @@ In your code you write probe(my_temp, "My intermediate value", "key-1") to let c
 
 ## send()
 
-Sends a message to a Floyd process.
+Sends a message to a Floyd green process.
 
 The process may run on a different OS thread but send() is thread safe.
 
 	send(string process_key, json_value message)
-
-
-If the expression evaluates to false, the program will log to the output, then be aborted via an exception.
 
 
 

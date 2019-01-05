@@ -9,85 +9,101 @@
 #ifndef core_types_hpp
 #define core_types_hpp
 
-#include <stdio.h>
+#include <string>
+#include <vector>
 
-#if 0
-typedef int cpu_address_t
-typedef cpu_address_t size_t
-typedef int file_pos_t
+typedef int cpu_address_t;
+//typedef cpu_address_t size_t
+typedef int file_pos_t;
 
-typedef int64_t time_seconds_t
+typedef int64_t time_seconds_t;
+
+
+//	This is used to tag message put in a green process inbox. It allows easy detection.
+struct inbox_tag_t {
+	std::string tag_string;
+};
+
+struct inbox_message_t {
+	std::string type;
+	inbox_tag_t tag;
+};
 
 
 //	A universally unique identifier (UUID) is a 128-bit number used to identify information in computer systems. The term globally unique identifier (GUID) is also used.
 struct uuid_t {
-	int high64
-	int low64
-}
+	int high64;
+	int low64;
+};
 
 struct uri_t {
-	string path
-}
+	std::string path;
+};
+
+struct quick_hash_t {
+	int hash;
+};
 
 //	Efficent keying using 64-bit hash instead of a string. Hash can often be computed from string-key at compile time.
 struct key_t {
-	quick_hash_t hash
-}
+	quick_hash_t hash;
+};
 
 struct date_t {
-	string utd_date;
-}
+	std::string utd_date;
+};
 
-struct source_code_location {
-	absolute_path_t source_file
-	int _line_number
-}
+struct url_t {
+	std::string complete_url_path;
+};
+
 
 struct sha1_t {
-	string ascii40
-}
+	std::string ascii40;
+};
 
-struct quick_hash_t {
-	int hash
-}
 
 struct relative_path_t {
-	string fRelativePath
-}
+	std::string fRelativePath;
+};
 
 struct absolute_path_t {
-	string fAbsolutePath
-}
+	std::string fAbsolutePath;
+};
 
 struct binary_t {
-	string bytes
-}
+	std::string bytes;
+};
+
+
+struct source_code_location {
+	absolute_path_t source_file;
+	int _line_number;
+};
+
+
 
 
 struct text_t {
-	int id
-}
+	int id;
+};
 
 struct text_resource_id {
-	quick_hash_t id
-}
+	quick_hash_t id;
+};
 
 
 struct image_id_t {
-	int id
-}
+	int id;
+};
 
-struct pixel_rgba_t {
-	uint8_t red, green, blue, alpha;
-}
+struct color_t {
+	float red, green, blue, alpha;
+};
 
-struct image_id_t {
-	float width;
-	float height
-	vector<pixel_rgba_t> pixels;
-}
-
-#endif
+struct vector2_t {
+	float x, y;
+};
 
 
 #endif /* core_types_hpp */

@@ -46,6 +46,10 @@ struct runtime_t {
 
 
 
+
+
+
+
 #if 0
 //////////////////////////		CORE 0.1
 
@@ -408,40 +412,6 @@ R fold([T], R init, F f)
 
 
 
-
-
-
-//////////////////////////////		SOCKETS
-
-
-
-
-
-server_socket_t
-client_socket_t
-
-rest_message_t
-
-cookie_t
-oath_t
-
-
-struct open_socket {
-	int socket_id
-}
-
-
-open_socket open_socket(string url)
-void close_socket(open_socket s)
-void write_sync(open_socket_t s, string message)
-void write_async(open_socket_t s, string message, message_t result_template)
-
-/*
-???
-
-Blocking operations (blocks green-process).
-Non-blocking operations post result as custom message to green-process.
-*/
 
 
 
