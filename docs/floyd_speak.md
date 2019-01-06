@@ -1390,25 +1390,68 @@ Converts Unicode in text_t value to an UTF8 string.
 # FUTURE -- BUILT-IN URL FUNTIONS
 
 
-```
-bool is_valid_url(const std::string& s);
-url_t make_url(const std::string& s);
+## is\_valid\_url()
 
-struct url_parts_t {
-	std::string protocol;
-	std::string path;
-	std::string parameters;
-};
-
-url_parts_t split_url(const url_t& url);
-url_t make_urls(const url_parts_t& parts);
+	bool is_valid_url(const std::string& s);
 
 
+## make\_url()
 
-//??? needed? Better to hide all escaping etc in highlevel function.
-std::string escape_string_to_url(const std::string& s);
-std::string unescape_string_from_url(const std::string& s);
-```
+	url_t make_url(const std::string& s);
+
+
+## url\_parts\_t {}
+
+This struct contains an URL separate to its components.
+
+	struct url_parts_t {
+		std::string protocol;
+		std::string domain;
+		std::string path;
+		[string:string] query_strings;
+	};
+
+Example 1:
+
+	url_parts_t("http", "example.com", "path/to/page", {"name": "ferret", "color": "purple"})
+
+	Output: "http://example.com/path/to/page?name=ferret&color=purple"
+
+
+
+## split_url()
+
+Splits a URL into its parts. This makes it easy to get to specific query strings or change a parts and reassemble the URL.
+
+	url_parts_t split_url(const url_t& url);
+
+## make_urls()
+
+Makes a url_t from parts.
+
+	url_t make_urls(const url_parts_t& parts);
+
+
+## escape\_for\_url()
+
+Prepares a string to be stored inside an URL. This requries some characters to be translated to special escapes.
+
+| Character						| Result |
+|---								| ---
+| space							| "%20"
+| !								| "%21"
+| "								| "%22"
+
+etc.
+
+	std::string escape_for_url(const std::string& s);
+
+## unescape\_from\_url()
+
+This is to opposite of escape_for_url() - it takes a string from a URL and turns %20 into a space character and so on.
+
+	std::string unescape_string_from_url(const std::string& s);
+
 
 
 # FUTURE -- BUILT-IN SHA1 FUNTIONS
