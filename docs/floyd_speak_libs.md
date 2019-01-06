@@ -814,10 +814,8 @@ void close_tcp_client_socket(const tcp_client_t& s);
 //	Blocks until IO is complete.
 tcp_reply_t send(const tcp_client_t& s, const binary_t& payload);
 
-Returns at once. When later a reply is received, you will get a message
-
-with a tcp_reply_t in your green-process INBOX.
-
+//	Returns at once. When later a reply is received, you will get a message
+//	with a tcp_reply_t in your green-process INBOX.
 void queue(const tcp_client_t& s, const binary_t& payload, const inbox_tag_t& inbox_tag);
 
 ```

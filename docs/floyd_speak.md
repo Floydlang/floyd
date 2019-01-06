@@ -698,14 +698,37 @@ Throw exception. Built in types, free noun. Refine, final.
 
 # AUTOMATIC SERIALIZATION
 
-Serializing any Floyd value is a built in mechanism. It is always true-deep. The result is always a normalized JSON text file in a Floyd string.
+Serializing any Floyd value is a built in mechanism. It is always true-deep.
+
+**This is very central to Floyd -- values are core and they can easily be passed around, sent as messages, stored in files, copy-pasted from log or debugger into the source code.**
 
 
+##### JSON data shapes, escaping
+
+These are the different shapes a JSON can have in Floyd:
+
+- Floyd value: a normal Floyd value - struct or a vector or a number etc.
+
+- json\_value: data is JSON compatible, stored in the 7 different value types supported by json\_value. It holds one JSON value or a JSON object or a JSON array, that in turn can hold other json\_value:s.
+
+- JSON-script string: JSON data encoded as a string of characters, as stored in a text file.
+
+	Example string: {"name":"John", "age":31, "city":"New York"}
+
+	It contains quotation characters, question mark characters, new lines etc.
+
+- Escaped string: the string is simplified to be stuffed as a string snippet into some restricted format, like inside a parameter in a URL, as a string-literal inside another JSON or inside a REST command.
+
+	Example string: {\"name\":\"John\", \"age\":31, \"city\":\"New York\"}
+
+Different destinations have different limitations and escape machanisms and will need different escape functions. This is not really a JSON-related issue, more a URL, REST question.
+
+
+##### FUNCTIONS
 Converting a floyd json\_value to a JSON string and back. The JSON-string can be directly read or written to a text file, sent via a protocol and so on.
 
 	string encode_json(json_value v)
 	json_value decode_json(string s)
-
 
 Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json\_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json\_value, using unflatten_from_json().
 
@@ -1016,38 +1039,18 @@ Return the type of its input value. The returned typeid-value is a complete Floy
 
 ## encode_json()
 
-Pack a JSON value to a JSON script string, ready to write to a file, send via protocol etc.
+Pack a JSON value to a JSON script string, ready to write to a file, send via protocol etc. The string is unescaped.
 
 	string encode_json(json_value v)
 
 The result is a valid JSON script string that can be handed to another system to be unpacked.
-
-##### JSON data shapes, escaping
-
-Notice that the string is *unescaped* - it contains the quotation character an so on. This is fine for storing it in a file or other use that supports the full 8 bit characters, but you cannot use it directly inside a URL or store it as a value in another JSON or paste it into the source code of most programming languages. Floyd has special support for unescaped JSON literals.
-
-These are the different shapes a JSON can have in Floyd:
-
-- Floyd value: a normal Floyd value - struct or a vector or a number etc.
-
-- json\_value: data is JSON compatible, stored in the 7 different value types supported by json\_value. It holds one JSON value or a JSON object or a JSON array, that in turn can hold other json\_value:s.
-
-- JSON-script string: JSON data encoded as a string of characters, as stored in a text file.
-
-	Example string: {"name":"John", "age":31, "city":"New York"}
-
-- Escaped string: the string is prepared to be stuffed in some more restricted format, like inside a parameter in a URL, as a string-literal inside another JSON or inside a REST command.
-
-	Example string: {\"name\":\"John\", \"age\":31, \"city\":\"New York\"}
-
-Different destinations have different limitations on characters and may need different escaping -- this is not really a JSON-related issue.
 
 ??? Rename to jsonvalue_to_script()
 
 
 ## decode_json()
 
-Make a new Floyd JSON value from a JSON-script string. If the string is malformed, exceptions will be thrown.
+Make a new Floyd JSON value from a JSON-script string. If the string is malformed, exceptions will be thrown. The string is unescaped.
  
 	json_value decode_json(string s)
 
