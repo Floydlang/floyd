@@ -7,7 +7,7 @@ Floyd Speak is the programming language part of Floyd. It's an alternative to Ja
 ![](floyd_speak_cheat_sheet.png)
 
 
-# TYPES
+# DATA TYPES
 
 These are the primitive data types built into the language itself. The goal is that all the basics you need are already there in the language. This makes it easy to start making useful programs, you don't need to choose or build the basics. It allows composability since all libraries can rely on these types and communicate between themselves using them. Reduces need for custom types and glue code.
 
@@ -55,14 +55,14 @@ These are features built into every type: integer, string, struct, dictionary, e
 |__a >= b__ 		| a larger or equal to b
 
 
-# SOURCE CODE FILES
+# ABOUT SOURCE CODE FILES
 
 Floyd Speak files are always utf-8 files with no BOM. Their extension is ".floyd".
 
 
-# VALUES, VARIABLES AND CONSTANTS
+# ABOUT VALUES, VARIABLES AND CONSTANTS
 
-All "variables" aka values are immutable.
+All "variables" aka values are by immutable. Local variables can be mutable if you specify it.
 
 - Function arguments
 - Function local variables
@@ -105,7 +105,7 @@ You can use "mutable" to make a local variable changeable.
 	}
 ```
 
-# GLOBAL SCOPE
+# ABOUT GLOBAL SCOPE
 
 Here you normally define functions, structs and global constants. The global scope can have almost any statement and they execute at program start, before main() is called. You don't even need a main function if you don't want it.
 
@@ -117,7 +117,7 @@ __main()__ This function is called by the host when program starts. You get the 
 
 
 
-# SOFTWARE-SYSTEM
+# SOFTWARE-SYSTEM KEYWORD
 
 This keyword is part of Floyd Systems -- a way to define how all the containers and components and processes are interfacting.
 
@@ -127,9 +127,10 @@ This keyword is part of Floyd Systems -- a way to define how all the containers 
 		"containers": {}
 	}
 
+Read more about this in the Floyd Systems documentation
 
 
-# FUNCTIONS
+# ABOUT FUNCTIONS
 
 Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants, never read or modify anything: not global variables, not by calling another, impure function. It's not possible to call a function with a set of arguments and later call it with the same argument and get a different result. A function like get_time() is impure.
 
@@ -178,8 +179,10 @@ This is a function that returns a function value:
 	func bool (string, string) f5(int x)
 ```
 
+All arguments to a function are read-only -- there are no output arguments.
 
-# EXPRESSIONS
+
+# ABOUT EXPRESSIONS
 
 Reference: http://www.tutorialspoint.com/cprogramming/c_operators.htm
 Comparisons are true-deep: they consider all members and also member structs and collections.
@@ -231,7 +234,7 @@ When the condition is true, this entire expression has the value of a. Else it h
 ```
 
 
-# IF - THEN - ELSE -- STATEMENT
+# ABOUT IF - THEN - ELSE -- STATEMENTS
 
 This is a normal if-elseif-else feature, like in most languages. Brackets are required always.
 
@@ -270,12 +273,12 @@ In each body you can write any statements. There is no "break" keyword.
 
 
 
-# MATCH
+# ABOUT MATCH STATEMENT
 
 TODO POC
 
 
-# FOR LOOPS
+# ABOUT FOR LOOPS
 
 For-loops are used to execute a body of statements many times. The number of times is calculated while the program runs. The entire condition expression is evaluated *before* the first time the body is called. This means the program already decided the number of loops to run before running the first loop iteration.
 
@@ -321,7 +324,7 @@ The loop is expanded before the first time the body is called. There is no way t
 
 
 
-# WHILE LOOPS
+# ABOUT WHILE LOOPS
 
 ```
 	while (my_array[a] != 3){
@@ -332,7 +335,7 @@ The loop is expanded before the first time the body is called. There is no way t
 
 
 
-# STRING
+# STRING DATA TYPE
 
 This is a pure 8-bit string type. It is immutable. You can compare with other strings, copy it using = and so on. There is a small kit of functions for changing and processing strings.
 
@@ -372,7 +375,7 @@ You can append two strings together using the + operation.
 
 
 
-# VECTOR
+# VECTOR DATA TYPE
 
 A vector is a collection of values where you lookup the values using an index between 0 and (vector size - 1). The positions in the vector are called "elements". The elements are ordered. Finding an element at a position uses constant time. In other languages vectors are called "arrays" or even "lists".
 
@@ -414,7 +417,7 @@ You can append two vectors together using the + operation.
 
 
 
-# DICTIONARY
+# DICTIONARY DATA TYPE
 
 A collection that maps a key to a value. It is not sorted. Like a C++ map. 
 
@@ -449,7 +452,7 @@ You copy dictionaries using = and all comparison expressions work.
 
 
 
-# STRUCTs - THE BASICS
+# STRUCT DATA TYPE
 
 Structs are the central building block for composing data in Floyd. They are used in place of structs and classes in other programming languages. Structs are always values and immutable. They are still fast and compact: behind the curtains copied structs  shares state between them, even when partially modified.
 
@@ -547,7 +550,7 @@ This works with nested values too:
 
 
 
-# PROTOCOL
+# PROTOCOL DATA TYPE
 
 TODO 1.0
 
@@ -555,14 +558,9 @@ Protocol member functions can be tagged "impure" which allows it to be implement
 
 
 
-# EXCEPTIONS
-
-TODO 1.0
-Throw exception. Built in types, free noun. Refine, final.
 
 
-
-# TYPEID
+# TYPEID DATA TYPE
 
 A typeid is tells the type of a value.
 
@@ -582,7 +580,7 @@ A typeid is a proper Floyd value: you can copy it, compare it, convert it to str
 
 
 
-# JSON_VALUE
+# JSON_VALUE DATA TYPE
 
 JSON is very central to Floyd. JSON is a way to store composite values in a tree shape in a simple and standardized way. Since Floyd mainly works with values this is a perfect match for serializing any Floyd value to text and back. It is built directly into the language as the default serialized format for Floyd values. It can be used for custom file format and protocol and to interface with other JSON-based systems. All structs also automatically are serializable to and from JSON automatically.
 
@@ -670,6 +668,31 @@ Many of the core functions work with json\_value, but it often depends on the ac
 
 
 
+# COMMENTS AND DOCUMENTATION
+
+
+Use comments to write documentation, notes or explanations in the code. Comments are not executed or compiled -- they are only for humans. You often use the comment features to disable / hide code from the compiler.
+
+Two types of comments:
+
+
+You can wrap many lines with "/*...*/" to make a big section of documentation or disable many lines of code. You can nest comments, for example wrap a lot of code with existing comments with /* ... */ to disable it.
+
+	/*	This is a comment */
+
+
+Everything between // and newline is a comment:
+
+	//	This is an end-of line comment
+	let a = "hello" //	This is an end of line comment.
+
+
+
+
+# EXCEPTIONS
+
+TODO 1.0
+Throw exception. Built in types, free noun. Refine, final.
 
 
 
@@ -698,30 +721,11 @@ Converts any Floyd value, (including any type of nesting of custom structs, coll
 
 
 
-# COMMENTS AND DOCUMENTATION
-
-
-Use comments to write documentation, notes or explanations in the code. Comments are not executed or compiled -- they are only for humans. You often use the comment features to disable / hide code from the compiler.
-
-Two types of comments:
-
-
-You can wrap many lines with "/*...*/" to make a big section of documentation or disable many lines of code. You can nest comments, for example wrap a lot of code with existing comments with /* ... */ to disable it.
-
-	/*	This is a comment */
-
-
-Everything between // and newline is a comment:
-
-	//	This is an end-of line comment
-	let a = "hello" //	This is an end of line comment.
 
 
 
+# BUILT-IN FUNCTIONS
 
-
-
-# CORE LANGUAGE FUNCTIONS
 These functions are built into the language and are always available to your code. They are all pure so can be used in pure functions.
 
 
@@ -1063,7 +1067,7 @@ Make a new Floyd JSON value from a JSON-script string. If the string is malforme
 
 
 
-# FUTURE -- CORE TYPES
+# FUTURE -- MORE BUILT-IN TYPES
 
 
 ## cpu\_address_t
@@ -1211,9 +1215,7 @@ It shares the actual string data behind the curtains so is efficent.
 
 ## text_t
 
-Unicode text. Opaque and undefined encoding, potentially platform dependant. Only use library functions to access text_t. The contents is opaque and you don't access individual, graphene clusters, code points, characters etc.
-
-Think of text_t and Uncode text more like a PDF.
+Unicode text. Opaque data -- only use library functions to process text_t. Think of text_t and Uncode text more like a PDF.
 
 	struct text_t {
 		binary_t data
@@ -1263,7 +1265,7 @@ Color. If you don't need alpha, set it to 1.0. Components are normally min 0.0 -
 
 
 
-# FUTURE -- CORE COLLECTION FUNTIONS
+# FUTURE -- BUILT-IN COLLECTION FUNCTIONS
 
 
 ```
@@ -1276,7 +1278,7 @@ T update(T v0, DT changes)
 
 
 
-# FUTURE -- STRING FUNCTIONS
+# FUTURE -- BUILT-IN STRING FUNCTIONS
 
 ```
 std::vector<string> split_on_chars(seq_t s, string match_chars)
@@ -1291,20 +1293,101 @@ double parse_double(string pos)
 ```
 
 
-# FUTURE -- TEXT AND TEXT RESOURCES FUNTIONS
+# FUTURE -- BUILT-IN TEXT AND TEXT RESOURCES FUNTIONS
+
+Unicode is used to support text in any human language. It's an extremely complex format and it's difficult to write code to manipulate or interpret it. It contains graphene clusters, code points, characters, compression etc.
+
+Floyd's solution:
+
+- a dedicated data type for holding Unicode text - text_t, separate from the string data type.
+
+- use an opaque encoding of the text data -- always use the text-functions only.
+
+Think of text_t more like PDF:s or JPEGs than strings of characters.
+
+
+## lookup\_text()
+
+Reads text from resource file (cached in RAM).
+This is a pure function, it expected to give the same result every time.
+
+	text_t lookup_text(text_resource_id id)
+
+## text\_from\_ascii()
+
+Makes a text from a normal string. Only 7bit ASCII is supported.
+
+	text_t text_from_ascii(string s)
+
+
+## populate\_text\_variables()
+
+Let's you safely assemble a Unicode text from a template that has insert-tags where to insert variable texts, in a way that is localizable. Localizing the template_text can change order of variables.
+
+	text_t populate_text_variables(text_t template_text, [string: text_t])
+
+
+Example 1:
+
 ```
-//	Reads text from resource file (cached in RAM).
-//	This is a pure function.
-text_t lookup_text(text_resource_id id)
+populate_text_variables(
+	"Press ^1 button with ^2!",
+	{ "^1": text_from_ascii("RED"), "^2": text_from_ascii("pinkie")}
+)
+```
+**Output: "Press RED button with pinkie!"**
 
-//	Let's you safely create a text from bits, in a way that is localizable.
-//	Localization can change order of variables.
-//	"Press $1 button  with $2!", [ "$1",
-text_t populate_text_variables(text_resource_id id, [struct { string aky, string s}])
+Example 2 -- reorder:
+
+```
+populate_text_variables(
+	"Använd ^2 för att trycka på den ^1 knappen!",
+	{ "^1": text_from_ascii("röda"), "^2": text_from_ascii("lillfingret")}
+)
+```
+**Output: "Använd lillfingret för att trycka på den röda knappen!"**
+
+
+## read\_unicode\_file()
+
+Reads a text file into a text_t. It supports several encodings of the text file:
+
+file_encoding:
+
+-	0 = utf8
+-	1 = Windows latin 1
+-	2 = ASCII 7bit
+-	3 = UTF16 BIG ENDIAN
+-	4 = UTF16 LITTLE ENDIAN
+-	5 = UTF32 BIG ENDIAN
+-	6 = UTF32 LITTLE ENDIAN
+
+```
+	text_t read_unicode_file(absolute_path_t path, int file_encoding)
 ```
 
+## write\_unicode\_file()
 
-# FUTURE -- URL FUNTIONS
+Writes text file in unicode format.
+
+	void write_unicode_file(absolute_path_t path, text_t t, int file_encoding, bool write_bom)
+
+
+## utf8\_to\_text()
+
+Converts a string with UTF8-text into a text_t.
+
+	text_t utf8_to_text(string s)
+
+
+## text\_to\_utf8()
+
+Converts Unicode in text_t value to an UTF8 string.
+
+	string text_to_utf8(text_t t, bool add_bom)
+
+
+# FUTURE -- BUILT-IN URL FUNTIONS
 
 
 ```
@@ -1328,7 +1411,7 @@ std::string unescape_string_from_url(const std::string& s);
 ```
 
 
-# FUTURE -- SHA1 FUNTIONS
+# FUTURE -- BUILT-IN SHA1 FUNTIONS
 ```
 
 sha1_t calc_sha1(string s)
@@ -1346,7 +1429,7 @@ sha1_t sha1_from_string(string s)
 ```
 
 
-# FUTURE - RANDOM FUNTIONS
+# FUTURE - BUILT-IN RANDOM FUNTIONS
 
 ```
 struct random_t {
@@ -1360,7 +1443,7 @@ random_t next(random_t& r)
 
 
 
-# FUTURE - MATH FUNTIONS
+# FUTURE - BUILT-IN MATH FUNTIONS
 
 ```
 let pi_constant = 3.141592653589793238462
@@ -1454,7 +1537,7 @@ double fmod(double x, double y)
 ```
 
 
-# FUTURE - FILE LOCATION FUNTIONS
+# FUTURE - BUILT-IN FILE PATH FUNTIONS
 
 
 ```
@@ -1504,7 +1587,7 @@ absolute_path_t make_path(path_parts_t parts)
 ```
 
 
-# FUTURE - STRING PARSING FUNCTIONS
+# FUTURE - BUILT-IN STRING FUNCTIONS
 
 ```
 struct seq_out {
@@ -1569,11 +1652,15 @@ std::pair<bool, seq_t> read_optional_char(seq_t s, char ch)
 
 
 
-# CORE WORLD FUNCTIONS
-
+# CORE BUILT-IN WORLD FUNCTIONS
 
 These are built in primitives you can always rely on being available.
-They are used to interact with the world around your program and communicate with other Floyd green-processes. They are not pure. These functions can only be called at the container level, not in pure Floyd code.
+
+They are used to interact with the world around your program and communicate with other Floyd green-processes.
+
+**They are not pure.**
+
+These functions can only be called at the container level, not in pure Floyd code.
 
 
 
@@ -1639,7 +1726,7 @@ Write a string to the file system as a text file. Will create any missing direct
 
 ## send()
 
-Sends a message to a Floyd green process.
+Sends a message to the inbox of a Floyd green process, possibly your own process.
 
 The process may run on a different OS thread but send() is thread safe.
 
@@ -1647,9 +1734,7 @@ The process may run on a different OS thread but send() is thread safe.
 
 
 
-
-
-# FUTURE -- WORLD GREEN-PROCESS FUNCTIONS
+# FUTURE -- BUILT-IN WORLD FUNCTIONS
 
 ## probe()
 
@@ -1683,11 +1768,11 @@ Floyd uses unix-style paths in all its APIs. It will convert these to native pat
 ??? Paths could use [string] instead.
 
 
-## load\_file()
+## load\_binary\_file()
 
 	binary_t load_file(absolute_path_t path)
 
-## save\_file()
+## save\_binary\_file()
 
 Will _create_ any needed directories in the save-path.
 

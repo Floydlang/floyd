@@ -10,11 +10,23 @@ Floyd is a general-purpose static and compiled programming language with strong 
 
 Floyd replaces languages like C++, C#, Rust, Swift and Java -- but also scripting languages like Python and Javascript.
 
-It's designed to allow you to write the next Photoshop and Grand Theft Auto and mobile apps.
+It's designed to allow you to write the next Photoshop and Grand Theft Auto and any type of mobile app.
 
 The end goal is always to ship great *products* that execute extremely well on the hardware and that are a delight to develop further.
 
-Floyd has a bunch of novel concepts, how it separates the programming work in new ways, imposes a clean system-wide structure and has simple built in ways to do processing and concurrency.
+Floyd has a bunch of novel concepts, how it separates the programming work in new ways, imposes a clean system-wide structure and has simple built-in ways to do hard things like concurrency.
+
+# THE MATRIX
+
+- **Red Pill**: Knowledge, freedom, uncertainty and the brutal truths of reality
+- **Blue Pill**: Security, happiness, beauty, and the blissful ignorance of illusion
+
+Working interactive software needs both red and blue code. Floyd uses a red - blue - red sandwich were:
+
+1. Red pill: the Floyd runtime sits at the bottom of the sandwich and upholds the blue matrix simulation above it.
+2. Blue pill: ontop of the runtime is the blissful matrix illusion. Make sure most of your code goes here. It's a fantasic place to write solid programs.
+3. Red pill: Finally, on top of it all sits the Floyd containers and proceesses - introducing reality: time, mutation, communication with an every changing outside world. Keep this code as small as possible. It also reaches downward and adjusts the matrix and the runtime to improve performance.
+
 
 # SO EXACTLY WHAT IS FLOYD?
 
@@ -25,26 +37,18 @@ Floyd consists of a small and elegant toolkit of features built directly into th
 ##### PRIMARY GOALS
 
 1. Make it simpler to create robust large scale software products
-
 2. Replace many bad programming ideas with a few good ones, critical to make code composable
-
 3. Introduce high-level features needed for large scale software
-
 4. Extreme execution speed, faster than practical in majority of C systems
-
 5. Next-gen visual and interactive tools to support exploration and experimentation
 
 
 # UNIQUE FEATURES
 
 1. Floyd splits your system into three areas: a) your program's logic, b) your program's processing and c) mapping its execution to the hardware.
-
 2. Floyd as a clean built-in structure skeleton for *complete* software systems including processes, people, concurrency and communication between processes
-
 3. Visual and interactive tools
-
 4. Carefully distilled set of syntactical features to move focus to the *system* rather than the inside of functions
-
 5. Feels like simple imperative programming but with the best bits of functional programming sneaked in discretely
 
 
