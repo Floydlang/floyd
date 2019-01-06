@@ -23,9 +23,9 @@ Floyd has a bunch of novel concepts, how it separates the programming work in ne
 
 Working interactive software needs both red and blue code. Floyd uses a red - blue - red sandwich were:
 
-1. Red pill: the Floyd runtime sits at the bottom of the sandwich and upholds the blue matrix simulation above it.
-2. Blue pill: ontop of the runtime is the blissful matrix illusion. Make sure most of your code goes here. It's a fantasic place to write solid programs.
-3. Red pill: Finally, on top of it all sits the Floyd containers and proceesses - introducing reality: time, mutation, communication with an every changing outside world. Keep this code as small as possible. It also reaches downward and adjusts the matrix and the runtime to improve performance.
+1. **Red pill**: the Floyd runtime sits at the bottom of the sandwich and upholds the blue matrix simulation above it.
+2. **Blue pill**: ontop of the runtime is the blissful matrix illusion. Make sure most of your code goes here. It's a fantasic place to write solid programs.
+3. **Red pill**: Finally, on top of it all sits the Floyd containers and proceesses - introducing reality: time, mutation, communication with an every changing outside world. Keep this code as small as possible. It also reaches downward and adjusts the matrix and the runtime to improve performance.
 
 
 # SO EXACTLY WHAT IS FLOYD?
