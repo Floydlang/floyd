@@ -282,31 +282,6 @@ populate_text_variables(
 **Output: "Använd lillfingret för att trycka på den röda knappen!"**
 
 
-## read\_unicode\_file()
-
-Reads a text file into a text_t. It supports several encodings of the text file:
-
-file_encoding:
-
--	0 = utf8
--	1 = Windows latin 1
--	2 = ASCII 7bit
--	3 = UTF16 BIG ENDIAN
--	4 = UTF16 LITTLE ENDIAN
--	5 = UTF32 BIG ENDIAN
--	6 = UTF32 LITTLE ENDIAN
-
-```
-	text_t read_unicode_file(absolute_path_t path, int file_encoding)
-```
-
-## write\_unicode\_file()
-
-Writes text file in unicode format.
-
-	void write_unicode_file(absolute_path_t path, text_t t, int file_encoding, bool write_bom)
-
-
 ## utf8\_to\_text()
 
 Converts a string with UTF8-text into a text_t.
@@ -666,35 +641,60 @@ Floyd uses unix-style paths in all its APIs. It will convert these to native pat
 
 ## load\_binary\_file()
 
-	binary_t load_file(absolute_path_t path)
+	binary_t load_file(world_t w, absolute_path_t path)
 
 
 ## save\_binary\_file()
 
 Will _create_ any needed directories in the save-path.
 
-	void save_file(absolute_path_t path, binary_t data)
+	void save_file(world_t w, absolute_path_t path, binary_t data)
+
+
+## read\_unicode\_file()
+
+Reads a text file into a text_t. It supports several encodings of the text file:
+
+file_encoding:
+
+-	0 = utf8
+-	1 = Windows latin 1
+-	2 = ASCII 7bit
+-	3 = UTF16 BIG ENDIAN
+-	4 = UTF16 LITTLE ENDIAN
+-	5 = UTF32 BIG ENDIAN
+-	6 = UTF32 LITTLE ENDIAN
+
+```
+	text_t read_unicode_file(world_t w, absolute_path_t path, int file_encoding)
+```
+
+## write\_unicode\_file()
+
+Writes text file in unicode format.
+
+	void write_unicode_file(world_t w, absolute_path_t path, text_t t, int file_encoding, bool write_bom)
 
 
 ## does\_entry\_exist()
 
-	bool does_entry_exist(absolute_path_t path)
+	bool does_entry_exist(world_t w, absolute_path_t path)
 
 
 ## create\_directories\_deep()
 
-	void create_directories_deep(absolute_path_t path)
+	void create_directories_deep(world_t w, absolute_path_t path)
 
 
 ## delete\_fs\_entry\_deep()
 
 Deletes a file or directory. If the entry has children those are deleted too = delete folder also deletes is contents.
 
-	void delete_fs_entry_deep(absolute_path_t path)
+	void delete_fs_entry_deep(world_t w, absolute_path_t path)
 
 ## rename\_entry()
 
-	void rename_entry(absolute_path_t path, string n)
+	void rename_entry(world_t w, absolute_path_t path, string n)
 
 
 ## get\_entry\_info()
@@ -713,10 +713,10 @@ Deletes a file or directory. If the entry has children those are deleted too = d
 		string name
 	}
 	
-	directory_entry_info_t get_entry_info(absolute_path_t path)
+	directory_entry_info_t get_entry_info(world_t w, absolute_path_t path)
 
 
-## get\_directory\_entries(), get\_directory\_entries\_deep()
+## get\_directory\_entries() and get\_directory\_entries\_deep()
 
 Returns a vector of all the files and directories found at the path.
 
@@ -729,23 +729,29 @@ Returns a vector of all the files and directories found at the path.
 		EType fType
 	}
 	
-	std::vector<directory_entry_t> get_directory_entries(absolute_path_t path)
+	std::vector<directory_entry_t> get_directory_entries(world_t w, absolute_path_t path)
 
 get_directory_entries_deep() works the same way, but will also traverse each found directory. Contents of sub-directories will be also be prefixed by the sub-directory names. All path names are relative to the input directory - not absolute to file system.
 
-	std::vector<directory_entry_t> get_directory_entries_deep(absolute_path_t path)
+	std::vector<directory_entry_t> get_directory_entries_deep(world_t w, absolute_path_t path)
 
 
-## NATIVE PATHS
+## to\_native\_path() and from\_native\_path()
 
-Converts all forward slashes "/" to the path separator of the current operating system:
-	Windows is "\"
-	Unix is "/"
-	Mac OS 9 is ":"
+Floyd's file and path function always use "/" as path divider. There may be other differences too.
 
-string to_native_path(absolute_path_t path)
-absolute_path_t get_native_path(string path)
+Native-path is the current operating system's idea of how to store a path in a string. If you want to call OS functions, convert your Floyd path to a native path first.
 
+- Windows is "\"
+- Unix is "/"
+- Mac OS 9 is ":"
+
+```
+	string to_native_path(world_t w, absolute_path_t path)
+```
+```
+	absolute_path_t from_native_path(world_t w, string path)
+```
 
 
 
@@ -755,21 +761,38 @@ absolute_path_t get_native_path(string path)
 
 FAQ:
 
-- ??? How can server code handle many clients in parallell? Use one green thread per request?
-- How can a client have many pending requests it waits for. It queues them all and calls select() on inbox.
+- Q: How can I write server code that handles many concurrent clients?
+- A: A server always supports many clients. Each reqeust goes it its inbox and can be handled one at a time.
+
+- Q: How can a server work on several requests *concurrently* (many of them are usually IO-bound anyhow).
+- A: Each process has a team-setting you can : have settings on process that tells how many instances of it runs in parallell. A process team. They each have their own state and inbox and runs in their own green-thread. Messages are multiplexed between the team members. ???
+
+- Q: How can a client have many pending requests it is waits for.
+- A: It queues them all and gets replies via its inbox.
 
 
-Network calls are normally IO-bound - it takes a long time from sending a message to getting the result -- often billions and billions of CPU clock cycles. When performing a call that is IO-bound you have two choices to handle this fact:
+Network calls are normally IO-bound - it takes a long time from sending a message to getting the result -- often billions and billions of you CPU' clock cycles.
 
-1. Make a synchronous call -- your code will stop until the IO operation is completed. Other processes and tasks can still run.
-	- the message has been sent via sockets
-	- destination devices has processed or failed to handle the message
-	- the destination has transmitted a reply back.
+1. Your code make a request message.
+2. the request is sent via the operating system's sockets and TCP/IP stack through the network card or WIFI card.
+3. The request is routed between nodes on the internet, each with their own hardware and software delays.
+4. The destination devices receives the request via its network hardware.
+5. The destination OS passes the request to a waiting socket, waking up its thread.
+6. The destination thread does work and its own communication and database accesses etc to solve the request.
+7. The destination thread calls the OS to send back a reply message.
+8. The destination OS writes the reply to its hardware.
+9. The reply is routed between nodes on the internet, each with their own hardware and software delays.
+10. The reply appears on your hardware.
+11. The OS wakes up your OS thread that waits on the socket.
+12. Your OS thread wakes up and reads the bytes of the message.
 
+If the message roundtrip above takes 10 ms, that is equivalent to 20.000.000 clock cycles for a 2 GHz CPU.
 
-2. Make an async call and privide a tag. Floyd will queue up your request then return immediately so your code can continue executing.
+Floyd has two ways to deal IO-bound operations like this:
 
-These functions are called "queue()". At a future time when there is a reply, your green-process will receive a special message in its INBOX.
+1. Make a synchronous call -- your code will stop until the IO operation is completed and you receive the reply message. Other processes and tasks can still run on your CPU.
+
+2. Queue an asynchronous request. Floyd will record your request then return immediately so your code can continue executing. At some point in the future the reply comes back and your green-process will receive the reply message in its INBOX.
 
 
 ```
@@ -796,11 +819,11 @@ struct tcp_server_settings_t {
 	inbox_tag_t inbox_tag;
 };
 
-tcp_server_t open_tcp_server(const tcp_server_settings_t& s);
+tcp_server_t open_tcp_server(world_t w, const tcp_server_settings_t& s);
 tcp_server_settings_t get_settings(const tcp_server_t& s);
-void close_tcp_server(const tcp_server_t& s);
+void close_tcp_server(world_t w, const tcp_server_t& s);
 
-void reply(const tcp_request_t& request, const tcp_reply_t& reply);
+void reply(world_t w, const tcp_request_t& request, const tcp_reply_t& reply);
 
 
 
@@ -808,15 +831,15 @@ struct tcp_client_t {
 	int id;
 };
 
-tcp_client_t open_tcp_client_socket(const url_t& url, int port);
-void close_tcp_client_socket(const tcp_client_t& s);
+tcp_client_t open_tcp_client_socket(world_t w, const url_t& url, int port);
+void close_tcp_client_socket(world_t w, const tcp_client_t& s);
 
 //	Blocks until IO is complete.
-tcp_reply_t send(const tcp_client_t& s, const binary_t& payload);
+tcp_reply_t send(world_t w, const tcp_client_t& s, const binary_t& payload);
 
 //	Returns at once. When later a reply is received, you will get a message
 //	with a tcp_reply_t in your green-process INBOX.
-void queue(const tcp_client_t& s, const binary_t& payload, const inbox_tag_t& inbox_tag);
+void queue(world_t w, const tcp_client_t& s, const binary_t& payload, const inbox_tag_t& inbox_tag);
 
 ```
 
@@ -849,9 +872,9 @@ struct rest_reply_t {
 };
 
 //	Blocks until IO is complete.
-rest_reply_t send(const rest_request_t& request);
+rest_reply_t send(world_t w, const rest_request_t& request);
 
 //	Returns at once. When later a reply is received, you will get a message with a rest_reply_t in your green-process INBOX.
-void queue_rest(const rest_request_t& request, const inbox_tag_t& inbox_tag);
+void queue_rest(world_t w, const rest_request_t& request, const inbox_tag_t& inbox_tag);
 
 ```
