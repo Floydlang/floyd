@@ -63,7 +63,7 @@ Internet URL.
 
 ## key_t
 
-Efficent keying using 64-bit hash instead of a string. Hash can often be computed from string-key at compile time.
+Efficent keying using 64-bit hash instead of a string. Hash can often be computed from string key at compile time.
 
 	struct key_t {
 		quick_hash_t hash
@@ -81,7 +81,7 @@ Stores a UDT.
 
 ## sha1_t
 
-128bit SHA1 hash number.
+128-bit SHA1 hash number.
 
 	struct sha1_t {
 		string ascii40
@@ -93,7 +93,7 @@ Stores a UDT.
 File path, relative to some other path.
 
 	struct relative_path_t {
-		string fRelativePath
+		string relative_path
 	}
 
 
@@ -102,7 +102,7 @@ File path, relative to some other path.
 Absolute file path, from root of file system. Can specify the root, a directory or a file.
 
 	struct absolute_path_t {
-		string fAbsolutePath
+		string absolute_path
 	}
 
 
@@ -123,7 +123,7 @@ Specifies a position in a text file.
 		absolute_path_t source_file
 		int line_number
 		int pos_in_line
-	};
+	}
 
 
 ## seq_t
@@ -212,7 +212,7 @@ T update(T v0, DT changes)
 # FUTURE -- BUILT-IN STRING FUNCTIONS
 
 ```
-std::vector<string> split_on_chars(seq_t s, string match_chars)
+[string] split_on_chars(seq_t s, string match_chars)
 /*
 	Concatunates vector of strings. Adds div between every pair of strings. There is never a div at end.
 */
@@ -249,14 +249,14 @@ This is a pure function, it expected to give the same result every time.
 
 ## text\_from\_ascii()
 
-Makes a text from a normal string. Only 7bit ASCII is supported.
+Makes a text from a normal string. Only 7-bit ASCII is supported.
 
 	text_t text_from_ascii(string s)
 
 
 ## populate\_text\_variables()
 
-Let's you safely assemble a Unicode text from a template that has insert-tags where to insert variable texts, in a way that is localizable. Localizing the template_text can change order of variables.
+Let's you safely assemble a Unicode text from a template that has insert-tags where to insert variable texts, in a way that is localizable. When localizing the template_text you can change the order of variables.
 
 	text_t populate_text_variables(text_t template_text, [string: text_t])
 
@@ -305,12 +305,12 @@ Converts Unicode in text_t value to an UTF8 string.
 
 ## is\_valid\_url()
 
-	bool is_valid_url(const std::string& s);
+	bool is_valid_url(string s)
 
 
 ## make\_url()
 
-	url_t make_url(const std::string& s);
+	url_t make_url(string s)
 
 
 ## url\_parts\_t {}
@@ -318,11 +318,11 @@ Converts Unicode in text_t value to an UTF8 string.
 This struct contains an URL separate to its components.
 
 	struct url_parts_t {
-		std::string protocol;
-		std::string domain;
-		std::string path;
-		[string:string] query_strings;
-	};
+		string protocol
+		string domain
+		string path
+		[string:string] query_strings
+	}
 
 Example 1:
 
@@ -335,14 +335,14 @@ Example 1:
 
 Splits a URL into its parts. This makes it easy to get to specific query strings or change a parts and reassemble the URL.
 
-	url_parts_t split_url(const url_t& url);
+	url_parts_t split_url(url_t url)
 
 
 ## make_urls()
 
 Makes a url_t from parts.
 
-	url_t make_urls(const url_parts_t& parts);
+	url_t make_urls(url_parts_t parts)
 
 
 ## escape\_for\_url()
@@ -357,14 +357,14 @@ Prepares a string to be stored inside an URL. This requries some characters to b
 
 etc.
 
-	std::string escape_for_url(const std::string& s);
+	string escape_for_url(string s)
 
 
 ## unescape\_from\_url()
 
 This is to opposite of escape_for_url() - it takes a string from a URL and turns %20 into a space character and so on.
 
-	std::string unescape_string_from_url(const std::string& s);
+	string unescape_string_from_url(string s)
 
 
 
@@ -400,8 +400,8 @@ struct random_t {
 }
 
 random_t make_random(int seed)
-int get_random(random_t& r)
-random_t next(random_t& r)
+int get_random(random_t r)
+random_t next(random_t r)
 ```
 
 
@@ -522,9 +522,9 @@ struct fs_environment_t {
 
 	absolute_path_t preference_dir
 	absolute_path_t desktop_dir
-};
+}
 
-fs_environment_t get_environment();
+fs_environment_t get_environment()
 
 absolute_path_t get_parent_directory(absolute_path_t path)
 
@@ -641,14 +641,14 @@ Floyd uses unix-style paths in all its APIs. It will convert these to native pat
 
 ## load\_binary\_file()
 
-	binary_t load_file(world_t w, absolute_path_t path)
+	binary_t load_file(world w, absolute_path_t path)
 
 
 ## save\_binary\_file()
 
 Will _create_ any needed directories in the save-path.
 
-	void save_file(world_t w, absolute_path_t path, binary_t data)
+	void save_file(world w, absolute_path_t path, binary_t data)
 
 
 ## read\_unicode\_file()
@@ -659,42 +659,42 @@ file_encoding:
 
 -	0 = utf8
 -	1 = Windows latin 1
--	2 = ASCII 7bit
+-	2 = ASCII 7-bit
 -	3 = UTF16 BIG ENDIAN
 -	4 = UTF16 LITTLE ENDIAN
 -	5 = UTF32 BIG ENDIAN
 -	6 = UTF32 LITTLE ENDIAN
 
 ```
-	text_t read_unicode_file(world_t w, absolute_path_t path, int file_encoding)
+	text_t read_unicode_file(world w, absolute_path_t path, int file_encoding)
 ```
 
 ## write\_unicode\_file()
 
 Writes text file in unicode format.
 
-	void write_unicode_file(world_t w, absolute_path_t path, text_t t, int file_encoding, bool write_bom)
+	void write_unicode_file(world w, absolute_path_t path, text_t t, int file_encoding, bool write_bom)
 
 
 ## does\_entry\_exist()
 
-	bool does_entry_exist(world_t w, absolute_path_t path)
+	bool does_entry_exist(world w, absolute_path_t path)
 
 
 ## create\_directories\_deep()
 
-	void create_directories_deep(world_t w, absolute_path_t path)
+	void create_directories_deep(world w, absolute_path_t path)
 
 
 ## delete\_fs\_entry\_deep()
 
 Deletes a file or directory. If the entry has children those are deleted too = delete folder also deletes is contents.
 
-	void delete_fs_entry_deep(world_t w, absolute_path_t path)
+	void delete_fs_entry_deep(world w, absolute_path_t path)
 
 ## rename\_entry()
 
-	void rename_entry(world_t w, absolute_path_t path, string n)
+	void rename_entry(world w, absolute_path_t path, string n)
 
 
 ## get\_entry\_info()
@@ -713,7 +713,7 @@ Deletes a file or directory. If the entry has children those are deleted too = d
 		string name
 	}
 	
-	directory_entry_info_t get_entry_info(world_t w, absolute_path_t path)
+	directory_entry_info_t get_entry_info(world w, absolute_path_t path)
 
 
 ## get\_directory\_entries() and get\_directory\_entries\_deep()
@@ -729,11 +729,11 @@ Returns a vector of all the files and directories found at the path.
 		EType fType
 	}
 	
-	std::vector<directory_entry_t> get_directory_entries(world_t w, absolute_path_t path)
+	[directory_entry_t] get_directory_entries(world w, absolute_path_t path)
 
 get_directory_entries_deep() works the same way, but will also traverse each found directory. Contents of sub-directories will be also be prefixed by the sub-directory names. All path names are relative to the input directory - not absolute to file system.
 
-	std::vector<directory_entry_t> get_directory_entries_deep(world_t w, absolute_path_t path)
+	[directory_entry_t] get_directory_entries_deep(world w, absolute_path_t path)
 
 
 ## to\_native\_path() and from\_native\_path()
@@ -747,10 +747,10 @@ Native-path is the current operating system's idea of how to store a path in a s
 - Mac OS 9 is ":"
 
 ```
-	string to_native_path(world_t w, absolute_path_t path)
+	string to_native_path(world w, absolute_path_t path)
 ```
 ```
-	absolute_path_t from_native_path(world_t w, string path)
+	absolute_path_t from_native_path(world w, string path)
 ```
 
 
@@ -795,86 +795,164 @@ Floyd has two ways to deal IO-bound operations like this:
 2. Queue an asynchronous request. Floyd will record your request then return immediately so your code can continue executing. At some point in the future the reply comes back and your green-process will receive the reply message in its INBOX.
 
 
+## server: tcp\_server\_t {}
+
+Represents an active TCP server instance. It can receive request messages from the outside world.
+
+	struct tcp_server_t {
+		int id
+	}
+
+
+## tcp_request\_t {}
+
+Describes a request messages. It's always a client that takes the initiative to create a request from a server.
+
+	struct tcp_request_t {
+		tcp_server_t server
+		binary_t payload
+	}
+
+
+
+## tcp\_reply\_t {}
+
+Describes a reply message. This is what a server gives back to a client, in respons to a request message.
+
+	struct tcp_reply_t {
+		binary_t payload
+	}
+
+
+
+## server: tcp\_server\_settings\_t
+
+The configuration of a TCP server - which URL and port it listens to, which protocols to use.
+
+	struct tcp_server_settings_t {
+		url_t url
+		int port
+	
+		//	domain: 1 = AF_INET (IPv4 protocol), 2 = AF_INET6 (IPv6 protocol).
+		//	Requests arrive in INBOX as tcp_request_t.
+		int domain
+		inbox_tag_t inbox_tag
+	}
+
+## server: open\_tcp\_server()
+
+Opens and creates an active TCP server in your program. You can create many if you want to.
+
+	tcp_server_t open_tcp_server(world w, tcp_server_settings_t s)
+
+
+## server: get\_settings()
+
+Returns the settings of the TCP server. Use this in your server code to differe between several TCP server instances.
+
+	tcp_server_settings_t get_settings(tcp_server_t s)
+
+
+## server: close\_tcp\_server()
+
+Close a server that you have opened. All servers must be closed. Each server can only be closed exactly once.
+
+	void close_tcp_server(world w, tcp_server_t s)
+
+## server: reply()
+
+This is how your server code can send back a reply message, in response to a client's request.
+
+	void reply(world w, tcp_request_t request, tcp_reply_t reply)
+
+
+## client: tcp\_client\_t {}
+
+Represents the client-end of a TCP connection. If you have a tcp_client_t, then you also have an up and running TCP session to a server.
+
+	struct tcp_client_t {
+		int id
+	}
+
+
+## client: open\_tcp\_client()
+
+Open a TCP client connected to a server, as specified using the url. If this function succeedes, then you have an up and running connection to the server.
+
+	tcp_client_t open_tcp_client(world w, url_t url, int port)
+
+## client: close\_tcp\_client()
+
+Close a TCP client, as previously opened using open_tcp_client_socket(). All clients must be closed exactly once.
+
+	void close_tcp_client(world w, tcp_client_t s)
+
+## client: send()
+
+Send a request to the server and wait until we get its reply. This blocks you running thread of execution, but other code can use the CPU meanwhile.
+
+	tcp_reply_t send(world w, tcp_client_t s, binary_t payload)
+
+## client: queue()
+
+Queues a request message to be sent to the server and then the function returns immediately, without waiting for the message to even be sent.
+
+When later a reply is received, your green-process will get a message with a tcp_reply_t in its inbox. This allows your code to continue doing other stuff while the request travels around the world and is handled y the server etc. You can even queue more requests.
+
 ```
-struct tcp_server_t {
-	int id;
-};
-
-struct tcp_request_t {
-	tcp_server_t server;
-	binary_t payload;
-};
-
-struct tcp_reply_t {
-	binary_t payload;
-};
-
-struct tcp_server_settings_t {
-	url_t url;
-	int port;
-
-	//	domain: 1 = AF_INET (IPv4 protocol), 2 = AF_INET6 (IPv6 protocol).
-	//	Requests arrive in INBOX as tcp_request_t.
-	int domain;
-	inbox_tag_t inbox_tag;
-};
-
-tcp_server_t open_tcp_server(world_t w, const tcp_server_settings_t& s);
-tcp_server_settings_t get_settings(const tcp_server_t& s);
-void close_tcp_server(world_t w, const tcp_server_t& s);
-
-void reply(world_t w, const tcp_request_t& request, const tcp_reply_t& reply);
-
-
-
-struct tcp_client_t {
-	int id;
-};
-
-tcp_client_t open_tcp_client_socket(world_t w, const url_t& url, int port);
-void close_tcp_client_socket(world_t w, const tcp_client_t& s);
-
-//	Blocks until IO is complete.
-tcp_reply_t send(world_t w, const tcp_client_t& s, const binary_t& payload);
-
-//	Returns at once. When later a reply is received, you will get a message
-//	with a tcp_reply_t in your green-process INBOX.
-void queue(world_t w, const tcp_client_t& s, const binary_t& payload, const inbox_tag_t& inbox_tag);
-
+void queue(world w, tcp_client_t s, binary_t payload, inbox_tag_t inbox_tag)
 ```
-
 
 
 
 
 # FUTURE -- WORLD REST COMMUNICATION
 
+It's very common to use REST APIs. This is high level commands built on top of TCP/IP.
+
 REST uses HTTP commands to communicate between client and server and these is no open session -- each command is its own session.
+
+
+## rest\_request\_t {}
+
+Describes a complete REST request as a value, including any parameters.
 
 ```
 struct rest_request_t {
 	//	"GET", "POST", "PUT"
-	std::string operation_type;
-
-	std::map<std::string, std::string> headers;
-	std::map<std::string, std::string> params;
-	binary_t raw_data;
-
+	string operation_type
+	
+	[string: string]> headers
+	[string: string] params
+	binary_t raw_data
+	
 	//	 If not "", then will be inserted in HTTP request header as XYZ.
-	std::string optional_session_token;
-};
+	string optional_session_token
+}
+```
 
-struct rest_reply_t {
-	rest_request_t request;
-	int html_status_code;
-	std::string response;
-	std::string internal_exception;
-};
+## rest\_reply\_t {}
 
-//	Blocks until IO is complete.
-rest_reply_t send(world_t w, const rest_request_t& request);
-
-//	Returns at once. When later a reply is received, you will get a message with a rest_reply_t in your green-process INBOX.
-void queue_rest(world_t w, const rest_request_t& request, const inbox_tag_t& inbox_tag);
+This is what you get back from the server.
 
 ```
+struct rest_reply_t {
+	rest_request_t request
+	int html_status_code
+	string response
+	string internal_exception
+}
+```
+
+## send()
+
+Sends a REST request to a server and block until IO is complete.
+
+	rest_reply_t send(world w, rest_request_t request)
+
+
+## queue\_rest()
+
+Queues a REST request a returns immediately. Your code can continue doing other things. When later a reply is received from the server, you will get a message with a rest_reply_t in your green-process inbox.
+
+	void queue_rest(world w, rest_request_t request, inbox_tag_t inbox_tag)
