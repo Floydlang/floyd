@@ -25,14 +25,14 @@ Working interactive software needs both red and blue code. Floyd uses a red - bl
 
 1. **Red pill**: the Floyd runtime sits at the bottom of the sandwich and upholds the blue matrix simulation above it.
 2. **Blue pill**: ontop of the runtime is the blissful matrix illusion. Make sure most of your code goes here. It's a fantasic place to write solid programs.
-3. **Red pill**: Finally, on top of it all sits the Floyd containers and proceesses - introducing reality: time, mutation, communication with an every changing outside world. Keep this code as small as possible. It also reaches downward and adjusts the matrix and the runtime to improve performance.
+3. **Red pill**: Finally, on top of it all sits the Floyd containers and processes - introducing reality: time, mutation, communication with an every changing outside world. Keep this code as small as possible. It also reaches downward and adjusts the matrix and the runtime to improve performance.
 
 
 # SO EXACTLY WHAT IS FLOYD?
 
-Floyd consists of a small and elegant toolkit of features built directly into the language that all go together to support you to make great products. Every feature has been carefully picked, polished and adopted as a first class feature in the language. The goal is to have *one* simple way to do each common thing.
+Floyd consists of a small and elegant toolkit of features built directly into the language that all go together to support you to make great products. Every feature has been carefully picked, polished and adopted as a first class feature in the language. The goal is to have one simple way to do each common thing.
 
-**What's *not* included and what you *can't* do is one of Floyds best features**
+**What's *not* included and what you *can't* do is a core of Floyd's design**
 
 ##### PRIMARY GOALS
 
@@ -46,10 +46,10 @@ Floyd consists of a small and elegant toolkit of features built directly into th
 # UNIQUE FEATURES
 
 1. Floyd splits your system into three areas: a) your program's logic, b) your program's processing and c) mapping its execution to the hardware.
-2. Floyd as a clean built-in structure skeleton for *complete* software systems including processes, people, concurrency and communication between processes
-3. Visual and interactive tools
-4. Carefully distilled set of syntactical features to move focus to the *system* rather than the inside of functions
-5. Feels like simple imperative programming but with the best bits of functional programming sneaked in discretely
+2. Floyd has a clean and minimal skeleton structure for *complete* software systems - including processes, people, concurrency and how they all interact.
+3. Carefully distilled set of syntactical features to move focus to the *system* rather than the inside of functions
+4. Feels like simple imperative programming but with the best bits of functional programming sneaked in discretely
+5. Visual and interactive tools
 
 
 Floyd has three big parts:

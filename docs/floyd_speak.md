@@ -55,12 +55,12 @@ These are features built into every type: integer, string, struct, dictionary, e
 |__a >= b__ 		| a larger or equal to b
 
 
-# ABOUT SOURCE CODE FILES
+# SOURCE CODE FILES
 
 Floyd Speak files are always utf-8 files with no BOM. Their extension is ".floyd".
 
 
-# ABOUT VALUES, VARIABLES AND CONSTANTS
+# VALUES, VARIABLES AND CONSTANTS
 
 All "variables" aka values are by immutable. Local variables can be mutable if you specify it.
 
@@ -105,7 +105,7 @@ You can use "mutable" to make a local variable changeable.
 	}
 ```
 
-# ABOUT GLOBAL SCOPE
+# GLOBAL SCOPE
 
 Here you normally define functions, structs and global constants. The global scope can have almost any statement and they execute at program start, before main() is called. You don't even need a main function if you don't want it.
 
@@ -130,7 +130,7 @@ This keyword is part of Floyd Systems -- a way to define how all the containers 
 Read more about this in the Floyd Systems documentation
 
 
-# ABOUT FUNCTIONS
+# FUNCTIONS
 
 Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants, never read or modify anything: not global variables, not by calling another, impure function. It's not possible to call a function with a set of arguments and later call it with the same argument and get a different result. A function like get_time() is impure.
 
@@ -182,7 +182,7 @@ This is a function that returns a function value:
 All arguments to a function are read-only -- there are no output arguments.
 
 
-# ABOUT EXPRESSIONS
+# EXPRESSIONS
 
 Reference: http://www.tutorialspoint.com/cprogramming/c_operators.htm
 Comparisons are true-deep: they consider all members and also member structs and collections.
@@ -234,7 +234,7 @@ When the condition is true, this entire expression has the value of a. Else it h
 ```
 
 
-# ABOUT IF - THEN - ELSE -- STATEMENTS
+# IF - THEN - ELSE -- STATEMENTS
 
 This is a normal if-elseif-else feature, like in most languages. Brackets are required always.
 
@@ -273,12 +273,12 @@ In each body you can write any statements. There is no "break" keyword.
 
 
 
-# ABOUT MATCH STATEMENT
+# MATCH STATEMENT
 
 TODO POC
 
 
-# ABOUT FOR LOOPS
+# FOR LOOPS
 
 For-loops are used to execute a body of statements many times. The number of times is calculated while the program runs. The entire condition expression is evaluated *before* the first time the body is called. This means the program already decided the number of loops to run before running the first loop iteration.
 
@@ -324,7 +324,7 @@ The loop is expanded before the first time the body is called. There is no way t
 
 
 
-# ABOUT WHILE LOOPS
+# WHILE LOOPS
 
 ```
 	while (my_array[a] != 3){
