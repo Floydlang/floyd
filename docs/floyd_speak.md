@@ -1895,7 +1895,6 @@ absolute_path_t get_native_path(string path)
 
 # FUTURE -- WORLD TCP COMMUNICATION
 
-
 FAQ:
 
 - ??? How can server code handle many clients in parallell? Use one green thread per request?
@@ -1913,7 +1912,6 @@ Network calls are normally IO-bound - it takes a long time from sending a messag
 2. Make an async call and privide a tag. Floyd will queue up your request then return immediately so your code can continue executing.
 
 These functions are called "queue()". At a future time when there is a reply, your green-process will receive a special message in its INBOX.
-
 
 
 ```
@@ -2001,6 +1999,7 @@ void queue_rest(const rest_request_t& request, const inbox_tag_t& inbox_tag);
 
 
 # FLOYD SYNTAX
+
 Here is the DAG for the complete syntax of Floyd.
 
 	IDENTIFIER_CHARS: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
