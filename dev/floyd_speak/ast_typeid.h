@@ -18,9 +18,11 @@
 
 	# typeid_t
 
-	Specifies an exact Floyd type. Both for base types like "int" and "string" and composit types like "struct { [float] p; string s }
+	Specifies an exact Floyd type. Both for base types like "int" and "string" and composite types like "struct { [float] p; string s }
 	It can hold *any Floyd type*. It can also hold unresolved type identifiers and a few types internal to compiler.
+
 	typeid_t can be convert to/from JSON and is written in source code according to Floyd source syntax, see table below.
+
 	Immutable value object.
 	The values are normalized and can be compared.
 	Composite types can form trees of types,
@@ -37,7 +39,7 @@
 	double							k_double								"double"
 	string							k_string								"string"
 	json_value						k_json_value							"json_value"
-	"typeid"						k_typeid								[target type id]
+	"typeid"						k_typeid								"typeid"
 	struct red { int x;float y}		k_struct								["struct", [{"type": "in", "name": "x"}, {"type": "float", "name": "y"}]]
 	protocol reader {
 		[int] read(); int get_size()
