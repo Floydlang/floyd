@@ -98,7 +98,6 @@ namespace floyd {
 
 	std::string to_compact_string(const struct_definition_t& v);
 
-	ast_json_t struct_definition_to_ast_json(const struct_definition_t& v);
 
 	//	Returns -1 if not found.
 	int find_struct_member_index(const struct_definition_t& def, const std::string& name);

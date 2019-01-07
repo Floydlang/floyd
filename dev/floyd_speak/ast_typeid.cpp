@@ -12,6 +12,7 @@
 #include "floyd_basics.h"
 #include "json_parser.h"
 #include "utils.h"
+#include "ast_typeid_helpers.h"
 
 using std::string;
 using std::vector;
@@ -699,14 +700,6 @@ std::string to_compact_string(const struct_definition_t& v){
 	}
 	s = s + "}";
 	return s;
-}
-
-ast_json_t struct_definition_to_ast_json(const struct_definition_t& v){
-	QUARK_ASSERT(v.check_invariant());
-
-	return ast_json_t{json_t::make_array({
-		members_to_json(v._members)
-	})};
 }
 
 

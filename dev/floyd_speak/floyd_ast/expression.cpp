@@ -9,6 +9,7 @@
 #include "expression.h"
 
 #include "statement.h"
+#include "ast_typeid_helpers.h"
 namespace floyd {
 
 using namespace std;
