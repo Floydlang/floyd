@@ -43,6 +43,16 @@ A universally unique identifier (UUID) is a 128-bit number used to identify info
 	}
 
 
+## ip_address_t
+
+Internet IP adress in using IPv6 128-bit number.
+
+	struct ip_address_t {
+		int high64
+		int low_64_bits
+´	}
+
+
 ## url_t
 
 Internet URL.
@@ -50,6 +60,25 @@ Internet URL.
 	struct url_t {
 		string absolute_url
 	}
+
+
+## url\_parts\_t {}
+
+This struct contains an URL separate to its components.
+
+	struct url_parts_t {
+		string protocol
+		string domain
+		string path
+		[string:string] query_strings
+		int port
+	}
+
+Example 1:
+
+	url_parts_t("http", "example.com", "path/to/page", {"name": "ferret", "color": "purple"})
+
+	Output: "http://example.com/path/to/page?name=ferret&color=purple"
 
 
 ## quick\_hash\_t
@@ -311,24 +340,6 @@ Converts Unicode in text_t value to an UTF8 string.
 ## make\_url()
 
 	url_t make_url(string s)
-
-
-## url\_parts\_t {}
-
-This struct contains an URL separate to its components.
-
-	struct url_parts_t {
-		string protocol
-		string domain
-		string path
-		[string:string] query_strings
-	}
-
-Example 1:
-
-	url_parts_t("http", "example.com", "path/to/page", {"name": "ferret", "color": "purple"})
-
-	Output: "http://example.com/path/to/page?name=ferret&color=purple"
 
 
 ## split_url()
@@ -759,6 +770,9 @@ Native-path is the current operating system's idea of how to store a path in a s
 
 # FUTURE -- WORLD TCP COMMUNICATION
 
+IDEA: Wrap CURL. https://en.wikipedia.org/wiki/CURL
+
+
 FAQ:
 
 - Q: How can I write server code that handles many concurrent clients?
@@ -904,16 +918,20 @@ void queue(world w, tcp_client_t s, binary_t payload, inbox_tag_t inbox_tag)
 ```
 
 
+## resolve_url()
+
+Uses DNS to get the IP-address for a URL.
+
+ip_address_t resolve(world w, url_t url)
+void queue_resolve(world w, url_t url)
 
 
 # FUTURE -- WORLD REST COMMUNICATION
 
-It's very common to use REST APIs. This is high level commands built on top of TCP/IP.
-
 REST uses HTTP commands to communicate between client and server and these is no open session -- each command is its own session.
 
 
-## rest\_request\_t {}
+## client: rest\_request\_t {}
 
 Describes a complete REST request as a value, including any parameters.
 
@@ -922,7 +940,7 @@ struct rest_request_t {
 	//	"GET", "POST", "PUT"
 	string operation_type
 	
-	[string: string]> headers
+	[string: string] headers
 	[string: string] params
 	binary_t raw_data
 	
@@ -931,7 +949,7 @@ struct rest_request_t {
 }
 ```
 
-## rest\_reply\_t {}
+## client: rest\_reply\_t {}
 
 This is what you get back from the server.
 
@@ -944,15 +962,64 @@ struct rest_reply_t {
 }
 ```
 
-## send()
+## client: send()
 
 Sends a REST request to a server and block until IO is complete.
 
 	rest_reply_t send(world w, rest_request_t request)
 
 
-## queue\_rest()
+## client: queue\_rest()
 
 Queues a REST request a returns immediately. Your code can continue doing other things. When later a reply is received from the server, you will get a message with a rest_reply_t in your green-process inbox.
 
 	void queue_rest(world w, rest_request_t request, inbox_tag_t inbox_tag)
+
+
+
+## server: rest\_server\_t {}
+
+Represents an active REST server instance. It can receive request messages from the outside world.
+
+	struct rest_server_t {
+		int id
+	}
+
+
+## server: rest\_server\_settings\_t
+
+The configuration of a REST server - which URL and port it listens to.
+
+	struct rest_server_settings_t {
+		url_t url
+		inbox_tag_t inbox_tag
+	}
+
+
+## server: open\_rest\_server()
+
+Opens and creates an active REST server in your program. You can create many if you want to. It serves ONE domain, like "https://www.mysite.com". You can get requests on any of its subdomains.
+
+	rest_server_t open_rest_server(world w, rest_server_settings_t s)
+
+
+## server: get\_settings()
+
+Returns the settings of the REST server. Use this in your server code to differ between several REST server instances.
+
+	rest_server_settings_t get_settings(rest_server_t s)
+
+
+## server: close\_rest\_server()
+
+Close a server that you have opened. All servers must be closed. Each server can only be closed exactly once.
+
+	void close_rest_server(world w, rest_server_t s)
+
+
+## server: reply()
+
+This is how your server code can send back a reply message, in response to a client's request.
+
+	void reply(world w, rest_request_t request, rest_reply_t reply)
+
