@@ -307,16 +307,19 @@ const char tag_resolved_type_char = '^';
 
 
 
-	QUARK_UNIT_TESTQ("typeid_t", "make_struct2()"){
-		QUARK_UT_VERIFY(typeid_t::make_struct2({}).get_base_type() == base_type::k_struct);
+	QUARK_UNIT_TESTQ("typeid_t", "make_struct()"){
+		auto struct_def = std::make_shared<struct_definition_t>(
+			std::vector<member_t>{}
+		);
+		QUARK_UT_VERIFY(typeid_t::make_struct(struct_def).get_base_type() == base_type::k_struct);
 	}
-	QUARK_UNIT_TESTQ("typeid_t", "make_struct2()"){
-		QUARK_UT_VERIFY(typeid_t::make_struct2({}).get_base_type() == base_type::k_struct);
+	QUARK_UNIT_TESTQ("typeid_t", "is_json_value()"){
+		auto struct_def = std::make_shared<struct_definition_t>(
+			std::vector<member_t>{}
+		);
+		QUARK_UT_VERIFY(typeid_t::make_struct(struct_def).is_struct() == true);
 	}
-	QUARK_UNIT_TESTQ("typeid_t", "is_struct()"){
-		QUARK_UT_VERIFY(typeid_t::make_struct2({}).is_struct() == true);
-	}
-	QUARK_UNIT_TESTQ("typeid_t", "is_struct()"){
+	QUARK_UNIT_TESTQ("typeid_t", "is_json_value()"){
 		QUARK_UT_VERIFY(typeid_t::make_bool().is_struct() == false);
 	}
 
@@ -512,7 +515,9 @@ const char tag_resolved_type_char = '^';
 				const auto member_array = struct_def_array[0].get_array();
 
 				const vector<member_t> struct_members = members_from_json(member_array);
-				return typeid_t::make_struct2(struct_members);
+				return typeid_t::make_struct(
+					std::make_shared<struct_definition_t>(struct_definition_t(struct_members))
+				);
 			}
 			if(s == keyword_t::k_protocol){
 				const auto protocol_def_array = a[1].get_array();
@@ -560,7 +565,9 @@ const char tag_resolved_type_char = '^';
 
 
 	const vector<typeid_str_test_t> make_typeid_str_tests(){
-		const auto s1 = typeid_t::make_struct2({});
+		const auto s1 = typeid_t::make_struct(
+			std::make_shared<struct_definition_t>(struct_definition_t({}))
+		);
 
 		const auto tests = vector<typeid_str_test_t>{
 			{ typeid_t::make_undefined(), quote(keyword_t::k_internal_undefined), keyword_t::k_internal_undefined },
@@ -580,11 +587,13 @@ const char tag_resolved_type_char = '^';
 			//	Struct
 			{ s1, R"(["struct", [[]]])", "struct {}" },
 			{
-				typeid_t::make_struct2(
-					vector<member_t>{
-						member_t(typeid_t::make_int(), "a"),
-						member_t(typeid_t::make_double(), "b")
-					}
+				typeid_t::make_struct(
+					std::make_shared<struct_definition_t>(struct_definition_t(
+						vector<member_t>{
+							member_t(typeid_t::make_int(), "a"),
+							member_t(typeid_t::make_double(), "b")
+						}
+					))
 				),
 				R"(["struct", [[{ "type": "int", "name": "a"}, {"type": "double", "name": "b"}]]])",
 				"struct {int a;double b;}"

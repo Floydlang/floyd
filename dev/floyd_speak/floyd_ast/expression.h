@@ -197,7 +197,7 @@ namespace floyd {
 			return expression_t(
 				expression_type::k_define_struct,
 				{},
-				std::make_shared<typeid_t>(typeid_t::make_struct1(def)),
+				std::make_shared<typeid_t>(typeid_t::make_struct(def)),
 				{},
 				def,
 				{},
