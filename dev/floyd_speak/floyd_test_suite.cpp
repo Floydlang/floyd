@@ -622,7 +622,7 @@ QUARK_UNIT_TEST("", "pixel_t()", "", ""){
 
 	test__run_init__check_result(
 		"struct pixel_t { int red int green int blue } result = pixel_t(1,2,3)",
-		value_t::make_struct_value(typeid_t::make_struct(pixel_t__def), vector<value_t>{value_t::make_int(1), value_t::make_int(2), value_t::make_int(3)})
+		value_t::make_struct_value(typeid_t::make_struct1(pixel_t__def), vector<value_t>{value_t::make_int(1), value_t::make_int(2), value_t::make_int(3)})
 	);
 }
 
@@ -2884,7 +2884,7 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
 		struct point_t { double x double y }
 		let result = unflatten_from_json(flatten_to_json(point_t(1.0, 3.0)), point_t)
 	)", {});
-	ut_compare_values(result, value_t::make_struct_value(typeid_t::make_struct(point_t_def), vector<value_t>{ value_t::make_double(1), value_t::make_double(3)}));
+	ut_compare_values(result, value_t::make_struct_value(typeid_t::make_struct1(point_t_def), vector<value_t>{ value_t::make_double(1), value_t::make_double(3)}));
 }
 
 
