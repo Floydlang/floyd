@@ -11,45 +11,6 @@
 
 
 
-//////////////////////////////////////		URLS
-
-
-//	???
-std::string escape_string_to_url(const std::string& s){
-	return s;
-}
-
-//	???
-std::string unescape_string_from_url(const std::string& s){
-	return s;
-}
-
-//	???
-bool is_valid_url(const std::string& s){
-	return false;
-}
-
-//	???
-url_t make_url(const std::string& s){
-	assert(false);
-	return {};
-}
-
-
-//	???
-url_parts_t split_url(const url_t& url){
-	assert(false);
-	return {};
-}
-
-//	???
-url_t make_urls(const url_parts_t& parts){
-	assert(false);
-	return {};
-}
-
-
-
 
 #if 0
 	/*

@@ -72,7 +72,7 @@ const char tag_resolved_type_char = '^';
 			return "fun";
 		}
 		else if(t == base_type::k_internal_unresolved_type_identifier){
-			return "unknown-identifier";
+			return "**unknown-identifier**";
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -85,18 +85,25 @@ const char tag_resolved_type_char = '^';
 
 
 	QUARK_UNIT_TESTQ("base_type_to_string(base_type)", ""){
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_internal_undefined) == "**undef**");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_internal_dynamic) == "**dyn**");
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_void) == keyword_t::k_void);
+
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_bool) == keyword_t::k_bool);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_int) == keyword_t::k_int);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_double) == keyword_t::k_double);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_string) == keyword_t::k_string);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_json_value) == keyword_t::k_json_value);
+
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_typeid) == "typeid");
+
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_struct) == keyword_t::k_struct);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_protocol) == keyword_t::k_protocol);
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_vector) == "vector");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_dict) == "dict");
 		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_function) == "fun");
-		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_internal_unresolved_type_identifier) == "unknown-identifier");
+
+		QUARK_TEST_VERIFY(base_type_to_string(base_type::k_internal_unresolved_type_identifier) == "**unknown-identifier**");
 	}
 
 
@@ -204,17 +211,124 @@ const char tag_resolved_type_char = '^';
 		QUARK_ASSERT(check_invariant());
 	}
 
-	QUARK_UNIT_TESTQ("typeid_t", "null"){
-		QUARK_UT_VERIFY(typeid_t::make_undefined().is_undefined());
+	QUARK_UNIT_TESTQ("typeid_t", "make_undefined()"){
+		QUARK_UT_VERIFY(typeid_t::make_undefined().get_base_type() == base_type::k_internal_undefined);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_undefined()"){
+		QUARK_UT_VERIFY(typeid_t::make_undefined().is_undefined() == true);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_undefined()"){
+		QUARK_UT_VERIFY(typeid_t::make_bool().is_undefined() == false);
 	}
 
-	QUARK_UNIT_TESTQ("typeid_t", "string"){
+	QUARK_UNIT_TESTQ("typeid_t", "make_internal_dynamic()"){
+		QUARK_UT_VERIFY(typeid_t::make_internal_dynamic().get_base_type() == base_type::k_internal_dynamic);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_internal_dynamic()"){
+		QUARK_UT_VERIFY(typeid_t::make_internal_dynamic().is_internal_dynamic() == true);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_internal_dynamic()"){
+		QUARK_UT_VERIFY(typeid_t::make_bool().is_internal_dynamic() == false);
+	}
+
+	QUARK_UNIT_TESTQ("typeid_t", "make_void()"){
+		QUARK_UT_VERIFY(typeid_t::make_void().get_base_type() == base_type::k_void);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_void()"){
+		QUARK_UT_VERIFY(typeid_t::make_void().is_void() == true);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_void()"){
+		QUARK_UT_VERIFY(typeid_t::make_bool().is_void() == false);
+	}
+
+	QUARK_UNIT_TESTQ("typeid_t", "make_bool()"){
+		QUARK_UT_VERIFY(typeid_t::make_bool().get_base_type() == base_type::k_bool);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_bool()"){
+		QUARK_UT_VERIFY(typeid_t::make_bool().is_bool() == true);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_bool()"){
+		QUARK_UT_VERIFY(typeid_t::make_void().is_bool() == false);
+	}
+
+	QUARK_UNIT_TESTQ("typeid_t", "make_int()"){
+		QUARK_UT_VERIFY(typeid_t::make_int().get_base_type() == base_type::k_int);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_int()"){
+		QUARK_UT_VERIFY(typeid_t::make_int().is_int() == true);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_int()"){
+		QUARK_UT_VERIFY(typeid_t::make_bool().is_int() == false);
+	}
+
+
+	QUARK_UNIT_TESTQ("typeid_t", "make_double()"){
+		QUARK_UT_VERIFY(typeid_t::make_double().is_double());
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_double()"){
+		QUARK_UT_VERIFY(typeid_t::make_double().is_double() == true);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_double()"){
+		QUARK_UT_VERIFY(typeid_t::make_bool().is_double() == false);
+	}
+
+
+	QUARK_UNIT_TESTQ("typeid_t", "make_string()"){
 		QUARK_UT_VERIFY(typeid_t::make_string().get_base_type() == base_type::k_string);
 	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_string()"){
+		QUARK_UT_VERIFY(typeid_t::make_string().is_string() == true);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_string()"){
+		QUARK_UT_VERIFY(typeid_t::make_bool().is_string() == false);
+	}
 
-	QUARK_UNIT_TESTQ("typeid_t", "unknown_identifier"){
+
+	QUARK_UNIT_TESTQ("typeid_t", "make_json_value()"){
+		QUARK_UT_VERIFY(typeid_t::make_json_value().get_base_type() == base_type::k_json_value);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_json_value()"){
+		QUARK_UT_VERIFY(typeid_t::make_json_value().is_json_value() == true);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_json_value()"){
+		QUARK_UT_VERIFY(typeid_t::make_bool().is_json_value() == false);
+	}
+
+
+	QUARK_UNIT_TESTQ("typeid_t", "make_typeid()"){
+		QUARK_UT_VERIFY(typeid_t::make_typeid().get_base_type() == base_type::k_typeid);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_typeid()"){
+		QUARK_UT_VERIFY(typeid_t::make_typeid().is_typeid() == true);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_typeid()"){
+		QUARK_UT_VERIFY(typeid_t::make_bool().is_typeid() == false);
+	}
+
+
+
+	QUARK_UNIT_TESTQ("typeid_t", "make_struct()"){
+		auto struct_def = std::make_shared<struct_definition_t>(
+			std::vector<member_t>{}
+		);
+		QUARK_UT_VERIFY(typeid_t::make_struct(struct_def).get_base_type() == base_type::k_struct);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_json_value()"){
+		auto struct_def = std::make_shared<struct_definition_t>(
+			std::vector<member_t>{}
+		);
+		QUARK_UT_VERIFY(typeid_t::make_struct(struct_def).is_struct() == true);
+	}
+	QUARK_UNIT_TESTQ("typeid_t", "is_json_value()"){
+		QUARK_UT_VERIFY(typeid_t::make_bool().is_struct() == false);
+	}
+
+
+
+	QUARK_UNIT_TESTQ("typeid_t", "make_unresolved_type_identifier()"){
 		QUARK_UT_VERIFY(typeid_t::make_unresolved_type_identifier("hello").get_base_type() == base_type::k_internal_unresolved_type_identifier);
 	}
+
 
 
 	//////////////////////////////////////		FORMATS
@@ -428,7 +542,7 @@ const char tag_resolved_type_char = '^';
 				const vector<typeid_t> arg_types = typeids_from_json_array(arg_types_array);
 				return typeid_t::make_function(ret_type, arg_types);
 			}
-			else if(s == "unknown-identifier"){
+			else if(s == "**unknown-identifier**"){
 				QUARK_ASSERT(false);
 				throw std::exception();
 			}
@@ -671,7 +785,19 @@ const char tag_resolved_type_char = '^';
 	}
 
 
+/*	QUARK_UNIT_TEST("typeid_to_ast_json()", "", "", ""){
+		const auto f = make_typeid_str_tests();
+		for(int i = 0 ; i < f.size() ; i++){
+			QUARK_TRACE(std::to_string(i));
+			const auto start_typeid = f[i]._typeid;
+			const auto expected_ast_json = parse_json(seq_t(f[i]._ast_json)).first;
 
+			//	Test typeid_to_ast_json().
+			const auto result1 = typeid_to_ast_json(start_typeid, json_tags::k_tag_resolve_state);
+			ut_compare_jsons(result1._value, expected_ast_json);
+		}
+	}
+*/
 
 
 
