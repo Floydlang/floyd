@@ -202,12 +202,7 @@ typeid_t resolve_type_internal(const analyser_t& a, const typeid_t& type){
 
 	else if(basetype == base_type::k_struct){
 		const auto& struct_def = type.get_struct();
-		std::vector<member_t> members2;
-		for(const auto& e: struct_def._members){
-			members2.push_back(member_t(resolve_type(a, e._type), e._name));
-		}
-		const auto struct_def2 = struct_definition_t(members2);
-		return typeid_t::make_struct(std::make_shared<struct_definition_t>(struct_def2));
+		return typeid_t::make_struct2(struct_def._members);
 	}
 	else if(basetype == base_type::k_vector){
 		return typeid_t::make_vector(resolve_type(a, type.get_vector_element_type()));
@@ -444,7 +439,7 @@ analyser_t analyse_def_struct_statement(const analyser_t& a, const statement_t::
 		throw std::runtime_error("Name already used.");
 	}
 
-	const auto struct_typeid1 = typeid_t::make_struct(statement._def);
+	const auto struct_typeid1 = typeid_t::make_struct1(statement._def);
 	const auto struct_typeid2 = resolve_type(a_acc, struct_typeid1);
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
 	a_acc._call_stack.back()->_symbols.push_back({struct_name, symbol_t::make_constant(struct_typeid_value)});

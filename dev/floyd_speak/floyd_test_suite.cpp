@@ -612,17 +612,18 @@ QUARK_UNIT_TEST("", "json_value()", "", ""){
 	test__run_init__check_result("let result = json_value([1,2,3])", value_t::make_json_value(json_t::make_array({1,2,3})));
 }
 QUARK_UNIT_TEST("", "pixel_t()", "", ""){
-	const auto pixel_t__def = std::make_shared<floyd::struct_definition_t>(
-		std::vector<member_t>{
-			member_t(typeid_t::make_int(), "red"),
-			member_t(typeid_t::make_int(), "green"),
-			member_t(typeid_t::make_int(), "blue")
-		}
-	);
+	const auto pixel_t__def = std::vector<member_t>{
+		member_t(typeid_t::make_int(), "red"),
+		member_t(typeid_t::make_int(), "green"),
+		member_t(typeid_t::make_int(), "blue")
+	};
 
 	test__run_init__check_result(
 		"struct pixel_t { int red int green int blue } result = pixel_t(1,2,3)",
-		value_t::make_struct_value(typeid_t::make_struct(pixel_t__def), vector<value_t>{value_t::make_int(1), value_t::make_int(2), value_t::make_int(3)})
+		value_t::make_struct_value(
+			typeid_t::make_struct2(pixel_t__def),
+			vector<value_t>{ value_t::make_int(1), value_t::make_int(2), value_t::make_int(3) }
+		)
 	);
 }
 
@@ -2129,7 +2130,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - read back struct member"){
 	});
 }
 
-QUARK_UNIT_TEST("run_main()", "struct - instantiate nested structs", "", ""){
+QUARK_UNIT_TEST_VIP("run_main()", "struct - instantiate nested structs", "", ""){
 	const auto vm = test__run_global(R"(
 		struct color { int red int green int blue }
 		struct image { color back color front }
@@ -2874,17 +2875,21 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "[]", ""){
 
 
 QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
-	const auto point_t_def = std::make_shared<floyd::struct_definition_t>(
-		std::vector<member_t>{
-			member_t(typeid_t::make_double(), "x"),
-			member_t(typeid_t::make_double(), "y")
-		}
-	);
+	const auto point_t_def = std::vector<member_t>{
+		member_t(typeid_t::make_double(), "x"),
+		member_t(typeid_t::make_double(), "y")
+	};
 	const auto result = test__run_return_result(R"(
 		struct point_t { double x double y }
 		let result = unflatten_from_json(flatten_to_json(point_t(1.0, 3.0)), point_t)
 	)", {});
-	ut_compare_values(result, value_t::make_struct_value(typeid_t::make_struct(point_t_def), vector<value_t>{ value_t::make_double(1), value_t::make_double(3)}));
+	ut_compare_values(
+		result,
+		value_t::make_struct_value(
+			typeid_t::make_struct2(point_t_def),
+			vector<value_t>{ value_t::make_double(1), value_t::make_double(3) }
+		)
+	);
 }
 
 

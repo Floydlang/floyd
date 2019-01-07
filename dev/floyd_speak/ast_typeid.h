@@ -291,11 +291,17 @@ namespace floyd {
 		}
 
 
-
-		public: static typeid_t make_struct(const std::shared_ptr<const struct_definition_t>& def){
+		public: static typeid_t make_struct1(const std::shared_ptr<const struct_definition_t>& def){
 			QUARK_ASSERT(def);
 
 			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, "", def, {} });
+			return { floyd::base_type::k_struct, ext };
+		}
+
+		//??? Simplify typeid_t by using std::variant and no using internal shared_ptr for each complex type.
+		public: static typeid_t make_struct2(const std::vector<member_t>& members){
+			auto struct_def = std::make_shared<const struct_definition_t>(members);
+			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, "", struct_def, {} });
 			return { floyd::base_type::k_struct, ext };
 		}
 
