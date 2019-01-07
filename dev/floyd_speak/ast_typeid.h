@@ -299,9 +299,8 @@ namespace floyd {
 			return { floyd::base_type::k_struct, ext };
 		}
 
-		public: static typeid_t make_struct2(const std::shared_ptr<const struct_definition_t>& def){
-			QUARK_ASSERT(def);
-
+		public: static typeid_t make_struct2(const std::vector<member_t>& members){
+			auto def = std::make_shared<const struct_definition_t>(members);
 			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, "", def, {} });
 			return { floyd::base_type::k_struct, ext };
 		}
