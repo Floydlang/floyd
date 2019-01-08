@@ -420,7 +420,6 @@ QUARK_UNIT_TESTQ("typeid_t", "is_protocol()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_protocol() == false);
 }
 
-
 QUARK_UNIT_TESTQ("typeid_t", "make_protocol()"){
 	const auto t = make_test_protocol_a();
 	QUARK_UT_VERIFY(t.get_protocol() == k_protocol_test_members_b);
@@ -450,6 +449,12 @@ QUARK_UNIT_TESTQ("typeid_t", "is_vector()"){
 QUARK_UNIT_TESTQ("typeid_t", "is_vector()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_vector() == false);
 }
+QUARK_UNIT_TESTQ("typeid_t", "get_vector_element_type()"){
+	QUARK_UT_VERIFY(typeid_t::make_vector(typeid_t::make_int()).get_vector_element_type().is_int());
+}
+QUARK_UNIT_TESTQ("typeid_t", "get_vector_element_type()"){
+	QUARK_UT_VERIFY(typeid_t::make_vector(typeid_t::make_string()).get_vector_element_type().is_string());
+}
 
 
 QUARK_UNIT_TESTQ("typeid_t", "make_dict()"){
@@ -461,33 +466,115 @@ QUARK_UNIT_TESTQ("typeid_t", "is_dict()"){
 QUARK_UNIT_TESTQ("typeid_t", "is_dict()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_dict() == false);
 }
+QUARK_UNIT_TESTQ("typeid_t", "get_dict_value_type()"){
+	QUARK_UT_VERIFY(typeid_t::make_dict(typeid_t::make_int()).get_dict_value_type().is_int());
+}
+QUARK_UNIT_TESTQ("typeid_t", "get_dict_value_type()"){
+	QUARK_UT_VERIFY(typeid_t::make_dict(typeid_t::make_string()).get_dict_value_type().is_string());
+}
 
+
+
+const auto k_test_function_args_a = std::vector<typeid_t>({
+	{ typeid_t::make_int() },
+	{ typeid_t::make_string() },
+	{ typeid_t::make_bool() }
+});
 
 QUARK_UNIT_TESTQ("typeid_t", "make_function()"){
-	QUARK_UT_VERIFY(typeid_t::make_function(typeid_t::make_void(), {}).get_base_type() == base_type::k_function);
+	const auto t = typeid_t::make_function(typeid_t::make_void(), {});
+	QUARK_UT_VERIFY(t.get_base_type() == base_type::k_function);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_function()()"){
-	QUARK_UT_VERIFY(typeid_t::make_function(typeid_t::make_void(), {}).is_function() == true);
+QUARK_UNIT_TESTQ("typeid_t", "is_function()"){
+	const auto t = typeid_t::make_function(typeid_t::make_void(), {});
+	QUARK_UT_VERIFY(t.is_function() == true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_function()()"){
+QUARK_UNIT_TESTQ("typeid_t", "is_function()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_function() == false);
+}
+QUARK_UNIT_TESTQ("typeid_t", "get_function_return()"){
+	const auto t = typeid_t::make_function(typeid_t::make_void(), {});
+	QUARK_UT_VERIFY(t.get_function_return().is_void());
+}
+QUARK_UNIT_TESTQ("typeid_t", "get_function_return()"){
+	const auto t = typeid_t::make_function(typeid_t::make_string(), {});
+	QUARK_UT_VERIFY(t.get_function_return().is_string());
+}
+QUARK_UNIT_TESTQ("typeid_t", "get_function_args()"){
+	const auto t = typeid_t::make_function(typeid_t::make_void(), k_test_function_args_a);
+	QUARK_UT_VERIFY(t.get_function_args() == k_test_function_args_a);
 }
 
 
 QUARK_UNIT_TESTQ("typeid_t", "make_unresolved_type_identifier()"){
-	QUARK_UT_VERIFY(typeid_t::make_unresolved_type_identifier("xyz").get_base_type() == base_type::k_internal_unresolved_type_identifier);
+	const auto t = typeid_t::make_unresolved_type_identifier("xyz");
+	QUARK_UT_VERIFY(t.get_base_type() == base_type::k_internal_unresolved_type_identifier);
 }
 
-QUARK_UNIT_TESTQ("typeid_t", "is_unresolved_type_identifier()()"){
-	QUARK_UT_VERIFY(typeid_t::make_unresolved_type_identifier("xyz").is_unresolved_type_identifier() == true);
+QUARK_UNIT_TESTQ("typeid_t", "is_unresolved_type_identifier()"){
+	const auto t = typeid_t::make_unresolved_type_identifier("xyz");
+	QUARK_UT_VERIFY(t.is_unresolved_type_identifier() == true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_unresolved_type_identifier()()"){
+QUARK_UNIT_TESTQ("typeid_t", "is_unresolved_type_identifier()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_unresolved_type_identifier() == false);
+}
+
+QUARK_UNIT_TESTQ("typeid_t", "get_unresolved_type_identifier()"){
+	const auto t = typeid_t::make_unresolved_type_identifier("xyz");
+	QUARK_UT_VERIFY(t.get_unresolved_type_identifier() == "xyz");
+}
+QUARK_UNIT_TESTQ("typeid_t", "get_unresolved_type_identifier()"){
+	const auto t = typeid_t::make_unresolved_type_identifier("123");
+	QUARK_UT_VERIFY(t.get_unresolved_type_identifier() == "123");
+}
+
+
+
+
+
+
+QUARK_UNIT_TESTQ("typeid_t", "operator==()"){
+	const auto a = typeid_t::make_vector(typeid_t::make_int());
+	const auto b = typeid_t::make_vector(typeid_t::make_int());
+	QUARK_UT_VERIFY(a == b);
+}
+QUARK_UNIT_TESTQ("typeid_t", "operator==()"){
+	const auto a = typeid_t::make_vector(typeid_t::make_int());
+	const auto b = typeid_t::make_dict(typeid_t::make_int());
+	QUARK_UT_VERIFY((a == b) == false);
+}
+QUARK_UNIT_TESTQ("typeid_t", "operator==()"){
+	const auto a = typeid_t::make_vector(typeid_t::make_int());
+	const auto b = typeid_t::make_vector(typeid_t::make_string());
+	QUARK_UT_VERIFY((a == b) == false);
+}
+
+
+QUARK_UNIT_TESTQ("typeid_t", "operator=()"){
+	const auto a = typeid_t::make_bool();
+	const auto b = a;
+	QUARK_UT_VERIFY(a == b);
+}
+QUARK_UNIT_TESTQ("typeid_t", "operator=()"){
+	const auto a = typeid_t::make_vector(typeid_t::make_int());
+	const auto b = a;
+	QUARK_UT_VERIFY(a == b);
+}
+QUARK_UNIT_TESTQ("typeid_t", "operator=()"){
+	const auto a = typeid_t::make_dict(typeid_t::make_int());
+	const auto b = a;
+	QUARK_UT_VERIFY(a == b);
+}
+QUARK_UNIT_TESTQ("typeid_t", "operator=()"){
+	const auto a = typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_int(), typeid_t::make_double() });
+	const auto b = a;
+	QUARK_UT_VERIFY(a == b);
 }
 
 
 
 //////////////////////////////////////		FORMATS
+
 
 
 std::string typeid_to_compact_string_int(const typeid_t& t){
