@@ -11,6 +11,7 @@
 #include "parser_primitives.h"
 #include "json_support.h"
 #include "ast_typeid.h"
+#include "ast_typeid_helpers.h"
 
 
 namespace floyd {

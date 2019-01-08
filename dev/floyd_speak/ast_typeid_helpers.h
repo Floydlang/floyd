@@ -11,29 +11,20 @@
 
 #include <vector>
 
-	struct json_t;
+struct json_t;
 
 namespace floyd {
-
 	struct ast_json_t;
 	struct struct_definition_t;
 	struct protocol_definition_t;
 	struct typeid_t;
-
+	struct member_t;
 
 	ast_json_t struct_definition_to_ast_json(const struct_definition_t& v);
-
-
-
 	ast_json_t protocol_definition_to_ast_json(const protocol_definition_t& v);
 
-
-
-
-
-	//////////////////////////////////////		JSON
-
-
+	json_t members_to_json(const std::vector<member_t>& members);
+	std::vector<member_t> members_from_json(const json_t& members);
 
 	enum class json_tags{
 		k_plain,
@@ -47,9 +38,6 @@ namespace floyd {
 
 	std::vector<json_t> typeids_to_json_array(const std::vector<typeid_t>& m);
 	std::vector<typeid_t> typeids_from_json_array(const std::vector<json_t>& m);
-
-
-
 }
 
 #endif /* typeid_helpers_hpp */

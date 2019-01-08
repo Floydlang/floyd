@@ -68,7 +68,6 @@
 #include <string>
 #include <vector>
 
-struct json_t;
 
 namespace floyd {
 	struct struct_definition_t;
@@ -520,8 +519,6 @@ namespace floyd {
 	};
 
 	std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m);
-	json_t members_to_json(const std::vector<member_t>& members);
-	std::vector<member_t> members_from_json(const json_t& members);
 }
 
 #endif /* ast_typeid_hpp */
