@@ -42,7 +42,8 @@
 	"typeid"						k_typeid								"typeid"
 	struct red { int x;float y}		k_struct								["struct", [{"type": "in", "name": "x"}, {"type": "float", "name": "y"}]]
 	protocol reader {
-		[int] read(); int get_size()
+		[int] read()
+		int get_size()
   	}								k_protocol								["protocol", [{"type": ["function", ["vector, "int"]]], "name": "read"}, {"type": "["function", []]", "name": "get_size"}]]
 	[int]							k_vector								["vector", "int"]
 	[string: int]					k_dict									["dict", "int"]
@@ -67,6 +68,8 @@
 
 #include <string>
 #include <vector>
+#include <variant>
+
 
 
 namespace floyd {
@@ -221,6 +224,7 @@ namespace floyd {
 			return _base_type == floyd::base_type::k_internal_dynamic;
 		}
 
+
 		public: static typeid_t make_void(){
 			return { floyd::base_type::k_void, {} };
 		}
@@ -242,6 +246,7 @@ namespace floyd {
 			return _base_type == base_type::k_bool;
 		}
 
+
 		public: static typeid_t make_int(){
 			return { floyd::base_type::k_int, {} };
 		}
@@ -251,6 +256,7 @@ namespace floyd {
 
 			return _base_type == base_type::k_int;
 		}
+
 
 		public: static typeid_t make_double(){
 			return { floyd::base_type::k_double, {} };
@@ -262,6 +268,7 @@ namespace floyd {
 			return _base_type == base_type::k_double;
 		}
 
+
 		public: static typeid_t make_string(){
 			return { floyd::base_type::k_string, {} };
 		}
@@ -271,6 +278,7 @@ namespace floyd {
 
 			return _base_type == base_type::k_string;
 		}
+
 
 		public: static typeid_t make_json_value(){
 			return { floyd::base_type::k_json_value, {} };
@@ -282,6 +290,7 @@ namespace floyd {
 			return _base_type == base_type::k_json_value;
 		}
 
+
 		public: static typeid_t make_typeid(){
 			return { floyd::base_type::k_typeid, {} };
 		}
@@ -291,7 +300,6 @@ namespace floyd {
 
 			return _base_type == base_type::k_typeid;
 		}
-
 
 
 		public: static typeid_t make_struct1(const std::shared_ptr<const struct_definition_t>& def){
@@ -326,8 +334,8 @@ namespace floyd {
 
 
 
-
-		public: static typeid_t make_protocol(const std::shared_ptr<const protocol_definition_t>& def){
+		public: static typeid_t make_protocol(const std::vector<member_t>& members){
+			const auto def = std::make_shared<protocol_definition_t>(protocol_definition_t(members));
 			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, "", {}, def });
 			return { floyd::base_type::k_protocol, ext };
 		}
@@ -340,7 +348,7 @@ namespace floyd {
 
 		public: const protocol_definition_t& get_protocol() const{
 			QUARK_ASSERT(get_base_type() == base_type::k_protocol);
-
+			QUARK_ASSERT(_ext->_protocol_def);
 			return *_ext->_protocol_def;
 		}
 		public: const std::shared_ptr<const protocol_definition_t>& get_protocol_ref() const{
@@ -348,7 +356,6 @@ namespace floyd {
 
 			return _ext->_protocol_def;
 		}
-
 
 
 
@@ -370,6 +377,7 @@ namespace floyd {
 		}
 
 
+
 		public: static typeid_t make_dict(const typeid_t& value_type){
 			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ { value_type }, "", {}, {} });
 			return { floyd::base_type::k_dict, ext };
@@ -386,6 +394,7 @@ namespace floyd {
 
 			return _ext->_parts[0];
 		}
+
 
 
 		public: static typeid_t make_function(const typeid_t& ret, const std::vector<typeid_t>& args){
@@ -417,6 +426,8 @@ namespace floyd {
 			return r;
 		}
 
+
+
 		public: static typeid_t make_unresolved_type_identifier(const std::string& s){
 			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, s, {}, {} });
 			return { floyd::base_type::k_internal_unresolved_type_identifier, ext };
@@ -434,6 +445,8 @@ namespace floyd {
 
 			return _ext->_unresolved_type_identifier;
 		}
+
+
 
 
 		public: bool operator==(const typeid_t& other) const{

@@ -17,7 +17,44 @@
 using std::string;
 using std::vector;
 
+
+
+
+
+
+
 namespace floyd {
+
+
+#if 0
+	struct typeid2_wrapper_t;
+
+	typedef std::variant<
+		void,
+		void,
+
+		void,
+
+		void,
+		void,
+		void,
+		void,
+		void,
+
+		void,
+
+		std::shared_ptr<const struct_definition_t>,
+		std::shared_ptr<const protocol_definition_t>,
+
+		//	vector, element-type
+		std::shared_ptr<typeid2_wrapper_t>
+	> typeid2_t;
+
+
+	struct typeid2_wrapper_t {
+		typeid2_t t;
+	};
+#endif
 
 
 
@@ -210,6 +247,8 @@ void typeid_t::swap(typeid_t& other){
 	QUARK_ASSERT(check_invariant());
 }
 
+
+
 QUARK_UNIT_TESTQ("typeid_t", "make_undefined()"){
 	QUARK_UT_VERIFY(typeid_t::make_undefined().get_base_type() == base_type::k_internal_undefined);
 }
@@ -306,15 +345,52 @@ QUARK_UNIT_TESTQ("typeid_t", "is_typeid()"){
 
 
 
-QUARK_UNIT_TESTQ("typeid_t", "make_struct()"){
+QUARK_UNIT_TESTQ("typeid_t", "make_struct2()"){
 	QUARK_UT_VERIFY(typeid_t::make_struct2({}).get_base_type() == base_type::k_struct);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_json_value()"){
+QUARK_UNIT_TESTQ("typeid_t", "is_struct()"){
 	QUARK_UT_VERIFY(typeid_t::make_struct2({}).is_struct() == true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_json_value()"){
+QUARK_UNIT_TESTQ("typeid_t", "is_struct()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_struct() == false);
 }
+
+
+QUARK_UNIT_TESTQ("typeid_t", "make_struct2()"){
+	QUARK_UT_VERIFY(typeid_t::make_struct2({}).get_base_type() == base_type::k_struct);
+}
+QUARK_UNIT_TESTQ("typeid_t", "is_struct()"){
+	QUARK_UT_VERIFY(typeid_t::make_struct2({}).is_struct() == true);
+}
+QUARK_UNIT_TESTQ("typeid_t", "is_struct()"){
+	QUARK_UT_VERIFY(typeid_t::make_bool().is_struct() == false);
+}
+
+
+QUARK_UNIT_TESTQ("typeid_t", "make_protocol()"){
+	QUARK_UT_VERIFY(typeid_t::make_protocol({}).get_base_type() == base_type::k_protocol);
+}
+QUARK_UNIT_TESTQ("typeid_t", "is_protocol()"){
+	QUARK_UT_VERIFY(typeid_t::make_protocol({}).is_protocol() == true);
+}
+QUARK_UNIT_TESTQ("typeid_t", "is_protocol()"){
+	QUARK_UT_VERIFY(typeid_t::make_bool().is_protocol() == false);
+}
+
+
+
+QUARK_UNIT_TESTQ("typeid_t", "make_vector()"){
+	QUARK_UT_VERIFY(typeid_t::make_vector(typeid_t::make_int()).get_base_type() == base_type::k_vector);
+}
+QUARK_UNIT_TESTQ("typeid_t", "is_vector()"){
+	QUARK_UT_VERIFY(typeid_t::make_vector(typeid_t::make_int()).is_vector() == true);
+}
+QUARK_UNIT_TESTQ("typeid_t", "is_vector()"){
+	QUARK_UT_VERIFY(typeid_t::make_bool().is_vector() == false);
+}
+
+
+
 
 
 

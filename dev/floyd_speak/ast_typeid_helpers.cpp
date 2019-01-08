@@ -176,9 +176,7 @@ typeid_t typeid_from_ast_json(const ast_json_t& t2){
 			const auto member_array = protocol_def_array[0].get_array();
 
 			const vector<member_t> protocol_members = members_from_json(member_array);
-			return typeid_t::make_protocol(
-				std::make_shared<protocol_definition_t>(protocol_definition_t(protocol_members))
-			);
+			return typeid_t::make_protocol(protocol_members);
 		}
 		else if(s == "vector"){
 			const auto element_type = typeid_from_ast_json(ast_json_t{a[1]});
