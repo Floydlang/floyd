@@ -10,6 +10,7 @@
 
 #include "statement.h"
 #include "ast_value.h"
+#include "ast_typeid_helpers.h"
 #include "ast_basics.h"
 #include "utils.h"
 #include "json_support.h"

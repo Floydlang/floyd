@@ -20,6 +20,7 @@
 #include "json_parser.h"
 
 #include "ast_typeid.h"
+#include "ast_typeid_helpers.h"
 
 #include <string>
 #include <memory>

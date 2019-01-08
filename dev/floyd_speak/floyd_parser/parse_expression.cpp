@@ -12,6 +12,7 @@
 #include "parser2.h"
 #include "json_support.h"
 #include "ast_typeid.h"		//???	 remove -- instead use hardcoded strings.
+#include "ast_typeid_helpers.h"
 
 namespace floyd {
 

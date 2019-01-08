@@ -43,6 +43,7 @@
 #include <map>
 #include "ast_basics.h"
 #include "ast_typeid.h"
+#include "ast_typeid_helpers.h"
 
 
 namespace floyd {
