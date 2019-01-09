@@ -27,7 +27,7 @@ namespace floyd {
 			{
 				"name": "pixel",
 				"members": [
-					{ "expr": [ "k", "two", "string" ], "name": "s", "type": "string" }
+					{ "name": "s", "type": "string" }
 				],
 			}
 		]

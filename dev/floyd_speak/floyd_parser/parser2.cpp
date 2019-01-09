@@ -685,7 +685,9 @@ std::pair<expr_t, seq_t> parse_lhs_atom(const seq_t& p){
 
 	else if(is_first(p2, keyword_t::k_struct)){
 		throw std::runtime_error("No support for struct definition expressions!");
-//		const auto result = floyd::parse_struct_definition_body(p2, "");
+	}
+	else if(is_first(p2, keyword_t::k_protocol)){
+		throw std::runtime_error("No support for protocol definition expressions!");
 	}
 
 	/*

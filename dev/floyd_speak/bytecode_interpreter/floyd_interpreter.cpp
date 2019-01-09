@@ -78,16 +78,18 @@ value_t bc_to_value(const bc_value_t& value){
 		return value_t::make_typeid_value(value.get_typeid_value());
 	}
 	else if(basetype == base_type::k_struct){
-		const auto& struct_def = type.get_struct();
 		const auto& members = value.get_struct_value();
 		vector<value_t> members2;
 		for(int i = 0 ; i < members.size() ; i++){
-			const auto& member_type = struct_def._members[i]._type;
 			const auto& member_value = members[i];
 			const auto& member_value2 = bc_to_value(member_value);
 			members2.push_back(member_value2);
 		}
 		return value_t::make_struct_value(type, members2);
+	}
+	else if(basetype == base_type::k_protocol){
+		QUARK_ASSERT(false);
+		return value_t::make_undefined();
 	}
 	else if(basetype == base_type::k_vector){
 		const auto& element_type  = type.get_vector_element_type();
@@ -185,6 +187,10 @@ bc_value_t value_to_bc(const value_t& value){
 	}
 	else if(basetype == base_type::k_struct){
 		return bc_value_t::make_struct_value(value.get_type(), values_to_bcs(value.get_struct_value()->_member_values));
+	}
+	else if(basetype == base_type::k_protocol){
+		QUARK_ASSERT(false);
+		return bc_value_t::make_undefined();
 	}
 
 	else if(basetype == base_type::k_vector){

@@ -209,6 +209,14 @@ typeid_t resolve_type_internal(const analyser_t& a, const typeid_t& type){
 		}
 		return typeid_t::make_struct2(members2);
 	}
+	else if(basetype == base_type::k_protocol){
+		const auto& protocol_def = type.get_protocol();
+		std::vector<member_t> members2;
+		for(const auto& e: protocol_def._members){
+			members2.push_back(member_t(resolve_type(a, e._type), e._name));
+		}
+		return typeid_t::make_protocol(members2);
+	}
 	else if(basetype == base_type::k_vector){
 		return typeid_t::make_vector(resolve_type(a, type.get_vector_element_type()));
 	}
@@ -452,6 +460,23 @@ analyser_t analyse_def_struct_statement(const analyser_t& a, const statement_t::
 	return a_acc;
 }
 
+analyser_t analyse_def_protocol_statement(const analyser_t& a, const statement_t::define_protocol_statement_t& statement){
+	QUARK_ASSERT(a.check_invariant());
+
+	auto a_acc = a;
+	const auto protocol_name = statement._name;
+	if(does_symbol_exist_shallow(a_acc, protocol_name)){
+		throw std::runtime_error("Name already used.");
+	}
+
+	const auto protocol_typeid1 = typeid_t::make_protocol(statement._def->_members);
+	const auto protocol_typeid2 = resolve_type(a_acc, protocol_typeid1);
+	const auto protocol_typeid_value = value_t::make_typeid_value(protocol_typeid2);
+	a_acc._call_stack.back()->_symbols.push_back({protocol_name, symbol_t::make_constant(protocol_typeid_value)});
+
+	return a_acc;
+}
+
 std::pair<analyser_t, statement_t> analyse_def_function_statement(const analyser_t& a, const statement_t& s){
 	QUARK_ASSERT(a.check_invariant());
 
@@ -564,6 +589,10 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 		}
 		return_type operator()(const statement_t::define_struct_statement_t& s) const{
 			const auto e = analyse_def_struct_statement(a, s);
+			return { e, {} };
+		}
+		return_type operator()(const statement_t::define_protocol_statement_t& s) const{
+			const auto e = analyse_def_protocol_statement(a, s);
 			return { e, {} };
 		}
 		return_type operator()(const statement_t::define_function_statement_t& s) const{

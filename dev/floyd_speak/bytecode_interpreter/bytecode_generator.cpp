@@ -561,6 +561,9 @@ bcgen_body_t bcgen_body_block(bcgenerator_t& vm, const body_t& body){
 				bcgen_body_t operator()(const statement_t::define_struct_statement_t& s) const{
 					QUARK_ASSERT(false);
 				}
+				bcgen_body_t operator()(const statement_t::define_protocol_statement_t& s) const{
+					QUARK_ASSERT(false);
+				}
 				bcgen_body_t operator()(const statement_t::define_function_statement_t& s) const{
 					QUARK_ASSERT(false);
 				}

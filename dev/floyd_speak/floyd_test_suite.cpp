@@ -2319,22 +2319,24 @@ QUARK_UNIT_TEST("run_main()", "struct definition expression", "", ""){
 */
 
 
-#if 0
 //////////////////////////////////////////		PROTOCOL - TYPE
 
 
-QUARK_UNIT_TESTQ("run_main()", "protocol"){
+QUARK_UNIT_TEST("run_main()", "protocol", "", ""){
 	const auto vm = test__run_global(R"(
 		protocol t {}
 	)");
 }
 
-QUARK_UNIT_TESTQ("run_main()", "protocol"){
+QUARK_UNIT_TEST("run_main()", "protocol", "", ""){
 	const auto vm = test__run_global(R"(
-		protocol t { int a }
+		protocol t {
+			func string f(int a, double b)
+		}
 	)");
 }
 
+#if 0
 QUARK_UNIT_TEST("run_main()", "protocol - check protocol's type", "", ""){
 	const auto vm = test__run_global(R"(
 		protocol t { int a }

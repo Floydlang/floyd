@@ -131,6 +131,9 @@ namespace floyd {
 		else if(basetype == base_type::k_struct){
 			return value_runtime_encoding::k_ext_struct;
 		}
+		else if(basetype == base_type::k_protocol){
+			return value_runtime_encoding::k_ext_struct;
+		}
 		else if(basetype == base_type::k_vector){
 			const auto& element_type = type.get_vector_element_type().get_base_type();
 			if(element_type == base_type::k_bool){
@@ -183,6 +186,7 @@ namespace floyd {
 			|| basetype == base_type::k_json_value
 			|| basetype == base_type::k_typeid
 			|| basetype == base_type::k_struct
+			|| basetype == base_type::k_protocol
 			|| basetype == base_type::k_vector
 			|| basetype == base_type::k_dict
 			;
