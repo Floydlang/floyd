@@ -38,8 +38,6 @@ namespace floyd {
 	};
 
 	std::map<int, host_function_t> get_host_functions();
-
-	floyd::value_t unflatten_json_to_specific_type(const json_t& v);
 }
 
 #endif /* host_functions_hpp */

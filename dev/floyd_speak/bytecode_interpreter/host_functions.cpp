@@ -39,6 +39,160 @@ value_t flatten_to_json(const value_t& value){
 
 
 
+
+
+
+
+
+
+
+////////////////////////////////////		CORE PROTOCOL
+
+
+
+
+
+
+bc_value_t coreapi__get_time_of_day(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 0){
+		throw std::runtime_error("get_time_of_day() requires 0 arguments!");
+	}
+
+	std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> elapsed_seconds = t - vm._imm->_start_time;
+	const auto ms = elapsed_seconds.count() * 1000.0;
+	const auto result = value_t::make_int(int(ms));
+	return value_to_bc(result);
+}
+
+QUARK_UNIT_TESTQ("sizeof(int)", ""){
+	QUARK_TRACE(std::to_string(sizeof(int)));
+	QUARK_TRACE(std::to_string(sizeof(int64_t)));
+}
+
+QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
+	const auto a = std::chrono::high_resolution_clock::now();
+    std::this_thread::sleep_for(std::chrono::milliseconds(7));
+	const auto b = std::chrono::high_resolution_clock::now();
+
+	std::chrono::duration<double> elapsed_seconds = b - a;
+	const int ms = static_cast<int>((static_cast<double>(elapsed_seconds.count()) * 1000.0));
+
+	QUARK_UT_VERIFY(ms >= 7)
+}
+
+
+
+bc_value_t coreapi__get_env_path(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 0){
+		throw std::runtime_error("get_env_path() requires 0 arguments!");
+	}
+
+    const char *homeDir = getenv("HOME");
+    const std::string env_path(homeDir);
+//	const std::string env_path = "~/Desktop/";
+
+	const auto v = bc_value_t::make_string(env_path);
+	return v;
+}
+
+bc_value_t coreapi__read_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 1){
+		throw std::runtime_error("read_text_file() requires 1 arguments!");
+	}
+	if(args[0]._type.is_string() == false){
+		throw std::runtime_error("read_text_file() requires a file path as a string.");
+	}
+
+	const string source_path = args[0].get_string_value();
+	std::string file_contents;
+	{
+		std::ifstream f (source_path);
+		if (f.is_open() == false){
+			throw std::runtime_error("Cannot read source file.");
+		}
+		std::string line;
+		while ( getline(f, line) ) {
+			file_contents.append(line + "\n");
+		}
+		f.close();
+	}
+	const auto v = bc_value_t::make_string(file_contents);
+	return v;
+}
+
+bc_value_t coreapi__write_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 2){
+		throw std::runtime_error("write_text_file() requires 2 arguments!");
+	}
+	else if(args[0]._type.is_string() == false){
+		throw std::runtime_error("write_text_file() requires a file path as a string.");
+	}
+	else if(args[1]._type.is_string() == false){
+		throw std::runtime_error("write_text_file() requires a file path as a string.");
+	}
+	else{
+		const string path = args[0].get_string_value();
+		const string file_contents = args[1].get_string_value();
+
+		std::ofstream outputFile;
+		outputFile.open(path);
+		outputFile << file_contents;
+		outputFile.close();
+		return bc_value_t();
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //??? removeusage of value_t
 value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_type){
 	QUARK_ASSERT(v.check_invariant());
