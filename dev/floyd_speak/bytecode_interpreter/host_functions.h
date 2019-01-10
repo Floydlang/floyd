@@ -23,6 +23,9 @@ namespace floyd {
 	struct interpreter_t;
 
 
+	extern const std::string k_tiny_prefix;
+
+
 	struct host_function_signature_t {
 		int _function_id;
 		floyd::typeid_t _function_type;

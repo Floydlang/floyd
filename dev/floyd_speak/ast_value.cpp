@@ -540,7 +540,7 @@ std::string to_compact_string2(const value_t& value) {
 		return std::string(temp);
 	}
 	else if(base_type == base_type::k_double){
-		return double_to_string(value.get_double_value());
+		return double_to_string_always_decimals(value.get_double_value());
 	}
 	else if(base_type == base_type::k_string){
 		return value.get_string_value();

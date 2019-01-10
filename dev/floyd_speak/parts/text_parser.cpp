@@ -146,21 +146,69 @@ QUARK_UNIT_TESTQ("float_to_string()", ""){
 }
 
 
-std::string double_to_string(double value){
+inline std::string remove_redundant_leading_zeros(const std::string& s){
+	auto i = s.size();
+	while(i > 2 && s[i - 1] == '0' && s[i - 2] != '.'){
+		i--;
+	}
+	const auto result = s.substr(0, i);
+	return result;
+}
+QUARK_UNIT_TESTQ("remove_redundant_leading_zeros()", ""){
+	QUARK_UT_VERIFY(remove_redundant_leading_zeros("1.0") == "1.0");
+}
+QUARK_UNIT_TESTQ("remove_redundant_leading_zeros()", ""){
+	QUARK_UT_VERIFY(remove_redundant_leading_zeros("1.00") == "1.0");
+}
+QUARK_UNIT_TESTQ("remove_redundant_leading_zeros()", ""){
+	QUARK_UT_VERIFY(remove_redundant_leading_zeros("1.000") == "1.0");
+}
+QUARK_UNIT_TESTQ("remove_redundant_leading_zeros()", ""){
+	QUARK_UT_VERIFY(remove_redundant_leading_zeros("1.5") == "1.5");
+}
+QUARK_UNIT_TESTQ("remove_redundant_leading_zeros()", ""){
+	QUARK_UT_VERIFY(remove_redundant_leading_zeros("1.50") == "1.5");
+}
+QUARK_UNIT_TESTQ("remove_redundant_leading_zeros()", ""){
+	QUARK_UT_VERIFY(remove_redundant_leading_zeros("1.500") == "1.5");
+}
+
+std::string double_to_string_simplify(double value){
 	std::stringstream s;
+//    s.setf(std::ios_base::showpoint);
 	s << value;
 	const auto result = s.str();
 	return result;
 }
 
-QUARK_UNIT_TESTQ("double_to_string()", ""){
-	quark::ut_compare_strings(float_to_string(0.0), "0");
+QUARK_UNIT_TESTQ("double_to_string_simplify()", ""){
+	quark::ut_compare_strings(double_to_string_simplify(0.0), "0");
 }
-QUARK_UNIT_TESTQ("double_to_string()", ""){
-	quark::ut_compare_strings(float_to_string(13.0), "13");
+QUARK_UNIT_TESTQ("double_to_string_simplify()", ""){
+	quark::ut_compare_strings(double_to_string_simplify(1.0), "1");
 }
-QUARK_UNIT_TESTQ("double_to_string()", ""){
-	quark::ut_compare_strings(float_to_string(13.5), "13.5");
+QUARK_UNIT_TESTQ("double_to_string_simplify()", ""){
+	quark::ut_compare_strings(double_to_string_simplify(13.0), "13");
+}
+QUARK_UNIT_TESTQ("double_to_string_simplify()", ""){
+	quark::ut_compare_strings(double_to_string_simplify(13.5), "13.5");
+}
+
+
+std::string double_to_string_always_decimals(double value){
+	const auto s = std::to_string(value);
+	const auto result = remove_redundant_leading_zeros(s);
+	return result;
+}
+
+QUARK_UNIT_TESTQ("double_to_string_always_decimals()", ""){
+	quark::ut_compare_strings(double_to_string_always_decimals(0.0), "0.0");
+}
+QUARK_UNIT_TESTQ("double_to_string_always_decimals()", ""){
+	quark::ut_compare_strings(double_to_string_always_decimals(13.0), "13.0");
+}
+QUARK_UNIT_TESTQ("double_to_string_always_decimals()", ""){
+	quark::ut_compare_strings(double_to_string_always_decimals(13.5), "13.5");
 }
 
 

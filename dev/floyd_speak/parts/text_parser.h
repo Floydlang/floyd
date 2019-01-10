@@ -34,7 +34,30 @@ float parse_float(const std::string& pos);
 double parse_double(const std::string& pos);
 
 std::string float_to_string(float value);
-std::string double_to_string(double value);
+
+
+
+/*
+	Skips decimals when not needed.
+
+	INPUT		OUTPUT
+	0			"0"
+	1			"1"
+	13.0		"13"
+	13.5		"13.5"
+*/
+std::string double_to_string_simplify(double value);
+
+/*
+	Always includes decimal, to show this is a decimal number.
+	INPUT		OUTPUT
+	0.0			"0.0"
+	13.0		"13.0"
+	13.5		"13.5"
+*/
+std::string double_to_string_always_decimals(double value);
+
+
 
 
 ///////////////////////////////		seq_t

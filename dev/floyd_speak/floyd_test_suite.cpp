@@ -436,7 +436,7 @@ QUARK_UNIT_TEST("execute_expression()", "Type mismatch", "", "") {
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch.");
+		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch. Cannot convert 'bool' to 'int.");
 	}
 }
 
@@ -956,7 +956,7 @@ QUARK_UNIT_TESTQ("run_init()", ""){
 		R"(
 			let string result = to_string(3.0)
 		)",
-		value_t::make_string("3")
+		value_t::make_string("3.0")
 	);
 }
 
@@ -2217,10 +2217,9 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs different types"){
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch.");
+		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch. Cannot convert 'struct {int id;}' to 'struct {int red;int green;int blue;}.");
 	}
 }
-
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs with <, different types"){
 	const auto vm = test__run_global(R"(
 		struct color { int red int green int blue }
@@ -2895,6 +2894,52 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
 }
 
 
+
+
+
+
+
+
+QUARK_UNIT_TEST("", "cmath_pi", "", ""){
+	const auto result = test__run_return_result(R"(
+		let result = cmath_pi
+	)", {});
+
+	QUARK_UT_VERIFY(result.get_double_value() >= 3.14 && result.get_double_value() < 3.15);
+}
+
+QUARK_UNIT_TEST("", "color__black", "", ""){
+	const auto result = test__run_global(R"(
+		assert(color__black.red == 0.0)
+		assert(color__black.green == 0.0)
+		assert(color__black.blue == 0.0)
+		assert(color__black.alpha == 1.0)
+	)");
+}
+
+
+QUARK_UNIT_TEST("", "color__black", "", ""){
+	const auto result = test__run_global(R"(
+
+		let r = add_colors(color_t(1.0, 2.0, 3.0, 4.0), color_t(1000.0, 2000.0, 3000.0, 4000.0))
+		print(to_string(r))
+		assert(r.red == 1001.0)
+		assert(r.green == 2002.0)
+		assert(r.blue == 3003.0)
+		assert(r.alpha == 4004.0)
+	)");
+}
+
+
+
+
+
+
+
+///////////////////////////////////////////////////			EDGE CASES
+
+
+
 //??? test accessing array->struct->array.
 //??? test structs in vectors.
 
@@ -3054,7 +3099,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong TYPE of arguments to struct-constructor"
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch.");
+		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch. Cannot convert 'int' to 'double.");
 	}
 }
 
@@ -3104,7 +3149,7 @@ QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch.");
+		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch. Cannot convert 'string' to 'int.");
 	}
 }
 
@@ -3116,7 +3161,7 @@ QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch.");
+		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch. Cannot convert 'double' to 'int.");
 	}
 }
 QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){

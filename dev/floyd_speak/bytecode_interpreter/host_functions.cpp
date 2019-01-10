@@ -42,6 +42,128 @@ value_t flatten_to_json(const value_t& value){
 
 
 
+extern const std::string k_tiny_prefix = R"(
+	let double cmath_pi = 3.14159265358979323846
+
+	struct cpu_address_t {
+		int address
+	}
+
+	struct size_t {
+		int address
+	}
+
+	struct file_pos_t {
+		int pos
+	}
+
+	struct time_ms_t {
+		int pos
+	}
+
+	struct uuid_t {
+		int high64
+		int low64
+	}
+
+
+	struct ip_address_t {
+		int high64
+		int low_64_bits
+	}
+
+
+	struct url_t {
+		string absolute_url
+	}
+
+	struct url_parts_t {
+		string protocol
+		string domain
+		string path
+		[string:string] query_strings
+		int port
+	}
+
+	struct quick_hash_t {
+		int hash
+	}
+
+	struct key_t {
+		quick_hash_t hash
+	}
+
+	struct date_t {
+		string utd_date
+	}
+
+	struct sha1_t {
+		string ascii40
+	}
+
+	struct relative_path_t {
+		string relative_path
+	}
+
+	struct absolute_path_t {
+		string absolute_path
+	}
+
+	struct binary_t {
+		string bytes
+	}
+
+	struct text_location_t {
+		absolute_path_t source_file
+		int line_number
+		int pos_in_line
+	}
+
+	struct seq_t {
+		string str
+		size_t pos
+	}
+
+	struct text_t {
+		binary_t data
+	}
+
+	struct text_resource_id {
+		quick_hash_t id
+	}
+
+	struct image_id_t {
+		int id
+	}
+
+	struct color_t {
+		double red
+		double green
+		double blue
+		double alpha
+	}
+
+	struct vector2_t {
+		double x
+		double y
+	}
+
+
+
+	let color__black = color_t(0.0, 0.0, 0.0, 1.0)
+	let color__white = color_t(1.0, 1.0, 1.0, 1.0)
+
+
+	func color_t add_colors(color_t a, color_t b){
+		return color_t(
+			a.red + b.red,
+			a.green + b.green,
+			a.blue + b.blue,
+			a.alpha + b.alpha
+		)
+	}
+
+)";
 
 
 
@@ -318,7 +440,7 @@ bc_value_t host__print(interpreter_t& vm, const bc_value_t args[], int arg_count
 
 	const auto& value = args[0];
 	const auto s = to_compact_string2(bc_to_value(value));
-	printf("%s\n", s.c_str());
+//	printf("%s\n", s.c_str());
 	vm._print_output.push_back(s);
 
 	return bc_value_t::make_undefined();

@@ -210,7 +210,7 @@ std::string json_to_compact_string2(const json_t& v, bool quote_fields){
 		return quote(v.get_string());
 	}
 	else if(v.is_number()){
-		return double_to_string(v.get_number());
+		return double_to_string_simplify(v.get_number());
 	}
 	else if(v.is_true()){
 		return "true";
@@ -418,7 +418,7 @@ std::string json_to_pretty_string_internal(const string& key, const json_t& valu
 		return string(pos, '\t') + key_str + quote(value.get_string());
 	}
 	else if(value.is_number()){
-		return string(pos, '\t') + key_str + double_to_string(value.get_number());
+		return string(pos, '\t') + key_str + double_to_string_simplify(value.get_number());
 	}
 	else if(value.is_true()){
 		return string(pos, '\t') + key_str + "true";

@@ -837,7 +837,7 @@ std::string expr_to_string(const expr_t& e){
 			return make3("\"k\"", "\"int\"", std::to_string(value._int));
 		}
 		else if(value._type == constant_value_t::etype::k_double){
-			return make3("\"k\"", "\"double\"", double_to_string(value._double));
+			return make3("\"k\"", "\"double\"", double_to_string_always_decimals(value._double));
 		}
 		else if(value._type == constant_value_t::etype::k_string){
 			//	 Use k_0_string_literal!
@@ -998,7 +998,7 @@ QUARK_UNIT_1("parse_terminal()", "identifier", test__parse_terminal(
 
 QUARK_UNIT_1("parse_terminal()", "identifier", test__parse_terminal(
 	"0.0 xxx",
-	R"(["k", "double", 0])",
+	R"(["k", "double", 0.0])",
 	" xxx"
 ));
 

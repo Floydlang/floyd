@@ -1577,7 +1577,13 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 		throw std::runtime_error("Expression type mismatch.");
 	}
 	else{
-		throw std::runtime_error("Expression type mismatch.");
+		const auto err =
+			std::string()
+			+ "Expression type mismatch. Cannot convert '"
+			+ typeid_to_compact_string( e3.get_output_type())
+			+ "' to '" + typeid_to_compact_string(target_type)
+			+ ".";
+		throw std::runtime_error(err);
 	}
 
 	if(e3.check_types_resolved() == false){

@@ -1179,6 +1179,231 @@ Called from a process function to read its inbox. It will block until a message 
 
 
 
+# BUILT-IN BASIC TYPES
+A bunch of common data types are built into Floyd. This is to make composition easier and avoid the noise of converting all simple types between different component's own versions.
+
+
+
+## cpu\_address_t
+
+64-bit integer used to specify memory addresses and binary data sizes.
+
+	typedef int cpu_address_t
+	typedef cpu_address_t size_t
+
+
+## file\_pos\_t
+
+64-bit integer for specifying positions inside files.
+
+	typedef int file_pos_t
+
+
+## time\_ms\_t
+
+64-bit integer counting miliseconds.
+
+	typedef int64_t time_ms_t
+
+
+
+
+## uuid_t
+
+A universally unique identifier (UUID) is a 128-bit number used to identify information in computer systems. The term globaly unique identifier (GUID) is also used.
+
+	struct uuid_t {
+		int high64
+		int low64
+	}
+
+
+## ip_address_t
+
+Internet IP adress in using IPv6 128-bit number.
+
+	struct ip_address_t {
+		int high64
+		int low_64_bits
+	}
+
+
+## url_t
+
+Internet URL.
+
+	struct url_t {
+		string absolute_url
+	}
+
+
+## url\_parts\_t {}
+
+This struct contains an URL separate to its components.
+
+	struct url_parts_t {
+		string protocol
+		string domain
+		string path
+		[string:string] query_strings
+		int port
+	}
+
+Example 1:
+
+	url_parts_t("http", "example.com", "path/to/page", {"name": "ferret", "color": "purple"})
+
+	Output: "http://example.com/path/to/page?name=ferret&color=purple"
+
+
+## quick\_hash\_t
+
+64-bit hash value used to speed up lookups and comparisons.
+
+	struct quick_hash_t {
+		int hash
+	}
+
+
+## key_t
+
+Efficent keying using 64-bit hash instead of a string. Hash can often be computed from string key at compile time.
+
+	struct key_t {
+		quick_hash_t hash
+	}
+
+
+## date_t
+
+Stores a UDT.
+
+	struct date_t {
+		string utd_date
+	}
+
+
+## sha1_t
+
+128-bit SHA1 hash number.
+
+	struct sha1_t {
+		string ascii40
+	}
+
+
+## relative\_path\_t 
+
+File path, relative to some other path.
+
+	struct relative_path_t {
+		string relative_path
+	}
+
+
+## absolute\_path\_t
+
+Absolute file path, from root of file system. Can specify the root, a directory or a file.
+
+	struct absolute_path_t {
+		string absolute_path
+	}
+
+
+## binary_t
+
+Raw binary data, 8bit per byte.
+
+	struct binary_t {
+		string bytes
+	}
+
+
+## text\_location\_t
+
+Specifies a position in a text file.
+
+	struct text_location_t {
+		absolute_path_t source_file
+		int line_number
+		int pos_in_line
+	}
+
+
+## seq_t
+
+This is the neatest way to parse strings without using an iterator or indexes.
+
+	struct seq_t {
+		string str
+		size_t pos
+	}
+
+When you consume data at start of seq_t you get a *new* seq_t that holds
+the rest of the string. No side effects.
+
+This is a magic string were you can easily peek into the beginning and also get a new string
+without the first character(s).
+
+It shares the actual string data behind the curtains so is efficent.
+
+
+
+## text_t
+
+Unicode text. Opaque data -- only use library functions to process text_t. Think of text_t and Uncode text more like a PDF.
+
+	struct text_t {
+		binary_t data
+	}
+
+
+## text\_resource\_id
+
+How you specify text resources.
+
+	struct text_resource_id {
+		quick_hash_t id
+	}
+
+
+## image\_id\_t
+
+How you specify image resources.
+
+	struct image_id_t {
+		int id
+	}
+
+
+## color_t
+
+Color. If you don't need alpha, set it to 1.0. Components are normally min 0.0 -- max 1.0 but you can use other ranges.
+
+	struct color_t {
+		float red
+		float green
+		float blue
+		float alpha
+	}
+
+
+## vector2_t
+
+2D position in cartesian coordinate system. Use to specify position on the screen and similar.
+
+	struct vector2_t {
+		float x
+		float y
+	}
+
+
+
+
+
+
+
+
 # FLOYD SYNTAX
 
 Here is the DAG for the complete syntax of Floyd.

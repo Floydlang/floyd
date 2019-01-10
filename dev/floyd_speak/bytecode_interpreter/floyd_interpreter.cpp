@@ -12,6 +12,7 @@
 #include "floyd_parser.h"
 
 #include "pass3.h"
+#include "host_functions.h"
 #include "bytecode_generator.h"
 
 #include <thread>
@@ -346,7 +347,7 @@ value_t get_global(const interpreter_t& vm, const string& name){
 
 	const auto& result = find_global_symbol2(vm, name);
 	if(result == nullptr){
-		throw std::runtime_error("Cannot find global.");
+		throw std::runtime_error(std::string() + "Cannot find global \"" + name + "\".");
 	}
 	else{
 		return bc_to_value(result->_value);
@@ -376,7 +377,11 @@ bc_program_t compile_to_bytecode(const interpreter_context_t& context, const str
 //	parser_context_t context{ quark::make_default_tracer() };
 //	QUARK_CONTEXT_TRACE(context._tracer, "Hello");
 
-	const auto& pass1 = parse_program2(context2, program);
+
+const auto pref = k_tiny_prefix;
+const auto p = pref + "\n" + program;
+
+	const auto& pass1 = parse_program2(context2, p);
 	const auto& pass2 = json_to_ast(context2._tracer, pass1);
 	const auto& pass3 = run_semantic_analysis(context2._tracer, pass2);
 	const auto bc = generate_bytecode(context2._tracer, pass3);
