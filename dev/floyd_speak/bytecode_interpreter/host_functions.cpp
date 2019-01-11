@@ -995,32 +995,24 @@ bc_value_t host__get_directory_entries_deep(interpreter_t& vm, const bc_value_t 
 		throw std::runtime_error("get_directory_entries_deep() requires a path, as a string.");
 	}
 
+
+	//??? check path is valid dir
 	const string path = args[0].get_string_value();
 
-//??? check path is valid dir
-
-
-	std::string file_contents;
-
 	const auto a = GetDirItemsDeep(path, path);
-
-	const auto result_vec = mapf<string>(
+	const auto elements = mapf<value_t>(
 		a,
-		[](const auto& e){ return e.fName; }
+		[](const auto& e){
+			return value_t::make_string(e.fName);
+		}
 	);
 
-	std::vector<value_t> elements;
-	for(const auto& e: result_vec){
-		const auto v = value_t::make_string(e);
-		elements.push_back(v);
-	}
 	const auto vec2 = value_t::make_vector_value(typeid_t::make_string(), elements);
 
-
-const auto debug = value_and_type_to_ast_json(vec2);
-
-QUARK_TRACE(json_to_pretty_string(debug._value));
-
+#if 0
+	const auto debug = value_and_type_to_ast_json(vec2);
+	QUARK_TRACE(json_to_pretty_string(debug._value));
+#endif
 
 	const auto v = value_to_bc(vec2);
 
