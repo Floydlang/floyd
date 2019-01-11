@@ -2898,6 +2898,62 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
 
 
 
+///////////////////////////////////////////////////			TEST LIBRARY FEATURES
+
+
+//??? It IS OK to call impure functions from a pure function:
+//		1. The impure function modifies a local value only -- cannot leak out.
+
+QUARK_UNIT_TEST("", "impure", "call pure->pure", "Compiles OK"){
+	const auto result = test__run_global(R"(
+
+		func int a(int p){ return p + 1 }
+		func int b(){ return a(100) }
+
+	)");
+}
+QUARK_UNIT_TEST("", "impure", "call impure->pure", "Compiles OK"){
+	const auto result = test__run_global(R"(
+
+		func int a(int p){ return p + 1 }
+		func int b() impure { return a(100) }
+
+	)");
+}
+#if 0
+QUARK_UNIT_TEST_VIP("", "impure", "call pure->impure", "Compilation error"){
+	try {
+		const auto result = test__run_global(R"(
+
+			func int a(int p) impure { return p + 1 }
+			func int b(){ return a(100) }
+
+		)");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const std::runtime_error& e){
+		QUARK_TEST_VERIFY(string(e.what()) == "Cannot call impure function 'a' from pure function 'b'.");
+	}
+}
+#endif
+QUARK_UNIT_TEST("", "impure", "call impure->impure", "Compiles OK"){
+	const auto result = test__run_global(R"(
+
+		func int a(int p) impure { return p + 1 }
+		func int b() impure { return a(100) }
+
+	)");
+}
+
+
+
+
+
+///////////////////////////////////////////////////			TEST LIBRARY FEATURES
+
+
+
+
 
 
 QUARK_UNIT_TEST("", "cmath_pi", "", ""){
@@ -2927,6 +2983,7 @@ QUARK_UNIT_TEST("", "color__black", "", ""){
 		assert(r.green == 2002.0)
 		assert(r.blue == 3003.0)
 		assert(r.alpha == 4004.0)
+
 	)");
 }
 
