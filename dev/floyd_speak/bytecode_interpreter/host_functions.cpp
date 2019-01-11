@@ -21,6 +21,7 @@
 #include <iostream>
 #include <fstream>
 #include "text_parser.h"
+#include "FileHandling.h"
 
 namespace floyd {
 
@@ -289,39 +290,6 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 }
 
 
-//	Records all output to interpreter
-bc_value_t host__print(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 1){
-		throw std::runtime_error("assert() requires 1 argument!");
-	}
-
-	const auto& value = args[0];
-	const auto s = to_compact_string2(bc_to_value(value));
-//	printf("%s\n", s.c_str());
-	vm._print_output.push_back(s);
-
-	return bc_value_t::make_undefined();
-}
-bc_value_t host__send(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 2){
-		throw std::runtime_error("send() requires 2 arguments!");
-	}
-
-	const auto& process_id = args[0].get_string_value();
-	const auto& message_json = args[1].get_json_value();
-
-	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
-
-
-	vm._handler->on_send(process_id, message_json);
-
-	return bc_value_t::make_undefined();
-}
-
 bc_value_t host__assert(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -379,35 +347,6 @@ bc_value_t host__typeof(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	return value_to_bc(result);
 }
 
-bc_value_t host__get_time_of_day(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 0){
-		throw std::runtime_error("get_time_of_day() requires 0 arguments!");
-	}
-
-	std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> elapsed_seconds = t - vm._imm->_start_time;
-	const auto ms = elapsed_seconds.count() * 1000.0;
-	const auto result = value_t::make_int(int(ms));
-	return value_to_bc(result);
-}
-
-QUARK_UNIT_TESTQ("sizeof(int)", ""){
-	QUARK_TRACE(std::to_string(sizeof(int)));
-	QUARK_TRACE(std::to_string(sizeof(int64_t)));
-}
-
-QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
-	const auto a = std::chrono::high_resolution_clock::now();
-    std::this_thread::sleep_for(std::chrono::milliseconds(7));
-	const auto b = std::chrono::high_resolution_clock::now();
-
-	std::chrono::duration<double> elapsed_seconds = b - a;
-	const int ms = static_cast<int>((static_cast<double>(elapsed_seconds.count()) * 1000.0));
-
-	QUARK_UT_VERIFY(ms >= 7)
-}
 
 
 bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_count){
@@ -796,73 +735,6 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 		throw std::runtime_error("Calling replace() on unsupported type of value.");
 	}
 }
-
-bc_value_t host__get_env_path(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 0){
-		throw std::runtime_error("get_env_path() requires 0 arguments!");
-	}
-
-    const char *homeDir = getenv("HOME");
-    const std::string env_path(homeDir);
-//	const std::string env_path = "~/Desktop/";
-
-	const auto v = bc_value_t::make_string(env_path);
-	return v;
-}
-
-bc_value_t host__read_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 1){
-		throw std::runtime_error("read_text_file() requires 1 arguments!");
-	}
-	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("read_text_file() requires a file path as a string.");
-	}
-
-	const string source_path = args[0].get_string_value();
-	std::string file_contents;
-	{
-		std::ifstream f (source_path);
-		if (f.is_open() == false){
-			throw std::runtime_error("Cannot read source file.");
-		}
-		std::string line;
-		while ( getline(f, line) ) {
-			file_contents.append(line + "\n");
-		}
-		f.close();
-	}
-	const auto v = bc_value_t::make_string(file_contents);
-	return v;
-}
-
-bc_value_t host__write_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 2){
-		throw std::runtime_error("write_text_file() requires 2 arguments!");
-	}
-	else if(args[0]._type.is_string() == false){
-		throw std::runtime_error("write_text_file() requires a file path as a string.");
-	}
-	else if(args[1]._type.is_string() == false){
-		throw std::runtime_error("write_text_file() requires a file path as a string.");
-	}
-	else{
-		const string path = args[0].get_string_value();
-		const string file_contents = args[1].get_string_value();
-
-		std::ofstream outputFile;
-		outputFile.open(path);
-		outputFile << file_contents;
-		outputFile.close();
-		return bc_value_t();
-	}
-}
-
 /*
 	Reads json from a text string, returning an unpacked json_value.
 */
@@ -973,6 +845,192 @@ bc_value_t host__get_json_type(interpreter_t& vm, const bc_value_t args[], int a
 	}
 }
 
+
+
+
+
+
+
+
+
+//	Records all output to interpreter
+bc_value_t host__print(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 1){
+		throw std::runtime_error("assert() requires 1 argument!");
+	}
+
+	const auto& value = args[0];
+	const auto s = to_compact_string2(bc_to_value(value));
+//	printf("%s\n", s.c_str());
+	vm._print_output.push_back(s);
+
+	return bc_value_t::make_undefined();
+}
+bc_value_t host__send(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 2){
+		throw std::runtime_error("send() requires 2 arguments!");
+	}
+
+	const auto& process_id = args[0].get_string_value();
+	const auto& message_json = args[1].get_json_value();
+
+	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
+
+
+	vm._handler->on_send(process_id, message_json);
+
+	return bc_value_t::make_undefined();
+}
+
+
+bc_value_t host__get_time_of_day(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 0){
+		throw std::runtime_error("get_time_of_day() requires 0 arguments!");
+	}
+
+	std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> elapsed_seconds = t - vm._imm->_start_time;
+	const auto ms = elapsed_seconds.count() * 1000.0;
+	const auto result = value_t::make_int(int(ms));
+	return value_to_bc(result);
+}
+
+QUARK_UNIT_TESTQ("sizeof(int)", ""){
+	QUARK_TRACE(std::to_string(sizeof(int)));
+	QUARK_TRACE(std::to_string(sizeof(int64_t)));
+}
+
+QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
+	const auto a = std::chrono::high_resolution_clock::now();
+    std::this_thread::sleep_for(std::chrono::milliseconds(7));
+	const auto b = std::chrono::high_resolution_clock::now();
+
+	std::chrono::duration<double> elapsed_seconds = b - a;
+	const int ms = static_cast<int>((static_cast<double>(elapsed_seconds.count()) * 1000.0));
+
+	QUARK_UT_VERIFY(ms >= 7)
+}
+
+
+
+bc_value_t host__get_env_path(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 0){
+		throw std::runtime_error("get_env_path() requires 0 arguments!");
+	}
+
+    const char *homeDir = getenv("HOME");
+    const std::string env_path(homeDir);
+//	const std::string env_path = "~/Desktop/";
+
+	const auto v = bc_value_t::make_string(env_path);
+	return v;
+}
+
+bc_value_t host__read_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 1){
+		throw std::runtime_error("read_text_file() requires 1 arguments!");
+	}
+	if(args[0]._type.is_string() == false){
+		throw std::runtime_error("read_text_file() requires a file path as a string.");
+	}
+
+	const string source_path = args[0].get_string_value();
+	std::string file_contents;
+	{
+		std::ifstream f (source_path);
+		if (f.is_open() == false){
+			throw std::runtime_error("Cannot read source file.");
+		}
+		std::string line;
+		while ( getline(f, line) ) {
+			file_contents.append(line + "\n");
+		}
+		f.close();
+	}
+	const auto v = bc_value_t::make_string(file_contents);
+	return v;
+}
+
+bc_value_t host__write_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 2){
+		throw std::runtime_error("write_text_file() requires 2 arguments!");
+	}
+	else if(args[0]._type.is_string() == false){
+		throw std::runtime_error("write_text_file() requires a file path as a string.");
+	}
+	else if(args[1]._type.is_string() == false){
+		throw std::runtime_error("write_text_file() requires a file path as a string.");
+	}
+	else{
+		const string path = args[0].get_string_value();
+		const string file_contents = args[1].get_string_value();
+
+		std::ofstream outputFile;
+		outputFile.open(path);
+		outputFile << file_contents;
+		outputFile.close();
+		return bc_value_t();
+	}
+}
+
+bc_value_t host__get_directory_entries_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 1){
+		throw std::runtime_error("get_directory_entries_deep() requires 1 arguments!");
+	}
+	if(args[0]._type.is_string() == false){
+		throw std::runtime_error("get_directory_entries_deep() requires a path, as a string.");
+	}
+
+	const string path = args[0].get_string_value();
+
+//??? check path is valid dir
+
+
+	std::string file_contents;
+
+	const auto a = GetDirItemsDeep(path, path);
+
+	const auto result_vec = mapf<string>(
+		a,
+		[](const auto& e){ return e.fName; }
+	);
+
+	std::vector<value_t> elements;
+	for(const auto& e: result_vec){
+		const auto v = value_t::make_string(e);
+		elements.push_back(v);
+	}
+	const auto vec2 = value_t::make_vector_value(typeid_t::make_string(), elements);
+
+
+const auto debug = value_and_type_to_ast_json(vec2);
+
+QUARK_TRACE(json_to_pretty_string(debug._value));
+
+
+	const auto v = value_to_bc(vec2);
+
+	return v;
+}
+
+
+
+
+
 std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 	const auto VOID = typeid_t::make_void();
 	const auto DYN = typeid_t::make_internal_dynamic();
@@ -999,12 +1057,21 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 		{ "unflatten_from_json", host_function_signature_t{ 1020, typeid_t::make_function(DYN, { typeid_t::make_json_value(), typeid_t::make_typeid() }, epure::pure) }},
 		{ "get_json_type", host_function_signature_t{ 1021, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}, epure::pure) }},
 
-		{ "print", host_function_signature_t{ 1000, typeid_t::make_function(VOID, { DYN }, epure::impure) } },
+
+		//	print = impure!
+		{ "print", host_function_signature_t{ 1000, typeid_t::make_function(VOID, { DYN }, epure::pure) } },
 		{ "send", host_function_signature_t{ 1022, typeid_t::make_function(VOID, { typeid_t::make_string(), typeid_t::make_json_value() }, epure::impure) } },
 		{ "get_time_of_day", host_function_signature_t{ 1005, typeid_t::make_function(typeid_t::make_int(), {}, epure::impure) }},
 		{ "get_env_path", host_function_signature_t{ 1014, typeid_t::make_function(typeid_t::make_string(), {}, epure::impure) }},
 		{ "read_text_file", host_function_signature_t{ 1015, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::impure) }},
-		{ "write_text_file", host_function_signature_t{ 1016, typeid_t::make_function(VOID, { DYN, DYN }, epure::impure) }}
+		{ "write_text_file", host_function_signature_t{ 1016, typeid_t::make_function(VOID, { DYN, DYN }, epure::impure) }},
+		{
+			"get_directory_entries_deep",
+			host_function_signature_t{
+				1023,
+				typeid_t::make_function(typeid_t::make_vector(typeid_t::make_string()), { typeid_t::make_string() }, epure::impure)
+			}
+		}
 	};
 	return temp;
 }
@@ -1037,9 +1104,11 @@ std::map<int,  host_function_t> get_host_functions(){
 		{ "print", host__print },
 		{ "send", host__send },
 		{ "get_time_of_day", host__get_time_of_day },
+
 		{ "get_env_path", host__get_env_path },
 		{ "read_text_file", host__read_text_file },
-		{ "write_text_file", host__write_text_file }
+		{ "write_text_file", host__write_text_file },
+		{ "get_directory_entries_deep", host__get_directory_entries_deep }
 	};
 
 	const auto lookup = [&](){

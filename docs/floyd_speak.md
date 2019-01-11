@@ -1152,6 +1152,17 @@ Returns the computer's realtime clock, expressed in the number of milliseconds s
 
 
 
+
+# WORLD FILE SYSTEM FUNCTIONS
+
+These functions allow you to access the OS file system. They are all impure. Temporary files are sometimes used to make the functions revertable on errors.
+
+Floyd uses unix-style paths in all its APIs. It will convert these to native paths with accessing the OS.
+
+
+
+
+
 ## get\_env\_path()
 
 Returns user's home directory, like "/Volumes/Bob".
@@ -1174,6 +1185,23 @@ Throws exception if file cannot be found or read.
 Write a string to the file system as a text file. Will create any missing directories in the path.
 
 	void write_text_file(string path, string data) impure
+
+
+
+## get\_directory\_entries() and get\_directory\_entries\_deep()
+
+Returns a vector of all the files and directories found at the path.
+
+	struct directory_entry_t {
+		string name
+		string type	//	"dir" or "file"
+	}
+	
+	[directory_entry_t] get_directory_entries(world w, absolute_path_t path)
+
+get_directory_entries_deep() works the same way, but will also traverse each found directory. Contents of sub-directories will be also be prefixed by the sub-directory names. All path names are relative to the input directory - not absolute to file system.
+
+	[directory_entry_t] get_directory_entries_deep(world w, absolute_path_t path)
 
 
 

@@ -224,7 +224,7 @@ bc_value_t value_to_bc(const value_t& value){
 			for(const auto& e: vec){
 				const auto bc = value_to_bc(e);
 				const auto hand = bc_object_handle_t(bc);
-				vec2.push_back(hand);
+				vec2 =vec2.push_back(hand);
 			}
 			return make_vector_value(element_type, vec2);
 		}
@@ -236,7 +236,7 @@ bc_value_t value_to_bc(const value_t& value){
 		const auto elements = value.get_dict_value();
 		immer::map<string, bc_object_handle_t> entries2;
 		for(const auto& e: elements){
-			entries2.insert({e.first, bc_object_handle_t(value_to_bc(e.second))});
+			entries2 = entries2.insert({e.first, bc_object_handle_t(value_to_bc(e.second))});
 		}
 		return make_dict_value(value_type, entries2);
 	}

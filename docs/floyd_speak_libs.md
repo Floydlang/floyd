@@ -421,10 +421,6 @@ std::pair<bool, seq_t> read_optional_char(seq_t s, char ch)
 
 # FUTURE -- WORLD FILE SYSTEM FUNCTIONS
 
-These functions allow you to access the OS file system. They are all impure. Temporary files are sometimes used to make the functions revertable on errors.
-
-Floyd uses unix-style paths in all its APIs. It will convert these to native paths with accessing the OS.
-
 
 ??? Keep file open, read/write part by part.
 ??? Paths could use [string] instead.
@@ -507,20 +503,6 @@ Deletes a file or directory. If the entry has children those are deleted too = d
 	directory_entry_info_t get_entry_info(world w, absolute_path_t path)
 
 
-## get\_directory\_entries() and get\_directory\_entries\_deep()
-
-Returns a vector of all the files and directories found at the path.
-
-	struct directory_entry_t {
-		string name
-		string type	//	"dir" or "file"
-	}
-	
-	[directory_entry_t] get_directory_entries(world w, absolute_path_t path)
-
-get_directory_entries_deep() works the same way, but will also traverse each found directory. Contents of sub-directories will be also be prefixed by the sub-directory names. All path names are relative to the input directory - not absolute to file system.
-
-	[directory_entry_t] get_directory_entries_deep(world w, absolute_path_t path)
 
 
 ## to\_native\_path() and from\_native\_path()

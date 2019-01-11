@@ -2987,7 +2987,27 @@ QUARK_UNIT_TEST("", "color__black", "", ""){
 	)");
 }
 
+#if 1
+QUARK_UNIT_TEST_VIP("", "get_directory_entries_deep()", "", ""){
+	const auto result = test__run_return_result(R"(
 
+//		print("/Desktop/test_out.txt")
+
+//		let a = ["/Desktop/test_out.txt", "Floyd wrote this!"]
+//		let b = ["/Desktop/test_out.txt"]
+//		let result = 3.0
+
+//		print("/Users/marcus/Desktop")
+
+		let result = get_directory_entries_deep("/Users/marcus/Desktop/")
+		assert(size(result) > 1000)
+		print(to_string(result))
+
+	)", {});
+
+//	QUARK_UT_VERIFY(result.get_double_value() >= 3.14 && result.get_double_value() < 3.15);
+}
+#endif
 
 
 
