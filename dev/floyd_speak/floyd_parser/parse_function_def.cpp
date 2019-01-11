@@ -30,7 +30,9 @@ std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos){
 	const auto return_type_pos = read_required_type(func_pos);
 	const auto function_name_pos = read_required_identifier(return_type_pos.second);
 	const auto args_pos = read_function_arg_parantheses(function_name_pos.second);
-	const auto body = parse_statement_body(args_pos.second);
+
+	const auto impure_pos = if_first(skip_whitespace(args_pos.second), keyword_t::k_impure);
+	const auto body = parse_statement_body(impure_pos.second);
 
 	const auto args = members_to_json(args_pos.first);
 	const auto function_name = function_name_pos.first;
@@ -41,17 +43,31 @@ std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos){
 			{ "name", function_name },
 			{ "args", args },
 			{ "statements", body.first._value },
-			{ "return_type", typeid_to_ast_json(return_type_pos.first, json_tags::k_tag_resolve_state)._value }
+			{ "return_type", typeid_to_ast_json(return_type_pos.first, json_tags::k_tag_resolve_state)._value },
+			{ "impure", impure_pos.first }
 		})
 	});
 	return { ast_json_t{function_def}, body.second };
 }
+
 
 struct test {
 	std::string desc;
 	std::string input;
 	std::string output;
 };
+
+
+QUARK_UNIT_TEST("", "parse_function_definition2()", "Minimal function IMPURE", ""){
+	const std::string input = "func int f() impure{ return 3; }";
+	const std::string expected = R"(
+		[
+			"def-func",
+			{ "args": [], "name": "f", "return_type": "^int", "statements": [["return", ["k", 3, "^int"]]], "impure": true }
+		]
+	)";
+	ut_compare_jsons(parse_function_definition2(seq_t(input)).first._value, parse_json(seq_t(expected)).first);
+}
 
 const std::vector<test> testsxyz = {
 	{
@@ -61,7 +77,7 @@ const std::vector<test> testsxyz = {
 		R"(
 			[
 				"def-func",
-				{ "args": [], "name": "f", "return_type": "^int", "statements": [["return", ["k", 3, "^int"]]] }
+				{ "args": [], "name": "f", "return_type": "^int", "statements": [["return", ["k", 3, "^int"]]], "impure": false }
 			]
 		)"
 	},
@@ -79,7 +95,8 @@ const std::vector<test> testsxyz = {
 					],
 					"name": "printf",
 					"return_type": "^int",
-					"statements": [["return", ["k", 3, "^int"]]]
+					"statements": [["return", ["k", 3, "^int"]]],
+					"impure": false
 				}
 			]
 		)"
@@ -97,7 +114,8 @@ const std::vector<test> testsxyz = {
 					],
 					"name": "printf",
 					"return_type": "^int",
-					"statements": [["return", ["k", 3, "^int"]]]
+					"statements": [["return", ["k", 3, "^int"]]],
+					"impure": false
 				}
 			]
 		)"
@@ -115,7 +133,8 @@ const std::vector<test> testsxyz = {
 					],
 					"name": "printf",
 					"return_type": "^int",
-					"statements": [["return", ["k", 3, "^int"]]]
+					"statements": [["return", ["k", 3, "^int"]]],
+					"impure": false
 				}
 			]
 		)"

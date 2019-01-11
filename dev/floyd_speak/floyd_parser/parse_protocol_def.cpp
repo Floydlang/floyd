@@ -43,7 +43,7 @@ namespace floyd {
 				arg_types.push_back(e._type);
 			}
 			const member_t f = {
-				typeid_t::make_function(return_type_pos.first, arg_types),
+				typeid_t::make_function(return_type_pos.first, arg_types, epure::pure),
 				function_name_pos.first
 			};
 			functions.push_back(f);
@@ -94,14 +94,14 @@ namespace floyd {
 							{ "name", "f"},
 							{
 								"type",
-								json_t::make_array({ "fun", "^int", json_t::make_array({"^string", "^double"}) })
+								json_t::make_array({ "fun", "^int", json_t::make_array({"^string", "^double"}), true })
 							}
 						}),
 						json_t::make_object({
 							{ "name", "g"},
 							{
 								"type",
-								json_t::make_array({ "fun", "^string", json_t::make_array({"^bool"}) })
+								json_t::make_array({ "fun", "^string", json_t::make_array({"^bool"}), true })
 							}
 						})
 					})

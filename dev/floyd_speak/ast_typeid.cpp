@@ -482,26 +482,26 @@ const auto k_test_function_args_a = std::vector<typeid_t>({
 });
 
 QUARK_UNIT_TESTQ("typeid_t", "make_function()"){
-	const auto t = typeid_t::make_function(typeid_t::make_void(), {});
+	const auto t = typeid_t::make_function(typeid_t::make_void(), {}, epure::pure);
 	QUARK_UT_VERIFY(t.get_base_type() == base_type::k_function);
 }
 QUARK_UNIT_TESTQ("typeid_t", "is_function()"){
-	const auto t = typeid_t::make_function(typeid_t::make_void(), {});
+	const auto t = typeid_t::make_function(typeid_t::make_void(), {}, epure::pure);
 	QUARK_UT_VERIFY(t.is_function() == true);
 }
 QUARK_UNIT_TESTQ("typeid_t", "is_function()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_function() == false);
 }
 QUARK_UNIT_TESTQ("typeid_t", "get_function_return()"){
-	const auto t = typeid_t::make_function(typeid_t::make_void(), {});
+	const auto t = typeid_t::make_function(typeid_t::make_void(), {}, epure::pure);
 	QUARK_UT_VERIFY(t.get_function_return().is_void());
 }
 QUARK_UNIT_TESTQ("typeid_t", "get_function_return()"){
-	const auto t = typeid_t::make_function(typeid_t::make_string(), {});
+	const auto t = typeid_t::make_function(typeid_t::make_string(), {}, epure::pure);
 	QUARK_UT_VERIFY(t.get_function_return().is_string());
 }
 QUARK_UNIT_TESTQ("typeid_t", "get_function_args()"){
-	const auto t = typeid_t::make_function(typeid_t::make_void(), k_test_function_args_a);
+	const auto t = typeid_t::make_function(typeid_t::make_void(), k_test_function_args_a, epure::pure);
 	QUARK_UT_VERIFY(t.get_function_args() == k_test_function_args_a);
 }
 
@@ -566,7 +566,7 @@ QUARK_UNIT_TESTQ("typeid_t", "operator=()"){
 	QUARK_UT_VERIFY(a == b);
 }
 QUARK_UNIT_TESTQ("typeid_t", "operator=()"){
-	const auto a = typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_int(), typeid_t::make_double() });
+	const auto a = typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_int(), typeid_t::make_double() }, epure::pure);
 	const auto b = a;
 	QUARK_UT_VERIFY(a == b);
 }
@@ -669,7 +669,7 @@ const vector<typeid_str_test_t> make_typeid_str_tests(){
 
 		//	Function
 		{
-			typeid_t::make_function(typeid_t::make_bool(), vector<typeid_t>{ typeid_t::make_int(), typeid_t::make_double() }),
+			typeid_t::make_function(typeid_t::make_bool(), vector<typeid_t>{ typeid_t::make_int(), typeid_t::make_double() }, epure::pure),
 			R"(["function", "bool", [ "int", "double"]])",
 			"function bool(int,double)"
 		},

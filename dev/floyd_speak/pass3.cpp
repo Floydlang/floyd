@@ -226,13 +226,14 @@ typeid_t resolve_type_internal(const analyser_t& a, const typeid_t& type){
 	else if(basetype == base_type::k_function){
 		const auto ret = type.get_function_return();
 		const auto args = type.get_function_args();
+		const auto pure = type.get_function_pure();
 
 		const auto ret2 = resolve_type(a, ret);
 		vector<typeid_t> args2;
 		for(const auto& e: args){
 			args2.push_back(resolve_type(a, e));
 		}
-		return typeid_t::make_function(ret2, args2);
+		return typeid_t::make_function(ret2, args2, pure);
 	}
 
 	else if(basetype == base_type::k_internal_unresolved_type_identifier){

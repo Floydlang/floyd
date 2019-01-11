@@ -168,6 +168,10 @@ namespace floyd {
 
 	std::string base_type_to_string(const base_type t);
 
+	enum class epure {
+		pure,
+		impure
+	};
 
 
 	//////////////////////////////////////		typeid_ext_imm_t
@@ -182,6 +186,7 @@ namespace floyd {
 				&& _unresolved_type_identifier == other._unresolved_type_identifier
 				&& compare_shared_values(_struct_def, other._struct_def)
 				&& compare_shared_values(_protocol_def, other._protocol_def)
+				&& _pure == other._pure
 				;
 		}
 
@@ -193,6 +198,7 @@ namespace floyd {
 
 		public: const std::shared_ptr<const struct_definition_t> _struct_def;
 		public: const std::shared_ptr<const protocol_definition_t> _protocol_def;
+		public: epure _pure;
 	};
 
 
@@ -305,13 +311,13 @@ namespace floyd {
 		public: static typeid_t make_struct1(const std::shared_ptr<const struct_definition_t>& def){
 			QUARK_ASSERT(def);
 
-			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, "", def, {} });
+			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, "", def, {}, epure::pure});
 			return { floyd::base_type::k_struct, ext };
 		}
 
 		public: static typeid_t make_struct2(const std::vector<member_t>& members){
 			auto def = std::make_shared<const struct_definition_t>(members);
-			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, "", def, {} });
+			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, "", def, {}, epure::pure});
 			return { floyd::base_type::k_struct, ext };
 		}
 
@@ -336,7 +342,7 @@ namespace floyd {
 
 		public: static typeid_t make_protocol(const std::vector<member_t>& members){
 			const auto def = std::make_shared<protocol_definition_t>(protocol_definition_t(members));
-			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, "", {}, def });
+			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, "", {}, def, epure::pure });
 			return { floyd::base_type::k_protocol, ext };
 		}
 
@@ -360,7 +366,7 @@ namespace floyd {
 
 
 		public: static typeid_t make_vector(const typeid_t& element_type){
-			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ { element_type }, "", {}, {} });
+			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ { element_type }, "", {}, {}, epure::pure });
 			return { floyd::base_type::k_vector, ext };
 		}
 
@@ -379,7 +385,7 @@ namespace floyd {
 
 
 		public: static typeid_t make_dict(const typeid_t& value_type){
-			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ { value_type }, "", {}, {} });
+			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ { value_type }, "", {}, {}, epure::pure });
 			return { floyd::base_type::k_dict, ext };
 		}
 
@@ -397,11 +403,11 @@ namespace floyd {
 
 
 
-		public: static typeid_t make_function(const typeid_t& ret, const std::vector<typeid_t>& args){
+		public: static typeid_t make_function(const typeid_t& ret, const std::vector<typeid_t>& args, epure pure){
 			//	Functions use _parts[0] for return type always. _parts[1] is first argument, if any.
 			std::vector<typeid_t> parts = { ret };
 			parts.insert(parts.end(), args.begin(), args.end());
-			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ parts, "", {}, {} });
+			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ parts, "", {}, {}, pure});
 
 			return { floyd::base_type::k_function, ext };
 		}
@@ -426,10 +432,16 @@ namespace floyd {
 			return r;
 		}
 
+		public: epure get_function_pure() const {
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(get_base_type() == base_type::k_function);
+
+			return _ext->_pure;
+		}
 
 
 		public: static typeid_t make_unresolved_type_identifier(const std::string& s){
-			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, s, {}, {} });
+			const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, s, {}, {}, epure::pure});
 			return { floyd::base_type::k_internal_unresolved_type_identifier, ext };
 		}
 

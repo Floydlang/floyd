@@ -93,7 +93,8 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 					"return_type": "^int",
 					"statements": [
 						["return", ["k", 13, "^int"]]
-					]
+					],
+					"impure": false
 				}
 			]
 		)")).first
@@ -144,7 +145,8 @@ const std::string k_test_program_0_parserout = R"(
 				"return_type": "^int",
 				"statements": [
 					[ "return", [ "k", 3, "^int" ] ]
-				]
+				],
+				"impure": false
 			}
 		]
 	]
@@ -167,7 +169,8 @@ const std::string k_test_program_1_parserout = R"(
 				"return_type": "^int",
 				"statements": [
 					[ "return", [ "k", 3, "^int" ] ]
-				]
+				],
+				"impure": false
 			}
 		]
 	]
@@ -206,7 +209,8 @@ const char k_test_program_100_parserout[] = R"(
 							["k", 3.0, "^double"]
 						]
 					]
-				]
+				],
+				"impure": false
 			}
 		],
 		[
@@ -223,7 +227,8 @@ const char k_test_program_100_parserout[] = R"(
 						["call", ["@", "pixel"], [["k", 1, "^int"], ["k", 0, "^int"], ["k", 0, "^int"]]]
 					],
 					["return", ["call", ["@", "get_grey"], [["@", "p"]]]]
-				]
+				],
+				"impure": false
 			}
 		]
 	]

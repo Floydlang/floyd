@@ -22,6 +22,7 @@ const std::string keyword_t::k_for = "for";
 const std::string keyword_t::k_if = "if";
 const std::string keyword_t::k_else = "else";
 const std::string keyword_t::k_func = "func";
+const std::string keyword_t::k_impure = "impure";
 
 const std::string keyword_t::k_internal_undefined = "**undef**";
 const std::string keyword_t::k_internal_dynamic = "**dyn**";

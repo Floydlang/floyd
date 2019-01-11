@@ -38,6 +38,7 @@ namespace floyd {
 		static const std::string k_if;
 		static const std::string k_else;
 		static const std::string k_func;
+		static const std::string k_impure;
 
 		static const std::string k_internal_undefined;
 		static const std::string k_internal_dynamic;

@@ -91,7 +91,8 @@ ast_json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 		return ast_json_t{json_t::make_array({
 			basetype_str,
 			typeid_to_ast_json(t.get_function_return(), tags)._value,
-			typeids_to_json_array(t.get_function_args())
+			typeids_to_json_array(t.get_function_args()),
+			t.get_function_pure() == epure::pure ? true : false
 		})};
 	}
 	else if(b == base_type::k_internal_unresolved_type_identifier){
@@ -190,7 +191,12 @@ typeid_t typeid_from_ast_json(const ast_json_t& t2){
 			const auto ret_type = typeid_from_ast_json(ast_json_t{a[1]});
 			const auto arg_types_array = a[2].get_array();
 			const vector<typeid_t> arg_types = typeids_from_json_array(arg_types_array);
-			return typeid_t::make_function(ret_type, arg_types);
+
+			if(a[3].is_true() == false && a[3].is_false() == false){
+				throw std::exception();
+			}
+			const bool pure = a[3].is_true();
+			return typeid_t::make_function(ret_type, arg_types, pure ? epure::pure : epure::impure);
 		}
 		else if(s == "**unknown-identifier**"){
 			QUARK_ASSERT(false);

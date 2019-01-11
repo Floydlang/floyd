@@ -130,7 +130,7 @@ This keyword is part of Floyd Systems -- a way to define how all the containers 
 Read more about this in the Floyd Systems documentation
 
 
-# FUNCTIONS
+# PURE FUNCTIONS
 
 Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants, never read or modify anything: not global variables, not by calling another, impure function. It's not possible to call a function with a set of arguments and later call it with the same argument and get a different result. A function like get_time() is impure.
 
@@ -180,6 +180,26 @@ This is a function that returns a function value:
 ```
 
 All arguments to a function are read-only -- there are no output arguments.
+
+
+# IMPURE FUNCTIONS
+
+You can tag a function to be impure using the "impure" keyword.
+
+	func int f1(string x) impure {
+		return 3
+	}
+
+This mean the function is no pure.
+
+A pure function cannot call any impure functions!
+An impure function can call both pure and impure functions.
+
+Limit the amount of impure code!
+
+# GRAY PURE FUNCTIONS
+
+
 
 
 # EXPRESSIONS
@@ -1118,7 +1138,7 @@ This outputs one line of text to the default output of the application. It can p
 
 Returns the computer's realtime clock, expressed in the number of milliseconds since system start. Useful to measure program execution. Sample get_time_of_day() before and after execution and compare them to see duration.
 
-	int get_time_of_day()
+	int get_time_of_day() impure
 
 
 
@@ -1126,7 +1146,7 @@ Returns the computer's realtime clock, expressed in the number of milliseconds s
 
 Returns user's home directory, like "/Volumes/Bob".
 
-	string get_env_path()
+	string get_env_path() impure
 
 
 
@@ -1134,7 +1154,7 @@ Returns user's home directory, like "/Volumes/Bob".
 
 Reads a text file from the file system and returns it as a string.
 
-	string read_text_file(string path)
+	string read_text_file(string path) impure
 
 Throws exception if file cannot be found or read.
 
@@ -1143,7 +1163,7 @@ Throws exception if file cannot be found or read.
 
 Write a string to the file system as a text file. Will create any missing directories in the path.
 
-	void write_text_file(string path, string data)
+	void write_text_file(string path, string data) impure
 
 
 
@@ -1153,7 +1173,7 @@ Sends a message to the inbox of a Floyd green process, possibly your own process
 
 The process may run on a different OS thread but send() is thread safe.
 
-	send(string process_key, json_value message)
+	send(string process_key, json_value message) impure
 
 
 
@@ -1163,7 +1183,7 @@ The process may run on a different OS thread but send() is thread safe.
 
 TODO POC
 
-	probe(value, description_string, probe_tag)
+	probe(value, description_string, probe_tag) impure
 
 In your code you write probe(my_temp, "My intermediate value", "key-1") to let clients log my_temp. The probe will appear as a hook in tools and you can chose to log the value and make stats and so on. Argument 2 is a descriptive name, argument 3 is a string-key that is scoped to the function and used to know if several probe()-statements log to the same signal or not.
 
@@ -1421,64 +1441,65 @@ Here is the DAG for the complete syntax of Floyd.
 	TYPE:
 		NULL							"null"
 		BOOL							"bool"
-		INT								"int"
-		DOUBLE							"double"
-		STRING							"string"
-		TYPEID							???
-		VECTOR							"[" TYPE "]"
-		DICTIONARY						"{" TYPE ":" TYPE" "}"
+		INT							"int"
+		DOUBLE						"double"
+		STRING						"string"
+		TYPEID						???
+		VECTOR						"[" TYPE "]"
+		DICTIONARY					"{" TYPE ":" TYPE" "}"
 		FUNCTION-TYPE					TYPE "(" ARGUMENT ","* ")" "{" BODY "}"
 			ARGUMENT					TYPE identifier
-		STRUCT-DEF						"struct" IDENTIFIER "{" MEMBER* "}"
-			MEMBER						 TYPE IDENTIFIER
-		UNNAMED-STRUCT					"struct" "{" TYPE* "}"
+		STRUCT-DEF					"struct" IDENTIFIER "{" MEMBER* "}"
+			MEMBER					 TYPE IDENTIFIER
+		UNNAMED-STRUCT				"struct" "{" TYPE* "}"
 
-		UNRESOLVED-TYPE					IDENTIFIER-CHARS, like "hello"
+		UNRESOLVED-TYPE				IDENTIFIER-CHARS, like "hello"
 
 	EXPRESSION:
 		EXPRESSION-COMMA-LIST			EXPRESSION | EXPRESSION "," EXPRESSION-COMMA-LIST
-		NAME-EXPRESSION					IDENTIFIER ":" EXPRESSION
+		NAME-EXPRESSION				IDENTIFIER ":" EXPRESSION
 		NAME-COLON-EXPRESSION-LIST		NAME-EXPRESSION | NAME-EXPRESSION "," NAME-COLON-EXPRESSION-LIST
 
 		TYPE-NAME						TYPE IDENTIFIER
 		TYPE-NAME-COMMA-LIST			TYPE-NAME | TYPE-NAME "," TYPE-NAME-COMMA-LIST
 		TYPE-NAME-SEMICOLON-LIST		TYPE-NAME ";" | TYPE-NAME ";" TYPE-NAME-SEMICOLON-LIST
 
-		NUMERIC-LITERAL					"0123456789" +++
+		NUMERIC-LITERAL				"0123456789" +++
 		RESOLVE-IDENTIFIER				IDENTIFIER +++
 
 		CONSTRUCTOR-CALL				TYPE "(" EXPRESSION-COMMA-LIST ")" +++
 
 		VECTOR-DEFINITION				"[" EXPRESSION-COMMA-LIST "]" +++
-		DICT-DEFINITION					"[" NAME-COLON-EXPRESSION-LIST "]" +++
-		ADD								EXPRESSION "+" EXPRESSION +++
-		SUB								EXPRESSION "-" EXPRESSION +++
-										EXPRESSION "&&" EXPRESSION +++
-		RESOLVE-MEMBER					EXPRESSION "." EXPRESSION +++
-		GROUP							"(" EXPRESSION ")"" +++
-		LOOKUP							EXPRESSION "[" EXPRESSION "]"" +++
+		DICT-DEFINITION				"[" NAME-COLON-EXPRESSION-LIST "]" +++
+		ADD							EXPRESSION "+" EXPRESSION +++
+		SUB							EXPRESSION "-" EXPRESSION +++
+									EXPRESSION "&&" EXPRESSION +++
+		RESOLVE-MEMBER				EXPRESSION "." EXPRESSION +++
+		GROUP						"(" EXPRESSION ")"" +++
+		LOOKUP						EXPRESSION "[" EXPRESSION "]"" +++
 		CALL							EXPRESSION "(" EXPRESSION-COMMA-LIST ")" +++
-		UNARY-MINUS						"-" EXPRESSION
+		UNARY-MINUS					"-" EXPRESSION
 		CONDITIONAL-OPERATOR			EXPRESSION ? EXPRESSION : EXPRESSION +++
 
 	STATEMENT:
 		BODY							"{" STATEMENT* "}"
 
-		RETURN							"return" EXPRESSION
+		RETURN						"return" EXPRESSION
 		DEFINE-STRUCT					"struct" IDENTIFIER "{" TYPE-NAME-SEMICOLON-LIST "}"
-		DEFINE-FUNCTION				 	"func" TYPE IDENTIFIER "(" TYPE-NAME-COMMA-LIST ")" BODY
-		IF								"if" "(" EXPRESSION ")" BODY "else" BODY
-		IF-ELSE							"if" "(" EXPRESSION ")" BODY "else" "if"(EXPRESSION) BODY "else" BODY
-		FOR								"for" "(" IDENTIFIER "in" EXPRESSION "..." EXPRESSION ")" BODY
-		FOR								"for" "(" IDENTIFIER "in" EXPRESSION "..<" EXPRESSION ")" BODY
-		WHILE 							"while" "(" EXPRESSION ")" BODY
+		DEFINE-FUNCTION				"func" TYPE IDENTIFIER "(" TYPE-NAME-COMMA-LIST ")" BODY
+		DEFINE-IMPURE-FUNCTION			"func" TYPE IDENTIFIER "(" TYPE-NAME-COMMA-LIST ")" "impure" BODY
+		IF							"if" "(" EXPRESSION ")" BODY "else" BODY
+		IF-ELSE						"if" "(" EXPRESSION ")" BODY "else" "if"(EXPRESSION) BODY "else" BODY
+		FOR							"for" "(" IDENTIFIER "in" EXPRESSION "..." EXPRESSION ")" BODY
+		FOR							"for" "(" IDENTIFIER "in" EXPRESSION "..<" EXPRESSION ")" BODY
+		WHILE 						"while" "(" EXPRESSION ")" BODY
 
  		BIND-IMMUTABLE-TYPED			"let" TYPE IDENTIFIER "=" EXPRESSION
  		BIND-IMMUTABLE-DEDUCETYPE		"let" IDENTIFIER "=" EXPRESSION
  		BIND-MUTABLE-TYPED				"mutable" TYPE IDENTIFIER "=" EXPRESSION
  		BIND-MUTABLE-DEDUCETYPE			"mutable" IDENTIFIER "=" EXPRESSION
 		EXPRESSION-STATEMENT 			EXPRESSION
- 		ASSIGNMENT	 					IDENTIFIER "=" EXPRESSION
+ 		ASSIGNMENT	 				IDENTIFIER "=" EXPRESSION
 
 
 

@@ -260,12 +260,18 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		const auto args = def.get_object_element("args");
 		const auto fstatements = def.get_object_element("statements");
 		const auto return_type = def.get_object_element("return_type");
+		const auto impure = def.get_object_element("impure");
 
 		const auto name2 = name.get_string();
 		const auto args2 = members_from_json(args);
 		const auto fstatements2 = astjson_to_statements(tracer, ast_json_t{fstatements});
 		const auto return_type2 = resolve_type_name(ast_json_t{return_type});
-		const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2));
+
+		if(impure.is_true() == false && impure.is_false() == false){
+			throw std::exception();
+		}
+		const auto pure = impure.is_false();
+		const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2), pure ? epure::pure : epure::impure);
 		const auto body = body_t{fstatements2};
 		const auto function_def = function_definition_t{function_typeid, args2, make_shared<body_t>(body), 0};
 
@@ -455,7 +461,8 @@ ast_json_t statement_to_json(const statement_t& e){
 			return ast_json_t{json_t::make_array({
 				json_t("def-func"),
 				json_t(s._name),
-				function_def_to_ast_json(*s._def)._value
+				function_def_to_ast_json(*s._def)._value,
+				s._def->_function_type.get_function_pure() == epure::impure ? true : false
 			})};
 		}
 

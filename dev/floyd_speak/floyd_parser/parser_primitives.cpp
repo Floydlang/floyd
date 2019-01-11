@@ -470,8 +470,10 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_optional_trailing_function_args(cons
 		const auto function_args_pos = read_function_arg_parantheses(more_pos);
 		vector<typeid_t> nameless_args = get_member_types(function_args_pos.first);
 
+		const auto impure_pos = if_first(skip_whitespace(function_args_pos.second), keyword_t::k_impure);
+
 		const auto pos = function_args_pos.second;
-		const auto function_type = typeid_t::make_function(type, nameless_args);
+		const auto function_type = typeid_t::make_function(type, nameless_args, impure_pos.first ? epure::impure : epure::pure);
 		const auto result = read_optional_trailing_function_args(function_type, pos);
 		return result;
 	}
@@ -546,21 +548,22 @@ QUARK_UNIT_TEST("", "read_type()", "dict", ""){
 
 QUARK_UNIT_TEST("", "read_type()", "", ""){
 	const auto r = read_type(seq_t("int ()"));
-	QUARK_TEST_VERIFY(*r.first ==  typeid_t::make_function(typeid_t::make_int(), {}));
+	QUARK_TEST_VERIFY(*r.first ==  typeid_t::make_function(typeid_t::make_int(), {}, epure::pure));
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 
 QUARK_UNIT_TEST("", "read_type()", "", ""){
 	const auto r = read_type(seq_t("string (double a, double b)"));
-	QUARK_TEST_VERIFY(	*r.first ==  typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_double(), typeid_t::make_double() })	);
+	QUARK_TEST_VERIFY(	*r.first ==  typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_double(), typeid_t::make_double() }, epure::pure)	);
 	QUARK_TEST_VERIFY(r.second == seq_t(""));
 }
 QUARK_UNIT_TEST("", "read_type()", "", ""){
 	const auto r = read_type(seq_t("int (double a) ()"));
 
 	QUARK_TEST_VERIFY( *r.first == typeid_t::make_function(
-			typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_double() }),
-			{}
+			typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_double() }, epure::pure),
+			{},
+			epure::pure
 		)
 	);
 	QUARK_TEST_VERIFY(	r.second == seq_t("") );
@@ -574,8 +577,9 @@ QUARK_UNIT_TEST("", "read_type()", "", ""){
 		typeid_t::make_function(
 			typeid_t::make_bool(),
 			{
-				typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_double() })
-			}
+				typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_double() }, epure::pure)
+			},
+			epure::pure
 		)
 	);
 
