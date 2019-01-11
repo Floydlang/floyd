@@ -43,6 +43,11 @@ struct analyzer_imm_t {
 	Value object (MUTABLE!) that represents one step of the semantic analysis. It is passed around.
 */
 
+struct lexical_scope_t {
+	symbol_table_t symbols;
+	epure pure;
+};
+
 struct analyser_t {
 	public: analyser_t(const ast_t& ast);
 	public: analyser_t(const analyser_t& other);
@@ -60,7 +65,7 @@ struct analyser_t {
 
 
 	//	Non-constant. Last scope is the current one. First scope is the root.
-	public: std::vector<std::shared_ptr<symbol_table_t>> _call_stack;
+	public: std::vector<lexical_scope_t> _lexical_scope_stack;
 
 	//	These are output functions, that have been fixed.
 	public: std::vector<std::shared_ptr<const floyd::function_definition_t>> _function_defs;
@@ -117,15 +122,20 @@ const function_definition_t& function_id_to_def(const analyser_t& a, int functio
 
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-std::pair<symbol_t*, floyd::variable_address_t> resolve_env_variable_deep(const analyser_t& a, int depth, const std::string& s){
+std::pair<const symbol_t*, floyd::variable_address_t> resolve_env_variable_deep(const analyser_t& a, int depth, const std::string& s){
 	QUARK_ASSERT(a.check_invariant());
-	QUARK_ASSERT(depth >= 0 && depth < a._call_stack.size());
+	QUARK_ASSERT(depth >= 0 && depth < a._lexical_scope_stack.size());
 	QUARK_ASSERT(s.size() > 0);
 
-    const auto it = std::find_if(a._call_stack[depth]->_symbols.begin(), a._call_stack[depth]->_symbols.end(),  [&s](const std::pair<std::string, floyd::symbol_t>& e) { return e.first == s; });
-	if(it != a._call_stack[depth]->_symbols.end()){
-		const auto parent_index = depth == 0 ? -1 : (int)(a._call_stack.size() - depth - 1);
-		const auto variable_index = (int)(it - a._call_stack[depth]->_symbols.begin());
+    const auto it = std::find_if(
+    	a._lexical_scope_stack[depth].symbols._symbols.begin(),
+    	a._lexical_scope_stack[depth].symbols._symbols.end(),
+    	[&s](const std::pair<std::string, floyd::symbol_t>& e) { return e.first == s; }
+	);
+
+	if(it != a._lexical_scope_stack[depth].symbols._symbols.end()){
+		const auto parent_index = depth == 0 ? -1 : (int)(a._lexical_scope_stack.size() - depth - 1);
+		const auto variable_index = (int)(it - a._lexical_scope_stack[depth].symbols._symbols.begin());
 		return { &it->second, floyd::variable_address_t::make_variable_address(parent_index, variable_index) };
 	}
 	else if(depth > 0){
@@ -136,25 +146,25 @@ std::pair<symbol_t*, floyd::variable_address_t> resolve_env_variable_deep(const 
 	}
 }
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-std::pair<symbol_t*, floyd::variable_address_t> find_symbol_by_name(const analyser_t& a, const std::string& s){
+std::pair<const symbol_t*, floyd::variable_address_t> find_symbol_by_name(const analyser_t& a, const std::string& s){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
-	return resolve_env_variable_deep(a, static_cast<int>(a._call_stack.size() - 1), s);
+	return resolve_env_variable_deep(a, static_cast<int>(a._lexical_scope_stack.size() - 1), s);
 }
 
 bool does_symbol_exist_shallow(const analyser_t& a, const std::string& s){
-    const auto it = std::find_if(a._call_stack.back()->_symbols.begin(), a._call_stack.back()->_symbols.end(),  [&s](const std::pair<std::string, floyd::symbol_t>& e) { return e.first == s; });
-	return it != a._call_stack.back()->_symbols.end();
+    const auto it = std::find_if(a._lexical_scope_stack.back().symbols._symbols.begin(), a._lexical_scope_stack.back().symbols._symbols.end(),  [&s](const std::pair<std::string, floyd::symbol_t>& e) { return e.first == s; });
+	return it != a._lexical_scope_stack.back().symbols._symbols.end();
 }
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-symbol_t* resolve_symbol_by_address(const analyser_t& a, const floyd::variable_address_t& s){
+const symbol_t* resolve_symbol_by_address(const analyser_t& a, const floyd::variable_address_t& s){
 	QUARK_ASSERT(a.check_invariant());
 
-	const auto env_index = s._parent_steps == -1 ? 0 : a._call_stack.size() - s._parent_steps - 1;
-	auto& env = a._call_stack[env_index];
-	return &env->_symbols[s._index].second;
+	const auto env_index = s._parent_steps == -1 ? 0 : a._lexical_scope_stack.size() - s._parent_steps - 1;
+	auto& env = a._lexical_scope_stack[env_index];
+	return &env.symbols._symbols[s._index].second;
 }
 
 symbol_t find_global_symbol(const analyser_t& a, const string& s){
@@ -291,19 +301,21 @@ std::pair<analyser_t, vector<statement_t>> analyse_statements(const analyser_t& 
 	return { a_acc, statements2 };
 }
 
-std::pair<analyser_t, body_t > analyse_body(const analyser_t& a, const floyd::body_t& body){
+std::pair<analyser_t, body_t > analyse_body(const analyser_t& a, const floyd::body_t& body, epure pure){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
 
 	auto new_environment = symbol_table_t{ body._symbols };
-	a_acc._call_stack.push_back(make_shared<symbol_table_t>(new_environment));
+	const auto lexical_scope = lexical_scope_t{new_environment, pure};
+	a_acc._lexical_scope_stack.push_back(lexical_scope);
+
 	const auto result = analyse_statements(a_acc, body._statements);
 	a_acc = result.first;
 
-	const auto body2 = body_t(result.second, *result.first._call_stack.back());
+	const auto body2 = body_t(result.second, result.first._lexical_scope_stack.back().symbols);
 
-	a_acc._call_stack.pop_back();
+	a_acc._lexical_scope_stack.pop_back();
 	return { a_acc, body2 };
 }
 
@@ -347,8 +359,8 @@ std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& a, 
 		a_acc = rhs_expr2.first;
 		const auto rhs_expr2_type = rhs_expr2.second.get_output_type();
 
-		a_acc._call_stack.back()->_symbols.push_back({local_name, symbol_t::make_immutable_local(rhs_expr2_type)});
-		int variable_index = (int)(a_acc._call_stack.back()->_symbols.size() - 1);
+		a_acc._lexical_scope_stack.back().symbols._symbols.push_back({local_name, symbol_t::make_immutable_local(rhs_expr2_type)});
+		int variable_index = (int)(a_acc._lexical_scope_stack.back().symbols._symbols.size() - 1);
 		return { a_acc, statement_t::make__store2(floyd::variable_address_t::make_variable_address(0, variable_index), rhs_expr2.second) };
 	}
 }
@@ -382,11 +394,11 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	//	Setup temporary simply so function definition can find itself = recursive.
 	//	Notice: the final type may not be correct yet, but for function defintions it is.
 	//	This logic should be available for deduced binds too, in analyse_store_statement().
-	a_acc._call_stack.back()->_symbols.push_back({
+	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({
 		new_local_name,
 		bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type) : symbol_t::make_immutable_local(lhs_type)
 	});
-	const auto local_name_index = a_acc._call_stack.back()->_symbols.size() - 1;
+	const auto local_name_index = a_acc._lexical_scope_stack.back().symbols._symbols.size() - 1;
 
 	try {
 		const auto rhs_expr_pair = lhs_type.is_undefined()
@@ -404,7 +416,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 		}
 		else{
 			//	Updated the symbol with the real function defintion.
-			a_acc._call_stack.back()->_symbols[local_name_index] = {new_local_name, bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type2) : symbol_t::make_immutable_local(lhs_type2)};
+			a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = {new_local_name, bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type2) : symbol_t::make_immutable_local(lhs_type2)};
 			return {
 				a_acc,
 				statement_t::make__store2(floyd::variable_address_t::make_variable_address(0, (int)local_name_index), rhs_expr_pair.second)
@@ -414,7 +426,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	catch(...){
 
 		//	Erase temporary symbol.
-		a_acc._call_stack.back()->_symbols.pop_back();
+		a_acc._lexical_scope_stack.back().symbols._symbols.pop_back();
 
 		throw;
 	}
@@ -424,7 +436,7 @@ std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& a, 
 	QUARK_ASSERT(a.check_invariant());
 
 	const auto statement = std::get<statement_t::block_statement_t>(s._contents);
-	const auto e = analyse_body(a, statement._body);
+	const auto e = analyse_body(a, statement._body, a._lexical_scope_stack.back().pure);
 	return {e.first, statement_t::make__block_statement(e.second)};
 }
 
@@ -456,7 +468,7 @@ analyser_t analyse_def_struct_statement(const analyser_t& a, const statement_t::
 	const auto struct_typeid1 = typeid_t::make_struct2(statement._def->_members);
 	const auto struct_typeid2 = resolve_type(a_acc, struct_typeid1);
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
-	a_acc._call_stack.back()->_symbols.push_back({struct_name, symbol_t::make_constant(struct_typeid_value)});
+	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({struct_name, symbol_t::make_constant(struct_typeid_value)});
 
 	return a_acc;
 }
@@ -473,7 +485,7 @@ analyser_t analyse_def_protocol_statement(const analyser_t& a, const statement_t
 	const auto protocol_typeid1 = typeid_t::make_protocol(statement._def->_members);
 	const auto protocol_typeid2 = resolve_type(a_acc, protocol_typeid1);
 	const auto protocol_typeid_value = value_t::make_typeid_value(protocol_typeid2);
-	a_acc._call_stack.back()->_symbols.push_back({protocol_name, symbol_t::make_constant(protocol_typeid_value)});
+	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({protocol_name, symbol_t::make_constant(protocol_typeid_value)});
 
 	return a_acc;
 }
@@ -490,7 +502,8 @@ std::pair<analyser_t, statement_t> analyse_def_function_statement(const analyser
 	const auto& s2 = statement_t::make__bind_local(
 		statement._name,
 		statement._def->_function_type,
-		function_def_expr, statement_t::bind_local_t::k_immutable
+		function_def_expr,
+		statement_t::bind_local_t::k_immutable
 	);
 	const auto s3 = analyse_bind_local_statement(a_acc, s2);
 	return s3;
@@ -509,8 +522,8 @@ std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a,
 		throw std::runtime_error("Boolean condition required.");
 	}
 
-	const auto then2 = analyse_body(a_acc, statement._then_body);
-	const auto else2 = analyse_body(a_acc, statement._else_body);
+	const auto then2 = analyse_body(a_acc, statement._then_body, a._lexical_scope_stack.back().pure);
+	const auto else2 = analyse_body(a_acc, statement._else_body, a._lexical_scope_stack.back().pure);
 	return { a_acc, statement_t::make__ifelse_statement(condition2.second, then2.second, else2.second) };
 }
 
@@ -539,7 +552,7 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 	auto symbols = statement._body._symbols;
 	symbols._symbols.push_back({ statement._iterator_name, iterator_symbol});
 	const auto body_injected = body_t(statement._body._statements, symbols);
-	const auto result = analyse_body(a_acc, body_injected);
+	const auto result = analyse_body(a_acc, body_injected, a._lexical_scope_stack.back().pure);
 	a_acc = result.first;
 
 	return { a_acc, statement_t::make__for_statement(statement._iterator_name, start_expr2.second, end_expr2.second, result.second, statement._range_type) };
@@ -553,7 +566,7 @@ std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& a, 
 	const auto condition2_expr = analyse_expression_no_target(a_acc, statement._condition);
 	a_acc = condition2_expr.first;
 
-	const auto result = analyse_body(a_acc, statement._body);
+	const auto result = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure);
 	a_acc = result.first;
 
 	return { a_acc, statement_t::make__while_statement(condition2_expr.second, result.second) };
@@ -1340,12 +1353,19 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a,
 
 	const auto args0 = vector<expression_t>(e._input_exprs.begin() + 1, e._input_exprs.end());
 
+	const auto callsite_pure = a_acc._lexical_scope_stack.back().pure;
 
 	//	This is a call to a function-value. Callee is a function-type.
 	const auto callee_type = callee_expr.get_output_type();
 	if(callee_type.is_function()){
 		const auto callee_args = callee_type.get_function_args();
 		const auto callee_return_value = callee_type.get_function_return();
+		const auto callee_pure = callee_type.get_function_pure();
+
+		if(callsite_pure == epure::pure && callee_pure == epure::impure){
+			throw std::runtime_error(std::string() + "Cannot call impure function pure function.");
+		}
+
 
 		const auto call_args_pair = analyze_call_args(a_acc, args0, callee_args);
 		a_acc = call_args_pair.first;
@@ -1422,6 +1442,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 
 	const auto function_def = e._function_def;
 	const auto function_type2 = resolve_type(a_acc, function_def->_function_type);
+	const auto function_pure = function_type2.get_function_pure();
 
 	vector<member_t> args2;
 	for(const auto& arg: function_def->_args){
@@ -1436,7 +1457,11 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	}
 	const auto function_body2 = body_t(function_def->_body->_statements, symbol_vec);
 
-	const auto function_body_pair = analyse_body(a_acc, function_body2);
+
+	//??? Can there be a pure function inside an impure lexical scope?
+	const auto pure = function_pure;
+
+	const auto function_body_pair = analyse_body(a_acc, function_body2, pure);
 	a_acc = function_body_pair.first;
 	const auto function_body3 = function_body_pair.second;
 
@@ -1602,9 +1627,9 @@ std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_
 /*
 json_t analyser_to_json(const analyser_t& a){
 	vector<json_t> callstack;
-	for(const auto& e: a._call_stack){
+	for(const auto& e: a._lexical_scope_stack){
 		std::map<string, json_t> values;
-		for(const auto& symbol_kv: e->_symbols){
+		for(const auto& symbol_kv: e.symbols._symbols){
 			const auto b = json_t::make_array({
 				json_t((int)symbol_kv.second._symbol_type),
 				typeid_to_ast_json(symbol_kv.second._value_type, floyd::json_tags::k_tag_resolve_state)._value,
@@ -1736,7 +1761,7 @@ semantic_ast_t analyse(const analyser_t& a){
 	analyser2._function_defs.swap(function_defs);
 
 	const auto body = body_t(analyser2._imm->_ast._globals._statements, symbol_table_t{symbol_map});
-	const auto result = analyse_body(analyser2, body);
+	const auto result = analyse_body(analyser2, body, epure::impure);
 	const auto result_ast0 = ast_t{
 		._globals = result. second,
 		._function_defs = result.first._function_defs,
@@ -1765,7 +1790,7 @@ analyser_t::analyser_t(const ast_t& ast){
 
 analyser_t::analyser_t(const analyser_t& other) :
 	_imm(other._imm),
-	_call_stack(other._call_stack),
+	_lexical_scope_stack(other._lexical_scope_stack),
 	_function_defs(other._function_defs),
 	_software_system(other._software_system)
 {
@@ -1775,7 +1800,7 @@ analyser_t::analyser_t(const analyser_t& other) :
 
 void analyser_t::swap(analyser_t& other) throw() {
 	_imm.swap(other._imm);
-	_call_stack.swap(other._call_stack);
+	_lexical_scope_stack.swap(other._lexical_scope_stack);
 	_function_defs.swap(other._function_defs);
 	std::swap(_software_system, other._software_system);
 }

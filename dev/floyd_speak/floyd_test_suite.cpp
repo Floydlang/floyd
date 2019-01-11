@@ -2920,8 +2920,8 @@ QUARK_UNIT_TEST("", "impure", "call impure->pure", "Compiles OK"){
 
 	)");
 }
-#if 0
-QUARK_UNIT_TEST_VIP("", "impure", "call pure->impure", "Compilation error"){
+
+QUARK_UNIT_TEST("", "impure", "call pure->impure", "Compilation error"){
 	try {
 		const auto result = test__run_global(R"(
 
@@ -2932,10 +2932,10 @@ QUARK_UNIT_TEST_VIP("", "impure", "call pure->impure", "Compilation error"){
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Cannot call impure function 'a' from pure function 'b'.");
+		QUARK_TEST_VERIFY(string(e.what()) == "Cannot call impure function pure function.");
 	}
 }
-#endif
+
 QUARK_UNIT_TEST("", "impure", "call impure->impure", "Compiles OK"){
 	const auto result = test__run_global(R"(
 
@@ -3445,7 +3445,7 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 			int _count
 		}
 
-		func my_gui_state_t my_gui__init(){
+		func my_gui_state_t my_gui__init() impure {
 			send("a", "dec")
 			send("a", "dec")
 			send("a", "stop")
@@ -3498,7 +3498,7 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 			int _count
 		}
 
-		func my_gui_state_t my_gui__init(){
+		func my_gui_state_t my_gui__init() impure {
 			send("a", "dec")
 			send("a", "dec")
 			send("a", "dec")
@@ -3506,7 +3506,7 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 			return my_gui_state_t(1000)
 		}
 
-		func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
+		func my_gui_state_t my_gui(my_gui_state_t state, json_value message) impure {
 			if(message == "inc"){
 				return update(state, "_count", state._count + 1)
 			}
@@ -3525,14 +3525,14 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 			int _audio
 		}
 
-		func my_audio_state_t my_audio__init(){
+		func my_audio_state_t my_audio__init() impure {
 			send("b", "process")
 			send("b", "process")
 			send("b", "stop")
 			return my_audio_state_t(0)
 		}
 
-		func my_audio_state_t my_audio(my_audio_state_t state, json_value message){
+		func my_audio_state_t my_audio(my_audio_state_t state, json_value message) impure {
 			if(message == "process"){
 				return update(state, "_audio", state._audio + 1)
 			}
@@ -3579,11 +3579,11 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 			int _count
 		}
 
-		func my_gui_state_t my_gui__init(){
+		func my_gui_state_t my_gui__init() impure {
 			return my_gui_state_t(1000)
 		}
 
-		func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
+		func my_gui_state_t my_gui(my_gui_state_t state, json_value message) impure {
 			if(message == "2"){
 				send("b", "3")
 				return update(state, "_count", state._count + 1)
@@ -3605,12 +3605,12 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 			int _audio
 		}
 
-		func my_audio_state_t my_audio__init(){
+		func my_audio_state_t my_audio__init() impure {
 			send("b", "1")
 			return my_audio_state_t(0)
 		}
 
-		func my_audio_state_t my_audio(my_audio_state_t state, json_value message){
+		func my_audio_state_t my_audio(my_audio_state_t state, json_value message) impure {
 			if(message == "1"){
 				send("a", "2")
 				return update(state, "_audio", state._audio + 1)

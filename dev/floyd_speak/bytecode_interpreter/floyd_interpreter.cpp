@@ -378,8 +378,12 @@ bc_program_t compile_to_bytecode(const interpreter_context_t& context, const str
 //	QUARK_CONTEXT_TRACE(context._tracer, "Hello");
 
 
+#if 1
 const auto pref = k_tiny_prefix;
 const auto p = pref + "\n" + program;
+#else
+const auto p = program;
+#endif
 
 	const auto& pass1 = parse_program2(context2, p);
 	const auto& pass2 = json_to_ast(context2._tracer, pass1);

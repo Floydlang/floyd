@@ -610,13 +610,14 @@ std::string typeid_to_compact_string_int(const typeid_t& t){
 	else if(basetype == floyd::base_type::k_function){
 		const auto ret = t.get_function_return();
 		const auto args = t.get_function_args();
+		const auto pure = t.get_function_pure();
 
 		vector<string> args_str;
 		for(const auto& a: args){
 			args_str.push_back(typeid_to_compact_string(a));
 		}
 
-		return string() + "function " + typeid_to_compact_string(ret) + "(" + concat_strings_with_divider(args_str, ",") + ")";
+		return string() + "function " + typeid_to_compact_string(ret) + "(" + concat_strings_with_divider(args_str, ",") + ") " + (pure == epure::pure ? "pure" : "impure");
 	}
 	else{
 		return base_type_to_string(basetype);
