@@ -979,12 +979,11 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 
 	const std::map<std::string, host_function_signature_t> temp {
 		{ "print", host_function_signature_t{ 1000, typeid_t::make_function(VOID, { DYN }, epure::pure) } },
-		{ "send", host_function_signature_t{ 1022, typeid_t::make_function(VOID, { typeid_t::make_string(), typeid_t::make_json_value() }, epure::impure) } },
+
 		{ "assert", host_function_signature_t{ 1001, typeid_t::make_function(VOID, { DYN }, epure::pure) } },
 		{ "to_string", host_function_signature_t{ 1002, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::pure) } },
 		{ "to_pretty_string", host_function_signature_t{ 1003, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::pure) }},
 		{ "typeof", host_function_signature_t{1004, typeid_t::make_function(typeid_t::make_typeid(), { DYN }, epure::pure) } },
-		{ "get_time_of_day", host_function_signature_t{ 1005, typeid_t::make_function(typeid_t::make_int(), {}, epure::impure) }},
 
 		{ "update", host_function_signature_t{ 1006, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure) }},
 		{ "size", host_function_signature_t{ 1007, typeid_t::make_function(typeid_t::make_int(), { DYN }, epure::pure) } },
@@ -995,16 +994,18 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 		{ "subset", host_function_signature_t{ 1012, typeid_t::make_function(DYN, { DYN, DYN, DYN}, epure::pure) }},
 		{ "replace", host_function_signature_t{ 1013, typeid_t::make_function(DYN, { DYN, DYN, DYN, DYN }, epure::pure) }},
 
-		{ "get_env_path", host_function_signature_t{ 1014, typeid_t::make_function(typeid_t::make_string(), {}, epure::impure) }},
-		{ "read_text_file", host_function_signature_t{ 1015, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::impure) }},
-		{ "write_text_file", host_function_signature_t{ 1016, typeid_t::make_function(VOID, { DYN, DYN }, epure::impure) }},
 
 		{ "decode_json", host_function_signature_t{ 1017, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_string()}, epure::pure) }},
 		{ "encode_json", host_function_signature_t{ 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json_value()}, epure::pure) }},
 		{ "flatten_to_json", host_function_signature_t{ 1019, typeid_t::make_function(typeid_t::make_json_value(), { DYN }, epure::pure) }},
 		{ "unflatten_from_json", host_function_signature_t{ 1020, typeid_t::make_function(DYN, { typeid_t::make_json_value(), typeid_t::make_typeid() }, epure::pure) }},
-		{ "get_json_type", host_function_signature_t{ 1021, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}, epure::pure) }}
-		,
+		{ "get_json_type", host_function_signature_t{ 1021, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}, epure::pure) }},
+
+		{ "send", host_function_signature_t{ 1022, typeid_t::make_function(VOID, { typeid_t::make_string(), typeid_t::make_json_value() }, epure::impure) } },
+		{ "get_time_of_day", host_function_signature_t{ 1005, typeid_t::make_function(typeid_t::make_int(), {}, epure::impure) }},
+		{ "get_env_path", host_function_signature_t{ 1014, typeid_t::make_function(typeid_t::make_string(), {}, epure::impure) }},
+		{ "read_text_file", host_function_signature_t{ 1015, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::impure) }},
+		{ "write_text_file", host_function_signature_t{ 1016, typeid_t::make_function(VOID, { DYN, DYN }, epure::impure) }}
 	};
 	return temp;
 }
@@ -1015,12 +1016,10 @@ std::map<int,  host_function_t> get_host_functions(){
 
 	const std::map<string, HOST_FUNCTION_PTR> lookup0 = {
 		{ "print", host__print },
-		{ "send", host__send },
 		{ "assert", host__assert },
 		{ "to_string", host__to_string },
 		{ "to_pretty_string", host__to_pretty_string },
 		{ "typeof", host__typeof },
-		{ "get_time_of_day", host__get_time_of_day },
 
 		{ "update", host__update },
 		{ "size", host__size },
@@ -1031,17 +1030,17 @@ std::map<int,  host_function_t> get_host_functions(){
 		{ "subset", host__subset },
 		{ "replace", host__replace },
 
-		{ "get_env_path", host__get_env_path },
-		{ "read_text_file", host__read_text_file },
-		{ "write_text_file", host__write_text_file },
-
 		{ "decode_json", host__decode_json },
 		{ "encode_json", host__encode_json },
 		{ "flatten_to_json", host__flatten_to_json },
 		{ "unflatten_from_json", host__unflatten_from_json },
-		{ "get_json_type", host__get_json_type }
-//		,
-	//	{ "instantiate_from_typeid", host__instantiate_from_typeid }
+		{ "get_json_type", host__get_json_type },
+
+		{ "send", host__send },
+		{ "get_time_of_day", host__get_time_of_day },
+		{ "get_env_path", host__get_env_path },
+		{ "read_text_file", host__read_text_file },
+		{ "write_text_file", host__write_text_file }
 	};
 
 	const auto lookup = [&](){
