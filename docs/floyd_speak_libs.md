@@ -512,12 +512,8 @@ Deletes a file or directory. If the entry has children those are deleted too = d
 Returns a vector of all the files and directories found at the path.
 
 	struct directory_entry_t {
-		enum EType {
-			kFile,
-			kDir
-		}
-		string fName
-		EType fType
+		string name
+		string type	//	"dir" or "file"
 	}
 	
 	[directory_entry_t] get_directory_entries(world w, absolute_path_t path)
