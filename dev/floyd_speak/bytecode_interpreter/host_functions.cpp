@@ -978,8 +978,6 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 	const auto DYN = typeid_t::make_internal_dynamic();
 
 	const std::map<std::string, host_function_signature_t> temp {
-		{ "print", host_function_signature_t{ 1000, typeid_t::make_function(VOID, { DYN }, epure::pure) } },
-
 		{ "assert", host_function_signature_t{ 1001, typeid_t::make_function(VOID, { DYN }, epure::pure) } },
 		{ "to_string", host_function_signature_t{ 1002, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::pure) } },
 		{ "to_pretty_string", host_function_signature_t{ 1003, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::pure) }},
@@ -1001,6 +999,7 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 		{ "unflatten_from_json", host_function_signature_t{ 1020, typeid_t::make_function(DYN, { typeid_t::make_json_value(), typeid_t::make_typeid() }, epure::pure) }},
 		{ "get_json_type", host_function_signature_t{ 1021, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}, epure::pure) }},
 
+		{ "print", host_function_signature_t{ 1000, typeid_t::make_function(VOID, { DYN }, epure::impure) } },
 		{ "send", host_function_signature_t{ 1022, typeid_t::make_function(VOID, { typeid_t::make_string(), typeid_t::make_json_value() }, epure::impure) } },
 		{ "get_time_of_day", host_function_signature_t{ 1005, typeid_t::make_function(typeid_t::make_int(), {}, epure::impure) }},
 		{ "get_env_path", host_function_signature_t{ 1014, typeid_t::make_function(typeid_t::make_string(), {}, epure::impure) }},
@@ -1015,7 +1014,6 @@ std::map<int,  host_function_t> get_host_functions(){
 	const auto host_functions = get_host_function_signatures();
 
 	const std::map<string, HOST_FUNCTION_PTR> lookup0 = {
-		{ "print", host__print },
 		{ "assert", host__assert },
 		{ "to_string", host__to_string },
 		{ "to_pretty_string", host__to_pretty_string },
@@ -1036,6 +1034,7 @@ std::map<int,  host_function_t> get_host_functions(){
 		{ "unflatten_from_json", host__unflatten_from_json },
 		{ "get_json_type", host__get_json_type },
 
+		{ "print", host__print },
 		{ "send", host__send },
 		{ "get_time_of_day", host__get_time_of_day },
 		{ "get_env_path", host__get_env_path },

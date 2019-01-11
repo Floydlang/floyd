@@ -1134,6 +1134,16 @@ This outputs one line of text to the default output of the application. It can p
 
 
 
+## send()
+
+Sends a message to the inbox of a Floyd green process, possibly your own process.
+
+The process may run on a different OS thread but send() is thread safe.
+
+	send(string process_key, json_value message) impure
+
+
+
 ## get\_time\_of\_day()
 
 Returns the computer's realtime clock, expressed in the number of milliseconds since system start. Useful to measure program execution. Sample get_time_of_day() before and after execution and compare them to see duration.
@@ -1167,13 +1177,6 @@ Write a string to the file system as a text file. Will create any missing direct
 
 
 
-## send()
-
-Sends a message to the inbox of a Floyd green process, possibly your own process.
-
-The process may run on a different OS thread but send() is thread safe.
-
-	send(string process_key, json_value message) impure
 
 
 
