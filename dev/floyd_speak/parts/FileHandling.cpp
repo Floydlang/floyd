@@ -12,6 +12,16 @@
 //#include "SDL_filesystem.h"
 
 
+
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <errno.h>
+	#include <libproc.h>
+
+	#include <CoreFoundation/CoreFoundation.h>
+
+
 #define JIU_MACOS 1
 
 #define TRACE_INDENT QUARK_SCOPED_TRACE
@@ -20,52 +30,141 @@
 
 
 
+///////////////////////////////////////////////////			DIRECTOR ROOTS
 
 
-/*
-	Example:
-		"/Users/marcus/Library/Developer/Xcode/DerivedData/Jiu-hfmjsbcsetvlvjgzvlfcucroeybg/Build/Products/Debug/Jiu Runtime.app/Contents/Resources/"
-*/
 
-std::string GetAppResourceDir(){
-	return "";
-/*
-	//??? hardcoded.
-	char* p = ::SDL_GetBasePath();
-	assert(p != nullptr);
-
-	const std::string result(p);
-	::SDL_free(p);
-	p = nullptr;
-	return result;
-*/
-
+std::string get_env(const std::string& s){
+	const char* value = getenv(s.c_str());
+	QUARK_ASSERT(value != nullptr);
+	if(value == nullptr){
+		throw std::exception();
+	}
+	return std::string(value);
 }
-std::string GetAppReadWriteDir(){
-	return "";
-/*
-	//??? hardcoded.
-	char* p = ::SDL_GetPrefPath("MarcusGameAB", "MyGame");
-	assert(p != nullptr);
 
-	const std::string result(p);
-	::SDL_free(p);
-	p = nullptr;
+//??? Uses getenv() which may not work with Sandboxes.
+//??? Hardcoded subpaths to Preferences etc.
+directories_t GetDirectories(){
+	const std::string home_dir = get_env("HOME");
+	const std::string temp_dir = get_env("TMPDIR");
+
+	directories_t result;
+	result.process_dir = get_process_info().process_path;
+	result.home_dir = home_dir;
+	result.documents_dir = home_dir + "/Documents";
+	result.desktop_dir = home_dir + "/Desktop";
+	result.preferences_dir = home_dir + "/Library/Preferences";
+	result.cache_dir = home_dir + "/Library/Caches";
+	result.temp_dir = temp_dir;
+	result.application_support = home_dir + "/Library/Application Support";
 	return result;
-*/}
+}
 
 
+QUARK_UNIT_TEST_VIP("", "GetDirectories()", "", ""){
+	const auto temp = GetDirectories();
 
-void GetTestDirs(std::string& oReadDir, std::string& oWriteDir){
-	oReadDir = GetAppResourceDir() + "TestInput/";
-	oWriteDir = GetAppReadWriteDir() + "TestOutput/";
-	TRACE("oReadDir: " + oReadDir);
-	TRACE("oWriteDir: " + oWriteDir);
+	QUARK_UT_VERIFY(true)
 }
 
 
 
-#if JIU_MACOS || JIU_IOS
+std::string get_process_path (int process_id){
+	pid_t pid; int ret;
+	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
+
+	pid = (pid_t) process_id;
+	ret = proc_pidpath (pid, pathbuf, sizeof(pathbuf));
+	if ( ret <= 0 ) {
+		fprintf(stderr, "PID %d: proc_pidpath ();\n", pid);
+		fprintf(stderr, "	%s\n", strerror(errno));
+		throw std::exception();
+	} else {
+//		printf("proc %d: %s\n", pid, pathbuf);
+		return std::string(pathbuf);
+	}
+}
+
+
+/*
+std::string MacBundlePath()
+{
+    char path[1024];
+    CFBundleRef mainBundle = CFBundleGetMainBundle();
+    if(!mainBundle)
+        return "";
+
+    CFURLRef mainBundleURL = CFBundleCopyBundleURL(mainBundle);
+    if(!mainBundleURL)
+        return "";
+
+    CFStringRef cfStringRef = CFURLCopyFileSystemPath(mainBundleURL, kCFURLPOSIXPathStyle);
+    if(!cfStringRef)
+        return "";
+
+    CFStringGetCString(cfStringRef, path, 1024, kCFStringEncodingASCII);
+
+    CFRelease(mainBundleURL);
+    CFRelease(cfStringRef);
+
+    return std::string(path);
+}
+*/
+
+//??? fix leaks.
+process_info_t get_process_info(){
+	CFBundleRef mainBundle = CFBundleGetMainBundle();
+	if(mainBundle == nullptr){
+		throw std::exception();
+	}
+
+    CFURLRef mainBundleURL = CFBundleCopyBundleURL(mainBundle);
+	if(mainBundleURL == nullptr){
+		throw std::exception();
+	}
+
+    CFStringRef cfStringRef = CFURLCopyFileSystemPath(mainBundleURL, kCFURLPOSIXPathStyle);
+	if(cfStringRef == nullptr){
+		throw std::exception();
+	}
+
+    char path[1024];
+    CFStringGetCString(cfStringRef, path, 1024, kCFStringEncodingASCII);
+
+    CFRelease(mainBundleURL);
+    CFRelease(cfStringRef);
+
+	return process_info_t{
+		std::string(path) + "/"
+	};
+}
+
+
+
+QUARK_UNIT_TEST_VIP("", "get_info()", "", ""){
+	const auto temp = get_process_info();
+
+	TFileInfo info;
+	bool ok = GetFileInfo(temp.process_path, info);
+
+	QUARK_UT_VERIFY(true)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 std::string UpDir(const std::string& path){
 	std::string res = path;
@@ -107,212 +206,6 @@ QUARK_UNIT_TEST("", "UpDir2()","", ""){
 QUARK_UNIT_TEST("", "UpDir2()","", ""){
 	QUARK_UT_VERIFY((UpDir2("/") == std::pair<std::string, std::string>{ "", "/" }));
 }
-
-
-std::string GetExecutableDir(){
-	return GetAppResourceDir();
-}
-
-
-
-std::string GetCacheDir(){
-	return GetAppReadWriteDir() + "/temp";
-}
-
-std::string GetPreferenceDir(){
-	return GetAppReadWriteDir() + "/prefs";
-}
-
-std::string GetDesktopDir(){
-	const char* homeDir = getenv("HOME");
-    return std::string(homeDir) + "/Desktop";
-}
-
-#endif
-
-
-#if JIU_MACOS && 0
-#include <Carbon/Carbon.h>
-
-static OSErr FSMakeFSRef(
-	FSVolumeRefNum volRefNum,
-	SInt32 dirID,
-	ConstStr255Param name,
-	FSRef *ref)
-{
-	OSErr		result;
-	FSRefParam	pb;
-	
-	//	check parameters
-	require_action(NULL != ref, BadParameter, result = paramErr);
-	
-	pb.ioVRefNum = volRefNum;
-	pb.ioDirID = dirID;
-	pb.ioNamePtr = (StringPtr)name;
-	pb.newRef = ref;
-	result = PBMakeFSRefSync(&pb);
-	require_noerr(result, PBMakeFSRefSync);
-PBMakeFSRefSync:
-BadParameter:
-	return ( result );
-}
-
-static OSStatus FSMakePath(
-	SInt16 volRefNum,
-	SInt32 dirID,
-	ConstStr255Param name,
-	UInt8 *path,
-	UInt32 maxPathSize)
-{
-	OSStatus	result;
-	FSRef		ref;
-	
-	// check parameters 
-	require_action(NULL != path, BadParameter, result = paramErr);
-	
-	// convert the inputs to an FSRef
-	result = FSMakeFSRef(volRefNum, dirID, name, &ref);
-	require_noerr(result, FSMakeFSRef);
-	
-	// and then convert the FSRef to a path
-	result = FSRefMakePath(&ref, path, maxPathSize);
-	require_noerr(result, FSRefMakePath);
-FSRefMakePath:
-FSMakeFSRef:
-BadParameter:
-	return ( result );
-}
-
-static ::FSSpec GetApplicationFSSpec(){
-	static bool sInitedFlag=false;
-	static ::FSSpec sApplicationFSSpec;
-
-	if(!sInitedFlag){
-		::ProcessSerialNumber psn;
-		OSErr err=::GetCurrentProcess(&psn);
-		if(err !=::noErr){
-			throw std::exception();
-		}
-		::ProcessInfoRec info;
-		std::memset(&info,0,sizeof(info));
-		info.processInfoLength=sizeof(info);
-		info.processAppSpec=&sApplicationFSSpec;
-		err=::GetProcessInformation(&psn,&info);
-		if(err !=::noErr){
-			throw std::exception();
-		}
-		sInitedFlag=true;
-	}
-	return sApplicationFSSpec;
-}
-
-//### Static!
-static std::string sCachesDir;
-static std::string sPreferencesPath;
-
-
-
-
-std::string GetExecutableDir(){
-	TRACE_INDENT("GetExecutableDir()");
-
-	::FSSpec applicationFSSpec=GetApplicationFSSpec();
-
-	std::uint8_t temp[1024 * 2 + 1];
-	OSStatus status=FSMakePath(
-		applicationFSSpec.vRefNum,
-		applicationFSSpec.parID,
-		applicationFSSpec.name,
-		temp,
-		1024 * 2 + 1);
-	if(status !=noErr){
-		throw std::exception();
-	}
-
-	//"Application path:/Volumes/LaCie disk/MZ Para - latest/Para to Backup/para project/Jiu Debug.app/Contents/MacOS/Jiu Debug"
-
-	std::string appPath=std::string(reinterpret_cast<const char*>(temp));
-	TRACE("path: " + appPath);
-	return appPath;
-}
-
-std::string FromFSRef(const FSRef& fsRef){
-	char tempBuffer[8192];
-	OSStatus status = FSRefMakePath(&fsRef, reinterpret_cast<UInt8*>(tempBuffer), 8191);
-	ThrowErr(status);
-
-	std::string s(tempBuffer);
-	return s;
-}
-
-static std::string FindFolderPath(OSType folderType, bool createDirFlag){
-	FSRef foundRef;
-	std::memset(&foundRef, 0, sizeof(FSRef));
-	OSErr err=FSFindFolder(kUserDomain, folderType, createDirFlag ? TRUE : FALSE, &foundRef);
-	if(err !=noErr){
-		throw std::exception();
-	}
-
-	std::string path = FromFSRef(foundRef);
-	return path;
-}
-
-//		std::string path=FindFolderPath(kPreferencesFolderType, true);
-/*
-		{
-			std::string path;
-			path=FindFolderPath(kSystemFolderType, true);
-			path=FindFolderPath(kDesktopFolderType, true);
-			path=FindFolderPath(kSystemDesktopFolderType, true);
-			path=FindFolderPath(kTrashFolderType, true);
-	//		path=FindFolderPath(kSystemTrashFolderType, true);
-
-			path=FindFolderPath(kTemporaryFolderType, true);	//	/private/var/tmp/folders.501/TemporaryItems
-			path=FindFolderPath(kApplicationsFolderType, true);
-			path=FindFolderPath(kDocumentsFolderType, true);
-			path=FindFolderPath(kVolumeRootFolderType, true);
-			path=FindFolderPath(kChewableItemsFolderType, true);
-			path=FindFolderPath(kApplicationSupportFolderType, true);
-			path=FindFolderPath(kHelpFolderType, true);
-			path=FindFolderPath(kUtilitiesFolderType, true);
-			path=FindFolderPath(kFavoritesFolderType, true);
-
-
-	//http://developer.apple.com/documentation/Carbon/Reference/Folder_Manager/folder_manager_ref/chapter_1.4_section_8.html
-
-			path=FindFolderPath(kUserSpecificTmpFolderType, true);
-		}
-*/
-
-std::string GetCacheDir(){
-	if(sCachesDir.empty()){
-		std::string path=FindFolderPath(kCachedDataFolderType, true);
-
-		sCachesDir=path + "/";
-	}
-	return sCachesDir;
-}
-
-//http://developer.apple.com/documentation/Carbon/Reference/Folder_Manager/folder_manager_ref/chapter_1.2_section_3.html
-//		kChewableItemsFolderType
-//		kTemporaryFolderType
-std::string GetPreferenceDir(){
-	if(sPreferencesPath.empty()){
-		std::string path=FindFolderPath(kPreferencesFolderType, true);
-		sPreferencesPath=path + "/";
-	}
-	return sPreferencesPath;
-}
-
-std::string GetDesktopDir(){
-	std::string path=FindFolderPath(kDesktopFolderType, true);
-	path=path + "/";
-	return path;
-}
-
-
-#endif	//	JIU_MACOS
-
 
 
 
@@ -401,6 +294,51 @@ TPathParts SplitPath(const std::string& inPath){
 	temp.fName=tempStr;
 	return temp;
 }
+
+static void TestSplitPath(const std::string& inPath, const TPathParts& correctParts){
+	TRACE_INDENT("TestSplitPath");
+	TRACE("path='" + inPath + "'");
+	TPathParts result = SplitPath(inPath);
+	TRACE("fPath='" + result.fPath + "'");
+	TRACE("fName='" + result.fName + "'");
+	TRACE("fExtension='" + result.fExtension + "'");
+
+	ASSERT(result.fPath == correctParts.fPath);
+	ASSERT(result.fName == correctParts.fName);
+	ASSERT(result.fExtension == correctParts.fExtension);
+}
+
+QUARK_UNIT_TEST("", "TestSplitPath","", ""){
+	//	Complex.
+	TestSplitPath("/Volumes/MyHD/SomeDir/MyFileName.txt", TPathParts("/Volumes/MyHD/SomeDir/","MyFileName",".txt"));
+}
+
+QUARK_UNIT_TEST("", "TestSplitPath","", ""){
+	//	Name + extension.
+	TestSplitPath("MyFileName.txt", TPathParts("","MyFileName",".txt"));
+}
+
+QUARK_UNIT_TEST("", "TestSplitPath","", ""){
+	//	Name
+	TestSplitPath("MyFileName", TPathParts("","MyFileName",""));
+}
+
+QUARK_UNIT_TEST("", "TestSplitPath","", ""){
+	//	Path + name
+	TestSplitPath("Dir/MyFileName", TPathParts("Dir/","MyFileName",""));
+}
+
+QUARK_UNIT_TEST("", "TestSplitPath","", ""){
+	//	Path + extension.
+	TestSplitPath("/Volumes/MyHD/SomeDir/.txt", TPathParts("/Volumes/MyHD/SomeDir/","",".txt"));
+}
+
+QUARK_UNIT_TEST("", "TestSplitPath","", ""){
+	TestSplitPath("/Volumes/MyHD/SomeDir/", TPathParts("/Volumes/MyHD/SomeDir/","",""));
+}
+
+
+
 
 std::vector<std::uint8_t> LoadFile(const std::string& completePath){
 	TRACE_INDENT("LoadFile(" + completePath + ")");
@@ -651,78 +589,13 @@ void SaveFile(const std::string& inFileName, const std::uint8_t data[], std::siz
 	}
 }
 
-#if JIU_MACOS || JIU_IOS
 
 std::string ToNativePath(const std::string& path){
 	return path;
 }
 
-#elif _WINDOWS
-
-??? works?
-
-std::string ToNativePath(const std::string& path){
-	std::string temp=path;
-	for(std::string::size_type c=0 ; c < temp.size() ; c++){
-		if(temp[c]=='/'){
-			temp[c]='\\';
-		}
-	}
-	return temp;
-}
-
-#else
-
-??? implement!
-
-#endif
 
 
-
-
-
-
-static void TestSplitPath(const std::string& inPath, const TPathParts& correctParts){
-	TRACE_INDENT("TestSplitPath");
-	TRACE("path='" + inPath + "'");
-	TPathParts result = SplitPath(inPath);
-	TRACE("fPath='" + result.fPath + "'");
-	TRACE("fName='" + result.fName + "'");
-	TRACE("fExtension='" + result.fExtension + "'");
-
-	ASSERT(result.fPath == correctParts.fPath);
-	ASSERT(result.fName == correctParts.fName);
-	ASSERT(result.fExtension == correctParts.fExtension);
-}
-
-QUARK_UNIT_TEST("", "TestSplitPath","", ""){
-	//	Complex.
-	TestSplitPath("/Volumes/MyHD/SomeDir/MyFileName.txt", TPathParts("/Volumes/MyHD/SomeDir/","MyFileName",".txt"));
-}
-
-QUARK_UNIT_TEST("", "TestSplitPath","", ""){
-	//	Name + extension.
-	TestSplitPath("MyFileName.txt", TPathParts("","MyFileName",".txt"));
-}
-
-QUARK_UNIT_TEST("", "TestSplitPath","", ""){
-	//	Name
-	TestSplitPath("MyFileName", TPathParts("","MyFileName",""));
-}
-
-QUARK_UNIT_TEST("", "TestSplitPath","", ""){
-	//	Path + name
-	TestSplitPath("Dir/MyFileName", TPathParts("Dir/","MyFileName",""));
-}
-
-QUARK_UNIT_TEST("", "TestSplitPath","", ""){
-	//	Path + extension.
-	TestSplitPath("/Volumes/MyHD/SomeDir/.txt", TPathParts("/Volumes/MyHD/SomeDir/","",".txt"));
-}
-
-QUARK_UNIT_TEST("", "TestSplitPath","", ""){
-	TestSplitPath("/Volumes/MyHD/SomeDir/", TPathParts("/Volumes/MyHD/SomeDir/","",""));
-}
 
 
 static void TestGetFileInfo_ForFile(const std::string& path, bool existsFlag, std::uint64_t modificationDate, std::uint64_t fileSize){
@@ -840,103 +713,7 @@ std::string MakeAbsolutePath(const std::string& base, const std::string& relativ
 
 
 
-#if JIU_MACOS && 0
-
-static ProcessSerialNumber MakeNoProcess(){
-	ProcessSerialNumber temp;
-	temp.lowLongOfPSN = kNoProcess;
-	temp.highLongOfPSN = 0;
-	return temp;
-}
-
-static bool IsNoProcess(const ProcessSerialNumber& psn){
-	if(psn.lowLongOfPSN == kNoProcess && psn.highLongOfPSN == 0){
-		return true;
-	}
-	else{
-		return false;
-	}
-}
-
-static bool GetPSNFromSignature(OSType signature, ProcessSerialNumber* finderPSN){
-	OSStatus status = noErr;
-
-	ProcessSerialNumber temp = MakeNoProcess();
-
-	status = GetNextProcess(&temp);
-	ThrowErr(status);
-	if(IsNoProcess(temp)){
-		return false;
-	}
-
-	while(!IsNoProcess(temp)){
-		ProcessInfoRec info;
-		std::memset(&info, 0x00, sizeof(ProcessInfoRec));
-		status = GetProcessInformation(&temp, &info);
-		ThrowErr(status);
-
-		if(info.processSignature == signature){
-			*finderPSN = temp;
-			return true;
-		}
-	}
-	return false;
-}
-
-static OSStatus RevealItemInFinder(const FSRef* pItemRef){
-	OSErr	err;
-	AEAddressDesc targetAddrDesc = { typeNull, nil };
-	AppleEvent theAppleEvent = { typeNull, nil };
-	AppleEvent replyAppleEvent = { typeNull, nil };
-	AliasHandle alias = nil;
-	OSType finderSig = 'MACS';
 
 
-	err = FSNewAlias(nil, pItemRef, &alias);
-	require_noerr(err, Bail);
 
 
-	HLock((Handle) alias); // HLock is unneeded on Mac OS X
-
-	// address target by signature
-	err = AECreateDesc(typeApplSignature, &finderSig, sizeof(OSType), &targetAddrDesc);
-	require_noerr(err, Bail);
-
-	// make the event
-	err = AECreateAppleEvent(kAEMiscStandards, kAEMakeObjectsVisible, &targetAddrDesc, kAutoGenerateReturnID, kAnyTransactionID, &theAppleEvent);
-	require_noerr(err, Bail);
-
-	err = AEPutParamPtr(&theAppleEvent, keyDirectObject, typeAlias, *alias, GetHandleSize((Handle) alias));
-	require_noerr(err, Bail);
-
-		// send it
-		err = AESend(&theAppleEvent, &replyAppleEvent, kAENoReply,
-					kAENormalPriority, kAEDefaultTimeout, NULL, NULL);
-
-
-	// bring the finder forward
-	ProcessSerialNumber finderPSN;
-	GetPSNFromSignature(finderSig, &finderPSN); // this calls GetNextProcess until GetProcessInformation finds the serial number of the app with the given signature
-	SetFrontProcess(&finderPSN);
-
-Bail:
-	if (alias)  DisposeHandle((Handle) alias);
-	if (targetAddrDesc.dataHandle) AEDisposeDesc(&targetAddrDesc);
-	if (theAppleEvent.dataHandle)  AEDisposeDesc(&theAppleEvent);
-
-
-	return err;
-}
-
-void RevealItemInFinder(const std::string& path){
-	OSStatus status = noErr;
-	FSRef ref;
-	Boolean isDirectory = false;
-	status = FSPathMakeRef(reinterpret_cast<const UInt8 *>(path.c_str()), &ref, &isDirectory);
-	ThrowErr(status);
-
-	status = RevealItemInFinder(&ref);
-	ThrowErr(status);
-}
-
-#endif

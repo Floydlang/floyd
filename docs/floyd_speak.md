@@ -1220,6 +1220,92 @@ get_directory_entries_deep() works the same way, but will also traverse each fou
 	directory_entry_info_t get_entry_info(string path) impure
 
 
+## get\_fs\_environment()
+
+Returns important root locations in the host computer's file system.
+
+Notice: some of these directories can change while your program runs.
+
+```
+	struct fs_environment_t {
+		string home_dir
+		string documents_dir
+		string desktop_dir
+
+		string hidden_persistence_dir
+		string preferences_dir
+		string cache_dir
+		string temp_dir
+
+		string executable_dir
+	}
+```
+
+```
+fs_environment_t get_fs_environment() impure
+```
+
+
+##### home_dir
+User's home directory. You don't normally store anything in this directory, but in one of the sub directories.
+
+Example: "/Users/bob"
+
+- User sees these files.
+
+##### documents_dir
+User's documents directory.
+
+Example: "/Users/bob/Documents"
+
+- User sees these files.
+
+##### desktop_dir
+User's desktop directory.
+
+Example: "/Users/bob/Desktop"
+
+- User sees these files.
+
+##### hidden\_persistence\_dir
+Current logged-in user's Application Support directory.
+App creates data here and manages it on behalf of the user and can include files that contain user data.
+
+Example: "/Users/marcus/Library/Application Support"
+
+- Notice that this points to a directory shared by many applications: store your data in a sub directory!
+- User don't see these files.
+
+##### preferences_dir
+Current logged-in user's preference directory.
+
+Example: "/Users/marcus/Library/Preferences"
+
+- Notice that this points to a directory shared by many applications: store your data in a sub directory!
+- User don't see these files.
+
+##### cache_dir
+Current logged-in user's cache directory.
+
+Example: "/Users/marcus/Library/Caches"
+
+- Notice that this points to a directory shared by many applications: store your data in a sub directory!
+- User don't see these files.
+
+##### temp_dir
+Temporary directory. Will be erased soon. Don't expect to find your files here next time your program starts or in 3 minutes.
+
+- Notice that this points to a directory shared by many applications: store your data in a sub directory!
+- User don't see these files.
+
+##### executable_dir
+Directory where your executable or bundle lives. This is usually read-only - you can't modify anything in this directory. You might use this path to read resources built into your executable or Mac bundle.
+
+Example: "/Users/bob/Applications/MyApp.app/"
+
+
+
+
 
 
 # FUTURE -- BUILT-IN WORLD FUNCTIONS

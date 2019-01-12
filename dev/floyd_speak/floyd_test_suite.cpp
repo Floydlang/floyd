@@ -3041,6 +3041,22 @@ QUARK_UNIT_TEST("", "get_entry_info()", "", ""){
 }
 
 
+QUARK_UNIT_TEST_VIP("", "get_entry_info()", "", ""){
+	const auto result = test__run_return_result(R"(
+
+		let result = get_fs_environment()
+		print(to_pretty_string(result))
+
+	)", {});
+
+	const auto expected = make__fs_environment_t__type();
+	QUARK_UT_VERIFY(result.get_type() == expected);
+}
+
+
+
+
+
 
 
 

@@ -47,6 +47,8 @@ namespace floyd {
 
 	typeid_t make__directory_entry_t__type();
 	typeid_t make__directory_entry_info_t__type();
+	typeid_t make__fs_environment_t__type();
+
 }
 
 #endif /* host_functions_hpp */

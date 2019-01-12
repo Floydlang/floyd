@@ -301,30 +301,15 @@ double fmod(double x, double y)
 
 
 ```
-struct fs_environment_t {
-	//	A writable directory were we can store files for next run time.
-	absolute_path_t persistence_dir
 
-	absolute_path_t app_resource_dir
-	absolute_path_t executable_dir
-
-	absolute_path_t test_read_dir
-	absolute_path_t test_write_dir
-
-	absolute_path_t preference_dir
-	absolute_path_t desktop_dir
-}
-
-fs_environment_t get_environment()
-
-absolute_path_t get_parent_directory(absolute_path_t path)
+string get_parent_directory(string abs_path)
 
 struct path_parts_t {
 	//	"/Volumes/MyHD/SomeDir/"
-	string fPath
+	string abs_parent_path
 
 	//	"MyFileName"
-	string fName
+	string name
 
 	//	Returns "" when there is no extension.
 	//	Returned extension includes the leading ".".
@@ -333,17 +318,17 @@ struct path_parts_t {
 	//		""
 	//		".doc"
 	//		".AIFF"
-	string fExtension
+	string extension
 }
 
-path_parts_t split_path(absolute_path_t path)
+path_parts_t split_path(string abs_path)
 
 
 /*
 	base								relativePath
 	"/users/marcus/"					"resources/hello.jpg"			"/users/marcus/resources/hello.jpg"
 */
-absolute_path_t make_path(path_parts_t parts)
+string make_path(path_parts_t parts)
 ```
 
 

@@ -23,6 +23,8 @@
 #include "text_parser.h"
 #include "FileHandling.h"
 
+
+
 namespace floyd {
 
 using std::vector;
@@ -184,10 +186,36 @@ extern const std::string k_tiny_prefix = R"(
 		int file_size
 	}
 
+	struct fs_environment_t {
+		string home_dir
+		string documents_dir
+		string desktop_dir
 
+		string hidden_persistence_dir
+		string preferences_dir
+		string cache_dir
+		string temp_dir
+
+		string executable_dir
+	}
 )";
 
 
+typeid_t make__fs_environment_t__type(){
+	const auto temp = typeid_t::make_struct2({
+		{ typeid_t::make_string(), "home_dir" },
+		{ typeid_t::make_string(), "documents_dir" },
+		{ typeid_t::make_string(), "desktop_dir" },
+
+		{ typeid_t::make_string(), "hidden_persistence_dir" },
+		{ typeid_t::make_string(), "preferences_dir" },
+		{ typeid_t::make_string(), "cache_dir" },
+		{ typeid_t::make_string(), "temp_dir" },
+
+		{ typeid_t::make_string(), "executable_dir" }
+	});
+	return temp;
+}
 
 
 
@@ -636,6 +664,7 @@ bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_coun
 		throw std::runtime_error("subset() requires start and end to be non-negative.");
 	}
 
+	//??? Move functionallity into seprate function.
 	if(obj._type.is_string()){
 		const auto str = obj.get_string_value();
 		const auto start2 = std::min(start, static_cast<int64_t>(str.size()));
@@ -866,7 +895,7 @@ bc_value_t host__get_json_type(interpreter_t& vm, const bc_value_t args[], int a
 
 
 
-
+/////////////////////////////////////////		IMPURE FUNCTIONS
 
 
 
@@ -926,7 +955,7 @@ QUARK_UNIT_TESTQ("sizeof(int)", ""){
 
 QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 	const auto a = std::chrono::high_resolution_clock::now();
-    std::this_thread::sleep_for(std::chrono::milliseconds(7));
+	std::this_thread::sleep_for(std::chrono::milliseconds(7));
 	const auto b = std::chrono::high_resolution_clock::now();
 
 	std::chrono::duration<double> elapsed_seconds = b - a;
@@ -944,8 +973,8 @@ bc_value_t host__get_env_path(interpreter_t& vm, const bc_value_t args[], int ar
 		throw std::runtime_error("get_env_path() requires 0 arguments!");
 	}
 
-    const char *homeDir = getenv("HOME");
-    const std::string env_path(homeDir);
+	const char *homeDir = getenv("HOME");
+	const std::string env_path(homeDir);
 //	const std::string env_path = "~/Desktop/";
 
 	const auto v = bc_value_t::make_string(env_path);
@@ -1077,6 +1106,8 @@ typeid_t make__directory_entry_info_t__type(){
 
 
 
+
+
 std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v){
 	const auto k_directory_entry_t__type = make__directory_entry_t__type();
 	const auto elements = mapf<value_t>(
@@ -1193,7 +1224,7 @@ bc_value_t host__get_entry_info(interpreter_t& vm, const bc_value_t args[], int 
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
-		throw std::runtime_error("get_directory_entries_shallow() illegal input path.");
+		throw std::runtime_error("get_entry_info() illegal input path.");
 	}
 
 
@@ -1229,6 +1260,43 @@ bc_value_t host__get_entry_info(interpreter_t& vm, const bc_value_t args[], int 
 		}
 	);
 
+#if 1
+	const auto debug = value_and_type_to_ast_json(result);
+	QUARK_TRACE(json_to_pretty_string(debug._value));
+#endif
+
+	const auto v = value_to_bc(result);
+	return v;
+}
+
+
+
+
+
+
+bc_value_t host__get_fs_environment(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 0){
+		throw std::runtime_error("get_fs_environment() requires 0 arguments!");
+	}
+	const auto dirs = GetDirectories();
+
+	const auto result = value_t::make_struct_value(
+		make__fs_environment_t__type(),
+		{
+			value_t::make_string(dirs.home_dir),
+			value_t::make_string(dirs.documents_dir),
+			value_t::make_string(dirs.desktop_dir),
+
+			value_t::make_string(dirs.application_support),
+			value_t::make_string(dirs.preferences_dir),
+			value_t::make_string(dirs.cache_dir),
+			value_t::make_string(dirs.temp_dir),
+
+			value_t::make_string(dirs.process_dir)
+		}
+	);
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(result);
@@ -1238,6 +1306,11 @@ bc_value_t host__get_entry_info(interpreter_t& vm, const bc_value_t args[], int 
 	const auto v = value_to_bc(result);
 	return v;
 }
+
+
+
+
+
 
 
 
@@ -1303,7 +1376,20 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 					epure::impure
 				)
 			}
-		}
+		},
+		{
+			"get_fs_environment",
+			host_function_signature_t{
+				1026,
+				typeid_t::make_function(
+					make__fs_environment_t__type(),
+					{},
+					epure::impure
+				)
+			}
+		},
+
+
 	};
 	return temp;
 }
@@ -1342,7 +1428,8 @@ std::map<int,  host_function_t> get_host_functions(){
 		{ "write_text_file", host__write_text_file },
 		{ "get_directory_entries_shallow", host__get_directory_entries_shallow },
 		{ "get_directory_entries_deep", host__get_directory_entries_deep },
-		{ "get_entry_info", host__get_entry_info }
+		{ "get_entry_info", host__get_entry_info },
+		{ "get_fs_environment", host__get_fs_environment }
 	};
 
 	const auto lookup = [&](){

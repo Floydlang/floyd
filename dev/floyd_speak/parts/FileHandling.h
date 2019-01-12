@@ -4,7 +4,8 @@
 #include <string>
 #include <cstdint>
 
-struct FSRef;
+
+
 
 struct VRelativePath {
 	std::string fRelativePath;
@@ -14,18 +15,8 @@ struct VAbsolutePath {
 	std::string fAbsolutePath;
 };
 
-/*
-struct VNativeAbsolutePath {
-	std::string fPath;
-};
 
-struct VVirtualAbsolutePath {
-	std::string fPath;
-};
 
-//	Input is a virtual absolute path.
-VVirtualAbsolutePath MakeVirtualAbsolutePath(const std::string& path);
-*/
 
 //	Path is absolute and with native path separators.
 std::vector<std::uint8_t> LoadFile(const std::string& completePath);
@@ -36,23 +27,65 @@ std::string LoadTextFile(const std::string& completePath);
 //	Path is absolute and with native path separators.
 bool DoesFileExist(const std::string& completePath);
 
-//	Same as GetAssetsDir, but referes to a writable directory were we can store files for next run time.
-std::string GetCacheDir();
-
-//	Works similar to GetAssetsDir, but to the users preference dir.
-std::string GetPreferenceDir();
-
-std::string GetDesktopDir();
-
-std::string GetAppResourceDir();
-std::string GetAppReadWriteDir();
-
-std::string GetExecutableDir();
-
-void GetTestDirs(std::string& oReadDir, std::string& oWriteDir);
 
 
-std::string FromFSRef(const FSRef& fsRef);
+///////////////////////////////////////////////////			DIRECTOR ROOTS
+
+//??? Add help creating the directory with the correct name.
+struct directories_t {
+
+	//??? add app resource root.
+
+	//	Directory where your executable or bundle lives.
+	std::string process_dir;
+
+
+	//	Current logged-in user's home directory. Ex: "/Users/marcus"
+	//	User-visible files.
+	std::string home_dir;
+
+	//	Current logged-in user's documents directory. Ex: "/Users/marcus/Documents"
+	//	User-visible files.
+	std::string documents_dir;
+
+	//	Current logged-in user's desktop directory. Ex: "/Users/marcus/Desktop"
+	//	User-visible files.
+	std::string desktop_dir;
+
+	//	Current logged-in user's preference directory. Ex: "/Users/marcus/Library/Preferences"
+	//	Notice that this points to a directory shared by many applications: store your data in a sub directory!
+	//	User don't see these files.
+	std::string preferences_dir;
+
+	//	Current logged-in user's cache directory. Ex: "/Users/marcus/Library/Caches"
+	//	Notice that this points to a directory shared by many applications: store your data in a sub directory!
+	//	User don't see these files.
+	std::string cache_dir;
+
+
+	//	Temporary directory. Will be erased soon.
+	//	Notice that this points to a directory shared by many applications: store your data in a sub directory!
+	//	User don't see these files.
+	std::string temp_dir;
+
+
+	//	Current logged-in user's Application Support directory. Ex: "/Users/marcus/Library/Application Support"
+	//	Notice that this points to a directory shared by many applications: store your data in a sub directory!
+	//	App creates and manages on behalf of the user and can include files that contain user data.
+	//	User don't see these files.
+	std::string application_support;
+};
+
+directories_t GetDirectories();
+
+struct process_info_t {
+	std::string process_path;
+};
+process_info_t get_process_info();
+
+
+///////////////////////////////////////////////////			ADVANCED
+
 
 //	Path is absolute and with native path separators.
 //	Will _create_ any needed directories in the save-path.
@@ -143,7 +176,6 @@ TPathParts SplitPath(const std::string& path);
 
 std::vector<std::string> SplitPath2(const std::string& path);
 
-void RevealItemInFinder(const std::string& path);
 
 
 /*
@@ -151,4 +183,7 @@ void RevealItemInFinder(const std::string& path);
 	"/users/marcus/"					"resources/hello.jpg"			"/users/marcus/resources/hello.jpg"
 */
 std::string MakeAbsolutePath(const std::string& base, const std::string& relativePath);
+
+
+
 
