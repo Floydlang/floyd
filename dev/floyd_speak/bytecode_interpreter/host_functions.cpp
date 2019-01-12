@@ -172,14 +172,14 @@ extern const std::string k_tiny_prefix = R"(
 
 	struct directory_entry_t {
 		string type	//	"dir" or "file"
-		string parent_path
+		string abs_parent_path
 		string name
 	}
 
 	struct directory_entry_info_t {
 		string type	//	"file" or "dir"
 		string name
-		string parent_path
+		string abs_parent_path
 
 		string creation_date
 		string modification_date
@@ -966,21 +966,6 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 
 
 
-bc_value_t host__get_env_path(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 0){
-		throw std::runtime_error("get_env_path() requires 0 arguments!");
-	}
-
-	const char *homeDir = getenv("HOME");
-	const std::string env_path(homeDir);
-//	const std::string env_path = "~/Desktop/";
-
-	const auto v = bc_value_t::make_string(env_path);
-	return v;
-}
-
 bc_value_t host__read_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -1349,7 +1334,6 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 		{ "print", host_function_signature_t{ 1000, typeid_t::make_function(VOID, { DYN }, epure::pure) } },
 		{ "send", host_function_signature_t{ 1022, typeid_t::make_function(VOID, { typeid_t::make_string(), typeid_t::make_json_value() }, epure::impure) } },
 		{ "get_time_of_day", host_function_signature_t{ 1005, typeid_t::make_function(typeid_t::make_int(), {}, epure::impure) }},
-		{ "get_env_path", host_function_signature_t{ 1014, typeid_t::make_function(typeid_t::make_string(), {}, epure::impure) }},
 		{ "read_text_file", host_function_signature_t{ 1015, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::impure) }},
 		{ "write_text_file", host_function_signature_t{ 1016, typeid_t::make_function(VOID, { DYN, DYN }, epure::impure) }},
 		{
@@ -1423,7 +1407,6 @@ std::map<int,  host_function_t> get_host_functions(){
 		{ "send", host__send },
 		{ "get_time_of_day", host__get_time_of_day },
 
-		{ "get_env_path", host__get_env_path },
 		{ "read_text_file", host__read_text_file },
 		{ "write_text_file", host__write_text_file },
 		{ "get_directory_entries_shallow", host__get_directory_entries_shallow },

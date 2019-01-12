@@ -1030,41 +1030,6 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 */
 
 
-//////////////////////////////////////////		HOST FUNCTION - print()
-
-
-QUARK_UNIT_TEST("run_global()", "Print Hello, world!", "", ""){
-	const auto r = test__run_global(
-		R"(
-			print("Hello, World!")
-		)"
-	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Hello, World!" }));
-}
-
-
-QUARK_UNIT_TEST("run_global()", "Test that VM state (print-log) escapes block!", "", ""){
-	const auto r = test__run_global(
-		R"(
-			{
-				print("Hello, World!")
-			}
-		)"
-	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Hello, World!" }));
-}
-
-QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes IF!"){
-	const auto r = test__run_global(
-		R"(
-			if(true){
-				print("Hello, World!")
-			}
-		)"
-	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Hello, World!" }));
-}
-
 
 //////////////////////////////////////////		HOST FUNCTION - assert()
 
@@ -1092,85 +1057,6 @@ QUARK_UNIT_TESTQ("run_global()", ""){
 	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A" }));
 }
 
-
-//////////////////////////////////////////		HOST FUNCTION - get_time_of_day()
-
-
-QUARK_UNIT_TESTQ("run_init()", "get_time_of_day()"){
-	test__run_global(
-		R"(
-			let int a = get_time_of_day()
-			let int b = get_time_of_day()
-			let int c = b - a
-			print("Delta time:" + to_string(a))
-		)"
-	);
-}
-
-
-//////////////////////////////////////////		HOST FUNCTION - get_env_path()
-
-
-QUARK_UNIT_TEST("", "get_env_path()", "", ""){
-	const auto vm = test__run_global(R"(
-		path = get_env_path()
-		print(path)
-	)");
-
-	quark::ut_compare_strings(vm->_print_output[0].substr(0, 7), "/Users/");
-}
-
-//////////////////////////////////////////		HOST FUNCTION - read_text_file()
-
-/*
-QUARK_UNIT_TEST("", "read_text_file()", "", ""){
-	const auto vm = test__run_global(R"(
-		path = get_env_path();
-		a = read_text_file(path + "/Desktop/test1.json");
-		print(a);
-	)");
-	ut_compare_stringvects(vm->_print_output, vector<string>{
-		string() + R"({ "magic": 1234 })" + "\n"
-	});
-}
-*/
-
-
-//////////////////////////////////////////		HOST FUNCTION - write_text_file()
-
-
-QUARK_UNIT_TEST("", "write_text_file()", "", ""){
-	const auto vm = test__run_global(R"(
-		let path = get_env_path()
-		write_text_file(path + "/Desktop/test_out.txt", "Floyd wrote this!")
-	)");
-}
-
-//////////////////////////////////////////		HOST FUNCTION - instantiate_from_typeid()
-
-//	instantiate_from_typeid() only works for const-symbols right now.
-/*
-??? Support when we can make "t = typeof(1234)" a const-symbol
-QUARK_UNIT_TEST("run_global()", "", "", ""){
-	const auto result = test__run_return_result(
-		R"(
-			t = typeof(1234);
-			result = instantiate_from_typeid(t, 3);
-		)", {}
-	);
-	ut_compare_values(result, value_t::make_int(3));
-}
-
-QUARK_UNIT_TEST("run_global()", "", "", ""){
-	const auto r = test__run_global(
-		R"(
-			a = instantiate_from_typeid(typeof(123), 3);
-			assert(to_string(typeof(a)) == "int");
-			assert(a == 3);
-		)"
-	);
-}
-*/
 
 OFF_QUARK_UNIT_TEST("", "instantiate_from_typeid", "Make struct, make sure it works too", ""){
 	const auto result = test__run_return_result(R"(
@@ -2999,6 +2885,115 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
+
+//////////////////////////////////////////		HOST FUNCTION - print()
+
+
+QUARK_UNIT_TEST("run_global()", "Print Hello, world!", "", ""){
+	const auto r = test__run_global(
+		R"(
+			print("Hello, World!")
+		)"
+	);
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Hello, World!" }));
+}
+
+
+QUARK_UNIT_TEST("run_global()", "Test that VM state (print-log) escapes block!", "", ""){
+	const auto r = test__run_global(
+		R"(
+			{
+				print("Hello, World!")
+			}
+		)"
+	);
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Hello, World!" }));
+}
+
+QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes IF!"){
+	const auto r = test__run_global(
+		R"(
+			if(true){
+				print("Hello, World!")
+			}
+		)"
+	);
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Hello, World!" }));
+}
+
+
+
+//////////////////////////////////////////		HOST FUNCTION - get_time_of_day()
+
+
+QUARK_UNIT_TESTQ("run_init()", "get_time_of_day()"){
+	test__run_global(
+		R"(
+			let int a = get_time_of_day()
+			let int b = get_time_of_day()
+			let int c = b - a
+			print("Delta time:" + to_string(a))
+		)"
+	);
+}
+
+
+//////////////////////////////////////////		HOST FUNCTION - read_text_file()
+
+/*
+QUARK_UNIT_TEST("", "read_text_file()", "", ""){
+	const auto vm = test__run_global(R"(
+		path = get_env_path();
+		a = read_text_file(path + "/Desktop/test1.json");
+		print(a);
+	)");
+	ut_compare_stringvects(vm->_print_output, vector<string>{
+		string() + R"({ "magic": 1234 })" + "\n"
+	});
+}
+*/
+
+
+//////////////////////////////////////////		HOST FUNCTION - write_text_file()
+
+
+QUARK_UNIT_TEST("", "write_text_file()", "", ""){
+	const auto vm = test__run_global(R"(
+		let path = get_fs_environment().desktop_dir
+		write_text_file(path + "/test_out.txt", "Floyd wrote this!")
+	)");
+}
+
+//////////////////////////////////////////		HOST FUNCTION - instantiate_from_typeid()
+
+//	instantiate_from_typeid() only works for const-symbols right now.
+/*
+??? Support when we can make "t = typeof(1234)" a const-symbol
+QUARK_UNIT_TEST("run_global()", "", "", ""){
+	const auto result = test__run_return_result(
+		R"(
+			t = typeof(1234);
+			result = instantiate_from_typeid(t, 3);
+		)", {}
+	);
+	ut_compare_values(result, value_t::make_int(3));
+}
+
+QUARK_UNIT_TEST("run_global()", "", "", ""){
+	const auto r = test__run_global(
+		R"(
+			a = instantiate_from_typeid(typeof(123), 3);
+			assert(to_string(typeof(a)) == "int");
+			assert(a == 3);
+		)"
+	);
+}
+*/
+
+
+//////////////////////////////////////////		HOST FUNCTION - get_directory_entries()
+
+
 QUARK_UNIT_TEST("", "get_directory_entries()", "", ""){
 	const auto result = test__run_return_result(R"(
 
@@ -3010,7 +3005,13 @@ QUARK_UNIT_TEST("", "get_directory_entries()", "", ""){
 
 	const auto expected = typeid_t::make_vector(make__directory_entry_t__type());
 	QUARK_UT_VERIFY(result.get_type() == expected);
+
+//	quark::ut_compare_strings(vm->_print_output[0].substr(0, 7), "/Users/");
 }
+
+
+//////////////////////////////////////////		HOST FUNCTION - get_directory_entries_deep()
+
 
 QUARK_UNIT_TEST("", "get_directory_entries_deep()", "", ""){
 	const auto result = test__run_return_result(R"(
@@ -3026,6 +3027,7 @@ QUARK_UNIT_TEST("", "get_directory_entries_deep()", "", ""){
 }
 
 
+//////////////////////////////////////////		HOST FUNCTION - get_entry_info()
 
 
 QUARK_UNIT_TEST("", "get_entry_info()", "", ""){
@@ -3041,7 +3043,10 @@ QUARK_UNIT_TEST("", "get_entry_info()", "", ""){
 }
 
 
-QUARK_UNIT_TEST_VIP("", "get_entry_info()", "", ""){
+//////////////////////////////////////////		HOST FUNCTION - get_fs_environment()
+
+
+QUARK_UNIT_TEST("", "get_fs_environment()", "", ""){
 	const auto result = test__run_return_result(R"(
 
 		let result = get_fs_environment()

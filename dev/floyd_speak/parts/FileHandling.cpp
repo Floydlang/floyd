@@ -62,7 +62,7 @@ directories_t GetDirectories(){
 }
 
 
-QUARK_UNIT_TEST_VIP("", "GetDirectories()", "", ""){
+QUARK_UNIT_TEST("", "GetDirectories()", "", ""){
 	const auto temp = GetDirectories();
 
 	QUARK_UT_VERIFY(true)
@@ -142,7 +142,7 @@ process_info_t get_process_info(){
 
 
 
-QUARK_UNIT_TEST_VIP("", "get_info()", "", ""){
+QUARK_UNIT_TEST("", "get_info()", "", ""){
 	const auto temp = get_process_info();
 
 	TFileInfo info;

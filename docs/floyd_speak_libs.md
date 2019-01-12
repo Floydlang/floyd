@@ -448,25 +448,6 @@ Writes text file in unicode format.
 	void write_unicode_file(world w, absolute_path_t path, text_t t, int file_encoding, bool write_bom)
 
 
-## does\_entry\_exist()
-
-	bool does_entry_exist(world w, absolute_path_t path)
-
-
-## create\_directories\_deep()
-
-	void create_directories_deep(world w, absolute_path_t path)
-
-
-## delete\_fs\_entry\_deep()
-
-Deletes a file or directory. If the entry has children those are deleted too = delete folder also deletes is contents.
-
-	void delete_fs_entry_deep(world w, absolute_path_t path)
-
-## rename\_entry()
-
-	void rename_entry(world w, absolute_path_t path, string n)
 
 
 

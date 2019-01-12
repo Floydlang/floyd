@@ -1152,6 +1152,9 @@ Returns the computer's realtime clock, expressed in the number of milliseconds s
 
 
 
+
+
+
 # WORLD FILE SYSTEM FUNCTIONS
 
 These functions allow you to access the OS file system. They are all impure. Temporary files are sometimes used to make the functions revertable on errors.
@@ -1162,11 +1165,6 @@ Floyd uses unix-style paths in all its APIs. It will convert these to native pat
 
 
 
-## get\_env\_path()
-
-Returns user's home directory, like "/Volumes/Bob".
-
-	string get_env_path() impure
 
 
 
@@ -1174,50 +1172,52 @@ Returns user's home directory, like "/Volumes/Bob".
 
 Reads a text file from the file system and returns it as a string.
 
-	string read_text_file(string path) impure
+	string read_text_file(string abs_path) impure
 
 Throws exception if file cannot be found or read.
 
 
 ## write\_text\_file()
 
-Write a string to the file system as a text file. Will create any missing directories in the path.
+Write a string to the file system as a text file. Will create any missing directories in the absolute path.
 
-	void write_text_file(string path, string data) impure
+	void write_text_file(string abs_path, string data) impure
 
 
 
 ## get\_directory\_entries_shallow() and get\_directory\_entries\_deep()
 
-Returns a vector of all the files and directories found at the path.
+Returns a vector of all the files and directories found at the absolute path.
 
 	struct directory_entry_t {
 		string type	//	"dir" or "file"
 		string name
-		string parent_path
+		string abs_parent_path
 	}
 	
-	[directory_entry_t] get_directory_entries_shallow(string path) impure
+	[directory_entry_t] get_directory_entries_shallow(string abs_path) impure
 
 get_directory_entries_deep() works the same way, but will also traverse each found directory. Contents of sub-directories will be also be prefixed by the sub-directory names. All path names are relative to the input directory - not absolute to file system.
 
-	[directory_entry_t] get_directory_entries_deep(string path) impure
+	[directory_entry_t] get_directory_entries_deep(string abs_path) impure
 
 
 
 ## get\_entry\_info()
 
+Information about an entry in the file system. Can be a file or a directory.
+
 	struct directory_entry_info_t {
 		string type	//	"file" or "dir"
 		string name
-		string parent_path
+		string abs_parent_path
 
 		string creation_date
 		string modification_date
 		int file_size
 	}
 	
-	directory_entry_info_t get_entry_info(string path) impure
+	directory_entry_info_t get_entry_info(string abs_path) impure
 
 
 ## get\_fs\_environment()
@@ -1302,6 +1302,31 @@ Temporary directory. Will be erased soon. Don't expect to find your files here n
 Directory where your executable or bundle lives. This is usually read-only - you can't modify anything in this directory. You might use this path to read resources built into your executable or Mac bundle.
 
 Example: "/Users/bob/Applications/MyApp.app/"
+
+
+
+## does\_entry\_exist()
+Checks if there is a file or directory at specified path.
+
+	bool does_entry_exist(string abs_path) impure
+
+
+## create\_directories\_deep()
+Creates a directory at specified path. If the parents directories don't exist, then those will be created too.
+
+	void create_directories_deep(string abs_path) impure
+
+
+## delete\_fs\_entry\_deep()
+
+Deletes a file or directory. If the entry has children those are deleted too - delete folder also deletes is contents.
+
+	void delete_fs_entry_deep(string abs_path) impure
+
+## rename\_fs\_entry()
+
+	void rename_fs_entry(string abs_path, string n) impure
+
 
 
 
