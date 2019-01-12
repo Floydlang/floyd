@@ -701,19 +701,21 @@ std::vector<TDirEntry> GetDirItems(const std::string& inDir){
 	}
 
 	/* this structure is used for storing the name of each entry in turn. */
-	const struct ::dirent* entry=NULL;
+	const struct ::dirent* entry = NULL;
 
 	while ( (entry = ::readdir(dir)) != NULL) {
-		if(entry->d_type==DT_REG){
+		if(entry->d_type == DT_REG){
 			TDirEntry tempFile;
-			tempFile.fName=entry->d_name;
-			tempFile.fType=TDirEntry::kFile;
+			tempFile.fNameOnly = entry->d_name;
+			tempFile.fParent = inDir;
+			tempFile.fType = TDirEntry::kFile;
 			r.push_back(tempFile);
 		}
-		else if(entry->d_type==DT_DIR){
+		else if(entry->d_type == DT_DIR){
 			TDirEntry tempDir;
-			tempDir.fName=entry->d_name;
-			tempDir.fType=TDirEntry::kDir;
+			tempDir.fNameOnly = entry->d_name;
+			tempDir.fParent = inDir;
+			tempDir.fType = TDirEntry::kDir;
 			r.push_back(tempDir);
 		}
 		else{
@@ -726,33 +728,24 @@ std::vector<TDirEntry> GetDirItems(const std::string& inDir){
 	return r;
 }
 
-std::vector<TDirEntry> GetDirItemsDeep(const std::string& inDir, const std::string& prefix2){
+std::vector<TDirEntry> GetDirItemsDeep(const std::string& inDir){
 	ASSERT(inDir.size() > 0 && inDir.back() == '/');
 
 	std::vector<TDirEntry> res;
-	std::vector<TDirEntry> items=GetDirItems(inDir);
-	for(long c=0 ; c < items.size() ; c++){
-//xx		TRACE(items[c].fName + "\t" + std::to_string(items[c].);
-		if(items[c].fName[0] !='.'){
-			if(items[c].fType==TDirEntry::kDir){
-				TDirEntry subDir=items[c];
-				subDir.fName=prefix2 + subDir.fName;
-				res.push_back(subDir);
+	const auto items = GetDirItems(inDir);
+	for(const auto& e: items){
+//xx		TRACE(e.fName + "\t" + std::to_string(e.);
+		if(e.fNameOnly[0] != '.'){
 
-				std::vector<TDirEntry> subDirItems=GetDirItemsDeep(inDir + items[c].fName + "/", prefix2 + items[c].fName + "/");
-				for(long d=0 ; d < subDirItems.size() ; d++){
-					res.push_back(subDirItems[d]);
-//					TRACE(subDirItems[d].fName);
-				}
-			}
-			else if(items[c].fType==TDirEntry::kFile){
-				TDirEntry subFile=items[c];
-				subFile.fName=prefix2 + subFile.fName;
-				res.push_back(subFile);
-//					TRACE(subFile.fName);
-			}
-			else{
-//				TRACE("Weird type");
+			//	Use the item as-is.
+			res.push_back(e);
+
+			//	For directories, also add their contents.
+			if(e.fType == TDirEntry::kDir){
+				TDirEntry subDir = e;
+				const auto path2 = inDir + e.fNameOnly + "/";
+				const auto subDirItems = GetDirItemsDeep(path2);
+				res.insert(res.end(), subDirItems.begin(), subDirItems.end());
 			}
 		}
 	}

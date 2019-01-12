@@ -81,8 +81,14 @@ struct TDirEntry {
 		kFile	=	200,
 		kDir	=	201
 	};
-	std::string fName;
+
 	EType fType;
+
+	//	Name of file or dir.
+	std::string fNameOnly;
+
+	//	Parent path.
+	std::string fParent;
 };
 
 
@@ -92,7 +98,7 @@ std::vector<TDirEntry> GetDirItems(const std::string& dir);
 //	Each TDirEntry name will be prefixed by _prefix_.
 //	Contents of sub-directories will be also be prefixed by the sub-directory names.
 //	All path names are relative to the input directory - not absolute to file system.
-std::vector<TDirEntry> GetDirItemsDeep(const std::string& dir, const std::string& prefix);
+std::vector<TDirEntry> GetDirItemsDeep(const std::string& dir);
 
 
 //	Converts all forward slashes "/" to the path separator of the current operating system:

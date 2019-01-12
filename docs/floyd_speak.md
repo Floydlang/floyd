@@ -679,7 +679,6 @@ Returns the actual type of this value stores inside the json\_value. It can be o
 Many of the core functions work with json\_value, but it often depends on the actual type of json\_value. Example: size() works for strings, arrays and object only.
 
 - __get\_json\_type()__
-- __pretty_string()__
 - __size()__
 - __encode_json()__
 - __decode_json()__
@@ -1188,16 +1187,17 @@ Write a string to the file system as a text file. Will create any missing direct
 
 
 
-## get\_directory\_entries() and get\_directory\_entries\_deep()
+## get\_directory\_entries_shallow() and get\_directory\_entries\_deep()
 
 Returns a vector of all the files and directories found at the path.
 
 	struct directory_entry_t {
-		string name
 		string type	//	"dir" or "file"
+		string name
+		string parent_path
 	}
 	
-	[directory_entry_t] get_directory_entries(world w, absolute_path_t path)
+	[directory_entry_t] get_directory_entries_shallow(world w, absolute_path_t path)
 
 get_directory_entries_deep() works the same way, but will also traverse each found directory. Contents of sub-directories will be also be prefixed by the sub-directory names. All path names are relative to the input directory - not absolute to file system.
 

@@ -2987,16 +2987,49 @@ QUARK_UNIT_TEST("", "color__black", "", ""){
 	)");
 }
 
+
+
+
+auto make__directory_entry_t__type(){
+	const auto temp = typeid_t::make_struct2({
+		{ typeid_t::make_string(), "type" },
+		{ typeid_t::make_string(), "name" },
+		{ typeid_t::make_string(), "parent_path" }
+	});
+	return temp;
+}
+
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto a = typeid_t::make_vector(typeid_t::make_string());
+	const auto b = typeid_t::make_vector(make__directory_entry_t__type());
+	QUARK_UT_VERIFY(a != b);
+}
+
+
+QUARK_UNIT_TEST("", "get_directory_entries()", "", ""){
+	const auto result = test__run_return_result(R"(
+
+		let result = get_directory_entries_shallow("/Users/marcus/Desktop/")
+		assert(size(result) > 3)
+		print(to_pretty_string(result))
+
+	)", {});
+
+	const auto expected = typeid_t::make_vector(make__directory_entry_t__type());
+	QUARK_UT_VERIFY(result.get_type() == expected);
+}
+
 QUARK_UNIT_TEST("", "get_directory_entries_deep()", "", ""){
 	const auto result = test__run_return_result(R"(
 
 		let result = get_directory_entries_deep("/Users/marcus/Desktop/")
 		assert(size(result) > 1000)
-		print(to_string(result))
+		print(to_pretty_string(result))
 
 	)", {});
 
-	QUARK_UT_VERIFY(result.get_type() == typeid_t::make_vector(typeid_t::make_string()));
+	const auto expected = typeid_t::make_vector(make__directory_entry_t__type());
+	QUARK_UT_VERIFY(result.get_type() == expected);
 }
 
 

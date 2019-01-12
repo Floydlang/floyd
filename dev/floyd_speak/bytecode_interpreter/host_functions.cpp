@@ -164,6 +164,16 @@ extern const std::string k_tiny_prefix = R"(
 		)
 	}
 
+
+	////////////////////////////		FILE SYSTEM TYPES
+
+
+	struct directory_entry_t {
+		string type	//	"dir" or "file"
+		string parent_path
+		string name
+	}
+
 )";
 
 
@@ -985,6 +995,62 @@ bc_value_t host__write_text_file(interpreter_t& vm, const bc_value_t args[], int
 	}
 }
 
+const auto k_directory_entry_t__type = typeid_t::make_struct2({
+	{ typeid_t::make_string(), "type" },
+	{ typeid_t::make_string(), "name" },
+	{ typeid_t::make_string(), "parent_path" }
+});
+
+
+
+std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v){
+	const auto elements = mapf<value_t>(
+		v,
+		[](const auto& e){
+//			const auto t = value_t::make_string(e.fName);
+			const auto type_string = e.fType == TDirEntry::kFile ? "file": "dir";
+			const auto t2 = value_t::make_struct_value(
+				k_directory_entry_t__type,
+				{
+					value_t::make_string(type_string),
+					value_t::make_string(e.fNameOnly),
+					value_t::make_string(e.fParent)
+				}
+			);
+			return t2;
+		}
+	);
+	return elements;
+}
+
+bc_value_t host__get_directory_entries_shallow(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 1){
+		throw std::runtime_error("host__get_directory_entries_shallow() requires 1 arguments!");
+	}
+	if(args[0]._type.is_string() == false){
+		throw std::runtime_error("host__get_directory_entries_shallow() requires a path, as a string.");
+	}
+
+
+	//??? check path is valid dir
+	const string path = args[0].get_string_value();
+
+	const auto a = GetDirItems(path);
+	const auto elements = directory_entries_to_values(a);
+	const auto vec2 = value_t::make_vector_value(k_directory_entry_t__type, elements);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(vec2);
+	QUARK_TRACE(json_to_pretty_string(debug._value));
+#endif
+
+	const auto v = value_to_bc(vec2);
+
+	return v;
+}
+
 bc_value_t host__get_directory_entries_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -999,15 +1065,9 @@ bc_value_t host__get_directory_entries_deep(interpreter_t& vm, const bc_value_t 
 	//??? check path is valid dir
 	const string path = args[0].get_string_value();
 
-	const auto a = GetDirItemsDeep(path, path);
-	const auto elements = mapf<value_t>(
-		a,
-		[](const auto& e){
-			return value_t::make_string(e.fName);
-		}
-	);
-
-	const auto vec2 = value_t::make_vector_value(typeid_t::make_string(), elements);
+	const auto a = GetDirItemsDeep(path);
+	const auto elements = directory_entries_to_values(a);
+	const auto vec2 = value_t::make_vector_value(k_directory_entry_t__type, elements);
 
 #if 0
 	const auto debug = value_and_type_to_ast_json(vec2);
@@ -1058,10 +1118,17 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 		{ "read_text_file", host_function_signature_t{ 1015, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::impure) }},
 		{ "write_text_file", host_function_signature_t{ 1016, typeid_t::make_function(VOID, { DYN, DYN }, epure::impure) }},
 		{
-			"get_directory_entries_deep",
+			"get_directory_entries_shallow",
 			host_function_signature_t{
 				1023,
-				typeid_t::make_function(typeid_t::make_vector(typeid_t::make_string()), { typeid_t::make_string() }, epure::impure)
+				typeid_t::make_function(typeid_t::make_vector(k_directory_entry_t__type), { typeid_t::make_string() }, epure::impure)
+			}
+		},
+		{
+			"get_directory_entries_deep",
+			host_function_signature_t{
+				1024,
+				typeid_t::make_function(typeid_t::make_vector(k_directory_entry_t__type), { typeid_t::make_string() }, epure::impure)
 			}
 		}
 	};
@@ -1100,6 +1167,7 @@ std::map<int,  host_function_t> get_host_functions(){
 		{ "get_env_path", host__get_env_path },
 		{ "read_text_file", host__read_text_file },
 		{ "write_text_file", host__write_text_file },
+		{ "get_directory_entries_shallow", host__get_directory_entries_shallow },
 		{ "get_directory_entries_deep", host__get_directory_entries_deep }
 	};
 

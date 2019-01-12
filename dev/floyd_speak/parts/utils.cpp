@@ -17,24 +17,41 @@ using std::string;
 //	template <typename T> bool compare_shared_values(const T& ptr_a, const T& ptr_b){
 
 
-QUARK_UNIT_TESTQ("compare_shared_values()", ""){
+QUARK_UNIT_TEST("", "compare_shared_values()", "", ""){
 	const auto a = std::make_shared<std::string>("a");
 	const auto b = std::make_shared<std::string>("a");
-	QUARK_TEST_VERIFY(compare_shared_values(a, b));
+	QUARK_TEST_VERIFY(compare_shared_values(a, b) == true);
 }
 
-QUARK_UNIT_TESTQ("compare_shared_values()", ""){
+QUARK_UNIT_TEST("", "compare_shared_values()", "", ""){
 	const auto a = std::make_shared<std::string>("a");
 	const auto b = a;
-	QUARK_TEST_VERIFY(compare_shared_values(a, b));
+	QUARK_TEST_VERIFY(compare_shared_values(a, b) == true);
 }
 
 
-QUARK_UNIT_TESTQ("compare_shared_values()", ""){
+QUARK_UNIT_TEST("", "compare_shared_values()", "", ""){
 	const auto a = std::make_shared<std::string>("a");
 	const auto b = std::make_shared<std::string>("b");
-	QUARK_TEST_VERIFY(!compare_shared_values(a, b));
+	QUARK_TEST_VERIFY(compare_shared_values(a, b) == false);
 }
+QUARK_UNIT_TEST("", "compare_shared_values()", "", ""){
+	const auto a = std::shared_ptr<std::string>();
+	const auto b = std::make_shared<std::string>("b");
+	QUARK_TEST_VERIFY(compare_shared_values(a, b) == false);
+}
+QUARK_UNIT_TEST("", "compare_shared_values()", "", ""){
+	const auto a = std::make_shared<std::string>("a");
+	const auto b = std::shared_ptr<std::string>();
+	QUARK_TEST_VERIFY(compare_shared_values(a, b) == false);
+}
+QUARK_UNIT_TEST("", "compare_shared_values()", "", ""){
+	const auto a = std::shared_ptr<std::string>();
+	const auto b = std::shared_ptr<std::string>();
+	QUARK_TEST_VERIFY(compare_shared_values(a, b) == true);
+}
+
+
 
 
 auto lambda_echo = [](int i ) { QUARK_TRACE_SS(i); };
@@ -45,7 +62,6 @@ QUARK_UNIT_TEST("", "lambda_echo()", "", "") {
 	for_each_col(test_collection, lambda_echo);
 }
 
-auto addOne = [](int i) { return i+1;};
 
 
 
