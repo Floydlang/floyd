@@ -68,7 +68,44 @@ void GetTestDirs(std::string& oReadDir, std::string& oWriteDir){
 #if JIU_MACOS || JIU_IOS
 
 std::string UpDir(const std::string& path){
-	return "";
+	std::string res = path;
+	std::string::size_type pos = path.rfind('/', std::string::npos);
+	if(pos != std::string::npos){
+		res.erase(pos, std::string::npos);
+	}
+	return res;
+}
+
+std::pair<std::string, std::string> UpDir2(const std::string& path){
+	ASSERT(path.empty() || path.back() == '/');
+
+	if(path == "/"){
+		return { "", "/" };
+	}
+	else if(path == ""){
+		return { "", "" };
+	}
+	else{
+		const auto pos = path.rfind('/', path.size() - 2);
+		if(pos != std::string::npos){
+			const auto left = std::string(path.begin(), path.begin() + pos + 1);
+			const auto right = std::string(path.begin() + pos + 1, path.end() - 1);
+			return { left, right };
+		}
+		else{
+			return { "", path };
+		}
+	}
+}
+
+QUARK_UNIT_TEST_VIP("", "UpDir2()","", ""){
+	QUARK_UT_VERIFY((UpDir2("/Users/marcus/Desktop/") == std::pair<std::string, std::string>{ "/Users/marcus/", "Desktop" }));
+}
+QUARK_UNIT_TEST_VIP("", "UpDir2()","", ""){
+	QUARK_UT_VERIFY((UpDir2("/Users/") == std::pair<std::string, std::string>{ "/", "Users" }));
+}
+QUARK_UNIT_TEST_VIP("", "UpDir2()","", ""){
+	QUARK_UT_VERIFY((UpDir2("/") == std::pair<std::string, std::string>{ "", "/" }));
 }
 
 
@@ -174,14 +211,6 @@ static std::string sCachesDir;
 static std::string sPreferencesPath;
 
 
-std::string UpDir(const std::string& path){
-	std::string res=path;
-	std::string::size_type pos=path.rfind('/',std::string::npos);
-	if(pos !=std::string::npos){
-		res.erase(pos,std::string::npos);
-	}
-	return res;
-}
 
 
 std::string GetExecutableDir(){
@@ -288,27 +317,44 @@ std::string GetDesktopDir(){
 
 
 std::string RemoveExtension(const std::string& s){
-	long pos=s.size();
-	while(pos > 1){
-		if(s[pos]=='.'){
-			return std::string(&s[0],&s[pos]);
-		}
-		pos--;
-	}
-	return s;
+	return SplitExtension(s).first;
 }
 
 std::string GetExtension(const std::string& s){
-	long size=s.size();
-	long pos=size;
-	while(pos > 1 && s[pos] !='.'){
+	return SplitExtension(s).second;
+}
+
+std::pair<std::string, std::string> SplitExtension(const std::string& s){
+	const auto size = s.size();
+	auto pos = size;
+	while(pos > 0 && s[pos - 1] != '.'){
 		pos--;
 	}
-	std::string extension;
-	if(pos > 1){
-		extension=std::string(&s[pos],&s[size]);
+
+	//	Found "."?
+	if(pos > 0){
+		const auto name = std::string(&s[0], &s[pos - 1]);
+		const auto extension = std::string(&s[pos - 1], &s[size]);
+		return { name, extension };
 	}
-	return extension;
+
+	//	No ".".
+	else{
+		return { s, "" };
+	}
+}
+
+QUARK_UNIT_TEST("", "SplitExtension()","", ""){
+	QUARK_UT_VERIFY((SplitExtension("snare.wav") == std::pair<std::string, std::string>{ "snare", ".wav" }));
+}
+QUARK_UNIT_TEST("", "SplitExtension()","", ""){
+	QUARK_UT_VERIFY((SplitExtension("snare.drum.wav") == std::pair<std::string, std::string>{ "snare.drum", ".wav" }));
+}
+QUARK_UNIT_TEST("", "SplitExtension()","", ""){
+	QUARK_UT_VERIFY((SplitExtension("snare") == std::pair<std::string, std::string>{ "snare", "" }));
+}
+QUARK_UNIT_TEST("", "SplitExtension()","", ""){
+	QUARK_UT_VERIFY((SplitExtension(".wav") == std::pair<std::string, std::string>{ "", ".wav" }));
 }
 
 
@@ -426,20 +472,23 @@ bool GetFileInfo(const std::string& completePath, TFileInfo& outInfo){
 //	TRACE_INDENT("GetFileInfo(" + completePath + ")");
 
 	TFileInfo result;
-//	result.fDirFlag=false;
-	result.fModificationDate=0;
-	result.fFileSize=0;
+	result.fDirFlag = false;
+	result.fModificationDate = 0;
+	result.fCreationDate = 0;
+	result.fFileSize = 0;
 
 	struct stat theStat;
 
 	//??? Works for dir?
-	int err=stat(completePath.c_str(), &theStat);
-	if(err !=0){
-		int theErrno = errno;
-		if(errno==ENOENT){
+	int err = stat(completePath.c_str(), &theStat);
+	if(err != 0){
+		const int theErrno = errno;
+
+		//	"Error NO ENTry"
+		if(theErrno == ENOENT){
 			return false;
 		}
-		else if(errno==ENOTDIR){
+		else if(theErrno == ENOTDIR){
 			ASSERT(false);
 			throw std::exception();
 		}
@@ -448,12 +497,20 @@ bool GetFileInfo(const std::string& completePath, TFileInfo& outInfo){
 		}
 	}
 
-	time_t dataChange=theStat.st_mtime;
-	time_t statusChange=theStat.st_ctime;
-	off_t size=theStat.st_size;
-	result.fModificationDate=std::max(dataChange, statusChange);
-	result.fFileSize=size;
-	outInfo=result;
+	time_t dataChange = theStat.st_mtime;
+	time_t statusChange = theStat.st_ctime;
+	off_t size = theStat.st_size;
+	result.fModificationDate = std::max(dataChange, statusChange);
+	result.fCreationDate = theStat.st_birthtimespec.tv_sec;
+
+
+	const bool dir = S_ISDIR(theStat.st_mode);
+	const bool file = S_ISREG(theStat.st_mode);
+
+	result.fDirFlag = dir ? true : false;
+
+	result.fFileSize = size;
+	outInfo = result;
 	return true;
 }
 
@@ -628,46 +685,53 @@ std::string ToNativePath(const std::string& path){
 static void TestSplitPath(const std::string& inPath, const TPathParts& correctParts){
 	TRACE_INDENT("TestSplitPath");
 	TRACE("path='" + inPath + "'");
-	TPathParts result=SplitPath(inPath);
+	TPathParts result = SplitPath(inPath);
 	TRACE("fPath='" + result.fPath + "'");
 	TRACE("fName='" + result.fName + "'");
 	TRACE("fExtension='" + result.fExtension + "'");
 
-	ASSERT(result.fPath==correctParts.fPath);
-	ASSERT(result.fName==correctParts.fName);
-	ASSERT(result.fExtension==correctParts.fExtension);
+	ASSERT(result.fPath == correctParts.fPath);
+	ASSERT(result.fName == correctParts.fName);
+	ASSERT(result.fExtension == correctParts.fExtension);
 }
 
-QUARK_UNIT_TESTQ("TestSplitPath",""){
+QUARK_UNIT_TEST("", "TestSplitPath","", ""){
 	//	Complex.
-	TestSplitPath("/Volumes/MyHD/SomeDir/MyFileName.txt",
-		TPathParts("/Volumes/MyHD/SomeDir/","MyFileName",".txt"));
-
-	//	Name + extension.
-	TestSplitPath("MyFileName.txt",
-		TPathParts("","MyFileName",".txt"));
-
-
-	//	Name
-	TestSplitPath("MyFileName",
-		TPathParts("","MyFileName",""));
-
-	//	Path + name
-	TestSplitPath("Dir/MyFileName",
-		TPathParts("Dir/","MyFileName",""));
-
-	//	Path + extension.
-	TestSplitPath("/Volumes/MyHD/SomeDir/.txt",
-		TPathParts("/Volumes/MyHD/SomeDir/","",".txt"));
+	TestSplitPath("/Volumes/MyHD/SomeDir/MyFileName.txt", TPathParts("/Volumes/MyHD/SomeDir/","MyFileName",".txt"));
 }
+
+QUARK_UNIT_TEST("", "TestSplitPath","", ""){
+	//	Name + extension.
+	TestSplitPath("MyFileName.txt", TPathParts("","MyFileName",".txt"));
+}
+
+QUARK_UNIT_TEST("", "TestSplitPath","", ""){
+	//	Name
+	TestSplitPath("MyFileName", TPathParts("","MyFileName",""));
+}
+
+QUARK_UNIT_TEST("", "TestSplitPath","", ""){
+	//	Path + name
+	TestSplitPath("Dir/MyFileName", TPathParts("Dir/","MyFileName",""));
+}
+
+QUARK_UNIT_TEST("", "TestSplitPath","", ""){
+	//	Path + extension.
+	TestSplitPath("/Volumes/MyHD/SomeDir/.txt", TPathParts("/Volumes/MyHD/SomeDir/","",".txt"));
+}
+
+QUARK_UNIT_TEST("", "TestSplitPath","", ""){
+	TestSplitPath("/Volumes/MyHD/SomeDir/", TPathParts("/Volumes/MyHD/SomeDir/","",""));
+}
+
 
 static void TestGetFileInfo_ForFile(const std::string& path, bool existsFlag, std::uint64_t modificationDate, std::uint64_t fileSize){
 	TFileInfo info;
-	bool result=GetFileInfo(path, info);
-	ASSERT(result==existsFlag);
+	bool result = GetFileInfo(path, info);
+	ASSERT(result == existsFlag);
 	if(result){
-//		ASSERT(info.fModificationDate==modificationDate);
-		ASSERT(info.fFileSize==fileSize);
+//		ASSERT(info.fModificationDate ==modificationDate);
+		ASSERT(info.fFileSize == fileSize);
 	}
 }
 

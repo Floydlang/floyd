@@ -1197,13 +1197,27 @@ Returns a vector of all the files and directories found at the path.
 		string parent_path
 	}
 	
-	[directory_entry_t] get_directory_entries_shallow(world w, absolute_path_t path)
+	[directory_entry_t] get_directory_entries_shallow(string path) impure
 
 get_directory_entries_deep() works the same way, but will also traverse each found directory. Contents of sub-directories will be also be prefixed by the sub-directory names. All path names are relative to the input directory - not absolute to file system.
 
-	[directory_entry_t] get_directory_entries_deep(world w, absolute_path_t path)
+	[directory_entry_t] get_directory_entries_deep(string path) impure
 
 
+
+## get\_entry\_info()
+
+	struct directory_entry_info_t {
+		string type	//	"file" or "dir"
+		string name
+		string parent_path
+
+		string creation_date
+		string modification_date
+		int file_size
+	}
+	
+	directory_entry_info_t get_entry_info(string path) impure
 
 
 
@@ -1330,7 +1344,7 @@ Efficent keying using 64-bit hash instead of a string. Hash can often be compute
 Stores a UDT.
 
 	struct date_t {
-		string utd_date
+		string utc_date
 	}
 
 

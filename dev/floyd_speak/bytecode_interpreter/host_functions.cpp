@@ -95,7 +95,7 @@ extern const std::string k_tiny_prefix = R"(
 	}
 
 	struct date_t {
-		string utd_date
+		string utc_date
 	}
 
 	struct sha1_t {
@@ -174,10 +174,18 @@ extern const std::string k_tiny_prefix = R"(
 		string name
 	}
 
+	struct directory_entry_info_t {
+		string type	//	"file" or "dir"
+		string name
+		string parent_path
+
+		string creation_date
+		string modification_date
+		int file_size
+	}
+
+
 )";
-
-
-
 
 
 
@@ -995,18 +1003,85 @@ bc_value_t host__write_text_file(interpreter_t& vm, const bc_value_t args[], int
 	}
 }
 
-const auto k_directory_entry_t__type = typeid_t::make_struct2({
-	{ typeid_t::make_string(), "type" },
-	{ typeid_t::make_string(), "name" },
-	{ typeid_t::make_string(), "parent_path" }
-});
+typeid_t make__directory_entry_t__type(){
+	const auto temp = typeid_t::make_struct2({
+		{ typeid_t::make_string(), "type" },
+		{ typeid_t::make_string(), "name" },
+		{ typeid_t::make_string(), "parent_path" }
+	});
+	return temp;
+}
+
+/*
+	struct date_t {
+		string utd_date
+	}
+*/
+typeid_t make__date_t__type(){
+	const auto temp = typeid_t::make_struct2({
+		{ typeid_t::make_string(), "utd_date" }
+	});
+	return temp;
+}
+
+/*
+	struct absolute_path_t {
+		string absolute_path
+	}
+*/
+typeid_t make__absolute_path_t__type(){
+	const auto temp = typeid_t::make_struct2({
+		{ typeid_t::make_string(), "absolute_path" }
+	});
+	return temp;
+}
+
+/*
+	struct file_pos_t {
+		int pos
+	}
+*/
+typeid_t make__file_pos_t__type(){
+	const auto temp = typeid_t::make_struct2({
+		{ typeid_t::make_int(), "pos" }
+	});
+	return temp;
+}
+
+/*
+	struct directory_entry_info_t {
+		string type	//	"file" or "dir"
+		string name
+		absolute_path_t parent_path
+
+		date_t creation_date
+		date_t modification_date
+		file_pos_t file_size
+	}
+*/
+typeid_t make__directory_entry_info_t__type(){
+	const auto temp = typeid_t::make_struct2({
+		{ typeid_t::make_string(), "type" },
+		{ typeid_t::make_string(), "name" },
+		{ typeid_t::make_string(), "parent_path" },
+
+		{ typeid_t::make_string(), "creation_date" },
+		{ typeid_t::make_string(), "modification_date" },
+		{ typeid_t::make_int(), "file_size" }
+	});
+	return temp;
+}
+
+
+
 
 
 
 std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v){
+	const auto k_directory_entry_t__type = make__directory_entry_t__type();
 	const auto elements = mapf<value_t>(
 		v,
-		[](const auto& e){
+		[&k_directory_entry_t__type](const auto& e){
 //			const auto t = value_t::make_string(e.fName);
 			const auto type_string = e.fType == TDirEntry::kFile ? "file": "dir";
 			const auto t2 = value_t::make_struct_value(
@@ -1023,22 +1098,40 @@ std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v
 	return elements;
 }
 
+
+
+	//??? check path is valid dir
+bool is_valid_absolute_dir_path(const std::string& s){
+	if(s.empty()){
+		return false;
+	}
+	else{
+		if(s.back() != '/'){
+			return false;
+		}
+	}
+	return true;
+}
+
+//??? use absolute_path_t as argument!
 bc_value_t host__get_directory_entries_shallow(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(arg_count != 1){
-		throw std::runtime_error("host__get_directory_entries_shallow() requires 1 arguments!");
+		throw std::runtime_error("get_directory_entries_shallow() requires 1 arguments!");
 	}
 	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("host__get_directory_entries_shallow() requires a path, as a string.");
+		throw std::runtime_error("get_directory_entries_shallow() requires a path, as a string.");
 	}
 
-
-	//??? check path is valid dir
 	const string path = args[0].get_string_value();
+	if(is_valid_absolute_dir_path(path) == false){
+		throw std::runtime_error("get_directory_entries_shallow() illegal input path.");
+	}
 
 	const auto a = GetDirItems(path);
 	const auto elements = directory_entries_to_values(a);
+	const auto k_directory_entry_t__type = make__directory_entry_t__type();
 	const auto vec2 = value_t::make_vector_value(k_directory_entry_t__type, elements);
 
 #if 1
@@ -1061,12 +1154,14 @@ bc_value_t host__get_directory_entries_deep(interpreter_t& vm, const bc_value_t 
 		throw std::runtime_error("get_directory_entries_deep() requires a path, as a string.");
 	}
 
-
-	//??? check path is valid dir
 	const string path = args[0].get_string_value();
+	if(is_valid_absolute_dir_path(path) == false){
+		throw std::runtime_error("get_directory_entries_shallow() illegal input path.");
+	}
 
 	const auto a = GetDirItemsDeep(path);
 	const auto elements = directory_entries_to_values(a);
+	const auto k_directory_entry_t__type = make__directory_entry_t__type();
 	const auto vec2 = value_t::make_vector_value(k_directory_entry_t__type, elements);
 
 #if 0
@@ -1080,12 +1175,103 @@ bc_value_t host__get_directory_entries_deep(interpreter_t& vm, const bc_value_t 
 }
 
 
+//??? implement
+std::string posix_timespec__to__utc(const time_t& t){
+	return std::to_string(t);
+}
+
+
+bc_value_t host__get_entry_info(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 1){
+		throw std::runtime_error("get_entry_info() requires 1 arguments!");
+	}
+	if(args[0]._type.is_string() == false){
+		throw std::runtime_error("get_entry_info() requires a path, as a string.");
+	}
+
+	const string path = args[0].get_string_value();
+	if(is_valid_absolute_dir_path(path) == false){
+		throw std::runtime_error("get_directory_entries_shallow() illegal input path.");
+	}
+
+
+#if 0
+struct TFileInfo {
+//	bool fDirFlag;
+
+	//	Dates are undefined unit, but can be compared.
+//	std::uint64_t fCreationDate;
+	std::uint64_t fModificationDate;
+	std::uint64_t fFileSize;
+};
+#endif
+
+	TFileInfo info;
+	bool ok = GetFileInfo(path, info);
+	QUARK_ASSERT(ok);
+	if(ok == false){
+		throw std::exception();
+	}
+
+
+
+/*
+	struct directory_entry_info_t {
+		string type	//	"file" or "dir"
+		string name
+		string parent_path
+
+		string creation_date
+		string modification_date
+		int file_size
+	}
+*/
+	const auto parts = SplitPath(path);
+	const auto parent = UpDir2(path);
+
+	const auto type_string = info.fDirFlag ? "dir" : "string";
+	const auto name = info.fDirFlag ? parent.second : parts.fName;
+	const auto parent_path = info.fDirFlag ? parent.first : parts.fPath;
+
+	const auto creation_date = posix_timespec__to__utc(info.fCreationDate);
+	const auto modification_date = posix_timespec__to__utc(info.fModificationDate);
+	const auto file_size = info.fFileSize;
+
+	const auto result = value_t::make_struct_value(
+		make__directory_entry_info_t__type(),
+		{
+			value_t::make_string(type_string),
+			value_t::make_string(name),
+			value_t::make_string(parent_path),
+
+			value_t::make_string(creation_date),
+			value_t::make_string(modification_date),
+
+			value_t::make_int(file_size)
+		}
+	);
+
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(result);
+	QUARK_TRACE(json_to_pretty_string(debug._value));
+#endif
+
+	const auto v = value_to_bc(result);
+	return v;
+}
+
+
 
 
 
 std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 	const auto VOID = typeid_t::make_void();
 	const auto DYN = typeid_t::make_internal_dynamic();
+
+	const auto k_directory_entry_t__type = make__directory_entry_t__type();
 
 	const std::map<std::string, host_function_signature_t> temp {
 		{ "assert", host_function_signature_t{ 1001, typeid_t::make_function(VOID, { DYN }, epure::pure) } },
@@ -1130,6 +1316,17 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 				1024,
 				typeid_t::make_function(typeid_t::make_vector(k_directory_entry_t__type), { typeid_t::make_string() }, epure::impure)
 			}
+		},
+		{
+			"get_entry_info",
+			host_function_signature_t{
+				1025,
+				typeid_t::make_function(
+					make__directory_entry_info_t__type(),
+					{ typeid_t::make_string() },
+					epure::impure
+				)
+			}
 		}
 	};
 	return temp;
@@ -1168,7 +1365,8 @@ std::map<int,  host_function_t> get_host_functions(){
 		{ "read_text_file", host__read_text_file },
 		{ "write_text_file", host__write_text_file },
 		{ "get_directory_entries_shallow", host__get_directory_entries_shallow },
-		{ "get_directory_entries_deep", host__get_directory_entries_deep }
+		{ "get_directory_entries_deep", host__get_directory_entries_deep },
+		{ "get_entry_info", host__get_entry_info }
 	};
 
 	const auto lookup = [&](){

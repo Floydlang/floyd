@@ -484,23 +484,6 @@ Deletes a file or directory. If the entry has children those are deleted too = d
 	void rename_entry(world w, absolute_path_t path, string n)
 
 
-## get\_entry\_info()
-
-	struct directory_entry_info_t {
-		enum EType {
-			kFile,
-			kDir
-		}
-	
-		date_t creation_date
-		date_t modification_date
-		EType type
-		file_pos_t file_size
-		relative_path_t path
-		string name
-	}
-	
-	directory_entry_info_t get_entry_info(world w, absolute_path_t path)
 
 
 

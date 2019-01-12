@@ -62,13 +62,14 @@ void SaveFile(const std::string& completePath, const std::uint8_t data[], std::s
 void MakeDirectoriesDeep(const std::string& nativePath);
 
 std::string UpDir(const std::string& path);
+std::pair<std::string, std::string> UpDir2(const std::string& path);
 
 
 struct TFileInfo {
-//	bool fDirFlag;
+	bool fDirFlag;
 
 	//	Dates are undefined unit, but can be compared.
-//	std::uint64_t fCreationDate;
+	std::uint64_t fCreationDate;
 	std::uint64_t fModificationDate;
 	std::uint64_t fFileSize;
 };
@@ -121,6 +122,9 @@ std::string RemoveExtension(const std::string& s);
 std::string GetExtension(const std::string& s);
 
 
+std::pair<std::string, std::string> SplitExtension(const std::string& s);
+
+
 struct TPathParts {
 	public: TPathParts();
 	public: TPathParts(const std::string& path, const std::string& name, const std::string& extension);
@@ -136,6 +140,8 @@ struct TPathParts {
 };
 
 TPathParts SplitPath(const std::string& path);
+
+std::vector<std::string> SplitPath2(const std::string& path);
 
 void RevealItemInFinder(const std::string& path);
 

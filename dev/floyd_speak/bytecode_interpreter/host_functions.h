@@ -41,6 +41,12 @@ namespace floyd {
 	};
 
 	std::map<int, host_function_t> get_host_functions();
+
+
+
+
+	typeid_t make__directory_entry_t__type();
+	typeid_t make__directory_entry_info_t__type();
 }
 
 #endif /* host_functions_hpp */
