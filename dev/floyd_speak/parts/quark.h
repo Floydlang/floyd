@@ -560,9 +560,9 @@ inline trace_context_t make_default_tracer(){
 	#define QUARK_TRACE_SS(x) {std::stringstream ss; ss << x; ::quark::quark_trace_func(ss, nullptr);}
 	#define QUARK_SCOPED_TRACE(s) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (s, nullptr)
 
-	#define QUARK_CONTEXT_TRACE(context, s) ::quark::quark_trace_func(s, &context)
-	#define QUARK_CONTEXT_TRACE_SS(context, x) {std::stringstream ss; ss << x; ::quark::quark_trace_func(ss, &context);}
-	#define QUARK_CONTEXT_SCOPED_TRACE(context, s) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (s, &context)
+	#define QUARK_CONTEXT_TRACE(context, s) if(context._verbose){::quark::quark_trace_func(s, &context);}else{}
+	#define QUARK_CONTEXT_TRACE_SS(context, x) if(context._verbose){std::stringstream ss; ss << x; ::quark::quark_trace_func(ss, &context);}else{}
+	#define QUARK_CONTEXT_SCOPED_TRACE(context, s) if(context._verbose){::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (s, &context);}else{}
 #else
 	#define QUARK_TRACE(s)
 	#define QUARK_TRACE_SS(s)

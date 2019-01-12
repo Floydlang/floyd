@@ -3028,7 +3028,7 @@ QUARK_UNIT_TEST("", "get_directory_entries_deep()", "", ""){
 
 
 
-QUARK_UNIT_TEST_VIP("", "get_entry_info()", "", ""){
+QUARK_UNIT_TEST("", "get_entry_info()", "", ""){
 	const auto result = test__run_return_result(R"(
 
 		let result = get_entry_info("/Users/marcus/Desktop/")

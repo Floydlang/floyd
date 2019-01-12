@@ -1197,17 +1197,6 @@ bc_value_t host__get_entry_info(interpreter_t& vm, const bc_value_t args[], int 
 	}
 
 
-#if 0
-struct TFileInfo {
-//	bool fDirFlag;
-
-	//	Dates are undefined unit, but can be compared.
-//	std::uint64_t fCreationDate;
-	std::uint64_t fModificationDate;
-	std::uint64_t fFileSize;
-};
-#endif
-
 	TFileInfo info;
 	bool ok = GetFileInfo(path, info);
 	QUARK_ASSERT(ok);
@@ -1215,19 +1204,6 @@ struct TFileInfo {
 		throw std::exception();
 	}
 
-
-
-/*
-	struct directory_entry_info_t {
-		string type	//	"file" or "dir"
-		string name
-		string parent_path
-
-		string creation_date
-		string modification_date
-		int file_size
-	}
-*/
 	const auto parts = SplitPath(path);
 	const auto parent = UpDir2(path);
 

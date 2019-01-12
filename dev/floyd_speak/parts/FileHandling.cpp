@@ -98,13 +98,13 @@ std::pair<std::string, std::string> UpDir2(const std::string& path){
 	}
 }
 
-QUARK_UNIT_TEST_VIP("", "UpDir2()","", ""){
+QUARK_UNIT_TEST("", "UpDir2()","", ""){
 	QUARK_UT_VERIFY((UpDir2("/Users/marcus/Desktop/") == std::pair<std::string, std::string>{ "/Users/marcus/", "Desktop" }));
 }
-QUARK_UNIT_TEST_VIP("", "UpDir2()","", ""){
+QUARK_UNIT_TEST("", "UpDir2()","", ""){
 	QUARK_UT_VERIFY((UpDir2("/Users/") == std::pair<std::string, std::string>{ "/", "Users" }));
 }
-QUARK_UNIT_TEST_VIP("", "UpDir2()","", ""){
+QUARK_UNIT_TEST("", "UpDir2()","", ""){
 	QUARK_UT_VERIFY((UpDir2("/") == std::pair<std::string, std::string>{ "", "/" }));
 }
 
