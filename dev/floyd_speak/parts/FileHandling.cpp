@@ -21,12 +21,211 @@
 
 	#include <CoreFoundation/CoreFoundation.h>
 
+#include <dirent.h>    /* struct DIR, struct dirent, opendir().. */
 
 #define JIU_MACOS 1
 
 #define TRACE_INDENT QUARK_SCOPED_TRACE
 #define TRACE QUARK_TRACE
 #define ASSERT QUARK_ASSERT
+
+
+
+
+
+#if 0
+From "errno.h"
+
+/*
+ * Error codes
+ */
+
+#define	EPERM		1		/* Operation not permitted */
+#define	ENOENT		2		/* No such file or directory */
+#define	ESRCH		3		/* No such process */
+#define	EINTR		4		/* Interrupted system call */
+#define	EIO		5		/* Input/output error */
+#define	ENXIO		6		/* Device not configured */
+#define	E2BIG		7		/* Argument list too long */
+#define	ENOEXEC		8		/* Exec format error */
+#define	EBADF		9		/* Bad file descriptor */
+#define	ECHILD		10		/* No child processes */
+#define	EDEADLK		11		/* Resource deadlock avoided */
+					/* 11 was EAGAIN */
+#define	ENOMEM		12		/* Cannot allocate memory */
+#define	EACCES		13		/* Permission denied */
+#define	EFAULT		14		/* Bad address */
+#if __DARWIN_C_LEVEL >= __DARWIN_C_FULL
+#define	ENOTBLK		15		/* Block device required */
+#endif
+#define	EBUSY		16		/* Device / Resource busy */
+#define	EEXIST		17		/* File exists */
+#define	EXDEV		18		/* Cross-device link */
+#define	ENODEV		19		/* Operation not supported by device */
+#define	ENOTDIR		20		/* Not a directory */
+#define	EISDIR		21		/* Is a directory */
+#define	EINVAL		22		/* Invalid argument */
+#define	ENFILE		23		/* Too many open files in system */
+#define	EMFILE		24		/* Too many open files */
+#define	ENOTTY		25		/* Inappropriate ioctl for device */
+#define	ETXTBSY		26		/* Text file busy */
+#define	EFBIG		27		/* File too large */
+#define	ENOSPC		28		/* No space left on device */
+#define	ESPIPE		29		/* Illegal seek */
+#define	EROFS		30		/* Read-only file system */
+#define	EMLINK		31		/* Too many links */
+#define	EPIPE		32		/* Broken pipe */
+
+/* math software */
+#define	EDOM		33		/* Numerical argument out of domain */
+#define	ERANGE		34		/* Result too large */
+
+/* non-blocking and interrupt i/o */
+#define	EAGAIN		35		/* Resource temporarily unavailable */
+#define	EWOULDBLOCK	EAGAIN		/* Operation would block */
+#define	EINPROGRESS	36		/* Operation now in progress */
+#define	EALREADY	37		/* Operation already in progress */
+
+/* ipc/network software -- argument errors */
+#define	ENOTSOCK	38		/* Socket operation on non-socket */
+#define	EDESTADDRREQ	39		/* Destination address required */
+#define	EMSGSIZE	40		/* Message too long */
+#define	EPROTOTYPE	41		/* Protocol wrong type for socket */
+#define	ENOPROTOOPT	42		/* Protocol not available */
+#define	EPROTONOSUPPORT	43		/* Protocol not supported */
+#if __DARWIN_C_LEVEL >= __DARWIN_C_FULL
+#define	ESOCKTNOSUPPORT	44		/* Socket type not supported */
+#endif
+#define ENOTSUP		45		/* Operation not supported */
+#if !__DARWIN_UNIX03 && !defined(KERNEL)
+/*
+ * This is the same for binary and source copmpatability, unless compiling
+ * the kernel itself, or compiling __DARWIN_UNIX03; if compiling for the
+ * kernel, the correct value will be returned.  If compiling non-POSIX
+ * source, the kernel return value will be converted by a stub in libc, and
+ * if compiling source with __DARWIN_UNIX03, the conversion in libc is not
+ * done, and the caller gets the expected (discrete) value.
+ */
+#define	EOPNOTSUPP	 ENOTSUP	/* Operation not supported on socket */
+#endif /* !__DARWIN_UNIX03 && !KERNEL */
+
+#if __DARWIN_C_LEVEL >= __DARWIN_C_FULL
+#define	EPFNOSUPPORT	46		/* Protocol family not supported */
+#endif
+#define	EAFNOSUPPORT	47		/* Address family not supported by protocol family */
+#define	EADDRINUSE	48		/* Address already in use */
+#define	EADDRNOTAVAIL	49		/* Can't assign requested address */
+
+/* ipc/network software -- operational errors */
+#define	ENETDOWN	50		/* Network is down */
+#define	ENETUNREACH	51		/* Network is unreachable */
+#define	ENETRESET	52		/* Network dropped connection on reset */
+#define	ECONNABORTED	53		/* Software caused connection abort */
+#define	ECONNRESET	54		/* Connection reset by peer */
+#define	ENOBUFS		55		/* No buffer space available */
+#define	EISCONN		56		/* Socket is already connected */
+#define	ENOTCONN	57		/* Socket is not connected */
+#if __DARWIN_C_LEVEL >= __DARWIN_C_FULL
+#define	ESHUTDOWN	58		/* Can't send after socket shutdown */
+#define	ETOOMANYREFS	59		/* Too many references: can't splice */
+#endif
+#define	ETIMEDOUT	60		/* Operation timed out */
+#define	ECONNREFUSED	61		/* Connection refused */
+
+#define	ELOOP		62		/* Too many levels of symbolic links */
+#define	ENAMETOOLONG	63		/* File name too long */
+
+/* should be rearranged */
+#if __DARWIN_C_LEVEL >= __DARWIN_C_FULL
+#define	EHOSTDOWN	64		/* Host is down */
+#endif
+#define	EHOSTUNREACH	65		/* No route to host */
+#define	ENOTEMPTY	66		/* Directory not empty */
+
+/* quotas & mush */
+#if __DARWIN_C_LEVEL >= __DARWIN_C_FULL
+#define	EPROCLIM	67		/* Too many processes */
+#define	EUSERS		68		/* Too many users */
+#endif
+#define	EDQUOT		69		/* Disc quota exceeded */
+
+/* Network File System */
+#define	ESTALE		70		/* Stale NFS file handle */
+#if __DARWIN_C_LEVEL >= __DARWIN_C_FULL
+#define	EREMOTE		71		/* Too many levels of remote in path */
+#define	EBADRPC		72		/* RPC struct is bad */
+#define	ERPCMISMATCH	73		/* RPC version wrong */
+#define	EPROGUNAVAIL	74		/* RPC prog. not avail */
+#define	EPROGMISMATCH	75		/* Program version wrong */
+#define	EPROCUNAVAIL	76		/* Bad procedure for program */
+#endif
+
+#define	ENOLCK		77		/* No locks available */
+#define	ENOSYS		78		/* Function not implemented */
+
+#if __DARWIN_C_LEVEL >= __DARWIN_C_FULL
+#define	EFTYPE		79		/* Inappropriate file type or format */
+#define	EAUTH		80		/* Authentication error */
+#define	ENEEDAUTH	81		/* Need authenticator */
+
+/* Intelligent device errors */
+#define	EPWROFF		82	/* Device power is off */
+#define	EDEVERR		83	/* Device error, e.g. paper out */
+#endif
+
+#define	EOVERFLOW	84		/* Value too large to be stored in data type */
+
+/* Program loading errors */
+#if __DARWIN_C_LEVEL >= __DARWIN_C_FULL
+#define EBADEXEC	85	/* Bad executable */
+#define EBADARCH	86	/* Bad CPU type in executable */
+#define ESHLIBVERS	87	/* Shared library version mismatch */
+#define EBADMACHO	88	/* Malformed Macho file */
+#endif
+
+#define	ECANCELED	89		/* Operation canceled */
+
+#define EIDRM		90		/* Identifier removed */
+#define ENOMSG		91		/* No message of desired type */
+#define EILSEQ		92		/* Illegal byte sequence */
+#if __DARWIN_C_LEVEL >= __DARWIN_C_FULL
+#define ENOATTR		93		/* Attribute not found */
+#endif
+
+#define EBADMSG		94		/* Bad message */
+#define EMULTIHOP	95		/* Reserved */
+#define	ENODATA		96		/* No message available on STREAM */
+#define ENOLINK		97		/* Reserved */
+#define ENOSR		98		/* No STREAM resources */
+#define ENOSTR		99		/* Not a STREAM */
+#define	EPROTO		100		/* Protocol error */
+#define ETIME		101		/* STREAM ioctl timeout */
+
+#if __DARWIN_UNIX03 || defined(KERNEL)
+/* This value is only discrete when compiling __DARWIN_UNIX03, or KERNEL */
+#define	EOPNOTSUPP	102		/* Operation not supported on socket */
+#endif /* __DARWIN_UNIX03 || KERNEL */
+
+#define ENOPOLICY	103		/* No such policy registered */
+
+#if __DARWIN_C_LEVEL >= 200809L
+#define ENOTRECOVERABLE 104		/* State not recoverable */
+#define EOWNERDEAD      105		/* Previous owner died */
+#endif
+
+#if __DARWIN_C_LEVEL >= __DARWIN_C_FULL
+#define	EQFULL		106		/* Interface output queue is full */
+#define	ELAST		106		/* Must be equal largest errno */
+#endif
+
+
+#endif
+
+
+
+int get_error(){
+	return errno;
+}
 
 
 
@@ -78,7 +277,7 @@ std::string get_process_path (int process_id){
 	ret = proc_pidpath (pid, pathbuf, sizeof(pathbuf));
 	if ( ret <= 0 ) {
 		fprintf(stderr, "PID %d: proc_pidpath ();\n", pid);
-		fprintf(stderr, "	%s\n", strerror(errno));
+		fprintf(stderr, "	%s\n", strerror(get_error()));
 		throw std::exception();
 	} else {
 //		printf("proc %d: %s\n", pid, pathbuf);
@@ -388,10 +587,8 @@ std::vector<std::uint8_t> LoadFile(const std::string& completePath){
 	return std::vector<std::uint8_t>();
 }
 
-bool DoesFileExist(const std::string& completePath){
-	TRACE_INDENT("DoesFileExist(" + completePath + ")");
-
-	FILE* f = 0;
+bool DoesEntryExist(const std::string& completePath){
+	FILE* f = nullptr;
 	f = std::fopen(completePath.c_str(), "rb");
 	if(f == 0){
 		return false;
@@ -418,15 +615,15 @@ bool GetFileInfo(const std::string& completePath, TFileInfo& outInfo){
 	struct stat theStat;
 
 	//??? Works for dir?
-	int err = stat(completePath.c_str(), &theStat);
-	if(err != 0){
-		const int theErrno = errno;
+	int error = stat(completePath.c_str(), &theStat);
+	if(error != 0){
+		const int err = get_error();
 
 		//	"Error NO ENTry"
-		if(theErrno == ENOENT){
+		if(err == ENOENT){
 			return false;
 		}
-		else if(theErrno == ENOTDIR){
+		else if(err == ENOTDIR){
 			ASSERT(false);
 			throw std::exception();
 		}
@@ -453,37 +650,75 @@ bool GetFileInfo(const std::string& completePath, TFileInfo& outInfo){
 }
 
 
-	using namespace std;
+
+void DeleteDeep(const std::string& path){
+	//	Attempt to delete base director or file.
+	//	If operation fails because it's a directory with contents, first delete contents then retry deleting the dir.
+	int error = ::remove(path.c_str());
+	if(error == 0){
+		return;
+	}
+	else if(error == -1){
+		const int err = get_error();
+
+		//	Directory not empty.
+		if(err == ENOTEMPTY){
+			std::vector<TDirEntry> dirEntries = GetDirItems(path);
+			for(const auto& e: dirEntries){
+				const auto subpath = e.fParent + "/" + e.fNameOnly;
+				DeleteDeep(subpath);
+			}
+			int error2 = ::remove(path.c_str());
+			if(error2 == 0){
+				return;
+			}
+			else{
+				throw std::exception();
+			}
+		}
+		throw std::exception();
+	}
+	else{
+		ASSERT(false);
+		throw std::exception();
+	}
+}
+//int	 rename (const char *__old, const char *__new);
+//char *tmpnam(char *str)
+
+
 
 void MakeDirectoriesDeep(const std::string& path){
 	TRACE_INDENT("MakeDirectoriesDeep()");
 
 	//??? Hack! I'm confused how you specify a directory in Mac OS X!!! There is sometimes an ending slash too much.
-	std::string temp=path;
+	std::string temp = path;
 	{
 //		if(temp.back()=='/')
-		if(temp[temp.size() - 1]=='/'){
-			temp=std::string(&temp[0], &temp[temp.size() - 1]);
+		if(temp[temp.size() - 1] == '/'){
+			temp = std::string(&temp[0], &temp[temp.size() - 1]);
 		}
 	}
 
-	int err=mkdir(temp.c_str(),S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-	if(err !=0){
-		if(errno==EEXIST){
+	int error = ::mkdir(temp.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	if(error != 0){
+		const auto err = get_error();
+		if(err == EEXIST){
+			return;
 		}
-		else if(errno==EFAULT){
+		else if(err == EFAULT){
 			throw std::exception();
 		}
-		else if(errno==EACCES){
+		else if(err == EACCES){
 			throw std::exception();
 		}
-		else if(errno==ENAMETOOLONG){
+		else if(err == ENAMETOOLONG){
 			throw std::exception();
 		}
-		else if(errno==ENOENT){
+		else if(err == ENOENT){
 			if(temp.size() > 2){
 				//	Make the path to the parent dir first.
-				TPathParts split=SplitPath(temp);
+				TPathParts split = SplitPath(temp);
 				MakeDirectoriesDeep(split.fPath);
 
 				//	Now try again making the sub directory.
@@ -493,22 +728,22 @@ void MakeDirectoriesDeep(const std::string& path){
 				throw std::exception();
 			}
 		}
-		else if(errno==ENOTDIR){
+		else if(err == ENOTDIR){
 			throw std::exception();
 		}
-		else if(errno==ENOMEM){
+		else if(err == ENOMEM){
 			throw std::exception();
 		}
-		else if(errno==EROFS){
+		else if(err == EROFS){
 			throw std::exception();
 		}
-		else if(errno==ELOOP){
+		else if(err == ELOOP){
 			throw std::exception();
 		}
-		else if(errno==ENOSPC){
+		else if(err == ENOSPC){
 			throw std::exception();
 		}
-		else if(errno==ENOSPC){
+		else if(err == ENOSPC){
 			throw std::exception();
 		}
 		else{
@@ -624,45 +859,57 @@ static void TestGetFileInfo(const std::string& testInputDir, const std::string& 
 
 //http://users.actcom.co.il/~choo/lupg/tutorials/handling-files/handling-files.html
 
-#include <dirent.h>    /* struct DIR, struct dirent, opendir().. */
 
 
-std::vector<TDirEntry> GetDirItems(const std::string& inDir){
-	std::vector<TDirEntry> r;
 
-	/* open the directory "/home/users" for reading. */
-//	::DIR* dir = ::opendir("/home/users");
+//	Includes "." and ".."
+std::vector<dirent> read_dir_elements(const std::string& inDir){
+	std::vector<dirent> result;
+
 	::DIR* dir = ::opendir(inDir.c_str());
 	if (!dir) {
 		throw std::exception();
 	}
 
-	/* this structure is used for storing the name of each entry in turn. */
 	const struct ::dirent* entry = NULL;
-
 	while ( (entry = ::readdir(dir)) != NULL) {
-		if(entry->d_type == DT_REG){
-			TDirEntry tempFile;
-			tempFile.fNameOnly = entry->d_name;
-			tempFile.fParent = inDir;
-			tempFile.fType = TDirEntry::kFile;
-			r.push_back(tempFile);
-		}
-		else if(entry->d_type == DT_DIR){
-			TDirEntry tempDir;
-			tempDir.fNameOnly = entry->d_name;
-			tempDir.fParent = inDir;
-			tempDir.fType = TDirEntry::kDir;
-			r.push_back(tempDir);
-		}
-		else{
-		}
+		result.push_back(*entry);
 	}
 
 	if (::closedir(dir) == -1) {
 		ASSERT(false);
 	}
-	return r;
+	return result;
+}
+
+std::vector<TDirEntry> GetDirItems(const std::string& inDir){
+	const auto dir_elements = read_dir_elements(inDir);
+	std::vector<TDirEntry> result;
+
+	for(const auto& e: dir_elements){
+		const std::string name(&e.d_name[0], &e.d_name[e.d_namlen]);
+
+		if(name == "." || name == ".."){
+			//	Skip.
+		}
+		else if(e.d_type == DT_REG){
+			TDirEntry tempFile;
+			tempFile.fNameOnly = name;
+			tempFile.fParent = inDir;
+			tempFile.fType = TDirEntry::kFile;
+			result.push_back(tempFile);
+		}
+		else if(e.d_type == DT_DIR){
+			TDirEntry tempDir;
+			tempDir.fNameOnly = name;
+			tempDir.fParent = inDir;
+			tempDir.fType = TDirEntry::kDir;
+			result.push_back(tempDir);
+		}
+		else{
+		}
+	}
+	return result;
 }
 
 std::vector<TDirEntry> GetDirItemsDeep(const std::string& inDir){
@@ -671,19 +918,15 @@ std::vector<TDirEntry> GetDirItemsDeep(const std::string& inDir){
 	std::vector<TDirEntry> res;
 	const auto items = GetDirItems(inDir);
 	for(const auto& e: items){
-//xx		TRACE(e.fName + "\t" + std::to_string(e.);
-		if(e.fNameOnly[0] != '.'){
+		//	Use the item as-is.
+		res.push_back(e);
 
-			//	Use the item as-is.
-			res.push_back(e);
-
-			//	For directories, also add their contents.
-			if(e.fType == TDirEntry::kDir){
-				TDirEntry subDir = e;
-				const auto path2 = inDir + e.fNameOnly + "/";
-				const auto subDirItems = GetDirItemsDeep(path2);
-				res.insert(res.end(), subDirItems.begin(), subDirItems.end());
-			}
+		//	For directories, also add their contents.
+		if(e.fType == TDirEntry::kDir){
+			TDirEntry subDir = e;
+			const auto path2 = inDir + e.fNameOnly + "/";
+			const auto subDirItems = GetDirItemsDeep(path2);
+			res.insert(res.end(), subDirItems.begin(), subDirItems.end());
 		}
 	}
 	return res;

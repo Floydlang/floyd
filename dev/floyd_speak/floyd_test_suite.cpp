@@ -15,6 +15,7 @@
 #include "json_parser.h"
 #include "text_parser.h"
 #include "host_functions.h"
+#include "FileHandling.h"
 
 #include <string>
 #include <vector>
@@ -3059,6 +3060,114 @@ QUARK_UNIT_TEST("", "get_fs_environment()", "", ""){
 }
 
 
+
+
+
+
+
+//////////////////////////////////////////		HOST FUNCTION - does_entry_exist()
+
+
+QUARK_UNIT_TEST("", "does_entry_exist()", "", ""){
+	const auto result = test__run_return_result(R"(
+
+		let path = get_fs_environment().desktop_dir
+		let result = does_entry_exist(path)
+		print(to_pretty_string(result))
+
+		assert(result == true);
+
+	)", {});
+
+	QUARK_UT_VERIFY(result.get_type() == typeid_t::make_bool());
+}
+QUARK_UNIT_TEST("", "does_entry_exist()", "", ""){
+	const auto result = test__run_return_result(R"(
+
+		let path = get_fs_environment().desktop_dir + "xyz";
+		let result = does_entry_exist(path)
+		print(to_pretty_string(result))
+
+		assert(result == false);
+
+	)", {});
+
+	QUARK_UT_VERIFY(result.get_type() == typeid_t::make_bool());
+}
+
+void remove_test_dir(const std::string& dir_name1, const std::string& dir_name2){
+	const auto path1 = GetDirectories().desktop_dir + "/" + dir_name1;
+	const auto path2 = path1 + "/" + dir_name2;
+
+	if(DoesEntryExist(path1) == true){
+		DeleteDeep(path1);
+		QUARK_ASSERT(DoesEntryExist(path1) == false);
+		QUARK_ASSERT(DoesEntryExist(path2) == false);
+	}
+}
+
+
+
+//////////////////////////////////////////		HOST FUNCTION - create_directories_deep()
+
+
+QUARK_UNIT_TEST("", "create_directories_deep()", "", ""){
+	remove_test_dir("unittest___create_directories_deep", "subdir");
+
+	const auto result = test__run_return_result(R"(
+
+		let path1 = get_fs_environment().desktop_dir + "/unittest___create_directories_deep";
+		let path2 = path1 + "/subdir";
+
+		assert(does_entry_exist(path1) == false)
+		assert(does_entry_exist(path2) == false)
+
+		//	Make test.
+		create_directories_deep(path2)
+		assert(does_entry_exist(path1) == true)
+		assert(does_entry_exist(path2) == true)
+
+		delete_fs_entry_deep(path1)
+		assert(does_entry_exist(path1) == false)
+		assert(does_entry_exist(path2) == false)
+
+		let result = true
+
+	)", {});
+
+	QUARK_UT_VERIFY(result.get_type() == typeid_t::make_bool());
+}
+
+
+//////////////////////////////////////////		HOST FUNCTION - delete_fs_entry_deep()
+
+
+QUARK_UNIT_TEST("", "delete_fs_entry_deep()", "", ""){
+	remove_test_dir("unittest___delete_fs_entry_deep", "subdir");
+
+	const auto result = test__run_return_result(R"(
+
+		let path1 = get_fs_environment().desktop_dir + "/unittest___delete_fs_entry_deep";
+		let path2 = path1 + "/subdir";
+
+		assert(does_entry_exist(path1) == false)
+		assert(does_entry_exist(path2) == false)
+
+		create_directories_deep(path2)
+		assert(does_entry_exist(path1) == true)
+		assert(does_entry_exist(path2) == true)
+
+		//	Make test.
+		delete_fs_entry_deep(path1)
+		assert(does_entry_exist(path1) == false)
+		assert(does_entry_exist(path2) == false)
+
+		let result = true
+
+	)", {});
+
+	QUARK_UT_VERIFY(result.get_type() == typeid_t::make_bool());
+}
 
 
 

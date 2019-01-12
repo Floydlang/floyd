@@ -1122,9 +1122,12 @@ bool is_valid_absolute_dir_path(const std::string& s){
 		return false;
 	}
 	else{
+/*
 		if(s.back() != '/'){
 			return false;
 		}
+*/
+
 	}
 	return true;
 }
@@ -1255,10 +1258,6 @@ bc_value_t host__get_entry_info(interpreter_t& vm, const bc_value_t args[], int 
 }
 
 
-
-
-
-
 bc_value_t host__get_fs_environment(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -1293,6 +1292,97 @@ bc_value_t host__get_fs_environment(interpreter_t& vm, const bc_value_t args[], 
 }
 
 
+
+
+//??? refactor common code.
+
+bc_value_t host__does_entry_exist(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 1){
+		throw std::runtime_error("does_entry_exist() requires 1 arguments!");
+	}
+	if(args[0]._type.is_string() == false){
+		throw std::runtime_error("does_entry_exist() requires a path, as a string.");
+	}
+
+	const string path = args[0].get_string_value();
+	if(is_valid_absolute_dir_path(path) == false){
+		throw std::runtime_error("does_entry_exist() illegal input path.");
+	}
+
+	bool exists = DoesEntryExist(path);
+	const auto result = value_t::make_bool(exists);
+#if 1
+	const auto debug = value_and_type_to_ast_json(result);
+	QUARK_TRACE(json_to_pretty_string(debug._value));
+#endif
+
+	const auto v = value_to_bc(result);
+	return v;
+}
+
+
+bc_value_t host__create_directories_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 1){
+		throw std::runtime_error("create_directories_deep() requires 1 arguments!");
+	}
+	if(args[0]._type.is_string() == false){
+		throw std::runtime_error("create_directories_deep() requires a path, as a string.");
+	}
+
+	const string path = args[0].get_string_value();
+	if(is_valid_absolute_dir_path(path) == false){
+		throw std::runtime_error("create_directories_deep() illegal input path.");
+	}
+
+	MakeDirectoriesDeep(path);
+	return bc_value_t::make_void();
+}
+
+bc_value_t host__delete_fs_entry_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 1){
+		throw std::runtime_error("delete_fs_entry_deep() requires 1 arguments!");
+	}
+	if(args[0]._type.is_string() == false){
+		throw std::runtime_error("delete_fs_entry_deep() requires a path, as a string.");
+	}
+
+	const string path = args[0].get_string_value();
+	if(is_valid_absolute_dir_path(path) == false){
+		throw std::runtime_error("delete_fs_entry_deep() illegal input path.");
+	}
+
+	DeleteDeep(path);
+
+	return bc_value_t::make_void();
+}
+
+
+bc_value_t host__rename_fs_entry(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 1){
+		throw std::runtime_error("rename_fs_entry() requires 1 arguments!");
+	}
+	if(args[0]._type.is_string() == false){
+		throw std::runtime_error("rename_fs_entry() requires a path, as a string.");
+	}
+
+	const string path = args[0].get_string_value();
+	if(is_valid_absolute_dir_path(path) == false){
+		throw std::runtime_error("rename_fs_entry() illegal input path.");
+	}
+
+	//??? implementation
+	QUARK_ASSERT(false);
+
+	return bc_value_t::make_void();
+}
 
 
 
@@ -1372,7 +1462,50 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 				)
 			}
 		},
-
+		{
+			"does_entry_exist",
+			host_function_signature_t{
+				1027,
+				typeid_t::make_function(
+					typeid_t::make_bool(),
+					{ typeid_t::make_string() },
+					epure::impure
+				)
+			}
+		},
+		{
+			"create_directories_deep",
+			host_function_signature_t{
+				1028,
+				typeid_t::make_function(
+					typeid_t::make_void(),
+					{ typeid_t::make_string() },
+					epure::impure
+				)
+			}
+		},
+		{
+			"delete_fs_entry_deep",
+			host_function_signature_t{
+				1029,
+				typeid_t::make_function(
+					typeid_t::make_void(),
+					{ typeid_t::make_string() },
+					epure::impure
+				)
+			}
+		},
+		{
+			"rename_fs_entry",
+			host_function_signature_t{
+				1030,
+				typeid_t::make_function(
+					typeid_t::make_void(),
+					{ typeid_t::make_string(), typeid_t::make_string() },
+					epure::impure
+				)
+			}
+		}
 
 	};
 	return temp;
@@ -1412,7 +1545,11 @@ std::map<int,  host_function_t> get_host_functions(){
 		{ "get_directory_entries_shallow", host__get_directory_entries_shallow },
 		{ "get_directory_entries_deep", host__get_directory_entries_deep },
 		{ "get_entry_info", host__get_entry_info },
-		{ "get_fs_environment", host__get_fs_environment }
+		{ "get_fs_environment", host__get_fs_environment },
+		{ "does_entry_exist", host__does_entry_exist },
+		{ "create_directories_deep", host__create_directories_deep },
+		{ "delete_fs_entry_deep", host__delete_fs_entry_deep },
+		{ "rename_fs_entry", host__rename_fs_entry }
 	};
 
 	const auto lookup = [&](){

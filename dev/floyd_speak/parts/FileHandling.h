@@ -25,7 +25,7 @@ std::vector<std::uint8_t> LoadFile(const std::string& completePath);
 std::string LoadTextFile(const std::string& completePath);
 
 //	Path is absolute and with native path separators.
-bool DoesFileExist(const std::string& completePath);
+bool DoesEntryExist(const std::string& completePath);
 
 
 
@@ -91,6 +91,23 @@ process_info_t get_process_info();
 //	Will _create_ any needed directories in the save-path.
 void SaveFile(const std::string& completePath, const std::uint8_t data[], std::size_t byteCount);
 
+/*
+	dir_a
+	dir_b
+		file_5
+		dir_d
+			file_4
+			file_2
+			dir_e
+				file_1
+				file_2
+				file_3
+	dir_c
+
+
+	DeleteDeep("dir_b") will delete file_5, file_4, file_2, file_1, file_2, file_3, dir_e, dir_d, dir_b
+*/
+void DeleteDeep(const std::string& path);
 
 void MakeDirectoriesDeep(const std::string& nativePath);
 
@@ -125,13 +142,14 @@ struct TDirEntry {
 	std::string fParent;
 };
 
-
+//	Never includes "." or "..".
 std::vector<TDirEntry> GetDirItems(const std::string& dir);
 
 //	Returns a entiry directory tree deeply.
 //	Each TDirEntry name will be prefixed by _prefix_.
 //	Contents of sub-directories will be also be prefixed by the sub-directory names.
 //	All path names are relative to the input directory - not absolute to file system.
+//	Never includes "." or "..".
 std::vector<TDirEntry> GetDirItemsDeep(const std::string& dir);
 
 
