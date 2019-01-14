@@ -173,12 +173,11 @@ Returns the computer's realtime clock, expressed in the number of milliseconds s
 
 # FILE SYSTEM FUNCTIONS
 
-These functions allow you to access the OS file system. They are all impure. Temporary files are sometimes used to make the functions revertable on errors.
+These functions allow you to access the OS file system. They are all impure.
 
 Floyd uses unix-style paths in all its APIs. It will convert these to native paths with accessing the OS.
 
-
-
+fsentry = File System Entry. This is a node in the file system's graph of files and directories. It can either be a file or a directory.
 
 
 ## read\_text\_file()
@@ -199,33 +198,33 @@ Write a string to the file system as a text file. Will create any missing direct
 
 
 
-## get\_directory\_entries_shallow() and get\_directory\_entries\_deep()
+## get\_fsentries_shallow() and get\_fsentries\_deep()
 
 Returns a vector of all the files and directories found at the absolute path.
 
-	struct directory_entry_t {
+	struct fsentry_t {
 		string type
 		string name
 		string abs_parent_path
 	}
 	
-	[directory_entry_t] get_directory_entries_shallow(string abs_path) impure
+	[fsentry_t] get_fsentries_shallow(string abs_path) impure
 
 - type: either "file" or "dir".
 - name: name of the leaf directory or file.
 - abs\_parent\_path: the path to the entires parent.
 
-get_directory_entries_deep() works the same way, but will also traverse each found directory. Contents of sub-directories will be also be prefixed by the sub-directory names. All path names are relative to the input directory - not absolute to file system.
+get_fsentries_deep() works the same way, but will also traverse each found directory. Contents of sub-directories will be also be prefixed by the sub-directory names. All path names are relative to the input directory - not absolute to file system.
 
-	[directory_entry_t] get_directory_entries_deep(string abs_path) impure
+	[fsentry_t] get_fsentries_deep(string abs_path) impure
 
 
 
-## get\_entry\_info()
+## get\_fsentry\_info()
 
 Information about an entry in the file system. Can be a file or a directory.
 
-	struct directory_entry_info_t {
+	struct fsentry_info_t {
 		string type
 		string name
 		string abs_parent_path
@@ -235,7 +234,7 @@ Information about an entry in the file system. Can be a file or a directory.
 		int file_size
 	}
 	
-	directory_entry_info_t get_entry_info(string abs_path) impure
+	fsentry_info_t get_fsentry_info(string abs_path) impure
 
 - type: either "file" or "dir".
 - name: name of the leaf directory or file.
@@ -330,33 +329,33 @@ Example: "/Users/bob/Applications/MyApp.app/"
 
 
 
-## does\_entry\_exist()
+## does\_fsentry\_exist()
 
 Checks if there is a file or directory at specified path.
 
-	bool does_entry_exist(string abs_path) impure
+	bool does_fsentry_exist(string abs_path) impure
 
 
-## create\_directories\_deep()
+## create\_directory\_branch()
 
 Creates a directory at specified path. If the parents directories don't exist, then those will be created too.
 
-	void create_directories_deep(string abs_path) impure
+	void create_directory_branch(string abs_path) impure
 
 
-## delete\_fs\_entry\_deep()
+## delete\_fsentry\_deep()
 
 Deletes a file or directory. If the entry has children those are deleted too - delete folder also deletes is contents.
 
-	void delete_fs_entry_deep(string abs_path) impure
+	void delete_fsentry_deep(string abs_path) impure
 
 
-## rename\_fs\_entry()
+## rename\_fsentry()
 
 Renames a file or directory. If it is a directory, its contents is unchanged.
 After this call completes, abs_path no longer references an entry.
 
-	void rename_fs_entry(string abs_path, string n) impure
+	void rename_fsentry(string abs_path, string n) impure
 
 Example:
 

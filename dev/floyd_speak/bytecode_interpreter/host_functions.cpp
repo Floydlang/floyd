@@ -170,13 +170,13 @@ extern const std::string k_tiny_prefix = R"(
 	////////////////////////////		FILE SYSTEM TYPES
 
 
-	struct directory_entry_t {
+	struct fsentry_t {
 		string type	//	"dir" or "file"
 		string abs_parent_path
 		string name
 	}
 
-	struct directory_entry_info_t {
+	struct fsentry_info_t {
 		string type	//	"file" or "dir"
 		string name
 		string abs_parent_path
@@ -1031,7 +1031,7 @@ bc_value_t host__write_text_file(interpreter_t& vm, const bc_value_t args[], int
 	}
 }
 
-typeid_t make__directory_entry_t__type(){
+typeid_t make__fsentry_t__type(){
 	const auto temp = typeid_t::make_struct2({
 		{ typeid_t::make_string(), "type" },
 		{ typeid_t::make_string(), "name" },
@@ -1077,7 +1077,7 @@ typeid_t make__file_pos_t__type(){
 }
 
 /*
-	struct directory_entry_info_t {
+	struct fsentry_info_t {
 		string type	//	"file" or "dir"
 		string name
 		absolute_path_t parent_path
@@ -1087,7 +1087,7 @@ typeid_t make__file_pos_t__type(){
 		file_pos_t file_size
 	}
 */
-typeid_t make__directory_entry_info_t__type(){
+typeid_t make__fsentry_info_t__type(){
 	const auto temp = typeid_t::make_struct2({
 		{ typeid_t::make_string(), "type" },
 		{ typeid_t::make_string(), "name" },
@@ -1108,14 +1108,14 @@ typeid_t make__directory_entry_info_t__type(){
 
 
 std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v){
-	const auto k_directory_entry_t__type = make__directory_entry_t__type();
+	const auto k_fsentry_t__type = make__fsentry_t__type();
 	const auto elements = mapf<value_t>(
 		v,
-		[&k_directory_entry_t__type](const auto& e){
+		[&k_fsentry_t__type](const auto& e){
 //			const auto t = value_t::make_string(e.fName);
 			const auto type_string = e.fType == TDirEntry::kFile ? "file": "dir";
 			const auto t2 = value_t::make_struct_value(
-				k_directory_entry_t__type,
+				k_fsentry_t__type,
 				{
 					value_t::make_string(type_string),
 					value_t::make_string(e.fNameOnly),
@@ -1147,25 +1147,25 @@ bool is_valid_absolute_dir_path(const std::string& s){
 }
 
 //??? use absolute_path_t as argument!
-bc_value_t host__get_directory_entries_shallow(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__get_fsentries_shallow(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(arg_count != 1){
-		throw std::runtime_error("get_directory_entries_shallow() requires 1 arguments!");
+		throw std::runtime_error("get_fsentries_shallow() requires 1 arguments!");
 	}
 	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("get_directory_entries_shallow() requires a path, as a string.");
+		throw std::runtime_error("get_fsentries_shallow() requires a path, as a string.");
 	}
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
-		throw std::runtime_error("get_directory_entries_shallow() illegal input path.");
+		throw std::runtime_error("get_fsentries_shallow() illegal input path.");
 	}
 
 	const auto a = GetDirItems(path);
 	const auto elements = directory_entries_to_values(a);
-	const auto k_directory_entry_t__type = make__directory_entry_t__type();
-	const auto vec2 = value_t::make_vector_value(k_directory_entry_t__type, elements);
+	const auto k_fsentry_t__type = make__fsentry_t__type();
+	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(vec2);
@@ -1177,25 +1177,25 @@ bc_value_t host__get_directory_entries_shallow(interpreter_t& vm, const bc_value
 	return v;
 }
 
-bc_value_t host__get_directory_entries_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__get_fsentries_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(arg_count != 1){
-		throw std::runtime_error("get_directory_entries_deep() requires 1 arguments!");
+		throw std::runtime_error("get_fsentries_deep() requires 1 arguments!");
 	}
 	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("get_directory_entries_deep() requires a path, as a string.");
+		throw std::runtime_error("get_fsentries_deep() requires a path, as a string.");
 	}
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
-		throw std::runtime_error("get_directory_entries_shallow() illegal input path.");
+		throw std::runtime_error("get_fsentries_shallow() illegal input path.");
 	}
 
 	const auto a = GetDirItemsDeep(path);
 	const auto elements = directory_entries_to_values(a);
-	const auto k_directory_entry_t__type = make__directory_entry_t__type();
-	const auto vec2 = value_t::make_vector_value(k_directory_entry_t__type, elements);
+	const auto k_fsentry_t__type = make__fsentry_t__type();
+	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
 
 #if 0
 	const auto debug = value_and_type_to_ast_json(vec2);
@@ -1214,19 +1214,19 @@ std::string posix_timespec__to__utc(const time_t& t){
 }
 
 
-bc_value_t host__get_entry_info(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(arg_count != 1){
-		throw std::runtime_error("get_entry_info() requires 1 arguments!");
+		throw std::runtime_error("get_fsentry_info() requires 1 arguments!");
 	}
 	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("get_entry_info() requires a path, as a string.");
+		throw std::runtime_error("get_fsentry_info() requires a path, as a string.");
 	}
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
-		throw std::runtime_error("get_entry_info() illegal input path.");
+		throw std::runtime_error("get_fsentry_info() illegal input path.");
 	}
 
 
@@ -1249,7 +1249,7 @@ bc_value_t host__get_entry_info(interpreter_t& vm, const bc_value_t args[], int 
 	const auto file_size = info.fFileSize;
 
 	const auto result = value_t::make_struct_value(
-		make__directory_entry_info_t__type(),
+		make__fsentry_info_t__type(),
 		{
 			value_t::make_string(type_string),
 			value_t::make_string(name),
@@ -1310,19 +1310,19 @@ bc_value_t host__get_fs_environment(interpreter_t& vm, const bc_value_t args[], 
 
 //??? refactor common code.
 
-bc_value_t host__does_entry_exist(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__does_fsentry_exist(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(arg_count != 1){
-		throw std::runtime_error("does_entry_exist() requires 1 arguments!");
+		throw std::runtime_error("does_fsentry_exist() requires 1 arguments!");
 	}
 	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("does_entry_exist() requires a path, as a string.");
+		throw std::runtime_error("does_fsentry_exist() requires a path, as a string.");
 	}
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
-		throw std::runtime_error("does_entry_exist() illegal input path.");
+		throw std::runtime_error("does_fsentry_exist() illegal input path.");
 	}
 
 	bool exists = DoesEntryExist(path);
@@ -1337,38 +1337,38 @@ bc_value_t host__does_entry_exist(interpreter_t& vm, const bc_value_t args[], in
 }
 
 
-bc_value_t host__create_directories_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__create_directory_branch(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(arg_count != 1){
-		throw std::runtime_error("create_directories_deep() requires 1 arguments!");
+		throw std::runtime_error("create_directory_branch() requires 1 arguments!");
 	}
 	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("create_directories_deep() requires a path, as a string.");
+		throw std::runtime_error("create_directory_branch() requires a path, as a string.");
 	}
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
-		throw std::runtime_error("create_directories_deep() illegal input path.");
+		throw std::runtime_error("create_directory_branch() illegal input path.");
 	}
 
 	MakeDirectoriesDeep(path);
 	return bc_value_t::make_void();
 }
 
-bc_value_t host__delete_fs_entry_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__delete_fsentry_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(arg_count != 1){
-		throw std::runtime_error("delete_fs_entry_deep() requires 1 arguments!");
+		throw std::runtime_error("delete_fsentry_deep() requires 1 arguments!");
 	}
 	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("delete_fs_entry_deep() requires a path, as a string.");
+		throw std::runtime_error("delete_fsentry_deep() requires a path, as a string.");
 	}
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
-		throw std::runtime_error("delete_fs_entry_deep() illegal input path.");
+		throw std::runtime_error("delete_fsentry_deep() illegal input path.");
 	}
 
 	DeleteDeep(path);
@@ -1377,26 +1377,26 @@ bc_value_t host__delete_fs_entry_deep(interpreter_t& vm, const bc_value_t args[]
 }
 
 
-bc_value_t host__rename_fs_entry(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__rename_fsentry(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(arg_count != 2){
-		throw std::runtime_error("rename_fs_entry() requires 2 arguments!");
+		throw std::runtime_error("rename_fsentry() requires 2 arguments!");
 	}
 	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("rename_fs_entry() requires a path, as a string.");
+		throw std::runtime_error("rename_fsentry() requires a path, as a string.");
 	}
 	if(args[1]._type.is_string() == false){
-		throw std::runtime_error("rename_fs_entry() argument 2 is name name, as a string.");
+		throw std::runtime_error("rename_fsentry() argument 2 is name name, as a string.");
 	}
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
-		throw std::runtime_error("rename_fs_entry() illegal input path.");
+		throw std::runtime_error("rename_fsentry() illegal input path.");
 	}
 	const string n = args[1].get_string_value();
 	if(n.empty()){
-		throw std::runtime_error("rename_fs_entry() illegal input name.");
+		throw std::runtime_error("rename_fsentry() illegal input name.");
 	}
 
 	RenameEntry(path, n);
@@ -1442,7 +1442,7 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 	const auto VOID = typeid_t::make_void();
 	const auto DYN = typeid_t::make_internal_dynamic();
 
-	const auto k_directory_entry_t__type = make__directory_entry_t__type();
+	const auto k_fsentry_t__type = make__fsentry_t__type();
 
 	const std::map<std::string, host_function_signature_t> temp {
 		{ "assert", host_function_signature_t{ 1001, typeid_t::make_function(VOID, { DYN }, epure::pure) } },
@@ -1474,25 +1474,25 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 		{ "read_text_file", host_function_signature_t{ 1015, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::impure) }},
 		{ "write_text_file", host_function_signature_t{ 1016, typeid_t::make_function(VOID, { DYN, DYN }, epure::impure) }},
 		{
-			"get_directory_entries_shallow",
+			"get_fsentries_shallow",
 			host_function_signature_t{
 				1023,
-				typeid_t::make_function(typeid_t::make_vector(k_directory_entry_t__type), { typeid_t::make_string() }, epure::impure)
+				typeid_t::make_function(typeid_t::make_vector(k_fsentry_t__type), { typeid_t::make_string() }, epure::impure)
 			}
 		},
 		{
-			"get_directory_entries_deep",
+			"get_fsentries_deep",
 			host_function_signature_t{
 				1024,
-				typeid_t::make_function(typeid_t::make_vector(k_directory_entry_t__type), { typeid_t::make_string() }, epure::impure)
+				typeid_t::make_function(typeid_t::make_vector(k_fsentry_t__type), { typeid_t::make_string() }, epure::impure)
 			}
 		},
 		{
-			"get_entry_info",
+			"get_fsentry_info",
 			host_function_signature_t{
 				1025,
 				typeid_t::make_function(
-					make__directory_entry_info_t__type(),
+					make__fsentry_info_t__type(),
 					{ typeid_t::make_string() },
 					epure::impure
 				)
@@ -1510,7 +1510,7 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 			}
 		},
 		{
-			"does_entry_exist",
+			"does_fsentry_exist",
 			host_function_signature_t{
 				1027,
 				typeid_t::make_function(
@@ -1521,7 +1521,7 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 			}
 		},
 		{
-			"create_directories_deep",
+			"create_directory_branch",
 			host_function_signature_t{
 				1028,
 				typeid_t::make_function(
@@ -1532,7 +1532,7 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 			}
 		},
 		{
-			"delete_fs_entry_deep",
+			"delete_fsentry_deep",
 			host_function_signature_t{
 				1029,
 				typeid_t::make_function(
@@ -1543,7 +1543,7 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 			}
 		},
 		{
-			"rename_fs_entry",
+			"rename_fsentry",
 			host_function_signature_t{
 				1030,
 				typeid_t::make_function(
@@ -1589,14 +1589,14 @@ std::map<int,  host_function_t> get_host_functions(){
 
 		{ "read_text_file", host__read_text_file },
 		{ "write_text_file", host__write_text_file },
-		{ "get_directory_entries_shallow", host__get_directory_entries_shallow },
-		{ "get_directory_entries_deep", host__get_directory_entries_deep },
-		{ "get_entry_info", host__get_entry_info },
+		{ "get_fsentries_shallow", host__get_fsentries_shallow },
+		{ "get_fsentries_deep", host__get_fsentries_deep },
+		{ "get_fsentry_info", host__get_fsentry_info },
 		{ "get_fs_environment", host__get_fs_environment },
-		{ "does_entry_exist", host__does_entry_exist },
-		{ "create_directories_deep", host__create_directories_deep },
-		{ "delete_fs_entry_deep", host__delete_fs_entry_deep },
-		{ "rename_fs_entry", host__rename_fs_entry }
+		{ "does_fsentry_exist", host__does_fsentry_exist },
+		{ "create_directory_branch", host__create_directory_branch },
+		{ "delete_fsentry_deep", host__delete_fsentry_deep },
+		{ "rename_fsentry", host__rename_fsentry }
 	};
 
 	const auto lookup = [&](){

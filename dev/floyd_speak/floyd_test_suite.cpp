@@ -2881,7 +2881,7 @@ QUARK_UNIT_TEST("", "color__black", "", ""){
 
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto a = typeid_t::make_vector(typeid_t::make_string());
-	const auto b = typeid_t::make_vector(make__directory_entry_t__type());
+	const auto b = typeid_t::make_vector(make__fsentry_t__type());
 	QUARK_UT_VERIFY(a != b);
 }
 
@@ -2998,48 +2998,48 @@ QUARK_UNIT_TEST("run_global()", "", "", ""){
 QUARK_UNIT_TEST("", "get_directory_entries()", "", ""){
 	const auto result = test__run_return_result(R"(
 
-		let result = get_directory_entries_shallow("/Users/marcus/Desktop/")
+		let result = get_fsentries_shallow("/Users/marcus/Desktop/")
 		assert(size(result) > 3)
 		print(to_pretty_string(result))
 
 	)", {});
 
-	const auto expected = typeid_t::make_vector(make__directory_entry_t__type());
+	const auto expected = typeid_t::make_vector(make__fsentry_t__type());
 	QUARK_UT_VERIFY(result.get_type() == expected);
 
 //	quark::ut_compare_strings(vm->_print_output[0].substr(0, 7), "/Users/");
 }
 
 
-//////////////////////////////////////////		HOST FUNCTION - get_directory_entries_deep()
+//////////////////////////////////////////		HOST FUNCTION - get_fsentries_deep()
 
 
-QUARK_UNIT_TEST("", "get_directory_entries_deep()", "", ""){
+QUARK_UNIT_TEST("", "get_fsentries_deep()", "", ""){
 	const auto result = test__run_return_result(R"(
 
-		let result = get_directory_entries_deep("/Users/marcus/Desktop/")
+		let result = get_fsentries_deep("/Users/marcus/Desktop/")
 		assert(size(result) > 1000)
 		print(to_pretty_string(result))
 
 	)", {});
 
-	const auto expected = typeid_t::make_vector(make__directory_entry_t__type());
+	const auto expected = typeid_t::make_vector(make__fsentry_t__type());
 	QUARK_UT_VERIFY(result.get_type() == expected);
 }
 
 
-//////////////////////////////////////////		HOST FUNCTION - get_entry_info()
+//////////////////////////////////////////		HOST FUNCTION - get_fsentry_info()
 
 
-QUARK_UNIT_TEST("", "get_entry_info()", "", ""){
+QUARK_UNIT_TEST("", "get_fsentry_info()", "", ""){
 	const auto result = test__run_return_result(R"(
 
-		let result = get_entry_info("/Users/marcus/Desktop/")
+		let result = get_fsentry_info("/Users/marcus/Desktop/")
 		print(to_pretty_string(result))
 
 	)", {});
 
-	const auto expected = make__directory_entry_info_t__type();
+	const auto expected = make__fsentry_info_t__type();
 	QUARK_UT_VERIFY(result.get_type() == expected);
 }
 
@@ -3065,14 +3065,14 @@ QUARK_UNIT_TEST("", "get_fs_environment()", "", ""){
 
 
 
-//////////////////////////////////////////		HOST FUNCTION - does_entry_exist()
+//////////////////////////////////////////		HOST FUNCTION - does_fsentry_exist()
 
 
-QUARK_UNIT_TEST("", "does_entry_exist()", "", ""){
+QUARK_UNIT_TEST("", "does_fsentry_exist()", "", ""){
 	const auto result = test__run_return_result(R"(
 
 		let path = get_fs_environment().desktop_dir
-		let result = does_entry_exist(path)
+		let result = does_fsentry_exist(path)
 		print(to_pretty_string(result))
 
 		assert(result == true)
@@ -3083,11 +3083,11 @@ QUARK_UNIT_TEST("", "does_entry_exist()", "", ""){
 }
 
 //??? Also test for files.
-QUARK_UNIT_TEST("", "does_entry_exist()", "", ""){
+QUARK_UNIT_TEST("", "does_fsentry_exist()", "", ""){
 	const auto result = test__run_return_result(R"(
 
 		let path = get_fs_environment().desktop_dir + "xyz"
-		let result = does_entry_exist(path)
+		let result = does_fsentry_exist(path)
 		print(to_pretty_string(result))
 
 		assert(result == false)
@@ -3110,28 +3110,28 @@ void remove_test_dir(const std::string& dir_name1, const std::string& dir_name2)
 
 
 
-//////////////////////////////////////////		HOST FUNCTION - create_directories_deep()
+//////////////////////////////////////////		HOST FUNCTION - create_directory_branch()
 
 
-QUARK_UNIT_TEST("", "create_directories_deep()", "", ""){
-	remove_test_dir("unittest___create_directories_deep", "subdir");
+QUARK_UNIT_TEST("", "create_directory_branch()", "", ""){
+	remove_test_dir("unittest___create_directory_branch", "subdir");
 
 	const auto result = test__run_return_result(R"(
 
-		let path1 = get_fs_environment().desktop_dir + "/unittest___create_directories_deep"
+		let path1 = get_fs_environment().desktop_dir + "/unittest___create_directory_branch"
 		let path2 = path1 + "/subdir"
 
-		assert(does_entry_exist(path1) == false)
-		assert(does_entry_exist(path2) == false)
+		assert(does_fsentry_exist(path1) == false)
+		assert(does_fsentry_exist(path2) == false)
 
 		//	Make test.
-		create_directories_deep(path2)
-		assert(does_entry_exist(path1) == true)
-		assert(does_entry_exist(path2) == true)
+		create_directory_branch(path2)
+		assert(does_fsentry_exist(path1) == true)
+		assert(does_fsentry_exist(path2) == true)
 
-		delete_fs_entry_deep(path1)
-		assert(does_entry_exist(path1) == false)
-		assert(does_entry_exist(path2) == false)
+		delete_fsentry_deep(path1)
+		assert(does_fsentry_exist(path1) == false)
+		assert(does_fsentry_exist(path2) == false)
 
 		let result = true
 
@@ -3141,28 +3141,28 @@ QUARK_UNIT_TEST("", "create_directories_deep()", "", ""){
 }
 
 
-//////////////////////////////////////////		HOST FUNCTION - delete_fs_entry_deep()
+//////////////////////////////////////////		HOST FUNCTION - delete_fsentry_deep()
 
 
-QUARK_UNIT_TEST("", "delete_fs_entry_deep()", "", ""){
-	remove_test_dir("unittest___delete_fs_entry_deep", "subdir");
+QUARK_UNIT_TEST("", "delete_fsentry_deep()", "", ""){
+	remove_test_dir("unittest___delete_fsentry_deep", "subdir");
 
 	const auto result = test__run_return_result(R"(
 
-		let path1 = get_fs_environment().desktop_dir + "/unittest___delete_fs_entry_deep"
+		let path1 = get_fs_environment().desktop_dir + "/unittest___delete_fsentry_deep"
 		let path2 = path1 + "/subdir"
 
-		assert(does_entry_exist(path1) == false)
-		assert(does_entry_exist(path2) == false)
+		assert(does_fsentry_exist(path1) == false)
+		assert(does_fsentry_exist(path2) == false)
 
-		create_directories_deep(path2)
-		assert(does_entry_exist(path1) == true)
-		assert(does_entry_exist(path2) == true)
+		create_directory_branch(path2)
+		assert(does_fsentry_exist(path1) == true)
+		assert(does_fsentry_exist(path2) == true)
 
 		//	Make test.
-		delete_fs_entry_deep(path1)
-		assert(does_entry_exist(path1) == false)
-		assert(does_entry_exist(path2) == false)
+		delete_fsentry_deep(path1)
+		assert(does_fsentry_exist(path1) == false)
+		assert(does_fsentry_exist(path2) == false)
 
 		let result = true
 
@@ -3173,33 +3173,33 @@ QUARK_UNIT_TEST("", "delete_fs_entry_deep()", "", ""){
 
 
 
-//////////////////////////////////////////		HOST FUNCTION - rename_fs_entry()
+//////////////////////////////////////////		HOST FUNCTION - rename_fsentry()
 
 
-QUARK_UNIT_TEST("", "rename_fs_entry()", "", ""){
+QUARK_UNIT_TEST("", "rename_fsentry()", "", ""){
 	const auto result = test__run_return_result(R"(
-		let dir = get_fs_environment().desktop_dir + "/unittest___rename_fs_entry"
+		let dir = get_fs_environment().desktop_dir + "/unittest___rename_fsentry"
 
-		delete_fs_entry_deep(dir)
+		delete_fsentry_deep(dir)
 
 		let file_path1 = dir + "/original.txt"
 		let file_path2 = dir + "/renamed.txt"
 
-		assert(does_entry_exist(file_path1) == false)
-		assert(does_entry_exist(file_path2) == false)
+		assert(does_fsentry_exist(file_path1) == false)
+		assert(does_fsentry_exist(file_path2) == false)
 
 		//	Will also create parent directory.
 		write_text_file(file_path1, "This is the file contents\n")
 
-		assert(does_entry_exist(file_path1) == true)
-		assert(does_entry_exist(file_path2) == false)
+		assert(does_fsentry_exist(file_path1) == true)
+		assert(does_fsentry_exist(file_path2) == false)
 
-		rename_fs_entry(file_path1, "renamed.txt")
+		rename_fsentry(file_path1, "renamed.txt")
 
-		assert(does_entry_exist(file_path1) == false)
-		assert(does_entry_exist(file_path2) == true)
+		assert(does_fsentry_exist(file_path1) == false)
+		assert(does_fsentry_exist(file_path2) == true)
 
-		delete_fs_entry_deep(dir)
+		delete_fsentry_deep(dir)
 
 		let result = true
 
