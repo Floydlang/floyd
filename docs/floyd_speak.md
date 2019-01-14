@@ -9,14 +9,16 @@ Floyd Speak is the programming language part of Floyd. It's an alternative to Ja
 
 # DATA TYPES
 
-These are the primitive data types built into the language itself. The goal is that all the basics you need are already there in the language. This makes it easy to start making useful programs, you don't need to choose or build the basics. It allows composability since all libraries can rely on these types and communicate between themselves using them. Reduces need for custom types and glue code.
+These are the primitive data types built into the language itself. The building blocks of all Floyd programs.
 
-|Type		  	| Use
-|---				|---	
+The goal is that all the basics you need are already there in the language and the core library. This makes it easy to start making meaningful programs. It also allows composability since all Floyd code can rely on these types and communicate between themselves using these types. This greatly reduces the need to write glue code that converts between different librarys' string classes and logging and so on.
+
+|TYPE		  	| USE
+|:---				|:---	
 |__bool__			|__true__ or __false__
 |__int__			| Signed 64 bit integer
 |__double__		| 64-bit floating point number
-|__string__		| Built-in string type. 8-bit pure (supports embedded zeros). Use for machine strings, basic UI. Not localizable.
+|__string__		| Built-in string type. 8-bit pure (supports embedded zeros). Use for machine strings, basic UI. Not localizable. Typically used for Windows Latin1, UTF-8 or ASCII.
 |__typeid__		| Describes the *type* of a value.
 |__function__	| A function value. Functions can be Floyd functions or C functions. They are callable.
 |__struct__		| Like C struct or classes or tuples. A value object.
@@ -38,60 +40,56 @@ Notice that string has many qualities of an array of characters. You can ask for
 Floyd Speak files are always utf-8 files with no BOM. Their extension is ".floyd".
 
 
-# CONCEPT: NO POINTERS
-
-There are no pointers or references in Floyd. You copy values around deeply instead. Behind the curtains Floyd uses pointers extensively to make this fast.
-
-Removing the concept of pointers make programming easier since there are no dangling pointers, aliasing problems or defencive copying and other classic bug sources. It also makes it simpler for the runtime and compiler to generate extremely fast code.
-
 
 # CONCEPT: PURE AND IMPURE FUNCTIONS
 
-Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants, never read or modify anything: not global variables, not by calling another, impure function. It's not possible to call a function with a set of arguments and later call it with the same argument and get a different result. A function like get_time() is impure.
+Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants, never read or modify anything: not global variables, not by calling another, impure function.
+
+It's not possible to call a pure function with a set of arguments and later call it again with the same arguments and get a different result.
+
+A function like get_time() is impure.
 
 While a function executes, it perceives the outside world to stand still.
 
 Functions always return exactly one value. Use a struct to return more values.
 
-A function without return value usually makes no sense since function cannot have side effects. Possible uses would be logging, asserting or throwing exceptions.
-
 Example definitions of functions:
 
 ```
-	func int f1(string x){
-		return 3
-	}
+func int f1(string x){
+	return 3
+}
 
-	func int f2(int a, int b){
-		return 5
-	}
+func int f2(int a, int b){
+	return 5
+}
 
-	func int f3(){	
-		return 100
-	}
+func int f3(){	
+	return 100
+}
 
-	func string f4(string x, bool y){
-		return "<" + x + ">"
-	}
+func string f4(string x, bool y){
+	return "<" + x + ">"
+}
 ```
 
 Function types:
 
 ```
-	func bool (string, double)
+func bool (string, double)
 ```
 
 
 This is a function that takes a function value as argument:
 
 ```
-	func int f5(func bool (string, string))
+func int f5(func bool (string, string))
 ```
 
 This is a function that returns a function value:
 
 ```
-	func bool (string, string) f5(int x)
+func bool (string, string) f5(int x)
 ```
 
 All arguments to a function are read-only -- there are no output arguments.
@@ -101,32 +99,37 @@ All arguments to a function are read-only -- there are no output arguments.
 
 You can tag a function to be impure using the "impure" keyword.
 
-	func int f1(string x) impure {
-		return 3
-	}
+```
+func int f1(string x) impure {
+	return 3
+}
+```
 
-This mean the function is not pure - it has side effects.
+This mean the function has side effects or gets information somewhere that can change over time.
 
-A pure function cannot call any impure functions!
-An impure function can call both pure and impure functions.
+- A pure function cannot call any impure functions!
+- An impure function can call both pure and impure functions.
 
 Limit the amount of impure code!
 
+
 ### GRAY PURE FUNCTIONS
 
-This is a function that has side effects or state -- but the calling functions cannot observe this so from their perspective it is pure. Examples are memory allocators and memory pools and logging program execution.
+This is a type of function that *has side effects or state* -- but the calling functions cannot observe this so from their perspective it is pure. Examples are memory allocators and memory pools and logging program execution.
+
+Why is the OK? Well to be picky there are no pure functions, since calling a pure function makes your CPU emit more heat and consumes real-world time, makes other programs run slower, consumes memory bandwidth. But a pure function cannot observe those side effects either.
 
 
-# CONCEPT: TRUE DEEP
+# CONCEPT: DEEP BY VALUE
 
-True-deep is a Floyd term that means that all values and sub-values are always considered in operations in any type of nesting of structs and values and collections. This includes equality checks or assignment for example.
+All values and aggregated members values are always considered in operations in any type of nesting of structs and values and collections. This includes equality checks or assignment for example.
 
 The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
 
 These are features built into every type: integer, string, struct, dictionary:
 
-|Expression		| Explanation
-|---				|---	
+|EXPRESSION		| EXPLANATION
+|:---				|:---	
 |__a = b__ 		| This true-deep copies the value b to the new name a.
 |__a == b__		| a exactly the same as b
 |__a != b__		| a different to b
@@ -135,55 +138,68 @@ These are features built into every type: integer, string, struct, dictionary:
 |__a > b__ 		| a larger than b
 |__a >= b__ 		| a larger or equal to b
 
-This also goes for print(), map(), to_string(), flatten_to_json(), send() etc.
+This also goes for print(), map(), to\_string(), flatten\_to\_json(), send() etc.
+
+Example: your application's entire state may be stored in *one* value in a struct containing other structs and vectors and so on. This value can still be copied around quickly, it is automatically sortable, convertable to JSON or whatever.
+
+
+# CONCEPT: NO POINTERS
+
+There are no pointers or references in Floyd. You copy values around deeply instead. Even a big value like your games entire world or your word processor's entire document. Behind the curtains Floyd uses pointers extensively to make this fast.
+
+Removing the concept of pointers makes programming easier. There are no dangling pointers, aliasing problems or defensive copying and other classic problems. It also makes it simpler for the runtime and compiler to generate extremely fast code.
+
+# CONCEPT: STATIC TYPING
+
+Every value and variable and identifier has a static type: a type that is defined at compile time, before the program runs. This is how Java, C++ and Swift works. Javascript, Python and Ruby does not use static typing.
 
 
 # CONCEPT: IMMUTABLE VALUES VS VARIABLES
 
-All values in Floyd are immutable -- you make new values based on previous values but you don't drectly modify old values. Internally Floyd uses clever mechansims to make this fast and avoids copying data too much. It's perfectly good to replace a character in a 3 GB long string and get a new 3 GB string as a result. Almost all of the characters will be stored only once.
+All values in Floyd are immutable -- you make new values based on previous values but you don't drectly modify old values. Internally Floyd uses clever mechanisms to make this fast and avoids copying data too much. It's perfectly good to replace a character in a 3 GB long string and get a new 3 GB string as a result. Almost all of the characters will be stored only once.
 
-All "variables" aka values are by immutable. Local variables can be mutable if you specify it.
+The only exception is local variables that can be forced to be mutable.
+
+(Also each green-process has one mutable value too.)
 
 
 - Function arguments
 - Function local variables
-- Member variables of structs, etc.
-
-Floyd is statically typed, which means every variable only supports a specific type of value.
+- Member variables of structs.
 
 When defining a variable you can often skip telling which type it is, since the type can be deduced by the Floyd compiler.
 
 Explicit
 
 ```
-	let int x = 10
+let int x = 10
 ```
 
 Implicit
 
 ```
-	let y = 11
+let y = 11
 ```
 
 
 Example:
 
 ```
-	int main(){
-		let a = "hello"
-		a = "goodbye"	//	Runtime error - you cannot change variable a.
-		return 3
-	}
+int main(){
+	let a = "hello"
+	a = "goodbye"	//	Runtime error - you cannot change variable a.
+	return 3
+}
 ```
 
 You can use "mutable" to make a local variable changeable.
 
 ```
-	int main(){
-		mutable a = "hello"
-		a = "goodbye"	//	Changes variable a to "goodbye".
-		return 3
-	}
+int main(){
+	mutable a = "hello"
+	a = "goodbye"	//	Changes variable a to "goodbye".
+	return 3
+}
 ```
 
 
@@ -198,11 +214,13 @@ Here you normally define functions, structs and global constants. The global sco
 
 This keyword is part of Floyd Systems -- a way to define how all the containers and components and processes are interfacting.
 
-	software-system {
-		"name": "My Arcade Game",
-		"desc": "Space shooter for mobile devices, with connection to a server.",
-		"containers": {}
-	}
+```
+software-system {
+	"name": "My Arcade Game",
+	"desc": "Space shooter for mobile devices, with connection to a server.",
+	"containers": {}
+}
+```
 
 Read more about this in the Floyd Systems documentation. It allows you setup concurrency.
 
@@ -213,56 +231,62 @@ Read more about this in the Floyd Systems documentation. It allows you setup con
 
 # EXPRESSIONS
 
-Reference: http://www.tutorialspoint.com/cprogramming/c_operators.htm
-Comparisons are true-deep: they consider all members and also member structs and collections.
+An expression is how you calculate new values. The output of an expression is always another value.
 
-## Arithmetic Operators
+Comparisons are deep: for a composite values they consider all members values and their member values. This goes for struct members and collections.
+
+## ARITHMETIC OPERATORS
 
 How to add and combine values:
 
-```
-+	Addition - adds two operands: "a = b + c", "a = b + c + d"
-−	Subtracts second operand from the first. "a = b - c", "a = b - c - d"
-*	Multiplies both operands: "a = b * c", "a = b * c * d"
-/	Divides numerator by de-numerator: "a = b / c", "a = b / c / d"
-%	Modulus Operator and remainder of after an integer division: "a = b / c", "a = b / c / d"
-```
+|OPERATOR		| EXPLANATION
+|:---			|:---	
+|+	|Addition - adds two operands: "a = b + c", "a = b + c + d"
+|−	|Subtracts second operand from the first. "a = b - c", "a = b - c - d"
+|*	|Multiplies both operands: "a = b * c", "a = b * c * d"
+|/	|Divides numerator by de-numerator: "a = b / c", "a = b / c / d"
+|%	|Modulus Operator and remainder of after an integer division: "a = b / c", "a = b / c / d"
 
-## Relational Operators
 
-Used to compare two values. The result is true or false:
-
-```
-	a == b					true if a and b have the same value
-	a != b				true if a and b have different values
-	a > b				true if the value of a is greater than the value of b
-	a < b				true if the value of a is smaller than the value of b
-	a >= b
-	a <= b
-```
-
-## Logical Operators
+## RELATIONAL OPERATORS
 
 Used to compare two values. The result is true or false:
 
+|OPERATOR		| EXPLANATION
+|:---			|:---	
+|	a == b	|	true if a and b have the same value
+|	a != b	|	true if a and b have different values
+|	a > b	|	true if the value of a is greater than the value of b
+|	a < b	|	true if the value of a is smaller than the value of b
+|	a >= b	|	true if a is greater than or equal to b
+|	a <= b	|	true if a is less than or equal to b
+
+
+## LOGICAL OPERATORS
+
+Used to compare two values. The result is true or false:
+
+|OPERATOR		| EXPLANATION
+|:---			|:---	
+| a && b		|	true if a is true and b is true
+| a \|\| b		|	true if a is true or b is true
+
+
+## CONDITIONAL OPERATOR
+When the condition is true, this entire expression has the value of a. Else it has the value of b. Also called ternary operator, because it has three parts.
+
 ```
-	a && b
-	a || b
+condition ? a : b
 ```
 
-## Conditional Operator
-```
-	condition ? a : b
-```
-
-When the condition is true, this entire expression has the value of a. Else it has the value of b. Condition, a and b can all be complex expressions, with function calls, etc.
+Condition, a and b can all be complex expressions, with function calls, etc.
 
 ```
-	func bool is_polite(string x){
-		return x == "hello" ? "polite" : "rude"
-	}
-	assert(is_polite("hiya!") == false)
-	assert(is_polite("hello") == true)
+func bool is_polite(string x){
+	return x == "hello" ? "polite" : "rude"
+}
+assert(is_polite("hiya!") == false)
+assert(is_polite("hello") == true)
 ```
 
 
@@ -271,34 +295,34 @@ When the condition is true, this entire expression has the value of a. Else it h
 This is a normal if-elseif-else feature, like in most languages. Brackets are required always.
 
 ```
-		if (s == "one"){
-			return 1
-		}
+if (s == "one"){
+	return 1
+}
 ```
 
 You can add an else body like this:
 
 ```
-		if(s == "one"){
-			return 1
-		}
-		else{
-			return -1
-		}
+if(s == "one"){
+	return 1
+}
+else{
+	return -1
+}
 ```
 
 Else-if lets you avoid big nested if-else statements and do this:
 
 ```
-		if(s == "one"){
-			return 1
-		}
-		else if(s == "two"){
-			return 2
-		}
-		else{
-			return -1
-		}
+if(s == "one"){
+	return 1
+}
+else if(s == "two"){
+	return 2
+}
+else{
+	return -1
+}
 ```
 
 In each body you can write any statements. There is no "break" keyword.
@@ -312,59 +336,44 @@ TODO POC
 
 # FOR LOOPS
 
-For-loops are used to execute a body of statements many times. The number of times is calculated while the program runs. The entire condition expression is evaluated *before* the first time the body is called. This means the program already decided the number of loops to run before running the first loop iteration.
+For loops are used to execute a body of statements many times. The number of times is calculated *before* the first time the body is called. Many other languages evaluates the condition for each loop iteration. In Floyd you use a while-loop for that.
 
-Closed range that starts with 1 and ends with 5:
-
-```
-	for (index in 1...5) {
-		print(index)
-	}
-```
-
-Open range that starts with 1 and ends with 59:
+Example: Closed range that starts with 1 and ends with 5:
 
 ```
-	for (tickMark in 0..<60) {
-	}
+for (index in 1 ... 5) {
+	print(index)
+}
 ```
 
-You can use expressions for range:
+Example: Open range that starts with 1 and ends with 59:
 
 ```
-	for (tickMark in a..<string.size()) {
-	}
+for (tickMark in 0 ..< 60) {
+}
 ```
 
-
-Above snippet simulates the for loop of the C language but it works a little differently. There is always exactly ONE loop variable and it is defined and inited in the first section, checked in the condition section and incremented / updated in the third section. It must be the same symbol.
-The result is the equivalent to
+You can use expressions to define the range:, not only constants:
 
 ```
-	let b = 3
-	{ a = 0; print(a + b) }
-	{ a = 1; print(a + b) }
-	{ a = 2; print(a + b) }
+for (tickMark in a ..< string.size()) {
+}
 ```
 
-The loop is expanded before the first time the body is called. There is no way to have any other kind of condition expression, that relies on the result of the body, etc.
-
-- init: must be an assignment statement for variable X.
-- condition: Must be a bool expression with only variable X. Is executed before each time body is executed. 
-- advance-statement: must be an assignment statement to X.
-- body: this is required and must have brackets. Brackets can be empty, like "{}".
-
+- ..< defines an *open range*. Up to the end value but *excluding the end value*.
+- ..- defines a *closed range*. Up to and *including* the end.
 
 
 # WHILE LOOPS
 
+Perform the loop body while the expression is true.
+
 ```
-	while (my_array[a] != 3){
-	}
+while (my_array[a] != 3){
+}
 ```
 
-- condition: executed each time before body is executed. If the condition is false initially, then zero loops will run.
-
+The condition is executed each time before body is executed. If the condition is false initially, then zero loops will run. If you can calculate the number of loop iteration beforehand, then prefer to use for-loop since it expresses that better and also can give better performance.
 
 
 # STRING DATA TYPE
@@ -375,23 +384,28 @@ The encoding of the characters in the string is undefined. You can put 7-bit ASC
 
 You can make string literals directly in the source code like this:
 
-	let a = "Hello, world!"
+```
+let a = "Hello, world!"
+```
 
 All comparison expressions work, like a == b, a < b, a >= b, a != b and so on.
 
 You can access a random character in the string, using its integer position, where element 0 is the first character, 1 the second etc.
 
-	let a = "Hello"[1]
-	assert(a == "e")
+```
+let a = "Hello"[1]
+assert(a == "e")
+```
 
 Notice 1: You cannot modify the string using [], only read. Use update() to change a character.
 Notice 2: Floyd returns the character as an int, which is 64 bit signed.
 
 You can append two strings together using the + operation.
 
-	let a = "Hello" + ", world!"
-	assert(a == "Hello, world!")
-
+```
+let a = "Hello" + ", world!"
+assert(a == "Hello, world!")
+```
 
 ### ESCAPE SEQUENCES
 
@@ -399,8 +413,8 @@ String literals in Floyd code cannot contain any character, because that would m
 
 You can use these escape characters in string literals by entering \n or \' or \" etc.
 
-|Escape sequence						| Result Character, as Hex		| ASCII meaning
-|---						| ---			|---
+|ESCAPE SEQUENCE	| RESULT CHARACTER, AS HEX		| ASCII MEANING
+|:---				|:---						|:---
 | \a		| 0x07	| BEL, bell, alarm, \a
 | \b		| 0x08	| BS, backspace, \b
 | \f		| 0x0c	| FF, NP, form feed, \f
@@ -408,14 +422,14 @@ You can use these escape characters in string literals by entering \n or \' or \
 | \r		| 0x0d	| Carriage Return
 | \t		| 0x09	| Horizontal Tab
 | \v		| 0x0b	| Vertical Tab
-| \\\\		| 0x5f	| Backslash
+| \\\\	| 0x5f	| Backslash
 | \'		| 0x27	| Single quotation mark
-| \\"		| 0x22	| Double quotation mark
+| \\"	| 0x22	| Double quotation mark
 
-##### Examples
+##### EXAMPLES
 
-|Code		| Output | Note
-|---			| --- | ---
+|CODE		| OUTPUT | NOTE
+|:---			|:--- |:---
 | print("hello") | hello
 | print("What does \\"blobb\\" mean?") | What does "blobb" mean? | Allows you to insert a double quotation mark into your string literal without ending the string literal itself.
 
@@ -442,12 +456,15 @@ A vector is a collection of values where you lookup the values using an index be
 
 You can make a new vector and specify its elements directly, like this:
 
-	let a = [ 1, 2, 3]
+```
+let a = [ 1, 2, 3]
+```
 
 You can also calculate its elements, they don't need to be constants:
 
-	let a = [ calc_pi(4), 2.1, calc_bounds() ]
-
+```
+let a = [ calc_pi(4), 2.1, calc_bounds() ]
+```
 
 You can put ANY type of value into a vector: integers, doubles, strings, structs, other vectors and so on. But all elements must be the same type inside a specific vector.
 
@@ -455,15 +472,19 @@ You can copy vectors using =. All comparison expressions work, like a == b, a < 
 
 This lets you access a random element in the vector, using its integer position.
 
-	let a = [10, 20, 30][1]
-	assert(a == 20)
+```
+let a = [10, 20, 30][1]
+assert(a == 20)
+```
 
 Notice: You cannot modify the vector using [], only read. Use update() to change an element.
 
 You can append two vectors together using the + operation.
 
-	let a = [ 10, 20, 30 ] + [ 40, 50 ]
-	assert(a == [ 10, 20, 30, 40, 50 ])
+```
+let a = [ 10, 20, 30 ] + [ 40, 50 ]
+assert(a == [ 10, 20, 30, 40, 50 ])
+```
 
 ##### CORE FUNCTIONS
 
@@ -483,17 +504,23 @@ A collection of values where you identify the elemts using string keys. It is no
 
 You make a new dictionary and specify its elements like this:
 
-	let [string: int] a = {"red": 0, "blue": 100,"green": 255}
+```
+let [string: int] a = {"red": 0, "blue": 100,"green": 255}
+```
 
 or shorter:
 
-	b = {"red": 0, "blue": 100,"green": 255}
+```
+b = {"red": 0, "blue": 100,"green": 255}
+```
 
 Dictionaries always use string-keys. When you specify the type of dictionary you must always include "string". In the future other types of keys may be supported.
 
-	struct test {
-		[string: int] _my_dict
-	}
+```
+struct test {
+	[string: int] _my_dict
+}
+```
 
 You can put any type of value into the dictionary (but not mix inside the same dictionary).
 
@@ -516,7 +543,7 @@ You copy dictionaries using = and all comparison expressions work, just like wit
 
 Structs are the central building block for composing data in Floyd. They are used in place of classes in other programming languages. Structs are always values and immutable. They are very fast and compact: behind the curtains copied structs shares state between them, even when partially modified.
 
-##### Automatic features of every struct:
+##### AUTOMATIC FEATURES OF EVERY STRUCT
 
 - constructor -- this is the only function that can create a value of the struct. It always requires every struct member, in the order they are listed in the struct definition. Usually you create some functions that makes instancing a struct convenient, like make_black_color(), make_empty() etc.
 - destructor -- will destroy the value including member values, when no longer needed. There are no custom destructors.
@@ -528,7 +555,7 @@ There is no concept of pointers or references or shared structs so there are no 
 
 This all makes simple structs extremely simple to create and use.
 
-##### Not possible:
+##### NOT POSSIBLE
 
 - You cannot make constructors. There is only *one* way to initialize the members, via the constructor, which always takes *all* members
 - There is no way to directly initialize a member when defining the struct.
@@ -540,25 +567,25 @@ This all makes simple structs extremely simple to create and use.
 Example:
 
 ```
-	//	Make simple, ready-for use struct.
-	struct point {
-		double x
-		double y
-	}
+//	Make simple, ready-for use struct.
+struct point {
+	double x
+	double y
+}
 
-	//	Try the new struct:
+//	Try the new struct:
 
-	let a = point(0, 3)
-	assert(a.x == 0)
-	assert(a.y == 3)
+let a = point(0, 3)
+assert(a.x == 0)
+assert(a.y == 3)
 
-	let b = point(0, 3)
-	let c = point(1, 3)
+let b = point(0, 3)
+let c = point(1, 3)
 
-	assert(a == a)
-	assert(a == b)
-	assert(a != c)
-	assert(c > a)
+assert(a == a)
+assert(a == b)
+assert(a != c)
+assert(c > a)
 ```
 
 A simple struct works almost like a collection with fixed number of named elements. It is only possible to make new instances by specifying every member or copying / modifying an existing one.
@@ -568,44 +595,42 @@ A simple struct works almost like a collection with fixed number of named elemen
 
 let b = update(a, member, value)
 
-
-
 ```
-	//	Make simple, ready-for use struct.
-	struct point {
-		double x
-		double y
-	}
+//	Make simple, ready-for use struct.
+struct point {
+	double x
+	double y
+}
 
-	let a = point(0, 3)
+let a = point(0, 3)
 
-	//	Nothing happens! Setting width to 100 returns us a new point but we we don't keep it.
-	update(a,"x", 100)
-	assert(a.x == 0)
+//	Nothing happens! Setting width to 100 returns us a new point but we we don't keep it.
+update(a,"x", 100)
+assert(a.x == 0)
 
-	//	Modifying a member creates a new instance, we assign it to b
-	let b = update(a,"x", 100)
+//	Modifying a member creates a new instance, we assign it to b
+let b = update(a,"x", 100)
 
-	//	Now we have the original, unmodified a and the new, updated b.
-	assert(a.x == 0)
-	assert(b.x == 100)
+//	Now we have the original, unmodified a and the new, updated b.
+assert(a.x == 0)
+assert(b.x == 100)
 ```
 
 This works with nested values too:
 
 
 ```
-	//	Define an image-struct that holds some stuff, including a pixel struct.
-	struct image { string name; point size }
+//	Define an image-struct that holds some stuff, including a pixel struct.
+struct image { string name; point size }
 
-	let a = image("Cat image.png", point(512, 256))
+let a = image("Cat image.png", point(512, 256))
 
-	assert(a.size.x == 512)
+assert(a.size.x == 512)
 
-	//	Update the width-member inside the image's size-member. The result is a brand new image, b!
-	let b = update(a, "size.x", 100)
-	assert(a.size.x == 512)
-	assert(b.size.x == 100)
+//	Update the width-member inside the image's size-member. The result is a brand new image, b!
+let b = update(a, "size.x", 100)
+assert(a.size.x == 512)
+assert(b.size.x == 100)
 ```
 
 
@@ -634,8 +659,8 @@ When you reference one of the built in primitive types by name, you are accessin
 - string
 
 ```
-	assert(typeid("hello") == string)
-	assert(to_string(typeid([1,2,3])) == "[int]")
+assert(typeid("hello") == string)
+assert(to_string(typeid([1,2,3])) == "[int]")
 ```
 
 A typeid is a proper Floyd value: you can copy it, compare it, convert it to strings, store it in dictionaries or whatever. Since to_string() supports typeid, you can easily print out the exact layout of any type, including complex ones with nested structs and vectors etc.
@@ -676,7 +701,7 @@ __json\_value__: 	This is an immutable value containing any JSON. You can query 
 Notice that json\_value can contain an entire huge JSON file, with a big tree of JSON objects and arrays and so on. A json\_value can also contain just a string or a number or a single JSON array of strings. The json\_value is used for every node in the json\_value tree.
 
 
-##### JSON LITERALS
+## JSON LITERALS
 
 You can directly embed JSON inside Floyd source code file. This is extremely simple - no escaping needed - just paste a snippet into the Floyd source code. Use this for test values. Round trip. Since the JSON code is not a string literal but actual Floyd syntax, there are not problems with escaping strings. The Floyd parser will create floyd strings, dictionaries and so on for the JSON data. Then it will create a json\_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown.
 
@@ -684,28 +709,30 @@ This all means you can write Floyd code that at runtime creates all or parts of 
 
 Example JSON:
 
-	let json_value a = 13
-	let json_value b = "Hello!"
-	let json_value c = { "hello": 1, "bye": 3 }
-	let json_value d = { "pigcount": 3, "pigcolor": "pink" }
+```
+let json_value a = 13
+let json_value b = "Hello!"
+let json_value c = { "hello": 1, "bye": 3 }
+let json_value d = { "pigcount": 3, "pigcolor": "pink" }
 
-	assert(a == 13)
-	assert(b == "Hello!")
-	assert(c["hello"] == 1)
-	assert(c["bye"] == 3)
-	assert(size(c) == 2)
+assert(a == 13)
+assert(b == "Hello!")
+assert(c["hello"] == 1)
+assert(c["bye"] == 3)
+assert(size(c) == 2)
 
-	let test_json2 = json_value(
-		{
-			"one": 1,
-			"two": 2,
-			"three": "three",
-			"four": [ 1, 2, 3, 4 ],
-			"five": { "alpha": 1000, "beta": 2000 },
-			"six": true,
-			"seven": false,
-		}
-	)
+let test_json2 = json_value(
+	{
+		"one": 1,
+		"two": 2,
+		"three": "three",
+		"four": [ 1, 2, 3, 4 ],
+		"five": { "alpha": 1000, "beta": 2000 },
+		"six": true,
+		"seven": false,
+	}
+)
+```
 
 Notice that JSON objects are more lax than Floyd: you can mix different types of values in the same object or array. Floyd is stricter: a vector can only hold one type of element, same with dictionaries.
 
@@ -742,15 +769,17 @@ Two types of comments:
 
 You can wrap many lines with "/\*" and "\*/" to make a big section of documentation or to disable many lines of code. You can nest comments, for example wrap a lot of code that already contains comments using /* ... */.
 
-	/*	This is a comment */
+```
+/*	This is a comment */
+```
 
 
 Everything between // and newline is a comment:
 
-	//	This is an end-of line comment
-	let a = "hello" //	This is an end of line comment.
-
-
+```
+//	This is an end-of line comment
+let a = "hello" //	This is an end of line comment.
+```
 
 
 # EXCEPTIONS
@@ -767,7 +796,7 @@ Serializing any Floyd value is a built in mechanism. It is always true-deep.
 **This is very central to Floyd -- values are core and they can easily be passed around, sent as messages, stored in files, copy-pasted from log or debugger into the source code.**
 
 
-##### JSON data shapes, escaping
+##### JSON DATA SHAPES, ESCAPING
 
 These are the different shapes a JSON can have in Floyd:
 
@@ -791,14 +820,17 @@ Different destinations have different limitations and escape machanisms and will
 #### FUNCTIONS
 Converting a floyd json\_value to a JSON string and back. The JSON-string can be directly read or written to a text file, sent via a protocol and so on.
 
-	string encode_json(json_value v)
-	json_value decode_json(string s)
+```
+string encode_json(json_value v)
+json_value decode_json(string s)
+```
 
 Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json\_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json\_value, using unflatten_from_json().
 
-	json_value flatten_to_json(any v)
-	any unflatten_from_json(json_value v)
-
+```
+json_value flatten_to_json(any v)
+any unflatten_from_json(json_value v)
+```
 
 - __encode_json()__
 - __decode_json()__
@@ -820,12 +852,14 @@ These functions are built into the language itself and are always available to y
 
 Returns the actual type of this value stores inside the json\_value. It can be one of the types supported by JSON.
 
-	typeid get_json_type(json_value v)
+```
+typeid get_json_type(json_value v)
+```
 
 This is how you check the type of JSON value and reads their different values.
 
-|Input						| Result 		| Int
-|---						| ---			|---
+|INPUT						| RESULT 		| INT
+|:---						|:---			|:---
 | json_value({"a": 1})		| json_object	| 1
 | json_value([1, 2, 3])		| json_array	| 2
 | json_value("hi")			| json_string	| 3
@@ -838,40 +872,40 @@ This is how you check the type of JSON value and reads their different values.
 Demo snippet, that checks type of a json\_value:
 
 ```
-	func string get_name(json_value value){
-		let t = get_json_type(value)
-		if(t == json_object){
-			return "json_object"
-		}
-		else if(t == json_array){
-			return "json_array"
-		}
-		else if(t == json_string){
-			return "json_string"
-		}
-		else if(t == json_number){
-			return "json_number"
-		}
-		else if(t == json_true){
-			return "json_true"
-		}
-		else if(t == json_false){
-			return "json_false"
-		}
-		else if(t == json_null){
-			return "json_null"
-		}
-		else {
-			assert(false)
-		}
+func string get_name(json_value value){
+	let t = get_json_type(value)
+	if(t == json_object){
+		return "json_object"
 	}
+	else if(t == json_array){
+		return "json_array"
+	}
+	else if(t == json_string){
+		return "json_string"
+	}
+	else if(t == json_number){
+		return "json_number"
+	}
+	else if(t == json_true){
+		return "json_true"
+	}
+	else if(t == json_false){
+		return "json_false"
+	}
+	else if(t == json_null){
+		return "json_null"
+	}
+	else {
+		assert(false)
+	}
+}
 	
-	assert(get_name(json_value({"a": 1, "b": 2})) == "json_object")
-	assert(get_name(json_value([1,2,3])) == "json_array")
-	assert(get_name(json_value("crash")) == "json_string")
-	assert(get_name(json_value(0.125)) == "json_number")
-	assert(get_name(json_value(true)) == "json_true")
-	assert(get_name(json_value(false)) == "json_false")
+assert(get_name(json_value({"a": 1, "b": 2})) == "json_object")
+assert(get_name(json_value([1,2,3])) == "json_array")
+assert(get_name(json_value("crash")) == "json_string")
+assert(get_name(json_value(0.125)) == "json_number")
+assert(get_name(json_value(true)) == "json_true")
+assert(get_name(json_value(false)) == "json_false")
 ```
 
 
@@ -883,8 +917,8 @@ This is how you modify a field of a struct, an element in a vector or string or 
 	let obj_b = update(obj_a, key, new_value)
 
 
-|Type		  	| Example						| Result |
-|---			|---							| ---
+|TYPE		  	| EXAMPLE						| RESULT |
+|:---			|:---							|:---
 | string		| update("hello", 3, 120)		| "helxo"
 | vector		| update([1,2,3,4], 2, 33)		| [1,2,33,4]
 | dictionary	| update({"a": 1, "b": 2, "c": 3}, "a", 11) | {"a":11,"b":2,"c":3}
@@ -894,8 +928,8 @@ This is how you modify a field of a struct, an element in a vector or string or 
 
 For dictionaries it can be used to add completely new elements too.
 
-|Type		  	| Example						| Result
-|---			|---							| ---
+|TYPE		  	| EXAMPLE						| RESULT
+|:---			|:---							|:---
 | dictionary	| update({"a": 1}, "b", 2] | {"a":1,"b":2}
 
 
@@ -908,10 +942,12 @@ TODO 1.0 - Update nested collections and structs.
 
 Returns the size of a collection -- the number of elements.
 
-	int size(obj)
+```
+int size(obj)
+```
 
-|Type		  		| Example					| Result
-|---				|---						| ---
+|TYPE		  		| EXAMPLE					| RESULT
+|:---				|:---						|:---
 | string			| size("hello")				| 5
 | vector			| size([1,2,3,4])			| 4
 | dictionary		| size({"a": 1, "b": })		| 2
@@ -926,10 +962,12 @@ Returns the size of a collection -- the number of elements.
 
 Searched for a value in a collection and returns its index or -1.
 
-	int find(obj, value)
+```
+int find(obj, value)
+```
 
-|Type		  	| Example						| Result |
-|---			|---							| ---
+|TYPE		  	| EXAMPLE						| RESULT |
+|:---			|:---							|:---
 | string		| find("hello", "o")			| 4
 | string		| find("hello", "x")			| -1
 | vector		| find([10,20,30,40], 30)		| 2
@@ -945,10 +983,12 @@ Searched for a value in a collection and returns its index or -1.
 
 Checks if the dictionary has an element with this key. Returns true or false.
 
-	bool exists(dict, string key)
+```
+bool exists(dict, string key)
+```
 
-|Type		  	| Example						| Result |
-|---			|---							| ---
+|TYPE		  	| EXAMPLE						| RESULT |
+|:---			|:---							|:---
 | string		| 								|
 | vector		| 								|
 | dictionary	| exists({"a":1,"b":2,"c":3), "b")	| true
@@ -964,9 +1004,9 @@ Checks if the dictionary has an element with this key. Returns true or false.
 
 Erase an element in a dictionary, as specified using its key.
 
-
-	dict erase(dict, string key)
-
+```
+dict erase(dict, string key)
+```
 
 
 
@@ -974,8 +1014,8 @@ Erase an element in a dictionary, as specified using its key.
 
 Appends an element to the end of a collection. A new collection is returned, the original unaffected.
 
-|Type		  	| Example						| Result |
-|---			|---							| ---
+|TYPE		  	| EXAMPLE						| RESULT |
+|:---			|:---							|:---
 | string		| push_back("hello", 120)		| hellox
 | vector		| push_back([1,2,3], 7)			| [1,2,3,7]
 | dictionary	| 								|
@@ -989,15 +1029,17 @@ Appends an element to the end of a collection. A new collection is returned, the
 
 This returns a range of elements from the collection.
 
-	string subset(string a, int start, int end)
-	vector subset(vector a, int start, int end)
+```
+string subset(string a, int start, int end)
+vector subset(vector a, int start, int end)
+```
 
 start: 0 or larger. If it is larger than the collection, it will be clipped to the size.
 end: 0 or larger. If it is larger than the collection, it will be clipped to the size.
 
 
-|Type		  	| Example						| Result |
-|---			|---							| ---
+|TYPE		  	| EXAMPLE						| RESULT |
+|:---			|:---							|:---
 | string		| subset("hello", 2, 4)			| ll
 | vector		| subset([10,20,30,40, 1, 3)	| [20,30]
 | dictionary	| 								|
@@ -1011,12 +1053,14 @@ end: 0 or larger. If it is larger than the collection, it will be clipped to the
 
 Replaces a range of a collection with the contents of another collection.
 
-	string replace(string a, int start, int end, string new)
-	vector replace(vector a, int start, int end, vector new)
+```
+string replace(string a, int start, int end, string new)
+vector replace(vector a, int start, int end, vector new)
+```
 
 
-|Type		  	| Example						| Result |
-|---			|---							| ---
+|TYPE		  	| EXAMPLE						| RESULT |
+|:---			|:---							|:---
 | string		|replace("hello", 0, 2, "bori")	| borillo
 | vector		|replace([1,2,3,4,5], 1, 4, [8, 9])	| [1,8,9,45]
 | dictionary	| 								|
@@ -1035,8 +1079,9 @@ Notice: by specifying the same index in *start* and *length* you will __insert__
 
 Return the type of its input value. The returned typeid-value is a complete Floyd type and can be stored, compared and so on.
 
-	typeid typeof(any)
-
+```
+typeid typeof(any)
+```
 
 
 
@@ -1122,7 +1167,7 @@ Here is the DAG for the complete syntax of Floyd.
 
 ## EXAMPLE BIND AND ASSIGNMENT STATEMENTS
 
-|Source		| Meaning
+|SOURCE		| MEANING
 |:---		|:---	
 | mutable int a = 10				| Allocate a mutable local int "a" and initialize it with 10
 | let int b = 11				| Allocate an immutable local int "b" and initialize it with 11
@@ -1142,7 +1187,7 @@ Here is the DAG for the complete syntax of Floyd.
 
 ## EXAMPLE RETURN STATEMENTS
 
-|Source		| Meaning
+|SOURCE		| MEANING
 |:---	|:---	
 | return 3						|
 | return myfunc(myfunc() + 3) |
@@ -1151,7 +1196,7 @@ Here is the DAG for the complete syntax of Floyd.
 
 ## EXAMPLE FUNCTION DEFINITION STATEMENTS
 
-|Source		| Meaning
+|SOURCE		| MEANING
 |:---	|:---	
 | func int f(string name){ return 13 |
 | func int print(float a) { ... }			|
@@ -1162,7 +1207,7 @@ Here is the DAG for the complete syntax of Floyd.
 
 ## EXAMPLE IF STATEMENTS
 
-|Source		| Meaning
+|SOURCE		| MEANING
 |:---	|:---	
 | if(true){ return 1000 } else { return 1001 } [
 
@@ -1170,7 +1215,7 @@ Here is the DAG for the complete syntax of Floyd.
 
 ## EXAMPLE OF STRUCT DEFINITION STATEMENTS
 
-|Source		| Meaning
+|SOURCE		| MEANING
 |:---	|:---	
 | struct mytype_t { float a float b } | 
 | struct a {} 						|
@@ -1183,7 +1228,7 @@ Here is the DAG for the complete syntax of Floyd.
 
 ## EXAMPLE EXPRESSIONS
 
-|Source		| Meaning
+|SOURCE		| MEANING
 |:---	|:---	
 | 0											|
 | 3											|
@@ -1212,7 +1257,7 @@ Here is the DAG for the complete syntax of Floyd.
 
 ## EXAMPLE TYPE DECLARATIONS
 
-|Source		| Meaning
+|SOURCE		| MEANING
 |:---	|:---	
 | bool								| Bool type
 | int								| Int type
