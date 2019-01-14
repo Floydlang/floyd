@@ -1406,7 +1406,7 @@ bc_value_t host__rename_fs_entry(interpreter_t& vm, const bc_value_t args[], int
 
 
 
-
+/*
 std::string GetTemporaryFile(const std::string& name){
 	//	char *tmpnam(char *str)
 	//	tempnam()
@@ -1430,7 +1430,7 @@ Example:
 	"/var/folders/kw/7178zwsx7p3_g10y7rp2mt5w0000gn/T/g10y/7178zwsxp3_g10y7rp2mt
 
 There is never a file extension. You could add one if you want too.
-
+*/
 
 
 

@@ -2,7 +2,7 @@
 
 # FLOYD SPEAK
 
-Floyd Speak is the programming language part of Floyd. It's an alternative to Java or Javascript or C++. Using Floyd Speak you write functions and data structures.
+Floyd Speak is the programming language part of Floyd. It's an alternative to Java and C++, Javascript and Python. Using Floyd Speak you write functions and data types. You make complex data structures, setup concurrency and parallelism and communicate with the world around your program.
 
 ![](floyd_speak_cheat_sheet.png)
 
@@ -33,104 +33,19 @@ These are the primitive data types built into the language itself. The goal is t
 Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [], etc.
 
 
-# TRUE DEEP
-
-True-deep is a Floyd term that means that all values and sub-values are always considered in operations in any type of nesting of structs and values and collections. This includes equality checks or assignment, for example.
-
-The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
-
-
-# CORE TYPE FEATURES
-
-These are features built into every type: integer, string, struct, dictionary, etc. They are true-deep.
-
-|Expression		| Explanation
-|---				|---	
-|__a = b__ 		| This true-deep copies the value b to the new name a.
-|__a == b__		| a exactly the same as b
-|__a != b__		| a different to b
-|__a < b__		| a smaller than b
-|__a <= b__ 		| a smaller or equal to b
-|__a > b__ 		| a larger than b
-|__a >= b__ 		| a larger or equal to b
-
-
 # SOURCE CODE FILES
 
 Floyd Speak files are always utf-8 files with no BOM. Their extension is ".floyd".
 
 
-# VALUES, VARIABLES AND CONSTANTS
+# CONCEPT: NO POINTERS
 
-All "variables" aka values are by immutable. Local variables can be mutable if you specify it.
+There are no pointers or references in Floyd. You copy values around deeply instead. Behind the curtains Floyd uses pointers extensively to make this fast.
 
-- Function arguments
-- Function local variables
-- Member variables of structs, etc.
-
-Floyd is statically typed, which means every variable only supports a specific type of value.
-
-When defining a variable you can often skip telling which type it is, since the type can be deduced by the Floyd compiler.
-
-Explicit
-
-```
-	let int x = 10
-```
-
-Implicit
-
-```
-	let y = 11
-```
+Removing the concept of pointers make programming easier since there are no dangling pointers, aliasing problems or defencive copying and other classic bug sources. It also makes it simpler for the runtime and compiler to generate extremely fast code.
 
 
-Example:
-
-```
-	int main(){
-		let a = "hello"
-		a = "goodbye"	//	Runtime error - you cannot change variable a.
-		return 3
-	}
-```
-
-You can use "mutable" to make a local variable changeable.
-
-```
-	int main(){
-		mutable a = "hello"
-		a = "goodbye"	//	Changes variable a to "goodbye".
-		return 3
-	}
-```
-
-# GLOBAL SCOPE
-
-Here you normally define functions, structs and global constants. The global scope can have almost any statement and they execute at program start, before main() is called. You don't even need a main function if you don't want it.
-
-
-??? Not true
-__main()__ This function is called by the host when program starts. You get the input arguments from the outside world (command line arguments etc) and you can return an integer to the outside.
-
-
-
-
-
-# SOFTWARE-SYSTEM KEYWORD
-
-This keyword is part of Floyd Systems -- a way to define how all the containers and components and processes are interfacting.
-
-	software-system {
-		"name": "My Arcade Game",
-		"desc": "Space shooter for mobile devices, with connection to a server.",
-		"containers": {}
-	}
-
-Read more about this in the Floyd Systems documentation
-
-
-# PURE FUNCTIONS
+# CONCEPT: PURE AND IMPURE FUNCTIONS
 
 Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants, never read or modify anything: not global variables, not by calling another, impure function. It's not possible to call a function with a set of arguments and later call it with the same argument and get a different result. A function like get_time() is impure.
 
@@ -182,7 +97,7 @@ This is a function that returns a function value:
 All arguments to a function are read-only -- there are no output arguments.
 
 
-# IMPURE FUNCTIONS
+### IMPURE FUNCTIONS
 
 You can tag a function to be impure using the "impure" keyword.
 
@@ -197,9 +112,103 @@ An impure function can call both pure and impure functions.
 
 Limit the amount of impure code!
 
-# GRAY PURE FUNCTIONS
+### GRAY PURE FUNCTIONS
 
 This is a function that has side effects or state -- but the calling functions cannot observe this so from their perspective it is pure. Examples are memory allocators and memory pools and logging program execution.
+
+
+# CONCEPT: TRUE DEEP
+
+True-deep is a Floyd term that means that all values and sub-values are always considered in operations in any type of nesting of structs and values and collections. This includes equality checks or assignment for example.
+
+The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
+
+These are features built into every type: integer, string, struct, dictionary:
+
+|Expression		| Explanation
+|---				|---	
+|__a = b__ 		| This true-deep copies the value b to the new name a.
+|__a == b__		| a exactly the same as b
+|__a != b__		| a different to b
+|__a < b__		| a smaller than b
+|__a <= b__ 		| a smaller or equal to b
+|__a > b__ 		| a larger than b
+|__a >= b__ 		| a larger or equal to b
+
+This also goes for print(), map(), to_string(), flatten_to_json(), send() etc.
+
+
+# CONCEPT: IMMUTABLE VALUES VS VARIABLES
+
+All values in Floyd are immutable -- you make new values based on previous values but you don't drectly modify old values. Internally Floyd uses clever mechansims to make this fast and avoids copying data too much. It's perfectly good to replace a character in a 3 GB long string and get a new 3 GB string as a result. Almost all of the characters will be stored only once.
+
+All "variables" aka values are by immutable. Local variables can be mutable if you specify it.
+
+
+- Function arguments
+- Function local variables
+- Member variables of structs, etc.
+
+Floyd is statically typed, which means every variable only supports a specific type of value.
+
+When defining a variable you can often skip telling which type it is, since the type can be deduced by the Floyd compiler.
+
+Explicit
+
+```
+	let int x = 10
+```
+
+Implicit
+
+```
+	let y = 11
+```
+
+
+Example:
+
+```
+	int main(){
+		let a = "hello"
+		a = "goodbye"	//	Runtime error - you cannot change variable a.
+		return 3
+	}
+```
+
+You can use "mutable" to make a local variable changeable.
+
+```
+	int main(){
+		mutable a = "hello"
+		a = "goodbye"	//	Changes variable a to "goodbye".
+		return 3
+	}
+```
+
+
+
+# CONCEPT: GLOBAL SCOPE
+
+Here you normally define functions, structs and global constants. The global scope can have almost any statement and they execute at program start. Simple programs can do without defining any functions at all.
+
+
+
+# CONCEPT: SOFTWARE-SYSTEM
+
+This keyword is part of Floyd Systems -- a way to define how all the containers and components and processes are interfacting.
+
+	software-system {
+		"name": "My Arcade Game",
+		"desc": "Space shooter for mobile devices, with connection to a server.",
+		"containers": {}
+	}
+
+Read more about this in the Floyd Systems documentation. It allows you setup concurrency.
+
+
+
+
 
 
 # EXPRESSIONS
@@ -208,6 +217,7 @@ Reference: http://www.tutorialspoint.com/cprogramming/c_operators.htm
 Comparisons are true-deep: they consider all members and also member structs and collections.
 
 ## Arithmetic Operators
+
 How to add and combine values:
 
 ```
@@ -219,6 +229,7 @@ How to add and combine values:
 ```
 
 ## Relational Operators
+
 Used to compare two values. The result is true or false:
 
 ```
@@ -231,6 +242,7 @@ Used to compare two values. The result is true or false:
 ```
 
 ## Logical Operators
+
 Used to compare two values. The result is true or false:
 
 ```
@@ -365,11 +377,9 @@ You can make string literals directly in the source code like this:
 
 	let a = "Hello, world!"
 
-Notice: You cannot use any escape characters, like in the C-language.
-
 All comparison expressions work, like a == b, a < b, a >= b, a != b and so on.
 
-You can access a random character in the string, using its integer position.
+You can access a random character in the string, using its integer position, where element 0 is the first character, 1 the second etc.
 
 	let a = "Hello"[1]
 	assert(a == "e")
@@ -381,6 +391,36 @@ You can append two strings together using the + operation.
 
 	let a = "Hello" + ", world!"
 	assert(a == "Hello, world!")
+
+
+### ESCAPE SEQUENCES
+
+String literals in Floyd code cannot contain any character, because that would make it impossible for the compiler to understand what is part of the string and what is the program code. Some special characters cannot be entered directly into string literals and you need to use a special trick, an escape sequence.
+
+You can use these escape characters in string literals by entering \n or \' or \" etc.
+
+|Escape sequence						| Result Character, as Hex		| ASCII meaning
+|---						| ---			|---
+| \a		| 0x07	| BEL, bell, alarm, \a
+| \b		| 0x08	| BS, backspace, \b
+| \f		| 0x0c	| FF, NP, form feed, \f
+| \n		| 0x0a	| Newline (Line Feed)
+| \r		| 0x0d	| Carriage Return
+| \t		| 0x09	| Horizontal Tab
+| \v		| 0x0b	| Vertical Tab
+| \\\\		| 0x5f	| Backslash
+| \'		| 0x27	| Single quotation mark
+| \\"		| 0x22	| Double quotation mark
+
+##### Examples
+
+|Code		| Output | Note
+|---			| --- | ---
+| print("hello") | hello
+| print("What does \\"blobb\\" mean?") | What does "blobb" mean? | Allows you to insert a double quotation mark into your string literal without ending the string literal itself.
+
+
+Floyd string literals do not support insert hex sequences or unicode code points.
 
 
 ##### CORE FUNCTIONS
@@ -397,14 +437,14 @@ You can append two strings together using the + operation.
 
 # VECTOR DATA TYPE
 
-A vector is a collection of values where you lookup the values using an index between 0 and (vector size - 1). The positions in the vector are called "elements". The elements are ordered. Finding an element at a position uses constant time. In other languages vectors are called "arrays" or even "lists".
+A vector is a collection of values where you lookup the values using an index between 0 and (vector size - 1). The items in a vector are called "elements". The elements are ordered. Finding an element at an index uses constant time. In other languages vectors are called "arrays" or even "lists".
 
 
 You can make a new vector and specify its elements directly, like this:
 
 	let a = [ 1, 2, 3]
 
-You can also calculate elements:
+You can also calculate its elements, they don't need to be constants:
 
 	let a = [ calc_pi(4), 2.1, calc_bounds() ]
 
@@ -439,7 +479,7 @@ You can append two vectors together using the + operation.
 
 # DICTIONARY DATA TYPE
 
-A collection that maps a key to a value. It is not sorted. Like a C++ map. 
+A collection of values where you identify the elemts using string keys. It is not sorted. In C++ you would use a std::map. 
 
 You make a new dictionary and specify its elements like this:
 
@@ -449,17 +489,17 @@ or shorter:
 
 	b = {"red": 0, "blue": 100,"green": 255}
 
-Dictionaries always use string-keys. When you specify the type of dictionary you must always include "string".
+Dictionaries always use string-keys. When you specify the type of dictionary you must always include "string". In the future other types of keys may be supported.
 
 	struct test {
-		{string: int} _my_dict
+		[string: int] _my_dict
 	}
 
 You can put any type of value into the dictionary (but not mix inside the same dictionary).
 
-Use [] to look up elements using a key. It throws an exception is the key not found. Use exists() first.
+Use [] to look up elements using a key. It throws an exception is the key not found. If you want to avoid that. check with exists() first.
 
-You copy dictionaries using = and all comparison expressions work.
+You copy dictionaries using = and all comparison expressions work, just like with strings and vectors.
 
 
 ##### CORE FUNCTIONS
@@ -474,15 +514,15 @@ You copy dictionaries using = and all comparison expressions work.
 
 # STRUCT DATA TYPE
 
-Structs are the central building block for composing data in Floyd. They are used in place of structs and classes in other programming languages. Structs are always values and immutable. They are still fast and compact: behind the curtains copied structs  shares state between them, even when partially modified.
+Structs are the central building block for composing data in Floyd. They are used in place of classes in other programming languages. Structs are always values and immutable. They are very fast and compact: behind the curtains copied structs shares state between them, even when partially modified.
 
 ##### Automatic features of every struct:
 
-- constructor -- this is the only function that can create a value of the struct. It always requires every struct member, in the order they are listed in the struct definition. Make explicit function that makes making values more convenient.
+- constructor -- this is the only function that can create a value of the struct. It always requires every struct member, in the order they are listed in the struct definition. Usually you create some functions that makes instancing a struct convenient, like make_black_color(), make_empty() etc.
 - destructor -- will destroy the value including member values, when no longer needed. There are no custom destructors.
-- Comparison operators: == != < > <= >= (this allows sorting too)
+- Comparison operators: == != < > <= >= (this allows sorting too).
 - Reading member values.
-- Modify member values
+- Modify member values.
 
 There is no concept of pointers or references or shared structs so there are no problems with aliasing or side effects caused by several clients modifying the same struct.
 
@@ -501,19 +541,19 @@ Example:
 
 ```
 	//	Make simple, ready-for use struct.
-	struct rect {
-		double width
-		double height
+	struct point {
+		double x
+		double y
 	}
 
 	//	Try the new struct:
 
-	let a = rect(0, 3)
-	assert(a.width == 0)
-	assert(a.height == 3)
+	let a = point(0, 3)
+	assert(a.x == 0)
+	assert(a.y == 3)
 
-	let b = rect(0, 3)
-	let c = rect(1, 3)
+	let b = point(0, 3)
+	let c = point(1, 3)
 
 	assert(a == a)
 	assert(a == b)
@@ -532,23 +572,23 @@ let b = update(a, member, value)
 
 ```
 	//	Make simple, ready-for use struct.
-	struct rect {
-		double width
-		double height
+	struct point {
+		double x
+		double y
 	}
 
-	let a = rect(0, 3)
+	let a = point(0, 3)
 
-	//	Nothing happens! Setting width to 100 returns us a new rect but we we don't keep it.
-	update(a,"width", 100)
-	assert(a.width == 0)
+	//	Nothing happens! Setting width to 100 returns us a new point but we we don't keep it.
+	update(a,"x", 100)
+	assert(a.x == 0)
 
 	//	Modifying a member creates a new instance, we assign it to b
-	let b = update(a,"width", 100)
+	let b = update(a,"x", 100)
 
 	//	Now we have the original, unmodified a and the new, updated b.
-	assert(a.width == 0)
-	assert(b.width == 100)
+	assert(a.x == 0)
+	assert(b.x == 100)
 ```
 
 This works with nested values too:
@@ -556,16 +596,16 @@ This works with nested values too:
 
 ```
 	//	Define an image-struct that holds some stuff, including a pixel struct.
-	struct image { string name; rect size }
+	struct image { string name; point size }
 
-	let a = image("Cat image.png", rect(512, 256))
+	let a = image("Cat image.png", point(512, 256))
 
-	assert(a.size.width == 512)
+	assert(a.size.x == 512)
 
 	//	Update the width-member inside the image's size-member. The result is a brand new image, b!
-	let b = update(a, "size.width", 100)
-	assert(a.size.width == 512)
-	assert(b.size.width == 100)
+	let b = update(a, "size.x", 100)
+	assert(a.size.x == 512)
+	assert(b.size.x == 100)
 ```
 
 
@@ -573,6 +613,8 @@ This works with nested values too:
 # PROTOCOL DATA TYPE
 
 TODO 1.0
+
+This defines a set of functions that serveral clients can implement differently. This introduced polymorphim into Floyd. Equivalent to inteface classes in other languages.
 
 Protocol member functions can be tagged "impure" which allows it to be implemented so it saves or uses state, modifies the world. There is no way to do these things in the implementation of pure protocol function memembers.
 
@@ -596,13 +638,15 @@ When you reference one of the built in primitive types by name, you are accessin
 	assert(to_string(typeid([1,2,3])) == "[int]")
 ```
 
-A typeid is a proper Floyd value: you can copy it, compare it, convert it to strings, store it in dictionaries or whatever.
+A typeid is a proper Floyd value: you can copy it, compare it, convert it to strings, store it in dictionaries or whatever. Since to_string() supports typeid, you can easily print out the exact layout of any type, including complex ones with nested structs and vectors etc.
 
 
 
 # JSON_VALUE DATA TYPE
 
-JSON is very central to Floyd. JSON is a way to store composite values in a tree shape in a simple and standardized way. Since Floyd mainly works with values this is a perfect match for serializing any Floyd value to text and back. It is built directly into the language as the default serialized format for Floyd values. It can be used for custom file format and protocol and to interface with other JSON-based systems. All structs also automatically are serializable to and from JSON automatically.
+Why JSON? JSON is very central to Floyd. Floyd is based on values (simple ones or entire data models as one value) JSON is a simple and standard way to store composite values in a tree shape in a simple and standardized way. It also makes it easy to serializing any Floyd value to text and back. JSON is built directly into the language as the default serialized format for Floyd values.
+
+It can be used for custom file format and protocol and to interface with other JSON-based systems. All structs also automatically are serializable to and from JSON automatically.
 
 JSON format is also used by the compiler and language itself to store intermediate Floyd program code, for all logging and for debugging features.
 
@@ -623,7 +667,7 @@ This value can contain any of the 7 JSON-compatible types:
 - false
 - null
 
-This is the only situation were Floyd supports null.
+Notice: This is the only situation were Floyd supports null. Floyd things null is a concept to avoid when possible.
 
 Notice that Floyd stores true/false as a bool type with the values true / false, not as two types called "true" and "false".
 
@@ -634,7 +678,7 @@ Notice that json\_value can contain an entire huge JSON file, with a big tree of
 
 ##### JSON LITERALS
 
-You can directly embed JSON inside source code file. Simple / no escaping needed. Just paste a snippet into the Floyd source code. Use this for test values. Round trip. Since the JSON code is not a string literal but actual Floyd syntax, there are not problems with escaping strings. The Floyd parser will create floyd strings, dictionaries and so on for the JSON data. Then it will create a json\_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown.
+You can directly embed JSON inside Floyd source code file. This is extremely simple - no escaping needed - just paste a snippet into the Floyd source code. Use this for test values. Round trip. Since the JSON code is not a string literal but actual Floyd syntax, there are not problems with escaping strings. The Floyd parser will create floyd strings, dictionaries and so on for the JSON data. Then it will create a json\_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown.
 
 This all means you can write Floyd code that at runtime creates all or parts of a composite JSON value. Also: you can nest JSONs in each other.
 
@@ -642,7 +686,7 @@ Example JSON:
 
 	let json_value a = 13
 	let json_value b = "Hello!"
-	let json_value c = {"hello": 1, "bye": 3}
+	let json_value c = { "hello": 1, "bye": 3 }
 	let json_value d = { "pigcount": 3, "pigcolor": "pink" }
 
 	assert(a == 13)
@@ -673,6 +717,8 @@ Returns the actual type of this value stores inside the json\_value. It can be o
 
 	typeid get_json_type(json_value v)
 
+This needs to be queried at runtime since JSON is dynamically typed.
+
 
 ##### CORE FUNCTIONS
 
@@ -694,7 +740,7 @@ Use comments to write documentation, notes or explanations in the code. Comments
 Two types of comments:
 
 
-You can wrap many lines with "/*...*/" to make a big section of documentation or disable many lines of code. You can nest comments, for example wrap a lot of code with existing comments with /* ... */ to disable it.
+You can wrap many lines with "/\*" and "\*/" to make a big section of documentation or to disable many lines of code. You can nest comments, for example wrap a lot of code that already contains comments using /* ... */.
 
 	/*	This is a comment */
 
@@ -725,24 +771,24 @@ Serializing any Floyd value is a built in mechanism. It is always true-deep.
 
 These are the different shapes a JSON can have in Floyd:
 
-- Floyd value: a normal Floyd value - struct or a vector or a number etc.
+1. Floyd value: a normal Floyd value - struct or a vector or a number etc. Stored in RAM.
 
-- json\_value: data is JSON compatible, stored in the 7 different value types supported by json\_value. It holds one JSON value or a JSON object or a JSON array, that in turn can hold other json\_value:s.
+2. json\_value: data is JSON compatible, stored in RAM the 7 different value types supported by json\_value. It holds one JSON value or a JSON object or a JSON array, that in turn can hold other json\_value:s.
 
-- JSON-script string: JSON data encoded as a string of characters, as stored in a text file.
+3. JSON-script string: JSON data encoded as a string of characters, as stored in a text file.
 
 	Example string: {"name":"John", "age":31, "city":"New York"}
 
 	It contains quotation characters, question mark characters, new lines etc.
 
-- Escaped string: the string is simplified to be stuffed as a string snippet into some restricted format, like inside a parameter in a URL, as a string-literal inside another JSON or inside a REST command.
+4. Escaped string: the string is simplified to be stuffed as a string snippet into some restricted format, like inside a parameter in a URL, as a string-literal inside another JSON or inside a REST command.
 
-	Example string: {\"name\":\"John\", \"age\":31, \"city\":\"New York\"}
+	Example string: {\\"name\":\\"John\", \\"age\\":31, \\"city\\":\\"New York\\"}
 
 Different destinations have different limitations and escape machanisms and will need different escape functions. This is not really a JSON-related issue, more a URL, REST question.
 
 
-##### FUNCTIONS
+#### FUNCTIONS
 Converting a floyd json\_value to a JSON string and back. The JSON-string can be directly read or written to a text file, sent via a protocol and so on.
 
 	string encode_json(json_value v)
@@ -764,37 +810,9 @@ Converts any Floyd value, (including any type of nesting of custom structs, coll
 
 
 
+# BUILT-IN FEATURES
 
-# BUILT-IN FUNCTIONS
-
-These functions are built into the language and are always available to your code. They are all pure so can be used in pure functions.
-
-
-
-## assert()
-
-Used this to check your code for programming errors, and check the inputs of your function for miss use by its callers.
-
-	assert(bool)
-
-
-If the expression evaluates to false, the program will log to the output, then be aborted via an exception.
-
-
-
-## to_string()
-
-Converts its input to a string. This works with any type of values. It also works with types, which is useful for debugging.
-
-	string to_string(any)
-
-You often use this function to convert numbers to strings.
-
-
-
-## to\_pretty\_string()
-
-Converts its input to a string of JSON data that is formatted nicely with indentations. It works with any Floyd value.
+These functions are built into the language itself and are always available to your code. They are all pure so can be used in pure functions.
 
 
 
@@ -903,6 +921,7 @@ Returns the size of a collection -- the number of elements.
 
 
 
+
 ## find()
 
 Searched for a value in a collection and returns its index or -1.
@@ -918,6 +937,7 @@ Searched for a value in a collection and returns its index or -1.
 | struct		|								|
 | json_value:array	|							|
 | json_value:object	| 							|
+
 
 
 
@@ -939,12 +959,15 @@ Checks if the dictionary has an element with this key. Returns true or false.
 
 
 
+
 ## erase()
 
 Erase an element in a dictionary, as specified using its key.
 
 
 	dict erase(dict, string key)
+
+
 
 
 ## push_back()
@@ -1007,587 +1030,12 @@ Notice: by specifying the same index in *start* and *length* you will __insert__
 
 
 
-## map(), filter(), reduce()
-
-TODO POC: Implement
-
-Expose possible parallelism of pure function, like shaders, at the code level (not declarative). The supplied function must be pure.
-
-
-
-## supermap()
-
-TODO 1.0
-
-	[int:R] supermap(tasks: [T, [int], f: R (T, [R]))
-
-This function runs a bunch of tasks with dependencies between them. When supermap() returns, all tasks have been executed.
-
-- Tasks can call blocking functions or impure functions. This makes the supermap() call impure too.
-- Tasks cannot generate new tasks.
-- A task *can* call supermap.
-- Task will not start until all its dependencies have been finished.
-- There is no way for any code to observe partially executed supermap(). It's done or not.
-
-- **tasks**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The indexes are the indexes into the tasks-vector.
-
-- **f**: this is your function that processes one T and returns a result R. The function must not depend on the order in which tasks execute. When f is called, all the tasks dependency tasks have already been executed and you get their results in [R].
-
-- **result**: a vector with one element for each element in the tasks-argument. The order of the elements are undefined. The int specifies which task, the R is its result.
-
-
-
-Notice: your function f can send messages to a clock — this means another clock can start consuming results while supermap() is still running.
-
-Notice: using this function exposes potential for parallelism.
-
-
-[//]: # (???)
-
-IDEA: Make this a two-step process. First analyze the tasks into an execution description. Then use that description to run the tasks. This allows grouping small tasks into lumps. Allow you to reuse the dependency graph but tag some tasks NOP. This lets you keep the execution description for next time, if tasks are the same. Also lets you inspect the execution description and improve it or create one for scratch.
-
-
 
 ## typeof()
 
 Return the type of its input value. The returned typeid-value is a complete Floyd type and can be stored, compared and so on.
 
 	typeid typeof(any)
-
-
-
-## encode_json()
-
-Pack a JSON value to a JSON script string, ready to write to a file, send via protocol etc. The string is unescaped.
-
-	string encode_json(json_value v)
-
-The result is a valid JSON script string that can be handed to another system to be unpacked.
-
-??? Rename to jsonvalue_to_script()
-
-
-## decode_json()
-
-Make a new Floyd JSON value from a JSON-script string. If the string is malformed, exceptions will be thrown. The string is unescaped.
- 
-	json_value decode_json(string s)
-
-??? Rename to script_to_jsonvalue()
-
-
-## flatten\_to_json()
-
-	json_value flatten_to_json(any v)
-
-??? Rename to value_to_jsonvalue()
-
-
-## unflatten\_from_json()
-
-	any unflatten_from_json(json_value v)
-
-
-??? Rename to jsonvalue_to_value()
-
-
-
-
-
-# CORE BUILT-IN WORLD FUNCTIONS
-
-These are built in primitives you can always rely on being available.
-
-They are used to interact with the world around your program and communicate with other Floyd green-processes.
-
-**They are not pure.**
-
-These functions can only be called at the container level, not in pure Floyd code.
-
-
-
-## print()
-
-This outputs one line of text to the default output of the application. It can print any type of value. If you want to compose output of many parts you need to convert them to strings and add them. Also works with types, like a struct-type.
-
-	print(any)
-
-
-| Example										| Result |
-|---											| ---
-| print(3)										| 3
-| print("shark")								| shark
-| print("Number four: " + to_string(4))			| Number four: 4
-| print(int)									| int
-| print([int])									| [int]
-| print({string: double})						| {string:double}
-| print([7, 8, 9])								| [7, 8, 9]
-| print({"a": 1})								| {"a": 1}
-| print(json_value("b"))						| b
-| print(json_value(5.3))						| 5.3
-| print(json_value({"x": 0, "y": -1}))			| {"a": 0, "b": -1}
-| print(json_value(["q", "u", "v"]))			| ["q", "u", "v"]
-| print(json_value(true))						| true
-| print(json_value(false))						| false
-| print(json_value(null))						| null
-
-
-
-## send()
-
-Sends a message to the inbox of a Floyd green process, possibly your own process.
-
-The process may run on a different OS thread but send() is thread safe.
-
-	send(string process_key, json_value message) impure
-
-
-
-## get\_time\_of\_day()
-
-Returns the computer's realtime clock, expressed in the number of milliseconds since system start. Useful to measure program execution. Sample get_time_of_day() before and after execution and compare them to see duration.
-
-	int get_time_of_day() impure
-
-
-
-
-
-
-
-# WORLD FILE SYSTEM FUNCTIONS
-
-These functions allow you to access the OS file system. They are all impure. Temporary files are sometimes used to make the functions revertable on errors.
-
-Floyd uses unix-style paths in all its APIs. It will convert these to native paths with accessing the OS.
-
-
-
-
-
-
-
-
-## read\_text\_file()
-
-Reads a text file from the file system and returns it as a string.
-
-	string read_text_file(string abs_path) impure
-
-Throws exception if file cannot be found or read.
-
-
-## write\_text\_file()
-
-Write a string to the file system as a text file. Will create any missing directories in the absolute path.
-
-	void write_text_file(string abs_path, string data) impure
-
-
-
-## get\_directory\_entries_shallow() and get\_directory\_entries\_deep()
-
-Returns a vector of all the files and directories found at the absolute path.
-
-	struct directory_entry_t {
-		string type	//	"dir" or "file"
-		string name
-		string abs_parent_path
-	}
-	
-	[directory_entry_t] get_directory_entries_shallow(string abs_path) impure
-
-get_directory_entries_deep() works the same way, but will also traverse each found directory. Contents of sub-directories will be also be prefixed by the sub-directory names. All path names are relative to the input directory - not absolute to file system.
-
-	[directory_entry_t] get_directory_entries_deep(string abs_path) impure
-
-
-
-## get\_entry\_info()
-
-Information about an entry in the file system. Can be a file or a directory.
-
-	struct directory_entry_info_t {
-		string type	//	"file" or "dir"
-		string name
-		string abs_parent_path
-
-		string creation_date
-		string modification_date
-		int file_size
-	}
-	
-	directory_entry_info_t get_entry_info(string abs_path) impure
-
-
-## get\_fs\_environment()
-
-Returns important root locations in the host computer's file system.
-
-Notice: some of these directories can change while your program runs.
-
-```
-	struct fs_environment_t {
-		string home_dir
-		string documents_dir
-		string desktop_dir
-
-		string hidden_persistence_dir
-		string preferences_dir
-		string cache_dir
-		string temp_dir
-
-		string executable_dir
-	}
-```
-
-```
-fs_environment_t get_fs_environment() impure
-```
-
-
-##### home_dir
-User's home directory. You don't normally store anything in this directory, but in one of the sub directories.
-
-Example: "/Users/bob"
-
-- User sees these files.
-
-##### documents_dir
-User's documents directory.
-
-Example: "/Users/bob/Documents"
-
-- User sees these files.
-
-##### desktop_dir
-User's desktop directory.
-
-Example: "/Users/bob/Desktop"
-
-- User sees these files.
-
-##### hidden\_persistence\_dir
-Current logged-in user's Application Support directory.
-App creates data here and manages it on behalf of the user and can include files that contain user data.
-
-Example: "/Users/marcus/Library/Application Support"
-
-- Notice that this points to a directory shared by many applications: store your data in a sub directory!
-- User don't see these files.
-
-##### preferences_dir
-Current logged-in user's preference directory.
-
-Example: "/Users/marcus/Library/Preferences"
-
-- Notice that this points to a directory shared by many applications: store your data in a sub directory!
-- User don't see these files.
-
-##### cache_dir
-Current logged-in user's cache directory.
-
-Example: "/Users/marcus/Library/Caches"
-
-- Notice that this points to a directory shared by many applications: store your data in a sub directory!
-- User don't see these files.
-
-##### temp_dir
-Temporary directory. Will be erased soon. Don't expect to find your files here next time your program starts or in 3 minutes.
-
-- Notice that this points to a directory shared by many applications: store your data in a sub directory!
-- User don't see these files.
-
-##### executable_dir
-Directory where your executable or bundle lives. This is usually read-only - you can't modify anything in this directory. You might use this path to read resources built into your executable or Mac bundle.
-
-Example: "/Users/bob/Applications/MyApp.app/"
-
-
-
-## does\_entry\_exist()
-
-Checks if there is a file or directory at specified path.
-
-	bool does_entry_exist(string abs_path) impure
-
-
-## create\_directories\_deep()
-
-Creates a directory at specified path. If the parents directories don't exist, then those will be created too.
-
-	void create_directories_deep(string abs_path) impure
-
-
-## delete\_fs\_entry\_deep()
-
-Deletes a file or directory. If the entry has children those are deleted too - delete folder also deletes is contents.
-
-	void delete_fs_entry_deep(string abs_path) impure
-
-
-## rename\_fs\_entry()
-
-Renames a file or directory. If it is a directory, its contents is unchanged.
-After this call completes, abs_path no longer references an entry.
-
-	void rename_fs_entry(string abs_path, string n) impure
-
-Example:
-
-Before:
-	In the file system: "/Users/bob/Desktop/original_name.txt"
-	abs_path: "/Users/bob/Desktop/original_name.txt"
-	n: "name_name.txt"
-
-After:
-	world: "/Users/bob/Desktop/name_name.txt"
-
-
-
-
-# FUTURE -- BUILT-IN WORLD FUNCTIONS
-
-## probe()
-
-TODO POC
-
-	probe(value, description_string, probe_tag) impure
-
-In your code you write probe(my_temp, "My intermediate value", "key-1") to let clients log my_temp. The probe will appear as a hook in tools and you can chose to log the value and make stats and so on. Argument 2 is a descriptive name, argument 3 is a string-key that is scoped to the function and used to know if several probe()-statements log to the same signal or not.
-
-
-
-## select()
-
-TBD POC
-
-Called from a process function to read its inbox. It will block until a message is received or it times out.
-
-
-
-
-
-# BUILT-IN BASIC TYPES
-A bunch of common data types are built into Floyd. This is to make composition easier and avoid the noise of converting all simple types between different component's own versions.
-
-
-
-## cpu\_address_t
-
-64-bit integer used to specify memory addresses and binary data sizes.
-
-	typedef int cpu_address_t
-	typedef cpu_address_t size_t
-
-
-## file\_pos\_t
-
-64-bit integer for specifying positions inside files.
-
-	typedef int file_pos_t
-
-
-## time\_ms\_t
-
-64-bit integer counting miliseconds.
-
-	typedef int64_t time_ms_t
-
-
-
-
-## uuid_t
-
-A universally unique identifier (UUID) is a 128-bit number used to identify information in computer systems. The term globaly unique identifier (GUID) is also used.
-
-	struct uuid_t {
-		int high64
-		int low64
-	}
-
-
-## ip\_address\_t
-
-Internet IP adress in using IPv6 128-bit number.
-
-	struct ip_address_t {
-		int high64
-		int low_64_bits
-	}
-
-
-## url_t
-
-Internet URL.
-
-	struct url_t {
-		string absolute_url
-	}
-
-
-## url\_parts\_t {}
-
-This struct contains an URL separate to its components.
-
-	struct url_parts_t {
-		string protocol
-		string domain
-		string path
-		[string:string] query_strings
-		int port
-	}
-
-Example 1:
-
-	url_parts_t("http", "example.com", "path/to/page", {"name": "ferret", "color": "purple"})
-
-	Output: "http://example.com/path/to/page?name=ferret&color=purple"
-
-
-## quick\_hash\_t
-
-64-bit hash value used to speed up lookups and comparisons.
-
-	struct quick_hash_t {
-		int hash
-	}
-
-
-## key_t
-
-Efficent keying using 64-bit hash instead of a string. Hash can often be computed from string key at compile time.
-
-	struct key_t {
-		quick_hash_t hash
-	}
-
-
-## date_t
-
-Stores a UDT.
-
-	struct date_t {
-		string utc_date
-	}
-
-
-## sha1_t
-
-128-bit SHA1 hash number.
-
-	struct sha1_t {
-		string ascii40
-	}
-
-
-## relative\_path\_t 
-
-File path, relative to some other path.
-
-	struct relative_path_t {
-		string relative_path
-	}
-
-
-## absolute\_path\_t
-
-Absolute file path, from root of file system. Can specify the root, a directory or a file.
-
-	struct absolute_path_t {
-		string absolute_path
-	}
-
-
-## binary_t
-
-Raw binary data, 8bit per byte.
-
-	struct binary_t {
-		string bytes
-	}
-
-
-## text\_location\_t
-
-Specifies a position in a text file.
-
-	struct text_location_t {
-		absolute_path_t source_file
-		int line_number
-		int pos_in_line
-	}
-
-
-## seq_t
-
-This is the neatest way to parse strings without using an iterator or indexes.
-
-	struct seq_t {
-		string str
-		size_t pos
-	}
-
-When you consume data at start of seq_t you get a *new* seq_t that holds
-the rest of the string. No side effects.
-
-This is a magic string were you can easily peek into the beginning and also get a new string
-without the first character(s).
-
-It shares the actual string data behind the curtains so is efficent.
-
-
-
-## text_t
-
-Unicode text. Opaque data -- only use library functions to process text_t. Think of text_t and Uncode text more like a PDF.
-
-	struct text_t {
-		binary_t data
-	}
-
-
-## text\_resource\_id
-
-How you specify text resources.
-
-	struct text_resource_id {
-		quick_hash_t id
-	}
-
-
-## image\_id\_t
-
-How you specify image resources.
-
-	struct image_id_t {
-		int id
-	}
-
-
-## color_t
-
-Color. If you don't need alpha, set it to 1.0. Components are normally min 0.0 -- max 1.0 but you can use other ranges.
-
-	struct color_t {
-		float red
-		float green
-		float blue
-		float alpha
-	}
-
-
-## vector2_t
-
-2D position in cartesian coordinate system. Use to specify position on the screen and similar.
-
-	struct vector2_t {
-		float x
-		float y
-	}
-
-
-
 
 
 

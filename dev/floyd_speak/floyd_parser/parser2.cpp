@@ -299,7 +299,7 @@ Escape sequence	Hex value in ASCII	Character represented
 \uhhhhnote 4	none	Unicode code point below 10000 hexadecimal
 */
 
-
+//??? add tests for this.
 char expand_one_char_escape(const char ch2){
 	switch(ch2){
 		case 'a':
@@ -317,13 +317,11 @@ char expand_one_char_escape(const char ch2){
 		case 'v':
 			return 0x0b;
 		case '\\':
-			return 0xfc;
+			return 0x5c;
 		case '\'':
 			return 0x27;
 		case '"':
 			return 0x22;
-		case '?':
-			return 0x3f;
 		default:
 			return 0;
 	}
@@ -364,24 +362,42 @@ pair<std::string, seq_t> parse_string_literal(const seq_t& s){
 	return { result, pos.rest() };
 }
 
-QUARK_UNIT_TESTQ("parse_string_literal()", ""){
+QUARK_UNIT_TEST("", "parse_string_literal()", "", ""){
 	quark::ut_compare(parse_string_literal(seq_t("\"\" xxx")), pair<std::string, seq_t>("", seq_t(" xxx")));
 }
 
-QUARK_UNIT_TESTQ("parse_string_literal()", ""){
+QUARK_UNIT_TEST("", "parse_string_literal()", "", ""){
 	quark::ut_compare(parse_string_literal(seq_t("\"hello\" xxx")), pair<std::string, seq_t>("hello", seq_t(" xxx")));
 }
 
-QUARK_UNIT_TESTQ("parse_string_literal()", ""){
+QUARK_UNIT_TEST("", "parse_string_literal()", "", ""){
 	quark::ut_compare(parse_string_literal(seq_t("\".5\" xxx")), pair<std::string, seq_t>(".5", seq_t(" xxx")));
 }
 
-QUARK_UNIT_TESTQ("parse_string_literal()", ""){
+QUARK_UNIT_TEST("", "parse_string_literal()", "", ""){
 	quark::ut_compare(parse_string_literal(seq_t(
 		R"abc("hello \"Bob\"!" xxx)abc"
 	)), pair<std::string, seq_t>("hello \"Bob\"!", seq_t(" xxx")));
 }
 
+QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \t", ""){
+	quark::ut_compare(parse_string_literal(seq_t(R"___("\t" xxx)___")), pair<std::string, seq_t>("\t", seq_t(" xxx")));
+}
+QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \\", ""){
+	quark::ut_compare(parse_string_literal(seq_t(R"___("\\" xxx)___")), pair<std::string, seq_t>("\\", seq_t(" xxx")));
+}
+QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \n", ""){
+	quark::ut_compare(parse_string_literal(seq_t(R"___("\n" xxx)___")), pair<std::string, seq_t>("\n", seq_t(" xxx")));
+}
+QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \r", ""){
+	quark::ut_compare(parse_string_literal(seq_t(R"___("\r" xxx)___")), pair<std::string, seq_t>("\r", seq_t(" xxx")));
+}
+QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \"", ""){
+	quark::ut_compare(parse_string_literal(seq_t(R"___("\"" xxx)___")), pair<std::string, seq_t>("\"", seq_t(" xxx")));
+}
+QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \'", ""){
+	quark::ut_compare(parse_string_literal(seq_t(R"___("\'" xxx)___")), pair<std::string, seq_t>("\'", seq_t(" xxx")));
+}
 
 std::pair<constant_value_t, seq_t> parse_numeric_constant(const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());

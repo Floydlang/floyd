@@ -82,7 +82,8 @@ The details on Tweakers, probes and Floyd Studio are on the drawing board.
 
 |Item				| Feature					| Link
 |:---				|:---					|:---
-| **Floyd Speak Manual**		|				|[Floyd Speak Manual](floyd_speak.md)
+| **Floyd Speak Manual**		|Details the language itself				|[Floyd Speak Manual](floyd_speak.md)
+| **Floyd Speak Core Library Manual**		|Details the must fundametal functions and types				|[Floyd Speak Core Library Manual](floyd_speak_corelibs.md)
 | **Floyd Speak compiler**		|Compiles Floyd Speak source code to byte code.
 | **Floyd Speak interpreter**	|Runs your programs at approx. 7-15% of native speeds.
 | **Floyd Systems Manual**		|				|[Floyd Systems Manual](floyd_systems.md)

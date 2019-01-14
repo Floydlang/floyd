@@ -1,0 +1,603 @@
+# FLOYD SPEAK CORE LIBRARY
+
+This is a small set of functions and types you can rely on always being available to your Floyd programs.
+
+Many of the functions are about converting data back and forth. To JSON, Floyd types, to the file system and to the Internet.
+
+An important distinction is between pure function and impure functions. Those have separate sections.
+
+
+
+# PURE FUNCTIONS
+
+
+## assert()
+
+Used this to check your code for programming errors, and check the inputs of your function for miss use by its callers.
+
+	assert(bool)
+
+
+If the expression evaluates to false, the program will log to the output, then be aborted via an exception.
+
+
+
+## to_string()
+
+Converts its input to a string. This works with any type of values. It also works with types, which is useful for debugging.
+
+	string to_string(any)
+
+You often use this function to convert numbers to strings.
+
+
+
+## to\_pretty\_string()
+
+Converts its input to a string of JSON data that is formatted nicely with indentations. It works with any Floyd value.
+
+
+
+## encode_json()
+
+Pack a JSON value to a JSON script string, ready to write to a file, send via protocol etc. The string is unescaped.
+
+	string encode_json(json_value v)
+
+The result is a valid JSON script string that can be handed to another system to be unpacked.
+
+??? Rename to jsonvalue_to_script()
+
+
+## decode_json()
+
+Make a new Floyd JSON value from a JSON-script string. If the string is malformed, exceptions will be thrown. The string is unescaped.
+ 
+	json_value decode_json(string s)
+
+??? Rename to script_to_jsonvalue()
+
+
+## flatten\_to_json()
+
+	json_value flatten_to_json(any v)
+
+??? Rename to value_to_jsonvalue()
+
+
+## unflatten\_from_json()
+
+	any unflatten_from_json(json_value v)
+
+
+??? Rename to jsonvalue_to_value()
+
+
+
+## map(), filter(), reduce()
+
+TODO POC: Implement
+
+IMPORTANT: Thsese functions *also* exposed parallelism opportunities that allows the Floyd runtime to process each element on a separate hardware code, like shaders works in a graphics card. The supplied function must be pure.
+
+
+
+## supermap()
+
+TODO 1.0
+
+	[int:R] supermap(tasks: [T, [int], f: R (T, [R]))
+
+This function runs a bunch of tasks with dependencies between them. When supermap() returns, all tasks have been executed.
+
+- Tasks can call blocking functions or impure functions. This makes the supermap() call impure too.
+- Tasks cannot generate new tasks.
+- A task *can* call supermap.
+- Task will not start until all its dependencies have been finished.
+- There is no way for any code to observe partially executed supermap(). It's done or not.
+
+- **tasks**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The indexes are the indexes into the tasks-vector.
+
+- **f**: this is your function that processes one T and returns a result R. The function must not depend on the order in which tasks execute. When f is called, all the tasks dependency tasks have already been executed and you get their results in [R].
+
+- **result**: a vector with one element for each element in the tasks-argument. The order of the elements are undefined. The int specifies which task, the R is its result.
+
+
+Notice: your function f can send messages to a clock — this means another clock can start consuming results while supermap() is still running.
+
+Notice: using this function exposes potential for parallelism.
+
+
+[//]: # (???)
+
+IDEA: Make this a two-step process. First analyze the tasks into an execution description. Then use that description to run the tasks. This allows grouping small tasks into lumps. Allow you to reuse the dependency graph but tag some tasks NOP. This lets you keep the execution description for next time, if tasks are the same. Also lets you inspect the execution description and improve it or create one for scratch.
+
+
+
+
+# IMPURE FUNCTIONS
+
+These are built in primitives you can always rely on being available. They are used to interact with the world around your program and communicate with other Floyd green-processes.
+
+**They are not pure.**
+
+These functions can only be called at the container level, not in pure Floyd code.
+
+
+## print()
+
+This outputs one line of text to the default output of the application. It can print any type of value. If you want to compose output of many parts you need to convert them to strings and add them. Also works with types, like a struct-type.
+
+	print(any)
+
+
+| Example										| Result |
+|---											| ---
+| print(3)										| 3
+| print("shark")								| shark
+| print("Number four: " + to_string(4))			| Number four: 4
+| print(int)									| int
+| print([int])									| [int]
+| print({string: double})						| {string:double}
+| print([7, 8, 9])								| [7, 8, 9]
+| print({"a": 1})								| {"a": 1}
+| print(json_value("b"))						| b
+| print(json_value(5.3))						| 5.3
+| print(json_value({"x": 0, "y": -1}))			| {"a": 0, "b": -1}
+| print(json_value(["q", "u", "v"]))			| ["q", "u", "v"]
+| print(json_value(true))						| true
+| print(json_value(false))						| false
+| print(json_value(null))						| null
+
+
+
+## send()
+
+Sends a message to the inbox of a Floyd green process, possibly your own process.
+
+The process may run on a different OS thread but send() is thread safe.
+
+	send(string process_key, json_value message) impure
+
+
+
+## get\_time\_of\_day()
+
+Returns the computer's realtime clock, expressed in the number of milliseconds since system start. Useful to measure program execution. Sample get_time_of_day() before and after execution and compare them to see duration.
+
+	int get_time_of_day() impure
+
+
+
+
+
+# FILE SYSTEM FUNCTIONS
+
+These functions allow you to access the OS file system. They are all impure. Temporary files are sometimes used to make the functions revertable on errors.
+
+Floyd uses unix-style paths in all its APIs. It will convert these to native paths with accessing the OS.
+
+
+
+
+
+## read\_text\_file()
+
+Reads a text file from the file system and returns it as a string.
+
+	string read_text_file(string abs_path) impure
+
+Throws exception if file cannot be found or read.
+
+
+
+## write\_text\_file()
+
+Write a string to the file system as a text file. Will create any missing directories in the absolute path.
+
+	void write_text_file(string abs_path, string data) impure
+
+
+
+## get\_directory\_entries_shallow() and get\_directory\_entries\_deep()
+
+Returns a vector of all the files and directories found at the absolute path.
+
+	struct directory_entry_t {
+		string type	//	"dir" or "file"
+		string name
+		string abs_parent_path
+	}
+	
+	[directory_entry_t] get_directory_entries_shallow(string abs_path) impure
+
+get_directory_entries_deep() works the same way, but will also traverse each found directory. Contents of sub-directories will be also be prefixed by the sub-directory names. All path names are relative to the input directory - not absolute to file system.
+
+	[directory_entry_t] get_directory_entries_deep(string abs_path) impure
+
+
+
+## get\_entry\_info()
+
+Information about an entry in the file system. Can be a file or a directory.
+
+	struct directory_entry_info_t {
+		string type	//	"file" or "dir"
+		string name
+		string abs_parent_path
+
+		string creation_date
+		string modification_date
+		int file_size
+	}
+	
+	directory_entry_info_t get_entry_info(string abs_path) impure
+
+
+## get\_fs\_environment()
+
+Returns important root locations in the host computer's file system.
+
+Notice: some of these directories can change while your program runs.
+
+```
+	struct fs_environment_t {
+		string home_dir
+		string documents_dir
+		string desktop_dir
+
+		string hidden_persistence_dir
+		string preferences_dir
+		string cache_dir
+		string temp_dir
+
+		string executable_dir
+	}
+```
+
+```
+fs_environment_t get_fs_environment() impure
+```
+
+
+##### home_dir
+User's home directory. You don't normally store anything in this directory, but in one of the sub directories.
+
+Example: "/Users/bob"
+
+- User sees these files.
+
+##### documents_dir
+User's documents directory.
+
+Example: "/Users/bob/Documents"
+
+- User sees these files.
+
+##### desktop_dir
+User's desktop directory.
+
+Example: "/Users/bob/Desktop"
+
+- User sees these files.
+
+##### hidden\_persistence\_dir
+Current logged-in user's Application Support directory.
+App creates data here and manages it on behalf of the user and can include files that contain user data.
+
+Example: "/Users/marcus/Library/Application Support"
+
+- Notice that this points to a directory shared by many applications: store your data in a sub directory!
+- User don't see these files.
+
+##### preferences_dir
+Current logged-in user's preference directory.
+
+Example: "/Users/marcus/Library/Preferences"
+
+- Notice that this points to a directory shared by many applications: store your data in a sub directory!
+- User don't see these files.
+
+##### cache_dir
+Current logged-in user's cache directory.
+
+Example: "/Users/marcus/Library/Caches"
+
+- Notice that this points to a directory shared by many applications: store your data in a sub directory!
+- User don't see these files.
+
+##### temp_dir
+Temporary directory. Will be erased soon. Don't expect to find your files here next time your program starts or in 3 minutes.
+
+- Notice that this points to a directory shared by many applications: store your data in a sub directory!
+- User don't see these files.
+
+##### executable_dir
+Directory where your executable or bundle lives. This is usually read-only - you can't modify anything in this directory. You might use this path to read resources built into your executable or Mac bundle.
+
+Example: "/Users/bob/Applications/MyApp.app/"
+
+
+
+## does\_entry\_exist()
+
+Checks if there is a file or directory at specified path.
+
+	bool does_entry_exist(string abs_path) impure
+
+
+## create\_directories\_deep()
+
+Creates a directory at specified path. If the parents directories don't exist, then those will be created too.
+
+	void create_directories_deep(string abs_path) impure
+
+
+## delete\_fs\_entry\_deep()
+
+Deletes a file or directory. If the entry has children those are deleted too - delete folder also deletes is contents.
+
+	void delete_fs_entry_deep(string abs_path) impure
+
+
+## rename\_fs\_entry()
+
+Renames a file or directory. If it is a directory, its contents is unchanged.
+After this call completes, abs_path no longer references an entry.
+
+	void rename_fs_entry(string abs_path, string n) impure
+
+Example:
+
+Before:
+	In the file system: "/Users/bob/Desktop/original_name.txt"
+	abs_path: "/Users/bob/Desktop/original_name.txt"
+	n: "name_name.txt"
+
+After:
+	world: "/Users/bob/Desktop/name_name.txt"
+
+
+
+
+# FUTURE -- IMPURE FUNCTIONS
+
+## probe()
+
+TODO POC
+
+	probe(value, description_string, probe_tag) impure
+
+In your code you write probe(my_temp, "My intermediate value", "key-1") to let clients log my_temp. The probe will appear as a hook in tools and you can chose to log the value and make stats and so on. Argument 2 is a descriptive name, argument 3 is a string-key that is scoped to the function and used to know if several probe()-statements log to the same signal or not.
+
+
+
+## select()
+
+TBD POC
+
+Called from a process function to read its inbox. It will block until a message is received or it times out.
+
+
+
+
+
+# CORE TYPES
+A bunch of common data types are built into Floyd. This is to make composition easier and avoid the noise of converting all simple types between different component's own versions.
+
+
+
+## cpu\_address_t
+
+64-bit integer used to specify memory addresses and binary data sizes.
+
+	typedef int cpu_address_t
+	typedef cpu_address_t size_t
+
+
+## file\_pos\_t
+
+64-bit integer for specifying positions inside files.
+
+	typedef int file_pos_t
+
+
+## time\_ms\_t
+
+64-bit integer counting miliseconds.
+
+	typedef int64_t time_ms_t
+
+
+
+
+## uuid_t
+
+A universally unique identifier (UUID) is a 128-bit number used to identify information in computer systems. The term globaly unique identifier (GUID) is also used.
+
+	struct uuid_t {
+		int high64
+		int low64
+	}
+
+
+## ip\_address\_t
+
+Internet IP adress in using IPv6 128-bit number.
+
+	struct ip_address_t {
+		int high64
+		int low_64_bits
+	}
+
+
+## url_t
+
+Internet URL.
+
+	struct url_t {
+		string absolute_url
+	}
+
+
+## url\_parts\_t {}
+
+This struct contains an URL separate to its components.
+
+	struct url_parts_t {
+		string protocol
+		string domain
+		string path
+		[string:string] query_strings
+		int port
+	}
+
+Example 1:
+
+	url_parts_t("http", "example.com", "path/to/page", {"name": "ferret", "color": "purple"})
+
+	Output: "http://example.com/path/to/page?name=ferret&color=purple"
+
+
+## quick\_hash\_t
+
+64-bit hash value used to speed up lookups and comparisons.
+
+	struct quick_hash_t {
+		int hash
+	}
+
+
+## key_t
+
+Efficent keying using 64-bit hash instead of a string. Hash can often be computed from string key at compile time.
+
+	struct key_t {
+		quick_hash_t hash
+	}
+
+
+## date_t
+
+Stores a UDT.
+
+	struct date_t {
+		string utc_date
+	}
+
+
+## sha1_t
+
+128-bit SHA1 hash number.
+
+	struct sha1_t {
+		string ascii40
+	}
+
+
+## relative\_path\_t 
+
+File path, relative to some other path.
+
+	struct relative_path_t {
+		string relative_path
+	}
+
+
+## absolute\_path\_t
+
+Absolute file path, from root of file system. Can specify the root, a directory or a file.
+
+	struct absolute_path_t {
+		string absolute_path
+	}
+
+
+## binary_t
+
+Raw binary data, 8bit per byte.
+
+	struct binary_t {
+		string bytes
+	}
+
+
+## text\_location\_t
+
+Specifies a position in a text file.
+
+	struct text_location_t {
+		absolute_path_t source_file
+		int line_number
+		int pos_in_line
+	}
+
+
+## seq_t
+
+This is the neatest way to parse strings without using an iterator or indexes.
+
+	struct seq_t {
+		string str
+		size_t pos
+	}
+
+When you consume data at start of seq_t you get a *new* seq_t that holds
+the rest of the string. No side effects.
+
+This is a magic string were you can easily peek into the beginning and also get a new string
+without the first character(s).
+
+It shares the actual string data behind the curtains so is efficent.
+
+
+
+## text_t
+
+Unicode text. Opaque data -- only use library functions to process text_t. Think of text_t and Uncode text more like a PDF.
+
+	struct text_t {
+		binary_t data
+	}
+
+
+## text\_resource\_id
+
+How you specify text resources.
+
+	struct text_resource_id {
+		quick_hash_t id
+	}
+
+
+## image\_id\_t
+
+How you specify image resources.
+
+	struct image_id_t {
+		int id
+	}
+
+
+## color_t
+
+Color. If you don't need alpha, set it to 1.0. Components are normally min 0.0 -- max 1.0 but you can use other ranges.
+
+	struct color_t {
+		float red
+		float green
+		float blue
+		float alpha
+	}
+
+
+## vector2_t
+
+2D position in cartesian coordinate system. Use to specify position on the screen and similar.
+
+	struct vector2_t {
+		float x
+		float y
+	}
+
+
