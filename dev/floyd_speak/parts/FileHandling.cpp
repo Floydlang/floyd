@@ -717,8 +717,6 @@ void RenameEntry(const std::string& path, const std::string& n){
 }
 
 
-//char *tmpnam(char *str)
-
 
 
 void MakeDirectoriesDeep(const std::string& path){

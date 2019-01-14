@@ -475,6 +475,61 @@ Native-path is the current operating system's idea of how to store a path in a s
 
 
 
+## make\_temporary\_path()
+
+Returns a path where you can write a file or a directory and it goes into the file system. The name will be randomized. The operating system will delete this data at some point.
+
+	string make_temporary_path() impure
+
+Example:
+
+	"/var/folders/kw/7178zwsx7p3_g10y7rp2mt5w0000gn/T/g10y/7178zwsxp3_g10y7rp2mt
+
+There is never a file extension. You could add one if you want too.
+
+
+
+??? add special support to write data next to dest, then atomically swap. Both file and dir.
+
+## make\_temporary\_dir()
+
+Creates a temporary direction with a unque name inside the specified directory. It returns the path to the new directory.
+
+If you use this function to do safe writing, make the directory next to the directory you want to replace. This makes it possible for swap_fs_entries() atomically swap the two directories.
+
+The temporary directory is not automatically deleted, your code needs to do this.
+
+	string make_temporary_dir(string abs_path) impure
+
+The mkdtemp() function shall create a directory with a unique name derived from template. The application shall ensure that the string provided in template is a pathname ending with at least six trailing 'X' characters. The mkdtemp() function shall modify the contents of template by replacing six or more 'X' characters at the end of the pathname with the same number of characters from the portable filename character set. The characters shall be chosen such that the resulting pathname does not duplicate the name of an existing file at the time of the call to mkdtemp(). The mkdtemp() function shall use the resulting pathname to create the new directory as if by a call to:
+
+
+
+
+## swap\_fs\_entries()
+
+Swaps the paths of two files or directories in an atomic (or almost) way.
+
+	void swap_fs_entries(string abs_path1, string abs_path2)
+
+This function is used to make atomic replacement of files or directories without risking corrupting the original data in face of an error.
+
+The normal usage sequence:
+
+1. Write new file, files or even directories with data *inside the temporary directory*. Use make_temporary_path() to find a path. No clients see this data, even if they take a long time to write it.
+
+2. Call swap_fs_entries() to change place of the original data and the new, completed data.
+
+3. Delete your data in the temporary directory.
+
+If something failes along the way, the original files are unmodified and the incomplete data sits in the temporary directory and will be cleaned up later by the OS.
+
+
+
+
+
+
+
 # FUTURE -- WORLD TCP COMMUNICATION
 
 IDEA: Wrap CURL. https://en.wikipedia.org/wiki/CURL
