@@ -159,6 +159,7 @@ The process may run on a different OS thread but send() is thread safe.
 
 	send(string process_key, json_value message) impure
 
+The send function returns immediately.
 
 
 ## get\_time\_of\_day()
@@ -166,7 +167,6 @@ The process may run on a different OS thread but send() is thread safe.
 Returns the computer's realtime clock, expressed in the number of milliseconds since system start. Useful to measure program execution. Sample get_time_of_day() before and after execution and compare them to see duration.
 
 	int get_time_of_day() impure
-
 
 
 
@@ -204,12 +204,16 @@ Write a string to the file system as a text file. Will create any missing direct
 Returns a vector of all the files and directories found at the absolute path.
 
 	struct directory_entry_t {
-		string type	//	"dir" or "file"
+		string type
 		string name
 		string abs_parent_path
 	}
 	
 	[directory_entry_t] get_directory_entries_shallow(string abs_path) impure
+
+- type: either "file" or "dir".
+- name: name of the leaf directory or file.
+- abs\_parent\_path: the path to the entires parent.
 
 get_directory_entries_deep() works the same way, but will also traverse each found directory. Contents of sub-directories will be also be prefixed by the sub-directory names. All path names are relative to the input directory - not absolute to file system.
 
@@ -222,7 +226,7 @@ get_directory_entries_deep() works the same way, but will also traverse each fou
 Information about an entry in the file system. Can be a file or a directory.
 
 	struct directory_entry_info_t {
-		string type	//	"file" or "dir"
+		string type
 		string name
 		string abs_parent_path
 
@@ -232,6 +236,13 @@ Information about an entry in the file system. Can be a file or a directory.
 	}
 	
 	directory_entry_info_t get_entry_info(string abs_path) impure
+
+- type: either "file" or "dir".
+- name: name of the leaf directory or file.
+- abs\_parent\_path: the path to the entires parent.
+- creation_date: creation date of the entry.
+- modification_date: latest modification date of the entry.
+- file_size: size of the file or directory.
 
 
 ## get\_fs\_environment()
