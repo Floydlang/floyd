@@ -38,39 +38,35 @@ Converts its input to a string of JSON data that is formatted nicely with indent
 
 
 
-## encode_json()
+## jsonvalue_to_script()
 
 Pack a JSON value to a JSON script string, ready to write to a file, send via protocol etc. The string is unescaped.
 
-	string encode_json(json_value v)
+	string jsonvalue_to_script(json_value v)
 
 The result is a valid JSON script string that can be handed to another system to be unpacked.
 
-??? Rename to jsonvalue_to_script()
 
 
-## decode_json()
+## script_to_jsonvalue()
 
 Make a new Floyd JSON value from a JSON-script string. If the string is malformed, exceptions will be thrown. The string is unescaped.
  
-	json_value decode_json(string s)
-
-??? Rename to script_to_jsonvalue()
+	json_value script_to_jsonvalue(string s)
 
 
-## flatten\_to_json()
 
-	json_value flatten_to_json(any v)
+## value\_to\_jsonvalue()
 
-??? Rename to value_to_jsonvalue()
-
-
-## unflatten\_from_json()
-
-	any unflatten_from_json(json_value v)
+	json_value value_to_jsonvalue(any v)
 
 
-??? Rename to jsonvalue_to_value()
+
+
+## jsonvalue\_to\_value()
+
+	any jsonvalue_to_value(json_value v)
+
 
 
 

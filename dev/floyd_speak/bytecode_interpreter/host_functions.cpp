@@ -34,7 +34,7 @@ using std::shared_ptr;
 using std::make_shared;
 
 //??? Remove usage of value_t
-value_t flatten_to_json(const value_t& value){
+value_t value_to_jsonvalue(const value_t& value){
 	const auto j = value_to_ast_json(value, json_tags::k_plain);
 	value_t json_value = value_t::make_json_value(j._value);
 	return json_value;
@@ -785,14 +785,14 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 /*
 	Reads json from a text string, returning an unpacked json_value.
 */
-bc_value_t host__decode_json(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__script_to_jsonvalue(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(arg_count != 1){
-		throw std::runtime_error("decode_json_value() requires 1 argument!");
+		throw std::runtime_error("script_to_jsonvalue_value() requires 1 argument!");
 	}
 	else if(args[0]._type.is_string() == false){
-		throw std::runtime_error("decode_json_value() requires string argument.");
+		throw std::runtime_error("script_to_jsonvalue_value() requires string argument.");
 	}
 	else{
 		const string s = args[0].get_string_value();
@@ -802,14 +802,14 @@ bc_value_t host__decode_json(interpreter_t& vm, const bc_value_t args[], int arg
 	}
 }
 
-bc_value_t host__encode_json(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__jsonvalue_to_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(arg_count != 1){
-		throw std::runtime_error("encode_json() requires 1 argument!");
+		throw std::runtime_error("jsonvalue_to_script() requires 1 argument!");
 	}
 	else if(args[0]._type.is_json_value()== false){
-		throw std::runtime_error("encode_json() requires argument to be json_value.");
+		throw std::runtime_error("jsonvalue_to_script() requires argument to be json_value.");
 	}
 	else{
 		const auto value0 = args[0].get_json_value();
@@ -819,31 +819,31 @@ bc_value_t host__encode_json(interpreter_t& vm, const bc_value_t args[], int arg
 }
 
 
-bc_value_t host__flatten_to_json(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__value_to_jsonvalue(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(arg_count != 1){
-		throw std::runtime_error("flatten_to_json() requires 1 argument!");
+		throw std::runtime_error("value_to_jsonvalue() requires 1 argument!");
 	}
 	else{
 		const auto value = args[0];
 		const auto value2 = bc_to_value(args[0]);
-		const auto result = flatten_to_json(value2);
+		const auto result = value_to_jsonvalue(value2);
 		return value_to_bc(result);
 	}
 }
 
-bc_value_t host__unflatten_from_json(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__jsonvalue_to_value(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(arg_count != 2){
-		throw std::runtime_error("unflatten_from_json() requires 2 argument!");
+		throw std::runtime_error("jsonvalue_to_value() requires 2 argument!");
 	}
 	else if(args[0]._type.is_json_value() == false){
-		throw std::runtime_error("unflatten_from_json() requires string argument.");
+		throw std::runtime_error("jsonvalue_to_value() requires string argument.");
 	}
 	else if(args[1]._type.is_typeid()== false){
-		throw std::runtime_error("unflatten_from_json() requires string argument.");
+		throw std::runtime_error("jsonvalue_to_value() requires string argument.");
 	}
 	else{
 		const auto json_value = args[0].get_json_value();
@@ -1460,10 +1460,10 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 		{ "replace", host_function_signature_t{ 1013, typeid_t::make_function(DYN, { DYN, DYN, DYN, DYN }, epure::pure) }},
 
 
-		{ "decode_json", host_function_signature_t{ 1017, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_string()}, epure::pure) }},
-		{ "encode_json", host_function_signature_t{ 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json_value()}, epure::pure) }},
-		{ "flatten_to_json", host_function_signature_t{ 1019, typeid_t::make_function(typeid_t::make_json_value(), { DYN }, epure::pure) }},
-		{ "unflatten_from_json", host_function_signature_t{ 1020, typeid_t::make_function(DYN, { typeid_t::make_json_value(), typeid_t::make_typeid() }, epure::pure) }},
+		{ "script_to_jsonvalue", host_function_signature_t{ 1017, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_string()}, epure::pure) }},
+		{ "jsonvalue_to_script", host_function_signature_t{ 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json_value()}, epure::pure) }},
+		{ "value_to_jsonvalue", host_function_signature_t{ 1019, typeid_t::make_function(typeid_t::make_json_value(), { DYN }, epure::pure) }},
+		{ "jsonvalue_to_value", host_function_signature_t{ 1020, typeid_t::make_function(DYN, { typeid_t::make_json_value(), typeid_t::make_typeid() }, epure::pure) }},
 		{ "get_json_type", host_function_signature_t{ 1021, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}, epure::pure) }},
 
 
@@ -1577,10 +1577,10 @@ std::map<int,  host_function_t> get_host_functions(){
 		{ "subset", host__subset },
 		{ "replace", host__replace },
 
-		{ "decode_json", host__decode_json },
-		{ "encode_json", host__encode_json },
-		{ "flatten_to_json", host__flatten_to_json },
-		{ "unflatten_from_json", host__unflatten_from_json },
+		{ "script_to_jsonvalue", host__script_to_jsonvalue },
+		{ "jsonvalue_to_script", host__jsonvalue_to_script },
+		{ "value_to_jsonvalue", host__value_to_jsonvalue },
+		{ "jsonvalue_to_value", host__jsonvalue_to_value },
 		{ "get_json_type", host__get_json_type },
 
 		{ "print", host__print },

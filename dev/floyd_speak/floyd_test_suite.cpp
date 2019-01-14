@@ -2566,19 +2566,19 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
-//////////////////////////////////////////		decode_json()
+//////////////////////////////////////////		script_to_jsonvalue()
 
 
-QUARK_UNIT_TEST("", "decode_json()", "", ""){
+QUARK_UNIT_TEST("", "script_to_jsonvalue()", "", ""){
 	const auto result = test__run_return_result(R"(
-		let result = decode_json("\"genelec\"")
+		let result = script_to_jsonvalue("\"genelec\"")
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t("genelec")));
 }
 
-QUARK_UNIT_TEST("", "decode_json()", "", ""){
+QUARK_UNIT_TEST("", "script_to_jsonvalue()", "", ""){
 	const auto vm = test__run_global(R"(
-		let a = decode_json("{ \"magic\": 1234 }")
+		let a = script_to_jsonvalue("{ \"magic\": 1234 }")
 		print(a)
 	)");
 	ut_compare_stringvects(vm->_print_output, vector<string>{
@@ -2587,13 +2587,13 @@ QUARK_UNIT_TEST("", "decode_json()", "", ""){
 }
 
 
-//////////////////////////////////////////		encode_json()
+//////////////////////////////////////////		jsonvalue_to_script()
 
 
-QUARK_UNIT_TEST("", "encode_json()", "", ""){
+QUARK_UNIT_TEST("", "jsonvalue_to_script()", "", ""){
 	const auto vm = test__run_global(R"(
 		let json_value a = "cheat"
-		let b = encode_json(a)
+		let b = jsonvalue_to_script(a)
 		print(b)
 	)");
 	ut_compare_stringvects(vm->_print_output, vector<string>{
@@ -2602,10 +2602,10 @@ QUARK_UNIT_TEST("", "encode_json()", "", ""){
 }
 
 
-QUARK_UNIT_TEST("", "encode_json()", "", ""){
+QUARK_UNIT_TEST("", "jsonvalue_to_script()", "", ""){
 	const auto vm = test__run_global(R"(
 		let json_value a = { "magic": 1234 }
-		let b = encode_json(a)
+		let b = jsonvalue_to_script(a)
 		print(b)
 	)");
 	ut_compare_stringvects(vm->_print_output, vector<string>{
@@ -2614,136 +2614,136 @@ QUARK_UNIT_TEST("", "encode_json()", "", ""){
 }
 
 
-//////////////////////////////////////////		flatten_to_json()
+//////////////////////////////////////////		value_to_jsonvalue()
 
 
-QUARK_UNIT_TEST("", "flatten_to_json()", "bool", ""){
+QUARK_UNIT_TEST("", "value_to_jsonvalue()", "bool", ""){
 	const auto result = test__run_return_result(R"(
-		let result = flatten_to_json(true)
+		let result = value_to_jsonvalue(true)
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t(true)));
 }
-QUARK_UNIT_TEST("", "flatten_to_json()", "bool", ""){
+QUARK_UNIT_TEST("", "value_to_jsonvalue()", "bool", ""){
 	const auto result = test__run_return_result(R"(
-		let result = flatten_to_json(false)
+		let result = value_to_jsonvalue(false)
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t(false)));
 }
 
-QUARK_UNIT_TEST("", "flatten_to_json()", "int", ""){
+QUARK_UNIT_TEST("", "value_to_jsonvalue()", "int", ""){
 	const auto result = test__run_return_result(R"(
-		let result = flatten_to_json(789)
+		let result = value_to_jsonvalue(789)
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t(789.0)));
 }
-QUARK_UNIT_TEST("", "flatten_to_json()", "int", ""){
+QUARK_UNIT_TEST("", "value_to_jsonvalue()", "int", ""){
 	const auto result = test__run_return_result(R"(
-		let result = flatten_to_json(-987)
+		let result = value_to_jsonvalue(-987)
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t(-987.0)));
 }
 
-QUARK_UNIT_TEST("", "flatten_to_json()", "double", ""){
+QUARK_UNIT_TEST("", "value_to_jsonvalue()", "double", ""){
 	const auto result = test__run_return_result(R"(
-		let result = flatten_to_json(-0.125)
+		let result = value_to_jsonvalue(-0.125)
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t(-0.125)));
 }
 
 
-QUARK_UNIT_TEST("", "flatten_to_json()", "string", ""){
+QUARK_UNIT_TEST("", "value_to_jsonvalue()", "string", ""){
 	const auto result = test__run_return_result(R"(
-		let result = flatten_to_json("fanta")
+		let result = value_to_jsonvalue("fanta")
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t("fanta")));
 }
 
-QUARK_UNIT_TEST("", "flatten_to_json()", "typeid", ""){
+QUARK_UNIT_TEST("", "value_to_jsonvalue()", "typeid", ""){
 	const auto result = test__run_return_result(R"(
-		let result = flatten_to_json(typeof([2,2,3]))
+		let result = value_to_jsonvalue(typeof([2,2,3]))
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(json_t::make_array(vector<json_t>{ "vector", "int"})));
 }
 
-QUARK_UNIT_TEST("", "flatten_to_json()", "[]", ""){
+QUARK_UNIT_TEST("", "value_to_jsonvalue()", "[]", ""){
 	const auto result = test__run_return_result(R"(
-		let result = flatten_to_json([1,2,3])
+		let result = value_to_jsonvalue([1,2,3])
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(
 		json_t::make_array(vector<json_t>{1,2,3})
 	));
 }
 
-QUARK_UNIT_TEST("", "flatten_to_json()", "{}", ""){
+QUARK_UNIT_TEST("", "value_to_jsonvalue()", "{}", ""){
 	const auto result = test__run_return_result(R"(
-		let result = flatten_to_json({"ten": 10, "eleven": 11})
+		let result = value_to_jsonvalue({"ten": 10, "eleven": 11})
 	)", {});
 	ut_compare_values(result, value_t::make_json_value(
 		json_t::make_object(std::map<string,json_t>{{"ten", 10},{"eleven", 11}})
 	));
 }
 
-QUARK_UNIT_TEST("", "flatten_to_json()", "pixel_t", ""){
+QUARK_UNIT_TEST("", "value_to_jsonvalue()", "pixel_t", ""){
 	const auto result = test__run_return_result(R"(
 		struct pixel_t { double x double y }
 		let c = pixel_t(100.0, 200.0)
-		let a = flatten_to_json(c)
-		let result = encode_json(a)
+		let a = value_to_jsonvalue(c)
+		let result = jsonvalue_to_script(a)
 	)", {});
 	ut_compare_values(result, value_t::make_string("{ \"x\": 100, \"y\": 200 }"));
 }
 
-QUARK_UNIT_TEST("", "flatten_to_json()", "[pixel_t]", ""){
+QUARK_UNIT_TEST("", "value_to_jsonvalue()", "[pixel_t]", ""){
 	const auto result = test__run_return_result(R"(
 		struct pixel_t { double x double y }
 		let c = [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)]
-		let a = flatten_to_json(c)
-		let result = encode_json(a)
+		let a = value_to_jsonvalue(c)
+		let result = jsonvalue_to_script(a)
 	)", {});
 	ut_compare_values(result, value_t::make_string("[{ \"x\": 100, \"y\": 200 }, { \"x\": 101, \"y\": 201 }]"));
 }
 
 
-//////////////////////////////////////////		flatten_to_json() -> unflatten_from_json() roundtrip
+//////////////////////////////////////////		value_to_jsonvalue() -> jsonvalue_to_value() roundtrip
 
 
-QUARK_UNIT_TEST("", "unflatten_from_json()", "bool", ""){
+QUARK_UNIT_TEST("", "jsonvalue_to_value()", "bool", ""){
 	const auto result = test__run_return_result(R"(
-		let result = unflatten_from_json(flatten_to_json(true), bool)
+		let result = jsonvalue_to_value(value_to_jsonvalue(true), bool)
 	)", {});
 	ut_compare_values(result, value_t::make_bool(true));
 }
-QUARK_UNIT_TEST("", "unflatten_from_json()", "bool", ""){
+QUARK_UNIT_TEST("", "jsonvalue_to_value()", "bool", ""){
 	const auto result = test__run_return_result(R"(
-		let result = unflatten_from_json(flatten_to_json(false), bool)
+		let result = jsonvalue_to_value(value_to_jsonvalue(false), bool)
 	)", {});
 	ut_compare_values(result, value_t::make_bool(false));
 }
 
-QUARK_UNIT_TEST("", "unflatten_from_json()", "int", ""){
+QUARK_UNIT_TEST("", "jsonvalue_to_value()", "int", ""){
 	const auto result = test__run_return_result(R"(
-		let result = unflatten_from_json(flatten_to_json(91), int)
+		let result = jsonvalue_to_value(value_to_jsonvalue(91), int)
 	)", {});
 	ut_compare_values(result, value_t::make_int(91));
 }
 
-QUARK_UNIT_TEST("", "unflatten_from_json()", "double", ""){
+QUARK_UNIT_TEST("", "jsonvalue_to_value()", "double", ""){
 	const auto result = test__run_return_result(R"(
-		let result = unflatten_from_json(flatten_to_json(-0.125), double)
+		let result = jsonvalue_to_value(value_to_jsonvalue(-0.125), double)
 	)", {});
 	ut_compare_values(result, value_t::make_double(-0.125));
 }
 
-QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
+QUARK_UNIT_TEST("", "jsonvalue_to_value()", "string", ""){
 	const auto result = test__run_return_result(R"(
-		let result = unflatten_from_json(flatten_to_json(""), string)
+		let result = jsonvalue_to_value(value_to_jsonvalue(""), string)
 	)", {});
 	ut_compare_values(result, value_t::make_string(""));
 }
 
-QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
+QUARK_UNIT_TEST("", "jsonvalue_to_value()", "string", ""){
 	const auto result = test__run_return_result(R"(
-		let result = unflatten_from_json(flatten_to_json("cola"), string)
+		let result = jsonvalue_to_value(value_to_jsonvalue("cola"), string)
 	)", {});
 	ut_compare_values(result, value_t::make_string("cola"));
 }
@@ -2751,9 +2751,9 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "string", ""){
 
 /*
 Need better way to specify typeid
-QUARK_UNIT_TEST("", "unflatten_from_json()", "[]", ""){
+QUARK_UNIT_TEST("", "jsonvalue_to_value()", "[]", ""){
 	const auto result = test__run_return_result(R"(
-		result = unflatten_from_json(flatten_to_json([1,2,3]), typeof([1]));
+		result = jsonvalue_to_value(value_to_jsonvalue([1,2,3]), typeof([1]));
 	)", {});
 	ut_compare_values(
 		result,
@@ -2763,14 +2763,14 @@ QUARK_UNIT_TEST("", "unflatten_from_json()", "[]", ""){
 */
 
 
-QUARK_UNIT_TEST("", "unflatten_from_json()", "point_t", ""){
+QUARK_UNIT_TEST("", "jsonvalue_to_value()", "point_t", ""){
 	const auto point_t_def = std::vector<member_t>{
 		member_t(typeid_t::make_double(), "x"),
 		member_t(typeid_t::make_double(), "y")
 	};
 	const auto result = test__run_return_result(R"(
 		struct point_t { double x double y }
-		let result = unflatten_from_json(flatten_to_json(point_t(1.0, 3.0)), point_t)
+		let result = jsonvalue_to_value(value_to_jsonvalue(point_t(1.0, 3.0)), point_t)
 	)", {});
 	ut_compare_values(
 		result,

@@ -138,7 +138,7 @@ These are features built into every type: integer, string, struct, dictionary:
 |__a > b__ 		| a larger than b
 |__a >= b__ 		| a larger or equal to b
 
-This also goes for print(), map(), to\_string(), flatten\_to\_json(), send() etc.
+This also goes for print(), map(), to\_string(), value\_to\_jsonvalue(), send() etc.
 
 Example: your application's entire state may be stored in *one* value in a struct containing other structs and vectors and so on. This value can still be copied around quickly, it is automatically sortable, convertable to JSON or whatever.
 
@@ -753,10 +753,10 @@ Many of the core functions work with json\_value, but it often depends on the ac
 
 - __get\_json\_type()__
 - __size()__
-- __encode_json()__
-- __decode_json()__
-- __flatten\_to\_json()__
-- __unflatten\_from\_json()__
+- __jsonvalue_to_script()__
+- __script\_to_jsonvalue()__
+- __value\_to\_jsonvalue()__
+- __jsonvalue\_to\_value()__
 
 
 
@@ -821,21 +821,21 @@ Different destinations have different limitations and escape machanisms and will
 Converting a floyd json\_value to a JSON string and back. The JSON-string can be directly read or written to a text file, sent via a protocol and so on.
 
 ```
-string encode_json(json_value v)
-json_value decode_json(string s)
+string jsonvalue_to_script(json_value v)
+json_value script_to_jsonvalue(string s)
 ```
 
-Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json\_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json\_value, using unflatten_from_json().
+Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json\_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json\_value, using jsonvalue_to_value().
 
 ```
-json_value flatten_to_json(any v)
-any unflatten_from_json(json_value v)
+json_value value_to_jsonvalue(any v)
+any jsonvalue_to_value(json_value v)
 ```
 
-- __encode_json()__
-- __decode_json()__
-- __flatten\_to\_json()__
-- __unflatten\_from\_json()__
+- __jsonvalue\_to\_script()__
+- __script\_to\_jsonvalue()__
+- __value\_to\_jsonvalue()__
+- __jsonvalue\_to\_value()__
 
 
 

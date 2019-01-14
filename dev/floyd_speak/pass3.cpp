@@ -1316,7 +1316,7 @@ typeid_t get_host_function_return_type(const analyser_t& a, const expression_t& 
 		}
 	}
 */
-	else if(function_name == "unflatten_from_json"){
+	else if(function_name == "jsonvalue_to_value"){
 		QUARK_ASSERT(args.size() == 2);
 
 		const auto arg0 = args[0];
@@ -1327,11 +1327,11 @@ typeid_t get_host_function_return_type(const analyser_t& a, const expression_t& 
 				return symbol->_const_value.get_typeid_value();
 			}
 			else{
-				throw std::runtime_error("Cannot resolve type for unflatten_from_json().");
+				throw std::runtime_error("Cannot resolve type for jsonvalue_to_value().");
 			}
 		}
 		else{
-			throw std::runtime_error("Cannot resolve type for unflatten_from_json().");
+			throw std::runtime_error("Cannot resolve type for jsonvalue_to_value().");
 		}
 	}
 	else{
