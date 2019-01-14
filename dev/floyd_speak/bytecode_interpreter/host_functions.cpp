@@ -22,6 +22,7 @@
 #include <fstream>
 #include "text_parser.h"
 #include "FileHandling.h"
+#include "sha1_class.h"
 
 
 
@@ -103,6 +104,7 @@ extern const std::string k_tiny_prefix = R"(
 	struct sha1_t {
 		string ascii40
 	}
+
 
 	struct relative_path_t {
 		string relative_path
@@ -201,6 +203,11 @@ extern const std::string k_tiny_prefix = R"(
 )";
 
 
+
+/////////////////////////////////////////		STRUCT PACKERS
+
+
+
 typeid_t make__fs_environment_t__type(){
 	const auto temp = typeid_t::make_struct2({
 		{ typeid_t::make_string(), "home_dir" },
@@ -216,6 +223,106 @@ typeid_t make__fs_environment_t__type(){
 	});
 	return temp;
 }
+
+typeid_t make__fsentry_t__type(){
+	const auto temp = typeid_t::make_struct2({
+		{ typeid_t::make_string(), "type" },
+		{ typeid_t::make_string(), "name" },
+		{ typeid_t::make_string(), "parent_path" }
+	});
+	return temp;
+}
+
+/*
+	struct date_t {
+		string utd_date
+	}
+*/
+typeid_t make__date_t__type(){
+	const auto temp = typeid_t::make_struct2({
+		{ typeid_t::make_string(), "utd_date" }
+	});
+	return temp;
+}
+
+/*
+	struct sha1_t {
+		string ascii40
+	}
+*/
+typeid_t make__sha1_t__type(){
+	const auto temp = typeid_t::make_struct2({
+		{ typeid_t::make_string(), "ascii40" }
+	});
+	return temp;
+}
+
+/*
+	struct binary_t {
+		string bytes
+	}
+*/
+typeid_t make__binary_t__type(){
+	const auto temp = typeid_t::make_struct2({
+		{ typeid_t::make_string(), "bytes" }
+	});
+	return temp;
+}
+
+/*
+	struct absolute_path_t {
+		string absolute_path
+	}
+*/
+typeid_t make__absolute_path_t__type(){
+	const auto temp = typeid_t::make_struct2({
+		{ typeid_t::make_string(), "absolute_path" }
+	});
+	return temp;
+}
+
+/*
+	struct file_pos_t {
+		int pos
+	}
+*/
+typeid_t make__file_pos_t__type(){
+	const auto temp = typeid_t::make_struct2({
+		{ typeid_t::make_int(), "pos" }
+	});
+	return temp;
+}
+
+/*
+	struct fsentry_info_t {
+		string type	//	"file" or "dir"
+		string name
+		absolute_path_t parent_path
+
+		date_t creation_date
+		date_t modification_date
+		file_pos_t file_size
+	}
+*/
+typeid_t make__fsentry_info_t__type(){
+	const auto temp = typeid_t::make_struct2({
+		{ typeid_t::make_string(), "type" },
+		{ typeid_t::make_string(), "name" },
+		{ typeid_t::make_string(), "parent_path" },
+
+		{ typeid_t::make_string(), "creation_date" },
+		{ typeid_t::make_string(), "modification_date" },
+		{ typeid_t::make_int(), "file_size" }
+	});
+	return temp;
+}
+
+
+
+
+
+
+
 
 
 
@@ -895,7 +1002,7 @@ bc_value_t host__get_json_type(interpreter_t& vm, const bc_value_t args[], int a
 
 
 
-/////////////////////////////////////////		IMPURE FUNCTIONS
+/////////////////////////////////////////		IMPURE -- MISC
 
 
 
@@ -965,6 +1072,101 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 }
 
 
+/////////////////////////////////////////		IMPURE -- SHA1
+
+
+/*
+# FUTURE -- BUILT-IN SHA1 FUNCTIONS
+```
+
+sha1_t calc_sha1(string s)
+sha1_t calc_sha1(binary_t data)
+
+//	SHA1 is 20 bytes.
+//	String representation uses hex, so is 40 characters long.
+//	"1234567890123456789012345678901234567890"
+let sha1_bytes = 20
+let sha1_chars = 40
+
+string sha1_to_string(sha1_t s)
+sha1_t sha1_from_string(string s)
+
+```
+*/
+
+
+bc_value_t host__calc_string_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 1){
+		throw std::runtime_error("calc_string_sha1() requires 1 arguments!");
+	}
+	if(args[0]._type.is_string() == false){
+		throw std::runtime_error("calc_string_sha1() requires a string.");
+	}
+
+	const auto& s = args[0].get_string_value();
+	const auto sha1 = CalcSHA1(s);
+	const auto ascii40 = SHA1ToStringPlain(sha1);
+
+	const auto result = value_t::make_struct_value(
+		make__sha1_t__type(),
+		{
+			value_t::make_string(ascii40)
+		}
+	);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(result);
+	QUARK_TRACE(json_to_pretty_string(debug._value));
+#endif
+
+	const auto v = value_to_bc(result);
+	return v;
+}
+
+
+
+bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 1){
+		throw std::runtime_error("calc_string_sha1() requires 1 arguments!");
+	}
+	if((args[0]._type == make__binary_t__type()) == false){
+		throw std::runtime_error("calc_string_sha1() requires a sha1_t.");
+	}
+
+	const auto& sha1_struct = args[0].get_struct_value();
+	QUARK_ASSERT(sha1_struct.size() == make__binary_t__type().get_struct()._members.size());
+	QUARK_ASSERT(sha1_struct[0]._type.is_string());
+
+	const auto& sha1_string = sha1_struct[0].get_string_value();
+	const auto sha1 = CalcSHA1(sha1_string);
+	const auto ascii40 = SHA1ToStringPlain(sha1);
+
+	const auto result = value_t::make_struct_value(
+		make__sha1_t__type(),
+		{
+			value_t::make_string(ascii40)
+		}
+	);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(result);
+	QUARK_TRACE(json_to_pretty_string(debug._value));
+#endif
+
+	const auto v = value_to_bc(result);
+	return v;
+}
+
+
+
+/////////////////////////////////////////		IMPURE -- FILE SYSTEM
+
+
+
 
 bc_value_t host__read_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -1030,80 +1232,6 @@ bc_value_t host__write_text_file(interpreter_t& vm, const bc_value_t args[], int
 		return bc_value_t();
 	}
 }
-
-typeid_t make__fsentry_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "type" },
-		{ typeid_t::make_string(), "name" },
-		{ typeid_t::make_string(), "parent_path" }
-	});
-	return temp;
-}
-
-/*
-	struct date_t {
-		string utd_date
-	}
-*/
-typeid_t make__date_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "utd_date" }
-	});
-	return temp;
-}
-
-/*
-	struct absolute_path_t {
-		string absolute_path
-	}
-*/
-typeid_t make__absolute_path_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "absolute_path" }
-	});
-	return temp;
-}
-
-/*
-	struct file_pos_t {
-		int pos
-	}
-*/
-typeid_t make__file_pos_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_int(), "pos" }
-	});
-	return temp;
-}
-
-/*
-	struct fsentry_info_t {
-		string type	//	"file" or "dir"
-		string name
-		absolute_path_t parent_path
-
-		date_t creation_date
-		date_t modification_date
-		file_pos_t file_size
-	}
-*/
-typeid_t make__fsentry_info_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "type" },
-		{ typeid_t::make_string(), "name" },
-		{ typeid_t::make_string(), "parent_path" },
-
-		{ typeid_t::make_string(), "creation_date" },
-		{ typeid_t::make_string(), "modification_date" },
-		{ typeid_t::make_int(), "file_size" }
-	});
-	return temp;
-}
-
-
-
-
-
 
 
 
@@ -1305,9 +1433,6 @@ bc_value_t host__get_fs_environment(interpreter_t& vm, const bc_value_t args[], 
 	return v;
 }
 
-
-
-
 //??? refactor common code.
 
 bc_value_t host__does_fsentry_exist(interpreter_t& vm, const bc_value_t args[], int arg_count){
@@ -1471,6 +1596,12 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 		{ "print", host_function_signature_t{ 1000, typeid_t::make_function(VOID, { DYN }, epure::pure) } },
 		{ "send", host_function_signature_t{ 1022, typeid_t::make_function(VOID, { typeid_t::make_string(), typeid_t::make_json_value() }, epure::impure) } },
 		{ "get_time_of_day", host_function_signature_t{ 1005, typeid_t::make_function(typeid_t::make_int(), {}, epure::impure) }},
+
+
+		{ "calc_string_sha1", host_function_signature_t{ 1031, typeid_t::make_function(make__sha1_t__type(), { typeid_t::make_string() }, epure::pure) }},
+		{ "calc_binary_sha1", host_function_signature_t{ 1032, typeid_t::make_function(make__sha1_t__type(), { make__binary_t__type() }, epure::pure) }},
+
+
 		{ "read_text_file", host_function_signature_t{ 1015, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::impure) }},
 		{ "write_text_file", host_function_signature_t{ 1016, typeid_t::make_function(VOID, { DYN, DYN }, epure::impure) }},
 		{
@@ -1586,6 +1717,10 @@ std::map<int,  host_function_t> get_host_functions(){
 		{ "print", host__print },
 		{ "send", host__send },
 		{ "get_time_of_day", host__get_time_of_day },
+
+		{ "calc_string_sha1", host__calc_string_sha1 },
+		{ "calc_binary_sha1", host__calc_binary_sha1 },
+
 
 		{ "read_text_file", host__read_text_file },
 		{ "write_text_file", host__write_text_file },

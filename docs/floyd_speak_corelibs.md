@@ -110,6 +110,23 @@ IDEA: Make this a two-step process. First analyze the tasks into an execution de
 
 
 
+# calc\_string\_sha1()
+
+Calculates a SHA1 hash for the contents in a string.
+
+```
+sha1_t calc_string_sha1(string s)
+```
+
+# calc\_binary\_sha1()
+
+Calculates a SHA1 hash for a block binary data.
+
+```
+sha1_t calc_binary_sha1(binary_t d)
+```
+
+
 
 # IMPURE FUNCTIONS
 

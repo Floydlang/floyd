@@ -2939,6 +2939,32 @@ QUARK_UNIT_TESTQ("run_init()", "get_time_of_day()"){
 }
 
 
+
+QUARK_UNIT_TEST_VIP("", "calc_string_sha1()", "", ""){
+	test__run_global(
+		R"(
+
+			let a = calc_string_sha1("Violator is the seventh studio album by English electronic music band Depeche Mode.")
+			print(to_string(a))
+			assert(a.ascii40 == "4d5a137b3b1faf855872a312a184dd9a24594387")
+		)"
+	);
+}
+QUARK_UNIT_TEST_VIP("", "calc_binary_sha1()", "", ""){
+	test__run_global(
+		R"(
+
+			let bin = binary_t("Violator is the seventh studio album by English electronic music band Depeche Mode.")
+			let a = calc_binary_sha1(bin)
+			print(to_string(a))
+			assert(a.ascii40 == "4d5a137b3b1faf855872a312a184dd9a24594387")
+		)"
+	);
+}
+
+
+
+
 //////////////////////////////////////////		HOST FUNCTION - read_text_file()
 
 /*

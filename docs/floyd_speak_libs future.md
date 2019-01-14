@@ -159,14 +159,14 @@ This is to opposite of escape_for_url() - it takes a string from a URL and turns
 
 
 
+# SHA1
 
+### binary_to_hex_string()
 
-
-# FUTURE -- BUILT-IN SHA1 FUNCTIONS
+/*
 ```
 
 sha1_t calc_sha1(string s)
-sha1_t calc_sha1(binary_t data)
 
 //	SHA1 is 20 bytes.
 //	String representation uses hex, so is 40 characters long.
@@ -178,7 +178,13 @@ string sha1_to_string(sha1_t s)
 sha1_t sha1_from_string(string s)
 
 ```
+*/
 
+
+
+
+
+# FUTURE - QUICK HASH
 
 
 
