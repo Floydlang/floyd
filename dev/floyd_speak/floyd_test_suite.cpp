@@ -3075,20 +3075,22 @@ QUARK_UNIT_TEST("", "does_entry_exist()", "", ""){
 		let result = does_entry_exist(path)
 		print(to_pretty_string(result))
 
-		assert(result == true);
+		assert(result == true)
 
 	)", {});
 
 	QUARK_UT_VERIFY(result.get_type() == typeid_t::make_bool());
 }
+
+//??? Also test for files.
 QUARK_UNIT_TEST("", "does_entry_exist()", "", ""){
 	const auto result = test__run_return_result(R"(
 
-		let path = get_fs_environment().desktop_dir + "xyz";
+		let path = get_fs_environment().desktop_dir + "xyz"
 		let result = does_entry_exist(path)
 		print(to_pretty_string(result))
 
-		assert(result == false);
+		assert(result == false)
 
 	)", {});
 
@@ -3116,8 +3118,8 @@ QUARK_UNIT_TEST("", "create_directories_deep()", "", ""){
 
 	const auto result = test__run_return_result(R"(
 
-		let path1 = get_fs_environment().desktop_dir + "/unittest___create_directories_deep";
-		let path2 = path1 + "/subdir";
+		let path1 = get_fs_environment().desktop_dir + "/unittest___create_directories_deep"
+		let path2 = path1 + "/subdir"
 
 		assert(does_entry_exist(path1) == false)
 		assert(does_entry_exist(path2) == false)
@@ -3147,8 +3149,8 @@ QUARK_UNIT_TEST("", "delete_fs_entry_deep()", "", ""){
 
 	const auto result = test__run_return_result(R"(
 
-		let path1 = get_fs_environment().desktop_dir + "/unittest___delete_fs_entry_deep";
-		let path2 = path1 + "/subdir";
+		let path1 = get_fs_environment().desktop_dir + "/unittest___delete_fs_entry_deep"
+		let path2 = path1 + "/subdir"
 
 		assert(does_entry_exist(path1) == false)
 		assert(does_entry_exist(path2) == false)
@@ -3161,6 +3163,43 @@ QUARK_UNIT_TEST("", "delete_fs_entry_deep()", "", ""){
 		delete_fs_entry_deep(path1)
 		assert(does_entry_exist(path1) == false)
 		assert(does_entry_exist(path2) == false)
+
+		let result = true
+
+	)", {});
+
+	QUARK_UT_VERIFY(result.get_type() == typeid_t::make_bool());
+}
+
+
+
+//////////////////////////////////////////		HOST FUNCTION - rename_fs_entry()
+
+
+QUARK_UNIT_TEST("", "rename_fs_entry()", "", ""){
+	const auto result = test__run_return_result(R"(
+		let dir = get_fs_environment().desktop_dir + "/unittest___rename_fs_entry"
+
+		delete_fs_entry_deep(dir)
+
+		let file_path1 = dir + "/original.txt"
+		let file_path2 = dir + "/renamed.txt"
+
+		assert(does_entry_exist(file_path1) == false)
+		assert(does_entry_exist(file_path2) == false)
+
+		//	Will also create parent directory.
+		write_text_file(file_path1, "This is the file contents\n")
+
+		assert(does_entry_exist(file_path1) == true)
+		assert(does_entry_exist(file_path2) == false)
+
+		rename_fs_entry(file_path1, "renamed.txt")
+
+		assert(does_entry_exist(file_path1) == false)
+		assert(does_entry_exist(file_path2) == true)
+
+		delete_fs_entry_deep(dir)
 
 		let result = true
 

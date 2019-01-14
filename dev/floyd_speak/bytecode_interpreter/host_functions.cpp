@@ -993,6 +993,22 @@ bc_value_t host__read_text_file(interpreter_t& vm, const bc_value_t args[], int 
 	return v;
 }
 
+
+void write_text_file(const std::string& abs_path, const std::string& data){
+	const auto up = UpDir2(abs_path);
+
+	MakeDirectoriesDeep(up.first);
+
+	std::ofstream outputFile;
+	outputFile.open(abs_path);
+	if (outputFile.fail()) {
+		throw std::exception();
+	}
+
+	outputFile << data;
+	outputFile.close();
+}
+
 bc_value_t host__write_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -1009,10 +1025,8 @@ bc_value_t host__write_text_file(interpreter_t& vm, const bc_value_t args[], int
 		const string path = args[0].get_string_value();
 		const string file_contents = args[1].get_string_value();
 
-		std::ofstream outputFile;
-		outputFile.open(path);
-		outputFile << file_contents;
-		outputFile.close();
+		write_text_file(path, file_contents);
+
 		return bc_value_t();
 	}
 }
@@ -1366,20 +1380,26 @@ bc_value_t host__delete_fs_entry_deep(interpreter_t& vm, const bc_value_t args[]
 bc_value_t host__rename_fs_entry(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
-	if(arg_count != 1){
-		throw std::runtime_error("rename_fs_entry() requires 1 arguments!");
+	if(arg_count != 2){
+		throw std::runtime_error("rename_fs_entry() requires 2 arguments!");
 	}
 	if(args[0]._type.is_string() == false){
 		throw std::runtime_error("rename_fs_entry() requires a path, as a string.");
+	}
+	if(args[1]._type.is_string() == false){
+		throw std::runtime_error("rename_fs_entry() argument 2 is name name, as a string.");
 	}
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
 		throw std::runtime_error("rename_fs_entry() illegal input path.");
 	}
+	const string n = args[1].get_string_value();
+	if(n.empty()){
+		throw std::runtime_error("rename_fs_entry() illegal input name.");
+	}
 
-	//??? implementation
-	QUARK_ASSERT(false);
+	RenameEntry(path, n);
 
 	return bc_value_t::make_void();
 }

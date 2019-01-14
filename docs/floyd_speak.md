@@ -190,7 +190,7 @@ You can tag a function to be impure using the "impure" keyword.
 		return 3
 	}
 
-This mean the function is no pure.
+This mean the function is not pure - it has side effects.
 
 A pure function cannot call any impure functions!
 An impure function can call both pure and impure functions.
@@ -199,7 +199,7 @@ Limit the amount of impure code!
 
 # GRAY PURE FUNCTIONS
 
-
+This is a function that has side effects or state -- but the calling functions cannot observe this so from their perspective it is pure. Examples are memory allocators and memory pools and logging program execution.
 
 
 # EXPRESSIONS
@@ -1324,10 +1324,53 @@ Deletes a file or directory. If the entry has children those are deleted too - d
 	void delete_fs_entry_deep(string abs_path) impure
 
 ## rename\_fs\_entry()
+Renames a file or directory. If it is a directory, its contents is unchanged.
+After this call completes, abs_path no longer references an entry.
+
+
 
 	void rename_fs_entry(string abs_path, string n) impure
 
+Example:
 
+Before:
+	In the file system: "/Users/bob/Desktop/original_name.txt"
+	abs_path: "/Users/bob/Desktop/original_name.txt"
+	n: "name_name.txt"
+
+After:
+	world: "/Users/bob/Desktop/name_name.txt"
+
+
+## make\_temporary\_path()
+
+Returns a path where you can write a file or a directory and it goes into the file system. The name will be randomized.
+
+	string make_temporary_path() impure
+
+Example:
+
+	"/var/folders/kw/7178zwsx7p3_g10y7rp2mt5w0000gn/T/g10y/7178zwsxp3_g10y7rp2mt
+
+There is never a file extension. You could add one if you want too.
+
+
+
+## swap\_fs\_entries()
+
+Swaps the paths of two files or directories in an atomic (or almost) way.
+
+This function is used to make atomic replacement of files or directories without risking corrupting the original data in face of an error.
+
+The normal usage sequence:
+
+1. Write new file, files or even directories with data *inside the temporary directory*. Use make_temporary_path() to find a path. No clients see this data, even if they take a long time to write it.
+
+2. Call swap_fs_entries() to change place of the original data and the new, completed data.
+
+3. Delete your data in the temporary directory.
+
+If something failes along the way, the original files are unmodified and the incomplete data sits in the temporary directory and will be cleaned up later by the OS.
 
 
 
@@ -1394,7 +1437,7 @@ A universally unique identifier (UUID) is a 128-bit number used to identify info
 	}
 
 
-## ip_address_t
+## ip\_address\_t
 
 Internet IP adress in using IPv6 128-bit number.
 

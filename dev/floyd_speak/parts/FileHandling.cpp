@@ -375,7 +375,7 @@ std::string UpDir(const std::string& path){
 }
 
 std::pair<std::string, std::string> UpDir2(const std::string& path){
-	ASSERT(path.empty() || path.back() == '/');
+//	ASSERT(path.empty() || path.back() == '/');
 
 	if(path == "/"){
 		return { "", "/" };
@@ -383,11 +383,15 @@ std::pair<std::string, std::string> UpDir2(const std::string& path){
 	else if(path == ""){
 		return { "", "" };
 	}
+	else if(path.back() == '/'){
+		const auto r = UpDir2(path.substr(0, path.size() - 1));
+		return r;
+	}
 	else{
-		const auto pos = path.rfind('/', path.size() - 2);
+		const auto pos = path.rfind('/');
 		if(pos != std::string::npos){
-			const auto left = std::string(path.begin(), path.begin() + pos + 1);
-			const auto right = std::string(path.begin() + pos + 1, path.end() - 1);
+			const auto left = path.substr(0, pos + 1);
+			const auto right = path.substr(pos + 1);
 			return { left, right };
 		}
 		else{
@@ -404,6 +408,9 @@ QUARK_UNIT_TEST("", "UpDir2()","", ""){
 }
 QUARK_UNIT_TEST("", "UpDir2()","", ""){
 	QUARK_UT_VERIFY((UpDir2("/") == std::pair<std::string, std::string>{ "", "/" }));
+}
+QUARK_UNIT_TEST("", "UpDir2()","", ""){
+	QUARK_UT_VERIFY((UpDir2("/Users/marcus/original.txt") == std::pair<std::string, std::string>{ "/Users/marcus/", "original.txt" }));
 }
 
 
@@ -661,8 +668,13 @@ void DeleteDeep(const std::string& path){
 	else if(error == -1){
 		const int err = get_error();
 
+		//	#define	ENOENT		2		/* No such file or directory */
+		if(err == ENOENT){
+			return;
+		}
+
 		//	Directory not empty.
-		if(err == ENOTEMPTY){
+		else if(err == ENOTEMPTY){
 			std::vector<TDirEntry> dirEntries = GetDirItems(path);
 			for(const auto& e: dirEntries){
 				const auto subpath = e.fParent + "/" + e.fNameOnly;
@@ -676,6 +688,26 @@ void DeleteDeep(const std::string& path){
 				throw std::exception();
 			}
 		}
+		else{
+			throw std::exception();
+		}
+	}
+	else{
+		ASSERT(false);
+		throw std::exception();
+	}
+}
+
+//int	 rename (const char *__old, const char *__new);
+void RenameEntry(const std::string& path, const std::string& n){
+	const auto parts = SplitPath(path);
+	const auto path2 = parts.fPath + "/" + n;
+	int error = ::rename(path.c_str(), path2.c_str());
+	if(error == 0){
+		return;
+	}
+	else if(error == -1){
+		const int err = get_error();
 		throw std::exception();
 	}
 	else{
@@ -683,7 +715,8 @@ void DeleteDeep(const std::string& path){
 		throw std::exception();
 	}
 }
-//int	 rename (const char *__old, const char *__new);
+
+
 //char *tmpnam(char *str)
 
 
@@ -756,7 +789,7 @@ void SaveFile(const std::string& inFileName, const std::uint8_t data[], std::siz
 	TRACE_INDENT("SaveFile()");
 	TRACE("Byte count: " + std::to_string(byteCount));
 
-	TPathParts split=SplitPath(inFileName);
+	TPathParts split = SplitPath(inFileName);
 
 	MakeDirectoriesDeep(split.fPath);
 /*
@@ -800,25 +833,25 @@ void SaveFile(const std::string& inFileName, const std::uint8_t data[], std::siz
 	}
 */
 
-	FILE* file=0;
-	file=std::fopen(inFileName.c_str(),"wb");
-	if(file==0){
+	FILE* file = 0;
+	file = std::fopen(inFileName.c_str(), "wb");
+	if(file == 0){
 		throw std::exception();
 	}
 
 	try{
-		size_t actuallyWriteCount=std::fwrite(&data[0],byteCount,1,file);
-		if(actuallyWriteCount !=1){
+		size_t actuallyWriteCount = std::fwrite(&data[0], byteCount, 1, file);
+		if(actuallyWriteCount != 1){
 			throw std::exception();
 		}
 
-		long result=std::fclose(file);
-		file=0;
+		long result = std::fclose(file);
+		file = 0;
 	}
 	catch(...){
-		if(file !=0){
-			long result=std::fclose(file);
-			file=0;
+		if(file != 0){
+			long result = std::fclose(file);
+			file = 0;
 		}
 		throw;
 	}

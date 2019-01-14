@@ -109,6 +109,8 @@ void SaveFile(const std::string& completePath, const std::uint8_t data[], std::s
 */
 void DeleteDeep(const std::string& path);
 
+void RenameEntry(const std::string& path, const std::string& n);
+
 void MakeDirectoriesDeep(const std::string& nativePath);
 
 std::string UpDir(const std::string& path);
