@@ -1300,6 +1300,13 @@ typeid_t get_host_function_return_type(const analyser_t& a, const expression_t& 
 	else if(function_name == "replace"){
 		return args[0].get_output_type();
 	}
+	else if(function_name == "map"){
+		const auto f = args[1].get_output_type().get_function_return();
+		//	[R] map([E], R f(E e))
+
+		const auto ret = typeid_t::make_vector(f);
+		return ret;
+	}
 /*
 	else if(function_name == "instantiate_from_typeid"){
 		if(args[0].get_operation() == expression_type::k_load2){

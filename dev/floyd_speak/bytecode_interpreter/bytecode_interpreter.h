@@ -414,8 +414,11 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		//	Bumps RC.
+		//	Bumps RC if needed.
 		public: inline explicit bc_value_t(const typeid_t& type, const bc_pod_value_t& internals);
+
+		//	Won't bump RC.
+		inline bc_value_t(const typeid_t& type, const bc_pod64_t& pod64);
 
 		//	Bumps RC.
 		public: inline explicit bc_value_t(const typeid_t& type, const bc_object_handle_t& handle);
@@ -755,12 +758,20 @@ namespace floyd {
 		}
 
 
+
 		inline const immer::vector<bc_object_handle_t>* get_vector_value(const bc_value_t& value){
 			QUARK_ASSERT(value.check_invariant());
 			QUARK_ASSERT(value._type.is_vector());
 			QUARK_ASSERT(encode_as_vector_pod64(value._type) == false);
 
 			return &value._pod._ext->_vector_objects;
+		}
+		inline const immer::vector<bc_pod64_t>* get_vector_value_pods(const bc_value_t& value){
+			QUARK_ASSERT(value.check_invariant());
+			QUARK_ASSERT(value._type.is_vector());
+			QUARK_ASSERT(encode_as_vector_pod64(value._type) == true);
+
+			return &value._pod._ext->_vector_pod64;
 		}
 		inline bc_value_t make_vector_value(const typeid_t& element_type, const immer::vector<bc_object_handle_t>& elements){
 			const auto vector_type = typeid_t::make_vector(element_type);
@@ -772,9 +783,6 @@ namespace floyd {
 			QUARK_ASSERT(temp.check_invariant());
 			return temp;
 		}
-
-
-
 		inline bc_value_t make_vector_int64_value(const typeid_t& element_type, const immer::vector<bc_pod64_t>& elements){
 			const auto vector_type = typeid_t::make_vector(element_type);
 			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == true);
@@ -785,6 +793,7 @@ namespace floyd {
 			QUARK_ASSERT(temp.check_invariant());
 			return temp;
 		}
+
 
 
 		inline const immer::map<std::string, bc_object_handle_t>& get_dict_value(const bc_value_t& value){
@@ -815,6 +824,12 @@ namespace floyd {
 			if(is_encoded_as_ext(_type)){
 				_pod._ext->_rc++;
 			}
+		}
+
+		inline bc_value_t::bc_value_t(const typeid_t& type, const bc_pod64_t& pod64) :
+			_type(type),
+			_pod{._pod64 = pod64}
+		{
 		}
 
 		inline bc_value_t::bc_value_t(const typeid_t& type, const bc_object_handle_t& handle) :

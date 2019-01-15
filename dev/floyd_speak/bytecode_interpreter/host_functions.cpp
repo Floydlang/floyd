@@ -1089,6 +1089,90 @@ bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], in
 	return v;
 }
 
+/////////////////////////////////////////		PURE -- FUNCTIONAL
+
+//	[R] map([E], R f(E e))
+//??? need to provice context property to map() and pass to f().
+bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 2){
+		throw std::runtime_error("map() requires 2 arguments");
+	}
+
+	if(args[0]._type.is_vector() == false){
+		throw std::runtime_error("map() arg 1 must be a vector.");
+	}
+	const auto& collection = args[0];
+	const auto collection_element_type = args[0]._type.get_vector_element_type();
+
+	if(args[1]._type.is_function() == false){
+		throw std::runtime_error("map() requires start and end to be integers.");
+	}
+	const auto f = args[1];
+	const auto f_arg_types = f._type.get_function_args();
+	const auto f_return_type = f._type.get_function_return();
+
+	if(f_arg_types.size() != 1){
+		throw std::runtime_error("map() function f requries 1 argument.");
+	}
+
+	if(f_arg_types[0] != collection_element_type){
+		throw std::runtime_error("map() function f must accept collection elements as its argument.");
+	}
+
+	const auto r_type = f_return_type;
+
+	immer::vector<bc_pod64_t> vec2;
+	if(is_encoded_as_ext(collection_element_type) == false){
+		for(const auto& e: collection._pod._ext->_vector_pod64){
+			const auto e2 = bc_value_t(collection_element_type, e);
+			const bc_value_t f_args[1] = { e2 };
+			const auto result1 = call_function_bc(vm, f, f_args, 1);
+			vec2 = vec2.push_back(result1._pod._pod64);
+		}
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+
+	const auto result = make_vector_int64_value(collection_element_type, vec2);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
+	QUARK_TRACE(json_to_pretty_string(debug._value));
+#endif
+
+	return result;
+/*
+	const auto result = make_vector_value(vec., vec2);
+		if(encode_as_vector_pod64(obj._type)){
+			const auto& element_type = obj._type.get_vector_element_type();
+			const auto& vec = obj._pod._ext->_vector_pod64;
+			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
+			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
+			immer::vector<bc_pod64_t> elements2;
+			for(auto i = start2 ; i < end2 ; i++){
+				elements2 = elements2.push_back(vec[i]);
+			}
+			const auto v = make_vector_int64_value(element_type, elements2);
+			return v;
+		}
+		else{
+			const auto vec = *get_vector_value(obj);
+			const auto element_type = obj._type.get_vector_element_type();
+			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
+			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
+			immer::vector<bc_object_handle_t> elements2;
+			for(auto i = start2 ; i < end2 ; i++){
+				elements2 = elements2.push_back(vec[i]);
+			}
+			const auto v = make_vector_value(element_type, elements2);
+			return v;
+		}
+*/
+}
+
 
 /////////////////////////////////////////		IMPURE -- MISC
 
@@ -1591,15 +1675,16 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 		{ "jsonvalue_to_value", host_function_signature_t{ 1020, typeid_t::make_function(DYN, { typeid_t::make_json_value(), typeid_t::make_typeid() }, epure::pure) }},
 		{ "get_json_type", host_function_signature_t{ 1021, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}, epure::pure) }},
 
+		{ "calc_string_sha1", host_function_signature_t{ 1031, typeid_t::make_function(make__sha1_t__type(), { typeid_t::make_string() }, epure::pure) }},
+		{ "calc_binary_sha1", host_function_signature_t{ 1032, typeid_t::make_function(make__sha1_t__type(), { make__binary_t__type() }, epure::pure) }},
+
+		{ "map", host_function_signature_t{ 1033, typeid_t::make_function(DYN, { DYN, DYN}, epure::pure) }},
+
 
 		//	print = impure!
 		{ "print", host_function_signature_t{ 1000, typeid_t::make_function(VOID, { DYN }, epure::pure) } },
 		{ "send", host_function_signature_t{ 1022, typeid_t::make_function(VOID, { typeid_t::make_string(), typeid_t::make_json_value() }, epure::impure) } },
 		{ "get_time_of_day", host_function_signature_t{ 1005, typeid_t::make_function(typeid_t::make_int(), {}, epure::impure) }},
-
-
-		{ "calc_string_sha1", host_function_signature_t{ 1031, typeid_t::make_function(make__sha1_t__type(), { typeid_t::make_string() }, epure::pure) }},
-		{ "calc_binary_sha1", host_function_signature_t{ 1032, typeid_t::make_function(make__sha1_t__type(), { make__binary_t__type() }, epure::pure) }},
 
 
 		{ "read_text_file", host_function_signature_t{ 1015, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::impure) }},
@@ -1716,6 +1801,7 @@ std::map<int,  host_function_t> get_host_functions(){
 
 		{ "calc_string_sha1", host__calc_string_sha1 },
 		{ "calc_binary_sha1", host__calc_binary_sha1 },
+		{ "map", host__map },
 
 		{ "print", host__print },
 		{ "send", host__send },

@@ -2940,7 +2940,7 @@ QUARK_UNIT_TESTQ("run_init()", "get_time_of_day()"){
 
 
 
-QUARK_UNIT_TEST_VIP("", "calc_string_sha1()", "", ""){
+QUARK_UNIT_TEST("", "calc_string_sha1()", "", ""){
 	test__run_global(
 		R"(
 
@@ -2950,7 +2950,7 @@ QUARK_UNIT_TEST_VIP("", "calc_string_sha1()", "", ""){
 		)"
 	);
 }
-QUARK_UNIT_TEST_VIP("", "calc_binary_sha1()", "", ""){
+QUARK_UNIT_TEST("", "calc_binary_sha1()", "", ""){
 	test__run_global(
 		R"(
 
@@ -2962,6 +2962,29 @@ QUARK_UNIT_TEST_VIP("", "calc_binary_sha1()", "", ""){
 	);
 }
 
+
+
+//////////////////////////////////////////		HOST FUNCTION - map()
+
+
+
+QUARK_UNIT_TEST_VIP("", "map()", "", ""){
+	test__run_global(
+		R"(
+
+			let a = [ 10, 11, 12, 13, 14 ]
+
+			func int f(int v){
+				return 1000 + v
+			}
+
+			let result = map(a, f)
+			print(to_string(result))
+//			assert(result == [ 1010, 1011, 1012, 1013, 1014])
+
+		)"
+	);
+}
 
 
 

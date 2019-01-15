@@ -100,6 +100,13 @@ Processes a vector of values one by one using function f. It returns a vector of
 [R] map([E], R f(E e))
 ```
 
+Supports mapping over
+- vectors
+- dictionaries
+- characters in a string
+- jsonvalue::array
+- jsonvalue::object
+
 
 ## filter()
 
