@@ -1000,79 +1000,7 @@ bc_value_t host__get_json_type(interpreter_t& vm, const bc_value_t args[], int a
 }
 
 
-
-
-/////////////////////////////////////////		IMPURE -- MISC
-
-
-
-
-//	Records all output to interpreter
-bc_value_t host__print(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 1){
-		throw std::runtime_error("assert() requires 1 argument!");
-	}
-
-	const auto& value = args[0];
-	const auto s = to_compact_string2(bc_to_value(value));
-//	printf("%s\n", s.c_str());
-	vm._print_output.push_back(s);
-
-	return bc_value_t::make_undefined();
-}
-bc_value_t host__send(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 2){
-		throw std::runtime_error("send() requires 2 arguments!");
-	}
-
-	const auto& process_id = args[0].get_string_value();
-	const auto& message_json = args[1].get_json_value();
-
-	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
-
-
-	vm._handler->on_send(process_id, message_json);
-
-	return bc_value_t::make_undefined();
-}
-
-
-bc_value_t host__get_time_of_day(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 0){
-		throw std::runtime_error("get_time_of_day() requires 0 arguments!");
-	}
-
-	std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> elapsed_seconds = t - vm._imm->_start_time;
-	const auto ms = elapsed_seconds.count() * 1000.0;
-	const auto result = value_t::make_int(int(ms));
-	return value_to_bc(result);
-}
-
-QUARK_UNIT_TESTQ("sizeof(int)", ""){
-	QUARK_TRACE(std::to_string(sizeof(int)));
-	QUARK_TRACE(std::to_string(sizeof(int64_t)));
-}
-
-QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
-	const auto a = std::chrono::high_resolution_clock::now();
-	std::this_thread::sleep_for(std::chrono::milliseconds(7));
-	const auto b = std::chrono::high_resolution_clock::now();
-
-	std::chrono::duration<double> elapsed_seconds = b - a;
-	const int ms = static_cast<int>((static_cast<double>(elapsed_seconds.count()) * 1000.0));
-
-	QUARK_UT_VERIFY(ms >= 7)
-}
-
-
-/////////////////////////////////////////		IMPURE -- SHA1
+/////////////////////////////////////////		PURE -- SHA1
 
 
 /*
@@ -1160,6 +1088,78 @@ bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], in
 	const auto v = value_to_bc(result);
 	return v;
 }
+
+
+/////////////////////////////////////////		IMPURE -- MISC
+
+
+
+
+//	Records all output to interpreter
+bc_value_t host__print(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 1){
+		throw std::runtime_error("assert() requires 1 argument!");
+	}
+
+	const auto& value = args[0];
+	const auto s = to_compact_string2(bc_to_value(value));
+//	printf("%s\n", s.c_str());
+	vm._print_output.push_back(s);
+
+	return bc_value_t::make_undefined();
+}
+bc_value_t host__send(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 2){
+		throw std::runtime_error("send() requires 2 arguments!");
+	}
+
+	const auto& process_id = args[0].get_string_value();
+	const auto& message_json = args[1].get_json_value();
+
+	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
+
+
+	vm._handler->on_send(process_id, message_json);
+
+	return bc_value_t::make_undefined();
+}
+
+
+bc_value_t host__get_time_of_day(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 0){
+		throw std::runtime_error("get_time_of_day() requires 0 arguments!");
+	}
+
+	std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> elapsed_seconds = t - vm._imm->_start_time;
+	const auto ms = elapsed_seconds.count() * 1000.0;
+	const auto result = value_t::make_int(int(ms));
+	return value_to_bc(result);
+}
+
+QUARK_UNIT_TESTQ("sizeof(int)", ""){
+	QUARK_TRACE(std::to_string(sizeof(int)));
+	QUARK_TRACE(std::to_string(sizeof(int64_t)));
+}
+
+QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
+	const auto a = std::chrono::high_resolution_clock::now();
+	std::this_thread::sleep_for(std::chrono::milliseconds(7));
+	const auto b = std::chrono::high_resolution_clock::now();
+
+	std::chrono::duration<double> elapsed_seconds = b - a;
+	const int ms = static_cast<int>((static_cast<double>(elapsed_seconds.count()) * 1000.0));
+
+	QUARK_UT_VERIFY(ms >= 7)
+}
+
+
 
 
 
@@ -1714,13 +1714,12 @@ std::map<int,  host_function_t> get_host_functions(){
 		{ "jsonvalue_to_value", host__jsonvalue_to_value },
 		{ "get_json_type", host__get_json_type },
 
-		{ "print", host__print },
-		{ "send", host__send },
-		{ "get_time_of_day", host__get_time_of_day },
-
 		{ "calc_string_sha1", host__calc_string_sha1 },
 		{ "calc_binary_sha1", host__calc_binary_sha1 },
 
+		{ "print", host__print },
+		{ "send", host__send },
+		{ "get_time_of_day", host__get_time_of_day },
 
 		{ "read_text_file", host__read_text_file },
 		{ "write_text_file", host__write_text_file },
