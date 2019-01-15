@@ -260,9 +260,9 @@ Type "help", "copyright", "credits" or "license" for more information.
 	}
 }
 
-void run_file(const std::vector<std::string>& args){
-	const auto source_path = args[1];
-	const std::vector<std::string> args2(args.begin() + 2, args.end());
+int run_file(const std::vector<std::string>& args){
+	const auto source_path = args[0];
+	const std::vector<std::string> args2(args.begin() + 1, args.end());
 
 //	std::cout << "Source file:" << source_path << std::endl;
 
@@ -297,7 +297,14 @@ void run_file(const std::vector<std::string>& args){
 //	std::cout << "Running..." << source << std::endl;
 
 	const auto result = floyd::run_program(context, program, args3);
-	std::cout << result.second.get_int_value() << std::endl;
+	if(result.second.is_int()){
+		int64_t result_code = result.second.get_int_value();
+		std::cout << result_code << std::endl;
+		return static_cast<int>(result_code);
+	}
+	else{
+		return 0;
+	}
 }
 
 void run_tests(){
@@ -456,7 +463,8 @@ int main(int argc, const char * argv[]) {
 		//	Run provided script file.
 		if(args.size() == 2){
 			const auto floyd_args = std::vector<std::string>(args.begin() + 1, args.end());
-			run_file(floyd_args);
+			int error_code = run_file(floyd_args);
+			return error_code;
 		}
 
 		//	Run REPL

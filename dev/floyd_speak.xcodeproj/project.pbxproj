@@ -57,6 +57,9 @@
 		2C4EF65621E4022100A9A7DB /* ast_typeid_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4EF65321E4022100A9A7DB /* ast_typeid_helpers.cpp */; };
 		2C4F355F1D4794CD0061CA93 /* ast_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4F355D1D4794CD0061CA93 /* ast_value.cpp */; };
 		2C530C2F21EA1DBE00F962FB /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C530C2E21EA1DBE00F962FB /* CoreFoundation.framework */; };
+		2C530C3021EDF23F00F962FB /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C530C2E21EA1DBE00F962FB /* CoreFoundation.framework */; };
+		2C530C3121EE0D0300F962FB /* libncurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CBF330C202143BD0030AE98 /* libncurses.tbd */; };
+		2C530C3221EE0D2000F962FB /* libncurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CBF330C202143BD0030AE98 /* libncurses.tbd */; };
 		2C5372B9207A9EBA00647AD1 /* bytecode_interpreter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5372B8207A9EBA00647AD1 /* bytecode_interpreter.cpp */; };
 		2C557C382040173E006F6818 /* host_functions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C557C362040173E006F6818 /* host_functions.cpp */; };
 		2C574E4A203107D80035EA62 /* ast_typeid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C574E48203107D80035EA62 /* ast_typeid.cpp */; };
@@ -219,7 +222,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2C530C3021EDF23F00F962FB /* CoreFoundation.framework in Frameworks */,
 				2C64578F2021E32E003625C8 /* libedit.tbd in Frameworks */,
+				2C530C3121EE0D0300F962FB /* libncurses.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -229,6 +234,7 @@
 			files = (
 				2C530C2F21EA1DBE00F962FB /* CoreFoundation.framework in Frameworks */,
 				2C78AD6D207B50AB00839E3E /* libedit.tbd in Frameworks */,
+				2C530C3221EE0D2000F962FB /* libncurses.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -632,7 +638,6 @@
 		2C0E14472063CDE50078EF4B /* Release - Profiling */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"QUARK_ASSERT_ON=0",
 					"QUARK_TRACE_ON=0",
@@ -747,7 +752,6 @@
 		2C1D84E51CA765A90042F0A8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"QUARK_ASSERT_ON=1",
 					"QUARK_TRACE_ON=1",
@@ -761,7 +765,6 @@
 		2C1D84E61CA765A90042F0A8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"QUARK_ASSERT_ON=0",
 					"QUARK_TRACE_ON=0",
@@ -774,7 +777,6 @@
 		2C78AD70207B50AB00839E3E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"QUARK_ASSERT_ON=1",
 					"QUARK_TRACE_ON=1",
@@ -787,7 +789,6 @@
 		2C78AD71207B50AB00839E3E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"QUARK_ASSERT_ON=0",
 					"QUARK_TRACE_ON=0",
@@ -799,7 +800,6 @@
 		2C78AD72207B50AB00839E3E /* Release - Profiling */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"QUARK_ASSERT_ON=0",
 					"QUARK_TRACE_ON=0",

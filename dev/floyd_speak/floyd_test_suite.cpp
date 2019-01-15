@@ -2968,7 +2968,7 @@ QUARK_UNIT_TEST("", "calc_binary_sha1()", "", ""){
 
 
 
-QUARK_UNIT_TEST_VIP("", "map()", "", ""){
+QUARK_UNIT_TEST("", "map()", "", ""){
 	test__run_global(
 		R"(
 
