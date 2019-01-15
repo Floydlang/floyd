@@ -206,3 +206,9 @@ std::string MakeAbsolutePath(const std::string& base, const std::string& relativ
 
 
 
+////////////////////////////		COMMAND LINE ARGUMENTS
+
+
+std::vector<std::string> args_to_vector(int argc, const char * argv[]);
+std::pair<std::string, std::vector<std::string> > extract_key(const std::vector<std::string>& args, const std::string& key);
+std::vector<std::pair<std::string, std::string>> parse_command_line_args(int argc, char* argv[], const std::string& flags);

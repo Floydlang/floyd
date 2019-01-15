@@ -21,7 +21,10 @@
 #include "ast_basics.h"
 #include "text_parser.h"
 #include "interpretator_benchmark.h"
+#include "FileHandling.h"
 
+#include <stdio.h>
+#include <unistd.h>
 
 
 //////////////////////////////////////////////////		main()
@@ -359,14 +362,6 @@ void run_tests(){
 	});
 }
 
-std::vector<std::string> args_to_vector(int argc, const char * argv[]){
-	std::vector<std::string> r;
-	for(int i = 0 ; i < argc ; i++){
-		const std::string s(argv[i]);
-		r.push_back(s);
-	}
-	return r;
-}
 
 
 bool trace_on = true;
@@ -432,6 +427,15 @@ void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_cod
 	throw std::logic_error("Unit test failed");
 }
 
+/*
+
+floyd (compiler settings
+
+"floyd myscript.floyd"
+ 
+"python myscript.py
+
+*/
 
 int main(int argc, const char * argv[]) {
 	const auto prev_q = quark::get_runtime();
@@ -442,6 +446,7 @@ int main(int argc, const char * argv[]) {
 
 	bool runtests = std::find(args.begin(), args.end(), "runtests") != args.end();
 	bool benchmark = std::find(args.begin(), args.end(), "benchmark") != args.end();
+	bool trace = std::find(args.begin(), args.end(), "-trace") != args.end();
 	bool run_as_tool = runtests == false && benchmark == false;
 
 	if(runtests && QUARK_UNIT_TESTS_ON){

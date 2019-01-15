@@ -991,3 +991,140 @@ std::string MakeAbsolutePath(const std::string& base, const std::string& relativ
 
 
 
+
+
+////////////////////////////		COMMAND LINE ARGUMENTS
+
+
+
+
+std::vector<std::string> args_to_vector(int argc, const char * argv[]){
+	std::vector<std::string> r;
+	for(int i = 0 ; i < argc ; i++){
+		const std::string s(argv[i]);
+		r.push_back(s);
+	}
+	return r;
+}
+
+std::pair<std::string, std::vector<std::string> > extract_key(const std::vector<std::string>& args, const std::string& key){
+	const auto it = std::find(args.begin(), args.end(), key);
+	if(it != args.end()){
+		auto copy = args;
+		copy.erase(it);
+
+		return { key, copy };
+	}
+	else{
+		return { "", args };
+	}
+}
+
+/*
+% testopt
+aflag = 0, bflag = 0, cvalue = (null)
+
+% testopt -a -b
+aflag = 1, bflag = 1, cvalue = (null)
+
+% testopt -ab
+aflag = 1, bflag = 1, cvalue = (null)
+
+% testopt -c foo
+aflag = 0, bflag = 0, cvalue = foo
+
+% testopt -cfoo
+aflag = 0, bflag = 0, cvalue = foo
+
+% testopt arg1
+aflag = 0, bflag = 0, cvalue = (null)
+Non-option argument arg1
+
+% testopt -a arg1
+aflag = 1, bflag = 0, cvalue = (null)
+Non-option argument arg1
+
+% testopt -c foo arg1
+aflag = 0, bflag = 0, cvalue = foo
+Non-option argument arg1
+
+% testopt -a -- -b
+aflag = 1, bflag = 0, cvalue = (null)
+Non-option argument -b
+
+% testopt -a -
+aflag = 1, bflag = 0, cvalue = (null)
+Non-option argument -
+*/
+
+std::vector<std::pair<std::string, std::string>> parse_command_line_args(int argc, char* argv[], const std::string& flags){
+	std::vector<std::pair<std::string, std::string>> result;
+
+    int opt = 0;
+	
+    // put ':' in the starting of the
+    // string so that program can
+    //distinguish between '?' and ':'
+    while((opt = getopt(argc, argv, flags.c_str())) != -1){
+        switch(opt){
+            case 'i':
+            case 'l':
+            case 'r':
+            	{
+					const std::string opt_string(1, opt);
+					result.push_back({ "option", opt_string });
+					printf("option: %c\n", opt);
+                }
+                break;
+            case 'f':
+            	{
+            		result.push_back({ "filename", optarg });
+                	printf("filename: %s\n", optarg);
+				}
+                break;
+            case ':':
+            	{
+            		result.push_back({ "option needs a value", "" });
+                	printf("option needs a value\n");
+				}
+                break;
+            case '?':
+            	{
+					const std::string optopt_string(1, optopt);
+					result.push_back({ "unknown option", optopt_string });
+					printf("unknown option: %c\n", optopt);
+                }
+                break;
+        }
+    }
+	
+    // optind is for the extra arguments
+    // which are not parsed
+    for(; optind < argc; optind++){
+		result.push_back({ "extra argument", std::string(argv[optind]) });
+        printf("extra arguments: %s\n", argv[optind]);
+    }
+
+	for(const auto& e: result){
+		const auto s = e.first + ": " + e.second;
+		QUARK_TRACE(s);
+	}
+    return result;
+}
+
+
+QUARK_UNIT_TEST_VIP("", "parse_command_line_args()", "", ""){
+	char* argv[10];
+	argv[0] = "myapp";
+	const auto result = parse_command_line_args(1, argv, ":if:lrx");
+	QUARK_UT_VERIFY((result == std::vector<std::pair<std::string, std::string>>{}));
+}
+
+QUARK_UNIT_TEST_VIP("", "parse_command_line_args()", "", ""){
+	char* argv[10];
+	argv[0] = "myapp";
+	argv[1] = "file1.txt";
+	const auto result = parse_command_line_args(2, argv, ":if:lrx");
+	QUARK_UT_VERIFY((result == std::vector<std::pair<std::string, std::string>>{}));
+}
+
