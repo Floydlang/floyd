@@ -32,6 +32,10 @@ float parse_float(string pos)
 double parse_double(string pos)
 ```
 
+In the default "C" locale, the following lowercase letters abcdefghijklmnopqrstuvwxyz are replaced with respective uppercase letters ABCDEFGHIJKLMNOPQRSTUVWXYZ.
+
+
+
 
 
 

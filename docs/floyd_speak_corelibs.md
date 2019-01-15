@@ -70,45 +70,6 @@ Make a new Floyd JSON value from a JSON-script string. If the string is malforme
 
 
 
-## map(), filter(), reduce()
-
-TODO POC: Implement
-
-IMPORTANT: Thsese functions *also* exposed parallelism opportunities that allows the Floyd runtime to process each element on a separate hardware code, like shaders works in a graphics card. The supplied function must be pure.
-
-
-
-## supermap()
-
-TODO 1.0
-
-	[int:R] supermap(tasks: [T, [int], f: R (T, [R]))
-
-This function runs a bunch of tasks with dependencies between them. When supermap() returns, all tasks have been executed.
-
-- Tasks can call blocking functions or impure functions. This makes the supermap() call impure too.
-- Tasks cannot generate new tasks.
-- A task *can* call supermap.
-- Task will not start until all its dependencies have been finished.
-- There is no way for any code to observe partially executed supermap(). It's done or not.
-
-- **tasks**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The indexes are the indexes into the tasks-vector.
-
-- **f**: this is your function that processes one T and returns a result R. The function must not depend on the order in which tasks execute. When f is called, all the tasks dependency tasks have already been executed and you get their results in [R].
-
-- **result**: a vector with one element for each element in the tasks-argument. The order of the elements are undefined. The int specifies which task, the R is its result.
-
-
-Notice: your function f can send messages to a clock — this means another clock can start consuming results while supermap() is still running.
-
-Notice: using this function exposes potential for parallelism.
-
-
-[//]: # (???)
-
-IDEA: Make this a two-step process. First analyze the tasks into an execution description. Then use that description to run the tasks. This allows grouping small tasks into lumps. Allow you to reuse the dependency graph but tag some tasks NOP. This lets you keep the execution description for next time, if tasks are the same. Also lets you inspect the execution description and improve it or create one for scratch.
-
-
 
 # calc\_string\_sha1()
 
@@ -125,6 +86,63 @@ Calculates a SHA1 hash for a block binary data.
 ```
 sha1_t calc_binary_sha1(binary_t d)
 ```
+
+
+# FUNCTIONAL-STYLE MAP FUNCTIONS
+
+IMPORTANT: Thsese functions *also* exposed parallelism opportunities that allows the Floyd runtime to process each element on a separate hardware code, like shaders works in a graphics card. The supplied function must be pure.
+
+## map()
+
+Processes a vector of values one by one using function f. It returns a vector of the same size, but with values of type R.
+
+```
+[R] map([E], R f(E e))
+```
+
+
+## filter()
+
+Processes a vector of values and returns each that function f decides to include.
+
+```
+[E] reduce([E], bool f(E e))
+```
+
+
+## reduce()
+
+Processes a vector or values using the supplied function. Result is *one* value.
+
+```
+R reduce([E], R init, R f(R accumulator, E e))
+```
+
+
+## supermap()
+
+	[R] supermap([T] values, [int] depends_on, R (T, [R]) f)
+
+This function runs a bunch of tasks with dependencies between them. When supermap() returns, all tasks have been executed.
+
+- Tasks can call blocking functions or impure functions. This makes the supermap() call impure too.
+- Tasks cannot generate new tasks.
+- A task *can* call supermap.
+- Task will not start until all its dependencies have been finished.
+- There is no way for any code to observe partially executed supermap(). It's done or not.
+
+- ** values**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The indexes are the indexes into the tasks-vector.
+
+- **f**: this is your function that processes one T and returns a result R. The function must not depend on the order in which tasks execute. When f is called, all the tasks dependency tasks have already been executed and you get their results in [R].
+
+- **result**: a vector with one element for each element in the tasks-argument. The order of the elements is the same as the input vector.
+
+
+Notice: your function f can send messages to a clock — this means another clock can start consuming results while supermap() is still running.
+
+Notice: using this function exposes potential for parallelism.
+
+
 
 
 
