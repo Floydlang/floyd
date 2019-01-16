@@ -75,13 +75,13 @@ QUARK_UNIT_TEST("C++17 variant", "", "", ""){
     foo = 69;
     //Extract the last assigned value:
     if( std::get<int>(foo) == 69 ) {
-        std::cout << "Let's do it!\n";
+       	QUARK_TRACE_SS("Let's do it!");
     }
 	
     //Assign a value to the std::string member
     foo = "Ciao!";
 	
-    std::cout << std::get<std::string>(foo) << std::endl;
+	QUARK_TRACE_SS(std::get<std::string>(foo));
 
 	const auto x = std::get<std::string>(foo);
 	QUARK_UT_VERIFY(x == "Ciao!");
@@ -268,7 +268,8 @@ static const int k_hardware_thread_count = 8;
 
 
 void call_from_thread(int tid) {
-	std::cout << tid << std::endl;
+//	std::cout << tid << std::endl;
+   	QUARK_TRACE_SS(tid);
 }
 
 struct runtime_t {
@@ -290,11 +291,11 @@ struct runtime_t {
 
 
 QUARK_UNIT_TEST("","", "", ""){
-	std::cout << "A" << std::endl;
+   	QUARK_TRACE_SS("A");
 	{
 		runtime_t test_runtime;
-		std::cout << "B" << std::endl;
+   		QUARK_TRACE_SS("B");
 	}
-	std::cout << "C" << std::endl;
+	QUARK_TRACE_SS("C");
 }
 

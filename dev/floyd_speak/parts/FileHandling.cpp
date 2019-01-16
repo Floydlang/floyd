@@ -1093,6 +1093,9 @@ command_line_args_t parse_command_line_args(const std::vector<std::string>& args
 	//	or when scanning a new argument vector.
 	optind = 1;
 
+	//	Disable getopt() from printing errors to stderr.
+	opterr = 0;
+
     // put ':' in the starting of the
     // string so that program can
     //distinguish between '?' and ':'
@@ -1130,7 +1133,6 @@ command_line_args_t parse_command_line_args(const std::vector<std::string>& args
     for(; optind < argc; optind++){
 		const auto s = std::string(argv[optind]);
 		extras.push_back(s);
-        printf("extra arguments: %s\n", argv[optind]);
     }
 
 	return { args[0], "", flags2, extras };
@@ -1319,7 +1321,7 @@ QUARK_UNIT_TEST("", "parse_command_line_args_subcommands()", "", ""){
 	QUARK_UT_VERIFY((result.flags == std::map<std::string, std::string>{}));
 	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{ "*" }));
 }
-QUARK_UNIT_TEST("", "parse_command_line_args_subcommands()", "", ""){
+QUARK_UNIT_TEST_VIP("", "parse_command_line_args_subcommands()", "", ""){
 	const auto result = parse_command_line_args_subcommands(split_command_line(k_git_command_examples[5]), "");
 	QUARK_UT_VERIFY(result.command == "git");
 	QUARK_UT_VERIFY(result.subcommand == "commit");

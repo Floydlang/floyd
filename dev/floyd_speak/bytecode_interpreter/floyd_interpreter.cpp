@@ -429,9 +429,9 @@ void print_vm_printlog(const interpreter_t& vm){
 	QUARK_ASSERT(vm.check_invariant());
 
 	if(vm._print_output.empty() == false){
-		std::cout << "print output:\n";
+		QUARK_SCOPED_TRACE("print output:");
 		for(const auto& line: vm._print_output){
-			std::cout << line << "\n";
+			QUARK_SCOPED_TRACE(line);
 		}
 	}
 }
@@ -513,7 +513,7 @@ void send_message(process_runtime_t& runtime, int process_id, const json_t& mess
     {
         std::lock_guard<std::mutex> lk(process._inbox_mutex);
         process._inbox.push_front(message);
-        std::cout << "Notifying...\n";
+        QUARK_TRACE("Notifying...");
     }
     process._inbox_condition_variable.notify_one();
 //    process._inbox_condition_variable.notify_all();
@@ -539,9 +539,9 @@ void process_process(process_runtime_t& runtime, int process_id){
 		{
 			std::unique_lock<std::mutex> lk(process._inbox_mutex);
 
-			std::cout << thread_name << ": waiting... \n";
+        	QUARK_TRACE_SS(thread_name << ": waiting......");
 			process._inbox_condition_variable.wait(lk, [&]{ return process._inbox.empty() == false; });
-			std::cout << thread_name << ": continue... \n";
+        	QUARK_TRACE_SS(thread_name << ": continue");
 
 			//	Pop message.
 			QUARK_ASSERT(process._inbox.empty() == false);
@@ -552,7 +552,7 @@ void process_process(process_runtime_t& runtime, int process_id){
 
 		if(message.is_string() && message.get_string() == "stop"){
 			stop = true;
-			std::cout << thread_name << ": STOP \n";
+        	QUARK_TRACE_SS(thread_name << ": STOP");
 		}
 		else{
 			if(process._processor){

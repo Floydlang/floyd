@@ -434,19 +434,23 @@ struct trace_globals_t {
 };
 
 inline trace_globals_t* get_global_data(){
-	static trace_globals_t globals;
-	globals._current = & globals._default_tracer;
+	static std::shared_ptr<trace_globals_t> globals;
 
-	return &globals;
+	if(!globals){
+		globals = std::make_shared<trace_globals_t>();
+		globals->_current = &globals->_default_tracer;
+	}
+
+	return globals.get();
 }
 
 
-inline const trace_i* get_trace(){
+inline const trace_i& get_trace(){
 	const auto g = get_global_data();
 
 	const auto result = g->_current;
 	assert(result);
-	return result;
+	return *result;
 }
 
 inline void set_trace(const trace_i* v){
@@ -455,39 +459,6 @@ inline void set_trace(const trace_i* v){
 }
 
 
-////////////////////////////		trace_context_t
-
-//	Notice: this is CONST but has hidden side effects. I decided this is OK.
-
-
-struct trace_context_t {
-	public: bool _verbose;
-	public: const trace_i* _tracer;
-
-
-	public: trace_context_t(bool verbose, const trace_i* tracer) :
-		_verbose(verbose),
-		_tracer(tracer)
-	{
-	}
-
-	public: void trace(const char s[]) const{
-		if(_verbose && strlen(s) > 0){
-			_tracer->trace_i__trace(s);
-		}
-	}
-	public: void open_scope(const char s[]) const{
-		_tracer->trace_i__open_scope(_verbose ? s : "");
-	}
-	public: void close_scope(const char s[]) const{
-		_tracer->trace_i__close_scope(_verbose ? s : "");
-	}
-};
-
-
-inline trace_context_t make_default_tracer(){
-	return trace_context_t(true, get_trace());
-}
 
 
 ////////////////////////////		scoped_trace
@@ -498,28 +469,28 @@ inline trace_context_t make_default_tracer(){
 
 #if QUARK_TRACE_ON
 	struct scoped_trace {
-		scoped_trace(const std::string& s, const trace_context_t* tracer) :
-			_tracer(tracer == nullptr ? make_default_tracer() : *tracer),
+		scoped_trace(const std::string& s, const trace_i& tracer) :
+			_tracer(tracer),
 			_trace_brackets(true)
 		{
-			_tracer.open_scope((s + " {").c_str());
+			_tracer.trace_i__open_scope((s + " {").c_str());
 		}
 
 		~scoped_trace(){
 			if(_trace_brackets){
-				_tracer.close_scope("}");
+				_tracer.trace_i__close_scope("}");
 			}
 			else{
-				_tracer.close_scope("");
+				_tracer.trace_i__close_scope("");
 			}
 		}
 
-		private: const trace_context_t _tracer;
+		private: const trace_i& _tracer;
 		private: bool _trace_brackets = true;
 	};
 #else
 	struct scoped_trace {
-		scoped_trace(const std::string& s, const trace_context_t* tracer){
+		scoped_trace(const std::string& s, const trace_i& tracer){
 		}
 
 		~scoped_trace(){
@@ -535,30 +506,24 @@ inline trace_context_t make_default_tracer(){
 		These functions are called by the macros and they in turn call the runtime_i.
 		TODO: Use only trace_context_t, runtime_i should contain a tracer.
 	*/
-	inline void on_trace_hook(const char s[], const trace_context_t& tracer){
-		tracer.trace(s);
+	inline void on_trace_hook(const char s[], const trace_i& tracer){
+		tracer.trace_i__trace(s);
 	}
 
 	//	Overloaded for char[] and std::string.
-	inline void quark_trace_func(const char s[], const trace_context_t* tracer){
-		if(tracer == nullptr){
-			const auto def = make_default_tracer();
-			return quark_trace_func(s, &def);
-		}
-		else{
-			::quark::on_trace_hook(s, *tracer);
-		}
+	inline void quark_trace_func(const char s[], const trace_i& tracer){
+		::quark::on_trace_hook(s, tracer);
 	}
-	inline void quark_trace_func(const std::string& s, const trace_context_t* tracer){
+	inline void quark_trace_func(const std::string& s, const trace_i& tracer){
 		quark_trace_func(s.c_str(), tracer);
 	}
-	inline void quark_trace_func(const std::stringstream& s, const trace_context_t* tracer){
+	inline void quark_trace_func(const std::stringstream& s, const trace_i& tracer){
 		quark_trace_func(s.str().c_str(), tracer);
 	}
 
-	#define QUARK_TRACE(s) ::quark::quark_trace_func(s, nullptr)
-	#define QUARK_TRACE_SS(x) {std::stringstream ss; ss << x; ::quark::quark_trace_func(ss, nullptr);}
-	#define QUARK_SCOPED_TRACE(s) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (s, nullptr)
+	#define QUARK_TRACE(s) ::quark::quark_trace_func(s, quark::get_trace())
+	#define QUARK_TRACE_SS(x) {std::stringstream ss; ss << x; ::quark::quark_trace_func(ss, quark::get_trace());}
+	#define QUARK_SCOPED_TRACE(s) ::quark::scoped_trace QUARK_UNIQUE_LABEL(scoped_trace) (s, quark::get_trace())
 #else
 	#define QUARK_TRACE(s)
 	#define QUARK_TRACE_SS(s)

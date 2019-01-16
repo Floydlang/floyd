@@ -442,17 +442,14 @@ std::string json_to_pretty_string(const json_t& value, int pos, const pretty_t& 
 
 QUARK_UNIT_TESTQ("json_to_pretty_string()", ""){
 	const pretty_t pretty{ k_default_pretty_columns, 4 };
-	std::cout <<(
-		json_to_pretty_string(
-			json_t::make_object(),
-			quark::get_log_indent(),
-			pretty
-		)
+   	QUARK_TRACE_SS(
+		json_to_pretty_string(json_t::make_object(), quark::get_log_indent(), pretty)
 	);
 }
 
 
 QUARK_UNIT_TESTQ("cout()", ""){
+#if 0
 	std::cout <<("\t\t\t{\n\t\t\t\t\"a\": 100\n\t\t\t}\n");
 	std::cout << R"(
 			{
@@ -460,6 +457,8 @@ QUARK_UNIT_TESTQ("cout()", ""){
 				"b": 234
 			}
 	)";
+#endif
+
 }
 
 QUARK_UNIT_TESTQ("json_to_pretty_string()", "object"){
@@ -474,7 +473,7 @@ QUARK_UNIT_TESTQ("json_to_pretty_string()", "object"){
 		quark::get_log_indent(),
 		pretty
 	);
-	std::cout << result << "\n";
+	QUARK_TRACE_SS(result);
 }
 
 
@@ -498,7 +497,7 @@ QUARK_UNIT_TESTQ("json_to_pretty_string()", "nested object"){
 		quark::get_log_indent(),
 		pretty
 	);
-	std::cout << result<<"\n";
+	QUARK_TRACE_SS(result);
 }
 
 
@@ -511,7 +510,7 @@ QUARK_UNIT_TESTQ("json_to_pretty_string()", "array"){
 		quark::get_log_indent(),
 		pretty
 	);
-	std::cout << result << "\n";
+	QUARK_TRACE_SS(result);
 }
 
 QUARK_UNIT_TESTQ("json_to_pretty_string()", "nested arrays"){
@@ -524,19 +523,18 @@ QUARK_UNIT_TESTQ("json_to_pretty_string()", "nested arrays"){
 		quark::get_log_indent(),
 		pretty
 	);
-	std::cout << result << "\n";
+	QUARK_TRACE_SS(result);
 }
 
 
 QUARK_UNIT_TESTQ("json_to_pretty_string()", ""){
 	const pretty_t pretty{ k_default_pretty_columns, 4 };
-	std::cout <<(
-		json_to_pretty_string(
-			parse_json(seq_t(beautiful_raw_string)).first,
-			quark::get_log_indent(),
-			pretty
-		)
-	) << "\n";
+	const auto result =	json_to_pretty_string(
+		parse_json(seq_t(beautiful_raw_string)).first,
+		quark::get_log_indent(),
+		pretty
+	);
+	QUARK_TRACE_SS(result);
 }
 
 
@@ -618,7 +616,7 @@ QUARK_UNIT_TESTQ("json_to_pretty_string()", ""){
 	const pretty_t pretty{ k_default_pretty_columns, 4 };
 	const auto b = json_to_pretty_string(json, 0, pretty );
 
-	std::cout << b << "\n";
+	QUARK_TRACE_SS(b);
 }
 
 
