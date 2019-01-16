@@ -10,95 +10,48 @@
 		2C00BC421F2428FF0087B8BB /* cpp_experiments.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00BC411F2428FF0087B8BB /* cpp_experiments.cpp */; };
 		2C02667C2014CAF000A82AD6 /* floyd_test_suite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */; };
 		2C18044B208B90E900F62480 /* utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180448208B90E800F62480 /* utils.cpp */; };
-		2C18044C208B90E900F62480 /* utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180448208B90E800F62480 /* utils.cpp */; };
 		2C18044D208B90E900F62480 /* text_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18044A208B90E800F62480 /* text_parser.cpp */; };
-		2C18044E208B90E900F62480 /* text_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18044A208B90E800F62480 /* text_parser.cpp */; };
 		2C180455208B911B00F62480 /* quark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180454208B911A00F62480 /* quark.cpp */; };
-		2C180456208B911B00F62480 /* quark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180454208B911A00F62480 /* quark.cpp */; };
 		2C18045D208B917500F62480 /* json_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180457208B917400F62480 /* json_parser.cpp */; };
-		2C18045E208B917500F62480 /* json_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180457208B917400F62480 /* json_parser.cpp */; };
 		2C18045F208B917500F62480 /* json_support.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18045B208B917500F62480 /* json_support.cpp */; };
-		2C180460208B917500F62480 /* json_support.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18045B208B917500F62480 /* json_support.cpp */; };
 		2C180461208B917500F62480 /* json_writer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18045C208B917500F62480 /* json_writer.cpp */; };
-		2C180462208B917500F62480 /* json_writer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18045C208B917500F62480 /* json_writer.cpp */; };
 		2C180475208B939800F62480 /* floyd_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180465208B939700F62480 /* floyd_parser.cpp */; };
-		2C180476208B939800F62480 /* floyd_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180465208B939700F62480 /* floyd_parser.cpp */; };
 		2C180477208B939800F62480 /* parse_expression.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180467208B939700F62480 /* parse_expression.cpp */; };
-		2C180478208B939800F62480 /* parse_expression.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180467208B939700F62480 /* parse_expression.cpp */; };
 		2C180479208B939800F62480 /* parse_function_def.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180469208B939700F62480 /* parse_function_def.cpp */; };
-		2C18047A208B939800F62480 /* parse_function_def.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180469208B939700F62480 /* parse_function_def.cpp */; };
 		2C18047B208B939800F62480 /* parse_prefixless_statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18046B208B939700F62480 /* parse_prefixless_statement.cpp */; };
-		2C18047C208B939800F62480 /* parse_prefixless_statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18046B208B939700F62480 /* parse_prefixless_statement.cpp */; };
 		2C18047D208B939800F62480 /* parse_statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18046D208B939700F62480 /* parse_statement.cpp */; };
-		2C18047E208B939800F62480 /* parse_statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18046D208B939700F62480 /* parse_statement.cpp */; };
 		2C18047F208B939800F62480 /* parse_struct_def.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18046F208B939700F62480 /* parse_struct_def.cpp */; };
-		2C180480208B939800F62480 /* parse_struct_def.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18046F208B939700F62480 /* parse_struct_def.cpp */; };
 		2C180481208B939800F62480 /* parser2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180471208B939700F62480 /* parser2.cpp */; };
-		2C180482208B939800F62480 /* parser2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180471208B939700F62480 /* parser2.cpp */; };
 		2C180483208B939800F62480 /* parser_primitives.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180473208B939700F62480 /* parser_primitives.cpp */; };
-		2C180484208B939800F62480 /* parser_primitives.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180473208B939700F62480 /* parser_primitives.cpp */; };
 		2C18048E208B947C00F62480 /* ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180486208B947C00F62480 /* ast.cpp */; };
-		2C18048F208B947C00F62480 /* ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180486208B947C00F62480 /* ast.cpp */; };
 		2C180490208B947C00F62480 /* ast_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180488208B947C00F62480 /* ast_basics.cpp */; };
-		2C180491208B947C00F62480 /* ast_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180488208B947C00F62480 /* ast_basics.cpp */; };
 		2C180492208B947C00F62480 /* expression.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18048A208B947C00F62480 /* expression.cpp */; };
-		2C180493208B947C00F62480 /* expression.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18048A208B947C00F62480 /* expression.cpp */; };
 		2C180494208B947C00F62480 /* statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18048C208B947C00F62480 /* statement.cpp */; };
-		2C180495208B947C00F62480 /* statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18048C208B947C00F62480 /* statement.cpp */; };
 		2C2625DA21E0D59900B41841 /* network_api.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C2625D821E0D59900B41841 /* network_api.cpp */; };
-		2C2625DB21E0D59900B41841 /* network_api.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C2625D821E0D59900B41841 /* network_api.cpp */; };
 		2C2625DE21E0D65E00B41841 /* core_api.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C2625DC21E0D65E00B41841 /* core_api.cpp */; };
-		2C2625DF21E0D65E00B41841 /* core_api.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C2625DC21E0D65E00B41841 /* core_api.cpp */; };
 		2C2625E221E0E52100B41841 /* core_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C2625E021E0E52100B41841 /* core_types.cpp */; };
-		2C2625E321E0E52100B41841 /* core_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C2625E021E0E52100B41841 /* core_types.cpp */; };
 		2C384AD41F3B604E0028C742 /* floyd_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C384AD21F3B604E0028C742 /* floyd_basics.cpp */; };
 		2C40A71F1D76E179003245E3 /* immutable_ref_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */; };
 		2C4EF65521E4022100A9A7DB /* ast_typeid_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4EF65321E4022100A9A7DB /* ast_typeid_helpers.cpp */; };
-		2C4EF65621E4022100A9A7DB /* ast_typeid_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4EF65321E4022100A9A7DB /* ast_typeid_helpers.cpp */; };
 		2C4F355F1D4794CD0061CA93 /* ast_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4F355D1D4794CD0061CA93 /* ast_value.cpp */; };
-		2C530C2F21EA1DBE00F962FB /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C530C2E21EA1DBE00F962FB /* CoreFoundation.framework */; };
 		2C530C3021EDF23F00F962FB /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C530C2E21EA1DBE00F962FB /* CoreFoundation.framework */; };
 		2C530C3121EE0D0300F962FB /* libncurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CBF330C202143BD0030AE98 /* libncurses.tbd */; };
-		2C530C3221EE0D2000F962FB /* libncurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CBF330C202143BD0030AE98 /* libncurses.tbd */; };
 		2C5372B9207A9EBA00647AD1 /* bytecode_interpreter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5372B8207A9EBA00647AD1 /* bytecode_interpreter.cpp */; };
 		2C557C382040173E006F6818 /* host_functions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C557C362040173E006F6818 /* host_functions.cpp */; };
 		2C574E4A203107D80035EA62 /* ast_typeid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C574E48203107D80035EA62 /* ast_typeid.cpp */; };
 		2C5E343C21527C6700B02262 /* hardware_caps.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5E343B21527C6700B02262 /* hardware_caps.cpp */; };
-		2C5E343D21527C6700B02262 /* hardware_caps.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5E343B21527C6700B02262 /* hardware_caps.cpp */; };
 		2C64578F2021E32E003625C8 /* libedit.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C64578E2021E32E003625C8 /* libedit.tbd */; };
 		2C7200B421E8FB750013003B /* FileHandling.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7200B321E8FB750013003B /* FileHandling.cpp */; };
-		2C7200B521E8FB750013003B /* FileHandling.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C7200B321E8FB750013003B /* FileHandling.cpp */; };
-		2C78AD42207B50AB00839E3E /* immutable_ref_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */; };
-		2C78AD43207B50AB00839E3E /* bytecode_interpreter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5372B8207A9EBA00647AD1 /* bytecode_interpreter.cpp */; };
-		2C78AD44207B50AB00839E3E /* floyd_main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */; };
-		2C78AD46207B50AB00839E3E /* ast_typeid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C574E48203107D80035EA62 /* ast_typeid.cpp */; };
-		2C78AD4E207B50AB00839E3E /* pass3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB2A515203D642B0001A19E /* pass3.cpp */; };
-		2C78AD51207B50AB00839E3E /* floyd_test_suite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */; };
-		2C78AD53207B50AB00839E3E /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DA1D569C6D000FAE81 /* sha1.cpp */; };
-		2C78AD55207B50AB00839E3E /* benchmark_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB57462071069B0005AC7A /* benchmark_basics.cpp */; };
-		2C78AD56207B50AB00839E3E /* benchmark_game_of_life.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB5744207106560005AC7A /* benchmark_game_of_life.cpp */; };
-		2C78AD5B207B50AB00839E3E /* bytecode_generator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C982D3520603FE2002002FF /* bytecode_generator.cpp */; };
-		2C78AD5C207B50AB00839E3E /* floyd_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C384AD21F3B604E0028C742 /* floyd_basics.cpp */; };
-		2C78AD5D207B50AB00839E3E /* host_functions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C557C362040173E006F6818 /* host_functions.cpp */; };
-		2C78AD60207B50AB00839E3E /* floyd_interpreter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C81894B1D47B62400030C96 /* floyd_interpreter.cpp */; };
-		2C78AD63207B50AB00839E3E /* sha1_class.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */; };
-		2C78AD64207B50AB00839E3E /* ast_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4F355D1D4794CD0061CA93 /* ast_value.cpp */; };
-		2C78AD65207B50AB00839E3E /* cpp_experiments.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00BC411F2428FF0087B8BB /* cpp_experiments.cpp */; };
-		2C78AD69207B50AB00839E3E /* interpretator_benchmark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB2A511203C4AA80001A19E /* interpretator_benchmark.cpp */; };
-		2C78AD6D207B50AB00839E3E /* libedit.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C64578E2021E32E003625C8 /* libedit.tbd */; };
 		2C81894D1D47B62400030C96 /* floyd_interpreter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C81894B1D47B62400030C96 /* floyd_interpreter.cpp */; };
 		2C85759B21E56D51000E2EA0 /* parse_protocol_def.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C85759921E56D51000E2EA0 /* parse_protocol_def.cpp */; };
-		2C85759C21E56D51000E2EA0 /* parse_protocol_def.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C85759921E56D51000E2EA0 /* parse_protocol_def.cpp */; };
 		2C982D3620603FE2002002FF /* bytecode_generator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C982D3520603FE2002002FF /* bytecode_generator.cpp */; };
 		2CB2A512203C4AA80001A19E /* interpretator_benchmark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB2A511203C4AA80001A19E /* interpretator_benchmark.cpp */; };
 		2CB2A516203D642B0001A19E /* pass3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB2A515203D642B0001A19E /* pass3.cpp */; };
 		2CB30736214A9B35007D2732 /* example.floydsys in Sources */ = {isa = PBXBuildFile; fileRef = 2CB30735214A9B35007D2732 /* example.floydsys */; };
 		2CB30739214ACF09007D2732 /* software_system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB30737214ACF09007D2732 /* software_system.cpp */; };
-		2CB3073A214AD336007D2732 /* software_system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB30737214ACF09007D2732 /* software_system.cpp */; };
 		2CBCA7DE1D569E04000FAE81 /* sha1_class.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */; };
 		2CBCA7DF1D569E07000FAE81 /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DA1D569C6D000FAE81 /* sha1.cpp */; };
 		2CC34CC121EF8882000F3CB6 /* floyd_repl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC34CBF21EF8882000F3CB6 /* floyd_repl.cpp */; };
-		2CC34CC221EF8882000F3CB6 /* floyd_repl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC34CBF21EF8882000F3CB6 /* floyd_repl.cpp */; };
 		2CCD83371CBA5BA3006033E4 /* floyd_main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */; };
 		2CEB5745207106560005AC7A /* benchmark_game_of_life.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB5744207106560005AC7A /* benchmark_game_of_life.cpp */; };
 		2CEB57472071069B0005AC7A /* benchmark_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB57462071069B0005AC7A /* benchmark_basics.cpp */; };
@@ -106,15 +59,6 @@
 
 /* Begin PBXCopyFilesBuildPhase section */
 		2C1D84DB1CA765A90042F0A8 /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
-		2C78AD6E207B50AB00839E3E /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -193,7 +137,6 @@
 		2C64578E2021E32E003625C8 /* libedit.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libedit.tbd; path = usr/lib/libedit.tbd; sourceTree = SDKROOT; };
 		2C7200B221E8FB750013003B /* FileHandling.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileHandling.h; sourceTree = "<group>"; };
 		2C7200B321E8FB750013003B /* FileHandling.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FileHandling.cpp; sourceTree = "<group>"; };
-		2C78AD73207B50AB00839E3E /* floydut */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = floydut; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C81894B1D47B62400030C96 /* floyd_interpreter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_interpreter.cpp; sourceTree = "<group>"; };
 		2C81894C1D47B62400030C96 /* floyd_interpreter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = floyd_interpreter.h; sourceTree = "<group>"; };
 		2C85759921E56D51000E2EA0 /* parse_protocol_def.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = parse_protocol_def.cpp; sourceTree = "<group>"; };
@@ -229,16 +172,6 @@
 				2C530C3021EDF23F00F962FB /* CoreFoundation.framework in Frameworks */,
 				2C64578F2021E32E003625C8 /* libedit.tbd in Frameworks */,
 				2C530C3121EE0D0300F962FB /* libncurses.tbd in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		2C78AD6C207B50AB00839E3E /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				2C530C2F21EA1DBE00F962FB /* CoreFoundation.framework in Frameworks */,
-				2C78AD6D207B50AB00839E3E /* libedit.tbd in Frameworks */,
-				2C530C3221EE0D2000F962FB /* libncurses.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -299,7 +232,6 @@
 			isa = PBXGroup;
 			children = (
 				2C1D84DD1CA765A90042F0A8 /* floyd */,
-				2C78AD73207B50AB00839E3E /* floydut */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -436,23 +368,6 @@
 			productReference = 2C1D84DD1CA765A90042F0A8 /* floyd */;
 			productType = "com.apple.product-type.tool";
 		};
-		2C78AD40207B50AB00839E3E /* floyd_speak UT */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 2C78AD6F207B50AB00839E3E /* Build configuration list for PBXNativeTarget "floyd_speak UT" */;
-			buildPhases = (
-				2C78AD41207B50AB00839E3E /* Sources */,
-				2C78AD6C207B50AB00839E3E /* Frameworks */,
-				2C78AD6E207B50AB00839E3E /* CopyFiles */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = "floyd_speak UT";
-			productName = FloydSpeak;
-			productReference = 2C78AD73207B50AB00839E3E /* floydut */;
-			productType = "com.apple.product-type.tool";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -481,7 +396,6 @@
 			projectRoot = "";
 			targets = (
 				2C1D84DC1CA765A90042F0A8 /* floyd_speak */,
-				2C78AD40207B50AB00839E3E /* floyd_speak UT */,
 			);
 		};
 /* End PBXProject section */
@@ -536,57 +450,6 @@
 				2C00BC421F2428FF0087B8BB /* cpp_experiments.cpp in Sources */,
 				2C18047B208B939800F62480 /* parse_prefixless_statement.cpp in Sources */,
 				2CB2A512203C4AA80001A19E /* interpretator_benchmark.cpp in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		2C78AD41207B50AB00839E3E /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				2C78AD42207B50AB00839E3E /* immutable_ref_value.cpp in Sources */,
-				2C78AD43207B50AB00839E3E /* bytecode_interpreter.cpp in Sources */,
-				2C78AD44207B50AB00839E3E /* floyd_main.cpp in Sources */,
-				2C7200B521E8FB750013003B /* FileHandling.cpp in Sources */,
-				2C180476208B939800F62480 /* floyd_parser.cpp in Sources */,
-				2C78AD46207B50AB00839E3E /* ast_typeid.cpp in Sources */,
-				2C180484208B939800F62480 /* parser_primitives.cpp in Sources */,
-				2C18045E208B917500F62480 /* json_parser.cpp in Sources */,
-				2C78AD4E207B50AB00839E3E /* pass3.cpp in Sources */,
-				2C18047A208B939800F62480 /* parse_function_def.cpp in Sources */,
-				2C18044E208B90E900F62480 /* text_parser.cpp in Sources */,
-				2C18044C208B90E900F62480 /* utils.cpp in Sources */,
-				2C2625DB21E0D59900B41841 /* network_api.cpp in Sources */,
-				2C78AD51207B50AB00839E3E /* floyd_test_suite.cpp in Sources */,
-				2CB3073A214AD336007D2732 /* software_system.cpp in Sources */,
-				2CC34CC221EF8882000F3CB6 /* floyd_repl.cpp in Sources */,
-				2C78AD53207B50AB00839E3E /* sha1.cpp in Sources */,
-				2C78AD55207B50AB00839E3E /* benchmark_basics.cpp in Sources */,
-				2C78AD56207B50AB00839E3E /* benchmark_game_of_life.cpp in Sources */,
-				2C180495208B947C00F62480 /* statement.cpp in Sources */,
-				2C180480208B939800F62480 /* parse_struct_def.cpp in Sources */,
-				2C78AD5B207B50AB00839E3E /* bytecode_generator.cpp in Sources */,
-				2C2625E321E0E52100B41841 /* core_types.cpp in Sources */,
-				2C180456208B911B00F62480 /* quark.cpp in Sources */,
-				2C4EF65621E4022100A9A7DB /* ast_typeid_helpers.cpp in Sources */,
-				2C180462208B917500F62480 /* json_writer.cpp in Sources */,
-				2C78AD5C207B50AB00839E3E /* floyd_basics.cpp in Sources */,
-				2C85759C21E56D51000E2EA0 /* parse_protocol_def.cpp in Sources */,
-				2C180482208B939800F62480 /* parser2.cpp in Sources */,
-				2C180460208B917500F62480 /* json_support.cpp in Sources */,
-				2C18048F208B947C00F62480 /* ast.cpp in Sources */,
-				2C180491208B947C00F62480 /* ast_basics.cpp in Sources */,
-				2C180478208B939800F62480 /* parse_expression.cpp in Sources */,
-				2C78AD5D207B50AB00839E3E /* host_functions.cpp in Sources */,
-				2C180493208B947C00F62480 /* expression.cpp in Sources */,
-				2C18047E208B939800F62480 /* parse_statement.cpp in Sources */,
-				2C78AD60207B50AB00839E3E /* floyd_interpreter.cpp in Sources */,
-				2C2625DF21E0D65E00B41841 /* core_api.cpp in Sources */,
-				2C78AD63207B50AB00839E3E /* sha1_class.cpp in Sources */,
-				2C5E343D21527C6700B02262 /* hardware_caps.cpp in Sources */,
-				2C78AD64207B50AB00839E3E /* ast_value.cpp in Sources */,
-				2C78AD65207B50AB00839E3E /* cpp_experiments.cpp in Sources */,
-				2C18047C208B939800F62480 /* parse_prefixless_statement.cpp in Sources */,
-				2C78AD69207B50AB00839E3E /* interpretator_benchmark.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -782,40 +645,6 @@
 			};
 			name = Release;
 		};
-		2C78AD70207B50AB00839E3E /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"QUARK_ASSERT_ON=1",
-					"QUARK_TRACE_ON=1",
-					"$(inherited)",
-				);
-				PRODUCT_NAME = floydut;
-			};
-			name = Debug;
-		};
-		2C78AD71207B50AB00839E3E /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"QUARK_ASSERT_ON=0",
-					"QUARK_TRACE_ON=0",
-				);
-				PRODUCT_NAME = floydut;
-			};
-			name = Release;
-		};
-		2C78AD72207B50AB00839E3E /* Release - Profiling */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"QUARK_ASSERT_ON=0",
-					"QUARK_TRACE_ON=0",
-				);
-				PRODUCT_NAME = floydut;
-			};
-			name = "Release - Profiling";
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -835,16 +664,6 @@
 				2C1D84E51CA765A90042F0A8 /* Debug */,
 				2C1D84E61CA765A90042F0A8 /* Release */,
 				2C0E14472063CDE50078EF4B /* Release - Profiling */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		2C78AD6F207B50AB00839E3E /* Build configuration list for PBXNativeTarget "floyd_speak UT" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				2C78AD70207B50AB00839E3E /* Debug */,
-				2C78AD71207B50AB00839E3E /* Release */,
-				2C78AD72207B50AB00839E3E /* Release - Profiling */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

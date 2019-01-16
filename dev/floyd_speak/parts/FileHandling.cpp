@@ -1061,7 +1061,7 @@ Non-option argument -
 
 command_line_args_t parse_command_line_args(const std::vector<std::string>& args, const std::string& flags){
 	if(args.size() == 0){
-		throw std::exception();
+		return {};
 	}
 
 	//	Includes a trailing null-terminator for each arg.
@@ -1321,7 +1321,7 @@ QUARK_UNIT_TEST("", "parse_command_line_args_subcommands()", "", ""){
 	QUARK_UT_VERIFY((result.flags == std::map<std::string, std::string>{}));
 	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{ "*" }));
 }
-QUARK_UNIT_TEST_VIP("", "parse_command_line_args_subcommands()", "", ""){
+QUARK_UNIT_TEST("", "parse_command_line_args_subcommands()", "", ""){
 	const auto result = parse_command_line_args_subcommands(split_command_line(k_git_command_examples[5]), "");
 	QUARK_UT_VERIFY(result.command == "git");
 	QUARK_UT_VERIFY(result.subcommand == "commit");
