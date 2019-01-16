@@ -2,26 +2,26 @@
 
 #include "quark.h"
 #include <unistd.h>
-//#include "Trace.h"
-//#include "JiuUtils.h"
+#include <getopt.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
-//#include "MacBasics.h"
+#include <map>
+#include <vector>
+#include "text_parser.h"
 
-//#include "SDL_filesystem.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <libproc.h>
 
-
-
-	#include <stdio.h>
-	#include <stdlib.h>
-	#include <string.h>
-	#include <errno.h>
-	#include <libproc.h>
-
-	#include <CoreFoundation/CoreFoundation.h>
+#include <CoreFoundation/CoreFoundation.h>
 
 #include <dirent.h>    /* struct DIR, struct dirent, opendir().. */
+
+
+
 
 #define JIU_MACOS 1
 
@@ -1057,74 +1057,272 @@ aflag = 1, bflag = 0, cvalue = (null)
 Non-option argument -
 */
 
-std::vector<std::pair<std::string, std::string>> parse_command_line_args(int argc, char* argv[], const std::string& flags){
-	std::vector<std::pair<std::string, std::string>> result;
 
-    int opt = 0;
-	
+
+command_line_args_t parse_command_line_args(const std::vector<std::string>& args, const std::string& flags){
+	if(args.size() == 0){
+		throw std::exception();
+	}
+
+	//	Includes a trailing null-terminator for each arg.
+	int byte_count = 0;
+	for(const auto& e: args){
+		byte_count = byte_count + static_cast<int>(e.size()) + 1;
+	}
+
+	//	Make local writeable strings to argv to hand to getopt().
+	std::vector<char*> argv;
+	std::string concat_args;
+
+	//	Make sure it's not reallocating since we're keeping pointers into the string.
+	concat_args.reserve(byte_count);
+
+	for(const auto& e: args){
+		char* ptr = &concat_args[concat_args.size()];
+		concat_args.insert(concat_args.end(), e.begin(), e.end());
+		concat_args.push_back('\0');
+		argv.push_back(ptr);
+	}
+
+	int argc = static_cast<int>(args.size());
+
+	std::map<std::string, std::string> flags2;
+
+	//	The variable optind is the index of the next element to be processed in argv. The system
+	//	initializes this value to 1. The caller can reset it to 1 to restart scanning of the same argv,
+	//	or when scanning a new argument vector.
+	optind = 1;
+
     // put ':' in the starting of the
     // string so that program can
     //distinguish between '?' and ':'
-    while((opt = getopt(argc, argv, flags.c_str())) != -1){
-        switch(opt){
-            case 'i':
-            case 'l':
-            case 'r':
-            	{
-					const std::string opt_string(1, opt);
-					result.push_back({ "option", opt_string });
-					printf("option: %c\n", opt);
-                }
-                break;
-            case 'f':
-            	{
-            		result.push_back({ "filename", optarg });
-                	printf("filename: %s\n", optarg);
-				}
-                break;
-            case ':':
-            	{
-            		result.push_back({ "option needs a value", "" });
-                	printf("option needs a value\n");
-				}
-                break;
-            case '?':
-            	{
-					const std::string optopt_string(1, optopt);
-					result.push_back({ "unknown option", optopt_string });
-					printf("unknown option: %c\n", optopt);
-                }
-                break;
-        }
+    int opt = 0;
+    while((opt = getopt(argc, &argv[0], flags.c_str())) != -1){
+		const auto opt_string = std::string(1, opt);
+		const auto optarg_string = optarg != nullptr ? std::string(optarg) : std::string();
+		const auto optopt_string = std::string(1, optopt);
+
+		//	Unknown flag.
+		if(opt == '?'){
+			flags2.insert({ optopt_string, "?" });
+		}
+
+		//	Flag with parameter.
+		else if(optarg_string.empty() == false){
+			flags2.insert({ opt_string, optarg_string });
+		}
+
+		//	Flag needs a value(???)
+		else if(opt == ':'){
+			flags2.insert({ ":", optarg_string });
+		}
+
+		//	Flag without parameter.
+		else{
+			flags2.insert({ opt_string, "" });
+		}
     }
-	
+
+	std::vector<std::string> extras;
+
     // optind is for the extra arguments
     // which are not parsed
     for(; optind < argc; optind++){
-		result.push_back({ "extra argument", std::string(argv[optind]) });
+		const auto s = std::string(argv[optind]);
+		extras.push_back(s);
         printf("extra arguments: %s\n", argv[optind]);
     }
 
-	for(const auto& e: result){
-		const auto s = e.first + ": " + e.second;
-		QUARK_TRACE(s);
+	return { args[0], "", flags2, extras };
+}
+
+command_line_args_t parse_command_line_args_subcommands(const std::vector<std::string>& args, const std::string& flags){
+	const auto a = parse_command_line_args({ args.begin() + 1, args.end()}, flags);
+	return { args[0], a.command, a.flags, a.extra_arguments };
+}
+
+
+void trace_command_line_args(const command_line_args_t& v){
+	QUARK_SCOPED_TRACE("trace_command_line_args");
+
+	{
+		QUARK_SCOPED_TRACE("flags");
+		for(const auto& e: v.flags){
+			const auto s = e.first + ": " + e.second;
+			QUARK_TRACE(s);
+		}
 	}
-    return result;
+}
+
+const auto k_git_command_examples = std::vector<std::string>({
+	R"(git init)",
+
+	R"(git clone /path/to/repository)",
+	R"(git clone username@host:/path/to/repository)",
+	R"(git add <filename>)",
+	R"(git add *)",
+	R"(git commit -m "Commit message")",
+
+	R"(git push origin master)",
+	R"(git remote add origin <server>)",
+	R"(git checkout -b feature_x)",
+	R"(git tag 1.0.0 1b2e1d63ff)",
+	R"(git log --help)"
+});
+
+
+
+
+std::vector<std::string> split_command_line(const std::string& s){
+	std::vector<std::string> result;
+	std::string acc;
+
+	auto pos = 0;
+	while(pos < s.size()){
+		if(s[pos] == ' '){
+			if(acc.empty()){
+			}
+			else{
+				result.push_back(acc);
+				acc = "";
+			}
+			pos++;
+		}
+		else if (s[pos] == '\"'){
+			acc.push_back(s[pos]);
+
+			pos++;
+			while(s[pos] != '\"'){
+				acc.push_back(s[pos]);
+				pos++;
+			}
+
+			acc.push_back(s[pos]);
+			pos++;
+		}
+		else{
+			acc.push_back(s[pos]);
+			pos++;
+		}
+	}
+
+	if(acc.empty() == false){
+		result.push_back(acc);
+		acc = "";
+	}
+
+	return result;
+}
+
+QUARK_UNIT_TEST_VIP("", "split_command_line()", "", ""){
+	const auto result = split_command_line("");
+	QUARK_UT_VERIFY(result == std::vector<std::string>{});
+}
+QUARK_UNIT_TEST_VIP("", "split_command_line()", "", ""){
+	const auto result = split_command_line("  ");
+	QUARK_UT_VERIFY(result == std::vector<std::string>{});
+}
+QUARK_UNIT_TEST_VIP("", "split_command_line()", "", ""){
+	const auto result = split_command_line(" one ");
+	QUARK_UT_VERIFY(result == std::vector<std::string>{ "one" });
+}
+QUARK_UNIT_TEST_VIP("", "split_command_line()", "", ""){
+	const auto result = split_command_line("one two");
+	QUARK_UT_VERIFY((result == std::vector<std::string>{ "one", "two" }));
+}
+QUARK_UNIT_TEST_VIP("", "split_command_line()", "", ""){
+	const auto result = split_command_line("one two     three");
+	QUARK_UT_VERIFY((result == std::vector<std::string>{ "one", "two", "three" }));
+}
+
+QUARK_UNIT_TEST_VIP("", "split_command_line()", "", ""){
+	const auto result = split_command_line(R"(one "hello world"    three)");
+	QUARK_UT_VERIFY((result == std::vector<std::string>{ "one", R"("hello world")", "three" }));
+}
+
+
+
+
+QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
+	const auto result = parse_command_line_args({ "myapp" }, ":if:lrx");
+	QUARK_UT_VERIFY(result.command == "myapp");
+	QUARK_UT_VERIFY(result.subcommand == "");
+	QUARK_UT_VERIFY(result.flags.empty() && result.extra_arguments.empty());
+}
+
+QUARK_UNIT_TEST("", "parse_command_line_args()", "", ""){
+	const auto result = parse_command_line_args({ "myapp", "file1.txt" }, ":if:lrx");
+	QUARK_UT_VERIFY(result.command == "myapp");
+	QUARK_UT_VERIFY(result.subcommand == "");
+	QUARK_UT_VERIFY(result.flags.empty());
+	QUARK_UT_VERIFY(result.extra_arguments == std::vector<std::string>({"file1.txt"}));
+}
+
+QUARK_UNIT_TEST_VIP("", "parse_command_line_args()", "", ""){
+	const auto result = parse_command_line_args({ "myapp", "-ilr", "-f", "doc.txt" }, ":if:lrx");
+	QUARK_UT_VERIFY(result.command == "myapp");
+	QUARK_UT_VERIFY(result.subcommand == "");
+	QUARK_UT_VERIFY(result.flags.find("i")->second == "");
+	QUARK_UT_VERIFY(result.flags.find("l")->second == "");
+	QUARK_UT_VERIFY(result.flags.find("r")->second == "");
+	QUARK_UT_VERIFY(result.flags.find("f")->second == "doc.txt");
+	QUARK_UT_VERIFY(result.extra_arguments.size() == 0);
+}
+
+
+//	getopt() uses global state, make sure we can call it several times OK (we reset it).
+QUARK_UNIT_TEST_VIP("", "parse_command_line_args()", "", ""){
+	const auto result = parse_command_line_args({ "myapp", "-ilr", "-f", "doc.txt" }, ":if:lrx");
+	QUARK_UT_VERIFY(result.command == "myapp");
+	QUARK_UT_VERIFY(result.subcommand == "");
+	QUARK_UT_VERIFY(result.flags.find("i")->second == "");
+	QUARK_UT_VERIFY(result.flags.find("l")->second == "");
+	QUARK_UT_VERIFY(result.flags.find("r")->second == "");
+	QUARK_UT_VERIFY(result.flags.find("f")->second == "doc.txt");
+	QUARK_UT_VERIFY(result.extra_arguments.size() == 0);
+
+	const auto result1 = parse_command_line_args({ "myapp", "-ilr", "-f", "doc.txt" }, ":if:lrx");
+	QUARK_UT_VERIFY(result.flags == result1.flags && result.extra_arguments == result.extra_arguments);
 }
 
 
 QUARK_UNIT_TEST_VIP("", "parse_command_line_args()", "", ""){
-	char* argv[10];
-	argv[0] = "myapp";
-	const auto result = parse_command_line_args(1, argv, ":if:lrx");
-	QUARK_UT_VERIFY((result == std::vector<std::pair<std::string, std::string>>{}));
+	const auto result = parse_command_line_args({ "myapp", "-i", "-f", "doc.txt", "extra_one", "extra_two" }, ":if:lrx");
+	QUARK_UT_VERIFY(result.command == "myapp");
+	QUARK_UT_VERIFY(result.subcommand == "");
+	QUARK_UT_VERIFY(result.flags.find("i")->second == "");
+	QUARK_UT_VERIFY(result.flags.find("f")->second == "doc.txt");
+	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{ "extra_one", "extra_two" }));
 }
 
-QUARK_UNIT_TEST_VIP("", "parse_command_line_args()", "", ""){
-	char* argv[10];
-	argv[0] = "myapp";
-	argv[1] = "file1.txt";
-	const auto result = parse_command_line_args(2, argv, ":if:lrx");
-	QUARK_UT_VERIFY((result == std::vector<std::pair<std::string, std::string>>{}));
+
+
+QUARK_UNIT_TEST_VIP("", "parse_command_line_args_subcommands()", "", ""){
+	const auto result = parse_command_line_args_subcommands(split_command_line(k_git_command_examples[0]), "");
+	QUARK_UT_VERIFY(result.command == "git");
+	QUARK_UT_VERIFY(result.subcommand == "init");
+	QUARK_UT_VERIFY((result.flags == std::map<std::string, std::string>{}));
+	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{}));
+}
+QUARK_UNIT_TEST_VIP("", "parse_command_line_args_subcommands()", "", ""){
+	const auto result = parse_command_line_args_subcommands(split_command_line(k_git_command_examples[1]), "");
+	QUARK_UT_VERIFY(result.command == "git");
+	QUARK_UT_VERIFY(result.subcommand == "clone");
+	QUARK_UT_VERIFY((result.flags == std::map<std::string, std::string>{}));
+	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{ "/path/to/repository" }));
 }
 
+QUARK_UNIT_TEST_VIP("", "parse_command_line_args_subcommands()", "", ""){
+	const auto result = parse_command_line_args_subcommands(split_command_line(k_git_command_examples[4]), "");
+	QUARK_UT_VERIFY(result.command == "git");
+	QUARK_UT_VERIFY(result.subcommand == "add");
+	QUARK_UT_VERIFY((result.flags == std::map<std::string, std::string>{}));
+	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{ "*" }));
+}
+QUARK_UNIT_TEST_VIP("", "parse_command_line_args_subcommands()", "", ""){
+	const auto result = parse_command_line_args_subcommands(split_command_line(k_git_command_examples[5]), "");
+	QUARK_UT_VERIFY(result.command == "git");
+	QUARK_UT_VERIFY(result.subcommand == "commit");
+	QUARK_UT_VERIFY((result.flags == std::map<std::string, std::string>{ {"m","?"}} ));
+	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{ R"("Commit message")" }));
+}

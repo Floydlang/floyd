@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <map>
 
 
 
@@ -210,5 +211,30 @@ std::string MakeAbsolutePath(const std::string& base, const std::string& relativ
 
 
 std::vector<std::string> args_to_vector(int argc, const char * argv[]);
-std::pair<std::string, std::vector<std::string> > extract_key(const std::vector<std::string>& args, const std::string& key);
-std::vector<std::pair<std::string, std::string>> parse_command_line_args(int argc, char* argv[], const std::string& flags);
+
+//	Flags: x: means x supports parameter.
+struct command_line_args_t {
+	std::string command;
+	std::string subcommand;
+
+	//	Key: flag character, value: parameter or ""
+	std::map<std::string, std::string> flags;
+
+
+	//	Extra arguments, after the flags have been parsed.
+	std::vector<std::string> extra_arguments;
+};
+
+
+command_line_args_t parse_command_line_args(const std::vector<std::string>& args, const std::string& flags);
+
+/*
+	git commit -m "Commit message"
+		command: "git"
+		subcommand: "commit"
+		flags
+			m: ""
+		extra_arguments
+			"Commit message"
+*/
+command_line_args_t parse_command_line_args_subcommands(const std::vector<std::string>& args, const std::string& flags);

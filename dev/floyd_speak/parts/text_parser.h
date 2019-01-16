@@ -165,4 +165,5 @@ std::pair<std::string, std::string> deinterleave_string(const std::string& s);
 //	First char must be an opening bracket. Result will include that character its final closing bracket and all chars between.
 std::pair<std::string, seq_t> read_balanced2(const seq_t& s, const std::string& open_close_pairs);
 
+
 #endif /* text_parser_hpp */
