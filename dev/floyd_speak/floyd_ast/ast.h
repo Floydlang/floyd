@@ -55,7 +55,7 @@ namespace floyd {
 		Future: generate AST as JSON, process AST as JSON etc.
 	*/
 	ast_json_t ast_to_json(const ast_t& ast);
-	ast_t json_to_ast(const quark::trace_context_t& tracer, const ast_json_t& parse_tree);
+	ast_t json_to_ast(const ast_json_t& parse_tree);
 
 
 

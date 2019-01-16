@@ -96,14 +96,6 @@ struct semantic_ast_t;
 	bc_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_t>& args);
 
 
-	//////////////////////////////////////		bcgen_context_t
-
-
-	struct bcgen_context_t {
-		public: quark::trace_context_t _tracer;
-	};
-
-
 	//////////////////////////////////////		bcgen_environment_t
 
 	/*
@@ -1524,11 +1516,10 @@ bc_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_t>& arg
 	return bc_frame_t(instrs2, symbols2, args);
 }
 
-bc_program_t generate_bytecode(const quark::trace_context_t& tracer, const semantic_ast_t& ast){
+bc_program_t generate_bytecode(const semantic_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	QUARK_CONTEXT_SCOPED_TRACE(tracer, "generate_bytecode");
-
+	QUARK_SCOPED_TRACE("generate_bytecode");
 //	QUARK_CONTEXT_TRACE_SS(tracer, "INPUT:  " << json_to_pretty_string(ast_to_json(ast._checked_ast)._value));
 
 	bcgenerator_t a(ast._checked_ast);

@@ -32,8 +32,6 @@ https://en.wikipedia.org/wiki/Parsing_expression_grammar
 https://en.wikipedia.org/wiki/Parsing
 */
 
-const parser_context_t test_context{ quark::make_default_tracer() };
-
 
 std::pair<ast_json_t, seq_t> parse_statement(const seq_t& s){
 	const auto pos = skip_whitespace(s);
@@ -124,9 +122,9 @@ std::pair<ast_json_t, seq_t> parse_statements(const seq_t& s){
 	return { ast_json_t{json_t::make_array(statements)}, pos };
 }
 
-ast_json_t parse_program2(const parser_context_t& context, const string& program){
+ast_json_t parse_program2(const string& program){
 	const auto statements_pos = parse_statements(seq_t(program));
-	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
+//	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
 	return statements_pos.first;
 }
 
@@ -236,14 +234,14 @@ const char k_test_program_100_parserout[] = R"(
 
 QUARK_UNIT_TEST("", "parse_program1()", "k_test_program_0_source", ""){
 	ut_compare_jsons(
-		parse_program2(test_context, k_test_program_0_source)._value,
+		parse_program2(k_test_program_0_source)._value,
 		parse_json(seq_t(k_test_program_0_parserout)).first
 	);
 }
 
 QUARK_UNIT_TEST("", "parse_program1()", "k_test_program_1_source", ""){
 	ut_compare_jsons(
-		parse_program2(test_context, k_test_program_1_source)._value,
+		parse_program2(k_test_program_1_source)._value,
 		parse_json(seq_t(k_test_program_1_parserout)).first
 	);
 }
@@ -251,7 +249,6 @@ QUARK_UNIT_TEST("", "parse_program1()", "k_test_program_1_source", ""){
 QUARK_UNIT_TEST("", "parse_program2()", "k_test_program_100_source", ""){
 	ut_compare_jsons(
 		parse_program2(
-			test_context,
 			R"(
 				struct pixel { double red; double green; double blue; }
 				func double get_grey(pixel p){ return (p.red + p.green + p.blue) / 3.0; }

@@ -112,8 +112,7 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Text metrics", "", ""){
 		k_repeats
 	);
 
-	interpreter_context_t context = make_benchmark_context();
-	const auto program = compile_to_bytecode(context, gol_floyd_str);
+	const auto program = compile_to_bytecode(gol_floyd_str);
 
 	interpreter_t vm(program);
 	const auto f = find_global_symbol2(vm, "f");
@@ -131,7 +130,6 @@ OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Text metrics", "", ""){
 void floyd_benchmark(){
 //OFF_QUARK_UNIT_TEST_VIP("Basic performance", "", "", ""){
 //	interpreter_context_t context = make_benchmark_context();
-	interpreter_context_t context = make_verbose_context();
 
 	if(1){
 		const auto cpp_func = [] {
@@ -152,7 +150,7 @@ void floyd_benchmark(){
 
 		trace_result(bench_result_t{ "For loop incrementing variable",
 			measure_execution_time_ns(cpp_func, k_repeats),
-			measure_floyd_function_f(context, floyd_str, k_repeats)
+			measure_floyd_function_f(floyd_str, k_repeats)
 		});
 	}
 
@@ -187,7 +185,7 @@ void floyd_benchmark(){
 
 		trace_result(bench_result_t{ "For loop with if/else",
 			measure_execution_time_ns(cpp_func, k_repeats),
-			measure_floyd_function_f(context, floyd_str, k_repeats)
+			measure_floyd_function_f(floyd_str, k_repeats)
 		});
 	}
 
@@ -218,7 +216,7 @@ void floyd_benchmark(){
 
 		trace_result(bench_result_t{ "For loop with int math",
 			measure_execution_time_ns(cpp_func, k_repeats),
-			measure_floyd_function_f(context, floyd_str, k_repeats)
+			measure_floyd_function_f(floyd_str, k_repeats)
 		});
 	}
 
@@ -258,7 +256,7 @@ void floyd_benchmark(){
 
 		trace_result(bench_result_t{ "Fibonacci",
 			measure_execution_time_ns(cpp_func, k_repeats),
-			measure_floyd_function_f(context, floyd_str, k_repeats)
+			measure_floyd_function_f(floyd_str, k_repeats)
 		});
 
 	}

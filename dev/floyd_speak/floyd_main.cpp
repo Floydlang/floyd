@@ -175,11 +175,11 @@ std::string floyd_version_string = "0.3";
 
 
 #if 0
-int handle_repl_input(floyd::interpreter_context_t& context, int print_pos, std::shared_ptr<floyd::interpreter_t>& vm_mut, const std::string& line){
+int handle_repl_input(int print_pos, std::shared_ptr<floyd::interpreter_t>& vm_mut, const std::string& line){
 	const auto& program1 = vm_mut->_imm->_program;
 
-	const auto blank_program = floyd::compile_to_bytecode(context, "");
-	const auto program2 = floyd::compile_to_bytecode(context, line);
+	const auto blank_program = floyd::compile_to_bytecode("");
+	const auto program2 = floyd::compile_to_bytecode(line);
 
 	//	Copy the new symbols, compared to a blank program.
 	const auto new_symbol_count = program2._globals._symbols.size() - blank_program._globals._symbols.size();
@@ -216,9 +216,7 @@ int handle_repl_input(floyd::interpreter_context_t& context, int print_pos, std:
 void run_repl(){
 	init_terminal();
 
-	floyd::interpreter_context_t context{ quark::make_default_tracer() };
-
-	auto program = floyd::compile_to_bytecode(context, "");
+	auto program = floyd::compile_to_bytecode("");
 	auto vm = std::make_shared<floyd::interpreter_t>(program);
 
 	std::cout << R"(Floyd " << floyd_version_string << " MIT.)" << std::endl;
@@ -286,8 +284,7 @@ int run_file(const std::vector<std::string>& args){
 
 
 //	std::cout << "Compiling..." << std::endl;
-	floyd::interpreter_context_t context{ quark::make_default_tracer() };
-	auto program = floyd::compile_to_bytecode(context, source);
+	auto program = floyd::compile_to_bytecode(source);
 
 
 //	std::cout << "Preparing arguments..." << std::endl;
@@ -299,7 +296,7 @@ int run_file(const std::vector<std::string>& args){
 
 //	std::cout << "Running..." << source << std::endl;
 
-	const auto result = floyd::run_program(context, program, args3);
+	const auto result = floyd::run_program(program, args3);
 	if(result.second.is_int()){
 		int64_t result_code = result.second.get_int_value();
 		std::cout << result_code << std::endl;

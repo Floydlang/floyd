@@ -73,9 +73,6 @@ protocol trace_i {
 #define QUARK_TRACE_SS(s)
 #define QUARK_SCOPED_TRACE(s)
 
-#define QUARK_CONTEXT_TRACE(context, s)
-#define QUARK_CONTEXT_TRACE_SS(context, s)
-#define QUARK_CONTEXT_SCOPED_TRACE(context, s)
 
 struct unit_test_def {
 	source_code_location loc

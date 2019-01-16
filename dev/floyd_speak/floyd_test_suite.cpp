@@ -28,11 +28,6 @@ using std::string;
 using namespace floyd;
 
 
-interpreter_context_t make_test_interpreter_context(){
-	const auto t = quark::trace_context_t(false, quark::get_trace());
-	interpreter_context_t context{ t };
-	return context;
-}
 
 
 std::vector<std::string> program_recording;
@@ -44,9 +39,8 @@ std::vector<std::string> program_recording;
 
 value_t test__run_return_result(const std::string& program, const std::vector<value_t>& args){
 	program_recording.push_back(program);
-	const auto context = make_test_interpreter_context();
 
-	const auto r = run_main(context, program, args);
+	const auto r = run_main(program, args);
 	print_vm_printlog(*r.first);
 	const auto result = get_global(*r.first, "result");
 	return result;
@@ -62,16 +56,14 @@ void test__run_init__check_result(const std::string& program, const value_t& exp
 
 std::shared_ptr<interpreter_t> test__run_global(const std::string& program){
 	program_recording.push_back(program);
-	const auto context = make_test_interpreter_context();
-	const auto result = run_global(context, program);
+	const auto result = run_global(program);
 	return result;
 }
 
 void test__run_main(const std::string& program, const vector<floyd::value_t>& args, const value_t& expected_return){
 	program_recording.push_back(program);
-	const auto context = make_test_interpreter_context();
 
-	const auto result = run_main(context, program, args);
+	const auto result = run_main(program, args);
 	ut_compare_jsons(
 		expression_to_json(expression_t::make_literal(result.second))._value,
 		expression_to_json(expression_t::make_literal(expected_return))._value
@@ -543,8 +535,7 @@ QUARK_UNIT_TESTQ("run_main()", ""){
 }
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program"){
-	const auto context = make_test_interpreter_context();
-	auto ast = compile_to_bytecode(context,
+	auto ast = compile_to_bytecode(
 		R"(
 			func int main(string args){
 				return 3 + 4
@@ -558,11 +549,12 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 }
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
-	const auto context = make_test_interpreter_context();
-	auto ast = compile_to_bytecode(context, R"(
+	auto ast = compile_to_bytecode(R"(
+
 		func string main(string args){
 			return "123" + "456"
 		}
+
 	)");
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
@@ -718,8 +710,7 @@ QUARK_UNIT_TEST("", "[[string: int]]()", "", ""){
 
 
 QUARK_UNIT_TEST("call_function()", "define additional function, call it several times", "", ""){
-	const auto context = make_test_interpreter_context();
-	auto ast = compile_to_bytecode(context, R"(
+	auto ast = compile_to_bytecode(R"(
 		func int myfunc(){ return 5 }
 		func int main(string args){
 			return myfunc() + myfunc() * 2
@@ -732,8 +723,7 @@ QUARK_UNIT_TEST("call_function()", "define additional function, call it several 
 }
 
 QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
-	const auto context = make_test_interpreter_context();
-	auto ast = compile_to_bytecode(context, R"(
+	auto ast = compile_to_bytecode(R"(
 		func string main(string args){
 			return "-" + args + "-"
 		}
@@ -752,8 +742,7 @@ QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
 
 
 QUARK_UNIT_TEST("call_function()", "use local variables", "", ""){
-	const auto context = make_test_interpreter_context();
-	auto ast = compile_to_bytecode(context, R"(
+	auto ast = compile_to_bytecode(R"(
 		func string myfunc(string t){ return "<" + t + ">" }
 		func string main(string args){
 			 let string a = "--"
@@ -3541,15 +3530,12 @@ QUARK_UNIT_TEST("vector-int", "size()", "3", ""){
 
 
 OFF_QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
-	const auto t = quark::trace_context_t(false, quark::get_trace());
-	interpreter_context_t context{ t };
-
 	int instruction_count_total = 0;
 	int symbol_count_total = 0;
 
 	for(const auto& s: program_recording){
 		try{
-		const auto bc = compile_to_bytecode(context, s);
+		const auto bc = compile_to_bytecode(s);
 		int instruction_count_sum = static_cast<int>(bc._globals._instrs2.size());
 		int symbol_count_sum = static_cast<int>(bc._globals._symbols.size());
 
@@ -3735,8 +3721,7 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 	)";
 
 	program_recording.push_back(test_ss2);
-	const auto context = make_test_interpreter_context();
-	run_container(context, test_ss2, {}, "iphone app");
+	run_container(test_ss2, {}, "iphone app");
 }
 
 QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
@@ -3812,8 +3797,7 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 	)";
 
 	program_recording.push_back(test_ss3);
-	const auto context = make_test_interpreter_context();
-	const auto result = run_container(context, test_ss3, {}, "iphone app");
+	const auto result = run_container(test_ss3, {}, "iphone app");
 	QUARK_UT_VERIFY(result.size() == 2);
 	QUARK_UT_VERIFY(result.at("a").get_struct_value()->_member_values[0].get_int_value() == 997);
 	QUARK_UT_VERIFY(result.at("b").get_struct_value()->_member_values[0].get_int_value() == 2);
@@ -3895,8 +3879,7 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 	)";
 
 	program_recording.push_back(test_ss3);
-	const auto context = make_test_interpreter_context();
-	const auto result = run_container(context, test_ss3, {}, "iphone app");
+	const auto result = run_container(test_ss3, {}, "iphone app");
 	QUARK_UT_VERIFY(result.size() == 2);
 	QUARK_UT_VERIFY(result.at("a").get_struct_value()->_member_values[0].get_int_value() == 1011);
 	QUARK_UT_VERIFY(result.at("b").get_struct_value()->_member_values[0].get_int_value() == 5);

@@ -1830,16 +1830,14 @@ bool analyser_t::check_invariant() const {
 //////////////////////////////////////		run_semantic_analysis()
 
 
-semantic_ast_t run_semantic_analysis(const quark::trace_context_t& tracer, const ast_t& ast){
+semantic_ast_t run_semantic_analysis(const ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	QUARK_CONTEXT_SCOPED_TRACE(tracer, "pass3");
-
-	QUARK_CONTEXT_TRACE_SS(tracer, "INPUT:  " << json_to_pretty_string(ast_to_json(ast)._value));
+//	QUARK_CONTEXT_TRACE_SS(tracer, "INPUT:  " << json_to_pretty_string(ast_to_json(ast)._value));
 	analyser_t a(ast);
 	const auto result = analyse(a);
 
-	QUARK_CONTEXT_TRACE_SS(tracer, "OUTPUT: " << json_to_pretty_string(ast_to_json(result._checked_ast)._value));
+//	QUARK_CONTEXT_TRACE_SS(tracer, "OUTPUT: " << json_to_pretty_string(ast_to_json(result._checked_ast)._value));
 	return result;
 }
 

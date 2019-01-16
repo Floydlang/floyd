@@ -20,23 +20,6 @@ using std::string;
 using namespace floyd;
 
 
-interpreter_context_t make_benchmark_context(){
-#if DEBUG
-	bool verbose = true;
-#else
-	bool verbose = false;
-#endif
-	const auto t = quark::trace_context_t(verbose, quark::get_trace());
-	interpreter_context_t context{ t };
-	return context;
-}
-
-interpreter_context_t make_verbose_context(){
-	const auto t = quark::trace_context_t(true, quark::get_trace());
-	interpreter_context_t context{ t };
-	return context;
-}
-
 
 string number_fmt(unsigned long long n, char sep) {
     std::stringstream fmt;
@@ -79,8 +62,8 @@ void trace_result(const bench_result_t& result){
 	std::cout << "\t%    : " << p << std::endl;
 }
 
-int64_t measure_floyd_function_f(const interpreter_context_t& context, const std::string& floyd_program, int count){
-	const auto program = compile_to_bytecode(context, floyd_program);
+int64_t measure_floyd_function_f(const std::string& floyd_program, int count){
+	const auto program = compile_to_bytecode(floyd_program);
 
 
 	const auto s = json_to_pretty_string(bcprogram_to_json(program));

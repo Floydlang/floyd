@@ -372,12 +372,7 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 	return bc_to_value(result);
 }
 
-bc_program_t compile_to_bytecode(const interpreter_context_t& context, const string& program){
-	parser_context_t context2{ quark::trace_context_t(context._tracer._verbose, context._tracer._tracer) };
-//	parser_context_t context{ quark::make_default_tracer() };
-//	QUARK_CONTEXT_TRACE(context._tracer, "Hello");
-
-
+bc_program_t compile_to_bytecode(const string& program){
 #if 1
 const auto pref = k_tiny_prefix;
 const auto p = pref + "\n" + program;
@@ -385,15 +380,15 @@ const auto p = pref + "\n" + program;
 const auto p = program;
 #endif
 
-	const auto& pass1 = parse_program2(context2, p);
-	const auto& pass2 = json_to_ast(context2._tracer, pass1);
-	const auto& pass3 = run_semantic_analysis(context2._tracer, pass2);
-	const auto bc = generate_bytecode(context2._tracer, pass3);
+	const auto& pass1 = parse_program2(p);
+	const auto& pass2 = json_to_ast(pass1);
+	const auto& pass3 = run_semantic_analysis(pass2);
+	const auto bc = generate_bytecode(pass3);
 
 	return bc;
 }
 
-std::pair<std::shared_ptr<interpreter_t>, value_t> run_program(const interpreter_context_t& context, const bc_program_t& program, const vector<floyd::value_t>& args){
+std::pair<std::shared_ptr<interpreter_t>, value_t> run_program(const bc_program_t& program, const vector<floyd::value_t>& args){
 	auto vm = make_shared<interpreter_t>(program);
 
 	const auto& main_func = find_global_symbol2(*vm, "main");
@@ -406,16 +401,16 @@ std::pair<std::shared_ptr<interpreter_t>, value_t> run_program(const interpreter
 	}
 }
 
-std::shared_ptr<interpreter_t> run_global(const interpreter_context_t& context, const string& source){
-	auto program = compile_to_bytecode(context, source);
+std::shared_ptr<interpreter_t> run_global(const string& source){
+	auto program = compile_to_bytecode(source);
 	auto vm = make_shared<interpreter_t>(program);
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 	print_vm_printlog(*vm);
 	return vm;
 }
 
-std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(const interpreter_context_t& context, const string& source, const vector<floyd::value_t>& args){
-	auto program = compile_to_bytecode(context, source);
+std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(const string& source, const vector<floyd::value_t>& args){
+	auto program = compile_to_bytecode(source);
 
 	//	Runs global code.
 	auto interpreter = make_shared<interpreter_t>(program);
@@ -573,11 +568,11 @@ void process_process(process_runtime_t& runtime, int process_id){
 	}
 }
 
-std::map<std::string, value_t> run_container(const interpreter_context_t& context, const string& source, const vector<floyd::value_t>& args, const std::string& container_key){
+std::map<std::string, value_t> run_container(const string& source, const vector<floyd::value_t>& args, const std::string& container_key){
 	process_runtime_t runtime;
 	runtime._main_thread_id = std::this_thread::get_id();
 
-	auto program = compile_to_bytecode(context, source);
+	auto program = compile_to_bytecode(source);
 	if(program._software_system._name == ""){
 		throw std::exception();
 	}

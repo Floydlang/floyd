@@ -26,7 +26,7 @@ namespace floyd {
 
 using namespace std;
 
-const std::vector<statement_t > astjson_to_statements(const quark::trace_context_t& tracer, const ast_json_t& p);
+const std::vector<statement_t > astjson_to_statements(const ast_json_t& p);
 ast_json_t statement_to_json(const statement_t& e);
 
 
@@ -61,9 +61,8 @@ typeid_t resolve_type_name(const ast_json_t& t){
 }
 
 //??? loses output-type for some expressions. Make it nonlossy!
-expression_t astjson_to_expression(const quark::trace_context_t& tracer, const json_t& e){
+expression_t astjson_to_expression(const json_t& e){
 	QUARK_ASSERT(e.check_invariant());
-	QUARK_CONTEXT_TRACE(tracer, json_to_pretty_string(e));
 
 	const auto op = e.get_array_n(0).get_string();
 	if(op == "k"){
@@ -95,36 +94,36 @@ expression_t astjson_to_expression(const quark::trace_context_t& tracer, const j
 	}
 	else if(op == "unary_minus"){
 		QUARK_ASSERT(e.get_array_size() == 2);
-		const auto expr = astjson_to_expression(tracer, e.get_array_n(1));
+		const auto expr = astjson_to_expression(e.get_array_n(1));
 		return expression_t::make_unary_minus(expr, nullptr);
 	}
 	else if(is_simple_expression__2(op)){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto op2 = token_to_expression_type(op);
-		const auto lhs_expr = astjson_to_expression(tracer, e.get_array_n(1));
-		const auto rhs_expr = astjson_to_expression(tracer, e.get_array_n(2));
+		const auto lhs_expr = astjson_to_expression(e.get_array_n(1));
+		const auto rhs_expr = astjson_to_expression(e.get_array_n(2));
 		return expression_t::make_simple_expression__2(op2, lhs_expr, rhs_expr, nullptr);
 	}
 	else if(op == "?:"){
 		QUARK_ASSERT(e.get_array_size() == 4);
-		const auto condition_expr = astjson_to_expression(tracer, e.get_array_n(1));
-		const auto a_expr = astjson_to_expression(tracer, e.get_array_n(2));
-		const auto b_expr = astjson_to_expression(tracer, e.get_array_n(3));
+		const auto condition_expr = astjson_to_expression(e.get_array_n(1));
+		const auto a_expr = astjson_to_expression(e.get_array_n(2));
+		const auto b_expr = astjson_to_expression(e.get_array_n(3));
 		return expression_t::make_conditional_operator(condition_expr, a_expr, b_expr, nullptr);
 	}
 	else if(op == "call"){
 		QUARK_ASSERT(e.get_array_size() == 3);
-		const auto function_expr = astjson_to_expression(tracer, e.get_array_n(1));
+		const auto function_expr = astjson_to_expression(e.get_array_n(1));
 		const auto args = e.get_array_n(2);
 		vector<expression_t> args2;
 		for(const auto& arg: args.get_array()){
-			args2.push_back(astjson_to_expression(tracer, arg));
+			args2.push_back(astjson_to_expression(arg));
 		}
 		return expression_t::make_call(function_expr, args2, nullptr);
 	}
 	else if(op == "->"){
 		QUARK_ASSERT(e.get_array_size() == 3);
-		const auto base_expr = astjson_to_expression(tracer, e.get_array_n(1));
+		const auto base_expr = astjson_to_expression(e.get_array_n(1));
 		const auto member = e.get_array_n(2).get_string();
 		return expression_t::make_resolve_member(base_expr, member, nullptr);
 	}
@@ -141,8 +140,8 @@ expression_t astjson_to_expression(const quark::trace_context_t& tracer, const j
 	}
 	else if(op == "[]"){
 		QUARK_ASSERT(e.get_array_size() == 3);
-		const auto parent_address_expr = astjson_to_expression(tracer, e.get_array_n(1));
-		const auto lookup_key_expr = astjson_to_expression(tracer, e.get_array_n(2));
+		const auto parent_address_expr = astjson_to_expression(e.get_array_n(1));
+		const auto lookup_key_expr = astjson_to_expression(e.get_array_n(2));
 		return expression_t::make_lookup(parent_address_expr, lookup_key_expr, nullptr);
 	}
 	else if(op == "construct-value"){
@@ -152,7 +151,7 @@ expression_t astjson_to_expression(const quark::trace_context_t& tracer, const j
 
 		std::vector<expression_t> args2;
 		for(const auto& m: args){
-			args2.push_back(astjson_to_expression(tracer, m));
+			args2.push_back(astjson_to_expression(m));
 		}
 
 		return expression_t::make_construct_value_expr(value_type, args2);
@@ -163,8 +162,7 @@ expression_t astjson_to_expression(const quark::trace_context_t& tracer, const j
 	}
 }
 
-statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer, const ast_json_t& statement0){
-	QUARK_CONTEXT_SCOPED_TRACE(tracer, "astjson_to_statement__nonlossy()");
+statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 	QUARK_ASSERT(statement0._value.check_invariant());
 	QUARK_ASSERT(statement0._value.is_array());
 
@@ -174,7 +172,7 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 	//	[ "return", [ "k", 3, "int" ] ]
 	if(type == "return"){
 		QUARK_ASSERT(statement.get_array_size() == 2);
-		const auto expr = astjson_to_expression(tracer, statement.get_array_n(1));
+		const auto expr = astjson_to_expression(statement.get_array_n(1));
 		return statement_t::make__return_statement(expr);
 	}
 
@@ -189,7 +187,7 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 
 		const auto bind_type2 = resolve_type_name(ast_json_t{bind_type});
 		const auto name2 = name.get_string();
-		const auto expr2 = astjson_to_expression(tracer, expr);
+		const auto expr2 = astjson_to_expression(expr);
 		bool mutable_flag = !meta.is_null() && meta.does_object_element_exist("mutable");
 		const auto mutable_mode = mutable_flag ? statement_t::bind_local_t::k_mutable : statement_t::bind_local_t::k_immutable;
 		return statement_t::make__bind_local(name2, bind_type2, expr2, mutable_mode);
@@ -202,7 +200,7 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		const auto expr = statement.get_array_n(2);
 
 		const auto name2 = name.get_string();
-		const auto expr2 = astjson_to_expression(tracer, expr);
+		const auto expr2 = astjson_to_expression(expr);
 		return statement_t::make__store(name2, expr2);
 	}
 
@@ -213,7 +211,7 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		const auto variable_index = (int)statement.get_array_n(2).get_number();
 		const auto expr = statement.get_array_n(3);
 
-		const auto expr2 = astjson_to_expression(tracer, expr);
+		const auto expr2 = astjson_to_expression(expr);
 		return statement_t::make__store2(variable_address_t::make_variable_address(parent_index, variable_index), expr2);
 	}
 
@@ -222,7 +220,7 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		QUARK_ASSERT(statement.get_array_size() == 2);
 
 		const auto statements = statement.get_array_n(1);
-		const auto r = astjson_to_statements(tracer, ast_json_t{statements});
+		const auto r = astjson_to_statements(ast_json_t{statements});
 
 		const auto body = body_t(r);
 		return statement_t::make__block_statement(body);
@@ -264,7 +262,7 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 
 		const auto name2 = name.get_string();
 		const auto args2 = members_from_json(args);
-		const auto fstatements2 = astjson_to_statements(tracer, ast_json_t{fstatements});
+		const auto fstatements2 = astjson_to_statements(ast_json_t{fstatements});
 		const auto return_type2 = resolve_type_name(ast_json_t{return_type});
 
 		if(impure.is_true() == false && impure.is_false() == false){
@@ -287,9 +285,9 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		const auto then_statements = statement.get_array_n(2);
 		const auto else_statements = statement.get_array_size() == 4 ? statement.get_array_n(3) : json_t::make_array();
 
-		const auto condition_expression2 = astjson_to_expression(tracer, condition_expression);
-		const auto then_statements2 = astjson_to_statements(tracer, ast_json_t{then_statements});
-		const auto else_statements2 = astjson_to_statements(tracer, ast_json_t{else_statements});
+		const auto condition_expression2 = astjson_to_expression(condition_expression);
+		const auto then_statements2 = astjson_to_statements(ast_json_t{then_statements});
+		const auto else_statements2 = astjson_to_statements(ast_json_t{else_statements});
 
 		return statement_t::make__ifelse_statement(
 			condition_expression2,
@@ -305,9 +303,9 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		const auto end_expression = statement.get_array_n(4);
 		const auto body_statements = statement.get_array_n(5);
 
-		const auto start_expression2 = astjson_to_expression(tracer, start_expression);
-		const auto end_expression2 = astjson_to_expression(tracer, end_expression);
-		const auto body_statements2 = astjson_to_statements(tracer, ast_json_t{body_statements});
+		const auto start_expression2 = astjson_to_expression(start_expression);
+		const auto end_expression2 = astjson_to_expression(end_expression);
+		const auto body_statements2 = astjson_to_statements(ast_json_t{body_statements});
 
 		const auto range_type = for_mode.get_string() == "open-range" ? statement_t::for_statement_t::k_open_range : statement_t::for_statement_t::k_closed_range;
 		return statement_t::make__for_statement(
@@ -323,8 +321,8 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 		const auto expression = statement.get_array_n(1);
 		const auto body_statements = statement.get_array_n(2);
 
-		const auto expression2 = astjson_to_expression(tracer, expression);
-		const auto body_statements2 = astjson_to_statements(tracer, ast_json_t{body_statements});
+		const auto expression2 = astjson_to_expression(expression);
+		const auto body_statements2 = astjson_to_statements(ast_json_t{body_statements});
 
 		return statement_t::make__while_statement(expression2, body_t{body_statements2});
 	}
@@ -339,7 +337,7 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 	else if(type == "expression-statement"){
 		QUARK_ASSERT(statement.get_array_size() == 2);
 		const auto expr = statement.get_array_n(1);
-		const auto expr2 = astjson_to_expression(tracer, expr);
+		const auto expr2 = astjson_to_expression(expr);
 		return statement_t::make__expression_statement(expr2);
 	}
 
@@ -348,15 +346,14 @@ statement_t astjson_to_statement__nonlossy(const quark::trace_context_t& tracer,
 	}
 }
 
-const std::vector<statement_t> astjson_to_statements(const quark::trace_context_t& tracer, const ast_json_t& p){
-	QUARK_CONTEXT_SCOPED_TRACE(tracer, "astjson_to_statements()");
+const std::vector<statement_t> astjson_to_statements(const ast_json_t& p){
 	QUARK_ASSERT(p._value.check_invariant());
 	QUARK_ASSERT(p._value.is_array());
 
 	vector<statement_t> statements2;
 	for(const auto& statement: p._value.get_array()){
 		const auto type = statement.get_array_n(0);
-		const auto s2 = astjson_to_statement__nonlossy(tracer, ast_json_t{ statement });
+		const auto s2 = astjson_to_statement__nonlossy(ast_json_t{ statement });
 		statements2.push_back(s2);
 	}
 	return statements2;
@@ -548,10 +545,8 @@ ast_json_t statement_to_json(const statement_t& e){
 }
 
 
-ast_t json_to_ast(const quark::trace_context_t& tracer, const ast_json_t& parse_tree){
-	QUARK_CONTEXT_TRACE(tracer, json_to_pretty_string(parse_tree._value));
-
-	const auto program_body = astjson_to_statements(tracer, parse_tree);
+ast_t json_to_ast(const ast_json_t& parse_tree){
+	const auto program_body = astjson_to_statements(parse_tree);
 	return ast_t{body_t{program_body}, {}, {}};
 }
 

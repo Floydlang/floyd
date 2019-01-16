@@ -29,7 +29,6 @@ http://craftinginterpreters.com/representing-code.html
 
 namespace floyd {
 	struct ast_json_t;
-	struct parser_context_t;
 
 	//////////////////////////////////////////////////		read_statement()
 
@@ -58,7 +57,7 @@ namespace floyd {
 	std::pair<ast_json_t, seq_t> parse_statements(const seq_t& s);
 
 	//	returns json-array of statements.
-	ast_json_t parse_program2(const parser_context_t& context, const std::string& program);
+	ast_json_t parse_program2(const std::string& program);
 
 }	//	floyd
 

@@ -23,13 +23,6 @@
 namespace floyd {
 	struct value_t;
 
-	//////////////////////////////////////		interpreter_context_t
-
-
-	struct interpreter_context_t {
-		public: quark::trace_context_t _tracer;
-	};
-
 
 	//////////////////////////////////////		Helpers for values.
 
@@ -46,22 +39,20 @@ namespace floyd {
 
 	value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vector<value_t>& args);
 
-	bc_program_t compile_to_bytecode(const interpreter_context_t& context, const std::string& program);
+	bc_program_t compile_to_bytecode(const std::string& program);
 
-	std::pair<std::shared_ptr<interpreter_t>, value_t> run_program(const interpreter_context_t& context, const bc_program_t& program, const std::vector<floyd::value_t>& args);
-	std::shared_ptr<interpreter_t> run_global(const interpreter_context_t& context, const std::string& source);
+	std::pair<std::shared_ptr<interpreter_t>, value_t> run_program(const bc_program_t& program, const std::vector<floyd::value_t>& args);
+	std::shared_ptr<interpreter_t> run_global(const std::string& source);
 
 	/*
 		Quickie that compiles a program and calls its main() with the args.
 	*/
 	std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(
-		const interpreter_context_t& context,
 		const std::string& source,
 		const std::vector<value_t>& args
 	);
 
 	std::map<std::string, value_t> run_container(
-		const interpreter_context_t& context,
 		const std::string& source,
 		const std::vector<value_t>& args,
 		const std::string& container_key
