@@ -39,6 +39,16 @@ Notice that string has many qualities of an array of characters. You can ask for
 
 Floyd Speak files are always utf-8 files with no BOM. Their extension is ".floyd".
 
+# COMMAND LINE
+
+|COMMAND		  	| MEANING
+|:---				|:---	
+| floyd mygame.floyd | compile and run the floyd program "mygame.floyd"
+| floyd help		| Show built in help for command line tool
+| floyd runtests	| Runs Floyds internal unit tests
+| floyd benchmark 		| Runs Floyd built in suite of benchmark tests and prints the results.
+| floyd -t mygame.floyd		| the -t turns on tracing, which shows Floyd compilation steps and internal states
+
 
 
 # CONCEPT: PURE AND IMPURE FUNCTIONS

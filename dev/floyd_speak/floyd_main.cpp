@@ -427,29 +427,35 @@ void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_cod
 	throw std::logic_error("Unit test failed");
 }
 
-/*
 
-floyd (compiler settings
-
-"floyd myscript.floyd"
- 
-"python myscript.py
-
-*/
+void help(){
+std::cout << "Floyd Speak Programming Language " << floyd_version_string << " MIT." <<
+	
+R"(
+Usage:
+floyd run mygame.floyd		- compile and run the floyd program "mygame.floyd"
+floyd help					- Show built in help for command line tool
+floyd runtests				- Runs Floyds internal unit tests
+floyd benchmark 			- Runs Floyd built in suite of benchmark tests and prints the results.
+floyd run -t mygame.floyd	- the -t turns on tracing, which shows Floyd compilation steps and internal states
+)";
+}
 
 int main(int argc, const char * argv[]) {
 	const auto prev_q = quark::get_runtime();
-	const auto args = args_to_vector(argc, argv);
 
 	floyd_quark_runtime q("");
 	quark::set_runtime(&q);
 
-	bool runtests = std::find(args.begin(), args.end(), "runtests") != args.end();
-	bool benchmark = std::find(args.begin(), args.end(), "benchmark") != args.end();
-	bool trace = std::find(args.begin(), args.end(), "-trace") != args.end();
-	bool run_as_tool = runtests == false && benchmark == false;
+	const auto command_line_args = parse_command_line_args_subcommands(args_to_vector(argc, argv), "t");
 
-	if(runtests && QUARK_UNIT_TESTS_ON){
+	const auto path_parts = SplitPath(command_line_args.command);
+	QUARK_ASSERT(path_parts.fName == "floyd" || path_parts.fName == "floydut");
+
+
+	trace_on = command_line_args.flags.find("t") != command_line_args.flags.end() ? true : false;
+
+	if(command_line_args.subcommand == "runtests"){
 		try {
 			run_tests();
 		}
@@ -458,24 +464,25 @@ int main(int argc, const char * argv[]) {
 			return -1;
 		}
 	}
-	else if(benchmark){
+	else if(command_line_args.subcommand == "benchmark"){
 		floyd_benchmark();
 	}
-
-	else if(run_as_tool){
-		trace_on = false;
-
+	else if(command_line_args.subcommand == "help"){
+		help();
+	}
+	else if(command_line_args.subcommand == "run"){
 		//	Run provided script file.
-		if(args.size() == 2){
-			const auto floyd_args = std::vector<std::string>(args.begin() + 1, args.end());
+		if(command_line_args.extra_arguments.size() == 1){
+//			const auto floyd_args = std::vector<std::string>(command_line_args.extra_arguments.begin() + 1, command_line_args.extra_arguments.end());
+			const auto floyd_args = command_line_args.extra_arguments;
 			int error_code = run_file(floyd_args);
 			return error_code;
 		}
-
-		//	Run REPL
 		else{
-//			run_repl();
 		}
+	}
+	else{
+		help();
 	}
 
 	quark::set_runtime(prev_q);
