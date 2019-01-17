@@ -1242,6 +1242,59 @@ bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 
 
+/////////////////////////////////////////		PURE -- filter()
+
+
+//	[E] filter([E], bool f(E e))
+
+
+bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	//	Check topology.
+	if(arg_count != 2 || args[0]._type.is_vector() == false || args[1]._type.is_function() == false || args[1]._type.get_function_args().size () != 1){
+		throw std::runtime_error("filter() requires 2 arguments.");
+	}
+
+	const auto& elements = args[0];
+	const auto& f = args[1];
+	const auto& e_type = elements._type.get_vector_element_type();
+
+	if(
+		elements._type.get_vector_element_type() != f._type.get_function_args()[0]
+	)
+	{
+		throw std::runtime_error("[E] filter([E], bool f(E e))");
+	}
+
+	const auto input_vec = get_vector(elements);
+	immer::vector<bc_value_t> vec2;
+
+	for(const auto& e: input_vec){
+		const bc_value_t f_args[1] = { e };
+		const auto result1 = call_function_bc(vm, f, f_args, 1);
+		QUARK_ASSERT(result1._type.is_bool());
+
+		if(result1.get_bool_value()){
+			vec2 = vec2.push_back(e);
+		}
+	}
+
+	const auto result = make_vector(e_type, vec2);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
+	QUARK_TRACE(json_to_pretty_string(debug._value));
+#endif
+
+	return result;
+}
+
+
+
+
+
+
 /////////////////////////////////////////		IMPURE -- MISC
 
 
@@ -1750,6 +1803,7 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 				)
 			}
 		},
+		{ "filter", host_function_signature_t{ 1036, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure) }},
 		{ "reduce", host_function_signature_t{ 1035, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure) }},
 
 		//	print = impure!
@@ -1874,6 +1928,7 @@ std::map<int,  host_function_t> get_host_functions(){
 		{ "calc_binary_sha1", host__calc_binary_sha1 },
 		{ "map", host__map },
 		{ "map_string", host__map_string },
+		{ "filter", host__filter },
 		{ "reduce", host__reduce },
 
 		{ "print", host__print },

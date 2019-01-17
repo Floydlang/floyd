@@ -3056,7 +3056,7 @@ QUARK_UNIT_TEST("", "map_string()", "", ""){
 
 
 
-QUARK_UNIT_TEST_VIP("", "reduce()", "int reduce([int], int, func int(int, int))", ""){
+QUARK_UNIT_TEST("", "reduce()", "int reduce([int], int, func int(int, int))", ""){
 	test__run_global(
 		R"(
 
@@ -3073,7 +3073,7 @@ QUARK_UNIT_TEST_VIP("", "reduce()", "int reduce([int], int, func int(int, int))"
 	);
 }
 
-QUARK_UNIT_TEST_VIP("", "reduce()", "string reduce([int], string, func int(string, int))", ""){
+QUARK_UNIT_TEST("", "reduce()", "string reduce([int], string, func int(string, int))", ""){
 	test__run_global(
 		R"xxx(
 
@@ -3094,23 +3094,48 @@ QUARK_UNIT_TEST_VIP("", "reduce()", "string reduce([int], string, func int(strin
 	);
 }
 
-QUARK_UNIT_TEST("", "reduce()", "[int] reduce(int f(string))", ""){
+
+
+
+//////////////////////////////////////////		HOST FUNCTION - filter()
+
+
+
+QUARK_UNIT_TEST("", "filter()", "int filter([int], int, func int(int, int))", ""){
 	test__run_global(
 		R"(
 
-			let a = [ "one", "two_", "three" ]
-
-			func int f(string v){
-				return size(v)
+			func bool f(int element){
+				return element % 3 == 0 ? true : false
 			}
 
-			let result = reduce(a, f)
+			let result = filter([ 3, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 ], f)
+
 			print(to_string(result))
-			assert(result == [ 3, 4, 5 ])
+			assert(result == [ 3, 3, 6, 9, 12 ])
 
 		)"
 	);
 }
+
+QUARK_UNIT_TEST("", "filter()", "string filter([int], string, func int(string, int))", ""){
+	test__run_global(
+		R"xxx(
+
+			func bool f(string element){
+				return size(element) == 3 || size(element) == 5
+			}
+
+			let result = filter([ "one", "two", "three", "four", "five", "six", "seven" ], f)
+
+			print(to_string(result))
+			assert(result == [ "one", "two", "three", "six", "seven" ])
+
+		)xxx"
+	);
+}
+
+
 
 
 

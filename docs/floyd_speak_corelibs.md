@@ -122,7 +122,7 @@ The function f is called with each character in the input string, stored as a 1-
 Processes a vector of values and returns each that function f decides to include.
 
 ```
-[E] reduce([E], bool f(E e))
+[E] filter([E], bool f(E e))
 ```
 
 
