@@ -765,6 +765,19 @@ QUARK_UNIT_TEST("call_function()", "use local variables", "", ""){
 //////////////////////////////////////////		MUTATE VARIABLES
 
 
+QUARK_UNIT_TEST("call_function()", "local variable without let", "", ""){
+	auto r = test__run_global(R"(
+		a = 7
+		print(a)
+	)");
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "7" }));
+}
+
+
+
+//////////////////////////////////////////		MUTATE VARIABLES
+
+
 QUARK_UNIT_TEST("call_function()", "mutate local", "", ""){
 	auto r = test__run_global(R"(
 		mutable a = 1

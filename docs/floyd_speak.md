@@ -192,6 +192,11 @@ Implicit
 let y = 11
 ```
 
+You can even leave out "let" to define a new variable, if that local variable do not yet exist:
+
+```
+y = 12
+```
 
 Example:
 
@@ -573,6 +578,7 @@ This all makes simple structs extremely simple to create and use.
 - There is no way to have several different constructors, instead create explicit functions like make_square().
 - If you want a default constructor, implement one yourself: ```rect make_zero_rect(){ return rect(0, 0) }```.
 - There is no aliasing of structs -- changing a struct is always invisible to all other code that has copies of that struct.
+- Unlink struct in the C language, Floyd's struct has an undefined layout so you cannot use them to do byte-level mapping like you often do in C. Floyd is free to store members in any way it wants too - pack or reorder in any way.
 
 
 Example:
