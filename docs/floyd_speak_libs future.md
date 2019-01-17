@@ -34,6 +34,8 @@ double parse_double(string pos)
 
 In the default "C" locale, the following lowercase letters abcdefghijklmnopqrstuvwxyz are replaced with respective uppercase letters ABCDEFGHIJKLMNOPQRSTUVWXYZ.
 
+string to_uppercase_ascii(string s)
+string to_lowercase_ascii(string s)
 
 
 
@@ -169,8 +171,6 @@ This is to opposite of escape_for_url() - it takes a string from a URL and turns
 
 /*
 ```
-
-sha1_t calc_sha1(string s)
 
 //	SHA1 is 20 bytes.
 //	String representation uses hex, so is 40 characters long.
@@ -536,6 +536,11 @@ If something failes along the way, the original files are unmodified and the inc
 
 
 
+# FUTURE -- FOREIGN FUNCTION INTERFACE
+
+
+
+call_c()
 
 
 
