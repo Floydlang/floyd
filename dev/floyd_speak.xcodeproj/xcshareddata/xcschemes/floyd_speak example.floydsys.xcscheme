@@ -63,7 +63,15 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "run example.floydsys"
+            argument = "run"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-t"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "example.floydsys"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

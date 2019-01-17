@@ -49,6 +49,7 @@
 		2CB2A516203D642B0001A19E /* pass3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB2A515203D642B0001A19E /* pass3.cpp */; };
 		2CB30736214A9B35007D2732 /* example.floydsys in Sources */ = {isa = PBXBuildFile; fileRef = 2CB30735214A9B35007D2732 /* example.floydsys */; };
 		2CB30739214ACF09007D2732 /* software_system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB30737214ACF09007D2732 /* software_system.cpp */; };
+		2CBB527A21EFBE0200E5024A /* example.floydsys in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2CB30735214A9B35007D2732 /* example.floydsys */; };
 		2CBCA7DE1D569E04000FAE81 /* sha1_class.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */; };
 		2CBCA7DF1D569E07000FAE81 /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DA1D569C6D000FAE81 /* sha1.cpp */; };
 		2CC34CC121EF8882000F3CB6 /* floyd_repl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC34CBF21EF8882000F3CB6 /* floyd_repl.cpp */; };
@@ -60,12 +61,13 @@
 /* Begin PBXCopyFilesBuildPhase section */
 		2C1D84DB1CA765A90042F0A8 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
+			buildActionMask = 12;
+			dstPath = "";
+			dstSubfolderSpec = 6;
 			files = (
+				2CBB527A21EFBE0200E5024A /* example.floydsys in CopyFiles */,
 			);
-			runOnlyForDeploymentPostprocessing = 1;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 

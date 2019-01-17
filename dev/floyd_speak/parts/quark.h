@@ -407,7 +407,8 @@ inline default_tracer_t::default_tracer_t() :
 inline void default_tracer_t::trace_i__trace(const char s[]) const{
 	if(strlen(s) > 0){
 		for(long i = 0 ; i < _indent ; i++){
-			std::cout << "|\t";
+//			std::cout << "|\t";
+			std::cout << "\t";
 		}
 
 		std::cout << std::string(s);
@@ -739,76 +740,76 @@ inline std::string path_to_name(const std::string& path){
 	return path.substr(pos);
 }
 
-inline int run_test_list(const std::vector<unit_test_def>& tests){
-	int fail_count = 0;
-	for(std::size_t i = 0 ; i < tests.size() ; i++){
-		const unit_test_def& test = tests[i];
+inline bool run_test(const unit_test_def& test, bool oneline){
+	std::stringstream testInfo;
+	testInfo << test._source_file << ":" << std::to_string(test._source_line)
+		<< " " << test._class_under_test
+		<< " " << test._function_under_test
+		<< " " << test._scenario
+		<< " " << test._expected_result;
 
-		std::stringstream testInfo;
-		testInfo << test._source_file << ":" << std::to_string(test._source_line) << " Test #" << i
-			<< " " << test._class_under_test
-			<< " | " << test._function_under_test
-			<< " | " << test._scenario
-			<< " | " << test._expected_result;
-
-		try{
-			QUARK_SCOPED_TRACE(testInfo.str());
+	try{
+		if(oneline){
+			std::cout << testInfo.str() << "...";
 			test._test_f();
-		}
-		catch(const std::exception& e){
-			QUARK_TRACE("FAILURE: " + testInfo.str());
-			QUARK_TRACE(typeid(e).name());
-			QUARK_TRACE(e.what());
-			fail_count++;
-			on_problem___put_breakpoint_here();
-		}
-		catch(...){
-			QUARK_TRACE("FAILURE: " + testInfo.str());
-			fail_count++;
-			on_problem___put_breakpoint_here();
-		}
-	}
-	return fail_count;
-}
-
-inline std::vector<unit_test_def> prepare_test_list(const std::vector<unit_test_def>& tests, const std::vector<std::string>& source_file_order){
-	std::vector<unit_test_def> vip_tests;
-	for(const auto& e: tests){
-		if(e._vip){
-			vip_tests.push_back(e);
+			std::cout << "OK" << std::endl;
+			return true;
 		}
 		else{
+			QUARK_SCOPED_TRACE(testInfo.str());
+			test._test_f();
+			return true;
 		}
 	}
-	if(vip_tests.empty() == false){
-		return vip_tests;
+	catch(const std::exception& e){
+		std::cout << "FAILURE: " + testInfo.str() << std::endl;
+		std::cout << typeid(e).name() << std::endl;
+		std::cout << std::string(e.what()) << std::endl;
+		on_problem___put_breakpoint_here();
+		return false;
 	}
+	catch(...){
+		std::cout << "FAILURE: " + testInfo.str() << std::endl;
+		on_problem___put_breakpoint_here();
+		return false;
+	}
+}
 
-	else{
-		std::vector<unit_test_def> ordered_tests;
-		std::vector<unit_test_def> remaining_tests = tests;
 
-		for(const auto& f: source_file_order){
+inline std::vector<unit_test_def> sort_tests(const std::vector<unit_test_def>& tests, const std::vector<std::string>& source_file_order){
+	std::vector<unit_test_def> ordered_tests;
+	std::vector<unit_test_def> remaining_tests = tests;
 
-			//	Make list of all tests for this source file.
-			auto it = remaining_tests.begin();
-			while(it != remaining_tests.end()){
+	for(const auto& f: source_file_order){
 
-				//	If this test belongs to our source file, MOVE it to file_tests.
-				const std::string file = path_to_name(it->_source_file);
-				if(file == f){
-					ordered_tests.push_back(*it);
-					it = remaining_tests.erase(it);
-				}
-				else{
-					it++;
-				}
+		//	Make list of all tests for this source file.
+		auto it = remaining_tests.begin();
+		while(it != remaining_tests.end()){
+
+			//	If this test belongs to our source file, MOVE it to file_tests.
+			const std::string file = path_to_name(it->_source_file);
+			if(file == f){
+				ordered_tests.push_back(*it);
+				it = remaining_tests.erase(it);
+			}
+			else{
+				it++;
 			}
 		}
-		auto result = ordered_tests;
-		result.insert(result.end(), remaining_tests.begin(), remaining_tests.end());
-		return result;
 	}
+	auto result = ordered_tests;
+	result.insert(result.end(), remaining_tests.begin(), remaining_tests.end());
+	return result;
+}
+
+inline int count_vip_tests(const std::vector<unit_test_def>& tests){
+	int count = 0;
+	for(const auto& e: tests){
+		if(e._vip){
+			count++;
+		}
+	}
+	return count;
 }
 
 
@@ -818,29 +819,57 @@ inline std::vector<unit_test_def> prepare_test_list(const std::vector<unit_test_
 	It will handle tracing and exceptions etc.
 	On unit-test failure this function exits the executable.
 */
-inline void run_tests(const unit_test_registry& registry, const std::vector<std::string>& source_file_order){
-	QUARK_SCOPED_TRACE(__FUNCTION__);
+inline void run_tests(const unit_test_registry& registry, const std::vector<std::string>& source_file_order, bool oneline){
+	const auto sorted_tests = sort_tests(registry._tests, source_file_order);
+	const auto vip_count = count_vip_tests(sorted_tests);
 
-	const auto filtered_tests = prepare_test_list(registry._tests, source_file_order);
+	const auto total_test_count = registry._tests.size();
 
-	std::size_t test_count = registry._tests.size();
-	std::size_t fail_count = 0;
-	QUARK_TRACE_SS("Running " << test_count << " tests...");
+	if(vip_count > 0){
+		std::cout << "Running SUBSET of tests: " << vip_count << " / " << total_test_count << std::endl;
 
-	fail_count += run_test_list(filtered_tests);
+		int fail_count = 0;
+		for(const auto& test: sorted_tests){
+			if(test._vip){
+				bool success = run_test(test, oneline);
+				if(success == false){
+					fail_count++;
+				}
+			}
+		}
 
-	if(fail_count == 0){
-		QUARK_TRACE_SS("SUCCESS " << test_count << " tests!");
+		if(fail_count == 0){
+			std::cout << "Succeess SUBSET " << vip_count << " / " << total_test_count << std::endl;
+		}
+		else{
+			std::cout << "Failure SUBSET " << fail_count << std::endl;
+			exit(-1);
+		}
 	}
 	else{
-		QUARK_TRACE_SS("FAILED " << fail_count << " out of " << test_count << " tests!");
-		exit(-1);
+		std::cout << "Running tests: " << total_test_count << std::endl;
+
+		int fail_count = 0;
+		for(const auto& test: sorted_tests){
+			bool success = run_test(test, oneline);
+			if(success == false){
+				fail_count++;
+			}
+		}
+
+		if(fail_count == 0){
+			std::cout << "Succeess ALL  " << sorted_tests.size() << std::endl;
+		}
+		else{
+			std::cout << "Failure SUBSET " << fail_count << std::endl;
+			exit(-1);
+		}
 	}
 }
 
-inline void run_tests(const std::vector<std::string>& source_file_order){
+inline void run_tests(const std::vector<std::string>& source_file_order, bool oneline){
 	QUARK_ASSERT(unit_test_rec::_registry_instance != nullptr);
-	run_tests(*unit_test_rec::_registry_instance, source_file_order);
+	run_tests(*unit_test_rec::_registry_instance, source_file_order, oneline);
 }
 
 #endif

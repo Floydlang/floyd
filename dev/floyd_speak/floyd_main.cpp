@@ -21,6 +21,7 @@
 #include "interpretator_benchmark.h"
 #include "FileHandling.h"
 
+#include "pass3.h"
 
 std::string floyd_version_string = "0.3";
 
@@ -28,107 +29,67 @@ std::string floyd_version_string = "0.3";
 //////////////////////////////////////////////////		main()
 
 
-int run_file(const std::vector<std::string>& args){
-	const auto source_path = args[0];
-	const std::vector<std::string> args2(args.begin() + 1, args.end());
-
-//	std::cout << "Source file:" << source_path << std::endl;
-
-	std::string source;
-	{
-		std::ifstream f (source_path);
-		if (f.is_open() == false){
-			throw std::runtime_error("Cannot read source file.");
-		}
-		std::string line;
-		while ( getline(f, line) ) {
-			source.append(line + "\n");
-		}
-		f.close();
-	}
-
-//	std::cout << "Source:" << source << std::endl;
-
-
-//	std::cout << "Compiling..." << std::endl;
-	auto program = floyd::compile_to_bytecode(source);
-
-
-//	std::cout << "Preparing arguments..." << std::endl;
-
-	std::vector<floyd::value_t> args3;
-	for(const auto& e: args2){
-		args3.push_back(floyd::value_t::make_string(e));
-	}
-
-//	std::cout << "Running..." << source << std::endl;
-
-	const auto result = floyd::run_program(program, args3);
-	if(result.second.is_int()){
-		int64_t result_code = result.second.get_int_value();
-//		std::cout << result_code << std::endl;
-		return static_cast<int>(result_code);
-	}
-	else{
-		return 0;
-	}
-}
-
-void run_tests(){
-	quark::run_tests({
-		"quark.cpp",
-
-		"text_parser.cpp",
-		"steady_vector.cpp",
-		"unused_bits.cpp",
-		"sha1_class.cpp",
-		"sha1.cpp",
-		"json_parser.cpp",
-		"json_support.cpp",
-		"json_writer.cpp",
-
-		"floyd_basics.cpp",
-
-
-		"parser2.cpp",
-		"parser_value.cpp",
-		"parser_primitives.cpp",
-
-		"parser_expression.cpp",
-		"parser_function.cpp",
-		"parser_statement.cpp",
-		"parser_struct.cpp",
-		"parse_prefixless_statement.cpp",
-		"floyd_parser.cpp",
-
-		"floyd_test_suite.cpp",
-		"interpretator_benchmark.cpp",
-
-		"ast_typeid.cpp",
-
-		"pass2.cpp",
-		"pass3.cpp",
-
-		"parse_statement.cpp",
-		"floyd_interpreter.cpp",
-
-		//	Core libs
-/*
-		"parser_ast.cpp",
-		"ast_utils.cpp",
-		"experimental_runtime.cpp",
-		"expressions.cpp",
-		"llvm_code_gen.cpp",
-		"utils.cpp",
-		"pass3.cpp",
-		"floyd_main.cpp",
-*/
-	});
-}
-
-
 
 bool trace_on = true;
+
+
+void run_tests(){
+	quark::run_tests(
+		{
+			"quark.cpp",
+
+			"text_parser.cpp",
+			"steady_vector.cpp",
+			"unused_bits.cpp",
+			"sha1_class.cpp",
+			"sha1.cpp",
+			"json_parser.cpp",
+			"json_support.cpp",
+			"json_writer.cpp",
+
+			"floyd_basics.cpp",
+
+
+			"parser2.cpp",
+			"parser_value.cpp",
+			"parser_primitives.cpp",
+
+			"parser_expression.cpp",
+			"parser_function.cpp",
+			"parser_statement.cpp",
+			"parser_struct.cpp",
+			"parse_prefixless_statement.cpp",
+			"floyd_parser.cpp",
+
+			"floyd_test_suite.cpp",
+			"interpretator_benchmark.cpp",
+
+			"ast_typeid.cpp",
+
+			"pass2.cpp",
+			"pass3.cpp",
+
+			"parse_statement.cpp",
+			"floyd_interpreter.cpp",
+
+			//	Core libs
+	/*
+			"parser_ast.cpp",
+			"ast_utils.cpp",
+			"experimental_runtime.cpp",
+			"expressions.cpp",
+			"llvm_code_gen.cpp",
+			"utils.cpp",
+			"pass3.cpp",
+			"floyd_main.cpp",
+	*/
+		},
+		trace_on ? false: true
+	);
+}
+
+
+
 
 
 //??? Only exists so we cn control tracing on/off. Delete and use new trace_context_t instead.
@@ -205,11 +166,73 @@ std::cout << "Floyd Speak Programming Language " << floyd_version_string << " MI
 R"(
 Usage:
 floyd run mygame.floyd		- compile and run the floyd program "mygame.floyd"
+floyd compile mygame.floyd	- compile the floyd program "mygame.floyd" to an AST, in JSON format
 floyd help					- Show built in help for command line tool
 floyd runtests				- Runs Floyds internal unit tests
 floyd benchmark 			- Runs Floyd built in suite of benchmark tests and prints the results.
 floyd run -t mygame.floyd	- the -t turns on tracing, which shows Floyd compilation steps and internal states
 )";
+}
+
+void run_command(const std::vector<std::string>& args){
+	const auto command_line_args = parse_command_line_args_subcommands(args, "t");
+	const auto path_parts = SplitPath(command_line_args.command);
+	QUARK_ASSERT(path_parts.fName == "floyd" || path_parts.fName == "floydut");
+	trace_on = command_line_args.flags.find("t") != command_line_args.flags.end() ? true : false;
+
+	if(command_line_args.subcommand == "runtests"){
+		run_tests();
+	}
+	else if(command_line_args.subcommand == "benchmark"){
+		floyd_benchmark();
+	}
+	else if(command_line_args.subcommand == "help"){
+		help();
+	}
+	else if(command_line_args.subcommand == "compile"){
+		if(command_line_args.extra_arguments.size() == 1){
+			const auto source_path = command_line_args.extra_arguments[0];
+			const auto source = read_text_file(source_path);
+			const auto ast = floyd::compile_to_sematic_ast(source);
+			const auto json = ast_to_json(ast._checked_ast);
+			std::cout << json_to_pretty_string(json._value);
+		}
+		else{
+		}
+	}
+	else if(command_line_args.subcommand == "run"){
+
+		//	Run provided script file.
+		if(command_line_args.extra_arguments.size() == 1){
+//			const auto floyd_args = std::vector<std::string>(command_line_args.extra_arguments.begin() + 1, command_line_args.extra_arguments.end());
+			const auto floyd_args = command_line_args.extra_arguments;
+
+			const auto source_path = floyd_args[0];
+			const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
+
+			const auto source = read_text_file(source_path);
+
+			auto program = floyd::compile_to_bytecode(source);
+
+			std::vector<floyd::value_t> args3;
+			for(const auto& e: args2){
+				args3.push_back(floyd::value_t::make_string(e));
+			}
+
+			const auto result = floyd::run_program(program, args3);
+			const int error_code = result.second.is_int() ? static_cast<int>(result.second.get_int_value()) : 0;
+			if(error_code == 0){
+			}
+			else{
+				throw std::exception();
+			}
+		}
+		else{
+		}
+	}
+	else{
+		help();
+	}
 }
 
 int main(int argc, const char * argv[]) {
@@ -219,44 +242,22 @@ int main(int argc, const char * argv[]) {
 	floyd_tracer tracer;
 	quark::set_trace(&tracer);
 
-	const auto command_line_args = parse_command_line_args_subcommands(args_to_vector(argc, argv), "t");
-
-	const auto path_parts = SplitPath(command_line_args.command);
-	QUARK_ASSERT(path_parts.fName == "floyd" || path_parts.fName == "floydut");
-
-
-	trace_on = command_line_args.flags.find("t") != command_line_args.flags.end() ? true : false;
-
-	if(command_line_args.subcommand == "runtests"){
-		try {
-			run_tests();
-		}
-		catch(...){
-			QUARK_TRACE("Error");
-			return -1;
-		}
+	const auto args = args_to_vector(argc, argv);
+	try{
+		run_command(args);
 	}
-	else if(command_line_args.subcommand == "benchmark"){
-		floyd_benchmark();
+	catch(const std::runtime_error& e){
+		const auto what = std::string(e.what());
+		std::cout << what << std::endl;
+		return EXIT_FAILURE;
 	}
-	else if(command_line_args.subcommand == "help"){
-		help();
+	catch(const std::exception& e){
+		return EXIT_FAILURE;
 	}
-	else if(command_line_args.subcommand == "run"){
-		//	Run provided script file.
-		if(command_line_args.extra_arguments.size() == 1){
-//			const auto floyd_args = std::vector<std::string>(command_line_args.extra_arguments.begin() + 1, command_line_args.extra_arguments.end());
-			const auto floyd_args = command_line_args.extra_arguments;
-			int error_code = run_file(floyd_args);
-			return error_code;
-		}
-		else{
-		}
+	catch(...){
+		std::cout << "Error" << std::endl;
+		return EXIT_FAILURE;
 	}
-	else{
-		help();
-	}
-
-	return 0;
+	return EXIT_SUCCESS;
 }
 

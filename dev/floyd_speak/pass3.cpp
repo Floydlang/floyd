@@ -1833,11 +1833,8 @@ bool analyser_t::check_invariant() const {
 semantic_ast_t run_semantic_analysis(const ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-//	QUARK_CONTEXT_TRACE_SS(tracer, "INPUT:  " << json_to_pretty_string(ast_to_json(ast)._value));
 	analyser_t a(ast);
 	const auto result = analyse(a);
-
-//	QUARK_CONTEXT_TRACE_SS(tracer, "OUTPUT: " << json_to_pretty_string(ast_to_json(result._checked_ast)._value));
 	return result;
 }
 

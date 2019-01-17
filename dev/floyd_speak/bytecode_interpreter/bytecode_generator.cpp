@@ -1520,7 +1520,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	QUARK_SCOPED_TRACE("generate_bytecode");
-//	QUARK_CONTEXT_TRACE_SS(tracer, "INPUT:  " << json_to_pretty_string(ast_to_json(ast._checked_ast)._value));
+	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(ast_to_json(ast._checked_ast)._value));
 
 	bcgenerator_t a(ast._checked_ast);
 
@@ -1556,7 +1556,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 
 	const auto result = bc_program_t{ globals2, function_defs2, a._types, ast._checked_ast._software_system };
 
-//	QUARK_CONTEXT_TRACE_SS(tracer, "OUTPUT: " << json_to_pretty_string(bcprogram_to_json(result)));
+	QUARK_TRACE_SS("OUTPUT: " << json_to_pretty_string(bcprogram_to_json(result)));
 
 	return result;
 }

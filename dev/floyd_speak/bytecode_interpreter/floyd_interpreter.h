@@ -22,7 +22,7 @@
 
 namespace floyd {
 	struct value_t;
-
+	struct semantic_ast_t;
 
 	//////////////////////////////////////		Helpers for values.
 
@@ -40,6 +40,7 @@ namespace floyd {
 	value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vector<value_t>& args);
 
 	bc_program_t compile_to_bytecode(const std::string& program);
+	semantic_ast_t compile_to_sematic_ast(const std::string& program);
 
 	std::pair<std::shared_ptr<interpreter_t>, value_t> run_program(const bc_program_t& program, const std::vector<floyd::value_t>& args);
 	std::shared_ptr<interpreter_t> run_global(const std::string& source);

@@ -36,13 +36,13 @@ std::pair<json_t, seq_t> parse_json(const seq_t& s){
 
 			const auto key_p = parse_json(p2);
 			if(!key_p.first.is_string()){
-				throw std::runtime_error("");
+				throw std::runtime_error("Missing key in JSON object");
 			}
 			const string key = key_p.first.get_string();
 
 			auto p3 = skip_whitespace(key_p.second);
 			if(p3.first1() != ":"){
-				throw std::runtime_error("");
+				throw std::runtime_error("Missing : betweeen key and value in JSON object");
 			}
 
 			p3 = skip_whitespace(p3.rest1());
@@ -52,7 +52,7 @@ std::pair<json_t, seq_t> parse_json(const seq_t& s){
 
 			auto post_p = skip_whitespace(expression_p.second);
 			if(post_p.first1() != "," && post_p.first1() != "}"){
-				throw std::runtime_error("");
+				throw std::runtime_error("Expected either , or } after JSON object field");
 			}
 
 			if(post_p.first1() == ","){
@@ -71,7 +71,7 @@ std::pair<json_t, seq_t> parse_json(const seq_t& s){
 
 			auto post_p = skip_whitespace(expression_p.second);
 			if(post_p.first1() != "," && post_p.first1() != "]"){
-				throw std::runtime_error("");
+				throw std::runtime_error("Expected , or ] after JSON array element");
 			}
 
 			if(post_p.first1() == ","){

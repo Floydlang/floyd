@@ -373,20 +373,35 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 }
 
 bc_program_t compile_to_bytecode(const string& program){
-#if 1
-const auto pref = k_tiny_prefix;
-const auto p = pref + "\n" + program;
-#else
-const auto p = program;
-#endif
+	const auto p = k_builtin_types_and_constants + "\n" + program;
 
-	const auto& pass1 = parse_program2(p);
-	const auto& pass2 = json_to_ast(pass1);
-	const auto& pass3 = run_semantic_analysis(pass2);
+//	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
+	const auto pass1 = parse_program2(p);
+
+
+//	QUARK_CONTEXT_TRACE_SS(tracer, "OUTPUT: " << json_to_pretty_string(ast_to_json(result._checked_ast)._value));
+	const auto pass2 = json_to_ast(pass1);
+
+
+	const auto pass3 = run_semantic_analysis(pass2);
 	const auto bc = generate_bytecode(pass3);
 
 	return bc;
 }
+
+
+semantic_ast_t compile_to_sematic_ast(const string& program){
+	const auto p = k_builtin_types_and_constants + "\n" + program;
+
+	const auto pass1 = parse_program2(p);
+	const auto pass2 = json_to_ast(pass1);
+	const auto pass3 = run_semantic_analysis(pass2);
+	return pass3;
+}
+
+
+
+
 
 std::pair<std::shared_ptr<interpreter_t>, value_t> run_program(const bc_program_t& program, const vector<floyd::value_t>& args){
 	auto vm = make_shared<interpreter_t>(program);

@@ -238,3 +238,7 @@ command_line_args_t parse_command_line_args(const std::vector<std::string>& args
 			"Commit message"
 */
 command_line_args_t parse_command_line_args_subcommands(const std::vector<std::string>& args, const std::string& flags);
+
+
+
+std::string read_text_file(const std::string& abs_path);

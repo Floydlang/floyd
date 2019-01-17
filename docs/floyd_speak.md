@@ -43,7 +43,8 @@ Floyd Speak files are always utf-8 files with no BOM. Their extension is ".floyd
 
 |COMMAND		  	| MEANING
 |:---				|:---	
-| floyd mygame.floyd | compile and run the floyd program "mygame.floyd"
+| floyd run mygame.floyd | compile and run the floyd program "mygame.floyd"
+| floyd compile mygame.floyd | compile the floyd program "mygame.floyd" to an AST, in JSON format
 | floyd help		| Show built in help for command line tool
 | floyd runtests	| Runs Floyds internal unit tests
 | floyd benchmark 		| Runs Floyd built in suite of benchmark tests and prints the results.

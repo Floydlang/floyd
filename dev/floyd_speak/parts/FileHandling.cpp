@@ -21,6 +21,8 @@
 #include <dirent.h>    /* struct DIR, struct dirent, opendir().. */
 
 
+#include <iostream>
+#include <fstream>
 
 
 #define JIU_MACOS 1
@@ -226,6 +228,25 @@ From "errno.h"
 int get_error(){
 	return errno;
 }
+
+
+
+std::string read_text_file(const std::string& abs_path){
+	std::string file_contents;
+
+	std::ifstream f (abs_path);
+	if (f.is_open() == false){
+		throw std::runtime_error(std::string() + "Cannot read text file." + abs_path);
+	}
+	std::string line;
+	while ( getline(f, line) ) {
+		file_contents.append(line + "\n");
+	}
+	f.close();
+
+	return file_contents;
+}
+
 
 
 

@@ -3584,6 +3584,7 @@ OFF_QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
 
 QUARK_UNIT_TEST("software-system", "test parsing all data", "", ""){
 	const auto test_ss = R"(
+
 		software-system {
 			"name": "My Arcade Game",
 			"desc": "Space shooter for mobile devices, with connection to a server.",
@@ -3670,6 +3671,7 @@ QUARK_UNIT_TEST("software-system", "test parsing all data", "", ""){
 			}
 		}
 		result = 123
+
 	)";
 
 	const auto result = test__run_return_result(test_ss, {});

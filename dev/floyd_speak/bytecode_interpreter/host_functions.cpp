@@ -46,7 +46,7 @@ value_t value_to_jsonvalue(const value_t& value){
 
 
 
-extern const std::string k_tiny_prefix = R"(
+extern const std::string k_builtin_types_and_constants = R"(
 	let double cmath_pi = 3.14159265358979323846
 
 	struct cpu_address_t {
@@ -1263,18 +1263,7 @@ bc_value_t host__read_text_file(interpreter_t& vm, const bc_value_t args[], int 
 	}
 
 	const string source_path = args[0].get_string_value();
-	std::string file_contents;
-	{
-		std::ifstream f (source_path);
-		if (f.is_open() == false){
-			throw std::runtime_error("Cannot read source file.");
-		}
-		std::string line;
-		while ( getline(f, line) ) {
-			file_contents.append(line + "\n");
-		}
-		f.close();
-	}
+	std::string file_contents = read_text_file(source_path);
 	const auto v = bc_value_t::make_string(file_contents);
 	return v;
 }

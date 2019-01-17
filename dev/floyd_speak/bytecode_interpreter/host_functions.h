@@ -23,7 +23,7 @@ namespace floyd {
 	struct interpreter_t;
 
 
-	extern const std::string k_tiny_prefix;
+	extern const std::string k_builtin_types_and_constants;
 
 
 	struct host_function_signature_t {
