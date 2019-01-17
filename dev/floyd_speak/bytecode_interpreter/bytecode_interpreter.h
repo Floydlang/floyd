@@ -773,6 +773,34 @@ namespace floyd {
 
 			return &value._pod._ext->_vector_pod64;
 		}
+		inline bc_value_t make_vector(const typeid_t& element_type, const immer::vector<bc_value_t>& elements){
+			const auto vector_type = typeid_t::make_vector(element_type);
+			if(encode_as_vector_pod64(vector_type)){
+				immer::vector<bc_pod64_t> elements2;
+				for(const auto& e: elements){
+					elements2 = elements2.push_back(e._pod._pod64);
+				}
+
+				bc_value_t temp;
+				temp._type = vector_type;
+				temp._pod._ext = new bc_value_object_t{vector_type, elements2};
+				QUARK_ASSERT(temp.check_invariant());
+				return temp;
+			}
+			else{
+				immer::vector<bc_object_handle_t> elements2;
+				for(const auto& e: elements){
+					elements2 = elements2.push_back(bc_object_handle_t(e));
+				}
+
+				bc_value_t temp;
+				temp._type = vector_type;
+				temp._pod._ext = new bc_value_object_t{vector_type, elements2};
+				QUARK_ASSERT(temp.check_invariant());
+				return temp;
+			}
+		}
+
 		inline bc_value_t make_vector_value(const typeid_t& element_type, const immer::vector<bc_object_handle_t>& elements){
 			const auto vector_type = typeid_t::make_vector(element_type);
 			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == false);

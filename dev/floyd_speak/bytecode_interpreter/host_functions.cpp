@@ -1123,20 +1123,20 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 
 	const auto r_type = f_return_type;
 
-	immer::vector<bc_pod64_t> vec2;
+	immer::vector<bc_value_t> vec2;
 	if(is_encoded_as_ext(collection_element_type) == false){
 		for(const auto& e: collection._pod._ext->_vector_pod64){
 			const auto e2 = bc_value_t(collection_element_type, e);
 			const bc_value_t f_args[1] = { e2 };
 			const auto result1 = call_function_bc(vm, f, f_args, 1);
-			vec2 = vec2.push_back(result1._pod._pod64);
+			vec2 = vec2.push_back(result1);
 		}
 	}
 	else{
 		QUARK_ASSERT(false);
 	}
 
-	const auto result = make_vector_int64_value(collection_element_type, vec2);
+	const auto result = make_vector(f_return_type, vec2);
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
@@ -1144,33 +1144,6 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 #endif
 
 	return result;
-/*
-	const auto result = make_vector_value(vec., vec2);
-		if(encode_as_vector_pod64(obj._type)){
-			const auto& element_type = obj._type.get_vector_element_type();
-			const auto& vec = obj._pod._ext->_vector_pod64;
-			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
-			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
-			immer::vector<bc_pod64_t> elements2;
-			for(auto i = start2 ; i < end2 ; i++){
-				elements2 = elements2.push_back(vec[i]);
-			}
-			const auto v = make_vector_int64_value(element_type, elements2);
-			return v;
-		}
-		else{
-			const auto vec = *get_vector_value(obj);
-			const auto element_type = obj._type.get_vector_element_type();
-			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
-			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
-			immer::vector<bc_object_handle_t> elements2;
-			for(auto i = start2 ; i < end2 ; i++){
-				elements2 = elements2.push_back(vec[i]);
-			}
-			const auto v = make_vector_value(element_type, elements2);
-			return v;
-		}
-*/
 }
 
 
