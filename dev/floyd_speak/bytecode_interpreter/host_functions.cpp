@@ -1103,7 +1103,6 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	if(args[0]._type.is_vector() == false){
 		throw std::runtime_error("map() arg 1 must be a vector.");
 	}
-	const auto& collection = args[0];
 	const auto collection_element_type = args[0]._type.get_vector_element_type();
 
 	if(args[1]._type.is_function() == false){
@@ -1123,17 +1122,12 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 
 	const auto r_type = f_return_type;
 
+	const auto input_vec = get_vector(args[0]);
 	immer::vector<bc_value_t> vec2;
-	if(is_encoded_as_ext(collection_element_type) == false){
-		for(const auto& e: collection._pod._ext->_vector_pod64){
-			const auto e2 = bc_value_t(collection_element_type, e);
-			const bc_value_t f_args[1] = { e2 };
-			const auto result1 = call_function_bc(vm, f, f_args, 1);
-			vec2 = vec2.push_back(result1);
-		}
-	}
-	else{
-		QUARK_ASSERT(false);
+	for(const auto& e: input_vec){
+		const bc_value_t f_args[1] = { e };
+		const auto result1 = call_function_bc(vm, f, f_args, 1);
+		vec2 = vec2.push_back(result1);
 	}
 
 	const auto result = make_vector(f_return_type, vec2);

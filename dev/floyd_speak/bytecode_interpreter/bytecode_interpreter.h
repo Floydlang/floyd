@@ -758,6 +758,29 @@ namespace floyd {
 		}
 
 
+		inline const immer::vector<bc_value_t> get_vector(const bc_value_t& value){
+			QUARK_ASSERT(value.check_invariant());
+			QUARK_ASSERT(value._type.is_vector());
+
+			const auto element_type = value._type.get_vector_element_type();
+
+			if(encode_as_vector_pod64(value._type)){
+				immer::vector<bc_value_t> result;
+				for(const auto& e: value._pod._ext->_vector_pod64){
+					bc_value_t temp(element_type, e);
+					result = result.push_back(temp);
+				}
+				return result;
+			}
+			else{
+				immer::vector<bc_value_t> result;
+				for(const auto& e: value._pod._ext->_vector_objects){
+					bc_value_t temp(element_type, e);
+					result = result.push_back(temp);
+				}
+				return result;
+			}
+		}
 
 		inline const immer::vector<bc_object_handle_t>* get_vector_value(const bc_value_t& value){
 			QUARK_ASSERT(value.check_invariant());
@@ -800,7 +823,6 @@ namespace floyd {
 				return temp;
 			}
 		}
-
 		inline bc_value_t make_vector_value(const typeid_t& element_type, const immer::vector<bc_object_handle_t>& elements){
 			const auto vector_type = typeid_t::make_vector(element_type);
 			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == false);

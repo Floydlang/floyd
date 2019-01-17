@@ -2970,7 +2970,7 @@ QUARK_UNIT_TEST("", "calc_binary_sha1()", "", ""){
 
 
 
-QUARK_UNIT_TEST_VIP("", "map()", "", ""){
+QUARK_UNIT_TEST("", "map()", "", ""){
 	test__run_global(
 		R"(
 
@@ -2988,7 +2988,7 @@ QUARK_UNIT_TEST_VIP("", "map()", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST_VIP("", "map()", "", ""){
+QUARK_UNIT_TEST("", "map()", "", ""){
 	test__run_global(
 		R"(
 
@@ -3001,6 +3001,24 @@ QUARK_UNIT_TEST_VIP("", "map()", "", ""){
 			let result = map(a, f)
 			print(to_string(result))
 			assert(result == [ "1010", "1011", "1012" ])
+
+		)"
+	);
+}
+
+QUARK_UNIT_TEST("", "map()", "", ""){
+	test__run_global(
+		R"(
+
+			let a = [ "one", "two_", "three" ]
+
+			func int f(string v){
+				return size(v)
+			}
+
+			let result = map(a, f)
+			print(to_string(result))
+			assert(result == [ 3, 4, 5 ])
 
 		)"
 	);
