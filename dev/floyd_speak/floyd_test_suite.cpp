@@ -3024,7 +3024,12 @@ QUARK_UNIT_TEST("", "map()", "[int] map(int f(string))", ""){
 	);
 }
 
-QUARK_UNIT_TEST("", "map_string()", "[int] map(int f(string))", ""){
+
+//////////////////////////////////////////		HOST FUNCTION - map_string()
+
+
+
+QUARK_UNIT_TEST("", "map_string()", "", ""){
 	test__run_global(
 		R"(
 
@@ -3045,6 +3050,67 @@ QUARK_UNIT_TEST("", "map_string()", "[int] map(int f(string))", ""){
 	);
 }
 
+
+
+//////////////////////////////////////////		HOST FUNCTION - reduce()
+
+
+
+QUARK_UNIT_TEST_VIP("", "reduce()", "int reduce([int], int, func int(int, int))", ""){
+	test__run_global(
+		R"(
+
+			func int f(int acc, int element){
+				return acc + element * 2
+			}
+
+			let result = reduce([ 10, 11, 12 ], 2000, f)
+
+			print(to_string(result))
+			assert(result == 2066)
+
+		)"
+	);
+}
+
+QUARK_UNIT_TEST_VIP("", "reduce()", "string reduce([int], string, func int(string, int))", ""){
+	test__run_global(
+		R"xxx(
+
+			func string f(string acc, int v){
+				mutable s = acc
+				for(e in 0 ..< v){
+					s = "<" + s + ">"
+				}
+				s = "(" + s + ")"
+				return s
+			}
+
+			let result = reduce([ 2, 4, 1 ], "O", f)
+			print(to_string(result))
+			assert(result == "(<(<<<<(<<O>>)>>>>)>)")
+
+		)xxx"
+	);
+}
+
+QUARK_UNIT_TEST("", "reduce()", "[int] reduce(int f(string))", ""){
+	test__run_global(
+		R"(
+
+			let a = [ "one", "two_", "three" ]
+
+			func int f(string v){
+				return size(v)
+			}
+
+			let result = reduce(a, f)
+			print(to_string(result))
+			assert(result == [ 3, 4, 5 ])
+
+		)"
+	);
+}
 
 
 

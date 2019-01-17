@@ -1091,8 +1091,9 @@ bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], in
 
 /////////////////////////////////////////		PURE -- FUNCTIONAL
 
+/////////////////////////////////////////		PURE -- MAP()
+
 //	[R] map([E], R f(E e))
-//??? need to provice context property to map() and pass to f().
 //??? need to provide context property to map() and pass to f().
 bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -1104,24 +1105,22 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	if(args[0]._type.is_vector() == false){
 		throw std::runtime_error("map() arg 1 must be a vector.");
 	}
-	const auto collection_element_type = args[0]._type.get_vector_element_type();
+	const auto e_type = args[0]._type.get_vector_element_type();
 
 	if(args[1]._type.is_function() == false){
 		throw std::runtime_error("map() requires start and end to be integers.");
 	}
 	const auto f = args[1];
 	const auto f_arg_types = f._type.get_function_args();
-	const auto f_return_type = f._type.get_function_return();
+	const auto r_type = f._type.get_function_return();
 
 	if(f_arg_types.size() != 1){
 		throw std::runtime_error("map() function f requries 1 argument.");
 	}
 
-	if(f_arg_types[0] != collection_element_type){
+	if(f_arg_types[0] != e_type){
 		throw std::runtime_error("map() function f must accept collection elements as its argument.");
 	}
-
-	const auto r_type = f_return_type;
 
 	const auto input_vec = get_vector(args[0]);
 	immer::vector<bc_value_t> vec2;
@@ -1131,7 +1130,7 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 		vec2 = vec2.push_back(result1);
 	}
 
-	const auto result = make_vector(f_return_type, vec2);
+	const auto result = make_vector(r_type, vec2);
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
@@ -1140,6 +1139,9 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 
 	return result;
 }
+
+
+/////////////////////////////////////////		PURE -- map_string()
 
 //	If input collection is a string, call f() with one character at a time, output is a new string.
 //	string map(string, string f(string:char e))
@@ -1158,7 +1160,7 @@ bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_
 	}
 	const auto f = args[1];
 	const auto f_arg_types = f._type.get_function_args();
-	const auto f_return_type = f._type.get_function_return();
+	const auto r_type = f._type.get_function_return();
 
 	if(f_arg_types.size() != 1){
 		throw std::runtime_error("map_string() function f requries 1 argument.");
@@ -1167,8 +1169,6 @@ bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_
 	if(f_arg_types[0] != typeid_t::make_string()){
 		throw std::runtime_error("map_string() function f must accept collection elements as its argument.");
 	}
-
-	const auto r_type = f_return_type;
 
 	const auto input_vec = args[0].get_string_value();
 	std::string vec2;
@@ -1188,6 +1188,58 @@ bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_
 
 	return result;
 }
+
+
+
+//??? Move get_host_function_return_type() here!
+
+
+
+/////////////////////////////////////////		PURE -- REDUCE()
+
+
+//	R map([E] elements, R init, R f(R acc, E e))
+
+bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	//	Check topology.
+	if(arg_count != 3 || args[0]._type.is_vector() == false || args[2]._type.is_function() == false || args[2]._type.get_function_args().size () != 2){
+		throw std::runtime_error("reduce() requires 3 arguments.");
+	}
+
+	const auto& elements = args[0];
+	const auto& init = args[1];
+	const auto& f = args[2];
+
+	if(
+		elements._type.get_vector_element_type() != f._type.get_function_args()[1]
+		&& init._type != f._type.get_function_args()[0]
+	)
+	{
+		throw std::runtime_error("R reduce([E] elements, R init_value, R (R acc, E element) f");
+	}
+
+	const auto input_vec = get_vector(elements);
+
+	bc_value_t acc = init;
+	for(const auto& e: input_vec){
+		const bc_value_t f_args[2] = { acc, e };
+		const auto result1 = call_function_bc(vm, f, f_args, 2);
+		acc = result1;
+	}
+
+	const auto result = acc;
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
+	QUARK_TRACE(json_to_pretty_string(debug._value));
+#endif
+
+	return result;
+}
+
+
 
 
 /////////////////////////////////////////		IMPURE -- MISC
@@ -1698,6 +1750,7 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 				)
 			}
 		},
+		{ "reduce", host_function_signature_t{ 1035, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure) }},
 
 		//	print = impure!
 		{ "print", host_function_signature_t{ 1000, typeid_t::make_function(VOID, { DYN }, epure::pure) } },
@@ -1821,6 +1874,7 @@ std::map<int,  host_function_t> get_host_functions(){
 		{ "calc_binary_sha1", host__calc_binary_sha1 },
 		{ "map", host__map },
 		{ "map_string", host__map_string },
+		{ "reduce", host__reduce },
 
 		{ "print", host__print },
 		{ "send", host__send },

@@ -131,7 +131,7 @@ Processes a vector of values and returns each that function f decides to include
 Processes a vector or values using the supplied function. Result is *one* value.
 
 ```
-R reduce([E], R init, R f(R accumulator, E e))
+R reduce([E], R init, R f(R accumulator, E element))
 ```
 
 
