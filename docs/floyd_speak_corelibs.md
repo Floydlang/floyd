@@ -108,6 +108,15 @@ Supports mapping over
 - jsonvalue::object
 
 
+#### map_string()
+
+This is special version of map designed to process strings.
+
+	string map_string(string in, func string(string e) f)
+
+The function f is called with each character in the input string, stored as a 1-character string in _e_. All the calls to f() will be appended together and returned from map_string().
+
+
 ## filter()
 
 Processes a vector of values and returns each that function f decides to include.

@@ -1093,6 +1093,7 @@ bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], in
 
 //	[R] map([E], R f(E e))
 //??? need to provice context property to map() and pass to f().
+//??? need to provide context property to map() and pass to f().
 bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -1131,6 +1132,54 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	}
 
 	const auto result = make_vector(f_return_type, vec2);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
+	QUARK_TRACE(json_to_pretty_string(debug._value));
+#endif
+
+	return result;
+}
+
+//	If input collection is a string, call f() with one character at a time, output is a new string.
+//	string map(string, string f(string:char e))
+bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	if(arg_count != 2){
+		throw std::runtime_error("map_string() requires 2 arguments");
+	}
+
+	if(args[0]._type.is_string() == false){
+		throw std::runtime_error("map_string() arg 1 must be a string.");
+	}
+	if(args[1]._type.is_function() == false){
+		throw std::runtime_error("map_string() requires start and end to be integers.");
+	}
+	const auto f = args[1];
+	const auto f_arg_types = f._type.get_function_args();
+	const auto f_return_type = f._type.get_function_return();
+
+	if(f_arg_types.size() != 1){
+		throw std::runtime_error("map_string() function f requries 1 argument.");
+	}
+
+	if(f_arg_types[0] != typeid_t::make_string()){
+		throw std::runtime_error("map_string() function f must accept collection elements as its argument.");
+	}
+
+	const auto r_type = f_return_type;
+
+	const auto input_vec = args[0].get_string_value();
+	std::string vec2;
+	for(const auto& e: input_vec){
+		const bc_value_t f_args[1] = { bc_value_t::make_string(std::string(1, e)) };
+		const auto result1 = call_function_bc(vm, f, f_args, 1);
+		QUARK_ASSERT(result1._type.is_string());
+		vec2.append(result1.get_string_value());
+	}
+
+	const auto result = bc_value_t::make_string(vec2);
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
@@ -1635,7 +1684,20 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 		{ "calc_binary_sha1", host_function_signature_t{ 1032, typeid_t::make_function(make__sha1_t__type(), { make__binary_t__type() }, epure::pure) }},
 
 		{ "map", host_function_signature_t{ 1033, typeid_t::make_function(DYN, { DYN, DYN}, epure::pure) }},
-
+		{
+			"map_string",
+			host_function_signature_t{
+				1034,
+				typeid_t::make_function(
+					typeid_t::make_string(),
+					{
+						typeid_t::make_string(),
+						typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_string() }, epure::pure)
+					},
+					epure::pure
+				)
+			}
+		},
 
 		//	print = impure!
 		{ "print", host_function_signature_t{ 1000, typeid_t::make_function(VOID, { DYN }, epure::pure) } },
@@ -1758,6 +1820,7 @@ std::map<int,  host_function_t> get_host_functions(){
 		{ "calc_string_sha1", host__calc_string_sha1 },
 		{ "calc_binary_sha1", host__calc_binary_sha1 },
 		{ "map", host__map },
+		{ "map_string", host__map_string },
 
 		{ "print", host__print },
 		{ "send", host__send },
