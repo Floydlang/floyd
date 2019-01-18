@@ -1295,6 +1295,102 @@ bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 
 
+/////////////////////////////////////////		PURE -- SUPERMAP()
+
+
+//	[R] supermap([E] values, [int] parents, R (E, [R]) f)
+
+bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	//	Check topology.
+	if(arg_count == 3 && args[0]._type.is_vector() && args[1]._type == typeid_t::make_vector(typeid_t::make_int()) && args[2]._type.is_function() && args[2]._type.get_function_args().size () == 2){
+	}
+	else{
+		throw std::runtime_error("supermap() requires 3 arguments.");
+	}
+
+	const auto& elements = args[0];
+	const auto& e_type = elements._type.get_vector_element_type();
+	const auto& parents = args[1];
+	const auto& f = args[2];
+	const auto& r_type = args[2]._type.get_function_return();
+	if(
+		e_type == f._type.get_function_args()[0]
+		&& r_type == f._type.get_function_args()[1].get_vector_element_type()
+	){
+	}
+	else {
+		throw std::runtime_error("R supermap([E] elements, R init_value, R (R acc, E element) f");
+	}
+
+	const auto elements2 = get_vector(elements);
+	const auto parents2 = get_vector(parents);
+
+	if(elements2.size() != parents2.size()) {
+		throw std::runtime_error("supermap() requires elements and parents be the same count.");
+	}
+
+	auto elements_todo = elements2.size();
+	std::vector<int> rcs(elements2.size(), 0);
+
+	immer::vector<bc_value_t> complete(elements2.size(), bc_value_t());
+
+	for(const auto& e: parents2){
+		const auto parent_index = e.get_int_value();
+
+		const auto count = static_cast<int64_t>(elements2.size());
+		QUARK_ASSERT(parent_index >= -1);
+		QUARK_ASSERT(parent_index < count);
+
+		if(parent_index != -1){
+			rcs[parent_index]++;
+		}
+	}
+
+	while(elements_todo > 0){
+		std::vector<int> pass_ids;
+		for(int i = 0 ; i < elements2.size() ; i++){
+			const auto rc = rcs[i];
+			if(rc == 0){
+				pass_ids.push_back(i);
+				rcs[i] = -1;
+			}
+		}
+
+		if(pass_ids.empty()){
+			throw std::runtime_error("supermap() dependency cycle error.");
+		}
+
+		for(const auto index: pass_ids){
+			const auto& e = elements2[index];
+			const bc_value_t f_args[2] = { e, make_vector(r_type, {}) };
+			const auto result1 = call_function_bc(vm, f, f_args, 2);
+
+			const auto parent_index = parents2[index].get_int_value();
+			if(parent_index != -1){
+				rcs[parent_index]--;
+			}
+			complete = complete.set(index, result1);
+			elements_todo--;
+		}
+	}
+
+	const auto result = make_vector(r_type, complete);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
+	QUARK_TRACE(json_to_pretty_string(debug._value));
+#endif
+
+	return result;
+}
+
+
+
+
+
+
 /////////////////////////////////////////		IMPURE -- MISC
 
 
@@ -1805,6 +1901,7 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 		},
 		{ "filter", host_function_signature_t{ 1036, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure) }},
 		{ "reduce", host_function_signature_t{ 1035, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure) }},
+		{ "supermap", host_function_signature_t{ 1037, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure) }},
 
 		//	print = impure!
 		{ "print", host_function_signature_t{ 1000, typeid_t::make_function(VOID, { DYN }, epure::pure) } },
@@ -1930,6 +2027,7 @@ std::map<int,  host_function_t> get_host_functions(){
 		{ "map_string", host__map_string },
 		{ "filter", host__filter },
 		{ "reduce", host__reduce },
+		{ "supermap", host__supermap },
 
 		{ "print", host__print },
 		{ "send", host__send },

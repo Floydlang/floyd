@@ -137,7 +137,7 @@ R reduce([E], R init, R f(R accumulator, E element))
 
 ## supermap()
 
-	[R] supermap([T] values, [int] depends_on, R (T, [R]) f)
+	[R] supermap([E] values, [int] depends_on, R (E, [R]) f)
 
 This function runs a bunch of tasks with dependencies between them. When supermap() returns, all tasks have been executed.
 
@@ -147,7 +147,7 @@ This function runs a bunch of tasks with dependencies between them. When superma
 - Task will not start until all its dependencies have been finished.
 - There is no way for any code to observe partially executed supermap(). It's done or not.
 
-- ** values**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The indexes are the indexes into the tasks-vector.
+- **values**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The indexes are the indexes into the tasks-vector. Use index -1 to mean *depends on nothing*.
 
 - **f**: this is your function that processes one T and returns a result R. The function must not depend on the order in which tasks execute. When f is called, all the tasks dependency tasks have already been executed and you get their results in [R].
 

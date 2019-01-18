@@ -1315,6 +1315,11 @@ typeid_t get_host_function_return_type(const analyser_t& a, const expression_t& 
 		const auto f = args[1].get_output_type();
 		return f;
 	}
+	else if(function_name == "supermap"){
+		const auto f = args[2].get_output_type().get_function_return();
+		const auto ret = typeid_t::make_vector(f);
+		return ret;
+	}
 /*
 	else if(function_name == "instantiate_from_typeid"){
 		if(args[0].get_operation() == expression_type::k_load2){

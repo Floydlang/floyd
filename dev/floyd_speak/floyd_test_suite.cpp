@@ -3139,6 +3139,44 @@ QUARK_UNIT_TEST("", "filter()", "string filter([int], string, func int(string, i
 
 
 
+//////////////////////////////////////////		HOST FUNCTION - supermap()
+
+
+
+QUARK_UNIT_TEST("", "supermap()", "No dependencies", ""){
+	test__run_global(
+		R"(
+
+			func string f(string v, [string] inputs){
+				return "[" + v + "]"
+			}
+
+			let result = supermap([ "one", "ring", "to"], [-1, -1, -1], f)
+			print(to_string(result))
+			assert(result == [ "[one]", "[ring]", "[to]" ])
+
+		)"
+	);
+}
+
+QUARK_UNIT_TEST_VIP("", "supermap()", "No dependencies", ""){
+	test__run_global(
+		R"(
+
+			func string f(string v, [string] inputs){
+				return "[" + v + "]"
+			}
+
+			let result = supermap([ "one", "ring", "to"], [1, 2, -1], f)
+			print(to_string(result))
+			assert(result == [ "[one]", "[ring]", "[to]" ])
+
+		)"
+	);
+}
+
+
+
 //////////////////////////////////////////		HOST FUNCTION - read_text_file()
 
 /*
