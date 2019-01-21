@@ -1191,8 +1191,6 @@ bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_
 
 
 
-//??? Move get_host_function_return_type() here!
-
 
 
 /////////////////////////////////////////		PURE -- REDUCE()
@@ -1989,57 +1987,37 @@ There is never a file extension. You could add one if you want too.
 */
 
 
-	const std::map<string, HOST_FUNCTION_PTR> lookup0 = {
-		{ "assert", host__assert },
-		{ "to_string", host__to_string },
-		{ "to_pretty_string", host__to_pretty_string },
-		{ "typeof", host__typeof },
-
-		{ "update", host__update },
-		{ "size", host__size },
-		{ "find", host__find },
-		{ "exists", host__exists },
-		{ "erase", host__erase },
-		{ "push_back", host__push_back },
-		{ "subset", host__subset },
-		{ "replace", host__replace },
-
-		{ "script_to_jsonvalue", host__script_to_jsonvalue },
-		{ "jsonvalue_to_script", host__jsonvalue_to_script },
-		{ "value_to_jsonvalue", host__value_to_jsonvalue },
-		{ "jsonvalue_to_value", host__jsonvalue_to_value },
-		{ "get_json_type", host__get_json_type },
-
-		{ "calc_string_sha1", host__calc_string_sha1 },
-		{ "calc_binary_sha1", host__calc_binary_sha1 },
-		{ "map", host__map },
-		{ "map_string", host__map_string },
-		{ "filter", host__filter },
-		{ "reduce", host__reduce },
-		{ "supermap", host__supermap },
-
-		{ "print", host__print },
-		{ "send", host__send },
-		{ "get_time_of_day", host__get_time_of_day },
-
-		{ "read_text_file", host__read_text_file },
-		{ "write_text_file", host__write_text_file },
-		{ "get_fsentries_shallow", host__get_fsentries_shallow },
-		{ "get_fsentries_deep", host__get_fsentries_deep },
-		{ "get_fsentry_info", host__get_fsentry_info },
-		{ "get_fs_environment", host__get_fs_environment },
-		{ "does_fsentry_exist", host__does_fsentry_exist },
-		{ "create_directory_branch", host__create_directory_branch },
-		{ "delete_fsentry_deep", host__delete_fsentry_deep },
-		{ "rename_fsentry", host__rename_fsentry }
-	};
-
-
-
 host_function_record_t make_rec(const std::string& name, HOST_FUNCTION_PTR f, int function_id, typeid_t function_type){
 	return host_function_record_t { name, f, function_id, function_type, nullptr };
 }
+host_function_record_t make_rec(const std::string& name, HOST_FUNCTION_PTR f, int function_id, typeid_t function_type, HOST_FUNCTION__CALC_RETURN_TYPE calc_return_type){
+	return host_function_record_t { name, f, function_id, function_type, calc_return_type };
+}
 
+
+typeid_t return_type_sames_as_arg0(const std::vector<typeid_t>& args){
+	QUARK_ASSERT(args.size() > 0);
+
+	return args[0];
+}
+typeid_t return_type_sames_as_arg1(const std::vector<typeid_t>& args){
+	QUARK_ASSERT(args.size() >= 2);
+
+	return args[1];
+}
+typeid_t return_type__map(const std::vector<typeid_t>& args){
+	QUARK_ASSERT(args.size() >= 2);
+
+	const auto f = args[1].get_function_return();
+	const auto ret = typeid_t::make_vector(f);
+	return ret;
+}
+
+typeid_t return_type__supermap(const std::vector<typeid_t>& args){
+	const auto f = args[2].get_function_return();
+	const auto ret = typeid_t::make_vector(f);
+	return ret;
+}
 
 std::vector<host_function_record_t> get_host_function_records(){
 	const auto VOID = typeid_t::make_void();
@@ -2053,14 +2031,14 @@ std::vector<host_function_record_t> get_host_function_records(){
 		make_rec("to_pretty_string", host__to_pretty_string, 1003, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::pure)),
 		make_rec("typeof", host__typeof, 1004, typeid_t::make_function(typeid_t::make_typeid(), { DYN }, epure::pure)),
 
-		make_rec("update", host__update, 1006, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure)),
+		make_rec("update", host__update, 1006, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure), return_type_sames_as_arg0),
 		make_rec("size", host__size, 1007, typeid_t::make_function(typeid_t::make_int(), { DYN }, epure::pure)),
 		make_rec("find", host__find, 1008, typeid_t::make_function(typeid_t::make_int(), { DYN, DYN }, epure::pure)),
 		make_rec("exists", host__exists, 1009, typeid_t::make_function(typeid_t::make_bool(), { DYN, DYN }, epure::pure)),
-		make_rec("erase", host__erase, 1010, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure)),
-		make_rec("push_back", host__push_back, 1011, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure)),
-		make_rec("subset", host__subset, 1012, typeid_t::make_function(DYN, { DYN, DYN, DYN}, epure::pure)),
-		make_rec("replace", host__replace, 1013, typeid_t::make_function(DYN, { DYN, DYN, DYN, DYN }, epure::pure)),
+		make_rec("erase", host__erase, 1010, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure), return_type_sames_as_arg0),
+		make_rec("push_back", host__push_back, 1011, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure), return_type_sames_as_arg0),
+		make_rec("subset", host__subset, 1012, typeid_t::make_function(DYN, { DYN, DYN, DYN}, epure::pure), return_type_sames_as_arg0),
+		make_rec("replace", host__replace, 1013, typeid_t::make_function(DYN, { DYN, DYN, DYN, DYN }, epure::pure), return_type_sames_as_arg0),
 
 
 		make_rec("script_to_jsonvalue", host__script_to_jsonvalue, 1017, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_string()}, epure::pure)),
@@ -2072,7 +2050,7 @@ std::vector<host_function_record_t> get_host_function_records(){
 		make_rec("calc_string_sha1", host__calc_string_sha1, 1031, typeid_t::make_function(make__sha1_t__type(), { typeid_t::make_string() }, epure::pure)),
 		make_rec("calc_binary_sha1", host__calc_binary_sha1, 1032, typeid_t::make_function(make__sha1_t__type(), { make__binary_t__type() }, epure::pure)),
 
-		make_rec("map", host__map, 1033, typeid_t::make_function(DYN, { DYN, DYN}, epure::pure)),
+		make_rec("map", host__map, 1033, typeid_t::make_function(DYN, { DYN, DYN}, epure::pure), return_type__map),
 		make_rec(
 			"map_string",
 			host__map_string,
@@ -2086,9 +2064,9 @@ std::vector<host_function_record_t> get_host_function_records(){
 				epure::pure
 			)
 		),
-		make_rec("filter", host__filter, 1036, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure)),
-		make_rec("reduce", host__reduce, 1035, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure)),
-		make_rec("supermap", host__supermap, 1037, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure)),
+		make_rec("filter", host__filter, 1036, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure), return_type_sames_as_arg0),
+		make_rec("reduce", host__reduce, 1035, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure), return_type_sames_as_arg1),
+		make_rec("supermap", host__supermap, 1037, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure), return_type__supermap),
 
 		//	print = impure!
 		make_rec("print", host__print, 1000, typeid_t::make_function(VOID, { DYN }, epure::pure)),
@@ -2182,7 +2160,7 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 
 	std::map<std::string, host_function_signature_t> result;
 	for(const auto& e: a){
-		result.insert({ e._name, { e._function_id, e._function_type } });
+		result.insert({ e._name, { e._function_id, e._function_type, e._dynamic_return_type } });
 	}
 	return result;
 }
@@ -2192,74 +2170,13 @@ std::map<int,  host_function_t> get_host_functions(){
 
 	std::map<int, host_function_t> result;
 	for(const auto& e: a){
-		const auto sign = host_function_signature_t{ e._function_id, e._function_type };
+		const auto sign = host_function_signature_t{ e._function_id, e._function_type, e._dynamic_return_type };
 		result.insert(
 			{ e._function_id, host_function_t{ sign, e._name, e._f } }
 		);
 	}
 	return result;
 }
-
-
-
-
-
-typeid_t get_host_function_return_type(const std::string& function_name, const vector<typeid_t>& args){
-	if(function_name == "update"){
-		return args[0];
-	}
-	else if(function_name == "erase"){
-		return args[0];
-	}
-	else if(function_name == "push_back"){
-		return args[0];
-	}
-	else if(function_name == "subset"){
-		return args[0];
-	}
-	else if(function_name == "replace"){
-		return args[0];
-	}
-	else if(function_name == "map"){
-		const auto f = args[1].get_function_return();
-		//	[R] map([E], R f(E e))
-
-		const auto ret = typeid_t::make_vector(f);
-		return ret;
-	}
-	else if(function_name == "filter"){
-		const auto f = args[0];
-		return f;
-	}
-	else if(function_name == "reduce"){
-		const auto f = args[1];
-		return f;
-	}
-	else if(function_name == "supermap"){
-		const auto f = args[2].get_function_return();
-		const auto ret = typeid_t::make_vector(f);
-		return ret;
-	}
-	else{
-		return typeid_t::make_undefined();
-	}
-}
-/*
-	else if(function_name == "instantiate_from_typeid"){
-		if(args[0].get_operation() == expression_type::k_load2){
-			const auto symbol = resolve_symbol_by_address(a, args[0]._address);
-			if(symbol != nullptr && symbol->_const_value.is_undefined() == false){
-				return symbol->_const_value.get_typeid_value();
-			}
-			else{
-				throw std::runtime_error("Cannot resolve type for instantiate_from_typeid().");
-			}
-		}
-		else{
-			throw std::runtime_error("Cannot resolve type for instantiate_from_typeid().");
-		}
-	}
-*/
 
 
 }

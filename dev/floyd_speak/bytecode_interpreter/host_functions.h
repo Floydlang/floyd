@@ -18,6 +18,11 @@
 
 namespace floyd {
 
+	enum class host_function_id {
+		jsonvalue_to_value = 1020
+	};
+
+
 	extern const std::string k_builtin_types_and_constants;
 
 	typedef typeid_t (*HOST_FUNCTION__CALC_RETURN_TYPE)(const std::vector<typeid_t>& args);
@@ -43,6 +48,7 @@ namespace floyd {
 	struct host_function_signature_t {
 		int _function_id;
 		floyd::typeid_t _function_type;
+		HOST_FUNCTION__CALC_RETURN_TYPE _dynamic_return_type;
 	};
 
 	std::map<std::string, host_function_signature_t> get_host_function_signatures();

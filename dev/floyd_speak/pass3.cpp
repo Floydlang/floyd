@@ -1283,38 +1283,39 @@ typeid_t get_host_function_return_type(const analyser_t& a, const expression_t& 
 	const auto found_it = find_if(host_functions.begin(), host_functions.end(), [&](const std::pair<std::string, floyd::host_function_signature_t>& kv){ return kv.second._function_id == host_function_id; });
 	QUARK_ASSERT(found_it != host_functions.end());
 
-	const auto function_name = found_it->first;
-
-	std::vector<typeid_t> arg_types;
-	for(const auto& e: args){
-		arg_types.push_back(e.get_output_type());
+	const auto calc_dyn_type = found_it->second._dynamic_return_type;
+	if(calc_dyn_type){
+		std::vector<typeid_t> arg_types;
+		for(const auto& e: args){
+			arg_types.push_back(e.get_output_type());
+		}
+		return calc_dyn_type(arg_types);
 	}
-	const auto r = get_host_function_return_type(function_name, arg_types);
-	if(r.is_undefined() == false){
-		return r;
-	}
+	else{
+		const auto function_name = found_it->first;
 
-	//	jsonvalue_to_value() supports argument 2 that is a compile-time type name.
-	else if(function_name == "jsonvalue_to_value"){
-		QUARK_ASSERT(args.size() == 2);
+		//	jsonvalue_to_value() supports argument 2 that is a compile-time type name.
+		if(found_it->second._function_id == static_cast<int>(host_function_id::jsonvalue_to_value)){
+			QUARK_ASSERT(args.size() == 2);
 
-		const auto arg0 = args[0];
-		const auto arg1 = args[1];
-		if(arg1.get_operation() == expression_type::k_load2){
-			const auto symbol = resolve_symbol_by_address(a, arg1._address);
-			if(symbol != nullptr && symbol->_const_value.is_undefined() == false){
-				return symbol->_const_value.get_typeid_value();
+			const auto arg0 = args[0];
+			const auto arg1 = args[1];
+			if(arg1.get_operation() == expression_type::k_load2){
+				const auto symbol = resolve_symbol_by_address(a, arg1._address);
+				if(symbol != nullptr && symbol->_const_value.is_undefined() == false){
+					return symbol->_const_value.get_typeid_value();
+				}
+				else{
+					throw std::runtime_error("Cannot resolve type for jsonvalue_to_value().");
+				}
 			}
 			else{
 				throw std::runtime_error("Cannot resolve type for jsonvalue_to_value().");
 			}
 		}
 		else{
-			throw std::runtime_error("Cannot resolve type for jsonvalue_to_value().");
+			return callee_expr.get_output_type().get_function_return();
 		}
-	}
-	else{
-		return callee_expr.get_output_type().get_function_return();
 	}
 }
 
