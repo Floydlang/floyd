@@ -3151,7 +3151,7 @@ QUARK_UNIT_TEST("", "supermap()", "No dependencies", ""){
 				return "[" + v + "]"
 			}
 
-			let result = supermap([ "one", "ring", "to"], [-1, -1, -1], f)
+			let result = supermap([ "one", "ring", "to" ], [ -1, -1, -1 ], f)
 			print(to_string(result))
 			assert(result == [ "[one]", "[ring]", "[to]" ])
 
@@ -3159,7 +3159,7 @@ QUARK_UNIT_TEST("", "supermap()", "No dependencies", ""){
 	);
 }
 
-QUARK_UNIT_TEST_VIP("", "supermap()", "No dependencies", ""){
+QUARK_UNIT_TEST("", "supermap()", "No dependencies", ""){
 	test__run_global(
 		R"(
 
@@ -3167,13 +3167,45 @@ QUARK_UNIT_TEST_VIP("", "supermap()", "No dependencies", ""){
 				return "[" + v + "]"
 			}
 
-			let result = supermap([ "one", "ring", "to"], [1, 2, -1], f)
+			let result = supermap([ "one", "ring", "to" ], [ 1, 2, -1 ], f)
 			print(to_string(result))
 			assert(result == [ "[one]", "[ring]", "[to]" ])
 
 		)"
 	);
 }
+
+
+
+
+
+QUARK_UNIT_TEST_VIP("", "supermap()", "complex", ""){
+	test__run_global(
+		R"(
+
+			func string f2(string acc, string element){
+				if(size(acc) == 0){
+					return element
+				}
+				else{
+					return acc + ", " + element
+				}
+			}
+
+			func string f(string v, [string] inputs){
+				let s = reduce(inputs, "", f2)
+				return v + "[" + s + "]"
+			}
+
+			let result = supermap([ "D", "B", "A", "C", "E", "F" ], [ 4, 2, -1, 4, 2, 4 ], f)
+			print(to_string(result))
+			assert(result == [ "D[]", "B[]", "A[B[], E[D[], C[], F[]]]", "C[]", "E[D[], C[], F[]]", "F[]" ])
+
+		)"
+	);
+}
+
+
 
 
 

@@ -1334,7 +1334,7 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 	auto elements_todo = elements2.size();
 	std::vector<int> rcs(elements2.size(), 0);
 
-	immer::vector<bc_value_t> complete(elements2.size(), bc_value_t());
+	std::vector<bc_value_t> complete(elements2.size(), bc_value_t());
 
 	for(const auto& e: parents2){
 		const auto parent_index = e.get_int_value();
@@ -1362,16 +1362,158 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 			throw std::runtime_error("supermap() dependency cycle error.");
 		}
 
-		for(const auto index: pass_ids){
-			const auto& e = elements2[index];
-			const bc_value_t f_args[2] = { e, make_vector(r_type, {}) };
+		for(const auto element_index: pass_ids){
+			const auto& e = elements2[element_index];
+
+			//	Make list of the element's inputs -- the must all be complete now.
+			immer::vector<bc_value_t> solved_deps;
+			for(int element_index2 = 0 ; element_index2 < parents2.size() ; element_index2++){
+				const auto& p = parents2[element_index2];
+				const auto parent_index = p.get_int_value();
+				if(parent_index == element_index){
+					QUARK_ASSERT(element_index2 != -1);
+					QUARK_ASSERT(element_index2 >= -1 && element_index2 < elements2.size());
+					QUARK_ASSERT(rcs[element_index2] == -1);
+					QUARK_ASSERT(complete[element_index2]._type.is_undefined() == false);
+					const auto& solved = complete[element_index2];
+					solved_deps = solved_deps.push_back(solved);
+				}
+			}
+
+			const bc_value_t f_args[2] = { e, make_vector(r_type, solved_deps) };
 			const auto result1 = call_function_bc(vm, f, f_args, 2);
 
-			const auto parent_index = parents2[index].get_int_value();
+			const auto parent_index = parents2[element_index].get_int_value();
 			if(parent_index != -1){
 				rcs[parent_index]--;
 			}
-			complete = complete.set(index, result1);
+			complete[element_index] = result1;
+			elements_todo--;
+		}
+	}
+
+	const auto result = make_vector(r_type, immer::vector<bc_value_t>{complete.begin(), complete.end()});
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
+	QUARK_TRACE(json_to_pretty_string(debug._value));
+#endif
+
+	return result;
+}
+
+
+
+
+
+/////////////////////////////////////////		PURE -- SUPERMAP2()
+
+//	Input dependencies are specified for as 1... many integers per E, in order. [-1] or [a, -1] or [a, b, -1 ] etc.
+//
+//	[R] supermap([E] values, [int] parents, R (E, [R]) f)
+
+struct dep_t {
+	int64_t incomplete_count;
+	std::vector<int64_t> depends_in_element_index;
+};
+
+
+bc_value_t host__supermap2(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+
+	//	Check topology.
+	if(arg_count == 3 && args[0]._type.is_vector() && args[1]._type == typeid_t::make_vector(typeid_t::make_int()) && args[2]._type.is_function() && args[2]._type.get_function_args().size () == 2){
+	}
+	else{
+		throw std::runtime_error("supermap() requires 3 arguments.");
+	}
+
+	const auto& elements = args[0];
+	const auto& e_type = elements._type.get_vector_element_type();
+	const auto& dependencies = args[1];
+	const auto& f = args[2];
+	const auto& r_type = args[2]._type.get_function_return();
+	if(
+		e_type == f._type.get_function_args()[0]
+		&& r_type == f._type.get_function_args()[1].get_vector_element_type()
+	){
+	}
+	else {
+		throw std::runtime_error("R supermap([E] elements, R init_value, R (R acc, E element) f");
+	}
+
+	const auto elements2 = get_vector(elements);
+	const auto dependencies2 = get_vector(dependencies);
+
+
+	immer::vector<bc_value_t> complete(elements2.size(), bc_value_t());
+
+	std::vector<dep_t> element_dependencies(elements2.size(), dep_t{ 0, {} });
+	{
+		const auto element_count = static_cast<int64_t>(elements2.size());
+		const auto dep_index_count = static_cast<int64_t>(dependencies2.size());
+		int element_index = 0;
+		int dep_index = 0;
+		while(element_index < element_count){
+			std::vector<int64_t> deps;
+			const auto& e = dependencies2[dep_index];
+			auto e_int = e.get_int_value();
+			while(e_int != -1){
+				deps.push_back(e_int);
+
+				dep_index++;
+				QUARK_ASSERT(dep_index < dep_index_count);
+
+				e_int = dependencies2[dep_index].get_int_value();
+			}
+			QUARK_ASSERT(element_index < element_count);
+			element_dependencies[element_index] = dep_t{ static_cast<int64_t>(deps.size()), deps };
+			element_index++;
+		}
+		QUARK_ASSERT(element_index == element_count);
+		QUARK_ASSERT(dep_index == dep_index_count);
+	}
+
+	auto elements_todo = elements2.size();
+	while(elements_todo > 0){
+
+		//	Make list of elements that should be processed this pass.
+		std::vector<int> pass_ids;
+		for(int i = 0 ; i < elements2.size() ; i++){
+			const auto rc = element_dependencies[i].incomplete_count;
+			if(rc == 0){
+				pass_ids.push_back(i);
+				element_dependencies[i].incomplete_count = -1;
+			}
+		}
+
+		if(pass_ids.empty()){
+			throw std::runtime_error("supermap() dependency cycle error.");
+		}
+
+		for(const auto element_index: pass_ids){
+			const auto& e = elements2[element_index];
+
+			immer::vector<bc_value_t> ready_elements;
+			for(const auto& dep_e: element_dependencies[element_index].depends_in_element_index){
+				const auto& ready = complete[dep_e];
+				ready_elements = ready_elements.push_back(ready);
+			}
+			const auto ready_elements2 = make_vector(r_type, ready_elements);
+			const bc_value_t f_args[2] = { e, ready_elements2 };
+
+			const auto result1 = call_function_bc(vm, f, f_args, 2);
+
+			//	Decrement incomplete_count for every element that specifies *element_index* as a input dependency.
+			for(auto& x: element_dependencies){
+				const auto it = std::find(x.depends_in_element_index.begin(), x.depends_in_element_index.end(), element_index);
+				if(it != x.depends_in_element_index.end()){
+					x.incomplete_count--;
+				}
+			}
+
+			//	Copy value to output.
+			complete = complete.set(element_index, result1);
 			elements_todo--;
 		}
 	}
@@ -1385,7 +1527,6 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 
 	return result;
 }
-
 
 
 

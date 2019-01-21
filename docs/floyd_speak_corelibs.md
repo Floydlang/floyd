@@ -102,10 +102,7 @@ Processes a vector of values one by one using function f. It returns a vector of
 
 Supports mapping over
 - vectors
-- dictionaries
 - characters in a string
-- jsonvalue::array
-- jsonvalue::object
 
 
 #### map_string()
