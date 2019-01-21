@@ -1989,12 +1989,7 @@ There is never a file extension. You could add one if you want too.
 */
 
 
-
-
-
-
-
-std::map<std::string, host_function_signature_t> get_host_function_signatures(){
+std::map<std::string, host_function_signature_t> get_host_function_signatures2(){
 	const auto VOID = typeid_t::make_void();
 	const auto DYN = typeid_t::make_internal_dynamic();
 
@@ -2137,9 +2132,8 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 	return temp;
 }
 
-
-std::map<int,  host_function_t> get_host_functions(){
-	const auto host_functions = get_host_function_signatures();
+std::map<int,  host_function_t> get_host_functions2(){
+	const auto host_functions = get_host_function_signatures2();
 
 	const std::map<string, HOST_FUNCTION_PTR> lookup0 = {
 		{ "assert", host__assert },
@@ -2199,6 +2193,51 @@ std::map<int,  host_function_t> get_host_functions(){
 	}();
 
 	return lookup;
+}
+
+
+std::vector<host_function_record_t> get_host_function_records(){
+	const auto functions = get_host_functions2();
+
+	std::vector<host_function_record_t> result;
+	for(const auto& f: functions){
+		QUARK_ASSERT(f.first == f.second._signature._function_id);
+
+		const auto rec = host_function_record_t{
+			f.second._signature._function_id,
+			f.second._signature._function_type,
+			f.second._name,
+			f.second._f,
+			nullptr
+		};
+		result.push_back(rec);
+	}
+	return result;
+}
+
+
+
+std::map<std::string, host_function_signature_t> get_host_function_signatures(){
+	const auto a = get_host_function_records();
+
+	std::map<std::string, host_function_signature_t> result;
+	for(const auto& e: a){
+		result.insert({ e._name, { e._function_id, e._function_type } });
+	}
+	return result;
+}
+
+std::map<int,  host_function_t> get_host_functions(){
+	const auto a = get_host_function_records();
+
+	std::map<int, host_function_t> result;
+	for(const auto& e: a){
+		const auto sign = host_function_signature_t{ e._function_id, e._function_type };
+		result.insert(
+			{ e._function_id, host_function_t{ sign, e._name, e._f } }
+		);
+	}
+	return result;
 }
 
 

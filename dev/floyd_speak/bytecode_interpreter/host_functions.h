@@ -17,13 +17,25 @@
 #include "floyd_interpreter.h"
 
 namespace floyd {
-	struct expression_t;
-	struct value_t;
-	struct statement_t;
-	struct interpreter_t;
-
 
 	extern const std::string k_builtin_types_and_constants;
+
+	typedef typeid_t (*HOST_FUNCTION__CALC_RETURN_TYPE)(const std::vector<typeid_t>& args);
+
+
+	struct host_function_record_t {
+		int _function_id;
+		floyd::typeid_t _function_type;
+		std::string _name;
+		HOST_FUNCTION_PTR _f;
+
+		//	Set to non-nullptr to override _function_type.get_return_type() depending on caller's argument types.
+		//	Use make_internal_dynamic() as return value and at least *one* input argument.
+		HOST_FUNCTION__CALC_RETURN_TYPE _dynamic_return_type;
+	};
+
+	std::vector<host_function_record_t> get_host_function_records();
+
 
 
 	struct host_function_signature_t {
@@ -41,6 +53,7 @@ namespace floyd {
 	};
 
 	std::map<int, host_function_t> get_host_functions();
+
 
 	typeid_t get_host_function_return_type(const std::string& function_name, const std::vector<typeid_t>& args);
 
