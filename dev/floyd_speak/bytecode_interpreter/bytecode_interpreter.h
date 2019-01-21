@@ -19,6 +19,8 @@
 #include "ast_typeid.h"
 #include "json_support.h"
 #include "software_system.h"
+#include <atomic>
+
 
 //??? remove usage of typeid_t. Use itype & types[]?
 
@@ -615,7 +617,7 @@ namespace floyd {
 
 		//////////////////////////////////////		STATE
 
-		public: mutable int _rc;
+		public: mutable std::atomic<int> _rc;
 		public: bool _is_unwritten_ext_value = false;
 #if DEBUG
 		public: typeid_t _debug_type;

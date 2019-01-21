@@ -3179,7 +3179,7 @@ QUARK_UNIT_TEST("", "supermap()", "No dependencies", ""){
 
 
 
-QUARK_UNIT_TEST_VIP("", "supermap()", "complex", ""){
+QUARK_UNIT_TEST("", "supermap()", "complex", ""){
 	test__run_global(
 		R"(
 

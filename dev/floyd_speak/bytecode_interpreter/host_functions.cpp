@@ -1334,7 +1334,7 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 	auto elements_todo = elements2.size();
 	std::vector<int> rcs(elements2.size(), 0);
 
-	std::vector<bc_value_t> complete(elements2.size(), bc_value_t());
+	immer::vector<bc_value_t> complete(elements2.size(), bc_value_t());
 
 	for(const auto& e: parents2){
 		const auto parent_index = e.get_int_value();
@@ -1387,12 +1387,12 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 			if(parent_index != -1){
 				rcs[parent_index]--;
 			}
-			complete[element_index] = result1;
+			complete = complete.set(element_index, result1);
 			elements_todo--;
 		}
 	}
 
-	const auto result = make_vector(r_type, immer::vector<bc_value_t>{complete.begin(), complete.end()});
+	const auto result = make_vector(r_type, complete);
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
