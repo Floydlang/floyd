@@ -2202,4 +2202,65 @@ std::map<int,  host_function_t> get_host_functions(){
 }
 
 
+
+
+
+typeid_t get_host_function_return_type(const std::string& function_name, const vector<typeid_t>& args){
+	if(function_name == "update"){
+		return args[0];
+	}
+	else if(function_name == "erase"){
+		return args[0];
+	}
+	else if(function_name == "push_back"){
+		return args[0];
+	}
+	else if(function_name == "subset"){
+		return args[0];
+	}
+	else if(function_name == "replace"){
+		return args[0];
+	}
+	else if(function_name == "map"){
+		const auto f = args[1].get_function_return();
+		//	[R] map([E], R f(E e))
+
+		const auto ret = typeid_t::make_vector(f);
+		return ret;
+	}
+	else if(function_name == "filter"){
+		const auto f = args[0];
+		return f;
+	}
+	else if(function_name == "reduce"){
+		const auto f = args[1];
+		return f;
+	}
+	else if(function_name == "supermap"){
+		const auto f = args[2].get_function_return();
+		const auto ret = typeid_t::make_vector(f);
+		return ret;
+	}
+	else{
+		return typeid_t::make_undefined();
+	}
+}
+/*
+	else if(function_name == "instantiate_from_typeid"){
+		if(args[0].get_operation() == expression_type::k_load2){
+			const auto symbol = resolve_symbol_by_address(a, args[0]._address);
+			if(symbol != nullptr && symbol->_const_value.is_undefined() == false){
+				return symbol->_const_value.get_typeid_value();
+			}
+			else{
+				throw std::runtime_error("Cannot resolve type for instantiate_from_typeid().");
+			}
+		}
+		else{
+			throw std::runtime_error("Cannot resolve type for instantiate_from_typeid().");
+		}
+	}
+*/
+
+
 }

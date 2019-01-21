@@ -1285,57 +1285,16 @@ typeid_t get_host_function_return_type(const analyser_t& a, const expression_t& 
 
 	const auto function_name = found_it->first;
 
-	if(function_name == "update"){
-		return args[0].get_output_type();
+	std::vector<typeid_t> arg_types;
+	for(const auto& e: args){
+		arg_types.push_back(e.get_output_type());
 	}
-	else if(function_name == "erase"){
-		return args[0].get_output_type();
+	const auto r = get_host_function_return_type(function_name, arg_types);
+	if(r.is_undefined() == false){
+		return r;
 	}
-	else if(function_name == "push_back"){
-		return args[0].get_output_type();
-	}
-	else if(function_name == "subset"){
-		return args[0].get_output_type();
-	}
-	else if(function_name == "replace"){
-		return args[0].get_output_type();
-	}
-	else if(function_name == "map"){
-		const auto f = args[1].get_output_type().get_function_return();
-		//	[R] map([E], R f(E e))
 
-		const auto ret = typeid_t::make_vector(f);
-		return ret;
-	}
-	else if(function_name == "filter"){
-		const auto f = args[0].get_output_type();
-		return f;
-	}
-	else if(function_name == "reduce"){
-		const auto f = args[1].get_output_type();
-		return f;
-	}
-	else if(function_name == "supermap"){
-		const auto f = args[2].get_output_type().get_function_return();
-		const auto ret = typeid_t::make_vector(f);
-		return ret;
-	}
-/*
-	else if(function_name == "instantiate_from_typeid"){
-		if(args[0].get_operation() == expression_type::k_load2){
-			const auto symbol = resolve_symbol_by_address(a, args[0]._address);
-			if(symbol != nullptr && symbol->_const_value.is_undefined() == false){
-				return symbol->_const_value.get_typeid_value();
-			}
-			else{
-				throw std::runtime_error("Cannot resolve type for instantiate_from_typeid().");
-			}
-		}
-		else{
-			throw std::runtime_error("Cannot resolve type for instantiate_from_typeid().");
-		}
-	}
-*/
+	//	jsonvalue_to_value() supports argument 2 that is a compile-time type name.
 	else if(function_name == "jsonvalue_to_value"){
 		QUARK_ASSERT(args.size() == 2);
 

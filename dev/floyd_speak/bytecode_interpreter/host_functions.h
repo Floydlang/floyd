@@ -42,6 +42,7 @@ namespace floyd {
 
 	std::map<int, host_function_t> get_host_functions();
 
+	typeid_t get_host_function_return_type(const std::string& function_name, const std::vector<typeid_t>& args);
 
 
 
