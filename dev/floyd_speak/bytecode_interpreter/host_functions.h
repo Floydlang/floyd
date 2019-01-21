@@ -24,10 +24,12 @@ namespace floyd {
 
 
 	struct host_function_record_t {
-		int _function_id;
-		floyd::typeid_t _function_type;
 		std::string _name;
 		HOST_FUNCTION_PTR _f;
+
+		int _function_id;
+
+		floyd::typeid_t _function_type;
 
 		//	Set to non-nullptr to override _function_type.get_return_type() depending on caller's argument types.
 		//	Use make_internal_dynamic() as return value and at least *one* input argument.
