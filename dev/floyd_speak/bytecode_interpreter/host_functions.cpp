@@ -445,15 +445,10 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 
 bc_value_t host__assert(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 1){
-		throw std::runtime_error("assert() requires 1 argument!");
-	}
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_bool());
 
 	const auto& value = args[0];
-	if(value._type.is_bool() == false){
-		throw std::runtime_error("First argument to assert() must be of type bool.");
-	}
 	bool ok = value.get_bool_value();
 	if(!ok){
 		vm._print_output.push_back("Assertion failed.");
@@ -465,10 +460,7 @@ bc_value_t host__assert(interpreter_t& vm, const bc_value_t args[], int arg_coun
 //	string to_string(value_t)
 bc_value_t host__to_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 1){
-		throw std::runtime_error("to_string() requires 1 argument!");
-	}
+	QUARK_ASSERT(arg_count == 1);
 
 	const auto& value = args[0];
 	const auto a = to_compact_string2(bc_to_value(value));
@@ -476,10 +468,7 @@ bc_value_t host__to_string(interpreter_t& vm, const bc_value_t args[], int arg_c
 }
 bc_value_t host__to_pretty_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 1){
-		throw std::runtime_error("to_pretty_string() requires 1 argument!");
-	}
+	QUARK_ASSERT(arg_count == 1);
 
 	const auto& value = args[0];
 	const auto json = bcvalue_to_json(value);
@@ -489,10 +478,7 @@ bc_value_t host__to_pretty_string(interpreter_t& vm, const bc_value_t args[], in
 
 bc_value_t host__typeof(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 1){
-		throw std::runtime_error("typeof() requires 1 argument!");
-	}
+	QUARK_ASSERT(arg_count == 1);
 
 	const auto& value = args[0];
 	const auto type = value._type;
@@ -504,29 +490,20 @@ bc_value_t host__typeof(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
+	QUARK_ASSERT(arg_count == 3);
 	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
 	const auto& obj1 = args[0];
 	const auto& lookup_key = args[1];
 	const auto& new_value = args[2];
-
-	if(arg_count != 3){
-		throw std::runtime_error("update() needs 3 arguments.");
-	}
-	else{
-		return update_element(vm, obj1, lookup_key, new_value);
-	}
+	return update_element(vm, obj1, lookup_key, new_value);
 }
 
-bc_value_t host__size(interpreter_t& vm, const bc_value_t args[], int arg_count){
+/*bc_value_t host__size(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
 
 		QUARK_ASSERT(false);
-
-	if(arg_count != 1){
-		throw std::runtime_error("find requires 2 arguments");
-	}
 
 	const auto obj = args[0];
 	if(obj._type.is_string()){
@@ -575,13 +552,11 @@ bc_value_t host__size(interpreter_t& vm, const bc_value_t args[], int arg_count)
 		throw std::runtime_error("Calling size() on unsupported type of value.");
 	}
 }
+*/
 
 bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 2){
-		throw std::runtime_error("find requires 2 arguments");
-	}
+	QUARK_ASSERT(arg_count == 2);
 
 	const auto obj = args[0];
 	const auto wanted = args[1];
@@ -597,6 +572,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 	else if(obj._type.is_vector()){
 		const auto element_type = obj._type.get_vector_element_type();
 		if(wanted._type != element_type){
+			QUARK_ASSERT(false);
 			throw std::runtime_error("Type mismatch.");
 		}
 		else if(obj._type.get_vector_element_type().is_bool()){
@@ -645,12 +621,12 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 	}
 }
 
+//??? user function type overloading and create several different functions, depending on the DYN argument.
+
+
 bc_value_t host__exists(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 2){
-		throw std::runtime_error("find requires 2 arguments");
-	}
+	QUARK_ASSERT(arg_count == 2);
 
 	const auto obj = args[0];
 	const auto key = args[1];
@@ -659,6 +635,7 @@ bc_value_t host__exists(interpreter_t& vm, const bc_value_t args[], int arg_coun
 		if(key._type.is_string() == false){
 			throw std::runtime_error("Key must be string.");
 		}
+
 		const auto key_string = key.get_string_value();
 
 		if(encode_as_dict_pod64(obj._type)){
@@ -678,10 +655,7 @@ bc_value_t host__exists(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 bc_value_t host__erase(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 2){
-		throw std::runtime_error("find requires 2 arguments");
-	}
+	QUARK_ASSERT(arg_count == 2);
 
 	const auto obj = args[0];
 	const auto key = args[1];
@@ -710,15 +684,13 @@ bc_value_t host__erase(interpreter_t& vm, const bc_value_t args[], int arg_count
 	}
 }
 
-
+/*
 //	assert(push_back(["one","two"], "three") == ["one","two","three"])
 bc_value_t host__push_back(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 2);
 
 	QUARK_ASSERT(false);
-	if(arg_count != 2){
-		throw std::runtime_error("find requires 2 arguments");
-	}
 
 	const auto obj = args[0];
 	const auto element = args[1];
@@ -750,20 +722,16 @@ bc_value_t host__push_back(interpreter_t& vm, const bc_value_t args[], int arg_c
 		throw std::runtime_error("Calling push_back() on unsupported type of value.");
 	}
 }
+*/
 
 //	assert(subset("abc", 1, 3) == "bc");
 bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 3){
-		throw std::runtime_error("subset() requires 3 arguments");
-	}
+	QUARK_ASSERT(arg_count == 3);
+	QUARK_ASSERT(args[1]._type.is_int());
+	QUARK_ASSERT(args[2]._type.is_int());
 
 	const auto obj = args[0];
-
-	if(args[1]._type.is_int() == false || args[2]._type.is_int() == false){
-		throw std::runtime_error("subset() requires start and end to be integers.");
-	}
 
 	const auto start = args[1].get_int_value();
 	const auto end = args[2].get_int_value();
@@ -819,16 +787,11 @@ bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_coun
 //	assert(replace("One ring to rule them all", 4, 7, "rabbit") == "One rabbit to rule them all");
 bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 4){
-		throw std::runtime_error("replace() requires 4 arguments");
-	}
+	QUARK_ASSERT(arg_count == 4);
+	QUARK_ASSERT(args[1]._type.is_int());
+	QUARK_ASSERT(args[2]._type.is_int());
 
 	const auto obj = args[0];
-
-	if(args[1]._type.is_int() == false || args[2]._type.is_int() == false){
-		throw std::runtime_error("replace() requires start and end to be integers.");
-	}
 
 	const auto start = args[1].get_int_value();
 	const auto end = args[2].get_int_value();
@@ -894,108 +857,79 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 */
 bc_value_t host__script_to_jsonvalue(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_string());
 
-	if(arg_count != 1){
-		throw std::runtime_error("script_to_jsonvalue_value() requires 1 argument!");
-	}
-	else if(args[0]._type.is_string() == false){
-		throw std::runtime_error("script_to_jsonvalue_value() requires string argument.");
-	}
-	else{
-		const string s = args[0].get_string_value();
-		std::pair<json_t, seq_t> result = parse_json(seq_t(s));
-		const auto json_value = bc_value_t::make_json_value(result.first);
-		return json_value;
-	}
+	const string s = args[0].get_string_value();
+	std::pair<json_t, seq_t> result = parse_json(seq_t(s));
+	const auto json_value = bc_value_t::make_json_value(result.first);
+	return json_value;
 }
 
 bc_value_t host__jsonvalue_to_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_json_value());
 
-	if(arg_count != 1){
-		throw std::runtime_error("jsonvalue_to_script() requires 1 argument!");
-	}
-	else if(args[0]._type.is_json_value()== false){
-		throw std::runtime_error("jsonvalue_to_script() requires argument to be json_value.");
-	}
-	else{
-		const auto value0 = args[0].get_json_value();
-		const string s = json_to_compact_string(value0);
-		return bc_value_t::make_string(s);
-	}
+	const auto value0 = args[0].get_json_value();
+	const string s = json_to_compact_string(value0);
+	return bc_value_t::make_string(s);
 }
 
 
 bc_value_t host__value_to_jsonvalue(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
 
-	if(arg_count != 1){
-		throw std::runtime_error("value_to_jsonvalue() requires 1 argument!");
-	}
-	else{
-		const auto value = args[0];
-		const auto value2 = bc_to_value(args[0]);
-		const auto result = value_to_jsonvalue(value2);
-		return value_to_bc(result);
-	}
+	const auto value = args[0];
+	const auto value2 = bc_to_value(args[0]);
+	const auto result = value_to_jsonvalue(value2);
+	return value_to_bc(result);
 }
 
 bc_value_t host__jsonvalue_to_value(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 2);
+	QUARK_ASSERT(args[0]._type.is_json_value());
+	QUARK_ASSERT(args[1]._type.is_typeid());
 
-	if(arg_count != 2){
-		throw std::runtime_error("jsonvalue_to_value() requires 2 argument!");
-	}
-	else if(args[0]._type.is_json_value() == false){
-		throw std::runtime_error("jsonvalue_to_value() requires string argument.");
-	}
-	else if(args[1]._type.is_typeid()== false){
-		throw std::runtime_error("jsonvalue_to_value() requires string argument.");
-	}
-	else{
-		const auto json_value = args[0].get_json_value();
-		const auto target_type = args[1].get_typeid_value();
-		const auto result = unflatten_json_to_specific_type(json_value, target_type);
-		return value_to_bc(result);
-	}
+	const auto json_value = args[0].get_json_value();
+	const auto target_type = args[1].get_typeid_value();
+	const auto result = unflatten_json_to_specific_type(json_value, target_type);
+	return value_to_bc(result);
 }
 
 bc_value_t host__get_json_type(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_json_value());
 
-	if(arg_count != 1){
-		throw std::runtime_error("get_json_type() requires 1 argument!");
+
+	const auto json_value = args[0].get_json_value();
+	if(json_value.is_object()){
+		return bc_value_t::make_int(1);
 	}
-	else if(args[0]._type.is_json_value() == false){
-		throw std::runtime_error("get_json_type() requires json_value argument.");
+	else if(json_value.is_array()){
+		return bc_value_t::make_int(2);
+	}
+	else if(json_value.is_string()){
+		return bc_value_t::make_int(3);
+	}
+	else if(json_value.is_number()){
+		return bc_value_t::make_int(4);
+	}
+	else if(json_value.is_true()){
+		return bc_value_t::make_int(5);
+	}
+	else if(json_value.is_false()){
+		return bc_value_t::make_int(6);
+	}
+	else if(json_value.is_null()){
+		return bc_value_t::make_int(7);
 	}
 	else{
-		const auto json_value = args[0].get_json_value();
-		if(json_value.is_object()){
-			return bc_value_t::make_int(1);
-		}
-		else if(json_value.is_array()){
-			return bc_value_t::make_int(2);
-		}
-		else if(json_value.is_string()){
-			return bc_value_t::make_int(3);
-		}
-		else if(json_value.is_number()){
-			return bc_value_t::make_int(4);
-		}
-		else if(json_value.is_true()){
-			return bc_value_t::make_int(5);
-		}
-		else if(json_value.is_false()){
-			return bc_value_t::make_int(6);
-		}
-		else if(json_value.is_null()){
-			return bc_value_t::make_int(7);
-		}
-		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
+		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 
@@ -1025,13 +959,8 @@ sha1_t sha1_from_string(string s)
 
 bc_value_t host__calc_string_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 1){
-		throw std::runtime_error("calc_string_sha1() requires 1 arguments!");
-	}
-	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("calc_string_sha1() requires a string.");
-	}
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_string());
 
 	const auto& s = args[0].get_string_value();
 	const auto sha1 = CalcSHA1(s);
@@ -1057,13 +986,8 @@ bc_value_t host__calc_string_sha1(interpreter_t& vm, const bc_value_t args[], in
 
 bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 1){
-		throw std::runtime_error("calc_string_sha1() requires 1 arguments!");
-	}
-	if((args[0]._type == make__binary_t__type()) == false){
-		throw std::runtime_error("calc_string_sha1() requires a sha1_t.");
-	}
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type == make__binary_t__type());
 
 	const auto& sha1_struct = args[0].get_struct_value();
 	QUARK_ASSERT(sha1_struct.size() == make__binary_t__type().get_struct()._members.size());
@@ -1097,10 +1021,7 @@ bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], in
 //??? need to provide context property to map() and pass to f().
 bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 2){
-		throw std::runtime_error("map() requires 2 arguments");
-	}
+	QUARK_ASSERT(arg_count == 2);
 
 	if(args[0]._type.is_vector() == false){
 		throw std::runtime_error("map() arg 1 must be a vector.");
@@ -1147,17 +1068,10 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 //	string map(string, string f(string:char e))
 bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 2);
+	QUARK_ASSERT(args[0]._type.is_string());
+	QUARK_ASSERT(args[1]._type.is_function());
 
-	if(arg_count != 2){
-		throw std::runtime_error("map_string() requires 2 arguments");
-	}
-
-	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("map_string() arg 1 must be a string.");
-	}
-	if(args[1]._type.is_function() == false){
-		throw std::runtime_error("map_string() requires start and end to be integers.");
-	}
 	const auto f = args[1];
 	const auto f_arg_types = f._type.get_function_args();
 	const auto r_type = f._type.get_function_return();
@@ -1200,9 +1114,10 @@ bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_
 
 bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 3);
 
 	//	Check topology.
-	if(arg_count != 3 || args[0]._type.is_vector() == false || args[2]._type.is_function() == false || args[2]._type.get_function_args().size () != 2){
+	if(args[0]._type.is_vector() == false || args[2]._type.is_function() == false || args[2]._type.get_function_args().size () != 2){
 		throw std::runtime_error("reduce() requires 3 arguments.");
 	}
 
@@ -1248,9 +1163,10 @@ bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 2);
 
 	//	Check topology.
-	if(arg_count != 2 || args[0]._type.is_vector() == false || args[1]._type.is_function() == false || args[1]._type.get_function_args().size () != 1){
+	if(args[0]._type.is_vector() == false || args[1]._type.is_function() == false || args[1]._type.get_function_args().size () != 1){
 		throw std::runtime_error("filter() requires 2 arguments.");
 	}
 
@@ -1300,9 +1216,10 @@ bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 3);
 
 	//	Check topology.
-	if(arg_count == 3 && args[0]._type.is_vector() && args[1]._type == typeid_t::make_vector(typeid_t::make_int()) && args[2]._type.is_function() && args[2]._type.get_function_args().size () == 2){
+	if(args[0]._type.is_vector() && args[1]._type == typeid_t::make_vector(typeid_t::make_int()) && args[2]._type.is_function() && args[2]._type.get_function_args().size () == 2){
 	}
 	else{
 		throw std::runtime_error("supermap() requires 3 arguments.");
@@ -1418,9 +1335,10 @@ struct dep_t {
 
 bc_value_t host__supermap2(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 3);
 
 	//	Check topology.
-	if(arg_count == 3 && args[0]._type.is_vector() && args[1]._type == typeid_t::make_vector(typeid_t::make_int()) && args[2]._type.is_function() && args[2]._type.get_function_args().size () == 2){
+	if(args[0]._type.is_vector() && args[1]._type == typeid_t::make_vector(typeid_t::make_int()) && args[2]._type.is_function() && args[2]._type.get_function_args().size () == 2){
 	}
 	else{
 		throw std::runtime_error("supermap() requires 3 arguments.");
@@ -1538,10 +1456,8 @@ bc_value_t host__supermap2(interpreter_t& vm, const bc_value_t args[], int arg_c
 //	Records all output to interpreter
 bc_value_t host__print(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 1){
-		throw std::runtime_error("assert() requires 1 argument!");
-	}
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_string());
 
 	const auto& value = args[0];
 	const auto s = to_compact_string2(bc_to_value(value));
@@ -1552,10 +1468,9 @@ bc_value_t host__print(interpreter_t& vm, const bc_value_t args[], int arg_count
 }
 bc_value_t host__send(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 2){
-		throw std::runtime_error("send() requires 2 arguments!");
-	}
+	QUARK_ASSERT(arg_count == 2);
+	QUARK_ASSERT(args[0]._type.is_string());
+	QUARK_ASSERT(args[1]._type.is_json_value());
 
 	const auto& process_id = args[0].get_string_value();
 	const auto& message_json = args[1].get_json_value();
@@ -1571,10 +1486,7 @@ bc_value_t host__send(interpreter_t& vm, const bc_value_t args[], int arg_count)
 
 bc_value_t host__get_time_of_day(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 0){
-		throw std::runtime_error("get_time_of_day() requires 0 arguments!");
-	}
+	QUARK_ASSERT(arg_count == 0);
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed_seconds = t - vm._imm->_start_time;
@@ -1610,13 +1522,8 @@ QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
 
 bc_value_t host__read_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 1){
-		throw std::runtime_error("read_text_file() requires 1 arguments!");
-	}
-	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("read_text_file() requires a file path as a string.");
-	}
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_string());
 
 	const string source_path = args[0].get_string_value();
 	std::string file_contents = read_text_file(source_path);
@@ -1642,24 +1549,16 @@ void write_text_file(const std::string& abs_path, const std::string& data){
 
 bc_value_t host__write_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 2);
+	QUARK_ASSERT(args[0]._type.is_string());
+	QUARK_ASSERT(args[1]._type.is_string());
 
-	if(arg_count != 2){
-		throw std::runtime_error("write_text_file() requires 2 arguments!");
-	}
-	else if(args[0]._type.is_string() == false){
-		throw std::runtime_error("write_text_file() requires a file path as a string.");
-	}
-	else if(args[1]._type.is_string() == false){
-		throw std::runtime_error("write_text_file() requires a file path as a string.");
-	}
-	else{
-		const string path = args[0].get_string_value();
-		const string file_contents = args[1].get_string_value();
+	const string path = args[0].get_string_value();
+	const string file_contents = args[1].get_string_value();
 
-		write_text_file(path, file_contents);
+	write_text_file(path, file_contents);
 
-		return bc_value_t();
-	}
+	return bc_value_t();
 }
 
 
@@ -1706,13 +1605,8 @@ bool is_valid_absolute_dir_path(const std::string& s){
 //??? use absolute_path_t as argument!
 bc_value_t host__get_fsentries_shallow(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 1){
-		throw std::runtime_error("get_fsentries_shallow() requires 1 arguments!");
-	}
-	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("get_fsentries_shallow() requires a path, as a string.");
-	}
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_string());
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
@@ -1736,13 +1630,8 @@ bc_value_t host__get_fsentries_shallow(interpreter_t& vm, const bc_value_t args[
 
 bc_value_t host__get_fsentries_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 1){
-		throw std::runtime_error("get_fsentries_deep() requires 1 arguments!");
-	}
-	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("get_fsentries_deep() requires a path, as a string.");
-	}
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_string());
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
@@ -1773,13 +1662,8 @@ std::string posix_timespec__to__utc(const time_t& t){
 
 bc_value_t host__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 1){
-		throw std::runtime_error("get_fsentry_info() requires 1 arguments!");
-	}
-	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("get_fsentry_info() requires a path, as a string.");
-	}
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_string());
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
@@ -1831,10 +1715,8 @@ bc_value_t host__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], in
 
 bc_value_t host__get_fs_environment(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 0);
 
-	if(arg_count != 0){
-		throw std::runtime_error("get_fs_environment() requires 0 arguments!");
-	}
 	const auto dirs = GetDirectories();
 
 	const auto result = value_t::make_struct_value(
@@ -1866,13 +1748,8 @@ bc_value_t host__get_fs_environment(interpreter_t& vm, const bc_value_t args[], 
 
 bc_value_t host__does_fsentry_exist(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 1){
-		throw std::runtime_error("does_fsentry_exist() requires 1 arguments!");
-	}
-	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("does_fsentry_exist() requires a path, as a string.");
-	}
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_string());
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
@@ -1893,13 +1770,8 @@ bc_value_t host__does_fsentry_exist(interpreter_t& vm, const bc_value_t args[], 
 
 bc_value_t host__create_directory_branch(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 1){
-		throw std::runtime_error("create_directory_branch() requires 1 arguments!");
-	}
-	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("create_directory_branch() requires a path, as a string.");
-	}
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_string());
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
@@ -1912,13 +1784,8 @@ bc_value_t host__create_directory_branch(interpreter_t& vm, const bc_value_t arg
 
 bc_value_t host__delete_fsentry_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 1){
-		throw std::runtime_error("delete_fsentry_deep() requires 1 arguments!");
-	}
-	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("delete_fsentry_deep() requires a path, as a string.");
-	}
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_string());
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
@@ -1933,16 +1800,9 @@ bc_value_t host__delete_fsentry_deep(interpreter_t& vm, const bc_value_t args[],
 
 bc_value_t host__rename_fsentry(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-
-	if(arg_count != 2){
-		throw std::runtime_error("rename_fsentry() requires 2 arguments!");
-	}
-	if(args[0]._type.is_string() == false){
-		throw std::runtime_error("rename_fsentry() requires a path, as a string.");
-	}
-	if(args[1]._type.is_string() == false){
-		throw std::runtime_error("rename_fsentry() argument 2 is name name, as a string.");
-	}
+	QUARK_ASSERT(arg_count == 2);
+	QUARK_ASSERT(args[0]._type.is_string());
+	QUARK_ASSERT(args[1]._type.is_string());
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
@@ -2032,13 +1892,19 @@ std::vector<host_function_record_t> get_host_function_records(){
 		make_rec("typeof", host__typeof, 1004, typeid_t::make_function(typeid_t::make_typeid(), { DYN }, epure::pure)),
 
 		make_rec("update", host__update, 1006, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure), return_type_sames_as_arg0),
-		make_rec("size", host__size, 1007, typeid_t::make_function(typeid_t::make_int(), { DYN }, epure::pure)),
+
+		//	size() is translated to bc_opcode::k_get_size_vector_obj() etc.
+		make_rec("size", nullptr, 1007, typeid_t::make_function(typeid_t::make_int(), { DYN }, epure::pure)),
+
 		make_rec("find", host__find, 1008, typeid_t::make_function(typeid_t::make_int(), { DYN, DYN }, epure::pure)),
 		make_rec("exists", host__exists, 1009, typeid_t::make_function(typeid_t::make_bool(), { DYN, DYN }, epure::pure)),
 		make_rec("erase", host__erase, 1010, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure), return_type_sames_as_arg0),
-		make_rec("push_back", host__push_back, 1011, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure), return_type_sames_as_arg0),
-		make_rec("subset", host__subset, 1012, typeid_t::make_function(DYN, { DYN, DYN, DYN}, epure::pure), return_type_sames_as_arg0),
-		make_rec("replace", host__replace, 1013, typeid_t::make_function(DYN, { DYN, DYN, DYN, DYN }, epure::pure), return_type_sames_as_arg0),
+
+		//	push_back() is translated to bc_opcode::k_pushback_vector_pod64() etc.
+		make_rec("push_back", nullptr, 1011, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure), return_type_sames_as_arg0),
+
+		make_rec("subset", host__subset, 1012, typeid_t::make_function(DYN, { DYN, typeid_t::make_int(), typeid_t::make_int()}, epure::pure), return_type_sames_as_arg0),
+		make_rec("replace", host__replace, 1013, typeid_t::make_function(DYN, { DYN, typeid_t::make_int(), typeid_t::make_int(), DYN }, epure::pure), return_type_sames_as_arg0),
 
 
 		make_rec("script_to_jsonvalue", host__script_to_jsonvalue, 1017, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_string()}, epure::pure)),
@@ -2074,7 +1940,7 @@ std::vector<host_function_record_t> get_host_function_records(){
 		make_rec("get_time_of_day", host__get_time_of_day, 1005, typeid_t::make_function(typeid_t::make_int(), {}, epure::impure)),
 
 
-		make_rec("read_text_file", host__read_text_file, 1015, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::impure)),
+		make_rec("read_text_file", host__read_text_file, 1015, typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_string() }, epure::impure)),
 		make_rec("write_text_file", host__write_text_file, 1016, typeid_t::make_function(VOID, { DYN, DYN }, epure::impure)),
 		make_rec(
 			"get_fsentries_shallow",
