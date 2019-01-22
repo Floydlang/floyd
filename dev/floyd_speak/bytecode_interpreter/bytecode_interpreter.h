@@ -206,6 +206,8 @@ namespace floyd {
 		public: static void release_ext(bc_value_t& value);
 		public: static void release_ext_pod(bc_pod_value_t& value);
 
+		public: bool check_invariant() const;
+
 		public: bc_value_t() :
 			_type(typeid_t::make_undefined())
 		{
@@ -258,12 +260,6 @@ namespace floyd {
 		}
 
 
-#if DEBUG
-		public: bool check_invariant() const {
-			QUARK_ASSERT(_type.check_invariant());
-			return true;
-		}
-#endif
 
 		public: explicit bc_value_t(const bc_frame_t* frame_ptr) :
 			_type(typeid_t::make_void())
@@ -365,7 +361,7 @@ namespace floyd {
 			return bc_value_t{ v };
 		}
 		public: inline  std::string get_string_value() const;
-		private: inline  explicit bc_value_t(const std::string value);
+		private: inline  explicit bc_value_t(const std::string& value);
 
 
 		//////////////////////////////////////		json_value
@@ -432,7 +428,9 @@ namespace floyd {
 	};
 
 
+
 	//////////////////////////////////////		bc_object_handle_t
+
 
 
 	//	Owns and RC:s a bc_value_object_t safely and automatically.
@@ -445,12 +443,18 @@ namespace floyd {
 		bc_object_handle_t& operator=(const bc_object_handle_t& other);
 		~bc_object_handle_t();
 
+		bool check_invariant() const;
 
 		//////////////////////////////////////		STATE
 		const bc_value_object_t* _ext;
 	};
 
+
+
 	//////////////////////////////////////		bc_value_object_t
+
+	bool check_ext_deep(const typeid_t& type, const bc_value_object_t* ext);
+
 
 	/*
 		This object contains the internals of values too big to be stored directly inside
@@ -463,9 +467,12 @@ namespace floyd {
 	struct bc_value_object_t {
 #if DEBUG
 		public: bool check_invariant() const{
+			QUARK_ASSERT(is_encoded_as_ext(_debug_type));
 			QUARK_ASSERT(_rc > 0);
 			QUARK_ASSERT(_debug_type.check_invariant());
 			QUARK_ASSERT(_typeid_value.check_invariant());
+
+			QUARK_ASSERT(check_ext_deep(_debug_type, this));
 
 			const auto encoding = type_to_encoding(_debug_type);
 			if(encoding == value_runtime_encoding::k_ext_string){
@@ -567,6 +574,7 @@ namespace floyd {
 			_debug_type(typeid_t::make_json_value()),
 			_json_value(s)
 		{
+			QUARK_ASSERT(s->check_invariant());
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -575,6 +583,7 @@ namespace floyd {
 			_debug_type(typeid_t::make_typeid()),
 			_typeid_value(s)
 		{
+			QUARK_ASSERT(s.check_invariant());
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -583,6 +592,12 @@ namespace floyd {
 			_debug_type(type),
 			_struct_members(s)
 		{
+			QUARK_ASSERT(type.check_invariant());
+			#if QUARK_ASSERT_ON
+				for(const auto& e: s){
+					QUARK_ASSERT(e.check_invariant());
+				}
+			#endif
 			QUARK_ASSERT(check_invariant());
 		}
 		public: bc_value_object_t(const typeid_t& type, const immer::vector<bc_object_handle_t>& s) :
@@ -590,6 +605,12 @@ namespace floyd {
 			_debug_type(type),
 			_vector_objects(s)
 		{
+			QUARK_ASSERT(type.check_invariant());
+			#if QUARK_ASSERT_ON
+				for(const auto& e: s){
+					QUARK_ASSERT(e.check_invariant());
+				}
+			#endif
 			QUARK_ASSERT(check_invariant());
 		}
 		public: bc_value_object_t(const typeid_t& type, const immer::vector<bc_pod64_t>& s) :
@@ -597,6 +618,7 @@ namespace floyd {
 			_debug_type(type),
 			_vector_pod64(s)
 		{
+			QUARK_ASSERT(type.check_invariant());
 			QUARK_ASSERT(check_invariant());
 		}
 		public: bc_value_object_t(const typeid_t& type, const immer::map<std::string, bc_object_handle_t>& s) :
@@ -604,6 +626,13 @@ namespace floyd {
 			_debug_type(type),
 			_dict_objects(s)
 		{
+			QUARK_ASSERT(type.check_invariant());
+			#if QUARK_ASSERT_ON
+				for(const auto& e: s){
+					QUARK_ASSERT(e.first.size() > 0);
+					QUARK_ASSERT(e.second.check_invariant());
+				}
+			#endif
 			QUARK_ASSERT(check_invariant());
 		}
 		public: bc_value_object_t(const typeid_t& type, const immer::map<std::string, bc_pod64_t>& s) :
@@ -611,6 +640,12 @@ namespace floyd {
 			_debug_type(type),
 			_dict_pod64(s)
 		{
+			QUARK_ASSERT(type.check_invariant());
+			#if QUARK_ASSERT_ON
+				for(const auto& e: s){
+					QUARK_ASSERT(e.first.size() > 0);
+				}
+			#endif
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -634,28 +669,49 @@ namespace floyd {
 
 
 
+	////////////////////////////////////////////			bc_object_handle_t
+
+
 
 		inline bc_object_handle_t::bc_object_handle_t(const bc_object_handle_t& other) :
 			_ext(other._ext)
 		{
+			QUARK_ASSERT(other.check_invariant());
+
 			_ext->_rc++;
+
+			QUARK_ASSERT(check_invariant());
 		}
 
 		inline bc_object_handle_t::bc_object_handle_t(const bc_value_object_t* ext) :
 			_ext(ext)
 		{
+			QUARK_ASSERT(ext != nullptr);
+
 			_ext->_rc++;
+
+			QUARK_ASSERT(check_invariant());
 		}
 
 		inline bc_object_handle_t::bc_object_handle_t(const bc_value_t& value) :
 			_ext(value._pod._ext)
 		{
+			QUARK_ASSERT(value.check_invariant());
 			QUARK_ASSERT(is_encoded_as_ext(value._type));
+
 			_ext->_rc++;
+
+			QUARK_ASSERT(check_invariant());
 		}
 
 		inline void bc_object_handle_t::swap(bc_object_handle_t& other){
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(other.check_invariant());
+
 			std::swap(_ext, other._ext);
+
+			QUARK_ASSERT(check_invariant());
+			QUARK_ASSERT(other.check_invariant());
 		}
 
 		inline bc_object_handle_t& bc_object_handle_t::operator=(const bc_object_handle_t& other){
@@ -665,6 +721,8 @@ namespace floyd {
 		}
 
 		inline bc_object_handle_t::~bc_object_handle_t(){
+			QUARK_ASSERT(check_invariant());
+
 			_ext->_rc--;
 			if(_ext->_rc == 0){
 				delete _ext;
@@ -672,10 +730,89 @@ namespace floyd {
 			}
 		}
 
+		inline bool bc_object_handle_t::check_invariant() const {
+			QUARK_ASSERT(_ext != nullptr);
+			QUARK_ASSERT(_ext->check_invariant());
+			return true;
+		}
 
+	inline bool check_ext_deep(const typeid_t& type, const bc_value_object_t* ext){
+		QUARK_ASSERT(type.check_invariant());
+		QUARK_ASSERT(is_encoded_as_ext(type));
+		QUARK_ASSERT(ext != nullptr);
+		QUARK_ASSERT(ext->_rc > 0);
+
+		const auto basetype = type.get_base_type();
+
+		if(basetype == base_type::k_struct){
+			for(const auto& e: ext->_struct_members){
+				QUARK_ASSERT(e.check_invariant());
+			}
+		}
+		else if(basetype == base_type::k_protocol){
+			QUARK_ASSERT(false);
+			return false;
+		}
+		else if(basetype == base_type::k_vector){
+			const auto& element_type  = type.get_vector_element_type();
+			if(is_encoded_as_ext(element_type)){
+				for(const auto& e: ext->_vector_objects){
+					QUARK_ASSERT(e.check_invariant());
+				}
+				return true;
+			}
+			else{
+				return true;
+			}
+		}
+		else if(basetype == base_type::k_dict){
+			const auto& element_type  = type.get_dict_value_type();
+			if(is_encoded_as_ext(element_type)){
+				for(const auto& e: ext->_vector_objects){
+					QUARK_ASSERT(e.check_invariant());
+				}
+				return true;
+			}
+			else{
+				return true;
+			}
+		}
+		else if(basetype == base_type::k_function){
+			QUARK_ASSERT(false);
+		}
+		else if(basetype == base_type::k_json_value){
+		}
+		else if(basetype == base_type::k_typeid){
+		}
+		else if(basetype == base_type::k_string){
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+		return true;
+	}
+
+
+
+	////////////////////////////////////////////			bc_value_t
+
+
+#if DEBUG
+		inline bool bc_value_t::check_invariant() const {
+			QUARK_ASSERT(_type.check_invariant());
+			if(is_encoded_as_ext(_type)){
+				QUARK_ASSERT(check_ext_deep(_type, _pod._ext))
+			}
+
+			return true;
+		}
+#endif
 
 
 	inline void bc_value_t::release_ext(bc_value_t& value){
+		QUARK_ASSERT(value.check_invariant());
+
 		value._pod._ext->_rc--;
 		if(value._pod._ext->_rc == 0){
 			delete value._pod._ext;
@@ -693,7 +830,11 @@ namespace floyd {
 	}
 
 	inline void bc_value_t::add_ext_ref(const bc_value_t& value){
+		QUARK_ASSERT(value.check_invariant());
+
 		value._pod._ext->_rc++;
+
+		QUARK_ASSERT(value.check_invariant());
 	}
 
 
@@ -703,7 +844,7 @@ namespace floyd {
 
 		return _pod._ext->_string;
 	}
-	inline  bc_value_t::bc_value_t(const std::string value) :
+	inline  bc_value_t::bc_value_t(const std::string& value) :
 		_type(typeid_t::make_string())
 	{
 		_pod._ext = new bc_value_object_t{value};
@@ -718,7 +859,11 @@ namespace floyd {
 		inline  bc_value_t::bc_value_t(const std::shared_ptr<json_t>& value) :
 			_type(typeid_t::make_json_value())
 		{
+			QUARK_ASSERT(value);
+			QUARK_ASSERT(value->check_invariant());
+
 			_pod._ext = new bc_value_object_t{value};
+
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -726,9 +871,12 @@ namespace floyd {
 		inline  bc_value_t::bc_value_t(const typeid_t& type, mode mode) :
 			_type(type)
 		{
+			QUARK_ASSERT(type.check_invariant());
+
 			auto temp = new bc_value_object_t{"UNWRITTEN EXT VALUE"};
 			temp->_is_unwritten_ext_value = true;
 			_pod._ext = temp;
+
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -741,7 +889,10 @@ namespace floyd {
 		inline  bc_value_t::bc_value_t(const typeid_t& type_id) :
 			_type(typeid_t::make_typeid())
 		{
+			QUARK_ASSERT(type_id.check_invariant());
+
 			_pod._ext = new bc_value_object_t{type_id};
+
 			QUARK_ASSERT(check_invariant());
 		}
 
@@ -755,9 +906,20 @@ namespace floyd {
 		inline  bc_value_t::bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag) :
 			_type(struct_type)
 		{
+			QUARK_ASSERT(struct_type.check_invariant());
+#if QUARK_ASSERT_ON
+			for(const auto& e: values) {
+				QUARK_ASSERT(e.check_invariant());
+			}
+#endif
+
 			_pod._ext = new bc_value_object_t{struct_type, values, true};
 			QUARK_ASSERT(check_invariant());
 		}
+
+
+
+	////////////////////////////////////////////			FREE
 
 
 		inline const immer::vector<bc_value_t> get_vector(const bc_value_t& value){
@@ -799,6 +961,13 @@ namespace floyd {
 			return &value._pod._ext->_vector_pod64;
 		}
 		inline bc_value_t make_vector(const typeid_t& element_type, const immer::vector<bc_value_t>& elements){
+			QUARK_ASSERT(element_type.check_invariant());
+#if QUARK_ASSERT_ON
+			for(const auto& e: elements) {
+				QUARK_ASSERT(e.check_invariant());
+			}
+#endif
+
 			const auto vector_type = typeid_t::make_vector(element_type);
 			if(encode_as_vector_pod64(vector_type)){
 				immer::vector<bc_pod64_t> elements2;
@@ -826,6 +995,13 @@ namespace floyd {
 			}
 		}
 		inline bc_value_t make_vector_value(const typeid_t& element_type, const immer::vector<bc_object_handle_t>& elements){
+			QUARK_ASSERT(element_type.check_invariant());
+#if QUARK_ASSERT_ON
+			for(const auto& e: elements) {
+				QUARK_ASSERT(e.check_invariant());
+			}
+#endif
+
 			const auto vector_type = typeid_t::make_vector(element_type);
 			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == false);
 
@@ -836,6 +1012,8 @@ namespace floyd {
 			return temp;
 		}
 		inline bc_value_t make_vector_int64_value(const typeid_t& element_type, const immer::vector<bc_pod64_t>& elements){
+			QUARK_ASSERT(element_type.check_invariant());
+
 			const auto vector_type = typeid_t::make_vector(element_type);
 			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == true);
 
@@ -855,6 +1033,14 @@ namespace floyd {
 		}
 
 		inline bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_object_handle_t>& entries){
+			QUARK_ASSERT(value_type.check_invariant());
+#if QUARK_ASSERT_ON
+			for(const auto& e: entries) {
+				QUARK_ASSERT(e.first.size() > 0);
+				QUARK_ASSERT(e.second.check_invariant());
+			}
+#endif
+
 			bc_value_t temp;
 			temp._type = typeid_t::make_dict(value_type);
 			temp._pod._ext = new bc_value_object_t{typeid_t::make_dict(value_type), entries};
@@ -862,6 +1048,8 @@ namespace floyd {
 			return temp;
 		}
 		inline bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_pod64_t>& entries){
+			QUARK_ASSERT(value_type.check_invariant());
+
 			bc_value_t temp;
 			temp._type = typeid_t::make_dict(value_type);
 			temp._pod._ext = new bc_value_object_t{typeid_t::make_dict(value_type), entries};
@@ -869,27 +1057,53 @@ namespace floyd {
 			return temp;
 		}
 
+
+
+	////////////////////////////////////////////			bc_value_t
+
+
 		inline bc_value_t::bc_value_t(const typeid_t& type, const bc_pod_value_t& internals) :
 			_type(type),
 			_pod(internals)
 		{
+			QUARK_ASSERT(type.check_invariant());
+#if QUARK_ASSERT_ON
+			if(is_encoded_as_ext(type)){
+				QUARK_ASSERT(check_ext_deep(type, internals._ext));
+			}
+#endif
+
 			if(is_encoded_as_ext(_type)){
 				_pod._ext->_rc++;
 			}
+			QUARK_ASSERT(check_invariant());
 		}
 
 		inline bc_value_t::bc_value_t(const typeid_t& type, const bc_pod64_t& pod64) :
 			_type(type),
 			_pod{._pod64 = pod64}
 		{
+			QUARK_ASSERT(type.check_invariant());
+			QUARK_ASSERT(is_encoded_as_ext(_type) == false);
+
+			QUARK_ASSERT(check_invariant());
 		}
 
 		inline bc_value_t::bc_value_t(const typeid_t& type, const bc_object_handle_t& handle) :
 			_type(type),
 			_pod{._ext = handle._ext}
 		{
+			QUARK_ASSERT(type.check_invariant());
+			QUARK_ASSERT(handle.check_invariant());
+
 			_pod._ext->_rc++;
+
+			QUARK_ASSERT(check_invariant());
 		}
+
+
+
+	////////////////////////////////////////////			FREE
 
 
 	json_t bcvalue_to_json(const bc_value_t& v);

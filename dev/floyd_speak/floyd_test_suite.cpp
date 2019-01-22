@@ -1061,14 +1061,6 @@ QUARK_UNIT_TESTQ("run_global()", ""){
 }
 
 
-OFF_QUARK_UNIT_TEST("", "instantiate_from_typeid", "Make struct, make sure it works too", ""){
-	const auto result = test__run_return_result(R"(
-		struct pos_t { double x double y }
-		let a = instantiate_from_typeid(pos_t, 100.0, 3.0)
-		let result = a.x + a.y
-	)", {});
-	ut_compare_values(result, value_t::make_double(103.0f));
-}
 
 
 //////////////////////////////////////////		BLOCKS AND SCOPING

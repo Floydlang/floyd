@@ -212,7 +212,7 @@ int test_main (int argc, char *argv[]) {
 
 
 const std::string gol_floyd_str = R"(
-	int f(){
+	func int f(){
 		mutable int count = 0;
 		for (index in 1...5000) {
 			count = count + 1;
@@ -222,7 +222,7 @@ const std::string gol_floyd_str = R"(
 )";
 
 
-OFF_QUARK_UNIT_TEST_VIP("Basic performance", "Game of life", "", ""){
+QUARK_UNIT_TEST_VIP("Basic performance", "Game of life", "", ""){
 	const auto cpp_ns = measure_execution_time_ns(
 		[&] {
 			test_main(0, nullptr);

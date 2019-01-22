@@ -236,7 +236,7 @@ std::string read_text_file(const std::string& abs_path){
 
 	std::ifstream f (abs_path);
 	if (f.is_open() == false){
-		throw std::runtime_error(std::string() + "Cannot read text file." + abs_path);
+		throw std::runtime_error(std::string() + "Cannot read text file " + abs_path);
 	}
 	std::string line;
 	while ( getline(f, line) ) {

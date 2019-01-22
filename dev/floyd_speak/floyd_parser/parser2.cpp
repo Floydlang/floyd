@@ -47,7 +47,7 @@ QUARK_UNIT_TESTQ("C++ enum class()", ""){
 
 
 bool is_valid_expr_chars(const std::string& s){
-	const auto allowed = k_c99_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[](){}.?:=!<>&,|#$\\;";
+	const auto allowed = k_c99_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[](){}.?:=!<>&,|#$\\;\'";
 	for(auto i = 0 ; i < s.size() ; i++){
 		const char ch = s[i];
 		if(allowed.find(ch) == string::npos){

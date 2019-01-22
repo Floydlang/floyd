@@ -112,6 +112,7 @@ value_t bc_to_value(const bc_value_t& value){
 		}
 		else{
 			for(const auto& e: value._pod._ext->_vector_objects){
+				QUARK_ASSERT(e.check_invariant());
 				vec2.push_back(bc_to_value(bc_value_t(element_type, e)));
 			}
 		}

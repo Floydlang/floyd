@@ -1461,7 +1461,7 @@ bc_value_t host__print(interpreter_t& vm, const bc_value_t args[], int arg_count
 
 	const auto& value = args[0];
 	const auto s = to_compact_string2(bc_to_value(value));
-//	printf("%s\n", s.c_str());
+	printf("%s\n", s.c_str());
 	vm._print_output.push_back(s);
 
 	return bc_value_t::make_undefined();

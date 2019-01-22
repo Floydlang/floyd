@@ -2297,7 +2297,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				frame_ptr = stack._current_frame_ptr;
 				regs = stack._current_frame_entry_ptr;
 
-				ASSERT(result.first);
+//				ASSERT(result.first);
 				if(function_return_type.is_void() == false){
 
 					//	Cannot store via register, we have not yet executed k_pop_frame_ptr that restores our frame.
