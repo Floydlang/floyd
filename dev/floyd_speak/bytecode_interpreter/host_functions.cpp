@@ -491,7 +491,7 @@ bc_value_t host__typeof(interpreter_t& vm, const bc_value_t args[], int arg_coun
 bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
-	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+//	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
 	const auto& obj1 = args[0];
 	const auto& lookup_key = args[1];

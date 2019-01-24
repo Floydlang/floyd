@@ -47,6 +47,7 @@ func int xadd (int i0, int a) {
 	while (i < 0){ i = i + BOARD_WIDTH }
 	while (i >= BOARD_WIDTH){ i = i - BOARD_WIDTH }
 
+//	print("xadd result: " + to_string(i))
 	assert(i >= 0 && i < BOARD_WIDTH)
 	return i;
 }
@@ -58,9 +59,20 @@ func int yadd (int i0, int a) {
 	while (i < 0){ i = i + BOARD_HEIGHT;}
 	while (i >= BOARD_HEIGHT){ i = i - BOARD_HEIGHT; }
 
+//	print("yadd result: " + to_string(i))
+//	print("yadd BOARD_HEIGHT: " + to_string(BOARD_HEIGHT))
 	assert(i >= 0 && i < BOARD_HEIGHT)
 	return i;
 }
+
+/*
+print("unit test start")
+	let iii = 0
+	assert(iii >= 0)
+//	assert(iii >= 0)
+//	assert(iii < BOARD_HEIGHT)
+print("unit test end")
+*/
 
 /* return the number of on cells adjacent to the i,j cell */
 
@@ -103,13 +115,12 @@ func [[int]] play ([[int]] board) {
 	for (i in 0 ..< BOARD_WIDTH){
 		for (j in 0 ..< BOARD_HEIGHT) {
 			let a = adjacent_to (board, i, j);
-/*
-			if (a == 2){ newboard[i][j] = board[i][j]; }
-			if (a == 3){ newboard[i][j] = 1; }
-			if (a < 2){ newboard[i][j] = 0; }
-			if (a > 3){ newboard[i][j] = 0; }
-*/
-
+			mutable int v = board[i][j]
+//			if (a == 2){ v = v }
+			if (a == 3){ v = 1 }
+			if (a < 2){ v = 0 }
+			if (a > 3){ v = 0 }
+			newboard = update(newboard, i, update(newboard[i], j, v))
 		}
 	}
 
@@ -159,32 +170,26 @@ func void read_file (int board[][BOARD_HEIGHT], char *name) {
 
 func int test_main ([string] args) {
 	mutable board = initialize_board ();
+	//print(to_string(board))
 
-print(to_string(board))
+	board = update(board, 0 + BOARD_WIDTH / 2, update(board[0 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
 
-//			board = update(board, 0 + BOARD_WIDTH / 2, update(board[0 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
-//			board = update(board, 1 + BOARD_WIDTH / 2, update(board[1 + BOARD_WIDTH / 2], 1 + BOARD_HEIGHT / 2, 120))
-//			board = update(board, 1 + BOARD_WIDTH / 2, update(board[1 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
+	board = update(board, 1 + BOARD_WIDTH / 2, update(board[1 + BOARD_WIDTH / 2], 1 + BOARD_HEIGHT / 2, 120))
+	board = update(board, 1 + BOARD_WIDTH / 2, update(board[1 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
 
-/*			board[BOARD_WIDTH / 2][BOARD_HEIGHT / 2] = 'x';
-			board[1 + BOARD_WIDTH / 2][1+ BOARD_HEIGHT / 2] = 'x';
-			board[1 + BOARD_WIDTH / 2][BOARD_HEIGHT / 2] = 'x';
-			board[2 + BOARD_WIDTH / 2][BOARD_HEIGHT / 2] = 'x';
-			board[2 + BOARD_WIDTH / 2][1 + BOARD_HEIGHT / 2] = 'x';
-			board[3 + BOARD_WIDTH / 2][BOARD_HEIGHT / 2] = 'x';
-			board[3 + BOARD_WIDTH / 2][1 + BOARD_HEIGHT / 2] = 'x';
-*/
+	board = update(board, 2 + BOARD_WIDTH / 2, update(board[2 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
+	board = update(board, 2 + BOARD_WIDTH / 2, update(board[2 + BOARD_WIDTH / 2], 1 + BOARD_HEIGHT / 2, 120))
 
-/*
+	board = update(board, 3 + BOARD_WIDTH / 2, update(board[3 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
+	board = update(board, 3 + BOARD_WIDTH / 2, update(board[3 + BOARD_WIDTH / 2], 1 + BOARD_HEIGHT / 2, 120))
+	//print(to_string(board))
+
 	/* play game of life 100 times */
-	for (i in 0 ..< 1) {
+	for (i in 0 ..< 1000) {
 		print_board(board);
-
-		print(to_string(board))
-
-//		board = play(board);
+//		print(to_string(board))
+		board = play(board);
 	}
-*/
 
 	return 0;
 }

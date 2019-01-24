@@ -1674,9 +1674,11 @@ namespace floyd {
 			QUARK_ASSERT(_current_frame_entry_ptr >= &_entries[0]);
 
 			QUARK_ASSERT(_debug_types.size() == _stack_size);
+#if 0
 			for(int i = 0 ; i < _stack_size ; i++){
 				QUARK_ASSERT(_debug_types[i].check_invariant());
 			}
+#endif
 //			QUARK_ASSERT(_global_frame != nullptr);
 			return true;
 		}

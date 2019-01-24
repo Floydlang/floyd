@@ -182,7 +182,7 @@ bc_value_t update_vector_element(interpreter_t& vm, const bc_value_t vec, int64_
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(vec._type.get_vector_element_type() == value._type);
 
-	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+//	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
 	const auto element_type = vec._type.get_vector_element_type();
 	if(encode_as_vector_pod64(vec._type)){
@@ -225,7 +225,7 @@ bc_value_t update_dict_entry(interpreter_t& vm, const bc_value_t dict, const std
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(dict._type.get_dict_value_type() == value._type);
 
-	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+//	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
 	const auto value_type = dict._type.get_dict_value_type();
 
@@ -250,7 +250,7 @@ bc_value_t update_struct_member(interpreter_t& vm, const bc_value_t str, const s
 	QUARK_ASSERT(value.check_invariant());
 //	QUARK_ASSERT(str._type.get_struct_ref()->_members[member_index]._type == value._type);
 
-	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+//	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
 	return update_struct_member_deep(vm, str, path, value);
 }
@@ -258,7 +258,7 @@ bc_value_t update_struct_member(interpreter_t& vm, const bc_value_t str, const s
 bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_value_t& lookup_key, const bc_value_t& new_value){
 	QUARK_ASSERT(vm.check_invariant());
 
-	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+//	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
 	if(obj1._type.is_string()){
 		if(lookup_key._type.is_int() == false){
@@ -2032,8 +2032,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			else{
 				auto handle = vec[lookup_index];
 				handle._ext->_rc++;
-				regs[i._a]._ext = handle._ext;
 				bc_value_t::release_ext_pod(regs[i._a]);
+				regs[i._a]._ext = handle._ext;
 			}
 			ASSERT(vm.check_invariant());
 			break;
@@ -2070,8 +2070,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			else{
 				const auto& handle = *found_ptr;
 				handle._ext->_rc++;
-				regs[i._a]._ext = handle._ext;
 				bc_value_t::release_ext_pod(regs[i._a]);
+				regs[i._a]._ext = handle._ext;
 			}
 			break;
 		}

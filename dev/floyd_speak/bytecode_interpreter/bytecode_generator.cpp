@@ -1192,8 +1192,8 @@ expr_info_t bcgen_comparison_expression(bcgenerator_t& vm, const variable_addres
 		static const std::map<expression_type, std::pair<bool, bc_opcode>> conv_opcode_int = {
 			{ expression_type::k_comparison_smaller_or_equal__2,			{ false, bc_opcode::k_comparison_smaller_or_equal_int } },
 			{ expression_type::k_comparison_smaller__2,						{ false, bc_opcode::k_comparison_smaller_int } },
-			{ expression_type::k_comparison_larger_or_equal__2,				{ true, bc_opcode::k_comparison_smaller_int } },
-			{ expression_type::k_comparison_larger__2,						{ true, bc_opcode::k_comparison_smaller_or_equal_int } },
+			{ expression_type::k_comparison_larger_or_equal__2,				{ true, bc_opcode::k_comparison_smaller_or_equal_int } },
+			{ expression_type::k_comparison_larger__2,						{ true, bc_opcode::k_comparison_smaller_int } },
 
 			{ expression_type::k_logical_equal__2,							{ false, bc_opcode::k_logical_equal_int } },
 			{ expression_type::k_logical_nonequal__2,						{ false, bc_opcode::k_logical_nonequal_int } }
@@ -1213,8 +1213,8 @@ expr_info_t bcgen_comparison_expression(bcgenerator_t& vm, const variable_addres
 		static const std::map<expression_type, std::pair<bool, bc_opcode>> conv_opcode = {
 			{ expression_type::k_comparison_smaller_or_equal__2,			{ false, bc_opcode::k_comparison_smaller_or_equal } },
 			{ expression_type::k_comparison_smaller__2,						{ false, bc_opcode::k_comparison_smaller } },
-			{ expression_type::k_comparison_larger_or_equal__2,				{ true, bc_opcode::k_comparison_smaller } },
-			{ expression_type::k_comparison_larger__2,						{ true, bc_opcode::k_comparison_smaller_or_equal } },
+			{ expression_type::k_comparison_larger_or_equal__2,				{ true, bc_opcode::k_comparison_smaller_or_equal } },
+			{ expression_type::k_comparison_larger__2,						{ true, bc_opcode::k_comparison_smaller } },
 
 			{ expression_type::k_logical_equal__2,							{ false, bc_opcode::k_logical_equal } },
 			{ expression_type::k_logical_nonequal__2,						{ false, bc_opcode::k_logical_nonequal } }
