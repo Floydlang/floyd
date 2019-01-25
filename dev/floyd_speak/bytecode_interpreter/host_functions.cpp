@@ -1457,7 +1457,7 @@ bc_value_t host__supermap2(interpreter_t& vm, const bc_value_t args[], int arg_c
 bc_value_t host__print(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_string());
+//	QUARK_ASSERT(args[0]._type.is_string());
 
 	const auto& value = args[0];
 	const auto s = to_compact_string2(bc_to_value(value));

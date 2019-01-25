@@ -119,7 +119,7 @@ func [[int]] play ([[int]] board) {
 
 /* print the life board */
 
-func void print_board ([[int]] board) {
+func void print_board ([[int]] board) impure {
 	/* for each row */
 
 	for (j in 0 ..< BOARD_HEIGHT) {
@@ -136,7 +136,7 @@ func void print_board ([[int]] board) {
 
 /* main program */
 
-func int test_main ([string] args) {
+func int test_main ([string] args) impure {
 	mutable board = initialize_board ()
 
 	board = update(board, 0 + BOARD_WIDTH / 2, update(board[0 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
