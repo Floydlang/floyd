@@ -53,6 +53,27 @@ namespace floyd {
 		const std::vector<value_t>& args
 	);
 
+
+	/*
+		SCENARIOS:
+		1) container_key specifies a container, as defined in software_system.
+		This runs all processes.
+
+		ARGS: No use of args.
+		RETURN: Multiple return values, keyed by process name.
+
+		2) container_key == "" and there is no "main()" function defined
+		Run global code only.
+
+		ARGS: No use of args()
+		RETURN: {{"global", void }}
+
+		3) container_key == "" and main() function specified
+		Run global code, then call main() function with args. Result value of main() (call it X) is returned by run_container.
+
+		ARGS: Sent as as arguments to main().
+		RETURN: {{ "main()", X }}
+	*/
 	std::map<std::string, value_t> run_container(
 		const std::string& source,
 		const std::vector<value_t>& args,

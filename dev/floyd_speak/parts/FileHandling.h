@@ -84,6 +84,8 @@ struct process_info_t {
 };
 process_info_t get_process_info();
 
+std::string get_working_dir();
+
 
 ///////////////////////////////////////////////////			ADVANCED
 
@@ -242,3 +244,4 @@ command_line_args_t parse_command_line_args_subcommands(const std::vector<std::s
 
 
 std::string read_text_file(const std::string& abs_path);
+

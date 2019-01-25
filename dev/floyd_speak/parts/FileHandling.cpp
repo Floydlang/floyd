@@ -1349,3 +1349,28 @@ QUARK_UNIT_TEST("", "parse_command_line_args_subcommands()", "", ""){
 	QUARK_UT_VERIFY((result.flags == std::map<std::string, std::string>{ {"m","?"}} ));
 	QUARK_UT_VERIFY((result.extra_arguments == std::vector<std::string>{ R"("Commit message")" }));
 }
+
+
+
+
+
+
+
+
+
+/*
+#include <unistd.h>
+#include <stdio.h>
+#include <limits.h>
+*/
+
+std::string get_working_dir(){
+   char cwd[PATH_MAX];
+   if (getcwd(cwd, sizeof(cwd)) != NULL) {
+       return std::string(cwd);
+   }
+   else {
+//       perror("getcwd() error");
+       throw std::exception();
+   }
+}

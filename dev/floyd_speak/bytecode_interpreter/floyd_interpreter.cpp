@@ -584,14 +584,17 @@ void process_process(process_runtime_t& runtime, int process_id){
 	}
 }
 
-std::map<std::string, value_t> run_container(const string& source, const vector<floyd::value_t>& args, const std::string& container_key){
+std::map<std::string, value_t> run_container_int(const bc_program_t& program, const vector<floyd::value_t>& args, const std::string& container_key){
 	process_runtime_t runtime;
 	runtime._main_thread_id = std::this_thread::get_id();
 
-	auto program = compile_to_bytecode(source);
+/*
 	if(program._software_system._name == ""){
 		throw std::exception();
 	}
+*/
+	QUARK_ASSERT(container_key.empty() == false);
+
 	runtime._container = program._software_system._containers.at(container_key);
 	runtime._process_infos = fold(runtime._container._clock_busses, std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const pair<string, clock_bus_t>& e){
 		auto acc2 = acc;
@@ -626,35 +629,6 @@ std::map<std::string, value_t> run_container(const string& source, const vector<
 		runtime._processes.push_back(process);
 	}
 
-/*
-	struct my_processor : public process_interface {
-		my_processor(process_runtime_t& runtime) : _runtime(runtime) {}
-
-		process_runtime_t& _runtime;
-
-		virtual void on_message(const json_t& message){
-			if(message.is_string() && message.get_string() == "hello me!"){
-				send_message(_runtime, 0, json_t("stop"));
-				send_message(_runtime, 1, json_t("stop"));
-				send_message(_runtime, 2, json_t("stop"));
-				send_message(_runtime, 3, json_t("stop"));
-			}
-			else{
-				QUARK_ASSERT(false);
-			}
-		}
-		virtual void on_init(){
-    		std::this_thread::sleep_for(std::chrono::seconds(1));
-			send_message(_runtime, 1, json_t("hello!"));
-    		std::this_thread::sleep_for(std::chrono::seconds(1));
-			send_message(_runtime, 2, json_t("hello me!"));
-		}
-	};
-
-	runtime._processes[2]->_processor = std::make_shared<my_processor>(runtime);
-*/
-
-
 	//	Remember that current thread (main) is also a thread, no need to create a worker thread for one process.
 	runtime._processes[0]->_thread_id = runtime._main_thread_id;
 
@@ -670,14 +644,6 @@ std::map<std::string, value_t> run_container(const string& source, const vector<
 			process_process(runtime, process_id);
 		}, process_id));
 	}
-
-/*
-	send_message(runtime, 0, json_t("inc"));
-	send_message(runtime, 0, json_t("inc"));
-	send_message(runtime, 0, json_t("dec"));
-	send_message(runtime, 0, json_t("inc"));
-	send_message(runtime, 0, json_t("stop"));
-*/
 
 	process_process(runtime, 0);
 
@@ -697,6 +663,35 @@ std::map<std::string, value_t> run_container(const string& source, const vector<
 
 	return result_map;
 //	QUARK_UT_VERIFY(runtime._processes[0]->_process_state.get_struct_value()->_member_values[0].get_int_value() == 998);
+}
+
+
+std::map<std::string, value_t> run_container(const string& source, const vector<floyd::value_t>& args, const std::string& container_key){
+	auto program = compile_to_bytecode(source);
+/*
+	if(program._software_system._name == ""){
+		throw std::exception();
+	}
+*/
+
+	if(container_key.empty()){
+		//	Create interpreter, run global code.
+		auto vm = make_shared<interpreter_t>(program);
+
+		const auto& main_function = find_global_symbol2(*vm, "main");
+		if(main_function != nullptr){
+			const auto& result = call_function(*vm, bc_to_value(main_function->_value), args);
+			print_vm_printlog(*vm);
+			return {{ "main()", result }};
+		}
+		else{
+			print_vm_printlog(*vm);
+			return {{ "global", value_t::make_void() }};
+		}
+	}
+	else{
+		return run_container_int(program, args, container_key);
+	}
 }
 
 

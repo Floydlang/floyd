@@ -4110,3 +4110,18 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 	QUARK_UT_VERIFY(result.at("a").get_struct_value()->_member_values[0].get_int_value() == 1011);
 	QUARK_UT_VERIFY(result.at("b").get_struct_value()->_member_values[0].get_int_value() == 5);
 }
+
+
+
+
+
+
+
+QUARK_UNIT_TEST_VIP("software-system", "run two CONNECTED processes", "", ""){
+	const auto path = get_working_dir() + "/hello_world.floyd";
+	const auto program = read_text_file(path);
+
+	const auto result = run_container(program, {}, "");
+	const std::map<std::string, value_t> expected = {{ "global", value_t::make_void() }};
+	QUARK_UT_VERIFY(result == expected);
+}
