@@ -1,6 +1,12 @@
+//
+//  FloydSpeak
+//
+//  Created by Marcus Zetterquist on 26/07/16.
+//  Copyright (c) 2016 Marcus Zetterquist. All rights reserved.
+//
 
 
-//////////////////////////////////////////		GAME OF LIFE C
+//////////////////////////////////////////		GAME OF LIFE - FLOYD
 
 //	https://www.cs.utexas.edu/users/djimenez/utsa/cs1713-3/c/life.txt
 
@@ -17,7 +23,19 @@
  * The game plays 100 rounds, printing to the screen each time.  'x' printed
  * means on, space means 0.
  *
- */
+	(copied this from some web page, hence the English spellings...)
+
+	1.STASIS : If, for a given cell, the number of on neighbours is
+	exactly two, the cell maintains its status quo into the next
+	generation. If the cell is on, it stays on, if it is off, it stays off.
+
+	2.GROWTH : If the number of on neighbours is exactly three, the cell
+	will be on in the next generation. This is regardless of the cell's
+	current state.
+
+	3.DEATH : If the number of on neighbours is 0, 1, 4-8, the cell will
+	be off in the next generation.
+*/
 
 /* dimensions of the screen */
 
@@ -26,15 +44,14 @@ let BOARD_HEIGHT = 24
 
 /* set everthing to zero */
 
-//	columns first.
 func [[int]] initialize_board() {
 	mutable [[int]] board = []
 
+	mutable [int] column = []
+	for (j in 0 ..< BOARD_HEIGHT) {
+		column = push_back(column, 0)
+	}
 	for (i in 0 ..< BOARD_WIDTH) {
-		mutable [int] column = []
-		for (j in 0 ..< BOARD_HEIGHT) {
-			column = push_back(column, 0)
-		}
 		board = push_back(board, column)
 	}
 	return board
@@ -46,33 +63,17 @@ func int xadd (int i0, int a) {
 	mutable i = i0 + a
 	while (i < 0){ i = i + BOARD_WIDTH }
 	while (i >= BOARD_WIDTH){ i = i - BOARD_WIDTH }
-
-//	print("xadd result: " + to_string(i))
-	assert(i >= 0 && i < BOARD_WIDTH)
-	return i;
+	return i
 }
 
 /* add to a height index, wrapping around */
 
 func int yadd (int i0, int a) {
-	mutable i = i0 + a;
-	while (i < 0){ i = i + BOARD_HEIGHT;}
-	while (i >= BOARD_HEIGHT){ i = i - BOARD_HEIGHT; }
-
-//	print("yadd result: " + to_string(i))
-//	print("yadd BOARD_HEIGHT: " + to_string(BOARD_HEIGHT))
-	assert(i >= 0 && i < BOARD_HEIGHT)
-	return i;
+	mutable i = i0 + a
+	while (i < 0){ i = i + BOARD_HEIGHT }
+	while (i >= BOARD_HEIGHT){ i = i - BOARD_HEIGHT }
+	return i
 }
-
-/*
-print("unit test start")
-	let iii = 0
-	assert(iii >= 0)
-//	assert(iii >= 0)
-//	assert(iii < BOARD_HEIGHT)
-print("unit test end")
-*/
 
 /* return the number of on cells adjacent to the i,j cell */
 
@@ -83,38 +84,27 @@ func int adjacent_to ([[int]] board, int i, int j) {
 
 	for (k in -1 ... 1){
 		for (l in -1 ... 1){
+
 			/* only count if at least one of k, l isn't zero */
+
 			if (k != 0 || l != 0){
 				if (board[xadd(i, k)][yadd(j, l)] != 0){
-					count = count + 1;
+					count = count + 1
 				}
 			}
 		}
 	}
-	return count;
+	return count
 }
 
 func [[int]] play ([[int]] board) {
-/*
-	(copied this from some web page, hence the English spellings...)
-
-	1.STASIS : If, for a given cell, the number of on neighbours is
-	exactly two, the cell maintains its status quo into the next
-	generation. If the cell is on, it stays on, if it is off, it stays off.
-
-	2.GROWTH : If the number of on neighbours is exactly three, the cell
-	will be on in the next generation. This is regardless of the cell's 		current state.
-
-	3.DEATH : If the number of on neighbours is 0, 1, 4-8, the cell will
-	be off in the next generation.
-*/
 	mutable newboard = board
 
 	/* for each cell, apply the rules of Life */
 
 	for (i in 0 ..< BOARD_WIDTH){
 		for (j in 0 ..< BOARD_HEIGHT) {
-			let a = adjacent_to (board, i, j);
+			let a = adjacent_to (board, i, j)
 			mutable int v = board[i][j]
 //			if (a == 2){ v = v }
 			if (a == 3){ v = 1 }
@@ -131,83 +121,42 @@ func [[int]] play ([[int]] board) {
 
 func void print_board ([[int]] board) {
 	/* for each row */
+
 	for (j in 0 ..< BOARD_HEIGHT) {
 
 		/* print each column position... */
-		mutable string row = to_string(j) + "\t"
+
+		mutable string row = ""
 		for (i in 0 ..< BOARD_WIDTH) {
-			row = push_back(row, board[i][j] != 0 ? 120 : 45);
+			row = push_back(row, board[i][j] != 0 ? 120 : 45)
 		}
 		print(row)
 	}
 }
 
-/* read a file into the life board */
-/*
-func void read_file (int board[][BOARD_HEIGHT], char *name) {
-	FILE	*f;
-	int	i, j;
-	char	s[100];
-
-	f = fopen (name, "r");
-	for (j=0; j<BOARD_HEIGHT; j++) {
-
-		/* get a string */
-
-		fgets (s, 100, f);
-
-		/* copy the string to the life board */
-
-		for (i=0; i<BOARD_WIDTH; i++) {
-			board[i][j] = s[i] == 'x';
-		}
-	}
-	fclose (f);
-}
-*/
-
 /* main program */
 
 func int test_main ([string] args) {
-	mutable board = initialize_board ();
-	//print(to_string(board))
+	mutable board = initialize_board ()
 
 	board = update(board, 0 + BOARD_WIDTH / 2, update(board[0 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
-
 	board = update(board, 1 + BOARD_WIDTH / 2, update(board[1 + BOARD_WIDTH / 2], 1 + BOARD_HEIGHT / 2, 120))
 	board = update(board, 1 + BOARD_WIDTH / 2, update(board[1 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
-
 	board = update(board, 2 + BOARD_WIDTH / 2, update(board[2 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
 	board = update(board, 2 + BOARD_WIDTH / 2, update(board[2 + BOARD_WIDTH / 2], 1 + BOARD_HEIGHT / 2, 120))
-
 	board = update(board, 3 + BOARD_WIDTH / 2, update(board[3 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
 	board = update(board, 3 + BOARD_WIDTH / 2, update(board[3 + BOARD_WIDTH / 2], 1 + BOARD_HEIGHT / 2, 120))
-	//print(to_string(board))
 
 	/* play game of life 100 times */
-	for (i in 0 ..< 1000) {
-		print_board(board);
-//		print(to_string(board))
-		board = play(board);
+
+	for (i in 0 ..< 100) {
+		print(to_string(i) + ":")
+		print_board(board)
+		board = play(board)
 	}
-
-	return 0;
+	return 0
 }
-
-//	read_file (board, argv[1]);
 
 
 test_main([])
-
-
-/*
-
-	for (i in 0 ..< 1000) {
-		print_board (board);
-		board = play (board);
-
-		/* clear the screen using VT100 escape codes */
-//		puts ("\033[H\033[J");
-	}
-*/
 
