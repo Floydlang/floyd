@@ -626,6 +626,7 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 		}
 		return_type operator()(const statement_t::store2_t& s) const{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 		return_type operator()(const statement_t::block_statement_t& s) const{
 			const auto e = analyse_block_statement(a, statement);

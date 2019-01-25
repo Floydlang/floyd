@@ -552,19 +552,24 @@ bcgen_body_t bcgen_body_block(bcgenerator_t& vm, const body_t& body){
 				}
 				bcgen_body_t operator()(const statement_t::define_struct_statement_t& s) const{
 					QUARK_ASSERT(false);
+					throw std::exception();
 				}
 				bcgen_body_t operator()(const statement_t::define_protocol_statement_t& s) const{
 					QUARK_ASSERT(false);
+					throw std::exception();
 				}
 				bcgen_body_t operator()(const statement_t::define_function_statement_t& s) const{
 					QUARK_ASSERT(false);
+					throw std::exception();
 				}
 
 				bcgen_body_t operator()(const statement_t::bind_local_t& s) const{
 					QUARK_ASSERT(false);
+					throw std::exception();
 				}
 				bcgen_body_t operator()(const statement_t::store_t& s) const{
 					QUARK_ASSERT(false);
+					throw std::exception();
 				}
 				bcgen_body_t operator()(const statement_t::store2_t& s) const{
 					return bcgen_store2_statement(vm, s, body_acc);

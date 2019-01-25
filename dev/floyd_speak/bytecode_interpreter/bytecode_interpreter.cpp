@@ -689,6 +689,7 @@ int json_value_type_to_int(const json_t& value){
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 
@@ -707,9 +708,11 @@ int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
 		else{
 			if(lhs.is_object()){
 				QUARK_ASSERT(false);
+				throw std::exception();
 			}
 			else if(lhs.is_array()){
 				QUARK_ASSERT(false);
+				throw std::exception();
 			}
 			else if(lhs.is_string()){
 				const auto diff = std::strcmp(lhs.get_string().c_str(), rhs.get_string().c_str());
@@ -722,15 +725,19 @@ int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
 			}
 			else if(lhs.is_true()){
 				QUARK_ASSERT(false);
+				throw std::exception();
 			}
 			else if(lhs.is_false()){
 				QUARK_ASSERT(false);
+				throw std::exception();
 			}
 			else if(lhs.is_null()){
 				QUARK_ASSERT(false);
+				throw std::exception();
 			}
 			else{
 				QUARK_ASSERT(false);
+				throw std::exception();
 			}
 		}
 	}

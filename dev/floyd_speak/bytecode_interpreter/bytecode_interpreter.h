@@ -563,7 +563,9 @@ namespace floyd {
 
 		public: bc_value_object_t(const std::string& s) :
 			_rc(1),
+#if DEBUG
 			_debug_type(typeid_t::make_string()),
+#endif
 			_string(s)
 		{
 			QUARK_ASSERT(check_invariant());
@@ -571,7 +573,9 @@ namespace floyd {
 
 		public: bc_value_object_t(const std::shared_ptr<json_t>& s) :
 			_rc(1),
+#if DEBUG
 			_debug_type(typeid_t::make_json_value()),
+#endif
 			_json_value(s)
 		{
 			QUARK_ASSERT(s->check_invariant());
@@ -580,7 +584,9 @@ namespace floyd {
 
 		public: bc_value_object_t(const typeid_t& s) :
 			_rc(1),
+#if DEBUG
 			_debug_type(typeid_t::make_typeid()),
+#endif
 			_typeid_value(s)
 		{
 			QUARK_ASSERT(s.check_invariant());
@@ -589,7 +595,9 @@ namespace floyd {
 
 		public: bc_value_object_t(const typeid_t& type, const std::vector<bc_value_t>& s, bool struct_tag) :
 			_rc(1),
+#if DEBUG
 			_debug_type(type),
+#endif
 			_struct_members(s)
 		{
 			QUARK_ASSERT(type.check_invariant());
@@ -602,7 +610,9 @@ namespace floyd {
 		}
 		public: bc_value_object_t(const typeid_t& type, const immer::vector<bc_object_handle_t>& s) :
 			_rc(1),
+#if DEBUG
 			_debug_type(type),
+#endif
 			_vector_objects(s)
 		{
 			QUARK_ASSERT(type.check_invariant());
@@ -615,7 +625,9 @@ namespace floyd {
 		}
 		public: bc_value_object_t(const typeid_t& type, const immer::vector<bc_pod64_t>& s) :
 			_rc(1),
+#if DEBUG
 			_debug_type(type),
+#endif
 			_vector_pod64(s)
 		{
 			QUARK_ASSERT(type.check_invariant());
@@ -623,7 +635,9 @@ namespace floyd {
 		}
 		public: bc_value_object_t(const typeid_t& type, const immer::map<std::string, bc_object_handle_t>& s) :
 			_rc(1),
+#if DEBUG
 			_debug_type(type),
+#endif
 			_dict_objects(s)
 		{
 			QUARK_ASSERT(type.check_invariant());
@@ -637,7 +651,9 @@ namespace floyd {
 		}
 		public: bc_value_object_t(const typeid_t& type, const immer::map<std::string, bc_pod64_t>& s) :
 			_rc(1),
+#if DEBUG
 			_debug_type(type),
+#endif
 			_dict_pod64(s)
 		{
 			QUARK_ASSERT(type.check_invariant());
@@ -1808,7 +1824,8 @@ namespace floyd {
 #if DEBUG
 			const auto result = bc_value_t(_current_frame_ptr->_symbols[reg].second._value_type, _current_frame_entry_ptr[reg]);
 #else
-			const auto result = bc_value_t(_current_frame_entry_ptr[reg], is_ext);
+//			const auto result = bc_value_t(_current_frame_entry_ptr[reg], is_ext);
+			const auto result = bc_value_t(_current_frame_ptr->_symbols[reg].second._value_type, _current_frame_entry_ptr[reg]);
 #endif
 			QUARK_ASSERT(result.check_invariant());
 			return result;
