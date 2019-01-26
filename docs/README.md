@@ -4,7 +4,7 @@ License: MIT
 
 Status: Language spec for 1.0 almost done. Compiles to byte code and interprets it. Not ready for production yet. 
 
-# FLOYD
+# FLOYD (ALPHA VERSION)
 
 Floyd is a general-purpose static and compiled programming language with strong opinions on how to write complex and robust software products with minimum pain and minimum waste of time. Fast programs. It's tools are visual and interactive.
 
