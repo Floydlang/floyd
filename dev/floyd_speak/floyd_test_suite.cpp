@@ -613,7 +613,9 @@ QUARK_UNIT_TEST("", "pixel_t()", "", ""){
 	};
 
 	test__run_init__check_result(
+
 		"struct pixel_t { int red int green int blue } result = pixel_t(1,2,3)",
+
 		value_t::make_struct_value(
 			typeid_t::make_struct2(pixel_t__def),
 			vector<value_t>{ value_t::make_int(1), value_t::make_int(2), value_t::make_int(3) }
@@ -711,10 +713,12 @@ QUARK_UNIT_TEST("", "[[string: int]]()", "", ""){
 
 QUARK_UNIT_TEST("call_function()", "define additional function, call it several times", "", ""){
 	auto ast = compile_to_bytecode(R"(
+
 		func int myfunc(){ return 5 }
 		func int main(string args){
 			return myfunc() + myfunc() * 2
 		}
+
 	)");
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
@@ -724,9 +728,11 @@ QUARK_UNIT_TEST("call_function()", "define additional function, call it several 
 
 QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
 	auto ast = compile_to_bytecode(R"(
+
 		func string main(string args){
 			return "-" + args + "-"
 		}
+
 	)");
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
@@ -743,12 +749,14 @@ QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
 
 QUARK_UNIT_TEST("call_function()", "use local variables", "", ""){
 	auto ast = compile_to_bytecode(R"(
+
 		func string myfunc(string t){ return "<" + t + ">" }
 		func string main(string args){
 			 let string a = "--"
 			 let string b = myfunc(args)
 			 return a + args + b + a
 		}
+
 	)");
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
@@ -767,8 +775,10 @@ QUARK_UNIT_TEST("call_function()", "use local variables", "", ""){
 
 QUARK_UNIT_TEST("call_function()", "local variable without let", "", ""){
 	auto r = test__run_global(R"(
+
 		a = 7
 		print(a)
+
 	)");
 	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "7" }));
 }
@@ -780,18 +790,22 @@ QUARK_UNIT_TEST("call_function()", "local variable without let", "", ""){
 
 QUARK_UNIT_TEST("call_function()", "mutate local", "", ""){
 	auto r = test__run_global(R"(
+
 		mutable a = 1
 		a = 2
 		print(a)
+
 	)");
 	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "2" }));
 }
 
 QUARK_UNIT_TESTQ("run_init()", "increment a mutable"){
 	const auto r = test__run_global(R"(
+
 		mutable a = 1000
 		a = a + 1
 		print(a)
+
 	)");
 	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "1001" }));
 }
@@ -799,8 +813,10 @@ QUARK_UNIT_TESTQ("run_init()", "increment a mutable"){
 QUARK_UNIT_TESTQ("run_main()", "test locals are immutable"){
 	try {
 		const auto vm = test__run_global(R"(
+
 			let a = 3
 			a = 4
+
 		)");
 		QUARK_UT_VERIFY(false);
 	}
@@ -811,10 +827,12 @@ QUARK_UNIT_TESTQ("run_main()", "test locals are immutable"){
 QUARK_UNIT_TESTQ("run_main()", "test function args are always immutable"){
 	try {
 		const auto vm = test__run_global(R"(
+
 			func int f(int x){
 				x = 6
 			}
 			f(5)
+
 		)");
 		QUARK_UT_VERIFY(false);
 	}
@@ -822,43 +840,51 @@ QUARK_UNIT_TESTQ("run_main()", "test function args are always immutable"){
 	}
 }
 
-		QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
-			const auto r = test__run_global(R"(
-				mutable a = 7
-				a = 8
-				{
-					print(a)
-				}
-			)");
-			QUARK_UT_VERIFY((r->_print_output == vector<string>{ "8" }));
+QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
+	const auto r = test__run_global(R"(
+
+		mutable a = 7
+		a = 8
+		{
+			print(a)
 		}
 
-		QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
-			const auto r = test__run_global(R"(
-				let a = 7
-				print(a)
-			)");
-			QUARK_UT_VERIFY((r->_print_output == vector<string>{ "7" }));
-		}
-
-
-		QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
-			const auto r = test__run_global(R"(
-				let a = 7
-				{
-				}
-				print(a)
-			)");
-			QUARK_UT_VERIFY((r->_print_output == vector<string>{ "7" }));
-		}
+	)");
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "8" }));
+}
 
 QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 	const auto r = test__run_global(R"(
+
+		let a = 7
+		print(a)
+
+	)");
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "7" }));
+}
+
+
+QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
+	const auto r = test__run_global(R"(
+
+		let a = 7
+		{
+		}
+		print(a)
+
+	)");
+	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "7" }));
+}
+
+QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
+	const auto r = test__run_global(R"(
+
 		mutable a = 7
 		{
 			a = 8
 		}
 		print(a)
+
 	)");
 	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "8" }));
 }
@@ -867,8 +893,10 @@ QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 //////////////////////////////////////////		RETURN STATEMENT - ADVANCED USAGE
 
 
+
 QUARK_UNIT_TEST("call_function()", "return from middle of function", "", ""){
 	auto r = test__run_global(R"(
+
 		func string f(){
 			print("A")
 			return "B"
@@ -877,12 +905,14 @@ QUARK_UNIT_TEST("call_function()", "return from middle of function", "", ""){
 		}
 		let string x = f()
 		print(x)
+
 	)");
 	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A", "B" }));
 }
 
 QUARK_UNIT_TEST("call_function()", "return from within IF block", "", ""){
 	auto r = test__run_global(R"(
+
 		func string f(){
 			if(true){
 				print("A")
@@ -894,12 +924,14 @@ QUARK_UNIT_TEST("call_function()", "return from within IF block", "", ""){
 		}
 		let string x = f()
 		print(x)
+
 	)");
 	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A", "B" }));
 }
 
 QUARK_UNIT_TEST("call_function()", "return from within FOR block", "", ""){
 	auto r = test__run_global(R"(
+
 		func string f(){
 			for(e in 0...3){
 				print("A")
@@ -911,6 +943,7 @@ QUARK_UNIT_TEST("call_function()", "return from within FOR block", "", ""){
 		}
 		let string x = f()
 		print(x)
+
 	)");
 	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A", "B" }));
 }
@@ -919,6 +952,7 @@ QUARK_UNIT_TEST("call_function()", "return from within FOR block", "", ""){
 
 QUARK_UNIT_TESTQ("call_function()", "return from within BLOCK"){
 	auto r = test__run_global(R"(
+
 		func string f(){
 			{
 				print("A")
@@ -930,9 +964,25 @@ QUARK_UNIT_TESTQ("call_function()", "return from within BLOCK"){
 		}
 		let string x = f()
 		print(x)
+
 	)");
 	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A", "B" }));
 }
+
+
+OFF_QUARK_UNIT_TEST("", "Make sure returning wrong type => error", "", ""){
+	run_container2(R"(
+
+func int f(double a, string s){
+	return to_string(a) + ":" + s
+}
+
+let a = f(3.14, "km")
+
+	)", {}, "");
+}
+
+
 
 
 //////////////////////////////////////////		HOST FUNCTION - to_string()
@@ -2480,7 +2530,11 @@ QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
 	ut_compare_values(result, value_t::make_json_value(json_t::make_object()));
 }
 
+
+
 //////////////////////////////////////////		json_value features
+
+
 
 
 QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
@@ -2721,20 +2775,24 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "{}", ""){
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "pixel_t", ""){
 	const auto result = test__run_return_result(R"(
+
 		struct pixel_t { double x double y }
 		let c = pixel_t(100.0, 200.0)
 		let a = value_to_jsonvalue(c)
 		let result = jsonvalue_to_script(a)
+
 	)", {});
 	ut_compare_values(result, value_t::make_string("{ \"x\": 100, \"y\": 200 }"));
 }
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "[pixel_t]", ""){
 	const auto result = test__run_return_result(R"(
+
 		struct pixel_t { double x double y }
 		let c = [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)]
 		let a = value_to_jsonvalue(c)
 		let result = jsonvalue_to_script(a)
+
 	)", {});
 	ut_compare_values(result, value_t::make_string("[{ \"x\": 100, \"y\": 200 }, { \"x\": 101, \"y\": 201 }]"));
 }
@@ -4136,5 +4194,260 @@ QUARK_UNIT_TEST("", "process_test1.floyd", "", ""){
 
 	const auto result = run_container2(program, {}, "iphone app");
 	QUARK_UT_VERIFY(result.empty());
+}
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//	QUICK REFERENCE SNIPPETS -- VERIFY THEY WORK
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+#define QUICK_REFERENCE_TEST	QUARK_UNIT_TEST
+
+
+QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "TERNARY OPERATOR", "", ""){
+	run_container2(R"(
+
+//	Snippets setup
+let b = ""
+
+
+
+let a = b == "true" ? true : false
+
+	)", {}, "");
+}
+
+QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "COMMENTS", "", ""){
+	run_container2(R"(
+
+/* Comment can span lines. */
+
+let a = 10; // To end of line
+
+	)", {}, "");
+}
+
+
+
+QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "LOCALS", "", ""){
+	run_container2(R"(
+
+let a = 10
+mutable b = 10
+b = 11
+
+	)", {}, "");
+}
+
+
+QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "WHILE", "", ""){
+	//	Just make sure it compiles, don't run it!
+	compile_to_bytecode(R"(
+
+//	Snippets setup
+let expression = true
+
+
+while(expression){
+	print("body")
+}
+
+	)");
+}
+
+
+QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "FOR", "", ""){
+	run_container2(R"(
+
+for (index in 1 ... 5) {
+	print(index)
+}
+for (index in 1  ..< 5) {
+	print(index)
+}
+
+	)", {}, "");
+}
+
+
+QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "IF ELSE", "", ""){
+	run_container2(R"(
+
+//	Snippets setup
+let a = 1000
+
+
+
+if(a > 10){
+	print("bigger")
+}
+else if(a > 0){
+	print("small positive")
+}
+else{
+	print("zero or negative")
+}
+
+	)", {}, "");
+}
+
+
+QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "BOOL", "", ""){
+	run_container2(R"(
+
+let a = true
+if(a){
+}
+
+	)", {}, "");
+}
+
+QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "STRING", "", ""){
+	run_container2(R"(
+
+let s1 = "Hello, world!"
+let s2 = "Title: " + s1
+assert(s2 == "Title: Hello, world!")
+assert(s1[0] == 72) // ASCII for 'H'
+assert(size(s1) == 13)
+assert(subset(s1, 1, 4) == "ell")
+let s4 = to_string(12003)
+
+	)", {}, "");
+}
+
+
+
+
+QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "FUNCTION", "", ""){
+	run_container2(R"(
+
+func string f(double a, string s){
+	return to_string(a) + ":" + s
+}
+
+let a = f(3.14, "km")
+
+	)", {}, "");
+}
+
+QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "IMPURE FUNCTION", "", ""){
+	run_container2(R"(
+
+func int main([string] args) impure {
+	return 1
+}
+
+	)", {}, "");
+}
+
+
+
+QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "STRUCT", "", ""){
+	run_container2(R"(
+
+struct rect {
+	double width
+	double height
+}
+
+let a = rect(0.0, 3.0)
+assert(a.width == 0.0
+	&& a.height == 3.0)
+
+assert(a == a)
+assert(a == rect(0.0, 3.0))
+assert(a != rect(1.0, 1.0))
+assert(a < rect(0.0, 4.0))
+
+let b = update(a, "width", 100.0)
+assert(a.width == 0.0)
+assert(b.width == 100.0)
+
+	)", {}, "");
+}
+
+//??? demo map(), reduce()
+
+QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "VECTOR", "", ""){
+	run_container2(R"(
+
+let a = [ 1, 2, 3 ]
+assert(size(a) == 3)
+assert(a[0] == 1)
+
+let b = update(a, 1, 6)
+assert(a == [ 1, 2, 3 ])
+assert(b == [ 1, 6, 3 ])
+
+let c = a + b
+let d = push_back(a, 7)
+
+let g = subset([ 4, 5, 6, 7, 8 ], 2, 4)
+assert(g == [ 6, 7 ])
+
+let h = replace([ 1, 2, 3, 4, 5 ], 1, 4, [ 8, 9 ])
+assert(h == [ 1, 8, 9, 5 ])
+
+for(i in 0 ..< size(a)){
+	print(a[i])
+}
+
+	)", {}, "");
+}
+
+
+QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "DICTIONARY", "", ""){
+	run_container2(R"(
+
+let a = { "one": 1, "two": 2 }
+assert(a["one"] == 1)
+
+let b = update(a, "one", 10)
+assert(a == { "one": 1, "two": 2 })
+assert(b == { "one": 10, "two": 2 })
+
+	)", {}, "");
+}
+
+
+QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "JSON_VALUE", "", ""){
+	run_container2(R"(
+
+let json_value a = {
+	"one": 1,
+	"three": "three",
+	"five": { "A": 10, "B": 20 }
+}
+
+	)", {}, "");
+}
+
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//	MANUAL SNIPPETS -- VERIFY THEY WORK
+///////////////////////////////////////////////////////////////////////////////////////
+
+#define MANUAL_SNIPPETS_TEST	QUARK_UNIT_TEST
+
+MANUAL_SNIPPETS_TEST("MANUAL SNIPPETS", "subset()", "", ""){
+	run_container2(R"(
+
+		assert(subset("hello", 2, 4) == "ll")
+		assert(subset([ 10, 20, 30, 40 ], 1, 3 ) == [ 20, 30 ])
+
+	)", {}, "");
 }
 

@@ -682,7 +682,9 @@ std::map<std::string, value_t> run_container(const bc_program_t& program, const 
 
 		const auto& main_function = find_global_symbol2(*vm, "main");
 		if(main_function != nullptr){
-			const auto& result = call_function(*vm, bc_to_value(main_function->_value), args);
+			const auto arg_vec = value_t::make_vector_value(typeid_t::make_string(), args);
+//			const auto bc_args = value_to_bc(arg_vec);
+			const auto& result = call_function(*vm, bc_to_value(main_function->_value), { arg_vec });
 			print_vm_printlog(*vm);
 			return {{ "main()", result }};
 		}
