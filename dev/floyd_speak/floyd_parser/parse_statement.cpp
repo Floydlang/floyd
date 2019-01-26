@@ -319,7 +319,7 @@ range_def_t parse_range(const seq_t& pos){
 		return { start_end2.first, "..<", start_end2.second };
 	}
 
-	throw std::runtime_error("For loop has illegal range.");
+	throw std::runtime_error("For loop has illegal range syntax.");
 }
 
 
