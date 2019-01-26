@@ -87,7 +87,7 @@ The details on Tweakers, probes and Floyd Studio are on the drawing board.
 | **Floyd Speak compiler**		|Compiles Floyd Speak source code to byte code.
 | **Floyd Speak interpreter**	|Runs your programs at approx. 7-15% of native speeds.
 | **Floyd Systems Manual**		|				|[Floyd Systems Manual](floyd_systems.md)
-| **TODO POC: Floyd Systems compiler**			|compiles floyd systems and containers etc to byte code.|
-| Standard library				|A number of basic components|
+| **Floyd Systems compiler**			|Compiles floyd systems and containers etc to byte code.|
+| **Standard library**				|Small kit of essential functions|
 
 Floyd compilers and tools are written in portable C++17.
