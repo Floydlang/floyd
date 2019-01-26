@@ -71,7 +71,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "example.floydsys"
+            argument = "process_test1.floyd"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

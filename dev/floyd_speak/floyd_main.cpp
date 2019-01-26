@@ -177,7 +177,7 @@ floyd run -t mygame.floyd	- the -t turns on tracing, which shows Floyd compilati
 )";
 }
 
-void run_command(const std::vector<std::string>& args){
+int run_command(const std::vector<std::string>& args){
 	const auto command_line_args = parse_command_line_args_subcommands(args, "t");
 	const auto path_parts = SplitPath(command_line_args.command);
 	QUARK_ASSERT(path_parts.fName == "floyd" || path_parts.fName == "floydut");
@@ -185,12 +185,15 @@ void run_command(const std::vector<std::string>& args){
 
 	if(command_line_args.subcommand == "runtests"){
 		run_tests();
+		return EXIT_SUCCESS;
 	}
 	else if(command_line_args.subcommand == "benchmark"){
 		floyd_benchmark();
+		return EXIT_SUCCESS;
 	}
 	else if(command_line_args.subcommand == "help"){
 		help();
+		return EXIT_SUCCESS;
 	}
 	else if(command_line_args.subcommand == "compile"){
 		if(command_line_args.extra_arguments.size() == 1){
@@ -202,6 +205,7 @@ void run_command(const std::vector<std::string>& args){
 		}
 		else{
 		}
+		return EXIT_SUCCESS;
 	}
 	else if(command_line_args.subcommand == "run"){
 
@@ -222,19 +226,24 @@ void run_command(const std::vector<std::string>& args){
 				args3.push_back(floyd::value_t::make_string(e));
 			}
 
-			const auto result = floyd::run_program(program, args3);
-			const int error_code = result.second.is_int() ? static_cast<int>(result.second.get_int_value()) : 0;
-			if(error_code == 0){
+			const auto result = floyd::run_container(program, args3, program._container_def._name);
+			if(result.size() == 1 && result.find("main()") != result.end()){
+				const auto main_return = *result.begin();
+				const auto error_code = main_return.second.is_int() ? main_return.second.get_int_value() : EXIT_SUCCESS;
+				return static_cast<int>(error_code);
 			}
 			else{
-				throw std::exception();
+				return EXIT_SUCCESS;
 			}
 		}
 		else{
+			help();
+			return EXIT_SUCCESS;
 		}
 	}
 	else{
 		help();
+		return EXIT_SUCCESS;
 	}
 }
 
@@ -247,7 +256,8 @@ int main(int argc, const char * argv[]) {
 
 	const auto args = args_to_vector(argc, argv);
 	try{
-		run_command(args);
+		const int result = run_command(args);
+		return result;
 	}
 	catch(const std::runtime_error& e){
 		const auto what = std::string(e.what());

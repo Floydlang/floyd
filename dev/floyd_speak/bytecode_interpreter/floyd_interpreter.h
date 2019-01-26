@@ -42,7 +42,6 @@ namespace floyd {
 	bc_program_t compile_to_bytecode(const std::string& program);
 	semantic_ast_t compile_to_sematic_ast(const std::string& program);
 
-	std::pair<std::shared_ptr<interpreter_t>, value_t> run_program(const bc_program_t& program, const std::vector<floyd::value_t>& args);
 	std::shared_ptr<interpreter_t> run_global(const std::string& source);
 
 	/*
@@ -60,7 +59,7 @@ namespace floyd {
 		This runs all processes.
 
 		ARGS: No use of args.
-		RETURN: Multiple return values, keyed by process name.
+		RETURN: none.
 
 		2) container_key == "" and there is no "main()" function defined
 		Run global code only.
@@ -75,6 +74,11 @@ namespace floyd {
 		RETURN: {{ "main()", X }}
 	*/
 	std::map<std::string, value_t> run_container(
+		const bc_program_t& program,
+		const std::vector<value_t>& args,
+		const std::string& container_key
+	);
+	std::map<std::string, value_t> run_container2(
 		const std::string& source,
 		const std::vector<value_t>& args,
 		const std::string& container_key

@@ -3885,7 +3885,7 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 	)";
 
 	program_recording.push_back(test_ss2);
-	const auto result = run_container(test_ss2, {}, "iphone app");
+	const auto result = run_container2(test_ss2, {}, "iphone app");
 	QUARK_UT_VERIFY(result.empty());
 }
 
@@ -3969,7 +3969,7 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 	)";
 
 	program_recording.push_back(test_ss3);
-	const auto result = run_container(test_ss3, {}, "iphone app");
+	const auto result = run_container2(test_ss3, {}, "iphone app");
 	QUARK_UT_VERIFY(result.empty());
 }
 
@@ -4055,7 +4055,7 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 	)";
 
 	program_recording.push_back(test_ss3);
-	const auto result = run_container(test_ss3, {}, "iphone app");
+	const auto result = run_container2(test_ss3, {}, "iphone app");
 	QUARK_UT_VERIFY(result.empty());
 }
 
@@ -4074,7 +4074,7 @@ QUARK_UNIT_TEST("", "hello_world.floyd", "", ""){
 	const auto path = get_working_dir() + "/hello_world.floyd";
 	const auto program = read_text_file(path);
 
-	const auto result = run_container(program, {}, "");
+	const auto result = run_container2(program, {}, "");
 	const std::map<std::string, value_t> expected = {{ "global", value_t::make_void() }};
 	QUARK_UT_VERIFY(result == expected);
 }
@@ -4083,7 +4083,7 @@ QUARK_UNIT_TEST("", "game_of_life.floyd", "", ""){
 	const auto path = get_working_dir() + "/game_of_life.floyd";
 	const auto program = read_text_file(path);
 
-	const auto result = run_container(program, {}, "");
+	const auto result = run_container2(program, {}, "");
 	const std::map<std::string, value_t> expected = {{ "global", value_t::make_void() }};
 	QUARK_UT_VERIFY(result == expected);
 }
@@ -4092,7 +4092,7 @@ QUARK_UNIT_TEST("", "process_test1.floyd", "", ""){
 	const auto path = get_working_dir() + "/process_test1.floyd";
 	const auto program = read_text_file(path);
 
-	const auto result = run_container(program, {}, "iphone app");
+	const auto result = run_container2(program, {}, "iphone app");
 	QUARK_UT_VERIFY(result.empty());
 }
 

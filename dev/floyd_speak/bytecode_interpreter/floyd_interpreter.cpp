@@ -404,19 +404,6 @@ semantic_ast_t compile_to_sematic_ast(const string& program){
 
 
 
-std::pair<std::shared_ptr<interpreter_t>, value_t> run_program(const bc_program_t& program, const vector<floyd::value_t>& args){
-	auto vm = make_shared<interpreter_t>(program);
-
-	const auto& main_func = find_global_symbol2(*vm, "main");
-	if(main_func != nullptr){
-		const auto& r = call_function(*vm, bc_to_value(main_func->_value), args);
-		return { vm, r };
-	}
-	else{
-		return { vm, value_t::make_undefined() };
-	}
-}
-
 std::shared_ptr<interpreter_t> run_global(const string& source){
 	auto program = compile_to_bytecode(source);
 	auto vm = make_shared<interpreter_t>(program);
@@ -682,15 +669,13 @@ std::map<std::string, value_t> run_container_int(const bc_program_t& program, co
 //	QUARK_UT_VERIFY(runtime._processes[0]->_process_state.get_struct_value()->_member_values[0].get_int_value() == 998);
 }
 
-
-std::map<std::string, value_t> run_container(const string& source, const vector<floyd::value_t>& args, const std::string& container_key){
-	auto program = compile_to_bytecode(source);
 /*
 	if(program._software_system._name == ""){
 		throw std::exception();
 	}
 */
 
+std::map<std::string, value_t> run_container(const bc_program_t& program, const vector<floyd::value_t>& args, const std::string& container_key){
 	if(container_key.empty()){
 		//	Create interpreter, run global code.
 		auto vm = make_shared<interpreter_t>(program);
@@ -709,6 +694,12 @@ std::map<std::string, value_t> run_container(const string& source, const vector<
 	else{
 		return run_container_int(program, args, container_key);
 	}
+}
+
+
+std::map<std::string, value_t> run_container2(const string& source, const vector<floyd::value_t>& args, const std::string& container_key){
+	auto program = compile_to_bytecode(source);
+	return run_container(program, args, container_key);
 }
 
 
