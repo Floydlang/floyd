@@ -1486,8 +1486,10 @@ QUARK_UNIT_TEST("vector", "explit bind, is []", "deduce type", "valid vector"){
 
 QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
 	const auto vm = test__run_global(R"(
+
 		let [string] a = []
 		print(a)
+
 	)");
 	ut_compare_stringvects(vm->_print_output, vector<string>{
 		R"([])"
@@ -1498,7 +1500,9 @@ QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
 QUARK_UNIT_TEST("vector", "==", "lhs and rhs are empty-typeless", ""){
 	try{
 		const auto vm = test__run_global(R"(
+
 			assert(([] == []) == true)
+
 		)");
 		QUARK_UT_VERIFY(false);
 	}
@@ -1509,7 +1513,11 @@ QUARK_UNIT_TEST("vector", "==", "lhs and rhs are empty-typeless", ""){
 
 QUARK_UNIT_TEST("vector", "+", "add empty vectors", ""){
 	try{
-		test_result(R"(		let [int] a = [] + [] result = a == []		)", R"(	)");
+		test_result(R"(
+
+			let [int] a = [] + [] result = a == []
+
+		)", R"(	)");
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
@@ -1517,23 +1525,41 @@ QUARK_UNIT_TEST("vector", "+", "add empty vectors", ""){
 	}
 }
 
+//??? This fails but should not. This code becomes a constructor call to [int] with more than 16 arguments. Byte code interpreter has 16 argument limit.
+OFF_QUARK_UNIT_TEST("vector", "[]-constructor", "32 elements initialization", ""){
+	const auto vm = test__run_global(R"(
+
+		let a = [ 0,0,1,1,0,0,0,0,	0,0,1,1,0,0,0,0,	0,0,1,1,1,0,0,0,	0,0,1,1,1,1,0,0 ]
+		print(a)
+
+	)");
+}
+
+
+
 
 //////////////////////////////////////////		vector-string
 
 
 QUARK_UNIT_TEST("vector-string", "literal expression", "", ""){
-	test_result(R"(		let [string] result = ["alpha", "beta"]		)", R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)");
+	test_result(R"(
+
+		let [string] result = ["alpha", "beta"]
+
+	)", R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)");
 }
 QUARK_UNIT_TEST("vector-string", "literal expression, computed element", "", ""){
 	test_result(R"(		func string get_beta(){ return "beta" } 	let [string] result = ["alpha", get_beta()]		)", R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)");
 }
 QUARK_UNIT_TEST("vector-string", "=", "copy", ""){
 	const auto vm = test__run_global(R"(
+
 		let a = ["one", "two"]
 		let b = a
 		assert(a == b)
 		print(a)
 		print(b)
+
 	)");
 	ut_compare_stringvects(vm->_print_output, vector<string>{
 		R"(["one", "two"])",
@@ -1542,49 +1568,65 @@ QUARK_UNIT_TEST("vector-string", "=", "copy", ""){
 }
 QUARK_UNIT_TEST("vector-string", "==", "same values", ""){
 	const auto vm = test__run_global(R"(
+
 		assert((["one", "two"] == ["one", "two"]) == true)
+
 	)");
 }
 
 QUARK_UNIT_TEST("vector-string", "==", "different values", ""){
 	const auto vm = test__run_global(R"(
+
 		assert((["one", "three"] == ["one", "two"]) == false)
+
 	)");
 }
 
 QUARK_UNIT_TEST("vector-string", "<", "same values", ""){
 	const auto vm = test__run_global(R"(
+
 		assert((["one", "two"] < ["one", "two"]) == false)
+
 	)");
 }
 
 QUARK_UNIT_TEST("vector-string", "<", "different values", ""){
 	const auto vm = test__run_global(R"(
+
 		assert((["one", "a"] < ["one", "two"]) == true)
+
 	)");
 }
 QUARK_UNIT_TEST("vector-string", "size()", "empty", "0"){
 	const auto vm = test__run_global(R"(
+
 		let [string] a = []
 		assert(size(a) == 0)
+
 	)");
 }
 QUARK_UNIT_TEST("vector-string", "size()", "2", ""){
 	const auto vm = test__run_global(R"(
+
 		let [string] a = ["one", "two"]
 		assert(size(a) == 2)
+
 	)");
 }
 QUARK_UNIT_TEST("vector-string", "+", "non-empty vectors", ""){
 	const auto vm = test__run_global(R"(
+
 		let [string] a = ["one"] + ["two"]
 		assert(a == ["one", "two"])
+
 	)");
 }
 QUARK_UNIT_TEST("vector-string", "push_back()", "", ""){
 	const auto vm = test__run_global(R"(
+
 		let [string] a = push_back(["one"], "two")
 		assert(a == ["one", "two"])
+
 	)");
 }
 
