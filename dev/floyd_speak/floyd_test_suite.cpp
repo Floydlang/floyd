@@ -976,11 +976,9 @@ QUARK_UNIT_TEST("", "Make sure returning wrong type => error", "", ""){
 	try {
 	run_container2(R"(
 
-func int f(double a, string s){
-	return to_string(a) + ":" + s
+func int f(){
+	return "x"
 }
-
-let a = f(3.14, "km")
 
 	)", {}, "");
 
