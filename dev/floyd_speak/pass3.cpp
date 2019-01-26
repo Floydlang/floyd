@@ -79,7 +79,7 @@ struct analyser_t {
 //////////////////////////////////////		forward
 
 
-std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement);
+std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const typeid_t& return_type);
 floyd::semantic_ast_t analyse(const analyser_t& a);
 typeid_t resolve_type(const analyser_t& a, const typeid_t& type);
 
@@ -88,7 +88,7 @@ typeid_t resolve_type(const analyser_t& a, const typeid_t& type);
 		null = statements were all executed through.
 		value = return statement returned a value.
 */
-std::pair<analyser_t, std::vector<std::shared_ptr<floyd::statement_t>> > analyse_statements(const analyser_t& a, const std::vector<std::shared_ptr<floyd::statement_t>>& statements);
+std::pair<analyser_t, std::vector<std::shared_ptr<floyd::statement_t>> > analyse_statements(const analyser_t& a, const std::vector<std::shared_ptr<floyd::statement_t>>& statements, const typeid_t& return_type);
 
 floyd::symbol_t find_global_symbol(const analyser_t& a, const std::string& s);
 
@@ -280,7 +280,7 @@ typeid_t resolve_type(const analyser_t& a, const typeid_t& type){
 
 
 
-std::pair<analyser_t, vector<statement_t>> analyse_statements(const analyser_t& a, const vector<statement_t>& statements){
+std::pair<analyser_t, vector<statement_t>> analyse_statements(const analyser_t& a, const vector<statement_t>& statements, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 	for(const auto& i: statements){ QUARK_ASSERT(i.check_invariant()); };
 
@@ -290,7 +290,7 @@ std::pair<analyser_t, vector<statement_t>> analyse_statements(const analyser_t& 
 	int statement_index = 0;
 	while(statement_index < statements.size()){
 		const auto statement = statements[statement_index];
-		const auto& r = analyse_statement(a_acc, statement);
+		const auto& r = analyse_statement(a_acc, statement, return_type);
 		a_acc = r.first;
 
 		if(r.second){
@@ -302,7 +302,7 @@ std::pair<analyser_t, vector<statement_t>> analyse_statements(const analyser_t& 
 	return { a_acc, statements2 };
 }
 
-std::pair<analyser_t, body_t > analyse_body(const analyser_t& a, const floyd::body_t& body, epure pure){
+std::pair<analyser_t, body_t > analyse_body(const analyser_t& a, const floyd::body_t& body, epure pure, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -311,7 +311,7 @@ std::pair<analyser_t, body_t > analyse_body(const analyser_t& a, const floyd::bo
 	const auto lexical_scope = lexical_scope_t{new_environment, pure};
 	a_acc._lexical_scope_stack.push_back(lexical_scope);
 
-	const auto result = analyse_statements(a_acc, body._statements);
+	const auto result = analyse_statements(a_acc, body._statements, return_type);
 	a_acc = result.first;
 
 	const auto body2 = body_t(result.second, result.first._lexical_scope_stack.back().symbols);
@@ -433,21 +433,22 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	}
 }
 
-std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& a, const statement_t& s){
+std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	const auto statement = std::get<statement_t::block_statement_t>(s._contents);
-	const auto e = analyse_body(a, statement._body, a._lexical_scope_stack.back().pure);
+	const auto e = analyse_body(a, statement._body, a._lexical_scope_stack.back().pure, return_type);
 	return {e.first, statement_t::make__block_statement(e.second)};
 }
 
-std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a, const statement_t& s){
+std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	const auto statement = std::get<statement_t::return_statement_t>(s._contents);
 	auto a_acc = a;
 	const auto expr = statement._expression;
-	const auto result = analyse_expression_no_target(a_acc, expr);
+	const auto result = analyse_expression_to_target(a_acc, expr, return_type);
+		
 	a_acc = result.first;
 
 	const auto result_value = result.second;
@@ -510,7 +511,7 @@ std::pair<analyser_t, statement_t> analyse_def_function_statement(const analyser
 	return s3;
 }
 
-std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a, const statement_t::ifelse_statement_t& statement){
+std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a, const statement_t::ifelse_statement_t& statement, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -523,12 +524,12 @@ std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a,
 		throw std::runtime_error("Boolean condition required.");
 	}
 
-	const auto then2 = analyse_body(a_acc, statement._then_body, a._lexical_scope_stack.back().pure);
-	const auto else2 = analyse_body(a_acc, statement._else_body, a._lexical_scope_stack.back().pure);
+	const auto then2 = analyse_body(a_acc, statement._then_body, a._lexical_scope_stack.back().pure, return_type);
+	const auto else2 = analyse_body(a_acc, statement._else_body, a._lexical_scope_stack.back().pure, return_type);
 	return { a_acc, statement_t::make__ifelse_statement(condition2.second, then2.second, else2.second) };
 }
 
-std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, const statement_t::for_statement_t& statement){
+std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, const statement_t::for_statement_t& statement, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -553,13 +554,13 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 	auto symbols = statement._body._symbols;
 	symbols._symbols.push_back({ statement._iterator_name, iterator_symbol});
 	const auto body_injected = body_t(statement._body._statements, symbols);
-	const auto result = analyse_body(a_acc, body_injected, a._lexical_scope_stack.back().pure);
+	const auto result = analyse_body(a_acc, body_injected, a._lexical_scope_stack.back().pure, return_type);
 	a_acc = result.first;
 
 	return { a_acc, statement_t::make__for_statement(statement._iterator_name, start_expr2.second, end_expr2.second, result.second, statement._range_type) };
 }
 
-std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& a, const statement_t::while_statement_t& statement){
+std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& a, const statement_t::while_statement_t& statement, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -567,7 +568,7 @@ std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& a, 
 	const auto condition2_expr = analyse_expression_no_target(a_acc, statement._condition);
 	a_acc = condition2_expr.first;
 
-	const auto result = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure);
+	const auto result = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, return_type);
 	a_acc = result.first;
 
 	return { a_acc, statement_t::make__while_statement(condition2_expr.second, result.second) };
@@ -584,92 +585,94 @@ std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t
 }
 
 //	Output is the RETURN VALUE of the analysed statement, if any.
-std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement){
+std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
 
 
 
-	typedef std::pair<analyser_t, shared_ptr<statement_t>> return_type;
+	typedef std::pair<analyser_t, shared_ptr<statement_t>> return_type_t;
 
 
 	struct visitor_t {
 		const analyser_t& a;
 		const statement_t& statement;
+		const typeid_t return_type;
 
-		return_type operator()(const statement_t::return_statement_t& s) const{
-			const auto e = analyse_return_statement(a, statement);
+
+		return_type_t operator()(const statement_t::return_statement_t& s) const{
+			const auto e = analyse_return_statement(a, statement, return_type);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		return_type operator()(const statement_t::define_struct_statement_t& s) const{
+		return_type_t operator()(const statement_t::define_struct_statement_t& s) const{
 			const auto e = analyse_def_struct_statement(a, s);
 			return { e, {} };
 		}
-		return_type operator()(const statement_t::define_protocol_statement_t& s) const{
+		return_type_t operator()(const statement_t::define_protocol_statement_t& s) const{
 			const auto e = analyse_def_protocol_statement(a, s);
 			return { e, {} };
 		}
-		return_type operator()(const statement_t::define_function_statement_t& s) const{
+		return_type_t operator()(const statement_t::define_function_statement_t& s) const{
 			const auto e = analyse_def_function_statement(a, statement);
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 
-		return_type operator()(const statement_t::bind_local_t& s) const{
+		return_type_t operator()(const statement_t::bind_local_t& s) const{
 			const auto e = analyse_bind_local_statement(a, statement);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		return_type operator()(const statement_t::store_t& s) const{
+		return_type_t operator()(const statement_t::store_t& s) const{
 			const auto e = analyse_store_statement(a, statement);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		return_type operator()(const statement_t::store2_t& s) const{
+		return_type_t operator()(const statement_t::store2_t& s) const{
 			QUARK_ASSERT(false);
 			throw std::exception();
 		}
-		return_type operator()(const statement_t::block_statement_t& s) const{
-			const auto e = analyse_block_statement(a, statement);
+		return_type_t operator()(const statement_t::block_statement_t& s) const{
+			const auto e = analyse_block_statement(a, statement, return_type);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 
-		return_type operator()(const statement_t::ifelse_statement_t& s) const{
-			const auto e = analyse_ifelse_statement(a, s);
+		return_type_t operator()(const statement_t::ifelse_statement_t& s) const{
+			const auto e = analyse_ifelse_statement(a, s, return_type);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		return_type operator()(const statement_t::for_statement_t& s) const{
-			const auto e = analyse_for_statement(a, s);
+		return_type_t operator()(const statement_t::for_statement_t& s) const{
+			const auto e = analyse_for_statement(a, s, return_type);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		return_type operator()(const statement_t::while_statement_t& s) const{
-			const auto e = analyse_while_statement(a, s);
+		return_type_t operator()(const statement_t::while_statement_t& s) const{
+			const auto e = analyse_while_statement(a, s, return_type);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 
 
-		return_type operator()(const statement_t::expression_statement_t& s) const{
+		return_type_t operator()(const statement_t::expression_statement_t& s) const{
 			const auto e = analyse_expression_statement(a, s);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		return_type operator()(const statement_t::software_system_statement_t& s) const{
+		return_type_t operator()(const statement_t::software_system_statement_t& s) const{
 			analyser_t temp = a;
 			temp._software_system = parse_software_system_json(s._json_data);
 			return { temp, std::make_shared<statement_t>(statement) };
 		}
-		return_type operator()(const statement_t::container_def_statement_t& s) const{
+		return_type_t operator()(const statement_t::container_def_statement_t& s) const{
 			analyser_t temp = a;
 			temp._container_def = parse_container_def_json(s._json_data);
 			return { temp, std::make_shared<statement_t>(statement) };
 		}
 	};
 
-	return std::visit(visitor_t{a, statement}, statement._contents);
+	return std::visit(visitor_t{ a, statement, return_type }, statement._contents);
 }
 
 
@@ -1447,7 +1450,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	//??? Can there be a pure function inside an impure lexical scope?
 	const auto pure = function_pure;
 
-	const auto function_body_pair = analyse_body(a_acc, function_body2, pure);
+	const auto function_body_pair = analyse_body(a_acc, function_body2, pure, function_type2.get_function_return());
 	a_acc = function_body_pair.first;
 	const auto function_body3 = function_body_pair.second;
 
@@ -1747,7 +1750,7 @@ semantic_ast_t analyse(const analyser_t& a){
 	analyser2._function_defs.swap(function_defs);
 
 	const auto body = body_t(analyser2._imm->_ast._globals._statements, symbol_table_t{symbol_map});
-	const auto result = analyse_body(analyser2, body, epure::impure);
+	const auto result = analyse_body(analyser2, body, epure::impure, typeid_t::make_undefined());
 	const auto result_ast0 = ast_t{
 		._globals = result. second,
 		._function_defs = result.first._function_defs,

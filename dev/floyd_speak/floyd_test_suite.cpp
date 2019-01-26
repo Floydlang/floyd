@@ -820,7 +820,8 @@ QUARK_UNIT_TESTQ("run_main()", "test locals are immutable"){
 		)");
 		QUARK_UT_VERIFY(false);
 	}
-	catch(...){
+	catch(const std::runtime_error& e){
+		QUARK_UT_VERIFY(string(e.what()) == "Cannot assign to immutable identifier.");
 	}
 }
 
@@ -836,7 +837,8 @@ QUARK_UNIT_TESTQ("run_main()", "test function args are always immutable"){
 		)");
 		QUARK_UT_VERIFY(false);
 	}
-	catch(...){
+	catch(const std::runtime_error& e){
+		QUARK_UT_VERIFY(string(e.what()) == "Cannot assign to immutable identifier.");
 	}
 }
 
@@ -970,7 +972,8 @@ QUARK_UNIT_TESTQ("call_function()", "return from within BLOCK"){
 }
 
 
-OFF_QUARK_UNIT_TEST("", "Make sure returning wrong type => error", "", ""){
+QUARK_UNIT_TEST("", "Make sure returning wrong type => error", "", ""){
+	try {
 	run_container2(R"(
 
 func int f(double a, string s){
@@ -980,6 +983,12 @@ func int f(double a, string s){
 let a = f(3.14, "km")
 
 	)", {}, "");
+
+
+	}
+	catch(const std::runtime_error& e){
+		QUARK_UT_VERIFY(string(e.what()) == "Expression type mismatch. Cannot convert 'string' to 'int.");
+	}
 }
 
 
@@ -1898,7 +1907,8 @@ QUARK_UNIT_TEST("dict", "", "", ""){
 		)");
 		QUARK_UT_VERIFY(false);
 	}
-	catch(...){
+	catch(const std::runtime_error& e){
+		QUARK_UT_VERIFY(string(e.what()) == "Cannot resolve type.");
 	}
 }
 
@@ -1910,7 +1920,8 @@ QUARK_UNIT_TEST("dict", "[:]", "", ""){
 		)");
 		QUARK_UT_VERIFY(false);
 	}
-	catch(...){
+	catch(const std::runtime_error& e){
+		QUARK_UT_VERIFY(string(e.what()) == "Cannot resolve type.");
 	}
 }
 
@@ -2240,7 +2251,8 @@ QUARK_UNIT_TEST("run_main()", "mutate struct member using = won't work", "", "")
 			print(b)
 		)");
 	}
-	catch(...){
+	catch(const std::runtime_error& e){
+		QUARK_UT_VERIFY(string(e.what()) == "Expected constant or identifier.");
 	}
 }
 
