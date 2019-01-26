@@ -68,6 +68,9 @@ std::pair<ast_json_t, seq_t> parse_statement(const seq_t& s){
 	else if(is_first(pos, keyword_t::k_software_system)){
 		return parse_software_system(pos);
 	}
+	else if(is_first(pos, keyword_t::k_container_def)){
+		return parse_container_def(pos);
+	}
 	else {
 		return parse_prefixless_statement(pos);
 	}

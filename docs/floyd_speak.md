@@ -226,9 +226,9 @@ Here you normally define functions, structs and global constants. The global sco
 
 
 
-# CONCEPT: SOFTWARE-SYSTEM
+# CONCEPT: SOFTWARE-SYSTEM & CONTAINER-DEF
 
-This keyword is part of Floyd Systems -- a way to define how all the containers and components and processes are interfacting.
+These mechanisms are part of Floyd Systems -- defines how all the containers and components and processes are interacting, how concurrency is handled and so on.
 
 ```
 software-system {
@@ -238,7 +238,23 @@ software-system {
 }
 ```
 
-Read more about this in the Floyd Systems documentation. It allows you setup concurrency.
+And
+
+```
+container-def {
+	"name": "iphone app",
+	"tech": "Swift, iOS, Xcode, Open GL",
+	"desc": "Mobile shooter game for iOS.",
+	"clocks": {
+		"main": {
+			"a": "my_gui",
+			"b": "my_audio",
+		}
+	}
+}
+```
+
+Read more about this in the Floyd Systems documentation.
 
 
 
@@ -770,7 +786,7 @@ Many of the core functions work with json\_value, but it often depends on the ac
 
 - __get\_json\_type()__
 - __size()__
-- __jsonvalue_to_script()__
+- __jsonvalue\_to\_script()__
 - __script\_to_jsonvalue()__
 - __value\_to\_jsonvalue()__
 - __jsonvalue\_to\_value()__

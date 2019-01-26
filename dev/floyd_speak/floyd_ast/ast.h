@@ -38,6 +38,7 @@ namespace floyd {
 		public: body_t _globals;
 		public: std::vector<std::shared_ptr<const floyd::function_definition_t>> _function_defs;
 		public: software_system_t _software_system;
+		public: container_t _container_def;
 	};
 
 

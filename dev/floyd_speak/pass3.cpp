@@ -71,6 +71,7 @@ struct analyser_t {
 	public: std::vector<std::shared_ptr<const floyd::function_definition_t>> _function_defs;
 
 	public: software_system_t _software_system;
+	public: container_t _container_def;
 };
 
 
@@ -659,8 +660,12 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 		return_type operator()(const statement_t::software_system_statement_t& s) const{
 			analyser_t temp = a;
 			temp._software_system = parse_software_system_json(s._json_data);
-			return { temp, std::make_shared<statement_t>(statement
-			) };
+			return { temp, std::make_shared<statement_t>(statement) };
+		}
+		return_type operator()(const statement_t::container_def_statement_t& s) const{
+			analyser_t temp = a;
+			temp._container_def = parse_container_def_json(s._json_data);
+			return { temp, std::make_shared<statement_t>(statement) };
 		}
 	};
 
@@ -1746,7 +1751,8 @@ semantic_ast_t analyse(const analyser_t& a){
 	const auto result_ast0 = ast_t{
 		._globals = result. second,
 		._function_defs = result.first._function_defs,
-		._software_system = result.first._software_system
+		._software_system = result.first._software_system,
+		._container_def = result.first._container_def
 	};
 
 	const auto result_ast1 = semantic_ast_t(result_ast0);
@@ -1773,7 +1779,8 @@ analyser_t::analyser_t(const analyser_t& other) :
 	_imm(other._imm),
 	_lexical_scope_stack(other._lexical_scope_stack),
 	_function_defs(other._function_defs),
-	_software_system(other._software_system)
+	_software_system(other._software_system),
+	_container_def(other._container_def)
 {
 	QUARK_ASSERT(other.check_invariant());
 	QUARK_ASSERT(check_invariant());
@@ -1784,6 +1791,7 @@ void analyser_t::swap(analyser_t& other) throw() {
 	_lexical_scope_stack.swap(other._lexical_scope_stack);
 	_function_defs.swap(other._function_defs);
 	std::swap(_software_system, other._software_system);
+	std::swap(_container_def, other._container_def);
 }
 
 const analyser_t& analyser_t::operator=(const analyser_t& other){

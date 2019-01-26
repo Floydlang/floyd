@@ -34,6 +34,7 @@ struct clock_bus_t {
 };
 
 struct container_t {
+	std::string _name;
 	std::string _desc;
 	std::string _tech;
 	std::map<std::string, clock_bus_t> _clock_busses;
@@ -46,10 +47,11 @@ struct software_system_t {
 	std::string _desc;
 	std::vector<person_t> _people;
 	std::vector<connection_t> _connections;
-	std::map<std::string, container_t> _containers;
+	std::vector<std::string> _containers;
 };
 
 software_system_t parse_software_system_json(const json_t& value);
+container_t parse_container_def_json(const json_t& value);
 
 
 

@@ -48,9 +48,9 @@
 		2C982D3620603FE2002002FF /* bytecode_generator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C982D3520603FE2002002FF /* bytecode_generator.cpp */; };
 		2CB2A512203C4AA80001A19E /* interpretator_benchmark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB2A511203C4AA80001A19E /* interpretator_benchmark.cpp */; };
 		2CB2A516203D642B0001A19E /* pass3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB2A515203D642B0001A19E /* pass3.cpp */; };
-		2CB30736214A9B35007D2732 /* example.floydsys in Sources */ = {isa = PBXBuildFile; fileRef = 2CB30735214A9B35007D2732 /* example.floydsys */; };
+		2CB30736214A9B35007D2732 /* process_test1.floyd in Sources */ = {isa = PBXBuildFile; fileRef = 2CB30735214A9B35007D2732 /* process_test1.floyd */; };
 		2CB30739214ACF09007D2732 /* software_system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB30737214ACF09007D2732 /* software_system.cpp */; };
-		2CBB527A21EFBE0200E5024A /* example.floydsys in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2CB30735214A9B35007D2732 /* example.floydsys */; };
+		2CBB527A21EFBE0200E5024A /* process_test1.floyd in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2CB30735214A9B35007D2732 /* process_test1.floyd */; };
 		2CBB527D21F6673A00E5024A /* game_of_life.floyd in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2CBB527C21F6606E00E5024A /* game_of_life.floyd */; };
 		2CBCA7DE1D569E04000FAE81 /* sha1_class.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */; };
 		2CBCA7DF1D569E07000FAE81 /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DA1D569C6D000FAE81 /* sha1.cpp */; };
@@ -67,7 +67,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				2CBB527A21EFBE0200E5024A /* example.floydsys in CopyFiles */,
+				2CBB527A21EFBE0200E5024A /* process_test1.floyd in CopyFiles */,
 				2CBB527D21F6673A00E5024A /* game_of_life.floyd in CopyFiles */,
 				2C914FE121FB59710007291D /* hello_world.floyd in CopyFiles */,
 			);
@@ -154,7 +154,7 @@
 		2CB2A513203C4ACB0001A19E /* interpretator_benchmark.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = interpretator_benchmark.h; sourceTree = "<group>"; };
 		2CB2A514203D64210001A19E /* pass3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pass3.h; sourceTree = "<group>"; };
 		2CB2A515203D642B0001A19E /* pass3.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pass3.cpp; sourceTree = "<group>"; };
-		2CB30735214A9B35007D2732 /* example.floydsys */ = {isa = PBXFileReference; lastKnownFileType = text; path = example.floydsys; sourceTree = "<group>"; };
+		2CB30735214A9B35007D2732 /* process_test1.floyd */ = {isa = PBXFileReference; lastKnownFileType = text; path = process_test1.floyd; sourceTree = "<group>"; };
 		2CB30737214ACF09007D2732 /* software_system.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = software_system.cpp; sourceTree = "<group>"; };
 		2CB30738214ACF09007D2732 /* software_system.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = software_system.h; sourceTree = "<group>"; };
 		2CBB527C21F6606E00E5024A /* game_of_life.floyd */ = {isa = PBXFileReference; fileEncoding = 7; lastKnownFileType = text; path = game_of_life.floyd; sourceTree = "<group>"; };
@@ -311,10 +311,10 @@
 		2CBB527B21F655A600E5024A /* examples */ = {
 			isa = PBXGroup;
 			children = (
-				2CB30735214A9B35007D2732 /* example.floydsys */,
 				2CEB5744207106560005AC7A /* game_of_life.cpp */,
 				2CBB527C21F6606E00E5024A /* game_of_life.floyd */,
 				2C914FE021FB591B0007291D /* hello_world.floyd */,
+				2CB30735214A9B35007D2732 /* process_test1.floyd */,
 			);
 			name = examples;
 			path = floyd_speak/examples;
@@ -455,7 +455,7 @@
 				2C180481208B939800F62480 /* parser2.cpp in Sources */,
 				2C2625DA21E0D59900B41841 /* network_api.cpp in Sources */,
 				2C18045F208B917500F62480 /* json_support.cpp in Sources */,
-				2CB30736214A9B35007D2732 /* example.floydsys in Sources */,
+				2CB30736214A9B35007D2732 /* process_test1.floyd in Sources */,
 				2C18048E208B947C00F62480 /* ast.cpp in Sources */,
 				2C180490208B947C00F62480 /* ast_basics.cpp in Sources */,
 				2C180477208B939800F62480 /* parse_expression.cpp in Sources */,

@@ -3806,7 +3806,7 @@ OFF_QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
 
 
 
-QUARK_UNIT_TEST("software-system", "test parsing all data", "", ""){
+QUARK_UNIT_TEST("software-system", "parse software-system", "", ""){
 	const auto test_ss = R"(
 
 		software-system {
@@ -3821,78 +3821,11 @@ QUARK_UNIT_TEST("software-system", "test parsing all data", "", ""){
 			"connections": [
 				{ "source": "Game", "dest": "iphone app", "interaction": "plays", "tech": "" }
 			],
-			"containers": {
-				"gmail mail server": {},
-
-				"iphone app": {
-					"tech": "Swift, iOS, Xcode, Open GL",
-					"desc": "Mobile shooter game for iOS.",
-
-					"clocks": {
-						"main": {
-							"a": "my_gui_main",
-							"b": "iphone-ux"
-						},
-
-						"com-clock": {
-							"c": "server_com"
-						},
-						"opengl_feeder": {
-							"d": "renderer"
-						}
-					},
-					"connections": [
-						{ "source": "b", "dest": "a", "interaction": "b sends messages to a", "tech": "OS call" },
-						{ "source": "b", "dest": "c", "interaction": "b also sends messages to c, which is another clock", "tech": "OS call" }
-					],
-					"components": [
-						"My Arcade Game-iphone-app",
-						"My Arcade Game-logic",
-						"My Arcade Game-servercom",
-						"OpenGL-component",
-						"Free Game Engine-component",
-						"iphone-ux-component"
-					]
-				},
-
-				"Android app": {
-					"tech": "Kotlin, Javalib, Android OS, OpenGL",
-					"desc": "Mobile shooter game for Android OS.",
-	 
-					"clocks": {
-						"main": {
-							"a": "my_gui_main",
-							"b": "iphone-ux"
-						},
-						"com-clock": {
-							"c": "server_com"
-						},
-						"opengl_feeder": {
-							"d": "renderer"
-						}
-					},
-					"components": [
-						"My Arcade Game-android-app",
-						"My Arcade Game-logic",
-						"My Arcade Game-servercom",
-						"OpenGL-component",
-						"Free Game Engine-component",
-						"Android-ux-component"
-					]
-				},
-				"Game Server with players & admin web": {
-					"tech": "Django, Pythong, Heroku, Postgres",
-					"desc": "The database that stores all user accounts, levels and talks to the mobile apps and handles admin tasks.",
-
-					"clocks": {
-						"main": {}
-					},
-					"components": [
-						"My Arcade Game-logic",
-						"My Arcade Game server logic"
-					]
-				}
-			}
+			"containers": [
+				"gmail mail server",
+				"iphone app",
+				"Android app"
+			]
 		}
 		result = 123
 
@@ -3909,15 +3842,16 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 			"desc": "Space shooter for mobile devices, with connection to a server.",
 			"people": {},
 			"connections": [],
-			"containers": {
-				"iphone app": {
-					"tech": "Swift, iOS, Xcode, Open GL",
-					"desc": "Mobile shooter game for iOS.",
-					"clocks": {
-						"main": {
-							"a": "my_gui",
-						}
-					}
+			"containers": [ "iphone app" ]
+		}
+
+		container-def {
+			"name": "iphone app",
+			"tech": "Swift, iOS, Xcode, Open GL",
+			"desc": "Mobile shooter game for iOS.",
+			"clocks": {
+				"main": {
+					"a": "my_gui"
 				}
 			}
 		}
@@ -3929,11 +3863,15 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 		func my_gui_state_t my_gui__init() impure {
 			send("a", "dec")
 			send("a", "dec")
+			send("a", "dec")
+			send("a", "dec")
 			send("a", "stop")
 			return my_gui_state_t(1000)
 		}
 
 		func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
+			print("received: " + to_string(message) + ", state: " + to_string(state))
+
 			if(message == "inc"){
 				return update(state, "_count", state._count + 1)
 			}
@@ -3947,7 +3885,8 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 	)";
 
 	program_recording.push_back(test_ss2);
-	run_container(test_ss2, {}, "iphone app");
+	const auto result = run_container(test_ss2, {}, "iphone app");
+	QUARK_UT_VERIFY(result.empty());
 }
 
 QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
@@ -3957,16 +3896,19 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 			"desc": "Space shooter for mobile devices, with connection to a server.",
 			"people": {},
 			"connections": [],
-			"containers": {
-				"iphone app": {
-					"tech": "Swift, iOS, Xcode, Open GL",
-					"desc": "Mobile shooter game for iOS.",
-					"clocks": {
-						"main": {
-							"a": "my_gui",
-							"b": "my_audio",
-						}
-					}
+			"containers": [
+				"iphone app"
+			]
+		}
+
+		container-def {
+			"name": "iphone app",
+			"tech": "Swift, iOS, Xcode, Open GL",
+			"desc": "Mobile shooter game for iOS.",
+			"clocks": {
+				"main": {
+					"a": "my_gui",
+					"b": "my_audio"
 				}
 			}
 		}
@@ -3987,6 +3929,8 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 		}
 
 		func my_gui_state_t my_gui(my_gui_state_t state, json_value message) impure {
+			print("my_gui --- received: " + to_string(message) + ", state: " + to_string(state))
+
 			if(message == "inc"){
 				return update(state, "_count", state._count + 1)
 			}
@@ -4013,6 +3957,8 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 		}
 
 		func my_audio_state_t my_audio(my_audio_state_t state, json_value message) impure {
+			print("my_audio --- received: " + to_string(message) + ", state: " + to_string(state))
+
 			if(message == "process"){
 				return update(state, "_audio", state._audio + 1)
 			}
@@ -4024,11 +3970,8 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 
 	program_recording.push_back(test_ss3);
 	const auto result = run_container(test_ss3, {}, "iphone app");
-	QUARK_UT_VERIFY(result.size() == 2);
-	QUARK_UT_VERIFY(result.at("a").get_struct_value()->_member_values[0].get_int_value() == 997);
-	QUARK_UT_VERIFY(result.at("b").get_struct_value()->_member_values[0].get_int_value() == 2);
+	QUARK_UT_VERIFY(result.empty());
 }
-
 
 QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 	const auto test_ss3 = R"(
@@ -4037,16 +3980,19 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 			"desc": "Space shooter for mobile devices, with connection to a server.",
 			"people": {},
 			"connections": [],
-			"containers": {
-				"iphone app": {
-					"tech": "Swift, iOS, Xcode, Open GL",
-					"desc": "Mobile shooter game for iOS.",
-					"clocks": {
-						"main": {
-							"a": "my_gui",
-							"b": "my_audio",
-						}
-					}
+			"containers": [
+				"iphone app"
+			]
+		}
+
+		container-def {
+			"name": "iphone app",
+			"tech": "Swift, iOS, Xcode, Open GL",
+			"desc": "Mobile shooter game for iOS.",
+			"clocks": {
+				"main": {
+					"a": "my_gui",
+					"b": "my_audio",
 				}
 			}
 		}
@@ -4063,6 +4009,8 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 		}
 
 		func my_gui_state_t my_gui(my_gui_state_t state, json_value message) impure {
+			print("my_gui --- received: " + to_string(message) + ", state: " + to_string(state))
+
 			if(message == "2"){
 				send("b", "3")
 				return update(state, "_count", state._count + 1)
@@ -4090,6 +4038,8 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 		}
 
 		func my_audio_state_t my_audio(my_audio_state_t state, json_value message) impure {
+			print("my_audio --- received: " + to_string(message) + ", state: " + to_string(state))
+
 			if(message == "1"){
 				send("a", "2")
 				return update(state, "_audio", state._audio + 1)
@@ -4106,9 +4056,7 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 
 	program_recording.push_back(test_ss3);
 	const auto result = run_container(test_ss3, {}, "iphone app");
-	QUARK_UT_VERIFY(result.size() == 2);
-	QUARK_UT_VERIFY(result.at("a").get_struct_value()->_member_values[0].get_int_value() == 1011);
-	QUARK_UT_VERIFY(result.at("b").get_struct_value()->_member_values[0].get_int_value() == 5);
+	QUARK_UT_VERIFY(result.empty());
 }
 
 
@@ -4116,8 +4064,13 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 
 
 
+///////////////////////////////////////////////////////////////////////////////////////
+//	RUN ALL EXAMPLE PROGRAMS -- VERIFY THEY WORK
+///////////////////////////////////////////////////////////////////////////////////////
 
-QUARK_UNIT_TEST_VIP("software-system", "run two CONNECTED processes", "", ""){
+
+
+QUARK_UNIT_TEST("", "hello_world.floyd", "", ""){
 	const auto path = get_working_dir() + "/hello_world.floyd";
 	const auto program = read_text_file(path);
 
@@ -4125,3 +4078,21 @@ QUARK_UNIT_TEST_VIP("software-system", "run two CONNECTED processes", "", ""){
 	const std::map<std::string, value_t> expected = {{ "global", value_t::make_void() }};
 	QUARK_UT_VERIFY(result == expected);
 }
+
+QUARK_UNIT_TEST("", "game_of_life.floyd", "", ""){
+	const auto path = get_working_dir() + "/game_of_life.floyd";
+	const auto program = read_text_file(path);
+
+	const auto result = run_container(program, {}, "");
+	const std::map<std::string, value_t> expected = {{ "global", value_t::make_void() }};
+	QUARK_UT_VERIFY(result == expected);
+}
+
+QUARK_UNIT_TEST("", "process_test1.floyd", "", ""){
+	const auto path = get_working_dir() + "/process_test1.floyd";
+	const auto program = read_text_file(path);
+
+	const auto result = run_container(program, {}, "iphone app");
+	QUARK_UT_VERIFY(result.empty());
+}
+

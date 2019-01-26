@@ -332,6 +332,12 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 
 		return statement_t::make__software_system_statement(json_data);
 	}
+	else if(type == keyword_t::k_container_def){
+		QUARK_ASSERT(statement.get_array_size() == 2);
+		const auto json_data = statement.get_array_n(1);
+
+		return statement_t::make__container_def_statement(json_data);
+	}
 
 	//	[ "expression-statement", EXPRESSION ]
 	else if(type == "expression-statement"){
@@ -536,6 +542,12 @@ ast_json_t statement_to_json(const statement_t& e){
 		ast_json_t operator()(const statement_t::software_system_statement_t& s) const{
 			return ast_json_t{json_t::make_array({
 				json_t(keyword_t::k_software_system),
+				s._json_data
+			})};
+		}
+		ast_json_t operator()(const statement_t::container_def_statement_t& s) const{
+			return ast_json_t{json_t::make_array({
+				json_t(keyword_t::k_container_def),
 				s._json_data
 			})};
 		}

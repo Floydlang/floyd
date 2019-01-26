@@ -149,9 +149,9 @@ int test_main (int argc, char *argv[]) {
 	board[3 + BOARD_WIDTH / 2][1 + BOARD_HEIGHT / 2] = 'x';
 
 
-	/* play game of life 100 times */
+	/* play game of life 5 times */
 
-	for (i=0; i<100; i++) {
+	for (i=0; i<5; i++) {
 		printf ("%d\n", i);
 		print (board);
 		play (board);

@@ -595,6 +595,9 @@ bcgen_body_t bcgen_body_block(bcgenerator_t& vm, const body_t& body){
 				bcgen_body_t operator()(const statement_t::software_system_statement_t& s) const{
 					return body_acc;
 				}
+				bcgen_body_t operator()(const statement_t::container_def_statement_t& s) const{
+					return body_acc;
+				}
 			};
 
 			body_acc = std::visit(visitor_t{vm, body_acc}, statement._contents);
@@ -1559,7 +1562,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 		}
 	}
 
-	const auto result = bc_program_t{ globals2, function_defs2, a._types, ast._checked_ast._software_system };
+	const auto result = bc_program_t{ globals2, function_defs2, a._types, ast._checked_ast._software_system, ast._checked_ast._container_def };
 
 	QUARK_TRACE_SS("OUTPUT: " << json_to_pretty_string(bcprogram_to_json(result)));
 

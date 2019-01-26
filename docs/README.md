@@ -83,16 +83,11 @@ The details on Tweakers, probes and Floyd Studio are on the drawing board.
 |Item				| Feature					| Link
 |:---				|:---					|:---
 | **Floyd Speak Manual**		|Details the language itself				|[Floyd Speak Manual](floyd_speak.md)
-| **Floyd Speak Core Library Manual**		|Details the must fundametal functions and types				|[Floyd Speak Core Library Manual](floyd_speak_corelibs.md)
+| **Floyd Speak Core Library Manual**		|Details the most fundamental functions and types				|[Floyd Speak Core Library Manual](floyd_speak_corelibs.md)
 | **Floyd Speak compiler**		|Compiles Floyd Speak source code to byte code.
 | **Floyd Speak interpreter**	|Runs your programs at approx. 7-15% of native speeds.
 | **Floyd Systems Manual**		|				|[Floyd Systems Manual](floyd_systems.md)
-| **Floyd Systems Reference**	|				|[Floyd Systems Reference](floyd_systems_ref.md)
 | **TODO POC: Floyd Systems compiler**			|compiles floyd systems and containers etc to byte code.|
 | Standard library				|A number of basic components|
 
 Floyd compilers and tools are written in portable C++17.
-
-
-##### BACKLOG
-These are upcoming features, listed here to give you an idea of what the plan is: [Floyd Backlog](backlog.md)

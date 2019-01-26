@@ -396,6 +396,24 @@ namespace floyd {
 		}
 
 
+		//////////////////////////////////////		container_def_statement_t
+
+
+		struct container_def_statement_t {
+			bool operator==(const container_def_statement_t& other) const {
+				return _json_data == other._json_data;
+			}
+
+			json_t _json_data;
+		};
+
+		public: static statement_t make__container_def_statement(
+			json_t json_data
+		){
+			return statement_t{ ._contents = {container_def_statement_t{ json_data }} };
+		}
+
+
 		//////////////////////////////////////		while_statement_t
 
 
@@ -510,6 +528,9 @@ namespace floyd {
 				bool operator()(const software_system_statement_t& s) const{
 					return true;
 				}
+				bool operator()(const container_def_statement_t& s) const{
+					return true;
+				}
 			};
 
 			return std::visit(visitor_t{}, _contents);
@@ -533,7 +554,8 @@ namespace floyd {
 			for_statement_t,
 			while_statement_t,
 			expression_statement_t,
-			software_system_statement_t
+			software_system_statement_t,
+			container_def_statement_t
 		> _contents;
 	};
 

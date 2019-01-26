@@ -147,9 +147,9 @@ func int test_main ([string] args) impure {
 	board = update(board, 3 + BOARD_WIDTH / 2, update(board[3 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
 	board = update(board, 3 + BOARD_WIDTH / 2, update(board[3 + BOARD_WIDTH / 2], 1 + BOARD_HEIGHT / 2, 120))
 
-	/* play game of life 100 times */
+	/* play game of life 5 times */
 
-	for (i in 0 ..< 100) {
+	for (i in 0 ..< 5) {
 		print(to_string(i) + ":")
 		print_board(board)
 		board = play(board)

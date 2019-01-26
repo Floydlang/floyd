@@ -38,7 +38,7 @@ Converts its input to a string of JSON data that is formatted nicely with indent
 
 
 
-## jsonvalue_to_script()
+## jsonvalue\_to\_script()
 
 Pack a JSON value to a JSON script string, ready to write to a file, send via protocol etc. The string is unescaped.
 
@@ -48,7 +48,7 @@ The result is a valid JSON script string that can be handed to another system to
 
 
 
-## script_to_jsonvalue()
+## script\_to\_jsonvalue()
 
 Make a new Floyd JSON value from a JSON-script string. If the string is malformed, exceptions will be thrown. The string is unescaped.
  

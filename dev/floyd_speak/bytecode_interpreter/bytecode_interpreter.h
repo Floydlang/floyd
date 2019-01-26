@@ -1619,6 +1619,7 @@ namespace floyd {
 		public: std::vector<bc_function_definition_t> _function_defs;
 		public: std::vector<typeid_t> _types;
 		public: software_system_t _software_system;
+		public: container_t _container_def;
 	};
 
 	json_t bcprogram_to_json(const bc_program_t& program);

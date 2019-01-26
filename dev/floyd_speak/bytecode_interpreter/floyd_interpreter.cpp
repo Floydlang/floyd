@@ -595,7 +595,21 @@ std::map<std::string, value_t> run_container_int(const bc_program_t& program, co
 */
 	QUARK_ASSERT(container_key.empty() == false);
 
-	runtime._container = program._software_system._containers.at(container_key);
+
+	//??? Confusing. Support several containers!
+	if(std::find(program._software_system._containers.begin(), program._software_system._containers.end(), container_key) == program._software_system._containers.end()){
+		throw std::runtime_error("Unknown container-key");
+	}
+
+	if(program._container_def._name != container_key){
+		throw std::runtime_error("Unknown container-key");
+	}
+
+	runtime._container = program._container_def;
+
+
+
+
 	runtime._process_infos = fold(runtime._container._clock_busses, std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const pair<string, clock_bus_t>& e){
 		auto acc2 = acc;
 		acc2.insert(e.second._processes.begin(), e.second._processes.end());
@@ -651,6 +665,7 @@ std::map<std::string, value_t> run_container_int(const bc_program_t& program, co
 		t.join();
 	}
 
+#if 0
 	const auto result_vec = mapf<pair<string, value_t>>(
 		runtime._processes,
 		[](const auto& process){ return pair<string, value_t>{ process->_name_key, process->_process_state };}
@@ -662,6 +677,8 @@ std::map<std::string, value_t> run_container_int(const bc_program_t& program, co
 	}
 
 	return result_map;
+#endif
+	return {};
 //	QUARK_UT_VERIFY(runtime._processes[0]->_process_state.get_struct_value()->_member_values[0].get_int_value() == 998);
 }
 

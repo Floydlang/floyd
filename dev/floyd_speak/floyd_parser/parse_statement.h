@@ -127,6 +127,8 @@ namespace floyd {
 
 
 	std::pair<ast_json_t, seq_t> parse_software_system(const seq_t& s);
+	std::pair<ast_json_t, seq_t> parse_container_def(const seq_t& s);
+
 
 }	//	floyd
 

@@ -53,6 +53,7 @@ container_t unpack_container(const json_t& container_obj){
 		container_t{}
 	:
 		container_t{
+		._name = container_obj.get_object_element("name").get_string(),
 		._tech = container_obj.get_object_element("tech").get_string(),
 		._desc = container_obj.get_object_element("desc").get_string(),
 		._clock_busses = unpack_clock_busses(container_obj.get_object_element("clocks")),
@@ -61,13 +62,11 @@ container_t unpack_container(const json_t& container_obj){
 	};
 }
 
-std::map<string, container_t> unpack_containers(const json_t& containers_obj){
-	std::map<string, container_t> result;
-	const auto containers_map = containers_obj.get_object();
-	for(const auto& container_pair: containers_map){
-		const auto name = container_pair.first;
-		const auto container = unpack_container(container_pair.second);
-		result.insert({name, container});
+std::vector<string> unpack_containers(const json_t& containers_obj){
+	std::vector<string> result;
+	const auto container_array = containers_obj.get_array();
+	for(const auto& e: container_array){
+		result.push_back(e.get_string());
 	}
 	return result;
 }
@@ -85,4 +84,8 @@ software_system_t parse_software_system_json(const json_t& value){
 		._connections = {},
 		._containers = containers
 	};
+}
+
+container_t parse_container_def_json(const json_t& value){
+	return unpack_container(value);
 }

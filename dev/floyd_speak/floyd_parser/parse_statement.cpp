@@ -454,7 +454,7 @@ QUARK_UNIT_TEST("", "parse_while_statement()", "while(){}", ""){
 
 
 /*
-	software_system: JSON
+	software-system: JSON
 */
 
 
@@ -470,6 +470,30 @@ pair<ast_json_t, seq_t> parse_software_system(const seq_t& s){
 	std::pair<json_t, seq_t> json_pos = parse_json(ss_pos.second);
 
 	const auto r = ast_json_t{json_t::make_array({ keyword_t::k_software_system, json_pos.first })};
+	return { r, json_pos.second };
+}
+
+
+//////////////////////////////////////////////////		parse_container_def()
+
+
+/*
+	container-def: JSON
+*/
+
+
+
+pair<ast_json_t, seq_t> parse_container_def(const seq_t& s){
+	const auto ss_pos = if_first(skip_whitespace(s), keyword_t::k_container_def);
+	if(ss_pos.first == false){
+		throw std::runtime_error("Syntax error");
+	}
+
+	//??? Instead of parsing a static JSON literal, we could parse a Floyd expression that results in a JSON value = use variables etc.
+//	const auto expr = parse_expression_seq(ss_pos.second);
+	std::pair<json_t, seq_t> json_pos = parse_json(ss_pos.second);
+
+	const auto r = ast_json_t{json_t::make_array({ keyword_t::k_container_def, json_pos.first })};
 	return { r, json_pos.second };
 }
 
