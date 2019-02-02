@@ -483,6 +483,8 @@ string get_current_thread_name(){
 #ifndef __EMSCRIPTEN_PTHREADS__
 	//pthread_setname_np(pthread_self(), s.c_str()); // set the name (pthread_self() returns the pthread_t of the current thread)
 	pthread_getname_np(pthread_self(), &name[0], sizeof(name));
+#else
+	strcpy(name, "");
 #endif
 	if(strlen(name) == 0){
 		return "main";
