@@ -10,6 +10,11 @@
 #define text_parser_hpp
 
 #include <string>
+#include <memory>
+#include <vector>
+#include <cmath>
+
+using std::isnan;
 
 struct seq_t;
 

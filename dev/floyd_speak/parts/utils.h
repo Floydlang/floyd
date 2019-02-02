@@ -9,6 +9,7 @@
 #ifndef utils_hpp
 #define utils_hpp
 
+#include <algorithm>
 #include "quark.h"
 #include <memory>
 #include <vector>

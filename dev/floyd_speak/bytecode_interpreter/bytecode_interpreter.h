@@ -20,6 +20,7 @@
 #include "json_support.h"
 #include "software_system.h"
 #include <atomic>
+#include <chrono>
 
 
 //??? remove usage of typeid_t. Use itype & types[]?

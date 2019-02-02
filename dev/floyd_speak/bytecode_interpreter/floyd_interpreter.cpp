@@ -480,8 +480,10 @@ std::packaged_task
 string get_current_thread_name(){
 	char name[16];
 
+#ifndef __EMSCRIPTEN_PTHREADS__
 	//pthread_setname_np(pthread_self(), s.c_str()); // set the name (pthread_self() returns the pthread_t of the current thread)
 	pthread_getname_np(pthread_self(), &name[0], sizeof(name));
+#endif
 	if(strlen(name) == 0){
 		return "main";
 	}
@@ -661,7 +663,9 @@ std::map<std::string, value_t> run_container_int(const bc_program_t& program, co
 
 			std::stringstream thread_name;
 			thread_name << string() << "process " << process_id << " thread";
+#ifdef __APPLE__
 			pthread_setname_np(/*pthread_self(),*/ thread_name.str().c_str());
+#endif
 
 			process_process(runtime, process_id);
 		}, process_id));
@@ -729,3 +733,29 @@ std::map<std::string, value_t> run_container2(const string& source, const vector
 
 
 }	//	floyd
+#ifdef  __EMSCRIPTEN__
+
+#include <emscripten/bind.h>
+
+using namespace emscripten;
+
+
+// C++ code callable from javascript
+int runFloyd(std::string inStr) {
+
+    //vector<floyd::value_t> args("");
+    //const std::string& container_key;
+
+    floyd::run_container2(inStr,{},"");
+
+
+    return 1;
+}
+
+// Expose function to JS
+EMSCRIPTEN_BINDINGS(my_module) {
+    function("runFloyd", &runFloyd);
+}
+
+#endif
+

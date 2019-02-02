@@ -21,6 +21,10 @@
 #ifndef quark_h
 #define quark_h
 
+#include <memory>
+#ifndef __APPLE__
+#define	__dead2
+#endif
 
 /*
 # QUARK - THE C++ SUPER GLUE
