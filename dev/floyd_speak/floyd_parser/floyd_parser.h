@@ -27,11 +27,14 @@ namespace floyd {
 
 	std::pair<ast_json_t, seq_t> parse_statement(const seq_t& pos0);
 
-	//	returns json-array of statements.
-	parse_result_t parse_statements(const seq_t& s);
+	//	"a = 1; print(a)"
+	parse_result_t parse_statements_no_brackets(const seq_t& s);
+
+	//	"{ a = 1; print(a) }"
+	parse_result_t parse_statements_bracketted(const seq_t& s);
 
 	//	returns json-array of statements.
-	parse_result_t parse_program2(const std::string& program, int pre_line_count);
+	parse_result_t parse_program2(const std::string& program);
 
 }	//	floyd
 

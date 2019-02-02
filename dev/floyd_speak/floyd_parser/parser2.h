@@ -14,6 +14,7 @@
 #include "quark.h"
 #include "text_parser.h"
 #include "utils.h"
+#include "floyd_basics.h"
 
 #include <string>
 #include <memory>
@@ -220,6 +221,7 @@ struct expr_t {
 	std::vector<expr_t> _exprs;
 	std::shared_ptr<constant_value_t> _constant;
 	std::string _identifier;
+	floyd::location_t _location;
 };
 
 inline bool operator==(const expr_t& a, const expr_t& b){

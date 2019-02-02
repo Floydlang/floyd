@@ -22,9 +22,9 @@ namespace floyd {
 
 
 	std::pair<ast_json_t, seq_t>  parse_protocol_definition_body(const seq_t& p, const std::string& name){
-		const auto s2 = skip_whitespace(p);
-		read_required_char(s2, '{');
-		const auto body_pos = get_balanced(s2);
+		const auto start = skip_whitespace(p);
+		read_required_char(start, '{');
+		const auto body_pos = get_balanced(start);
 
 		vector<member_t> functions;
 
@@ -50,7 +50,7 @@ namespace floyd {
 		}
 
 		const auto r = make_statement1(
-			0,
+			location_t(start.pos()),
 			"def-protocol",
 			json_t::make_object({
 				{ "name", name },
@@ -85,6 +85,7 @@ namespace floyd {
 
 		const auto expected =
 		json_t::make_array({
+			17,
 			"def-protocol",
 			json_t::make_object({
 				{ "name", "prot" },

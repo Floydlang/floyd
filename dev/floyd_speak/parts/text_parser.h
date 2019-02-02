@@ -110,6 +110,7 @@ struct seq_t {
 	public: std::string get_s() const { return str(); }
 	public: std::string str() const;
 	public: std::size_t size() const;
+	public: std::size_t pos() const;
 
 	//	If true, there are no more characters.
 	public: bool empty() const;

@@ -23,7 +23,7 @@
 
 using namespace std;
 using floyd::keyword_t;
-
+using floyd::location_t;
 
 namespace parser2 {
 
@@ -71,45 +71,45 @@ seq_t skip_expr_whitespace(const seq_t& p) {
 */
 
 const expr_t maker__make_identifier(const std::string& s){
-	return expr_t{ eoperation::k_0_resolve, {}, {}, s };
+	return expr_t{ eoperation::k_0_resolve, {}, {}, s, floyd::k_no_location };
 }
 
 const expr_t maker__make1(const eoperation op, const expr_t& expr){
-	return expr_t{ op, { expr }, {}, "" };
+	return expr_t{ op, { expr }, {}, "", floyd::k_no_location };
 }
 
 const expr_t maker__make2(const eoperation op, const expr_t& lhs, const expr_t& rhs){
-	return expr_t{ op, { lhs, rhs }, {}, "" };
+	return expr_t{ op, { lhs, rhs }, {}, "", floyd::k_no_location };
 }
 
 const expr_t maker__make3(const eoperation op, const expr_t& e1, const expr_t& e2, const expr_t& e3){
-	return expr_t{ op, { e1, e2, e3 }, {}, "" };
+	return expr_t{ op, { e1, e2, e3 }, {}, "", floyd::k_no_location };
 }
 
 const expr_t maker__call(const expr_t& f, const std::vector<expr_t>& args){
 	std::vector<expr_t> exprs;
 	exprs.push_back(f);
 	exprs.insert(exprs.end(), args.begin(), args.end());
-	return expr_t{ eoperation::k_n_call, exprs, {}, "" };
+	return expr_t{ eoperation::k_n_call, exprs, {}, "", floyd::k_no_location };
 }
 
 const expr_t maker_vector_definition(const std::string& element_type, const std::vector<expr_t>& elements){
-	return expr_t{ eoperation::k_1_vector_definition, elements, {}, element_type };
+	return expr_t{ eoperation::k_1_vector_definition, elements, {}, element_type, floyd::k_no_location };
 }
 const expr_t maker_dict_definition(const std::string& value_type, const std::vector<expr_t>& elements){
-	return expr_t{ eoperation::k_1_dict_definition, elements, {}, value_type };
+	return expr_t{ eoperation::k_1_dict_definition, elements, {}, value_type, floyd::k_no_location };
 }
 
 const expr_t maker__member_access(const expr_t& address, const std::string& member_name){
-	return expr_t{ eoperation::k_x_member_access, { address }, {}, member_name };
+	return expr_t{ eoperation::k_x_member_access, { address }, {}, member_name, floyd::k_no_location };
 }
 
 const expr_t maker__make_constant(const constant_value_t& value){
 	if(value._type == constant_value_t::etype::k_string){
-		return expr_t{ eoperation::k_0_string_literal, {}, std::make_shared<constant_value_t>(value), "" };
+		return expr_t{ eoperation::k_0_string_literal, {}, std::make_shared<constant_value_t>(value), "", floyd::k_no_location };
 	}
 	else{
-		return expr_t{ eoperation::k_0_number_constant, {}, std::make_shared<constant_value_t>(value), "" };
+		return expr_t{ eoperation::k_0_number_constant, {}, std::make_shared<constant_value_t>(value), "", floyd::k_no_location };
 	}
 }
 /*

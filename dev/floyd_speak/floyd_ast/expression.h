@@ -61,6 +61,7 @@ namespace floyd {
 		public: bool check_types_resolved() const;
 
 
+		const location_t _location;
 		const typeid_t _function_type;
 		const std::vector<member_t> _args;
 		const std::shared_ptr<body_t> _body;

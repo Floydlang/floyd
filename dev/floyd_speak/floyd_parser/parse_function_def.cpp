@@ -26,7 +26,8 @@ namespace floyd {
 
 
 std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos){
-	const auto func_pos = read_required(skip_whitespace(pos), keyword_t::k_func);
+	const auto start = skip_whitespace(pos);
+	const auto func_pos = read_required(start, keyword_t::k_func);
 	const auto return_type_pos = read_required_type(func_pos);
 	const auto function_name_pos = read_required_identifier(return_type_pos.second);
 	const auto args_pos = read_function_arg_parantheses(skip_whitespace(function_name_pos.second));
@@ -38,7 +39,7 @@ std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos){
 	const auto function_name = function_name_pos.first;
 
 	const auto function_def = make_statement1(
-		0,
+		location_t(start.pos()),
 		"def-func",
 		json_t::make_object({
 			{ "name", function_name },
@@ -63,8 +64,9 @@ QUARK_UNIT_TEST("", "parse_function_definition2()", "Minimal function IMPURE", "
 	const std::string input = "func int f() impure{ return 3; }";
 	const std::string expected = R"(
 		[
+			0,
 			"def-func",
-			{ "args": [], "name": "f", "return_type": "^int", "statements": [["return", ["k", 3, "^int"]]], "impure": true }
+			{ "args": [], "name": "f", "return_type": "^int", "statements": [[21, "return", ["k", 3, "^int"]]], "impure": true }
 		]
 	)";
 	ut_compare_jsons(parse_function_definition2(seq_t(input)).first._value, parse_json(seq_t(expected)).first);
@@ -77,8 +79,9 @@ const std::vector<test> testsxyz = {
 
 		R"(
 			[
+				0,
 				"def-func",
-				{ "args": [], "name": "f", "return_type": "^int", "statements": [["return", ["k", 3, "^int"]]], "impure": false }
+				{ "args": [], "name": "f", "return_type": "^int", "statements": [[14, "return", ["k", 3, "^int"]]], "impure": false }
 			]
 		)"
 	},
@@ -87,6 +90,7 @@ const std::vector<test> testsxyz = {
 		"func int printf(string a, double barry, int c){ return 3; }",
 		R"(
 			[
+				0,
 				"def-func",
 				{
 					"args": [
@@ -96,7 +100,7 @@ const std::vector<test> testsxyz = {
 					],
 					"name": "printf",
 					"return_type": "^int",
-					"statements": [["return", ["k", 3, "^int"]]],
+					"statements": [[48, "return", ["k", 3, "^int"]]],
 					"impure": false
 				}
 			]
@@ -107,6 +111,7 @@ const std::vector<test> testsxyz = {
 		" func  \t int \t printf( \t string \t a \t , \t double \t b \t ){ \t return \t 3 \t ; \t } \t ",
 		R"(
 			[
+				1,
 				"def-func",
 				{
 					"args": [
@@ -115,7 +120,7 @@ const std::vector<test> testsxyz = {
 					],
 					"name": "printf",
 					"return_type": "^int",
-					"statements": [["return", ["k", 3, "^int"]]],
+					"statements": [[60, "return", ["k", 3, "^int"]]],
 					"impure": false
 				}
 			]
@@ -126,6 +131,7 @@ const std::vector<test> testsxyz = {
 		"func int printf(string a,double b){return 3;}",
 		R"(
 			[
+				0,
 				"def-func",
 				{
 					"args": [
@@ -134,7 +140,7 @@ const std::vector<test> testsxyz = {
 					],
 					"name": "printf",
 					"return_type": "^int",
-					"statements": [["return", ["k", 3, "^int"]]],
+					"statements": [[35, "return", ["k", 3, "^int"]]],
 					"impure": false
 				}
 			]

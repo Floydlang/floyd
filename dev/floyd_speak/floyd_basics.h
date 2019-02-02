@@ -91,6 +91,33 @@ struct ast_json_t {
 
 
 
+struct location2_t {
+	location2_t(const std::string& source_file_path, int line_number, int column) :
+		source_file_path(source_file_path),
+		line_number(line_number),
+		column(column)
+	{
+	}
+
+	std::string source_file_path;
+	int line_number;
+	int column;
+};
+
+struct location_t {
+	explicit location_t(std::size_t offset) :
+		offset(offset)
+	{
+	}
+
+	std::size_t offset;
+};
+
+inline bool operator==(const location_t& lhs, const location_t& rhs){
+	return lhs.offset == rhs.offset;
+}
+extern const location_t k_no_location;
+
 
 //??? move operation codes here.
 

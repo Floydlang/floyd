@@ -330,6 +330,11 @@ std::size_t seq_t::size() const{
 
 	return empty() ? 0 : _str->size() - _pos;
 }
+std::size_t seq_t::pos() const{
+	QUARK_ASSERT(check_invariant());
+
+	return _pos;
+}
 
 
 bool seq_t::empty() const{

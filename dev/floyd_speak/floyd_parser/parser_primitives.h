@@ -153,29 +153,18 @@ inline int count_lines(const seq_t& start, const seq_t& end){
 }
 
 
-struct location_t {
-	location_t(const std::string& source_file_path, int line_number, int column) :
-		source_file_path(source_file_path),
-		line_number(line_number),
-		column(column)
-	{
-	}
 
-	std::string source_file_path;
-	int line_number;
-	int column;
-};
 
-ast_json_t make_statement_n(int64_t location, const std::string& opcode, const std::vector<json_t>& params);
-ast_json_t make_statement1(int64_t location, const std::string& opcode, const json_t& params);
-ast_json_t make_statement2(int64_t location, const std::string& opcode, const json_t& param1, const json_t& param2);
-ast_json_t make_statement3(int64_t location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3);
-ast_json_t make_statement4(int64_t location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3, const json_t& param4);
+ast_json_t make_statement_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
+ast_json_t make_statement1(const location_t& location, const std::string& opcode, const json_t& params);
+ast_json_t make_statement2(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2);
+ast_json_t make_statement3(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3);
+ast_json_t make_statement4(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3, const json_t& param4);
 
-ast_json_t make_expression_n(int64_t location, const std::string& opcode, const std::vector<json_t>& params);
-ast_json_t make_expression1(int64_t location, const std::string& opcode, const json_t& param);
-ast_json_t make_expression2(int64_t location, const std::string& opcode, const json_t& param1, const json_t& param2);
-ast_json_t make_expression3(int64_t location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3);
+ast_json_t make_expression_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
+ast_json_t make_expression1(const location_t& location, const std::string& opcode, const json_t& param);
+ast_json_t make_expression2(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2);
+ast_json_t make_expression3(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3);
 
 /*
 #include "floyd_basics.h"
@@ -184,7 +173,6 @@ ast_json_t make_expression3(int64_t location, const std::string& opcode, const j
 	struct parse_result_t {
 		ast_json_t ast;
 		seq_t pos;
-		std::vector<int> line_numbers;
 	};
 
 	

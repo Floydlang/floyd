@@ -25,6 +25,7 @@ using namespace std;
 
 bool operator==(const function_definition_t& lhs, const function_definition_t& rhs){
 	return true
+		&& lhs._location == rhs._location
 		&& lhs._function_type == rhs._function_type
 		&& lhs._args == rhs._args
 		&& compare_shared_values(lhs._body, rhs._body)
@@ -39,7 +40,7 @@ const typeid_t& get_function_type(const function_definition_t& f){
 ast_json_t function_def_to_ast_json(const function_definition_t& v) {
 	typeid_t function_type = get_function_type(v);
 	return make_expression_n(
-		0,
+		v._location,
 		"func-def",
 		{
 			typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state)._value,
@@ -132,7 +133,7 @@ ast_json_t expression_to_json_internal(const expression_t& e){
 
 	if(opcode == expression_type::k_literal){
 		return make_expression2(
-			0,
+			k_no_location,
 			"k",
 			value_to_ast_json(e._value, json_tags::k_tag_resolve_state)._value,
 			typeid_to_ast_json(e._value.get_type(), json_tags::k_tag_resolve_state)._value
@@ -140,18 +141,18 @@ ast_json_t expression_to_json_internal(const expression_t& e){
 	}
 	else if(is_arithmetic_expression(opcode) || is_comparison_expression(opcode)){
 		return make_expression2(
-			0,
+			k_no_location,
 			expression_type_to_token(opcode),
 			expression_to_json(e._input_exprs[0])._value,
 			expression_to_json(e._input_exprs[1])._value
 		);
 	}
 	else if(opcode == expression_type::k_arithmetic_unary_minus__1){
-		return make_expression1(0, expression_type_to_token(opcode), expression_to_json(e._input_exprs[0])._value);
+		return make_expression1(k_no_location, expression_type_to_token(opcode), expression_to_json(e._input_exprs[0])._value);
 	}
 	if(opcode == expression_type::k_conditional_operator3){
 		const auto a = make_expression3(
-			0,
+			k_no_location,
 			"?:",
 			expression_to_json(e._input_exprs[0])._value,
 			expression_to_json(e._input_exprs[1])._value,
@@ -163,27 +164,27 @@ ast_json_t expression_to_json_internal(const expression_t& e){
 		const auto callee = e._input_exprs[0];
 		const auto args = vector<expression_t>(e._input_exprs.begin() + 1, e._input_exprs.end());
 
-		return make_expression2(0, "call", expression_to_json(callee)._value, expressions_to_json(args)._value);
+		return make_expression2(k_no_location, "call", expression_to_json(callee)._value, expressions_to_json(args)._value);
 	}
 	else if(opcode == expression_type::k_define_struct){
-		return make_expression1(0, "def-struct", struct_definition_to_ast_json(*e._struct_def)._value);
+		return make_expression1(k_no_location, "def-struct", struct_definition_to_ast_json(*e._struct_def)._value);
 	}
 	else if(opcode == expression_type::k_define_function){
 		return ast_json_t{function_def_to_ast_json(*e._function_def)};
 	}
 	else if(opcode == expression_type::k_load){
-		return make_expression1(0, "@", json_t(e._variable_name));
+		return make_expression1(k_no_location, "@", json_t(e._variable_name));
 	}
 	else if(opcode == expression_type::k_load2){
-		return make_expression2(0, "@i", json_t(e._address._parent_steps), json_t(e._address._index));
+		return make_expression2(k_no_location, "@i", json_t(e._address._parent_steps), json_t(e._address._index));
 	}
 
 	else if(opcode == expression_type::k_resolve_member){
-		return make_expression2(0, "->", expression_to_json(e._input_exprs[0])._value, json_t(e._variable_name));
+		return make_expression2(k_no_location, "->", expression_to_json(e._input_exprs[0])._value, json_t(e._variable_name));
 	}
 	else if(opcode == expression_type::k_lookup_element){
 		return make_expression2(
-			0,
+			k_no_location,
 			"[]",
 			expression_to_json(e._input_exprs[0])._value,
 			expression_to_json(e._input_exprs[1])._value
@@ -192,7 +193,7 @@ ast_json_t expression_to_json_internal(const expression_t& e){
 
 	else if(opcode == expression_type::k_construct_value){
 		return make_expression2(
-			0,
+			k_no_location,
 			"construct-value",
 			typeid_to_ast_json(*e._output_type, json_tags::k_tag_resolve_state)._value,
 			expressions_to_json(e._input_exprs)._value

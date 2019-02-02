@@ -13,6 +13,8 @@ using std::vector;
 
 namespace floyd {
 
+const location_t k_no_location(std::numeric_limits<std::size_t>::max());
+
 //////////////////////////////////////////////////		keywords
 
 

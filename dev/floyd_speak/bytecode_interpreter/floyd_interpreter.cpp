@@ -376,6 +376,7 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 
 
 json_t parse_result_to_json(const parse_result_t& p){
+/*
 	const auto line_numbers = mapf<json_t>(
 		p.line_numbers,
 		[](const auto line){ return json_t(line); }
@@ -385,16 +386,17 @@ json_t parse_result_to_json(const parse_result_t& p){
 		{ "ast", p.ast._value },
 		{ "lines", line_numbers }
 	});
+*/
+	return p.ast._value;
 }
 
 
 bc_program_t compile_to_bytecode(const string& program){
 	const auto pre = k_builtin_types_and_constants + "\n";
-	const auto pre_line_count = count_lines(pre);
 	const auto p = pre + program;
 
 //	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
-	const auto pass1 = parse_program2(p, pre_line_count);
+	const auto pass1 = parse_program2(p);
 
 //	QUARK_TRACE_SS(		"OUTPUT: " << json_to_pretty_string(parse_result_to_json(pass1))	);
 
@@ -410,11 +412,10 @@ bc_program_t compile_to_bytecode(const string& program){
 
 semantic_ast_t compile_to_sematic_ast(const string& program){
 	const auto pre = k_builtin_types_and_constants + "\n";
-	const auto pre_line_count = count_lines(pre);
 	const auto p = pre + program;
 
 //	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
-	const auto pass1 = parse_program2(p, pre_line_count);
+	const auto pass1 = parse_program2(p);
 
 	const auto pass2 = json_to_ast(pass1.ast);
 	const auto pass3 = run_semantic_analysis(pass2);

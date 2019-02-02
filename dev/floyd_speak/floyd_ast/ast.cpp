@@ -163,12 +163,32 @@ expression_t astjson_to_expression(const json_t& e){
 	}
 }
 
+//	INPUT: [2, "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"]]
+std::pair<json_t, location_t> unpack_loc(const ast_json_t& s){
+	QUARK_ASSERT(s._value.is_array());
+
+	const bool has_location = s._value.get_array_n(0).is_number();
+	if(has_location){
+		const location_t source_offset = has_location ? location_t(static_cast<std::size_t>(s._value.get_array_n(0).get_number())) : k_no_location;
+
+		const auto elements = s._value.get_array();
+		const std::vector<json_t> elements2 = { elements.begin() + 1, elements.end() };
+		const auto statement = json_t::make_array(elements2);
+
+		return { statement, source_offset };
+	}
+	else{
+		return { s._value, k_no_location };
+	}
+}
+
 statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 	QUARK_ASSERT(statement0._value.check_invariant());
 	QUARK_ASSERT(statement0._value.is_array());
 
-	const auto statement = statement0._value;
-	const auto type = statement.get_array_n(0);
+	const auto s = unpack_loc(statement0);
+	const auto statement = s.first;
+	const std::string type = statement.get_array_n(0).get_string();
 
 	//	[ "return", [ "k", 3, "int" ] ]
 	if(type == "return"){
@@ -272,7 +292,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		const auto pure = impure.is_false();
 		const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2), pure ? epure::pure : epure::impure);
 		const auto body = body_t{fstatements2};
-		const auto function_def = function_definition_t{function_typeid, args2, make_shared<body_t>(body), 0};
+		const auto function_def = function_definition_t{k_no_location, function_typeid, args2, make_shared<body_t>(body), 0};
 
 		const auto s = statement_t::define_function_statement_t{ name2, std::make_shared<function_definition_t>(function_def) };
 		return statement_t::make__define_function_statement(s);
@@ -359,7 +379,6 @@ const std::vector<statement_t> astjson_to_statements(const ast_json_t& p){
 
 	vector<statement_t> statements2;
 	for(const auto& statement: p._value.get_array()){
-		const auto type = statement.get_array_n(0);
 		const auto s2 = astjson_to_statement__nonlossy(ast_json_t::make(statement));
 		statements2.push_back(s2);
 	}
@@ -442,17 +461,17 @@ ast_json_t statement_to_json(const statement_t& e){
 
 	struct visitor_t {
 		ast_json_t operator()(const statement_t::return_statement_t& s) const{
-			return make_statement1(0, keyword_t::k_return, expression_to_json(s._expression)._value);
+			return make_statement1(k_no_location, keyword_t::k_return, expression_to_json(s._expression)._value);
 		}
 		ast_json_t operator()(const statement_t::define_struct_statement_t& s) const{
-			return make_statement2(0, "def-struct", json_t(s._name), struct_definition_to_ast_json(*s._def)._value);
+			return make_statement2(k_no_location, "def-struct", json_t(s._name), struct_definition_to_ast_json(*s._def)._value);
 		}
 		ast_json_t operator()(const statement_t::define_protocol_statement_t& s) const{
-			return make_statement2(0, "def-protocol", json_t(s._name), protocol_definition_to_ast_json(*s._def)._value);
+			return make_statement2(k_no_location, "def-protocol", json_t(s._name), protocol_definition_to_ast_json(*s._def)._value);
 		}
 		ast_json_t operator()(const statement_t::define_function_statement_t& s) const{
 			return make_statement3(
-				0,
+				k_no_location,
 				"def-func",
 				json_t(s._name),
 				function_def_to_ast_json(*s._def)._value,
@@ -469,7 +488,7 @@ ast_json_t statement_to_json(const statement_t& e){
 				: json_t();
 
 			return make_statement4(
-				0,
+				k_no_location,
 				"bind",
 				s._new_local_name,
 				typeid_to_ast_json(s._bindtype, json_tags::k_tag_resolve_state)._value,
@@ -479,7 +498,7 @@ ast_json_t statement_to_json(const statement_t& e){
 		}
 		ast_json_t operator()(const statement_t::store_t& s) const{
 			return make_statement2(
-				0,
+				k_no_location,
 				"store",
 				s._local_name,
 				expression_to_json(s._expression)._value
@@ -487,7 +506,7 @@ ast_json_t statement_to_json(const statement_t& e){
 		}
 		ast_json_t operator()(const statement_t::store2_t& s) const{
 			return make_statement3(
-				0,
+				k_no_location,
 				"store2",
 				s._dest_variable._parent_steps,
 				s._dest_variable._index,
@@ -495,12 +514,12 @@ ast_json_t statement_to_json(const statement_t& e){
 			);
 		}
 		ast_json_t operator()(const statement_t::block_statement_t& s) const{
-			return make_statement1(0, "block", body_to_json(s._body)._value);
+			return make_statement1(k_no_location, "block", body_to_json(s._body)._value);
 		}
 
 		ast_json_t operator()(const statement_t::ifelse_statement_t& s) const{
 			return make_statement3(
-				0,
+				k_no_location,
 				keyword_t::k_if,
 				expression_to_json(s._condition)._value,
 				body_to_json(s._then_body)._value,
@@ -509,7 +528,7 @@ ast_json_t statement_to_json(const statement_t& e){
 		}
 		ast_json_t operator()(const statement_t::for_statement_t& s) const{
 			return make_statement4(
-				0,
+				k_no_location,
 				keyword_t::k_for,
 				//??? open_range?
 				json_t("closed_range"),
@@ -520,7 +539,7 @@ ast_json_t statement_to_json(const statement_t& e){
 		}
 		ast_json_t operator()(const statement_t::while_statement_t& s) const{
 			return make_statement2(
-				0,
+				k_no_location,
 				keyword_t::k_while,
 				expression_to_json(s._condition)._value,
 				body_to_json(s._body)._value
@@ -530,21 +549,21 @@ ast_json_t statement_to_json(const statement_t& e){
 
 		ast_json_t operator()(const statement_t::expression_statement_t& s) const{
 			return make_statement1(
-				0,
+				k_no_location,
 				"expression-statement",
 				expression_to_json(s._expression)._value
 			);
 		}
 		ast_json_t operator()(const statement_t::software_system_statement_t& s) const{
 			return make_statement1(
-				0,
+				k_no_location,
 				keyword_t::k_software_system,
 				s._json_data
 			);
 		}
 		ast_json_t operator()(const statement_t::container_def_statement_t& s) const{
 			return make_statement1(
-				0,
+				k_no_location,
 				keyword_t::k_container_def,
 				s._json_data
 			);
@@ -559,60 +578,6 @@ ast_t json_to_ast(const ast_json_t& parse_tree){
 	const auto program_body = astjson_to_statements(parse_tree);
 	return ast_t{body_t{program_body}, {}, {}, {}};
 }
-
-
-///////////////////////////////////////			TESTS
-
-
-const std::string k_test_program_0_parserout = R"(
-	[
-		[
-			"def-func",
-			{
-				"args": [],
-				"name": "main",
-				"return_type": "int",
-				"statements": [
-					[ "return", [ "k", 3, "int" ] ]
-				]
-			}
-		]
-	]
-)";
-const std::string k_test_program_0_pass2output = R"(
-	{
-		"globals": {
-			"statements": [
-				[
-					"bind",
-					"main",
-					[ "function", "int", [] ],
-					[
-						"func-def",
-						[ "function", "int", [] ],
-						[],
-						{
-							"statements": [
-								[
-									"return", [ "k", 3, "int" ]
-								]
-							],
-							"symbols": [
-							]
-						},
-						"int"
-					]
-				]
-			],
-			"symbols": [
-			]
-		}
-	}
-
-
-//	{ "statements": [["bind", "main", ["function", "int", []], ["func-def", ["function", "int", []], [], [["return", ["k", 3, "int", "int"]]], "int", ["function", "int", []]]]] }
-)";
-
 
 
 

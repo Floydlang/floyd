@@ -186,7 +186,8 @@ DETECT_TEST("", "detect_implicit_statement_lookahead()", "dict", "assign"){
 //	BIND:			mutable int x = 10
 //	BIND:			mutable x = 10
 pair<ast_json_t, seq_t> parse_bind_statement(const seq_t& s){
-	const auto let_pos = if_first(skip_whitespace(s), keyword_t::k_let);
+	const auto start = skip_whitespace(s);
+	const auto let_pos = if_first(start, keyword_t::k_let);
 	const auto mutable_pos = if_first(skip_whitespace(s), keyword_t::k_mutable);
 	if(let_pos.first == false && mutable_pos.first == false){
 		throw std::runtime_error("Bind syntax error");
@@ -219,7 +220,7 @@ pair<ast_json_t, seq_t> parse_bind_statement(const seq_t& s){
 		}
 	;
 
-	const auto statement = make_statement_n(0, "bind", params);
+	const auto statement = make_statement_n(location_t(start.pos()), "bind", params);
 
 	return { statement, expression_fr.second };
 }
@@ -238,7 +239,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 	ut_compare_json_and_rest(
 		parse_bind_statement(seq_t("let int test = 123 let int a = 4 ")),
 		R"(
-			[ "bind", "^int", "test", ["k", 123, "^int"]]
+			[ 0, "bind", "^int", "test", ["k", 123, "^int"]]
 		)",
 		" let int a = 4 "
 	);
@@ -251,7 +252,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 		parse_bind_statement(seq_t("let bool bb = true")).first._value,
 		parse_json(seq_t(
 			R"(
-				[ "bind", "^bool", "bb", ["k", true, "^bool"]]
+				[ 0, "bind", "^bool", "bb", ["k", true, "^bool"]]
 			)"
 		)).first
 	);
@@ -261,7 +262,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 		parse_bind_statement(seq_t("let int hello = 3")).first._value,
 		parse_json(seq_t(
 			R"(
-				[ "bind", "^int", "hello", ["k", 3, "^int"]]
+				[ 0, "bind", "^int", "hello", ["k", 3, "^int"]]
 			)"
 		)).first
 	);
@@ -272,7 +273,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 		parse_bind_statement(seq_t("mutable int a = 14")).first._value,
 		parse_json(seq_t(
 			R"(
-				[ "bind", "^int", "a", ["k", 14, "^int"], { "mutable": true }]
+				[ 0, "bind", "^int", "a", ["k", 14, "^int"], { "mutable": true }]
 			)"
 		)).first
 	);
@@ -283,7 +284,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 		parse_bind_statement(seq_t("mutable hello = 3")).first._value,
 		parse_json(seq_t(
 			R"(
-				[ "bind", "^**undef**", "hello", ["k", 3, "^int"], { "mutable": true }]
+				[ 0, "bind", "^**undef**", "hello", ["k", 3, "^int"], { "mutable": true }]
 			)"
 		)).first
 	);
@@ -297,7 +298,8 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 
 
 pair<ast_json_t, seq_t> parse_assign_statement(const seq_t& s){
-	const auto variable_pos = read_identifier(s);
+	const auto start = skip_whitespace(s);
+	const auto variable_pos = read_identifier(start);
 	if(variable_pos.first.empty()){
 		throw std::runtime_error("Assign syntax error");
 	}
@@ -305,7 +307,7 @@ pair<ast_json_t, seq_t> parse_assign_statement(const seq_t& s){
 	const auto rhs_seq = skip_whitespace(equal_pos);
 	const auto expression_fr = parse_expression_seq(rhs_seq);
 
-	const auto statement = make_statement_n(0, "store", { variable_pos.first, expression_fr.first._value });
+	const auto statement = make_statement_n(location_t(start.pos()), "store", { variable_pos.first, expression_fr.first._value });
 	return { statement, expression_fr.second };
 }
 
@@ -314,7 +316,7 @@ QUARK_UNIT_TEST("", "parse_assign_statement()", "", ""){
 		parse_assign_statement(seq_t("x = 10;")).first._value,
 		parse_json(seq_t(
 			R"(
-				["store","x",["k",10,"^int"]]
+				[ 0, "store","x",["k",10,"^int"] ]
 			)"
 		)).first
 	);
@@ -325,9 +327,10 @@ QUARK_UNIT_TEST("", "parse_assign_statement()", "", ""){
 
 
 pair<ast_json_t, seq_t> parse_expression_statement(const seq_t& s){
-	const auto expression_fr = parse_expression_seq(s);
+	const auto start = skip_whitespace(s);
+	const auto expression_fr = parse_expression_seq(start);
 
-	const auto statement = make_statement1(0, "expression-statement", expression_fr.first._value);
+	const auto statement = make_statement1(location_t(start.pos()), "expression-statement", expression_fr.first._value);
 	return { ast_json_t{statement}, expression_fr.second };
 }
 
@@ -336,7 +339,7 @@ QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
 		parse_expression_statement(seq_t("print(14);")).first._value,
 		parse_json(seq_t(
 			R"(
-				[ "expression-statement", [ "call", ["@", "print"], [["k", 14, "^int"]] ] ]
+				[ 0, "expression-statement", [ "call", ["@", "print"], [["k", 14, "^int"]] ] ]
 			)"
 		)).first
 	);

@@ -21,6 +21,7 @@
 #include <vector>
 #include <iostream>
 
+#if 1
 
 using std::vector;
 using std::string;
@@ -114,6 +115,10 @@ void ut_compare_values(const value_t& result, const value_t& expected){
 
 //////////////////////////////////////////		TEST GLOBAL CONSTANTS
 
+
+QUARK_UNIT_TEST("Floyd test suite", "Global int variable", "", ""){
+	run_main("{}", {});
+}
 
 QUARK_UNIT_TEST("Floyd test suite", "Global int variable", "", ""){
 	test__run_init__check_result("let int result = 123", value_t::make_int(123));
@@ -1179,7 +1184,7 @@ QUARK_UNIT_TESTQ("run_init()", "if(false){}"){
 	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Goodbye!" }));
 }
 
-QUARK_UNIT_TESTQ("run_init()", "if(true){}else{}"){
+QUARK_UNIT_TEST("", "run_init()", "if(true){}else{}", ""){
 	const auto r = test__run_global(
 		R"(
 			if(true){
@@ -4461,3 +4466,4 @@ MANUAL_SNIPPETS_TEST("MANUAL SNIPPETS", "subset()", "", ""){
 	)", {}, "");
 }
 
+#endif

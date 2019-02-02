@@ -80,7 +80,7 @@ std::pair<ast_json_t, seq_t> parse_statement(const seq_t& s){
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_compare_jsons(
 		parse_statement(seq_t("let int x = 10;")).first._value,
-		parse_json(seq_t(R"(["bind", "^int", "x", ["k", 10, "^int"]])")).first
+		parse_json(seq_t(R"([0, "bind", "^int", "x", ["k", 10, "^int"]])")).first
 	);
 }
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
@@ -88,13 +88,14 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 		parse_statement(seq_t("func int f(string name){ return 13; }")).first._value,
 		parse_json(seq_t(R"(
 			[
+				0,
 				"def-func",
 				{
 					"args": [{ "name": "name", "type": "^string" }],
 					"name": "f",
 					"return_type": "^int",
 					"statements": [
-						["return", ["k", 13, "^int"]]
+						[25, "return", ["k", 13, "^int"]]
 					],
 					"impure": false
 				}
@@ -106,22 +107,21 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_compare_jsons(
 		parse_statement(seq_t("let int x = f(3);")).first._value,
-		parse_json(seq_t(R"(["bind", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first
+		parse_json(seq_t(R"([0, "bind", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first
 	);
 }
 
 
-parse_result_t parse_statements(const seq_t& s){
+//	"a = 1; print(a)"
+parse_result_t parse_statements_no_brackets(const seq_t& s){
 	vector<json_t> statements;
-	vector<int> line_numbers;
 
 	auto pos = skip_whitespace(s);
 
-	int line_number = count_lines(s, pos);
-	while(!pos.empty()){
-		line_numbers.push_back(line_number);
-
+	while(pos.empty() == false){
 		const auto statement_pos = parse_statement(pos);
+		QUARK_ASSERT(statement_pos.second.pos() >= pos.pos());
+
 		statements.push_back(statement_pos.first._value);
 
 		auto pos2 = skip_whitespace(statement_pos.second);
@@ -132,47 +132,293 @@ parse_result_t parse_statements(const seq_t& s){
 			pos2 = skip_whitespace(pos2);
 		}
 
-		line_number = line_number + count_lines(pos, pos2);
-
+		QUARK_ASSERT(pos2.pos() >= pos.pos());
 		pos = pos2;
 	}
-	return { ast_json_t::make(statements), pos, line_numbers };
+	return { ast_json_t::make(statements), pos };
 }
 
-parse_result_t parse_program2(const string& program, int pre_line_count){
-	const auto statements_pos = parse_statements(seq_t(program));
+//	"{ a = 1; print(a) }"
+parse_result_t parse_statements_bracketted(const seq_t& s){
+	vector<json_t> statements;
+
+	auto pos = skip_whitespace(s);
+	pos = read_required(pos, "{");
+	pos = skip_whitespace(pos);
+
+	while(pos.empty() == false && pos.first() != "}"){
+		const auto statement_pos = parse_statement(pos);
+		QUARK_ASSERT(statement_pos.second.pos() >= pos.pos());
+
+		statements.push_back(statement_pos.first._value);
+
+		auto pos2 = skip_whitespace(statement_pos.second);
+
+		//	Skip optional ;
+		while(pos2.empty() == false && pos2.first1_char() == ';'){
+			pos2 = pos2.rest1();
+			pos2 = skip_whitespace(pos2);
+		}
+
+		QUARK_ASSERT(pos2.pos() >= pos.pos());
+		pos = pos2;
+	}
+	if(pos.first() == "}"){
+		return { ast_json_t::make(statements), pos.rest() };
+	}
+	else{
+		throw std::runtime_error("Missing end bracket \'}\'.");
+	}
+}
+
+QUARK_UNIT_TEST("", "parse_statements_bracketted()", "", ""){
+	ut_compare_jsons(
+		parse_statement_body(seq_t(" { } ")).ast._value,
+		parse_json(seq_t(
+			R"(
+				[]
+			)"
+		)).first
+	);
+}
+QUARK_UNIT_TEST("", "parse_statements_bracketted()", "", ""){
+	ut_compare_jsons(
+		parse_statement_body(seq_t(" { let int x = 1; let int y = 2; } ")).ast._value,
+		parse_json(seq_t(
+			R"(
+				[
+					[3, "bind", "^int", "x", ["k", 1, "^int"]],
+					[18, "bind", "^int", "y", ["k", 2, "^int"]]
+				]
+			)"
+		)).first
+	);
+}
+
+
+
+
+
+/*
+
+extern const std::string k_builtin_types_and_constants___xxx = R"(
+	let double cmath_pi = 3.14159265358979323846
+
+	struct cpu_address_t {
+		int address
+	}
+
+	struct size_t {
+		int address
+	}
+
+	struct file_pos_t {
+		int pos
+	}
+
+	struct time_ms_t {
+		int pos
+	}
+
+	struct uuid_t {
+		int high64
+		int low64
+	}
+
+
+	struct ip_address_t {
+		int high64
+		int low_64_bits
+	}
+
+
+	struct url_t {
+		string absolute_url
+	}
+
+	struct url_parts_t {
+		string protocol
+		string domain
+		string path
+		[string:string] query_strings
+		int port
+	}
+
+	struct quick_hash_t {
+		int hash
+	}
+
+	struct key_t {
+		quick_hash_t hash
+	}
+
+	struct date_t {
+		string utc_date
+	}
+
+	struct sha1_t {
+		string ascii40
+	}
+
+
+	struct relative_path_t {
+		string relative_path
+	}
+
+	struct absolute_path_t {
+		string absolute_path
+	}
+
+	struct binary_t {
+		string bytes
+	}
+
+	struct text_location_t {
+		absolute_path_t source_file
+		int line_number
+		int pos_in_line
+	}
+
+	struct seq_t {
+		string str
+		size_t pos
+	}
+
+	struct text_t {
+		binary_t data
+	}
+
+	struct text_resource_id {
+		quick_hash_t id
+	}
+
+	struct image_id_t {
+		int id
+	}
+
+	struct color_t {
+		double red
+		double green
+		double blue
+		double alpha
+	}
+
+	struct vector2_t {
+		double x
+		double y
+	}
+
+
+
+	let color__black = color_t(0.0, 0.0, 0.0, 1.0)
+	let color__white = color_t(1.0, 1.0, 1.0, 1.0)
+
+
+	func color_t add_colors(color_t a, color_t b){
+		return color_t(
+			a.red + b.red,
+			a.green + b.green,
+			a.blue + b.blue,
+			a.alpha + b.alpha
+		)
+	}
+
+
+	////////////////////////////		FILE SYSTEM TYPES
+
+
+	struct fsentry_t {
+		string type	//	"dir" or "file"
+		string abs_parent_path
+		string name
+	}
+
+	struct fsentry_info_t {
+		string type	//	"file" or "dir"
+		string name
+		string abs_parent_path
+
+		string creation_date
+		string modification_date
+		int file_size
+	}
+
+	struct fs_environment_t {
+		string home_dir
+		string documents_dir
+		string desktop_dir
+
+		string hidden_persistence_dir
+		string preferences_dir
+		string cache_dir
+		string temp_dir
+
+		string executable_dir
+	}
+)";
+
+
+QUARK_UNIT_TEST_VIP("", "parse_statements_bracketted()", "", ""){
+	ut_compare_jsons(
+		parse_program2(k_builtin_types_and_constants___xxx).ast._value,
+		parse_json(seq_t(
+			R"(
+				[]
+			)"
+		)).first
+	);
+}
+*/
+
+
+parse_result_t parse_program2(const string& program){
+	const auto statements_pos = parse_statements_no_brackets(seq_t(program));
+/*
 	const auto line_numbers2 = mapf<int>(
 		statements_pos.line_numbers,
 		[&](const auto& e){
 			return e - pre_line_count;
 		}
 	);
+*/
 
-
-	return { statements_pos.ast, statements_pos.pos, line_numbers2 };
+	return { statements_pos.ast, statements_pos.pos };
 }
 
 
 //////////////////////////////////////////////////		Test programs
 
 
+
+
+
+
 const std::string k_test_program_0_source = "func int main(){ return 3; }";
 const std::string k_test_program_0_parserout = R"(
 	[
 		[
+			0,
 			"def-func",
 			{
 				"args": [],
 				"name": "main",
 				"return_type": "^int",
 				"statements": [
-					[ "return", [ "k", 3, "^int" ] ]
+					[ 17, "return", [ "k", 3, "^int" ] ]
 				],
 				"impure": false
 			}
 		]
 	]
 )";
+
+QUARK_UNIT_TEST("", "parse_program1()", "k_test_program_0_source", ""){
+	ut_compare_jsons(
+		parse_program2(k_test_program_0_source).ast._value,
+		parse_json(seq_t(k_test_program_0_parserout)).first
+	);
+}
+
 
 
 const std::string k_test_program_1_source =
@@ -182,6 +428,7 @@ const std::string k_test_program_1_source =
 const std::string k_test_program_1_parserout = R"(
 	[
 		[
+			0,
 			"def-func",
 			{
 				"args": [
@@ -190,7 +437,7 @@ const std::string k_test_program_1_parserout = R"(
 				"name": "main",
 				"return_type": "^int",
 				"statements": [
-					[ "return", [ "k", 3, "^int" ] ]
+					[ 29, "return", [ "k", 3, "^int" ] ]
 				],
 				"impure": false
 			}
@@ -198,10 +445,19 @@ const std::string k_test_program_1_parserout = R"(
 	]
 )";
 
+QUARK_UNIT_TEST("", "parse_program1()", "k_test_program_1_source", ""){
+	ut_compare_jsons(
+		parse_program2(k_test_program_1_source).ast._value,
+		parse_json(seq_t(k_test_program_1_parserout)).first
+	);
+}
+
+
 
 const char k_test_program_100_parserout[] = R"(
 	[
 		[
+			5,
 			"def-struct",
 			{
 				"members": [
@@ -213,6 +469,7 @@ const char k_test_program_100_parserout[] = R"(
 			}
 		],
 		[
+			65,
 			"def-func",
 			{
 				"args": [{ "name": "p", "type": "#pixel" }],
@@ -220,6 +477,7 @@ const char k_test_program_100_parserout[] = R"(
 				"return_type": "^double",
 				"statements": [
 					[
+						96,
 						"return",
 						[
 							"/",
@@ -236,6 +494,7 @@ const char k_test_program_100_parserout[] = R"(
 			}
 		],
 		[
+			144,
 			"def-func",
 			{
 				"args": [],
@@ -243,32 +502,19 @@ const char k_test_program_100_parserout[] = R"(
 				"return_type": "^double",
 				"statements": [
 					[
+						169,
 						"bind",
 						"#pixel",
 						"p",
 						["call", ["@", "pixel"], [["k", 1, "^int"], ["k", 0, "^int"], ["k", 0, "^int"]]]
 					],
-					["return", ["call", ["@", "get_grey"], [["@", "p"]]]]
+					[204, "return", ["call", ["@", "get_grey"], [["@", "p"]]]]
 				],
 				"impure": false
 			}
 		]
 	]
 )";
-
-QUARK_UNIT_TEST("", "parse_program1()", "k_test_program_0_source", ""){
-	ut_compare_jsons(
-					 parse_program2(k_test_program_0_source, 0).ast._value,
-		parse_json(seq_t(k_test_program_0_parserout)).first
-	);
-}
-
-QUARK_UNIT_TEST("", "parse_program1()", "k_test_program_1_source", ""){
-	ut_compare_jsons(
-					 parse_program2(k_test_program_1_source, 0).ast._value,
-		parse_json(seq_t(k_test_program_1_parserout)).first
-	);
-}
 
 QUARK_UNIT_TEST("", "parse_program2()", "k_test_program_100_source", ""){
 	ut_compare_jsons(
@@ -281,9 +527,8 @@ QUARK_UNIT_TEST("", "parse_program2()", "k_test_program_100_source", ""){
 					let pixel p = pixel(1, 0, 0);
 					return get_grey(p);
 				}
-			)",
-			0
-					 ).ast._value,
+			)"
+		).ast._value,
 		parse_json(seq_t(k_test_program_100_parserout)).first
 	);
 }

@@ -54,11 +54,11 @@ const std::map<eoperation, string> k_2_operator_to_string{
 
 ast_json_t expr_to_json(const expr_t& e);
 
-static ast_json_t op2_to_json(eoperation op, const expr_t& expr0, const expr_t& expr1){
+static ast_json_t op2_to_json(const location_t& location, eoperation op, const expr_t& expr0, const expr_t& expr1){
 	const auto op_str = k_2_operator_to_string.at(op);
 
 
-	return make_expression2(0, op_str, expr_to_json(expr0)._value, expr_to_json(expr1)._value);
+	return make_expression2(location, op_str, expr_to_json(expr0)._value, expr_to_json(expr1)._value);
 }
 
 
@@ -74,17 +74,17 @@ ast_json_t expr_to_json(const expr_t& e){
 	if(e._op == eoperation::k_0_number_constant){
 		const auto value = *e._constant;
 		if(value._type == constant_value_t::etype::k_bool){
-			return make_expression2(0, "k", json_t(value._bool), typeid_to_ast_json(typeid_t::make_bool(), json_tags::k_tag_resolve_state)._value);
+			return make_expression2(e._location, "k", json_t(value._bool), typeid_to_ast_json(typeid_t::make_bool(), json_tags::k_tag_resolve_state)._value);
 		}
 		else if(value._type == constant_value_t::etype::k_int){
-			return make_expression2(0, "k", json_t((double)value._int), typeid_to_ast_json(typeid_t::make_int(), json_tags::k_tag_resolve_state)._value);
+			return make_expression2(e._location, "k", json_t((double)value._int), typeid_to_ast_json(typeid_t::make_int(), json_tags::k_tag_resolve_state)._value);
 		}
 		else if(value._type == constant_value_t::etype::k_double){
-			return make_expression2(0, "k", json_t(value._double), typeid_to_ast_json(typeid_t::make_double(), json_tags::k_tag_resolve_state)._value);
+			return make_expression2(e._location, "k", json_t(value._double), typeid_to_ast_json(typeid_t::make_double(), json_tags::k_tag_resolve_state)._value);
 		}
 		else if(value._type == constant_value_t::etype::k_string){
 			//	 Use k_0_string_literal!
-			return make_expression2(0, "k", json_t(value._string), typeid_to_ast_json(typeid_t::make_string(), json_tags::k_tag_resolve_state)._value);
+			return make_expression2(e._location, "k", json_t(value._string), typeid_to_ast_json(typeid_t::make_string(), json_tags::k_tag_resolve_state)._value);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -92,62 +92,62 @@ ast_json_t expr_to_json(const expr_t& e){
 		}
 	}
 	else if(e._op == eoperation::k_0_resolve){
-		return make_expression1(0, "@", json_t(e._identifier));
+		return make_expression1(e._location, "@", json_t(e._identifier));
 	}
 	else if(e._op == eoperation::k_0_string_literal){
 		const auto value = *e._constant;
 		QUARK_ASSERT(value._type == constant_value_t::etype::k_string);
-		return make_expression2(0, "k", json_t(value._string), typeid_to_ast_json(typeid_t::make_string(), json_tags::k_tag_resolve_state)._value);
+		return make_expression2(e._location, "k", json_t(value._string), typeid_to_ast_json(typeid_t::make_string(), json_tags::k_tag_resolve_state)._value);
 	}
 	else if(e._op == eoperation::k_x_member_access){
 //		return ast_json_t{make_array_skip_nulls({ json_t("->"), json_t(), expr_to_json(e._exprs[0])._value, json_t(e._identifier) })};
-		return make_expression2(0, "->", expr_to_json(e._exprs[0])._value, json_t(e._identifier));
+		return make_expression2(e._location, "->", expr_to_json(e._exprs[0])._value, json_t(e._identifier));
 	}
 	else if(e._op == eoperation::k_2_lookup){
-		return op2_to_json(e._op, e._exprs[0], e._exprs[1]);
+		return op2_to_json(e._location, e._op, e._exprs[0], e._exprs[1]);
 	}
 	else if(e._op == eoperation::k_2_add){
-		return op2_to_json(e._op, e._exprs[0], e._exprs[1]);
+		return op2_to_json(e._location, e._op, e._exprs[0], e._exprs[1]);
 	}
 	else if(e._op == eoperation::k_2_subtract){
-		return op2_to_json(e._op, e._exprs[0], e._exprs[1]);
+		return op2_to_json(e._location, e._op, e._exprs[0], e._exprs[1]);
 	}
 	else if(e._op == eoperation::k_2_multiply){
-		return op2_to_json(e._op, e._exprs[0], e._exprs[1]);
+		return op2_to_json(e._location, e._op, e._exprs[0], e._exprs[1]);
 	}
 	else if(e._op == eoperation::k_2_divide){
-		return op2_to_json(e._op, e._exprs[0], e._exprs[1]);
+		return op2_to_json(e._location, e._op, e._exprs[0], e._exprs[1]);
 	}
 	else if(e._op == eoperation::k_2_remainder){
-		return op2_to_json(e._op, e._exprs[0], e._exprs[1]);
+		return op2_to_json(e._location, e._op, e._exprs[0], e._exprs[1]);
 	}
 	else if(e._op == eoperation::k_2_smaller_or_equal){
-		return op2_to_json(e._op, e._exprs[0], e._exprs[1]);
+		return op2_to_json(e._location, e._op, e._exprs[0], e._exprs[1]);
 	}
 	else if(e._op == eoperation::k_2_smaller){
-		return op2_to_json(e._op, e._exprs[0], e._exprs[1]);
+		return op2_to_json(e._location, e._op, e._exprs[0], e._exprs[1]);
 	}
 	else if(e._op == eoperation::k_2_larger_or_equal){
-		return op2_to_json(e._op, e._exprs[0], e._exprs[1]);
+		return op2_to_json(e._location, e._op, e._exprs[0], e._exprs[1]);
 	}
 	else if(e._op == eoperation::k_2_larger){
-		return op2_to_json(e._op, e._exprs[0], e._exprs[1]);
+		return op2_to_json(e._location, e._op, e._exprs[0], e._exprs[1]);
 	}
 	else if(e._op == eoperation::k_2_logical_equal){
-		return op2_to_json(e._op, e._exprs[0], e._exprs[1]);
+		return op2_to_json(e._location, e._op, e._exprs[0], e._exprs[1]);
 	}
 	else if(e._op == eoperation::k_2_logical_nonequal){
-		return op2_to_json(e._op, e._exprs[0], e._exprs[1]);
+		return op2_to_json(e._location, e._op, e._exprs[0], e._exprs[1]);
 	}
 	else if(e._op == eoperation::k_2_logical_and){
-		return op2_to_json(e._op, e._exprs[0], e._exprs[1]);
+		return op2_to_json(e._location, e._op, e._exprs[0], e._exprs[1]);
 	}
 	else if(e._op == eoperation::k_2_logical_or){
-		return op2_to_json(e._op, e._exprs[0], e._exprs[1]);
+		return op2_to_json(e._location, e._op, e._exprs[0], e._exprs[1]);
 	}
 	else if(e._op == eoperation::k_3_conditional_operator){
 		return make_expression3(
-			0,
+			e._location,
 			"?:",
 			expr_to_json(e._exprs[0])._value,
 			expr_to_json(e._exprs[1])._value,
@@ -161,17 +161,17 @@ ast_json_t expr_to_json(const expr_t& e){
 			const auto& arg = expr_to_json(e._exprs[i + 1]);
 			args.push_back(arg._value);
 		}
-		return make_expression2(0, "call", expr_to_json(e._exprs[0])._value, json_t(args));
+		return make_expression2(e._location, "call", expr_to_json(e._exprs[0])._value, json_t(args));
 	}
 	else if(e._op == eoperation::k_1_unary_minus){
-		return make_expression1(0, "unary_minus", expr_to_json(e._exprs[0])._value);
+		return make_expression1(e._location, "unary_minus", expr_to_json(e._exprs[0])._value);
 	}
 	else if(e._op == eoperation::k_1_vector_definition){
 		//??? what is _identifier?
 		QUARK_ASSERT(e._identifier == "");
 
 		return make_expression2(
-			0,
+			e._location,
 			"construct-value",
 			typeid_to_ast_json(typeid_t::make_vector(typeid_t::make_undefined()), json_tags::k_tag_resolve_state)._value,
 			expr_vector_to_json_array(e._exprs)._value
@@ -182,7 +182,7 @@ ast_json_t expr_to_json(const expr_t& e){
 		QUARK_ASSERT(e._identifier == "");
 
 		return make_expression2(
-			0,
+			e._location,
 			"construct-value",
 			typeid_to_ast_json(typeid_t::make_dict(typeid_t::make_undefined()), json_tags::k_tag_resolve_state)._value,
 			expr_vector_to_json_array(e._exprs)._value
