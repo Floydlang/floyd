@@ -37,7 +37,7 @@ std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos){
 	const auto args = members_to_json(args_pos.first);
 	const auto function_name = function_name_pos.first;
 
-	const auto function_def = make_statement(
+	const auto function_def = make_statement1(
 		0,
 		"def-func",
 		json_t::make_object({

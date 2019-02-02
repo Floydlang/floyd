@@ -10,6 +10,8 @@
 
 #include "statement.h"
 #include "ast_typeid_helpers.h"
+#include "parser_primitives.h"
+
 namespace floyd {
 
 using namespace std;
@@ -36,17 +38,20 @@ const typeid_t& get_function_type(const function_definition_t& f){
 
 ast_json_t function_def_to_ast_json(const function_definition_t& v) {
 	typeid_t function_type = get_function_type(v);
-	return ast_json_t{json_t::make_array({
+	return make_expression_n(
+		0,
 		"func-def",
-		typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state)._value,
-		members_to_json(v._args),
-		/***v._body ? body_to_json(*v._body)._value :***/ json_t(),
+		{
+			typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state)._value,
+			members_to_json(v._args),
+			/***v._body ? body_to_json(*v._body)._value :***/ json_t(),
 
-		json_t(v._host_function_id),
+			json_t(v._host_function_id),
 
-		//	Duplicate info -- we have convered this using function_type above.
-		typeid_to_ast_json(v._function_type.get_function_return(), json_tags::k_tag_resolve_state)._value
-	})};
+			//	Duplicate info -- we have convered this using function_type above.
+			typeid_to_ast_json(v._function_type.get_function_return(), json_tags::k_tag_resolve_state)._value
+		}
+	);
 }
 
  bool function_definition_t::check_types_resolved() const{

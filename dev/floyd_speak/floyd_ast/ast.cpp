@@ -20,6 +20,7 @@
 #include "json_parser.h"
 #include "ast.h"
 #include "ast_typeid_helpers.h"
+#include "parser_primitives.h"
 
 
 namespace floyd {
@@ -44,19 +45,19 @@ ast_json_t ast_to_json(const ast_t& ast){
 	}
 
 	const auto function_defs_json = json_t::make_array(fds);
-	return ast_json_t{json_t::make_object(
+	return ast_json_t::make(json_t::make_object(
 		{
 			{ "globals", body_to_json(ast._globals)._value },
 			{ "function_defs", function_defs_json }
 		}
-	)};
+	));
 }
 
 
 
 
-typeid_t resolve_type_name(const ast_json_t& t){
-	const auto t2 = typeid_from_ast_json(t);
+typeid_t resolve_type_name(const json_t& t){
+	const auto t2 = typeid_from_ast_json(ast_json_t::make(t));
 	return t2;
 }
 
@@ -70,7 +71,7 @@ expression_t astjson_to_expression(const json_t& e){
 
 		const auto value = e.get_array_n(1);
 		const auto type = e.get_array_n(2);
-		const auto type2 = resolve_type_name(ast_json_t{type});
+		const auto type2 = resolve_type_name(type);
 
 		if(type2.is_undefined()){
 			return expression_t::make_literal_undefined();
@@ -146,7 +147,7 @@ expression_t astjson_to_expression(const json_t& e){
 	}
 	else if(op == "construct-value"){
 		QUARK_ASSERT(e.get_array_size() == 3);
-		const auto value_type = resolve_type_name(ast_json_t{e.get_array_n(1)});
+		const auto value_type = resolve_type_name(e.get_array_n(1));
 		const auto args = e.get_array_n(2).get_array();
 
 		std::vector<expression_t> args2;
@@ -185,7 +186,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		const auto expr = statement.get_array_n(3);
 		const auto meta = statement.get_array_size() >= 5 ? statement.get_array_n(4) : json_t();
 
-		const auto bind_type2 = resolve_type_name(ast_json_t{bind_type});
+		const auto bind_type2 = resolve_type_name(bind_type);
 		const auto name2 = name.get_string();
 		const auto expr2 = astjson_to_expression(expr);
 		bool mutable_flag = !meta.is_null() && meta.does_object_element_exist("mutable");
@@ -220,7 +221,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		QUARK_ASSERT(statement.get_array_size() == 2);
 
 		const auto statements = statement.get_array_n(1);
-		const auto r = astjson_to_statements(ast_json_t{statements});
+		const auto r = astjson_to_statements(ast_json_t::make(statements));
 
 		const auto body = body_t(r);
 		return statement_t::make__block_statement(body);
@@ -262,8 +263,8 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 
 		const auto name2 = name.get_string();
 		const auto args2 = members_from_json(args);
-		const auto fstatements2 = astjson_to_statements(ast_json_t{fstatements});
-		const auto return_type2 = resolve_type_name(ast_json_t{return_type});
+		const auto fstatements2 = astjson_to_statements(ast_json_t::make(fstatements));
+		const auto return_type2 = resolve_type_name(return_type);
 
 		if(impure.is_true() == false && impure.is_false() == false){
 			throw std::exception();
@@ -286,8 +287,8 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		const auto else_statements = statement.get_array_size() == 4 ? statement.get_array_n(3) : json_t::make_array();
 
 		const auto condition_expression2 = astjson_to_expression(condition_expression);
-		const auto then_statements2 = astjson_to_statements(ast_json_t{then_statements});
-		const auto else_statements2 = astjson_to_statements(ast_json_t{else_statements});
+		const auto then_statements2 = astjson_to_statements(ast_json_t::make(then_statements));
+		const auto else_statements2 = astjson_to_statements(ast_json_t::make(else_statements));
 
 		return statement_t::make__ifelse_statement(
 			condition_expression2,
@@ -305,7 +306,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 
 		const auto start_expression2 = astjson_to_expression(start_expression);
 		const auto end_expression2 = astjson_to_expression(end_expression);
-		const auto body_statements2 = astjson_to_statements(ast_json_t{body_statements});
+		const auto body_statements2 = astjson_to_statements(ast_json_t::make(body_statements));
 
 		const auto range_type = for_mode.get_string() == "open-range" ? statement_t::for_statement_t::k_open_range : statement_t::for_statement_t::k_closed_range;
 		return statement_t::make__for_statement(
@@ -322,7 +323,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		const auto body_statements = statement.get_array_n(2);
 
 		const auto expression2 = astjson_to_expression(expression);
-		const auto body_statements2 = astjson_to_statements(ast_json_t{body_statements});
+		const auto body_statements2 = astjson_to_statements(ast_json_t::make(body_statements));
 
 		return statement_t::make__while_statement(expression2, body_t{body_statements2});
 	}
@@ -359,7 +360,7 @@ const std::vector<statement_t> astjson_to_statements(const ast_json_t& p){
 	vector<statement_t> statements2;
 	for(const auto& statement: p._value.get_array()){
 		const auto type = statement.get_array_n(0);
-		const auto s2 = astjson_to_statement__nonlossy(ast_json_t{ statement });
+		const auto s2 = astjson_to_statement__nonlossy(ast_json_t::make(statement));
 		statements2.push_back(s2);
 	}
 	return statements2;
@@ -407,31 +408,31 @@ ast_json_t body_to_json(const body_t& e){
 
 	const auto symbols = symbols_to_json(e._symbols._symbols);
 
-	return ast_json_t{
+	return ast_json_t::make(
 		json_t::make_object({
 			std::pair<std::string, json_t>{ "statements", json_t::make_array(statements) },
 			std::pair<std::string, json_t>{ "symbols", json_t::make_array(symbols) }
 		})
-	};
+	);
 }
 
 ast_json_t symbol_to_json(const symbol_t& e){
 	const auto symbol_type_str = e._symbol_type == symbol_t::immutable_local ? "immutable_local" : "mutable_local";
 
 	if(e._const_value.is_undefined() == false){
-		return ast_json_t{
+		return ast_json_t::make(
 			json_t::make_object({
 				{ "const_value", value_to_ast_json(e._const_value, json_tags::k_tag_resolve_state)._value }
 			})
-		};
+		);
 	}
 	else{
-		return ast_json_t{
+		return ast_json_t::make(
 			json_t::make_object({
 				{ "type", symbol_type_str },
 				{ "value_type", typeid_to_ast_json(e._value_type, json_tags::k_tag_resolve_state)._value }
 			})
-		};
+		);
 	}
 }
 
@@ -441,32 +442,22 @@ ast_json_t statement_to_json(const statement_t& e){
 
 	struct visitor_t {
 		ast_json_t operator()(const statement_t::return_statement_t& s) const{
-			return ast_json_t{json_t::make_array({
-				json_t(keyword_t::k_return),
-				expression_to_json(s._expression)._value
-			})};
+			return make_statement1(0, keyword_t::k_return, expression_to_json(s._expression)._value);
 		}
 		ast_json_t operator()(const statement_t::define_struct_statement_t& s) const{
-			return ast_json_t{json_t::make_array({
-				json_t("def-struct"),
-				json_t(s._name),
-				struct_definition_to_ast_json(*s._def)._value
-			})};
+			return make_statement2(0, "def-struct", json_t(s._name), struct_definition_to_ast_json(*s._def)._value);
 		}
 		ast_json_t operator()(const statement_t::define_protocol_statement_t& s) const{
-			return ast_json_t{json_t::make_array({
-				json_t("def-protocol"),
-				json_t(s._name),
-				protocol_definition_to_ast_json(*s._def)._value
-			})};
+			return make_statement2(0, "def-protocol", json_t(s._name), protocol_definition_to_ast_json(*s._def)._value);
 		}
 		ast_json_t operator()(const statement_t::define_function_statement_t& s) const{
-			return ast_json_t{json_t::make_array({
-				json_t("def-func"),
+			return make_statement3(
+				0,
+				"def-func",
 				json_t(s._name),
 				function_def_to_ast_json(*s._def)._value,
 				s._def->_function_type.get_function_pure() == epure::impure ? true : false
-			})};
+			);
 		}
 
 		ast_json_t operator()(const statement_t::bind_local_t& s) const{
@@ -477,79 +468,86 @@ ast_json_t statement_to_json(const statement_t& e){
 				})
 				: json_t();
 
-			return ast_json_t{make_array_skip_nulls({
-				json_t("bind"),
+			return make_statement4(
+				0,
+				"bind",
 				s._new_local_name,
 				typeid_to_ast_json(s._bindtype, json_tags::k_tag_resolve_state)._value,
 				expression_to_json(s._expression)._value,
 				meta
-			})};
+			);
 		}
 		ast_json_t operator()(const statement_t::store_t& s) const{
-			return ast_json_t{make_array_skip_nulls({
-				json_t("store"),
+			return make_statement2(
+				0,
+				"store",
 				s._local_name,
 				expression_to_json(s._expression)._value
-			})};
+			);
 		}
 		ast_json_t operator()(const statement_t::store2_t& s) const{
-			return ast_json_t{make_array_skip_nulls({
-				json_t("store2"),
+			return make_statement3(
+				0,
+				"store2",
 				s._dest_variable._parent_steps,
 				s._dest_variable._index,
 				expression_to_json(s._expression)._value
-			})};
+			);
 		}
 		ast_json_t operator()(const statement_t::block_statement_t& s) const{
-			return ast_json_t{json_t::make_array({
-				json_t("block"),
-				body_to_json(s._body)._value
-			})};
+			return make_statement1(0, "block", body_to_json(s._body)._value);
 		}
 
 		ast_json_t operator()(const statement_t::ifelse_statement_t& s) const{
-			return ast_json_t{json_t::make_array({
-				json_t(keyword_t::k_if),
+			return make_statement3(
+				0,
+				keyword_t::k_if,
 				expression_to_json(s._condition)._value,
 				body_to_json(s._then_body)._value,
 				body_to_json(s._else_body)._value
-			})};
+			);
 		}
 		ast_json_t operator()(const statement_t::for_statement_t& s) const{
-			return ast_json_t{json_t::make_array({
-				json_t(keyword_t::k_for),
+			return make_statement4(
+				0,
+				keyword_t::k_for,
+				//??? open_range?
 				json_t("closed_range"),
 				expression_to_json(s._start_expression)._value,
 				expression_to_json(s._end_expression)._value,
 				body_to_json(s._body)._value
-			})};
+			);
 		}
 		ast_json_t operator()(const statement_t::while_statement_t& s) const{
-			return ast_json_t{json_t::make_array({
-				json_t(keyword_t::k_while),
+			return make_statement2(
+				0,
+				keyword_t::k_while,
 				expression_to_json(s._condition)._value,
 				body_to_json(s._body)._value
-			})};
+			);
 		}
 
 
 		ast_json_t operator()(const statement_t::expression_statement_t& s) const{
-			return ast_json_t{json_t::make_array({
-				json_t("expression-statement"),
+			return make_statement1(
+				0,
+				"expression-statement",
 				expression_to_json(s._expression)._value
-			})};
+			);
 		}
 		ast_json_t operator()(const statement_t::software_system_statement_t& s) const{
-			return ast_json_t{json_t::make_array({
-				json_t(keyword_t::k_software_system),
+			return make_statement1(
+				0,
+				keyword_t::k_software_system,
 				s._json_data
-			})};
+			);
 		}
 		ast_json_t operator()(const statement_t::container_def_statement_t& s) const{
-			return ast_json_t{json_t::make_array({
-				json_t(keyword_t::k_container_def),
+			return make_statement1(
+				0,
+				keyword_t::k_container_def,
 				s._json_data
-			})};
+			);
 		}
 	};
 
@@ -559,7 +557,7 @@ ast_json_t statement_to_json(const statement_t& e){
 
 ast_t json_to_ast(const ast_json_t& parse_tree){
 	const auto program_body = astjson_to_statements(parse_tree);
-	return ast_t{body_t{program_body}, {}, {}};
+	return ast_t{body_t{program_body}, {}, {}, {}};
 }
 
 

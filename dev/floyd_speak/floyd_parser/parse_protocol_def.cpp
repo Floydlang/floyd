@@ -49,7 +49,7 @@ namespace floyd {
 			functions.push_back(f);
 		}
 
-		const auto r = make_statement(
+		const auto r = make_statement1(
 			0,
 			"def-protocol",
 			json_t::make_object({

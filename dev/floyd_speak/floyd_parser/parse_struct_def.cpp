@@ -35,7 +35,7 @@ namespace floyd {
 			pos = skip_whitespace(pos);
 		}
 
-		const auto r = make_statement(
+		const auto r = make_statement1(
 			0,
 			"def-struct",
 			json_t::make_object({

@@ -146,7 +146,14 @@ ast_json_t expr_to_json(const expr_t& e){
 		return op2_to_json(e._op, e._exprs[0], e._exprs[1]);
 	}
 	else if(e._op == eoperation::k_3_conditional_operator){
-		return ast_json_t{json_t::make_array({ json_t("?:"), expr_to_json(e._exprs[0])._value, expr_to_json(e._exprs[1])._value, expr_to_json(e._exprs[2])._value })};
+		return make_expression3(
+			0,
+			"?:",
+			expr_to_json(e._exprs[0])._value,
+			expr_to_json(e._exprs[1])._value,
+			expr_to_json(e._exprs[2])._value
+		);
+//		return ast_json_t{json_t::make_array({ json_t("?:"), expr_to_json(e._exprs[0])._value, expr_to_json(e._exprs[1])._value, expr_to_json(e._exprs[2])._value })};
 	}
 	else if(e._op == eoperation::k_n_call){
 		vector<json_t> args;
@@ -154,30 +161,32 @@ ast_json_t expr_to_json(const expr_t& e){
 			const auto& arg = expr_to_json(e._exprs[i + 1]);
 			args.push_back(arg._value);
 		}
-		return ast_json_t{make_array_skip_nulls({ json_t("call"), expr_to_json(e._exprs[0])._value, json_t(), args })};
+		return make_expression2(0, "call", expr_to_json(e._exprs[0])._value, json_t(args));
 	}
 	else if(e._op == eoperation::k_1_unary_minus){
-		return ast_json_t{make_array_skip_nulls({ json_t("unary_minus"), json_t(), expr_to_json(e._exprs[0])._value })};
+		return make_expression1(0, "unary_minus", expr_to_json(e._exprs[0])._value);
 	}
 	else if(e._op == eoperation::k_1_vector_definition){
 		//??? what is _identifier?
 		QUARK_ASSERT(e._identifier == "");
 
-		return ast_json_t{json_t::make_array({
-			json_t("construct-value"),
+		return make_expression2(
+			0,
+			"construct-value",
 			typeid_to_ast_json(typeid_t::make_vector(typeid_t::make_undefined()), json_tags::k_tag_resolve_state)._value,
 			expr_vector_to_json_array(e._exprs)._value
-		})};
+		);
 	}
 	else if(e._op == eoperation::k_1_dict_definition){
 		//??? what is _identifier?
 		QUARK_ASSERT(e._identifier == "");
 
-		return ast_json_t{json_t::make_array({
-			json_t("construct-value"),
+		return make_expression2(
+			0,
+			"construct-value",
 			typeid_to_ast_json(typeid_t::make_dict(typeid_t::make_undefined()), json_tags::k_tag_resolve_state)._value,
 			expr_vector_to_json_array(e._exprs)._value
-		})};
+		);
 
 		//??? need to encode that this is a dict.
 //		return ast_json_t{json_t::make_array({ json_t("construct-value"), "{string:null}", expr_vector_to_json_array(e._exprs)._value })};

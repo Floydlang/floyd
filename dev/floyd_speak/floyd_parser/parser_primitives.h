@@ -166,11 +166,16 @@ struct location_t {
 	int column;
 };
 
-ast_json_t make_statement(int64_t location, const std::string& opcode, const std::vector<json_t>& params);
-ast_json_t make_statement(int64_t location, const std::string& opcode, const json_t& params);
+ast_json_t make_statement_n(int64_t location, const std::string& opcode, const std::vector<json_t>& params);
+ast_json_t make_statement1(int64_t location, const std::string& opcode, const json_t& params);
+ast_json_t make_statement2(int64_t location, const std::string& opcode, const json_t& param1, const json_t& param2);
+ast_json_t make_statement3(int64_t location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3);
+ast_json_t make_statement4(int64_t location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3, const json_t& param4);
 
+ast_json_t make_expression_n(int64_t location, const std::string& opcode, const std::vector<json_t>& params);
 ast_json_t make_expression1(int64_t location, const std::string& opcode, const json_t& param);
 ast_json_t make_expression2(int64_t location, const std::string& opcode, const json_t& param1, const json_t& param2);
+ast_json_t make_expression3(int64_t location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3);
 
 /*
 #include "floyd_basics.h"

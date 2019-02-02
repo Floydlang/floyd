@@ -607,20 +607,33 @@ pair<typeid_t, seq_t> read_required_type(const seq_t& s){
 
 
 
-ast_json_t make_statement(int64_t location, const std::string& opcode, const std::vector<json_t>& params){
+ast_json_t make_statement_n(int64_t location, const std::string& opcode, const std::vector<json_t>& params){
 	std::vector<json_t> e = { json_t(opcode) };
 	e.insert(e.end(), params.begin(), params.end());
 	const auto r = json_t(e);
 	return ast_json_t::make(r);
 }
-ast_json_t make_statement(int64_t location, const std::string& opcode, const json_t& params){
+
+ast_json_t make_statement1(int64_t location, const std::string& opcode, const json_t& params){
 	const auto r = json_t::make_array({ json_t(opcode), params });
+	return ast_json_t::make(r);
+}
+ast_json_t make_statement2(int64_t location, const std::string& opcode, const json_t& param1, const json_t& param2){
+	const auto r = json_t::make_array({ json_t(opcode), param1, param2 });
+	return ast_json_t::make(r);
+}
+ast_json_t make_statement3(int64_t location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3){
+	const auto r = json_t::make_array({ json_t(opcode), param1, param2, param3 });
+	return ast_json_t::make(r);
+}
+ast_json_t make_statement4(int64_t location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3, const json_t& param4){
+	const auto r = json_t::make_array({ json_t(opcode), param1, param2, param3, param4 });
 	return ast_json_t::make(r);
 }
 
 
-QUARK_UNIT_TEST("", "make_statement()", "", ""){
-	const auto r = make_statement(0, "def-struct", std::vector<json_t>{});
+QUARK_UNIT_TEST("", "make_statement_n()", "", ""){
+	const auto r = make_statement_n(0, "def-struct", std::vector<json_t>{});
 
 	QUARK_TEST_VERIFY( r._value == json_t::make_array({ "def-struct" }));
 }
@@ -628,6 +641,12 @@ QUARK_UNIT_TEST("", "make_statement()", "", ""){
 
 
 
+ast_json_t make_expression_n(int64_t location, const std::string& opcode, const std::vector<json_t>& params){
+	std::vector<json_t> e = { json_t(opcode) };
+	e.insert(e.end(), params.begin(), params.end());
+	const auto r = json_t(e);
+	return ast_json_t::make(r);
+}
 
 ast_json_t make_expression1(int64_t location, const std::string& opcode, const json_t& param){
 	const auto r = json_t::make_array({ json_t(opcode), param });
@@ -636,6 +655,10 @@ ast_json_t make_expression1(int64_t location, const std::string& opcode, const j
 
 ast_json_t make_expression2(int64_t location, const std::string& opcode, const json_t& param1, const json_t& param2){
 	const auto r = json_t::make_array({ json_t(opcode), param1, param2 });
+	return ast_json_t::make(r);
+}
+ast_json_t make_expression3(int64_t location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3){
+	const auto r = json_t::make_array({ json_t(opcode), param1, param2, param3 });
 	return ast_json_t::make(r);
 }
 

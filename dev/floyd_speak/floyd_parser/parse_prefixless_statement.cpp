@@ -219,7 +219,7 @@ pair<ast_json_t, seq_t> parse_bind_statement(const seq_t& s){
 		}
 	;
 
-	const auto statement = make_statement(0, "bind", params);
+	const auto statement = make_statement_n(0, "bind", params);
 
 	return { statement, expression_fr.second };
 }
@@ -305,7 +305,7 @@ pair<ast_json_t, seq_t> parse_assign_statement(const seq_t& s){
 	const auto rhs_seq = skip_whitespace(equal_pos);
 	const auto expression_fr = parse_expression_seq(rhs_seq);
 
-	const auto statement = make_statement(0, "store", { variable_pos.first, expression_fr.first._value });
+	const auto statement = make_statement_n(0, "store", { variable_pos.first, expression_fr.first._value });
 	return { statement, expression_fr.second };
 }
 
@@ -327,7 +327,7 @@ QUARK_UNIT_TEST("", "parse_assign_statement()", "", ""){
 pair<ast_json_t, seq_t> parse_expression_statement(const seq_t& s){
 	const auto expression_fr = parse_expression_seq(s);
 
-	const auto statement = make_statement(0, "expression-statement", expression_fr.first._value);
+	const auto statement = make_statement1(0, "expression-statement", expression_fr.first._value);
 	return { ast_json_t{statement}, expression_fr.second };
 }
 
