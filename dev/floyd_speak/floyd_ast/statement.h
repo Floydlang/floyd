@@ -156,6 +156,8 @@ namespace floyd {
 
 		bool check_invariant() const;
 
+
+		////////////////////		STATE
 		std::vector<statement_t> _statements;
 		symbol_table_t _symbols;
 	};

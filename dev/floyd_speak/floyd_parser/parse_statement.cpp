@@ -90,7 +90,7 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 
 pair<ast_json_t, seq_t> parse_block(const seq_t& s){
 	const auto body = parse_statement_body(s);
-	return { ast_json_t{json_t::make_array({ "block", body.ast._value })}, body.pos };
+	return { make_statement(0, "block", body.ast._value), body.pos };
 }
 
 QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
@@ -120,9 +120,9 @@ pair<ast_json_t, seq_t> parse_return_statement(const seq_t& s){
 	const auto expression_pos = read_until(skip_whitespace(token_pos.second), ";");
 	const auto expression1 = parse_expression_all(seq_t(expression_pos.first));
 
-	const auto statement = json_t::make_array({ json_t("return"), expression1._value });
+	const auto statement = make_statement(0, "return", expression1._value);
 	const auto pos = skip_whitespace(expression_pos.second.rest1());
-	return { ast_json_t{statement}, pos };
+	return { statement, pos };
 }
 
 QUARK_UNIT_TESTQ("parse_return_statement()", ""){
@@ -150,7 +150,7 @@ std::pair<ast_json_t, seq_t> parse_if(const seq_t& pos){
 	const auto condition2 = parse_expression_all(seq_t(condition.first));
 
 	return {
-		ast_json_t{json_t::make_array({ keyword_t::k_if, condition2._value, then_body.ast._value })},
+		make_statement(0, keyword_t::k_if, { condition2._value, then_body.ast._value} ),
 		then_body.pos
 	};
 }
@@ -176,12 +176,15 @@ std::pair<ast_json_t, seq_t> parse_if_statement(const seq_t& pos){
 			const auto elseif_statement2 = parse_if_statement(pos2);
 
 			return {
-				ast_json_t{json_t::make_array({
+				make_statement(
+					0,
 					keyword_t::k_if,
-					if_statement2.first._value.get_array_n(1),
-					if_statement2.first._value.get_array_n(2),
-					json_t::make_array({elseif_statement2.first._value})
-				})},
+					{
+						if_statement2.first._value.get_array_n(1),
+						if_statement2.first._value.get_array_n(2),
+						json_t::make_array({elseif_statement2.first._value})
+					}
+				),
 				elseif_statement2.second
 			};
 		}
@@ -189,12 +192,15 @@ std::pair<ast_json_t, seq_t> parse_if_statement(const seq_t& pos){
 			const auto else_body = parse_statement_body(pos2);
 
 			return {
-				ast_json_t{json_t::make_array({
+				make_statement(
+					0,
 					keyword_t::k_if,
-					if_statement2.first._value.get_array_n(1),
-					if_statement2.first._value.get_array_n(2),
-					else_body.ast._value
-				})},
+					{
+						if_statement2.first._value.get_array_n(1),
+						if_statement2.first._value.get_array_n(2),
+						else_body.ast._value
+					}
+				),
 				else_body.pos
 			};
 		}
@@ -350,16 +356,17 @@ std::pair<ast_json_t, seq_t> parse_for_statement(const seq_t& pos){
 	const auto start_expr = parse_expression_all(seq_t(start));
 	const auto end_expr = parse_expression_all(end_pos);
 
-	const auto r = ast_json_t{json_t::make_array(
+	const auto r = make_statement(
+		0,
+		keyword_t::k_for,
 		{
-			keyword_t::k_for,
 			range_type == "..." ? "closed-range" : "open-range",
 			iterator_name.first,
 			start_expr._value,
 			end_expr._value,
 			body.ast._value
 		}
-	)};
+	);
 	return { r, body.pos };
 }
 
@@ -414,15 +421,15 @@ std::pair<ast_json_t, seq_t> parse_while_statement(const seq_t& pos){
 	const auto body = parse_statement_body(condition.second);
 
 	const auto condition_expr = parse_expression_all(seq_t(condition.first));
-	const auto r = ast_json_t{json_t::make_array(
+	const auto r = make_statement(
+		0,
+		keyword_t::k_while,
 		{
-			keyword_t::k_while,
 			condition_expr._value,
 			body.ast._value
 		}
-	)};
+	);
 	return { r, body.pos };
-//	return std::pair<json_t, seq_t>(json_t(), seq_t(""));
 }
 
 QUARK_UNIT_TEST("", "parse_while_statement()", "while(){}", ""){
@@ -466,10 +473,8 @@ pair<ast_json_t, seq_t> parse_software_system(const seq_t& s){
 	}
 
 	//??? Instead of parsing a static JSON literal, we could parse a Floyd expression that results in a JSON value = use variables etc.
-//	const auto expr = parse_expression_seq(ss_pos.second);
 	std::pair<json_t, seq_t> json_pos = parse_json(ss_pos.second);
-
-	const auto r = ast_json_t{json_t::make_array({ keyword_t::k_software_system, json_pos.first })};
+	const auto r = make_statement(0, keyword_t::k_software_system, json_pos.first);
 	return { r, json_pos.second };
 }
 
@@ -490,10 +495,9 @@ pair<ast_json_t, seq_t> parse_container_def(const seq_t& s){
 	}
 
 	//??? Instead of parsing a static JSON literal, we could parse a Floyd expression that results in a JSON value = use variables etc.
-//	const auto expr = parse_expression_seq(ss_pos.second);
 	std::pair<json_t, seq_t> json_pos = parse_json(ss_pos.second);
 
-	const auto r = ast_json_t{json_t::make_array({ keyword_t::k_container_def, json_pos.first })};
+	const auto r = make_statement(0, keyword_t::k_container_def, json_pos.first);
 	return { r, json_pos.second };
 }
 

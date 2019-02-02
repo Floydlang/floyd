@@ -136,7 +136,7 @@ parse_result_t parse_statements(const seq_t& s){
 
 		pos = pos2;
 	}
-	return { ast_json_t{ json_t::make_array(statements) }, pos, line_numbers };
+	return { ast_json_t::make(statements), pos, line_numbers };
 }
 
 parse_result_t parse_program2(const string& program, int pre_line_count){

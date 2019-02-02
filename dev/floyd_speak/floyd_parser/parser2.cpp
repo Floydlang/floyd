@@ -496,7 +496,7 @@ std::pair<expr_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			else if(op1 == "["  && precedence > eoperator_precedence::k_looup){
 				const auto p2 = skip_expr_whitespace(p.rest());
 				const auto key = parse_expression_int(p2, eoperator_precedence::k_super_weak);
-				const auto result = maker__make2(eoperation::k_2_looup, lhs, key.first);
+				const auto result = maker__make2(eoperation::k_2_lookup, lhs, key.first);
 				const auto p3 = skip_expr_whitespace(key.second);
 
 				// Closing "]".
@@ -799,7 +799,7 @@ std::pair<expr_t, seq_t> parse_expression(const seq_t& p){
 static const std::map<eoperation, string> k_2_operator_to_string{
 //	{ eoperation::k_x_member_access, "->" },
 
-	{ eoperation::k_2_looup, "[]" },
+	{ eoperation::k_2_lookup, "[]" },
 
 	{ eoperation::k_2_add, "+" },
 	{ eoperation::k_2_subtract, "-" },
@@ -876,7 +876,7 @@ std::string expr_to_string(const expr_t& e){
 	else if(e._op == eoperation::k_x_member_access){
 		return make3(quote("->"), expr_to_string(e._exprs[0]), quote(e._identifier));
 	}
-	else if(e._op == eoperation::k_2_looup){
+	else if(e._op == eoperation::k_2_lookup){
 		return op_to_string(e._op, e._exprs[0], e._exprs[1]);
 	}
 	else if(e._op == eoperation::k_2_add){

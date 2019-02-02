@@ -153,20 +153,24 @@ inline int count_lines(const seq_t& start, const seq_t& end){
 }
 
 
-	struct location_t {
-		location_t(const std::string& source_file_path, int line_number, int column) :
-			source_file_path(source_file_path),
-			line_number(line_number),
-			column(column)
-		{
-		}
+struct location_t {
+	location_t(const std::string& source_file_path, int line_number, int column) :
+		source_file_path(source_file_path),
+		line_number(line_number),
+		column(column)
+	{
+	}
 
-		std::string source_file_path;
-		int line_number;
-		int column;
-	};
-	ast_json_t make_statement(const location_t& loc, const std::string& opcode, const std::vector<json_t>& params);
+	std::string source_file_path;
+	int line_number;
+	int column;
+};
 
+ast_json_t make_statement(int64_t location, const std::string& opcode, const std::vector<json_t>& params);
+ast_json_t make_statement(int64_t location, const std::string& opcode, const json_t& params);
+
+ast_json_t make_expression1(int64_t location, const std::string& opcode, const json_t& param);
+ast_json_t make_expression2(int64_t location, const std::string& opcode, const json_t& param1, const json_t& param2);
 
 /*
 #include "floyd_basics.h"

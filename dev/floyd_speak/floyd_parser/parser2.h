@@ -98,7 +98,7 @@ enum class eoperation {
 
 	k_x_member_access,
 
-	k_2_looup,
+	k_2_lookup,
 
 	k_2_add,
 	k_2_subtract,

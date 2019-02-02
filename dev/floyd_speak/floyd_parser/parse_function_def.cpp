@@ -37,7 +37,8 @@ std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos){
 	const auto args = members_to_json(args_pos.first);
 	const auto function_name = function_name_pos.first;
 
-	json_t function_def = json_t::make_array({
+	const auto function_def = make_statement(
+		0,
 		"def-func",
 		json_t::make_object({
 			{ "name", function_name },
@@ -46,8 +47,8 @@ std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos){
 			{ "return_type", typeid_to_ast_json(return_type_pos.first, json_tags::k_tag_resolve_state)._value },
 			{ "impure", impure_pos.first }
 		})
-	});
-	return { ast_json_t{function_def}, body.pos };
+	);
+	return { function_def, body.pos };
 }
 
 

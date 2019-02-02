@@ -35,14 +35,15 @@ namespace floyd {
 			pos = skip_whitespace(pos);
 		}
 
-		const auto r = json_t::make_array({
+		const auto r = make_statement(
+			0,
 			"def-struct",
 			json_t::make_object({
 				{ "name", name },
 				{ "members", members_to_json(members) }
 			})
-		});
-		return { ast_json_t{r}, skip_whitespace(body_pos.second) };
+		);
+		return { r, skip_whitespace(body_pos.second) };
 	}
 
 	std::pair<ast_json_t, seq_t>  parse_struct_definition(const seq_t& pos0){
