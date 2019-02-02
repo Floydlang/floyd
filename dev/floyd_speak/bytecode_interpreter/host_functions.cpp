@@ -328,7 +328,7 @@ typeid_t make__fsentry_info_t__type(){
 
 
 
-//??? removeusage of value_t
+//??? remove usage of value_t
 value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_type){
 	QUARK_ASSERT(v.check_invariant());
 
@@ -374,7 +374,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 		return value_t::make_json_value(v);
 	}
 	else if(target_type.is_typeid()){
-		const auto typeid_value = typeid_from_ast_json(ast_json_t({v}));
+		const auto typeid_value = typeid_from_ast_json(ast_json_t::make(v));
 		return value_t::make_typeid_value(typeid_value);
 	}
 	else if(target_type.is_struct()){

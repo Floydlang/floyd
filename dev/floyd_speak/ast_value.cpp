@@ -988,10 +988,12 @@ QUARK_UNIT_TESTQ("value_t()", "string"){
 
 
 ast_json_t value_and_type_to_ast_json(const value_t& v){
-	return ast_json_t{json_t::make_array({
-		typeid_to_ast_json(v.get_type(), json_tags::k_tag_resolve_state)._value,
-		value_to_ast_json(v, json_tags::k_tag_resolve_state)._value
-	})};
+	return ast_json_t::make(
+		json_t::make_array({
+			typeid_to_ast_json(v.get_type(), json_tags::k_tag_resolve_state)._value,
+			value_to_ast_json(v, json_tags::k_tag_resolve_state)._value
+		})
+	);
 }
 
 #if DEBUG
@@ -1006,28 +1008,28 @@ std::string make_value_debug_str(const value_t& value){
 
 ast_json_t value_to_ast_json(const value_t& v, json_tags tags){
 	if(v.is_undefined()){
-		return ast_json_t{json_t()};
+		return ast_json_t::make(json_t());
 	}
 	else if(v.is_internal_dynamic()){
-		return ast_json_t{json_t()};
+		return ast_json_t::make(json_t());
 	}
 	else if(v.is_void()){
-		return ast_json_t{json_t()};
+		return ast_json_t::make(json_t());
 	}
 	else if(v.is_bool()){
-		return ast_json_t{json_t(v.get_bool_value())};
+		return ast_json_t::make(json_t(v.get_bool_value()));
 	}
 	else if(v.is_int()){
-		return ast_json_t{json_t(static_cast<double>(v.get_int_value()))};
+		return ast_json_t::make(json_t(static_cast<double>(v.get_int_value())));
 	}
 	else if(v.is_double()){
-		return ast_json_t{json_t(static_cast<double>(v.get_double_value()))};
+		return ast_json_t::make(json_t(static_cast<double>(v.get_double_value())));
 	}
 	else if(v.is_string()){
-		return ast_json_t{json_t(v.get_string_value())};
+		return ast_json_t::make(json_t(v.get_string_value()));
 	}
 	else if(v.is_json_value()){
-		return ast_json_t{v.get_json_value()};
+		return ast_json_t::make(v.get_json_value());
 	}
 	else if(v.is_typeid()){
 		return typeid_to_ast_json(v.get_typeid_value(), tags);
@@ -1043,7 +1045,7 @@ ast_json_t value_to_ast_json(const value_t& v, json_tags tags){
 			const auto& value2 = value_to_ast_json(value, tags);
 			obj2[key] = value2._value;
 		}
-		return ast_json_t{json_t::make_object(obj2)};
+		return ast_json_t::make(json_t::make_object(obj2));
 /*
 
  }
@@ -1067,7 +1069,7 @@ ast_json_t value_to_ast_json(const value_t& v, json_tags tags){
 			const auto& value2 = value_to_ast_json(value, tags);
 			obj2[key] = value2._value;
 		}
-		return ast_json_t{json_t::make_object(obj2)};
+		return ast_json_t::make(json_t::make_object(obj2));
 /*
 
  }
@@ -1082,7 +1084,7 @@ ast_json_t value_to_ast_json(const value_t& v, json_tags tags){
 	}
 	else if(v.is_vector()){
 		const auto& vec = v.get_vector_value();
-		return ast_json_t{ values_to_json_array(vec) 	};
+		return ast_json_t::make(values_to_json_array(vec));
 /*
 		std::vector<json_t> result;
 		for(int i = 0 ; i < value->_elements.size() ; i++){
@@ -1099,14 +1101,14 @@ ast_json_t value_to_ast_json(const value_t& v, json_tags tags){
 		for(const auto& e: entries){
 			result[e.first] = value_to_ast_json(e.second, tags)._value;
 		}
-		return ast_json_t{result};
+		return ast_json_t::make(result);
 	}
 	else if(v.is_function()){
-		return ast_json_t{json_t::make_object(
+		return ast_json_t::make(json_t::make_object(
 			{
 				{ "funtyp", typeid_to_ast_json(v.get_type(), tags)._value }
 			}
-		)};
+		));
 	}
 	else{
 		throw std::exception();

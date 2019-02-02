@@ -73,7 +73,7 @@ Expression:
 */
 
 struct ast_json_t {
-	public: ast_json_t(const json_t& v) :
+	private: ast_json_t(const json_t& v) :
 		_value(v)
 	{
 	}

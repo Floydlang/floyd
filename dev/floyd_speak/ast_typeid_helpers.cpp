@@ -22,18 +22,18 @@ using std::vector;
 ast_json_t struct_definition_to_ast_json(const struct_definition_t& v){
 	QUARK_ASSERT(v.check_invariant());
 
-	return ast_json_t{json_t::make_array({
+	return ast_json_t::make(json_t::make_array({
 		members_to_json(v._members)
-	})};
+	}));
 }
 
 
 ast_json_t protocol_definition_to_ast_json(const protocol_definition_t& v){
 	QUARK_ASSERT(v.check_invariant());
 
-	return ast_json_t{json_t::make_array({
+	return ast_json_t::make(json_t::make_array({
 		members_to_json(v._members)
-	})};
+	}));
 }
 
 
@@ -57,46 +57,52 @@ ast_json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 		|| b == base_type::k_json_value
 		|| b == base_type::k_typeid
 	){
-		return ast_json_t{basetype_str_tagged};
+		return ast_json_t::make(basetype_str_tagged);
 	}
 	else if(b == base_type::k_struct){
 		const auto struct_def = t.get_struct();
-		return ast_json_t{json_t::make_array({
-			json_t(basetype_str_tagged),
-			struct_definition_to_ast_json(struct_def)._value
-		})};
+		return ast_json_t::make(
+			json_t::make_array({
+				json_t(basetype_str_tagged),
+				struct_definition_to_ast_json(struct_def)._value
+			})
+		);
 	}
 	else if(b == base_type::k_protocol){
 		const auto protocol_def = t.get_protocol();
-		return ast_json_t{json_t::make_array({
-			json_t(basetype_str_tagged),
-			protocol_definition_to_ast_json(protocol_def)._value
-		})};
+		return ast_json_t::make(
+			json_t::make_array({
+				json_t(basetype_str_tagged),
+				protocol_definition_to_ast_json(protocol_def)._value
+			})
+		);
 	}
 	else if(b == base_type::k_vector){
 		const auto d = t.get_vector_element_type();
-		return ast_json_t{json_t::make_array({
+		return ast_json_t::make(json_t::make_array({
 			json_t(basetype_str),
 			typeid_to_ast_json(d, tags)._value
-		})};
+		}));
 	}
 	else if(b == base_type::k_dict){
 		const auto d = t.get_dict_value_type();
-		return ast_json_t{json_t::make_array({
+		return ast_json_t::make(json_t::make_array({
 			json_t(basetype_str),
 			typeid_to_ast_json(d, tags)._value
-		})};
+		}));
 	}
 	else if(b == base_type::k_function){
-		return ast_json_t{json_t::make_array({
+		return ast_json_t::make(json_t::make_array({
 			basetype_str,
 			typeid_to_ast_json(t.get_function_return(), tags)._value,
 			typeids_to_json_array(t.get_function_args()),
 			t.get_function_pure() == epure::pure ? true : false
-		})};
+		}));
 	}
 	else if(b == base_type::k_internal_unresolved_type_identifier){
-		return ast_json_t{ std::string() + std::string(1, tag_unresolved_type_char) + t.get_unresolved_type_identifier() };
+		return ast_json_t::make(
+			std::string() + std::string(1, tag_unresolved_type_char) + t.get_unresolved_type_identifier()
+		);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -180,15 +186,15 @@ typeid_t typeid_from_ast_json(const ast_json_t& t2){
 			return typeid_t::make_protocol(protocol_members);
 		}
 		else if(s == "vector"){
-			const auto element_type = typeid_from_ast_json(ast_json_t{a[1]});
+			const auto element_type = typeid_from_ast_json(ast_json_t::make(a[1]));
 			return typeid_t::make_vector(element_type);
 		}
 		else if(s == "dict"){
-			const auto value_type = typeid_from_ast_json(ast_json_t{a[1]});
+			const auto value_type = typeid_from_ast_json(ast_json_t::make(a[1]));
 			return typeid_t::make_dict(value_type);
 		}
 		else if(s == "fun"){
-			const auto ret_type = typeid_from_ast_json(ast_json_t{a[1]});
+			const auto ret_type = typeid_from_ast_json(ast_json_t::make(a[1]));
 			const auto arg_types_array = a[2].get_array();
 			const vector<typeid_t> arg_types = typeids_from_json_array(arg_types_array);
 
@@ -226,7 +232,7 @@ std::vector<json_t> typeids_to_json_array(const std::vector<typeid_t>& m){
 std::vector<typeid_t> typeids_from_json_array(const std::vector<json_t>& m){
 	vector<typeid_t> r;
 	for(const auto& a: m){
-		r.push_back(typeid_from_ast_json(ast_json_t{a}));
+		r.push_back(typeid_from_ast_json(ast_json_t::make(a)));
 	}
 	return r;
 }
@@ -251,7 +257,7 @@ std::vector<member_t> members_from_json(const json_t& members){
 	std::vector<member_t> r;
 	for(const auto& i: members.get_array()){
 		const auto m = member_t(
-			typeid_from_ast_json(ast_json_t{i.get_object_element("type")}),
+			typeid_from_ast_json(ast_json_t::make(i.get_object_element("type"))),
 			i.get_object_element("name").get_string()
 		);
 
