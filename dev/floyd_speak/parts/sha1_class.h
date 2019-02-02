@@ -47,7 +47,7 @@ struct TSHA1 {
 	friend bool operator<(const TSHA1& iLHS, const TSHA1& iRHS);
 
 	///////////////////		State
-		private: std::uint8_t fHash[kHashSize];
+		 std::uint8_t fHash[kHashSize];
 };
 
 bool operator<(const TSHA1& iLHS, const TSHA1& iRHS);

@@ -14,9 +14,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#ifdef __APPLE__
 #include <libproc.h>
 
 #include <CoreFoundation/CoreFoundation.h>
+#endif
 
 #include <dirent.h>    /* struct DIR, struct dirent, opendir().. */
 
@@ -291,6 +293,7 @@ QUARK_UNIT_TEST("", "GetDirectories()", "", ""){
 
 
 std::string get_process_path (int process_id){
+#ifdef __APPLE__
 	pid_t pid; int ret;
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
 
@@ -304,6 +307,12 @@ std::string get_process_path (int process_id){
 //		printf("proc %d: %s\n", pid, pathbuf);
 		return std::string(pathbuf);
 	}
+#else
+     pid_t pid; int ret;
+	 char pathbuf[512]; /* /proc/<pid>/exe */
+	 snprintf(pathbuf, sizeof(pathbuf), "/proc/%i/exe", pid);
+	 return std::string(pathbuf);
+#endif
 }
 
 
@@ -334,6 +343,7 @@ std::string MacBundlePath()
 
 //??? fix leaks.
 process_info_t get_process_info(){
+#ifdef __APPLE__
 	CFBundleRef mainBundle = CFBundleGetMainBundle();
 	if(mainBundle == nullptr){
 		throw std::exception();
@@ -358,6 +368,11 @@ process_info_t get_process_info(){
 	return process_info_t{
 		std::string(path) + "/"
 	};
+#else
+	return process_info_t{
+		std::string("path") + "/"
+	};
+#endif
 }
 
 
@@ -664,8 +679,9 @@ bool GetFileInfo(const std::string& completePath, TFileInfo& outInfo){
 	time_t statusChange = theStat.st_ctime;
 	off_t size = theStat.st_size;
 	result.fModificationDate = std::max(dataChange, statusChange);
+#ifdef __APPLE__
 	result.fCreationDate = theStat.st_birthtimespec.tv_sec;
-
+#endif
 
 	const bool dir = S_ISDIR(theStat.st_mode);
 	const bool file = S_ISREG(theStat.st_mode);
@@ -939,7 +955,12 @@ std::vector<TDirEntry> GetDirItems(const std::string& inDir){
 	std::vector<TDirEntry> result;
 
 	for(const auto& e: dir_elements){
+#ifdef __APPLE__
 		const std::string name(&e.d_name[0], &e.d_name[e.d_namlen]);
+#else
+		const std::string name(&e.d_name[0], &e.d_name[256]);
+
+#endif
 
 		if(name == "." || name == ".."){
 			//	Skip.
@@ -1028,6 +1049,7 @@ std::vector<std::string> args_to_vector(int argc, const char * argv[]){
 	return r;
 }
 
+#ifdef __APPLE__
 std::pair<std::string, std::vector<std::string> > extract_key(const std::vector<std::string>& args, const std::string& key){
 	const auto it = std::find(args.begin(), args.end(), key);
 	if(it != args.end()){
@@ -1040,6 +1062,7 @@ std::pair<std::string, std::vector<std::string> > extract_key(const std::vector<
 		return { "", args };
 	}
 }
+#endif
 
 /*
 % testopt
