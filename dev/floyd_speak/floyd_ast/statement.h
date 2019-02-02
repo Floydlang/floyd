@@ -188,8 +188,8 @@ namespace floyd {
 
 			expression_t _expression;
 		};
-		public: static statement_t make__return_statement(const expression_t& expression){
-			return statement_t{ ._contents = {return_statement_t{expression}} };
+		public: static statement_t make__return_statement(const location_t& location, const expression_t& expression){
+			return statement_t{ .location = location, ._contents = {return_statement_t{expression}} };
 		}
 
 
@@ -204,8 +204,8 @@ namespace floyd {
 			std::string _name;
 			std::shared_ptr<const struct_definition_t> _def;
 		};
-		public: static statement_t make__define_struct_statement(const define_struct_statement_t& value){
-			return statement_t{ ._contents = {define_struct_statement_t{value}} };
+		public: static statement_t make__define_struct_statement(const location_t& location, const define_struct_statement_t& value){
+			return statement_t{ .location = location, ._contents = {define_struct_statement_t{value}} };
 		}
 
 
@@ -220,8 +220,8 @@ namespace floyd {
 			std::string _name;
 			std::shared_ptr<const protocol_definition_t> _def;
 		};
-		public: static statement_t make__define_protocol_statement(const define_protocol_statement_t& value){
-			return statement_t{ ._contents = {define_protocol_statement_t{value}} };
+		public: static statement_t make__define_protocol_statement(const location_t& location, const define_protocol_statement_t& value){
+			return statement_t{ .location = location, ._contents = {define_protocol_statement_t{value}} };
 		}
 
 
@@ -236,8 +236,8 @@ namespace floyd {
 			std::string _name;
 			std::shared_ptr<const function_definition_t> _def;
 		};
-		public: static statement_t make__define_function_statement(const define_function_statement_t& value){
-			return statement_t{ ._contents = {define_function_statement_t{value}} };
+		public: static statement_t make__define_function_statement(const location_t& location, const define_function_statement_t& value){
+			return statement_t{ .location = location, ._contents = {define_function_statement_t{value}} };
 		}
 
 
@@ -262,8 +262,8 @@ namespace floyd {
 			expression_t _expression;
 			mutable_mode _locals_mutable_mode;
 		};
-		public: static statement_t make__bind_local(const std::string& new_local_name, const typeid_t& bindtype, const expression_t& expression, bind_local_t::mutable_mode locals_mutable_mode){
-			return statement_t{ ._contents = {bind_local_t{ new_local_name, bindtype, expression, locals_mutable_mode}} };
+		public: static statement_t make__bind_local(const location_t& location, const std::string& new_local_name, const typeid_t& bindtype, const expression_t& expression, bind_local_t::mutable_mode locals_mutable_mode){
+			return statement_t{ .location = location, ._contents = {bind_local_t{ new_local_name, bindtype, expression, locals_mutable_mode}} };
 		}
 
 
@@ -279,8 +279,8 @@ namespace floyd {
 			std::string _local_name;
 			expression_t _expression;
 		};
-		public: static statement_t make__store(const std::string& local_name, const expression_t& expression){
-			return statement_t{ ._contents = {store_t{ local_name, expression}} };
+		public: static statement_t make__store(const location_t& location, const std::string& local_name, const expression_t& expression){
+			return statement_t{ .location = location, ._contents = {store_t{ local_name, expression}} };
 		}
 
 
@@ -297,8 +297,8 @@ namespace floyd {
 			expression_t _expression;
 		};
 
-		public: static statement_t make__store2(const variable_address_t& dest_variable, const expression_t& expression){
-			return statement_t{ ._contents = {store2_t{ dest_variable, expression}} };
+		public: static statement_t make__store2(const location_t& location, const variable_address_t& dest_variable, const expression_t& expression){
+			return statement_t{ .location = location, ._contents = {store2_t{ dest_variable, expression}} };
 		}
 
 
@@ -313,8 +313,8 @@ namespace floyd {
 			body_t _body;
 		};
 
-		public: static statement_t make__block_statement(const body_t& body){
-			return statement_t{ ._contents = {block_statement_t{ body}} };
+		public: static statement_t make__block_statement(const location_t& location, const body_t& body){
+			return statement_t{ .location = location, ._contents = {block_statement_t{ body}} };
 		}
 
 
@@ -336,11 +336,12 @@ namespace floyd {
 			body_t _else_body;
 		};
 		public: static statement_t make__ifelse_statement(
+			const location_t& location,
 			const expression_t& condition,
 			const body_t& then_body,
 			const body_t& else_body
 		){
-			return statement_t{ ._contents = {ifelse_statement_t{ condition, then_body, else_body}} };
+			return statement_t{ .location = location, ._contents = {ifelse_statement_t{ condition, then_body, else_body}} };
 		}
 
 
@@ -370,13 +371,14 @@ namespace floyd {
 			range_type _range_type;
 		};
 		public: static statement_t make__for_statement(
+			const location_t& location,
 			const std::string iterator_name,
 			const expression_t& start_expression,
 			const expression_t& end_expression,
 			const body_t& body,
 			for_statement_t::range_type range_type
 		){
-			return statement_t{ ._contents = {for_statement_t{ iterator_name, start_expression, end_expression, body, range_type }} };
+			return statement_t{ .location = location, ._contents = {for_statement_t{ iterator_name, start_expression, end_expression, body, range_type }} };
 		}
 
 
@@ -392,9 +394,10 @@ namespace floyd {
 		};
 
 		public: static statement_t make__software_system_statement(
+			const location_t& location,
 			json_t json_data
 		){
-			return statement_t{ ._contents = {software_system_statement_t{ json_data }} };
+			return statement_t{ .location = location, ._contents = {software_system_statement_t{ json_data }} };
 		}
 
 
@@ -410,9 +413,10 @@ namespace floyd {
 		};
 
 		public: static statement_t make__container_def_statement(
+			const location_t& location,
 			json_t json_data
 		){
-			return statement_t{ ._contents = {container_def_statement_t{ json_data }} };
+			return statement_t{ .location = location, ._contents = {container_def_statement_t{ json_data }} };
 		}
 
 
@@ -431,10 +435,11 @@ namespace floyd {
 		};
 
 		public: static statement_t make__while_statement(
+			const location_t& location,
 			const expression_t& condition,
 			const body_t& body
 		){
-			return statement_t{ ._contents = {while_statement_t{ condition, body }} };
+			return statement_t{ .location = location, ._contents = {while_statement_t{ condition, body }} };
 		}
 
 
@@ -448,8 +453,8 @@ namespace floyd {
 
 			expression_t _expression;
 		};
-		public: static statement_t make__expression_statement(const expression_t& expression){
-			return statement_t{ ._contents = {expression_statement_t{ expression }} };
+		public: static statement_t make__expression_statement(const location_t& location, const expression_t& expression){
+			return statement_t{ .location = location, ._contents = {expression_statement_t{ expression }} };
 		}
 
 
@@ -543,6 +548,7 @@ namespace floyd {
 		//////////////////////////////////////		STATE
 
 
+		location_t location;
 		std::variant<
 			return_statement_t,
 			define_struct_statement_t,
@@ -562,7 +568,7 @@ namespace floyd {
 	};
 
 	static bool operator==(const statement_t& lhs, const statement_t& rhs){
-		return lhs._contents == rhs._contents;
+		return lhs.location == rhs.location && lhs._contents == rhs._contents;
 	}
 
 	inline bool body_t::check_types_resolved() const{

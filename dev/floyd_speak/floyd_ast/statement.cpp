@@ -34,8 +34,8 @@ int add_temp(symbol_table_t& symbols, const std::string& name, const floyd::type
 
 
 QUARK_UNIT_TEST("", "", "", ""){
-	const auto a = statement_t::make__block_statement({});
-	const auto b = statement_t::make__block_statement({});
+	const auto a = statement_t::make__block_statement(k_no_location, {});
+	const auto b = statement_t::make__block_statement(k_no_location, {});
 	QUARK_UT_VERIFY(a == b);
 }
 

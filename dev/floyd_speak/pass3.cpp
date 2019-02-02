@@ -349,7 +349,7 @@ std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& a, 
 				throw std::runtime_error("Types not compatible in bind.");
 			}
 			else{
-				return { a_acc, statement_t::make__store2(existing_value_deep_ptr.second, rhs_expr3) };
+				return { a_acc, statement_t::make__store2(s.location, existing_value_deep_ptr.second, rhs_expr3) };
 			}
 		}
 	}
@@ -362,7 +362,7 @@ std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& a, 
 
 		a_acc._lexical_scope_stack.back().symbols._symbols.push_back({local_name, symbol_t::make_immutable_local(rhs_expr2_type)});
 		int variable_index = (int)(a_acc._lexical_scope_stack.back().symbols._symbols.size() - 1);
-		return { a_acc, statement_t::make__store2(floyd::variable_address_t::make_variable_address(0, variable_index), rhs_expr2.second) };
+		return { a_acc, statement_t::make__store2(s.location, floyd::variable_address_t::make_variable_address(0, variable_index), rhs_expr2.second) };
 	}
 }
 
@@ -420,7 +420,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 			a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = {new_local_name, bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type2) : symbol_t::make_immutable_local(lhs_type2)};
 			return {
 				a_acc,
-				statement_t::make__store2(floyd::variable_address_t::make_variable_address(0, (int)local_name_index), rhs_expr_pair.second)
+				statement_t::make__store2(s.location, floyd::variable_address_t::make_variable_address(0, (int)local_name_index), rhs_expr_pair.second)
 			};
 		}
 	}
@@ -438,7 +438,7 @@ std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& a, 
 
 	const auto statement = std::get<statement_t::block_statement_t>(s._contents);
 	const auto e = analyse_body(a, statement._body, a._lexical_scope_stack.back().pure, return_type);
-	return {e.first, statement_t::make__block_statement(e.second)};
+	return {e.first, statement_t::make__block_statement(s.location, e.second)};
 }
 
 std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
@@ -455,7 +455,7 @@ std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a,
 
 	//	Check that return value's type matches function's return type. Cannot be done here since we don't know who called us.
 	//	Instead calling code must check.
-	return { a_acc, statement_t::make__return_statement(result.second) };
+	return { a_acc, statement_t::make__return_statement(s.location, result.second) };
 }
 
 analyser_t analyse_def_struct_statement(const analyser_t& a, const statement_t::define_struct_statement_t& statement){
@@ -502,6 +502,7 @@ std::pair<analyser_t, statement_t> analyse_def_function_statement(const analyser
 	//	Translates into:  bind-local, "myfunc", function_definition_expr_t
 	const auto function_def_expr = expression_t::make_function_definition(statement._def);
 	const auto& s2 = statement_t::make__bind_local(
+		s.location,
 		statement._name,
 		statement._def->_function_type,
 		function_def_expr,
@@ -511,9 +512,10 @@ std::pair<analyser_t, statement_t> analyse_def_function_statement(const analyser
 	return s3;
 }
 
-std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a, const statement_t::ifelse_statement_t& statement, const typeid_t& return_type){
+std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
+	const auto statement = std::get<statement_t::ifelse_statement_t>(s._contents);
 	auto a_acc = a;
 
 	const auto condition2 = analyse_expression_no_target(a_acc, statement._condition);
@@ -526,12 +528,13 @@ std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a,
 
 	const auto then2 = analyse_body(a_acc, statement._then_body, a._lexical_scope_stack.back().pure, return_type);
 	const auto else2 = analyse_body(a_acc, statement._else_body, a._lexical_scope_stack.back().pure, return_type);
-	return { a_acc, statement_t::make__ifelse_statement(condition2.second, then2.second, else2.second) };
+	return { a_acc, statement_t::make__ifelse_statement(s.location, condition2.second, then2.second, else2.second) };
 }
 
-std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, const statement_t::for_statement_t& statement, const typeid_t& return_type){
+std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
+	const auto statement = std::get<statement_t::for_statement_t>(s._contents);
 	auto a_acc = a;
 
 	const auto start_expr2 = analyse_expression_no_target(a_acc, statement._start_expression);
@@ -557,12 +560,13 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 	const auto result = analyse_body(a_acc, body_injected, a._lexical_scope_stack.back().pure, return_type);
 	a_acc = result.first;
 
-	return { a_acc, statement_t::make__for_statement(statement._iterator_name, start_expr2.second, end_expr2.second, result.second, statement._range_type) };
+	return { a_acc, statement_t::make__for_statement(s.location, statement._iterator_name, start_expr2.second, end_expr2.second, result.second, statement._range_type) };
 }
 
-std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& a, const statement_t::while_statement_t& statement, const typeid_t& return_type){
+std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
+	const auto statement = std::get<statement_t::while_statement_t>(s._contents);
 	auto a_acc = a;
 
 	const auto condition2_expr = analyse_expression_no_target(a_acc, statement._condition);
@@ -571,17 +575,18 @@ std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& a, 
 	const auto result = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, return_type);
 	a_acc = result.first;
 
-	return { a_acc, statement_t::make__while_statement(condition2_expr.second, result.second) };
+	return { a_acc, statement_t::make__while_statement(s.location, condition2_expr.second, result.second) };
 }
 
-std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t& a, const statement_t::expression_statement_t& statement){
+std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t& a, const statement_t& s){
 	QUARK_ASSERT(a.check_invariant());
 
+	const auto statement = std::get<statement_t::expression_statement_t>(s._contents);
 	auto a_acc = a;
 	const auto expr2 = analyse_expression_no_target(a_acc, statement._expression);
 	a_acc = expr2.first;
 
-	return { a_acc, statement_t::make__expression_statement(expr2.second) };
+	return { a_acc, statement_t::make__expression_statement(s.location, expr2.second) };
 }
 
 //	Output is the RETURN VALUE of the analysed statement, if any.
@@ -639,24 +644,24 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 		}
 
 		return_type_t operator()(const statement_t::ifelse_statement_t& s) const{
-			const auto e = analyse_ifelse_statement(a, s, return_type);
+			const auto e = analyse_ifelse_statement(a, statement, return_type);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 		return_type_t operator()(const statement_t::for_statement_t& s) const{
-			const auto e = analyse_for_statement(a, s, return_type);
+			const auto e = analyse_for_statement(a, statement, return_type);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 		return_type_t operator()(const statement_t::while_statement_t& s) const{
-			const auto e = analyse_while_statement(a, s, return_type);
+			const auto e = analyse_while_statement(a, statement, return_type);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 
 
 		return_type_t operator()(const statement_t::expression_statement_t& s) const{
-			const auto e = analyse_expression_statement(a, s);
+			const auto e = analyse_expression_statement(a, statement);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}

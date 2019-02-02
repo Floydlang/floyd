@@ -186,15 +186,16 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 	QUARK_ASSERT(statement0._value.check_invariant());
 	QUARK_ASSERT(statement0._value.is_array());
 
-	const auto s = unpack_loc(statement0);
-	const auto statement = s.first;
+	const auto statement1 = unpack_loc(statement0);
+	const auto loc = statement1.second;
+	const auto statement = statement1.first;
 	const std::string type = statement.get_array_n(0).get_string();
 
 	//	[ "return", [ "k", 3, "int" ] ]
 	if(type == "return"){
 		QUARK_ASSERT(statement.get_array_size() == 2);
 		const auto expr = astjson_to_expression(statement.get_array_n(1));
-		return statement_t::make__return_statement(expr);
+		return statement_t::make__return_statement(loc, expr);
 	}
 
 	//	[ "bind", "double", "x", EXPRESSION, {} ]
@@ -211,7 +212,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		const auto expr2 = astjson_to_expression(expr);
 		bool mutable_flag = !meta.is_null() && meta.does_object_element_exist("mutable");
 		const auto mutable_mode = mutable_flag ? statement_t::bind_local_t::k_mutable : statement_t::bind_local_t::k_immutable;
-		return statement_t::make__bind_local(name2, bind_type2, expr2, mutable_mode);
+		return statement_t::make__bind_local(loc, name2, bind_type2, expr2, mutable_mode);
 	}
 
 	//	[ "store", "x", EXPRESSION ]
@@ -222,7 +223,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 
 		const auto name2 = name.get_string();
 		const auto expr2 = astjson_to_expression(expr);
-		return statement_t::make__store(name2, expr2);
+		return statement_t::make__store(loc, name2, expr2);
 	}
 
 	//	[ "store2", parent_index, variable_index, EXPRESSION ]
@@ -233,7 +234,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		const auto expr = statement.get_array_n(3);
 
 		const auto expr2 = astjson_to_expression(expr);
-		return statement_t::make__store2(variable_address_t::make_variable_address(parent_index, variable_index), expr2);
+		return statement_t::make__store2(loc, variable_address_t::make_variable_address(parent_index, variable_index), expr2);
 	}
 
 	//	[ "block", [ STATEMENTS ] ]
@@ -244,7 +245,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		const auto r = astjson_to_statements(ast_json_t::make(statements));
 
 		const auto body = body_t(r);
-		return statement_t::make__block_statement(body);
+		return statement_t::make__block_statement(loc, body);
 	}
 
 	else if(type == "def-struct"){
@@ -257,7 +258,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		const auto struct_def2 = struct_definition_t(members2);
 
 		const auto s = statement_t::define_struct_statement_t{ name, std::make_shared<struct_definition_t>(struct_def2) };
-		return statement_t::make__define_struct_statement(s);
+		return statement_t::make__define_struct_statement(loc, s);
 	}
 	else if(type == "def-protocol"){
 		QUARK_ASSERT(statement.get_array_size() == 2);
@@ -269,7 +270,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		const auto protocol_def2 = protocol_definition_t(members2);
 
 		const auto s = statement_t::define_protocol_statement_t{ name, std::make_shared<protocol_definition_t>(protocol_def2) };
-		return statement_t::make__define_protocol_statement(s);
+		return statement_t::make__define_protocol_statement(loc, s);
 	}
 
 	else if(type == "def-func"){
@@ -295,7 +296,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		const auto function_def = function_definition_t{k_no_location, function_typeid, args2, make_shared<body_t>(body), 0};
 
 		const auto s = statement_t::define_function_statement_t{ name2, std::make_shared<function_definition_t>(function_def) };
-		return statement_t::make__define_function_statement(s);
+		return statement_t::make__define_function_statement(loc, s);
 	}
 
 	//	[ "if", CONDITION_EXPR, THEN_STATEMENTS, ELSE_STATEMENTS ]
@@ -311,9 +312,10 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		const auto else_statements2 = astjson_to_statements(ast_json_t::make(else_statements));
 
 		return statement_t::make__ifelse_statement(
+			loc,
 			condition_expression2,
-			body_t{then_statements2},
-			body_t{else_statements2}
+			body_t{ then_statements2 },
+			body_t{ else_statements2 }
 		);
 	}
 	else if(type == keyword_t::k_for){
@@ -330,6 +332,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 
 		const auto range_type = for_mode.get_string() == "open-range" ? statement_t::for_statement_t::k_open_range : statement_t::for_statement_t::k_closed_range;
 		return statement_t::make__for_statement(
+			loc,
 			iterator_name.get_string(),
 			start_expression2,
 			end_expression2,
@@ -345,19 +348,19 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		const auto expression2 = astjson_to_expression(expression);
 		const auto body_statements2 = astjson_to_statements(ast_json_t::make(body_statements));
 
-		return statement_t::make__while_statement(expression2, body_t{body_statements2});
+		return statement_t::make__while_statement(loc, expression2, body_t{body_statements2});
 	}
 	else if(type == keyword_t::k_software_system){
 		QUARK_ASSERT(statement.get_array_size() == 2);
 		const auto json_data = statement.get_array_n(1);
 
-		return statement_t::make__software_system_statement(json_data);
+		return statement_t::make__software_system_statement(loc, json_data);
 	}
 	else if(type == keyword_t::k_container_def){
 		QUARK_ASSERT(statement.get_array_size() == 2);
 		const auto json_data = statement.get_array_n(1);
 
-		return statement_t::make__container_def_statement(json_data);
+		return statement_t::make__container_def_statement(loc, json_data);
 	}
 
 	//	[ "expression-statement", EXPRESSION ]
@@ -365,7 +368,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		QUARK_ASSERT(statement.get_array_size() == 2);
 		const auto expr = statement.get_array_n(1);
 		const auto expr2 = astjson_to_expression(expr);
-		return statement_t::make__expression_statement(expr2);
+		return statement_t::make__expression_statement(loc, expr2);
 	}
 
 	else{
@@ -460,6 +463,8 @@ ast_json_t statement_to_json(const statement_t& e){
 	QUARK_ASSERT(e.check_invariant());
 
 	struct visitor_t {
+		const statement_t& statement;
+
 		ast_json_t operator()(const statement_t::return_statement_t& s) const{
 			return make_statement1(k_no_location, keyword_t::k_return, expression_to_json(s._expression)._value);
 		}
@@ -471,7 +476,7 @@ ast_json_t statement_to_json(const statement_t& e){
 		}
 		ast_json_t operator()(const statement_t::define_function_statement_t& s) const{
 			return make_statement3(
-				k_no_location,
+				statement.location,
 				"def-func",
 				json_t(s._name),
 				function_def_to_ast_json(*s._def)._value,
@@ -488,7 +493,7 @@ ast_json_t statement_to_json(const statement_t& e){
 				: json_t();
 
 			return make_statement4(
-				k_no_location,
+				statement.location,
 				"bind",
 				s._new_local_name,
 				typeid_to_ast_json(s._bindtype, json_tags::k_tag_resolve_state)._value,
@@ -498,7 +503,7 @@ ast_json_t statement_to_json(const statement_t& e){
 		}
 		ast_json_t operator()(const statement_t::store_t& s) const{
 			return make_statement2(
-				k_no_location,
+				statement.location,
 				"store",
 				s._local_name,
 				expression_to_json(s._expression)._value
@@ -506,7 +511,7 @@ ast_json_t statement_to_json(const statement_t& e){
 		}
 		ast_json_t operator()(const statement_t::store2_t& s) const{
 			return make_statement3(
-				k_no_location,
+				statement.location,
 				"store2",
 				s._dest_variable._parent_steps,
 				s._dest_variable._index,
@@ -519,7 +524,7 @@ ast_json_t statement_to_json(const statement_t& e){
 
 		ast_json_t operator()(const statement_t::ifelse_statement_t& s) const{
 			return make_statement3(
-				k_no_location,
+				statement.location,
 				keyword_t::k_if,
 				expression_to_json(s._condition)._value,
 				body_to_json(s._then_body)._value,
@@ -528,7 +533,7 @@ ast_json_t statement_to_json(const statement_t& e){
 		}
 		ast_json_t operator()(const statement_t::for_statement_t& s) const{
 			return make_statement4(
-				k_no_location,
+				statement.location,
 				keyword_t::k_for,
 				//??? open_range?
 				json_t("closed_range"),
@@ -539,7 +544,7 @@ ast_json_t statement_to_json(const statement_t& e){
 		}
 		ast_json_t operator()(const statement_t::while_statement_t& s) const{
 			return make_statement2(
-				k_no_location,
+				statement.location,
 				keyword_t::k_while,
 				expression_to_json(s._condition)._value,
 				body_to_json(s._body)._value
@@ -549,28 +554,28 @@ ast_json_t statement_to_json(const statement_t& e){
 
 		ast_json_t operator()(const statement_t::expression_statement_t& s) const{
 			return make_statement1(
-				k_no_location,
+				statement.location,
 				"expression-statement",
 				expression_to_json(s._expression)._value
 			);
 		}
 		ast_json_t operator()(const statement_t::software_system_statement_t& s) const{
 			return make_statement1(
-				k_no_location,
+				statement.location,
 				keyword_t::k_software_system,
 				s._json_data
 			);
 		}
 		ast_json_t operator()(const statement_t::container_def_statement_t& s) const{
 			return make_statement1(
-				k_no_location,
+				statement.location,
 				keyword_t::k_container_def,
 				s._json_data
 			);
 		}
 	};
 
-	return std::visit(visitor_t{}, e._contents);
+	return std::visit(visitor_t{ e }, e._contents);
 }
 
 
