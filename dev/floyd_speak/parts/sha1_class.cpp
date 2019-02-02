@@ -12,7 +12,9 @@
 #include "quark.h"
 #include "sha1.h"
 
+#ifdef __APPLE__
      #include <CommonCrypto/CommonDigest.h>
+#endif
 
 
 #define ASSERT(x) QUARK_ASSERT(x)
@@ -124,7 +126,7 @@ bool operator<(const TSHA1& iLHS, const TSHA1& iRHS){
 TSHA1 CalcSHA1(const std::uint8_t iData[], std::size_t iSize){
 	ASSERT(iData != nullptr || iSize == 0);
 
-#if 0
+#ifndef __APPLE_
 	TSHA1 hash;
     sha1::calc(iData, static_cast<const int>(iSize), hash.fHash);
 #else

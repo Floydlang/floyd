@@ -23,6 +23,8 @@ using namespace std;
 
 #include "quark.h"
 
+#ifdef __APPLE__
+
 namespace floyd {
 
 
@@ -87,8 +89,10 @@ uint64_t sysctlbyname_uint64(const std::string& key){
 
 
 //	SEE sysctl.h
+
 #include <mach/machine.h>
 
+  
 hardware_info_t read_hardware_info(){
 	return {
 		._cpu_type = sysctlbyname_uint32("hw.cputype"),
@@ -210,6 +214,7 @@ int sched_getaffinity(pid_t pid, size_t cpu_size, cpu_set_t *cpu_set)
 
   return 0;
 }
+#endif
 
 /*
 int pthread_setaffinity_np(pthread_t thread, size_t cpu_size,
