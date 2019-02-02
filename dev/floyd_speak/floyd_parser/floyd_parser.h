@@ -18,7 +18,6 @@
 #include "quark.h"
 #include <string>
 
-struct seq_t;
 
 /*
 PEG
@@ -27,10 +26,15 @@ http://craftinginterpreters.com/representing-code.html
 
 */
 
-namespace floyd {
-	struct ast_json_t;
+struct seq_t;
 
-	//////////////////////////////////////////////////		read_statement()
+namespace floyd {
+
+	struct ast_json_t;
+	struct parse_result_t;
+
+
+	//////////////////////////////////////////////////		parse_statement()
 
 
 	/*
@@ -52,12 +56,11 @@ namespace floyd {
 
 	std::pair<ast_json_t, seq_t> parse_statement(const seq_t& pos0);
 
+	//	returns json-array of statements.
+	parse_result_t parse_statements(const seq_t& s);
 
 	//	returns json-array of statements.
-	std::pair<ast_json_t, seq_t> parse_statements(const seq_t& s);
-
-	//	returns json-array of statements.
-	ast_json_t parse_program2(const std::string& program);
+	parse_result_t parse_program2(const std::string& program, int pre_line_count);
 
 }	//	floyd
 

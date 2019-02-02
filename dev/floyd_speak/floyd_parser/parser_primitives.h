@@ -22,7 +22,7 @@
 #include <map>
 
 
-struct json_t;
+struct ast_json_t;
 
 namespace floyd {
 	//??? move this out of this file -- parser should not know about typeid_t.
@@ -137,6 +137,48 @@ namespace floyd {
 
 	std::pair<std::vector<member_t>, seq_t> read_function_arg_parantheses(const seq_t& s);
 
+
+
+
+
+inline int count_lines(const std::string& range){
+	const auto lf_count = std::count(range.begin(), range.end(), '\r');
+	const auto nl_count = std::count(range.begin(), range.end(), '\n');
+	return static_cast<int>(lf_count + nl_count);
+}
+
+inline int count_lines(const seq_t& start, const seq_t& end){
+	const auto range = get_range(start, end);
+	return count_lines(range);
+}
+
+
+	struct location_t {
+		location_t(const std::string& source_file_path, int line_number, int column) :
+			source_file_path(source_file_path),
+			line_number(line_number),
+			column(column)
+		{
+		}
+
+		std::string source_file_path;
+		int line_number;
+		int column;
+	};
+	ast_json_t make_statement(const location_t& loc, const std::string& opcode, const std::vector<json_t>& params);
+
+
+/*
+#include "floyd_basics.h"
+#include "text_parser.h"
+*/
+	struct parse_result_t {
+		ast_json_t ast;
+		seq_t pos;
+		std::vector<int> line_numbers;
+	};
+
+	
 }	//	floyd
 
 

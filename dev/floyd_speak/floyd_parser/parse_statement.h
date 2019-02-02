@@ -17,6 +17,7 @@ struct seq_t;
 namespace floyd {
 
 	struct ast_json_t;
+	struct parse_result_t;
 
 
 	/*
@@ -33,7 +34,7 @@ namespace floyd {
 				...
 			]
 	*/
-	std::pair<ast_json_t, seq_t> parse_statement_body(const seq_t& pos);
+	parse_result_t parse_statement_body(const seq_t& pos);
 
 
 	/*

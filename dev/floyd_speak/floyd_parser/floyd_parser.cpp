@@ -16,6 +16,7 @@
 #include "parse_protocol_def.h"
 #include "parser_primitives.h"
 #include "json_parser.h"
+#include "utils.h"
 
 
 namespace floyd {
@@ -110,24 +111,45 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 }
 
 
-std::pair<ast_json_t, seq_t> parse_statements(const seq_t& s){
+parse_result_t parse_statements(const seq_t& s){
 	vector<json_t> statements;
+	vector<int> line_numbers;
+
 	auto pos = skip_whitespace(s);
+
+	int line_number = count_lines(s, pos);
 	while(!pos.empty()){
+		line_numbers.push_back(line_number);
+
 		const auto statement_pos = parse_statement(pos);
 		statements.push_back(statement_pos.first._value);
-		pos = skip_whitespace(statement_pos.second);
-		while(pos.empty() == false && pos.first1_char() == ';'){
-			pos = pos.rest1();
-			pos = skip_whitespace(pos);
+
+		auto pos2 = skip_whitespace(statement_pos.second);
+
+		//	Skip optional ;
+		while(pos2.empty() == false && pos2.first1_char() == ';'){
+			pos2 = pos2.rest1();
+			pos2 = skip_whitespace(pos2);
 		}
+
+		line_number = line_number + count_lines(pos, pos2);
+
+		pos = pos2;
 	}
-	return { ast_json_t{json_t::make_array(statements)}, pos };
+	return { ast_json_t{ json_t::make_array(statements) }, pos, line_numbers };
 }
 
-ast_json_t parse_program2(const string& program){
+parse_result_t parse_program2(const string& program, int pre_line_count){
 	const auto statements_pos = parse_statements(seq_t(program));
-	return statements_pos.first;
+	const auto line_numbers2 = mapf<int>(
+		statements_pos.line_numbers,
+		[&](const auto& e){
+			return e - pre_line_count;
+		}
+	);
+
+
+	return { statements_pos.ast, statements_pos.pos, line_numbers2 };
 }
 
 
@@ -236,14 +258,14 @@ const char k_test_program_100_parserout[] = R"(
 
 QUARK_UNIT_TEST("", "parse_program1()", "k_test_program_0_source", ""){
 	ut_compare_jsons(
-		parse_program2(k_test_program_0_source)._value,
+					 parse_program2(k_test_program_0_source, 0).ast._value,
 		parse_json(seq_t(k_test_program_0_parserout)).first
 	);
 }
 
 QUARK_UNIT_TEST("", "parse_program1()", "k_test_program_1_source", ""){
 	ut_compare_jsons(
-		parse_program2(k_test_program_1_source)._value,
+					 parse_program2(k_test_program_1_source, 0).ast._value,
 		parse_json(seq_t(k_test_program_1_parserout)).first
 	);
 }
@@ -259,8 +281,9 @@ QUARK_UNIT_TEST("", "parse_program2()", "k_test_program_100_source", ""){
 					let pixel p = pixel(1, 0, 0);
 					return get_grey(p);
 				}
-			)"
-		)._value,
+			)",
+			0
+					 ).ast._value,
 		parse_json(seq_t(k_test_program_100_parserout)).first
 	);
 }

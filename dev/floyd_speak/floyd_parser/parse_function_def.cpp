@@ -42,12 +42,12 @@ std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos){
 		json_t::make_object({
 			{ "name", function_name },
 			{ "args", args },
-			{ "statements", body.first._value },
+			{ "statements", body.ast._value },
 			{ "return_type", typeid_to_ast_json(return_type_pos.first, json_tags::k_tag_resolve_state)._value },
 			{ "impure", impure_pos.first }
 		})
 	});
-	return { ast_json_t{function_def}, body.second };
+	return { ast_json_t{function_def}, body.pos };
 }
 
 

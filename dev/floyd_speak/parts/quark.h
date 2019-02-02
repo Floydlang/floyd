@@ -263,6 +263,22 @@ Add mechanism for unit tests to get to test files.
 namespace quark {
 
 
+
+class format_exception : std::runtime_error {
+	public: format_exception(const std::string& noun_type, const std::string& what) :
+		std::runtime_error(what),
+		noun_type(noun_type)
+	{
+	}
+
+	public: std::string noun_type;
+};
+
+inline void throw_format(const std::string& noun_type, const std::string& what){
+	throw format_exception(noun_type, what);
+}
+
+
 //	PRIMITIVES
 //	====================================================================================================================
 
@@ -861,7 +877,7 @@ inline void run_tests(const unit_test_registry& registry, const std::vector<std:
 			std::cout << "Succeess ALL  " << sorted_tests.size() << std::endl;
 		}
 		else{
-			std::cout << "Failure SUBSET " << fail_count << std::endl;
+			std::cout << "Failure ALL " << fail_count << std::endl;
 			exit(-1);
 		}
 	}

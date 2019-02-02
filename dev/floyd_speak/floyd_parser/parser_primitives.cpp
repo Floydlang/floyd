@@ -605,4 +605,21 @@ pair<typeid_t, seq_t> read_required_type(const seq_t& s){
 }
 
 
+
+
+ast_json_t make_statement(const location_t& loc, const std::string& opcode, const std::vector<json_t>& params){
+	std::vector<json_t> e = { json_t(opcode) };
+	e.insert(e.end(), params.begin(), params.end());
+	const auto r = json_t(e);
+	return ast_json_t{r};
+}
+
+
+QUARK_UNIT_TEST("", "make_statement()", "", ""){
+	const auto r = make_statement({ "hello.floyd", 123, 80 }, "def-struct", {});
+
+	QUARK_TEST_VERIFY( r._value == json_t::make_array({ "def-struct" }));
+}
+
+
 }	//	floyd
