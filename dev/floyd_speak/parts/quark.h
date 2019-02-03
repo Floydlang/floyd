@@ -643,7 +643,7 @@ inline void set_trace(const trace_i* v){
 		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(cppext_unit_test_), false); \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
 
-	//	When one or more of these exists, no non_VIP tests are run. Let's you iterate on a broken test quickly and let breakpoints in etc.
+	//	When one or more of these exists, no non_VIP tests are run. Let's you iterate on a broken test quickly and set breakpoints in etc.
 	#define QUARK_UNIT_TEST_VIP(class_under_test, function_under_test, scenario, expected_result) \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
 		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(cppext_unit_test_), true); \
@@ -658,8 +658,82 @@ inline void set_trace(const trace_i* v){
 
 	//### Add argument to unit-test functions that can be used / checked in UT_VERIFY().
 	#define QUARK_UT_VERIFY(exp) if(exp){}else{ ::quark::on_unit_test_failed_hook(::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(exp)); }
-
 	#define QUARK_TEST_VERIFY QUARK_UT_VERIFY
+	#define QUARK_UT_COMPARE(result, expected) ut_compare_hook(result, expected, ::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__))
+
+
+
+//	Make custom ut_validate() for your specific types.
+template <typename T> bool ut_validate(const T& result, const T& expected){
+	if(result == expected){
+		return true;
+	}
+	else{
+		QUARK_TRACE_SS("  result: " << result);
+		QUARK_TRACE_SS("expected: " << expected);
+		return false;
+	}
+}
+inline bool ut_validate(const std::string& result, const std::string& expected){
+	if(result == expected){
+		return true;
+	}
+	else{
+		QUARK_TRACE_SS("  result: " << result);
+		QUARK_TRACE_SS("expected: " << expected);
+
+		//	Show exactly where mismatch is.
+		for(size_t pos = 0 ; pos < std::max(result.size(), expected.size()) ; pos++){
+			const int result_int = pos < result.size() ? result[pos] : -1;
+			const int expected_int = pos < expected.size() ? expected[pos] : -1;
+
+			std::stringstream s;
+			s << pos;
+			s << "\t result:\t";
+			if(result_int == -1){
+				s << "<OUT OF BOUNDS>";
+			}
+			else{
+				s << "\'" << std::string(1, result_int) << "\'";
+				s << "\t" << result_int;
+				s << "\t" << "0x" << std::hex << result_int << std::dec;
+			}
+
+			s << "\t expected:\t";
+			if(expected_int == -1){
+				s << "<OUT OF BOUNDS>";
+			}
+			else{
+				s << "\'" << std::string(1, expected_int) << "\'";
+				s << "\t" << expected_int;
+				s << "\t" << "0x" << std::hex << expected_int << std::dec;
+			}
+
+			s << (result_int == expected_int ? "" : "\t=> DIFFERENT");
+			QUARK_TRACE_SS(s.str());
+		}
+		return false;
+	}
+}
+template <typename T> void ut_compare_hook(const T& result, const T& expected, runtime_i* runtime, const source_code_location& location){
+	const auto ok = ut_validate(result, expected);
+	if(ok == false){
+		::quark::on_unit_test_failed_hook(
+			runtime,
+			location,
+			QUARK_STRING(result) " != " QUARK_STRING(expect)
+		);
+	}
+}
+//	Special function to support using string literals, like 	QUARK_UT_COMPARE("xyz", "12345")
+inline void ut_compare_hook(const char* result, const char* expected, runtime_i* runtime, const source_code_location& location){
+	ut_compare_hook(std::string(result), std::string(expected), runtime, location);
+}
+
+
+
+
+
 
 
 template <typename T> void ut_compare(const T& result, const T& expected){
@@ -672,12 +746,12 @@ template <typename T> void ut_compare(const T& result, const T& expected){
 	}
 }
 
-
 inline void ut_compare_strings(const std::string& result, const std::string& expected){
 	if(result != expected){
-		QUARK_TRACE_SS("  result:" << result);
-		QUARK_TRACE_SS("expected:" << expected);
+		QUARK_TRACE_SS("  result: " << result);
+		QUARK_TRACE_SS("expected: " << expected);
 
+		//	Show exactly where mismatch is.
 		for(size_t pos = 0 ; pos < std::max(result.size(), expected.size()) ; pos++){
 			const int ach = pos < result.size() ? result[pos] : 1000;
 			const int bch = pos < expected.size() ? expected[pos] : 1000;
@@ -701,12 +775,14 @@ inline void ut_compare_strings(const std::string& result, const std::string& exp
 
 	#define QUARK_UT_VERIFY(exp)
 	#define QUARK_TEST_VERIFY QUARK_UT_VERIFY
+	#define QUARK_UT_COMPARE(result, expected)
 
 #endif
 
 
 	#define OFF_QUARK_UNIT_TEST(class_under_test, function_under_test, scenario, expected_result) \
 		void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
+
 	#define OFF_QUARK_UNIT_TEST_VIP(class_under_test, function_under_test, scenario, expected_result) \
 		void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
 

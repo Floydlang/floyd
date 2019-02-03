@@ -72,6 +72,53 @@ QUARK_UNIT_TESTQ("path_to_name()", ""){
 	QUARK_UT_VERIFY(path_to_name("") == "");
 }
 
+
+QUARK_UNIT_TEST("Quark", "QUARK_UT_COMPARE()", "", ""){
+	QUARK_UT_COMPARE(std::string("xyz"), std::string("xyz"));
+}
+QUARK_UNIT_TEST("Quark", "QUARK_UT_COMPARE()", "", ""){
+	QUARK_UT_COMPARE("xyz", "xyz");
+}
+QUARK_UNIT_TEST("Quark", "QUARK_UT_COMPARE()", "", ""){
+	try{
+		QUARK_UT_COMPARE("xyzabc", "xyztbcd");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+		//	We should land here.
+	}
+}
+
+struct custom_type_t {
+	int a;
+	std::string s;
+};
+
+bool ut_validate(const custom_type_t& result, const custom_type_t& expected){
+	if(result.a == expected.a && result.s == expected.s){
+		return true;
+	}
+	else{
+		QUARK_TRACE_SS("  result: " << result.a << " " << result.s);
+		QUARK_TRACE_SS("expected: " << expected.a << " " << expected.s);
+		return false;
+	}
+}
+
+/*bool operator==(const custom_type_t& lhs, const custom_type_t& rhs){
+	return lhs.a == rhs.a && lhs.s == rhs.s;
+}*/
+QUARK_UNIT_TEST("Quark", "QUARK_UT_COMPARE()", "", ""){
+	try {
+		const auto result = custom_type_t{ 100, "one hundred" };
+		const auto expected = custom_type_t{ 200, "two hundred" };
+		QUARK_UT_COMPARE(result, expected);
+	}
+	catch(...){
+		//	We should land here.
+	}
+}
+
 #endif
 
 
