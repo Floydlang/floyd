@@ -185,6 +185,13 @@ DETECT_TEST("", "detect_implicit_statement_lookahead()", "dict", "assign"){
 //	BIND:			let int (string a) x = f(4 == 5)
 //	BIND:			mutable int x = 10
 //	BIND:			mutable x = 10
+
+//	ERROR:			let int x
+//	ERROR:			let x
+//	ERROR:			mutable int x
+//	ERROR:			mutable x
+
+//	ERROR:			x = 10
 pair<ast_json_t, seq_t> parse_bind_statement(const seq_t& s){
 	const auto start = skip_whitespace(s);
 	const auto let_pos = if_first(start, keyword_t::k_let);
