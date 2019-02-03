@@ -21,7 +21,6 @@
 		2C18047B208B939800F62480 /* parse_prefixless_statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18046B208B939700F62480 /* parse_prefixless_statement.cpp */; };
 		2C18047D208B939800F62480 /* parse_statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18046D208B939700F62480 /* parse_statement.cpp */; };
 		2C18047F208B939800F62480 /* parse_struct_def.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18046F208B939700F62480 /* parse_struct_def.cpp */; };
-		2C180481208B939800F62480 /* parser2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180471208B939700F62480 /* parser2.cpp */; };
 		2C180483208B939800F62480 /* parser_primitives.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180473208B939700F62480 /* parser_primitives.cpp */; };
 		2C18048E208B947C00F62480 /* ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180486208B947C00F62480 /* ast.cpp */; };
 		2C180490208B947C00F62480 /* ast_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180488208B947C00F62480 /* ast_basics.cpp */; };
@@ -103,8 +102,6 @@
 		2C18046E208B939700F62480 /* parse_statement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parse_statement.h; sourceTree = "<group>"; };
 		2C18046F208B939700F62480 /* parse_struct_def.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parse_struct_def.cpp; sourceTree = "<group>"; };
 		2C180470208B939700F62480 /* parse_struct_def.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parse_struct_def.h; sourceTree = "<group>"; };
-		2C180471208B939700F62480 /* parser2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser2.cpp; sourceTree = "<group>"; };
-		2C180472208B939700F62480 /* parser2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser2.h; sourceTree = "<group>"; };
 		2C180473208B939700F62480 /* parser_primitives.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser_primitives.cpp; sourceTree = "<group>"; };
 		2C180474208B939700F62480 /* parser_primitives.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser_primitives.h; sourceTree = "<group>"; };
 		2C180486208B947C00F62480 /* ast.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ast.cpp; sourceTree = "<group>"; };
@@ -205,8 +202,6 @@
 				2C180470208B939700F62480 /* parse_struct_def.h */,
 				2C180473208B939700F62480 /* parser_primitives.cpp */,
 				2C180474208B939700F62480 /* parser_primitives.h */,
-				2C180471208B939700F62480 /* parser2.cpp */,
-				2C180472208B939700F62480 /* parser2.h */,
 			);
 			path = floyd_parser;
 			sourceTree = "<group>";
@@ -452,7 +447,6 @@
 				2C180461208B917500F62480 /* json_writer.cpp in Sources */,
 				2C384AD41F3B604E0028C742 /* floyd_basics.cpp in Sources */,
 				2C85759B21E56D51000E2EA0 /* parse_protocol_def.cpp in Sources */,
-				2C180481208B939800F62480 /* parser2.cpp in Sources */,
 				2C2625DA21E0D59900B41841 /* network_api.cpp in Sources */,
 				2C18045F208B917500F62480 /* json_support.cpp in Sources */,
 				2CB30736214A9B35007D2732 /* process_test1.floyd in Sources */,
