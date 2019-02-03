@@ -33,7 +33,6 @@ namespace floyd {
 		- Supports function calls-
 		- No optimization or evalution of any constant expressions etc. Must be non-lossy = cannot optimize.
 	*/
-	ast_json_t parse_expression_all(const seq_t& expression);
 
 	std::pair<ast_json_t, seq_t> parse_expression_seq(const seq_t& expression);
 

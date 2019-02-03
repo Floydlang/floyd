@@ -153,10 +153,10 @@ std::pair<ast_json_t, seq_t> parse_if(const seq_t& pos){
 
 	const auto condition = read_enclosed_in_parantheses(a.second);
 	const auto then_body = parse_statement_body(condition.second);
-	const auto condition2 = parse_expression_all(seq_t(condition.first));
+	const auto condition2 = parse_expression_seq(seq_t(condition.first));
 
 	return {
-		make_statement2(location_t(start.pos()), keyword_t::k_if, condition2._value, then_body.ast._value),
+		make_statement2(location_t(start.pos()), keyword_t::k_if, condition2.first._value, then_body.ast._value),
 		then_body.pos
 	};
 }
@@ -363,8 +363,8 @@ std::pair<ast_json_t, seq_t> parse_for_statement(const seq_t& pos){
 	const auto range_type = range_parts._range_type;
 	const auto end_pos = range_parts._end_pos;
 
-	const auto start_expr = parse_expression_all(seq_t(start));
-	const auto end_expr = parse_expression_all(end_pos);
+	const auto start_expr = parse_expression_seq(seq_t(start)).first;
+	const auto end_expr = parse_expression_seq(end_pos).first;
 
 	const auto r = make_statement_n(
 		location_t(pos.pos()),
@@ -432,7 +432,7 @@ std::pair<ast_json_t, seq_t> parse_while_statement(const seq_t& pos){
 	const auto condition = read_enclosed_in_parantheses(while_pos.second);
 	const auto body = parse_statement_body(condition.second);
 
-	const auto condition_expr = parse_expression_all(seq_t(condition.first));
+	const auto condition_expr = parse_expression_seq(seq_t(condition.first)).first;
 	const auto r = make_statement_n(
 		location_t(pos.pos()),
 		keyword_t::k_while,

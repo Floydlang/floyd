@@ -2006,16 +2006,6 @@ ast_json_t expr_to_json(const expr_t& e){
 	}
 }
 
-ast_json_t parse_expression_all(const seq_t& expression){
-	const auto result = parse_expression_seq(expression);
-/*
-	if(!parser2::skip_expr_whitespace(result.second).empty()){
-		throw std::runtime_error("All of expression not used");
-	}
-*/
-	return result.first;
-}
-
 std::pair<ast_json_t, seq_t> parse_expression_seq(const seq_t& expression){
 	const auto expr = parse_expression(expression);
 	const auto json = expr_to_json(expr.first);
