@@ -34,19 +34,29 @@ static std::map<expression_type, string> operation_to_string_lookup = {
 	{ expression_type::k_logical_and__2, "&&" },
 	{ expression_type::k_logical_or__2, "||" },
 //	{ expression_type::k_logical_not, "!" },
-	{ expression_type::k_arithmetic_unary_minus__1, "unary_minus" },
 
 	{ expression_type::k_literal, "k" },
+
+	{ expression_type::k_arithmetic_unary_minus__1, "unary_minus" },
 
 	{ expression_type::k_conditional_operator3, "?:" },
 	{ expression_type::k_call, "call" },
 
 	{ expression_type::k_load, "@" },
-	{ expression_type::k_load2, "@2" },
+	{ expression_type::k_load2, "@i" },
 	{ expression_type::k_resolve_member, "->" },
 
-	{ expression_type::k_lookup_element, "[]" }
+	{ expression_type::k_lookup_element, "[]" },
+
+	{ expression_type::k_define_struct, "def-struct" },
+	{ expression_type::k_define_function, "def-func" },
+	{ expression_type::k_construct_value, "construct_value" }
 };
+
+
+
+
+
 
 std::map<string, expression_type> make_reverse(const std::map<expression_type, string>& m){
 	std::map<string, expression_type> temp;
