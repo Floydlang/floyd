@@ -63,7 +63,7 @@ void trace_result(const bench_result_t& result){
 }
 
 int64_t measure_floyd_function_f(const std::string& floyd_program, int count){
-	const auto program = compile_to_bytecode(floyd_program);
+	const auto program = compile_to_bytecode(floyd_program, "");
 
 
 	const auto s = json_to_pretty_string(bcprogram_to_json(program));

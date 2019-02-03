@@ -92,16 +92,22 @@ struct ast_json_t {
 
 
 struct location2_t {
-	location2_t(const std::string& source_file_path, int line_number, int column) :
+	location2_t(const std::string& source_file_path, int line_number, int column, std::size_t start, std::size_t end, const std::string& line) :
 		source_file_path(source_file_path),
 		line_number(line_number),
-		column(column)
+		column(column),
+		start(start),
+		end(end),
+		line(line)
 	{
 	}
 
 	std::string source_file_path;
 	int line_number;
 	int column;
+	std::size_t start;
+	std::size_t end;
+	std::string line;
 };
 
 struct location_t {

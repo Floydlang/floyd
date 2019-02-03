@@ -391,8 +391,115 @@ json_t parse_result_to_json(const parse_result_t& p){
 }
 
 
-bc_program_t compile_to_bytecode(const string& program){
-	const auto pre = k_builtin_types_and_constants + "\n";
+
+
+//	Return one entry per source line PLUS one extra end-marker. int tells byte offset of files that maps to this line-start.
+//	Never returns empty vector, at least 2 elements.
+std::vector<int> make_location_lookup(const string& source){
+	if(source.empty()){
+		return { 0 };
+	}
+	else{
+		std::vector<int> result;
+		int char_index = 0;
+		result.push_back(char_index);
+		for(const auto& ch: source){
+			char_index++;
+
+			if(ch == '\n' || ch == '\r'){
+				result.push_back(char_index);
+			}
+		}
+		const auto back_char = source.back();
+		if(back_char == '\r' || back_char == '\n'){
+			return result;
+		}
+		else{
+			int end_index = static_cast<int>(source.size());
+			result.push_back(end_index);
+			return result;
+		}
+	}
+}
+
+QUARK_UNIT_TEST("", "make_location_lookup()", "", ""){
+	const auto r = make_location_lookup("");
+	QUARK_UT_VERIFY((r == std::vector<int>{ 0 }));
+}
+QUARK_UNIT_TEST("", "make_location_lookup()", "", ""){
+	const auto r = make_location_lookup("aaa");
+	QUARK_UT_VERIFY((r == std::vector<int>{ 0, 3 }));
+}
+QUARK_UNIT_TEST("", "make_location_lookup()", "", ""){
+	const auto r = make_location_lookup("aaa\nbbb\n");
+	QUARK_UT_VERIFY((r == std::vector<int>{ 0, 4, 8 }));
+}
+
+location2_t find_loc_info(const std::string& program, const std::vector<int>& lookup, const std::string& file, const location_t& loc){
+	int line_index = 0;
+	while(lookup[line_index + 1] <= loc.offset){
+		line_index++;
+	}
+
+	const auto start = lookup[line_index];
+	const auto end = lookup[line_index + 1];
+	const auto line = program.substr(start, end - start);
+	const auto column = loc.offset - start;
+	return location2_t(file, line_index, static_cast<int>(column), start, end, line);
+}
+
+location2_t find_source_line(const std::string& program, const std::string& file, bool corelib, const location_t& loc){
+	const auto program_lookup = make_location_lookup(program);
+
+	if(corelib){
+		const auto corelib_lookup = make_location_lookup(k_builtin_types_and_constants);
+		const auto corelib_end_offset = corelib_lookup.back();
+		if(loc.offset < corelib_end_offset){
+			return find_loc_info(k_builtin_types_and_constants, corelib_lookup, "corelib", loc);
+		}
+		else{
+			return find_loc_info(program, program_lookup, file, location_t(loc.offset - corelib_end_offset));
+		}
+	}
+	else{
+		return find_loc_info(program, program_lookup, file, loc);
+	}
+}
+
+
+
+/*	const auto line_numbers2 = mapf<int>(
+		statements_pos.line_numbers,
+		[&](const auto& e){
+			return e - pre_line_count;
+		}
+	);
+*/
+semantic_ast_t run_semantic_analysis__errors(const ast_t& pass2, const std::string& pre, const std::string& program, const std::string& file){
+	try {
+		const auto pass3 = run_semantic_analysis(pass2);
+		return pass3;
+	}
+	catch(const semantic_error& e){
+		const auto loc2 = find_source_line(program, file, true, e.location);
+		const auto what1 = std::string(e.what());
+
+		std::stringstream what2;
+		what2 << what1 << " Line: " << std::to_string(loc2.line_number + 1) << " \"" << loc2.line << "\"";
+		if(loc2.source_file_path.empty() == false){
+			what2 << " file: " << loc2.source_file_path;
+		}
+		throw_semantic_error(e.location, loc2, what2.str());
+	}
+	catch(const std::exception& e){
+		throw;
+//		const auto location = find_source_line(const std::string& program, const std::string& file, bool corelib, const location_t& loc){
+	}
+}
+
+
+bc_program_t compile_to_bytecode(const string& program, const std::string& file){
+	const auto pre = k_builtin_types_and_constants;
 	const auto p = pre + program;
 
 //	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
@@ -403,14 +510,14 @@ bc_program_t compile_to_bytecode(const string& program){
 	const auto pass2 = json_to_ast(pass1.ast);
 
 
-	const auto pass3 = run_semantic_analysis(pass2);
+	const auto pass3 = run_semantic_analysis__errors(pass2, pre, program, file);
 	const auto bc = generate_bytecode(pass3);
 
 	return bc;
 }
 
 
-semantic_ast_t compile_to_sematic_ast(const string& program){
+semantic_ast_t compile_to_sematic_ast(const string& program, const std::string& file){
 	const auto pre = k_builtin_types_and_constants + "\n";
 	const auto p = pre + program;
 
@@ -418,7 +525,7 @@ semantic_ast_t compile_to_sematic_ast(const string& program){
 	const auto pass1 = parse_program2(p);
 
 	const auto pass2 = json_to_ast(pass1.ast);
-	const auto pass3 = run_semantic_analysis(pass2);
+	const auto pass3 = run_semantic_analysis__errors(pass2, pre, program, file);
 	return pass3;
 }
 
@@ -426,16 +533,16 @@ semantic_ast_t compile_to_sematic_ast(const string& program){
 
 
 
-std::shared_ptr<interpreter_t> run_global(const string& source){
-	auto program = compile_to_bytecode(source);
+std::shared_ptr<interpreter_t> run_global(const string& source, const std::string& file){
+	auto program = compile_to_bytecode(source, file);
 	auto vm = make_shared<interpreter_t>(program);
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 	print_vm_printlog(*vm);
 	return vm;
 }
 
-std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(const string& source, const vector<floyd::value_t>& args){
-	auto program = compile_to_bytecode(source);
+std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(const string& source, const vector<floyd::value_t>& args, const std::string& file){
+	auto program = compile_to_bytecode(source, file);
 
 	//	Runs global code.
 	auto interpreter = make_shared<interpreter_t>(program);
@@ -727,8 +834,8 @@ std::map<std::string, value_t> run_container(const bc_program_t& program, const 
 }
 
 
-std::map<std::string, value_t> run_container2(const string& source, const vector<floyd::value_t>& args, const std::string& container_key){
-	auto program = compile_to_bytecode(source);
+std::map<std::string, value_t> run_container2(const string& source, const vector<floyd::value_t>& args, const std::string& container_key, const std::string& source_path){
+	auto program = compile_to_bytecode(source, source_path);
 	return run_container(program, args, container_key);
 }
 

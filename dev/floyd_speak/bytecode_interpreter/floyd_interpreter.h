@@ -39,17 +39,18 @@ namespace floyd {
 
 	value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vector<value_t>& args);
 
-	bc_program_t compile_to_bytecode(const std::string& program);
-	semantic_ast_t compile_to_sematic_ast(const std::string& program);
+	bc_program_t compile_to_bytecode(const std::string& program, const std::string& file);
+	semantic_ast_t compile_to_sematic_ast(const std::string& program, const std::string& file);
 
-	std::shared_ptr<interpreter_t> run_global(const std::string& source);
+	std::shared_ptr<interpreter_t> run_global(const std::string& source, const std::string& file);
 
 	/*
 		Quickie that compiles a program and calls its main() with the args.
 	*/
 	std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(
 		const std::string& source,
-		const std::vector<value_t>& args
+		const std::vector<value_t>& args,
+		const std::string& file
 	);
 
 
@@ -81,10 +82,13 @@ namespace floyd {
 	std::map<std::string, value_t> run_container2(
 		const std::string& source,
 		const std::vector<value_t>& args,
-		const std::string& container_key
+		const std::string& container_key,
+		const std::string& source_path
 	);
 
 	void print_vm_printlog(const interpreter_t& vm);
+
+	location2_t find_source_line(const std::string& program, const std::string& file, bool corelib, const location_t& loc);
 
 } //	floyd
 

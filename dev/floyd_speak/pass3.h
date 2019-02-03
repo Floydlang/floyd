@@ -62,6 +62,32 @@ namespace floyd {
 		Semantic Analysis -> SYMBOL TABLE + annotated AST
 	*/
 	semantic_ast_t run_semantic_analysis(const ast_t& ast);
+
+
+
+
+	class semantic_error : public std::runtime_error {
+		public: semantic_error(const location_t& location, const location2_t& location2, const std::string& message) :
+			std::runtime_error(message),
+			location(location),
+			location2(location2)
+		{
+		}
+
+		public: location_t location;
+		public: location2_t location2;
+	};
+
+	void throw_semantic_error(const location_t& location, const std::string& message) __dead2;
+	inline void throw_semantic_error(const location_t& location, const std::string& message){
+	//	location2_t(const std::string& source_file_path, int line_number, int column, std::size_t start, std::size_t end, const std::string& line) :
+		throw semantic_error(location, location2_t("", 0, 0, 0, 0, ""), message);
+	}
+	void throw_semantic_error(const location_t& location, const location2_t& location2, const std::string& message) __dead2;
+	inline void throw_semantic_error(const location_t& location, const location2_t& location2, const std::string& message){
+		throw semantic_error(location, location2, message);
+	}
+
 }
 
 #endif /* pass3_hpp */

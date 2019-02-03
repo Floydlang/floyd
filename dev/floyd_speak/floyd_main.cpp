@@ -199,7 +199,7 @@ int run_command(const std::vector<std::string>& args){
 		if(command_line_args.extra_arguments.size() == 1){
 			const auto source_path = command_line_args.extra_arguments[0];
 			const auto source = read_text_file(source_path);
-			const auto ast = floyd::compile_to_sematic_ast(source);
+			const auto ast = floyd::compile_to_sematic_ast(source, source_path);
 			const auto json = ast_to_json(ast._checked_ast);
 			std::cout << json_to_pretty_string(json._value);
 		}
@@ -219,7 +219,7 @@ int run_command(const std::vector<std::string>& args){
 
 			const auto source = read_text_file(source_path);
 
-			auto program = floyd::compile_to_bytecode(source);
+			auto program = floyd::compile_to_bytecode(source, source_path);
 
 			std::vector<floyd::value_t> args3;
 			for(const auto& e: args2){

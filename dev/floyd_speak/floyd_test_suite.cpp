@@ -41,7 +41,7 @@ std::vector<std::string> program_recording;
 value_t test__run_return_result(const std::string& program, const std::vector<value_t>& args){
 	program_recording.push_back(program);
 
-	const auto r = run_main(program, args);
+	const auto r = run_main(program, args, "");
 	print_vm_printlog(*r.first);
 	const auto result = get_global(*r.first, "result");
 	return result;
@@ -57,14 +57,14 @@ void test__run_init__check_result(const std::string& program, const value_t& exp
 
 std::shared_ptr<interpreter_t> test__run_global(const std::string& program){
 	program_recording.push_back(program);
-	const auto result = run_global(program);
+	const auto result = run_global(program, "");
 	return result;
 }
 
 void test__run_main(const std::string& program, const vector<floyd::value_t>& args, const value_t& expected_return){
 	program_recording.push_back(program);
 
-	const auto result = run_main(program, args);
+	const auto result = run_main(program, args, "");
 	ut_compare_jsons(
 		expression_to_json(expression_t::make_literal(result.second))._value,
 		expression_to_json(expression_t::make_literal(expected_return))._value
@@ -117,7 +117,7 @@ void ut_compare_values(const value_t& result, const value_t& expected){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "Global int variable", "", ""){
-	run_main("{}", {});
+	run_main("{}", {}, "");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "Global int variable", "", ""){
@@ -435,7 +435,7 @@ QUARK_UNIT_TEST("execute_expression()", "Type mismatch", "", "") {
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch. Cannot convert 'bool' to 'int.");
+		QUARK_TEST_VERIFY(string(e.what()) == "Expression type mismatch - cannot convert 'bool' to 'int. Line: 1 \"let int result = true\"");
 	}
 }
 
@@ -545,7 +545,8 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 			func int main(string args){
 				return 3 + 4
 			}
-		)"
+		)",
+		""
 	);
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
@@ -560,7 +561,8 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 			return "123" + "456"
 		}
 
-	)");
+	)",
+	"");
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
@@ -724,7 +726,8 @@ QUARK_UNIT_TEST("call_function()", "define additional function, call it several 
 			return myfunc() + myfunc() * 2
 		}
 
-	)");
+	)",
+	"");
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
@@ -738,7 +741,8 @@ QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
 			return "-" + args + "-"
 		}
 
-	)");
+	)",
+	"");
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("xyz") });
@@ -762,7 +766,8 @@ QUARK_UNIT_TEST("call_function()", "use local variables", "", ""){
 			 return a + args + b + a
 		}
 
-	)");
+	)",
+	"");
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("xyz") });
@@ -985,7 +990,7 @@ func int f(){
 	return "x"
 }
 
-	)", {}, "");
+	)", {}, "", "");
 
 
 	}
@@ -3874,7 +3879,7 @@ OFF_QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
 
 	for(const auto& s: program_recording){
 		try{
-		const auto bc = compile_to_bytecode(s);
+		const auto bc = compile_to_bytecode(s, "");
 		int instruction_count_sum = static_cast<int>(bc._globals._instrs2.size());
 		int symbol_count_sum = static_cast<int>(bc._globals._symbols.size());
 
@@ -4000,7 +4005,7 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 	)";
 
 	program_recording.push_back(test_ss2);
-	const auto result = run_container2(test_ss2, {}, "iphone app");
+	const auto result = run_container2(test_ss2, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
 
@@ -4084,7 +4089,7 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 	)";
 
 	program_recording.push_back(test_ss3);
-	const auto result = run_container2(test_ss3, {}, "iphone app");
+	const auto result = run_container2(test_ss3, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
 
@@ -4170,7 +4175,7 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 	)";
 
 	program_recording.push_back(test_ss3);
-	const auto result = run_container2(test_ss3, {}, "iphone app");
+	const auto result = run_container2(test_ss3, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
 
@@ -4189,7 +4194,7 @@ QUARK_UNIT_TEST("", "hello_world.floyd", "", ""){
 	const auto path = get_working_dir() + "/hello_world.floyd";
 	const auto program = read_text_file(path);
 
-	const auto result = run_container2(program, {}, "");
+	const auto result = run_container2(program, {}, "", "");
 	const std::map<std::string, value_t> expected = {{ "global", value_t::make_void() }};
 	QUARK_UT_VERIFY(result == expected);
 }
@@ -4198,7 +4203,7 @@ QUARK_UNIT_TEST("", "game_of_life.floyd", "", ""){
 	const auto path = get_working_dir() + "/game_of_life.floyd";
 	const auto program = read_text_file(path);
 
-	const auto result = run_container2(program, {}, "");
+	const auto result = run_container2(program, {}, "", "");
 	const std::map<std::string, value_t> expected = {{ "global", value_t::make_void() }};
 	QUARK_UT_VERIFY(result == expected);
 }
@@ -4207,7 +4212,7 @@ QUARK_UNIT_TEST("", "process_test1.floyd", "", ""){
 	const auto path = get_working_dir() + "/process_test1.floyd";
 	const auto program = read_text_file(path);
 
-	const auto result = run_container2(program, {}, "iphone app");
+	const auto result = run_container2(program, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
 
@@ -4235,7 +4240,7 @@ let b = ""
 
 let a = b == "true" ? true : false
 
-	)", {}, "");
+	)", {}, "", "");
 }
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "COMMENTS", "", ""){
@@ -4245,7 +4250,7 @@ QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "COMMENTS", "", ""){
 
 let a = 10; // To end of line
 
-	)", {}, "");
+	)", {}, "", "");
 }
 
 
@@ -4257,7 +4262,7 @@ let a = 10
 mutable b = 10
 b = 11
 
-	)", {}, "");
+	)", {}, "", "");
 }
 
 
@@ -4273,7 +4278,8 @@ while(expression){
 	print("body")
 }
 
-	)");
+	)",
+	"");
 }
 
 
@@ -4287,7 +4293,7 @@ for (index in 1  ..< 5) {
 	print(index)
 }
 
-	)", {}, "");
+	)", {}, "", "");
 }
 
 
@@ -4309,7 +4315,7 @@ else{
 	print("zero or negative")
 }
 
-	)", {}, "");
+	)", {}, "", "");
 }
 
 
@@ -4320,7 +4326,7 @@ let a = true
 if(a){
 }
 
-	)", {}, "");
+	)", {}, "", "");
 }
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "STRING", "", ""){
@@ -4334,7 +4340,7 @@ assert(size(s1) == 13)
 assert(subset(s1, 1, 4) == "ell")
 let s4 = to_string(12003)
 
-	)", {}, "");
+	)", {}, "", "");
 }
 
 
@@ -4349,7 +4355,7 @@ func string f(double a, string s){
 
 let a = f(3.14, "km")
 
-	)", {}, "");
+	)", {}, "", "");
 }
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "IMPURE FUNCTION", "", ""){
@@ -4359,7 +4365,7 @@ func int main([string] args) impure {
 	return 1
 }
 
-	)", {}, "");
+	)", {}, "", "");
 }
 
 
@@ -4385,7 +4391,7 @@ let b = update(a, "width", 100.0)
 assert(a.width == 0.0)
 assert(b.width == 100.0)
 
-	)", {}, "");
+	)", {}, "", "");
 }
 
 //??? demo map(), reduce()
@@ -4414,7 +4420,7 @@ for(i in 0 ..< size(a)){
 	print(a[i])
 }
 
-	)", {}, "");
+	)", {}, "", "");
 }
 
 
@@ -4428,7 +4434,7 @@ let b = update(a, "one", 10)
 assert(a == { "one": 1, "two": 2 })
 assert(b == { "one": 10, "two": 2 })
 
-	)", {}, "");
+	)", {}, "", "");
 }
 
 
@@ -4441,7 +4447,7 @@ let json_value a = {
 	"five": { "A": 10, "B": 20 }
 }
 
-	)", {}, "");
+	)", {}, "", "");
 }
 
 
@@ -4463,7 +4469,7 @@ MANUAL_SNIPPETS_TEST("MANUAL SNIPPETS", "subset()", "", ""){
 		assert(subset("hello", 2, 4) == "ll")
 		assert(subset([ 10, 20, 30, 40 ], 1, 3 ) == [ 20, 30 ])
 
-	)", {}, "");
+	)", {}, "", "");
 }
 
 #endif

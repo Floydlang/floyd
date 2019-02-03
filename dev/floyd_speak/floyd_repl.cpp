@@ -210,7 +210,7 @@ int handle_repl_input(int print_pos, std::shared_ptr<floyd::interpreter_t>& vm_m
 void run_repl(){
 	init_terminal();
 
-	auto program = floyd::compile_to_bytecode("");
+	auto program = floyd::compile_to_bytecode("", "");
 	auto vm = std::make_shared<floyd::interpreter_t>(program);
 
 	std::cout << R"(Floyd " << floyd_version_string << " MIT.)" << std::endl;

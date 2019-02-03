@@ -98,8 +98,8 @@ floyd::symbol_t find_global_symbol(const analyser_t& a, const std::string& s);
 	return == _constant != nullptr:	the expression was completely analysed and resulted in a constant value.
 	return == _constant == nullptr: the expression was partially analyse.
 */
-std::pair<analyser_t, floyd::expression_t> analyse_expression_to_target(const analyser_t& a, const floyd::expression_t& e, const floyd::typeid_t& target_type);
-std::pair<analyser_t, floyd::expression_t> analyse_expression_no_target(const analyser_t& a, const floyd::expression_t& e);
+std::pair<analyser_t, floyd::expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const floyd::expression_t& e, const floyd::typeid_t& target_type);
+std::pair<analyser_t, floyd::expression_t> analyse_expression_no_target(const analyser_t& a, const statement_t& parent, const floyd::expression_t& e);
 
 
 
@@ -341,7 +341,7 @@ std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& a, 
 			const auto lhs_type = existing_value_deep_ptr.first->get_type();
 			QUARK_ASSERT(lhs_type.check_types_resolved());
 
-			const auto rhs_expr2 = analyse_expression_to_target(a_acc, statement._expression, lhs_type);
+			const auto rhs_expr2 = analyse_expression_to_target(a_acc, s, statement._expression, lhs_type);
 			a_acc = rhs_expr2.first;
 			const auto rhs_expr3 = rhs_expr2.second;
 
@@ -356,7 +356,7 @@ std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& a, 
 
 	//	Bind new value -- deduce type.
 	else{
-		const auto rhs_expr2 = analyse_expression_no_target(a_acc, statement._expression);
+		const auto rhs_expr2 = analyse_expression_no_target(a_acc, s, statement._expression);
 		a_acc = rhs_expr2.first;
 		const auto rhs_expr2_type = rhs_expr2.second.get_output_type();
 
@@ -403,8 +403,8 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 
 	try {
 		const auto rhs_expr_pair = lhs_type.is_undefined()
-			? analyse_expression_no_target(a_acc, statement._expression)
-			: analyse_expression_to_target(a_acc, statement._expression, lhs_type);
+			? analyse_expression_no_target(a_acc, s, statement._expression)
+			: analyse_expression_to_target(a_acc, s, statement._expression, lhs_type);
 		a_acc = rhs_expr_pair.first;
 
 		//??? if expression is a k_define_struct, k_define_function -- make it a constant in symbol table and emit no store-statement!
@@ -447,7 +447,7 @@ std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a,
 	const auto statement = std::get<statement_t::return_statement_t>(s._contents);
 	auto a_acc = a;
 	const auto expr = statement._expression;
-	const auto result = analyse_expression_to_target(a_acc, expr, return_type);
+	const auto result = analyse_expression_to_target(a_acc, s, expr, return_type);
 		
 	a_acc = result.first;
 
@@ -518,7 +518,7 @@ std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a,
 	const auto statement = std::get<statement_t::ifelse_statement_t>(s._contents);
 	auto a_acc = a;
 
-	const auto condition2 = analyse_expression_no_target(a_acc, statement._condition);
+	const auto condition2 = analyse_expression_no_target(a_acc, s, statement._condition);
 	a_acc = condition2.first;
 
 	const auto condition_type = condition2.second.get_output_type();
@@ -537,14 +537,14 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 	const auto statement = std::get<statement_t::for_statement_t>(s._contents);
 	auto a_acc = a;
 
-	const auto start_expr2 = analyse_expression_no_target(a_acc, statement._start_expression);
+	const auto start_expr2 = analyse_expression_no_target(a_acc, s, statement._start_expression);
 	a_acc = start_expr2.first;
 
 	if(start_expr2.second.get_output_type().is_int() == false){
 		throw std::runtime_error("For-loop requires integer iterator.");
 	}
 
-	const auto end_expr2 = analyse_expression_no_target(a_acc, statement._end_expression);
+	const auto end_expr2 = analyse_expression_no_target(a_acc, s, statement._end_expression);
 	a_acc = end_expr2.first;
 
 	if(end_expr2.second.get_output_type().is_int() == false){
@@ -569,7 +569,7 @@ std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& a, 
 	const auto statement = std::get<statement_t::while_statement_t>(s._contents);
 	auto a_acc = a;
 
-	const auto condition2_expr = analyse_expression_no_target(a_acc, statement._condition);
+	const auto condition2_expr = analyse_expression_no_target(a_acc, s, statement._condition);
 	a_acc = condition2_expr.first;
 
 	const auto result = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, return_type);
@@ -583,7 +583,7 @@ std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t
 
 	const auto statement = std::get<statement_t::expression_statement_t>(s._contents);
 	auto a_acc = a;
-	const auto expr2 = analyse_expression_no_target(a_acc, statement._expression);
+	const auto expr2 = analyse_expression_no_target(a_acc, s, statement._expression);
 	a_acc = expr2.first;
 
 	return { a_acc, statement_t::make__expression_statement(s.location, expr2.second) };
@@ -686,11 +686,11 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 
 
 
-std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const analyser_t& a, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const analyser_t& a, const statement_t& parent, const expression_t& e){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
-	const auto parent_expr = analyse_expression_no_target(a_acc, e._input_exprs[0]);
+	const auto parent_expr = analyse_expression_no_target(a_acc, parent, e._input_exprs[0]);
 	a_acc = parent_expr.first;
 
 	const auto parent_type = parent_expr.second.get_output_type();
@@ -711,14 +711,14 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const analyser_t& a, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const analyser_t& a, const statement_t& parent, const expression_t& e){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
-	const auto parent_expr = analyse_expression_no_target(a_acc, e._input_exprs[0]);
+	const auto parent_expr = analyse_expression_no_target(a_acc, parent, e._input_exprs[0]);
 	a_acc = parent_expr.first;
 
-	const auto key_expr = analyse_expression_no_target(a_acc, e._input_exprs[1]);
+	const auto key_expr = analyse_expression_no_target(a_acc, parent, e._input_exprs[1]);
 	a_acc = key_expr.first;
 
 	const auto parent_type = parent_expr.second.get_output_type();
@@ -787,7 +787,7 @@ std::pair<analyser_t, expression_t> analyse_load2(const analyser_t& a, const exp
 
 	rhs is an invalid dict construction -- you can't mix string/int values in a floyd dict. BUT: it's a valid JSON!
 */
-std::pair<analyser_t, expression_t> analyse_construct_value_expression(const analyser_t& a, const expression_t& e, const typeid_t& target_type){
+std::pair<analyser_t, expression_t> analyse_construct_value_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -801,7 +801,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 
 			std::vector<expression_t> elements2;
 			for(const auto& m: e._input_exprs){
-				const auto element_expr = analyse_expression_to_target(a_acc, m, element_type);
+				const auto element_expr = analyse_expression_to_target(a_acc, parent, m, element_type);
 				a_acc = element_expr.first;
 				elements2.push_back(element_expr.second);
 			}
@@ -821,7 +821,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			const auto element_type = current_type.get_vector_element_type();
 			std::vector<expression_t> elements2;
 			for(const auto& m: e._input_exprs){
-				const auto element_expr = analyse_expression_no_target(a_acc, m);
+				const auto element_expr = analyse_expression_no_target(a_acc, parent, m);
 				a_acc = element_expr.first;
 				elements2.push_back(element_expr.second);
 			}
@@ -855,7 +855,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			for(int i = 0 ; i < e._input_exprs.size() / 2 ; i++){
 				const auto& key = e._input_exprs[i * 2 + 0].get_literal().get_string_value();
 				const auto& value = e._input_exprs[i * 2 + 1];
-				const auto element_expr = analyse_expression_to_target(a_acc, value, element_type);
+				const auto element_expr = analyse_expression_to_target(a_acc, parent, value, element_type);
 				a_acc = element_expr.first;
 				elements2.push_back(expression_t::make_literal_string(key));
 				elements2.push_back(element_expr.second);
@@ -882,7 +882,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			for(int i = 0 ; i < e._input_exprs.size() / 2 ; i++){
 				const auto& key = e._input_exprs[i * 2 + 0].get_literal().get_string_value();
 				const auto& value = e._input_exprs[i * 2 + 1];
-				const auto element_expr = analyse_expression_no_target(a_acc, value);
+				const auto element_expr = analyse_expression_no_target(a_acc, parent, value);
 				a_acc = element_expr.first;
 				elements2.push_back(expression_t::make_literal_string(key));
 				elements2.push_back(element_expr.second);
@@ -909,11 +909,11 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	throw std::exception();
 }
 
-std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(const analyser_t& a, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(const analyser_t& a, const statement_t& parent, const expression_t& e){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
-	const auto& expr2 = analyse_expression_no_target(a_acc, e._input_exprs[0]);
+	const auto& expr2 = analyse_expression_no_target(a_acc, parent, e._input_exprs[0]);
 	a_acc = expr2.first;
 
 	//??? We could simplify here and return [ "-", 0, expr]
@@ -926,19 +926,19 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(co
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(const analyser_t& analyser, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(const analyser_t& analyser, const statement_t& parent, const expression_t& e){
 	QUARK_ASSERT(analyser.check_invariant());
 
 	auto analyser_acc = analyser;
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
-	const auto cond_result = analyse_expression_no_target(analyser_acc, e._input_exprs[0]);
+	const auto cond_result = analyse_expression_no_target(analyser_acc, parent, e._input_exprs[0]);
 	analyser_acc = cond_result.first;
 
-	const auto a = analyse_expression_no_target(analyser_acc, e._input_exprs[1]);
+	const auto a = analyse_expression_no_target(analyser_acc, parent, e._input_exprs[1]);
 	analyser_acc = a.first;
 
-	const auto b = analyse_expression_no_target(analyser_acc, e._input_exprs[2]);
+	const auto b = analyse_expression_no_target(analyser_acc, parent, e._input_exprs[2]);
 	analyser_acc = b.first;
 
 	const auto type = cond_result.second.get_output_type();
@@ -962,19 +962,19 @@ std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(cons
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser_t& a, expression_type op, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser_t& a, const statement_t& parent, expression_type op, const expression_t& e){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
 
 	//	First analyse all inputs to our operation.
-	const auto left_expr = analyse_expression_no_target(a_acc, e._input_exprs[0]);
+	const auto left_expr = analyse_expression_no_target(a_acc, parent, e._input_exprs[0]);
 	a_acc = left_expr.first;
 
 	const auto lhs_type = left_expr.second.get_output_type();
 
 	//	Make rhs match left if needed/possible.
-	const auto right_expr = analyse_expression_to_target(a_acc, e._input_exprs[1], lhs_type);
+	const auto right_expr = analyse_expression_to_target(a_acc, parent, e._input_exprs[1], lhs_type);
 	a_acc = right_expr.first;
 	const auto rhs_type = right_expr.second.get_output_type();
 
@@ -1012,19 +1012,19 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser_t& a, expression_type op, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser_t& a, const statement_t& parent, expression_type op, const expression_t& e){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
 
 	//	First analyse both inputs to our operation.
-	const auto left_expr = analyse_expression_no_target(a_acc, e._input_exprs[0]);
+	const auto left_expr = analyse_expression_no_target(a_acc, parent, e._input_exprs[0]);
 	a_acc = left_expr.first;
 
 	const auto lhs_type = left_expr.second.get_output_type();
 
 	//	Make rhs match lhs if needed/possible.
-	const auto right_expr = analyse_expression_to_target(a_acc, e._input_exprs[1], lhs_type);
+	const auto right_expr = analyse_expression_to_target(a_acc, parent, e._input_exprs[1], lhs_type);
 	a_acc = right_expr.first;
 
 	const auto rhs_type = right_expr.second.get_output_type();
@@ -1228,12 +1228,12 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 /*
 	Magic support variable argument functions ,like c-lang (...). Use a function taking ONE argument of type internal_dynamic.
 */
-std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& a, const vector<expression_t>& call_args, const std::vector<typeid_t>& callee_args){
+std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& a, const statement_t& parent, const vector<expression_t>& call_args, const std::vector<typeid_t>& callee_args){
 	if(callee_args.size() == 1 && callee_args[0].is_internal_dynamic()){
 		auto a_acc = a;
 		vector<expression_t> call_args2;
 		for(int i = 0 ; i < call_args.size() ; i++){
-			const auto call_arg_pair = analyse_expression_no_target(a_acc, call_args[i]);
+			const auto call_arg_pair = analyse_expression_no_target(a_acc, parent, call_args[i]);
 			a_acc = call_arg_pair.first;
 			call_args2.push_back(call_arg_pair.second);
 		}
@@ -1250,7 +1250,7 @@ std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& 
 		for(int i = 0 ; i < callee_args.size() ; i++){
 			const auto callee_arg = callee_args[i];
 
-			const auto call_arg_pair = analyse_expression_to_target(a_acc, call_args[i], callee_arg);
+			const auto call_arg_pair = analyse_expression_to_target(a_acc, parent, call_args[i], callee_arg);
 			a_acc = call_arg_pair.first;
 			call_args2.push_back(call_arg_pair.second);
 		}
@@ -1336,12 +1336,12 @@ typeid_t get_host_function_return_type(const analyser_t& a, const expression_t& 
 /*
 	Notice: e._input_expr[0] is callee, the remaining are arguments.
 */
-std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a, const statement_t& parent, const expression_t& e){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
 
-	const auto callee_expr0 = analyse_expression_no_target(a_acc, e._input_exprs[0]);
+	const auto callee_expr0 = analyse_expression_no_target(a_acc, parent, e._input_exprs[0]);
 	a_acc = callee_expr0.first;
 	const auto callee_expr = callee_expr0.second;
 
@@ -1361,7 +1361,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a,
 		}
 
 
-		const auto call_args_pair = analyze_call_args(a_acc, args0, callee_args);
+		const auto call_args_pair = analyze_call_args(a_acc, parent, args0, callee_args);
 		a_acc = call_args_pair.first;
 		if(is_host_function_call(a, callee_expr)){
 			const auto return_type = get_host_function_return_type(a, callee_expr, call_args_pair.second);
@@ -1388,7 +1388,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a,
 			if(callee_type2.is_struct()){
 				const auto& def = callee_type2.get_struct();
 				const auto callee_args = get_member_types(def._members);
-				const auto call_args_pair = analyze_call_args(a_acc, args0, callee_args);
+				const auto call_args_pair = analyze_call_args(a_acc, parent, args0, callee_args);
 				a_acc = call_args_pair.first;
 
 				return { a_acc, expression_t::make_construct_value_expr(callee_type2, call_args_pair.second) };
@@ -1398,7 +1398,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a,
 			else{
 				const auto callee_args = vector<typeid_t>{ callee_type2 };
 				QUARK_ASSERT(callee_args.size() == 1);
-				const auto call_args_pair = analyze_call_args(a_acc, args0, callee_args);
+				const auto call_args_pair = analyze_call_args(a_acc, parent, args0, callee_args);
 				a_acc = call_args_pair.first;
 				return { a_acc, expression_t::make_construct_value_expr(callee_type2, call_args_pair.second) };
 			}
@@ -1409,7 +1409,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a,
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const analyser_t& a, const expression_t& e0){
+std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const analyser_t& a, const statement_t& parent, const expression_t& e0){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -1472,7 +1472,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 }
 
 
-std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const analyser_t& a, const expression_t& e, const typeid_t& target_type){
+std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -1482,10 +1482,10 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 		return { a, e };
 	}
 	else if(op == expression_type::k_resolve_member){
-		return analyse_resolve_member_expression(a, e);
+		return analyse_resolve_member_expression(a, parent, e);
 	}
 	else if(op == expression_type::k_lookup_element){
-		return analyse_lookup_element_expression(a, e);
+		return analyse_lookup_element_expression(a, parent, e);
 	}
 	else if(op == expression_type::k_load){
 		return analyse_load(a, e);
@@ -1495,11 +1495,11 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 	}
 
 	else if(op == expression_type::k_call){
-		return analyse_call_expression(a, e);
+		return analyse_call_expression(a, parent, e);
 	}
 
 	else if(op == expression_type::k_define_struct){
-		return analyse_struct_definition_expression(a, e);
+		return analyse_struct_definition_expression(a, parent, e);
 	}
 
 	else if(op == expression_type::k_define_function){
@@ -1507,22 +1507,22 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 	}
 
 	else if(op == expression_type::k_construct_value){
-		return analyse_construct_value_expression(a, e, target_type);
+		return analyse_construct_value_expression(a, parent, e, target_type);
 	}
 
 	else if(op == expression_type::k_arithmetic_unary_minus__1){
-		return analyse_arithmetic_unary_minus_expression(a, e);
+		return analyse_arithmetic_unary_minus_expression(a, parent, e);
 	}
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
 	else if(op == expression_type::k_conditional_operator3){
-		return analyse_conditional_operator_expression(a, e);
+		return analyse_conditional_operator_expression(a, parent, e);
 	}
 	else if(is_comparison_expression(op)){
-		return analyse_comparison_expression(a, op, e);
+		return analyse_comparison_expression(a, parent, op, e);
 	}
 	else if(is_arithmetic_expression(op)){
-		return analyse_arithmetic_expression(a, op, e);
+		return analyse_arithmetic_expression(a, parent, op, e);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -1572,14 +1572,15 @@ expression_t auto_cast_expression_type(const expression_t& e, const floyd::typei
 }
 
 //	Returned expression is guaranteed to be deep-resolved.
-std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const expression_t& e, const typeid_t& target_type){
+std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type){
 	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(parent.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(target_type.is_void() == false && target_type.is_undefined() == false);
 	QUARK_ASSERT(target_type.check_types_resolved());
 
 	auto a_acc = a;
-	const auto e2_pair = analyse_expression__operation_specific(a_acc, e, target_type);
+	const auto e2_pair = analyse_expression__operation_specific(a_acc, parent, e, target_type);
 	a_acc = e2_pair.first;
 	const auto e2b = e2_pair.second;
 	if(e2b.check_types_resolved() == false){
@@ -1597,13 +1598,11 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 		throw std::runtime_error("Expression type mismatch.");
 	}
 	else{
-		const auto err =
-			std::string()
-			+ "Expression type mismatch. Cannot convert '"
-			+ typeid_to_compact_string( e3.get_output_type())
-			+ "' to '" + typeid_to_compact_string(target_type)
-			+ ".";
-		throw std::runtime_error(err);
+		std::stringstream what;
+
+		what << "Expression type mismatch - cannot convert '"
+		<< typeid_to_compact_string( e3.get_output_type()) << "' to '" << typeid_to_compact_string(target_type) << ".";
+		throw_semantic_error(parent.location, what.str());
 	}
 
 	if(e3.check_types_resolved() == false){
@@ -1614,8 +1613,8 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 }
 
 //	Returned expression is guaranteed to be deep-resolved.
-std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_t& a, const expression_t& e){
-	return analyse_expression_to_target(a, e, typeid_t::make_internal_dynamic());
+std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_t& a, const statement_t& parent, const expression_t& e){
+	return analyse_expression_to_target(a, parent, e, typeid_t::make_internal_dynamic());
 }
 
 /*
@@ -1648,10 +1647,10 @@ json_t analyser_to_json(const analyser_t& a){
 }
 */
 
-void test__analyse_expression(const expression_t& e, const expression_t& expected){
+void test__analyse_expression(const statement_t& parent, const expression_t& e, const expression_t& expected){
 	const ast_t ast;
 	const analyser_t interpreter(ast);
-	const auto e3 = analyse_expression_no_target(interpreter, e);
+	const auto e3 = analyse_expression_no_target(interpreter, parent, e);
 
 	ut_compare_jsons(expression_to_json(e3.second)._value, expression_to_json(expected)._value);
 }
@@ -1659,6 +1658,7 @@ void test__analyse_expression(const expression_t& e, const expression_t& expecte
 
 QUARK_UNIT_TEST("analyse_expression_no_target()", "literal 1234 == 1234", "", "") {
 	test__analyse_expression(
+		statement_t::make__bind_local(k_no_location, "xyz", typeid_t::make_string(), expression_t::make_literal_string("abc"), statement_t::bind_local_t::mutable_mode::k_immutable),
 		expression_t::make_literal_int(1234),
 		expression_t::make_literal_int(1234)
 	);
@@ -1667,7 +1667,9 @@ QUARK_UNIT_TEST("analyse_expression_no_target()", "literal 1234 == 1234", "", ""
 QUARK_UNIT_TESTQ("analyse_expression_no_target()", "1 + 2 == 3") {
 	const ast_t ast;
 	const analyser_t interpreter(ast);
-	const auto e3 = analyse_expression_no_target(interpreter,
+	const auto e3 = analyse_expression_no_target(
+		interpreter,
+		statement_t::make__bind_local(k_no_location, "xyz", typeid_t::make_string(), expression_t::make_literal_string("abc"), statement_t::bind_local_t::mutable_mode::k_immutable),
 		expression_t::make_simple_expression__2(
 			expression_type::k_arithmetic_add__2,
 			expression_t::make_literal_int(1),
