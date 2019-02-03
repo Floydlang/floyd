@@ -29,18 +29,6 @@
 #include <cmath>
 
 
-namespace quark {
-	template<> std::string to_debug_str<std::pair<std::vector<std::string>, seq_t>>(const std::pair<std::vector<std::string>, seq_t>& s){
-		return json_to_pretty_string(
-			json_t::make_array({
-				from_string_vec(s.first),
-				s.second.str().substr(0, 24)
-			})
-		);
-	}
-}
-
-
 namespace floyd {
 
 

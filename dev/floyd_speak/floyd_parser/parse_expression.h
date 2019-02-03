@@ -20,20 +20,16 @@ namespace floyd {
 
 	/*
 		Parses the expression string
-
-		Requires all characters to be part of expression - does not stop until all characters have been evaluated.
-		Checks syntax
-
+		Checks syntax.
 		Returns AST, in JSON-format.
 
 		Does NOT validates that called functions exists and has correct type.
 		Does NOT validates that accessed variables exists and has correct types.
 
 		- Supports nesting, full paths, like "my_global[10 + f(selector)].lookup("asd").next"
-		- Supports function calls-
-		- No optimization or evalution of any constant expressions etc. Must be non-lossy = cannot optimize.
+		- Supports function calls.
+		- No optimization or evalution of any constant expressions etc. Must be non-lossy.
 	*/
-
 	std::pair<ast_json_t, seq_t> parse_expression_seq(const seq_t& expression);
 
 }	//	floyd

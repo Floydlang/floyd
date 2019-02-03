@@ -654,19 +654,12 @@ inline void set_trace(const trace_i* v){
 		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, "", function_under_test, scenario, "", QUARK_UNIQUE_LABEL(cppext_unit_test_), false); \
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
 
-	#define QUARK_UNIT_1(function_under_test, scenario, test_expression) \
-		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
-		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, "", function_under_test, scenario, "", QUARK_UNIQUE_LABEL(cppext_unit_test_), false); \
-		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(){ if(test_expression){}else{ ::quark::on_unit_test_failed_hook(::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(exp)); } }
 
 
 	//### Add argument to unit-test functions that can be used / checked in UT_VERIFY().
 	#define QUARK_UT_VERIFY(exp) if(exp){}else{ ::quark::on_unit_test_failed_hook(::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(exp)); }
 
 	#define QUARK_TEST_VERIFY QUARK_UT_VERIFY
-
-
-	#define QUARK_UT_VERIFY2(result, expected) ut_compare2((result), (expected), ::quark::source_code_location(__FILE__, __LINE__))
 
 
 template <typename T> void ut_compare(const T& result, const T& expected){
@@ -679,27 +672,6 @@ template <typename T> void ut_compare(const T& result, const T& expected){
 	}
 }
 
-template <typename T> std::string to_debug_str(const T& v);
-
-template <typename T> void ut_compare2(const T& result, const T& expected, const source_code_location& code_location){
-	if(!(result == expected)){
-		const std::string result_str = to_debug_str(result);
-		const std::string expected_str = to_debug_str(expected);
-
-		QUARK_SCOPED_TRACE("Test failed");
-
-		QUARK_TRACE("  Result:");
-		QUARK_TRACE(result_str);
-		QUARK_TRACE("Expected:");
-		QUARK_TRACE(expected_str);
-
-		::quark::on_unit_test_failed_hook(
-			::quark::get_runtime(),
-			code_location,
-			(result_str + " != " + expected_str).c_str()
-		);
-	}
-}
 
 inline void ut_compare_strings(const std::string& result, const std::string& expected){
 	if(result != expected){

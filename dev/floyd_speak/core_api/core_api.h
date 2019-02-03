@@ -86,7 +86,6 @@ struct unit_test_def {
 	bool _vip
 }
 
-template <typename T> void ut_compare2(T result, T expected, source_code_location code_location){
 inline void run_tests(unit_test_registry registry, [string] source_file_order){
 
 
