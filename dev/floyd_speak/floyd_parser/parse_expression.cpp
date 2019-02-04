@@ -17,32 +17,22 @@
 
 
 
-using namespace std;
-using floyd::keyword_t;
-using floyd::location_t;
-
-
 namespace floyd {
 
 
-using std::pair;
-using std::string;
-using std::vector;
+#define UNIT_TEST_1(function_under_test, scenario, test_expression) \
+	static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
+	static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, "", function_under_test, scenario, "", QUARK_UNIQUE_LABEL(cppext_unit_test_), false); \
+	static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(){ if(test_expression){}else{ ::quark::on_unit_test_failed_hook(::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(exp)); } }
 
 
-	#define UNIT_TEST_1(function_under_test, scenario, test_expression) \
-		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
-		static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, "", function_under_test, scenario, "", QUARK_UNIQUE_LABEL(cppext_unit_test_), false); \
-		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(){ if(test_expression){}else{ ::quark::on_unit_test_failed_hook(::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(exp)); } }
-
-
-QUARK_UNIT_TESTQ("C++ operators", ""){
+QUARK_UNIT_TEST("", "C++ operators", "", ""){
 	const int a = 2-+-2;
 	QUARK_TEST_VERIFY(a == 4);
 }
 
 
-QUARK_UNIT_TESTQ("C++ enum class()", ""){
+QUARK_UNIT_TEST("", "C++ enum class()", "", ""){
 	enum class my_enum {
 		k_one = 1,
 		k_four = 4
@@ -54,20 +44,13 @@ QUARK_UNIT_TESTQ("C++ enum class()", ""){
 }
 
 
-
-
-
-
-
-
-
 /*
 	C99-language constants.
 	http://en.cppreference.com/w/cpp/language/operator_precedence
 */
 const std::string k_c99_number_chars = "0123456789.";
 const std::string k_c99_whitespace_chars = " \n\t\r";
-	const std::string k_c99_identifier_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+const std::string k_c99_identifier_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
 
 /*
 	White-space policy:
@@ -83,6 +66,7 @@ const std::string k_c99_whitespace_chars = " \n\t\r";
 /*
 	Operator precedence is the same as C99.
 	Lower number gives stronger precedence.
+	Important: we use < and > to compare these.
 */
 enum class eoperator_precedence {
 	k_super_strong = 0,
@@ -186,7 +170,7 @@ enum class eoperation {
 };
 
 
-static const std::map<eoperation, string> k_2_operator_to_string{
+static const std::map<eoperation, std::string> k_2_operator_to_string{
 //	{ eoperation::k_x_member_access, "->" },
 
 	{ eoperation::k_2_lookup, "[]" },
@@ -209,55 +193,6 @@ static const std::map<eoperation, string> k_2_operator_to_string{
 };
 
 
-
-
-///////////////////////////////////			FUNCTIONS
-
-
-bool is_valid_expr_chars(const std::string& s);
-seq_t skip_expr_whitespace(const seq_t& p);
-
-std::pair<std::string, seq_t> parse_string_literal(const seq_t& p);
-
-
-// [0-9] and "."  => numeric constant.
-std::pair<value_t, seq_t> parse_numeric_constant(const seq_t& p);
-
-/*
-	Constant literal or identifier.
-		3
-		3.0
-		"three"
-		true
-		false
-		hello2
-		x
-*/
-std::pair<json_t, seq_t> parse_terminal(const seq_t& p);
-
-/*
-	Atom = standalone expression, like a constant, a function call.
-	It can be composed of subexpressions
-
-	It may then be chained rightwards using operations like "+" etc.
-
-	Examples:
-		123
-		-123
-		--+-123
-		(123 + 123 * x + f(y*3))
-		[ 1, 2, calc_exp(3) ]
-*/
-std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p);
-
-
-/*
-
-	lhs operation EXPR +++
-	lhs OPERATION EXPRESSION ...
-*/
-std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, const json_t& lhs, const eoperator_precedence precedence);
-
 std::pair<ast_json_t, seq_t> parse_expression_int(const seq_t& p, const eoperator_precedence precedence);
 
 //	Top-level function that parses entire expression into json_t.
@@ -268,23 +203,16 @@ std::pair<ast_json_t, seq_t> parse_expression2(const seq_t& p);
 
 
 
-
-
-
-
-
-
 bool is_valid_expr_chars(const std::string& s){
 	const auto allowed = k_c99_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[](){}.?:=!<>&,|#$\\;\'";
 	for(auto i = 0 ; i < s.size() ; i++){
 		const char ch = s[i];
-		if(allowed.find(ch) == string::npos){
+		if(allowed.find(ch) == std::string::npos){
 			return false;
 		}
 	}
 	return true;
 }
-
 
 seq_t skip_expr_whitespace(const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
@@ -293,10 +221,6 @@ seq_t skip_expr_whitespace(const seq_t& p) {
 //	return read_while(p, k_c99_whitespace_chars).second;
 }
 
-
-/*
-	Generates expressions encode as JSON in std::string values. Use for testing.
-*/
 
 /*
 	()
@@ -308,7 +232,7 @@ seq_t skip_expr_whitespace(const seq_t& p) {
 	["one": 1000, "two": 2000]
 */
 struct collection_element_t {
-	shared_ptr<json_t> _key;
+	std::shared_ptr<json_t> _key;
 	json_t _value;
 };
 
@@ -320,15 +244,16 @@ bool operator==(const collection_element_t& lhs, const collection_element_t& rhs
 
 struct collection_def_t {
 	bool _has_keys;
-	vector<collection_element_t> _elements;
+	std::vector<collection_element_t> _elements;
 };
 
 bool operator==(const collection_def_t& lhs, const collection_def_t& rhs){
-	return lhs._has_keys == rhs._has_keys
-	&& lhs._elements == rhs._elements;
+	return
+		lhs._has_keys == rhs._has_keys
+		&& lhs._elements == rhs._elements;
 }
 
-void ut_verify(const quark::call_context_t& context, const std::pair<collection_def_t, seq_t> result, const std::pair<collection_def_t, seq_t> expected){
+void ut_verify_collection(const quark::call_context_t& context, const std::pair<collection_def_t, seq_t> result, const std::pair<collection_def_t, seq_t> expected){
 	if(result == expected){
 	}
 	else{
@@ -336,7 +261,7 @@ void ut_verify(const quark::call_context_t& context, const std::pair<collection_
 	}
 }
 
-
+//	???	Return json_t directly, no need for collection_def_t-type.
 std::pair<collection_def_t, seq_t> parse_bounded_list(const seq_t& s, const std::string& start_char, const std::string& end_char){
 	QUARK_ASSERT(s.check_invariant());
 	QUARK_ASSERT(s.first() == start_char);
@@ -378,11 +303,11 @@ std::pair<collection_def_t, seq_t> parse_bounded_list(const seq_t& s, const std:
 				const auto pos4 = skip_expr_whitespace(expression2_pos.second);
 				const auto ch2 = pos4.first1();
 				if(ch2 == ","){
-					result._elements.push_back(collection_element_t{ make_shared<json_t>(expression_pos.first._value), expression2_pos.first._value });
+					result._elements.push_back(collection_element_t{ std::make_shared<json_t>(expression_pos.first._value), expression2_pos.first._value });
 					pos = pos4.rest1();
 				}
 				else if(ch2 == end_char){
-					result._elements.push_back(collection_element_t{ make_shared<json_t>(expression_pos.first._value), expression2_pos.first._value });
+					result._elements.push_back(collection_element_t{ std::make_shared<json_t>(expression_pos.first._value), expression2_pos.first._value });
 					pos = pos4;
 				}
 				else{
@@ -397,26 +322,23 @@ std::pair<collection_def_t, seq_t> parse_bounded_list(const seq_t& s, const std:
 	}
 }
 
-
-
 QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
-	ut_verify(
+	ut_verify_collection(
 		QUARK_POS,
 		parse_bounded_list(seq_t("(3)xyz"), "(", ")"),
-		pair<collection_def_t, seq_t>({false, {	{ nullptr, maker__make_constant(value_t::make_int(3))._value }}}, seq_t("xyz"))
+		std::pair<collection_def_t, seq_t>({false, {	{ nullptr, maker__make_constant(value_t::make_int(3))._value }}}, seq_t("xyz"))
 	);
 }
 
-
 QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
-	ut_verify(QUARK_POS, parse_bounded_list(seq_t("[]xyz"), "[", "]"), pair<collection_def_t, seq_t>({false, {}}, seq_t("xyz")));
+	ut_verify_collection(QUARK_POS, parse_bounded_list(seq_t("[]xyz"), "[", "]"), std::pair<collection_def_t, seq_t>({false, {}}, seq_t("xyz")));
 }
 
 QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
-	ut_verify(
+	ut_verify_collection(
 		QUARK_POS,
 		parse_bounded_list(seq_t("[1,2]xyz"), "[", "]"),
-		pair<collection_def_t, seq_t>(
+		std::pair<collection_def_t, seq_t>(
 			{
 				false,
 				{
@@ -430,10 +352,10 @@ QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
 }
 
 QUARK_UNIT_TEST("parser", "parse_bounded_list()", "blank dict", ""){
-	ut_verify(
+	ut_verify_collection(
 		QUARK_POS,
 		parse_bounded_list(seq_t(R"([:]xyz)"), "[", "]"),
-		pair<collection_def_t, seq_t>(
+		std::pair<collection_def_t, seq_t>(
 			{
 				true,
 				{}
@@ -442,16 +364,17 @@ QUARK_UNIT_TEST("parser", "parse_bounded_list()", "blank dict", ""){
 		)
 	);
 }
+
 QUARK_UNIT_TEST("parser", "parse_bounded_list()", "two elements", ""){
-	ut_verify(
+	ut_verify_collection(
 		QUARK_POS,
 		parse_bounded_list(seq_t(R"(["one": 1, "two": 2]xyz)"), "[", "]"),
-		pair<collection_def_t, seq_t>(
+		std::pair<collection_def_t, seq_t>(
 			{
 				true,
 				{
-					{ make_shared<json_t>(maker__make_constant(value_t::make_string("one"))._value), maker__make_constant(value_t::make_int(1))._value },
-					{ make_shared<json_t>(maker__make_constant(value_t::make_string("two"))._value), maker__make_constant(value_t::make_int(2))._value }
+					{ std::make_shared<json_t>(maker__make_constant(value_t::make_string("one"))._value), maker__make_constant(value_t::make_int(1))._value },
+					{ std::make_shared<json_t>(maker__make_constant(value_t::make_string("two"))._value), maker__make_constant(value_t::make_int(2))._value }
 				}
 			},
 			seq_t("xyz")
@@ -461,19 +384,10 @@ QUARK_UNIT_TEST("parser", "parse_bounded_list()", "two elements", ""){
 
 bool are_keys_used(const collection_def_t& c){
 	return c._has_keys;
-/*
-	for(const auto e: c){
-		if(e._key != nullptr){
-			return true;
-		}
-	}
-	return false;
-*/
-
 }
 
-vector<json_t> get_values(const collection_def_t& c){
-	vector<json_t> result;
+std::vector<json_t> get_values(const collection_def_t& c){
+	std::vector<json_t> result;
 	for(const auto& e: c._elements){
 		result.push_back(e._value);
 	}
@@ -482,7 +396,6 @@ vector<json_t> get_values(const collection_def_t& c){
 
 
 /*
-
 Escape sequence	Hex value in ASCII	Character represented
 \a	07	Alert (Beep, Bell) (added in C89)[1]
 \b	08	Backspace
@@ -501,7 +414,6 @@ Escape sequence	Hex value in ASCII	Character represented
 \Uhhhhhhhhnote 3	none	Unicode code point where h is a hexadecimal digit
 \uhhhhnote 4	none	Unicode code point below 10000 hexadecimal
 */
-
 //??? add tests for this.
 char expand_one_char_escape(const char ch2){
 	switch(ch2){
@@ -530,12 +442,12 @@ char expand_one_char_escape(const char ch2){
 	}
 }
 
-pair<std::string, seq_t> parse_string_literal(const seq_t& s){
+std::pair<std::string, seq_t> parse_string_literal(const seq_t& s){
 	QUARK_ASSERT(!s.empty());
 	QUARK_ASSERT(s.first1_char() == '\"');
 
 	auto pos = s.rest();
-	string result = "";
+	std::string result = "";
 	while(pos.empty() == false && pos.first() != "\""){
 		//	Look for escape char
 		if(pos.first1_char() == 0x5c){
@@ -546,10 +458,10 @@ pair<std::string, seq_t> parse_string_literal(const seq_t& s){
 				const auto ch2 = pos.first(2)[1];
 				const char expanded_char = expand_one_char_escape(ch2);
 				if(expanded_char == 0x00){
-					throw std::runtime_error("Unknown escape character \"" + string(1, ch2) + "\" in string literal: \"" + result + "\"!");
+					throw std::runtime_error("Unknown escape character \"" + std::string(1, ch2) + "\" in string literal: \"" + result + "\"!");
 				}
 				else{
-					result += string(1, expanded_char);
+					result += std::string(1, expanded_char);
 					pos = pos.rest(2);
 				}
 			}
@@ -566,45 +478,46 @@ pair<std::string, seq_t> parse_string_literal(const seq_t& s){
 }
 
 QUARK_UNIT_TEST("", "parse_string_literal()", "", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"("" xxx)")), pair<std::string, seq_t>("", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"("" xxx)")), std::pair<std::string, seq_t>("", seq_t(" xxx")));
 }
 
 QUARK_UNIT_TEST("", "parse_string_literal()", "", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"("hello" xxx)")), pair<std::string, seq_t>("hello", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"("hello" xxx)")), std::pair<std::string, seq_t>("hello", seq_t(" xxx")));
 }
 
 QUARK_UNIT_TEST("", "parse_string_literal()", "", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"(".5" xxx)")), pair<std::string, seq_t>(".5", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"(".5" xxx)")), std::pair<std::string, seq_t>(".5", seq_t(" xxx")));
 }
 
 QUARK_UNIT_TEST("", "parse_string_literal()", "", ""){
 	ut_verify(
 		QUARK_POS,
 		//	NOTICE that \" are Floyd-escapes in the Floyd source code.
-		parse_string_literal(seq_t(R"abc("hello \"Bob\"!" xxx)abc")),
-		pair<std::string, seq_t>(R"(hello "Bob"!)", seq_t(" xxx"))
+		parse_string_literal(seq_t(R"___("hello \"Bob\"!" xxx)___")),
+		std::pair<std::string, seq_t>(R"(hello "Bob"!)", seq_t(" xxx"))
 	);
 }
 
 QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \t", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\t" xxx)___")), pair<std::string, seq_t>("\t", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\t" xxx)___")), std::pair<std::string, seq_t>("\t", seq_t(" xxx")));
 }
 QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \\", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\\" xxx)___")), pair<std::string, seq_t>("\\", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\\" xxx)___")), std::pair<std::string, seq_t>("\\", seq_t(" xxx")));
 }
 QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \n", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\n" xxx)___")), pair<std::string, seq_t>("\n", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\n" xxx)___")), std::pair<std::string, seq_t>("\n", seq_t(" xxx")));
 }
 QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \r", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\r" xxx)___")), pair<std::string, seq_t>("\r", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\r" xxx)___")), std::pair<std::string, seq_t>("\r", seq_t(" xxx")));
 }
 QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \"", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\"" xxx)___")), pair<std::string, seq_t>("\"", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\"" xxx)___")), std::pair<std::string, seq_t>("\"", seq_t(" xxx")));
 }
 QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \'", ""){
-	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\'" xxx)___")), pair<std::string, seq_t>("\'", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\'" xxx)___")), std::pair<std::string, seq_t>("\'", seq_t(" xxx")));
 }
 
+// [0-9] and "."  => numeric constant.
 std::pair<value_t, seq_t> parse_numeric_constant(const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
 	QUARK_ASSERT(k_c99_number_chars.find(p.first()) != std::string::npos);
@@ -625,25 +538,30 @@ std::pair<value_t, seq_t> parse_numeric_constant(const seq_t& p) {
 	}
 }
 
-QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
+QUARK_UNIT_TEST("", "parse_numeric_constant()", "", ""){
 	const auto a = parse_numeric_constant(seq_t("0 xxx"));
 	QUARK_UT_VERIFY(a.first.get_int_value() == 0);
 	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
 }
 
-QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
+QUARK_UNIT_TEST("", "parse_numeric_constant()", "", ""){
 	const auto a = parse_numeric_constant(seq_t("1234 xxx"));
 	QUARK_UT_VERIFY(a.first.get_int_value() == 1234);
 	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
 }
 
-QUARK_UNIT_TESTQ("parse_numeric_constant()", ""){
+QUARK_UNIT_TEST("", "parse_numeric_constant()", "", ""){
 	const auto a = parse_numeric_constant(seq_t("0.5 xxx"));
 	QUARK_UT_VERIFY(a.first.get_double_value() == 0.5f);
 	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
 }
 
 
+/*
+
+	lhs operation EXPR +++
+	lhs OPERATION EXPRESSION ...
+*/
 std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, const json_t& lhs, const eoperator_precedence precedence){
 	QUARK_ASSERT(p0.check_invariant());
 
@@ -832,6 +750,16 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 }
 
 
+/*
+	Constant literal or identifier.
+		3
+		3.0
+		"three"
+		true
+		false
+		hello2
+		x
+*/
 std::pair<json_t, seq_t> parse_terminal(const seq_t& p0) {
 	QUARK_ASSERT(p0.check_invariant());
 
@@ -874,6 +802,19 @@ std::pair<json_t, seq_t> parse_terminal(const seq_t& p0) {
 	throw std::runtime_error("Expected constant or identifier.");
 }
 
+/*
+	Atom = standalone expression, like a constant, a function call.
+	It can be composed of subexpressions
+
+	It may then be chained rightwards using operations like "+" etc.
+
+	Examples:
+		123
+		-123
+		--+-123
+		(123 + 123 * x + f(y*3))
+		[ 1, 2, calc_exp(3) ]
+*/
 std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 	QUARK_ASSERT(p.check_invariant());
 
@@ -937,7 +878,7 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 		if(a.first._elements.size() > 0 && a.first._has_keys == false){
 			throw std::runtime_error("Dictionary needs keys!");
 		}
-		vector<json_t> flat_dict;
+		std::vector<json_t> flat_dict;
 		for(const auto& b: a.first._elements){
 			if(b._key == nullptr){
 				throw std::runtime_error("Dictionary definition misses element key(s)!");
@@ -957,42 +898,24 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 	}
 }
 
-QUARK_UNIT_TESTQ("parse_lhs_atom()", ""){
+QUARK_UNIT_TEST("", "parse_lhs_atom()", "", ""){
 	const auto a = parse_lhs_atom(seq_t("3"));
 	QUARK_UT_VERIFY(a.first == maker__make_constant(value_t::make_int(3))._value);
 }
 
-QUARK_UNIT_TESTQ("parse_lhs_atom()", ""){
+QUARK_UNIT_TEST("", "parse_lhs_atom()", "", ""){
 	const auto a = parse_lhs_atom(seq_t("[3]"));
-	QUARK_UT_VERIFY(a.first == maker_vector_definition("", vector<json_t>{maker__make_constant(value_t::make_int(3))._value})._value);
+	QUARK_UT_VERIFY(a.first == maker_vector_definition("", std::vector<json_t>{maker__make_constant(value_t::make_int(3))._value})._value);
 }
-
-/*
-QUARK_UNIT_TESTQ("parse_lhs_atom()", ""){
-	const auto a = parse_lhs_atom(seq_t("struct {}"));
-	QUARK_UT_VERIFY(a.first == maker__make_constant(constant_value_t(3)));
-}
-QUARK_UNIT_TESTQ("parse_lhs_atom()", ""){
-	const auto a = parse_lhs_atom(seq_t("struct {int a; int b;}"));
-	QUARK_UT_VERIFY(a.first == maker__make_constant(constant_value_t(3)));
-}
-*/
-
-
-
-//////////////////////			expr_to_string
-
-
 
 
 std::string expr_to_string(const json_t& e){
 	return json_to_compact_string(e);
 }
 
-
 void ut_verify_terminal(const std::string& expression, const std::string& expected_value, const std::string& expected_seq){
 	const auto result = parse_terminal(seq_t(expression));
-	const string json_s = expr_to_string(result.first);
+	const std::string json_s = expr_to_string(result.first);
 	if(json_s == expected_value && result.second.get_s() == expected_seq){
 	}
 	else{
@@ -1002,7 +925,6 @@ void ut_verify_terminal(const std::string& expression, const std::string& expect
 		fail_test(QUARK_POS);
 	}
 }
-
 
 QUARK_UNIT_TEST("", "parse_terminal()", "identifier", ""){
 	ut_verify_terminal(
@@ -1075,7 +997,7 @@ std::pair<std::string, seq_t> test_parse_expression2(const seq_t& expression){
 }
 
 
-bool test__parse_expression2(const std::string& expression, string expected_value, string expected_seq){
+bool test__parse_expression2(const std::string& expression, std::string expected_value, std::string expected_seq){
 	QUARK_TRACE_SS("input:" << expression);
 	QUARK_TRACE_SS("expect:" << expected_value);
 
@@ -1091,7 +1013,7 @@ bool test__parse_expression2(const std::string& expression, string expected_valu
 }
 //??? move to this.
 void ut_verify__expression(const std::pair<ast_json_t, seq_t>& result, const std::string& expected_json, const std::string& expected_seq){
-	const string json_s = expr_to_string(result.first._value);
+	const std::string json_s = expr_to_string(result.first._value);
 	if(json_s == expected_json && result.second.get_s() == expected_seq){
 	}
 	else{
@@ -1111,7 +1033,7 @@ QUARK_UNIT_TEST("", "parse_expression2()", "", ""){
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Unexpected end of string.");
+		QUARK_TEST_VERIFY(std::string(e.what()) == "Unexpected end of string.");
 	}
 }
 
@@ -1128,7 +1050,7 @@ QUARK_UNIT_TEST("", "parse_expression2()", "", ""){
 //	ut_verify__expression(parse_expression2(seq_t("1234567890")), "[\"k\", 1234567890, \"^int\"]", "");
 }
 QUARK_UNIT_TEST("", "parse_expression2()", "", ""){
-	ut_verify__expression(parse_expression2(seq_t(R"xxx("hello, world!")xxx")), R"(["k", "hello, world!", "^string"])", "");
+	ut_verify__expression(parse_expression2(seq_t(R"___("hello, world!")___")), R"(["k", "hello, world!", "^string"])", "");
 }
 
 
@@ -1464,13 +1386,13 @@ UNIT_TEST_1("parse_expression2()", "function call with expression-args", test__p
 
 QUARK_UNIT_TEST("", "parse_expression2()", "function call, expression argument", ""){
 	const auto result = test_parse_expression2(seq_t("1 == 2)"));
-	QUARK_UT_VERIFY((		result == pair<string, seq_t>( R"(["==", ["k", 1, "^int"], ["k", 2, "^int"]])", ")" )		));
+	QUARK_UT_VERIFY((		result == std::pair<std::string, seq_t>( R"(["==", ["k", 1, "^int"], ["k", 2, "^int"]])", ")" )		));
 }
 
 
 QUARK_UNIT_TEST("", "parse_expression2()", "function call, expression argument", ""){
 	const auto result = test_parse_expression2(seq_t("f(1 == 2)"));
-	QUARK_UT_VERIFY((		result == pair<string, seq_t>( R"(["call", ["@", "f"], [["==", ["k", 1, "^int"], ["k", 2, "^int"]]]])", "" )		));
+	QUARK_UT_VERIFY((		result == std::pair<std::string, seq_t>( R"(["call", ["@", "f"], [["==", ["k", 1, "^int"], ["k", 2, "^int"]]]])", "" )		));
 }
 
 
@@ -1498,7 +1420,7 @@ QUARK_UNIT_TEST("", "parse_expression2()", "function call", ""){
 	QUARK_UT_VERIFY(
 		test__parse_expression2(
 			"print(color(1, 2, 3) == file(404)) xxx",
-			R"aaa(["call", ["@", "print"], [["==", ["call", ["@", "color"], [["k", 1, "^int"], ["k", 2, "^int"], ["k", 3, "^int"]]], ["call", ["@", "file"], [["k", 404, "^int"]]]]]])aaa",
+			R"___(["call", ["@", "print"], [["==", ["call", ["@", "color"], [["k", 1, "^int"], ["k", 2, "^int"], ["k", 3, "^int"]]], ["call", ["@", "file"], [["k", 404, "^int"]]]]]])___",
 			" xxx"
 		)
 	)
