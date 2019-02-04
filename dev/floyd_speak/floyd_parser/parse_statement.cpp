@@ -12,7 +12,6 @@
 #include "parser_primitives.h"
 #include "floyd_parser.h"
 #include "json_support.h"
-#include "json_parser.h"
 
 namespace floyd {
 	using std::string;

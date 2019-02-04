@@ -10,7 +10,7 @@
 
 #include "floyd_parser/parser_primitives.h"
 #include "floyd_basics.h"
-#include "json_parser.h"
+#include "json_support.h"
 #include "utils.h"
 #include "ast_typeid_helpers.h"
 

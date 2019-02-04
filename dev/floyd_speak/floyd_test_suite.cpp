@@ -12,7 +12,7 @@
 #include "bytecode_interpreter/floyd_interpreter.h"
 #include "ast_value.h"
 #include "expression.h"
-#include "json_parser.h"
+#include "json_support.h"
 #include "text_parser.h"
 #include "host_functions.h"
 #include "FileHandling.h"

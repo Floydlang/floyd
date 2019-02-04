@@ -12,9 +12,7 @@
 		2C18044B208B90E900F62480 /* utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180448208B90E800F62480 /* utils.cpp */; };
 		2C18044D208B90E900F62480 /* text_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18044A208B90E800F62480 /* text_parser.cpp */; };
 		2C180455208B911B00F62480 /* quark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180454208B911A00F62480 /* quark.cpp */; };
-		2C18045D208B917500F62480 /* json_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180457208B917400F62480 /* json_parser.cpp */; };
 		2C18045F208B917500F62480 /* json_support.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18045B208B917500F62480 /* json_support.cpp */; };
-		2C180461208B917500F62480 /* json_writer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18045C208B917500F62480 /* json_writer.cpp */; };
 		2C180475208B939800F62480 /* floyd_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180465208B939700F62480 /* floyd_parser.cpp */; };
 		2C180477208B939800F62480 /* parse_expression.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180467208B939700F62480 /* parse_expression.cpp */; };
 		2C180479208B939800F62480 /* parse_function_def.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180469208B939700F62480 /* parse_function_def.cpp */; };
@@ -84,12 +82,8 @@
 		2C18044A208B90E800F62480 /* text_parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = text_parser.cpp; sourceTree = "<group>"; };
 		2C180453208B911A00F62480 /* quark.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = quark.h; sourceTree = "<group>"; };
 		2C180454208B911A00F62480 /* quark.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = quark.cpp; sourceTree = "<group>"; };
-		2C180457208B917400F62480 /* json_parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = json_parser.cpp; sourceTree = "<group>"; };
-		2C180458208B917400F62480 /* json_parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = json_parser.h; sourceTree = "<group>"; };
-		2C180459208B917500F62480 /* json_writer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = json_writer.h; sourceTree = "<group>"; };
 		2C18045A208B917500F62480 /* json_support.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = json_support.h; sourceTree = "<group>"; };
 		2C18045B208B917500F62480 /* json_support.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = json_support.cpp; sourceTree = "<group>"; };
-		2C18045C208B917500F62480 /* json_writer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = json_writer.cpp; sourceTree = "<group>"; };
 		2C180465208B939700F62480 /* floyd_parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_parser.cpp; sourceTree = "<group>"; };
 		2C180466208B939700F62480 /* floyd_parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = floyd_parser.h; sourceTree = "<group>"; };
 		2C180467208B939700F62480 /* parse_expression.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parse_expression.cpp; sourceTree = "<group>"; };
@@ -324,12 +318,8 @@
 				2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */,
 				2C40A71E1D76E179003245E3 /* immutable_ref_value.h */,
 				2C5F60CC1D5E3345006E0A89 /* json_for_modern_cpp.h */,
-				2C180457208B917400F62480 /* json_parser.cpp */,
-				2C180458208B917400F62480 /* json_parser.h */,
 				2C18045B208B917500F62480 /* json_support.cpp */,
 				2C18045A208B917500F62480 /* json_support.h */,
-				2C18045C208B917500F62480 /* json_writer.cpp */,
-				2C180459208B917500F62480 /* json_writer.h */,
 				2C180454208B911A00F62480 /* quark.cpp */,
 				2C180453208B911A00F62480 /* quark.h */,
 				2CBCA7D91D569C6D000FAE81 /* sha1 */,
@@ -430,7 +420,6 @@
 				2C2625DE21E0D65E00B41841 /* core_api.cpp in Sources */,
 				2C180483208B939800F62480 /* parser_primitives.cpp in Sources */,
 				2CC34CC121EF8882000F3CB6 /* floyd_repl.cpp in Sources */,
-				2C18045D208B917500F62480 /* json_parser.cpp in Sources */,
 				2CB2A516203D642B0001A19E /* pass3.cpp in Sources */,
 				2C180479208B939800F62480 /* parse_function_def.cpp in Sources */,
 				2C2625E221E0E52100B41841 /* core_types.cpp in Sources */,
@@ -444,7 +433,6 @@
 				2C18047F208B939800F62480 /* parse_struct_def.cpp in Sources */,
 				2C982D3620603FE2002002FF /* bytecode_generator.cpp in Sources */,
 				2C180455208B911B00F62480 /* quark.cpp in Sources */,
-				2C180461208B917500F62480 /* json_writer.cpp in Sources */,
 				2C384AD41F3B604E0028C742 /* floyd_basics.cpp in Sources */,
 				2C85759B21E56D51000E2EA0 /* parse_protocol_def.cpp in Sources */,
 				2C2625DA21E0D59900B41841 /* network_api.cpp in Sources */,

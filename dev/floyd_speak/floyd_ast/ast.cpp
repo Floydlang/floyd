@@ -17,7 +17,6 @@
 #include "statement.h"
 #include "utils.h"
 #include "json_support.h"
-#include "json_parser.h"
 #include "ast.h"
 #include "ast_typeid_helpers.h"
 #include "parser_primitives.h"

@@ -13,7 +13,7 @@ using std::vector;
 
 #include "ast_value.h"
 #include "text_parser.h"
-#include "json_parser.h"
+#include "json_support.h"
 
 namespace floyd {
 

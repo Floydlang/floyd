@@ -15,7 +15,7 @@
 #include "parse_struct_def.h"
 #include "parse_protocol_def.h"
 #include "parser_primitives.h"
-#include "json_parser.h"
+#include "json_support.h"
 #include "utils.h"
 
 

@@ -13,7 +13,6 @@
 #include "parser_primitives.h"
 #include "parse_statement.h"
 #include "json_support.h"
-#include "json_parser.h"
 #include "ast_typeid.h"
 #include "ast_typeid_helpers.h"
 

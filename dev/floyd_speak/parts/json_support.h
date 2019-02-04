@@ -14,8 +14,10 @@
 #include <map>
 #include "quark.h"
 
+struct seq_t;
+struct json_t;
 
-#include "json_writer.h"
+std::string json_to_compact_string(const json_t& v);
 
 /*
 PRETTY FORMAT FOR READING:
@@ -310,12 +312,31 @@ struct json_t {
 };
 
 
+std::pair<json_t, seq_t> parse_json(const seq_t& s);
+
+
+////////////////////////////////////////		TO / FROM STRING
+
+
+std::string json_to_compact_string(const json_t& v);
+std::string json_to_compact_string_minimal_quotes(const json_t& v);
+
+
+//	Defaults to 120 chars width print out, 4 space-tabs.
+std::string json_to_pretty_string(const json_t& v);
+
+struct pretty_t {
+	int _max_column_chars;
+	int _tab_char_setting;
+};
+std::string json_to_pretty_string(const json_t& value, int pos, const pretty_t& pretty);
+
+
 ////////////////////////////////////////		HELPERS
 
 /*
 	Used for unit tests, if pretty-string version of inputs are different, trace them and fail.
 */
-struct seq_t;
 
 void ut_verify(const quark::call_context_t& context, const json_t& result, const json_t& expected);
 void ut_verify(const quark::call_context_t& context, const std::pair<json_t, seq_t>& result, const std::pair<json_t, seq_t>& expected);
