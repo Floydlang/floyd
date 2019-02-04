@@ -50,11 +50,10 @@ void run_tests(){
 			"floyd_basics.cpp",
 
 
-			"parser2.cpp",
+			"parser_expression.cpp",
 			"parser_value.cpp",
 			"parser_primitives.cpp",
 
-			"parser_expression.cpp",
 			"parser_function.cpp",
 			"parser_statement.cpp",
 			"parser_struct.cpp",

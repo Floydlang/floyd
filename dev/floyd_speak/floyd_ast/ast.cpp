@@ -157,7 +157,6 @@ expression_t astjson_to_expression(const json_t& e){
 		return expression_t::make_construct_value_expr(value_type, args2);
 	}
 	else{
-		QUARK_ASSERT(false);
 		throw std::exception();
 	}
 }

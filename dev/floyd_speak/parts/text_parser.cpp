@@ -193,6 +193,9 @@ QUARK_UNIT_TESTQ("double_to_string_simplify()", ""){
 QUARK_UNIT_TESTQ("double_to_string_simplify()", ""){
 	ut_verify(QUARK_POS, double_to_string_simplify(13.5), "13.5");
 }
+QUARK_UNIT_TEST("", "double_to_string_simplify()", "", ""){
+	ut_verify(QUARK_POS, double_to_string_simplify(1234567890.0), "1.23457e+09");
+}
 
 
 std::string double_to_string_always_decimals(double value){

@@ -50,7 +50,7 @@ static std::map<expression_type, string> operation_to_string_lookup = {
 
 	{ expression_type::k_define_struct, "def-struct" },
 	{ expression_type::k_define_function, "def-func" },
-	{ expression_type::k_construct_value, "construct_value" }
+	{ expression_type::k_construct_value, "construct-value" }
 };
 
 

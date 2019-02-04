@@ -1883,7 +1883,7 @@ QUARK_UNIT_TEST("dict", "", "", ""){
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_UT_VERIFY(string(e.what()) == "Cannot infer type in construct_value-expression. Line: 2 \"\t\t\tmutable a = {}\n\"");
+		QUARK_UT_VERIFY(string(e.what()) == "Cannot infer type in construct-value-expression. Line: 2 \"\t\t\tmutable a = {}\n\"");
 	}
 }
 
@@ -1896,7 +1896,7 @@ QUARK_UNIT_TEST("dict", "[:]", "", ""){
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_UT_VERIFY(string(e.what()) == "Cannot infer type in construct_value-expression. Line: 2 \"\t\t\tlet a = {}\n\"");
+		QUARK_UT_VERIFY(string(e.what()) == "Cannot infer type in construct-value-expression. Line: 2 \"\t\t\tlet a = {}\n\"");
 	}
 }
 
@@ -1956,7 +1956,7 @@ QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Cannot infer type in construct_value-expression. Line: 2 \"\t\t\tassert(size({}) == 0)\n\"");
+		QUARK_TEST_VERIFY(string(e.what()) == "Cannot infer type in construct-value-expression. Line: 2 \"\t\t\tassert(size({}) == 0)\n\"");
 	}
 }
 
@@ -1968,7 +1968,7 @@ QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Cannot infer type in construct_value-expression. Line: 2 \"\t\t\tprint({})\n\"");
+		QUARK_TEST_VERIFY(string(e.what()) == "Cannot infer type in construct-value-expression. Line: 2 \"\t\t\tprint({})\n\"");
 	}
 }
 
@@ -2022,7 +2022,7 @@ QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Cannot infer type in construct_value-expression. Line: 2 \"\t\t\tlet a = update({}, \"one\", 1)\n\"");
+		QUARK_TEST_VERIFY(string(e.what()) == "Cannot infer type in construct-value-expression. Line: 2 \"\t\t\tlet a = update({}, \"one\", 1)\n\"");
 	}
 }
 

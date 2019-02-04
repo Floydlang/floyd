@@ -90,7 +90,8 @@ void ut_verify(const quark::call_context_t& context, const std::pair<std::string
 	if(result == expected){
 	}
 	else{
-		quark::fail_test(context);
+		ut_verify(context, result.first, expected.first);
+		ut_verify(context, result.second.str(), expected.second.str());
 	}
 }
 

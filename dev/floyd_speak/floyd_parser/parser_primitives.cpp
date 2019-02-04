@@ -669,4 +669,65 @@ ast_json_t make_expression3(const location_t& location, const std::string& opcod
 }
 
 
+
+
+
+ast_json_t maker__make_identifier(const std::string& s){
+	return make_expression1(floyd::k_no_location, "@", json_t(s));
+}
+
+ast_json_t maker__make_unary_minus(const json_t& expr){
+	return make_expression1(floyd::k_no_location, "unary_minus", expr);
+}
+
+ast_json_t maker__make2(const std::string op, const json_t& lhs, const json_t& rhs){
+	return make_expression2(floyd::k_no_location, op, lhs, rhs);
+}
+
+ast_json_t maker__make_conditional_operator(const json_t& e1, const json_t& e2, const json_t& e3){
+	return make_expression3(floyd::k_no_location, "?:", e1, e2, e3);
+}
+
+ast_json_t maker__call(const json_t& f, const std::vector<json_t>& args){
+	return make_expression2(floyd::k_no_location, "call", f, json_t::make_array(args));
+}
+
+ast_json_t maker_vector_definition(const std::string& element_type, const std::vector<json_t>& elements){
+	QUARK_ASSERT(element_type == "");
+
+//	const auto element_type2 = element_type.empty() ? typeid_t::make_undefined() : typeid_t::make_unresolved_type_identifier(element_type);
+	const auto element_type2 = typeid_to_ast_json(typeid_t::make_vector(typeid_t::make_undefined()), json_tags::k_tag_resolve_state);
+	return make_expression2(floyd::k_no_location, "construct-value", element_type2._value, json_t::make_array(elements));
+}
+ast_json_t maker_dict_definition(const std::string& value_type, const std::vector<json_t>& elements){
+	QUARK_ASSERT(value_type == "");
+
+//	const auto type = typeid_t::make_dict(typeid_t::make_unresolved_type_identifier(value_type));
+	const auto element_type2 = typeid_to_ast_json(typeid_t::make_dict(typeid_t::make_undefined()), json_tags::k_tag_resolve_state);
+	return make_expression2(floyd::k_no_location, "construct-value", element_type2._value, json_t::make_array(elements));
+
+/*
+	return make_expression2(
+		e._location,
+		"construct-value",
+		typeid_to_ast_json(typeid_t::make_vector(typeid_t::make_undefined()), json_tags::k_tag_resolve_state)._value,
+		expr_vector_to_json_array(e._exprs)._value
+	);
+*/
+
+}
+
+ast_json_t maker__member_access(const json_t& address, const std::string& member_name){
+	return make_expression2(floyd::k_no_location, "->", address, json_t(member_name));
+}
+
+ast_json_t maker__make_constant(const value_t& value){
+	return make_expression2(
+		floyd::k_no_location,
+		"k",
+		value_to_ast_json(value, json_tags::k_tag_resolve_state)._value,
+		typeid_to_ast_json(value.get_type(), json_tags::k_tag_resolve_state)._value
+	);
+}
+
 }	//	floyd
