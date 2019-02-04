@@ -1116,23 +1116,23 @@ ast_json_t value_to_ast_json(const value_t& v, json_tags tags){
 }
 
 QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
-	ut_compare(QUARK_POS, value_to_ast_json(value_t::make_string("hello"), json_tags::k_tag_resolve_state)._value, json_t("hello"));
+	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_string("hello"), json_tags::k_tag_resolve_state)._value, json_t("hello"));
 }
 
 QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
-	ut_compare(QUARK_POS, value_to_ast_json(value_t::make_int(123), json_tags::k_tag_resolve_state)._value, json_t(123.0));
+	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_int(123), json_tags::k_tag_resolve_state)._value, json_t(123.0));
 }
 
 QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
-	ut_compare(QUARK_POS, value_to_ast_json(value_t::make_bool(true), json_tags::k_tag_resolve_state)._value, json_t(true));
+	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_bool(true), json_tags::k_tag_resolve_state)._value, json_t(true));
 }
 
 QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
-	ut_compare(QUARK_POS, value_to_ast_json(value_t::make_bool(false), json_tags::k_tag_resolve_state)._value, json_t(false));
+	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_bool(false), json_tags::k_tag_resolve_state)._value, json_t(false));
 }
 
 QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
-	ut_compare(QUARK_POS, value_to_ast_json(value_t::make_undefined(), json_tags::k_tag_resolve_state)._value, json_t());
+	ut_verify(QUARK_POS, value_to_ast_json(value_t::make_undefined(), json_tags::k_tag_resolve_state)._value, json_t());
 }
 
 

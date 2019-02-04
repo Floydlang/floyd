@@ -49,7 +49,7 @@ value_t test__run_return_result(const std::string& program, const std::vector<va
 
 void test__run_init__check_result(const std::string& program, const value_t& expected_result){
 	const auto result = test__run_return_result(program, {});
-	ut_compare(QUARK_POS,
+	ut_verify(QUARK_POS,
 		expression_to_json(expression_t::make_literal(result))._value,
 		expression_to_json(expression_t::make_literal(expected_result))._value
 	);
@@ -65,7 +65,7 @@ void test__run_main(const std::string& program, const vector<floyd::value_t>& ar
 	program_recording.push_back(program);
 
 	const auto result = run_main(program, args, "");
-	ut_compare(QUARK_POS,
+	ut_verify(QUARK_POS,
 		expression_to_json(expression_t::make_literal(result.second))._value,
 		expression_to_json(expression_t::make_literal(expected_return))._value
 	);
@@ -75,7 +75,7 @@ void test_result(const std::string& program, const std::string& expected_json){
 	const auto result = test__run_return_result(program, {});
 	const auto expected_json2 = parse_json(seq_t(expected_json));
 	const auto result_json = value_and_type_to_ast_json(result)._value;
-	ut_compare(QUARK_POS, result_json, expected_json2.first);
+	ut_verify(QUARK_POS, result_json, expected_json2.first);
 }
 
 
@@ -1008,7 +1008,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 			let result = typeof(145)
 		)", {}
 	);
-	ut_compare_values(QUARK_POS, result, value_t::make_typeid_value(typeid_t::make_int()));
+	ut_verify_values(QUARK_POS, result, value_t::make_typeid_value(typeid_t::make_int()));
 }
 QUARK_UNIT_TEST("", "typeof()", "", ""){
 	const auto result = test__run_return_result(
@@ -1016,7 +1016,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 			let result = to_string(typeof(145))
 		)", {}
 	);
-	ut_compare_values(QUARK_POS, result, value_t::make_string("int"));
+	ut_verify_values(QUARK_POS, result, value_t::make_string("int"));
 }
 
 QUARK_UNIT_TEST("", "typeof()", "", ""){
@@ -1025,7 +1025,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 			let result = typeof("hello")
 		)", {}
 	);
-	ut_compare_values(QUARK_POS, result, value_t::make_typeid_value(typeid_t::make_string()));
+	ut_verify_values(QUARK_POS, result, value_t::make_typeid_value(typeid_t::make_string()));
 }
 
 QUARK_UNIT_TEST("", "typeof()", "", ""){
@@ -1034,7 +1034,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 			let result = to_string(typeof("hello"))
 		)", {}
 	);
-	ut_compare_values(QUARK_POS, result, value_t::make_string("string"));
+	ut_verify_values(QUARK_POS, result, value_t::make_string("string"));
 }
 
 QUARK_UNIT_TEST("", "typeof()", "", ""){
@@ -1043,7 +1043,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 			let result = typeof([1,2,3])
 		)", {}
 	);
-	ut_compare_values(QUARK_POS, result, value_t::make_typeid_value(typeid_t::make_vector(typeid_t::make_int())));
+	ut_verify_values(QUARK_POS, result, value_t::make_typeid_value(typeid_t::make_vector(typeid_t::make_int())));
 }
 QUARK_UNIT_TEST("", "typeof()", "", ""){
 	const auto result = test__run_return_result(
@@ -1051,7 +1051,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 			let result = to_string(typeof([1,2,3]))
 		)", {}
 	);
-	ut_compare_values(QUARK_POS, result, value_t::make_string("[int]"));
+	ut_verify_values(QUARK_POS, result, value_t::make_string("[int]"));
 }
 
 /*
@@ -1062,7 +1062,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 			result = typeof(int);
 		)", {}
 	);
-	ut_compare_values(QUARK_POS, result, value_t::make_string("int"));
+	ut_verify_values(QUARK_POS, result, value_t::make_string("int"));
 }
 */
 
@@ -1482,7 +1482,7 @@ QUARK_UNIT_TEST("vector", "[]-constructor", "Infer type", "valid vector"){
 		let a = ["one", "two"]
 		print(a)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		R"(["one", "two"])"
 	});
 }
@@ -1513,7 +1513,7 @@ QUARK_UNIT_TEST("vector", "explit bind, is []", "Infer type", "valid vector"){
 		let [string] a = ["one", "two"]
 		print(a)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		R"(["one", "two"])"
 	});
 }
@@ -1525,7 +1525,7 @@ QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
 		print(a)
 
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		R"([])"
 	});
 }
@@ -1595,7 +1595,7 @@ QUARK_UNIT_TEST("vector-string", "=", "copy", ""){
 		print(b)
 
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		R"(["one", "two"])",
 		R"(["one", "two"])"
 	});
@@ -1842,7 +1842,7 @@ QUARK_UNIT_TEST("", "update()", "mutate element", "valid vector, without side ef
 		assert(a == ["one","two","three"])
 		assert(b == ["one","zwei","three"])
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		R"(["one", "two", "three"])",
 		R"(["one", "zwei", "three"])"
 	});
@@ -1867,7 +1867,7 @@ QUARK_UNIT_TEST("dict", "[]", "", ""){
 		print(a["one"])
 		print(a["two"])
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"1",
 		"2"
 	});
@@ -1906,7 +1906,7 @@ QUARK_UNIT_TEST("dict", "Infered type ", "", ""){
 		let a = {"one": 1, "two": 2}
 		print(a)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		R"({"one": 1, "two": 2})",
 	});
 }
@@ -1917,7 +1917,7 @@ QUARK_UNIT_TEST("dict", "{}", "", ""){
 		a = {}
 		print(a)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		R"({})",
 	});
 }
@@ -1990,7 +1990,7 @@ QUARK_UNIT_TEST("dict", "update()", "add element", "valid dict, without side eff
 		print(a)
 		print(b)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		R"({"one": 1, "two": 2})",
 		R"({"one": 1, "three": 3, "two": 2})"
 	});
@@ -2003,7 +2003,7 @@ QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
 		print(a)
 		print(b)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		R"({"one": 1, "three": 3, "two": 2})",
 		R"({"one": 1, "three": 333, "two": 2})"
 	});
@@ -2063,7 +2063,7 @@ QUARK_UNIT_TEST("run_main()", "struct - check struct's type", "", ""){
 		struct t { int a }
 		print(t)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"struct {int a;}"
 	});
 }
@@ -2074,7 +2074,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
 		let a = t(3)
 		print(a)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		 R"({a=3})"
 	});
 }
@@ -2085,7 +2085,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - read back struct member"){
 		let temp = t(4)
 		print(temp.a)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"4"
 	});
 }
@@ -2100,7 +2100,7 @@ QUARK_UNIT_TEST("run_main()", "struct - instantiate nested structs", "", ""){
 		let i = image(color(1, 2, 3), color(200, 201, 202))
 		print(i)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"{red=128, green=192, blue=255}",
 		"{back={red=1, green=2, blue=3}, front={red=200, green=201, blue=202}}"
 	});
@@ -2113,7 +2113,7 @@ QUARK_UNIT_TEST("run_main()", "struct - access member of nested structs", "", ""
 		let i = image(color(1, 2, 3), color(200, 201, 202))
 		print(i.front.green)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"201"
 	});
 }
@@ -2128,7 +2128,7 @@ QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
 		let z = make_color()
 		print(z)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"{red=100, green=101, blue=102}",
 	});
 }
@@ -2142,7 +2142,7 @@ QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
 		}
 		print(make_color())
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"{red=100, green=101, blue=102}",
 	});
 }
@@ -2152,7 +2152,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
 		struct color { int red int green int blue }
 		print(color(1, 2, 3) == color(1, 2, 3))
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"true"
 	});
 }
@@ -2162,7 +2162,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
 		struct color { int red int green int blue }
 		print(color(9, 2, 3) == color(1, 2, 3))
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"false"
 	});
 }
@@ -2185,7 +2185,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs with <, different types
 		struct color { int red int green int blue }
 		print(color(1, 2, 3) < color(1, 2, 3))
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"false"
 	});
 }
@@ -2195,7 +2195,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs <"){
 		struct color { int red int green int blue }
 		print(color(1, 2, 3) < color(1, 4, 3))
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"true"
 	});
 }
@@ -2209,7 +2209,7 @@ QUARK_UNIT_TESTQ("run_main()", "update struct manually"){
 		print(a)
 		print(b)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"{red=255, green=128, blue=128}",
 		"{red=255, green=128, blue=129}"
 	});
@@ -2240,7 +2240,7 @@ QUARK_UNIT_TESTQ("run_main()", "mutate struct member using update()"){
 		print(b)
 	)");
 
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"{red=255, green=128, blue=128}",
 		"{red=255, green=3, blue=128}",
 	});
@@ -2255,7 +2255,7 @@ QUARK_UNIT_TEST("run_main()", "mutate nested member", "", ""){
 		print(a)
 		print(b)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"{back={red=0, green=100, blue=200}, front={red=0, green=0, blue=0}}",
 		"{back={red=0, green=100, blue=200}, front={red=0, green=3, blue=0}}"
 	});
@@ -2271,7 +2271,7 @@ QUARK_UNIT_TEST("run_main()", "struct definition expression", "", ""){
 		print(a);
 		print(b);
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"{red=255, green=128, blue=128}",
 		"{red=255, green=128, blue=129}"
 	});
@@ -2302,7 +2302,7 @@ QUARK_UNIT_TEST("run_main()", "protocol - check protocol's type", "", ""){
 		protocol t { int a }
 		print(t)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"protocol {int a;}"
 	});
 }
@@ -2336,7 +2336,7 @@ QUARK_UNIT_TESTQ("comments", "// on start of line"){
 		//	XYZ
 		print("Hello")
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"Hello"
 	});
 }
@@ -2345,7 +2345,7 @@ QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
 	const auto vm = test__run_global(R"(
 		print("Hello")		//	XYZ
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"Hello"
 	});
 }
@@ -2354,7 +2354,7 @@ QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
 	const auto vm = test__run_global(R"(
 		print("Hello")/* xyz */print("Bye")
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"Hello",
 		"Bye"
 	});
@@ -2368,7 +2368,7 @@ QUARK_UNIT_TEST("json_value-string", "Infer json_value::string", "", ""){
 	const auto result = test__run_return_result(R"(
 		let json_value result = "hello"
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value("hello"));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value("hello"));
 }
 
 QUARK_UNIT_TEST("json_value-string", "string-size()", "", ""){
@@ -2376,34 +2376,34 @@ QUARK_UNIT_TEST("json_value-string", "string-size()", "", ""){
 		let json_value a = "hello"
 		let result = size(a);
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_int(5));
+	ut_verify_values(QUARK_POS, result, value_t::make_int(5));
 }
 
 QUARK_UNIT_TEST("json_value-number", "construct number", "", ""){
 	const auto result = test__run_return_result(R"(
 		let json_value result = 13
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value(13));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(13));
 }
 
 QUARK_UNIT_TEST("json_value-bool", "construct true", "", ""){
 	const auto result = test__run_return_result(R"(
 		let json_value result = true
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value(true));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(true));
 }
 QUARK_UNIT_TEST("json_value-bool", "construct false", "", ""){
 	const auto result = test__run_return_result(R"(
 		let json_value result = false
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value(false));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(false));
 }
 
 QUARK_UNIT_TEST("json_value-array", "construct array", "", ""){
 	const auto result = test__run_return_result(R"(
 		let json_value result = ["hello", "bye"]
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value(json_t::make_array(vector<json_t>{"hello", "bye"})));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t::make_array(vector<json_t>{"hello", "bye"})));
 }
 
 QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
@@ -2411,21 +2411,21 @@ QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
 		let json_value a = ["hello", "bye"]
 		let result = string(a[0]) + string(a[1])
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_string("hellobye"));
+	ut_verify_values(QUARK_POS, result, value_t::make_string("hellobye"));
 }
 QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
 	const auto result = test__run_return_result(R"(
 		let json_value a = ["hello", "bye"]
 		let result = a[0]
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value("hello"));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value("hello"));
 }
 QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
 	const auto result = test__run_return_result(R"(
 		let json_value a = ["hello", "bye"]
 		let result = a[1]
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value("bye"));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value("bye"));
 }
 
 QUARK_UNIT_TEST("json_value-array", "size()", "", ""){
@@ -2433,7 +2433,7 @@ QUARK_UNIT_TEST("json_value-array", "size()", "", ""){
 		let json_value a = ["a", "b", "c", "d"]
 		let result = size(a)
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_int(4));
+	ut_verify_values(QUARK_POS, result, value_t::make_int(4));
 }
 
 //	NOTICE: Floyd dict is stricter than JSON -- cannot have different types of values!
@@ -2442,7 +2442,7 @@ QUARK_UNIT_TEST("json_value-object", "def", "mix value-types in dict", ""){
 		let json_value a = { "pigcount": 3, "pigcolor": "pink" }
 		print(a)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		R"({ "pigcolor": "pink", "pigcount": 3 })"
 	});
 }
@@ -2465,7 +2465,7 @@ QUARK_UNIT_TEST("json_value-object", "def", "read world data", ""){
 		}
 		print(a)
 	)ABCD");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		R"ABCD({ "menu": { "id": "file", "popup": { "menuitem": [{ "onclick": "CreateNewDoc()", "value": "New" }, { "onclick": "OpenDoc()", "value": "Open" }, { "onclick": "CloseDoc()", "value": "Close" }] }, "value": "File" } })ABCD"
 	});
 }
@@ -2475,7 +2475,7 @@ QUARK_UNIT_TEST("json_value-object", "{}", "expressions inside def", ""){
 		let json_value a = { "pigcount": 1 + 2, "pigcolor": "pi" + "nk" }
 		print(a)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		R"({ "pigcolor": "pink", "pigcount": 3 })"
 	});
 }
@@ -2486,7 +2486,7 @@ QUARK_UNIT_TEST("json_value-object", "{}", "", ""){
 		print(a["pigcount"])
 		print(a["pigcolor"])
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"3",
 		"\"pink\""
 	});
@@ -2504,7 +2504,7 @@ QUARK_UNIT_TEST("json_value-null", "construct null", "", ""){
 	const auto result = test__run_return_result(R"(
 		let json_value result = null
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value(json_t()));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t()));
 }
 
 
@@ -2514,7 +2514,7 @@ QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
 	const auto result = test__run_return_result(R"(
 		let json_value result = {}
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value(json_t::make_object()));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t::make_object()));
 }
 
 
@@ -2528,44 +2528,44 @@ QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
 	const auto result = test__run_return_result(R"(
 		let result = get_json_type(json_value({}))
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_int(1));
+	ut_verify_values(QUARK_POS, result, value_t::make_int(1));
 }
 QUARK_UNIT_TEST("", "get_json_type()", "[]", ""){
 	const auto result = test__run_return_result(R"(
 		let result = get_json_type(json_value([]))
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_int(2));
+	ut_verify_values(QUARK_POS, result, value_t::make_int(2));
 }
 QUARK_UNIT_TEST("", "get_json_type()", "string", ""){
 	const auto result = test__run_return_result(R"(
 		let result = get_json_type(json_value("hello"))
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_int(3));
+	ut_verify_values(QUARK_POS, result, value_t::make_int(3));
 }
 QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
 	const auto result = test__run_return_result(R"(
 		let result = get_json_type(json_value(13))
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_int(4));
+	ut_verify_values(QUARK_POS, result, value_t::make_int(4));
 }
 QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
 	const auto result = test__run_return_result(R"(
 		let result = get_json_type(json_value(true))
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_int(5));
+	ut_verify_values(QUARK_POS, result, value_t::make_int(5));
 }
 QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
 	const auto result = test__run_return_result(R"(
 		let result = get_json_type(json_value(false))
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_int(6));
+	ut_verify_values(QUARK_POS, result, value_t::make_int(6));
 }
 
 QUARK_UNIT_TEST("", "get_json_type()", "null", ""){
 	const auto result = test__run_return_result(R"(
 		let result = get_json_type(json_value(null))
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_int(7));
+	ut_verify_values(QUARK_POS, result, value_t::make_int(7));
 }
 
 QUARK_UNIT_TEST("", "get_json_type()", "DOCUMENTATION SNIPPET", ""){
@@ -2614,7 +2614,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 		let a = pixel_t(100.0, 200.0)
 		let result = a.x
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_double(100.0));
+	ut_verify_values(QUARK_POS, result, value_t::make_double(100.0));
 }
 
 
@@ -2624,7 +2624,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 		let c = [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)]
 		let result = c[1].y
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_double(201.0));
+	ut_verify_values(QUARK_POS, result, value_t::make_double(201.0));
 }
 
 QUARK_UNIT_TEST("", "", "", ""){
@@ -2650,7 +2650,7 @@ QUARK_UNIT_TEST("", "script_to_jsonvalue()", "", ""){
 	const auto result = test__run_return_result(R"(
 		let result = script_to_jsonvalue("\"genelec\"")
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value(json_t("genelec")));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t("genelec")));
 }
 
 QUARK_UNIT_TEST("", "script_to_jsonvalue()", "", ""){
@@ -2658,7 +2658,7 @@ QUARK_UNIT_TEST("", "script_to_jsonvalue()", "", ""){
 		let a = script_to_jsonvalue("{ \"magic\": 1234 }")
 		print(a)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		R"({ "magic": 1234 })"
 	});
 }
@@ -2673,7 +2673,7 @@ QUARK_UNIT_TEST("", "jsonvalue_to_script()", "", ""){
 		let b = jsonvalue_to_script(a)
 		print(b)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"\"cheat\""
 	});
 }
@@ -2685,7 +2685,7 @@ QUARK_UNIT_TEST("", "jsonvalue_to_script()", "", ""){
 		let b = jsonvalue_to_script(a)
 		print(b)
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		"{ \"magic\": 1234 }"
 	});
 }
@@ -2698,33 +2698,33 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "bool", ""){
 	const auto result = test__run_return_result(R"(
 		let result = value_to_jsonvalue(true)
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value(json_t(true)));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t(true)));
 }
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "bool", ""){
 	const auto result = test__run_return_result(R"(
 		let result = value_to_jsonvalue(false)
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value(json_t(false)));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t(false)));
 }
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "int", ""){
 	const auto result = test__run_return_result(R"(
 		let result = value_to_jsonvalue(789)
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value(json_t(789.0)));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t(789.0)));
 }
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "int", ""){
 	const auto result = test__run_return_result(R"(
 		let result = value_to_jsonvalue(-987)
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value(json_t(-987.0)));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t(-987.0)));
 }
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "double", ""){
 	const auto result = test__run_return_result(R"(
 		let result = value_to_jsonvalue(-0.125)
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value(json_t(-0.125)));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t(-0.125)));
 }
 
 
@@ -2732,21 +2732,21 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "string", ""){
 	const auto result = test__run_return_result(R"(
 		let result = value_to_jsonvalue("fanta")
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value(json_t("fanta")));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t("fanta")));
 }
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "typeid", ""){
 	const auto result = test__run_return_result(R"(
 		let result = value_to_jsonvalue(typeof([2,2,3]))
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value(json_t::make_array(vector<json_t>{ "vector", "int"})));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t::make_array(vector<json_t>{ "vector", "int"})));
 }
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "[]", ""){
 	const auto result = test__run_return_result(R"(
 		let result = value_to_jsonvalue([1,2,3])
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value(
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(
 		json_t::make_array(vector<json_t>{1,2,3})
 	));
 }
@@ -2755,7 +2755,7 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "{}", ""){
 	const auto result = test__run_return_result(R"(
 		let result = value_to_jsonvalue({"ten": 10, "eleven": 11})
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_json_value(
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(
 		json_t::make_object(std::map<string,json_t>{{"ten", 10},{"eleven", 11}})
 	));
 }
@@ -2769,7 +2769,7 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "pixel_t", ""){
 		let result = jsonvalue_to_script(a)
 
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_string("{ \"x\": 100, \"y\": 200 }"));
+	ut_verify_values(QUARK_POS, result, value_t::make_string("{ \"x\": 100, \"y\": 200 }"));
 }
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "[pixel_t]", ""){
@@ -2781,7 +2781,7 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "[pixel_t]", ""){
 		let result = jsonvalue_to_script(a)
 
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_string("[{ \"x\": 100, \"y\": 200 }, { \"x\": 101, \"y\": 201 }]"));
+	ut_verify_values(QUARK_POS, result, value_t::make_string("[{ \"x\": 100, \"y\": 200 }, { \"x\": 101, \"y\": 201 }]"));
 }
 
 
@@ -2792,41 +2792,41 @@ QUARK_UNIT_TEST("", "jsonvalue_to_value()", "bool", ""){
 	const auto result = test__run_return_result(R"(
 		let result = jsonvalue_to_value(value_to_jsonvalue(true), bool)
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_bool(true));
+	ut_verify_values(QUARK_POS, result, value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("", "jsonvalue_to_value()", "bool", ""){
 	const auto result = test__run_return_result(R"(
 		let result = jsonvalue_to_value(value_to_jsonvalue(false), bool)
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_bool(false));
+	ut_verify_values(QUARK_POS, result, value_t::make_bool(false));
 }
 
 QUARK_UNIT_TEST("", "jsonvalue_to_value()", "int", ""){
 	const auto result = test__run_return_result(R"(
 		let result = jsonvalue_to_value(value_to_jsonvalue(91), int)
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_int(91));
+	ut_verify_values(QUARK_POS, result, value_t::make_int(91));
 }
 
 QUARK_UNIT_TEST("", "jsonvalue_to_value()", "double", ""){
 	const auto result = test__run_return_result(R"(
 		let result = jsonvalue_to_value(value_to_jsonvalue(-0.125), double)
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_double(-0.125));
+	ut_verify_values(QUARK_POS, result, value_t::make_double(-0.125));
 }
 
 QUARK_UNIT_TEST("", "jsonvalue_to_value()", "string", ""){
 	const auto result = test__run_return_result(R"(
 		let result = jsonvalue_to_value(value_to_jsonvalue(""), string)
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_string(""));
+	ut_verify_values(QUARK_POS, result, value_t::make_string(""));
 }
 
 QUARK_UNIT_TEST("", "jsonvalue_to_value()", "string", ""){
 	const auto result = test__run_return_result(R"(
 		let result = jsonvalue_to_value(value_to_jsonvalue("cola"), string)
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_string("cola"));
+	ut_verify_values(QUARK_POS, result, value_t::make_string("cola"));
 }
 
 
@@ -2836,7 +2836,7 @@ QUARK_UNIT_TEST("", "jsonvalue_to_value()", "[]", ""){
 	const auto result = test__run_return_result(R"(
 		result = jsonvalue_to_value(value_to_jsonvalue([1,2,3]), typeof([1]));
 	)", {});
-	ut_compare_values(QUARK_POS,
+	ut_verify_values(QUARK_POS,
 		result,
 		value_t::make_vector_value(typeid_t::make_int(), vector<value_t>{value_t::make_int(1), value_t::make_int(2), value_t::make_int(3)})
 	);
@@ -2853,7 +2853,7 @@ QUARK_UNIT_TEST("", "jsonvalue_to_value()", "point_t", ""){
 		struct point_t { double x double y }
 		let result = jsonvalue_to_value(value_to_jsonvalue(point_t(1.0, 3.0)), point_t)
 	)", {});
-	ut_compare_values(QUARK_POS,
+	ut_verify_values(QUARK_POS,
 		result,
 		value_t::make_struct_value(
 			typeid_t::make_struct2(point_t_def),
@@ -3297,7 +3297,7 @@ QUARK_UNIT_TEST("", "read_text_file()", "", ""){
 		a = read_text_file(path + "/Desktop/test1.json");
 		print(a);
 	)");
-	ut_compare(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
 		string() + R"({ "magic": 1234 })" + "\n"
 	});
 }
@@ -3326,7 +3326,7 @@ QUARK_UNIT_TEST("run_global()", "", "", ""){
 			result = instantiate_from_typeid(t, 3);
 		)", {}
 	);
-	ut_compare_values(QUARK_POS, result, value_t::make_int(3));
+	ut_verify_values(QUARK_POS, result, value_t::make_int(3));
 }
 
 QUARK_UNIT_TEST("run_global()", "", "", ""){
@@ -3356,7 +3356,7 @@ QUARK_UNIT_TEST("", "get_directory_entries()", "", ""){
 	const auto expected = typeid_t::make_vector(make__fsentry_t__type());
 	QUARK_UT_VERIFY(result.get_type() == expected);
 
-//	ut_compare(QUARK_POS, vm->_print_output[0].substr(0, 7), "/Users/");
+//	ut_verify(QUARK_POS, vm->_print_output[0].substr(0, 7), "/Users/");
 }
 
 
@@ -3854,7 +3854,7 @@ QUARK_UNIT_TEST("vector-int", "size()", "3", ""){
 		let [int] a = [1, 2, 3]
 		let result = size(a)
 	)", {});
-	ut_compare_values(QUARK_POS, result, value_t::make_int(3));
+	ut_verify_values(QUARK_POS, result, value_t::make_int(3));
 }
 QUARK_UNIT_TEST("vector-int", "size()", "3", ""){
 	const auto result = test__run_return_result(R"(
@@ -3946,7 +3946,7 @@ QUARK_UNIT_TEST("software-system", "parse software-system", "", ""){
 	)";
 
 	const auto result = test__run_return_result(test_ss, {});
-	ut_compare_values(QUARK_POS, result, value_t::make_int(123));
+	ut_verify_values(QUARK_POS, result, value_t::make_int(123));
 }
 
 QUARK_UNIT_TEST("software-system", "run one process", "", ""){

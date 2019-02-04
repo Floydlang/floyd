@@ -111,8 +111,8 @@ namespace floyd {
 			})
 		});
 
-		ut_compare(QUARK_POS, r.first._value, expected);
-		ut_compare(QUARK_POS, r.second.str(), "");
+		ut_verify(QUARK_POS, r.first._value, expected);
+		ut_verify(QUARK_POS, r.second.str(), "");
 	}
 
 

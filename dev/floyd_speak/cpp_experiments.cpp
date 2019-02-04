@@ -48,10 +48,10 @@ QUARK_UNIT_TESTQ("test_cpp_value_class_a", "what is needed for basic operations"
 
 
 QUARK_UNIT_TESTQ("C++ bool", ""){
-	ut_compare_auto(QUARK_POS, true, true);
-	ut_compare_auto(QUARK_POS, true, !false);
-	ut_compare_auto(QUARK_POS, false, false);
-	ut_compare_auto(QUARK_POS, !false, true);
+	ut_verify_auto(QUARK_POS, true, true);
+	ut_verify_auto(QUARK_POS, true, !false);
+	ut_verify_auto(QUARK_POS, false, false);
+	ut_verify_auto(QUARK_POS, !false, true);
 
 	const auto x = false + false;
 	const auto y = false - false;

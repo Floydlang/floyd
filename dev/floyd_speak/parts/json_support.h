@@ -317,8 +317,8 @@ struct json_t {
 */
 struct seq_t;
 
-void ut_compare(const quark::call_context_t& context, const json_t& result, const json_t& expected);
-void ut_compare(const quark::call_context_t& context, const std::pair<json_t, seq_t>& result, const std::pair<json_t, seq_t>& expected);
+void ut_verify(const quark::call_context_t& context, const json_t& result, const json_t& expected);
+void ut_verify(const quark::call_context_t& context, const std::pair<json_t, seq_t>& result, const std::pair<json_t, seq_t>& expected);
 
 
 

@@ -429,14 +429,7 @@ bool operator==(const collection_def_t& lhs, const collection_def_t& rhs){
 	&& lhs._elements == rhs._elements;
 }
 
-void ut_compare(const quark::call_context_t& context, const std::pair<collection_def_t, seq_t> result, const std::pair<collection_def_t, seq_t> expected){
-	if(result == expected){
-	}
-	else{
-		quark::fail_test(context);
-	}
-}
-void ut_compare(const quark::call_context_t& context, const std::pair<std::string, seq_t>& result, const std::pair<std::string, seq_t>& expected){
+void ut_verify(const quark::call_context_t& context, const std::pair<collection_def_t, seq_t> result, const std::pair<collection_def_t, seq_t> expected){
 	if(result == expected){
 	}
 	else{
@@ -508,7 +501,7 @@ std::pair<collection_def_t, seq_t> parse_bounded_list(const seq_t& s, const std:
 
 
 QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
-	ut_compare(
+	ut_verify(
 		QUARK_POS,
 		parse_bounded_list(seq_t("(3)xyz"), "(", ")"),
 		pair<collection_def_t, seq_t>({false, {	{ nullptr, maker__make_constant(constant_value_t{3}) }}}, seq_t("xyz"))
@@ -517,11 +510,11 @@ QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
 
 
 QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
-	ut_compare(QUARK_POS, parse_bounded_list(seq_t("[]xyz"), "[", "]"), pair<collection_def_t, seq_t>({false, {}}, seq_t("xyz")));
+	ut_verify(QUARK_POS, parse_bounded_list(seq_t("[]xyz"), "[", "]"), pair<collection_def_t, seq_t>({false, {}}, seq_t("xyz")));
 }
 
 QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
-	ut_compare(
+	ut_verify(
 		QUARK_POS,
 		parse_bounded_list(seq_t("[1,2]xyz"), "[", "]"),
 		pair<collection_def_t, seq_t>(
@@ -538,7 +531,7 @@ QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
 }
 
 QUARK_UNIT_TEST("parser", "parse_bounded_list()", "blank dict", ""){
-	ut_compare(
+	ut_verify(
 		QUARK_POS,
 		parse_bounded_list(seq_t(R"([:]xyz)"), "[", "]"),
 		pair<collection_def_t, seq_t>(
@@ -551,7 +544,7 @@ QUARK_UNIT_TEST("parser", "parse_bounded_list()", "blank dict", ""){
 	);
 }
 QUARK_UNIT_TEST("parser", "parse_bounded_list()", "two elements", ""){
-	ut_compare(
+	ut_verify(
 		QUARK_POS,
 		parse_bounded_list(seq_t(R"(["one": 1, "two": 2]xyz)"), "[", "]"),
 		pair<collection_def_t, seq_t>(
@@ -674,19 +667,19 @@ pair<std::string, seq_t> parse_string_literal(const seq_t& s){
 }
 
 QUARK_UNIT_TEST("", "parse_string_literal()", "", ""){
-	ut_compare(QUARK_POS, parse_string_literal(seq_t("\"\" xxx")), pair<std::string, seq_t>("", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t("\"\" xxx")), pair<std::string, seq_t>("", seq_t(" xxx")));
 }
 
 QUARK_UNIT_TEST("", "parse_string_literal()", "", ""){
-	ut_compare(QUARK_POS, parse_string_literal(seq_t("\"hello\" xxx")), pair<std::string, seq_t>("hello", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t("\"hello\" xxx")), pair<std::string, seq_t>("hello", seq_t(" xxx")));
 }
 
 QUARK_UNIT_TEST("", "parse_string_literal()", "", ""){
-	ut_compare(QUARK_POS, parse_string_literal(seq_t("\".5\" xxx")), pair<std::string, seq_t>(".5", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t("\".5\" xxx")), pair<std::string, seq_t>(".5", seq_t(" xxx")));
 }
 
 QUARK_UNIT_TEST("", "parse_string_literal()", "", ""){
-	ut_compare(
+	ut_verify(
 		QUARK_POS,
 		parse_string_literal(seq_t(R"abc("hello \"Bob\"!" xxx)abc")),
 		pair<std::string, seq_t>("hello \"Bob\"!", seq_t(" xxx"))
@@ -694,22 +687,22 @@ QUARK_UNIT_TEST("", "parse_string_literal()", "", ""){
 }
 
 QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \t", ""){
-	ut_compare(QUARK_POS, parse_string_literal(seq_t(R"___("\t" xxx)___")), pair<std::string, seq_t>("\t", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\t" xxx)___")), pair<std::string, seq_t>("\t", seq_t(" xxx")));
 }
 QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \\", ""){
-	ut_compare(QUARK_POS, parse_string_literal(seq_t(R"___("\\" xxx)___")), pair<std::string, seq_t>("\\", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\\" xxx)___")), pair<std::string, seq_t>("\\", seq_t(" xxx")));
 }
 QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \n", ""){
-	ut_compare(QUARK_POS, parse_string_literal(seq_t(R"___("\n" xxx)___")), pair<std::string, seq_t>("\n", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\n" xxx)___")), pair<std::string, seq_t>("\n", seq_t(" xxx")));
 }
 QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \r", ""){
-	ut_compare(QUARK_POS, parse_string_literal(seq_t(R"___("\r" xxx)___")), pair<std::string, seq_t>("\r", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\r" xxx)___")), pair<std::string, seq_t>("\r", seq_t(" xxx")));
 }
 QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \"", ""){
-	ut_compare(QUARK_POS, parse_string_literal(seq_t(R"___("\"" xxx)___")), pair<std::string, seq_t>("\"", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\"" xxx)___")), pair<std::string, seq_t>("\"", seq_t(" xxx")));
 }
 QUARK_UNIT_TEST("", "parse_string_literal()", "Escape \'", ""){
-	ut_compare(QUARK_POS, parse_string_literal(seq_t(R"___("\'" xxx)___")), pair<std::string, seq_t>("\'", seq_t(" xxx")));
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\'" xxx)___")), pair<std::string, seq_t>("\'", seq_t(" xxx")));
 }
 
 std::pair<constant_value_t, seq_t> parse_numeric_constant(const seq_t& p) {

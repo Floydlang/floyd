@@ -80,15 +80,15 @@ ast_json_t function_def_to_ast_json(const function_definition_t& v) {
 
 
 QUARK_UNIT_TESTQ("expression_to_json()", "literals"){
-	ut_compare(QUARK_POS, expression_to_json_string(expression_t::make_literal_int(13)), R"(["k", 13, "^int"])");
-	ut_compare(QUARK_POS, expression_to_json_string(expression_t::make_literal_string("xyz")), R"(["k", "xyz", "^string"])");
-	ut_compare(QUARK_POS, expression_to_json_string(expression_t::make_literal_double(14.0f)), R"(["k", 14, "^double"])");
-	ut_compare(QUARK_POS, expression_to_json_string(expression_t::make_literal_bool(true)), R"(["k", true, "^bool"])");
-	ut_compare(QUARK_POS, expression_to_json_string(expression_t::make_literal_bool(false)), R"(["k", false, "^bool"])");
+	ut_verify(QUARK_POS, expression_to_json_string(expression_t::make_literal_int(13)), R"(["k", 13, "^int"])");
+	ut_verify(QUARK_POS, expression_to_json_string(expression_t::make_literal_string("xyz")), R"(["k", "xyz", "^string"])");
+	ut_verify(QUARK_POS, expression_to_json_string(expression_t::make_literal_double(14.0f)), R"(["k", 14, "^double"])");
+	ut_verify(QUARK_POS, expression_to_json_string(expression_t::make_literal_bool(true)), R"(["k", true, "^bool"])");
+	ut_verify(QUARK_POS, expression_to_json_string(expression_t::make_literal_bool(false)), R"(["k", false, "^bool"])");
 }
 
 QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
-	ut_compare(QUARK_POS,
+	ut_verify(QUARK_POS,
 		expression_to_json_string(
 			expression_t::make_simple_expression__2(
 				expression_type::k_arithmetic_add__2, expression_t::make_literal_int(2), expression_t::make_literal_int(3), nullptr)
@@ -98,7 +98,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
 }
 
 QUARK_UNIT_TESTQ("expression_to_json()", "call"){
-	ut_compare(QUARK_POS,
+	ut_verify(QUARK_POS,
 		expression_to_json_string(
 			expression_t::make_call(
 				expression_t::make_load("my_func", nullptr),
@@ -114,7 +114,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 }
 
 QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
-	ut_compare(QUARK_POS, 
+	ut_verify(QUARK_POS, 
 		expression_to_json_string(
 			expression_t::make_lookup(
 				expression_t::make_load("hello", nullptr),

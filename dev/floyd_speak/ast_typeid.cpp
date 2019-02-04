@@ -692,7 +692,7 @@ OFF_QUARK_UNIT_TEST("typeid_to_ast_json()", "", "", ""){
 
 		//	Test typeid_to_ast_json().
 		const auto result1 = typeid_to_ast_json(start_typeid, json_tags::k_tag_resolve_state);
-		ut_compare(QUARK_POS, result1._value, expected_ast_json);
+		ut_verify(QUARK_POS, result1._value, expected_ast_json);
 	}
 }
 
@@ -720,7 +720,7 @@ OFF_QUARK_UNIT_TEST("typeid_to_compact_string", "", "", ""){
 
 		//	Test typeid_to_compact_string().
 		const auto result3 = typeid_to_compact_string(start_typeid);
-		ut_compare(QUARK_POS, result3, f[i]._compact_str);
+		ut_verify(QUARK_POS, result3, f[i]._compact_str);
 	}
 	QUARK_TRACE("OK!");
 }
@@ -832,7 +832,7 @@ std::string to_compact_string(const protocol_definition_t& v){
 
 		//	Test typeid_to_ast_json().
 		const auto result1 = typeid_to_ast_json(start_typeid, json_tags::k_tag_resolve_state);
-		ut_compare(QUARK_POS, result1._value, expected_ast_json);
+		ut_verify(QUARK_POS, result1._value, expected_ast_json);
 	}
 }
 */

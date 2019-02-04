@@ -64,18 +64,18 @@ const std::string keyword_t::k_json_null = "json_null";
 
 
 
-void ut_compare_json_and_rest(const quark::call_context_t& context, const std::pair<ast_json_t, seq_t>& result_pair, const std::string& expected_json, const std::string& expected_rest){
-	ut_compare(
+void ut_verify_json_and_rest(const quark::call_context_t& context, const std::pair<ast_json_t, seq_t>& result_pair, const std::string& expected_json, const std::string& expected_rest){
+	ut_verify(
 		context,
 		result_pair.first._value,
 		parse_json(seq_t(expected_json)).first
 	);
 
-	ut_compare(context, result_pair.second.str(), expected_rest);
+	ut_verify(context, result_pair.second.str(), expected_rest);
 }
 
 
-void ut_compare_values(const quark::call_context_t& context, const value_t& result, const value_t& expected){
+void ut_verify_values(const quark::call_context_t& context, const value_t& result, const value_t& expected){
 	if(result != expected){
 		QUARK_TRACE("result:");
 		QUARK_TRACE(json_to_pretty_string(value_and_type_to_ast_json(result)._value));
@@ -86,6 +86,13 @@ void ut_compare_values(const quark::call_context_t& context, const value_t& resu
 	}
 }
 
+void ut_verify(const quark::call_context_t& context, const std::pair<std::string, seq_t>& result, const std::pair<std::string, seq_t>& expected){
+	if(result == expected){
+	}
+	else{
+		quark::fail_test(context);
+	}
+}
 
 
 }

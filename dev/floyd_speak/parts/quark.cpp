@@ -72,46 +72,32 @@ QUARK_UNIT_TESTQ("path_to_name()", ""){
 	QUARK_UT_VERIFY(path_to_name("") == "");
 }
 
+//??? test mixes of string vs char*
 
-QUARK_UNIT_TEST("Quark", "QUARK_UT_COMPARE()", "", ""){
-
+QUARK_UNIT_TEST("Quark", "ut_verify()", "", ""){
+	ut_verify(QUARK_POS, std::string("xyz123"), std::string("xyz123"));
+}
+QUARK_UNIT_TEST("Quark", "ut_verify()", "", ""){
+	ut_verify(QUARK_POS, "xyz", "xyz");
+}
+/*
+QUARK_UNIT_TEST("Quark", "ut_verify()", "", ""){
 	try{
-//	quark::ut_compare_t(std::string("aaa"), std::string("bbb")).go(QUARK_SAMPLE_CONTEXT);
-		ut_compare(QUARK_POS, std::string("aaa"), std::string("bbb"));
-		QUARK_UT_VERIFY(false);
-	}
-	catch(...){
-		//	We should land here.
-	}
-
-//	quark::ut_compare_t<std::string>(	quark::call_context_t{::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__)}	)(std::string("aaa"), std::string("bbb"));
-
-
-}
-
-
-QUARK_UNIT_TEST("Quark", "QUARK_UT_COMPARE()", "", ""){
-	ut_compare(QUARK_POS, std::string("xyz123"), std::string("xyz123"));
-}
-QUARK_UNIT_TEST("Quark", "QUARK_UT_COMPARE()", "", ""){
-	ut_compare(QUARK_POS, "xyz", "xyz");
-}
-QUARK_UNIT_TEST("Quark", "QUARK_UT_COMPARE()", "", ""){
-	try{
-		ut_compare(QUARK_POS, "xyzabc", "xyztbcd");
+		ut_verify(QUARK_POS, "xyzabc", "xyztbcd");
 		QUARK_UT_VERIFY(false);
 	}
 	catch(...){
 		//	We should land here.
 	}
 }
+*/
 
 struct custom_type_t {
 	int a;
 	std::string s;
 };
 
-void ut_compare(const call_context_t& context, const custom_type_t& result, const custom_type_t& expected){
+void ut_verify(const call_context_t& context, const custom_type_t& result, const custom_type_t& expected){
 	if(result.a == expected.a && result.s == expected.s){
 	}
 	else{
@@ -124,11 +110,11 @@ void ut_compare(const call_context_t& context, const custom_type_t& result, cons
 /*bool operator==(const custom_type_t& lhs, const custom_type_t& rhs){
 	return lhs.a == rhs.a && lhs.s == rhs.s;
 }*/
-QUARK_UNIT_TEST("Quark", "QUARK_UT_COMPARE()", "", ""){
+QUARK_UNIT_TEST("Quark", "ut_verify()", "", ""){
 	try {
 		const auto result = custom_type_t{ 100, "one hundred" };
 		const auto expected = custom_type_t{ 200, "two hundred" };
-		ut_compare(QUARK_POS, result, expected);
+		ut_verify(QUARK_POS, result, expected);
 	}
 	catch(...){
 		//	We should land here.

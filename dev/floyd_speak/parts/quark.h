@@ -659,8 +659,8 @@ inline void set_trace(const trace_i* v){
 	//### Add argument to unit-test functions that can be used / checked in UT_VERIFY().
 	#define QUARK_UT_VERIFY(exp) if(exp){}else{ ::quark::on_unit_test_failed_hook(::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(exp)); }
 	#define QUARK_TEST_VERIFY QUARK_UT_VERIFY
-//	#define QUARK_UT_COMPARExxxx(result, expected) ut_compare(quark::call_context_t{::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__)}, result, expected)
-//	#define QUARK_UT_COMPARE(result, expected) quark::ut_compare_t(result, expected).go(QUARK_SAMPLE_CONTEXT)
+//	#define QUARK_UT_COMPARExxxx(result, expected) ut_verify(quark::call_context_t{::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__)}, result, expected)
+//	#define QUARK_UT_COMPARE(result, expected) quark::ut_verify_t(result, expected).go(QUARK_SAMPLE_CONTEXT)
 
 
 struct call_context_t {
@@ -676,11 +676,7 @@ inline void fail_test(const call_context_t& context){
 	);
 }
 
-	inline int get_log_pos2(){
-		return 0;
-	}
-
-template <typename T> void ut_compare_auto(const quark::call_context_t& context, const T& result, const T& expected){
+template <typename T> void ut_verify_auto(const quark::call_context_t& context, const T& result, const T& expected){
 	if(result == expected){
 	}
 	else{
@@ -691,7 +687,7 @@ template <typename T> void ut_compare_auto(const quark::call_context_t& context,
 	}
 }
 
-inline void ut_compare(const quark::call_context_t& context, const std::string& result, const std::string& expected){
+inline void ut_verify(const quark::call_context_t& context, const std::string& result, const std::string& expected){
 	if(result == expected){
 	}
 	else{
@@ -731,7 +727,7 @@ inline void ut_compare(const quark::call_context_t& context, const std::string& 
 		fail_test(context);
 	}
 }
-inline void ut_compare(const quark::call_context_t& context, const std::vector<std::string>& result, const std::vector<std::string>& expected){
+inline void ut_verify(const quark::call_context_t& context, const std::vector<std::string>& result, const std::vector<std::string>& expected){
 	if(result != expected){
 		if(result.size() != expected.size()){
 			QUARK_TRACE("Vector are different sizes!");
@@ -740,7 +736,7 @@ inline void ut_compare(const quark::call_context_t& context, const std::vector<s
 		for(int i = 0 ; i < count ; i++){
 			QUARK_SCOPED_TRACE(std::to_string(i));
 
-			ut_compare(context, result[i], expected[i]);
+			ut_verify(context, result[i], expected[i]);
 		}
 
 		quark::fail_test(context);
@@ -748,40 +744,40 @@ inline void ut_compare(const quark::call_context_t& context, const std::vector<s
 }
 
 
-//	Special function to support using string literals, like 	QUARK_UT_COMPARE("xyz", "12345")
-inline void ut_compare(const call_context_t& context, const char* result, const char* expected){
-	ut_compare(context, std::string(result), std::string(expected));
+//	Special function to support using string literals, like 	QUARK_ut_verify("xyz", "12345")
+inline void ut_verify(const call_context_t& context, const char* result, const char* expected){
+	ut_verify(context, std::string(result), std::string(expected));
 }
-inline void ut_compare(const call_context_t& context, const std::string& result, const char* expected){
-	ut_compare(context, result, std::string(expected));
+inline void ut_verify(const call_context_t& context, const std::string& result, const char* expected){
+	ut_verify(context, result, std::string(expected));
 }
-inline void ut_compare(const call_context_t& context, const char* result, const std::string& expected){
-	ut_compare(context, std::string(result), expected);
+inline void ut_verify(const call_context_t& context, const char* result, const std::string& expected){
+	ut_verify(context, std::string(result), expected);
 }
 
 /*
 template <typename T>
-struct ut_compare_t {
-	ut_compare_t(const char* result, const char* expected) :
+struct ut_verify_t {
+	ut_verify_t(const char* result, const char* expected) :
 		result(result),
 		expected(expected),
 		context{nullptr, quark::source_code_location{"", 0}}
 	{
 	}
-	ut_compare_t(const std::string& result, const char* expected) :
+	ut_verify_t(const std::string& result, const char* expected) :
 		result(result),
 		expected(expected),
 		context{nullptr, quark::source_code_location{"", 0}}
 	{
 	}
-	ut_compare_t(const char* result, const std::string& expected) :
+	ut_verify_t(const char* result, const std::string& expected) :
 		result(result),
 		expected(expected),
 		context{nullptr, quark::source_code_location{"", 0}}
 	{
 	}
 
-	ut_compare_t(const T& result, const T& expected) :
+	ut_verify_t(const T& result, const T& expected) :
 		result(result),
 		expected(expected),
 		context{nullptr, quark::source_code_location{"", 0}}
@@ -790,7 +786,7 @@ struct ut_compare_t {
 
 
 	void go(const call_context_t& c){
-//		ut_compare(result, expected);
+//		ut_verify(result, expected);
 	}
 
 	const T result;
