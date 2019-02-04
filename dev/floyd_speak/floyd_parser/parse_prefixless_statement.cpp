@@ -21,6 +21,7 @@
 
 #include "ast_typeid.h"
 #include "ast_typeid_helpers.h"
+#include "floyd_basics.h"
 
 #include <string>
 #include <memory>
@@ -221,17 +222,10 @@ pair<ast_json_t, seq_t> parse_bind_statement(const seq_t& s){
 }
 
 
-void ut_compare_json_and_rest(const pair<ast_json_t, seq_t>& result_pair, const std::string& expected_json, const std::string& expected_rest){
-	ut_compare_jsons(
-		result_pair.first._value,
-		parse_json(seq_t(expected_json)).first
-	);
-
-	quark::ut_compare_strings(result_pair.second.str(), expected_rest);
-}
 
 QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 	ut_compare_json_and_rest(
+		QUARK_POS,
 		parse_bind_statement(seq_t("let int test = 123 let int a = 4 ")),
 		R"(
 			[ 0, "bind", "^int", "test", ["k", 123, "^int"]]
@@ -243,7 +237,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 
 
 QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_bind_statement(seq_t("let bool bb = true")).first._value,
 		parse_json(seq_t(
 			R"(
@@ -253,7 +247,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 	);
 }
 QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS, 
 		parse_bind_statement(seq_t("let int hello = 3")).first._value,
 		parse_json(seq_t(
 			R"(
@@ -264,7 +258,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 }
 
 QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_bind_statement(seq_t("mutable int a = 14")).first._value,
 		parse_json(seq_t(
 			R"(
@@ -275,7 +269,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 }
 
 QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_bind_statement(seq_t("mutable hello = 3")).first._value,
 		parse_json(seq_t(
 			R"(
@@ -307,7 +301,7 @@ pair<ast_json_t, seq_t> parse_assign_statement(const seq_t& s){
 }
 
 QUARK_UNIT_TEST("", "parse_assign_statement()", "", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_assign_statement(seq_t("x = 10;")).first._value,
 		parse_json(seq_t(
 			R"(
@@ -330,7 +324,7 @@ pair<ast_json_t, seq_t> parse_expression_statement(const seq_t& s){
 }
 
 QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_expression_statement(seq_t("print(14);")).first._value,
 		parse_json(seq_t(
 			R"(
@@ -357,7 +351,7 @@ std::pair<ast_json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 
 /*
 QUARK_UNIT_TEST("", "parse_prefixless_statement()", "", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_prefixless_statement(seq_t("x = f(3);")).first._value,
 		parse_json(seq_t(R"(["bind", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first
 	);

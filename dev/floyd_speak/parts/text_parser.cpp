@@ -70,19 +70,19 @@ vector<string> split_on_chars(const seq_t& s, const string& match_chars){
 }
 
 QUARK_UNIT_TESTQ("split_on_chars()", ""){
-	quark::ut_compare(split_on_chars(seq_t(""),"#"), vector<string>{});
+	ut_compare(QUARK_POS, split_on_chars(seq_t(""),"#"), vector<string>{});
 }
 QUARK_UNIT_TESTQ("split_on_chars()", ""){
-	quark::ut_compare(split_on_chars(seq_t("#"),"#"), vector<string>{""});
+	ut_compare(QUARK_POS, split_on_chars(seq_t("#"),"#"), vector<string>{""});
 }
 QUARK_UNIT_TESTQ("split_on_chars()", ""){
-	quark::ut_compare(split_on_chars(seq_t("123#"),"#"), vector<string>{"123"});
+	ut_compare(QUARK_POS, split_on_chars(seq_t("123#"),"#"), vector<string>{"123"});
 }
 QUARK_UNIT_TESTQ("split_on_chars()", ""){
-	quark::ut_compare(split_on_chars(seq_t("123#456"),"#"), vector<string>{"123", "456"});
+	ut_compare(QUARK_POS, split_on_chars(seq_t("123#456"),"#"), (vector<string>{"123", "456"}));
 }
 QUARK_UNIT_TESTQ("split_on_chars()", ""){
-	quark::ut_compare(split_on_chars(seq_t("a##b"),"#"), vector<string>{"a", "", "b"});
+	ut_compare(QUARK_POS, split_on_chars(seq_t("a##b"),"#"), (vector<string>{"a", "", "b"}));
 }
 
 
@@ -101,13 +101,13 @@ std::string concat_strings_with_divider(const std::vector<std::string>& v, const
 }
 
 QUARK_UNIT_TESTQ("concat_strings_with_divider()", ""){
-	quark::ut_compare_strings(concat_strings_with_divider({""},", "), "");
+	ut_compare(QUARK_POS, concat_strings_with_divider({""},", "), "");
 }
 QUARK_UNIT_TESTQ("concat_strings_with_divider()", ""){
-	quark::ut_compare_strings(concat_strings_with_divider({"one"},", "), "one");
+	ut_compare(QUARK_POS, concat_strings_with_divider({"one"},", "), "one");
 }
 QUARK_UNIT_TESTQ("concat_strings_with_divider()", ""){
-	quark::ut_compare_strings(concat_strings_with_divider({"one","two"},", "), "one, two");
+	ut_compare(QUARK_POS, concat_strings_with_divider({"one","two"},", "), "one, two");
 }
 
 
@@ -136,13 +136,13 @@ std::string float_to_string(float value){
 }
 
 QUARK_UNIT_TESTQ("float_to_string()", ""){
-	quark::ut_compare_strings(float_to_string(0.0f), "0");
+	ut_compare(QUARK_POS, float_to_string(0.0f), "0");
 }
 QUARK_UNIT_TESTQ("float_to_string()", ""){
-	quark::ut_compare_strings(float_to_string(13.0f), "13");
+	ut_compare(QUARK_POS, float_to_string(13.0f), "13");
 }
 QUARK_UNIT_TESTQ("float_to_string()", ""){
-	quark::ut_compare_strings(float_to_string(13.5f), "13.5");
+	ut_compare(QUARK_POS, float_to_string(13.5f), "13.5");
 }
 
 
@@ -182,16 +182,16 @@ std::string double_to_string_simplify(double value){
 }
 
 QUARK_UNIT_TESTQ("double_to_string_simplify()", ""){
-	quark::ut_compare_strings(double_to_string_simplify(0.0), "0");
+	ut_compare(QUARK_POS, double_to_string_simplify(0.0), "0");
 }
 QUARK_UNIT_TESTQ("double_to_string_simplify()", ""){
-	quark::ut_compare_strings(double_to_string_simplify(1.0), "1");
+	ut_compare(QUARK_POS, double_to_string_simplify(1.0), "1");
 }
 QUARK_UNIT_TESTQ("double_to_string_simplify()", ""){
-	quark::ut_compare_strings(double_to_string_simplify(13.0), "13");
+	ut_compare(QUARK_POS, double_to_string_simplify(13.0), "13");
 }
 QUARK_UNIT_TESTQ("double_to_string_simplify()", ""){
-	quark::ut_compare_strings(double_to_string_simplify(13.5), "13.5");
+	ut_compare(QUARK_POS, double_to_string_simplify(13.5), "13.5");
 }
 
 
@@ -202,13 +202,13 @@ std::string double_to_string_always_decimals(double value){
 }
 
 QUARK_UNIT_TESTQ("double_to_string_always_decimals()", ""){
-	quark::ut_compare_strings(double_to_string_always_decimals(0.0), "0.0");
+	ut_compare(QUARK_POS, double_to_string_always_decimals(0.0), "0.0");
 }
 QUARK_UNIT_TESTQ("double_to_string_always_decimals()", ""){
-	quark::ut_compare_strings(double_to_string_always_decimals(13.0), "13.0");
+	ut_compare(QUARK_POS, double_to_string_always_decimals(13.0), "13.0");
 }
 QUARK_UNIT_TESTQ("double_to_string_always_decimals()", ""){
-	quark::ut_compare_strings(double_to_string_always_decimals(13.5), "13.5");
+	ut_compare(QUARK_POS, double_to_string_always_decimals(13.5), "13.5");
 }
 
 

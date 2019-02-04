@@ -1712,7 +1712,7 @@ void test__analyse_expression(const statement_t& parent, const expression_t& e, 
 	const analyser_t interpreter(ast);
 	const auto e3 = analyse_expression_no_target(interpreter, parent, e);
 
-	ut_compare_jsons(expression_to_json(e3.second)._value, expression_to_json(expected)._value);
+	ut_compare(QUARK_POS, expression_to_json(e3.second)._value, expression_to_json(expected)._value);
 }
 
 
@@ -1738,7 +1738,7 @@ QUARK_UNIT_TESTQ("analyse_expression_no_target()", "1 + 2 == 3") {
 		)
 	);
 
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		expression_to_json(e3.second)._value,
 		parse_json(seq_t(R"(   ["+", ["k", 1, "^int"], ["k", 2, "^int"], "^int"]   )")).first
 	);

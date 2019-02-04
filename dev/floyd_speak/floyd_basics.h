@@ -14,8 +14,11 @@
 #include "json_support.h"
 
 
+struct seq_t;
+
 namespace floyd {
 
+struct value_t;
 
 //////////////////////////////////////		ast_json_t
 
@@ -230,7 +233,13 @@ const std::vector<std::string> advanced_types {
 */
 };
 
-}	//	floyd
 
+
+void ut_compare_json_and_rest(const quark::call_context_t& context, const std::pair<ast_json_t, seq_t>& result_pair, const std::string& expected_json, const std::string& expected_rest);
+
+void ut_compare_values(const quark::call_context_t& context, const value_t& result, const value_t& expected);
+
+
+}	//	floyd
 
 #endif /* floyd_basics_hpp */

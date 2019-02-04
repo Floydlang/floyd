@@ -636,6 +636,7 @@ inline void set_trace(const trace_i* v){
 
 	////////////////////////////		Macros used by client code
 
+	#define QUARK_POS quark::call_context_t{::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__)}
 
 	//	The generated function is static and will be stripped in optimized builds (it will not be referenced).
 	#define QUARK_UNIT_TEST(class_under_test, function_under_test, scenario, expected_result) \
@@ -655,28 +656,43 @@ inline void set_trace(const trace_i* v){
 		static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
 
 
-
 	//### Add argument to unit-test functions that can be used / checked in UT_VERIFY().
 	#define QUARK_UT_VERIFY(exp) if(exp){}else{ ::quark::on_unit_test_failed_hook(::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(exp)); }
 	#define QUARK_TEST_VERIFY QUARK_UT_VERIFY
-	#define QUARK_UT_COMPARE(result, expected) ut_compare_hook(result, expected, ::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__))
+//	#define QUARK_UT_COMPARExxxx(result, expected) ut_compare(quark::call_context_t{::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__)}, result, expected)
+//	#define QUARK_UT_COMPARE(result, expected) quark::ut_compare_t(result, expected).go(QUARK_SAMPLE_CONTEXT)
 
 
+struct call_context_t {
+	runtime_i* runtime;
+	source_code_location location;
+};
 
-//	Make custom ut_validate() for your specific types.
-template <typename T> bool ut_validate(const T& result, const T& expected){
+inline void fail_test(const call_context_t& context){
+	::quark::on_unit_test_failed_hook(
+		context.runtime,
+		context.location,
+		""
+	);
+}
+
+	inline int get_log_pos2(){
+		return 0;
+	}
+
+template <typename T> void ut_compare_auto(const quark::call_context_t& context, const T& result, const T& expected){
 	if(result == expected){
-		return true;
 	}
 	else{
 		QUARK_TRACE_SS("  result: " << result);
 		QUARK_TRACE_SS("expected: " << expected);
-		return false;
+
+		fail_test(context);
 	}
 }
-inline bool ut_validate(const std::string& result, const std::string& expected){
+
+inline void ut_compare(const quark::call_context_t& context, const std::string& result, const std::string& expected){
 	if(result == expected){
-		return true;
 	}
 	else{
 		QUARK_TRACE_SS("  result: " << result);
@@ -712,60 +728,76 @@ inline bool ut_validate(const std::string& result, const std::string& expected){
 			s << (result_int == expected_int ? "" : "\t=> DIFFERENT");
 			QUARK_TRACE_SS(s.str());
 		}
-		return false;
+		fail_test(context);
 	}
 }
-template <typename T> void ut_compare_hook(const T& result, const T& expected, runtime_i* runtime, const source_code_location& location){
-	const auto ok = ut_validate(result, expected);
-	if(ok == false){
-		::quark::on_unit_test_failed_hook(
-			runtime,
-			location,
-			QUARK_STRING(result) " != " QUARK_STRING(expect)
-		);
-	}
-}
-//	Special function to support using string literals, like 	QUARK_UT_COMPARE("xyz", "12345")
-inline void ut_compare_hook(const char* result, const char* expected, runtime_i* runtime, const source_code_location& location){
-	ut_compare_hook(std::string(result), std::string(expected), runtime, location);
-}
-
-
-
-
-
-
-
-template <typename T> void ut_compare(const T& result, const T& expected){
-	if(!(result == expected)){
-		::quark::on_unit_test_failed_hook(
-			::quark::get_runtime(),
-			::quark::source_code_location(__FILE__, __LINE__),
-			QUARK_STRING(result) " != " QUARK_STRING(expect)
-		);
-	}
-}
-
-inline void ut_compare_strings(const std::string& result, const std::string& expected){
+inline void ut_compare(const quark::call_context_t& context, const std::vector<std::string>& result, const std::vector<std::string>& expected){
 	if(result != expected){
-		QUARK_TRACE_SS("  result: " << result);
-		QUARK_TRACE_SS("expected: " << expected);
+		if(result.size() != expected.size()){
+			QUARK_TRACE("Vector are different sizes!");
+		}
+		const auto count = std::min(result.size(), expected.size());
+		for(int i = 0 ; i < count ; i++){
+			QUARK_SCOPED_TRACE(std::to_string(i));
 
-		//	Show exactly where mismatch is.
-		for(size_t pos = 0 ; pos < std::max(result.size(), expected.size()) ; pos++){
-			const int ach = pos < result.size() ? result[pos] : 1000;
-			const int bch = pos < expected.size() ? expected[pos] : 1000;
-			QUARK_TRACE_SS("" << pos << ": " << ach << " : " << bch << " " << (ach == bch ? "" : "DIFFERENT"))
+			ut_compare(context, result[i], expected[i]);
 		}
 
-		::quark::on_unit_test_failed_hook(
-			::quark::get_runtime(),
-			::quark::source_code_location(__FILE__, __LINE__),
-			(result + " != " + expected).c_str()
-		);
+		quark::fail_test(context);
 	}
 }
 
+
+//	Special function to support using string literals, like 	QUARK_UT_COMPARE("xyz", "12345")
+inline void ut_compare(const call_context_t& context, const char* result, const char* expected){
+	ut_compare(context, std::string(result), std::string(expected));
+}
+inline void ut_compare(const call_context_t& context, const std::string& result, const char* expected){
+	ut_compare(context, result, std::string(expected));
+}
+inline void ut_compare(const call_context_t& context, const char* result, const std::string& expected){
+	ut_compare(context, std::string(result), expected);
+}
+
+/*
+template <typename T>
+struct ut_compare_t {
+	ut_compare_t(const char* result, const char* expected) :
+		result(result),
+		expected(expected),
+		context{nullptr, quark::source_code_location{"", 0}}
+	{
+	}
+	ut_compare_t(const std::string& result, const char* expected) :
+		result(result),
+		expected(expected),
+		context{nullptr, quark::source_code_location{"", 0}}
+	{
+	}
+	ut_compare_t(const char* result, const std::string& expected) :
+		result(result),
+		expected(expected),
+		context{nullptr, quark::source_code_location{"", 0}}
+	{
+	}
+
+	ut_compare_t(const T& result, const T& expected) :
+		result(result),
+		expected(expected),
+		context{nullptr, quark::source_code_location{"", 0}}
+	{
+	}
+
+
+	void go(const call_context_t& c){
+//		ut_compare(result, expected);
+	}
+
+	const T result;
+	const T expected;
+	call_context_t context;
+};
+*/
 
 #else
 
@@ -775,7 +807,7 @@ inline void ut_compare_strings(const std::string& result, const std::string& exp
 
 	#define QUARK_UT_VERIFY(exp)
 	#define QUARK_TEST_VERIFY QUARK_UT_VERIFY
-	#define QUARK_UT_COMPARE(result, expected)
+//	#define QUARK_UT_COMPARE(result, expected)
 
 #endif
 

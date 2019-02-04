@@ -17,6 +17,35 @@ using std::string;
 using std::vector;
 
 
+
+#include "text_parser.h"
+
+void ut_compare(const quark::call_context_t& context, const json_t& result, const json_t& expected){
+	if(result == expected){
+	}
+	else{
+		const auto result2 = json_to_pretty_string(result);
+		const auto expected2 = json_to_pretty_string(expected);
+		quark::ut_compare(context, result2, expected2);
+	}
+}
+
+void ut_compare(const quark::call_context_t& context, const std::pair<json_t, seq_t>& result, const std::pair<json_t, seq_t>& expected){
+	if(result == expected){
+	}
+	else{
+		if(result.first != expected.first){
+			const auto result2 = json_to_pretty_string(result.first);
+			const auto expected2 = json_to_pretty_string(expected.first);
+			quark::ut_compare(context, result2, expected2);
+		}
+		else {
+			quark::ut_compare(context, result.second.str(), expected.second.str());
+		}
+	}
+}
+
+
 ////////////////////////////////////////		json_t
 
 
@@ -237,22 +266,6 @@ QUARK_UNIT_TESTQ("json_t()", ""){
 ////////////////////////////////////////		HELPERS
 
 
-void ut_compare_jsons(const json_t& result, const json_t& expected){
-	const auto result2 = json_to_pretty_string(result);
-	const auto expected2 = json_to_pretty_string(expected);
-
-	if(result2 != expected2){
-		{
-			QUARK_SCOPED_TRACE("RESULT");
-			QUARK_TRACE(result2);
-		}
-		{
-			QUARK_SCOPED_TRACE("EXPECTED");
-			QUARK_TRACE(expected2);
-		}
-		QUARK_TEST_VERIFY(false)
-	}
-}
 
 
 long long double_to_int(const double value){

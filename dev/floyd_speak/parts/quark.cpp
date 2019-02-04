@@ -74,14 +74,31 @@ QUARK_UNIT_TESTQ("path_to_name()", ""){
 
 
 QUARK_UNIT_TEST("Quark", "QUARK_UT_COMPARE()", "", ""){
-	QUARK_UT_COMPARE(std::string("xyz"), std::string("xyz"));
+
+	try{
+//	quark::ut_compare_t(std::string("aaa"), std::string("bbb")).go(QUARK_SAMPLE_CONTEXT);
+		ut_compare(QUARK_POS, std::string("aaa"), std::string("bbb"));
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+		//	We should land here.
+	}
+
+//	quark::ut_compare_t<std::string>(	quark::call_context_t{::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__)}	)(std::string("aaa"), std::string("bbb"));
+
+
+}
+
+
+QUARK_UNIT_TEST("Quark", "QUARK_UT_COMPARE()", "", ""){
+	ut_compare(QUARK_POS, std::string("xyz123"), std::string("xyz123"));
 }
 QUARK_UNIT_TEST("Quark", "QUARK_UT_COMPARE()", "", ""){
-	QUARK_UT_COMPARE("xyz", "xyz");
+	ut_compare(QUARK_POS, "xyz", "xyz");
 }
 QUARK_UNIT_TEST("Quark", "QUARK_UT_COMPARE()", "", ""){
 	try{
-		QUARK_UT_COMPARE("xyzabc", "xyztbcd");
+		ut_compare(QUARK_POS, "xyzabc", "xyztbcd");
 		QUARK_UT_VERIFY(false);
 	}
 	catch(...){
@@ -94,14 +111,13 @@ struct custom_type_t {
 	std::string s;
 };
 
-bool ut_validate(const custom_type_t& result, const custom_type_t& expected){
+void ut_compare(const call_context_t& context, const custom_type_t& result, const custom_type_t& expected){
 	if(result.a == expected.a && result.s == expected.s){
-		return true;
 	}
 	else{
 		QUARK_TRACE_SS("  result: " << result.a << " " << result.s);
 		QUARK_TRACE_SS("expected: " << expected.a << " " << expected.s);
-		return false;
+		quark::fail_test(context);
 	}
 }
 
@@ -112,7 +128,7 @@ QUARK_UNIT_TEST("Quark", "QUARK_UT_COMPARE()", "", ""){
 	try {
 		const auto result = custom_type_t{ 100, "one hundred" };
 		const auto expected = custom_type_t{ 200, "two hundred" };
-		QUARK_UT_COMPARE(result, expected);
+		ut_compare(QUARK_POS, result, expected);
 	}
 	catch(...){
 		//	We should land here.

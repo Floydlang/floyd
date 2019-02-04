@@ -111,8 +111,8 @@ namespace floyd {
 			})
 		});
 
-		ut_compare_jsons(r.first._value, expected);
-		quark::ut_compare_strings(r.second.str(), "");
+		ut_compare(QUARK_POS, r.first._value, expected);
+		ut_compare(QUARK_POS, r.second.str(), "");
 	}
 
 

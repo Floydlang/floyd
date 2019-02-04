@@ -11,6 +11,10 @@
 using std::string;
 using std::vector;
 
+#include "ast_value.h"
+#include "text_parser.h"
+#include "json_parser.h"
+
 namespace floyd {
 
 const location_t k_no_location(std::numeric_limits<std::size_t>::max());
@@ -54,5 +58,34 @@ const std::string keyword_t::k_json_number = "json_number";
 const std::string keyword_t::k_json_true = "json_true";
 const std::string keyword_t::k_json_false = "json_false";
 const std::string keyword_t::k_json_null = "json_null";
+
+
+
+
+
+
+void ut_compare_json_and_rest(const quark::call_context_t& context, const std::pair<ast_json_t, seq_t>& result_pair, const std::string& expected_json, const std::string& expected_rest){
+	ut_compare(
+		context,
+		result_pair.first._value,
+		parse_json(seq_t(expected_json)).first
+	);
+
+	ut_compare(context, result_pair.second.str(), expected_rest);
+}
+
+
+void ut_compare_values(const quark::call_context_t& context, const value_t& result, const value_t& expected){
+	if(result != expected){
+		QUARK_TRACE("result:");
+		QUARK_TRACE(json_to_pretty_string(value_and_type_to_ast_json(result)._value));
+		QUARK_TRACE("expected:");
+		QUARK_TRACE(json_to_pretty_string(value_and_type_to_ast_json(expected)._value));
+
+		fail_test(context);
+	}
+}
+
+
 
 }

@@ -30,7 +30,7 @@ parse_result_t parse_statement_body(const seq_t& s){
 
 
 QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_statement_body(seq_t("{}")).ast._value,
 		parse_json(seq_t(
 			R"(
@@ -40,7 +40,7 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 	);
 }
 QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_statement_body(seq_t("{ let int y = 11; }")).ast._value,
 		parse_json(seq_t(
 			R"(
@@ -52,7 +52,7 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 	);
 }
 QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_statement_body(seq_t("{ let int y = 11; print(3); }")).ast._value,
 		parse_json(seq_t(
 			R"(
@@ -67,7 +67,7 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 
 //### test nested blocks.
 QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_statement_body(seq_t(" { let int x = 1; let int y = 2; } ")).ast._value,
 		parse_json(seq_t(
 			R"(
@@ -91,7 +91,7 @@ pair<ast_json_t, seq_t> parse_block(const seq_t& s){
 }
 
 QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_block(seq_t(" { let int x = 1; let int y = 2; } ")).first._value,
 		parse_json(seq_t(
 			R"(
@@ -125,7 +125,7 @@ pair<ast_json_t, seq_t> parse_return_statement(const seq_t& s){
 }
 
 QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_return_statement(seq_t("return 0;")).first._value,
 		parse_json(seq_t(
 			R"(
@@ -217,7 +217,7 @@ std::pair<ast_json_t, seq_t> parse_if_statement(const seq_t& pos){
 }
 
 QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_if_statement(seq_t("if (1 > 2) { return 3 }")).first._value,
 		parse_json(seq_t(
 			R"(
@@ -235,7 +235,7 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}", ""){
 }
 
 QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}else{}", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_if_statement(seq_t("if (1 > 2) { return 3 } else { return 4 }")).first._value,
 		parse_json(seq_t(
 			R"(
@@ -256,7 +256,7 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}else{}", ""){
 }
 
 QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}else{}", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_if_statement(seq_t("if (1 > 2) { return 3 } else { return 4 }")).first._value,
 		parse_json(seq_t(
 			R"(
@@ -277,7 +277,7 @@ QUARK_UNIT_TEST("", "parse_if_statement()", "if(){}else{}", ""){
 }
 
 QUARK_UNIT_TEST("", "parse_if_statement()", "if(){} else if(){} else {}", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_if_statement(
 			seq_t("if (1 == 1) { return 1 } else if(2 == 2) { return 2 } else if(3 == 3) { return 3 } else { return 4 }")
 		).first._value,
@@ -381,7 +381,7 @@ std::pair<ast_json_t, seq_t> parse_for_statement(const seq_t& pos){
 }
 
 QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_for_statement(seq_t("for ( index in 1...5 ) { let int y = 11 }")).first._value,
 		parse_json(seq_t(
 			R"(
@@ -401,7 +401,7 @@ QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 	);
 }
 QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS,
 		parse_for_statement(seq_t("for ( index in 1..<5 ) { let int y = 11 }")).first._value,
 		parse_json(seq_t(
 			R"(
@@ -445,7 +445,7 @@ std::pair<ast_json_t, seq_t> parse_while_statement(const seq_t& pos){
 }
 
 QUARK_UNIT_TEST("", "parse_while_statement()", "while(){}", ""){
-	ut_compare_jsons(
+	ut_compare(QUARK_POS, 
 		parse_while_statement(seq_t("while (a < 10) { print(a) }")).first._value,
 		parse_json(seq_t(
 			R"(
