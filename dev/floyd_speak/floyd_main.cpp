@@ -273,3 +273,68 @@ int main(int argc, const char * argv[]) {
 	return EXIT_SUCCESS;
 }
 
+
+
+
+
+/*
+	request:
+		{
+			"command": "run",
+			"source_path": "/mypath/test.floyd"
+		}
+
+	reply:
+		{
+			"output": <error integer>
+		}
+*/
+
+json_t handle_server_request(const json_t& request) {
+	floyd_quark_runtime q("");
+	quark::set_runtime(&q);
+
+	floyd_tracer tracer;
+	quark::set_trace(&tracer);
+
+	try{
+		if(request.is_object()){
+			const auto command = request.get_object_element("command").get_string();
+			if(command == "run"){
+				const auto source_path = request.get_object_element("source_path").get_string();
+				const auto source = read_text_file(source_path);
+				auto program = floyd::compile_to_bytecode(source, source_path);
+
+				const auto result = floyd::run_container(program, {}, program._container_def._name);
+				if(result.size() == 1 && result.find("main()") != result.end()){
+					const auto main_return = *result.begin();
+					const auto error_code = main_return.second.is_int() ? main_return.second.get_int_value() : EXIT_SUCCESS;
+					const auto output_value = static_cast<int>(error_code);
+					return json_t::make_object({{ "output", json_t(output_value) }});
+				}
+				else{
+					return json_t::make_object({{ "output", json_t(EXIT_SUCCESS) }});
+				}
+			}
+			else{
+				throw std::exception();
+			}
+		}
+		else{
+			throw std::exception();
+		}
+	}
+	catch(const std::runtime_error& e){
+		const auto what = std::string(e.what());
+		std::cout << what << std::endl;
+		return json_t::make_object({{ "output", json_t(EXIT_FAILURE) }});
+	}
+	catch(const std::exception& e){
+		return json_t::make_object({{ "output", json_t(EXIT_FAILURE) }});
+	}
+	catch(...){
+		std::cout << "Error" << std::endl;
+		return json_t::make_object({{ "output", json_t(EXIT_FAILURE) }});
+	}
+	return json_t::make_object({{ "output", json_t(EXIT_SUCCESS) }});
+}
