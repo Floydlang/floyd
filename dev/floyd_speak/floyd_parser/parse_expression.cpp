@@ -19,12 +19,6 @@
 namespace floyd {
 
 
-#define UNIT_TEST_1(function_under_test, scenario, test_expression) \
-	static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
-	static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, "", function_under_test, scenario, "", QUARK_UNIQUE_LABEL(cppext_unit_test_), false); \
-	static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(){ if(test_expression){}else{ ::quark::on_unit_test_failed_hook(::quark::get_runtime(), ::quark::source_code_location(__FILE__, __LINE__), QUARK_STRING(exp)); } }
-
-
 QUARK_UNIT_TEST("parser", "C++ operators", "", ""){
 	const int a = 2-+-2;
 	QUARK_TEST_VERIFY(a == 4);
@@ -43,7 +37,7 @@ QUARK_UNIT_TEST("parser", "C++ enum class()", "", ""){
 }
 
 
-std::pair<ast_json_t, seq_t> parse_expression_int(const seq_t& p, const eoperator_precedence precedence);
+std::pair<ast_json_t, seq_t> parse_expression_deep(const seq_t& p, const eoperator_precedence precedence);
 
 
 
@@ -123,7 +117,7 @@ std::pair<collection_def_t, seq_t> parse_bounded_list(const seq_t& s, const std:
 	else{
 		collection_def_t result{false, {}};
 		while(pos.first1() != end_char){
-			const auto expression_pos = parse_expression_int(pos, eoperator_precedence::k_super_weak);
+			const auto expression_pos = parse_expression_deep(pos, eoperator_precedence::k_super_weak);
 			const auto pos2 = skip_whitespace(expression_pos.second);
 			const auto ch = pos2.first1();
 			if(ch == ","){
@@ -138,7 +132,7 @@ std::pair<collection_def_t, seq_t> parse_bounded_list(const seq_t& s, const std:
 				result._has_keys = true;
 
 				const auto pos3 = skip_whitespace(pos2.rest1());
-				const auto expression2_pos = parse_expression_int(pos3, eoperator_precedence::k_super_weak);
+				const auto expression2_pos = parse_expression_deep(pos3, eoperator_precedence::k_super_weak);
 				const auto pos4 = skip_whitespace(expression2_pos.second);
 				const auto ch2 = pos4.first1();
 				if(ch2 == ","){
@@ -449,7 +443,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	EXPRESSION "[" EXPRESSION "]" +
 			else if(op1 == "["  && precedence > eoperator_precedence::k_lookup){
 				const auto p2 = skip_whitespace(p.rest());
-				const auto key = parse_expression_int(p2, eoperator_precedence::k_super_weak);
+				const auto key = parse_expression_deep(p2, eoperator_precedence::k_super_weak);
 				const auto result = maker__make2(k_2_operator_to_string__func(eoperation::k_2_lookup), lhs, key.first._value);
 				const auto p3 = skip_whitespace(key.second);
 
@@ -462,34 +456,34 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 
 			//	EXPRESSION "+" EXPRESSION
 			else if(op1 == "+"  && precedence > eoperator_precedence::k_add_sub){
-				const auto rhs = parse_expression_int(p.rest(), eoperator_precedence::k_add_sub);
+				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_add_sub);
 				const auto value2 = maker__make2(k_2_operator_to_string__func(eoperation::k_2_add), lhs, rhs.first._value);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 
 			//	EXPRESSION "-" EXPRESSION
 			else if(op1 == "-" && precedence > eoperator_precedence::k_add_sub){
-				const auto rhs = parse_expression_int(p.rest(), eoperator_precedence::k_add_sub);
+				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_add_sub);
 				const auto value2 = maker__make2(k_2_operator_to_string__func(eoperation::k_2_subtract), lhs, rhs.first._value);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 
 			//	EXPRESSION "*" EXPRESSION
 			else if(op1 == "*" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
-				const auto rhs = parse_expression_int(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
+				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
 				const auto value2 = maker__make2(k_2_operator_to_string__func(eoperation::k_2_multiply), lhs, rhs.first._value);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 			//	EXPRESSION "/" EXPRESSION
 			else if(op1 == "/" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
-				const auto rhs = parse_expression_int(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
+				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
 				const auto value2 = maker__make2(k_2_operator_to_string__func(eoperation::k_2_divide), lhs, rhs.first._value);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 
 			//	EXPRESSION "%" EXPRESSION
 			else if(op1 == "%" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
-				const auto rhs = parse_expression_int(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
+				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
 				const auto value2 = maker__make2(k_2_operator_to_string__func(eoperation::k_2_remainder), lhs, rhs.first._value);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
@@ -497,7 +491,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 
 			//	EXPRESSION "?" EXPRESSION ":" EXPRESSION
 			else if(op1 == "?" && precedence > eoperator_precedence::k_comparison_operator) {
-				const auto true_expr_p = parse_expression_int(p.rest(), eoperator_precedence::k_comparison_operator);
+				const auto true_expr_p = parse_expression_deep(p.rest(), eoperator_precedence::k_comparison_operator);
 
 				const auto pos2 = skip_whitespace(true_expr_p.second);
 				const auto colon = pos2.first();
@@ -505,7 +499,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 					throw std::runtime_error("Expected \":\"");
 				}
 
-				const auto false_expr_p = parse_expression_int(pos2.rest(), precedence);
+				const auto false_expr_p = parse_expression_deep(pos2.rest(), precedence);
 				const auto value2 = maker__make_conditional_operator(lhs, true_expr_p.first._value, false_expr_p.first._value);
 				return parse_optional_operation_rightward(false_expr_p.second, value2._value, precedence);
 			}
@@ -513,13 +507,13 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 
 			//	EXPRESSION "==" EXPRESSION
 			else if(op2 == "==" && precedence > eoperator_precedence::k_equal__not_equal){
-				const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_equal__not_equal);
+				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_equal__not_equal);
 				const auto value2 = maker__make2(k_2_operator_to_string__func(eoperation::k_2_logical_equal), lhs, rhs.first._value);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 			//	EXPRESSION "!=" EXPRESSION
 			else if(op2 == "!=" && precedence > eoperator_precedence::k_equal__not_equal){
-				const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_equal__not_equal);
+				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_equal__not_equal);
 				const auto value2 = maker__make2(k_2_operator_to_string__func(eoperation::k_2_logical_nonequal), lhs, rhs.first._value);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
@@ -527,14 +521,14 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	!!! Check for "<=" before we check for "<".
 			//	EXPRESSION "<=" EXPRESSION
 			else if(op2 == "<=" && precedence > eoperator_precedence::k_larger_smaller){
-				const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_larger_smaller);
+				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_larger_smaller);
 				const auto value2 = maker__make2(k_2_operator_to_string__func(eoperation::k_2_smaller_or_equal), lhs, rhs.first._value);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 
 			//	EXPRESSION "<" EXPRESSION
 			else if(op1 == "<" && precedence > eoperator_precedence::k_larger_smaller){
-				const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_larger_smaller);
+				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_larger_smaller);
 				const auto value2 = maker__make2(k_2_operator_to_string__func(eoperation::k_2_smaller), lhs, rhs.first._value);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
@@ -543,14 +537,14 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	!!! Check for ">=" before we check for ">".
 			//	EXPRESSION ">=" EXPRESSION
 			else if(op2 == ">=" && precedence > eoperator_precedence::k_larger_smaller){
-				const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_larger_smaller);
+				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_larger_smaller);
 				const auto value2 = maker__make2(k_2_operator_to_string__func(eoperation::k_2_larger_or_equal), lhs, rhs.first._value);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 
 			//	EXPRESSION ">" EXPRESSION
 			else if(op1 == ">" && precedence > eoperator_precedence::k_larger_smaller){
-				const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_larger_smaller);
+				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_larger_smaller);
 				const auto value2 = maker__make2(k_2_operator_to_string__func(eoperation::k_2_larger), lhs, rhs.first._value);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
@@ -558,14 +552,14 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 
 			//	EXPRESSION "&&" EXPRESSION
 			else if(op2 == "&&" && precedence > eoperator_precedence::k_logical_and){
-				const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_logical_and);
+				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_logical_and);
 				const auto value2 = maker__make2(k_2_operator_to_string__func(eoperation::k_2_logical_and), lhs, rhs.first._value);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 
 			//	EXPRESSION "||" EXPRESSION
 			else if(op2 == "||" && precedence > eoperator_precedence::k_logical_or){
-				const auto rhs = parse_expression_int(p.rest(2), eoperator_precedence::k_logical_or);
+				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_logical_or);
 				const auto value2 = maker__make2(k_2_operator_to_string__func(eoperation::k_2_logical_or), lhs, rhs.first._value);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
@@ -737,18 +731,18 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 
 	//	Negate? "-xxx"
 	if(ch1 == '-'){
-		const auto a = parse_expression_int(p2.rest1(), eoperator_precedence::k_super_strong);
+		const auto a = parse_expression_deep(p2.rest1(), eoperator_precedence::k_super_strong);
 		const auto value2 = maker__make_unary_minus(a.first._value);
 		return { value2._value, a.second };
 	}
 	else if(ch1 == '+'){
-		const auto a = parse_expression_int(p2.rest1(), eoperator_precedence::k_super_strong);
+		const auto a = parse_expression_deep(p2.rest1(), eoperator_precedence::k_super_strong);
 		return { a.first._value, a.second };
 	}
 	//	Expression within parantheses?
 	//	(EXPRESSION)xxx"
 	else if(ch1 == '('){
-		const auto a = parse_expression_int(p2.rest1(), eoperator_precedence::k_super_weak);
+		const auto a = parse_expression_deep(p2.rest1(), eoperator_precedence::k_super_weak);
 		const auto p3 = skip_whitespace(a.second);
 		if (p3.first() != ")"){
 			throw std::runtime_error("Expected ')'");
@@ -1139,84 +1133,119 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "identifier", ""){
 
 //////////////////////////////////			COMPARISON OPERATOR
 
-UNIT_TEST_1("parse_expression()", "?:", test__parse_expression(
-	"1 ? 2 : 3 xxx",
-	R"(["?:", ["k", 1, "^int"], ["k", 2, "^int"], ["k", 3, "^int"]])",
-	" xxx"
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "?:", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"1 ? 2 : 3 xxx",
+		R"(["?:", ["k", 1, "^int"], ["k", 2, "^int"], ["k", 3, "^int"]])",
+		" xxx"
+	);
+}
 
-UNIT_TEST_1("parse_expression()", "?:", test__parse_expression(
-	"1==3 ? 4 : 6 xxx",
-	R"(["?:", ["==", ["k", 1, "^int"], ["k", 3, "^int"]], ["k", 4, "^int"], ["k", 6, "^int"]])",
-	" xxx"
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "?:", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"1==3 ? 4 : 6 xxx",
+		R"(["?:", ["==", ["k", 1, "^int"], ["k", 3, "^int"]], ["k", 4, "^int"], ["k", 6, "^int"]])",
+		" xxx"
+	);
+}
+QUARK_UNIT_TEST("parser", "parse_expression()", "?:", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"1 ? \"true!!!\" : \"false!!!\" xxx",
+		R"(["?:", ["k", 1, "^int"], ["k", "true!!!", "^string"], ["k", "false!!!", "^string"]])",
+		" xxx"
+	);
+}
 
-UNIT_TEST_1("parse_expression()", "?:", test__parse_expression(
-	"1 ? \"true!!!\" : \"false!!!\" xxx",
-	R"(["?:", ["k", 1, "^int"], ["k", "true!!!", "^string"], ["k", "false!!!", "^string"]])",
-	" xxx"
-));
-
-UNIT_TEST_1("parse_expression()", "?:", test__parse_expression(
-	"1 + 2 ? 3 + 4 : 5 + 6 xxx",
-	R"(["?:", ["+", ["k", 1, "^int"], ["k", 2, "^int"]], ["+", ["k", 3, "^int"], ["k", 4, "^int"]], ["+", ["k", 5, "^int"], ["k", 6, "^int"]]])",
-	" xxx"
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "?:", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"1 + 2 ? 3 + 4 : 5 + 6 xxx",
+		R"(["?:", ["+", ["k", 1, "^int"], ["k", 2, "^int"]], ["+", ["k", 3, "^int"], ["k", 4, "^int"]], ["+", ["k", 5, "^int"], ["k", 6, "^int"]]])",
+		" xxx"
+	);
+}
 
 //??? Add more test to see precedence works as it should!
 
 
-UNIT_TEST_1("parse_expression()", "?:", test__parse_expression(
-	"input_flag ? \"123\" : \"456\"",
-	R"(["?:", ["@", "input_flag"], ["k", "123", "^string"], ["k", "456", "^string"]])",
-	""
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "?:", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"input_flag ? \"123\" : \"456\"",
+		R"(["?:", ["@", "input_flag"], ["k", "123", "^string"], ["k", "456", "^string"]])",
+		""
+	);
+}
 
 
-UNIT_TEST_1("parse_expression()", "?:", test__parse_expression(
-	"input_flag ? 100 + 10 * 2 : 1000 - 3 * 4",
-	R"(["?:", ["@", "input_flag"], ["+", ["k", 100, "^int"], ["*", ["k", 10, "^int"], ["k", 2, "^int"]]], ["-", ["k", 1000, "^int"], ["*", ["k", 3, "^int"], ["k", 4, "^int"]]]])",
-	""
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "?:", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"input_flag ? 100 + 10 * 2 : 1000 - 3 * 4",
+		R"(["?:", ["@", "input_flag"], ["+", ["k", 100, "^int"], ["*", ["k", 10, "^int"], ["k", 2, "^int"]]], ["-", ["k", 1000, "^int"], ["*", ["k", 3, "^int"], ["k", 4, "^int"]]]])",
+		""
+	);
+}
 
 
 //////////////////////////////////			FUNCTION CALLS
 
-UNIT_TEST_1("parse_expression()", "function call", test__parse_expression(
-	"f() xxx",
-	R"(["call", ["@", "f"], []])",
-	" xxx"
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "function call", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"f() xxx",
+		R"(["call", ["@", "f"], []])",
+		" xxx"
+	);
+}
 
-UNIT_TEST_1("parse_expression()", "function call, one simple arg",
-	test__parse_expression(
+QUARK_UNIT_TEST("parser", "parse_expression()", "function call, one simple arg", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
 		"f(3)",
 		R"(["call", ["@", "f"], [["k", 3, "^int"]]])",
 		""
-	)
-);
+	);
+}
 
-UNIT_TEST_1("parse_expression()", "call with expression-arg", test__parse_expression(
-	"f(x+10) xxx",
-	R"(["call", ["@", "f"], [["+", ["@", "x"], ["k", 10, "^int"]]]])",
-	" xxx"
-));
-UNIT_TEST_1("parse_expression()", "call with expression-arg", test__parse_expression(
-	"f(1,2) xxx",
-	R"(["call", ["@", "f"], [["k", 1, "^int"], ["k", 2, "^int"]]])",
-	" xxx"
-));
-UNIT_TEST_1("parse_expression()", "call with expression-arg -- whitespace", test__parse_expression(
-	"f ( 1 , 2 ) xxx",
-	R"(["call", ["@", "f"], [["k", 1, "^int"], ["k", 2, "^int"]]])",
-	" xxx"
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "call with expression-arg", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"f(x+10) xxx",
+		R"(["call", ["@", "f"], [["+", ["@", "x"], ["k", 10, "^int"]]]])",
+		" xxx"
+	);
+}
+QUARK_UNIT_TEST("parser", "parse_expression()", "call with expression-arg", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"f(1,2) xxx",
+		R"(["call", ["@", "f"], [["k", 1, "^int"], ["k", 2, "^int"]]])",
+		" xxx"
+	);
+}
+QUARK_UNIT_TEST("parser", "parse_expression()", "call with expression-arg -- whitespace", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"f ( 1 , 2 ) xxx",
+		R"(["call", ["@", "f"], [["k", 1, "^int"], ["k", 2, "^int"]]])",
+		" xxx"
+	);
+}
 
-UNIT_TEST_1("parse_expression()", "function call with expression-args", test__parse_expression(
-	"f(3 + 4, 4 * g(1000 + 2345), \"hello\", 5)",
-	R"(["call", ["@", "f"], [["+", ["k", 3, "^int"], ["k", 4, "^int"]], ["*", ["k", 4, "^int"], ["call", ["@", "g"], [["+", ["k", 1000, "^int"], ["k", 2345, "^int"]]]]], ["k", "hello", "^string"], ["k", 5, "^int"]]])",
-	""
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "function call with expression-args", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"f(3 + 4, 4 * g(1000 + 2345), \"hello\", 5)",
+		R"(["call", ["@", "f"], [["+", ["k", 3, "^int"], ["k", 4, "^int"]], ["*", ["k", 4, "^int"], ["call", ["@", "g"], [["+", ["k", 1000, "^int"], ["k", 2345, "^int"]]]]], ["k", "hello", "^string"], ["k", 5, "^int"]]])",
+		""
+	);
+}
+
+
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "function call, expression argument", ""){
 	const auto result = test_parse_expression(seq_t("1 == 2)"));
@@ -1267,74 +1296,104 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "struct member access", ""){
 	ut_verify__parse_expression(QUARK_POS, "hello.kitty xxx", R"(["->", ["@", "hello"], "kitty"])", " xxx");
 }
 
-UNIT_TEST_1("parse_expression()", "struct member access", test__parse_expression(
-	"hello.kitty.cat xxx",
-	R"(["->", ["->", ["@", "hello"], "kitty"], "cat"])",
-	" xxx"
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "struct member access", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"hello.kitty.cat xxx",
+		R"(["->", ["->", ["@", "hello"], "kitty"], "cat"])",
+		" xxx"
+	);
+}
 
-UNIT_TEST_1("parse_expression()", "struct member access -- whitespace", test__parse_expression(
-	"hello . kitty . cat xxx",
-	R"(["->", ["->", ["@", "hello"], "kitty"], "cat"])",
-	" xxx"
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "struct member access -- whitespace", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"hello . kitty . cat xxx",
+		R"(["->", ["->", ["@", "hello"], "kitty"], "cat"])",
+		" xxx"
+	);
+}
 
 
 //////////////////////////////////			LOOKUP
 
-UNIT_TEST_1("parse_expression()", "lookup with int", test__parse_expression(
-	"hello[10] xxx",
-	R"(["[]", ["@", "hello"], ["k", 10, "^int"]])",
-	" xxx"
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "lookup with int", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"hello[10] xxx",
+		R"(["[]", ["@", "hello"], ["k", 10, "^int"]])",
+		" xxx"
+	);
+}
 
-UNIT_TEST_1("parse_expression()", "lookup with string", test__parse_expression(
-	R"(hello["troll"] xxx)",
-	R"(["[]", ["@", "hello"], ["k", "troll", "^string"]])",
-	" xxx"
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "lookup with string", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		R"(hello["troll"] xxx)",
+		R"(["[]", ["@", "hello"], ["k", "troll", "^string"]])",
+		" xxx"
+	);
+}
 
-UNIT_TEST_1("parse_expression()", "lookup with string -- whitespace", test__parse_expression(
-	R"(hello [ "troll" ] xxx)",
-	R"(["[]", ["@", "hello"], ["k", "troll", "^string"]])",
-	" xxx"
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "lookup with string -- whitespace", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		R"(hello [ "troll" ] xxx)",
+		R"(["[]", ["@", "hello"], ["k", "troll", "^string"]])",
+		" xxx"
+	);
+}
 
 
 //////////////////////////////////			COMBOS
 
 
-UNIT_TEST_1("parse_expression()", "combo - function call", test__parse_expression(
-	"poke.mon.f() xxx",
-	R"(["call", ["->", ["->", ["@", "poke"], "mon"], "f"], []])",
-	" xxx"
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "combo - function call", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"poke.mon.f() xxx",
+		R"(["call", ["->", ["->", ["@", "poke"], "mon"], "f"], []])",
+		" xxx"
+	);
+}
 
-UNIT_TEST_1("parse_expression()", "combo - function call", test__parse_expression(
-	"f().g() xxx",
-	R"(["call", ["->", ["call", ["@", "f"], []], "g"], []])",
-	" xxx"
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "combo - function call", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"f().g() xxx",
+		R"(["call", ["->", ["call", ["@", "f"], []], "g"], []])",
+		" xxx"
+	);
+}
 
 
-UNIT_TEST_1("parse_expression()", "complex chain", test__parse_expression(
-	R"(hello["troll"].kitty[10].cat xxx)",
-	R"(["->", ["[]", ["->", ["[]", ["@", "hello"], ["k", "troll", "^string"]], "kitty"], ["k", 10, "^int"]], "cat"])",
-	" xxx"
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "complex chain", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		R"(hello["troll"].kitty[10].cat xxx)",
+		R"(["->", ["[]", ["->", ["[]", ["@", "hello"], ["k", "troll", "^string"]], "kitty"], ["k", 10, "^int"]], "cat"])",
+		" xxx"
+	);
+}
 
 
-UNIT_TEST_1("parse_expression()", "chain", test__parse_expression(
-	R"(poke.mon.v[10].a.b.c["three"] xxx)",
-	R"(["[]", ["->", ["->", ["->", ["[]", ["->", ["->", ["@", "poke"], "mon"], "v"], ["k", 10, "^int"]], "a"], "b"], "c"], ["k", "three", "^string"]])",
-	" xxx"
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "chain", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		R"(poke.mon.v[10].a.b.c["three"] xxx)",
+		R"(["[]", ["->", ["->", ["->", ["[]", ["->", ["->", ["@", "poke"], "mon"], "v"], ["k", 10, "^int"]], "a"], "b"], "c"], ["k", "three", "^string"]])",
+		" xxx"
+	);
+}
 
-UNIT_TEST_1("parse_expression()", "combo arithmetics", test__parse_expression(
-	" 5 - 2 * ( 3 ) xxx",
-	R"(["-", ["k", 5, "^int"], ["*", ["k", 2, "^int"], ["k", 3, "^int"]]])",
-	" xxx"
-));
+QUARK_UNIT_TEST("parser", "parse_expression()", "combo arithmetics", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		" 5 - 2 * ( 3 ) xxx",
+		R"(["-", ["k", 5, "^int"], ["*", ["k", 2, "^int"], ["k", 3, "^int"]]])",
+		" xxx"
+	);
+}
 
 
 //////////////////////////////////			EXPRESSION ERRORS
@@ -1399,7 +1458,7 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "Invalid characters", ""){
 
 
 
-std::pair<ast_json_t, seq_t> parse_expression_int(const seq_t& p, const eoperator_precedence precedence){
+std::pair<ast_json_t, seq_t> parse_expression_deep(const seq_t& p, const eoperator_precedence precedence){
 	QUARK_ASSERT(p.check_invariant());
 
 	auto lhs = parse_lhs_atom(p);
@@ -1411,7 +1470,7 @@ std::pair<ast_json_t, seq_t> parse_expression(const seq_t& p){
 	if(!is_valid_chars(p.get_s(), valid_expression_chars)){
 		throw std::runtime_error("Illegal characters.");
 	}
-	return parse_expression_int(p, eoperator_precedence::k_super_weak);
+	return parse_expression_deep(p, eoperator_precedence::k_super_weak);
 }
 
 
