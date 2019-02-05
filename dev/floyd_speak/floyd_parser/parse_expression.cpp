@@ -144,11 +144,11 @@ std::pair<collection_def_t, seq_t> parse_bounded_list(const seq_t& s, const std:
 					pos = pos4;
 				}
 				else{
-					quark::throw_runtime_error("Unexpected char \"" + ch + "\" in bounded list " + start_char + " " + end_char + "!");
+					throw_compiler_error(location_t(s.pos()), "Unexpected char \"" + ch + "\" in bounded list " + start_char + " " + end_char + "!");
 				}
 			}
 			else{
-				quark::throw_runtime_error("Unexpected char \"" + ch + "\" in bounded list " + start_char + " " + end_char + "!");
+				throw_compiler_error(location_t(s.pos()), "Unexpected char \"" + ch + "\" in bounded list " + start_char + " " + end_char + "!");
 			}
 		}
 		return { result, pos.rest1() };

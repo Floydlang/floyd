@@ -3564,7 +3564,7 @@ QUARK_UNIT_TEST("", "rename_fsentry()", "", ""){
 ///////////////////////////////////////////////////			PARSER ERRORS
 
 
-QUARK_UNIT_TEST("Edge case", "", "", "exception"){
+QUARK_UNIT_TEST("Parser error", "", "", ""){
 	try{
 		const auto result = test__run_return_result(R"(
 
@@ -3575,6 +3575,18 @@ QUARK_UNIT_TEST("Edge case", "", "", "exception"){
 	}
 	catch(const compiler_error& e){
 		ut_verify(QUARK_POS, e.what(), R"___(Block is missing end bracket '}'. Line: 6 "")___");
+	}
+}
+
+QUARK_UNIT_TEST_VIP("Parser error", "", "", ""){
+	try{
+		const auto result = test__run_return_result(R"(
+			[ 100, 200 }
+		)", {});
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const compiler_error& e){
+		ut_verify(QUARK_POS, e.what(), R"___(Unexpected char "}" in bounded list [ ]! Line: 2 "			[ 100, 200 }")___");
 	}
 }
 

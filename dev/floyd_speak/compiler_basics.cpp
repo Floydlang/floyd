@@ -8,7 +8,7 @@
 
 #include "compiler_basics.h"
 
-
+#include "text_parser.h"
 
 
 namespace floyd {
@@ -88,7 +88,11 @@ location2_t find_loc_info(const std::string& program, const std::vector<int>& lo
 
 		const auto start = lookup[line_index];
 		const auto end = lookup[line_index + 1];
-		const auto line = program.substr(start, end - start);
+		const auto line0 = program.substr(start, end - start);
+		const auto split = split_on_chars(seq_t(line0), "\n\r");
+		QUARK_ASSERT(split.size() > 0);
+		const auto line = split.front();
+
 		const auto column = loc.offset - start;
 		return location2_t(file, line_index, static_cast<int>(column), start, end, line, loc);
 	}
