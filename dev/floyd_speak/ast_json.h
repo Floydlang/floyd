@@ -138,6 +138,21 @@ ast_json_t maker__make_constant(const value_t& value);
 
 
 
+//	INPUT: [2, "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"]]
+inline location_t unpack_loc2(const ast_json_t& s){
+	QUARK_ASSERT(s._value.is_array());
+
+	const bool has_location = s._value.get_array_n(0).is_number();
+	if(has_location){
+		const location_t source_offset = has_location ? location_t(static_cast<std::size_t>(s._value.get_array_n(0).get_number())) : k_no_location;
+		return source_offset;
+	}
+	else{
+		return k_no_location;
+	}
+}
+
+
 //??? move somewhere else
 void ut_verify_json_and_rest(const quark::call_context_t& context, const std::pair<ast_json_t, seq_t>& result_pair, const std::string& expected_json, const std::string& expected_rest);
 

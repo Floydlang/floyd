@@ -3564,17 +3564,17 @@ QUARK_UNIT_TEST("", "rename_fsentry()", "", ""){
 ///////////////////////////////////////////////////			PARSER ERRORS
 
 
-QUARK_UNIT_TEST("Edge case", "", "if with non-bool expression", "exception"){
+QUARK_UNIT_TEST("Edge case", "", "", "exception"){
 	try{
 		const auto result = test__run_return_result(R"(
 
-			mutable string row
+			{ let a = 10
 
 		)", {});
 		QUARK_TEST_VERIFY(false);
 	}
-	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(string(e.what()) == "Unexpected end of string.");
+	catch(const compiler_error& e){
+		ut_verify(QUARK_POS, e.what(), R"___(Block is missing end bracket '}'. Line: 6 "")___");
 	}
 }
 

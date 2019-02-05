@@ -375,103 +375,32 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 
 
 
-//	Return one entry per source line PLUS one extra end-marker. int tells byte offset of files that maps to this line-start.
-//	Never returns empty vector, at least 2 elements.
-std::vector<int> make_location_lookup(const string& source){
-	if(source.empty()){
-		return { 0 };
-	}
-	else{
-		std::vector<int> result;
-		int char_index = 0;
-		result.push_back(char_index);
-		for(const auto& ch: source){
-			char_index++;
 
-			if(ch == '\n' || ch == '\r'){
-				result.push_back(char_index);
-			}
-		}
-		const auto back_char = source.back();
-		if(back_char == '\r' || back_char == '\n'){
-			return result;
-		}
-		else{
-			int end_index = static_cast<int>(source.size());
-			result.push_back(end_index);
-			return result;
-		}
+
+
+parse_tree_t parse_program__errors(const compilation_unit_t& cu){
+	try {
+		const auto parse_tree = parse_program2(cu.prefix_source + cu.program_text);
+		return parse_tree;
+	}
+	catch(const compiler_error& e){
+		const auto refined = refine_compiler_error_with_loc2(cu, e);
+		throw_compiler_error(refined.first, refined.second);
+	}
+	catch(const std::exception& e){
+		throw;
+//		const auto location = find_source_line(const std::string& program, const std::string& file, bool corelib, const location_t& loc){
 	}
 }
 
-QUARK_UNIT_TEST("", "make_location_lookup()", "", ""){
-	const auto r = make_location_lookup("");
-	QUARK_UT_VERIFY((r == std::vector<int>{ 0 }));
-}
-QUARK_UNIT_TEST("", "make_location_lookup()", "", ""){
-	const auto r = make_location_lookup("aaa");
-	QUARK_UT_VERIFY((r == std::vector<int>{ 0, 3 }));
-}
-QUARK_UNIT_TEST("", "make_location_lookup()", "", ""){
-	const auto r = make_location_lookup("aaa\nbbb\n");
-	QUARK_UT_VERIFY((r == std::vector<int>{ 0, 4, 8 }));
-}
-
-location2_t find_loc_info(const std::string& program, const std::vector<int>& lookup, const std::string& file, const location_t& loc){
-	int line_index = 0;
-	while(lookup[line_index + 1] <= loc.offset){
-		line_index++;
-	}
-
-	const auto start = lookup[line_index];
-	const auto end = lookup[line_index + 1];
-	const auto line = program.substr(start, end - start);
-	const auto column = loc.offset - start;
-	return location2_t(file, line_index, static_cast<int>(column), start, end, line);
-}
-
-location2_t find_source_line(const std::string& program, const std::string& file, bool corelib, const location_t& loc){
-	const auto program_lookup = make_location_lookup(program);
-
-	if(corelib){
-		const auto corelib_lookup = make_location_lookup(k_builtin_types_and_constants);
-		const auto corelib_end_offset = corelib_lookup.back();
-		if(loc.offset < corelib_end_offset){
-			return find_loc_info(k_builtin_types_and_constants, corelib_lookup, "corelib", loc);
-		}
-		else{
-			return find_loc_info(program, program_lookup, file, location_t(loc.offset - corelib_end_offset));
-		}
-	}
-	else{
-		return find_loc_info(program, program_lookup, file, loc);
-	}
-}
-
-
-
-/*	const auto line_numbers2 = mapf<int>(
-		statements_pos.line_numbers,
-		[&](const auto& e){
-			return e - pre_line_count;
-		}
-	);
-*/
-semantic_ast_t run_semantic_analysis__errors(const ast_t& pass2, const std::string& pre, const std::string& program, const std::string& file){
+semantic_ast_t run_semantic_analysis__errors(const ast_t& pass2, const compilation_unit_t& cu){
 	try {
 		const auto pass3 = run_semantic_analysis(pass2);
 		return pass3;
 	}
 	catch(const compiler_error& e){
-		const auto loc2 = find_source_line(program, file, true, e.location);
-		const auto what1 = std::string(e.what());
-
-		std::stringstream what2;
-		what2 << what1 << " Line: " << std::to_string(loc2.line_number + 1) << " \"" << loc2.line << "\"";
-		if(loc2.source_file_path.empty() == false){
-			what2 << " file: " << loc2.source_file_path;
-		}
-		throw_compiler_error(e.location, loc2, what2.str());
+		const auto refined = refine_compiler_error_with_loc2(cu, e);
+		throw_compiler_error(refined.first, refined.second);
 	}
 	catch(const std::exception& e){
 		throw;
@@ -482,17 +411,21 @@ semantic_ast_t run_semantic_analysis__errors(const ast_t& pass2, const std::stri
 
 bc_program_t compile_to_bytecode(const string& program, const std::string& file){
 	const auto pre = k_builtin_types_and_constants;
-	const auto p = pre + program;
+
+	const auto cu = compilation_unit_t{
+		.prefix_source = pre,
+		.program_text = program,
+		.source_file_path = file
+	};
 
 //	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
-	const auto pass1 = parse_program2(p);
+	const auto parse_tree = parse_program__errors(cu);
 
-	QUARK_TRACE_SS(		"OUTPUT: " << json_to_pretty_string(pass1._value)	);
+	QUARK_TRACE_SS(		"OUTPUT: " << json_to_pretty_string(parse_tree._value)	);
 
-	const auto pass2 = json_to_ast(ast_json_t::make(pass1._value));
+	const auto pass2 = json_to_ast(ast_json_t::make(parse_tree._value));
 
-
-	const auto pass3 = run_semantic_analysis__errors(pass2, pre, program, file);
+	const auto pass3 = run_semantic_analysis__errors(pass2, cu);
 	const auto bc = generate_bytecode(pass3);
 
 	return bc;
@@ -501,13 +434,18 @@ bc_program_t compile_to_bytecode(const string& program, const std::string& file)
 
 semantic_ast_t compile_to_sematic_ast(const string& program, const std::string& file){
 	const auto pre = k_builtin_types_and_constants + "\n";
-	const auto p = pre + program;
+
+	const auto cu = compilation_unit_t{
+		.prefix_source = pre,
+		.program_text = program,
+		.source_file_path = file
+	};
 
 //	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
-	const auto pass1 = parse_program2(p);
+	const auto parse_tree = parse_program__errors(cu);
 
-	const auto pass2 = json_to_ast(ast_json_t::make(pass1._value));
-	const auto pass3 = run_semantic_analysis__errors(pass2, pre, program, file);
+	const auto pass2 = json_to_ast(ast_json_t::make(parse_tree._value));
+	const auto pass3 = run_semantic_analysis__errors(pass2, cu);
 	return pass3;
 }
 
