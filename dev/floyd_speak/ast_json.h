@@ -6,14 +6,12 @@
 //  Copyright © 2017 Marcus Zetterquist. All rights reserved.
 //
 
-#ifndef floyd_basics_hpp
-#define floyd_basics_hpp
+#ifndef ast_json_h
+#define ast_json_h
 
 #include <string>
 #include <vector>
-
 #include "json_support.h"
-#include "floyd_syntax.h"
 
 struct seq_t;
 
@@ -21,9 +19,8 @@ namespace floyd {
 
 struct value_t;
 
-//////////////////////////////////////		ast_json_t
 
-
+////////////////////////////////////////		ast_json_t
 
 /*
 Used to hold an AST encoded as a JSON.
@@ -42,7 +39,7 @@ If a string, this is the node opcode.
 	[ "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"] ],
 
 - Record byte position inside source file: requires source file to figure out line number.
-- Offset is text position inside compilaton unit source -- different ranges maps to different source files, like preheader and includes.
+- Offset is text position inside compilaton unit source -- different ranges maps to different source files, like preheader and includes. location_t.
 */
 
 struct ast_json_t {
@@ -62,6 +59,8 @@ struct ast_json_t {
 	json_t _value;
 };
 
+
+////////////////////////////////////////		location2_t
 
 
 struct location2_t {
@@ -83,6 +82,12 @@ struct location2_t {
 	std::string line;
 };
 
+
+////////////////////////////////////////		location_t
+
+
+//	Specifies character offset inside source code.
+
 struct location_t {
 	explicit location_t(std::size_t offset) :
 		offset(offset)
@@ -99,7 +104,7 @@ extern const location_t k_no_location;
 
 
 
-
+////////////////////////////////////////		Creates json values for different AST constructs like expressions and statements.
 
 
 ast_json_t make_statement_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
@@ -127,6 +132,7 @@ ast_json_t maker__make_constant(const value_t& value);
 
 
 
+//??? move somewhere else
 void ut_verify_json_and_rest(const quark::call_context_t& context, const std::pair<ast_json_t, seq_t>& result_pair, const std::string& expected_json, const std::string& expected_rest);
 
 void ut_verify_values(const quark::call_context_t& context, const value_t& result, const value_t& expected);
@@ -136,4 +142,4 @@ void ut_verify(const quark::call_context_t& context, const std::pair<std::string
 
 }	//	floyd
 
-#endif /* floyd_basics_hpp */
+#endif /* ast_json_h */

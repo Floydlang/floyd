@@ -12,6 +12,7 @@
 #include "parser_primitives.h"
 #include "floyd_parser.h"
 #include "json_support.h"
+#include "floyd_syntax.h"
 
 namespace floyd {
 
