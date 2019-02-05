@@ -32,9 +32,6 @@ namespace floyd {
 	struct member_t;
 
 
-	const std::string whitespace_chars = " \n\t";
-	const std::string identifier_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-	const std::string bracket_pairs = "(){}[]";
 
 
 	//////////////////////////////////////////////////		Text parsing primitives, Floyd specific

@@ -24,14 +24,6 @@ namespace floyd {
 
 using namespace std;
 
-/*
-	AST ABSTRACT SYNTAX TREE
-
-https://en.wikipedia.org/wiki/Abstract_syntax_tree
-
-https://en.wikipedia.org/wiki/Parsing_expression_grammar
-https://en.wikipedia.org/wiki/Parsing
-*/
 
 
 std::pair<ast_json_t, seq_t> parse_statement(const seq_t& s){
@@ -83,6 +75,7 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 		parse_json(seq_t(R"([0, "bind", "^int", "x", ["k", 10, "^int"]])")).first
 	);
 }
+
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_statement(seq_t("func int f(string name){ return 13; }")).first._value,
@@ -198,19 +191,10 @@ QUARK_UNIT_TEST("", "parse_statements_bracketted()", "", ""){
 
 
 
-
-
 parse_result_t parse_program2(const string& program){
 	const auto statements_pos = parse_statements_no_brackets(seq_t(program));
 	return { statements_pos.ast, statements_pos.pos };
 }
-
-
-//////////////////////////////////////////////////		Test programs
-
-
-
-
 
 
 const std::string k_test_program_0_source = "func int main(){ return 3; }";
@@ -232,7 +216,7 @@ const std::string k_test_program_0_parserout = R"(
 	]
 )";
 
-QUARK_UNIT_TEST("", "parse_program1()", "k_test_program_0_source", ""){
+QUARK_UNIT_TEST("", "parse_program2()", "k_test_program_0_source", ""){
 	ut_verify(QUARK_POS,
 		parse_program2(k_test_program_0_source).ast._value,
 		parse_json(seq_t(k_test_program_0_parserout)).first
@@ -265,7 +249,7 @@ const std::string k_test_program_1_parserout = R"(
 	]
 )";
 
-QUARK_UNIT_TEST("", "parse_program1()", "k_test_program_1_source", ""){
+QUARK_UNIT_TEST("", "parse_program2()", "k_test_program_1_source", ""){
 	ut_verify(QUARK_POS,
 		parse_program2(k_test_program_1_source).ast._value,
 		parse_json(seq_t(k_test_program_1_parserout)).first

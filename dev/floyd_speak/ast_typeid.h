@@ -69,7 +69,7 @@
 #include <string>
 #include <vector>
 #include <variant>
-
+#include "floyd_syntax.h"
 
 
 namespace floyd {
@@ -135,38 +135,6 @@ namespace floyd {
 
 
 
-	//////////////////////////////////////		base_type
-
-	/*
-		This type is tracked by compiler, not stored in the value-type.
-	*/
-	enum class base_type {
-		k_internal_undefined,	//	k_internal_undefined is never exposed in code, only used internally in compiler.
-		k_internal_dynamic,	//	Used by host functions arguments / returns to tell this is a dynamic value, not static type.
-
-		k_void,		//	Means no value. Used as return type for print() etc.
-
-		k_bool,
-		k_int,
-		k_double,
-		k_string,
-		k_json_value,
-
-		//	This is a type that specifies another type.
-		k_typeid,
-
-		k_struct,
-		k_protocol,
-		k_vector,
-		k_dict,
-		k_function,
-
-		//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
-		//	Keep the identifier so it can be resolved later
-		k_internal_unresolved_type_identifier
-	};
-
-	std::string base_type_to_string(const base_type t);
 
 	enum class epure {
 		pure,

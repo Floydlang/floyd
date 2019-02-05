@@ -11,7 +11,6 @@
 
 
 #include <vector>
-#include "json_support.h"
 
 
 namespace floyd {
@@ -57,122 +56,6 @@ namespace floyd {
 		return lhs._parent_steps == rhs._parent_steps && lhs._index == rhs._index;
 	}
 
-
-	//////////////////////////////////////		expression_type
-
-
-
-	//??? Split and categories better. Logic vs equality vs math.
-
-	//	Number at end of name tells number of input expressions operation has.
-	enum class expression_type {
-
-		//	c99: a + b			token: "+"
-		k_arithmetic_add__2 = 10,
-
-		//	c99: a - b			token: "-"
-		k_arithmetic_subtract__2,
-
-		//	c99: a * b			token: "*"
-		k_arithmetic_multiply__2,
-
-		//	c99: a / b			token: "/"
-		k_arithmetic_divide__2,
-
-		//	c99: a % b			token: "%"
-		k_arithmetic_remainder__2,
-
-
-		//	c99: a <= b			token: "<="
-		k_comparison_smaller_or_equal__2,
-
-		//	c99: a < b			token: "<"
-		k_comparison_smaller__2,
-
-		//	c99: a >= b			token: ">="
-		k_comparison_larger_or_equal__2,
-
-		//	c99: a > b			token: ">"
-		k_comparison_larger__2,
-
-
-		//	c99: a == b			token: "=="
-		k_logical_equal__2,
-
-		//	c99: a != b			token: "!="
-		k_logical_nonequal__2,
-
-
-		//	c99: a && b			token: "&&"
-		k_logical_and__2,
-
-		//	c99: a || b			token: "||"
-		k_logical_or__2,
-
-		//	c99: !a				token: "!"
-//			k_logical_not,
-
-		//	c99: 13				token: "k"
-		k_literal,
-
-		//	c99: -a				token: "unary_minus"
-		k_arithmetic_unary_minus__1,
-
-		//	c99: cond ? a : b	token: "?:"
-		k_conditional_operator3,
-
-		//	c99: a(b, c)		token: "call"
-		k_call,
-
-		//	c99: a				token: "@"
-		k_load,
-
-		//	c99: a				token: "@i"
-		k_load2,
-
-		//	c99: a.b			token: "->"
-		k_resolve_member,
-
-		//	c99: a[b]			token: "[]"
-		k_lookup_element,
-
-		//	"def-struct"
-		k_define_struct,
-
-		//???	use k_literal for function values?
-		//	"def-func"
-		k_define_function,
-
-		//	"construct-value"
-		k_construct_value,
-	};
-
-	inline bool is_arithmetic_expression(expression_type op){
-		return false
-			|| op == expression_type::k_arithmetic_add__2
-			|| op == expression_type::k_arithmetic_subtract__2
-			|| op == expression_type::k_arithmetic_multiply__2
-			|| op == expression_type::k_arithmetic_divide__2
-			|| op == expression_type::k_arithmetic_remainder__2
-			|| op == expression_type::k_logical_and__2
-			|| op == expression_type::k_logical_or__2
-			;
-	}
-
-	inline bool is_comparison_expression(expression_type op){
-		return false
-			|| op == expression_type::k_comparison_smaller_or_equal__2
-			|| op == expression_type::k_comparison_smaller__2
-			|| op == expression_type::k_comparison_larger_or_equal__2
-			|| op == expression_type::k_comparison_larger__2
-
-			|| op == expression_type::k_logical_equal__2
-			|| op == expression_type::k_logical_nonequal__2
-			;
-	}
-
-	expression_type token_to_expression_type(const std::string& op);
-	std::string expression_type_to_token(const expression_type& op);
 
 }
 

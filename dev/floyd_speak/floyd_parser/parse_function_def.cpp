@@ -147,7 +147,6 @@ const std::vector<test> testsxyz = {
 	}
 };
 
-
 QUARK_UNIT_TEST("", "parse_function_definition2()", "BATCH", "Correct output JSON"){
 	for(const auto& e: testsxyz){
 		QUARK_SCOPED_TRACE(e.desc);

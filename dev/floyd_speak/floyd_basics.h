@@ -11,8 +11,9 @@
 
 #include <string>
 #include <vector>
-#include "json_support.h"
 
+#include "json_support.h"
+#include "floyd_syntax.h"
 
 struct seq_t;
 
@@ -42,37 +43,6 @@ If a string, this is the node opcode.
 
 - Record byte position inside source file: requires source file to figure out line number.
 - Offset is text position inside compilaton unit source -- different ranges maps to different source files, like preheader and includes.
-
-
-
-
-Expression:
-
-	["k", CONSTANT_VALUE, TYPEID_WITH_RESOLVE_STATE_JSON ]
-	["@", IDENTIFIER_STRING ]
-	["->", EXPRESSION, IDENTIFIER_STRING ]
-	["[]", EXPRESSION, EXPRESSION ]
-	["+", EXPRESSION, EXPRESSION ]
-	["-", EXPRESSION, EXPRESSION ]
-	["*", EXPRESSION, EXPRESSION ]
-	["/", EXPRESSION, EXPRESSION ]
-	["%", EXPRESSION, EXPRESSION ]
-	["<=", EXPRESSION, EXPRESSION ]
-	["<", EXPRESSION, EXPRESSION ]
-	[">=", EXPRESSION, EXPRESSION ]
-	[">", EXPRESSION, EXPRESSION ]
-	["==", EXPRESSION, EXPRESSION ]
-	["!=", EXPRESSION, EXPRESSION ]
-	["&&", EXPRESSION, EXPRESSION ]
-	["||", EXPRESSION, EXPRESSION ]
-	["?:", EXPRESSION, EXPRESSION, EXPRESSION ]
-	["call", EXPRESSION, [EXPRESSION] ]
-
-	["unary_minus", EXPRESSION ]
-
-
-	["construct-value", TYPEID_WITH_RESOLVE_STATE_JSON, [EXPRESSION] ]
-	["construct-value", TYPEID_WITH_RESOLVE_STATE_JSON, [EXPRESSION] ]
 */
 
 struct ast_json_t {
@@ -127,111 +97,6 @@ inline bool operator==(const location_t& lhs, const location_t& rhs){
 }
 extern const location_t k_no_location;
 
-
-//??? move operation codes here.
-
-//	Keywords in source code.
-struct keyword_t {
-	static const std::string k_return;
-	static const std::string k_while;
-	static const std::string k_for;
-	static const std::string k_if;
-	static const std::string k_else;
-	static const std::string k_func;
-	static const std::string k_impure;
-
-	static const std::string k_internal_undefined;
-	static const std::string k_internal_dynamic;
-	static const std::string k_void;
-	static const std::string k_false;
-	static const std::string k_true;
-	static const std::string k_bool;
-	static const std::string k_int;
-	static const std::string k_double;
-	static const std::string k_string;
-	static const std::string k_typeid;
-	static const std::string k_json_value;
-	static const std::string k_struct;
-	static const std::string k_protocol;
-
-	static const std::string k_mutable;
-	static const std::string k_let;
-
-	static const std::string k_software_system;
-	static const std::string k_container_def;
-
-	static const std::string k_json_object;
-	static const std::string k_json_array;
-	static const std::string k_json_string;
-	static const std::string k_json_number;
-	static const std::string k_json_true;
-	static const std::string k_json_false;
-	static const std::string k_json_null;
-
-/*
-	"assert",
-	"print",
-	"to_string",
-	"update",
-	"size",
-*/
-
-/*
-	"catch",
-	"deserialize()",
-	"diff()",
-	"ensure",
-	"foreach",
-	"hash()",
-	"invariant",
-	"log",
-	"namespace",
-	"private",
-	"property",
-	"prove",
-	"require",
-	"serialize()",
-	"swap",
-	"switch",
-	"tag",
-	"test",
-	"this",
-	"try",
-	"typecast",
-	"typeof",
-*/
-
-/*
-const std::vector<std::string> basic_types {
-	"char",
-	code_point",
-	"float",
-	"float32",
-	"float80",
-	hash",
-	"int16",
-	"int32",
-	"int64",
-	"int8",
-	path",
-	text"
-};
-const std::vector<std::string> advanced_types {
-	clock",
-	defect_exception",
-	dyn",
-	dyn**<>",
-	enum",
-	exception",
-	"dict",
-	protocol",
-	rights",
-	runtime_exception",
-	"seq",
-	typedef",
-};
-*/
-};
 
 
 

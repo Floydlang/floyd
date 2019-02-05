@@ -33,7 +33,6 @@ namespace floyd {
 	*/
 	std::pair<ast_json_t, seq_t> parse_protocol_definition(const seq_t& pos);
 
-
 	std::pair<ast_json_t, seq_t>  parse_protocol_definition_body(const seq_t& p, const std::string& name);
 }
 

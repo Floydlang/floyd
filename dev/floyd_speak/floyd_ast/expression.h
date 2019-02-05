@@ -34,16 +34,6 @@ namespace floyd {
 
 
 
-	//	"+", "<=", "&&" etc.
-	inline bool is_simple_expression__2(const std::string& op){
-		return
-			op == "+" || op == "-" || op == "*" || op == "/" || op == "%"
-			|| op == "<=" || op == "<" || op == ">=" || op == ">"
-			|| op == "==" || op == "!=" || op == "&&" || op == "||";
-	}
-
-
-
 	//////////////////////////////////////////////////		function_definition_t
 
 

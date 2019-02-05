@@ -35,21 +35,6 @@ namespace floyd {
 using namespace std;
 
 
-const std::string k_backward_brackets = ")(}{][";
-
-
-std::string concat_strings(const vector<string>& v){
-	if(v.empty()){
-		return "";
-	}
-	else{
-		string result;
-		for(const auto& e: v){
-			result += "\t|\t" + e;
-		}
-		return result;
-	}
-}
 
 //////////////////////////////////////////////////		detect_implicit_statement_lookahead()
 

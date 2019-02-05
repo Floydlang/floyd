@@ -12,12 +12,6 @@
 #include <string>
 
 
-/*
-PEG
-https://en.wikipedia.org/wiki/Parsing_expression_grammar
-http://craftinginterpreters.com/representing-code.html
-*/
-
 struct seq_t;
 
 namespace floyd {

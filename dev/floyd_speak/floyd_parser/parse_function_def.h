@@ -32,8 +32,6 @@ namespace floyd {
 			]
 	*/
 	std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos);
-
 }
-
 
 #endif /* parser_function_hpp */
