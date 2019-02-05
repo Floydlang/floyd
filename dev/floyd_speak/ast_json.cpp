@@ -14,10 +14,10 @@ using std::vector;
 #include "ast_value.h"
 #include "text_parser.h"
 #include "json_support.h"
+#include "compiler_basics.h"
 
 namespace floyd {
 
-const location_t k_no_location(std::numeric_limits<std::size_t>::max());
 
 
 

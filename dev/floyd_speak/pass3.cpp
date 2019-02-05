@@ -173,7 +173,7 @@ typeid_t resolve_type_internal(const analyser_t& a, const location_t& loc, const
 	const auto basetype = type.get_base_type();
 
 	if(basetype == base_type::k_internal_undefined){
-		throw_semantic_error(loc, "Cannot resolve type");
+		throw_compiler_error(loc, "Cannot resolve type");
 	}
 	else if(basetype == base_type::k_internal_dynamic){
 		return type;
@@ -244,11 +244,11 @@ typeid_t resolve_type_internal(const analyser_t& a, const location_t& loc, const
 				return found.first->_const_value.get_typeid_value();
 			}
 			else{
-				throw_semantic_error(loc, "Cannot resolve type");
+				throw_compiler_error(loc, "Cannot resolve type");
 			}
 		}
 		else{
-			throw_semantic_error(loc, "Cannot resolve type");
+			throw_compiler_error(loc, "Cannot resolve type");
 		}
 	}
 	else {
@@ -259,7 +259,7 @@ typeid_t resolve_type_internal(const analyser_t& a, const location_t& loc, const
 typeid_t resolve_type(const analyser_t& a, const location_t& loc, const typeid_t& type){
 	const auto result = resolve_type_internal(a, loc, type);
 	if(result.check_types_resolved() == false){
-		throw_semantic_error(loc, "Cannot resolve type");
+		throw_compiler_error(loc, "Cannot resolve type");
 	}
 	return result;
 }
@@ -325,7 +325,7 @@ std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& a, 
 	//	Attempt to mutate existing value!
 	if(existing_value_deep_ptr.first != nullptr){
 		if(existing_value_deep_ptr.first->_symbol_type != symbol_t::mutable_local){
-			throw_semantic_error(s.location, "Cannot assign to immutable identifier \"" + local_name + "\".");
+			throw_compiler_error(s.location, "Cannot assign to immutable identifier \"" + local_name + "\".");
 		}
 		else{
 			const auto lhs_type = existing_value_deep_ptr.first->get_type();
@@ -339,7 +339,7 @@ std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& a, 
 				std::stringstream what;
 				what << "Types not compatible in bind - cannot convert '"
 				<< typeid_to_compact_string(rhs_expr3.get_output_type()) << "' to '" << typeid_to_compact_string(lhs_type) << ".";
-				throw_semantic_error(s.location, what.str());
+				throw_compiler_error(s.location, what.str());
 			}
 			else{
 				return { a_acc, statement_t::make__store2(s.location, existing_value_deep_ptr.second, rhs_expr3) };
@@ -384,7 +384,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	if(value_exists_in_env){
 		std::stringstream what;
 		what << "Local identifier \"" << new_local_name << "\" already exists.";
-		throw_semantic_error(s.location, what.str());
+		throw_compiler_error(s.location, what.str());
 	}
 
 	//	Setup temporary simply so function definition can find itself = recursive.
@@ -412,7 +412,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 			std::stringstream what;
 			what << "Types not compatible in bind - cannot convert '"
 			<< typeid_to_compact_string(lhs_type2) << "' to '" << typeid_to_compact_string(lhs_type2) << ".";
-			throw_semantic_error(s.location, what.str());
+			throw_compiler_error(s.location, what.str());
 		}
 		else{
 			//	Updated the symbol with the real function defintion.
@@ -466,7 +466,7 @@ analyser_t analyse_def_struct_statement(const analyser_t& a, const statement_t& 
 	if(does_symbol_exist_shallow(a_acc, struct_name)){
 		std::stringstream what;
 		what << "Name \"" << struct_name << "\" already used in current lexical scope.";
-		throw_semantic_error(s.location, what.str());
+		throw_compiler_error(s.location, what.str());
 	}
 
 	const auto struct_typeid1 = typeid_t::make_struct2(statement._def->_members);
@@ -486,7 +486,7 @@ analyser_t analyse_def_protocol_statement(const analyser_t& a, const statement_t
 	if(does_symbol_exist_shallow(a_acc, protocol_name)){
 		std::stringstream what;
 		what << "Name \"" << protocol_name << "\" already used in current lexical scope.";
-		throw_semantic_error(s.location, what.str());
+		throw_compiler_error(s.location, what.str());
 	}
 
 	const auto protocol_typeid1 = typeid_t::make_protocol(statement._def->_members);
@@ -530,7 +530,7 @@ std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a,
 	if(condition_type.is_bool() == false){
 		std::stringstream what;
 		what << "Boolean condition required.";
-		throw_semantic_error(s.location, what.str());
+		throw_compiler_error(s.location, what.str());
 	}
 
 	const auto then2 = analyse_body(a_acc, statement._then_body, a._lexical_scope_stack.back().pure, return_type);
@@ -550,7 +550,7 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 	if(start_expr2.second.get_output_type().is_int() == false){
 		std::stringstream what;
 		what << "For-loop requires integer iterator, start type is " <<  typeid_to_compact_string(start_expr2.second.get_output_type()) << ".";
-		throw_semantic_error(s.location, what.str());
+		throw_compiler_error(s.location, what.str());
 	}
 
 	const auto end_expr2 = analyse_expression_no_target(a_acc, s, statement._end_expression);
@@ -559,7 +559,7 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 	if(end_expr2.second.get_output_type().is_int() == false){
 		std::stringstream what;
 		what << "For-loop requires integer iterator, end type is " <<  typeid_to_compact_string(end_expr2.second.get_output_type()) << ".";
-		throw_semantic_error(s.location, what.str());
+		throw_compiler_error(s.location, what.str());
 	}
 
 	const auto iterator_symbol = symbol_t::make_immutable_local(typeid_t::make_int());
@@ -714,7 +714,7 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 		if(index == -1){
 			std::stringstream what;
 			what << "Unknown struct member \"" + e._variable_name + "\".";
-			throw_semantic_error(parent.location, what.str());
+			throw_compiler_error(parent.location, what.str());
 		}
 		const auto member_type = struct_def._members[index]._type;
 		return { a_acc, expression_t::make_resolve_member(parent_expr.second, e._variable_name, make_shared<typeid_t>(member_type))};
@@ -722,7 +722,7 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	else{
 		std::stringstream what;
 		what << "Left hand side is not a struct value, it's of type \"" + typeid_to_compact_string(parent_type) + "\".";
-		throw_semantic_error(parent.location, what.str());
+		throw_compiler_error(parent.location, what.str());
 	}
 }
 
@@ -743,7 +743,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 		if(key_type.is_int() == false){
 			std::stringstream what;
 			what << "Strings can only be indexed by integers, not a \"" + typeid_to_compact_string(key_type) + "\".";
-			throw_semantic_error(parent.location, what.str());
+			throw_compiler_error(parent.location, what.str());
 		}
 		else{
 			return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(typeid_t::make_int())) };
@@ -756,7 +756,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 		if(key_type.is_int() == false){
 			std::stringstream what;
 			what << "Vector can only be indexed by integers, not a \"" + typeid_to_compact_string(key_type) + "\".";
-			throw_semantic_error(parent.location, what.str());
+			throw_compiler_error(parent.location, what.str());
 		}
 		else{
 			return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(parent_type.get_vector_element_type())) };
@@ -766,7 +766,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 		if(key_type.is_string() == false){
 			std::stringstream what;
 			what << "Dictionary can only be looked up using string keys, not a \"" + typeid_to_compact_string(key_type) + "\".";
-			throw_semantic_error(parent.location, what.str());
+			throw_compiler_error(parent.location, what.str());
 		}
 		else{
 			return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(parent_type.get_dict_value_type())) };
@@ -775,7 +775,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	else {
 		std::stringstream what;
 		what << "Lookup using [] only works with strings, vectors, dicts and json_value - not a \"" + typeid_to_compact_string(parent_type) + "\".";
-		throw_semantic_error(parent.location, what.str());
+		throw_compiler_error(parent.location, what.str());
 	}
 }
 
@@ -790,7 +790,7 @@ std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const stat
 	else{
 		std::stringstream what;
 		what << "Undefined variable \"" << e._variable_name << "\".";
-		throw_semantic_error(parent.location, what.str());
+		throw_compiler_error(parent.location, what.str());
 	}
 }
 
@@ -834,7 +834,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			if(result_type.check_types_resolved() == false){
 				std::stringstream what;
 				what << "Cannot infer vector element type, add explicit type.";
-				throw_semantic_error(parent.location, what.str());
+				throw_compiler_error(parent.location, what.str());
 			}
 			return {
 				a_acc,
@@ -860,14 +860,14 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			if(result_type.check_types_resolved() == false){
 				std::stringstream what;
 				what << "Cannot infer vector element type, add explicit type.";
-				throw_semantic_error(parent.location, what.str());
+				throw_compiler_error(parent.location, what.str());
 			}
 
 			for(const auto& m: elements2){
 				if(m.get_output_type() != element_type2){
 					std::stringstream what;
 					what << "Vector of type " << typeid_to_compact_string(result_type) << " cannot hold an element of type " << typeid_to_compact_string(m.get_output_type()) << ".";
-					throw_semantic_error(parent.location, what.str());
+					throw_compiler_error(parent.location, what.str());
 				}
 			}
 			QUARK_ASSERT(result_type.check_types_resolved());
@@ -896,7 +896,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			if(result_type.check_types_resolved() == false){
 				std::stringstream what;
 				what << "Cannot infer dictionary element type, add explicit type.";
-				throw_semantic_error(parent.location, what.str());
+				throw_compiler_error(parent.location, what.str());
 			}
 			return {
 				a_acc,
@@ -932,7 +932,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				if(element_type0 != element_type2){
 					std::stringstream what;
 					what << "Dictionary of type " << typeid_to_compact_string(result_type) << " cannot hold an element of type " << typeid_to_compact_string(element_type0) << ".";
-					throw_semantic_error(parent.location, what.str());
+					throw_compiler_error(parent.location, what.str());
 				}
 			}
 			return {a_acc, expression_t::make_construct_value_expr(result_type, elements2)};
@@ -959,7 +959,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(co
 	else{
 		std::stringstream what;
 		what << "Unary minus don't work on expressions of type \"" << typeid_to_compact_string(type) << "\"" << ", only int and double.";
-		throw_semantic_error(parent.location, what.str());
+		throw_compiler_error(parent.location, what.str());
 	}
 }
 
@@ -982,12 +982,12 @@ std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(cons
 	if(type.is_bool() == false){
 		std::stringstream what;
 		what << "Conditional expression needs to be a bool, not a " << typeid_to_compact_string(type) << ".";
-		throw_semantic_error(parent.location, what.str());
+		throw_compiler_error(parent.location, what.str());
 	}
 	else if(a.second.get_output_type() != b.second.get_output_type()){
 		std::stringstream what;
 		what << "Conditional expression requires true/false expressions to have the same type, currently " << typeid_to_compact_string(a.second.get_output_type()) << " : " << typeid_to_compact_string(b.second.get_output_type()) << ".";
-		throw_semantic_error(parent.location, what.str());
+		throw_compiler_error(parent.location, what.str());
 	}
 	else{
 		const auto final_expression_type = a.second.get_output_type();
@@ -1024,7 +1024,7 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 	if(lhs_type != rhs_type || (lhs_type.is_undefined() == true || rhs_type.is_undefined() == true)){
 		std::stringstream what;
 		what << "Left and right expressions must be same type in comparison, " << typeid_to_compact_string(lhs_type) << " " << expression_type_to_token(op) << typeid_to_compact_string(rhs_type) << ".";
-		throw_semantic_error(parent.location, what.str());
+		throw_compiler_error(parent.location, what.str());
 	}
 	else{
 		const auto shared_type = lhs_type;
@@ -1078,7 +1078,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 	if(lhs_type != rhs_type){
 		std::stringstream what;
 		what << "Artithmetics: Left and right expressions must be same type, currently " << typeid_to_compact_string(lhs_type) << " : " << typeid_to_compact_string(rhs_type) << ".";
-		throw_semantic_error(parent.location, what.str());
+		throw_compiler_error(parent.location, what.str());
 	}
 	else{
 		const auto shared_type = lhs_type;
@@ -1088,16 +1088,16 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			if(op == expression_type::k_arithmetic_add__2){
 			}
 			else if(op == expression_type::k_arithmetic_subtract__2){
-				throw_semantic_error(parent.location, "Operation not allowed on bool.");
+				throw_compiler_error(parent.location, "Operation not allowed on bool.");
 			}
 			else if(op == expression_type::k_arithmetic_multiply__2){
-				throw_semantic_error(parent.location, "Operation not allowed on bool.");
+				throw_compiler_error(parent.location, "Operation not allowed on bool.");
 			}
 			else if(op == expression_type::k_arithmetic_divide__2){
-				throw_semantic_error(parent.location, "Operation not allowed on bool.");
+				throw_compiler_error(parent.location, "Operation not allowed on bool.");
 			}
 			else if(op == expression_type::k_arithmetic_remainder__2){
-				throw_semantic_error(parent.location, "Operation not allowed on bool.");
+				throw_compiler_error(parent.location, "Operation not allowed on bool.");
 			}
 
 			else if(op == expression_type::k_logical_and__2){
@@ -1148,7 +1148,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			else if(op == expression_type::k_arithmetic_divide__2){
 			}
 			else if(op == expression_type::k_arithmetic_remainder__2){
-				throw_semantic_error(parent.location, "Modulo operation on double not supported.");
+				throw_compiler_error(parent.location, "Modulo operation on double not supported.");
 			}
 
 			else if(op == expression_type::k_logical_and__2){
@@ -1169,23 +1169,23 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			}
 
 			else if(op == expression_type::k_arithmetic_subtract__2){
-				throw_semantic_error(parent.location, "Operation not allowed on string.");
+				throw_compiler_error(parent.location, "Operation not allowed on string.");
 			}
 			else if(op == expression_type::k_arithmetic_multiply__2){
-				throw_semantic_error(parent.location, "Operation not allowed on string.");
+				throw_compiler_error(parent.location, "Operation not allowed on string.");
 			}
 			else if(op == expression_type::k_arithmetic_divide__2){
-				throw_semantic_error(parent.location, "Operation not allowed on string.");
+				throw_compiler_error(parent.location, "Operation not allowed on string.");
 			}
 			else if(op == expression_type::k_arithmetic_remainder__2){
-				throw_semantic_error(parent.location, "Operation not allowed on string.");
+				throw_compiler_error(parent.location, "Operation not allowed on string.");
 			}
 
 			else if(op == expression_type::k_logical_and__2){
-				throw_semantic_error(parent.location, "Operation not allowed on string.");
+				throw_compiler_error(parent.location, "Operation not allowed on string.");
 			}
 			else if(op == expression_type::k_logical_or__2){
-				throw_semantic_error(parent.location, "Operation not allowed on string.");
+				throw_compiler_error(parent.location, "Operation not allowed on string.");
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -1200,26 +1200,26 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			//	Structs must be exactly the same type to match.
 
 			if(op == expression_type::k_arithmetic_add__2){
-				throw_semantic_error(parent.location, "Operation not allowed on structs.");
+				throw_compiler_error(parent.location, "Operation not allowed on structs.");
 			}
 			else if(op == expression_type::k_arithmetic_subtract__2){
-				throw_semantic_error(parent.location, "Operation not allowed on structs.");
+				throw_compiler_error(parent.location, "Operation not allowed on structs.");
 			}
 			else if(op == expression_type::k_arithmetic_multiply__2){
-				throw_semantic_error(parent.location, "Operation not allowed on structs.");
+				throw_compiler_error(parent.location, "Operation not allowed on structs.");
 			}
 			else if(op == expression_type::k_arithmetic_divide__2){
-				throw_semantic_error(parent.location, "Operation not allowed on structs.");
+				throw_compiler_error(parent.location, "Operation not allowed on structs.");
 			}
 			else if(op == expression_type::k_arithmetic_remainder__2){
-				throw_semantic_error(parent.location, "Operation not allowed on structs.");
+				throw_compiler_error(parent.location, "Operation not allowed on structs.");
 			}
 
 			else if(op == expression_type::k_logical_and__2){
-				throw_semantic_error(parent.location, "Operation not allowed on structs.");
+				throw_compiler_error(parent.location, "Operation not allowed on structs.");
 			}
 			else if(op == expression_type::k_logical_or__2){
-				throw_semantic_error(parent.location, "Operation not allowed on structs.");
+				throw_compiler_error(parent.location, "Operation not allowed on structs.");
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -1236,24 +1236,24 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			}
 
 			else if(op == expression_type::k_arithmetic_subtract__2){
-				throw_semantic_error(parent.location, "Operation not allowed on vectors.");
+				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
 			}
 			else if(op == expression_type::k_arithmetic_multiply__2){
-				throw_semantic_error(parent.location, "Operation not allowed on vectors.");
+				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
 			}
 			else if(op == expression_type::k_arithmetic_divide__2){
-				throw_semantic_error(parent.location, "Operation not allowed on vectors.");
+				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
 			}
 			else if(op == expression_type::k_arithmetic_remainder__2){
-				throw_semantic_error(parent.location, "Operation not allowed on vectors.");
+				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
 			}
 
 
 			else if(op == expression_type::k_logical_and__2){
-				throw_semantic_error(parent.location, "Operation not allowed on vectors.");
+				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
 			}
 			else if(op == expression_type::k_logical_or__2){
-				throw_semantic_error(parent.location, "Operation not allowed on vectors.");
+				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -1264,10 +1264,10 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 
 		//	function
 		else if(shared_type.is_function()){
-			throw_semantic_error(parent.location, "Cannot perform operations on two function values.");
+			throw_compiler_error(parent.location, "Cannot perform operations on two function values.");
 		}
 		else{
-			throw_semantic_error(parent.location, "Arithmetics failed.");
+			throw_compiler_error(parent.location, "Arithmetics failed.");
 		}
 	}
 }
@@ -1295,7 +1295,7 @@ std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& 
 		if(call_args.size() != callee_args.size()){
 			std::stringstream what;
 			what << "Wrong number of arguments in function call, got " << std::to_string(call_args.size()) << ", expected " << std::to_string(callee_args.size()) << ".";
-			throw_semantic_error(parent.location, what.str());
+			throw_compiler_error(parent.location, what.str());
 		}
 
 		auto a_acc = a;
@@ -1373,11 +1373,11 @@ typeid_t get_host_function_return_type(const analyser_t& a, const statement_t& p
 					return symbol->_const_value.get_typeid_value();
 				}
 				else{
-					throw_semantic_error(parent.location, "Cannot resolve type for jsonvalue_to_value().");
+					throw_compiler_error(parent.location, "Cannot resolve type for jsonvalue_to_value().");
 				}
 			}
 			else{
-				throw_semantic_error(parent.location, "Cannot resolve type for jsonvalue_to_value().");
+				throw_compiler_error(parent.location, "Cannot resolve type for jsonvalue_to_value().");
 			}
 		}
 		else{
@@ -1410,7 +1410,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a,
 		const auto callee_pure = callee_type.get_function_pure();
 
 		if(callsite_pure == epure::pure && callee_pure == epure::impure){
-			throw_semantic_error(parent.location, "Cannot call impure function from a pure function.");
+			throw_compiler_error(parent.location, "Cannot call impure function from a pure function.");
 		}
 
 
@@ -1432,7 +1432,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a,
 		QUARK_ASSERT(found_symbol_ptr != nullptr);
 
 		if(found_symbol_ptr->_const_value.is_undefined()){
-			throw_semantic_error(parent.location, "Cannot resolve callee.");
+			throw_compiler_error(parent.location, "Cannot resolve callee.");
 		}
 		else{
 			const auto callee_type2 = found_symbol_ptr->_const_value.get_typeid_value();
@@ -1460,7 +1460,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a,
 	else{
 		std::stringstream what;
 		what << "Cannot call non-function, its type is " << typeid_to_compact_string(callee_type) << ".";
-		throw_semantic_error(parent.location, what.str());
+		throw_compiler_error(parent.location, what.str());
 	}
 }
 
@@ -1644,7 +1644,7 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 	if(e2b.check_types_resolved() == false){
 		std::stringstream what;
 		what << "Cannot infer type in " << expression_type_to_token(e2b.get_operation()) << "-expression.";
-		throw_semantic_error(parent.location, what.str());
+		throw_compiler_error(parent.location, what.str());
 	}
 
 	const auto e3 = auto_cast_expression_type(e2b, target_type);
@@ -1661,11 +1661,11 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 		std::stringstream what;
 		what << "Expression type mismatch - cannot convert '"
 		<< typeid_to_compact_string(e3.get_output_type()) << "' to '" << typeid_to_compact_string(target_type) << ".";
-		throw_semantic_error(parent.location, what.str());
+		throw_compiler_error(parent.location, what.str());
 	}
 
 	if(e3.check_types_resolved() == false){
-		throw_semantic_error(parent.location, "Cannot resolve type.");
+		throw_compiler_error(parent.location, "Cannot resolve type.");
 	}
 	QUARK_ASSERT(e3.check_types_resolved());
 	return { a_acc, e3 };

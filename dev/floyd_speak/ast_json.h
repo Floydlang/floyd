@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include "json_support.h"
+#include "compiler_basics.h"
 
 struct seq_t;
 
@@ -106,50 +107,6 @@ namespace expression_opcode_t {
 	const std::string k_lookup_element = "[]";
 };
 
-
-
-
-////////////////////////////////////////		location2_t
-
-
-struct location2_t {
-	location2_t(const std::string& source_file_path, int line_number, int column, std::size_t start, std::size_t end, const std::string& line) :
-		source_file_path(source_file_path),
-		line_number(line_number),
-		column(column),
-		start(start),
-		end(end),
-		line(line)
-	{
-	}
-
-	std::string source_file_path;
-	int line_number;
-	int column;
-	std::size_t start;
-	std::size_t end;
-	std::string line;
-};
-
-
-////////////////////////////////////////		location_t
-
-
-//	Specifies character offset inside source code.
-
-struct location_t {
-	explicit location_t(std::size_t offset) :
-		offset(offset)
-	{
-	}
-
-	std::size_t offset;
-};
-
-inline bool operator==(const location_t& lhs, const location_t& rhs){
-	return lhs.offset == rhs.offset;
-}
-extern const location_t k_no_location;
 
 
 

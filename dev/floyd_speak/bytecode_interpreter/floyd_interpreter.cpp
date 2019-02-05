@@ -462,7 +462,7 @@ semantic_ast_t run_semantic_analysis__errors(const ast_t& pass2, const std::stri
 		const auto pass3 = run_semantic_analysis(pass2);
 		return pass3;
 	}
-	catch(const semantic_error& e){
+	catch(const compiler_error& e){
 		const auto loc2 = find_source_line(program, file, true, e.location);
 		const auto what1 = std::string(e.what());
 
@@ -471,7 +471,7 @@ semantic_ast_t run_semantic_analysis__errors(const ast_t& pass2, const std::stri
 		if(loc2.source_file_path.empty() == false){
 			what2 << " file: " << loc2.source_file_path;
 		}
-		throw_semantic_error(e.location, loc2, what2.str());
+		throw_compiler_error(e.location, loc2, what2.str());
 	}
 	catch(const std::exception& e){
 		throw;
