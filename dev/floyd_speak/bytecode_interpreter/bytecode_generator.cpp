@@ -1401,7 +1401,7 @@ expr_info_t bcgen_expression(bcgenerator_t& vm, const variable_address_t& target
 	else if(op == expression_type::k_call){
 		return bcgen_call_expression(vm, target_reg, e, body);
 	}
-	else if(op == expression_type::k_construct_value){
+	else if(op == expression_type::k_value_constructor){
 		return bcgen_construct_value_expression(vm, target_reg, e, body);
 	}
 	else if(op == expression_type::k_arithmetic_unary_minus__1){

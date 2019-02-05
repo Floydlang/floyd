@@ -268,7 +268,7 @@ enum class expression_type {
 	//	c99: 13				token: "k"
 	k_literal,
 
-	//	c99: -a				token: "unary_minus"
+	//	c99: -a				token: "unary-minus"
 	k_arithmetic_unary_minus__1,
 
 	//	c99: cond ? a : b	token: "?:"
@@ -290,15 +290,31 @@ enum class expression_type {
 	k_lookup_element,
 
 	//	"def-struct"
-	k_define_struct,
+	k_struct_def,
 
 	//???	use k_literal for function values?
 	//	"def-func"
-	k_define_function,
+	k_function_def,
 
 	//	"construct-value"
-	k_construct_value,
+	k_value_constructor,
 };
+
+struct expression_opcode_t {
+	static const std::string k_literal;
+	static const std::string k_call;
+	static const std::string k_load;
+	static const std::string k_load2;
+	static const std::string k_resolve_member;
+	static const std::string k_unary_minus;
+	static const std::string k_conditional_operator;
+	static const std::string k_struct_def;
+	static const std::string k_function_def;
+	static const std::string k_value_constructor;
+	static const std::string k_lookup_element;
+};
+
+
 
 inline bool is_arithmetic_expression(expression_type op){
 	return false

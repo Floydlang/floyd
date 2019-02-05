@@ -138,41 +138,16 @@ namespace floyd {
 
 
 
-inline int count_lines(const std::string& range){
-	const auto lf_count = std::count(range.begin(), range.end(), '\r');
-	const auto nl_count = std::count(range.begin(), range.end(), '\n');
-	return static_cast<int>(lf_count + nl_count);
-}
+	inline int count_lines(const std::string& range){
+		const auto lf_count = std::count(range.begin(), range.end(), '\r');
+		const auto nl_count = std::count(range.begin(), range.end(), '\n');
+		return static_cast<int>(lf_count + nl_count);
+	}
 
-inline int count_lines(const seq_t& start, const seq_t& end){
-	const auto range = get_range(start, end);
-	return count_lines(range);
-}
-
-
-
-
-ast_json_t make_statement_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
-ast_json_t make_statement1(const location_t& location, const std::string& opcode, const json_t& params);
-ast_json_t make_statement2(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2);
-ast_json_t make_statement3(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3);
-ast_json_t make_statement4(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3, const json_t& param4);
-
-ast_json_t make_expression_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
-ast_json_t make_expression1(const location_t& location, const std::string& opcode, const json_t& param);
-ast_json_t make_expression2(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2);
-ast_json_t make_expression3(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3);
-
-
-ast_json_t maker__make_identifier(const std::string& s);
-ast_json_t maker__make_unary_minus(const json_t& expr);
-ast_json_t maker__make2(const std::string op, const json_t& lhs, const json_t& rhs);
-ast_json_t maker__make_conditional_operator(const json_t& e1, const json_t& e2, const json_t& e3);
-ast_json_t maker__call(const json_t& f, const std::vector<json_t>& args);
-ast_json_t maker_vector_definition(const std::string& element_type, const std::vector<json_t>& elements);
-ast_json_t maker_dict_definition(const std::string& value_type, const std::vector<json_t>& elements);
-ast_json_t maker__member_access(const json_t& address, const std::string& member_name);
-ast_json_t maker__make_constant(const value_t& value);
+	inline int count_lines(const seq_t& start, const seq_t& end){
+		const auto range = get_range(start, end);
+		return count_lines(range);
+	}
 
 
 	struct parse_result_t {

@@ -505,7 +505,7 @@ bc_program_t compile_to_bytecode(const string& program, const std::string& file)
 //	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
 	const auto pass1 = parse_program2(p);
 
-//	QUARK_TRACE_SS(		"OUTPUT: " << json_to_pretty_string(parse_result_to_json(pass1))	);
+	QUARK_TRACE_SS(		"OUTPUT: " << json_to_pretty_string(parse_result_to_json(pass1))	);
 
 	const auto pass2 = json_to_ast(pass1.ast);
 

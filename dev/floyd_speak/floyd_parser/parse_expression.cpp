@@ -1043,13 +1043,13 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "dict definition", ""){
 //////////////////////////////////			NEG
 
 QUARK_UNIT_TEST("parser", "parse_expression2()", "unary minus", ""){
-	QUARK_UT_VERIFY(test__parse_expression2("-2 xxx", R"(["unary_minus", ["k", 2, "^int"]])", " xxx"));
+	QUARK_UT_VERIFY(test__parse_expression2("-2 xxx", R"(["unary-minus", ["k", 2, "^int"]])", " xxx"));
 }
 
 QUARK_UNIT_TEST("parser", "parse_expression2()", "unary minus", ""){
 	QUARK_UT_VERIFY(test__parse_expression2(
 		"-(3)",
-		R"(["unary_minus", ["k", 3, "^int"]])",
+		R"(["unary-minus", ["k", 3, "^int"]])",
 		""
 	));
 }
@@ -1057,7 +1057,7 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "unary minus", ""){
 QUARK_UNIT_TEST("parser", "parse_expression2()", "unary minus", ""){
 	QUARK_UT_VERIFY(test__parse_expression2(
 		"2---2 xxx",
-		R"(["-", ["k", 2, "^int"], ["unary_minus", ["unary_minus", ["k", 2, "^int"]]]])",
+		R"(["-", ["k", 2, "^int"], ["unary-minus", ["unary-minus", ["k", 2, "^int"]]]])",
 		" xxx"
 	));
 }
@@ -1065,7 +1065,7 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "unary minus", ""){
 QUARK_UNIT_TEST("parser", "parse_expression2()", "unary minus", ""){
 	QUARK_UT_VERIFY(test__parse_expression2(
 		"2-+-2 xxx",
-		R"(["-", ["k", 2, "^int"], ["unary_minus", ["k", 2, "^int"]]])",
+		R"(["-", ["k", 2, "^int"], ["unary-minus", ["k", 2, "^int"]]])",
 		" xxx"
 	));
 }

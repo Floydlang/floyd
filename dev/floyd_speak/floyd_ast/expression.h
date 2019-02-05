@@ -186,7 +186,7 @@ namespace floyd {
 
 		public: static expression_t make_struct_definition(const std::shared_ptr<const struct_definition_t>& def){
 			return expression_t(
-				expression_type::k_define_struct,
+				expression_type::k_struct_def,
 				{},
 				std::make_shared<typeid_t>(typeid_t::make_struct1(def)),
 				{},
@@ -199,7 +199,7 @@ namespace floyd {
 
 		public: static expression_t make_function_definition(const std::shared_ptr<const function_definition_t>& def){
 			return expression_t(
-				expression_type::k_define_function,
+				expression_type::k_function_def,
 				{},
 				std::make_shared<typeid_t>(def->_function_type),
 				{},
@@ -282,7 +282,7 @@ namespace floyd {
 		)
 		{
 			return expression_t(
-				expression_type::k_construct_value,
+				expression_type::k_value_constructor,
 				args,
 				std::make_shared<typeid_t>(value_type),
 				{},
@@ -344,9 +344,9 @@ namespace floyd {
 
 			return false
 				|| _operation == expression_type::k_literal
-				|| _operation == expression_type::k_define_struct
-				|| _operation == expression_type::k_define_function
-				|| _operation == expression_type::k_construct_value
+				|| _operation == expression_type::k_struct_def
+				|| _operation == expression_type::k_function_def
+				|| _operation == expression_type::k_value_constructor
 				;
 		}
 

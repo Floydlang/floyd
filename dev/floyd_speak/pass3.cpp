@@ -1553,15 +1553,15 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 		return analyse_call_expression(a, parent, e);
 	}
 
-	else if(op == expression_type::k_define_struct){
+	else if(op == expression_type::k_struct_def){
 		return analyse_struct_definition_expression(a, parent, e);
 	}
 
-	else if(op == expression_type::k_define_function){
+	else if(op == expression_type::k_function_def){
 		return analyse_function_definition_expression(a, parent, e);
 	}
 
-	else if(op == expression_type::k_construct_value){
+	else if(op == expression_type::k_value_constructor){
 		return analyse_construct_value_expression(a, parent, e, target_type);
 	}
 

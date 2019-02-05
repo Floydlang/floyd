@@ -65,7 +65,12 @@ expression_t astjson_to_expression(const json_t& e){
 	QUARK_ASSERT(e.check_invariant());
 
 	const auto op = e.get_array_n(0).get_string();
-	if(op == "k"){
+	QUARK_ASSERT(op != "");
+	if(op.empty()){
+		throw std::exception();
+	}
+
+	if(op == expression_opcode_t::k_literal){
 		QUARK_ASSERT(e.get_array_size() == 3);
 
 		const auto value = e.get_array_n(1);
@@ -92,7 +97,7 @@ expression_t astjson_to_expression(const json_t& e){
 			throw std::exception();
 		}
 	}
-	else if(op == "unary_minus"){
+	else if(op == expression_opcode_t::k_unary_minus){
 		QUARK_ASSERT(e.get_array_size() == 2);
 		const auto expr = astjson_to_expression(e.get_array_n(1));
 		return expression_t::make_unary_minus(expr, nullptr);
@@ -104,14 +109,14 @@ expression_t astjson_to_expression(const json_t& e){
 		const auto rhs_expr = astjson_to_expression(e.get_array_n(2));
 		return expression_t::make_simple_expression__2(op2, lhs_expr, rhs_expr, nullptr);
 	}
-	else if(op == "?:"){
+	else if(op == expression_opcode_t::k_conditional_operator){
 		QUARK_ASSERT(e.get_array_size() == 4);
 		const auto condition_expr = astjson_to_expression(e.get_array_n(1));
 		const auto a_expr = astjson_to_expression(e.get_array_n(2));
 		const auto b_expr = astjson_to_expression(e.get_array_n(3));
 		return expression_t::make_conditional_operator(condition_expr, a_expr, b_expr, nullptr);
 	}
-	else if(op == "call"){
+	else if(op == expression_opcode_t::k_call){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto function_expr = astjson_to_expression(e.get_array_n(1));
 		const auto args = e.get_array_n(2);
@@ -121,30 +126,30 @@ expression_t astjson_to_expression(const json_t& e){
 		}
 		return expression_t::make_call(function_expr, args2, nullptr);
 	}
-	else if(op == "->"){
+	else if(op == expression_opcode_t::k_resolve_member){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto base_expr = astjson_to_expression(e.get_array_n(1));
 		const auto member = e.get_array_n(2).get_string();
 		return expression_t::make_resolve_member(base_expr, member, nullptr);
 	}
-	else if(op == "@"){
+	else if(op == expression_opcode_t::k_load){
 		QUARK_ASSERT(e.get_array_size() == 2);
 		const auto variable_symbol = e.get_array_n(1).get_string();
 		return expression_t::make_load(variable_symbol, nullptr);
 	}
-	else if(op == "@i"){
+	else if(op == expression_opcode_t::k_load2){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto parent_step = (int)e.get_array_n(1).get_number();
 		const auto index = (int)e.get_array_n(2).get_number();
 		return expression_t::make_load2(variable_address_t::make_variable_address(parent_step, index), nullptr);
 	}
-	else if(op == "[]"){
+	else if(op == expression_opcode_t::k_lookup_element){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto parent_address_expr = astjson_to_expression(e.get_array_n(1));
 		const auto lookup_key_expr = astjson_to_expression(e.get_array_n(2));
 		return expression_t::make_lookup(parent_address_expr, lookup_key_expr, nullptr);
 	}
-	else if(op == "construct-value"){
+	else if(op == expression_opcode_t::k_value_constructor){
 		QUARK_ASSERT(e.get_array_size() == 3);
 		const auto value_type = resolve_type_name(e.get_array_n(1));
 		const auto args = e.get_array_n(2).get_array();

@@ -152,11 +152,24 @@ const std::string statement_opcode_t::k_software_system = "software-system";
 const std::string statement_opcode_t::k_container_def = "container-def";
 
 
+const std::string expression_opcode_t::k_literal = "k";
+const std::string expression_opcode_t::k_call = "call";
+const std::string expression_opcode_t::k_load = "@";
+const std::string expression_opcode_t::k_load2 = "@i";
+const std::string expression_opcode_t::k_resolve_member = "->";
+const std::string expression_opcode_t::k_unary_minus = "unary-minus";
+const std::string expression_opcode_t::k_conditional_operator = "?:";
+const std::string expression_opcode_t::k_struct_def = "def-struct";
+const std::string expression_opcode_t::k_function_def = "def-func";
+const std::string expression_opcode_t::k_value_constructor = "construct-value";
+const std::string expression_opcode_t::k_lookup_element = "[]";
 
+
+//	WARNING: Make sure all accessed constants have already been initialized!
 static const std::map<eoperation, std::string> k_2_operator_to_string{
 //	{ eoperation::k_x_member_access, "->" },
 
-	{ eoperation::k_2_lookup, "[]" },
+	{ eoperation::k_2_lookup, expression_opcode_t::k_lookup_element },
 
 	{ eoperation::k_2_add, "+" },
 	{ eoperation::k_2_subtract, "-" },
@@ -180,6 +193,7 @@ std::string k_2_operator_to_string__func(eoperation op){
 }
 
 
+//	WARNING: Make sure all accessed constants have already been initialized!
 static std::map<expression_type, string> operation_to_string_lookup = {
 	{ expression_type::k_arithmetic_add__2, "+" },
 	{ expression_type::k_arithmetic_subtract__2, "-" },
@@ -198,23 +212,24 @@ static std::map<expression_type, string> operation_to_string_lookup = {
 	{ expression_type::k_logical_or__2, "||" },
 //	{ expression_type::k_logical_not, "!" },
 
-	{ expression_type::k_literal, "k" },
+	{ expression_type::k_literal, expression_opcode_t::k_literal },
 
-	{ expression_type::k_arithmetic_unary_minus__1, "unary_minus" },
+	{ expression_type::k_arithmetic_unary_minus__1, expression_opcode_t::k_unary_minus },
 
-	{ expression_type::k_conditional_operator3, "?:" },
-	{ expression_type::k_call, "call" },
+	{ expression_type::k_conditional_operator3, expression_opcode_t::k_conditional_operator },
+	{ expression_type::k_call, expression_opcode_t::k_call },
 
-	{ expression_type::k_load, "@" },
-	{ expression_type::k_load2, "@i" },
-	{ expression_type::k_resolve_member, "->" },
+	{ expression_type::k_load, expression_opcode_t::k_load },
+	{ expression_type::k_load2, expression_opcode_t::k_load2 },
+	{ expression_type::k_resolve_member, expression_opcode_t::k_resolve_member },
 
-	{ expression_type::k_lookup_element, "[]" },
+	{ expression_type::k_lookup_element, expression_opcode_t::k_lookup_element },
 
-	{ expression_type::k_define_struct, "def-struct" },
-	{ expression_type::k_define_function, "def-func" },
-	{ expression_type::k_construct_value, "construct-value" }
+	{ expression_type::k_struct_def, expression_opcode_t::k_struct_def },
+	{ expression_type::k_function_def, expression_opcode_t::k_function_def },
+	{ expression_type::k_value_constructor, expression_opcode_t::k_value_constructor }
 };
+
 
 
 
@@ -246,6 +261,9 @@ expression_type token_to_expression_type(const string& op){
 	return r->second;
 }
 
+
+
+//??? split this file into syntax.h and ast.h
 
 
 
