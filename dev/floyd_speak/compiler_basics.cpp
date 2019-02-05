@@ -63,6 +63,17 @@ QUARK_UNIT_TEST("", "make_location_lookup()", "", ""){
 	QUARK_UT_VERIFY((r == std::vector<int>{ 0, 4, 8 }));
 }
 
+const std::string cleanup_line_snippet(const std::string& s){
+	const auto line1 = skip(seq_t(s), "\t ");
+	const auto split = split_on_chars(line1, "\n\r");
+	QUARK_ASSERT(split.size() > 0);
+	const auto line = split.front();
+	return line;
+}
+QUARK_UNIT_TEST("", "cleanup_line_snippet()", "", ""){
+	ut_verify(QUARK_POS, cleanup_line_snippet(" \tabc\n\a"), "abc");
+}
+
 location2_t find_loc_info(const std::string& program, const std::vector<int>& lookup, const std::string& file, const location_t& loc){
 	QUARK_ASSERT(lookup.size() >= 2);
 	QUARK_ASSERT(loc.offset <= lookup.back());
@@ -88,11 +99,7 @@ location2_t find_loc_info(const std::string& program, const std::vector<int>& lo
 
 		const auto start = lookup[line_index];
 		const auto end = lookup[line_index + 1];
-		const auto line0 = program.substr(start, end - start);
-		const auto split = split_on_chars(seq_t(line0), "\n\r");
-		QUARK_ASSERT(split.size() > 0);
-		const auto line = split.front();
-
+		const auto line = cleanup_line_snippet(program.substr(start, end - start));
 		const auto column = loc.offset - start;
 		return location2_t(file, line_index, static_cast<int>(column), start, end, line, loc);
 	}
