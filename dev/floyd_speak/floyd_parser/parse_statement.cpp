@@ -14,11 +14,8 @@
 #include "json_support.h"
 
 namespace floyd {
-	using std::string;
-	using std::vector;
-	using std::pair;
-	using std::make_shared;
-	using std::shared_ptr;
+
+//??? Decide if parse functions accept leading whitespace or asserts on there is none.
 
 
 parse_result_t parse_statement_body(const seq_t& s){
@@ -83,7 +80,7 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 //////////////////////////////////////////////////		parse_block()
 
 
-pair<ast_json_t, seq_t> parse_block(const seq_t& s){
+std::pair<ast_json_t, seq_t> parse_block(const seq_t& s){
 	const auto start = skip_whitespace(s);
 	const auto body = parse_statement_body(start);
 	return { make_statement1(location_t(start.pos()), statement_opcode_t::k_block, body.ast._value), body.pos };
@@ -111,7 +108,7 @@ QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
 //////////////////////////////////////////////////		parse_block()
 
 
-pair<ast_json_t, seq_t> parse_return_statement(const seq_t& s){
+std::pair<ast_json_t, seq_t> parse_return_statement(const seq_t& s){
 	const auto start = skip_whitespace(s);
 	const auto token_pos = if_first(start, keyword_t::k_return);
 	QUARK_ASSERT(token_pos.first);
@@ -168,10 +165,6 @@ std::pair<ast_json_t, seq_t> parse_if(const seq_t& pos){
 	Ex 4: "else if (EXPRESSION) { STATEMENTS } else { STATEMENTS }"
 	Ex 5: "else if (EXPRESSION) { STATEMENTS } else if (EXPRESSION) { STATEMENTS } else { STATEMENTS }"
 */
-
-
-//??? Decide if parse functions accept leading whitespace or asserts on there is none.
-
 std::pair<ast_json_t, seq_t> parse_if_statement(const seq_t& pos){
 	const auto start = skip_whitespace(pos);
 
@@ -478,7 +471,7 @@ QUARK_UNIT_TEST("", "parse_while_statement()", "while(){}", ""){
 
 
 
-pair<ast_json_t, seq_t> parse_software_system(const seq_t& s){
+std::pair<ast_json_t, seq_t> parse_software_system(const seq_t& s){
 	const auto start = skip_whitespace(s);
 	const auto ss_pos = if_first(start, keyword_t::k_software_system);
 	if(ss_pos.first == false){
@@ -501,7 +494,7 @@ pair<ast_json_t, seq_t> parse_software_system(const seq_t& s){
 
 
 
-pair<ast_json_t, seq_t> parse_container_def(const seq_t& s){
+std::pair<ast_json_t, seq_t> parse_container_def(const seq_t& s){
 	const auto start = skip_whitespace(s);
 	const auto ss_pos = if_first(start, keyword_t::k_container_def);
 	if(ss_pos.first == false){

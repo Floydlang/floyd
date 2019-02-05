@@ -16,7 +16,6 @@
 #include "parser_primitives.h"
 
 
-
 namespace floyd {
 
 
@@ -47,22 +46,9 @@ QUARK_UNIT_TEST("parser", "C++ enum class()", "", ""){
 std::pair<ast_json_t, seq_t> parse_expression_int(const seq_t& p, const eoperator_precedence precedence);
 
 
-bool is_valid_expr_chars(const std::string& s){
-	const auto allowed = k_c99_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[](){}.?:=!<>&,|#$\\;\'";
-	for(auto i = 0 ; i < s.size() ; i++){
-		const char ch = s[i];
-		if(allowed.find(ch) == std::string::npos){
-			return false;
-		}
-	}
-	return true;
-}
 
-seq_t skip_expr_whitespace(const seq_t& p) {
-	QUARK_ASSERT(p.check_invariant());
 
-	return floyd::skip_whitespace(p);
-}
+
 
 std::string expr_to_string(const json_t& e){
 	return json_to_compact_string(e);
@@ -98,6 +84,13 @@ bool operator==(const collection_def_t& lhs, const collection_def_t& rhs){
 		lhs._has_keys == rhs._has_keys
 		&& lhs._elements == rhs._elements;
 }
+std::vector<json_t> get_values(const collection_def_t& c){
+	std::vector<json_t> result;
+	for(const auto& e: c._elements){
+		result.push_back(e._value);
+	}
+	return result;
+}
 
 void ut_verify_collection(const quark::call_context_t& context, const std::pair<collection_def_t, seq_t> result, const std::pair<collection_def_t, seq_t> expected){
 	if(result == expected){
@@ -114,24 +107,24 @@ std::pair<collection_def_t, seq_t> parse_bounded_list(const seq_t& s, const std:
 	QUARK_ASSERT(start_char.size() == 1);
 	QUARK_ASSERT(end_char.size() == 1);
 
-	auto pos = skip_expr_whitespace(s.rest1());
+	auto pos = skip_whitespace(s.rest1());
 	if(pos.first1() == end_char){
 		return {
 			collection_def_t{ false, {} },
 			pos.rest1()
 		};
 	}
-	else if(pos.first1() == ":" && skip_expr_whitespace(pos.rest1()).first1() == end_char){
+	else if(pos.first1() == ":" && skip_whitespace(pos.rest1()).first1() == end_char){
 		return {
 			collection_def_t{ true, {} },
-			skip_expr_whitespace(pos.rest1()).rest1()
+			skip_whitespace(pos.rest1()).rest1()
 		};
 	}
 	else{
 		collection_def_t result{false, {}};
 		while(pos.first1() != end_char){
 			const auto expression_pos = parse_expression_int(pos, eoperator_precedence::k_super_weak);
-			const auto pos2 = skip_expr_whitespace(expression_pos.second);
+			const auto pos2 = skip_whitespace(expression_pos.second);
 			const auto ch = pos2.first1();
 			if(ch == ","){
 				result._elements.push_back(collection_element_t{ nullptr, expression_pos.first._value });
@@ -144,9 +137,9 @@ std::pair<collection_def_t, seq_t> parse_bounded_list(const seq_t& s, const std:
 			else if(ch == ":"){
 				result._has_keys = true;
 
-				const auto pos3 = skip_expr_whitespace(pos2.rest1());
+				const auto pos3 = skip_whitespace(pos2.rest1());
 				const auto expression2_pos = parse_expression_int(pos3, eoperator_precedence::k_super_weak);
-				const auto pos4 = skip_expr_whitespace(expression2_pos.second);
+				const auto pos4 = skip_whitespace(expression2_pos.second);
 				const auto ch2 = pos4.first1();
 				if(ch2 == ","){
 					result._elements.push_back(collection_element_t{ std::make_shared<json_t>(expression_pos.first._value), expression2_pos.first._value });
@@ -228,17 +221,6 @@ QUARK_UNIT_TEST("parser", "parse_bounded_list()", "two elements", ""){
 	);
 }
 
-bool are_keys_used(const collection_def_t& c){
-	return c._has_keys;
-}
-
-std::vector<json_t> get_values(const collection_def_t& c){
-	std::vector<json_t> result;
-	for(const auto& e: c._elements){
-		result.push_back(e._value);
-	}
-	return result;
-}
 
 
 /*
@@ -413,7 +395,7 @@ QUARK_UNIT_TEST("parser", "parse_numeric_constant()", "", ""){
 std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, const json_t& lhs, const eoperator_precedence precedence){
 	QUARK_ASSERT(p0.check_invariant());
 
-	const auto p = skip_expr_whitespace(p0);
+	const auto p = skip_whitespace(p0);
 	if(p.empty()){
 		return { lhs, p0 };
 	}
@@ -443,7 +425,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			if(op1 == "(" && precedence > eoperator_precedence::k_function_call){
 				const auto a_pos = parse_bounded_list(p, "(", ")");
 
-				if(are_keys_used(a_pos.first)){
+				if(a_pos.first._has_keys){
 					throw std::runtime_error("Cannot name arguments in function call!");
 				}
 				const auto values = get_values(a_pos.first);
@@ -454,7 +436,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	Member access
 			//	EXPRESSION "." EXPRESSION +
 			else if(op1 == "."  && precedence > eoperator_precedence::k_member_access){
-				const auto identifier_s = read_while(skip_expr_whitespace(p.rest()), k_c99_identifier_chars);
+				const auto identifier_s = read_while(skip_whitespace(p.rest()), k_c99_identifier_chars);
 				if(identifier_s.first.empty()){
 					throw std::runtime_error("Expected ')'");
 				}
@@ -466,10 +448,10 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	Lookup / subscription
 			//	EXPRESSION "[" EXPRESSION "]" +
 			else if(op1 == "["  && precedence > eoperator_precedence::k_lookup){
-				const auto p2 = skip_expr_whitespace(p.rest());
+				const auto p2 = skip_whitespace(p.rest());
 				const auto key = parse_expression_int(p2, eoperator_precedence::k_super_weak);
 				const auto result = maker__make2(k_2_operator_to_string__func(eoperation::k_2_lookup), lhs, key.first._value);
-				const auto p3 = skip_expr_whitespace(key.second);
+				const auto p3 = skip_whitespace(key.second);
 
 				// Closing "]".
 				if(p3.first() != "]"){
@@ -517,7 +499,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			else if(op1 == "?" && precedence > eoperator_precedence::k_comparison_operator) {
 				const auto true_expr_p = parse_expression_int(p.rest(), eoperator_precedence::k_comparison_operator);
 
-				const auto pos2 = skip_expr_whitespace(true_expr_p.second);
+				const auto pos2 = skip_whitespace(true_expr_p.second);
 				const auto colon = pos2.first();
 				if(colon != ":"){
 					throw std::runtime_error("Expected \":\"");
@@ -611,7 +593,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 std::pair<json_t, seq_t> parse_terminal(const seq_t& p0) {
 	QUARK_ASSERT(p0.check_invariant());
 
-	const auto p = skip_expr_whitespace(p0);
+	const auto p = skip_whitespace(p0);
 
 	//	String literal?
 	if(p.first1() == "\""){
@@ -746,7 +728,7 @@ QUARK_UNIT_TEST("parser", "parse_terminal()", "identifier", ""){
 std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 	QUARK_ASSERT(p.check_invariant());
 
-    const auto p2 = skip_expr_whitespace(p);
+    const auto p2 = skip_whitespace(p);
 	if(p2.empty()){
 		throw std::runtime_error("Unexpected end of string.");
 	}
@@ -767,7 +749,7 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 	//	(EXPRESSION)xxx"
 	else if(ch1 == '('){
 		const auto a = parse_expression_int(p2.rest1(), eoperator_precedence::k_super_weak);
-		const auto p3 = skip_expr_whitespace(a.second);
+		const auto p3 = skip_whitespace(a.second);
 		if (p3.first() != ")"){
 			throw std::runtime_error("Expected ')'");
 		}
@@ -1426,7 +1408,7 @@ std::pair<ast_json_t, seq_t> parse_expression_int(const seq_t& p, const eoperato
 }
 
 std::pair<ast_json_t, seq_t> parse_expression(const seq_t& p){
-	if(!is_valid_expr_chars(p.get_s())){
+	if(!is_valid_chars(p.get_s(), valid_expression_chars)){
 		throw std::runtime_error("Illegal characters.");
 	}
 	return parse_expression_int(p, eoperator_precedence::k_super_weak);

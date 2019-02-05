@@ -145,6 +145,16 @@ QUARK_UNIT_TESTQ("float_to_string()", ""){
 	ut_verify(QUARK_POS, float_to_string(13.5f), "13.5");
 }
 
+bool is_valid_chars(const std::string& s, const std::string& valid_chars){
+	for(auto i = 0 ; i < s.size() ; i++){
+		const char ch = s[i];
+		if(valid_chars.find(ch) == std::string::npos){
+			return false;
+		}
+	}
+	return true;
+}
+
 
 inline std::string remove_redundant_leading_zeros(const std::string& s){
 	auto i = s.size();

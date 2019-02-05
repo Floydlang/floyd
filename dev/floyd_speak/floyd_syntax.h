@@ -40,6 +40,8 @@ const std::string whitespace_chars = " \n\t";
 const std::string identifier_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
 const std::string bracket_pairs = "(){}[]";
 
+const std::string valid_expression_chars = k_c99_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[](){}.?:=!<>&,|#$\\;\'";
+
 
 //////////////////////////////////////		base_type
 

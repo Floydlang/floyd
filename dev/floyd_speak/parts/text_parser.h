@@ -40,6 +40,7 @@ double parse_double(const std::string& pos);
 
 std::string float_to_string(float value);
 
+bool is_valid_chars(const std::string& s, const std::string& valid_chars);
 
 
 /*
