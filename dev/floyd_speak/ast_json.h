@@ -60,6 +60,55 @@ struct ast_json_t {
 };
 
 
+
+////////////////////////////////////////		statement_opcode_t
+
+//	String keys use to specifiy statement type inside the ast_json_t.
+
+namespace statement_opcode_t {
+	const std::string k_return = "return";
+
+	const std::string k_bind = "bind";
+	const std::string k_store = "store";
+	const std::string k_store2 = "store2";
+	const std::string k_block = "block";
+
+	const std::string k_def_struct = "def-struct";
+	const std::string k_def_protocol = "def-protocol";
+	const std::string k_def_func = "def-func";
+
+
+	const std::string k_if = "if";
+	const std::string k_for = "for";
+	const std::string k_while = "while";
+
+	const std::string k_expression_statement = "expression-statement";
+	const std::string k_software_system = "software-system";
+	const std::string k_container_def = "container-def";
+};
+
+
+////////////////////////////////////////		expression_opcode_t
+
+//	String keys use to specifiy statement type inside the ast_json_t.
+
+namespace expression_opcode_t {
+	const std::string k_literal = "k";
+	const std::string k_call = "call";
+	const std::string k_load = "@";
+	const std::string k_load2 = "@i";
+	const std::string k_resolve_member = "->";
+	const std::string k_unary_minus = "unary-minus";
+	const std::string k_conditional_operator = "?:";
+	const std::string k_struct_def = "def-struct";
+	const std::string k_function_def = "def-func";
+	const std::string k_value_constructor = "construct-value";
+	const std::string k_lookup_element = "[]";
+};
+
+
+
+
 ////////////////////////////////////////		location2_t
 
 
