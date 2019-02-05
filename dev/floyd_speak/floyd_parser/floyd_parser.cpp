@@ -189,11 +189,19 @@ QUARK_UNIT_TEST("", "parse_statements_bracketted()", "", ""){
 	);
 }
 
-
-
+void check_illegal_chars(const seq_t& p){
+	const auto illegal_char = read_while(p, valid_expression_chars);
+	const auto pos = illegal_char.first.size();
+	if(pos < p.size()){
+		throw_compiler_error(location_t(pos), "Illegal characters.");
+	}
+}
 
 parse_tree_t parse_program2(const string& program){
-	const auto statements_pos = parse_statements_no_brackets(seq_t(program));
+	const auto pos = seq_t(program);
+	check_illegal_chars(pos);
+
+	const auto statements_pos = parse_statements_no_brackets(pos);
 	return parse_tree_t{ statements_pos.ast._value };
 }
 

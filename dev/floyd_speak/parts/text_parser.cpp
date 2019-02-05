@@ -155,7 +155,6 @@ bool is_valid_chars(const std::string& s, const std::string& valid_chars){
 	return true;
 }
 
-
 inline std::string remove_redundant_leading_zeros(const std::string& s){
 	auto i = s.size();
 	while(i > 2 && s[i - 1] == '0' && s[i - 2] != '.'){
