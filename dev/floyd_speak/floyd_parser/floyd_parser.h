@@ -10,7 +10,7 @@
 
 #include "quark.h"
 #include <string>
-
+#include "json_support.h"
 
 struct seq_t;
 
@@ -27,8 +27,13 @@ namespace floyd {
 	//	"{ a = 1; print(a) }"
 	parse_result_t parse_statements_bracketted(const seq_t& s);
 
+
+	struct parse_tree_t {
+		json_t _value;
+	};
+
 	//	returns json-array of statements.
-	parse_result_t parse_program2(const std::string& program);
+	parse_tree_t parse_program2(const std::string& program);
 
 }	//	floyd
 

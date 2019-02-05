@@ -948,27 +948,27 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "parantheses", ""){
 
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "vector", ""){
-	ut_verify__parse_expression(QUARK_POS, "[]", R"(["construct-value", ["vector", "^**undef**"], []])", "");
+	ut_verify__parse_expression(QUARK_POS, "[]", R"(["value-constructor", ["vector", "^**undef**"], []])", "");
 }
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "vector", ""){
-	ut_verify__parse_expression(QUARK_POS, "[1,2,3]", R"(["construct-value", ["vector", "^**undef**"], [["k", 1, "^int"], ["k", 2, "^int"], ["k", 3, "^int"]]])", "");
+	ut_verify__parse_expression(QUARK_POS, "[1,2,3]", R"(["value-constructor", ["vector", "^**undef**"], [["k", 1, "^int"], ["k", 2, "^int"], ["k", 3, "^int"]]])", "");
 }
 
 
 //////////////////////////////////			DICTIONARIES
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "dict", ""){
-	ut_verify__parse_expression(QUARK_POS, "{:}", R"(["construct-value", ["dict", "^**undef**"], []])", "");
+	ut_verify__parse_expression(QUARK_POS, "{:}", R"(["value-constructor", ["dict", "^**undef**"], []])", "");
 }
 QUARK_UNIT_TEST("parser", "parse_expression()", "dict", ""){
-	ut_verify__parse_expression(QUARK_POS, "{}", R"(["construct-value", ["dict", "^**undef**"], []])", "");
+	ut_verify__parse_expression(QUARK_POS, "{}", R"(["value-constructor", ["dict", "^**undef**"], []])", "");
 }
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "dict definition", ""){
 	ut_verify__parse_expression(QUARK_POS,
 		R"({"one": 1, "two": 2, "three": 3})",
-		R"(["construct-value", ["dict", "^**undef**"], [["k", "one", "^string"], ["k", 1, "^int"], ["k", "two", "^string"], ["k", 2, "^int"], ["k", "three", "^string"], ["k", 3, "^int"]]])", ""
+		R"(["value-constructor", ["dict", "^**undef**"], [["k", "one", "^string"], ["k", 1, "^int"], ["k", "two", "^string"], ["k", 2, "^int"], ["k", "three", "^string"], ["k", 3, "^int"]]])", ""
 	);
 }
 

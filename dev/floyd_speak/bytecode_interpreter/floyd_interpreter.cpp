@@ -375,24 +375,6 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 
 
 
-json_t parse_result_to_json(const parse_result_t& p){
-/*
-	const auto line_numbers = mapf<json_t>(
-		p.line_numbers,
-		[](const auto line){ return json_t(line); }
-	);
-
-	return json_t::make_object({
-		{ "ast", p.ast._value },
-		{ "lines", line_numbers }
-	});
-*/
-	return p.ast._value;
-}
-
-
-
-
 //	Return one entry per source line PLUS one extra end-marker. int tells byte offset of files that maps to this line-start.
 //	Never returns empty vector, at least 2 elements.
 std::vector<int> make_location_lookup(const string& source){
@@ -505,9 +487,9 @@ bc_program_t compile_to_bytecode(const string& program, const std::string& file)
 //	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
 	const auto pass1 = parse_program2(p);
 
-	QUARK_TRACE_SS(		"OUTPUT: " << json_to_pretty_string(parse_result_to_json(pass1))	);
+	QUARK_TRACE_SS(		"OUTPUT: " << json_to_pretty_string(pass1._value)	);
 
-	const auto pass2 = json_to_ast(pass1.ast);
+	const auto pass2 = json_to_ast(ast_json_t::make(pass1._value));
 
 
 	const auto pass3 = run_semantic_analysis__errors(pass2, pre, program, file);
@@ -524,7 +506,7 @@ semantic_ast_t compile_to_sematic_ast(const string& program, const std::string& 
 //	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
 	const auto pass1 = parse_program2(p);
 
-	const auto pass2 = json_to_ast(pass1.ast);
+	const auto pass2 = json_to_ast(ast_json_t::make(pass1._value));
 	const auto pass3 = run_semantic_analysis__errors(pass2, pre, program, file);
 	return pass3;
 }

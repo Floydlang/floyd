@@ -100,9 +100,9 @@ namespace expression_opcode_t {
 	const std::string k_resolve_member = "->";
 	const std::string k_unary_minus = "unary-minus";
 	const std::string k_conditional_operator = "?:";
-	const std::string k_struct_def = "def-struct";
-	const std::string k_function_def = "def-func";
-	const std::string k_value_constructor = "construct-value";
+	const std::string k_struct_def = "struct-def";
+	const std::string k_function_def = "function-def";
+	const std::string k_value_constructor = "value-constructor";
 	const std::string k_lookup_element = "[]";
 };
 
