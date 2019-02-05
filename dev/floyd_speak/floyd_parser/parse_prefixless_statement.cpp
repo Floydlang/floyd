@@ -183,7 +183,7 @@ pair<ast_json_t, seq_t> parse_bind_statement(const seq_t& s){
 
 	const auto type = type_pos.empty() ? typeid_t::make_undefined() : read_required_type(type_pos).first;
 
-	const auto expression_fr = parse_expression_seq(rhs);
+	const auto expression_fr = parse_expression(rhs);
 
 	const auto meta = mutable_flag ? (json_t::make_object({pair<string,json_t>{"mutable", true}})) : json_t();
 
@@ -278,7 +278,7 @@ pair<ast_json_t, seq_t> parse_assign_statement(const seq_t& s){
 	}
 	const auto equal_pos = read_required_char(skip_whitespace(variable_pos.second), '=');
 	const auto rhs_seq = skip_whitespace(equal_pos);
-	const auto expression_fr = parse_expression_seq(rhs_seq);
+	const auto expression_fr = parse_expression(rhs_seq);
 
 	const auto statement = make_statement_n(location_t(start.pos()), statement_opcode_t::k_store, { variable_pos.first, expression_fr.first._value });
 	return { statement, expression_fr.second };
@@ -301,7 +301,7 @@ QUARK_UNIT_TEST("", "parse_assign_statement()", "", ""){
 
 pair<ast_json_t, seq_t> parse_expression_statement(const seq_t& s){
 	const auto start = skip_whitespace(s);
-	const auto expression_fr = parse_expression_seq(start);
+	const auto expression_fr = parse_expression(start);
 
 	const auto statement = make_statement1(location_t(start.pos()), statement_opcode_t::k_expression_statement, expression_fr.first._value);
 	return { ast_json_t{statement}, expression_fr.second };

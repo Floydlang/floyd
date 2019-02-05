@@ -1432,9 +1432,5 @@ std::pair<ast_json_t, seq_t> parse_expression(const seq_t& p){
 	return parse_expression_int(p, eoperator_precedence::k_super_weak);
 }
 
-std::pair<ast_json_t, seq_t> parse_expression_seq(const seq_t& expression){
-	return parse_expression(expression);
-}
-
 
 }	//	floyd
