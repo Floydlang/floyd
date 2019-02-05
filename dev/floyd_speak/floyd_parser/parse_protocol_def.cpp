@@ -51,7 +51,7 @@ namespace floyd {
 
 		const auto r = make_statement1(
 			location_t(start.pos()),
-			"def-protocol",
+			statement_opcode_t::k_def_protocol,
 			json_t::make_object({
 				{ "name", name },
 				{ "members", members_to_json(functions)

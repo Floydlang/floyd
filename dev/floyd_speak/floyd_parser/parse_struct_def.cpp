@@ -35,7 +35,7 @@ namespace floyd {
 
 		const auto r = make_statement1(
 			location,
-			"def-struct",
+			statement_opcode_t::k_def_struct,
 			json_t::make_object({
 				{ "name", name },
 				{ "members", members_to_json(members) }

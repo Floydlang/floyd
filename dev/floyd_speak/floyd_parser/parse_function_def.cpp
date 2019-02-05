@@ -39,7 +39,7 @@ std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos){
 
 	const auto function_def = make_statement1(
 		location_t(start.pos()),
-		"def-func",
+		statement_opcode_t::k_def_func,
 		json_t::make_object({
 			{ "name", function_name },
 			{ "args", args },

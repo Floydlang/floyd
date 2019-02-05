@@ -132,6 +132,26 @@ QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
 
 
 
+const std::string statement_opcode_t::k_return = "return";
+const std::string statement_opcode_t::k_bind = "bind";
+const std::string statement_opcode_t::k_store = "store";
+const std::string statement_opcode_t::k_store2 = "store2";
+const std::string statement_opcode_t::k_block = "block";
+
+const std::string statement_opcode_t::k_def_struct = "def-struct";
+const std::string statement_opcode_t::k_def_protocol = "def-protocol";
+const std::string statement_opcode_t::k_def_func = "def-func";
+
+
+const std::string statement_opcode_t::k_if = "if";
+const std::string statement_opcode_t::k_for = "for";
+const std::string statement_opcode_t::k_while = "while";
+
+const std::string statement_opcode_t::k_expression_statement = "expression-statement";
+const std::string statement_opcode_t::k_software_system = "software-system";
+const std::string statement_opcode_t::k_container_def = "container-def";
+
+
 
 static const std::map<eoperation, std::string> k_2_operator_to_string{
 //	{ eoperation::k_x_member_access, "->" },

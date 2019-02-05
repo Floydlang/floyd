@@ -77,6 +77,24 @@ std::string base_type_to_string(const base_type t);
 
 //??? use lookup for statements vs their JSON-strings: k_store2, "store" and "def-struct".
 
+struct statement_opcode_t {
+	static const std::string k_return;
+	static const std::string k_bind;
+	static const std::string k_store;
+	static const std::string k_store2;
+	static const std::string k_block;
+	static const std::string k_def_struct;
+	static const std::string k_def_protocol;
+	static const std::string k_def_func;
+
+	static const std::string k_if;
+	static const std::string k_for;
+	static const std::string k_while;
+	static const std::string k_expression_statement;
+	static const std::string k_software_system;
+	static const std::string k_container_def;
+};
+
 
 ///////////////////////////////////			eoperator_precedence
 
