@@ -3603,6 +3603,17 @@ QUARK_UNIT_TEST("Parser error", "", "", ""){
 }
 
 
+QUARK_UNIT_TEST("Parser error", "", "", ""){
+	try{
+		const auto result = test__run_global(R"("abc\)");
+		QUARK_TEST_VERIFY(false);
+	}
+	catch(const compiler_error& e){
+		ut_verify(QUARK_POS, e.what(), R"___(Incomplete escape sequence in string literal: "abc"! Line: 1 ""abc\")___");
+	}
+}
+
+
 
 ///////////////////////////////////////////////////			EDGE CASES
 

@@ -274,7 +274,7 @@ std::pair<std::string, seq_t> parse_string_literal(const seq_t& s){
 		//	Look for escape char
 		if(pos.first1_char() == 0x5c){
 			if(pos.size() < 2){
-				quark::throw_runtime_error("Incomplete escape sequence in string literal: \"" + result + "\"!");
+				throw_compiler_error(location_t(s.pos()), "Incomplete escape sequence in string literal: \"" + result + "\"!");
 			}
 			else{
 				const auto ch2 = pos.first(2)[1];
