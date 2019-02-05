@@ -36,6 +36,7 @@ namespace floyd {
 		No need to filter when you return for next function.
 		Why: only one function entry, often many function exists.
 	*/
+	std::pair<ast_json_t, seq_t> parse_expression(const seq_t& expression);
 	std::pair<ast_json_t, seq_t> parse_expression_seq(const seq_t& expression);
 }	//	floyd
 

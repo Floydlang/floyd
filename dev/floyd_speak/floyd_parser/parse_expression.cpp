@@ -46,13 +46,6 @@ QUARK_UNIT_TEST("parser", "C++ enum class()", "", ""){
 
 std::pair<ast_json_t, seq_t> parse_expression_int(const seq_t& p, const eoperator_precedence precedence);
 
-//	Top-level function that parses entire expression into json_t.
-std::pair<ast_json_t, seq_t> parse_expression2(const seq_t& p);
-
-
-
-
-
 
 bool is_valid_expr_chars(const std::string& s){
 	const auto allowed = k_c99_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[](){}.?:=!<>&,|#$\\;\'";
@@ -844,16 +837,16 @@ QUARK_UNIT_TEST("parser", "parse_lhs_atom()", "", ""){
 }
 
 
-std::pair<std::string, seq_t> test_parse_expression2(const seq_t& expression){
-	const auto result = parse_expression2(seq_t(expression));
+std::pair<std::string, seq_t> test_parse_expression(const seq_t& expression){
+	const auto result = parse_expression(seq_t(expression));
 	return { expr_to_string(result.first._value), result.second };
 }
 
-bool test__parse_expression2(const std::string& expression, std::string expected_value, std::string expected_seq){
+bool test__parse_expression(const std::string& expression, std::string expected_value, std::string expected_seq){
 	QUARK_TRACE_SS("input:" << expression);
 	QUARK_TRACE_SS("expect:" << expected_value);
 
-	const auto result = test_parse_expression2(seq_t(expression));
+	const auto result = test_parse_expression(seq_t(expression));
 	QUARK_TRACE_SS("result:" << result.first);
 	if(result.first != expected_value){
 		return false;
@@ -864,9 +857,9 @@ bool test__parse_expression2(const std::string& expression, std::string expected
 	return true;
 }
 
-void ut_verify__parse_expression2(const quark::call_context_t& context, const std::string& input, const std::string& expected_json, const std::string& expected_seq){
+void ut_verify__parse_expression(const quark::call_context_t& context, const std::string& input, const std::string& expected_json, const std::string& expected_seq){
 
-	const auto result = parse_expression2(seq_t(input));
+	const auto result = parse_expression(seq_t(input));
 	const std::string json_s = expr_to_string(result.first._value);
 
 	//	Generate the expted JSON using json_to_compact_string() so manual-input differences in expected_json don't matter for result being OK.
@@ -886,9 +879,9 @@ void ut_verify__parse_expression2(const quark::call_context_t& context, const st
 
 //////////////////////////////////			EMPTY
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "", ""){
+QUARK_UNIT_TEST("parser", "parse_expression()", "", ""){
 	try{
-		parse_expression2(seq_t(""));
+		parse_expression(seq_t(""));
 		QUARK_UT_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
@@ -898,29 +891,29 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "", ""){
 
 //////////////////////////////////			CONSTANTS
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "", ""){
-	ut_verify__parse_expression2(QUARK_POS, "0", R"(["k", 0, "^int"])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", "", ""){
+	ut_verify__parse_expression(QUARK_POS, "0", R"(["k", 0, "^int"])", "");
 }
-QUARK_UNIT_TEST("parser", "parse_expression2()", "", ""){
-	ut_verify__parse_expression2(QUARK_POS, "0 xxx", R"(["k", 0, "^int"])", " xxx");
+QUARK_UNIT_TEST("parser", "parse_expression()", "", ""){
+	ut_verify__parse_expression(QUARK_POS, "0 xxx", R"(["k", 0, "^int"])", " xxx");
 }
-QUARK_UNIT_TEST("parser", "parse_expression2()", "", ""){
+QUARK_UNIT_TEST("parser", "parse_expression()", "", ""){
 //???
-//	ut_verify__expression(parse_expression2(seq_t("1234567890")), "[\"k\", 1234567890, \"^int\"]", "");
+//	ut_verify__expression(parse_expression(seq_t("1234567890")), "[\"k\", 1234567890, \"^int\"]", "");
 }
-QUARK_UNIT_TEST("parser", "parse_expression2()", "", ""){
-	ut_verify__parse_expression2(QUARK_POS, R"___("hello, world!")___", R"(["k", "hello, world!", "^string"])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", "", ""){
+	ut_verify__parse_expression(QUARK_POS, R"___("hello, world!")___", R"(["k", "hello, world!", "^string"])", "");
 }
 
 
 //////////////////////////////////			ARITHMETICS
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "arithmetics", ""){
-	ut_verify__parse_expression2(QUARK_POS, "10 + 4", R"(["+", ["k", 10, "^int"], ["k", 4, "^int"]])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", "arithmetics", ""){
+	ut_verify__parse_expression(QUARK_POS, "10 + 4", R"(["+", ["k", 10, "^int"], ["k", 4, "^int"]])", "");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "arithmetics", ""){
-	ut_verify__parse_expression2(
+QUARK_UNIT_TEST("parser", "parse_expression()", "arithmetics", ""){
+	ut_verify__parse_expression(
 		QUARK_POS,
 		"1 + 2 + 3 + 4",
 		R"(["+", ["+", ["+", ["k", 1, "^int"], ["k", 2, "^int"]], ["k", 3, "^int"]], ["k", 4, "^int"]])",
@@ -928,24 +921,24 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "arithmetics", ""){
 	);
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "arithmetics", ""){
-	ut_verify__parse_expression2(QUARK_POS, "10 * 4", R"(["*", ["k", 10, "^int"], ["k", 4, "^int"]])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", "arithmetics", ""){
+	ut_verify__parse_expression(QUARK_POS, "10 * 4", R"(["*", ["k", 10, "^int"], ["k", 4, "^int"]])", "");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "arithmetics", ""){
-	ut_verify__parse_expression2(
+QUARK_UNIT_TEST("parser", "parse_expression()", "arithmetics", ""){
+	ut_verify__parse_expression(
 		QUARK_POS,
 		"10 * 4 * 3",
 		R"(["*", ["*", ["k", 10, "^int"], ["k", 4, "^int"]], ["k", 3, "^int"]])",
 		""
 	);
 }
-QUARK_UNIT_TEST("parser", "parse_expression2()", "arithmetics", ""){
-	ut_verify__parse_expression2(QUARK_POS, "40 / 4", R"(["/", ["k", 40, "^int"], ["k", 4, "^int"]])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", "arithmetics", ""){
+	ut_verify__parse_expression(QUARK_POS, "40 / 4", R"(["/", ["k", 40, "^int"], ["k", 4, "^int"]])", "");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "arithmetics", ""){
-	ut_verify__parse_expression2(
+QUARK_UNIT_TEST("parser", "parse_expression()", "arithmetics", ""){
+	ut_verify__parse_expression(
 		QUARK_POS,
 		"40 / 5 / 2",
 		R"(["/", ["/", ["k", 40, "^int"], ["k", 5, "^int"]], ["k", 2, "^int"]])",
@@ -953,12 +946,12 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "arithmetics", ""){
 	);
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "arithmetics", ""){
-	ut_verify__parse_expression2(QUARK_POS, "41 % 5", R"(["%", ["k", 41, "^int"], ["k", 5, "^int"]])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", "arithmetics", ""){
+	ut_verify__parse_expression(QUARK_POS, "41 % 5", R"(["%", ["k", 41, "^int"], ["k", 5, "^int"]])", "");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "arithmetics", ""){
-	ut_verify__parse_expression2(
+QUARK_UNIT_TEST("parser", "parse_expression()", "arithmetics", ""){
+	ut_verify__parse_expression(
 		QUARK_POS,
 		"413 % 50 % 10",
 		R"(["%", ["%", ["k", 413, "^int"], ["k", 50, "^int"]], ["k", 10, "^int"]])",
@@ -966,8 +959,8 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "arithmetics", ""){
 	);
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "arithmetics", ""){
-	ut_verify__parse_expression2(
+QUARK_UNIT_TEST("parser", "parse_expression()", "arithmetics", ""){
+	ut_verify__parse_expression(
 		QUARK_POS,
 		"1 + 3 * 2 + 100",
 		R"(["+", ["+", ["k", 1, "^int"], ["*", ["k", 3, "^int"], ["k", 2, "^int"]]], ["k", 100, "^int"]])",
@@ -975,8 +968,8 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "arithmetics", ""){
 	);
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "arithmetics", ""){
-	ut_verify__parse_expression2(
+QUARK_UNIT_TEST("parser", "parse_expression()", "arithmetics", ""){
+	ut_verify__parse_expression(
 		QUARK_POS,
 		"1 + 8 + 7 + 2 * 3 + 4 * 5 + 6",
 		R"(["+", ["+", ["+", ["+", ["+", ["k", 1, "^int"], ["k", 8, "^int"]], ["k", 7, "^int"]], ["*", ["k", 2, "^int"], ["k", 3, "^int"]]], ["*", ["k", 4, "^int"], ["k", 5, "^int"]]], ["k", 6, "^int"]])",
@@ -987,15 +980,15 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "arithmetics", ""){
 
 //////////////////////////////////			parantheses
 
-QUARK_UNIT_TEST("parser","parse_expression2()", "parantheses", ""){
-	ut_verify__parse_expression2(QUARK_POS, "(3)", R"(["k", 3, "^int"])", "");
+QUARK_UNIT_TEST("parser","parse_expression()", "parantheses", ""){
+	ut_verify__parse_expression(QUARK_POS, "(3)", R"(["k", 3, "^int"])", "");
 }
-QUARK_UNIT_TEST("parser", "parse_expression2()", "parantheses", ""){
-	ut_verify__parse_expression2(QUARK_POS, "(3 * 8)", R"(["*", ["k", 3, "^int"], ["k", 8, "^int"]])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", "parantheses", ""){
+	ut_verify__parse_expression(QUARK_POS, "(3 * 8)", R"(["*", ["k", 3, "^int"], ["k", 8, "^int"]])", "");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "parantheses", ""){
-	ut_verify__parse_expression2(
+QUARK_UNIT_TEST("parser", "parse_expression()", "parantheses", ""){
+	ut_verify__parse_expression(
 		QUARK_POS,
 		"(3 * 2 + (8 * 2)) - (((1))) * 2",
 		R"(["-", ["+", ["*", ["k", 3, "^int"], ["k", 2, "^int"]], ["*", ["k", 8, "^int"], ["k", 2, "^int"]]], ["*", ["k", 1, "^int"], ["k", 2, "^int"]]])",
@@ -1007,26 +1000,26 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "parantheses", ""){
 //////////////////////////////////			vector definition
 
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "vector", ""){
-	ut_verify__parse_expression2(QUARK_POS, "[]", R"(["construct-value", ["vector", "^**undef**"], []])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", "vector", ""){
+	ut_verify__parse_expression(QUARK_POS, "[]", R"(["construct-value", ["vector", "^**undef**"], []])", "");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "vector", ""){
-	ut_verify__parse_expression2(QUARK_POS, "[1,2,3]", R"(["construct-value", ["vector", "^**undef**"], [["k", 1, "^int"], ["k", 2, "^int"], ["k", 3, "^int"]]])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", "vector", ""){
+	ut_verify__parse_expression(QUARK_POS, "[1,2,3]", R"(["construct-value", ["vector", "^**undef**"], [["k", 1, "^int"], ["k", 2, "^int"], ["k", 3, "^int"]]])", "");
 }
 
 
 //////////////////////////////////			DICT definition
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "dict", ""){
-	ut_verify__parse_expression2(QUARK_POS, "{:}", R"(["construct-value", ["dict", "^**undef**"], []])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", "dict", ""){
+	ut_verify__parse_expression(QUARK_POS, "{:}", R"(["construct-value", ["dict", "^**undef**"], []])", "");
 }
-QUARK_UNIT_TEST("parser", "parse_expression2()", "dict", ""){
-	ut_verify__parse_expression2(QUARK_POS, "{}", R"(["construct-value", ["dict", "^**undef**"], []])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", "dict", ""){
+	ut_verify__parse_expression(QUARK_POS, "{}", R"(["construct-value", ["dict", "^**undef**"], []])", "");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "dict definition", ""){
-	ut_verify__parse_expression2(QUARK_POS,
+QUARK_UNIT_TEST("parser", "parse_expression()", "dict definition", ""){
+	ut_verify__parse_expression(QUARK_POS,
 		R"({"one": 1, "two": 2, "three": 3})",
 		R"(["construct-value", ["dict", "^**undef**"], [["k", "one", "^string"], ["k", 1, "^int"], ["k", "two", "^string"], ["k", 2, "^int"], ["k", "three", "^string"], ["k", 3, "^int"]]])", ""
 	);
@@ -1035,28 +1028,28 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "dict definition", ""){
 
 //////////////////////////////////			NEG
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "unary minus", ""){
-	ut_verify__parse_expression2(QUARK_POS, "-2 xxx", R"(["unary-minus", ["k", 2, "^int"]])", " xxx");
+QUARK_UNIT_TEST("parser", "parse_expression()", "unary minus", ""){
+	ut_verify__parse_expression(QUARK_POS, "-2 xxx", R"(["unary-minus", ["k", 2, "^int"]])", " xxx");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "unary minus", ""){
-	ut_verify__parse_expression2(QUARK_POS,
+QUARK_UNIT_TEST("parser", "parse_expression()", "unary minus", ""){
+	ut_verify__parse_expression(QUARK_POS,
 		"-(3)",
 		R"(["unary-minus", ["k", 3, "^int"]])",
 		""
 	);
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "unary minus", ""){
-	ut_verify__parse_expression2(QUARK_POS,
+QUARK_UNIT_TEST("parser", "parse_expression()", "unary minus", ""){
+	ut_verify__parse_expression(QUARK_POS,
 		"2---2 xxx",
 		R"(["-", ["k", 2, "^int"], ["unary-minus", ["unary-minus", ["k", 2, "^int"]]]])",
 		" xxx"
 	);
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "unary minus", ""){
-	ut_verify__parse_expression2(QUARK_POS,
+QUARK_UNIT_TEST("parser", "parse_expression()", "unary minus", ""){
+	ut_verify__parse_expression(QUARK_POS,
 		"2-+-2 xxx",
 		R"(["-", ["k", 2, "^int"], ["unary-minus", ["k", 2, "^int"]]])",
 		" xxx"
@@ -1067,40 +1060,40 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "unary minus", ""){
 //////////////////////////////////			LOGICAL EQUALITY
 
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "<=", ""){
-	ut_verify__parse_expression2(QUARK_POS, "3 <= 4", R"(["<=", ["k", 3, "^int"], ["k", 4, "^int"]])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", "<=", ""){
+	ut_verify__parse_expression(QUARK_POS, "3 <= 4", R"(["<=", ["k", 3, "^int"], ["k", 4, "^int"]])", "");
 }
-QUARK_UNIT_TEST("parser", "parse_expression2()", "<", ""){
-	ut_verify__parse_expression2(QUARK_POS, "3 < 4", R"(["<", ["k", 3, "^int"], ["k", 4, "^int"]])", "");
-}
-
-QUARK_UNIT_TEST("parser", "parse_expression2()", ">=", ""){
-	ut_verify__parse_expression2(QUARK_POS, "3 >= 4", R"([">=", ["k", 3, "^int"], ["k", 4, "^int"]])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", "<", ""){
+	ut_verify__parse_expression(QUARK_POS, "3 < 4", R"(["<", ["k", 3, "^int"], ["k", 4, "^int"]])", "");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", ">", ""){
-	ut_verify__parse_expression2(QUARK_POS, "3 > 4", R"([">", ["k", 3, "^int"], ["k", 4, "^int"]])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", ">=", ""){
+	ut_verify__parse_expression(QUARK_POS, "3 >= 4", R"([">=", ["k", 3, "^int"], ["k", 4, "^int"]])", "");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "==", ""){
-	ut_verify__parse_expression2(QUARK_POS, "3 == 4", R"(["==", ["k", 3, "^int"], ["k", 4, "^int"]])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", ">", ""){
+	ut_verify__parse_expression(QUARK_POS, "3 > 4", R"([">", ["k", 3, "^int"], ["k", 4, "^int"]])", "");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "==", ""){
-	ut_verify__parse_expression2(QUARK_POS, "1==3", R"(["==", ["k", 1, "^int"], ["k", 3, "^int"]])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", "==", ""){
+	ut_verify__parse_expression(QUARK_POS, "3 == 4", R"(["==", ["k", 3, "^int"], ["k", 4, "^int"]])", "");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "!=", ""){
-	ut_verify__parse_expression2(QUARK_POS, "3 != 4", R"(["!=", ["k", 3, "^int"], ["k", 4, "^int"]])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", "==", ""){
+	ut_verify__parse_expression(QUARK_POS, "1==3", R"(["==", ["k", 1, "^int"], ["k", 3, "^int"]])", "");
+}
+
+QUARK_UNIT_TEST("parser", "parse_expression()", "!=", ""){
+	ut_verify__parse_expression(QUARK_POS, "3 != 4", R"(["!=", ["k", 3, "^int"], ["k", 4, "^int"]])", "");
 }
 
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "&&", ""){
-	ut_verify__parse_expression2(QUARK_POS, "3 && 4", R"(["&&", ["k", 3, "^int"], ["k", 4, "^int"]])", "");
+QUARK_UNIT_TEST("parser", "parse_expression()", "&&", ""){
+	ut_verify__parse_expression(QUARK_POS, "3 && 4", R"(["&&", ["k", 3, "^int"], ["k", 4, "^int"]])", "");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "&&", ""){
-	ut_verify__parse_expression2(
+QUARK_UNIT_TEST("parser", "parse_expression()", "&&", ""){
+	ut_verify__parse_expression(
 		QUARK_POS,
 		"3 && 4 && 5",
 		R"(["&&", ["&&", ["k", 3, "^int"], ["k", 4, "^int"]], ["k", 5, "^int"]])",
@@ -1108,8 +1101,8 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "&&", ""){
 	);
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "&&", ""){
-	ut_verify__parse_expression2(
+QUARK_UNIT_TEST("parser", "parse_expression()", "&&", ""){
+	ut_verify__parse_expression(
 		QUARK_POS,
 		"1 * 1 && 0 * 1",
 		R"(["&&", ["*", ["k", 1, "^int"], ["k", 1, "^int"]], ["*", ["k", 0, "^int"], ["k", 1, "^int"]]])",
@@ -1118,8 +1111,8 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "&&", ""){
 }
 
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "||", ""){
-	ut_verify__parse_expression2(
+QUARK_UNIT_TEST("parser", "parse_expression()", "||", ""){
+	ut_verify__parse_expression(
 		QUARK_POS,
 		"3 || 4",
 		R"(["||", ["k", 3, "^int"], ["k", 4, "^int"]])",
@@ -1127,8 +1120,8 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "||", ""){
 	);
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "||", ""){
-	ut_verify__parse_expression2(
+QUARK_UNIT_TEST("parser", "parse_expression()", "||", ""){
+	ut_verify__parse_expression(
 		QUARK_POS,
 		"3 || 4 || 5",
 		R"(["||", ["||", ["k", 3, "^int"], ["k", 4, "^int"]], ["k", 5, "^int"]])",
@@ -1136,8 +1129,8 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "||", ""){
 	);
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "||", ""){
-	ut_verify__parse_expression2(
+QUARK_UNIT_TEST("parser", "parse_expression()", "||", ""){
+	ut_verify__parse_expression(
 		QUARK_POS,
 		"1 * 1 || 0 * 1",
 		R"(["||", ["*", ["k", 1, "^int"], ["k", 1, "^int"]], ["*", ["k", 0, "^int"], ["k", 1, "^int"]]])",
@@ -1152,8 +1145,8 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "||", ""){
 //////////////////////////////////			IDENTIFIERS
 
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "identifier", ""){
-	ut_verify__parse_expression2(
+QUARK_UNIT_TEST("parser", "parse_expression()", "identifier", ""){
+	ut_verify__parse_expression(
 		QUARK_POS,
 		"hello xxx",
 		R"(["@", "hello"])",
@@ -1164,25 +1157,25 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "identifier", ""){
 
 //////////////////////////////////			COMPARISON OPERATOR
 
-UNIT_TEST_1("parse_expression2()", "?:", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "?:", test__parse_expression(
 	"1 ? 2 : 3 xxx",
 	R"(["?:", ["k", 1, "^int"], ["k", 2, "^int"], ["k", 3, "^int"]])",
 	" xxx"
 ));
 
-UNIT_TEST_1("parse_expression2()", "?:", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "?:", test__parse_expression(
 	"1==3 ? 4 : 6 xxx",
 	R"(["?:", ["==", ["k", 1, "^int"], ["k", 3, "^int"]], ["k", 4, "^int"], ["k", 6, "^int"]])",
 	" xxx"
 ));
 
-UNIT_TEST_1("parse_expression2()", "?:", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "?:", test__parse_expression(
 	"1 ? \"true!!!\" : \"false!!!\" xxx",
 	R"(["?:", ["k", 1, "^int"], ["k", "true!!!", "^string"], ["k", "false!!!", "^string"]])",
 	" xxx"
 ));
 
-UNIT_TEST_1("parse_expression2()", "?:", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "?:", test__parse_expression(
 	"1 + 2 ? 3 + 4 : 5 + 6 xxx",
 	R"(["?:", ["+", ["k", 1, "^int"], ["k", 2, "^int"]], ["+", ["k", 3, "^int"], ["k", 4, "^int"]], ["+", ["k", 5, "^int"], ["k", 6, "^int"]]])",
 	" xxx"
@@ -1191,14 +1184,14 @@ UNIT_TEST_1("parse_expression2()", "?:", test__parse_expression2(
 //??? Add more test to see precedence works as it should!
 
 
-UNIT_TEST_1("parse_expression2()", "?:", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "?:", test__parse_expression(
 	"input_flag ? \"123\" : \"456\"",
 	R"(["?:", ["@", "input_flag"], ["k", "123", "^string"], ["k", "456", "^string"]])",
 	""
 ));
 
 
-UNIT_TEST_1("parse_expression2()", "?:", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "?:", test__parse_expression(
 	"input_flag ? 100 + 10 * 2 : 1000 - 3 * 4",
 	R"(["?:", ["@", "input_flag"], ["+", ["k", 100, "^int"], ["*", ["k", 10, "^int"], ["k", 2, "^int"]]], ["-", ["k", 1000, "^int"], ["*", ["k", 3, "^int"], ["k", 4, "^int"]]]])",
 	""
@@ -1207,77 +1200,77 @@ UNIT_TEST_1("parse_expression2()", "?:", test__parse_expression2(
 
 //////////////////////////////////			FUNCTION CALLS
 
-UNIT_TEST_1("parse_expression2()", "function call", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "function call", test__parse_expression(
 	"f() xxx",
 	R"(["call", ["@", "f"], []])",
 	" xxx"
 ));
 
-UNIT_TEST_1("parse_expression2()", "function call, one simple arg",
-	test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "function call, one simple arg",
+	test__parse_expression(
 		"f(3)",
 		R"(["call", ["@", "f"], [["k", 3, "^int"]]])",
 		""
 	)
 );
 
-UNIT_TEST_1("parse_expression2()", "call with expression-arg", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "call with expression-arg", test__parse_expression(
 	"f(x+10) xxx",
 	R"(["call", ["@", "f"], [["+", ["@", "x"], ["k", 10, "^int"]]]])",
 	" xxx"
 ));
-UNIT_TEST_1("parse_expression2()", "call with expression-arg", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "call with expression-arg", test__parse_expression(
 	"f(1,2) xxx",
 	R"(["call", ["@", "f"], [["k", 1, "^int"], ["k", 2, "^int"]]])",
 	" xxx"
 ));
-UNIT_TEST_1("parse_expression2()", "call with expression-arg -- whitespace", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "call with expression-arg -- whitespace", test__parse_expression(
 	"f ( 1 , 2 ) xxx",
 	R"(["call", ["@", "f"], [["k", 1, "^int"], ["k", 2, "^int"]]])",
 	" xxx"
 ));
 
-UNIT_TEST_1("parse_expression2()", "function call with expression-args", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "function call with expression-args", test__parse_expression(
 	"f(3 + 4, 4 * g(1000 + 2345), \"hello\", 5)",
 	R"(["call", ["@", "f"], [["+", ["k", 3, "^int"], ["k", 4, "^int"]], ["*", ["k", 4, "^int"], ["call", ["@", "g"], [["+", ["k", 1000, "^int"], ["k", 2345, "^int"]]]]], ["k", "hello", "^string"], ["k", 5, "^int"]]])",
 	""
 ));
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "function call, expression argument", ""){
-	const auto result = test_parse_expression2(seq_t("1 == 2)"));
+QUARK_UNIT_TEST("parser", "parse_expression()", "function call, expression argument", ""){
+	const auto result = test_parse_expression(seq_t("1 == 2)"));
 	QUARK_UT_VERIFY((		result == std::pair<std::string, seq_t>( R"(["==", ["k", 1, "^int"], ["k", 2, "^int"]])", ")" )		));
 }
 
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "function call, expression argument", ""){
-	const auto result = test_parse_expression2(seq_t("f(1 == 2)"));
+QUARK_UNIT_TEST("parser", "parse_expression()", "function call, expression argument", ""){
+	const auto result = test_parse_expression(seq_t("f(1 == 2)"));
 	QUARK_UT_VERIFY((		result == std::pair<std::string, seq_t>( R"(["call", ["@", "f"], [["==", ["k", 1, "^int"], ["k", 2, "^int"]]]])", "" )		));
 }
 
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "function call", ""){
-	const auto result = test_parse_expression2(seq_t("((3))))"));
+QUARK_UNIT_TEST("parser", "parse_expression()", "function call", ""){
+	const auto result = test_parse_expression(seq_t("((3))))"));
 }
-QUARK_UNIT_TEST("parser", "parse_expression2()", "function call", ""){
-	const auto result = test_parse_expression2(seq_t("print((3))))"));
-}
-
-QUARK_UNIT_TEST("parser", "parse_expression2()", "function call", ""){
-	const auto result = test_parse_expression2(seq_t("print(1 < 2)"));
+QUARK_UNIT_TEST("parser", "parse_expression()", "function call", ""){
+	const auto result = test_parse_expression(seq_t("print((3))))"));
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "function call", ""){
-	const auto result = test_parse_expression2(seq_t("print(1 < color(1, 2, 3))"));
+QUARK_UNIT_TEST("parser", "parse_expression()", "function call", ""){
+	const auto result = test_parse_expression(seq_t("print(1 < 2)"));
+}
+
+QUARK_UNIT_TEST("parser", "parse_expression()", "function call", ""){
+	const auto result = test_parse_expression(seq_t("print(1 < color(1, 2, 3))"));
 }
 
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "function call", ""){
-	const auto result = test_parse_expression2(seq_t("print(color(1, 2, 3) < color(1, 2, 3))"));
+QUARK_UNIT_TEST("parser", "parse_expression()", "function call", ""){
+	const auto result = test_parse_expression(seq_t("print(color(1, 2, 3) < color(1, 2, 3))"));
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "function call", ""){
+QUARK_UNIT_TEST("parser", "parse_expression()", "function call", ""){
 	QUARK_UT_VERIFY(
-		test__parse_expression2(
+		test__parse_expression(
 			"print(color(1, 2, 3) == file(404)) xxx",
 			R"___(["call", ["@", "print"], [["==", ["call", ["@", "color"], [["k", 1, "^int"], ["k", 2, "^int"], ["k", 3, "^int"]]], ["call", ["@", "file"], [["k", 404, "^int"]]]]]])___",
 			" xxx"
@@ -1288,17 +1281,17 @@ QUARK_UNIT_TEST("parser", "parse_expression2()", "function call", ""){
 
 //////////////////////////////////			MEMBER ACCESS
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "struct member access", ""){
-	ut_verify__parse_expression2(QUARK_POS, "hello.kitty xxx", R"(["->", ["@", "hello"], "kitty"])", " xxx");
+QUARK_UNIT_TEST("parser", "parse_expression()", "struct member access", ""){
+	ut_verify__parse_expression(QUARK_POS, "hello.kitty xxx", R"(["->", ["@", "hello"], "kitty"])", " xxx");
 }
 
-UNIT_TEST_1("parse_expression2()", "struct member access", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "struct member access", test__parse_expression(
 	"hello.kitty.cat xxx",
 	R"(["->", ["->", ["@", "hello"], "kitty"], "cat"])",
 	" xxx"
 ));
 
-UNIT_TEST_1("parse_expression2()", "struct member access -- whitespace", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "struct member access -- whitespace", test__parse_expression(
 	"hello . kitty . cat xxx",
 	R"(["->", ["->", ["@", "hello"], "kitty"], "cat"])",
 	" xxx"
@@ -1307,19 +1300,19 @@ UNIT_TEST_1("parse_expression2()", "struct member access -- whitespace", test__p
 
 //////////////////////////////////			LOOKUP
 
-UNIT_TEST_1("parse_expression2()", "lookup with int", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "lookup with int", test__parse_expression(
 	"hello[10] xxx",
 	R"(["[]", ["@", "hello"], ["k", 10, "^int"]])",
 	" xxx"
 ));
 
-UNIT_TEST_1("parse_expression2()", "lookup with string", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "lookup with string", test__parse_expression(
 	R"(hello["troll"] xxx)",
 	R"(["[]", ["@", "hello"], ["k", "troll", "^string"]])",
 	" xxx"
 ));
 
-UNIT_TEST_1("parse_expression2()", "lookup with string -- whitespace", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "lookup with string -- whitespace", test__parse_expression(
 	R"(hello [ "troll" ] xxx)",
 	R"(["[]", ["@", "hello"], ["k", "troll", "^string"]])",
 	" xxx"
@@ -1329,33 +1322,33 @@ UNIT_TEST_1("parse_expression2()", "lookup with string -- whitespace", test__par
 //////////////////////////////////			COMBOS
 
 
-UNIT_TEST_1("parse_expression2()", "combo - function call", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "combo - function call", test__parse_expression(
 	"poke.mon.f() xxx",
 	R"(["call", ["->", ["->", ["@", "poke"], "mon"], "f"], []])",
 	" xxx"
 ));
 
-UNIT_TEST_1("parse_expression2()", "combo - function call", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "combo - function call", test__parse_expression(
 	"f().g() xxx",
 	R"(["call", ["->", ["call", ["@", "f"], []], "g"], []])",
 	" xxx"
 ));
 
 
-UNIT_TEST_1("parse_expression2()", "complex chain", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "complex chain", test__parse_expression(
 	R"(hello["troll"].kitty[10].cat xxx)",
 	R"(["->", ["[]", ["->", ["[]", ["@", "hello"], ["k", "troll", "^string"]], "kitty"], ["k", 10, "^int"]], "cat"])",
 	" xxx"
 ));
 
 
-UNIT_TEST_1("parse_expression2()", "chain", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "chain", test__parse_expression(
 	R"(poke.mon.v[10].a.b.c["three"] xxx)",
 	R"(["[]", ["->", ["->", ["->", ["[]", ["->", ["->", ["@", "poke"], "mon"], "v"], ["k", 10, "^int"]], "a"], "b"], "c"], ["k", "three", "^string"]])",
 	" xxx"
 ));
 
-UNIT_TEST_1("parse_expression2()", "combo arithmetics", test__parse_expression2(
+UNIT_TEST_1("parse_expression()", "combo arithmetics", test__parse_expression(
 	" 5 - 2 * ( 3 ) xxx",
 	R"(["-", ["k", 5, "^int"], ["*", ["k", 2, "^int"], ["k", 3, "^int"]]])",
 	" xxx"
@@ -1367,7 +1360,7 @@ UNIT_TEST_1("parse_expression2()", "combo arithmetics", test__parse_expression2(
 
 void test__parse_expression__throw(const std::string& expression, const std::string& exception_message){
 	try{
-		const auto result = parse_expression2(seq_t(expression));
+		const auto result = parse_expression(seq_t(expression));
 		QUARK_TEST_VERIFY(false);
 	}
 	catch(const std::runtime_error& e){
@@ -1379,44 +1372,44 @@ void test__parse_expression__throw(const std::string& expression, const std::str
 }
 
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "Parentheses error", ""){
+QUARK_UNIT_TEST("parser", "parse_expression()", "Parentheses error", ""){
 	test__parse_expression__throw("5*((1+3)*2+1", "");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "Parentheses error", ""){
+QUARK_UNIT_TEST("parser", "parse_expression()", "Parentheses error", ""){
 //	test__parse_expression__throw("5*((1+3)*2)+1)", "");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "Repeated operators (wrong)", ""){
+QUARK_UNIT_TEST("parser", "parse_expression()", "Repeated operators (wrong)", ""){
 	test__parse_expression__throw("5*/2", "");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "Wrong position of an operator", ""){
+QUARK_UNIT_TEST("parser", "parse_expression()", "Wrong position of an operator", ""){
 	test__parse_expression__throw("*2", "");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "Wrong position of an operator", ""){
+QUARK_UNIT_TEST("parser", "parse_expression()", "Wrong position of an operator", ""){
 	test__parse_expression__throw("2+", "Unexpected end of string.");
 }
-QUARK_UNIT_TEST("parser", "parse_expression2()", "Wrong position of an operator", ""){
+QUARK_UNIT_TEST("parser", "parse_expression()", "Wrong position of an operator", ""){
 	test__parse_expression__throw("2*", "Unexpected end of string.");
 }
 
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "Invalid characters", ""){
+QUARK_UNIT_TEST("parser", "parse_expression()", "Invalid characters", ""){
 	test__parse_expression__throw("~5", "Illegal characters.");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "Invalid characters", ""){
+QUARK_UNIT_TEST("parser", "parse_expression()", "Invalid characters", ""){
 	test__parse_expression__throw("~5", "");
 }
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "Invalid characters", ""){
+QUARK_UNIT_TEST("parser", "parse_expression()", "Invalid characters", ""){
 //	test__parse_expression__throw("5x", "EEE_WRONG_CHAR");
 }
 
 
-QUARK_UNIT_TEST("parser", "parse_expression2()", "Invalid characters", ""){
+QUARK_UNIT_TEST("parser", "parse_expression()", "Invalid characters", ""){
 	test__parse_expression__throw("2/", "Unexpected end of string.");
 }
 
@@ -1432,7 +1425,7 @@ std::pair<ast_json_t, seq_t> parse_expression_int(const seq_t& p, const eoperato
 	return { ast_json_t::make(r.first), r.second };
 }
 
-std::pair<ast_json_t, seq_t> parse_expression2(const seq_t& p){
+std::pair<ast_json_t, seq_t> parse_expression(const seq_t& p){
 	if(!is_valid_expr_chars(p.get_s())){
 		throw std::runtime_error("Illegal characters.");
 	}
@@ -1440,8 +1433,7 @@ std::pair<ast_json_t, seq_t> parse_expression2(const seq_t& p){
 }
 
 std::pair<ast_json_t, seq_t> parse_expression_seq(const seq_t& expression){
-	const auto expr = parse_expression2(expression);
-	return { expr.first, expr.second };
+	return parse_expression(expression);
 }
 
 
