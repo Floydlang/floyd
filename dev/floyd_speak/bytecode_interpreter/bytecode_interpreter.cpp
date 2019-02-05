@@ -107,7 +107,7 @@ bc_value_t update_struct_member_shallow(interpreter_t& vm, const bc_value_t& obj
 
 	int member_index = find_struct_member_index(struct_def, member_name);
 	if(member_index == -1){
-		throw std::runtime_error("Unknown member.");
+		quark::throw_runtime_error("Unknown member.");
 	}
 
 #if DEBUG
@@ -140,13 +140,13 @@ bc_value_t update_struct_member_deep(interpreter_t& vm, const bc_value_t& obj, c
 		const auto& struct_def = obj._type.get_struct();
 		int member_index = find_struct_member_index(struct_def, path[0]);
 		if(member_index == -1){
-			throw std::runtime_error("Unknown member.");
+			quark::throw_runtime_error("Unknown member.");
 		}
 
 		const auto& child_value = values[member_index];
 		const auto& child_type = struct_def._members[member_index]._type;
 		if(child_type.is_struct() == false){
-			throw std::runtime_error("Value type not matching struct member type.");
+			quark::throw_runtime_error("Value type not matching struct member type.");
 		}
 
 		const auto child2 = update_struct_member_deep(vm, child_value, subpath, new_value);
@@ -164,7 +164,7 @@ bc_value_t update_string_char(interpreter_t& vm, const bc_value_t s, int64_t loo
 
 	string s2 = s.get_string_value();
 	if(lookup_index < 0 || lookup_index >= s2.size()){
-		throw std::runtime_error("String lookup out of bounds.");
+		quark::throw_runtime_error("String lookup out of bounds.");
 	}
 	else{
 		s2[lookup_index] = static_cast<char>(ch);
@@ -189,7 +189,7 @@ bc_value_t update_vector_element(interpreter_t& vm, const bc_value_t vec, int64_
 		auto v2 = vec._pod._ext->_vector_pod64;
 
 		if(lookup_index < 0 || lookup_index >= v2.size()){
-			throw std::runtime_error("Vector lookup out of bounds.");
+			quark::throw_runtime_error("Vector lookup out of bounds.");
 		}
 		else{
 			v2 = v2.set(lookup_index, value._pod._pod64);
@@ -201,7 +201,7 @@ bc_value_t update_vector_element(interpreter_t& vm, const bc_value_t vec, int64_
 		const auto obj = vec;
 		auto v2 = *get_vector_value(obj);
 		if(lookup_index < 0 || lookup_index >= v2.size()){
-			throw std::runtime_error("Vector lookup out of bounds.");
+			quark::throw_runtime_error("Vector lookup out of bounds.");
 		}
 		else{
 //			QUARK_TRACE_SS("bc1:  " << json_to_pretty_string(bcvalue_to_json(obj)));
@@ -262,12 +262,12 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 
 	if(obj1._type.is_string()){
 		if(lookup_key._type.is_int() == false){
-			throw std::runtime_error("String lookup using integer index only.");
+			quark::throw_runtime_error("String lookup using integer index only.");
 		}
 		else{
 			const auto v = obj1.get_string_value();
 			if(new_value._type.is_int() == false){
-				throw std::runtime_error("Update element must be a character in an int.");
+				quark::throw_runtime_error("Update element must be a character in an int.");
 			}
 			else{
 				const auto lookup_index = lookup_key.get_int_value();
@@ -284,16 +284,16 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 			assert(false);
 		}
 		else{
-			throw std::runtime_error("Can only update string, vector, dict or struct.");
+			quark::throw_runtime_error("Can only update string, vector, dict or struct.");
 		}
 	}
 	else if(obj1._type.is_vector()){
 		const auto element_type = obj1._type.get_vector_element_type();
 		if(lookup_key._type.is_int() == false){
-			throw std::runtime_error("Vector lookup using integer index only.");
+			quark::throw_runtime_error("Vector lookup using integer index only.");
 		}
 		else if(element_type != new_value._type){
-			throw std::runtime_error("Update element must match vector type.");
+			quark::throw_runtime_error("Update element must match vector type.");
 		}
 		else{
 			const auto lookup_index = lookup_key.get_int_value();
@@ -302,13 +302,13 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 	}
 	else if(obj1._type.is_dict()){
 		if(lookup_key._type.is_string() == false){
-			throw std::runtime_error("Dict lookup using string key only.");
+			quark::throw_runtime_error("Dict lookup using string key only.");
 		}
 		else{
 			const auto obj = obj1;
 			const auto value_type = obj._type.get_dict_value_type();
 			if(value_type != new_value._type){
-				throw std::runtime_error("Update element must match dict value type.");
+				quark::throw_runtime_error("Update element must match dict value type.");
 			}
 			else{
 				const string key = lookup_key.get_string_value();
@@ -318,18 +318,18 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 	}
 	else if(obj1._type.is_struct()){
 		if(lookup_key._type.is_string() == false){
-			throw std::runtime_error("You must specify structure member using string.");
+			quark::throw_runtime_error("You must specify structure member using string.");
 		}
 		else{
 			const auto nodes = split_on_chars(seq_t(lookup_key.get_string_value()), ".");
 			if(nodes.empty()){
-				throw std::runtime_error("You must specify structure member using string.");
+				quark::throw_runtime_error("You must specify structure member using string.");
 			}
 			return update_struct_member(vm, obj1, nodes, new_value);
 		}
 	}
 	else {
-		throw std::runtime_error("Can only update string, vector, dict or struct.");
+		quark::throw_runtime_error("Can only update string, vector, dict or struct.");
 	}
 }
 
@@ -547,7 +547,7 @@ int bc_compare_dicts_obj(const immer::map<std::string, bc_object_handle_t>& left
 		return -1;
 	}
 	QUARK_ASSERT(false)
-	throw std::exception();
+	quark::throw_exception();
 }
 
 //??? make template.
@@ -586,7 +586,7 @@ int bc_compare_dicts_bool(const immer::map<std::string, bc_pod64_t>& left, const
 		return -1;
 	}
 	QUARK_ASSERT(false)
-	throw std::exception();
+	quark::throw_exception();
 }
 int bc_compare_dicts_int(const immer::map<std::string, bc_pod64_t>& left, const immer::map<std::string, bc_pod64_t>& right){
 	auto left_it = left.begin();
@@ -623,7 +623,7 @@ int bc_compare_dicts_int(const immer::map<std::string, bc_pod64_t>& left, const 
 		return -1;
 	}
 	QUARK_ASSERT(false)
-	throw std::exception();
+	quark::throw_exception();
 }
 int bc_compare_dicts_double(const immer::map<std::string, bc_pod64_t>& left, const immer::map<std::string, bc_pod64_t>& right){
 	auto left_it = left.begin();
@@ -660,7 +660,7 @@ int bc_compare_dicts_double(const immer::map<std::string, bc_pod64_t>& left, con
 		return -1;
 	}
 	QUARK_ASSERT(false)
-	throw std::exception();
+	quark::throw_exception();
 }
 
 
@@ -689,7 +689,7 @@ int json_value_type_to_int(const json_t& value){
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -708,11 +708,11 @@ int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
 		else{
 			if(lhs.is_object()){
 				QUARK_ASSERT(false);
-				throw std::exception();
+				quark::throw_exception();
 			}
 			else if(lhs.is_array()){
 				QUARK_ASSERT(false);
-				throw std::exception();
+				quark::throw_exception();
 			}
 			else if(lhs.is_string()){
 				const auto diff = std::strcmp(lhs.get_string().c_str(), rhs.get_string().c_str());
@@ -725,19 +725,19 @@ int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
 			}
 			else if(lhs.is_true()){
 				QUARK_ASSERT(false);
-				throw std::exception();
+				quark::throw_exception();
 			}
 			else if(lhs.is_false()){
 				QUARK_ASSERT(false);
-				throw std::exception();
+				quark::throw_exception();
 			}
 			else if(lhs.is_null()){
 				QUARK_ASSERT(false);
-				throw std::exception();
+				quark::throw_exception();
 			}
 			else{
 				QUARK_ASSERT(false);
-				throw std::exception();
+				quark::throw_exception();
 			}
 		}
 	}
@@ -835,7 +835,7 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -992,7 +992,7 @@ reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
 
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -1375,7 +1375,7 @@ json_t bcvalue_to_json(const bc_value_t& v){
 		);
 	}
 	else{
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -1964,7 +1964,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& s = regs[i._b]._ext->_string;
 			const auto lookup_index = regs[i._c]._pod64._int64;
 			if(lookup_index < 0 || lookup_index >= s.size()){
-				throw std::runtime_error("Lookup in string: out of bounds.");
+				quark::throw_runtime_error("Lookup in string: out of bounds.");
 			}
 			else{
 				regs[i._a]._pod64._int64 = s[lookup_index];
@@ -2004,7 +2004,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 				const auto lookup_index = regs[i._c]._pod64._int64;
 				if(lookup_index < 0 || lookup_index >= parent_json_value->get_array_size()){
-					throw std::runtime_error("Lookup in json_value array: out of bounds.");
+					quark::throw_runtime_error("Lookup in json_value array: out of bounds.");
 				}
 				else{
 					const auto& value = parent_json_value->get_array_n(lookup_index);
@@ -2019,7 +2019,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				}
 			}
 			else{
-				throw std::runtime_error("Lookup using [] on json_value only works on objects and arrays.");
+				quark::throw_runtime_error("Lookup using [] on json_value only works on objects and arrays.");
 			}
 			ASSERT(vm.check_invariant());
 			break;
@@ -2034,7 +2034,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& vec = regs[i._b]._ext->_vector_objects;
 			const auto lookup_index = regs[i._c]._pod64._int64;
 			if(lookup_index < 0 || lookup_index >= vec.size()){
-				throw std::runtime_error("Lookup in vector: out of bounds.");
+				quark::throw_runtime_error("Lookup in vector: out of bounds.");
 			}
 			else{
 				auto handle = vec[lookup_index];
@@ -2054,7 +2054,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& vec = regs[i._b]._ext->_vector_pod64;
 			const auto lookup_index = regs[i._c]._pod64._int64;
 			if(lookup_index < 0 || lookup_index >= vec.size()){
-				throw std::runtime_error("Lookup in vector: out of bounds.");
+				quark::throw_runtime_error("Lookup in vector: out of bounds.");
 			}
 			else{
 				regs[i._a]._pod64 = vec[lookup_index];
@@ -2072,7 +2072,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& lookup_key = regs[i._c]._ext->_string;
 			const auto found_ptr = entries.find(lookup_key);
 			if(found_ptr == nullptr){
-				throw std::runtime_error("Lookup in dict: key not found.");
+				quark::throw_runtime_error("Lookup in dict: key not found.");
 			}
 			else{
 				const auto& handle = *found_ptr;
@@ -2091,7 +2091,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& lookup_key = regs[i._c]._ext->_string;
 			const auto found_ptr = entries.find(lookup_key);
 			if(found_ptr == nullptr){
-				throw std::runtime_error("Lookup in dict: key not found.");
+				quark::throw_runtime_error("Lookup in dict: key not found.");
 			}
 			else{
 				regs[i._a]._pod64 = *found_ptr;
@@ -2171,7 +2171,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				regs[i._a]._pod64._int64 = json_value.get_string().size();
 			}
 			else{
-				throw std::runtime_error("Calling size() on unsupported type of value.");
+				quark::throw_runtime_error("Calling size() on unsupported type of value.");
 			}
 			ASSERT(vm.check_invariant());
 			break;
@@ -2627,7 +2627,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			const auto right = regs[i._c]._pod64._double;
 			if(right == 0.0f){
-				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
+				quark::throw_runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
 			regs[i._a]._pod64._double = regs[i._b]._pod64._double / right;
 			break;
@@ -2639,7 +2639,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			const auto right = regs[i._c]._pod64._int64;
 			if(right == 0.0f){
-				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
+				quark::throw_runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
 			regs[i._a]._pod64._int64 = regs[i._b]._pod64._int64 / right;
 			break;
@@ -2651,7 +2651,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			const auto right = regs[i._c]._pod64._int64;
 			if(right == 0){
-				throw std::runtime_error("EEE_DIVIDE_BY_ZERO");
+				quark::throw_runtime_error("EEE_DIVIDE_BY_ZERO");
 			}
 			regs[i._a]._pod64._int64 = regs[i._b]._pod64._int64 % right;
 			break;
@@ -2715,7 +2715,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 		default:
 			ASSERT(false);
-			throw std::exception();
+			quark::throw_exception();
 		}
 		pc++;
 	}

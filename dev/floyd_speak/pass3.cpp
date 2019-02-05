@@ -253,7 +253,7 @@ typeid_t resolve_type_internal(const analyser_t& a, const location_t& loc, const
 	}
 	else {
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 typeid_t resolve_type(const analyser_t& a, const location_t& loc, const typeid_t& type){
@@ -646,7 +646,7 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 		}
 		return_type_t operator()(const statement_t::store2_t& s) const{
 			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_exception();
 		}
 		return_type_t operator()(const statement_t::block_statement_t& s) const{
 			const auto e = analyse_block_statement(a, statement, return_type);
@@ -941,7 +941,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	else{
 		QUARK_ASSERT(false);
 	}
-	throw std::exception();
+	quark::throw_exception();
 }
 
 std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(const analyser_t& a, const statement_t& parent, const expression_t& e){
@@ -1043,7 +1043,7 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 		else if(op == expression_type::k_logical_nonequal__2){
 		}
 		else{
-			throw std::exception();
+			quark::throw_exception();
 		}
 		return {
 			a_acc,
@@ -1106,7 +1106,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			}
 			else{
 				QUARK_ASSERT(false);
-				throw std::exception();
+				quark::throw_exception();
 			}
 
 			return {a_acc, expression_t::make_simple_expression__2(e.get_operation(), left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
@@ -1131,7 +1131,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			}
 			else{
 				QUARK_ASSERT(false);
-				throw std::exception();
+				quark::throw_exception();
 			}
 
 			return {a_acc, expression_t::make_simple_expression__2(e.get_operation(), left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
@@ -1157,7 +1157,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			}
 			else{
 				QUARK_ASSERT(false);
-				throw std::exception();
+				quark::throw_exception();
 			}
 
 			return {a_acc, expression_t::make_simple_expression__2(e.get_operation(), left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
@@ -1189,7 +1189,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			}
 			else{
 				QUARK_ASSERT(false);
-				throw std::exception();
+				quark::throw_exception();
 			}
 
 			return {a_acc, expression_t::make_simple_expression__2(e.get_operation(), left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
@@ -1223,7 +1223,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			}
 			else{
 				QUARK_ASSERT(false);
-				throw std::exception();
+				quark::throw_exception();
 			}
 
 			return {a_acc, expression_t::make_simple_expression__2(e.get_operation(), left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
@@ -1257,7 +1257,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			}
 			else{
 				QUARK_ASSERT(false);
-				throw std::exception();
+				quark::throw_exception();
 			}
 			return {a_acc, expression_t::make_simple_expression__2(e.get_operation(), left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
@@ -1581,7 +1581,7 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -1655,7 +1655,7 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 	}
 	else if(e3.get_output_type().is_undefined()){
 		QUARK_ASSERT(false);
-		throw std::runtime_error("Expression type mismatch.");
+		quark::throw_runtime_error("Expression type mismatch.");
 	}
 	else{
 		std::stringstream what;

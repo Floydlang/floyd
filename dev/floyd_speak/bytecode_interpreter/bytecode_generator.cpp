@@ -341,7 +341,7 @@ bcgen_body_t copy_value(bcgenerator_t& vm, const typeid_t& type, const reg_t& de
 	//	global <= global
 	if(dest_reg._parent_steps == -1 && source_reg._parent_steps == -1){
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 //		body_acc._instrs.push_back(bcgen_instruction_t(is_ext ? bc_opcode::k_load_global_obj : bc_opcode::k_load_global_intern, dest_reg, make_imm_int(source_reg._index), {}));
 	}
 
@@ -552,24 +552,24 @@ bcgen_body_t bcgen_body_block(bcgenerator_t& vm, const body_t& body){
 				}
 				bcgen_body_t operator()(const statement_t::define_struct_statement_t& s) const{
 					QUARK_ASSERT(false);
-					throw std::exception();
+					quark::throw_exception();
 				}
 				bcgen_body_t operator()(const statement_t::define_protocol_statement_t& s) const{
 					QUARK_ASSERT(false);
-					throw std::exception();
+					quark::throw_exception();
 				}
 				bcgen_body_t operator()(const statement_t::define_function_statement_t& s) const{
 					QUARK_ASSERT(false);
-					throw std::exception();
+					quark::throw_exception();
 				}
 
 				bcgen_body_t operator()(const statement_t::bind_local_t& s) const{
 					QUARK_ASSERT(false);
-					throw std::exception();
+					quark::throw_exception();
 				}
 				bcgen_body_t operator()(const statement_t::store_t& s) const{
 					QUARK_ASSERT(false);
-					throw std::exception();
+					quark::throw_exception();
 				}
 				bcgen_body_t operator()(const statement_t::store2_t& s) const{
 					return bcgen_store2_statement(vm, s, body_acc);
@@ -696,7 +696,7 @@ expr_info_t bcgen_lookup_element_expression(bcgenerator_t& vm, const variable_ad
 		}
 		else{
 			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_exception();
 		}
 	}();
 
@@ -790,7 +790,7 @@ call_setup_t gen_call_setup(bcgenerator_t& vm, const std::vector<typeid_t>& func
 
 	//	We have max 32 extbits when popping stack.
 	if(arg_count > 16){
-		throw std::runtime_error("Max 16 arguments to function.");
+		quark::throw_runtime_error("Max 16 arguments to function.");
 	}
 
 	//	Make push-instructions that push args in correct order on callstack, before k_opcode_call is inserted.
@@ -943,7 +943,7 @@ expr_info_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& t
 		if(opcode != bc_opcode::k_nop){
 			//	push_back() used DYN-arguments which are resolved at runtime. When we make opcodes we need to check at compile time = now.
 			if(arg1_type.is_string() && e._input_exprs[2].get_output_type().is_int() == false){
-				throw std::runtime_error("Bad element to push_back(). Require push_back(string, int)");
+				quark::throw_runtime_error("Bad element to push_back(). Require push_back(string, int)");
 			}
 
 			const auto& arg1_expr = bcgen_expression(vm, {}, e._input_exprs[1], body_acc);
@@ -1099,7 +1099,7 @@ expr_info_t bcgen_arithmetic_unary_minus_expression(bcgenerator_t& vm, const var
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -1342,7 +1342,7 @@ expr_info_t bcgen_arithmetic_expression(bcgenerator_t& vm, const variable_addres
 		}
 		else{
 			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_exception();
 		}
 	}();
 
@@ -1419,7 +1419,7 @@ expr_info_t bcgen_expression(bcgenerator_t& vm, const variable_address_t& target
 	else{
 		QUARK_ASSERT(false);
 	}
-	throw std::exception();
+	quark::throw_exception();
 }
 
 

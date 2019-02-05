@@ -115,7 +115,7 @@ float parse_float(const std::string& pos){
 	size_t end = -1;
 	auto res = std::stof(pos, &end);
 	if(isnan(res) || end == 0){
-		throw std::runtime_error("EEE_WRONG_CHAR");
+		quark::throw_runtime_error("EEE_WRONG_CHAR");
 	}
 	return res;
 }
@@ -123,7 +123,7 @@ double parse_double(const std::string& pos){
 	size_t end = -1;
 	auto res = std::stod(pos, &end);
 	if(isnan(res) || end == 0){
-		throw std::runtime_error("EEE_WRONG_CHAR");
+		quark::throw_runtime_error("EEE_WRONG_CHAR");
 	}
 	return res;
 }
@@ -296,7 +296,7 @@ char seq_t::first1_char() const{
 	QUARK_ASSERT(check_invariant());
 
 	if(_pos >= _str->size()){
-		throw std::runtime_error("");
+		quark::throw_runtime_error("");
 	}
 
 	return (*_str)[_pos];
@@ -546,7 +546,7 @@ pair<char, seq_t> read_char(const seq_t& s){
 		return { s.first1_char(), s.rest1() };
 	}
 	else{
-		throw std::runtime_error("expected character.");
+		quark::throw_runtime_error("expected character.");
 	}
 }
 
@@ -558,7 +558,7 @@ seq_t read_required(const seq_t& s, const std::string& req){
 	const auto count = req.size();
 	const auto peek = s.first(count);
 	if(peek != req){
-		throw std::runtime_error("expected '" + req  + "'.");
+		quark::throw_runtime_error("expected '" + req  + "'.");
 	}
 	return s.rest(count);
 }

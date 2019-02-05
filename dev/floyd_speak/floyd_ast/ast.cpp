@@ -67,7 +67,7 @@ expression_t astjson_to_expression(const json_t& e){
 	const auto op = e.get_array_n(0).get_string();
 	QUARK_ASSERT(op != "");
 	if(op.empty()){
-		throw std::exception();
+		quark::throw_exception();
 	}
 
 	if(op == expression_opcode_t::k_literal){
@@ -94,7 +94,7 @@ expression_t astjson_to_expression(const json_t& e){
 		}
 		else{
 			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_exception();
 		}
 	}
 	else if(op == expression_opcode_t::k_unary_minus){
@@ -162,7 +162,7 @@ expression_t astjson_to_expression(const json_t& e){
 		return expression_t::make_construct_value_expr(value_type, args2);
 	}
 	else{
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -291,7 +291,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		const auto return_type2 = resolve_type_name(return_type);
 
 		if(impure.is_true() == false && impure.is_false() == false){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		const auto pure = impure.is_false();
 		const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2), pure ? epure::pure : epure::impure);
@@ -376,7 +376,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 	}
 
 	else{
-		throw std::runtime_error("Illegal statement.");
+		quark::throw_runtime_error("Illegal statement.");
 	}
 }
 

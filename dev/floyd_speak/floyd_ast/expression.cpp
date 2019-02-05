@@ -198,7 +198,7 @@ ast_json_t expression_to_json_internal(const expression_t& e){
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 

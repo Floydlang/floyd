@@ -133,7 +133,7 @@ namespace floyd {
 			}
 			else{
 				QUARK_ASSERT(false);
-				throw std::exception();
+				quark::throw_exception();
 			}
 		}
 

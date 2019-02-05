@@ -267,6 +267,15 @@ Add mechanism for unit tests to get to test files.
 namespace quark {
 
 
+void throw_exception() __dead2;
+inline void throw_exception(){ throw std::exception(); }
+
+void throw_runtime_error(const std::string& s) __dead2;
+inline void throw_runtime_error(const std::string& s) { throw std::runtime_error(s); }
+
+void throw_logic_error() __dead2;
+inline void throw_logic_error(){ throw std::logic_error(""); }
+
 
 class format_exception : std::runtime_error {
 	public: format_exception(const std::string& noun_type, const std::string& what) :

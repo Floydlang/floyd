@@ -332,7 +332,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 	QUARK_ASSERT(v.check_invariant());
 
 	if(target_type.is_undefined()){
-		throw std::runtime_error("Invalid json schema, found null - unsupported by Floyd.");
+		quark::throw_runtime_error("Invalid json schema, found null - unsupported by Floyd.");
 	}
 	else if(target_type.is_bool()){
 		if(v.is_true()){
@@ -342,7 +342,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 			return value_t::make_bool(false);
 		}
 		else{
-			throw std::runtime_error("Invalid json schema, expected true or false.");
+			quark::throw_runtime_error("Invalid json schema, expected true or false.");
 		}
 	}
 	else if(target_type.is_int()){
@@ -350,7 +350,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 			return value_t::make_int((int)v.get_number());
 		}
 		else{
-			throw std::runtime_error("Invalid json schema, expected number.");
+			quark::throw_runtime_error("Invalid json schema, expected number.");
 		}
 	}
 	else if(target_type.is_double()){
@@ -358,7 +358,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 			return value_t::make_double((double)v.get_number());
 		}
 		else{
-			throw std::runtime_error("Invalid json schema, expected number.");
+			quark::throw_runtime_error("Invalid json schema, expected number.");
 		}
 	}
 	else if(target_type.is_string()){
@@ -366,7 +366,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 			return value_t::make_string(v.get_string());
 		}
 		else{
-			throw std::runtime_error("Invalid json schema, expected string.");
+			quark::throw_runtime_error("Invalid json schema, expected string.");
 		}
 	}
 	else if(target_type.is_json_value()){
@@ -389,7 +389,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 			return result;
 		}
 		else{
-			throw std::runtime_error("Invalid json schema for Floyd struct, expected JSON object.");
+			quark::throw_runtime_error("Invalid json schema for Floyd struct, expected JSON object.");
 		}
 	}
 
@@ -406,7 +406,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 			return result;
 		}
 		else{
-			throw std::runtime_error("Invalid json schema for Floyd vector, expected JSON array.");
+			quark::throw_runtime_error("Invalid json schema for Floyd vector, expected JSON array.");
 		}
 	}
 	else if(target_type.is_dict()){
@@ -424,20 +424,20 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 			return result;
 		}
 		else{
-			throw std::runtime_error("Invalid json schema, expected JSON object.");
+			quark::throw_runtime_error("Invalid json schema, expected JSON object.");
 		}
 	}
 	else if(target_type.is_function()){
-		throw std::runtime_error("Invalid json schema, cannot unflatten functions.");
+		quark::throw_runtime_error("Invalid json schema, cannot unflatten functions.");
 	}
 	else if(target_type.is_unresolved_type_identifier()){
 		QUARK_ASSERT(false);
-		throw std::exception();
-//		throw std::runtime_error("Invalid json schema, cannot unflatten functions.");
+		quark::throw_exception();
+//		quark::throw_runtime_error("Invalid json schema, cannot unflatten functions.");
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -451,7 +451,7 @@ bc_value_t host__assert(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	bool ok = value.get_bool_value();
 	if(!ok){
 		vm._print_output.push_back("Assertion failed.");
-		throw std::runtime_error("Floyd assertion failed.");
+		quark::throw_runtime_error("Floyd assertion failed.");
 	}
 	return bc_value_t::make_undefined();
 }
@@ -524,7 +524,7 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 			return bc_value_t::make_int(static_cast<int>(size));
 		}
 		else{
-			throw std::runtime_error("Calling size() on unsupported type of value.");
+			quark::throw_runtime_error("Calling size() on unsupported type of value.");
 		}
 	}
 	else if(obj._type.is_vector()){
@@ -548,7 +548,7 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 		}
 	}
 	else{
-		throw std::runtime_error("Calling size() on unsupported type of value.");
+		quark::throw_runtime_error("Calling size() on unsupported type of value.");
 	}
 }
 */
@@ -572,7 +572,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 		const auto element_type = obj._type.get_vector_element_type();
 		if(wanted._type != element_type){
 			QUARK_ASSERT(false);
-			throw std::runtime_error("Type mismatch.");
+			quark::throw_runtime_error("Type mismatch.");
 		}
 		else if(obj._type.get_vector_element_type().is_bool()){
 			const auto& vec = obj._pod._ext->_vector_pod64;
@@ -616,7 +616,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 		}
 	}
 	else{
-		throw std::runtime_error("Calling find() on unsupported type of value.");
+		quark::throw_runtime_error("Calling find() on unsupported type of value.");
 	}
 }
 
@@ -632,7 +632,7 @@ bc_value_t host__exists(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 	if(obj._type.is_dict()){
 		if(key._type.is_string() == false){
-			throw std::runtime_error("Key must be string.");
+			quark::throw_runtime_error("Key must be string.");
 		}
 
 		const auto key_string = key.get_string_value();
@@ -648,7 +648,7 @@ bc_value_t host__exists(interpreter_t& vm, const bc_value_t args[], int arg_coun
 		}
 	}
 	else{
-		throw std::runtime_error("Calling exist() on unsupported type of value.");
+		quark::throw_runtime_error("Calling exist() on unsupported type of value.");
 	}
 }
 
@@ -661,7 +661,7 @@ bc_value_t host__erase(interpreter_t& vm, const bc_value_t args[], int arg_count
 
 	if(obj._type.is_dict()){
 		if(key._type.is_string() == false){
-			throw std::runtime_error("Key must be string.");
+			quark::throw_runtime_error("Key must be string.");
 		}
 		const auto key_string = key.get_string_value();
 
@@ -679,7 +679,7 @@ bc_value_t host__erase(interpreter_t& vm, const bc_value_t args[], int arg_count
 		}
 	}
 	else{
-		throw std::runtime_error("Calling exist() on unsupported type of value.");
+		quark::throw_runtime_error("Calling exist() on unsupported type of value.");
 	}
 }
 
@@ -703,7 +703,7 @@ bc_value_t host__push_back(interpreter_t& vm, const bc_value_t args[], int arg_c
 		QUARK_ASSERT(false);
 		const auto element_type = obj._type.get_vector_element_type();
 		if(element._type != element_type){
-			throw std::runtime_error("Type mismatch.");
+			quark::throw_runtime_error("Type mismatch.");
 		}
 		else if(encode_as_vector_pod64(obj._type)){
 			auto elements2 = obj._pod._ext->_vector_pod64.push_back(element._pod._pod64);
@@ -718,7 +718,7 @@ bc_value_t host__push_back(interpreter_t& vm, const bc_value_t args[], int arg_c
 		}
 	}
 	else{
-		throw std::runtime_error("Calling push_back() on unsupported type of value.");
+		quark::throw_runtime_error("Calling push_back() on unsupported type of value.");
 	}
 }
 */
@@ -735,7 +735,7 @@ bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	const auto start = args[1].get_int_value();
 	const auto end = args[2].get_int_value();
 	if(start < 0 || end < 0){
-		throw std::runtime_error("subset() requires start and end to be non-negative.");
+		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
 
 	//??? Move functionallity into seprate function.
@@ -778,7 +778,7 @@ bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_coun
 		}
 	}
 	else{
-		throw std::runtime_error("Calling push_back() on unsupported type of value.");
+		quark::throw_runtime_error("Calling push_back() on unsupported type of value.");
 	}
 }
 
@@ -795,10 +795,10 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 	const auto start = args[1].get_int_value();
 	const auto end = args[2].get_int_value();
 	if(start < 0 || end < 0){
-		throw std::runtime_error("replace() requires start and end to be non-negative.");
+		quark::throw_runtime_error("replace() requires start and end to be non-negative.");
 	}
 	if(args[3]._type != args[0]._type){
-		throw std::runtime_error("replace() requires 4th arg to be same as argument 0.");
+		quark::throw_runtime_error("replace() requires 4th arg to be same as argument 0.");
 	}
 
 	if(obj._type.is_string()){
@@ -848,7 +848,7 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 		}
 	}
 	else{
-		throw std::runtime_error("Calling replace() on unsupported type of value.");
+		quark::throw_runtime_error("Calling replace() on unsupported type of value.");
 	}
 }
 /*
@@ -928,7 +928,7 @@ bc_value_t host__get_json_type(interpreter_t& vm, const bc_value_t args[], int a
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -1023,23 +1023,23 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(arg_count == 2);
 
 	if(args[0]._type.is_vector() == false){
-		throw std::runtime_error("map() arg 1 must be a vector.");
+		quark::throw_runtime_error("map() arg 1 must be a vector.");
 	}
 	const auto e_type = args[0]._type.get_vector_element_type();
 
 	if(args[1]._type.is_function() == false){
-		throw std::runtime_error("map() requires start and end to be integers.");
+		quark::throw_runtime_error("map() requires start and end to be integers.");
 	}
 	const auto f = args[1];
 	const auto f_arg_types = f._type.get_function_args();
 	const auto r_type = f._type.get_function_return();
 
 	if(f_arg_types.size() != 1){
-		throw std::runtime_error("map() function f requries 1 argument.");
+		quark::throw_runtime_error("map() function f requries 1 argument.");
 	}
 
 	if(f_arg_types[0] != e_type){
-		throw std::runtime_error("map() function f must accept collection elements as its argument.");
+		quark::throw_runtime_error("map() function f must accept collection elements as its argument.");
 	}
 
 	const auto input_vec = get_vector(args[0]);
@@ -1076,11 +1076,11 @@ bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_
 	const auto r_type = f._type.get_function_return();
 
 	if(f_arg_types.size() != 1){
-		throw std::runtime_error("map_string() function f requries 1 argument.");
+		quark::throw_runtime_error("map_string() function f requries 1 argument.");
 	}
 
 	if(f_arg_types[0] != typeid_t::make_string()){
-		throw std::runtime_error("map_string() function f must accept collection elements as its argument.");
+		quark::throw_runtime_error("map_string() function f must accept collection elements as its argument.");
 	}
 
 	const auto input_vec = args[0].get_string_value();
@@ -1117,7 +1117,7 @@ bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 	//	Check topology.
 	if(args[0]._type.is_vector() == false || args[2]._type.is_function() == false || args[2]._type.get_function_args().size () != 2){
-		throw std::runtime_error("reduce() requires 3 arguments.");
+		quark::throw_runtime_error("reduce() requires 3 arguments.");
 	}
 
 	const auto& elements = args[0];
@@ -1129,7 +1129,7 @@ bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_coun
 		&& init._type != f._type.get_function_args()[0]
 	)
 	{
-		throw std::runtime_error("R reduce([E] elements, R init_value, R (R acc, E element) f");
+		quark::throw_runtime_error("R reduce([E] elements, R init_value, R (R acc, E element) f");
 	}
 
 	const auto input_vec = get_vector(elements);
@@ -1166,7 +1166,7 @@ bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 	//	Check topology.
 	if(args[0]._type.is_vector() == false || args[1]._type.is_function() == false || args[1]._type.get_function_args().size () != 1){
-		throw std::runtime_error("filter() requires 2 arguments.");
+		quark::throw_runtime_error("filter() requires 2 arguments.");
 	}
 
 	const auto& elements = args[0];
@@ -1177,7 +1177,7 @@ bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_coun
 		elements._type.get_vector_element_type() != f._type.get_function_args()[0]
 	)
 	{
-		throw std::runtime_error("[E] filter([E], bool f(E e))");
+		quark::throw_runtime_error("[E] filter([E], bool f(E e))");
 	}
 
 	const auto input_vec = get_vector(elements);
@@ -1221,7 +1221,7 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 	if(args[0]._type.is_vector() && args[1]._type == typeid_t::make_vector(typeid_t::make_int()) && args[2]._type.is_function() && args[2]._type.get_function_args().size () == 2){
 	}
 	else{
-		throw std::runtime_error("supermap() requires 3 arguments.");
+		quark::throw_runtime_error("supermap() requires 3 arguments.");
 	}
 
 	const auto& elements = args[0];
@@ -1235,14 +1235,14 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 	){
 	}
 	else {
-		throw std::runtime_error("R supermap([E] elements, R init_value, R (R acc, E element) f");
+		quark::throw_runtime_error("R supermap([E] elements, R init_value, R (R acc, E element) f");
 	}
 
 	const auto elements2 = get_vector(elements);
 	const auto parents2 = get_vector(parents);
 
 	if(elements2.size() != parents2.size()) {
-		throw std::runtime_error("supermap() requires elements and parents be the same count.");
+		quark::throw_runtime_error("supermap() requires elements and parents be the same count.");
 	}
 
 	auto elements_todo = elements2.size();
@@ -1273,7 +1273,7 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 		}
 
 		if(pass_ids.empty()){
-			throw std::runtime_error("supermap() dependency cycle error.");
+			quark::throw_runtime_error("supermap() dependency cycle error.");
 		}
 
 		for(const auto element_index: pass_ids){
@@ -1340,7 +1340,7 @@ bc_value_t host__supermap2(interpreter_t& vm, const bc_value_t args[], int arg_c
 	if(args[0]._type.is_vector() && args[1]._type == typeid_t::make_vector(typeid_t::make_int()) && args[2]._type.is_function() && args[2]._type.get_function_args().size () == 2){
 	}
 	else{
-		throw std::runtime_error("supermap() requires 3 arguments.");
+		quark::throw_runtime_error("supermap() requires 3 arguments.");
 	}
 
 	const auto& elements = args[0];
@@ -1354,7 +1354,7 @@ bc_value_t host__supermap2(interpreter_t& vm, const bc_value_t args[], int arg_c
 	){
 	}
 	else {
-		throw std::runtime_error("R supermap([E] elements, R init_value, R (R acc, E element) f");
+		quark::throw_runtime_error("R supermap([E] elements, R init_value, R (R acc, E element) f");
 	}
 
 	const auto elements2 = get_vector(elements);
@@ -1403,7 +1403,7 @@ bc_value_t host__supermap2(interpreter_t& vm, const bc_value_t args[], int arg_c
 		}
 
 		if(pass_ids.empty()){
-			throw std::runtime_error("supermap() dependency cycle error.");
+			quark::throw_runtime_error("supermap() dependency cycle error.");
 		}
 
 		for(const auto element_index: pass_ids){
@@ -1539,7 +1539,7 @@ void write_text_file(const std::string& abs_path, const std::string& data){
 	std::ofstream outputFile;
 	outputFile.open(abs_path);
 	if (outputFile.fail()) {
-		throw std::exception();
+		quark::throw_exception();
 	}
 
 	outputFile << data;
@@ -1609,7 +1609,7 @@ bc_value_t host__get_fsentries_shallow(interpreter_t& vm, const bc_value_t args[
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
-		throw std::runtime_error("get_fsentries_shallow() illegal input path.");
+		quark::throw_runtime_error("get_fsentries_shallow() illegal input path.");
 	}
 
 	const auto a = GetDirItems(path);
@@ -1634,7 +1634,7 @@ bc_value_t host__get_fsentries_deep(interpreter_t& vm, const bc_value_t args[], 
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
-		throw std::runtime_error("get_fsentries_shallow() illegal input path.");
+		quark::throw_runtime_error("get_fsentries_shallow() illegal input path.");
 	}
 
 	const auto a = GetDirItemsDeep(path);
@@ -1666,7 +1666,7 @@ bc_value_t host__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], in
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
-		throw std::runtime_error("get_fsentry_info() illegal input path.");
+		quark::throw_runtime_error("get_fsentry_info() illegal input path.");
 	}
 
 
@@ -1674,7 +1674,7 @@ bc_value_t host__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], in
 	bool ok = GetFileInfo(path, info);
 	QUARK_ASSERT(ok);
 	if(ok == false){
-		throw std::exception();
+		quark::throw_exception();
 	}
 
 	const auto parts = SplitPath(path);
@@ -1752,7 +1752,7 @@ bc_value_t host__does_fsentry_exist(interpreter_t& vm, const bc_value_t args[], 
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
-		throw std::runtime_error("does_fsentry_exist() illegal input path.");
+		quark::throw_runtime_error("does_fsentry_exist() illegal input path.");
 	}
 
 	bool exists = DoesEntryExist(path);
@@ -1774,7 +1774,7 @@ bc_value_t host__create_directory_branch(interpreter_t& vm, const bc_value_t arg
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
-		throw std::runtime_error("create_directory_branch() illegal input path.");
+		quark::throw_runtime_error("create_directory_branch() illegal input path.");
 	}
 
 	MakeDirectoriesDeep(path);
@@ -1788,7 +1788,7 @@ bc_value_t host__delete_fsentry_deep(interpreter_t& vm, const bc_value_t args[],
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
-		throw std::runtime_error("delete_fsentry_deep() illegal input path.");
+		quark::throw_runtime_error("delete_fsentry_deep() illegal input path.");
 	}
 
 	DeleteDeep(path);
@@ -1805,11 +1805,11 @@ bc_value_t host__rename_fsentry(interpreter_t& vm, const bc_value_t args[], int 
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
-		throw std::runtime_error("rename_fsentry() illegal input path.");
+		quark::throw_runtime_error("rename_fsentry() illegal input path.");
 	}
 	const string n = args[1].get_string_value();
 	if(n.empty()){
-		throw std::runtime_error("rename_fsentry() illegal input name.");
+		quark::throw_runtime_error("rename_fsentry() illegal input name.");
 	}
 
 	RenameEntry(path, n);

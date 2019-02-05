@@ -322,7 +322,7 @@ namespace floyd {
 		public: bool get_bool_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_bool()){
-				throw std::runtime_error("Type mismatch!");
+				quark::throw_runtime_error("Type mismatch!");
 			}
 
 			return _value_internals._bool;
@@ -346,7 +346,7 @@ namespace floyd {
 		public: int64_t get_int_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_int()){
-				throw std::runtime_error("Type mismatch!");
+				quark::throw_runtime_error("Type mismatch!");
 			}
 
 			return _value_internals._int;
@@ -368,7 +368,7 @@ namespace floyd {
 		public: double get_double_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_double()){
-				throw std::runtime_error("Type mismatch!");
+				quark::throw_runtime_error("Type mismatch!");
 			}
 
 			return _value_internals._double;

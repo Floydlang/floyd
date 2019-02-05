@@ -209,7 +209,7 @@ namespace floyd {
 			}
 			else {
 				QUARK_ASSERT(false);
-				throw std::exception();
+				quark::throw_exception();
 			}
 		}
 
@@ -347,7 +347,7 @@ int compare_dict_true_deep(const std::map<std::string, value_t>& left, const std
 	}
 	else{
 		QUARK_ASSERT(false)
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -413,7 +413,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	else if(left.is_struct()){
 		//	Make sure the EXACT struct types are the same -- not only that they are both structs
 		if(left.get_type() != right.get_type()){
-			throw std::runtime_error("Cannot compare structs of different type.");
+			quark::throw_runtime_error("Cannot compare structs of different type.");
 		}
 		else{
 			//	Shortcut: same object == we know values are same without having to check them.
@@ -428,7 +428,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	else if(left.is_protocol()){
 		//	Make sure the EXACT protocol types are the same -- not only that they are both protocols
 		if(left.get_type() != right.get_type()){
-			throw std::runtime_error("Cannot compare protocols of different type.");
+			quark::throw_runtime_error("Cannot compare protocols of different type.");
 		}
 		else{
 			//	Shortcut: same object == we know values are same without having to check them.
@@ -443,7 +443,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	else if(left.is_vector()){
 		//	Make sure the EXACT types are the same -- not only that they are both vectors.
 		if(left.get_type() != right.get_type()){
-			throw std::runtime_error("Cannot compare vectors of different type.");
+			quark::throw_runtime_error("Cannot compare vectors of different type.");
 		}
 		else{
 			const auto& left_vec = left.get_vector_value();
@@ -454,7 +454,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	else if(left.is_dict()){
 		//	Make sure the EXACT types are the same -- not only that they are both dicts.
 		if(left.get_type() != right.get_type()){
-			throw std::runtime_error("Cannot compare dicts of different type.");
+			quark::throw_runtime_error("Cannot compare dicts of different type.");
 		}
 		else{
 			const auto& left2 = left.get_dict_value();
@@ -468,7 +468,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -608,7 +608,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		std::string value_t::get_string_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_string()){
-				throw std::runtime_error("Type mismatch!");
+				quark::throw_runtime_error("Type mismatch!");
 			}
 
 			return _value_internals._ext->_string;
@@ -618,7 +618,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		json_t value_t::get_json_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_json_value()){
-				throw std::runtime_error("Type mismatch!");
+				quark::throw_runtime_error("Type mismatch!");
 			}
 
 			return *_value_internals._ext->_json_value;
@@ -628,7 +628,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		typeid_t value_t::get_typeid_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_typeid()){
-				throw std::runtime_error("Type mismatch!");
+				quark::throw_runtime_error("Type mismatch!");
 			}
 
 			return _value_internals._ext->_typeid_value;
@@ -638,7 +638,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		std::shared_ptr<struct_value_t> value_t::get_struct_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_struct()){
-				throw std::runtime_error("Type mismatch!");
+				quark::throw_runtime_error("Type mismatch!");
 			}
 
 			return _value_internals._ext->_struct;
@@ -647,7 +647,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		std::shared_ptr<protocol_value_t> value_t::get_protocol_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_protocol()){
-				throw std::runtime_error("Type mismatch!");
+				quark::throw_runtime_error("Type mismatch!");
 			}
 
 			return _value_internals._ext->_protocol;
@@ -657,7 +657,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		const std::vector<value_t>& value_t::get_vector_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_vector()){
-				throw std::runtime_error("Type mismatch!");
+				quark::throw_runtime_error("Type mismatch!");
 			}
 
 			return _value_internals._ext->_vector_elements;
@@ -667,7 +667,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		const std::map<std::string, value_t>& value_t::get_dict_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_dict()){
-				throw std::runtime_error("Type mismatch!");
+				quark::throw_runtime_error("Type mismatch!");
 			}
 
 			return _value_internals._ext->_dict_entries;
@@ -676,7 +676,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		int value_t::get_function_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_function()){
-				throw std::runtime_error("Type mismatch!");
+				quark::throw_runtime_error("Type mismatch!");
 			}
 
 			return _value_internals._ext->_function_id;
@@ -1111,7 +1111,7 @@ ast_json_t value_to_ast_json(const value_t& v, json_tags tags){
 		));
 	}
 	else{
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -1267,7 +1267,7 @@ value_t make_def(const typeid_t& type){
 	}
 
 	QUARK_ASSERT(false);
-	throw std::exception();
+	quark::throw_exception();
 }
 
 }	//	floyd

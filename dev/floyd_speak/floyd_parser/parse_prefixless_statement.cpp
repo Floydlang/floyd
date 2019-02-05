@@ -170,7 +170,7 @@ pair<ast_json_t, seq_t> parse_bind_statement(const seq_t& s){
 	const auto let_pos = if_first(start, keyword_t::k_let);
 	const auto mutable_pos = if_first(skip_whitespace(s), keyword_t::k_mutable);
 	if(let_pos.first == false && mutable_pos.first == false){
-		throw std::runtime_error("Bind syntax error");
+		quark::throw_runtime_error("Bind syntax error");
 	}
 	const auto pos = let_pos.first ? let_pos.second : mutable_pos.second;
 	const auto equal_sign_fr = read_until_toplevel_match(pos, "=");
@@ -274,7 +274,7 @@ pair<ast_json_t, seq_t> parse_assign_statement(const seq_t& s){
 	const auto start = skip_whitespace(s);
 	const auto variable_pos = read_identifier(start);
 	if(variable_pos.first.empty()){
-		throw std::runtime_error("Assign syntax error");
+		quark::throw_runtime_error("Assign syntax error");
 	}
 	const auto equal_pos = read_required_char(skip_whitespace(variable_pos.second), '=');
 	const auto rhs_seq = skip_whitespace(equal_pos);
@@ -329,7 +329,7 @@ std::pair<ast_json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 		return parse_assign_statement(pos);
 	}
 	else{
-		throw std::runtime_error("Use 'mutable' or 'let' syntax.");
+		quark::throw_runtime_error("Use 'mutable' or 'let' syntax.");
 	}
 }
 

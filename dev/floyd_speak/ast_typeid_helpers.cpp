@@ -106,7 +106,7 @@ ast_json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_logic_error();
 	}
 }
 
@@ -151,14 +151,14 @@ typeid_t typeid_from_ast_json(const ast_json_t& t2){
 				return typeid_t::make_json_value();
 			}
 			else{
-				throw std::exception();
+				quark::throw_exception();
 			}
 		}
 		else if(s0.front() == tag_unresolved_type_char){
 			return typeid_t::make_unresolved_type_identifier(s);
 		}
 		else{
-			throw std::exception();
+			quark::throw_exception();
 		}
 	}
 	else if(t.is_array()){
@@ -199,22 +199,22 @@ typeid_t typeid_from_ast_json(const ast_json_t& t2){
 			const vector<typeid_t> arg_types = typeids_from_json_array(arg_types_array);
 
 			if(a[3].is_true() == false && a[3].is_false() == false){
-				throw std::exception();
+				quark::throw_exception();
 			}
 			const bool pure = a[3].is_true();
 			return typeid_t::make_function(ret_type, arg_types, pure ? epure::pure : epure::impure);
 		}
 		else if(s == "**unknown-identifier**"){
 			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else {
 			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_exception();
 		}
 	}
 	else{
-		throw std::runtime_error("Invalid typeid-json.");
+		quark::throw_runtime_error("Invalid typeid-json.");
 	}
 }
 

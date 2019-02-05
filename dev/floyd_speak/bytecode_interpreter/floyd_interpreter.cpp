@@ -148,7 +148,7 @@ value_t bc_to_value(const bc_value_t& value){
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -246,7 +246,7 @@ bc_value_t value_to_bc(const value_t& value){
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -332,7 +332,7 @@ bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, 
 	}
 
 	QUARK_ASSERT(false);
-	throw std::exception();
+	quark::throw_exception();
 }
 #endif
 
@@ -348,7 +348,7 @@ value_t get_global(const interpreter_t& vm, const string& name){
 
 	const auto& result = find_global_symbol2(vm, name);
 	if(result == nullptr){
-		throw std::runtime_error(std::string() + "Cannot find global \"" + name + "\".");
+		quark::throw_runtime_error(std::string() + "Cannot find global \"" + name + "\".");
 	}
 	else{
 		return bc_to_value(result->_value);
@@ -692,7 +692,7 @@ std::map<std::string, value_t> run_container_int(const bc_program_t& program, co
 
 /*
 	if(program._software_system._name == ""){
-		throw std::exception();
+		quark::throw_exception();
 	}
 */
 	QUARK_ASSERT(container_key.empty() == false);
@@ -700,11 +700,11 @@ std::map<std::string, value_t> run_container_int(const bc_program_t& program, co
 
 	//??? Confusing. Support several containers!
 	if(std::find(program._software_system._containers.begin(), program._software_system._containers.end(), container_key) == program._software_system._containers.end()){
-		throw std::runtime_error("Unknown container-key");
+		quark::throw_runtime_error("Unknown container-key");
 	}
 
 	if(program._container_def._name != container_key){
-		throw std::runtime_error("Unknown container-key");
+		quark::throw_runtime_error("Unknown container-key");
 	}
 
 	runtime._container = program._container_def;
@@ -788,7 +788,7 @@ std::map<std::string, value_t> run_container_int(const bc_program_t& program, co
 
 /*
 	if(program._software_system._name == ""){
-		throw std::exception();
+		quark::throw_exception();
 	}
 */
 

@@ -238,7 +238,7 @@ std::string read_text_file(const std::string& abs_path){
 
 	std::ifstream f (abs_path);
 	if (f.is_open() == false){
-		throw std::runtime_error(std::string() + "Cannot read text file " + abs_path);
+		quark::throw_runtime_error(std::string() + "Cannot read text file " + abs_path);
 	}
 	std::string line;
 	while ( getline(f, line) ) {
@@ -260,7 +260,7 @@ std::string get_env(const std::string& s){
 	const char* value = getenv(s.c_str());
 	QUARK_ASSERT(value != nullptr);
 	if(value == nullptr){
-		throw std::exception();
+		quark::throw_exception();
 	}
 	return std::string(value);
 }
@@ -302,7 +302,7 @@ std::string get_process_path (int process_id){
 	if ( ret <= 0 ) {
 		fprintf(stderr, "PID %d: proc_pidpath ();\n", pid);
 		fprintf(stderr, "	%s\n", strerror(get_error()));
-		throw std::exception();
+		quark::throw_exception();
 	} else {
 //		printf("proc %d: %s\n", pid, pathbuf);
 		return std::string(pathbuf);
@@ -346,17 +346,17 @@ process_info_t get_process_info(){
 #ifdef __APPLE__
 	CFBundleRef mainBundle = CFBundleGetMainBundle();
 	if(mainBundle == nullptr){
-		throw std::exception();
+		quark::throw_exception();
 	}
 
     CFURLRef mainBundleURL = CFBundleCopyBundleURL(mainBundle);
 	if(mainBundleURL == nullptr){
-		throw std::exception();
+		quark::throw_exception();
 	}
 
     CFStringRef cfStringRef = CFURLCopyFileSystemPath(mainBundleURL, kCFURLPOSIXPathStyle);
 	if(cfStringRef == nullptr){
-		throw std::exception();
+		quark::throw_exception();
 	}
 
     char path[1024];
@@ -589,28 +589,28 @@ std::vector<std::uint8_t> LoadFile(const std::string& completePath){
 	try {
 		f = std::fopen(completePath.c_str(), "rb");
 		if(f == 0){
-			throw std::exception();
+			quark::throw_exception();
 		}
 
 		int fseekReturn = std::fseek(f, 0, SEEK_END);
 		if (fseekReturn != 0) {
-			throw std::exception();
+			quark::throw_exception();
 		}
 
 		long fileSize = std::ftell(f);
 		if (fileSize < 0) {
-			throw std::exception();
+			quark::throw_exception();
 		}
 
 		fseekReturn = std::fseek(f, 0, SEEK_SET);
 		if (fseekReturn != 0) {
-			throw std::exception();
+			quark::throw_exception();
 		}
 
 		std::vector<std::uint8_t> data(fileSize);
 		size_t freadReturn = std::fread(&data[0], 1, fileSize, f);
 		if (freadReturn != fileSize) {
-			throw std::exception();
+			quark::throw_exception();
 		}
 
 		TRACE("File size: " + std::to_string(fileSize));
@@ -668,10 +668,10 @@ bool GetFileInfo(const std::string& completePath, TFileInfo& outInfo){
 		}
 		else if(err == ENOTDIR){
 			ASSERT(false);
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else{
-			throw std::exception();
+			quark::throw_exception();
 		}
 	}
 
@@ -722,16 +722,16 @@ void DeleteDeep(const std::string& path){
 				return;
 			}
 			else{
-				throw std::exception();
+				quark::throw_exception();
 			}
 		}
 		else{
-			throw std::exception();
+			quark::throw_exception();
 		}
 	}
 	else{
 		ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -745,11 +745,11 @@ void RenameEntry(const std::string& path, const std::string& n){
 	}
 	else if(error == -1){
 		const int err = get_error();
-		throw std::exception();
+		quark::throw_exception();
 	}
 	else{
 		ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -775,13 +775,13 @@ void MakeDirectoriesDeep(const std::string& path){
 			return;
 		}
 		else if(err == EFAULT){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else if(err == EACCES){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else if(err == ENAMETOOLONG){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else if(err == ENOENT){
 			if(temp.size() > 2){
@@ -793,29 +793,29 @@ void MakeDirectoriesDeep(const std::string& path){
 				MakeDirectoriesDeep(temp);
 			}
 			else{
-				throw std::exception();
+				quark::throw_exception();
 			}
 		}
 		else if(err == ENOTDIR){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else if(err == ENOMEM){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else if(err == EROFS){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else if(err == ELOOP){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else if(err == ENOSPC){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else if(err == ENOSPC){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else{
-			throw std::exception();
+			quark::throw_exception();
 		}
 	}
 }
@@ -833,37 +833,37 @@ void SaveFile(const std::string& inFileName, const std::uint8_t data[], std::siz
 		if(errno==EEXIST){
 		}
 		else if(errno==EFAULT){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else if(errno==EACCES){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else if(errno==ENAMETOOLONG){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else if(errno==ENOENT){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else if(errno==ENOTDIR){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else if(errno==ENOMEM){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else if(errno==EROFS){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else if(errno==ELOOP){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else if(errno==ENOSPC){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else if(errno==ENOSPC){
-			throw std::exception();
+			quark::throw_exception();
 		}
 		else{
-			throw std::exception();
+			quark::throw_exception();
 		}
 	}
 */
@@ -871,13 +871,13 @@ void SaveFile(const std::string& inFileName, const std::uint8_t data[], std::siz
 	FILE* file = 0;
 	file = std::fopen(inFileName.c_str(), "wb");
 	if(file == 0){
-		throw std::exception();
+		quark::throw_exception();
 	}
 
 	try{
 		size_t actuallyWriteCount = std::fwrite(&data[0], byteCount, 1, file);
 		if(actuallyWriteCount != 1){
-			throw std::exception();
+			quark::throw_exception();
 		}
 
 		long result = std::fclose(file);
@@ -936,7 +936,7 @@ std::vector<dirent> read_dir_elements(const std::string& inDir){
 
 	::DIR* dir = ::opendir(inDir.c_str());
 	if (!dir) {
-		throw std::exception();
+		quark::throw_exception();
 	}
 
 	const struct ::dirent* entry = NULL;
@@ -1394,6 +1394,6 @@ std::string get_working_dir(){
    }
    else {
 //       perror("getcwd() error");
-       throw std::exception();
+       quark::throw_exception();
    }
 }

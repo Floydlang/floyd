@@ -161,7 +161,7 @@ parse_result_t parse_statements_bracketted(const seq_t& s){
 		return { ast_json_t::make(statements), pos.rest() };
 	}
 	else{
-		throw std::runtime_error("Missing end bracket \'}\'.");
+		quark::throw_runtime_error("Missing end bracket \'}\'.");
 	}
 }
 

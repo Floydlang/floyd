@@ -72,7 +72,7 @@ string base_type_to_string(const base_type t){
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 

@@ -163,7 +163,7 @@ namespace floyd {
 		else{
 		}
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 
 	//	??? very slow?
@@ -553,7 +553,7 @@ namespace floyd {
 			}
 			else {
 				QUARK_ASSERT(false);
-				throw std::exception();
+				quark::throw_exception();
 			}
 			return true;
 		}
@@ -805,7 +805,7 @@ namespace floyd {
 		}
 		else{
 			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_exception();
 		}
 		return true;
 	}

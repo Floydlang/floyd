@@ -317,11 +317,11 @@ json_t handle_server_request(const json_t& request) {
 				}
 			}
 			else{
-				throw std::exception();
+				quark::throw_exception();
 			}
 		}
 		else{
-			throw std::exception();
+			quark::throw_exception();
 		}
 	}
 	catch(const std::runtime_error& e){

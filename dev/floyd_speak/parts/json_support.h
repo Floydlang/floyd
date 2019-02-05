@@ -158,7 +158,7 @@ struct json_t {
 		QUARK_ASSERT(check_invariant());
 
 		if(!is_object()){
-			throw std::runtime_error("Wrong type of JSON value");
+			quark::throw_runtime_error("Wrong type of JSON value");
 		}
 		return _object;
 	}
@@ -171,7 +171,7 @@ struct json_t {
 		QUARK_ASSERT(check_invariant());
 
 		if(!is_object()){
-			throw std::runtime_error("Wrong type of JSON value");
+			quark::throw_runtime_error("Wrong type of JSON value");
 		}
 		return _object.at(key);
 	}
@@ -184,7 +184,7 @@ struct json_t {
 		QUARK_ASSERT(check_invariant());
 
 		if(!is_object()){
-			throw std::runtime_error("Wrong type of JSON value");
+			quark::throw_runtime_error("Wrong type of JSON value");
 		}
 		if(does_object_element_exist(key)){
 			return get_object_element(key);
@@ -198,7 +198,7 @@ struct json_t {
 		QUARK_ASSERT(check_invariant());
 
 		if(!is_object()){
-			throw std::runtime_error("Wrong type of JSON value");
+			quark::throw_runtime_error("Wrong type of JSON value");
 		}
 		return _object.find(key) != _object.end();
 	}
@@ -207,7 +207,7 @@ struct json_t {
 		QUARK_ASSERT(check_invariant());
 
 		if(!is_object()){
-			throw std::runtime_error("Wrong type of JSON value");
+			quark::throw_runtime_error("Wrong type of JSON value");
 		}
 		return _object.size();
 	}
@@ -226,7 +226,7 @@ struct json_t {
 		QUARK_ASSERT(check_invariant());
 
 		if(!is_array()){
-			throw std::runtime_error("Wrong type of JSON value");
+			quark::throw_runtime_error("Wrong type of JSON value");
 		}
 		return _array;
 	}
@@ -236,7 +236,7 @@ struct json_t {
 		QUARK_ASSERT(index >= 0);
 
 		if(!is_array()){
-			throw std::runtime_error("Wrong type of JSON value");
+			quark::throw_runtime_error("Wrong type of JSON value");
 		}
 		QUARK_ASSERT(index < _array.size());
 		return _array[index];
@@ -246,7 +246,7 @@ struct json_t {
 		QUARK_ASSERT(check_invariant());
 
 		if(!is_array()){
-			throw std::runtime_error("Wrong type of JSON value");
+			quark::throw_runtime_error("Wrong type of JSON value");
 		}
 		return _array.size();
 	}
@@ -261,7 +261,7 @@ struct json_t {
 		QUARK_ASSERT(check_invariant());
 
 		if(!is_string()){
-			throw std::runtime_error("Wrong type of JSON value");
+			quark::throw_runtime_error("Wrong type of JSON value");
 		}
 		return _string;
 	}
@@ -277,7 +277,7 @@ struct json_t {
 		QUARK_ASSERT(check_invariant());
 
 		if(!is_number()){
-			throw std::runtime_error("Wrong type of JSON value");
+			quark::throw_runtime_error("Wrong type of JSON value");
 		}
 		return _number;
 	}

@@ -71,7 +71,7 @@ uint32_t sysctlbyname_uint32(const std::string& key){
 	size_t size = -1;
 	int error = sysctlbyname(key.c_str(), &result, &size, NULL, 0);
 	if(error != 0){
-		throw std::exception();
+		quark::throw_exception();
 	}
 	QUARK_ASSERT(size == 4);
 	return result;
@@ -81,7 +81,7 @@ uint64_t sysctlbyname_uint64(const std::string& key){
 	size_t size = -1;
 	int error = sysctlbyname(key.c_str(), &result, &size, NULL, 0);
 	if(error != 0){
-		throw std::exception();
+		quark::throw_exception();
 	}
 	QUARK_ASSERT(size == 8);
 	return result;

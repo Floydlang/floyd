@@ -144,11 +144,11 @@ std::pair<collection_def_t, seq_t> parse_bounded_list(const seq_t& s, const std:
 					pos = pos4;
 				}
 				else{
-					throw std::runtime_error("Unexpected char \"" + ch + "\" in bounded list " + start_char + " " + end_char + "!");
+					quark::throw_runtime_error("Unexpected char \"" + ch + "\" in bounded list " + start_char + " " + end_char + "!");
 				}
 			}
 			else{
-				throw std::runtime_error("Unexpected char \"" + ch + "\" in bounded list " + start_char + " " + end_char + "!");
+				quark::throw_runtime_error("Unexpected char \"" + ch + "\" in bounded list " + start_char + " " + end_char + "!");
 			}
 		}
 		return { result, pos.rest1() };
@@ -274,13 +274,13 @@ std::pair<std::string, seq_t> parse_string_literal(const seq_t& s){
 		//	Look for escape char
 		if(pos.first1_char() == 0x5c){
 			if(pos.size() < 2){
-				throw std::runtime_error("Incomplete escape sequence in string literal: \"" + result + "\"!");
+				quark::throw_runtime_error("Incomplete escape sequence in string literal: \"" + result + "\"!");
 			}
 			else{
 				const auto ch2 = pos.first(2)[1];
 				const char expanded_char = expand_one_char_escape(ch2);
 				if(expanded_char == 0x00){
-					throw std::runtime_error("Unknown escape character \"" + std::string(1, ch2) + "\" in string literal: \"" + result + "\"!");
+					quark::throw_runtime_error("Unknown escape character \"" + std::string(1, ch2) + "\" in string literal: \"" + result + "\"!");
 				}
 				else{
 					result += std::string(1, expanded_char);
@@ -294,7 +294,7 @@ std::pair<std::string, seq_t> parse_string_literal(const seq_t& s){
 		}
 	}
 	if(pos.first() != "\""){
-		throw std::runtime_error("Incomplete string literal -- missing ending \"-character in string literal: \"" + result + "\"!");
+		quark::throw_runtime_error("Incomplete string literal -- missing ending \"-character in string literal: \"" + result + "\"!");
 	}
 	return { result, pos.rest() };
 }
@@ -348,7 +348,7 @@ std::pair<value_t, seq_t> parse_numeric_constant(const seq_t& p) {
 
 	const auto number_pos = read_while(p, k_c99_number_chars);
 	if(number_pos.first.empty()){
-		throw std::runtime_error("EEE_WRONG_CHAR");
+		quark::throw_runtime_error("EEE_WRONG_CHAR");
 	}
 
 	//	If it contains a "." its a double, else an int.
@@ -413,7 +413,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 				const auto a_pos = parse_bounded_list(p, "(", ")");
 
 				if(a_pos.first._has_keys){
-					throw std::runtime_error("Cannot name arguments in function call!");
+					quark::throw_runtime_error("Cannot name arguments in function call!");
 				}
 				const auto values = get_values(a_pos.first);
 				const auto call = maker__call(lhs, values);
@@ -425,7 +425,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			else if(op1 == "."  && precedence > eoperator_precedence::k_member_access){
 				const auto identifier_s = read_while(skip_whitespace(p.rest()), k_c99_identifier_chars);
 				if(identifier_s.first.empty()){
-					throw std::runtime_error("Expected ')'");
+					quark::throw_runtime_error("Expected ')'");
 				}
 				const auto value2 = maker__member_access(lhs, identifier_s.first);
 
@@ -442,7 +442,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 
 				// Closing "]".
 				if(p3.first() != "]"){
-					throw std::runtime_error("Expected closing \"]\"");
+					quark::throw_runtime_error("Expected closing \"]\"");
 				}
 				return parse_optional_operation_rightward(p3.rest(), result._value, precedence);
 			}
@@ -489,7 +489,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 				const auto pos2 = skip_whitespace(true_expr_p.second);
 				const auto colon = pos2.first();
 				if(colon != ":"){
-					throw std::runtime_error("Expected \":\"");
+					quark::throw_runtime_error("Expected \":\"");
 				}
 
 				const auto false_expr_p = parse_expression_deep(pos2.rest(), precedence);
@@ -616,7 +616,7 @@ std::pair<json_t, seq_t> parse_terminal(const seq_t& p0) {
 		}
 	}
 
-	throw std::runtime_error("Expected constant or identifier.");
+	quark::throw_runtime_error("Expected constant or identifier.");
 }
 
 void ut_verify_terminal(const std::string& expression, const std::string& expected_value, const std::string& expected_seq){
@@ -717,7 +717,7 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 
     const auto p2 = skip_whitespace(p);
 	if(p2.empty()){
-		throw std::runtime_error("Unexpected end of string.");
+		quark::throw_runtime_error("Unexpected end of string.");
 	}
 
 	const char ch1 = p2.first1_char();
@@ -738,16 +738,16 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 		const auto a = parse_expression_deep(p2.rest1(), eoperator_precedence::k_super_weak);
 		const auto p3 = skip_whitespace(a.second);
 		if (p3.first() != ")"){
-			throw std::runtime_error("Expected ')'");
+			quark::throw_runtime_error("Expected ')'");
 		}
 		return { a.first._value, p3.rest() };
 	}
 
 	else if(is_first(p2, keyword_t::k_struct)){
-		throw std::runtime_error("No support for struct definition expressions!");
+		quark::throw_runtime_error("No support for struct definition expressions!");
 	}
 	else if(is_first(p2, keyword_t::k_protocol)){
-		throw std::runtime_error("No support for protocol definition expressions!");
+		quark::throw_runtime_error("No support for protocol definition expressions!");
 	}
 
 	/*
@@ -763,7 +763,7 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 	else if(ch1 == '['){
 		const auto a = parse_bounded_list(p2, "[", "]");
 		if(a.first._has_keys){
-			throw std::runtime_error("Illegal vector, use {} to make a dictionary!");
+			quark::throw_runtime_error("Illegal vector, use {} to make a dictionary!");
 		}
 		else{
 			const auto result = maker_vector_definition("", get_values(a.first));
@@ -773,12 +773,12 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 	else if(ch1 == '{'){
 		const auto a = parse_bounded_list(p2, "{", "}");
 		if(a.first._elements.size() > 0 && a.first._has_keys == false){
-			throw std::runtime_error("Dictionary needs keys!");
+			quark::throw_runtime_error("Dictionary needs keys!");
 		}
 		std::vector<json_t> flat_dict;
 		for(const auto& b: a.first._elements){
 			if(b._key == nullptr){
-				throw std::runtime_error("Dictionary definition misses element key(s)!");
+				quark::throw_runtime_error("Dictionary definition misses element key(s)!");
 			}
 			flat_dict.push_back(*b._key);
 			flat_dict.push_back(b._value);
@@ -1483,7 +1483,7 @@ std::pair<ast_json_t, seq_t> parse_expression_deep(const seq_t& p, const eoperat
 
 std::pair<ast_json_t, seq_t> parse_expression(const seq_t& p){
 	if(!is_valid_chars(p.get_s(), valid_expression_chars)){
-		throw std::runtime_error("Illegal characters.");
+		quark::throw_runtime_error("Illegal characters.");
 	}
 	return parse_expression_deep(p, eoperator_precedence::k_super_weak);
 }

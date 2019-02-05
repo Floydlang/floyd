@@ -394,7 +394,7 @@ bool exists_in(const json_t& parent, const std::vector<json_t>& path){
 		}
 		else{
 			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_exception();
 		}
 	}
 	else if(parent.is_array()){
@@ -412,11 +412,11 @@ bool exists_in(const json_t& parent, const std::vector<json_t>& path){
 		}
 		else{
 			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_exception();
 		}
 	}
 	else{
-		throw std::runtime_error("");
+		quark::throw_runtime_error("");
 	}
 }
 
@@ -475,7 +475,7 @@ json_t get_in(const json_t& parent, const std::vector<json_t>& path){
 		}
 		else{
 			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_exception();
 		}
 	}
 	else if(parent.is_array()){
@@ -493,11 +493,11 @@ json_t get_in(const json_t& parent, const std::vector<json_t>& path){
 		}
 		else{
 			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_exception();
 		}
 	}
 	else{
-		throw std::runtime_error("");
+		quark::throw_runtime_error("");
 	}
 }
 
@@ -567,7 +567,7 @@ json_t assoc(const json_t& obj, const json_t& key, const json_t& new_element){
 		return json_t(array);
 	}
 	else{
-		throw std::runtime_error("");
+		quark::throw_runtime_error("");
 	}
 }
 
@@ -642,7 +642,7 @@ json_t dissoc(const json_t& obj, const json_t& key){
 		return json_t(array);
 	}
 	else{
-		throw std::runtime_error("");
+		quark::throw_runtime_error("");
 	}
 }
 
@@ -697,7 +697,7 @@ json_t assoc_in(const json_t& parent, const std::vector<json_t>& path, const jso
 		}
 		else{
 			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_exception();
 		}
 	}
 	else if(parent.is_array()){
@@ -723,12 +723,12 @@ json_t assoc_in(const json_t& parent, const std::vector<json_t>& path, const jso
 		}
 		else{
 			QUARK_ASSERT(false);
-			throw std::exception();
+			quark::throw_exception();
 		}
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -844,13 +844,13 @@ std::pair<json_t, seq_t> parse_json(const seq_t& s){
 
 			const auto key_p = parse_json(p2);
 			if(!key_p.first.is_string()){
-				throw std::runtime_error("Missing key in JSON object");
+				quark::throw_runtime_error("Missing key in JSON object");
 			}
 			const string key = key_p.first.get_string();
 
 			auto p3 = skip_whitespace(key_p.second);
 			if(p3.first1() != ":"){
-				throw std::runtime_error("Missing : betweeen key and value in JSON object");
+				quark::throw_runtime_error("Missing : betweeen key and value in JSON object");
 			}
 
 			p3 = skip_whitespace(p3.rest1());
@@ -860,7 +860,7 @@ std::pair<json_t, seq_t> parse_json(const seq_t& s){
 
 			auto post_p = skip_whitespace(expression_p.second);
 			if(post_p.first1() != "," && post_p.first1() != "}"){
-				throw std::runtime_error("Expected either , or } after JSON object field");
+				quark::throw_runtime_error("Expected either , or } after JSON object field");
 			}
 
 			if(post_p.first1() == ","){
@@ -879,7 +879,7 @@ std::pair<json_t, seq_t> parse_json(const seq_t& s){
 
 			auto post_p = skip_whitespace(expression_p.second);
 			if(post_p.first1() != "," && post_p.first1() != "]"){
-				throw std::runtime_error("Expected , or ] after JSON array element");
+				quark::throw_runtime_error("Expected , or ] after JSON array element");
 			}
 
 			if(post_p.first1() == ","){
@@ -1201,7 +1201,7 @@ std::string json_to_compact_string2(const json_t& v, bool quote_fields){
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
@@ -1409,7 +1409,7 @@ std::string json_to_pretty_string_internal(const string& key, const json_t& valu
 	}
 	else{
 		QUARK_ASSERT(false);
-		throw std::exception();
+		quark::throw_exception();
 	}
 }
 
