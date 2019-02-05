@@ -79,22 +79,40 @@ std::string base_type_to_string(const base_type t);
 
 //??? use lookup for statements vs their JSON-strings: k_store2, "store" and "def-struct".
 
-struct statement_opcode_t {
-	static const std::string k_return;
-	static const std::string k_bind;
-	static const std::string k_store;
-	static const std::string k_store2;
-	static const std::string k_block;
-	static const std::string k_def_struct;
-	static const std::string k_def_protocol;
-	static const std::string k_def_func;
+namespace statement_opcode_t {
+	const std::string k_return = "return";
 
-	static const std::string k_if;
-	static const std::string k_for;
-	static const std::string k_while;
-	static const std::string k_expression_statement;
-	static const std::string k_software_system;
-	static const std::string k_container_def;
+	const std::string k_bind = "bind";
+	const std::string k_store = "store";
+	const std::string k_store2 = "store2";
+	const std::string k_block = "block";
+
+	const std::string k_def_struct = "def-struct";
+	const std::string k_def_protocol = "def-protocol";
+	const std::string k_def_func = "def-func";
+
+
+	const std::string k_if = "if";
+	const std::string k_for = "for";
+	const std::string k_while = "while";
+
+	const std::string k_expression_statement = "expression-statement";
+	const std::string k_software_system = "software-system";
+	const std::string k_container_def = "container-def";
+};
+
+namespace expression_opcode_t {
+	const std::string k_literal = "k";
+	const std::string k_call = "call";
+	const std::string k_load = "@";
+	const std::string k_load2 = "@i";
+	const std::string k_resolve_member = "->";
+	const std::string k_unary_minus = "unary-minus";
+	const std::string k_conditional_operator = "?:";
+	const std::string k_struct_def = "def-struct";
+	const std::string k_function_def = "def-func";
+	const std::string k_value_constructor = "construct-value";
+	const std::string k_lookup_element = "[]";
 };
 
 
@@ -302,20 +320,6 @@ enum class expression_type {
 	k_value_constructor,
 };
 
-struct expression_opcode_t {
-	static const std::string k_literal;
-	static const std::string k_call;
-	static const std::string k_load;
-	static const std::string k_load2;
-	static const std::string k_resolve_member;
-	static const std::string k_unary_minus;
-	static const std::string k_conditional_operator;
-	static const std::string k_struct_def;
-	static const std::string k_function_def;
-	static const std::string k_value_constructor;
-	static const std::string k_lookup_element;
-};
-
 
 
 inline bool is_arithmetic_expression(expression_type op){
@@ -358,42 +362,43 @@ inline bool is_simple_expression__2(const std::string& op){
 //??? move operation codes here.
 
 //	Keywords in source code.
-struct keyword_t {
-	static const std::string k_return;
-	static const std::string k_while;
-	static const std::string k_for;
-	static const std::string k_if;
-	static const std::string k_else;
-	static const std::string k_func;
-	static const std::string k_impure;
+namespace keyword_t {
+	const std::string k_return = "return";
+	const std::string k_while = "while";
+	const std::string k_for = "for";
+	const std::string k_if = "if";
+	const std::string k_else = "else";
+	const std::string k_func = "func";
+	const std::string k_impure = "impure";
 
-	static const std::string k_internal_undefined;
-	static const std::string k_internal_dynamic;
-	static const std::string k_void;
-	static const std::string k_false;
-	static const std::string k_true;
-	static const std::string k_bool;
-	static const std::string k_int;
-	static const std::string k_double;
-	static const std::string k_string;
-	static const std::string k_typeid;
-	static const std::string k_json_value;
-	static const std::string k_struct;
-	static const std::string k_protocol;
+	const std::string k_internal_undefined = "**undef**";
+	const std::string k_internal_dynamic = "**dyn**";
+	const std::string k_void = "void";
+	const std::string k_false = "false";
+	const std::string k_true = "true";
+	const std::string k_bool = "bool";
 
-	static const std::string k_mutable;
-	static const std::string k_let;
+	const std::string k_int = "int";
+	const std::string k_double = "double";
+	const std::string k_string = "string";
+	const std::string k_typeid = "typeid";
+	const std::string k_json_value = "json_value";
+	const std::string k_struct = "struct";
+	const std::string k_protocol = "protocol";
 
-	static const std::string k_software_system;
-	static const std::string k_container_def;
+	const std::string k_mutable = "mutable";
+	const std::string k_let = "let";
 
-	static const std::string k_json_object;
-	static const std::string k_json_array;
-	static const std::string k_json_string;
-	static const std::string k_json_number;
-	static const std::string k_json_true;
-	static const std::string k_json_false;
-	static const std::string k_json_null;
+	const std::string k_software_system = "software-system";
+	const std::string k_container_def = "container-def";
+
+	const std::string k_json_object = "json_object";
+	const std::string k_json_array = "json_array";
+	const std::string k_json_string = "json_string";
+	const std::string k_json_number = "json_number";
+	const std::string k_json_true = "json_true";
+	const std::string k_json_false = "json_false";
+	const std::string k_json_null = "json_null";
 
 /*
 	"assert",

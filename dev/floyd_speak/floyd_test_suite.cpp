@@ -199,23 +199,23 @@ QUARK_UNIT_TESTQ("execute_expression()", "Spaces") {
 //////////////////////////////////////////		BASIC EXPRESSIONS - double
 
 
-QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
-	test__run_init__check_result("let double result = 5.5/5.0", value_t::make_double(1.1f));
+QUARK_UNIT_TEST("", "execute_expression()", "Fractional numbers", "") {
+	test__run_init__check_result("let double result = 2.8/2.0", value_t::make_double(1.4));
 }
 QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
 //	test__run_init__check_result("int result = 1/5e10") == 2e-11);
 }
 QUARK_UNIT_TEST("execute_expression()", "Fractional numbers", "", "") {
-	test__run_init__check_result("let double result = (4.0-3.0)/(4.0*4.0)", value_t::make_double(0.0625f));
+	test__run_init__check_result("let double result = (4.0-3.0)/(4.0*4.0)", value_t::make_double(0.0625));
 }
 QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
-	test__run_init__check_result("let double result = 1.0/2.0/2.0", value_t::make_double(0.25f));
+	test__run_init__check_result("let double result = 1.0/2.0/2.0", value_t::make_double(0.25));
 }
 QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
-	test__run_init__check_result("let double result = 0.25 * .5 * 0.5", value_t::make_double(0.0625f));
+	test__run_init__check_result("let double result = 0.25 * .5 * 0.5", value_t::make_double(0.0625));
 }
 QUARK_UNIT_TESTQ("execute_expression()", "Fractional numbers") {
-	test__run_init__check_result("let double result = .25 / 2.0 * .5", value_t::make_double(0.0625f));
+	test__run_init__check_result("let double result = .25 / 2.0 * .5", value_t::make_double(0.0625));
 }
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - EDGE CASES
@@ -553,7 +553,7 @@ QUARK_UNIT_TEST("", "double()", "", ""){
 	test__run_init__check_result("let result = double(0.0)", value_t::make_double(0.0));
 }
 QUARK_UNIT_TEST("", "double()", "", ""){
-	test__run_init__check_result("let result = double(123.456)", value_t::make_double(123.456f));
+	test__run_init__check_result("let result = double(123.456)", value_t::make_double(123.456));
 }
 
 QUARK_UNIT_TEST("", "string()", "", ""){
