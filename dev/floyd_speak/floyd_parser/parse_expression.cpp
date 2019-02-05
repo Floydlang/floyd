@@ -401,13 +401,6 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 		if(op1 == ")" && precedence > eoperator_precedence::k_parentesis){
 			return { lhs, p0 };
 		}
-
-#if 0
-		else if(op2 == "//" || op2 == "/*"){
-			return { lhs, p0 };
-		}
-#endif
-
 		else if(op1 == "]" && precedence > eoperator_precedence::k_parentesis){
 			return { lhs, p0 };
 		}
@@ -813,41 +806,19 @@ QUARK_UNIT_TEST("parser", "parse_lhs_atom()", "", ""){
 }
 
 
-std::pair<std::string, seq_t> test_parse_expression(const seq_t& expression){
-	const auto result = parse_expression(seq_t(expression));
-	return { expr_to_string(result.first._value), result.second };
-}
-
-bool test__parse_expression(const std::string& expression, std::string expected_value, std::string expected_seq){
-	QUARK_TRACE_SS("input:" << expression);
-	QUARK_TRACE_SS("expect:" << expected_value);
-
-	const auto result = test_parse_expression(seq_t(expression));
-	QUARK_TRACE_SS("result:" << result.first);
-	if(result.first != expected_value){
-		return false;
-	}
-	else if(result.second.get_s() != expected_seq){
-		return false;
-	}
-	return true;
-}
-
-void ut_verify__parse_expression(const quark::call_context_t& context, const std::string& input, const std::string& expected_json, const std::string& expected_seq){
-
+void ut_verify__parse_expression(const quark::call_context_t& context, const std::string& input, const std::string& expected_json_s, const std::string& expected_rest){
 	const auto result = parse_expression(seq_t(input));
-	const std::string json_s = expr_to_string(result.first._value);
+	const std::string result_json_s = expr_to_string(result.first._value);
 
 	//	Generate the expted JSON using json_to_compact_string() so manual-input differences in expected_json don't matter for result being OK.
-	const std::string expected_json2 = json_to_compact_string(parse_json(seq_t(expected_json)).first);
-
-	if(json_s == expected_json2 && result.second.get_s() == expected_seq){
+	const auto expected_json = parse_json(seq_t(expected_json_s)).first;
+	if(result.first._value == expected_json && result.second.get_s() == expected_rest){
 	}
 	else{
-		QUARK_TRACE_SS("input:" << input);
-		QUARK_TRACE_SS("result:" << json_s);
-		QUARK_TRACE_SS("expect:" << expected_json2);
-		fail_test(QUARK_POS);
+		const std::string expected_json2_s = json_to_compact_string(expected_json);
+		ut_verify(context, result.first._value, expected_json);
+		ut_verify(context, result.second.str(), expected_rest);
+		fail_test(context);
 	}
 }
 
@@ -954,7 +925,7 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "arithmetics", ""){
 }
 
 
-//////////////////////////////////			parantheses
+//////////////////////////////////			PARANTHESES
 
 QUARK_UNIT_TEST("parser","parse_expression()", "parantheses", ""){
 	ut_verify__parse_expression(QUARK_POS, "(3)", R"(["k", 3, "^int"])", "");
@@ -973,7 +944,7 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "parantheses", ""){
 }
 
 
-//////////////////////////////////			vector definition
+//////////////////////////////////			VECTORS
 
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "vector", ""){
@@ -985,7 +956,7 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "vector", ""){
 }
 
 
-//////////////////////////////////			DICT definition
+//////////////////////////////////			DICTIONARIES
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "dict", ""){
 	ut_verify__parse_expression(QUARK_POS, "{:}", R"(["construct-value", ["dict", "^**undef**"], []])", "");
@@ -1248,45 +1219,89 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "function call with expression-a
 
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "function call, expression argument", ""){
-	const auto result = test_parse_expression(seq_t("1 == 2)"));
-	QUARK_UT_VERIFY((		result == std::pair<std::string, seq_t>( R"(["==", ["k", 1, "^int"], ["k", 2, "^int"]])", ")" )		));
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"1 == 2)",
+		R"(["==", ["k", 1, "^int"], ["k", 2, "^int"]])",
+		")"
+	);
 }
 
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "function call, expression argument", ""){
-	const auto result = test_parse_expression(seq_t("f(1 == 2)"));
-	QUARK_UT_VERIFY((		result == std::pair<std::string, seq_t>( R"(["call", ["@", "f"], [["==", ["k", 1, "^int"], ["k", 2, "^int"]]]])", "" )		));
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"f(1 == 2)",
+		R"(["call", ["@", "f"], [["==", ["k", 1, "^int"], ["k", 2, "^int"]]]])",
+		""
+	);
 }
 
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "function call", ""){
-	const auto result = test_parse_expression(seq_t("((3))))"));
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"((3))))",
+		R"(["k", 3, "^int"])",
+		"))"
+	);
 }
 QUARK_UNIT_TEST("parser", "parse_expression()", "function call", ""){
-	const auto result = test_parse_expression(seq_t("print((3))))"));
-}
-
-QUARK_UNIT_TEST("parser", "parse_expression()", "function call", ""){
-	const auto result = test_parse_expression(seq_t("print(1 < 2)"));
-}
-
-QUARK_UNIT_TEST("parser", "parse_expression()", "function call", ""){
-	const auto result = test_parse_expression(seq_t("print(1 < color(1, 2, 3))"));
-}
-
-
-QUARK_UNIT_TEST("parser", "parse_expression()", "function call", ""){
-	const auto result = test_parse_expression(seq_t("print(color(1, 2, 3) < color(1, 2, 3))"));
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"print((3))))",
+		R"(["call", ["@", "print"], [["k", 3, "^int"]]])",
+		"))"
+	);
 }
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "function call", ""){
-	QUARK_UT_VERIFY(
-		test__parse_expression(
-			"print(color(1, 2, 3) == file(404)) xxx",
-			R"___(["call", ["@", "print"], [["==", ["call", ["@", "color"], [["k", 1, "^int"], ["k", 2, "^int"], ["k", 3, "^int"]]], ["call", ["@", "file"], [["k", 404, "^int"]]]]]])___",
-			" xxx"
-		)
-	)
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"print(1 < 2)",
+		R"(["call", ["@", "print"], [["<", ["k", 1, "^int"], ["k", 2, "^int"]]]])",
+		""
+	);
+}
+
+QUARK_UNIT_TEST("parser", "parse_expression()", "function call", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"print(1 < color(1, 2, 3))",
+		R"(["call", ["@", "print"], [["<", ["k", 1, "^int"], ["call", ["@", "color"], [["k", 1, "^int"], ["k", 2, "^int"], ["k", 3, "^int"]]]]]])",
+		""
+	);
+}
+
+
+QUARK_UNIT_TEST("parser", "parse_expression()", "function call", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"print(color(1, 2, 3) < color(1, 2, 3))",
+		R"(
+			[
+				"call",
+				["@", "print"],
+				[
+					[
+						"<",
+						["call", ["@", "color"], [["k", 1, "^int"], ["k", 2, "^int"], ["k", 3, "^int"]]],
+						["call", ["@", "color"], [["k", 1, "^int"], ["k", 2, "^int"], ["k", 3, "^int"]]]
+					]
+				]
+			]
+		)",
+		""
+	);
+}
+
+QUARK_UNIT_TEST("parser", "parse_expression()", "function call", ""){
+	ut_verify__parse_expression(
+		QUARK_POS,
+		"print(color(1, 2, 3) == file(404)) xxx",
+		R"___(["call", ["@", "print"], [["==", ["call", ["@", "color"], [["k", 1, "^int"], ["k", 2, "^int"], ["k", 3, "^int"]]], ["call", ["@", "file"], [["k", 404, "^int"]]]]]])___",
+		" xxx"
+	);
 }
 
 
