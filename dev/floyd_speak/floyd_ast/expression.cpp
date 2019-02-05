@@ -132,12 +132,7 @@ ast_json_t expression_to_json_internal(const expression_t& e){
 	const auto opcode = e.get_operation();
 
 	if(opcode == expression_type::k_literal){
-		return make_expression2(
-			k_no_location,
-			expression_opcode_t::k_literal,
-			value_to_ast_json(e._value, json_tags::k_tag_resolve_state)._value,
-			typeid_to_ast_json(e._value.get_type(), json_tags::k_tag_resolve_state)._value
-		);
+		return maker__make_constant(e._value);
 	}
 	else if(is_arithmetic_expression(opcode) || is_comparison_expression(opcode)){
 		return make_expression2(
@@ -148,12 +143,10 @@ ast_json_t expression_to_json_internal(const expression_t& e){
 		);
 	}
 	else if(opcode == expression_type::k_arithmetic_unary_minus__1){
-		return make_expression1(k_no_location, expression_type_to_token(opcode), expression_to_json(e._input_exprs[0])._value);
+		return maker__make_unary_minus(expression_to_json(e._input_exprs[0])._value);
 	}
 	if(opcode == expression_type::k_conditional_operator3){
-		const auto a = make_expression3(
-			k_no_location,
-			expression_opcode_t::k_conditional_operator,
+		const auto a = maker__make_conditional_operator(
 			expression_to_json(e._input_exprs[0])._value,
 			expression_to_json(e._input_exprs[1])._value,
 			expression_to_json(e._input_exprs[2])._value
@@ -162,9 +155,12 @@ ast_json_t expression_to_json_internal(const expression_t& e){
 	}
 	else if(opcode == expression_type::k_call){
 		const auto callee = e._input_exprs[0];
-		const auto args = vector<expression_t>(e._input_exprs.begin() + 1, e._input_exprs.end());
+		vector<json_t> args;
+		for(auto it = e._input_exprs.begin() + 1 ; it != e._input_exprs.end() ; it++){
+			args.push_back(expression_to_json(*it)._value);
+		}
 
-		return make_expression2(k_no_location, expression_opcode_t::k_call, expression_to_json(callee)._value, expressions_to_json(args)._value);
+		return maker__call(expression_to_json(callee)._value, args);
 	}
 	else if(opcode == expression_type::k_struct_def){
 		return make_expression1(k_no_location, expression_opcode_t::k_struct_def, struct_definition_to_ast_json(*e._struct_def)._value);
@@ -179,6 +175,7 @@ ast_json_t expression_to_json_internal(const expression_t& e){
 		return make_expression2(k_no_location, expression_opcode_t::k_load2, json_t(e._address._parent_steps), json_t(e._address._index));
 	}
 
+	//??? use maker_vector_definition() etc.
 	else if(opcode == expression_type::k_resolve_member){
 		return make_expression2(k_no_location, expression_opcode_t::k_resolve_member, expression_to_json(e._input_exprs[0])._value, json_t(e._variable_name));
 	}
