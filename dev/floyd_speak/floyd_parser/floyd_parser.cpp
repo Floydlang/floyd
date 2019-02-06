@@ -28,45 +28,58 @@ using namespace std;
 
 
 std::pair<ast_json_t, seq_t> parse_statement(const seq_t& s){
-	const auto pos = skip_whitespace(s);
-	if(is_first(pos, "{")){
-		return parse_block(pos);
+	try {
+		const auto pos = skip_whitespace(s);
+		if(is_first(pos, "{")){
+			return parse_block(pos);
+		}
+		else if(is_first(pos, keyword_t::k_return)){
+			return parse_return_statement(pos);
+		}
+		else if(is_first(pos, keyword_t::k_struct)){
+			return parse_struct_definition(pos);
+		}
+		else if(is_first(pos, keyword_t::k_protocol)){
+			return parse_protocol_definition(pos);
+		}
+		else if(is_first(pos, keyword_t::k_if)){
+			return  parse_if_statement(pos);
+		}
+		else if(is_first(pos, keyword_t::k_for)){
+			return parse_for_statement(pos);
+		}
+		else if(is_first(pos, keyword_t::k_while)){
+			return parse_while_statement(pos);
+		}
+		else if(is_first(pos, keyword_t::k_func)){
+			return parse_function_definition2(pos);
+		}
+		else if(is_first(pos, keyword_t::k_let)){
+			return parse_bind_statement(pos);
+		}
+		else if(is_first(pos, keyword_t::k_mutable)){
+			return parse_bind_statement(pos);
+		}
+		else if(is_first(pos, keyword_t::k_software_system)){
+			return parse_software_system(pos);
+		}
+		else if(is_first(pos, keyword_t::k_container_def)){
+			return parse_container_def(pos);
+		}
+		else {
+			return parse_prefixless_statement(pos);
+		}
 	}
-	else if(is_first(pos, keyword_t::k_return)){
-		return parse_return_statement(pos);
+
+	//	If an exception other than compiler_error is thrown, make a compiler error with location info.
+	catch(const compiler_error& e){
+		throw;
 	}
-	else if(is_first(pos, keyword_t::k_struct)){
-		return parse_struct_definition(pos);
+	catch(const std::runtime_error& e){
+		throw_compiler_error(location_t(s.pos()), e.what());
 	}
-	else if(is_first(pos, keyword_t::k_protocol)){
-		return parse_protocol_definition(pos);
-	}
-	else if(is_first(pos, keyword_t::k_if)){
-		return  parse_if_statement(pos);
-	}
-	else if(is_first(pos, keyword_t::k_for)){
-		return parse_for_statement(pos);
-	}
-	else if(is_first(pos, keyword_t::k_while)){
-		return parse_while_statement(pos);
-	}
-	else if(is_first(pos, keyword_t::k_func)){
-		return parse_function_definition2(pos);
-	}
-	else if(is_first(pos, keyword_t::k_let)){
-		return parse_bind_statement(pos);
-	}
-	else if(is_first(pos, keyword_t::k_mutable)){
-		return parse_bind_statement(pos);
-	}
-	else if(is_first(pos, keyword_t::k_software_system)){
-		return parse_software_system(pos);
-	}
-	else if(is_first(pos, keyword_t::k_container_def)){
-		return parse_container_def(pos);
-	}
-	else {
-		return parse_prefixless_statement(pos);
+	catch(const std::exception& e){
+		throw_compiler_error(location_t(s.pos()), "Failed to parse statement.");
 	}
 }
 

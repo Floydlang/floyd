@@ -1489,7 +1489,20 @@ std::pair<ast_json_t, seq_t> parse_expression(const seq_t& p){
 	QUARK_ASSERT(illegal_char.second.empty());
 #endif
 
-	return parse_expression_deep(p, eoperator_precedence::k_super_weak);
+	try{
+		return parse_expression_deep(p, eoperator_precedence::k_super_weak);
+	}
+
+	//	If an exception other than compiler_error is thrown, make a compiler error with location info.
+	catch(const compiler_error& e){
+		throw;
+	}
+	catch(const std::runtime_error& e){
+		throw_compiler_error(location_t(p.pos()), e.what());
+	}
+	catch(const std::exception& e){
+		throw_compiler_error(location_t(p.pos()), "Failed to parse expression.");
+	}
 }
 
 

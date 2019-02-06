@@ -33,7 +33,7 @@ namespace floyd {
 			const auto func_pos = read_required(skip_whitespace(pos), keyword_t::k_func);
 			const auto return_type_pos = read_required_type(func_pos);
 			const auto function_name_pos = read_required_identifier(return_type_pos.second);
-			const auto args_pos = read_function_arg_parantheses(function_name_pos.second);
+			const auto args_pos = read_functiondef_arg_parantheses(function_name_pos.second);
 			pos = read_optional_char(skip_whitespace(args_pos.second), ';').second;
 			pos = skip_whitespace(pos);
 

@@ -66,29 +66,38 @@ QUARK_UNIT_TEST("", "make_location_lookup()", "", ""){
 const std::string cleanup_line_snippet(const std::string& s){
 	const auto line1 = skip(seq_t(s), "\t ");
 	const auto split = split_on_chars(line1, "\n\r");
-	QUARK_ASSERT(split.size() > 0);
-	const auto line = split.front();
+	const auto line = split.size() > 0 ? split.front() : "";
 	return line;
 }
 QUARK_UNIT_TEST("", "cleanup_line_snippet()", "", ""){
 	ut_verify(QUARK_POS, cleanup_line_snippet(" \tabc\n\a"), "abc");
 }
 
+location2_t make_loc2(const std::string& program, const std::vector<int>& lookup, const std::string& file, const location_t& loc, int line_index){
+	const auto start = lookup[line_index];
+	const auto end = lookup[line_index + 1];
+	const auto line = cleanup_line_snippet(program.substr(start, end - start));
+	const auto column = loc.offset - start;
+	return location2_t(file, line_index, static_cast<int>(column), start, end, line, loc);
+}
+
+
 location2_t find_loc_info(const std::string& program, const std::vector<int>& lookup, const std::string& file, const location_t& loc){
 	QUARK_ASSERT(lookup.size() >= 2);
 	QUARK_ASSERT(loc.offset <= lookup.back());
 
-	int back = lookup.back();
-	QUARK_ASSERT(back >= loc.offset);
+	int last_line_offset = lookup.back();
+	QUARK_ASSERT(last_line_offset >= loc.offset);
 
-	//	 EOF?
-	if(back == loc.offset){
-		const auto line_index = static_cast<int>(lookup.size()) - 1;
-		const auto start = lookup[line_index];
-		const auto end = lookup[line_index];
-		const auto line = program.substr(start, end - start);
-		const auto column = loc.offset - start;
-		return location2_t(file, line_index, static_cast<int>(column), start, end, line, loc);
+	//	 EOF? Use program's last non-blank line.
+	if(last_line_offset == loc.offset){
+		auto line_index = static_cast<int>(lookup.size()) - 2;
+		auto loc2 = make_loc2(program, lookup, file, loc, line_index);
+		while(line_index >= 0 && loc2.line ==""){
+			line_index--;
+			loc2 = make_loc2(program, lookup, file, loc, line_index);
+		}
+		return loc2;
 	}
 	else{
 		int line_index = 0;
@@ -96,12 +105,7 @@ location2_t find_loc_info(const std::string& program, const std::vector<int>& lo
 			line_index++;
 			QUARK_ASSERT(line_index < lookup.size());
 		}
-
-		const auto start = lookup[line_index];
-		const auto end = lookup[line_index + 1];
-		const auto line = cleanup_line_snippet(program.substr(start, end - start));
-		const auto column = loc.offset - start;
-		return location2_t(file, line_index, static_cast<int>(column), start, end, line, loc);
+		return make_loc2(program, lookup, file, loc, line_index);
 	}
 }
 

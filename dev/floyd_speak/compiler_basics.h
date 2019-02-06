@@ -103,6 +103,7 @@ inline void throw_compiler_error(const location2_t& location2, const std::string
 
 
 
+
 ////////////////////////////////////////		refine_compiler_error_with_loc2()
 
 

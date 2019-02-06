@@ -114,10 +114,17 @@ namespace floyd {
 	std::pair<std::shared_ptr<typeid_t>, seq_t> read_type(const seq_t& s);
 	std::pair<typeid_t, seq_t> read_required_type(const seq_t& s);
 
-	std::pair<bool, seq_t> read_type_verify(const seq_t& s);
 
 
 	//////////////////////////////////////		HIGH LEVEL
+
+
+
+	/*
+		int (double, string)	--	function-type
+		func int f(double x, string y)		-- function definition
+		f(a, b)		-- function call
+	*/
 
 
 	/*
@@ -130,10 +137,12 @@ namespace floyd {
 
 		(int, int)
 	*/
-	std::vector<member_t> parse_functiondef_arguments2(const std::string& s);
+	std::pair<std::vector<member_t>, seq_t> read_functiondef_arg_parantheses(const seq_t& s);
 
-	std::pair<std::vector<member_t>, seq_t> read_function_arg_parantheses(const seq_t& s);
+	//	Member names may be left blank.
+	std::pair<std::vector<member_t>, seq_t> read_function_type_args(const seq_t& s);
 
+	std::pair<std::vector<member_t>, seq_t> read_call_args(const seq_t& s);
 
 
 

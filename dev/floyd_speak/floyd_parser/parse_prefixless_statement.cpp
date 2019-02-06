@@ -38,21 +38,6 @@ using namespace std;
 
 //////////////////////////////////////////////////		detect_implicit_statement_lookahead()
 
-//	Finds identifier-string at RIGHT side of string. Stops at whitespace.
-//	"1234()=<whatever> IDENTIFIER": "1234()=<whatever>", "IDENTIFIER"
-//	Removed leading/trailing whitespace of both returned strings.
-pair<string, string> split_at_tail_identifier(const std::string& s){
-	auto i = s.size();
-	while(i > 0 && whitespace_chars.find(s[i - 1]) != string::npos){
-		i--;
-	}
-	while(i > 0 && identifier_chars.find(s[i - 1]) != string::npos){
-		i--;
-	}
-	const auto pre_identifier = skip_whitespace(s.substr(0, i));
-	const auto identifier = s.substr(i);
-	return { skip_whitespace_ends(pre_identifier), skip_whitespace_ends(identifier) };
-}
 
 
 enum class implicit_statement {
@@ -80,8 +65,11 @@ implicit_statement detect_implicit_statement_lookahead(const seq_t& s){
 		//	Detect "int test = 123" which is common illegal syntax, where you forgot "mutable" or "let".
 
 		try {
-			const auto maybe_type = read_type_verify(s);
-			if(maybe_type.first){
+			const auto maybe_type = read_type(s);
+			if(maybe_type.first != nullptr){
+				if(maybe_type.first->is_function()){
+					throw_compiler_error(location_t(s.pos()), "Function types not supported.");
+				}
 				if(is_identifier_and_equal(maybe_type.second)){
 					return implicit_statement::k_error;
 				}
@@ -150,6 +138,98 @@ DETECT_TEST("", "detect_implicit_statement_lookahead()", "dict", "assign"){
 }
 
 
+
+
+//	Finds identifier-string at RIGHT side of string. Stops at whitespace.
+//	"1234()=<whatever> IDENTIFIER": "1234()=<whatever>", "IDENTIFIER"
+std::size_t split_at_tail_identifier(const std::string& s){
+	auto i = s.size();
+	while(i > 0 && whitespace_chars.find(s[i - 1]) != string::npos){
+		i--;
+	}
+	while(i > 0 && identifier_chars.find(s[i - 1]) != string::npos){
+		i--;
+	}
+	return i;
+}
+
+
+
+//	BIND:			int x = 10
+//	BIND:			x = 10
+//	BIND:			int (string a) x = f(4 == 5)
+//	BIND:			int x = 10
+//	BIND:			x = 10
+struct a_result_t {
+	typeid_t type;
+	std::string identifier;
+
+	//	Points to "=" or end of sequence if no "=" was found.
+	seq_t rest;
+};
+
+a_result_t parse_a(const seq_t& p, const location_t& loc){
+	const auto pos = skip_whitespace(p);
+
+	//	Notice: if there is no type, only and identifier -- then we still get a type back: with an unresolved identifier.
+	const auto optional_type_pos = read_type(pos);
+	const auto identifier_pos = read_identifier(optional_type_pos.second);
+
+	if(optional_type_pos.first && identifier_pos.first != ""){
+		return a_result_t{ *optional_type_pos.first, identifier_pos.first, identifier_pos.second };
+	}
+	else if(!optional_type_pos.first && identifier_pos.first != ""){
+		QUARK_ASSERT(false);
+		return a_result_t{ typeid_t::make_undefined(), optional_type_pos.first->get_unresolved_type_identifier(), identifier_pos.second };
+	}
+	else if(optional_type_pos.first && optional_type_pos.first->is_unresolved_type_identifier() && identifier_pos.first == ""){
+		return a_result_t{ typeid_t::make_undefined(), optional_type_pos.first->get_unresolved_type_identifier(), identifier_pos.second };
+	}
+	else{
+		throw_compiler_error(loc, "Require a value for new bind.");
+	}
+}
+
+pair<ast_json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
+	const auto a_result = parse_a(pos, loc);
+	if(a_result.rest.empty()){
+		throw_compiler_error(loc, "Require a value for new bind.");
+	}
+	const auto equal_sign = read_required(skip_whitespace(a_result.rest), "=");
+	const auto expression_pos = parse_expression(equal_sign);
+
+	const auto params = std::vector<json_t>{
+		typeid_to_ast_json(a_result.type, json_tags::k_tag_resolve_state)._value,
+		a_result.identifier,
+		expression_pos.first._value,
+	};
+	const auto statement = make_statement_n(loc, statement_opcode_t::k_bind, params);
+	return { statement, expression_pos.second };
+}
+
+pair<ast_json_t, seq_t> parse_mutable(const seq_t& pos, const location_t& loc){
+	const auto a_result = parse_a(pos, loc);
+	if(a_result.rest.empty()){
+		throw_compiler_error(loc, "Require a value for new bind.");
+	}
+	const auto equal_sign = read_required(skip_whitespace(a_result.rest), "=");
+	const auto expression_pos = parse_expression(equal_sign);
+
+	const auto meta = (json_t::make_object({pair<string,json_t>{"mutable", true}}));
+
+	const auto params = std::vector<json_t>{
+		typeid_to_ast_json(a_result.type, json_tags::k_tag_resolve_state)._value,
+		a_result.identifier,
+		expression_pos.first._value,
+		meta
+	};
+	const auto statement = make_statement_n(loc, statement_opcode_t::k_bind, params);
+
+	return { statement, expression_pos.second };
+}
+
+
+
 //////////////////////////////////////////////////		parse_bind_statement()
 
 
@@ -165,46 +245,50 @@ DETECT_TEST("", "detect_implicit_statement_lookahead()", "dict", "assign"){
 //	ERROR:			mutable x
 
 //	ERROR:			x = 10
+//	[let]/[mutable] TYPE identifier = EXPRESSION
+//					|<----------->|		call this section a.
+
 pair<ast_json_t, seq_t> parse_bind_statement(const seq_t& s){
 	const auto start = skip_whitespace(s);
+	const auto loc = location_t(start.pos());
+
 	const auto let_pos = if_first(start, keyword_t::k_let);
-	const auto mutable_pos = if_first(skip_whitespace(s), keyword_t::k_mutable);
-	if(let_pos.first == false && mutable_pos.first == false){
-		quark::throw_runtime_error("Bind syntax error");
+	if(let_pos.first){
+		return parse_let(let_pos.second, loc);
 	}
-	const auto pos = let_pos.first ? let_pos.second : mutable_pos.second;
-	const auto equal_sign_fr = read_until_toplevel_match(pos, "=");
-	const auto rhs = skip_whitespace(equal_sign_fr.second.rest1());
-	const auto lhs_pair = split_at_tail_identifier(equal_sign_fr.first);
-	const auto identifier = lhs_pair.second;
 
-	const bool mutable_flag = mutable_pos.first;
-	const auto type_pos = seq_t(lhs_pair.first);;
+	const auto mutable_pos = if_first(skip_whitespace(s), keyword_t::k_mutable);
+	if(mutable_pos.first){
+		return parse_mutable(mutable_pos.second, loc);
+	}
 
-	const auto type = type_pos.empty() ? typeid_t::make_undefined() : read_required_type(type_pos).first;
-
-	const auto expression_fr = parse_expression(rhs);
-
-	const auto meta = mutable_flag ? (json_t::make_object({pair<string,json_t>{"mutable", true}})) : json_t();
-
-	const auto params = meta.is_null() ?
-		std::vector<json_t>{
-			typeid_to_ast_json(type, json_tags::k_tag_resolve_state)._value, identifier,
-			expression_fr.first._value,
-		}
-		:
-		std::vector<json_t>{
-			typeid_to_ast_json(type, json_tags::k_tag_resolve_state)._value, identifier,
-			expression_fr.first._value,
-			meta
-		}
-	;
-
-	const auto statement = make_statement_n(location_t(start.pos()), statement_opcode_t::k_bind, params);
-
-	return { statement, expression_fr.second };
+	quark::throw_runtime_error("Bind syntax error.");
 }
 
+
+QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
+	const auto input = R"(
+
+		mutable string row
+
+	)";
+
+	try {
+		ut_verify_json_and_rest(
+			QUARK_POS,
+			parse_bind_statement(seq_t(input)),
+			R"(
+				[ 0, "bind", "^int", "test", ["k", 123, "^int"]]
+			)",
+			" let int a = 4 "
+		);
+		fail_test(QUARK_POS);
+	}
+	catch(const runtime_error& e){
+		//	Should come here.
+		ut_verify(QUARK_POS, e.what(), "Expected \'=\' character.");
+	}
+}
 
 
 QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
@@ -260,6 +344,17 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 				[ 0, "bind", "^**undef**", "hello", ["k", 3, "^int"], { "mutable": true }]
 			)"
 		)).first
+	);
+}
+
+QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
+	ut_verify_json_and_rest(
+		QUARK_POS,
+		parse_bind_statement(seq_t("let int (double, [string]) test = 123 let int a = 4 ")),
+		R"(
+			[0, "bind", ["fun", "^int", ["^double", ["vector", "^string"]], true], "test", ["k", 123, "^int"]]
+		)",
+		" let int a = 4 "
 	);
 }
 
