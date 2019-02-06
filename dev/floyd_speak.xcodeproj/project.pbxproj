@@ -108,6 +108,7 @@
 		2C18048B208B947C00F62480 /* expression.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = expression.h; sourceTree = "<group>"; };
 		2C18048C208B947C00F62480 /* statement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = statement.cpp; sourceTree = "<group>"; };
 		2C18048D208B947C00F62480 /* statement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = statement.h; sourceTree = "<group>"; };
+		2C182F1F220B17780003FC1F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		2C1D84DD1CA765A90042F0A8 /* floyd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = floyd; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C2625D821E0D59900B41841 /* network_api.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = network_api.cpp; sourceTree = "<group>"; };
 		2C2625D921E0D59900B41841 /* network_api.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = network_api.h; sourceTree = "<group>"; };
@@ -224,6 +225,7 @@
 		2C1D84D41CA765A90042F0A8 = {
 			isa = PBXGroup;
 			children = (
+				2C182F1F220B17780003FC1F /* README.md */,
 				2CBB527B21F655A600E5024A /* examples */,
 				2C1D84DF1CA765A90042F0A8 /* floyd_speak */,
 				2CBF330B202143BC0030AE98 /* Frameworks */,

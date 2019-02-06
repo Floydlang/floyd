@@ -32,17 +32,14 @@ namespace floyd {
 		You can also add constants directly to the symbol table.
 
 
-		# Host functions
-		Host functions are added as constant values, with the proper _value_type (function signature) and _const_value (function value to that host function ID).
-
-
 		# Functions
-		These are stored as local variable reservations of correct function-signature-type. They are inited during execution, not const-values in symbol table. Function calls needs to evaluate callee expression.
+		These are stored as local variable reservations of correct function-signature-type. They are inited
+		during execution, not const-values in symbol table. Function calls needs to evaluate callee expression.
 		??? TODO: make functions const-values when possible.
 
 
 		# Structs
-		These are const-values in symbol table.
+		These are const-values in symbol table -- the *type* of the struct that is.
 
 		struct pixel_t { int red; int green; int blue; }
 
@@ -61,7 +58,6 @@ namespace floyd {
 		type _symbol_type;
 		floyd::typeid_t _value_type;
 		floyd::value_t _const_value;
-
 
 
 		bool operator==(const symbol_t& other) const {
@@ -118,9 +114,9 @@ namespace floyd {
 
 
 	struct symbol_table_t {
-			bool operator==(const symbol_table_t& other) const {
-				return _symbols == other._symbols;
-			}
+		bool operator==(const symbol_table_t& other) const {
+			return _symbols == other._symbols;
+		}
 
 
 		public: std::vector<std::pair<std::string, floyd::symbol_t>> _symbols;

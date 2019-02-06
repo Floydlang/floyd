@@ -24,7 +24,7 @@ struct value_t;
 ////////////////////////////////////////		ast_json_t
 
 /*
-Used to hold an AST encoded as a JSON.
+The ast_json_t type hold an AST, encoded as a JSON.
 
 It's a JSON array with each program statement in order.
 Each statement is a JSON array like this:
@@ -34,13 +34,19 @@ Each statement is a JSON array like this:
 	["def_struct", STRUCT_DEF_JSON_OBJECT ]
 	["define_function", FUNCTION_DEF_JSON_OBJECT ]
 
-Element 0: if its a number, this is an extra field before the opcode and it contains the byte position inside compilation unit text.
-If a string, this is the node opcode.
+The first element, element 0, of each statement is optionally a byte-offset where this statement is defined in the source text.
+Then comes the statement opcode, like "return" and its parameters.
 	[ 135500, "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"] ],
 	[ "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"] ],
 
-- Record byte position inside source file: requires source file to figure out line number.
-- Offset is text position inside compilaton unit source -- different ranges maps to different source files, like preheader and includes. location_t.
+
+NOTICE: Right now ast_json_t is used a little sloppyly.
+
+1. The parse tree
+2. The input AST (no types and resolve)
+3. The semantically correct AST
+
+Future: make separate types, optimally separate constants for statement/expression opcodes.
 */
 
 struct ast_json_t {
@@ -55,7 +61,6 @@ struct ast_json_t {
 	public: static ast_json_t make(const std::vector<json_t>& v){
 		return { json_t::make_array(v) };
 	}
-
 
 	json_t _value;
 };

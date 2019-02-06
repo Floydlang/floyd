@@ -1017,6 +1017,7 @@ bool bc_instruction_t::check_invariant() const {
 
 //////////////////////////////////////////		bc_frame_t
 
+//?? STATIC frame definition -- not a runtime thing!
 
 bc_frame_t::bc_frame_t(const std::vector<bc_instruction_t>& instrs2, const std::vector<std::pair<std::string, bc_symbol_t>>& symbols, const std::vector<typeid_t>& args) :
 	_instrs2(instrs2),
