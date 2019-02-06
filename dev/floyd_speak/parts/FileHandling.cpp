@@ -382,8 +382,9 @@ QUARK_UNIT_TEST("", "get_info()", "", ""){
 
 	TFileInfo info;
 	bool ok = GetFileInfo(temp.process_path, info);
+	QUARK_UT_VERIFY(ok);
 
-	QUARK_UT_VERIFY(true)
+	QUARK_UT_VERIFY(true);
 }
 
 
@@ -686,6 +687,9 @@ bool GetFileInfo(const std::string& completePath, TFileInfo& outInfo){
 	const bool dir = S_ISDIR(theStat.st_mode);
 	const bool file = S_ISREG(theStat.st_mode);
 
+	//	There can be entries that are neither dir or file.
+	QUARK_ASSERT(file == !dir);
+
 	result.fDirFlag = dir ? true : false;
 
 	result.fFileSize = size;
@@ -745,7 +749,12 @@ void RenameEntry(const std::string& path, const std::string& n){
 	}
 	else if(error == -1){
 		const int err = get_error();
-		quark::throw_exception();
+		if(err == EACCES){
+			quark::throw_exception();
+		}
+		else{
+			quark::throw_exception();
+		}
 	}
 	else{
 		ASSERT(false);
@@ -881,11 +890,17 @@ void SaveFile(const std::string& inFileName, const std::uint8_t data[], std::siz
 		}
 
 		long result = std::fclose(file);
+		if(result != 0){
+//			int error = get_error();
+		}
 		file = 0;
 	}
 	catch(...){
 		if(file != 0){
 			long result = std::fclose(file);
+			if(result != 0){
+//				int error = get_error();
+			}
 			file = 0;
 		}
 		throw;

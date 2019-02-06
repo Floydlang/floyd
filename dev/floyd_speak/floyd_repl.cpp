@@ -222,7 +222,7 @@ Python 2.7.10 (default, Jul 15 2017, 17:16:57)
 Type "help", "copyright", "credits" or "license" for more information.
 */
 
-	int print_pos = 0;
+//	int print_pos = 0;
 	while(true){
 		try {
 			const auto line = get_command();

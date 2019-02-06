@@ -114,7 +114,7 @@ std::int64_t measure_execution_time_ns(std::function<void (void)> func, int coun
 	auto d2 = results[results.size() - 4 + 2];
 	auto d3 = results[results.size() - 4 + 3];
 
-	const auto average = (d0 + d1 + d2 + d3) / 4.0;
+//	const auto average = (d0 + d1 + d2 + d3) / 4.0;
 	const auto min = std::min(std::min(d0, d1), std::min(d2, d3));
 	auto duration1 = std::chrono::duration_cast<std::chrono::nanoseconds>(min);
 

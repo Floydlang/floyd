@@ -214,21 +214,22 @@ namespace floyd {
 		}
 
 
-int64_t limit(int64_t value, int64_t min, int64_t max){
-	if(value < min){
-		return min;
+int limit_comparison(int64_t value){
+	if(value < -1){
+		return -1;
 	}
-	else if(value > max){
-		return max;
+	else if(value > 1){
+		return 1;
 	}
 	else{
-		return value;
+		return 0;
 	}
 }
 
 int compare_string(const std::string& left, const std::string& right){
 	// ### Better if it doesn't use c_ptr since that is non-pure string handling.
-	return limit(std::strcmp(left.c_str(), right.c_str()), -1, 1);
+	const auto result = std::strcmp(left.c_str(), right.c_str());
+	return limit_comparison(result);
 }
 
 QUARK_UNIT_TESTQ("compare_string()", ""){
@@ -380,7 +381,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 		return (left.get_bool_value() ? 1 : 0) - (right.get_bool_value() ? 1 : 0);
 	}
 	else if(left.is_int()){
-		return limit(left.get_int_value() - right.get_int_value(), -1, 1);
+		return limit_comparison(left.get_int_value() - right.get_int_value());
 	}
 	else if(left.is_double()){
 		const auto a = left.get_double_value();
@@ -1040,7 +1041,7 @@ ast_json_t value_to_ast_json(const value_t& v, json_tags tags){
 		for(int i = 0 ; i < struct_value->_def->_members.size() ; i++){
 			const auto& member = struct_value->_def->_members[i];
 			const auto& key = member._name;
-			const auto& type = member._type;
+//			const auto& type = member._type;
 			const auto& value = struct_value->_member_values[i];
 			const auto& value2 = value_to_ast_json(value, tags);
 			obj2[key] = value2._value;
@@ -1064,7 +1065,7 @@ ast_json_t value_to_ast_json(const value_t& v, json_tags tags){
 		for(int i = 0 ; i < protocol_value->_def->_members.size() ; i++){
 			const auto& member = protocol_value->_def->_members[i];
 			const auto& key = member._name;
-			const auto& type = member._type;
+//			const auto& type = member._type;
 			const auto& value = protocol_value->_member_values[i];
 			const auto& value2 = value_to_ast_json(value, tags);
 			obj2[key] = value2._value;

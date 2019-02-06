@@ -20,7 +20,8 @@ using namespace std;
 #include "quark.h"
 
 
-
+//	"Implicit conversion turns floating-point number into integer: 'double' "
+#if 0
 QUARK_UNIT_TEST("", "", "", ""){
 	double a = 10.0f;
 	double b = 23.3f;
@@ -28,6 +29,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 	bool r = a && b;
 	QUARK_UT_VERIFY(r == true);
 }
+#endif
 
 struct test_cpp_value_class_a {
 	int _a = 10;
@@ -133,6 +135,7 @@ QUARK_UNIT_TEST("C++17 variant", "", "", ""){
 	test_statement_t a{bind_t{"myval", {"1+3"}}, "debug myval = 1+3"};
 
 	const auto s = sizeof(a);
+	QUARK_UT_VERIFY(s > 0);
 
 	const auto bind = std::get<bind_t>(a._contents);
 	QUARK_UT_VERIFY(bind._variable_name == "myval");

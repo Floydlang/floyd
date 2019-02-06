@@ -1822,7 +1822,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 			QUARK_ASSERT(check_reg(reg));
 
-			bool is_ext = _current_frame_ptr->_exts[reg];
+//			bool is_ext = _current_frame_ptr->_exts[reg];
 #if DEBUG
 			const auto result = bc_value_t(_current_frame_ptr->_symbols[reg].second._value_type, _current_frame_entry_ptr[reg]);
 #else

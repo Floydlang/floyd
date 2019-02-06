@@ -1002,8 +1002,8 @@ reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
 
 #if DEBUG
 bool bc_instruction_t::check_invariant() const {
-	const auto encoding = k_opcode_info.at(_opcode)._encoding;
-	const auto reg_flags = encoding_to_reg_flags(encoding);
+//	const auto encoding = k_opcode_info.at(_opcode)._encoding;
+//	const auto reg_flags = encoding_to_reg_flags(encoding);
 
 /*
 	QUARK_ASSERT(check_register(_reg_a, reg_flags._a));
@@ -1067,17 +1067,17 @@ bool bc_frame_t::check_invariant() const {
 //	QUARK_ASSERT(_body.check_invariant());
 	QUARK_ASSERT(_symbols.size() == _exts.size());
 
-	for(const auto& e: _instrs2){
-		const auto encoding = k_opcode_info.at(e._opcode)._encoding;
-		const auto reg_flags = encoding_to_reg_flags(encoding);
-
 /*
+	for(const auto& e: _instrs2){
+//		const auto encoding = k_opcode_info.at(e._opcode)._encoding;
+//		const auto reg_flags = encoding_to_reg_flags(encoding);
+
 		QUARK_ASSERT(check_register__local(e._reg_a, reg_flags._a));
 		QUARK_ASSERT(check_register__local(e._reg_b, reg_flags._b));
 		QUARK_ASSERT(check_register__local(e._reg_c, reg_flags._c));
-*/
 
 	}
+*/
 	return true;
 }
 
@@ -1318,7 +1318,7 @@ json_t bcvalue_to_json(const bc_value_t& v){
 		for(int i = 0 ; i < struct_def._members.size() ; i++){
 			const auto& member = struct_def._members[i];
 			const auto& key = member._name;
-			const auto& type = member._type;
+//			const auto& type = member._type;
 			const auto& value = struct_value[i];
 			const auto& value2 = bcvalue_to_json(value);
 			obj2[key] = value2;
@@ -1463,7 +1463,7 @@ bool interpreter_t::check_invariant() const {
 
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto value_size = sizeof(bc_value_t);
-
+	QUARK_UT_VERIFY(value_size >= 8);
 /*
 	QUARK_UT_VERIFY(value_size == 16);
 	QUARK_UT_VERIFY(expression_size == 40);
@@ -1482,6 +1482,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto s = sizeof(bc_value_t);
+	QUARK_UT_VERIFY(s >= 8);
 //	QUARK_UT_VERIFY(s == 16);
 }
 
@@ -1535,7 +1536,7 @@ void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_
 	QUARK_ASSERT(target_type.is_undefined() == false);
 
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
-	bool is_element_ext = is_encoded_as_ext(element_type);
+//	bool is_element_ext = is_encoded_as_ext(element_type);
 
 	immer::vector<bc_object_handle_t> elements2;
 	for(int i = 0 ; i < arg_count ; i++){
@@ -1674,8 +1675,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 	bc_pod_value_t* regs = stack._current_frame_entry_ptr;
 	bc_pod_value_t* globals = &stack._entries[k_frame_overhead];
 
-	const typeid_t* type_lookup = &vm._imm->_program._types[0];
-	const auto type_count = vm._imm->_program._types.size();
+//	const typeid_t* type_lookup = &vm._imm->_program._types[0];
+//	const auto type_count = vm._imm->_program._types.size();
 
 //	QUARK_TRACE_SS("STACK:  " << json_to_pretty_string(stack.stack_to_json()));
 
