@@ -163,53 +163,52 @@ void typeid_t::swap(typeid_t& other){
 }
 
 
-
 QUARK_UNIT_TESTQ("typeid_t", "make_undefined()"){
-	QUARK_UT_VERIFY(typeid_t::make_undefined().get_base_type() == base_type::k_internal_undefined);
+	ut_verify(QUARK_POS, typeid_t::make_undefined().get_base_type(), base_type::k_internal_undefined);
 }
 QUARK_UNIT_TESTQ("typeid_t", "is_undefined()"){
-	QUARK_UT_VERIFY(typeid_t::make_undefined().is_undefined() == true);
+	ut_verify_auto(QUARK_POS, typeid_t::make_undefined().is_undefined(), true);
 }
 QUARK_UNIT_TESTQ("typeid_t", "is_undefined()"){
-	QUARK_UT_VERIFY(typeid_t::make_bool().is_undefined() == false);
+	ut_verify_auto(QUARK_POS, typeid_t::make_bool().is_undefined(), false);
 }
 
 
 QUARK_UNIT_TESTQ("typeid_t", "make_internal_dynamic()"){
-	QUARK_UT_VERIFY(typeid_t::make_internal_dynamic().get_base_type() == base_type::k_internal_dynamic);
+	ut_verify(QUARK_POS, typeid_t::make_internal_dynamic().get_base_type(), base_type::k_internal_dynamic);
 }
 QUARK_UNIT_TESTQ("typeid_t", "is_internal_dynamic()"){
-	QUARK_UT_VERIFY(typeid_t::make_internal_dynamic().is_internal_dynamic() == true);
+	ut_verify_auto(QUARK_POS, typeid_t::make_internal_dynamic().is_internal_dynamic(), true);
 }
 QUARK_UNIT_TESTQ("typeid_t", "is_internal_dynamic()"){
-	QUARK_UT_VERIFY(typeid_t::make_bool().is_internal_dynamic() == false);
+	ut_verify_auto(QUARK_POS, typeid_t::make_bool().is_internal_dynamic(), false);
 }
 
 
 QUARK_UNIT_TESTQ("typeid_t", "make_void()"){
-	QUARK_UT_VERIFY(typeid_t::make_void().get_base_type() == base_type::k_void);
+	ut_verify(QUARK_POS, typeid_t::make_void().get_base_type(), base_type::k_void);
 }
 QUARK_UNIT_TESTQ("typeid_t", "is_void()"){
-	QUARK_UT_VERIFY(typeid_t::make_void().is_void() == true);
+	ut_verify_auto(QUARK_POS, typeid_t::make_void().is_void(), true);
 }
 QUARK_UNIT_TESTQ("typeid_t", "is_void()"){
-	QUARK_UT_VERIFY(typeid_t::make_bool().is_void() == false);
+	ut_verify_auto(QUARK_POS, typeid_t::make_bool().is_void(), false);
 }
 
 
 QUARK_UNIT_TESTQ("typeid_t", "make_bool()"){
-	QUARK_UT_VERIFY(typeid_t::make_bool().get_base_type() == base_type::k_bool);
+	ut_verify(QUARK_POS, typeid_t::make_bool().get_base_type(), base_type::k_bool);
 }
 QUARK_UNIT_TESTQ("typeid_t", "is_bool()"){
-	QUARK_UT_VERIFY(typeid_t::make_bool().is_bool() == true);
+	ut_verify_auto(QUARK_POS, typeid_t::make_bool().is_bool(), true);
 }
 QUARK_UNIT_TESTQ("typeid_t", "is_bool()"){
-	QUARK_UT_VERIFY(typeid_t::make_void().is_bool() == false);
+	ut_verify_auto(QUARK_POS, typeid_t::make_void().is_bool(), false);
 }
 
 
 QUARK_UNIT_TESTQ("typeid_t", "make_int()"){
-	QUARK_UT_VERIFY(typeid_t::make_int().get_base_type() == base_type::k_int);
+	ut_verify(QUARK_POS, typeid_t::make_int().get_base_type(), base_type::k_int);
 }
 QUARK_UNIT_TESTQ("typeid_t", "is_int()"){
 	QUARK_UT_VERIFY(typeid_t::make_int().is_int() == true);
@@ -845,6 +844,8 @@ bool is_dynamic_function(const typeid_t& function_type){
 	const auto count = count_function_dynamic_args(function_type);
 	return count > 0;
 }
+
+
 
 }
 

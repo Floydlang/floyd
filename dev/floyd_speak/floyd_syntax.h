@@ -11,6 +11,7 @@
 
 #include <string>
 #include <map>
+#include "quark.h"
 
 namespace floyd {
 
@@ -82,6 +83,8 @@ enum class base_type {
 };
 
 std::string base_type_to_string(const base_type t);
+
+void ut_verify(const quark::call_context_t& context, const base_type& result, const base_type& expected);
 
 
 //??? use lookup for statements vs their JSON-strings: k_store2, "store" and "def-struct".

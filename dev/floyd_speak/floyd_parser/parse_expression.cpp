@@ -1422,7 +1422,7 @@ void test__parse_expression__throw(const std::string& expression, const std::str
 	catch(const std::runtime_error& e){
 		const std::string es(e.what());
 		if(!exception_message.empty()){
-			QUARK_TEST_VERIFY(es == exception_message);
+			ut_verify(QUARK_POS, es, exception_message);
 		}
 	}
 }

@@ -9,6 +9,7 @@
 #ifndef typeid_helpers_hpp
 #define typeid_helpers_hpp
 
+#include "quark.h"
 #include <vector>
 
 struct json_t;
@@ -38,6 +39,8 @@ namespace floyd {
 
 	std::vector<json_t> typeids_to_json_array(const std::vector<typeid_t>& m);
 	std::vector<typeid_t> typeids_from_json_array(const std::vector<json_t>& m);
+
+	void ut_verify(const quark::call_context_t& context, const typeid_t& result, const typeid_t& expected);
 }
 
 #endif /* typeid_helpers_hpp */

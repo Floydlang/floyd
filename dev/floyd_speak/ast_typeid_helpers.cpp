@@ -11,6 +11,7 @@
 #include "quark.h"
 #include "ast_json.h"
 #include "ast_typeid.h"
+#include "text_parser.h"
 
 
 
@@ -266,6 +267,13 @@ std::vector<member_t> members_from_json(const json_t& members){
 	return r;
 }
 
+void ut_verify(const quark::call_context_t& context, const typeid_t& result, const typeid_t& expected){
+	ut_verify(
+		context,
+		typeid_to_ast_json(result, json_tags::k_plain)._value,
+		typeid_to_ast_json(expected, json_tags::k_plain)._value
+	);
+}
 
 }
 
