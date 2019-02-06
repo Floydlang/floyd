@@ -215,10 +215,10 @@ namespace floyd {
 
 
 int limit_comparison(int64_t value){
-	if(value < -1){
+	if(value < 0){
 		return -1;
 	}
-	else if(value > 1){
+	else if(value > 0){
 		return 1;
 	}
 	else{
@@ -238,7 +238,7 @@ QUARK_UNIT_TESTQ("compare_string()", ""){
 QUARK_UNIT_TESTQ("compare_string()", ""){
 	ut_verify_auto(QUARK_POS, compare_string("aaa", "aaa"), 0);
 }
-QUARK_UNIT_TESTQ("compare_string()", ""){
+QUARK_UNIT_TEST("", "compare_string()", "", ""){
 	ut_verify_auto(QUARK_POS, compare_string("b", "a"), 1);
 }
 

@@ -11,14 +11,15 @@
 
 #include "quark.h"
 
-#include "bytecode_interpreter.h"
-
-
 namespace floyd {
 	struct semantic_ast_t;
+	struct bc_program_t;
 
 	//////////////////////////		generate_bytecode()
 
+	/*
+		Compiles the ast to Floyd byte code.
+	*/
 	bc_program_t generate_bytecode(const semantic_ast_t& ast);
 
 

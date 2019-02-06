@@ -16,7 +16,6 @@
 #include <cstdint>
 
 
-
 namespace floyd {
 
 using std::vector;
@@ -29,124 +28,117 @@ struct semantic_ast_t;
 
 
 
+//	Replace by int when we have flattened local bodies.
+typedef variable_address_t reg_t;
 
 
-
-	//	Replace by int when we have flattened local bodies.
-	typedef variable_address_t reg_t;
+//////////////////////////////////////		bcgen_instruction_t
 
 
-	//////////////////////////////////////		bcgen_instruction_t
-
-
-	struct bcgen_instruction_t {
-		bcgen_instruction_t(
-			bc_opcode opcode,
-			variable_address_t regA,
-			variable_address_t regB,
-			variable_address_t regC
-		) :
-			_opcode(opcode),
-			_reg_a(regA),
-			_reg_b(regB),
-			_reg_c(regC)
-		{
-			QUARK_ASSERT(check_invariant());
-		}
+struct bcgen_instruction_t {
+	bcgen_instruction_t(
+		bc_opcode opcode,
+		variable_address_t regA,
+		variable_address_t regB,
+		variable_address_t regC
+	) :
+		_opcode(opcode),
+		_reg_a(regA),
+		_reg_b(regB),
+		_reg_c(regC)
+	{
+		QUARK_ASSERT(check_invariant());
+	}
 
 #if DEBUG
-		public: bool check_invariant() const;
+	public: bool check_invariant() const;
 #endif
 
-		//////////////////////////////////////		STATE
-		bc_opcode _opcode;
-		variable_address_t _reg_a;
-		variable_address_t _reg_b;
-		variable_address_t _reg_c;
-	};
+	//////////////////////////////////////		STATE
+	bc_opcode _opcode;
+	variable_address_t _reg_a;
+	variable_address_t _reg_b;
+	variable_address_t _reg_c;
+};
 
 
-	//////////////////////////////////////		bcgen_body_t
+//////////////////////////////////////		bcgen_body_t
 
 
-	struct bcgen_body_t {
-		bcgen_body_t(const std::vector<bcgen_instruction_t>& s) :
-			_instrs(s),
-			_symbols{}
-		{
-			QUARK_ASSERT(check_invariant());
-		}
+struct bcgen_body_t {
+	bcgen_body_t(const std::vector<bcgen_instruction_t>& s) :
+		_instrs(s),
+		_symbols{}
+	{
+		QUARK_ASSERT(check_invariant());
+	}
 
-		bcgen_body_t(const std::vector<bcgen_instruction_t>& instructions, const symbol_table_t& symbols) :
-			_instrs(instructions),
-			_symbols(symbols)
-		{
-			QUARK_ASSERT(check_invariant());
-		}
+	bcgen_body_t(const std::vector<bcgen_instruction_t>& instructions, const symbol_table_t& symbols) :
+		_instrs(instructions),
+		_symbols(symbols)
+	{
+		QUARK_ASSERT(check_invariant());
+	}
 
-		public: bool check_invariant() const;
-
-
-		//////////////////////////////////////		STATE
-
-		symbol_table_t _symbols;
-		std::vector<bcgen_instruction_t> _instrs;
-	};
-
-	bc_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_t>& args);
+	public: bool check_invariant() const;
 
 
-	//////////////////////////////////////		bcgen_environment_t
+	////////////////////////		STATE
+	symbol_table_t _symbols;
+	std::vector<bcgen_instruction_t> _instrs;
+};
 
-	/*
-		Runtime scope, similar to a stack frame.
-	*/
-
-	struct bcgen_environment_t {
-		public: const bcgen_body_t* _body_ptr;
-	};
+bc_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_t>& args);
 
 
-	//////////////////////////////////////		bgen_imm_t
+//////////////////////////////////////		bcgen_environment_t
+
+/*
+	Runtime scope, similar to a stack frame.
+*/
+
+struct bcgen_environment_t {
+
+	//////////////////////////////////////		STATE
+	public: const bcgen_body_t* _body_ptr;
+};
 
 
-	struct bgen_imm_t {
-		////////////////////////		STATE
-		public: const semantic_ast_t _ast;
-	};
 
+//////////////////////////////////////		bcgenerator_t
 
-	//////////////////////////////////////		bcgenerator_t
+/*
+	Complete runtime state of the bgenerator.
+	MUTABLE
+*/
 
-	/*
-		Complete runtime state of the bgenerator.
-		MUTABLE
-	*/
-
-	struct bcgenerator_t {
-		public: explicit bcgenerator_t(const semantic_ast_t& ast);
-		public: bcgenerator_t(const bcgenerator_t& other);
-		public: const bcgenerator_t& operator=(const bcgenerator_t& other);
+struct bcgenerator_t {
+	public: explicit bcgenerator_t(const semantic_ast_t& ast);
+	public: bcgenerator_t(const bcgenerator_t& other);
+	public: const bcgenerator_t& operator=(const bcgenerator_t& other);
 #if DEBUG
-		public: bool check_invariant() const;
+	public: bool check_invariant() const;
 #endif
-		public: void swap(bcgenerator_t& other) throw();
-
-		////////////////////////		STATE
-		public: std::shared_ptr<bgen_imm_t> _imm;
-
-		//	Holds all values for all environments.
-		public: std::vector<bcgen_environment_t> _call_stack;
-
-		public: std::vector<typeid_t> _types;
-	};
+	public: void swap(bcgenerator_t& other) throw();
 
 
+	//////////////////////////////////////		STATE
+	public: std::shared_ptr<semantic_ast_t> _ast_imm;
+
+	//	Holds all values for all environments.
+	public: std::vector<bcgen_environment_t> _call_stack;
+
+	public: std::vector<typeid_t> _types;
+};
 
 
+//////////////////////////////////////		bcgenerator_t
 
+//	Why: needed to return from codegen functions that process expressions. Any new instructions have been recorded into _body.
 
-struct expr_info_t {
+struct expression_gen_t {
+
+	//////////////////////////////////////		STATE
 	bcgen_body_t _body;
 
 	variable_address_t _out;
@@ -158,13 +150,13 @@ struct expr_info_t {
 
 /*
 	target_reg: if defined, this is where the output value will be stored. If undefined, then the expression allocates (or redirect to existing register).
-	expr_info_t._out: always holds the output register, no matter who decided it.
+	expression_gen_t._out: always holds the output register, no matter who decided it.
 */
-expr_info_t bcgen_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body);
-
-
+expression_gen_t bcgen_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body);
 bcgen_body_t bcgen_body_top(bcgenerator_t& vm, const body_t& body);
 bcgen_body_t bcgen_body_block(bcgenerator_t& vm, const body_t& body);
+
+
 
 
 variable_address_t add_local_temp(bcgen_body_t& body_acc, const typeid_t& type, const std::string& name){
@@ -632,7 +624,7 @@ bcgen_body_t bcgen_body_top(bcgenerator_t& vm, const body_t& body){
 //////////////////////////////////////		PROCESS EXPRESSIONS
 
 
-expr_info_t bcgen_resolve_member_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
+expression_gen_t bcgen_resolve_member_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e._input_exprs[0].get_output_type().is_struct());
 	QUARK_ASSERT(body.check_invariant());
@@ -657,7 +649,7 @@ expr_info_t bcgen_resolve_member_expression(bcgenerator_t& vm, const variable_ad
 	return { body_acc, target_reg2, intern_type(vm, *e._output_type) };
 }
 
-expr_info_t bcgen_lookup_element_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
+expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -713,7 +705,7 @@ expr_info_t bcgen_lookup_element_expression(bcgenerator_t& vm, const variable_ad
 }
 
 //??? Value already sits in a register / global -- no need to generate code to copy it in most cases!
-expr_info_t bcgen_load2_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
+expression_gen_t bcgen_load2_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -833,7 +825,7 @@ int get_host_function_id(bcgenerator_t& vm, const expression_t& e){
 		const auto& global_symbol = vm._call_stack[0]._body_ptr->_symbols._symbols[global_index];
 		if(global_symbol.second._const_value.is_function()){
 			const auto function_id = global_symbol.second._const_value.get_function_value();
-			const auto& function_def = vm._imm->_ast._checked_ast._function_defs[function_id];
+			const auto& function_def = vm._ast_imm->_checked_ast._function_defs[function_id];
 			return function_def->_host_function_id;
 		}
 		else{
@@ -895,8 +887,7 @@ bc_opcode convert_call_to_pushback_opcode(const typeid_t& arg1_type){
 	}
 }
 
-
-expr_info_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
+expression_gen_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -996,7 +987,7 @@ expr_info_t bcgen_call_expression(bcgenerator_t& vm, const variable_address_t& t
 //??? Submit dest-register to all gen-functions = minimize temps.
 //??? Wrap itype in struct to make it typesafe.
 
-expr_info_t bcgen_construct_value_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
+expression_gen_t bcgen_construct_value_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -1082,7 +1073,7 @@ expr_info_t bcgen_construct_value_expression(bcgenerator_t& vm, const variable_a
 	return { body_acc, target_reg2, target_itype };
 }
 
-expr_info_t bcgen_arithmetic_unary_minus_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
+expression_gen_t bcgen_arithmetic_unary_minus_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -1116,7 +1107,7 @@ expr_info_t bcgen_arithmetic_unary_minus_expression(bcgenerator_t& vm, const var
 		temp = c
 	}
 */
-expr_info_t bcgen_conditional_operator_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
+expression_gen_t bcgen_conditional_operator_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -1173,7 +1164,7 @@ expr_info_t bcgen_conditional_operator_expression(bcgenerator_t& vm, const varia
 	return { body_acc, target_reg2, result_itype };
 }
 
-expr_info_t bcgen_comparison_expression(bcgenerator_t& vm, const variable_address_t& target_reg, expression_type op, const expression_t& e, const bcgen_body_t& body){
+expression_gen_t bcgen_comparison_expression(bcgenerator_t& vm, const variable_address_t& target_reg, expression_type op, const expression_t& e, const bcgen_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -1241,7 +1232,7 @@ expr_info_t bcgen_comparison_expression(bcgenerator_t& vm, const variable_addres
 	return { body_acc, target_reg2, intern_type(vm, typeid_t::make_bool()) };
 }
 
-expr_info_t bcgen_arithmetic_expression(bcgenerator_t& vm, const variable_address_t& target_reg, expression_type op, const expression_t& e, const bcgen_body_t& body){
+expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& vm, const variable_address_t& target_reg, expression_type op, const expression_t& e, const bcgen_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -1353,9 +1344,7 @@ expr_info_t bcgen_arithmetic_expression(bcgenerator_t& vm, const variable_addres
 	return { body_acc, target_reg2, itype };
 }
 
-
-
-expr_info_t bcgen_literal_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
+expression_gen_t bcgen_literal_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -1377,9 +1366,7 @@ expr_info_t bcgen_literal_expression(bcgenerator_t& vm, const variable_address_t
 	}
 }
 
-
-
-expr_info_t bcgen_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
+expression_gen_t bcgen_expression(bcgenerator_t& vm, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(target_reg.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1435,16 +1422,15 @@ void test__bcgen_expression(const expression_t& e, const expression_t& expected_
 	ut_compare_jsons(expression_to_json(e3)._value, expression_to_json(expected_value)._value);
 }
 */
-
 bcgenerator_t::bcgenerator_t(const semantic_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	_imm = std::make_shared<bgen_imm_t>(bgen_imm_t{ast});
+	_ast_imm = std::make_shared<semantic_ast_t>(ast);
 	QUARK_ASSERT(check_invariant());
 }
 
 bcgenerator_t::bcgenerator_t(const bcgenerator_t& other) :
-	_imm(other._imm),
+	_ast_imm(other._ast_imm),
 	_call_stack(other._call_stack),
 	_types(other._types)
 {
@@ -1453,7 +1439,7 @@ bcgenerator_t::bcgenerator_t(const bcgenerator_t& other) :
 }
 
 void bcgenerator_t::swap(bcgenerator_t& other) throw(){
-	other._imm.swap(this->_imm);
+	other._ast_imm.swap(this->_ast_imm);
 	_call_stack.swap(this->_call_stack);
 	_types.swap(this->_types);
 }
@@ -1466,7 +1452,7 @@ const bcgenerator_t& bcgenerator_t::operator=(const bcgenerator_t& other){
 
 #if DEBUG
 bool bcgenerator_t::check_invariant() const {
-	QUARK_ASSERT(_imm->_ast.check_invariant());
+	QUARK_ASSERT(_ast_imm->check_invariant());
 	return true;
 }
 #endif
@@ -1532,7 +1518,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 
 	bcgenerator_t a(ast._checked_ast);
 
-	const auto global_body = bcgen_body_top(a, a._imm->_ast._checked_ast._globals);
+	const auto global_body = bcgen_body_top(a, a._ast_imm->_checked_ast._globals);
 	const auto globals2 = make_frame(global_body, {});
 	a._call_stack.push_back(bcgen_environment_t{ &global_body });
 
