@@ -32,6 +32,7 @@ set(CMAKE_CXX_FLAGS "-std=c++17 -g")
 # set( CMAKE_FIND_FRAMEWORK "LAST")
 
 set( FLOYD_SPEAK_SOURCES
+ast_json.cpp
 ast_typeid.cpp
 ast_typeid_helpers.cpp
 ast_value.cpp
@@ -42,28 +43,31 @@ bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/floyd_interpreter.cpp
 bytecode_interpreter/host_functions.cpp
 cpp_experiments.cpp
+compiler_basics.cpp
 floyd_ast/ast.cpp
 floyd_ast/ast_basics.cpp
 floyd_ast/expression.cpp
 floyd_ast/statement.cpp
-floyd_basics.cpp
+#floyd_basics.cpp
 floyd_main.cpp
+floyd_syntax.cpp
 floyd_parser/floyd_parser.cpp
 floyd_parser/parse_expression.cpp
 floyd_parser/parse_function_def.cpp
 floyd_parser/parse_prefixless_statement.cpp
+floyd_parser/parse_protocol_def.cpp
 floyd_parser/parse_statement.cpp
 floyd_parser/parse_struct_def.cpp
-floyd_parser/parser2.cpp
+#floyd_parser/parser2.cpp
 floyd_parser/parser_primitives.cpp
 floyd_parser/parse_protocol_def.cpp
 #floyd_speak/example.floydsys
 hardware_caps.cpp
 interpretator_benchmark.cpp
 parts/immutable_ref_value.cpp
-parts/json_parser.cpp
+#parts/json_parser.cpp
 parts/json_support.cpp
-parts/json_writer.cpp
+#parts/json_writer.cpp
 parts/quark.cpp
 parts/sha1/sha1.cpp
 parts/sha1_class.cpp
@@ -87,6 +91,7 @@ set( FLOYD_SPEAK_DEPENDENCIES
 ##
 
 set( FLOYD_SPEAK__UT_SOURCES
+ast_json.cpp
 ast_typeid.cpp
 ast_typeid_helpers.cpp
 ast_value.cpp
@@ -97,28 +102,31 @@ bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/floyd_interpreter.cpp
 bytecode_interpreter/host_functions.cpp
 cpp_experiments.cpp
+compiler_basics.cpp
 floyd_ast/ast.cpp
 floyd_ast/ast_basics.cpp
 floyd_ast/expression.cpp
 floyd_ast/statement.cpp
-floyd_basics.cpp
+#floyd_basics.cpp
 floyd_main.cpp
+floyd_syntax.cpp
 floyd_parser/floyd_parser.cpp
 floyd_parser/parse_expression.cpp
 floyd_parser/parse_function_def.cpp
 floyd_parser/parse_prefixless_statement.cpp
+floyd_parser/parse_protocol_def.cpp
 floyd_parser/parse_statement.cpp
 floyd_parser/parse_struct_def.cpp
-floyd_parser/parser2.cpp
+#floyd_parser/parser2.cpp
 floyd_parser/parser_primitives.cpp
 floyd_parser/parse_protocol_def.cpp
 floyd_test_suite.cpp
 hardware_caps.cpp
 interpretator_benchmark.cpp
 parts/immutable_ref_value.cpp
-parts/json_parser.cpp
+#parts/json_parser.cpp
 parts/json_support.cpp
-parts/json_writer.cpp
+#parts/json_writer.cpp
 parts/quark.cpp
 parts/sha1/sha1.cpp
 parts/sha1_class.cpp

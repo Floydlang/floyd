@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 #include <map>
-
+#include <algorithm>
 
 struct ast_json_t;
 
