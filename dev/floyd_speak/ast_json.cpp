@@ -62,7 +62,7 @@ ast_json_t make_statement4(const location_t& location, const std::string& opcode
 QUARK_UNIT_TEST("", "make_statement_n()", "", ""){
 	const auto r = make_statement_n(location_t(1234), "def-struct", std::vector<json_t>{});
 
-	QUARK_TEST_VERIFY( r._value == json_t::make_array({ 1234.0, "def-struct" }));
+	ut_verify(QUARK_POS, r._value, json_t::make_array({ 1234.0, "def-struct" }));
 }
 
 

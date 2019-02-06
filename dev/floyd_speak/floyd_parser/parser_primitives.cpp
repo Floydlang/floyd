@@ -72,10 +72,10 @@ std::pair<std::string, seq_t> while_multicomment(const seq_t& s){
 			return { a, p.rest(2) };
 		}
 		else{
-			quark::throw_runtime_error("Unbalanaced comments /* ... */");
+			throw_compiler_error(location_t(s.pos()), "Unbalanaced comments /* ... */");
 		}
 	}
-	quark::throw_runtime_error("Unbalanaced comments /* ... */");
+	throw_compiler_error(location_t(s.pos()), "Unbalanaced comments /* ... */");
 }
 
 pair<string, seq_t> skip_whitespace2(const seq_t& s){
@@ -147,7 +147,7 @@ QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */", ""){
 QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */", ""){
 	try {
 		QUARK_TEST_VERIFY(skip_whitespace2(seq_t("/*xyz")).second == seq_t(""));
-		QUARK_UT_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(...) {
 	}
@@ -211,7 +211,7 @@ std::pair<std::string, seq_t> get_balanced(const seq_t& s){
 
 	const auto r = read_balanced2(s, bracket_pairs);
 	if(r.first == ""){
-		quark::throw_runtime_error("unbalanced ([{< >}])");
+		throw_compiler_error(location_t(s.pos()), "unbalanced ([{< >}])");
 	}
 
 	return r;
@@ -292,7 +292,7 @@ std::pair<string, seq_t> read_until_toplevel_match(const seq_t& s, const std::st
 QUARK_UNIT_TEST("", "read_until_toplevel_match()", "", ""){
 	try {
 		read_until_toplevel_match(seq_t("print(json_to_string(json_to_value(value_to_json(\"cola\"));\n\t"), ";{");
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(...){
 	}
@@ -321,7 +321,7 @@ std::pair<std::string, seq_t> read_identifier(const seq_t& s){
 std::pair<std::string, seq_t> read_required_identifier(const seq_t& s){
 	const auto b = read_identifier(s);
 	if(b.first.empty()){
-		quark::throw_runtime_error("missing identifier");
+		throw_compiler_error(location_t(s.pos()), "missing identifier");
 	}
 	return b;
 }
@@ -413,7 +413,7 @@ std::pair<vector<member_t>, seq_t> read_functiondef_arg_parantheses(const seq_t&
 
 	std::pair<std::string, seq_t> args_pos = read_balanced2(s, bracket_pairs);
 	if(args_pos.first.empty()){
-		quark::throw_runtime_error("unbalanced ()");
+		throw_compiler_error(location_t(s.pos()), "unbalanced ()");
 	}
 	const auto r = parse_functiondef_arguments2(args_pos.first, true);
 	return { r, args_pos.second };
@@ -425,7 +425,7 @@ std::pair<std::vector<member_t>, seq_t> read_function_type_args(const seq_t& s){
 
 	std::pair<std::string, seq_t> args_pos = read_balanced2(s, bracket_pairs);
 	if(args_pos.first.empty()){
-		quark::throw_runtime_error("unbalanced ()");
+		throw_compiler_error(location_t(s.pos()),"unbalanced ()");
 	}
 	const auto r = parse_functiondef_arguments2(args_pos.first, false);
 	return { r, args_pos.second };
@@ -465,7 +465,7 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_basic_or_vector(const seq_t& s){
 			const auto pos4 = pos3.rest1();
 
 			if(element_type_pos.first.is_string() == false){
-				quark::throw_runtime_error("Dict only support string as key!");
+				throw_compiler_error(location_t(pos0.pos()), "Dict only support string as key!");
 			}
 			else{
 				const auto element_type2_pos = read_required_type(skip_whitespace(pos4));
@@ -479,7 +479,7 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_basic_or_vector(const seq_t& s){
 					};
 				}
 				else{
-					quark::throw_runtime_error("unbalanced []");
+					throw_compiler_error(location_t(element_type2_pos.second.pos()), "unbalanced [].");
 				}
 			}
 		}
@@ -487,7 +487,7 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_basic_or_vector(const seq_t& s){
 			return { make_shared<typeid_t>(typeid_t::make_vector(element_type_pos.first)), pos3.rest1() };
 		}
 		else{
-			quark::throw_runtime_error("unbalanced []");
+			throw_compiler_error(location_t(pos3.pos()), "unbalanced [].");
 		}
 	}
 	else {
@@ -627,7 +627,7 @@ QUARK_UNIT_TEST("", "read_type_identifier()", "", ""){
 pair<typeid_t, seq_t> read_required_type(const seq_t& s){
 	const auto type_pos = read_type(s);
 	if(type_pos.first == nullptr){
-		quark::throw_runtime_error("illegal character in type identifier");
+		throw_compiler_error(location_t(s.pos()), "illegal character in type identifier");
 	}
 	return { *type_pos.first, type_pos.second };
 }

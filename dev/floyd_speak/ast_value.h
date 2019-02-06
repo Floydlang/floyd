@@ -676,6 +676,7 @@ namespace floyd {
 	//////////////////////////////////////////////////		Helpers
 
 
+
 	/*
 		"true"
 		"0"
@@ -704,6 +705,7 @@ namespace floyd {
 
 	value_t make_def(const typeid_t& type);
 
+	void ut_verify(const quark::call_context_t& context, const value_t& result, const value_t& expected);
 
 }	//	floyd
 

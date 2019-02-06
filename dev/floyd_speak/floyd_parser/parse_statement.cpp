@@ -328,7 +328,7 @@ range_def_t parse_range(const seq_t& pos){
 		return { start_end2.first, "..<", start_end2.second };
 	}
 
-	quark::throw_runtime_error("For loop has illegal range syntax.");
+	throw_compiler_error(location_t(pos.pos()), "For loop has illegal range syntax.");
 }
 
 
@@ -344,7 +344,7 @@ std::pair<ast_json_t, seq_t> parse_for_statement(const seq_t& pos){
 	//	iterator == "index".
 	const auto iterator_name = read_required_identifier(seq_t(header.first));
 	if(iterator_name.first.empty()){
-		quark::throw_runtime_error("For loop requires iterator name.");
+		throw_compiler_error(location_t(pos.pos()), "For loop requires iterator name.");
 	}
 
 	const auto in_str = read_required(skip_whitespace(iterator_name.second), "in");
@@ -474,14 +474,15 @@ QUARK_UNIT_TEST("", "parse_while_statement()", "while(){}", ""){
 
 std::pair<ast_json_t, seq_t> parse_software_system(const seq_t& s){
 	const auto start = skip_whitespace(s);
+	const auto loc = location_t(start.pos());
 	const auto ss_pos = if_first(start, keyword_t::k_software_system);
 	if(ss_pos.first == false){
-		quark::throw_runtime_error("Syntax error");
+		throw_compiler_error(loc, "Syntax error.");
 	}
 
 	//??? Instead of parsing a static JSON literal, we could parse a Floyd expression that results in a JSON value = use variables etc.
 	std::pair<json_t, seq_t> json_pos = parse_json(ss_pos.second);
-	const auto r = make_statement1(location_t(start.pos()), statement_opcode_t::k_software_system, json_pos.first);
+	const auto r = make_statement1(loc, statement_opcode_t::k_software_system, json_pos.first);
 	return { r, json_pos.second };
 }
 
@@ -497,15 +498,16 @@ std::pair<ast_json_t, seq_t> parse_software_system(const seq_t& s){
 
 std::pair<ast_json_t, seq_t> parse_container_def(const seq_t& s){
 	const auto start = skip_whitespace(s);
+	const auto loc = location_t(start.pos());
 	const auto ss_pos = if_first(start, keyword_t::k_container_def);
 	if(ss_pos.first == false){
-		quark::throw_runtime_error("Syntax error");
+		throw_compiler_error(loc, "Syntax error.");
 	}
 
 	//??? Instead of parsing a static JSON literal, we could parse a Floyd expression that results in a JSON value = use variables etc.
 	std::pair<json_t, seq_t> json_pos = parse_json(ss_pos.second);
 
-	const auto r = make_statement1(location_t(start.pos()), statement_opcode_t::k_container_def, json_pos.first);
+	const auto r = make_statement1(loc, statement_opcode_t::k_container_def, json_pos.first);
 	return { r, json_pos.second };
 }
 

@@ -357,13 +357,13 @@ int bc_compare_string(const std::string& left, const std::string& right){
 }
 
 QUARK_UNIT_TESTQ("bc_compare_string()", ""){
-	QUARK_TEST_VERIFY(bc_compare_string("", "") == 0);
+	ut_verify_auto(QUARK_POS, bc_compare_string("", ""), 0);
 }
 QUARK_UNIT_TESTQ("bc_compare_string()", ""){
-	QUARK_TEST_VERIFY(bc_compare_string("aaa", "aaa") == 0);
+	ut_verify_auto(QUARK_POS, bc_compare_string("aaa", "aaa"), 0);
 }
 QUARK_UNIT_TESTQ("bc_compare_string()", ""){
-	QUARK_TEST_VERIFY(bc_compare_string("b", "a") == 1);
+	ut_verify_auto(QUARK_POS, bc_compare_string("b", "a"), 1);
 }
 
 

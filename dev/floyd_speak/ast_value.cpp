@@ -232,13 +232,13 @@ int compare_string(const std::string& left, const std::string& right){
 }
 
 QUARK_UNIT_TESTQ("compare_string()", ""){
-	QUARK_TEST_VERIFY(compare_string("", "") == 0);
+	ut_verify_auto(QUARK_POS, compare_string("", ""), 0);
 }
 QUARK_UNIT_TESTQ("compare_string()", ""){
-	QUARK_TEST_VERIFY(compare_string("aaa", "aaa") == 0);
+	ut_verify_auto(QUARK_POS, compare_string("aaa", "aaa"), 0);
 }
 QUARK_UNIT_TESTQ("compare_string()", ""){
-	QUARK_TEST_VERIFY(compare_string("b", "a") == 1);
+	ut_verify_auto(QUARK_POS, compare_string("b", "a"), 1);
 }
 
 
@@ -1268,6 +1268,15 @@ value_t make_def(const typeid_t& type){
 
 	QUARK_ASSERT(false);
 	quark::throw_exception();
+}
+
+
+void ut_verify(const quark::call_context_t& context, const value_t& result, const value_t& expected){
+	ut_verify(
+		context,
+		value_to_ast_json(result, json_tags::k_plain)._value,
+		value_to_ast_json(expected, json_tags::k_plain)._value
+	);
 }
 
 }	//	floyd

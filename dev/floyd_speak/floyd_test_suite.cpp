@@ -132,12 +132,12 @@ QUARK_UNIT_TESTQ("Floyd test suite", "parant") {
 
 QUARK_UNIT_TEST("Floyd test suite", "Expression statement", "", "") {
 	const auto r = test__run_global("print(5)");
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "5" }));
+	ut_verify(QUARK_POS, r->_print_output, { "5" });
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "Infered bind", "", "") {
 	const auto r = test__run_global("let a = 10;print(a)");
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "10" }));
+	ut_verify(QUARK_POS, r->_print_output, { "10" });
 }
 
 
@@ -399,7 +399,7 @@ QUARK_UNIT_TESTQ("execute_expression()", "||") {
 QUARK_UNIT_TEST("execute_expression()", "Type mismatch", "", "") {
 	try{
 		test__run_init__check_result("let int result = true", value_t::make_int(1));
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Expression type mismatch - cannot convert 'bool' to 'int. Line: 1 \"let int result = true\"");
@@ -410,7 +410,7 @@ QUARK_UNIT_TEST("execute_expression()", "Type mismatch", "", "") {
 QUARK_UNIT_TEST("", "execute_expression()", "Division by zero", "") {
 	try{
 		test__run_init__check_result("let int result = 2/0", value_t::make_undefined());
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "EEE_DIVIDE_BY_ZERO");
@@ -420,7 +420,7 @@ QUARK_UNIT_TEST("", "execute_expression()", "Division by zero", "") {
 QUARK_UNIT_TESTQ("execute_expression()", "Division by zero"){
 	try{
 		test__run_init__check_result("let int result = 3+1/(5-5)+4", value_t::make_undefined());
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "EEE_DIVIDE_BY_ZERO");
@@ -450,7 +450,7 @@ QUARK_UNIT_TESTQ("execute_expression()", "Errors") {
 QUARK_UNIT_TEST("execute_expression()", "-true", "", "") {
 	try{
 		test__run_init__check_result("let int result = -true", value_t::make_int(0));
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Unary minus don't work on expressions of type \"bool\", only int and double. Line: 1 \"let int result = -true\"");
@@ -464,7 +464,7 @@ QUARK_UNIT_TEST("execute_expression()", "-true", "", "") {
 QUARK_UNIT_TEST("run_main", "Forgot let or mutable", "", "Exception"){
 	try{
 		test__run_init__check_result("int test = 123", value_t::make_int(0));
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Use 'mutable' or 'let' syntax. Line: 1 \"int test = 123\"");
@@ -518,7 +518,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(result == value_t::make_int(7));
+	ut_verify(QUARK_POS, result, value_t::make_int(7));
 }
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
@@ -533,7 +533,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(result == value_t::make_string("123456"));
+	ut_verify(QUARK_POS, result, value_t::make_string("123456"));
 }
 
 
@@ -559,7 +559,7 @@ QUARK_UNIT_TEST("", "double()", "", ""){
 QUARK_UNIT_TEST("", "string()", "", ""){
 	try{
 		test__run_init__check_result("let result = string()", value_t::make_string(""));
-		QUARK_UT_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Wrong number of arguments in function call, got 0, expected 1. Line: 1 \"let result = string()\"");
@@ -698,7 +698,7 @@ QUARK_UNIT_TEST("call_function()", "define additional function, call it several 
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
-	QUARK_TEST_VERIFY(result == value_t::make_int(15));
+	ut_verify(QUARK_POS, result, value_t::make_int(15));
 }
 
 QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
@@ -713,10 +713,10 @@ QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("xyz") });
-	QUARK_TEST_VERIFY(result == value_t::make_string("-xyz-"));
+	ut_verify(QUARK_POS, result, value_t::make_string("-xyz-"));
 
 	const auto result2 = call_function(vm, f, vector<value_t>{ value_t::make_string("Hello, world!") });
-	QUARK_TEST_VERIFY(result2 == value_t::make_string("-Hello, world!-"));
+	ut_verify(QUARK_POS, result2, value_t::make_string("-Hello, world!-"));
 }
 
 
@@ -739,11 +739,11 @@ QUARK_UNIT_TEST("call_function()", "use local variables", "", ""){
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("xyz") });
 
-	QUARK_TEST_VERIFY(result == value_t::make_string("--xyz<xyz>--"));
+	ut_verify(QUARK_POS, result, value_t::make_string("--xyz<xyz>--"));
 
 	const auto result2 = call_function(vm, f, vector<value_t>{ value_t::make_string("123") });
 
-	QUARK_TEST_VERIFY(result2 == value_t::make_string("--123<123>--"));
+	ut_verify(QUARK_POS, result2, value_t::make_string("--123<123>--"));
 }
 
 
@@ -757,7 +757,7 @@ QUARK_UNIT_TEST("call_function()", "local variable without let", "", ""){
 		print(a)
 
 	)");
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "7" }));
+	ut_verify(QUARK_POS, r->_print_output, { "7" });
 }
 
 
@@ -773,7 +773,7 @@ QUARK_UNIT_TEST("call_function()", "mutate local", "", ""){
 		print(a)
 
 	)");
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "2" }));
+	ut_verify(QUARK_POS, r->_print_output, { "2" });
 }
 
 QUARK_UNIT_TESTQ("run_init()", "increment a mutable"){
@@ -784,7 +784,7 @@ QUARK_UNIT_TESTQ("run_init()", "increment a mutable"){
 		print(a)
 
 	)");
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "1001" }));
+	ut_verify(QUARK_POS, r->_print_output, { "1001" });
 }
 
 QUARK_UNIT_TEST("", "run_main()", "test locals are immutable", ""){
@@ -795,7 +795,7 @@ QUARK_UNIT_TEST("", "run_main()", "test locals are immutable", ""){
 			a = 4
 
 		)");
-		QUARK_UT_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		QUARK_UT_VERIFY(string(e.what()) == "Cannot assign to immutable identifier \"a\". Line: 4 \"a = 4\"");
@@ -812,7 +812,7 @@ QUARK_UNIT_TEST("", "run_main()", "test function args are always immutable", "")
 			f(5)
 
 		)");
-		QUARK_UT_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		QUARK_UT_VERIFY(string(e.what()) == "Cannot assign to immutable identifier \"x\". Line: 4 \"x = 6\"");
@@ -829,7 +829,7 @@ QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 		}
 
 	)");
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "8" }));
+	ut_verify(QUARK_POS, r->_print_output, { "8" });
 }
 
 QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
@@ -839,7 +839,7 @@ QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 		print(a)
 
 	)");
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "7" }));
+	ut_verify(QUARK_POS, r->_print_output, { "7" });
 }
 
 
@@ -852,7 +852,7 @@ QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 		print(a)
 
 	)");
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "7" }));
+	ut_verify(QUARK_POS, r->_print_output, { "7" });
 }
 
 QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
@@ -865,7 +865,7 @@ QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 		print(a)
 
 	)");
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "8" }));
+	ut_verify(QUARK_POS, r->_print_output, { "8" });
 }
 
 
@@ -886,7 +886,7 @@ QUARK_UNIT_TEST("call_function()", "return from middle of function", "", ""){
 		print(x)
 
 	)");
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A", "B" }));
+	ut_verify(QUARK_POS, r->_print_output, { "A", "B" });
 }
 
 QUARK_UNIT_TEST("call_function()", "return from within IF block", "", ""){
@@ -905,7 +905,7 @@ QUARK_UNIT_TEST("call_function()", "return from within IF block", "", ""){
 		print(x)
 
 	)");
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A", "B" }));
+	ut_verify(QUARK_POS, r->_print_output, { "A", "B" });
 }
 
 QUARK_UNIT_TEST("call_function()", "return from within FOR block", "", ""){
@@ -924,7 +924,7 @@ QUARK_UNIT_TEST("call_function()", "return from within FOR block", "", ""){
 		print(x)
 
 	)");
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A", "B" }));
+	ut_verify(QUARK_POS, r->_print_output, { "A", "B" });
 }
 
 // ??? add test for: return from ELSE
@@ -945,7 +945,7 @@ QUARK_UNIT_TESTQ("call_function()", "return from within BLOCK"){
 		print(x)
 
 	)");
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A", "B" }));
+	ut_verify(QUARK_POS, r->_print_output, { "A", "B" });
 }
 
 
@@ -1077,10 +1077,10 @@ QUARK_UNIT_TEST("", "run_global()", "", ""){
 				assert(1 == 2)
 			)"
 		);
-		QUARK_UT_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(...){
-//		QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Assertion failed.", "A" }));
+//		ut_verify(QUARK_POS, r->_print_output, { "Assertion failed.", "A" });
 	}
 }
 
@@ -1091,7 +1091,7 @@ QUARK_UNIT_TESTQ("run_global()", ""){
 			print("A")
 		)"
 	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "A" }));
+	ut_verify(QUARK_POS, r->_print_output, { "A" });
 }
 
 
@@ -1125,7 +1125,7 @@ QUARK_UNIT_TEST("run_init()", "Block with local variable, no shadowing", "", "")
 			print("E:" + to_string(x))
 		)"
 	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "B:3", "C:3", "D:4", "E:3" }));
+	ut_verify(QUARK_POS, r->_print_output, { "B:3", "C:3", "D:4", "E:3" });
 }
 
 
@@ -1141,7 +1141,7 @@ QUARK_UNIT_TEST("run_init()", "if(true){}", "", ""){
 			print("Goodbye!")
 		)"
 	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Hello!", "Goodbye!" }));
+	ut_verify(QUARK_POS, r->_print_output, { "Hello!", "Goodbye!" });
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if(false){}"){
@@ -1153,7 +1153,7 @@ QUARK_UNIT_TESTQ("run_init()", "if(false){}"){
 			print("Goodbye!")
 		)"
 	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Goodbye!" }));
+	ut_verify(QUARK_POS, r->_print_output, { "Goodbye!" });
 }
 
 QUARK_UNIT_TEST("", "run_init()", "if(true){}else{}", ""){
@@ -1167,7 +1167,7 @@ QUARK_UNIT_TEST("", "run_init()", "if(true){}else{}", ""){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Hello!" }));
+	ut_verify(QUARK_POS, r->_print_output, { "Hello!" });
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if(false){}else{}"){
@@ -1181,7 +1181,7 @@ QUARK_UNIT_TESTQ("run_init()", "if(false){}else{}"){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Goodbye!" }));
+	ut_verify(QUARK_POS, r->_print_output, { "Goodbye!" });
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if"){
@@ -1201,7 +1201,7 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "one" }));
+	ut_verify(QUARK_POS, r->_print_output, { "one" });
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if"){
@@ -1221,7 +1221,7 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "two" }));
+	ut_verify(QUARK_POS, r->_print_output, { "two" });
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if"){
@@ -1241,7 +1241,7 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "three" }));
+	ut_verify(QUARK_POS, r->_print_output, { "three" });
 }
 
 QUARK_UNIT_TESTQ("run_init()", "if"){
@@ -1261,7 +1261,7 @@ QUARK_UNIT_TESTQ("run_init()", "if"){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "four" }));
+	ut_verify(QUARK_POS, r->_print_output, { "four" });
 }
 
 
@@ -1314,7 +1314,7 @@ QUARK_UNIT_TEST("run_init()", "for", "", ""){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "xyz", "xyz", "xyz" }));
+	ut_verify(QUARK_POS, r->_print_output, { "xyz", "xyz", "xyz" });
 }
 QUARK_UNIT_TEST("run_init()", "for", "", ""){
 	const auto r = test__run_global(
@@ -1324,7 +1324,7 @@ QUARK_UNIT_TEST("run_init()", "for", "", ""){
 			}
 		)"
 	);
-//	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Iteration: 0", "Iteration: 1", "Iteration: 2" }));
+//	ut_verify(QUARK_POS, r->_print_output, { "Iteration: 0", "Iteration: 1", "Iteration: 2" });
 }
 
 
@@ -1336,7 +1336,7 @@ QUARK_UNIT_TEST("run_init()", "for", "", ""){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Iteration: 0", "Iteration: 1", "Iteration: 2" }));
+	ut_verify(QUARK_POS, r->_print_output, { "Iteration: 0", "Iteration: 1", "Iteration: 2" });
 }
 QUARK_UNIT_TEST("run_init()", "for", "", ""){
 	const auto r = test__run_global(
@@ -1346,7 +1346,7 @@ QUARK_UNIT_TEST("run_init()", "for", "", ""){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Iteration: 0", "Iteration: 1" }));
+	ut_verify(QUARK_POS, r->_print_output, { "Iteration: 0", "Iteration: 1" });
 }
 
 QUARK_UNIT_TEST("run_init()", "fibonacci", "", ""){
@@ -1383,7 +1383,7 @@ OFF_QUARK_UNIT_TEST("run_init()", "for", "", ""){
 			a = a + 1
 		}
 	)");
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "100", "101", "102", "103", "104" }));
+	ut_verify(QUARK_POS, r->_print_output, { "100", "101", "102", "103", "104" });
 }
 
 
@@ -1401,7 +1401,7 @@ QUARK_UNIT_TEST("null", "", "", "0"){
 			let result = null
 		)", {});
 /*
-		QUARK_UT_VERIFY(false);
+		fail_test(QUARK_POS);
 
  }
 	catch(const std::runtime_error& e){
@@ -1493,7 +1493,7 @@ QUARK_UNIT_TEST("vector", "[]-constructor", "cannot be infered", "error"){
 			let a = []
 			print(a)
 		)");
-		QUARK_UT_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		QUARK_UT_VERIFY(string(e.what()) == "Cannot infer vector element type, add explicit type. Line: 2 \"let a = []\"");
@@ -1538,7 +1538,7 @@ QUARK_UNIT_TEST("vector", "==", "lhs and rhs are empty-typeless", ""){
 			assert(([] == []) == true)
 
 		)");
-		QUARK_UT_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Cannot infer vector element type, add explicit type. Line: 3 \"assert(([] == []) == true)\"");
@@ -1552,7 +1552,7 @@ QUARK_UNIT_TEST("vector", "+", "add empty vectors", ""){
 			let [int] a = [] + [] result = a == []
 
 		)", R"(	)");
-		QUARK_UT_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Cannot infer vector element type, add explicit type. Line: 3 \"let [int] a = [] + [] result = a == []\"");
@@ -1880,7 +1880,7 @@ QUARK_UNIT_TEST("dict", "", "", ""){
 			a = {"hello": 1}
 			print(a)
 		)");
-		QUARK_UT_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		QUARK_UT_VERIFY(string(e.what()) == "Cannot infer type in construct-value-expression. Line: 2 \"mutable a = {}\"");
@@ -1893,7 +1893,7 @@ QUARK_UNIT_TEST("dict", "[:]", "", ""){
 			let a = {}
 			print(a)
 		)");
-		QUARK_UT_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		QUARK_UT_VERIFY(string(e.what()) == "Cannot infer type in construct-value-expression. Line: 2 \"let a = {}\"");
@@ -1953,7 +1953,7 @@ QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 		const auto vm = test__run_global(R"(
 			assert(size({}) == 0)
 		)");
-		QUARK_UT_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Cannot infer type in construct-value-expression. Line: 2 \"assert(size({}) == 0)\"");
@@ -1965,7 +1965,7 @@ QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
 		const auto vm = test__run_global(R"(
 			print({})
 		)");
-		QUARK_UT_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Cannot infer type in construct-value-expression. Line: 2 \"print({})\"");
@@ -2019,7 +2019,7 @@ QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
 			assert(b == {"one": 1, "two": 2})
 		)");
 
-		QUARK_UT_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Cannot infer type in construct-value-expression. Line: 2 \"let a = update({}, \"one\", 1)\"");
@@ -2174,7 +2174,7 @@ QUARK_UNIT_TEST("", "run_main()", "struct - compare structs different types", ""
 			struct file { int id }
 			print(color(1, 2, 3) == file(404))
 		)");
-		QUARK_UT_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Expression type mismatch - cannot convert 'struct {int id;}' to 'struct {int red;int green;int blue;}. Line: 4 \"print(color(1, 2, 3) == file(404))\"");
@@ -2897,7 +2897,7 @@ QUARK_UNIT_TEST("", "impure", "call pure->impure", "Compilation error"){
 			func int b(){ return a(100) }
 
 		)");
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Cannot call impure function from a pure function. Line: 4 \"func int b(){ return a(100) }\"");
@@ -2976,7 +2976,7 @@ QUARK_UNIT_TEST("run_global()", "Print Hello, world!", "", ""){
 			print("Hello, World!")
 		)"
 	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Hello, World!" }));
+	ut_verify(QUARK_POS, r->_print_output, { "Hello, World!" });
 }
 
 
@@ -2988,7 +2988,7 @@ QUARK_UNIT_TEST("run_global()", "Test that VM state (print-log) escapes block!",
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Hello, World!" }));
+	ut_verify(QUARK_POS, r->_print_output, { "Hello, World!" });
 }
 
 QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes IF!"){
@@ -2999,7 +2999,7 @@ QUARK_UNIT_TESTQ("run_global()", "Test that VM state (print-log) escapes IF!"){
 			}
 		)"
 	);
-	QUARK_UT_VERIFY((r->_print_output == vector<string>{ "Hello, World!" }));
+	ut_verify(QUARK_POS, r->_print_output, { "Hello, World!" });
 }
 
 
@@ -3569,7 +3569,7 @@ QUARK_UNIT_TEST("Parser error", "", "", ""){
 			£
 
 		)");
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const compiler_error& e){
 		ut_verify(QUARK_POS, e.what(), R"___(Illegal characters. Line: 3 "£")___");
@@ -3584,7 +3584,7 @@ QUARK_UNIT_TEST("Parser error", "", "", ""){
 			{ let a = 10
 
 		)");
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const compiler_error& e){
 		ut_verify(QUARK_POS, e.what(), R"___(Block is missing end bracket '}'. Line: 3 "{ let a = 10")___");
@@ -3596,7 +3596,7 @@ QUARK_UNIT_TEST("Parser error", "", "", ""){
 		const auto result = test__run_global(R"(
 			[ 100, 200 }
 		)");
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const compiler_error& e){
 		ut_verify(QUARK_POS, e.what(), R"___(Unexpected char "}" in bounded list [ ]! Line: 2 "[ 100, 200 }")___");
@@ -3608,7 +3608,7 @@ QUARK_UNIT_TEST("Parser error", "", "", ""){
 		const auto result = test__run_global(R"(
 			x = { "a": 100 ]
 		)");
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const compiler_error& e){
 		ut_verify(QUARK_POS, e.what(), R"___(Unexpected char "]" in bounded list { }! Line: 2 "x = { "a": 100 ]")___");
@@ -3619,7 +3619,7 @@ QUARK_UNIT_TEST("Parser error", "", "", ""){
 QUARK_UNIT_TEST("Parser error", "", "", ""){
 	try{
 		const auto result = test__run_global(R"("abc\)");
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const compiler_error& e){
 		ut_verify(QUARK_POS, e.what(), R"___(Incomplete escape sequence in string literal: "abc"! Line: 1 ""abc\")___");
@@ -3643,7 +3643,7 @@ QUARK_UNIT_TEST("Edge case", "", "if with non-bool expression", "exception"){
 			mutable string row
 
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), R"___(Expected '=' character. Line: 3 "mutable string row")___");
@@ -3659,7 +3659,7 @@ QUARK_UNIT_TEST("Edge case", "", "if with non-bool expression", "exception"){
 				assert(false)
 			}
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Boolean condition required. Line: 2 \"if(\"not a bool\"){\"");
@@ -3672,7 +3672,7 @@ QUARK_UNIT_TEST("Edge case", "", "assign to immutable local", "exception"){
 			let int a = 10
 			let int a = 11
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Local identifier \"a\" already exists. Line: 3 \"let int a = 11\"");
@@ -3684,7 +3684,7 @@ QUARK_UNIT_TEST("Edge case", "", "Define struct with colliding name", "exception
 			let int a = 10
 			struct a { int x }
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Name \"a\" already used in current lexical scope. Line: 3 \"struct a { int x }\"");
@@ -3698,7 +3698,7 @@ QUARK_UNIT_TEST("Edge case", "", "Access unknown struct member", "exception"){
 			let b = a(13)
 			print(b.y)
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Unknown struct member \"y\". Line: 4 \"print(b.y)\"");
@@ -3711,7 +3711,7 @@ QUARK_UNIT_TEST("Edge case", "", "Access unknown member in non-struct", "excepti
 			let a = 10
 			print(a.y)
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Left hand side is not a struct value, it's of type \"int\". Line: 3 \"print(a.y)\"");
@@ -3724,7 +3724,7 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup in string using non-int", "exception"){
 			let string a = "test string"
 			print(a["not an integer"])
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Strings can only be indexed by integers, not a \"string\". Line: 3 \"print(a[\"not an integer\"])\"");
@@ -3737,7 +3737,7 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup in vector using non-int", "exception"){
 			let [string] a = ["one", "two", "three"]
 			print(a["not an integer"])
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Vector can only be indexed by integers, not a \"string\". Line: 3 \"print(a[\"not an integer\"])\"");
@@ -3750,7 +3750,7 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup in dict using non-string key", "excepti
 			let a = { "one": 1, "two": 2 }
 			print(a[3])
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Dictionary can only be looked up using string keys, not a \"int\". Line: 3 \"print(a[3])\"");
@@ -3762,7 +3762,7 @@ QUARK_UNIT_TEST("Edge case", "", "Access undefined variable", "exception"){
 		const auto result = test__run_return_result(R"(
 			print(a)
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Undefined variable \"a\". Line: 2 \"print(a)\"");
@@ -3775,7 +3775,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments in function call", "
 			func int f(int a){ return a + 1 }
 			let a = f(1, 2)
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Wrong number of arguments in function call, got 2, expected 1. Line: 3 \"let a = f(1, 2)\"");
@@ -3789,7 +3789,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to struct-constructo
 			struct pos { double x double y }
 			let a = pos(3)
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Wrong number of arguments in function call, got 1, expected 2. Line: 3 \"let a = pos(3)\"");
@@ -3803,7 +3803,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong TYPE of arguments to struct-constructor"
 			struct pos { double x double y }
 			let a = pos(3, "hello")
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Expression type mismatch - cannot convert 'int' to 'double. Line: 3 \"let a = pos(3, \"hello\")\"");
@@ -3815,7 +3815,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to int-constructor",
 		const auto result = test__run_return_result(R"(
 			let a = int()
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Wrong number of arguments in function call, got 0, expected 1. Line: 2 \"let a = int()\"");
@@ -3827,7 +3827,7 @@ QUARK_UNIT_TEST("Edge case", "", "Call non-function, non-struct, non-typeid", "e
 		const auto result = test__run_return_result(R"(
 			let a = 3()
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Cannot call non-function, its type is int. Line: 2 \"let a = 3()\"");
@@ -3839,7 +3839,7 @@ QUARK_UNIT_TEST("Edge case", "", "Vector can not hold elements of different type
 		const auto result = test__run_return_result(R"(
 			let a = [3, bool]
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Vector of type [int] cannot hold an element of type typeid. Line: 2 \"let a = [3, bool]\"");
@@ -3850,7 +3850,7 @@ QUARK_UNIT_TEST("Edge case", "", "Dict can not hold elements of different types.
 		const auto result = test__run_return_result(R"(
 			let a = {"one": 1, "two": bool}
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Dictionary of type [string:int] cannot hold an element of type typeid. Line: 2 \"let a = {\"one\": 1, \"two\": bool}\"");
@@ -3863,7 +3863,7 @@ QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
 		const auto result = test__run_return_result(R"(
 			let a = 3 < "hello"
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Expression type mismatch - cannot convert 'string' to 'int. Line: 2 \"let a = 3 < \"hello\"\"");
@@ -3875,7 +3875,7 @@ QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
 		const auto result = test__run_return_result(R"(
 			let a = 3 * 3.2
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Expression type mismatch - cannot convert 'double' to 'int. Line: 2 \"let a = 3 * 3.2\"");
@@ -3905,7 +3905,7 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup the unlookupable", "exception"){
 		const auto result = test__run_return_result(R"(
 			let a = 3[0]
 		)", {});
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Lookup using [] only works with strings, vectors, dicts and json_value - not a \"int\". Line: 2 \"let a = 3[0]\"");

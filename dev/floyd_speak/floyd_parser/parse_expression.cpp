@@ -21,7 +21,7 @@ namespace floyd {
 
 QUARK_UNIT_TEST("parser", "C++ operators", "", ""){
 	const int a = 2-+-2;
-	QUARK_TEST_VERIFY(a == 4);
+	ut_verify_auto(QUARK_POS, a, 4);
 }
 
 
@@ -717,7 +717,7 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 
     const auto p2 = skip_whitespace(p);
 	if(p2.empty()){
-		throw_compiler_error(location_t(p2.pos()), "Unexpected end of string.");
+		throw_compiler_error(location_t(p2.pos()), "Unexpected end of program.");
 	}
 
 	const char ch1 = p2.first1_char();
@@ -738,7 +738,7 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 		const auto a = parse_expression_deep(p2.rest1(), eoperator_precedence::k_super_weak);
 		const auto p3 = skip_whitespace(a.second);
 		if (p3.first() != ")"){
-			throw_compiler_error(location_t(p2.pos()), "Expected ')'");
+			throw_compiler_error(location_t(p2.pos()), "Expected ')' character.");
 		}
 		return { a.first._value, p3.rest() };
 	}
@@ -829,10 +829,10 @@ void ut_verify__parse_expression(const quark::call_context_t& context, const std
 QUARK_UNIT_TEST("parser", "parse_expression()", "", ""){
 	try{
 		parse_expression(seq_t(""));
-		QUARK_UT_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_TEST_VERIFY(std::string(e.what()) == "Unexpected end of string.");
+		ut_verify(QUARK_POS, e.what(), "Unexpected end of program.");
 	}
 }
 
@@ -1417,7 +1417,7 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "combo arithmetics", ""){
 void test__parse_expression__throw(const std::string& expression, const std::string& exception_message){
 	try{
 		const auto result = parse_expression(seq_t(expression));
-		QUARK_TEST_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
 		const std::string es(e.what());
@@ -1445,10 +1445,10 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "Wrong position of an operator",
 }
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "Wrong position of an operator", ""){
-	test__parse_expression__throw("2+", "Unexpected end of string.");
+	test__parse_expression__throw("2+", "Unexpected end of program.");
 }
 QUARK_UNIT_TEST("parser", "parse_expression()", "Wrong position of an operator", ""){
-	test__parse_expression__throw("2*", "Unexpected end of string.");
+	test__parse_expression__throw("2*", "Unexpected end of program.");
 }
 
 

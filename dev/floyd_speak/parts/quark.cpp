@@ -84,7 +84,7 @@ QUARK_UNIT_TEST("Quark", "ut_verify()", "", ""){
 QUARK_UNIT_TEST("Quark", "ut_verify()", "", ""){
 	try{
 		ut_verify(QUARK_POS, "xyzabc", "xyztbcd");
-		QUARK_UT_VERIFY(false);
+		fail_test(QUARK_POS);
 	}
 	catch(...){
 		//	We should land here.
