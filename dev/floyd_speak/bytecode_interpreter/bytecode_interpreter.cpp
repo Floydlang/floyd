@@ -469,49 +469,49 @@ value_runtime_encoding type_to_encoding(const typeid_t& type){
 		return value_runtime_encoding::k_none;
 	}
 	else if(basetype == base_type::k_bool){
-		return value_runtime_encoding::k_inline_bool;
+		return value_runtime_encoding::k_inplace__bool;
 	}
 	else if(basetype == base_type::k_int){
-		return value_runtime_encoding::k_inline_int_as_uint64;
+		return value_runtime_encoding::k_inplace__int_as_uint64;
 	}
 	else if(basetype == base_type::k_double){
-		return value_runtime_encoding::k_inline_double;
+		return value_runtime_encoding::k_inplace__double;
 	}
 	else if(basetype == base_type::k_string){
-		return value_runtime_encoding::k_ext_string;
+		return value_runtime_encoding::k_external__string;
 	}
 	else if(basetype == base_type::k_json_value){
-		return value_runtime_encoding::k_ext_json_value;
+		return value_runtime_encoding::k_external__json_value;
 	}
 	else if(basetype == base_type::k_typeid){
-		return value_runtime_encoding::k_ext_typeid;
+		return value_runtime_encoding::k_external__typeid;
 	}
 	else if(basetype == base_type::k_struct){
-		return value_runtime_encoding::k_ext_struct;
+		return value_runtime_encoding::k_external__struct;
 	}
 	else if(basetype == base_type::k_protocol){
-		return value_runtime_encoding::k_ext_struct;
+		return value_runtime_encoding::	k_external__protocol;
 	}
 	else if(basetype == base_type::k_vector){
 		const auto& element_type = type.get_vector_element_type().get_base_type();
 		if(element_type == base_type::k_bool){
-			return value_runtime_encoding::k_ext_vector_pod64;
+			return value_runtime_encoding::k_external__vector_pod64;
 		}
 		else if(element_type == base_type::k_int){
-			return value_runtime_encoding::k_ext_vector_pod64;
+			return value_runtime_encoding::k_external__vector_pod64;
 		}
 		else if(element_type == base_type::k_double){
-			return value_runtime_encoding::k_ext_vector_pod64;
+			return value_runtime_encoding::k_external__vector_pod64;
 		}
 		else{
-			return value_runtime_encoding::k_ext_vector;
+			return value_runtime_encoding::k_external__vector;
 		}
 	}
 	else if(basetype == base_type::k_dict){
-		return value_runtime_encoding::k_ext_dict;
+		return value_runtime_encoding::k_external__dict;
 	}
 	else if(basetype == base_type::k_function){
-		return value_runtime_encoding::k_inline_function;
+		return value_runtime_encoding::k_inplace__function;
 	}
 	else if(basetype == base_type::k_internal_unresolved_type_identifier){
 	}
@@ -528,13 +528,13 @@ value_runtime_encoding type_to_encoding(const typeid_t& type){
 //	??? very slow?
 bool is_encoded_as_ext(value_runtime_encoding encoding){
 	return false
-		|| encoding == value_runtime_encoding::k_ext_string
-		|| encoding == value_runtime_encoding::k_ext_json_value
-		|| encoding == value_runtime_encoding::k_ext_typeid
-		|| encoding == value_runtime_encoding::k_ext_struct
-		|| encoding == value_runtime_encoding::k_ext_vector
-		|| encoding == value_runtime_encoding::k_ext_vector_pod64
-		|| encoding == value_runtime_encoding::k_ext_dict
+		|| encoding == value_runtime_encoding::k_external__string
+		|| encoding == value_runtime_encoding::k_external__json_value
+		|| encoding == value_runtime_encoding::k_external__typeid
+		|| encoding == value_runtime_encoding::k_external__struct
+		|| encoding == value_runtime_encoding::k_external__vector
+		|| encoding == value_runtime_encoding::k_external__vector_pod64
+		|| encoding == value_runtime_encoding::k_external__dict
 		;
 }
 
@@ -568,7 +568,7 @@ bool bc_external_value_t::check_invariant() const{
 	QUARK_ASSERT(check_ext_deep(_debug_type, this));
 
 	const auto encoding = type_to_encoding(_debug_type);
-	if(encoding == value_runtime_encoding::k_ext_string){
+	if(encoding == value_runtime_encoding::k_external__string){
 //				QUARK_ASSERT(_string);
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
@@ -578,7 +578,7 @@ bool bc_external_value_t::check_invariant() const{
 		QUARK_ASSERT(_dict_objects.size() == 0);
 		QUARK_ASSERT(_dict_pod64.size() == 0);
 	}
-	else if(encoding == value_runtime_encoding::k_ext_json_value){
+	else if(encoding == value_runtime_encoding::k_external__json_value){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json_value != nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
@@ -590,7 +590,7 @@ bool bc_external_value_t::check_invariant() const{
 
 		QUARK_ASSERT(_json_value->check_invariant());
 	}
-	else if(encoding == value_runtime_encoding::k_ext_typeid){
+	else if(encoding == value_runtime_encoding::k_external__typeid){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json_value == nullptr);
 //		QUARK_ASSERT(_typeid_value != typeid_t::make_undefined());
@@ -602,7 +602,7 @@ bool bc_external_value_t::check_invariant() const{
 
 		QUARK_ASSERT(_typeid_value.check_invariant());
 	}
-	else if(encoding == value_runtime_encoding::k_ext_struct){
+	else if(encoding == value_runtime_encoding::k_external__struct){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
@@ -614,7 +614,7 @@ bool bc_external_value_t::check_invariant() const{
 
 //				QUARK_ASSERT(_struct && _struct->check_invariant());
 	}
-	else if(encoding == value_runtime_encoding::k_ext_vector){
+	else if(encoding == value_runtime_encoding::k_external__vector){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
@@ -624,7 +624,7 @@ bool bc_external_value_t::check_invariant() const{
 		QUARK_ASSERT(_dict_objects.size() == 0);
 		QUARK_ASSERT(_dict_pod64.size() == 0);
 	}
-	else if(encoding == value_runtime_encoding::k_ext_vector_pod64){
+	else if(encoding == value_runtime_encoding::k_external__vector_pod64){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
@@ -633,7 +633,7 @@ bool bc_external_value_t::check_invariant() const{
 		QUARK_ASSERT(_dict_objects.size() == 0);
 		QUARK_ASSERT(_dict_pod64.size() == 0);
 	}
-	else if(encoding == value_runtime_encoding::k_ext_dict){
+	else if(encoding == value_runtime_encoding::k_external__dict){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
@@ -1386,7 +1386,7 @@ int compare_doubles(const bc_inplace_value_t& left, const bc_inplace_value_t& ri
 
 /*
 	const auto encoding = type_to_encoding(type);
-	QUARK_ASSERT(encoding == value_runtime_encoding::k_ext_vector || encoding == value_runtime_encoding::k_ext_vector_int);
+	QUARK_ASSERT(encoding == value_runtime_encoding::k_external__vector || encoding == value_runtime_encoding::                                                                                                                                                                                                                                                                                                                                                                                                                                                                  m_int);
 
 	if(encoding == value_runtime_encoding::k_ext_vector){
 */

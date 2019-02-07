@@ -13,22 +13,20 @@
 	The Floyd byte code interpreter, used to run Floyd byte code programs.
 */
 
+#include "ast_typeid.h"
+#include "json_support.h"
+#include "software_system.h"
 #include "quark.h"
 
 #include <string>
 #include <vector>
+#include <map>
+#include <atomic>
 #include "immer/vector.hpp"
 #include "immer/map.hpp"
-#include <map>
-#include "ast_typeid.h"
-#include "json_support.h"
-#include "software_system.h"
-#include <atomic>
-#include <chrono>
 
 
 //??? remove usage of typeid_t. Use itype & types[]?
-//??? remove all make-functions -- just use constructors.
 //??? All functions should be the same type of function-values: host-functions and Floyd functions: _host_function_id should be in the VALUE not function definition!
 
 namespace floyd {
@@ -75,20 +73,21 @@ union bc_pod_value_t {
 
 enum class value_runtime_encoding {
 	k_none,
-	k_inline_bool,
-	k_inline_int_as_uint64,
-	k_inline_double,
-	k_ext_string,
-	k_ext_json_value,
+	k_inplace__bool,
+	k_inplace__int_as_uint64,
+	k_inplace__double,
+	k_external__string,
+	k_external__json_value,
 
 	//	This is a type that specifies another type.
-	k_ext_typeid,
+	k_external__typeid,
 
-	k_ext_struct,
-	k_ext_vector,
-	k_ext_vector_pod64,
-	k_ext_dict,
-	k_inline_function,
+	k_external__struct,
+	k_external__protocol,
+	k_external__vector,
+	k_external__vector_pod64,
+	k_external__dict,
+	k_inplace__function,
 };
 
 
