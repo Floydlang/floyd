@@ -219,18 +219,18 @@ struct bc_value_t {
 //	These values are put in collections.
 
 struct bc_external_handle_t {
-	bc_external_handle_t(const bc_external_handle_t& other);
-	explicit bc_external_handle_t(const bc_external_value_t* ext);
-	explicit bc_external_handle_t(const bc_value_t& value);
-	void swap(bc_external_handle_t& other);
-	bc_external_handle_t& operator=(const bc_external_handle_t& other);
-	~bc_external_handle_t();
+	public: bc_external_handle_t(const bc_external_handle_t& other);
+	public: explicit bc_external_handle_t(const bc_external_value_t* ext);
+	public: explicit bc_external_handle_t(const bc_value_t& value);
+	public: void swap(bc_external_handle_t& other);
+	public: bc_external_handle_t& operator=(const bc_external_handle_t& other);
+	public: ~bc_external_handle_t();
 
-	bool check_invariant() const;
+	public: bool check_invariant() const;
 
 	//////////////////////////////////////		STATE
 	//	Uses intrusive reference counting, that's why this isn't just a shared_ptr<>
-	const bc_external_value_t* _ext;
+	public: const bc_external_value_t* _ext;
 };
 
 
@@ -247,7 +247,7 @@ bool check_ext_deep(const typeid_t& type, const bc_external_value_t* ext);
 */
 
 struct bc_external_value_t {
-public: bc_external_value_t(const std::string& s);
+	public: bc_external_value_t(const std::string& s);
 	public: bc_external_value_t(const std::shared_ptr<json_t>& s);
 	public: bc_external_value_t(const typeid_t& s);
 	public: bc_external_value_t(const typeid_t& type, const std::vector<bc_value_t>& s, bool struct_tag);
@@ -261,8 +261,8 @@ public: bc_external_value_t(const std::string& s);
 #endif
 	public: bool operator==(const bc_external_value_t& other) const;
 
-	//////////////////////////////////////		STATE
 
+	//////////////////////////////////////		STATE
 	public: mutable std::atomic<int> _rc;
 	public: bool _is_unwritten_ext_value = false;
 #if DEBUG
@@ -279,16 +279,10 @@ public: bc_external_value_t(const std::string& s);
 };
 
 
+////////////////////////////////////////////			FREE
 
 
 bool check_ext_deep(const typeid_t& type, const bc_external_value_t* ext);
-
-
-
-
-
-////////////////////////////////////////////			FREE
-
 
 const immer::vector<bc_value_t> get_vector(const bc_value_t& value);
 const immer::vector<bc_external_handle_t>* get_vector_value(const bc_value_t& value);
@@ -301,10 +295,6 @@ bc_value_t make_vector_int64_value(const typeid_t& element_type, const immer::ve
 const immer::map<std::string, bc_external_handle_t>& get_dict_value(const bc_value_t& value);
 bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_external_handle_t>& entries);
 bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_inplace_value_t>& entries);
-
-
-////////////////////////////////////////////			FREE
-
 
 json_t bcvalue_to_json(const bc_value_t& v);
 int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, const typeid_t& type);
@@ -710,15 +700,7 @@ reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e);
 //	It's 64-bits big, has an opcode and 3 operands, A-B-C.
 
 struct bc_instruction_t {
-	bc_instruction_t(bc_opcode opcode, 	int16_t a, int16_t b, int16_t c) :
-		_opcode(opcode),
-		_a(a),
-		_b(b),
-		_c(c)
-	{
-		QUARK_ASSERT(check_invariant());
-	}
-
+	bc_instruction_t(bc_opcode opcode, int16_t a, int16_t b, int16_t c);
 #if DEBUG
 	public: bool check_invariant() const;
 #endif
@@ -781,22 +763,11 @@ struct bc_function_definition_t {
 		const std::vector<member_t>& args,
 		const std::shared_ptr<bc_static_frame_t>& frame,
 		int host_function_id
-	):
-		_function_type(function_type),
-		_args(args),
-		_frame_ptr(frame),
-		_host_function_id(host_function_id),
-		_dyn_arg_count(-1),
-		_return_is_ext(is_encoded_as_ext(_function_type.get_function_return()))
-	{
-		_dyn_arg_count = count_function_dynamic_args(function_type);
-	}
-
+	);
 #if DEBUG
-	public: bool check_invariant() const {
-		return true;
-	}
+	public: bool check_invariant() const;
 #endif
+
 
 	//////////////////////////////////////		STATE
 	typeid_t _function_type;
@@ -1180,6 +1151,7 @@ struct interpreter_stack_t {
 		const auto frame_ptr = bc_value_t(_current_frame_ptr);
 		push_intern(frame_ptr);
 	}
+
 	public: void restore_frame(){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(_stack_size >= k_frame_overhead);
@@ -1216,6 +1188,7 @@ struct interpreter_stack_t {
 
 		QUARK_ASSERT(check_invariant());
 	}
+
 	public: inline void push_intern(const bc_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
@@ -1295,6 +1268,7 @@ struct interpreter_stack_t {
 		}
 		QUARK_ASSERT(check_invariant());
 	}
+
 	private: inline void pop(bool ext){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(_stack_size > 0);
@@ -1433,72 +1407,7 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 
 
 
-////////////////////////////////////////////			bc_external_handle_t
 
-
-
-inline bc_external_handle_t::bc_external_handle_t(const bc_external_handle_t& other) :
-	_ext(other._ext)
-{
-	QUARK_ASSERT(other.check_invariant());
-
-	_ext->_rc++;
-
-	QUARK_ASSERT(check_invariant());
-}
-
-inline bc_external_handle_t::bc_external_handle_t(const bc_external_value_t* ext) :
-	_ext(ext)
-{
-	QUARK_ASSERT(ext != nullptr);
-
-	_ext->_rc++;
-
-	QUARK_ASSERT(check_invariant());
-}
-
-inline bc_external_handle_t::bc_external_handle_t(const bc_value_t& value) :
-	_ext(value._pod._ext)
-{
-	QUARK_ASSERT(value.check_invariant());
-	QUARK_ASSERT(is_encoded_as_ext(value._type));
-
-	_ext->_rc++;
-
-	QUARK_ASSERT(check_invariant());
-}
-
-inline void bc_external_handle_t::swap(bc_external_handle_t& other){
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(other.check_invariant());
-
-	std::swap(_ext, other._ext);
-
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(other.check_invariant());
-}
-
-inline bc_external_handle_t& bc_external_handle_t::operator=(const bc_external_handle_t& other){
-	auto temp = other;
-	temp.swap(*this);
-	return *this;
-}
-
-inline bc_external_handle_t::~bc_external_handle_t(){
-	QUARK_ASSERT(check_invariant());
-
-	_ext->_rc--;
-	if(_ext->_rc == 0){
-		delete _ext;
-		_ext = nullptr;
-	}
-}
-
-inline bool bc_external_handle_t::check_invariant() const {
-	QUARK_ASSERT(_ext != nullptr);
-	QUARK_ASSERT(_ext->check_invariant());
-	return true;
-}
 
 
 } //	floyd

@@ -19,9 +19,7 @@
 namespace floyd {
 
 
-
-
-
+////////////////////////////////////////////			bc_value_t
 
 
 
@@ -206,9 +204,6 @@ bc_value_t::bc_value_t(const std::shared_ptr<json_t>& value) :
 }
 
 
-
-
-
 //////////////////////////////////////		typeid
 
 
@@ -232,7 +227,6 @@ bc_value_t::bc_value_t(const typeid_t& type_id) :
 
 
 //////////////////////////////////////		struct
-
 
 
 
@@ -260,7 +254,7 @@ bc_value_t::bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t
 }
 
 
-	//////////////////////////////////////		function
+//////////////////////////////////////		function
 
 
 bc_value_t bc_value_t::make_function_value(const typeid_t& function_type, int function_id){
@@ -322,8 +316,6 @@ bc_value_t::bc_value_t(const typeid_t& type, const bc_external_handle_t& handle)
 
 
 
-
-
 #if DEBUG
 bool bc_value_t::check_invariant() const {
 	QUARK_ASSERT(_type.check_invariant());
@@ -362,13 +354,7 @@ void bc_value_t::add_ext_ref(const bc_value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 }
 
-
-
-
-
-
-
-inline bc_value_t::bc_value_t(const typeid_t& type, mode mode) :
+bc_value_t::bc_value_t(const typeid_t& type, mode mode) :
 	_type(type)
 {
 	QUARK_ASSERT(type.check_invariant());
@@ -384,6 +370,72 @@ inline bc_value_t::bc_value_t(const typeid_t& type, mode mode) :
 
 
 
+////////////////////////////////////////////			bc_external_handle_t
+
+
+
+bc_external_handle_t::bc_external_handle_t(const bc_external_handle_t& other) :
+	_ext(other._ext)
+{
+	QUARK_ASSERT(other.check_invariant());
+
+	_ext->_rc++;
+
+	QUARK_ASSERT(check_invariant());
+}
+
+bc_external_handle_t::bc_external_handle_t(const bc_external_value_t* ext) :
+	_ext(ext)
+{
+	QUARK_ASSERT(ext != nullptr);
+
+	_ext->_rc++;
+
+	QUARK_ASSERT(check_invariant());
+}
+
+bc_external_handle_t::bc_external_handle_t(const bc_value_t& value) :
+	_ext(value._pod._ext)
+{
+	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(is_encoded_as_ext(value._type));
+
+	_ext->_rc++;
+
+	QUARK_ASSERT(check_invariant());
+}
+
+void bc_external_handle_t::swap(bc_external_handle_t& other){
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(other.check_invariant());
+
+	std::swap(_ext, other._ext);
+
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(other.check_invariant());
+}
+
+bc_external_handle_t& bc_external_handle_t::operator=(const bc_external_handle_t& other){
+	auto temp = other;
+	temp.swap(*this);
+	return *this;
+}
+
+bc_external_handle_t::~bc_external_handle_t(){
+	QUARK_ASSERT(check_invariant());
+
+	_ext->_rc--;
+	if(_ext->_rc == 0){
+		delete _ext;
+		_ext = nullptr;
+	}
+}
+
+bool bc_external_handle_t::check_invariant() const {
+	QUARK_ASSERT(_ext != nullptr);
+	QUARK_ASSERT(_ext->check_invariant());
+	return true;
+}
 
 
 
@@ -392,18 +444,18 @@ inline bc_value_t::bc_value_t(const typeid_t& type, mode mode) :
 
 
 
-inline bool encode_as_pod64(const typeid_t& type){
+bool encode_as_pod64(const typeid_t& type){
 	return type.is_bool() || type.is_int() || type.is_double();
 }
-inline bool encode_as_vector_pod64(const typeid_t& type){
+bool encode_as_vector_pod64(const typeid_t& type){
 	return type.is_vector() && encode_as_pod64(type.get_vector_element_type());
 }
 
-inline bool encode_as_dict_pod64(const typeid_t& type){
+bool encode_as_dict_pod64(const typeid_t& type){
 	return type.is_dict() && encode_as_pod64(type.get_dict_value_type());
 }
 
-inline value_runtime_encoding type_to_encoding(const typeid_t& type){
+value_runtime_encoding type_to_encoding(const typeid_t& type){
 	const auto basetype = type.get_base_type();
 	if(false){
 	}
@@ -474,7 +526,7 @@ inline value_runtime_encoding type_to_encoding(const typeid_t& type){
 
 
 //	??? very slow?
-inline bool is_encoded_as_ext(value_runtime_encoding encoding){
+bool is_encoded_as_ext(value_runtime_encoding encoding){
 	return false
 		|| encoding == value_runtime_encoding::k_ext_string
 		|| encoding == value_runtime_encoding::k_ext_json_value
@@ -487,7 +539,7 @@ inline bool is_encoded_as_ext(value_runtime_encoding encoding){
 }
 
 //	??? very slow?
-inline bool is_encoded_as_ext(const typeid_t& type){
+bool is_encoded_as_ext(const typeid_t& type){
 	const auto basetype = type.get_base_type();
 	return false
 		|| basetype == base_type::k_string
@@ -922,10 +974,10 @@ bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::str
 
 
 
-inline const typeid_t& lookup_full_type(const interpreter_t& vm, const bc_typeid_t& type){
+const typeid_t& lookup_full_type(const interpreter_t& vm, const bc_typeid_t& type){
 	return vm._imm->_program._types[type];
 }
-inline const base_type lookup_full_basetype(const interpreter_t& vm, const bc_typeid_t& type){
+const base_type lookup_full_basetype(const interpreter_t& vm, const bc_typeid_t& type){
 	return vm._imm->_program._types[type].get_base_type();
 }
 
@@ -1231,7 +1283,7 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 
 
 
-inline int compare(int64_t value){
+int compare(int64_t value){
 	if(value < 0){
 		return -1;
 	}
@@ -1874,6 +1926,15 @@ reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
 //////////////////////////////////////////		bc_instruction_t
 
 
+bc_instruction_t::bc_instruction_t(bc_opcode opcode, int16_t a, int16_t b, int16_t c) :
+	_opcode(opcode),
+	_a(a),
+	_b(b),
+	_c(c)
+{
+	QUARK_ASSERT(check_invariant());
+}
+
 #if DEBUG
 bool bc_instruction_t::check_invariant() const {
 //	const auto encoding = k_opcode_info.at(_opcode)._encoding;
@@ -1955,6 +2016,33 @@ bool bc_static_frame_t::check_invariant() const {
 */
 	return true;
 }
+
+
+//////////////////////////////////////////		bc_function_definition_t
+
+
+bc_function_definition_t::bc_function_definition_t(
+	const typeid_t& function_type,
+	const std::vector<member_t>& args,
+	const std::shared_ptr<bc_static_frame_t>& frame,
+	int host_function_id
+) :
+	_function_type(function_type),
+	_args(args),
+	_frame_ptr(frame),
+	_host_function_id(host_function_id),
+	_dyn_arg_count(-1),
+	_return_is_ext(is_encoded_as_ext(_function_type.get_function_return()))
+{
+	_dyn_arg_count = count_function_dynamic_args(function_type);
+}
+
+#if DEBUG
+bool bc_function_definition_t::check_invariant() const {
+	return true;
+}
+#endif
+
 
 
 //////////////////////////////////////////		interpreter_stack_t
@@ -2080,7 +2168,7 @@ json_t interpreter_stack_t::stack_to_json() const{
 //////////////////////////////////////////		GLOBAL FUNCTIONS
 
 
-inline const bc_function_definition_t& get_function_def(const interpreter_t& vm, int function_id){
+const bc_function_definition_t& get_function_def(const interpreter_t& vm, int function_id){
 	QUARK_ASSERT(vm.check_invariant());
 
 	QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
@@ -3285,7 +3373,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 		//////////////////////////////		COMPARISON
 
-		//??? inline compare_value_true_deep().
+		//??? compare_value_true_deep().
 
 		case bc_opcode::k_comparison_smaller_or_equal: {
 			QUARK_ASSERT(stack.check_reg_bool(i._a));
