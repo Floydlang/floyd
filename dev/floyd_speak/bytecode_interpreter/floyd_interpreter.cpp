@@ -96,22 +96,22 @@ value_t bc_to_value(const bc_value_t& value){
 		const auto& element_type  = type.get_vector_element_type();
 		vector<value_t> vec2;
 		if(element_type.is_bool()){
-			for(const auto e: value._pod._ext->_vector_pod64){
+			for(const auto e: value._pod._external->_vector_pod64){
 				vec2.push_back(value_t::make_bool(e._bool));
 			}
 		}
 		else if(element_type.is_int()){
-			for(const auto e: value._pod._ext->_vector_pod64){
+			for(const auto e: value._pod._external->_vector_pod64){
 				vec2.push_back(value_t::make_int(e._int64));
 			}
 		}
 		else if(element_type.is_double()){
-			for(const auto e: value._pod._ext->_vector_pod64){
+			for(const auto e: value._pod._external->_vector_pod64){
 				vec2.push_back(value_t::make_double(e._double));
 			}
 		}
 		else{
-			for(const auto& e: value._pod._ext->_vector_objects){
+			for(const auto& e: value._pod._external->_vector_objects){
 				QUARK_ASSERT(e.check_invariant());
 				vec2.push_back(bc_to_value(bc_value_t(element_type, e)));
 			}
@@ -122,22 +122,22 @@ value_t bc_to_value(const bc_value_t& value){
 		const auto& value_type  = type.get_dict_value_type();
 		std::map<string, value_t> entries2;
 		if(value_type.is_bool()){
-			for(const auto& e: value._pod._ext->_dict_pod64){
+			for(const auto& e: value._pod._external->_dict_pod64){
 				entries2.insert({ e.first, value_t::make_bool(e.second._bool) });
 			}
 		}
 		else if(value_type.is_int()){
-			for(const auto& e: value._pod._ext->_dict_pod64){
+			for(const auto& e: value._pod._external->_dict_pod64){
 				entries2.insert({ e.first, value_t::make_int(e.second._int64) });
 			}
 		}
 		else if(value_type.is_double()){
-			for(const auto& e: value._pod._ext->_dict_pod64){
+			for(const auto& e: value._pod._external->_dict_pod64){
 				entries2.insert({ e.first, value_t::make_double(e.second._double) });
 			}
 		}
 		else{
-			for(const auto& e: value._pod._ext->_dict_objects){
+			for(const auto& e: value._pod._external->_dict_objects){
 				entries2.insert({ e.first, bc_to_value(bc_value_t(value_type, e.second)) });
 			}
 		}

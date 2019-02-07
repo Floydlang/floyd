@@ -528,7 +528,7 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	}
 	else if(obj._type.is_vector()){
 		if(encode_as_vector_w_inplace_element(obj._type)){
-			const auto size = obj._pod._ext->_vector_pod64.size();
+			const auto size = obj._pod._external->_vector_pod64.size();
 			return bc_value_t::make_int(static_cast<int>(size));
 		}
 		else{
@@ -538,7 +538,7 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	}
 	else if(obj._type.is_dict()){
 		if(encode_as_dict_w_inplace_values(obj._type)){
-			const auto size = obj._pod._ext->_dict_pod64.size();
+			const auto size = obj._pod._external->_dict_pod64.size();
 			return bc_value_t::make_int(static_cast<int>(size));
 		}
 		else{
@@ -574,7 +574,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 			quark::throw_runtime_error("Type mismatch.");
 		}
 		else if(obj._type.get_vector_element_type().is_bool()){
-			const auto& vec = obj._pod._ext->_vector_pod64;
+			const auto& vec = obj._pod._external->_vector_pod64;
 			int index = 0;
 			const auto size = vec.size();
 			while(index < size && vec[index]._bool != wanted._pod._pod64._bool){
@@ -584,7 +584,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 			return bc_value_t::make_int(result);
 		}
 		else if(obj._type.get_vector_element_type().is_int()){
-			const auto& vec = obj._pod._ext->_vector_pod64;
+			const auto& vec = obj._pod._external->_vector_pod64;
 			int index = 0;
 			const auto size = vec.size();
 			while(index < size && vec[index]._int64 != wanted._pod._pod64._int64){
@@ -594,7 +594,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 			return bc_value_t::make_int(result);
 		}
 		else if(obj._type.get_vector_element_type().is_double()){
-			const auto& vec = obj._pod._ext->_vector_pod64;
+			const auto& vec = obj._pod._external->_vector_pod64;
 			int index = 0;
 			const auto size = vec.size();
 			while(index < size && vec[index]._double != wanted._pod._pod64._double){
@@ -637,7 +637,7 @@ bc_value_t host__exists(interpreter_t& vm, const bc_value_t args[], int arg_coun
 		const auto key_string = key.get_string_value();
 
 		if(encode_as_dict_w_inplace_values(obj._type)){
-			const auto found_ptr = obj._pod._ext->_dict_pod64.find(key_string);
+			const auto found_ptr = obj._pod._external->_dict_pod64.find(key_string);
 			return bc_value_t::make_bool(found_ptr != nullptr);
 		}
 		else{
@@ -666,7 +666,7 @@ bc_value_t host__erase(interpreter_t& vm, const bc_value_t args[], int arg_count
 
 		const auto value_type = obj._type.get_dict_value_type();
 		if(encode_as_dict_w_inplace_values(obj._type)){
-			auto entries2 = obj._pod._ext->_dict_pod64.erase(key_string);
+			auto entries2 = obj._pod._external->_dict_pod64.erase(key_string);
 			const auto value2 = make_dict_value(value_type, entries2);
 			return value2;
 		}
@@ -705,7 +705,7 @@ bc_value_t host__push_back(interpreter_t& vm, const bc_value_t args[], int arg_c
 			quark::throw_runtime_error("Type mismatch.");
 		}
 		else if(encode_as_vector_w_inplace_element(obj._type)){
-			auto elements2 = obj._pod._ext->_vector_pod64.push_back(element._pod._pod64);
+			auto elements2 = obj._pod._external->_vector_pod64.push_back(element._pod._pod64);
 			const auto v = make_vector_int64_value(element_type, elements2);
 			return v;
 		}
@@ -753,7 +753,7 @@ bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	else if(obj._type.is_vector()){
 		if(encode_as_vector_w_inplace_element(obj._type)){
 			const auto& element_type = obj._type.get_vector_element_type();
-			const auto& vec = obj._pod._ext->_vector_pod64;
+			const auto& vec = obj._pod._external->_vector_pod64;
 			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
 			immer::vector<bc_inplace_value_t> elements2;
@@ -812,11 +812,11 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 	}
 	else if(obj._type.is_vector()){
 		if(encode_as_vector_w_inplace_element(obj._type)){
-			const auto& vec = obj._pod._ext->_vector_pod64;
+			const auto& vec = obj._pod._external->_vector_pod64;
 			const auto element_type = obj._type.get_vector_element_type();
 			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
-			const auto& new_bits = args[3]._pod._ext->_vector_pod64;
+			const auto& new_bits = args[3]._pod._external->_vector_pod64;
 
 			auto result = immer::vector<bc_inplace_value_t>(vec.begin(), vec.begin() + start2);
 			for(int i = 0 ; i < new_bits.size() ; i++){

@@ -63,7 +63,7 @@ union bc_inplace_value_t {
 //	Does NOT handle reference counting if this is an external value. Use bc_value_t for that!
 
 union bc_pod_value_t {
-	const bc_external_value_t* _ext;
+	const bc_external_value_t* _external;
 	bc_inplace_value_t _pod64;//??? rename
 };
 
@@ -227,7 +227,7 @@ struct bc_external_handle_t {
 
 	//////////////////////////////////////		STATE
 	//	Uses intrusive reference counting, that's why this isn't just a shared_ptr<>
-	public: const bc_external_value_t* _ext;
+	public: const bc_external_value_t* _external;
 };
 
 
@@ -1014,7 +1014,7 @@ struct interpreter_stack_t {
 		bool is_ext = _current_frame_ptr->_exts[reg];
 		if(is_ext){
 			auto prev_copy = _current_frame_entry_ptr[reg];
-			value._pod._ext->_rc++;
+			value._pod._external->_rc++;
 			_current_frame_entry_ptr[reg] = value._pod;
 			bc_value_t::release_ext_pod(prev_copy);
 		}
@@ -1032,7 +1032,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type == value._type);
 
 		auto prev_copy = _current_frame_entry_ptr[reg];
-		value._pod._ext->_rc++;
+		value._pod._external->_rc++;
 		_current_frame_entry_ptr[reg] = value._pod;
 		bc_value_t::release_ext_pod(prev_copy);
 
@@ -1176,7 +1176,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(encode_as_external(value._type) == true);
 #endif
 
-		value._pod._ext->_rc++;
+		value._pod._external->_rc++;
 		_entries[_stack_size] = value._pod;
 		_stack_size++;
 #if DEBUG
@@ -1246,7 +1246,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(_debug_types[pos] == value._type);
 
 		auto prev_copy = _entries[pos];
-		value._pod._ext->_rc++;
+		value._pod._external->_rc++;
 		_entries[pos] = value._pod;
 		bc_value_t::release_ext_pod(prev_copy);
 
