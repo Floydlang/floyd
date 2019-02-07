@@ -139,6 +139,424 @@ inline bool is_encoded_as_ext(const typeid_t& type){
 
 
 
+
+
+#if DEBUG
+bool bc_external_value_t::check_invariant() const{
+	QUARK_ASSERT(is_encoded_as_ext(_debug_type));
+	QUARK_ASSERT(_rc > 0);
+	QUARK_ASSERT(_debug_type.check_invariant());
+	QUARK_ASSERT(_typeid_value.check_invariant());
+
+	QUARK_ASSERT(check_ext_deep(_debug_type, this));
+
+	const auto encoding = type_to_encoding(_debug_type);
+	if(encoding == value_runtime_encoding::k_ext_string){
+//				QUARK_ASSERT(_string);
+		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
+		QUARK_ASSERT(_struct_members.empty());
+		QUARK_ASSERT(_vector_objects.empty());
+		QUARK_ASSERT(_vector_pod64.empty());
+		QUARK_ASSERT(_dict_objects.size() == 0);
+		QUARK_ASSERT(_dict_pod64.size() == 0);
+	}
+	else if(encoding == value_runtime_encoding::k_ext_json_value){
+		QUARK_ASSERT(_string.empty());
+		QUARK_ASSERT(_json_value != nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
+		QUARK_ASSERT(_struct_members.empty());
+		QUARK_ASSERT(_vector_objects.empty());
+		QUARK_ASSERT(_vector_pod64.empty());
+		QUARK_ASSERT(_dict_objects.size() == 0);
+		QUARK_ASSERT(_dict_pod64.size() == 0);
+
+		QUARK_ASSERT(_json_value->check_invariant());
+	}
+	else if(encoding == value_runtime_encoding::k_ext_typeid){
+		QUARK_ASSERT(_string.empty());
+		QUARK_ASSERT(_json_value == nullptr);
+//		QUARK_ASSERT(_typeid_value != typeid_t::make_undefined());
+		QUARK_ASSERT(_struct_members.empty());
+		QUARK_ASSERT(_vector_objects.empty());
+		QUARK_ASSERT(_vector_pod64.empty());
+		QUARK_ASSERT(_dict_objects.size() == 0);
+		QUARK_ASSERT(_dict_pod64.size() == 0);
+
+		QUARK_ASSERT(_typeid_value.check_invariant());
+	}
+	else if(encoding == value_runtime_encoding::k_ext_struct){
+		QUARK_ASSERT(_string.empty());
+		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
+//				QUARK_ASSERT(_struct != nullptr);
+		QUARK_ASSERT(_vector_objects.empty());
+		QUARK_ASSERT(_vector_pod64.empty());
+		QUARK_ASSERT(_dict_objects.size() == 0);
+		QUARK_ASSERT(_dict_pod64.size() == 0);
+
+//				QUARK_ASSERT(_struct && _struct->check_invariant());
+	}
+	else if(encoding == value_runtime_encoding::k_ext_vector){
+		QUARK_ASSERT(_string.empty());
+		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
+		QUARK_ASSERT(_struct_members.empty());
+//		QUARK_ASSERT(_vector_objects.empty());
+		QUARK_ASSERT(_vector_pod64.empty());
+		QUARK_ASSERT(_dict_objects.size() == 0);
+		QUARK_ASSERT(_dict_pod64.size() == 0);
+	}
+	else if(encoding == value_runtime_encoding::k_ext_vector_pod64){
+		QUARK_ASSERT(_string.empty());
+		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
+		QUARK_ASSERT(_struct_members.empty());
+		QUARK_ASSERT(_vector_objects.empty());
+		QUARK_ASSERT(_dict_objects.size() == 0);
+		QUARK_ASSERT(_dict_pod64.size() == 0);
+	}
+	else if(encoding == value_runtime_encoding::k_ext_dict){
+		QUARK_ASSERT(_string.empty());
+		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
+		QUARK_ASSERT(_struct_members.empty());
+		QUARK_ASSERT(_vector_objects.empty());
+		QUARK_ASSERT(_vector_pod64.empty());
+//				QUARK_ASSERT(_dict_objects.size() == 0);
+//				QUARK_ASSERT(_dict_pod64.size() == 0);
+	}
+	else {
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+	}
+	return true;
+}
+#endif
+
+bc_external_value_t::bc_external_value_t(const std::string& s) :
+	_rc(1),
+#if DEBUG
+	_debug_type(typeid_t::make_string()),
+#endif
+	_string(s)
+{
+	QUARK_ASSERT(check_invariant());
+}
+
+bc_external_value_t::bc_external_value_t(const std::shared_ptr<json_t>& s) :
+	_rc(1),
+#if DEBUG
+	_debug_type(typeid_t::make_json_value()),
+#endif
+	_json_value(s)
+{
+	QUARK_ASSERT(s->check_invariant());
+	QUARK_ASSERT(check_invariant());
+}
+
+bc_external_value_t::bc_external_value_t(const typeid_t& s) :
+	_rc(1),
+#if DEBUG
+	_debug_type(typeid_t::make_typeid()),
+#endif
+	_typeid_value(s)
+{
+	QUARK_ASSERT(s.check_invariant());
+	QUARK_ASSERT(check_invariant());
+}
+
+
+
+
+
+
+bc_external_value_t::bc_external_value_t(const typeid_t& type, const std::vector<bc_value_t>& s, bool struct_tag) :
+		_rc(1),
+#if DEBUG
+	_debug_type(type),
+#endif
+	_struct_members(s)
+{
+	QUARK_ASSERT(type.check_invariant());
+	#if QUARK_ASSERT_ON
+		for(const auto& e: s){
+			QUARK_ASSERT(e.check_invariant());
+		}
+	#endif
+	QUARK_ASSERT(check_invariant());
+}
+bc_external_value_t::bc_external_value_t(const typeid_t& type, const immer::vector<bc_external_handle_t>& s) :
+	_rc(1),
+#if DEBUG
+	_debug_type(type),
+#endif
+	_vector_objects(s)
+{
+	QUARK_ASSERT(type.check_invariant());
+	#if QUARK_ASSERT_ON
+		for(const auto& e: s){
+			QUARK_ASSERT(e.check_invariant());
+		}
+	#endif
+	QUARK_ASSERT(check_invariant());
+}
+bc_external_value_t::bc_external_value_t(const typeid_t& type, const immer::vector<bc_inplace_value_t>& s) :
+	_rc(1),
+#if DEBUG
+	_debug_type(type),
+#endif
+	_vector_pod64(s)
+{
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(check_invariant());
+}
+bc_external_value_t::bc_external_value_t(const typeid_t& type, const immer::map<std::string, bc_external_handle_t>& s) :
+	_rc(1),
+#if DEBUG
+	_debug_type(type),
+#endif
+	_dict_objects(s)
+{
+	QUARK_ASSERT(type.check_invariant());
+	#if QUARK_ASSERT_ON
+		for(const auto& e: s){
+			QUARK_ASSERT(e.first.size() > 0);
+			QUARK_ASSERT(e.second.check_invariant());
+		}
+	#endif
+	QUARK_ASSERT(check_invariant());
+}
+bc_external_value_t::bc_external_value_t(const typeid_t& type, const immer::map<std::string, bc_inplace_value_t>& s) :
+	_rc(1),
+#if DEBUG
+	_debug_type(type),
+#endif
+	_dict_pod64(s)
+{
+	QUARK_ASSERT(type.check_invariant());
+	#if QUARK_ASSERT_ON
+		for(const auto& e: s){
+			QUARK_ASSERT(e.first.size() > 0);
+		}
+	#endif
+	QUARK_ASSERT(check_invariant());
+}
+
+
+
+
+bool check_ext_deep(const typeid_t& type, const bc_external_value_t* ext){
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(is_encoded_as_ext(type));
+	QUARK_ASSERT(ext != nullptr);
+	QUARK_ASSERT(ext->_rc > 0);
+
+	const auto basetype = type.get_base_type();
+
+	if(basetype == base_type::k_struct){
+		for(const auto& e: ext->_struct_members){
+			QUARK_ASSERT(e.check_invariant());
+		}
+	}
+	else if(basetype == base_type::k_protocol){
+		QUARK_ASSERT(false);
+		return false;
+	}
+	else if(basetype == base_type::k_vector){
+		const auto& element_type  = type.get_vector_element_type();
+		if(is_encoded_as_ext(element_type)){
+			for(const auto& e: ext->_vector_objects){
+				QUARK_ASSERT(e.check_invariant());
+			}
+			return true;
+		}
+		else{
+			return true;
+		}
+	}
+	else if(basetype == base_type::k_dict){
+		const auto& element_type  = type.get_dict_value_type();
+		if(is_encoded_as_ext(element_type)){
+			for(const auto& e: ext->_vector_objects){
+				QUARK_ASSERT(e.check_invariant());
+			}
+			return true;
+		}
+		else{
+			return true;
+		}
+	}
+	else if(basetype == base_type::k_function){
+		QUARK_ASSERT(false);
+	}
+	else if(basetype == base_type::k_json_value){
+	}
+	else if(basetype == base_type::k_typeid){
+	}
+	else if(basetype == base_type::k_string){
+	}
+	else{
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+	}
+	return true;
+}
+
+
+
+
+
+
+
+const immer::vector<bc_value_t> get_vector(const bc_value_t& value){
+	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(value._type.is_vector());
+
+	const auto element_type = value._type.get_vector_element_type();
+
+	if(encode_as_vector_pod64(value._type)){
+		immer::vector<bc_value_t> result;
+		for(const auto& e: value._pod._ext->_vector_pod64){
+			bc_value_t temp(element_type, e);
+			result = result.push_back(temp);
+		}
+		return result;
+	}
+	else{
+		immer::vector<bc_value_t> result;
+		for(const auto& e: value._pod._ext->_vector_objects){
+			bc_value_t temp(element_type, e);
+			result = result.push_back(temp);
+		}
+		return result;
+	}
+}
+
+
+
+const immer::vector<bc_external_handle_t>* get_vector_value(const bc_value_t& value){
+	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(value._type.is_vector());
+	QUARK_ASSERT(encode_as_vector_pod64(value._type) == false);
+
+	return &value._pod._ext->_vector_objects;
+}
+
+const immer::vector<bc_inplace_value_t>* get_vector_value_pods(const bc_value_t& value){
+	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(value._type.is_vector());
+	QUARK_ASSERT(encode_as_vector_pod64(value._type) == true);
+
+	return &value._pod._ext->_vector_pod64;
+}
+
+bc_value_t make_vector(const typeid_t& element_type, const immer::vector<bc_value_t>& elements){
+	QUARK_ASSERT(element_type.check_invariant());
+#if QUARK_ASSERT_ON
+	for(const auto& e: elements) {
+		QUARK_ASSERT(e.check_invariant());
+	}
+#endif
+
+	const auto vector_type = typeid_t::make_vector(element_type);
+	if(encode_as_vector_pod64(vector_type)){
+		immer::vector<bc_inplace_value_t> elements2;
+		for(const auto& e: elements){
+			elements2 = elements2.push_back(e._pod._pod64);
+		}
+
+		bc_value_t temp;
+		temp._type = vector_type;
+		temp._pod._ext = new bc_external_value_t{vector_type, elements2};
+		QUARK_ASSERT(temp.check_invariant());
+		return temp;
+	}
+	else{
+		immer::vector<bc_external_handle_t> elements2;
+		for(const auto& e: elements){
+			elements2 = elements2.push_back(bc_external_handle_t(e));
+		}
+
+		bc_value_t temp;
+		temp._type = vector_type;
+		temp._pod._ext = new bc_external_value_t{vector_type, elements2};
+		QUARK_ASSERT(temp.check_invariant());
+		return temp;
+	}
+}
+
+bc_value_t make_vector_value(const typeid_t& element_type, const immer::vector<bc_external_handle_t>& elements){
+	QUARK_ASSERT(element_type.check_invariant());
+#if QUARK_ASSERT_ON
+	for(const auto& e: elements) {
+		QUARK_ASSERT(e.check_invariant());
+	}
+#endif
+
+	const auto vector_type = typeid_t::make_vector(element_type);
+	QUARK_ASSERT(encode_as_vector_pod64(vector_type) == false);
+
+	bc_value_t temp;
+	temp._type = vector_type;
+	temp._pod._ext = new bc_external_value_t{vector_type, elements};
+	QUARK_ASSERT(temp.check_invariant());
+	return temp;
+}
+
+bc_value_t make_vector_int64_value(const typeid_t& element_type, const immer::vector<bc_inplace_value_t>& elements){
+	QUARK_ASSERT(element_type.check_invariant());
+
+	const auto vector_type = typeid_t::make_vector(element_type);
+	QUARK_ASSERT(encode_as_vector_pod64(vector_type) == true);
+
+	bc_value_t temp;
+	temp._type = vector_type;
+	temp._pod._ext = new bc_external_value_t{vector_type, elements};
+	QUARK_ASSERT(temp.check_invariant());
+	return temp;
+}
+
+
+
+
+
+const immer::map<std::string, bc_external_handle_t>& get_dict_value(const bc_value_t& value){
+	QUARK_ASSERT(value.check_invariant());
+
+	return value._pod._ext->_dict_objects;
+}
+
+bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_external_handle_t>& entries){
+	QUARK_ASSERT(value_type.check_invariant());
+#if QUARK_ASSERT_ON
+	for(const auto& e: entries) {
+		QUARK_ASSERT(e.first.size() > 0);
+		QUARK_ASSERT(e.second.check_invariant());
+	}
+#endif
+
+	bc_value_t temp;
+	temp._type = typeid_t::make_dict(value_type);
+	temp._pod._ext = new bc_external_value_t{typeid_t::make_dict(value_type), entries};
+	QUARK_ASSERT(temp.check_invariant());
+	return temp;
+}
+
+bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_inplace_value_t>& entries){
+	QUARK_ASSERT(value_type.check_invariant());
+
+	bc_value_t temp;
+	temp._type = typeid_t::make_dict(value_type);
+	temp._pod._ext = new bc_external_value_t{typeid_t::make_dict(value_type), entries};
+	QUARK_ASSERT(temp.check_invariant());
+	return temp;
+}
+
+
+
+
+
 inline const typeid_t& lookup_full_type(const interpreter_t& vm, const bc_typeid_t& type){
 	return vm._imm->_program._types[type];
 }
