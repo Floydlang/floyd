@@ -22,7 +22,8 @@
 #include "text_parser.h"
 #include "file_handling.h"
 #include "sha1_class.h"
-
+#include "ast_value.h"
+#include "ast_json.h"
 
 
 namespace floyd {
@@ -33,16 +34,14 @@ using std::pair;
 using std::shared_ptr;
 using std::make_shared;
 
+
+
 //??? Remove usage of value_t
 value_t value_to_jsonvalue(const value_t& value){
 	const auto j = value_to_ast_json(value, json_tags::k_plain);
 	value_t json_value = value_t::make_json_value(j._value);
 	return json_value;
 }
-
-
-
-
 
 
 extern const std::string k_builtin_types_and_constants = R"(

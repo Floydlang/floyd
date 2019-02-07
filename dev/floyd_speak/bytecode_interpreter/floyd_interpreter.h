@@ -16,10 +16,6 @@
 #include "quark.h"
 
 #include "bytecode_interpreter.h"
-#include "ast_value.h"
-#include "immer/vector.hpp"
-#include "statement.h"
-
 #include <string>
 #include <vector>
 
@@ -92,7 +88,6 @@ std::map<std::string, value_t> run_container2(
 
 void print_vm_printlog(const interpreter_t& vm);
 
-location2_t find_source_line(const std::string& program, const std::string& file, bool corelib, const location_t& loc);
 
 
 } //	floyd

@@ -10,11 +10,9 @@
 
 #include "host_functions.h"
 #include "text_parser.h"
-
-#include <cmath>
+#include "ast_value.h"
+#include "ast_json.h"
 #include <sys/time.h>
-
-#include <chrono>
 #include <algorithm>
 
 
@@ -44,7 +42,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 	const auto pod_size = sizeof(bc_pod_value_t);
 	QUARK_ASSERT(pod_size == 8);
 
-	const auto value_object_size = sizeof(bc_value_object_t);
+	const auto value_object_size = sizeof(bc_external_value_t);
 	QUARK_ASSERT(value_object_size >= 8);
 
 	const auto bcvalue_size = sizeof(bc_value_t);
@@ -935,29 +933,11 @@ reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
 	if(e == opcode_info_t::encoding::k_e_0000){
 		return { false, false, false };
 	}
-	else if(e == opcode_info_t::encoding::k_f_trr0){
-		return { true, true, false };
-	}
-	else if(e == opcode_info_t::encoding::k_g_trri){
-		return { true, true, false };
-	}
-	else if(e == opcode_info_t::encoding::k_h_trrr){
-		return { true, true, true };
-	}
-	else if(e == opcode_info_t::encoding::k_i_trii){
-		return { true, false, false };
-	}
-	else if(e == opcode_info_t::encoding::k_j_tr00){
-		return { true, false, false };
-	}
 	else if(e == opcode_info_t::encoding::k_k_0ri0){
 		return { true, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_l_00i0){
 		return { false, false, false };
-	}
-	else if(e == opcode_info_t::encoding::k_m_tr00){
-		return { true, false, false };
 	}
 	else if(e == opcode_info_t::encoding::k_n_0ii0){
 		return { false, false, false };
@@ -2181,7 +2161,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& element_type = type.get_vector_element_type();
 
 			auto elements2 = regs[i._b]._ext->_vector_objects.push_back(bc_external_handle_t(regs[i._c]._ext));
-			//??? always allocates a new bc_value_object_t!
+			//??? always allocates a new bc_external_value_t!
 			const auto vec2 = make_vector_value(element_type, elements2);
 			vm._stack.write_register_obj(i._a, vec2);
 			QUARK_ASSERT(vm.check_invariant());
@@ -2197,7 +2177,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& element_type = type.get_vector_element_type();
 
 			//??? optimize - bypass bc_value_t
-			//??? always allocates a new bc_value_object_t!
+			//??? always allocates a new bc_external_value_t!
 			auto elements2 = regs[i._b]._ext->_vector_pod64.push_back(regs[i._c]._pod64);
 			const auto vec = make_vector_int64_value(element_type, elements2);
 			vm._stack.write_register_obj(i._a, vec);
@@ -2216,7 +2196,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			str2.push_back(static_cast<char>(ch));
 
 			//??? optimize - bypass bc_value_t
-			//??? always allocates a new bc_value_object_t!
+			//??? always allocates a new bc_external_value_t!
 			const auto str3 = bc_value_t::make_string(str2);
 			vm._stack.write_register_obj(i._a, str3);
 			QUARK_ASSERT(vm.check_invariant());

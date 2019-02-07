@@ -36,7 +36,7 @@ struct interpreter_t;
 struct bc_program_t;
 struct bc_static_frame_t;
 struct bc_value_t;
-struct bc_value_object_t;
+struct bc_external_value_t;
 union bc_pod_value_t;
 struct bc_external_handle_t;
 typedef bc_value_t (*HOST_FUNCTION_PTR)(interpreter_t& vm, const bc_value_t args[], int arg_count);
@@ -65,7 +65,7 @@ union bc_inplace_value_t {
 //	Does NOT handle reference counting if this is an external value. Use bc_value_t for that!
 
 union bc_pod_value_t {
-	const bc_value_object_t* _ext;
+	const bc_external_value_t* _ext;
 	bc_inplace_value_t _pod64;//??? rename
 };
 
@@ -171,7 +171,7 @@ inline value_runtime_encoding type_to_encoding(const typeid_t& type){
 }
 
 //	??? very slow?
-//	Will this type of value require an ext ? bc_value_object_t to be used?
+//	Will this type of value require an ext ? bc_external_value_t to be used?
 inline bool is_encoded_as_ext(value_runtime_encoding encoding){
 	return false
 		|| encoding == value_runtime_encoding::k_ext_string
@@ -185,7 +185,7 @@ inline bool is_encoded_as_ext(value_runtime_encoding encoding){
 }
 
 //	??? very slow?
-//	Will this type of value require an ext ? bc_value_object_t to be used?
+//	Will this type of value require an ext ? bc_external_value_t to be used?
 inline bool is_encoded_as_ext(const typeid_t& type){
 	const auto basetype = type.get_base_type();
 	return false
@@ -443,7 +443,7 @@ struct bc_value_t {
 
 struct bc_external_handle_t {
 	bc_external_handle_t(const bc_external_handle_t& other);
-	explicit bc_external_handle_t(const bc_value_object_t* ext);
+	explicit bc_external_handle_t(const bc_external_value_t* ext);
 	explicit bc_external_handle_t(const bc_value_t& value);
 	void swap(bc_external_handle_t& other);
 	bc_external_handle_t& operator=(const bc_external_handle_t& other);
@@ -452,26 +452,24 @@ struct bc_external_handle_t {
 	bool check_invariant() const;
 
 	//////////////////////////////////////		STATE
-	const bc_value_object_t* _ext;
+	//	Uses intrusive reference counting, that's why this isn't just a shared_ptr<>
+	const bc_external_value_t* _ext;
 };
 
 
+bool check_ext_deep(const typeid_t& type, const bc_external_value_t* ext);
 
-//////////////////////////////////////		bc_value_object_t
+
+//////////////////////////////////////		bc_external_value_t
 
 /*
-	This object contains the internals of values too big to be stored directly inside
-	the bc_value_t / bc_pod_value_t itself
+	This object contains the internals of values too big to be stored inplace inside bc_value_t / bc_pod_value_t.
+	The bc_external_value_t:s are allocated on the heap and are reference counted.
 
-	The bc_value_object_t objects are allocated on the heap and are reference counted.
-	TODO: Right now wastes resouces by containing
+	TODO: Right now wastes resouces by containing *all* types of external values! Should use std::variant.
 */
 
-
-bool check_ext_deep(const typeid_t& type, const bc_value_object_t* ext);
-
-
-struct bc_value_object_t {
+struct bc_external_value_t {
 #if DEBUG
 	public: bool check_invariant() const{
 		QUARK_ASSERT(is_encoded_as_ext(_debug_type));
@@ -565,10 +563,10 @@ struct bc_value_object_t {
 	}
 #endif
 
-	public: bool operator==(const bc_value_object_t& other) const;
+	public: bool operator==(const bc_external_value_t& other) const;
 
 
-	public: bc_value_object_t(const std::string& s) :
+	public: bc_external_value_t(const std::string& s) :
 		_rc(1),
 #if DEBUG
 		_debug_type(typeid_t::make_string()),
@@ -578,7 +576,7 @@ struct bc_value_object_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: bc_value_object_t(const std::shared_ptr<json_t>& s) :
+	public: bc_external_value_t(const std::shared_ptr<json_t>& s) :
 		_rc(1),
 #if DEBUG
 		_debug_type(typeid_t::make_json_value()),
@@ -589,7 +587,7 @@ struct bc_value_object_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: bc_value_object_t(const typeid_t& s) :
+	public: bc_external_value_t(const typeid_t& s) :
 		_rc(1),
 #if DEBUG
 		_debug_type(typeid_t::make_typeid()),
@@ -600,7 +598,7 @@ struct bc_value_object_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: bc_value_object_t(const typeid_t& type, const std::vector<bc_value_t>& s, bool struct_tag) :
+	public: bc_external_value_t(const typeid_t& type, const std::vector<bc_value_t>& s, bool struct_tag) :
 			_rc(1),
 #if DEBUG
 		_debug_type(type),
@@ -615,7 +613,7 @@ struct bc_value_object_t {
 		#endif
 		QUARK_ASSERT(check_invariant());
 	}
-	public: bc_value_object_t(const typeid_t& type, const immer::vector<bc_external_handle_t>& s) :
+	public: bc_external_value_t(const typeid_t& type, const immer::vector<bc_external_handle_t>& s) :
 		_rc(1),
 #if DEBUG
 		_debug_type(type),
@@ -630,7 +628,7 @@ struct bc_value_object_t {
 		#endif
 		QUARK_ASSERT(check_invariant());
 	}
-	public: bc_value_object_t(const typeid_t& type, const immer::vector<bc_inplace_value_t>& s) :
+	public: bc_external_value_t(const typeid_t& type, const immer::vector<bc_inplace_value_t>& s) :
 		_rc(1),
 #if DEBUG
 		_debug_type(type),
@@ -640,7 +638,7 @@ struct bc_value_object_t {
 		QUARK_ASSERT(type.check_invariant());
 		QUARK_ASSERT(check_invariant());
 	}
-	public: bc_value_object_t(const typeid_t& type, const immer::map<std::string, bc_external_handle_t>& s) :
+	public: bc_external_value_t(const typeid_t& type, const immer::map<std::string, bc_external_handle_t>& s) :
 		_rc(1),
 #if DEBUG
 		_debug_type(type),
@@ -656,7 +654,7 @@ struct bc_value_object_t {
 		#endif
 		QUARK_ASSERT(check_invariant());
 	}
-	public: bc_value_object_t(const typeid_t& type, const immer::map<std::string, bc_inplace_value_t>& s) :
+	public: bc_external_value_t(const typeid_t& type, const immer::map<std::string, bc_inplace_value_t>& s) :
 		_rc(1),
 #if DEBUG
 		_debug_type(type),
@@ -706,7 +704,7 @@ inline bc_external_handle_t::bc_external_handle_t(const bc_external_handle_t& ot
 	QUARK_ASSERT(check_invariant());
 }
 
-inline bc_external_handle_t::bc_external_handle_t(const bc_value_object_t* ext) :
+inline bc_external_handle_t::bc_external_handle_t(const bc_external_value_t* ext) :
 	_ext(ext)
 {
 	QUARK_ASSERT(ext != nullptr);
@@ -759,7 +757,7 @@ inline bool bc_external_handle_t::check_invariant() const {
 	return true;
 }
 
-inline bool check_ext_deep(const typeid_t& type, const bc_value_object_t* ext){
+inline bool check_ext_deep(const typeid_t& type, const bc_external_value_t* ext){
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(is_encoded_as_ext(type));
 	QUARK_ASSERT(ext != nullptr);
@@ -871,75 +869,75 @@ inline  std::string bc_value_t::get_string_value() const{
 inline  bc_value_t::bc_value_t(const std::string& value) :
 	_type(typeid_t::make_string())
 {
-	_pod._ext = new bc_value_object_t{value};
+	_pod._ext = new bc_external_value_t{value};
 	QUARK_ASSERT(check_invariant());
 }
 
-	inline  json_t bc_value_t::get_json_value() const{
-		QUARK_ASSERT(check_invariant());
+inline  json_t bc_value_t::get_json_value() const{
+	QUARK_ASSERT(check_invariant());
 
-		return *_pod._ext->_json_value.get();
-	}
-	inline  bc_value_t::bc_value_t(const std::shared_ptr<json_t>& value) :
-		_type(typeid_t::make_json_value())
-	{
-		QUARK_ASSERT(value);
-		QUARK_ASSERT(value->check_invariant());
+	return *_pod._ext->_json_value.get();
+}
+inline  bc_value_t::bc_value_t(const std::shared_ptr<json_t>& value) :
+	_type(typeid_t::make_json_value())
+{
+	QUARK_ASSERT(value);
+	QUARK_ASSERT(value->check_invariant());
 
-		_pod._ext = new bc_value_object_t{value};
+	_pod._ext = new bc_external_value_t{value};
 
-		QUARK_ASSERT(check_invariant());
-	}
-
-
-	inline  bc_value_t::bc_value_t(const typeid_t& type, mode mode) :
-		_type(type)
-	{
-		QUARK_ASSERT(type.check_invariant());
-
-		auto temp = new bc_value_object_t{"UNWRITTEN EXT VALUE"};
-		temp->_is_unwritten_ext_value = true;
-		_pod._ext = temp;
-
-		QUARK_ASSERT(check_invariant());
-	}
+	QUARK_ASSERT(check_invariant());
+}
 
 
-	inline  typeid_t bc_value_t::get_typeid_value() const {
-		QUARK_ASSERT(check_invariant());
+inline  bc_value_t::bc_value_t(const typeid_t& type, mode mode) :
+	_type(type)
+{
+	QUARK_ASSERT(type.check_invariant());
 
-		return _pod._ext->_typeid_value;
-	}
-	inline  bc_value_t::bc_value_t(const typeid_t& type_id) :
-		_type(typeid_t::make_typeid())
-	{
-		QUARK_ASSERT(type_id.check_invariant());
+	auto temp = new bc_external_value_t{"UNWRITTEN EXT VALUE"};
+	temp->_is_unwritten_ext_value = true;
+	_pod._ext = temp;
 
-		_pod._ext = new bc_value_object_t{type_id};
-
-		QUARK_ASSERT(check_invariant());
-	}
+	QUARK_ASSERT(check_invariant());
+}
 
 
-	inline  const std::vector<bc_value_t>& bc_value_t::get_struct_value() const {
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(_type.is_struct());
+inline  typeid_t bc_value_t::get_typeid_value() const {
+	QUARK_ASSERT(check_invariant());
 
-		return _pod._ext->_struct_members;
-	}
-	inline  bc_value_t::bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag) :
-		_type(struct_type)
-	{
-		QUARK_ASSERT(struct_type.check_invariant());
+	return _pod._ext->_typeid_value;
+}
+inline  bc_value_t::bc_value_t(const typeid_t& type_id) :
+	_type(typeid_t::make_typeid())
+{
+	QUARK_ASSERT(type_id.check_invariant());
+
+	_pod._ext = new bc_external_value_t{type_id};
+
+	QUARK_ASSERT(check_invariant());
+}
+
+
+inline  const std::vector<bc_value_t>& bc_value_t::get_struct_value() const {
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(_type.is_struct());
+
+	return _pod._ext->_struct_members;
+}
+inline  bc_value_t::bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag) :
+	_type(struct_type)
+{
+	QUARK_ASSERT(struct_type.check_invariant());
 #if QUARK_ASSERT_ON
-		for(const auto& e: values) {
-			QUARK_ASSERT(e.check_invariant());
-		}
+	for(const auto& e: values) {
+		QUARK_ASSERT(e.check_invariant());
+	}
 #endif
 
-		_pod._ext = new bc_value_object_t{struct_type, values, true};
-		QUARK_ASSERT(check_invariant());
-	}
+	_pod._ext = new bc_external_value_t{struct_type, values, true};
+	QUARK_ASSERT(check_invariant());
+}
 
 
 
@@ -1001,7 +999,7 @@ inline bc_value_t make_vector(const typeid_t& element_type, const immer::vector<
 
 		bc_value_t temp;
 		temp._type = vector_type;
-		temp._pod._ext = new bc_value_object_t{vector_type, elements2};
+		temp._pod._ext = new bc_external_value_t{vector_type, elements2};
 		QUARK_ASSERT(temp.check_invariant());
 		return temp;
 	}
@@ -1013,7 +1011,7 @@ inline bc_value_t make_vector(const typeid_t& element_type, const immer::vector<
 
 		bc_value_t temp;
 		temp._type = vector_type;
-		temp._pod._ext = new bc_value_object_t{vector_type, elements2};
+		temp._pod._ext = new bc_external_value_t{vector_type, elements2};
 		QUARK_ASSERT(temp.check_invariant());
 		return temp;
 	}
@@ -1032,7 +1030,7 @@ inline bc_value_t make_vector_value(const typeid_t& element_type, const immer::v
 
 	bc_value_t temp;
 	temp._type = vector_type;
-	temp._pod._ext = new bc_value_object_t{vector_type, elements};
+	temp._pod._ext = new bc_external_value_t{vector_type, elements};
 	QUARK_ASSERT(temp.check_invariant());
 	return temp;
 }
@@ -1044,7 +1042,7 @@ inline bc_value_t make_vector_int64_value(const typeid_t& element_type, const im
 
 	bc_value_t temp;
 	temp._type = vector_type;
-	temp._pod._ext = new bc_value_object_t{vector_type, elements};
+	temp._pod._ext = new bc_external_value_t{vector_type, elements};
 	QUARK_ASSERT(temp.check_invariant());
 	return temp;
 }
@@ -1068,7 +1066,7 @@ inline bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<s
 
 	bc_value_t temp;
 	temp._type = typeid_t::make_dict(value_type);
-	temp._pod._ext = new bc_value_object_t{typeid_t::make_dict(value_type), entries};
+	temp._pod._ext = new bc_external_value_t{typeid_t::make_dict(value_type), entries};
 	QUARK_ASSERT(temp.check_invariant());
 	return temp;
 }
@@ -1077,7 +1075,7 @@ inline bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<s
 
 	bc_value_t temp;
 	temp._type = typeid_t::make_dict(value_type);
-	temp._pod._ext = new bc_value_object_t{typeid_t::make_dict(value_type), entries};
+	temp._pod._ext = new bc_external_value_t{typeid_t::make_dict(value_type), entries};
 	QUARK_ASSERT(temp.check_invariant());
 	return temp;
 }
@@ -1140,6 +1138,9 @@ int bc_compare_value_exts(const bc_external_handle_t& left, const bc_external_ha
 
 //////////////////////////////////////		bc_symbol_t
 
+/*
+	Tracks information about a symbol inside a stack frame.
+*/
 
 struct bc_symbol_t {
 	enum type {
@@ -1161,7 +1162,10 @@ struct bc_symbol_t {
 
 //////////////////////////////////////		bc_opcode
 
-
+/*
+	These are the instructions used byte the byte code.
+	Each instruction has 3 16-bit fields, called A, B, C. Each opcode has description that tells how A-B-B are used.
+*/
 enum class bc_opcode: uint8_t {
 	k_nop = 0,
 
@@ -1478,18 +1482,23 @@ enum class bc_opcode: uint8_t {
 };
 
 
+
+//////////////////////////////////////		bc_instruction_t
+
+//	Compile-time information about the different opcodes: it's name, how the fields A-B-C are used.
+
 struct opcode_info_t {
 	std::string _as_text;
+
+	//	There is a set of encoding pattern how A-B-C are used that are shared between the instructions.
+	//	The patterns are named "e", "q" etc.
+	//	0: set operand to 0
+	//	r: operand specifies a register
+	//	i: operand contains an immediate number
 	enum class encoding {
 		k_e_0000,
-		k_f_trr0,
-		k_g_trri,
-		k_h_trrr,
-		k_i_trii,
-		k_j_tr00,
 		k_k_0ri0,
 		k_l_00i0,
-		k_m_tr00,
 		k_n_0ii0,
 		k_o_0rrr,
 		k_p_0r00,
@@ -1504,8 +1513,24 @@ struct opcode_info_t {
 extern const std::map<bc_opcode, opcode_info_t> k_opcode_info;
 
 
+
+//////////////////////////////////////		reg_flags_t
+
+
+struct reg_flags_t {
+	bool _a;
+	bool _b;
+	bool _c;
+};
+
+//	Tells if a register is specified
+reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e);
+
+
 //////////////////////////////////////		bc_instruction_t
 
+//	The byte code instruction itself, as executed by the interpreter.
+//	It's 64-bits big, has an opcode and 3 operands, A-B-C.
 
 struct bc_instruction_t {
 	bc_instruction_t(bc_opcode opcode, 	int16_t a, int16_t b, int16_t c) :
@@ -1524,23 +1549,11 @@ struct bc_instruction_t {
 
 	//////////////////////////////////////		STATE
 	bc_opcode _opcode;
-	uint8_t _pad8;
+	uint8_t _zero;
 	int16_t _a;
 	int16_t _b;
 	int16_t _c;
 };
-
-
-//////////////////////////////////////		reg_flags_t
-
-
-struct reg_flags_t {
-	bool _a;
-	bool _b;
-	bool _c;
-};
-
-reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e);
 
 
 //////////////////////////////////////		bc_static_frame_t
@@ -1580,6 +1593,10 @@ struct bc_static_frame_t {
 
 //////////////////////////////////////		bc_function_definition_t
 
+/*
+	Represents a function, ready to execute.
+	The interpreter doesn't use a flat list of instructions for programs, rather a list of functions.
+*/
 
 struct bc_function_definition_t {
 	bc_function_definition_t(
@@ -1617,6 +1634,10 @@ struct bc_function_definition_t {
 
 //////////////////////////////////////		bc_program_t
 
+/*
+	A complete, stand-alone, Floyd byte code executable, ready to be executed by interpreter.
+*/
+//??? rename to bc_executable_t
 
 struct bc_program_t {
 #if DEBUG
@@ -1641,6 +1662,7 @@ json_t bcprogram_to_json(const bc_program_t& program);
 //////////////////////////////////////		frame_pos_t
 
 
+//	Keeps track where in the interpreter's stack we're executing code right now.
 struct frame_pos_t {
 	int _frame_pos;
 	const bc_static_frame_t* _frame_ptr;
@@ -1653,7 +1675,14 @@ inline bool operator==(const frame_pos_t& lhs, const frame_pos_t& rhs){
 
 //////////////////////////////////////		interpreter_stack_t
 
+/*
+	The interpreters's stack -- each element contains a bc_pod_value_t.
+	For each stack entry we need to keep track of if it's an inplace or external value so we can
+	keep the external value's reference counting OK.
 
+	Each stack frame will be mapped to a range of the interpreter stack.
+	The stack frame's registers are really mapped to entries in the stack.
+*/
 enum {
 	//	We store prev-frame-pos & symbol-ptr.
 	k_frame_overhead = 2
@@ -1709,23 +1738,11 @@ struct interpreter_stack_t {
 			QUARK_ASSERT(_debug_types[i].check_invariant());
 		}
 #endif
-//			QUARK_ASSERT(_global_frame != nullptr);
 		return true;
 	}
 
 	public: interpreter_stack_t(const interpreter_stack_t& other) = delete;
 	public: interpreter_stack_t& operator=(const interpreter_stack_t& other) = delete;
-
-/*
-	public: interpreter_stack_t& operator=(const interpreter_stack_t& other){
-		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(other.check_invariant());
-
-		interpreter_stack_t temp = other;
-		temp.swap(*this);
-		return *this;
-	}
-*/
 
 	public: void swap(interpreter_stack_t& other) throw() {
 		QUARK_ASSERT(check_invariant());
@@ -2156,7 +2173,11 @@ struct interpreter_stack_t {
 
 //////////////////////////////////////		interpreter_t
 
-
+/*
+	This is a callback from the interpreter (really the host functions run from the interpeter)
+	that allows the interpreter to indirectly control the outside runtime that hosts the interpreter.
+	FUTURE: Needs neater solution than this.
+*/
 struct interpreter_handler_i {
 	virtual ~interpreter_handler_i(){};
 	virtual void on_send(const std::string& process_id, const json_t& message) = 0;
@@ -2165,6 +2186,7 @@ struct interpreter_handler_i {
 
 //////////////////////////////////////		interpreter_imm_t
 
+//	Holds static = immutable state the interpreter wants to keep around.
 
 struct interpreter_imm_t {
 	public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
@@ -2175,6 +2197,7 @@ struct interpreter_imm_t {
 
 //////////////////////////////////////		value_entry_t
 
+//	Allows the interpreter's clients to access values in the interpreter.
 
 struct value_entry_t {
 	bc_value_t _value;
@@ -2189,6 +2212,7 @@ struct value_entry_t {
 /*
 	Complete runtime state of the interpreter.
 	MUTABLE
+	Non-copyable.
 */
 
 struct interpreter_t {

@@ -106,6 +106,7 @@ inline void throw_compiler_error(const location2_t& location2, const std::string
 }
 
 
+location2_t find_source_line(const std::string& program, const std::string& file, bool corelib, const location_t& loc);
 
 
 ////////////////////////////////////////		refine_compiler_error_with_loc2()

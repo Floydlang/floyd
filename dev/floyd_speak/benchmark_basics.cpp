@@ -8,6 +8,7 @@
 
 #include "interpretator_benchmark.h"
 
+#include "ast_value.h"
 #include "benchmark_basics.h"
 
 #include <string>
