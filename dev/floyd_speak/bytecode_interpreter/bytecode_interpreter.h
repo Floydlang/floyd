@@ -111,6 +111,7 @@ bool is_encoded_as_ext(const typeid_t& type);
 	Efficent representation of any value supported by the interpreter.
 	It's immutable and uses value-semantics.
 	Holds either and inplace value or an external value. Handles reference counting automatically when required.
+	??? replace my variant<>
 */
 
 struct bc_value_t {
@@ -119,64 +120,12 @@ struct bc_value_t {
 	public: static void release_ext_pod(bc_pod_value_t& value);
 
 	public: bool check_invariant() const;
-
-	public: bc_value_t() :
-		_type(typeid_t::make_undefined())
-	{
-		_pod._ext = nullptr;
-		QUARK_ASSERT(check_invariant());
-	}
-
-	public: ~bc_value_t(){
-		QUARK_ASSERT(check_invariant());
-
-		if(is_encoded_as_ext(_type)){
-			release_ext_pod(_pod);
-		}
-	}
-
-	public: bc_value_t(const bc_value_t& other) :
-		_type(other._type),
-		_pod(other._pod)
-	{
-		QUARK_ASSERT(other.check_invariant());
-
-		if(is_encoded_as_ext(_type)){
-			add_ext_ref(*this);
-		}
-
-		QUARK_ASSERT(check_invariant());
-	}
-
-	public: bc_value_t& operator=(const bc_value_t& other){
-		QUARK_ASSERT(other.check_invariant());
-		QUARK_ASSERT(check_invariant());
-
-		bc_value_t temp(other);
-		temp.swap(*this);
-
-		QUARK_ASSERT(other.check_invariant());
-		QUARK_ASSERT(check_invariant());
-		return *this;
-	}
-
-	public: void swap(bc_value_t& other){
-		QUARK_ASSERT(other.check_invariant());
-		QUARK_ASSERT(check_invariant());
-
-		std::swap(_type, other._type);
-		std::swap(_pod, other._pod);
-
-		QUARK_ASSERT(other.check_invariant());
-		QUARK_ASSERT(check_invariant());
-	}
-
-	public: explicit bc_value_t(const bc_static_frame_t* frame_ptr) :
-		_type(typeid_t::make_void())
-	{
-		_pod._pod64._frame_ptr = frame_ptr;
-		QUARK_ASSERT(check_invariant());
-	}
+	public: bc_value_t();
+	public: ~bc_value_t();
+	public: bc_value_t(const bc_value_t& other);
+	public: bc_value_t& operator=(const bc_value_t& other);
+	public: void swap(bc_value_t& other);
+	public: explicit bc_value_t(const bc_static_frame_t* frame_ptr);
 
 	enum class mode {
 		k_unwritten_ext_value
@@ -185,154 +134,77 @@ struct bc_value_t {
 
 
 	//////////////////////////////////////		internal-undefined type
-
-
-	public: static bc_value_t make_undefined(){
-		return bc_value_t();
-	}
+	public: static bc_value_t make_undefined();
 
 
 	//////////////////////////////////////		internal-dynamic type
+	public: static bc_value_t make_internal_dynamic();
 
-
-	public: static bc_value_t make_internal_dynamic(){
-		return bc_value_t();
-	}
 
 	//////////////////////////////////////		void
-
-
-	public: static bc_value_t make_void(){
-		return bc_value_t();
-	}
+	public: static bc_value_t make_void();
 
 
 	//////////////////////////////////////		bool
-
-
-	public: inline static bc_value_t make_bool(bool v){
-		return bc_value_t(v);
-	}
-	public: inline bool get_bool_value() const {
-		QUARK_ASSERT(check_invariant());
-
-		return _pod._pod64._bool;
-	}
-	private: inline explicit bc_value_t(bool value) :
-		_type(typeid_t::make_bool())
-	{
-		_pod._pod64._bool = value;
-		QUARK_ASSERT(check_invariant());
-	}
+	public: static bc_value_t make_bool(bool v);
+	public: bool get_bool_value() const;
+	private: explicit bc_value_t(bool value);
 
 
 	//////////////////////////////////////		int
-
-
-	public: inline static bc_value_t make_int(int64_t v){
-		return bc_value_t{ v };
-	}
-	public: inline int64_t get_int_value() const {
-		QUARK_ASSERT(check_invariant());
-
-		return _pod._pod64._int64;
-	}
-	private: inline explicit bc_value_t(int64_t value) :
-		_type(typeid_t::make_int())
-	{
-		_pod._pod64._int64 = value;
-		QUARK_ASSERT(check_invariant());
-	}
+	public: static bc_value_t make_int(int64_t v);
+	public: int64_t get_int_value() const;
+	private: explicit bc_value_t(int64_t value);
 
 
 	//////////////////////////////////////		double
-
-
-	public: inline static bc_value_t make_double(double v){
-		return bc_value_t{ v };
-	}
-	public: double get_double_value() const {
-		QUARK_ASSERT(check_invariant());
-
-		return _pod._pod64._double;
-	}
-	private: inline explicit bc_value_t(double value) :
-		_type(typeid_t::make_double())
-	{
-		_pod._pod64._double = value;
-		QUARK_ASSERT(check_invariant());
-	}
+	public: static bc_value_t make_double(double v);
+	public: double get_double_value() const;
+	private: explicit bc_value_t(double value);
 
 
 	//////////////////////////////////////		string
-
-
-	public: inline static bc_value_t make_string(const std::string& v){
-		return bc_value_t{ v };
-	}
-	public: inline std::string get_string_value() const;
-	private: inline explicit bc_value_t(const std::string& value);
+	public: static bc_value_t make_string(const std::string& v);
+	public: std::string get_string_value() const;
+	private: explicit bc_value_t(const std::string& value);
 
 
 	//////////////////////////////////////		json_value
-
-
-	public: inline static bc_value_t make_json_value(const json_t& v){
-		return bc_value_t{ std::make_shared<json_t>(v) };
-	}
-	public: inline json_t get_json_value() const;
-	private: inline explicit bc_value_t(const std::shared_ptr<json_t>& value);
+	public: static bc_value_t make_json_value(const json_t& v);
+	public: json_t get_json_value() const;
+	private: explicit bc_value_t(const std::shared_ptr<json_t>& value);
 
 
 	//////////////////////////////////////		typeid
-
-
-	public: inline static bc_value_t make_typeid_value(const typeid_t& type_id){
-		return bc_value_t{ type_id };
-	}
-	public: inline typeid_t get_typeid_value() const;
-	private: inline explicit bc_value_t(const typeid_t& type_id);
+	public: static bc_value_t make_typeid_value(const typeid_t& type_id);
+	public: typeid_t get_typeid_value() const;
+	private: explicit bc_value_t(const typeid_t& type_id);
 
 
 	//////////////////////////////////////		struct
-
-
-	public: inline static bc_value_t make_struct_value(const typeid_t& struct_type, const std::vector<bc_value_t>& values){
-		return bc_value_t{ struct_type, values, true };
-	}
-	public: inline const std::vector<bc_value_t>& get_struct_value() const;
-	private: inline explicit bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag);
+	public: static bc_value_t make_struct_value(const typeid_t& struct_type, const std::vector<bc_value_t>& values);
+	public: const std::vector<bc_value_t>& get_struct_value() const;
+	private: explicit bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag);
 
 
 	//////////////////////////////////////		function
+	public: static bc_value_t make_function_value(const typeid_t& function_type, int function_id);
+	public: int get_function_value() const;
+	private: explicit bc_value_t(const typeid_t& function_type, int function_id, bool dummy);
 
-
-	public: inline static bc_value_t make_function_value(const typeid_t& function_type, int function_id){
-		return bc_value_t{ function_type, function_id, true };
-	}
-	public: inline int get_function_value() const{
-		QUARK_ASSERT(check_invariant());
-
-		return _pod._pod64._function_id;
-	}
-	private: inline explicit bc_value_t(const typeid_t& function_type, int function_id, bool dummy) :
-		_type(function_type)
-	{
-		_pod._pod64._function_id = function_id;
-		QUARK_ASSERT(check_invariant());
-	}
 
 	//	Bumps RC if needed.
-	public: inline explicit bc_value_t(const typeid_t& type, const bc_pod_value_t& internals);
+	public: explicit bc_value_t(const typeid_t& type, const bc_pod_value_t& internals);
 
 	//	Won't bump RC.
-	inline bc_value_t(const typeid_t& type, const bc_inplace_value_t& pod64);
+	public: bc_value_t(const typeid_t& type, const bc_inplace_value_t& pod64);
 
 	//	Bumps RC.
-	public: inline explicit bc_value_t(const typeid_t& type, const bc_external_handle_t& handle);
+	public: explicit bc_value_t(const typeid_t& type, const bc_external_handle_t& handle);
 
 
 	//////////////////////////////////////		STATE
+	//??? make private, also check other classes.
 	public: typeid_t _type;
 	public: bc_pod_value_t _pod;
 };
@@ -1557,180 +1429,6 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 
 
 
-
-
-
-
-
-////////////////////////////////////////////			INLINE IMPLEMENTATIONS
-
-
-
-
-
-
-
-////////////////////////////////////////////			bc_value_t
-
-
-#if DEBUG
-inline bool bc_value_t::check_invariant() const {
-	QUARK_ASSERT(_type.check_invariant());
-	if(is_encoded_as_ext(_type)){
-		QUARK_ASSERT(check_ext_deep(_type, _pod._ext))
-	}
-
-	return true;
-}
-#endif
-
-
-inline void bc_value_t::release_ext(bc_value_t& value){
-	QUARK_ASSERT(value.check_invariant());
-
-	value._pod._ext->_rc--;
-	if(value._pod._ext->_rc == 0){
-		delete value._pod._ext;
-		value._pod._ext = nullptr;
-	}
-}
-inline void bc_value_t::release_ext_pod(bc_pod_value_t& value){
-	QUARK_ASSERT(value._ext != nullptr);
-
-	value._ext->_rc--;
-	if(value._ext->_rc == 0){
-		delete value._ext;
-		value._ext = nullptr;
-	}
-}
-
-inline void bc_value_t::add_ext_ref(const bc_value_t& value){
-	QUARK_ASSERT(value.check_invariant());
-
-	value._pod._ext->_rc++;
-
-	QUARK_ASSERT(value.check_invariant());
-}
-
-
-
-inline std::string bc_value_t::get_string_value() const{
-	QUARK_ASSERT(check_invariant());
-
-	return _pod._ext->_string;
-}
-
-inline bc_value_t::bc_value_t(const std::string& value) :
-	_type(typeid_t::make_string())
-{
-	_pod._ext = new bc_external_value_t{value};
-	QUARK_ASSERT(check_invariant());
-}
-
-inline json_t bc_value_t::get_json_value() const{
-	QUARK_ASSERT(check_invariant());
-
-	return *_pod._ext->_json_value.get();
-}
-inline bc_value_t::bc_value_t(const std::shared_ptr<json_t>& value) :
-	_type(typeid_t::make_json_value())
-{
-	QUARK_ASSERT(value);
-	QUARK_ASSERT(value->check_invariant());
-
-	_pod._ext = new bc_external_value_t{value};
-
-	QUARK_ASSERT(check_invariant());
-}
-
-
-inline bc_value_t::bc_value_t(const typeid_t& type, mode mode) :
-	_type(type)
-{
-	QUARK_ASSERT(type.check_invariant());
-
-	auto temp = new bc_external_value_t{"UNWRITTEN EXT VALUE"};
-	temp->_is_unwritten_ext_value = true;
-	_pod._ext = temp;
-
-	QUARK_ASSERT(check_invariant());
-}
-
-
-inline typeid_t bc_value_t::get_typeid_value() const {
-	QUARK_ASSERT(check_invariant());
-
-	return _pod._ext->_typeid_value;
-}
-inline bc_value_t::bc_value_t(const typeid_t& type_id) :
-	_type(typeid_t::make_typeid())
-{
-	QUARK_ASSERT(type_id.check_invariant());
-
-	_pod._ext = new bc_external_value_t{type_id};
-
-	QUARK_ASSERT(check_invariant());
-}
-
-
-inline const std::vector<bc_value_t>& bc_value_t::get_struct_value() const {
-	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(_type.is_struct());
-
-	return _pod._ext->_struct_members;
-}
-inline bc_value_t::bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag) :
-	_type(struct_type)
-{
-	QUARK_ASSERT(struct_type.check_invariant());
-#if QUARK_ASSERT_ON
-	for(const auto& e: values) {
-		QUARK_ASSERT(e.check_invariant());
-	}
-#endif
-
-	_pod._ext = new bc_external_value_t{struct_type, values, true};
-	QUARK_ASSERT(check_invariant());
-}
-
-inline bc_value_t::bc_value_t(const typeid_t& type, const bc_pod_value_t& internals) :
-	_type(type),
-	_pod(internals)
-{
-	QUARK_ASSERT(type.check_invariant());
-#if QUARK_ASSERT_ON
-	if(is_encoded_as_ext(type)){
-		QUARK_ASSERT(check_ext_deep(type, internals._ext));
-	}
-#endif
-
-	if(is_encoded_as_ext(_type)){
-		_pod._ext->_rc++;
-	}
-	QUARK_ASSERT(check_invariant());
-}
-
-inline bc_value_t::bc_value_t(const typeid_t& type, const bc_inplace_value_t& pod64) :
-	_type(type),
-	_pod{._pod64 = pod64}
-{
-	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(is_encoded_as_ext(_type) == false);
-
-	QUARK_ASSERT(check_invariant());
-}
-
-inline bc_value_t::bc_value_t(const typeid_t& type, const bc_external_handle_t& handle) :
-	_type(type),
-	_pod{._ext = handle._ext}
-{
-	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(handle.check_invariant());
-
-	_pod._ext->_rc++;
-
-	QUARK_ASSERT(check_invariant());
-}
 
 
 

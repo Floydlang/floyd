@@ -25,6 +25,371 @@ namespace floyd {
 
 
 
+bc_value_t::bc_value_t() :
+	_type(typeid_t::make_undefined())
+{
+	_pod._ext = nullptr;
+	QUARK_ASSERT(check_invariant());
+}
+
+bc_value_t::~bc_value_t(){
+	QUARK_ASSERT(check_invariant());
+
+	if(is_encoded_as_ext(_type)){
+		release_ext_pod(_pod);
+	}
+}
+
+bc_value_t::bc_value_t(const bc_value_t& other) :
+	_type(other._type),
+	_pod(other._pod)
+{
+	QUARK_ASSERT(other.check_invariant());
+
+	if(is_encoded_as_ext(_type)){
+		add_ext_ref(*this);
+	}
+
+	QUARK_ASSERT(check_invariant());
+}
+
+bc_value_t& bc_value_t::operator=(const bc_value_t& other){
+	QUARK_ASSERT(other.check_invariant());
+	QUARK_ASSERT(check_invariant());
+
+	bc_value_t temp(other);
+	temp.swap(*this);
+
+	QUARK_ASSERT(other.check_invariant());
+	QUARK_ASSERT(check_invariant());
+	return *this;
+}
+
+void bc_value_t::swap(bc_value_t& other){
+	QUARK_ASSERT(other.check_invariant());
+	QUARK_ASSERT(check_invariant());
+
+	std::swap(_type, other._type);
+	std::swap(_pod, other._pod);
+
+	QUARK_ASSERT(other.check_invariant());
+	QUARK_ASSERT(check_invariant());
+}
+
+bc_value_t::bc_value_t(const bc_static_frame_t* frame_ptr) :
+	_type(typeid_t::make_void())
+{
+	_pod._pod64._frame_ptr = frame_ptr;
+	QUARK_ASSERT(check_invariant());
+}
+
+
+//////////////////////////////////////		internal-undefined type
+
+
+bc_value_t bc_value_t::make_undefined(){
+	return bc_value_t();
+}
+
+
+//////////////////////////////////////		internal-dynamic type
+
+
+bc_value_t bc_value_t::make_internal_dynamic(){
+	return bc_value_t();
+}
+
+//////////////////////////////////////		void
+
+
+bc_value_t bc_value_t::make_void(){
+	return bc_value_t();
+}
+
+
+//////////////////////////////////////		bool
+
+
+bc_value_t bc_value_t::make_bool(bool v){
+	return bc_value_t(v);
+}
+bool bc_value_t::get_bool_value() const {
+	QUARK_ASSERT(check_invariant());
+
+	return _pod._pod64._bool;
+}
+bc_value_t::bc_value_t(bool value) :
+	_type(typeid_t::make_bool())
+{
+	_pod._pod64._bool = value;
+	QUARK_ASSERT(check_invariant());
+}
+
+
+//////////////////////////////////////		int
+
+
+bc_value_t bc_value_t::make_int(int64_t v){
+	return bc_value_t{ v };
+}
+int64_t bc_value_t::get_int_value() const {
+	QUARK_ASSERT(check_invariant());
+
+	return _pod._pod64._int64;
+}
+bc_value_t::bc_value_t(int64_t value) :
+	_type(typeid_t::make_int())
+{
+	_pod._pod64._int64 = value;
+	QUARK_ASSERT(check_invariant());
+}
+
+
+//////////////////////////////////////		double
+
+
+bc_value_t bc_value_t::make_double(double v){
+	return bc_value_t{ v };
+}
+double bc_value_t::get_double_value() const {
+	QUARK_ASSERT(check_invariant());
+
+	return _pod._pod64._double;
+}
+bc_value_t::bc_value_t(double value) :
+	_type(typeid_t::make_double())
+{
+	_pod._pod64._double = value;
+	QUARK_ASSERT(check_invariant());
+}
+
+
+//////////////////////////////////////		string
+
+
+bc_value_t bc_value_t::make_string(const std::string& v){
+	return bc_value_t{ v };
+}
+std::string bc_value_t::get_string_value() const{
+	QUARK_ASSERT(check_invariant());
+
+	return _pod._ext->_string;
+}
+bc_value_t::bc_value_t(const std::string& value) :
+	_type(typeid_t::make_string())
+{
+	_pod._ext = new bc_external_value_t{value};
+	QUARK_ASSERT(check_invariant());
+}
+
+
+//////////////////////////////////////		json_value
+
+
+bc_value_t bc_value_t::make_json_value(const json_t& v){
+	return bc_value_t{ std::make_shared<json_t>(v) };
+}
+json_t bc_value_t::get_json_value() const{
+	QUARK_ASSERT(check_invariant());
+
+	return *_pod._ext->_json_value.get();
+}
+bc_value_t::bc_value_t(const std::shared_ptr<json_t>& value) :
+	_type(typeid_t::make_json_value())
+{
+	QUARK_ASSERT(value);
+	QUARK_ASSERT(value->check_invariant());
+
+	_pod._ext = new bc_external_value_t{value};
+
+	QUARK_ASSERT(check_invariant());
+}
+
+
+
+
+
+//////////////////////////////////////		typeid
+
+
+bc_value_t bc_value_t::make_typeid_value(const typeid_t& type_id){
+	return bc_value_t{ type_id };
+}
+typeid_t bc_value_t::get_typeid_value() const {
+	QUARK_ASSERT(check_invariant());
+
+	return _pod._ext->_typeid_value;
+}
+bc_value_t::bc_value_t(const typeid_t& type_id) :
+	_type(typeid_t::make_typeid())
+{
+	QUARK_ASSERT(type_id.check_invariant());
+
+	_pod._ext = new bc_external_value_t{type_id};
+
+	QUARK_ASSERT(check_invariant());
+}
+
+
+//////////////////////////////////////		struct
+
+
+
+
+bc_value_t bc_value_t::make_struct_value(const typeid_t& struct_type, const std::vector<bc_value_t>& values){
+	return bc_value_t{ struct_type, values, true };
+}
+const std::vector<bc_value_t>& bc_value_t::get_struct_value() const {
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(_type.is_struct());
+
+	return _pod._ext->_struct_members;
+}
+bc_value_t::bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t>& values, bool struct_tag) :
+	_type(struct_type)
+{
+	QUARK_ASSERT(struct_type.check_invariant());
+#if QUARK_ASSERT_ON
+	for(const auto& e: values) {
+		QUARK_ASSERT(e.check_invariant());
+	}
+#endif
+
+	_pod._ext = new bc_external_value_t{struct_type, values, true};
+	QUARK_ASSERT(check_invariant());
+}
+
+
+	//////////////////////////////////////		function
+
+
+bc_value_t bc_value_t::make_function_value(const typeid_t& function_type, int function_id){
+	return bc_value_t{ function_type, function_id, true };
+}
+int bc_value_t::get_function_value() const{
+	QUARK_ASSERT(check_invariant());
+
+	return _pod._pod64._function_id;
+}
+bc_value_t::bc_value_t(const typeid_t& function_type, int function_id, bool dummy) :
+	_type(function_type)
+{
+	_pod._pod64._function_id = function_id;
+	QUARK_ASSERT(check_invariant());
+}
+
+
+
+
+bc_value_t::bc_value_t(const typeid_t& type, const bc_pod_value_t& internals) :
+	_type(type),
+	_pod(internals)
+{
+	QUARK_ASSERT(type.check_invariant());
+#if QUARK_ASSERT_ON
+	if(is_encoded_as_ext(type)){
+		QUARK_ASSERT(check_ext_deep(type, internals._ext));
+	}
+#endif
+
+	if(is_encoded_as_ext(_type)){
+		_pod._ext->_rc++;
+	}
+	QUARK_ASSERT(check_invariant());
+}
+
+bc_value_t::bc_value_t(const typeid_t& type, const bc_inplace_value_t& pod64) :
+	_type(type),
+	_pod{._pod64 = pod64}
+{
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(is_encoded_as_ext(_type) == false);
+
+	QUARK_ASSERT(check_invariant());
+}
+
+bc_value_t::bc_value_t(const typeid_t& type, const bc_external_handle_t& handle) :
+	_type(type),
+	_pod{._ext = handle._ext}
+{
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(handle.check_invariant());
+
+	_pod._ext->_rc++;
+
+	QUARK_ASSERT(check_invariant());
+}
+
+
+
+
+
+#if DEBUG
+bool bc_value_t::check_invariant() const {
+	QUARK_ASSERT(_type.check_invariant());
+	if(is_encoded_as_ext(_type)){
+		QUARK_ASSERT(check_ext_deep(_type, _pod._ext))
+	}
+
+	return true;
+}
+#endif
+
+void bc_value_t::release_ext(bc_value_t& value){
+	QUARK_ASSERT(value.check_invariant());
+
+	value._pod._ext->_rc--;
+	if(value._pod._ext->_rc == 0){
+		delete value._pod._ext;
+		value._pod._ext = nullptr;
+	}
+}
+void bc_value_t::release_ext_pod(bc_pod_value_t& value){
+	QUARK_ASSERT(value._ext != nullptr);
+
+	value._ext->_rc--;
+	if(value._ext->_rc == 0){
+		delete value._ext;
+		value._ext = nullptr;
+	}
+}
+
+void bc_value_t::add_ext_ref(const bc_value_t& value){
+	QUARK_ASSERT(value.check_invariant());
+
+	value._pod._ext->_rc++;
+
+	QUARK_ASSERT(value.check_invariant());
+}
+
+
+
+
+
+
+
+inline bc_value_t::bc_value_t(const typeid_t& type, mode mode) :
+	_type(type)
+{
+	QUARK_ASSERT(type.check_invariant());
+
+	auto temp = new bc_external_value_t{"UNWRITTEN EXT VALUE"};
+	temp->_is_unwritten_ext_value = true;
+	_pod._ext = temp;
+
+	QUARK_ASSERT(check_invariant());
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 inline bool encode_as_pod64(const typeid_t& type){
