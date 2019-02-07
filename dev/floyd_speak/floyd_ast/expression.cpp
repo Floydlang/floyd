@@ -79,16 +79,25 @@ ast_json_t function_def_to_ast_json(const function_definition_t& v) {
 ////////////////////////////////////////////		JSON SUPPORT
 
 
-QUARK_UNIT_TESTQ("expression_to_json()", "literals"){
+QUARK_UNIT_TEST("expression_t", "expression_to_json()", "literals", ""){
 	ut_verify(QUARK_POS, expression_to_json_string(expression_t::make_literal_int(13)), R"(["k", 13, "^int"])");
+}
+QUARK_UNIT_TEST("expression", "expression_to_json()", "literals", ""){
 	ut_verify(QUARK_POS, expression_to_json_string(expression_t::make_literal_string("xyz")), R"(["k", "xyz", "^string"])");
+}
+QUARK_UNIT_TEST("expression", "expression_to_json()", "literals", ""){
 	ut_verify(QUARK_POS, expression_to_json_string(expression_t::make_literal_double(14.0f)), R"(["k", 14, "^double"])");
+}
+QUARK_UNIT_TEST("expression", "expression_to_json()", "literals", ""){
 	ut_verify(QUARK_POS, expression_to_json_string(expression_t::make_literal_bool(true)), R"(["k", true, "^bool"])");
+}
+QUARK_UNIT_TEST("expression", "expression_to_json()", "literals", ""){
 	ut_verify(QUARK_POS, expression_to_json_string(expression_t::make_literal_bool(false)), R"(["k", false, "^bool"])");
 }
 
-QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
-	ut_verify(QUARK_POS,
+QUARK_UNIT_TEST("expression_t", "expression_to_json()", "math2", ""){
+	ut_verify(
+		QUARK_POS,
 		expression_to_json_string(
 			expression_t::make_simple_expression__2(
 				expression_type::k_arithmetic_add__2, expression_t::make_literal_int(2), expression_t::make_literal_int(3), nullptr)
@@ -97,8 +106,9 @@ QUARK_UNIT_TESTQ("expression_to_json()", "math2"){
 	);
 }
 
-QUARK_UNIT_TESTQ("expression_to_json()", "call"){
-	ut_verify(QUARK_POS,
+QUARK_UNIT_TEST("expression_t", "expression_to_json()", "call", ""){
+	ut_verify(
+		QUARK_POS,
 		expression_to_json_string(
 			expression_t::make_call(
 				expression_t::make_load("my_func", nullptr),
@@ -113,7 +123,7 @@ QUARK_UNIT_TESTQ("expression_to_json()", "call"){
 	);
 }
 
-QUARK_UNIT_TESTQ("expression_to_json()", "lookup"){
+QUARK_UNIT_TEST("expression_t", "expression_to_json()", "lookup", ""){
 	ut_verify(QUARK_POS, 
 		expression_to_json_string(
 			expression_t::make_lookup(
