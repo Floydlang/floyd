@@ -70,7 +70,7 @@ union bc_inplace_value_t {
 
 union bc_pod_value_t {
 	const bc_external_value_t* _external;
-	bc_inplace_value_t _pod64;
+	bc_inplace_value_t _inplace;
 };
 
 void release_pod_external(bc_pod_value_t& value);
@@ -1159,8 +1159,8 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(_stack_size >= k_frame_overhead);
 
-		const auto frame_pos = _entries[_stack_size - k_frame_overhead + 0]._pod64._int64;
-		const auto frame_ptr = _entries[_stack_size - k_frame_overhead + 1]._pod64._frame_ptr;
+		const auto frame_pos = _entries[_stack_size - k_frame_overhead + 0]._inplace._int64;
+		const auto frame_ptr = _entries[_stack_size - k_frame_overhead + 1]._inplace._frame_ptr;
 		_stack_size -= k_frame_overhead;
 #if DEBUG
 		_debug_types.pop_back();
@@ -1225,7 +1225,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 		QUARK_ASSERT(_debug_types[pos].is_int());
 
-		return _entries[pos]._pod64._int64;
+		return _entries[pos]._inplace._int64;
 	}
 
 	public: inline void replace_intern(int pos, const bc_value_t& value){

@@ -577,7 +577,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 			const auto& vec = obj._pod._external->_vector_pod64;
 			int index = 0;
 			const auto size = vec.size();
-			while(index < size && vec[index]._bool != wanted._pod._pod64._bool){
+			while(index < size && vec[index]._bool != wanted._pod._inplace._bool){
 				index++;
 			}
 			int result = index == size ? -1 : static_cast<int>(index);
@@ -587,7 +587,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 			const auto& vec = obj._pod._external->_vector_pod64;
 			int index = 0;
 			const auto size = vec.size();
-			while(index < size && vec[index]._int64 != wanted._pod._pod64._int64){
+			while(index < size && vec[index]._int64 != wanted._pod._inplace._int64){
 				index++;
 			}
 			int result = index == size ? -1 : static_cast<int>(index);
@@ -597,7 +597,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 			const auto& vec = obj._pod._external->_vector_pod64;
 			int index = 0;
 			const auto size = vec.size();
-			while(index < size && vec[index]._double != wanted._pod._pod64._double){
+			while(index < size && vec[index]._double != wanted._pod._inplace._double){
 				index++;
 			}
 			int result = index == size ? -1 : static_cast<int>(index);
