@@ -30,5 +30,4 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast);
 
 } //	floyd
 
-
 #endif /* bytecode_gen_h */

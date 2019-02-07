@@ -500,9 +500,7 @@ bcgen_body_t bcgen_while_statement(bcgenerator_t& vm, const statement_t::while_s
 	auto body_acc = body;
 
 	const auto& loop_body = bcgen_body_block(vm, statement._body);
-
 	int body_instr_count = static_cast<int>(loop_body._instrs.size());
-
 	const auto condition_pc = static_cast<int>(body_acc._instrs.size());
 
 	const auto condition_expr = bcgen_expression(vm, {}, statement._condition, body_acc);
@@ -1554,5 +1552,6 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 
 	return result;
 }
+
 
 }	//	floyd
