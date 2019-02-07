@@ -27,7 +27,6 @@ struct parse_tree_t {
 };
 
 
-std::pair<json_t, seq_t> parse_statement(const seq_t& s);
 
 //	"a = 1; print(a)"
 parse_result_t parse_statements_no_brackets(const seq_t& s);

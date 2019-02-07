@@ -62,6 +62,73 @@ namespace floyd {
 	std::pair<json_t, seq_t> parse_return_statement(const seq_t& s);
 
 
+
+	/*
+		OUTPUT:
+			[ "bind", "float", "x", EXPRESSION, { "mutable": true } ]
+	*/
+	std::pair<json_t, seq_t> parse_bind_statement(const seq_t& s);
+
+	std::pair<json_t, seq_t> parse_assign_statement(const seq_t& s);
+	std::pair<json_t, seq_t> parse_expression_statement(const seq_t& s);
+
+
+/*
+	OUTPUT:
+		[
+			"def-func",
+			{
+				"name": "main",
+				"args": [],
+				"return_type": "int",
+				"statements": [
+					[ "return", [ "k", 3, "int" ]]
+				]
+			}
+		]
+*/
+std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos);
+
+
+
+	/*
+		OUTPUT
+
+		[
+			"def-struct",
+			{
+				"name": "pixel",
+				"members": [
+					{ "name": "s", "type": "string" }
+				],
+			}
+		]
+	*/
+	std::pair<json_t, seq_t> parse_struct_definition(const seq_t& pos);
+
+
+	std::pair<json_t, seq_t>  parse_struct_definition_body(const seq_t& p, const std::string& name);
+
+
+
+	/*
+		OUTPUT
+
+		[
+			"def-protocol",
+			{
+				"name": "pixel",
+				"members": [
+					{ "name": "s", "type": "string" }
+				],
+			}
+		]
+	*/
+	std::pair<json_t, seq_t> parse_protocol_definition(const seq_t& pos);
+
+	std::pair<json_t, seq_t>  parse_protocol_definition_body(const seq_t& p, const std::string& name);
+
+
 	/*
 		A:
 			if (2 > 1){

@@ -15,6 +15,8 @@
 #include "floyd_syntax.h"
 #include "compiler_basics.h"
 #include "ast_json.h"
+#include "ast_typeid.h"
+#include "ast_typeid_helpers.h"
 
 namespace floyd {
 
@@ -133,6 +135,582 @@ QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
 		)).first
 	);
 }
+
+
+
+
+
+//	Finds identifier-string at RIGHT side of string. Stops at whitespace.
+//	"1234()=<whatever> IDENTIFIER": "1234()=<whatever>", "IDENTIFIER"
+std::size_t split_at_tail_identifier(const std::string& s){
+	auto i = s.size();
+	while(i > 0 && whitespace_chars.find(s[i - 1]) != std::string::npos){
+		i--;
+	}
+	while(i > 0 && identifier_chars.find(s[i - 1]) != std::string::npos){
+		i--;
+	}
+	return i;
+}
+
+//	BIND:			int x = 10
+//	BIND:			x = 10
+//	BIND:			int (string a) x = f(4 == 5)
+//	BIND:			int x = 10
+//	BIND:			x = 10
+struct a_result_t {
+	typeid_t type;
+	std::string identifier;
+
+	//	Points to "=" or end of sequence if no "=" was found.
+	seq_t rest;
+};
+
+a_result_t parse_a(const seq_t& p, const location_t& loc){
+	const auto pos = skip_whitespace(p);
+
+	//	Notice: if there is no type, only and identifier -- then we still get a type back: with an unresolved identifier.
+	const auto optional_type_pos = read_type(pos);
+	const auto identifier_pos = read_identifier(optional_type_pos.second);
+
+	if(optional_type_pos.first && identifier_pos.first != ""){
+		return a_result_t{ *optional_type_pos.first, identifier_pos.first, identifier_pos.second };
+	}
+	else if(!optional_type_pos.first && identifier_pos.first != ""){
+		QUARK_ASSERT(false);
+		return a_result_t{ typeid_t::make_undefined(), optional_type_pos.first->get_unresolved_type_identifier(), identifier_pos.second };
+	}
+	else if(optional_type_pos.first && optional_type_pos.first->is_unresolved_type_identifier() && identifier_pos.first == ""){
+		return a_result_t{ typeid_t::make_undefined(), optional_type_pos.first->get_unresolved_type_identifier(), identifier_pos.second };
+	}
+	else{
+		throw_compiler_error(loc, "Require a value for new bind.");
+	}
+}
+
+std::pair<json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
+	const auto a_result = parse_a(pos, loc);
+	if(a_result.rest.empty()){
+		throw_compiler_error(loc, "Require a value for new bind.");
+	}
+	const auto equal_sign = read_required(skip_whitespace(a_result.rest), "=");
+	const auto expression_pos = parse_expression(equal_sign);
+
+	const auto params = std::vector<json_t>{
+		typeid_to_ast_json(a_result.type, json_tags::k_tag_resolve_state)._value,
+		a_result.identifier,
+		expression_pos.first,
+	};
+	const auto statement = make_statement_n(loc, statement_opcode_t::k_bind, params)._value;
+	return { statement, expression_pos.second };
+}
+
+std::pair<json_t, seq_t> parse_mutable(const seq_t& pos, const location_t& loc){
+	const auto a_result = parse_a(pos, loc);
+	if(a_result.rest.empty()){
+		throw_compiler_error(loc, "Require a value for new bind.");
+	}
+	const auto equal_sign = read_required(skip_whitespace(a_result.rest), "=");
+	const auto expression_pos = parse_expression(equal_sign);
+
+	const auto meta = (json_t::make_object({ std::pair<std::string, json_t>{"mutable", true } }));
+
+	const auto params = std::vector<json_t>{
+		typeid_to_ast_json(a_result.type, json_tags::k_tag_resolve_state)._value,
+		a_result.identifier,
+		expression_pos.first,
+		meta
+	};
+	const auto statement = make_statement_n(loc, statement_opcode_t::k_bind, params)._value;
+
+	return { statement, expression_pos.second };
+}
+
+
+
+//////////////////////////////////////////////////		parse_bind_statement()
+
+
+//	BIND:			let int x = 10
+//	BIND:			let x = 10
+//	BIND:			let int (string a) x = f(4 == 5)
+//	BIND:			mutable int x = 10
+//	BIND:			mutable x = 10
+
+//	ERROR:			let int x
+//	ERROR:			let x
+//	ERROR:			mutable int x
+//	ERROR:			mutable x
+
+//	ERROR:			x = 10
+//	[let]/[mutable] TYPE identifier = EXPRESSION
+//					|<----------->|		call this section a.
+
+std::pair<json_t, seq_t> parse_bind_statement(const seq_t& s){
+	const auto start = skip_whitespace(s);
+	const auto loc = location_t(start.pos());
+
+	const auto let_pos = if_first(start, keyword_t::k_let);
+	if(let_pos.first){
+		return parse_let(let_pos.second, loc);
+	}
+
+	const auto mutable_pos = if_first(skip_whitespace(s), keyword_t::k_mutable);
+	if(mutable_pos.first){
+		return parse_mutable(mutable_pos.second, loc);
+	}
+
+	throw_compiler_error(loc, "Bind syntax error.");
+}
+
+
+QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
+	const auto input = R"(
+
+		mutable string row
+
+	)";
+
+	try {
+		ut_verify_json_and_rest(
+			QUARK_POS,
+			parse_bind_statement(seq_t(input)),
+			R"(
+				[ 0, "bind", "^int", "test", ["k", 123, "^int"]]
+			)",
+			" let int a = 4 "
+		);
+		fail_test(QUARK_POS);
+	}
+	catch(const std::runtime_error& e){
+		//	Should come here.
+		ut_verify(QUARK_POS, e.what(), "Expected \'=\' character.");
+	}
+}
+
+
+QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
+	ut_verify_json_and_rest(
+		QUARK_POS,
+		parse_bind_statement(seq_t("let int test = 123 let int a = 4 ")),
+		R"(
+			[ 0, "bind", "^int", "test", ["k", 123, "^int"]]
+		)",
+		" let int a = 4 "
+	);
+}
+
+
+
+QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
+	ut_verify(QUARK_POS,
+		parse_bind_statement(seq_t("let bool bb = true")).first,
+		parse_json(seq_t(
+			R"(
+				[ 0, "bind", "^bool", "bb", ["k", true, "^bool"]]
+			)"
+		)).first
+	);
+}
+QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
+	ut_verify(QUARK_POS,
+		parse_bind_statement(seq_t("let int hello = 3")).first,
+		parse_json(seq_t(
+			R"(
+				[ 0, "bind", "^int", "hello", ["k", 3, "^int"]]
+			)"
+		)).first
+	);
+}
+
+QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
+	ut_verify(QUARK_POS,
+		parse_bind_statement(seq_t("mutable int a = 14")).first,
+		parse_json(seq_t(
+			R"(
+				[ 0, "bind", "^int", "a", ["k", 14, "^int"], { "mutable": true }]
+			)"
+		)).first
+	);
+}
+
+QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
+	ut_verify(QUARK_POS,
+		parse_bind_statement(seq_t("mutable hello = 3")).first,
+		parse_json(seq_t(
+			R"(
+				[ 0, "bind", "^**undef**", "hello", ["k", 3, "^int"], { "mutable": true }]
+			)"
+		)).first
+	);
+}
+
+QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
+	ut_verify_json_and_rest(
+		QUARK_POS,
+		parse_bind_statement(seq_t("let int (double, [string]) test = 123 let int a = 4 ")),
+		R"(
+			[0, "bind", ["fun", "^int", ["^double", ["vector", "^string"]], true], "test", ["k", 123, "^int"]]
+		)",
+		" let int a = 4 "
+	);
+}
+
+//### test float literal
+//### test string literal
+
+
+//////////////////////////////////////////////////		parse_assign_statement()
+
+
+std::pair<json_t, seq_t> parse_assign_statement(const seq_t& s){
+	const auto start = skip_whitespace(s);
+	const auto variable_pos = read_identifier(start);
+	if(variable_pos.first.empty()){
+		throw_compiler_error(location_t(s.pos()), "Assign syntax error.");
+	}
+	const auto equal_pos = read_required_char(skip_whitespace(variable_pos.second), '=');
+	const auto rhs_seq = skip_whitespace(equal_pos);
+	const auto expression_fr = parse_expression(rhs_seq);
+
+	const auto statement = make_statement_n(location_t(start.pos()), statement_opcode_t::k_store, { variable_pos.first, expression_fr.first })._value;
+	return { statement, expression_fr.second };
+}
+
+QUARK_UNIT_TEST("", "parse_assign_statement()", "", ""){
+	ut_verify(QUARK_POS,
+		parse_assign_statement(seq_t("x = 10;")).first,
+		parse_json(seq_t(
+			R"(
+				[ 0, "store","x",["k",10,"^int"] ]
+			)"
+		)).first
+	);
+}
+
+
+//////////////////////////////////////////////////		parse_expression_statement()
+
+
+std::pair<json_t, seq_t> parse_expression_statement(const seq_t& s){
+	const auto start = skip_whitespace(s);
+	const auto expression_fr = parse_expression(start);
+
+	const auto statement = make_statement1(location_t(start.pos()), statement_opcode_t::k_expression_statement, expression_fr.first)._value;
+	return { statement, expression_fr.second };
+}
+
+QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
+	ut_verify(QUARK_POS,
+		parse_expression_statement(seq_t("print(14);")).first,
+		parse_json(seq_t(
+			R"(
+				[ 0, "expression-statement", [ "call", ["@", "print"], [["k", 14, "^int"]] ] ]
+			)"
+		)).first
+	);
+}
+
+//////////////////////////////////////////////////		parse_function_definition_statement()
+
+
+std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
+	const auto start = skip_whitespace(pos);
+	const auto func_pos = read_required(start, keyword_t::k_func);
+	const auto return_type_pos = read_required_type(func_pos);
+	const auto function_name_pos = read_required_identifier(return_type_pos.second);
+	const auto args_pos = read_functiondef_arg_parantheses(skip_whitespace(function_name_pos.second));
+
+	const auto impure_pos = if_first(skip_whitespace(args_pos.second), keyword_t::k_impure);
+	const auto body = parse_statement_body(impure_pos.second);
+
+	const auto args = members_to_json(args_pos.first);
+	const auto function_name = function_name_pos.first;
+
+	const auto function_def = make_statement1(
+		location_t(start.pos()),
+		statement_opcode_t::k_def_func,
+		json_t::make_object({
+			{ "name", function_name },
+			{ "args", args },
+			{ "statements", body.ast },
+			{ "return_type", typeid_to_ast_json(return_type_pos.first, json_tags::k_tag_resolve_state)._value },
+			{ "impure", impure_pos.first }
+		})
+	)._value;
+	return { function_def, body.pos };
+}
+
+
+struct test {
+	std::string desc;
+	std::string input;
+	std::string output;
+};
+
+
+QUARK_UNIT_TEST("", "parse_function_definition_statement()", "Minimal function IMPURE", ""){
+	const std::string input = "func int f() impure{ return 3; }";
+	const std::string expected = R"(
+		[
+			0,
+			"def-func",
+			{ "args": [], "name": "f", "return_type": "^int", "statements": [[21, "return", ["k", 3, "^int"]]], "impure": true }
+		]
+	)";
+	ut_verify(QUARK_POS, parse_function_definition_statement(seq_t(input)).first, parse_json(seq_t(expected)).first);
+}
+
+const std::vector<test> testsxyz = {
+	{
+		"Minimal function",
+		"func int f(){ return 3; }",
+
+		R"(
+			[
+				0,
+				"def-func",
+				{ "args": [], "name": "f", "return_type": "^int", "statements": [[14, "return", ["k", 3, "^int"]]], "impure": false }
+			]
+		)"
+	},
+	{
+		"3 args of different types",
+		"func int printf(string a, double barry, int c){ return 3; }",
+		R"(
+			[
+				0,
+				"def-func",
+				{
+					"args": [
+						{ "name": "a", "type": "^string" },
+						{ "name": "barry", "type": "^double" },
+						{ "name": "c", "type": "^int" },
+					],
+					"name": "printf",
+					"return_type": "^int",
+					"statements": [[48, "return", ["k", 3, "^int"]]],
+					"impure": false
+				}
+			]
+		)"
+	},
+	{
+		"Max whitespace",
+		" func  \t int \t printf( \t string \t a \t , \t double \t b \t ){ \t return \t 3 \t ; \t } \t ",
+		R"(
+			[
+				1,
+				"def-func",
+				{
+					"args": [
+						{ "name": "a", "type": "^string" },
+						{ "name": "b", "type": "^double" }
+					],
+					"name": "printf",
+					"return_type": "^int",
+					"statements": [[60, "return", ["k", 3, "^int"]]],
+					"impure": false
+				}
+			]
+		)"
+	},
+	{
+		"Min whitespace",
+		"func int printf(string a,double b){return 3;}",
+		R"(
+			[
+				0,
+				"def-func",
+				{
+					"args": [
+						{ "name": "a", "type": "^string" },
+						{ "name": "b", "type": "^double" }
+					],
+					"name": "printf",
+					"return_type": "^int",
+					"statements": [[35, "return", ["k", 3, "^int"]]],
+					"impure": false
+				}
+			]
+		)"
+	}
+};
+
+QUARK_UNIT_TEST("", "parse_function_definition_statement()", "BATCH", "Correct output JSON"){
+	for(const auto& e: testsxyz){
+		QUARK_SCOPED_TRACE(e.desc);
+		ut_verify(QUARK_POS, parse_function_definition_statement(seq_t(e.input)).first, parse_json(seq_t(e.output)).first);
+	}
+}
+
+
+//////////////////////////////////////////////////		parse_struct_definition()
+
+
+
+	std::pair<json_t, seq_t>  parse_struct_definition_body(const seq_t& p, const std::string& name, const location_t& location){
+		const auto s2 = skip_whitespace(p);
+		auto pos = read_required_char(s2, '{');
+		std::vector<member_t> members;
+		while(!pos.empty() && pos.first() != "}"){
+			const auto member_type = read_required_type(pos);
+			const auto member_name = read_required_identifier(member_type.second);
+			members.push_back(member_t(member_type.first, member_name.first));
+			pos = read_optional_char(skip_whitespace(member_name.second), ';').second;
+			pos = skip_whitespace(pos);
+		}
+		pos = read_required(pos, "}");
+
+		const auto r = make_statement1(
+			location,
+			statement_opcode_t::k_def_struct,
+			json_t::make_object({
+				{ "name", name },
+				{ "members", members_to_json(members) }
+			})
+		)._value;
+		return { r, skip_whitespace(pos) };
+	}
+
+	std::pair<json_t, seq_t>  parse_struct_definition(const seq_t& pos0){
+		std::pair<bool, seq_t> token_pos = if_first(pos0, keyword_t::k_struct);
+		QUARK_ASSERT(token_pos.first);
+
+		const auto struct_name_pos = read_required_identifier(token_pos.second);
+		const auto location = location_t(pos0.pos());
+
+		const auto s2 = skip_whitespace(struct_name_pos.second);
+		const auto b = parse_struct_definition_body(s2, struct_name_pos.first, location);
+		return b;
+	}
+
+
+	const std::string k_test_struct0 = "struct a {int x; string y; double z;}";
+
+	QUARK_UNIT_TEST("parser", "parse_struct_definition", "", ""){
+		const auto r = parse_struct_definition(seq_t(k_test_struct0));
+
+		const auto expected =
+		json_t::make_array({
+			0,
+			"def-struct",
+			json_t::make_object({
+				{ "name", "a" },
+				{
+					"members",
+					json_t::make_array({
+						json_t::make_object({ { "name", "x"}, { "type", "^int"} }),
+						json_t::make_object({ { "name", "y"}, { "type", "^string"} }),
+						json_t::make_object({ { "name", "z"}, { "type", "^double"} })
+					})
+				},
+			})
+		});
+
+		ut_verify(QUARK_POS, r.first, expected);
+		ut_verify(QUARK_POS, r.second.str(), "");
+	}
+
+
+
+//////////////////////////////////////////////////		parse_protocol_definition()
+
+
+
+	std::pair<json_t, seq_t>  parse_protocol_definition_body(const seq_t& p, const std::string& name){
+		const auto start = skip_whitespace(p);
+		read_required_char(start, '{');
+		const auto body_pos = get_balanced(start);
+
+		std::vector<member_t> functions;
+
+		auto pos = seq_t(trim_ends(body_pos.first));
+		while(!pos.empty()){
+			const auto func_pos = read_required(skip_whitespace(pos), keyword_t::k_func);
+			const auto return_type_pos = read_required_type(func_pos);
+			const auto function_name_pos = read_required_identifier(return_type_pos.second);
+			const auto args_pos = read_functiondef_arg_parantheses(function_name_pos.second);
+			pos = read_optional_char(skip_whitespace(args_pos.second), ';').second;
+			pos = skip_whitespace(pos);
+
+
+			std::vector<typeid_t> arg_types;
+			for(const auto& e: args_pos.first){
+				arg_types.push_back(e._type);
+			}
+			const member_t f = {
+				typeid_t::make_function(return_type_pos.first, arg_types, epure::pure),
+				function_name_pos.first
+			};
+			functions.push_back(f);
+		}
+
+		const auto r = make_statement1(
+			location_t(start.pos()),
+			statement_opcode_t::k_def_protocol,
+			json_t::make_object({
+				{ "name", name },
+				{ "members", members_to_json(functions)
+				}
+			})
+		)._value;
+		return { r, skip_whitespace(body_pos.second) };
+	}
+
+	std::pair<json_t, seq_t>  parse_protocol_definition(const seq_t& p){
+		const auto pos0 = skip_whitespace(p);
+		std::pair<bool, seq_t> token_pos = if_first(pos0, keyword_t::k_protocol);
+		QUARK_ASSERT(token_pos.first);
+
+		const auto protocol_name_pos = read_required_identifier(token_pos.second);
+
+		const auto s2 = skip_whitespace(protocol_name_pos.second);
+		return parse_protocol_definition_body(s2, protocol_name_pos.first);
+	}
+
+	const std::string k_test_protocol0 = R"(
+		protocol prot {
+			func int f(string a, double b)
+			func string g(bool c)
+		}
+	)";
+
+
+	QUARK_UNIT_TEST("parse_protocol_definition", "", "", ""){
+		const auto r = parse_protocol_definition(seq_t(k_test_protocol0));
+
+		const auto expected =
+		json_t::make_array({
+			17,
+			"def-protocol",
+			json_t::make_object({
+				{ "name", "prot" },
+				{
+					"members",
+					json_t::make_array({
+						json_t::make_object({
+							{ "name", "f"},
+							{
+								"type",
+								json_t::make_array({ "fun", "^int", json_t::make_array({"^string", "^double"}), true })
+							}
+						}),
+						json_t::make_object({
+							{ "name", "g"},
+							{
+								"type",
+								json_t::make_array({ "fun", "^string", json_t::make_array({"^bool"}), true })
+							}
+						})
+					})
+				},
+			})
+		});
+
+		ut_verify(QUARK_POS, r.first, expected);
+		ut_verify(QUARK_POS, r.second.str(), "");
+	}
 
 
 
