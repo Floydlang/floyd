@@ -76,11 +76,11 @@ union bc_pod_value_t {
 void release_pod_external(bc_pod_value_t& value);
 
 
-//////////////////////////////////////		value_runtime_encoding
+//////////////////////////////////////		value_encoding
 
 //	Tells how a specific type of value needs to be store in the interpreter.
 
-enum class value_runtime_encoding {
+enum class value_encoding {
 	k_none,
 	k_inplace__bool,
 	k_inplace__int_as_uint64,
@@ -101,10 +101,10 @@ enum class value_runtime_encoding {
 bool encode_as_inplace(const typeid_t& type);
 bool encode_as_vector_w_inplace_element(const typeid_t& type);
 bool encode_as_dict_w_inplace_values(const typeid_t& type);
-value_runtime_encoding type_to_encoding(const typeid_t& type);
+value_encoding type_to_encoding(const typeid_t& type);
 
 //	Will this type of value require an ext ? bc_external_value_t to be used?
-bool encode_as_external(value_runtime_encoding encoding);
+bool encode_as_external(value_encoding encoding);
 
 //	Will this type of value require an ext ? bc_external_value_t to be used?
 bool encode_as_external(const typeid_t& type);
@@ -118,8 +118,6 @@ bool encode_as_external(const typeid_t& type);
 	Holds either and inplace value or an external value. Handles reference counting automatically when required.
 	??? replace my variant<>
 */
-
-
 
 struct bc_value_t {
 	public: bool check_invariant() const;

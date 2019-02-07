@@ -342,6 +342,7 @@ bc_value_t::bc_value_t(const typeid_t& type, mode mode) :
 {
 	QUARK_ASSERT(type.check_invariant());
 
+	//	Allocate a dummy external value.
 	auto temp = new bc_external_value_t{"UNWRITTEN EXT VALUE"};
 	temp->_is_unwritten_ext_value = true;
 	_pod._external = temp;
@@ -438,63 +439,63 @@ bool encode_as_dict_w_inplace_values(const typeid_t& type){
 	return type.is_dict() && encode_as_inplace(type.get_dict_value_type());
 }
 
-value_runtime_encoding type_to_encoding(const typeid_t& type){
+value_encoding type_to_encoding(const typeid_t& type){
 	const auto basetype = type.get_base_type();
 	if(false){
 	}
 	else if(basetype == base_type::k_internal_undefined){
-		return value_runtime_encoding::k_none;
+		return value_encoding::k_none;
 	}
 	else if(basetype == base_type::k_internal_dynamic){
-		return value_runtime_encoding::k_none;
+		return value_encoding::k_none;
 	}
 	else if(basetype == base_type::k_void){
-		return value_runtime_encoding::k_none;
+		return value_encoding::k_none;
 	}
 	else if(basetype == base_type::k_bool){
-		return value_runtime_encoding::k_inplace__bool;
+		return value_encoding::k_inplace__bool;
 	}
 	else if(basetype == base_type::k_int){
-		return value_runtime_encoding::k_inplace__int_as_uint64;
+		return value_encoding::k_inplace__int_as_uint64;
 	}
 	else if(basetype == base_type::k_double){
-		return value_runtime_encoding::k_inplace__double;
+		return value_encoding::k_inplace__double;
 	}
 	else if(basetype == base_type::k_string){
-		return value_runtime_encoding::k_external__string;
+		return value_encoding::k_external__string;
 	}
 	else if(basetype == base_type::k_json_value){
-		return value_runtime_encoding::k_external__json_value;
+		return value_encoding::k_external__json_value;
 	}
 	else if(basetype == base_type::k_typeid){
-		return value_runtime_encoding::k_external__typeid;
+		return value_encoding::k_external__typeid;
 	}
 	else if(basetype == base_type::k_struct){
-		return value_runtime_encoding::k_external__struct;
+		return value_encoding::k_external__struct;
 	}
 	else if(basetype == base_type::k_protocol){
-		return value_runtime_encoding::	k_external__protocol;
+		return value_encoding::k_external__protocol;
 	}
 	else if(basetype == base_type::k_vector){
 		const auto& element_type = type.get_vector_element_type().get_base_type();
 		if(element_type == base_type::k_bool){
-			return value_runtime_encoding::k_external__vector_pod64;
+			return value_encoding::k_external__vector_pod64;
 		}
 		else if(element_type == base_type::k_int){
-			return value_runtime_encoding::k_external__vector_pod64;
+			return value_encoding::k_external__vector_pod64;
 		}
 		else if(element_type == base_type::k_double){
-			return value_runtime_encoding::k_external__vector_pod64;
+			return value_encoding::k_external__vector_pod64;
 		}
 		else{
-			return value_runtime_encoding::k_external__vector;
+			return value_encoding::k_external__vector;
 		}
 	}
 	else if(basetype == base_type::k_dict){
-		return value_runtime_encoding::k_external__dict;
+		return value_encoding::k_external__dict;
 	}
 	else if(basetype == base_type::k_function){
-		return value_runtime_encoding::k_inplace__function;
+		return value_encoding::k_inplace__function;
 	}
 	else if(basetype == base_type::k_internal_unresolved_type_identifier){
 	}
@@ -504,15 +505,15 @@ value_runtime_encoding type_to_encoding(const typeid_t& type){
 	quark::throw_exception();
 }
 
-bool encode_as_external(value_runtime_encoding encoding){
+bool encode_as_external(value_encoding encoding){
 	return false
-		|| encoding == value_runtime_encoding::k_external__string
-		|| encoding == value_runtime_encoding::k_external__json_value
-		|| encoding == value_runtime_encoding::k_external__typeid
-		|| encoding == value_runtime_encoding::k_external__struct
-		|| encoding == value_runtime_encoding::k_external__vector
-		|| encoding == value_runtime_encoding::k_external__vector_pod64
-		|| encoding == value_runtime_encoding::k_external__dict
+		|| encoding == value_encoding::k_external__string
+		|| encoding == value_encoding::k_external__json_value
+		|| encoding == value_encoding::k_external__typeid
+		|| encoding == value_encoding::k_external__struct
+		|| encoding == value_encoding::k_external__vector
+		|| encoding == value_encoding::k_external__vector_pod64
+		|| encoding == value_encoding::k_external__dict
 		;
 }
 
@@ -540,7 +541,7 @@ bool bc_external_value_t::check_invariant() const{
 	QUARK_ASSERT(check_ext_deep(_debug_type, this));
 
 	const auto encoding = type_to_encoding(_debug_type);
-	if(encoding == value_runtime_encoding::k_external__string){
+	if(encoding == value_encoding::k_external__string){
 //				QUARK_ASSERT(_string);
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
@@ -550,7 +551,7 @@ bool bc_external_value_t::check_invariant() const{
 		QUARK_ASSERT(_dict_objects.size() == 0);
 		QUARK_ASSERT(_dict_pod64.size() == 0);
 	}
-	else if(encoding == value_runtime_encoding::k_external__json_value){
+	else if(encoding == value_encoding::k_external__json_value){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json_value != nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
@@ -562,7 +563,7 @@ bool bc_external_value_t::check_invariant() const{
 
 		QUARK_ASSERT(_json_value->check_invariant());
 	}
-	else if(encoding == value_runtime_encoding::k_external__typeid){
+	else if(encoding == value_encoding::k_external__typeid){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json_value == nullptr);
 //		QUARK_ASSERT(_typeid_value != typeid_t::make_undefined());
@@ -574,7 +575,7 @@ bool bc_external_value_t::check_invariant() const{
 
 		QUARK_ASSERT(_typeid_value.check_invariant());
 	}
-	else if(encoding == value_runtime_encoding::k_external__struct){
+	else if(encoding == value_encoding::k_external__struct){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
@@ -586,7 +587,7 @@ bool bc_external_value_t::check_invariant() const{
 
 //				QUARK_ASSERT(_struct && _struct->check_invariant());
 	}
-	else if(encoding == value_runtime_encoding::k_external__vector){
+	else if(encoding == value_encoding::k_external__vector){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
@@ -596,7 +597,7 @@ bool bc_external_value_t::check_invariant() const{
 		QUARK_ASSERT(_dict_objects.size() == 0);
 		QUARK_ASSERT(_dict_pod64.size() == 0);
 	}
-	else if(encoding == value_runtime_encoding::k_external__vector_pod64){
+	else if(encoding == value_encoding::k_external__vector_pod64){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
@@ -605,7 +606,7 @@ bool bc_external_value_t::check_invariant() const{
 		QUARK_ASSERT(_dict_objects.size() == 0);
 		QUARK_ASSERT(_dict_pod64.size() == 0);
 	}
-	else if(encoding == value_runtime_encoding::k_external__dict){
+	else if(encoding == value_encoding::k_external__dict){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
@@ -1354,14 +1355,6 @@ int compare_doubles(const bc_inplace_value_t& left, const bc_inplace_value_t& ri
 		return 0;
 	}
 }
-
-
-/*
-	const auto encoding = type_to_encoding(type);
-	QUARK_ASSERT(encoding == value_runtime_encoding::k_external__vector || encoding == value_runtime_encoding::                                                                                                                                                                                                                                                                                                                                                                                                                                                                  m_int);
-
-	if(encoding == value_runtime_encoding::k_ext_vector){
-*/
 
 int bc_compare_vectors_bool(const immer::vector<bc_inplace_value_t>& left, const immer::vector<bc_inplace_value_t>& right){
 	const auto& shared_count = std::min(left.size(), right.size());
