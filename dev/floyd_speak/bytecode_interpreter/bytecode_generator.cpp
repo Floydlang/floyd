@@ -17,13 +17,6 @@
 
 
 namespace floyd {
-
-using std::vector;
-using std::string;
-using std::pair;
-using std::shared_ptr;
-using std::make_shared;
-
 struct semantic_ast_t;
 
 
@@ -749,7 +742,7 @@ uint32_t pack_bools(const std::vector<bool>& bools){
 */
 struct call_setup_t {
 	bcgen_body_t _body;
-	vector<bool> _exts;
+	std::vector<bool> _exts;
 	int _stack_count;
 };
 
@@ -771,7 +764,7 @@ call_setup_t gen_call_setup(bcgenerator_t& vm, const std::vector<typeid_t>& func
 
 	//	Generate code / symbols for all arguments to the function call. Record where each arg is kept.
 	//	This might not create instructions or anything, if arguments are available as constants somewhere.
-	vector<std::pair<reg_t, bc_typeid_t>> argument_regs;
+	std::vector<std::pair<reg_t, bc_typeid_t>> argument_regs;
 	for(int i = 0 ; i < arg_count ; i++){
 		const auto& m2 = bcgen_expression(vm, {}, args[i], body_acc);
 		body_acc = m2._body;
@@ -784,7 +777,7 @@ call_setup_t gen_call_setup(bcgenerator_t& vm, const std::vector<typeid_t>& func
 	}
 
 	//	Make push-instructions that push args in correct order on callstack, before k_opcode_call is inserted.
-	vector<bool> exts;;
+	std::vector<bool> exts;;
 	for(int i = 0 ; i < arg_count ; i++){
 		const auto arg_reg = argument_regs[i].first;
 		const auto callee_arg_type = argument_regs[i].second;
@@ -996,7 +989,7 @@ expression_gen_t bcgen_construct_value_expression(bcgenerator_t& vm, const varia
 	const auto target_itype = intern_type(vm, target_type);
 
 	const auto callee_arg_count = static_cast<int>(e._input_exprs.size());
-	vector<typeid_t> arg_types;
+	std::vector<typeid_t> arg_types;
 	for(const auto& m: e._input_exprs){
 		arg_types.push_back(m.get_output_type());
 	}
@@ -1411,15 +1404,6 @@ expression_gen_t bcgen_expression(bcgenerator_t& vm, const variable_address_t& t
 //////////////////////////////////////		bcgenerator_t
 
 
-/*
-void test__bcgen_expression(const expression_t& e, const expression_t& expected_value){
-	const ast_t ast;
-	bcgenerator_t interpreter(ast);
-	const auto& e3 = bcgen_expression(interpreter, e);
-
-	ut_compare_jsons(expression_to_json(e3)._value, expression_to_json(expected_value)._value);
-}
-*/
 bcgenerator_t::bcgenerator_t(const semantic_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
@@ -1539,7 +1523,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 			const auto function_def2 = bc_function_definition_t{
 				function_def._function_type,
 				function_def._args,
-				make_shared<bc_static_frame_t>(frame),
+				std::make_shared<bc_static_frame_t>(frame),
 				function_def._host_function_id
 			};
 			function_defs2.push_back(function_def2);

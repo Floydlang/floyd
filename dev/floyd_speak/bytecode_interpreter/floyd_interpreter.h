@@ -11,6 +11,7 @@
 
 /*
 	High-level access to the byte code interpreter.
+	Implements process / inbox mechanisms.
 */
 
 #include "quark.h"
@@ -87,7 +88,6 @@ std::map<std::string, value_t> run_container2(
 );
 
 void print_vm_printlog(const interpreter_t& vm);
-
 
 
 } //	floyd

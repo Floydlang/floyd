@@ -13,6 +13,8 @@
 	Simple but complete JSON library.
 	Immutable.
 	Not super efficient right now.
+
+	json_t is the only type you need.
 */
 
 #include <string>

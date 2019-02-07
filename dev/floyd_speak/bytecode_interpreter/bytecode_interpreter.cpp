@@ -284,7 +284,6 @@ bc_value_t::bc_value_t(const typeid_t& function_type, int function_id, bool dumm
 
 
 
-
 bc_value_t::bc_value_t(const typeid_t& type, const bc_pod_value_t& internals) :
 	_type(type),
 	_pod(internals)
@@ -351,8 +350,6 @@ bc_value_t::bc_value_t(const typeid_t& type, mode mode) :
 
 	QUARK_ASSERT(check_invariant());
 }
-
-
 
 
 
@@ -526,7 +523,6 @@ bool encode_as_external(const typeid_t& type){
 		;
 }
 
-
 #if DEBUG
 bool bc_external_value_t::check_invariant() const{
 	QUARK_ASSERT(encode_as_external(_debug_type));
@@ -652,11 +648,6 @@ bc_external_value_t::bc_external_value_t(const typeid_t& s) :
 	QUARK_ASSERT(check_invariant());
 }
 
-
-
-
-
-
 bc_external_value_t::bc_external_value_t(const typeid_t& type, const std::vector<bc_value_t>& s, bool struct_tag) :
 		_rc(1),
 #if DEBUG
@@ -731,7 +722,6 @@ bc_external_value_t::bc_external_value_t(const typeid_t& type, const immer::map<
 
 
 
-
 bool check_external_deep(const typeid_t& type, const bc_external_value_t* ext){
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(encode_as_external(type));
@@ -788,10 +778,6 @@ bool check_external_deep(const typeid_t& type, const bc_external_value_t* ext){
 	}
 	return true;
 }
-
-
-
-
 
 
 
@@ -905,8 +891,6 @@ bc_value_t make_vector(const typeid_t& element_type, const immer::vector<bc_inpl
 
 
 
-
-
 const immer::map<std::string, bc_external_handle_t>& get_dict_value(const bc_value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 
@@ -938,8 +922,6 @@ bc_value_t make_dict(const typeid_t& value_type, const immer::map<std::string, b
 	QUARK_ASSERT(temp.check_invariant());
 	return temp;
 }
-
-
 
 
 
@@ -1409,8 +1391,7 @@ int bc_compare_vectors_double(const immer::vector<bc_inplace_value_t>& left, con
 
 
 
-template <typename Map>
-bool bc_map_compare (Map const &lhs, Map const &rhs) {
+template <typename Map> bool bc_map_compare(Map const &lhs, Map const &rhs) {
 	// No predicate needed because there is operator== for pairs already.
 	return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
@@ -1493,6 +1474,7 @@ int bc_compare_dicts_bool(const immer::map<std::string, bc_inplace_value_t>& lef
 	QUARK_ASSERT(false)
 	quark::throw_exception();
 }
+
 int bc_compare_dicts_int(const immer::map<std::string, bc_inplace_value_t>& left, const immer::map<std::string, bc_inplace_value_t>& right){
 	auto left_it = left.begin();
 	auto left_end_it = left.end();
@@ -1530,6 +1512,7 @@ int bc_compare_dicts_int(const immer::map<std::string, bc_inplace_value_t>& left
 	QUARK_ASSERT(false)
 	quark::throw_exception();
 }
+
 int bc_compare_dicts_double(const immer::map<std::string, bc_inplace_value_t>& left, const immer::map<std::string, bc_inplace_value_t>& right){
 	auto left_it = left.begin();
 	auto left_end_it = left.end();
@@ -1913,7 +1896,6 @@ bool bc_instruction_t::check_invariant() const {
 
 //////////////////////////////////////////		bc_static_frame_t
 
-//?? STATIC frame definition -- not a runtime thing!
 
 bc_static_frame_t::bc_static_frame_t(const std::vector<bc_instruction_t>& instrs2, const std::vector<std::pair<std::string, bc_symbol_t>>& symbols, const std::vector<typeid_t>& args) :
 	_instructions(instrs2),
@@ -2346,32 +2328,12 @@ interpreter_t::interpreter_t(const bc_program_t& program, interpreter_handler_i*
 }
 interpreter_t::interpreter_t(const bc_program_t& program) : interpreter_t(program, nullptr) {}
 
-/*
-interpreter_t::interpreter_t(const interpreter_t& other) :
-	_imm(other._imm),
-	_stack(other._stack),
-	_current_stack_frame(other._current_stack_frame),
-	_print_output(other._print_output)
-{
-	QUARK_ASSERT(other.check_invariant());
-	QUARK_ASSERT(check_invariant());
-}
-*/
-
 void interpreter_t::swap(interpreter_t& other) throw(){
 	other._imm.swap(this->_imm);
 	std::swap(other._handler, this->_handler);
 	other._stack.swap(this->_stack);
 	other._print_output.swap(this->_print_output);
 }
-
-/*
-const interpreter_t& interpreter_t::operator=(const interpreter_t& other){
-	auto temp = other;
-	temp.swap(*this);
-	return *this;
-}
-*/
 
 #if DEBUG
 bool interpreter_t::check_invariant() const {
@@ -2549,46 +2511,6 @@ void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t target_ityp
 	vm._stack.write_register__external_value(dest_reg, result);
 }
 
-
-
-
-#if 0
-//	Computed goto-dispatch of expressions: -- not faster than switch when running max optimizations. C++ Optimizer makes compute goto?
-//	May be better bet when doing a SEQUENCE of opcode dispatches in a loop.
-//??? use C++ local variables as our VM locals1?
-//https://eli.thegreenplace.net/2012/07/12/computed-goto-for-efficient-dispatch-tables
-bc_value_t execute_expression__computed_goto(interpreter_t& vm, const bc_expression_t& e){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	const auto& op = static_cast<int>(e._opcode);
-	//	Not thread safe -- avoid static locals!
-	static void* dispatch_table[] = {
-		&&bc_expression_opcode___k_expression_literal,
-		&&bc_expression_opcode___k_expression_logical_or
-	};
-//	#define DISPATCH() goto *dispatch_table[op]
-
-//	DISPATCH();
-	goto *dispatch_table[op];
-	while (1) {
-        bc_expression_opcode___k_expression_literal:
-			return e._value;
-
-		bc_expression_opcode___k_expression_resolve_member:
-			return execute_resolve_member_expression(vm, e);
-
-		bc_expression_opcode___k_expression_lookup_element:
-			return execute_lookup_element_expression(vm, e);
-
-	}
-}
-#endif
-
-
-
-//??? pass returns value(s) via parameters instead.
-//???	Future: support dynamic Floyd functions too.
 
 std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const std::vector<bc_instruction_t>& instructions){
 	QUARK_ASSERT(vm.check_invariant());
@@ -3229,7 +3151,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				frame_ptr = stack._current_frame_ptr;
 				regs = stack._current_frame_entry_ptr;
 
-//				QUARK_ASSERT(result.first);
 				if(function_return_type.is_void() == false){
 
 					//	Cannot store via register, we have not yet executed k_pop_frame_ptr that restores our frame.
@@ -3285,7 +3206,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto dest_reg = i._a;
 			const auto arg_count = i._c;
 
-//???works for all pod64
 			const int arg0_stack_pos = vm._stack.size() - arg_count;
 			immer::vector<bc_inplace_value_t> elements2;
 			for(int a = 0 ; a < arg_count ; a++){
@@ -3334,7 +3254,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 		//////////////////////////////		COMPARISON
 
-		//??? compare_value_true_deep().
 
 		case bc_opcode::k_comparison_smaller_or_equal: {
 			QUARK_ASSERT(stack.check_reg_bool(i._a));
@@ -3583,7 +3502,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 
-		//### Could be replaced by feature to convert any value to bool -- they use a generic comparison for && and ||
 		case bc_opcode::k_logical_and_bool: {
 			QUARK_ASSERT(stack.check_reg_bool(i._a));
 			QUARK_ASSERT(stack.check_reg_bool(i._b));
@@ -3787,25 +3705,6 @@ json_t functiondef_to_json(const bc_function_definition_t& def){
 
 json_t bcprogram_to_json(const bc_program_t& program){
 	std::vector<json_t> callstack;
-/*
-	for(int env_index = 0 ; env_index < vm._call_stack.size() ; env_index++){
-		const auto e = &vm._call_stack[vm._call_stack.size() - 1 - env_index];
-
-		const auto local_end = (env_index == (vm._call_stack.size() - 1)) ? vm._value_stack.size() : vm._call_stack[vm._call_stack.size() - 1 - env_index + 1]._values_offset;
-		const auto local_count = local_end - e->_values_offset;
-		std::vector<json_t> values;
-		for(int local_index = 0 ; local_index < local_count ; local_index++){
-			const auto& v = vm._value_stack[e->_values_offset + local_index];
-			const auto& a = value_and_type_to_ast_json(v);
-			values.push_back(a._value);
-		}
-
-		const auto& env = json_t::make_object({
-			{ "values", values }
-		});
-		callstack.push_back(env);
-	}
-*/
 	std::vector<json_t> function_defs;
 	for(int i = 0 ; i < program._function_defs.size() ; i++){
 		const auto& function_def = program._function_defs[i];

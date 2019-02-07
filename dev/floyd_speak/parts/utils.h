@@ -45,6 +45,10 @@ template <typename T> bool compare_shared_value_vectors(const std::vector<T>& ve
 	return true;
 }
 
+
+////////////////////////////////		Collections
+
+
 //	Returns new collection.
 template <typename T> std::vector<T> concat(const std::vector<T>& lhs, const std::vector<T>& rhs){
 	std::vector<T> temp = lhs;
@@ -60,6 +64,9 @@ template <typename T> std::vector<T> concat(const std::vector<T>& lhs, const T& 
 }
 
 
+////////////////////////////////		for_each_col()
+
+
 // BETTER WAY: https://yongweiwu.wordpress.com/2014/12/07/study-notes-functional-programming-with-cplusplus/
 
 template <typename COLLECTION, typename UNARY_OPERATION>
@@ -67,7 +74,9 @@ void for_each_col(COLLECTION col, UNARY_OPERATION op){
 	std::for_each(col.begin(),col.end(),op);
 }
 
+
 ////////////////////////////////		mapf()
+
 
 //	Functional map()-function. Returns new collection.
 
@@ -80,22 +89,6 @@ std::vector<DEST_ELEMENT_TYPE> mapf(const COLLECTION& col, const UNARY_OPERATION
 	std::transform(col.begin(), col.end(), std::back_inserter(result), operation);
 	return result;
 }
-
-/*
-template <typename Collection, typename Predicate>
-Collection filterNot(Collection col,Predicate predicate ) {
-	auto returnIterator = std::remove_if(col.begin(),col.end(),predicate);
-	col.erase(returnIterator,std::end(col));
-	return col;
-}
-
-template <typename Collection, typename Predicate>
-Collection filter(Collection col,Predicate predicate) {
-	//capture the predicate in order to be used inside function
-	auto fnCol = filterNot(col,[predicate](typename Collection::value_type i) { return !predicate(i);});
-	return fnCol;
-}
-*/
 
 
 ////////////////////////////////		reduce()

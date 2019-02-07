@@ -21,7 +21,26 @@ namespace floyd {
 
 using namespace std;
 
+bool check_types_resolved(const ast_t& ast);
 
+
+
+//////////////////////////////////////		semantic_ast_t
+
+semantic_ast_t::semantic_ast_t(const ast_t& checked_ast){
+	QUARK_ASSERT(checked_ast.check_invariant());
+	QUARK_ASSERT(check_types_resolved(checked_ast));
+
+	_checked_ast = checked_ast;
+}
+
+#if DEBUG
+bool semantic_ast_t::check_invariant() const{
+	QUARK_ASSERT(_checked_ast.check_invariant());
+	QUARK_ASSERT(check_types_resolved(_checked_ast));
+	return true;
+}
+#endif
 
 
 
@@ -102,9 +121,7 @@ std::pair<analyser_t, floyd::expression_t> analyse_expression_no_target(const an
 
 
 
-
 //////////////////////////////////////		IMPLEMENTATION
-
 
 
 
@@ -256,6 +273,7 @@ typeid_t resolve_type_internal(const analyser_t& a, const location_t& loc, const
 		quark::throw_exception();
 	}
 }
+
 typeid_t resolve_type(const analyser_t& a, const location_t& loc, const typeid_t& type){
 	const auto result = resolve_type_internal(a, loc, type);
 	if(result.check_types_resolved() == false){
@@ -605,10 +623,7 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(statement.check_invariant());
 
-
-
 	typedef std::pair<analyser_t, shared_ptr<statement_t>> return_type_t;
-
 
 	struct visitor_t {
 		const analyser_t& a;
@@ -1626,9 +1641,6 @@ expression_t auto_cast_expression_type(const expression_t& e, const floyd::typei
 	}
 }
 
-
-
-
 //	Returned expression is guaranteed to be deep-resolved.
 std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type){
 	QUARK_ASSERT(a.check_invariant());
@@ -1675,36 +1687,6 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_t& a, const statement_t& parent, const expression_t& e){
 	return analyse_expression_to_target(a, parent, e, typeid_t::make_internal_dynamic());
 }
-
-/*
-json_t analyser_to_json(const analyser_t& a){
-	vector<json_t> callstack;
-	for(const auto& e: a._lexical_scope_stack){
-		std::map<string, json_t> values;
-		for(const auto& symbol_kv: e.symbols._symbols){
-			const auto b = json_t::make_array({
-				json_t((int)symbol_kv.second._symbol_type),
-				typeid_to_ast_json(symbol_kv.second._value_type, floyd::json_tags::k_tag_resolve_state)._value,
-				value_to_ast_json(symbol_kv.second._const_value, floyd::json_tags::k_tag_resolve_state)._value
-			});
-			values[symbol_kv.first] = b;
-		}
-
-		const auto& env = json_t::make_object({
-//			{ "parent_env", e->_parent_env ? e->_parent_env->_object_id : json_t() },
-//			{ "object_id", json_t(double(e->_object_id)) },
-			{ "values", values }
-		});
-		callstack.push_back(env);
-	}
-
-	return json_t::make_object({
-		{ "ast", ast_to_json(a._imm->_ast)._value },
-		{ "host_functions", json_t("dummy1234") },
-		{ "callstack", json_t::make_array(callstack) }
-	});
-}
-*/
 
 void test__analyse_expression(const statement_t& parent, const expression_t& e, const expression_t& expected){
 	const ast_t ast;
@@ -1832,7 +1814,6 @@ semantic_ast_t analyse(const analyser_t& a){
 
 
 
-
 //////////////////////////////////////		analyser_t
 
 
@@ -1875,7 +1856,6 @@ bool analyser_t::check_invariant() const {
 	return true;
 }
 #endif
-
 
 
 //////////////////////////////////////		run_semantic_analysis()
