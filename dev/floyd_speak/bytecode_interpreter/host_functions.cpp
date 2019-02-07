@@ -608,7 +608,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 			const auto& vec = *get_vector_value(obj);
 			const auto size = vec.size();
 			int index = 0;
-			while(index < size && bc_compare_value_exts(vec[index], bc_object_handle_t(wanted), element_type) != 0){
+			while(index < size && bc_compare_value_exts(vec[index], bc_external_handle_t(wanted), element_type) != 0){
 				index++;
 			}
 			int result = index == size ? -1 : static_cast<int>(index);
@@ -712,7 +712,7 @@ bc_value_t host__push_back(interpreter_t& vm, const bc_value_t args[], int arg_c
 		}
 		else{
 			const auto vec = *get_vector_value(obj);
-			auto elements2 = vec.push_back(bc_object_handle_t(element));
+			auto elements2 = vec.push_back(bc_external_handle_t(element));
 			const auto v = make_vector_value(element_type, elements2);
 			return v;
 		}
@@ -757,7 +757,7 @@ bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_coun
 			const auto& vec = obj._pod._ext->_vector_pod64;
 			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
-			immer::vector<bc_pod64_t> elements2;
+			immer::vector<bc_inplace_value_t> elements2;
 			for(auto i = start2 ; i < end2 ; i++){
 				elements2 = elements2.push_back(vec[i]);
 			}
@@ -769,7 +769,7 @@ bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_coun
 			const auto element_type = obj._type.get_vector_element_type();
 			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
-			immer::vector<bc_object_handle_t> elements2;
+			immer::vector<bc_external_handle_t> elements2;
 			for(auto i = start2 ; i < end2 ; i++){
 				elements2 = elements2.push_back(vec[i]);
 			}
@@ -819,7 +819,7 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
 			const auto& new_bits = args[3]._pod._ext->_vector_pod64;
 
-			auto result = immer::vector<bc_pod64_t>(vec.begin(), vec.begin() + start2);
+			auto result = immer::vector<bc_inplace_value_t>(vec.begin(), vec.begin() + start2);
 			for(int i = 0 ; i < new_bits.size() ; i++){
 				result = result.push_back(new_bits[i]);
 			}
@@ -836,7 +836,7 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
 			const auto& new_bits = *get_vector_value(args[3]);
 
-			auto result = immer::vector<bc_object_handle_t>(vec.begin(), vec.begin() + start2);
+			auto result = immer::vector<bc_external_handle_t>(vec.begin(), vec.begin() + start2);
 			for(int i = 0 ; i < new_bits.size() ; i++){
 				result = result.push_back(new_bits[i]);
 			}

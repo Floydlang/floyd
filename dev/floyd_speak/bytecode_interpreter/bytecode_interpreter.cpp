@@ -198,7 +198,7 @@ bc_value_t update_vector_element(interpreter_t& vm, const bc_value_t vec, int64_
 //			QUARK_TRACE_SS("bc1:  " << json_to_pretty_string(bcvalue_to_json(obj)));
 
 			QUARK_ASSERT(is_encoded_as_ext(value._type));
-			const auto e = bc_object_handle_t(value);
+			const auto e = bc_external_handle_t(value);
 			v2 = v2.set(lookup_index, e);
 			const auto s2 = make_vector_value(element_type, v2);
 
@@ -227,7 +227,7 @@ bc_value_t update_dict_entry(interpreter_t& vm, const bc_value_t dict, const std
 	}
 	else{
 		const auto entries = get_dict_value(dict);
-		auto entries2 = entries.set(key, bc_object_handle_t(value));
+		auto entries2 = entries.set(key, bc_external_handle_t(value));
 		const auto value2 = make_dict_value(value_type, entries2);
 		return value2;
 	}
@@ -371,7 +371,7 @@ int bc_compare_struct_true_deep(const std::vector<bc_value_t>& left, const std::
 	return 0;
 }
 
-int bc_compare_vectors_obj(const immer::vector<bc_object_handle_t>& left, const immer::vector<bc_object_handle_t>& right, const typeid_t& type){
+int bc_compare_vectors_obj(const immer::vector<bc_external_handle_t>& left, const immer::vector<bc_external_handle_t>& right, const typeid_t& type){
 	QUARK_ASSERT(type.is_vector());
 
 	const auto& shared_count = std::min(left.size(), right.size());
@@ -393,7 +393,7 @@ int bc_compare_vectors_obj(const immer::vector<bc_object_handle_t>& left, const 
 	}
 }
 
-int compare_bools(const bc_pod64_t& left, const bc_pod64_t& right){
+int compare_bools(const bc_inplace_value_t& left, const bc_inplace_value_t& right){
 	auto left2 = left._bool ? 1 : 0;
 	auto right2 = right._bool ? 1 : 0;
 	if(left2 < right2){
@@ -407,7 +407,7 @@ int compare_bools(const bc_pod64_t& left, const bc_pod64_t& right){
 	}
 }
 
-int compare_ints(const bc_pod64_t& left, const bc_pod64_t& right){
+int compare_ints(const bc_inplace_value_t& left, const bc_inplace_value_t& right){
 	if(left._int64 < right._int64){
 		return -1;
 	}
@@ -418,7 +418,7 @@ int compare_ints(const bc_pod64_t& left, const bc_pod64_t& right){
 		return 0;
 	}
 }
-int compare_doubles(const bc_pod64_t& left, const bc_pod64_t& right){
+int compare_doubles(const bc_inplace_value_t& left, const bc_inplace_value_t& right){
 	if(left._double < right._double){
 		return -1;
 	}
@@ -438,7 +438,7 @@ int compare_doubles(const bc_pod64_t& left, const bc_pod64_t& right){
 	if(encoding == value_runtime_encoding::k_ext_vector){
 */
 
-int bc_compare_vectors_bool(const immer::vector<bc_pod64_t>& left, const immer::vector<bc_pod64_t>& right){
+int bc_compare_vectors_bool(const immer::vector<bc_inplace_value_t>& left, const immer::vector<bc_inplace_value_t>& right){
 	const auto& shared_count = std::min(left.size(), right.size());
 	for(int i = 0 ; i < shared_count ; i++){
 		int result = compare_bools(left[i], right[i]);
@@ -456,7 +456,7 @@ int bc_compare_vectors_bool(const immer::vector<bc_pod64_t>& left, const immer::
 		return +1;
 	}
 }
-int bc_compare_vectors_int(const immer::vector<bc_pod64_t>& left, const immer::vector<bc_pod64_t>& right){
+int bc_compare_vectors_int(const immer::vector<bc_inplace_value_t>& left, const immer::vector<bc_inplace_value_t>& right){
 	const auto& shared_count = std::min(left.size(), right.size());
 	for(int i = 0 ; i < shared_count ; i++){
 		int result = compare_ints(left[i], right[i]);
@@ -474,7 +474,7 @@ int bc_compare_vectors_int(const immer::vector<bc_pod64_t>& left, const immer::v
 		return +1;
 	}
 }
-int bc_compare_vectors_double(const immer::vector<bc_pod64_t>& left, const immer::vector<bc_pod64_t>& right){
+int bc_compare_vectors_double(const immer::vector<bc_inplace_value_t>& left, const immer::vector<bc_inplace_value_t>& right){
 	const auto& shared_count = std::min(left.size(), right.size());
 	for(int i = 0 ; i < shared_count ; i++){
 		int result = compare_doubles(left[i], right[i]);
@@ -501,7 +501,7 @@ bool bc_map_compare (Map const &lhs, Map const &rhs) {
 	return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
-int bc_compare_dicts_obj(const immer::map<std::string, bc_object_handle_t>& left, const immer::map<std::string, bc_object_handle_t>& right, const typeid_t& type){
+int bc_compare_dicts_obj(const immer::map<std::string, bc_external_handle_t>& left, const immer::map<std::string, bc_external_handle_t>& right, const typeid_t& type){
 	const auto& element_type = typeid_t(type.get_dict_value_type());
 
 	auto left_it = left.begin();
@@ -542,7 +542,7 @@ int bc_compare_dicts_obj(const immer::map<std::string, bc_object_handle_t>& left
 }
 
 //??? make template.
-int bc_compare_dicts_bool(const immer::map<std::string, bc_pod64_t>& left, const immer::map<std::string, bc_pod64_t>& right){
+int bc_compare_dicts_bool(const immer::map<std::string, bc_inplace_value_t>& left, const immer::map<std::string, bc_inplace_value_t>& right){
 	auto left_it = left.begin();
 	auto left_end_it = left.end();
 
@@ -579,7 +579,7 @@ int bc_compare_dicts_bool(const immer::map<std::string, bc_pod64_t>& left, const
 	QUARK_ASSERT(false)
 	quark::throw_exception();
 }
-int bc_compare_dicts_int(const immer::map<std::string, bc_pod64_t>& left, const immer::map<std::string, bc_pod64_t>& right){
+int bc_compare_dicts_int(const immer::map<std::string, bc_inplace_value_t>& left, const immer::map<std::string, bc_inplace_value_t>& right){
 	auto left_it = left.begin();
 	auto left_end_it = left.end();
 
@@ -616,7 +616,7 @@ int bc_compare_dicts_int(const immer::map<std::string, bc_pod64_t>& left, const 
 	QUARK_ASSERT(false)
 	quark::throw_exception();
 }
-int bc_compare_dicts_double(const immer::map<std::string, bc_pod64_t>& left, const immer::map<std::string, bc_pod64_t>& right){
+int bc_compare_dicts_double(const immer::map<std::string, bc_inplace_value_t>& left, const immer::map<std::string, bc_inplace_value_t>& right){
 	auto left_it = left.begin();
 	auto left_end_it = left.end();
 
@@ -734,7 +734,7 @@ int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
 	}
 }
 
-int bc_compare_value_exts(const bc_object_handle_t& left, const bc_object_handle_t& right, const typeid_t& type){
+int bc_compare_value_exts(const bc_external_handle_t& left, const bc_external_handle_t& right, const typeid_t& type){
 	return bc_compare_value_true_deep(bc_value_t(type, left), bc_value_t(type, right), type);
 }
 
@@ -1530,11 +1530,11 @@ void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
 //	bool is_element_ext = is_encoded_as_ext(element_type);
 
-	immer::vector<bc_object_handle_t> elements2;
+	immer::vector<bc_external_handle_t> elements2;
 	for(int i = 0 ; i < arg_count ; i++){
 		const auto pos = arg0_stack_pos + i;
 		QUARK_ASSERT(vm._stack._debug_types[pos] == element_type);
-		const auto e = bc_object_handle_t(vm._stack._entries[pos]._ext);
+		const auto e = bc_external_handle_t(vm._stack._entries[pos]._ext);
 		elements2 = elements2.push_back(e);
 	}
 
@@ -1556,13 +1556,13 @@ void execute_new_dict_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_it
 
 	const auto string_type = typeid_t::make_string();
 
-	immer::map<std::string, bc_object_handle_t> elements2;
+	immer::map<std::string, bc_external_handle_t> elements2;
 	int dict_element_count = arg_count / 2;
 	for(auto i = 0 ; i < dict_element_count ; i++){
 		const auto key = vm._stack.load_value(arg0_stack_pos + i * 2 + 0, string_type);
 		const auto value = vm._stack.load_value(arg0_stack_pos + i * 2 + 1, element_type);
 		const auto key2 = key.get_string_value();
-		elements2 = elements2.insert({ key2, bc_object_handle_t(value) });
+		elements2 = elements2.insert({ key2, bc_external_handle_t(value) });
 	}
 
 	const auto result = make_dict_value(element_type, elements2);
@@ -1582,7 +1582,7 @@ void execute_new_dict_pod64(interpreter_t& vm, int16_t dest_reg, int16_t target_
 
 	const auto string_type = typeid_t::make_string();
 
-	immer::map<std::string, bc_pod64_t> elements2;
+	immer::map<std::string, bc_inplace_value_t> elements2;
 	int dict_element_count = arg_count / 2;
 	for(auto i = 0 ; i < dict_element_count ; i++){
 		const auto key = vm._stack.load_value(arg0_stack_pos + i * 2 + 0, string_type);
@@ -2180,7 +2180,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto& element_type = type.get_vector_element_type();
 
-			auto elements2 = regs[i._b]._ext->_vector_objects.push_back(bc_object_handle_t(regs[i._c]._ext));
+			auto elements2 = regs[i._b]._ext->_vector_objects.push_back(bc_external_handle_t(regs[i._c]._ext));
 			//??? always allocates a new bc_value_object_t!
 			const auto vec2 = make_vector_value(element_type, elements2);
 			vm._stack.write_register_obj(i._a, vec2);
@@ -2355,7 +2355,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 //???works for all pod64
 			const int arg0_stack_pos = vm._stack.size() - arg_count;
-			immer::vector<bc_pod64_t> elements2;
+			immer::vector<bc_inplace_value_t> elements2;
 			for(int a = 0 ; a < arg_count ; a++){
 				const auto pos = arg0_stack_pos + a;
 				elements2 = elements2.push_back(stack._entries[pos]._pod64);
@@ -2550,7 +2550,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == false);
 
 			//	Copy left into new vector.
-			immer::vector<bc_object_handle_t> elements2 = regs[i._b]._ext->_vector_objects;
+			immer::vector<bc_external_handle_t> elements2 = regs[i._b]._ext->_vector_objects;
 
 			const auto& right_elements = regs[i._c]._ext->_vector_objects;
 			for(const auto& e: right_elements){

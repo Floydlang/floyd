@@ -201,30 +201,30 @@ bc_value_t value_to_bc(const value_t& value){
 
 		if(encode_as_vector_pod64(vector_type)){
 			const auto& vec = value.get_vector_value();
-			immer::vector<bc_pod64_t> vec2;
+			immer::vector<bc_inplace_value_t> vec2;
 			if(element_type.is_bool()){
 				for(const auto& e: vec){
-					vec2.push_back(bc_pod64_t{._bool = e.get_bool_value()});
+					vec2.push_back(bc_inplace_value_t{._bool = e.get_bool_value()});
 				}
 			}
 			else if(element_type.is_int()){
 				for(const auto& e: vec){
-					vec2.push_back(bc_pod64_t{._int64 = e.get_int_value()});
+					vec2.push_back(bc_inplace_value_t{._int64 = e.get_int_value()});
 				}
 			}
 			else if(element_type.is_double()){
 				for(const auto& e: vec){
-					vec2.push_back(bc_pod64_t{._double = e.get_double_value()});
+					vec2.push_back(bc_inplace_value_t{._double = e.get_double_value()});
 				}
 			}
 			return make_vector_int64_value(element_type, vec2);
 		}
 		else{
 			const auto& vec = value.get_vector_value();
-			immer::vector<bc_object_handle_t> vec2;
+			immer::vector<bc_external_handle_t> vec2;
 			for(const auto& e: vec){
 				const auto bc = value_to_bc(e);
-				const auto hand = bc_object_handle_t(bc);
+				const auto hand = bc_external_handle_t(bc);
 				vec2 =vec2.push_back(hand);
 			}
 			return make_vector_value(element_type, vec2);
@@ -235,9 +235,9 @@ bc_value_t value_to_bc(const value_t& value){
 		const auto value_type = dict_type.get_dict_value_type();
 //??? add handling for int, bool, double
 		const auto elements = value.get_dict_value();
-		immer::map<string, bc_object_handle_t> entries2;
+		immer::map<string, bc_external_handle_t> entries2;
 		for(const auto& e: elements){
-			entries2 = entries2.insert({e.first, bc_object_handle_t(value_to_bc(e.second))});
+			entries2 = entries2.insert({e.first, bc_external_handle_t(value_to_bc(e.second))});
 		}
 		return make_dict_value(value_type, entries2);
 	}

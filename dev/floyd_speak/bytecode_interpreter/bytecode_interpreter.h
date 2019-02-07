@@ -38,15 +38,15 @@ struct bc_static_frame_t;
 struct bc_value_t;
 struct bc_value_object_t;
 union bc_pod_value_t;
-struct bc_object_handle_t;
+struct bc_external_handle_t;
 typedef bc_value_t (*HOST_FUNCTION_PTR)(interpreter_t& vm, const bc_value_t args[], int arg_count);
 typedef int16_t bc_typeid_t;
 
 
-//////////////////////////////////////		bc_pod_value_t
+//////////////////////////////////////		bc_inplace_value_t
 
 
-union bc_pod64_t {
+union bc_inplace_value_t {
 	bool _bool;
 	int64_t _int64;
 	double _double;
@@ -58,13 +58,13 @@ union bc_pod64_t {
 
 //////////////////////////////////////		bc_pod_value_t
 
-
+//	Holds any type of value, both an inplace and external values.
 //	IMPORTANT: Has no constructor, destructor etc!! POD.
-
+//	Does NOT handle reference counting if this is an external value. Use bc_value_t for that!
 
 union bc_pod_value_t {
 	const bc_value_object_t* _ext;
-	bc_pod64_t _pod64;
+	bc_inplace_value_t _pod64;//??? rename
 };
 
 
@@ -419,10 +419,10 @@ struct bc_value_t {
 	public: inline explicit bc_value_t(const typeid_t& type, const bc_pod_value_t& internals);
 
 	//	Won't bump RC.
-	inline bc_value_t(const typeid_t& type, const bc_pod64_t& pod64);
+	inline bc_value_t(const typeid_t& type, const bc_inplace_value_t& pod64);
 
 	//	Bumps RC.
-	public: inline explicit bc_value_t(const typeid_t& type, const bc_object_handle_t& handle);
+	public: inline explicit bc_value_t(const typeid_t& type, const bc_external_handle_t& handle);
 
 
 	//////////////////////////////////////		STATE
@@ -432,19 +432,20 @@ struct bc_value_t {
 
 
 
-//////////////////////////////////////		bc_object_handle_t
+//////////////////////////////////////		bc_external_handle_t
 
 
 //	Owns and RC:s a bc_value_object_t safely and automatically.
-//	These values are put in collections
+//	These values are put in collections.
+//	It does *not* know its type, just that it's an external value.
 
-struct bc_object_handle_t {
-	bc_object_handle_t(const bc_object_handle_t& other);
-	explicit bc_object_handle_t(const bc_value_object_t* ext);
-	explicit bc_object_handle_t(const bc_value_t& value);
-	void swap(bc_object_handle_t& other);
-	bc_object_handle_t& operator=(const bc_object_handle_t& other);
-	~bc_object_handle_t();
+struct bc_external_handle_t {
+	bc_external_handle_t(const bc_external_handle_t& other);
+	explicit bc_external_handle_t(const bc_value_object_t* ext);
+	explicit bc_external_handle_t(const bc_value_t& value);
+	void swap(bc_external_handle_t& other);
+	bc_external_handle_t& operator=(const bc_external_handle_t& other);
+	~bc_external_handle_t();
 
 	bool check_invariant() const;
 
@@ -612,7 +613,7 @@ struct bc_value_object_t {
 		#endif
 		QUARK_ASSERT(check_invariant());
 	}
-	public: bc_value_object_t(const typeid_t& type, const immer::vector<bc_object_handle_t>& s) :
+	public: bc_value_object_t(const typeid_t& type, const immer::vector<bc_external_handle_t>& s) :
 		_rc(1),
 #if DEBUG
 		_debug_type(type),
@@ -627,7 +628,7 @@ struct bc_value_object_t {
 		#endif
 		QUARK_ASSERT(check_invariant());
 	}
-	public: bc_value_object_t(const typeid_t& type, const immer::vector<bc_pod64_t>& s) :
+	public: bc_value_object_t(const typeid_t& type, const immer::vector<bc_inplace_value_t>& s) :
 		_rc(1),
 #if DEBUG
 		_debug_type(type),
@@ -637,7 +638,7 @@ struct bc_value_object_t {
 		QUARK_ASSERT(type.check_invariant());
 		QUARK_ASSERT(check_invariant());
 	}
-	public: bc_value_object_t(const typeid_t& type, const immer::map<std::string, bc_object_handle_t>& s) :
+	public: bc_value_object_t(const typeid_t& type, const immer::map<std::string, bc_external_handle_t>& s) :
 		_rc(1),
 #if DEBUG
 		_debug_type(type),
@@ -653,7 +654,7 @@ struct bc_value_object_t {
 		#endif
 		QUARK_ASSERT(check_invariant());
 	}
-	public: bc_value_object_t(const typeid_t& type, const immer::map<std::string, bc_pod64_t>& s) :
+	public: bc_value_object_t(const typeid_t& type, const immer::map<std::string, bc_inplace_value_t>& s) :
 		_rc(1),
 #if DEBUG
 		_debug_type(type),
@@ -681,19 +682,19 @@ struct bc_value_object_t {
 	public: std::shared_ptr<json_t> _json_value;
 	public: typeid_t _typeid_value = typeid_t::make_undefined();
 	public: std::vector<bc_value_t> _struct_members;
-	public: immer::vector<bc_object_handle_t> _vector_objects;
-	public: immer::vector<bc_pod64_t> _vector_pod64;
-	public: immer::map<std::string, bc_object_handle_t> _dict_objects;
-	public: immer::map<std::string, bc_pod64_t> _dict_pod64;
+	public: immer::vector<bc_external_handle_t> _vector_objects;
+	public: immer::vector<bc_inplace_value_t> _vector_pod64;
+	public: immer::map<std::string, bc_external_handle_t> _dict_objects;
+	public: immer::map<std::string, bc_inplace_value_t> _dict_pod64;
 };
 
 
 
-////////////////////////////////////////////			bc_object_handle_t
+////////////////////////////////////////////			bc_external_handle_t
 
 
 
-inline bc_object_handle_t::bc_object_handle_t(const bc_object_handle_t& other) :
+inline bc_external_handle_t::bc_external_handle_t(const bc_external_handle_t& other) :
 	_ext(other._ext)
 {
 	QUARK_ASSERT(other.check_invariant());
@@ -703,7 +704,7 @@ inline bc_object_handle_t::bc_object_handle_t(const bc_object_handle_t& other) :
 	QUARK_ASSERT(check_invariant());
 }
 
-inline bc_object_handle_t::bc_object_handle_t(const bc_value_object_t* ext) :
+inline bc_external_handle_t::bc_external_handle_t(const bc_value_object_t* ext) :
 	_ext(ext)
 {
 	QUARK_ASSERT(ext != nullptr);
@@ -713,7 +714,7 @@ inline bc_object_handle_t::bc_object_handle_t(const bc_value_object_t* ext) :
 	QUARK_ASSERT(check_invariant());
 }
 
-inline bc_object_handle_t::bc_object_handle_t(const bc_value_t& value) :
+inline bc_external_handle_t::bc_external_handle_t(const bc_value_t& value) :
 	_ext(value._pod._ext)
 {
 	QUARK_ASSERT(value.check_invariant());
@@ -724,7 +725,7 @@ inline bc_object_handle_t::bc_object_handle_t(const bc_value_t& value) :
 	QUARK_ASSERT(check_invariant());
 }
 
-inline void bc_object_handle_t::swap(bc_object_handle_t& other){
+inline void bc_external_handle_t::swap(bc_external_handle_t& other){
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(other.check_invariant());
 
@@ -734,13 +735,13 @@ inline void bc_object_handle_t::swap(bc_object_handle_t& other){
 	QUARK_ASSERT(other.check_invariant());
 }
 
-inline bc_object_handle_t& bc_object_handle_t::operator=(const bc_object_handle_t& other){
+inline bc_external_handle_t& bc_external_handle_t::operator=(const bc_external_handle_t& other){
 	auto temp = other;
 	temp.swap(*this);
 	return *this;
 }
 
-inline bc_object_handle_t::~bc_object_handle_t(){
+inline bc_external_handle_t::~bc_external_handle_t(){
 	QUARK_ASSERT(check_invariant());
 
 	_ext->_rc--;
@@ -750,7 +751,7 @@ inline bc_object_handle_t::~bc_object_handle_t(){
 	}
 }
 
-inline bool bc_object_handle_t::check_invariant() const {
+inline bool bc_external_handle_t::check_invariant() const {
 	QUARK_ASSERT(_ext != nullptr);
 	QUARK_ASSERT(_ext->check_invariant());
 	return true;
@@ -967,14 +968,14 @@ inline const immer::vector<bc_value_t> get_vector(const bc_value_t& value){
 	}
 }
 
-inline const immer::vector<bc_object_handle_t>* get_vector_value(const bc_value_t& value){
+inline const immer::vector<bc_external_handle_t>* get_vector_value(const bc_value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value._type.is_vector());
 	QUARK_ASSERT(encode_as_vector_pod64(value._type) == false);
 
 	return &value._pod._ext->_vector_objects;
 }
-inline const immer::vector<bc_pod64_t>* get_vector_value_pods(const bc_value_t& value){
+inline const immer::vector<bc_inplace_value_t>* get_vector_value_pods(const bc_value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value._type.is_vector());
 	QUARK_ASSERT(encode_as_vector_pod64(value._type) == true);
@@ -991,7 +992,7 @@ inline bc_value_t make_vector(const typeid_t& element_type, const immer::vector<
 
 	const auto vector_type = typeid_t::make_vector(element_type);
 	if(encode_as_vector_pod64(vector_type)){
-		immer::vector<bc_pod64_t> elements2;
+		immer::vector<bc_inplace_value_t> elements2;
 		for(const auto& e: elements){
 			elements2 = elements2.push_back(e._pod._pod64);
 		}
@@ -1003,9 +1004,9 @@ inline bc_value_t make_vector(const typeid_t& element_type, const immer::vector<
 		return temp;
 	}
 	else{
-		immer::vector<bc_object_handle_t> elements2;
+		immer::vector<bc_external_handle_t> elements2;
 		for(const auto& e: elements){
-			elements2 = elements2.push_back(bc_object_handle_t(e));
+			elements2 = elements2.push_back(bc_external_handle_t(e));
 		}
 
 		bc_value_t temp;
@@ -1016,7 +1017,7 @@ inline bc_value_t make_vector(const typeid_t& element_type, const immer::vector<
 	}
 }
 
-inline bc_value_t make_vector_value(const typeid_t& element_type, const immer::vector<bc_object_handle_t>& elements){
+inline bc_value_t make_vector_value(const typeid_t& element_type, const immer::vector<bc_external_handle_t>& elements){
 	QUARK_ASSERT(element_type.check_invariant());
 #if QUARK_ASSERT_ON
 	for(const auto& e: elements) {
@@ -1033,7 +1034,7 @@ inline bc_value_t make_vector_value(const typeid_t& element_type, const immer::v
 	QUARK_ASSERT(temp.check_invariant());
 	return temp;
 }
-inline bc_value_t make_vector_int64_value(const typeid_t& element_type, const immer::vector<bc_pod64_t>& elements){
+inline bc_value_t make_vector_int64_value(const typeid_t& element_type, const immer::vector<bc_inplace_value_t>& elements){
 	QUARK_ASSERT(element_type.check_invariant());
 
 	const auto vector_type = typeid_t::make_vector(element_type);
@@ -1048,13 +1049,13 @@ inline bc_value_t make_vector_int64_value(const typeid_t& element_type, const im
 
 
 
-inline const immer::map<std::string, bc_object_handle_t>& get_dict_value(const bc_value_t& value){
+inline const immer::map<std::string, bc_external_handle_t>& get_dict_value(const bc_value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 
 	return value._pod._ext->_dict_objects;
 }
 
-inline bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_object_handle_t>& entries){
+inline bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_external_handle_t>& entries){
 	QUARK_ASSERT(value_type.check_invariant());
 #if QUARK_ASSERT_ON
 	for(const auto& e: entries) {
@@ -1069,7 +1070,7 @@ inline bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<s
 	QUARK_ASSERT(temp.check_invariant());
 	return temp;
 }
-inline bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_pod64_t>& entries){
+inline bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_inplace_value_t>& entries){
 	QUARK_ASSERT(value_type.check_invariant());
 
 	bc_value_t temp;
@@ -1101,7 +1102,7 @@ inline bc_value_t::bc_value_t(const typeid_t& type, const bc_pod_value_t& intern
 	QUARK_ASSERT(check_invariant());
 }
 
-inline bc_value_t::bc_value_t(const typeid_t& type, const bc_pod64_t& pod64) :
+inline bc_value_t::bc_value_t(const typeid_t& type, const bc_inplace_value_t& pod64) :
 	_type(type),
 	_pod{._pod64 = pod64}
 {
@@ -1111,7 +1112,7 @@ inline bc_value_t::bc_value_t(const typeid_t& type, const bc_pod64_t& pod64) :
 	QUARK_ASSERT(check_invariant());
 }
 
-inline bc_value_t::bc_value_t(const typeid_t& type, const bc_object_handle_t& handle) :
+inline bc_value_t::bc_value_t(const typeid_t& type, const bc_external_handle_t& handle) :
 	_type(type),
 	_pod{._ext = handle._ext}
 {
@@ -1130,7 +1131,7 @@ inline bc_value_t::bc_value_t(const typeid_t& type, const bc_object_handle_t& ha
 
 json_t bcvalue_to_json(const bc_value_t& v);
 int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, const typeid_t& type);
-int bc_compare_value_exts(const bc_object_handle_t& left, const bc_object_handle_t& right, const typeid_t& type);
+int bc_compare_value_exts(const bc_external_handle_t& left, const bc_external_handle_t& right, const typeid_t& type);
 
 
 
