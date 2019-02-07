@@ -1272,12 +1272,13 @@ value_t make_def(const typeid_t& type){
 }
 
 
-void ut_verify(const quark::call_context_t& context, const value_t& result, const value_t& expected){
+void ut_verify_values(const quark::call_context_t& context, const value_t& result, const value_t& expected){
 	ut_verify(
 		context,
-		value_to_ast_json(result, json_tags::k_plain)._value,
-		value_to_ast_json(expected, json_tags::k_plain)._value
+		value_and_type_to_ast_json(result)._value,
+		value_and_type_to_ast_json(expected)._value
 	);
 }
+
 
 }	//	floyd

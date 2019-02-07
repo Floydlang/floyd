@@ -15,32 +15,36 @@
 struct json_t;
 
 namespace floyd {
-	struct ast_json_t;
-	struct struct_definition_t;
-	struct protocol_definition_t;
-	struct typeid_t;
-	struct member_t;
 
-	ast_json_t struct_definition_to_ast_json(const struct_definition_t& v);
-	ast_json_t protocol_definition_to_ast_json(const protocol_definition_t& v);
+struct ast_json_t;
+struct struct_definition_t;
+struct protocol_definition_t;
+struct typeid_t;
+struct member_t;
 
-	json_t members_to_json(const std::vector<member_t>& members);
-	std::vector<member_t> members_from_json(const json_t& members);
 
-	enum class json_tags{
-		k_plain,
+ast_json_t struct_definition_to_ast_json(const struct_definition_t& v);
+ast_json_t protocol_definition_to_ast_json(const protocol_definition_t& v);
 
-		//	Show in the string if the type has been resolved or not. Uses "^hello" or "#world"
-		k_tag_resolve_state
-	};
+json_t members_to_json(const std::vector<member_t>& members);
+std::vector<member_t> members_from_json(const json_t& members);
 
-	ast_json_t typeid_to_ast_json(const typeid_t& t, json_tags tags);
-	typeid_t typeid_from_ast_json(const ast_json_t& t);
 
-	std::vector<json_t> typeids_to_json_array(const std::vector<typeid_t>& m);
-	std::vector<typeid_t> typeids_from_json_array(const std::vector<json_t>& m);
+enum class json_tags{
+	k_plain,
 
-	void ut_verify(const quark::call_context_t& context, const typeid_t& result, const typeid_t& expected);
-}
+	//	Show in the string if the type has been resolved or not. Uses "^hello" or "#world"
+	k_tag_resolve_state
+};
+const char tag_unresolved_type_char = '#';
+const char tag_resolved_type_char = '^';
+
+ast_json_t typeid_to_ast_json(const typeid_t& t, json_tags tags);
+typeid_t typeid_from_ast_json(const ast_json_t& t);
+
+
+void ut_verify(const quark::call_context_t& context, const typeid_t& result, const typeid_t& expected);
+
+}	//	floyd
 
 #endif /* typeid_helpers_hpp */

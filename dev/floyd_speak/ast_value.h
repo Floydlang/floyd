@@ -13,12 +13,12 @@
 	value_t
 
 	Hold a Floyd value with an explicit type.
-	Immutable value.
+	Immutable, value-semantics.
 
 	The value_t is completely standalone and is not coupled to the runtime etc.
 
 	A value of type *struct* can hold a huge, deeply nested struct containing dictionaries and so on.
-	It will be deep-copied alternatively some internal immutable state may be shared with other code.
+	It will be deep-copied alternatively some internal immutable state may be shared with other instances.
 
 
 	value_t is mostly used in the API:s of the compiler.
@@ -48,12 +48,14 @@
 
 
 namespace floyd {
-	struct body_t;
-	struct value_t;
-	struct value_ext_t;
+
+struct body_t;
+struct value_t;
+struct value_ext_t;
+
 
 #if DEBUG
-	std::string make_value_debug_str(const value_t& v);
+std::string make_value_debug_str(const value_t& v);
 #endif
 
 //??? make internal class tht can be used in struct_value_t and protocol_value_t.
@@ -76,6 +78,7 @@ namespace floyd {
 		public: bool operator==(const struct_value_t& other) const;
 
 
+		////////////////////////////////////////		STATE
 		public: std::shared_ptr<const struct_definition_t> _def;
 		public: std::vector<value_t> _member_values;
 	};
@@ -106,9 +109,8 @@ namespace floyd {
 
 	//////////////////////////////////////////////////		value_ext_t
 
-
 	/*
-		Holds data that can't be fit directly inlined into the value_t itself (which would be preferred).
+		Holds data that can't be fit directly inlined into the value_t itself.
 	*/
 
 	struct value_ext_t {
@@ -222,7 +224,7 @@ namespace floyd {
 		public: value_ext_t(const typeid_t& type, int function_id);
 
 
-		//	NOTICE: Use std::variant.
+		//	??? NOTICE: Use std::variant or subclasses.
 		public: int _rc;
 		public: typeid_t _type;
 		public: std::string _string;
@@ -705,7 +707,7 @@ namespace floyd {
 
 	value_t make_def(const typeid_t& type);
 
-	void ut_verify(const quark::call_context_t& context, const value_t& result, const value_t& expected);
+	void ut_verify_values(const quark::call_context_t& context, const value_t& result, const value_t& expected);
 
 }	//	floyd
 

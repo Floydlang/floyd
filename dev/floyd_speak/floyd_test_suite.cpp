@@ -518,7 +518,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
-	ut_verify(QUARK_POS, result, value_t::make_int(7));
+	ut_verify_values(QUARK_POS, result, value_t::make_int(7));
 }
 
 QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
@@ -533,7 +533,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
-	ut_verify(QUARK_POS, result, value_t::make_string("123456"));
+	ut_verify_values(QUARK_POS, result, value_t::make_string("123456"));
 }
 
 
@@ -698,7 +698,7 @@ QUARK_UNIT_TEST("call_function()", "define additional function, call it several 
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
-	ut_verify(QUARK_POS, result, value_t::make_int(15));
+	ut_verify_values(QUARK_POS, result, value_t::make_int(15));
 }
 
 QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
@@ -713,10 +713,10 @@ QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("xyz") });
-	ut_verify(QUARK_POS, result, value_t::make_string("-xyz-"));
+	ut_verify_values(QUARK_POS, result, value_t::make_string("-xyz-"));
 
 	const auto result2 = call_function(vm, f, vector<value_t>{ value_t::make_string("Hello, world!") });
-	ut_verify(QUARK_POS, result2, value_t::make_string("-Hello, world!-"));
+	ut_verify_values(QUARK_POS, result2, value_t::make_string("-Hello, world!-"));
 }
 
 
@@ -739,11 +739,11 @@ QUARK_UNIT_TEST("call_function()", "use local variables", "", ""){
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("xyz") });
 
-	ut_verify(QUARK_POS, result, value_t::make_string("--xyz<xyz>--"));
+	ut_verify_values(QUARK_POS, result, value_t::make_string("--xyz<xyz>--"));
 
 	const auto result2 = call_function(vm, f, vector<value_t>{ value_t::make_string("123") });
 
-	ut_verify(QUARK_POS, result2, value_t::make_string("--123<123>--"));
+	ut_verify_values(QUARK_POS, result2, value_t::make_string("--123<123>--"));
 }
 
 

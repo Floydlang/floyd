@@ -8,20 +8,12 @@
 
 #include "ast_json.h"
 
-using std::string;
-using std::vector;
-
 #include "ast_value.h"
 #include "text_parser.h"
 #include "json_support.h"
 #include "compiler_basics.h"
 
 namespace floyd {
-
-
-
-
-
 
 
 ast_json_t make_ast_entry(const location_t& location, const std::string& opcode, const std::vector<json_t>& params){
@@ -40,9 +32,13 @@ ast_json_t make_ast_entry(const location_t& location, const std::string& opcode,
 	}
 }
 
-
 ast_json_t make_statement_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params){
 	return make_ast_entry(location, opcode, params);
+}
+QUARK_UNIT_TEST("", "make_statement_n()", "", ""){
+	const auto r = make_statement_n(location_t(1234), "def-struct", std::vector<json_t>{});
+
+	ut_verify(QUARK_POS, r._value, json_t::make_array({ 1234.0, "def-struct" }));
 }
 
 ast_json_t make_statement1(const location_t& location, const std::string& opcode, const json_t& params){
@@ -58,12 +54,6 @@ ast_json_t make_statement4(const location_t& location, const std::string& opcode
 	return make_statement_n(location, opcode, { param1, param2, param3, param4 });
 }
 
-
-QUARK_UNIT_TEST("", "make_statement_n()", "", ""){
-	const auto r = make_statement_n(location_t(1234), "def-struct", std::vector<json_t>{});
-
-	ut_verify(QUARK_POS, r._value, json_t::make_array({ 1234.0, "def-struct" }));
-}
 
 
 
@@ -111,26 +101,14 @@ ast_json_t maker__call(const json_t& f, const std::vector<json_t>& args){
 ast_json_t maker_vector_definition(const std::string& element_type, const std::vector<json_t>& elements){
 	QUARK_ASSERT(element_type == "");
 
-//	const auto element_type2 = element_type.empty() ? typeid_t::make_undefined() : typeid_t::make_unresolved_type_identifier(element_type);
 	const auto element_type2 = typeid_to_ast_json(typeid_t::make_vector(typeid_t::make_undefined()), json_tags::k_tag_resolve_state);
 	return make_expression2(floyd::k_no_location, expression_opcode_t::k_value_constructor, element_type2._value, json_t::make_array(elements));
 }
 ast_json_t maker_dict_definition(const std::string& value_type, const std::vector<json_t>& elements){
 	QUARK_ASSERT(value_type == "");
 
-//	const auto type = typeid_t::make_dict(typeid_t::make_unresolved_type_identifier(value_type));
 	const auto element_type2 = typeid_to_ast_json(typeid_t::make_dict(typeid_t::make_undefined()), json_tags::k_tag_resolve_state);
 	return make_expression2(floyd::k_no_location, expression_opcode_t::k_value_constructor, element_type2._value, json_t::make_array(elements));
-
-/*
-	return make_expression2(
-		e._location,
-		"construct-value",
-		typeid_to_ast_json(typeid_t::make_vector(typeid_t::make_undefined()), json_tags::k_tag_resolve_state)._value,
-		expr_vector_to_json_array(e._exprs)._value
-	);
-*/
-
 }
 
 ast_json_t maker__member_access(const json_t& address, const std::string& member_name){
@@ -147,10 +125,18 @@ ast_json_t maker__make_constant(const value_t& value){
 }
 
 
+location_t unpack_loc2(const ast_json_t& s){
+	QUARK_ASSERT(s._value.is_array());
 
-
-
-
+	const bool has_location = s._value.get_array_n(0).is_number();
+	if(has_location){
+		const location_t source_offset = has_location ? location_t(static_cast<std::size_t>(s._value.get_array_n(0).get_number())) : k_no_location;
+		return source_offset;
+	}
+	else{
+		return k_no_location;
+	}
+}
 
 void ut_verify_json_and_rest(const quark::call_context_t& context, const std::pair<ast_json_t, seq_t>& result_pair, const std::string& expected_json, const std::string& expected_rest){
 	ut_verify(
@@ -160,18 +146,6 @@ void ut_verify_json_and_rest(const quark::call_context_t& context, const std::pa
 	);
 
 	ut_verify(context, result_pair.second.str(), expected_rest);
-}
-
-
-void ut_verify_values(const quark::call_context_t& context, const value_t& result, const value_t& expected){
-	if(result != expected){
-		QUARK_TRACE("result:");
-		QUARK_TRACE(json_to_pretty_string(value_and_type_to_ast_json(result)._value));
-		QUARK_TRACE("expected:");
-		QUARK_TRACE(json_to_pretty_string(value_and_type_to_ast_json(expected)._value));
-
-		fail_test(context);
-	}
 }
 
 void ut_verify(const quark::call_context_t& context, const std::pair<std::string, seq_t>& result, const std::pair<std::string, seq_t>& expected){

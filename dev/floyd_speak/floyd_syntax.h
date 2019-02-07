@@ -44,10 +44,11 @@ const std::string bracket_pairs = "(){}[]";
 const std::string valid_expression_chars = k_c99_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[](){}.?:=!<>&,|#$\\;\'";
 
 
+
 //////////////////////////////////////		base_type
 
 /*
-	The atomic buildng block of all types.
+	The atomic building block of all types.
 	Some of the types are ready as-is, like bool or double.
 	Some types needs further information to be 100% defined, like struct (needs its members), vector needs its element-type.
 */
