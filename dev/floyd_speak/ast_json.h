@@ -10,29 +10,29 @@
 #define ast_json_h
 
 /*
-The ast_json_t type hold an AST, encoded as a JSON.
+	The ast_json_t type hold an AST, encoded as a JSON.
 
-It's a JSON array with each program statement in order.
-Each statement is a JSON array like this:
+	It's a JSON array with each program statement in order.
+	Each statement is a JSON array like this:
 
-	["return", EXPRESSION_JSON_OBJECT ]
-	["bind", "string", "local_name", EXPRESSION_JSON_OBJECT ]
-	["def_struct", STRUCT_DEF_JSON_OBJECT ]
-	["define_function", FUNCTION_DEF_JSON_OBJECT ]
+		["return", EXPRESSION_JSON_OBJECT ]
+		["bind", "string", "local_name", EXPRESSION_JSON_OBJECT ]
+		["def_struct", STRUCT_DEF_JSON_OBJECT ]
+		["define_function", FUNCTION_DEF_JSON_OBJECT ]
 
-The first element, element 0, of each statement is optionally a byte-offset where this statement is defined in the source text.
-Then comes the statement opcode, like "return" and its parameters.
-	[ 135500, "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"] ],
-	[ "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"] ],
+	The first element, element 0, of each statement is optionally a byte-offset where this statement is defined in the source text.
+	Then comes the statement opcode, like "return" and its parameters.
+		[ 135500, "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"] ],
+		[ "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"] ],
 
 
-NOTICE: Right now ast_json_t is used a little sloppyly.
+	NOTICE: Right now ast_json_t is used a little sloppyly.
 
-1. The parse tree
-2. The input AST (no types and resolve)
-3. The semantically correct AST
+	1. The parse tree
+	2. The input AST (no types and resolve)
+	3. The semantically correct AST
 
-Future: make separate types, optimally separate constants for statement/expression opcodes.
+	Future: make separate types, optimally separate constants for statement/expression opcodes.
 */
 
 #include <string>

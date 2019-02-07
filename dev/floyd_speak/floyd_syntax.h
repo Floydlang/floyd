@@ -9,6 +9,11 @@
 #ifndef floyd_syntax_hpp
 #define floyd_syntax_hpp
 
+/*
+	Types and constants that describe the syntax of floyd program texts.
+	Keywords, the different types in the language, what special characters there are.
+*/
+
 #include <string>
 #include <map>
 #include "quark.h"

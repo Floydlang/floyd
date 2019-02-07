@@ -70,7 +70,7 @@
 /* Begin PBXFileReference section */
 		2C00BC411F2428FF0087B8BB /* cpp_experiments.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cpp_experiments.cpp; sourceTree = "<group>"; };
 		2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_test_suite.cpp; sourceTree = "<group>"; };
-		2C02667B2014CAF000A82AD6 /* floyd_test_suite.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = floyd_test_suite.hpp; sourceTree = "<group>"; };
+		2C02667B2014CAF000A82AD6 /* floyd_test_suite.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_test_suite.h; sourceTree = "<group>"; };
 		2C180447208B90E800F62480 /* text_parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = text_parser.h; sourceTree = "<group>"; };
 		2C180448208B90E800F62480 /* utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = utils.cpp; sourceTree = "<group>"; };
 		2C180449208B90E800F62480 /* utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = utils.h; sourceTree = "<group>"; };
@@ -237,7 +237,7 @@
 				2CB7AA63220900190011DE4B /* floyd_syntax.cpp */,
 				2CB7AA64220900190011DE4B /* floyd_syntax.h */,
 				2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */,
-				2C02667B2014CAF000A82AD6 /* floyd_test_suite.hpp */,
+				2C02667B2014CAF000A82AD6 /* floyd_test_suite.h */,
 				2C5E343B21527C6700B02262 /* hardware_caps.cpp */,
 				2C5E343E21527C8B00B02262 /* hardware_caps.h */,
 				2CB2A511203C4AA80001A19E /* interpretator_benchmark.cpp */,

@@ -9,69 +9,68 @@
 #ifndef parse_statement_hpp
 #define parse_statement_hpp
 
+/*
+	Functions to parse every type of statement in the Floyd syntax.
+*/
+
 #include "quark.h"
 
 struct seq_t;
 struct json_t;
 
 namespace floyd {
-	struct parse_result_t;
+struct parse_result_t;
 
+/*
+	INPUT:
+		"{}"
+		"{\n}"
+		"{ int x = 1; }"
+		"{ int x = 1; ; int y = 2; }"
 
-	/*
-		INPUT:
-			"{}"
-			"{\n}"
-			"{ int x = 1; }"
-			"{ int x = 1; ; int y = 2; }"
+	OUTPUT:
+		[
+			STATEMENT
+			STATEMENT
+			...
+		]
+*/
+parse_result_t parse_statement_body(const seq_t& s);
 
-		OUTPUT:
-			[
-				STATEMENT
-				STATEMENT
-				...
-			]
-	*/
-	parse_result_t parse_statement_body(const seq_t& pos);
+/*
+	INPUT:
+		"{}"
+		"{\n}"
+		"{ int x = 1; }"
+		"{ int x = 1; ; int y = 2; }"
 
+	OUTPUT:
+		["block", [ STATEMENTS ] ]
+*/
+std::pair<json_t, seq_t> parse_block(const seq_t& s);
 
-	/*
-		INPUT:
-			"{}"
-			"{\n}"
-			"{ int x = 1; }"
-			"{ int x = 1; ; int y = 2; }"
+/*
+	INPUT:
+	Must start with "return".
 
-		OUTPUT:
-			["block", [ STATEMENTS ] ]
-	*/
-	std::pair<json_t, seq_t> parse_block(const seq_t& s);
+	Examples:
+		"return 0;"
+		"return x + y;"
 
+	OUTPUT:
+		["return", EXPRESSION ]
+*/
+std::pair<json_t, seq_t> parse_return_statement(const seq_t& s);
 
-	/*
-		INPUT:
-		Must start with "return".
+/*
+	OUTPUT:
+		[ "bind", "float", "x", EXPRESSION, { "mutable": true } ]
+*/
+std::pair<json_t, seq_t> parse_bind_statement(const seq_t& s);
 
-		Examples:
-			"return 0;"
-			"return x + y;"
+std::pair<json_t, seq_t> parse_assign_statement(const seq_t& s);
 
-		OUTPUT:
-			["return", EXPRESSION ]
-	*/
-	std::pair<json_t, seq_t> parse_return_statement(const seq_t& s);
-
-
-
-	/*
-		OUTPUT:
-			[ "bind", "float", "x", EXPRESSION, { "mutable": true } ]
-	*/
-	std::pair<json_t, seq_t> parse_bind_statement(const seq_t& s);
-
-	std::pair<json_t, seq_t> parse_assign_statement(const seq_t& s);
-	std::pair<json_t, seq_t> parse_expression_statement(const seq_t& s);
-
+std::pair<json_t, seq_t> parse_expression_statement(const seq_t& s);
 
 /*
 	OUTPUT:
@@ -87,112 +86,106 @@ namespace floyd {
 			}
 		]
 */
-std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos);
+std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& s);
 
+/*
+	OUTPUT
 
-
-	/*
-		OUTPUT
-
-		[
-			"def-struct",
-			{
-				"name": "pixel",
-				"members": [
-					{ "name": "s", "type": "string" }
-				],
-			}
-		]
-	*/
-	std::pair<json_t, seq_t> parse_struct_definition(const seq_t& pos);
-
-
-	std::pair<json_t, seq_t>  parse_struct_definition_body(const seq_t& p, const std::string& name);
-
-
-
-	/*
-		OUTPUT
-
-		[
-			"def-protocol",
-			{
-				"name": "pixel",
-				"members": [
-					{ "name": "s", "type": "string" }
-				],
-			}
-		]
-	*/
-	std::pair<json_t, seq_t> parse_protocol_definition(const seq_t& pos);
-
-	std::pair<json_t, seq_t>  parse_protocol_definition_body(const seq_t& p, const std::string& name);
-
-
-	/*
-		A:
-			if (2 > 1){
-				...
-			}
-
-
-		B:
-			if (2 > 1){
-				...
-			}
-			else{
-				...
-			}
-
-		C:
-			if (2 > 1){
-				...
-			}
-			else if(2 > 3){
-				...
-			}
-			else{
-				...
-			}
-
-
-		OUTPUT
-			["if", EXPRESSION, THEN_STATEMENTS ]
-			["if", EXPRESSION, THEN_STATEMENTS, ELSE_STATEMENTS ]
-	*/
-	std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos);
-
-
-	/*
-		for (index in 1...5) {
-			print(index)
+	[
+		"def-struct",
+		{
+			"name": "pixel",
+			"members": [
+				{ "name": "s", "type": "string" }
+			],
 		}
-		for (tickMark in 0..<minutes) {
+	]
+*/
+std::pair<json_t, seq_t> parse_struct_definition_statement(const seq_t& s);
+
+//	Parses only the "{ MEMBERS }" part of the struct.
+std::pair<json_t, seq_t>  parse_struct_definition_body(const seq_t& s, const std::string& name);
+
+/*
+	OUTPUT
+
+	[
+		"def-protocol",
+		{
+			"name": "pixel",
+			"members": [
+				{ "name": "s", "type": "string" }
+			],
+		}
+	]
+*/
+std::pair<json_t, seq_t> parse_protocol_definition_statement(const seq_t& s);
+
+//	Parses only the "{ MEMBERS }" part of the protocol definition.
+std::pair<json_t, seq_t>  parse_protocol_definition_body(const seq_t& s, const std::string& name);
+
+/*
+	A:
+		if (2 > 1){
+			...
 		}
 
-		OUTPUT
-			[ "for", "closed-range", ITERATOR_NAME, START_EXPRESSION, END_EXPRESSION, BODY ]
-			[ "for", "open-range", ITERATOR_NAME, START_EXPRESSION, END_EXPRESSION, BODY ]
-	*/
-	std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos);
 
-
-	/*
-		while (a < 10) {
-			print(a)
+	B:
+		if (2 > 1){
+			...
 		}
-		while (count_trees(s) != 0) {
-			print(4)
+		else{
+			...
 		}
 
-		OUTPUT
-			[ "while", "EXPRESSION, BODY ]
-	*/
-	std::pair<json_t, seq_t> parse_while_statement(const seq_t& pos);
+	C:
+		if (2 > 1){
+			...
+		}
+		else if(2 > 3){
+			...
+		}
+		else{
+			...
+		}
 
+	OUTPUT
+		["if", EXPRESSION, THEN_STATEMENTS ]
+		["if", EXPRESSION, THEN_STATEMENTS, ELSE_STATEMENTS ]
+*/
+std::pair<json_t, seq_t> parse_if_statement(const seq_t& s);
 
-	std::pair<json_t, seq_t> parse_software_system(const seq_t& s);
-	std::pair<json_t, seq_t> parse_container_def(const seq_t& s);
+/*
+	for (index in 1...5) {
+		print(index)
+	}
+	for (tickMark in 0..<minutes) {
+	}
+
+	OUTPUT
+		[ "for", "closed-range", ITERATOR_NAME, START_EXPRESSION, END_EXPRESSION, BODY ]
+		[ "for", "open-range", ITERATOR_NAME, START_EXPRESSION, END_EXPRESSION, BODY ]
+*/
+std::pair<json_t, seq_t> parse_for_statement(const seq_t& s);
+
+/*
+	while (a < 10) {
+		print(a)
+	}
+	while (count_trees(s) != 0) {
+		print(4)
+	}
+
+	OUTPUT
+		[ "while", "EXPRESSION, BODY ]
+*/
+std::pair<json_t, seq_t> parse_while_statement(const seq_t& s);
+
+std::pair<json_t, seq_t> parse_software_system_statement(const seq_t& s);
+
+std::pair<json_t, seq_t> parse_container_def_statement(const seq_t& s);
+
 }	//	floyd
 
 

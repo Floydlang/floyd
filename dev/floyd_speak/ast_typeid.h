@@ -10,53 +10,53 @@
 #define ast_typeid_hpp
 
 /*
-typeid_t
+	typeid_t
 
-This is a very central type in the Floyd compiler.
+	This is a very central type in the Floyd compiler.
 
-It specifies an exact Floyd type. Both for base types like "int" and "string" and composite types
-like "struct { [float] p; string s }.
-It can hold *any Floyd type*. It can also hold unresolved type identifiers and a few types internal to compiler.
+	It specifies an exact Floyd type. Both for base types like "int" and "string" and composite types
+	like "struct { [float] p; string s }.
+	It can hold *any Floyd type*. It can also hold unresolved type identifiers and a few types internal to compiler.
 
-typeid_t can be convert to/from JSON and is written in source code according to Floyd source syntax, see table below.
+	typeid_t can be convert to/from JSON and is written in source code according to Floyd source syntax, see table below.
 
-typeid_t is an immutable value object.
-The typeid_t is normalized and can be compared with other typeid_t:s.
+	typeid_t is an immutable value object.
+	The typeid_t is normalized and can be compared with other typeid_t:s.
 
-Composite types can form trees of types,
-	like:
-		"[string: struct {int x; int y}]"
-	This is a dictionary with structs, each holding two integers.
+	Composite types can form trees of types,
+		like:
+			"[string: struct {int x; int y}]"
+		This is a dictionary with structs, each holding two integers.
 
-Source code						base_type								AST JSON
-================================================================================================================
-null							k_internal_undefined					"null"
-bool							k_bool									"bool"
-int								k_int									"int"
-double							k_double								"double"
-string							k_string								"string"
-json_value						k_json_value							"json_value"
-"typeid"						k_typeid								"typeid"
-struct red { int x;float y}		k_struct								["struct", [{"type": "in", "name": "x"}, {"type": "float", "name": "y"}]]
-protocol reader {
-	[int] read()
-	int get_size()
-}								k_protocol								["protocol", [{"type": ["function", ["vector, "int"]]], "name": "read"}, {"type": "["function", []]", "name": "get_size"}]]
-[int]							k_vector								["vector", "int"]
-[string: int]					k_dict									["dict", "int"]
-int ()							k_function								["function", "int", []]
-int (double, [string])			k_function								["function", "int", ["double", ["vector", "string"]]]
-randomize_player			k_internal_unresolved_type_identifier		["internal_unresolved_type_identifier", "randomize_player"]
+	Source code						base_type								AST JSON
+	================================================================================================================
+	null							k_internal_undefined					"null"
+	bool							k_bool									"bool"
+	int								k_int									"int"
+	double							k_double								"double"
+	string							k_string								"string"
+	json_value						k_json_value							"json_value"
+	"typeid"						k_typeid								"typeid"
+	struct red { int x;float y}		k_struct								["struct", [{"type": "in", "name": "x"}, {"type": "float", "name": "y"}]]
+	protocol reader {
+		[int] read()
+		int get_size()
+	}								k_protocol								["protocol", [{"type": ["function", ["vector, "int"]]], "name": "read"}, {"type": "["function", []]", "name": "get_size"}]]
+	[int]							k_vector								["vector", "int"]
+	[string: int]					k_dict									["dict", "int"]
+	int ()							k_function								["function", "int", []]
+	int (double, [string])			k_function								["function", "int", ["double", ["vector", "string"]]]
+	randomize_player			k_internal_unresolved_type_identifier		["internal_unresolved_type_identifier", "randomize_player"]
 
 
-AST JSON
-This is the JSON format we use to pass AST around. Use typeid_to_ast_json() and typeid_from_ast_json().
+	AST JSON
+	This is the JSON format we use to pass AST around. Use typeid_to_ast_json() and typeid_from_ast_json().
 
-COMPACT_STRING
-This is a nice user-visible representation of the typeid_t. It may be lossy. It's for REPLs etc. UI.
+	COMPACT_STRING
+	This is a nice user-visible representation of the typeid_t. It may be lossy. It's for REPLs etc. UI.
 
-SOURCE CODE TYPE
-Use read_type(), read_required_type()
+	SOURCE CODE TYPE
+	Use read_type(), read_required_type()
 */
 
 #include "quark.h"

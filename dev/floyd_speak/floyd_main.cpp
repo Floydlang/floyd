@@ -34,6 +34,8 @@ bool trace_on = true;
 
 
 void run_tests(){
+	//	Cherry-picked list of files who's tests we run first.
+	//	Ideally you should run the test for the lowest level source first.
 	quark::run_tests(
 		{
 			"quark.cpp",
@@ -88,10 +90,10 @@ void run_tests(){
 }
 
 
+////////////////////////////////	floyd_tracer
 
+//	Patch into quark's tracing system to get more control over tracing.
 
-
-//??? Only exists so we cn control tracing on/off. Delete and use new trace_context_t instead.
 struct floyd_tracer : public quark::trace_i {
 	public: floyd_tracer();
 
@@ -103,7 +105,6 @@ struct floyd_tracer : public quark::trace_i {
 	///////////////		State.
 	public: quark::default_tracer_t def;
 };
-
 
 floyd_tracer::floyd_tracer(){
 }
@@ -127,6 +128,10 @@ void floyd_tracer::trace_i__close_scope(const char s[]) const{
 }
 
 
+////////////////////////////////	floyd_quark_runtime
+
+//	Patch into quark's runtime system to get control over assert and unit tests.
+
 struct floyd_quark_runtime : public quark::runtime_i {
 	floyd_quark_runtime(const std::string& test_data_root);
 
@@ -147,9 +152,6 @@ floyd_quark_runtime::floyd_quark_runtime(const std::string& test_data_root) :
 
 void floyd_quark_runtime::runtime_i__on_assert(const quark::source_code_location& location, const char expression[]){
 	QUARK_TRACE_SS(std::string("Assertion failed ") << location._source_file << ", " << location._line_number << " \"" << expression << "\"");
-
-	
-
 	perror("perror() says");
 	throw std::logic_error("assert");
 }
@@ -161,7 +163,7 @@ void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_cod
 	throw std::logic_error("Unit test failed");
 }
 
-
+//	Print usage instructions to stdio.
 void help(){
 std::cout << "Floyd Speak Programming Language " << floyd_version_string << " MIT." <<
 	
@@ -176,6 +178,7 @@ floyd run -t mygame.floyd	- the -t turns on tracing, which shows Floyd compilati
 )";
 }
 
+//	Runs one of the commands, args depends on which command.
 int run_command(const std::vector<std::string>& args){
 	const auto command_line_args = parse_command_line_args_subcommands(args, "t");
 	const auto path_parts = SplitPath(command_line_args.command);
@@ -246,6 +249,7 @@ int run_command(const std::vector<std::string>& args){
 	}
 }
 
+
 int main(int argc, const char * argv[]) {
 	floyd_quark_runtime q("");
 	quark::set_runtime(&q);
@@ -272,9 +276,6 @@ int main(int argc, const char * argv[]) {
 	}
 	return EXIT_SUCCESS;
 }
-
-
-
 
 
 /*

@@ -6,7 +6,7 @@
 //  Copyright © 2018 Marcus Zetterquist. All rights reserved.
 //
 
-#include "floyd_test_suite.hpp"
+#include "floyd_test_suite.h"
 
 
 #include "bytecode_interpreter/floyd_interpreter.h"

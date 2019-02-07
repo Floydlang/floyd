@@ -10,6 +10,8 @@
 #define pass3_hpp
 
 /*
+	Performs semantic analysis of a Floyd program.
+
 	Converts an ast_t to a semantic_ast_t.
 
 	- All language-level syntax checks passed.
@@ -27,42 +29,42 @@
 #include <string>
 #include "ast.h"
 
-
 namespace floyd {
-	bool check_types_resolved(const ast_t& ast);
+
+bool check_types_resolved(const ast_t& ast);
 
 
-	//////////////////////////////////////		semantic_ast_t
+//////////////////////////////////////		semantic_ast_t
 
+/*
+	The semantic_ast_t is a ready-to-run program, all symbols resolved, all semantics are OK.
+*/
+struct semantic_ast_t {
+	semantic_ast_t(const ast_t& checked_ast){
+		QUARK_ASSERT(checked_ast.check_invariant());
+		QUARK_ASSERT(check_types_resolved(checked_ast));
 
-	/*
-		The semantic_ast_t is a ready-to-run program, all symbols resolved, all semantics are OK.
-	*/
-	struct semantic_ast_t {
-		semantic_ast_t(const ast_t& checked_ast){
-			QUARK_ASSERT(checked_ast.check_invariant());
-			QUARK_ASSERT(check_types_resolved(checked_ast));
-
-			_checked_ast = checked_ast;
-		}
+		_checked_ast = checked_ast;
+	}
 
 #if DEBUG
-		public: bool check_invariant() const{
-			QUARK_ASSERT(_checked_ast.check_invariant());
-			QUARK_ASSERT(check_types_resolved(_checked_ast));
-			return true;
-		}
+	public: bool check_invariant() const{
+		QUARK_ASSERT(_checked_ast.check_invariant());
+		QUARK_ASSERT(check_types_resolved(_checked_ast));
+		return true;
+	}
 #endif
 
-		public: ast_t _checked_ast;
-	};
+	public: ast_t _checked_ast;
+};
 
 
-	/*
-		Semantic Analysis -> SYMBOL TABLE + annotated AST
-	*/
-	semantic_ast_t run_semantic_analysis(const ast_t& ast);
-}
+/*
+	Semantic Analysis -> SYMBOL TABLE + annotated AST
+*/
+semantic_ast_t run_semantic_analysis(const ast_t& ast);
+
+}	// Floyd
 
 #endif /* pass3_hpp */
 

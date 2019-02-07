@@ -9,6 +9,9 @@
 #ifndef software_system_hpp
 #define software_system_hpp
 
+/*
+	Parses the process configuration information.
+*/
 
 #include "quark.h"
 #include <vector>

@@ -36,10 +36,10 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 			return parse_return_statement(pos);
 		}
 		else if(is_first(pos, keyword_t::k_struct)){
-			return parse_struct_definition(pos);
+			return parse_struct_definition_statement(pos);
 		}
 		else if(is_first(pos, keyword_t::k_protocol)){
-			return parse_protocol_definition(pos);
+			return parse_protocol_definition_statement(pos);
 		}
 		else if(is_first(pos, keyword_t::k_if)){
 			return  parse_if_statement(pos);
@@ -60,10 +60,10 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 			return parse_bind_statement(pos);
 		}
 		else if(is_first(pos, keyword_t::k_software_system)){
-			return parse_software_system(pos);
+			return parse_software_system_statement(pos);
 		}
 		else if(is_first(pos, keyword_t::k_container_def)){
-			return parse_container_def(pos);
+			return parse_container_def_statement(pos);
 		}
 		else {
 			//	k_assign and k_expression_statement has no prefix, we need to figure out if it's one of those.

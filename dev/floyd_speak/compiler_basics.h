@@ -9,6 +9,10 @@
 #ifndef compiler_basics_hpp
 #define compiler_basics_hpp
 
+/*
+	Infrastructure primitives under the compiler.
+*/
+
 #include "quark.h"
 
 namespace floyd {
