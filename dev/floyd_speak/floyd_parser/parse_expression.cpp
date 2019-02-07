@@ -37,7 +37,7 @@ QUARK_UNIT_TEST("parser", "C++ enum class()", "", ""){
 }
 
 
-std::pair<ast_json_t, seq_t> parse_expression_deep(const seq_t& p, const eoperator_precedence precedence);
+std::pair<json_t, seq_t> parse_expression_deep(const seq_t& p, const eoperator_precedence precedence);
 
 
 
@@ -121,11 +121,11 @@ std::pair<collection_def_t, seq_t> parse_bounded_list(const seq_t& s, const std:
 			const auto pos2 = skip_whitespace(expression_pos.second);
 			const auto ch = pos2.first1();
 			if(ch == ","){
-				result._elements.push_back(collection_element_t{ nullptr, expression_pos.first._value });
+				result._elements.push_back(collection_element_t{ nullptr, expression_pos.first });
 				pos = pos2.rest1();
 			}
 			else if(ch == end_char){
-				result._elements.push_back(collection_element_t{ nullptr, expression_pos.first._value });
+				result._elements.push_back(collection_element_t{ nullptr, expression_pos.first });
 				pos = pos2;
 			}
 			else if(ch == ":"){
@@ -136,11 +136,11 @@ std::pair<collection_def_t, seq_t> parse_bounded_list(const seq_t& s, const std:
 				const auto pos4 = skip_whitespace(expression2_pos.second);
 				const auto ch2 = pos4.first1();
 				if(ch2 == ","){
-					result._elements.push_back(collection_element_t{ std::make_shared<json_t>(expression_pos.first._value), expression2_pos.first._value });
+					result._elements.push_back(collection_element_t{ std::make_shared<json_t>(expression_pos.first), expression2_pos.first});
 					pos = pos4.rest1();
 				}
 				else if(ch2 == end_char){
-					result._elements.push_back(collection_element_t{ std::make_shared<json_t>(expression_pos.first._value), expression2_pos.first._value });
+					result._elements.push_back(collection_element_t{ std::make_shared<json_t>(expression_pos.first), expression2_pos.first});
 					pos = pos4;
 				}
 				else{
@@ -437,7 +437,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			else if(op1 == "["  && precedence > eoperator_precedence::k_lookup){
 				const auto p2 = skip_whitespace(p.rest());
 				const auto key = parse_expression_deep(p2, eoperator_precedence::k_super_weak);
-				const auto result = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_lookup), lhs, key.first._value);
+				const auto result = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_lookup), lhs, key.first);
 				const auto p3 = skip_whitespace(key.second);
 
 				// Closing "]".
@@ -450,34 +450,34 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	EXPRESSION "+" EXPRESSION
 			else if(op1 == "+"  && precedence > eoperator_precedence::k_add_sub){
 				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_add_sub);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_add), lhs, rhs.first._value);
+				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_add), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 
 			//	EXPRESSION "-" EXPRESSION
 			else if(op1 == "-" && precedence > eoperator_precedence::k_add_sub){
 				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_add_sub);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_subtract), lhs, rhs.first._value);
+				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_subtract), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 
 			//	EXPRESSION "*" EXPRESSION
 			else if(op1 == "*" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
 				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_multiply), lhs, rhs.first._value);
+				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_multiply), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 			//	EXPRESSION "/" EXPRESSION
 			else if(op1 == "/" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
 				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_divide), lhs, rhs.first._value);
+				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_divide), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 
 			//	EXPRESSION "%" EXPRESSION
 			else if(op1 == "%" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
 				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_remainder), lhs, rhs.first._value);
+				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_remainder), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 
@@ -493,7 +493,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 				}
 
 				const auto false_expr_p = parse_expression_deep(pos2.rest(), precedence);
-				const auto value2 = maker__make_conditional_operator(lhs, true_expr_p.first._value, false_expr_p.first._value);
+				const auto value2 = maker__make_conditional_operator(lhs, true_expr_p.first, false_expr_p.first);
 				return parse_optional_operation_rightward(false_expr_p.second, value2._value, precedence);
 			}
 
@@ -501,13 +501,13 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	EXPRESSION "==" EXPRESSION
 			else if(op2 == "==" && precedence > eoperator_precedence::k_equal__not_equal){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_equal__not_equal);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_logical_equal), lhs, rhs.first._value);
+				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_logical_equal), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 			//	EXPRESSION "!=" EXPRESSION
 			else if(op2 == "!=" && precedence > eoperator_precedence::k_equal__not_equal){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_equal__not_equal);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_logical_nonequal), lhs, rhs.first._value);
+				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_logical_nonequal), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 
@@ -515,14 +515,14 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	EXPRESSION "<=" EXPRESSION
 			else if(op2 == "<=" && precedence > eoperator_precedence::k_larger_smaller){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_larger_smaller);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_smaller_or_equal), lhs, rhs.first._value);
+				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_smaller_or_equal), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 
 			//	EXPRESSION "<" EXPRESSION
 			else if(op1 == "<" && precedence > eoperator_precedence::k_larger_smaller){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_larger_smaller);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_smaller), lhs, rhs.first._value);
+				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_smaller), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 
@@ -531,14 +531,14 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	EXPRESSION ">=" EXPRESSION
 			else if(op2 == ">=" && precedence > eoperator_precedence::k_larger_smaller){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_larger_smaller);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_larger_or_equal), lhs, rhs.first._value);
+				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_larger_or_equal), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 
 			//	EXPRESSION ">" EXPRESSION
 			else if(op1 == ">" && precedence > eoperator_precedence::k_larger_smaller){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_larger_smaller);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_larger), lhs, rhs.first._value);
+				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_larger), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 
@@ -546,14 +546,14 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	EXPRESSION "&&" EXPRESSION
 			else if(op2 == "&&" && precedence > eoperator_precedence::k_logical_and){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_logical_and);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_logical_and), lhs, rhs.first._value);
+				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_logical_and), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 
 			//	EXPRESSION "||" EXPRESSION
 			else if(op2 == "||" && precedence > eoperator_precedence::k_logical_or){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_logical_or);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_logical_or), lhs, rhs.first._value);
+				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_logical_or), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2._value, precedence);
 			}
 
@@ -725,12 +725,12 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 	//	Negate? "-xxx"
 	if(ch1 == '-'){
 		const auto a = parse_expression_deep(p2.rest1(), eoperator_precedence::k_super_strong);
-		const auto value2 = maker__make_unary_minus(a.first._value);
+		const auto value2 = maker__make_unary_minus(a.first);
 		return { value2._value, a.second };
 	}
 	else if(ch1 == '+'){
 		const auto a = parse_expression_deep(p2.rest1(), eoperator_precedence::k_super_strong);
-		return { a.first._value, a.second };
+		return { a.first, a.second };
 	}
 	//	Expression within parantheses?
 	//	(EXPRESSION)xxx"
@@ -740,7 +740,7 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 		if (p3.first() != ")"){
 			throw_compiler_error(location_t(p2.pos()), "Expected ')' character.");
 		}
-		return { a.first._value, p3.rest() };
+		return { a.first, p3.rest() };
 	}
 
 	else if(is_first(p2, keyword_t::k_struct)){
@@ -1475,12 +1475,12 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "Invalid characters", ""){
 
 
 
-std::pair<ast_json_t, seq_t> parse_expression_deep(const seq_t& p, const eoperator_precedence precedence){
+std::pair<json_t, seq_t> parse_expression_deep(const seq_t& p, const eoperator_precedence precedence){
 	QUARK_ASSERT(p.check_invariant());
 
 	auto lhs = parse_lhs_atom(p);
 	const auto r = parse_optional_operation_rightward(lhs.second, lhs.first, precedence);
-	return { ast_json_t::make(r.first), r.second };
+	return r;
 }
 
 std::pair<json_t, seq_t> parse_expression(const seq_t& p){
@@ -1491,7 +1491,7 @@ std::pair<json_t, seq_t> parse_expression(const seq_t& p){
 
 	try{
 		const auto r = parse_expression_deep(p, eoperator_precedence::k_super_weak);
-		return { r.first._value, r.second };
+		return { r.first, r.second };
 	}
 
 	//	If an exception other than compiler_error is thrown, make a compiler error with location info.
