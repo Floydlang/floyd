@@ -99,7 +99,7 @@ enum class value_encoding {
 };
 
 bool encode_as_inplace(const typeid_t& type);
-bool encode_as_vector_w_inplace_element(const typeid_t& type);
+bool encode_as_vector_w_inplace_elements(const typeid_t& type);
 bool encode_as_dict_w_inplace_values(const typeid_t& type);
 value_encoding type_to_encoding(const typeid_t& type);
 
@@ -229,13 +229,14 @@ struct bc_external_handle_t {
 
 	public: bool check_invariant() const;
 
+
 	//////////////////////////////////////		STATE
 	//	Uses intrusive reference counting, that's why this isn't just a shared_ptr<>
 	public: const bc_external_value_t* _external;
 };
 
 
-bool check_ext_deep(const typeid_t& type, const bc_external_value_t* ext);
+bool check_external_deep(const typeid_t& type, const bc_external_value_t* ext);
 
 
 //////////////////////////////////////		bc_external_value_t
@@ -265,7 +266,9 @@ struct bc_external_value_t {
 
 	//////////////////////////////////////		STATE
 	public: mutable std::atomic<int> _rc;
-	public: bool _is_unwritten_ext_value = false;
+#if DEBUG
+	public: bool _debug__is_unwritten_external_value = false;
+#endif
 #if DEBUG
 	public: typeid_t _debug_type;
 #endif
@@ -273,34 +276,31 @@ struct bc_external_value_t {
 	public: std::shared_ptr<json_t> _json_value;
 	public: typeid_t _typeid_value = typeid_t::make_undefined();
 	public: std::vector<bc_value_t> _struct_members;
-	public: immer::vector<bc_external_handle_t> _vector_objects;
-	public: immer::vector<bc_inplace_value_t> _vector_pod64;
-	public: immer::map<std::string, bc_external_handle_t> _dict_objects;
-	public: immer::map<std::string, bc_inplace_value_t> _dict_pod64;
+	public: immer::vector<bc_external_handle_t> _vector_w_external_elements;
+	public: immer::vector<bc_inplace_value_t> _vector_w_inplace_elements;
+	public: immer::map<std::string, bc_external_handle_t> _dict_w_external_values;
+	public: immer::map<std::string, bc_inplace_value_t> _dict_w_inplace_values;
 };
 
 
 ////////////////////////////////////////////			FREE
 
 
-bool check_ext_deep(const typeid_t& type, const bc_external_value_t* ext);
-
 const immer::vector<bc_value_t> get_vector(const bc_value_t& value);
-const immer::vector<bc_external_handle_t>* get_vector_value(const bc_value_t& value);
-const immer::vector<bc_inplace_value_t>* get_vector_value_pods(const bc_value_t& value);
+const immer::vector<bc_external_handle_t>* get_vector_external_elements(const bc_value_t& value);
+const immer::vector<bc_inplace_value_t>* get_vector_inplace_elements(const bc_value_t& value);
 
 bc_value_t make_vector(const typeid_t& element_type, const immer::vector<bc_value_t>& elements);
-bc_value_t make_vector_value(const typeid_t& element_type, const immer::vector<bc_external_handle_t>& elements);
-bc_value_t make_vector_int64_value(const typeid_t& element_type, const immer::vector<bc_inplace_value_t>& elements);
+bc_value_t make_vector(const typeid_t& element_type, const immer::vector<bc_external_handle_t>& elements);
+bc_value_t make_vector(const typeid_t& element_type, const immer::vector<bc_inplace_value_t>& elements);
 
 const immer::map<std::string, bc_external_handle_t>& get_dict_value(const bc_value_t& value);
-bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_external_handle_t>& entries);
-bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_inplace_value_t>& entries);
+bc_value_t make_dict(const typeid_t& value_type, const immer::map<std::string, bc_external_handle_t>& entries);
+bc_value_t make_dict(const typeid_t& value_type, const immer::map<std::string, bc_inplace_value_t>& entries);
 
 json_t bcvalue_to_json(const bc_value_t& v);
 int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, const typeid_t& type);
 int bc_compare_value_exts(const bc_external_handle_t& left, const bc_external_handle_t& right, const typeid_t& type);
-
 
 
 
@@ -316,15 +316,16 @@ struct bc_symbol_t {
 		mutable_local
 	};
 
-	type _symbol_type;
-	floyd::typeid_t _value_type;
-	floyd::bc_value_t _const_value;
-
-
 	public: bool check_invariant() const {
 		QUARK_ASSERT(_const_value._type.is_undefined() || _const_value._type == _value_type);
 		return true;
 	}
+
+
+	//////////////////////////////////////		STATE
+	type _symbol_type;
+	floyd::typeid_t _value_type;
+	floyd::bc_value_t _const_value;
 };
 
 
@@ -1089,7 +1090,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
 		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_vector());
-		QUARK_ASSERT(encode_as_vector_w_inplace_element(_current_frame_ptr->_symbols[reg].second._value_type) == false);
+		QUARK_ASSERT(encode_as_vector_w_inplace_elements(_current_frame_ptr->_symbols[reg].second._value_type) == false);
 		return true;
 	}
 
@@ -1097,7 +1098,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
 		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_vector());
-		QUARK_ASSERT(encode_as_vector_w_inplace_element(_current_frame_ptr->_symbols[reg].second._value_type) == true);
+		QUARK_ASSERT(encode_as_vector_w_inplace_elements(_current_frame_ptr->_symbols[reg].second._value_type) == true);
 		return true;
 	}
 

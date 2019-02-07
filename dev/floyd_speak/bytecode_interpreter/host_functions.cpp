@@ -527,8 +527,8 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 		}
 	}
 	else if(obj._type.is_vector()){
-		if(encode_as_vector_w_inplace_element(obj._type)){
-			const auto size = obj._pod._external->_vector_pod64.size();
+		if(encode_as_vector_w_inplace_elements(obj._type)){
+			const auto size = obj._pod._external->_vector_w_inplace_elements.size();
 			return bc_value_t::make_int(static_cast<int>(size));
 		}
 		else{
@@ -538,7 +538,7 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	}
 	else if(obj._type.is_dict()){
 		if(encode_as_dict_w_inplace_values(obj._type)){
-			const auto size = obj._pod._external->_dict_pod64.size();
+			const auto size = obj._pod._external->_dict_w_inplace_values.size();
 			return bc_value_t::make_int(static_cast<int>(size));
 		}
 		else{
@@ -574,7 +574,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 			quark::throw_runtime_error("Type mismatch.");
 		}
 		else if(obj._type.get_vector_element_type().is_bool()){
-			const auto& vec = obj._pod._external->_vector_pod64;
+			const auto& vec = obj._pod._external->_vector_w_inplace_elements;
 			int index = 0;
 			const auto size = vec.size();
 			while(index < size && vec[index]._bool != wanted._pod._inplace._bool){
@@ -584,7 +584,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 			return bc_value_t::make_int(result);
 		}
 		else if(obj._type.get_vector_element_type().is_int()){
-			const auto& vec = obj._pod._external->_vector_pod64;
+			const auto& vec = obj._pod._external->_vector_w_inplace_elements;
 			int index = 0;
 			const auto size = vec.size();
 			while(index < size && vec[index]._int64 != wanted._pod._inplace._int64){
@@ -594,7 +594,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 			return bc_value_t::make_int(result);
 		}
 		else if(obj._type.get_vector_element_type().is_double()){
-			const auto& vec = obj._pod._external->_vector_pod64;
+			const auto& vec = obj._pod._external->_vector_w_inplace_elements;
 			int index = 0;
 			const auto size = vec.size();
 			while(index < size && vec[index]._double != wanted._pod._inplace._double){
@@ -604,7 +604,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 			return bc_value_t::make_int(result);
 		}
 		else{
-			const auto& vec = *get_vector_value(obj);
+			const auto& vec = *get_vector_external_elements(obj);
 			const auto size = vec.size();
 			int index = 0;
 			while(index < size && bc_compare_value_exts(vec[index], bc_external_handle_t(wanted), element_type) != 0){
@@ -637,7 +637,7 @@ bc_value_t host__exists(interpreter_t& vm, const bc_value_t args[], int arg_coun
 		const auto key_string = key.get_string_value();
 
 		if(encode_as_dict_w_inplace_values(obj._type)){
-			const auto found_ptr = obj._pod._external->_dict_pod64.find(key_string);
+			const auto found_ptr = obj._pod._external->_dict_w_inplace_values.find(key_string);
 			return bc_value_t::make_bool(found_ptr != nullptr);
 		}
 		else{
@@ -666,14 +666,14 @@ bc_value_t host__erase(interpreter_t& vm, const bc_value_t args[], int arg_count
 
 		const auto value_type = obj._type.get_dict_value_type();
 		if(encode_as_dict_w_inplace_values(obj._type)){
-			auto entries2 = obj._pod._external->_dict_pod64.erase(key_string);
-			const auto value2 = make_dict_value(value_type, entries2);
+			auto entries2 = obj._pod._external->_dict_w_inplace_values.erase(key_string);
+			const auto value2 = make_dict(value_type, entries2);
 			return value2;
 		}
 		else{
 			auto entries2 = get_dict_value(obj);
 			entries2 = entries2.erase(key_string);
-			const auto value2 = make_dict_value(value_type, entries2);
+			const auto value2 = make_dict(value_type, entries2);
 			return value2;
 		}
 	}
@@ -704,9 +704,9 @@ bc_value_t host__push_back(interpreter_t& vm, const bc_value_t args[], int arg_c
 		if(element._type != element_type){
 			quark::throw_runtime_error("Type mismatch.");
 		}
-		else if(encode_as_vector_w_inplace_element(obj._type)){
-			auto elements2 = obj._pod._external->_vector_pod64.push_back(element._pod._pod64);
-			const auto v = make_vector_int64_value(element_type, elements2);
+		else if(encode_as_vector_w_inplace_elements(obj._type)){
+			auto elements2 = obj._pod._external->_vector_w_inplace_elements.push_back(element._pod._pod64);
+			const auto v = make_vector(element_type, elements2);
 			return v;
 		}
 		else{
@@ -751,20 +751,20 @@ bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_coun
 		return v;
 	}
 	else if(obj._type.is_vector()){
-		if(encode_as_vector_w_inplace_element(obj._type)){
+		if(encode_as_vector_w_inplace_elements(obj._type)){
 			const auto& element_type = obj._type.get_vector_element_type();
-			const auto& vec = obj._pod._external->_vector_pod64;
+			const auto& vec = obj._pod._external->_vector_w_inplace_elements;
 			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
 			immer::vector<bc_inplace_value_t> elements2;
 			for(auto i = start2 ; i < end2 ; i++){
 				elements2 = elements2.push_back(vec[i]);
 			}
-			const auto v = make_vector_int64_value(element_type, elements2);
+			const auto v = make_vector(element_type, elements2);
 			return v;
 		}
 		else{
-			const auto vec = *get_vector_value(obj);
+			const auto& vec = obj._pod._external->_vector_w_external_elements;
 			const auto element_type = obj._type.get_vector_element_type();
 			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
@@ -772,7 +772,7 @@ bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_coun
 			for(auto i = start2 ; i < end2 ; i++){
 				elements2 = elements2.push_back(vec[i]);
 			}
-			const auto v = make_vector_value(element_type, elements2);
+			const auto v = make_vector(element_type, elements2);
 			return v;
 		}
 	}
@@ -811,12 +811,12 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 		return v;
 	}
 	else if(obj._type.is_vector()){
-		if(encode_as_vector_w_inplace_element(obj._type)){
-			const auto& vec = obj._pod._external->_vector_pod64;
+		if(encode_as_vector_w_inplace_elements(obj._type)){
+			const auto& vec = obj._pod._external->_vector_w_inplace_elements;
 			const auto element_type = obj._type.get_vector_element_type();
 			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
-			const auto& new_bits = args[3]._pod._external->_vector_pod64;
+			const auto& new_bits = args[3]._pod._external->_vector_w_inplace_elements;
 
 			auto result = immer::vector<bc_inplace_value_t>(vec.begin(), vec.begin() + start2);
 			for(int i = 0 ; i < new_bits.size() ; i++){
@@ -825,15 +825,15 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 			for(int i = 0 ; i < (vec.size( ) - end2) ; i++){
 				result = result.push_back(vec[end2 + i]);
 			}
-			const auto v = make_vector_int64_value(element_type, result);
+			const auto v = make_vector(element_type, result);
 			return v;
 		}
 		else{
-			const auto& vec = *get_vector_value(obj);
+			const auto& vec = obj._pod._external->_vector_w_external_elements;
 			const auto element_type = obj._type.get_vector_element_type();
 			const auto start2 = std::min(start, static_cast<int64_t>(vec.size()));
 			const auto end2 = std::min(end, static_cast<int64_t>(vec.size()));
-			const auto& new_bits = *get_vector_value(args[3]);
+			const auto& new_bits = args[3]._pod._external->_vector_w_external_elements;
 
 			auto result = immer::vector<bc_external_handle_t>(vec.begin(), vec.begin() + start2);
 			for(int i = 0 ; i < new_bits.size() ; i++){
@@ -842,7 +842,7 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 			for(int i = 0 ; i < (vec.size( ) - end2) ; i++){
 				result = result.push_back(vec[end2 + i]);
 			}
-			const auto v = make_vector_value(element_type, result);
+			const auto v = make_vector(element_type, result);
 			return v;
 		}
 	}

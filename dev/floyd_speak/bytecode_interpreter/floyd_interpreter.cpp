@@ -96,22 +96,22 @@ value_t bc_to_value(const bc_value_t& value){
 		const auto& element_type  = type.get_vector_element_type();
 		vector<value_t> vec2;
 		if(element_type.is_bool()){
-			for(const auto e: value._pod._external->_vector_pod64){
+			for(const auto e: value._pod._external->_vector_w_inplace_elements){
 				vec2.push_back(value_t::make_bool(e._bool));
 			}
 		}
 		else if(element_type.is_int()){
-			for(const auto e: value._pod._external->_vector_pod64){
+			for(const auto e: value._pod._external->_vector_w_inplace_elements){
 				vec2.push_back(value_t::make_int(e._int64));
 			}
 		}
 		else if(element_type.is_double()){
-			for(const auto e: value._pod._external->_vector_pod64){
+			for(const auto e: value._pod._external->_vector_w_inplace_elements){
 				vec2.push_back(value_t::make_double(e._double));
 			}
 		}
 		else{
-			for(const auto& e: value._pod._external->_vector_objects){
+			for(const auto& e: value._pod._external->_vector_w_external_elements){
 				QUARK_ASSERT(e.check_invariant());
 				vec2.push_back(bc_to_value(bc_value_t(element_type, e)));
 			}
@@ -122,22 +122,22 @@ value_t bc_to_value(const bc_value_t& value){
 		const auto& value_type  = type.get_dict_value_type();
 		std::map<string, value_t> entries2;
 		if(value_type.is_bool()){
-			for(const auto& e: value._pod._external->_dict_pod64){
+			for(const auto& e: value._pod._external->_dict_w_inplace_values){
 				entries2.insert({ e.first, value_t::make_bool(e.second._bool) });
 			}
 		}
 		else if(value_type.is_int()){
-			for(const auto& e: value._pod._external->_dict_pod64){
+			for(const auto& e: value._pod._external->_dict_w_inplace_values){
 				entries2.insert({ e.first, value_t::make_int(e.second._int64) });
 			}
 		}
 		else if(value_type.is_double()){
-			for(const auto& e: value._pod._external->_dict_pod64){
+			for(const auto& e: value._pod._external->_dict_w_inplace_values){
 				entries2.insert({ e.first, value_t::make_double(e.second._double) });
 			}
 		}
 		else{
-			for(const auto& e: value._pod._external->_dict_objects){
+			for(const auto& e: value._pod._external->_dict_w_external_values){
 				entries2.insert({ e.first, bc_to_value(bc_value_t(value_type, e.second)) });
 			}
 		}
@@ -199,7 +199,7 @@ bc_value_t value_to_bc(const value_t& value){
 		const auto vector_type = value.get_type();
 		const auto element_type = vector_type.get_vector_element_type();
 
-		if(encode_as_vector_w_inplace_element(vector_type)){
+		if(encode_as_vector_w_inplace_elements(vector_type)){
 			const auto& vec = value.get_vector_value();
 			immer::vector<bc_inplace_value_t> vec2;
 			if(element_type.is_bool()){
@@ -217,7 +217,7 @@ bc_value_t value_to_bc(const value_t& value){
 					vec2.push_back(bc_inplace_value_t{._double = e.get_double_value()});
 				}
 			}
-			return make_vector_int64_value(element_type, vec2);
+			return make_vector(element_type, vec2);
 		}
 		else{
 			const auto& vec = value.get_vector_value();
@@ -227,7 +227,7 @@ bc_value_t value_to_bc(const value_t& value){
 				const auto hand = bc_external_handle_t(bc);
 				vec2 =vec2.push_back(hand);
 			}
-			return make_vector_value(element_type, vec2);
+			return make_vector(element_type, vec2);
 		}
 	}
 	else if(basetype == base_type::k_dict){
@@ -239,7 +239,7 @@ bc_value_t value_to_bc(const value_t& value){
 		for(const auto& e: elements){
 			entries2 = entries2.insert({e.first, bc_external_handle_t(value_to_bc(e.second))});
 		}
-		return make_dict_value(value_type, entries2);
+		return make_dict(value_type, entries2);
 	}
 	else if(basetype == base_type::k_function){
 		return bc_value_t::make_function_value(value.get_type(), value.get_function_value());
@@ -310,7 +310,7 @@ bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, 
 		const auto& element_type = type.get_vector_element_type();
 		QUARK_ASSERT(element_type.is_undefined() == false);
 
-		return bc_value_t::make_vector_value(element_type, arg_values);
+		return bc_value_t::make_vector(element_type, arg_values);
 	}
 	else if(type.is_dict()){
 		const auto& element_type = type.get_dict_value_type();

@@ -292,7 +292,7 @@ bc_value_t::bc_value_t(const typeid_t& type, const bc_pod_value_t& internals) :
 	QUARK_ASSERT(type.check_invariant());
 #if QUARK_ASSERT_ON
 	if(encode_as_external(type)){
-		QUARK_ASSERT(check_ext_deep(type, internals._external));
+		QUARK_ASSERT(check_external_deep(type, internals._external));
 	}
 #endif
 
@@ -330,7 +330,7 @@ bc_value_t::bc_value_t(const typeid_t& type, const bc_external_handle_t& handle)
 bool bc_value_t::check_invariant() const {
 	QUARK_ASSERT(_type.check_invariant());
 	if(encode_as_external(_type)){
-		QUARK_ASSERT(check_ext_deep(_type, _pod._external))
+		QUARK_ASSERT(check_external_deep(_type, _pod._external))
 	}
 
 	return true;
@@ -344,7 +344,9 @@ bc_value_t::bc_value_t(const typeid_t& type, mode mode) :
 
 	//	Allocate a dummy external value.
 	auto temp = new bc_external_value_t{"UNWRITTEN EXT VALUE"};
-	temp->_is_unwritten_ext_value = true;
+#if DEBUG
+	temp->_debug__is_unwritten_external_value = true;
+#endif
 	_pod._external = temp;
 
 	QUARK_ASSERT(check_invariant());
@@ -422,16 +424,10 @@ bool bc_external_handle_t::check_invariant() const {
 }
 
 
-
-
-
-
-
-
 bool encode_as_inplace(const typeid_t& type){
 	return type.is_bool() || type.is_int() || type.is_double();
 }
-bool encode_as_vector_w_inplace_element(const typeid_t& type){
+bool encode_as_vector_w_inplace_elements(const typeid_t& type){
 	return type.is_vector() && encode_as_inplace(type.get_vector_element_type());
 }
 
@@ -538,7 +534,7 @@ bool bc_external_value_t::check_invariant() const{
 	QUARK_ASSERT(_debug_type.check_invariant());
 	QUARK_ASSERT(_typeid_value.check_invariant());
 
-	QUARK_ASSERT(check_ext_deep(_debug_type, this));
+	QUARK_ASSERT(check_external_deep(_debug_type, this));
 
 	const auto encoding = type_to_encoding(_debug_type);
 	if(encoding == value_encoding::k_external__string){
@@ -546,20 +542,20 @@ bool bc_external_value_t::check_invariant() const{
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
-		QUARK_ASSERT(_vector_objects.empty());
-		QUARK_ASSERT(_vector_pod64.empty());
-		QUARK_ASSERT(_dict_objects.size() == 0);
-		QUARK_ASSERT(_dict_pod64.size() == 0);
+		QUARK_ASSERT(_vector_w_external_elements.empty());
+		QUARK_ASSERT(_vector_w_inplace_elements.empty());
+		QUARK_ASSERT(_dict_w_external_values.size() == 0);
+		QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
 	}
 	else if(encoding == value_encoding::k_external__json_value){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json_value != nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
-		QUARK_ASSERT(_vector_objects.empty());
-		QUARK_ASSERT(_vector_pod64.empty());
-		QUARK_ASSERT(_dict_objects.size() == 0);
-		QUARK_ASSERT(_dict_pod64.size() == 0);
+		QUARK_ASSERT(_vector_w_external_elements.empty());
+		QUARK_ASSERT(_vector_w_inplace_elements.empty());
+		QUARK_ASSERT(_dict_w_external_values.size() == 0);
+		QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
 
 		QUARK_ASSERT(_json_value->check_invariant());
 	}
@@ -568,10 +564,10 @@ bool bc_external_value_t::check_invariant() const{
 		QUARK_ASSERT(_json_value == nullptr);
 //		QUARK_ASSERT(_typeid_value != typeid_t::make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
-		QUARK_ASSERT(_vector_objects.empty());
-		QUARK_ASSERT(_vector_pod64.empty());
-		QUARK_ASSERT(_dict_objects.size() == 0);
-		QUARK_ASSERT(_dict_pod64.size() == 0);
+		QUARK_ASSERT(_vector_w_external_elements.empty());
+		QUARK_ASSERT(_vector_w_inplace_elements.empty());
+		QUARK_ASSERT(_dict_w_external_values.size() == 0);
+		QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
 
 		QUARK_ASSERT(_typeid_value.check_invariant());
 	}
@@ -580,10 +576,10 @@ bool bc_external_value_t::check_invariant() const{
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 //				QUARK_ASSERT(_struct != nullptr);
-		QUARK_ASSERT(_vector_objects.empty());
-		QUARK_ASSERT(_vector_pod64.empty());
-		QUARK_ASSERT(_dict_objects.size() == 0);
-		QUARK_ASSERT(_dict_pod64.size() == 0);
+		QUARK_ASSERT(_vector_w_external_elements.empty());
+		QUARK_ASSERT(_vector_w_inplace_elements.empty());
+		QUARK_ASSERT(_dict_w_external_values.size() == 0);
+		QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
 
 //				QUARK_ASSERT(_struct && _struct->check_invariant());
 	}
@@ -592,29 +588,29 @@ bool bc_external_value_t::check_invariant() const{
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
-//		QUARK_ASSERT(_vector_objects.empty());
-		QUARK_ASSERT(_vector_pod64.empty());
-		QUARK_ASSERT(_dict_objects.size() == 0);
-		QUARK_ASSERT(_dict_pod64.size() == 0);
+//		QUARK_ASSERT(_vector_w_external_elements.empty());
+		QUARK_ASSERT(_vector_w_inplace_elements.empty());
+		QUARK_ASSERT(_dict_w_external_values.size() == 0);
+		QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
 	}
 	else if(encoding == value_encoding::k_external__vector_pod64){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
-		QUARK_ASSERT(_vector_objects.empty());
-		QUARK_ASSERT(_dict_objects.size() == 0);
-		QUARK_ASSERT(_dict_pod64.size() == 0);
+		QUARK_ASSERT(_vector_w_external_elements.empty());
+		QUARK_ASSERT(_dict_w_external_values.size() == 0);
+		QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
 	}
 	else if(encoding == value_encoding::k_external__dict){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json_value == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
-		QUARK_ASSERT(_vector_objects.empty());
-		QUARK_ASSERT(_vector_pod64.empty());
-//				QUARK_ASSERT(_dict_objects.size() == 0);
-//				QUARK_ASSERT(_dict_pod64.size() == 0);
+		QUARK_ASSERT(_vector_w_external_elements.empty());
+		QUARK_ASSERT(_vector_w_inplace_elements.empty());
+//				QUARK_ASSERT(_dict_w_external_values.size() == 0);
+//				QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
 	}
 	else {
 		QUARK_ASSERT(false);
@@ -681,7 +677,7 @@ bc_external_value_t::bc_external_value_t(const typeid_t& type, const immer::vect
 #if DEBUG
 	_debug_type(type),
 #endif
-	_vector_objects(s)
+	_vector_w_external_elements(s)
 {
 	QUARK_ASSERT(type.check_invariant());
 	#if QUARK_ASSERT_ON
@@ -696,7 +692,7 @@ bc_external_value_t::bc_external_value_t(const typeid_t& type, const immer::vect
 #if DEBUG
 	_debug_type(type),
 #endif
-	_vector_pod64(s)
+	_vector_w_inplace_elements(s)
 {
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(check_invariant());
@@ -706,7 +702,7 @@ bc_external_value_t::bc_external_value_t(const typeid_t& type, const immer::map<
 #if DEBUG
 	_debug_type(type),
 #endif
-	_dict_objects(s)
+	_dict_w_external_values(s)
 {
 	QUARK_ASSERT(type.check_invariant());
 	#if QUARK_ASSERT_ON
@@ -722,7 +718,7 @@ bc_external_value_t::bc_external_value_t(const typeid_t& type, const immer::map<
 #if DEBUG
 	_debug_type(type),
 #endif
-	_dict_pod64(s)
+	_dict_w_inplace_values(s)
 {
 	QUARK_ASSERT(type.check_invariant());
 	#if QUARK_ASSERT_ON
@@ -736,7 +732,7 @@ bc_external_value_t::bc_external_value_t(const typeid_t& type, const immer::map<
 
 
 
-bool check_ext_deep(const typeid_t& type, const bc_external_value_t* ext){
+bool check_external_deep(const typeid_t& type, const bc_external_value_t* ext){
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(encode_as_external(type));
 	QUARK_ASSERT(ext != nullptr);
@@ -756,7 +752,7 @@ bool check_ext_deep(const typeid_t& type, const bc_external_value_t* ext){
 	else if(basetype == base_type::k_vector){
 		const auto& element_type  = type.get_vector_element_type();
 		if(encode_as_external(element_type)){
-			for(const auto& e: ext->_vector_objects){
+			for(const auto& e: ext->_vector_w_external_elements){
 				QUARK_ASSERT(e.check_invariant());
 			}
 			return true;
@@ -768,7 +764,7 @@ bool check_ext_deep(const typeid_t& type, const bc_external_value_t* ext){
 	else if(basetype == base_type::k_dict){
 		const auto& element_type  = type.get_dict_value_type();
 		if(encode_as_external(element_type)){
-			for(const auto& e: ext->_vector_objects){
+			for(const auto& e: ext->_vector_w_external_elements){
 				QUARK_ASSERT(e.check_invariant());
 			}
 			return true;
@@ -805,9 +801,9 @@ const immer::vector<bc_value_t> get_vector(const bc_value_t& value){
 
 	const auto element_type = value._type.get_vector_element_type();
 
-	if(encode_as_vector_w_inplace_element(value._type)){
+	if(encode_as_vector_w_inplace_elements(value._type)){
 		immer::vector<bc_value_t> result;
-		for(const auto& e: value._pod._external->_vector_pod64){
+		for(const auto& e: value._pod._external->_vector_w_inplace_elements){
 			bc_value_t temp(element_type, e);
 			result = result.push_back(temp);
 		}
@@ -815,7 +811,7 @@ const immer::vector<bc_value_t> get_vector(const bc_value_t& value){
 	}
 	else{
 		immer::vector<bc_value_t> result;
-		for(const auto& e: value._pod._external->_vector_objects){
+		for(const auto& e: value._pod._external->_vector_w_external_elements){
 			bc_value_t temp(element_type, e);
 			result = result.push_back(temp);
 		}
@@ -825,20 +821,20 @@ const immer::vector<bc_value_t> get_vector(const bc_value_t& value){
 
 
 
-const immer::vector<bc_external_handle_t>* get_vector_value(const bc_value_t& value){
+const immer::vector<bc_external_handle_t>* get_vector_external_elements(const bc_value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value._type.is_vector());
-	QUARK_ASSERT(encode_as_vector_w_inplace_element(value._type) == false);
+	QUARK_ASSERT(encode_as_vector_w_inplace_elements(value._type) == false);
 
-	return &value._pod._external->_vector_objects;
+	return &value._pod._external->_vector_w_external_elements;
 }
 
-const immer::vector<bc_inplace_value_t>* get_vector_value_pods(const bc_value_t& value){
+const immer::vector<bc_inplace_value_t>* get_vector_inplace_elements(const bc_value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value._type.is_vector());
-	QUARK_ASSERT(encode_as_vector_w_inplace_element(value._type) == true);
+	QUARK_ASSERT(encode_as_vector_w_inplace_elements(value._type) == true);
 
-	return &value._pod._external->_vector_pod64;
+	return &value._pod._external->_vector_w_inplace_elements;
 }
 
 bc_value_t make_vector(const typeid_t& element_type, const immer::vector<bc_value_t>& elements){
@@ -850,7 +846,7 @@ bc_value_t make_vector(const typeid_t& element_type, const immer::vector<bc_valu
 #endif
 
 	const auto vector_type = typeid_t::make_vector(element_type);
-	if(encode_as_vector_w_inplace_element(vector_type)){
+	if(encode_as_vector_w_inplace_elements(vector_type)){
 		immer::vector<bc_inplace_value_t> elements2;
 		for(const auto& e: elements){
 			elements2 = elements2.push_back(e._pod._inplace);
@@ -876,7 +872,7 @@ bc_value_t make_vector(const typeid_t& element_type, const immer::vector<bc_valu
 	}
 }
 
-bc_value_t make_vector_value(const typeid_t& element_type, const immer::vector<bc_external_handle_t>& elements){
+bc_value_t make_vector(const typeid_t& element_type, const immer::vector<bc_external_handle_t>& elements){
 	QUARK_ASSERT(element_type.check_invariant());
 #if QUARK_ASSERT_ON
 	for(const auto& e: elements) {
@@ -885,7 +881,7 @@ bc_value_t make_vector_value(const typeid_t& element_type, const immer::vector<b
 #endif
 
 	const auto vector_type = typeid_t::make_vector(element_type);
-	QUARK_ASSERT(encode_as_vector_w_inplace_element(vector_type) == false);
+	QUARK_ASSERT(encode_as_vector_w_inplace_elements(vector_type) == false);
 
 	bc_value_t temp;
 	temp._type = vector_type;
@@ -894,11 +890,11 @@ bc_value_t make_vector_value(const typeid_t& element_type, const immer::vector<b
 	return temp;
 }
 
-bc_value_t make_vector_int64_value(const typeid_t& element_type, const immer::vector<bc_inplace_value_t>& elements){
+bc_value_t make_vector(const typeid_t& element_type, const immer::vector<bc_inplace_value_t>& elements){
 	QUARK_ASSERT(element_type.check_invariant());
 
 	const auto vector_type = typeid_t::make_vector(element_type);
-	QUARK_ASSERT(encode_as_vector_w_inplace_element(vector_type) == true);
+	QUARK_ASSERT(encode_as_vector_w_inplace_elements(vector_type) == true);
 
 	bc_value_t temp;
 	temp._type = vector_type;
@@ -914,10 +910,10 @@ bc_value_t make_vector_int64_value(const typeid_t& element_type, const immer::ve
 const immer::map<std::string, bc_external_handle_t>& get_dict_value(const bc_value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 
-	return value._pod._external->_dict_objects;
+	return value._pod._external->_dict_w_external_values;
 }
 
-bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_external_handle_t>& entries){
+bc_value_t make_dict(const typeid_t& value_type, const immer::map<std::string, bc_external_handle_t>& entries){
 	QUARK_ASSERT(value_type.check_invariant());
 #if QUARK_ASSERT_ON
 	for(const auto& e: entries) {
@@ -933,7 +929,7 @@ bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::str
 	return temp;
 }
 
-bc_value_t make_dict_value(const typeid_t& value_type, const immer::map<std::string, bc_inplace_value_t>& entries){
+bc_value_t make_dict(const typeid_t& value_type, const immer::map<std::string, bc_inplace_value_t>& entries){
 	QUARK_ASSERT(value_type.check_invariant());
 
 	bc_value_t temp;
@@ -1102,21 +1098,21 @@ bc_value_t update_vector_element(interpreter_t& vm, const bc_value_t vec, int64_
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
 	const auto element_type = vec._type.get_vector_element_type();
-	if(encode_as_vector_w_inplace_element(vec._type)){
-		auto v2 = vec._pod._external->_vector_pod64;
+	if(encode_as_vector_w_inplace_elements(vec._type)){
+		auto v2 = vec._pod._external->_vector_w_inplace_elements;
 
 		if(lookup_index < 0 || lookup_index >= v2.size()){
 			quark::throw_runtime_error("Vector lookup out of bounds.");
 		}
 		else{
 			v2 = v2.set(lookup_index, value._pod._inplace);
-			const auto s2 = make_vector_int64_value(element_type, v2);
+			const auto s2 = make_vector(element_type, v2);
 			return s2;
 		}
 	}
 	else{
 		const auto obj = vec;
-		auto v2 = *get_vector_value(obj);
+		auto v2 = *get_vector_external_elements(obj);
 		if(lookup_index < 0 || lookup_index >= v2.size()){
 			quark::throw_runtime_error("Vector lookup out of bounds.");
 		}
@@ -1126,7 +1122,7 @@ bc_value_t update_vector_element(interpreter_t& vm, const bc_value_t vec, int64_
 			QUARK_ASSERT(encode_as_external(value._type));
 			const auto e = bc_external_handle_t(value);
 			v2 = v2.set(lookup_index, e);
-			const auto s2 = make_vector_value(element_type, v2);
+			const auto s2 = make_vector(element_type, v2);
 
 //			QUARK_TRACE_SS("bc2:  " << json_to_pretty_string(bcvalue_to_json(s2)));
 			return s2;
@@ -1147,14 +1143,14 @@ bc_value_t update_dict_entry(interpreter_t& vm, const bc_value_t dict, const std
 	const auto value_type = dict._type.get_dict_value_type();
 
 	if(encode_as_dict_w_inplace_values(dict._type)){
-		auto entries2 = dict._pod._external->_dict_pod64.set(key, value._pod._inplace);
-		const auto value2 = make_dict_value(value_type, entries2);
+		auto entries2 = dict._pod._external->_dict_w_inplace_values.set(key, value._pod._inplace);
+		const auto value2 = make_dict(value_type, entries2);
 		return value2;
 	}
 	else{
 		const auto entries = get_dict_value(dict);
 		auto entries2 = entries.set(key, bc_external_handle_t(value));
-		const auto value2 = make_dict_value(value_type, entries2);
+		const auto value2 = make_dict(value_type, entries2);
 		return value2;
 	}
 }
@@ -1706,17 +1702,17 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 		if(false){
 		}
 		else if(type.get_vector_element_type().is_bool()){
-			return bc_compare_vectors_bool(left._pod._external->_vector_pod64, right._pod._external->_vector_pod64);
+			return bc_compare_vectors_bool(left._pod._external->_vector_w_inplace_elements, right._pod._external->_vector_w_inplace_elements);
 		}
 		else if(type.get_vector_element_type().is_int()){
-			return bc_compare_vectors_int(left._pod._external->_vector_pod64, right._pod._external->_vector_pod64);
+			return bc_compare_vectors_int(left._pod._external->_vector_w_inplace_elements, right._pod._external->_vector_w_inplace_elements);
 		}
 		else if(type.get_vector_element_type().is_double()){
-			return bc_compare_vectors_double(left._pod._external->_vector_pod64, right._pod._external->_vector_pod64);
+			return bc_compare_vectors_double(left._pod._external->_vector_w_inplace_elements, right._pod._external->_vector_w_inplace_elements);
 		}
 		else{
-			const auto& left_vec = get_vector_value(left);
-			const auto& right_vec = get_vector_value(right);
+			const auto& left_vec = get_vector_external_elements(left);
+			const auto& right_vec = get_vector_external_elements(right);
 			return bc_compare_vectors_obj(*left_vec, *right_vec, type0);
 		}
 	}
@@ -1724,13 +1720,13 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 		if(false){
 		}
 		else if(type.get_dict_value_type().is_bool()){
-			return bc_compare_dicts_bool(left._pod._external->_dict_pod64, right._pod._external->_dict_pod64);
+			return bc_compare_dicts_bool(left._pod._external->_dict_w_inplace_values, right._pod._external->_dict_w_inplace_values);
 		}
 		else if(type.get_dict_value_type().is_int()){
-			return bc_compare_dicts_int(left._pod._external->_dict_pod64, right._pod._external->_dict_pod64);
+			return bc_compare_dicts_int(left._pod._external->_dict_w_inplace_values, right._pod._external->_dict_w_inplace_values);
 		}
 		else if(type.get_dict_value_type().is_double()){
-			return bc_compare_dicts_double(left._pod._external->_dict_pod64, right._pod._external->_dict_pod64);
+			return bc_compare_dicts_double(left._pod._external->_dict_w_inplace_values, right._pod._external->_dict_w_inplace_values);
 		}
 		else  {
 			const auto& left2 = get_dict_value(left);
@@ -2111,7 +2107,7 @@ json_t interpreter_stack_t::stack_to_json() const{
 		const auto bc_pod = _entries[i];
 		const auto bc = bc_value_t(debug_type, bc_pod);
 
-		bool unwritten = ext && bc._pod._external->_is_unwritten_ext_value;
+		bool unwritten = ext && bc._pod._external->_debug__is_unwritten_external_value;
 
 		auto a = json_t::make_array({
 			json_t(i),
@@ -2258,25 +2254,25 @@ json_t bcvalue_to_json(const bc_value_t& v){
 
 		std::vector<json_t> result;
 		if(element_type.is_bool()){
-			for(int i = 0 ; i < v._pod._external->_vector_pod64.size() ; i++){
-				const auto element_value2 = v._pod._external->_vector_pod64[i]._bool;
+			for(int i = 0 ; i < v._pod._external->_vector_w_inplace_elements.size() ; i++){
+				const auto element_value2 = v._pod._external->_vector_w_inplace_elements[i]._bool;
 				result.push_back(json_t(element_value2));
 			}
 		}
 		else if(element_type.is_int()){
-			for(int i = 0 ; i < v._pod._external->_vector_pod64.size() ; i++){
-				const auto element_value2 = v._pod._external->_vector_pod64[i]._int64;
+			for(int i = 0 ; i < v._pod._external->_vector_w_inplace_elements.size() ; i++){
+				const auto element_value2 = v._pod._external->_vector_w_inplace_elements[i]._int64;
 				result.push_back(json_t(element_value2));
 			}
 		}
 		else if(element_type.is_double()){
-			for(int i = 0 ; i < v._pod._external->_vector_pod64.size() ; i++){
-				const auto element_value2 = v._pod._external->_vector_pod64[i]._double;
+			for(int i = 0 ; i < v._pod._external->_vector_w_inplace_elements.size() ; i++){
+				const auto element_value2 = v._pod._external->_vector_w_inplace_elements[i]._double;
 				result.push_back(json_t(element_value2));
 			}
 		}
 		else{
-			const auto vec = get_vector_value(v);
+			const auto vec = get_vector_external_elements(v);
 			for(int i = 0 ; i < vec->size() ; i++){
 				const auto element_value2 = vec->operator[](i);
 				result.push_back(bcvalue_to_json(bc_value_t(element_type, element_value2)));
@@ -2457,7 +2453,7 @@ void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_
 
 	const auto& target_type = lookup_full_type(vm, target_itype);
 	QUARK_ASSERT(target_type.is_vector());
-	QUARK_ASSERT(encode_as_vector_w_inplace_element(target_type) == false);
+	QUARK_ASSERT(encode_as_vector_w_inplace_elements(target_type) == false);
 
 	const auto& element_type = target_type.get_vector_element_type();
 	QUARK_ASSERT(element_type.is_undefined() == false);
@@ -2474,7 +2470,7 @@ void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_
 		elements2 = elements2.push_back(e);
 	}
 
-	const auto result = make_vector_value(element_type, elements2);
+	const auto result = make_vector(element_type, elements2);
 	vm._stack.write_register_obj(dest_reg, result);
 }
 
@@ -2501,7 +2497,7 @@ void execute_new_dict_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_it
 		elements2 = elements2.insert({ key2, bc_external_handle_t(value) });
 	}
 
-	const auto result = make_dict_value(element_type, elements2);
+	const auto result = make_dict(element_type, elements2);
 	vm._stack.write_register_obj(dest_reg, result);
 }
 void execute_new_dict_pod64(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
@@ -2527,7 +2523,7 @@ void execute_new_dict_pod64(interpreter_t& vm, int16_t dest_reg, int16_t target_
 		elements2 = elements2.insert({ key2, value._pod._inplace });
 	}
 
-	const auto result = make_dict_value(element_type, elements2);
+	const auto result = make_dict(element_type, elements2);
 	vm._stack.write_register_obj(dest_reg, result);
 }
 
@@ -2960,7 +2956,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_vector_obj(i._b));
 			QUARK_ASSERT(stack.check_reg_int(i._c));
 
-			const auto& vec = regs[i._b]._external->_vector_objects;
+			const auto& vec = regs[i._b]._external->_vector_w_external_elements;
 			const auto lookup_index = regs[i._c]._inplace._int64;
 			if(lookup_index < 0 || lookup_index >= vec.size()){
 				quark::throw_runtime_error("Lookup in vector: out of bounds.");
@@ -2980,7 +2976,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_vector_pod64(i._b));
 			QUARK_ASSERT(stack.check_reg_int(i._c));
 
-			const auto& vec = regs[i._b]._external->_vector_pod64;
+			const auto& vec = regs[i._b]._external->_vector_w_inplace_elements;
 			const auto lookup_index = regs[i._c]._inplace._int64;
 			if(lookup_index < 0 || lookup_index >= vec.size()){
 				quark::throw_runtime_error("Lookup in vector: out of bounds.");
@@ -2997,7 +2993,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_dict_obj(i._b));
 			QUARK_ASSERT(stack.check_reg_string(i._c));
 
-			const auto& entries = regs[i._b]._external->_dict_objects;
+			const auto& entries = regs[i._b]._external->_dict_w_external_values;
 			const auto& lookup_key = regs[i._c]._external->_string;
 			const auto found_ptr = entries.find(lookup_key);
 			if(found_ptr == nullptr){
@@ -3016,7 +3012,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_dict_pod64(i._b));
 			QUARK_ASSERT(stack.check_reg_string(i._c));
 
-			const auto& entries = regs[i._b]._external->_dict_pod64;
+			const auto& entries = regs[i._b]._external->_dict_w_inplace_values;
 			const auto& lookup_key = regs[i._c]._external->_string;
 			const auto found_ptr = entries.find(lookup_key);
 			if(found_ptr == nullptr){
@@ -3035,7 +3031,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_vector_obj(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			regs[i._a]._inplace._int64 = regs[i._b]._external->_vector_objects.size();
+			regs[i._a]._inplace._int64 = regs[i._b]._external->_vector_w_external_elements.size();
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
@@ -3045,7 +3041,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_vector_pod64(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			regs[i._a]._inplace._int64 = regs[i._b]._external->_vector_pod64.size();
+			regs[i._a]._inplace._int64 = regs[i._b]._external->_vector_w_inplace_elements.size();
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
@@ -3057,7 +3053,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_dict_obj(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			regs[i._a]._inplace._int64 = regs[i._b]._external->_dict_objects.size();
+			regs[i._a]._inplace._int64 = regs[i._b]._external->_dict_w_external_values.size();
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
@@ -3067,7 +3063,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_dict_pod64(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			regs[i._a]._inplace._int64 = regs[i._b]._external->_dict_pod64.size();
+			regs[i._a]._inplace._int64 = regs[i._b]._external->_dict_w_inplace_values.size();
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
@@ -3116,9 +3112,9 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto& element_type = type.get_vector_element_type();
 
-			auto elements2 = regs[i._b]._external->_vector_objects.push_back(bc_external_handle_t(regs[i._c]._external));
+			auto elements2 = regs[i._b]._external->_vector_w_external_elements.push_back(bc_external_handle_t(regs[i._c]._external));
 			//??? always allocates a new bc_external_value_t!
-			const auto vec2 = make_vector_value(element_type, elements2);
+			const auto vec2 = make_vector(element_type, elements2);
 			vm._stack.write_register_obj(i._a, vec2);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
@@ -3134,8 +3130,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			//??? optimize - bypass bc_value_t
 			//??? always allocates a new bc_external_value_t!
-			auto elements2 = regs[i._b]._external->_vector_pod64.push_back(regs[i._c]._inplace);
-			const auto vec = make_vector_int64_value(element_type, elements2);
+			auto elements2 = regs[i._b]._external->_vector_w_inplace_elements.push_back(regs[i._c]._inplace);
+			const auto vec = make_vector(element_type, elements2);
 			vm._stack.write_register_obj(i._a, vec);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
@@ -3274,7 +3270,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto arg_count = i._c;
 			const auto& vector_type = lookup_full_type(vm, target_itype);
 			QUARK_ASSERT(vector_type.is_vector());
-			QUARK_ASSERT(encode_as_vector_w_inplace_element(vector_type) == false);
+			QUARK_ASSERT(encode_as_vector_w_inplace_elements(vector_type) == false);
 
 			execute_new_vector_obj(vm, dest_reg, target_itype, arg_count);
 			break;
@@ -3300,7 +3296,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto& element_type = type.get_vector_element_type();
 
-			const auto result = make_vector_int64_value(element_type, elements2);
+			const auto result = make_vector(element_type, elements2);
 			vm._stack.write_register_obj(dest_reg, result);
 
 			QUARK_ASSERT(vm.check_invariant());
@@ -3483,16 +3479,16 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			const auto& vector_type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto& element_type = vector_type.get_vector_element_type();
-			QUARK_ASSERT(encode_as_vector_w_inplace_element(vector_type) == false);
+			QUARK_ASSERT(encode_as_vector_w_inplace_elements(vector_type) == false);
 
 			//	Copy left into new vector.
-			immer::vector<bc_external_handle_t> elements2 = regs[i._b]._external->_vector_objects;
+			immer::vector<bc_external_handle_t> elements2 = regs[i._b]._external->_vector_w_external_elements;
 
-			const auto& right_elements = regs[i._c]._external->_vector_objects;
+			const auto& right_elements = regs[i._c]._external->_vector_w_external_elements;
 			for(const auto& e: right_elements){
 				elements2 = elements2.push_back(e);
 			}
-			const auto& value2 = make_vector_value(element_type, elements2);
+			const auto& value2 = make_vector(element_type, elements2);
 			stack.write_register_obj(i._a, value2);
 			break;
 		}
@@ -3503,16 +3499,16 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			const auto& vector_type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto& element_type = vector_type.get_vector_element_type();
-			QUARK_ASSERT(encode_as_vector_w_inplace_element(vector_type) == true);
+			QUARK_ASSERT(encode_as_vector_w_inplace_elements(vector_type) == true);
 
 			//	Copy left into new vector.
-			auto elements2 = regs[i._b]._external->_vector_pod64;
+			auto elements2 = regs[i._b]._external->_vector_w_inplace_elements;
 
-			const auto& right_elements = regs[i._c]._external->_vector_pod64;
+			const auto& right_elements = regs[i._c]._external->_vector_w_inplace_elements;
 			for(const auto& e: right_elements){
 				elements2 = elements2.push_back(e);
 			}
-			const auto& value2 = make_vector_int64_value(element_type, elements2);
+			const auto& value2 = make_vector(element_type, elements2);
 			stack.write_register_obj(i._a, value2);
 			break;
 		}
