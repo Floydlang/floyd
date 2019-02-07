@@ -123,6 +123,11 @@ void ut_verify_result_global(const quark::call_context_t& context, const std::st
 	);
 }
 
+void ut_verify_printout(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout){
+	const auto result = run_program(program);
+	ut_verify(context, result.print_out, printout);
+}
+
 std::shared_ptr<interpreter_t> test__run_global(const std::string& program){
 	const auto result = run_global(program, "");
 	return result;
@@ -207,13 +212,11 @@ QUARK_UNIT_TEST("Floyd test suite", "parant", "", ""){
 //??? test all types, like [int] etc.
 
 QUARK_UNIT_TEST("Floyd test suite", "Expression statement", "", ""){
-	const auto r = test__run_global("print(5)");
-	ut_verify(QUARK_POS, r->_print_output, { "5" });
+	ut_verify_printout(QUARK_POS, "print(5)", { "5" });
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "Infered bind", "", "") {
-	const auto r = test__run_global("let a = 10;print(a)");
-	ut_verify(QUARK_POS, r->_print_output, { "10" });
+	ut_verify_printout(QUARK_POS, "let a = 10;print(a)", {  "10" });
 }
 
 
@@ -799,13 +802,16 @@ QUARK_UNIT_TEST("call_function()", "use local variables", "", ""){
 
 
 QUARK_UNIT_TEST("call_function()", "local variable without let", "", ""){
-	auto r = test__run_global(R"(
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
 
-		a = 7
-		print(a)
+			a = 7
+			print(a)
 
-	)");
-	ut_verify(QUARK_POS, r->_print_output, { "7" });
+		)",
+		{ "7" }
+	);
 }
 
 
@@ -814,25 +820,31 @@ QUARK_UNIT_TEST("call_function()", "local variable without let", "", ""){
 
 
 QUARK_UNIT_TEST("call_function()", "mutate local", "", ""){
-	auto r = test__run_global(R"(
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
 
-		mutable a = 1
-		a = 2
-		print(a)
+			mutable a = 1
+			a = 2
+			print(a)
 
-	)");
-	ut_verify(QUARK_POS, r->_print_output, { "2" });
+		)",
+		{ "2" }
+	);
 }
 
 QUARK_UNIT_TEST("run_init()", "increment a mutable", "", ""){
-	const auto r = test__run_global(R"(
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
 
-		mutable a = 1000
-		a = a + 1
-		print(a)
+			mutable a = 1000
+			a = a + 1
+			print(a)
 
-	)");
-	ut_verify(QUARK_POS, r->_print_output, { "1001" });
+		)",
+		{ "1001" }
+	);
 }
 
 QUARK_UNIT_TEST("", "run_main()", "test locals are immutable", ""){
@@ -864,52 +876,64 @@ QUARK_UNIT_TEST("", "run_main()", "test function args are always immutable", "")
 }
 
 QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
-	const auto r = test__run_global(R"(
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
 
-		mutable a = 7
-		a = 8
-		{
-			print(a)
-		}
-
-	)");
-	ut_verify(QUARK_POS, r->_print_output, { "8" });
-}
-
-QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
-	const auto r = test__run_global(R"(
-
-		let a = 7
-		print(a)
-
-	)");
-	ut_verify(QUARK_POS, r->_print_output, { "7" });
-}
-
-
-QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
-	const auto r = test__run_global(R"(
-
-		let a = 7
-		{
-		}
-		print(a)
-
-	)");
-	ut_verify(QUARK_POS, r->_print_output, { "7" });
-}
-
-QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
-	const auto r = test__run_global(R"(
-
-		mutable a = 7
-		{
+			mutable a = 7
 			a = 8
-		}
-		print(a)
+			{
+				print(a)
+			}
 
-	)");
-	ut_verify(QUARK_POS, r->_print_output, { "8" });
+		)",
+		{ "8" }
+	);
+}
+
+QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			let a = 7
+			print(a)
+
+		)",
+		{ "7" }
+	);
+}
+
+
+QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			let a = 7
+			{
+			}
+			print(a)
+
+		)",
+		{ "7" }
+	);
+}
+
+QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			mutable a = 7
+			{
+				a = 8
+			}
+			print(a)
+
+		)",
+		{ "8" }
+	);
 }
 
 
@@ -918,78 +942,90 @@ QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 
 
 QUARK_UNIT_TEST("call_function()", "return from middle of function", "", ""){
-	auto r = test__run_global(R"(
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
 
-		func string f(){
-			print("A")
-			return "B"
-			print("C")
-			return "D"
-		}
-		let string x = f()
-		print(x)
+			func string f(){
+				print("A")
+				return "B"
+				print("C")
+				return "D"
+			}
+			let string x = f()
+			print(x)
 
-	)");
-	ut_verify(QUARK_POS, r->_print_output, { "A", "B" });
+		)",
+		{ "A", "B" }
+	);
 }
 
 QUARK_UNIT_TEST("call_function()", "return from within IF block", "", ""){
-	auto r = test__run_global(R"(
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
 
-		func string f(){
-			if(true){
-				print("A")
-				return "B"
-				print("C")
+			func string f(){
+				if(true){
+					print("A")
+					return "B"
+					print("C")
+				}
+				print("D")
+				return "E"
 			}
-			print("D")
-			return "E"
-		}
-		let string x = f()
-		print(x)
+			let string x = f()
+			print(x)
 
-	)");
-	ut_verify(QUARK_POS, r->_print_output, { "A", "B" });
+		)",
+		{ "A", "B" }
+	);
 }
 
 QUARK_UNIT_TEST("call_function()", "return from within FOR block", "", ""){
-	auto r = test__run_global(R"(
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
 
-		func string f(){
-			for(e in 0...3){
-				print("A")
-				return "B"
-				print("C")
+			func string f(){
+				for(e in 0...3){
+					print("A")
+					return "B"
+					print("C")
+				}
+				print("D")
+				return "E"
 			}
-			print("D")
-			return "E"
-		}
-		let string x = f()
-		print(x)
+			let string x = f()
+			print(x)
 
-	)");
-	ut_verify(QUARK_POS, r->_print_output, { "A", "B" });
+		)",
+		{ "A", "B" }
+	);
 }
 
 // ??? add test for: return from ELSE
 
 QUARK_UNIT_TEST("call_function()", "return from within BLOCK", "", ""){
-	auto r = test__run_global(R"(
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
 
-		func string f(){
-			{
-				print("A")
-				return "B"
-				print("C")
+			func string f(){
+				{
+					print("A")
+					return "B"
+					print("C")
+				}
+				print("D")
+				return "E"
 			}
-			print("D")
-			return "E"
-		}
-		let string x = f()
-		print(x)
+			let string x = f()
+			print(x)
 
-	)");
-	ut_verify(QUARK_POS, r->_print_output, { "A", "B" });
+		)",
+		{ "A", "B" }
+	);
 }
 
 
@@ -1135,13 +1171,16 @@ QUARK_UNIT_TEST("", "run_global()", "", ""){
 }
 
 QUARK_UNIT_TEST("run_global()", "", "", ""){
-	const auto r = test__run_global(
+	ut_verify_printout(
+		QUARK_POS,
 		R"(
+
 			assert(1 == 1)
 			print("A")
-		)"
+
+		)",
+		{ "A" }
 	);
-	ut_verify(QUARK_POS, r->_print_output, { "A" });
 }
 
 
@@ -1163,8 +1202,10 @@ QUARK_UNIT_TEST("run_init()", "Block with local variable, no shadowing", "", "")
 }
 
 QUARK_UNIT_TEST("run_init()", "Block with local variable, no shadowing", "", ""){
-	const auto r = test__run_global(
+	ut_verify_printout(
+		QUARK_POS,
 		R"(
+
 			let int x = 3
 			print("B:" + to_string(x))
 			{
@@ -1173,9 +1214,10 @@ QUARK_UNIT_TEST("run_init()", "Block with local variable, no shadowing", "", "")
 				print("D:" + to_string(x))
 			}
 			print("E:" + to_string(x))
-		)"
+
+		)",
+		{ "B:3", "C:3", "D:4", "E:3" }
 	);
-	ut_verify(QUARK_POS, r->_print_output, { "B:3", "C:3", "D:4", "E:3" });
 }
 
 
@@ -1183,60 +1225,74 @@ QUARK_UNIT_TEST("run_init()", "Block with local variable, no shadowing", "", "")
 
 
 QUARK_UNIT_TEST("run_init()", "if(true){}", "", ""){
-	const auto r = test__run_global(
+	ut_verify_printout(
+		QUARK_POS,
 		R"(
+
 			if(true){
 				print("Hello!")
 			}
 			print("Goodbye!")
-		)"
+
+		)",
+		{ "Hello!", "Goodbye!" }
 	);
-	ut_verify(QUARK_POS, r->_print_output, { "Hello!", "Goodbye!" });
 }
 
 QUARK_UNIT_TEST("run_init()", "if(false){}", "", ""){
-	const auto r = test__run_global(
+	ut_verify_printout(
+		QUARK_POS,
 		R"(
+
 			if(false){
 				print("Hello!")
 			}
 			print("Goodbye!")
-		)"
+
+		)",
+		{ "Goodbye!" }
 	);
-	ut_verify(QUARK_POS, r->_print_output, { "Goodbye!" });
 }
 
 QUARK_UNIT_TEST("", "run_init()", "if(true){}else{}", ""){
-	const auto r = test__run_global(
+	ut_verify_printout(
+		QUARK_POS,
 		R"(
+
 			if(true){
 				print("Hello!")
 			}
 			else{
 				print("Goodbye!")
 			}
-		)"
+
+		)",
+		{ "Hello!" }
 	);
-	ut_verify(QUARK_POS, r->_print_output, { "Hello!" });
 }
 
 QUARK_UNIT_TEST("run_init()", "if(false){}else{}", "", ""){
-	const auto r = test__run_global(
+	ut_verify_printout(
+		QUARK_POS,
 		R"(
+
 			if(false){
 				print("Hello!")
 			}
 			else{
 				print("Goodbye!")
 			}
-		)"
+
+		)",
+		{ "Goodbye!" }
 	);
-	ut_verify(QUARK_POS, r->_print_output, { "Goodbye!" });
 }
 
 QUARK_UNIT_TEST("run_init()", "if", "", ""){
-	const auto r = test__run_global(
+	ut_verify_printout(
+		QUARK_POS,
 		R"(
+
 			if(1 == 1){
 				print("one")
 			}
@@ -1249,14 +1305,17 @@ QUARK_UNIT_TEST("run_init()", "if", "", ""){
 			else{
 				print("four")
 			}
-		)"
+
+		)",
+		{ "one" }
 	);
-	ut_verify(QUARK_POS, r->_print_output, { "one" });
 }
 
 QUARK_UNIT_TEST("run_init()", "if", "", ""){
-	const auto r = test__run_global(
+	ut_verify_printout(
+		QUARK_POS,
 		R"(
+
 			if(1 == 0){
 				print("one")
 			}
@@ -1269,14 +1328,17 @@ QUARK_UNIT_TEST("run_init()", "if", "", ""){
 			else{
 				print("four")
 			}
-		)"
+
+		)",
+		{ "two" }
 	);
-	ut_verify(QUARK_POS, r->_print_output, { "two" });
 }
 
 QUARK_UNIT_TEST("run_init()", "if", "", ""){
-	const auto r = test__run_global(
+	ut_verify_printout(
+		QUARK_POS,
 		R"(
+
 			if(1 == 0){
 				print("one")
 			}
@@ -1289,14 +1351,17 @@ QUARK_UNIT_TEST("run_init()", "if", "", ""){
 			else{
 				print("four")
 			}
-		)"
+
+		)",
+		{ "three" }
 	);
-	ut_verify(QUARK_POS, r->_print_output, { "three" });
 }
 
 QUARK_UNIT_TEST("run_init()", "if", "", ""){
-	const auto r = test__run_global(
+	ut_verify_printout(
+		QUARK_POS,
 		R"(
+
 			if(1 == 0){
 				print("one")
 			}
@@ -1309,9 +1374,10 @@ QUARK_UNIT_TEST("run_init()", "if", "", ""){
 			else{
 				print("four")
 			}
-		)"
+
+		)",
+		{ "four" }
 	);
-	ut_verify(QUARK_POS, r->_print_output, { "four" });
 }
 
 
@@ -1327,8 +1393,10 @@ QUARK_UNIT_TEST("", "function calling itself by name", "", ""){
 
 
 QUARK_UNIT_TEST("run_init()", "Make sure a function can access global independent on how it's called in callstack", "", ""){
-	const auto vm = test__run_global(
+	ut_verify_printout(
+		QUARK_POS,
 		R"(
+
 			let int x = 13
 
 			func int add(bool t){
@@ -1343,9 +1411,10 @@ QUARK_UNIT_TEST("run_init()", "Make sure a function can access global independen
 			print(x)
 			print(add(false))
 			print(add(true))
-		)"
+
+		)",
+		{ "13", "14", "1014" }
 	);
-	ut_verify(QUARK_POS, vm->_print_output, { "13", "14", "1014" });
 }
 
 
@@ -1353,67 +1422,69 @@ QUARK_UNIT_TEST("run_init()", "Make sure a function can access global independen
 
 
 QUARK_UNIT_TEST("run_init()", "for", "", ""){
-	const auto r = test__run_global(
+	ut_verify_printout(
+		QUARK_POS,
 		R"(
+
 			for (i in 0...2) {
 				print("xyz")
 			}
-		)"
+
+		)",
+		{ "xyz", "xyz", "xyz" }
 	);
-	ut_verify(QUARK_POS, r->_print_output, { "xyz", "xyz", "xyz" });
-}
-QUARK_UNIT_TEST("run_init()", "for", "", ""){
-	const auto r = test__run_global(
-		R"(
-			for (i in 0...2) {
-				to_string(i)
-			}
-		)"
-	);
-//	ut_verify(QUARK_POS, r->_print_output, { "Iteration: 0", "Iteration: 1", "Iteration: 2" });
 }
 
 
 QUARK_UNIT_TEST("run_init()", "for", "", ""){
-	const auto r = test__run_global(
+	ut_verify_printout(
+		QUARK_POS,
 		R"(
+
 			for (i in 0...2) {
 				print("Iteration: " + to_string(i))
 			}
-		)"
+
+		)",
+		{ "Iteration: 0", "Iteration: 1", "Iteration: 2" }
 	);
-	ut_verify(QUARK_POS, r->_print_output, { "Iteration: 0", "Iteration: 1", "Iteration: 2" });
 }
+
 QUARK_UNIT_TEST("run_init()", "for", "", ""){
-	const auto r = test__run_global(
+	ut_verify_printout(
+		QUARK_POS,
 		R"(
+
 			for (i in 0..<2) {
 				print("Iteration: " + to_string(i))
 			}
-		)"
+
+		)",
+		{ "Iteration: 0", "Iteration: 1" }
 	);
-	ut_verify(QUARK_POS, r->_print_output, { "Iteration: 0", "Iteration: 1" });
 }
 
 QUARK_UNIT_TEST("run_init()", "fibonacci", "", ""){
-	const auto vm = test__run_global(R"(
-		func int fibonacci(int n) {
-			if (n <= 1){
-				return n
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			func int fibonacci(int n) {
+				if (n <= 1){
+					return n
+				}
+				return fibonacci(n - 2) + fibonacci(n - 1)
 			}
-			return fibonacci(n - 2) + fibonacci(n - 1)
-		}
 
-		for (i in 0...10) {
-			print(fibonacci(i))
-		}
-	)");
+			for (i in 0...10) {
+				print(fibonacci(i))
+			}
 
-	QUARK_UT_VERIFY((
-		vm->_print_output == std::vector<std::string>{
+		)",
+		{
 			"0", "1", "1", "2", "3", "5", "8", "13", "21", "34",
 			"55" //, "89", "144", "233", "377", "610", "987", "1597", "2584", "4181"
-		})
+		}
 	);
 }
 
@@ -1422,14 +1493,19 @@ QUARK_UNIT_TEST("run_init()", "fibonacci", "", ""){
 
 //	Parser thinks that "print(to_string(a))" is a type -- a function that returns a "print" and takes a function that returns a to_string and has a argument of type a.
 OFF_QUARK_UNIT_TEST("run_init()", "for", "", ""){
-	const auto r = test__run_global(R"(
-		mutable a = 100
-		while(a < 105){
-			print(to_string(a))
-			a = a + 1
-		}
-	)");
-	ut_verify(QUARK_POS, r->_print_output, { "100", "101", "102", "103", "104" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			mutable a = 100
+			while(a < 105){
+				print(to_string(a))
+				a = a + 1
+			}
+
+		)",
+		{ "100", "101", "102", "103", "104" }
+	);
 }
 
 
@@ -1522,13 +1598,16 @@ QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
 
 
 QUARK_UNIT_TEST("vector", "[]-constructor", "Infer type", "valid vector"){
-	const auto vm = test__run_global(R"(
-		let a = ["one", "two"]
-		print(a)
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, std::vector<std::string>{
-		R"(["one", "two"])"
-	});
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			let a = ["one", "two"]
+			print(a)
+
+		)",
+		{ R"(["one", "two"])" }
+	);
 }
 
 QUARK_UNIT_TEST("vector", "[]-constructor", "cannot be infered", "error"){
@@ -1551,21 +1630,29 @@ QUARK_UNIT_TEST("vector", "[]-constructor", "cannot be infered", "error"){
 */
 
 QUARK_UNIT_TEST("vector", "explit bind, is []", "Infer type", "valid vector"){
-	const auto vm = test__run_global(R"(
-		let [string] a = ["one", "two"]
-		print(a)
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { R"(["one", "two"])" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			let [string] a = ["one", "two"]
+			print(a)
+
+		)",
+		{ R"(["one", "two"])" }
+	);
 }
 
 QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
-	const auto vm = test__run_global(R"(
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
 
-		let [string] a = []
-		print(a)
+			let [string] a = []
+			print(a)
 
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { R"([])" });
+		)",
+		{ R"([])" }
+	);
 }
 
 //	We could support this if we had special type for empty-vector and empty-dict.
@@ -1619,18 +1706,23 @@ QUARK_UNIT_TEST("vector-string", "literal expression", "", ""){
 QUARK_UNIT_TEST("vector-string", "literal expression, computed element", "", ""){
 	test_result(R"(		func string get_beta(){ return "beta" } 	let [string] result = ["alpha", get_beta()]		)", R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)");
 }
+
 QUARK_UNIT_TEST("vector-string", "=", "copy", ""){
-	const auto vm = test__run_global(R"(
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
 
-		let a = ["one", "two"]
-		let b = a
-		assert(a == b)
-		print(a)
-		print(b)
+			let a = ["one", "two"]
+			let b = a
+			assert(a == b)
+			print(a)
+			print(b)
 
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { R"(["one", "two"])", R"(["one", "two"])" });
+		)",
+		{ R"(["one", "two"])", R"(["one", "two"])" }
+	);
 }
+
 QUARK_UNIT_TEST("vector-string", "==", "same values", ""){
 	const auto vm = test__run_global(R"(
 
@@ -1865,17 +1957,19 @@ QUARK_UNIT_TEST("", "replace()", "int", ""){
 
 
 QUARK_UNIT_TEST("", "update()", "mutate element", "valid vector, without side effect on original vector"){
-	const auto vm = test__run_global(R"(
-		a = [ "one", "two", "three"]
-		b = update(a, 1, "zwei")
-		print(a)
-		print(b)
-		assert(a == ["one","two","three"])
-		assert(b == ["one","zwei","three"])
-	)");
-	ut_verify(
+	ut_verify_printout(
 		QUARK_POS,
-		vm->_print_output, {
+		R"(
+
+			a = [ "one", "two", "three"]
+			b = update(a, 1, "zwei")
+			print(a)
+			print(b)
+			assert(a == ["one","two","three"])
+			assert(b == ["one","zwei","three"])
+
+		)",
+		{
 			R"(["one", "two", "three"])",
 			R"(["one", "zwei", "three"])"
 		}
@@ -1898,14 +1992,17 @@ QUARK_UNIT_TEST("dict", "construct", "", ""){
 	)");
 }
 QUARK_UNIT_TEST("dict", "[]", "", ""){
-	const auto vm = test__run_global(R"(
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
 
-		let [string: int] a = {"one": 1, "two": 2}
-		print(a["one"])
-		print(a["two"])
+			let [string: int] a = {"one": 1, "two": 2}
+			print(a["one"])
+			print(a["two"])
 
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "1", "2" });
+		)",
+		{ "1", "2" }
+	);
 }
 
 QUARK_UNIT_TEST("dict", "", "", ""){
@@ -1936,24 +2033,30 @@ QUARK_UNIT_TEST("dict", "[:]", "", ""){
 
 
 QUARK_UNIT_TEST("dict", "Infered type ", "", ""){
-	const auto vm = test__run_global(R"(
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
 
-		let a = {"one": 1, "two": 2}
-		print(a)
+			let a = {"one": 1, "two": 2}
+			print(a)
 
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { R"({"one": 1, "two": 2})", });
+		)",
+		{ R"({"one": 1, "two": 2})" }
+	);
 }
 
 QUARK_UNIT_TEST("dict", "{}", "", ""){
-	const auto vm = test__run_global(R"(
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
 
-		mutable [string:int] a = {}
-		a = {}
-		print(a)
+			mutable [string:int] a = {}
+			a = {}
+			print(a)
 
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { R"({})" });
+		)",
+		{ R"({})" }
+	);
 }
 
 QUARK_UNIT_TEST("dict", "==", "", ""){
@@ -2028,15 +2131,17 @@ QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 }
 
 QUARK_UNIT_TEST("dict", "update()", "add element", "valid dict, without side effect on original dict"){
-	const auto vm = test__run_global(R"(
-		let a = { "one": 1, "two": 2}
-		let b = update(a, "three", 3)
-		print(a)
-		print(b)
-	)");
-	ut_verify(
+	ut_verify_printout(
 		QUARK_POS,
-		vm->_print_output, {
+		R"(
+
+			let a = { "one": 1, "two": 2}
+			let b = update(a, "three", 3)
+			print(a)
+			print(b)
+
+		)",
+		{
 			R"({"one": 1, "two": 2})",
 			R"({"one": 1, "three": 3, "two": 2})"
 		}
@@ -2044,15 +2149,17 @@ QUARK_UNIT_TEST("dict", "update()", "add element", "valid dict, without side eff
 }
 
 QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
-	const auto vm = test__run_global(R"(
-		let a = { "one": 1, "two": 2, "three" : 3}
-		let b = update(a, "three", 333)
-		print(a)
-		print(b)
-	)");
-	ut_verify(
+	ut_verify_printout(
 		QUARK_POS,
-		vm->_print_output, {
+		R"(
+
+			let a = { "one": 1, "two": 2, "three" : 3}
+			let b = update(a, "three", 333)
+			print(a)
+			print(b)
+
+		)",
+		{
 			R"({"one": 1, "three": 3, "two": 2})",
 			R"({"one": 1, "three": 333, "two": 2})"
 		}
@@ -2106,44 +2213,60 @@ QUARK_UNIT_TEST("run_main()", "struct", "", ""){
 }
 
 QUARK_UNIT_TEST("run_main()", "struct - check struct's type", "", ""){
-	const auto vm = test__run_global(R"(
-		struct t { int a }
-		print(t)
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "struct {int a;}" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			struct t { int a }
+			print(t)
+
+		)",
+		{ "struct {int a;}" }
+	);
 }
 
 QUARK_UNIT_TEST("run_main()", "struct - check struct's type", "", ""){
-	const auto vm = test__run_global(R"(
-		struct t { int a }
-		let a = t(3)
-		print(a)
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { R"({a=3})" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			struct t { int a }
+			let a = t(3)
+			print(a)
+
+		)",
+		{ R"({a=3})" }
+	);
 }
 
 QUARK_UNIT_TEST("run_main()", "struct - read back struct member", "", ""){
-	const auto vm = test__run_global(R"(
-		struct t { int a }
-		let temp = t(4)
-		print(temp.a)
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "4" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			struct t { int a }
+			let temp = t(4)
+			print(temp.a)
+
+		)",
+		{ "4" }
+	);
 }
 
 QUARK_UNIT_TEST("run_main()", "struct - instantiate nested structs", "", ""){
-	const auto vm = test__run_global(R"(
-		struct color { int red int green int blue }
-		struct image { color back color front }
-
-		let c = color(128, 192, 255)
-		print(c)
-		let i = image(color(1, 2, 3), color(200, 201, 202))
-		print(i)
-	)");
-	ut_verify(
+	ut_verify_printout(
 		QUARK_POS,
-		vm->_print_output,
+		R"(
+
+			struct color { int red int green int blue }
+			struct image { color back color front }
+
+			let c = color(128, 192, 255)
+			print(c)
+			let i = image(color(1, 2, 3), color(200, 201, 202))
+			print(i)
+
+		)",
 		{
 			"{red=128, green=192, blue=255}",
 			"{back={red=1, green=2, blue=3}, front={red=200, green=201, blue=202}}"
@@ -2152,54 +2275,79 @@ QUARK_UNIT_TEST("run_main()", "struct - instantiate nested structs", "", ""){
 }
 
 QUARK_UNIT_TEST("run_main()", "struct - access member of nested structs", "", ""){
-	const auto vm = test__run_global(R"(
-		struct color { int red int green int blue }
-		struct image { color back color front }
-		let i = image(color(1, 2, 3), color(200, 201, 202))
-		print(i.front.green)
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "201" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			struct color { int red int green int blue }
+			struct image { color back color front }
+			let i = image(color(1, 2, 3), color(200, 201, 202))
+			print(i.front.green)
+
+		)",
+		{ "201" }
+	);
 }
 
 QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
-	const auto vm = test__run_global(R"(
-		struct color { int red int green int blue }
-		struct image { color back color front }
-		func color make_color(){
-			return color(100, 101, 102)
-		}
-		let z = make_color()
-		print(z)
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "{red=100, green=101, blue=102}" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			struct color { int red int green int blue }
+			struct image { color back color front }
+			func color make_color(){
+				return color(100, 101, 102)
+			}
+			let z = make_color()
+			print(z)
+
+		)",
+		{ "{red=100, green=101, blue=102}" }
+	);
 }
 
 QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
-	const auto vm = test__run_global(R"(
-		struct color { int red int green int blue }
-		struct image { color back color front }
-		func color make_color(){
-			return color(100, 101, 102)
-		}
-		print(make_color())
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "{red=100, green=101, blue=102}" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			struct color { int red int green int blue }
+			struct image { color back color front }
+			func color make_color(){
+				return color(100, 101, 102)
+			}
+			print(make_color())
+
+		)",
+		{ "{red=100, green=101, blue=102}" }
+	);
 }
 
 QUARK_UNIT_TEST("run_main()", "struct - compare structs", "", ""){
-	const auto vm = test__run_global(R"(
-		struct color { int red int green int blue }
-		print(color(1, 2, 3) == color(1, 2, 3))
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "true" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			struct color { int red int green int blue }
+			print(color(1, 2, 3) == color(1, 2, 3))
+
+		)",
+		{ "true" }
+	);
 }
 
 QUARK_UNIT_TEST("run_main()", "struct - compare structs", "", ""){
-	const auto vm = test__run_global(R"(
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
 		struct color { int red int green int blue }
 		print(color(9, 2, 3) == color(1, 2, 3))
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "false" });
+
+		)",
+		{ "false" }
+	);
 }
 
 QUARK_UNIT_TEST("", "run_main()", "struct - compare structs different types", ""){
