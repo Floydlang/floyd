@@ -12,11 +12,9 @@
 #include "quark.h"
 
 struct seq_t;
-
+struct json_t;
 
 namespace floyd {
-
-	struct ast_json_t;
 
 	/*
 		Parses the expression string
@@ -36,7 +34,7 @@ namespace floyd {
 		No need to filter when you return for next function.
 		Why: only one function entry, often many function exists.
 	*/
-	std::pair<ast_json_t, seq_t> parse_expression(const seq_t& expression);
+	std::pair<json_t, seq_t> parse_expression(const seq_t& expression);
 }	//	floyd
 
 

@@ -15,14 +15,12 @@
 
 #include "quark.h"
 #include "text_parser.h"
-#include "ast_json.h"
+#include "json_support.h"
 
 #include <string>
 #include <vector>
 #include <map>
 
-
-struct ast_json_t;
 
 namespace floyd {
 struct typeid_t;
@@ -136,7 +134,8 @@ std::pair<std::vector<member_t>, seq_t> read_call_args(const seq_t& s);
 //	Used by the parser functions to return both its result and the pos where it stopped reading.
 
 struct parse_result_t {
-	ast_json_t ast;
+	//??? renameto parse_tree
+	json_t ast;
 	seq_t pos;
 };
 

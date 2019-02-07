@@ -18,6 +18,7 @@
 #include "json_support.h"
 #include "utils.h"
 #include "floyd_syntax.h"
+#include "compiler_basics.h"
 
 
 namespace floyd {
@@ -27,7 +28,7 @@ using namespace std;
 
 
 
-std::pair<ast_json_t, seq_t> parse_statement(const seq_t& s){
+std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 	try {
 		const auto pos = skip_whitespace(s);
 		if(is_first(pos, "{")){
@@ -85,14 +86,14 @@ std::pair<ast_json_t, seq_t> parse_statement(const seq_t& s){
 
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_verify(QUARK_POS,
-		parse_statement(seq_t("let int x = 10;")).first._value,
+		parse_statement(seq_t("let int x = 10;")).first,
 		parse_json(seq_t(R"([0, "bind", "^int", "x", ["k", 10, "^int"]])")).first
 	);
 }
 
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_verify(QUARK_POS,
-		parse_statement(seq_t("func int f(string name){ return 13; }")).first._value,
+		parse_statement(seq_t("func int f(string name){ return 13; }")).first,
 		parse_json(seq_t(R"(
 			[
 				0,
@@ -113,7 +114,7 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_verify(QUARK_POS,
-		parse_statement(seq_t("let int x = f(3);")).first._value,
+		parse_statement(seq_t("let int x = f(3);")).first,
 		parse_json(seq_t(R"([0, "bind", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first
 	);
 }
@@ -129,7 +130,7 @@ parse_result_t parse_statements_no_brackets(const seq_t& s){
 		const auto statement_pos = parse_statement(pos);
 		QUARK_ASSERT(statement_pos.second.pos() >= pos.pos());
 
-		statements.push_back(statement_pos.first._value);
+		statements.push_back(statement_pos.first);
 
 		auto pos2 = skip_whitespace(statement_pos.second);
 
@@ -142,7 +143,7 @@ parse_result_t parse_statements_no_brackets(const seq_t& s){
 		QUARK_ASSERT(pos2.pos() >= pos.pos());
 		pos = pos2;
 	}
-	return { ast_json_t::make(statements), pos };
+	return { statements, pos };
 }
 
 //	"{ a = 1; print(a) }"
@@ -157,7 +158,7 @@ parse_result_t parse_statements_bracketted(const seq_t& s){
 		const auto statement_pos = parse_statement(pos);
 		QUARK_ASSERT(statement_pos.second.pos() >= pos.pos());
 
-		statements.push_back(statement_pos.first._value);
+		statements.push_back(statement_pos.first);
 
 		auto pos2 = skip_whitespace(statement_pos.second);
 
@@ -171,7 +172,7 @@ parse_result_t parse_statements_bracketted(const seq_t& s){
 		pos = pos2;
 	}
 	if(pos.first() == "}"){
-		return { ast_json_t::make(statements), pos.rest() };
+		return { statements, pos.rest() };
 	}
 	else{
 		throw_compiler_error(location_t(pos.pos()), "Block is missing end bracket \'}\'.");
@@ -180,7 +181,7 @@ parse_result_t parse_statements_bracketted(const seq_t& s){
 
 QUARK_UNIT_TEST("", "parse_statements_bracketted()", "", ""){
 	ut_verify(QUARK_POS,
-		parse_statement_body(seq_t(" { } ")).ast._value,
+		parse_statement_body(seq_t(" { } ")).ast,
 		parse_json(seq_t(
 			R"(
 				[]
@@ -190,7 +191,7 @@ QUARK_UNIT_TEST("", "parse_statements_bracketted()", "", ""){
 }
 QUARK_UNIT_TEST("", "parse_statements_bracketted()", "", ""){
 	ut_verify(QUARK_POS,
-		parse_statement_body(seq_t(" { let int x = 1; let int y = 2; } ")).ast._value,
+		parse_statement_body(seq_t(" { let int x = 1; let int y = 2; } ")).ast,
 		parse_json(seq_t(
 			R"(
 				[
@@ -215,7 +216,7 @@ parse_tree_t parse_program2(const string& program){
 	check_illegal_chars(pos);
 
 	const auto statements_pos = parse_statements_no_brackets(pos);
-	return parse_tree_t{ statements_pos.ast._value };
+	return parse_tree_t{ statements_pos.ast };
 }
 
 

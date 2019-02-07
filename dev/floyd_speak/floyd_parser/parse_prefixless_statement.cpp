@@ -190,7 +190,7 @@ a_result_t parse_a(const seq_t& p, const location_t& loc){
 	}
 }
 
-pair<ast_json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
+pair<json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
 	const auto a_result = parse_a(pos, loc);
 	if(a_result.rest.empty()){
 		throw_compiler_error(loc, "Require a value for new bind.");
@@ -201,13 +201,13 @@ pair<ast_json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
 	const auto params = std::vector<json_t>{
 		typeid_to_ast_json(a_result.type, json_tags::k_tag_resolve_state)._value,
 		a_result.identifier,
-		expression_pos.first._value,
+		expression_pos.first,
 	};
-	const auto statement = make_statement_n(loc, statement_opcode_t::k_bind, params);
+	const auto statement = make_statement_n(loc, statement_opcode_t::k_bind, params)._value;
 	return { statement, expression_pos.second };
 }
 
-pair<ast_json_t, seq_t> parse_mutable(const seq_t& pos, const location_t& loc){
+pair<json_t, seq_t> parse_mutable(const seq_t& pos, const location_t& loc){
 	const auto a_result = parse_a(pos, loc);
 	if(a_result.rest.empty()){
 		throw_compiler_error(loc, "Require a value for new bind.");
@@ -220,10 +220,10 @@ pair<ast_json_t, seq_t> parse_mutable(const seq_t& pos, const location_t& loc){
 	const auto params = std::vector<json_t>{
 		typeid_to_ast_json(a_result.type, json_tags::k_tag_resolve_state)._value,
 		a_result.identifier,
-		expression_pos.first._value,
+		expression_pos.first,
 		meta
 	};
-	const auto statement = make_statement_n(loc, statement_opcode_t::k_bind, params);
+	const auto statement = make_statement_n(loc, statement_opcode_t::k_bind, params)._value;
 
 	return { statement, expression_pos.second };
 }
@@ -248,7 +248,7 @@ pair<ast_json_t, seq_t> parse_mutable(const seq_t& pos, const location_t& loc){
 //	[let]/[mutable] TYPE identifier = EXPRESSION
 //					|<----------->|		call this section a.
 
-pair<ast_json_t, seq_t> parse_bind_statement(const seq_t& s){
+pair<json_t, seq_t> parse_bind_statement(const seq_t& s){
 	const auto start = skip_whitespace(s);
 	const auto loc = location_t(start.pos());
 
@@ -306,7 +306,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 
 QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 	ut_verify(QUARK_POS,
-		parse_bind_statement(seq_t("let bool bb = true")).first._value,
+		parse_bind_statement(seq_t("let bool bb = true")).first,
 		parse_json(seq_t(
 			R"(
 				[ 0, "bind", "^bool", "bb", ["k", true, "^bool"]]
@@ -316,7 +316,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 }
 QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 	ut_verify(QUARK_POS, 
-		parse_bind_statement(seq_t("let int hello = 3")).first._value,
+		parse_bind_statement(seq_t("let int hello = 3")).first,
 		parse_json(seq_t(
 			R"(
 				[ 0, "bind", "^int", "hello", ["k", 3, "^int"]]
@@ -327,7 +327,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 
 QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 	ut_verify(QUARK_POS,
-		parse_bind_statement(seq_t("mutable int a = 14")).first._value,
+		parse_bind_statement(seq_t("mutable int a = 14")).first,
 		parse_json(seq_t(
 			R"(
 				[ 0, "bind", "^int", "a", ["k", 14, "^int"], { "mutable": true }]
@@ -338,7 +338,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 
 QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 	ut_verify(QUARK_POS,
-		parse_bind_statement(seq_t("mutable hello = 3")).first._value,
+		parse_bind_statement(seq_t("mutable hello = 3")).first,
 		parse_json(seq_t(
 			R"(
 				[ 0, "bind", "^**undef**", "hello", ["k", 3, "^int"], { "mutable": true }]
@@ -365,7 +365,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 //////////////////////////////////////////////////		parse_assign_statement()
 
 
-pair<ast_json_t, seq_t> parse_assign_statement(const seq_t& s){
+pair<json_t, seq_t> parse_assign_statement(const seq_t& s){
 	const auto start = skip_whitespace(s);
 	const auto variable_pos = read_identifier(start);
 	if(variable_pos.first.empty()){
@@ -375,13 +375,13 @@ pair<ast_json_t, seq_t> parse_assign_statement(const seq_t& s){
 	const auto rhs_seq = skip_whitespace(equal_pos);
 	const auto expression_fr = parse_expression(rhs_seq);
 
-	const auto statement = make_statement_n(location_t(start.pos()), statement_opcode_t::k_store, { variable_pos.first, expression_fr.first._value });
+	const auto statement = make_statement_n(location_t(start.pos()), statement_opcode_t::k_store, { variable_pos.first, expression_fr.first })._value;
 	return { statement, expression_fr.second };
 }
 
 QUARK_UNIT_TEST("", "parse_assign_statement()", "", ""){
 	ut_verify(QUARK_POS,
-		parse_assign_statement(seq_t("x = 10;")).first._value,
+		parse_assign_statement(seq_t("x = 10;")).first,
 		parse_json(seq_t(
 			R"(
 				[ 0, "store","x",["k",10,"^int"] ]
@@ -394,17 +394,17 @@ QUARK_UNIT_TEST("", "parse_assign_statement()", "", ""){
 //////////////////////////////////////////////////		parse_expression_statement()
 
 
-pair<ast_json_t, seq_t> parse_expression_statement(const seq_t& s){
+pair<json_t, seq_t> parse_expression_statement(const seq_t& s){
 	const auto start = skip_whitespace(s);
 	const auto expression_fr = parse_expression(start);
 
-	const auto statement = make_statement1(location_t(start.pos()), statement_opcode_t::k_expression_statement, expression_fr.first._value);
-	return { ast_json_t{statement}, expression_fr.second };
+	const auto statement = make_statement1(location_t(start.pos()), statement_opcode_t::k_expression_statement, expression_fr.first)._value;
+	return { statement, expression_fr.second };
 }
 
 QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
 	ut_verify(QUARK_POS,
-		parse_expression_statement(seq_t("print(14);")).first._value,
+		parse_expression_statement(seq_t("print(14);")).first,
 		parse_json(seq_t(
 			R"(
 				[ 0, "expression-statement", [ "call", ["@", "print"], [["k", 14, "^int"]] ] ]
@@ -414,7 +414,7 @@ QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
 }
 
 
-std::pair<ast_json_t, seq_t> parse_prefixless_statement(const seq_t& s){
+std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 	const auto pos = skip_whitespace(s);
 	const auto implicit_type = detect_implicit_statement_lookahead(pos);
 	if(implicit_type == implicit_statement::k_expression_statement){

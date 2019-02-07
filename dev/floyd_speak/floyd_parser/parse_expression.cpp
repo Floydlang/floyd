@@ -808,15 +808,15 @@ QUARK_UNIT_TEST("parser", "parse_lhs_atom()", "", ""){
 
 void ut_verify__parse_expression(const quark::call_context_t& context, const std::string& input, const std::string& expected_json_s, const std::string& expected_rest){
 	const auto result = parse_expression(seq_t(input));
-	const std::string result_json_s = expr_to_string(result.first._value);
+	const std::string result_json_s = expr_to_string(result.first);
 
 	//	Generate the expted JSON using json_to_compact_string() so manual-input differences in expected_json don't matter for result being OK.
 	const auto expected_json = parse_json(seq_t(expected_json_s)).first;
-	if(result.first._value == expected_json && result.second.get_s() == expected_rest){
+	if(result.first == expected_json && result.second.get_s() == expected_rest){
 	}
 	else{
 		const std::string expected_json2_s = json_to_compact_string(expected_json);
-		ut_verify(context, result.first._value, expected_json);
+		ut_verify(context, result.first, expected_json);
 		ut_verify(context, result.second.str(), expected_rest);
 		fail_test(context);
 	}
@@ -1483,14 +1483,15 @@ std::pair<ast_json_t, seq_t> parse_expression_deep(const seq_t& p, const eoperat
 	return { ast_json_t::make(r.first), r.second };
 }
 
-std::pair<ast_json_t, seq_t> parse_expression(const seq_t& p){
+std::pair<json_t, seq_t> parse_expression(const seq_t& p){
 #if DEBUG
 	const auto illegal_char = read_while(p, valid_expression_chars);
 	QUARK_ASSERT(illegal_char.second.empty());
 #endif
 
 	try{
-		return parse_expression_deep(p, eoperator_precedence::k_super_weak);
+		const auto r = parse_expression_deep(p, eoperator_precedence::k_super_weak);
+		return { r.first._value, r.second };
 	}
 
 	//	If an exception other than compiler_error is thrown, make a compiler error with location info.

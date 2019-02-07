@@ -12,6 +12,8 @@
 #include "json_support.h"
 #include "ast_typeid.h"
 #include "ast_typeid_helpers.h"
+#include "compiler_basics.h"
+#include "ast_json.h"
 
 
 namespace floyd {
@@ -20,7 +22,7 @@ namespace floyd {
 	using std::pair;
 
 
-	std::pair<ast_json_t, seq_t>  parse_struct_definition_body(const seq_t& p, const std::string& name, const location_t& location){
+	std::pair<json_t, seq_t>  parse_struct_definition_body(const seq_t& p, const std::string& name, const location_t& location){
 		const auto s2 = skip_whitespace(p);
 		auto pos = read_required_char(s2, '{');
 		vector<member_t> members;
@@ -40,11 +42,11 @@ namespace floyd {
 				{ "name", name },
 				{ "members", members_to_json(members) }
 			})
-		);
+		)._value;
 		return { r, skip_whitespace(pos) };
 	}
 
-	std::pair<ast_json_t, seq_t>  parse_struct_definition(const seq_t& pos0){
+	std::pair<json_t, seq_t>  parse_struct_definition(const seq_t& pos0){
 		std::pair<bool, seq_t> token_pos = if_first(pos0, keyword_t::k_struct);
 		QUARK_ASSERT(token_pos.first);
 
@@ -79,7 +81,7 @@ namespace floyd {
 			})
 		});
 
-		ut_verify(QUARK_POS, r.first._value, expected);
+		ut_verify(QUARK_POS, r.first, expected);
 		ut_verify(QUARK_POS, r.second.str(), "");
 	}
 

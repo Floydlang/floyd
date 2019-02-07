@@ -9,13 +9,12 @@
 */
 
 #include "quark.h"
-#include <string>
 #include "json_support.h"
+#include <string>
 
 struct seq_t;
 
 namespace floyd {
-struct ast_json_t;
 struct parse_result_t;
 
 
@@ -28,8 +27,7 @@ struct parse_tree_t {
 };
 
 
-
-std::pair<ast_json_t, seq_t> parse_statement(const seq_t& pos0);
+std::pair<json_t, seq_t> parse_statement(const seq_t& s);
 
 //	"a = 1; print(a)"
 parse_result_t parse_statements_no_brackets(const seq_t& s);

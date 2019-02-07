@@ -13,25 +13,25 @@
 #include <string>
 
 struct seq_t;
+struct json_t;
 
 namespace floyd {
-	struct ast_json_t;
 
-	/*
-		OUTPUT:
-			[
-				"def-func",
-				{
-					"name": "main",
-					"args": [],
-					"return_type": "int",
-					"statements": [
-						[ "return", [ "k", 3, "int" ]]
-					]
-				}
-			]
-	*/
-	std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos);
+/*
+	OUTPUT:
+		[
+			"def-func",
+			{
+				"name": "main",
+				"args": [],
+				"return_type": "int",
+				"statements": [
+					[ "return", [ "k", 3, "int" ]]
+				]
+			}
+		]
+*/
+std::pair<json_t, seq_t> parse_function_definition2(const seq_t& pos);
 }
 
 #endif /* parser_function_hpp */

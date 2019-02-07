@@ -13,10 +13,9 @@
 #include <string>
 
 struct seq_t;
+struct json_t;
 
 namespace floyd {
-
-	struct ast_json_t;
 
 	/*
 		OUTPUT
@@ -31,9 +30,9 @@ namespace floyd {
 			}
 		]
 	*/
-	std::pair<ast_json_t, seq_t> parse_protocol_definition(const seq_t& pos);
+	std::pair<json_t, seq_t> parse_protocol_definition(const seq_t& pos);
 
-	std::pair<ast_json_t, seq_t>  parse_protocol_definition_body(const seq_t& p, const std::string& name);
+	std::pair<json_t, seq_t>  parse_protocol_definition_body(const seq_t& p, const std::string& name);
 }
 
 #endif /* parse_protocol_def_hpp */

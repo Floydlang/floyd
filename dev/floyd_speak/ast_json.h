@@ -152,6 +152,7 @@ location_t unpack_loc2(const ast_json_t& s);
 
 
 //??? move somewhere else
+void ut_verify_json_and_rest(const quark::call_context_t& context, const std::pair<json_t, seq_t>& result_pair, const std::string& expected_json, const std::string& expected_rest);
 void ut_verify_json_and_rest(const quark::call_context_t& context, const std::pair<ast_json_t, seq_t>& result_pair, const std::string& expected_json, const std::string& expected_rest);
 
 

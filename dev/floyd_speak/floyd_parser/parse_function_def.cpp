@@ -15,6 +15,8 @@
 #include "json_support.h"
 #include "ast_typeid.h"
 #include "ast_typeid_helpers.h"
+#include "compiler_basics.h"
+#include "ast_json.h"
 
 #include <cmath>
 
@@ -24,7 +26,7 @@ namespace floyd {
 	using std::vector;
 
 
-std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos){
+std::pair<json_t, seq_t> parse_function_definition2(const seq_t& pos){
 	const auto start = skip_whitespace(pos);
 	const auto func_pos = read_required(start, keyword_t::k_func);
 	const auto return_type_pos = read_required_type(func_pos);
@@ -43,11 +45,11 @@ std::pair<ast_json_t, seq_t> parse_function_definition2(const seq_t& pos){
 		json_t::make_object({
 			{ "name", function_name },
 			{ "args", args },
-			{ "statements", body.ast._value },
+			{ "statements", body.ast },
 			{ "return_type", typeid_to_ast_json(return_type_pos.first, json_tags::k_tag_resolve_state)._value },
 			{ "impure", impure_pos.first }
 		})
-	);
+	)._value;
 	return { function_def, body.pos };
 }
 
@@ -68,7 +70,7 @@ QUARK_UNIT_TEST("", "parse_function_definition2()", "Minimal function IMPURE", "
 			{ "args": [], "name": "f", "return_type": "^int", "statements": [[21, "return", ["k", 3, "^int"]]], "impure": true }
 		]
 	)";
-	ut_verify(QUARK_POS, parse_function_definition2(seq_t(input)).first._value, parse_json(seq_t(expected)).first);
+	ut_verify(QUARK_POS, parse_function_definition2(seq_t(input)).first, parse_json(seq_t(expected)).first);
 }
 
 const std::vector<test> testsxyz = {
@@ -150,7 +152,7 @@ const std::vector<test> testsxyz = {
 QUARK_UNIT_TEST("", "parse_function_definition2()", "BATCH", "Correct output JSON"){
 	for(const auto& e: testsxyz){
 		QUARK_SCOPED_TRACE(e.desc);
-		ut_verify(QUARK_POS, parse_function_definition2(seq_t(e.input)).first._value, parse_json(seq_t(e.output)).first);
+		ut_verify(QUARK_POS, parse_function_definition2(seq_t(e.input)).first, parse_json(seq_t(e.output)).first);
 	}
 }
 

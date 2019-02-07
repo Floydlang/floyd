@@ -12,18 +12,18 @@
 #include "quark.h"
 
 struct seq_t;
+struct json_t;
 
 namespace floyd {
-	struct ast_json_t;
 
 	/*
 		OUTPUT:
 			[ "bind", "float", "x", EXPRESSION, { "mutable": true } ]
 	*/
-	std::pair<ast_json_t, seq_t> parse_bind_statement(const seq_t& s);
+	std::pair<json_t, seq_t> parse_bind_statement(const seq_t& s);
 
-	std::pair<ast_json_t, seq_t> parse_assign_statement(const seq_t& s);
-	std::pair<ast_json_t, seq_t> parse_expression_statement(const seq_t& s);
+	std::pair<json_t, seq_t> parse_assign_statement(const seq_t& s);
+	std::pair<json_t, seq_t> parse_expression_statement(const seq_t& s);
 
 	//	Main function: detects each of the other implicit statements and parses them.
 
@@ -33,7 +33,7 @@ namespace floyd {
 		or
 		EXPRESSION, like "print(3)"
 	*/
-	std::pair<ast_json_t, seq_t> parse_prefixless_statement(const seq_t& s);
+	std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s);
 }
 
 #endif /* parse_implicit_statement_hpp */
