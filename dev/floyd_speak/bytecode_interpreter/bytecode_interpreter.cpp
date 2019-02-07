@@ -33,7 +33,7 @@ bc_value_t::bc_value_t() :
 bc_value_t::~bc_value_t(){
 	QUARK_ASSERT(check_invariant());
 
-	if(is_encoded_as_ext(_type)){
+	if(encode_as_external(_type)){
 		release_ext_pod(_pod);
 	}
 }
@@ -44,7 +44,7 @@ bc_value_t::bc_value_t(const bc_value_t& other) :
 {
 	QUARK_ASSERT(other.check_invariant());
 
-	if(is_encoded_as_ext(_type)){
+	if(encode_as_external(_type)){
 		add_ext_ref(*this);
 	}
 
@@ -281,12 +281,12 @@ bc_value_t::bc_value_t(const typeid_t& type, const bc_pod_value_t& internals) :
 {
 	QUARK_ASSERT(type.check_invariant());
 #if QUARK_ASSERT_ON
-	if(is_encoded_as_ext(type)){
+	if(encode_as_external(type)){
 		QUARK_ASSERT(check_ext_deep(type, internals._ext));
 	}
 #endif
 
-	if(is_encoded_as_ext(_type)){
+	if(encode_as_external(_type)){
 		_pod._ext->_rc++;
 	}
 	QUARK_ASSERT(check_invariant());
@@ -297,7 +297,7 @@ bc_value_t::bc_value_t(const typeid_t& type, const bc_inplace_value_t& pod64) :
 	_pod{._pod64 = pod64}
 {
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(is_encoded_as_ext(_type) == false);
+	QUARK_ASSERT(encode_as_external(_type) == false);
 
 	QUARK_ASSERT(check_invariant());
 }
@@ -319,7 +319,7 @@ bc_value_t::bc_value_t(const typeid_t& type, const bc_external_handle_t& handle)
 #if DEBUG
 bool bc_value_t::check_invariant() const {
 	QUARK_ASSERT(_type.check_invariant());
-	if(is_encoded_as_ext(_type)){
+	if(encode_as_external(_type)){
 		QUARK_ASSERT(check_ext_deep(_type, _pod._ext))
 	}
 
@@ -398,7 +398,7 @@ bc_external_handle_t::bc_external_handle_t(const bc_value_t& value) :
 	_ext(value._pod._ext)
 {
 	QUARK_ASSERT(value.check_invariant());
-	QUARK_ASSERT(is_encoded_as_ext(value._type));
+	QUARK_ASSERT(encode_as_external(value._type));
 
 	_ext->_rc++;
 
@@ -444,15 +444,15 @@ bool bc_external_handle_t::check_invariant() const {
 
 
 
-bool encode_as_pod64(const typeid_t& type){
+bool encode_as_inplace(const typeid_t& type){
 	return type.is_bool() || type.is_int() || type.is_double();
 }
-bool encode_as_vector_pod64(const typeid_t& type){
-	return type.is_vector() && encode_as_pod64(type.get_vector_element_type());
+bool encode_as_vector_w_inplace_element(const typeid_t& type){
+	return type.is_vector() && encode_as_inplace(type.get_vector_element_type());
 }
 
-bool encode_as_dict_pod64(const typeid_t& type){
-	return type.is_dict() && encode_as_pod64(type.get_dict_value_type());
+bool encode_as_dict_w_inplace_values(const typeid_t& type){
+	return type.is_dict() && encode_as_inplace(type.get_dict_value_type());
 }
 
 value_runtime_encoding type_to_encoding(const typeid_t& type){
@@ -526,7 +526,7 @@ value_runtime_encoding type_to_encoding(const typeid_t& type){
 
 
 //	??? very slow?
-bool is_encoded_as_ext(value_runtime_encoding encoding){
+bool encode_as_external(value_runtime_encoding encoding){
 	return false
 		|| encoding == value_runtime_encoding::k_external__string
 		|| encoding == value_runtime_encoding::k_external__json_value
@@ -539,7 +539,7 @@ bool is_encoded_as_ext(value_runtime_encoding encoding){
 }
 
 //	??? very slow?
-bool is_encoded_as_ext(const typeid_t& type){
+bool encode_as_external(const typeid_t& type){
 	const auto basetype = type.get_base_type();
 	return false
 		|| basetype == base_type::k_string
@@ -560,7 +560,7 @@ bool is_encoded_as_ext(const typeid_t& type){
 
 #if DEBUG
 bool bc_external_value_t::check_invariant() const{
-	QUARK_ASSERT(is_encoded_as_ext(_debug_type));
+	QUARK_ASSERT(encode_as_external(_debug_type));
 	QUARK_ASSERT(_rc > 0);
 	QUARK_ASSERT(_debug_type.check_invariant());
 	QUARK_ASSERT(_typeid_value.check_invariant());
@@ -765,7 +765,7 @@ bc_external_value_t::bc_external_value_t(const typeid_t& type, const immer::map<
 
 bool check_ext_deep(const typeid_t& type, const bc_external_value_t* ext){
 	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(is_encoded_as_ext(type));
+	QUARK_ASSERT(encode_as_external(type));
 	QUARK_ASSERT(ext != nullptr);
 	QUARK_ASSERT(ext->_rc > 0);
 
@@ -782,7 +782,7 @@ bool check_ext_deep(const typeid_t& type, const bc_external_value_t* ext){
 	}
 	else if(basetype == base_type::k_vector){
 		const auto& element_type  = type.get_vector_element_type();
-		if(is_encoded_as_ext(element_type)){
+		if(encode_as_external(element_type)){
 			for(const auto& e: ext->_vector_objects){
 				QUARK_ASSERT(e.check_invariant());
 			}
@@ -794,7 +794,7 @@ bool check_ext_deep(const typeid_t& type, const bc_external_value_t* ext){
 	}
 	else if(basetype == base_type::k_dict){
 		const auto& element_type  = type.get_dict_value_type();
-		if(is_encoded_as_ext(element_type)){
+		if(encode_as_external(element_type)){
 			for(const auto& e: ext->_vector_objects){
 				QUARK_ASSERT(e.check_invariant());
 			}
@@ -832,7 +832,7 @@ const immer::vector<bc_value_t> get_vector(const bc_value_t& value){
 
 	const auto element_type = value._type.get_vector_element_type();
 
-	if(encode_as_vector_pod64(value._type)){
+	if(encode_as_vector_w_inplace_element(value._type)){
 		immer::vector<bc_value_t> result;
 		for(const auto& e: value._pod._ext->_vector_pod64){
 			bc_value_t temp(element_type, e);
@@ -855,7 +855,7 @@ const immer::vector<bc_value_t> get_vector(const bc_value_t& value){
 const immer::vector<bc_external_handle_t>* get_vector_value(const bc_value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value._type.is_vector());
-	QUARK_ASSERT(encode_as_vector_pod64(value._type) == false);
+	QUARK_ASSERT(encode_as_vector_w_inplace_element(value._type) == false);
 
 	return &value._pod._ext->_vector_objects;
 }
@@ -863,7 +863,7 @@ const immer::vector<bc_external_handle_t>* get_vector_value(const bc_value_t& va
 const immer::vector<bc_inplace_value_t>* get_vector_value_pods(const bc_value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value._type.is_vector());
-	QUARK_ASSERT(encode_as_vector_pod64(value._type) == true);
+	QUARK_ASSERT(encode_as_vector_w_inplace_element(value._type) == true);
 
 	return &value._pod._ext->_vector_pod64;
 }
@@ -877,7 +877,7 @@ bc_value_t make_vector(const typeid_t& element_type, const immer::vector<bc_valu
 #endif
 
 	const auto vector_type = typeid_t::make_vector(element_type);
-	if(encode_as_vector_pod64(vector_type)){
+	if(encode_as_vector_w_inplace_element(vector_type)){
 		immer::vector<bc_inplace_value_t> elements2;
 		for(const auto& e: elements){
 			elements2 = elements2.push_back(e._pod._pod64);
@@ -912,7 +912,7 @@ bc_value_t make_vector_value(const typeid_t& element_type, const immer::vector<b
 #endif
 
 	const auto vector_type = typeid_t::make_vector(element_type);
-	QUARK_ASSERT(encode_as_vector_pod64(vector_type) == false);
+	QUARK_ASSERT(encode_as_vector_w_inplace_element(vector_type) == false);
 
 	bc_value_t temp;
 	temp._type = vector_type;
@@ -925,7 +925,7 @@ bc_value_t make_vector_int64_value(const typeid_t& element_type, const immer::ve
 	QUARK_ASSERT(element_type.check_invariant());
 
 	const auto vector_type = typeid_t::make_vector(element_type);
-	QUARK_ASSERT(encode_as_vector_pod64(vector_type) == true);
+	QUARK_ASSERT(encode_as_vector_w_inplace_element(vector_type) == true);
 
 	bc_value_t temp;
 	temp._type = vector_type;
@@ -1129,7 +1129,7 @@ bc_value_t update_vector_element(interpreter_t& vm, const bc_value_t vec, int64_
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
 	const auto element_type = vec._type.get_vector_element_type();
-	if(encode_as_vector_pod64(vec._type)){
+	if(encode_as_vector_w_inplace_element(vec._type)){
 		auto v2 = vec._pod._ext->_vector_pod64;
 
 		if(lookup_index < 0 || lookup_index >= v2.size()){
@@ -1150,7 +1150,7 @@ bc_value_t update_vector_element(interpreter_t& vm, const bc_value_t vec, int64_
 		else{
 //			QUARK_TRACE_SS("bc1:  " << json_to_pretty_string(bcvalue_to_json(obj)));
 
-			QUARK_ASSERT(is_encoded_as_ext(value._type));
+			QUARK_ASSERT(encode_as_external(value._type));
 			const auto e = bc_external_handle_t(value);
 			v2 = v2.set(lookup_index, e);
 			const auto s2 = make_vector_value(element_type, v2);
@@ -1173,7 +1173,7 @@ bc_value_t update_dict_entry(interpreter_t& vm, const bc_value_t dict, const std
 
 	const auto value_type = dict._type.get_dict_value_type();
 
-	if(encode_as_dict_pod64(dict._type)){
+	if(encode_as_dict_w_inplace_values(dict._type)){
 		auto entries2 = dict._pod._ext->_dict_pod64.set(key, value._pod._pod64);
 		const auto value2 = make_dict_value(value_type, entries2);
 		return value2;
@@ -1963,7 +1963,7 @@ bc_static_frame_t::bc_static_frame_t(const std::vector<bc_instruction_t>& instrs
 
 	for(int i = 0 ; i < _symbols.size() ; i++){
 		const auto type = _symbols[i].second._value_type;
-		const bool ext = is_encoded_as_ext(type);
+		const bool ext = encode_as_external(type);
 		_exts.push_back(ext);
 	}
 
@@ -2032,7 +2032,7 @@ bc_function_definition_t::bc_function_definition_t(
 	_frame_ptr(frame),
 	_host_function_id(host_function_id),
 	_dyn_arg_count(-1),
-	_return_is_ext(is_encoded_as_ext(_function_type.get_function_return()))
+	_return_is_ext(encode_as_external(_function_type.get_function_return()))
 {
 	_dyn_arg_count = count_function_dynamic_args(function_type);
 }
@@ -2075,7 +2075,7 @@ bool interpreter_stack_t::check_stack_frame(const frame_pos_t& in_frame) const{
 		for(int i = 0 ; i < in_frame._frame_ptr->_symbols.size() ; i++){
 			const auto& symbol = in_frame._frame_ptr->_symbols[i];
 
-			bool symbol_ext = is_encoded_as_ext(symbol.second._value_type);
+			bool symbol_ext = encode_as_external(symbol.second._value_type);
 			int local_pos = get_local_n_pos(in_frame._frame_pos, i);
 
 			bool stack_ext = is_ext(local_pos);
@@ -2142,7 +2142,7 @@ json_t interpreter_stack_t::stack_to_json() const{
 
 #if DEBUG
 		const auto debug_type = _debug_types[i];
-		const auto ext = is_encoded_as_ext(debug_type);
+		const auto ext = encode_as_external(debug_type);
 		const auto bc_pod = _entries[i];
 		const auto bc = bc_value_t(debug_type, bc_pod);
 
@@ -2221,7 +2221,7 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 		std::vector<bool> exts;
 		for(int i = 0 ; i < arg_count ; i++){
 			const auto& bc = args[i];
-			bool is_ext = is_encoded_as_ext(args[i]._type);
+			bool is_ext = encode_as_external(args[i]._type);
 			exts.push_back(is_ext);
 			if(is_ext){
 				vm._stack.push_obj(bc);
@@ -2492,14 +2492,14 @@ void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_
 
 	const auto& target_type = lookup_full_type(vm, target_itype);
 	QUARK_ASSERT(target_type.is_vector());
-	QUARK_ASSERT(encode_as_vector_pod64(target_type) == false);
+	QUARK_ASSERT(encode_as_vector_w_inplace_element(target_type) == false);
 
 	const auto& element_type = target_type.get_vector_element_type();
 	QUARK_ASSERT(element_type.is_undefined() == false);
 	QUARK_ASSERT(target_type.is_undefined() == false);
 
 	const int arg0_stack_pos = vm._stack.size() - arg_count;
-//	bool is_element_ext = is_encoded_as_ext(element_type);
+//	bool is_element_ext = encode_as_external(element_type);
 
 	immer::vector<bc_external_handle_t> elements2;
 	for(int i = 0 ; i < arg_count ; i++){
@@ -2828,7 +2828,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			for(int m = 0 ; m < n ; m++){
 				bool ext = (bits & 1) ? true : false;
 
-				QUARK_ASSERT(is_encoded_as_ext(stack._debug_types.back()) == ext);
+				QUARK_ASSERT(encode_as_external(stack._debug_types.back()) == ext);
 	#if DEBUG
 				stack._debug_types.pop_back();
 	#endif
@@ -3309,7 +3309,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto arg_count = i._c;
 			const auto& vector_type = lookup_full_type(vm, target_itype);
 			QUARK_ASSERT(vector_type.is_vector());
-			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == false);
+			QUARK_ASSERT(encode_as_vector_w_inplace_element(vector_type) == false);
 
 			execute_new_vector_obj(vm, dest_reg, target_itype, arg_count);
 			break;
@@ -3518,7 +3518,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			const auto& vector_type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto& element_type = vector_type.get_vector_element_type();
-			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == false);
+			QUARK_ASSERT(encode_as_vector_w_inplace_element(vector_type) == false);
 
 			//	Copy left into new vector.
 			immer::vector<bc_external_handle_t> elements2 = regs[i._b]._ext->_vector_objects;
@@ -3538,7 +3538,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			const auto& vector_type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto& element_type = vector_type.get_vector_element_type();
-			QUARK_ASSERT(encode_as_vector_pod64(vector_type) == true);
+			QUARK_ASSERT(encode_as_vector_w_inplace_element(vector_type) == true);
 
 			//	Copy left into new vector.
 			auto elements2 = regs[i._b]._ext->_vector_pod64;

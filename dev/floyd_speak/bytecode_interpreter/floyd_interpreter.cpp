@@ -199,7 +199,7 @@ bc_value_t value_to_bc(const value_t& value){
 		const auto vector_type = value.get_type();
 		const auto element_type = vector_type.get_vector_element_type();
 
-		if(encode_as_vector_pod64(vector_type)){
+		if(encode_as_vector_w_inplace_element(vector_type)){
 			const auto& vec = value.get_vector_value();
 			immer::vector<bc_inplace_value_t> vec2;
 			if(element_type.is_bool()){

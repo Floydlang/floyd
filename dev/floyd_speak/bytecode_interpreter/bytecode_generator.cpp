@@ -324,7 +324,7 @@ bcgen_body_t copy_value(bcgenerator_t& vm, const typeid_t& type, const reg_t& de
 	QUARK_ASSERT(source_reg.check_invariant());
 
 	auto body_acc = body;
-	bool is_ext = is_encoded_as_ext(type);
+	bool is_ext = encode_as_external(type);
 
 	//	If this asserts, we should special-case and do nothing.
 	QUARK_ASSERT(!(dest_reg == source_reg));
@@ -669,7 +669,7 @@ expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& vm, const variab
 			return bc_opcode::k_lookup_element_json_value;
 		}
 		else if(parent_type.is_vector()){
-			if(encode_as_vector_pod64(parent_type)){
+			if(encode_as_vector_w_inplace_element(parent_type)){
 				return bc_opcode::k_lookup_element_vector_pod64;
 			}
 			else{
@@ -677,7 +677,7 @@ expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& vm, const variab
 			}
 		}
 		else if(parent_type.is_dict()){
-			if(encode_as_dict_pod64(parent_type)){
+			if(encode_as_dict_w_inplace_values(parent_type)){
 				return bc_opcode::k_lookup_element_dict_pod64;
 			}
 			else{
@@ -800,7 +800,7 @@ call_setup_t gen_call_setup(bcgenerator_t& vm, const std::vector<typeid_t>& func
 		}
 
 		const auto arg_type_full = vm._types[callee_arg_type];
-		bool ext = is_encoded_as_ext(arg_type_full);
+		bool ext = encode_as_external(arg_type_full);
 		if(ext){
 			body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_obj, arg_reg, {}, {} ));
 			exts.push_back(true);
@@ -840,7 +840,7 @@ bc_opcode convert_call_to_size_opcode(const typeid_t& arg1_type){
 	QUARK_ASSERT(arg1_type.check_invariant());
 
 	if(arg1_type.is_vector()){
-		if(encode_as_vector_pod64(arg1_type)){
+		if(encode_as_vector_w_inplace_element(arg1_type)){
 			return bc_opcode::k_get_size_vector_pod64;
 		}
 		else{
@@ -848,7 +848,7 @@ bc_opcode convert_call_to_size_opcode(const typeid_t& arg1_type){
 		}
 	}
 	else if(arg1_type.is_dict()){
-		if(encode_as_dict_pod64(arg1_type)){
+		if(encode_as_dict_w_inplace_values(arg1_type)){
 			return bc_opcode::k_get_size_dict_pod64;
 		}
 		else{
@@ -870,7 +870,7 @@ bc_opcode convert_call_to_pushback_opcode(const typeid_t& arg1_type){
 	QUARK_ASSERT(arg1_type.check_invariant());
 
 	if(arg1_type.is_vector()){
-		if(encode_as_vector_pod64(arg1_type)){
+		if(encode_as_vector_w_inplace_element(arg1_type)){
 			return bc_opcode::k_pushback_vector_pod64;
 		}
 		else{
@@ -1010,7 +1010,7 @@ expression_gen_t bcgen_construct_value_expression(bcgenerator_t& vm, const varia
 	const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: construct value result") : target_reg;
 
 	if(target_type.is_vector()){
-		if(encode_as_vector_pod64(target_type)){
+		if(encode_as_vector_w_inplace_element(target_type)){
 			body_acc._instrs.push_back(bcgen_instruction_t(
 				bc_opcode::k_new_vector_pod64,
 				target_reg2,
@@ -1028,7 +1028,7 @@ expression_gen_t bcgen_construct_value_expression(bcgenerator_t& vm, const varia
 		}
 	}
 	else if(target_type.is_dict()){
-		if(encode_as_dict_pod64(target_type)){
+		if(encode_as_dict_w_inplace_values(target_type)){
 			body_acc._instrs.push_back(bcgen_instruction_t(
 				bc_opcode::k_new_dict_pod64,
 				target_reg2,
@@ -1302,7 +1302,7 @@ expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& vm, const variable_a
 			return conv_opcode.at(e._operation);
 		}
 		else if(type.is_vector()){
-			if(encode_as_vector_pod64(type)){
+			if(encode_as_vector_w_inplace_element(type)){
 				static const std::map<expression_type, bc_opcode> conv_opcode = {
 					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_pod64 },
 					{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },

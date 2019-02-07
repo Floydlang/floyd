@@ -68,8 +68,9 @@ union bc_pod_value_t {
 };
 
 
-//////////////////////////////////////		Encodings
+//////////////////////////////////////		value_runtime_encoding
 
+//	Tells how a specific type of value needs to be store in the interpreter.
 
 enum class value_runtime_encoding {
 	k_none,
@@ -79,7 +80,6 @@ enum class value_runtime_encoding {
 	k_external__string,
 	k_external__json_value,
 
-	//	This is a type that specifies another type.
 	k_external__typeid,
 
 	k_external__struct,
@@ -87,21 +87,19 @@ enum class value_runtime_encoding {
 	k_external__vector,
 	k_external__vector_pod64,
 	k_external__dict,
-	k_inplace__function,
+	k_inplace__function
 };
 
-
-bool encode_as_pod64(const typeid_t& type);
-bool encode_as_vector_pod64(const typeid_t& type);
-bool encode_as_dict_pod64(const typeid_t& type);
+bool encode_as_inplace(const typeid_t& type);
+bool encode_as_vector_w_inplace_element(const typeid_t& type);
+bool encode_as_dict_w_inplace_values(const typeid_t& type);
 value_runtime_encoding type_to_encoding(const typeid_t& type);
 
 //	Will this type of value require an ext ? bc_external_value_t to be used?
-bool is_encoded_as_ext(value_runtime_encoding encoding);
+bool encode_as_external(value_runtime_encoding encoding);
 
 //	Will this type of value require an ext ? bc_external_value_t to be used?
-bool is_encoded_as_ext(const typeid_t& type);
-
+bool encode_as_external(const typeid_t& type);
 
 
 //////////////////////////////////////		bc_value_t
@@ -1087,7 +1085,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
 		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_vector());
-		QUARK_ASSERT(encode_as_vector_pod64(_current_frame_ptr->_symbols[reg].second._value_type) == false);
+		QUARK_ASSERT(encode_as_vector_w_inplace_element(_current_frame_ptr->_symbols[reg].second._value_type) == false);
 		return true;
 	}
 
@@ -1095,7 +1093,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
 		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_vector());
-		QUARK_ASSERT(encode_as_vector_pod64(_current_frame_ptr->_symbols[reg].second._value_type) == true);
+		QUARK_ASSERT(encode_as_vector_w_inplace_element(_current_frame_ptr->_symbols[reg].second._value_type) == true);
 		return true;
 	}
 
@@ -1103,14 +1101,14 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
 		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_dict());
-		QUARK_ASSERT(encode_as_dict_pod64(_current_frame_ptr->_symbols[reg].second._value_type) == false);
+		QUARK_ASSERT(encode_as_dict_w_inplace_values(_current_frame_ptr->_symbols[reg].second._value_type) == false);
 		return true;
 	}
 	public: bool check_reg_dict_pod64(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
 		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_dict());
-		QUARK_ASSERT(encode_as_dict_pod64(_current_frame_ptr->_symbols[reg].second._value_type) == true);
+		QUARK_ASSERT(encode_as_dict_w_inplace_values(_current_frame_ptr->_symbols[reg].second._value_type) == true);
 		return true;
 	}
 
@@ -1175,7 +1173,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 #if DEBUG
-		QUARK_ASSERT(is_encoded_as_ext(value._type) == true);
+		QUARK_ASSERT(encode_as_external(value._type) == true);
 #endif
 
 		value._pod._ext->_rc++;
@@ -1192,7 +1190,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 #if DEBUG
-		QUARK_ASSERT(is_encoded_as_ext(value._type) == false);
+		QUARK_ASSERT(encode_as_external(value._type) == false);
 #endif
 
 		_entries[_stack_size] = value._pod;
@@ -1229,7 +1227,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(value.check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 #if FLOYD_BC_VALUE_DEBUG_TYPE
-		QUARK_ASSERT(is_encoded_as_ext(value._type.get_base_type()) == false);
+		QUARK_ASSERT(encode_as_external(value._type.get_base_type()) == false);
 #endif
 		QUARK_ASSERT(_debug_types[pos] == value._type);
 
@@ -1243,7 +1241,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(value.check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 #if FLOYD_BC_VALUE_DEBUG_TYPE
-		QUARK_ASSERT(is_encoded_as_ext(value._type.get_base_type()) == true);
+		QUARK_ASSERT(encode_as_external(value._type.get_base_type()) == true);
 #endif
 		QUARK_ASSERT(_debug_types[pos] == value._type);
 
@@ -1271,7 +1269,7 @@ struct interpreter_stack_t {
 	private: inline void pop(bool ext){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(_stack_size > 0);
-		QUARK_ASSERT(is_encoded_as_ext(_debug_types.back()) == ext);
+		QUARK_ASSERT(encode_as_external(_debug_types.back()) == ext);
 
 		auto copy = _entries[_stack_size - 1];
 		_stack_size--;
@@ -1289,7 +1287,7 @@ struct interpreter_stack_t {
 	private: bool is_ext(int pos) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
-		return is_encoded_as_ext(_debug_types[pos]);
+		return encode_as_external(_debug_types[pos]);
 	}
 #endif
 
@@ -1399,14 +1397,6 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, const std::string& s);
 
 bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_value_t& lookup_key, const bc_value_t& new_value);
-
-
-
-
-
-
-
-
 
 
 } //	floyd
