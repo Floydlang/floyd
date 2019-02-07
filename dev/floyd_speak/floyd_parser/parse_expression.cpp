@@ -40,10 +40,6 @@ QUARK_UNIT_TEST("parser", "C++ enum class()", "", ""){
 std::pair<json_t, seq_t> parse_expression_deep(const seq_t& p, const eoperator_precedence precedence);
 
 
-
-
-
-
 std::string expr_to_string(const json_t& e){
 	return json_to_compact_string(e);
 }
@@ -215,8 +211,6 @@ QUARK_UNIT_TEST("parser", "parse_bounded_list()", "two elements", ""){
 	);
 }
 
-
-
 /*
 Escape sequence	Hex value in ASCII	Character represented
 \a	07	Alert (Beep, Bell) (added in C89)[1]
@@ -340,7 +334,6 @@ QUARK_UNIT_TEST("parser", "parse_string_literal()", "Escape \'", ""){
 }
 
 
-
 // [0-9] and "."  => numeric constant.
 std::pair<value_t, seq_t> parse_numeric_constant(const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
@@ -378,6 +371,135 @@ QUARK_UNIT_TEST("parser", "parse_numeric_constant()", "", ""){
 	const auto a = parse_numeric_constant(seq_t("0.5 xxx"));
 	QUARK_UT_VERIFY(a.first.get_double_value() == 0.5f);
 	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+
+/*
+	Constant literal or identifier.
+		3
+		3.0
+		"three"
+		true
+		false
+		hello2
+		x
+*/
+std::pair<json_t, seq_t> parse_terminal(const seq_t& p0) {
+	QUARK_ASSERT(p0.check_invariant());
+
+	const auto p = skip_whitespace(p0);
+
+	//	String literal?
+	if(p.first1() == "\""){
+		const auto value_pos = parse_string_literal(p);
+		const auto result = maker__make_constant(value_t::make_string(value_pos.first));
+		return { result._value, value_pos.second };
+	}
+
+	//	Number constant?
+	// [0-9] and "."  => numeric constant.
+	else if(k_c99_number_chars.find(p.first1()) != std::string::npos){
+		const auto value_p = parse_numeric_constant(p);
+		const auto result = maker__make_constant(value_p.first);
+		return { result._value, value_p.second };
+	}
+
+	else if(if_first(p, keyword_t::k_true).first){
+		const auto result = maker__make_constant(value_t::make_bool(true));
+		return { result._value, if_first(p, keyword_t::k_true).second };
+	}
+
+	else if(if_first(p, keyword_t::k_false).first){
+		const auto result = maker__make_constant(value_t::make_bool(false));
+		return { result._value, if_first(p, keyword_t::k_false).second };
+	}
+
+	//	Identifier?
+	{
+		const auto identifier_s = read_while(p, k_c99_identifier_chars);
+		if(!identifier_s.first.empty()){
+			const auto result = maker__make_identifier(identifier_s.first);
+			return { result._value, identifier_s.second };
+		}
+	}
+
+	throw_compiler_error(location_t(p.pos()), "Expected constant or identifier.");
+}
+
+void ut_verify_terminal(const std::string& expression, const std::string& expected_value, const std::string& expected_seq){
+	const auto result = parse_terminal(seq_t(expression));
+	const std::string json_s = expr_to_string(result.first);
+	if(json_s == expected_value && result.second.get_s() == expected_seq){
+	}
+	else{
+		QUARK_TRACE_SS("input:" << expression);
+		QUARK_TRACE_SS("expect:" << expected_value);
+		QUARK_TRACE_SS("result:" << json_s);
+		fail_test(QUARK_POS);
+	}
+}
+
+QUARK_UNIT_TEST("parser", "parse_terminal()", "identifier", ""){
+	ut_verify_terminal(
+		"123 xxx",
+		R"(["k", 123, "^int"])",
+		" xxx"
+	);
+}
+
+QUARK_UNIT_TEST("parser", "parse_terminal()", "identifier", ""){
+	ut_verify_terminal(
+		"123.5 xxx",
+		R"(["k", 123.5, "^double"])",
+		" xxx"
+	);
+}
+
+QUARK_UNIT_TEST("parser", "parse_terminal()", "identifier", ""){
+	ut_verify_terminal(
+		"0.0 xxx",
+		R"(["k", 0, "^double"])",
+		" xxx"
+	);
+}
+
+QUARK_UNIT_TEST("parser", "parse_terminal()", "identifier", ""){
+	ut_verify_terminal(
+		"hello xxx",
+		R"(["@", "hello"])",
+		" xxx"
+	);
+}
+
+QUARK_UNIT_TEST("parser", "parse_terminal()", "identifier", ""){
+	ut_verify_terminal(
+		R"("world!" xxx)",
+		R"(["k", "world!", "^string"])",
+		" xxx"
+	);
+}
+
+QUARK_UNIT_TEST("parser", "parse_terminal()", "identifier", ""){
+	ut_verify_terminal(
+		R"("" xxx)",
+		R"(["k", "", "^string"])",
+		" xxx"
+	);
+}
+
+
+QUARK_UNIT_TEST("parser", "parse_terminal()", "identifier", ""){
+	ut_verify_terminal(
+		"true xxx",
+		R"(["k", true, "^bool"])",
+		" xxx"
+	);
+}
+QUARK_UNIT_TEST("parser", "parse_terminal()", "identifier", ""){
+	ut_verify_terminal(
+		"false xxx",
+		R"(["k", false, "^bool"])",
+		" xxx"
+	);
 }
 
 
@@ -565,138 +687,6 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 		}
 	}
 }
-
-
-/*
-	Constant literal or identifier.
-		3
-		3.0
-		"three"
-		true
-		false
-		hello2
-		x
-*/
-std::pair<json_t, seq_t> parse_terminal(const seq_t& p0) {
-	QUARK_ASSERT(p0.check_invariant());
-
-	const auto p = skip_whitespace(p0);
-
-	//	String literal?
-	if(p.first1() == "\""){
-		const auto value_pos = parse_string_literal(p);
-		const auto result = maker__make_constant(value_t::make_string(value_pos.first));
-		return { result._value, value_pos.second };
-	}
-
-	//	Number constant?
-	// [0-9] and "."  => numeric constant.
-	else if(k_c99_number_chars.find(p.first1()) != std::string::npos){
-		const auto value_p = parse_numeric_constant(p);
-		const auto result = maker__make_constant(value_p.first);
-		return { result._value, value_p.second };
-	}
-
-	else if(if_first(p, keyword_t::k_true).first){
-		const auto result = maker__make_constant(value_t::make_bool(true));
-		return { result._value, if_first(p, keyword_t::k_true).second };
-	}
-
-	else if(if_first(p, keyword_t::k_false).first){
-		const auto result = maker__make_constant(value_t::make_bool(false));
-		return { result._value, if_first(p, keyword_t::k_false).second };
-	}
-
-	//	Identifier?
-	{
-		const auto identifier_s = read_while(p, k_c99_identifier_chars);
-		if(!identifier_s.first.empty()){
-			const auto result = maker__make_identifier(identifier_s.first);
-			return { result._value, identifier_s.second };
-		}
-	}
-
-	throw_compiler_error(location_t(p.pos()), "Expected constant or identifier.");
-}
-
-void ut_verify_terminal(const std::string& expression, const std::string& expected_value, const std::string& expected_seq){
-	const auto result = parse_terminal(seq_t(expression));
-	const std::string json_s = expr_to_string(result.first);
-	if(json_s == expected_value && result.second.get_s() == expected_seq){
-	}
-	else{
-		QUARK_TRACE_SS("input:" << expression);
-		QUARK_TRACE_SS("expect:" << expected_value);
-		QUARK_TRACE_SS("result:" << json_s);
-		fail_test(QUARK_POS);
-	}
-}
-
-QUARK_UNIT_TEST("parser", "parse_terminal()", "identifier", ""){
-	ut_verify_terminal(
-		"123 xxx",
-		R"(["k", 123, "^int"])",
-		" xxx"
-	);
-}
-
-QUARK_UNIT_TEST("parser", "parse_terminal()", "identifier", ""){
-	ut_verify_terminal(
-		"123.5 xxx",
-		R"(["k", 123.5, "^double"])",
-		" xxx"
-	);
-}
-
-QUARK_UNIT_TEST("parser", "parse_terminal()", "identifier", ""){
-	ut_verify_terminal(
-		"0.0 xxx",
-		R"(["k", 0, "^double"])",
-		" xxx"
-	);
-}
-
-QUARK_UNIT_TEST("parser", "parse_terminal()", "identifier", ""){
-	ut_verify_terminal(
-		"hello xxx",
-		R"(["@", "hello"])",
-		" xxx"
-	);
-}
-
-QUARK_UNIT_TEST("parser", "parse_terminal()", "identifier", ""){
-	ut_verify_terminal(
-		R"("world!" xxx)",
-		R"(["k", "world!", "^string"])",
-		" xxx"
-	);
-}
-
-QUARK_UNIT_TEST("parser", "parse_terminal()", "identifier", ""){
-	ut_verify_terminal(
-		R"("" xxx)",
-		R"(["k", "", "^string"])",
-		" xxx"
-	);
-}
-
-
-QUARK_UNIT_TEST("parser", "parse_terminal()", "identifier", ""){
-	ut_verify_terminal(
-		"true xxx",
-		R"(["k", true, "^bool"])",
-		" xxx"
-	);
-}
-QUARK_UNIT_TEST("parser", "parse_terminal()", "identifier", ""){
-	ut_verify_terminal(
-		"false xxx",
-		R"(["k", false, "^bool"])",
-		" xxx"
-	);
-}
-
-
 
 
 /*
@@ -1470,9 +1460,6 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "Invalid characters", ""){
 	test__parse_expression__throw("2/", "Unexpected end of string.");
 }
 */
-
-
-
 
 
 std::pair<json_t, seq_t> parse_expression_deep(const seq_t& p, const eoperator_precedence precedence){

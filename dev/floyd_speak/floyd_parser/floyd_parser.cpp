@@ -355,12 +355,7 @@ QUARK_UNIT_TEST("", "parse_program2()", "k_test_program_100_source", ""){
 }
 
 
-
-
-
-
 //////////////////////////////////////////////////		detect_implicit_statement_lookahead()
-
 
 
 enum class implicit_statement {
