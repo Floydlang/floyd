@@ -1747,23 +1747,23 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_nop, { "nop", opcode_info_t::encoding::k_e_0000 }},
 
-	{ bc_opcode::k_load_global_obj, { "load_global_obj", opcode_info_t::encoding::k_k_0ri0 } },
-	{ bc_opcode::k_load_global_intern, { "load_global_intern", opcode_info_t::encoding::k_k_0ri0 } },
+	{ bc_opcode::k_load_global_external_value, { "load_global_external_value", opcode_info_t::encoding::k_k_0ri0 } },
+	{ bc_opcode::k_load_global_inplace_value, { "load_global_inplace_value", opcode_info_t::encoding::k_k_0ri0 } },
 
-	{ bc_opcode::k_store_global_obj, { "store_global_obj", opcode_info_t::encoding::k_r_0ir0 } },
-	{ bc_opcode::k_store_global_intern, { "store_global_intern", opcode_info_t::encoding::k_r_0ir0 } },
+	{ bc_opcode::k_store_global_external_value, { "store_global_external_value", opcode_info_t::encoding::k_r_0ir0 } },
+	{ bc_opcode::k_store_global_inplace_value, { "store_global_inplace_value", opcode_info_t::encoding::k_r_0ir0 } },
 
-	{ bc_opcode::k_copy_reg_intern, { "copy_reg_intern", opcode_info_t::encoding::k_q_0rr0 } },
-	{ bc_opcode::k_copy_reg_obj, { "copy_reg_obj", opcode_info_t::encoding::k_q_0rr0 } },
+	{ bc_opcode::k_copy_reg_inplace_value, { "copy_reg_inplace_value", opcode_info_t::encoding::k_q_0rr0 } },
+	{ bc_opcode::k_copy_reg_external_value, { "copy_reg_external_value", opcode_info_t::encoding::k_q_0rr0 } },
 
 	{ bc_opcode::k_get_struct_member, { "get_struct_member", opcode_info_t::encoding::k_s_0rri } },
 
 	{ bc_opcode::k_lookup_element_string, { "lookup_element_string", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_lookup_element_json_value, { "lookup_element_jsonvalue", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_lookup_element_vector_obj, { "lookup_element_vector_obj", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_lookup_element_vector_pod64, { "lookup_element_vector_pod64", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_lookup_element_dict_obj, { "lookup_element_dict_obj", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_lookup_element_dict_pod64, { "lookup_element_dict_pod64", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_lookup_element_vector_w_external_elements, { "lookup_element_vector_w_external_elements", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_lookup_element_vector_w_inplace_elements, { "lookup_element_vector_w_inplace_elements", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_lookup_element_dict_w_external_values, { "lookup_element_dict_w_external_values", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_lookup_element_dict_w_inplace_values, { "lookup_element_dict_w_inplace_values", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_get_size_vector_obj, { "get_size_vector_obj", opcode_info_t::encoding::k_q_0rr0 } },
 	{ bc_opcode::k_get_size_vector_pod64, { "get_size_vector_pod64", opcode_info_t::encoding::k_q_0rr0 } },
@@ -2627,7 +2627,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		//////////////////////////////////////////		ACCESS GLOBALS
 
 
-		case bc_opcode::k_load_global_obj: {
+		case bc_opcode::k_load_global_external_value: {
 			QUARK_ASSERT(stack.check_reg_obj(i._a));
 			QUARK_ASSERT(stack.check_global_access_obj(i._b));
 
@@ -2637,7 +2637,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			new_value_pod._external->_rc++;
 			break;
 		}
-		case bc_opcode::k_load_global_intern: {
+		case bc_opcode::k_load_global_inplace_value: {
 			QUARK_ASSERT(stack.check_reg_intern(i._a));
 
 			regs[i._a] = globals[i._b];
@@ -2645,7 +2645,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 
-		case bc_opcode::k_store_global_obj: {
+		case bc_opcode::k_store_global_external_value: {
 			QUARK_ASSERT(stack.check_global_access_obj(i._a));
 			QUARK_ASSERT(stack.check_reg_obj(i._b));
 
@@ -2655,7 +2655,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			new_value_pod._external->_rc++;
 			break;
 		}
-		case bc_opcode::k_store_global_intern: {
+		case bc_opcode::k_store_global_inplace_value: {
 			QUARK_ASSERT(stack.check_global_access_intern(i._a));
 			QUARK_ASSERT(stack.check_reg_intern(i._b));
 
@@ -2667,14 +2667,14 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		//////////////////////////////////////////		ACCESS LOCALS
 
 
-		case bc_opcode::k_copy_reg_intern: {
+		case bc_opcode::k_copy_reg_inplace_value: {
 			QUARK_ASSERT(stack.check_reg_intern(i._a));
 			QUARK_ASSERT(stack.check_reg_intern(i._b));
 
 			regs[i._a] = regs[i._b];
 			break;
 		}
-		case bc_opcode::k_copy_reg_obj: {
+		case bc_opcode::k_copy_reg_external_value: {
 			QUARK_ASSERT(stack.check_reg_obj(i._a));
 			QUARK_ASSERT(stack.check_reg_obj(i._b));
 
@@ -2950,7 +2950,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		case bc_opcode::k_lookup_element_vector_obj: {
+		case bc_opcode::k_lookup_element_vector_w_external_elements: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_obj(i._a));
 			QUARK_ASSERT(stack.check_reg_vector_obj(i._b));
@@ -2970,7 +2970,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
-		case bc_opcode::k_lookup_element_vector_pod64: {
+		case bc_opcode::k_lookup_element_vector_w_inplace_elements: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
 			QUARK_ASSERT(stack.check_reg_vector_pod64(i._b));
@@ -2988,7 +2988,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		case bc_opcode::k_lookup_element_dict_obj: {
+		case bc_opcode::k_lookup_element_dict_w_external_values: {
 			QUARK_ASSERT(stack.check_reg_obj(i._a));
 			QUARK_ASSERT(stack.check_reg_dict_obj(i._b));
 			QUARK_ASSERT(stack.check_reg_string(i._c));
@@ -3007,7 +3007,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			}
 			break;
 		}
-		case bc_opcode::k_lookup_element_dict_pod64: {
+		case bc_opcode::k_lookup_element_dict_w_inplace_values: {
 			QUARK_ASSERT(stack.check_reg_any(i._a));
 			QUARK_ASSERT(stack.check_reg_dict_pod64(i._b));
 			QUARK_ASSERT(stack.check_reg_string(i._c));

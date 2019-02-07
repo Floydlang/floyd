@@ -334,20 +334,20 @@ bcgen_body_t copy_value(bcgenerator_t& vm, const typeid_t& type, const reg_t& de
 	if(dest_reg._parent_steps == -1 && source_reg._parent_steps == -1){
 		QUARK_ASSERT(false);
 		quark::throw_exception();
-//		body_acc._instrs.push_back(bcgen_instruction_t(is_ext ? bc_opcode::k_load_global_obj : bc_opcode::k_load_global_intern, dest_reg, make_imm_int(source_reg._index), {}));
+//		body_acc._instrs.push_back(bcgen_instruction_t(is_ext ? bc_opcode::k_load_global_external_value : bc_opcode::k_load_global_inplace_value, dest_reg, make_imm_int(source_reg._index), {}));
 	}
 
 	//	global <= local
 	else if(dest_reg._parent_steps == -1 && source_reg._parent_steps != -1){
-		body_acc._instrs.push_back(bcgen_instruction_t(is_ext ? bc_opcode::k_store_global_obj : bc_opcode::k_store_global_intern, make_imm_int(dest_reg._index), source_reg, {}));
+		body_acc._instrs.push_back(bcgen_instruction_t(is_ext ? bc_opcode::k_store_global_external_value : bc_opcode::k_store_global_inplace_value, make_imm_int(dest_reg._index), source_reg, {}));
 	}
 	//	local <= global
 	else if(dest_reg._parent_steps != -1 && source_reg._parent_steps == -1){
-		body_acc._instrs.push_back(bcgen_instruction_t(is_ext ? bc_opcode::k_load_global_obj : bc_opcode::k_load_global_intern, dest_reg, make_imm_int(source_reg._index), {}));
+		body_acc._instrs.push_back(bcgen_instruction_t(is_ext ? bc_opcode::k_load_global_external_value : bc_opcode::k_load_global_inplace_value, dest_reg, make_imm_int(source_reg._index), {}));
 	}
 	//	local <= local
 	else{
-		body_acc._instrs.push_back(bcgen_instruction_t(is_ext ? bc_opcode::k_copy_reg_obj : bc_opcode::k_copy_reg_intern, dest_reg, source_reg, {}));
+		body_acc._instrs.push_back(bcgen_instruction_t(is_ext ? bc_opcode::k_copy_reg_external_value : bc_opcode::k_copy_reg_inplace_value, dest_reg, source_reg, {}));
 	}
 
 	QUARK_ASSERT(body_acc.check_invariant());
@@ -476,7 +476,7 @@ bcgen_body_t bcgen_for_statement(bcgenerator_t& vm, const statement_t::for_state
 
 	//	IMPORTANT: Iterator register is the FIRST symbol of the loop body's symbol table.
 	const auto counter_reg = variable_address_t::make_variable_address(0, static_cast<int>(body_acc._symbols._symbols.size()));
-	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_copy_reg_intern, counter_reg, start_expr._out, {}));
+	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_copy_reg_inplace_value, counter_reg, start_expr._out, {}));
 
 	// Reuse start value as our counter.
 	// Notice: we need to store iterator value in body's first register.
@@ -670,18 +670,18 @@ expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& vm, const variab
 		}
 		else if(parent_type.is_vector()){
 			if(encode_as_vector_w_inplace_elements(parent_type)){
-				return bc_opcode::k_lookup_element_vector_pod64;
+				return bc_opcode::k_lookup_element_vector_w_inplace_elements;
 			}
 			else{
-				return bc_opcode::k_lookup_element_vector_obj;
+				return bc_opcode::k_lookup_element_vector_w_external_elements;
 			}
 		}
 		else if(parent_type.is_dict()){
 			if(encode_as_dict_w_inplace_values(parent_type)){
-				return bc_opcode::k_lookup_element_dict_pod64;
+				return bc_opcode::k_lookup_element_dict_w_inplace_values;
 			}
 			else{
-				return bc_opcode::k_lookup_element_dict_obj;
+				return bc_opcode::k_lookup_element_dict_w_external_values;
 			}
 		}
 		else{

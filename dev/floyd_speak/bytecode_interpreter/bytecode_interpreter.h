@@ -343,13 +343,13 @@ enum class bc_opcode: uint8_t {
 		B: IMMEDIATE: global index
 		C: ---
 	*/
-	k_load_global_obj,
+	k_load_global_external_value,
 	/*
 		A: Register: where to put result
 		B: IMMEDIATE: global index
 		C: ---
 	*/
-	k_load_global_intern,
+	k_load_global_inplace_value,
 
 
 	/*
@@ -357,27 +357,27 @@ enum class bc_opcode: uint8_t {
 		B: Register: source reg
 		C: ---
 	*/
-	k_store_global_obj,
+	k_store_global_external_value,
 
 	/*
 		A: IMMEDIATE: global index
 		B: Register: source reg
 		C: ---
 	*/
-	k_store_global_intern,
+	k_store_global_inplace_value,
 
 	/*
 		A: Register: where to put result
 		B: Register: source value
 		C: ---
 	*/
-	k_copy_reg_intern,
+	k_copy_reg_inplace_value,
 	/*
 		A: Register: where to put result
 		B: Register: source value
 		C: ---
 	*/
-	k_copy_reg_obj,
+	k_copy_reg_external_value,
 
 
 	/*
@@ -394,10 +394,10 @@ enum class bc_opcode: uint8_t {
 	*/
 	k_lookup_element_string,
 	k_lookup_element_json_value,
-	k_lookup_element_vector_obj,
-	k_lookup_element_vector_pod64,
-	k_lookup_element_dict_obj,
-	k_lookup_element_dict_pod64,
+	k_lookup_element_vector_w_external_elements,
+	k_lookup_element_vector_w_inplace_elements,
+	k_lookup_element_dict_w_external_values,
+	k_lookup_element_dict_w_inplace_values,
 
 	/*
 		A: Register: where to put result: integer

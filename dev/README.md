@@ -97,7 +97,7 @@ Example instructions and their encoding:
 	B: Register: source reg
 	C: ---
 */
-k_store_global_obj,
+k_store_global_external_value,
 ```
 
 ```
