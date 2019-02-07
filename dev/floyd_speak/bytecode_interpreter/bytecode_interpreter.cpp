@@ -1015,11 +1015,11 @@ bool bc_instruction_t::check_invariant() const {
 #endif
 
 
-//////////////////////////////////////////		bc_frame_t
+//////////////////////////////////////////		bc_static_frame_t
 
 //?? STATIC frame definition -- not a runtime thing!
 
-bc_frame_t::bc_frame_t(const std::vector<bc_instruction_t>& instrs2, const std::vector<std::pair<std::string, bc_symbol_t>>& symbols, const std::vector<typeid_t>& args) :
+bc_static_frame_t::bc_static_frame_t(const std::vector<bc_instruction_t>& instrs2, const std::vector<std::pair<std::string, bc_symbol_t>>& symbols, const std::vector<typeid_t>& args) :
 	_instrs2(instrs2),
 	_symbols(symbols),
 	_args(args)
@@ -1064,7 +1064,7 @@ bc_frame_t::bc_frame_t(const std::vector<bc_instruction_t>& instrs2, const std::
 	QUARK_ASSERT(check_invariant());
 }
 
-bool bc_frame_t::check_invariant() const {
+bool bc_static_frame_t::check_invariant() const {
 //	QUARK_ASSERT(_body.check_invariant());
 	QUARK_ASSERT(_symbols.size() == _exts.size());
 
@@ -1672,7 +1672,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 	ASSERT(instructions.empty() == true || (instructions.back()._opcode == bc_opcode::k_return || instructions.back()._opcode == bc_opcode::k_stop));
 
 	interpreter_stack_t& stack = vm._stack;
-	const bc_frame_t* frame_ptr = stack._current_frame_ptr;
+	const bc_static_frame_t* frame_ptr = stack._current_frame_ptr;
 	bc_pod_value_t* regs = stack._current_frame_entry_ptr;
 	bc_pod_value_t* globals = &stack._entries[k_frame_overhead];
 
@@ -2234,7 +2234,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 
 		/*
-			??? Make stub bc_frame_t for each host function to make call conventions same as Floyd functions.
+			??? Make stub bc_static_frame_t for each host function to make call conventions same as Floyd functions.
 		*/
 
 		//	Notice: host calls and floyd calls have the same type -- we cannot detect host calls until we have a callee value.
@@ -2808,7 +2808,7 @@ std::vector<json_t> bc_symbols_to_json(const std::vector<std::pair<std::string, 
 	return r;
 }
 
-json_t frame_to_json(const bc_frame_t& frame){
+json_t frame_to_json(const bc_static_frame_t& frame){
 	vector<json_t> exts;
 	for(int i = 0 ; i < frame._exts.size() ; i++){
 		const auto& e = frame._exts[i];

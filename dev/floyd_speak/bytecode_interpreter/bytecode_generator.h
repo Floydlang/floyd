@@ -9,18 +9,23 @@
 #ifndef bytecode_gen_h
 #define bytecode_gen_h
 
+/*
+	Converts an AST into Floyd-specific byte code, ready to execute with the Floyd byte code interpreter.
+*/
+
 #include "quark.h"
 
 namespace floyd {
-	struct semantic_ast_t;
-	struct bc_program_t;
+struct semantic_ast_t;
+struct bc_program_t;
 
-	//////////////////////////		generate_bytecode()
 
-	/*
-		Compiles the ast to Floyd byte code.
-	*/
-	bc_program_t generate_bytecode(const semantic_ast_t& ast);
+//////////////////////////		generate_bytecode()
+
+/*
+	Compiles the ast to Floyd byte code.
+*/
+bc_program_t generate_bytecode(const semantic_ast_t& ast);
 
 
 } //	floyd

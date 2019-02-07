@@ -88,7 +88,7 @@ struct bcgen_body_t {
 	std::vector<bcgen_instruction_t> _instrs;
 };
 
-bc_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_t>& args);
+bc_static_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_t>& args);
 
 
 //////////////////////////////////////		bcgen_environment_t
@@ -1486,7 +1486,7 @@ bc_instruction_t squeeze_instruction(const bcgen_instruction_t& instruction){
 	return result;
 }
 
-bc_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_t>& args){
+bc_static_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_t>& args){
 	QUARK_ASSERT(body.check_invariant());
 
 	std::vector<bc_instruction_t> instrs2;
@@ -1507,7 +1507,7 @@ bc_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_t>& arg
 		symbols2.push_back(e2);
 	}
 
-	return bc_frame_t(instrs2, symbols2, args);
+	return bc_static_frame_t(instrs2, symbols2, args);
 }
 
 bc_program_t generate_bytecode(const semantic_ast_t& ast){
@@ -1541,7 +1541,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 			const auto function_def2 = bc_function_definition_t{
 				function_def._function_type,
 				function_def._args,
-				make_shared<bc_frame_t>(frame),
+				make_shared<bc_static_frame_t>(frame),
 				function_def._host_function_id
 			};
 			function_defs2.push_back(function_def2);
