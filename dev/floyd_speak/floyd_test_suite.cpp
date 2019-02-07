@@ -3366,7 +3366,7 @@ QUARK_UNIT_TEST("", "get_fsentries_deep()", "", ""){
 	const auto result = test__run_return_result(R"(
 
 		let result = get_fsentries_deep("/Users/marcus/Desktop/")
-		assert(size(result) > 1000)
+		assert(size(result) > 3)
 		print(to_pretty_string(result))
 
 	)", {});
