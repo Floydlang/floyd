@@ -19,6 +19,126 @@
 namespace floyd {
 
 
+
+
+
+
+
+
+
+
+inline bool encode_as_pod64(const typeid_t& type){
+	return type.is_bool() || type.is_int() || type.is_double();
+}
+inline bool encode_as_vector_pod64(const typeid_t& type){
+	return type.is_vector() && encode_as_pod64(type.get_vector_element_type());
+}
+
+inline bool encode_as_dict_pod64(const typeid_t& type){
+	return type.is_dict() && encode_as_pod64(type.get_dict_value_type());
+}
+
+inline value_runtime_encoding type_to_encoding(const typeid_t& type){
+	const auto basetype = type.get_base_type();
+	if(false){
+	}
+	else if(basetype == base_type::k_internal_undefined){
+		return value_runtime_encoding::k_none;
+	}
+	else if(basetype == base_type::k_internal_dynamic){
+		return value_runtime_encoding::k_none;
+	}
+	else if(basetype == base_type::k_void){
+		return value_runtime_encoding::k_none;
+	}
+	else if(basetype == base_type::k_bool){
+		return value_runtime_encoding::k_inline_bool;
+	}
+	else if(basetype == base_type::k_int){
+		return value_runtime_encoding::k_inline_int_as_uint64;
+	}
+	else if(basetype == base_type::k_double){
+		return value_runtime_encoding::k_inline_double;
+	}
+	else if(basetype == base_type::k_string){
+		return value_runtime_encoding::k_ext_string;
+	}
+	else if(basetype == base_type::k_json_value){
+		return value_runtime_encoding::k_ext_json_value;
+	}
+	else if(basetype == base_type::k_typeid){
+		return value_runtime_encoding::k_ext_typeid;
+	}
+	else if(basetype == base_type::k_struct){
+		return value_runtime_encoding::k_ext_struct;
+	}
+	else if(basetype == base_type::k_protocol){
+		return value_runtime_encoding::k_ext_struct;
+	}
+	else if(basetype == base_type::k_vector){
+		const auto& element_type = type.get_vector_element_type().get_base_type();
+		if(element_type == base_type::k_bool){
+			return value_runtime_encoding::k_ext_vector_pod64;
+		}
+		else if(element_type == base_type::k_int){
+			return value_runtime_encoding::k_ext_vector_pod64;
+		}
+		else if(element_type == base_type::k_double){
+			return value_runtime_encoding::k_ext_vector_pod64;
+		}
+		else{
+			return value_runtime_encoding::k_ext_vector;
+		}
+	}
+	else if(basetype == base_type::k_dict){
+		return value_runtime_encoding::k_ext_dict;
+	}
+	else if(basetype == base_type::k_function){
+		return value_runtime_encoding::k_inline_function;
+	}
+	else if(basetype == base_type::k_internal_unresolved_type_identifier){
+	}
+	else{
+	}
+	QUARK_ASSERT(false);
+	quark::throw_exception();
+}
+
+
+
+
+
+//	??? very slow?
+inline bool is_encoded_as_ext(value_runtime_encoding encoding){
+	return false
+		|| encoding == value_runtime_encoding::k_ext_string
+		|| encoding == value_runtime_encoding::k_ext_json_value
+		|| encoding == value_runtime_encoding::k_ext_typeid
+		|| encoding == value_runtime_encoding::k_ext_struct
+		|| encoding == value_runtime_encoding::k_ext_vector
+		|| encoding == value_runtime_encoding::k_ext_vector_pod64
+		|| encoding == value_runtime_encoding::k_ext_dict
+		;
+}
+
+//	??? very slow?
+inline bool is_encoded_as_ext(const typeid_t& type){
+	const auto basetype = type.get_base_type();
+	return false
+		|| basetype == base_type::k_string
+		|| basetype == base_type::k_json_value
+		|| basetype == base_type::k_typeid
+		|| basetype == base_type::k_struct
+		|| basetype == base_type::k_protocol
+		|| basetype == base_type::k_vector
+		|| basetype == base_type::k_dict
+		;
+}
+
+
+
+
+
 inline const typeid_t& lookup_full_type(const interpreter_t& vm, const bc_typeid_t& type){
 	return vm._imm->_program._types[type];
 }
