@@ -19,6 +19,16 @@
 namespace floyd {
 
 
+void release_pod_external(bc_pod_value_t& value){
+	QUARK_ASSERT(value._external != nullptr);
+
+	value._external->_rc--;
+	if(value._external->_rc == 0){
+		delete value._external;
+		value._external = nullptr;
+	}
+}
+
 ////////////////////////////////////////////			bc_value_t
 
 
@@ -34,7 +44,7 @@ bc_value_t::~bc_value_t(){
 	QUARK_ASSERT(check_invariant());
 
 	if(encode_as_external(_type)){
-		release_ext_pod(_pod);
+		release_pod_external(_pod);
 	}
 }
 
@@ -45,7 +55,7 @@ bc_value_t::bc_value_t(const bc_value_t& other) :
 	QUARK_ASSERT(other.check_invariant());
 
 	if(encode_as_external(_type)){
-		add_ext_ref(*this);
+		_pod._external->_rc++;
 	}
 
 	QUARK_ASSERT(check_invariant());
@@ -326,33 +336,6 @@ bool bc_value_t::check_invariant() const {
 	return true;
 }
 #endif
-
-void bc_value_t::release_ext(bc_value_t& value){
-	QUARK_ASSERT(value.check_invariant());
-
-	value._pod._external->_rc--;
-	if(value._pod._external->_rc == 0){
-		delete value._pod._external;
-		value._pod._external = nullptr;
-	}
-}
-void bc_value_t::release_ext_pod(bc_pod_value_t& value){
-	QUARK_ASSERT(value._external != nullptr);
-
-	value._external->_rc--;
-	if(value._external->_rc == 0){
-		delete value._external;
-		value._external = nullptr;
-	}
-}
-
-void bc_value_t::add_ext_ref(const bc_value_t& value){
-	QUARK_ASSERT(value.check_invariant());
-
-	value._pod._external->_rc++;
-
-	QUARK_ASSERT(value.check_invariant());
-}
 
 bc_value_t::bc_value_t(const typeid_t& type, mode mode) :
 	_type(type)
@@ -2659,7 +2642,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_obj(i._a));
 			QUARK_ASSERT(stack.check_global_access_obj(i._b));
 
-			bc_value_t::release_ext_pod(regs[i._a]);
+			release_pod_external(regs[i._a]);
 			const auto& new_value_pod = globals[i._b];
 			regs[i._a] = new_value_pod;
 			new_value_pod._external->_rc++;
@@ -2677,7 +2660,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_global_access_obj(i._a));
 			QUARK_ASSERT(stack.check_reg_obj(i._b));
 
-			bc_value_t::release_ext_pod(globals[i._a]);
+			release_pod_external(globals[i._a]);
 			const auto& new_value_pod = regs[i._b];
 			globals[i._a] = new_value_pod;
 			new_value_pod._external->_rc++;
@@ -2706,7 +2689,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_obj(i._a));
 			QUARK_ASSERT(stack.check_reg_obj(i._b));
 
-			bc_value_t::release_ext_pod(regs[i._a]);
+			release_pod_external(regs[i._a]);
 			const auto& new_value_pod = regs[i._b];
 			regs[i._a] = new_value_pod;
 			new_value_pod._external->_rc++;
@@ -2822,7 +2805,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				stack._debug_types.pop_back();
 	#endif
 				if(ext){
-					bc_value_t::release_ext_pod(stack._entries[pos]);
+					release_pod_external(stack._entries[pos]);
 				}
 				pos--;
 				bits = bits >> 1;
@@ -2900,7 +2883,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& value_pod = regs[i._b]._external->_struct_members[i._c]._pod;
 			bool ext = frame_ptr->_exts[i._a];
 			if(ext){
-				bc_value_t::release_ext_pod(regs[i._a]);
+				release_pod_external(regs[i._a]);
 				value_pod._external->_rc++;
 			}
 			regs[i._a] = value_pod;
@@ -2949,7 +2932,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				const auto value2 = bc_value_t::make_json_value(value);
 
 				value2._pod._external->_rc++;
-				bc_value_t::release_ext_pod(regs[i._a]);
+				release_pod_external(regs[i._a]);
 				regs[i._a] = value2._pod;
 			}
 			else if(parent_json_value->is_array()){
@@ -2967,7 +2950,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 					const auto value2 = bc_value_t::make_json_value(value);
 
 					value2._pod._external->_rc++;
-					bc_value_t::release_ext_pod(regs[i._a]);
+					release_pod_external(regs[i._a]);
 					regs[i._a] = value2._pod;
 				}
 			}
@@ -2992,7 +2975,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			else{
 				auto handle = vec[lookup_index];
 				handle._external->_rc++;
-				bc_value_t::release_ext_pod(regs[i._a]);
+				release_pod_external(regs[i._a]);
 				regs[i._a]._external = handle._external;
 			}
 			QUARK_ASSERT(vm.check_invariant());
@@ -3030,7 +3013,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			else{
 				const auto& handle = *found_ptr;
 				handle._external->_rc++;
-				bc_value_t::release_ext_pod(regs[i._a]);
+				release_pod_external(regs[i._a]);
 				regs[i._a]._external = handle._external;
 			}
 			break;
@@ -3496,7 +3479,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			auto prev_copy = regs[i._a];
 			value._pod._external->_rc++;
 			regs[i._a] = value._pod;
-			bc_value_t::release_ext_pod(prev_copy);
+			release_pod_external(prev_copy);
 			break;
 		}
 

@@ -11,6 +11,9 @@
 
 /*
 	The Floyd byte code interpreter, used to run Floyd byte code programs.
+
+	inplace: data is stored directly inside the value.
+	external: data is allocated externally and value points to it.
 */
 
 #include "ast_typeid.h"
@@ -33,10 +36,13 @@ namespace floyd {
 struct interpreter_t;
 struct bc_program_t;
 struct bc_static_frame_t;
+
 struct bc_value_t;
-struct bc_external_value_t;
 union bc_pod_value_t;
+struct bc_external_value_t;
 struct bc_external_handle_t;
+
+
 typedef bc_value_t (*HOST_FUNCTION_PTR)(interpreter_t& vm, const bc_value_t args[], int arg_count);
 typedef int16_t bc_typeid_t;
 
@@ -64,8 +70,10 @@ union bc_inplace_value_t {
 
 union bc_pod_value_t {
 	const bc_external_value_t* _external;
-	bc_inplace_value_t _pod64;//??? rename
+	bc_inplace_value_t _pod64;
 };
+
+void release_pod_external(bc_pod_value_t& value);
 
 
 //////////////////////////////////////		value_runtime_encoding
@@ -111,11 +119,9 @@ bool encode_as_external(const typeid_t& type);
 	??? replace my variant<>
 */
 
-struct bc_value_t {
-	public: static void add_ext_ref(const bc_value_t& value);
-	public: static void release_ext(bc_value_t& value);
-	public: static void release_ext_pod(bc_pod_value_t& value);
 
+
+struct bc_value_t {
 	public: bool check_invariant() const;
 	public: bc_value_t();
 	public: ~bc_value_t();
@@ -1016,7 +1022,7 @@ struct interpreter_stack_t {
 			auto prev_copy = _current_frame_entry_ptr[reg];
 			value._pod._external->_rc++;
 			_current_frame_entry_ptr[reg] = value._pod;
-			bc_value_t::release_ext_pod(prev_copy);
+			release_pod_external(prev_copy);
 		}
 		else{
 			_current_frame_entry_ptr[reg] = value._pod;
@@ -1034,7 +1040,7 @@ struct interpreter_stack_t {
 		auto prev_copy = _current_frame_entry_ptr[reg];
 		value._pod._external->_rc++;
 		_current_frame_entry_ptr[reg] = value._pod;
-		bc_value_t::release_ext_pod(prev_copy);
+		release_pod_external(prev_copy);
 
 		QUARK_ASSERT(check_invariant());
 	}
@@ -1248,7 +1254,7 @@ struct interpreter_stack_t {
 		auto prev_copy = _entries[pos];
 		value._pod._external->_rc++;
 		_entries[pos] = value._pod;
-		bc_value_t::release_ext_pod(prev_copy);
+		release_pod_external(prev_copy);
 
 		QUARK_ASSERT(check_invariant());
 	}
@@ -1277,7 +1283,7 @@ struct interpreter_stack_t {
 		_debug_types.pop_back();
 #endif
 		if(ext){
-			bc_value_t::release_ext_pod(copy);
+			release_pod_external(copy);
 		}
 
 		QUARK_ASSERT(check_invariant());
