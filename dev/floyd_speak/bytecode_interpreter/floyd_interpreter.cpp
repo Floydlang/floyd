@@ -471,7 +471,7 @@ void print_vm_printlog(const interpreter_t& vm){
 	if(vm._print_output.empty() == false){
 		QUARK_SCOPED_TRACE("print output:");
 		for(const auto& line: vm._print_output){
-			QUARK_SCOPED_TRACE(line);
+			QUARK_TRACE_SS(line);
 		}
 	}
 }

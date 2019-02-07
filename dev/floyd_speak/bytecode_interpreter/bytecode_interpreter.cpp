@@ -1872,6 +1872,7 @@ reg_flags_t encoding_to_reg_flags(opcode_info_t::encoding e){
 
 bc_instruction_t::bc_instruction_t(bc_opcode opcode, int16_t a, int16_t b, int16_t c) :
 	_opcode(opcode),
+	_zero(0),
 	_a(a),
 	_b(b),
 	_c(c)

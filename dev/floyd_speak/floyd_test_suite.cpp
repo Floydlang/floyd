@@ -23,24 +23,72 @@
 
 #if 1
 
-using std::vector;
-using std::string;
-
 using namespace floyd;
 
 
 
 
-std::vector<std::string> program_recording;
+struct run_result_t {
+	value_t result_variable;
+	value_t main_result;
+	std::vector<std::string> print_out;
+};
 
-///////////////////////////////////////////////////////////////////////////////////////
-//	FLOYD LANGUAGE TEST SUITE
-///////////////////////////////////////////////////////////////////////////////////////
+void ut_verify(const quark::call_context_t& context, const run_result_t& result, const run_result_t& expected){
+	ut_verify_values(context, result.result_variable, expected.result_variable);
+	ut_verify_values(context, result.main_result, expected.main_result);
+	ut_verify(context, result.print_out, expected.print_out);
+}
+
+run_result_t run_program(const std::string& program, const std::vector<value_t>& main_args, const std::string& file){
+	const auto exe = compile_to_bytecode(program, file);
+
+	//	Runs global code.
+	auto interpreter = interpreter_t(exe);
+	const auto main_function = find_global_symbol2(interpreter, "main");
+	const auto result_variable = find_global_symbol2(interpreter, "result");
+
+	value_t main_result;
+	if(main_function != nullptr){
+		const value_t args_vec = value_t::make_vector_value(typeid_t::make_string(), main_args);
+		main_result = call_function(interpreter, bc_to_value(main_function->_value), { args_vec });
+	}
+
+	value_t result_global;
+	if(result_variable != nullptr){
+		result_global = bc_to_value(result_variable->_value);
+	}
+
+	print_vm_printlog(interpreter);
+
+	return run_result_t{ result_global, main_result, interpreter._print_output };
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
+	ut_verify(
+		QUARK_POS,
+		run_program("print(\"Hello, world!\")", {}, "hello.floyd"),
+		run_result_t{ value_t::make_undefined(), value_t::make_undefined(), { "Hello, world!" }}
+	);
+}
+QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
+	ut_verify(
+		QUARK_POS,
+		run_program("let result = 112", {}, ""),
+		run_result_t{ value_t::make_int(112), value_t::make_undefined(), {}}
+	);
+}
+QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
+	ut_verify(
+		QUARK_POS,
+		run_program("func int main([string] args){ return 1003 }", {}, ""),
+		run_result_t{ value_t::make_undefined(), value_t::make_int(1003), {}}
+	);
+}
+
 
 
 value_t test__run_return_result(const std::string& program, const std::vector<value_t>& args){
-	program_recording.push_back(program);
-
 	const auto r = run_main(program, args, "");
 	print_vm_printlog(*r.first);
 	const auto result = get_global(*r.first, "result");
@@ -49,23 +97,22 @@ value_t test__run_return_result(const std::string& program, const std::vector<va
 
 void test__run_init__check_result(const std::string& program, const value_t& expected_result){
 	const auto result = test__run_return_result(program, {});
-	ut_verify(QUARK_POS,
+	ut_verify(
+		QUARK_POS,
 		expression_to_json(expression_t::make_literal(result))._value,
 		expression_to_json(expression_t::make_literal(expected_result))._value
 	);
 }
 
 std::shared_ptr<interpreter_t> test__run_global(const std::string& program){
-	program_recording.push_back(program);
 	const auto result = run_global(program, "");
 	return result;
 }
 
-void test__run_main(const std::string& program, const vector<floyd::value_t>& args, const value_t& expected_return){
-	program_recording.push_back(program);
-
+void test__run_main(const std::string& program, const std::vector<floyd::value_t>& args, const value_t& expected_return){
 	const auto result = run_main(program, args, "");
-	ut_verify(QUARK_POS,
+	ut_verify(
+		QUARK_POS,
 		expression_to_json(expression_t::make_literal(result.second))._value,
 		expression_to_json(expression_t::make_literal(expected_return))._value
 	);
@@ -491,7 +538,7 @@ QUARK_UNIT_TEST("run_main()", "minimal program 2", "", ""){
 				return "123" + "456"
 			}
 		)",
-		vector<value_t>{value_t::make_string("program_name 1 2 3 4")},
+		std::vector<value_t>{value_t::make_string("program_name 1 2 3 4")},
 		value_t::make_string("123456")
 	);
 }
@@ -517,7 +564,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program"){
 	);
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
-	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
+	const auto result = call_function(vm, f, std::vector<value_t>{ value_t::make_string("program_name 1 2 3") });
 	ut_verify_values(QUARK_POS, result, value_t::make_int(7));
 }
 
@@ -532,7 +579,7 @@ QUARK_UNIT_TESTQ("call_function()", "minimal program 2"){
 	"");
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
-	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
+	const auto result = call_function(vm, f, std::vector<value_t>{ value_t::make_string("program_name 1 2 3") });
 	ut_verify_values(QUARK_POS, result, value_t::make_string("123456"));
 }
 
@@ -592,7 +639,7 @@ QUARK_UNIT_TEST("", "pixel_t()", "", ""){
 
 		value_t::make_struct_value(
 			typeid_t::make_struct2(pixel_t__def),
-			vector<value_t>{ value_t::make_int(1), value_t::make_int(2), value_t::make_int(3) }
+			std::vector<value_t>{ value_t::make_int(1), value_t::make_int(2), value_t::make_int(3) }
 		)
 	);
 }
@@ -697,7 +744,7 @@ QUARK_UNIT_TEST("call_function()", "define additional function, call it several 
 	"");
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
-	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("program_name 1 2 3") });
+	const auto result = call_function(vm, f, std::vector<value_t>{ value_t::make_string("program_name 1 2 3") });
 	ut_verify_values(QUARK_POS, result, value_t::make_int(15));
 }
 
@@ -712,10 +759,10 @@ QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
 	"");
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
-	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("xyz") });
+	const auto result = call_function(vm, f, std::vector<value_t>{ value_t::make_string("xyz") });
 	ut_verify_values(QUARK_POS, result, value_t::make_string("-xyz-"));
 
-	const auto result2 = call_function(vm, f, vector<value_t>{ value_t::make_string("Hello, world!") });
+	const auto result2 = call_function(vm, f, std::vector<value_t>{ value_t::make_string("Hello, world!") });
 	ut_verify_values(QUARK_POS, result2, value_t::make_string("-Hello, world!-"));
 }
 
@@ -737,11 +784,11 @@ QUARK_UNIT_TEST("call_function()", "use local variables", "", ""){
 	"");
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
-	const auto result = call_function(vm, f, vector<value_t>{ value_t::make_string("xyz") });
+	const auto result = call_function(vm, f, std::vector<value_t>{ value_t::make_string("xyz") });
 
 	ut_verify_values(QUARK_POS, result, value_t::make_string("--xyz<xyz>--"));
 
-	const auto result2 = call_function(vm, f, vector<value_t>{ value_t::make_string("123") });
+	const auto result2 = call_function(vm, f, std::vector<value_t>{ value_t::make_string("123") });
 
 	ut_verify_values(QUARK_POS, result2, value_t::make_string("--123<123>--"));
 }
@@ -798,7 +845,7 @@ QUARK_UNIT_TEST("", "run_main()", "test locals are immutable", ""){
 		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_UT_VERIFY(string(e.what()) == "Cannot assign to immutable identifier \"a\". Line: 4 \"a = 4\"");
+		ut_verify(QUARK_POS, e.what(), "Cannot assign to immutable identifier \"a\". Line: 4 \"a = 4\"");
 	}
 }
 
@@ -815,7 +862,7 @@ QUARK_UNIT_TEST("", "run_main()", "test function args are always immutable", "")
 		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_UT_VERIFY(string(e.what()) == "Cannot assign to immutable identifier \"x\". Line: 4 \"x = 6\"");
+		ut_verify(QUARK_POS, e.what(), "Cannot assign to immutable identifier \"x\". Line: 4 \"x = 6\"");
 	}
 }
 
@@ -962,7 +1009,7 @@ func int f(){
 
 	}
 	catch(const std::runtime_error& e){
-		QUARK_UT_VERIFY(string(e.what()) == "Expression type mismatch - cannot convert 'string' to 'int. Line: 4 \"return \"x\"\"");
+		ut_verify(QUARK_POS, e.what(), "Expression type mismatch - cannot convert 'string' to 'int. Line: 4 \"return \"x\"\"");
 	}
 }
 
@@ -1295,11 +1342,7 @@ QUARK_UNIT_TEST("run_init()", "Make sure a function can access global independen
 			print(add(true))
 		)"
 	);
-	QUARK_UT_VERIFY((
-		vm->_print_output == vector<string>{
-			"13", "14", "1014"
-		})
-	);
+	ut_verify(QUARK_POS, vm->_print_output, { "13", "14", "1014" });
 }
 
 
@@ -1364,7 +1407,7 @@ QUARK_UNIT_TEST("run_init()", "fibonacci", "", ""){
 	)");
 
 	QUARK_UT_VERIFY((
-		vm->_print_output == vector<string>{
+		vm->_print_output == std::vector<std::string>{
 			"0", "1", "1", "2", "3", "5", "8", "13", "21", "34",
 			"55" //, "89", "144", "233", "377", "610", "987", "1597", "2584", "4181"
 		})
@@ -1405,7 +1448,7 @@ QUARK_UNIT_TEST("null", "", "", "0"){
 
  }
 	catch(const std::runtime_error& e){
-		QUARK_UT_VERIFY(string(e.what()) == "Undefined variable \"null\".");
+		ut_verify(QUARK_POS, e.what(), "Undefined variable \"null\".");
 	}
 */
 
@@ -1482,7 +1525,7 @@ QUARK_UNIT_TEST("vector", "[]-constructor", "Infer type", "valid vector"){
 		let a = ["one", "two"]
 		print(a)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
+	ut_verify(QUARK_POS, vm->_print_output, std::vector<std::string>{
 		R"(["one", "two"])"
 	});
 }
@@ -1496,7 +1539,7 @@ QUARK_UNIT_TEST("vector", "[]-constructor", "cannot be infered", "error"){
 		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_UT_VERIFY(string(e.what()) == "Cannot infer vector element type, add explicit type. Line: 2 \"let a = []\"");
+		ut_verify(QUARK_POS, e.what(), "Cannot infer vector element type, add explicit type. Line: 2 \"let a = []\"");
 	}
 }
 /*
@@ -1513,9 +1556,7 @@ QUARK_UNIT_TEST("vector", "explit bind, is []", "Infer type", "valid vector"){
 		let [string] a = ["one", "two"]
 		print(a)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		R"(["one", "two"])"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { R"(["one", "two"])" });
 }
 
 QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
@@ -1525,9 +1566,7 @@ QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
 		print(a)
 
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		R"([])"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { R"([])" });
 }
 
 //	We could support this if we had special type for empty-vector and empty-dict.
@@ -1595,10 +1634,7 @@ QUARK_UNIT_TEST("vector-string", "=", "copy", ""){
 		print(b)
 
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		R"(["one", "two"])",
-		R"(["one", "two"])"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { R"(["one", "two"])", R"(["one", "two"])" });
 }
 QUARK_UNIT_TEST("vector-string", "==", "same values", ""){
 	const auto vm = test__run_global(R"(
@@ -1842,10 +1878,13 @@ QUARK_UNIT_TEST("", "update()", "mutate element", "valid vector, without side ef
 		assert(a == ["one","two","three"])
 		assert(b == ["one","zwei","three"])
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		R"(["one", "two", "three"])",
-		R"(["one", "zwei", "three"])"
-	});
+	ut_verify(
+		QUARK_POS,
+		vm->_print_output, {
+			R"(["one", "two", "three"])",
+			R"(["one", "zwei", "three"])"
+		}
+	);
 }
 
 
@@ -1867,10 +1906,7 @@ QUARK_UNIT_TEST("dict", "[]", "", ""){
 		print(a["one"])
 		print(a["two"])
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"1",
-		"2"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "1", "2" });
 }
 
 QUARK_UNIT_TEST("dict", "", "", ""){
@@ -1883,7 +1919,7 @@ QUARK_UNIT_TEST("dict", "", "", ""){
 		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_UT_VERIFY(string(e.what()) == "Cannot infer type in construct-value-expression. Line: 2 \"mutable a = {}\"");
+		ut_verify(QUARK_POS, e.what(), "Cannot infer type in construct-value-expression. Line: 2 \"mutable a = {}\"");
 	}
 }
 
@@ -1896,7 +1932,7 @@ QUARK_UNIT_TEST("dict", "[:]", "", ""){
 		fail_test(QUARK_POS);
 	}
 	catch(const std::runtime_error& e){
-		QUARK_UT_VERIFY(string(e.what()) == "Cannot infer type in construct-value-expression. Line: 2 \"let a = {}\"");
+		ut_verify(QUARK_POS, e.what(), "Cannot infer type in construct-value-expression. Line: 2 \"let a = {}\"");
 	}
 }
 
@@ -1906,9 +1942,7 @@ QUARK_UNIT_TEST("dict", "Infered type ", "", ""){
 		let a = {"one": 1, "two": 2}
 		print(a)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		R"({"one": 1, "two": 2})",
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { R"({"one": 1, "two": 2})", });
 }
 
 QUARK_UNIT_TEST("dict", "{}", "", ""){
@@ -1917,9 +1951,7 @@ QUARK_UNIT_TEST("dict", "{}", "", ""){
 		a = {}
 		print(a)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		R"({})",
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { R"({})" });
 }
 
 QUARK_UNIT_TEST("dict", "==", "", ""){
@@ -1990,10 +2022,13 @@ QUARK_UNIT_TEST("dict", "update()", "add element", "valid dict, without side eff
 		print(a)
 		print(b)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		R"({"one": 1, "two": 2})",
-		R"({"one": 1, "three": 3, "two": 2})"
-	});
+	ut_verify(
+		QUARK_POS,
+		vm->_print_output, {
+			R"({"one": 1, "two": 2})",
+			R"({"one": 1, "three": 3, "two": 2})"
+		}
+	);
 }
 
 QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
@@ -2003,10 +2038,13 @@ QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
 		print(a)
 		print(b)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		R"({"one": 1, "three": 3, "two": 2})",
-		R"({"one": 1, "three": 333, "two": 2})"
-	});
+	ut_verify(
+		QUARK_POS,
+		vm->_print_output, {
+			R"({"one": 1, "three": 3, "two": 2})",
+			R"({"one": 1, "three": 333, "two": 2})"
+		}
+	);
 }
 
 QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
@@ -2063,9 +2101,7 @@ QUARK_UNIT_TEST("run_main()", "struct - check struct's type", "", ""){
 		struct t { int a }
 		print(t)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"struct {int a;}"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "struct {int a;}" });
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
@@ -2074,9 +2110,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - check struct's type"){
 		let a = t(3)
 		print(a)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		 R"({a=3})"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { R"({a=3})" });
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - read back struct member"){
@@ -2085,9 +2119,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - read back struct member"){
 		let temp = t(4)
 		print(temp.a)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"4"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "4" });
 }
 
 QUARK_UNIT_TEST("run_main()", "struct - instantiate nested structs", "", ""){
@@ -2100,10 +2132,14 @@ QUARK_UNIT_TEST("run_main()", "struct - instantiate nested structs", "", ""){
 		let i = image(color(1, 2, 3), color(200, 201, 202))
 		print(i)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"{red=128, green=192, blue=255}",
-		"{back={red=1, green=2, blue=3}, front={red=200, green=201, blue=202}}"
-	});
+	ut_verify(
+		QUARK_POS,
+		vm->_print_output,
+		{
+			"{red=128, green=192, blue=255}",
+			"{back={red=1, green=2, blue=3}, front={red=200, green=201, blue=202}}"
+		}
+	);
 }
 
 QUARK_UNIT_TEST("run_main()", "struct - access member of nested structs", "", ""){
@@ -2113,9 +2149,7 @@ QUARK_UNIT_TEST("run_main()", "struct - access member of nested structs", "", ""
 		let i = image(color(1, 2, 3), color(200, 201, 202))
 		print(i.front.green)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"201"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "201" });
 }
 
 QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
@@ -2128,9 +2162,7 @@ QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
 		let z = make_color()
 		print(z)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"{red=100, green=101, blue=102}",
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "{red=100, green=101, blue=102}" });
 }
 
 QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
@@ -2142,9 +2174,7 @@ QUARK_UNIT_TEST("run_main()", "return struct from function", "", ""){
 		}
 		print(make_color())
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"{red=100, green=101, blue=102}",
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "{red=100, green=101, blue=102}" });
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
@@ -2152,9 +2182,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
 		struct color { int red int green int blue }
 		print(color(1, 2, 3) == color(1, 2, 3))
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"true"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "true" });
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
@@ -2162,9 +2190,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs"){
 		struct color { int red int green int blue }
 		print(color(9, 2, 3) == color(1, 2, 3))
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"false"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "false" });
 }
 
 QUARK_UNIT_TEST("", "run_main()", "struct - compare structs different types", ""){
@@ -2185,9 +2211,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs with <, different types
 		struct color { int red int green int blue }
 		print(color(1, 2, 3) < color(1, 2, 3))
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"false"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "false" });
 }
 
 QUARK_UNIT_TESTQ("run_main()", "struct - compare structs <"){
@@ -2195,9 +2219,7 @@ QUARK_UNIT_TESTQ("run_main()", "struct - compare structs <"){
 		struct color { int red int green int blue }
 		print(color(1, 2, 3) < color(1, 4, 3))
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"true"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "true" });
 }
 
 
@@ -2209,10 +2231,7 @@ QUARK_UNIT_TESTQ("run_main()", "update struct manually"){
 		print(a)
 		print(b)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"{red=255, green=128, blue=128}",
-		"{red=255, green=128, blue=129}"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "{red=255, green=128, blue=128}", "{red=255, green=128, blue=129}" });
 }
 
 QUARK_UNIT_TEST("run_main()", "mutate struct member using = won't work", "", ""){
@@ -2226,7 +2245,7 @@ QUARK_UNIT_TEST("run_main()", "mutate struct member using = won't work", "", "")
 		)");
 	}
 	catch(const std::runtime_error& e){
-		QUARK_UT_VERIFY(string(e.what()) == R"___(Expected constant or identifier. Line: 4 "let b = a.green = 3")___");
+		ut_verify(QUARK_POS, e.what(), R"___(Expected constant or identifier. Line: 4 "let b = a.green = 3")___");
 	}
 }
 
@@ -2239,10 +2258,7 @@ QUARK_UNIT_TESTQ("run_main()", "mutate struct member using update()"){
 		print(b)
 	)");
 
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"{red=255, green=128, blue=128}",
-		"{red=255, green=3, blue=128}",
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "{red=255, green=128, blue=128}", "{red=255, green=3, blue=128}" });
 }
 
 QUARK_UNIT_TEST("run_main()", "mutate nested member", "", ""){
@@ -2254,10 +2270,14 @@ QUARK_UNIT_TEST("run_main()", "mutate nested member", "", ""){
 		print(a)
 		print(b)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"{back={red=0, green=100, blue=200}, front={red=0, green=0, blue=0}}",
-		"{back={red=0, green=100, blue=200}, front={red=0, green=3, blue=0}}"
-	});
+	ut_verify(
+		QUARK_POS,
+		vm->_print_output,
+		{
+			"{back={red=0, green=100, blue=200}, front={red=0, green=0, blue=0}}",
+			"{back={red=0, green=100, blue=200}, front={red=0, green=3, blue=0}}"
+		}
+	);
 }
 
 
@@ -2270,10 +2290,7 @@ QUARK_UNIT_TEST("run_main()", "struct definition expression", "", ""){
 		print(a);
 		print(b);
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"{red=255, green=128, blue=128}",
-		"{red=255, green=128, blue=129}"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "{red=255, green=128, blue=128}", "{red=255, green=128, blue=129}" });
 }
 */
 
@@ -2301,9 +2318,7 @@ QUARK_UNIT_TEST("run_main()", "protocol - check protocol's type", "", ""){
 		protocol t { int a }
 		print(t)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"protocol {int a;}"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "protocol {int a;}" });
 }
 #endif
 
@@ -2335,28 +2350,21 @@ QUARK_UNIT_TESTQ("comments", "// on start of line"){
 		//	XYZ
 		print("Hello")
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"Hello"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "Hello" });
 }
 
 QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
 	const auto vm = test__run_global(R"(
 		print("Hello")		//	XYZ
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"Hello"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "Hello" });
 }
 
 QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
 	const auto vm = test__run_global(R"(
 		print("Hello")/* xyz */print("Bye")
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"Hello",
-		"Bye"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "Hello", "Bye" });
 }
 
 
@@ -2402,7 +2410,7 @@ QUARK_UNIT_TEST("json_value-array", "construct array", "", ""){
 	const auto result = test__run_return_result(R"(
 		let json_value result = ["hello", "bye"]
 	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t::make_array(vector<json_t>{"hello", "bye"})));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t::make_array(std::vector<json_t>{"hello", "bye"})));
 }
 
 QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
@@ -2441,9 +2449,7 @@ QUARK_UNIT_TEST("json_value-object", "def", "mix value-types in dict", ""){
 		let json_value a = { "pigcount": 3, "pigcolor": "pink" }
 		print(a)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		R"({ "pigcolor": "pink", "pigcount": 3 })"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { R"({ "pigcolor": "pink", "pigcount": 3 })" });
 }
 
 // JSON example snippets: http://json.org/example.html
@@ -2464,9 +2470,13 @@ QUARK_UNIT_TEST("json_value-object", "def", "read world data", ""){
 		}
 		print(a)
 	)ABCD");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		R"ABCD({ "menu": { "id": "file", "popup": { "menuitem": [{ "onclick": "CreateNewDoc()", "value": "New" }, { "onclick": "OpenDoc()", "value": "Open" }, { "onclick": "CloseDoc()", "value": "Close" }] }, "value": "File" } })ABCD"
-	});
+	ut_verify(
+		QUARK_POS,
+		vm->_print_output,
+		{
+			R"ABCD({ "menu": { "id": "file", "popup": { "menuitem": [{ "onclick": "CreateNewDoc()", "value": "New" }, { "onclick": "OpenDoc()", "value": "Open" }, { "onclick": "CloseDoc()", "value": "Close" }] }, "value": "File" } })ABCD"
+		}
+	);
 }
 
 QUARK_UNIT_TEST("json_value-object", "{}", "expressions inside def", ""){
@@ -2474,9 +2484,13 @@ QUARK_UNIT_TEST("json_value-object", "{}", "expressions inside def", ""){
 		let json_value a = { "pigcount": 1 + 2, "pigcolor": "pi" + "nk" }
 		print(a)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		R"({ "pigcolor": "pink", "pigcount": 3 })"
-	});
+	ut_verify(
+		QUARK_POS,
+		vm->_print_output,
+		{
+			R"({ "pigcolor": "pink", "pigcount": 3 })"
+		}
+	);
 }
 
 QUARK_UNIT_TEST("json_value-object", "{}", "", ""){
@@ -2485,10 +2499,7 @@ QUARK_UNIT_TEST("json_value-object", "{}", "", ""){
 		print(a["pigcount"])
 		print(a["pigcolor"])
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"3",
-		"\"pink\""
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "3", "\"pink\"" });
 }
 
 QUARK_UNIT_TEST("json_value-object", "size()", "", ""){
@@ -2657,9 +2668,7 @@ QUARK_UNIT_TEST("", "script_to_jsonvalue()", "", ""){
 		let a = script_to_jsonvalue("{ \"magic\": 1234 }")
 		print(a)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		R"({ "magic": 1234 })"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { R"({ "magic": 1234 })" });
 }
 
 
@@ -2672,9 +2681,7 @@ QUARK_UNIT_TEST("", "jsonvalue_to_script()", "", ""){
 		let b = jsonvalue_to_script(a)
 		print(b)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"\"cheat\""
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "\"cheat\"" });
 }
 
 
@@ -2684,9 +2691,7 @@ QUARK_UNIT_TEST("", "jsonvalue_to_script()", "", ""){
 		let b = jsonvalue_to_script(a)
 		print(b)
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		"{ \"magic\": 1234 }"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { "{ \"magic\": 1234 }" });
 }
 
 
@@ -2738,16 +2743,14 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "typeid", ""){
 	const auto result = test__run_return_result(R"(
 		let result = value_to_jsonvalue(typeof([2,2,3]))
 	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t::make_array(vector<json_t>{ "vector", "int"})));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t::make_array({ "vector", "int"})));
 }
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "[]", ""){
 	const auto result = test__run_return_result(R"(
 		let result = value_to_jsonvalue([1,2,3])
 	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_json_value(
-		json_t::make_array(vector<json_t>{1,2,3})
-	));
+	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t::make_array({ 1, 2, 3 })));
 }
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "{}", ""){
@@ -2755,7 +2758,7 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "{}", ""){
 		let result = value_to_jsonvalue({"ten": 10, "eleven": 11})
 	)", {});
 	ut_verify_values(QUARK_POS, result, value_t::make_json_value(
-		json_t::make_object(std::map<string,json_t>{{"ten", 10},{"eleven", 11}})
+		json_t::make_object({{ "ten", 10 }, { "eleven", 11 }})
 	));
 }
 
@@ -2856,7 +2859,7 @@ QUARK_UNIT_TEST("", "jsonvalue_to_value()", "point_t", ""){
 		result,
 		value_t::make_struct_value(
 			typeid_t::make_struct2(point_t_def),
-			vector<value_t>{ value_t::make_double(1), value_t::make_double(3)}
+			{ value_t::make_double(1), value_t::make_double(3)}
 		)
 	);
 }
@@ -3296,9 +3299,7 @@ QUARK_UNIT_TEST("", "read_text_file()", "", ""){
 		a = read_text_file(path + "/Desktop/test1.json");
 		print(a);
 	)");
-	ut_verify(QUARK_POS, vm->_print_output, vector<string>{
-		string() + R"({ "magic": 1234 })" + "\n"
-	});
+	ut_verify(QUARK_POS, vm->_print_output, { string() + R"({ "magic": 1234 })" + "\n" });
 }
 */
 
@@ -3930,7 +3931,7 @@ QUARK_UNIT_TEST("vector-int", "size()", "3", ""){
 
 
 
-
+#if 0
 OFF_QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
 	int instruction_count_total = 0;
 	int symbol_count_total = 0;
@@ -3960,14 +3961,7 @@ OFF_QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
 
 	QUARK_TRACE_SS("TOTAL: " << instruction_count_total << "\t" <<symbol_count_total);
 }
-
-
-
-
-
-
-
-
+#endif
 
 
 
@@ -4062,7 +4056,6 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 		}
 	)";
 
-	program_recording.push_back(test_ss2);
 	const auto result = run_container2(test_ss2, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
@@ -4146,7 +4139,6 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 		}
 	)";
 
-	program_recording.push_back(test_ss3);
 	const auto result = run_container2(test_ss3, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
@@ -4232,7 +4224,6 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 		}
 	)";
 
-	program_recording.push_back(test_ss3);
 	const auto result = run_container2(test_ss3, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
