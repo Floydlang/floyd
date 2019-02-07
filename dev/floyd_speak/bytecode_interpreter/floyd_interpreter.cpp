@@ -647,10 +647,7 @@ std::map<std::string, value_t> run_container_int(const bc_program_t& program, co
 
 	runtime._container = program._container_def;
 
-
-
-
-	runtime._process_infos = fold(runtime._container._clock_busses, std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const pair<string, clock_bus_t>& e){
+	runtime._process_infos = reduce(runtime._container._clock_busses, std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const pair<string, clock_bus_t>& e){
 		auto acc2 = acc;
 		acc2.insert(e.second._processes.begin(), e.second._processes.end());
 		return acc2;

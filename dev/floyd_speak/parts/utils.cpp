@@ -120,12 +120,12 @@ QUARK_UNIT_TEST("", "filter()", "", "") {
 
 
 
-QUARK_UNIT_TEST("", "fold()", "", "") {
-	const auto result = fold(std::vector<int>{ 1, 2, 3 }, 1000, [](int acc, int e){ return acc + e; });
+QUARK_UNIT_TEST("", "reduce()", "", "") {
+	const auto result = reduce(std::vector<int>{ 1, 2, 3 }, 1000, [](int acc, int e){ return acc + e; });
 	QUARK_UT_VERIFY(result == (1000 + 1 + 2 + 3));
 }
-QUARK_UNIT_TEST("", "fold()", "", "") {
-	const auto result = fold(std::vector<std::string>{ "a", "b", "c", "b", "d" }, 100, [](int acc, std::string e){ return e == "b" ? acc + 1 : acc; });
+QUARK_UNIT_TEST("", "reduce()", "", "") {
+	const auto result = reduce(std::vector<std::string>{ "a", "b", "c", "b", "d" }, 100, [](int acc, std::string e){ return e == "b" ? acc + 1 : acc; });
 	QUARK_UT_VERIFY(result == 102);
 }
 

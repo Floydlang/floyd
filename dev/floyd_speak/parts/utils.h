@@ -9,43 +9,51 @@
 #ifndef utils_hpp
 #define utils_hpp
 
+/*
+	Some basic C++ utilities for doing collections, smart pointers etc.
+*/
+
 #include <algorithm>
 #include "quark.h"
 #include <memory>
 #include <vector>
 
-	template <typename T> bool compare_shared_values(const T& ptr_a, const T& ptr_b){
-		if(ptr_a && ptr_b){
-			return *ptr_a == *ptr_b;
-		}
-		else if(!ptr_a && !ptr_b){
-			return true;
-		}
-		else{
-			return false;
-		}
-	}
 
-	template <typename T> bool compare_shared_value_vectors(const std::vector<T>& vec_a, const std::vector<T>& vec_b){
-		if(vec_a.size() != vec_b.size()){
-			return false;
-		}
-		for(size_t i = 0 ; i < vec_a.size() ; i++){
-			if(compare_shared_values(vec_a[i], vec_b[i]) == false){
-				return false;
-			}
-		}
+//	Compare shared_ptr<>:s BY VALUE, not by-pointer.
+template <typename T> bool compare_shared_values(const T& ptr_a, const T& ptr_b){
+	if(ptr_a && ptr_b){
+		return *ptr_a == *ptr_b;
+	}
+	else if(!ptr_a && !ptr_b){
 		return true;
 	}
+	else{
+		return false;
+	}
+}
 
+//	Compares two vectors of shared_ptr<>:s BY VALUE, not by-pointer.
+template <typename T> bool compare_shared_value_vectors(const std::vector<T>& vec_a, const std::vector<T>& vec_b){
+	if(vec_a.size() != vec_b.size()){
+		return false;
+	}
+	for(size_t i = 0 ; i < vec_a.size() ; i++){
+		if(compare_shared_values(vec_a[i], vec_b[i]) == false){
+			return false;
+		}
+	}
+	return true;
+}
 
-template <typename T> std::vector<T> operator+(const std::vector<T>& lhs, const std::vector<T>& rhs){
+//	Returns new collection.
+template <typename T> std::vector<T> concat(const std::vector<T>& lhs, const std::vector<T>& rhs){
 	std::vector<T> temp = lhs;
 	temp.insert(temp.end(), rhs.begin(), rhs.end());
 	return temp;
 }
 
-template <typename T> std::vector<T> operator+(const std::vector<T>& lhs, const T& rhs){
+//	Returns new collection.
+template <typename T> std::vector<T> concat(const std::vector<T>& lhs, const T& rhs){
 	std::vector<T> temp = lhs;
 	temp.push_back(rhs);
 	return temp;
@@ -58,6 +66,10 @@ template <typename COLLECTION, typename UNARY_OPERATION>
 void for_each_col(COLLECTION col, UNARY_OPERATION op){
 	std::for_each(col.begin(),col.end(),op);
 }
+
+////////////////////////////////		mapf()
+
+//	Functional map()-function. Returns new collection.
 
 template <typename DEST_ELEMENT_TYPE, typename COLLECTION, typename UNARY_OPERATION>
 std::vector<DEST_ELEMENT_TYPE> mapf(const COLLECTION& col, const UNARY_OPERATION& operation) {
@@ -85,17 +97,18 @@ Collection filter(Collection col,Predicate predicate) {
 }
 */
 
+
+////////////////////////////////		reduce()
+
+//	Functional reduce()-function. Returns new collection.
+
 template <typename COLLECTION, typename VALUE, typename BINARY_OPERATION>
-VALUE fold(COLLECTION col, const VALUE& init, const BINARY_OPERATION op) {
+VALUE reduce(COLLECTION col, const VALUE& init, const BINARY_OPERATION op) {
 	auto acc = init;
 	for(const auto& e: col){
 		acc = op(acc, e);
 	}
 	return acc;
 }
-
-
-//std::string float_to_string_no_trailing_zeros(float v);
-
 
 #endif /* utils_hpp */

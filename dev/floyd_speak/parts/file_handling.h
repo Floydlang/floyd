@@ -1,11 +1,13 @@
 #pragma once
 
+/*
+	Simple library for access the local file system.
+*/
+
 #include <vector>
 #include <string>
 #include <cstdint>
 #include <map>
-
-
 
 
 struct VRelativePath {
@@ -15,8 +17,6 @@ struct VRelativePath {
 struct VAbsolutePath {
 	std::string fAbsolutePath;
 };
-
-
 
 
 //	Path is absolute and with native path separators.
@@ -29,8 +29,8 @@ std::string LoadTextFile(const std::string& completePath);
 bool DoesEntryExist(const std::string& completePath);
 
 
-
 ///////////////////////////////////////////////////			DIRECTOR ROOTS
+
 
 //??? Add help creating the directory with the correct name.
 struct directories_t {

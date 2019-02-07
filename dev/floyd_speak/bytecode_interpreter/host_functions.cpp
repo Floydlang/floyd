@@ -20,7 +20,7 @@
 #include <iostream>
 #include <fstream>
 #include "text_parser.h"
-#include "FileHandling.h"
+#include "file_handling.h"
 #include "sha1_class.h"
 
 

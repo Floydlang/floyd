@@ -9,6 +9,10 @@
 #ifndef text_parser_hpp
 #define text_parser_hpp
 
+/*
+	Low-level features to read and manipulate strings.
+	Check out seq_t.
+*/
 #include <string>
 #include <memory>
 #include <vector>
@@ -65,15 +69,15 @@ std::string double_to_string_always_decimals(double value);
 
 
 
-
 ///////////////////////////////		seq_t
 
 
 /*
+	Wraps a potentially huge string and an offset in an immutable value. You get new seq_t:s when you
+	read from the seq_t but the internal string is shared.
+
 	This is a magic string were you can easily peek into the beginning and
 	also get a new string without the first character(s).
-
-	It shares the actual string data behind the curtains so is efficent.
 */
 
 struct seq_t {

@@ -9,8 +9,11 @@
 #ifndef immutable_ref_value_hpp
 #define immutable_ref_value_hpp
 
-#include <memory>
+/*
+	Wrap any type and make it immutable, even if original type is mutable.
+*/
 
+#include <memory>
 #include "quark.h"
 
 

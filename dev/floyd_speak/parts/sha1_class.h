@@ -9,20 +9,16 @@
 #ifndef __Permafrost__sha1_class__
 #define __Permafrost__sha1_class__
 
+/*
+	Support for SHA1 hashes.
+
+	https://code.google.com/p/smallsha1/downloads/detail?name=sha1.zip&can=2&q=
+*/
+
 #include <cstdint>
 #include <cstddef>
 #include <string>
 #include "quark.h"
-
-
-
-
-
-/**
-sha1 hash
-https://code.google.com/p/smallsha1/downloads/detail?name=sha1.zip&can=2&q=
-*/
-
 
 
 ////////////////////////			TSHA1
