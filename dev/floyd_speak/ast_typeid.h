@@ -10,9 +10,12 @@
 #define ast_typeid_hpp
 
 /*
-# typeid_t
+typeid_t
 
-Specifies an exact Floyd type. Both for base types like "int" and "string" and composite types like "struct { [float] p; string s }
+This is a very central type in the Floyd compiler.
+
+It specifies an exact Floyd type. Both for base types like "int" and "string" and composite types
+like "struct { [float] p; string s }.
 It can hold *any Floyd type*. It can also hold unresolved type identifiers and a few types internal to compiler.
 
 typeid_t can be convert to/from JSON and is written in source code according to Floyd source syntax, see table below.
@@ -132,6 +135,8 @@ enum class epure {
 
 
 //	Stores extra information for those types that need more than just a base_type.
+//	This requires an allocation.
+//	TODO: Simplify this code now that std::variant is available.
 
 struct typeid_ext_imm_t {
 	public: bool operator==(const typeid_ext_imm_t& other) const{
@@ -160,10 +165,12 @@ struct typeid_ext_imm_t {
 
 
 struct typeid_t {
+
+	////////////////////////////////////////		FUNCTIONS FOR EACH BASE-TYPE.
+
 	public: static typeid_t make_undefined(){
 		return { floyd::base_type::k_internal_undefined, {} };
 	}
-
 	public: bool is_undefined() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -174,7 +181,6 @@ struct typeid_t {
 	public: static typeid_t make_internal_dynamic(){
 		return { floyd::base_type::k_internal_dynamic, {} };
 	}
-
 	public: bool is_internal_dynamic() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -185,7 +191,6 @@ struct typeid_t {
 	public: static typeid_t make_void(){
 		return { floyd::base_type::k_void, {} };
 	}
-
 	public: bool is_void() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -196,7 +201,6 @@ struct typeid_t {
 	public: static typeid_t make_bool(){
 		return { floyd::base_type::k_bool, {} };
 	}
-
 	public: bool is_bool() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -207,7 +211,6 @@ struct typeid_t {
 	public: static typeid_t make_int(){
 		return { floyd::base_type::k_int, {} };
 	}
-
 	public: bool is_int() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -218,7 +221,6 @@ struct typeid_t {
 	public: static typeid_t make_double(){
 		return { floyd::base_type::k_double, {} };
 	}
-
 	public: bool is_double() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -229,7 +231,6 @@ struct typeid_t {
 	public: static typeid_t make_string(){
 		return { floyd::base_type::k_string, {} };
 	}
-
 	public: bool is_string() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -240,7 +241,6 @@ struct typeid_t {
 	public: static typeid_t make_json_value(){
 		return { floyd::base_type::k_json_value, {} };
 	}
-
 	public: bool is_json_value() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -251,7 +251,6 @@ struct typeid_t {
 	public: static typeid_t make_typeid(){
 		return { floyd::base_type::k_typeid, {} };
 	}
-
 	public: bool is_typeid() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -265,19 +264,16 @@ struct typeid_t {
 		const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, "", def, {}, epure::pure});
 		return { floyd::base_type::k_struct, ext };
 	}
-
 	public: static typeid_t make_struct2(const std::vector<member_t>& members){
 		auto def = std::make_shared<const struct_definition_t>(members);
 		const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, "", def, {}, epure::pure});
 		return { floyd::base_type::k_struct, ext };
 	}
-
 	public: bool is_struct() const {
 		QUARK_ASSERT(check_invariant());
 
 		return _base_type == base_type::k_struct;
 	}
-
 	public: const struct_definition_t& get_struct() const{
 		QUARK_ASSERT(get_base_type() == base_type::k_struct);
 
@@ -290,19 +286,16 @@ struct typeid_t {
 	}
 
 
-
 	public: static typeid_t make_protocol(const std::vector<member_t>& members){
 		const auto def = std::make_shared<protocol_definition_t>(protocol_definition_t(members));
 		const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, "", {}, def, epure::pure });
 		return { floyd::base_type::k_protocol, ext };
 	}
-
 	public: bool is_protocol() const {
 		QUARK_ASSERT(check_invariant());
 
 		return _base_type == base_type::k_protocol;
 	}
-
 	public: const protocol_definition_t& get_protocol() const{
 		QUARK_ASSERT(get_base_type() == base_type::k_protocol);
 		QUARK_ASSERT(_ext->_protocol_def);
@@ -315,18 +308,15 @@ struct typeid_t {
 	}
 
 
-
 	public: static typeid_t make_vector(const typeid_t& element_type){
 		const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ { element_type }, "", {}, {}, epure::pure });
 		return { floyd::base_type::k_vector, ext };
 	}
-
 	public: bool is_vector() const {
 		QUARK_ASSERT(check_invariant());
 
 		return _base_type == base_type::k_vector;
 	}
-
 	public: const typeid_t& get_vector_element_type() const{
 		QUARK_ASSERT(get_base_type() == base_type::k_vector);
 
@@ -334,24 +324,20 @@ struct typeid_t {
 	}
 
 
-
 	public: static typeid_t make_dict(const typeid_t& value_type){
 		const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ { value_type }, "", {}, {}, epure::pure });
 		return { floyd::base_type::k_dict, ext };
 	}
-
 	public: bool is_dict() const {
 		QUARK_ASSERT(check_invariant());
 
 		return _base_type == base_type::k_dict;
 	}
-
 	public: const typeid_t& get_dict_value_type() const{
 		QUARK_ASSERT(get_base_type() == base_type::k_dict);
 
 		return _ext->_parts[0];
 	}
-
 
 
 	public: static typeid_t make_function(const typeid_t& ret, const std::vector<typeid_t>& args, epure pure){
@@ -362,13 +348,11 @@ struct typeid_t {
 
 		return { floyd::base_type::k_function, ext };
 	}
-
 	public: bool is_function() const {
 		QUARK_ASSERT(check_invariant());
 
 		return _base_type == base_type::k_function;
 	}
-
 	public: const typeid_t& get_function_return() const{
 		QUARK_ASSERT(get_base_type() == base_type::k_function);
 
@@ -382,7 +366,6 @@ struct typeid_t {
 		r.erase(r.begin());
 		return r;
 	}
-
 	public: epure get_function_pure() const {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(get_base_type() == base_type::k_function);
@@ -395,13 +378,11 @@ struct typeid_t {
 		const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, s, {}, {}, epure::pure});
 		return { floyd::base_type::k_internal_unresolved_type_identifier, ext };
 	}
-
 	public: bool is_unresolved_type_identifier() const {
 		QUARK_ASSERT(check_invariant());
 
 		return _base_type == base_type::k_internal_unresolved_type_identifier;
 	}
-
 	public: std::string get_unresolved_type_identifier() const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(get_base_type() == base_type::k_internal_unresolved_type_identifier);
@@ -410,7 +391,13 @@ struct typeid_t {
 	}
 
 
+	////////////////////////////////////////		BASICS
 
+	public: inline floyd::base_type get_base_type() const{
+		return _base_type;
+	}
+
+	public: bool check_types_resolved() const;
 
 	public: bool operator==(const typeid_t& other) const{
 		QUARK_ASSERT(check_invariant());
@@ -424,24 +411,17 @@ struct typeid_t {
 			&& compare_shared_values(_ext, other._ext);
 	}
 	public: bool operator!=(const typeid_t& other) const{ return !(*this == other);}
-
 	public: bool check_invariant() const;
-
 	public: void swap(typeid_t& other);
 
 
-	public: bool check_types_resolved() const;
+	////////////////////////////////////////		INTERNALS
 
-	public: inline floyd::base_type get_base_type() const{
-		return _base_type;
-	}
 
 	private: typeid_t(floyd::base_type base_type, const std::shared_ptr<const typeid_ext_imm_t>& ext) :
 		_base_type(base_type),
 		_ext(ext)
 	{
-//			for(const auto e: parts){ QUARK_ASSERT(e.check_invariant()); }
-//			QUARK_ASSERT(struct_def == nullptr || struct_def->check_invariant());
 
 #if DEBUG
 		_DEBUG = typeid_to_compact_string(*this);
@@ -463,7 +443,8 @@ std::string typeid_to_compact_string(const typeid_t& t);
 
 //////////////////////////////////////		dynamic function
 
-
+//	Dynamic values are "fat" values that also keep their type. This is used right now for Floyd's host functions
+//	that accepts many/any type of arguments. Like size().
 //	A dynamic function has one or several arguments of type k_internal_dynamic.
 //	The argument types for k_internal_dynamic arguments must be supplied for each function invocation.
 bool is_dynamic_function(const typeid_t& function_type);
@@ -472,10 +453,11 @@ int count_function_dynamic_args(const std::vector<typeid_t>& args);
 int count_function_dynamic_args(const typeid_t& function_type);
 
 
+
 //////////////////////////////////////		member_t
 
 /*
-	Definition of a struct-member.
+	Definition of a struct-member, just a type + name. It is used for other purposes too, like defining function arguments.
 */
 
 struct member_t {

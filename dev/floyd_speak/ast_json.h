@@ -9,20 +9,6 @@
 #ifndef ast_json_h
 #define ast_json_h
 
-#include <string>
-#include <vector>
-#include "json_support.h"
-#include "compiler_basics.h"
-
-struct seq_t;
-
-namespace floyd {
-
-struct value_t;
-
-
-////////////////////////////////////////		ast_json_t
-
 /*
 The ast_json_t type hold an AST, encoded as a JSON.
 
@@ -49,6 +35,21 @@ NOTICE: Right now ast_json_t is used a little sloppyly.
 Future: make separate types, optimally separate constants for statement/expression opcodes.
 */
 
+#include <string>
+#include <vector>
+#include "json_support.h"
+#include "compiler_basics.h"
+
+struct seq_t;
+
+namespace floyd {
+
+struct value_t;
+
+
+////////////////////////////////////////		ast_json_t
+
+
 struct ast_json_t {
 	private: ast_json_t(const json_t& v) :
 		_value(v)
@@ -71,7 +72,7 @@ struct ast_json_t {
 
 ////////////////////////////////////////		statement_opcode_t
 
-//	String keys use to specifiy statement type inside the ast_json_t.
+//	String keys use to specify statement type inside the ast_json_t.
 
 namespace statement_opcode_t {
 	const std::string k_return = "return";
@@ -98,7 +99,7 @@ namespace statement_opcode_t {
 
 ////////////////////////////////////////		expression_opcode_t
 
-//	String keys use to specifiy statement type inside the ast_json_t.
+//	String keys use to specify statement type inside the ast_json_t.
 
 namespace expression_opcode_t {
 	const std::string k_literal = "k";
@@ -120,7 +121,6 @@ namespace expression_opcode_t {
 ////////////////////////////////////////		make_statement*(), make_expression*()
 
 //	Creates json values for different AST constructs like expressions and statements.
-
 
 ast_json_t make_statement_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
 ast_json_t make_statement1(const location_t& location, const std::string& opcode, const json_t& params);

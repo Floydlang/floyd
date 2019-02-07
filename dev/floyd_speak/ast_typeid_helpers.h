@@ -9,6 +9,10 @@
 #ifndef typeid_helpers_hpp
 #define typeid_helpers_hpp
 
+/*
+	Functions that packs and unpacks typeid_t.
+*/
+
 #include "quark.h"
 #include <vector>
 
