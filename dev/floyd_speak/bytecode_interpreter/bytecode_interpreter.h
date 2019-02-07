@@ -14,6 +14,12 @@
 
 	inplace: data is stored directly inside the value.
 	external: data is allocated externally and value points to it.
+
+
+
+??? remove usage of typeid_t. Use itype & types[]?
+??? All functions should be the same type of function-values: host-functions and Floyd functions: _host_function_id should be in the VALUE not function definition!
+??? Less code + faster to generate increc, decref instructions instead of make *_external_value, *_internal_value opcodes.
 */
 
 #include "ast_typeid.h"
@@ -29,8 +35,6 @@
 #include "immer/map.hpp"
 
 
-//??? remove usage of typeid_t. Use itype & types[]?
-//??? All functions should be the same type of function-values: host-functions and Floyd functions: _host_function_id should be in the VALUE not function definition!
 
 namespace floyd {
 struct interpreter_t;
@@ -404,10 +408,10 @@ enum class bc_opcode: uint8_t {
 		B: Register: object
 		C: 0
 	*/
-	k_get_size_vector_obj,
-	k_get_size_vector_pod64,
-	k_get_size_dict_obj,
-	k_get_size_dict_pod64,
+	k_get_size_vector_w_external_elements,
+	k_get_size_vector_w_inplace_elements,
+	k_get_size_dict_w_external_values,
+	k_get_size_dict_w_inplace_values,
 	k_get_size_string,
 	k_get_size_jsonvalue,
 
@@ -416,8 +420,8 @@ enum class bc_opcode: uint8_t {
 		B: Register: object
 		C: Register: value
 	*/
-	k_pushback_vector_obj,
-	k_pushback_vector_pod64,
+	k_pushback_vector_w_external_elements,
+	k_pushback_vector_w_inplace_elements,
 	k_pushback_string,
 
 	/*
@@ -440,8 +444,8 @@ enum class bc_opcode: uint8_t {
 	k_add_double,
 
 	k_concat_strings,
-	k_concat_vectors_obj,
-	k_concat_vectors_pod64,
+	k_concat_vectors_w_external_elements,
+	k_concat_vectors_w_inplace_elements,
 
 	k_subtract_double,
 	k_subtract_int,
@@ -502,7 +506,7 @@ enum class bc_opcode: uint8_t {
 
 		Arguments are put on stack. No DYN arguments. All arguments are of type E.
 	*/
-	k_new_vector_obj,
+	k_new_vector_w_external_elements,
 
 	/*
 		A: Register: where to put resulting value
@@ -511,7 +515,7 @@ enum class bc_opcode: uint8_t {
 
 		Arguments are put on stack. All arguments are of type int.
 	*/
-	k_new_vector_pod64,
+	k_new_vector_w_inplace_elements,
 
 	/*
 		A: Register: where to put resulting value
@@ -529,8 +533,8 @@ enum class bc_opcode: uint8_t {
 			C: 6
 			Stack: "chewie", 10.0, "leia", 20.0, "luke", 30.0
 	*/
-	k_new_dict_obj,
-	k_new_dict_pod64,
+	k_new_dict_w_external_values,
+	k_new_dict_w_inplace_values,
 
 	/*
 		A: Register: where to put resulting value
@@ -588,7 +592,7 @@ enum class bc_opcode: uint8_t {
 		STACK 1: a b c
 		STACK 2: a b c V
 	*/
-	k_push_intern,
+	k_push_inplace_value,
 
 	/*
 		NOTICE: This function bumps the RC of the pushed V-object. This represents the stack-entry co-owning V.
@@ -598,7 +602,7 @@ enum class bc_opcode: uint8_t {
 		STACK 1: a b c
 		STACK 2: a b c V
 	*/
-	k_push_obj,
+	k_push_external_value,
 
 	/*
 		A: IMMEDIATE: arg count. 0 to 32.
@@ -735,17 +739,18 @@ struct bc_static_frame_t {
 
 
 	//////////////////////////////////////		STATE
-	std::vector<bc_instruction_t> _instrs2;
+	std::vector<bc_instruction_t> _instructions;
 
 	//??? Optimize how we store this data for quick access + compactness.
 	std::vector<std::pair<std::string, bc_symbol_t>> _symbols;
 	std::vector<typeid_t> _args;
 
-	//	True if equivalent symbol is an ext.
+	//	True if equivalent symbol is an external value.
 	//??? unify with _locals_exts.
 	//??? also redundant with _symbols._value_type
 	std::vector<bool> _exts;
 
+	//	Is the local value external values?
 	//	This doesn't count arguments.
 	std::vector<bool> _locals_exts;
 	std::vector<bc_value_t> _locals;
@@ -787,7 +792,6 @@ struct bc_function_definition_t {
 /*
 	A complete, stand-alone, Floyd byte code executable, ready to be executed by interpreter.
 */
-//??? rename to bc_executable_t
 
 struct bc_program_t {
 #if DEBUG
@@ -963,10 +967,10 @@ struct interpreter_stack_t {
 			bool ext = frame._locals_exts[i];
 			const auto& local = frame._locals[i];
 			if(ext){
-				push_obj(local);
+				push_external_value(local);
 			}
 			else{
-				push_intern(local);
+				push_inplace_value(local);
 			}
 		}
 		_current_frame_ptr = &frame;
@@ -996,7 +1000,7 @@ struct interpreter_stack_t {
 		return true;
 	}
 
-
+	//	Slow since it looks up the type of the register at runtime.
 	public: bc_value_t read_register(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
@@ -1011,6 +1015,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(result.check_invariant());
 		return result;
 	}
+
 	public: void write_register(const int reg, const bc_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
@@ -1030,9 +1035,10 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: void write_register_obj(const int reg, const bc_value_t& value){
+	public: void write_register__external_value(const int reg, const bc_value_t& value){
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(check_reg_obj(reg));
+		QUARK_ASSERT(encode_as_external(value._type));
+		QUARK_ASSERT(check_reg__external_value(reg));
 		QUARK_ASSERT(value.check_invariant());
 		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type == value._type);
 
@@ -1086,7 +1092,7 @@ struct interpreter_stack_t {
 		return true;
 	}
 
-	public: bool check_reg_vector_obj(const int reg) const{
+	public: bool check_reg_vector_w_external_elements(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
 		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_vector());
@@ -1094,7 +1100,7 @@ struct interpreter_stack_t {
 		return true;
 	}
 
-	public: bool check_reg_vector_pod64(const int reg) const{
+	public: bool check_reg_vector_w_inplace_elements(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
 		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_vector());
@@ -1102,14 +1108,14 @@ struct interpreter_stack_t {
 		return true;
 	}
 
-	public: bool check_reg_dict_obj(const int reg) const{
+	public: bool check_reg_dict_w_external_values(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
 		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_dict());
 		QUARK_ASSERT(encode_as_dict_w_inplace_values(_current_frame_ptr->_symbols[reg].second._value_type) == false);
 		return true;
 	}
-	public: bool check_reg_dict_pod64(const int reg) const{
+	public: bool check_reg_dict_w_inplace_values(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
 		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_dict());
@@ -1131,14 +1137,14 @@ struct interpreter_stack_t {
 		return true;
 	}
 
-	public: bool check_reg_obj(const int reg) const{
+	public: bool check_reg__external_value(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
 		QUARK_ASSERT(_current_frame_ptr->_exts[reg] == true);
 		return true;
 	}
 
-	public: bool check_reg_intern(const int reg) const{
+	public: bool check_reg__inplace_value(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
 		QUARK_ASSERT(_current_frame_ptr->_exts[reg] == false);
@@ -1148,10 +1154,10 @@ struct interpreter_stack_t {
 
 	public: void save_frame(){
 		const auto frame_pos = bc_value_t::make_int(get_current_frame_start());
-		push_intern(frame_pos);
+		push_inplace_value(frame_pos);
 
 		const auto frame_ptr = bc_value_t(_current_frame_ptr);
-		push_intern(frame_ptr);
+		push_inplace_value(frame_ptr);
 	}
 
 	public: void restore_frame(){
@@ -1174,7 +1180,7 @@ struct interpreter_stack_t {
 	//////////////////////////////////////		STACK
 
 
-	public: inline void push_obj(const bc_value_t& value){
+	public: inline void push_external_value(const bc_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 #if DEBUG
@@ -1191,7 +1197,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: inline void push_intern(const bc_value_t& value){
+	public: inline void push_inplace_value(const bc_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 #if DEBUG
@@ -1227,7 +1233,7 @@ struct interpreter_stack_t {
 		return _entries[pos]._inplace._int64;
 	}
 
-	public: inline void replace_intern(int pos, const bc_value_t& value){
+	public: inline void replace_inplace_value(int pos, const bc_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
@@ -1241,7 +1247,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 	}
 
-	public: inline void replace_obj(int pos, const bc_value_t& value){
+	public: inline void replace_external_value(int pos, const bc_value_t& value){
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(value.check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
@@ -1289,7 +1295,7 @@ struct interpreter_stack_t {
 	}
 
 #if DEBUG
-	private: bool is_ext(int pos) const{
+	private: bool debug_is_ext(int pos) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 		return encode_as_external(_debug_types[pos]);

@@ -3938,12 +3938,12 @@ OFF_QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
 	for(const auto& s: program_recording){
 		try{
 		const auto bc = compile_to_bytecode(s, "");
-		int instruction_count_sum = static_cast<int>(bc._globals._instrs2.size());
+		int instruction_count_sum = static_cast<int>(bc._globals._instructions.size());
 		int symbol_count_sum = static_cast<int>(bc._globals._symbols.size());
 
 		for(const auto& f: bc._function_defs){
 			if(f._frame_ptr != nullptr){
-				const auto instruction_count = f._frame_ptr->_instrs2.size();
+				const auto instruction_count = f._frame_ptr->_instructions.size();
 				const auto symbol_count = f._frame_ptr->_symbols.size();
 				instruction_count_sum += instruction_count;
 				symbol_count_sum += symbol_count;

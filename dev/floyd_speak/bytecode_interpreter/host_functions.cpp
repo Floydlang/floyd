@@ -1891,14 +1891,14 @@ std::vector<host_function_record_t> get_host_function_records(){
 
 		make_rec("update", host__update, 1006, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure), return_type_sames_as_arg0),
 
-		//	size() is translated to bc_opcode::k_get_size_vector_obj() etc.
+		//	size() is translated to bc_opcode::k_get_size_vector_w_external_elements() etc.
 		make_rec("size", nullptr, 1007, typeid_t::make_function(typeid_t::make_int(), { DYN }, epure::pure)),
 
 		make_rec("find", host__find, 1008, typeid_t::make_function(typeid_t::make_int(), { DYN, DYN }, epure::pure)),
 		make_rec("exists", host__exists, 1009, typeid_t::make_function(typeid_t::make_bool(), { DYN, DYN }, epure::pure)),
 		make_rec("erase", host__erase, 1010, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure), return_type_sames_as_arg0),
 
-		//	push_back() is translated to bc_opcode::k_pushback_vector_pod64() etc.
+		//	push_back() is translated to bc_opcode::k_pushback_vector_w_inplace_elements() etc.
 		make_rec("push_back", nullptr, 1011, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure), return_type_sames_as_arg0),
 
 		make_rec("subset", host__subset, 1012, typeid_t::make_function(DYN, { DYN, typeid_t::make_int(), typeid_t::make_int()}, epure::pure), return_type_sames_as_arg0),

@@ -793,7 +793,7 @@ call_setup_t gen_call_setup(bcgenerator_t& vm, const std::vector<typeid_t>& func
 		//	Prepend internal-dynamic arguments with the itype of the actual callee-argument.
 		if(func_arg_type.is_internal_dynamic()){
 			const auto arg_type_reg = add_local_const(body_acc, value_t::make_int(callee_arg_type), "DYN type arg #" + std::to_string(i));
-			body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_intern, arg_type_reg, {}, {} ));
+			body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_inplace_value, arg_type_reg, {}, {} ));
 
 			//	Int don't need extbit.
 			exts.push_back(false);
@@ -802,11 +802,11 @@ call_setup_t gen_call_setup(bcgenerator_t& vm, const std::vector<typeid_t>& func
 		const auto arg_type_full = vm._types[callee_arg_type];
 		bool ext = encode_as_external(arg_type_full);
 		if(ext){
-			body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_obj, arg_reg, {}, {} ));
+			body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_external_value, arg_reg, {}, {} ));
 			exts.push_back(true);
 		}
 		else{
-			body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_intern, arg_reg, {}, {} ));
+			body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_inplace_value, arg_reg, {}, {} ));
 			exts.push_back(false);
 		}
 	}
@@ -841,18 +841,18 @@ bc_opcode convert_call_to_size_opcode(const typeid_t& arg1_type){
 
 	if(arg1_type.is_vector()){
 		if(encode_as_vector_w_inplace_elements(arg1_type)){
-			return bc_opcode::k_get_size_vector_pod64;
+			return bc_opcode::k_get_size_vector_w_inplace_elements;
 		}
 		else{
-			return bc_opcode::k_get_size_vector_obj;
+			return bc_opcode::k_get_size_vector_w_external_elements;
 		}
 	}
 	else if(arg1_type.is_dict()){
 		if(encode_as_dict_w_inplace_values(arg1_type)){
-			return bc_opcode::k_get_size_dict_pod64;
+			return bc_opcode::k_get_size_dict_w_inplace_values;
 		}
 		else{
-			return bc_opcode::k_get_size_dict_obj;
+			return bc_opcode::k_get_size_dict_w_external_values;
 		}
 	}
 	else if(arg1_type.is_string()){
@@ -871,10 +871,10 @@ bc_opcode convert_call_to_pushback_opcode(const typeid_t& arg1_type){
 
 	if(arg1_type.is_vector()){
 		if(encode_as_vector_w_inplace_elements(arg1_type)){
-			return bc_opcode::k_pushback_vector_pod64;
+			return bc_opcode::k_pushback_vector_w_inplace_elements;
 		}
 		else{
-			return bc_opcode::k_pushback_vector_obj;
+			return bc_opcode::k_pushback_vector_w_external_elements;
 		}
 	}
 	else if(arg1_type.is_string()){
@@ -1012,7 +1012,7 @@ expression_gen_t bcgen_construct_value_expression(bcgenerator_t& vm, const varia
 	if(target_type.is_vector()){
 		if(encode_as_vector_w_inplace_elements(target_type)){
 			body_acc._instrs.push_back(bcgen_instruction_t(
-				bc_opcode::k_new_vector_pod64,
+				bc_opcode::k_new_vector_w_inplace_elements,
 				target_reg2,
 				make_imm_int(0),
 				make_imm_int(arg_count)
@@ -1020,7 +1020,7 @@ expression_gen_t bcgen_construct_value_expression(bcgenerator_t& vm, const varia
 		}
 		else{
 			body_acc._instrs.push_back(bcgen_instruction_t(
-				bc_opcode::k_new_vector_obj,
+				bc_opcode::k_new_vector_w_external_elements,
 				target_reg2,
 				make_imm_int(target_itype),
 				make_imm_int(arg_count)
@@ -1030,7 +1030,7 @@ expression_gen_t bcgen_construct_value_expression(bcgenerator_t& vm, const varia
 	else if(target_type.is_dict()){
 		if(encode_as_dict_w_inplace_values(target_type)){
 			body_acc._instrs.push_back(bcgen_instruction_t(
-				bc_opcode::k_new_dict_pod64,
+				bc_opcode::k_new_dict_w_inplace_values,
 				target_reg2,
 				make_imm_int(target_itype),
 				make_imm_int(arg_count)
@@ -1038,7 +1038,7 @@ expression_gen_t bcgen_construct_value_expression(bcgenerator_t& vm, const varia
 		}
 		else{
 			body_acc._instrs.push_back(bcgen_instruction_t(
-				bc_opcode::k_new_dict_obj,
+				bc_opcode::k_new_dict_w_external_values,
 				target_reg2,
 				make_imm_int(target_itype),
 				make_imm_int(arg_count)
@@ -1304,7 +1304,7 @@ expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& vm, const variable_a
 		else if(type.is_vector()){
 			if(encode_as_vector_w_inplace_elements(type)){
 				static const std::map<expression_type, bc_opcode> conv_opcode = {
-					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_pod64 },
+					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_w_inplace_elements },
 					{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
 					{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
 					{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
@@ -1317,7 +1317,7 @@ expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& vm, const variable_a
 			}
 			else{
 				static const std::map<expression_type, bc_opcode> conv_opcode = {
-					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_obj },
+					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_w_external_elements },
 					{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
 					{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
 					{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },

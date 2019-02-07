@@ -1765,15 +1765,15 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_lookup_element_dict_w_external_values, { "lookup_element_dict_w_external_values", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_lookup_element_dict_w_inplace_values, { "lookup_element_dict_w_inplace_values", opcode_info_t::encoding::k_o_0rrr } },
 
-	{ bc_opcode::k_get_size_vector_obj, { "get_size_vector_obj", opcode_info_t::encoding::k_q_0rr0 } },
-	{ bc_opcode::k_get_size_vector_pod64, { "get_size_vector_pod64", opcode_info_t::encoding::k_q_0rr0 } },
-	{ bc_opcode::k_get_size_dict_obj, { "get_size_dict_obj", opcode_info_t::encoding::k_q_0rr0 } },
-	{ bc_opcode::k_get_size_dict_pod64, { "get_size_dict_pod64", opcode_info_t::encoding::k_q_0rr0 } },
+	{ bc_opcode::k_get_size_vector_w_external_elements, { "get_size_vector_w_external_elements", opcode_info_t::encoding::k_q_0rr0 } },
+	{ bc_opcode::k_get_size_vector_w_inplace_elements, { "get_size_vector_w_inplace_elements", opcode_info_t::encoding::k_q_0rr0 } },
+	{ bc_opcode::k_get_size_dict_w_external_values, { "get_size_dict_w_external_values", opcode_info_t::encoding::k_q_0rr0 } },
+	{ bc_opcode::k_get_size_dict_w_inplace_values, { "get_size_dict_w_inplace_values", opcode_info_t::encoding::k_q_0rr0 } },
 	{ bc_opcode::k_get_size_string, { "get_size_string", opcode_info_t::encoding::k_q_0rr0 } },
 	{ bc_opcode::k_get_size_jsonvalue, { "get_size_jsonvalue", opcode_info_t::encoding::k_q_0rr0 } },
 
-	{ bc_opcode::k_pushback_vector_obj, { "pushback_vector_obj", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_pushback_vector_pod64, { "pushback_vector_pod64", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_pushback_vector_w_external_elements, { "pushback_vector_w_external_elements", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_pushback_vector_w_inplace_elements, { "pushback_vector_w_inplace_elements", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_pushback_string, { "pushback_string", opcode_info_t::encoding::k_o_0rrr } },
 
 	{ bc_opcode::k_call, { "call", opcode_info_t::encoding::k_s_0rri } },
@@ -1782,8 +1782,8 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_add_int, { "add_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_add_double, { "add_double", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_concat_strings, { "concat_strings", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_concat_vectors_obj, { "concat_vectors_obj", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_concat_vectors_pod64, { "concat_vectors_pod64", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_concat_vectors_w_external_elements, { "concat_vectors_w_external_elements", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_concat_vectors_w_inplace_elements, { "concat_vectors_pod64", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_subtract_double, { "subtract_double", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_subtract_int, { "subtract_int", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_multiply_double, { "multiply_double", opcode_info_t::encoding::k_o_0rrr } },
@@ -1814,10 +1814,10 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 
 	{ bc_opcode::k_new_1, { "new_1", opcode_info_t::encoding::k_t_0rii } },
-	{ bc_opcode::k_new_vector_obj, { "new_vector_obj", opcode_info_t::encoding::k_t_0rii } },
-	{ bc_opcode::k_new_vector_pod64, { "new_vector_pod64", opcode_info_t::encoding::k_t_0rii } },
-	{ bc_opcode::k_new_dict_obj, { "new_dict_obj", opcode_info_t::encoding::k_t_0rii } },
-	{ bc_opcode::k_new_dict_pod64, { "new_dict_pod64", opcode_info_t::encoding::k_t_0rii } },
+	{ bc_opcode::k_new_vector_w_external_elements, { "new_vector_w_external_elements", opcode_info_t::encoding::k_t_0rii } },
+	{ bc_opcode::k_new_vector_w_inplace_elements, { "new_vector_w_inplace_elements", opcode_info_t::encoding::k_t_0rii } },
+	{ bc_opcode::k_new_dict_w_external_values, { "new_dict_w_external_values", opcode_info_t::encoding::k_t_0rii } },
+	{ bc_opcode::k_new_dict_w_inplace_values, { "new_dict_w_inplace_values", opcode_info_t::encoding::k_t_0rii } },
 	{ bc_opcode::k_new_struct, { "new_struct", opcode_info_t::encoding::k_t_0rii } },
 
 	{ bc_opcode::k_return, { "return", opcode_info_t::encoding::k_p_0r00 } },
@@ -1825,8 +1825,8 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 
 	{ bc_opcode::k_push_frame_ptr, { "push_frame_ptr", opcode_info_t::encoding::k_e_0000 } },
 	{ bc_opcode::k_pop_frame_ptr, { "pop_frame_ptr", opcode_info_t::encoding::k_e_0000 } },
-	{ bc_opcode::k_push_intern, { "push_intern", opcode_info_t::encoding::k_p_0r00 } },
-	{ bc_opcode::k_push_obj, { "push_obj", opcode_info_t::encoding::k_p_0r00 } },
+	{ bc_opcode::k_push_inplace_value, { "push_inplace_value", opcode_info_t::encoding::k_p_0r00 } },
+	{ bc_opcode::k_push_external_value, { "push_external_value", opcode_info_t::encoding::k_p_0r00 } },
 	{ bc_opcode::k_popn, { "popn", opcode_info_t::encoding::k_n_0ii0 } },
 
 	{ bc_opcode::k_branch_false_bool, { "branch_false_bool", opcode_info_t::encoding::k_k_0ri0 } },
@@ -1916,7 +1916,7 @@ bool bc_instruction_t::check_invariant() const {
 //?? STATIC frame definition -- not a runtime thing!
 
 bc_static_frame_t::bc_static_frame_t(const std::vector<bc_instruction_t>& instrs2, const std::vector<std::pair<std::string, bc_symbol_t>>& symbols, const std::vector<typeid_t>& args) :
-	_instrs2(instrs2),
+	_instructions(instrs2),
 	_symbols(symbols),
 	_args(args)
 {
@@ -1965,7 +1965,7 @@ bool bc_static_frame_t::check_invariant() const {
 	QUARK_ASSERT(_symbols.size() == _exts.size());
 
 /*
-	for(const auto& e: _instrs2){
+	for(const auto& e: _instructions){
 //		const auto encoding = k_opcode_info.at(e._opcode)._encoding;
 //		const auto reg_flags = encoding_to_reg_flags(encoding);
 
@@ -2039,7 +2039,7 @@ bool interpreter_stack_t::check_stack_frame(const frame_pos_t& in_frame) const{
 			bool symbol_ext = encode_as_external(symbol.second._value_type);
 			int local_pos = get_local_n_pos(in_frame._frame_pos, i);
 
-			bool stack_ext = is_ext(local_pos);
+			bool stack_ext = debug_is_ext(local_pos);
 			QUARK_ASSERT(symbol_ext == stack_ext);
 		}
 
@@ -2185,15 +2185,15 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 			bool is_ext = encode_as_external(args[i]._type);
 			exts.push_back(is_ext);
 			if(is_ext){
-				vm._stack.push_obj(bc);
+				vm._stack.push_external_value(bc);
 			}
 			else{
-				vm._stack.push_intern(bc);
+				vm._stack.push_inplace_value(bc);
 			}
 		}
 
 		vm._stack.open_frame(*function_def._frame_ptr, arg_count);
-		const auto& result = execute_instructions(vm, function_def._frame_ptr->_instrs2);
+		const auto& result = execute_instructions(vm, function_def._frame_ptr->_instructions);
 		vm._stack.close_frame(*function_def._frame_ptr);
 		vm._stack.pop_batch(exts);
 		vm._stack.restore_frame();
@@ -2341,7 +2341,7 @@ interpreter_t::interpreter_t(const bc_program_t& program, interpreter_handler_i*
 	_stack.open_frame(_imm->_program._globals, 0);
 
 	//	Run static intialization (basically run global instructions before calling main()).
-	/*const auto& r =*/ execute_instructions(*this, _imm->_program._globals._instrs2);
+	/*const auto& r =*/ execute_instructions(*this, _imm->_program._globals._instructions);
 	QUARK_ASSERT(check_invariant());
 }
 interpreter_t::interpreter_t(const bc_program_t& program) : interpreter_t(program, nullptr) {}
@@ -2471,7 +2471,7 @@ void execute_new_vector_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_
 	}
 
 	const auto result = make_vector(element_type, elements2);
-	vm._stack.write_register_obj(dest_reg, result);
+	vm._stack.write_register__external_value(dest_reg, result);
 }
 
 void execute_new_dict_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
@@ -2498,7 +2498,7 @@ void execute_new_dict_obj(interpreter_t& vm, int16_t dest_reg, int16_t target_it
 	}
 
 	const auto result = make_dict(element_type, elements2);
-	vm._stack.write_register_obj(dest_reg, result);
+	vm._stack.write_register__external_value(dest_reg, result);
 }
 void execute_new_dict_pod64(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -2524,7 +2524,7 @@ void execute_new_dict_pod64(interpreter_t& vm, int16_t dest_reg, int16_t target_
 	}
 
 	const auto result = make_dict(element_type, elements2);
-	vm._stack.write_register_obj(dest_reg, result);
+	vm._stack.write_register__external_value(dest_reg, result);
 }
 
 void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, int16_t arg_count){
@@ -2546,7 +2546,7 @@ void execute_new_struct(interpreter_t& vm, int16_t dest_reg, int16_t target_ityp
 	const auto result = bc_value_t::make_struct_value(target_type, elements2);
 //	QUARK_TRACE(to_compact_string2(instance));
 
-	vm._stack.write_register_obj(dest_reg, result);
+	vm._stack.write_register__external_value(dest_reg, result);
 }
 
 
@@ -2628,7 +2628,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 
 		case bc_opcode::k_load_global_external_value: {
-			QUARK_ASSERT(stack.check_reg_obj(i._a));
+			QUARK_ASSERT(stack.check_reg__external_value(i._a));
 			QUARK_ASSERT(stack.check_global_access_obj(i._b));
 
 			release_pod_external(regs[i._a]);
@@ -2638,7 +2638,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 		case bc_opcode::k_load_global_inplace_value: {
-			QUARK_ASSERT(stack.check_reg_intern(i._a));
+			QUARK_ASSERT(stack.check_reg__inplace_value(i._a));
 
 			regs[i._a] = globals[i._b];
 			break;
@@ -2647,7 +2647,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_store_global_external_value: {
 			QUARK_ASSERT(stack.check_global_access_obj(i._a));
-			QUARK_ASSERT(stack.check_reg_obj(i._b));
+			QUARK_ASSERT(stack.check_reg__external_value(i._b));
 
 			release_pod_external(globals[i._a]);
 			const auto& new_value_pod = regs[i._b];
@@ -2657,7 +2657,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 		case bc_opcode::k_store_global_inplace_value: {
 			QUARK_ASSERT(stack.check_global_access_intern(i._a));
-			QUARK_ASSERT(stack.check_reg_intern(i._b));
+			QUARK_ASSERT(stack.check_reg__inplace_value(i._b));
 
 			globals[i._a] = regs[i._b];
 			break;
@@ -2668,15 +2668,15 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 
 		case bc_opcode::k_copy_reg_inplace_value: {
-			QUARK_ASSERT(stack.check_reg_intern(i._a));
-			QUARK_ASSERT(stack.check_reg_intern(i._b));
+			QUARK_ASSERT(stack.check_reg__inplace_value(i._a));
+			QUARK_ASSERT(stack.check_reg__inplace_value(i._b));
 
 			regs[i._a] = regs[i._b];
 			break;
 		}
 		case bc_opcode::k_copy_reg_external_value: {
-			QUARK_ASSERT(stack.check_reg_obj(i._a));
-			QUARK_ASSERT(stack.check_reg_obj(i._b));
+			QUARK_ASSERT(stack.check_reg__external_value(i._a));
+			QUARK_ASSERT(stack.check_reg__external_value(i._b));
 
 			release_pod_external(regs[i._a]);
 			const auto& new_value_pod = regs[i._b];
@@ -2692,8 +2692,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		case bc_opcode::k_return: {
 			bool is_ext = frame_ptr->_exts[i._a];
 			QUARK_ASSERT(
-				(is_ext && stack.check_reg_obj(i._a))
-				|| (!is_ext && stack.check_reg_intern(i._a))
+				(is_ext && stack.check_reg__external_value(i._a))
+				|| (!is_ext && stack.check_reg__inplace_value(i._a))
 			);
 
 			return { true, bc_value_t(frame_ptr->_symbols[i._a].second._value_type, regs[i._a]) };
@@ -2743,8 +2743,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		case bc_opcode::k_push_intern: {
-			QUARK_ASSERT(stack.check_reg_intern(i._a));
+		case bc_opcode::k_push_inplace_value: {
+			QUARK_ASSERT(stack.check_reg__inplace_value(i._a));
 #if DEBUG
 			const auto debug_type = stack._debug_types[stack.get_current_frame_start() + i._a];
 #endif
@@ -2757,8 +2757,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_invariant());
 			break;
 		}
-		case bc_opcode::k_push_obj: {
-			QUARK_ASSERT(stack.check_reg_obj(i._a));
+		case bc_opcode::k_push_external_value: {
+			QUARK_ASSERT(stack.check_reg__external_value(i._a));
 
 #if DEBUG
 			const auto debug_type = stack._debug_types[stack.get_current_frame_start() + i._a];
@@ -2952,8 +2952,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 		case bc_opcode::k_lookup_element_vector_w_external_elements: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_obj(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_obj(i._b));
+			QUARK_ASSERT(stack.check_reg__external_value(i._a));
+			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
 			QUARK_ASSERT(stack.check_reg_int(i._c));
 
 			const auto& vec = regs[i._b]._external->_vector_w_external_elements;
@@ -2973,7 +2973,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		case bc_opcode::k_lookup_element_vector_w_inplace_elements: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_pod64(i._b));
+			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._b));
 			QUARK_ASSERT(stack.check_reg_int(i._c));
 
 			const auto& vec = regs[i._b]._external->_vector_w_inplace_elements;
@@ -2989,8 +2989,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 		case bc_opcode::k_lookup_element_dict_w_external_values: {
-			QUARK_ASSERT(stack.check_reg_obj(i._a));
-			QUARK_ASSERT(stack.check_reg_dict_obj(i._b));
+			QUARK_ASSERT(stack.check_reg__external_value(i._a));
+			QUARK_ASSERT(stack.check_reg_dict_w_external_values(i._b));
 			QUARK_ASSERT(stack.check_reg_string(i._c));
 
 			const auto& entries = regs[i._b]._external->_dict_w_external_values;
@@ -3009,7 +3009,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 		case bc_opcode::k_lookup_element_dict_w_inplace_values: {
 			QUARK_ASSERT(stack.check_reg_any(i._a));
-			QUARK_ASSERT(stack.check_reg_dict_pod64(i._b));
+			QUARK_ASSERT(stack.check_reg_dict_w_inplace_values(i._b));
 			QUARK_ASSERT(stack.check_reg_string(i._c));
 
 			const auto& entries = regs[i._b]._external->_dict_w_inplace_values;
@@ -3025,20 +3025,20 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 
-		case bc_opcode::k_get_size_vector_obj: {
+		case bc_opcode::k_get_size_vector_w_external_elements: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_obj(i._b));
+			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
 			QUARK_ASSERT(i._c == 0);
 
 			regs[i._a]._inplace._int64 = regs[i._b]._external->_vector_w_external_elements.size();
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
-		case bc_opcode::k_get_size_vector_pod64: {
+		case bc_opcode::k_get_size_vector_w_inplace_elements: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_pod64(i._b));
+			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._b));
 			QUARK_ASSERT(i._c == 0);
 
 			regs[i._a]._inplace._int64 = regs[i._b]._external->_vector_w_inplace_elements.size();
@@ -3047,20 +3047,20 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 
-		case bc_opcode::k_get_size_dict_obj: {
+		case bc_opcode::k_get_size_dict_w_external_values: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_dict_obj(i._b));
+			QUARK_ASSERT(stack.check_reg_dict_w_external_values(i._b));
 			QUARK_ASSERT(i._c == 0);
 
 			regs[i._a]._inplace._int64 = regs[i._b]._external->_dict_w_external_values.size();
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
-		case bc_opcode::k_get_size_dict_pod64: {
+		case bc_opcode::k_get_size_dict_w_inplace_values: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_int(i._a));
-			QUARK_ASSERT(stack.check_reg_dict_pod64(i._b));
+			QUARK_ASSERT(stack.check_reg_dict_w_inplace_values(i._b));
 			QUARK_ASSERT(i._c == 0);
 
 			regs[i._a]._inplace._int64 = regs[i._b]._external->_dict_w_inplace_values.size();
@@ -3103,11 +3103,11 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 
-		case bc_opcode::k_pushback_vector_obj: {
+		case bc_opcode::k_pushback_vector_w_external_elements: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_vector_obj(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_obj(i._b));
-			QUARK_ASSERT(stack.check_reg_obj(i._c));
+			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._a));
+			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
+			QUARK_ASSERT(stack.check_reg__external_value(i._c));
 
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto& element_type = type.get_vector_element_type();
@@ -3115,14 +3115,14 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			auto elements2 = regs[i._b]._external->_vector_w_external_elements.push_back(bc_external_handle_t(regs[i._c]._external));
 			//??? always allocates a new bc_external_value_t!
 			const auto vec2 = make_vector(element_type, elements2);
-			vm._stack.write_register_obj(i._a, vec2);
+			vm._stack.write_register__external_value(i._a, vec2);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
-		case bc_opcode::k_pushback_vector_pod64: {
+		case bc_opcode::k_pushback_vector_w_inplace_elements: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_vector_pod64(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_pod64(i._b));
+			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._a));
+			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._b));
 			QUARK_ASSERT(stack.check_reg(i._c));
 
 			const auto& type = frame_ptr->_symbols[i._a].second._value_type;
@@ -3132,7 +3132,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			//??? always allocates a new bc_external_value_t!
 			auto elements2 = regs[i._b]._external->_vector_w_inplace_elements.push_back(regs[i._c]._inplace);
 			const auto vec = make_vector(element_type, elements2);
-			vm._stack.write_register_obj(i._a, vec);
+			vm._stack.write_register__external_value(i._a, vec);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
@@ -3150,7 +3150,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			//??? optimize - bypass bc_value_t
 			//??? always allocates a new bc_external_value_t!
 			const auto str3 = bc_value_t::make_string(str2);
-			vm._stack.write_register_obj(i._a, str3);
+			vm._stack.write_register__external_value(i._a, str3);
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
@@ -3222,7 +3222,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				int result_reg_pos = static_cast<int>(stack._current_frame_entry_ptr - &stack._entries[0]) + i._a;
 
 				stack.open_frame(*function_def._frame_ptr, callee_arg_count);
-				const auto& result = execute_instructions(vm, function_def._frame_ptr->_instrs2);
+				const auto& result = execute_instructions(vm, function_def._frame_ptr->_instructions);
 				stack.close_frame(*function_def._frame_ptr);
 
 				//	Update our cached pointers.
@@ -3234,10 +3234,10 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 					//	Cannot store via register, we have not yet executed k_pop_frame_ptr that restores our frame.
 					if(function_def._return_is_ext){
-						stack.replace_obj(result_reg_pos, result.second);
+						stack.replace_external_value(result_reg_pos, result.second);
 					}
 					else{
-						stack.replace_intern(result_reg_pos, result.second);
+						stack.replace_inplace_value(result_reg_pos, result.second);
 					}
 				}
 			}
@@ -3260,8 +3260,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		case bc_opcode::k_new_vector_obj: {
-			QUARK_ASSERT(stack.check_reg_vector_obj(i._a));
+		case bc_opcode::k_new_vector_w_external_elements: {
+			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._a));
 			QUARK_ASSERT(i._b >= 0);
 			QUARK_ASSERT(i._c >= 0);
 
@@ -3276,9 +3276,9 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		case bc_opcode::k_new_vector_pod64: {
+		case bc_opcode::k_new_vector_w_inplace_elements: {
 			QUARK_ASSERT(vm.check_invariant());
-			QUARK_ASSERT(stack.check_reg_vector_pod64(i._a));
+			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._a));
 			QUARK_ASSERT(i._b == 0);
 			QUARK_ASSERT(i._c >= 0);
 
@@ -3297,13 +3297,13 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			const auto& element_type = type.get_vector_element_type();
 
 			const auto result = make_vector(element_type, elements2);
-			vm._stack.write_register_obj(dest_reg, result);
+			vm._stack.write_register__external_value(dest_reg, result);
 
 			QUARK_ASSERT(vm.check_invariant());
 			break;
 		}
 
-		case bc_opcode::k_new_dict_obj: {
+		case bc_opcode::k_new_dict_w_external_values: {
 			const auto dest_reg = i._a;
 			const auto target_itype = i._b;
 			const auto arg_count = i._c;
@@ -3312,7 +3312,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			execute_new_dict_obj(vm, dest_reg, target_itype, arg_count);
 			break;
 		}
-		case bc_opcode::k_new_dict_pod64: {
+		case bc_opcode::k_new_dict_w_inplace_values: {
 			const auto dest_reg = i._a;
 			const auto target_itype = i._b;
 			const auto arg_count = i._c;
@@ -3472,10 +3472,10 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			break;
 		}
 
-		case bc_opcode::k_concat_vectors_obj: {
-			QUARK_ASSERT(stack.check_reg_vector_obj(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_obj(i._b));
-			QUARK_ASSERT(stack.check_reg_vector_obj(i._c));
+		case bc_opcode::k_concat_vectors_w_external_elements: {
+			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._a));
+			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._b));
+			QUARK_ASSERT(stack.check_reg_vector_w_external_elements(i._c));
 
 			const auto& vector_type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto& element_type = vector_type.get_vector_element_type();
@@ -3489,13 +3489,13 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				elements2 = elements2.push_back(e);
 			}
 			const auto& value2 = make_vector(element_type, elements2);
-			stack.write_register_obj(i._a, value2);
+			stack.write_register__external_value(i._a, value2);
 			break;
 		}
-		case bc_opcode::k_concat_vectors_pod64: {
-			QUARK_ASSERT(stack.check_reg_vector_pod64(i._a));
-			QUARK_ASSERT(stack.check_reg_vector_pod64(i._b));
-			QUARK_ASSERT(stack.check_reg_vector_pod64(i._c));
+		case bc_opcode::k_concat_vectors_w_inplace_elements: {
+			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._a));
+			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._b));
+			QUARK_ASSERT(stack.check_reg_vector_w_inplace_elements(i._c));
 
 			const auto& vector_type = frame_ptr->_symbols[i._a].second._value_type;
 			const auto& element_type = vector_type.get_vector_element_type();
@@ -3509,7 +3509,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				elements2 = elements2.push_back(e);
 			}
 			const auto& value2 = make_vector(element_type, elements2);
-			stack.write_register_obj(i._a, value2);
+			stack.write_register__external_value(i._a, value2);
 			break;
 		}
 
@@ -3743,7 +3743,7 @@ json_t frame_to_json(const bc_static_frame_t& frame){
 
 	std::vector<json_t> instructions;
 	int pc = 0;
-	for(const auto& e: frame._instrs2){
+	for(const auto& e: frame._instructions){
 		const auto i = json_t::make_array({
 			pc,
 			opcode_to_string(e._opcode),
