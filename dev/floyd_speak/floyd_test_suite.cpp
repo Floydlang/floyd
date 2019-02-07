@@ -474,26 +474,6 @@ QUARK_UNIT_TESTQ("execute_expression()", "Division by zero"){
 	}
 }
 
-#if false
-
-QUARK_UNIT_TESTQ("execute_expression()", "Errors") {
-		//	Multiple errors not possible/relevant now that we use exceptions for errors.
-/*
-	//////////////////////////		Only one error will be detected (in this case, the last one)
-	QUARK_TEST_VERIFY(test__execute_expression("3+1/0+4$") == EEE_WRONG_CHAR);
-
-	QUARK_TEST_VERIFY(test__execute_expression("3+1/0+4") == EEE_DIVIDE_BY_ZERO);
-
-	// ...or the first one
-	QUARK_TEST_VERIFY(test__execute_expression("q+1/0)") == EEE_WRONG_CHAR);
-	QUARK_TEST_VERIFY(test__execute_expression("+1/0)") == EEE_PARENTHESES);
-	QUARK_TEST_VERIFY(test__execute_expression("+1/0") == EEE_DIVIDE_BY_ZERO);
-*/
-}
-
-#endif
-
-
 QUARK_UNIT_TEST("execute_expression()", "-true", "", "") {
 	try{
 		test__run_init__check_result("let int result = -true", value_t::make_int(0));
@@ -2328,6 +2308,7 @@ QUARK_UNIT_TEST("run_main()", "protocol - check protocol's type", "", ""){
 
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto vm = test__run_global(R"(
+
 		let start = get_time_of_day()
 		mutable b = 0
 		mutable t = [0]
@@ -2338,8 +2319,8 @@ QUARK_UNIT_TEST("", "", "", ""){
 		end = get_time_of_day()
 		print("Duration: " + to_string(end - start) + ", number = " + to_string(b))
 		print(t)
+
 	)");
-	QUARK_UT_VERIFY(true);
 }
 
 //////////////////////////////////////////		Comments
@@ -2812,21 +2793,27 @@ QUARK_UNIT_TEST("", "jsonvalue_to_value()", "int", ""){
 
 QUARK_UNIT_TEST("", "jsonvalue_to_value()", "double", ""){
 	const auto result = test__run_return_result(R"(
+
 		let result = jsonvalue_to_value(value_to_jsonvalue(-0.125), double)
+
 	)", {});
 	ut_verify_values(QUARK_POS, result, value_t::make_double(-0.125));
 }
 
 QUARK_UNIT_TEST("", "jsonvalue_to_value()", "string", ""){
 	const auto result = test__run_return_result(R"(
+
 		let result = jsonvalue_to_value(value_to_jsonvalue(""), string)
+
 	)", {});
 	ut_verify_values(QUARK_POS, result, value_t::make_string(""));
 }
 
 QUARK_UNIT_TEST("", "jsonvalue_to_value()", "string", ""){
 	const auto result = test__run_return_result(R"(
+
 		let result = jsonvalue_to_value(value_to_jsonvalue("cola"), string)
+
 	)", {});
 	ut_verify_values(QUARK_POS, result, value_t::make_string("cola"));
 }
@@ -2852,10 +2839,13 @@ QUARK_UNIT_TEST("", "jsonvalue_to_value()", "point_t", ""){
 		member_t(typeid_t::make_double(), "y")
 	};
 	const auto result = test__run_return_result(R"(
+
 		struct point_t { double x double y }
 		let result = jsonvalue_to_value(value_to_jsonvalue(point_t(1.0, 3.0)), point_t)
+
 	)", {});
-	ut_verify_values(QUARK_POS,
+	ut_verify_values(
+		QUARK_POS,
 		result,
 		value_t::make_struct_value(
 			typeid_t::make_struct2(point_t_def),
@@ -2932,7 +2922,7 @@ QUARK_UNIT_TEST("", "cmath_pi", "", ""){
 		let result = cmath_pi
 	)", {});
 
-	QUARK_UT_VERIFY(result.get_double_value() >= 3.14 && result.get_double_value() < 3.15);
+	ut_verify_auto(QUARK_POS, result.get_double_value() >= 3.14 && result.get_double_value() < 3.15, true);
 }
 
 QUARK_UNIT_TEST("", "color__black", "", ""){
@@ -2965,7 +2955,7 @@ QUARK_UNIT_TEST("", "color__black", "", ""){
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto a = typeid_t::make_vector(typeid_t::make_string());
 	const auto b = typeid_t::make_vector(make__fsentry_t__type());
-	QUARK_UT_VERIFY(a != b);
+	ut_verify_auto(QUARK_POS, a != b, true);
 }
 
 
@@ -3353,10 +3343,7 @@ QUARK_UNIT_TEST("", "get_directory_entries()", "", ""){
 
 	)", {});
 
-	const auto expected = typeid_t::make_vector(make__fsentry_t__type());
-	QUARK_UT_VERIFY(result.get_type() == expected);
-
-//	ut_verify(QUARK_POS, vm->_print_output[0].substr(0, 7), "/Users/");
+	ut_verify(QUARK_POS, result.get_type(), typeid_t::make_vector(make__fsentry_t__type()));
 }
 
 
@@ -3365,15 +3352,12 @@ QUARK_UNIT_TEST("", "get_directory_entries()", "", ""){
 
 QUARK_UNIT_TEST("", "get_fsentries_deep()", "", ""){
 	const auto result = test__run_return_result(R"(
-
 		let result = get_fsentries_deep("/Users/marcus/Desktop/")
 		assert(size(result) > 3)
 		print(to_pretty_string(result))
 
 	)", {});
-
-	const auto expected = typeid_t::make_vector(make__fsentry_t__type());
-	QUARK_UT_VERIFY(result.get_type() == expected);
+	ut_verify(QUARK_POS, result.get_type(), typeid_t::make_vector(make__fsentry_t__type()));
 }
 
 
@@ -3387,9 +3371,7 @@ QUARK_UNIT_TEST("", "get_fsentry_info()", "", ""){
 		print(to_pretty_string(result))
 
 	)", {});
-
-	const auto expected = make__fsentry_info_t__type();
-	QUARK_UT_VERIFY(result.get_type() == expected);
+	ut_verify(QUARK_POS, result.get_type(), make__fsentry_info_t__type());
 }
 
 
@@ -3403,9 +3385,7 @@ QUARK_UNIT_TEST("", "get_fs_environment()", "", ""){
 		print(to_pretty_string(result))
 
 	)", {});
-
-	const auto expected = make__fs_environment_t__type();
-	QUARK_UT_VERIFY(result.get_type() == expected);
+	ut_verify(QUARK_POS, result.get_type(), make__fs_environment_t__type());
 }
 
 
@@ -3427,11 +3407,9 @@ QUARK_UNIT_TEST("", "does_fsentry_exist()", "", ""){
 		assert(result == true)
 
 	)", {});
-
-	QUARK_UT_VERIFY(result.get_type() == typeid_t::make_bool());
+	ut_verify(QUARK_POS, result.get_type(), typeid_t::make_bool());
 }
 
-//??? Also test for files.
 QUARK_UNIT_TEST("", "does_fsentry_exist()", "", ""){
 	const auto result = test__run_return_result(R"(
 
@@ -3443,7 +3421,7 @@ QUARK_UNIT_TEST("", "does_fsentry_exist()", "", ""){
 
 	)", {});
 
-	QUARK_UT_VERIFY(result.get_type() == typeid_t::make_bool());
+	ut_verify(QUARK_POS, result.get_type(), typeid_t::make_bool());
 }
 
 void remove_test_dir(const std::string& dir_name1, const std::string& dir_name2){
@@ -3486,7 +3464,7 @@ QUARK_UNIT_TEST("", "create_directory_branch()", "", ""){
 
 	)", {});
 
-	QUARK_UT_VERIFY(result.get_type() == typeid_t::make_bool());
+	ut_verify(QUARK_POS, result.get_type(), typeid_t::make_bool());
 }
 
 
@@ -3517,7 +3495,7 @@ QUARK_UNIT_TEST("", "delete_fsentry_deep()", "", ""){
 
 	)", {});
 
-	QUARK_UT_VERIFY(result.get_type() == typeid_t::make_bool());
+	ut_verify(QUARK_POS, result.get_type(), typeid_t::make_bool());
 }
 
 
@@ -3554,7 +3532,7 @@ QUARK_UNIT_TEST("", "rename_fsentry()", "", ""){
 
 	)", {});
 
-	QUARK_UT_VERIFY(result.get_type() == typeid_t::make_bool());
+	ut_verify(QUARK_POS, result.get_type(), typeid_t::make_bool());
 }
 
 
@@ -4443,7 +4421,6 @@ assert(b.width == 100.0)
 	)", {}, "", "");
 }
 
-//??? demo map(), reduce()
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "VECTOR", "", ""){
 	run_container2(R"(
