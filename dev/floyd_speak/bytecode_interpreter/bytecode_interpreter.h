@@ -45,6 +45,8 @@ typedef int16_t bc_typeid_t;
 
 //////////////////////////////////////		bc_inplace_value_t
 
+//	A value that is inplace == all its data sits in this struct, no external memory required.
+//	These values are always pods and can be copied, no referencing counting required.
 
 union bc_inplace_value_t {
 	bool _bool;
@@ -201,7 +203,9 @@ inline bool is_encoded_as_ext(const typeid_t& type){
 //////////////////////////////////////		bc_value_t
 
 /*
-	Efficient value-object. Holds intern values or RC-objects. Handles RC automatically.
+	Efficent representation of any value supported by the interpreter.
+	It's immutable and uses value-semantics.
+	Holds either and inplace value or an external value. Handles reference counting automatically when required.
 */
 
 struct bc_value_t {
@@ -261,8 +265,6 @@ struct bc_value_t {
 		QUARK_ASSERT(other.check_invariant());
 		QUARK_ASSERT(check_invariant());
 	}
-
-
 
 	public: explicit bc_value_t(const bc_static_frame_t* frame_ptr) :
 		_type(typeid_t::make_void())
@@ -434,10 +436,10 @@ struct bc_value_t {
 
 //////////////////////////////////////		bc_external_handle_t
 
-
-//	Owns and RC:s a bc_value_object_t safely and automatically.
+//	Wraps an external value and handles reference counting for it.
+//	Immutable, value-semantics.
+//	It does not its type, just that it's an external value.
 //	These values are put in collections.
-//	It does *not* know its type, just that it's an external value.
 
 struct bc_external_handle_t {
 	bc_external_handle_t(const bc_external_handle_t& other);
@@ -457,17 +459,17 @@ struct bc_external_handle_t {
 
 //////////////////////////////////////		bc_value_object_t
 
+/*
+	This object contains the internals of values too big to be stored directly inside
+	the bc_value_t / bc_pod_value_t itself
+
+	The bc_value_object_t objects are allocated on the heap and are reference counted.
+	TODO: Right now wastes resouces by containing
+*/
+
 
 bool check_ext_deep(const typeid_t& type, const bc_value_object_t* ext);
 
-
-	/*
-		This object contains the internals of values too big to be stored directly inside
-		the bc_value_t / bc_pod_value_t itself
-
-		The bc_value_object_t objects are allocated on the heap and are reference counted.
-		TODO: Right now wastes resouces by containing
-	*/
 
 struct bc_value_object_t {
 #if DEBUG
