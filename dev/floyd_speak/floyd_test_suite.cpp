@@ -3784,146 +3784,156 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments in function call", "
 
 
 QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to struct-constructor", "exception"){
-	try{
-		const auto result = test__run_return_result(R"(
+	ut_verify_exception(
+		QUARK_POS,
+		R"(
+
 			struct pos { double x double y }
 			let a = pos(3)
-		)", {});
-		fail_test(QUARK_POS);
-	}
-	catch(const std::runtime_error& e){
-		ut_verify(QUARK_POS, e.what(), "Wrong number of arguments in function call, got 1, expected 2. Line: 3 \"let a = pos(3)\"");
-	}
+
+		)",
+		"Wrong number of arguments in function call, got 1, expected 2. Line: 4 \"let a = pos(3)\""
+	);
 }
 
 //??? Also tell *which* argument is wrong type -- its name and index.
 QUARK_UNIT_TEST("Edge case", "", "Wrong TYPE of arguments to struct-constructor", "exception"){
-	try{
-		const auto result = test__run_return_result(R"(
+	ut_verify_exception(
+		QUARK_POS,
+		R"(
+
 			struct pos { double x double y }
 			let a = pos(3, "hello")
-		)", {});
-		fail_test(QUARK_POS);
-	}
-	catch(const std::runtime_error& e){
-		ut_verify(QUARK_POS, e.what(), "Expression type mismatch - cannot convert 'int' to 'double. Line: 3 \"let a = pos(3, \"hello\")\"");
-	}
+
+		)",
+		"Expression type mismatch - cannot convert 'int' to 'double. Line: 4 \"let a = pos(3, \"hello\")\""
+	);
 }
 
 QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to int-constructor", "exception"){
-	try{
-		const auto result = test__run_return_result(R"(
+	ut_verify_exception(
+		QUARK_POS,
+		R"(
+
 			let a = int()
-		)", {});
-		fail_test(QUARK_POS);
-	}
-	catch(const std::runtime_error& e){
-		ut_verify(QUARK_POS, e.what(), "Wrong number of arguments in function call, got 0, expected 1. Line: 2 \"let a = int()\"");
-	}
+
+		)",
+		"Wrong number of arguments in function call, got 0, expected 1. Line: 3 \"let a = int()\""
+	);
 }
 
 QUARK_UNIT_TEST("Edge case", "", "Call non-function, non-struct, non-typeid", "exception"){
-	try{
-		const auto result = test__run_return_result(R"(
+	ut_verify_exception(
+		QUARK_POS,
+		R"(
+
 			let a = 3()
-		)", {});
-		fail_test(QUARK_POS);
-	}
-	catch(const std::runtime_error& e){
-		ut_verify(QUARK_POS, e.what(), "Cannot call non-function, its type is int. Line: 2 \"let a = 3()\"");
-	}
+
+		)",
+		"Cannot call non-function, its type is int. Line: 3 \"let a = 3()\""
+	);
 }
 
 QUARK_UNIT_TEST("Edge case", "", "Vector can not hold elements of different types.", "exception"){
-	try{
-		const auto result = test__run_return_result(R"(
+	ut_verify_exception(
+		QUARK_POS,
+		R"(
+
 			let a = [3, bool]
-		)", {});
-		fail_test(QUARK_POS);
-	}
-	catch(const std::runtime_error& e){
-		ut_verify(QUARK_POS, e.what(), "Vector of type [int] cannot hold an element of type typeid. Line: 2 \"let a = [3, bool]\"");
-	}
+
+		)",
+		"Vector of type [int] cannot hold an element of type typeid. Line: 3 \"let a = [3, bool]\""
+	);
 }
 QUARK_UNIT_TEST("Edge case", "", "Dict can not hold elements of different types.", "exception"){
-	try{
-		const auto result = test__run_return_result(R"(
+	ut_verify_exception(
+		QUARK_POS,
+		R"(
+
 			let a = {"one": 1, "two": bool}
-		)", {});
-		fail_test(QUARK_POS);
-	}
-	catch(const std::runtime_error& e){
-		ut_verify(QUARK_POS, e.what(), "Dictionary of type [string:int] cannot hold an element of type typeid. Line: 2 \"let a = {\"one\": 1, \"two\": bool}\"");
-	}
+
+		)",
+		"Dictionary of type [string:int] cannot hold an element of type typeid. Line: 3 \"let a = {\"one\": 1, \"two\": bool}\""
+	);
 }
 
 
 QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
-	try{
-		const auto result = test__run_return_result(R"(
+	ut_verify_exception(
+		QUARK_POS,
+		R"(
+
 			let a = 3 < "hello"
-		)", {});
-		fail_test(QUARK_POS);
-	}
-	catch(const std::runtime_error& e){
-		ut_verify(QUARK_POS, e.what(), "Expression type mismatch - cannot convert 'string' to 'int. Line: 2 \"let a = 3 < \"hello\"\"");
-	}
+
+		)",
+		"Expression type mismatch - cannot convert 'string' to 'int. Line: 3 \"let a = 3 < \"hello\"\""
+	);
 }
 
 QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
-	try{
-		const auto result = test__run_return_result(R"(
+	ut_verify_exception(
+		QUARK_POS,
+		R"(
+
 			let a = 3 * 3.2
-		)", {});
-		fail_test(QUARK_POS);
-	}
-	catch(const std::runtime_error& e){
-		ut_verify(QUARK_POS, e.what(), "Expression type mismatch - cannot convert 'double' to 'int. Line: 2 \"let a = 3 * 3.2\"");
-	}
+
+		)",
+		"Expression type mismatch - cannot convert 'double' to 'int. Line: 3 \"let a = 3 * 3.2\""
+	);
 }
 QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
 	const auto result = test__run_return_result(R"(
+
 		let result = false + true
+
 	)", {});
 	QUARK_ASSERT(result.get_bool_value() == true);
 }
 QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
 	const auto result = test__run_return_result(R"(
+
 		let result = false + false
+
 	)", {});
 	QUARK_ASSERT(result.get_bool_value() == false);
 }
 QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
 	const auto result = test__run_return_result(R"(
+
 		let result = true + true
+
 	)", {});
 	QUARK_ASSERT(result.get_bool_value() == true);
 }
 
 QUARK_UNIT_TEST("Edge case", "", "Lookup the unlookupable", "exception"){
-	try{
-		const auto result = test__run_return_result(R"(
+	ut_verify_exception(
+		QUARK_POS,
+		R"(
+
 			let a = 3[0]
-		)", {});
-		fail_test(QUARK_POS);
-	}
-	catch(const std::runtime_error& e){
-		ut_verify(QUARK_POS, e.what(), "Lookup using [] only works with strings, vectors, dicts and json_value - not a \"int\". Line: 2 \"let a = 3[0]\"");
-	}
+
+		)",
+		"Lookup using [] only works with strings, vectors, dicts and json_value - not a \"int\". Line: 3 \"let a = 3[0]\""
+	);
 }
 
 
 QUARK_UNIT_TEST("vector-int", "size()", "3", ""){
 	const auto result = test__run_return_result(R"(
+
 		let [int] a = [1, 2, 3]
 		let result = size(a)
+
 	)", {});
 	ut_verify_values(QUARK_POS, result, value_t::make_int(3));
 }
 QUARK_UNIT_TEST("vector-int", "size()", "3", ""){
 	const auto result = test__run_return_result(R"(
+
 		let result = push_back([1, 2], 3)
 		assert(result == [1, 2, 3])
+
 	)", {});
 }
 
