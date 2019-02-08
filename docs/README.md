@@ -8,6 +8,9 @@ Status: All the basics are finished. Runs on a bytecode interpreter. Will run na
 
 Floyd is a general purpose programming language designed for making very large and robust programs that run really fast.
 
+Learn more here: [www.floydlang.org](https://www.floydlang.org "Floyd language's Homepage")
+
+
 # USE
 
 Use Floyd to build the next Photoshop, Grand Theft Auto or mobile app. But also for short scripts and toy programs. Probably not embedded software, though.
@@ -35,7 +38,7 @@ Floyd compilers and tools are written in C++ 17.
 Processing and concurrency is done using Floyd's virtual processes and message passing. Each process has its own private state. Floyd processes can call impure functions and interact with the world. The rest of your program is pure.
 
 
-# FLOYD PERFORMANC
+# FLOYD PERFORMANCE
 *(Implementation in progress)*
 
 
