@@ -108,9 +108,6 @@ QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
 	);
 }
 
-
-
-
 void ut_verify_global_result(const quark::call_context_t& context, const std::string& program, const value_t& expected_result){
 	const auto result = run_program(program);
 	ut_verify(
@@ -540,11 +537,13 @@ QUARK_UNIT_TEST("run_main()", "minimal program 2", "", ""){
 	ut_verify_mainfunc_return(
 		QUARK_POS,
 		R"(
+
 			func string main(string args){
 				return "123" + "456"
 			}
+
 		)",
-		std::vector<value_t>{value_t::make_string("program_name 1 2 3 4")},
+		std::vector<value_t>{value_t::make_string("")},
 		value_t::make_string("123456")
 	);
 }
@@ -649,87 +648,17 @@ QUARK_UNIT_TEST("", "pixel_t()", "", ""){
 	);
 }
 
-//??? typeid()
-
 /*
 unsupported syntax
-QUARK_UNIT_TEST("", "[int]()", "", ""){
-	ut_verify_global_result(QUARK_POS,
-		"result = [int](1,2,3);",
-		value_t::make_vector_value(typeid_t::make_int(), {
-			value_t::make_int(1),
-			value_t::make_int(2),
-			value_t::make_int(3)
-		})
-	);
-}
+	"result = [int](1,2,3);",
 
 unsupported syntax
-QUARK_UNIT_TEST("", "[[int]]()", "", ""){
-	ut_verify_global_result(QUARK_POS,
-		"result = [[int]]([1,2,3], [4,5,6]);",
-		value_t::make_vector_value(
-			typeid_t::make_vector(typeid_t::make_int()),
-			{
-				value_t::make_vector_value(typeid_t::make_int(), {
-					value_t::make_int(1),
-					value_t::make_int(2),
-					value_t::make_int(3)
-				}),
-				value_t::make_vector_value(typeid_t::make_int(), {
-					value_t::make_int(4),
-					value_t::make_int(5),
-					value_t::make_int(6)
-				})
-			}
-		)
-	);
-}
+	"result = [[int]]([1,2,3], [4,5,6]);",
 
 unsupported syntax
-QUARK_UNIT_TEST("", "[pixel_t]()", "", ""){
-	const auto pixel_t__def = std::make_shared<floyd::struct_definition_t>(
-		std::vector<member_t>{
-			member_t(typeid_t::make_int(), "red"),
-			member_t(typeid_t::make_int(), "green"),
-			member_t(typeid_t::make_int(), "blue")
-		}
-	);
-	const auto pixel_t_typeid = typeid_t::make_struct(pixel_t__def);
+	"struct pixel_t { int red; int green; int blue; } result = [pixel_t](pixel_t(1,2,3),pixel_t(4,5,6));",
 
-	ut_verify_global_result(QUARK_POS,
-		"struct pixel_t { int red; int green; int blue; } result = [pixel_t](pixel_t(1,2,3),pixel_t(4,5,6));",
-		value_t::make_vector_value(
-			pixel_t_typeid,
-			{
-				value_t::make_struct_value(pixel_t_typeid, vector<value_t>{value_t::make_int(1), value_t::make_int(2), value_t::make_int(3)}),
-				value_t::make_struct_value(pixel_t_typeid, vector<value_t>{value_t::make_int(4), value_t::make_int(5), value_t::make_int(6)})
-			}
-		)
-	);
-}
-*/
-
-/*
-QUARK_UNIT_TEST("", "[[string: int]]()", "", ""){
-	ut_verify_global_result(QUARK_POS,
-		R"(result = [{string: int}]({"a":1,"b":2,"c":3}, {"d":4,"e":5,"f":6});)",
-		value_t::make_vector_value(
-			typeid_t::make_vector(typeid_t::make_int()),
-			{
-				value_t::make_vector_value(typeid_t::make_int(), {
-					value_t::make_int(1),
-					value_t::make_int(2),
-					value_t::make_int(3)
-				}),
-				value_t::make_vector_value(typeid_t::make_int(), {
-					value_t::make_int(4),
-					value_t::make_int(5),
-					value_t::make_int(6)
-				})
-			}
-		)
-	);
+	R"(result = [{string: int}]({"a":1,"b":2,"c":3}, {"d":4,"e":5,"f":6});)",
 }
 */
 
@@ -1056,7 +985,9 @@ func int f(){
 QUARK_UNIT_TEST("run_init()", "", "", ""){
 	ut_verify_global_result(QUARK_POS,
 		R"(
+
 			let string result = to_string(145)
+
 		)",
 		value_t::make_string("145")
 	);
@@ -1064,7 +995,9 @@ QUARK_UNIT_TEST("run_init()", "", "", ""){
 QUARK_UNIT_TEST("run_init()", "", "", ""){
 	ut_verify_global_result(QUARK_POS,
 		R"(
+
 			let string result = to_string(3.1)
+
 		)",
 		value_t::make_string("3.1")
 	);
@@ -1073,7 +1006,9 @@ QUARK_UNIT_TEST("run_init()", "", "", ""){
 QUARK_UNIT_TEST("run_init()", "", "", ""){
 	ut_verify_global_result(QUARK_POS,
 		R"(
+
 			let string result = to_string(3.0)
+
 		)",
 		value_t::make_string("3.0")
 	);
@@ -1396,9 +1331,11 @@ QUARK_UNIT_TEST("run_init()", "if", "", ""){
 QUARK_UNIT_TEST("", "function calling itself by name", "", ""){
 	run_closed(
 		R"(
+
 			func int fx(int a){
 				return fx(a + 1)
 			}
+
 		)"
 	);
 }
@@ -1551,55 +1488,70 @@ QUARK_UNIT_TEST("null", "", "", "0"){
 
 QUARK_UNIT_TEST("string", "[]", "string", "0"){
 	run_closed(R"(
+
 		assert("hello"[0] == 104)
+
 	)");
 }
 QUARK_UNIT_TEST("string", "[]", "string", "0"){
 	run_closed(R"(
+
 		assert("hello"[4] == 111)
+
 	)");
 }
 
 QUARK_UNIT_TEST("string", "size()", "string", "0"){
 	run_closed(R"(
+
 		assert(size("") == 0)
+
 	)");
 }
 QUARK_UNIT_TEST("string", "size()", "string", "24"){
 	run_closed(R"(
+
 		assert(size("How long is this string?") == 24)
+
 	)");
 }
 
 QUARK_UNIT_TEST("string", "push_back()", "string", "correct final vector"){
 	run_closed(R"(
+
 		a = push_back("one", 111)
 		assert(a == "oneo")
+
 	)");
 }
 
 QUARK_UNIT_TEST("string", "update()", "string", "correct final string"){
 	run_closed(R"(
+
 		a = update("hello", 1, 98)
 		assert(a == "hbllo")
+
 	)");
 }
 
 
 QUARK_UNIT_TEST("string", "subset()", "string", "correct final vector"){
 	run_closed(R"(
+
 		assert(subset("abc", 0, 3) == "abc")
 		assert(subset("abc", 1, 3) == "bc")
 		assert(subset("abc", 0, 0) == "")
+
 	)");
 }
 
 QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
 	run_closed(R"(
+
 		assert(replace("One ring to rule them all", 4, 8, "rabbit") == "One rabbit to rule them all")
+
 	)");
 }
-// ### test pos limiting and edge cases.
 
 
 
@@ -1626,20 +1578,14 @@ QUARK_UNIT_TEST("vector", "[]-constructor", "cannot be infered", "error"){
 	ut_verify_exception(
 		QUARK_POS,
 		R"(
+
 			let a = []
 			print(a)
+
 		)",
-		"Cannot infer vector element type, add explicit type. Line: 2 \"let a = []\""
+		"Cannot infer vector element type, add explicit type. Line: 3 \"let a = []\""
 	);
 }
-/*
-???
-		[string] a = ["one", "two"]
-
-		Parsed as:
-			[string]		//	Expression statement that creates [typeid] = [string]
-			a = ["one", "two"]	//	Make vector with type infered from "one".
-*/
 
 QUARK_UNIT_TEST("vector", "explit bind, is []", "Infer type", "valid vector"){
 	ut_verify_printout(
@@ -1922,17 +1868,21 @@ QUARK_UNIT_TEST("vector-double", "push_back()", "", ""){
 
 QUARK_UNIT_TEST("", "find()", "int", ""){
 	run_closed(R"(
+
 		assert(find([1,2,3], 4) == -1)
 		assert(find([1,2,3], 1) == 0)
 		assert(find([1,2,2,2,3], 2) == 1)
+
 	)");
 }
 
 QUARK_UNIT_TEST("", "find()", "string", ""){
 	run_closed(R"(
+
 		assert(find("hello, world", "he") == 0)
 		assert(find("hello, world", "e") == 1)
 		assert(find("hello, world", "x") == -1)
+
 	)");
 }
 
@@ -1942,22 +1892,30 @@ QUARK_UNIT_TEST("", "find()", "string", ""){
 
 QUARK_UNIT_TEST("", "subset()", "int", ""){
 	run_closed(R"(
+
 		assert(subset([10,20,30], 0, 3) == [10,20,30])
+
 	)");
 }
 QUARK_UNIT_TEST("", "subset()", "int", ""){
 	run_closed(R"(
+
 		assert(subset([10,20,30], 1, 3) == [20,30])
+
 	)");
 }
 QUARK_UNIT_TEST("", "subset()", "int", ""){
 	run_closed(R"(
+
 		result = (subset([10,20,30], 0, 0) == [])
+
 	)");
 }
 QUARK_UNIT_TEST("", "subset()", "int", ""){
 	run_closed(R"(
+
 		assert(subset([10,20,30], 0, 0) == [])
+
 	)");
 }
 
@@ -1967,7 +1925,9 @@ QUARK_UNIT_TEST("", "subset()", "int", ""){
 
 QUARK_UNIT_TEST("", "replace()", "int", ""){
 	run_closed(R"(
+
 		assert(replace([ 1, 2, 3, 4, 5, 6 ], 2, 5, [20, 30]) == [1, 2, 20, 30, 6])
+
 	)");
 }
 // ### test pos limiting and edge cases.
@@ -2141,12 +2101,16 @@ QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
 
 QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 	run_closed(R"(
+
 		assert(size({"one":1}) == 1)
+
 	)");
 }
 QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 	run_closed(R"(
+
 		assert(size({"one":1, "two":2}) == 2)
+
 	)");
 }
 
@@ -2190,29 +2154,35 @@ QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
 	ut_verify_exception(
 		QUARK_POS,
 		R"(
+
 			let a = update({}, "one", 1)
 			let b = update(a, "two", 2)
 			print(b)
 			assert(a == {"one": 1})
 			assert(b == {"one": 1, "two": 2})
+
 		)",
-		"Cannot infer type in construct-value-expression. Line: 2 \"let a = update({}, \"one\", 1)\""
+		"Cannot infer type in construct-value-expression. Line: 3 \"let a = update({}, \"one\", 1)\""
 	);
 }
 
 QUARK_UNIT_TEST("dict", "exists()", "", ""){
 	run_closed(R"(
+
 		let a = { "one": 1, "two": 2, "three" : 3}
 		assert(exists(a, "two") == true)
 		assert(exists(a, "four") == false)
+
 	)");
 }
 
 QUARK_UNIT_TEST("dict", "erase()", "", ""){
 	run_closed(R"(
+
 		let a = { "one": 1, "two": 2, "three" : 3}
 		let b = erase(a, "one")
 		assert(b == { "two": 2, "three" : 3})
+
 	)");
 }
 
@@ -2222,13 +2192,17 @@ QUARK_UNIT_TEST("dict", "erase()", "", ""){
 
 QUARK_UNIT_TEST("run_main()", "struct", "", ""){
 	run_closed(R"(
+
 		struct t {}
+
 	)");
 }
 
 QUARK_UNIT_TEST("run_main()", "struct", "", ""){
 	run_closed(R"(
+
 		struct t { int a }
+
 	)");
 }
 
@@ -2362,8 +2336,8 @@ QUARK_UNIT_TEST("run_main()", "struct - compare structs", "", ""){
 		QUARK_POS,
 		R"(
 
-		struct color { int red int green int blue }
-		print(color(9, 2, 3) == color(1, 2, 3))
+			struct color { int red int green int blue }
+			print(color(9, 2, 3) == color(1, 2, 3))
 
 		)",
 		{ "false" }
@@ -2374,11 +2348,13 @@ QUARK_UNIT_TEST("", "run_main()", "struct - compare structs different types", ""
 	ut_verify_exception(
 		QUARK_POS,
 		R"(
+
 			struct color { int red int green int blue }
 			struct file { int id }
 			print(color(1, 2, 3) == file(404))
+
 		)",
-		"Expression type mismatch - cannot convert 'struct {int id;}' to 'struct {int red;int green;int blue;}. Line: 4 \"print(color(1, 2, 3) == file(404))\""
+		"Expression type mismatch - cannot convert 'struct {int id;}' to 'struct {int red;int green;int blue;}. Line: 5 \"print(color(1, 2, 3) == file(404))\""
 	);
 }
 QUARK_UNIT_TEST("run_main()", "struct - compare structs with <, different types", "", ""){
@@ -2428,13 +2404,15 @@ QUARK_UNIT_TEST("run_main()", "mutate struct member using = won't work", "", "")
 	ut_verify_exception(
 		QUARK_POS,
 		R"(
+
 			struct color { int red int green int blue }
 			let a = color(255,128,128)
 			let b = a.green = 3
 			print(a)
 			print(b)
+
 		)",
-		R"___(Expected constant or identifier. Line: 4 "let b = a.green = 3")___"
+		R"___(Expected constant or identifier. Line: 5 "let b = a.green = 3")___"
 	);
 }
 
@@ -2590,8 +2568,10 @@ QUARK_UNIT_TEST("json_value-string", "string-size()", "", ""){
 	ut_verify_global_result(
 		QUARK_POS,
 		R"(
+
 			let json_value a = "hello"
 			let result = size(a);
+
 		)",
 		value_t::make_int(5)
 	);
@@ -2768,8 +2748,10 @@ QUARK_UNIT_TEST("json_value-object", "{}", "", ""){
 
 QUARK_UNIT_TEST("json_value-object", "size()", "", ""){
 	run_closed(R"(
+
 		let json_value a = { "a": 1, "b": 2, "c": 3, "d": 4, "e": 5 }
 		assert(size(a) == 5)
+
 	)");
 }
 
@@ -2888,7 +2870,8 @@ QUARK_UNIT_TEST("", "get_json_type()", "null", ""){
 }
 
 QUARK_UNIT_TEST("", "get_json_type()", "DOCUMENTATION SNIPPET", ""){
-	run_closed(R"ABCD(
+	run_closed(R"___(
+
 		func string get_name(json_value value){
 			t = get_json_type(value)
 			if(t == json_object){
@@ -2923,7 +2906,8 @@ QUARK_UNIT_TEST("", "get_json_type()", "DOCUMENTATION SNIPPET", ""){
 		assert(get_name(json_value(0.125)) == "json_number")
 		assert(get_name(json_value(true)) == "json_true")
 		assert(get_name(json_value(false)) == "json_false")
-	)ABCD");
+
+	)___");
 }
 
 
@@ -2960,13 +2944,15 @@ QUARK_UNIT_TEST("", "", "", ""){
 	ut_verify_exception(
 		QUARK_POS,
 		R"(
+
 			struct pixel_t { double x double y }
 
 			//	c is a json_value::object
 			let c = { "version": "1.0", "image": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] }
 			let result = c["image"][1].y
+
 		)",
-		"Dictionary of type [string:string] cannot hold an element of type [struct {double x;double y;}]. Line: 5 \"let c = { \"version\": \"1.0\", \"image\": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] }\""
+		"Dictionary of type [string:string] cannot hold an element of type [struct {double x;double y;}]. Line: 6 \"let c = { \"version\": \"1.0\", \"image\": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] }\""
 	);
 }
 
@@ -3250,21 +3236,6 @@ QUARK_UNIT_TEST("", "jsonvalue_to_value()", "string", ""){
 	);
 }
 
-
-/*
-Need better way to specify typeid
-QUARK_UNIT_TEST("", "jsonvalue_to_value()", "[]", ""){
-	const auto result = test__run_return_result(R"(
-		result = jsonvalue_to_value(value_to_jsonvalue([1,2,3]), typeof([1]));
-	)", {});
-	ut_verify_values(QUARK_POS,
-		result,
-		value_t::make_vector_value(typeid_t::make_int(), vector<value_t>{value_t::make_int(1), value_t::make_int(2), value_t::make_int(3)})
-	);
-}
-*/
-
-
 QUARK_UNIT_TEST("", "jsonvalue_to_value()", "point_t", ""){
 	const auto point_t_def = std::vector<member_t>{
 		member_t(typeid_t::make_double(), "x"),
@@ -3340,9 +3311,7 @@ QUARK_UNIT_TEST("", "impure", "call impure->impure", "Compiles OK"){
 
 
 
-
 ///////////////////////////////////////////////////			TEST LIBRARY FEATURES
-
 
 
 
@@ -4453,6 +4422,7 @@ QUARK_UNIT_TEST("software-system", "parse software-system", "", ""){
 
 QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 	const auto test_ss2 = R"(
+
 		software-system {
 			"name": "My Arcade Game",
 			"desc": "Space shooter for mobile devices, with connection to a server.",
@@ -4498,6 +4468,7 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 				assert(false)
 			}
 		}
+
 	)";
 
 	const auto result = run_container2(test_ss2, {}, "iphone app", "");
@@ -4506,6 +4477,7 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 
 QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 	const auto test_ss3 = R"(
+
 		software-system {
 			"name": "My Arcade Game",
 			"desc": "Space shooter for mobile devices, with connection to a server.",
@@ -4527,7 +4499,6 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 				}
 			}
 		}
-
 
 		////////////////////////////////	my_gui -- process
 
@@ -4581,6 +4552,7 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 				assert(false)
 			}
 		}
+
 	)";
 
 	const auto result = run_container2(test_ss3, {}, "iphone app", "");
@@ -4589,6 +4561,7 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 
 QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 	const auto test_ss3 = R"(
+
 		software-system {
 			"name": "My Arcade Game",
 			"desc": "Space shooter for mobile devices, with connection to a server.",
@@ -4666,6 +4639,7 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 				assert(false)
 			}
 		}
+
 	)";
 
 	const auto result = run_container2(test_ss3, {}, "iphone app", "");
