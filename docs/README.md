@@ -8,27 +8,38 @@ Status: All the basics are finished. Runs on a bytecode interpreter. Will run na
 
 Floyd is a general purpose programming language designed for making very large and robust programs that run really fast.
 
-### USE
+# USE
+
 Use Floyd to build the next Photoshop, Grand Theft Auto or mobile app. But also for short scripts and toy programs. Probably not embedded software, though.
 
 Floyd wants to replace C++, Rust, C#, Python. And Javascript. Only C can stay. Maybe Closure too, just out of respect.
 
 
-### FLOYD IN NUTSHELL
+# FLOYD IN NUTSHELL
 
-Novelty: Floyd separates your program into three separate concerns: 1) writing the program logic, 2) setup processing / interactions, 3) mapping the program to the cpu and memory system.
+Floyd separates your program into three separate concerns:
 
+1. Writing the program logic: Floyd Speak.
+2. Programming the interaction between your internal process and the outside world: Floyd Systems and Floyd Processes.
+3. Mapping the program to the cpu and memory system: Floyd's augumentation mechanism and parallelism functions.
 
 Floyd is a small and friendly language that is easy to learn. It looks like Javascript or C. It is statically typed with type inference and runs on a bytecode interpreter (now) and natively using LLVM (not implemented). It's got built in types for vector, dictionaries, JSON, a struct type and strings. All values are immutable / persistent data structures using HAMT and other techniques. Floyd uses reference counting internally.
 
 It's a mashup of imperative, functional and OOP. Functions defaults to pure (but with normal local variables). TBD: protocol type allows polymorphism. There is no encapsulation (yet).
 
-Concurrency is done using virtual processes and message passing. Floyd processes can call impure functions and interact with the world. The rest of your program is pure.
+There are no classes, pointers / references, no tracing GC, lambdas (yet), closures, pattern matching, generics (yet), threads, mutexes, atomics, header files, encapsulation (yet).
+
+Floyd compilers and tools are written in C++ 17.
 
 
-Optimization strategy (implementation not complete): 
+Processing and concurrency is done using Floyd's virtual processes and message passing. Each process has its own private state. Floyd processes can call impure functions and interact with the world. The rest of your program is pure.
 
-- Parallelism is simple and safe with map(), reduce(), filter() and supermap() functions. Like shaders running on a GPU. They share an internal OS thread team with the Floyd processes.
+
+# FLOYD PERFORMANC
+*(Implementation in progress)*
+
+
+Parallelism is simple and safe with map(), reduce(), filter() and supermap() functions. Like shaders running on a GPU. They share an internal OS thread team with the Floyd processes.
 
 You optimise your program by running it and *augmenting* your Floyd process functions (and the function calls they make, downward the call graph). This automatically generates new optimized versions of lots of affected functions. This cannot introduce defects! Examples:
 
@@ -36,10 +47,6 @@ You optimise your program by running it and *augmenting* your Floyd process func
 - Select backend for collections: a dictionary can be an array with binary search, a HAMT, a hash table or a red-black tree - all with different performance tradeoffs.
 - Control thread priority, affinity, how many threads to use for the parallelization features.
 - Insert read or write caches, introduce batching.
-
-There are no classes, pointers / references, no tracing GC, lambdas (yet), closures, pattern matching, generics (yet), threads, mutexes, atomics, header files, encapsulation (yet).
-
-Floyd compilers and tools are written in C++ 17.
 
 
 # QUICK REFERENCE
