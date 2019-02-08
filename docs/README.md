@@ -10,12 +10,14 @@ Floyd is a industrial grade general purpose programming language. It has strong 
 
 
 ##### USE
-Use Floyd to build the next Photoshop, Grand Theft Auto and any type of mobile application. But also to make short scripts and toy programs. Probably not embedded software, though. The end goal is always to ship great *products* that execute extremely well on the hardware and that you are happy to develop further.
+Use Floyd to build the next Photoshop, Grand Theft Auto and any type of mobile application. But also to make short scripts and toy programs. Probably not embedded software, though.
+
+The end goal is always to ship *great products* that execute extremely well on the hardware and that you are happy to develop further.
 
 Floyd wants to replace C++, Rust, C#, Python. And Javascript. Only C can stay. Maybe Closure too, just out of respect.
 
 ##### VERTICAL LANGUAGE
-Floyd is a vertical language: it cares deeply about **cache lines** and **hardware cores** and at the same time has keywords like **software-system** and primitived for interacting between concurrent processes.
+Floyd is a vertical language: it cares deeply about **cache lines** and **hardware cores** and at the same time has keywords like **software-system** and primitives for interacting between concurrent processes.
 
 It's still very small and easy to learn, by dropping a lot of cruft other programming languages think is needed. C++ - how many ways do we need to initialise a variable? Really?
 

@@ -39,7 +39,6 @@ Floyd consists of a small and elegant toolkit of features built directly into th
 2. Floyd has a clean and minimal skeleton structure for *complete* software systems - including processes, people, concurrency and how they all interact.
 3. Carefully distilled set of syntactical features to move focus to the *system* rather than the inside of functions
 4. Feels like simple imperative programming but with the best bits of functional programming sneaked in discretely
-5. Visual and interactive tools
 
 
 Floyd has three big parts:
