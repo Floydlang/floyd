@@ -10,12 +10,14 @@ Floyd is a industrial grade general purpose programming language. It has strong 
 
 
 ##### USE
-Use Floyd to build the next Photoshop, Grand Theft Auto, any type of mobile application. But also short scripts and toy programs. Probably not embedded software, though. The end goal is always to ship great *products* that execute extremely well on the hardware and that you are happy to develop further.
+Use Floyd to build the next Photoshop, Grand Theft Auto and any type of mobile application. But also to make short scripts and toy programs. Probably not embedded software, though. The end goal is always to ship great *products* that execute extremely well on the hardware and that you are happy to develop further.
 
 Floyd wants to replace C++, Rust, C#, Python. And Javascript. Only C can stay. Maybe Closure too, just out of respect.
 
 ##### VERTICAL LANGUAGE
-Floyd is a vertical language: it cares deeply about cache lines and hardware cores and at the same time has keywords like **software-system** and interacting between concurrent processes. It's still very small and easy to learn by dropping a lot of cruft other programming languages thinks are needed. C++ - how many ways do we need to initialise a variable? Really?
+Floyd is a vertical language: it cares deeply about **cache lines** and **hardware cores** and at the same time has keywords like **software-system** and primitived for interacting between concurrent processes.
+
+It's still very small and easy to learn, by dropping a lot of cruft other programming languages think is needed. C++ - how many ways do we need to initialise a variable? Really?
 
 ##### THE MATRIX
 Floyd is inspired by the movie The Matrix, which is obviously a great way to design a programming language!
@@ -23,7 +25,7 @@ Floyd is inspired by the movie The Matrix, which is obviously a great way to des
 - **Red Pill**: Knowledge, freedom, uncertainty and the brutal truths of reality
 - **Blue Pill**: Security, happiness, beauty, and the blissful ignorance of illusion
 
-Learn more here - things like the **red and blue pill**, **green processes** and other cool and colorful things: [www.floydlang.org](https://www.floydlang.org "Floyd language's Homepage")
+Learn more here - things like **green processes**, **black magic** and the **red and blue pill**,  and other cool and colorful things: [www.floydlang.org](https://www.floydlang.org "Floyd language's Homepage")
 
 
 # QUICK REFERENCE
@@ -51,7 +53,7 @@ A handful features are needed for a proper 1.0: rounding out the language featur
 Floyd compilers and tools are written in portable C++17.
 
 
-# FORWARD
+# LOOKING FORWARD
 
 #### LANGUAGE FEATURES
 - More int and float types
