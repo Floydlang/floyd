@@ -1,3 +1,25 @@
+
+
+##### THE MATRIX
+Floyd is inspired by the movie The Matrix, which is obviously a great way to design a programming language!
+
+- **Red Pill**: Knowledge, freedom, uncertainty and the brutal truths of reality
+- **Blue Pill**: Security, happiness, beauty, and the blissful ignorance of illusion
+
+Learn more here - things like **green processes**, **black magic**, the **red and blue pill**, and other cool and colorful things: [www.floydlang.org](https://www.floydlang.org "Floyd language's Homepage")
+
+
+##### VERTICAL LANGUAGE
+Floyd is a vertical language: it cares deeply about **cache lines** and **hardware cores** and at the same time has keywords like **software-system** and primitives for interacting between concurrent processes.
+
+It's still very small and easy to learn, by dropping a lot of cruft other programming languages think is needed. C++ - how many ways do we need to initialise a variable? Really?
+
+
+
+
+
+
+
 ### NOVEL CONCEPTS
 
 Floyd separates the programming work in new ways, imposes a clean system-wide structure and has simple built-in ways to do hard things like concurrency and optimization.
@@ -96,3 +118,84 @@ Read more about Floyd: [Read more](readme_deeper.md)
 - Binary packing of data
 - C language integration
 - Built-in REST library
+
+
+
+
+
+# PERFORMANCE - PAGE
+
+
+# How are Floyd programs simper to make:
+
+BLUE PILL CODE
+You implement the simplest program that does the job. Optimise later by augmenting your code, without risk of introducing defects!
+
+- There are no pointers or references
+- There is no aliasing
+- There are no ownerships or lifetimes
+- There are no globals
+- Function's don't have side effects, you can call any function without surprises
+- Dead simple to write tests
+- Everything is guaranteed to be 100% reproducible = simple debugging
+- There are no threading concerns, no need to think about this at all
+- You don't write any caching that go out of sync
+- You don't attempt to do the regular optimisations with caching, batching and tweaking collection types
+- You don't do error handling
+
+RED PILL CODE
+This is done by writing code for your processes, usually 1 to 4. Try to have very little code here, preferably delegate all logic to blue pill code.
+
+- Processes have one variable.
+- They run in a sandbox.
+- All communication between processes is done via immutable messages, no mutexes, threads or futures.
+
+
+
+
+
+
+# RUNTIME CODEGEN FOR OPTIMIZATION: GENERATE BITMAP SCALER
+
+
+# How is concurrency handled in Floyd?
+
+Floyd does simple and safe concurrency using Floyd processes. These are sandboxed and communicate only by sending atomic messages to each-other. A messages can be a string or a huge data structure. Similar to Erlang. (Sweden rules!).
+
+An advanced xbox game might have 5-10 of these processes and send world states and render graphs and textures between them. Posting a huge data structure between two processes only costs bumping an atomic reference count.
+# How are Floyd programs fast?
+
+DISCLAIMER: The structure for this is in Floyd right now - processes, supermap() etc. The byte code interpreter does very little optimisation. Next on the roadmap is LLVM codegen from Floyd's byte code.
+
+Floyd makes it simple to control how your program cab exploit the memory sub system and CPU cores of the hardware it runs on.
+
+You dictate memory layout and collection types on-top of existing code, interactively, without changing your code. Several version of your functions are generated and optimised automatically. Match up with hardware cache lines.
+You can insert caches and batching in existing code, without changing it.
+You can assign thread priority, affinity to function calls, without changing your code.
+Profiling is integrated into the language itself, not a separate clunky tool you run once per release.
+There is no pointer type thus no aliasing problems = compiler generates fast-than-C code.
+You can exploit hardware threads by using map(), reduce() and supermap(). Crunch a collection of 1000 JPEG:s or 3840 x 2160 float pixel images. Your function executes in a sandbox on many hardware cores. This is how shaders work on a GPU. The supermap() function even allows you to do this when elements have dependencies between them.
+Floyd uses an internal OS thread team.
+Floyd uses green-threads and does not consume OS threads when blocking on I/O, only when executing instructions.
+
+==================
+Floyd code is written with generic vectors, dictionaries and structs to get the logic right. Which type of collection (hash, array with binary search, HAMT, red-black trees etc) is controlled separately. Your struct:s have undefined memory layout. When your program works, you can interactively explore how to use the hardware best. This is impossible with C, all these decisions are locked down into every line of C code.
+
+- Augument your program to control memory layouts and collection backend on a per-function-call level.
+
+Floyd automatically generates optimized machine code for the function and all functions it calls. There can be many versions of the *same Floyd functions*, optimised for different purposes. This is done without introducing defect - it doesn't affect your program's logic at all.
+
+- You can augument your code by insert caches and batching - without altering your logic. 
+
+- You can augment your Floyd process and functions with hardware core affinities and priorities to control how they are mapped to available cores.
+
+- Floyd has no pointer thus has no aliasing problems, this is an advantage compared to C.
+
+
+- Floyd does parallelism using small set of safe primitives: map(), reduce(), filter() and supermap(). You supply a collection (1000 JPEG? 3840 x 2160 float pixels?) Your code execute sandboxed on many hardware cores. This is how shaders work on a GPU. The supermap() allows you to do the same even when elements have dependencies between them.
+
+- Floyd uses an internal OS thread team.
+
+- Floyd does not consume OS threads when it blocks on IO, only when executing instructions.
+
+

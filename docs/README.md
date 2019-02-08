@@ -4,30 +4,42 @@ License: MIT
 
 Status: All the basics are finished. Runs on a byte code interpreter. Will run natively soon.
 
-# NEW TO FLOYD?
+# WHAT IS FLOYD?
 
-Floyd is a industrial grade general purpose programming language. It has strong opinions on how to write complex and robust software products. Fast programs! While you are getting actual things done. Think H-beams and RCCB:s. Floyd is designed 2019, not in the 50-80:ies.
+Floyd is a general purpose programming language designed for making very large and robust programs that run really fast.
 
-
-##### USE
-Use Floyd to build the next Photoshop, Grand Theft Auto and any type of mobile application. But also to make short scripts and toy programs. Probably not embedded software, though.
-
-The end goal is always to ship *great products* that execute extremely well on the hardware and that you are happy to develop further.
+### USE
+Use Floyd to build the next Photoshop, Grand Theft Auto or mobile app. But also for short scripts and toy programs. Probably not embedded software, though.
 
 Floyd wants to replace C++, Rust, C#, Python. And Javascript. Only C can stay. Maybe Closure too, just out of respect.
 
-##### VERTICAL LANGUAGE
-Floyd is a vertical language: it cares deeply about **cache lines** and **hardware cores** and at the same time has keywords like **software-system** and primitives for interacting between concurrent processes.
 
-It's still very small and easy to learn, by dropping a lot of cruft other programming languages think is needed. C++ - how many ways do we need to initialise a variable? Really?
+### FLOYD IN NUTSHEEL
 
-##### THE MATRIX
-Floyd is inspired by the movie The Matrix, which is obviously a great way to design a programming language!
+Novelty: Floyd separates your program into three separate conserns: 1) writing the program logic, 2) setup processing / interactions, 3) mapping the program to the cpu and memory system.
 
-- **Red Pill**: Knowledge, freedom, uncertainty and the brutal truths of reality
-- **Blue Pill**: Security, happiness, beauty, and the blissful ignorance of illusion
 
-Learn more here - things like **green processes**, **black magic**, the **red and blue pill**, and other cool and colorful things: [www.floydlang.org](https://www.floydlang.org "Floyd language's Homepage")
+Floyd is a small and friendly language that is easy to learn. It looks like Javascript or C. It is statically typed with type inference and runs on a byte code interpreter (now) and natively using LLVM (not implemented). It's got built in types for vector, dictionaries, JSON, a struct type and strings. All values are immutable / persistent data structures using HAMT and other techniques. Floyd uses reference counting internally.
+
+It's a mashup of imperative, functional and OOP. Functions defaults to pure (but with normal local variables). TBD: protocol type allows polymorhism. There is no encapsulation (yet).
+
+Concurrency is done using virtual processes and message passing. Floyd processes can call inpure functions and interact with the world. The rest of your program is pure.
+
+
+Optimization strategy (implementation not complete): 
+
+- Parallelism is simple and safe with map(), reduce(), filter() and supermap() functions. Like shaders running on a GPU. They share an internal OS thread team with the Floyd processes.
+
+You optimise your program by running it and *augmenting* your Floyd process functions (and the function calls they make, downward the call graph). This automatically generates new optimized versions of lots of affected functions. This cannot introduce defects! Examples:
+
+- Change memory layout of structs, order, split, merge, array-of-structs vs struct-of-arrays.
+- Select backend for collections: a dictionary can be an array with binary search, a HAMT, a hash or a red-black tree - all with different performance tradeoffs.
+- Control thread priority, affinity, how many threads to use for the parallelization features.
+- Insert read or write caches, introduce batching.
+
+There are no classes, pointers / references, no tracing GC, lambdas (yet), closures, pattern matching, generics (yet), threads, mutexes, atomics, header files, encapsulation (yet).
+
+Floyd compilers and tools are written in C++ 17.
 
 
 # QUICK REFERENCE
@@ -37,9 +49,9 @@ Learn more here - things like **green processes**, **black magic**, the **red an
 
 # STATUS
 
-The essentials of the Floyd are up and running and very robust (approx 1000 tests). The compiler generates byte code that runs quite fast on an interpreter. The manual is complete.
+The essentials of Floyd are up and running and very robust (approx 1000 tests), including the concurrent Floyd processes. The compiler generates byte code that runs at approx 5-15% of native speed on the interpreter. The manual is complete.
 
-A handful features are needed for a proper 1.0: rounding out the language features somewhat and then *all about hardware performance*.
+A handful features are needed for a satisfying 1.0: rounding out the language features somewhat and then *it's all about performance*.
 
 
 # IN THE BOX
@@ -48,14 +60,19 @@ A handful features are needed for a proper 1.0: rounding out the language featur
 |:---				|:---
 | [Floyd Speak Manual](floyd_speak.md) | Programming language manual
 | [Core Library Manual](floyd_speak_corelibs.md) | File system access, JSON support
-| [Floyd Systems Manual](floyd_systems.md) | How to setup concurrency and change the world.
-| **Floyd compiler** | Compiles Floyd Speak source code to byte code.
-| **Floyd byte Code interpreter**	|Interprets your programs at approx. 7-15% of native speeds.
+| [Floyd Systems Manual](floyd_systems.md) | How to use Floyd processes to change the world
+| **Floyd compiler** | Compiles Floyd source code to byte code
+| **Floyd byte Code interpreter**	|Runs your program
 
-Floyd compilers and tools are written in portable C++17.
 
 
 # LOOKING FORWARD
+
+#### PERFORMANCE
+- LLVM codegen
+- Better internal threaded task manager
+- Control over collection backend types, caching
+- Visual profiler, debugger
 
 #### LANGUAGE FEATURES
 - More int and float types
@@ -67,8 +84,3 @@ Floyd compilers and tools are written in portable C++17.
 - C language integration
 - Built-in REST library
 
-#### PERFORMANCE
-- LLVM codegen
-- Better internal threaded task manager
-- Visual profiler, debugger
-- Control over collection backend types, caching
