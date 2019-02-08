@@ -33,7 +33,7 @@ Optimization strategy (implementation not complete):
 You optimise your program by running it and *augmenting* your Floyd process functions (and the function calls they make, downward the call graph). This automatically generates new optimized versions of lots of affected functions. This cannot introduce defects! Examples:
 
 - Change memory layout of structs, order, split, merge, array-of-structs vs struct-of-arrays.
-- Select backend for collections: a dictionary can be an array with binary search, a HAMT, a hash or a red-black tree - all with different performance tradeoffs.
+- Select backend for collections: a dictionary can be an array with binary search, a HAMT, a hash table or a red-black tree - all with different performance tradeoffs.
 - Control thread priority, affinity, how many threads to use for the parallelization features.
 - Insert read or write caches, introduce batching.
 
