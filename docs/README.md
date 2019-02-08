@@ -25,7 +25,7 @@ Floyd is inspired by the movie The Matrix, which is obviously a great way to des
 - **Red Pill**: Knowledge, freedom, uncertainty and the brutal truths of reality
 - **Blue Pill**: Security, happiness, beauty, and the blissful ignorance of illusion
 
-Learn more here - things like **green processes**, **black magic** and the **red and blue pill**,  and other cool and colorful things: [www.floydlang.org](https://www.floydlang.org "Floyd language's Homepage")
+Learn more here - things like **green processes**, **black magic**, the **red and blue pill**, and other cool and colorful things: [www.floydlang.org](https://www.floydlang.org "Floyd language's Homepage")
 
 
 # QUICK REFERENCE
