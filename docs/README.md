@@ -2,7 +2,7 @@
 
 License: MIT
 
-Status: All the basics are finished. Runs on a byte code interpreter. Will run natively soon.
+Status: All the basics are finished. Runs on a bytecode interpreter. Will run natively soon.
 
 # WHAT IS FLOYD?
 
@@ -14,16 +14,16 @@ Use Floyd to build the next Photoshop, Grand Theft Auto or mobile app. But also 
 Floyd wants to replace C++, Rust, C#, Python. And Javascript. Only C can stay. Maybe Closure too, just out of respect.
 
 
-### FLOYD IN NUTSHEEL
+### FLOYD IN NUTSHELL
 
-Novelty: Floyd separates your program into three separate conserns: 1) writing the program logic, 2) setup processing / interactions, 3) mapping the program to the cpu and memory system.
+Novelty: Floyd separates your program into three separate concerns: 1) writing the program logic, 2) setup processing / interactions, 3) mapping the program to the cpu and memory system.
 
 
-Floyd is a small and friendly language that is easy to learn. It looks like Javascript or C. It is statically typed with type inference and runs on a byte code interpreter (now) and natively using LLVM (not implemented). It's got built in types for vector, dictionaries, JSON, a struct type and strings. All values are immutable / persistent data structures using HAMT and other techniques. Floyd uses reference counting internally.
+Floyd is a small and friendly language that is easy to learn. It looks like Javascript or C. It is statically typed with type inference and runs on a bytecode interpreter (now) and natively using LLVM (not implemented). It's got built in types for vector, dictionaries, JSON, a struct type and strings. All values are immutable / persistent data structures using HAMT and other techniques. Floyd uses reference counting internally.
 
-It's a mashup of imperative, functional and OOP. Functions defaults to pure (but with normal local variables). TBD: protocol type allows polymorhism. There is no encapsulation (yet).
+It's a mashup of imperative, functional and OOP. Functions defaults to pure (but with normal local variables). TBD: protocol type allows polymorphism. There is no encapsulation (yet).
 
-Concurrency is done using virtual processes and message passing. Floyd processes can call inpure functions and interact with the world. The rest of your program is pure.
+Concurrency is done using virtual processes and message passing. Floyd processes can call impure functions and interact with the world. The rest of your program is pure.
 
 
 Optimization strategy (implementation not complete): 
@@ -49,7 +49,7 @@ Floyd compilers and tools are written in C++ 17.
 
 # STATUS
 
-The essentials of Floyd are up and running and very robust (approx 1000 tests), including the concurrent Floyd processes. The compiler generates byte code that runs at approx 5-15% of native speed on the interpreter. The manual is complete.
+The essentials of Floyd are up and running and very robust (approx 1000 tests), including the concurrent Floyd processes. The compiler generates bytecode that runs at approx 5-15% of native speed on the interpreter. The manual is complete.
 
 A handful features are needed for a satisfying 1.0: rounding out the language features somewhat and then *it's all about performance*.
 
@@ -62,7 +62,7 @@ A handful features are needed for a satisfying 1.0: rounding out the language fe
 | [Core Library Manual](floyd_speak_corelibs.md) | File system access, JSON support
 | [Floyd Systems Manual](floyd_systems.md) | How to use Floyd processes to change the world
 | **Floyd compiler** | Compiles Floyd source code to byte code
-| **Floyd byte Code interpreter**	|Runs your program
+| **Floyd byteCode interpreter**	|Runs your program
 
 
 
@@ -83,4 +83,5 @@ A handful features are needed for a satisfying 1.0: rounding out the language fe
 - Binary packing of data
 - C language integration
 - Built-in REST library
+
 
