@@ -24,7 +24,7 @@ Floyd separates your program into three separate concerns:
 
 1. Writing the program logic: Floyd Speak.
 2. Programming the interaction between your internal process and the outside world: Floyd Systems and Floyd Processes.
-3. Mapping the program to the cpu and memory system: Floyd's augumentation mechanism and parallelism functions.
+3. Mapping the program to the cpu and memory system: Floyd's augmentation mechanism and parallelism functions.
 
 Floyd is a small and friendly language that is easy to learn. It looks like Javascript or C. It is statically typed with type inference and runs on a bytecode interpreter (now) and natively using LLVM (not implemented). It's got built in types for vector, dictionaries, JSON, a struct type and strings. All values are immutable / persistent data structures using HAMT and other techniques. Floyd uses reference counting internally.
 
