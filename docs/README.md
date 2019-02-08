@@ -10,7 +10,7 @@ Floyd is a industrial grade general purpose programming language. It has strong 
 
 
 ##### USE
-Use Floyd to build the next Photoshop, Grand Theft Auto, any type of mobile application. But also short scripts and toy programs. Probably not embedded software, though, that's why C can stay. The end goal is always to ship great *products* that execute extremely well on the hardware and that are exciting to develop further.
+Use Floyd to build the next Photoshop, Grand Theft Auto, any type of mobile application. But also short scripts and toy programs. Probably not embedded software, though. The end goal is always to ship great *products* that execute extremely well on the hardware and that you are happy to develop further.
 
 Floyd wants to replace C++, Rust, C#, Python. And Javascript. Only C can stay. Maybe Closure too, just out of respect.
 
