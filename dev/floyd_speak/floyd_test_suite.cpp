@@ -1152,17 +1152,18 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 	);
 }
 
-/*
 //??? add support for typeof(int)
-QUARK_UNIT_TEST("", "typeof()", "", ""){
-	const auto result = test__run_return_result(
+OFF_QUARK_UNIT_TEST("", "typeof()", "", ""){
+	ut_verify_result_global(
+		QUARK_POS,
 		R"(
-			result = typeof(int);
-		)", {}
+
+			let result = to_string(typeof(int));
+
+		)",
+		value_t::make_string("int")
 	);
-	ut_verify_values(QUARK_POS, result, value_t::make_string("int"));
 }
-*/
 
 
 
@@ -3787,14 +3788,15 @@ QUARK_UNIT_TEST("", "get_directory_entries()", "", ""){
 
 
 QUARK_UNIT_TEST("", "get_fsentries_deep()", "", ""){
-	const auto result = test__run_return_result(R"(
+	run_closed(
+		R"(
 
-		let result = get_fsentries_deep("/Users/marcus/Desktop/")
-		assert(size(result) > 3)
-		print(to_pretty_string(result))
+			let result = get_fsentries_deep("/Users/marcus/Desktop/")
+			assert(size(result) > 3)
+			print(to_pretty_string(result))
 
-	)", {});
-	ut_verify(QUARK_POS, result.get_type(), typeid_t::make_vector(make__fsentry_t__type()));
+		)"
+	);
 }
 
 
@@ -3802,13 +3804,19 @@ QUARK_UNIT_TEST("", "get_fsentries_deep()", "", ""){
 
 
 QUARK_UNIT_TEST("", "get_fsentry_info()", "", ""){
-	const auto result = test__run_return_result(R"(
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
 
-		let result = get_fsentry_info("/Users/marcus/Desktop/")
-		print(to_pretty_string(result))
+			let x = get_fsentry_info("/Users/marcus/Desktop/")
+			print(to_pretty_string(x))
+			let result = typeof(x)
 
-	)", {});
-	ut_verify(QUARK_POS, result.get_type(), make__fsentry_info_t__type());
+		)",
+		value_t::make_typeid_value(
+			make__fsentry_info_t__type()
+		)
+	);
 }
 
 
@@ -3816,17 +3824,20 @@ QUARK_UNIT_TEST("", "get_fsentry_info()", "", ""){
 
 
 QUARK_UNIT_TEST("", "get_fs_environment()", "", ""){
-	const auto result = test__run_return_result(R"(
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
 
-		let result = get_fs_environment()
-		print(to_pretty_string(result))
+			let x = get_fs_environment()
+			print(to_pretty_string(x))
+			let result = typeof(x)
 
-	)", {});
-	ut_verify(QUARK_POS, result.get_type(), make__fs_environment_t__type());
+		)",
+		value_t::make_typeid_value(
+			make__fs_environment_t__type()
+		)
+	);
 }
-
-
-
 
 
 
@@ -3835,30 +3846,36 @@ QUARK_UNIT_TEST("", "get_fs_environment()", "", ""){
 
 
 QUARK_UNIT_TEST("", "does_fsentry_exist()", "", ""){
-	const auto result = test__run_return_result(R"(
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
 
-		let path = get_fs_environment().desktop_dir
-		let result = does_fsentry_exist(path)
-		print(to_pretty_string(result))
+			let path = get_fs_environment().desktop_dir
+			let x = does_fsentry_exist(path)
+			print(to_pretty_string(x))
 
-		assert(result == true)
+			assert(x == true)
+			let result = typeof(x)
 
-	)", {});
-	ut_verify(QUARK_POS, result.get_type(), typeid_t::make_bool());
+		)",
+		value_t::make_typeid_value(typeid_t::make_bool())
+	);
 }
 
 QUARK_UNIT_TEST("", "does_fsentry_exist()", "", ""){
-	const auto result = test__run_return_result(R"(
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
 
-		let path = get_fs_environment().desktop_dir + "xyz"
-		let result = does_fsentry_exist(path)
-		print(to_pretty_string(result))
+			let path = get_fs_environment().desktop_dir + "xyz"
+			let result = does_fsentry_exist(path)
+			print(to_pretty_string(result))
 
-		assert(result == false)
+			assert(result == false)
 
-	)", {});
-
-	ut_verify(QUARK_POS, result.get_type(), typeid_t::make_bool());
+		)",
+		value_t::make_bool(false)
+	);
 }
 
 void remove_test_dir(const std::string& dir_name1, const std::string& dir_name2){
@@ -3880,28 +3897,28 @@ void remove_test_dir(const std::string& dir_name1, const std::string& dir_name2)
 QUARK_UNIT_TEST("", "create_directory_branch()", "", ""){
 	remove_test_dir("unittest___create_directory_branch", "subdir");
 
-	const auto result = test__run_return_result(R"(
+	run_closed(
+		R"(
 
-		let path1 = get_fs_environment().desktop_dir + "/unittest___create_directory_branch"
-		let path2 = path1 + "/subdir"
+			let path1 = get_fs_environment().desktop_dir + "/unittest___create_directory_branch"
+			let path2 = path1 + "/subdir"
 
-		assert(does_fsentry_exist(path1) == false)
-		assert(does_fsentry_exist(path2) == false)
+			assert(does_fsentry_exist(path1) == false)
+			assert(does_fsentry_exist(path2) == false)
 
-		//	Make test.
-		create_directory_branch(path2)
-		assert(does_fsentry_exist(path1) == true)
-		assert(does_fsentry_exist(path2) == true)
+			//	Make test.
+			create_directory_branch(path2)
+			assert(does_fsentry_exist(path1) == true)
+			assert(does_fsentry_exist(path2) == true)
 
-		delete_fsentry_deep(path1)
-		assert(does_fsentry_exist(path1) == false)
-		assert(does_fsentry_exist(path2) == false)
+			delete_fsentry_deep(path1)
+			assert(does_fsentry_exist(path1) == false)
+			assert(does_fsentry_exist(path2) == false)
 
-		let result = true
+			let result = true
 
-	)", {});
-
-	ut_verify(QUARK_POS, result.get_type(), typeid_t::make_bool());
+		)"
+	);
 }
 
 
@@ -3911,28 +3928,28 @@ QUARK_UNIT_TEST("", "create_directory_branch()", "", ""){
 QUARK_UNIT_TEST("", "delete_fsentry_deep()", "", ""){
 	remove_test_dir("unittest___delete_fsentry_deep", "subdir");
 
-	const auto result = test__run_return_result(R"(
+	run_closed(
+		R"(
 
-		let path1 = get_fs_environment().desktop_dir + "/unittest___delete_fsentry_deep"
-		let path2 = path1 + "/subdir"
+			let path1 = get_fs_environment().desktop_dir + "/unittest___delete_fsentry_deep"
+			let path2 = path1 + "/subdir"
 
-		assert(does_fsentry_exist(path1) == false)
-		assert(does_fsentry_exist(path2) == false)
+			assert(does_fsentry_exist(path1) == false)
+			assert(does_fsentry_exist(path2) == false)
 
-		create_directory_branch(path2)
-		assert(does_fsentry_exist(path1) == true)
-		assert(does_fsentry_exist(path2) == true)
+			create_directory_branch(path2)
+			assert(does_fsentry_exist(path1) == true)
+			assert(does_fsentry_exist(path2) == true)
 
-		//	Make test.
-		delete_fsentry_deep(path1)
-		assert(does_fsentry_exist(path1) == false)
-		assert(does_fsentry_exist(path2) == false)
+			//	Make test.
+			delete_fsentry_deep(path1)
+			assert(does_fsentry_exist(path1) == false)
+			assert(does_fsentry_exist(path2) == false)
 
-		let result = true
+			let result = true
 
-	)", {});
-
-	ut_verify(QUARK_POS, result.get_type(), typeid_t::make_bool());
+		)"
+	);
 }
 
 
@@ -3941,36 +3958,36 @@ QUARK_UNIT_TEST("", "delete_fsentry_deep()", "", ""){
 
 
 QUARK_UNIT_TEST("", "rename_fsentry()", "", ""){
-	const auto result = test__run_return_result(R"(
+	run_closed(
+		R"(
 
-		let dir = get_fs_environment().desktop_dir + "/unittest___rename_fsentry"
+			let dir = get_fs_environment().desktop_dir + "/unittest___rename_fsentry"
 
-		delete_fsentry_deep(dir)
+			delete_fsentry_deep(dir)
 
-		let file_path1 = dir + "/original.txt"
-		let file_path2 = dir + "/renamed.txt"
+			let file_path1 = dir + "/original.txt"
+			let file_path2 = dir + "/renamed.txt"
 
-		assert(does_fsentry_exist(file_path1) == false)
-		assert(does_fsentry_exist(file_path2) == false)
+			assert(does_fsentry_exist(file_path1) == false)
+			assert(does_fsentry_exist(file_path2) == false)
 
-		//	Will also create parent directory.
-		write_text_file(file_path1, "This is the file contents\n")
+			//	Will also create parent directory.
+			write_text_file(file_path1, "This is the file contents\n")
 
-		assert(does_fsentry_exist(file_path1) == true)
-		assert(does_fsentry_exist(file_path2) == false)
+			assert(does_fsentry_exist(file_path1) == true)
+			assert(does_fsentry_exist(file_path2) == false)
 
-		rename_fsentry(file_path1, "renamed.txt")
+			rename_fsentry(file_path1, "renamed.txt")
 
-		assert(does_fsentry_exist(file_path1) == false)
-		assert(does_fsentry_exist(file_path2) == true)
+			assert(does_fsentry_exist(file_path1) == false)
+			assert(does_fsentry_exist(file_path2) == true)
 
-		delete_fsentry_deep(dir)
+			delete_fsentry_deep(dir)
 
-		let result = true
+			let result = true
 
-	)", {});
-
-	ut_verify(QUARK_POS, result.get_type(), typeid_t::make_bool());
+		)"
+	);
 }
 
 
@@ -4291,28 +4308,37 @@ QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
 	);
 }
 QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
-	const auto result = test__run_return_result(R"(
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
 
-		let result = false + true
+			let result = false + true
 
-	)", {});
-	QUARK_ASSERT(result.get_bool_value() == true);
+		)",
+		value_t::make_bool(true)
+	);
 }
 QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
-	const auto result = test__run_return_result(R"(
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
 
-		let result = false + false
+			let result = false + false
 
-	)", {});
-	QUARK_ASSERT(result.get_bool_value() == false);
+		)",
+		value_t::make_bool(false)
+	);
 }
 QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
-	const auto result = test__run_return_result(R"(
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
 
-		let result = true + true
+			let result = true + true
 
-	)", {});
-	QUARK_ASSERT(result.get_bool_value() == true);
+		)",
+		value_t::make_bool(true)
+	);
 }
 
 QUARK_UNIT_TEST("Edge case", "", "Lookup the unlookupable", "exception"){
@@ -4329,21 +4355,27 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup the unlookupable", "exception"){
 
 
 QUARK_UNIT_TEST("vector-int", "size()", "3", ""){
-	const auto result = test__run_return_result(R"(
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
 
-		let [int] a = [1, 2, 3]
-		let result = size(a)
+			let [int] a = [1, 2, 3]
+			let result = size(a)
 
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_int(3));
+		)",
+		value_t::make_int(3)
+	);
 }
+
 QUARK_UNIT_TEST("vector-int", "size()", "3", ""){
-	const auto result = test__run_return_result(R"(
+	run_closed(
+		R"(
 
-		let result = push_back([1, 2], 3)
-		assert(result == [1, 2, 3])
+			let result = push_back([1, 2], 3)
+			assert(result == [1, 2, 3])
 
-	)", {});
+		)"
+	);
 }
 
 
