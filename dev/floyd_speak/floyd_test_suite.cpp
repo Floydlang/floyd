@@ -55,8 +55,7 @@ run_report_t run_program(const std::string& program, const std::vector<value_t>&
 
 		value_t main_result;
 		if(main_function != nullptr){
-			const value_t args_vec = value_t::make_vector_value(typeid_t::make_string(), main_args);
-			main_result = call_function(interpreter, bc_to_value(main_function->_value), { args_vec });
+			main_result = call_function(interpreter, bc_to_value(main_function->_value), main_args);
 		}
 
 		value_t result_global;
@@ -72,6 +71,7 @@ run_report_t run_program(const std::string& program, const std::vector<value_t>&
 		return run_report_t{ {}, {}, {}, e.what() };
 	}
 }
+
 run_report_t run_program(const std::string& program){
 	return run_program(program, {});
 }
@@ -93,7 +93,10 @@ QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
 QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
 	ut_verify(
 		QUARK_POS,
-		run_program("func int main([string] args){ return 1003 }", {}),
+		run_program(
+			"func int main([string] args){ return 1003 }",
+			{ value_t::make_vector_value(typeid_t::make_string(), { value_t::make_string("a"), value_t::make_string("b") }) }
+		),
 		run_report_t{ value_t::make_undefined(), value_t::make_int(1003), {}, ""}
 	);
 }
@@ -108,49 +111,42 @@ QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
 
 
 
-value_t test__run_return_result(const std::string& program, const std::vector<value_t>& args){
-	QUARK_ASSERT(args.empty());
-
-	const auto r = run_main(program, {}, "");
-	print_vm_printlog(*r.first);
-	const auto result = get_global(*r.first, "result");
-	return result;
-}
-void ut_verify_result_global(const quark::call_context_t& context, const std::string& program, const value_t& expected_result){
-	const auto result = test__run_return_result(program, {});
+void ut_verify_global_result(const quark::call_context_t& context, const std::string& program, const value_t& expected_result){
+	const auto result = run_program(program);
 	ut_verify(
 		context,
-		expression_to_json(expression_t::make_literal(result))._value,
-		expression_to_json(expression_t::make_literal(expected_result))._value
+		value_and_type_to_ast_json(result.result_variable)._value,
+		value_and_type_to_ast_json(expected_result)._value
 	);
 }
-void ut_verify_result_as_json(const std::string& program, const std::string& expected_json){
-	const auto result = test__run_return_result(program, {});
-	const auto expected_json2 = parse_json(seq_t(expected_json));
-	const auto result_json = value_and_type_to_ast_json(result)._value;
-	ut_verify(QUARK_POS, result_json, expected_json2.first);
+void ut_verify_global_result_as_json(const quark::call_context_t& context, const std::string& program, const std::string& expected_json){
+	const auto expected_json2 = parse_json(seq_t(expected_json)).first;
+	const auto result = run_program(program);
+	ut_verify(
+		context,
+		value_and_type_to_ast_json(result.result_variable)._value,
+		expected_json2
+	);
 }
-
-
 
 void ut_verify_printout(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout){
 	const auto result = run_program(program);
 	ut_verify(context, result.print_out, printout);
 }
 
+//	Has no output value: only compilation errors or floyd-asserts.
 void run_closed(const std::string& program){
 	run_global(program, "");
 }
 
-void test__run_main(const std::string& program, const std::vector<floyd::value_t>& args, const value_t& expected_return){
-	const auto result = run_main(program, args, "");
+void ut_verify_mainfunc_return(const quark::call_context_t& context, const std::string& program, const std::vector<floyd::value_t>& args, const value_t& expected_return){
+	const auto result = run_program(program, args);
 	ut_verify(
-		QUARK_POS,
-		expression_to_json(expression_t::make_literal(result.second))._value,
-		expression_to_json(expression_t::make_literal(expected_return))._value
+		context,
+		value_and_type_to_ast_json(result.main_result)._value,
+		value_and_type_to_ast_json(expected_return)._value
 	);
 }
-
 
 void ut_verify_exception(const quark::call_context_t& context, const std::string& program, const std::string& expected_what){
 	try{
@@ -172,26 +168,26 @@ QUARK_UNIT_TEST("Floyd test suite", "Global int variable", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "Global int variable", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = 123", value_t::make_int(123));
+	ut_verify_global_result(QUARK_POS, "let int result = 123", value_t::make_int(123));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "bool constant expression", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = true", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = true", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("Floyd test suite", "bool constant expression", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = false", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = false", value_t::make_bool(false));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "int constant expression", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = 123", value_t::make_int(123));
+	ut_verify_global_result(QUARK_POS, "let int result = 123", value_t::make_int(123));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "double constant expression", "", ""){
-	ut_verify_result_global(QUARK_POS, "let double result = 3.5", value_t::make_double(double(3.5)));
+	ut_verify_global_result(QUARK_POS, "let double result = 3.5", value_t::make_double(double(3.5)));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "string constant expression", "", ""){
-	ut_verify_result_global(QUARK_POS, "let string result = \"xyz\"", value_t::make_string("xyz"));
+	ut_verify_global_result(QUARK_POS, "let string result = \"xyz\"", value_t::make_string("xyz"));
 }
 
 
@@ -199,17 +195,17 @@ QUARK_UNIT_TEST("Floyd test suite", "string constant expression", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "+", "", "") {
-	ut_verify_result_global(QUARK_POS, "let int result = 1 + 2", value_t::make_int(3));
+	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2", value_t::make_int(3));
 }
 QUARK_UNIT_TEST("Floyd test suite", "+", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
+	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
 }
 QUARK_UNIT_TEST("Floyd test suite", "*", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = 3 * 4", value_t::make_int(12));
+	ut_verify_global_result(QUARK_POS, "let int result = 3 * 4", value_t::make_int(12));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "parant", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = (3 * 4) * 5", value_t::make_int(60));
+	ut_verify_global_result(QUARK_POS, "let int result = (3 * 4) * 5", value_t::make_int(60));
 }
 
 //??? test all types, like [int] etc.
@@ -227,19 +223,19 @@ QUARK_UNIT_TEST("Floyd test suite", "Infered bind", "", "") {
 
 
 QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = true ? 1 : 2", value_t::make_int(1));
+	ut_verify_global_result(QUARK_POS, "let int result = true ? 1 : 2", value_t::make_int(1));
 }
 QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = false ? 1 : 2", value_t::make_int(2));
+	ut_verify_global_result(QUARK_POS, "let int result = false ? 1 : 2", value_t::make_int(2));
 }
 
 //??? Test truthness off all variable types: strings, doubles
 
 QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
-	ut_verify_result_global(QUARK_POS, "let string result = true ? \"yes\" : \"no\"", value_t::make_string("yes"));
+	ut_verify_global_result(QUARK_POS, "let string result = true ? \"yes\" : \"no\"", value_t::make_string("yes"));
 }
 QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
-	ut_verify_result_global(QUARK_POS, "let string result = false ? \"yes\" : \"no\"", value_t::make_string("no"));
+	ut_verify_global_result(QUARK_POS, "let string result = false ? \"yes\" : \"no\"", value_t::make_string("no"));
 }
 
 
@@ -247,20 +243,20 @@ QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
 
 
 QUARK_UNIT_TEST("execute_expression()", "Parentheses", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = 5*(4+4+1)", value_t::make_int(45));
+	ut_verify_global_result(QUARK_POS, "let int result = 5*(4+4+1)", value_t::make_int(45));
 }
 QUARK_UNIT_TEST("execute_expression()", "Parentheses", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = 5*(2*(1+3)+1)", value_t::make_int(45));
+	ut_verify_global_result(QUARK_POS, "let int result = 5*(2*(1+3)+1)", value_t::make_int(45));
 }
 QUARK_UNIT_TEST("execute_expression()", "Parentheses", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = 5*((1+3)*2+1)", value_t::make_int(45));
+	ut_verify_global_result(QUARK_POS, "let int result = 5*((1+3)*2+1)", value_t::make_int(45));
 }
 
 QUARK_UNIT_TEST("execute_expression()", "Sign before parentheses", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = -(2+1)*4", value_t::make_int(-12));
+	ut_verify_global_result(QUARK_POS, "let int result = -(2+1)*4", value_t::make_int(-12));
 }
 QUARK_UNIT_TEST("execute_expression()", "Sign before parentheses", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = -4*(2+1)", value_t::make_int(-12));
+	ut_verify_global_result(QUARK_POS, "let int result = -4*(2+1)", value_t::make_int(-12));
 }
 
 
@@ -268,13 +264,13 @@ QUARK_UNIT_TEST("execute_expression()", "Sign before parentheses", "", ""){
 
 
 QUARK_UNIT_TEST("execute_expression()", "Spaces", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = 5 * ((1 + 3) * 2 + 1)", value_t::make_int(45));
+	ut_verify_global_result(QUARK_POS, "let int result = 5 * ((1 + 3) * 2 + 1)", value_t::make_int(45));
 }
 QUARK_UNIT_TEST("execute_expression()", "Spaces", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = 5 - 2 * ( 3 )", value_t::make_int(-1));
+	ut_verify_global_result(QUARK_POS, "let int result = 5 - 2 * ( 3 )", value_t::make_int(-1));
 }
 QUARK_UNIT_TEST("execute_expression()", "Spaces", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result =  5 - 2 * ( ( 4 )  - 1 )", value_t::make_int(-1));
+	ut_verify_global_result(QUARK_POS, "let int result =  5 - 2 * ( ( 4 )  - 1 )", value_t::make_int(-1));
 }
 
 
@@ -282,38 +278,38 @@ QUARK_UNIT_TEST("execute_expression()", "Spaces", "", ""){
 
 
 QUARK_UNIT_TEST("", "execute_expression()", "Fractional numbers", "") {
-	ut_verify_result_global(QUARK_POS, "let double result = 2.8/2.0", value_t::make_double(1.4));
+	ut_verify_global_result(QUARK_POS, "let double result = 2.8/2.0", value_t::make_double(1.4));
 }
 QUARK_UNIT_TEST("execute_expression()", "Fractional numbers", "", ""){
-//	ut_verify_result_global(QUARK_POS, "int result = 1/5e10") == 2e-11);
+//	ut_verify_global_result(QUARK_POS, "int result = 1/5e10") == 2e-11);
 }
 QUARK_UNIT_TEST("execute_expression()", "Fractional numbers", "", ""){
-	ut_verify_result_global(QUARK_POS, "let double result = (4.0-3.0)/(4.0*4.0)", value_t::make_double(0.0625));
+	ut_verify_global_result(QUARK_POS, "let double result = (4.0-3.0)/(4.0*4.0)", value_t::make_double(0.0625));
 }
 QUARK_UNIT_TEST("execute_expression()", "Fractional numbers", "", ""){
-	ut_verify_result_global(QUARK_POS, "let double result = 1.0/2.0/2.0", value_t::make_double(0.25));
+	ut_verify_global_result(QUARK_POS, "let double result = 1.0/2.0/2.0", value_t::make_double(0.25));
 }
 QUARK_UNIT_TEST("execute_expression()", "Fractional numbers", "", ""){
-	ut_verify_result_global(QUARK_POS, "let double result = 0.25 * .5 * 0.5", value_t::make_double(0.0625));
+	ut_verify_global_result(QUARK_POS, "let double result = 0.25 * .5 * 0.5", value_t::make_double(0.0625));
 }
 QUARK_UNIT_TEST("execute_expression()", "Fractional numbers", "", ""){
-	ut_verify_result_global(QUARK_POS, "let double result = .25 / 2.0 * .5", value_t::make_double(0.0625));
+	ut_verify_global_result(QUARK_POS, "let double result = .25 / 2.0 * .5", value_t::make_double(0.0625));
 }
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - EDGE CASES
 
 
 QUARK_UNIT_TEST("execute_expression()", "Repeated operators", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = 1+-2", value_t::make_int(-1));
+	ut_verify_global_result(QUARK_POS, "let int result = 1+-2", value_t::make_int(-1));
 }
 QUARK_UNIT_TEST("execute_expression()", "Repeated operators", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = --2", value_t::make_int(2));
+	ut_verify_global_result(QUARK_POS, "let int result = --2", value_t::make_int(2));
 }
 QUARK_UNIT_TEST("execute_expression()", "Repeated operators", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = 2---2", value_t::make_int(0));
+	ut_verify_global_result(QUARK_POS, "let int result = 2---2", value_t::make_int(0));
 }
 QUARK_UNIT_TEST("execute_expression()", "Repeated operators", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = 2-+-2", value_t::make_int(4));
+	ut_verify_global_result(QUARK_POS, "let int result = 2-+-2", value_t::make_int(4));
 }
 
 
@@ -321,10 +317,10 @@ QUARK_UNIT_TEST("execute_expression()", "Repeated operators", "", ""){
 
 
 QUARK_UNIT_TEST("execute_expression()", "Bool", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = true", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = true", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("execute_expression()", "Bool", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = false", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = false", value_t::make_bool(false));
 }
 
 
@@ -332,25 +328,25 @@ QUARK_UNIT_TEST("execute_expression()", "Bool", "", ""){
 
 
 QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = true ? 4 : 6", value_t::make_int(4));
+	ut_verify_global_result(QUARK_POS, "let int result = true ? 4 : 6", value_t::make_int(4));
 }
 QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = false ? 4 : 6", value_t::make_int(6));
-}
-
-QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = 1==3 ? 4 : 6", value_t::make_int(6));
-}
-QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = 3==3 ? 4 : 6", value_t::make_int(4));
+	ut_verify_global_result(QUARK_POS, "let int result = false ? 4 : 6", value_t::make_int(6));
 }
 
 QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = 3==3 ? 2 + 2 : 2 * 3", value_t::make_int(4));
+	ut_verify_global_result(QUARK_POS, "let int result = 1==3 ? 4 : 6", value_t::make_int(6));
+}
+QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
+	ut_verify_global_result(QUARK_POS, "let int result = 3==3 ? 4 : 6", value_t::make_int(4));
 }
 
 QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
-	ut_verify_result_global(QUARK_POS, "let int result = 3==1+2 ? 2 + 2 : 2 * 3", value_t::make_int(4));
+	ut_verify_global_result(QUARK_POS, "let int result = 3==3 ? 2 + 2 : 2 * 3", value_t::make_int(4));
+}
+
+QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
+	ut_verify_global_result(QUARK_POS, "let int result = 3==1+2 ? 2 + 2 : 2 * 3", value_t::make_int(4));
 }
 
 
@@ -358,19 +354,19 @@ QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
 
 
 QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = 1 == 1", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = 1 == 1", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = 1 == 2", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = 1 == 2", value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = 1.3 == 1.3", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = 1.3 == 1.3", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = \"hello\" == \"hello\"", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = \"hello\" == \"hello\"", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = \"hello\" == \"bye\"", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = \"hello\" == \"bye\"", value_t::make_bool(false));
 }
 
 
@@ -378,100 +374,100 @@ QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
 
 
 QUARK_UNIT_TEST("execute_expression()", "<", "", "") {
-	ut_verify_result_global(QUARK_POS, "let bool result = 1 < 2", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = 1 < 2", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("execute_expression()", "<", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = 5 < 2", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = 5 < 2", value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("execute_expression()", "<", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = 0.3 < 0.4", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = 0.3 < 0.4", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("execute_expression()", "<", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = 1.5 < 0.4", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = 1.5 < 0.4", value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("execute_expression()", "<", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = \"adwark\" < \"boat\"", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = \"adwark\" < \"boat\"", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("execute_expression()", "<", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = \"boat\" < \"adwark\"", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = \"boat\" < \"adwark\"", value_t::make_bool(false));
 }
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR &&
 
 QUARK_UNIT_TEST("execute_expression()", "&&", "", "") {
-	ut_verify_result_global(QUARK_POS, "let bool result = false && false", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = false && false", value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("execute_expression()", "&&", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = false && true", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = false && true", value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("execute_expression()", "&&", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = true && false", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = true && false", value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("execute_expression()", "&&", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = true && true", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = true && true", value_t::make_bool(true));
 }
 
 QUARK_UNIT_TEST("execute_expression()", "&&", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = false && false && false", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = false && false && false", value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("execute_expression()", "&&", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = false && false && true", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = false && false && true", value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("execute_expression()", "&&", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = false && true && false", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = false && true && false", value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("execute_expression()", "&&", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = false && true && true", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = false && true && true", value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("execute_expression()", "&&", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = true && false && false", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = true && false && false", value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("execute_expression()", "&&", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = true && true && false", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = true && true && false", value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("execute_expression()", "&&", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = true && true && true", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = true && true && true", value_t::make_bool(true));
 }
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR ||
 
 QUARK_UNIT_TEST("execute_expression()", "||", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = false || false", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = false || false", value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("execute_expression()", "||", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = false || true", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = false || true", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("execute_expression()", "||", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = true || false", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = true || false", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("execute_expression()", "||", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = true || true", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = true || true", value_t::make_bool(true));
 }
 
 
 QUARK_UNIT_TEST("execute_expression()", "||", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = false || false || false", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = false || false || false", value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("execute_expression()", "||", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = false || false || true", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = false || false || true", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("execute_expression()", "||", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = false || true || false", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = false || true || false", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("execute_expression()", "||", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = false || true || true", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = false || true || true", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("execute_expression()", "||", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = true || false || false", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = true || false || false", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("execute_expression()", "||", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = true || false || true", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = true || false || true", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("execute_expression()", "||", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = true || true || false", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = true || true || false", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("execute_expression()", "||", "", ""){
-	ut_verify_result_global(QUARK_POS, "let bool result = true || true || true", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = true || true || true", value_t::make_bool(true));
 }
 
 
@@ -525,7 +521,8 @@ QUARK_UNIT_TEST("run_main", "Forgot let or mutable", "", "Exception"){
 }
 
 QUARK_UNIT_TEST("run_main", "Can make and read global int", "", ""){
-	test__run_main(
+	ut_verify_mainfunc_return(
+		QUARK_POS,
 		R"(
 
 			let int test = 123
@@ -540,7 +537,8 @@ QUARK_UNIT_TEST("run_main", "Can make and read global int", "", ""){
 }
 
 QUARK_UNIT_TEST("run_main()", "minimal program 2", "", ""){
-	test__run_main(
+	ut_verify_mainfunc_return(
+		QUARK_POS,
 		R"(
 			func string main(string args){
 				return "123" + "456"
@@ -552,28 +550,28 @@ QUARK_UNIT_TEST("run_main()", "minimal program 2", "", ""){
 }
 
 QUARK_UNIT_TEST("run_main()", "", "", ""){
-	test__run_main("func bool main(){ return 4 < 5 }", {}, value_t::make_bool(true));
+	ut_verify_mainfunc_return(QUARK_POS, "func bool main(){ return 4 < 5 }", {}, value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("run_main()", "", "", ""){
-	test__run_main("func bool main(){ return 5 < 4 }", {}, value_t::make_bool(false));
+	ut_verify_mainfunc_return(QUARK_POS, "func bool main(){ return 5 < 4 }", {}, value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("run_main()", "", "", ""){
-	test__run_main("func bool main(){ return 4 <= 4 }", {}, value_t::make_bool(true));
+	ut_verify_mainfunc_return(QUARK_POS, "func bool main(){ return 4 <= 4 }", {}, value_t::make_bool(true));
 }
 
 QUARK_UNIT_TEST("call_function()", "minimal program", "", ""){
-	auto ast = compile_to_bytecode(
+	ut_verify_mainfunc_return(
+		QUARK_POS,
 		R"(
+
 			func int main(string args){
 				return 3 + 4
 			}
+
 		)",
-		""
+		{ value_t::make_string("a") },
+		value_t::make_int(7)
 	);
-	interpreter_t vm(ast);
-	const auto f = find_global_symbol(vm, "main");
-	const auto result = call_function(vm, f, std::vector<value_t>{ value_t::make_string("program_name 1 2 3") });
-	ut_verify_values(QUARK_POS, result, value_t::make_int(7));
 }
 
 QUARK_UNIT_TEST("call_function()", "minimal program 2", "", ""){
@@ -596,19 +594,19 @@ QUARK_UNIT_TEST("call_function()", "minimal program 2", "", ""){
 
 
 QUARK_UNIT_TEST("", "bool()", "", ""){
-	ut_verify_result_global(QUARK_POS, "let result = bool(false)", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let result = bool(false)", value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("", "bool()", "", ""){
-	ut_verify_result_global(QUARK_POS, "let result = bool(true)", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let result = bool(true)", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("", "int()", "", ""){
-	ut_verify_result_global(QUARK_POS, "let result = int(123)", value_t::make_int(123));
+	ut_verify_global_result(QUARK_POS, "let result = int(123)", value_t::make_int(123));
 }
 QUARK_UNIT_TEST("", "double()", "", ""){
-	ut_verify_result_global(QUARK_POS, "let result = double(0.0)", value_t::make_double(0.0));
+	ut_verify_global_result(QUARK_POS, "let result = double(0.0)", value_t::make_double(0.0));
 }
 QUARK_UNIT_TEST("", "double()", "", ""){
-	ut_verify_result_global(QUARK_POS, "let result = double(123.456)", value_t::make_double(123.456));
+	ut_verify_global_result(QUARK_POS, "let result = double(123.456)", value_t::make_double(123.456));
 }
 
 QUARK_UNIT_TEST("", "string()", "", ""){
@@ -620,17 +618,17 @@ QUARK_UNIT_TEST("", "string()", "", ""){
 }
 
 QUARK_UNIT_TEST("", "string()", "", ""){
-	ut_verify_result_global(QUARK_POS, "let result = string(\"ABCD\")", value_t::make_string("ABCD"));
+	ut_verify_global_result(QUARK_POS, "let result = string(\"ABCD\")", value_t::make_string("ABCD"));
 }
 
 QUARK_UNIT_TEST("", "json_value()", "", ""){
-	ut_verify_result_global(QUARK_POS, "let result = json_value(123)", value_t::make_json_value(json_t(123.0)));
+	ut_verify_global_result(QUARK_POS, "let result = json_value(123)", value_t::make_json_value(json_t(123.0)));
 }
 QUARK_UNIT_TEST("", "json_value()", "", ""){
-	ut_verify_result_global(QUARK_POS, "let result = json_value(\"hello\")", value_t::make_json_value(json_t("hello")));
+	ut_verify_global_result(QUARK_POS, "let result = json_value(\"hello\")", value_t::make_json_value(json_t("hello")));
 }
 QUARK_UNIT_TEST("", "json_value()", "", ""){
-	ut_verify_result_global(QUARK_POS, "let result = json_value([1,2,3])", value_t::make_json_value(json_t::make_array({1,2,3})));
+	ut_verify_global_result(QUARK_POS, "let result = json_value([1,2,3])", value_t::make_json_value(json_t::make_array({1,2,3})));
 }
 QUARK_UNIT_TEST("", "pixel_t()", "", ""){
 	const auto pixel_t__def = std::vector<member_t>{
@@ -639,7 +637,7 @@ QUARK_UNIT_TEST("", "pixel_t()", "", ""){
 		member_t(typeid_t::make_int(), "blue")
 	};
 
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 
 		"struct pixel_t { int red int green int blue } result = pixel_t(1,2,3)",
@@ -656,7 +654,7 @@ QUARK_UNIT_TEST("", "pixel_t()", "", ""){
 /*
 unsupported syntax
 QUARK_UNIT_TEST("", "[int]()", "", ""){
-	ut_verify_result_global(QUARK_POS,
+	ut_verify_global_result(QUARK_POS,
 		"result = [int](1,2,3);",
 		value_t::make_vector_value(typeid_t::make_int(), {
 			value_t::make_int(1),
@@ -668,7 +666,7 @@ QUARK_UNIT_TEST("", "[int]()", "", ""){
 
 unsupported syntax
 QUARK_UNIT_TEST("", "[[int]]()", "", ""){
-	ut_verify_result_global(QUARK_POS,
+	ut_verify_global_result(QUARK_POS,
 		"result = [[int]]([1,2,3], [4,5,6]);",
 		value_t::make_vector_value(
 			typeid_t::make_vector(typeid_t::make_int()),
@@ -699,7 +697,7 @@ QUARK_UNIT_TEST("", "[pixel_t]()", "", ""){
 	);
 	const auto pixel_t_typeid = typeid_t::make_struct(pixel_t__def);
 
-	ut_verify_result_global(QUARK_POS,
+	ut_verify_global_result(QUARK_POS,
 		"struct pixel_t { int red; int green; int blue; } result = [pixel_t](pixel_t(1,2,3),pixel_t(4,5,6));",
 		value_t::make_vector_value(
 			pixel_t_typeid,
@@ -714,7 +712,7 @@ QUARK_UNIT_TEST("", "[pixel_t]()", "", ""){
 
 /*
 QUARK_UNIT_TEST("", "[[string: int]]()", "", ""){
-	ut_verify_result_global(QUARK_POS,
+	ut_verify_global_result(QUARK_POS,
 		R"(result = [{string: int}]({"a":1,"b":2,"c":3}, {"d":4,"e":5,"f":6});)",
 		value_t::make_vector_value(
 			typeid_t::make_vector(typeid_t::make_int()),
@@ -1056,7 +1054,7 @@ func int f(){
 
 
 QUARK_UNIT_TEST("run_init()", "", "", ""){
-	ut_verify_result_global(QUARK_POS,
+	ut_verify_global_result(QUARK_POS,
 		R"(
 			let string result = to_string(145)
 		)",
@@ -1064,7 +1062,7 @@ QUARK_UNIT_TEST("run_init()", "", "", ""){
 	);
 }
 QUARK_UNIT_TEST("run_init()", "", "", ""){
-	ut_verify_result_global(QUARK_POS,
+	ut_verify_global_result(QUARK_POS,
 		R"(
 			let string result = to_string(3.1)
 		)",
@@ -1073,7 +1071,7 @@ QUARK_UNIT_TEST("run_init()", "", "", ""){
 }
 
 QUARK_UNIT_TEST("run_init()", "", "", ""){
-	ut_verify_result_global(QUARK_POS,
+	ut_verify_global_result(QUARK_POS,
 		R"(
 			let string result = to_string(3.0)
 		)",
@@ -1086,16 +1084,14 @@ QUARK_UNIT_TEST("run_init()", "", "", ""){
 
 
 QUARK_UNIT_TEST("", "typeof()", "", ""){
-	ut_verify(
+	ut_verify_global_result(
 		QUARK_POS,
-		run_program(
-			R"(
+		R"(
 
-				let result = typeof(145)
+			let result = typeof(145)
 
-			)", {}
-		),
-		make_result(value_t::make_typeid_value(typeid_t::make_int()))
+		)",
+		value_t::make_typeid_value(typeid_t::make_int())
 	);
 }
 
@@ -1105,7 +1101,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 		let result = to_string(typeof(145))
 
 	)";
-	ut_verify_result_global(QUARK_POS, input, value_t::make_string("int"));
+	ut_verify_global_result(QUARK_POS, input, value_t::make_string("int"));
 }
 
 QUARK_UNIT_TEST("", "typeof()", "", ""){
@@ -1114,11 +1110,11 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 		let result = typeof("hello")
 
 	)";
-	ut_verify_result_global(QUARK_POS, input, value_t::make_typeid_value(typeid_t::make_string()));
+	ut_verify_global_result(QUARK_POS, input, value_t::make_typeid_value(typeid_t::make_string()));
 }
 
 QUARK_UNIT_TEST("", "typeof()", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -1130,7 +1126,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 }
 
 QUARK_UNIT_TEST("", "typeof()", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -1141,7 +1137,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 	);
 }
 QUARK_UNIT_TEST("", "typeof()", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -1154,7 +1150,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 
 //??? add support for typeof(int)
 OFF_QUARK_UNIT_TEST("", "typeof()", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -1713,7 +1709,8 @@ OFF_QUARK_UNIT_TEST("vector", "[]-constructor", "32 elements initialization", ""
 
 
 QUARK_UNIT_TEST("vector-string", "literal expression", "", ""){
-	ut_verify_result_as_json(
+	ut_verify_global_result_as_json(
+		QUARK_POS,
 		R"(
 
 			let [string] result = ["alpha", "beta"]
@@ -1723,11 +1720,10 @@ QUARK_UNIT_TEST("vector-string", "literal expression", "", ""){
 	);
 }
 QUARK_UNIT_TEST("vector-string", "literal expression, computed element", "", ""){
-	ut_verify_result_as_json(
-
+	ut_verify_global_result_as_json(
+		QUARK_POS,
 		R"(		func string get_beta(){ return "beta" } 	let [string] result = ["alpha", get_beta()]		)",
 		R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)"
-
 	);
 }
 
@@ -1816,34 +1812,34 @@ QUARK_UNIT_TEST("vector-string", "push_back()", "", ""){
 
 
 QUARK_UNIT_TEST("vector-bool", "literal expression", "", ""){
-	ut_verify_result_as_json(R"(		let [bool] result = [true, false, true]		)", R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let [bool] result = [true, false, true]		)", R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
 }
 QUARK_UNIT_TEST("vector-bool", "=", "copy", ""){
-	ut_verify_result_as_json(R"(		let a = [true, false, true] result = a		)", R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let a = [true, false, true] result = a		)", R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
 }
 QUARK_UNIT_TEST("vector-bool", "==", "same values", ""){
-	ut_verify_result_as_json(R"(		let result = [true, false] == [true, false]		)", R"(		[ "^bool", true]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [true, false] == [true, false]		)", R"(		[ "^bool", true]		)");
 }
 QUARK_UNIT_TEST("vector-bool", "==", "different values", ""){
-	ut_verify_result_as_json(R"(		let result = [false, false] == [true, false]		)", R"(		[ "^bool", false]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [false, false] == [true, false]		)", R"(		[ "^bool", false]		)");
 }
 QUARK_UNIT_TEST("vector-bool", "<", "", ""){
-	ut_verify_result_as_json(R"(		let result = [true, true] < [true, true]		)", R"(		[ "^bool", false]	)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [true, true] < [true, true]		)", R"(		[ "^bool", false]	)");
 }
 QUARK_UNIT_TEST("vector-bool", "<", "different values", ""){
-	ut_verify_result_as_json(R"(		let result = [true, false] < [true, true]		)", R"(		[ "^bool", true]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [true, false] < [true, true]		)", R"(		[ "^bool", true]		)");
 }
 QUARK_UNIT_TEST("vector-bool", "size()", "empty", "0"){
-	ut_verify_result_as_json(R"(		let [bool] a = [] result = size(a)		)", R"(		[ "^int", 0]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let [bool] a = [] result = size(a)		)", R"(		[ "^int", 0]		)");
 }
 QUARK_UNIT_TEST("vector-bool", "size()", "2", ""){
-	ut_verify_result_as_json(R"(		let [bool] a = [true, false, true] result = size(a)		)", R"(		[ "^int", 3]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let [bool] a = [true, false, true] result = size(a)		)", R"(		[ "^int", 3]		)");
 }
 QUARK_UNIT_TEST("vector-bool", "+", "non-empty vectors", ""){
-	ut_verify_result_as_json(R"(		let [bool] result = [true, false] + [true, true]		)", R"(		[[ "vector", "^bool" ], [true, false, true, true]]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let [bool] result = [true, false] + [true, true]		)", R"(		[[ "vector", "^bool" ], [true, false, true, true]]		)");
 }
 QUARK_UNIT_TEST("vector-bool", "push_back()", "", ""){
-	ut_verify_result_as_json(R"(		let [bool] result = push_back([true, false], true)		)", R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let [bool] result = push_back([true, false], true)		)", R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
 }
 
 
@@ -1851,34 +1847,34 @@ QUARK_UNIT_TEST("vector-bool", "push_back()", "", ""){
 
 
 QUARK_UNIT_TEST("vector-int", "literal expression", "", ""){
-	ut_verify_result_as_json(R"(		let [int] result = [10, 20, 30]		)", R"(		[[ "vector", "^int" ], [10, 20, 30]]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let [int] result = [10, 20, 30]		)", R"(		[[ "vector", "^int" ], [10, 20, 30]]		)");
 }
 QUARK_UNIT_TEST("vector-int", "=", "copy", ""){
-	ut_verify_result_as_json(R"(		let a = [10, 20, 30] result = a;		)", R"(		[[ "vector", "^int" ], [10, 20, 30]]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let a = [10, 20, 30] result = a;		)", R"(		[[ "vector", "^int" ], [10, 20, 30]]		)");
 }
 QUARK_UNIT_TEST("vector-int", "==", "same values", ""){
-	ut_verify_result_as_json(R"(		let result = [1, 2] == [1, 2]		)", R"(		[ "^bool", true]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [1, 2] == [1, 2]		)", R"(		[ "^bool", true]		)");
 }
 QUARK_UNIT_TEST("vector-int", "==", "different values", ""){
-	ut_verify_result_as_json(R"(		let result = [1, 3] == [1, 2]		)", R"(		[ "^bool", false]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [1, 3] == [1, 2]		)", R"(		[ "^bool", false]		)");
 }
 QUARK_UNIT_TEST("vector-int", "<", "", ""){
-	ut_verify_result_as_json(R"(		let result = [1, 2] < [1, 2]		)", R"(		[ "^bool", false]	)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [1, 2] < [1, 2]		)", R"(		[ "^bool", false]	)");
 }
 QUARK_UNIT_TEST("vector-int", "<", "different values", ""){
-	ut_verify_result_as_json(R"(		let result = [1, 2] < [1, 3]		)", R"(		[ "^bool", true]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [1, 2] < [1, 3]		)", R"(		[ "^bool", true]		)");
 }
 QUARK_UNIT_TEST("vector-int", "size()", "empty", "0"){
-	ut_verify_result_as_json(R"(		let [int] a = [] result = size(a)		)", R"(		[ "^int", 0]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let [int] a = [] result = size(a)		)", R"(		[ "^int", 0]		)");
 }
 QUARK_UNIT_TEST("vector-int", "size()", "2", ""){
-	ut_verify_result_as_json(R"(		let [int] a = [1, 2, 3] result = size(a)		)", R"(		[ "^int", 3]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let [int] a = [1, 2, 3] result = size(a)		)", R"(		[ "^int", 3]		)");
 }
 QUARK_UNIT_TEST("vector-int", "+", "non-empty vectors", ""){
-	ut_verify_result_as_json(R"(		let [int] result = [1, 2] + [3, 4]		)", R"(		[[ "vector", "^int" ], [1, 2, 3, 4]]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let [int] result = [1, 2] + [3, 4]		)", R"(		[[ "vector", "^int" ], [1, 2, 3, 4]]		)");
 }
 QUARK_UNIT_TEST("vector-int", "push_back()", "", ""){
-	ut_verify_result_as_json(R"(		let [int] result = push_back([1, 2], 3)		)", R"(		[[ "vector", "^int" ], [1, 2, 3]]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let [int] result = push_back([1, 2], 3)		)", R"(		[[ "vector", "^int" ], [1, 2, 3]]		)");
 }
 
 
@@ -1886,34 +1882,34 @@ QUARK_UNIT_TEST("vector-int", "push_back()", "", ""){
 
 
 QUARK_UNIT_TEST("vector-double", "literal expression", "", ""){
-	ut_verify_result_as_json(R"(		let [double] result = [10.5, 20.5, 30.5]		)", R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let [double] result = [10.5, 20.5, 30.5]		)", R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)");
 }
 QUARK_UNIT_TEST("vector-double", "=", "copy", ""){
-	ut_verify_result_as_json(R"(		let a = [10.5, 20.5, 30.5] result = a		)", R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let a = [10.5, 20.5, 30.5] result = a		)", R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)");
 }
 QUARK_UNIT_TEST("vector-double", "==", "same values", ""){
-	ut_verify_result_as_json(R"(		let result = [1.5, 2.5] == [1.5, 2.5]		)", R"(		[ "^bool", true]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [1.5, 2.5] == [1.5, 2.5]		)", R"(		[ "^bool", true]		)");
 }
 QUARK_UNIT_TEST("vector-double", "==", "different values", ""){
-	ut_verify_result_as_json(R"(		let result = [1.5, 3.5] == [1.5, 2.5]		)", R"(		[ "^bool", false]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [1.5, 3.5] == [1.5, 2.5]		)", R"(		[ "^bool", false]		)");
 }
 QUARK_UNIT_TEST("vector-double", "<", "", ""){
-	ut_verify_result_as_json(R"(		let result = [1.5, 2.5] < [1.5, 2.5]		)", R"(		[ "^bool", false]	)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [1.5, 2.5] < [1.5, 2.5]		)", R"(		[ "^bool", false]	)");
 }
 QUARK_UNIT_TEST("vector-double", "<", "different values", ""){
-	ut_verify_result_as_json(R"(		let result = [1.5, 2.5] < [1.5, 3.5]		)", R"(		[ "^bool", true]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [1.5, 2.5] < [1.5, 3.5]		)", R"(		[ "^bool", true]		)");
 }
 QUARK_UNIT_TEST("vector-double", "size()", "empty", "0"){
-	ut_verify_result_as_json(R"(		let [double] a = [] result = size(a)		)", R"(		[ "^int", 0]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let [double] a = [] result = size(a)		)", R"(		[ "^int", 0]		)");
 }
 QUARK_UNIT_TEST("vector-double", "size()", "2", ""){
-	ut_verify_result_as_json(R"(		let [double] a = [1.5, 2.5, 3.5] result = size(a)		)", R"(		[ "^int", 3]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let [double] a = [1.5, 2.5, 3.5] result = size(a)		)", R"(		[ "^int", 3]		)");
 }
 QUARK_UNIT_TEST("vector-double", "+", "non-empty vectors", ""){
-	ut_verify_result_as_json(R"(		let [double] result = [1.5, 2.5] + [3.5, 4.5]		)", R"(		[[ "vector", "^double" ], [1.5, 2.5, 3.5, 4.5]]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let [double] result = [1.5, 2.5] + [3.5, 4.5]		)", R"(		[[ "vector", "^double" ], [1.5, 2.5, 3.5, 4.5]]		)");
 }
 QUARK_UNIT_TEST("vector-double", "push_back()", "", ""){
-	ut_verify_result_as_json(R"(		let [double] result = push_back([1.5, 2.5], 3.5)		)", R"(		[[ "vector", "^double" ], [1.5, 2.5, 3.5]]		)");
+	ut_verify_global_result_as_json(QUARK_POS, R"(		let [double] result = push_back([1.5, 2.5], 3.5)		)", R"(		[[ "vector", "^double" ], [1.5, 2.5, 3.5]]		)");
 }
 
 
@@ -2579,7 +2575,7 @@ QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
 
 
 QUARK_UNIT_TEST("json_value-string", "Infer json_value::string", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2591,7 +2587,7 @@ QUARK_UNIT_TEST("json_value-string", "Infer json_value::string", "", ""){
 }
 
 QUARK_UNIT_TEST("json_value-string", "string-size()", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 			let json_value a = "hello"
@@ -2602,7 +2598,7 @@ QUARK_UNIT_TEST("json_value-string", "string-size()", "", ""){
 }
 
 QUARK_UNIT_TEST("json_value-number", "construct number", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2614,7 +2610,7 @@ QUARK_UNIT_TEST("json_value-number", "construct number", "", ""){
 }
 
 QUARK_UNIT_TEST("json_value-bool", "construct true", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2625,7 +2621,7 @@ QUARK_UNIT_TEST("json_value-bool", "construct true", "", ""){
 	);
 }
 QUARK_UNIT_TEST("json_value-bool", "construct false", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2637,7 +2633,7 @@ QUARK_UNIT_TEST("json_value-bool", "construct false", "", ""){
 }
 
 QUARK_UNIT_TEST("json_value-array", "construct array", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2649,7 +2645,7 @@ QUARK_UNIT_TEST("json_value-array", "construct array", "", ""){
 }
 
 QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2661,7 +2657,7 @@ QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
 	);
 }
 QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2674,7 +2670,7 @@ QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
 }
 
 QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2687,7 +2683,7 @@ QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
 }
 
 QUARK_UNIT_TEST("json_value-array", "size()", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2779,7 +2775,7 @@ QUARK_UNIT_TEST("json_value-object", "size()", "", ""){
 
 
 QUARK_UNIT_TEST("json_value-null", "construct null", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2794,7 +2790,7 @@ QUARK_UNIT_TEST("json_value-null", "construct null", "", ""){
 //////////////////////////////////////////		TEST TYPE INFERING
 
 QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2813,7 +2809,7 @@ QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
 
 
 QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2824,7 +2820,7 @@ QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
 	);
 }
 QUARK_UNIT_TEST("", "get_json_type()", "[]", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2835,7 +2831,7 @@ QUARK_UNIT_TEST("", "get_json_type()", "[]", ""){
 	);
 }
 QUARK_UNIT_TEST("", "get_json_type()", "string", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2846,7 +2842,7 @@ QUARK_UNIT_TEST("", "get_json_type()", "string", ""){
 	);
 }
 QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2857,7 +2853,7 @@ QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
 	);
 }
 QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2868,7 +2864,7 @@ QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
 	);
 }
 QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2880,7 +2876,7 @@ QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
 }
 
 QUARK_UNIT_TEST("", "get_json_type()", "null", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2932,7 +2928,7 @@ QUARK_UNIT_TEST("", "get_json_type()", "DOCUMENTATION SNIPPET", ""){
 
 
 QUARK_UNIT_TEST("", "", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2947,7 +2943,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 QUARK_UNIT_TEST("", "", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -2979,7 +2975,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 QUARK_UNIT_TEST("", "script_to_jsonvalue()", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3041,7 +3037,7 @@ QUARK_UNIT_TEST("", "jsonvalue_to_script()", "", ""){
 
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "bool", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3052,7 +3048,7 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "bool", ""){
 	);
 }
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "bool", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3064,7 +3060,7 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "bool", ""){
 }
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "int", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3075,7 +3071,7 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "int", ""){
 	);
 }
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "int", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3087,7 +3083,7 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "int", ""){
 }
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "double", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3100,7 +3096,7 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "double", ""){
 
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "string", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3112,7 +3108,7 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "string", ""){
 }
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "typeid", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3124,7 +3120,7 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "typeid", ""){
 }
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "[]", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3136,7 +3132,7 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "[]", ""){
 }
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "{}", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3150,7 +3146,7 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "{}", ""){
 }
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "pixel_t", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 	
@@ -3165,7 +3161,7 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "pixel_t", ""){
 }
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "[pixel_t]", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3184,7 +3180,7 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "[pixel_t]", ""){
 
 
 QUARK_UNIT_TEST("", "jsonvalue_to_value()", "bool", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3195,7 +3191,7 @@ QUARK_UNIT_TEST("", "jsonvalue_to_value()", "bool", ""){
 	);
 }
 QUARK_UNIT_TEST("", "jsonvalue_to_value()", "bool", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3207,7 +3203,7 @@ QUARK_UNIT_TEST("", "jsonvalue_to_value()", "bool", ""){
 }
 
 QUARK_UNIT_TEST("", "jsonvalue_to_value()", "int", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3219,7 +3215,7 @@ QUARK_UNIT_TEST("", "jsonvalue_to_value()", "int", ""){
 }
 
 QUARK_UNIT_TEST("", "jsonvalue_to_value()", "double", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3231,7 +3227,7 @@ QUARK_UNIT_TEST("", "jsonvalue_to_value()", "double", ""){
 }
 
 QUARK_UNIT_TEST("", "jsonvalue_to_value()", "string", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3243,7 +3239,7 @@ QUARK_UNIT_TEST("", "jsonvalue_to_value()", "string", ""){
 }
 
 QUARK_UNIT_TEST("", "jsonvalue_to_value()", "string", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3279,7 +3275,7 @@ QUARK_UNIT_TEST("", "jsonvalue_to_value()", "point_t", ""){
 		{ value_t::make_double(1), value_t::make_double(3) }
 	);
 
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3353,7 +3349,7 @@ QUARK_UNIT_TEST("", "impure", "call impure->impure", "Compiles OK"){
 
 
 QUARK_UNIT_TEST("", "cmath_pi", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3766,7 +3762,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 QUARK_UNIT_TEST("", "get_directory_entries()", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3804,7 +3800,7 @@ QUARK_UNIT_TEST("", "get_fsentries_deep()", "", ""){
 
 
 QUARK_UNIT_TEST("", "get_fsentry_info()", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3824,7 +3820,7 @@ QUARK_UNIT_TEST("", "get_fsentry_info()", "", ""){
 
 
 QUARK_UNIT_TEST("", "get_fs_environment()", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3846,7 +3842,7 @@ QUARK_UNIT_TEST("", "get_fs_environment()", "", ""){
 
 
 QUARK_UNIT_TEST("", "does_fsentry_exist()", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -3863,7 +3859,7 @@ QUARK_UNIT_TEST("", "does_fsentry_exist()", "", ""){
 }
 
 QUARK_UNIT_TEST("", "does_fsentry_exist()", "", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -4308,7 +4304,7 @@ QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
 	);
 }
 QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -4319,7 +4315,7 @@ QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
 	);
 }
 QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -4330,7 +4326,7 @@ QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
 	);
 }
 QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -4355,7 +4351,7 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup the unlookupable", "exception"){
 
 
 QUARK_UNIT_TEST("vector-int", "size()", "3", ""){
-	ut_verify_result_global(
+	ut_verify_global_result(
 		QUARK_POS,
 		R"(
 
@@ -4449,12 +4445,10 @@ QUARK_UNIT_TEST("software-system", "parse software-system", "", ""){
 				"Android app"
 			]
 		}
-		result = 123
 
 	)";
 
-	const auto result = test__run_return_result(test_ss, {});
-	ut_verify_values(QUARK_POS, result, value_t::make_int(123));
+	run_closed(test_ss);
 }
 
 QUARK_UNIT_TEST("software-system", "run one process", "", ""){
