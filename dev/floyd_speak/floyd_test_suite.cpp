@@ -111,7 +111,7 @@ QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
 value_t test__run_return_result(const std::string& program, const std::vector<value_t>& args){
 	QUARK_ASSERT(args.empty());
 
-	const auto r = run_main(program, args, "");
+	const auto r = run_main(program, {}, "");
 	print_vm_printlog(*r.first);
 	const auto result = get_global(*r.first, "result");
 	return result;
@@ -2601,60 +2601,101 @@ QUARK_UNIT_TEST("json_value-string", "string-size()", "", ""){
 }
 
 QUARK_UNIT_TEST("json_value-number", "construct number", "", ""){
-	const auto result = test__run_return_result(R"(
-		let json_value result = 13
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_json_value(13));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let json_value result = 13
+
+		)",
+		value_t::make_json_value(13)
+	);
 }
 
 QUARK_UNIT_TEST("json_value-bool", "construct true", "", ""){
-	const auto result = test__run_return_result(R"(
-		let json_value result = true
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_json_value(true));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let json_value result = true
+
+		)",
+		value_t::make_json_value(true)
+	);
 }
 QUARK_UNIT_TEST("json_value-bool", "construct false", "", ""){
-	const auto result = test__run_return_result(R"(
-		let json_value result = false
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_json_value(false));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let json_value result = false
+
+		)",
+		value_t::make_json_value(false)
+	);
 }
 
 QUARK_UNIT_TEST("json_value-array", "construct array", "", ""){
-	const auto result = test__run_return_result(R"(
-		let json_value result = ["hello", "bye"]
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t::make_array(std::vector<json_t>{"hello", "bye"})));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let json_value result = ["hello", "bye"]
+
+		)",
+		value_t::make_json_value(json_t::make_array(std::vector<json_t>{ "hello", "bye" }))
+	);
 }
 
 QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
-	const auto result = test__run_return_result(R"(
-		let json_value a = ["hello", "bye"]
-		let result = string(a[0]) + string(a[1])
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_string("hellobye"));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let json_value a = ["hello", "bye"]
+			let result = string(a[0]) + string(a[1])
+
+		)",
+		value_t::make_string("hellobye")
+	);
 }
 QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
-	const auto result = test__run_return_result(R"(
-		let json_value a = ["hello", "bye"]
-		let result = a[0]
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_json_value("hello"));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let json_value a = ["hello", "bye"]
+			let result = a[0]
+
+		)",
+		value_t::make_json_value("hello")
+	);
 }
+
 QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
-	const auto result = test__run_return_result(R"(
-		let json_value a = ["hello", "bye"]
-		let result = a[1]
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_json_value("bye"));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let json_value a = ["hello", "bye"]
+			let result = a[1]
+
+		)",
+		value_t::make_json_value("bye")
+	);
 }
 
 QUARK_UNIT_TEST("json_value-array", "size()", "", ""){
-	const auto result = test__run_return_result(R"(
-		let json_value a = ["a", "b", "c", "d"]
-		let result = size(a)
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_int(4));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let json_value a = ["a", "b", "c", "d"]
+			let result = size(a)
+
+		)",
+		value_t::make_int(4)
+	);
 }
 
 //	NOTICE: Floyd dict is stricter than JSON -- cannot have different types of values!
@@ -2737,20 +2778,30 @@ QUARK_UNIT_TEST("json_value-object", "size()", "", ""){
 
 
 QUARK_UNIT_TEST("json_value-null", "construct null", "", ""){
-	const auto result = test__run_return_result(R"(
-		let json_value result = null
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t()));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let json_value result = null
+
+		)",
+		value_t::make_json_value(json_t())
+	);
 }
 
 
 //////////////////////////////////////////		TEST TYPE INFERING
 
 QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
-	const auto result = test__run_return_result(R"(
-		let json_value result = {}
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t::make_object()));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let json_value result = {}
+
+		)",
+		value_t::make_json_value(json_t::make_object())
+	);
 }
 
 
@@ -2761,47 +2812,82 @@ QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
 
 
 QUARK_UNIT_TEST("", "get_json_type()", "{}", ""){
-	const auto result = test__run_return_result(R"(
-		let result = get_json_type(json_value({}))
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_int(1));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let result = get_json_type(json_value({}))
+
+		)",
+		value_t::make_int(1)
+	);
 }
 QUARK_UNIT_TEST("", "get_json_type()", "[]", ""){
-	const auto result = test__run_return_result(R"(
-		let result = get_json_type(json_value([]))
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_int(2));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let result = get_json_type(json_value([]))
+
+		)",
+		value_t::make_int(2)
+	);
 }
 QUARK_UNIT_TEST("", "get_json_type()", "string", ""){
-	const auto result = test__run_return_result(R"(
-		let result = get_json_type(json_value("hello"))
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_int(3));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let result = get_json_type(json_value("hello"))
+
+		)",
+		value_t::make_int(3)
+	);
 }
 QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
-	const auto result = test__run_return_result(R"(
-		let result = get_json_type(json_value(13))
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_int(4));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let result = get_json_type(json_value(13))
+
+		)",
+		value_t::make_int(4)
+	);
 }
 QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
-	const auto result = test__run_return_result(R"(
-		let result = get_json_type(json_value(true))
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_int(5));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let result = get_json_type(json_value(true))
+
+		)",
+		value_t::make_int(5)
+	);
 }
 QUARK_UNIT_TEST("", "get_json_type()", "number", ""){
-	const auto result = test__run_return_result(R"(
-		let result = get_json_type(json_value(false))
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_int(6));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let result = get_json_type(json_value(false))
+
+		)",
+		value_t::make_int(6)
+	);
 }
 
 QUARK_UNIT_TEST("", "get_json_type()", "null", ""){
-	const auto result = test__run_return_result(R"(
-		let result = get_json_type(json_value(null))
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_int(7));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let result = get_json_type(json_value(null))
+
+		)",
+		value_t::make_int(7)
+	);
 }
 
 QUARK_UNIT_TEST("", "get_json_type()", "DOCUMENTATION SNIPPET", ""){
@@ -2845,26 +2931,32 @@ QUARK_UNIT_TEST("", "get_json_type()", "DOCUMENTATION SNIPPET", ""){
 
 
 QUARK_UNIT_TEST("", "", "", ""){
-	const auto result = test__run_return_result(R"(
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
 
-		struct pixel_t { double x double y }
-		let a = pixel_t(100.0, 200.0)
-		let result = a.x
+			struct pixel_t { double x double y }
+			let a = pixel_t(100.0, 200.0)
+			let result = a.x
 
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_double(100.0));
+		)",
+		value_t::make_double(100.0)
+	);
 }
 
 
 QUARK_UNIT_TEST("", "", "", ""){
-	const auto result = test__run_return_result(R"(
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
 
-		struct pixel_t { double x double y }
-		let c = [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)]
-		let result = c[1].y
+			struct pixel_t { double x double y }
+			let c = [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)]
+			let result = c[1].y
 
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_double(201.0));
+		)",
+		value_t::make_double(201.0)
+	);
 }
 
 QUARK_UNIT_TEST("", "", "", ""){
@@ -2886,12 +2978,15 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 QUARK_UNIT_TEST("", "script_to_jsonvalue()", "", ""){
-	const auto result = test__run_return_result(R"(
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
 
-		let result = script_to_jsonvalue("\"genelec\"")
+			let result = script_to_jsonvalue("\"genelec\"")
 
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t("genelec")));
+		)",
+		value_t::make_json_value(json_t("genelec"))
+	);
 }
 
 QUARK_UNIT_TEST("", "script_to_jsonvalue()", "", ""){
@@ -2945,23 +3040,38 @@ QUARK_UNIT_TEST("", "jsonvalue_to_script()", "", ""){
 
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "bool", ""){
-	const auto result = test__run_return_result(R"(
-		let result = value_to_jsonvalue(true)
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t(true)));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let result = value_to_jsonvalue(true)
+
+		)",
+		value_t::make_json_value(json_t(true))
+	);
 }
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "bool", ""){
-	const auto result = test__run_return_result(R"(
-		let result = value_to_jsonvalue(false)
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t(false)));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let result = value_to_jsonvalue(false)
+
+		)",
+		value_t::make_json_value(json_t(false))
+	);
 }
 
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "int", ""){
-	const auto result = test__run_return_result(R"(
-		let result = value_to_jsonvalue(789)
-	)", {});
-	ut_verify_values(QUARK_POS, result, value_t::make_json_value(json_t(789.0)));
+	ut_verify_result_global(
+		QUARK_POS,
+		R"(
+
+			let result = value_to_jsonvalue(789)
+
+		)",
+		value_t::make_json_value(json_t(789.0))
+	);
 }
 QUARK_UNIT_TEST("", "value_to_jsonvalue()", "int", ""){
 	const auto result = test__run_return_result(R"(
