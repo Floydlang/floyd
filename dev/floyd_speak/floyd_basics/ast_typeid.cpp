@@ -8,53 +8,15 @@
 
 #include "ast_typeid.h"
 
-#include "floyd_parser/parser_primitives.h"
+#include "parser_primitives.h"
 #include "ast_json.h"
 #include "json_support.h"
 #include "utils.h"
 #include "ast_typeid_helpers.h"
 
-using std::string;
-using std::vector;
-
-
-
-
-
 
 
 namespace floyd {
-
-
-#if 0
-	struct typeid2_wrapper_t;
-
-	typedef std::variant<
-		void,
-		void,
-
-		void,
-
-		void,
-		void,
-		void,
-		void,
-		void,
-
-		void,
-
-		std::shared_ptr<const struct_definition_t>,
-		std::shared_ptr<const protocol_definition_t>,
-
-		//	vector, element-type
-		std::shared_ptr<typeid2_wrapper_t>
-	> typeid2_t;
-
-
-	struct typeid2_wrapper_t {
-		typeid2_t t;
-	};
-#endif
 
 
 
@@ -62,8 +24,6 @@ namespace floyd {
 
 
 bool typeid_t::check_invariant() const{
-//		QUARK_ASSERT(_DEBUG != "");
-
 	if(_base_type == floyd::base_type::k_internal_undefined){
 		QUARK_ASSERT(!_ext);
 	}
@@ -526,12 +486,12 @@ std::string typeid_to_compact_string_int(const typeid_t& t){
 		const auto args = t.get_function_args();
 		const auto pure = t.get_function_pure();
 
-		vector<string> args_str;
+		std::vector<std::string> args_str;
 		for(const auto& a: args){
 			args_str.push_back(typeid_to_compact_string(a));
 		}
 
-		return string() + "function " + typeid_to_compact_string(ret) + "(" + concat_strings_with_divider(args_str, ",") + ") " + (pure == epure::pure ? "pure" : "impure");
+		return std::string() + "function " + typeid_to_compact_string(ret) + "(" + concat_strings_with_divider(args_str, ",") + ") " + (pure == epure::pure ? "pure" : "impure");
 	}
 	else{
 		return base_type_to_string(basetype);
@@ -545,15 +505,15 @@ std::string typeid_to_compact_string(const typeid_t& t){
 
 struct typeid_str_test_t {
 	typeid_t _typeid;
-	string _ast_json;
-	string _compact_str;
+	std::string _ast_json;
+	std::string _compact_str;
 };
 
 
-const vector<typeid_str_test_t> make_typeid_str_tests(){
+const std::vector<typeid_str_test_t> make_typeid_str_tests(){
 	const auto s1 = typeid_t::make_struct2({});
 
-	const auto tests = vector<typeid_str_test_t>{
+	const auto tests = std::vector<typeid_str_test_t>{
 		{ typeid_t::make_undefined(), quote(keyword_t::k_internal_undefined), keyword_t::k_internal_undefined },
 		{ typeid_t::make_bool(), quote(keyword_t::k_bool), keyword_t::k_bool },
 		{ typeid_t::make_int(), quote(keyword_t::k_int), keyword_t::k_int },
@@ -572,7 +532,7 @@ const vector<typeid_str_test_t> make_typeid_str_tests(){
 		{ s1, R"(["struct", [[]]])", "struct {}" },
 		{
 			typeid_t::make_struct2(
-				vector<member_t>{
+				std::vector<member_t>{
 					member_t(typeid_t::make_int(), "a"),
 					member_t(typeid_t::make_double(), "b")
 				}
@@ -584,7 +544,7 @@ const vector<typeid_str_test_t> make_typeid_str_tests(){
 
 		//	Function
 		{
-			typeid_t::make_function(typeid_t::make_bool(), vector<typeid_t>{ typeid_t::make_int(), typeid_t::make_double() }, epure::pure),
+			typeid_t::make_function(typeid_t::make_bool(), std::vector<typeid_t>{ typeid_t::make_int(), typeid_t::make_double() }, epure::pure),
 			R"(["function", "bool", [ "int", "double"]])",
 			"function bool(int,double)"
 		},
@@ -672,7 +632,7 @@ bool struct_definition_t::check_types_resolved() const{
 
 
 std::string to_compact_string(const struct_definition_t& v){
-	auto s = string() + "struct {";
+	auto s = std::string() + "struct {";
 	for(const auto& e: v._members){
 		s = s + typeid_to_compact_string(e._type) + " " + e._name + ";";
 	}
@@ -727,7 +687,7 @@ bool protocol_definition_t::check_types_resolved() const{
 
 
 std::string to_compact_string(const protocol_definition_t& v){
-	auto s = string() + "protocol {";
+	auto s = std::string() + "protocol {";
 	for(const auto& e: v._members){
 		s = s + typeid_to_compact_string(e._type) + " " + e._name + ";";
 	}
@@ -782,7 +742,7 @@ bool member_t::operator==(const member_t& other) const{
 
 
 std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m){
-	vector<floyd::typeid_t> r;
+	std::vector<floyd::typeid_t> r;
 	for(const auto& a: m){
 		r.push_back(a._type);
 	}

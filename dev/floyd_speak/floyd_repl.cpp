@@ -22,7 +22,7 @@
 #include "ast_basics.h"
 #include "text_parser.h"
 #include "interpretator_benchmark.h"
-#include "FileHandling.h"
+#include "file_handling.h"
 
 #if true
 

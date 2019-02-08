@@ -9,6 +9,9 @@
 #ifndef hardware_caps_h
 #define hardware_caps_h
 
+/*
+	Getting information about the computer the program is running on at the moment.
+*/
 
 #include <cstdint>
 #include <cstddef>

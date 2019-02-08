@@ -9,6 +9,14 @@
 #ifndef json_support_hpp
 #define json_support_hpp
 
+/*
+	Simple but complete JSON library.
+	Immutable.
+	Not super efficient right now.
+
+	json_t is the only type you need.
+*/
+
 #include <string>
 #include <vector>
 #include <map>

@@ -97,7 +97,7 @@ Example instructions and their encoding:
 	B: Register: source reg
 	C: ---
 */
-k_store_global_obj,
+k_store_global_external_value,
 ```
 
 ```
@@ -115,8 +115,8 @@ k_get_struct_member,
 	B: Register: object
 	C: Register: value
 */
-k_pushback_vector_obj,
-k_pushback_vector_pod64,
+k_pushback_vector_w_external_elements,
+k_pushback_vector_w_inplace_elements,
 k_pushback_string,
 ```
 

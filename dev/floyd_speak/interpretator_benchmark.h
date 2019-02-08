@@ -9,6 +9,10 @@
 #ifndef interpretator_benchmark_hpp
 #define interpretator_benchmark_hpp
 
+/*
+	Performance benchmarks used when profiling and optimising the byte code interpreter.
+*/
+
 void floyd_benchmark();
 
 #endif /* interpretator_benchmark_hpp */

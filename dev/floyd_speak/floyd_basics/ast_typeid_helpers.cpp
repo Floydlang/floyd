@@ -17,7 +17,9 @@
 
 namespace floyd {
 
-using std::vector;
+std::vector<json_t> typeids_to_json_array(const std::vector<typeid_t>& m);
+std::vector<typeid_t> typeids_from_json_array(const std::vector<json_t>& m);
+
 
 
 ast_json_t struct_definition_to_ast_json(const struct_definition_t& v){
@@ -36,8 +38,6 @@ ast_json_t protocol_definition_to_ast_json(const protocol_definition_t& v){
 		members_to_json(v._members)
 	}));
 }
-
-
 
 ast_json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 	QUARK_ASSERT(t.check_invariant());
@@ -111,7 +111,6 @@ ast_json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 	}
 }
 
-
 typeid_t typeid_from_ast_json(const ast_json_t& t2){
 	QUARK_ASSERT(t2._value.check_invariant());
 
@@ -176,14 +175,14 @@ typeid_t typeid_from_ast_json(const ast_json_t& t2){
 			const auto struct_def_array = a[1].get_array();
 			const auto member_array = struct_def_array[0].get_array();
 
-			const vector<member_t> struct_members = members_from_json(member_array);
+			const std::vector<member_t> struct_members = members_from_json(member_array);
 			return typeid_t::make_struct2(struct_members);
 		}
 		if(s == keyword_t::k_protocol){
 			const auto protocol_def_array = a[1].get_array();
 			const auto member_array = protocol_def_array[0].get_array();
 
-			const vector<member_t> protocol_members = members_from_json(member_array);
+			const std::vector<member_t> protocol_members = members_from_json(member_array);
 			return typeid_t::make_protocol(protocol_members);
 		}
 		else if(s == "vector"){
@@ -197,7 +196,7 @@ typeid_t typeid_from_ast_json(const ast_json_t& t2){
 		else if(s == "fun"){
 			const auto ret_type = typeid_from_ast_json(ast_json_t::make(a[1]));
 			const auto arg_types_array = a[2].get_array();
-			const vector<typeid_t> arg_types = typeids_from_json_array(arg_types_array);
+			const std::vector<typeid_t> arg_types = typeids_from_json_array(arg_types_array);
 
 			if(a[3].is_true() == false && a[3].is_false() == false){
 				quark::throw_exception();
@@ -221,17 +220,15 @@ typeid_t typeid_from_ast_json(const ast_json_t& t2){
 
 
 
-
-
 std::vector<json_t> typeids_to_json_array(const std::vector<typeid_t>& m){
-	vector<json_t> r;
+	std::vector<json_t> r;
 	for(const auto& a: m){
 		r.push_back(typeid_to_ast_json(a, json_tags::k_tag_resolve_state)._value);
 	}
 	return r;
 }
 std::vector<typeid_t> typeids_from_json_array(const std::vector<json_t>& m){
-	vector<typeid_t> r;
+	std::vector<typeid_t> r;
 	for(const auto& a: m){
 		r.push_back(typeid_from_ast_json(ast_json_t::make(a)));
 	}
@@ -268,6 +265,9 @@ std::vector<member_t> members_from_json(const json_t& members){
 }
 
 void ut_verify(const quark::call_context_t& context, const typeid_t& result, const typeid_t& expected){
+	QUARK_ASSERT(result.check_invariant());
+	QUARK_ASSERT(expected.check_invariant());
+
 	ut_verify(
 		context,
 		typeid_to_ast_json(result, json_tags::k_plain)._value,

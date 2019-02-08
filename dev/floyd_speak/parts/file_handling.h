@@ -1,12 +1,13 @@
 #pragma once
 
+/*
+	Simple library for access the local file system.
+*/
+
 #include <vector>
 #include <string>
 #include <cstdint>
 #include <map>
-
-
-
 
 struct VRelativePath {
 	std::string fRelativePath;
@@ -15,9 +16,6 @@ struct VRelativePath {
 struct VAbsolutePath {
 	std::string fAbsolutePath;
 };
-
-
-
 
 //	Path is absolute and with native path separators.
 std::vector<std::uint8_t> LoadFile(const std::string& completePath);
@@ -29,8 +27,8 @@ std::string LoadTextFile(const std::string& completePath);
 bool DoesEntryExist(const std::string& completePath);
 
 
-
 ///////////////////////////////////////////////////			DIRECTOR ROOTS
+
 
 //??? Add help creating the directory with the correct name.
 struct directories_t {
@@ -107,7 +105,6 @@ void SaveFile(const std::string& completePath, const std::uint8_t data[], std::s
 				file_3
 	dir_c
 
-
 	DeleteDeep("dir_b") will delete file_5, file_4, file_2, file_1, file_2, file_3, dir_e, dir_d, dir_b
 */
 void DeleteDeep(const std::string& path);
@@ -177,9 +174,7 @@ std::string RemoveExtension(const std::string& s);
 //		".AIFF"
 std::string GetExtension(const std::string& s);
 
-
 std::pair<std::string, std::string> SplitExtension(const std::string& s);
-
 
 struct TPathParts {
 	public: TPathParts();
@@ -199,14 +194,11 @@ TPathParts SplitPath(const std::string& path);
 
 std::vector<std::string> SplitPath2(const std::string& path);
 
-
-
 /*
 	base								relativePath
 	"/users/marcus/"					"resources/hello.jpg"			"/users/marcus/resources/hello.jpg"
 */
 std::string MakeAbsolutePath(const std::string& base, const std::string& relativePath);
-
 
 
 ////////////////////////////		COMMAND LINE ARGUMENTS
@@ -227,7 +219,6 @@ struct command_line_args_t {
 	std::vector<std::string> extra_arguments;
 };
 
-
 command_line_args_t parse_command_line_args(const std::vector<std::string>& args, const std::string& flags);
 
 /*
@@ -241,7 +232,4 @@ command_line_args_t parse_command_line_args(const std::vector<std::string>& args
 */
 command_line_args_t parse_command_line_args_subcommands(const std::vector<std::string>& args, const std::string& flags);
 
-
-
 std::string read_text_file(const std::string& abs_path);
-

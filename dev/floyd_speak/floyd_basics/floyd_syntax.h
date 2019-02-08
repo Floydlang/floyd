@@ -9,6 +9,11 @@
 #ifndef floyd_syntax_hpp
 #define floyd_syntax_hpp
 
+/*
+	Types and constants that describe the syntax of floyd program texts.
+	Keywords, the different types in the language, what special characters there are.
+*/
+
 #include <string>
 #include <map>
 #include "quark.h"
@@ -16,16 +21,16 @@
 namespace floyd {
 
 /*
-PEG
-https://en.wikipedia.org/wiki/Parsing_expression_grammar
-http://craftinginterpreters.com/representing-code.html
+	PEG
+	https://en.wikipedia.org/wiki/Parsing_expression_grammar
+	http://craftinginterpreters.com/representing-code.html
 
-AST ABSTRACT SYNTAX TREE
+	AST ABSTRACT SYNTAX TREE
 
-https://en.wikipedia.org/wiki/Abstract_syntax_tree
+	https://en.wikipedia.org/wiki/Abstract_syntax_tree
 
-https://en.wikipedia.org/wiki/Parsing_expression_grammar
-https://en.wikipedia.org/wiki/Parsing
+	https://en.wikipedia.org/wiki/Parsing_expression_grammar
+	https://en.wikipedia.org/wiki/Parsing
 */
 
 /*
@@ -44,10 +49,11 @@ const std::string bracket_pairs = "(){}[]";
 const std::string valid_expression_chars = k_c99_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[](){}.?:=!<>&,|#$\\;\'";
 
 
+
 //////////////////////////////////////		base_type
 
 /*
-	The atomic buildng block of all types.
+	The atomic building block of all types.
 	Some of the types are ready as-is, like bool or double.
 	Some types needs further information to be 100% defined, like struct (needs its members), vector needs its element-type.
 */
@@ -404,10 +410,7 @@ namespace keyword_t {
 	"try",
 	"typecast",
 	"typeof",
-*/
 
-/*
-const std::vector<std::string> basic_types {
 	"char",
 	code_point",
 	"float",
@@ -420,8 +423,7 @@ const std::vector<std::string> basic_types {
 	"int8",
 	path",
 	text"
-};
-const std::vector<std::string> advanced_types {
+
 	clock",
 	defect_exception",
 	dyn",
@@ -434,7 +436,6 @@ const std::vector<std::string> advanced_types {
 	runtime_exception",
 	"seq",
 	typedef",
-};
 */
 };
 

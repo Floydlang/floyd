@@ -24,12 +24,6 @@
 
 namespace floyd {
 
-using std::vector;
-using std::string;
-using std::pair;
-using std::shared_ptr;
-using std::make_shared;
-
 
 
 
@@ -37,8 +31,8 @@ using std::make_shared;
 
 
 
-vector<bc_value_t> values_to_bcs(const vector<value_t>& values){
-	vector<bc_value_t> result;
+std::vector<bc_value_t> values_to_bcs(const std::vector<value_t>& values){
+	std::vector<bc_value_t> result;
 	for(const auto& e: values){
 		result.push_back(value_to_bc(e));
 	}
@@ -80,7 +74,7 @@ value_t bc_to_value(const bc_value_t& value){
 	}
 	else if(basetype == base_type::k_struct){
 		const auto& members = value.get_struct_value();
-		vector<value_t> members2;
+		std::vector<value_t> members2;
 		for(int i = 0 ; i < members.size() ; i++){
 			const auto& member_value = members[i];
 			const auto& member_value2 = bc_to_value(member_value);
@@ -94,24 +88,24 @@ value_t bc_to_value(const bc_value_t& value){
 	}
 	else if(basetype == base_type::k_vector){
 		const auto& element_type  = type.get_vector_element_type();
-		vector<value_t> vec2;
+		std::vector<value_t> vec2;
 		if(element_type.is_bool()){
-			for(const auto e: value._pod._ext->_vector_pod64){
+			for(const auto e: value._pod._external->_vector_w_inplace_elements){
 				vec2.push_back(value_t::make_bool(e._bool));
 			}
 		}
 		else if(element_type.is_int()){
-			for(const auto e: value._pod._ext->_vector_pod64){
+			for(const auto e: value._pod._external->_vector_w_inplace_elements){
 				vec2.push_back(value_t::make_int(e._int64));
 			}
 		}
 		else if(element_type.is_double()){
-			for(const auto e: value._pod._ext->_vector_pod64){
+			for(const auto e: value._pod._external->_vector_w_inplace_elements){
 				vec2.push_back(value_t::make_double(e._double));
 			}
 		}
 		else{
-			for(const auto& e: value._pod._ext->_vector_objects){
+			for(const auto& e: value._pod._external->_vector_w_external_elements){
 				QUARK_ASSERT(e.check_invariant());
 				vec2.push_back(bc_to_value(bc_value_t(element_type, e)));
 			}
@@ -120,24 +114,24 @@ value_t bc_to_value(const bc_value_t& value){
 	}
 	else if(basetype == base_type::k_dict){
 		const auto& value_type  = type.get_dict_value_type();
-		std::map<string, value_t> entries2;
+		std::map<std::string, value_t> entries2;
 		if(value_type.is_bool()){
-			for(const auto& e: value._pod._ext->_dict_pod64){
+			for(const auto& e: value._pod._external->_dict_w_inplace_values){
 				entries2.insert({ e.first, value_t::make_bool(e.second._bool) });
 			}
 		}
 		else if(value_type.is_int()){
-			for(const auto& e: value._pod._ext->_dict_pod64){
+			for(const auto& e: value._pod._external->_dict_w_inplace_values){
 				entries2.insert({ e.first, value_t::make_int(e.second._int64) });
 			}
 		}
 		else if(value_type.is_double()){
-			for(const auto& e: value._pod._ext->_dict_pod64){
+			for(const auto& e: value._pod._external->_dict_w_inplace_values){
 				entries2.insert({ e.first, value_t::make_double(e.second._double) });
 			}
 		}
 		else{
-			for(const auto& e: value._pod._ext->_dict_objects){
+			for(const auto& e: value._pod._external->_dict_w_external_values){
 				entries2.insert({ e.first, bc_to_value(bc_value_t(value_type, e.second)) });
 			}
 		}
@@ -199,35 +193,35 @@ bc_value_t value_to_bc(const value_t& value){
 		const auto vector_type = value.get_type();
 		const auto element_type = vector_type.get_vector_element_type();
 
-		if(encode_as_vector_pod64(vector_type)){
+		if(encode_as_vector_w_inplace_elements(vector_type)){
 			const auto& vec = value.get_vector_value();
-			immer::vector<bc_pod64_t> vec2;
+			immer::vector<bc_inplace_value_t> vec2;
 			if(element_type.is_bool()){
 				for(const auto& e: vec){
-					vec2.push_back(bc_pod64_t{._bool = e.get_bool_value()});
+					vec2.push_back(bc_inplace_value_t{._bool = e.get_bool_value()});
 				}
 			}
 			else if(element_type.is_int()){
 				for(const auto& e: vec){
-					vec2.push_back(bc_pod64_t{._int64 = e.get_int_value()});
+					vec2.push_back(bc_inplace_value_t{._int64 = e.get_int_value()});
 				}
 			}
 			else if(element_type.is_double()){
 				for(const auto& e: vec){
-					vec2.push_back(bc_pod64_t{._double = e.get_double_value()});
+					vec2.push_back(bc_inplace_value_t{._double = e.get_double_value()});
 				}
 			}
-			return make_vector_int64_value(element_type, vec2);
+			return make_vector(element_type, vec2);
 		}
 		else{
 			const auto& vec = value.get_vector_value();
-			immer::vector<bc_object_handle_t> vec2;
+			immer::vector<bc_external_handle_t> vec2;
 			for(const auto& e: vec){
 				const auto bc = value_to_bc(e);
-				const auto hand = bc_object_handle_t(bc);
+				const auto hand = bc_external_handle_t(bc);
 				vec2 =vec2.push_back(hand);
 			}
-			return make_vector_value(element_type, vec2);
+			return make_vector(element_type, vec2);
 		}
 	}
 	else if(basetype == base_type::k_dict){
@@ -235,11 +229,11 @@ bc_value_t value_to_bc(const value_t& value){
 		const auto value_type = dict_type.get_dict_value_type();
 //??? add handling for int, bool, double
 		const auto elements = value.get_dict_value();
-		immer::map<string, bc_object_handle_t> entries2;
+		immer::map<std::string, bc_external_handle_t> entries2;
 		for(const auto& e: elements){
-			entries2 = entries2.insert({e.first, bc_object_handle_t(value_to_bc(e.second))});
+			entries2 = entries2.insert({e.first, bc_external_handle_t(value_to_bc(e.second))});
 		}
-		return make_dict_value(value_type, entries2);
+		return make_dict(value_type, entries2);
 	}
 	else if(basetype == base_type::k_function){
 		return bc_value_t::make_function_value(value.get_type(), value.get_function_value());
@@ -310,7 +304,7 @@ bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, 
 		const auto& element_type = type.get_vector_element_type();
 		QUARK_ASSERT(element_type.is_undefined() == false);
 
-		return bc_value_t::make_vector_value(element_type, arg_values);
+		return bc_value_t::make_vector(element_type, arg_values);
 	}
 	else if(type.is_dict()){
 		const auto& element_type = type.get_dict_value_type();
@@ -337,13 +331,13 @@ bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, 
 #endif
 
 
-floyd::value_t find_global_symbol(const interpreter_t& vm, const string& s){
+floyd::value_t find_global_symbol(const interpreter_t& vm, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 
 	return get_global(vm, s);
 }
 
-value_t get_global(const interpreter_t& vm, const string& name){
+value_t get_global(const interpreter_t& vm, const std::string& name){
 	QUARK_ASSERT(vm.check_invariant());
 
 	const auto& result = find_global_symbol2(vm, name);
@@ -355,7 +349,7 @@ value_t get_global(const interpreter_t& vm, const string& name){
 	}
 }
 
-value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<value_t>& args){
+value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vector<value_t>& args){
 #if DEBUG
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(f.check_invariant());
@@ -364,7 +358,7 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 #endif
 
 	const auto f2 = value_to_bc(f);
-	vector<bc_value_t> args2;
+	std::vector<bc_value_t> args2;
 	for(const auto& e: args){
 		args2.push_back(value_to_bc(e));
 	}
@@ -372,9 +366,6 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const vector<v
 	const auto result = call_function_bc(vm, f2, &args2[0], static_cast<int>(args2.size()));
 	return bc_to_value(result);
 }
-
-
-
 
 
 
@@ -409,7 +400,7 @@ semantic_ast_t run_semantic_analysis__errors(const ast_t& pass2, const compilati
 }
 
 
-bc_program_t compile_to_bytecode(const string& program, const std::string& file){
+bc_program_t compile_to_bytecode(const std::string& program, const std::string& file){
 	const auto pre = k_builtin_types_and_constants;
 
 	const auto cu = compilation_unit_t{
@@ -432,7 +423,7 @@ bc_program_t compile_to_bytecode(const string& program, const std::string& file)
 }
 
 
-semantic_ast_t compile_to_sematic_ast(const string& program, const std::string& file){
+semantic_ast_t compile_to_sematic_ast(const std::string& program, const std::string& file){
 	const auto pre = k_builtin_types_and_constants + "\n";
 
 	const auto cu = compilation_unit_t{
@@ -450,22 +441,19 @@ semantic_ast_t compile_to_sematic_ast(const string& program, const std::string& 
 }
 
 
-
-
-
-std::shared_ptr<interpreter_t> run_global(const string& source, const std::string& file){
+std::shared_ptr<interpreter_t> run_global(const std::string& source, const std::string& file){
 	auto program = compile_to_bytecode(source, file);
-	auto vm = make_shared<interpreter_t>(program);
+	auto vm = std::make_shared<interpreter_t>(program);
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 	print_vm_printlog(*vm);
 	return vm;
 }
 
-std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(const string& source, const vector<floyd::value_t>& args, const std::string& file){
+std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(const std::string& source, const std::vector<floyd::value_t>& args, const std::string& file){
 	auto program = compile_to_bytecode(source, file);
 
 	//	Runs global code.
-	auto interpreter = make_shared<interpreter_t>(program);
+	auto interpreter = std::make_shared<interpreter_t>(program);
 
 	const auto& main_function = find_global_symbol2(*interpreter, "main");
 	if(main_function != nullptr){
@@ -483,16 +471,13 @@ void print_vm_printlog(const interpreter_t& vm){
 	if(vm._print_output.empty() == false){
 		QUARK_SCOPED_TRACE("print output:");
 		for(const auto& line: vm._print_output){
-			QUARK_SCOPED_TRACE(line);
+			QUARK_TRACE_SS(line);
 		}
 	}
 }
 
 
-
-
 //////////////////////////////////////		container_runner_t
-
 
 
 /*
@@ -501,11 +486,9 @@ std::packaged_task
 */
 
 
-
-
 //	https://en.cppreference.com/w/cpp/thread/condition_variable/wait
 
-string get_current_thread_name(){
+std::string get_current_thread_name(){
 	char name[16];
 
 #ifndef __EMSCRIPTEN_PTHREADS__
@@ -518,7 +501,7 @@ string get_current_thread_name(){
 		return "main";
 	}
 	else{
-		return string(name);
+		return std::string(name);
 	}
 }
 
@@ -536,8 +519,8 @@ struct process_t {
 	std::mutex _inbox_mutex;
 	std::deque<json_t> _inbox;
 
-	string _name_key;
-	string _function_key;
+	std::string _name_key;
+	std::string _function_key;
 	std::thread::id _thread_id;
 
 	std::shared_ptr<interpreter_t> _interpreter;
@@ -554,8 +537,8 @@ struct process_runtime_t {
 	std::map<std::string, std::string> _process_infos;
 	std::thread::id _main_thread_id;
 
-	vector<std::shared_ptr<process_t>> _processes;
-	vector<std::thread> _worker_threads;
+	std::vector<std::shared_ptr<process_t>> _processes;
+	std::vector<std::thread> _worker_threads;
 };
 
 /*
@@ -586,7 +569,7 @@ void process_process(process_runtime_t& runtime, int process_id){
 	}
 
 	if(process._init_function != nullptr){
-		const vector<value_t> args = {};
+		const std::vector<value_t> args = {};
 		process._process_state = call_function(*process._interpreter, bc_to_value(process._init_function->_value), args);
 	}
 
@@ -616,7 +599,7 @@ void process_process(process_runtime_t& runtime, int process_id){
 			}
 
 			if(process._process_function != nullptr){
-				const vector<value_t> args = { process._process_state, value_t::make_json_value(message) };
+				const std::vector<value_t> args = { process._process_state, value_t::make_json_value(message) };
 				const auto& state2 = call_function(*process._interpreter, bc_to_value(process._process_function->_value), args);
 				process._process_state = state2;
 			}
@@ -624,7 +607,7 @@ void process_process(process_runtime_t& runtime, int process_id){
 	}
 }
 
-std::map<std::string, value_t> run_container_int(const bc_program_t& program, const vector<floyd::value_t>& args, const std::string& container_key){
+std::map<std::string, value_t> run_container_int(const bc_program_t& program, const std::vector<floyd::value_t>& args, const std::string& container_key){
 	process_runtime_t runtime;
 	runtime._main_thread_id = std::this_thread::get_id();
 
@@ -647,10 +630,7 @@ std::map<std::string, value_t> run_container_int(const bc_program_t& program, co
 
 	runtime._container = program._container_def;
 
-
-
-
-	runtime._process_infos = fold(runtime._container._clock_busses, std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const pair<string, clock_bus_t>& e){
+	runtime._process_infos = reduce(runtime._container._clock_busses, std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const std::pair<std::string, clock_bus_t>& e){
 		auto acc2 = acc;
 		acc2.insert(e.second._processes.begin(), e.second._processes.end());
 		return acc2;
@@ -676,7 +656,7 @@ std::map<std::string, value_t> run_container_int(const bc_program_t& program, co
 		auto process = std::make_shared<process_t>();
 		process->_name_key = t.first;
 		process->_function_key = t.second;
-		process->_interpreter = make_shared<interpreter_t>(program, &my_interpreter_handler);
+		process->_interpreter = std::make_shared<interpreter_t>(program, &my_interpreter_handler);
 		process->_init_function = find_global_symbol2(*process->_interpreter, t.second + "__init");
 		process->_process_function = find_global_symbol2(*process->_interpreter, t.second);
 
@@ -692,7 +672,7 @@ std::map<std::string, value_t> run_container_int(const bc_program_t& program, co
 //			const auto native_thread = thread::native_handle();
 
 			std::stringstream thread_name;
-			thread_name << string() << "process " << process_id << " thread";
+			thread_name << std::string() << "process " << process_id << " thread";
 #ifdef __APPLE__
 			pthread_setname_np(/*pthread_self(),*/ thread_name.str().c_str());
 #endif
@@ -730,10 +710,10 @@ std::map<std::string, value_t> run_container_int(const bc_program_t& program, co
 	}
 */
 
-std::map<std::string, value_t> run_container(const bc_program_t& program, const vector<floyd::value_t>& args, const std::string& container_key){
+std::map<std::string, value_t> run_container(const bc_program_t& program, const std::vector<floyd::value_t>& args, const std::string& container_key){
 	if(container_key.empty()){
 		//	Create interpreter, run global code.
-		auto vm = make_shared<interpreter_t>(program);
+		auto vm = std::make_shared<interpreter_t>(program);
 
 		const auto& main_function = find_global_symbol2(*vm, "main");
 		if(main_function != nullptr){
@@ -754,7 +734,7 @@ std::map<std::string, value_t> run_container(const bc_program_t& program, const 
 }
 
 
-std::map<std::string, value_t> run_container2(const string& source, const vector<floyd::value_t>& args, const std::string& container_key, const std::string& source_path){
+std::map<std::string, value_t> run_container2(const std::string& source, const std::vector<floyd::value_t>& args, const std::string& container_key, const std::string& source_path){
 	auto program = compile_to_bytecode(source, source_path);
 	return run_container(program, args, container_key);
 }

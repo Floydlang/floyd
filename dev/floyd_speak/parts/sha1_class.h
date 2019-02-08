@@ -6,8 +6,14 @@
 //  Copyright (c) 2014 Marcus Zetterquist. All rights reserved.
 //
 
-#ifndef __Permafrost__sha1_class__
-#define __Permafrost__sha1_class__
+#ifndef __sha1_class__
+#define __sha1_class__
+
+/*
+	Support for SHA1 hashes.
+
+	https://code.google.com/p/smallsha1/downloads/detail?name=sha1.zip&can=2&q=
+*/
 
 #include <cstdint>
 #include <cstddef>
@@ -15,18 +21,7 @@
 #include "quark.h"
 
 
-
-
-
-/**
-sha1 hash
-https://code.google.com/p/smallsha1/downloads/detail?name=sha1.zip&can=2&q=
-*/
-
-
-
 ////////////////////////			TSHA1
-
 
 
 struct TSHA1 {
@@ -82,8 +77,4 @@ std::string SHA1ToStringTagged(const TSHA1& iSHA1);
 TSHA1 SHA1FromStringTagged(const std::string& iString);
 
 
-//const TSHA1 CalcSHA1Vec(const immutable_vector<std::uint8_t>& iData);
-
-
-
-#endif /* defined(__Permafrost__sha1_class__) */
+#endif /* defined(__sha1_class__) */

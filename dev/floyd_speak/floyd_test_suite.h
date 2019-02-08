@@ -9,5 +9,8 @@
 #ifndef floyd_test_suite_hpp
 #define floyd_test_suite_hpp
 
+/*
+	A long list of simple tests that proves the compiler works.
+*/
 
 #endif /* floyd_test_suite_hpp */
