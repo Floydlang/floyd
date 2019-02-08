@@ -2661,28 +2661,29 @@ QUARK_UNIT_TEST("json_value-object", "def", "mix value-types in dict", ""){
 }
 
 // JSON example snippets: http://json.org/example.html
-QUARK_UNIT_TEST("json_value-object", "def", "read world data", ""){
-	const auto vm = test__run_global(R"ABCD(
-		let json_value a = {
-			"menu": {
-			  "id": "file",
-			  "value": "File",
-			  "popup": {
-				"menuitem": [
-				  {"value": "New", "onclick": "CreateNewDoc()"},
-				  {"value": "Open", "onclick": "OpenDoc()"},
-				  {"value": "Close", "onclick": "CloseDoc()"}
-				]
-			  }
-			}
-		}
-		print(a)
-	)ABCD");
-	ut_verify(
+QUARK_UNIT_TEST_VIP("json_value-object", "def", "read world data", ""){
+	ut_verify_printout(
 		QUARK_POS,
-		vm->_print_output,
+		R"___(
+
+			let json_value a = {
+				"menu": {
+				  "id": "file",
+				  "value": "File",
+				  "popup": {
+					"menuitem": [
+					  {"value": "New", "onclick": "CreateNewDoc()"},
+					  {"value": "Open", "onclick": "OpenDoc()"},
+					  {"value": "Close", "onclick": "CloseDoc()"}
+					]
+				  }
+				}
+			}
+			print(a)
+
+		)___",
 		{
-			R"ABCD({ "menu": { "id": "file", "popup": { "menuitem": [{ "onclick": "CreateNewDoc()", "value": "New" }, { "onclick": "OpenDoc()", "value": "Open" }, { "onclick": "CloseDoc()", "value": "Close" }] }, "value": "File" } })ABCD"
+			R"___({ "menu": { "id": "file", "popup": { "menuitem": [{ "onclick": "CreateNewDoc()", "value": "New" }, { "onclick": "OpenDoc()", "value": "Open" }, { "onclick": "CloseDoc()", "value": "Close" }] }, "value": "File" } })___"
 		}
 	);
 }
