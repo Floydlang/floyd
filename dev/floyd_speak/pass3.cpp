@@ -1705,7 +1705,7 @@ QUARK_UNIT_TEST("analyse_expression_no_target()", "literal 1234 == 1234", "", ""
 	);
 }
 
-QUARK_UNIT_TESTQ("analyse_expression_no_target()", "1 + 2 == 3") {
+QUARK_UNIT_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 	const ast_t ast;
 	const analyser_t interpreter(ast);
 	const auto e3 = analyse_expression_no_target(

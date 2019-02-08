@@ -326,7 +326,7 @@ std::pair<std::string, seq_t> read_required_identifier(const seq_t& s){
 	return b;
 }
 
-QUARK_UNIT_TESTQ("read_required_identifier()", ""){
+QUARK_UNIT_TEST("read_required_identifier()", "", "", ""){
 	QUARK_TEST_VERIFY(read_required_identifier(seq_t("\thello\txxx")) == (std::pair<std::string, seq_t>("hello", seq_t("\txxx"))));
 }
 

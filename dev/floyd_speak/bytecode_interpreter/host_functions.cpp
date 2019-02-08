@@ -1493,12 +1493,12 @@ bc_value_t host__get_time_of_day(interpreter_t& vm, const bc_value_t args[], int
 	return value_to_bc(result);
 }
 
-QUARK_UNIT_TESTQ("sizeof(int)", ""){
+QUARK_UNIT_TEST("sizeof(int)", "", "", ""){
 	QUARK_TRACE(std::to_string(sizeof(int)));
 	QUARK_TRACE(std::to_string(sizeof(int64_t)));
 }
 
-QUARK_UNIT_TESTQ("get_time_of_day_ms()", ""){
+QUARK_UNIT_TEST("get_time_of_day_ms()", "", "", ""){
 	const auto a = std::chrono::high_resolution_clock::now();
 	std::this_thread::sleep_for(std::chrono::milliseconds(7));
 	const auto b = std::chrono::high_resolution_clock::now();

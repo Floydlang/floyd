@@ -40,7 +40,7 @@ struct test_cpp_value_class_a {
 	}
 };
 
-QUARK_UNIT_TESTQ("test_cpp_value_class_a", "what is needed for basic operations"){
+QUARK_UNIT_TEST("test_cpp_value_class_a", "what is needed for basic operations", "", ""){
 	test_cpp_value_class_a a;
 	test_cpp_value_class_a b = a;
 
@@ -49,7 +49,7 @@ QUARK_UNIT_TESTQ("test_cpp_value_class_a", "what is needed for basic operations"
 }
 
 
-QUARK_UNIT_TESTQ("C++ bool", ""){
+QUARK_UNIT_TEST("C++ bool", "", "", ""){
 	ut_verify_auto(QUARK_POS, true, true);
 	ut_verify_auto(QUARK_POS, true, !false);
 	ut_verify_auto(QUARK_POS, false, false);
