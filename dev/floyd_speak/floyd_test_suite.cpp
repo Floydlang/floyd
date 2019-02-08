@@ -1118,7 +1118,9 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 	ut_verify_result_global(
 		QUARK_POS,
 		R"(
+
 			let result = to_string(typeof("hello"))
+
 		)",
 		value_t::make_string("string")
 	);
@@ -1128,7 +1130,9 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 	ut_verify_result_global(
 		QUARK_POS,
 		R"(
+
 			let result = typeof([1,2,3])
+
 		)",
 		value_t::make_typeid_value(typeid_t::make_vector(typeid_t::make_int()))
 	);
@@ -1137,7 +1141,9 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 	ut_verify_result_global(
 		QUARK_POS,
 		R"(
+
 			let result = to_string(typeof([1,2,3]))
+
 		)",
 		value_t::make_string("[int]")
 	);
@@ -1164,7 +1170,9 @@ QUARK_UNIT_TEST("", "run_global()", "", ""){
 	ut_verify_exception(
 		QUARK_POS,
 		R"(
+
 			assert(1 == 2)
+
 		)",
 		"Floyd assertion failed."
 	);
@@ -1191,13 +1199,17 @@ QUARK_UNIT_TEST("run_global()", "", "", ""){
 
 QUARK_UNIT_TEST("run_init()", "Empty block", "", ""){
 	test__run_global(
+
 		"{}"
+
 	);
 }
 
 QUARK_UNIT_TEST("run_init()", "Block with local variable, no shadowing", "", ""){
 	test__run_global(
+
 		"{ let int x = 4 }"
+
 	);
 }
 
@@ -2362,31 +2374,46 @@ QUARK_UNIT_TEST("", "run_main()", "struct - compare structs different types", ""
 	);
 }
 QUARK_UNIT_TEST("run_main()", "struct - compare structs with <, different types", "", ""){
-	const auto vm = test__run_global(R"(
-		struct color { int red int green int blue }
-		print(color(1, 2, 3) < color(1, 2, 3))
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "false" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			struct color { int red int green int blue }
+			print(color(1, 2, 3) < color(1, 2, 3))
+
+		)",
+		{ "false" }
+	);
 }
 
 QUARK_UNIT_TEST("run_main()", "struct - compare structs <", "", ""){
-	const auto vm = test__run_global(R"(
-		struct color { int red int green int blue }
-		print(color(1, 2, 3) < color(1, 4, 3))
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "true" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			struct color { int red int green int blue }
+			print(color(1, 2, 3) < color(1, 4, 3))
+
+		)",
+		{ "true" }
+	);
 }
 
 
 QUARK_UNIT_TEST("run_main()", "update struct manually", "", ""){
-	const auto vm = test__run_global(R"(
-		struct color { int red int green int blue }
-		let a = color(255, 128, 128)
-		let b = color(a.red, a.green, 129)
-		print(a)
-		print(b)
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "{red=255, green=128, blue=128}", "{red=255, green=128, blue=129}" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			struct color { int red int green int blue }
+			let a = color(255, 128, 128)
+			let b = color(a.red, a.green, 129)
+			print(a)
+			print(b)
+
+		)",
+		{ "{red=255, green=128, blue=128}", "{red=255, green=128, blue=129}" }
+	);
 }
 
 QUARK_UNIT_TEST("run_main()", "mutate struct member using = won't work", "", ""){
@@ -2404,29 +2431,34 @@ QUARK_UNIT_TEST("run_main()", "mutate struct member using = won't work", "", "")
 }
 
 QUARK_UNIT_TEST("run_main()", "mutate struct member using update()", "", ""){
-	const auto vm = test__run_global(R"(
-		struct color { int red int green int blue }
-		let a = color(255,128,128)
-		let b = update(a, "green", 3)
-		print(a)
-		print(b)
-	)");
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
 
-	ut_verify(QUARK_POS, vm->_print_output, { "{red=255, green=128, blue=128}", "{red=255, green=3, blue=128}" });
+			struct color { int red int green int blue }
+			let a = color(255,128,128)
+			let b = update(a, "green", 3)
+			print(a)
+			print(b)
+
+		)",
+		{ "{red=255, green=128, blue=128}", "{red=255, green=3, blue=128}" }
+	);
 }
 
 QUARK_UNIT_TEST("run_main()", "mutate nested member", "", ""){
-	const auto vm = test__run_global(R"(
-		struct color { int red int green int blue }
-		struct image { color back color front }
-		let a = image(color(0,100,200), color(0,0,0))
-		let b = update(a, "front.green", 3)
-		print(a)
-		print(b)
-	)");
-	ut_verify(
+	ut_verify_printout(
 		QUARK_POS,
-		vm->_print_output,
+		R"(
+
+			struct color { int red int green int blue }
+			struct image { color back color front }
+			let a = image(color(0,100,200), color(0,0,0))
+			let b = update(a, "front.green", 3)
+			print(a)
+			print(b)
+
+		)",
 		{
 			"{back={red=0, green=100, blue=200}, front={red=0, green=0, blue=0}}",
 			"{back={red=0, green=100, blue=200}, front={red=0, green=3, blue=0}}"
@@ -2435,42 +2467,35 @@ QUARK_UNIT_TEST("run_main()", "mutate nested member", "", ""){
 }
 
 
-/*
-QUARK_UNIT_TEST("run_main()", "struct definition expression", "", ""){
-	const auto vm = test__run_global(R"(
-		color = struct { int red; int green; int blue;};
-		a = color(255, 128, 128);
-		b = color(a.red, a.green, 129);
-		print(a);
-		print(b);
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "{red=255, green=128, blue=128}", "{red=255, green=128, blue=129}" });
-}
-*/
-
 
 //////////////////////////////////////////		PROTOCOL - TYPE
 
 
 QUARK_UNIT_TEST("run_main()", "protocol", "", ""){
 	const auto vm = test__run_global(R"(
+
 		protocol t {}
+
 	)");
 }
 
 QUARK_UNIT_TEST("run_main()", "protocol", "", ""){
 	const auto vm = test__run_global(R"(
+
 		protocol t {
 			func string f(int a, double b)
 		}
+
 	)");
 }
 
 #if 0
 QUARK_UNIT_TEST("run_main()", "protocol - check protocol's type", "", ""){
 	const auto vm = test__run_global(R"(
+
 		protocol t { int a }
 		print(t)
+
 	)");
 	ut_verify(QUARK_POS, vm->_print_output, { "protocol {int a;}" });
 }
@@ -2501,25 +2526,40 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
-	const auto vm = test__run_global(R"(
-		//	XYZ
-		print("Hello")
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "Hello" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			//	XYZ
+			print("Hello")
+
+		)",
+		{ "Hello" }
+	);
 }
 
 QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
-	const auto vm = test__run_global(R"(
-		print("Hello")		//	XYZ
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "Hello" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			print("Hello")		//	XYZ
+
+		)",
+		{ "Hello" }
+	);
 }
 
 QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
-	const auto vm = test__run_global(R"(
-		print("Hello")/* xyz */print("Bye")
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "Hello", "Bye" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			print("Hello")/* xyz */print("Bye")
+
+		)",
+		{ "Hello", "Bye" }
+	);
 }
 
 
@@ -2530,7 +2570,9 @@ QUARK_UNIT_TEST("json_value-string", "Infer json_value::string", "", ""){
 	ut_verify_result_global(
 		QUARK_POS,
 		R"(
+
 			let json_value result = "hello"
+
 		)",
 		value_t::make_json_value("hello")
 	);
@@ -2606,11 +2648,16 @@ QUARK_UNIT_TEST("json_value-array", "size()", "", ""){
 
 //	NOTICE: Floyd dict is stricter than JSON -- cannot have different types of values!
 QUARK_UNIT_TEST("json_value-object", "def", "mix value-types in dict", ""){
-	const auto vm = test__run_global(R"(
-		let json_value a = { "pigcount": 3, "pigcolor": "pink" }
-		print(a)
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { R"({ "pigcolor": "pink", "pigcount": 3 })" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			let json_value a = { "pigcount": 3, "pigcolor": "pink" }
+			print(a)
+
+		)",
+		{ R"({ "pigcolor": "pink", "pigcount": 3 })" }
+	);
 }
 
 // JSON example snippets: http://json.org/example.html
@@ -2641,13 +2688,14 @@ QUARK_UNIT_TEST("json_value-object", "def", "read world data", ""){
 }
 
 QUARK_UNIT_TEST("json_value-object", "{}", "expressions inside def", ""){
-	const auto vm = test__run_global(R"(
-		let json_value a = { "pigcount": 1 + 2, "pigcolor": "pi" + "nk" }
-		print(a)
-	)");
-	ut_verify(
+	ut_verify_printout(
 		QUARK_POS,
-		vm->_print_output,
+		R"___(
+
+			let json_value a = { "pigcount": 1 + 2, "pigcolor": "pi" + "nk" }
+			print(a)
+
+		)___",
 		{
 			R"({ "pigcolor": "pink", "pigcount": 3 })"
 		}
@@ -2655,12 +2703,17 @@ QUARK_UNIT_TEST("json_value-object", "{}", "expressions inside def", ""){
 }
 
 QUARK_UNIT_TEST("json_value-object", "{}", "", ""){
-	const auto vm = test__run_global(R"(
-		let json_value a = { "pigcount": 3, "pigcolor": "pink" }
-		print(a["pigcount"])
-		print(a["pigcolor"])
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "3", "\"pink\"" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"___(
+
+			let json_value a = { "pigcount": 3, "pigcolor": "pink" }
+			print(a["pigcount"])
+			print(a["pigcolor"])
+
+		)___",
+		{ "3", "\"pink\"" }
+	);
 }
 
 QUARK_UNIT_TEST("json_value-object", "size()", "", ""){
@@ -2824,11 +2877,16 @@ QUARK_UNIT_TEST("", "script_to_jsonvalue()", "", ""){
 }
 
 QUARK_UNIT_TEST("", "script_to_jsonvalue()", "", ""){
-	const auto vm = test__run_global(R"(
-		let a = script_to_jsonvalue("{ \"magic\": 1234 }")
-		print(a)
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { R"({ "magic": 1234 })" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"___(
+
+			let a = script_to_jsonvalue("{ \"magic\": 1234 }")
+			print(a)
+
+		)___",
+		{ R"({ "magic": 1234 })" }
+	);
 }
 
 
@@ -2836,22 +2894,32 @@ QUARK_UNIT_TEST("", "script_to_jsonvalue()", "", ""){
 
 
 QUARK_UNIT_TEST("", "jsonvalue_to_script()", "", ""){
-	const auto vm = test__run_global(R"(
-		let json_value a = "cheat"
-		let b = jsonvalue_to_script(a)
-		print(b)
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "\"cheat\"" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"___(
+
+			let json_value a = "cheat"
+			let b = jsonvalue_to_script(a)
+			print(b)
+
+		)___",
+		{ "\"cheat\"" }
+	);
 }
 
 
 QUARK_UNIT_TEST("", "jsonvalue_to_script()", "", ""){
-	const auto vm = test__run_global(R"(
-		let json_value a = { "magic": 1234 }
-		let b = jsonvalue_to_script(a)
-		print(b)
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "{ \"magic\": 1234 }" });
+	ut_verify_printout(
+		QUARK_POS,
+		R"___(
+
+			let json_value a = { "magic": 1234 }
+			let b = jsonvalue_to_script(a)
+			print(b)
+
+		)___",
+		{ "{ \"magic\": 1234 }" }
+	);
 }
 
 
@@ -3141,35 +3209,44 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 QUARK_UNIT_TEST("run_global()", "Print Hello, world!", "", ""){
-	const auto r = test__run_global(
-		R"(
+	ut_verify_printout(
+		QUARK_POS,
+		R"___(
+
 			print("Hello, World!")
-		)"
+
+		)___",
+		{ "Hello, World!" }
 	);
-	ut_verify(QUARK_POS, r->_print_output, { "Hello, World!" });
 }
 
 
 QUARK_UNIT_TEST("run_global()", "Test that VM state (print-log) escapes block!", "", ""){
-	const auto r = test__run_global(
-		R"(
+	ut_verify_printout(
+		QUARK_POS,
+		R"___(
+
 			{
 				print("Hello, World!")
 			}
-		)"
+
+		)___",
+		{ "Hello, World!" }
 	);
-	ut_verify(QUARK_POS, r->_print_output, { "Hello, World!" });
 }
 
 QUARK_UNIT_TEST("run_global()", "Test that VM state (print-log) escapes IF!", "", ""){
-	const auto r = test__run_global(
-		R"(
+	ut_verify_printout(
+		QUARK_POS,
+		R"___(
+
 			if(true){
 				print("Hello, World!")
 			}
-		)"
+
+		)___",
+		{ "Hello, World!" }
 	);
-	ut_verify(QUARK_POS, r->_print_output, { "Hello, World!" });
 }
 
 
