@@ -37,7 +37,7 @@ Notice that string has many qualities of an array of characters. You can ask for
 
 # SOURCE CODE FILES
 
-Floyd Speak files are always utf-8 files with no BOM. Their extension is ".floyd".
+Floyd Speak files are always utf-8 files with no BOM. Their extension is ".floyd". immutable values 
 
 # COMMAND LINE
 
@@ -167,7 +167,7 @@ Every value and variable and identifier has a static type: a type that is define
 
 # CONCEPT: IMMUTABLE VALUES VS VARIABLES
 
-All values in Floyd are immutable -- you make new values based on previous values but you don't drectly modify old values. Internally Floyd uses clever mechanisms to make this fast and avoids copying data too much. It's perfectly good to replace a character in a 3 GB long string and get a new 3 GB string as a result. Almost all of the characters will be stored only once.
+All values in Floyd are immutable -- you make new values based on previous values but you don't directly modify old values. Internally Floyd uses clever mechanisms to make this fast and avoids copying data too much. It's perfectly good to replace a character in a 3 GB long string and get a new 3 GB string as a result. Almost all of the characters will be stored only once.
 
 The only exception is local variables that can be forced to be mutable.
 
@@ -178,7 +178,7 @@ The only exception is local variables that can be forced to be mutable.
 - Function local variables
 - Member variables of structs.
 
-When defining a variable you can often skip telling which type it is, since the type can be deduced by the Floyd compiler.
+When defining a variable you can often skip telling which type it is, since the type can be inferred by the Floyd compiler.
 
 Explicit
 
@@ -1190,9 +1190,9 @@ Here is the DAG for the complete syntax of Floyd.
 		WHILE 						"while" "(" EXPRESSION ")" BODY
 
  		BIND-IMMUTABLE-TYPED			"let" TYPE IDENTIFIER "=" EXPRESSION
- 		BIND-IMMUTABLE-DEDUCETYPE		"let" IDENTIFIER "=" EXPRESSION
+ 		BIND-IMMUTABLE-INFERETYPE		"let" IDENTIFIER "=" EXPRESSION
  		BIND-MUTABLE-TYPED				"mutable" TYPE IDENTIFIER "=" EXPRESSION
- 		BIND-MUTABLE-DEDUCETYPE			"mutable" IDENTIFIER "=" EXPRESSION
+ 		BIND-MUTABLE-INFERCETYPE			"mutable" IDENTIFIER "=" EXPRESSION
 		EXPRESSION-STATEMENT 			EXPRESSION
  		ASSIGNMENT	 				IDENTIFIER "=" EXPRESSION
 
@@ -1204,10 +1204,10 @@ Here is the DAG for the complete syntax of Floyd.
 |:---		|:---	
 | mutable int a = 10				| Allocate a mutable local int "a" and initialize it with 10
 | let int b = 11				| Allocate an immutable local int "b" and initialize it with 11
-| let c = 11				| Allocate an immutable local "b" and initialize it with 11. Type will be deduced to int.
+| let c = 11				| Allocate an immutable local "b" and initialize it with 11. Type will be inferred to int.
 | a = 12						| Assign 12 to local mutable "a".
-| let d = 8.5				| Allocate an immutable local "d" and initialize it with 8.5. Type will be deduced to double.
-| let e = "hello"				| Allocate an immutable local "e" and initialize it with "hello". Type will be deduced to string.
+| let d = 8.5				| Allocate an immutable local "d" and initialize it with 8.5. Type will be inferred to double.
+| let e = "hello"				| Allocate an immutable local "e" and initialize it with "hello". Type will be inferred to string.
 | let f = f(3) == 2		| Allocate an immutable local "f" and initialize it true/false. Type will be bool.
 
 | let pixel x = 20 |

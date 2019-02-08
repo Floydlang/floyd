@@ -2,92 +2,69 @@
 
 License: MIT
 
-Status: Language spec for 1.0 almost done. Compiles to byte code and interprets it. Not ready for production yet. 
+Status: All the basics are finished. Runs on a byte code interpreter. Will run natively soon.
 
-# FLOYD (ALPHA VERSION)
+# NEW TO FLOYD?
 
-Floyd is a general-purpose static and compiled programming language with strong opinions on how to write complex and robust software products with minimum pain and minimum waste of time. Fast programs. It's tools are visual and interactive.
+Floyd is a industrial grade general purpose programming language. It has strong opinions on how to write complex and robust software products. Fast programs! While you are getting actual things done. Think H-beams and RCCB:s. Floyd is designed 2019, not in the 50-80:ies.
 
-Floyd replaces languages like C++, C#, Rust, Swift and Java -- but also scripting languages like Python and Javascript.
 
-It's designed to allow you to write the next Photoshop and Grand Theft Auto and any type of mobile app.
+##### USE
+Use Floyd to build the next Photoshop, Grand Theft Auto, any type of mobile application. But also short scripts and toy programs. Probably not embedded software, though, that's why C can stay. The end goal is always to ship great *products* that execute extremely well on the hardware and that are exciting to develop further.
 
-The end goal is always to ship great *products* that execute extremely well on the hardware and that are a delight to develop further.
+Floyd wants to replace C++, Rust, C#, Python. And Javascript. Only C can stay. Maybe Closure too, just out of respect.
 
-Floyd has a bunch of novel concepts, how it separates the programming work in new ways, imposes a clean system-wide structure and has simple built-in ways to do hard things like concurrency.
+##### VERTICAL LANGUAGE
+Floyd is a vertical language: it cares deeply about cache lines and hardware cores and at the same time has keywords like **software-system** and interacting between concurrent processes. It's still very small and easy to learn by dropping a lot of cruft other programming languages thinks are needed. C++ - how many ways do we need to initialise a variable? Really?
 
-# THE MATRIX
+##### THE MATRIX
+Floyd is inspired by the movie The Matrix, which is obviously a great way to design a programming language!
 
 - **Red Pill**: Knowledge, freedom, uncertainty and the brutal truths of reality
 - **Blue Pill**: Security, happiness, beauty, and the blissful ignorance of illusion
 
-Working interactive software needs both red and blue code. Floyd uses a red - blue - red sandwich were:
-
-1. **Red pill**: the Floyd runtime sits at the bottom of the sandwich and upholds the blue matrix simulation above it.
-2. **Blue pill**: ontop of the runtime is the blissful matrix illusion. Make sure most of your code goes here. It's a fantasic place to write solid programs.
-3. **Red pill**: Finally, on top of it all sits the Floyd containers and processes - introducing reality: time, mutation, communication with an every changing outside world. Keep this code as small as possible. It also reaches downward and adjusts the matrix and the runtime to improve performance.
+Learn more here - things like the **red and blue pill**, **green processes** and other cool and colorful things: [www.floydlang.org](https://www.floydlang.org "Floyd language's Homepage")
 
 
-# SO EXACTLY WHAT IS FLOYD?
+# QUICK REFERENCE
 
-Floyd consists of a small and elegant toolkit of features built directly into the language that all go together to support you to make great products. Every feature has been carefully picked, polished and adopted as a first class feature in the language. The goal is to have one simple way to do each common thing.
-
-**What's *not* included and what you *can't* do is a core of Floyd's design**
-
-##### PRIMARY GOALS
-
-1. Make it simpler to create robust large scale software products
-2. Replace many bad programming ideas with a few good ones, critical to make code composable
-3. Introduce high-level features needed for large scale software
-4. Extreme execution speed, faster than practical in majority of C systems
-5. Next-gen visual and interactive tools to support exploration and experimentation
-
-
-# UNIQUE FEATURES
-
-1. Floyd splits your system into three areas: a) your program's logic, b) your program's processing and c) mapping its execution to the hardware.
-2. Floyd has a clean and minimal skeleton structure for *complete* software systems - including processes, people, concurrency and how they all interact.
-3. Carefully distilled set of syntactical features to move focus to the *system* rather than the inside of functions
-4. Feels like simple imperative programming but with the best bits of functional programming sneaked in discretely
-5. Visual and interactive tools
-
-
-Floyd has three big parts:
-
-1. **Floyd Speak** - a neat new programming language for doing logic. It's statically typed with inference, compiles to byte code or native code. Here you program the bulk of your system.
 ![](readme_cheat_sheet.png)
 
-2. **Floyd Systems** - does two things: A) defines your complete software system and its internal interactions and processes and concurrency, and B) Allows you to use Tweakers to map your software onto the hardware resources (cores, caches, RAM) 
-![](readme_floyd_systems_vst.png)
-
-3. **Floyd Studio** - a fast interactive and visual tool to play around with your code and visually wire things together, profile your system and apply heavy optimizations to it
-
-
-
-Read more about Floyd: [Read more](readme_deeper.md)
-
-# INSTALLATION
-
-TBD (for now, explore dev directory)
 
 # STATUS
 
-The core of the Floyd Speak language is up and running. The compiler compiles the source code to byte code that runs quite fast on an interpreter. There are approximately 750 tests the make sure compiler is solid. The manual is complete.
-A handful small but critical features needs to be implemented before it's truly useful for real world programming.
+The essentials of the Floyd are up and running and very robust (approx 1000 tests). The compiler generates byte code that runs quite fast on an interpreter. The manual is complete.
 
-Floyd Systems finally has its design in place but needs to be implemented in the compiler and runtime.
-
-The details on Tweakers, probes and Floyd Studio are on the drawing board.
+A handful features are needed for a proper 1.0: rounding out the language features somewhat and then *all about hardware performance*.
 
 
-|Item				| Feature					| Link
-|:---				|:---					|:---
-| **Floyd Speak Manual**		|Details the language itself				|[Floyd Speak Manual](floyd_speak.md)
-| **Floyd Speak Core Library Manual**		|Details the most fundamental functions and types				|[Floyd Speak Core Library Manual](floyd_speak_corelibs.md)
-| **Floyd Speak compiler**		|Compiles Floyd Speak source code to byte code.
-| **Floyd Speak interpreter**	|Runs your programs at approx. 7-15% of native speeds.
-| **Floyd Systems Manual**		|				|[Floyd Systems Manual](floyd_systems.md)
-| **Floyd Systems compiler**			|Compiles floyd systems and containers etc to byte code.|
-| **Standard library**				|Small kit of essential functions|
+# IN THE BOX
+
+|Item				| Feature	
+|:---				|:---
+| [Floyd Speak Manual](floyd_speak.md) | Programming language manual
+| [Core Library Manual](floyd_speak_corelibs.md) | File system access, JSON support
+| [Floyd Systems Manual](floyd_systems.md) | How to setup concurrency and change the world.
+| **Floyd compiler** | Compiles Floyd Speak source code to byte code.
+| **Floyd byte Code interpreter**	|Interprets your programs at approx. 7-15% of native speeds.
 
 Floyd compilers and tools are written in portable C++17.
+
+
+# FORWARD
+
+#### LANGUAGE FEATURES
+- More int and float types
+- Sum-type (enum/union) with switch
+- Proper support for libraries
+- Protocol type
+- Basic Unicode functions
+- Binary packing of data
+- C language integration
+- Built-in REST library
+
+#### PERFORMANCE
+- LLVM codegen
+- Better internal threaded task manager
+- Visual profiler, debugger
+- Control over collection backend types, caching
