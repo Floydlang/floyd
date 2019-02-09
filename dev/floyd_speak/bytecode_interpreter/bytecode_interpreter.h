@@ -31,6 +31,7 @@
 #include <vector>
 #include <map>
 #include <atomic>
+#include <chrono>
 #include "immer/vector.hpp"
 #include "immer/map.hpp"
 
