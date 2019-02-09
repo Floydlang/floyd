@@ -12,7 +12,7 @@ cmake_minimum_required (VERSION 3.4)
 #SET (CMAKE_BUILD_TYPE Release)
 #SET (CMAKE_BUILD_TYPE Debug)
 
-include_directories(parts floyd_ast bytecode_interpreter parts/immer-master floyd_parser parts/sha1 .)
+include_directories(parts floyd_basics floyd_ast bytecode_interpreter parts/immer-master floyd_parser parts/sha1 .)
 
 # for newer cmake 
 #add_compile_definitions(DEBUG)
