@@ -1,4 +1,4 @@
-![](floyd_systems_logo.png)
+![](floyd_logo_banner.png)
 
 # FLOYD SYSTEMS MANUAL
 

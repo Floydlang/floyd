@@ -4694,7 +4694,7 @@ QUARK_UNIT_TEST("", "process_test1.floyd", "", ""){
 
 
 
-#define QUICK_REFERENCE_TEST	QUARK_UNIT_TEST
+#define QUICK_REFERENCE_TEST	QUARK_UNIT_TEST_VIP
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "TERNARY OPERATOR", "", ""){
@@ -4918,6 +4918,19 @@ let json_value a = {
 
 
 
+
+
+QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "MAP", "", ""){
+	run_container2(R"(
+
+		func int f(int v){
+			return 1000 + v
+		}
+		let result = map([ 10, 11, 12 ], f)
+		assert(result == [ 1010, 1011, 1012 ])
+
+	)", {}, "", "");
+}
 
 
 

@@ -1,4 +1,4 @@
-![](readme_floyd_logo.png)
+![](floyd_logo_banner.png)
 
 License: MIT
 
@@ -42,7 +42,7 @@ Floyd has no classes, no pointers / references, no tracing GC (uses copying and 
 
 TBD: protocol type for simple polymorphism, basic encapsulation, sumtype and limited lambdas.
 
-![](readme_cheat_sheet.png)
+![](floyd_quick_reference.png)
 
 
 

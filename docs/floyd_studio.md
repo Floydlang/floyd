@@ -1,4 +1,4 @@
-![](floyd_speak_logo.png)
+![](floyd_logo_banner.png)
 
 # FLOYD STUDIO
 

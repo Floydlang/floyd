@@ -1,10 +1,10 @@
-![](floyd_speak_logo.png)
+![](floyd_logo_banner.png)
 
 # FLOYD SPEAK
 
 Floyd Speak is the programming language part of Floyd. It's an alternative to Java and C++, Javascript and Python. Using Floyd Speak you write functions and data types. You make complex data structures, setup concurrency and parallelism and communicate with the world around your program.
 
-![](floyd_speak_cheat_sheet.png)
+![](floyd_quick_reference.png)
 
 
 # DATA TYPES
