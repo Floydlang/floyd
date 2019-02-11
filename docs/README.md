@@ -16,7 +16,7 @@ Floyds web page: [www.floydlang.org](https://www.floydlang.org "Floyd language's
 Floyd separates your program into three separate concerns:
 
 1. Writing the program logic
-2. Programming the interaction between your internal processes and the outside world
+2. Programming internal concurrent processes how they access the outside world
 3. Mapping the program to the CPU and memory system
 
 Floyd compilers and tools are written in C++ 17 and compiles with Clang and GCC.
@@ -36,11 +36,11 @@ Floyd looks like Javascript and has a lot fewer features, syntax and quirks than
 
 ![](floyd_snippets.png)
 
-It's a mashup of imperative, functional and OOP. Functions defaults to **pure** (but with normal local variables). TBD: protocol type allows polymorphism. There is no encapsulation (yet).
+It's a mashup of imperative, functional and OOP. Functions defaults to **pure** (but with normal local variables).
 
-Floyd has no classes, no pointers / references, no tracing GC (uses copying and RC), no threads, mutexes, atomics and no header files. No Closures.
+Floyd has no classes, no pointers / references, no tracing GC (uses copying and RC), no threads, mutexes, atomics and no header files. No Closures. No generics.
 
-Later on, basic encapsulation, generics and lambdas may be added.
+TBD: protocol type for simple polymorphism, basic encapsulation, sumtype and limited lambdas.
 
 ![](readme_cheat_sheet.png)
 
