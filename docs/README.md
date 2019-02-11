@@ -48,22 +48,23 @@ TBD: protocol type for simple polymorphism, basic encapsulation, sumtype and lim
 
 ## CONCURRENCY, STATE AND THE WORLD
 
-Processing and concurrency is done using Floyd's virtual processes and message passing. Each Floyd process has its own private state and are sandboxed. Floyd processes can interact with the world, calling OS APIs and accessing files.
+Processing and concurrency is done using Floyd's virtual processes and message passing. Each Floyd process has its own private state and is sandboxed. Floyd processes can interact with the world, calling OS APIs and accessing files. Keep this code small, with mininal logic.
 
 ![](floyd_container_example.png)
 
+The bulk of your program should be blue-pill code, that is pure.
 
 ## PARALLELISM
 
 *(Implementation in progress)*
 
-Safe parellelism is built in using map() reduce() filter and supermap(). Like shaders running on a GPU. They share an internal OS thread team with the Floyd processes.
+Safe parellelism is built in using map() reduce() filter() and supermap(). Like shaders running on a GPU. They share an internal OS thread team with the Floyd processes.
 
 
 
 ## BYTECODE AND NATIVE
 
-Floyd runs runs on a bytecode interpreter (now) and natively using LLVM (implementation in progress).
+Floyd runs runs on a bytecode interpreter (now) and natively using LLVM (implementation in progress). Both will be available.
 
 
 
@@ -71,7 +72,7 @@ Floyd runs runs on a bytecode interpreter (now) and natively using LLVM (impleme
 
 *(Implementation in progress)*
 
-You optimise your program by running it and *augmenting* your Floyd processe and their function call graph. Each process has its own optimisation settings. This automatically generates new optimized versions of lots of affected functions. This cannot introduce defects! Examples:
+You optimise your program by running it and *augmenting* your Floyd processes and their function call graph. Each process has its own optimisation settings. This automatically generates new optimized versions of affected functions. This cannot introduce defects! Examples:
 
 
 - Change memory layout of structs, order, split, merge, array-of-structs vs struct-of-arrays.
