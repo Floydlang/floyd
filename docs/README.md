@@ -2,64 +2,88 @@
 
 License: MIT
 
-Status: All the basics are finished. Runs on a bytecode interpreter. Will run natively soon.
+Status: Alpha. All the basics are finished. Runs on a bytecode interpreter. Will run natively soon. Production ready for smaller programs.
+
+This repo holds the compiler, the bytecode interpreter and documentation.
+
 
 # WHAT IS FLOYD?
 
 Floyd is a general purpose programming language designed for making very large and robust programs that run really fast.
 
-Learn more here: [www.floydlang.org](https://www.floydlang.org "Floyd language's Homepage")
+Floyds web page: [www.floydlang.org](https://www.floydlang.org "Floyd language's Homepage")
+
+Floyd separates your program into three separate concerns:
+
+1. Writing the program logic
+2. Programming the interaction between your internal processes and the outside world
+3. Mapping the program to the CPU and memory system
+
+Floyd compilers and tools are written in C++ 17 and compiles with Clang and GCC.
 
 
-# USE
+## USE FOR
 
 Use Floyd to build the next Photoshop, Grand Theft Auto or mobile app. But also for short scripts and toy programs. Probably not embedded software, though.
 
 Floyd wants to replace C++, Rust, C#, Python. And Javascript. Only C can stay. Maybe Closure too, just out of respect.
 
 
-# FLOYD IN NUTSHELL
+## LANGUAGE SYNTAX
 
-Floyd separates your program into three separate concerns:
-
-1. Writing the program logic: Floyd Speak.
-2. Programming the interaction between your internal process and the outside world: Floyd Systems and Floyd Processes.
-3. Mapping the program to the cpu and memory system: Floyd's augmentation mechanism and parallelism functions.
-
-Floyd is a small and friendly language that is easy to learn. It looks like Javascript or C. It is statically typed with type inference and runs on a bytecode interpreter (now) and natively using LLVM (implementation in progress). It's got built in types for vectors, dictionaries, JSON, a struct type and strings. All values are immutable / persistent data structures using HAMT and other techniques. Floyd uses reference counting internally.
-
-It's a mashup of imperative, functional and OOP. Functions defaults to pure (but with normal local variables). TBD: protocol type allows polymorphism. There is no encapsulation (yet).
-
-There are no classes, pointers / references, no tracing GC, lambdas (yet), closures, pattern matching, generics (yet), threads, mutexes, atomics, header files, encapsulation (yet).
-
-Floyd compilers and tools are written in C++ 17.
+Floyd looks like Javascript and has a lot fewer features, syntax and quirks than most languages. Floyd is **statically typed** with **type inference**. It's got built in types for vectors, dictionaries, JSON, a struct type and strings. All values are **immutable** / **persistent data structures** using HAMT and other techniques.
 
 
-Processing and concurrency is done using Floyd's virtual processes and message passing. Each process has its own private state. Floyd processes can call impure functions and interact with the world. The rest of your program is pure.
+![](floyd_snippets.png)
+
+It's a mashup of imperative, functional and OOP. Functions defaults to **pure** (but with normal local variables). TBD: protocol type allows polymorphism. There is no encapsulation (yet).
+
+Floyd has no classes, no pointers / references, no tracing GC (uses copying and RC), no threads, mutexes, atomics and no header files. No Closures.
+
+Later on, basic encapsulation, generics and lambdas may be added.
+
+![](readme_cheat_sheet.png)
 
 
-# FLOYD PERFORMANCE
+
+## CONCURRENCY, STATE AND THE WORLD
+
+Processing and concurrency is done using Floyd's virtual processes and message passing. Each Floyd process has its own private state and are sandboxed. Floyd processes can interact with the world, calling OS APIs and accessing files.
+
+![](floyd_container_example.png)
+
+
+## PARALLELISM
+
 *(Implementation in progress)*
 
+Safe parellelism is built in using map() reduce() filter and supermap(). Like shaders running on a GPU. They share an internal OS thread team with the Floyd processes.
 
-Parallelism is simple and safe with map(), reduce(), filter() and supermap() functions. Like shaders running on a GPU. They share an internal OS thread team with the Floyd processes.
 
-You optimise your program by running it and *augmenting* your Floyd process functions (and the function calls they make, downward the call graph). This automatically generates new optimized versions of lots of affected functions. This cannot introduce defects! Examples:
+
+## BYTECODE AND NATIVE
+
+Floyd runs runs on a bytecode interpreter (now) and natively using LLVM (implementation in progress).
+
+
+
+## OPTIMIZATION
+
+*(Implementation in progress)*
+
+You optimise your program by running it and *augmenting* your Floyd processe and their function call graph. Each process has its own optimisation settings. This automatically generates new optimized versions of lots of affected functions. This cannot introduce defects! Examples:
+
 
 - Change memory layout of structs, order, split, merge, array-of-structs vs struct-of-arrays.
 - Select backend for collections: a dictionary can be an array with binary search, a HAMT, a hash table or a red-black tree - all with different performance tradeoffs.
 - Control thread priority, affinity, how many threads to use for the parallelization features.
 - Insert read or write caches, introduce batching.
 
-
-# QUICK REFERENCE
-
-![](readme_cheat_sheet.png)
-
+![](floyd_optimization.png)
 
 # STATUS
 
-The essentials of Floyd are up and running and very robust (approx 1000 tests), including the concurrent Floyd processes. The compiler generates bytecode that runs at approx 5-15% of native speed on the interpreter. The manual is complete.
+The essentials of Floyd are up and running and very robust (approx 1000 tests), including the concurrent Floyd processes. The compiler generates bytecode that runs at approx 5-10% of native speed on the interpreter. The manual is complete.
 
 A handful features are needed for a satisfying 1.0: rounding out the language features somewhat and then *it's all about performance*.
 
@@ -69,10 +93,10 @@ A handful features are needed for a satisfying 1.0: rounding out the language fe
 |Item				| Feature	
 |:---				|:---
 | [Floyd Speak Manual](floyd_speak.md) | Programming language manual
-| [Core Library Manual](floyd_speak_corelibs.md) | File system access, JSON support
+| [Core Library Manual](floyd_speak_corelibs.md) | File system access, JSON support, hashes, map() etc.
 | [Floyd Systems Manual](floyd_systems.md) | How to use Floyd processes to change the world
 | **Floyd compiler** | Compiles Floyd source code to byte code
-| **Floyd byteCode interpreter**	|Runs your program
+| **Floyd bytecode interpreter**	|Runs your program
 
 
 
