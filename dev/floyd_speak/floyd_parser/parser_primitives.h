@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 #include <map>
-
+#include <algorithm>
 
 namespace floyd {
 struct typeid_t;
