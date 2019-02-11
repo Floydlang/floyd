@@ -2,21 +2,21 @@
 
 License: MIT
 
-Status: Alpha. All the basics are finished. Runs on a bytecode interpreter. Will run natively soon. Production ready for smaller programs.
+Status: Alpha. All the basics are finished and robust. Runs on bytecode interpreter. Will run natively soon. Production ready for smaller programs.
 
 This repo holds the compiler, the bytecode interpreter and documentation.
 
 
 # WHAT IS FLOYD?
 
-Floyd is a general purpose programming language designed for making very large and robust programs that run really fast.
+Floyd is a general purpose programming language designed for making very large and robust programs that run really fast, while ducking many of the problems of older languages.
 
 Floyds web page: [www.floydlang.org](https://www.floydlang.org "Floyd language's Homepage")
 
 Floyd separates your program into three separate concerns:
 
 1. Writing the program logic
-2. Programming internal concurrent processes how they access the outside world
+2. Programming internal concurrent processes and how they access the outside world
 3. Mapping the program to the CPU and memory system
 
 Floyd compilers and tools are written in C++ 17 and compiles with Clang and GCC.
