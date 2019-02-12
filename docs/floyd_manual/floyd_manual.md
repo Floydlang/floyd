@@ -1,8 +1,10 @@
+??? Make more meaty examples, with structs and actual data and "objects".
+
 ![](floyd_logo_banner.png)
 
 # FLOYD
 
-Floyd is the programming language part of Floyd. It's an alternative to Java and C++, Javascript and Python. Using Floyd you write functions and data types. You make complex data structures, setup concurrency and parallelism and communicate with the world around your program.
+Floyd is the programming language part of Floyd. It's an alternative to Java and C++, JavaScript and Python. Using Floyd, you write functions and data types. You make complex data structures, setup concurrency and parallelism and communicate with the world around your program.
 
 
 
@@ -105,18 +107,18 @@ Why is the OK? Well to be picky there are no pure functions, since calling a pur
 
 ### IMMUTABLE VALUES VS VARIABLES
 
-All values in Floyd are immutable -- you make new values based on previous values but you don't directly modify old values. Internally Floyd uses clever mechanisms to make this fast and avoids copying data too much. It's perfectly good to replace a character in a 3 GB long string and get a new 3 GB string as a result. Almost all of the characters will be stored only once.
+All values in Floyd are immutable -- you make new values based on previous values, but you don't directly modify old values. Internally Floyd uses clever mechanisms to make this fast and avoids copying data too much. It's perfectly good to replace a character in a 3 GB long string and get a new 3 GB string as a result. Almost all of the characters will be stored only once.
 
 The only exception is local variables that can be forced to be mutable.
 
-(Also each green-process has one mutable value too.)
+(Also, each green-process has one mutable value too.)
 
 
 - Function arguments
 - Function local variables
 - Member variables of structs.
 
-When defining a variable you can often skip telling which type it is, since the type can be inferred by the Floyd compiler.
+When defining a variable, you can often skip telling which type it is, since the type can be inferred by the Floyd compiler.
 
 Explicit
 
@@ -130,7 +132,7 @@ Implicit
 let y = 11
 ```
 
-You can even leave out "let" to define a new variable, if that local variable do not yet exist:
+You can even leave out "let" to define a new variable, if that local variable does not yet exist:
 
 ```
 y = 12
@@ -177,28 +179,31 @@ These are features built into every type: integer, string, struct, dictionary:
 
 This also goes for print(), map(), to\_string(), value\_to\_jsonvalue(), send() etc.
 
-Example: your application's entire state may be stored in *one* value in a struct containing other structs and vectors and so on. This value can still be copied around quickly, it is automatically sortable, convertable to JSON or whatever.
+Example: your application's entire state may be stored in *one* value in a struct containing other structs and vectors and so on. This value can still be copied around quickly, it is automatically sortable, convertible to JSON or whatever.
 
 
 ### NO POINTERS
 
-There are no pointers or references in Floyd. You copy values around deeply instead. Even a big value like your games entire world or your word processor's entire document. Behind the curtains Floyd uses pointers extensively to make this fast.
+There are no pointers or references in Floyd. You copy values around deeply instead. Even a big value like your game's entire world or your word processor's entire document. Behind the curtains Floyd uses pointers extensively to make this fast.
 
 Removing the concept of pointers makes programming easier. There are no dangling pointers, aliasing problems or defensive copying and other classic problems. It also makes it simpler for the runtime and compiler to generate extremely fast code.
 
 ### STATIC TYPING, INFERRED
 
-Every value and variable and identifier has a static type: a type that is defined at compile time, before the program runs. This is how Java, C++ and Swift works. Javascript, Python and Ruby does not use static typing.
+Every value and variable and identifier have a static type: a type that is defined at compile time, before the program runs. This is how Java, C++ and Swift works. Javascript, Python and Ruby does not use static typing.
 
+You can often leave out the actual type from the code, when the compiler already knows the type.
 
 
 
 
 ## DATA TYPES
 
-These are the primitive data types built into the language itself. The building blocks of all Floyd programs.
+These are the primitive data types built into the language itself. The building blocks of all values and data in Floyd.
 
-The goal is that all the basics you need are already there in the language and the core library. This makes it easy to start making meaningful programs. It also allows composability since all Floyd code can rely on these types and communicate between themselves using these types. This greatly reduces the need to write glue code that converts between different librarys' string classes and logging and so on.
+The goal is that all the basics you need are already there in the language and the core library. This makes it easy to start making meaningful programs.
+
+It also promotes composability since all Floyd code can rely on these types and communicate between themselves using these types. This greatly reduces the need to write glue code that converts between different library's string classes and logging and so on.
 
 |TYPE		  	| USE
 |:---				|:---	
@@ -229,20 +234,20 @@ Notice that string has many qualities of an array of characters. You can ask for
 
 ## SOFTWARE SYSTEM - C4
 
-Floyd uses the C4 model to organize your code. This is optional but is a very light weight way to orgainise your code and programs and generate a few great diagrams so you can reason about the system.
+Floyd uses the C4 model to organize your code. This is completely optional to use but is a very fast and lightweight way to organise your code and programs and generate a few great diagrams that lets you can reason about the system.
 
 Read more here: https://c4model.com/
 
 These lets you have a complete overview over your entire system and how users interact with it, then drill down to individual containers and further down to components and the code itself.
 
-In Floyd you describe you system using the keywords **software-system** and **container-def**.
+In Floyd you describe your system using the keywords **software-system** and **container-def**.
 
 ![Software Systems](floyd_systems_software_system.png)
 
 
 ### PERSON
 
-Represents various human users of your software system. Uses some sort of user interface to the Software System. For example a UI on an iPhone.
+Represents various human users of your software system. Uses some sort of user interface to the Software System. For example, a UI on an iPhone.
 
 
 ### C1 - SOFTWARE SYSTEM
@@ -254,14 +259,14 @@ Highest level of abstraction and describes something that delivers value to its 
 
 ### C2 - CONTAINER
 
-Containers is were the bulk of the programming happens. A container represents something that hosts code or data. A container is something that needs to be running in order for the overall software system to work. A mobile app, a server-side web application, a client-side web application, a micro service: all examples of containers.
+Containers is where the bulk of the programming happens. A container represents something that hosts code or data. A container is something that needs to be running in order for the overall software system to work. A mobile app, a server-side web application, a client-side web application, a micro service: all examples of containers.
 
 This is usually a single OS-process, with internal mutation, time, several threads. It looks for resources and knows how to string things together inside the container.
 
 
 The container *completely* defines *all* its: concurrency, state, communication with outside world and runtime errors of the container. This includes sockets, file systems, messages, screens, UI.
 
-Containers declare which external systems they need, which libraries are needed and its own internal Floyd processes. A container's design is usually a one-off and cannot be composed into other containers.
+Containers declare which external systems they need; which libraries are needed and its own internal Floyd processes. A container's design is usually a one-off and cannot be composed into other containers.
 
 There are proxy-containers that lets you place things like Amazon S3 or an email server into your system.
 
@@ -272,7 +277,7 @@ The basic building blocks are components, built in ones and ones you program you
 
 ### C3 - COMPONENT
 
-Grouping of related functionality encapsulated behind a well-defined interface. Like a software integrated circuit or a code library. Does not span processes. JPEG library, JSON lib. Custom component for syncing with your server. Amazon S3 library, socket library.
+Grouping of related functionalities encapsulated behind a well-defined interface. Like a software integrated circuit or a code library. Does not span processes. JPEG library, JSON lib. Custom component for syncing with your server. Amazon S3 library, socket library.
 
 A component can be fully pure. Pure components have no side effects, have no internal state and are passive, like a ZIP library or a matrix-math library.
 
@@ -366,15 +371,15 @@ func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
 |Part		| Details
 |:---	|:---	
 |**my\_gui\_state_t**		| this is a struct that holds the mutable memory of this process and any component instances needed by the container.
-|**my\_gui()**				| this function is specified in the software-system/"containers"/"my_iphone_app"/"clocks". The message is always a json_value. You can decide how encode the message into that.
+|**my\_gui()**				| this function is specified in the software-system/"containers"/"my_iphone_app"/"clocks". The message is always a json_value. You can decide how to encode the message into that.
 |**my\_gui__init()**		| this is the init function -- it has the same name with "__init" at the end. It has no arguments and returns the initial state of the process.
 
 
-This is how you express time / mutation / concurrency in Floyd. These concepts are related and they are all setup at the top level of a container. In fact, this is the main **purpose** of a container.
+This is how you express time / mutation / concurrency in Floyd. These concepts are related, and they are all setup at the top level of a container. In fact, this is the main **purpose** of a container.
 
 The goal with Floyd's concurrency model is:
 
-1. Simple and robust pre-made mechanisms for real-world concurrency need. Avoid general-purpose primitives, instea have a ready made solution that works.
+1. Simple and robust pre-made mechanisms for real-world concurrency need. Avoid general-purpose primitives, instead have a ready-made solution that works.
 2. Composable.
 3. Allow you to make a *static design* of your container and its concurrency and state.
 4. Separate out parallelism into a separate mechanism.
@@ -396,7 +401,7 @@ Use a process if:
 
 1. You want to be able to run work concurrently, like loading data in the background
 2. You want a mutable state / memory
-3. You want to model a system where things happens concurrently, like audio streaming vs main thread
+3. You want to model a system where things happen concurrently, like audio streaming vs main thread
 
 
 The inbox is thread safe and it's THE way to communicate across processes. The inbox has these purposes:
@@ -419,7 +424,7 @@ Processes are very inexpensive.
 **Synchronization points between systems (state or concurrent) always breaks all attempts to composition. That's why Floyd has moved these to top level of container.**
 
 
-The runtime can chose to execute processes on different cores or servers. You have control over this via tweakers. Tweakers also controls the priority of processes vs hardware.
+The runtime can choose to execute processes on different cores or servers. You have control over this via tweakers. Tweakers also controls the priority of processes vs hardware.
 
 
 Floyd process limitations:
@@ -439,7 +444,7 @@ If the processes are running on the same clock, the sequence of:
 - process B completes and updates its state
 - process A continues
 
-...is done synchronously without any schedueling or OS-level context switching - just like a function call from A to B.
+...is done synchronously without any scheduling or OS-level context switching - just like a function call from A to B.
 
 You synchronise processes when it's important that the receiving process handles the messages *right away*. 
 
@@ -449,7 +454,7 @@ Synced processes still have their own state and can be used as controllers / med
 
 ### GAIN PERFORMANCE VIA CONCURRENCY
 
-Sometimes we introduce concurrency to make more parallelism possible: multithreading a game engine is taking a non-concurrent design and making it concurrent to be able to improve throughput by running many tasks in parallel. This is different to using concurrency to model real-world concurrency like UI vs background cloud com vs realtime audio processing.
+Sometimes we introduce concurrency to make more parallelism possible: multithreading a game engine is taking a non-concurrent design and making it concurrent to be able to improve throughput by running many tasks in parallel. This is different to using concurrency to model real-world concurrency like UI vs background cloud com vs real-time audio processing.
 
 
 
@@ -462,7 +467,7 @@ Sometimes we introduce concurrency to make more parallelism possible: multithrea
 |3	| Perform non-blocking impure background calculation (auto save doc) | Copy document, create worker thread | Use process, use data directly
 |4	| Run process concurrently, like analyze game world to prefetch assets | Manually synchronize all shared data, use separate thread | Use process -- data is immutable
 |5	| Handle requests from OS quickly, like call to audio buffer switch process() | Use callback function | Use process and set its clock to sync to clock of buffer switch
-|6	| Improve performance using concurrency + parallelism / fan-in-fan-out / processing pipeline | Split work into small tasks that are independent, queue them to a thread team, resolve dependencies somehow, use end-fence with completetion notification | call map() or supermap() from a process.
+|6	| Improve performance using concurrency + parallelism / fan-in-fan-out / processing pipeline | Split work into small tasks that are independent, queue them to a thread team, resolve dependencies somehow, use end-fence with competition notification | call map() or supermap() from a process.
 |7	| Spread heavy work across time (do some processing each game frame) | Use coroutine or thread that sleeps after doing some work. Wake it next frame. | Process does work. It calls select() inside a loop to wait on next trigger to continue work.
 |8	| Do work regularly, independent of other threads (like a timer interrupt) | Call timer with callback / make thread that sleeps on event | Use process that calls post_at_time(now() + 100) to itself
 |9	| Small server | Write loop that listens to socket | Use process that waits for messages
@@ -556,7 +561,7 @@ let test_json2 = json_value(
 )
 ```
 
-Notice that JSON objects are more lax than Floyd: you can mix different types of values in the same object or array. Floyd is stricter: a vector can only hold one type of element, same with dictionaries.
+Notice that JSON objects are laxer than other Floyd values: you can mix different types of values in the same object or array. Floyd is stricter: a vector can only hold one type of element, same with dictionaries.
 
 
 
@@ -595,7 +600,7 @@ let a = "hello" //	This is an end of line comment.
 
 ## AUTOMATIC SERIALIZATION
 
-Serializing any Floyd value is a built in mechanism. It is always true-deep.
+Serializing any Floyd value is a built-in mechanism. It is always true-deep.
 
 **This is very central to Floyd -- values are core and they can easily be passed around, sent as messages, stored in files, copy-pasted from log or debugger into the source code.**
 
@@ -618,7 +623,7 @@ These are the different shapes a JSON can have in Floyd:
 
 	Example string: {\\"name\":\\"John\", \\"age\\":31, \\"city\\":\\"New York\\"}
 
-Different destinations have different limitations and escape machanisms and will need different escape functions. This is not really a JSON-related issue, more a URL, REST question.
+Different destinations have different limitations and escape mechanisms and will need different escape functions. This is not really a JSON-related issue, more a URL, REST question.
 
 
 #### FUNCTIONS
@@ -754,7 +759,7 @@ Floyd files are always utf-8 files with no BOM. Their extension is ".floyd".
 
 An expression is how you calculate new values. The output of an expression is always another value.
 
-Comparisons are deep: for a composite values they consider all members values and their member values. This goes for struct members and collections.
+Comparisons are deep: for a composite value they consider all members values and their member values. This goes for struct members and collections.
 
 
 
@@ -1016,7 +1021,7 @@ In each body you can write any statements. There is no "break" keyword.
 
 ### FOR LOOP STATEMENT
 
-For loops are used to execute a body of statements many times. The number of times is calculated *before* the first time the body is called. Many other languages evaluates the condition for each loop iteration. In Floyd you use a while-loop for that.
+For loops are used to execute a body of statements many times. The number of times is calculated *before* the first time the body is called. Many other languages evaluate the condition for each loop iteration. In Floyd you use a while-loop for that.
 
 Example: Closed range that starts with 1 and ends with 5:
 
@@ -1043,6 +1048,7 @@ for (tickMark in a ..< string.size()) {
 - ..< defines an *open range*. Up to the end value but *excluding the end value*.
 - ..- defines a *closed range*. Up to and *including* the end.
 
+Notice: prefer to use map(), filter() and reduce() instead of for-loops whenever possible. This makes cleaner code and more optimisation opportunities.
 
 ### WHILE LOOP STATEMENT
 
@@ -1073,7 +1079,7 @@ The return statement aborts the execution of the current function as the functio
 
 ## SOFTWARE-SYSTEM STATEMENT
 
-This is a dedicated keyword for defining software systems: **software-system**. It's contents is encoded as a JSON object and designed to be either hand-coded or processed by tools. You only have one of these in a software system.
+This is a dedicated keyword for defining software systems: **software-system**. Its contents is encoded as a JSON object and designed to be either hand-coded or processed by tools. You only have one of these in a software system.
 
 |Key		| Meaning
 |:---	|:---	
@@ -1125,7 +1131,7 @@ This is an object where each key is the name of a persona and a short descriptio
 
 ## CONTAINER-DEF STATEMENT
 
-This is a dedicated keyword. It defines *one* container, it's name, its internal processes and how they interact.
+This is a dedicated keyword. It defines *one* container, its name, its internal processes and how they interact.
 
 |Key		| Meaning
 |:---	|:---	
@@ -1364,7 +1370,7 @@ You can use these escape characters in string literals by entering \n or \' or \
 | print("What does \\"blobb\\" mean?") | What does "blobb" mean? | Allows you to insert a double quotation mark into your string literal without ending the string literal itself.
 
 
-Floyd string literals do not support insert hex sequences or unicode code points.
+Floyd string literals do not support insert hex sequences or Unicode code points.
 
 
 ##### CORE FUNCTIONS
@@ -1381,7 +1387,7 @@ Floyd string literals do not support insert hex sequences or unicode code points
 
 ## VECTOR DATA TYPE
 
-A vector is a collection of values where you lookup the values using an index between 0 and (vector size - 1). The items in a vector are called "elements". The elements are ordered. Finding an element at an index uses constant time. In other languages vectors are called "arrays" or even "lists".
+A vector is a collection of values where you look up the values using an index between 0 and (vector size - 1). The items in a vector are called "elements". The elements are ordered. Finding an element at an index uses constant time. In other languages vectors are called "arrays" or even "lists".
 
 
 You can make a new vector and specify its elements directly, like this:
@@ -1430,9 +1436,9 @@ assert(a == [ 10, 20, 30, 40, 50 ])
 
 ## DICTIONARY DATA TYPE
 
-A collection of values where you identify the elemts using string keys. It is not sorted. In C++ you would use a std::map. 
+A collection of values where you identify the values using string keys. It is not sorted. In C++ you would use a std::map. 
 
-You make a new dictionary and specify its elements like this:
+You make a new dictionary and specify its values like this:
 
 ```
 let [string: int] a = {"red": 0, "blue": 100,"green": 255}
@@ -1454,7 +1460,7 @@ struct test {
 
 You can put any type of value into the dictionary (but not mix inside the same dictionary).
 
-Use [] to look up elements using a key. It throws an exception is the key not found. If you want to avoid that. check with exists() first.
+Use [] to look up values using a key. It throws an exception is the key not found. If you want to avoid that. check with exists() first.
 
 You copy dictionaries using = and all comparison expressions work, just like with strings and vectors.
 
@@ -1462,8 +1468,8 @@ You copy dictionaries using = and all comparison expressions work, just like wit
 ##### CORE FUNCTIONS
 
 - __print()__: prints a vector to the default output of the app.
-- __update()__: changes one element of the dictionary and returns a new dictionary
-- __size()__: returns the number of elements in the dictionary, as an integer.
+- __update()__: changes one value of the dictionary and returns a new dictionary
+- __size()__: returns the number of values in the dictionary, as an integer.
 - __exists()__: checks to see if the dictionary holds a specific key
 - __erase()__: erase a specific key from the dictionary and returns a new dictionary
 
@@ -1535,7 +1541,7 @@ struct point {
 
 let a = point(0, 3)
 
-//	Nothing happens! Setting width to 100 returns us a new point but we we don't keep it.
+//	Nothing happens! Setting width to 100 returns us a new point but we don't keep it.
 update(a,"x", 100)
 assert(a.x == 0)
 
@@ -1558,7 +1564,7 @@ let a = image("Cat image.png", point(512, 256))
 
 assert(a.size.x == 512)
 
-//	Update the width-member inside the image's size-member. The result is a brand new image, b!
+//	Update the width-member inside the image's size-member. The result is a brand-new image, b!
 let b = update(a, "size.x", 100)
 assert(a.size.x == 512)
 assert(b.size.x == 100)
@@ -1569,7 +1575,7 @@ assert(b.size.x == 100)
 
 A typeid is tells the type of a value.
 
-When you reference one of the built in primitive types by name, you are accessing a variable of type typeid.
+When you reference one of the built-in primitive types by name, you are accessing a variable of type typeid.
 
 - bool
 - int
@@ -1640,9 +1646,9 @@ Many of the core functions work with json\_value, but it often depends on the ac
 
 TODO 1.0
 
-This defines a set of functions that serveral clients can implement differently. This introduced polymorphim into Floyd. Equivalent to inteface classes in other languages.
+This defines a set of functions that several clients can implement differently. This introduced polymorphism into Floyd. Equivalent to interface classes in other languages.
 
-Protocol member functions can be tagged "impure" which allows it to be implemented so it saves or uses state, modifies the world. There is no way to do these things in the implementation of pure protocol function memembers.
+Protocol member functions can be tagged "impure" which allows it to be implemented so it saves or uses state, modifies the world. There is no way to do these things in the implementation of pure protocol function members.
 
 
 
