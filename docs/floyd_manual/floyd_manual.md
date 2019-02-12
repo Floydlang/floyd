@@ -250,14 +250,14 @@ In Floyd you describe your system using the keywords **software-system** and **c
 Represents various human users of your software system. Uses some sort of user interface to the Software System. For example, a UI on an iPhone.
 
 
-### C1 - SOFTWARE SYSTEM
+### LEVEL 1 - SOFTWARE SYSTEM
 
 Highest level of abstraction and describes something that delivers value to its users, whether they are human or not, can be composed of many computers working together.
 
 ![Level1](floyd_systems_level1_diagram.png)
 
 
-### C2 - CONTAINER
+### LEVEL 2 - CONTAINER
 
 Containers is where the bulk of the programming happens. A container represents something that hosts code or data. A container is something that needs to be running in order for the overall software system to work. A mobile app, a server-side web application, a client-side web application, a micro service: all examples of containers.
 
@@ -275,7 +275,7 @@ The basic building blocks are components, built in ones and ones you program you
 ![Level2](floyd_systems_level2_diagram.png)
 
 
-### C3 - COMPONENT
+### LEVEL 3 - COMPONENT
 
 Grouping of related functionalities encapsulated behind a well-defined interface. Like a software integrated circuit or a code library. Does not span processes. JPEG library, JSON lib. Custom component for syncing with your server. Amazon S3 library, socket library.
 
@@ -291,7 +291,7 @@ Pure components are preferable when possible.
 Notice: a component used in several containers or a piece of code that appears in several components will *appear in each*, appearing like they are duplicates. The perspective of the diagrams is **logic dependencies**. These diagrams don't show the physical dependencies -- which source files or libraries that depends on each other.
 
 
-### C4 - CODE
+### LEVEL 4 - CODE
 
 Classes. Instance diagram. Examples. Passive.
 
