@@ -1,8 +1,8 @@
 ![](floyd_logo_banner.png)
 
-# FLOYD SPEAK
+# FLOYD
 
-Floyd Speak is the programming language part of Floyd. It's an alternative to Java and C++, Javascript and Python. Using Floyd Speak you write functions and data types. You make complex data structures, setup concurrency and parallelism and communicate with the world around your program.
+Floyd is the programming language part of Floyd. It's an alternative to Java and C++, Javascript and Python. Using Floyd you write functions and data types. You make complex data structures, setup concurrency and parallelism and communicate with the world around your program.
 
 ![](floyd_quick_reference.png)
 
@@ -37,7 +37,7 @@ Notice that string has many qualities of an array of characters. You can ask for
 
 # SOURCE CODE FILES
 
-Floyd Speak files are always utf-8 files with no BOM. Their extension is ".floyd". immutable values 
+Floyd files are always utf-8 files with no BOM. Their extension is ".floyd". immutable values 
 
 # COMMAND LINE
 
@@ -1317,9 +1317,9 @@ Here is the DAG for the complete syntax of Floyd.
 
 # FLOYD SYSTEMS MANUAL
 
-Floyd Speak: this is the basic way to create logic. The code is isolated from the noise and troubles of the real world: everything is immutable and pure. Time does not advance. There is no concurrency or communication with other systems, no runtime errors.
+Floyd: this is the basic way to create logic. The code is isolated from the noise and troubles of the real world: everything is immutable and pure. Time does not advance. There is no concurrency or communication with other systems, no runtime errors.
 
-Floyd Systems: this is how you make software that lives in the real world, where all those things happens all the time. Floyd allows you create huge, robust software systems that you can reason about, spanning computers and processes, handling communication and time advancing and faults. Floyd Systems are built on top of Floyd Speak logic.
+Floyd Systems: this is how you make software that lives in the real world, where all those things happens all the time. Floyd allows you create huge, robust software systems that you can reason about, spanning computers and processes, handling communication and time advancing and faults. Floyd Systems are built on top of Floyd logic.
 
 Floyd uses the C4 model to organize all of this. Read more here: https://c4model.com/
 
@@ -1428,7 +1428,7 @@ Notice: a component used in several containers or a piece of code that appears i
 
 # MORE ABOUT CONTAINERS
 
-Containers are where you spend most of your time along with writing the Floyd Speak code.
+Containers are where you spend most of your time along with writing the Floyd code.
 
 A mobile app is a container, so is the Django server on Heroku. A container is typically run as its own OS process.
 
@@ -1653,7 +1653,7 @@ Notice: map() and supermap() shares threads with other mechanisms in the Floyd r
 
 [//]: # (???)
 
-This is a basic command line app, have only one clock that gathers ONE input value from the command line arguments, calls some pure Floyd Speak functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
+This is a basic command line app, have only one clock that gathers ONE input value from the command line arguments, calls some pure Floyd functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
 main() one clock only.
 
 
@@ -1697,13 +1697,13 @@ This game does audio and Open GL graphics. It runs many different clocks. It use
 
 # REFERENCE
 
-Here are all the details you need to use Floyd Systems. Every single feature. Floyd Speak is the building block for the logic used by the Floyd System.
+Here are all the details you need to use Floyd Systems. Every single feature. Floyd is the building block for the logic used by the Floyd System.
 
 Highest level of abstraction and describes something that delivers value to its users, whether they are human or not, can be composed of many computers working together.
 
 There is no support for package management built into Floyd 1.0.
 
-Floyd System defines what people use the system, which servers and programs and applications that are involved, how each program does its internal processing, which components its uses and so on. It's a lot. But the bulk of code is not included here - the program logic. The program logic is written in Floyd Speak and stored inside one or many components.
+Floyd System defines what people use the system, which servers and programs and applications that are involved, how each program does its internal processing, which components its uses and so on. It's a lot. But the bulk of code is not included here - the program logic. The program logic is written in Floyd and stored inside one or many components.
 
 
 
