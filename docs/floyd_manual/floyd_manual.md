@@ -4,55 +4,25 @@
 
 Floyd is the programming language part of Floyd. It's an alternative to Java and C++, Javascript and Python. Using Floyd you write functions and data types. You make complex data structures, setup concurrency and parallelism and communicate with the world around your program.
 
+
+
 ![](floyd_quick_reference.png)
 
 
-# DATA TYPES
-
-These are the primitive data types built into the language itself. The building blocks of all Floyd programs.
-
-The goal is that all the basics you need are already there in the language and the core library. This makes it easy to start making meaningful programs. It also allows composability since all Floyd code can rely on these types and communicate between themselves using these types. This greatly reduces the need to write glue code that converts between different librarys' string classes and logging and so on.
-
-|TYPE		  	| USE
-|:---				|:---	
-|__bool__			|__true__ or __false__
-|__int__			| Signed 64 bit integer
-|__double__		| 64-bit floating point number
-|__string__		| Built-in string type. 8-bit pure (supports embedded zeros). Use for machine strings, basic UI. Not localizable. Typically used for Windows Latin1, UTF-8 or ASCII.
-|__typeid__		| Describes the *type* of a value.
-|__function__	| A function value. Functions can be Floyd functions or C functions. They are callable.
-|__struct__		| Like C struct or classes or tuples. A value object.
-|__protocol__	| A value that hold a number of callable functions. Also called interface or abstract base class.
-|__vector__		| A continuous array of elements addressed via indexes.
-|__dictionary__	| Lookup values using string keys.
-|__json_value__	| A value that holds a JSON-compatible value, can be a big JSON tree.
-|TODO POC: __sum-type__		| Tagged union.
-|TODO 1.0: __float__		| 32-bit floating point number
-|TODO 1.0: __int8__		| 8-bit signed integer
-|TODO 1.0: __int16__		| 16-bit signed integer
-|TODO 1.0: __int32__		| 32-bit signed integer
-
-Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [], etc.
 
 
-# SOURCE CODE FILES
+![](cpu_overview.png)
 
-Floyd files are always utf-8 files with no BOM. Their extension is ".floyd". immutable values 
-
-# COMMAND LINE
-
-|COMMAND		  	| MEANING
-|:---				|:---	
-| floyd run mygame.floyd | compile and run the floyd program "mygame.floyd"
-| floyd compile mygame.floyd | compile the floyd program "mygame.floyd" to an AST, in JSON format
-| floyd help		| Show built in help for command line tool
-| floyd runtests	| Runs Floyds internal unit tests
-| floyd benchmark 		| Runs Floyd built in suite of benchmark tests and prints the results.
-| floyd -t mygame.floyd		| the -t turns on tracing, which shows Floyd compilation steps and internal states
+??? Also draw computing power.
 
 
 
-# CONCEPT: PURE AND IMPURE FUNCTIONS
+
+
+# BASIC CONCEPTS
+
+
+## FUNCTIONS (PURE AND IMPURE)
 
 Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants, never read or modify anything: not global variables, not by calling another, impure function.
 
@@ -131,41 +101,9 @@ This is a type of function that *has side effects or state* -- but the calling f
 Why is the OK? Well to be picky there are no pure functions, since calling a pure function makes your CPU emit more heat and consumes real-world time, makes other programs run slower, consumes memory bandwidth. But a pure function cannot observe those side effects either.
 
 
-# CONCEPT: DEEP BY VALUE
+## VALUES, VARIABLES
 
-All values and aggregated members values are always considered in operations in any type of nesting of structs and values and collections. This includes equality checks or assignment for example.
-
-The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
-
-These are features built into every type: integer, string, struct, dictionary:
-
-|EXPRESSION		| EXPLANATION
-|:---				|:---	
-|__a = b__ 		| This true-deep copies the value b to the new name a.
-|__a == b__		| a exactly the same as b
-|__a != b__		| a different to b
-|__a < b__		| a smaller than b
-|__a <= b__ 		| a smaller or equal to b
-|__a > b__ 		| a larger than b
-|__a >= b__ 		| a larger or equal to b
-
-This also goes for print(), map(), to\_string(), value\_to\_jsonvalue(), send() etc.
-
-Example: your application's entire state may be stored in *one* value in a struct containing other structs and vectors and so on. This value can still be copied around quickly, it is automatically sortable, convertable to JSON or whatever.
-
-
-# CONCEPT: NO POINTERS
-
-There are no pointers or references in Floyd. You copy values around deeply instead. Even a big value like your games entire world or your word processor's entire document. Behind the curtains Floyd uses pointers extensively to make this fast.
-
-Removing the concept of pointers makes programming easier. There are no dangling pointers, aliasing problems or defensive copying and other classic problems. It also makes it simpler for the runtime and compiler to generate extremely fast code.
-
-# CONCEPT: STATIC TYPING
-
-Every value and variable and identifier has a static type: a type that is defined at compile time, before the program runs. This is how Java, C++ and Swift works. Javascript, Python and Ruby does not use static typing.
-
-
-# CONCEPT: IMMUTABLE VALUES VS VARIABLES
+### IMMUTABLE VALUES VS VARIABLES
 
 All values in Floyd are immutable -- you make new values based on previous values but you don't directly modify old values. Internally Floyd uses clever mechanisms to make this fast and avoids copying data too much. It's perfectly good to replace a character in a 3 GB long string and get a new 3 GB string as a result. Almost all of the characters will be stored only once.
 
@@ -219,55 +157,644 @@ int main(){
 ```
 
 
+### DEEP BY VALUE
 
-# CONCEPT: GLOBAL SCOPE
+All values and aggregated members values are always considered in operations in any type of nesting of structs and values and collections. This includes equality checks or assignment for example.
 
-Here you normally define functions, structs and global constants. The global scope can have almost any statement and they execute at program start. Simple programs can do without defining any functions at all.
+The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
+
+These are features built into every type: integer, string, struct, dictionary:
+
+|EXPRESSION		| EXPLANATION
+|:---				|:---	
+|__a = b__ 		| This true-deep copies the value b to the new name a.
+|__a == b__		| a exactly the same as b
+|__a != b__		| a different to b
+|__a < b__		| a smaller than b
+|__a <= b__ 		| a smaller or equal to b
+|__a > b__ 		| a larger than b
+|__a >= b__ 		| a larger or equal to b
+
+This also goes for print(), map(), to\_string(), value\_to\_jsonvalue(), send() etc.
+
+Example: your application's entire state may be stored in *one* value in a struct containing other structs and vectors and so on. This value can still be copied around quickly, it is automatically sortable, convertable to JSON or whatever.
+
+
+### NO POINTERS
+
+There are no pointers or references in Floyd. You copy values around deeply instead. Even a big value like your games entire world or your word processor's entire document. Behind the curtains Floyd uses pointers extensively to make this fast.
+
+Removing the concept of pointers makes programming easier. There are no dangling pointers, aliasing problems or defensive copying and other classic problems. It also makes it simpler for the runtime and compiler to generate extremely fast code.
+
+### STATIC TYPING, INFERRED
+
+Every value and variable and identifier has a static type: a type that is defined at compile time, before the program runs. This is how Java, C++ and Swift works. Javascript, Python and Ruby does not use static typing.
 
 
 
-# CONCEPT: SOFTWARE-SYSTEM & CONTAINER-DEF
 
-These mechanisms are part of Floyd Systems -- defines how all the containers and components and processes are interacting, how concurrency is handled and so on.
+
+## DATA TYPES
+
+These are the primitive data types built into the language itself. The building blocks of all Floyd programs.
+
+The goal is that all the basics you need are already there in the language and the core library. This makes it easy to start making meaningful programs. It also allows composability since all Floyd code can rely on these types and communicate between themselves using these types. This greatly reduces the need to write glue code that converts between different librarys' string classes and logging and so on.
+
+|TYPE		  	| USE
+|:---				|:---	
+|__bool__			|__true__ or __false__
+|__int__			| Signed 64 bit integer
+|__double__		| 64-bit floating point number
+|__string__		| Built-in string type. 8-bit pure (supports embedded zeros). Use for machine strings, basic UI. Not localizable. Typically used for Windows Latin1, UTF-8 or ASCII.
+|__typeid__		| Describes the *type* of a value.
+|__function__	| A function value. Functions can be Floyd functions or C functions. They are callable.
+|__struct__		| Like C struct or classes or tuples. A value object.
+|TODO __protocol__	| A value that hold a number of callable functions. Also called interface or abstract base class.
+|__vector__		| A continuous array of elements addressed via indexes.
+|__dictionary__	| Lookup values using string keys.
+|__json_value__	| A value that holds a JSON-compatible value, can be a big JSON tree.
+|TODO POC: __sum-type__		| Tagged union.
+|TODO 1.0: __float__		| 32-bit floating point number
+|TODO 1.0: __int8__		| 8-bit signed integer
+|TODO 1.0: __int16__		| 16-bit signed integer
+|TODO 1.0: __int32__		| 32-bit signed integer
+
+Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [], etc.
+
+
+
+
+
+
+
+## SOFTWARE SYSTEM - C4
+
+Floyd uses the C4 model to organize your code. This is optional but is a very light weight way to orgainise your code and programs and generate a few great diagrams so you can reason about the system.
+
+Read more here: https://c4model.com/
+
+These lets you have a complete overview over your entire system and how users interact with it, then drill down to individual containers and further down to components and the code itself.
+
+In Floyd you describe you system using the keywords **software-system** and **container-def**.
+
+![Software Systems](floyd_systems_software_system.png)
+
+
+### PERSON
+
+Represents various human users of your software system. Uses some sort of user interface to the Software System. For example a UI on an iPhone.
+
+
+### C1 - SOFTWARE SYSTEM
+
+Highest level of abstraction and describes something that delivers value to its users, whether they are human or not, can be composed of many computers working together.
+
+![Level1](floyd_systems_level1_diagram.png)
+
+
+### C2 - CONTAINER
+
+Containers is were the bulk of the programming happens. A container represents something that hosts code or data. A container is something that needs to be running in order for the overall software system to work. A mobile app, a server-side web application, a client-side web application, a micro service: all examples of containers.
+
+This is usually a single OS-process, with internal mutation, time, several threads. It looks for resources and knows how to string things together inside the container.
+
+
+The container *completely* defines *all* its: concurrency, state, communication with outside world and runtime errors of the container. This includes sockets, file systems, messages, screens, UI.
+
+Containers declare which external systems they need, which libraries are needed and its own internal Floyd processes. A container's design is usually a one-off and cannot be composed into other containers.
+
+There are proxy-containers that lets you place things like Amazon S3 or an email server into your system.
+
+The basic building blocks are components, built in ones and ones you program yourself.
+
+![Level2](floyd_systems_level2_diagram.png)
+
+
+### C3 - COMPONENT
+
+Grouping of related functionality encapsulated behind a well-defined interface. Like a software integrated circuit or a code library. Does not span processes. JPEG library, JSON lib. Custom component for syncing with your server. Amazon S3 library, socket library.
+
+A component can be fully pure. Pure components have no side effects, have no internal state and are passive, like a ZIP library or a matrix-math library.
+
+Or they can be impure. Impure components may be active (detecting mouse clicks and calling your code) and may affect the world around you or give different results for each call and keeps their own internal state. get_time() and get_mouse_pos(), on_mouse_click(). read_directory_elements().
+
+Pure components are preferable when possible.
+
+
+![Level3](floyd_systems_level3_diagram.png)
+
+Notice: a component used in several containers or a piece of code that appears in several components will *appear in each*, appearing like they are duplicates. The perspective of the diagrams is **logic dependencies**. These diagrams don't show the physical dependencies -- which source files or libraries that depends on each other.
+
+
+### C4 - CODE
+
+Classes. Instance diagram. Examples. Passive.
+
+
+
+### EXAMPLE SOFTWARE SYSTEM STATEMENT
+
 
 ```
 software-system {
 	"name": "My Arcade Game",
 	"desc": "Space shooter for mobile devices, with connection to a server.",
-	"containers": {}
+
+	"people": {
+		"Gamer": "Plays the game on one of the mobile apps",
+		"Curator": "Updates achievements, competitions, make custom on-off maps",
+		"Admin": "Keeps the system running"
+	},
+	"connections": [
+		{ "source": "Game", "dest": "iphone app", "interaction": "plays", "tech": "" }
+	],
+	"containers": [
+		"gmail mail server",
+		"iphone app",
+		"Android app"
+	]
 }
 ```
 
-And
+
+
+
+
+## FLOYD PROCESSES - CONCURRENCY, TIME, STATE, COMMUNICATION
+
+Floyd processes lives inside a Floyd container and are very light weight. They are not the same as OS-processes. They *are* sandboxed from their sibbling processes. They can be run in their own OS-threads or share OS-thread with other Floyd processes.
+
+A process is defined by:
+
+1. a struct for its memory / state
+
+2. an initialisation function that instantiates needed components and returns the intial state
+
+3. a process function that repeatedly handles messages. It can make impure calls, send messages to other processes and block for a long time. The process function ends each call by returning an updated version of its state - this is the only mutable memory in Floyd.
+
+Usually process functions are one-offs and not reusable, they are the glue that binds your program together.
+
+Avoid having logic inside the process functions - move that logic to separate, pure functions.
+
+
+Example process code:
 
 ```
-container-def {
-	"name": "iphone app",
-	"tech": "Swift, iOS, Xcode, Open GL",
-	"desc": "Mobile shooter game for iOS.",
-	"clocks": {
-		"main": {
-			"a": "my_gui",
-			"b": "my_audio",
-		}
+struct my_gui_state_t {
+	int _count
+}
+
+func my_gui_state_t my_gui__init(){
+	send("a", "dec")
+
+	return my_gui_state_t(0	);
+}
+
+func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
+	if(message == "inc"){
+		return update(state, "_count", state._count + 1)
+	}
+	else if(message == "dec"){
+		return update(state, "_count", state._count - 1)
+	}
+	else{
+		assert(false)
 	}
 }
 ```
 
-Read more about this in the Floyd Systems documentation.
+|Part		| Details
+|:---	|:---	
+|**my\_gui\_state_t**		| this is a struct that holds the mutable memory of this process and any component instances needed by the container.
+|**my\_gui()**				| this function is specified in the software-system/"containers"/"my_iphone_app"/"clocks". The message is always a json_value. You can decide how encode the message into that.
+|**my\_gui__init()**		| this is the init function -- it has the same name with "__init" at the end. It has no arguments and returns the initial state of the process.
+
+
+This is how you express time / mutation / concurrency in Floyd. These concepts are related and they are all setup at the top level of a container. In fact, this is the main **purpose** of a container.
+
+The goal with Floyd's concurrency model is:
+
+1. Simple and robust pre-made mechanisms for real-world concurrency need. Avoid general-purpose primitives, instea have a ready made solution that works.
+2. Composable.
+3. Allow you to make a *static design* of your container and its concurrency and state.
+4. Separate out parallelism into a separate mechanism.
+5. Avoid problematic constructs like threads, locks, callback hell, nested futures and await/async -- dead ends of concurrency.
+6. Let you control/tune how many threads and cores to use for what parts of the system, independently of the actual code.
+
+Inspirations for Floyd's concurrency model are CSP, Erlang, Go routines and channels and Clojure Core.Async.
+
+
+##### PROCESSES: INBOX, STATE, PROCESSING FUNCTION
+
+For each independent mutable state and/or "thread" you want in your container, you need to insert a process. Processes are statically instantiated in a container -- you cannot allocate them at runtime.
+
+The process represents a little standalone program with its own call stack that listens to messages from other processes. When a process receives a message in its inbox, its function is called (now or some time later) with the message and the process's previous state. The process does some work - something simple or a maybe call a big call tree or do blocking calls to the file system, and then it ends by returning its new state, which completes the message handling.
+
+**The process feature is the only way to keep state in Floyd.**
+
+Use a process if:
+
+1. You want to be able to run work concurrently, like loading data in the background
+2. You want a mutable state / memory
+3. You want to model a system where things happens concurrently, like audio streaming vs main thread
+
+
+The inbox is thread safe and it's THE way to communicate across processes. The inbox has these purposes:
+	
+1. Allow process to *wait* for external messages using the select() call
+2. Transform messages between different clock-bases -- the inbox is thread safe
+3. Allow buffering of messages, that is moving them in time
+
+You need to implement your process's processing function and define its mutable state. The processing function is impure. It can call OS-functions, block on writes to disk, use sockets etc. Each API you want to use needs to be passed as an argument into the processing function, it cannot go find them - or anything else.
+
+Processes cannot change any other state than its own, they run in their own virtual address space.
+
+When you send messages to other process you can block until you get a reply, get replies via your inbox or just don't use replies.
+
+The process function CAN chose to have several select()-statements which makes it work as a small state machine.
+
+Processes are very inexpensive.
+
+
+**Synchronization points between systems (state or concurrent) always breaks all attempts to composition. That's why Floyd has moved these to top level of container.**
+
+
+The runtime can chose to execute processes on different cores or servers. You have control over this via tweakers. Tweakers also controls the priority of processes vs hardware.
+
+
+Floyd process limitations:
+
+- Cannot find assets / ports / resources — those are handed to it via the container's wiring
+- Cannot be created or deleted at runtime
+- Cannot access any global state or other processes
+
+
+##### SYNCHRONOUS PROCESSES
+
+If the processes are running on the same clock, the sequence of:
+
+- process A posts message to process B
+- process B receives the message
+- process B processes the message
+- process B completes and updates its state
+- process A continues
+
+...is done synchronously without any schedueling or OS-level context switching - just like a function call from A to B.
+
+You synchronise processes when it's important that the receiving process handles the messages *right away*. 
+
+Synced processes still have their own state and can be used as controllers / mediators.
+
+
+
+### GAIN PERFORMANCE VIA CONCURRENCY
+
+Sometimes we introduce concurrency to make more parallelism possible: multithreading a game engine is taking a non-concurrent design and making it concurrent to be able to improve throughput by running many tasks in parallel. This is different to using concurrency to model real-world concurrency like UI vs background cloud com vs realtime audio processing.
+
+
+
+### CONCURRENCY SCENARIOS
+
+|#	|Need		|Traditional	|Floyd
+|---	|---			|---			|---
+|1	| Make a REST request	| Block entire thread / nested callbacks / futures / async-await | Just block. Make call from process to keep caller running
+|2	| Make a sequence of back and forth communication with a REST server | Make separate thread and block on each step then notify main thread on completion / nested futures or callbacks / await-async | Make an process that makes blocking calls
+|3	| Perform non-blocking impure background calculation (auto save doc) | Copy document, create worker thread | Use process, use data directly
+|4	| Run process concurrently, like analyze game world to prefetch assets | Manually synchronize all shared data, use separate thread | Use process -- data is immutable
+|5	| Handle requests from OS quickly, like call to audio buffer switch process() | Use callback function | Use process and set its clock to sync to clock of buffer switch
+|6	| Improve performance using concurrency + parallelism / fan-in-fan-out / processing pipeline | Split work into small tasks that are independent, queue them to a thread team, resolve dependencies somehow, use end-fence with completetion notification | call map() or supermap() from a process.
+|7	| Spread heavy work across time (do some processing each game frame) | Use coroutine or thread that sleeps after doing some work. Wake it next frame. | Process does work. It calls select() inside a loop to wait on next trigger to continue work.
+|8	| Do work regularly, independent of other threads (like a timer interrupt) | Call timer with callback / make thread that sleeps on event | Use process that calls post_at_time(now() + 100) to itself
+|9	| Small server | Write loop that listens to socket | Use process that waits for messages
+
+
+
+### EXAMPLE SETUPS
+
+#### SIMPLE CONSOLE PROGRAM
+
+[//]: # (???)
+
+This is a basic command line app, have only one clock that gathers ONE input value from the command line arguments, calls some pure Floyd functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
+main() one clock only.
+
+
+
+#### EXAMPLE: VST-plugin
+
+[//]: # (???)
+
+TBD: make example of *all* the diagrams, including Software System diagram.
+
+![VST](floyd_systems_vst.png)
+
+
+#### FIRST PERSON SHOOTER GAME
+
+[//]: # (???)
+
+TBD: make example of *all* the diagrams, including Software System diagram.
+
+![Shooter](floyd_systems_1st_person_shooter.png)
+
+
+https://www.youtube.com/watch?v=v2Q_zHG3vqg
+
+A video game may have several clocks:
+
+- UI event loop clock
+- Prefetch assets clock
+- World-simulation / physics clock
+- Rendering pass 1 clock
+- Commit to OpenGL clock
+- Audio streaming clock
+
+This game does audio and Open GL graphics. It runs many different clocks. It uses supermap() to render Open GL commands in parallel.
+
+
+
+
+
+## EXCEPTIONS
+
+TODO 1.0
+Throw exception. Built in types, free noun. Refine, final.
+
+
+
+
+## JSON LITERALS
+
+You can directly embed JSON inside Floyd source code file. This is extremely simple - no escaping needed - just paste a snippet into the Floyd source code. Use this for test values. Round trip. Since the JSON code is not a string literal but actual Floyd syntax, there are not problems with escaping strings. The Floyd parser will create floyd strings, dictionaries and so on for the JSON data. Then it will create a json\_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown.
+
+This all means you can write Floyd code that at runtime creates all or parts of a composite JSON value. Also: you can nest JSONs in each other.
+
+Example JSON:
+
+```
+let json_value a = 13
+let json_value b = "Hello!"
+let json_value c = { "hello": 1, "bye": 3 }
+let json_value d = { "pigcount": 3, "pigcolor": "pink" }
+
+assert(a == 13)
+assert(b == "Hello!")
+assert(c["hello"] == 1)
+assert(c["bye"] == 3)
+assert(size(c) == 2)
+
+let test_json2 = json_value(
+	{
+		"one": 1,
+		"two": 2,
+		"three": "three",
+		"four": [ 1, 2, 3, 4 ],
+		"five": { "alpha": 1000, "beta": 2000 },
+		"six": true,
+		"seven": false,
+	}
+)
+```
+
+Notice that JSON objects are more lax than Floyd: you can mix different types of values in the same object or array. Floyd is stricter: a vector can only hold one type of element, same with dictionaries.
+
+
+
+## GLOBAL SCOPE
+
+Here you normally define functions, structs and global constants. The global scope can have almost any statement and they execute at program start. Simple programs can do without defining any functions at all.
+
+
+
+## COMMENTS AND DOCUMENTATION
+
+Use comments to write documentation, notes or explanations in the code. Comments are not executed or compiled -- they are only for humans. You often use the comment features to disable / hide code from the compiler.
+
+Two types of comments:
+
+
+You can wrap many lines with "/\*" and "\*/" to make a big section of documentation or to disable many lines of code. You can nest comments, for example wrap a lot of code that already contains comments using /* ... */.
+
+```
+/*	This is a comment */
+```
+
+
+Everything between // and newline is a comment:
+
+```
+//	This is an end-of line comment
+let a = "hello" //	This is an end of line comment.
+```
 
 
 
 
 
 
-# EXPRESSIONS
+
+## AUTOMATIC SERIALIZATION
+
+Serializing any Floyd value is a built in mechanism. It is always true-deep.
+
+**This is very central to Floyd -- values are core and they can easily be passed around, sent as messages, stored in files, copy-pasted from log or debugger into the source code.**
+
+
+##### JSON DATA SHAPES, ESCAPING
+
+These are the different shapes a JSON can have in Floyd:
+
+1. Floyd value: a normal Floyd value - struct or a vector or a number etc. Stored in RAM.
+
+2. json\_value: data is JSON compatible, stored in RAM the 7 different value types supported by json\_value. It holds one JSON value or a JSON object or a JSON array, that in turn can hold other json\_value:s.
+
+3. JSON-script string: JSON data encoded as a string of characters, as stored in a text file.
+
+	Example string: {"name":"John", "age":31, "city":"New York"}
+
+	It contains quotation characters, question mark characters, new lines etc.
+
+4. Escaped string: the string is simplified to be stuffed as a string snippet into some restricted format, like inside a parameter in a URL, as a string-literal inside another JSON or inside a REST command.
+
+	Example string: {\\"name\":\\"John\", \\"age\\":31, \\"city\\":\\"New York\\"}
+
+Different destinations have different limitations and escape machanisms and will need different escape functions. This is not really a JSON-related issue, more a URL, REST question.
+
+
+#### FUNCTIONS
+Converting a floyd json\_value to a JSON string and back. The JSON-string can be directly read or written to a text file, sent via a protocol and so on.
+
+```
+string jsonvalue_to_script(json_value v)
+json_value script_to_jsonvalue(string s)
+```
+
+Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json\_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json\_value, using jsonvalue_to_value().
+
+```
+json_value value_to_jsonvalue(any v)
+any jsonvalue_to_value(json_value v)
+```
+
+- __jsonvalue\_to\_script()__
+- __script\_to\_jsonvalue()__
+- __value\_to\_jsonvalue()__
+- __jsonvalue\_to\_value()__
+
+
+
+
+
+
+
+
+## ABOUT PERFORMANCE
+
+Chandler Carruth:
+
+- EFFICIENCY: HOW MUCH WORK IS REQUIRED BY A TASK
+	- Improve by doing less work.
+	- Better algorithms.
+	
+- PERFORMANCE: HOW QUICKLY A PROGRAM DOES ITS WORK.
+	- Do work faster. 
+	- Lighting up all the transistors.
+	- Data structures
+
+
+**EFFICIENCY WITH ALGORITHMS, PERFORMANCE WITH DATA STRUCTURES**
+
+
+
+
+Floyd is designed to make it simple and practical to make big systems with performance better than what you get with average optimized C code.
+
+It does this by splitting the design into two different concepts:
+
+1. Encourage your logic and processing code to be simple and correct and to declare where there is opportunity to execute code independently of each other. This type of code is ideal to run in parallel or cache etc, like a shader in a graphics API.
+
+2. At the top level, profile execution and make high-level improvements that dramatically alter how the code is *generated* and executed to run on the available hardware. Caching, collection type selection, batching, parallelization, ordering work for different localities, memory layouts and access patterns.
+
+It is also simple to introduce more concurrency to create more opportunities to run computations in parallel.
+
+
+
+
+## PROBES
+
+TBD: COMING SOON
+
+
+You add probes to wires, processes and individual functions and expressions. They gather intel on how your program runs on the hardware, let's you explore your running code and profile its hardware use.
+
+
+
+
+## TWEAKERS
+
+TBD: COMING SOON
+
+Tweakers are inserted onto the wires and clocks and functions and expressions of the code and affect how the runtime and language executes that code, without changing its logic. Caching, batching, pre-calculation, parallelization, hardware allocation, collection-type selection are examples of what's possible.
+
+
+
+
+## ABOUT PARALLELISM
+
+In Floyd you accelerate the performance of your code by making it expose where there are dependencies between computations and where there are not. Then you can orchestrate how to best execute your container from the top level -- using tweak probes and profiling probes, affecting how the hardware is mapped to your logic.
+
+Easy ways to expose parallelism is by writing pure functions (their results can be cached or precomputed) and by using functions like map(), fold(), filter() and supermap(). These function work on individual elements of a collection and each computation is independent of the others. This lets the runtime process the different elements on parallel hardware.
+
+[//]: # (??? make pipeline part. https://blog.golang.org/pipelines)
+
+The functions map() and supermap() replaces FAN-IN-FAN-OUT-mechanisms.
+
+You can inspect in code and visually how the elements are distributed as tasks.
+
+supermap() works like map(), but each element also has dependencies to other elements in the collection.
+
+Accelerating computations (parallelism) is done using tweaks — a separate mechanism. It supports moving computations in time (lazy, eager, caching) and running work in parallel.
+
+
+Often processes and concurrency is introduced into a system to *expose opportunity* for parallelism.
+
+The optimizations using tweaks in no way affect the logic of your program, only the timing and order where those don't matter.
+
+To make something like a software graphics shaders, you would do
+
+let image2 = map(image1, my_pixel_shader) and the pixels can be processed in parallel.
+
+
+**Task** - this is a work item that takes usually approximately 0.5 - 10 ms to execute and has an end. The runtime generates these when it wants to run map() elements in parallel. All tasks in the entire container are scheduled together.
+
+Notice: map() and supermap() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
+
+
+
+
+
+
+
+
+
+
+# THE LANGUAGE
+
+
+
+
+
+## SOURCE CODE FILES
+
+Floyd files are always utf-8 files with no BOM. Their extension is ".floyd".
+
+
+
+## EXPRESSIONS
 
 An expression is how you calculate new values. The output of an expression is always another value.
 
 Comparisons are deep: for a composite values they consider all members values and their member values. This goes for struct members and collections.
 
-## ARITHMETIC OPERATORS
+
+
+### LITERALS
+
+This is a value that is fully defined directly in the code. Like the number 3.
+
+
+|OPERATOR		| EXPLANATION
+|:---			|:---	
+| 0				| Integer literal
+| 0.3			| Double literal
+| "Hello, world!	| String literal
+| [ "one", "two", "three" ] | Vector-of-strings literal
+| { "a": 100, "b": 200 } | Dictionary of string-integer literal.
+| ...			| Any literal that is compatible with json_value_t can be a JSON literal
+
+
+### VECTOR-CONSTRUCTOR
+
+This lets you create a new vector value anywhere an expression can be typed. This expression supports non-constant elements of the constructor.
+???
+
+
+### DICTIONARY-CONSTRUCTOR
+
+This lets you create a new dictionary value anywhere an expression can be typed. This expression supports non-constant elements of the constructor.
+???
+
+### FUNCTION CALL
+
+```
+	let a = make_friendly_message("Lana")
+```
+
+Anywhere an expression can be put, so can a function call be put. Notice that the function value itself can also be an expression, so can each of its arguments.
+
+
+
+### ARITHMETIC OPERATORS
 
 How to add and combine values:
 
@@ -280,7 +807,7 @@ How to add and combine values:
 |%	|Modulus Operator and remainder of after an integer division: "a = b / c", "a = b / c / d"
 
 
-## RELATIONAL OPERATORS
+### RELATIONAL OPERATORS
 
 Used to compare two values. The result is true or false:
 
@@ -294,7 +821,7 @@ Used to compare two values. The result is true or false:
 |	a <= b	|	true if a is less than or equal to b
 
 
-## LOGICAL OPERATORS
+### LOGICAL OPERATORS
 
 Used to compare two values. The result is true or false:
 
@@ -304,7 +831,8 @@ Used to compare two values. The result is true or false:
 | a \|\| b		|	true if a is true or b is true
 
 
-## CONDITIONAL OPERATOR
+### CONDITIONAL OPERATOR
+
 When the condition is true, this entire expression has the value of a. Else it has the value of b. Also called ternary operator, because it has three parts.
 
 ```
@@ -322,7 +850,124 @@ assert(is_polite("hello") == true)
 ```
 
 
-# IF - THEN - ELSE -- STATEMENTS
+### EXAMPLE EXPRESSIONS
+
+|SOURCE		| MEANING
+|:---	|:---	
+| 0											|
+| 3											|
+| 3.5										|
+| (3)										|
+| 3 + 4										|
+| (1 + 2) * 3									|
+| x											|
+| x + y										|
+| hello + 3									|
+| "test"										|
+| "test number"								|
+| f()										|
+| f(10, 122)									|
+| print(3)									|
+| print (3) 									|
+| print ("Hello, World!")						|
+| print("Hello, World!" + f(3) == 2)				|
+| (my\_fun1("hello, 3) + 4) * my_fun2(10))		|	
+| hello[\"troll\"].kitty[10].cat					|
+| condition_expr ? yesexpr : noexpr				|
+| condition_expr ? yesexpr : noexpr				|
+| a == 1 ? "one" : ”some other number"			|
+
+
+
+## STATEMENTS
+
+
+### LET STATEMENT
+
+Makes a new constant with a name and a value. The value cannot be changed.
+
+```
+let hello = "Greeting message."
+```
+
+|SOURCE		| MEANING
+|:---		|:---	
+| let int b = 11				| Allocate an immutable local int "b" and initialize it with 11
+| let c = 11				| Allocate an immutable local "b" and initialize it with 11. Type will be inferred to int.
+| let d = 8.5				| Allocate an immutable local "d" and initialize it with 8.5. Type will be inferred to double.
+| let e = "hello"				| Allocate an immutable local "e" and initialize it with "hello". Type will be inferred to string.
+| let f = f(3) == 2		| Allocate an immutable local "f" and initialize it true/false. Type will be bool.
+
+| let pixel x = 20 |
+| let int x = {"a": 1, "b": 2} |
+| let  int x = 10 |
+| let int (string a) x = f(4 == 5) |
+
+
+
+
+### MUTABLE STATEMENT
+
+Makes a new local variable with a name, calculated from the expression. The variable can be changed to hold another value of the same type.
+
+
+```
+mutable hello = "Greeting message."
+```
+
+|SOURCE		| MEANING
+|:---		|:---	
+| mutable int a = 10				| Allocate a mutable local int "a" and initialize it with 10
+| a = 12						| Assign 12 to local mutable "a".
+| mutable int x = 10 |
+
+
+
+
+## FUNC (FUNCTION) DEFINITION STATEMENT
+
+```
+func int hello(string s){
+	...
+}
+```
+This defines a new function value and gives it a name in the current scope.
+
+|SOURCE		| MEANING
+|:---	|:---	
+| func int f(string name){ return 13 |
+| func int print(float a) { ... }			|
+| func int print (float a) { ... }			|
+| func int f(string name)					|
+
+
+
+
+## STRUCT DEFINITION STATEMENTS
+
+This defines a new struct-type and gives it a name in the current scope.
+
+```
+struct my_struct_t {
+	int a
+	string b
+}
+```
+
+|SOURCE		| MEANING
+|:---	|:---	
+| struct mytype_t { float a float b } | 
+| struct a {} 						|
+| struct b { int a }					|
+| struct c { int a = 13 }				|
+| struct pixel { int red int green int blue }		|
+| struct pixel { int red = 255 int green = 255 int blue = 255 }|
+
+
+
+
+
+### IF - THEN - ELSE STATEMENT
 
 This is a normal if-elseif-else feature, like in most languages. Brackets are required always.
 
@@ -359,14 +1004,17 @@ else{
 
 In each body you can write any statements. There is no "break" keyword.
 
+##### EXAMPLE IF STATEMENTS
+
+|SOURCE		| MEANING
+|:---	|:---	
+| if(true){ return 1000 } else { return 1001 } [
 
 
-# MATCH STATEMENT
-
-TODO POC
 
 
-# FOR LOOPS
+
+### FOR LOOP STATEMENT
 
 For loops are used to execute a body of statements many times. The number of times is calculated *before* the first time the body is called. Many other languages evaluates the condition for each loop iteration. In Floyd you use a while-loop for that.
 
@@ -396,7 +1044,7 @@ for (tickMark in a ..< string.size()) {
 - ..- defines a *closed range*. Up to and *including* the end.
 
 
-# WHILE LOOPS
+### WHILE LOOP STATEMENT
 
 Perform the loop body while the expression is true.
 
@@ -408,7 +1056,257 @@ while (my_array[a] != 3){
 The condition is executed each time before body is executed. If the condition is false initially, then zero loops will run. If you can calculate the number of loop iteration beforehand, then prefer to use for-loop since it expresses that better and also can give better performance.
 
 
-# STRING DATA TYPE
+
+### RETURN STATEMENT
+
+The return statement aborts the execution of the current function as the function will have the return statement's expression as its return value.
+
+
+|SOURCE		| MEANING
+|:---	|:---	
+| return 3						|
+| return myfunc(myfunc() + 3) |
+
+
+
+
+
+## SOFTWARE-SYSTEM STATEMENT
+
+This is a dedicated keyword for defining software systems: **software-system**. It's contents is encoded as a JSON object and designed to be either hand-coded or processed by tools. You only have one of these in a software system.
+
+|Key		| Meaning
+|:---	|:---	
+|**name**		| name of your software system. Something short. JSON String.
+|**desc**		| longer description of your software system. JSON String.
+|**people**	| personas involved in using or maintaining your system. Don't go crazy. JSON object.
+|**connections**	| the most important relationships between people and the containers. Be specific "user sends email using gmail" or "user plays game on device" or "mobile app pulls user account from server based on login". JSON array.
+|**containers**	| Your iOS app, your server, the email system. Notice that you map gmail-server as a container, even though it's a gigantic software system by itself. JSON array with container names as strings. These strings are used as keys to identify containers.
+
+
+
+##### PEOPLE
+
+This is an object where each key is the name of a persona and a short description of that persona.
+
+```
+"people": {
+	"Gamer": "Plays the game on one of the mobile apps",
+	"Curator": "Updates achievements, competitions, make custom on-off maps",
+	"Admin": "Keeps the system running"
+}
+```
+
+
+##### CONNECTIONS
+
+```
+"connections": [
+	{
+		"source": "Game",
+		"dest": "iphone app",
+		"interaction": "plays",
+		"tech": ""
+	}
+]
+```
+
+
+|Key		| Meaning
+|:---	|:---	
+|**source**		| the name of the container or user, as listed in the software-system
+|**dest**		| the name of the container or user, as listed in the software-system
+|**interaction**		| "user plays game on device" or "server sends order notification"
+|**tech**		| "webhook", "REST command"
+
+
+
+
+
+## CONTAINER-DEF STATEMENT
+
+This is a dedicated keyword. It defines *one* container, it's name, its internal processes and how they interact.
+
+|Key		| Meaning
+|:---	|:---	
+|**name**		| Needs to match the name listed in software-systems, containers.
+|**tech**		| short string that lists the most important technologies, languages, toolkits.
+|**desc**		| short string that tells what this component is and does.
+|**clocks**		| defines every clock (concurrent process) in this container and lists which processes that are synced to each of these clocks
+|**connections**		| connects the processes together using virtual wires. Source-process-name, dest-process-name, interaction-description.
+|**probes\_and\_tweakers**		| lists all probes and tweakers used in this container. Notice that the same function or component can have a different set of probes and tweakers per container or share them.
+|**components**		| lists all imported components needed for this container
+
+
+You should keep this statement close to process-code that makes up the container. That handles messages, stores their mutable state, does all communication with the real world. Keep the logic code out of here as much as possible, the Floyd processes are about communication and state and time only.
+
+
+Example container:
+
+```
+container-def {
+	"name": "iphone app",
+	"tech": "Swift, iOS, Xcode, Open GL",
+	"desc": "Mobile shooter game for iOS.",
+
+	"clocks": {
+		"main": {
+			"a": "my_gui_main",
+			"b": "iphone-ux"
+		},
+
+		"com-clock": {
+			"c": "server_com"
+		},
+		"opengl_feeder": {
+			"d": "renderer"
+		}
+	},
+	"connections": [
+		{ "source": "b", "dest": "a", "interaction": "b sends messages to a", "tech": "OS call" },
+		{ "source": "b", "dest": "c", "interaction": "b also sends messages to c, which is another clock", "tech": "OS call" }
+	],
+	"components": [
+		"My Arcade Game-iphone-app",
+		"My Arcade Game-logic",
+		"My Arcade Game-servercom",
+		"OpenGL-component",
+		"Free Game Engine-component",
+		"iphone-ux-component"
+	]
+}
+```
+
+
+##### PROXY CONTAINER
+
+If you use an external component or software system, like for example gmail, you list it here so we can represent it, as a proxy.
+
+```
+container-def {
+	"name": "gmail mail server"
+}
+```
+
+or 
+
+```
+container-def {
+	"name": "gmail mail server"
+	"tech": "Google tech",
+	"desc": "Use gmail to store all gamer notifications."
+}
+```
+
+
+This is a dedicated keyword. It defines *one* container, it's name, its internal processes and how they interact.
+
+|Key		| Meaning
+|:---	|:---	
+|**name**		| Needs to match the name listed in software-systems, containers.
+|**tech**		| short string that lists the most important technologies, languages, toolkits.
+|**desc**		| short string that tells what this component is and does.
+|**clocks**		| defines every clock (concurrent process) in this container and lists which processes that are synced to each of these clocks
+|**connections**		| connects the processes together using virtual wires. Source-process-name, dest-process-name, interaction-description.
+|**probes\_and\_tweakers**		| lists all probes and tweakers used in this container. Notice that the same function or component can have a different set of probes and tweakers per container or share them.
+|**components**		| lists all imported components needed for this container
+
+
+You should keep this statement close to process-code that makes up the container. That handles messages, stores their mutable state, does all communication with the real world. Keep the logic code out of here as much as possible, the Floyd processes are about communication and state and time only.
+
+
+Example container:
+
+```
+container-def {
+	"name": "iphone app",
+	"tech": "Swift, iOS, Xcode, Open GL",
+	"desc": "Mobile shooter game for iOS.",
+
+	"clocks": {
+		"main": {
+			"a": "my_gui_main",
+			"b": "iphone-ux"
+		},
+
+		"com-clock": {
+			"c": "server_com"
+		},
+		"opengl_feeder": {
+			"d": "renderer"
+		}
+	},
+	"connections": [
+		{ "source": "b", "dest": "a", "interaction": "b sends messages to a", "tech": "OS call" },
+		{ "source": "b", "dest": "c", "interaction": "b also sends messages to c, which is another clock", "tech": "OS call" }
+	],
+	"components": [
+		"My Arcade Game-iphone-app",
+		"My Arcade Game-logic",
+		"My Arcade Game-servercom",
+		"OpenGL-component",
+		"Free Game Engine-component",
+		"iphone-ux-component"
+	]
+}
+```
+
+##### PROXY CONTAINER
+
+If you use an external component or software system, like for example gmail, you list it here so we can represent it, as a proxy.
+
+```
+container-def {
+	"name": "gmail mail server"
+}
+```
+
+or 
+
+```
+container-def {
+	"name": "gmail mail server"
+	"tech": "Google tech",
+	"desc": "Use gmail to store all gamer notifications."
+}
+```
+
+
+
+
+### TODO: SWITCH STATEMENT
+
+TODO POC
+
+
+
+# DATA TYPES
+
+## EXAMPLE TYPE DECLARATIONS
+
+|SOURCE		| MEANING
+|:---	|:---	
+| bool								| Bool type
+| int								| Int type
+| string								| String type
+| [int]								| Vector of ints
+| [[int]]								| Vector of int-vectors
+| [string:int]						| Dictionary of ints
+| int ()								| Function returning int, no arguments
+| int (double a, string b)				| Function returning int, arguments are double and string
+| [int (double a, string b)]			| vector of functions, were function returns int and takes double and string arg.
+| int (double a) ()					| Function A with no arguments, that returns a function B. B returns int and has a double argument.
+| my_global							| name of custom type
+| [my_global]							| vector of custom type
+| mything (mything a, mything b)			| function returning mything-type, with two mything arguments
+| bool (int (double a) b)				| function returns bool and takes argument of type: function that returns in and take double-argument.
+
+
+
+
+
+
+## STRING DATA TYPE
 
 This is a pure 8-bit string type. It is immutable. You can compare with other strings, copy it using = and so on. There is a small kit of functions for changing and processing strings.
 
@@ -481,7 +1379,7 @@ Floyd string literals do not support insert hex sequences or unicode code points
 
 
 
-# VECTOR DATA TYPE
+## VECTOR DATA TYPE
 
 A vector is a collection of values where you lookup the values using an index between 0 and (vector size - 1). The items in a vector are called "elements". The elements are ordered. Finding an element at an index uses constant time. In other languages vectors are called "arrays" or even "lists".
 
@@ -530,7 +1428,7 @@ assert(a == [ 10, 20, 30, 40, 50 ])
 
 
 
-# DICTIONARY DATA TYPE
+## DICTIONARY DATA TYPE
 
 A collection of values where you identify the elemts using string keys. It is not sorted. In C++ you would use a std::map. 
 
@@ -571,7 +1469,7 @@ You copy dictionaries using = and all comparison expressions work, just like wit
 
 
 
-# STRUCT DATA TYPE
+## STRUCT DATA TYPE
 
 Structs are the central building block for composing data in Floyd. They are used in place of classes in other programming languages. Structs are always values and immutable. They are very fast and compact: behind the curtains copied structs shares state between them, even when partially modified.
 
@@ -667,20 +1565,7 @@ assert(b.size.x == 100)
 ```
 
 
-
-# PROTOCOL DATA TYPE
-
-TODO 1.0
-
-This defines a set of functions that serveral clients can implement differently. This introduced polymorphim into Floyd. Equivalent to inteface classes in other languages.
-
-Protocol member functions can be tagged "impure" which allows it to be implemented so it saves or uses state, modifies the world. There is no way to do these things in the implementation of pure protocol function memembers.
-
-
-
-
-
-# TYPEID DATA TYPE
+## TYPEID DATA TYPE
 
 A typeid is tells the type of a value.
 
@@ -700,7 +1585,7 @@ A typeid is a proper Floyd value: you can copy it, compare it, convert it to str
 
 
 
-# JSON_VALUE DATA TYPE
+## JSON_VALUE DATA TYPE
 
 Why JSON? JSON is very central to Floyd. Floyd is based on values (simple ones or entire data models as one value) JSON is a simple and standard way to store composite values in a tree shape in a simple and standardized way. It also makes it easy to serializing any Floyd value to text and back. JSON is built directly into the language as the default serialized format for Floyd values.
 
@@ -717,13 +1602,7 @@ Read more about JSON here: www.json.org
 
 This value can contain any of the 7 JSON-compatible types:
 
-- string
-- number
-- object
-- array
-- true
-- false
-- null
+- **string**, **number**, **object**, **array**, **true**, **false**, **null**
 
 Notice: This is the only situation were Floyd supports null. Floyd things null is a concept to avoid when possible.
 
@@ -734,43 +1613,6 @@ __json\_value__: 	This is an immutable value containing any JSON. You can query 
 Notice that json\_value can contain an entire huge JSON file, with a big tree of JSON objects and arrays and so on. A json\_value can also contain just a string or a number or a single JSON array of strings. The json\_value is used for every node in the json\_value tree.
 
 
-## JSON LITERALS
-
-You can directly embed JSON inside Floyd source code file. This is extremely simple - no escaping needed - just paste a snippet into the Floyd source code. Use this for test values. Round trip. Since the JSON code is not a string literal but actual Floyd syntax, there are not problems with escaping strings. The Floyd parser will create floyd strings, dictionaries and so on for the JSON data. Then it will create a json\_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown.
-
-This all means you can write Floyd code that at runtime creates all or parts of a composite JSON value. Also: you can nest JSONs in each other.
-
-Example JSON:
-
-```
-let json_value a = 13
-let json_value b = "Hello!"
-let json_value c = { "hello": 1, "bye": 3 }
-let json_value d = { "pigcount": 3, "pigcolor": "pink" }
-
-assert(a == 13)
-assert(b == "Hello!")
-assert(c["hello"] == 1)
-assert(c["bye"] == 3)
-assert(size(c) == 2)
-
-let test_json2 = json_value(
-	{
-		"one": 1,
-		"two": 2,
-		"three": "three",
-		"four": [ 1, 2, 3, 4 ],
-		"five": { "alpha": 1000, "beta": 2000 },
-		"six": true,
-		"seven": false,
-	}
-)
-```
-
-Notice that JSON objects are more lax than Floyd: you can mix different types of values in the same object or array. Floyd is stricter: a vector can only hold one type of element, same with dictionaries.
-
-
-
 ##### __get\_json\_type()__:
 
 Returns the actual type of this value stores inside the json\_value. It can be one of the types supported by JSON.
@@ -778,7 +1620,6 @@ Returns the actual type of this value stores inside the json\_value. It can be o
 	typeid get_json_type(json_value v)
 
 This needs to be queried at runtime since JSON is dynamically typed.
-
 
 ##### CORE FUNCTIONS
 
@@ -793,89 +1634,22 @@ Many of the core functions work with json\_value, but it often depends on the ac
 
 
 
-# COMMENTS AND DOCUMENTATION
-
-Use comments to write documentation, notes or explanations in the code. Comments are not executed or compiled -- they are only for humans. You often use the comment features to disable / hide code from the compiler.
-
-Two types of comments:
 
 
-You can wrap many lines with "/\*" and "\*/" to make a big section of documentation or to disable many lines of code. You can nest comments, for example wrap a lot of code that already contains comments using /* ... */.
-
-```
-/*	This is a comment */
-```
-
-
-Everything between // and newline is a comment:
-
-```
-//	This is an end-of line comment
-let a = "hello" //	This is an end of line comment.
-```
-
-
-# EXCEPTIONS
+## TODO: PROTOCOL DATA TYPE
 
 TODO 1.0
-Throw exception. Built in types, free noun. Refine, final.
 
+This defines a set of functions that serveral clients can implement differently. This introduced polymorphim into Floyd. Equivalent to inteface classes in other languages.
 
-
-# AUTOMATIC SERIALIZATION
-
-Serializing any Floyd value is a built in mechanism. It is always true-deep.
-
-**This is very central to Floyd -- values are core and they can easily be passed around, sent as messages, stored in files, copy-pasted from log or debugger into the source code.**
-
-
-##### JSON DATA SHAPES, ESCAPING
-
-These are the different shapes a JSON can have in Floyd:
-
-1. Floyd value: a normal Floyd value - struct or a vector or a number etc. Stored in RAM.
-
-2. json\_value: data is JSON compatible, stored in RAM the 7 different value types supported by json\_value. It holds one JSON value or a JSON object or a JSON array, that in turn can hold other json\_value:s.
-
-3. JSON-script string: JSON data encoded as a string of characters, as stored in a text file.
-
-	Example string: {"name":"John", "age":31, "city":"New York"}
-
-	It contains quotation characters, question mark characters, new lines etc.
-
-4. Escaped string: the string is simplified to be stuffed as a string snippet into some restricted format, like inside a parameter in a URL, as a string-literal inside another JSON or inside a REST command.
-
-	Example string: {\\"name\":\\"John\", \\"age\\":31, \\"city\\":\\"New York\\"}
-
-Different destinations have different limitations and escape machanisms and will need different escape functions. This is not really a JSON-related issue, more a URL, REST question.
-
-
-#### FUNCTIONS
-Converting a floyd json\_value to a JSON string and back. The JSON-string can be directly read or written to a text file, sent via a protocol and so on.
-
-```
-string jsonvalue_to_script(json_value v)
-json_value script_to_jsonvalue(string s)
-```
-
-Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json\_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json\_value, using jsonvalue_to_value().
-
-```
-json_value value_to_jsonvalue(any v)
-any jsonvalue_to_value(json_value v)
-```
-
-- __jsonvalue\_to\_script()__
-- __script\_to\_jsonvalue()__
-- __value\_to\_jsonvalue()__
-- __jsonvalue\_to\_value()__
+Protocol member functions can be tagged "impure" which allows it to be implemented so it saves or uses state, modifies the world. There is no way to do these things in the implementation of pure protocol function memembers.
 
 
 
 
 
 
-# BUILT-IN FEATURES
+# BUILT-IN FUNCTIONS
 
 These functions are built into the language itself and are always available to your code. They are all pure so can be used in pure functions.
 
@@ -1119,7 +1893,95 @@ typeid typeof(any)
 
 
 
-# FLOYD SYNTAX
+
+
+
+# COMMAND LINE TOOL
+
+|COMMAND		  	| MEANING
+|:---				|:---	
+| floyd run mygame.floyd | compile and run the floyd program "mygame.floyd"
+| floyd compile mygame.floyd | compile the floyd program "mygame.floyd" to an AST, in JSON format
+| floyd help		| Show built in help for command line tool
+| floyd runtests	| Runs Floyds internal unit tests
+| floyd benchmark 		| Runs Floyd built in suite of benchmark tests and prints the results.
+| floyd -t mygame.floyd		| the -t turns on tracing, which shows Floyd compilation steps and internal states
+
+
+
+
+
+# REFERENCE
+
+
+
+### EXAMPLE SOFTWARE SYSTEM FILE
+
+
+```
+software-system {
+	"name": "My Arcade Game",
+	"desc": "Space shooter for mobile devices, with connection to a server.",
+
+	"people": {
+		"Gamer": "Plays the game on one of the mobile apps",
+		"Curator": "Updates achievements, competitions, make custom on-off maps",
+		"Admin": "Keeps the system running"
+	},
+	"connections": [
+		{ "source": "Game", "dest": "iphone app", "interaction": "plays", "tech": "" }
+	],
+	"containers": [
+		"gmail mail server",
+		"iphone app",
+		"Android app"
+	]
+}
+result = 123
+
+container-def {
+	"name": "iphone app",
+	"tech": "Swift, iOS, Xcode, Open GL",
+	"desc": "Mobile shooter game for iOS.",
+
+	"clocks": {
+		"main": {
+			"a": "my_gui_main",
+			"b": "iphone-ux"
+		},
+
+		"com-clock": {
+			"c": "server_com"
+		},
+		"opengl_feeder": {
+			"d": "renderer"
+		}
+	},
+	"connections": [
+		{ "source": "b", "dest": "a", "interaction": "b sends messages to a", "tech": "OS call" },
+		{ "source": "b", "dest": "c", "interaction": "b also sends messages to c, which is another clock", "tech": "OS call" }
+	],
+	"components": [
+		"My Arcade Game-iphone-app",
+		"My Arcade Game-logic",
+		"My Arcade Game-servercom",
+		"OpenGL-component",
+		"Free Game Engine-component",
+		"iphone-ux-component"
+	]
+}
+
+func string my_gui_main__init() impure {
+	print("HELLO")
+	send("a", "stop")
+	send("b", "stop")
+	send("c", "stop")
+	send("d", "stop")
+	return "a is done"
+}
+
+```
+## FLOYD SYNTAX
 
 Here is the DAG for the complete syntax of Floyd.
 
@@ -1195,820 +2057,7 @@ Here is the DAG for the complete syntax of Floyd.
  		BIND-MUTABLE-INFERCETYPE			"mutable" IDENTIFIER "=" EXPRESSION
 		EXPRESSION-STATEMENT 			EXPRESSION
  		ASSIGNMENT	 				IDENTIFIER "=" EXPRESSION
+		SOFTWARE-SYSTEM				"software-system" JSON_BODY
+		COMPONENT-DEF					"component-def" JSON_BODY
 
 
-
-## EXAMPLE BIND AND ASSIGNMENT STATEMENTS
-
-|SOURCE		| MEANING
-|:---		|:---	
-| mutable int a = 10				| Allocate a mutable local int "a" and initialize it with 10
-| let int b = 11				| Allocate an immutable local int "b" and initialize it with 11
-| let c = 11				| Allocate an immutable local "b" and initialize it with 11. Type will be inferred to int.
-| a = 12						| Assign 12 to local mutable "a".
-| let d = 8.5				| Allocate an immutable local "d" and initialize it with 8.5. Type will be inferred to double.
-| let e = "hello"				| Allocate an immutable local "e" and initialize it with "hello". Type will be inferred to string.
-| let f = f(3) == 2		| Allocate an immutable local "f" and initialize it true/false. Type will be bool.
-
-| let pixel x = 20 |
-| let int x = {"a": 1, "b": 2} |
-| let  int x = 10 |
-| let int (string a) x = f(4 == 5) |
-| mutable int x = 10 |
-
-
-
-## EXAMPLE RETURN STATEMENTS
-
-|SOURCE		| MEANING
-|:---	|:---	
-| return 3						|
-| return myfunc(myfunc() + 3) |
-
-
-
-## EXAMPLE FUNCTION DEFINITION STATEMENTS
-
-|SOURCE		| MEANING
-|:---	|:---	
-| func int f(string name){ return 13 |
-| func int print(float a) { ... }			|
-| func int print (float a) { ... }			|
-| func int f(string name)					|
-
-
-
-## EXAMPLE IF STATEMENTS
-
-|SOURCE		| MEANING
-|:---	|:---	
-| if(true){ return 1000 } else { return 1001 } [
-
-
-
-## EXAMPLE OF STRUCT DEFINITION STATEMENTS
-
-|SOURCE		| MEANING
-|:---	|:---	
-| struct mytype_t { float a float b } | 
-| struct a {} 						|
-| struct b { int a }					|
-| struct c { int a = 13 }				|
-| struct pixel { int red int green int blue }		|
-| struct pixel { int red = 255 int green = 255 int blue = 255 }|
-
-
-
-## EXAMPLE EXPRESSIONS
-
-|SOURCE		| MEANING
-|:---	|:---	
-| 0											|
-| 3											|
-| 3.5										|
-| (3)										|
-| 3 + 4										|
-| (1 + 2) * 3									|
-| x											|
-| x + y										|
-| hello + 3									|
-| "test"										|
-| "test number"								|
-| f()										|
-| f(10, 122)									|
-| print(3)									|
-| print (3) 									|
-| print ("Hello, World!")						|
-| print("Hello, World!" + f(3) == 2)				|
-| (my\_fun1("hello, 3) + 4) * my_fun2(10))		|	
-| hello[\"troll\"].kitty[10].cat					|
-| condition_expr ? yesexpr : noexpr				|
-| condition_expr ? yesexpr : noexpr				|
-| a == 1 ? "one" : ”some other number"			|
-
-
-
-## EXAMPLE TYPE DECLARATIONS
-
-|SOURCE		| MEANING
-|:---	|:---	
-| bool								| Bool type
-| int								| Int type
-| string								| String type
-| [int]								| Vector of ints
-| [[int]]								| Vector of int-vectors
-| [string:int]						| Dictionary of ints
-| int ()								| Function returning int, no arguments
-| int (double a, string b)				| Function returning int, arguments are double and string
-| [int (double a, string b)]			| vector of functions, were function returns int and takes double and string arg.
-| int (double a) ()					| Function A with no arguments, that returns a function B. B returns int and has a double argument.
-| my_global							| name of custom type
-| [my_global]							| vector of custom type
-| mything (mything a, mything b)			| function returning mything-type, with two mything arguments
-| bool (int (double a) b)				| function returns bool and takes argument of type: function that returns in and take double-argument.
-
-
-
-
-
-
-
-![](floyd_logo_banner.png)
-
-# FLOYD SYSTEMS MANUAL
-
-Floyd: this is the basic way to create logic. The code is isolated from the noise and troubles of the real world: everything is immutable and pure. Time does not advance. There is no concurrency or communication with other systems, no runtime errors.
-
-Floyd Systems: this is how you make software that lives in the real world, where all those things happens all the time. Floyd allows you create huge, robust software systems that you can reason about, spanning computers and processes, handling communication and time advancing and faults. Floyd Systems are built on top of Floyd logic.
-
-Floyd uses the C4 model to organize all of this. Read more here: https://c4model.com/
-
-
-GOALS
-
-1. Allow you design reliable systems and reason about them. Systems with many computers, processes and threads -- concepts beyond functions, classes and modules. It represent those concepts through out: at the source code level, in debugger, in profiler and so on.
-2. Provide simple and robust methods for doing concurrency, communication, parallelization, errors handling, etc.
-3. Allow extreme performance and profiling capabilities.
-4. Support next-gen visual programming and interactions.
-
-
-
-
-
-
-# ABOUT PERFORMANCE
-
-Floyd is designed to make it simple and practical to make big systems with performance better than what you get with average optimized C code.
-
-It does this by splitting the design into two different concepts:
-
-1. Encourage your logic and processing code to be simple and correct and to declare where there is opportunity to execute code independently of each other. This type of code is ideal to run in parallel or cache etc, like a shader in a graphics API.
-
-2. At the top level, profile execution and make high-level improvements that dramatically alter how the code is *generated* and executed to run on the available hardware. Caching, collection type selection, batching, parallelization, ordering work for different localities, memory layouts and access patterns.
-
-It is also simple to introduce more concurrency to create more opportunities to run computations in parallel.
-
-
-
-# ABOUT C4 CONCEPTS
-
-A complete system is organized into parts like this:
-
-
-![Software Systems](floyd_systems_software_system.png)
-
-
-### PERSON
-
-Represents various human users of your software system. Uses some sort of user interface to the Software System. For example a UI on an iPhone.
-
-
-### SOFTWARE SYSTEM
-
-Highest level of abstraction and describes something that delivers value to its users, whether they are human or not, can be composed of many computers working together.
-
-
-### CONTAINER
-
-A container represents something that hosts code or data. A container is something that needs to be running in order for the overall software system to work. A mobile app, a server-side web application, a client-side web application, a micro service: all examples of containers.
-
-This is usually a single OS-process, with internal mutation, time, several threads. It looks for resources and knows how to string things together inside the container. The basic building blocks are components, built in ones and ones you program yourself.
-
-
-### COMPONENT
-
-Grouping of related functionality encapsulated behind a well-defined interface. Like a software integrated circuit or a code library. Does not span processes. JPEG library, JSON lib. Custom component for syncing with your server. Amazon S3 library, socket library.
-
-A component can be fully pure. Pure components have no side effects, have no internal state and are passive, like a ZIP library or a matrix-math library.
-
-Or they can be impure. Impure components may be active (detecting mouse clicks and calling your code) and may affect the world around you or give different results for each call and keeps their own internal state. get_time() and get_mouse_pos(), on_mouse_click(). read_directory_elements().
-
-Pure components are preferable when possible.
-
-
-
-### CODE
-
-Classes. Instance diagram. Examples. Passive. Pure.
-
-
-
-# ABOUT C4 DIAGRAMS
-
-There is a set of standard diagram views for explaining and reasoning about your software. These lets you have a complete overview over your entire system and how users interact with it, then drill down to individual containers and further down to components and the code itself.
-
-
-
-![Level1](floyd_systems_level1_diagram.png)
-
-**Above, level 1: System Context diagram**
-
-
-
-![Level2](floyd_systems_level2_diagram.png)
-
-Above, level 2: Container diagram
-
-
-
-![Level3](floyd_systems_level3_diagram.png)
-
-Above, level 3: Component diagram
-
-
-![Level4](floyd_systems_level4_diagram.png)
-
-Above, level 4: Code
-
-
-Notice: a component used in several containers or a piece of code that appears in several components will *appear in each*, appearing like they are duplicates. The perspective of the diagrams is **logic dependencies**. These diagrams don't show the physical dependencies -- which source files or libraries that depends on each other.
-
-
-
-
-# MORE ABOUT CONTAINERS
-
-Containers are where you spend most of your time along with writing the Floyd code.
-
-A mobile app is a container, so is the Django server on Heroku. A container is typically run as its own OS process.
-
-The container *completely* defines *all* its: concurrency, state, communication with outside world and runtime errors of the container. This includes sockets, file systems, messages, screens, UI.
-
-There are often sibling containers in your system, like a server for your mobile game or data on Amazon S3. Containers may be implemented some other way or maybe canned solutions like Amazon S3, but should still be represented in Floyd Systems.
-
-Containers are data files: they list the needed containers and wires them together and adds a few other types of parts, like clocks and processes.
-
-**Wires**: carry messages encoded as a Floyd value, typically a Floyd enum. Notice that the message can carry *any* of Floyd's types -- even huge multi-gigabyte nested structs or collections. Since they are immutable they can be passed around efficiently (internally this is done using their ID or hardware address).
-
-
-**Processs** and **Clocks**: builtin mechanisms to define time and state.
-**Probes** and **Tweakers**: these are added on top of a design. They allow you to augment a design with logging, profiling, breakpoints and do advanced performance optimizations.
-
-Example of components you drop into your container:
-
-- A component written in C
-- Built in local file system component: Read and write files, rename directory, swap temp files (impure)
-- SVG Lib component (pure)
-- ImageLib component (pure)
-- Built in S3 component (impure)
-- Built in socket component (impure)
-- Built in UI-component (impure)
-- Built in command line component: Interfaces with command line arguments / returns (impure)
-- Audio component that uses Direct X (impure)
-
-Notice: these components are all non-singletons - you can make many instances in one container
-
-The container's design is usually a one-off and cannot be composed into other containers. Almost always has side effects.
-
-
-
-# MORE ABOUT CONCURRENCY AND TIME - INTRODUCING FLOYD PROCESSES
-
-This is how you express time / mutation / concurrency in Floyd. These concepts are related and they are all setup at the top level of a container. In fact, this is the main **purpose** of a container.
-
-A Floyd process is not the same thing as an OS process. A Floyd process is extremely light weight. It is sandboxed like an OS process since it cannot access data in other Floyd processes.
-
-The goal with Floyd's concurrency model is:
-
-1. Simple and robust pre-made mechanisms for real-world concurrency need. Avoid general-purpose primitives, have a ready made solution that works.
-2. Composable.
-3. Allow you to make a *static design* of your container and its concurrency and state.
-4. Separate out parallelism into a separate mechanism.
-5. Avoid problematic constructs like threads, locks, callback hell, nested futures and await/async -- dead ends of concurrency.
-6. Let you control/tune how many threads and cores to use for what parts of the system, independently of the actual code.
-
-Inspirations for Floyd's concurrency model are CSP, Erlang, Go routines and channels and Clojure Core.Async.
-
-
-##### PROCESSES: INBOX, STATE, PROCESSING FUNCTION
-
-For each independent mutable state and/or "thread" you want in your container, you need to insert a process. Processes are statically instantiated in a container -- you cannot allocate them at runtime.
-
-The process represents a little standalone program with its own call stack that listens to messages from other processes. When a process receives a message in its inbox, its function is called (now or some time later) with the message and the process's previous state. The process does some work - something simple or a maybe call a big call tree or do blocking calls to the file system, and then it ends by returning its new state, which completes the message handling.
-
-**The process feature is the only way to keep state in Floyd.**
-
-Use a process if:
-
-1. You want to be able to run work concurrently, like loading data in the background
-2. You want a mutable state / memory
-3. You want to model a system where things happens concurrently, like audio streaming vs main thread
-
-
-The inbox is thread safe and it's THE way to communicate across processes. The inbox has these purposes:
-	
-1. Allow process to *wait* for external messages using the select() call
-2. Transform messages between different clock-bases -- the inbox is thread safe
-3. Allow buffering of messages, that is moving them in time
-
-You need to implement your process's processing function and define its mutable state. The processing function is impure. It can call OS-functions, block on writes to disk, use sockets etc. Each API you want to use needs to be passed as an argument into the processing function, it cannot go find them - or anything else.
-
-Processes cannot change any other state than its own, they run in their own virtual address space.
-
-When you send messages to other process you can block until you get a reply, get replies via your inbox or just don't use replies.
-
-The process function CAN chose to have several select()-statements which makes it work as a small state machine.
-
-Processes are very inexpensive.
-
-
-**Synchronization points between systems (state or concurrent) always breaks all attempts to composition. That's why Floyd has moved these to top level of container.**
-
-
-The runtime can chose to execute processes on different cores or servers. You have control over this via tweakers. Tweakers also controls the priority of processes vs hardware.
-
-
-Floyd process limitations:
-
-- Cannot find assets / ports / resources — those are handed to it via the container's wiring
-- Cannot be created or deleted at runtime
-- Cannot access any global state or other processes
-
-
-##### SYNCHRONOUS PROCESES
-
-If the processes are running on the same clock, the sequence of:
-
-- process A posts message to process B
-- process B receives the message
-- process B processes the message
-- process B completes and updates its state
-- process A continues
-
-...is done synchronously without any schedueling or OS-level context switching - just like a function call from A to B.
-
-You synchronise processes when it's important that the receiving process handles the messages *right away*. 
-
-Synced processes still have their own state and can be used as controllers / mediators.
-
-
-
-### GAIN PERFORMANCE VIA CONCURRENCY
-
-Sometimes we introduce concurrency to make more parallelism possible: multithreading a game engine is taking a non-concurrent design and making it concurrent to be able to improve throughput by running many tasks in parallel. This is different to using concurrency to model real-world concurrency like UI vs background cloud com vs realtime audio processing.
-
-
-
-### CONCURRENCY SCENARIOS
-
-|#	|Need		|Traditional	|Floyd
-|---	|---			|---			|---
-|1	| Make a REST request	| Block entire thread / nested callbacks / futures / async-await | Just block. Make call from process to keep caller running
-|2	| Make a sequence of back and forth communication with a REST server | Make separate thread and block on each step then notify main thread on completion / nested futures or callbacks / await-async | Make an process that makes blocking calls
-|3	| Perform non-blocking impure background calculation (auto save doc) | Copy document, create worker thread | Use process, use data directly
-|4	| Run process concurrently, like analyze game world to prefetch assets | Manually synchronize all shared data, use separate thread | Use process -- data is immutable
-|5	| Handle requests from OS quickly, like call to audio buffer switch process() | Use callback function | Use process and set its clock to sync to clock of buffer switch
-|6	| Improve performance using concurrency + parallelism / fan-in-fan-out / processing pipeline | Split work into small tasks that are independent, queue them to a thread team, resolve dependencies somehow, use end-fence with completetion notification | call map() or supermap() from a process.
-|7	| Spread heavy work across time (do some processing each game frame) | Use coroutine or thread that sleeps after doing some work. Wake it next frame. | Process does work. It calls select() inside a loop to wait on next trigger to continue work.
-|8	| Do work regularly, independent of other threads (like a timer interrupt) | Call timer with callback / make thread that sleeps on event | Use process that calls post_at_time(now() + 100) to itself
-|9	| Small server | Write loop that listens to socket | Use process that waits for messages
-
-
-
-
-# SIMULATION - ABOUT FLOYD'S LAYERS OF REALITY
-
-### 1 - REALITY / WORLD
-
-This is where your cat lives. Were it hurts to step on LEGO.
-
-More things that lives here: networks, Internet, files, gravity, RAM memory, CPUs and graphics cards.
-Also someone unconnecting a cable, a backup services temporarily locking some files, time-outs.
-
-Your program needs to live in this mess.
-
-
-### 2 - INSIDE FLOYD RUNTIME
-
-The workings of the Floyd system. It runs in the real world and upholds the Floyd simulation, like the MATRIX.
-
-
-### 3 - INSIDE FLOYD PROCESSES
-
-Here your code runs like small independent programs. They still need to deal with the mess in the real world, but the Floyd runtime has hidden lots of complexity of the hardware your code runs on. There is no multi-threading or aliasing. You don't do logic here, focus is wiring things together into on-going processes and coordinating the reality vs your logic code.
-
-A process uses a bunch of components (aka libraries aka, aka packages). Your own components or other people's. Only the top level of a Floyd process can instantiate components.
-
-
-### 4 - INSIDE THE SIMULATION / THE MATRIX
-
-This is where your logic lives. This should be the bulk of the code you write.
-
-This is a fantastic place to write code.
-
-- CPUs are infinitely fast.
-- You work on a snapshot of reality that can't change - the worlds stands still while your function executes.
-- You don't need to think about caching and memory access patterns or decide on which type of dictionary implementation to use.
-- You have unlimited memory.
-- There are no unexpected side effects or ripple effects. No callbacks or event pumps.
-
-
-# FLOYD'S EFFECT LEVELS
-
-- Level 0: Pure function -- referential transparent inside the simulation. In reality calling pure functions has some side effects: function execution uses real-world time, it heats up your CPU and spins the CPU fan, drains your battery, disturbes execution of other programs, allocates stack memory and heap memory etc. These happens *outside* the simulation and cannot be observed by the functions running inside.
-
-- Level 1: External output-only effects. These effects cannot be observed by pure functions in the simulation. Example: tracing to the log file.
-
-- Level 2: No external effects but internal state: keep a mutable variable in your process. In Floyd you can only do this inside processes and inside impure functions in components.
-
-- Level 3: Externa input & output = impure: reading from file, writing to file. These things have state, state can be observed and mutated by other programs. If a resource is written to by more than one program we can get data races. These things can fail.
-
-
-
-# ABOUT PARALLELISM
-
-In Floyd you accelerate the performance of your code by making it expose where there are dependencies between computations and where there are not. Then you can orchestrate how to best execute your container from the top level -- using tweak probes and profiling probes, affecting how the hardware is mapped to your logic.
-
-Easy ways to expose parallelism is by writing pure functions (their results can be cached or precomputed) and by using functions like map(), fold(), filter() and supermap(). These function work on individual elements of a collection and each computation is independent of the others. This lets the runtime process the different elements on parallel hardware.
-
-[//]: # (??? make pipeline part. https://blog.golang.org/pipelines)
-
-The functions map() and supermap() replaces FAN-IN-FAN-OUT-mechanisms.
-
-You can inspect in code and visually how the elements are distributed as tasks.
-
-supermap() works like map(), but each element also has dependencies to other elements in the collection.
-
-Accelerating computations (parallelism) is done using tweaks — a separate mechanism. It supports moving computations in time (lazy, eager, caching) and running work in parallel.
-
-
-Often processes and concurrency is introduced into a system to *expose opportunity* for parallelism.
-
-The optimizations using tweaks in no way affect the logic of your program, only the timing and order where those don't matter.
-
-To make something like a software graphics shaders, you would do
-
-let image2 = map(image1, my_pixel_shader) and the pixels can be processed in parallel.
-
-
-**Task** - this is a work item that takes usually approximately 0.5 - 10 ms to execute and has an end. The runtime generates these when it wants to run map() elements in parallel. All tasks in the entire container are scheduled together.
-
-Notice: map() and supermap() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
-
-
-
-# EXAMPLE SETUPS
-
-### SIMPLE CONSOLE PROGRAM
-
-[//]: # (???)
-
-This is a basic command line app, have only one clock that gathers ONE input value from the command line arguments, calls some pure Floyd functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
-main() one clock only.
-
-
-
-### EXAMPLE: VST-plugin
-
-[//]: # (???)
-
-TBD: make example of *all* the diagrams, including Software System diagram.
-
-![VST](floyd_systems_vst.png)
-
-
-### FIRST PERSON SHOOTER GAME
-
-[//]: # (???)
-
-TBD: make example of *all* the diagrams, including Software System diagram.
-
-![Shooter](floyd_systems_1st_person_shooter.png)
-
-
-https://www.youtube.com/watch?v=v2Q_zHG3vqg
-
-A video game may have several clocks:
-
-- UI event loop clock
-- Prefetch assets clock
-- World-simulation / physics clock
-- Rendering pass 1 clock
-- Commit to OpenGL clock
-- Audio streaming clock
-
-This game does audio and Open GL graphics. It runs many different clocks. It uses supermap() to render Open GL commands in parallel.
-
-
-
-
-
-
-
-# REFERENCE
-
-Here are all the details you need to use Floyd Systems. Every single feature. Floyd is the building block for the logic used by the Floyd System.
-
-Highest level of abstraction and describes something that delivers value to its users, whether they are human or not, can be composed of many computers working together.
-
-There is no support for package management built into Floyd 1.0.
-
-Floyd System defines what people use the system, which servers and programs and applications that are involved, how each program does its internal processing, which components its uses and so on. It's a lot. But the bulk of code is not included here - the program logic. The program logic is written in Floyd and stored inside one or many components.
-
-
-
-
-## SOFTWARE-SYSTEM
-
-This is a dedicated keyword for defining software systems: **software-system**. It's contents is encoded as a JSON object and designed to be either hand-coded or processed by tools. You only have one of these in a software system.
-
-|Key		| Meaning
-|:---	|:---	
-|**name**		| name of your software system. Something short. JSON String.
-|**desc**		| longer description of your software system. JSON String.
-|**people**	| personas involved in using or maintaining your system. Don't go crazy. JSON object.
-|**connections**	| the most important relationships between people and the containers. Be specific "user sends email using gmail" or "user plays game on device" or "mobile app pulls user account from server based on login". JSON array.
-|**containers**	| Your iOS app, your server, the email system. Notice that you map gmail-server as a container, even though it's a gigantic software system by itself. JSON array with container names as strings. These strings are used as keys to identify containers.
-
-
-
-##### PEOPLE
-
-This is an object where each key is the name of a persona and a short description of that persona.
-
-```
-"people": {
-	"Gamer": "Plays the game on one of the mobile apps",
-	"Curator": "Updates achievements, competitions, make custom on-off maps",
-	"Admin": "Keeps the system running"
-}
-```
-
-
-
-##### CONNECTIONS
-
-```
-"connections": [
-	{
-		"source": "Game",
-		"dest": "iphone app",
-		"interaction": "plays",
-		"tech": ""
-	}
-]
-```
-
-
-|Key		| Meaning
-|:---	|:---	
-|**source**		| the name of the container or user, as listed in the software-system
-|**dest**		| the name of the container or user, as listed in the software-system
-|**interaction**		| "user plays game on device" or "server sends order notification"
-|**tech**		| "webhook", "REST command"
-
-
-
-## CONTAINER-DEF
-This is a dedicated keyword. It defines *one* container, it's name, its internal processes and how they interact.
-
-|Key		| Meaning
-|:---	|:---	
-|**name**		| Needs to match the name listed in software-systems, containers.
-|**tech**		| short string that lists the most important technologies, languages, toolkits.
-|**desc**		| short string that tells what this component is and does.
-|**clocks**		| defines every clock (concurrent process) in this container and lists which processes that are synced to each of these clocks
-|**connections**		| connects the processes together using virtual wires. Source-process-name, dest-process-name, interaction-description.
-|**probes\_and\_tweakers**		| lists all probes and tweakers used in this container. Notice that the same function or component can have a different set of probes and tweakers per container or share them.
-|**components**		| lists all imported components needed for this container
-
-
-You should keep this statement close to process-code that makes up the container. That handles messages, stores their mutable state, does all communication with the real world. Keep the logic code out of here as much as possible, the Floyd processes are about communication and state and time only.
-
-
-Example container:
-
-```
-container-def {
-	"name": "iphone app",
-	"tech": "Swift, iOS, Xcode, Open GL",
-	"desc": "Mobile shooter game for iOS.",
-
-	"clocks": {
-		"main": {
-			"a": "my_gui_main",
-			"b": "iphone-ux"
-		},
-
-		"com-clock": {
-			"c": "server_com"
-		},
-		"opengl_feeder": {
-			"d": "renderer"
-		}
-	},
-	"connections": [
-		{ "source": "b", "dest": "a", "interaction": "b sends messages to a", "tech": "OS call" },
-		{ "source": "b", "dest": "c", "interaction": "b also sends messages to c, which is another clock", "tech": "OS call" }
-	],
-	"components": [
-		"My Arcade Game-iphone-app",
-		"My Arcade Game-logic",
-		"My Arcade Game-servercom",
-		"OpenGL-component",
-		"Free Game Engine-component",
-		"iphone-ux-component"
-	]
-}
-```
-
-
-
-##### PROXY CONTAINER
-
-If you use an external component or software system, like for example gmail, you list it here so we can represent it, as a proxy.
-
-```
-container-def {
-	"name": "gmail mail server"
-}
-```
-
-or 
-
-```
-container-def {
-	"name": "gmail mail server"
-	"tech": "Google tech",
-	"desc": "Use gmail to store all gamer notifications."
-}
-```
-
-
-
-## PROCESSES
-
-Floyd processes are not the same as OS-processes. Floyd processes lives inside a Floyd container and are very light weight.
-
-A process is defined by:
-
-1. a struct for its memory / state
-
-2. an initialisation function that instantiates needed components and returns the intial state
-
-3. a process function that repeatedly handles messages. It can make impure calls, send messages to other processes and block for a long time. The process function ends each call by returning an updated version of its state - this is the only mutable memory in Floyd.
-
-Usually process functions are one-offs and not reusable, they are the glue that binds your program together.
-
-Avoid having logic inside the process functions - move that logic to separate, pure functions.
-
-
-Example process code:
-
-```
-struct my_gui_state_t {
-	int _count
-}
-
-func my_gui_state_t my_gui__init(){
-	send("a", "dec")
-
-	return my_gui_state_t(0	);
-}
-
-func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
-	if(message == "inc"){
-		return update(state, "_count", state._count + 1)
-	}
-	else if(message == "dec"){
-		return update(state, "_count", state._count - 1)
-	}
-	else{
-		assert(false)
-	}
-}
-```
-
-|Part		| Details
-|:---	|:---	
-|**my\_gui\_state_t**		| this is a struct that holds the mutable memory of this process and any component instances needed by the container.
-|**my\_gui()**				| this function is specified in the software-system/"containers"/"my_iphone_app"/"clocks". The message is always a json_value. You can decide how encode the message into that.
-|**my\_gui__init()**		| this is the init function -- it has the same name with "__init" at the end. It has no arguments and returns the initial state of the process.
-
-
-
-
-
-## FLOYD COMPONENTS
-
-TBD: COMING SOON
-
-There is a keyword for defining components, called "component-api". It specify the exported features of this component.
-
-Floyd wants to make it explicit what is the API of a component. Functions, structs, version, tests, docs. Every library needs this to export API.
-
-It's also important to make the component-API syntax compact - no need to duplicate or reformat like headers in C++. No implementation possible in "header".
-
-API: defines one version of a component's exported interface. Functions, protocols, structs, tests and docs. Similar to a C++ namespace.
-
-
-
-
-
-## BUILT-IN COMPONENTS
-
-TBD: COMING SOON
-A bunch of standard components come with Floyd.
-
-
-
-
-
-
-
-## PROBES
-
-TBD: COMING SOON
-
-
-You add probes to wires, processes and individual functions and expressions. They gather intel on how your program runs on the hardware, let's you explore your running code and profile its hardware use.
-
-
-
-
-## TWEAKERS
-
-TBD: COMING SOON
-
-Tweakers are inserted onto the wires and clocks and functions and expressions of the code and affect how the runtime and language executes that code, without changing its logic. Caching, batching, pre-calculation, parallelization, hardware allocation, collection-type selection are examples of what's possible.
-
-
-
-
-## SYNTAX
-
-```
-STATEMENT "software-system" JSON_BODY
-STATEMENT "component-def" JSON_BODY
-```
-
-
-
-
-
-## EXAMPLE SOFTWARE SYSTEM FILE
-
-
-```
-software-system {
-	"name": "My Arcade Game",
-	"desc": "Space shooter for mobile devices, with connection to a server.",
-
-	"people": {
-		"Gamer": "Plays the game on one of the mobile apps",
-		"Curator": "Updates achievements, competitions, make custom on-off maps",
-		"Admin": "Keeps the system running"
-	},
-	"connections": [
-		{ "source": "Game", "dest": "iphone app", "interaction": "plays", "tech": "" }
-	],
-	"containers": [
-		"gmail mail server",
-		"iphone app",
-		"Android app"
-	]
-}
-result = 123
-
-container-def {
-	"name": "iphone app",
-	"tech": "Swift, iOS, Xcode, Open GL",
-	"desc": "Mobile shooter game for iOS.",
-
-	"clocks": {
-		"main": {
-			"a": "my_gui_main",
-			"b": "iphone-ux"
-		},
-
-		"com-clock": {
-			"c": "server_com"
-		},
-		"opengl_feeder": {
-			"d": "renderer"
-		}
-	},
-	"connections": [
-		{ "source": "b", "dest": "a", "interaction": "b sends messages to a", "tech": "OS call" },
-		{ "source": "b", "dest": "c", "interaction": "b also sends messages to c, which is another clock", "tech": "OS call" }
-	],
-	"components": [
-		"My Arcade Game-iphone-app",
-		"My Arcade Game-logic",
-		"My Arcade Game-servercom",
-		"OpenGL-component",
-		"Free Game Engine-component",
-		"iphone-ux-component"
-	]
-}
-
-func string my_gui_main__init() impure {
-	print("HELLO")
-	send("a", "stop")
-	send("b", "stop")
-	send("c", "stop")
-	send("d", "stop")
-	return "a is done"
-}
-
-```
