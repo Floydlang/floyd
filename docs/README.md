@@ -93,9 +93,8 @@ A handful features are needed for a satisfying 1.0: rounding out the language fe
 
 |Item				| Feature	
 |:---				|:---
-| [Floyd Speak Manual](floyd_speak.md) | Programming language manual
-| [Core Library Manual](floyd_speak_corelibs.md) | File system access, JSON support, hashes, map() etc.
-| [Floyd Systems Manual](floyd_systems.md) | How to use Floyd processes to change the world
+| [Floyd Manual](floyd_manual/floyd_manual.md) | Programming language manual
+| [Core Library Manual](floyd_manual/floyd_speak_corelibs.md) | File system access, JSON support, hashes, map() etc.
 | **Floyd compiler** | Compiles Floyd source code to byte code
 | **Floyd bytecode interpreter**	|Runs your program
 
