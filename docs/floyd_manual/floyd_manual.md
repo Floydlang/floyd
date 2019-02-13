@@ -1,4 +1,4 @@
-??? Make more meaty examples, with structs and actual data and "objects".
+TODO: Make more meaty examples, with structs and actual data and "objects".
 
 ![](floyd_logo_banner.png)
 
@@ -17,12 +17,8 @@ Floyd is the programming language part of Floyd. It's an alternative to Java and
 4. COMMAND LINE TOOL
 5. REFERENCE
 
- # INTRODUCTION
 
- 
- 
- 
- 
+
 # QUICK REFERENCE
 
 
@@ -223,15 +219,15 @@ It also promotes composability since all Floyd code can rely on these types and 
 |__typeid__		| Describes the *type* of a value.
 |__function__	| A function value. Functions can be Floyd functions or C functions. They are callable.
 |__struct__		| Like C struct or classes or tuples. A value object.
-|TODO __protocol__	| A value that hold a number of callable functions. Also called interface or abstract base class.
 |__vector__		| A continuous array of elements addressed via indexes.
 |__dictionary__	| Lookup values using string keys.
 |__json_value__	| A value that holds a JSON-compatible value, can be a big JSON tree.
-|TODO POC: __sum-type__		| Tagged union.
-|TODO 1.0: __float__		| 32-bit floating point number
-|TODO 1.0: __int8__		| 8-bit signed integer
-|TODO 1.0: __int16__		| 16-bit signed integer
-|TODO 1.0: __int32__		| 32-bit signed integer
+|TODO: __protocol__	| A value that hold a number of callable functions. Also called interface or abstract base class.
+|TODO: __sum-type__		| Tagged union.
+|TODO: __float__		| 32-bit floating point number
+|TODO: __int8__		| 8-bit signed integer
+|TODO: __int16__		| 16-bit signed integer
+|TODO: __int32__		| 32-bit signed integer
 
 Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [], etc.
 
@@ -315,7 +311,7 @@ Classes. Instance diagram. Examples. Passive. You often use a simple UML diagram
 ![Level3](floyd_systems_level4_diagram.png)
 
 
-
+TODO: Make script that generates diagrams from software-system JSON.
 
 
 ### EXAMPLE SOFTWARE SYSTEM STATEMENT
@@ -342,9 +338,9 @@ software-system {
 }
 ```
 
-??? support proxy software-systems
+TODO: support proxy software-systems
 
-??? support connections between components inside containers.
+TODO: support connections between components inside containers.
 
 
 
@@ -503,22 +499,18 @@ Sometimes we introduce concurrency to make more parallelism possible: multithrea
 
 
 
-### EXAMPLE SETUPS
 
-#### SIMPLE CONSOLE PROGRAM
+### EXAMPLE: SIMPLE CONSOLE PROGRAM
 
-[//]: # (???)
-
-This is a basic command line app, have only one clock that gathers ONE input value from the command line arguments, calls some pure Floyd functions on the arguments, reads and writes to the world, then finally return an integer result. A server app may have a lot more concurrency.
-main() one clock only.
+This is a basic command line app. It doesn't need a Floyd process at all, it's just a function. It gets its input values from the command line arguments, calls some pure Floyd functions on the arguments, reads and writes to the world, then finally return an integer result. 
 
 
 
-#### EXAMPLE: PACMAN IPHONE
+### EXAMPLE: PACMAN IPHONE
 
 ![Pacman](floyd_pacman.png)
 
-TBD: make example of *all* the diagrams, including Software System diagram.
+TODO: make example of *all* the diagrams, including Software System diagram.
 
 A complex gamewill have many clocks, both to model concurreny and to allow parallelism. When simulation has been run, it can hand of a copy of the game world for renderer to work on in parallel.
 
@@ -557,7 +549,6 @@ Chandler Carruth:
 
 
 
-
 Floyd is designed to make it simple and practical to make big systems with performance better than what you get with average optimized C code.
 
 It does this by splitting the design into two different concepts:
@@ -572,25 +563,21 @@ It is also simple to introduce more concurrency to create more opportunities to 
 
 ![](cpu_overview.png)
 
-??? Also draw computing power.
+TODO: Also draw computing power.
+TOD: Fact check stats.
 
 
 
 
 
-## PROBES
-
-TBD: COMING SOON
-
+## TODO:PROBES
 
 You add probes to wires, processes and individual functions and expressions. They gather intel on how your program runs on the hardware, let's you explore your running code and profile its hardware use.
 
 
 
 
-## TWEAKERS
-
-TBD: COMING SOON
+## TODO: TWEAKERS
 
 Tweakers are inserted onto the wires and clocks and functions and expressions of the code and affect how the runtime and language executes that code, without changing its logic. Caching, batching, pre-calculation, parallelization, hardware allocation, collection-type selection are examples of what's possible.
 
@@ -602,8 +589,6 @@ Tweakers are inserted onto the wires and clocks and functions and expressions of
 In Floyd you accelerate the performance of your code by making it expose where there are dependencies between computations and where there are not. Then you can orchestrate how to best execute your container from the top level -- using tweak probes and profiling probes, affecting how the hardware is mapped to your logic.
 
 Easy ways to expose parallelism is by writing pure functions (their results can be cached or precomputed) and by using functions like map(), fold(), filter() and supermap(). These function work on individual elements of a collection and each computation is independent of the others. This lets the runtime process the different elements on parallel hardware.
-
-[//]: # (??? make pipeline part. https://blog.golang.org/pipelines)
 
 The functions map() and supermap() replaces FAN-IN-FAN-OUT-mechanisms.
 
@@ -623,6 +608,7 @@ To make something like a software graphics shaders, you would do
 let image2 = map(image1, my_pixel_shader) and the pixels can be processed in parallel.
 
 
+???
 **Task** - this is a work item that takes usually approximately 0.5 - 10 ms to execute and has an end. The runtime generates these when it wants to run map() elements in parallel. All tasks in the entire container are scheduled together.
 
 Notice: map() and supermap() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
@@ -704,8 +690,6 @@ let a = "hello" //	This is an end of line comment.
 
 
 
-
-
 ## AUTOMATIC SERIALIZATION
 
 Serializing any Floyd value is a built-in mechanism. It is always true-deep.
@@ -761,8 +745,6 @@ any jsonvalue_to_value(json_value v)
 
 
 
-
-
 # 2. THE LANGUAGE
 
 
@@ -801,13 +783,13 @@ This is a value that is fully defined directly in the code. Like the number 3.
 ### VECTOR-CONSTRUCTOR
 
 This lets you create a new vector value anywhere an expression can be typed. This expression supports non-constant elements of the constructor.
-???
+TODO: More text.
 
 
 ### DICTIONARY-CONSTRUCTOR
 
 This lets you create a new dictionary value anywhere an expression can be typed. This expression supports non-constant elements of the constructor.
-???
+TODO: More text.
 
 ### FUNCTION CALL
 
