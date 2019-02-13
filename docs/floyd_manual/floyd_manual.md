@@ -2,26 +2,35 @@
 
 ![](floyd_logo_banner.png)
 
-# FLOYD
+# INTRODUCTION
 
 Floyd is the programming language part of Floyd. It's an alternative to Java and C++, JavaScript and Python. Using Floyd, you write functions and data types. You make complex data structures, setup concurrency and parallelism and communicate with the world around your program.
 
 
 
-![](floyd_quick_reference.png)
+# CONTENTS
+
+
+1. BASIC CONCEPTS
+2. THE LANGUAGE
+3. BUILT-IN FUNCTIONS
+4. COMMAND LINE TOOL
+5. REFERENCE
+
+ # INTRODUCTION
+
+ 
+ 
+ 
+ 
+# QUICK REFERENCE
+
+
+ ![](floyd_quick_reference.png)
 
 
 
-
-![](cpu_overview.png)
-
-??? Also draw computing power.
-
-
-
-
-
-# BASIC CONCEPTS
+# 1. BASIC CONCEPTS
 
 
 ## FUNCTIONS (PURE AND IMPURE)
@@ -234,66 +243,78 @@ Notice that string has many qualities of an array of characters. You can ask for
 
 ## SOFTWARE SYSTEM - C4
 
-Floyd uses the C4 model to organize your code. This is completely optional to use but is a very fast and lightweight way to organise your code and programs and generate a few great diagrams that lets you can reason about the system.
+Floyd uses the C4 model to navigate and present your code. It's completely optional to use this feature. The C4 features gives you a very fast and lightweight way to think about your system automatically generate a few great diagrams that helps you can reason about the system.
 
 Read more here: https://c4model.com/
 
-These lets you have a complete overview over your entire system and how users interact with it, then drill down to individual containers and further down to components and the code itself.
+The C4 model and the diagrams lets you have a complete overview over your entire system and how users interact with it, then drill down to individual containers and further down to components and the code itself.
 
-In Floyd you describe your system using the keywords **software-system** and **container-def**.
+In Floyd you describe your system using the keywords **software-system** and **container-def**, which use C4 terminology.
 
 ![Software Systems](floyd_systems_software_system.png)
 
 
 ### PERSON
 
-Represents various human users of your software system. Uses some sort of user interface to the Software System. For example, a UI on an iPhone.
+Represents various human users of your software system. They access the system through some sort of user interface. For example, a UI on an iPhone.
 
 
-### LEVEL 1 - SOFTWARE SYSTEM
+### LEVEL 1 - SYSTEM CONTEXT DIAGRAM
 
-Highest level of abstraction and describes something that delivers value to its users, whether they are human or not, can be composed of many computers working together.
+This describes the entire software system you are building -- something that delivers value to its users, whether they are human or not. It can be composed of many computers, servers and apps working together -- or just one, like an iPhone app.
 
 ![Level1](floyd_systems_level1_diagram.png)
 
 
-### LEVEL 2 - CONTAINER
+### LEVEL 2 - CONTAINER DIAGRAM
 
-Containers is where the bulk of the programming happens. A container represents something that hosts code or data. A container is something that needs to be running in order for the overall software system to work. A mobile app, a server-side web application, a client-side web application, a micro service: all examples of containers.
-
-This is usually a single OS-process, with internal mutation, time, several threads. It looks for resources and knows how to string things together inside the container.
-
-
-The container *completely* defines *all* its: concurrency, state, communication with outside world and runtime errors of the container. This includes sockets, file systems, messages, screens, UI.
-
-Containers declare which external systems they need; which libraries are needed and its own internal Floyd processes. A container's design is usually a one-off and cannot be composed into other containers.
+Zooms into your software system and shows the different containers (apps) that makes up the system.
 
 There are proxy-containers that lets you place things like Amazon S3 or an email server into your system.
-
-The basic building blocks are components, built in ones and ones you program yourself.
 
 ![Level2](floyd_systems_level2_diagram.png)
 
 
-### LEVEL 3 - COMPONENT
+### CONTAINERS
 
-Grouping of related functionalities encapsulated behind a well-defined interface. Like a software integrated circuit or a code library. Does not span processes. JPEG library, JSON lib. Custom component for syncing with your server. Amazon S3 library, socket library.
+Containers is where the bulk of the programming happens. A container represents something that hosts code or data. A container is a thing that needs to be running in order for the overall software system to work. A mobile app, a server-side web application, a client-side web application, a micro service: all examples of containers.
 
-A component can be fully pure. Pure components have no side effects, have no internal state and are passive, like a ZIP library or a matrix-math library.
+A container is usually a single OS-process. It looks for resources and knows how to string things together inside the container, does its own processing of events and so forth, has its own state and handles runtimer errors. Sockets, file systems, concurrency, messages and screens are handled here.
 
-Or they can be impure. Impure components may be active (detecting mouse clicks and calling your code) and may affect the world around you or give different results for each call and keeps their own internal state. get_time() and get_mouse_pos(), on_mouse_click(). read_directory_elements().
+A container's design is usually a one-off and not reusable.
 
-Pure components are preferable when possible.
+![](floyd_container_example.png)
 
+In Floyd, containers are defined using container-def, which lists the components it needs, which internal Floyd processes it runs and which impure Floyd functions that run those processes.
+
+
+### LEVEL 3 - COMPONENT DIAGRAM
+
+This diagram zooms into an individual container to show the components inside.
 
 ![Level3](floyd_systems_level3_diagram.png)
 
-Notice: a component used in several containers or a piece of code that appears in several components will *appear in each*, appearing like they are duplicates. The perspective of the diagrams is **logic dependencies**. These diagrams don't show the physical dependencies -- which source files or libraries that depends on each other.
+
+### COMPONENTS
+
+A component is the same as a library, package or module. It's a group of related features encapsulated behind a well-defined interface. You can make your own components, use built-in component and get 3rd party components.
+
+Examples: JPEG library, JSON lib. Custom component for syncing with your server. Amazon S3 library, socket library.
+
+Does not span processes. A component can be fully pure. Pure components have no side effects, have no internal state and are passive, like a ZIP library or a matrix-math library. These can be used from any Floyd code in the call graph -- both pure and impure functions.
+
+Or they can be impure. Impure components may take aktive decisions (detecting mouse clicks and calling your code) and may affect the world around you or give different results for each call and keeps their own internal state. get_time() and get_mouse_pos(), on_mouse_click(). read_directory_elements(). These can only be accessed from impure Floyd functions at the top of the call graph.
+
+Notice: a component used in several containers or a piece of code that appears in several components will appear in each -- they will look like they are duplicates in C4 diagrams, but they aren't. The perspective of the diagrams is **logic dependencies**. These diagrams don't show the physical dependencies -- which source files or libraries that depends on each other.
 
 
-### LEVEL 4 - CODE
+### LEVEL 4 - CODE DIAGRAM
 
-Classes. Instance diagram. Examples. Passive.
+Classes. Instance diagram. Examples. Passive. You often use a simple UML diagram here.
+
+![Level3](floyd_systems_level4_diagram.png)
+
+
 
 
 
@@ -321,6 +342,9 @@ software-system {
 }
 ```
 
+??? support proxy software-systems
+
+??? support connections between components inside containers.
 
 
 
@@ -331,11 +355,16 @@ Floyd processes lives inside a Floyd container and are very light weight. They a
 
 A process is defined by:
 
-1. a struct for its memory / state
+1. a value **M** for its memory / state -- usually a struct
 
 2. an initialisation function that instantiates needed components and returns the intial state
 
-3. a process function that repeatedly handles messages. It can make impure calls, send messages to other processes and block for a long time. The process function ends each call by returning an updated version of its state - this is the only mutable memory in Floyd.
+3. a process function **f** that repeatedly handles messages. It can make impure calls, send messages to other processes and block for a long time. The process function ends each call by returning an updated version of its state - this is the only mutable memory in Floyd.
+
+4. A message inbox.
+
+
+![Floyd Process](floyd_process.png)
 
 Usually process functions are one-offs and not reusable, they are the glue that binds your program together.
 
@@ -485,27 +514,13 @@ main() one clock only.
 
 
 
-#### EXAMPLE: VST-plugin
+#### EXAMPLE: PACMAN IPHONE
 
-[//]: # (???)
-
-TBD: make example of *all* the diagrams, including Software System diagram.
-
-![VST](floyd_systems_vst.png)
-
-
-#### FIRST PERSON SHOOTER GAME
-
-[//]: # (???)
+![Pacman](floyd_pacman.png)
 
 TBD: make example of *all* the diagrams, including Software System diagram.
 
-![Shooter](floyd_systems_1st_person_shooter.png)
-
-
-https://www.youtube.com/watch?v=v2Q_zHG3vqg
-
-A video game may have several clocks:
+A complex gamewill have many clocks, both to model concurreny and to allow parallelism. When simulation has been run, it can hand of a copy of the game world for renderer to work on in parallel.
 
 - UI event loop clock
 - Prefetch assets clock
@@ -514,16 +529,109 @@ A video game may have several clocks:
 - Commit to OpenGL clock
 - Audio streaming clock
 
-This game does audio and Open GL graphics. It runs many different clocks. It uses supermap() to render Open GL commands in parallel.
+https://www.youtube.com/watch?v=v2Q_zHG3vqg
 
 
+## TODO: EXCEPTIONS
 
-
-
-## EXCEPTIONS
-
-TODO 1.0
 Throw exception. Built in types, free noun. Refine, final.
+
+
+
+
+## ABOUT PERFORMANCE
+
+Chandler Carruth:
+
+- EFFICIENCY: HOW MUCH WORK IS REQUIRED BY A TASK
+	- Improve by doing less work.
+	- Better algorithms.
+	
+- PERFORMANCE: HOW QUICKLY A PROGRAM DOES ITS WORK.
+	- Do work faster. 
+	- Lighting up all the transistors.
+	- Data structures
+
+
+**EFFICIENCY WITH ALGORITHMS, PERFORMANCE WITH DATA STRUCTURES**
+
+
+
+
+Floyd is designed to make it simple and practical to make big systems with performance better than what you get with average optimized C code.
+
+It does this by splitting the design into two different concepts:
+
+1. Encourage your logic and processing code to be simple and correct and to declare where there is opportunity to execute code independently of each other. This type of code is ideal to run in parallel or cache etc, like a shader in a graphics API.
+
+2. At the top level, profile execution and make high-level improvements that dramatically alter how the code is *generated* and executed to run on the available hardware. Caching, collection type selection, batching, parallelization, ordering work for different localities, memory layouts and access patterns.
+
+It is also simple to introduce more concurrency to create more opportunities to run computations in parallel.
+
+
+
+![](cpu_overview.png)
+
+??? Also draw computing power.
+
+
+
+
+
+## PROBES
+
+TBD: COMING SOON
+
+
+You add probes to wires, processes and individual functions and expressions. They gather intel on how your program runs on the hardware, let's you explore your running code and profile its hardware use.
+
+
+
+
+## TWEAKERS
+
+TBD: COMING SOON
+
+Tweakers are inserted onto the wires and clocks and functions and expressions of the code and affect how the runtime and language executes that code, without changing its logic. Caching, batching, pre-calculation, parallelization, hardware allocation, collection-type selection are examples of what's possible.
+
+
+
+
+## ABOUT PARALLELISM
+
+In Floyd you accelerate the performance of your code by making it expose where there are dependencies between computations and where there are not. Then you can orchestrate how to best execute your container from the top level -- using tweak probes and profiling probes, affecting how the hardware is mapped to your logic.
+
+Easy ways to expose parallelism is by writing pure functions (their results can be cached or precomputed) and by using functions like map(), fold(), filter() and supermap(). These function work on individual elements of a collection and each computation is independent of the others. This lets the runtime process the different elements on parallel hardware.
+
+[//]: # (??? make pipeline part. https://blog.golang.org/pipelines)
+
+The functions map() and supermap() replaces FAN-IN-FAN-OUT-mechanisms.
+
+You can inspect in code and visually how the elements are distributed as tasks.
+
+supermap() works like map(), but each element also has dependencies to other elements in the collection.
+
+Accelerating computations (parallelism) is done using tweaks — a separate mechanism. It supports moving computations in time (lazy, eager, caching) and running work in parallel.
+
+
+Often processes and concurrency is introduced into a system to *expose opportunity* for parallelism.
+
+The optimizations using tweaks in no way affect the logic of your program, only the timing and order where those don't matter.
+
+To make something like a software graphics shaders, you would do
+
+let image2 = map(image1, my_pixel_shader) and the pixels can be processed in parallel.
+
+
+**Task** - this is a work item that takes usually approximately 0.5 - 10 ms to execute and has an end. The runtime generates these when it wants to run map() elements in parallel. All tasks in the entire container are scheduled together.
+
+Notice: map() and supermap() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
+
+
+
+
+
+
 
 
 
@@ -653,97 +761,9 @@ any jsonvalue_to_value(json_value v)
 
 
 
-## ABOUT PERFORMANCE
-
-Chandler Carruth:
-
-- EFFICIENCY: HOW MUCH WORK IS REQUIRED BY A TASK
-	- Improve by doing less work.
-	- Better algorithms.
-	
-- PERFORMANCE: HOW QUICKLY A PROGRAM DOES ITS WORK.
-	- Do work faster. 
-	- Lighting up all the transistors.
-	- Data structures
 
 
-**EFFICIENCY WITH ALGORITHMS, PERFORMANCE WITH DATA STRUCTURES**
-
-
-
-
-Floyd is designed to make it simple and practical to make big systems with performance better than what you get with average optimized C code.
-
-It does this by splitting the design into two different concepts:
-
-1. Encourage your logic and processing code to be simple and correct and to declare where there is opportunity to execute code independently of each other. This type of code is ideal to run in parallel or cache etc, like a shader in a graphics API.
-
-2. At the top level, profile execution and make high-level improvements that dramatically alter how the code is *generated* and executed to run on the available hardware. Caching, collection type selection, batching, parallelization, ordering work for different localities, memory layouts and access patterns.
-
-It is also simple to introduce more concurrency to create more opportunities to run computations in parallel.
-
-
-
-
-## PROBES
-
-TBD: COMING SOON
-
-
-You add probes to wires, processes and individual functions and expressions. They gather intel on how your program runs on the hardware, let's you explore your running code and profile its hardware use.
-
-
-
-
-## TWEAKERS
-
-TBD: COMING SOON
-
-Tweakers are inserted onto the wires and clocks and functions and expressions of the code and affect how the runtime and language executes that code, without changing its logic. Caching, batching, pre-calculation, parallelization, hardware allocation, collection-type selection are examples of what's possible.
-
-
-
-
-## ABOUT PARALLELISM
-
-In Floyd you accelerate the performance of your code by making it expose where there are dependencies between computations and where there are not. Then you can orchestrate how to best execute your container from the top level -- using tweak probes and profiling probes, affecting how the hardware is mapped to your logic.
-
-Easy ways to expose parallelism is by writing pure functions (their results can be cached or precomputed) and by using functions like map(), fold(), filter() and supermap(). These function work on individual elements of a collection and each computation is independent of the others. This lets the runtime process the different elements on parallel hardware.
-
-[//]: # (??? make pipeline part. https://blog.golang.org/pipelines)
-
-The functions map() and supermap() replaces FAN-IN-FAN-OUT-mechanisms.
-
-You can inspect in code and visually how the elements are distributed as tasks.
-
-supermap() works like map(), but each element also has dependencies to other elements in the collection.
-
-Accelerating computations (parallelism) is done using tweaks — a separate mechanism. It supports moving computations in time (lazy, eager, caching) and running work in parallel.
-
-
-Often processes and concurrency is introduced into a system to *expose opportunity* for parallelism.
-
-The optimizations using tweaks in no way affect the logic of your program, only the timing and order where those don't matter.
-
-To make something like a software graphics shaders, you would do
-
-let image2 = map(image1, my_pixel_shader) and the pixels can be processed in parallel.
-
-
-**Task** - this is a work item that takes usually approximately 0.5 - 10 ms to execute and has an end. The runtime generates these when it wants to run map() elements in parallel. All tasks in the entire container are scheduled together.
-
-Notice: map() and supermap() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
-
-
-
-
-
-
-
-
-
-
-# THE LANGUAGE
+# 2. THE LANGUAGE
 
 
 
@@ -1655,7 +1675,7 @@ Protocol member functions can be tagged "impure" which allows it to be implement
 
 
 
-# BUILT-IN FUNCTIONS
+# 3. BUILT-IN FUNCTIONS
 
 These functions are built into the language itself and are always available to your code. They are all pure so can be used in pure functions.
 
@@ -1902,7 +1922,7 @@ typeid typeof(any)
 
 
 
-# COMMAND LINE TOOL
+# 4. COMMAND LINE TOOL
 
 |COMMAND		  	| MEANING
 |:---				|:---	
@@ -1917,7 +1937,7 @@ typeid typeof(any)
 
 
 
-# REFERENCE
+# 5. REFERENCE
 
 
 
