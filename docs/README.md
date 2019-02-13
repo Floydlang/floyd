@@ -26,7 +26,7 @@ Floyd compilers and tools are written in C++ 17 and compiles with Clang and GCC.
 
 Use Floyd to build the next Photoshop, Grand Theft Auto or mobile app. But also for short scripts and toy programs. Probably not embedded software, though.
 
-Floyd wants to replace C++, Rust, C#, Python. And Javascript. Only C can stay. Maybe Closure too, just out of respect.
+Floyd wants to replace C++, Rust, C#, Python. And Javascript.
 
 
 ## LANGUAGE SYNTAX
