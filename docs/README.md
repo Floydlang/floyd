@@ -9,7 +9,7 @@ This repo holds the compiler, the bytecode interpreter and documentation.
 
 # WHAT IS FLOYD?
 
-Floyd is a general purpose programming language designed for making very large and robust programs that run really fast, while ducking many of the problems of older languages.
+Floyd is a general-purpose programming language designed for making very large and robust programs that run really fast, while ducking many of the problems of older languages.
 
 Floyds web page: [www.floydlang.org](https://www.floydlang.org "Floyd language's Homepage")
 
@@ -58,13 +58,13 @@ The bulk of your program should be blue-pill code, that is pure.
 
 *(Implementation in progress)*
 
-Safe parellelism is built in using map() reduce() filter() and supermap(). Like shaders running on a GPU. They share an internal OS thread team with the Floyd processes.
+Safe parallelism is built in using map() reduce() filter() and supermap(). Like shaders running on a GPU. They share an internal OS thread team with the Floyd processes.
 
 
 
 ## BYTECODE AND NATIVE
 
-Floyd runs runs on a bytecode interpreter (now) and natively using LLVM (implementation in progress). Both will be available.
+Floyd runs on a bytecode interpreter (now) and natively using LLVM (implementation in progress). Both will be available.
 
 
 
