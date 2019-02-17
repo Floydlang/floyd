@@ -23,6 +23,9 @@
 
 #include "pass3.h"
 
+#include "libs/Celero-master/include/celero/Celero.h"
+#include "libs/Celero-master/include/celero/Executor.h"
+
 std::string floyd_version_string = "0.3";
 
 
@@ -163,6 +166,37 @@ void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_cod
 	throw std::logic_error("Unit test failed");
 }
 
+
+////////////////////////////////	BENCHMARKS
+
+
+static void celero_run(const std::vector<std::string>& command_line_args) {
+	std::vector<const char*> ptrs;
+	for(const auto& e: command_line_args){
+		ptrs.push_back(e.c_str());
+	}
+	celero::Run(static_cast<int>(ptrs.size()), (char**)&ptrs[0]);
+//celero::executor::RunAll();
+}
+
+
+void run_benchmark(){
+#if 1
+	const auto dirs = GetDirectories();
+	const std::vector<std::string> inputs = {
+		"myapp",
+		std::string() + "--outputTable",
+		dirs.desktop_dir + "/bench.txt"
+	};
+
+	celero_run(inputs);
+#else
+	floyd_benchmark();
+#endif
+}
+
+
+
 //	Print usage instructions to stdio.
 void help(){
 std::cout << "Floyd Speak Programming Language " << floyd_version_string << " MIT." <<
@@ -190,7 +224,7 @@ int run_command(const std::vector<std::string>& args){
 		return EXIT_SUCCESS;
 	}
 	else if(command_line_args.subcommand == "benchmark"){
-		floyd_benchmark();
+		run_benchmark();
 		return EXIT_SUCCESS;
 	}
 	else if(command_line_args.subcommand == "help"){
@@ -249,7 +283,6 @@ int run_command(const std::vector<std::string>& args){
 	}
 }
 
-
 int main(int argc, const char * argv[]) {
 	floyd_quark_runtime q("");
 	quark::set_runtime(&q);
@@ -276,6 +309,24 @@ int main(int argc, const char * argv[]) {
 	}
 	return EXIT_SUCCESS;
 }
+
+
+#if 0
+
+
+//CELERO_MAIN
+int main(int argc, const char * argv[]) {
+	const auto dirs = GetDirectories();
+	const std::vector<std::string> inputs = {
+		"myapp",
+		std::string() + "--outputTable",
+		dirs.desktop_dir + "/bench.txt"
+	};
+
+	celero_run(inputs);
+}
+
+#endif
 
 
 /*

@@ -8,6 +8,27 @@
 
 /* Begin PBXBuildFile section */
 		2C00BC421F2428FF0087B8BB /* cpp_experiments.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00BC411F2428FF0087B8BB /* cpp_experiments.cpp */; };
+		2C00DEB122198B0300DB322E /* Exceptions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE8A22198B0300DB322E /* Exceptions.cpp */; };
+		2C00DEB222198B0300DB322E /* Memory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE8B22198B0300DB322E /* Memory.cpp */; };
+		2C00DEB322198B0300DB322E /* Distribution.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE8C22198B0300DB322E /* Distribution.cpp */; };
+		2C00DEB422198B0300DB322E /* Executor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE8D22198B0300DB322E /* Executor.cpp */; };
+		2C00DEB522198B0300DB322E /* Experiment.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE8E22198B0300DB322E /* Experiment.cpp */; };
+		2C00DEB622198B0300DB322E /* ResultTable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE8F22198B0300DB322E /* ResultTable.cpp */; };
+		2C00DEB722198B0300DB322E /* JUnit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE9022198B0300DB322E /* JUnit.cpp */; };
+		2C00DEB822198B0300DB322E /* Console.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE9122198B0300DB322E /* Console.cpp */; };
+		2C00DEB922198B0300DB322E /* TestFixture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE9222198B0300DB322E /* TestFixture.cpp */; };
+		2C00DEBA22198B0300DB322E /* Timer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE9322198B0300DB322E /* Timer.cpp */; };
+		2C00DEBB22198B0300DB322E /* Print.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE9422198B0300DB322E /* Print.cpp */; };
+		2C00DEBC22198B0300DB322E /* Benchmark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE9522198B0300DB322E /* Benchmark.cpp */; };
+		2C00DEBD22198B0300DB322E /* ExperimentResult.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE9622198B0300DB322E /* ExperimentResult.cpp */; };
+		2C00DEBE22198B0300DB322E /* Utilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE9722198B0300DB322E /* Utilities.cpp */; };
+		2C00DEBF22198B0300DB322E /* Celero.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE9822198B0300DB322E /* Celero.cpp */; };
+		2C00DEC022198B0300DB322E /* Callbacks.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE9922198B0300DB322E /* Callbacks.cpp */; };
+		2C00DEC122198B0300DB322E /* UserDefinedMeasurementCollector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE9A22198B0300DB322E /* UserDefinedMeasurementCollector.cpp */; };
+		2C00DEC222198B0300DB322E /* ThreadTestFixture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE9B22198B0300DB322E /* ThreadTestFixture.cpp */; };
+		2C00DEC322198B0300DB322E /* TestVector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE9C22198B0300DB322E /* TestVector.cpp */; };
+		2C00DEC422198B0300DB322E /* Archive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DE9D22198B0300DB322E /* Archive.cpp */; };
+		2C00DEC822198C6300DB322E /* floyd_runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DEC622198C6300DB322E /* floyd_runtime.cpp */; };
 		2C02667C2014CAF000A82AD6 /* floyd_test_suite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */; };
 		2C18044B208B90E900F62480 /* utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180448208B90E800F62480 /* utils.cpp */; };
 		2C18044D208B90E900F62480 /* text_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18044A208B90E800F62480 /* text_parser.cpp */; };
@@ -69,6 +90,68 @@
 
 /* Begin PBXFileReference section */
 		2C00BC411F2428FF0087B8BB /* cpp_experiments.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cpp_experiments.cpp; sourceTree = "<group>"; };
+		2C00DE6122198B0300DB322E /* Console.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Console.h; sourceTree = "<group>"; };
+		2C00DE6222198B0300DB322E /* TestVector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TestVector.h; sourceTree = "<group>"; };
+		2C00DE6322198B0300DB322E /* Experiment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Experiment.h; sourceTree = "<group>"; };
+		2C00DE6422198B0300DB322E /* Archive.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Archive.h; sourceTree = "<group>"; };
+		2C00DE6522198B0300DB322E /* UserDefinedMeasurementCollector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UserDefinedMeasurementCollector.h; sourceTree = "<group>"; };
+		2C00DE6622198B0300DB322E /* Export.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Export.h; sourceTree = "<group>"; };
+		2C00DE6722198B0300DB322E /* GenericFactory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GenericFactory.h; sourceTree = "<group>"; };
+		2C00DE6822198B0300DB322E /* ThreadLocal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ThreadLocal.h; sourceTree = "<group>"; };
+		2C00DE6922198B0300DB322E /* Callbacks.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Callbacks.h; sourceTree = "<group>"; };
+		2C00DE6A22198B0300DB322E /* JUnit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JUnit.h; sourceTree = "<group>"; };
+		2C00DE6B22198B0300DB322E /* Exceptions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Exceptions.h; sourceTree = "<group>"; };
+		2C00DE6C22198B0300DB322E /* Celero.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Celero.h; sourceTree = "<group>"; };
+		2C00DE6D22198B0300DB322E /* Utilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Utilities.h; sourceTree = "<group>"; };
+		2C00DE6E22198B0300DB322E /* UserDefinedMeasurementTemplate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UserDefinedMeasurementTemplate.h; sourceTree = "<group>"; };
+		2C00DE6F22198B0300DB322E /* ResultTable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ResultTable.h; sourceTree = "<group>"; };
+		2C00DE7022198B0300DB322E /* Timer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Timer.h; sourceTree = "<group>"; };
+		2C00DE7122198B0300DB322E /* PimplImpl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PimplImpl.h; sourceTree = "<group>"; };
+		2C00DE7222198B0300DB322E /* Executor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Executor.h; sourceTree = "<group>"; };
+		2C00DE7322198B0300DB322E /* UserDefinedMeasurement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UserDefinedMeasurement.h; sourceTree = "<group>"; };
+		2C00DE7422198B0300DB322E /* Statistics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Statistics.h; sourceTree = "<group>"; };
+		2C00DE7522198B0300DB322E /* ExperimentResult.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ExperimentResult.h; sourceTree = "<group>"; };
+		2C00DE7622198B0300DB322E /* Distribution.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Distribution.h; sourceTree = "<group>"; };
+		2C00DE7722198B0300DB322E /* Print.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Print.h; sourceTree = "<group>"; };
+		2C00DE7822198B0300DB322E /* Pimpl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Pimpl.h; sourceTree = "<group>"; };
+		2C00DE7922198B0300DB322E /* TestFixture.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TestFixture.h; sourceTree = "<group>"; };
+		2C00DE7A22198B0300DB322E /* Memory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Memory.h; sourceTree = "<group>"; };
+		2C00DE7B22198B0300DB322E /* CommandLine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CommandLine.h; sourceTree = "<group>"; };
+		2C00DE7C22198B0300DB322E /* Benchmark.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Benchmark.h; sourceTree = "<group>"; };
+		2C00DE7D22198B0300DB322E /* ThreadTestFixture.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ThreadTestFixture.h; sourceTree = "<group>"; };
+		2C00DE7E22198B0300DB322E /* FileReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileReader.h; sourceTree = "<group>"; };
+		2C00DE7F22198B0300DB322E /* Factory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Factory.h; sourceTree = "<group>"; };
+		2C00DE8022198B0300DB322E /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		2C00DE8122198B0300DB322E /* ISSUE_TEMPLATE.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = ISSUE_TEMPLATE.md; sourceTree = "<group>"; };
+		2C00DE8222198B0300DB322E /* .gitignore */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		2C00DE8322198B0300DB322E /* CONTRIBUTING.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = CONTRIBUTING.md; sourceTree = "<group>"; };
+		2C00DE8422198B0300DB322E /* .clang-format */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ".clang-format"; sourceTree = "<group>"; };
+		2C00DE8522198B0300DB322E /* .gitattributes */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = .gitattributes; sourceTree = "<group>"; };
+		2C00DE8622198B0300DB322E /* Doxyfile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Doxyfile; sourceTree = "<group>"; };
+		2C00DE8722198B0300DB322E /* license.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = license.txt; sourceTree = "<group>"; };
+		2C00DE8822198B0300DB322E /* .travis.yml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = .travis.yml; sourceTree = "<group>"; };
+		2C00DE8A22198B0300DB322E /* Exceptions.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Exceptions.cpp; sourceTree = "<group>"; };
+		2C00DE8B22198B0300DB322E /* Memory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Memory.cpp; sourceTree = "<group>"; };
+		2C00DE8C22198B0300DB322E /* Distribution.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Distribution.cpp; sourceTree = "<group>"; };
+		2C00DE8D22198B0300DB322E /* Executor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Executor.cpp; sourceTree = "<group>"; };
+		2C00DE8E22198B0300DB322E /* Experiment.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Experiment.cpp; sourceTree = "<group>"; };
+		2C00DE8F22198B0300DB322E /* ResultTable.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ResultTable.cpp; sourceTree = "<group>"; };
+		2C00DE9022198B0300DB322E /* JUnit.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = JUnit.cpp; sourceTree = "<group>"; };
+		2C00DE9122198B0300DB322E /* Console.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Console.cpp; sourceTree = "<group>"; };
+		2C00DE9222198B0300DB322E /* TestFixture.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TestFixture.cpp; sourceTree = "<group>"; };
+		2C00DE9322198B0300DB322E /* Timer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Timer.cpp; sourceTree = "<group>"; };
+		2C00DE9422198B0300DB322E /* Print.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Print.cpp; sourceTree = "<group>"; };
+		2C00DE9522198B0300DB322E /* Benchmark.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Benchmark.cpp; sourceTree = "<group>"; };
+		2C00DE9622198B0300DB322E /* ExperimentResult.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ExperimentResult.cpp; sourceTree = "<group>"; };
+		2C00DE9722198B0300DB322E /* Utilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Utilities.cpp; sourceTree = "<group>"; };
+		2C00DE9822198B0300DB322E /* Celero.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Celero.cpp; sourceTree = "<group>"; };
+		2C00DE9922198B0300DB322E /* Callbacks.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Callbacks.cpp; sourceTree = "<group>"; };
+		2C00DE9A22198B0300DB322E /* UserDefinedMeasurementCollector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UserDefinedMeasurementCollector.cpp; sourceTree = "<group>"; };
+		2C00DE9B22198B0300DB322E /* ThreadTestFixture.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ThreadTestFixture.cpp; sourceTree = "<group>"; };
+		2C00DE9C22198B0300DB322E /* TestVector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TestVector.cpp; sourceTree = "<group>"; };
+		2C00DE9D22198B0300DB322E /* Archive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Archive.cpp; sourceTree = "<group>"; };
+		2C00DEC622198C6300DB322E /* floyd_runtime.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_runtime.cpp; sourceTree = "<group>"; };
+		2C00DEC722198C6300DB322E /* floyd_runtime.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_runtime.h; sourceTree = "<group>"; };
 		2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_test_suite.cpp; sourceTree = "<group>"; };
 		2C02667B2014CAF000A82AD6 /* floyd_test_suite.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_test_suite.h; sourceTree = "<group>"; };
 		2C180447208B90E800F62480 /* text_parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = text_parser.h; sourceTree = "<group>"; };
@@ -163,6 +246,114 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2C00DE2222198B0300DB322E /* libs */ = {
+			isa = PBXGroup;
+			children = (
+				2C00DE2322198B0300DB322E /* Celero-master */,
+			);
+			path = libs;
+			sourceTree = "<group>";
+		};
+		2C00DE2322198B0300DB322E /* Celero-master */ = {
+			isa = PBXGroup;
+			children = (
+				2C00DE5F22198B0300DB322E /* include */,
+				2C00DE8022198B0300DB322E /* README.md */,
+				2C00DE8122198B0300DB322E /* ISSUE_TEMPLATE.md */,
+				2C00DE8222198B0300DB322E /* .gitignore */,
+				2C00DE8322198B0300DB322E /* CONTRIBUTING.md */,
+				2C00DE8422198B0300DB322E /* .clang-format */,
+				2C00DE8522198B0300DB322E /* .gitattributes */,
+				2C00DE8622198B0300DB322E /* Doxyfile */,
+				2C00DE8722198B0300DB322E /* license.txt */,
+				2C00DE8822198B0300DB322E /* .travis.yml */,
+				2C00DE8922198B0300DB322E /* src */,
+			);
+			path = "Celero-master";
+			sourceTree = "<group>";
+		};
+		2C00DE5F22198B0300DB322E /* include */ = {
+			isa = PBXGroup;
+			children = (
+				2C00DE6022198B0300DB322E /* celero */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
+		2C00DE6022198B0300DB322E /* celero */ = {
+			isa = PBXGroup;
+			children = (
+				2C00DE6122198B0300DB322E /* Console.h */,
+				2C00DE6222198B0300DB322E /* TestVector.h */,
+				2C00DE6322198B0300DB322E /* Experiment.h */,
+				2C00DE6422198B0300DB322E /* Archive.h */,
+				2C00DE6522198B0300DB322E /* UserDefinedMeasurementCollector.h */,
+				2C00DE6622198B0300DB322E /* Export.h */,
+				2C00DE6722198B0300DB322E /* GenericFactory.h */,
+				2C00DE6822198B0300DB322E /* ThreadLocal.h */,
+				2C00DE6922198B0300DB322E /* Callbacks.h */,
+				2C00DE6A22198B0300DB322E /* JUnit.h */,
+				2C00DE6B22198B0300DB322E /* Exceptions.h */,
+				2C00DE6C22198B0300DB322E /* Celero.h */,
+				2C00DE6D22198B0300DB322E /* Utilities.h */,
+				2C00DE6E22198B0300DB322E /* UserDefinedMeasurementTemplate.h */,
+				2C00DE6F22198B0300DB322E /* ResultTable.h */,
+				2C00DE7022198B0300DB322E /* Timer.h */,
+				2C00DE7122198B0300DB322E /* PimplImpl.h */,
+				2C00DE7222198B0300DB322E /* Executor.h */,
+				2C00DE7322198B0300DB322E /* UserDefinedMeasurement.h */,
+				2C00DE7422198B0300DB322E /* Statistics.h */,
+				2C00DE7522198B0300DB322E /* ExperimentResult.h */,
+				2C00DE7622198B0300DB322E /* Distribution.h */,
+				2C00DE7722198B0300DB322E /* Print.h */,
+				2C00DE7822198B0300DB322E /* Pimpl.h */,
+				2C00DE7922198B0300DB322E /* TestFixture.h */,
+				2C00DE7A22198B0300DB322E /* Memory.h */,
+				2C00DE7B22198B0300DB322E /* CommandLine.h */,
+				2C00DE7C22198B0300DB322E /* Benchmark.h */,
+				2C00DE7D22198B0300DB322E /* ThreadTestFixture.h */,
+				2C00DE7E22198B0300DB322E /* FileReader.h */,
+				2C00DE7F22198B0300DB322E /* Factory.h */,
+			);
+			path = celero;
+			sourceTree = "<group>";
+		};
+		2C00DE8922198B0300DB322E /* src */ = {
+			isa = PBXGroup;
+			children = (
+				2C00DE8A22198B0300DB322E /* Exceptions.cpp */,
+				2C00DE8B22198B0300DB322E /* Memory.cpp */,
+				2C00DE8C22198B0300DB322E /* Distribution.cpp */,
+				2C00DE8D22198B0300DB322E /* Executor.cpp */,
+				2C00DE8E22198B0300DB322E /* Experiment.cpp */,
+				2C00DE8F22198B0300DB322E /* ResultTable.cpp */,
+				2C00DE9022198B0300DB322E /* JUnit.cpp */,
+				2C00DE9122198B0300DB322E /* Console.cpp */,
+				2C00DE9222198B0300DB322E /* TestFixture.cpp */,
+				2C00DE9322198B0300DB322E /* Timer.cpp */,
+				2C00DE9422198B0300DB322E /* Print.cpp */,
+				2C00DE9522198B0300DB322E /* Benchmark.cpp */,
+				2C00DE9622198B0300DB322E /* ExperimentResult.cpp */,
+				2C00DE9722198B0300DB322E /* Utilities.cpp */,
+				2C00DE9822198B0300DB322E /* Celero.cpp */,
+				2C00DE9922198B0300DB322E /* Callbacks.cpp */,
+				2C00DE9A22198B0300DB322E /* UserDefinedMeasurementCollector.cpp */,
+				2C00DE9B22198B0300DB322E /* ThreadTestFixture.cpp */,
+				2C00DE9C22198B0300DB322E /* TestVector.cpp */,
+				2C00DE9D22198B0300DB322E /* Archive.cpp */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		2C00DEC522198C4000DB322E /* floyd_runtime */ = {
+			isa = PBXGroup;
+			children = (
+				2C00DEC622198C6300DB322E /* floyd_runtime.cpp */,
+				2C00DEC722198C6300DB322E /* floyd_runtime.h */,
+			);
+			path = floyd_runtime;
+			sourceTree = "<group>";
+		};
 		2C180464208B939700F62480 /* floyd_parser */ = {
 			isa = PBXGroup;
 			children = (
@@ -235,6 +426,8 @@
 		2C1D84DF1CA765A90042F0A8 /* floyd_speak */ = {
 			isa = PBXGroup;
 			children = (
+				2C00DEC522198C4000DB322E /* floyd_runtime */,
+				2C00DE2222198B0300DB322E /* libs */,
 				2C182F20220BCD410003FC1F /* floyd_basics */,
 				2CEB57462071069B0005AC7A /* benchmark_basics.cpp */,
 				2CEB5748207106C60005AC7A /* benchmark_basics.h */,
@@ -389,36 +582,57 @@
 				2C5E343C21527C6700B02262 /* hardware_caps.cpp in Sources */,
 				2C40A71F1D76E179003245E3 /* immutable_ref_value.cpp in Sources */,
 				2C5372B9207A9EBA00647AD1 /* bytecode_interpreter.cpp in Sources */,
+				2C00DEB622198B0300DB322E /* ResultTable.cpp in Sources */,
+				2C00DEC022198B0300DB322E /* Callbacks.cpp in Sources */,
 				2CCD83371CBA5BA3006033E4 /* floyd_main.cpp in Sources */,
 				2CB30739214ACF09007D2732 /* software_system.cpp in Sources */,
 				2C180475208B939800F62480 /* floyd_parser.cpp in Sources */,
+				2C00DEBB22198B0300DB322E /* Print.cpp in Sources */,
 				2C7200B421E8FB750013003B /* file_handling.cpp in Sources */,
+				2C00DEB822198B0300DB322E /* Console.cpp in Sources */,
 				2C574E4A203107D80035EA62 /* ast_typeid.cpp in Sources */,
 				2C180483208B939800F62480 /* parser_primitives.cpp in Sources */,
 				2CC34CC121EF8882000F3CB6 /* floyd_repl.cpp in Sources */,
+				2C00DEB722198B0300DB322E /* JUnit.cpp in Sources */,
+				2C00DEB922198B0300DB322E /* TestFixture.cpp in Sources */,
 				2CB2A516203D642B0001A19E /* pass3.cpp in Sources */,
+				2C00DEB322198B0300DB322E /* Distribution.cpp in Sources */,
 				2C18044D208B90E900F62480 /* text_parser.cpp in Sources */,
+				2C00DEBA22198B0300DB322E /* Timer.cpp in Sources */,
+				2C00DEC322198B0300DB322E /* TestVector.cpp in Sources */,
 				2CB7AA6B2209E51E0011DE4B /* compiler_basics.cpp in Sources */,
+				2C00DEB522198B0300DB322E /* Experiment.cpp in Sources */,
 				2C18044B208B90E900F62480 /* utils.cpp in Sources */,
 				2C02667C2014CAF000A82AD6 /* floyd_test_suite.cpp in Sources */,
+				2C00DEBE22198B0300DB322E /* Utilities.cpp in Sources */,
+				2C00DEB122198B0300DB322E /* Exceptions.cpp in Sources */,
+				2C00DEB422198B0300DB322E /* Executor.cpp in Sources */,
 				2CBCA7DF1D569E07000FAE81 /* sha1.cpp in Sources */,
 				2CEB57472071069B0005AC7A /* benchmark_basics.cpp in Sources */,
 				2CEB5745207106560005AC7A /* game_of_life.cpp in Sources */,
 				2C180494208B947C00F62480 /* statement.cpp in Sources */,
 				2C982D3620603FE2002002FF /* bytecode_generator.cpp in Sources */,
+				2C00DEBD22198B0300DB322E /* ExperimentResult.cpp in Sources */,
+				2C00DEC122198B0300DB322E /* UserDefinedMeasurementCollector.cpp in Sources */,
 				2C180455208B911B00F62480 /* quark.cpp in Sources */,
 				2C384AD41F3B604E0028C742 /* ast_json.cpp in Sources */,
+				2C00DEC422198B0300DB322E /* Archive.cpp in Sources */,
 				2C18045F208B917500F62480 /* json_support.cpp in Sources */,
 				2CB30736214A9B35007D2732 /* process_test1.floyd in Sources */,
 				2C18048E208B947C00F62480 /* ast.cpp in Sources */,
 				2C180490208B947C00F62480 /* ast_basics.cpp in Sources */,
+				2C00DEC222198B0300DB322E /* ThreadTestFixture.cpp in Sources */,
 				2C180477208B939800F62480 /* parse_expression.cpp in Sources */,
 				2C557C382040173E006F6818 /* host_functions.cpp in Sources */,
 				2C180492208B947C00F62480 /* expression.cpp in Sources */,
 				2C18047D208B939800F62480 /* parse_statement.cpp in Sources */,
+				2C00DEBF22198B0300DB322E /* Celero.cpp in Sources */,
 				2C81894D1D47B62400030C96 /* floyd_interpreter.cpp in Sources */,
 				2C4EF65521E4022100A9A7DB /* ast_typeid_helpers.cpp in Sources */,
+				2C00DEB222198B0300DB322E /* Memory.cpp in Sources */,
+				2C00DEC822198C6300DB322E /* floyd_runtime.cpp in Sources */,
 				2CBCA7DE1D569E04000FAE81 /* sha1_class.cpp in Sources */,
+				2C00DEBC22198B0300DB322E /* Benchmark.cpp in Sources */,
 				2C4F355F1D4794CD0061CA93 /* ast_value.cpp in Sources */,
 				2C00BC421F2428FF0087B8BB /* cpp_experiments.cpp in Sources */,
 				2CB2A512203C4AA80001A19E /* interpretator_benchmark.cpp in Sources */,
@@ -473,8 +687,10 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_PROFILING_CODE = YES;
 				HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/floyd_speak/parts/immer-master/**";
+				LIBRARY_SEARCH_PATHS = "";
 				LLVM_LTO = YES;
 				SDKROOT = macosx;
+				SYSTEM_HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/floyd_speak/libs/Celero-master/include/**";
 			};
 			name = "Release - Profiling";
 		};
@@ -537,8 +753,10 @@
 				GCC_WARN_UNUSED_PARAMETER = NO;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/floyd_speak/parts/immer-master/**";
+				LIBRARY_SEARCH_PATHS = "";
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				SYSTEM_HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/floyd_speak/libs/Celero-master/include/**";
 			};
 			name = Debug;
 		};
@@ -585,8 +803,10 @@
 				GCC_WARN_UNUSED_PARAMETER = NO;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/floyd_speak/parts/immer-master/**";
+				LIBRARY_SEARCH_PATHS = "";
 				LLVM_LTO = YES;
 				SDKROOT = macosx;
+				SYSTEM_HEADER_SEARCH_PATHS = "${SOURCE_ROOT}/floyd_speak/libs/Celero-master/include/**";
 			};
 			name = Release;
 		};

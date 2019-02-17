@@ -1174,9 +1174,11 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 		const auto json_value0 = obj1.get_json_value();
 		if(json_value0.is_array()){
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 		else if(json_value0.is_object()){
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 		else{
 			quark::throw_runtime_error("Can only update string, vector, dict or struct.");
