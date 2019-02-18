@@ -11,8 +11,6 @@ This repo holds the compiler, the bytecode interpreter and documentation.
 
 Floyd is a general-purpose programming language designed for making very large and robust programs that run really fast, while ducking many of the problems of older languages.
 
-Floyds web page: [www.floydlang.org](https://www.floydlang.org "Floyd language's Homepage")
-
 
 The goal is to make a programming language that:
 
@@ -24,7 +22,7 @@ The goal is to make a programming language that:
 
 - Simple built-in support for concurrency and parallelism
 
-The theory is that this level of execution speed can be reached thanks to Floyd's design. It leaves great freedom to the compiler and runtime to drastically control the mapping of the program's execution to the hardware. The programmer supervises this mapping interactively using a profiler-like tool, separately from writing the program logic. The programmer has control over precise selection of data structures, exact memory layouts, data packing, hot-cold data, hardware caches, thread tasks priorities, thread affinity and so on.
+How can this level of execution speed be reached? The theory is that this is possible by designing Floyd to give great freedom to the compiler and runtime to drastically control the mapping of the program's execution to the hardware. The programmer supervises this mapping interactively using a profiler-like tool. This is done separately from writing the program logic. The programmer has control over precise selection of data structures, exact memory layouts, data packing, hot-cold data, hardware caches, thread tasks priorities, thread affinity and so on.
 
 Floyd separates your program into three separate concerns:
 
@@ -33,6 +31,8 @@ Floyd separates your program into three separate concerns:
 3. Mapping the program to the CPU and memory system
 
 Floyd compilers and tools are written in C++ 17 and compiles with Clang and GCC.
+
+Floyds web page: [www.floydlang.org](https://www.floydlang.org "Floyd language's Homepage")
 
 
 ## USE FOR
