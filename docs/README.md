@@ -14,9 +14,9 @@ Floyd is a general-purpose programming language designed for making very large a
 Floyds web page: [www.floydlang.org](https://www.floydlang.org "Floyd language's Homepage")
 
 
-The goal is to make a programming language that
+The goal is to make a programming language that:
 
-- Executes faster than the same programming written in C or C++ - it should be the prefered language to write a video game engine with, for example
+- Executes faster than the same programming written in C or C++ - it should be the preferred language to write a video game engine with, for example
 
 - Makes it fast and simple to program - less accidental complexity
 
@@ -24,7 +24,7 @@ The goal is to make a programming language that
 
 - Simple built-in support for concurrency and parallelism
 
-The theory is that this level of execution speed can be reached thank's to Floyd's design. It leaves great freedom to the compiler and runtime to drastically control the mapping of the program's execution to the hardware. The programmer supervises this mapping interactively using a profiler-like tool, separately from writing the program logic. The programmer has control over precise selection of data structures, exact memory layouts, data packing, hot-cold data, hardware caches, thread tasks priorities, thread affinity and so on.
+The theory is that this level of execution speed can be reached thanks to Floyd's design. It leaves great freedom to the compiler and runtime to drastically control the mapping of the program's execution to the hardware. The programmer supervises this mapping interactively using a profiler-like tool, separately from writing the program logic. The programmer has control over precise selection of data structures, exact memory layouts, data packing, hot-cold data, hardware caches, thread tasks priorities, thread affinity and so on.
 
 Floyd separates your program into three separate concerns:
 
@@ -54,7 +54,7 @@ It's a mashup of imperative, functional and OOP. Functions defaults to **pure** 
 
 Floyd has no classes, no pointers / references, no tracing GC (uses copying and RC), no threads, mutexes, atomics and no header files. No Closures. No generics.
 
-TBD: protocol type for simple polymorphism, basic encapsulation feature, sumtype and limited lambdas.
+TBD: protocol type for simple polymorphism, basic encapsulation feature, sum-type and limited lambdas.
 
 ![](floyd_quick_reference.png)
 
@@ -62,7 +62,7 @@ TBD: protocol type for simple polymorphism, basic encapsulation feature, sumtype
 
 ## CONCURRENCY, STATE AND THE WORLD
 
-Processing and concurrency is done using Floyd's virtual processes and message passing. Each Floyd process has its own private state and is sandboxed. Floyd processes can interact with the world, calling OS APIs and accessing files. Keep this code small, with mininal logic.
+Processing and concurrency is done using Floyd's virtual processes and message passing. Each Floyd process has its own private state and is sandboxed. Floyd processes can interact with the world, calling OS APIs and accessing files. Keep this code small, with minimal logic.
 
 ![](floyd_container_example.png)
 
@@ -98,7 +98,7 @@ You optimise your program by running it and *augmenting* your Floyd processes an
 
 # STATUS
 
-The essentials of Floyd are up and running and very robust (approx 1000 tests), including the concurrent Floyd processes. The compiler generates bytecode that runs at approx 5-10% of native speed on the interpreter. The manual is complete.
+The essentials of Floyd are up and running and very robust (approximately 1000 tests), including the concurrent Floyd processes. The compiler generates bytecode that runs at about 5-10% of native speed on the interpreter. The manual is complete.
 
 A handful features are needed for a satisfying 1.0: rounding out the language features somewhat and then *it's all about performance*.
 
