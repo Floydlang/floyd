@@ -2,7 +2,7 @@
 
 License: MIT
 
-Status: Alpha. All the basics are finished and robust. Runs on bytecode interpreter. Will run natively soon. Production ready for smaller programs.
+Status: Alpha. All the basics of the language are finished and robust. Runs on bytecode interpreter. Will run natively soon. Production ready for smaller programs. The next step is implementing the LLVM backend and the data structure optimisation features.
 
 This repo holds the compiler, the bytecode interpreter and documentation.
 
@@ -12,6 +12,19 @@ This repo holds the compiler, the bytecode interpreter and documentation.
 Floyd is a general-purpose programming language designed for making very large and robust programs that run really fast, while ducking many of the problems of older languages.
 
 Floyds web page: [www.floydlang.org](https://www.floydlang.org "Floyd language's Homepage")
+
+
+The goal is to make a programming language that
+
+- Executes faster than the same programming written in C or C++ - it should be the prefered language to write a video game engine with, for example
+
+- Makes it fast and simple to program - less accidental complexity
+
+- Helps you make big programs that are fun and straight forward to work on for a long time
+
+- Simple built-in support for concurrency and parallelism
+
+The theory is that this level of execution speed can be reached thank's to Floyd's design. It leaves great freedom to the compiler and runtime to drastically control the mapping of the program's execution to the hardware. The programmer supervises this mapping interactively using a profiler-like tool, separately from writing the program logic. The programmer has control over precise selection of data structures, exact memory layouts, data packing, hot-cold data, hardware caches, thread tasks priorities, thread affinity and so on.
 
 Floyd separates your program into three separate concerns:
 
@@ -24,7 +37,7 @@ Floyd compilers and tools are written in C++ 17 and compiles with Clang and GCC.
 
 ## USE FOR
 
-Use Floyd to build the next Photoshop, Grand Theft Auto or mobile app. But also for short scripts and toy programs. Probably not embedded software, though.
+The goal is that Floyd will be the best way to build the next Photoshop, Grand Theft Auto or mobile app. But also for short scripts and toy programs. Probably not embedded software, though.
 
 Floyd wants to replace C++, Rust, C#, Python. And Javascript.
 
@@ -35,12 +48,13 @@ Floyd looks like Javascript and has a lot fewer features, syntax and quirks than
 
 
 ![](floyd_snippets.png)
+*Notice that the last example gives you a NEW dictionary - it doesn't change the old one*
 
 It's a mashup of imperative, functional and OOP. Functions defaults to **pure** (but with normal local variables).
 
 Floyd has no classes, no pointers / references, no tracing GC (uses copying and RC), no threads, mutexes, atomics and no header files. No Closures. No generics.
 
-TBD: protocol type for simple polymorphism, basic encapsulation, sumtype and limited lambdas.
+TBD: protocol type for simple polymorphism, basic encapsulation feature, sumtype and limited lambdas.
 
 ![](floyd_quick_reference.png)
 
@@ -52,7 +66,7 @@ Processing and concurrency is done using Floyd's virtual processes and message p
 
 ![](floyd_container_example.png)
 
-The bulk of your program should be blue-pill code, that is pure.
+The bulk of your program should be blue code - pure code.
 
 ## PARALLELISM
 
