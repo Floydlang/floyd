@@ -12,6 +12,8 @@
 #include "ast_typeid_helpers.h"
 #include "parser_primitives.h"
 
+#include "ast.h"
+
 namespace floyd {
 
 using namespace std;
@@ -45,7 +47,8 @@ ast_json_t function_def_to_ast_json(const function_definition_t& v) {
 		{
 			typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state)._value,
 			members_to_json(v._args),
-			/***v._body ? body_to_json(*v._body)._value :***/ json_t(),
+
+			v._body ? body_to_json(*v._body)._value : json_t(),
 
 			json_t(v._host_function_id),
 

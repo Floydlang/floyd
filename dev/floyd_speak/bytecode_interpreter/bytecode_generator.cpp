@@ -1508,7 +1508,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 	for(int function_id = 0 ; function_id < ast._checked_ast._function_defs.size() ; function_id++){
 		const auto& function_def = *ast._checked_ast._function_defs[function_id];
 
-		if(function_def._host_function_id){
+		if(function_def._host_function_id != k_no_host_function_id){
 			const auto function_def2 = bc_function_definition_t{
 				function_def._function_type,
 				function_def._args,

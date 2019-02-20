@@ -193,7 +193,7 @@ typeid_t typeid_from_ast_json(const ast_json_t& t2){
 			const auto value_type = typeid_from_ast_json(ast_json_t::make(a[1]));
 			return typeid_t::make_dict(value_type);
 		}
-		else if(s == "fun"){
+		else if(s == "func"){
 			const auto ret_type = typeid_from_ast_json(ast_json_t::make(a[1]));
 			const auto arg_types_array = a[2].get_array();
 			const std::vector<typeid_t> arg_types = typeids_from_json_array(arg_types_array);

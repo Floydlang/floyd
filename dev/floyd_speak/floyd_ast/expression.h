@@ -23,6 +23,8 @@ namespace floyd {
 	struct statement_t;
 	struct expression_t;
 
+	const int k_no_host_function_id = 0;
+
 
 	/*
 		An expression is a json array where entries may be other json arrays.
@@ -39,7 +41,7 @@ namespace floyd {
 
 	struct function_definition_t {
 		public: bool check_invariant() const {
-			if(_host_function_id != 0){
+			if(_host_function_id != k_no_host_function_id){
 				QUARK_ASSERT(!_body);
 			}
 			else{

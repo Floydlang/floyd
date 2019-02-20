@@ -1105,9 +1105,16 @@ ast_json_t value_to_ast_json(const value_t& v, json_tags tags){
 		return ast_json_t::make(result);
 	}
 	else if(v.is_function()){
+/*
 		return ast_json_t::make(json_t::make_object(
 			{
 				{ "funtyp", typeid_to_ast_json(v.get_type(), tags)._value }
+			}
+		));
+*/
+		return ast_json_t::make(json_t::make_object(
+			{
+				{ "function_id", v.get_function_value() }
 			}
 		));
 	}

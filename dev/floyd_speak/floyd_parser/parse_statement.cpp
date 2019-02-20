@@ -344,7 +344,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 		QUARK_POS,
 		parse_bind_statement(seq_t("let int (double, [string]) test = 123 let int a = 4 ")),
 		R"(
-			[0, "bind", ["fun", "^int", ["^double", ["vector", "^string"]], true], "test", ["k", 123, "^int"]]
+			[0, "bind", ["func", "^int", ["^double", ["vector", "^string"]], true], "test", ["k", 123, "^int"]]
 		)",
 		" let int a = 4 "
 	);
@@ -681,14 +681,14 @@ OFF_QUARK_UNIT_TEST("parse_protocol_definition_statement", "", "", ""){
 						{ "name", "f"},
 						{
 							"type",
-							json_t::make_array({ "fun", "^int", json_t::make_array({"^string", "^double"}), true })
+							json_t::make_array({ "func", "^int", json_t::make_array({"^string", "^double"}), true })
 						}
 					}),
 					json_t::make_object({
 						{ "name", "g"},
 						{
 							"type",
-							json_t::make_array({ "fun", "^string", json_t::make_array({"^bool"}), true })
+							json_t::make_array({ "func", "^string", json_t::make_array({"^bool"}), true })
 						}
 					})
 				})

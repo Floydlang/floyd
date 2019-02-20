@@ -65,7 +65,7 @@ string base_type_to_string(const base_type t){
 		return "dict";
 	}
 	else if(t == base_type::k_function){
-		return "fun";
+		return "func";
 	}
 	else if(t == base_type::k_internal_unresolved_type_identifier){
 		return "**unknown-identifier**";
@@ -119,7 +119,7 @@ QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_dict) == "dict");
 }
 QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_function) == "fun");
+	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_function) == "func");
 }
 
 QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){

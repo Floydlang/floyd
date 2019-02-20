@@ -1339,7 +1339,7 @@ bool is_host_function_call(const analyser_t& a, const expression_t& callee_expr)
 
 		if(callee->_const_value.is_function()){
 			const auto& function_def = function_id_to_def(a, callee->_const_value.get_function_value());
-			return function_def._host_function_id != 0;
+			return function_def._host_function_id != k_no_host_function_id;
 		}
 		else{
 			return false;
