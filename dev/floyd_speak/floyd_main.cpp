@@ -238,6 +238,7 @@ int run_command(const std::vector<std::string>& args){
 			const auto ast = floyd::compile_to_sematic_ast(source, source_path);
 			const auto json = ast_to_json(ast._checked_ast);
 			std::cout << json_to_pretty_string(json._value);
+			std::cout << std::endl;
 		}
 		else{
 		}
@@ -246,7 +247,7 @@ int run_command(const std::vector<std::string>& args){
 	else if(command_line_args.subcommand == "run"){
 
 		//	Run provided script file.
-		if(command_line_args.extra_arguments.size() == 1){
+		if(command_line_args.extra_arguments.size() >= 1){
 //			const auto floyd_args = std::vector<std::string>(command_line_args.extra_arguments.begin() + 1, command_line_args.extra_arguments.end());
 			const auto floyd_args = command_line_args.extra_arguments;
 

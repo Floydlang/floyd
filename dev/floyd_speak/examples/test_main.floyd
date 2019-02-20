@@ -1,0 +1,8 @@
+
+
+func int main([string] args){
+	print(args)
+	assert(args == ["-c40", "test.json"])
+
+	return 42
+}

@@ -570,7 +570,7 @@ TOD: Fact check stats.
 
 
 
-## TODO:PROBES
+## TODO: PROBES
 
 You add probes to wires, processes and individual functions and expressions. They gather intel on how your program runs on the hardware, let's you explore your running code and profile its hardware use.
 
@@ -741,7 +741,22 @@ any jsonvalue_to_value(json_value v)
 
 
 
+## MAIN()
 
+You can implement a function called "main" that will called by the Floyd runtime after all global statements have been executed. The main() function is optional, but the only way to get command line arguments and return a command line error code.
+
+```
+func int main([string] args){
+	print(args)
+	assert(args == ["-a", "output.txt"])
+
+	return 42
+}
+```
+
+>floyd run my_program.floyd -a output.txt
+
+...will call your main() function with ["-a", "output.txt"]
 
 
 

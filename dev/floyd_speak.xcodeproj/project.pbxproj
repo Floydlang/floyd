@@ -42,6 +42,9 @@
 		2C180490208B947C00F62480 /* ast_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180488208B947C00F62480 /* ast_basics.cpp */; };
 		2C180492208B947C00F62480 /* expression.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18048A208B947C00F62480 /* expression.cpp */; };
 		2C180494208B947C00F62480 /* statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18048C208B947C00F62480 /* statement.cpp */; };
+		2C36C083221DF09E00CAFEF4 /* test_main.floyd in Sources */ = {isa = PBXBuildFile; fileRef = 2C36C082221DEF0900CAFEF4 /* test_main.floyd */; };
+		2C36C084221DF17C00CAFEF4 /* test_main.floyd in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2C36C082221DEF0900CAFEF4 /* test_main.floyd */; };
+		2C36C086221DF1DA00CAFEF4 /* test.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2C36C085221DF1C600CAFEF4 /* test.json */; };
 		2C384AD41F3B604E0028C742 /* ast_json.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C384AD21F3B604E0028C742 /* ast_json.cpp */; };
 		2C40A71F1D76E179003245E3 /* immutable_ref_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */; };
 		2C4EF65521E4022100A9A7DB /* ast_typeid_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4EF65321E4022100A9A7DB /* ast_typeid_helpers.cpp */; };
@@ -81,8 +84,10 @@
 			dstSubfolderSpec = 6;
 			files = (
 				2CBB527A21EFBE0200E5024A /* process_test1.floyd in CopyFiles */,
+				2C36C086221DF1DA00CAFEF4 /* test.json in CopyFiles */,
 				2CBB527D21F6673A00E5024A /* game_of_life.floyd in CopyFiles */,
 				2C914FE121FB59710007291D /* hello_world.floyd in CopyFiles */,
+				2C36C084221DF17C00CAFEF4 /* test_main.floyd in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -180,6 +185,8 @@
 		2C18048D208B947C00F62480 /* statement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = statement.h; sourceTree = "<group>"; };
 		2C182F1F220B17780003FC1F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		2C1D84DD1CA765A90042F0A8 /* floyd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = floyd; sourceTree = BUILT_PRODUCTS_DIR; };
+		2C36C082221DEF0900CAFEF4 /* test_main.floyd */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test_main.floyd; sourceTree = "<group>"; };
+		2C36C085221DF1C600CAFEF4 /* test.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test.json; sourceTree = "<group>"; };
 		2C384AD21F3B604E0028C742 /* ast_json.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ast_json.cpp; sourceTree = "<group>"; };
 		2C384AD31F3B604E0028C742 /* ast_json.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ast_json.h; sourceTree = "<group>"; };
 		2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = immutable_ref_value.cpp; sourceTree = "<group>"; };
@@ -210,14 +217,14 @@
 		2CB2A513203C4ACB0001A19E /* interpretator_benchmark.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = interpretator_benchmark.h; sourceTree = "<group>"; };
 		2CB2A514203D64210001A19E /* pass3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pass3.h; sourceTree = "<group>"; };
 		2CB2A515203D642B0001A19E /* pass3.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pass3.cpp; sourceTree = "<group>"; };
-		2CB30735214A9B35007D2732 /* process_test1.floyd */ = {isa = PBXFileReference; lastKnownFileType = text; path = process_test1.floyd; sourceTree = "<group>"; };
+		2CB30735214A9B35007D2732 /* process_test1.floyd */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = process_test1.floyd; sourceTree = "<group>"; };
 		2CB30737214ACF09007D2732 /* software_system.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = software_system.cpp; sourceTree = "<group>"; };
 		2CB30738214ACF09007D2732 /* software_system.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = software_system.h; sourceTree = "<group>"; };
 		2CB7AA63220900190011DE4B /* floyd_syntax.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_syntax.cpp; sourceTree = "<group>"; };
 		2CB7AA64220900190011DE4B /* floyd_syntax.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_syntax.h; sourceTree = "<group>"; };
 		2CB7AA692209E51E0011DE4B /* compiler_basics.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = compiler_basics.cpp; sourceTree = "<group>"; };
 		2CB7AA6A2209E51E0011DE4B /* compiler_basics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = compiler_basics.h; sourceTree = "<group>"; };
-		2CBB527C21F6606E00E5024A /* game_of_life.floyd */ = {isa = PBXFileReference; fileEncoding = 7; lastKnownFileType = text; path = game_of_life.floyd; sourceTree = "<group>"; };
+		2CBB527C21F6606E00E5024A /* game_of_life.floyd */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = game_of_life.floyd; sourceTree = "<group>"; };
 		2CBCA7DA1D569C6D000FAE81 /* sha1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = sha1.cpp; sourceTree = "<group>"; };
 		2CBCA7DB1D569C6D000FAE81 /* sha1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sha1.h; sourceTree = "<group>"; };
 		2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = sha1_class.cpp; sourceTree = "<group>"; };
@@ -473,6 +480,8 @@
 				2CBB527C21F6606E00E5024A /* game_of_life.floyd */,
 				2C914FE021FB591B0007291D /* hello_world.floyd */,
 				2CB30735214A9B35007D2732 /* process_test1.floyd */,
+				2C36C082221DEF0900CAFEF4 /* test_main.floyd */,
+				2C36C085221DF1C600CAFEF4 /* test.json */,
 			);
 			name = examples;
 			path = floyd_speak/examples;
@@ -636,6 +645,7 @@
 				2C4F355F1D4794CD0061CA93 /* ast_value.cpp in Sources */,
 				2C00BC421F2428FF0087B8BB /* cpp_experiments.cpp in Sources */,
 				2CB2A512203C4AA80001A19E /* interpretator_benchmark.cpp in Sources */,
+				2C36C083221DF09E00CAFEF4 /* test_main.floyd in Sources */,
 				2CB7AA65220900190011DE4B /* floyd_syntax.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

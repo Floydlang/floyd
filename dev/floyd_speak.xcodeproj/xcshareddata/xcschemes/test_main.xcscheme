@@ -75,7 +75,15 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "game_of_life.floyd"
+            argument = "test_main.floyd"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-c40"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "test.json"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
