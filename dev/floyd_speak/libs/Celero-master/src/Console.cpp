@@ -199,6 +199,7 @@ void Default()
 
 void celero::console::SetConsoleColor(const celero::console::ConsoleColor x)
 {
+#if 0
 	switch(x)
 	{
 		case ConsoleColor_Red:
@@ -251,4 +252,6 @@ void celero::console::SetConsoleColor(const celero::console::ConsoleColor x)
 			Default();
 			break;
 	}
+#endif
+
 }
