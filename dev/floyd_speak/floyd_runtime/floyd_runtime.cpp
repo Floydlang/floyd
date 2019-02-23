@@ -21,6 +21,12 @@
 #include <cstdlib>
 #endif
 
+
+//#define LOCAL_TRACE_SS QUARK_TRACE_SS
+#define LOCAL_TRACE_SS(x)
+
+
+
 #if 0
 ///
 /// This is the main(int argc, char** argv) for the entire celero program.
@@ -298,6 +304,8 @@ BENCHMARK_F(ParticlesTest, PtrVectorNoRand, ParticlesPtrVectorNoRandFixture, Sam
 
 
 std::vector<int32_t> make_test_elements(int64_t count){
+	LOCAL_TRACE_SS(std::endl << "•••• make_test_elements(): const" << count);
+
 	std::random_device random_device;
 	std::uniform_int_distribution<int> d(0, 1024);
 
@@ -313,42 +321,75 @@ std::vector<int32_t> make_test_elements(int64_t count){
 
 
 
-static const int SamplesCount = 100;
-static const int IterationsCount = 1;
+
+static const int SamplesCount = 8;
+static const int IterationsCount = 3'000'000;
+
+//	Chosen because my L3 caches is 8 MB.
+static const int k_element_count = 400'000;
+
+const auto totalNumberOfTests = 16;
 
 std::vector<celero::TestFixture::ExperimentValue> getExperimentValues(){
 	std::vector<celero::TestFixture::ExperimentValue> problemSpace;
-	const auto totalNumberOfTests = 10;
+	for(auto i = 0; i < totalNumberOfTests; i++){
+		/// An arbitrary integer value which can be used or translated for use by the test fixture.
+//		const int64_t value_for_fixture = k_element_count + i * k_element_count;
+		const int64_t value_for_fixture = 1 << (8 + i);
 
-	for(auto i = 0; i < totalNumberOfTests; i++)
-	{
+		/// The number of iterations to do with this test value.  0 (default) indicates that the default number of iterations set up for the test
+		/// case should be used.
+		const int64_t iterations = static_cast<int64_t>(totalNumberOfTests - i);
+
 		// ExperimentValues is part of the base class and allows us to specify
 		// some values to control various test runs to end up building a nice graph.
-		problemSpace.push_back({1000 + i * 1000, static_cast<int64_t>(totalNumberOfTests - i)});
+		const auto e = celero::TestFixture::ExperimentValue{ value_for_fixture, iterations };
+		problemSpace.push_back(e);
+
+		LOCAL_TRACE_SS("getExperimentValues: " << i << " value_for_fixture: " << e.Value << " iterations: " << e.Iterations);
 	}
 
 	return problemSpace;
 }
 
+std::vector<int32_t> g_test_elements;
+
+
 	class Fix1 : public celero::TestFixture {
+		public: ~Fix1(){
+			LOCAL_TRACE_SS("~Fix1()" << this->elements.size());
+		}
+
 		public: std::vector<celero::TestFixture::ExperimentValue> getExperimentValues() const override {
 			return ::getExperimentValues();
 		}
 
 		public: void setUp(const celero::TestFixture::ExperimentValue& x) override {
-			elements = make_test_elements(x.Value);
+			LOCAL_TRACE_SS("setUp() x.Value: " << x.Value << " this->elements.size(): " <<this->elements.size());
+
+			if(g_test_elements.size() == x.Value){
+				elements = g_test_elements;
+			}
+			else{
+				g_test_elements = make_test_elements(x.Value);
+				elements = g_test_elements;
+			}
 		}
 		void tearDown() override {
-			std::vector<int32_t>().swap(elements);
+			LOCAL_TRACE_SS("tearDown()" << this->elements.size());
+//			std::vector<int32_t>().swap(elements);
 		}
 
 		std::vector<int32_t> elements;
 	};
 
+
 // Run an automatic baseline.
 BASELINE_F(vector_int32_read_test, std_vector_int, Fix1, SamplesCount, IterationsCount){
+	LOCAL_TRACE_SS(__FUNCTION__ << " element count: " << this->elements.size());
+
 	int32_t sum = 0;
-	for(int i = 0 ; i < SamplesCount ; i++){
+	for(int i = 0 ; i < this->elements.size() ; i++){
 		const auto e = this->elements[i];
 		sum = sum + e;
 	}

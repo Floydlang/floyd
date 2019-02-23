@@ -4658,7 +4658,7 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 
 
 QUARK_UNIT_TEST("", "hello_world.floyd", "", ""){
-	const auto path = get_working_dir() + "/hello_world.floyd";
+	const auto path = get_working_dir() + "/examples/hello_world.floyd";
 	const auto program = read_text_file(path);
 
 	const auto result = run_container2(program, {}, "", "");
@@ -4667,7 +4667,7 @@ QUARK_UNIT_TEST("", "hello_world.floyd", "", ""){
 }
 
 QUARK_UNIT_TEST("", "game_of_life.floyd", "", ""){
-	const auto path = get_working_dir() + "/game_of_life.floyd";
+	const auto path = get_working_dir() + "/examples/game_of_life.floyd";
 	const auto program = read_text_file(path);
 
 	const auto result = run_container2(program, {}, "", "");
@@ -4676,7 +4676,7 @@ QUARK_UNIT_TEST("", "game_of_life.floyd", "", ""){
 }
 
 QUARK_UNIT_TEST("", "process_test1.floyd", "", ""){
-	const auto path = get_working_dir() + "/process_test1.floyd";
+	const auto path = get_working_dir() + "/examples/process_test1.floyd";
 	const auto program = read_text_file(path);
 
 	const auto result = run_container2(program, {}, "iphone app", "");
