@@ -11,8 +11,8 @@
 
 #include "quark.h"
 
-
-#include <celero/Celero.h>
+#if 0
+//#include <celero/Celero.h>
 
 #include <random>
 
@@ -444,5 +444,10 @@ BENCHMARK_F(ParticlesTest, PtrVectorNoRand, ParticlesPtrVectorNoRandFixture, Sam
 		}
 	}
 }
+#endif
+
+
+
+
 #endif
 

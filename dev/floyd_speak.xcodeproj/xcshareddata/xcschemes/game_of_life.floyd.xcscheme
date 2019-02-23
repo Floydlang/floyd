@@ -75,7 +75,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "game_of_life.floyd"
+            argument = "examples/game_of_life.floyd"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

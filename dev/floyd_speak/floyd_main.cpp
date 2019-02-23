@@ -23,8 +23,6 @@
 
 #include "pass3.h"
 
-#include "libs/Celero-master/include/celero/Celero.h"
-#include "libs/Celero-master/include/celero/Executor.h"
 
 std::string floyd_version_string = "0.3";
 
@@ -170,29 +168,10 @@ void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_cod
 ////////////////////////////////	BENCHMARKS
 
 
-static void celero_run(const std::vector<std::string>& command_line_args) {
-	std::vector<const char*> ptrs;
-	for(const auto& e: command_line_args){
-		ptrs.push_back(e.c_str());
-	}
-	celero::Run(static_cast<int>(ptrs.size()), (char**)&ptrs[0]);
-//celero::executor::RunAll();
-}
 
 
 void run_benchmark(){
-#if 1
-	const auto dirs = GetDirectories();
-	const std::vector<std::string> inputs = {
-		"myapp",
-		std::string() + "--outputTable",
-		dirs.desktop_dir + "/bench.txt"
-	};
-
-	celero_run(inputs);
-#else
 	floyd_benchmark();
-#endif
 }
 
 
