@@ -17,7 +17,10 @@
 
 #include <variant>
 
+#include "variable_length_quantity.h"
 
+
+#if 0
 ///////////////////////////		CSoundEngine
 
 #define CAtomicFIFO std::vector
@@ -252,7 +255,7 @@ struct FloydNative__CSoundEngine2 {
 	float fMic2Y;
 	long fMagic;
 };
-
+#endif
 
 
 
@@ -342,6 +345,9 @@ https://lwn.net/Articles/250967/
 
 
 
+////////////////////////////////		BENCHMARK -- GOOGLE EXAMPLES
+
+#if 0
 
 int Factorial(int n)
 {
@@ -366,30 +372,6 @@ TEST(FactorialTest, HandlesPositiveInput) {
   EXPECT_EQ(Factorial(3), 6);
   EXPECT_EQ(Factorial(8), 40320);
 }
-
-
-#if 0
-////////////////////////////////		TESTS
-
-int main(int argc, char * argv[]) {
-	::testing::InitGoogleTest(&argc, argv);
-
-	// insert code here...
-	std::cout << "Hello, World!\n";
-
-	return RUN_ALL_TESTS();
-
-//	std::cout << sizeof(std::string) << std::endl;
-	return 0;
-}
-
-#else
-////////////////////////////////		BENCHMARK
-
-
-
-
-#define BENCHMARK_NOINLINE
 
 
 namespace {
@@ -456,11 +438,14 @@ static void BM_SetInsert(benchmark::State& state) {
   state.SetBytesProcessed(state.iterations() * state.range(1) * sizeof(int));
 }
 
-#if 0
-
 // Test many inserts at once to reduce the total iterations needed. Otherwise, the slower,
 // non-timed part of each iteration will make the benchmark take forever.
 BENCHMARK(BM_SetInsert)->Ranges({{1 << 10, 8 << 10}, {128, 512}});
+#endif
+
+
+#if 0
+
 
 template <typename Container,
           typename ValueType = typename Container::value_type>
@@ -538,8 +523,153 @@ BENCHMARK(BM_DenseThreadRanges)->Arg(3)->DenseThreadRange(5, 14, 3);
 #endif
 
 
-BENCHMARK_MAIN();
 
 
+
+
+
+
+
+////////////////////////////////		BENCHMARK -- vector<int32_> vs variable_length_equantity
+
+
+
+
+#if 0
+std::set<int64_t> ConstructRandomSet2(int64_t size) {
+	std::set<int64_t> s;
+	for (int i = 0; i < size; ++i) s.insert(s.end(), i);
+	return s;
+}
+
+static void BM_SetInsert2(benchmark::State& state) {
+	std::set<int64_t> data;
+	for (auto _ : state) {
+		state.PauseTiming();
+		data = ConstructRandomSet2(state.range(0));
+		state.ResumeTiming();
+		for (int j = 0; j < state.range(1); ++j) data.insert(rand());
+	}
+	state.SetItemsProcessed(state.iterations() * state.range(1));
+	state.SetBytesProcessed(state.iterations() * state.range(1) * sizeof(int));
+}
+
+// Test many inserts at once to reduce the total iterations needed. Otherwise, the slower,
+// non-timed part of each iteration will make the benchmark take forever.
+BENCHMARK(BM_SetInsert2)->Ranges({{1 << 10, 8 << 10}, {128, 512}});
 #endif
+
+
+std::vector<int32_t> make_random_vector_int32(int64_t count) {
+	std::vector<int32_t> s;
+	s.reserve(count);
+	for (int i = 0; i < count; ++i){
+		const int32_t value = rand() % 65535;
+		s.insert(s.end(), value);
+	}
+	return s;
+}
+
+static const size_t k_test_element_count = 1 << 18;
+
+static void BM_read_vector(benchmark::State& state) {
+	std::vector<int32_t> data = make_random_vector_int32(state.range(0));
+	for (auto _ : state) {
+		long sum = 0;
+		for (int j = 0; j < data.size(); ++j){
+			const auto value = data[j];
+			sum = sum + value;
+		}
+        benchmark::DoNotOptimize(sum);
+	}
+//	state.SetItemsProcessed(state.iterations() * state.range(0));
+	state.SetBytesProcessed(state.iterations() * state.range(0) * sizeof(int32_t));
+}
+
+//BENCHMARK(BM_read_vector)->Ranges({{1 << 16, 4 << 16}, {1, 1}});
+//BENCHMARK(BM_read_vector)->Arg(1 << 16);
+//BENCHMARK(BM_read_vector)->RangeMultiplier(2)->Range(1 << 1, k_test_element_count);
+BENCHMARK(BM_read_vector)->Arg(1 << 20);
+
+
+std::vector<uint8_t> pack_vlq_vector(const std::vector<int32_t>& v){
+	std::vector<uint8_t> result;
+	result.reserve(static_cast<std::size_t>(v.size() * 2.5f));
+
+	for(const auto e: v){
+		const auto packed = pack_vlq(e);
+		result.insert(result.end(), packed.begin(), packed.end());
+	}
+
+#if 0
+	const size_t input_bytes = v.size() * sizeof(int32_t);
+	const size_t output_bytes = result.size();
+	const double compression = (double)output_bytes / (double)input_bytes;
+	std::cout
+		<< "pack_vlq_vector()"
+		<< " input bytes: " << input_bytes
+		<< " output bytes: " << output_bytes
+		<< " out/in size: " << (compression * 100.0) << "%"
+		<< std::endl;
+#endif
+	return result;
+}
+
+
+//	Fast integer array compression: https://github.com/lemire/FastPFor
+
+static void BM_read_vlq_vector(benchmark::State& state) {
+	const auto data0 = make_random_vector_int32(state.range(0));
+	std::vector<uint8_t> data = pack_vlq_vector(make_random_vector_int32(state.range(0)));
+
+	for (auto _ : state) {
+		long sum = 0;
+		size_t pos = 0;
+		for (int j = 0; j < data.size(); ++j){
+			const auto e = unpack_vlq(&data[pos]);
+			const auto value = e.first;
+			pos = pos + e.second;
+			sum = sum + value;
+		}
+        benchmark::DoNotOptimize(sum);
+	}
+//	state.SetItemsProcessed(state.iterations() * state.range(0));
+	state.SetBytesProcessed(state.iterations() * state.range(0) * sizeof(int32_t));
+}
+
+//BENCHMARK(BM_read_vector)->Ranges({{1 << 16, 4 << 16}, {1, 1}});
+//BENCHMARK(BM_read_vector)->Arg(1 << 16);
+//BENCHMARK(BM_read_vlq_vector)->RangeMultiplier(2)->Range(1 << 1, k_test_element_count);
+BENCHMARK(BM_read_vlq_vector)->Arg(1 << 20);
+
+
+
+static void BM_read_vlq_vector2(benchmark::State& state) {
+	const auto data0 = make_random_vector_int32(state.range(0));
+	std::vector<uint8_t> data = pack_vlq_vector(make_random_vector_int32(state.range(0)));
+
+	for (auto _ : state) {
+		long sum = 0;
+		size_t pos = 0;
+		for (int j = 0; j < data.size(); ++j){
+			const auto e = unpack_vlq(&data[pos]);
+			const auto value = e.first;
+			pos = pos + e.second;
+			sum = sum + value;
+		}
+        benchmark::DoNotOptimize(sum);
+	}
+//	state.SetItemsProcessed(state.iterations() * state.range(0));
+	state.SetBytesProcessed(state.iterations() * state.range(0) * sizeof(int32_t));
+}
+
+//BENCHMARK(BM_read_vector)->Ranges({{1 << 16, 4 << 16}, {1, 1}});
+//BENCHMARK(BM_read_vector)->Arg(1 << 16);
+//BENCHMARK(BM_read_vlq_vector)->RangeMultiplier(2)->Range(1 << 1, k_test_element_count);
+BENCHMARK(BM_read_vlq_vector2)->Arg(1 << 20);
+
+
+
+
+BENCHMARK_MAIN();
 

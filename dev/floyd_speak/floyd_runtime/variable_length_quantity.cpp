@@ -39,13 +39,13 @@ std::vector<uint8_t> WriteVarLen(unsigned long value)
    return result;
 }
 
-uint8_t getc2(const uint8_t data[], uint32_t& io_pos){
+uint8_t getc2(const uint8_t data[], std::size_t& io_pos){
 	const auto result = data[io_pos];
 	io_pos++;
 	return result;
 }
 
-unsigned long ReadVarLen(const uint8_t data[], uint32_t pos)
+std::pair<unsigned long, std::size_t> ReadVarLen(const uint8_t data[], std::size_t pos)
 {
     unsigned long value;
     unsigned char c;
@@ -59,10 +59,10 @@ unsigned long ReadVarLen(const uint8_t data[], uint32_t pos)
        } while (c & 0x80);
     }
 
-    return(value);
+    return { value, pos };
 }
 
-uint32_t unpack_vlq(const uint8_t data[]){
+std::pair<uint32_t, size_t> unpack_vlq(const uint8_t data[]){
 	const auto r = ReadVarLen(data, 0);
 	return r;
 }
@@ -173,10 +173,12 @@ QUARK_UNIT_TEST("variable_length_quantity", "pack_vlq()", "", ""){
 //	Wrapper that controls every result against reference implementation.
 uint32_t unpack_vlq__verified(const uint8_t data[]){
 	const auto a = unpack_vlq(data);
-	return a;
+	const auto b = ReadVarLen(data, 0);
+	QUARK_ASSERT(a.first == b.first && a.second == b.second);
+	return a.first;
 }
 
-QUARK_UNIT_TEST("variable_length_quantity", "pack_vlq()", "", ""){
+QUARK_UNIT_TEST_VIP("variable_length_quantity", "pack_vlq()", "", ""){
 	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[0].second[0]) == test_data[0].first);
 	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[1].second[0]) == test_data[1].first);
 	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[2].second[0]) == test_data[2].first);
@@ -195,7 +197,7 @@ QUARK_UNIT_TEST("variable_length_quantity", "pack_vlq()", "", ""){
 }
 
 
-QUARK_UNIT_TEST("variable_length_quantity", "unpack_vlq()", "", ""){
+QUARK_UNIT_TEST_VIP("variable_length_quantity", "unpack_vlq()", "", ""){
 	QUARK_UT_VERIFY(pack_vlq__verified(test_data[0].first) == test_data[0].second);
 }
 
