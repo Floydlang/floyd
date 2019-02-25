@@ -73,7 +73,10 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 
 	//	If an exception other than compiler_error is thrown, make a compiler error with location info.
 	catch(const compiler_error& e){
-		throw;
+		if(e.location == k_no_location){
+			QUARK_ASSERT(e.location2.loc == k_no_location);
+		}
+		throw_compiler_error(location_t(s.pos()), e.what());
 	}
 	catch(const std::runtime_error& e){
 		throw_compiler_error(location_t(s.pos()), e.what());
@@ -174,7 +177,7 @@ parse_result_t parse_statements_bracketted(const seq_t& s){
 		return { statements, pos.rest() };
 	}
 	else{
-		throw_compiler_error(location_t(pos.pos()), "Block is missing end bracket \'}\'.");
+		throw_compiler_error_nopos("Block is missing end bracket \'}\'.");
 	}
 }
 
@@ -386,7 +389,7 @@ implicit_statement detect_implicit_statement_lookahead(const seq_t& s){
 			const auto maybe_type = read_type(s);
 			if(maybe_type.first != nullptr){
 				if(maybe_type.first->is_function()){
-					throw_compiler_error(location_t(s.pos()), "Function types not supported.");
+					throw_compiler_error_nopos("Function types not supported.");
 				}
 				if(is_identifier_and_equal(maybe_type.second)){
 					return implicit_statement::k_error;
@@ -471,7 +474,7 @@ std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 		return parse_assign_statement(pos);
 	}
 	else{
-		throw_compiler_error(location_t(pos.pos()), "Use 'mutable' or 'let' syntax.");
+		throw_compiler_error_nopos("Use 'mutable' or 'let' syntax.");
 	}
 }
 

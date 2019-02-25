@@ -94,10 +94,18 @@ class compiler_error : public std::runtime_error {
 ////////////////////////////////////////		throw_compiler_error()
 
 
+void throw_compiler_error_nopos(const std::string& message) __dead2;
+inline void throw_compiler_error_nopos(const std::string& message){
+//	location2_t(const std::string& source_file_path, int line_number, int column, std::size_t start, std::size_t end, const std::string& line) :
+	throw compiler_error(k_no_location, location2_t("", 0, 0, 0, 0, "", k_no_location), message);
+}
+
+
+
 void throw_compiler_error(const location_t& location, const std::string& message) __dead2;
 inline void throw_compiler_error(const location_t& location, const std::string& message){
 //	location2_t(const std::string& source_file_path, int line_number, int column, std::size_t start, std::size_t end, const std::string& line) :
-	throw compiler_error(location, location2_t("", 0, 0, 0, 0, "", location_t(0)), message);
+	throw compiler_error(location, location2_t("", 0, 0, 0, 0, "", k_no_location), message);
 }
 
 void throw_compiler_error(const location2_t& location2, const std::string& message) __dead2;

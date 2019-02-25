@@ -12,7 +12,7 @@
 using namespace floyd;
 
 
-OFF_QUARK_UNIT_TEST("https://github.com/marcusz/floyd/issues/8", "", "", "") {
+QUARK_UNIT_TEST("https://github.com/marcusz/floyd/issues/8", "", "", "") {
 	ut_verify_exception(
 		QUARK_POS,
 		
@@ -20,7 +20,7 @@ R"(for (i in 1..5) {
   print(i)
 }
 )",
-		"Expression type mismatch - cannot convert 'bool' to 'int. Line: 1 \"let int result = true\""
+		R"(For loop has illegal range syntax. Line: 1 "for (i in 1..5) {")"
 	);
 }
 
