@@ -62,10 +62,13 @@ std::pair<unsigned long, std::size_t> ReadVarLen(const uint8_t data[], std::size
     return { value, pos };
 }
 
+#if 0
 std::pair<uint32_t, size_t> unpack_vlq(const uint8_t data[]){
 	const auto r = ReadVarLen(data, 0);
 	return r;
 }
+#else
+#endif
 
 
 
@@ -174,7 +177,12 @@ QUARK_UNIT_TEST("variable_length_quantity", "pack_vlq()", "", ""){
 uint32_t unpack_vlq__verified(const uint8_t data[]){
 	const auto a = unpack_vlq(data);
 	const auto b = ReadVarLen(data, 0);
-	QUARK_ASSERT(a.first == b.first && a.second == b.second);
+
+	std::size_t c_pos = 0;
+	const auto c = unpack_vlq2(data, c_pos);
+
+	QUARK_ASSERT(a.first == b.first && b.first == c);
+	QUARK_ASSERT(a.second == b.second && b.second == c_pos);
 	return a.first;
 }
 

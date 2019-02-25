@@ -109,6 +109,7 @@
 		2CBB527D21F6673A00E5024A /* game_of_life.floyd in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2CBB527C21F6606E00E5024A /* game_of_life.floyd */; };
 		2CBCA7DE1D569E04000FAE81 /* sha1_class.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */; };
 		2CBCA7DF1D569E07000FAE81 /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DA1D569C6D000FAE81 /* sha1.cpp */; };
+		2CC0B3DE2224232700C9D584 /* compressed_vector_benchmark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC0B3DD2224232700C9D584 /* compressed_vector_benchmark.cpp */; };
 		2CC34CC121EF8882000F3CB6 /* floyd_repl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC34CBF21EF8882000F3CB6 /* floyd_repl.cpp */; };
 		2CEB5745207106560005AC7A /* game_of_life.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB5744207106560005AC7A /* game_of_life.cpp */; };
 		2CEB57472071069B0005AC7A /* benchmark_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB57462071069B0005AC7A /* benchmark_basics.cpp */; };
@@ -542,6 +543,7 @@
 		2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = sha1_class.cpp; sourceTree = "<group>"; };
 		2CBCA7DD1D569C6D000FAE81 /* sha1_class.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sha1_class.h; sourceTree = "<group>"; };
 		2CBF330C202143BD0030AE98 /* libncurses.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libncurses.tbd; path = usr/lib/libncurses.tbd; sourceTree = SDKROOT; };
+		2CC0B3DD2224232700C9D584 /* compressed_vector_benchmark.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = compressed_vector_benchmark.cpp; sourceTree = "<group>"; };
 		2CC34CBF21EF8882000F3CB6 /* floyd_repl.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_repl.cpp; sourceTree = "<group>"; };
 		2CC34CC021EF8882000F3CB6 /* floyd_repl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_repl.h; sourceTree = "<group>"; };
 		2CCC0D222141DCC700788BCB /* immer-master */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "immer-master"; sourceTree = "<group>"; };
@@ -690,6 +692,7 @@
 				2CB2A514203D64210001A19E /* pass3.h */,
 				2CB30737214ACF09007D2732 /* software_system.cpp */,
 				2CB30738214ACF09007D2732 /* software_system.h */,
+				2CC0B3DD2224232700C9D584 /* compressed_vector_benchmark.cpp */,
 			);
 			path = floyd_speak;
 			sourceTree = SOURCE_ROOT;
@@ -1500,6 +1503,7 @@
 				2C8C03CD2221DBD70085EBBE /* benchmark_runner.cc in Sources */,
 				2C8C04002221DC190085EBBE /* floyd_benchmark_main.cpp in Sources */,
 				2C8C03D02221DBD70085EBBE /* quark.cpp in Sources */,
+				2CC0B3DE2224232700C9D584 /* compressed_vector_benchmark.cpp in Sources */,
 				2C8C03D22221DBD70085EBBE /* json_support.cpp in Sources */,
 				2C8C03D32221DBD70085EBBE /* sleep.cc in Sources */,
 				2C8C03D42221DBD70085EBBE /* statistics.cc in Sources */,
