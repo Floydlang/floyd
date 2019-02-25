@@ -9,12 +9,12 @@ project( floyd_speak)
 
 cmake_minimum_required (VERSION 3.4)
 
-add_subdirectory(libs/Celero-master)
+#add_subdirectory(libs/Celero-master)
 
 SET (CMAKE_BUILD_TYPE Release)
 #SET (CMAKE_BUILD_TYPE Debug)
 
-include_directories(parts floyd_basics floyd_ast bytecode_interpreter celero parts/immer-master floyd_parser parts/sha1 libs/Celero-master/include  .)
+include_directories(parts floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1  .)
 
 # for newer cmake 
 #add_compile_definitions(DEBUG)
@@ -127,7 +127,6 @@ target_include_directories( floyd
 target_link_libraries( floyd
 ${FLOYD_SPEAK_STATIC_DEPENDENCIES}
 ${FLOYD_SPEAK_DEPENDENCIES} pthread
-celero
 )
 
 
@@ -154,5 +153,4 @@ target_include_directories( floyd-UT
 target_link_libraries( floyd-UT
 ${FLOYD_SPEAK__UT_STATIC_DEPENDENCIES}
 ${FLOYD_SPEAK__UT_DEPENDENCIES} pthread
-celero
 )
