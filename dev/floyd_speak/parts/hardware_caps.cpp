@@ -23,59 +23,50 @@ using namespace std;
 
 #include "quark.h"
 
+
+#include <mach/machine.h>
+
+
+
 #ifdef __APPLE__
 
 namespace floyd {
 
 
 /*
-	Can't be used, they are compiler-time constants.
-	std::hardware_destructive_interference_size, std::hardware_constructive_interference_size
+Can't be used, they are compiler-time constants:
+std::hardware_destructive_interference_size, std::hardware_constructive_interference_size
 
-	https://www.unix.com/man-page/osx/3/sysconf/
+https://www.unix.com/man-page/osx/3/sysconf/
 
-	https://www.freebsd.org/cgi/man.cgi?query=sysctlbyname&apropos=0&sektion=0&manpath=FreeBSD+10.1-RELEASE&arch=default&format=html
-*/
-
+https://www.freebsd.org/cgi/man.cgi?query=sysctlbyname&apropos=0&sektion=0&manpath=FreeBSD+10.1-RELEASE&arch=default&format=html
 
 
-/*
-	Model Name:	iMac
-	Model Identifier:	iMac15,1
-	Processor Name:	Intel Core i7
-	Processor Speed:	4 GHz
-	Number of Processors:	1
-	Total Number of Cores:	4
-	L2 Cache (per Core):	256 KB
-	L3 Cache:	8 MB
-	Memory:	16 GB
-	Boot ROM Version:	IM151.0217.B00
-	SMC Version (system):	2.23f11
-	Serial Number (system):	C02NR292FY14
-	Hardware UUID:	6CC8669B-7ADB-583F-BEB7-251C0199F0EE
-*/
+Model Name:	iMac
+Model Identifier:	iMac15,1
+Processor Name:	Intel Core i7
+Processor Speed:	4 GHz
+Number of Processors:	1
+Total Number of Cores:	4
+L2 Cache (per Core):	256 KB
+L3 Cache:	8 MB
+Memory:	16 GB
+Boot ROM Version:	IM151.0217.B00
+SMC Version (system):	2.23f11
+Serial Number (system):	C02NR292FY14
+Hardware UUID:	6CC8669B-7ADB-583F-BEB7-251C0199F0EE
 
-/*
+
+SEE sysctl.h
+
 sysctl -n machdep.cpu.brand_string
 Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz
 
 https://ark.intel.com/products/80807/Intel-Core-i7-4790K-Processor-8M-Cache-up-to-4_40-GHz
-
 */
 
 
-//int	sysctl(int *, u_int, void *, size_t *, void *, size_t);
-//int	sysctlbyname(const char *, void *, size_t *, void *, size_t);
-uint32_t sysctlbyname_uint32(const std::string& key){
-	uint32_t result = -1;
-	size_t size = -1;
-	int error = sysctlbyname(key.c_str(), &result, &size, NULL, 0);
-	if(error != 0){
-		quark::throw_exception();
-	}
-	QUARK_ASSERT(size == 4);
-	return result;
-}
+
 uint64_t sysctlbyname_uint64(const std::string& key){
 	uint64_t result = -1;
 	size_t size = -1;
@@ -87,46 +78,238 @@ uint64_t sysctlbyname_uint64(const std::string& key){
 	return result;
 }
 
+uint64_t sysctlbyname_uint64_def(const std::string& key, uint64_t def){
+	try{
+		return sysctlbyname_uint64(key);
+	}
+	catch(...){
+		return def;
+	}
+}
 
-//	SEE sysctl.h
+uint32_t sysctlbyname_uint32(const std::string& key){
+	//	Reserve 8 bytes here.
+	uint64_t result = -1;
 
-#include <mach/machine.h>
+	size_t size = -1;
+	int error = sysctlbyname(key.c_str(), &result, &size, NULL, 0);
+	if(error != 0){
+		quark::throw_exception();
+	}
 
-  
-hardware_info_t read_hardware_info(){
+	//	CTL_HW_NAMES sometimes lies and says this key is a CTLTYPE_INT, then returns 8 bytes.
+	if(size == 8){
+		const auto result2 = sysctlbyname_uint64(key);
+		return static_cast<uint32_t>(result2);
+	}
+	else{
+		QUARK_ASSERT(size == 4);
+		return static_cast<uint32_t>(result);
+	}
+}
+
+uint32_t sysctlbyname_uint32_def(const std::string& key, uint32_t def){
+	try{
+		return sysctlbyname_uint32(key);
+	}
+	catch(...){
+		return def;
+	}
+}
+
+std::string sysctlbyname_string(const std::string& key){
+	std::vector<char> temp(200, 'x');
+	size_t out_size = temp.size();
+	int error = sysctlbyname(key.c_str(), &temp[0], &out_size, nullptr, 0);
+	if(error != 0){
+		quark::throw_exception();
+	}
+
+	const std::string result(temp.begin(), temp.begin() + out_size - 1);
+	return result;
+}
+
+std::string sysctlbyname_string_def(const std::string& key, const std::string& def){
+	try{
+		return sysctlbyname_string(key);
+	}
+	catch(...){
+		return def;
+	}
+}
+
+
+
+
+
+
+#if 0
+FUTURE: More caps about how many caches and how they are shared.
+
+Below copied from Darwin code.
+
+/* For each cache level (0 is memory) */
+void test(){
+	std::size_t size = 0;
+	int i = 0;
+	int memsize = 666;
+
+	if (!sysctlbyname("hw.cacheconfig", NULL, &size, NULL, 0)) {
+		unsigned n = size / sizeof(uint32_t);
+		uint64_t cacheconfig[n];
+		uint64_t cachesize[n];
+		uint32_t cacheconfig32[n];
+
+		if ((!sysctlbyname("hw.cacheconfig", cacheconfig, &size, NULL, 0))) {
+			/* Yeech. Darwin seemingly has changed from 32bit to 64bit integers for
+			 * cacheconfig, with apparently no way for detection. Assume the machine
+			 * won't have more than 4 billion cpus */
+			if (cacheconfig[0] > 0xFFFFFFFFUL) {
+				memcpy(cacheconfig32, cacheconfig, size);
+				for (i = 0 ; i < size / sizeof(uint32_t); i++)
+					cacheconfig[i] = cacheconfig32[i];
+			}
+
+			memset(cachesize, 0, sizeof(uint64_t) * n);
+			size = sizeof(uint64_t) * n;
+			if (sysctlbyname("hw.cachesize", cachesize, &size, NULL, 0)) {
+				if (n > 0)
+					cachesize[0] = memsize;
+				if (n > 1)
+					cachesize[1] = l1dcachesize;
+				if (n > 2)
+					cachesize[2] = l2cachesize;
+				if (n > 3)
+					cachesize[3] = l3cachesize;
+			}
+
+			hwloc_debug("%s", "caches");
+			for (i = 0; i < n && cacheconfig[i]; i++)
+				hwloc_debug(" %"PRIu64"(%"PRIu64"kB)", cacheconfig[i], cachesize[i] / 1024);
+
+			/* Now we know how many caches there are */
+			n = i;
+			hwloc_debug("\n%u cache levels\n", n - 1);
+
+			/* For each cache level (0 is memory) */
+			for (i = 0; i < n; i++) {
+
+		if (hwloc_filter_check_keep_object_type(topology, obj->type))
+			hwloc_insert_object_by_cpuset(topology, obj);
+		else
+			hwloc_free_unlinked_object(obj); /* FIXME: don't built at all, just build the cpuset in case l1i needs it */
+				}
+			}
+		}
+	}
+}
+#endif
+
+
+
+hardware_caps_t read_hardware_caps(){
 	return {
-		._cpu_type = sysctlbyname_uint32("hw.cputype"),
-		._cpu_type_subtype = sysctlbyname_uint32("hw.cpusubtype"),
+		._hw_machine = sysctlbyname_string_def("hw.machine", ""),
+		._hw_model = sysctlbyname_string_def("hw.model", ""),
+		._hw_ncpu = sysctlbyname_uint32_def("hw.ncpu", -1),
 
-		._processor_packages = sysctlbyname_uint32("hw.packages"),
+		._hw_byteorder = sysctlbyname_uint32_def("hw.byteorder", 0),
+		._hw_physmem = sysctlbyname_uint32_def("hw.physmem", 0),
+		._hw_usermem = sysctlbyname_uint32_def("hw.usermem", 0),
 
-		._physical_processor_count = sysctlbyname_uint32("hw.physicalcpu_max"),
-		._logical_processor_count = sysctlbyname_uint32("hw.logicalcpu_max"),
+		._hw_epoch = sysctlbyname_uint32_def("hw.epoch", -1),
+		._hw_floatingpoint = sysctlbyname_uint32_def("hw.floatingpoint", 0),
 
-		._cpu_freq_hz = sysctlbyname_uint64("hw.cpufrequency"),
-		._bus_freq_hz = sysctlbyname_uint64("hw.busfrequency"),
+		._hw_machinearch = sysctlbyname_string_def("hw.machinearch", ""),
 
-		._mem_size = sysctlbyname_uint64("hw.memsize"),
-		._page_size = sysctlbyname_uint64("hw.pagesize"),
-		._cacheline_size = sysctlbyname_uint64("hw.cachelinesize"),
+		._hw_vectorunit = sysctlbyname_uint32_def("hw.vectorunit", -1),
+		._hw_tbfrequency = sysctlbyname_uint32_def("hw.tbfrequency", -1),
+		._hw_availcpu = sysctlbyname_uint32_def("hw.availcpu", -1),
+
+
+		._hw_cpu_type = sysctlbyname_uint32_def("hw.cputype", -1),
+
+		._hw_cpu_type_subtype = sysctlbyname_uint32_def("hw.cpusubtype", -1),
+
+		._processor_packages = sysctlbyname_uint32_def("hw.packages", -1),
+
+		._physical_processor_count = sysctlbyname_uint32_def("hw.physicalcpu_max", -1),
+		._logical_processor_count = sysctlbyname_uint32_def("hw.logicalcpu_max", -1),
+
+		._cpu_freq_hz = sysctlbyname_uint64_def("hw.cpufrequency", -1),
+		._bus_freq_hz = sysctlbyname_uint64_def("hw.busfrequency", -1),
+
+		._mem_size = sysctlbyname_uint64_def("hw.memsize", -1),
+		._page_size = sysctlbyname_uint64_def("hw.pagesize", -1),
+		._cacheline_size = sysctlbyname_uint64_def("hw.cachelinesize", -1),
 		._scalar_align = alignof(std::max_align_t),
 
-		._l1_data_cache_size = sysctlbyname_uint64("hw.l1dcachesize"),
-		._l1_instruction_cache_size = sysctlbyname_uint64("hw.l1icachesize"),
-		._l2_cache_size = sysctlbyname_uint64("hw.l2cachesize"),
-		._l3_cache_size = sysctlbyname_uint64("hw.l3cachesize")
+		._l1_data_cache_size = sysctlbyname_uint64_def("hw.l1dcachesize", -1),
+		._l1_instruction_cache_size = sysctlbyname_uint64_def("hw.l1icachesize", -1),
+		._l2_cache_size = sysctlbyname_uint64_def("hw.l2cachesize", -1),
+		._l3_cache_size = sysctlbyname_uint64_def("hw.l3cachesize", -1)
 
 	};
 }
 
-
 QUARK_UNIT_TEST("","", "", ""){
-	const auto a = read_hardware_info();
+	const auto a = read_hardware_caps();
 	QUARK_UT_VERIFY(a._cacheline_size >= 16);
 	QUARK_UT_VERIFY(a._scalar_align >= 4);
 }
 
+void trace_hardware_caps(const hardware_caps_t& info){
+	QUARK_SCOPED_TRACE("Hardware info");
 
+	QUARK_TRACE_SS("_hw_machine" << ":\t" << info._hw_machine);
+	QUARK_TRACE_SS("_hw_model" << ":\t" << info._hw_model);
+	QUARK_TRACE_SS("_hw_ncpu" << ":\t" << info._hw_ncpu);
+
+	QUARK_TRACE_SS("_hw_byteorder" << ":\t" << info._hw_byteorder);
+	QUARK_TRACE_SS("_hw_physmem" << ":\t" << info._hw_physmem);
+	QUARK_TRACE_SS("_hw_usermem" << ":\t" << info._hw_usermem);
+
+
+	QUARK_TRACE_SS("_hw_epoch" << ":\t" << info._hw_epoch);
+//	QUARK_TRACE_SS("_hw_floatingpoint" << ":\t" << info._hw_floatingpoint);
+	QUARK_TRACE_SS("_hw_machinearch" << ":\t" << info._hw_machinearch);
+
+	QUARK_TRACE_SS("_hw_vectorunit" << ":\t" << info._hw_vectorunit);
+	QUARK_TRACE_SS("_hw_tbfrequency" << ":\t" << info._hw_tbfrequency);
+	QUARK_TRACE_SS("_hw_availcpu" << ":\t" << info._hw_availcpu);
+
+
+	QUARK_TRACE_SS("_hw_cpu_type" << ":\t" << info._hw_cpu_type);
+	QUARK_TRACE_SS("_hw_cpu_type_subtype" << ":\t" << info._hw_cpu_type_subtype);
+
+	QUARK_TRACE_SS("_processor_packages" << ":\t" << info._processor_packages);
+
+	QUARK_TRACE_SS("_physical_processor_count" << ":\t" << info._physical_processor_count);
+
+
+	QUARK_TRACE_SS("_logical_processor_count" << ":\t" << info._logical_processor_count);
+
+
+	QUARK_TRACE_SS("_cpu_freq_hz" << ":\t" << info._cpu_freq_hz);
+	QUARK_TRACE_SS("_bus_freq_hz" << ":\t" << info._bus_freq_hz);
+
+	QUARK_TRACE_SS("_mem_size" << ":\t" << info._mem_size);
+	QUARK_TRACE_SS("_page_size" << ":\t" << info._page_size);
+	QUARK_TRACE_SS("_cacheline_size" << ":\t" << info._cacheline_size);
+
+
+	QUARK_TRACE_SS("_scalar_align" << ":\t" << info._scalar_align);
+
+	QUARK_TRACE_SS("_l1_data_cache_size" << ":\t" << info._l1_data_cache_size);
+	QUARK_TRACE_SS("_l1_instruction_cache_size" << ":\t" << info._l1_instruction_cache_size);
+	QUARK_TRACE_SS("_l2_cache_size" << ":\t" << info._l2_cache_size);
+	QUARK_TRACE_SS("_l3_cache_size" << ":\t" << info._l3_cache_size);
+
+}
+
+
+
+//	Experiement.
 QUARK_UNIT_TEST("","", "", ""){
 	unsigned num_cpus = std::thread::hardware_concurrency();
 
@@ -157,30 +340,10 @@ QUARK_UNIT_TEST("","", "", ""){
 	QUARK_UT_VERIFY(num_cpus > 0);
 }
 
-}
 
 
-/*
-unsigned int get_freq() {
-	int mib[2];
-	unsigned int freq;
-	size_t len;
 
-	mib[0] = CTL_HW;
-	mib[1] = HW_CPU_FREQ;
-	len = sizeof(freq);
-	sysctl(mib, 2, &freq, &len, NULL, 0);
-
-	printf("%u\n", freq);
-
-	return freq;
-}
-
-QUARK_UNIT_TEST("","", "", ""){
-	const auto a = get_freq();
-	QUARK_UT_VERIFY(a > 0);
-}
-*/
+////////////////////////////////		AFFINITY
 
 
 
@@ -211,7 +374,6 @@ int sched_getaffinity(pid_t pid, size_t cpu_size, cpu_set_t *cpu_set){
 
   return 0;
 }
-#endif
 
 /*
 int pthread_setaffinity_np(pthread_t thread, size_t cpu_size,
@@ -232,3 +394,6 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpu_size,
 }
 */
 
+}
+
+#endif

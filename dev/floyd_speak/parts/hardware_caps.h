@@ -15,21 +15,39 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <string>
 
 namespace floyd {
 
-struct hardware_info_t {
-	std::uint64_t _cpu_type;
-	std::uint64_t _cpu_type_subtype;
+struct hardware_caps_t {
+	std::string _hw_machine;
+	std::string _hw_model;
+	std::uint32_t _hw_ncpu;
+
+	std::uint32_t _hw_byteorder;
+	std::uint32_t _hw_physmem;
+	std::uint32_t _hw_usermem;
+
+	std::uint32_t _hw_epoch;
+	std::uint32_t _hw_floatingpoint;
+	std::string _hw_machinearch;
+
+	std::uint32_t _hw_vectorunit;
+	std::uint32_t _hw_tbfrequency;
+	std::uint32_t _hw_availcpu;
 
 
-	std::uint64_t _processor_packages;
+	std::uint64_t _hw_cpu_type;
+	std::uint64_t _hw_cpu_type_subtype;
+
+	std::uint32_t _processor_packages;
 
 	//	Core count
 	std::uint32_t _physical_processor_count;
 
 	//	Total hardware thread count (can be more than physical because of hyperthreading).
 	std::uint32_t _logical_processor_count;
+
 
 	std::uint64_t _cpu_freq_hz;
 	std::uint64_t _bus_freq_hz;
@@ -38,6 +56,7 @@ struct hardware_info_t {
 	std::size_t _mem_size;
 	std::size_t _page_size;
 	std::size_t _cacheline_size;
+
 	//	Usually depends on "long double".
 	std::size_t _scalar_align;
 
@@ -45,11 +64,10 @@ struct hardware_info_t {
 	std::size_t _l1_instruction_cache_size;
 	std::size_t _l2_cache_size;
 	std::size_t _l3_cache_size;
-
-
 };
 
-hardware_info_t read_hardware_info();
+hardware_caps_t read_hardware_caps();
+void trace_hardware_caps(const hardware_caps_t& info);
 
 }
 

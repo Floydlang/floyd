@@ -10,6 +10,7 @@
 #include "benchmark/benchmark.h"
 
 #include "variable_length_quantity.h"
+#include "hardware_caps.h"
 
 #include <iostream>
 #include <vector>
@@ -231,5 +232,15 @@ BENCHMARK(BM_read_vlq_vector4)ARGS_XYZ;
 
 
 
-BENCHMARK_MAIN();
+
+int main(int argc, char** argv) {
+	const auto caps = floyd::read_hardware_caps();
+	floyd::trace_hardware_caps(caps);
+
+	::benchmark::Initialize(&argc, argv);
+	if (::benchmark::ReportUnrecognizedArguments(argc, argv)) return 1;
+	::benchmark::RunSpecifiedBenchmarks();
+}
+
+//BENCHMARK_MAIN();
 

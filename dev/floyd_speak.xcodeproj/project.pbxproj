@@ -61,7 +61,6 @@
 		2C8C03B12221DA9B0085EBBE /* floyd_main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */; };
 		2C8C03B42221DBD70085EBBE /* hardware_caps.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5E343B21527C6700B02262 /* hardware_caps.cpp */; };
 		2C8C03B52221DBD70085EBBE /* gmock-all.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2C69C5D22221D47800E9D03E /* gmock-all.cc */; };
-		2C8C03B82221DBD70085EBBE /* software_system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB30737214ACF09007D2732 /* software_system.cpp */; };
 		2C8C03B92221DBD70085EBBE /* csv_reporter.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2C69C5EC2221D47800E9D03E /* csv_reporter.cc */; };
 		2C8C03BB2221DBD70085EBBE /* json_reporter.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2C69C5F12221D47800E9D03E /* json_reporter.cc */; };
 		2C8C03BD2221DBD70085EBBE /* reporter.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2C69C5F32221D47800E9D03E /* reporter.cc */; };
@@ -1438,7 +1437,6 @@
 				2C8C03A32221D95F0085EBBE /* counter.cc in Sources */,
 				2C18044D208B90E900F62480 /* text_parser.cpp in Sources */,
 				2CB7AA6B2209E51E0011DE4B /* compiler_basics.cpp in Sources */,
-				2C00DEB522198B0300DB322E /* Experiment.cpp in Sources */,
 				2CC0B3E322248EBD00C9D584 /* test_helpers.cpp in Sources */,
 				2C18044B208B90E900F62480 /* utils.cpp in Sources */,
 				2C02667C2014CAF000A82AD6 /* floyd_test_suite.cpp in Sources */,
@@ -1489,7 +1487,6 @@
 			files = (
 				2C8C03B42221DBD70085EBBE /* hardware_caps.cpp in Sources */,
 				2C8C03B52221DBD70085EBBE /* gmock-all.cc in Sources */,
-				2C8C03B82221DBD70085EBBE /* software_system.cpp in Sources */,
 				2C8C03B92221DBD70085EBBE /* csv_reporter.cc in Sources */,
 				2C8C03BB2221DBD70085EBBE /* json_reporter.cc in Sources */,
 				2C8C03BD2221DBD70085EBBE /* reporter.cc in Sources */,
