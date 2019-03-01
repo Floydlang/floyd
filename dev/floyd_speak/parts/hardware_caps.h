@@ -40,34 +40,34 @@ struct hardware_caps_t {
 	std::uint64_t _hw_cpu_type;
 	std::uint64_t _hw_cpu_type_subtype;
 
-	std::uint32_t _processor_packages;
+	std::uint32_t _hw_packaged;
 
 	//	Core count
-	std::uint32_t _physical_processor_count;
+	std::uint32_t _hw_physical_processor_count;
 
 	//	Total hardware thread count (can be more than physical because of hyperthreading).
-	std::uint32_t _logical_processor_count;
+	std::uint32_t _hw_logical_processor_count;
 
 
-	std::uint64_t _cpu_freq_hz;
-	std::uint64_t _bus_freq_hz;
+	std::uint64_t _hw_cpu_freq_hz;
+	std::uint64_t _hw_bus_freq_hz;
 
 
-	std::size_t _mem_size;
-	std::size_t _page_size;
-	std::size_t _cacheline_size;
+	std::size_t _hw_mem_size;
+	std::size_t _hw_page_size;
+	std::size_t _hw_cacheline_size;
 
 	//	Usually depends on "long double".
-	std::size_t _scalar_align;
+	std::size_t _hw_scalar_align;
 
-	std::size_t _l1_data_cache_size;
-	std::size_t _l1_instruction_cache_size;
-	std::size_t _l2_cache_size;
-	std::size_t _l3_cache_size;
+	std::size_t _hw_l1_data_cache_size;
+	std::size_t _hw_l1_instruction_cache_size;
+	std::size_t _hw_l2_cache_size;
+	std::size_t _hw_l3_cache_size;
 };
 
 hardware_caps_t read_hardware_caps();
-void trace_hardware_caps(const hardware_caps_t& info);
+void trace_hardware_caps(const hardware_caps_t& caps);
 
 }
 

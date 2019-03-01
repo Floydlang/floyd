@@ -231,80 +231,79 @@ hardware_caps_t read_hardware_caps(){
 
 		._hw_cpu_type_subtype = sysctlbyname_uint32_def("hw.cpusubtype", -1),
 
-		._processor_packages = sysctlbyname_uint32_def("hw.packages", -1),
+		._hw_packaged = sysctlbyname_uint32_def("hw.packages", -1),
 
-		._physical_processor_count = sysctlbyname_uint32_def("hw.physicalcpu_max", -1),
-		._logical_processor_count = sysctlbyname_uint32_def("hw.logicalcpu_max", -1),
+		._hw_physical_processor_count = sysctlbyname_uint32_def("hw.physicalcpu_max", -1),
+		._hw_logical_processor_count = sysctlbyname_uint32_def("hw.logicalcpu_max", -1),
 
-		._cpu_freq_hz = sysctlbyname_uint64_def("hw.cpufrequency", -1),
-		._bus_freq_hz = sysctlbyname_uint64_def("hw.busfrequency", -1),
+		._hw_cpu_freq_hz = sysctlbyname_uint64_def("hw.cpufrequency", -1),
+		._hw_bus_freq_hz = sysctlbyname_uint64_def("hw.busfrequency", -1),
 
-		._mem_size = sysctlbyname_uint64_def("hw.memsize", -1),
-		._page_size = sysctlbyname_uint64_def("hw.pagesize", -1),
-		._cacheline_size = sysctlbyname_uint64_def("hw.cachelinesize", -1),
-		._scalar_align = alignof(std::max_align_t),
+		._hw_mem_size = sysctlbyname_uint64_def("hw.memsize", -1),
+		._hw_page_size = sysctlbyname_uint64_def("hw.pagesize", -1),
+		._hw_cacheline_size = sysctlbyname_uint64_def("hw.cachelinesize", -1),
+		._hw_scalar_align = alignof(std::max_align_t),
 
-		._l1_data_cache_size = sysctlbyname_uint64_def("hw.l1dcachesize", -1),
-		._l1_instruction_cache_size = sysctlbyname_uint64_def("hw.l1icachesize", -1),
-		._l2_cache_size = sysctlbyname_uint64_def("hw.l2cachesize", -1),
-		._l3_cache_size = sysctlbyname_uint64_def("hw.l3cachesize", -1)
+		._hw_l1_data_cache_size = sysctlbyname_uint64_def("hw.l1dcachesize", -1),
+		._hw_l1_instruction_cache_size = sysctlbyname_uint64_def("hw.l1icachesize", -1),
+		._hw_l2_cache_size = sysctlbyname_uint64_def("hw.l2cachesize", -1),
+		._hw_l3_cache_size = sysctlbyname_uint64_def("hw.l3cachesize", -1)
 
 	};
 }
 
 QUARK_UNIT_TEST("","", "", ""){
 	const auto a = read_hardware_caps();
-	QUARK_UT_VERIFY(a._cacheline_size >= 16);
-	QUARK_UT_VERIFY(a._scalar_align >= 4);
+	QUARK_UT_VERIFY(a._hw_cacheline_size >= 16);
+	QUARK_UT_VERIFY(a._hw_scalar_align >= 4);
 }
 
-void trace_hardware_caps(const hardware_caps_t& info){
-	QUARK_SCOPED_TRACE("Hardware info");
+void trace_hardware_caps(const hardware_caps_t& caps){
+	QUARK_SCOPED_TRACE("Hardware caps");
 
-	QUARK_TRACE_SS("_hw_machine" << ":\t" << info._hw_machine);
-	QUARK_TRACE_SS("_hw_model" << ":\t" << info._hw_model);
-	QUARK_TRACE_SS("_hw_ncpu" << ":\t" << info._hw_ncpu);
+	QUARK_TRACE_SS("machine" << ":\t" << caps._hw_machine);
+	QUARK_TRACE_SS("model" << ":\t" << caps._hw_model);
+	QUARK_TRACE_SS("ncpu" << ":\t" << caps._hw_ncpu);
 
-	QUARK_TRACE_SS("_hw_byteorder" << ":\t" << info._hw_byteorder);
-	QUARK_TRACE_SS("_hw_physmem" << ":\t" << info._hw_physmem);
-	QUARK_TRACE_SS("_hw_usermem" << ":\t" << info._hw_usermem);
-
-
-	QUARK_TRACE_SS("_hw_epoch" << ":\t" << info._hw_epoch);
-//	QUARK_TRACE_SS("_hw_floatingpoint" << ":\t" << info._hw_floatingpoint);
-	QUARK_TRACE_SS("_hw_machinearch" << ":\t" << info._hw_machinearch);
-
-	QUARK_TRACE_SS("_hw_vectorunit" << ":\t" << info._hw_vectorunit);
-	QUARK_TRACE_SS("_hw_tbfrequency" << ":\t" << info._hw_tbfrequency);
-	QUARK_TRACE_SS("_hw_availcpu" << ":\t" << info._hw_availcpu);
+	QUARK_TRACE_SS("byteorder" << ":\t" << caps._hw_byteorder);
+	QUARK_TRACE_SS("physmem" << ":\t" << caps._hw_physmem);
+	QUARK_TRACE_SS("usermem" << ":\t" << caps._hw_usermem);
 
 
-	QUARK_TRACE_SS("_hw_cpu_type" << ":\t" << info._hw_cpu_type);
-	QUARK_TRACE_SS("_hw_cpu_type_subtype" << ":\t" << info._hw_cpu_type_subtype);
+	QUARK_TRACE_SS("epoch" << ":\t" << caps._hw_epoch);
+	QUARK_TRACE_SS("floatingpoint" << ":\t" << caps._hw_floatingpoint);
+	QUARK_TRACE_SS("machinearch" << ":\t" << caps._hw_machinearch);
 
-	QUARK_TRACE_SS("_processor_packages" << ":\t" << info._processor_packages);
-
-	QUARK_TRACE_SS("_physical_processor_count" << ":\t" << info._physical_processor_count);
-
-
-	QUARK_TRACE_SS("_logical_processor_count" << ":\t" << info._logical_processor_count);
+	QUARK_TRACE_SS("vectorunit" << ":\t" << caps._hw_vectorunit);
+	QUARK_TRACE_SS("tbfrequency" << ":\t" << caps._hw_tbfrequency);
+	QUARK_TRACE_SS("availcpu" << ":\t" << caps._hw_availcpu);
 
 
-	QUARK_TRACE_SS("_cpu_freq_hz" << ":\t" << info._cpu_freq_hz);
-	QUARK_TRACE_SS("_bus_freq_hz" << ":\t" << info._bus_freq_hz);
+	QUARK_TRACE_SS("cpu_type" << ":\t" << caps._hw_cpu_type);
+	QUARK_TRACE_SS("cpu_type_subtype" << ":\t" << caps._hw_cpu_type_subtype);
 
-	QUARK_TRACE_SS("_mem_size" << ":\t" << info._mem_size);
-	QUARK_TRACE_SS("_page_size" << ":\t" << info._page_size);
-	QUARK_TRACE_SS("_cacheline_size" << ":\t" << info._cacheline_size);
+	QUARK_TRACE_SS("packaged" << ":\t" << caps._hw_packaged);
+
+	QUARK_TRACE_SS("physical_processor_count" << ":\t" << caps._hw_physical_processor_count);
 
 
-	QUARK_TRACE_SS("_scalar_align" << ":\t" << info._scalar_align);
+	QUARK_TRACE_SS("logical_processor_count" << ":\t" << caps._hw_logical_processor_count);
 
-	QUARK_TRACE_SS("_l1_data_cache_size" << ":\t" << info._l1_data_cache_size);
-	QUARK_TRACE_SS("_l1_instruction_cache_size" << ":\t" << info._l1_instruction_cache_size);
-	QUARK_TRACE_SS("_l2_cache_size" << ":\t" << info._l2_cache_size);
-	QUARK_TRACE_SS("_l3_cache_size" << ":\t" << info._l3_cache_size);
 
+	QUARK_TRACE_SS("cpu_freq_hz" << ":\t" << caps._hw_cpu_freq_hz);
+	QUARK_TRACE_SS("bus_freq_hz" << ":\t" << caps._hw_bus_freq_hz);
+
+	QUARK_TRACE_SS("mem_size" << ":\t" << caps._hw_mem_size);
+	QUARK_TRACE_SS("page_size" << ":\t" << caps._hw_page_size);
+	QUARK_TRACE_SS("cacheline_size" << ":\t" << caps._hw_cacheline_size);
+
+
+	QUARK_TRACE_SS("scalar_align" << ":\t" << caps._hw_scalar_align);
+
+	QUARK_TRACE_SS("l1_data_cache_size" << ":\t" << caps._hw_l1_data_cache_size);
+	QUARK_TRACE_SS("l1_instruction_cache_size" << ":\t" << caps._hw_l1_instruction_cache_size);
+	QUARK_TRACE_SS("l2_cache_size" << ":\t" << caps._hw_l2_cache_size);
+	QUARK_TRACE_SS("l3_cache_size" << ":\t" << caps._hw_l3_cache_size);
 }
 
 
