@@ -67,6 +67,7 @@ struct hardware_caps_t {
 };
 
 hardware_caps_t read_hardware_caps();
+std::string get_hardware_caps_string(const hardware_caps_t& caps);
 void trace_hardware_caps(const hardware_caps_t& caps);
 
 }
