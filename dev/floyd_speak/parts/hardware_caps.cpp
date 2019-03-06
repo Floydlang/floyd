@@ -309,7 +309,7 @@ std::string get_hardware_caps_string(const hardware_caps_t& caps){
 void trace_hardware_caps(const hardware_caps_t& caps){
 #if QUARK_TRACE_ON
 	QUARK_SCOPED_TRACE("Hardware caps");
-	const auto s = get_hardware_caps_string;
+	const auto s = get_hardware_caps_string(caps);
 	QUARK_TRACE(s);
 #endif
 
