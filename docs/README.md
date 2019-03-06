@@ -4,6 +4,10 @@ License: MIT
 
 Status: Alpha. All the basics of the language are finished and robust. Runs on bytecode interpreter. Will run natively soon. Production ready for smaller programs. The next step is implementing the LLVM backend and the data structure optimisation features.
 
+[ROADMAP](https://github.com/marcusz/floyd/projects/1 "Floyd Roadmap")
+
+[CURRENT MILESTONE](https://github.com/marcusz/floyd/projects/4 "Milestone 2")
+
 This repo holds the compiler, the bytecode interpreter and documentation.
 
 
@@ -109,20 +113,6 @@ A handful features are needed for a satisfying 1.0: rounding out the language fe
 
 # LOOKING FORWARD
 
-#### PERFORMANCE
-- LLVM codegen
-- Better internal threaded task manager
-- Control over collection backend types, caching
-- Visual profiler, debugger
+[ROADMAP](https://github.com/marcusz/floyd/projects/1 "Floyd Roadmap")
 
-#### LANGUAGE FEATURES
-- More int and float types
-- Sum-type (enum/union) with switch
-- Proper support for libraries
-- Protocol type
-- Basic Unicode functions
-- Binary packing of data
-- C language integration
-- Built-in REST library
-
-
+[CURRENT MILESTONE](https://github.com/marcusz/floyd/projects/4 "Milestone 2")
