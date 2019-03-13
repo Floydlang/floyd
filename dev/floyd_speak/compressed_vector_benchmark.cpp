@@ -18,8 +18,8 @@
 #include "quark.h"
 
 
-static const size_t k_test_element_count = 1 << 26;
-//static const size_t k_test_element_count = 1 << 24;
+//static const size_t k_test_element_count = 1 << 26;
+static const size_t k_test_element_count = 1 << 25;
 #define ARGS_XYZ	->Arg(k_test_element_count)
 //#define ARGS_XYZ	->Arg(1 << 16)->Arg(k_test_element_count)
 
@@ -66,7 +66,7 @@ static void BM_read_vector_uint32(benchmark::State& state) {
 //BENCHMARK(BM_read_vector_uint32)->Ranges({{1 << 16, 4 << 16}, {1, 1}});
 //BENCHMARK(BM_read_vector_uint32)->Arg(1 << 16);
 //BENCHMARK(BM_read_vector_uint32)->RangeMultiplier(2)->Range(1 << 1, k_test_element_count);
-BENCHMARK(BM_read_vector_uint32)ARGS_XYZ;
+//BENCHMARK(BM_read_vector_uint32)ARGS_XYZ;
 
 
 
@@ -122,7 +122,7 @@ static void BM_read_vlq_vector(benchmark::State& state) {
 //BENCHMARK(BM_read_vector_uint32)->Ranges({{1 << 16, 4 << 16}, {1, 1}});
 //BENCHMARK(BM_read_vector_uint32)->Arg(1 << 16);
 //BENCHMARK(BM_read_vlq_vector)->RangeMultiplier(2)->Range(1 << 1, k_test_element_count);
-BENCHMARK(BM_read_vlq_vector)ARGS_XYZ;
+//BENCHMARK(BM_read_vlq_vector)ARGS_XYZ;
 
 
 
@@ -144,7 +144,7 @@ static void BM_read_vlq_vector2(benchmark::State& state) {
 	state.SetBytesProcessed(state.iterations() * element_count * sizeof(int32_t));
 }
 
-BENCHMARK(BM_read_vlq_vector2)ARGS_XYZ;
+//BENCHMARK(BM_read_vlq_vector2)ARGS_XYZ;
 
 
 
@@ -174,13 +174,14 @@ std::vector<uint8_t> use_low_8bits(const std::vector<int32_t>& v){
 }
 
 static void BM_read_vector_uint8(benchmark::State& state) {
+	sleep(3);
 	const auto element_count = state.range(0);
 //	state.PauseTiming();
-#if 0
+#if 1
 	std::vector<uint8_t> data = use_low_8bits(make_random_vector_int32(element_count));
 #endif
 
-	std::vector<uint8_t> data(element_count, 0x13);
+//	std::vector<uint8_t> data(element_count, 0x13);
 
 //	state.ResumeTiming();
 
