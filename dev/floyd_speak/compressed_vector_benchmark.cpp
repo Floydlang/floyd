@@ -1,10 +1,3 @@
-//
-//  main.cpp
-//  megastruct
-//
-//  Created by Marcus Zetterquist on 2019-01-28.
-//  Copyright © 2019 Marcus Zetterquist. All rights reserved.
-//
 
 #include "gtest/gtest.h"
 #include "benchmark/benchmark.h"
@@ -18,9 +11,12 @@
 #include "quark.h"
 
 
-//static const size_t k_test_element_count = 1 << 26;
-static const size_t k_test_element_count = 1 << 25;
-#define ARGS_XYZ	->Arg(k_test_element_count)
+static const size_t k_64M = 1 << 26;
+static const size_t k_32M = 1 << 25;
+//static const size_t k_test_element_count = k_32M;
+static const size_t k_testdata_size = k_32M;
+
+//#define ARGS_XYZ	->Arg(k_test_element_count)
 //#define ARGS_XYZ	->Arg(1 << 16)->Arg(k_test_element_count)
 
 
@@ -173,17 +169,14 @@ std::vector<uint8_t> use_low_8bits(const std::vector<int32_t>& v){
 	return result;
 }
 
-static void BM_read_vector_uint8(benchmark::State& state) {
-	sleep(3);
-	const auto element_count = state.range(0);
 //	state.PauseTiming();
-#if 1
-	std::vector<uint8_t> data = use_low_8bits(make_random_vector_int32(element_count));
-#endif
-
-//	std::vector<uint8_t> data(element_count, 0x13);
-
 //	state.ResumeTiming();
+
+static void BM_read_vector_uint8(benchmark::State& state) {
+//	sleep(3);
+	const auto element_count = state.range(0);
+	std::vector<uint8_t> data = use_low_8bits(make_random_vector_int32(element_count));
+//	std::vector<uint8_t> data(element_count, 0x13);
 
 	for (auto _ : state) {
 		long sum = 0;
@@ -198,9 +191,7 @@ static void BM_read_vector_uint8(benchmark::State& state) {
 	state.SetBytesProcessed(state.iterations() * element_count * sizeof(int8_t));
 }
 
-BENCHMARK(BM_read_vector_uint8)ARGS_XYZ;
-
-
+BENCHMARK(BM_read_vector_uint8)->Range((k_testdata_size >> 16) / sizeof(uint8_t), k_testdata_size / sizeof(uint8_t));
 
 
 
