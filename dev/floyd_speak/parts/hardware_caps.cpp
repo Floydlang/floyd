@@ -206,9 +206,16 @@ void test(){
 #endif
 
 
-
 hardware_caps_t read_hardware_caps(){
 	return {
+		._machdep_cpu_brand_string = sysctlbyname_string_def("machdep.cpu.brand_string", ""),
+
+/*
+machdep.cpu.features
+machdep.cpu.leaf7_features
+machdep.cpu.extfeatures
+*/
+
 		._hw_machine = sysctlbyname_string_def("hw.machine", ""),
 		._hw_model = sysctlbyname_string_def("hw.model", ""),
 		._hw_ncpu = sysctlbyname_uint32_def("hw.ncpu", -1),
@@ -260,6 +267,8 @@ QUARK_UNIT_TEST("","", "", ""){
 
 std::string get_hardware_caps_string(const hardware_caps_t& caps){
 	std::stringstream r;
+	r << "machdep_cpu_brand_string" << ":\t" << caps._machdep_cpu_brand_string << std::endl;
+
 	r << "machine" << ":\t" << caps._hw_machine << std::endl;
 	r << "model" << ":\t" << caps._hw_model << std::endl;
 	r << "ncpu" << ":\t" << caps._hw_ncpu << std::endl;

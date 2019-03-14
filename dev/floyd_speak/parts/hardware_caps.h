@@ -20,6 +20,8 @@
 namespace floyd {
 
 struct hardware_caps_t {
+	std::string _machdep_cpu_brand_string;
+
 	std::string _hw_machine;
 	std::string _hw_model;
 	std::uint32_t _hw_ncpu;
