@@ -13,16 +13,14 @@
 
 static const size_t k_64M = 1 << 26;
 static const size_t k_32M = 1 << 25;
-//static const size_t k_test_element_count = k_32M;
 static const size_t k_testdata_size = k_32M;
 
-//#define ARGS_XYZ	->Arg(k_test_element_count)
-//#define ARGS_XYZ	->Arg(1 << 16)->Arg(k_test_element_count)
+//	state.PauseTiming();
+//	state.ResumeTiming();
 
 
 
-
-////////////////////////////////		BENCHMARK -- vector<int32_> vs variable_length_equantity
+////////////////////////////////		HELPERS
 
 
 
@@ -38,32 +36,6 @@ std::vector<int32_t> make_random_vector_int32(int64_t count) {
 	}
 	return s;
 }
-
-
-
-
-static void BM_read_vector_uint32(benchmark::State& state) {
-	const auto element_count = state.range(0);
-	std::vector<int32_t> data = make_random_vector_int32(element_count);
-	QUARK_ASSERT(data.size() == element_count)
-
-	for (auto _ : state) {
-		long sum = 0;
-		for (int j = 0; j < data.size(); ++j){
-			const auto value = data[j];
-			sum = sum + value;
-		}
-        benchmark::DoNotOptimize(sum);
-	}
-
-	state.SetBytesProcessed(state.iterations() * element_count * sizeof(int32_t));
-}
-
-//BENCHMARK(BM_read_vector_uint32)->Ranges({{1 << 16, 4 << 16}, {1, 1}});
-//BENCHMARK(BM_read_vector_uint32)->Arg(1 << 16);
-//BENCHMARK(BM_read_vector_uint32)->RangeMultiplier(2)->Range(1 << 1, k_test_element_count);
-//BENCHMARK(BM_read_vector_uint32)ARGS_XYZ;
-
 
 
 __attribute__((noinline))
@@ -90,6 +62,56 @@ std::vector<uint8_t> pack_vlq_vector(const std::vector<int32_t>& v){
 	return result;
 }
 
+__attribute__((noinline))
+std::vector<uint8_t> use_low_8bits(const std::vector<int32_t>& v){
+	std::vector<uint8_t> result;
+	result.reserve(static_cast<std::size_t>(v.size() * 2.5f));
+
+	for(const auto e: v){
+		const uint8_t packed = e & 0xff;
+		result.push_back(packed);
+	}
+
+#if 0
+	const size_t input_bytes = v.size() * sizeof(int32_t);
+	const size_t output_bytes = result.size();
+	const double compression = (double)output_bytes / (double)input_bytes;
+	std::cout
+		<< "pack_vlq_vector()"
+		<< " input bytes: " << input_bytes
+		<< " output bytes: " << output_bytes
+		<< " out/in size: " << (compression * 100.0) << "%"
+		<< std::endl;
+#endif
+	return result;
+}
+
+
+
+
+////////////////////////////////		BENCHMARK -- vector<int32_> vs variable_length_equantity
+
+
+
+
+
+static void BM_read_vector_uint32(benchmark::State& state) {
+	const auto element_count = state.range(0);
+	std::vector<int32_t> data = make_random_vector_int32(element_count);
+
+	for (auto _ : state) {
+		long sum = 0;
+		for (int j = 0; j < element_count; ++j){
+			const auto value = data[j];
+			sum = sum + value;
+		}
+        benchmark::DoNotOptimize(sum);
+	}
+
+	state.counters["bytes/test"] = element_count * sizeof(int32_t);
+	state.SetBytesProcessed(state.iterations() * element_count * sizeof(int32_t));
+}
+BENCHMARK(BM_read_vector_uint32)->Range((k_testdata_size >> 16) / sizeof(uint32_t), k_testdata_size / sizeof(uint32_t));
 
 
 //	Fast integer array compression: https://github.com/lemire/FastPFor
@@ -115,13 +137,6 @@ static void BM_read_vlq_vector(benchmark::State& state) {
 	state.SetBytesProcessed(state.iterations() * element_count * sizeof(int32_t));
 }
 
-//BENCHMARK(BM_read_vector_uint32)->Ranges({{1 << 16, 4 << 16}, {1, 1}});
-//BENCHMARK(BM_read_vector_uint32)->Arg(1 << 16);
-//BENCHMARK(BM_read_vlq_vector)->RangeMultiplier(2)->Range(1 << 1, k_test_element_count);
-//BENCHMARK(BM_read_vlq_vector)ARGS_XYZ;
-
-
-
 
 static void BM_read_vlq_vector2(benchmark::State& state) {
 	const auto element_count = state.range(0);
@@ -139,38 +154,8 @@ static void BM_read_vlq_vector2(benchmark::State& state) {
 
 	state.SetBytesProcessed(state.iterations() * element_count * sizeof(int32_t));
 }
-
 //BENCHMARK(BM_read_vlq_vector2)ARGS_XYZ;
 
-
-
-
-__attribute__((noinline))
-std::vector<uint8_t> use_low_8bits(const std::vector<int32_t>& v){
-	std::vector<uint8_t> result;
-	result.reserve(static_cast<std::size_t>(v.size() * 2.5f));
-
-	for(const auto e: v){
-		const uint8_t packed = e & 0xff;
-		result.push_back(packed);
-	}
-
-#if 0
-	const size_t input_bytes = v.size() * sizeof(int32_t);
-	const size_t output_bytes = result.size();
-	const double compression = (double)output_bytes / (double)input_bytes;
-	std::cout
-		<< "pack_vlq_vector()"
-		<< " input bytes: " << input_bytes
-		<< " output bytes: " << output_bytes
-		<< " out/in size: " << (compression * 100.0) << "%"
-		<< std::endl;
-#endif
-	return result;
-}
-
-//	state.PauseTiming();
-//	state.ResumeTiming();
 
 static void BM_read_vector_uint8(benchmark::State& state) {
 //	sleep(3);
@@ -180,19 +165,17 @@ static void BM_read_vector_uint8(benchmark::State& state) {
 
 	for (auto _ : state) {
 		long sum = 0;
-		size_t pos = 0;
-		for (int j = 0; j < data.size(); ++j){
-			const uint32_t value = data[pos];
+		for (int j = 0; j < element_count; ++j){
+			const uint32_t value = data[j];
 			sum = sum + value;
 		}
         benchmark::DoNotOptimize(sum);
 	}
 
+	state.counters["bytes/test"] = element_count * sizeof(int8_t);
 	state.SetBytesProcessed(state.iterations() * element_count * sizeof(int8_t));
 }
-
 BENCHMARK(BM_read_vector_uint8)->Range((k_testdata_size >> 16) / sizeof(uint8_t), k_testdata_size / sizeof(uint8_t));
-
 
 
 #if 0
@@ -216,8 +199,6 @@ static void BM_read_vlq_vector4(benchmark::State& state) {
 	//	Unpacked bytes.
 	state.SetBytesProcessed(state.iterations() * element_count * sizeof(int32_t));
 }
-
-BENCHMARK(BM_read_vlq_vector4)ARGS_XYZ;
 #endif
 
 
@@ -232,6 +213,5 @@ int main(int argc, char** argv) {
 	if (::benchmark::ReportUnrecognizedArguments(argc, argv)) return 1;
 	::benchmark::RunSpecifiedBenchmarks();
 }
-
 //BENCHMARK_MAIN();
 
