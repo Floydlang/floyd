@@ -11,9 +11,6 @@
 #include "quark.h"
 
 
-static const size_t k_64M = 1 << 26;
-static const size_t k_32M = 1 << 25;
-static const size_t k_testdata_size = k_32M;
 
 //	state.PauseTiming();
 //	state.ResumeTiming();
@@ -93,11 +90,14 @@ std::vector<uint8_t> use_low_8bits(const std::vector<int32_t>& v){
 
 
 
+static const size_t k_32M = 1 << 25;
+static const size_t k_testdata_size = k_32M;
 
 
 static void BM_read_vector_uint32(benchmark::State& state) {
 	const auto element_count = state.range(0);
-	std::vector<int32_t> data = make_random_vector_int32(element_count);
+//	std::vector<int32_t> data = make_random_vector_int32(element_count);
+	std::vector<int32_t> data(element_count, 0x1234abcd);
 
 	for (auto _ : state) {
 		long sum = 0;
@@ -113,6 +113,46 @@ static void BM_read_vector_uint32(benchmark::State& state) {
 }
 BENCHMARK(BM_read_vector_uint32)->Range((k_testdata_size >> 16) / sizeof(uint32_t), k_testdata_size / sizeof(uint32_t));
 
+static void BM_read_vector_uint8(benchmark::State& state) {
+	const auto element_count = state.range(0);
+//	std::vector<uint8_t> data = use_low_8bits(make_random_vector_int32(element_count));
+	std::vector<uint8_t> data(element_count, 0x13);
+
+	for (auto _ : state) {
+		long sum = 0;
+		for (int j = 0; j < element_count; ++j){
+			const auto value = data[j];
+			sum = sum + value;
+		}
+        benchmark::DoNotOptimize(sum);
+	}
+
+	state.counters["bytes/test"] = element_count * sizeof(int8_t);
+	state.SetBytesProcessed(state.iterations() * element_count * sizeof(int8_t));
+}
+BENCHMARK(BM_read_vector_uint8)->Range((k_testdata_size >> 16) / sizeof(uint8_t), k_testdata_size / sizeof(uint8_t));
+
+#if 0
+static void BM_read_vector_uint8_ptr(benchmark::State& state) {
+	const auto element_count = state.range(0);
+//	std::vector<uint8_t> data = use_low_8bits(make_random_vector_int32(element_count));
+	std::vector<uint8_t> data(element_count, 0x13);
+	const auto ptr = &data[0];
+
+	for (auto _ : state) {
+		long sum = 0;
+		for (int j = 0; j < element_count; ++j){
+			const uint32_t value = ptr[j];
+			sum = sum + value;
+		}
+        benchmark::DoNotOptimize(sum);
+	}
+
+	state.counters["bytes/test"] = element_count * sizeof(int8_t);
+	state.SetBytesProcessed(state.iterations() * element_count * sizeof(int8_t));
+}
+BENCHMARK(BM_read_vector_uint8_ptr)->Range((k_testdata_size >> 16) / sizeof(uint8_t), k_testdata_size / sizeof(uint8_t));
+#endif
 
 //	Fast integer array compression: https://github.com/lemire/FastPFor
 
@@ -155,27 +195,6 @@ static void BM_read_vlq_vector2(benchmark::State& state) {
 	state.SetBytesProcessed(state.iterations() * element_count * sizeof(int32_t));
 }
 //BENCHMARK(BM_read_vlq_vector2)ARGS_XYZ;
-
-
-static void BM_read_vector_uint8(benchmark::State& state) {
-//	sleep(3);
-	const auto element_count = state.range(0);
-	std::vector<uint8_t> data = use_low_8bits(make_random_vector_int32(element_count));
-//	std::vector<uint8_t> data(element_count, 0x13);
-
-	for (auto _ : state) {
-		long sum = 0;
-		for (int j = 0; j < element_count; ++j){
-			const uint32_t value = data[j];
-			sum = sum + value;
-		}
-        benchmark::DoNotOptimize(sum);
-	}
-
-	state.counters["bytes/test"] = element_count * sizeof(int8_t);
-	state.SetBytesProcessed(state.iterations() * element_count * sizeof(int8_t));
-}
-BENCHMARK(BM_read_vector_uint8)->Range((k_testdata_size >> 16) / sizeof(uint8_t), k_testdata_size / sizeof(uint8_t));
 
 
 #if 0
