@@ -186,7 +186,7 @@ uint32_t unpack_vlq__verified(const uint8_t data[]){
 	return a.first;
 }
 
-QUARK_UNIT_TEST_VIP("variable_length_quantity", "pack_vlq()", "", ""){
+QUARK_UNIT_TEST("variable_length_quantity", "pack_vlq()", "", ""){
 	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[0].second[0]) == test_data[0].first);
 	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[1].second[0]) == test_data[1].first);
 	QUARK_UT_VERIFY(unpack_vlq__verified(&test_data[2].second[0]) == test_data[2].first);
@@ -205,7 +205,7 @@ QUARK_UNIT_TEST_VIP("variable_length_quantity", "pack_vlq()", "", ""){
 }
 
 
-QUARK_UNIT_TEST_VIP("variable_length_quantity", "unpack_vlq()", "", ""){
+QUARK_UNIT_TEST("variable_length_quantity", "unpack_vlq()", "", ""){
 	QUARK_UT_VERIFY(pack_vlq__verified(test_data[0].first) == test_data[0].second);
 }
 
