@@ -79,14 +79,14 @@ struct bcgen_instruction_t {
 struct bcgen_body_t {
 	bcgen_body_t(const std::vector<bcgen_instruction_t>& s) :
 		_instrs(s),
-		_symbols{}
+		_symbol_table{}
 	{
 		QUARK_ASSERT(check_invariant());
 	}
 
 	bcgen_body_t(const std::vector<bcgen_instruction_t>& instructions, const symbol_table_t& symbols) :
 		_instrs(instructions),
-		_symbols(symbols)
+		_symbol_table(symbols)
 	{
 		QUARK_ASSERT(check_invariant());
 	}
@@ -95,7 +95,7 @@ struct bcgen_body_t {
 
 
 	////////////////////////		STATE
-	symbol_table_t _symbols;
+	symbol_table_t _symbol_table;
 	std::vector<bcgen_instruction_t> _instrs;
 };
 
@@ -127,9 +127,11 @@ struct bcgenerator_t {
 };
 
 
-//////////////////////////////////////		bcgenerator_t
 
-//	Why: needed to return from codegen functions that process expressions. Any new instructions have been recorded into _body.
+//////////////////////////////////////		expression_gen_t
+
+//	Why: needed to return from codegen functions that process expressions.
+//	Any new instructions have been recorded into _body.
 
 struct expression_gen_t {
 
@@ -144,11 +146,12 @@ struct expression_gen_t {
 
 
 /*
-	target_reg: if defined, this is where the output value will be stored. If undefined, then the expression allocates (or redirect to existing register).
+	target_reg: if defined, this is where the output value will be stored. If undefined,
+	then the expression allocates (or redirect to existing register).
 	expression_gen_t._out: always holds the output register, no matter who decided it.
 */
 expression_gen_t bcgen_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body);
-bcgen_body_t bcgen_body_top(bcgenerator_t& gen_acc, bcgen_body_t& body_acc, const body_t& body);
+
 bcgen_body_t bcgen_body_block(bcgenerator_t& gen_acc, const body_t& body);
 
 
@@ -159,7 +162,7 @@ variable_address_t add_local_temp(bcgen_body_t& body_acc, const typeid_t& type, 
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(name.empty() == false);
 
-	int id = add_temp(body_acc._symbols, name, type);
+	int id = add_temp(body_acc._symbol_table, name, type);
 	return variable_address_t::make_variable_address(0, id);
 }
 
@@ -168,7 +171,7 @@ variable_address_t add_local_const(bcgen_body_t& body_acc, const value_t& value,
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(name.empty() == false);
 
-	int id = add_constant_literal(body_acc._symbols, name, value);
+	int id = add_constant_literal(body_acc._symbol_table, name, value);
 	return variable_address_t::make_variable_address(0, id);
 }
 
@@ -260,7 +263,7 @@ bool check_register__local(const reg_t& reg, bool is_reg){
 		QUARK_ASSERT(check_register_nonlocal(e._reg_b, reg_flags._b));
 		QUARK_ASSERT(check_register_nonlocal(e._reg_c, reg_flags._c));
 	}
-	for(const auto& e: _symbols._symbols){
+	for(const auto& e: _symbol_table._symbols){
 		QUARK_ASSERT(e.first != "");
 		QUARK_ASSERT(e.second.check_invariant());
 	}
@@ -293,7 +296,7 @@ bcgen_body_t flatten_body(const bcgenerator_t& gen, const bcgen_body_t& dest, co
 	QUARK_ASSERT(source.check_invariant());
 
 	std::vector<bcgen_instruction_t> instructions;
-	int offset = static_cast<int>(dest._symbols._symbols.size());
+	int offset = static_cast<int>(dest._symbol_table._symbols.size());
 	for(int i = 0 ; i < source._instrs.size() ; i++){
 		//	Decrese parent-step for all local register accesses.
 		auto s = source._instrs[i];
@@ -313,7 +316,7 @@ bcgen_body_t flatten_body(const bcgenerator_t& gen, const bcgen_body_t& dest, co
 
 	auto body_acc = dest;
 	body_acc._instrs.insert(body_acc._instrs.end(), instructions.begin(), instructions.end());
-	body_acc._symbols._symbols.insert(body_acc._symbols._symbols.end(), source._symbols._symbols.begin(), source._symbols._symbols.end());
+	body_acc._symbol_table._symbols.insert(body_acc._symbol_table._symbols.end(), source._symbol_table._symbols.begin(), source._symbol_table._symbols.end());
 	return body_acc;
 }
 
@@ -482,7 +485,7 @@ bcgen_body_t bcgen_for_statement(bcgenerator_t& gen_acc, const statement_t::for_
 	const auto condition_opcode = statement._range_type == statement_t::for_statement_t::k_closed_range ? bc_opcode::k_branch_smaller_or_equal_int : bc_opcode::k_branch_smaller_int;
 
 	//	IMPORTANT: Iterator register is the FIRST symbol of the loop body's symbol table.
-	const auto counter_reg = variable_address_t::make_variable_address(0, static_cast<int>(body_acc._symbols._symbols.size()));
+	const auto counter_reg = variable_address_t::make_variable_address(0, static_cast<int>(body_acc._symbol_table._symbols.size()));
 	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_copy_reg_inplace_value, counter_reg, start_expr._out, {}));
 
 	// Reuse start value as our counter.
@@ -611,7 +614,7 @@ bcgen_body_t bcgen_body_block(bcgenerator_t& gen_acc, const body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	auto body_acc = bcgen_body_t({}, body._symbols);
+	auto body_acc = bcgen_body_t({}, body._symbol_table);
 	body_acc = bcgen_body_block_statements(gen_acc, body_acc, body._statements);
 
 	QUARK_ASSERT(body_acc.check_invariant());
@@ -636,13 +639,13 @@ bcgen_body_t bcgen_body_top(bcgenerator_t& gen_acc, bcgen_body_t& body_acc, cons
 }
 
 void bcgen_globals(bcgenerator_t& gen_acc, const body_t& globals){
-	gen_acc._globals = bcgen_body_t({}, globals._symbols);
+	gen_acc._globals = bcgen_body_t({}, globals._symbol_table);
 	bcgen_body_top(gen_acc, gen_acc._globals, globals);
 }
 
 bcgen_body_t bcgen_function(bcgenerator_t& gen_acc, const floyd::function_definition_t& function_def){
 	if(function_def._body){
-		auto body = bcgen_body_t({}, function_def._body->_symbols);
+		auto body = bcgen_body_t({}, function_def._body->_symbol_table);
 		const auto body_acc = bcgen_body_top(gen_acc, body, *function_def._body.get());
 		return body_acc;
 	}
@@ -862,8 +865,8 @@ int get_host_function_id(bcgenerator_t& gen_acc, const expression_t& e){
 	if(e._input_exprs[0]._operation == expression_type::k_load2 && e._input_exprs[0]._address._parent_steps == -1){
 		const auto global_index = e._input_exprs[0]._address._index;
 
-		QUARK_ASSERT(global_index >= 0 && global_index < gen_acc._globals._symbols._symbols.size());
-		const auto& global_symbol = gen_acc._globals._symbols._symbols[global_index];
+		QUARK_ASSERT(global_index >= 0 && global_index < gen_acc._globals._symbol_table._symbols.size());
+		const auto& global_symbol = gen_acc._globals._symbol_table._symbols[global_index];
 		if(global_symbol.second._const_value.is_function()){
 			const auto function_id = global_symbol.second._const_value.get_function_value();
 			const auto& function_def = gen_acc._ast_imm->_checked_ast._function_defs[function_id];
@@ -1532,7 +1535,7 @@ bc_static_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_
 	}
 
 	std::vector<std::pair<std::string, bc_symbol_t>> symbols2;
-	for(const auto& e: body._symbols._symbols){
+	for(const auto& e: body._symbol_table._symbols){
 		const auto e2 = std::pair<std::string, bc_symbol_t>{
 			e.first,
 			bc_symbol_t{

@@ -315,7 +315,7 @@ std::pair<analyser_t, body_t > analyse_body(const analyser_t& a, const floyd::bo
 
 	auto a_acc = a;
 
-	auto new_environment = symbol_table_t{ body._symbols };
+	auto new_environment = symbol_table_t{ body._symbol_table };
 	const auto lexical_scope = lexical_scope_t{new_environment, pure};
 	a_acc._lexical_scope_stack.push_back(lexical_scope);
 
@@ -583,7 +583,7 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 	const auto iterator_symbol = symbol_t::make_immutable_local(typeid_t::make_int());
 
 	//	Add the iterator as a symbol to the body of the for-loop.
-	auto symbols = statement._body._symbols;
+	auto symbols = statement._body._symbol_table;
 	symbols._symbols.push_back({ statement._iterator_name, iterator_symbol});
 	const auto body_injected = body_t(statement._body._statements, symbols);
 	const auto result = analyse_body(a_acc, body_injected, a._lexical_scope_stack.back().pure, return_type);
@@ -1515,7 +1515,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	}
 
 	//	Make function body with arguments injected FIRST in body as local symbols.
-	auto symbol_vec = function_def->_body->_symbols;
+	auto symbol_vec = function_def->_body->_symbol_table;
 	for(const auto& arg: args2){
 		symbol_vec._symbols.push_back({arg._name , symbol_t::make_immutable_local(arg._type)});
 	}

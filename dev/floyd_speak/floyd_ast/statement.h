@@ -139,13 +139,13 @@ namespace floyd {
 
 		body_t(const std::vector<statement_t>& s) :
 			_statements(s),
-			_symbols{}
+			_symbol_table{}
 		{
 		}
 
 		body_t(const std::vector<statement_t>& statements, const symbol_table_t& symbols) :
 			_statements(statements),
-			_symbols(symbols)
+			_symbol_table(symbols)
 		{
 		}
 		bool check_types_resolved() const;
@@ -155,13 +155,13 @@ namespace floyd {
 
 		////////////////////		STATE
 		std::vector<statement_t> _statements;
-		symbol_table_t _symbols;
+		symbol_table_t _symbol_table;
 	};
 
 	static inline bool operator==(const body_t& lhs, const body_t& rhs){
 		return
 			lhs._statements == rhs._statements
-			&& lhs._symbols == rhs._symbols;
+			&& lhs._symbol_table == rhs._symbol_table;
 	}
 
 
@@ -573,7 +573,7 @@ namespace floyd {
 				return false;
 			}
 		}
-		for(const auto& s: _symbols._symbols){
+		for(const auto& s: _symbol_table._symbols){
 			if(s.first != "**undef**" && s.second._value_type.check_types_resolved() == false){
 				return false;
 			}
