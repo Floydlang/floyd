@@ -815,7 +815,7 @@ call_setup_t gen_call_setup(bcgenerator_t& gen_acc, const std::vector<typeid_t>&
 	}
 
 	//	We have max 16 extbits when popping stack.
-	//???	Added separate call opcode that can have any number of parameters -- use for collection initialisation
+	//	??? Add separate call opcode that can have any number of parameters -- use for collection initialisation
 	//	where you might have 10 MB of ints or expressions.
 	if(arg_count > 16){
 		quark::throw_runtime_error("Max 16 arguments to function.");
@@ -1027,6 +1027,7 @@ expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const variable_ad
 
 //??? Submit dest-register to all gen-functions = minimize temps.
 //??? Wrap itype in struct to make it typesafe.
+//??? Only use itypes in interpreter
 
 expression_gen_t bcgen_construct_value_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const expression_t& e, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
