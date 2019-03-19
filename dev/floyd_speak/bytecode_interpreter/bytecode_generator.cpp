@@ -6,6 +6,20 @@
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
+/*
+	??? "body" is a bad term. Maybe use "scope", "lexical scope", "block"?
+
+	bcgen_body_t -- holds the symbols and instructions for
+		- Global state
+		- a function
+		- a sub-block of a function
+
+	The functions that generate code all use a bcgen_body_t& body_acc that holds the current state of a body and where new data is *acc*umulated / added.
+	This means that only the body_acc's state is changed, not global state.
+	This makes it possible to generate code for an IF-statement's THEN and ELSE bodies first, count their instructions,
+	then setup branches and insert the THEN and ELSE instructions.
+*/
+
 #include "bytecode_generator.h"
 
 #include "pass3.h"
@@ -27,6 +41,10 @@ typedef variable_address_t reg_t;
 
 //////////////////////////////////////		bcgen_instruction_t
 
+/*
+	A temporary, bigger, representation of instructions. Each register can reference the current scope or any parent scope (like the globals).
+	At and of codegen, explicit instructions have been generated for locals and global accesses and each reg-slot no longer points to scopes. squeeze_instruction().
+*/
 
 struct bcgen_instruction_t {
 	bcgen_instruction_t(
@@ -403,6 +421,10 @@ bcgen_body_t bcgen_ifelse_statement(bcgenerator_t& vm, const statement_t::ifelse
 	body_acc = condition_expr._body;
 	QUARK_ASSERT(statement._condition.get_output_type().is_bool());
 
+	//???	Needs short-circuit evaluation here!
+
+	//	Notice that we generate the instructions for then/else but we don't store them in body_acc yet, we
+	//	keep them and check their sizes so we can calculate jumps around them.
 	const auto& then_expr = bcgen_body_block(vm, statement._then_body);
 	const auto& else_expr = bcgen_body_block(vm, statement._else_body);
 
@@ -750,7 +772,7 @@ struct call_setup_t {
 //??? Do interning of add_local_const().
 //??? make different types for register vs stack-pos.
 
-//	NOTICE: extbits are generated for every value on callstack, even for DYN-types.
+//	NOTICE: extbits are generated for every value on callstack, even for DYN-types. This is correct.
 call_setup_t gen_call_setup(bcgenerator_t& vm, const std::vector<typeid_t>& function_def_arg_type, const expression_t* args, int callee_arg_count, const bcgen_body_t& body){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(args != nullptr || callee_arg_count == 0);
@@ -771,7 +793,9 @@ call_setup_t gen_call_setup(bcgenerator_t& vm, const std::vector<typeid_t>& func
 		argument_regs.push_back(std::pair<reg_t, bc_typeid_t>(m2._out, m2._type));
 	}
 
-	//	We have max 32 extbits when popping stack.
+	//	We have max 16 extbits when popping stack.
+	//???	Added separate call opcode that can have any number of parameters -- use for collection initialisation
+	//	where you might have 10 MB of ints or expressions.
 	if(arg_count > 16){
 		quark::throw_runtime_error("Max 16 arguments to function.");
 	}
@@ -1165,7 +1189,6 @@ expression_gen_t bcgen_comparison_expression(bcgenerator_t& vm, const variable_a
 	const auto& left_expr = bcgen_expression(vm, {}, e._input_exprs[0], body_acc);
 	body_acc = left_expr._body;
 
-//	const auto right_value_reg = add_local_temp(body_acc, e._input_exprs[1].get_output_type(), "temp: left value");
 	const auto& right_expr = bcgen_expression(vm, {}, e._input_exprs[1], body_acc);
 	body_acc = right_expr._body;
 
@@ -1422,8 +1445,8 @@ bcgenerator_t::bcgenerator_t(const bcgenerator_t& other) :
 
 void bcgenerator_t::swap(bcgenerator_t& other) throw(){
 	other._ast_imm.swap(this->_ast_imm);
-	_call_stack.swap(this->_call_stack);
-	_types.swap(this->_types);
+	other._call_stack.swap(this->_call_stack);
+	other._types.swap(this->_types);
 }
 
 const bcgenerator_t& bcgenerator_t::operator=(const bcgenerator_t& other){
