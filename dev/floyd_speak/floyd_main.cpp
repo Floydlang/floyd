@@ -22,6 +22,7 @@
 #include "file_handling.h"
 
 #include "pass3.h"
+#include "floyd_llvm_codegen.h"
 
 
 std::string floyd_version_string = "0.3";
@@ -192,11 +193,6 @@ floyd run -t mygame.floyd	- the -t turns on tracing, which shows Floyd compilati
 
 
 
-int main_fibonacci_loop(int argc, char* argv[]);
-int main_fibonacci_resursive(int argc, char* argv[]);
-
-void test_llvm(){
-}
 
 int do_compile_command(const command_line_args_t& command_line_args){
 	if(command_line_args.extra_arguments.size() == 1){
@@ -251,30 +247,22 @@ int do_run_llvm_command(const command_line_args_t& command_line_args){
 	//	Run provided script file.
 	if(command_line_args.extra_arguments.size() >= 1){
 		const auto floyd_args = command_line_args.extra_arguments;
-
 		const auto source_path = floyd_args[0];
 		const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
 
+		std::vector<floyd::value_t> args3;
+		for(const auto& e: args2){
+			args3.push_back(floyd::value_t::make_string(e));
+		}
+
 		const auto source = read_text_file(source_path);
-
-		char app_name[] = "dummy_app";
-		char num[] = "20";
-		char* args[] = { app_name, num };
-		main_fibonacci_loop(2, args);
-
-		return EXIT_SUCCESS;
+		int error_code = run_using_llvm(source, source_path, args3);
+		return static_cast<int>(error_code);
 	}
 	else{
 		help();
 		return EXIT_SUCCESS;
 	}
-}
-
-QUARK_UNIT_TEST("", "main_fibonacci_loop()", "", ""){
-	char app_name[] = "dummy_app";
-	char num[] = "20";
-	char* args[] = { app_name, num };
-	main_fibonacci_loop(2, args);
 }
 
 
