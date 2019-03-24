@@ -28,7 +28,7 @@
 using namespace llvm;
 
 /// Function declarations
-Function* InitFibonacciFnc(LLVMContext &context, IRBuilder<> &builder, Module* module, int targetFibNum);
+static Function* InitFibonacciFnc(LLVMContext &context, IRBuilder<> &builder, Module* module, int targetFibNum);
 
 /// Global variables
 // static std::map<std::string, AllocaInst*> NamedValues;
@@ -122,7 +122,7 @@ int main_fibonacci_loop(int argc, char* argv[])
 	return 0;
 }
 
-Function* InitFibonacciFnc(LLVMContext &context, IRBuilder<> &builder, Module* module, int targetFibNum)
+static Function* InitFibonacciFnc(LLVMContext &context, IRBuilder<> &builder, Module* module, int targetFibNum)
 {
 	Function *FibonacciFnc = 
 		cast<Function>( module->getOrInsertFunction("FibonacciFnc", Type::getInt32Ty(context)) );
