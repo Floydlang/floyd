@@ -176,9 +176,13 @@ if (llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt*>(value)) {
   }
 }
 #endif
+//	llvm::CreateGenericValueOfInt(value);
+//	int value2 = value.as_float;
 
+	const int64_t x = value.IntVal.getSExtValue();
+	QUARK_TRACE_SS("Fib = " << x);
 
-	llvm::outs() << "Module: " << *module << " Fibonacci #" << targetFibNum << " = " << value.IntVal;
+//	llvm::outs() << "Module: " << *module << " Fibonacci #" << targetFibNum << " = " << value.IntVal;
 	return 0;
 }
 
