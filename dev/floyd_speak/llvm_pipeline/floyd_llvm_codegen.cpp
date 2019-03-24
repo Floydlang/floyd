@@ -38,6 +38,8 @@
 
 #include "quark.h"
 
+//http://releases.llvm.org/2.6/docs/tutorial/JITTutorial2.html
+
 
 /*
 # ACCESSING INTEGER INSIDE GENERICVALUE
@@ -71,8 +73,6 @@ static llvm::Function* InitFibonacciFnc(llvm::LLVMContext& context, llvm::IRBuil
 
 	/// EntryBB
 	llvm::BasicBlock* EntryBB = llvm::BasicBlock::Create(context, "entry", f);
-	builder.SetInsertPoint(EntryBB);
-
 
 	llvm::BasicBlock* LoopEntryBB = llvm::BasicBlock::Create(context, "loopEntry", f);
 
@@ -84,6 +84,9 @@ static llvm::Function* InitFibonacciFnc(llvm::LLVMContext& context, llvm::IRBuil
 	llvm::BasicBlock* ExitLoopBB = llvm::BasicBlock::Create(context, "exitLoop", f);
 
 
+	////////////////////////		EntryBB
+
+	builder.SetInsertPoint(EntryBB);
 	llvm::Value* next = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "next");
 	llvm::Value* first = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "first");
 	llvm::Value* second = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "second");
@@ -96,17 +99,22 @@ static llvm::Function* InitFibonacciFnc(llvm::LLVMContext& context, llvm::IRBuil
 	// continue to loop entry
 	builder.CreateBr(LoopEntryBB);
 
-	/// LoopEntryBB
+	////////////////////////		LoopEntryBB
+
 	builder.SetInsertPoint(LoopEntryBB);
 	llvm::Value* countVal = builder.CreateLoad(count, "countVal");
 	llvm::Value* ifCountLTN = builder.CreateICmpULT(countVal, N, "enterLoopCond");
 	builder.CreateCondBr(ifCountLTN, LoopBB, ExitLoopBB);
 
-	/// LoopBB
+
+	////////////////////////		LoopBB
+
 	builder.SetInsertPoint(LoopBB);
 	builder.CreateBr(IfBB);
 
-		/// IfBB
+
+		////////////////////////		IfBB
+
 		// Nested statements are attached just before adding to the block, so that
 		// their insertion point in LoopBB is certain.
 		f->getBasicBlockList().push_back(IfBB);
@@ -114,14 +122,19 @@ static llvm::Function* InitFibonacciFnc(llvm::LLVMContext& context, llvm::IRBuil
 		llvm::Value* ifCountLTTwo = builder.CreateICmpULT(countVal, two, "ifStmt");
 		builder.CreateCondBr(ifCountLTTwo, ThenBB, ElseBB);
 
-		/// ThenBB
+		////////////////////////		ThenBB
+
 		f->getBasicBlockList().push_back(ThenBB);
 		builder.SetInsertPoint(ThenBB);
 		llvm::Value* nextVal = builder.CreateLoad(count, "nextVal");
 		builder.CreateStore(nextVal, next);
-		builder.CreateBr(MergeBB); // terminate ThenBB
 
-		/// ElseBB
+		// terminate ThenBB
+		builder.CreateBr(MergeBB);
+
+
+		////////////////////////		ElseBB
+
 		f->getBasicBlockList().push_back(ElseBB);
 		builder.SetInsertPoint(ElseBB);
 	
@@ -132,16 +145,21 @@ static llvm::Function* InitFibonacciFnc(llvm::LLVMContext& context, llvm::IRBuil
 		builder.CreateStore(secondVal, first);
 		builder.CreateStore(nextVal, second);
 
-		builder.CreateBr(MergeBB); // terminate ElseBB
+		// terminate ElseBB
+		builder.CreateBr(MergeBB);
 
-		/// MergeBB
+
+		////////////////////////		MergeBB
+
 		f->getBasicBlockList().push_back(MergeBB);
 		builder.SetInsertPoint(MergeBB);
 		countVal = builder.CreateAdd(countVal, one); //increment
 		builder.CreateStore(countVal, count);
 		builder.CreateBr(LoopEntryBB);
 
-	/// ExitLoopBB
+
+	////////////////////////		ExitLoopBB
+
 	builder.SetInsertPoint(ExitLoopBB);
 	llvm::Value* finalFibNum = builder.CreateLoad(next, "finalNext");
 	llvm::ReturnInst::Create(context, finalFibNum, ExitLoopBB);
