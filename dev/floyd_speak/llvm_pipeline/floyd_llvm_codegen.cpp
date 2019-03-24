@@ -71,9 +71,9 @@ static llvm::Function* InitFibonacciFnc(llvm::LLVMContext& context, llvm::IRBuil
 	llvm::Value* N = llvm::ConstantInt::get(builder.getInt32Ty(), targetFibNum);
 
 
-	/// EntryBB
-	llvm::BasicBlock* EntryBB = llvm::BasicBlock::Create(context, "entry", f);
+	////////////////////////		Create all basic blocks first, so we can branch between them when we start emitting instructions
 
+	llvm::BasicBlock* EntryBB = llvm::BasicBlock::Create(context, "entry", f);
 	llvm::BasicBlock* LoopEntryBB = llvm::BasicBlock::Create(context, "loopEntry", f);
 
 	llvm::BasicBlock* LoopBB = llvm::BasicBlock::Create(context, "loop", f);
@@ -98,6 +98,7 @@ static llvm::Function* InitFibonacciFnc(llvm::LLVMContext& context, llvm::IRBuil
 
 	// continue to loop entry
 	builder.CreateBr(LoopEntryBB);
+
 
 	////////////////////////		LoopEntryBB
 
