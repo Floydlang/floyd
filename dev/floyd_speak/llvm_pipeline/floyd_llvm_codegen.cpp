@@ -39,8 +39,26 @@
 #include "quark.h"
 
 
+/*
+# ACCESSING INTEGER INSIDE GENERICVALUE
 
-static llvm::Function* InitFibonacciFnc(llvm::LLVMContext &context, llvm::IRBuilder<> &builder, llvm::Module* module, int targetFibNum){
+//const int x = value.IntVal.U.VAL;
+//	const int64_t x = llvm::cast<llvm::ConstantInt>(value);
+//	QUARK_TRACE_SS("Fib = " << x);
+
+#if 0
+if (llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt*>(value)) {
+  if (CI->getBitWidth() <= 32) {
+    const auto constIntValue = CI->getSExtValue();
+    QUARK_TRACE_SS("Fib: " << constIntValue);
+  }
+}
+#endif
+//	llvm::CreateGenericValueOfInt(value);
+//	int value2 = value.as_float;
+*/
+
+static llvm::Function* InitFibonacciFnc(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module* module, int targetFibNum){
 	llvm::Function* f = llvm::cast<llvm::Function>(
 		module->getOrInsertFunction("FibonacciFnc", llvm::Type::getInt32Ty(context))
 	);
@@ -50,21 +68,22 @@ static llvm::Function* InitFibonacciFnc(llvm::LLVMContext &context, llvm::IRBuil
 	llvm::Value* two = llvm::ConstantInt::get(builder.getInt32Ty(), 2);
 	llvm::Value* N = llvm::ConstantInt::get(builder.getInt32Ty(), targetFibNum);
 
-	/// BBs and outline
+
+	/// EntryBB
 	llvm::BasicBlock* EntryBB = llvm::BasicBlock::Create(context, "entry", f);
+	builder.SetInsertPoint(EntryBB);
+
+
 	llvm::BasicBlock* LoopEntryBB = llvm::BasicBlock::Create(context, "loopEntry", f);
+
 	llvm::BasicBlock* LoopBB = llvm::BasicBlock::Create(context, "loop", f);
 		llvm::BasicBlock* IfBB = llvm::BasicBlock::Create(context, "if"); 			//floating
 		llvm::BasicBlock* ThenBB = llvm::BasicBlock::Create(context, "ifTrue"); 	//floating
 		llvm::BasicBlock* ElseBB = llvm::BasicBlock::Create(context, "else"); 		//floating
 		llvm::BasicBlock* MergeBB = llvm::BasicBlock::Create(context, "merge"); 	//floating
 	llvm::BasicBlock* ExitLoopBB = llvm::BasicBlock::Create(context, "exitLoop", f);
-	
-	/// EntryBB
-	builder.SetInsertPoint(EntryBB);
 
-	// NamedValues["next"] = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "next");
-	// Allocate and store for mutable variables
+
 	llvm::Value* next = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "next");
 	llvm::Value* first = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "first");
 	llvm::Value* second = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "second");
@@ -76,7 +95,6 @@ static llvm::Function* InitFibonacciFnc(llvm::LLVMContext &context, llvm::IRBuil
 
 	// continue to loop entry
 	builder.CreateBr(LoopEntryBB);
-	
 
 	/// LoopEntryBB
 	builder.SetInsertPoint(LoopEntryBB);
@@ -131,7 +149,7 @@ static llvm::Function* InitFibonacciFnc(llvm::LLVMContext &context, llvm::IRBuil
 	return f;
 }
 
-int run_using_llvm(const std::string& program, const std::string& file, const std::vector<floyd::value_t>& args){
+int64_t run_using_llvm(const std::string& program, const std::string& file, const std::vector<floyd::value_t>& args){
 	int targetFibNum = 20;
 
 	/// LLVM IR Variables
@@ -164,28 +182,16 @@ int run_using_llvm(const std::string& program, const std::string& file, const st
 	std::vector<llvm::GenericValue> Args(0); // Empty vector as no args are passed
 	llvm::GenericValue value = exeEng->runFunction(FibonacciFnc, Args);
 
-//const int x = value.IntVal.U.VAL;
-//	const int64_t x = llvm::cast<llvm::ConstantInt>(value);
-//	QUARK_TRACE_SS("Fib = " << x);
-
-#if 0
-if (llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt*>(value)) {
-  if (CI->getBitWidth() <= 32) {
-    const auto constIntValue = CI->getSExtValue();
-    QUARK_TRACE_SS("Fib: " << constIntValue);
-  }
-}
-#endif
-//	llvm::CreateGenericValueOfInt(value);
-//	int value2 = value.as_float;
 
 	const int64_t x = value.IntVal.getSExtValue();
 	QUARK_TRACE_SS("Fib = " << x);
-
+	return x;
 //	llvm::outs() << "Module: " << *module << " Fibonacci #" << targetFibNum << " = " << value.IntVal;
-	return 0;
 }
 
 QUARK_UNIT_TEST_VIP("", "run_using_llvm()", "", ""){
-	run_using_llvm("", "", {});
+	const auto r = run_using_llvm("", "", {});
+	QUARK_UT_VERIFY(r == 6765);
 }
+
+

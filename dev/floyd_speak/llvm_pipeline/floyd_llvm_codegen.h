@@ -12,6 +12,6 @@
 #include "ast_value.h"
 #include <string>
 
-int run_using_llvm(const std::string& program, const std::string& file, const std::vector<floyd::value_t>& args);
+int64_t run_using_llvm(const std::string& program, const std::string& file, const std::vector<floyd::value_t>& args);
 
 #endif /* floyd_llvm_codegen_hpp */
