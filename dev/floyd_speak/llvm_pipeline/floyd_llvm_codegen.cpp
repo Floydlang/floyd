@@ -946,20 +946,20 @@ uint64_t* get_global_uint64_t(llvm::ExecutionEngine& exeEng, const std::string& 
 
 
 struct llvm_execution_engine_t {
-	std::unique_ptr<llvm::ExecutionEngine> ee;
+	std::shared_ptr<llvm::ExecutionEngine> ee;
 };
 
-//	Destroys program, can only run it once!
-int64_t run_llvm_program(llvm_ir_program_t& program, const std::vector<floyd::value_t>& args){
-	QUARK_ASSERT(program.module);
 
+//	Destroys program, can only run it once!
+//	Automatically runs floyd_runtime_init() to execute Floyd's global functions and initialize global constants.
+llvm_execution_engine_t make_engine_break_program(llvm_ir_program_t& program){
+	QUARK_ASSERT(program.module);
 
 	llvm::Function* init = program.module->getFunction("floyd_runtime_init");
 	QUARK_ASSERT(init != nullptr);
 
 	std::string collectedErrors;
 
-	/// Execution Engine
 	//??? Destroys p -- uses std::move().
 	llvm::ExecutionEngine* exeEng = llvm::EngineBuilder(std::move(program.module))
 		.setErrorStr(&collectedErrors)
@@ -972,14 +972,25 @@ int64_t run_llvm_program(llvm_ir_program_t& program, const std::vector<floyd::va
 		throw std::exception();
 	}
 
-	//	Call main().
-	std::vector<llvm::GenericValue> args2(0);
-	llvm::GenericValue value = exeEng->runFunction(init, args2);
+	auto ee = std::shared_ptr<llvm::ExecutionEngine>(exeEng);
 
-	const auto result = *get_global_uint64_t(*exeEng, "result");
+	//	Call floyd_runtime_init().
+	std::vector<llvm::GenericValue> args2(0);
+	llvm::GenericValue return_value = ee->runFunction(init, args2);
+
+	return { ee };
+}
+
+
+//	Destroys program, can only run it once!
+int64_t run_llvm_program(llvm_ir_program_t& program, const std::vector<floyd::value_t>& args){
+	QUARK_ASSERT(program.module);
+
+	auto ee = make_engine_break_program(program);
+	const auto result = *get_global_uint64_t(*ee.ee, "result");
 	QUARK_TRACE_SS("a_result() = " << result);
 
-//	const int64_t x = value.IntVal.getSExtValue();
+//	const int64_t x = return_value.IntVal.getSExtValue();
 //	QUARK_TRACE_SS("init() = " << x);
 	return 0;
 }
@@ -1039,8 +1050,11 @@ QUARK_UNIT_TEST_VIP("", "run_using_llvm()", "", ""){
 QUARK_UNIT_TEST_VIP("Floyd test suite", "+", "", ""){
 //	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
 
-	auto result = floyd::run_using_llvm_helper("let int result = 1 + 2 + 3", "myfile.floyd", {});
-	QUARK_ASSERT(result == 0);
+	const auto pass3 = compile_to_sematic_ast__errors("let int result = 1 + 2 + 3", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
+	auto program = generate_llvm_ir(pass3, "myfile.floyd");
+	auto ee = make_engine_break_program(*program);
+	const auto result = *floyd::get_global_uint64_t(*ee.ee, "result");
+	QUARK_ASSERT(result == 6);
 
 //	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
 }
