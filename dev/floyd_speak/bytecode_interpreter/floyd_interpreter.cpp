@@ -14,6 +14,7 @@
 #include "pass3.h"
 #include "host_functions.h"
 #include "bytecode_generator.h"
+#include "compiler_helpers.h"
 
 #include <thread>
 #include <deque>
@@ -369,76 +370,14 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vec
 
 
 
-parse_tree_t parse_program__errors(const compilation_unit_t& cu){
-	try {
-		const auto parse_tree = parse_program2(cu.prefix_source + cu.program_text);
-		return parse_tree;
-	}
-	catch(const compiler_error& e){
-		const auto refined = refine_compiler_error_with_loc2(cu, e);
-		throw_compiler_error(refined.first, refined.second);
-	}
-	catch(const std::exception& e){
-		throw;
-//		const auto location = find_source_line(const std::string& program, const std::string& file, bool corelib, const location_t& loc){
-	}
-}
-
-semantic_ast_t run_semantic_analysis__errors(const ast_t& pass2, const compilation_unit_t& cu){
-	try {
-		const auto pass3 = run_semantic_analysis(pass2);
-		return pass3;
-	}
-	catch(const compiler_error& e){
-		const auto refined = refine_compiler_error_with_loc2(cu, e);
-		throw_compiler_error(refined.first, refined.second);
-	}
-	catch(const std::exception& e){
-		throw;
-//		const auto location = find_source_line(const std::string& program, const std::string& file, bool corelib, const location_t& loc){
-	}
-}
-
 
 bc_program_t compile_to_bytecode(const std::string& program, const std::string& file){
-	const auto pre = k_builtin_types_and_constants;
-
-	const auto cu = compilation_unit_t{
-		.prefix_source = pre,
-		.program_text = program,
-		.source_file_path = file
-	};
-
-//	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
-	const auto parse_tree = parse_program__errors(cu);
-
-	QUARK_TRACE_SS(		"OUTPUT: " << json_to_pretty_string(parse_tree._value)	);
-
-	const auto pass2 = json_to_ast(ast_json_t::make(parse_tree._value));
-
-	const auto pass3 = run_semantic_analysis__errors(pass2, cu);
+	const auto pass3 = compile_to_sematic_ast__errors(program, file);
 	const auto bc = generate_bytecode(pass3);
-
 	return bc;
 }
 
 
-semantic_ast_t compile_to_sematic_ast(const std::string& program, const std::string& file){
-	const auto pre = k_builtin_types_and_constants + "\n";
-
-	const auto cu = compilation_unit_t{
-		.prefix_source = pre,
-		.program_text = program,
-		.source_file_path = file
-	};
-
-//	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
-	const auto parse_tree = parse_program__errors(cu);
-
-	const auto pass2 = json_to_ast(ast_json_t::make(parse_tree._value));
-	const auto pass3 = run_semantic_analysis__errors(pass2, cu);
-	return pass3;
-}
 
 
 std::shared_ptr<interpreter_t> run_global(const std::string& source, const std::string& file){

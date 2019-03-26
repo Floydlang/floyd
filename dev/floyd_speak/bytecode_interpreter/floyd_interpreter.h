@@ -41,7 +41,6 @@ value_t get_global(const interpreter_t& vm, const std::string& name);
 value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vector<value_t>& args);
 
 bc_program_t compile_to_bytecode(const std::string& program, const std::string& file);
-semantic_ast_t compile_to_sematic_ast(const std::string& program, const std::string& file);
 
 std::shared_ptr<interpreter_t> run_global(const std::string& source, const std::string& file);
 

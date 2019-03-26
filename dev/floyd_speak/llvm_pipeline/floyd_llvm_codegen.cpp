@@ -36,6 +36,12 @@
 #include <vector>
 #include <iostream>
 
+#include "host_functions.h"
+#include "compiler_basics.h"
+#include "compiler_helpers.h"
+#include "floyd_parser.h"
+#include "pass3.h"
+
 #include "quark.h"
 
 //http://releases.llvm.org/2.6/docs/tutorial/JITTutorial2.html
@@ -60,9 +66,88 @@ if (llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt*>(value)) {
 //	int value2 = value.as_float;
 */
 
-static llvm::Function* InitFibonacciFnc(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module* module, int targetFibNum){
+namespace floyd {
+
+/*
+http://blog.audio-tk.com/2018/09/18/compiling-c-code-in-memory-with-clang/
+With LLVM, we also have some things to be careful about. The first is the LLVM context we created before needs to stay alive as long as we use anything from this compilation unit. This is important because everything that is generated with the JIT will have to stay alive after this function and registers itself in the context until it is explicitly deleted.
+
+*/
+
+
+std::unique_ptr<llvm_ir_program_t> make_empty_program(const std::string& module_name){
+	return std::make_unique<llvm_ir_program_t>(module_name);
+}
+
+
+
+
+std::string print_program(const llvm_ir_program_t& program){
+	std::string dump;
+	llvm::raw_string_ostream stream2(dump);
+	program.module->print(stream2, nullptr);
+	return dump;
+}
+
+
+static const std::string k_expected_ir_fibonacci_text = R"ABC(
+; ModuleID = 'fibonacciModule'
+source_filename = "fibonacciModule"
+
+define i32 @FibonacciFnc() {
+entry:
+  %next = alloca i32
+  %first = alloca i32
+  %second = alloca i32
+  %count = alloca i32
+  store i32 0, i32* %next
+  store i32 0, i32* %first
+  store i32 1, i32* %second
+  store i32 0, i32* %count
+  br label %loopEntry
+
+loopEntry:                                        ; preds = %merge, %entry
+  %countVal = load i32, i32* %count
+  %enterLoopCond = icmp ult i32 %countVal, 21
+  br i1 %enterLoopCond, label %loop, label %exitLoop
+
+loop:                                             ; preds = %loopEntry
+  br label %if
+
+exitLoop:                                         ; preds = %loopEntry
+  %finalNext = load i32, i32* %next
+  ret i32 %finalNext
+
+if:                                               ; preds = %loop
+  %ifStmt = icmp ult i32 %countVal, 2
+  br i1 %ifStmt, label %ifTrue, label %else
+
+ifTrue:                                           ; preds = %if
+  %nextVal = load i32, i32* %count
+  store i32 %nextVal, i32* %next
+  br label %merge
+
+else:                                             ; preds = %if
+  %firstVal = load i32, i32* %first
+  %secondVal = load i32, i32* %second
+  %nextVal1 = add i32 %firstVal, %secondVal
+  store i32 %nextVal1, i32* %next
+  store i32 %secondVal, i32* %first
+  store i32 %nextVal1, i32* %second
+  br label %merge
+
+merge:                                            ; preds = %else, %ifTrue
+  %0 = add i32 %countVal, 1
+  store i32 %0, i32* %count
+  br label %loopEntry
+}
+)ABC";
+
+
+
+static llvm::Function* InitFibonacciFnc(llvm_ir_program_t& program, llvm::IRBuilder<>& builder, int targetFibNum){
 	llvm::Function* f = llvm::cast<llvm::Function>(
-		module->getOrInsertFunction("FibonacciFnc", llvm::Type::getInt32Ty(context))
+		program.module->getOrInsertFunction("FibonacciFnc", llvm::Type::getInt32Ty(program.context))
 	);
 
 	llvm::Value* zero = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
@@ -73,24 +158,24 @@ static llvm::Function* InitFibonacciFnc(llvm::LLVMContext& context, llvm::IRBuil
 
 	////////////////////////		Create all basic blocks first, so we can branch between them when we start emitting instructions
 
-	llvm::BasicBlock* EntryBB = llvm::BasicBlock::Create(context, "entry", f);
-	llvm::BasicBlock* LoopEntryBB = llvm::BasicBlock::Create(context, "loopEntry", f);
+	llvm::BasicBlock* EntryBB = llvm::BasicBlock::Create(program.context, "entry", f);
+	llvm::BasicBlock* LoopEntryBB = llvm::BasicBlock::Create(program.context, "loopEntry", f);
 
-	llvm::BasicBlock* LoopBB = llvm::BasicBlock::Create(context, "loop", f);
-		llvm::BasicBlock* IfBB = llvm::BasicBlock::Create(context, "if"); 			//floating
-		llvm::BasicBlock* ThenBB = llvm::BasicBlock::Create(context, "ifTrue"); 	//floating
-		llvm::BasicBlock* ElseBB = llvm::BasicBlock::Create(context, "else"); 		//floating
-		llvm::BasicBlock* MergeBB = llvm::BasicBlock::Create(context, "merge"); 	//floating
-	llvm::BasicBlock* ExitLoopBB = llvm::BasicBlock::Create(context, "exitLoop", f);
+	llvm::BasicBlock* LoopBB = llvm::BasicBlock::Create(program.context, "loop", f);
+		llvm::BasicBlock* IfBB = llvm::BasicBlock::Create(program.context, "if"); 			//floating
+		llvm::BasicBlock* ThenBB = llvm::BasicBlock::Create(program.context, "ifTrue"); 	//floating
+		llvm::BasicBlock* ElseBB = llvm::BasicBlock::Create(program.context, "else"); 		//floating
+		llvm::BasicBlock* MergeBB = llvm::BasicBlock::Create(program.context, "merge"); 	//floating
+	llvm::BasicBlock* ExitLoopBB = llvm::BasicBlock::Create(program.context, "exitLoop", f);
 
 
 	////////////////////////		EntryBB
 
 	builder.SetInsertPoint(EntryBB);
-	llvm::Value* next = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "next");
-	llvm::Value* first = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "first");
-	llvm::Value* second = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "second");
-	llvm::Value* count = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "count");
+	llvm::Value* next = builder.CreateAlloca(llvm::Type::getInt32Ty(program.context), nullptr, "next");
+	llvm::Value* first = builder.CreateAlloca(llvm::Type::getInt32Ty(program.context), nullptr, "first");
+	llvm::Value* second = builder.CreateAlloca(llvm::Type::getInt32Ty(program.context), nullptr, "second");
+	llvm::Value* count = builder.CreateAlloca(llvm::Type::getInt32Ty(program.context), nullptr, "count");
 	builder.CreateStore(zero, next);
 	builder.CreateStore(zero, first);
 	builder.CreateStore(one, second);
@@ -163,29 +248,60 @@ static llvm::Function* InitFibonacciFnc(llvm::LLVMContext& context, llvm::IRBuil
 
 	builder.SetInsertPoint(ExitLoopBB);
 	llvm::Value* finalFibNum = builder.CreateLoad(next, "finalNext");
-	llvm::ReturnInst::Create(context, finalFibNum, ExitLoopBB);
+	llvm::ReturnInst::Create(program.context, finalFibNum, ExitLoopBB);
+
+	QUARK_TRACE_SS("result = " << floyd::print_program(program));
 
 	return f;
 }
 
-int64_t run_using_llvm(const std::string& program, const std::string& file, const std::vector<floyd::value_t>& args){
+
+
+std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(const semantic_ast_t& ast, const std::string& module_name){
+	QUARK_ASSERT(ast.check_invariant());
+//	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(ast_to_json(ast._checked_ast)._value));
+
 	int targetFibNum = 20;
 
-	/// LLVM IR Variables
-	llvm::LLVMContext context;
-	llvm::IRBuilder<> builder(context);
-	std::unique_ptr<llvm::Module> mainModule( new llvm::Module("fibonacciModule", context) );
-	llvm::Module* module = mainModule.get();
+	auto p = make_empty_program(module_name);
+
+	llvm::IRBuilder<> builder(p->context);
 	llvm::InitializeNativeTarget();
 	llvm::InitializeNativeTargetAsmPrinter();
 
 	// "+1" Only needed for loop case. Still need to check why.
-	llvm::Function* FibonacciFnc = InitFibonacciFnc(context, builder, module, targetFibNum + 1);
+	llvm::Function* FibonacciFnc = InitFibonacciFnc(*p, builder, targetFibNum + 1);
+	QUARK_ASSERT(FibonacciFnc != nullptr);
+
+	QUARK_TRACE_SS("result = " << floyd::print_program(*p));
+
+	return p;
+}
+
+std::unique_ptr<llvm_ir_program_t> compile_to_ir(const std::string& program, const std::string& file){
+	const auto pass3 = compile_to_sematic_ast__errors(program, file);
+	auto bc = generate_llvm_ir(pass3, file);
+	return bc;
+}
+
+
+
+int64_t run_using_llvm(const std::string& program, const std::string& file, const std::vector<floyd::value_t>& args){
+	int targetFibNum = 20;
+
+	auto p = make_empty_program("fibonacciModule");
+
+	llvm::IRBuilder<> builder(p->context);
+	llvm::InitializeNativeTarget();
+	llvm::InitializeNativeTargetAsmPrinter();
+
+	// "+1" Only needed for loop case. Still need to check why.
+	llvm::Function* FibonacciFnc = InitFibonacciFnc(*p, builder, targetFibNum + 1);
 
 	/// Create a JIT
+	//??? Destroys p!
 	std::string collectedErrors;
-	llvm::ExecutionEngine* exeEng =
-		llvm::EngineBuilder(std::move(mainModule))
+	llvm::ExecutionEngine* exeEng = llvm::EngineBuilder(std::move(p->module))
 		.setErrorStr(&collectedErrors)
 		.setEngineKind(llvm::EngineKind::JIT)
 		.create();
@@ -208,9 +324,24 @@ int64_t run_using_llvm(const std::string& program, const std::string& file, cons
 //	llvm::outs() << "Module: " << *module << " Fibonacci #" << targetFibNum << " = " << value.IntVal;
 }
 
-QUARK_UNIT_TEST_VIP("", "run_using_llvm()", "", ""){
-	const auto r = run_using_llvm("", "", {});
+}	//	namespace floyd
+
+QUARK_UNIT_TEST("", "run_using_llvm()", "", ""){
+	const auto r = floyd::run_using_llvm("", "", {});
 	QUARK_UT_VERIFY(r == 6765);
+}
+
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "+", "", ""){
+//	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
+
+	auto program = floyd::compile_to_ir( "let int result = 1 + 2 + 3", "myfile.floyd");
+
+	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
+//	const auto dump = floyd::print_program(*program);
+//	QUARK_UT_VERIFY(dump == "12378928");
 }
 
 
