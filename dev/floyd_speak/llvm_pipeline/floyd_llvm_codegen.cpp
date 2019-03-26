@@ -278,70 +278,84 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(const semantic_ast_t& ast, c
 	return p;
 }
 
-std::unique_ptr<llvm_ir_program_t> compile_to_ir(const std::string& program, const std::string& file){
+//	Destroys program, can only run it once!
+int64_t run_llvm_program(llvm_ir_program_t& program, const std::vector<floyd::value_t>& args){
+	QUARK_ASSERT(program.module);
+
+	llvm::Function* fib = program.module->getFunction("FibonacciFnc");
+	QUARK_ASSERT(fib != nullptr);
+
+	std::string collectedErrors;
+
+	/// Execution Engine
+	//??? Destroys p -- uses std::move().
+	llvm::ExecutionEngine* exeEng = llvm::EngineBuilder(std::move(program.module))
+		.setErrorStr(&collectedErrors)
+		.setEngineKind(llvm::EngineKind::JIT)
+		.create();
+
+	if (exeEng == nullptr){
+		std::string error = "Unable to construct execution engine: " + collectedErrors;
+		perror(error.c_str());
+		throw std::exception();
+	}
+
+
+
+	std::vector<llvm::GenericValue> args2(0);
+	llvm::GenericValue value = exeEng->runFunction(fib, args2);
+
+
+	const int64_t x = value.IntVal.getSExtValue();
+	QUARK_TRACE_SS("Fib = " << x);
+	return x;
+}
+
+
+////////////////////////////////		HELPERS
+
+
+
+std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(const std::string& program, const std::string& file){
 	const auto pass3 = compile_to_sematic_ast__errors(program, file);
 	auto bc = generate_llvm_ir(pass3, file);
 	return bc;
 }
 
 
-
-int64_t run_using_llvm(const std::string& program, const std::string& file, const std::vector<floyd::value_t>& args){
-	int targetFibNum = 20;
-
-	auto p = make_empty_program("fibonacciModule");
-
-	llvm::IRBuilder<> builder(p->context);
-	llvm::InitializeNativeTarget();
-	llvm::InitializeNativeTargetAsmPrinter();
-
-	// "+1" Only needed for loop case. Still need to check why.
-	llvm::Function* FibonacciFnc = InitFibonacciFnc(*p, builder, targetFibNum + 1);
-
-	/// Create a JIT
-	//??? Destroys p!
-	std::string collectedErrors;
-	llvm::ExecutionEngine* exeEng = llvm::EngineBuilder(std::move(p->module))
-		.setErrorStr(&collectedErrors)
-		.setEngineKind(llvm::EngineKind::JIT)
-		.create();
-
-	/// Execution Engine
-	if ( !exeEng )
-	{
-		std::string error = "Unable to construct execution engine: " + collectedErrors;
-		perror(error.c_str());
-		return -1;
-	}
-
-	std::vector<llvm::GenericValue> Args(0); // Empty vector as no args are passed
-	llvm::GenericValue value = exeEng->runFunction(FibonacciFnc, Args);
-
-
-	const int64_t x = value.IntVal.getSExtValue();
-	QUARK_TRACE_SS("Fib = " << x);
-	return x;
-//	llvm::outs() << "Module: " << *module << " Fibonacci #" << targetFibNum << " = " << value.IntVal;
+int64_t run_using_llvm_helper(const std::string& program_source, const std::string& file, const std::vector<floyd::value_t>& args){
+	const auto pass3 = compile_to_sematic_ast__errors(program_source, file);
+	auto program = generate_llvm_ir(pass3, file);
+	const auto result = run_llvm_program(*program, args);
+	QUARK_TRACE_SS("Fib = " << result);
+	return result;
 }
+
+
 
 }	//	namespace floyd
 
-QUARK_UNIT_TEST("", "run_using_llvm()", "", ""){
-	const auto r = floyd::run_using_llvm("", "", {});
+
+
+
+////////////////////////////////		TESTS
+
+
+
+#if 0
+QUARK_UNIT_TEST_VIP("", "run_using_llvm()", "", ""){
+	const auto r = floyd::run_using_llvm_helper("", "", {});
 	QUARK_UT_VERIFY(r == 6765);
 }
+#endif
 
 
-
-
-QUARK_UNIT_TEST("Floyd test suite", "+", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "+", "", ""){
 //	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
 
-	auto program = floyd::compile_to_ir( "let int result = 1 + 2 + 3", "myfile.floyd");
+	auto program = floyd::compile_to_ir_helper( "let int result = 1 + 2 + 3", "myfile.floyd");
 
 	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
-//	const auto dump = floyd::print_program(*program);
-//	QUARK_UT_VERIFY(dump == "12378928");
 }
 
 

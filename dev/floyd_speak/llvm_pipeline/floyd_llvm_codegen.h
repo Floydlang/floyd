@@ -40,10 +40,21 @@ struct llvm_ir_program_t {
 	std::unique_ptr<llvm::Module> module;
 };
 
-int64_t run_using_llvm(const std::string& program, const std::string& file, const std::vector<floyd::value_t>& args);
-
+//	Converts the semantic AST to LLVM IR code.
 std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(const semantic_ast_t& ast, const std::string& module_name);
-std::unique_ptr<llvm_ir_program_t> compile_to_ir(const std::string& program, const std::string& file);
+
+
+//	Runs the LLVM IR program.
+int64_t run_llvm_program(llvm_ir_program_t& program, const std::vector<floyd::value_t>& args);
+
+
+
+
+//	Helper that goes directly from source to LLVM IR code.
+std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(const std::string& program_source, const std::string& file);
+
+//	Compiles and runs the program.
+int64_t run_using_llvm_helper(const std::string& program_source, const std::string& file, const std::vector<floyd::value_t>& args);
 
 
 }

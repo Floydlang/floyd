@@ -257,7 +257,7 @@ int do_run_llvm_command(const command_line_args_t& command_line_args){
 		}
 
 		const auto source = read_text_file(source_path);
-		int error_code = run_using_llvm(source, source_path, args3);
+		int error_code = run_using_llvm_helper(source, source_path, args3);
 		return static_cast<int>(error_code);
 	}
 	else{
