@@ -372,7 +372,7 @@ bcgen_body_t bcgen_store2_statement(bcgenerator_t& gen_acc, const statement_t::s
 
 	auto body_acc = body;
 
-	//	Shortcut: if destinatio is a local variable, have the expression write directly to that register.
+	//	Shortcut: if destination is a local variable, have the expression write directly to that register.
 	if(statement._dest_variable._parent_steps != -1){
 		const auto expr = bcgen_expression(gen_acc, statement._dest_variable, statement._expression, body_acc);
 		body_acc = expr._body;

@@ -57,14 +57,21 @@ semantic_ast_t run_semantic_analysis__errors(const ast_t& pass2, const compilati
 	}
 }
 
-semantic_ast_t compile_to_sematic_ast__errors(const std::string& program, const std::string& file){
+semantic_ast_t compile_to_sematic_ast__errors(const std::string& program, const std::string& file, compilation_unit_mode mode){
 	const auto pre = k_builtin_types_and_constants + "\n";
 
-	const auto cu = compilation_unit_t{
-		.prefix_source = pre,
-		.program_text = program,
-		.source_file_path = file
-	};
+	const auto cu = mode == compilation_unit_mode::k_no_core_lib ?
+		compilation_unit_t{
+			.prefix_source = "",
+			.program_text = program,
+			.source_file_path = file
+		}
+		:
+		compilation_unit_t{
+			.prefix_source = pre,
+			.program_text = program,
+			.source_file_path = file
+		};
 
 //	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
 	const auto parse_tree = parse_program__errors(cu);

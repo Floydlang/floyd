@@ -163,7 +163,7 @@ struct typeid_ext_imm_t {
 
 //////////////////////////////////////		typeid_t
 
-
+//??? use std::variant<> and its visitor.
 struct typeid_t {
 
 	////////////////////////////////////////		FUNCTIONS FOR EACH BASE-TYPE.

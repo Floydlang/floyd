@@ -33,6 +33,9 @@ struct llvm_ir_program_t {
 	{
 	}
 
+	public: bool check_invariant() const {
+		return true;
+	}
 
 	llvm::LLVMContext context;
 

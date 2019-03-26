@@ -25,7 +25,12 @@ struct ast_t;
 parse_tree_t parse_program__errors(const compilation_unit_t& cu);
 semantic_ast_t run_semantic_analysis__errors(const ast_t& pass2, const compilation_unit_t& cu);
 
-semantic_ast_t compile_to_sematic_ast__errors(const std::string& program, const std::string& file);
+enum class compilation_unit_mode {
+	k_include_core_lib,
+	k_no_core_lib
+};
+
+semantic_ast_t compile_to_sematic_ast__errors(const std::string& program, const std::string& file, compilation_unit_mode mode);
 
 }
 

@@ -372,7 +372,7 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vec
 
 
 bc_program_t compile_to_bytecode(const std::string& program, const std::string& file){
-	const auto pass3 = compile_to_sematic_ast__errors(program, file);
+	const auto pass3 = compile_to_sematic_ast__errors(program, file, compilation_unit_mode::k_include_core_lib);
 	const auto bc = generate_bytecode(pass3);
 	return bc;
 }
