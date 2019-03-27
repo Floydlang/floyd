@@ -43,6 +43,8 @@ struct llvm_ir_program_t {
 	std::unique_ptr<llvm::Module> module;
 };
 
+
+
 //	Converts the semantic AST to LLVM IR code.
 std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(const semantic_ast_t& ast, const std::string& module_name);
 

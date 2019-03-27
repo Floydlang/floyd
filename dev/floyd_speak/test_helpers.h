@@ -30,7 +30,6 @@ void ut_verify(const quark::call_context_t& context, const run_report_t& result,
 
 run_report_t run_program(const std::string& program, const std::vector<value_t>& main_args);
 
-run_report_t run_program(const std::string& program);
 
 
 

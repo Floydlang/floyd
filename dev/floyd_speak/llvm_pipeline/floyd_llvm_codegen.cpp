@@ -394,9 +394,11 @@ llvm::Function* make_function_stub(llvmgen_t& gen_acc, const std::string& functi
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(function_type.check_invariant());
 
-	llvm::Type* ftype = intern_type(gen_acc, function_type);
+	floyd::typeid_t hacked_function_type = floyd::typeid_t::make_function(function_type.get_function_return(), { floyd::typeid_t::make_int() }, floyd::epure::impure);
+
+	llvm::Type* ftype = intern_type(gen_acc, hacked_function_type);
 	llvm::Function* f = llvm::cast<llvm::Function>(
-		gen_acc.program_acc.module->getOrInsertFunction(function_name, ftype)
+		gen_acc.program_acc.module->getOrInsertFunction(function_name, (llvm::FunctionType*)ftype)
 	);
 	llvm::verifyFunction(*f);
 	return f;
@@ -874,7 +876,7 @@ void genllvm_make_function_defs(llvmgen_t& gen_acc, const semantic_ast_t& semant
 
 		}
 		else{
-			genllvm_function_def(gen_acc, function_def);
+//???			genllvm_function_def(gen_acc, function_def);
 		}
 	}
 }
@@ -886,7 +888,7 @@ void genllvm_make_floyd_runtime_init(llvmgen_t& gen_acc, const semantic_ast_t& s
 	llvm::Function* f = make_function_stub(
 		gen_acc,
 		"floyd_runtime_init",
-		floyd::typeid_t::make_function(floyd::typeid_t::make_void(), {}, floyd::epure::impure)
+		floyd::typeid_t::make_function(floyd::typeid_t::make_int(), {}, floyd::epure::impure)
 	);
 
 	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(gen_acc.program_acc.context, "entry", f);
@@ -894,7 +896,7 @@ void genllvm_make_floyd_runtime_init(llvmgen_t& gen_acc, const semantic_ast_t& s
 
 	genllvm_statements(gen_acc, semantic_ast._checked_ast._globals._statements, global_symbol_table);
 
-	llvm::Value* dummy_result = llvm::ConstantInt::get(gen_acc.builder.getInt32Ty(), 667);
+	llvm::Value* dummy_result = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 667);
 	llvm::ReturnInst::Create(gen_acc.program_acc.context, dummy_result, entryBB);
 
 	llvm::verifyFunction(*f);
@@ -938,16 +940,28 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(const semantic_ast_t& ast, c
 	return p;
 }
 
-uint64_t* get_global_uint64_t(llvm::ExecutionEngine& exeEng, const std::string& name){
-	const auto a = exeEng.getGlobalValueAddress(name);
-	const auto a_ptr = (uint64_t*)a;
-	return a_ptr;
+void* get_global_ptr(llvm::ExecutionEngine& exeEng, const std::string& name){
+	const auto addr = exeEng.getGlobalValueAddress(name);
+	return  (void*)addr;
 }
+
+uint64_t* get_global_uint64_t(llvm::ExecutionEngine& exeEng, const std::string& name){
+	return (uint64_t*)get_global_ptr(exeEng, name);
+}
+
+
+void* get_global_function(llvm::ExecutionEngine& exeEng, const std::string& name){
+	const auto addr = exeEng.getFunctionAddress(name);
+	return (void*)addr;
+}
+
 
 
 struct llvm_execution_engine_t {
 	std::shared_ptr<llvm::ExecutionEngine> ee;
 };
+
+typedef int64_t (*FLOYD_RUNTIME_INIT)();
 
 
 //	Destroys program, can only run it once!
@@ -955,14 +969,37 @@ struct llvm_execution_engine_t {
 llvm_execution_engine_t make_engine_break_program(llvm_ir_program_t& program){
 	QUARK_ASSERT(program.module);
 
-	llvm::Function* init = program.module->getFunction("floyd_runtime_init");
-	QUARK_ASSERT(init != nullptr);
+	llvm::Function* init_func = program.module->getFunction("floyd_runtime_init");
+	QUARK_ASSERT(init_func != nullptr);
+
+	init_func->print(llvm::errs());
+
+	if(false){
+		const auto& functionList = program.module->getFunctionList();
+		for(const auto& e: functionList){
+
+	/*
+		std::string dump;
+		llvm::raw_string_ostream stream2(dump);
+		program.module->print(stream2, nullptr);
+		return dump;
+	*/
+			e.print(llvm::errs());
+		}
+
+		const auto& globalList = program.module->getGlobalList();
+		for(const auto& e: globalList){
+			e.print(llvm::errs());
+		}
+	}
 
 	std::string collectedErrors;
 
 	//??? Destroys p -- uses std::move().
 	llvm::ExecutionEngine* exeEng = llvm::EngineBuilder(std::move(program.module))
 		.setErrorStr(&collectedErrors)
+		.setOptLevel(llvm::CodeGenOpt::Level::None)
+		.setVerifyModules(true)
 		.setEngineKind(llvm::EngineKind::JIT)
 		.create();
 
@@ -974,9 +1011,50 @@ llvm_execution_engine_t make_engine_break_program(llvm_ir_program_t& program){
 
 	auto ee = std::shared_ptr<llvm::ExecutionEngine>(exeEng);
 
+	ee->finalizeObject();
+
+
+	const auto result0_ptr = get_global_uint64_t(*ee, "result");
+	const auto result0 = result0_ptr ? *result0_ptr : -1;
+
+
 	//	Call floyd_runtime_init().
-	std::vector<llvm::GenericValue> args2(0);
-	llvm::GenericValue return_value = ee->runFunction(init, args2);
+	{
+		/*
+		  /// For MCJIT execution engines, clients are encouraged to use the
+		  /// "GetFunctionAddress" method (rather than runFunction) and cast the
+		  /// returned uint64_t to the desired function pointer type. However, for
+		  /// backwards compatibility MCJIT's implementation can execute 'main-like'
+		  /// function (i.e. those returning void or int, and taking either no
+		  /// arguments or (int, char*[])).
+		*/
+		/*
+		LLVM’s “eager” JIT compiler is safe to use in threaded programs. Multiple threads can call ExecutionEngine::getPointerToFunction() or ExecutionEngine::runFunction() concurrently, and multiple threads can run code output by the JIT concurrently. The user must still ensure that only one thread accesses IR in a given LLVMContext while another thread might be modifying it. One way to do that is to always hold the JIT lock while accessing IR outside the JIT (the JIT modifies the IR by adding CallbackVHs). Another way is to only call getPointerToFunction() from the LLVMContext’s thread.
+		*/
+
+		llvm::GenericValue init_result = ee->runFunction(init_func, {});
+		const int64_t init_result_int = init_result.IntVal.getSExtValue();
+		QUARK_ASSERT(init_result_int == 667);
+
+
+		auto a_addr = ee->getFunctionAddress("floyd_runtime_init");
+		auto a_func = (FLOYD_RUNTIME_INIT)a_addr;
+		int64_t a_result = (*a_func)();
+		QUARK_ASSERT(a_result == 667);
+
+
+		llvm::Function* b_func = ee->FindFunctionNamed("floyd_runtime_init");
+		llvm::GenericValue b_result = ee->runFunction(b_func, {});
+		const int64_t b_result_int = b_result.IntVal.getSExtValue();
+		QUARK_ASSERT(b_result_int == 667);
+
+
+
+//		init_result.print(llvm::errs());
+	}
+
+	const auto result1_ptr = get_global_uint64_t(*ee, "result");
+	const auto result1 = result1_ptr ? *result1_ptr : -1;
 
 	return { ee };
 }
@@ -987,6 +1065,7 @@ int64_t run_llvm_program(llvm_ir_program_t& program, const std::vector<floyd::va
 	QUARK_ASSERT(program.module);
 
 	auto ee = make_engine_break_program(program);
+
 	const auto result = *get_global_uint64_t(*ee.ee, "result");
 	QUARK_TRACE_SS("a_result() = " << result);
 
