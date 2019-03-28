@@ -972,22 +972,19 @@ LLVM’s “eager” JIT compiler is safe to use in threaded programs. Multiple 
 
 */
 
-void* get_global_ptr(llvm::ExecutionEngine& exeEng, const std::string& name){
-	const auto addr = exeEng.getGlobalValueAddress(name);
+void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name){
+	const auto addr = ee.ee->getGlobalValueAddress(name);
 	return  (void*)addr;
 }
 
-void* get_global_function(llvm::ExecutionEngine& exeEng, const std::string& name){
-	const auto addr = exeEng.getFunctionAddress(name);
+void* get_global_function(llvm_execution_engine_t& ee, const std::string& name){
+	const auto addr = ee.ee->getFunctionAddress(name);
 	return (void*)addr;
 }
 
 
 
 
-struct llvm_execution_engine_t {
-	std::shared_ptr<llvm::ExecutionEngine> ee;
-};
 
 typedef int64_t (*FLOYD_RUNTIME_INIT)();
 
@@ -1010,9 +1007,10 @@ void print_module_contents(llvm::Module& module){
 	}
 }
 
+
 //	Destroys program, can only run it once!
 //	Automatically runs floyd_runtime_init() to execute Floyd's global functions and initialize global constants.
-llvm_execution_engine_t make_engine_break_program(llvm_ir_program_t& program){
+llvm_execution_engine_t make_engine_break_program_no_init(llvm_ir_program_t& program){
 	QUARK_ASSERT(program.module);
 
 	//	print_module_contents(*program.module);
@@ -1034,24 +1032,23 @@ llvm_execution_engine_t make_engine_break_program(llvm_ir_program_t& program){
 	}
 
 	auto ee = std::shared_ptr<llvm::ExecutionEngine>(exeEng);
-
 	ee->finalizeObject();
+	return { ee };
+}
 
-	const auto result0_ptr = static_cast<uint64_t*>(get_global_ptr(*ee, "result"));
-	const auto result0 = result0_ptr ? *result0_ptr : -1;
-	QUARK_ASSERT(result0 == 0);
+//	Destroys program, can only run it once!
+//	Automatically runs floyd_runtime_init() to execute Floyd's global functions and initialize global constants.
+llvm_execution_engine_t make_engine_break_program(llvm_ir_program_t& program){
+	QUARK_ASSERT(program.module);
 
+	llvm_execution_engine_t ee = make_engine_break_program_no_init(program);
 
 	//	Call floyd_runtime_init().
 	{
-		auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(*ee, "floyd_runtime_init"));
+		auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, "floyd_runtime_init"));
 		int64_t a_result = (*a_func)();
 		QUARK_ASSERT(a_result == 667);
 	}
-
-	const auto result1_ptr = static_cast<uint64_t*>(get_global_ptr(*ee, "result"));
-	const auto result1 = result1_ptr ? *result1_ptr : -1;
-	QUARK_ASSERT(result1 == 6);
 
 	return { ee };
 }
@@ -1063,7 +1060,7 @@ int64_t run_llvm_program(llvm_ir_program_t& program, const std::vector<floyd::va
 
 	auto ee = make_engine_break_program(program);
 
-	const auto result = static_cast<uint64_t*>(get_global_ptr(*ee.ee, "result"));
+	const auto result = static_cast<uint64_t*>(get_global_ptr(ee, "result"));
 	QUARK_TRACE_SS("a_result() = " << result);
 
 //	const int64_t x = return_value.IntVal.getSExtValue();
@@ -1130,10 +1127,9 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "+", "", ""){
 	auto program = generate_llvm_ir(pass3, "myfile.floyd");
 	auto ee = make_engine_break_program(*program);
 
-	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(*ee.ee, "result"));
+	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(ee, "result"));
 	QUARK_ASSERT(result == 6);
 
 //	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
 }
-
 

@@ -20,6 +20,7 @@ namespace floyd {
 }
 namespace llvm {
 	struct Module;
+	struct ExecutionEngine;
 }
 namespace floyd {
 
@@ -55,6 +56,23 @@ int64_t run_llvm_program(llvm_ir_program_t& program, const std::vector<floyd::va
 
 
 
+
+struct llvm_execution_engine_t {
+	std::shared_ptr<llvm::ExecutionEngine> ee;
+};
+
+llvm_execution_engine_t make_engine_break_program_no_init(llvm_ir_program_t& program);
+llvm_execution_engine_t make_engine_break_program(llvm_ir_program_t& program);
+
+//	Cast to uint64_t* or other the required type, then access via it.
+void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name);
+
+//	Cast to function pointer, then call it.
+void* get_global_function(llvm_execution_engine_t& ee, const std::string& name);
+
+
+
+
 //	Helper that goes directly from source to LLVM IR code.
 std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(const std::string& program_source, const std::string& file);
 
@@ -62,6 +80,6 @@ std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(const std::string& progr
 int64_t run_using_llvm_helper(const std::string& program_source, const std::string& file, const std::vector<floyd::value_t>& args);
 
 
-}
+}	//	floyd
 
 #endif /* floyd_llvm_codegen_hpp */
