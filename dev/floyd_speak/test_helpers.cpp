@@ -24,6 +24,13 @@
 #include <iostream>
 
 
+#include "host_functions.h"
+#include "compiler_basics.h"
+#include "compiler_helpers.h"
+#include "floyd_parser.h"
+#include "pass3.h"
+
+
 namespace floyd {
 
 run_report_t make_result(const value_t& result){
@@ -69,8 +76,10 @@ static run_report_t run_program_bc(const std::string& program, const std::vector
 //	Run program using LLVM.
 static run_report_t run_program_llvm(const std::string& program_source, const std::vector<value_t>& main_args){
 	try {
-//		const auto exe = compile_to_bytecode(program, "test");
-		auto exe = compile_to_ir_helper(program_source, "test");
+		const auto file = "test567.floyd";
+		const auto pass3 = compile_to_sematic_ast__errors(program_source, file, floyd::compilation_unit_mode::k_no_core_lib);
+		auto exe = generate_llvm_ir(pass3, file);
+
 
 		//	Runs global init code.
 		auto ee = make_engine_break_program(*exe);
@@ -78,16 +87,28 @@ static run_report_t run_program_llvm(const std::string& program_source, const st
 		//??? need mechanism to map Floyd types vs machine-types.
 		const auto main_function = reinterpret_cast<FLOYD_RUNTIME_MAIN>(get_global_function(ee, "main"));
 
-		const auto result_variable = static_cast<int64_t*>(get_global_ptr(ee, "result"));
 
 		value_t main_result;
 		if(main_function != nullptr){
+			//??? How are different machine values returned?
 			int64_t r = (*main_function)();
 			main_result = value_t::make_int(r);
 		}
 
-		//??? Only support ints!
-		value_t result_global = result_variable != nullptr ? value_t::make_int(*result_variable) : value_t::make_void();
+
+		value_t result_global;
+
+		const auto result_symbol = find_symbol(pass3._checked_ast._globals._symbol_table, "result");
+		if(result_symbol != nullptr){
+			//	Find global in exe.
+			const auto result_variable_ptr = get_global_ptr(ee, "result");
+			QUARK_ASSERT(result_variable_ptr != nullptr);
+			if(result_variable_ptr == nullptr){
+				throw std::exception();
+			}
+
+			result_global = llvm_to_value(result_variable_ptr, result_symbol->get_type());
+		}
 
 //		print_vm_printlog(interpreter);
 

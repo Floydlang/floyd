@@ -72,6 +72,7 @@ void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name);
 void* get_global_function(llvm_execution_engine_t& ee, const std::string& name);
 
 
+value_t llvm_to_value(const void* value_ptr, const floyd::typeid_t& type);
 
 
 //	Helper that goes directly from source to LLVM IR code.

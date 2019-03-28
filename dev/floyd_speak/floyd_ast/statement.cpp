@@ -32,6 +32,25 @@ int add_temp(symbol_table_t& symbols, const std::string& name, const floyd::type
 	return static_cast<int>(symbols._symbols.size() - 1);
 }
 
+const floyd::symbol_t* find_symbol(const symbol_table_t& symbol_table, const std::string& name){
+	const auto it = std::find_if(
+		symbol_table._symbols.begin(), symbol_table._symbols.end(),
+		[&name](const std::pair<std::string, symbol_t>& x) { return x.first == name; }
+	);
+	
+	return (it == symbol_table._symbols.end()) ? nullptr : &(it->second);
+}
+const floyd::symbol_t& find_symbol_required(const symbol_table_t& symbol_table, const std::string& name){
+	const auto it = std::find_if(
+		symbol_table._symbols.begin(), symbol_table._symbols.end(),
+		[&name](const std::pair<std::string, symbol_t>& x) { return x.first == name; }
+	);
+	if(it == symbol_table._symbols.end()){
+		throw std::exception();
+	}
+	return it->second;
+}
+
 
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto a = statement_t::make__block_statement(k_no_location, {});

@@ -34,7 +34,7 @@ using namespace floyd;
 //////////////////////////////////////////		TEST GLOBAL CONSTANTS
 
 
-QUARK_UNIT_TEST("Floyd test suite", "Global int variable", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "Global int variable", "", ""){
 	run_closed("{}");
 }
 
@@ -42,22 +42,22 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "Global int variable", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 123", value_t::make_int(123));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "bool constant expression", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "bool constant expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let bool result = true", value_t::make_bool(true));
 }
-QUARK_UNIT_TEST("Floyd test suite", "bool constant expression", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "bool constant expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let bool result = false", value_t::make_bool(false));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "int constant expression", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "int constant expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 123", value_t::make_int(123));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "double constant expression", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "double constant expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let double result = 3.5", value_t::make_double(double(3.5)));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "string constant expression", "", ""){
+OFF_QUARK_UNIT_TEST("Floyd test suite", "string constant expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let string result = \"xyz\"", value_t::make_string("xyz"));
 }
 
@@ -71,11 +71,11 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "+", "", "") {
 QUARK_UNIT_TEST_VIP("Floyd test suite", "+", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
 }
-QUARK_UNIT_TEST("Floyd test suite", "*", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "*", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 3 * 4", value_t::make_int(12));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "parant", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "parant", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = (3 * 4) * 5", value_t::make_int(60));
 }
 
@@ -958,8 +958,9 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 	);
 }
 
+#if 0
 //??? add support for typeof(int)
-OFF_QUARK_UNIT_TEST("", "typeof()", "", ""){
+QUARK_UNIT_TEST("", "typeof()", "", ""){
 	ut_verify_global_result(
 		QUARK_POS,
 		R"(
@@ -970,7 +971,7 @@ OFF_QUARK_UNIT_TEST("", "typeof()", "", ""){
 		value_t::make_string("int")
 	);
 }
-
+#endif
 
 
 //////////////////////////////////////////		HOST FUNCTION - assert()
@@ -1316,7 +1317,8 @@ QUARK_UNIT_TEST("run_init()", "fibonacci", "", ""){
 //////////////////////////////////////////		WHILE STATEMENT
 
 //	Parser thinks that "print(to_string(a))" is a type -- a function that returns a "print" and takes a function that returns a to_string and has a argument of type a.
-OFF_QUARK_UNIT_TEST("run_init()", "for", "", ""){
+#if 0
+QUARK_UNIT_TEST("run_init()", "for", "", ""){
 	ut_verify_printout(
 		QUARK_POS,
 		R"(
@@ -1331,6 +1333,7 @@ OFF_QUARK_UNIT_TEST("run_init()", "for", "", ""){
 		{ "100", "101", "102", "103", "104" }
 	);
 }
+#endif
 
 
 //////////////////////////////////////////		TYPEID - TYPE
@@ -1513,8 +1516,9 @@ QUARK_UNIT_TEST("vector", "+", "add empty vectors", ""){
 	);
 }
 
+#if 0
 //??? This fails but should not. This code becomes a constructor call to [int] with more than 16 arguments. Byte code interpreter has 16 argument limit.
-OFF_QUARK_UNIT_TEST("vector", "[]-constructor", "32 elements initialization", ""){
+QUARK_UNIT_TEST("vector", "[]-constructor", "32 elements initialization", ""){
 	run_closed(R"(
 
 		let a = [ 0,0,1,1,0,0,0,0,	0,0,1,1,0,0,0,0,	0,0,1,1,1,0,0,0,	0,0,1,1,1,1,0,0 ]
@@ -1522,6 +1526,7 @@ OFF_QUARK_UNIT_TEST("vector", "[]-constructor", "32 elements initialization", ""
 
 	)");
 }
+#endif
 
 
 
@@ -4222,7 +4227,7 @@ QUARK_UNIT_TEST("vector-int", "size()", "3", ""){
 
 
 #if 0
-OFF_QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
+QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
 	int instruction_count_total = 0;
 	int symbol_count_total = 0;
 

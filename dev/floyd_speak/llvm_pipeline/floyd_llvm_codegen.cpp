@@ -101,15 +101,83 @@ std::unique_ptr<llvm_ir_program_t> make_empty_program(const std::string& module_
 	return std::make_unique<llvm_ir_program_t>(module_name);
 }
 
-
-
-
 std::string print_program(const llvm_ir_program_t& program){
 	std::string dump;
 	llvm::raw_string_ostream stream2(dump);
 	program.module->print(stream2, nullptr);
 	return dump;
 }
+
+
+/*
+First-class values
+
+LLVM has a distinction between first class values and other types of values.
+First class values can be returned by instructions, passed to functions,
+loaded, stored, PHI'd etc.  Currently the first class value types are:
+
+  1. Integer
+  2. Floating point
+  3. Pointer
+  4. Vector
+  5. Opaque (which is assumed to eventually resolve to 1-4)
+
+The non-first-class types are:
+
+  5. Array
+  6. Structure/Packed Structure
+  7. Function
+  8. Void
+  9. Label
+*/
+
+value_t llvm_to_value(const void* value_ptr, const typeid_t& type){
+	QUARK_ASSERT(value_ptr != nullptr);
+	QUARK_ASSERT(type.check_invariant());
+
+	//??? more types.
+	if(type.is_undefined()){
+	}
+	else if(type.is_bool()){
+		//??? How is int1 encoded by LLVM?
+		const auto temp = *static_cast<const uint8_t*>(value_ptr);
+		return value_t::make_bool(temp == 0 ? false : true);
+	}
+	else if(type.is_int()){
+		const auto temp = *static_cast<const uint64_t*>(value_ptr);
+		return value_t::make_int(temp);
+	}
+	else if(type.is_double()){
+		const auto temp = *static_cast<const double*>(value_ptr);
+		return value_t::make_double(temp);
+	}
+	else if(type.is_string()){
+	}
+	else if(type.is_json_value()){
+	}
+	else if(type.is_typeid()){
+	}
+	else if(type.is_struct()){
+	}
+	else if(type.is_vector()){
+	}
+	else if(type.is_dict()){
+	}
+	else if(type.is_function()){
+	}
+	else{
+	}
+	QUARK_ASSERT(false);
+	throw std::exception();
+}
+
+
+
+
+
+
+
+
 
 
 static const std::string k_expected_ir_fibonacci_text = R"ABC(
@@ -428,7 +496,7 @@ llvm::Value* make_constant(llvmgen_t& gen_acc, const value_t& value){
 		return nullptr;
 	}
 	else if(type.is_bool()){
-		return llvm::ConstantInt::get(itype, value.get_int_value());
+		return llvm::ConstantInt::get(itype, value.get_bool_value() ? 1 : 0);
 	}
 	else if(type.is_int()){
 		return llvm::ConstantInt::get(itype, value.get_int_value());
@@ -509,7 +577,10 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 	}
 	else*/ if(type.is_int()){
 		if(e._operation == expression_type::k_arithmetic_add__2){
-			return gen_acc.builder.CreateAdd(lhs_temp, rhs_temp, "addtmp");
+			return gen_acc.builder.CreateAdd(lhs_temp, rhs_temp, "add_tmp");
+		}
+		else if(e._operation == expression_type::k_arithmetic_multiply__2){
+			return gen_acc.builder.CreateMul(lhs_temp, rhs_temp, "mult_tmp");
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -583,15 +654,14 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 			return conv_opcode.at(e._operation);
 		}
 	}
-*/		else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
-	}
+*/
+	QUARK_ASSERT(false);
+	quark::throw_exception();
 
 	return nullptr;
 }
 
-
+//??? use visitor and std::variant<>
 llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -600,37 +670,49 @@ llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e){
 	if(op == expression_type::k_literal){
 		return genllvm_literal_expression(gen_acc, e);
 	}
-/*
 	else if(op == expression_type::k_resolve_member){
-		return bcgen_resolve_member_expression(gen_acc, target_reg, e, body);
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+//		return bcgen_resolve_member_expression(gen_acc, target_reg, e, body);
 	}
 	else if(op == expression_type::k_lookup_element){
-		return bcgen_lookup_element_expression(gen_acc, target_reg, e, body);
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+//		return bcgen_lookup_element_expression(gen_acc, target_reg, e, body);
 	}
 	else if(op == expression_type::k_load2){
-		return bcgen_load2_expression(gen_acc, target_reg, e, body);
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+//		return bcgen_load2_expression(gen_acc, target_reg, e, body);
 	}
 	else if(op == expression_type::k_call){
-		return bcgen_call_expression(gen_acc, target_reg, e, body);
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+//		return bcgen_call_expression(gen_acc, target_reg, e, body);
 	}
 	else if(op == expression_type::k_value_constructor){
-		return bcgen_construct_value_expression(gen_acc, target_reg, e, body);
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+//		return bcgen_construct_value_expression(gen_acc, target_reg, e, body);
 	}
 	else if(op == expression_type::k_arithmetic_unary_minus__1){
-		return bcgen_arithmetic_unary_minus_expression(gen_acc, target_reg, e, body);
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+//		return bcgen_arithmetic_unary_minus_expression(gen_acc, target_reg, e, body);
 	}
 	else if(op == expression_type::k_conditional_operator3){
-		return bcgen_conditional_operator_expression(gen_acc, target_reg, e, body);
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+//		return bcgen_conditional_operator_expression(gen_acc, target_reg, e, body);
 	}
-*/
 	else if (is_arithmetic_expression(op)){
 		return genllvm_arithmetic_expression(gen_acc, op, e);
 	}
-/*
 	else if (is_comparison_expression(op)){
-		return bcgen_comparison_expression(gen_acc, target_reg, op, e, body);
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+//		return bcgen_comparison_expression(gen_acc, target_reg, op, e, body);
 	}
-*/
 	else{
 		QUARK_ASSERT(false);
 	}
@@ -663,25 +745,16 @@ void genllvm_store2_statement(llvmgen_t& gen_acc, const statement_t::store2_t& s
 	llvm::Value* dest = find_value_slot(gen_acc, local_symbols, s._dest_variable);
 	gen_acc.builder.CreateStore(value, dest);
 
-/*
-	//	Shortcut: if destination is a local variable, have the expression write directly to that register.
-	if(statement._dest_variable._parent_steps != -1){
-		const auto expr = bcgen_expression(gen_acc, statement._dest_variable, statement._expression, body_acc);
-		body_acc = expr._body;
-		QUARK_ASSERT(body_acc.check_invariant());
-	}
-	else{
-		const auto expr = bcgen_expression(gen_acc, {}, statement._expression, body_acc);
-		body_acc = expr._body;
-		body_acc = copy_value(statement._expression.get_output_type(), statement._dest_variable, expr._out, body_acc);
-		QUARK_ASSERT(body_acc.check_invariant());
-	}
-	return body_acc;
-*/
-
 	QUARK_ASSERT(gen_acc.check_invariant());
 }
 
+void genllvm_expression_statement(llvmgen_t& gen_acc, const statement_t::expression_statement_t& s, const std::vector<llvm::Value*>& local_symbols){
+	QUARK_ASSERT(gen_acc.check_invariant());
+
+	llvm::Value* value = genllvm_expression(gen_acc, s._expression);
+
+	QUARK_ASSERT(gen_acc.check_invariant());
+}
 
 /*
 	All Floyd's global statements becomes instructions in floyd_init()-function that is called by Floyd runtime before any other function is called.
@@ -749,9 +822,7 @@ void genllvm_statements(llvmgen_t& gen_acc, const std::vector<statement_t>& stat
 
 
 				void operator()(const statement_t::expression_statement_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
-//					return bcgen_expression_statement(_gen_acc, s, body_acc);
+					genllvm_expression_statement(acc0, s, local_symbols0);
 				}
 				void operator()(const statement_t::software_system_statement_t& s) const{
 					QUARK_ASSERT(false);
