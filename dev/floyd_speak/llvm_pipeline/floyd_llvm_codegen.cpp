@@ -919,9 +919,6 @@ void genllvm_all(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast){
 	genllvm_make_floyd_runtime_init(gen_acc, semantic_ast, gen_acc.globals);
 }
 
-
-
-
 std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(const semantic_ast_t& ast, const std::string& module_name){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(ast_to_json(ast._checked_ast)._value));
@@ -940,20 +937,51 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(const semantic_ast_t& ast, c
 	return p;
 }
 
+
+
+
+/*
+  /// For MCJIT execution engines, clients are encouraged to use the
+  /// "GetFunctionAddress" method (rather than runFunction) and cast the
+  /// returned uint64_t to the desired function pointer type. However, for
+  /// backwards compatibility MCJIT's implementation can execute 'main-like'
+  /// function (i.e. those returning void or int, and taking either no
+  /// arguments or (int, char*[])).
+*/
+/*
+LLVM’s “eager” JIT compiler is safe to use in threaded programs. Multiple threads can call ExecutionEngine::getPointerToFunction() or ExecutionEngine::runFunction() concurrently, and multiple threads can run code output by the JIT concurrently. The user must still ensure that only one thread accesses IR in a given LLVMContext while another thread might be modifying it. One way to do that is to always hold the JIT lock while accessing IR outside the JIT (the JIT modifies the IR by adding CallbackVHs). Another way is to only call getPointerToFunction() from the LLVMContext’s thread.
+*/
+/*
+
+	llvm::Function* init_func = program.module->getFunction("floyd_runtime_init");
+	QUARK_ASSERT(init_func != nullptr);
+	init_func->print(llvm::errs());
+
+
+
+		llvm::GenericValue init_result = ee->runFunction(init_func, {});
+		const int64_t init_result_int = init_result.IntVal.getSExtValue();
+		QUARK_ASSERT(init_result_int == 667);
+
+
+
+		llvm::Function* b_func = ee->FindFunctionNamed("floyd_runtime_init");
+		llvm::GenericValue b_result = ee->runFunction(b_func, {});
+		const int64_t b_result_int = b_result.IntVal.getSExtValue();
+		QUARK_ASSERT(b_result_int == 667);
+
+*/
+
 void* get_global_ptr(llvm::ExecutionEngine& exeEng, const std::string& name){
 	const auto addr = exeEng.getGlobalValueAddress(name);
 	return  (void*)addr;
 }
 
-uint64_t* get_global_uint64_t(llvm::ExecutionEngine& exeEng, const std::string& name){
-	return (uint64_t*)get_global_ptr(exeEng, name);
-}
-
-
 void* get_global_function(llvm::ExecutionEngine& exeEng, const std::string& name){
 	const auto addr = exeEng.getFunctionAddress(name);
 	return (void*)addr;
 }
+
 
 
 
@@ -982,16 +1010,10 @@ void print_module_contents(llvm::Module& module){
 	}
 }
 
-
 //	Destroys program, can only run it once!
 //	Automatically runs floyd_runtime_init() to execute Floyd's global functions and initialize global constants.
 llvm_execution_engine_t make_engine_break_program(llvm_ir_program_t& program){
 	QUARK_ASSERT(program.module);
-
-	llvm::Function* init_func = program.module->getFunction("floyd_runtime_init");
-	QUARK_ASSERT(init_func != nullptr);
-
-	init_func->print(llvm::errs());
 
 	//	print_module_contents(*program.module);
 
@@ -1015,56 +1037,24 @@ llvm_execution_engine_t make_engine_break_program(llvm_ir_program_t& program){
 
 	ee->finalizeObject();
 
-
-	const auto result0_ptr = get_global_uint64_t(*ee, "result");
+	const auto result0_ptr = static_cast<uint64_t*>(get_global_ptr(*ee, "result"));
 	const auto result0 = result0_ptr ? *result0_ptr : -1;
 	QUARK_ASSERT(result0 == 0);
 
 
 	//	Call floyd_runtime_init().
 	{
-		/*
-		  /// For MCJIT execution engines, clients are encouraged to use the
-		  /// "GetFunctionAddress" method (rather than runFunction) and cast the
-		  /// returned uint64_t to the desired function pointer type. However, for
-		  /// backwards compatibility MCJIT's implementation can execute 'main-like'
-		  /// function (i.e. those returning void or int, and taking either no
-		  /// arguments or (int, char*[])).
-		*/
-		/*
-		LLVM’s “eager” JIT compiler is safe to use in threaded programs. Multiple threads can call ExecutionEngine::getPointerToFunction() or ExecutionEngine::runFunction() concurrently, and multiple threads can run code output by the JIT concurrently. The user must still ensure that only one thread accesses IR in a given LLVMContext while another thread might be modifying it. One way to do that is to always hold the JIT lock while accessing IR outside the JIT (the JIT modifies the IR by adding CallbackVHs). Another way is to only call getPointerToFunction() from the LLVMContext’s thread.
-		*/
-
-		llvm::GenericValue init_result = ee->runFunction(init_func, {});
-		const int64_t init_result_int = init_result.IntVal.getSExtValue();
-		QUARK_ASSERT(init_result_int == 667);
-
-
-		auto a_addr = ee->getFunctionAddress("floyd_runtime_init");
-		auto a_func = (FLOYD_RUNTIME_INIT)a_addr;
+		auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(*ee, "floyd_runtime_init"));
 		int64_t a_result = (*a_func)();
 		QUARK_ASSERT(a_result == 667);
-
-
-		llvm::Function* b_func = ee->FindFunctionNamed("floyd_runtime_init");
-		llvm::GenericValue b_result = ee->runFunction(b_func, {});
-		const int64_t b_result_int = b_result.IntVal.getSExtValue();
-		QUARK_ASSERT(b_result_int == 667);
-
-
-//		init_result.print(llvm::errs());
 	}
 
-	const auto result1_ptr = get_global_uint64_t(*ee, "result");
+	const auto result1_ptr = static_cast<uint64_t*>(get_global_ptr(*ee, "result"));
 	const auto result1 = result1_ptr ? *result1_ptr : -1;
 	QUARK_ASSERT(result1 == 6);
 
 	return { ee };
 }
-
-/*
-*/
-
 
 
 //	Destroys program, can only run it once!
@@ -1073,7 +1063,7 @@ int64_t run_llvm_program(llvm_ir_program_t& program, const std::vector<floyd::va
 
 	auto ee = make_engine_break_program(program);
 
-	const auto result = *get_global_uint64_t(*ee.ee, "result");
+	const auto result = static_cast<uint64_t*>(get_global_ptr(*ee.ee, "result"));
 	QUARK_TRACE_SS("a_result() = " << result);
 
 //	const int64_t x = return_value.IntVal.getSExtValue();
@@ -1139,7 +1129,8 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "+", "", ""){
 	const auto pass3 = compile_to_sematic_ast__errors("let int result = 1 + 2 + 3", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
 	auto program = generate_llvm_ir(pass3, "myfile.floyd");
 	auto ee = make_engine_break_program(*program);
-	const auto result = *floyd::get_global_uint64_t(*ee.ee, "result");
+
+	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(*ee.ee, "result"));
 	QUARK_ASSERT(result == 6);
 
 //	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
