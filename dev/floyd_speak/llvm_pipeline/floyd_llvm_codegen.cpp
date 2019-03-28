@@ -575,44 +575,69 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 		};
 		return conv_opcode.at(e._operation);
 	}
-	else*/ if(type.is_int()){
+	else*/
+	if(type.is_int()){
 		if(e._operation == expression_type::k_arithmetic_add__2){
 			return gen_acc.builder.CreateAdd(lhs_temp, rhs_temp, "add_tmp");
+		}
+		else if(e._operation == expression_type::k_arithmetic_subtract__2){
+			return gen_acc.builder.CreateSub(lhs_temp, rhs_temp, "subtract_tmp");
 		}
 		else if(e._operation == expression_type::k_arithmetic_multiply__2){
 			return gen_acc.builder.CreateMul(lhs_temp, rhs_temp, "mult_tmp");
 		}
+		else if(e._operation == expression_type::k_arithmetic_divide__2){
+			return gen_acc.builder.CreateSDiv(lhs_temp, rhs_temp, "divide_tmp");
+		}
+		else if(e._operation == expression_type::k_arithmetic_remainder__2){
+			return gen_acc.builder.CreateSRem(lhs_temp, rhs_temp, "reminder_tmp");
+		}
+
+		else if(e._operation == expression_type::k_logical_and__2){
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+			return gen_acc.builder.CreateAnd(lhs_temp, rhs_temp, "logical_and_tmp");
+		}
+		else if(e._operation == expression_type::k_logical_or__2){
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+			return gen_acc.builder.CreateOr(lhs_temp, rhs_temp, "logical_or_tmp");
+		}
 		else{
 			QUARK_ASSERT(false);
 		}
+	}
+	else if(type.is_double()){
+		if(e._operation == expression_type::k_arithmetic_add__2){
+			return gen_acc.builder.CreateFAdd(lhs_temp, rhs_temp, "add_tmp");
+		}
+		else if(e._operation == expression_type::k_arithmetic_subtract__2){
+			return gen_acc.builder.CreateFSub(lhs_temp, rhs_temp, "subtract_tmp");
+		}
+		else if(e._operation == expression_type::k_arithmetic_multiply__2){
+			return gen_acc.builder.CreateFMul(lhs_temp, rhs_temp, "mult_tmp");
+		}
+		else if(e._operation == expression_type::k_arithmetic_divide__2){
+			return gen_acc.builder.CreateFDiv(lhs_temp, rhs_temp, "divide_tmp");
+		}
+		else if(e._operation == expression_type::k_arithmetic_remainder__2){
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+		}
+		else if(e._operation == expression_type::k_logical_and__2){
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+		}
+		else if(e._operation == expression_type::k_logical_or__2){
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
 /*
-		static const std::map<expression_type, bc_opcode> conv_opcode = {
-			{ expression_type::k_arithmetic_add__2, bc_opcode::k_add_int },
-			{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_subtract_int },
-			{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_multiply_int },
-			{ expression_type::k_arithmetic_divide__2, bc_opcode::k_divide_int },
-			{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_remainder_int },
 
-			{ expression_type::k_logical_and__2, bc_opcode::k_logical_and_int },
-			{ expression_type::k_logical_or__2, bc_opcode::k_logical_or_int }
-		};
-		return conv_opcode.at(e._operation);
-*/
-
-	}
-/*		else if(type.is_double()){
-		static const std::map<expression_type, bc_opcode> conv_opcode = {
-			{ expression_type::k_arithmetic_add__2, bc_opcode::k_add_double },
-			{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_subtract_double },
-			{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_multiply_double },
-			{ expression_type::k_arithmetic_divide__2, bc_opcode::k_divide_double },
-			{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
-
-			{ expression_type::k_logical_and__2, bc_opcode::k_logical_and_double },
-			{ expression_type::k_logical_or__2, bc_opcode::k_logical_or_double }
-		};
-		return conv_opcode.at(e._operation);
-	}
 	else if(type.is_string()){
 		static const std::map<expression_type, bc_opcode> conv_opcode = {
 			{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_strings },
@@ -661,6 +686,26 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 	return nullptr;
 }
 
+llvm::Value* genllvm_arithmetic_unary_minus_expression(llvmgen_t& gen_acc, const expression_t& e){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	const auto type = e._input_exprs[0].get_output_type();
+	if(type.is_int()){
+		const auto e2 = expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), e._input_exprs[0], e._output_type);
+		return genllvm_expression(gen_acc, e2);
+	}
+	else if(type.is_double()){
+		const auto e2 = expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_double(0), e._input_exprs[0], e._output_type);
+		return genllvm_expression(gen_acc, e2);
+	}
+	else{
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+	}
+}
+
+
 //??? use visitor and std::variant<>
 llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -696,9 +741,7 @@ llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e){
 //		return bcgen_construct_value_expression(gen_acc, target_reg, e, body);
 	}
 	else if(op == expression_type::k_arithmetic_unary_minus__1){
-		QUARK_ASSERT(false);
-		quark::throw_exception();
-//		return bcgen_arithmetic_unary_minus_expression(gen_acc, target_reg, e, body);
+		return genllvm_arithmetic_unary_minus_expression(gen_acc, e);
 	}
 	else if(op == expression_type::k_conditional_operator3){
 		QUARK_ASSERT(false);

@@ -114,20 +114,20 @@ QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
 //////////////////////////////////////////		BASIC EXPRESSIONS - PARANTHESES
 
 
-QUARK_UNIT_TEST("execute_expression()", "Parentheses", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Parentheses", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 5*(4+4+1)", value_t::make_int(45));
 }
-QUARK_UNIT_TEST("execute_expression()", "Parentheses", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Parentheses", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 5*(2*(1+3)+1)", value_t::make_int(45));
 }
-QUARK_UNIT_TEST("execute_expression()", "Parentheses", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Parentheses", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 5*((1+3)*2+1)", value_t::make_int(45));
 }
 
-QUARK_UNIT_TEST("execute_expression()", "Sign before parentheses", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Sign before parentheses", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = -(2+1)*4", value_t::make_int(-12));
 }
-QUARK_UNIT_TEST("execute_expression()", "Sign before parentheses", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Sign before parentheses", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = -4*(2+1)", value_t::make_int(-12));
 }
 
@@ -135,13 +135,13 @@ QUARK_UNIT_TEST("execute_expression()", "Sign before parentheses", "", ""){
 //////////////////////////////////////////		BASIC EXPRESSIONS - SPACES
 
 
-QUARK_UNIT_TEST("execute_expression()", "Spaces", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Spaces", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 5 * ((1 + 3) * 2 + 1)", value_t::make_int(45));
 }
-QUARK_UNIT_TEST("execute_expression()", "Spaces", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Spaces", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 5 - 2 * ( 3 )", value_t::make_int(-1));
 }
-QUARK_UNIT_TEST("execute_expression()", "Spaces", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Spaces", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result =  5 - 2 * ( ( 4 )  - 1 )", value_t::make_int(-1));
 }
 
@@ -149,38 +149,38 @@ QUARK_UNIT_TEST("execute_expression()", "Spaces", "", ""){
 //////////////////////////////////////////		BASIC EXPRESSIONS - double
 
 
-QUARK_UNIT_TEST("", "execute_expression()", "Fractional numbers", "") {
+QUARK_UNIT_TEST_VIP("", "execute_expression()", "Fractional numbers", "") {
 	ut_verify_global_result(QUARK_POS, "let double result = 2.8/2.0", value_t::make_double(1.4));
 }
-QUARK_UNIT_TEST("execute_expression()", "Fractional numbers", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Fractional numbers", "", ""){
 //	ut_verify_global_result(QUARK_POS, "int result = 1/5e10") == 2e-11);
 }
-QUARK_UNIT_TEST("execute_expression()", "Fractional numbers", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Fractional numbers", "", ""){
 	ut_verify_global_result(QUARK_POS, "let double result = (4.0-3.0)/(4.0*4.0)", value_t::make_double(0.0625));
 }
-QUARK_UNIT_TEST("execute_expression()", "Fractional numbers", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Fractional numbers", "", ""){
 	ut_verify_global_result(QUARK_POS, "let double result = 1.0/2.0/2.0", value_t::make_double(0.25));
 }
-QUARK_UNIT_TEST("execute_expression()", "Fractional numbers", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Fractional numbers", "", ""){
 	ut_verify_global_result(QUARK_POS, "let double result = 0.25 * .5 * 0.5", value_t::make_double(0.0625));
 }
-QUARK_UNIT_TEST("execute_expression()", "Fractional numbers", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Fractional numbers", "", ""){
 	ut_verify_global_result(QUARK_POS, "let double result = .25 / 2.0 * .5", value_t::make_double(0.0625));
 }
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - EDGE CASES
 
 
-QUARK_UNIT_TEST("execute_expression()", "Repeated operators", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Repeated operators", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 1+-2", value_t::make_int(-1));
 }
-QUARK_UNIT_TEST("execute_expression()", "Repeated operators", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Repeated operators", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = --2", value_t::make_int(2));
 }
-QUARK_UNIT_TEST("execute_expression()", "Repeated operators", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Repeated operators", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 2---2", value_t::make_int(0));
 }
-QUARK_UNIT_TEST("execute_expression()", "Repeated operators", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Repeated operators", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 2-+-2", value_t::make_int(4));
 }
 
@@ -188,10 +188,10 @@ QUARK_UNIT_TEST("execute_expression()", "Repeated operators", "", ""){
 //////////////////////////////////////////		BASIC EXPRESSIONS - BOOL
 
 
-QUARK_UNIT_TEST("execute_expression()", "Bool", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Bool", "", ""){
 	ut_verify_global_result(QUARK_POS, "let bool result = true", value_t::make_bool(true));
 }
-QUARK_UNIT_TEST("execute_expression()", "Bool", "", ""){
+QUARK_UNIT_TEST_VIP("execute_expression()", "Bool", "", ""){
 	ut_verify_global_result(QUARK_POS, "let bool result = false", value_t::make_bool(false));
 }
 
