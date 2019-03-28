@@ -54,8 +54,9 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(const semantic_ast_t& ast, c
 int64_t run_llvm_program(llvm_ir_program_t& program, const std::vector<floyd::value_t>& args);
 
 
-
-
+//??? Temp - should be:
+//func int main([string] args){...}
+typedef int64_t (*FLOYD_RUNTIME_MAIN)();
 
 struct llvm_execution_engine_t {
 	std::shared_ptr<llvm::ExecutionEngine> ee;

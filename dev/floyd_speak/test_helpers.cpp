@@ -72,28 +72,26 @@ static run_report_t run_program_llvm(const std::string& program_source, const st
 //		const auto exe = compile_to_bytecode(program, "test");
 		auto exe = compile_to_ir_helper(program_source, "test");
 
-#if 0
-		//	Runs global code.
-		const auto main_function = find_global_symbol2(interpreter, "main");
-		const auto result_variable = find_global_symbol2(interpreter, "result");
+		//	Runs global init code.
+		auto ee = make_engine_break_program(*exe);
+
+		//??? need mechanism to map Floyd types vs machine-types.
+		const auto main_function = reinterpret_cast<FLOYD_RUNTIME_MAIN>(get_global_function(ee, "main"));
+
+		const auto result_variable = static_cast<int64_t*>(get_global_ptr(ee, "result"));
 
 		value_t main_result;
 		if(main_function != nullptr){
-			main_result = call_function(interpreter, bc_to_value(main_function->_value), main_args);
+			int64_t r = (*main_function)();
+			main_result = value_t::make_int(r);
 		}
 
-		value_t result_global;
-		if(result_variable != nullptr){
-			result_global = bc_to_value(result_variable->_value);
-		}
+		//??? Only support ints!
+		value_t result_global = result_variable != nullptr ? value_t::make_int(*result_variable) : value_t::make_void();
 
-		print_vm_printlog(interpreter);
+//		print_vm_printlog(interpreter);
 
-		return run_report_t{ result_global, main_result, interpreter._print_output, "" };
-#else
-	return {};
-#endif
-
+		return run_report_t{ result_global, main_result, {}, "" };
 	}
 	catch(const std::runtime_error& e){
 		return run_report_t{ {}, {}, {}, e.what() };

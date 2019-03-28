@@ -1059,12 +1059,6 @@ int64_t run_llvm_program(llvm_ir_program_t& program, const std::vector<floyd::va
 	QUARK_ASSERT(program.module);
 
 	auto ee = make_engine_break_program(program);
-
-	const auto result = static_cast<uint64_t*>(get_global_ptr(ee, "result"));
-	QUARK_TRACE_SS("a_result() = " << result);
-
-//	const int64_t x = return_value.IntVal.getSExtValue();
-//	QUARK_TRACE_SS("init() = " << x);
 	return 0;
 }
 
@@ -1113,14 +1107,14 @@ int64_t run_using_llvm_helper(const std::string& program_source, const std::stri
 
 
 #if 0
-QUARK_UNIT_TEST_VIP("", "run_using_llvm()", "", ""){
+QUARK_UNIT_TEST("", "run_using_llvm()", "", ""){
 	const auto r = floyd::run_using_llvm_helper("", "", {});
 	QUARK_UT_VERIFY(r == 6765);
 }
 #endif
 
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "+", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "+", "", ""){
 //	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
 
 	const auto pass3 = compile_to_sematic_ast__errors("let int result = 1 + 2 + 3", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);

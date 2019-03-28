@@ -38,7 +38,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Global int variable", "", ""){
 	run_closed("{}");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "Global int variable", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "Global int variable", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 123", value_t::make_int(123));
 }
 
@@ -65,10 +65,10 @@ QUARK_UNIT_TEST("Floyd test suite", "string constant expression", "", ""){
 //////////////////////////////////////////		BASIC EXPRESSIONS
 
 
-QUARK_UNIT_TEST("Floyd test suite", "+", "", "") {
+QUARK_UNIT_TEST_VIP("Floyd test suite", "+", "", "") {
 	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2", value_t::make_int(3));
 }
-QUARK_UNIT_TEST("Floyd test suite", "+", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "+", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
 }
 QUARK_UNIT_TEST("Floyd test suite", "*", "", ""){
@@ -89,6 +89,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Infered bind", "", "") {
 	ut_verify_printout(QUARK_POS, "let a = 10;print(a)", {  "10" });
 }
 
+//??? add tests for arithmetic bounds, limiting, wrapping.
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - CONDITIONAL EXPRESSION
 
