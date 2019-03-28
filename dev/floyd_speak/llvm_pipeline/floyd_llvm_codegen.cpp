@@ -963,6 +963,25 @@ struct llvm_execution_engine_t {
 
 typedef int64_t (*FLOYD_RUNTIME_INIT)();
 
+void print_module_contents(llvm::Module& module){
+	const auto& functionList = module.getFunctionList();
+	for(const auto& e: functionList){
+
+/*
+	std::string dump;
+	llvm::raw_string_ostream stream2(dump);
+	module.print(stream2, nullptr);
+	return dump;
+*/
+		e.print(llvm::errs());
+	}
+
+	const auto& globalList = module.getGlobalList();
+	for(const auto& e: globalList){
+		e.print(llvm::errs());
+	}
+}
+
 
 //	Destroys program, can only run it once!
 //	Automatically runs floyd_runtime_init() to execute Floyd's global functions and initialize global constants.
@@ -974,24 +993,7 @@ llvm_execution_engine_t make_engine_break_program(llvm_ir_program_t& program){
 
 	init_func->print(llvm::errs());
 
-	if(false){
-		const auto& functionList = program.module->getFunctionList();
-		for(const auto& e: functionList){
-
-	/*
-		std::string dump;
-		llvm::raw_string_ostream stream2(dump);
-		program.module->print(stream2, nullptr);
-		return dump;
-	*/
-			e.print(llvm::errs());
-		}
-
-		const auto& globalList = program.module->getGlobalList();
-		for(const auto& e: globalList){
-			e.print(llvm::errs());
-		}
-	}
+	//	print_module_contents(*program.module);
 
 	std::string collectedErrors;
 
@@ -1016,6 +1018,7 @@ llvm_execution_engine_t make_engine_break_program(llvm_ir_program_t& program){
 
 	const auto result0_ptr = get_global_uint64_t(*ee, "result");
 	const auto result0 = result0_ptr ? *result0_ptr : -1;
+	QUARK_ASSERT(result0 == 0);
 
 
 	//	Call floyd_runtime_init().
@@ -1049,15 +1052,19 @@ llvm_execution_engine_t make_engine_break_program(llvm_ir_program_t& program){
 		QUARK_ASSERT(b_result_int == 667);
 
 
-
 //		init_result.print(llvm::errs());
 	}
 
 	const auto result1_ptr = get_global_uint64_t(*ee, "result");
 	const auto result1 = result1_ptr ? *result1_ptr : -1;
+	QUARK_ASSERT(result1 == 6);
 
 	return { ee };
 }
+
+/*
+*/
+
 
 
 //	Destroys program, can only run it once!
