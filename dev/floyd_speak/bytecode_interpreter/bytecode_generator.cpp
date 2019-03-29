@@ -748,7 +748,7 @@ expression_gen_t bcgen_load2_expression(bcgenerator_t& gen_acc, const variable_a
 	auto body_acc = body;
 	const auto result_type = e.get_output_type();
 
-	//	Shortcut: If we're loading a local-variable and are free from putting it in target_reg -- just acces the register where it sits = no instruction!
+	//	Shortcut: If we're loading a local-variable and are free from putting it in target_reg -- just access the register where it sits = no instruction!
 	if(target_reg.is_empty() && e._address._parent_steps != -1){
 		QUARK_ASSERT(body_acc.check_invariant());
 		return { body_acc, e._address, intern_type(gen_acc, result_type) };

@@ -60,6 +60,7 @@ typedef int64_t (*FLOYD_RUNTIME_MAIN)();
 
 struct llvm_execution_engine_t {
 	std::shared_ptr<llvm::ExecutionEngine> ee;
+	public: std::vector<std::string> _print_output;
 };
 
 llvm_execution_engine_t make_engine_break_program_no_init(llvm_ir_program_t& program);
