@@ -30,7 +30,7 @@ namespace floyd {
 		An expression is a json array where entries may be other json arrays.
 		["+", ["+", 1, 2], ["k", 10]]
 	*/
-	ast_json_t expression_to_json(const expression_t& e);
+	json_t expression_to_json(const expression_t& e);
 
 	std::string expression_to_json_string(const expression_t& e);
 
@@ -61,7 +61,7 @@ namespace floyd {
 	};
 
 	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);
-	ast_json_t function_def_to_ast_json(const function_definition_t& v);
+	json_t function_def_to_ast_json(const function_definition_t& v);
 	const typeid_t& get_function_type(const function_definition_t& f);
 
 

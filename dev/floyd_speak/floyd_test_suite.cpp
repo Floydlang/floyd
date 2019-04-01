@@ -81,7 +81,7 @@ QUARK_UNIT_TEST("Floyd test suite", "parant", "", ""){
 
 //??? test all types, like [int] etc.
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "Expression statement", "", ""){
+OFF_QUARK_UNIT_TEST("Floyd test suite", "Expression statement", "", ""){
 	ut_verify_printout(QUARK_POS, "print(5)", { "5" });
 }
 

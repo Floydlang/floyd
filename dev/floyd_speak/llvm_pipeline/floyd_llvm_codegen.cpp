@@ -909,7 +909,7 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const std::vector<globa
 		llvm::Value* callee0 = genllvm_expression(gen_acc, local_symbols, e._input_exprs[0]);
 		QUARK_TRACE_SS("callee0: " << print_value(callee0));
 
-Y		QUARK_TRACE_SS("gen_acc: " << print_gen(gen_acc));
+		QUARK_TRACE_SS("gen_acc: " << print_gen(gen_acc));
 
 		llvm::Function* callee = llvm::cast<llvm::Function>(callee0);
 
@@ -1537,7 +1537,7 @@ QUARK_UNIT_TEST("", "run_using_llvm()", "", ""){
 }
 #endif
 
-
+#if 0
 QUARK_UNIT_TEST("Floyd test suite", "+", "", ""){
 //	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
 
@@ -1550,4 +1550,87 @@ QUARK_UNIT_TEST("Floyd test suite", "+", "", ""){
 
 //	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
 }
+#endif
+
+
+
+const std::string test_1_json = R"ABCD(
+{
+	"function_defs": [
+		["function-def", ["func", "^void", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1000, "^void"],
+		[
+			"function-def",
+			["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true],
+			[{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }],
+			null,
+			1011,
+			"^**dyn**"
+		]
+	],
+	"globals": {
+		"statements": [
+			[0, "expression-statement", ["call", ["@i", -1, 20, ["func", "^void", ["^**dyn**"], true]], [["k", 5, "^int"]], "^void"]]
+		],
+		"symbols": [
+			[20, "print", "CONST", [["func", "^void", ["^**dyn**"], true], { "function_id": 20 }]],
+			[37, "null", "CONST", ["^json_value", null]],
+			[38, "**undef**", "LOCAL", { "type": "immutable_local", "value_type": "^**undef**" }],
+			[39, "**dyn**", "CONST", ["^**dyn**", null]],
+			[40, "void", "CONST", ["^void", null]],
+			[41, "bool", "CONST", ["^typeid", "^bool"]],
+			[42, "int", "CONST", ["^typeid", "^int"]],
+			[43, "double", "CONST", ["^typeid", "^double"]],
+			[44, "string", "CONST", ["^typeid", "^string"]],
+			[45, "typeid", "CONST", ["^typeid", "^typeid"]],
+			[46, "json_value", "CONST", ["^typeid", "^json_value"]],
+			[47, "json_object", "CONST", ["^int", 1]],
+			[48, "json_array", "CONST", ["^int", 2]],
+			[49, "json_string", "CONST", ["^int", 3]],
+			[50, "json_number", "CONST", ["^int", 4]],
+			[51, "json_true", "CONST", ["^int", 5]],
+			[52, "json_false", "CONST", ["^int", 6]],
+			[53, "json_null", "CONST", ["^int", 7]]
+		]
+	}
+}
+")ABCD";
+
+#include "text_parser.h"
+#include "ast_json.h"
+
+#if 0
+floyd::semantic_ast_t json_to_semantic_ast(const json_t& j){
+
+
+const std::vector<statement_t> astjson_to_statements(const ast_json_t& p){
+
+
+
+
+	const floyd::ast_t pass3 = parse_tree_to_ast(floyd::ast_json_t::make(a.first));
+//	const auto pass3 = compile_to_sematic_ast__errors("let int result = 1 + 2 + 3", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
+
+	return floyd::semantic_ast_t(pass3);
+}
+
+
+
+QUARK_UNIT_TEST_VIP("", "", "", ""){
+	std::pair<json_t, seq_t> a = parse_json(seq_t(test_1_json));
+
+	const auto pass3 = json_to_semantic_ast(a);
+	auto program = generate_llvm_ir(pass3, "myfile.floyd");
+
+	floyd::print_program(*program);
+
+	auto ee = make_engine_break_program(*program);
+
+	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(ee, "result"));
+	QUARK_ASSERT(result == 6);
+
+//	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
+}
+
+
+#endif
 

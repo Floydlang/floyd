@@ -18,7 +18,7 @@ namespace floyd {
 
 using namespace std;
 
-	ast_json_t expressions_to_json(const std::vector<expression_t> v);
+	json_t expressions_to_json(const std::vector<expression_t> v);
 
 
 
@@ -39,21 +39,21 @@ const typeid_t& get_function_type(const function_definition_t& f){
 	return f._function_type;
 }
 
-ast_json_t function_def_to_ast_json(const function_definition_t& v) {
+json_t function_def_to_ast_json(const function_definition_t& v) {
 	typeid_t function_type = get_function_type(v);
 	return make_expression_n(
 		v._location,
 		expression_opcode_t::k_function_def,
 		{
-			typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state)._value,
+			typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state),
 			members_to_json(v._args),
 
-			v._body ? body_to_json(*v._body)._value : json_t(),
+			v._body ? body_to_json(*v._body) : json_t(),
 
 			json_t(v._host_function_id),
 
 			//	Duplicate info -- we have convered this using function_type above.
-			typeid_to_ast_json(v._function_type.get_function_return(), json_tags::k_tag_resolve_state)._value
+			typeid_to_ast_json(v._function_type.get_function_return(), json_tags::k_tag_resolve_state)
 		}
 	);
 }
@@ -141,7 +141,7 @@ QUARK_UNIT_TEST("expression_t", "expression_to_json()", "lookup", ""){
 
 
 
-ast_json_t expression_to_json_internal(const expression_t& e){
+json_t expression_to_json_internal(const expression_t& e){
 	const auto opcode = e.get_operation();
 
 	if(opcode == expression_type::k_literal){
@@ -151,18 +151,18 @@ ast_json_t expression_to_json_internal(const expression_t& e){
 		return make_expression2(
 			k_no_location,
 			expression_type_to_token(opcode),
-			expression_to_json(e._input_exprs[0])._value,
-			expression_to_json(e._input_exprs[1])._value
+			expression_to_json(e._input_exprs[0]),
+			expression_to_json(e._input_exprs[1])
 		);
 	}
 	else if(opcode == expression_type::k_arithmetic_unary_minus__1){
-		return maker__make_unary_minus(expression_to_json(e._input_exprs[0])._value);
+		return maker__make_unary_minus(expression_to_json(e._input_exprs[0]));
 	}
 	if(opcode == expression_type::k_conditional_operator3){
 		const auto a = maker__make_conditional_operator(
-			expression_to_json(e._input_exprs[0])._value,
-			expression_to_json(e._input_exprs[1])._value,
-			expression_to_json(e._input_exprs[2])._value
+			expression_to_json(e._input_exprs[0]),
+			expression_to_json(e._input_exprs[1]),
+			expression_to_json(e._input_exprs[2])
 		);
 		return a;
 	}
@@ -170,16 +170,16 @@ ast_json_t expression_to_json_internal(const expression_t& e){
 		const auto callee = e._input_exprs[0];
 		vector<json_t> args;
 		for(auto it = e._input_exprs.begin() + 1 ; it != e._input_exprs.end() ; it++){
-			args.push_back(expression_to_json(*it)._value);
+			args.push_back(expression_to_json(*it));
 		}
 
-		return maker__call(expression_to_json(callee)._value, args);
+		return maker__call(expression_to_json(callee), args);
 	}
 	else if(opcode == expression_type::k_struct_def){
-		return make_expression1(k_no_location, expression_opcode_t::k_struct_def, struct_definition_to_ast_json(*e._struct_def)._value);
+		return make_expression1(k_no_location, expression_opcode_t::k_struct_def, struct_definition_to_ast_json(*e._struct_def));
 	}
 	else if(opcode == expression_type::k_function_def){
-		return ast_json_t{function_def_to_ast_json(*e._function_def)};
+		return function_def_to_ast_json(*e._function_def);
 	}
 	else if(opcode == expression_type::k_load){
 		return make_expression1(k_no_location, expression_opcode_t::k_load, json_t(e._variable_name));
@@ -190,14 +190,14 @@ ast_json_t expression_to_json_internal(const expression_t& e){
 
 	//??? use maker_vector_definition() etc.
 	else if(opcode == expression_type::k_resolve_member){
-		return make_expression2(k_no_location, expression_opcode_t::k_resolve_member, expression_to_json(e._input_exprs[0])._value, json_t(e._variable_name));
+		return make_expression2(k_no_location, expression_opcode_t::k_resolve_member, expression_to_json(e._input_exprs[0]), json_t(e._variable_name));
 	}
 	else if(opcode == expression_type::k_lookup_element){
 		return make_expression2(
 			k_no_location,
 			expression_opcode_t::k_lookup_element,
-			expression_to_json(e._input_exprs[0])._value,
-			expression_to_json(e._input_exprs[1])._value
+			expression_to_json(e._input_exprs[0]),
+			expression_to_json(e._input_exprs[1])
 		);
 	}
 
@@ -205,8 +205,8 @@ ast_json_t expression_to_json_internal(const expression_t& e){
 		return make_expression2(
 			k_no_location,
 			expression_opcode_t::k_value_constructor,
-			typeid_to_ast_json(*e._output_type, json_tags::k_tag_resolve_state)._value,
-			expressions_to_json(e._input_exprs)._value
+			typeid_to_ast_json(*e._output_type, json_tags::k_tag_resolve_state),
+			expressions_to_json(e._input_exprs)
 		);
 	}
 	else{
@@ -215,24 +215,24 @@ ast_json_t expression_to_json_internal(const expression_t& e){
 	}
 }
 
-ast_json_t expressions_to_json(const std::vector<expression_t> v){
+json_t expressions_to_json(const std::vector<expression_t> v){
 	std::vector<json_t> r;
 	for(const auto& e: v){
-		r.push_back(expression_to_json(e)._value);
+		r.push_back(expression_to_json(e));
 	}
-	return ast_json_t::make(json_t::make_array(r));
+	return json_t::make_array(r);
 }
 
-ast_json_t expression_to_json(const expression_t& e){
+json_t expression_to_json(const expression_t& e){
 	const auto a = expression_to_json_internal(e);
 
 	//	Add annotated-type element to json?
 	if(e.is_annotated_shallow() && e.has_builtin_type() == false){
 		const auto t = e.get_output_type();
-		auto a2 = a._value.get_array();
+		auto a2 = a.get_array();
 		const auto type_json = typeid_to_ast_json(t, json_tags::k_tag_resolve_state);
-		a2.push_back(type_json._value);
-		return ast_json_t::make(json_t::make_array(a2));
+		a2.push_back(type_json);
+		return json_t::make_array(a2);
 	}
 	else{
 		return a;
@@ -241,7 +241,7 @@ ast_json_t expression_to_json(const expression_t& e){
 
 std::string expression_to_json_string(const expression_t& e){
 	const auto json = expression_to_json(e);
-	return json_to_compact_string(json._value);
+	return json_to_compact_string(json);
 }
 
 

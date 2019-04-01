@@ -39,7 +39,7 @@ using std::make_shared;
 //??? Remove usage of value_t
 value_t value_to_jsonvalue(const value_t& value){
 	const auto j = value_to_ast_json(value, json_tags::k_plain);
-	value_t json_value = value_t::make_json_value(j._value);
+	value_t json_value = value_t::make_json_value(j);
 	return json_value;
 }
 
@@ -372,7 +372,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 		return value_t::make_json_value(v);
 	}
 	else if(target_type.is_typeid()){
-		const auto typeid_value = typeid_from_ast_json(ast_json_t::make(v));
+		const auto typeid_value = typeid_from_ast_json(v);
 		return value_t::make_typeid_value(typeid_value);
 	}
 	else if(target_type.is_struct()){
@@ -973,7 +973,7 @@ bc_value_t host__calc_string_sha1(interpreter_t& vm, const bc_value_t args[], in
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	const auto v = value_to_bc(result);
@@ -1004,7 +1004,7 @@ bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], in
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	const auto v = value_to_bc(result);
@@ -1053,7 +1053,7 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	return result;
@@ -1095,7 +1095,7 @@ bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	return result;
@@ -1144,7 +1144,7 @@ bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	return result;
@@ -1196,7 +1196,7 @@ bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	return result;
@@ -1309,7 +1309,7 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	return result;
@@ -1436,7 +1436,7 @@ bc_value_t host__supermap2(interpreter_t& vm, const bc_value_t args[], int arg_c
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	return result;
@@ -1618,7 +1618,7 @@ bc_value_t host__get_fsentries_shallow(interpreter_t& vm, const bc_value_t args[
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(vec2);
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	const auto v = value_to_bc(vec2);
@@ -1703,7 +1703,7 @@ bc_value_t host__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], in
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	const auto v = value_to_bc(result);
@@ -1735,7 +1735,7 @@ bc_value_t host__get_fs_environment(interpreter_t& vm, const bc_value_t args[], 
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	const auto v = value_to_bc(result);
@@ -1758,7 +1758,7 @@ bc_value_t host__does_fsentry_exist(interpreter_t& vm, const bc_value_t args[], 
 	const auto result = value_t::make_bool(exists);
 #if 1
 	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	const auto v = value_to_bc(result);

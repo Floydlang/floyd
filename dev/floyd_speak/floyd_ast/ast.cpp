@@ -26,8 +26,8 @@ namespace floyd {
 
 using namespace std;
 
-const std::vector<statement_t > astjson_to_statements(const ast_json_t& p);
-ast_json_t statement_to_json(const statement_t& e);
+const std::vector<statement_t > astjson_to_statements(const json_t& p);
+json_t statement_to_json(const statement_t& e);
 
 
 
@@ -39,14 +39,14 @@ ast_json_t ast_to_json(const ast_t& ast){
 
 	std::vector<json_t> fds;
 	for(const auto& e: ast._function_defs){
-		ast_json_t fd = function_def_to_ast_json(*e);
-		fds.push_back(fd._value);
+		const auto fd = function_def_to_ast_json(*e);
+		fds.push_back(fd);
 	}
 
 	const auto function_defs_json = json_t::make_array(fds);
 	return ast_json_t::make(json_t::make_object(
 		{
-			{ "globals", body_to_json(ast._globals)._value },
+			{ "globals", body_to_json(ast._globals) },
 			{ "function_defs", function_defs_json }
 		}
 	));
@@ -56,7 +56,7 @@ ast_json_t ast_to_json(const ast_t& ast){
 
 
 typeid_t resolve_type_name(const json_t& t){
-	const auto t2 = typeid_from_ast_json(ast_json_t::make(t));
+	const auto t2 = typeid_from_ast_json(t);
 	return t2;
 }
 
@@ -167,27 +167,27 @@ expression_t astjson_to_expression(const json_t& e){
 }
 
 //	INPUT: [2, "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"]]
-std::pair<json_t, location_t> unpack_loc(const ast_json_t& s){
-	QUARK_ASSERT(s._value.is_array());
+std::pair<json_t, location_t> unpack_loc(const json_t& s){
+	QUARK_ASSERT(s.is_array());
 
-	const bool has_location = s._value.get_array_n(0).is_number();
+	const bool has_location = s.get_array_n(0).is_number();
 	if(has_location){
-		const location_t source_offset = has_location ? location_t(static_cast<std::size_t>(s._value.get_array_n(0).get_number())) : k_no_location;
+		const location_t source_offset = has_location ? location_t(static_cast<std::size_t>(s.get_array_n(0).get_number())) : k_no_location;
 
-		const auto elements = s._value.get_array();
+		const auto elements = s.get_array();
 		const std::vector<json_t> elements2 = { elements.begin() + 1, elements.end() };
 		const auto statement = json_t::make_array(elements2);
 
 		return { statement, source_offset };
 	}
 	else{
-		return { s._value, k_no_location };
+		return { s, k_no_location };
 	}
 }
 
-statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
-	QUARK_ASSERT(statement0._value.check_invariant());
-	QUARK_ASSERT(statement0._value.is_array());
+statement_t astjson_to_statement__nonlossy(const json_t& statement0){
+	QUARK_ASSERT(statement0.check_invariant());
+	QUARK_ASSERT(statement0.is_array());
 
 	const auto statement1 = unpack_loc(statement0);
 	const auto loc = statement1.second;
@@ -245,7 +245,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		QUARK_ASSERT(statement.get_array_size() == 2);
 
 		const auto statements = statement.get_array_n(1);
-		const auto r = astjson_to_statements(ast_json_t::make(statements));
+		const auto r = astjson_to_statements(statements);
 
 		const auto body = body_t(r);
 		return statement_t::make__block_statement(loc, body);
@@ -287,7 +287,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 
 		const auto name2 = name.get_string();
 		const auto args2 = members_from_json(args);
-		const auto fstatements2 = astjson_to_statements(ast_json_t::make(fstatements));
+		const auto fstatements2 = astjson_to_statements(fstatements);
 		const auto return_type2 = resolve_type_name(return_type);
 
 		if(impure.is_true() == false && impure.is_false() == false){
@@ -311,8 +311,8 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		const auto else_statements = statement.get_array_size() == 4 ? statement.get_array_n(3) : json_t::make_array();
 
 		const auto condition_expression2 = astjson_to_expression(condition_expression);
-		const auto then_statements2 = astjson_to_statements(ast_json_t::make(then_statements));
-		const auto else_statements2 = astjson_to_statements(ast_json_t::make(else_statements));
+		const auto then_statements2 = astjson_to_statements(then_statements);
+		const auto else_statements2 = astjson_to_statements(else_statements);
 
 		return statement_t::make__ifelse_statement(
 			loc,
@@ -331,7 +331,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 
 		const auto start_expression2 = astjson_to_expression(start_expression);
 		const auto end_expression2 = astjson_to_expression(end_expression);
-		const auto body_statements2 = astjson_to_statements(ast_json_t::make(body_statements));
+		const auto body_statements2 = astjson_to_statements(body_statements);
 
 		const auto range_type = for_mode.get_string() == "open-range" ? statement_t::for_statement_t::k_open_range : statement_t::for_statement_t::k_closed_range;
 		return statement_t::make__for_statement(
@@ -349,7 +349,7 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 		const auto body_statements = statement.get_array_n(2);
 
 		const auto expression2 = astjson_to_expression(expression);
-		const auto body_statements2 = astjson_to_statements(ast_json_t::make(body_statements));
+		const auto body_statements2 = astjson_to_statements(body_statements);
 
 		return statement_t::make__while_statement(loc, expression2, body_t{body_statements2});
 	}
@@ -380,13 +380,13 @@ statement_t astjson_to_statement__nonlossy(const ast_json_t& statement0){
 	}
 }
 
-const std::vector<statement_t> astjson_to_statements(const ast_json_t& p){
-	QUARK_ASSERT(p._value.check_invariant());
-	QUARK_ASSERT(p._value.is_array());
+const std::vector<statement_t> astjson_to_statements(const json_t& p){
+	QUARK_ASSERT(p.check_invariant());
+	QUARK_ASSERT(p.is_array());
 
 	vector<statement_t> statements2;
-	for(const auto& statement: p._value.get_array()){
-		const auto s2 = astjson_to_statement__nonlossy(ast_json_t::make(statement));
+	for(const auto& statement: p.get_array()){
+		const auto s2 = astjson_to_statement__nonlossy(statement);
 		statements2.push_back(s2);
 	}
 	return statements2;
@@ -404,7 +404,7 @@ std::vector<json_t> symbols_to_json(const std::vector<std::pair<std::string, sym
 				symbol_index,
 				e.first,
 				"CONST",
-				value_and_type_to_ast_json(symbol._const_value)._value
+				value_and_type_to_ast_json(symbol._const_value)
 			});
 			r.push_back(e2);
 		}
@@ -414,7 +414,7 @@ std::vector<json_t> symbols_to_json(const std::vector<std::pair<std::string, sym
 				e.first,
 				"LOCAL",
 				json_t::make_object({
-					{ "value_type", typeid_to_ast_json(symbol._value_type, json_tags::k_tag_resolve_state)._value },
+					{ "value_type", typeid_to_ast_json(symbol._value_type, json_tags::k_tag_resolve_state) },
 					{ "type", symbol_type_str }
 				})
 			});
@@ -426,69 +426,63 @@ std::vector<json_t> symbols_to_json(const std::vector<std::pair<std::string, sym
 	return r;
 }
 
-ast_json_t body_to_json(const body_t& e){
+json_t body_to_json(const body_t& e){
 	std::vector<json_t> statements;
 	for(const auto& i: e._statements){
-		statements.push_back(statement_to_json(i)._value);
+		statements.push_back(statement_to_json(i));
 	}
 
 	const auto symbols = symbols_to_json(e._symbol_table._symbols);
 
-	return ast_json_t::make(
-		json_t::make_object({
-			std::pair<std::string, json_t>{ "statements", json_t::make_array(statements) },
-			std::pair<std::string, json_t>{ "symbols", json_t::make_array(symbols) }
-		})
-	);
+	return json_t::make_object({
+		std::pair<std::string, json_t>{ "statements", json_t::make_array(statements) },
+		std::pair<std::string, json_t>{ "symbols", json_t::make_array(symbols) }
+	});
 }
 
-ast_json_t symbol_to_json(const symbol_t& e){
+json_t symbol_to_json(const symbol_t& e){
 	const auto symbol_type_str = e._symbol_type == symbol_t::immutable_local ? "immutable_local" : "mutable_local";
 
 	if(e._const_value.is_undefined() == false){
-		return ast_json_t::make(
-			json_t::make_object({
-				{ "const_value", value_to_ast_json(e._const_value, json_tags::k_tag_resolve_state)._value }
-			})
-		);
+		return json_t::make_object({
+			{ "const_value", value_to_ast_json(e._const_value, json_tags::k_tag_resolve_state) }
+		});
 	}
 	else{
-		return ast_json_t::make(
-			json_t::make_object({
-				{ "type", symbol_type_str },
-				{ "value_type", typeid_to_ast_json(e._value_type, json_tags::k_tag_resolve_state)._value }
-			})
-		);
+		return json_t::make_object({
+			{ "type", symbol_type_str },
+			{ "value_type", typeid_to_ast_json(e._value_type, json_tags::k_tag_resolve_state) }
+		});
 	}
 }
 
 
-ast_json_t statement_to_json(const statement_t& e){
+json_t statement_to_json(const statement_t& e){
 	QUARK_ASSERT(e.check_invariant());
 
 	struct visitor_t {
 		const statement_t& statement;
 
-		ast_json_t operator()(const statement_t::return_statement_t& s) const{
-			return make_statement1(k_no_location, statement_opcode_t::k_return, expression_to_json(s._expression)._value);
+		json_t operator()(const statement_t::return_statement_t& s) const{
+			return make_statement1(k_no_location, statement_opcode_t::k_return, expression_to_json(s._expression));
 		}
-		ast_json_t operator()(const statement_t::define_struct_statement_t& s) const{
-			return make_statement2(k_no_location, statement_opcode_t::k_def_struct, json_t(s._name), struct_definition_to_ast_json(*s._def)._value);
+		json_t operator()(const statement_t::define_struct_statement_t& s) const{
+			return make_statement2(k_no_location, statement_opcode_t::k_def_struct, json_t(s._name), struct_definition_to_ast_json(*s._def));
 		}
-		ast_json_t operator()(const statement_t::define_protocol_statement_t& s) const{
-			return make_statement2(k_no_location, statement_opcode_t::k_def_protocol, json_t(s._name), protocol_definition_to_ast_json(*s._def)._value);
+		json_t operator()(const statement_t::define_protocol_statement_t& s) const{
+			return make_statement2(k_no_location, statement_opcode_t::k_def_protocol, json_t(s._name), protocol_definition_to_ast_json(*s._def));
 		}
-		ast_json_t operator()(const statement_t::define_function_statement_t& s) const{
+		json_t operator()(const statement_t::define_function_statement_t& s) const{
 			return make_statement3(
 				statement.location,
 				statement_opcode_t::k_def_func,
 				json_t(s._name),
-				function_def_to_ast_json(*s._def)._value,
+				function_def_to_ast_json(*s._def),
 				s._def->_function_type.get_function_pure() == epure::impure ? true : false
 			);
 		}
 
-		ast_json_t operator()(const statement_t::bind_local_t& s) const{
+		json_t operator()(const statement_t::bind_local_t& s) const{
 			bool mutable_flag = s._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
 			const auto meta = mutable_flag
 				? json_t::make_object({
@@ -500,77 +494,77 @@ ast_json_t statement_to_json(const statement_t& e){
 				statement.location,
 				statement_opcode_t::k_bind,
 				s._new_local_name,
-				typeid_to_ast_json(s._bindtype, json_tags::k_tag_resolve_state)._value,
-				expression_to_json(s._expression)._value,
+				typeid_to_ast_json(s._bindtype, json_tags::k_tag_resolve_state),
+				expression_to_json(s._expression),
 				meta
 			);
 		}
-		ast_json_t operator()(const statement_t::store_t& s) const{
+		json_t operator()(const statement_t::store_t& s) const{
 			return make_statement2(
 				statement.location,
 				statement_opcode_t::k_store,
 				s._local_name,
-				expression_to_json(s._expression)._value
+				expression_to_json(s._expression)
 			);
 		}
-		ast_json_t operator()(const statement_t::store2_t& s) const{
+		json_t operator()(const statement_t::store2_t& s) const{
 			return make_statement3(
 				statement.location,
 				statement_opcode_t::k_store2,
 				s._dest_variable._parent_steps,
 				s._dest_variable._index,
-				expression_to_json(s._expression)._value
+				expression_to_json(s._expression)
 			);
 		}
-		ast_json_t operator()(const statement_t::block_statement_t& s) const{
-			return make_statement1(k_no_location, statement_opcode_t::k_block, body_to_json(s._body)._value);
+		json_t operator()(const statement_t::block_statement_t& s) const{
+			return make_statement1(k_no_location, statement_opcode_t::k_block, body_to_json(s._body));
 		}
 
-		ast_json_t operator()(const statement_t::ifelse_statement_t& s) const{
+		json_t operator()(const statement_t::ifelse_statement_t& s) const{
 			return make_statement3(
 				statement.location,
 				statement_opcode_t::k_if,
-				expression_to_json(s._condition)._value,
-				body_to_json(s._then_body)._value,
-				body_to_json(s._else_body)._value
+				expression_to_json(s._condition),
+				body_to_json(s._then_body),
+				body_to_json(s._else_body)
 			);
 		}
-		ast_json_t operator()(const statement_t::for_statement_t& s) const{
+		json_t operator()(const statement_t::for_statement_t& s) const{
 			return make_statement4(
 				statement.location,
 				statement_opcode_t::k_for,
 				//??? open_range?
 				json_t("closed_range"),
-				expression_to_json(s._start_expression)._value,
-				expression_to_json(s._end_expression)._value,
-				body_to_json(s._body)._value
+				expression_to_json(s._start_expression),
+				expression_to_json(s._end_expression),
+				body_to_json(s._body)
 			);
 		}
-		ast_json_t operator()(const statement_t::while_statement_t& s) const{
+		json_t operator()(const statement_t::while_statement_t& s) const{
 			return make_statement2(
 				statement.location,
 				statement_opcode_t::k_while,
-				expression_to_json(s._condition)._value,
-				body_to_json(s._body)._value
+				expression_to_json(s._condition),
+				body_to_json(s._body)
 			);
 		}
 
 
-		ast_json_t operator()(const statement_t::expression_statement_t& s) const{
+		json_t operator()(const statement_t::expression_statement_t& s) const{
 			return make_statement1(
 				statement.location,
 				statement_opcode_t::k_expression_statement,
-				expression_to_json(s._expression)._value
+				expression_to_json(s._expression)
 			);
 		}
-		ast_json_t operator()(const statement_t::software_system_statement_t& s) const{
+		json_t operator()(const statement_t::software_system_statement_t& s) const{
 			return make_statement1(
 				statement.location,
 				statement_opcode_t::k_software_system,
 				s._json_data
 			);
 		}
-		ast_json_t operator()(const statement_t::container_def_statement_t& s) const{
+		json_t operator()(const statement_t::container_def_statement_t& s) const{
 			return make_statement1(
 				statement.location,
 				statement_opcode_t::k_container_def,
@@ -583,8 +577,28 @@ ast_json_t statement_to_json(const statement_t& e){
 }
 
 
-ast_t json_to_ast(const ast_json_t& parse_tree){
-	const auto program_body = astjson_to_statements(parse_tree);
+/*
+ast_json_t ast_to_json(const ast_t& ast){
+	QUARK_ASSERT(ast.check_invariant());
+
+	std::vector<json_t> fds;
+	for(const auto& e: ast._function_defs){
+		ast_json_t fd = function_def_to_ast_json(*e);
+		fds.push_back(fd._value);
+	}
+
+	const auto function_defs_json = json_t::make_array(fds);
+	return ast_json_t::make(json_t::make_object(
+		{
+			{ "globals", body_to_json(ast._globals)._value },
+			{ "function_defs", function_defs_json }
+		}
+	));
+}
+*/
+
+ast_t parse_tree_to_ast(const ast_json_t& parse_tree){
+	const auto program_body = astjson_to_statements(parse_tree._value);
 	return ast_t{body_t{program_body}, {}, {}, {}};
 }
 

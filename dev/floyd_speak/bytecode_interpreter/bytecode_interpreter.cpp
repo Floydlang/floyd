@@ -2096,7 +2096,7 @@ json_t interpreter_stack_t::stack_to_json() const{
 
 		auto a = json_t::make_array({
 			json_t(i),
-			typeid_to_ast_json(debug_type, json_tags::k_plain)._value,
+			typeid_to_ast_json(debug_type, json_tags::k_plain),
 			unwritten ? json_t("UNWRITTEN") : bcvalue_to_json(bc_value_t{bc})
 		});
 		elements.push_back(a);
@@ -2218,7 +2218,7 @@ json_t bcvalue_to_json(const bc_value_t& v){
 		return v.get_json_value();
 	}
 	else if(v._type.is_typeid()){
-		return typeid_to_ast_json(v.get_typeid_value(), json_tags::k_plain)._value;
+		return typeid_to_ast_json(v.get_typeid_value(), json_tags::k_plain);
 	}
 	else if(v._type.is_struct()){
 		const auto& struct_value = v.get_struct_value();
@@ -2279,7 +2279,7 @@ json_t bcvalue_to_json(const bc_value_t& v){
 	else if(v._type.is_function()){
 		return json_t::make_object(
 			{
-				{ "funtyp", typeid_to_ast_json(v._type, json_tags::k_plain)._value }
+				{ "funtyp", typeid_to_ast_json(v._type, json_tags::k_plain) }
 			}
 		);
 	}
@@ -2291,7 +2291,7 @@ json_t bcvalue_to_json(const bc_value_t& v){
 
 json_t bcvalue_and_type_to_json(const bc_value_t& v){
 	return json_t::make_array({
-		typeid_to_ast_json(v._type, json_tags::k_plain)._value,
+		typeid_to_ast_json(v._type, json_tags::k_plain),
 		bcvalue_to_json(v)
 	});
 }
@@ -3640,7 +3640,7 @@ std::vector<json_t> bc_symbols_to_json(const std::vector<std::pair<std::string, 
 				e.first,
 				"LOCAL",
 				json_t::make_object({
-					{ "value_type", typeid_to_ast_json(symbol._value_type, json_tags::k_tag_resolve_state)._value },
+					{ "value_type", typeid_to_ast_json(symbol._value_type, json_tags::k_tag_resolve_state) },
 					{ "type", symbol_type_str }
 				})
 			});
@@ -3689,7 +3689,7 @@ json_t types_to_json(const std::vector<typeid_t>& types){
 	for(const auto& e: types){
 		const auto i = json_t::make_array({
 			id,
-			typeid_to_ast_json(e, json_tags::k_plain)._value
+			typeid_to_ast_json(e, json_tags::k_plain)
 		});
 		r.push_back(i);
 		id++;

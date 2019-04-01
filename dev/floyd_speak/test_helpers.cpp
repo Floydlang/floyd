@@ -120,8 +120,8 @@ static run_report_t run_program_llvm(const std::string& program_source, const st
 }
 
 run_report_t run_program(const std::string& program_source, const std::vector<value_t>& main_args){
-//	return run_program_bc(program_source, main_args);
-	return run_program_llvm(program_source, main_args);
+	return run_program_bc(program_source, main_args);
+//	return run_program_llvm(program_source, main_args);
 }
 
 
@@ -164,8 +164,8 @@ void ut_verify_global_result(const quark::call_context_t& context, const std::st
 	const auto result = run_program(program, {});
 	ut_verify(
 		context,
-		value_and_type_to_ast_json(result.result_variable)._value,
-		value_and_type_to_ast_json(expected_result)._value
+		value_and_type_to_ast_json(result.result_variable),
+		value_and_type_to_ast_json(expected_result)
 	);
 }
 void ut_verify_global_result_as_json(const quark::call_context_t& context, const std::string& program, const std::string& expected_json){
@@ -173,7 +173,7 @@ void ut_verify_global_result_as_json(const quark::call_context_t& context, const
 	const auto result = run_program(program, {});
 	ut_verify(
 		context,
-		value_and_type_to_ast_json(result.result_variable)._value,
+		value_and_type_to_ast_json(result.result_variable),
 		expected_json2
 	);
 }
@@ -192,8 +192,8 @@ void ut_verify_mainfunc_return(const quark::call_context_t& context, const std::
 	const auto result = run_program(program, args);
 	ut_verify(
 		context,
-		value_and_type_to_ast_json(result.main_result)._value,
-		value_and_type_to_ast_json(expected_return)._value
+		value_and_type_to_ast_json(result.main_result),
+		value_and_type_to_ast_json(expected_return)
 	);
 }
 

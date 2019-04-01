@@ -56,13 +56,13 @@ namespace floyd {
 		Future: generate AST as JSON, process AST as JSON etc.
 	*/
 	ast_json_t ast_to_json(const ast_t& ast);
-	ast_t json_to_ast(const ast_json_t& parse_tree);
+	ast_t parse_tree_to_ast(const ast_json_t& parse_tree);
 
 
 
-	ast_json_t body_to_json(const body_t& e);
+	json_t body_to_json(const body_t& e);
 
-	ast_json_t symbol_to_json(const symbol_t& e);
+	json_t symbol_to_json(const symbol_t& e);
 	std::vector<json_t> symbols_to_json(const std::vector<std::pair<std::string, symbol_t>>& symbols);
 
 

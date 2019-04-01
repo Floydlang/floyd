@@ -566,7 +566,7 @@ OFF_QUARK_UNIT_TEST("typeid_to_ast_json()", "", "", ""){
 
 		//	Test typeid_to_ast_json().
 		const auto result1 = typeid_to_ast_json(start_typeid, json_tags::k_tag_resolve_state);
-		ut_verify(QUARK_POS, result1._value, expected_ast_json);
+		ut_verify(QUARK_POS, result1, expected_ast_json);
 	}
 }
 
@@ -579,7 +579,7 @@ OFF_QUARK_UNIT_TEST("typeid_from_ast_json", "", "", ""){
 		const auto expected_ast_json = parse_json(seq_t(f[i]._ast_json)).first;
 
 		//	Test typeid_from_ast_json();
-		const auto result2 = typeid_from_ast_json(ast_json_t::make(expected_ast_json));
+		const auto result2 = typeid_from_ast_json(expected_ast_json);
 		QUARK_UT_VERIFY(result2 == start_typeid);
 	}
 	QUARK_TRACE("OK!");

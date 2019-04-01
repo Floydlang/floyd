@@ -699,8 +699,8 @@ std::string make_value_debug_str(const value_t& v);
 	*/
 	std::string value_and_type_to_string(const value_t& value);
 
-	ast_json_t value_to_ast_json(const value_t& v, json_tags tags);
-	ast_json_t value_and_type_to_ast_json(const value_t& v);
+	json_t value_to_ast_json(const value_t& v, json_tags tags);
+	json_t value_and_type_to_ast_json(const value_t& v);
 
 	json_t values_to_json_array(const std::vector<value_t>& values);
 

@@ -38,7 +38,7 @@ namespace floyd {
 	The semantic_ast_t is a ready-to-run program, all symbols resolved, all semantics are OK.
 */
 struct semantic_ast_t {
-	public: semantic_ast_t(const ast_t& checked_ast);
+	public: explicit semantic_ast_t(const ast_t& checked_ast);
 
 #if DEBUG
 	public: bool check_invariant() const;

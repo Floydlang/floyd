@@ -1556,7 +1556,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 //	QUARK_SCOPED_TRACE("generate_bytecode");
 //	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(ast_to_json(ast._checked_ast)._value));
 
-	bcgenerator_t a(ast._checked_ast);
+	bcgenerator_t a(ast);
 
 	bcgen_globals(a, a._ast_imm->_checked_ast._globals);
 
