@@ -61,7 +61,11 @@ namespace floyd {
 
 	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);
 	json_t function_def_to_ast_json(const function_definition_t& v);
+	function_definition_t json_to_function_def(const json_t& p);
 	const typeid_t& get_function_type(const function_definition_t& f);
+
+
+	json_t function_def_expression_to_ast_json(const function_definition_t& v);
 
 
 

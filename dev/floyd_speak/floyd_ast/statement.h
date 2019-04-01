@@ -57,26 +57,28 @@ namespace floyd {
 
 		type _symbol_type;
 		floyd::typeid_t _value_type;
-		floyd::value_t _const_value;
+
+		//	If there is no initialization value, this member must be value_t::make_undefined();
+		floyd::value_t _init;
 
 
 		bool operator==(const symbol_t& other) const {
 			return true
 				&& _symbol_type == other._symbol_type
 				&& _value_type == other._value_type
-				&& _const_value == other._const_value
+				&& _init == other._init
 				;
 		}
 
 		public: bool check_invariant() const {
-			QUARK_ASSERT(_const_value.is_undefined() || _const_value.get_type() == _value_type);
+			QUARK_ASSERT(_init.is_undefined() || _init.get_type() == _value_type);
 			return true;
 		}
 
-		private: symbol_t(type symbol_type, const floyd::typeid_t& value_type, const floyd::value_t& const_value) :
+		public: symbol_t(type symbol_type, const floyd::typeid_t& value_type, const floyd::value_t& const_value) :
 			_symbol_type(symbol_type),
 			_value_type(value_type),
-			_const_value(const_value)
+			_init(const_value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
@@ -580,7 +582,7 @@ namespace floyd {
 			if(s.first != "**undef**" && s.second._value_type.check_types_resolved() == false){
 				return false;
 			}
-			if(s.first != "**undef**" && s.second._const_value.is_undefined() == false && s.second._const_value.get_type().check_types_resolved() == false){
+			if(s.first != "**undef**" && s.second._init.is_undefined() == false && s.second._init.get_type().check_types_resolved() == false){
 				return false;
 			}
 		}

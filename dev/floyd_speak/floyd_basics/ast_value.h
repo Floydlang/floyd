@@ -700,7 +700,15 @@ std::string make_value_debug_str(const value_t& v);
 	std::string value_and_type_to_string(const value_t& value);
 
 	json_t value_to_ast_json(const value_t& v, json_tags tags);
+	value_t ast_json_to_value(const typeid_t& type, const json_t& v);
+
+
+	//	json array: [ TYPE, VALUE ]
 	json_t value_and_type_to_ast_json(const value_t& v);
+
+	//	json array: [ TYPE, VALUE ]
+	value_t ast_json_to_value_and_type(const json_t& v);
+
 
 	json_t values_to_json_array(const std::vector<value_t>& values);
 

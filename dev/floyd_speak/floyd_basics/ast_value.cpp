@@ -997,6 +997,15 @@ json_t value_and_type_to_ast_json(const value_t& v){
 		});
 }
 
+value_t ast_json_to_value_and_type(const json_t& v){
+	const auto type0 = v.get_array_n(0);
+	const auto value0 = v.get_array_n(1);
+
+	const auto type1 = typeid_from_ast_json(type0);
+	const auto value1 = ast_json_to_value(type1, value0);
+	return value1;
+}
+
 #if DEBUG
 std::string make_value_debug_str(const value_t& value){
 	return value_and_type_to_string(value);
@@ -1006,6 +1015,92 @@ std::string make_value_debug_str(const value_t& value){
 }
 #endif
 
+
+value_t ast_json_to_value(const typeid_t& type, const json_t& v){
+	if(type.is_undefined()){
+		return value_t();
+	}
+	else if(type.is_internal_dynamic()){
+		return make_def(type);
+	}
+	else if(type.is_void()){
+		return make_def(type);
+	}
+	else if(type.is_bool()){
+		if(v.is_true() || v.is_false()){
+			return value_t::make_bool(v.is_true() ? true : false);
+		}
+		else{
+			throw std::exception();
+		}
+	}
+	else if(type.is_int()){
+		return value_t::make_int(static_cast<int64_t>(v.get_number()));
+	}
+	else if(type.is_double()){
+		return value_t::make_double(v.get_number());
+	}
+	else if(type.is_string()){
+		return value_t::make_string(v.get_string());
+	}
+	else if(type.is_json_value()){
+		return value_t::make_json_value(v);
+	}
+	else if(type.is_typeid()){
+		const auto t = typeid_from_ast_json(v);
+		return value_t::make_typeid_value(t);
+	}
+	else if(type.is_struct()){
+		QUARK_ASSERT(false);
+		return make_def(type);
+
+/*
+		const auto& members = v.get_array();
+		if(members.get_array_count != )
+		const auto& struct_value = v.get_struct_value();
+		std::map<string, json_t> obj2;
+		for(int i = 0 ; i < struct_value->_def->_members.size() ; i++){
+			const auto& member = struct_value->_def->_members[i];
+			const auto& key = member._name;
+			const auto& value = struct_value->_member_values[i];
+			const auto& value2 = value_to_ast_json(value, tags);
+			obj2[key] = value2;
+		}
+		return json_t::make_object(obj2);
+*/
+
+	}
+	else if(type.is_protocol()){
+		QUARK_ASSERT(false);
+		return make_def(type);
+	}
+	else if(type.is_vector()){
+		QUARK_ASSERT(false);
+		return make_def(type);
+//		const auto& vec = v.get_vector_value();
+//		return values_to_json_array(vec);
+	}
+	else if(type.is_dict()){
+		QUARK_ASSERT(false);
+		return make_def(type);
+/*
+		const auto entries = v.get_dict_value();
+		std::map<string, json_t> result;
+		for(const auto& e: entries){
+			result[e.first] = value_to_ast_json(e.second, tags);
+		}
+		return result;
+*/
+
+	}
+	else if(type.is_function()){
+		const auto function_id = v.get_object_element("function_id").get_number();
+		return value_t::make_function_value(type, static_cast<int>(function_id));
+	}
+	else{
+		quark::throw_exception();
+	}
+}
 
 json_t value_to_ast_json(const value_t& v, json_tags tags){
 	if(v.is_undefined()){
@@ -1041,23 +1136,11 @@ json_t value_to_ast_json(const value_t& v, json_tags tags){
 		for(int i = 0 ; i < struct_value->_def->_members.size() ; i++){
 			const auto& member = struct_value->_def->_members[i];
 			const auto& key = member._name;
-//			const auto& type = member._type;
 			const auto& value = struct_value->_member_values[i];
 			const auto& value2 = value_to_ast_json(value, tags);
 			obj2[key] = value2;
 		}
 		return json_t::make_object(obj2);
-/*
-
- }
-		return ast_json_t{json_t::make_object(
-			{
-				{ "struct-def", struct_definition_to_ast_json(i->_def)._value },
-				{ "member_values", values_to_json_array(i->_member_values) }
-			}
-		)};
-*/
-//		return ast_json_t{ values_to_json_array(value->_member_values) 	};
 	}
 	else if(v.is_protocol()){
 		const auto& protocol_value = v.get_protocol_value();
@@ -1071,30 +1154,10 @@ json_t value_to_ast_json(const value_t& v, json_tags tags){
 			obj2[key] = value2;
 		}
 		return json_t::make_object(obj2);
-/*
-
- }
-		return ast_json_t{json_t::make_object(
-			{
-				{ "protocol-def", protocol_definition_to_ast_json(i->_def)._value },
-				{ "member_values", values_to_json_array(i->_member_values) }
-			}
-		)};
-*/
-//		return ast_json_t{ values_to_json_array(value->_member_values) 	};
 	}
 	else if(v.is_vector()){
 		const auto& vec = v.get_vector_value();
 		return values_to_json_array(vec);
-/*
-		std::vector<json_t> result;
-		for(int i = 0 ; i < value->_elements.size() ; i++){
-			const auto element_value = value->_elements[i];
-			result.push_back(value_to_ast_json(element_value)._value);
-		}
-		return ast_json_t{result};
-*/
-
 	}
 	else if(v.is_dict()){
 		const auto entries = v.get_dict_value();
@@ -1105,13 +1168,6 @@ json_t value_to_ast_json(const value_t& v, json_tags tags){
 		return result;
 	}
 	else if(v.is_function()){
-/*
-		return ast_json_t::make(json_t::make_object(
-			{
-				{ "funtyp", typeid_to_ast_json(v.get_type(), tags)._value }
-			}
-		));
-*/
 		return json_t::make_object(
 			{
 				{ "function_id", v.get_function_value() }

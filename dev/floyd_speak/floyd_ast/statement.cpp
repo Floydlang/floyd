@@ -25,7 +25,7 @@ std::string symbol_to_string(const symbol_t& s){
 	out << "<symbol> {"
 		<< (s._symbol_type == symbol_t::type::immutable_local ? "immutable_local" : "mutable_local" )
 		<< " type: " << typeid_to_compact_string(s._value_type)
-		<< " init: " << (s._const_value.is_void() ? "<none>" : value_and_type_to_string(s._const_value))
+		<< " init: " << (s._init.is_undefined() ? "<none>" : value_and_type_to_string(s._init))
 	<< "}";
 	return out.str();
 }

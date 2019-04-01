@@ -95,9 +95,9 @@ namespace floyd {
 
 
 	json_t body_to_json(const body_t& e);
+	body_t json_to_body(const json_t& json);
 
-	json_t symbol_to_json(const symbol_t& e);
-	std::vector<json_t> symbols_to_json(const std::vector<std::pair<std::string, symbol_t>>& symbols);
+	std::vector<json_t> symbols_to_json(const symbol_table_t& symbols);
 
 
 }	//	floyd

@@ -867,8 +867,8 @@ int get_host_function_id(bcgenerator_t& gen_acc, const expression_t& e){
 
 		QUARK_ASSERT(global_index >= 0 && global_index < gen_acc._globals._symbol_table._symbols.size());
 		const auto& global_symbol = gen_acc._globals._symbol_table._symbols[global_index];
-		if(global_symbol.second._const_value.is_function()){
-			const auto function_id = global_symbol.second._const_value.get_function_value();
+		if(global_symbol.second._init.is_function()){
+			const auto function_id = global_symbol.second._init.get_function_value();
 			const auto& function_def = gen_acc._ast_imm->_tree._function_defs[function_id];
 			return function_def->_host_function_id;
 		}
@@ -1541,7 +1541,7 @@ bc_static_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_
 			bc_symbol_t{
 				e.second._symbol_type == symbol_t::immutable_local ? bc_symbol_t::immutable_local : bc_symbol_t::mutable_local,
 				e.second._value_type,
-				value_to_bc(e.second._const_value)
+				value_to_bc(e.second._init)
 			}
 		};
 		symbols2.push_back(e2);

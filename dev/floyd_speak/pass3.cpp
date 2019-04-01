@@ -258,7 +258,7 @@ typeid_t resolve_type_internal(const analyser_t& a, const location_t& loc, const
 		const auto found = find_symbol_by_name(a, type.get_unresolved_type_identifier());
 		if(found.first != nullptr){
 			if(found.first->_value_type.is_typeid()){
-				return found.first->_const_value.get_typeid_value();
+				return found.first->_init.get_typeid_value();
 			}
 			else{
 				throw_compiler_error(loc, "Cannot resolve type");
@@ -1337,8 +1337,8 @@ bool is_host_function_call(const analyser_t& a, const expression_t& callee_expr)
 		const auto callee = resolve_symbol_by_address(a, callee_expr._address);
 		QUARK_ASSERT(callee != nullptr);
 
-		if(callee->_const_value.is_function()){
-			const auto& function_def = function_id_to_def(a, callee->_const_value.get_function_value());
+		if(callee->_init.is_function()){
+			const auto& function_def = function_id_to_def(a, callee->_init.get_function_value());
 			return function_def._host_function_id != k_no_host_function_id;
 		}
 		else{
@@ -1357,7 +1357,7 @@ typeid_t get_host_function_return_type(const analyser_t& a, const statement_t& p
 	const auto callee = resolve_symbol_by_address(a, callee_expr._address);
 	QUARK_ASSERT(callee != nullptr);
 
-	const auto& function_def = function_id_to_def(a, callee->_const_value.get_function_value());
+	const auto& function_def = function_id_to_def(a, callee->_init.get_function_value());
 
 	const auto host_function_id = function_def._host_function_id;
 
@@ -1384,8 +1384,8 @@ typeid_t get_host_function_return_type(const analyser_t& a, const statement_t& p
 			const auto arg1 = args[1];
 			if(arg1.get_operation() == expression_type::k_load2){
 				const auto symbol = resolve_symbol_by_address(a, arg1._address);
-				if(symbol != nullptr && symbol->_const_value.is_undefined() == false){
-					return symbol->_const_value.get_typeid_value();
+				if(symbol != nullptr && symbol->_init.is_undefined() == false){
+					return symbol->_init.get_typeid_value();
 				}
 				else{
 					throw_compiler_error(parent.location, "Cannot resolve type for jsonvalue_to_value().");
@@ -1446,11 +1446,11 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a,
 		const auto found_symbol_ptr = resolve_symbol_by_address(a_acc, callee_expr._address);
 		QUARK_ASSERT(found_symbol_ptr != nullptr);
 
-		if(found_symbol_ptr->_const_value.is_undefined()){
+		if(found_symbol_ptr->_init.is_undefined()){
 			throw_compiler_error(parent.location, "Cannot resolve callee.");
 		}
 		else{
-			const auto callee_type2 = found_symbol_ptr->_const_value.get_typeid_value();
+			const auto callee_type2 = found_symbol_ptr->_init.get_typeid_value();
 
 			//	Convert calls to struct-type into construct-value expression.
 			if(callee_type2.is_struct()){

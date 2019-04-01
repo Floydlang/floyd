@@ -41,24 +41,39 @@ const typeid_t& get_function_type(const function_definition_t& f){
 
 json_t function_def_to_ast_json(const function_definition_t& v) {
 	typeid_t function_type = get_function_type(v);
-	return make_expression_n(
-		v._location,
-		expression_opcode_t::k_function_def,
-		{
-			typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state),
-			members_to_json(v._args),
 
-			v._body ? body_to_json(*v._body) : json_t(),
+	return std::vector<json_t>{
+		typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state),
+		members_to_json(v._args),
 
-			json_t(v._host_function_id),
+		v._body ? body_to_json(*v._body) : json_t(),
 
-			//	Duplicate info -- we have convered this using function_type above.
-			typeid_to_ast_json(v._function_type.get_function_return(), json_tags::k_tag_resolve_state)
-		}
-	);
+		json_t(v._host_function_id)
+	};
 }
 
- bool function_definition_t::check_types_resolved() const{
+
+function_definition_t json_to_function_def(const json_t& p){
+	const auto function_type0 = p.get_array_n(0);
+	const auto args0 = p.get_array_n(1);
+	const auto body0 = p.get_array_n(2);
+	const auto host_function_id0 = p.get_array_n(3);
+
+	const location_t location1 = k_no_location;
+	const typeid_t function_type1 = typeid_from_ast_json(function_type0);
+	const std::vector<member_t> args1 = members_from_json(args0);
+	const std::shared_ptr<body_t> body1 = body0.is_null() ? std::shared_ptr<body_t>() : std::make_shared<body_t>(json_to_body(body0));
+
+	return function_definition_t{
+		location1,
+		function_type1,
+		args1,
+		body1,
+		k_no_host_function_id
+	};
+}
+
+bool function_definition_t::check_types_resolved() const{
 	bool result = _function_type.check_types_resolved();
 	if(result == false){
 		return false;
@@ -139,7 +154,14 @@ QUARK_UNIT_TEST("expression_t", "expression_to_json()", "lookup", ""){
 	);
 }
 
-
+json_t function_def_expression_to_ast_json(const function_definition_t& v) {
+	typeid_t function_type = get_function_type(v);
+	return make_expression_n(
+		v._location,
+		expression_opcode_t::k_function_def,
+		function_def_to_ast_json(v).get_array()
+	);
+}
 
 json_t expression_to_json_internal(const expression_t& e){
 	const auto opcode = e.get_operation();
@@ -179,7 +201,7 @@ json_t expression_to_json_internal(const expression_t& e){
 		return make_expression1(k_no_location, expression_opcode_t::k_struct_def, struct_definition_to_ast_json(*e._struct_def));
 	}
 	else if(opcode == expression_type::k_function_def){
-		return function_def_to_ast_json(*e._function_def);
+		return function_def_expression_to_ast_json(*e._function_def);
 	}
 	else if(opcode == expression_type::k_load){
 		return make_expression1(k_no_location, expression_opcode_t::k_load, json_t(e._variable_name));

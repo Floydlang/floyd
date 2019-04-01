@@ -39,6 +39,17 @@ typeid_t resolve_type_name(const json_t& t){
 	return t2;
 }
 
+std::shared_ptr<typeid_t> get_optional_typeid(const json_t& json_array, int optional_index){
+	if(optional_index < json_array.get_array_size()){
+		const auto e = json_array.get_array_n(optional_index);
+		return std::make_shared<typeid_t>(typeid_from_ast_json(e));
+	}
+	else{
+		return nullptr;
+	}
+}
+
+
 //??? loses output-type for some expressions. Make it nonlossy!
 expression_t astjson_to_expression(const json_t& e){
 	QUARK_ASSERT(e.check_invariant());
@@ -77,59 +88,78 @@ expression_t astjson_to_expression(const json_t& e){
 		}
 	}
 	else if(op == expression_opcode_t::k_unary_minus){
-		QUARK_ASSERT(e.get_array_size() == 2);
+		QUARK_ASSERT(e.get_array_size() == 2 || e.get_array_size() == 3);
+
 		const auto expr = astjson_to_expression(e.get_array_n(1));
-		return expression_t::make_unary_minus(expr, nullptr);
+		const auto annotated_type = get_optional_typeid(e, 2);
+		return expression_t::make_unary_minus(expr, annotated_type);
 	}
 	else if(is_simple_expression__2(op)){
-		QUARK_ASSERT(e.get_array_size() == 3);
+		QUARK_ASSERT(e.get_array_size() == 3 || e.get_array_size() == 4);
+
 		const auto op2 = token_to_expression_type(op);
 		const auto lhs_expr = astjson_to_expression(e.get_array_n(1));
 		const auto rhs_expr = astjson_to_expression(e.get_array_n(2));
-		return expression_t::make_simple_expression__2(op2, lhs_expr, rhs_expr, nullptr);
+		const auto annotated_type = get_optional_typeid(e, 3);
+		return expression_t::make_simple_expression__2(op2, lhs_expr, rhs_expr, annotated_type);
 	}
 	else if(op == expression_opcode_t::k_conditional_operator){
-		QUARK_ASSERT(e.get_array_size() == 4);
+		QUARK_ASSERT(e.get_array_size() == 4 || e.get_array_size() == 5);
+
 		const auto condition_expr = astjson_to_expression(e.get_array_n(1));
 		const auto a_expr = astjson_to_expression(e.get_array_n(2));
 		const auto b_expr = astjson_to_expression(e.get_array_n(3));
-		return expression_t::make_conditional_operator(condition_expr, a_expr, b_expr, nullptr);
+		const auto annotated_type = get_optional_typeid(e, 4);
+		return expression_t::make_conditional_operator(condition_expr, a_expr, b_expr, annotated_type);
 	}
 	else if(op == expression_opcode_t::k_call){
-		QUARK_ASSERT(e.get_array_size() == 3);
+		QUARK_ASSERT(e.get_array_size() == 3 || e.get_array_size() == 4);
+
 		const auto function_expr = astjson_to_expression(e.get_array_n(1));
 		const auto args = e.get_array_n(2);
 		vector<expression_t> args2;
 		for(const auto& arg: args.get_array()){
 			args2.push_back(astjson_to_expression(arg));
 		}
-		return expression_t::make_call(function_expr, args2, nullptr);
+
+		const auto annotated_type = get_optional_typeid(e, 3);
+
+		return expression_t::make_call(function_expr, args2, annotated_type);
 	}
 	else if(op == expression_opcode_t::k_resolve_member){
-		QUARK_ASSERT(e.get_array_size() == 3);
+		QUARK_ASSERT(e.get_array_size() == 3 || e.get_array_size() == 4);
+
 		const auto base_expr = astjson_to_expression(e.get_array_n(1));
 		const auto member = e.get_array_n(2).get_string();
-		return expression_t::make_resolve_member(base_expr, member, nullptr);
+		const auto annotated_type = get_optional_typeid(e, 3);
+		return expression_t::make_resolve_member(base_expr, member, annotated_type);
 	}
 	else if(op == expression_opcode_t::k_load){
-		QUARK_ASSERT(e.get_array_size() == 2);
+		QUARK_ASSERT(e.get_array_size() == 2 || e.get_array_size() == 3);
+
 		const auto variable_symbol = e.get_array_n(1).get_string();
-		return expression_t::make_load(variable_symbol, nullptr);
+		const auto annotated_type = get_optional_typeid(e, 2);
+		return expression_t::make_load(variable_symbol, annotated_type);
 	}
 	else if(op == expression_opcode_t::k_load2){
-		QUARK_ASSERT(e.get_array_size() == 3);
+		QUARK_ASSERT(e.get_array_size() == 3 || e.get_array_size() == 4);
+
 		const auto parent_step = (int)e.get_array_n(1).get_number();
 		const auto index = (int)e.get_array_n(2).get_number();
-		return expression_t::make_load2(variable_address_t::make_variable_address(parent_step, index), nullptr);
+		const auto annotated_type = get_optional_typeid(e, 3);
+		return expression_t::make_load2(variable_address_t::make_variable_address(parent_step, index), annotated_type);
 	}
 	else if(op == expression_opcode_t::k_lookup_element){
-		QUARK_ASSERT(e.get_array_size() == 3);
+		QUARK_ASSERT(e.get_array_size() == 3 || e.get_array_size() == 4);
+
 		const auto parent_address_expr = astjson_to_expression(e.get_array_n(1));
 		const auto lookup_key_expr = astjson_to_expression(e.get_array_n(2));
-		return expression_t::make_lookup(parent_address_expr, lookup_key_expr, nullptr);
+		const auto annotated_type = get_optional_typeid(e, 3);
+		return expression_t::make_lookup(parent_address_expr, lookup_key_expr, annotated_type);
 	}
 	else if(op == expression_opcode_t::k_value_constructor){
 		QUARK_ASSERT(e.get_array_size() == 3);
+
 		const auto value_type = resolve_type_name(e.get_array_n(1));
 		const auto args = e.get_array_n(2).get_array();
 
@@ -371,39 +401,76 @@ const std::vector<statement_t> astjson_to_statements(const json_t& p){
 	return statements2;
 }
 
-std::vector<json_t> symbols_to_json(const std::vector<std::pair<std::string, symbol_t>>& symbols){
+
+
+json_t symbol_to_json(const symbol_t& symbol){
+	const auto symbol_type_str = symbol._symbol_type == symbol_t::immutable_local ? "immutable_local" : "mutable_local";
+	const auto value_type = typeid_to_ast_json(symbol._value_type, json_tags::k_tag_resolve_state);
+
+	const auto e2 = json_t::make_object({
+		{ "symbol_type", symbol_type_str },
+		{ "value_type", value_type },
+		{ "init", value_to_ast_json(symbol._init, json_tags::k_tag_resolve_state) }
+	});
+	return e2;
+}
+
+symbol_t json_to_symbol(const json_t& e){
+	const auto symbol_type = e.get_object_element("symbol_type").get_string();
+	const auto value_type = e.get_object_element("value_type");
+
+	if(symbol_type == "immutable_local" || symbol_type == "mutable_local"){
+	}
+	else{
+		throw std::exception();
+	}
+	const auto symbol_type1 = symbol_type == "immutable_local" ? symbol_t::immutable_local : symbol_t::mutable_local;
+	const auto value_type1 = typeid_from_ast_json(value_type);
+	const auto init = e.get_object_element("init");
+	const auto init_value1 = init.is_null() ? value_t::make_undefined() : ast_json_to_value(value_type1, init);
+	const auto result = symbol_t(symbol_type1, value_type1, init_value1);
+	return result;
+}
+
+
+std::vector<json_t> symbols_to_json(const symbol_table_t& symbol_table){
 	std::vector<json_t> r;
 	int symbol_index = 0;
-	for(const auto& e: symbols){
-		const auto& symbol = e.second;
-		const auto symbol_type_str = symbol._symbol_type == symbol_t::immutable_local ? "immutable_local" : "mutable_local";
-
-		if(symbol._const_value.is_undefined() == false){
-			const auto e2 = json_t::make_array({
-				symbol_index,
-				e.first,
-				"CONST",
-				value_and_type_to_ast_json(symbol._const_value)
-			});
-			r.push_back(e2);
-		}
-		else{
-			const auto e2 = json_t::make_array({
-				symbol_index,
-				e.first,
-				"LOCAL",
-				json_t::make_object({
-					{ "value_type", typeid_to_ast_json(symbol._value_type, json_tags::k_tag_resolve_state) },
-					{ "type", symbol_type_str }
-				})
-			});
-			r.push_back(e2);
-		}
-
+	for(const auto& e: symbol_table._symbols){
+		const auto symbol1 = symbol_to_json(e.second);
+		const auto e2 = json_t::make_array({
+			symbol_index,
+			e.first,
+			symbol1
+		});
+		r.push_back(e2);
 		symbol_index++;
 	}
 	return r;
 }
+
+symbol_table_t astjson_to_symbols(const json_t& p){
+	std::vector<std::pair<std::string, floyd::symbol_t>> result;
+	const auto json_array = p.get_array();
+	for(const auto& e: json_array){
+		const auto symbol_array_json = e;
+		const auto symbol_index = e.get_array_n(0).get_number();
+		const auto symbol_name = e.get_array_n(1).get_string();
+		const auto symbol = json_to_symbol(e.get_array_n(2));
+
+		while(result.size() < symbol_index){
+			result.push_back({"dummy_symbol #" + std::to_string(result.size()), symbol});
+		}
+
+		QUARK_ASSERT(result.size() == symbol_index);
+		result.push_back({ symbol_name, symbol } );
+	}
+	return symbol_table_t{ result };
+}
+
+
+
+
 
 json_t body_to_json(const body_t& e){
 	std::vector<json_t> statements;
@@ -411,7 +478,7 @@ json_t body_to_json(const body_t& e){
 		statements.push_back(statement_to_json(i));
 	}
 
-	const auto symbols = symbols_to_json(e._symbol_table._symbols);
+	const auto symbols = symbols_to_json(e._symbol_table);
 
 	return json_t::make_object({
 		std::pair<std::string, json_t>{ "statements", json_t::make_array(statements) },
@@ -419,21 +486,17 @@ json_t body_to_json(const body_t& e){
 	});
 }
 
-json_t symbol_to_json(const symbol_t& e){
-	const auto symbol_type_str = e._symbol_type == symbol_t::immutable_local ? "immutable_local" : "mutable_local";
+body_t json_to_body(const json_t& json){
+	const auto statements = json.does_object_element_exist("statements") ? json.get_object_element("statements") : json_t();
+	const auto statements1 = statements.is_null() ? std::vector<statement_t>() : astjson_to_statements(statements);
 
-	if(e._const_value.is_undefined() == false){
-		return json_t::make_object({
-			{ "const_value", value_to_ast_json(e._const_value, json_tags::k_tag_resolve_state) }
-		});
-	}
-	else{
-		return json_t::make_object({
-			{ "type", symbol_type_str },
-			{ "value_type", typeid_to_ast_json(e._value_type, json_tags::k_tag_resolve_state) }
-		});
-	}
+	const auto symbols = json.does_object_element_exist("symbols") ? json.get_object_element("symbols") : json_t();
+	const auto symbols1 = symbols.is_null() ? symbol_table_t{} : astjson_to_symbols(symbols);
+
+	return body_t(statements1, symbols1);
 }
+
+
 
 
 json_t statement_to_json(const statement_t& e){
@@ -456,7 +519,7 @@ json_t statement_to_json(const statement_t& e){
 				statement.location,
 				statement_opcode_t::k_def_func,
 				json_t(s._name),
-				function_def_to_ast_json(*s._def),
+				function_def_expression_to_ast_json(*s._def),
 				s._def->_function_type.get_function_pure() == epure::impure ? true : false
 			);
 		}
@@ -576,16 +639,42 @@ json_t gp_ast_to_json(const general_purpose_ast_t& ast){
 			{ "function_defs", function_defs_json }
 		}
 	);
+
+	//??? add software-system and containerdef.
 }
 
 general_purpose_ast_t json_to_gp_ast(const json_t& json){
-	const auto program_body = astjson_to_statements(json);
-	return general_purpose_ast_t{
-		body_t{ program_body },
-		{},
-		{},
-		{}
-	};
+
+	//	This is a pass2 AST: it contains an array of statements, with hierachical functions and types.
+	if(json.is_array()){
+		const auto program_body = astjson_to_statements(json);
+		return general_purpose_ast_t{
+			body_t{ program_body },
+			{},
+			{},
+			{}
+		};
+	}
+	else{
+		const auto globals0 = json.get_object_element("globals");
+		const auto function_defs = json.get_object_element("function_defs");
+
+		body_t globals1 = json_to_body(globals0);
+
+		std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs1;
+		for(const auto& f: function_defs.get_array()){
+			const auto f1 = json_to_function_def(f);
+			const auto f2 = std::make_shared<const floyd::function_definition_t>(f1);
+			function_defs1.push_back(f2);
+		}
+
+		return general_purpose_ast_t {
+			globals1,
+			function_defs1,
+			software_system_t{},
+			container_t{}
+		};
+	}
 }
 
 
