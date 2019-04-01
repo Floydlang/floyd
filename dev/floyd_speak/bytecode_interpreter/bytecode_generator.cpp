@@ -869,7 +869,7 @@ int get_host_function_id(bcgenerator_t& gen_acc, const expression_t& e){
 		const auto& global_symbol = gen_acc._globals._symbol_table._symbols[global_index];
 		if(global_symbol.second._const_value.is_function()){
 			const auto function_id = global_symbol.second._const_value.get_function_value();
-			const auto& function_def = gen_acc._ast_imm->_checked_ast._function_defs[function_id];
+			const auto& function_def = gen_acc._ast_imm->_checked_ast._tree._function_defs[function_id];
 			return function_def->_host_function_id;
 		}
 		else{
@@ -1558,11 +1558,11 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 
 	bcgenerator_t a(ast);
 
-	bcgen_globals(a, a._ast_imm->_checked_ast._globals);
+	bcgen_globals(a, a._ast_imm->_checked_ast._tree._globals);
 
 	std::vector<bc_function_definition_t> function_defs2;
-	for(int function_id = 0 ; function_id < ast._checked_ast._function_defs.size() ; function_id++){
-		const auto& function_def = *ast._checked_ast._function_defs[function_id];
+	for(int function_id = 0 ; function_id < ast._checked_ast._tree._function_defs.size() ; function_id++){
+		const auto& function_def = *ast._checked_ast._tree._function_defs[function_id];
 
 		if(function_def._host_function_id != k_no_host_function_id){
 			const auto function_def2 = bc_function_definition_t{
@@ -1588,7 +1588,12 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 	}
 
 	const auto globals2 = make_frame(a._globals, {});
-	const auto result = bc_program_t{ globals2, function_defs2, a._types, ast._checked_ast._software_system, ast._checked_ast._container_def };
+	const auto result = bc_program_t{
+		globals2,
+		function_defs2,
+		a._types, ast._checked_ast._tree._software_system,
+		ast._checked_ast._tree._container_def
+	};
 
 //	QUARK_TRACE_SS("OUTPUT: " << json_to_pretty_string(bcprogram_to_json(result)));
 

@@ -21,7 +21,7 @@ namespace floyd {
 
 using namespace std;
 
-bool check_types_resolved(const pass2_ast_t& ast);
+bool check_types_resolved(const general_purpose_ast_t& ast);
 
 
 
@@ -29,7 +29,7 @@ bool check_types_resolved(const pass2_ast_t& ast);
 
 semantic_ast_t::semantic_ast_t(const pass2_ast_t& checked_ast){
 	QUARK_ASSERT(checked_ast.check_invariant());
-	QUARK_ASSERT(check_types_resolved(checked_ast));
+	QUARK_ASSERT(check_types_resolved(checked_ast._tree));
 
 	_checked_ast = checked_ast;
 }
@@ -37,7 +37,7 @@ semantic_ast_t::semantic_ast_t(const pass2_ast_t& checked_ast){
 #if DEBUG
 bool semantic_ast_t::check_invariant() const{
 	QUARK_ASSERT(_checked_ast.check_invariant());
-	QUARK_ASSERT(check_types_resolved(_checked_ast));
+	QUARK_ASSERT(check_types_resolved(_checked_ast._tree));
 	return true;
 }
 #endif
@@ -1726,7 +1726,7 @@ QUARK_UNIT_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 }
 
 
-bool check_types_resolved(const pass2_ast_t& ast){
+bool check_types_resolved(const general_purpose_ast_t& ast){
 	if(ast._globals.check_types_resolved() == false){
 		return false;
 	}
@@ -1747,7 +1747,7 @@ semantic_ast_t analyse(const analyser_t& a){
 	*/
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
-	auto function_defs = a._imm->_ast._function_defs;
+	auto function_defs = a._imm->_ast._tree._function_defs;
 
 	//	Insert built-in functions.
 	for(auto hf_kv: a._imm->_host_functions){
@@ -1797,18 +1797,18 @@ semantic_ast_t analyse(const analyser_t& a){
 	auto analyser2 = a;
 	analyser2._function_defs.swap(function_defs);
 
-	const auto body = body_t(analyser2._imm->_ast._globals._statements, symbol_table_t{symbol_map});
+	const auto body = body_t(analyser2._imm->_ast._tree._globals._statements, symbol_table_t{symbol_map});
 	const auto result = analyse_body(analyser2, body, epure::impure, typeid_t::make_undefined());
-	const auto result_ast0 = pass2_ast_t{
+	const auto result_ast0 = pass2_ast_t{general_purpose_ast_t{
 		._globals = result. second,
 		._function_defs = result.first._function_defs,
 		._software_system = result.first._software_system,
 		._container_def = result.first._container_def
-	};
+	}};
 
 	const auto result_ast1 = semantic_ast_t(result_ast0);
 	QUARK_ASSERT(result_ast1._checked_ast.check_invariant());
-	QUARK_ASSERT(check_types_resolved(result_ast1._checked_ast));
+	QUARK_ASSERT(check_types_resolved(result_ast1._checked_ast._tree));
 	return result_ast1;
 }
 

@@ -38,7 +38,7 @@ ast_json_t pass1_ast_to_json(const pass2_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	std::vector<json_t> fds;
-	for(const auto& e: ast._function_defs){
+	for(const auto& e: ast._tree._function_defs){
 		const auto fd = function_def_to_ast_json(*e);
 		fds.push_back(fd);
 	}
@@ -46,7 +46,7 @@ ast_json_t pass1_ast_to_json(const pass2_ast_t& ast){
 	const auto function_defs_json = json_t::make_array(fds);
 	return ast_json_t::make(json_t::make_object(
 		{
-			{ "globals", body_to_json(ast._globals) },
+			{ "globals", body_to_json(ast._tree._globals) },
 			{ "function_defs", function_defs_json }
 		}
 	));

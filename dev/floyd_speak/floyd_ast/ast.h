@@ -32,15 +32,10 @@ namespace floyd {
 	};
 
 
-	//////////////////////////////////////////////////		pass2_ast_t
 
-	/*
-		The Abstract Syntax Tree. It may contain unresolved symbols.
-		It can optionally be annotated with all expression types OR NOT.
-		Immutable
-	*/
+	//////////////////////////////////////////////////		general_purpose_ast_t
 
-	struct pass2_ast_t {
+	struct general_purpose_ast_t {
 		public: bool check_invariant() const{
 			QUARK_ASSERT(_globals.check_invariant());
 			return true;
@@ -51,6 +46,26 @@ namespace floyd {
 		public: std::vector<std::shared_ptr<const floyd::function_definition_t>> _function_defs;
 		public: software_system_t _software_system;
 		public: container_t _container_def;
+	};
+
+
+
+	//////////////////////////////////////////////////		pass2_ast_t
+
+	/*
+		The Abstract Syntax Tree. It may contain unresolved symbols.
+		It can optionally be annotated with all expression types OR NOT.
+		Immutable
+	*/
+
+	struct pass2_ast_t {
+		public: bool check_invariant() const{
+			QUARK_ASSERT(_tree.check_invariant());
+			return true;
+		}
+
+		/////////////////////////////		STATE
+		public: general_purpose_ast_t _tree;
 	};
 
 

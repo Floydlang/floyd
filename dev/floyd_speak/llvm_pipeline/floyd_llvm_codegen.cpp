@@ -1173,7 +1173,7 @@ llvm::Value* genllvm_make_global(llvmgen_t& gen_acc, const pass2_ast_t& checked_
 		QUARK_TRACE_SS("itype: " << print_type(itype));
 
 		const int function_id = symbol._const_value.get_function_value();
-		const auto& function_def = *checked_ast._function_defs[function_id];
+		const auto& function_def = *checked_ast._tree._function_defs[function_id];
 		if(function_def._host_function_id != k_no_host_function_id){
 			const auto label = make_host_function_label(function_def._host_function_id);
 			llvm::Function* f = gen_acc.program_acc.module->getFunction(label);
@@ -1261,8 +1261,8 @@ void genllvm_make_function_defs(llvmgen_t& gen_acc, const semantic_ast_t& semant
 	QUARK_ASSERT(semantic_ast.check_invariant());
 
 
-	for(int function_id = 0 ; function_id < semantic_ast._checked_ast._function_defs.size() ; function_id++){
-		const auto& function_def = *semantic_ast._checked_ast._function_defs[function_id];
+	for(int function_id = 0 ; function_id < semantic_ast._checked_ast._tree._function_defs.size() ; function_id++){
+		const auto& function_def = *semantic_ast._checked_ast._tree._function_defs[function_id];
 
 		if(function_def._host_function_id != k_no_host_function_id){
 //			QUARK_ASSERT(false);
@@ -1295,7 +1295,7 @@ void genllvm_make_floyd_runtime_init(llvmgen_t& gen_acc, const semantic_ast_t& s
 	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(gen_acc.program_acc.context, "entry", f);
 	gen_acc.builder.SetInsertPoint(entryBB);
 
-	genllvm_statements(gen_acc, global_symbol_table, semantic_ast._checked_ast._globals._statements);
+	genllvm_statements(gen_acc, global_symbol_table, semantic_ast._checked_ast._tree._globals._statements);
 
 	llvm::Value* dummy_result = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 667);
 	llvm::ReturnInst::Create(gen_acc.program_acc.context, dummy_result, entryBB);
@@ -1312,7 +1312,7 @@ void genllvm_all(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast){
 	//	host functions are later linked by LLVM execution engine, by matching the function names.
 	//	Floyd functions are later filled with instructions.
 	{
-		const auto& defs = semantic_ast._checked_ast._function_defs;
+		const auto& defs = semantic_ast._checked_ast._tree._function_defs;
 		for(int function_id = 0 ; function_id < defs.size() ; function_id++){
 			const auto& function_def = *defs[function_id];
 			const auto function_type = function_def._function_type;
@@ -1333,7 +1333,11 @@ void genllvm_all(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast){
 		QUARK_ASSERT(gen_acc.check_invariant());
 		QUARK_ASSERT(semantic_ast.check_invariant());
 
-		std::vector<global_v_t> globals = genllvm_make_globals(gen_acc, semantic_ast._checked_ast, semantic_ast._checked_ast._globals._symbol_table);
+		std::vector<global_v_t> globals = genllvm_make_globals(
+			gen_acc,
+			semantic_ast._checked_ast,
+			semantic_ast._checked_ast._tree._globals._symbol_table
+		);
 		gen_acc.globals = globals;
 	}
 
