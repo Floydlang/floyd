@@ -69,7 +69,7 @@ function_definition_t json_to_function_def(const json_t& p){
 		function_type1,
 		args1,
 		body1,
-		k_no_host_function_id
+		static_cast<int>(host_function_id0.get_number())
 	};
 }
 

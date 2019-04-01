@@ -822,6 +822,12 @@ void floyd_host_function_1000(int64_t arg){
 void floyd_host_function_1001(int64_t arg){
 	std:: cout << "floyd_host_function_1001: " << arg << std::endl;
 }
+void floyd_host_function_2002(int64_t arg){
+	std:: cout << "floyd_host_function_2002: " << arg << std::endl;
+}
+void floyd_host_function_2003(int64_t arg){
+	std:: cout << "floyd_host_function_2003: " << arg << std::endl;
+}
 
 void host_print(int64_t arg){
 	std:: cout << "host_print: " << arg << std::endl;
@@ -900,8 +906,6 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const std::vector<globa
 
 //	floyd::typeid_t print_function_type = floyd::typeid_t::make_function(typeid_t::make_void(), { floyd::typeid_t::make_int() }, floyd::epure::impure);
 
-	//	Name matches host_print()-function above.
-//	llvm::Function* print_stub = make_function_stub(gen_acc, "host_print", print_function_type);
 
 
 	//	Normal function call.
@@ -911,7 +915,7 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const std::vector<globa
 
 		QUARK_TRACE_SS("gen_acc: " << print_gen(gen_acc));
 
-		llvm::Function* callee = llvm::cast<llvm::Function>(callee0);
+//		llvm::Function* callee = llvm::cast<llvm::Function>(callee0);
 
 		//	Skip [0], which is callee.
 		std::vector<llvm::Value*> args2;
@@ -936,10 +940,10 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const std::vector<globa
 //		llvm::Function* print_func = make_function_stub(gen_acc, unique_function_str, function_type);
 
 		if(return_type.is_void()){
-			return gen_acc.builder.CreateCall(callee, args2, "");
+			return gen_acc.builder.CreateCall(callee0, args2, "");
 		}
 		else{
-			return gen_acc.builder.CreateCall(callee, args2, "temp_call");
+			return gen_acc.builder.CreateCall(callee0, args2, "temp_call");
 		}
 	}
 }
@@ -1169,7 +1173,7 @@ llvm::Value* genllvm_make_global(llvmgen_t& gen_acc, const semantic_ast_t& ast, 
 	const auto type0 = symbol.get_type();
 
 	if(type0.is_function()){
-		const auto itype = intern_type(gen_acc, hack_function_type(type0), func_encode::functions_are_values);
+		const auto itype = intern_type(gen_acc, hack_function_type(type0), func_encode::functions_are_pointers);
 		QUARK_TRACE_SS("itype: " << print_type(itype));
 
 		const int function_id = symbol._init.get_function_value();
@@ -1548,8 +1552,8 @@ QUARK_UNIT_TEST_VIP("", "run_using_llvm()", "", ""){
 }
 #endif
 
-#if 0
-QUARK_UNIT_TEST_VIP("Floyd test suite", "+", "", ""){
+#if 1
+QUARK_UNIT_TEST("Floyd test suite", "+", "", ""){
 //	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
 
 	const auto pass3 = compile_to_sematic_ast__errors("let int result = 1 + 2 + 3", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
@@ -1607,14 +1611,11 @@ const std::string test_1_json = R"ABCD(
 #include "ast_json.h"
 
 #if 1
-QUARK_UNIT_TEST_VIP("", "", "", ""){
+QUARK_UNIT_TEST("", "", "", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_1_json));
 
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
 	auto program = generate_llvm_ir(pass3, "myfile.floyd");
-
-	floyd::print_program(*program);
-
 	auto ee = make_engine_break_program(*program);
 
 	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(ee, "result"));
@@ -1622,7 +1623,39 @@ QUARK_UNIT_TEST_VIP("", "", "", ""){
 
 //	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
 }
-
-
 #endif
+
+
+
+
+
+
+const std::string test_2_json = R"ABCD(
+{
+	"function_defs": [
+		[["func", "^void", ["^void"], true], [], null, 2002],
+		[["func", "^void", ["^void"], true], [], null, 2003],
+		[["func", "^void", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1000]
+	],
+	"globals": {
+		"statements": [[0, "expression-statement", ["call", ["@i", -1, 1, ["func", "^void", ["^**dyn**"], true]], [["k", 5, "^int"]], "^void"]]],
+		"symbols": [
+			[0, "assert", { "init": { "function_id": 0 }, "symbol_type": "immutable_local", "value_type": ["func", "^void", ["^**dyn**"], true] }],
+			[1, "host_print", { "init": { "function_id": 2 }, "symbol_type": "immutable_local", "value_type": ["func", "^void", ["^**dyn**"], true] }]
+		]
+	}
+}
+}
+")ABCD";
+
+
+QUARK_UNIT_TEST_VIP("", "Simple function call", "", ""){
+	std::pair<json_t, seq_t> a = parse_json(seq_t(test_2_json));
+	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
+//	const auto pass3 = compile_to_sematic_ast__errors("print(5)", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
+
+	auto program = generate_llvm_ir(pass3, "myfile.floyd");
+	auto ee = make_engine_break_program(*program);
+}
+
 
