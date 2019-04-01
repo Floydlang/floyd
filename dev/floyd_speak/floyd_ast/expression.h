@@ -18,7 +18,6 @@
 
 
 namespace floyd {
-	struct ast_json_t;
 	struct value_t;
 	struct statement_t;
 	struct expression_t;

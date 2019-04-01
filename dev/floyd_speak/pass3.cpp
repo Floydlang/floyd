@@ -21,13 +21,13 @@ namespace floyd {
 
 using namespace std;
 
-bool check_types_resolved(const ast_t& ast);
+bool check_types_resolved(const pass2_ast_t& ast);
 
 
 
 //////////////////////////////////////		semantic_ast_t
 
-semantic_ast_t::semantic_ast_t(const ast_t& checked_ast){
+semantic_ast_t::semantic_ast_t(const pass2_ast_t& checked_ast){
 	QUARK_ASSERT(checked_ast.check_invariant());
 	QUARK_ASSERT(check_types_resolved(checked_ast));
 
@@ -49,7 +49,7 @@ bool semantic_ast_t::check_invariant() const{
 //	Immutable data used by analyser.
 
 struct analyzer_imm_t {
-	public: ast_t _ast;
+	public: pass2_ast_t _ast;
 	public: std::map<std::string, floyd::host_function_signature_t> _host_functions;
 };
 
@@ -67,7 +67,7 @@ struct lexical_scope_t {
 };
 
 struct analyser_t {
-	public: analyser_t(const ast_t& ast);
+	public: analyser_t(const pass2_ast_t& ast);
 	public: analyser_t(const analyser_t& other);
 	public: const analyser_t& operator=(const analyser_t& other);
 #if DEBUG
@@ -1689,7 +1689,7 @@ std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_
 }
 
 void test__analyse_expression(const statement_t& parent, const expression_t& e, const expression_t& expected){
-	const ast_t ast;
+	const pass2_ast_t ast;
 	const analyser_t interpreter(ast);
 	const auto e3 = analyse_expression_no_target(interpreter, parent, e);
 
@@ -1706,7 +1706,7 @@ QUARK_UNIT_TEST("analyse_expression_no_target()", "literal 1234 == 1234", "", ""
 }
 
 QUARK_UNIT_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
-	const ast_t ast;
+	const pass2_ast_t ast;
 	const analyser_t interpreter(ast);
 	const auto e3 = analyse_expression_no_target(
 		interpreter,
@@ -1726,7 +1726,7 @@ QUARK_UNIT_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 }
 
 
-bool check_types_resolved(const ast_t& ast){
+bool check_types_resolved(const pass2_ast_t& ast){
 	if(ast._globals.check_types_resolved() == false){
 		return false;
 	}
@@ -1799,7 +1799,7 @@ semantic_ast_t analyse(const analyser_t& a){
 
 	const auto body = body_t(analyser2._imm->_ast._globals._statements, symbol_table_t{symbol_map});
 	const auto result = analyse_body(analyser2, body, epure::impure, typeid_t::make_undefined());
-	const auto result_ast0 = ast_t{
+	const auto result_ast0 = pass2_ast_t{
 		._globals = result. second,
 		._function_defs = result.first._function_defs,
 		._software_system = result.first._software_system,
@@ -1818,7 +1818,7 @@ semantic_ast_t analyse(const analyser_t& a){
 
 
 
-analyser_t::analyser_t(const ast_t& ast){
+analyser_t::analyser_t(const pass2_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	const auto host_functions = floyd::get_host_function_signatures();
@@ -1861,7 +1861,7 @@ bool analyser_t::check_invariant() const {
 //////////////////////////////////////		run_semantic_analysis()
 
 
-semantic_ast_t run_semantic_analysis(const ast_t& ast){
+semantic_ast_t run_semantic_analysis(const pass2_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	analyser_t a(ast);

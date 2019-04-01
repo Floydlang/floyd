@@ -31,10 +31,10 @@ json_t statement_to_json(const statement_t& e);
 
 
 
-////////////////////////			ast_t
+////////////////////////			pass2_ast_t
 
 
-ast_json_t ast_to_json(const ast_t& ast){
+ast_json_t pass1_ast_to_json(const pass2_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	std::vector<json_t> fds;
@@ -597,9 +597,9 @@ ast_json_t ast_to_json(const ast_t& ast){
 }
 */
 
-ast_t parse_tree_to_ast(const parse_tree_json_t& parse_tree){
+pass2_ast_t parse_tree_to_pass1_ast(const parse_tree_json_t& parse_tree){
 	const auto program_body = astjson_to_statements(parse_tree._value);
-	return ast_t{body_t{program_body}, {}, {}, {}};
+	return pass2_ast_t{body_t{program_body}, {}, {}, {}};
 }
 
 

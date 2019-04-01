@@ -43,7 +43,7 @@ parse_tree_json_t parse_program__errors(const compilation_unit_t& cu){
 
 
 
-semantic_ast_t run_semantic_analysis__errors(const ast_t& pass2, const compilation_unit_t& cu){
+semantic_ast_t run_semantic_analysis__errors(const pass2_ast_t& pass2, const compilation_unit_t& cu){
 	try {
 		const auto pass3 = run_semantic_analysis(pass2);
 		return pass3;
@@ -77,7 +77,7 @@ semantic_ast_t compile_to_sematic_ast__errors(const std::string& program, const 
 //	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
 	const auto parse_tree = parse_program__errors(cu);
 
-	const auto pass2 = parse_tree_to_ast(parse_tree);
+	const auto pass2 = parse_tree_to_pass1_ast(parse_tree);
 	const auto pass3 = run_semantic_analysis__errors(pass2, cu);
 	return pass3;
 }

@@ -20,10 +20,10 @@ struct value_t;
 struct semantic_ast_t;
 struct compilation_unit_t;
 struct parse_tree_json_t;
-struct ast_t;
+struct pass2_ast_t;
 
 parse_tree_json_t parse_program__errors(const compilation_unit_t& cu);
-semantic_ast_t run_semantic_analysis__errors(const ast_t& pass2, const compilation_unit_t& cu);
+semantic_ast_t run_semantic_analysis__errors(const pass2_ast_t& pass2, const compilation_unit_t& cu);
 
 enum class compilation_unit_mode {
 	k_include_core_lib,

@@ -32,7 +32,7 @@ namespace floyd {
 	};
 
 
-	//////////////////////////////////////////////////		ast_t
+	//////////////////////////////////////////////////		pass2_ast_t
 
 	/*
 		The Abstract Syntax Tree. It may contain unresolved symbols.
@@ -40,7 +40,7 @@ namespace floyd {
 		Immutable
 	*/
 
-	struct ast_t {
+	struct pass2_ast_t {
 		public: bool check_invariant() const{
 			QUARK_ASSERT(_globals.check_invariant());
 			return true;
@@ -67,8 +67,8 @@ namespace floyd {
 		Parser reads source and generates the AST as JSON. Pass2 translates it to C++ AST.
 		Future: generate AST as JSON, process AST as JSON etc.
 	*/
-	ast_json_t ast_to_json(const ast_t& ast);
-	ast_t parse_tree_to_ast(const parse_tree_json_t& parse_tree);
+	ast_json_t pass1_ast_to_json(const pass2_ast_t& ast);
+	pass2_ast_t parse_tree_to_pass1_ast(const parse_tree_json_t& parse_tree);
 
 
 

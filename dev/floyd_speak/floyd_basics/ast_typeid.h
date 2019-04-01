@@ -69,7 +69,6 @@
 
 namespace floyd {
 struct struct_definition_t;
-struct ast_json_t;
 struct typeid_t;
 struct member_t;
 
