@@ -19,6 +19,17 @@ bool body_t::check_invariant() const {
 }
 
 
+std::string symbol_to_string(const symbol_t& s){
+	std::stringstream out;
+
+	out << "<symbol> {"
+		<< (s._symbol_type == symbol_t::type::immutable_local ? "immutable_local" : "mutable_local" )
+		<< " type: " << typeid_to_compact_string(s._value_type)
+		<< " init: " << (s._const_value.is_void() ? "<none>" : value_and_type_to_string(s._const_value))
+	<< "}";
+	return out.str();
+}
+
 int add_constant_literal(symbol_table_t& symbols, const std::string& name, const floyd::value_t& value){
 	const auto s = symbol_t::make_constant(value);
 	symbols._symbols.push_back(std::pair<std::string, symbol_t>(name, s));

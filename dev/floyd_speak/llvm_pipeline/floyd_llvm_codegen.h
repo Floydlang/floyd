@@ -24,6 +24,10 @@ namespace llvm {
 }
 namespace floyd {
 
+
+////////////////////////////////		llvm_ir_program_t
+
+
 struct llvm_ir_program_t {
 	llvm_ir_program_t(const llvm_ir_program_t& other) = delete;
 	llvm_ir_program_t& operator=(const llvm_ir_program_t& other) = delete;
@@ -57,6 +61,12 @@ int64_t run_llvm_program(llvm_ir_program_t& program, const std::vector<floyd::va
 //??? Temp - should be:
 //func int main([string] args){...}
 typedef int64_t (*FLOYD_RUNTIME_MAIN)();
+
+
+
+////////////////////////////////		llvm_execution_engine_t
+
+
 
 struct llvm_execution_engine_t {
 	std::shared_ptr<llvm::ExecutionEngine> ee;

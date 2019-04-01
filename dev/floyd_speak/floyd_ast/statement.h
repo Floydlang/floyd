@@ -108,6 +108,7 @@ namespace floyd {
 		}
 	};
 
+	std::string symbol_to_string(const symbol_t& symbol);
 
 
 	//////////////////////////////////////		symbol_table_t
