@@ -200,7 +200,7 @@ int do_compile_command(const command_line_args_t& command_line_args){
 		const auto source_path = command_line_args.extra_arguments[0];
 		const auto source = read_text_file(source_path);
 		const auto ast = floyd::compile_to_sematic_ast__errors(source, source_path, floyd::compilation_unit_mode::k_include_core_lib);
-		const auto json = pass1_ast_to_json(ast._checked_ast);
+		const auto json = semantic_ast_to_json(ast);
 		std::cout << json_to_pretty_string(json._value);
 		std::cout << std::endl;
 	}

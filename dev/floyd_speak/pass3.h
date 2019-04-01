@@ -38,7 +38,7 @@ namespace floyd {
 	The semantic_ast_t is a ready-to-run program, all symbols resolved, all semantics are OK.
 */
 struct semantic_ast_t {
-	public: explicit semantic_ast_t(const pass2_ast_t& checked_ast);
+	public: explicit semantic_ast_t(const general_purpose_ast_t& tree);
 
 #if DEBUG
 	public: bool check_invariant() const;
@@ -46,9 +46,7 @@ struct semantic_ast_t {
 
 
 	////////////////////////////////	STATE
-
-	//??? Flatten into sep members.
-	public: pass2_ast_t _checked_ast;
+	public: general_purpose_ast_t _tree;
 };
 
 
@@ -56,6 +54,9 @@ struct semantic_ast_t {
 	Semantic Analysis -> SYMBOL TABLE + annotated AST
 */
 semantic_ast_t run_semantic_analysis(const pass2_ast_t& ast);
+
+ast_json_t semantic_ast_to_json(const semantic_ast_t& ast);
+semantic_ast_t json_to_semantic_ast(const ast_json_t& json);
 
 
 }	// Floyd

@@ -27,17 +27,17 @@ bool check_types_resolved(const general_purpose_ast_t& ast);
 
 //////////////////////////////////////		semantic_ast_t
 
-semantic_ast_t::semantic_ast_t(const pass2_ast_t& checked_ast){
-	QUARK_ASSERT(checked_ast.check_invariant());
-	QUARK_ASSERT(check_types_resolved(checked_ast._tree));
+semantic_ast_t::semantic_ast_t(const general_purpose_ast_t& tree){
+	QUARK_ASSERT(tree.check_invariant());
+	QUARK_ASSERT(check_types_resolved(tree));
 
-	_checked_ast = checked_ast;
+	_tree = tree;
 }
 
 #if DEBUG
 bool semantic_ast_t::check_invariant() const{
-	QUARK_ASSERT(_checked_ast.check_invariant());
-	QUARK_ASSERT(check_types_resolved(_checked_ast._tree));
+	QUARK_ASSERT(_tree.check_invariant());
+	QUARK_ASSERT(check_types_resolved(_tree));
 	return true;
 }
 #endif
@@ -1806,9 +1806,10 @@ semantic_ast_t analyse(const analyser_t& a){
 		._container_def = result.first._container_def
 	}};
 
-	const auto result_ast1 = semantic_ast_t(result_ast0);
-	QUARK_ASSERT(result_ast1._checked_ast.check_invariant());
-	QUARK_ASSERT(check_types_resolved(result_ast1._checked_ast._tree));
+	QUARK_ASSERT(check_types_resolved(result_ast0._tree));
+	const auto result_ast1 = semantic_ast_t(result_ast0._tree);
+	QUARK_ASSERT(result_ast1._tree.check_invariant());
+	QUARK_ASSERT(check_types_resolved(result_ast1._tree));
 	return result_ast1;
 }
 
@@ -1867,6 +1868,25 @@ semantic_ast_t run_semantic_analysis(const pass2_ast_t& ast){
 	analyser_t a(ast);
 	const auto result = analyse(a);
 	return result;
+}
+
+
+
+
+ast_json_t semantic_ast_to_json(const semantic_ast_t& ast){
+	QUARK_ASSERT(ast.check_invariant());
+
+	return ast_json_t::make(gp_ast_to_json(ast._tree));
+}
+
+
+semantic_ast_t json_to_semantic_ast(const ast_json_t& json){
+	const auto gp_ast = json_to_gp_ast(json._value);
+	bool resolved = check_types_resolved(gp_ast);
+	if(resolved == false){
+		throw std::exception();
+	}
+	return semantic_ast_t{ gp_ast };
 }
 
 

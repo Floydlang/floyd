@@ -1161,9 +1161,9 @@ std::vector<global_v_t> genllvm_local_make_symbols(llvmgen_t& gen_acc, const sym
 		bool isExternallyInitialized = false
 	);
 */
-llvm::Value* genllvm_make_global(llvmgen_t& gen_acc, const pass2_ast_t& checked_ast, const std::string& symbol_name, const symbol_t& symbol){
+llvm::Value* genllvm_make_global(llvmgen_t& gen_acc, const semantic_ast_t& ast, const std::string& symbol_name, const symbol_t& symbol){
 	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(checked_ast.check_invariant());
+	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(symbol.check_invariant());
 
 	const auto type0 = symbol.get_type();
@@ -1173,7 +1173,7 @@ llvm::Value* genllvm_make_global(llvmgen_t& gen_acc, const pass2_ast_t& checked_
 		QUARK_TRACE_SS("itype: " << print_type(itype));
 
 		const int function_id = symbol._const_value.get_function_value();
-		const auto& function_def = *checked_ast._tree._function_defs[function_id];
+		const auto& function_def = *ast._tree._function_defs[function_id];
 		if(function_def._host_function_id != k_no_host_function_id){
 			const auto label = make_host_function_label(function_def._host_function_id);
 			llvm::Function* f = gen_acc.program_acc.module->getFunction(label);
@@ -1222,7 +1222,7 @@ llvm::Value* genllvm_make_global(llvmgen_t& gen_acc, const pass2_ast_t& checked_
 
 
 
-std::vector<global_v_t> genllvm_make_globals(llvmgen_t& gen_acc, const pass2_ast_t& checked_ast, const symbol_table_t& symbol_table){
+std::vector<global_v_t> genllvm_make_globals(llvmgen_t& gen_acc, const semantic_ast_t& ast, const symbol_table_t& symbol_table){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	QUARK_TRACE_SS("result = " << floyd::print_program(gen_acc.program_acc));
@@ -1230,7 +1230,7 @@ std::vector<global_v_t> genllvm_make_globals(llvmgen_t& gen_acc, const pass2_ast
 	std::vector<global_v_t> result;
 
 	for(const auto& e: symbol_table._symbols){
-		llvm::Value* value = genllvm_make_global(gen_acc, checked_ast, e.first, e.second);
+		llvm::Value* value = genllvm_make_global(gen_acc, ast, e.first, e.second);
 		const auto debug_str = "name:" + e.first + " symbol_t: " + symbol_to_string(e.second);
 		result.push_back(make_global(value, debug_str));
 
@@ -1261,8 +1261,8 @@ void genllvm_make_function_defs(llvmgen_t& gen_acc, const semantic_ast_t& semant
 	QUARK_ASSERT(semantic_ast.check_invariant());
 
 
-	for(int function_id = 0 ; function_id < semantic_ast._checked_ast._tree._function_defs.size() ; function_id++){
-		const auto& function_def = *semantic_ast._checked_ast._tree._function_defs[function_id];
+	for(int function_id = 0 ; function_id < semantic_ast._tree._function_defs.size() ; function_id++){
+		const auto& function_def = *semantic_ast._tree._function_defs[function_id];
 
 		if(function_def._host_function_id != k_no_host_function_id){
 //			QUARK_ASSERT(false);
@@ -1295,7 +1295,7 @@ void genllvm_make_floyd_runtime_init(llvmgen_t& gen_acc, const semantic_ast_t& s
 	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(gen_acc.program_acc.context, "entry", f);
 	gen_acc.builder.SetInsertPoint(entryBB);
 
-	genllvm_statements(gen_acc, global_symbol_table, semantic_ast._checked_ast._tree._globals._statements);
+	genllvm_statements(gen_acc, global_symbol_table, semantic_ast._tree._globals._statements);
 
 	llvm::Value* dummy_result = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 667);
 	llvm::ReturnInst::Create(gen_acc.program_acc.context, dummy_result, entryBB);
@@ -1312,7 +1312,7 @@ void genllvm_all(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast){
 	//	host functions are later linked by LLVM execution engine, by matching the function names.
 	//	Floyd functions are later filled with instructions.
 	{
-		const auto& defs = semantic_ast._checked_ast._tree._function_defs;
+		const auto& defs = semantic_ast._tree._function_defs;
 		for(int function_id = 0 ; function_id < defs.size() ; function_id++){
 			const auto& function_def = *defs[function_id];
 			const auto function_type = function_def._function_type;
@@ -1335,8 +1335,8 @@ void genllvm_all(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast){
 
 		std::vector<global_v_t> globals = genllvm_make_globals(
 			gen_acc,
-			semantic_ast._checked_ast,
-			semantic_ast._checked_ast._tree._globals._symbol_table
+			semantic_ast,
+			semantic_ast._tree._globals._symbol_table
 		);
 		gen_acc.globals = globals;
 	}
@@ -1350,7 +1350,7 @@ void genllvm_all(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast){
 
 std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(const semantic_ast_t& ast, const std::string& module_name){
 	QUARK_ASSERT(ast.check_invariant());
-	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(pass1_ast_to_json(ast._checked_ast)._value));
+	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast)._value));
 
 	auto p = make_empty_program(module_name);
 

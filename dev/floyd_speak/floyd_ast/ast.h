@@ -48,6 +48,9 @@ namespace floyd {
 		public: container_t _container_def;
 	};
 
+	json_t gp_ast_to_json(const general_purpose_ast_t& ast);
+	general_purpose_ast_t json_to_gp_ast(const json_t& json);
+
 
 
 	//////////////////////////////////////////////////		pass2_ast_t
@@ -82,8 +85,12 @@ namespace floyd {
 		Parser reads source and generates the AST as JSON. Pass2 translates it to C++ AST.
 		Future: generate AST as JSON, process AST as JSON etc.
 	*/
-	ast_json_t pass1_ast_to_json(const pass2_ast_t& ast);
-	pass2_ast_t parse_tree_to_pass1_ast(const parse_tree_json_t& parse_tree);
+	ast_json_t pass2_ast_to_json(const pass2_ast_t& ast);
+	pass2_ast_t parse_tree_to_pass2_ast(const parse_tree_json_t& parse_tree);
+
+
+
+
 
 
 

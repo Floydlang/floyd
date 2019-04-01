@@ -98,7 +98,7 @@ static run_report_t run_program_llvm(const std::string& program_source, const st
 
 		value_t result_global;
 
-		const auto result_symbol = find_symbol(pass3._checked_ast._tree._globals._symbol_table, "result");
+		const auto result_symbol = find_symbol(pass3._tree._globals._symbol_table, "result");
 		if(result_symbol != nullptr){
 			//	Find global in exe.
 			const auto result_variable_ptr = get_global_ptr(ee, "result");

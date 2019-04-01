@@ -31,27 +31,6 @@ json_t statement_to_json(const statement_t& e);
 
 
 
-////////////////////////			pass2_ast_t
-
-
-ast_json_t pass1_ast_to_json(const pass2_ast_t& ast){
-	QUARK_ASSERT(ast.check_invariant());
-
-	std::vector<json_t> fds;
-	for(const auto& e: ast._tree._function_defs){
-		const auto fd = function_def_to_ast_json(*e);
-		fds.push_back(fd);
-	}
-
-	const auto function_defs_json = json_t::make_array(fds);
-	return ast_json_t::make(json_t::make_object(
-		{
-			{ "globals", body_to_json(ast._tree._globals) },
-			{ "function_defs", function_defs_json }
-		}
-	));
-}
-
 
 
 
@@ -577,29 +556,51 @@ json_t statement_to_json(const statement_t& e){
 }
 
 
-/*
-ast_json_t ast_to_json(const ast_t& ast){
+
+
+
+
+json_t gp_ast_to_json(const general_purpose_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	std::vector<json_t> fds;
 	for(const auto& e: ast._function_defs){
-		ast_json_t fd = function_def_to_ast_json(*e);
-		fds.push_back(fd._value);
+		const auto fd = function_def_to_ast_json(*e);
+		fds.push_back(fd);
 	}
 
 	const auto function_defs_json = json_t::make_array(fds);
-	return ast_json_t::make(json_t::make_object(
+	return json_t::make_object(
 		{
-			{ "globals", body_to_json(ast._globals)._value },
+			{ "globals", body_to_json(ast._globals) },
 			{ "function_defs", function_defs_json }
 		}
-	));
+	);
 }
-*/
 
-pass2_ast_t parse_tree_to_pass1_ast(const parse_tree_json_t& parse_tree){
-	const auto program_body = astjson_to_statements(parse_tree._value);
-	return pass2_ast_t{body_t{program_body}, {}, {}, {}};
+general_purpose_ast_t json_to_gp_ast(const json_t& json){
+	const auto program_body = astjson_to_statements(json);
+	return general_purpose_ast_t{
+		body_t{ program_body },
+		{},
+		{},
+		{}
+	};
+}
+
+
+
+
+
+ast_json_t pass2_ast_to_json(const pass2_ast_t& ast){
+	QUARK_ASSERT(ast.check_invariant());
+
+	return ast_json_t::make(gp_ast_to_json(ast._tree));
+}
+
+pass2_ast_t parse_tree_to_pass2_ast(const parse_tree_json_t& json){
+	const auto gp_ast = json_to_gp_ast(json._value);
+	return pass2_ast_t{ gp_ast };
 }
 
 
