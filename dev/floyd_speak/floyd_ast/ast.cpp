@@ -597,7 +597,7 @@ ast_json_t ast_to_json(const ast_t& ast){
 }
 */
 
-ast_t parse_tree_to_ast(const ast_json_t& parse_tree){
+ast_t parse_tree_to_ast(const parse_tree_json_t& parse_tree){
 	const auto program_body = astjson_to_statements(parse_tree._value);
 	return ast_t{body_t{program_body}, {}, {}, {}};
 }

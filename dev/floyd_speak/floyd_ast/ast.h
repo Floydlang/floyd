@@ -20,6 +20,18 @@ namespace floyd {
 	struct ast_json_t;
 
 
+	//////////////////////////////////////////////////		parse_tree_json_t
+
+
+	struct parse_tree_json_t {
+		explicit parse_tree_json_t(const json_t& v): _value(v)
+		{
+		}
+
+		json_t _value;
+	};
+
+
 	//////////////////////////////////////////////////		ast_t
 
 	/*
@@ -56,7 +68,7 @@ namespace floyd {
 		Future: generate AST as JSON, process AST as JSON etc.
 	*/
 	ast_json_t ast_to_json(const ast_t& ast);
-	ast_t parse_tree_to_ast(const ast_json_t& parse_tree);
+	ast_t parse_tree_to_ast(const parse_tree_json_t& parse_tree);
 
 
 
