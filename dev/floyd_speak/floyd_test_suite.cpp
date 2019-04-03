@@ -57,7 +57,7 @@ QUARK_UNIT_TEST("Floyd test suite", "double constant expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let double result = 3.5", value_t::make_double(double(3.5)));
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "string constant expression", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "string constant expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let string result = \"xyz\"", value_t::make_string("xyz"));
 }
 
@@ -94,11 +94,11 @@ QUARK_UNIT_TEST("Floyd test suite", "Infered bind", "", "") {
 //////////////////////////////////////////		BASIC EXPRESSIONS - CONDITIONAL EXPRESSION
 
 
-QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
-	ut_verify_global_result(QUARK_POS, "let int result = true ? 1 : 2", value_t::make_int(1));
+QUARK_UNIT_TEST_VIP("run_main()", "conditional expression", "", ""){
+	ut_verify_global_result(QUARK_POS, "let int result = true ? 98 : 99", value_t::make_int(98));
 }
-QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
-	ut_verify_global_result(QUARK_POS, "let int result = false ? 1 : 2", value_t::make_int(2));
+QUARK_UNIT_TEST_VIP("run_main()", "conditional expression", "", ""){
+	ut_verify_global_result(QUARK_POS, "let int result = false ? 70 : 80", value_t::make_int(80));
 }
 
 //??? Test truthness off all variable types: strings, doubles

@@ -325,7 +325,7 @@ std::string print_globals(const std::vector<global_v_t>& globals){
 
 
 std::string print_gen(const llvmgen_t& gen){
-	QUARK_ASSERT(gen.check_invariant());
+//	QUARK_ASSERT(gen.check_invariant());
 
 	std::stringstream out;
 
@@ -1019,6 +1019,90 @@ llvm::Value* genllvm_arithmetic_unary_minus_expression(llvmgen_t& gen_acc, const
 
 
 
+
+
+/*
+	my_func
+		[BB entry]
+			...
+		[BB xyz]
+			condition_value = expr[0]
+			if condition_value %then, %else
+
+		[BB then]
+			[BB ...]
+				[BB ...]
+					[BB ...]
+						[BB ...]
+				[BB ...]
+					[BB ...]
+			temp1 = expr[1]
+			br %join
+		[BB else]
+			[BB ...]
+				[BB ...]
+					[BB ...]
+						[BB ...]
+				[BB ...]
+					[BB ...]
+			temp2 = expr[2]
+			br %join
+		[BB join]
+ 			Value* phu(temp1, temp2)
+*/
+
+
+
+llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, const expression_t& e){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	const auto result_type = e.get_output_type();
+	const auto result_itype = intern_type(gen_acc, result_type, func_encode::functions_are_pointers);
+
+	llvm::Value* condition_value = genllvm_expression(gen_acc, e._input_exprs[0]);
+
+	llvm::Function* parent_function = builder.GetInsertBlock()->getParent();
+
+	// Create blocks for the then and else cases.  Insert the 'then' block at the
+	// end of the function.
+	llvm::BasicBlock* then_bb = llvm::BasicBlock::Create(context, "then", parent_function);
+	llvm::BasicBlock* else_bb = llvm::BasicBlock::Create(context, "else");
+	llvm::BasicBlock* join_bb = llvm::BasicBlock::Create(context, "cond_operator-join");
+
+	builder.CreateCondBr(condition_value, then_bb, else_bb);
+
+	// Emit then-value.
+	builder.SetInsertPoint(then_bb);
+	llvm::Value* then_value = genllvm_expression(gen_acc, e._input_exprs[1]);
+	builder.CreateBr(join_bb);
+	// Codegen of 'Then' can change the current block, update then_bb.
+	llvm::BasicBlock* then_bb2 = builder.GetInsertBlock();
+
+	// Emit else block.
+	parent_function->getBasicBlockList().push_back(else_bb);
+	builder.SetInsertPoint(else_bb);
+	llvm::Value* else_value = genllvm_expression(gen_acc, e._input_exprs[2]);
+	builder.CreateBr(join_bb);
+	// Codegen of 'Else' can change the current block, update else_bb.
+	llvm::BasicBlock* else_bb2 = builder.GetInsertBlock();
+
+	// Emit join block.
+	parent_function->getBasicBlockList().push_back(join_bb);
+	builder.SetInsertPoint(join_bb);
+	llvm::PHINode* phiNode = builder.CreatePHI(result_itype, 2, "cond_operator-result");
+
+	phiNode->addIncoming(then_value, then_bb2);
+	phiNode->addIncoming(else_value, else_bb2);
+
+	return phiNode;
+}
+
+
+
 ////////////////////////////////	Host functions, automatically linked into the LLVM execution engine.
 
 /*
@@ -1355,9 +1439,7 @@ llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e){
 		return genllvm_arithmetic_unary_minus_expression(gen_acc, e);
 	}
 	else if(op == expression_type::k_conditional_operator3){
-		QUARK_ASSERT(false);
-		quark::throw_exception();
-//		return bcgen_conditional_operator_expression(gen_acc, target_reg, e, body);
+		return llvmgen_conditional_operator_expression(gen_acc, e);
 	}
 	else if (is_arithmetic_expression(op)){
 		return genllvm_arithmetic_expression(gen_acc, op, e);
@@ -1654,13 +1736,14 @@ void genllvm_make_floyd_runtime_init(llvmgen_t& gen_acc, const semantic_ast_t& s
 		genllvm_statements(gen_acc, semantic_ast._tree._globals._statements);
 
 		llvm::Value* dummy_result = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 667);
-		llvm::ReturnInst::Create(gen_acc.instance->context, dummy_result, entryBB);
+		gen_acc.builder.CreateRet(dummy_result);
+//		llvm::ReturnInst::Create(gen_acc.instance->context, dummy_result, entryBB);
 
 		end_function_emit(gen_acc);
 	}
-	QUARK_ASSERT(gen_acc.check_invariant());
-
+	QUARK_TRACE_SS("result = " << floyd::print_gen(gen_acc));
 	QUARK_ASSERT(check_invariant__function(f));
+	QUARK_ASSERT(gen_acc.check_invariant());
 
 	gen_acc.floyd_runtime_init_f = f;
 }
