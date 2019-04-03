@@ -76,13 +76,15 @@ static run_report_t run_program_bc(const std::string& program, const std::vector
 //	Run program using LLVM.
 static run_report_t run_program_llvm(const std::string& program_source, const std::vector<value_t>& main_args){
 	try {
+		llvm_instance_t llvm_instance;
+
 		const auto file = "test567.floyd";
 		const auto pass3 = compile_to_sematic_ast__errors(program_source, file, floyd::compilation_unit_mode::k_no_core_lib);
-		auto exe = generate_llvm_ir(pass3, file);
+		auto exe = generate_llvm_ir(llvm_instance, pass3, file);
 
 
 		//	Runs global init code.
-		auto ee = make_engine_break_program(*exe);
+		auto ee = make_engine_break_program(llvm_instance, *exe);
 
 		//??? need mechanism to map Floyd types vs machine-types.
 		const auto main_function = reinterpret_cast<FLOYD_RUNTIME_MAIN>(get_global_function(ee, "main"));

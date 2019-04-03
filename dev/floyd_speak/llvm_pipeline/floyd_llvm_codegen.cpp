@@ -80,10 +80,6 @@ With LLVM, we also have some things to be careful about. The first is the LLVM c
 */
 
 
-struct global_v_t {
-	llvm::Value* value_ptr;
-	std::string debug_str;
-};
 
 
 struct llvmgen_generated_function_t {
@@ -92,17 +88,28 @@ struct llvmgen_generated_function_t {
 };
 
 struct llvmgen_t {
-	public: llvmgen_t(llvm_ir_program_t& program_acc0, llvm::IRBuilder<>& builder0) :
-		program_acc(program_acc0),
-		builder(builder0),
+	public: llvmgen_t(llvm_instance_t& instance, const std::string& module_name) :
+		instance(&instance),
+		module(std::make_unique<llvm::Module>(module_name.c_str(), instance.context)),
+		builder(instance.context),
 		floyd_runtime_init_f(nullptr)
 	{
+	//	llvm::IRBuilder<> builder(instance.context);
+		llvm::InitializeNativeTarget();
+		llvm::InitializeNativeTargetAsmPrinter();
+
+		QUARK_ASSERT(check_invariant());
 	}
 	public: bool check_invariant() const {
+		QUARK_ASSERT(instance);
+		QUARK_ASSERT(instance->check_invariant());
+		QUARK_ASSERT(module);
+
 		if(emit_function){
 		}
 		else{
-			QUARK_ASSERT(program_acc.check_invariant());
+			//	While emitting a function, the module is in an invalid state.
+			QUARK_ASSERT(check_invariant__module(module.get()));
 		}
 
 /*
@@ -120,8 +127,12 @@ struct llvmgen_t {
 	}
 
 
-	llvm_ir_program_t& program_acc;
-	llvm::IRBuilder<>& builder;
+	llvm_instance_t* instance;
+
+	//	Module must sit in a unique_ptr<> because llvm::EngineBuilder needs that.
+	std::unique_ptr<llvm::Module> module;
+
+	llvm::IRBuilder<> builder;
 
 	llvm::Function* floyd_runtime_init_f;
 
@@ -150,12 +161,6 @@ void end_function_emit(llvmgen_t& gen_acc){
 
 llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e);
 
-
-std::unique_ptr<llvm_ir_program_t> make_empty_program(const std::string& module_name){
-	QUARK_ASSERT(module_name.size() > 0);
-
-	return std::make_unique<llvm_ir_program_t>(module_name);
-}
 
 /*
 std::string print_ee(const llvm::ExecutionEngine& v){
@@ -322,8 +327,8 @@ std::string print_gen(const llvmgen_t& gen){
 
 	std::stringstream out;
 
-	out << "llvm_ir_program_t:"
-		<< print_program(gen.program_acc)
+	out << "module:"
+		<< print_module(*gen.module)
 		<< std::endl
 	<< "globals"
 		<< print_globals(gen.globals);
@@ -487,9 +492,9 @@ merge:                                            ; preds = %else, %ifTrue
 
 
 
-static llvm::Function* InitFibonacciFnc(llvm_ir_program_t& program, llvm::IRBuilder<>& builder, int targetFibNum){
+static llvm::Function* InitFibonacciFnc(llvm::LLVMContext& context, std::unique_ptr<llvm::Module> module, llvm::IRBuilder<>& builder, int targetFibNum){
 	llvm::Function* f = llvm::cast<llvm::Function>(
-		program.module->getOrInsertFunction("FibonacciFnc", llvm::Type::getInt32Ty(program.context))
+		module->getOrInsertFunction("FibonacciFnc", llvm::Type::getInt32Ty(context))
 	);
 
 	llvm::Value* zero = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
@@ -500,24 +505,24 @@ static llvm::Function* InitFibonacciFnc(llvm_ir_program_t& program, llvm::IRBuil
 
 	////////////////////////		Create all basic blocks first, so we can branch between them when we start emitting instructions
 
-	llvm::BasicBlock* EntryBB = llvm::BasicBlock::Create(program.context, "entry", f);
-	llvm::BasicBlock* LoopEntryBB = llvm::BasicBlock::Create(program.context, "loopEntry", f);
+	llvm::BasicBlock* EntryBB = llvm::BasicBlock::Create(context, "entry", f);
+	llvm::BasicBlock* LoopEntryBB = llvm::BasicBlock::Create(context, "loopEntry", f);
 
-	llvm::BasicBlock* LoopBB = llvm::BasicBlock::Create(program.context, "loop", f);
-		llvm::BasicBlock* IfBB = llvm::BasicBlock::Create(program.context, "if"); 			//floating
-		llvm::BasicBlock* ThenBB = llvm::BasicBlock::Create(program.context, "ifTrue"); 	//floating
-		llvm::BasicBlock* ElseBB = llvm::BasicBlock::Create(program.context, "else"); 		//floating
-		llvm::BasicBlock* MergeBB = llvm::BasicBlock::Create(program.context, "merge"); 	//floating
-	llvm::BasicBlock* ExitLoopBB = llvm::BasicBlock::Create(program.context, "exitLoop", f);
+	llvm::BasicBlock* LoopBB = llvm::BasicBlock::Create(context, "loop", f);
+		llvm::BasicBlock* IfBB = llvm::BasicBlock::Create(context, "if"); 			//floating
+		llvm::BasicBlock* ThenBB = llvm::BasicBlock::Create(context, "ifTrue"); 	//floating
+		llvm::BasicBlock* ElseBB = llvm::BasicBlock::Create(context, "else"); 		//floating
+		llvm::BasicBlock* MergeBB = llvm::BasicBlock::Create(context, "merge"); 	//floating
+	llvm::BasicBlock* ExitLoopBB = llvm::BasicBlock::Create(context, "exitLoop", f);
 
 
 	////////////////////////		EntryBB
 
 	builder.SetInsertPoint(EntryBB);
-	llvm::Value* next = builder.CreateAlloca(llvm::Type::getInt32Ty(program.context), nullptr, "next");
-	llvm::Value* first = builder.CreateAlloca(llvm::Type::getInt32Ty(program.context), nullptr, "first");
-	llvm::Value* second = builder.CreateAlloca(llvm::Type::getInt32Ty(program.context), nullptr, "second");
-	llvm::Value* count = builder.CreateAlloca(llvm::Type::getInt32Ty(program.context), nullptr, "count");
+	llvm::Value* next = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "next");
+	llvm::Value* first = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "first");
+	llvm::Value* second = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "second");
+	llvm::Value* count = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "count");
 	builder.CreateStore(zero, next);
 	builder.CreateStore(zero, first);
 	builder.CreateStore(one, second);
@@ -590,9 +595,7 @@ static llvm::Function* InitFibonacciFnc(llvm_ir_program_t& program, llvm::IRBuil
 
 	builder.SetInsertPoint(ExitLoopBB);
 	llvm::Value* finalFibNum = builder.CreateLoad(next, "finalNext");
-	llvm::ReturnInst::Create(program.context, finalFibNum, ExitLoopBB);
-
-	QUARK_TRACE_SS("result = " << floyd::print_program(program));
+	llvm::ReturnInst::Create(context, finalFibNum, ExitLoopBB);
 
 	return f;
 }
@@ -607,40 +610,42 @@ llvm::Type* intern_type(llvmgen_t& gen_acc, const typeid_t& type, func_encode en
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
+	auto& context = gen_acc.instance->context;
+
 	if(type.is_void()){
-		return llvm::Type::getVoidTy(gen_acc.program_acc.context);
+		return llvm::Type::getVoidTy(context);
 	}
 	else if(type.is_int()){
-		return llvm::Type::getInt64Ty(gen_acc.program_acc.context);
+		return llvm::Type::getInt64Ty(context);
 	}
 	else if(type.is_bool()){
-		return llvm::Type::getInt1Ty(gen_acc.program_acc.context);
+		return llvm::Type::getInt1Ty(context);
 	}
 
 	else if(type.is_string()){
-		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 16);
+		return llvm::Type::getIntNTy(context, 16);
 	}
 	else if(type.is_json_value()){
-		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 16);
+		return llvm::Type::getIntNTy(context, 16);
 	}
 	else if(type.is_vector()){
-		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 16);
+		return llvm::Type::getIntNTy(context, 16);
 	}
 	else if(type.is_typeid()){
-		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 16);
+		return llvm::Type::getIntNTy(context, 16);
 	}
 	else if(type.is_undefined()){
-		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 16);
+		return llvm::Type::getIntNTy(context, 16);
 	}
 	else if(type.is_unresolved_type_identifier()){
 		QUARK_ASSERT(false);
-		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 16);
+		return llvm::Type::getIntNTy(context, 16);
 	}
 	else if(type.is_double()){
-		return llvm::Type::getDoubleTy(gen_acc.program_acc.context);
+		return llvm::Type::getDoubleTy(context);
 	}
 	else if(type.is_struct()){
-		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 16);
+		return llvm::Type::getIntNTy(context, 16);
 
 #if 0
 		std::vector<llvm::Type*> members;
@@ -649,10 +654,10 @@ llvm::Type* intern_type(llvmgen_t& gen_acc, const typeid_t& type, func_encode en
 			members.push_back(m2);
 		}
 
-  		llvm::StructType* s = llvm::StructType::get(gen_acc.program_acc.context, members, false);
+  		llvm::StructType* s = llvm::StructType::get(context, members, false);
 
-//		return llvm::StructType::get(gen_acc.program_acc.context);
-//		return llvm::Type::getInt32Ty(gen_acc.program_acc.context);
+//		return llvm::StructType::get(context);
+//		return llvm::Type::getInt32Ty(context);
 		return s;
 #endif
 
@@ -660,7 +665,7 @@ llvm::Type* intern_type(llvmgen_t& gen_acc, const typeid_t& type, func_encode en
 
 	else if(type.is_internal_dynamic()){
 		//	Use int16ptr as placeholder for **dyn**. Maybe pass a struct instead?
-		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 16);
+		return llvm::Type::getIntNTy(context, 16);
 	}
 	else if(type.is_function()){
 		const auto& return_type = type.get_function_return();
@@ -672,7 +677,7 @@ llvm::Type* intern_type(llvmgen_t& gen_acc, const typeid_t& type, func_encode en
 		std::vector<llvm::Type*> args2;
 
 		//	Pass Floyd runtime as extra, hidden argument #0.
-		llvm::Type* context_ptr = llvm::Type::getInt32PtrTy(gen_acc.program_acc.context);
+		llvm::Type* context_ptr = llvm::Type::getInt32PtrTy(context);
 		args2.push_back(context_ptr);
 
 		for(const auto& arg: args){
@@ -721,7 +726,7 @@ typeid_t hack_function_type(const typeid_t& function_type){
 llvm::Function* make_function_stub(llvmgen_t& gen_acc, const std::string& function_name, const floyd::typeid_t& function_type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(function_type.check_invariant());
-	auto existing_f = gen_acc.program_acc.module->getFunction(function_name);
+	auto existing_f = gen_acc.module->getFunction(function_name);
 	QUARK_ASSERT(existing_f == nullptr);
 
 	floyd::typeid_t hacked_function_type = hack_function_type(function_type);
@@ -729,7 +734,7 @@ llvm::Function* make_function_stub(llvmgen_t& gen_acc, const std::string& functi
 	llvm::Type* ftype = intern_type(gen_acc, hacked_function_type, func_encode::functions_are_values);
 
 	//	IMPORTANT: Must cast to (llvm::FunctionType*) to get correct overload of getOrInsertFunction() to be called!
-	auto f3 = gen_acc.program_acc.module->getOrInsertFunction(function_name, (llvm::FunctionType*)ftype);
+	auto f3 = gen_acc.module->getOrInsertFunction(function_name, (llvm::FunctionType*)ftype);
 	llvm::Function* f = llvm::cast<llvm::Function>(f3);
 
 	QUARK_ASSERT(check_invariant__function(f));
@@ -1126,9 +1131,8 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 
 		auto& emit_function = *gen_acc.emit_function;
 
-		//	Insert floyd runtime as first argument.
-		//Function::ArgumentListType &getArgumentList()
-		//	???load "floyd_context" variable. Use as "this" to chain all functions.
+		//	Insert floyd_runtime_ptr as first argument to called function.
+		//	Function::ArgumentListType &getArgumentList()
 		auto args = emit_function.f->args();
 		QUARK_ASSERT((args.end() - args.begin()) >= 1);
 		auto floyd_context_arg_ptr = args.begin();
@@ -1360,20 +1364,6 @@ std::vector<global_v_t> genllvm_local_make_symbols(llvmgen_t& gen_acc, const sym
 
 
 
-/*
-	llvm::Value* gv = GlobalVariable(
-		Module &M,
-		Type *Ty,
-		bool isConstant,
-		LinkageTypes Linkage,
-		Constant *Initializer,
-		const Twine &Name = "",
-		GlobalVariable *InsertBefore = nullptr,
-		ThreadLocalMode = NotThreadLocal,
-		unsigned AddressSpace = 0,
-		bool isExternallyInitialized = false
-	);
-*/
 llvm::Value* genllvm_make_global(llvmgen_t& gen_acc, const semantic_ast_t& ast, const std::string& symbol_name, const symbol_t& symbol){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(ast.check_invariant());
@@ -1393,11 +1383,11 @@ llvm::Value* genllvm_make_global(llvmgen_t& gen_acc, const semantic_ast_t& ast, 
 			const auto function_def = *function_def0;
 			if(function_def._host_function_id != k_no_host_function_id){
 				const auto label = make_host_function_label(function_def._host_function_id);
-				llvm::Function* f = gen_acc.program_acc.module->getFunction(label);
+				llvm::Function* f = gen_acc.module->getFunction(label);
 				QUARK_ASSERT(f != nullptr);
 
 				llvm::Value* gv = new llvm::GlobalVariable(
-					*gen_acc.program_acc.module,
+					*gen_acc.module,
 					itype,
 					true,
 					llvm::GlobalValue::ExternalLinkage,
@@ -1427,7 +1417,7 @@ llvm::Value* genllvm_make_global(llvmgen_t& gen_acc, const semantic_ast_t& ast, 
 		}
 
 		llvm::Value* gv = new llvm::GlobalVariable(
-			*gen_acc.program_acc.module,
+			*gen_acc.module,
 			itype,
 			true,
 			llvm::GlobalValue::ExternalLinkage,
@@ -1470,7 +1460,7 @@ void genllvm_function_def(llvmgen_t& gen_acc, const floyd::function_definition_t
 	llvm::Function* f = make_function_stub(gen_acc, "generated_func_name", function_def._function_type);
 	QUARK_ASSERT(check_invariant__function(f));
 
-	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(gen_acc.program_acc.context, "entry", f);
+	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(gen_acc.instance->context, "entry", f);
 	gen_acc.builder.SetInsertPoint(entryBB);
 
 	auto symbol_table_values = genllvm_local_make_symbols(gen_acc, function_def._body->_symbol_table);
@@ -1514,7 +1504,7 @@ void genllvm_make_floyd_runtime_init(llvmgen_t& gen_acc, const semantic_ast_t& s
 	);
 	QUARK_ASSERT(check_invariant__function(f));
 
-	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(gen_acc.program_acc.context, "entry", f);
+	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(gen_acc.instance->context, "entry", f);
 	gen_acc.builder.SetInsertPoint(entryBB);
 
 	{
@@ -1522,7 +1512,7 @@ void genllvm_make_floyd_runtime_init(llvmgen_t& gen_acc, const semantic_ast_t& s
 		genllvm_statements(gen_acc, semantic_ast._tree._globals._statements);
 
 		llvm::Value* dummy_result = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 667);
-		llvm::ReturnInst::Create(gen_acc.program_acc.context, dummy_result, entryBB);
+		llvm::ReturnInst::Create(gen_acc.instance->context, dummy_result, entryBB);
 
 		end_function_emit(gen_acc);
 	}
@@ -1581,23 +1571,17 @@ void genllvm_all(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast){
 	genllvm_make_function_defs(gen_acc, semantic_ast);
 }
 
-std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(const semantic_ast_t& ast, const std::string& module_name){
+std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(llvm_instance_t& instance, const semantic_ast_t& ast, const std::string& module_name){
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(module_name.empty() == false);
 	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast)._value));
 
-	auto p = make_empty_program(module_name);
-
-	llvm::IRBuilder<> builder(p->context);
-	llvm::InitializeNativeTarget();
-	llvm::InitializeNativeTargetAsmPrinter();
-
-	llvmgen_t acc(*p, builder);
+	llvmgen_t acc(instance, module_name);
 	genllvm_all(acc, ast);
 
-	QUARK_TRACE_SS("result = " << floyd::print_program(*p));
-
-	return p;
+	auto result = std::make_unique<llvm_ir_program_t>(&instance, acc.module, acc.globals);
+	QUARK_TRACE_SS("result = " << floyd::print_program(*result));
+	return result;
 }
 
 
@@ -1680,6 +1664,13 @@ llvm_execution_engine_t make_engine_no_init(llvm_ir_program_t& program_breaks){
 	auto ee2 = llvm_execution_engine_t{ k_debug_magic, ee, {} };
 	QUARK_ASSERT(ee2.check_invariant());
 
+
+#if DEBUG
+	//??? verify that all global functions can be accessed = keep global symbols in
+	{
+	}
+#endif
+
 //	ee2.ee->DisableGVCompilation(false);
 //	ee2.ee->DisableSymbolSearching(false);
 
@@ -1705,8 +1696,24 @@ llvm_execution_engine_t make_engine_run_init(llvm_ir_program_t& program_breaks){
 
 	llvm_execution_engine_t ee = make_engine_no_init(program_breaks);
 
-	const auto print_ptr = floyd::get_global_ptr(ee, "print");
-	QUARK_ASSERT(print_ptr != nullptr);
+#if DEBUG
+	{
+		const auto print_global_ptr = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(ee, "print");
+		QUARK_ASSERT(print_global_ptr != nullptr);
+
+		const auto print_f = *print_global_ptr;
+		if(print_f){
+			QUARK_ASSERT(print_f != nullptr);
+
+//			(*print_f)(&ee, 109);
+		}
+	}
+
+	{
+		auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, "floyd_runtime_init"));
+		QUARK_ASSERT(a_func != nullptr);
+	}
+#endif
 
 	const auto init_result = call_floyd_runtime_init(ee);
 	QUARK_ASSERT(init_result == 667);
@@ -1741,16 +1748,18 @@ int64_t run_llvm_program(llvm_ir_program_t& program_breaks, const std::vector<fl
 
 
 
-std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(const std::string& program, const std::string& file){
+std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instance, const std::string& program, const std::string& file){
 	const auto pass3 = compile_to_sematic_ast__errors(program, file, compilation_unit_mode::k_no_core_lib);
-	auto bc = generate_llvm_ir(pass3, file);
+	auto bc = generate_llvm_ir(instance, pass3, file);
 	return bc;
 }
 
 
 int64_t run_using_llvm_helper(const std::string& program_source, const std::string& file, const std::vector<floyd::value_t>& args){
 	const auto pass3 = compile_to_sematic_ast__errors(program_source, file, compilation_unit_mode::k_no_core_lib);
-	auto program = generate_llvm_ir(pass3, file);
+
+	llvm_instance_t instance;
+	auto program = generate_llvm_ir(instance, pass3, file);
 	const auto result = run_llvm_program(*program, args);
 	QUARK_TRACE_SS("Fib = " << result);
 	return result;
@@ -1810,8 +1819,9 @@ const std::string test_1_json = R"ABCD(
 QUARK_UNIT_TEST("", "From JSON: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_1_json));
 
+	floyd::llvm_instance_t instance;
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
-	auto program = generate_llvm_ir(pass3, "myfile.floyd");
+	auto program = generate_llvm_ir(instance, pass3, "myfile.floyd");
 	auto ee = make_engine_run_init(*program);
 
 	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(ee, "result"));
@@ -1824,7 +1834,9 @@ QUARK_UNIT_TEST("", "From source: Check that floyd_runtime_init() runs and sets 
 //	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
 
 	const auto pass3 = compile_to_sematic_ast__errors("let int result = 1 + 2 + 3", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
-	auto program = generate_llvm_ir(pass3, "myfile.floyd");
+
+	floyd::llvm_instance_t instance;
+	auto program = generate_llvm_ir(instance, pass3, "myfile.floyd");
 	auto ee = make_engine_run_init(*program);
 
 	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(ee, "result"));
@@ -1856,23 +1868,27 @@ const std::string test_2_json = R"ABCD(
 }
 ")ABCD";
 
+#if 1
 //	Works! Calls print()!!!
-QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
+QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_2_json));
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
 
-	auto program = generate_llvm_ir(pass3, "myfile.floyd");
+	floyd::llvm_instance_t instance;
+	auto program = generate_llvm_ir(instance, pass3, "myfile.floyd");
 	auto ee = make_engine_run_init(*program);
 	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"6"});
 }
+#endif
 
 #if 0
 //??? all external functions referenced from code must be defined or print() will return nullptr.
 //	BROKEN!
-QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
+QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	const auto pass3 = compile_to_sematic_ast__errors("print(5)", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
 
-	auto program = generate_llvm_ir(pass3, "myfile.floyd");
+	floyd::llvm_instance_t instance;
+	auto program = generate_llvm_ir(instance, pass3, "myfile.floyd");
 	auto ee = make_engine_run_init(*program);
 	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"5"});
 }
@@ -2301,10 +2317,12 @@ QUARK_UNIT_TEST("", "json_to_semantic_ast()", "Complex JSON with ^types", ""){
 }
 
 #if 0
-QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
+QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_3_json));
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
-	auto program = generate_llvm_ir(pass3, "myfile.floyd");
+
+	floyd::llvm_instance_t instance;
+	auto program = generate_llvm_ir(instance, pass3, "myfile.floyd");
 	auto ee = make_engine_run_init(*program);
 	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"6"});
 }
