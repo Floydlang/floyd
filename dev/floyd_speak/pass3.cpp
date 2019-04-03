@@ -1778,7 +1778,7 @@ semantic_ast_t analyse(const analyser_t& a){
 	symbol_map.push_back({keyword_t::k_internal_undefined, symbol_t::make_constant(value_t::make_undefined())});
 	symbol_map.push_back({keyword_t::k_internal_dynamic, symbol_t::make_constant(value_t::make_internal_dynamic())});
 
-	symbol_map.push_back({keyword_t::k_void, symbol_t::make_constant(value_t::make_void())});
+	symbol_map.push_back({keyword_t::k_void, symbol_t::make_type(typeid_t::make_void())});
 	symbol_map.push_back({keyword_t::k_bool, symbol_t::make_type(typeid_t::make_bool())});
 	symbol_map.push_back({keyword_t::k_int, symbol_t::make_type(typeid_t::make_int())});
 	symbol_map.push_back({keyword_t::k_double, symbol_t::make_type(typeid_t::make_double())});

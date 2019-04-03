@@ -85,6 +85,12 @@ struct global_v_t {
 	std::string debug_str;
 };
 
+
+struct llvmgen_generated_function_t {
+	std::vector<global_v_t> local_variable_symbols;
+	llvm::Function* f;
+};
+
 struct llvmgen_t {
 	public: llvmgen_t(llvm_ir_program_t& program_acc0, llvm::IRBuilder<>& builder0) :
 		program_acc(program_acc0),
@@ -93,7 +99,23 @@ struct llvmgen_t {
 	{
 	}
 	public: bool check_invariant() const {
-		QUARK_ASSERT(program_acc.check_invariant());
+		if(emit_function){
+		}
+		else{
+			QUARK_ASSERT(program_acc.check_invariant());
+		}
+
+/*
+		if(emit_function_incomplete == 0){
+			if(emit_function){
+				QUARK_ASSERT(check_invariant__function(emit_function->f));
+			}
+			else{
+			}
+		}
+		else{
+		}
+*/
 		return true;
 	}
 
@@ -105,18 +127,33 @@ struct llvmgen_t {
 
 	//	One element for each global symbol in AST. Same indexes as in symbol table.
 	std::vector<global_v_t> globals;
+
+
+	//	0: function is not being modified and should be correct. >0: function is being emitted, can be invalid state.
+	std::unique_ptr<llvmgen_generated_function_t> emit_function;
 };
 
-struct llvmgen_generated_function_t {
-	std::vector<global_v_t> local_variable_symbols;
-	llvm::Function* f;
-};
+void start_function_emit(llvmgen_t& gen_acc, const std::vector<global_v_t>& local_variable_symbols, llvm::Function* stub){
+	QUARK_ASSERT(!gen_acc.emit_function);
+
+	auto temp = llvmgen_generated_function_t{local_variable_symbols, stub};
+	auto temp2 = std::make_unique<llvmgen_generated_function_t>(temp);
+	gen_acc.emit_function.swap(temp2);
+}
 
 
-llvm::Value* genllvm_expression(llvmgen_t& gen_acc, llvmgen_generated_function_t& func_acc, const expression_t& e);
+void end_function_emit(llvmgen_t& gen_acc){
+	gen_acc.emit_function.reset();
+}
+
+
+
+llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e);
 
 
 std::unique_ptr<llvm_ir_program_t> make_empty_program(const std::string& module_name){
+	QUARK_ASSERT(module_name.size() > 0);
+
 	return std::make_unique<llvm_ir_program_t>(module_name);
 }
 
@@ -129,7 +166,76 @@ std::string print_ee(const llvm::ExecutionEngine& v){
 }
 */
 
+
+
+
+/// Check a function for errors, useful for use when debugging a
+/// pass.
+///
+/// If there are no errors, the function returns false. If an error is found,
+/// a message describing the error is written to OS (if non-null) and true is
+/// returned.
+//bool verifyFunction(const Function &F, raw_ostream *OS = nullptr);
+
+bool check_invariant__function(const llvm::Function* f){
+	QUARK_ASSERT(f != nullptr);
+
+	std::string dump;
+	llvm::raw_string_ostream stream2(dump);
+	bool errors = llvm::verifyFunction(*f, &stream2);
+	if(errors){
+		QUARK_TRACE_SS(dump);
+	}
+	return !errors;
+}
+
+
+
+bool check_invariant__module(llvm::Module* module){
+	QUARK_ASSERT(module != nullptr);
+
+	std::string dump;
+	llvm::raw_string_ostream stream2(dump);
+	bool module_errors_flag = llvm::verifyModule(*module, &stream2, nullptr);
+	if(module_errors_flag){
+		QUARK_TRACE_SS(dump);
+		QUARK_ASSERT(false);
+		return false;
+	}
+
+	const auto& functions = module->getFunctionList();
+	for(const auto& e: functions){
+		QUARK_ASSERT(check_invariant__function(&e));
+//		llvm::verifyFunction(e);
+	}
+
+	return true;
+}
+
+
+
+void print_module_contents(llvm::Module& module){
+	const auto& functionList = module.getFunctionList();
+	for(const auto& e: functionList){
+
+/*
+	std::string dump;
+	llvm::raw_string_ostream stream2(dump);
+	module.print(stream2, nullptr);
+	return dump;
+*/
+		e.print(llvm::errs());
+	}
+
+	const auto& globalList = module.getGlobalList();
+	for(const auto& e: globalList){
+		e.print(llvm::errs());
+	}
+}
+
 std::string print_program(const llvm_ir_program_t& program){
+	QUARK_ASSERT(program.check_invariant());
+
 	std::string dump;
 	llvm::raw_string_ostream stream2(dump);
 	program.module->print(stream2, nullptr);
@@ -154,6 +260,8 @@ std::string print_function(llvm::Function* f){
 		return "nullptr";
 	}
 	else{
+		QUARK_ASSERT(check_invariant__function(f));
+
 		std::string s;
 		llvm::raw_string_ostream rso(s);
 		f->print(rso);
@@ -199,6 +307,8 @@ std::string print_globals(const std::vector<global_v_t>& globals){
 
 
 std::string print_gen(const llvmgen_t& gen){
+	QUARK_ASSERT(gen.check_invariant());
+
 	std::stringstream out;
 
 	out << "llvm_ir_program_t:"
@@ -213,6 +323,8 @@ std::string print_gen(const llvmgen_t& gen){
 
 
 global_v_t make_global(llvm::Value* value_ptr, std::string debug_str){
+	QUARK_ASSERT(value_ptr != nullptr);
+
 	return { value_ptr, debug_str };
 }
 
@@ -241,6 +353,8 @@ The non-first-class types are:
 */
 
 value_t llvm_to_value(const void* value_ptr, const typeid_t& type){
+QUARK_ASSERT(false);//??? this function is unused.
+
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
 
@@ -285,7 +399,7 @@ value_t llvm_to_value(const void* value_ptr, const typeid_t& type){
 
 
 
-global_v_t find_symbol(llvmgen_t& gen_acc, llvmgen_generated_function_t& func_acc, const variable_address_t& reg){
+global_v_t find_symbol(llvmgen_t& gen_acc, const variable_address_t& reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(reg._parent_steps == -1 || reg._parent_steps == 0);
 
@@ -294,8 +408,10 @@ global_v_t find_symbol(llvmgen_t& gen_acc, llvmgen_generated_function_t& func_ac
 		return gen_acc.globals[reg._index];
 	}
 	else if(reg._parent_steps == 0){
-		QUARK_ASSERT(reg._index >=0 && reg._index < func_acc.local_variable_symbols.size());
-		return func_acc.local_variable_symbols[reg._index];
+		QUARK_ASSERT(gen_acc.emit_function);
+		QUARK_ASSERT(reg._index >=0 && reg._index < gen_acc.emit_function->local_variable_symbols.size());
+
+		return gen_acc.emit_function->local_variable_symbols[reg._index];
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -574,6 +690,8 @@ llvm::Type* intern_type(llvmgen_t& gen_acc, const typeid_t& type, func_encode en
 
 //	??? temp workaround -- we don't support all argument types yet.
 typeid_t hack_function_type(const typeid_t& function_type){
+	QUARK_ASSERT(function_type.check_invariant());
+
 	floyd::typeid_t hacked_function_type = floyd::typeid_t::make_function(
 		function_type.get_function_return(),
 		{
@@ -598,7 +716,9 @@ llvm::Function* make_function_stub(llvmgen_t& gen_acc, const std::string& functi
 	//	IMPORTANT: Must cast to (llvm::FunctionType*) to get correct overload of getOrInsertFunction() to be called!
 	auto f3 = gen_acc.program_acc.module->getOrInsertFunction(function_name, (llvm::FunctionType*)ftype);
 	llvm::Function* f = llvm::cast<llvm::Function>(f3);
-	llvm::verifyFunction(*f);
+
+	QUARK_ASSERT(check_invariant__function(f));
+	QUARK_ASSERT(gen_acc.check_invariant());
 	return f;
 }
 
@@ -619,6 +739,9 @@ std::string make_host_function_label(int host_function_id){
 
 
 llvm::Value* make_constant(llvmgen_t& gen_acc, const value_t& value){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+
 	const auto type = value.get_type();
 	const auto itype = intern_type(gen_acc, type, func_encode::functions_are_pointers);
 
@@ -629,7 +752,7 @@ llvm::Value* make_constant(llvmgen_t& gen_acc, const value_t& value){
 		return llvm::ConstantInt::get(itype, 13);
 	}
 	else if(type.is_void()){
-//		QUARK_ASSERT(false);
+		QUARK_ASSERT(false);
 		return nullptr;
 	}
 	else if(type.is_bool()){
@@ -646,10 +769,10 @@ llvm::Value* make_constant(llvmgen_t& gen_acc, const value_t& value){
 		return nullptr;
 	}
 	else if(type.is_json_value()){
-		return llvm::ConstantInt::get(itype, 14);
+		return llvm::ConstantInt::get(itype, 7000);
 	}
 	else if(type.is_typeid()){
-		return llvm::ConstantInt::get(itype, 15);
+		return llvm::ConstantInt::get(itype, 6000);
 	}
 	else if(type.is_struct()){
 		QUARK_ASSERT(false);
@@ -684,19 +807,20 @@ llvm::Value* make_constant(llvmgen_t& gen_acc, const value_t& value){
 
 llvm::Value* genllvm_literal_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
 
 	const auto literal = e.get_literal();
 	return make_constant(gen_acc, literal);
 }
 
-llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, llvmgen_generated_function_t& func_acc, expression_type op, const expression_t& e){
+llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type op, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 	const auto type = e._input_exprs[0].get_output_type();
 
-	auto lhs_temp = genllvm_expression(gen_acc, func_acc, e._input_exprs[0]);
-	auto rhs_temp = genllvm_expression(gen_acc, func_acc, e._input_exprs[1]);
+	auto lhs_temp = genllvm_expression(gen_acc, e._input_exprs[0]);
+	auto rhs_temp = genllvm_expression(gen_acc, e._input_exprs[1]);
 
 /*
 	if(type.is_bool()){
@@ -823,18 +947,18 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, llvmgen_generated
 	return nullptr;
 }
 
-llvm::Value* genllvm_arithmetic_unary_minus_expression(llvmgen_t& gen_acc, llvmgen_generated_function_t& func_acc, const expression_t& e){
+llvm::Value* genllvm_arithmetic_unary_minus_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 	const auto type = e._input_exprs[0].get_output_type();
 	if(type.is_int()){
 		const auto e2 = expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), e._input_exprs[0], e._output_type);
-		return genllvm_expression(gen_acc, func_acc, e2);
+		return genllvm_expression(gen_acc, e2);
 	}
 	else if(type.is_double()){
 		const auto e2 = expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_double(0), e._input_exprs[0], e._output_type);
-		return genllvm_expression(gen_acc, func_acc, e2);
+		return genllvm_expression(gen_acc, e2);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -857,7 +981,9 @@ ret i32 %2
 */
 
 
-llvm_execution_engine_t* get_floyd_runtime(uint32_t* floyd_runtime_ptr){
+llvm_execution_engine_t* get_floyd_runtime(void* floyd_runtime_ptr){
+	QUARK_ASSERT(floyd_runtime_ptr != nullptr);
+
 	auto ptr = reinterpret_cast<llvm_execution_engine_t*>(floyd_runtime_ptr);
 	QUARK_ASSERT(ptr != nullptr);
 	QUARK_ASSERT(ptr->debug_magic == k_debug_magic);
@@ -866,9 +992,11 @@ llvm_execution_engine_t* get_floyd_runtime(uint32_t* floyd_runtime_ptr){
 
 
 //	The names of these are computed from the host-id in the symbol table, not the names of the functions/symbols.
+//	They must use C calling convention so llvm JIT can find them.
+//	Make sure they are not dead-stripped out of binary!
 extern "C" {
 
-	void floyd_host_function_1000(uint32_t* floyd_runtime_ptr, int64_t arg){
+	extern void floyd_host_function_1000(void* floyd_runtime_ptr, int64_t arg){
 		std:: cout << "floyd_host_function_1000: " << arg << std::endl;
 
 		auto r = get_floyd_runtime(floyd_runtime_ptr);
@@ -877,22 +1005,22 @@ extern "C" {
 		r->_print_output.push_back(s);
 	}
 
-	void floyd_host_function_1001(uint32_t* floyd_runtime_ptr, int64_t arg){
+	extern void floyd_host_function_1001(void* floyd_runtime_ptr, int64_t arg){
 		std:: cout << "floyd_host_function_1001: " << arg << std::endl;
 	}
 
-	void floyd_host_function_2002(uint32_t* floyd_runtime_ptr, int64_t arg){
+	extern void floyd_host_function_2002(void* floyd_runtime_ptr, int64_t arg){
 		std:: cout << "floyd_host_function_2002: " << arg << std::endl;
 	}
 
-	void floyd_host_function_2003(uint32_t* floyd_runtime_ptr, int64_t arg){
+	extern void floyd_host_function_2003(void* floyd_runtime_ptr, int64_t arg){
 		std:: cout << "floyd_host_function_2003: " << arg << std::endl;
 	}
 
 }
 
 
-llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvmgen_generated_function_t& func_acc, const expression_t& e){
+llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -966,7 +1094,7 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvmgen_generated_funct
 
 	//	Normal function call.
 	{
-		llvm::Value* callee0 = genllvm_expression(gen_acc, func_acc, e._input_exprs[0]);
+		llvm::Value* callee0 = genllvm_expression(gen_acc, e._input_exprs[0]);
 		QUARK_TRACE_SS("callee0: " << print_value(callee0));
 
 //		QUARK_TRACE_SS("gen_acc: " << print_gen(gen_acc));
@@ -976,10 +1104,12 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvmgen_generated_funct
 
 		std::vector<llvm::Value*> args2;
 
+		auto& emit_function = *gen_acc.emit_function;
+
 		//	Insert floyd runtime as first argument.
 		//Function::ArgumentListType &getArgumentList()
 		//	???load "floyd_context" variable. Use as "this" to chain all functions.
-		auto args = func_acc.f->args();
+		auto args = emit_function.f->args();
 		QUARK_ASSERT((args.end() - args.begin()) >= 1);
 		auto floyd_context_arg_ptr = args.begin();
 //		callee_f->args();
@@ -988,31 +1118,35 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvmgen_generated_funct
 
 		//	Skip input argument [0], which is callee.
 		for(int i = 1 ; i < e._input_exprs.size() ; i++){
-			llvm::Value* arg2 = genllvm_expression(gen_acc, func_acc, e._input_exprs[i]);
+			llvm::Value* arg2 = genllvm_expression(gen_acc, e._input_exprs[i]);
 			args2.push_back(arg2);
 		}
 
 		if(return_type.is_void()){
-			return gen_acc.builder.CreateCall(callee0, args2, "");
+			auto result = gen_acc.builder.CreateCall(callee0, args2, "");
+			QUARK_ASSERT(gen_acc.check_invariant());
+			return result;
 		}
 		else{
-			return gen_acc.builder.CreateCall(callee0, args2, "temp_call");
+			auto result = gen_acc.builder.CreateCall(callee0, args2, "temp_call");
+			QUARK_ASSERT(gen_acc.check_invariant());
+			return result;
 		}
 	}
 }
 
-llvm::Value* llvmgen_load2_expression(llvmgen_t& gen_acc, const expression_t& e, llvmgen_generated_function_t& func_acc){
+llvm::Value* llvmgen_load2_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 //	QUARK_TRACE_SS("result = " << floyd::print_program(gen_acc.program_acc));
 
-	auto dest = find_symbol(gen_acc, func_acc, e._address);
+	auto dest = find_symbol(gen_acc, e._address);
 	return gen_acc.builder.CreateLoad(dest.value_ptr);
 }
 
 //??? use visitor and std::variant<>
-llvm::Value* genllvm_expression(llvmgen_t& gen_acc, llvmgen_generated_function_t& func_acc, const expression_t& e){
+llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -1040,11 +1174,11 @@ llvm::Value* genllvm_expression(llvmgen_t& gen_acc, llvmgen_generated_function_t
 			return llvmgen_load2_expression(gen_acc, e, func_acc);
 		}
 #else
-		return llvmgen_load2_expression(gen_acc, e, func_acc);
+		return llvmgen_load2_expression(gen_acc, e);
 #endif
 	}
 	else if(op == expression_type::k_call){
-		return llvmgen_call_expression(gen_acc, func_acc, e);
+		return llvmgen_call_expression(gen_acc, e);
 	}
 	else if(op == expression_type::k_value_constructor){
 		QUARK_ASSERT(false);
@@ -1052,7 +1186,7 @@ llvm::Value* genllvm_expression(llvmgen_t& gen_acc, llvmgen_generated_function_t
 //		return bcgen_construct_value_expression(gen_acc, target_reg, e, body);
 	}
 	else if(op == expression_type::k_arithmetic_unary_minus__1){
-		return genllvm_arithmetic_unary_minus_expression(gen_acc, func_acc, e);
+		return genllvm_arithmetic_unary_minus_expression(gen_acc, e);
 	}
 	else if(op == expression_type::k_conditional_operator3){
 		QUARK_ASSERT(false);
@@ -1060,7 +1194,7 @@ llvm::Value* genllvm_expression(llvmgen_t& gen_acc, llvmgen_generated_function_t
 //		return bcgen_conditional_operator_expression(gen_acc, target_reg, e, body);
 	}
 	else if (is_arithmetic_expression(op)){
-		return genllvm_arithmetic_expression(gen_acc, func_acc, op, e);
+		return genllvm_arithmetic_expression(gen_acc, op, e);
 	}
 	else if (is_comparison_expression(op)){
 		QUARK_ASSERT(false);
@@ -1075,21 +1209,21 @@ llvm::Value* genllvm_expression(llvmgen_t& gen_acc, llvmgen_generated_function_t
 
 
 
-void genllvm_store2_statement(llvmgen_t& gen_acc, llvmgen_generated_function_t& func_acc, const statement_t::store2_t& s){
+void genllvm_store2_statement(llvmgen_t& gen_acc, const statement_t::store2_t& s){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
-	llvm::Value* value = genllvm_expression(gen_acc, func_acc, s._expression);
+	llvm::Value* value = genllvm_expression(gen_acc, s._expression);
 
-	auto dest = find_symbol(gen_acc, func_acc, s._dest_variable);
+	auto dest = find_symbol(gen_acc, s._dest_variable);
 	gen_acc.builder.CreateStore(value, dest.value_ptr);
 
 	QUARK_ASSERT(gen_acc.check_invariant());
 }
 
-void genllvm_expression_statement(llvmgen_t& gen_acc, llvmgen_generated_function_t& func_acc, const statement_t::expression_statement_t& s){
+void genllvm_expression_statement(llvmgen_t& gen_acc, const statement_t::expression_statement_t& s){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
-	genllvm_expression(gen_acc, func_acc, s._expression);
+	genllvm_expression(gen_acc, s._expression);
 
 	QUARK_ASSERT(gen_acc.check_invariant());
 }
@@ -1098,14 +1232,15 @@ void genllvm_expression_statement(llvmgen_t& gen_acc, llvmgen_generated_function
 	All Floyd's global statements becomes instructions in floyd_init()-function that is called by Floyd runtime before any other function is called.
 */
 
-void genllvm_statements(llvmgen_t& gen_acc, llvmgen_generated_function_t& func_acc, const std::vector<statement_t>& statements){
+void genllvm_statements(llvmgen_t& gen_acc, const std::vector<statement_t>& statements){
+	QUARK_ASSERT(gen_acc.check_invariant());
+
 	if(statements.empty() == false){
 		for(const auto& statement: statements){
 			QUARK_ASSERT(statement.check_invariant());
 
 			struct visitor_t {
 				llvmgen_t& acc0;
-				llvmgen_generated_function_t& func_acc0;
 
 				void operator()(const statement_t::return_statement_t& s) const{
 					QUARK_ASSERT(false);
@@ -1134,7 +1269,7 @@ void genllvm_statements(llvmgen_t& gen_acc, llvmgen_generated_function_t& func_a
 					quark::throw_exception();
 				}
 				void operator()(const statement_t::store2_t& s) const{
-					genllvm_store2_statement(acc0, func_acc0, s);
+					genllvm_store2_statement(acc0, s);
 				}
 				void operator()(const statement_t::block_statement_t& s) const{
 					QUARK_ASSERT(false);
@@ -1160,7 +1295,7 @@ void genllvm_statements(llvmgen_t& gen_acc, llvmgen_generated_function_t& func_a
 
 
 				void operator()(const statement_t::expression_statement_t& s) const{
-					genllvm_expression_statement(acc0, func_acc0, s);
+					genllvm_expression_statement(acc0, s);
 				}
 				void operator()(const statement_t::software_system_statement_t& s) const{
 					QUARK_ASSERT(false);
@@ -1174,13 +1309,14 @@ void genllvm_statements(llvmgen_t& gen_acc, llvmgen_generated_function_t& func_a
 				}
 			};
 
-			std::visit(visitor_t{ gen_acc, func_acc }, statement._contents);
+			std::visit(visitor_t{ gen_acc }, statement._contents);
 		}
 	}
 }
 
 std::vector<global_v_t> genllvm_local_make_symbols(llvmgen_t& gen_acc, const symbol_table_t& symbol_table){
 	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(symbol_table.check_invariant());
 
 	std::vector<global_v_t> result;
 
@@ -1221,6 +1357,7 @@ std::vector<global_v_t> genllvm_local_make_symbols(llvmgen_t& gen_acc, const sym
 llvm::Value* genllvm_make_global(llvmgen_t& gen_acc, const semantic_ast_t& ast, const std::string& symbol_name, const symbol_t& symbol){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(ast.check_invariant());
+	QUARK_ASSERT(symbol_name.empty() == false);
 	QUARK_ASSERT(symbol.check_invariant());
 
 	const auto type0 = symbol.get_type();
@@ -1245,7 +1382,6 @@ llvm::Value* genllvm_make_global(llvmgen_t& gen_acc, const semantic_ast_t& ast, 
 					true,
 					llvm::GlobalValue::ExternalLinkage,
 					f,
-	//				llvm::Constant::getNullValue(itype),
 					symbol_name
 				);
 
@@ -1288,6 +1424,8 @@ llvm::Value* genllvm_make_global(llvmgen_t& gen_acc, const semantic_ast_t& ast, 
 
 std::vector<global_v_t> genllvm_make_globals(llvmgen_t& gen_acc, const semantic_ast_t& ast, const symbol_table_t& symbol_table){
 	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(ast.check_invariant());
+	QUARK_ASSERT(symbol_table.check_invariant());
 
 //	QUARK_TRACE_SS("result = " << floyd::print_program(gen_acc.program_acc));
 
@@ -1310,19 +1448,20 @@ void genllvm_function_def(llvmgen_t& gen_acc, const floyd::function_definition_t
 	QUARK_ASSERT(function_def.check_invariant());
 
 	llvm::Function* f = make_function_stub(gen_acc, "generated_func_name", function_def._function_type);
-	llvm::verifyFunction(*f);
+	QUARK_ASSERT(check_invariant__function(f));
 
 	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(gen_acc.program_acc.context, "entry", f);
 	gen_acc.builder.SetInsertPoint(entryBB);
 
 	auto symbol_table_values = genllvm_local_make_symbols(gen_acc, function_def._body->_symbol_table);
 
+	{
+		start_function_emit(gen_acc, symbol_table_values, f);
+		genllvm_statements(gen_acc, function_def._body->_statements);
+		end_function_emit(gen_acc);
+	}
 
-	llvmgen_generated_function_t func_acc{ symbol_table_values, f };
-
-	genllvm_statements(gen_acc, func_acc, function_def._body->_statements);
-
-	llvm::verifyFunction(*f);
+	QUARK_ASSERT(check_invariant__function(f));
 }
 
 void genllvm_make_function_defs(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast){
@@ -1334,16 +1473,6 @@ void genllvm_make_function_defs(llvmgen_t& gen_acc, const semantic_ast_t& semant
 		const auto& function_def = *semantic_ast._tree._function_defs[function_id];
 
 		if(function_def._host_function_id != k_no_host_function_id){
-//			QUARK_ASSERT(false);
-/*
-			const auto function_def2 = bc_function_definition_t{
-				function_def._function_type,
-				function_def._args,
-				nullptr,
-				function_def._host_function_id
-			};
-*/
-
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -1356,24 +1485,31 @@ void genllvm_make_function_defs(llvmgen_t& gen_acc, const semantic_ast_t& semant
 //	The AST contains statements that initializes the global variables, including global functions.
 void genllvm_make_floyd_runtime_init(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast, const std::vector<global_v_t>& global_symbol_table){
 	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(semantic_ast.check_invariant());
 
 	llvm::Function* f = make_function_stub(
 		gen_acc,
 		"floyd_runtime_init",
 		floyd::typeid_t::make_function(floyd::typeid_t::make_int(), {}, floyd::epure::impure)
 	);
+	QUARK_ASSERT(check_invariant__function(f));
 
 	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(gen_acc.program_acc.context, "entry", f);
 	gen_acc.builder.SetInsertPoint(entryBB);
 
-	llvmgen_generated_function_t func_acc{ global_symbol_table, f };
+	{
+		start_function_emit(gen_acc, global_symbol_table, f);
+		genllvm_statements(gen_acc, semantic_ast._tree._globals._statements);
 
-	genllvm_statements(gen_acc, func_acc, semantic_ast._tree._globals._statements);
+		llvm::Value* dummy_result = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 667);
+		llvm::ReturnInst::Create(gen_acc.program_acc.context, dummy_result, entryBB);
 
-	llvm::Value* dummy_result = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 667);
-	llvm::ReturnInst::Create(gen_acc.program_acc.context, dummy_result, entryBB);
+		end_function_emit(gen_acc);
+	}
+	QUARK_ASSERT(gen_acc.check_invariant());
 
-	llvm::verifyFunction(*f);
+	QUARK_ASSERT(check_invariant__function(f));
+
 	gen_acc.floyd_runtime_init_f = f;
 }
 
@@ -1418,7 +1554,7 @@ void genllvm_all(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast){
 		gen_acc.globals = globals;
 	}
 
-	//	Global instructions are packed into the "floyd_runtime_init"-function. LLVM does't have global instructions.
+	//	Global instructions are packed into the "floyd_runtime_init"-function. LLVM doesn't have global instructions.
 	genllvm_make_floyd_runtime_init(gen_acc, semantic_ast, gen_acc.globals);
 
 	//	Generate instructions for all functions.
@@ -1427,6 +1563,7 @@ void genllvm_all(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast){
 
 std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(const semantic_ast_t& ast, const std::string& module_name){
 	QUARK_ASSERT(ast.check_invariant());
+	QUARK_ASSERT(module_name.empty() == false);
 	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast)._value));
 
 	auto p = make_empty_program(module_name);
@@ -1478,44 +1615,28 @@ LLVM’s “eager” JIT compiler is safe to use in threaded programs. Multiple 
 */
 
 void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name){
+	QUARK_ASSERT(ee.check_invariant());
+	QUARK_ASSERT(name.empty() == false);
+
 	const auto addr = ee.ee->getGlobalValueAddress(name);
 	return  (void*)addr;
 }
 
 void* get_global_function(llvm_execution_engine_t& ee, const std::string& name){
+	QUARK_ASSERT(ee.check_invariant());
+	QUARK_ASSERT(name.empty() == false);
+
 	const auto addr = ee.ee->getFunctionAddress(name);
 	return (void*)addr;
 }
 
 
 
-
-
 typedef int64_t (*FLOYD_RUNTIME_INIT)(void* floyd_runtime_ptr);
-
-void print_module_contents(llvm::Module& module){
-	const auto& functionList = module.getFunctionList();
-	for(const auto& e: functionList){
-
-/*
-	std::string dump;
-	llvm::raw_string_ostream stream2(dump);
-	module.print(stream2, nullptr);
-	return dump;
-*/
-		e.print(llvm::errs());
-	}
-
-	const auto& globalList = module.getGlobalList();
-	for(const auto& e: globalList){
-		e.print(llvm::errs());
-	}
-}
-
 
 //	Destroys program, can only run it once!
 llvm_execution_engine_t make_engine_break_program_no_init(llvm_ir_program_t& program){
-	QUARK_ASSERT(program.module);
+	QUARK_ASSERT(program.check_invariant());
 
 	//	print_module_contents(*program.module);
 
@@ -1539,36 +1660,47 @@ llvm_execution_engine_t make_engine_break_program_no_init(llvm_ir_program_t& pro
 	auto ee = std::shared_ptr<llvm::ExecutionEngine>(exeEng);
 	ee->finalizeObject();
 
-	exeEng->DisableGVCompilation(false);
-	exeEng->DisableSymbolSearching(false);
+	auto ee2 = llvm_execution_engine_t{ k_debug_magic, ee, {} };
+	QUARK_ASSERT(ee2.check_invariant());
+
+//	ee2.ee->DisableGVCompilation(false);
+//	ee2.ee->DisableSymbolSearching(false);
 
 //	llvm::WriteBitcodeToFile(exeEng->getVerifyModules(), raw_ostream &Out);
+	return ee2;
+}
 
-	return { k_debug_magic, ee, {} };
+uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee){
+	QUARK_ASSERT(ee.check_invariant());
+
+	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, "floyd_runtime_init"));
+	QUARK_ASSERT(a_func != nullptr);
+
+	int64_t a_result = (*a_func)((void*)&ee);
+	QUARK_ASSERT(a_result == 667);
+	return a_result;
 }
 
 //	Destroys program, can only run it once!
 //	Automatically runs floyd_runtime_init() to execute Floyd's global functions and initialize global constants.
 llvm_execution_engine_t make_engine_break_program(llvm_ir_program_t& program){
-	QUARK_ASSERT(program.module);
+	QUARK_ASSERT(program.check_invariant());
 
 	llvm_execution_engine_t ee = make_engine_break_program_no_init(program);
 
-	//	Call floyd_runtime_init().
-	{
-		auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, "floyd_runtime_init"));
-		QUARK_ASSERT(a_func != nullptr);
-		int64_t a_result = (*a_func)((void*)&ee);
-		QUARK_ASSERT(a_result == 667);
-	}
+	const auto print_ptr = floyd::get_global_ptr(ee, "print");
+	QUARK_ASSERT(print_ptr != nullptr);
 
-	return { ee };
+	const auto init_result = call_floyd_runtime_init(ee);
+	QUARK_ASSERT(init_result == 667);
+
+	return ee;
 }
 
 
 //	Destroys program, can only run it once!
 int64_t run_llvm_program(llvm_ir_program_t& program, const std::vector<floyd::value_t>& args){
-	QUARK_ASSERT(program.module);
+	QUARK_ASSERT(program.check_invariant());
 
 	auto ee = make_engine_break_program(program);
 	return 0;
@@ -1658,7 +1790,7 @@ const std::string test_1_json = R"ABCD(
 */
 
 
-QUARK_UNIT_TEST("", "From JSON: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
+QUARK_UNIT_TEST_VIP("", "From JSON: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_1_json));
 
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
@@ -1671,7 +1803,7 @@ QUARK_UNIT_TEST("", "From JSON: Check that floyd_runtime_init() runs and sets 'r
 //	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
 }
 
-QUARK_UNIT_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
+QUARK_UNIT_TEST_VIP("", "From source: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
 //	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
 
 	const auto pass3 = compile_to_sematic_ast__errors("let int result = 1 + 2 + 3", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
@@ -1708,7 +1840,7 @@ const std::string test_2_json = R"ABCD(
 ")ABCD";
 
 
-QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
+QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_2_json));
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
 
@@ -1717,7 +1849,6 @@ QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_ru
 	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"6"});
 }
 
-//Xx
 #if 0
 QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	const auto pass3 = compile_to_sematic_ast__errors("print(5)", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
@@ -1727,7 +1858,6 @@ QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floy
 	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"5"});
 }
 #endif
-
 
 const std::string test_3_json = R"ABCD(
 
@@ -2146,13 +2276,13 @@ const std::string test_3_json = R"ABCD(
 ")ABCD";
 
 
-QUARK_UNIT_TEST("", "json_to_semantic_ast()", "Complex JSON with ^types", ""){
+QUARK_UNIT_TEST_VIP("", "json_to_semantic_ast()", "Complex JSON with ^types", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_3_json));
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
 }
 
 #if 0
-QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
+QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_3_json));
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
 	auto program = generate_llvm_ir(pass3, "myfile.floyd");

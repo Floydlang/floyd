@@ -14,6 +14,8 @@
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/Verifier.h>
 
 namespace floyd {
 	struct semantic_ast_t;
@@ -27,6 +29,8 @@ namespace floyd {
 
 ////////////////////////////////		llvm_ir_program_t
 
+bool check_invariant__module(llvm::Module* module);
+bool check_invariant__function(const llvm::Function* f);
 
 struct llvm_ir_program_t {
 	llvm_ir_program_t(const llvm_ir_program_t& other) = delete;
@@ -36,9 +40,12 @@ struct llvm_ir_program_t {
 		context(),
 		module(std::make_unique<llvm::Module>(module_name.c_str(), context))
 	{
+		QUARK_ASSERT(check_invariant());
 	}
 
 	public: bool check_invariant() const {
+		QUARK_ASSERT(module);
+		QUARK_ASSERT(check_invariant__module(module.get()));
 		return true;
 	}
 
@@ -67,9 +74,15 @@ typedef int64_t (*FLOYD_RUNTIME_MAIN)();
 ////////////////////////////////		llvm_execution_engine_t
 
 
+//https://en.wikipedia.org/wiki/Hexspeak
 const uint64_t k_debug_magic = 0xFACEFEED05050505;
 
 struct llvm_execution_engine_t {
+	bool check_invariant() const {
+		QUARK_ASSERT(ee);
+		return true;
+	}
+
 	uint64_t debug_magic;
 
 	std::shared_ptr<llvm::ExecutionEngine> ee;

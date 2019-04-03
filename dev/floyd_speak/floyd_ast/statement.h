@@ -117,6 +117,10 @@ namespace floyd {
 
 
 	struct symbol_table_t {
+		bool check_invariant() const {
+			return true;
+		}
+
 		bool operator==(const symbol_table_t& other) const {
 			return _symbols == other._symbols;
 		}
