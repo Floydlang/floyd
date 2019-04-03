@@ -94,10 +94,10 @@ QUARK_UNIT_TEST("Floyd test suite", "Infered bind", "", "") {
 //////////////////////////////////////////		BASIC EXPRESSIONS - CONDITIONAL EXPRESSION
 
 
-QUARK_UNIT_TEST_VIP("run_main()", "conditional expression", "", ""){
+QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = true ? 98 : 99", value_t::make_int(98));
 }
-QUARK_UNIT_TEST_VIP("run_main()", "conditional expression", "", ""){
+QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = false ? 70 : 80", value_t::make_int(80));
 }
 
@@ -393,7 +393,7 @@ QUARK_UNIT_TEST("run_main", "Forgot let or mutable", "", "Exception"){
 	);
 }
 
-QUARK_UNIT_TEST("run_main", "Can make and read global int", "", ""){
+QUARK_UNIT_TEST_VIP("run_main", "Can make and read global int", "", ""){
 	ut_verify_mainfunc_return(
 		QUARK_POS,
 		R"(

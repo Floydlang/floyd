@@ -92,7 +92,8 @@ struct llvmgen_t {
 		instance(&instance),
 		module(std::make_unique<llvm::Module>(module_name.c_str(), instance.context)),
 		builder(instance.context),
-		floyd_runtime_init_f(nullptr)
+		floyd_runtime_init_f(nullptr),
+		compare_strings_f(nullptr)
 	{
 		QUARK_ASSERT(instance.check_invariant());
 
@@ -137,6 +138,7 @@ struct llvmgen_t {
 	llvm::IRBuilder<> builder;
 
 	llvm::Function* floyd_runtime_init_f;
+	llvm::Function* compare_strings_f;
 
 	//	One element for each global symbol in AST. Same indexes as in symbol table.
 	std::vector<global_v_t> globals;
@@ -873,22 +875,7 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 	auto lhs_temp = genllvm_expression(gen_acc, e._input_exprs[0]);
 	auto rhs_temp = genllvm_expression(gen_acc, e._input_exprs[1]);
 
-/*
-	if(type.is_bool()){
-		static const std::map<expression_type, bc_opcode> conv_opcode = {
-			{ expression_type::k_arithmetic_add__2, bc_opcode::k_add_bool },
-			{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
-			{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
-			{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
-			{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
-
-			{ expression_type::k_logical_and__2, bc_opcode::k_logical_and_bool },
-			{ expression_type::k_logical_or__2, bc_opcode::k_logical_or_bool }
-		};
-		return conv_opcode.at(e._operation);
-	}
-	else*/
-	if(type.is_int()){
+	if(type.is_bool() || type.is_int()){
 		if(e._operation == expression_type::k_arithmetic_add__2){
 			return gen_acc.builder.CreateAdd(lhs_temp, rhs_temp, "add_tmp");
 		}
@@ -906,13 +893,9 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 		}
 
 		else if(e._operation == expression_type::k_logical_and__2){
-			QUARK_ASSERT(false);
-			quark::throw_exception();
 			return gen_acc.builder.CreateAnd(lhs_temp, rhs_temp, "logical_and_tmp");
 		}
 		else if(e._operation == expression_type::k_logical_or__2){
-			QUARK_ASSERT(false);
-			quark::throw_exception();
 			return gen_acc.builder.CreateOr(lhs_temp, rhs_temp, "logical_or_tmp");
 		}
 		else{
@@ -998,6 +981,123 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 	return nullptr;
 }
 
+llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, expression_type op, const expression_t& e){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	auto lhs_temp = genllvm_expression(gen_acc, e._input_exprs[0]);
+	auto rhs_temp = genllvm_expression(gen_acc, e._input_exprs[1]);
+
+	//	Type is the data the opcode works on -- comparing two ints, comparing two strings etc.
+	const auto type = e._input_exprs[0].get_output_type();
+
+	//	Output reg always a bool.
+	QUARK_ASSERT(e.get_output_type().is_bool());
+
+	if(type.is_bool() || type.is_int()){
+		/*
+			ICMP_EQ    = 32,  ///< equal
+			ICMP_NE    = 33,  ///< not equal
+			ICMP_UGT   = 34,  ///< unsigned greater than
+			ICMP_UGE   = 35,  ///< unsigned greater or equal
+			ICMP_ULT   = 36,  ///< unsigned less than
+			ICMP_ULE   = 37,  ///< unsigned less or equal
+			ICMP_SGT   = 38,  ///< signed greater than
+			ICMP_SGE   = 39,  ///< signed greater or equal
+			ICMP_SLT   = 40,  ///< signed less than
+			ICMP_SLE   = 41,  ///< signed less or equal
+		*/
+		static const std::map<expression_type, llvm::CmpInst::Predicate> conv_opcode_int = {
+			{ expression_type::k_comparison_smaller_or_equal__2,			llvm::CmpInst::Predicate::ICMP_SLE },
+			{ expression_type::k_comparison_smaller__2,						llvm::CmpInst::Predicate::ICMP_SLT },
+			{ expression_type::k_comparison_larger_or_equal__2,				llvm::CmpInst::Predicate::ICMP_SGE },
+			{ expression_type::k_comparison_larger__2,						llvm::CmpInst::Predicate::ICMP_SGT },
+
+			{ expression_type::k_logical_equal__2,							llvm::CmpInst::Predicate::ICMP_EQ },
+			{ expression_type::k_logical_nonequal__2,						llvm::CmpInst::Predicate::ICMP_NE }
+		};
+		const auto pred = conv_opcode_int.at(e._operation);
+		return gen_acc.builder.CreateICmp(pred, lhs_temp, rhs_temp);
+	}
+	else if(type.is_double()){
+		//??? Use ordered or unordered?
+		/*
+			// Opcode              U L G E    Intuitive operation
+			FCMP_FALSE =  0,  ///< 0 0 0 0    Always false (always folded)
+
+			FCMP_OEQ   =  1,  ///< 0 0 0 1    True if ordered and equal
+			FCMP_OGT   =  2,  ///< 0 0 1 0    True if ordered and greater than
+			FCMP_OGE   =  3,  ///< 0 0 1 1    True if ordered and greater than or equal
+			FCMP_OLT   =  4,  ///< 0 1 0 0    True if ordered and less than
+			FCMP_OLE   =  5,  ///< 0 1 0 1    True if ordered and less than or equal
+			FCMP_ONE   =  6,  ///< 0 1 1 0    True if ordered and operands are unequal
+			FCMP_ORD   =  7,  ///< 0 1 1 1    True if ordered (no nans)
+		*/
+		static const std::map<expression_type, llvm::CmpInst::Predicate> conv_opcode_int = {
+			{ expression_type::k_comparison_smaller_or_equal__2,			llvm::CmpInst::Predicate::FCMP_OLE },
+			{ expression_type::k_comparison_smaller__2,						llvm::CmpInst::Predicate::FCMP_OLT },
+			{ expression_type::k_comparison_larger_or_equal__2,				llvm::CmpInst::Predicate::FCMP_OGE },
+			{ expression_type::k_comparison_larger__2,						llvm::CmpInst::Predicate::FCMP_OGT },
+
+			{ expression_type::k_logical_equal__2,							llvm::CmpInst::Predicate::FCMP_OEQ },
+			{ expression_type::k_logical_nonequal__2,						llvm::CmpInst::Predicate::FCMP_ONE }
+		};
+		const auto pred = conv_opcode_int.at(e._operation);
+		return gen_acc.builder.CreateFCmp(pred, lhs_temp, rhs_temp);
+	}
+	else if(type.is_string()){
+		QUARK_ASSERT(gen_acc.compare_strings_f != nullptr);
+
+		std::vector<llvm::Value*> args2;
+
+		auto& emit_function = *gen_acc.emit_function;
+
+		//	Insert floyd_runtime_ptr as first argument to called function.
+		auto args = emit_function.f->args();
+		QUARK_ASSERT((args.end() - args.begin()) >= 1);
+		auto floyd_context_arg_ptr = args.begin();
+		args2.push_back(floyd_context_arg_ptr);
+
+		llvm::Value* op_value = make_constant(gen_acc, value_t::make_int(static_cast<int64_t>(e._operation)));
+		args2.push_back(op_value);
+
+		args2.push_back(lhs_temp);
+		args2.push_back(rhs_temp);
+		auto result = gen_acc.builder.CreateCall(gen_acc.compare_strings_f, args2, "compare_strings");
+
+		auto result2 = gen_acc.builder.CreateICmp(llvm::CmpInst::Predicate::ICMP_NE, result, llvm::ConstantInt::get(gen_acc.builder.getInt32Ty(), 0));
+
+
+		QUARK_ASSERT(gen_acc.check_invariant());
+		return result2;
+	}
+	else{
+		QUARK_ASSERT(false);
+#if 0
+		//	Bool tells if to flip left / right.
+		static const std::map<expression_type, std::pair<bool, bc_opcode>> conv_opcode = {
+			{ expression_type::k_comparison_smaller_or_equal__2,			{ false, bc_opcode::k_comparison_smaller_or_equal } },
+			{ expression_type::k_comparison_smaller__2,						{ false, bc_opcode::k_comparison_smaller } },
+			{ expression_type::k_comparison_larger_or_equal__2,				{ true, bc_opcode::k_comparison_smaller_or_equal } },
+			{ expression_type::k_comparison_larger__2,						{ true, bc_opcode::k_comparison_smaller } },
+
+			{ expression_type::k_logical_equal__2,							{ false, bc_opcode::k_logical_equal } },
+			{ expression_type::k_logical_nonequal__2,						{ false, bc_opcode::k_logical_nonequal } }
+		};
+
+		const auto result = conv_opcode.at(e._operation);
+		if(result.first == false){
+			body_acc._instrs.push_back(bcgen_instruction_t(result.second, target_reg2, left_expr._out, right_expr._out));
+		}
+		else{
+			body_acc._instrs.push_back(bcgen_instruction_t(result.second, target_reg2, right_expr._out, left_expr._out));
+		}
+#endif
+		return nullptr;
+	}
+}
+
+
 llvm::Value* genllvm_arithmetic_unary_minus_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1075,12 +1175,14 @@ llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, const e
 
 	builder.CreateCondBr(condition_value, then_bb, else_bb);
 
+
 	// Emit then-value.
 	builder.SetInsertPoint(then_bb);
 	llvm::Value* then_value = genllvm_expression(gen_acc, e._input_exprs[1]);
 	builder.CreateBr(join_bb);
 	// Codegen of 'Then' can change the current block, update then_bb.
 	llvm::BasicBlock* then_bb2 = builder.GetInsertBlock();
+
 
 	// Emit else block.
 	parent_function->getBasicBlockList().push_back(else_bb);
@@ -1090,11 +1192,11 @@ llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, const e
 	// Codegen of 'Else' can change the current block, update else_bb.
 	llvm::BasicBlock* else_bb2 = builder.GetInsertBlock();
 
+
 	// Emit join block.
 	parent_function->getBasicBlockList().push_back(join_bb);
 	builder.SetInsertPoint(join_bb);
 	llvm::PHINode* phiNode = builder.CreatePHI(result_itype, 2, "cond_operator-result");
-
 	phiNode->addIncoming(then_value, then_bb2);
 	phiNode->addIncoming(else_value, else_bb2);
 
@@ -1134,6 +1236,39 @@ void hook(const std::string& s, void* floyd_runtime_ptr, int64_t arg){
 //	They must use C calling convention so llvm JIT can find them.
 //	Make sure they are not dead-stripped out of binary!
 extern "C" {
+
+	extern int32_t floyd_runtime__compare_strings(void* floyd_runtime_ptr, int64_t op, const char* lhs, const char* rhs){
+		std:: cout << __FUNCTION__ << " " << std::string(lhs) << " comp " <<std::string(rhs) << std::endl;
+
+		const auto result = std::strcmp(lhs, rhs);
+		const auto op2 = static_cast<expression_type>(op);
+		if(op2 == expression_type::k_comparison_smaller_or_equal__2){
+			return result <= 0 ? 1 : 0;
+		}
+		else if(op2 == expression_type::k_comparison_smaller__2){
+			return result < 0 ? 1 : 0;
+		}
+		else if(op2 == expression_type::k_comparison_larger_or_equal__2){
+			return result >= 0 ? 1 : 0;
+		}
+		else if(op2 == expression_type::k_comparison_larger__2){
+			return result > 0 ? 1 : 0;
+		}
+
+		else if(op2 == expression_type::k_logical_equal__2){
+			return result == 0 ? 1 : 0;
+		}
+		else if(op2 == expression_type::k_logical_nonequal__2){
+			return result != 0 ? 1 : 0;
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+
+
+
+
 
 	extern void floyd_host_function_1000(void* floyd_runtime_ptr, int64_t arg){
 		std:: cout << "floyd_host_function_1000: " << arg << std::endl;
@@ -1445,9 +1580,7 @@ llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e){
 		return genllvm_arithmetic_expression(gen_acc, op, e);
 	}
 	else if (is_comparison_expression(op)){
-		QUARK_ASSERT(false);
-		quark::throw_exception();
-//		return bcgen_comparison_expression(gen_acc, target_reg, op, e, body);
+		return llvmgen_comparison_expression(gen_acc, op, e);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -1752,6 +1885,24 @@ void genllvm_all(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(semantic_ast.check_invariant());
 
+
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getInt32Ty(gen_acc.instance->context),
+		{
+			llvm::Type::getInt32PtrTy(gen_acc.instance->context),
+			llvm::Type::getInt64Ty(gen_acc.instance->context),
+			llvm::Type::getInt8PtrTy(gen_acc.instance->context),
+			llvm::Type::getInt8PtrTy(gen_acc.instance->context)
+		},
+		false
+	);
+	auto f3 = gen_acc.module->getOrInsertFunction("floyd_runtime__compare_strings", function_type);
+	gen_acc.compare_strings_f = llvm::cast<llvm::Function>(f3);
+	QUARK_ASSERT(check_invariant__function(gen_acc.compare_strings_f));
+
+
+
+
 	//	Register all function defs as LLVM function prototypes.
 	//	host functions are later linked by LLVM execution engine, by matching the function names.
 	//	Floyd functions are later filled with instructions.
@@ -1787,6 +1938,8 @@ void genllvm_all(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast){
 
 	//	Global instructions are packed into the "floyd_runtime_init"-function. LLVM doesn't have global instructions.
 	genllvm_make_floyd_runtime_init(gen_acc, semantic_ast, gen_acc.globals);
+
+
 
 	//	Generate instructions for all functions.
 	genllvm_make_function_defs(gen_acc, semantic_ast);
