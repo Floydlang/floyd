@@ -1579,7 +1579,7 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(llvm_instance_t& instance, c
 	llvmgen_t acc(instance, module_name);
 	genllvm_all(acc, ast);
 
-	auto result = std::make_unique<llvm_ir_program_t>(&instance, acc.module, acc.globals);
+	auto result = std::make_unique<llvm_ir_program_t>(&instance, acc.module, ast._tree._globals._symbol_table);
 	QUARK_TRACE_SS("result = " << floyd::print_program(*result));
 	return result;
 }
@@ -1668,6 +1668,21 @@ llvm_execution_engine_t make_engine_no_init(llvm_ir_program_t& program_breaks){
 #if DEBUG
 	//??? verify that all global functions can be accessed = keep global symbols in
 	{
+		int index = 0;
+		for(const auto& e: program_breaks.debug_globals._symbols){
+			if(e.second.get_type().is_function()){
+				const auto global_var = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(ee2, e.first);
+				QUARK_ASSERT(global_var != nullptr);
+
+				const auto f = *global_var;
+				const std::string suffix = f == nullptr ? " NULL POINTER" : "";
+				const uint64_t addr = reinterpret_cast<uint64_t>(f);
+				QUARK_TRACE_SS(index << " " << e.first << " " << addr << suffix);
+			}
+			else{
+			}
+			index++;
+		}
 	}
 #endif
 
@@ -1795,25 +1810,6 @@ const std::string test_1_json = R"ABCD(
 }
 }
 ")ABCD";
-/*
-			[37, "null", { "init": null, "symbol_type": "immutable_local", "value_type": "^json_value" }],
-			[38, "**undef**", { "init": null, "symbol_type": "immutable_local", "value_type": "^**undef**" }],
-			[39, "**dyn**", { "init": null, "symbol_type": "immutable_local", "value_type": "^**dyn**" }],
-			[40, "void", { "init": null, "symbol_type": "immutable_local", "value_type": "^void" }],
-			[41, "bool", { "init": "^bool", "symbol_type": "immutable_local", "value_type": "^typeid" }],
-			[42, "int", { "init": "^int", "symbol_type": "immutable_local", "value_type": "^typeid" }],
-			[43, "double", { "init": "^double", "symbol_type": "immutable_local", "value_type": "^typeid" }],
-			[44, "string", { "init": "^string", "symbol_type": "immutable_local", "value_type": "^typeid" }],
-			[45, "typeid", { "init": "^typeid", "symbol_type": "immutable_local", "value_type": "^typeid" }],
-			[46, "json_value", { "init": "^json_value", "symbol_type": "immutable_local", "value_type": "^typeid" }],
-			[47, "json_object", { "init": 1, "symbol_type": "immutable_local", "value_type": "^int" }],
-			[48, "json_array", { "init": 2, "symbol_type": "immutable_local", "value_type": "^int" }],
-			[49, "json_string", { "init": 3, "symbol_type": "immutable_local", "value_type": "^int" }],
-			[50, "json_number", { "init": 4, "symbol_type": "immutable_local", "value_type": "^int" }],
-			[51, "json_true", { "init": 5, "symbol_type": "immutable_local", "value_type": "^int" }],
-			[52, "json_false", { "init": 6, "symbol_type": "immutable_local", "value_type": "^int" }],
-			[53, "json_null", { "init": 7, "symbol_type": "immutable_local", "value_type": "^int" }],
-*/
 
 
 QUARK_UNIT_TEST("", "From JSON: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
@@ -1870,7 +1866,7 @@ const std::string test_2_json = R"ABCD(
 
 #if 1
 //	Works! Calls print()!!!
-QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
+QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_2_json));
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
 
@@ -1884,7 +1880,7 @@ QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_ru
 #if 0
 //??? all external functions referenced from code must be defined or print() will return nullptr.
 //	BROKEN!
-QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
+QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	const auto pass3 = compile_to_sematic_ast__errors("print(5)", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
 
 	floyd::llvm_instance_t instance;

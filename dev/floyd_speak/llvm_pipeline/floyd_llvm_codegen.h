@@ -10,6 +10,7 @@
 #define floyd_llvm_codegen_hpp
 
 #include "ast_value.h"
+#include "statement.h"
 #include <string>
 
 #include <llvm/IR/LLVMContext.h>
@@ -53,7 +54,7 @@ struct llvm_ir_program_t {
 	llvm_ir_program_t(const llvm_ir_program_t& other) = delete;
 	llvm_ir_program_t& operator=(const llvm_ir_program_t& other) = delete;
 
-	explicit llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const std::vector<global_v_t>& globals) :
+	explicit llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const symbol_table_t& globals) :
 		instance(instance),
 		debug_globals(globals)
 	{
@@ -77,7 +78,7 @@ struct llvm_ir_program_t {
 	//	Module must sit in a unique_ptr<> because llvm::EngineBuilder needs that.
 	std::unique_ptr<llvm::Module> module;
 
-	std::vector<global_v_t> debug_globals;
+	symbol_table_t debug_globals;
 };
 
 
