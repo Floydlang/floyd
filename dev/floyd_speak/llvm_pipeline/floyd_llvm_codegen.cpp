@@ -753,6 +753,7 @@ std::string make_unique_internal_function_name(const value_t& function_value){
 	return make_unique_internal_function_name2(function_id);
 }
 std::string make_host_function_label(int host_function_id){
+//	const auto s = "floyd_host_function_ABC";
 	const auto s = std::string() + "floyd_host_function_" + std::to_string(host_function_id);
 	return s;
 }
@@ -1010,6 +1011,10 @@ llvm_execution_engine_t* get_floyd_runtime(void* floyd_runtime_ptr){
 	return ptr;
 }
 
+void hook(const std::string& s, void* floyd_runtime_ptr, int64_t arg){
+	std:: cout << s << arg << " arg: " << std::endl;
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+}
 
 //	The names of these are computed from the host-id in the symbol table, not the names of the functions/symbols.
 //	They must use C calling convention so llvm JIT can find them.
@@ -1026,7 +1031,166 @@ extern "C" {
 	}
 
 	extern void floyd_host_function_1001(void* floyd_runtime_ptr, int64_t arg){
-		std:: cout << "floyd_host_function_1001: " << arg << std::endl;
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1002(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1003(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1004(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1005(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1006(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1007(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1008(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1009(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+
+
+	extern void floyd_host_function_1010(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1011(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1012(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1013(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1014(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1015(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1016(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1017(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1018(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1019(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+
+
+	extern void floyd_host_function_1020(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1021(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1022(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1023(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1024(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1025(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1026(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1027(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1028(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1029(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+
+
+
+	extern void floyd_host_function_1030(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1031(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1032(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1033(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1034(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1035(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1036(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1037(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1038(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	}
+
+	extern void floyd_host_function_1039(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
 	}
 
 
@@ -1035,11 +1199,11 @@ extern "C" {
 	///////////////		TEST
 
 	extern void floyd_host_function_2002(void* floyd_runtime_ptr, int64_t arg){
-		std:: cout << "floyd_host_function_2002: " << arg << std::endl;
+		std:: cout << __FUNCTION__ << arg << std::endl;
 	}
 
 	extern void floyd_host_function_2003(void* floyd_runtime_ptr, int64_t arg){
-		std:: cout << "floyd_host_function_2003: " << arg << std::endl;
+		std:: cout << __FUNCTION__ << arg << std::endl;
 	}
 
 }
@@ -1065,56 +1229,7 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 
 //	int host_function_id = get_host_function_id(gen_acc, e);
 
-#if 0
-	//	a = size(b)
-	if(host_function_id == 1007 && arg_count == 1){
-		const auto arg1_type = e._input_exprs[1].get_output_type();
-
-		bc_opcode opcode = convert_call_to_size_opcode(arg1_type);
-		if(opcode != bc_opcode::k_nop){
-			const auto& arg1_expr = bcgen_expression(gen_acc, {}, e._input_exprs[1], body_acc);
-			body_acc = arg1_expr._body;
-
-			const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: result for k_get_size_vector_x") : target_reg;
-			body_acc._instrs.push_back(bcgen_instruction_t(opcode, target_reg2, arg1_expr._out, make_imm_int(0)));
-			QUARK_ASSERT(body_acc.check_invariant());
-			return { body_acc, target_reg2, intern_type(gen_acc, return_type) };
-		}
-		else{
-		}
-	}
-
-	//	a = push_back(b, c)
-	else if(host_function_id == 1011 && arg_count == 2){
-		QUARK_ASSERT(e.get_output_type() == e._input_exprs[1].get_output_type());
-
-		const auto arg1_type = e._input_exprs[1].get_output_type();
-		bc_opcode opcode = convert_call_to_pushback_opcode(arg1_type);
-		if(opcode != bc_opcode::k_nop){
-			//	push_back() used DYN-arguments which are resolved at runtime. When we make opcodes we need to check at compile time = now.
-			if(arg1_type.is_string() && e._input_exprs[2].get_output_type().is_int() == false){
-				quark::throw_runtime_error("Bad element to push_back(). Require push_back(string, int)");
-			}
-
-			const auto& arg1_expr = bcgen_expression(gen_acc, {}, e._input_exprs[1], body_acc);
-			body_acc = arg1_expr._body;
-
-			const auto& arg2_expr = bcgen_expression(gen_acc, {}, e._input_exprs[2], body_acc);
-			body_acc = arg2_expr._body;
-
-			const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: result for k_pushback_x") : target_reg;
-
-			body_acc._instrs.push_back(bcgen_instruction_t(opcode, target_reg2, arg1_expr._out, arg2_expr._out));
-			QUARK_ASSERT(body_acc.check_invariant());
-			return { body_acc, target_reg2, intern_type(gen_acc, return_type) };
-		}
-		else{
-		}
-	}
-#endif
-
 //	floyd::typeid_t print_function_type = floyd::typeid_t::make_function(typeid_t::make_void(), { floyd::typeid_t::make_int() }, floyd::epure::impure);
-
 
 
 	//	Normal function call.
@@ -1123,9 +1238,6 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 		QUARK_TRACE_SS("callee0: " << print_value(callee0));
 
 //		QUARK_TRACE_SS("gen_acc: " << print_gen(gen_acc));
-
-//		llvm::Function* callee_f = llvm::cast<llvm::Function>(callee0);
-//		print_function(callee_f);
 
 		std::vector<llvm::Value*> args2;
 
@@ -1523,10 +1635,6 @@ void genllvm_make_floyd_runtime_init(llvmgen_t& gen_acc, const semantic_ast_t& s
 	gen_acc.floyd_runtime_init_f = f;
 }
 
-
-//	llvm::MCJITMemoryManager
-
-
 void genllvm_all(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(semantic_ast.check_invariant());
@@ -1666,7 +1774,7 @@ llvm_execution_engine_t make_engine_no_init(llvm_ir_program_t& program_breaks){
 
 
 #if DEBUG
-	//??? verify that all global functions can be accessed = keep global symbols in
+	//	Verify that all global functions can be accessed. If *one* is unresolved, then all return NULL!?
 	{
 		int index = 0;
 		for(const auto& e: program_breaks.debug_globals._symbols){
@@ -1675,6 +1783,8 @@ llvm_execution_engine_t make_engine_no_init(llvm_ir_program_t& program_breaks){
 				QUARK_ASSERT(global_var != nullptr);
 
 				const auto f = *global_var;
+				QUARK_ASSERT(f != nullptr);
+
 				const std::string suffix = f == nullptr ? " NULL POINTER" : "";
 				const uint64_t addr = reinterpret_cast<uint64_t>(f);
 				QUARK_TRACE_SS(index << " " << e.first << " " << addr << suffix);
@@ -1790,6 +1900,8 @@ int64_t run_using_llvm_helper(const std::string& program_source, const std::stri
 ////////////////////////////////		TESTS
 
 
+#define LLVM_TEST		QUARK_UNIT_TEST
+#define LLVM_TEST_VIP	QUARK_UNIT_TEST_VIP
 
 
 const std::string test_1_json = R"ABCD(
@@ -1812,7 +1924,7 @@ const std::string test_1_json = R"ABCD(
 ")ABCD";
 
 
-QUARK_UNIT_TEST("", "From JSON: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
+LLVM_TEST("", "From JSON: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_1_json));
 
 	floyd::llvm_instance_t instance;
@@ -1826,7 +1938,7 @@ QUARK_UNIT_TEST("", "From JSON: Check that floyd_runtime_init() runs and sets 'r
 //	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
 }
 
-QUARK_UNIT_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
+LLVM_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
 //	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
 
 	const auto pass3 = compile_to_sematic_ast__errors("let int result = 1 + 2 + 3", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
@@ -1864,9 +1976,9 @@ const std::string test_2_json = R"ABCD(
 }
 ")ABCD";
 
-#if 1
+#if 0
 //	Works! Calls print()!!!
-QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
+LLVM_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_2_json));
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
 
@@ -1877,10 +1989,10 @@ QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floy
 }
 #endif
 
-#if 0
+#if 1
 //??? all external functions referenced from code must be defined or print() will return nullptr.
 //	BROKEN!
-QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
+LLVM_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	const auto pass3 = compile_to_sematic_ast__errors("print(5)", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
 
 	floyd::llvm_instance_t instance;
@@ -2307,20 +2419,18 @@ const std::string test_3_json = R"ABCD(
 ")ABCD";
 
 
-QUARK_UNIT_TEST("", "json_to_semantic_ast()", "Complex JSON with ^types", ""){
+LLVM_TEST("", "json_to_semantic_ast()", "Complex JSON with ^types", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_3_json));
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
 }
 
-#if 0
-QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
+LLVM_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_3_json));
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
 
 	floyd::llvm_instance_t instance;
 	auto program = generate_llvm_ir(instance, pass3, "myfile.floyd");
 	auto ee = make_engine_run_init(*program);
-	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"6"});
+	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"5"});
 }
-#endif
 
