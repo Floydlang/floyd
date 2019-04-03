@@ -1039,7 +1039,6 @@ extern "C" {
 
 }
 
-//??? all external functions referenced from code must be defined or print() will return nullptr.
 
 llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1656,13 +1655,13 @@ void* get_global_function(llvm_execution_engine_t& ee, const std::string& name){
 typedef int64_t (*FLOYD_RUNTIME_INIT)(void* floyd_runtime_ptr);
 
 //	Destroys program, can only run it once!
-llvm_execution_engine_t make_engine_break_program_no_init(llvm_ir_program_t& program){
-	QUARK_ASSERT(program.check_invariant());
+llvm_execution_engine_t make_engine_no_init(llvm_ir_program_t& program_breaks){
+	QUARK_ASSERT(program_breaks.check_invariant());
 
 	std::string collectedErrors;
 
 	//??? Destroys p -- uses std::move().
-	llvm::ExecutionEngine* exeEng = llvm::EngineBuilder(std::move(program.module))
+	llvm::ExecutionEngine* exeEng = llvm::EngineBuilder(std::move(program_breaks.module))
 		.setErrorStr(&collectedErrors)
 		.setOptLevel(llvm::CodeGenOpt::Level::None)
 		.setVerifyModules(true)
@@ -1702,10 +1701,10 @@ uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee){
 
 //	Destroys program, can only run it once!
 //	Automatically runs floyd_runtime_init() to execute Floyd's global functions and initialize global constants.
-llvm_execution_engine_t make_engine_break_program(llvm_ir_program_t& program){
-	QUARK_ASSERT(program.check_invariant());
+llvm_execution_engine_t make_engine_run_init(llvm_ir_program_t& program_breaks){
+	QUARK_ASSERT(program_breaks.check_invariant());
 
-	llvm_execution_engine_t ee = make_engine_break_program_no_init(program);
+	llvm_execution_engine_t ee = make_engine_no_init(program_breaks);
 
 	const auto print_ptr = floyd::get_global_ptr(ee, "print");
 	QUARK_ASSERT(print_ptr != nullptr);
@@ -1718,10 +1717,10 @@ llvm_execution_engine_t make_engine_break_program(llvm_ir_program_t& program){
 
 
 //	Destroys program, can only run it once!
-int64_t run_llvm_program(llvm_ir_program_t& program, const std::vector<floyd::value_t>& args){
-	QUARK_ASSERT(program.check_invariant());
+int64_t run_llvm_program(llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args){
+	QUARK_ASSERT(program_breaks.check_invariant());
 
-	auto ee = make_engine_break_program(program);
+	auto ee = make_engine_run_init(program_breaks);
 	return 0;
 }
 
@@ -1814,7 +1813,7 @@ QUARK_UNIT_TEST("", "From JSON: Check that floyd_runtime_init() runs and sets 'r
 
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
 	auto program = generate_llvm_ir(pass3, "myfile.floyd");
-	auto ee = make_engine_break_program(*program);
+	auto ee = make_engine_run_init(*program);
 
 	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(ee, "result"));
 	QUARK_ASSERT(result == 6);
@@ -1827,7 +1826,7 @@ QUARK_UNIT_TEST("", "From source: Check that floyd_runtime_init() runs and sets 
 
 	const auto pass3 = compile_to_sematic_ast__errors("let int result = 1 + 2 + 3", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
 	auto program = generate_llvm_ir(pass3, "myfile.floyd");
-	auto ee = make_engine_break_program(*program);
+	auto ee = make_engine_run_init(*program);
 
 	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(ee, "result"));
 	QUARK_ASSERT(result == 6);
@@ -1864,17 +1863,18 @@ QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floy
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
 
 	auto program = generate_llvm_ir(pass3, "myfile.floyd");
-	auto ee = make_engine_break_program(*program);
+	auto ee = make_engine_run_init(*program);
 	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"6"});
 }
 
 #if 0
+//??? all external functions referenced from code must be defined or print() will return nullptr.
 //	BROKEN!
 QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	const auto pass3 = compile_to_sematic_ast__errors("print(5)", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
 
 	auto program = generate_llvm_ir(pass3, "myfile.floyd");
-	auto ee = make_engine_break_program(*program);
+	auto ee = make_engine_run_init(*program);
 	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"5"});
 }
 #endif
@@ -2306,7 +2306,7 @@ QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floy
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_3_json));
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
 	auto program = generate_llvm_ir(pass3, "myfile.floyd");
-	auto ee = make_engine_break_program(*program);
+	auto ee = make_engine_run_init(*program);
 	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"6"});
 }
 #endif

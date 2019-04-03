@@ -62,7 +62,7 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(const semantic_ast_t& ast, c
 
 
 //	Runs the LLVM IR program.
-int64_t run_llvm_program(llvm_ir_program_t& program, const std::vector<floyd::value_t>& args);
+int64_t run_llvm_program(llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args);
 
 
 //??? Temp - should be:
