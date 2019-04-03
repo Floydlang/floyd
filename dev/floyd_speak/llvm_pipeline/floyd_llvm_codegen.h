@@ -65,10 +65,15 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(const semantic_ast_t& ast, c
 int64_t run_llvm_program(llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args);
 
 
+
+
+
+typedef int64_t (*FLOYD_RUNTIME_INIT)(void* floyd_runtime_ptr);
+typedef void (*FLOYD_RUNTIME_HOST_FUNCTION)(void* floyd_runtime_ptr, int64_t arg);
+
 //??? Temp - should be:
 //func int main([string] args){...}
 typedef int64_t (*FLOYD_RUNTIME_MAIN)();
-
 
 
 ////////////////////////////////		llvm_execution_engine_t

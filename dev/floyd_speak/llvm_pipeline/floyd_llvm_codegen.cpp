@@ -1652,7 +1652,6 @@ void* get_global_function(llvm_execution_engine_t& ee, const std::string& name){
 
 
 
-typedef int64_t (*FLOYD_RUNTIME_INIT)(void* floyd_runtime_ptr);
 
 //	Destroys program, can only run it once!
 llvm_execution_engine_t make_engine_no_init(llvm_ir_program_t& program_breaks){
