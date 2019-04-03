@@ -57,7 +57,7 @@ QUARK_UNIT_TEST("Floyd test suite", "double constant expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let double result = 3.5", value_t::make_double(double(3.5)));
 }
 
-OFF_QUARK_UNIT_TEST("Floyd test suite", "string constant expression", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "string constant expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let string result = \"xyz\"", value_t::make_string("xyz"));
 }
 
@@ -81,11 +81,11 @@ QUARK_UNIT_TEST("Floyd test suite", "parant", "", ""){
 
 //??? test all types, like [int] etc.
 
-OFF_QUARK_UNIT_TEST("Floyd test suite", "Expression statement", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Expression statement", "", ""){
 	ut_verify_printout(QUARK_POS, "print(5)", { "5" });
 }
 
-OFF_QUARK_UNIT_TEST("Floyd test suite", "Infered bind", "", "") {
+QUARK_UNIT_TEST("Floyd test suite", "Infered bind", "", "") {
 	ut_verify_printout(QUARK_POS, "let a = 10;print(a)", {  "10" });
 }
 
@@ -94,19 +94,19 @@ OFF_QUARK_UNIT_TEST("Floyd test suite", "Infered bind", "", "") {
 //////////////////////////////////////////		BASIC EXPRESSIONS - CONDITIONAL EXPRESSION
 
 
-OFF_QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
+QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = true ? 1 : 2", value_t::make_int(1));
 }
-OFF_QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
+QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = false ? 1 : 2", value_t::make_int(2));
 }
 
 //??? Test truthness off all variable types: strings, doubles
 
-OFF_QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
+QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let string result = true ? \"yes\" : \"no\"", value_t::make_string("yes"));
 }
-OFF_QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
+QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let string result = false ? \"yes\" : \"no\"", value_t::make_string("no"));
 }
 
@@ -199,25 +199,25 @@ QUARK_UNIT_TEST("execute_expression()", "Bool", "", ""){
 //////////////////////////////////////////		BASIC EXPRESSIONS - CONDITIONAL EXPRESSION
 
 
-OFF_QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
+QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = true ? 4 : 6", value_t::make_int(4));
 }
-OFF_QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
+QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = false ? 4 : 6", value_t::make_int(6));
 }
 
-OFF_QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
+QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 1==3 ? 4 : 6", value_t::make_int(6));
 }
-OFF_QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
+QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 3==3 ? 4 : 6", value_t::make_int(4));
 }
 
-OFF_QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
+QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 3==3 ? 2 + 2 : 2 * 3", value_t::make_int(4));
 }
 
-OFF_QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
+QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 3==1+2 ? 2 + 2 : 2 * 3", value_t::make_int(4));
 }
 
@@ -225,19 +225,19 @@ OFF_QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
 //////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR ==
 
 
-OFF_QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
+QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
 	ut_verify_global_result(QUARK_POS, "let bool result = 1 == 1", value_t::make_bool(true));
 }
-OFF_QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
+QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
 	ut_verify_global_result(QUARK_POS, "let bool result = 1 == 2", value_t::make_bool(false));
 }
-OFF_QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
+QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
 	ut_verify_global_result(QUARK_POS, "let bool result = 1.3 == 1.3", value_t::make_bool(true));
 }
-OFF_QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
+QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
 	ut_verify_global_result(QUARK_POS, "let bool result = \"hello\" == \"hello\"", value_t::make_bool(true));
 }
-OFF_QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
+QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
 	ut_verify_global_result(QUARK_POS, "let bool result = \"hello\" == \"bye\"", value_t::make_bool(false));
 }
 
@@ -245,22 +245,22 @@ OFF_QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
 //////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR <
 
 
-OFF_QUARK_UNIT_TEST("execute_expression()", "<", "", "") {
+QUARK_UNIT_TEST("execute_expression()", "<", "", "") {
 	ut_verify_global_result(QUARK_POS, "let bool result = 1 < 2", value_t::make_bool(true));
 }
-OFF_QUARK_UNIT_TEST("execute_expression()", "<", "", ""){
+QUARK_UNIT_TEST("execute_expression()", "<", "", ""){
 	ut_verify_global_result(QUARK_POS, "let bool result = 5 < 2", value_t::make_bool(false));
 }
-OFF_QUARK_UNIT_TEST("execute_expression()", "<", "", ""){
+QUARK_UNIT_TEST("execute_expression()", "<", "", ""){
 	ut_verify_global_result(QUARK_POS, "let bool result = 0.3 < 0.4", value_t::make_bool(true));
 }
-OFF_QUARK_UNIT_TEST("execute_expression()", "<", "", ""){
+QUARK_UNIT_TEST("execute_expression()", "<", "", ""){
 	ut_verify_global_result(QUARK_POS, "let bool result = 1.5 < 0.4", value_t::make_bool(false));
 }
-OFF_QUARK_UNIT_TEST("execute_expression()", "<", "", ""){
+QUARK_UNIT_TEST("execute_expression()", "<", "", ""){
 	ut_verify_global_result(QUARK_POS, "let bool result = \"adwark\" < \"boat\"", value_t::make_bool(true));
 }
-OFF_QUARK_UNIT_TEST("execute_expression()", "<", "", ""){
+QUARK_UNIT_TEST("execute_expression()", "<", "", ""){
 	ut_verify_global_result(QUARK_POS, "let bool result = \"boat\" < \"adwark\"", value_t::make_bool(false));
 }
 

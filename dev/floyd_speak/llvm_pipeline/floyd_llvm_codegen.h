@@ -67,8 +67,11 @@ typedef int64_t (*FLOYD_RUNTIME_MAIN)();
 ////////////////////////////////		llvm_execution_engine_t
 
 
+const uint64_t k_debug_magic = 0xFACEFEED05050505;
 
 struct llvm_execution_engine_t {
+	uint64_t debug_magic;
+
 	std::shared_ptr<llvm::ExecutionEngine> ee;
 	public: std::vector<std::string> _print_output;
 };
