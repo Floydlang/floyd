@@ -84,7 +84,7 @@ static run_report_t run_program_llvm(const std::string& program_source, const st
 
 
 		//	Runs global init code.
-		auto ee = make_engine_break_program(llvm_instance, *exe);
+		auto ee = make_engine_run_init(llvm_instance, *exe);
 
 		//??? need mechanism to map Floyd types vs machine-types.
 		const auto main_function = reinterpret_cast<FLOYD_RUNTIME_MAIN>(get_global_function(ee, "main"));
@@ -114,7 +114,7 @@ static run_report_t run_program_llvm(const std::string& program_source, const st
 
 //		print_vm_printlog(interpreter);
 
-		return run_report_t{ result_global, main_result, {}, "" };
+		return run_report_t{ result_global, main_result, ee._print_output, "" };
 	}
 	catch(const std::runtime_error& e){
 		return run_report_t{ {}, {}, {}, e.what() };
@@ -122,8 +122,8 @@ static run_report_t run_program_llvm(const std::string& program_source, const st
 }
 
 run_report_t run_program(const std::string& program_source, const std::vector<value_t>& main_args){
-	return run_program_bc(program_source, main_args);
-//	return run_program_llvm(program_source, main_args);
+//	return run_program_bc(program_source, main_args);
+	return run_program_llvm(program_source, main_args);
 }
 
 

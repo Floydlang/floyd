@@ -94,6 +94,8 @@ struct llvmgen_t {
 		builder(instance.context),
 		floyd_runtime_init_f(nullptr)
 	{
+		QUARK_ASSERT(instance.check_invariant());
+
 	//	llvm::IRBuilder<> builder(instance.context);
 		llvm::InitializeNativeTarget();
 		llvm::InitializeNativeTargetAsmPrinter();
@@ -369,8 +371,6 @@ The non-first-class types are:
 */
 
 value_t llvm_to_value(const void* value_ptr, const typeid_t& type){
-QUARK_ASSERT(false);//??? this function is unused.
-
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
 
@@ -1680,6 +1680,7 @@ void genllvm_all(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast){
 }
 
 std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(llvm_instance_t& instance, const semantic_ast_t& ast, const std::string& module_name){
+	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(ast.check_invariant());
 	QUARK_ASSERT(module_name.empty() == false);
 	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast)._value));
@@ -1746,7 +1747,8 @@ void* get_global_function(llvm_execution_engine_t& ee, const std::string& name){
 
 
 //	Destroys program, can only run it once!
-llvm_execution_engine_t make_engine_no_init(llvm_ir_program_t& program_breaks){
+llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks){
+	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(program_breaks.check_invariant());
 
 	std::string collectedErrors;
@@ -1816,10 +1818,11 @@ uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee){
 
 //	Destroys program, can only run it once!
 //	Automatically runs floyd_runtime_init() to execute Floyd's global functions and initialize global constants.
-llvm_execution_engine_t make_engine_run_init(llvm_ir_program_t& program_breaks){
+llvm_execution_engine_t make_engine_run_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks){
+	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(program_breaks.check_invariant());
 
-	llvm_execution_engine_t ee = make_engine_no_init(program_breaks);
+	llvm_execution_engine_t ee = make_engine_no_init(instance, program_breaks);
 
 #if DEBUG
 	{
@@ -1848,10 +1851,11 @@ llvm_execution_engine_t make_engine_run_init(llvm_ir_program_t& program_breaks){
 
 
 //	Destroys program, can only run it once!
-int64_t run_llvm_program(llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args){
+int64_t run_llvm_program(llvm_instance_t& instance, llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args){
+	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(program_breaks.check_invariant());
 
-	auto ee = make_engine_run_init(program_breaks);
+	auto ee = make_engine_run_init(instance, program_breaks);
 	return 0;
 }
 
@@ -1874,6 +1878,7 @@ int64_t run_llvm_program(llvm_ir_program_t& program_breaks, const std::vector<fl
 
 
 std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instance, const std::string& program, const std::string& file){
+	QUARK_ASSERT(instance.check_invariant());
 	const auto pass3 = compile_to_sematic_ast__errors(program, file, compilation_unit_mode::k_no_core_lib);
 	auto bc = generate_llvm_ir(instance, pass3, file);
 	return bc;
@@ -1885,7 +1890,7 @@ int64_t run_using_llvm_helper(const std::string& program_source, const std::stri
 
 	llvm_instance_t instance;
 	auto program = generate_llvm_ir(instance, pass3, file);
-	const auto result = run_llvm_program(*program, args);
+	const auto result = run_llvm_program(instance, *program, args);
 	QUARK_TRACE_SS("Fib = " << result);
 	return result;
 }
@@ -1930,7 +1935,7 @@ LLVM_TEST("", "From JSON: Check that floyd_runtime_init() runs and sets 'result'
 	floyd::llvm_instance_t instance;
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
 	auto program = generate_llvm_ir(instance, pass3, "myfile.floyd");
-	auto ee = make_engine_run_init(*program);
+	auto ee = make_engine_run_init(instance, *program);
 
 	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(ee, "result"));
 	QUARK_ASSERT(result == 6);
@@ -1945,7 +1950,7 @@ LLVM_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'resul
 
 	floyd::llvm_instance_t instance;
 	auto program = generate_llvm_ir(instance, pass3, "myfile.floyd");
-	auto ee = make_engine_run_init(*program);
+	auto ee = make_engine_run_init(instance, *program);
 
 	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(ee, "result"));
 	QUARK_ASSERT(result == 6);
@@ -1976,7 +1981,7 @@ const std::string test_2_json = R"ABCD(
 }
 ")ABCD";
 
-#if 0
+#if 1
 //	Works! Calls print()!!!
 LLVM_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_2_json));
@@ -1984,7 +1989,7 @@ LLVM_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_
 
 	floyd::llvm_instance_t instance;
 	auto program = generate_llvm_ir(instance, pass3, "myfile.floyd");
-	auto ee = make_engine_run_init(*program);
+	auto ee = make_engine_run_init(instance, *program);
 	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"6"});
 }
 #endif
@@ -1997,7 +2002,7 @@ LLVM_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_
 
 	floyd::llvm_instance_t instance;
 	auto program = generate_llvm_ir(instance, pass3, "myfile.floyd");
-	auto ee = make_engine_run_init(*program);
+	auto ee = make_engine_run_init(instance, *program);
 	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"5"});
 }
 #endif
@@ -2430,7 +2435,7 @@ LLVM_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_
 
 	floyd::llvm_instance_t instance;
 	auto program = generate_llvm_ir(instance, pass3, "myfile.floyd");
-	auto ee = make_engine_run_init(*program);
+	auto ee = make_engine_run_init(instance, *program);
 	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"5"});
 }
 

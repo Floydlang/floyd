@@ -125,8 +125,8 @@ struct llvm_execution_engine_t {
 	public: std::vector<std::string> _print_output;
 };
 
-llvm_execution_engine_t make_engine_break_program_no_init(llvm_instance_t& instance, llvm_ir_program_t& program);
-llvm_execution_engine_t make_engine_break_program(llvm_instance_t& instance, llvm_ir_program_t& program);
+llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program);
+llvm_execution_engine_t make_engine_run_init(llvm_instance_t& instance, llvm_ir_program_t& program);
 
 //	Cast to uint64_t* or other the required type, then access via it.
 void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name);

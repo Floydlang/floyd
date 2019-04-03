@@ -57,7 +57,7 @@ QUARK_UNIT_TEST("Floyd test suite", "double constant expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let double result = 3.5", value_t::make_double(double(3.5)));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "string constant expression", "", ""){
+OFF_QUARK_UNIT_TEST("Floyd test suite", "string constant expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let string result = \"xyz\"", value_t::make_string("xyz"));
 }
 
