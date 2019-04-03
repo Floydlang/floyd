@@ -214,32 +214,43 @@ bool check_invariant__module(llvm::Module* module){
 
 
 
-void print_module_contents(llvm::Module& module){
-	const auto& functionList = module.getFunctionList();
-	for(const auto& e: functionList){
-
-/*
+std::string print_module(llvm::Module& module){
 	std::string dump;
 	llvm::raw_string_ostream stream2(dump);
+
+	stream2 << "\n" "MODULE" << "\n";
 	module.print(stream2, nullptr);
-	return dump;
+
+/*
+	Not needed, module.print() prints the exact list.
+	stream2 << "\n" "FUNCTIONS" << "\n";
+	const auto& functionList = module.getFunctionList();
+	for(const auto& e: functionList){
+		e.print(stream2);
+	}
 */
-		e.print(llvm::errs());
+
+	stream2 << "\n" "GLOBALS" << "\n";
+	const auto& globalList = module.getGlobalList();
+	int index = 0;
+	for(const auto& e: globalList){
+		stream2 << index << ": ";
+		e.print(stream2);
+		stream2 << "\n";
+		index++;
 	}
 
-	const auto& globalList = module.getGlobalList();
-	for(const auto& e: globalList){
-		e.print(llvm::errs());
-	}
+	return dump;
 }
 
 std::string print_program(const llvm_ir_program_t& program){
 	QUARK_ASSERT(program.check_invariant());
 
-	std::string dump;
-	llvm::raw_string_ostream stream2(dump);
-	program.module->print(stream2, nullptr);
-	return dump;
+//	std::string dump;
+//	llvm::raw_string_ostream stream2(dump);
+//	program.module->print(stream2, nullptr);
+
+	return print_module(*program.module);
 }
 
 std::string print_type(llvm::Type* type){
@@ -607,45 +618,49 @@ llvm::Type* intern_type(llvmgen_t& gen_acc, const typeid_t& type, func_encode en
 	}
 
 	else if(type.is_string()){
-		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 10);
+		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 16);
 	}
 	else if(type.is_json_value()){
-		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 14);
+		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 16);
 	}
 	else if(type.is_vector()){
-		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 11);
+		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 16);
 	}
 	else if(type.is_typeid()){
-		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 15);
+		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 16);
 	}
 	else if(type.is_undefined()){
-		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 17);
+		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 16);
 	}
 	else if(type.is_unresolved_type_identifier()){
 		QUARK_ASSERT(false);
-		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 18);
+		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 16);
 	}
 	else if(type.is_double()){
 		return llvm::Type::getDoubleTy(gen_acc.program_acc.context);
 	}
 	else if(type.is_struct()){
+		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 16);
+
+#if 0
 		std::vector<llvm::Type*> members;
 		for(const auto& m: type.get_struct_ref()->_members){
 			const auto m2 = intern_type(gen_acc, m._type, encode);
 			members.push_back(m2);
 		}
-//ArrayRef<Type*> Elements
 
   		llvm::StructType* s = llvm::StructType::get(gen_acc.program_acc.context, members, false);
 
 //		return llvm::StructType::get(gen_acc.program_acc.context);
 //		return llvm::Type::getInt32Ty(gen_acc.program_acc.context);
 		return s;
+#endif
+
 	}
 
 	else if(type.is_internal_dynamic()){
 		//	Use int16ptr as placeholder for **dyn**. Maybe pass a struct instead?
-		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 13);
+		return llvm::Type::getIntNTy(gen_acc.program_acc.context, 16);
 	}
 	else if(type.is_function()){
 		const auto& return_type = type.get_function_return();
@@ -1009,6 +1024,11 @@ extern "C" {
 		std:: cout << "floyd_host_function_1001: " << arg << std::endl;
 	}
 
+
+
+
+	///////////////		TEST
+
 	extern void floyd_host_function_2002(void* floyd_runtime_ptr, int64_t arg){
 		std:: cout << "floyd_host_function_2002: " << arg << std::endl;
 	}
@@ -1019,6 +1039,7 @@ extern "C" {
 
 }
 
+//??? all external functions referenced from code must be defined or print() will return nullptr.
 
 llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1638,8 +1659,6 @@ typedef int64_t (*FLOYD_RUNTIME_INIT)(void* floyd_runtime_ptr);
 llvm_execution_engine_t make_engine_break_program_no_init(llvm_ir_program_t& program){
 	QUARK_ASSERT(program.check_invariant());
 
-	//	print_module_contents(*program.module);
-
 	std::string collectedErrors;
 
 	//??? Destroys p -- uses std::move().
@@ -1790,7 +1809,7 @@ const std::string test_1_json = R"ABCD(
 */
 
 
-QUARK_UNIT_TEST_VIP("", "From JSON: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
+QUARK_UNIT_TEST("", "From JSON: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_1_json));
 
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
@@ -1803,7 +1822,7 @@ QUARK_UNIT_TEST_VIP("", "From JSON: Check that floyd_runtime_init() runs and set
 //	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
 }
 
-QUARK_UNIT_TEST_VIP("", "From source: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
+QUARK_UNIT_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
 //	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
 
 	const auto pass3 = compile_to_sematic_ast__errors("let int result = 1 + 2 + 3", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
@@ -1839,7 +1858,7 @@ const std::string test_2_json = R"ABCD(
 }
 ")ABCD";
 
-
+//	Works! Calls print()!!!
 QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_2_json));
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
@@ -1850,6 +1869,7 @@ QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floy
 }
 
 #if 0
+//	BROKEN!
 QUARK_UNIT_TEST_VIP("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	const auto pass3 = compile_to_sematic_ast__errors("print(5)", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
 
@@ -2276,7 +2296,7 @@ const std::string test_3_json = R"ABCD(
 ")ABCD";
 
 
-QUARK_UNIT_TEST_VIP("", "json_to_semantic_ast()", "Complex JSON with ^types", ""){
+QUARK_UNIT_TEST("", "json_to_semantic_ast()", "Complex JSON with ^types", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_3_json));
 	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
 }
