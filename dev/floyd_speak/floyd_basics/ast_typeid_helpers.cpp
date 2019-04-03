@@ -105,15 +105,28 @@ json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 	}
 }
 
+std::string strip_resolve_tag(const std::string& s){
+	QUARK_ASSERT(s.size() > 1);
+
+	if(s[0] == '^'){
+		return s.substr(1);
+	}
+	else if(s[0] == '#'){
+		return s.substr(1);
+	}
+	else{
+		return s;
+	}
+}
+
 typeid_t typeid_from_ast_json(const json_t& t2){
 	QUARK_ASSERT(t2.check_invariant());
 
 	const auto t = t2;
 	if(t.is_string()){
 		const auto s0 = t.get_string();
-		auto s = std::string(s0.begin() + 1, s0.end());
-
 		if(s0.front() == tag_resolved_type_char){
+			const auto s = s0.substr(1);
 			if(s == ""){
 				return typeid_t::make_undefined();
 			}
@@ -149,6 +162,7 @@ typeid_t typeid_from_ast_json(const json_t& t2){
 			}
 		}
 		else if(s0.front() == tag_unresolved_type_char){
+			const auto s = s0.substr(1);
 			return typeid_t::make_unresolved_type_identifier(s);
 		}
 		else{
@@ -157,7 +171,10 @@ typeid_t typeid_from_ast_json(const json_t& t2){
 	}
 	else if(t.is_array()){
 		const auto a = t.get_array();
-		const auto s = a[0].get_string();
+		const auto s0 = a[0].get_string();
+//		QUARK_ASSERT(s0.front() != '^');
+		QUARK_ASSERT(s0.front() != '#');
+		const auto s = s0.front() == '^' ? s0.substr(1) : s0;
 /*
 		if(s == "typeid"){
 			const auto t3 = typeid_from_ast_json(json_t{a[1]});
