@@ -391,6 +391,9 @@ value_t llvm_to_value(const void* value_ptr, const typeid_t& type){
 		return value_t::make_double(temp);
 	}
 	else if(type.is_string()){
+		const uint64_t value = *reinterpret_cast<const uint64_t*>(value_ptr);
+		const char* s = reinterpret_cast<const char*>(value);
+		return value_t::make_string(s);
 	}
 	else if(type.is_json_value()){
 	}
@@ -623,7 +626,7 @@ llvm::Type* intern_type(llvmgen_t& gen_acc, const typeid_t& type, func_encode en
 	}
 
 	else if(type.is_string()){
-		return llvm::Type::getIntNTy(context, 16);
+		return llvm::Type::getInt8PtrTy(context);
 	}
 	else if(type.is_json_value()){
 		return llvm::Type::getIntNTy(context, 16);
@@ -759,10 +762,25 @@ std::string make_host_function_label(int host_function_id){
 }
 
 
-llvm::Value* make_constant(llvmgen_t& gen_acc, const value_t& value){
+
+
+
+#if 0
+std::vector<llvm::Constant*> values;
+...
+/* Make the value 42 appear in the array - ty is "i32" */
+llvm::Constant* c = llvm::Constant::getIntegerValue(ty, 42);
+values.push_back(c);
+... // Add more values here ...
+llvm::Constant* init = llvm::ConstantArray::get(arrayTy_0, values);
+GArray->setInitializer(init);
+#endif
+
+llvm::Constant* make_constant(llvmgen_t& gen_acc, const value_t& value){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
+	auto& context = gen_acc.instance->context;
 	const auto type = value.get_type();
 	const auto itype = intern_type(gen_acc, type, func_encode::functions_are_pointers);
 
@@ -786,8 +804,20 @@ llvm::Value* make_constant(llvmgen_t& gen_acc, const value_t& value){
 		return llvm::ConstantFP::get(itype, value.get_double_value());
 	}
 	else if(type.is_string()){
-		QUARK_ASSERT(false);
-		return nullptr;
+		//	Stores trailing zero. ??? not pure string!
+//		llvm::Constant* array = llvm::ConstantDataArray::getString(context, value.get_string_value(), true);
+
+		// The type of your string will be [n x i8], it needs to be i8*, so we cast here. We
+		// explicitly use the type of printf's first arg to guarantee we are always right.
+
+		llvm::PointerType* int8Ptr_type = llvm::Type::getInt8PtrTy(context);
+
+		llvm::Constant* c2 = gen_acc.builder.CreateGlobalStringPtr(value.get_string_value());
+		//	, "cast [n x i8] to i8*"
+//		llvm::Constant* c = gen_acc.builder.CreatePointerCast(array, int8Ptr_type);
+		return c2;
+
+//		return gen_acc.builder.CreateGlobalStringPtr(llvm::StringRef(value.get_string_value()));
 	}
 	else if(type.is_json_value()){
 		return llvm::ConstantInt::get(itype, 7000);
