@@ -47,6 +47,19 @@ struct llvm_instance_t {
 };
 
 
+
+struct function_def_t {
+	std::string def_name;
+	llvm::Function* llvm_f;
+	bool emitted_flag;
+
+	int floyd_function_id;
+	function_definition_t floyd_fundef;
+};
+
+
+
+
 ////////////////////////////////		llvm_ir_program_t
 
 
@@ -54,9 +67,10 @@ struct llvm_ir_program_t {
 	llvm_ir_program_t(const llvm_ir_program_t& other) = delete;
 	llvm_ir_program_t& operator=(const llvm_ir_program_t& other) = delete;
 
-	explicit llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const symbol_table_t& globals) :
+	explicit llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const symbol_table_t& globals, const std::vector<function_def_t>& function_defs) :
 		instance(instance),
-		debug_globals(globals)
+		debug_globals(globals),
+		function_defs(function_defs)
 	{
 		module.swap(module2_swap);
 		QUARK_ASSERT(check_invariant());
@@ -79,6 +93,7 @@ struct llvm_ir_program_t {
 	std::unique_ptr<llvm::Module> module;
 
 	symbol_table_t debug_globals;
+	std::vector<function_def_t> function_defs;
 };
 
 

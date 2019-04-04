@@ -52,11 +52,11 @@ namespace floyd {
 		public: bool check_types_resolved() const;
 
 
-		const location_t _location;
-		const typeid_t _function_type;
-		const std::vector<member_t> _args;
-		const std::shared_ptr<body_t> _body;
-		const int _host_function_id;
+		location_t _location;
+		typeid_t _function_type;
+		std::vector<member_t> _args;
+		std::shared_ptr<body_t> _body;
+		int _host_function_id;
 	};
 
 	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);

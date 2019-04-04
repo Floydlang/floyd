@@ -81,20 +81,21 @@ With LLVM, we also have some things to be careful about. The first is the LLVM c
 
 
 
-
 struct llvmgen_generated_function_t {
 	std::vector<global_v_t> local_variable_symbols;
 	llvm::Function* f;
 };
 
 struct llvmgen_t {
-	public: llvmgen_t(llvm_instance_t& instance, const std::string& module_name) :
+	public: llvmgen_t(llvm_instance_t& instance, llvm::Module* module) :
 		instance(&instance),
-		module(std::make_unique<llvm::Module>(module_name.c_str(), instance.context)),
-		builder(instance.context),
+		module(module),
+		builder(instance.context)
+/*
 		floyd_runtime_init_f(nullptr),
 		compare_strings_f(nullptr),
 		placeholder_f(nullptr)
+*/
 	{
 		QUARK_ASSERT(instance.check_invariant());
 
@@ -113,7 +114,7 @@ struct llvmgen_t {
 		}
 		else{
 			//	While emitting a function, the module is in an invalid state.
-			QUARK_ASSERT(check_invariant__module(module.get()));
+			QUARK_ASSERT(check_invariant__module(module));
 		}
 
 /*
@@ -133,17 +134,18 @@ struct llvmgen_t {
 
 	llvm_instance_t* instance;
 
-	//	Module must sit in a unique_ptr<> because llvm::EngineBuilder needs that.
-	std::unique_ptr<llvm::Module> module;
+	llvm::Module* module;
 
 	llvm::IRBuilder<> builder;
 
+/*
 	llvm::Function* floyd_runtime_init_f;
 	llvm::Function* compare_strings_f;
 	llvm::Function* placeholder_f;
-
+*/
 	//	One element for each global symbol in AST. Same indexes as in symbol table.
 	std::vector<global_v_t> globals;
+	std::vector<function_def_t> function_defs;
 
 
 	//	0: function is not being modified and should be correct. >0: function is being emitted, can be invalid state.
@@ -200,8 +202,6 @@ bool check_invariant__function(const llvm::Function* f){
 	return !errors;
 }
 
-
-
 bool check_invariant__module(llvm::Module* module){
 	QUARK_ASSERT(module != nullptr);
 
@@ -219,9 +219,18 @@ bool check_invariant__module(llvm::Module* module){
 		QUARK_ASSERT(check_invariant__function(&e));
 //		llvm::verifyFunction(e);
 	}
-
 	return true;
 }
+
+bool check_invariant__builder(llvm::IRBuilder<>* builder){
+	QUARK_ASSERT(builder != nullptr);
+
+	auto module = builder->GetInsertBlock()->getParent()->getParent();
+	QUARK_ASSERT(check_invariant__module(module));
+	return true;
+}
+
+
 
 
 
@@ -613,11 +622,11 @@ enum class func_encode {
 	functions_are_pointers
 };
 
-llvm::Type* intern_type(llvmgen_t& gen_acc, const typeid_t& type, func_encode encode){
-	QUARK_ASSERT(gen_acc.check_invariant());
+llvm::Type* intern_type(llvm::Module& module, const typeid_t& type, func_encode encode){
+//	QUARK_ASSERT(check_invariant__module(&module));
 	QUARK_ASSERT(type.check_invariant());
 
-	auto& context = gen_acc.instance->context;
+	auto& context = module.getContext();
 
 	if(type.is_void()){
 		return llvm::Type::getVoidTy(context);
@@ -657,7 +666,7 @@ llvm::Type* intern_type(llvmgen_t& gen_acc, const typeid_t& type, func_encode en
 #if 0
 		std::vector<llvm::Type*> members;
 		for(const auto& m: type.get_struct_ref()->_members){
-			const auto m2 = intern_type(gen_acc, m._type, encode);
+			const auto m2 = intern_type(*gen_acc.module, m._type, encode);
 			members.push_back(m2);
 		}
 
@@ -678,7 +687,7 @@ llvm::Type* intern_type(llvmgen_t& gen_acc, const typeid_t& type, func_encode en
 		const auto& return_type = type.get_function_return();
 		const auto args = type.get_function_args();
 
-		const auto return_type2 = intern_type(gen_acc, return_type, encode);
+		const auto return_type2 = intern_type(module, return_type, encode);
 
 		// Make the function type:  double(double,double) etc.
 		std::vector<llvm::Type*> args2;
@@ -688,7 +697,7 @@ llvm::Type* intern_type(llvmgen_t& gen_acc, const typeid_t& type, func_encode en
 		args2.push_back(context_ptr);
 
 		for(const auto& arg: args){
-			auto arg_type = intern_type(gen_acc, arg, encode);
+			auto arg_type = intern_type(module, arg, encode);
 			args2.push_back(arg_type);
 		}
 
@@ -729,25 +738,6 @@ typeid_t hack_function_type(const typeid_t& function_type){
 	return hacked_function_type;
 }
 
-//	Function prototype must NOT EXIST already.
-llvm::Function* make_function_prototype(llvmgen_t& gen_acc, const std::string& function_name, const floyd::typeid_t& function_type){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(function_type.check_invariant());
-	auto existing_f = gen_acc.module->getFunction(function_name);
-	QUARK_ASSERT(existing_f == nullptr);
-
-	floyd::typeid_t hacked_function_type = hack_function_type(function_type);
-
-	llvm::Type* ftype = intern_type(gen_acc, hacked_function_type, func_encode::functions_are_values);
-
-	//	IMPORTANT: Must cast to (llvm::FunctionType*) to get correct overload of getOrInsertFunction() to be called!
-	auto f3 = gen_acc.module->getOrInsertFunction(function_name, (llvm::FunctionType*)ftype);
-	llvm::Function* f = llvm::cast<llvm::Function>(f3);
-
-	QUARK_ASSERT(check_invariant__function(f));
-	QUARK_ASSERT(gen_acc.check_invariant());
-	return f;
-}
 
 //	Uses to name the LLVM function objects: both prototypes/declarations AND the when filling them up with code.
 std::string make_unique_funcdef_name2(int function_id){
@@ -780,9 +770,12 @@ llvm::Constant* make_constant(llvmgen_t& gen_acc, const value_t& value){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
-	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	auto& module = *gen_acc.module;
+
 	const auto type = value.get_type();
-	const auto itype = intern_type(gen_acc, type, func_encode::functions_are_pointers);
+	const auto itype = intern_type(module, type, func_encode::functions_are_pointers);
 
 	if(type.is_undefined()){
 		return llvm::ConstantInt::get(itype, 17);
@@ -810,9 +803,9 @@ llvm::Constant* make_constant(llvmgen_t& gen_acc, const value_t& value){
 		// The type of your string will be [n x i8], it needs to be i8*, so we cast here. We
 		// explicitly use the type of printf's first arg to guarantee we are always right.
 
-		llvm::PointerType* int8Ptr_type = llvm::Type::getInt8PtrTy(context);
+//		llvm::PointerType* int8Ptr_type = llvm::Type::getInt8PtrTy(context);
 
-		llvm::Constant* c2 = gen_acc.builder.CreateGlobalStringPtr(value.get_string_value());
+		llvm::Constant* c2 = builder.CreateGlobalStringPtr(value.get_string_value());
 		//	, "cast [n x i8] to i8*"
 //		llvm::Constant* c = gen_acc.builder.CreatePointerCast(array, int8Ptr_type);
 		return c2;
@@ -843,10 +836,19 @@ llvm::Constant* make_constant(llvmgen_t& gen_acc, const value_t& value){
 	}
 	else if(type.is_function()){
 		const auto function_id = value.get_function_value();
+		for(const auto& e: gen_acc.function_defs){
+			if(e.floyd_function_id == function_id){
+				return e.llvm_f;
+			}
+		}
+		QUARK_ASSERT(false);
+		throw std::exception();
+/*
 		const auto unique_function_str = make_unique_funcdef_name2(function_id);
-		auto existing_f = gen_acc.module->getFunction(unique_function_str);
+		auto existing_f = module.getFunction(unique_function_str);
 		QUARK_ASSERT(existing_f != nullptr);
-		return existing_f;
+*/
+
 	}
 	else if(type.is_unresolved_type_identifier()){
 		QUARK_ASSERT(false);
@@ -857,6 +859,77 @@ llvm::Constant* make_constant(llvmgen_t& gen_acc, const value_t& value){
 		return nullptr;
 	}
 }
+
+const function_def_t& find_function_def(llvmgen_t& gen_acc, const std::string& function_name){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	auto it = std::find_if(gen_acc.function_defs.begin(), gen_acc.function_defs.end(), [&] (function_def_t& e) { return e.def_name == function_name; } );
+	QUARK_ASSERT(it != gen_acc.function_defs.end());
+
+	QUARK_ASSERT(it->llvm_f != nullptr);
+	return *it;
+}
+
+
+#if 0
+llvm::Value* resolve_function_init(llvmgen_t& gen_acc, const semantic_ast_t& ast, const std::string& symbol_name, const symbol_t& symbol, const value_t& init){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(ast.check_invariant());
+	QUARK_ASSERT(symbol_name.empty() == false);
+	QUARK_ASSERT(symbol.check_invariant());
+
+	QUARK_ASSERT(symbol.get_type().is_function());
+
+	auto& module = *gen_acc.module;
+	const auto type0 = symbol.get_type();
+	const auto itype = type0.is_function()
+		? intern_type(module, hack_function_type(type0), func_encode::functions_are_pointers)
+		: intern_type(module, type0, func_encode::functions_are_pointers);
+
+	if(symbol._init.is_undefined()){
+		return nullptr;
+	}
+	else{
+		const int function_id = symbol._init.get_function_value();
+		QUARK_ASSERT(function_id >= 0 && function_id < ast._tree._function_defs.size());
+		const auto function_def0 = ast._tree._function_defs[function_id];
+		QUARK_ASSERT(function_def0 != nullptr);
+		if(function_def0 != nullptr){
+			const auto function_def = *function_def0;
+
+
+			auto it = std::find_if(gen_acc.function_defs.begin(), gen_acc.function_defs.end(), [] (S s) { return s.S1 == 0; } );
+
+
+//??? can do better resolve
+
+			//	Host functions can be initialized directly to their LLVM prototypes -- we already created those.
+			if(function_def._host_function_id != k_no_host_function_id){
+				const auto label = make_host_function_label(function_def._host_function_id);
+				llvm::Function* f = module.getFunction(label);
+				QUARK_ASSERT(f != nullptr);
+				return make_global(module, symbol_name, *itype, f);
+			}
+
+	//	??? Fix the floyd functions properly so they get proper prototypes from the start etc.
+			//	FLoyd functions also already have LLVM prototypes.
+			else{
+/*
+
+				//	Put the stub function here so LLVM can resolve this global. Stub will be overwritten by global statements.
+				return make_global(module, symbol_name, *itype, gen_acc.placeholder_f);
+*/
+
+			}
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+}
+#endif
+
+
+
 
 
 llvm::Value* genllvm_literal_expression(llvmgen_t& gen_acc, const expression_t& e){
@@ -1047,8 +1120,7 @@ llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, expression_type o
 		return gen_acc.builder.CreateFCmp(pred, lhs_temp, rhs_temp);
 	}
 	else if(type.is_string()){
-		QUARK_ASSERT(gen_acc.compare_strings_f != nullptr);
-
+		const auto def = find_function_def(gen_acc, "floyd_runtime__compare_strings");
 		std::vector<llvm::Value*> args2;
 
 		auto& emit_function = *gen_acc.emit_function;
@@ -1064,7 +1136,7 @@ llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, expression_type o
 
 		args2.push_back(lhs_temp);
 		args2.push_back(rhs_temp);
-		auto result = gen_acc.builder.CreateCall(gen_acc.compare_strings_f, args2, "compare_strings");
+		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "compare_strings");
 
 		auto result2 = gen_acc.builder.CreateICmp(llvm::CmpInst::Predicate::ICMP_NE, result, llvm::ConstantInt::get(gen_acc.builder.getInt32Ty(), 0));
 
@@ -1161,7 +1233,7 @@ llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, const e
 	auto& builder = gen_acc.builder;
 
 	const auto result_type = e.get_output_type();
-	const auto result_itype = intern_type(gen_acc, result_type, func_encode::functions_are_pointers);
+	const auto result_itype = intern_type(*gen_acc.module, result_type, func_encode::functions_are_pointers);
 
 	llvm::Value* condition_value = genllvm_expression(gen_acc, e._input_exprs[0]);
 
@@ -1478,16 +1550,8 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 	const auto function_def_arg_types = function_type.get_function_args();
 	QUARK_ASSERT(callee_arg_count == function_def_arg_types.size());
 	const auto return_type = e.get_output_type();
-
 	QUARK_ASSERT(callee_arg_count == function_def_arg_types.size());
-	const auto arg_count = callee_arg_count;
 
-//	int host_function_id = get_host_function_id(gen_acc, e);
-
-//	floyd::typeid_t print_function_type = floyd::typeid_t::make_function(typeid_t::make_void(), { floyd::typeid_t::make_int() }, floyd::epure::impure);
-
-
-	//	Normal function call.
 	{
 		llvm::Value* callee0 = genllvm_expression(gen_acc, e._input_exprs[0]);
 		QUARK_TRACE_SS("callee0: " << print_value(callee0));
@@ -1513,16 +1577,9 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 			args2.push_back(arg2);
 		}
 
-		if(return_type.is_void()){
-			auto result = gen_acc.builder.CreateCall(callee0, args2, "");
-			QUARK_ASSERT(gen_acc.check_invariant());
-			return result;
-		}
-		else{
-			auto result = gen_acc.builder.CreateCall(callee0, args2, "temp_call");
-			QUARK_ASSERT(gen_acc.check_invariant());
-			return result;
-		}
+		auto result = gen_acc.builder.CreateCall(callee0, args2, return_type.is_void() ? "" : "temp_call");
+		QUARK_ASSERT(gen_acc.check_invariant());
+		return result;
 	}
 }
 
@@ -1707,20 +1764,22 @@ void genllvm_statements(llvmgen_t& gen_acc, const std::vector<statement_t>& stat
 	}
 }
 
-llvm::Value* make_global(llvmgen_t& gen_acc, const std::string& symbol_name, llvm::Type& itype, llvm::Constant* init_or_nuullptr){
-	QUARK_ASSERT(gen_acc.check_invariant());
+llvm::Value* make_global(llvm::Module& module, const std::string& symbol_name, llvm::Type& itype, llvm::Constant* init_or_nullptr){
+	QUARK_ASSERT(check_invariant__module(&module));
 	QUARK_ASSERT(symbol_name.empty() == false);
 
 	llvm::Value* gv = new llvm::GlobalVariable(
-		*gen_acc.module,
+		module,
 		&itype,
-		true,
+		false,	//	isConstant
 		llvm::GlobalValue::ExternalLinkage,
-		init_or_nuullptr,
+		init_or_nullptr ? init_or_nullptr : llvm::Constant::getNullValue(&itype),
 		symbol_name
 	);
 	return gv;
 }
+
+
 
 llvm::Value* genllvm_make_global(llvmgen_t& gen_acc, const semantic_ast_t& ast, const std::string& symbol_name, const symbol_t& symbol){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1728,52 +1787,19 @@ llvm::Value* genllvm_make_global(llvmgen_t& gen_acc, const semantic_ast_t& ast, 
 	QUARK_ASSERT(symbol_name.empty() == false);
 	QUARK_ASSERT(symbol.check_invariant());
 
+	auto& module = *gen_acc.module;
 	const auto type0 = symbol.get_type();
 	const auto itype = type0.is_function()
-		? intern_type(gen_acc, hack_function_type(type0), func_encode::functions_are_pointers)
-		: intern_type(gen_acc, type0, func_encode::functions_are_pointers);
+		? intern_type(module, hack_function_type(type0), func_encode::functions_are_pointers)
+		: intern_type(module, type0, func_encode::functions_are_pointers);
 
 	if(symbol._init.is_undefined()){
-		return make_global(gen_acc, symbol_name, *itype, nullptr);
+		return make_global(module, symbol_name, *itype, nullptr);
 	}
 	else{
-		if(type0.is_function()){
-	//		QUARK_TRACE_SS("itype: " << print_type(itype));
-
-			const int function_id = symbol._init.get_function_value();
-			QUARK_ASSERT(function_id >= 0 && function_id < ast._tree._function_defs.size());
-			const auto function_def0 = ast._tree._function_defs[function_id];
-
-			QUARK_ASSERT(function_def0 != nullptr);
-			if(function_def0 != nullptr){
-				const auto function_def = *function_def0;
-
-				//	Host functions can be initialized directly to their LLVM prototypes -- we already created those.
-				if(function_def._host_function_id != k_no_host_function_id){
-					const auto label = make_host_function_label(function_def._host_function_id);
-					llvm::Function* f = gen_acc.module->getFunction(label);
-					QUARK_ASSERT(f != nullptr);
-					return make_global(gen_acc, symbol_name, *itype, f);
-				}
-
-??? Fix the floyd functions properly so they get proper prototypes from the start etc.
-				//	FLoyd functions also already have LLVM prototypes.
-				else{
-					QUARK_ASSERT(gen_acc.placeholder_f != nullptr);
-
-					//	Put the stub function here so LLVM can resolve this global. Stub will be overwritten by global statements.
-					return make_global(gen_acc, symbol_name, *itype, gen_acc.placeholder_f);
-				}
-			}
-			else{
-				QUARK_ASSERT(false);
-			}
-		}
-		else{
-			llvm::Constant* init = make_constant(gen_acc, symbol._init);
-			//	dest->setInitializer(constant_value);
-			return make_global(gen_acc, symbol_name, *itype, init);
-		}
+		llvm::Constant* init = make_constant(gen_acc, symbol._init);
+		//	dest->setInitializer(constant_value);
+		return make_global(module, symbol_name, *itype, init);
 	}
 }
 
@@ -1809,7 +1835,7 @@ std::vector<global_v_t> genllvm_local_make_symbols(llvmgen_t& gen_acc, const sym
 
 	for(const auto& e: symbol_table._symbols){
 		const auto type = e.second.get_type();
-		const auto itype = intern_type(gen_acc, type, func_encode::functions_are_pointers);
+		const auto itype = intern_type(*gen_acc.module, type, func_encode::functions_are_pointers);
 
 		llvm::Value* dest = gen_acc.builder.CreateAlloca(itype, nullptr, e.first);
 
@@ -1825,8 +1851,11 @@ std::vector<global_v_t> genllvm_local_make_symbols(llvmgen_t& gen_acc, const sym
 	return result;
 }
 
+
+
+
 //	NOTICE: Fills-in the body of an existing LLVM function prototype.
-void genllvm_function_def(llvmgen_t& gen_acc, int function_id, const floyd::function_definition_t& function_def){
+void genllvm_fill_function_def(llvmgen_t& gen_acc, int function_id, const floyd::function_definition_t& function_def){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
 
@@ -1848,7 +1877,7 @@ void genllvm_function_def(llvmgen_t& gen_acc, int function_id, const floyd::func
 	QUARK_ASSERT(check_invariant__function(f));
 }
 
-void genllvm_make_function_defs(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast){
+void genllvm_fill_functions_with_instructions(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(semantic_ast.check_invariant());
 
@@ -1859,127 +1888,178 @@ void genllvm_make_function_defs(llvmgen_t& gen_acc, const semantic_ast_t& semant
 		if(function_def._host_function_id != k_no_host_function_id){
 		}
 		else{
-			genllvm_function_def(gen_acc, function_id, function_def);
+			genllvm_fill_function_def(gen_acc, function_id, function_def);
 		}
 	}
 }
 
 //	Generate floyd_runtime_init() that runs all global statements, before main() is run.
 //	The AST contains statements that initializes the global variables, including global functions.
-void genllvm_make_floyd_runtime_init(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast, const std::vector<global_v_t>& global_symbol_table){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(semantic_ast.check_invariant());
 
-	llvm::Function* f = make_function_prototype(
-		gen_acc,
-		"floyd_runtime_init",
-		floyd::typeid_t::make_function(floyd::typeid_t::make_int(), {}, floyd::epure::impure)
-	);
+//	Function prototype must NOT EXIST already.
+llvm::Function* make_function_prototype(llvm::Module& module, const std::string& function_name, const floyd::typeid_t& function_type){
+	QUARK_ASSERT(check_invariant__module(&module));
+	QUARK_ASSERT(function_type.check_invariant());
+	auto existing_f = module.getFunction(function_name);
+	QUARK_ASSERT(existing_f == nullptr);
+
+	floyd::typeid_t hacked_function_type = hack_function_type(function_type);
+
+	llvm::Type* ftype = intern_type(module, hacked_function_type, func_encode::functions_are_values);
+
+	//	IMPORTANT: Must cast to (llvm::FunctionType*) to get correct overload of getOrInsertFunction() to be called!
+	auto f3 = module.getOrInsertFunction(function_name, (llvm::FunctionType*)ftype);
+	llvm::Function* f = llvm::cast<llvm::Function>(f3);
+
 	QUARK_ASSERT(check_invariant__function(f));
-
-	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(gen_acc.instance->context, "entry", f);
-	gen_acc.builder.SetInsertPoint(entryBB);
-
-	{
-		start_function_emit(gen_acc, f);
-		gen_acc.emit_function->local_variable_symbols = global_symbol_table;
-		genllvm_statements(gen_acc, semantic_ast._tree._globals._statements);
-
-		llvm::Value* dummy_result = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 667);
-		gen_acc.builder.CreateRet(dummy_result);
-//		llvm::ReturnInst::Create(gen_acc.instance->context, dummy_result, entryBB);
-
-		end_function_emit(gen_acc);
-	}
-	QUARK_TRACE_SS("result = " << floyd::print_gen(gen_acc));
-	QUARK_ASSERT(check_invariant__function(f));
-	QUARK_ASSERT(gen_acc.check_invariant());
-
-	gen_acc.floyd_runtime_init_f = f;
+	QUARK_ASSERT(check_invariant__module(&module));
+	return f;
 }
 
-//??? Floyd functions in ast: undef global name, function-def and a global-store that sets the global name. Replace with an init of the global variable?
-void genllvm_all(llvmgen_t& gen_acc, const semantic_ast_t& semantic_ast){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(semantic_ast.check_invariant());
+function_definition_t make_dummy_function_definition(){
+	return { k_no_location, typeid_t::make_undefined(), {}, {}, -1 };
+}
 
-	//	Make runtime functions.
+//	Make LLVM functions -- runtime, floyd host functions, floyd functions.
+std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, const std::vector<std::shared_ptr<const floyd::function_definition_t>> defs){
+	std::vector<function_def_t> result;
+
+	auto& context = module.getContext();
+
+	//	floyd_runtime__compare_strings()
 	{
-		//	floyd_runtime__compare_strings()
-		{
-			llvm::FunctionType* function_type = llvm::FunctionType::get(
-				llvm::Type::getInt32Ty(gen_acc.instance->context),
-				{
-					llvm::Type::getInt32PtrTy(gen_acc.instance->context),
-					llvm::Type::getInt64Ty(gen_acc.instance->context),
-					llvm::Type::getInt8PtrTy(gen_acc.instance->context),
-					llvm::Type::getInt8PtrTy(gen_acc.instance->context)
-				},
-				false
-			);
-			auto f3 = gen_acc.module->getOrInsertFunction("floyd_runtime__compare_strings", function_type);
-			gen_acc.compare_strings_f = llvm::cast<llvm::Function>(f3);
-			QUARK_ASSERT(check_invariant__function(gen_acc.compare_strings_f));
-		}
-
-
-		//	Stub function for avoiding unresolved LLVM function declarations.
-		{
-			llvm::FunctionType* function_type = llvm::FunctionType::get(
-				llvm::Type::getVoidTy(gen_acc.instance->context),
-				{
-					llvm::Type::getInt32PtrTy(gen_acc.instance->context)
-				},
-				false
-			);
-			auto f3 = gen_acc.module->getOrInsertFunction("floyd_runtime__unresolved_func", function_type);
-			gen_acc.placeholder_f = llvm::cast<llvm::Function>(f3);
-			QUARK_ASSERT(check_invariant__function(gen_acc.placeholder_f));
-
-		}
+		llvm::FunctionType* function_type = llvm::FunctionType::get(
+			llvm::Type::getInt32Ty(context),
+			{
+				llvm::Type::getInt32PtrTy(context),
+				llvm::Type::getInt64Ty(context),
+				llvm::Type::getInt8PtrTy(context),
+				llvm::Type::getInt8PtrTy(context)
+			},
+			false
+		);
+		auto f = module.getOrInsertFunction("floyd_runtime__compare_strings", function_type);
+		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), false, -1, make_dummy_function_definition()});
 	}
 
+/*	//	Stub function for avoiding unresolved LLVM function declarations.
+	{
+		llvm::FunctionType* function_type = llvm::FunctionType::get(
+			llvm::Type::getVoidTy(context),
+			{
+				llvm::Type::getInt32PtrTy(context)
+			},
+			false
+		);
+		auto f = module.getOrInsertFunction("floyd_runtime__unresolved_func", function_type);
+		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), false, -1, make_dummy_function_definition()});
+	}
+*/
+
+	{
+/*
+		llvm::Function* f = make_function_prototype(
+			module,
+			"floyd_runtime_init",
+			floyd::typeid_t::make_function(floyd::typeid_t::make_int(), {}, floyd::epure::impure)
+		);
+		QUARK_ASSERT(check_invariant__function(f));
+		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), false, -1, make_dummy_function_definition()});
+*/
+		llvm::FunctionType* function_type = llvm::FunctionType::get(
+			llvm::Type::getInt64Ty(context),
+			{
+				llvm::Type::getInt32PtrTy(context)
+			},
+			false
+		);
+		auto f = module.getOrInsertFunction("floyd_runtime_init", function_type);
+		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), false, -1, make_dummy_function_definition()});
+
+	}
 
 	//	Register all function defs as LLVM function prototypes.
 	//	host functions are later linked by LLVM execution engine, by matching the function names.
 	//	Floyd functions are later filled with instructions.
 	{
-		const auto& defs = semantic_ast._tree._function_defs;
 		for(int function_id = 0 ; function_id < defs.size() ; function_id++){
 			const auto& function_def = *defs[function_id];
 			const auto function_type = function_def._function_type;
 
 			if(function_def._host_function_id != k_no_host_function_id){
 				const auto label = make_host_function_label(function_def._host_function_id);
-				auto f = make_function_prototype(gen_acc, label, hack_function_type(function_type));
+				auto f = make_function_prototype(module, label, hack_function_type(function_type));
+				result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), false, function_id, function_def});
 			}
 			else{
 				const auto label = make_unique_funcdef_name2(function_id);
-				auto f = make_function_prototype(gen_acc, label, hack_function_type(function_type));
+				auto f = make_function_prototype(module, label, hack_function_type(function_type));
+				result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), false, function_id, function_def});
 			}
 		}
 	}
+	return result;
+}
 
-	//	Global variables.
+
+std::unique_ptr<llvm::Module> genllvm_all(llvm_instance_t& instance, const std::string& module_name, const semantic_ast_t& semantic_ast){
+	QUARK_ASSERT(instance.check_invariant());
+	QUARK_ASSERT(module_name.empty() == false);
+	QUARK_ASSERT(semantic_ast.check_invariant());
+
+	//	Module must sit in a unique_ptr<> because llvm::EngineBuilder needs that.
+	auto module = std::make_unique<llvm::Module>(module_name.c_str(), instance.context);
+
+	llvmgen_t gen_acc(instance, module.get());
+
+	auto& context = instance.context;
+
+	//	Generate all LLVM nodes: functions and globals.
+	//	This lets all other code reference them, even if they're not fill up with code yet.
 	{
-		QUARK_ASSERT(gen_acc.check_invariant());
-		QUARK_ASSERT(semantic_ast.check_invariant());
+		const auto funcs = make_all_function_prototypes(*module, semantic_ast._tree._function_defs);
 
-		std::vector<global_v_t> globals = genllvm_make_globals(
-			gen_acc,
-			semantic_ast,
-			semantic_ast._tree._globals._symbol_table
-		);
-		gen_acc.globals = globals;
+		gen_acc.function_defs = funcs;
+
+		//	Global variables.
+		{
+			std::vector<global_v_t> globals = genllvm_make_globals(
+				gen_acc,
+				semantic_ast,
+				semantic_ast._tree._globals._symbol_table
+			);
+			gen_acc.globals = globals;
+		}
 	}
 
+
+	//	GENERATE CODE for floyd_runtime_init()
 	//	Global instructions are packed into the "floyd_runtime_init"-function. LLVM doesn't have global instructions.
-	genllvm_make_floyd_runtime_init(gen_acc, semantic_ast, gen_acc.globals);
+	{
+		const auto def = find_function_def(gen_acc, "floyd_runtime_init");
+		llvm::Function* f = def.llvm_f;
+		llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(gen_acc.instance->context, "entry", f);
+		gen_acc.builder.SetInsertPoint(entryBB);
 
+		{
+			start_function_emit(gen_acc, f);
+			gen_acc.emit_function->local_variable_symbols = gen_acc.globals;
+			genllvm_statements(gen_acc, semantic_ast._tree._globals._statements);
 
+			llvm::Value* dummy_result = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 667);
+			gen_acc.builder.CreateRet(dummy_result);
 
-	//	Generate instructions for all functions.
-	genllvm_make_function_defs(gen_acc, semantic_ast);
+			end_function_emit(gen_acc);
+		}
+		QUARK_ASSERT(check_invariant__function(f));
+	}
+
+	QUARK_TRACE_SS("result = " << floyd::print_gen(gen_acc));
+	QUARK_ASSERT(gen_acc.check_invariant());
+
+	genllvm_fill_functions_with_instructions(gen_acc, semantic_ast);
+
+	return module;
 }
 
 std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(llvm_instance_t& instance, const semantic_ast_t& ast, const std::string& module_name){
@@ -1988,47 +2068,13 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(llvm_instance_t& instance, c
 	QUARK_ASSERT(module_name.empty() == false);
 	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast)._value));
 
-	llvmgen_t acc(instance, module_name);
-	genllvm_all(acc, ast);
+	auto module = genllvm_all(instance, module_name, ast);
 
-	auto result = std::make_unique<llvm_ir_program_t>(&instance, acc.module, ast._tree._globals._symbol_table);
+	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, ast._tree._globals._symbol_table, std::vector<function_def_t>{});
 	QUARK_TRACE_SS("result = " << floyd::print_program(*result));
 	return result;
 }
 
-
-
-/*
-  /// For MCJIT execution engines, clients are encouraged to use the
-  /// "GetFunctionAddress" method (rather than runFunction) and cast the
-  /// returned uint64_t to the desired function pointer type. However, for
-  /// backwards compatibility MCJIT's implementation can execute 'main-like'
-  /// function (i.e. those returning void or int, and taking either no
-  /// arguments or (int, char*[])).
-*/
-/*
-LLVM’s “eager” JIT compiler is safe to use in threaded programs. Multiple threads can call ExecutionEngine::getPointerToFunction() or ExecutionEngine::runFunction() concurrently, and multiple threads can run code output by the JIT concurrently. The user must still ensure that only one thread accesses IR in a given LLVMContext while another thread might be modifying it. One way to do that is to always hold the JIT lock while accessing IR outside the JIT (the JIT modifies the IR by adding CallbackVHs). Another way is to only call getPointerToFunction() from the LLVMContext’s thread.
-*/
-/*
-
-	llvm::Function* init_func = program.module->getFunction("floyd_runtime_init");
-	QUARK_ASSERT(init_func != nullptr);
-	init_func->print(llvm::errs());
-
-
-
-		llvm::GenericValue init_result = ee->runFunction(init_func, {});
-		const int64_t init_result_int = init_result.IntVal.getSExtValue();
-		QUARK_ASSERT(init_result_int == 667);
-
-
-
-		llvm::Function* b_func = ee->FindFunctionNamed("floyd_runtime_init");
-		llvm::GenericValue b_result = ee->runFunction(b_func, {});
-		const int64_t b_result_int = b_result.IntVal.getSExtValue();
-		QUARK_ASSERT(b_result_int == 667);
-
-*/
 
 void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name){
 	QUARK_ASSERT(ee.check_invariant());
@@ -2047,6 +2093,29 @@ void* get_global_function(llvm_execution_engine_t& ee, const std::string& name){
 }
 
 
+
+#if DEBUG && 1
+//	Verify that all global functions can be accessed. If *one* is unresolved, then all return NULL!?
+void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
+	int index = 0;
+	for(const auto& e: p.debug_globals._symbols){
+		if(e.second.get_type().is_function()){
+			const auto global_var = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(ee2, e.first);
+			QUARK_ASSERT(global_var != nullptr);
+
+			const auto f = *global_var;
+//				QUARK_ASSERT(f != nullptr);
+
+			const std::string suffix = f == nullptr ? " NULL POINTER" : "";
+			const uint64_t addr = reinterpret_cast<uint64_t>(f);
+			QUARK_TRACE_SS(index << " " << e.first << " " << addr << suffix);
+		}
+		else{
+		}
+		index++;
+	}
+}
+#endif
 
 
 //	Destroys program, can only run it once!
@@ -2071,38 +2140,89 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 	}
 	QUARK_ASSERT(collectedErrors.empty());
 
-	auto ee = std::shared_ptr<llvm::ExecutionEngine>(exeEng);
-	ee->finalizeObject();
-
-	auto ee2 = llvm_execution_engine_t{ k_debug_magic, ee, {} };
+	auto ee1 = std::shared_ptr<llvm::ExecutionEngine>(exeEng);
+	auto ee2 = llvm_execution_engine_t{ k_debug_magic, ee1, {} };
 	QUARK_ASSERT(ee2.check_invariant());
 
 
-#if DEBUG && 0
-	//	Verify that all global functions can be accessed. If *one* is unresolved, then all return NULL!?
+	const std::map<std::string, void*> function_map = {
+		{ "floyd_runtime__compare_strings", reinterpret_cast<void *>(&floyd_runtime__compare_strings) },
+
+		{ "floyd_host_function_1000", reinterpret_cast<void *>(&floyd_host_function_1000) },
+		{ "floyd_host_function_1001", reinterpret_cast<void *>(&floyd_host_function_1001) },
+		{ "floyd_host_function_1002", reinterpret_cast<void *>(&floyd_host_function_1002) },
+		{ "floyd_host_function_1003", reinterpret_cast<void *>(&floyd_host_function_1003) },
+		{ "floyd_host_function_1004", reinterpret_cast<void *>(&floyd_host_function_1004) },
+		{ "floyd_host_function_1005", reinterpret_cast<void *>(&floyd_host_function_1005) },
+		{ "floyd_host_function_1006", reinterpret_cast<void *>(&floyd_host_function_1006) },
+		{ "floyd_host_function_1007", reinterpret_cast<void *>(&floyd_host_function_1007) },
+		{ "floyd_host_function_1008", reinterpret_cast<void *>(&floyd_host_function_1008) },
+		{ "floyd_host_function_1009", reinterpret_cast<void *>(&floyd_host_function_1009) },
+
+		{ "floyd_host_function_1010", reinterpret_cast<void *>(&floyd_host_function_1010) },
+		{ "floyd_host_function_1011", reinterpret_cast<void *>(&floyd_host_function_1011) },
+		{ "floyd_host_function_1012", reinterpret_cast<void *>(&floyd_host_function_1012) },
+		{ "floyd_host_function_1013", reinterpret_cast<void *>(&floyd_host_function_1013) },
+		{ "floyd_host_function_1014", reinterpret_cast<void *>(&floyd_host_function_1014) },
+		{ "floyd_host_function_1015", reinterpret_cast<void *>(&floyd_host_function_1015) },
+		{ "floyd_host_function_1016", reinterpret_cast<void *>(&floyd_host_function_1016) },
+		{ "floyd_host_function_1017", reinterpret_cast<void *>(&floyd_host_function_1017) },
+		{ "floyd_host_function_1018", reinterpret_cast<void *>(&floyd_host_function_1018) },
+		{ "floyd_host_function_1019", reinterpret_cast<void *>(&floyd_host_function_1019) },
+
+		{ "floyd_host_function_1020", reinterpret_cast<void *>(&floyd_host_function_1020) },
+		{ "floyd_host_function_1021", reinterpret_cast<void *>(&floyd_host_function_1021) },
+		{ "floyd_host_function_1022", reinterpret_cast<void *>(&floyd_host_function_1022) },
+		{ "floyd_host_function_1023", reinterpret_cast<void *>(&floyd_host_function_1023) },
+		{ "floyd_host_function_1024", reinterpret_cast<void *>(&floyd_host_function_1024) },
+		{ "floyd_host_function_1025", reinterpret_cast<void *>(&floyd_host_function_1025) },
+		{ "floyd_host_function_1026", reinterpret_cast<void *>(&floyd_host_function_1026) },
+		{ "floyd_host_function_1027", reinterpret_cast<void *>(&floyd_host_function_1027) },
+		{ "floyd_host_function_1028", reinterpret_cast<void *>(&floyd_host_function_1028) },
+		{ "floyd_host_function_1029", reinterpret_cast<void *>(&floyd_host_function_1029) },
+
+		{ "floyd_host_function_1030", reinterpret_cast<void *>(&floyd_host_function_1030) },
+		{ "floyd_host_function_1031", reinterpret_cast<void *>(&floyd_host_function_1031) },
+		{ "floyd_host_function_1032", reinterpret_cast<void *>(&floyd_host_function_1032) },
+		{ "floyd_host_function_1033", reinterpret_cast<void *>(&floyd_host_function_1033) },
+		{ "floyd_host_function_1034", reinterpret_cast<void *>(&floyd_host_function_1034) },
+		{ "floyd_host_function_1035", reinterpret_cast<void *>(&floyd_host_function_1035) },
+		{ "floyd_host_function_1036", reinterpret_cast<void *>(&floyd_host_function_1036) },
+		{ "floyd_host_function_1037", reinterpret_cast<void *>(&floyd_host_function_1037) },
+		{ "floyd_host_function_1038", reinterpret_cast<void *>(&floyd_host_function_1038) },
+		{ "floyd_host_function_1039", reinterpret_cast<void *>(&floyd_host_function_1039) }
+	};
+
+
+	//	Resolve all unresolved functions.
 	{
-		int index = 0;
-		for(const auto& e: program_breaks.debug_globals._symbols){
-			if(e.second.get_type().is_function()){
-				const auto global_var = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(ee2, e.first);
-				QUARK_ASSERT(global_var != nullptr);
+		//	https://stackoverflow.com/questions/33328562/add-mapping-to-c-lambda-from-llvm
+		auto lambda = [&](const std::string& s) -> void* {
+			QUARK_ASSERT(s.empty() == false);
+			QUARK_ASSERT(s[0] == '_');
+			const auto s2 = s.substr(1);
 
-				const auto f = *global_var;
-				QUARK_ASSERT(f != nullptr);
-
-				const std::string suffix = f == nullptr ? " NULL POINTER" : "";
-				const uint64_t addr = reinterpret_cast<uint64_t>(f);
-				QUARK_TRACE_SS(index << " " << e.first << " " << addr << suffix);
+			const auto it = function_map.find(s2);
+			if(it != function_map.end()){
+				return it->second;
 			}
 			else{
 			}
-			index++;
-		}
-	}
-#endif
 
-//	ee2.ee->DisableGVCompilation(false);
-//	ee2.ee->DisableSymbolSearching(false);
+			return nullptr;
+		};
+		std::function<void*(const std::string&)> on_lazy_function_creator2 = lambda;
+
+		//	NOTICE! Patch during finalizeObject() only, then restore!
+		ee2.ee->InstallLazyFunctionCreator(on_lazy_function_creator2);
+		ee2.ee->finalizeObject();
+		ee2.ee->InstallLazyFunctionCreator(nullptr);
+
+	//	ee2.ee->DisableGVCompilation(false);
+	//	ee2.ee->DisableSymbolSearching(false);
+	}
+
+	check_nulls(ee2, program_breaks);
 
 //	llvm::WriteBitcodeToFile(exeEng->getVerifyModules(), raw_ostream &Out);
 	return ee2;
@@ -2148,6 +2268,8 @@ llvm_execution_engine_t make_engine_run_init(llvm_instance_t& instance, llvm_ir_
 
 	const auto init_result = call_floyd_runtime_init(ee);
 	QUARK_ASSERT(init_result == 667);
+
+	check_nulls(ee, program_breaks);
 
 	return ee;
 }
