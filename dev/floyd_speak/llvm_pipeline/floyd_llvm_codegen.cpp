@@ -350,6 +350,7 @@ The non-first-class types are:
   9. Label
 */
 
+		//??? need mechanism to map Floyd types vs machine-types.
 value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
 	QUARK_ASSERT(global_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
@@ -433,17 +434,10 @@ value_t llvm_to_value(const uint64_t encoded_value, const typeid_t& type){
 	throw std::exception();
 }
 
-value_t read_global(llvm_execution_engine_t&& ee, const std::string& global_name, const typeid_t& type){
-	//	Find global in exe.
-	const auto global_ptr = get_global_ptr(ee, global_name);
-	if(global_ptr == nullptr){
-		return value_t::make_undefined();
-	}
-
-	return llvm_global_to_value(global_ptr, type);
-}
-
 std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std::string& name){
+	QUARK_ASSERT(ee.check_invariant());
+	QUARK_ASSERT(name.empty() == false);
+
 	const auto f = reinterpret_cast<FLOYD_RUNTIME_MAIN*>(get_global_function(ee, name));
 	if(f != nullptr){
 		const function_def_t def = find_function_def2(ee.function_defs, std::string() + "floyd_funcdef__" + name);
@@ -469,6 +463,30 @@ value_t call_function(const std::pair<void*, typeid_t>& f){
 	return llvm_to_value(return_encoded, return_type);
 }
 
+
+
+std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name){
+	QUARK_ASSERT(ee.check_invariant());
+	QUARK_ASSERT(name.empty() == false);
+
+	const auto global_ptr = get_global_ptr(ee, name);
+	if(global_ptr != nullptr){
+		auto symbol = find_symbol(ee.global_symbols, name);
+		QUARK_ASSERT(symbol != nullptr);
+
+		return { global_ptr, symbol->get_type() };
+	}
+	else{
+		return { nullptr, typeid_t::make_undefined() };
+	}
+}
+
+value_t load_global(const std::pair<void*, typeid_t>& v){
+	QUARK_ASSERT(v.first != nullptr);
+	QUARK_ASSERT(v.second.is_undefined() == false);
+
+	return llvm_global_to_value(v.first, v.second);
+}
 
 
 

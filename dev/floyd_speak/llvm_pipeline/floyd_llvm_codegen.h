@@ -152,15 +152,11 @@ void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name);
 void* get_global_function(llvm_execution_engine_t& ee, const std::string& name);
 
 
-value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type);
-value_t llvm_to_value(const uint64_t encoded_value, const floyd::typeid_t& type);
-
 std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std::string& name);
 value_t call_function(const std::pair<void*, typeid_t>& f);
 
-
-//	Returns make_undefined() if no global exists with name 'global_name'.
-value_t read_global(llvm_execution_engine_t&& ee, const std::string& global_name, const typeid_t& type);
+std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name);
+value_t load_global(const std::pair<void*, typeid_t>& v);
 
 
 //	Helper that goes directly from source to LLVM IR code.

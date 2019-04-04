@@ -88,24 +88,11 @@ static run_report_t run_program_llvm(const std::string& program_source, const st
 		//	Runs global init code.
 		auto ee = make_engine_run_init(llvm_instance, *exe);
 
-		//??? need mechanism to map Floyd types vs machine-types.
-
 		const auto main_function = bind_function(ee, "main");
 		const auto main_result = main_function.first != nullptr ? call_function(main_function) : value_t();
 
-
-		value_t result_global;
-		const auto result_symbol = find_symbol(pass3._tree._globals._symbol_table, "result");
-		if(result_symbol != nullptr){
-			//	Find global in exe.
-			const auto result_variable_ptr = get_global_ptr(ee, "result");
-			QUARK_ASSERT(result_variable_ptr != nullptr);
-			if(result_variable_ptr == nullptr){
-				throw std::exception();
-			}
-
-			result_global = llvm_global_to_value(result_variable_ptr, result_symbol->get_type());
-		}
+		const auto result_global0 = bind_global(ee, "result");
+		const auto result_global = result_global0.first != nullptr ? load_global(result_global0) : value_t();
 
 //		print_vm_printlog(interpreter);
 
