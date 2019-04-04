@@ -28,6 +28,7 @@ using namespace std;
 bool operator==(const function_definition_t& lhs, const function_definition_t& rhs){
 	return true
 		&& lhs._location == rhs._location
+		&& lhs._definition_name == rhs._definition_name
 		&& lhs._function_type == rhs._function_type
 		&& lhs._args == rhs._args
 		&& compare_shared_values(lhs._body, rhs._body)
@@ -44,6 +45,7 @@ json_t function_def_to_ast_json(const function_definition_t& v) {
 
 	return std::vector<json_t>{
 		typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state),
+		v._definition_name,
 		members_to_json(v._args),
 
 		v._body ? body_to_json(*v._body) : json_t(),
@@ -55,17 +57,20 @@ json_t function_def_to_ast_json(const function_definition_t& v) {
 
 function_definition_t json_to_function_def(const json_t& p){
 	const auto function_type0 = p.get_array_n(0);
-	const auto args0 = p.get_array_n(1);
-	const auto body0 = p.get_array_n(2);
-	const auto host_function_id0 = p.get_array_n(3);
+	const auto definition_name0 = p.get_array_n(1);
+	const auto args0 = p.get_array_n(2);
+	const auto body0 = p.get_array_n(3);
+	const auto host_function_id0 = p.get_array_n(4);
 
 	const location_t location1 = k_no_location;
+	const std::string definition_name1 = definition_name0.get_string();
 	const typeid_t function_type1 = typeid_from_ast_json(function_type0);
 	const std::vector<member_t> args1 = members_from_json(args0);
 	const std::shared_ptr<body_t> body1 = body0.is_null() ? std::shared_ptr<body_t>() : std::make_shared<body_t>(json_to_body(body0));
 
 	return function_definition_t{
 		location1,
+		definition_name1,
 		function_type1,
 		args1,
 		body1,

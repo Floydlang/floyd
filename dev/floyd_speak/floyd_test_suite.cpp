@@ -393,7 +393,6 @@ QUARK_UNIT_TEST("run_main", "Forgot let or mutable", "", "Exception"){
 	);
 }
 
-//AAA
 QUARK_UNIT_TEST("run_main", "Can make and read global int", "", ""){
 	ut_verify_mainfunc_return(
 		QUARK_POS,
@@ -410,7 +409,8 @@ QUARK_UNIT_TEST("run_main", "Can make and read global int", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST_VIP("run_main()", "minimal program 2", "", ""){
+//AAA
+QUARK_UNIT_TEST("run_main()", "minimal program 2", "", ""){
 	ut_verify_mainfunc_return(
 		QUARK_POS,
 		R"(

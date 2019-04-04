@@ -1529,7 +1529,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	a_acc = function_body_pair.first;
 	const auto function_body3 = function_body_pair.second;
 
-	const auto function_def2 = function_definition_t{ k_no_location, function_type2, args2, make_shared<body_t>(function_body3), 0 };
+	const auto function_def2 = function_definition_t{ k_no_location, e._function_def->_definition_name, function_type2, args2, make_shared<body_t>(function_body3), 0 };
 
 	QUARK_ASSERT(function_def2.check_types_resolved());
 
@@ -1762,7 +1762,7 @@ semantic_ast_t analyse(const analyser_t& a){
 			return result;
 		}();
 
-		const auto def = make_shared<function_definition_t>(function_definition_t{ k_no_location, signature._function_type, args, {}, signature._function_id });
+		const auto def = make_shared<function_definition_t>(function_definition_t{ k_no_location, function_name, signature._function_type, args, {}, signature._function_id });
 
 		const auto function_id = static_cast<int>(function_defs.size());
 		function_defs.push_back(def);

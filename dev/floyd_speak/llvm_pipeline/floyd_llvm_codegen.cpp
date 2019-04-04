@@ -350,8 +350,8 @@ The non-first-class types are:
   9. Label
 */
 
-value_t llvm_to_value(const void* value_ptr, const typeid_t& type){
-	QUARK_ASSERT(value_ptr != nullptr);
+value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
+	QUARK_ASSERT(global_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
 
 	//??? more types.
@@ -359,19 +359,19 @@ value_t llvm_to_value(const void* value_ptr, const typeid_t& type){
 	}
 	else if(type.is_bool()){
 		//??? How is int1 encoded by LLVM?
-		const auto temp = *static_cast<const uint8_t*>(value_ptr);
+		const auto temp = *static_cast<const uint8_t*>(global_ptr);
 		return value_t::make_bool(temp == 0 ? false : true);
 	}
 	else if(type.is_int()){
-		const auto temp = *static_cast<const uint64_t*>(value_ptr);
+		const auto temp = *static_cast<const uint64_t*>(global_ptr);
 		return value_t::make_int(temp);
 	}
 	else if(type.is_double()){
-		const auto temp = *static_cast<const double*>(value_ptr);
+		const auto temp = *static_cast<const double*>(global_ptr);
 		return value_t::make_double(temp);
 	}
 	else if(type.is_string()){
-		const char* s = (const char*)(value_ptr);
+		const char* s = *(const char**)(global_ptr);
 		return value_t::make_string(s);
 	}
 	else if(type.is_json_value()){
@@ -390,6 +390,57 @@ value_t llvm_to_value(const void* value_ptr, const typeid_t& type){
 	}
 	QUARK_ASSERT(false);
 	throw std::exception();
+}
+
+value_t llvm_to_value(const uint64_t encoded_value, const typeid_t& type){
+	QUARK_ASSERT(type.check_invariant());
+
+	//??? more types.
+	if(type.is_undefined()){
+	}
+	else if(type.is_bool()){
+		//??? How is int1 encoded by LLVM?
+		const auto temp = static_cast<const uint8_t>(encoded_value);
+		return value_t::make_bool(temp == 0 ? false : true);
+	}
+	else if(type.is_int()){
+		const auto temp = static_cast<const uint64_t>(encoded_value);
+		return value_t::make_int(temp);
+	}
+	else if(type.is_double()){
+		const auto temp = static_cast<const double>(encoded_value);
+		return value_t::make_double(temp);
+	}
+	else if(type.is_string()){
+		const char* s = (const char*)(encoded_value);
+		return value_t::make_string(s);
+	}
+	else if(type.is_json_value()){
+	}
+	else if(type.is_typeid()){
+	}
+	else if(type.is_struct()){
+	}
+	else if(type.is_vector()){
+	}
+	else if(type.is_dict()){
+	}
+	else if(type.is_function()){
+	}
+	else{
+	}
+	QUARK_ASSERT(false);
+	throw std::exception();
+}
+
+value_t read_global(llvm_execution_engine_t&& ee, const std::string& global_name, const typeid_t& type){
+	//	Find global in exe.
+	const auto global_ptr = get_global_ptr(ee, global_name);
+	if(global_ptr == nullptr){
+		return value_t::make_undefined();
+	}
+
+	return llvm_global_to_value(global_ptr, type);
 }
 
 
@@ -692,17 +743,43 @@ typeid_t hack_function_type(const typeid_t& function_type){
 	return hacked_function_type;
 }
 
-//	Uses to name the LLVM function objects: both prototypes/declarations AND the when filling them up with code.
-std::string make_unique_funcdef_name2(int function_id){
-	const auto s = std::string() + "floyd_internal_" + std::to_string(function_id);
-	return s;
+
+
+
+
+
+
+
+std::string get_function_def_name(int function_id, const function_definition_t& def){
+
+/*
+	if(def._host_function_id != k_no_host_function_id){
+		const auto label = make_host_function_label(def._host_function_id);
+		auto f = make_function_prototype(module, label, hack_function_type(function_type));
+		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), function_id, def});
+	}
+	else{
+		const auto label = make_unique_funcdef_name2(function_id);
+		auto f = make_function_prototype(module, label, hack_function_type(function_type));
+		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), function_id, def});
+	}
+*/
+
+	const auto def_name = def._definition_name;
+	const auto funcdef_name = def_name.empty() ? std::string() + "floyd_unnamed_function_" + std::to_string(function_id) : std::string("floyd_funcdef__") + def_name;
+	return funcdef_name;
 }
 
+/*
 std::string make_host_function_label(int host_function_id){
 //	const auto s = "floyd_host_function_ABC";
 	const auto s = std::string() + "floyd_host_function_" + std::to_string(host_function_id);
 	return s;
 }
+*/
+
+
+
 
 
 
@@ -1266,13 +1343,8 @@ extern "C" {
 
 
 
-	extern void floyd_host_function_1000(void* floyd_runtime_ptr, int64_t arg){
-		std:: cout << "floyd_host_function_1000: " << arg << std::endl;
-
-		auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-		const auto s = std::to_string(arg);
-		r->_print_output.push_back(s);
+	extern void floyd_funcdef__assert(void* floyd_runtime_ptr, int64_t arg){
+		hook(__FUNCTION__, floyd_runtime_ptr, arg);
 	}
 
 	extern void floyd_host_function_1001(void* floyd_runtime_ptr, int64_t arg){
@@ -1355,8 +1427,10 @@ extern "C" {
 
 
 
-	extern void floyd_host_function_1020(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	extern void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg){
+		auto r = get_floyd_runtime(floyd_runtime_ptr);
+		const auto s = std::to_string(arg);
+		r->_print_output.push_back(s);
 	}
 
 	extern void floyd_host_function_1021(void* floyd_runtime_ptr, int64_t arg){
@@ -1723,7 +1797,7 @@ llvm::Value* genllvm_make_global(llvmgen_t& gen_acc, const semantic_ast_t& ast, 
 
 
 //	Make LLVM globals for every global in the AST.
-//	Inits the globals when possible. Patches up host-functions using make_host_function_label().
+//	Inits the globals when possible.
 //	Other globals are uninitialised and global statements will store to them from floyd_runtime_init().
 std::vector<global_v_t> genllvm_make_globals(llvmgen_t& gen_acc, const semantic_ast_t& ast, const symbol_table_t& symbol_table){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1777,7 +1851,8 @@ void genllvm_fill_function_def(llvmgen_t& gen_acc, int function_id, const floyd:
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
 
-	const auto funcdef_name = make_unique_funcdef_name2(function_id);
+	const auto funcdef_name = get_function_def_name(function_id, function_def);
+
 	auto f = gen_acc.module->getFunction(funcdef_name);
 	QUARK_ASSERT(check_invariant__function(f));
 
@@ -1835,7 +1910,7 @@ llvm::Function* make_function_prototype(llvm::Module& module, const std::string&
 }
 
 function_definition_t make_dummy_function_definition(){
-	return { k_no_location, typeid_t::make_undefined(), {}, {}, -1 };
+	return { k_no_location, "", typeid_t::make_undefined(), {}, {}, -1 };
 }
 
 //	Make LLVM functions -- runtime, floyd host functions, floyd functions.
@@ -1919,16 +1994,9 @@ std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, c
 			const auto& function_def = *defs[function_id];
 			const auto function_type = function_def._function_type;
 
-			if(function_def._host_function_id != k_no_host_function_id){
-				const auto label = make_host_function_label(function_def._host_function_id);
-				auto f = make_function_prototype(module, label, hack_function_type(function_type));
-				result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), function_id, function_def});
-			}
-			else{
-				const auto label = make_unique_funcdef_name2(function_id);
-				auto f = make_function_prototype(module, label, hack_function_type(function_type));
-				result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), function_id, function_def});
-			}
+			const auto funcdef_name = get_function_def_name(function_id, function_def);
+			auto f = make_function_prototype(module, funcdef_name, hack_function_type(function_type));
+			result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), function_id, function_def});
 		}
 	}
 	return result;
@@ -2076,7 +2144,7 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 	QUARK_ASSERT(collectedErrors.empty());
 
 	auto ee1 = std::shared_ptr<llvm::ExecutionEngine>(exeEng);
-	auto ee2 = llvm_execution_engine_t{ k_debug_magic, ee1, {} };
+	auto ee2 = llvm_execution_engine_t{ k_debug_magic, ee1, program_breaks.debug_globals, {} };
 	QUARK_ASSERT(ee2.check_invariant());
 
 
@@ -2084,49 +2152,46 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 		{ "floyd_runtime__compare_strings", reinterpret_cast<void *>(&floyd_runtime__compare_strings) },
 		{ "floyd_runtime__append_strings", reinterpret_cast<void *>(&floyd_runtime__append_strings) },
 
-		{ "floyd_host_function_1000", reinterpret_cast<void *>(&floyd_host_function_1000) },
-		{ "floyd_host_function_1001", reinterpret_cast<void *>(&floyd_host_function_1001) },
-		{ "floyd_host_function_1002", reinterpret_cast<void *>(&floyd_host_function_1002) },
-		{ "floyd_host_function_1003", reinterpret_cast<void *>(&floyd_host_function_1003) },
-		{ "floyd_host_function_1004", reinterpret_cast<void *>(&floyd_host_function_1004) },
-		{ "floyd_host_function_1005", reinterpret_cast<void *>(&floyd_host_function_1005) },
-		{ "floyd_host_function_1006", reinterpret_cast<void *>(&floyd_host_function_1006) },
-		{ "floyd_host_function_1007", reinterpret_cast<void *>(&floyd_host_function_1007) },
-		{ "floyd_host_function_1008", reinterpret_cast<void *>(&floyd_host_function_1008) },
-		{ "floyd_host_function_1009", reinterpret_cast<void *>(&floyd_host_function_1009) },
+		{ "floyd_funcdef__assert", reinterpret_cast<void *>(&floyd_funcdef__assert) },
+		{ "floyd_funcdef__calc_binary_sha1", reinterpret_cast<void *>(&floyd_host_function_1001) },
+		{ "floyd_funcdef__calc_string_sha1", reinterpret_cast<void *>(&floyd_host_function_1002) },
+		{ "floyd_funcdef__create_directory_branch", reinterpret_cast<void *>(&floyd_host_function_1003) },
+		{ "floyd_funcdef__delete_fsentry_deep", reinterpret_cast<void *>(&floyd_host_function_1004) },
+		{ "floyd_funcdef__does_fsentry_exist", reinterpret_cast<void *>(&floyd_host_function_1005) },
+		{ "floyd_funcdef__erase", reinterpret_cast<void *>(&floyd_host_function_1006) },
+		{ "floyd_funcdef__exists", reinterpret_cast<void *>(&floyd_host_function_1007) },
+		{ "floyd_funcdef__filter", reinterpret_cast<void *>(&floyd_host_function_1008) },
+		{ "floyd_funcdef__find", reinterpret_cast<void *>(&floyd_host_function_1009) },
 
-		{ "floyd_host_function_1010", reinterpret_cast<void *>(&floyd_host_function_1010) },
-		{ "floyd_host_function_1011", reinterpret_cast<void *>(&floyd_host_function_1011) },
-		{ "floyd_host_function_1012", reinterpret_cast<void *>(&floyd_host_function_1012) },
-		{ "floyd_host_function_1013", reinterpret_cast<void *>(&floyd_host_function_1013) },
-		{ "floyd_host_function_1014", reinterpret_cast<void *>(&floyd_host_function_1014) },
-		{ "floyd_host_function_1015", reinterpret_cast<void *>(&floyd_host_function_1015) },
-		{ "floyd_host_function_1016", reinterpret_cast<void *>(&floyd_host_function_1016) },
-		{ "floyd_host_function_1017", reinterpret_cast<void *>(&floyd_host_function_1017) },
-		{ "floyd_host_function_1018", reinterpret_cast<void *>(&floyd_host_function_1018) },
-		{ "floyd_host_function_1019", reinterpret_cast<void *>(&floyd_host_function_1019) },
+		{ "floyd_funcdef__get_fs_environment", reinterpret_cast<void *>(&floyd_host_function_1010) },
+		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&floyd_host_function_1011) },
+		{ "floyd_funcdef__get_fsentries_shallow", reinterpret_cast<void *>(&floyd_host_function_1012) },
+		{ "floyd_funcdef__get_fsentry_info", reinterpret_cast<void *>(&floyd_host_function_1013) },
+		{ "floyd_funcdef__get_json_type", reinterpret_cast<void *>(&floyd_host_function_1014) },
+		{ "floyd_funcdef__get_time_of_day", reinterpret_cast<void *>(&floyd_host_function_1015) },
+		{ "floyd_funcdef__jsonvalue_to_script", reinterpret_cast<void *>(&floyd_host_function_1016) },
+		{ "floyd_funcdef__jsonvalue_to_value", reinterpret_cast<void *>(&floyd_host_function_1017) },
+		{ "floyd_funcdef__map", reinterpret_cast<void *>(&floyd_host_function_1018) },
+		{ "floyd_funcdef__map_string", reinterpret_cast<void *>(&floyd_host_function_1019) },
 
-		{ "floyd_host_function_1020", reinterpret_cast<void *>(&floyd_host_function_1020) },
-		{ "floyd_host_function_1021", reinterpret_cast<void *>(&floyd_host_function_1021) },
-		{ "floyd_host_function_1022", reinterpret_cast<void *>(&floyd_host_function_1022) },
-		{ "floyd_host_function_1023", reinterpret_cast<void *>(&floyd_host_function_1023) },
-		{ "floyd_host_function_1024", reinterpret_cast<void *>(&floyd_host_function_1024) },
-		{ "floyd_host_function_1025", reinterpret_cast<void *>(&floyd_host_function_1025) },
-		{ "floyd_host_function_1026", reinterpret_cast<void *>(&floyd_host_function_1026) },
-		{ "floyd_host_function_1027", reinterpret_cast<void *>(&floyd_host_function_1027) },
-		{ "floyd_host_function_1028", reinterpret_cast<void *>(&floyd_host_function_1028) },
-		{ "floyd_host_function_1029", reinterpret_cast<void *>(&floyd_host_function_1029) },
+		{ "floyd_funcdef__print", reinterpret_cast<void *>(&floyd_funcdef__print) },
+		{ "floyd_funcdef__push_back", reinterpret_cast<void *>(&floyd_host_function_1021) },
+		{ "floyd_funcdef__read_text_file", reinterpret_cast<void *>(&floyd_host_function_1022) },
+		{ "floyd_funcdef__reduce", reinterpret_cast<void *>(&floyd_host_function_1023) },
+		{ "floyd_funcdef__rename_fsentry", reinterpret_cast<void *>(&floyd_host_function_1024) },
+		{ "floyd_funcdef__replace", reinterpret_cast<void *>(&floyd_host_function_1025) },
+		{ "floyd_funcdef__script_to_jsonvalue", reinterpret_cast<void *>(&floyd_host_function_1026) },
+		{ "floyd_funcdef__send", reinterpret_cast<void *>(&floyd_host_function_1027) },
+		{ "floyd_funcdef__size", reinterpret_cast<void *>(&floyd_host_function_1028) },
+		{ "floyd_funcdef__subset", reinterpret_cast<void *>(&floyd_host_function_1029) },
 
-		{ "floyd_host_function_1030", reinterpret_cast<void *>(&floyd_host_function_1030) },
-		{ "floyd_host_function_1031", reinterpret_cast<void *>(&floyd_host_function_1031) },
-		{ "floyd_host_function_1032", reinterpret_cast<void *>(&floyd_host_function_1032) },
-		{ "floyd_host_function_1033", reinterpret_cast<void *>(&floyd_host_function_1033) },
-		{ "floyd_host_function_1034", reinterpret_cast<void *>(&floyd_host_function_1034) },
-		{ "floyd_host_function_1035", reinterpret_cast<void *>(&floyd_host_function_1035) },
-		{ "floyd_host_function_1036", reinterpret_cast<void *>(&floyd_host_function_1036) },
-		{ "floyd_host_function_1037", reinterpret_cast<void *>(&floyd_host_function_1037) },
-		{ "floyd_host_function_1038", reinterpret_cast<void *>(&floyd_host_function_1038) },
-		{ "floyd_host_function_1039", reinterpret_cast<void *>(&floyd_host_function_1039) }
+		{ "floyd_funcdef__supermap", reinterpret_cast<void *>(&floyd_host_function_1030) },
+		{ "floyd_funcdef__to_pretty_string", reinterpret_cast<void *>(&floyd_host_function_1031) },
+		{ "floyd_funcdef__to_string", reinterpret_cast<void *>(&floyd_host_function_1032) },
+		{ "floyd_funcdef__typeof", reinterpret_cast<void *>(&floyd_host_function_1033) },
+		{ "floyd_funcdef__update", reinterpret_cast<void *>(&floyd_host_function_1034) },
+		{ "floyd_funcdef__value_to_jsonvalue", reinterpret_cast<void *>(&floyd_host_function_1035) },
+		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&floyd_host_function_1036) }
 	};
 
 

@@ -137,6 +137,7 @@ struct llvm_execution_engine_t {
 	uint64_t debug_magic;
 
 	std::shared_ptr<llvm::ExecutionEngine> ee;
+	symbol_table_t global_symbols;
 	public: std::vector<std::string> _print_output;
 };
 
@@ -150,7 +151,11 @@ void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name);
 void* get_global_function(llvm_execution_engine_t& ee, const std::string& name);
 
 
-value_t llvm_to_value(const void* value_ptr, const floyd::typeid_t& type);
+value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type);
+value_t llvm_to_value(const uint64_t encoded_value, const floyd::typeid_t& type);
+
+//	Returns make_undefined() if no global exists with name 'global_name'.
+value_t read_global(llvm_execution_engine_t&& ee, const std::string& global_name, const typeid_t& type);
 
 
 //	Helper that goes directly from source to LLVM IR code.

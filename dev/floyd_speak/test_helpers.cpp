@@ -73,6 +73,8 @@ static run_report_t run_program_bc(const std::string& program, const std::vector
 	}
 }
 
+
+
 //	Run program using LLVM.
 static run_report_t run_program_llvm(const std::string& program_source, const std::vector<value_t>& main_args){
 	try {
@@ -86,23 +88,21 @@ static run_report_t run_program_llvm(const std::string& program_source, const st
 		//	Runs global init code.
 		auto ee = make_engine_run_init(llvm_instance, *exe);
 
+
 		//??? need mechanism to map Floyd types vs machine-types.
-		const auto main_function = reinterpret_cast<FLOYD_RUNTIME_MAIN*>(get_global_function(ee, "main"));
-
-
 		value_t main_result;
+		const auto main_function = reinterpret_cast<FLOYD_RUNTIME_MAIN*>(get_global_function(ee, "main"));
 		if(main_function != nullptr){
 			//??? How are different machine values returned = encoded? Like i13.
-			int64_t r = (**main_function)();
-//??? hardcoded function name!
-			const function_def_t main_def = find_function_def2(exe->function_defs, "floyd_internal_37");
+			int64_t return_encoded = (**main_function)();
+
+			const function_def_t main_def = find_function_def2(exe->function_defs, std::string() + "floyd_funcdef__" + "main");
 			const auto return_type = main_def.floyd_fundef._function_type.get_function_return();
-			main_result = llvm_to_value((const void*)r, return_type);
+			main_result = llvm_to_value(return_encoded, return_type);
 		}
 
 
 		value_t result_global;
-
 		const auto result_symbol = find_symbol(pass3._tree._globals._symbol_table, "result");
 		if(result_symbol != nullptr){
 			//	Find global in exe.
@@ -112,7 +112,7 @@ static run_report_t run_program_llvm(const std::string& program_source, const st
 				throw std::exception();
 			}
 
-			result_global = llvm_to_value(result_variable_ptr, result_symbol->get_type());
+			result_global = llvm_global_to_value(result_variable_ptr, result_symbol->get_type());
 		}
 
 //		print_vm_printlog(interpreter);

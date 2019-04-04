@@ -53,6 +53,7 @@ namespace floyd {
 
 
 		location_t _location;
+		std::string _definition_name;
 		typeid_t _function_type;
 		std::vector<member_t> _args;
 		std::shared_ptr<body_t> _body;
