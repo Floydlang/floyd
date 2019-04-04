@@ -138,6 +138,7 @@ struct llvm_execution_engine_t {
 
 	std::shared_ptr<llvm::ExecutionEngine> ee;
 	symbol_table_t global_symbols;
+	std::vector<function_def_t> function_defs;
 	public: std::vector<std::string> _print_output;
 };
 
@@ -153,6 +154,10 @@ void* get_global_function(llvm_execution_engine_t& ee, const std::string& name);
 
 value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type);
 value_t llvm_to_value(const uint64_t encoded_value, const floyd::typeid_t& type);
+
+std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std::string& name);
+value_t call_function(const std::pair<void*, typeid_t>& f);
+
 
 //	Returns make_undefined() if no global exists with name 'global_name'.
 value_t read_global(llvm_execution_engine_t&& ee, const std::string& global_name, const typeid_t& type);

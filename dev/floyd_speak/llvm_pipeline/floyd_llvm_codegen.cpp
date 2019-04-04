@@ -443,6 +443,34 @@ value_t read_global(llvm_execution_engine_t&& ee, const std::string& global_name
 	return llvm_global_to_value(global_ptr, type);
 }
 
+std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std::string& name){
+	const auto f = reinterpret_cast<FLOYD_RUNTIME_MAIN*>(get_global_function(ee, name));
+	if(f != nullptr){
+		const function_def_t def = find_function_def2(ee.function_defs, std::string() + "floyd_funcdef__" + name);
+		const auto function_type = def.floyd_fundef._function_type;
+		return { f, function_type };
+	}
+	else{
+		return { nullptr, typeid_t::make_undefined() };
+	}
+}
+
+value_t call_function(const std::pair<void*, typeid_t>& f){
+	QUARK_ASSERT(f.first != nullptr);
+	QUARK_ASSERT(f.second.is_function());
+
+	//??? How are different machine values returned = encoded? Like i13.
+	const auto function_ptr = reinterpret_cast<FLOYD_RUNTIME_MAIN*>(f.first);
+
+	//??? pass in floyd_runtime_ptr*?
+	int64_t return_encoded = (*function_ptr)();
+
+	const auto return_type = f.second.get_function_return();
+	return llvm_to_value(return_encoded, return_type);
+}
+
+
+
 
 global_v_t find_symbol(llvmgen_t& gen_acc, const variable_address_t& reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -2144,7 +2172,7 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 	QUARK_ASSERT(collectedErrors.empty());
 
 	auto ee1 = std::shared_ptr<llvm::ExecutionEngine>(exeEng);
-	auto ee2 = llvm_execution_engine_t{ k_debug_magic, ee1, program_breaks.debug_globals, {} };
+	auto ee2 = llvm_execution_engine_t{ k_debug_magic, ee1, program_breaks.debug_globals, program_breaks.function_defs, {} };
 	QUARK_ASSERT(ee2.check_invariant());
 
 

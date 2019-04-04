@@ -88,18 +88,10 @@ static run_report_t run_program_llvm(const std::string& program_source, const st
 		//	Runs global init code.
 		auto ee = make_engine_run_init(llvm_instance, *exe);
 
-
 		//??? need mechanism to map Floyd types vs machine-types.
-		value_t main_result;
-		const auto main_function = reinterpret_cast<FLOYD_RUNTIME_MAIN*>(get_global_function(ee, "main"));
-		if(main_function != nullptr){
-			//??? How are different machine values returned = encoded? Like i13.
-			int64_t return_encoded = (**main_function)();
 
-			const function_def_t main_def = find_function_def2(exe->function_defs, std::string() + "floyd_funcdef__" + "main");
-			const auto return_type = main_def.floyd_fundef._function_type.get_function_return();
-			main_result = llvm_to_value(return_encoded, return_type);
-		}
+		const auto main_function = bind_function(ee, "main");
+		const auto main_result = main_function.first != nullptr ? call_function(main_function) : value_t();
 
 
 		value_t result_global;
