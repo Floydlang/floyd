@@ -51,7 +51,6 @@ struct llvm_instance_t {
 struct function_def_t {
 	std::string def_name;
 	llvm::Function* llvm_f;
-	bool emitted_flag;
 
 	int floyd_function_id;
 	function_definition_t floyd_fundef;
@@ -96,6 +95,7 @@ struct llvm_ir_program_t {
 	std::vector<function_def_t> function_defs;
 };
 
+const function_def_t& find_function_def2(const std::vector<function_def_t>& function_defs, const std::string& function_name);
 
 
 //	Converts the semantic AST to LLVM IR code.
