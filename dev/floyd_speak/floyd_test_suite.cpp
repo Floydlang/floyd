@@ -748,8 +748,8 @@ QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 //////////////////////////////////////////		RETURN STATEMENT - ADVANCED USAGE
 
 
-
-QUARK_UNIT_TEST_VIP("call_function()", "return from middle of function", "", ""){
+//QUARK_UNIT_TEST_VIP
+QUARK_UNIT_TEST("call_function()", "return from middle of function", "", ""){
 	ut_verify_printout(
 		QUARK_POS,
 		R"(

@@ -680,12 +680,38 @@ static llvm::Function* InitFibonacciFnc(llvm::LLVMContext& context, std::unique_
 	return f;
 }
 
-enum class func_encode {
-	functions_are_values,
-	functions_are_pointers
-};
 
-llvm::Type* intern_type(llvm::Module& module, const typeid_t& type, func_encode encode){
+llvm::Type* intern_type(llvm::Module& module, const typeid_t& type);
+
+
+//	Function-types are alwayds returns as pointer-to-functiontype.
+llvm::Type* make_function_type(llvm::Module& module, const typeid_t& type){
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(type.is_function());
+
+	auto& context = module.getContext();
+	const auto& return_type = type.get_function_return();
+	const auto args = type.get_function_args();
+
+	const auto return_type2 = intern_type(module, return_type);
+	std::vector<llvm::Type*> args2;
+
+	//	Pass Floyd runtime as extra, hidden argument #0.
+	llvm::Type* context_ptr = llvm::Type::getInt32PtrTy(context);
+	args2.push_back(context_ptr);
+
+	for(const auto& arg: args){
+		auto arg_type = intern_type(module, arg);
+		args2.push_back(arg_type);
+	}
+
+	llvm::FunctionType* function_type = llvm::FunctionType::get(return_type2, args2, false);
+	auto function_pointer_type = function_type->getPointerTo();
+	return function_pointer_type;
+}
+
+
+llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	auto& context = module.getContext();
@@ -738,43 +764,14 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type, func_encode 
 //		return llvm::Type::getInt32Ty(context);
 		return s;
 #endif
-
 	}
 
 	else if(type.is_internal_dynamic()){
 		//	Use int16ptr as placeholder for **dyn**. Maybe pass a struct instead?
-		return llvm::Type::getIntNTy(context, 16);
+		return llvm::Type::getIntNTy(context, 64);
 	}
 	else if(type.is_function()){
-		const auto& return_type = type.get_function_return();
-		const auto args = type.get_function_args();
-
-		const auto return_type2 = intern_type(module, return_type, encode);
-
-		// Make the function type:  double(double,double) etc.
-		std::vector<llvm::Type*> args2;
-
-		//	Pass Floyd runtime as extra, hidden argument #0.
-		llvm::Type* context_ptr = llvm::Type::getInt32PtrTy(context);
-		args2.push_back(context_ptr);
-
-		for(const auto& arg: args){
-			auto arg_type = intern_type(module, arg, encode);
-			args2.push_back(arg_type);
-		}
-
-		llvm::FunctionType* function_type = llvm::FunctionType::get(return_type2, args2, false);
-
-		if(encode == func_encode::functions_are_values){
-			return function_type;
-		}
-		else if(encode == func_encode::functions_are_pointers){
-			auto function_pointer_type = function_type->getPointerTo();
-			return function_pointer_type;
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
+		return make_function_type(module, type);
 	}
 	else{
 		QUARK_TRACE_SS(floyd::typeid_to_compact_string(type));
@@ -783,42 +780,8 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type, func_encode 
 	}
 }
 
-//	??? temp workaround -- we don't support all argument types yet.
-typeid_t hack_function_type(const typeid_t& function_type){
-	QUARK_ASSERT(function_type.check_invariant());
-
-	floyd::typeid_t hacked_function_type = floyd::typeid_t::make_function(
-		function_type.get_function_return(),
-		{
-			floyd::typeid_t::make_int()
-		},
-		floyd::epure::impure
-	);
-	return hacked_function_type;
-}
-
-
-
-
-
-
-
 
 std::string get_function_def_name(int function_id, const function_definition_t& def){
-
-/*
-	if(def._host_function_id != k_no_host_function_id){
-		const auto label = make_host_function_label(def._host_function_id);
-		auto f = make_function_prototype(module, label, hack_function_type(function_type));
-		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), function_id, def});
-	}
-	else{
-		const auto label = make_unique_funcdef_name2(function_id);
-		auto f = make_function_prototype(module, label, hack_function_type(function_type));
-		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), function_id, def});
-	}
-*/
-
 	const auto def_name = def._definition_name;
 	const auto funcdef_name = def_name.empty() ? std::string() + "floyd_unnamed_function_" + std::to_string(function_id) : std::string("floyd_funcdef__") + def_name;
 	return funcdef_name;
@@ -857,7 +820,7 @@ llvm::Constant* make_constant(llvmgen_t& gen_acc, const value_t& value){
 	auto& module = *gen_acc.module;
 
 	const auto type = value.get_type();
-	const auto itype = intern_type(module, type, func_encode::functions_are_pointers);
+	const auto itype = intern_type(module, type);
 
 	if(type.is_undefined()){
 		return llvm::ConstantInt::get(itype, 17);
@@ -959,7 +922,7 @@ std::vector<global_v_t> genllvm_local_make_symbols(llvmgen_t& gen_acc, const sym
 
 	for(const auto& e: symbol_table._symbols){
 		const auto type = e.second.get_type();
-		const auto itype = intern_type(*gen_acc.module, type, func_encode::functions_are_pointers);
+		const auto itype = intern_type(*gen_acc.module, type);
 
 		llvm::Value* dest = gen_acc.builder.CreateAlloca(itype, nullptr, e.first);
 
@@ -1308,7 +1271,7 @@ llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, const e
 	auto& builder = gen_acc.builder;
 
 	const auto result_type = e.get_output_type();
-	const auto result_itype = intern_type(*gen_acc.module, result_type, func_encode::functions_are_pointers);
+	const auto result_itype = intern_type(*gen_acc.module, result_type);
 
 	llvm::Value* condition_value = genllvm_expression(gen_acc, e._input_exprs[0]);
 
@@ -1675,7 +1638,7 @@ llvm::Value* llvmgen_construct_value_expression(llvmgen_t& gen_acc, const expres
 QUARK_ASSERT(false);
 
 	const auto target_type = e.get_output_type();
-	const auto target_itype = intern_type(*gen_acc.module, target_type, func_encode::functions_are_pointers);
+	const auto target_itype = intern_type(*gen_acc.module, target_type);
 
 	const auto callee_arg_count = static_cast<int>(e._input_exprs.size());
 	std::vector<typeid_t> arg_types;
@@ -1747,7 +1710,7 @@ QUARK_ASSERT(false);
 		QUARK_ASSERT(arg_count == 1);
 
 /*
-		const auto source_itype = arg_count == 0 ? -1 : intern_type(gen_acc, e._input_exprs[0].get_output_type(), func_encode::functions_are_pointers);
+		const auto source_itype = arg_count == 0 ? -1 : intern_type(gen_acc, e._input_exprs[0].get_output_type());
 		body_acc._instrs.push_back(bcgen_instruction_t(
 			bc_opcode::k_new_1,
 			target_reg2,
@@ -2002,6 +1965,16 @@ llvm::Value* make_global(llvm::Module& module, const std::string& symbol_name, l
 	return gv;
 }
 
+llvm::Type* deref_ptr(llvm::Type* type){
+	if(type->isPointerTy()){
+		llvm::PointerType* type2 = llvm::cast<llvm::PointerType>(type);
+  		llvm::Type* element_type = type2->getElementType();
+  		return element_type;
+	}
+	else{
+		return type;
+	}
+}
 
 
 llvm::Value* genllvm_make_global(llvmgen_t& gen_acc, const semantic_ast_t& ast, const std::string& symbol_name, const symbol_t& symbol){
@@ -2012,9 +1985,7 @@ llvm::Value* genllvm_make_global(llvmgen_t& gen_acc, const semantic_ast_t& ast, 
 
 	auto& module = *gen_acc.module;
 	const auto type0 = symbol.get_type();
-	const auto itype = type0.is_function()
-		? intern_type(module, hack_function_type(type0), func_encode::functions_are_pointers)
-		: intern_type(module, type0, func_encode::functions_are_pointers);
+	const auto itype = intern_type(module, type0);
 
 	if(symbol._init.is_undefined()){
 		return make_global(module, symbol_name, *itype, nullptr);
@@ -2099,15 +2070,16 @@ void genllvm_fill_functions_with_instructions(llvmgen_t& gen_acc, const semantic
 llvm::Function* make_function_prototype(llvm::Module& module, const std::string& function_name, const floyd::typeid_t& function_type){
 	QUARK_ASSERT(check_invariant__module(&module));
 	QUARK_ASSERT(function_type.check_invariant());
+	QUARK_ASSERT(function_type.is_function());
+
 	auto existing_f = module.getFunction(function_name);
 	QUARK_ASSERT(existing_f == nullptr);
 
-	floyd::typeid_t hacked_function_type = hack_function_type(function_type);
-
-	llvm::Type* ftype = intern_type(module, hacked_function_type, func_encode::functions_are_values);
+	llvm::Type* function_ptr_type = intern_type(module, function_type);
+	const auto function_byvalue_type = deref_ptr(function_ptr_type);
 
 	//	IMPORTANT: Must cast to (llvm::FunctionType*) to get correct overload of getOrInsertFunction() to be called!
-	auto f3 = module.getOrInsertFunction(function_name, (llvm::FunctionType*)ftype);
+	auto f3 = module.getOrInsertFunction(function_name, (llvm::FunctionType*)function_byvalue_type);
 	llvm::Function* f = llvm::cast<llvm::Function>(f3);
 
 	QUARK_ASSERT(check_invariant__function(f));
@@ -2201,7 +2173,7 @@ std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, c
 			const auto function_type = function_def._function_type;
 
 			const auto funcdef_name = get_function_def_name(function_id, function_def);
-			auto f = make_function_prototype(module, funcdef_name, hack_function_type(function_type));
+			auto f = make_function_prototype(module, funcdef_name, function_type);
 			result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), function_id, function_def});
 		}
 	}
