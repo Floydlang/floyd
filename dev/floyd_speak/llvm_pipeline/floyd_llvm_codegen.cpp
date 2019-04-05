@@ -146,6 +146,7 @@ void end_function_emit(llvmgen_t& gen_acc){
 
 
 llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e);
+void genllvm_statements(llvmgen_t& gen_acc, const std::vector<statement_t>& statements);
 
 
 
@@ -940,6 +941,44 @@ const function_def_t& find_function_def(llvmgen_t& gen_acc, const std::string& f
 
 	return find_function_def2(gen_acc.function_defs, function_name);
 }
+
+
+
+std::vector<global_v_t> genllvm_local_make_symbols(llvmgen_t& gen_acc, const symbol_table_t& symbol_table){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(symbol_table.check_invariant());
+
+	std::vector<global_v_t> result;
+
+	for(const auto& e: symbol_table._symbols){
+		const auto type = e.second.get_type();
+		const auto itype = intern_type(*gen_acc.module, type, func_encode::functions_are_pointers);
+
+		llvm::Value* dest = gen_acc.builder.CreateAlloca(itype, nullptr, e.first);
+
+		if(e.second._init.is_undefined() == false){
+			llvm::Value* c = make_constant(gen_acc, e.second._init);
+			gen_acc.builder.CreateStore(c, dest);
+		}
+		else{
+		}
+		const auto debug_str = "name:" + e.first + " symbol_t: " + symbol_to_string(e.second);
+		result.push_back(make_global(dest, debug_str));
+	}
+	return result;
+}
+
+void genllvm_body(llvmgen_t& gen_acc, const floyd::body_t& body){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
+
+	auto symbol_table_values = genllvm_local_make_symbols(gen_acc, body._symbol_table);
+	gen_acc.emit_function->local_variable_symbols = symbol_table_values;
+	genllvm_statements(gen_acc, body._statements);
+}
+
+
+
 
 
 llvm::Value* genllvm_literal_expression(llvmgen_t& gen_acc, const expression_t& e){
@@ -1800,6 +1839,49 @@ void genllvm_store2_statement(llvmgen_t& gen_acc, const statement_t::store2_t& s
 	QUARK_ASSERT(gen_acc.check_invariant());
 }
 
+
+
+/*
+	//	current block at start of llvmgen_block_statement()
+	[block a]
+		...
+		...
+		br b
+
+	//	New BLOCK
+	[block b]
+		...
+		...
+		br c
+
+	//	New join-block
+	[block c]
+*/
+
+void llvmgen_block_statement(llvmgen_t& gen_acc, const statement_t::block_statement_t& s){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(gen_acc.emit_function);
+
+/*
+	llvm::Function* f = gen_acc.emit_function->f;
+	llvm::BasicBlock* b = llvm::BasicBlock::Create(gen_acc.instance->context, "block", f);
+	llvm::BasicBlock* c = llvm::BasicBlock::Create(gen_acc.instance->context, "block-join", f);
+	gen_acc.builder.SetInsertPoint(b);
+*/
+//	genllvm_body(gen_acc, s._body);
+
+	auto values = genllvm_local_make_symbols(gen_acc, s._body._symbol_table);
+
+	//	We append the block's local variables to the current BB.
+	auto& dest = gen_acc.emit_function->local_variable_symbols;
+	dest.insert(dest.end(), values.begin(), values.end());
+	genllvm_statements(gen_acc, s._body._statements);
+
+//	gen_acc.builder.CreateBr(BasicBlock *Dest)
+
+	QUARK_ASSERT(gen_acc.check_invariant());
+}
+
 void genllvm_expression_statement(llvmgen_t& gen_acc, const statement_t::expression_statement_t& s){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
@@ -1858,9 +1940,7 @@ void genllvm_statements(llvmgen_t& gen_acc, const std::vector<statement_t>& stat
 					genllvm_store2_statement(acc0, s);
 				}
 				void operator()(const statement_t::block_statement_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
-//					return bcgen_block_statement(_gen_acc, s, body_acc);
+					return llvmgen_block_statement(acc0, s);
 				}
 
 				void operator()(const statement_t::ifelse_statement_t& s) const{
@@ -1963,32 +2043,6 @@ std::vector<global_v_t> genllvm_make_globals(llvmgen_t& gen_acc, const semantic_
 }
 
 
-std::vector<global_v_t> genllvm_local_make_symbols(llvmgen_t& gen_acc, const symbol_table_t& symbol_table){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(symbol_table.check_invariant());
-
-	std::vector<global_v_t> result;
-
-	for(const auto& e: symbol_table._symbols){
-		const auto type = e.second.get_type();
-		const auto itype = intern_type(*gen_acc.module, type, func_encode::functions_are_pointers);
-
-		llvm::Value* dest = gen_acc.builder.CreateAlloca(itype, nullptr, e.first);
-
-		if(e.second._init.is_undefined() == false){
-			llvm::Value* c = make_constant(gen_acc, e.second._init);
-			gen_acc.builder.CreateStore(c, dest);
-		}
-		else{
-		}
-		const auto debug_str = "name:" + e.first + " symbol_t: " + symbol_to_string(e.second);
-		result.push_back(make_global(dest, debug_str));
-	}
-	return result;
-}
-
-
-
 
 //	NOTICE: Fills-in the body of an existing LLVM function prototype.
 void genllvm_fill_function_def(llvmgen_t& gen_acc, int function_id, const floyd::function_definition_t& function_def){
@@ -2008,6 +2062,7 @@ void genllvm_fill_function_def(llvmgen_t& gen_acc, int function_id, const floyd:
 		auto symbol_table_values = genllvm_local_make_symbols(gen_acc, function_def._body->_symbol_table);
 		gen_acc.emit_function->local_variable_symbols = symbol_table_values;
 		genllvm_statements(gen_acc, function_def._body->_statements);
+//		genllvm_body(gen_acc, *function_def._body);
 		end_function_emit(gen_acc);
 	}
 
@@ -2190,6 +2245,7 @@ std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> genllvm_al
 			start_function_emit(gen_acc, f);
 			gen_acc.emit_function->local_variable_symbols = gen_acc.globals;
 			genllvm_statements(gen_acc, semantic_ast._tree._globals._statements);
+//			genllvm_body(gen_acc, semantic_ast._tree._globals);
 
 			llvm::Value* dummy_result = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 667);
 			gen_acc.builder.CreateRet(dummy_result);

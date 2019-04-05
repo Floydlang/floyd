@@ -746,6 +746,7 @@ inline void ut_verify(const quark::call_context_t& context, const std::vector<st
 			QUARK_SCOPED_TRACE(std::to_string(i));
 
 			ut_verify(context, result[i], expected[i]);
+			QUARK_TRACE_SS(result[i] << "==" << expected[i]);
 		}
 
 		quark::fail_test(context);

@@ -506,7 +506,7 @@ OFF_QUARK_UNIT_TEST("", "json_value()", "", ""){
 OFF_QUARK_UNIT_TEST("", "json_value()", "", ""){
 	ut_verify_global_result(QUARK_POS, "let result = json_value([1,2,3])", value_t::make_json_value(json_t::make_array({1,2,3})));
 }
-QUARK_UNIT_TEST("", "pixel_t()", "", ""){
+OFF_QUARK_UNIT_TEST("", "pixel_t()", "", ""){
 	const auto pixel_t__def = std::vector<member_t>{
 		member_t(typeid_t::make_int(), "red"),
 		member_t(typeid_t::make_int(), "green"),
@@ -682,6 +682,7 @@ QUARK_UNIT_TEST("", "run_main()", "test function args are always immutable", "")
 	);
 }
 
+//
 QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 	ut_verify_printout(
 		QUARK_POS,
