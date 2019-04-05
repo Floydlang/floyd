@@ -52,6 +52,9 @@
 //http://releases.llvm.org/2.6/docs/tutorial/JITTutorial2.html
 
 
+typedef std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs_t;
+
+
 /*
 # ACCESSING INTEGER INSIDE GENERICVALUE
 
@@ -171,6 +174,8 @@ bool check_invariant__function(const llvm::Function* f){
 		f->print(stream2);
 
 		QUARK_TRACE_SS("\n" << dump);
+
+//??? print("") and print(123) could be different functions.
 
 		QUARK_ASSERT(false);
 	}
@@ -683,6 +688,23 @@ static llvm::Function* InitFibonacciFnc(llvm::LLVMContext& context, std::unique_
 
 llvm::Type* intern_type(llvm::Module& module, const typeid_t& type);
 
+//	LLVM-functions pass GENs as two 64bit arguments.
+//	Return: First is the type of the value. Second is tells if
+/*
+std::pair<llvm::Type*, bool> intern_type_generics(llvm::Module& module, const typeid_t& type){
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(type.is_function() == false);
+
+	auto& context = module.getContext();
+
+	if(type.is_internal_dynamic()){
+		return { llvm::Type::getIntNTy(context, 64), llvm::Type::getIntNTy(context, 64) };
+	}
+	else{
+		return { intern_type(module, type), nullptr };
+	}
+}
+*/
 
 //	Function-types are alwayds returns as pointer-to-functiontype.
 llvm::Type* make_function_type(llvm::Module& module, const typeid_t& type){
@@ -703,6 +725,9 @@ llvm::Type* make_function_type(llvm::Module& module, const typeid_t& type){
 	for(const auto& arg: args){
 		auto arg_type = intern_type(module, arg);
 		args2.push_back(arg_type);
+		if(arg.is_internal_dynamic()){
+			args2.push_back(intern_type(module, typeid_t::make_int()));
+		}
 	}
 
 	llvm::FunctionType* function_type = llvm::FunctionType::get(return_type2, args2, false);
@@ -767,7 +792,6 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 	}
 
 	else if(type.is_internal_dynamic()){
-		//	Use int16ptr as placeholder for **dyn**. Maybe pass a struct instead?
 		return llvm::Type::getIntNTy(context, 64);
 	}
 	else if(type.is_function()){
@@ -1482,10 +1506,23 @@ extern "C" {
 
 
 
-	extern void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg){
+	extern void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
 		auto r = get_floyd_runtime(floyd_runtime_ptr);
-		const auto s = std::to_string(arg);
-		r->_print_output.push_back(s);
+
+		const auto type = (base_type)arg0_type;
+
+		if(type == base_type::k_int){
+			const auto value = (int64_t)arg0_value;
+			const auto s = std::to_string(arg0_value);
+			r->_print_output.push_back(s);
+		}
+		else if(type == base_type::k_string){
+			const auto value = (const char*)arg0_value;
+			r->_print_output.push_back(value);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
 	}
 
 	extern void floyd_host_function_1021(void* floyd_runtime_ptr, int64_t arg){
@@ -1590,6 +1627,8 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 	//	[0] is the callee, which is required. [1] etc are the args, which are optional.
 	QUARK_ASSERT(e._input_exprs.size() >= 1);
 
+	auto& context = gen_acc.instance->context;
+
 	//	_input_exprs[0] is callee, rest are arguments.
 	const auto callee_arg_count = static_cast<int>(e._input_exprs.size()) - 1;
 
@@ -1621,7 +1660,17 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 		//	Skip input argument [0], which is callee.
 		for(int i = 1 ; i < e._input_exprs.size() ; i++){
 			llvm::Value* arg2 = genllvm_expression(gen_acc, e._input_exprs[i]);
-			args2.push_back(arg2);
+
+			const auto function_type_arg = function_def_arg_types[i];
+			if(function_type_arg.is_internal_dynamic()){
+				arg2 = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, llvm::Type::getIntNTy(context, 64));
+				args2.push_back(arg2);
+				const auto gen_type_id = (int64_t)e._input_exprs[i].get_output_type().get_base_type();
+				args2.push_back(make_constant(gen_acc, value_t::make_int(gen_type_id)));
+			}
+			else{
+				args2.push_back(arg2);
+			}
 		}
 
 		auto result = gen_acc.builder.CreateCall(callee0, args2, return_type.is_void() ? "" : "temp_call");
@@ -2092,7 +2141,7 @@ function_definition_t make_dummy_function_definition(){
 }
 
 //	Make LLVM functions -- runtime, floyd host functions, floyd functions.
-std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, const std::vector<std::shared_ptr<const floyd::function_definition_t>> defs){
+std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, const function_defs_t& defs){
 	std::vector<function_def_t> result;
 
 	auto& context = module.getContext();
@@ -2181,6 +2230,99 @@ std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, c
 }
 
 
+
+
+std::pair<statement_t, function_defs_t> expand_generics(const statement_t& statement, const function_defs_t& functions){
+	QUARK_ASSERT(statement.check_invariant());
+
+	struct visitor_t {
+		const statement_t& in_statement;
+		const function_defs_t& in_functions;
+
+		std::pair<statement_t, function_defs_t> operator()(const statement_t::return_statement_t& s) const{
+			return { in_statement, in_functions };
+		}
+		std::pair<statement_t, function_defs_t> operator()(const statement_t::define_struct_statement_t& s) const{
+			return { in_statement, in_functions };
+		}
+		std::pair<statement_t, function_defs_t> operator()(const statement_t::define_protocol_statement_t& s) const{
+			return { in_statement, in_functions };
+		}
+		std::pair<statement_t, function_defs_t> operator()(const statement_t::define_function_statement_t& s) const{
+			return { in_statement, in_functions };
+		}
+
+		std::pair<statement_t, function_defs_t> operator()(const statement_t::bind_local_t& s) const{
+			return { in_statement, in_functions };
+		}
+		std::pair<statement_t, function_defs_t> operator()(const statement_t::store_t& s) const{
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+		}
+		std::pair<statement_t, function_defs_t> operator()(const statement_t::store2_t& s) const{
+			return { in_statement, in_functions };
+		}
+		std::pair<statement_t, function_defs_t> operator()(const statement_t::block_statement_t& s) const{
+			return { in_statement, in_functions };
+		}
+
+		std::pair<statement_t, function_defs_t> operator()(const statement_t::ifelse_statement_t& s) const{
+			return { in_statement, in_functions };
+		}
+		std::pair<statement_t, function_defs_t> operator()(const statement_t::for_statement_t& s) const{
+			return { in_statement, in_functions };
+		}
+		std::pair<statement_t, function_defs_t> operator()(const statement_t::while_statement_t& s) const{
+			return { in_statement, in_functions };
+		}
+
+
+		std::pair<statement_t, function_defs_t> operator()(const statement_t::expression_statement_t& s) const{
+			return { in_statement, in_functions };
+		}
+		std::pair<statement_t, function_defs_t> operator()(const statement_t::software_system_statement_t& s) const{
+			return { in_statement, in_functions };
+		}
+		std::pair<statement_t, function_defs_t> operator()(const statement_t::container_def_statement_t& s) const{
+			return { in_statement, in_functions };
+		}
+	};
+
+	return std::visit(visitor_t{ statement, functions }, statement._contents);
+}
+//			[20, "print", { "init": { "function_id": 20 }, "symbol_type": "immutable_local", "value_type": ["func", "^void", ["^**dyn**"], true] }],
+std::pair<body_t, function_defs_t>  expand_generics(const body_t& body, const function_defs_t& functions){
+	auto functions2 = functions;
+
+	//??? How to expand symbols, like a function-value in the symbol table?
+
+	std::vector<statement_t> statements2;
+	symbol_table_t symbol_table2;
+	for(const auto& e: body._statements){
+		const auto r = expand_generics(e, functions2);
+		statements2.push_back(r.first);
+		functions2 = r.second;
+	}
+	return { body_t(statements2, body._symbol_table), functions2 };
+}
+
+
+//	Find all calls of functions with dynamic arguments-types. This lets use generate-out variants of the function for those types.
+//		print("test") print(123) => print$string(string v), => print$int(int v)
+//	Alternative 2: transform funcdefs / calls of print(DYN) to print(int v_itype, uint64 v_packed)
+//	Replace all use of DYN arguments with explicit function-defs and calls.
+semantic_ast_t expand_generics(const semantic_ast_t& semantic_ast){
+	//	Pass 1: find all *use* of generic functions and make those explicit with their types. Also collect all used variants of generic functions.
+	//	Pass 2: replace generic functions with 0...many explicitly typed versions.
+
+	//??? NOTICE: This can introduce semantic type-errors.
+	//??? NOTICE: Implementation of a generic function can use typeof(v) to find out exact type.
+
+//	auto globals2 = expand_generics(semantic_ast._tree._globals, semantic_ast._tree._function_defs);
+	return semantic_ast;
+}
+
+
 std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> genllvm_all(llvm_instance_t& instance, const std::string& module_name, const semantic_ast_t& semantic_ast){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(module_name.empty() == false);
@@ -2194,7 +2336,7 @@ std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> genllvm_al
 	auto& context = instance.context;
 
 	//	Generate all LLVM nodes: functions and globals.
-	//	This lets all other code reference them, even if they're not fill up with code yet.
+	//	This lets all other code reference them, even if they're not filled up with code yet.
 	{
 		const auto funcs = make_all_function_prototypes(*module, semantic_ast._tree._function_defs);
 
@@ -2242,11 +2384,14 @@ std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> genllvm_al
 	return { std::move(module), gen_acc.function_defs };
 }
 
-std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(llvm_instance_t& instance, const semantic_ast_t& ast, const std::string& module_name){
+std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(llvm_instance_t& instance, const semantic_ast_t& as0, const std::string& module_name){
 	QUARK_ASSERT(instance.check_invariant());
-	QUARK_ASSERT(ast.check_invariant());
+	QUARK_ASSERT(as0.check_invariant());
 	QUARK_ASSERT(module_name.empty() == false);
-	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast)._value));
+	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(as0)._value));
+
+	auto ast = expand_generics(as0);
+
 
 	auto result0 = genllvm_all(instance, module_name, ast);
 	auto module = std::move(result0.first);
