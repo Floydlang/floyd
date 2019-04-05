@@ -1621,6 +1621,106 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 	}
 }
 
+
+llvm::Value* llvmgen_construct_value_expression(llvmgen_t& gen_acc, const expression_t& e){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+QUARK_ASSERT(false);
+
+	const auto target_type = e.get_output_type();
+	const auto target_itype = intern_type(*gen_acc.module, target_type, func_encode::functions_are_pointers);
+
+	const auto callee_arg_count = static_cast<int>(e._input_exprs.size());
+	std::vector<typeid_t> arg_types;
+	for(const auto& m: e._input_exprs){
+		arg_types.push_back(m.get_output_type());
+	}
+	const auto arg_count = callee_arg_count;
+
+//	const auto call_setup = gen_call_setup(gen_acc, arg_types, &e._input_exprs[0], arg_count, body_acc);
+
+
+	if(target_type.is_vector()){
+		QUARK_ASSERT(false);
+/*
+		if(encode_as_vector_w_inplace_elements(target_type)){
+			body_acc._instrs.push_back(bcgen_instruction_t(
+				bc_opcode::k_new_vector_w_inplace_elements,
+				target_reg2,
+				make_imm_int(0),
+				make_imm_int(arg_count)
+			));
+		}
+		else{
+			body_acc._instrs.push_back(bcgen_instruction_t(
+				bc_opcode::k_new_vector_w_external_elements,
+				target_reg2,
+				make_imm_int(target_itype),
+				make_imm_int(arg_count)
+			));
+		}
+*/
+
+	}
+	else if(target_type.is_dict()){
+		QUARK_ASSERT(false);
+/*
+		if(encode_as_dict_w_inplace_values(target_type)){
+			body_acc._instrs.push_back(bcgen_instruction_t(
+				bc_opcode::k_new_dict_w_inplace_values,
+				target_reg2,
+				make_imm_int(target_itype),
+				make_imm_int(arg_count)
+			));
+		}
+		else{
+			body_acc._instrs.push_back(bcgen_instruction_t(
+				bc_opcode::k_new_dict_w_external_values,
+				target_reg2,
+				make_imm_int(target_itype),
+				make_imm_int(arg_count)
+			));
+		}
+*/
+
+	}
+	else if(target_type.is_struct()){
+		QUARK_ASSERT(false);
+/*
+		body_acc._instrs.push_back(bcgen_instruction_t(
+			bc_opcode::k_new_struct,
+			target_reg2,
+			make_imm_int(target_itype),
+			make_imm_int(arg_count)
+		));
+*/
+
+	}
+	else{
+		QUARK_ASSERT(arg_count == 1);
+
+/*
+		const auto source_itype = arg_count == 0 ? -1 : intern_type(gen_acc, e._input_exprs[0].get_output_type(), func_encode::functions_are_pointers);
+		body_acc._instrs.push_back(bcgen_instruction_t(
+			bc_opcode::k_new_1,
+			target_reg2,
+			make_imm_int(target_itype),
+			make_imm_int(source_itype)
+		));
+*/
+
+	}
+
+/*
+	const auto extbits = pack_bools(call_setup._exts);
+	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_popn, make_imm_int(call_setup._stack_count), make_imm_int(extbits), {} ));
+*/
+	return nullptr;
+}
+
+
+
 llvm::Value* llvmgen_load2_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1667,9 +1767,7 @@ llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e){
 		return llvmgen_call_expression(gen_acc, e);
 	}
 	else if(op == expression_type::k_value_constructor){
-		QUARK_ASSERT(false);
-		quark::throw_exception();
-//		return bcgen_construct_value_expression(gen_acc, target_reg, e, body);
+		return llvmgen_construct_value_expression(gen_acc, e);
 	}
 	else if(op == expression_type::k_arithmetic_unary_minus__1){
 		return genllvm_arithmetic_unary_minus_expression(gen_acc, e);

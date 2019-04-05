@@ -469,19 +469,19 @@ QUARK_UNIT_TEST("call_function()", "minimal program 2", "", ""){
 //////////////////////////////////////////		TEST CONSTRUCTOR FOR ALL TYPES
 
 
-QUARK_UNIT_TEST("", "bool()", "", ""){
+OFF_QUARK_UNIT_TEST("", "bool()", "", ""){
 	ut_verify_global_result(QUARK_POS, "let result = bool(false)", value_t::make_bool(false));
 }
-QUARK_UNIT_TEST("", "bool()", "", ""){
+OFF_QUARK_UNIT_TEST("", "bool()", "", ""){
 	ut_verify_global_result(QUARK_POS, "let result = bool(true)", value_t::make_bool(true));
 }
-QUARK_UNIT_TEST("", "int()", "", ""){
+OFF_QUARK_UNIT_TEST("", "int()", "", ""){
 	ut_verify_global_result(QUARK_POS, "let result = int(123)", value_t::make_int(123));
 }
-QUARK_UNIT_TEST("", "double()", "", ""){
+OFF_QUARK_UNIT_TEST("", "double()", "", ""){
 	ut_verify_global_result(QUARK_POS, "let result = double(0.0)", value_t::make_double(0.0));
 }
-QUARK_UNIT_TEST("", "double()", "", ""){
+OFF_QUARK_UNIT_TEST("", "double()", "", ""){
 	ut_verify_global_result(QUARK_POS, "let result = double(123.456)", value_t::make_double(123.456));
 }
 
@@ -493,17 +493,17 @@ QUARK_UNIT_TEST("", "string()", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("", "string()", "", ""){
+OFF_QUARK_UNIT_TEST("", "string()", "", ""){
 	ut_verify_global_result(QUARK_POS, "let result = string(\"ABCD\")", value_t::make_string("ABCD"));
 }
 
-QUARK_UNIT_TEST("", "json_value()", "", ""){
+OFF_QUARK_UNIT_TEST("", "json_value()", "", ""){
 	ut_verify_global_result(QUARK_POS, "let result = json_value(123)", value_t::make_json_value(json_t(123.0)));
 }
-QUARK_UNIT_TEST("", "json_value()", "", ""){
+OFF_QUARK_UNIT_TEST("", "json_value()", "", ""){
 	ut_verify_global_result(QUARK_POS, "let result = json_value(\"hello\")", value_t::make_json_value(json_t("hello")));
 }
-QUARK_UNIT_TEST("", "json_value()", "", ""){
+OFF_QUARK_UNIT_TEST("", "json_value()", "", ""){
 	ut_verify_global_result(QUARK_POS, "let result = json_value([1,2,3])", value_t::make_json_value(json_t::make_array({1,2,3})));
 }
 QUARK_UNIT_TEST("", "pixel_t()", "", ""){
