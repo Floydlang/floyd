@@ -148,6 +148,8 @@ void end_function_emit(llvmgen_t& gen_acc){
 llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e);
 void genllvm_statements(llvmgen_t& gen_acc, const std::vector<statement_t>& statements);
 
+std::string print_function(const llvm::Function* f);
+
 
 
 /// Check a function for errors, useful for use when debugging a
@@ -165,7 +167,12 @@ bool check_invariant__function(const llvm::Function* f){
 	llvm::raw_string_ostream stream2(dump);
 	bool errors = llvm::verifyFunction(*f, &stream2);
 	if(errors){
-		QUARK_TRACE_SS(dump);
+		stream2 << "\n";
+		f->print(stream2);
+
+		QUARK_TRACE_SS("\n" << dump);
+
+		QUARK_ASSERT(false);
 	}
 	return !errors;
 }
@@ -254,7 +261,7 @@ std::string print_type(llvm::Type* type){
 	}
 }
 
-std::string print_function(llvm::Function* f){
+std::string print_function(const llvm::Function* f){
 	if(f == nullptr){
 		return "nullptr";
 	}
