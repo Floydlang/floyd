@@ -1921,80 +1921,98 @@ llvm::Value* llvmgen_return_statement(llvmgen_t& gen_acc, const statement_t::ret
 	return gen_acc.builder.CreateRet(value);
 }
 
+enum class gen_statement_mode {
+	more,
+	skip_remaining_statements
+};
+
+gen_statement_mode genllvm_statement(llvmgen_t& gen_acc, const statement_t& statement){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(statement.check_invariant());
+
+	struct visitor_t {
+		llvmgen_t& acc0;
+
+		gen_statement_mode operator()(const statement_t::return_statement_t& s) const{
+			llvmgen_return_statement(acc0, s);
+			return gen_statement_mode::skip_remaining_statements;
+		}
+		gen_statement_mode operator()(const statement_t::define_struct_statement_t& s) const{
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+		}
+		gen_statement_mode operator()(const statement_t::define_protocol_statement_t& s) const{
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+		}
+		gen_statement_mode operator()(const statement_t::define_function_statement_t& s) const{
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+		}
+
+		gen_statement_mode operator()(const statement_t::bind_local_t& s) const{
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+		}
+		gen_statement_mode operator()(const statement_t::store_t& s) const{
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+		}
+		gen_statement_mode operator()(const statement_t::store2_t& s) const{
+			genllvm_store2_statement(acc0, s);
+			return gen_statement_mode::more;
+		}
+		gen_statement_mode operator()(const statement_t::block_statement_t& s) const{
+			llvmgen_block_statement(acc0, s);
+			return gen_statement_mode::more;
+		}
+
+		gen_statement_mode operator()(const statement_t::ifelse_statement_t& s) const{
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+//					return bcgen_ifelse_statement(_gen_acc, s, body_acc);
+		}
+		gen_statement_mode operator()(const statement_t::for_statement_t& s) const{
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+//					return bcgen_for_statement(_gen_acc, s, body_acc);
+		}
+		gen_statement_mode operator()(const statement_t::while_statement_t& s) const{
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+//					return bcgen_while_statement(_gen_acc, s, body_acc);
+		}
+
+
+		gen_statement_mode operator()(const statement_t::expression_statement_t& s) const{
+			genllvm_expression_statement(acc0, s);
+			return gen_statement_mode::more;
+		}
+		gen_statement_mode operator()(const statement_t::software_system_statement_t& s) const{
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+//					return body_acc;
+		}
+		gen_statement_mode operator()(const statement_t::container_def_statement_t& s) const{
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+//					return body_acc;
+		}
+	};
+
+	return std::visit(visitor_t{ gen_acc }, statement._contents);
+}
+
 void genllvm_statements(llvmgen_t& gen_acc, const std::vector<statement_t>& statements){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	if(statements.empty() == false){
 		for(const auto& statement: statements){
 			QUARK_ASSERT(statement.check_invariant());
-
-			struct visitor_t {
-				llvmgen_t& acc0;
-
-				void operator()(const statement_t::return_statement_t& s) const{
-					llvmgen_return_statement(acc0, s);
-				}
-				void operator()(const statement_t::define_struct_statement_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
-				}
-				void operator()(const statement_t::define_protocol_statement_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
-				}
-				void operator()(const statement_t::define_function_statement_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
-				}
-
-				void operator()(const statement_t::bind_local_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
-				}
-				void operator()(const statement_t::store_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
-				}
-				void operator()(const statement_t::store2_t& s) const{
-					genllvm_store2_statement(acc0, s);
-				}
-				void operator()(const statement_t::block_statement_t& s) const{
-					return llvmgen_block_statement(acc0, s);
-				}
-
-				void operator()(const statement_t::ifelse_statement_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
-//					return bcgen_ifelse_statement(_gen_acc, s, body_acc);
-				}
-				void operator()(const statement_t::for_statement_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
-//					return bcgen_for_statement(_gen_acc, s, body_acc);
-				}
-				void operator()(const statement_t::while_statement_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
-//					return bcgen_while_statement(_gen_acc, s, body_acc);
-				}
-
-
-				void operator()(const statement_t::expression_statement_t& s) const{
-					genllvm_expression_statement(acc0, s);
-				}
-				void operator()(const statement_t::software_system_statement_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
-//					return body_acc;
-				}
-				void operator()(const statement_t::container_def_statement_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
-//					return body_acc;
-				}
-			};
-
-			std::visit(visitor_t{ gen_acc }, statement._contents);
+			const auto mode = genllvm_statement(gen_acc, statement);
+			if(mode == gen_statement_mode::skip_remaining_statements){
+				return;
+			}
 		}
 	}
 }

@@ -748,7 +748,7 @@ QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 //////////////////////////////////////////		RETURN STATEMENT - ADVANCED USAGE
 
 
-QUARK_UNIT_TEST_VIP("call_function()", "print() supports ints and strings", "", ""){
+QUARK_UNIT_TEST("call_function()", "print() supports ints and strings", "", ""){
 	ut_verify_printout(
 		QUARK_POS,
 		R"(
