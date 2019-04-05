@@ -4,7 +4,7 @@ TODO: Make more meaty examples, with structs and actual data and "objects".
 
 # INTRODUCTION
 
-Floyd is the programming language part of Floyd. It's an alternative to Java and C++, JavaScript and Python. Using Floyd, you write functions and data types. You make complex data structures, setup concurrency and parallelism and communicate with the world around your program.
+Floyd is programming language as an alternative to Java and C++, JavaScript and Python. When you write Floyd programs you write functions and complex data structures. You setup your program's concurrency and parallelism and how it communicate with the world around it.
 
 
 
@@ -80,7 +80,7 @@ This is a function that returns a function value:
 func bool (string, string) f5(int x)
 ```
 
-All arguments to a function are read-only -- there are no output arguments.
+All arguments to a function are read-only -- you cannot modify the arguments or anything they refer too. There are no output parameters in Floyd.
 
 
 ### IMPURE FUNCTIONS
@@ -624,9 +624,7 @@ Notice: map() and supermap() shares threads with other mechanisms in the Floyd r
 
 ## JSON LITERALS
 
-You can directly embed JSON inside Floyd source code file. This is extremely simple - no escaping needed - just paste a snippet into the Floyd source code. Use this for test values. Round trip. Since the JSON code is not a string literal but actual Floyd syntax, there are not problems with escaping strings. The Floyd parser will create floyd strings, dictionaries and so on for the JSON data. Then it will create a json\_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown.
-
-This all means you can write Floyd code that at runtime creates all or parts of a composite JSON value. Also: you can nest JSONs in each other.
+You can directly embed JSON inside Floyd source code file. This is extremely simple - no escaping needed - just paste a snippet into the Floyd source code. Use this for test values. Round trip. The Floyd parser will create Floyd strings, dictionaries and so on for the JSON data. Then it will create a json\_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown.
 
 Example JSON:
 
@@ -797,7 +795,7 @@ This is a value that is fully defined directly in the code. Like the number 3.
 
 ### VECTOR-CONSTRUCTOR
 
-This lets you create a new vector value anywhere an expression can be typed. This expression supports non-constant elements of the constructor.
+This lets you create a new vector value anywhere an expression can be put. This expression supports non-constant elements of the constructor.
 TODO: More text.
 
 
@@ -1384,7 +1382,7 @@ You can use these escape characters in string literals by entering \n or \' or \
 |CODE		| OUTPUT | NOTE
 |:---			|:--- |:---
 | print("hello") | hello
-| print("What does \\"blobb\\" mean?") | What does "blobb" mean? | Allows you to insert a double quotation mark into your string literal without ending the string literal itself.
+| print("What does \\"blob\\" mean?") | What does "blob" mean? | Allows you to insert a double quotation mark into your string literal without ending the string literal itself.
 
 
 Floyd string literals do not support insert hex sequences or Unicode code points.
