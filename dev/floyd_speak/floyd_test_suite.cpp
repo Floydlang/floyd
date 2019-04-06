@@ -745,127 +745,6 @@ QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 }
 
 
-//////////////////////////////////////////		RETURN STATEMENT - ADVANCED USAGE
-
-
-QUARK_UNIT_TEST("call_function()", "print() supports ints and strings", "", ""){
-	ut_verify_printout(
-		QUARK_POS,
-		R"(
-			print("Hello, world!")
-			print(123)
-		)",
-		{ "Hello, world!", "123" }
-	);
-}
-
-//QUARK_UNIT_TEST_VIP
-QUARK_UNIT_TEST("call_function()", "return from middle of function", "", ""){
-	ut_verify_printout(
-		QUARK_POS,
-		R"(
-
-			func string f(){
-				print("A")
-				return "B"
-				print("C")
-				return "D"
-			}
-			let string x = f()
-			print(x)
-
-		)",
-		{ "A", "B" }
-	);
-}
-
-QUARK_UNIT_TEST("call_function()", "return from within IF block", "", ""){
-	ut_verify_printout(
-		QUARK_POS,
-		R"(
-
-			func string f(){
-				if(true){
-					print("A")
-					return "B"
-					print("C")
-				}
-				print("D")
-				return "E"
-			}
-			let string x = f()
-			print(x)
-
-		)",
-		{ "A", "B" }
-	);
-}
-
-QUARK_UNIT_TEST("call_function()", "return from within FOR block", "", ""){
-	ut_verify_printout(
-		QUARK_POS,
-		R"(
-
-			func string f(){
-				for(e in 0...3){
-					print("A")
-					return "B"
-					print("C")
-				}
-				print("D")
-				return "E"
-			}
-			let string x = f()
-			print(x)
-
-		)",
-		{ "A", "B" }
-	);
-}
-
-// ??? add test for: return from ELSE
-
-QUARK_UNIT_TEST("call_function()", "return from within BLOCK", "", ""){
-	ut_verify_printout(
-		QUARK_POS,
-		R"(
-
-			func string f(){
-				{
-					print("A")
-					return "B"
-					print("C")
-				}
-				print("D")
-				return "E"
-			}
-			let string x = f()
-			print(x)
-
-		)",
-		{ "A", "B" }
-	);
-}
-
-
-QUARK_UNIT_TEST("", "Make sure returning wrong type => error", "", ""){
-	try {
-	run_container2(R"(
-
-func int f(){
-	return "x"
-}
-
-	)", {}, "", "");
-
-
-	}
-	catch(const std::runtime_error& e){
-		ut_verify(QUARK_POS, e.what(), "Expression type mismatch - cannot convert 'string' to 'int. Line: 4 \"return \"x\"\"");
-	}
-}
-
-
 
 
 //////////////////////////////////////////		HOST FUNCTION - to_string()
@@ -4236,6 +4115,131 @@ QUARK_UNIT_TEST("vector-int", "size()", "3", ""){
 		)"
 	);
 }
+
+
+
+
+//////////////////////////////////////////		RETURN STATEMENT - ADVANCED USAGE
+
+
+QUARK_UNIT_TEST("call_function()", "print() supports ints and strings", "", ""){
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+			print("Hello, world!")
+			print(123)
+		)",
+		{ "Hello, world!", "123" }
+	);
+}
+
+//QUARK_UNIT_TEST_VIP
+QUARK_UNIT_TEST("call_function()", "return from middle of function", "", ""){
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			func string f(){
+				print("A")
+				return "B"
+				print("C")
+				return "D"
+			}
+			let string x = f()
+			print(x)
+
+		)",
+		{ "A", "B" }
+	);
+}
+
+QUARK_UNIT_TEST("call_function()", "return from within IF block", "", ""){
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			func string f(){
+				if(true){
+					print("A")
+					return "B"
+					print("C")
+				}
+				print("D")
+				return "E"
+			}
+			let string x = f()
+			print(x)
+
+		)",
+		{ "A", "B" }
+	);
+}
+
+QUARK_UNIT_TEST("call_function()", "return from within FOR block", "", ""){
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			func string f(){
+				for(e in 0...3){
+					print("A")
+					return "B"
+					print("C")
+				}
+				print("D")
+				return "E"
+			}
+			let string x = f()
+			print(x)
+
+		)",
+		{ "A", "B" }
+	);
+}
+
+// ??? add test for: return from ELSE
+
+QUARK_UNIT_TEST("call_function()", "return from within BLOCK", "", ""){
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			func string f(){
+				{
+					print("A")
+					return "B"
+					print("C")
+				}
+				print("D")
+				return "E"
+			}
+			let string x = f()
+			print(x)
+
+		)",
+		{ "A", "B" }
+	);
+}
+
+
+QUARK_UNIT_TEST("", "Make sure returning wrong type => error", "", ""){
+	try {
+	run_container2(R"(
+
+func int f(){
+	return "x"
+}
+
+	)", {}, "", "");
+
+
+	}
+	catch(const std::runtime_error& e){
+		ut_verify(QUARK_POS, e.what(), "Expression type mismatch - cannot convert 'string' to 'int. Line: 4 \"return \"x\"\"");
+	}
+}
+
+
 
 
 

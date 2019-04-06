@@ -422,7 +422,7 @@ value_t llvm_to_value(const uint64_t encoded_value, const typeid_t& type){
 		return value_t::make_int(temp);
 	}
 	else if(type.is_double()){
-		const auto temp = static_cast<const double>(encoded_value);
+		const auto temp = *reinterpret_cast<const double*>(&encoded_value);
 		return value_t::make_double(temp);
 	}
 	else if(type.is_string()){
@@ -1366,11 +1366,36 @@ void hook(const std::string& s, void* floyd_runtime_ptr, int64_t arg){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 }
 
+std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, int64_t arg_type){
+	const auto type = (base_type)arg_type;
+	if(type == base_type::k_int){
+		const auto value = (int64_t)arg_value;
+		return std::to_string(value);
+	}
+	else if(type == base_type::k_string){
+		const auto value = (const char*)arg_value;
+		return std::string(value);
+	}
+	else if(type == base_type::k_double){
+		const auto d = sizeof(double);
+		const auto i = sizeof(int64_t);
+		QUARK_ASSERT(d == i);
+
+		const auto value = *(double*)&arg_value;
+
+		return double_to_string_always_decimals(value);
+//		return std::to_string(value);
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+
 //	The names of these are computed from the host-id in the symbol table, not the names of the functions/symbols.
 //	They must use C calling convention so llvm JIT can find them.
 //	Make sure they are not dead-stripped out of binary!
 extern "C" {
-
 
 	extern void floyd_runtime__unresolved_func(void* floyd_runtime_ptr){
 		std:: cout << __FUNCTION__ << std::endl;
@@ -1505,24 +1530,12 @@ extern "C" {
 	}
 
 
-
+	//	??? Make visitor to handle different types.
+	//	??? Extend GEN to support any type, not just base_type.
 	extern void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
 		auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-		const auto type = (base_type)arg0_type;
-
-		if(type == base_type::k_int){
-			const auto value = (int64_t)arg0_value;
-			const auto s = std::to_string(arg0_value);
-			r->_print_output.push_back(s);
-		}
-		else if(type == base_type::k_string){
-			const auto value = (const char*)arg0_value;
-			r->_print_output.push_back(value);
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
+		const auto s = gen_to_string(r, arg0_value, arg0_type);
+		r->_print_output.push_back(s);
 	}
 
 	extern void floyd_host_function_1021(void* floyd_runtime_ptr, int64_t arg){
@@ -1572,8 +1585,13 @@ extern "C" {
 		hook(__FUNCTION__, floyd_runtime_ptr, arg);
 	}
 
-	extern void floyd_host_function_1032(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	extern const char* floyd_host__to_string(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
+		auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+		const auto s = gen_to_string(r, arg0_value, arg0_type);
+
+		//??? leaks.
+		return strdup(s.c_str());
 	}
 
 	extern void floyd_host_function_1033(void* floyd_runtime_ptr, int64_t arg){
@@ -1638,6 +1656,8 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 	const auto return_type = e.get_output_type();
 	QUARK_ASSERT(callee_arg_count == function_def_arg_types.size());
 
+	llvm::Type* llvm_gen_encoded = llvm::Type::getIntNTy(context, 64);
+
 	{
 		llvm::Value* callee0 = genllvm_expression(gen_acc, e._input_exprs[0]);
 		QUARK_TRACE_SS("callee0: " << print_value(callee0));
@@ -1659,13 +1679,32 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 
 		//	Skip input argument [0], which is callee.
 		for(int i = 1 ; i < e._input_exprs.size() ; i++){
+			const auto arg2_type = e._input_exprs[i].get_output_type();
 			llvm::Value* arg2 = genllvm_expression(gen_acc, e._input_exprs[i]);
 
 			const auto function_type_arg = function_def_arg_types[i];
 			if(function_type_arg.is_internal_dynamic()){
-				arg2 = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, llvm::Type::getIntNTy(context, 64));
-				args2.push_back(arg2);
-				const auto gen_type_id = (int64_t)e._input_exprs[i].get_output_type().get_base_type();
+
+				if(arg2_type.is_function()){
+					llvm::Value* arg3 = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, llvm_gen_encoded, "pack function to GEN int64");
+					args2.push_back(arg3);
+				}
+				else if(arg2_type.is_double()){
+					llvm::Value* arg3 = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::BitCast, arg2, llvm_gen_encoded, "pack double to GEN int64");
+					args2.push_back(arg3);
+				}
+				else if(arg2_type.is_string()){
+					llvm::Value* arg3 = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, llvm_gen_encoded, "pack string to GEN int64");
+					args2.push_back(arg3);
+				}
+				else if(arg2_type.is_int()){
+					args2.push_back(arg2);
+				}
+				else{
+					QUARK_ASSERT(false);
+				}
+
+				const auto gen_type_id = (int64_t)arg2_type.get_base_type();
 				args2.push_back(make_constant(gen_acc, value_t::make_int(gen_type_id)));
 			}
 			else{
@@ -2529,7 +2568,7 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 
 		{ "floyd_funcdef__supermap", reinterpret_cast<void *>(&floyd_host_function_1030) },
 		{ "floyd_funcdef__to_pretty_string", reinterpret_cast<void *>(&floyd_host_function_1031) },
-		{ "floyd_funcdef__to_string", reinterpret_cast<void *>(&floyd_host_function_1032) },
+		{ "floyd_funcdef__to_string", reinterpret_cast<void *>(&floyd_host__to_string) },
 		{ "floyd_funcdef__typeof", reinterpret_cast<void *>(&floyd_host_function_1033) },
 		{ "floyd_funcdef__update", reinterpret_cast<void *>(&floyd_host_function_1034) },
 		{ "floyd_funcdef__value_to_jsonvalue", reinterpret_cast<void *>(&floyd_host_function_1035) },
