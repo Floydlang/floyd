@@ -1594,8 +1594,19 @@ extern "C" {
 		return strdup(s.c_str());
 	}
 
-	extern void floyd_host_function_1033(void* floyd_runtime_ptr, int64_t arg){
+	extern void floyd_host__typeof(void* floyd_runtime_ptr, int64_t arg){
 		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+/*
+bc_value_t host__typeof(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+
+	const auto& value = args[0];
+	const auto type = value._type;
+	const auto result = value_t::make_typeid_value(type);
+	return value_to_bc(result);
+}
+*/
 	}
 
 	extern void floyd_host_function_1034(void* floyd_runtime_ptr, int64_t arg){
@@ -2569,7 +2580,7 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 		{ "floyd_funcdef__supermap", reinterpret_cast<void *>(&floyd_host_function_1030) },
 		{ "floyd_funcdef__to_pretty_string", reinterpret_cast<void *>(&floyd_host_function_1031) },
 		{ "floyd_funcdef__to_string", reinterpret_cast<void *>(&floyd_host__to_string) },
-		{ "floyd_funcdef__typeof", reinterpret_cast<void *>(&floyd_host_function_1033) },
+		{ "floyd_funcdef__typeof", reinterpret_cast<void *>(&floyd_host__typeof) },
 		{ "floyd_funcdef__update", reinterpret_cast<void *>(&floyd_host_function_1034) },
 		{ "floyd_funcdef__value_to_jsonvalue", reinterpret_cast<void *>(&floyd_host_function_1035) },
 		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&floyd_host_function_1036) }
