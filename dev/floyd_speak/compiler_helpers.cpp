@@ -59,12 +59,15 @@ compilation_unit_t make_compilation_unit_lib(const std::string& source_code, con
 	};
 }
 
-compilation_unit_t make_compilation_unit(const std::string& source_code, bool corelib){
-	if(corelib){
-		return make_compilation_unit_lib(source_code, "");
+compilation_unit_t make_compilation_unit(const std::string& source_code, const std::string& source_path, compilation_unit_mode mode){
+	if(mode == compilation_unit_mode::k_include_core_lib){
+		return make_compilation_unit_lib(source_code, source_path);
+	}
+	else if(mode == compilation_unit_mode::k_no_core_lib){
+		return make_compilation_unit_nolib(source_code, source_path);
 	}
 	else{
-		return make_compilation_unit_nolib(source_code, "");
+		QUARK_ASSERT(false);
 	}
 }
 

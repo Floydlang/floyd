@@ -31,7 +31,7 @@ enum class compilation_unit_mode {
 
 compilation_unit_t make_compilation_unit_nolib(const std::string& source_code, const std::string& source_path);
 compilation_unit_t make_compilation_unit_lib(const std::string& source_code, const std::string& source_path);
-compilation_unit_t make_compilation_unit(const std::string& source_code, bool corelib);
+compilation_unit_t make_compilation_unit(const std::string& source_code, const std::string& source_path, compilation_unit_mode mode);
 
 
 semantic_ast_t compile_to_sematic_ast__errors(const compilation_unit_t& cu);
