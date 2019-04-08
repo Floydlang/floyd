@@ -486,19 +486,19 @@ QUARK_UNIT_TEST("Floyd test suite", "call_function()", "minimal program", ""){
 //////////////////////////////////////////		TEST CONSTRUCTOR FOR ALL TYPES
 
 
-OFF_QUARK_UNIT_TEST("Floyd test suite", "", "bool()", ""){
+QUARK_UNIT_TEST("Floyd test suite", "", "bool()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = bool(false)", value_t::make_bool(false));
 }
-OFF_QUARK_UNIT_TEST("Floyd test suite", "", "bool()", ""){
+QUARK_UNIT_TEST("Floyd test suite", "", "bool()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = bool(true)", value_t::make_bool(true));
 }
-OFF_QUARK_UNIT_TEST("Floyd test suite", "", "int()", ""){
+QUARK_UNIT_TEST("Floyd test suite", "", "int()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = int(123)", value_t::make_int(123));
 }
-OFF_QUARK_UNIT_TEST("Floyd test suite", "", "double()", ""){
+QUARK_UNIT_TEST("Floyd test suite", "", "double()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = double(0.0)", value_t::make_double(0.0));
 }
-OFF_QUARK_UNIT_TEST("Floyd test suite", "", "double()", ""){
+QUARK_UNIT_TEST("Floyd test suite", "", "double()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = double(123.456)", value_t::make_double(123.456));
 }
 
@@ -510,20 +510,20 @@ QUARK_UNIT_TEST("Floyd test suite", "", "string()", ""){
 	);
 }
 
-OFF_QUARK_UNIT_TEST("Floyd test suite", "", "string()", ""){
+QUARK_UNIT_TEST("Floyd test suite", "", "string()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = string(\"ABCD\")", value_t::make_string("ABCD"));
 }
 
-OFF_QUARK_UNIT_TEST("Floyd test suite", "", "json_value()", ""){
+QUARK_UNIT_TEST("Floyd test suite", "", "json_value()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = json_value(123)", value_t::make_json_value(json_t(123.0)));
 }
-OFF_QUARK_UNIT_TEST("Floyd test suite", "", "json_value()", ""){
+QUARK_UNIT_TEST("Floyd test suite", "", "json_value()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = json_value(\"hello\")", value_t::make_json_value(json_t("hello")));
 }
-OFF_QUARK_UNIT_TEST("Floyd test suite", "", "json_value()", ""){
+QUARK_UNIT_TEST("Floyd test suite", "", "json_value()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = json_value([1,2,3])", value_t::make_json_value(json_t::make_array({1,2,3})));
 }
-OFF_QUARK_UNIT_TEST("Floyd test suite", "", "pixel_t()", ""){
+QUARK_UNIT_TEST("Floyd test suite", "", "pixel_t()", ""){
 	const auto pixel_t__def = std::vector<member_t>{
 		member_t(typeid_t::make_int(), "red"),
 		member_t(typeid_t::make_int(), "green"),
@@ -776,7 +776,7 @@ QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
 //////////////////////////////////////////		HOST FUNCTION - typeof()
 
 
-OFF_QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -788,7 +788,7 @@ OFF_QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 	);
 }
 
-OFF_QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 	const auto input = R"(
 
 		let result = to_string(typeof(145))
@@ -797,7 +797,7 @@ OFF_QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, input, value_t::make_string("int"));
 }
 
-OFF_QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 	const auto input = R"(
 
 		let result = typeof("hello")
@@ -806,7 +806,7 @@ OFF_QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, input, value_t::make_typeid_value(typeid_t::make_string()));
 }
 
-OFF_QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -818,7 +818,7 @@ OFF_QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 	);
 }
 
-OFF_QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -829,7 +829,7 @@ OFF_QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 		value_t::make_typeid_value(typeid_t::make_vector(typeid_t::make_int()))
 	);
 }
-OFF_QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
