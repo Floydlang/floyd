@@ -42,12 +42,12 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vec
 
 bc_program_t compile_to_bytecode(const compilation_unit_t& cu);
 
-std::shared_ptr<interpreter_t> run_global(const compilation_unit_t& cu);
+std::shared_ptr<interpreter_t> bc_run_global(const compilation_unit_t& cu);
 
 /*
 	Quickie that compiles a program and calls its main() with the args.
 */
-std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(
+std::pair<std::shared_ptr<interpreter_t>, value_t> bc_run_main(
 	const std::string& source,
 	const std::vector<value_t>& args,
 	const std::string& file
@@ -79,7 +79,7 @@ std::map<std::string, value_t> run_container(
 	const std::vector<value_t>& args,
 	const std::string& container_key
 );
-std::map<std::string, value_t> run_container2(
+std::map<std::string, value_t> bc_run_container2(
 	const compilation_unit_t& cu,
 	const std::vector<value_t>& args,
 	const std::string& container_key

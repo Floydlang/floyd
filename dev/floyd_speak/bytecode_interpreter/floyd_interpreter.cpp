@@ -673,7 +673,7 @@ std::map<std::string, value_t> run_container(const bc_program_t& program, const 
 }
 
 
-std::map<std::string, value_t> run_container2(const compilation_unit_t& cu, const std::vector<floyd::value_t>& args, const std::string& container_key){
+std::map<std::string, value_t> bc_run_container2(const compilation_unit_t& cu, const std::vector<floyd::value_t>& args, const std::string& container_key){
 	auto program = compile_to_bytecode(cu);
 	return run_container(program, args, container_key);
 }

@@ -28,15 +28,16 @@ using namespace floyd;
 
 #define LLVM_FAILURES	1
 //??? Make namespace for bytecode interpreter and LLVM code: floyd, floyd_bc, floyd_llvm.
-//??? Run these tests for LLVM too!
-bc_program_t test_compile_to_bytecode(const std::string& source_code, const std::string& source_path){
-	const auto cu = make_compilation_unit_nolib(source_code, source_path);
-	return compile_to_bytecode(cu);
-}
+//??? Run all container2 tests for LLVM too!
+//???Make vistors-mechanism to support many sast passes, like expanding generics, making collection and layouts explicits etc.
+
+
+
+
 //??? Run these tests for LLVM too!
 std::map<std::string, value_t> test_run_container2(const std::string& program, const std::vector<floyd::value_t>& args, const std::string& container_key, const std::string& source_file){
 	const auto cu = make_compilation_unit_lib(program, source_file);
-	return run_container2(cu, args, container_key);
+	return bc_run_container2(cu, args, container_key);
 }
 
 void run_closed(const std::string& program){
@@ -487,25 +488,6 @@ QUARK_UNIT_TEST("call_function()", "minimal program", "", ""){
 }
 
 
-
-QUARK_UNIT_TEST("call_function()", "minimal program 2", "", ""){
-	auto ast = test_compile_to_bytecode(
-		R"(
-
-			func string main(string args){
-				return "123" + "456"
-			}
-
-		)",
-		""
-	);
-	interpreter_t vm(ast);
-	const auto f = find_global_symbol(vm, "main");
-	const auto result = call_function(vm, f, std::vector<value_t>{ value_t::make_string("program_name 1 2 3") });
-	ut_verify_values(QUARK_POS, result, value_t::make_string("123456"));
-}
-
-
 //////////////////////////////////////////		TEST CONSTRUCTOR FOR ALL TYPES
 
 
@@ -584,65 +566,37 @@ unsupported syntax
 
 
 QUARK_UNIT_TEST("call_function()", "define additional function, call it several times", "", ""){
-	auto ast = test_compile_to_bytecode(R"(
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
 
-		func int myfunc(){ return 5 }
-		func int main(string args){
-			return myfunc() + myfunc() * 2
-		}
+			func int myfunc(){ return 5 }
+			func int main(string args){
+				return myfunc() + myfunc() * 2
+			}
 
-	)",
-	"");
-	interpreter_t vm(ast);
-	const auto f = find_global_symbol(vm, "main");
-	const auto result = call_function(vm, f, std::vector<value_t>{ value_t::make_string("program_name 1 2 3") });
-	ut_verify_values(QUARK_POS, result, value_t::make_int(15));
+		)",
+		value_t::make_int(15)
+	);
 }
 
 QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
-	auto ast = test_compile_to_bytecode(R"(
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
 
-		func string main(string args){
-			return "-" + args + "-"
-		}
+			func string test(string args){
+				return "-" + args + "-"
+			}
 
-	)",
-	"");
-	interpreter_t vm(ast);
-	const auto f = find_global_symbol(vm, "main");
-	const auto result = call_function(vm, f, std::vector<value_t>{ value_t::make_string("xyz") });
-	ut_verify_values(QUARK_POS, result, value_t::make_string("-xyz-"));
-
-	const auto result2 = call_function(vm, f, std::vector<value_t>{ value_t::make_string("Hello, world!") });
-	ut_verify_values(QUARK_POS, result2, value_t::make_string("-Hello, world!-"));
+			let result = test("xyz");
+		)",
+		value_t::make_string("-xyz-")
+	);
 }
 
 
 //////////////////////////////////////////		USE LOCAL VARIABLES IN FUNCTION
-
-
-QUARK_UNIT_TEST("call_function()", "use local variables", "", ""){
-	auto ast = test_compile_to_bytecode(R"(
-
-		func string myfunc(string t){ return "<" + t + ">" }
-		func string main(string args){
-			 let string a = "--"
-			 let string b = myfunc(args)
-			 return a + args + b + a
-		}
-
-	)",
-	"");
-	interpreter_t vm(ast);
-	const auto f = find_global_symbol(vm, "main");
-	const auto result = call_function(vm, f, std::vector<value_t>{ value_t::make_string("xyz") });
-
-	ut_verify_values(QUARK_POS, result, value_t::make_string("--xyz<xyz>--"));
-
-	const auto result2 = call_function(vm, f, std::vector<value_t>{ value_t::make_string("123") });
-
-	ut_verify_values(QUARK_POS, result2, value_t::make_string("--123<123>--"));
-}
 
 
 //////////////////////////////////////////		MUTATE VARIABLES
@@ -4833,7 +4787,7 @@ b = 11
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "WHILE", "", ""){
 	//	Just make sure it compiles, don't run it!
-	test_compile_to_bytecode(R"(
+	ut_run_closed(R"(
 
 //	Snippets setup
 let expression = true
@@ -4844,7 +4798,8 @@ while(expression){
 }
 
 	)",
-	"");
+	compilation_unit_mode::k_no_core_lib
+	);
 }
 
 
