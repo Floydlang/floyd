@@ -168,9 +168,9 @@ bool check_invariant__function(const llvm::Function* f){
 
 	std::string dump;
 	llvm::raw_string_ostream stream2(dump);
+	stream2 << "================================================================================\n";
 	bool errors = llvm::verifyFunction(*f, &stream2);
 	if(errors){
-		stream2 << "\n";
 		f->print(stream2);
 
 		QUARK_TRACE_SS("\n" << dump);
@@ -723,6 +723,9 @@ llvm::Type* make_function_type(llvm::Module& module, const typeid_t& type){
 	args2.push_back(context_ptr);
 
 	for(const auto& arg: args){
+		QUARK_ASSERT(arg.is_undefined() == false);
+		QUARK_ASSERT(arg.is_void() == false);
+
 		auto arg_type = intern_type(module, arg);
 		args2.push_back(arg_type);
 		if(arg.is_internal_dynamic()){
@@ -1364,6 +1367,7 @@ llvm_execution_engine_t* get_floyd_runtime(void* floyd_runtime_ptr){
 void hook(const std::string& s, void* floyd_runtime_ptr, int64_t arg){
 	std:: cout << s << arg << " arg: " << std::endl;
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
+	throw std::runtime_error("HOST FUNCTION NOT IMPLEMENTED FOR LLVM");
 }
 
 std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, int64_t arg_type){
@@ -1448,7 +1452,13 @@ extern "C" {
 
 
 	extern void floyd_funcdef__assert(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+		auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+		bool ok = arg == 0 ? false : true;
+		if(!ok){
+			r->_print_output.push_back("Assertion failed.");
+			quark::throw_runtime_error("Floyd assertion failed.");
+		}
 	}
 
 	extern void floyd_host_function_1001(void* floyd_runtime_ptr, int64_t arg){
@@ -1711,6 +1721,9 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 				else if(arg2_type.is_int()){
 					args2.push_back(arg2);
 				}
+				else if(arg2_type.is_bool()){
+					args2.push_back(arg2);
+				}
 				else{
 					QUARK_ASSERT(false);
 				}
@@ -1941,6 +1954,7 @@ void llvmgen_block_statement(llvmgen_t& gen_acc, const statement_t::block_statem
 
 	auto values = genllvm_local_make_symbols(gen_acc, s._body._symbol_table);
 
+//??? Must flatten all references to the symbols too!
 	//	We append the block's local variables to the current BB.
 	auto& dest = gen_acc.emit_function->local_variable_symbols;
 	dest.insert(dest.end(), values.begin(), values.end());
@@ -2452,13 +2466,13 @@ std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> genllvm_al
 	return { std::move(module), gen_acc.function_defs };
 }
 
-std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(llvm_instance_t& instance, const semantic_ast_t& as0, const std::string& module_name){
+std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(llvm_instance_t& instance, const semantic_ast_t& ast0, const std::string& module_name){
 	QUARK_ASSERT(instance.check_invariant());
-	QUARK_ASSERT(as0.check_invariant());
+	QUARK_ASSERT(ast0.check_invariant());
 	QUARK_ASSERT(module_name.empty() == false);
-	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(as0)._value));
+	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast0)._value));
 
-	auto ast = expand_generics(as0);
+	auto ast = expand_generics(ast0);
 
 
 	auto result0 = genllvm_all(instance, module_name, ast);
@@ -2697,14 +2711,17 @@ int64_t run_llvm_program(llvm_instance_t& instance, llvm_ir_program_t& program_b
 
 std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instance, const std::string& program, const std::string& file){
 	QUARK_ASSERT(instance.check_invariant());
-	const auto pass3 = compile_to_sematic_ast__errors(program, file, compilation_unit_mode::k_no_core_lib);
+
+	const auto cu = floyd::make_compilation_unit_nolib(program, file);
+	const auto pass3 = compile_to_sematic_ast__errors(cu);
 	auto bc = generate_llvm_ir(instance, pass3, file);
 	return bc;
 }
 
 
 int64_t run_using_llvm_helper(const std::string& program_source, const std::string& file, const std::vector<floyd::value_t>& args){
-	const auto pass3 = compile_to_sematic_ast__errors(program_source, file, compilation_unit_mode::k_no_core_lib);
+	const auto cu = floyd::make_compilation_unit_nolib(program_source, file);
+	const auto pass3 = compile_to_sematic_ast__errors(cu);
 
 	llvm_instance_t instance;
 	auto program = generate_llvm_ir(instance, pass3, file);
@@ -2730,9 +2747,9 @@ int64_t run_using_llvm_helper(const std::string& program_source, const std::stri
 const std::string test_1_json = R"ABCD(
 {
 	"function_defs": [
-		[["func", "^void", ["^void"], true], [], null, 2002],
-		[["func", "^void", ["^void"], true], [], null, 2003],
-		[["func", "^void", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1000]
+		[["func", "^void", [], true], "func_a", [], null, 2002],
+		[["func", "^void", [], true], "func_b", [], null, 2003],
+		[["func", "^void", ["^**dyn**"], true], "func_c", [{ "name": "dummy", "type": "^**dyn**" }], null, 1000]
 	],
 	"globals": {
 		"statements": [[0, "store2", 0, 2, ["+", ["+", ["k", 1, "^int"], ["k", 2, "^int"], "^int"], ["k", 3, "^int"], "^int"]]],
@@ -2746,8 +2763,8 @@ const std::string test_1_json = R"ABCD(
 }
 ")ABCD";
 
-
-LLVM_TEST("", "From JSON: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
+#if 0
+LLVM_TEST_VIP("", "From JSON: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
 	std::pair<json_t, seq_t> a = parse_json(seq_t(test_1_json));
 
 	floyd::llvm_instance_t instance;
@@ -2760,11 +2777,13 @@ LLVM_TEST("", "From JSON: Check that floyd_runtime_init() runs and sets 'result'
 
 //	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
 }
+#endif
 
 LLVM_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
 //	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
 
-	const auto pass3 = compile_to_sematic_ast__errors("let int result = 1 + 2 + 3", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
+	const auto cu = floyd::make_compilation_unit_nolib("let int result = 1 + 2 + 3", "myfile.floyd");
+	const auto pass3 = compile_to_sematic_ast__errors(cu);
 
 	floyd::llvm_instance_t instance;
 	auto program = generate_llvm_ir(instance, pass3, "myfile.floyd");
@@ -2780,7 +2799,7 @@ LLVM_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'resul
 
 
 
-
+#if 0
 const std::string test_2_json = R"ABCD(
 {
 	"function_defs": [
@@ -2811,12 +2830,14 @@ LLVM_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_
 	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"6"});
 }
 #endif
+#endif
 
 #if 1
 //??? all external functions referenced from code must be defined or print() will return nullptr.
 //	BROKEN!
 LLVM_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
-	const auto pass3 = compile_to_sematic_ast__errors("print(5)", "myfile.floyd", floyd::compilation_unit_mode::k_no_core_lib);
+	const auto cu = floyd::make_compilation_unit_nolib("print(5)", "myfile.floyd");
+	const auto pass3 = compile_to_sematic_ast__errors(cu);
 
 	floyd::llvm_instance_t instance;
 	auto program = generate_llvm_ir(instance, pass3, "myfile.floyd");
@@ -2825,6 +2846,7 @@ LLVM_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_
 }
 #endif
 
+#if 0
 const std::string test_3_json = R"ABCD(
 
 {
@@ -3256,4 +3278,5 @@ LLVM_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_
 	auto ee = make_engine_run_init(instance, *program);
 	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"5"});
 }
+#endif
 
