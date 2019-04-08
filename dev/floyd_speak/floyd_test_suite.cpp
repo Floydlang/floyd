@@ -25,6 +25,20 @@
 
 using namespace floyd;
 
+/*
+unsupported syntax
+	"result = [int](1,2,3);",
+
+unsupported syntax
+	"result = [[int]]([1,2,3], [4,5,6]);",
+
+unsupported syntax
+	"struct pixel_t { int red; int green; int blue; } result = [pixel_t](pixel_t(1,2,3),pixel_t(4,5,6));",
+
+	R"(result = [{string: int}]({"a":1,"b":2,"c":3}, {"d":4,"e":5,"f":6});)",
+}
+*/
+//??? Decide if string is a simple type or composite-type. Move to the corresponding place in this source file.
 
 //??? Make namespace for bytecode interpreter and LLVM code: floyd, floyd_bc, floyd_llvm.
 //??? Run all container2 tests for LLVM too!
@@ -63,38 +77,61 @@ void ut_verify_exception_nolib(const quark::call_context_t& context, const std::
 
 
 
-//////////////////////////////////////////		TEST GLOBAL CONSTANTS
+//////////////////////////////////////////		DEFINE VARIABLE, SIMPLE TYPES
 
 
-QUARK_UNIT_TEST("Floyd test suite", "Global int variable", "", ""){
-	run_closed("{}");
-}
 
-QUARK_UNIT_TEST("Floyd test suite", "Global int variable", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Define variable", "int", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let int result = 123", value_t::make_int(123));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "bool constant expression", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Define variable", "bool", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true", value_t::make_bool(true));
 }
-QUARK_UNIT_TEST("Floyd test suite", "bool constant expression", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Define variable", "bool", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false", value_t::make_bool(false));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "int constant expression", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Define variable", "int", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let int result = 123", value_t::make_int(123));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "double constant expression", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Define variable", "double", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let double result = 3.5", value_t::make_double(double(3.5)));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "string constant expression", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Define variable", "string", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let string result = \"xyz\"", value_t::make_string("xyz"));
 }
 
+//	??? Add special error when local is not initialized.
+QUARK_UNIT_TEST("Floyd test suite", "Define variable", "Error: No initial assignment", "compiler error"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
 
-//////////////////////////////////////////		BASIC EXPRESSIONS
+			mutable string row
+
+		)",
+		R"___(Expected '=' character. Line: 3 "mutable string row")___"
+	);
+}
+QUARK_UNIT_TEST("Floyd test suite", "Define variable", "Error: assign to immutable local", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			let int a = 10
+			let int a = 11
+
+		)",
+		"Local identifier \"a\" already exists. Line: 4 \"let int a = 11\""
+	);
+}
+
+
+
+//////////////////////////////////////////		BASIC EXPRESSIONS, SIMPLE TYPES
 
 
 QUARK_UNIT_TEST("Floyd test suite", "+", "", "") {
@@ -111,15 +148,6 @@ QUARK_UNIT_TEST("Floyd test suite", "parant", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let int result = (3 * 4) * 5", value_t::make_int(60));
 }
 
-//??? test all types, like [int] etc.
-
-QUARK_UNIT_TEST("Floyd test suite", "Expression statement", "", ""){
-	ut_verify_printout_nolib(QUARK_POS, "print(5)", { "5" });
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "Infered bind", "", "") {
-	ut_verify_printout_nolib(QUARK_POS, "let a = 10;print(a)", {  "10" });
-}
 
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - CONDITIONAL EXPRESSION
@@ -138,6 +166,28 @@ QUARK_UNIT_TEST("Floyd test suite", "conditional expression", "", ""){
 }
 QUARK_UNIT_TEST("Floyd test suite", "conditional expression", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let string result = false ? \"yes\" : \"no\"", value_t::make_string("no"));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "conditional expression", "?:", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = true ? 4 : 6", value_t::make_int(4));
+}
+QUARK_UNIT_TEST("Floyd test suite", "conditional expression", "?:", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = false ? 4 : 6", value_t::make_int(6));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "conditional expression", "?:", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 1==3 ? 4 : 6", value_t::make_int(6));
+}
+QUARK_UNIT_TEST("Floyd test suite", "conditional expression", "?:", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 3==3 ? 4 : 6", value_t::make_int(4));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "conditional expression", "?:", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 3==3 ? 2 + 2 : 2 * 3", value_t::make_int(4));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "conditional expression", "?:", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 3==1+2 ? 2 + 2 : 2 * 3", value_t::make_int(4));
 }
 
 
@@ -176,7 +226,7 @@ QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "Spaces", ""){
 }
 
 
-//////////////////////////////////////////		BASIC EXPRESSIONS - double
+//////////////////////////////////////////		BASIC EXPRESSIONS - DOUBLE
 
 
 QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "Fractional numbers", "") {
@@ -225,31 +275,6 @@ QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "Bool", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false", value_t::make_bool(false));
 }
 
-
-//////////////////////////////////////////		BASIC EXPRESSIONS - CONDITIONAL EXPRESSION
-
-
-QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "?:", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = true ? 4 : 6", value_t::make_int(4));
-}
-QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "?:", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = false ? 4 : 6", value_t::make_int(6));
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "?:", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 1==3 ? 4 : 6", value_t::make_int(6));
-}
-QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "?:", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 3==3 ? 4 : 6", value_t::make_int(4));
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "?:", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 3==3 ? 2 + 2 : 2 * 3", value_t::make_int(4));
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "?:", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 3==1+2 ? 2 + 2 : 2 * 3", value_t::make_int(4));
-}
 
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR ==
@@ -410,10 +435,6 @@ QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "-true", "") {
 	);
 }
 
-
-//////////////////////////////////////////		MINIMAL PROGRAMS
-
-
 QUARK_UNIT_TEST("Floyd test suite", "Forgot let or mutable", "", "Exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
@@ -422,68 +443,8 @@ QUARK_UNIT_TEST("Floyd test suite", "Forgot let or mutable", "", "Exception"){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "Can make and read global int", "", ""){
-	ut_verify_mainfunc_return(
-		QUARK_POS,
-		R"(
 
-			let int test = 123
-			func int main(){
-				return test
-			}
-
-		)",
-		compilation_unit_mode::k_no_core_lib,
-		{},
-		value_t::make_int(123)
-	);
-}
-
-//AAA
-QUARK_UNIT_TEST("Floyd test suite", "Floyd test suite", "minimal program 2", ""){
-	ut_verify_mainfunc_return(
-		QUARK_POS,
-		R"(
-
-			func string main(string args){
-				return "123" + "456"
-			}
-
-		)",
-		compilation_unit_mode::k_no_core_lib,
-		std::vector<value_t>{value_t::make_string("")},
-		value_t::make_string("123456")
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "Floyd test suite", "", ""){
-	ut_verify_mainfunc_return(QUARK_POS, "func bool main(){ return 4 < 5 }", compilation_unit_mode::k_no_core_lib, {}, value_t::make_bool(true));
-}
-QUARK_UNIT_TEST("Floyd test suite", "Floyd test suite", "", ""){
-	ut_verify_mainfunc_return(QUARK_POS, "func bool main(){ return 5 < 4 }", compilation_unit_mode::k_no_core_lib, {}, value_t::make_bool(false));
-}
-QUARK_UNIT_TEST("Floyd test suite", "Floyd test suite", "", ""){
-	ut_verify_mainfunc_return(QUARK_POS, "func bool main(){ return 4 <= 4 }", compilation_unit_mode::k_no_core_lib, {}, value_t::make_bool(true));
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "call_function()", "minimal program", ""){
-	ut_verify_mainfunc_return(
-		QUARK_POS,
-		R"(
-
-			func int main(string args){
-				return 3 + 4
-			}
-
-		)",
-		compilation_unit_mode::k_no_core_lib,
-		{ value_t::make_string("a") },
-		value_t::make_int(7)
-	);
-}
-
-
-//////////////////////////////////////////		TEST CONSTRUCTOR FOR ALL TYPES
+//////////////////////////////////////////		TEST CONSTRUCTOR - SIMPLE TYPES
 
 
 QUARK_UNIT_TEST("Floyd test suite", "", "bool()", ""){
@@ -514,92 +475,18 @@ QUARK_UNIT_TEST("Floyd test suite", "", "string()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = string(\"ABCD\")", value_t::make_string("ABCD"));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "", "json_value()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = json_value(123)", value_t::make_json_value(json_t(123.0)));
-}
-QUARK_UNIT_TEST("Floyd test suite", "", "json_value()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = json_value(\"hello\")", value_t::make_json_value(json_t("hello")));
-}
-QUARK_UNIT_TEST("Floyd test suite", "", "json_value()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = json_value([1,2,3])", value_t::make_json_value(json_t::make_array({1,2,3})));
-}
-QUARK_UNIT_TEST("Floyd test suite", "", "pixel_t()", ""){
-	const auto pixel_t__def = std::vector<member_t>{
-		member_t(typeid_t::make_int(), "red"),
-		member_t(typeid_t::make_int(), "green"),
-		member_t(typeid_t::make_int(), "blue")
-	};
 
-	ut_verify_global_result_nolib(
-		QUARK_POS,
 
-		"struct pixel_t { int red int green int blue } result = pixel_t(1,2,3)",
 
-		value_t::make_struct_value(
-			typeid_t::make_struct2(pixel_t__def),
-			std::vector<value_t>{ value_t::make_int(1), value_t::make_int(2), value_t::make_int(3) }
-		)
-	);
+//////////////////////////////////////////		HOST FUNCTION - print()
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "Expression statement", "", ""){
+	ut_verify_printout_nolib(QUARK_POS, "print(5)", { "5" });
 }
 
-/*
-unsupported syntax
-	"result = [int](1,2,3);",
-
-unsupported syntax
-	"result = [[int]]([1,2,3], [4,5,6]);",
-
-unsupported syntax
-	"struct pixel_t { int red; int green; int blue; } result = [pixel_t](pixel_t(1,2,3),pixel_t(4,5,6));",
-
-	R"(result = [{string: int}]({"a":1,"b":2,"c":3}, {"d":4,"e":5,"f":6});)",
-}
-*/
-
-
-//////////////////////////////////////////		CALL FUNCTIONS
-
-
-QUARK_UNIT_TEST("Floyd test suite", "call_function()", "define additional function, call it several times", ""){
-	ut_verify_mainfunc_return(
-		QUARK_POS,
-		R"(
-
-			func int myfunc(){ return 5 }
-			func int main(string args){
-				return myfunc() + myfunc() * 2
-			}
-
-		)",
-		compilation_unit_mode::k_no_core_lib,
-		{ value_t::make_string("dummy-arg") },
-		value_t::make_int(15)
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "call_function()", "use function inputs", ""){
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-		R"(
-
-			func string test(string args){
-				return "-" + args + "-"
-			}
-
-			let result = test("xyz");
-		)",
-		value_t::make_string("-xyz-")
-	);
-}
-
-
-//////////////////////////////////////////		USE LOCAL VARIABLES IN FUNCTION
-
-
-//////////////////////////////////////////		MUTATE VARIABLES
-
-
-QUARK_UNIT_TEST("Floyd test suite", "call_function()", "local variable without let", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Call print()", "local variable without let", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -612,12 +499,29 @@ QUARK_UNIT_TEST("Floyd test suite", "call_function()", "local variable without l
 	);
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "print() supports ints and strings", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+			print("Hello, world!")
+			print(123)
+		)",
+		{ "Hello, world!", "123" }
+	);
+}
+
+
+
+
+
+
+
 
 
 //////////////////////////////////////////		MUTATE VARIABLES
 
 
-QUARK_UNIT_TEST("Floyd test suite", "call_function()", "mutate local", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Mutate", "mutate local", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -631,7 +535,7 @@ QUARK_UNIT_TEST("Floyd test suite", "call_function()", "mutate local", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "increment a mutable", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Mutate", "increment a mutable", "OK"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -645,7 +549,7 @@ QUARK_UNIT_TEST("Floyd test suite", "increment a mutable", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "Floyd test suite", "test locals are immutable", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Mutate", "Store to immutable", "compiler error"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -658,84 +562,37 @@ QUARK_UNIT_TEST("Floyd test suite", "Floyd test suite", "test locals are immutab
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "Floyd test suite", "test function args are always immutable", ""){
+
+
+
+
+//////////////////////////////////////////		HOST FUNCTION - assert()
+
+//??? add file + line to Floyd's asserts
+QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
 
-			func int f(int x){
-				x = 6
-			}
-			f(5)
+			assert(1 == 2)
 
 		)",
-		"Cannot assign to immutable identifier \"x\". Line: 4 \"x = 6\""
+		"Floyd assertion failed."
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "test reading from subscope", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
 
-			mutable a = 7
-			a = 8
-			{
-				print(a)
-			}
+			assert(1 == 1)
+			print("A")
 
 		)",
-		{ "8" }
+		{ "A" }
 	);
 }
-
-QUARK_UNIT_TEST("Floyd test suite", "test mutating from a subscope", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			let a = 7
-			print(a)
-
-		)",
-		{ "7" }
-	);
-}
-
-
-QUARK_UNIT_TEST("Floyd test suite", "test mutating from a subscope", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			let a = 7
-			{
-			}
-			print(a)
-
-		)",
-		{ "7" }
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "test mutating from a subscope", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			mutable a = 7
-			{
-				a = 8
-			}
-			print(a)
-
-		)",
-		{ "8" }
-	);
-}
-
-
-
 
 //////////////////////////////////////////		HOST FUNCTION - to_string()
 
@@ -773,125 +630,348 @@ QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
 }
 
 
-//////////////////////////////////////////		HOST FUNCTION - typeof()
+
+//////////////////////////////////////////		IMPLEMENT MAIN()
 
 
-QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "main() - Can make and read global int", "", ""){
+	ut_verify_mainfunc_return(
+		QUARK_POS,
+		R"(
+
+			let int test = 123
+			func int main(){
+				return test
+			}
+
+		)",
+		compilation_unit_mode::k_no_core_lib,
+		{},
+		value_t::make_int(123)
+	);
+}
+
+//AAA
+QUARK_UNIT_TEST("Floyd test suite", "main()", "minimal program 2", ""){
+	ut_verify_mainfunc_return(
+		QUARK_POS,
+		R"(
+
+			func string main(string args){
+				return "123" + "456"
+			}
+
+		)",
+		compilation_unit_mode::k_no_core_lib,
+		std::vector<value_t>{value_t::make_string("")},
+		value_t::make_string("123456")
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "main()", "", ""){
+	ut_verify_mainfunc_return(QUARK_POS, "func bool main(){ return 4 < 5 }", compilation_unit_mode::k_no_core_lib, {}, value_t::make_bool(true));
+}
+QUARK_UNIT_TEST("Floyd test suite", "main()", "", ""){
+	ut_verify_mainfunc_return(QUARK_POS, "func bool main(){ return 5 < 4 }", compilation_unit_mode::k_no_core_lib, {}, value_t::make_bool(false));
+}
+QUARK_UNIT_TEST("Floyd test suite", "main()", "", ""){
+	ut_verify_mainfunc_return(QUARK_POS, "func bool main(){ return 4 <= 4 }", compilation_unit_mode::k_no_core_lib, {}, value_t::make_bool(true));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "main()", "minimal program", ""){
+	ut_verify_mainfunc_return(
+		QUARK_POS,
+		R"(
+
+			func int main(string args){
+				return 3 + 4
+			}
+
+		)",
+		compilation_unit_mode::k_no_core_lib,
+		{ value_t::make_string("a") },
+		value_t::make_int(7)
+	);
+}
+
+
+
+
+//////////////////////////////////////////		func
+
+
+QUARK_UNIT_TEST("Floyd test suite", "func", "define additional function, call it several times", ""){
+	ut_verify_mainfunc_return(
+		QUARK_POS,
+		R"(
+
+			func int myfunc(){ return 5 }
+			func int main(string args){
+				return myfunc() + myfunc() * 2
+			}
+
+		)",
+		compilation_unit_mode::k_no_core_lib,
+		{ value_t::make_string("dummy-arg") },
+		value_t::make_int(15)
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "func", "use function inputs", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
 
-			let result = typeof(145)
+			func string test(string args){
+				return "-" + args + "-"
+			}
 
+			let result = test("xyz");
 		)",
-		value_t::make_typeid_value(typeid_t::make_int())
+		value_t::make_string("-xyz-")
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
-	const auto input = R"(
 
-		let result = to_string(typeof(145))
-
-	)";
-	ut_verify_global_result_nolib(QUARK_POS, input, value_t::make_string("int"));
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
-	const auto input = R"(
-
-		let result = typeof("hello")
-
-	)";
-	ut_verify_global_result_nolib(QUARK_POS, input, value_t::make_typeid_value(typeid_t::make_string()));
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-		R"(
-
-			let result = to_string(typeof("hello"))
-
-		)",
-		value_t::make_string("string")
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-		R"(
-
-			let result = typeof([1,2,3])
-
-		)",
-		value_t::make_typeid_value(typeid_t::make_vector(typeid_t::make_int()))
-	);
-}
-QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-		R"(
-
-			let result = to_string(typeof([1,2,3]))
-
-		)",
-		value_t::make_string("[int]")
-	);
-}
-
-#if 0
-//??? add support for typeof(int)
-QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-		R"(
-
-			let result = to_string(typeof(int));
-
-		)",
-		value_t::make_string("int")
-	);
-}
-#endif
-
-
-//////////////////////////////////////////		HOST FUNCTION - assert()
-
-//??? add file + line to Floyd's asserts
-QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "func", "test function args are always immutable", ""){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
 
-			assert(1 == 2)
+			func int f(int x){
+				x = 6
+			}
+			f(5)
 
 		)",
-		"Floyd assertion failed."
+		"Cannot assign to immutable identifier \"x\". Line: 4 \"x = 6\""
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "func", "Recursion: function calling itself by name", ""){
+	run_closed(
+		R"(
+
+			func int fx(int a){
+				return fx(a + 1)
+			}
+
+		)"
+	);
+}
+
+
+
+
+//////////////////////////////////////////		RETURN STATEMENT - ADVANCED USAGE
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "return", "return from middle of function", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
 
-			assert(1 == 1)
-			print("A")
+			func string f(){
+				print("A")
+				return "B"
+				print("C")
+				return "D"
+			}
+			let string x = f()
+			print(x)
 
 		)",
-		{ "A" }
+		{ "A", "B" }
 	);
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "return", "return from within IF block", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func string f(){
+				if(true){
+					print("A")
+					return "B"
+					print("C")
+				}
+				print("D")
+				return "E"
+			}
+			let string x = f()
+			print(x)
+
+		)",
+		{ "A", "B" }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "return", "return from within FOR block", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func string f(){
+				for(e in 0...3){
+					print("A")
+					return "B"
+					print("C")
+				}
+				print("D")
+				return "E"
+			}
+			let string x = f()
+			print(x)
+
+		)",
+		{ "A", "B" }
+	);
+}
+
+// ??? add test for: return from ELSE
+
+QUARK_UNIT_TEST("Floyd test suite", "return", "return from within BLOCK", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func string f(){
+				{
+					print("A")
+					return "B"
+					print("C")
+				}
+				print("D")
+				return "E"
+			}
+			let string x = f()
+			print(x)
+
+		)",
+		{ "A", "B" }
+	);
+}
+
+
+QUARK_UNIT_TEST("Floyd test suite", "return", "Make sure returning wrong type => error", ""){
+	try {
+	test_run_container2(R"(
+
+func int f(){
+	return "x"
+}
+
+	)", {}, "", "");
+
+
+	}
+	catch(const std::runtime_error& e){
+		ut_verify(QUARK_POS, e.what(), "Expression type mismatch - cannot convert 'string' to 'int. Line: 4 \"return \"x\"\"");
+	}
+}
+
+
+
+
+
+
+///////////////////////////////////////////////////			PURE & IMPURE FUNCTIONS
+
+
+//??? It IS OK to call impure functions from a pure function:
+//		1. The impure function modifies a local value only -- cannot leak out.
+
+QUARK_UNIT_TEST("Floyd test suite", "impure", "call pure->pure", "Compiles OK"){
+	run_closed(R"(
+
+		func int a(int p){ return p + 1 }
+		func int b(){ return a(100) }
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "impure", "call impure->pure", "Compiles OK"){
+	run_closed(R"(
+
+		func int a(int p){ return p + 1 }
+		func int b() impure { return a(100) }
+
+	)");
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "impure", "call pure->impure", "Compilation error"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			func int a(int p) impure { return p + 1 }
+			func int b(){ return a(100) }
+
+		)",
+		"Cannot call impure function from a pure function. Line: 4 \"func int b(){ return a(100) }\""
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "impure", "call impure->impure", "Compiles OK"){
+	run_closed(R"(
+
+		func int a(int p) impure { return p + 1 }
+		func int b() impure { return a(100) }
+
+	)");
+}
+
+
+
+
+
+//////////////////////////////////////////		Comments
+
+
+QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			//	XYZ
+			print("Hello")
+
+		)",
+		{ "Hello" }
+	);
+}
+
+QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			print("Hello")		//	XYZ
+
+		)",
+		{ "Hello" }
+	);
+}
+
+QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			print("Hello")/* xyz */print("Bye")
+
+		)",
+		{ "Hello", "Bye" }
+	);
+}
 
 
 
 //////////////////////////////////////////		BLOCK & SCOPES & LOCALS
 
 
-QUARK_UNIT_TEST("Floyd test suite", "Empty block", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Scopes: Empty block", "", ""){
 	run_closed(
 
 		"{}"
@@ -899,7 +979,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Empty block", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "Block with local variable, no shadowing", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Scopes: Block with local variable, no shadowing", "", ""){
 	run_closed(
 
 		"{ let int x = 4 }"
@@ -908,8 +988,68 @@ QUARK_UNIT_TEST("Floyd test suite", "Block with local variable, no shadowing", "
 }
 
 
+QUARK_UNIT_TEST("Floyd test suite", "Scopes: test reading from subscope", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
 
-QUARK_UNIT_TEST("run_init", "Global block scopes, shadowing or not", "", ""){
+			mutable a = 7
+			a = 8
+			{
+				print(a)
+			}
+
+		)",
+		{ "8" }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "Scopes: test mutating from a subscope", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = 7
+			print(a)
+
+		)",
+		{ "7" }
+	);
+}
+
+
+QUARK_UNIT_TEST("Floyd test suite", "Scopes: test scope ends", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = 7
+			{
+			}
+			print(a)
+
+		)",
+		{ "7" }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "Scopes: test mutating from a subscope", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			mutable a = 7
+			{
+				a = 8
+			}
+			print(a)
+
+		)",
+		{ "8" }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "Scopes: Global block scopes, shadowing or not", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -941,7 +1081,7 @@ QUARK_UNIT_TEST("run_init", "Global block scopes, shadowing or not", "", ""){
 }
 
 //???FAIL
-QUARK_UNIT_TEST("run_init", "Function arguments & locals & blocks vs globals, shadowing or not", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Scopes: Function arguments & locals & blocks vs globals, shadowing or not", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1006,7 +1146,7 @@ QUARK_UNIT_TEST("run_init", "Function arguments & locals & blocks vs globals, sh
 }
 
 //???FAIL
-QUARK_UNIT_TEST("run_init", "All block scopes, shadowing or not", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Scopes: All block scopes, shadowing or not", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1086,12 +1226,36 @@ QUARK_UNIT_TEST("run_init", "All block scopes, shadowing or not", "", ""){
 	);
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "Scopes: Make sure a function can access global independent on how it's called in callstack", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let int x = 13
+
+			func int add(bool t){
+				if(t == false){
+					return x + 1
+				}
+				else{
+					return add(false) + 1000
+				}
+			}
+
+			print(x)
+			print(add(false))
+			print(add(true))
+
+		)",
+		{ "13", "14", "1014" }
+	);
+}
 
 
 //////////////////////////////////////////		IF STATEMENT
 
 
-QUARK_UNIT_TEST("Floyd test suite", "if(true){}", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "if", "if(true){}", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1106,7 +1270,7 @@ QUARK_UNIT_TEST("Floyd test suite", "if(true){}", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "if(false){}", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "if", "if(false){}", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1121,7 +1285,7 @@ QUARK_UNIT_TEST("Floyd test suite", "if(false){}", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "run_init()", "if(true){}else{}", ""){
+QUARK_UNIT_TEST("Floyd test suite", "if", "if(true){}else{}", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1138,7 +1302,7 @@ QUARK_UNIT_TEST("Floyd test suite", "run_init()", "if(true){}else{}", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "if(false){}else{}", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "if", "if(false){}else{}", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1247,47 +1411,26 @@ QUARK_UNIT_TEST("Floyd test suite", "if", "", ""){
 	);
 }
 
-
-QUARK_UNIT_TEST("Floyd test suite", "function calling itself by name", "", ""){
-	run_closed(
-		R"(
-
-			func int fx(int a){
-				return fx(a + 1)
-			}
-
-		)"
-	);
-}
-
-
-QUARK_UNIT_TEST("Floyd test suite", "Make sure a function can access global independent on how it's called in callstack", "", ""){
-	ut_verify_printout_nolib(
+QUARK_UNIT_TEST("Floyd test suite", "if", "Error: if with non-bool expression", "exception"){
+	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
 
-			let int x = 13
-
-			func int add(bool t){
-				if(t == false){
-					return x + 1
-				}
-				else{
-					return add(false) + 1000
-				}
+			if("not a bool"){
+			}
+			else{
+				assert(false)
 			}
 
-			print(x)
-			print(add(false))
-			print(add(true))
-
 		)",
-		{ "13", "14", "1014" }
+		"Boolean condition required. Line: 3 \"if(\"not a bool\"){\""
 	);
 }
 
 
+
 //////////////////////////////////////////		FOR STATEMENT
+
 
 
 QUARK_UNIT_TEST("Floyd test suite", "for", "", ""){
@@ -1362,7 +1505,7 @@ QUARK_UNIT_TEST("Floyd test suite", "fibonacci", "", ""){
 
 //	Parser thinks that "print(to_string(a))" is a type -- a function that returns a "print" and takes a function that returns a to_string and has a argument of type a.
 #if 0
-QUARK_UNIT_TEST("Floyd test suite", "for", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "while", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1380,9 +1523,98 @@ QUARK_UNIT_TEST("Floyd test suite", "for", "", ""){
 #endif
 
 
+
+
 //////////////////////////////////////////		TYPEID - TYPE
 
 //	??? Test converting different types to jsons
+
+
+
+//////////////////////////////////////////		HOST FUNCTION - typeof()
+
+
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			let result = typeof(145)
+
+		)",
+		value_t::make_typeid_value(typeid_t::make_int())
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+	const auto input = R"(
+
+		let result = to_string(typeof(145))
+
+	)";
+	ut_verify_global_result_nolib(QUARK_POS, input, value_t::make_string("int"));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+	const auto input = R"(
+
+		let result = typeof("hello")
+
+	)";
+	ut_verify_global_result_nolib(QUARK_POS, input, value_t::make_typeid_value(typeid_t::make_string()));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			let result = to_string(typeof("hello"))
+
+		)",
+		value_t::make_string("string")
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			let result = typeof([1,2,3])
+
+		)",
+		value_t::make_typeid_value(typeid_t::make_vector(typeid_t::make_int()))
+	);
+}
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			let result = to_string(typeof([1,2,3]))
+
+		)",
+		value_t::make_string("[int]")
+	);
+}
+
+#if 0
+//??? add support for typeof(int)
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			let result = to_string(typeof(int));
+
+		)",
+		value_t::make_string("int")
+	);
+}
+#endif
+
+
 
 
 //////////////////////////////////////////		NULL - TYPE
@@ -1408,14 +1640,14 @@ QUARK_UNIT_TEST("null", "", "", "0"){
 
 //??? add tests for equality.
 
-QUARK_UNIT_TEST("string", "[]", "string", "0"){
+QUARK_UNIT_TEST("Floyd test suite", "string []", "string", "0"){
 	run_closed(R"(
 
 		assert("hello"[0] == 104)
 
 	)");
 }
-QUARK_UNIT_TEST("string", "[]", "string", "0"){
+QUARK_UNIT_TEST("Floyd test suite", "string []", "string", "0"){
 	run_closed(R"(
 
 		assert("hello"[4] == 111)
@@ -1423,14 +1655,14 @@ QUARK_UNIT_TEST("string", "[]", "string", "0"){
 	)");
 }
 
-QUARK_UNIT_TEST("string", "size()", "string", "0"){
+QUARK_UNIT_TEST("Floyd test suite", "string size()", "string", "0"){
 	run_closed(R"(
 
 		assert(size("") == 0)
 
 	)");
 }
-QUARK_UNIT_TEST("string", "size()", "string", "24"){
+QUARK_UNIT_TEST("Floyd test suite", "string size()", "string", "24"){
 	run_closed(R"(
 
 		assert(size("How long is this string?") == 24)
@@ -1438,7 +1670,7 @@ QUARK_UNIT_TEST("string", "size()", "string", "24"){
 	)");
 }
 
-QUARK_UNIT_TEST("string", "push_back()", "string", "correct final vector"){
+QUARK_UNIT_TEST("Floyd test suite", "string push_back()", "string", "correct final vector"){
 	run_closed(R"(
 
 		a = push_back("one", 111)
@@ -1447,7 +1679,7 @@ QUARK_UNIT_TEST("string", "push_back()", "string", "correct final vector"){
 	)");
 }
 
-QUARK_UNIT_TEST("string", "update()", "string", "correct final string"){
+QUARK_UNIT_TEST("Floyd test suite", "string update()", "string", "correct final string"){
 	run_closed(R"(
 
 		a = update("hello", 1, 98)
@@ -1457,7 +1689,7 @@ QUARK_UNIT_TEST("string", "update()", "string", "correct final string"){
 }
 
 
-QUARK_UNIT_TEST("string", "subset()", "string", "correct final vector"){
+QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", "correct final vector"){
 	run_closed(R"(
 
 		assert(subset("abc", 0, 3) == "abc")
@@ -1467,7 +1699,7 @@ QUARK_UNIT_TEST("string", "subset()", "string", "correct final vector"){
 	)");
 }
 
-QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
+QUARK_UNIT_TEST("Floyd test suite", "string replace()", "combo", ""){
 	run_closed(R"(
 
 		assert(replace("One ring to rule them all", 4, 8, "rabbit") == "One rabbit to rule them all")
@@ -1483,7 +1715,7 @@ QUARK_UNIT_TEST("vector", "replace()", "combo", ""){
 
 
 
-QUARK_UNIT_TEST("vector", "[]-constructor", "Infer type", "valid vector"){
+QUARK_UNIT_TEST("Floyd test suite", "vector []-constructor", "Infer type", "valid vector"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1496,7 +1728,7 @@ QUARK_UNIT_TEST("vector", "[]-constructor", "Infer type", "valid vector"){
 	);
 }
 
-QUARK_UNIT_TEST("vector", "[]-constructor", "cannot be infered", "error"){
+QUARK_UNIT_TEST("Floyd test suite", "vector []-constructor", "cannot be infered", "error"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -1509,7 +1741,7 @@ QUARK_UNIT_TEST("vector", "[]-constructor", "cannot be infered", "error"){
 	);
 }
 
-QUARK_UNIT_TEST("vector", "explit bind, is []", "Infer type", "valid vector"){
+QUARK_UNIT_TEST("Floyd test suite", "vector explit bind, is []", "Infer type", "valid vector"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1522,7 +1754,7 @@ QUARK_UNIT_TEST("vector", "explit bind, is []", "Infer type", "valid vector"){
 	);
 }
 
-QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
+QUARK_UNIT_TEST("Floyd test suite", "vector ", "empty vector", "valid vector"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1536,7 +1768,7 @@ QUARK_UNIT_TEST("vector", "", "empty vector", "valid vector"){
 }
 
 //	We could support this if we had special type for empty-vector and empty-dict.
-QUARK_UNIT_TEST("vector", "==", "lhs and rhs are empty-typeless", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector ==", "lhs and rhs are empty-typeless", ""){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -1548,7 +1780,7 @@ QUARK_UNIT_TEST("vector", "==", "lhs and rhs are empty-typeless", ""){
 	);
 }
 
-QUARK_UNIT_TEST("vector", "+", "add empty vectors", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector +", "add empty vectors", ""){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -1562,7 +1794,7 @@ QUARK_UNIT_TEST("vector", "+", "add empty vectors", ""){
 
 #if 0
 //??? This fails but should not. This code becomes a constructor call to [int] with more than 16 arguments. Byte code interpreter has 16 argument limit.
-QUARK_UNIT_TEST("vector", "[]-constructor", "32 elements initialization", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector []-constructor", "32 elements initialization", ""){
 	run_closed(R"(
 
 		let a = [ 0,0,1,1,0,0,0,0,	0,0,1,1,0,0,0,0,	0,0,1,1,1,0,0,0,	0,0,1,1,1,1,0,0 ]
@@ -1573,12 +1805,7 @@ QUARK_UNIT_TEST("vector", "[]-constructor", "32 elements initialization", ""){
 #endif
 
 
-
-
-//////////////////////////////////////////		vector-string
-
-
-QUARK_UNIT_TEST("vector-string", "literal expression", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<string> literal expression", "", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(
@@ -1590,7 +1817,7 @@ QUARK_UNIT_TEST("vector-string", "literal expression", "", ""){
 		R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-string", "literal expression, computed element", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<string> literal expression, computed element", "", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		func string get_beta(){ return "beta" } 	let [string] result = ["alpha", get_beta()]		)",
@@ -1599,7 +1826,7 @@ QUARK_UNIT_TEST("vector-string", "literal expression, computed element", "", "")
 	);
 }
 
-QUARK_UNIT_TEST("vector-string", "=", "copy", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<string> =", "copy", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1615,7 +1842,7 @@ QUARK_UNIT_TEST("vector-string", "=", "copy", ""){
 	);
 }
 
-QUARK_UNIT_TEST("vector-string", "==", "same values", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<string> ==", "same values", ""){
 	run_closed(R"(
 
 		assert((["one", "two"] == ["one", "two"]) == true)
@@ -1623,7 +1850,7 @@ QUARK_UNIT_TEST("vector-string", "==", "same values", ""){
 	)");
 }
 
-QUARK_UNIT_TEST("vector-string", "==", "different values", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<string> ==", "different values", ""){
 	run_closed(R"(
 
 		assert((["one", "three"] == ["one", "two"]) == false)
@@ -1631,7 +1858,7 @@ QUARK_UNIT_TEST("vector-string", "==", "different values", ""){
 	)");
 }
 
-QUARK_UNIT_TEST("vector-string", "<", "same values", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<string> <", "same values", ""){
 	run_closed(R"(
 
 		assert((["one", "two"] < ["one", "two"]) == false)
@@ -1639,14 +1866,14 @@ QUARK_UNIT_TEST("vector-string", "<", "same values", ""){
 	)");
 }
 
-QUARK_UNIT_TEST("vector-string", "<", "different values", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<string> <", "different values", ""){
 	run_closed(R"(
 
 		assert((["one", "a"] < ["one", "two"]) == true)
 
 	)");
 }
-QUARK_UNIT_TEST("vector-string", "size()", "empty", "0"){
+QUARK_UNIT_TEST("Floyd test suite", "vector<string> size()", "empty", "0"){
 	run_closed(R"(
 
 		let [string] a = []
@@ -1654,7 +1881,7 @@ QUARK_UNIT_TEST("vector-string", "size()", "empty", "0"){
 
 	)");
 }
-QUARK_UNIT_TEST("vector-string", "size()", "2", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<string> size()", "2", ""){
 	run_closed(R"(
 
 		let [string] a = ["one", "two"]
@@ -1662,7 +1889,7 @@ QUARK_UNIT_TEST("vector-string", "size()", "2", ""){
 
 	)");
 }
-QUARK_UNIT_TEST("vector-string", "+", "non-empty vectors", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<string> +", "non-empty vectors", ""){
 	run_closed(R"(
 
 		let [string] a = ["one"] + ["two"]
@@ -1670,7 +1897,7 @@ QUARK_UNIT_TEST("vector-string", "+", "non-empty vectors", ""){
 
 	)");
 }
-QUARK_UNIT_TEST("vector-string", "push_back()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<string> push_back()", "", ""){
 	run_closed(R"(
 
 		let [string] a = push_back(["one"], "two")
@@ -1683,7 +1910,7 @@ QUARK_UNIT_TEST("vector-string", "push_back()", "", ""){
 //////////////////////////////////////////		vector-bool
 
 
-QUARK_UNIT_TEST("vector-bool", "literal expression", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<bool> literal expression", "", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let [bool] result = [true, false, true]		)",
@@ -1691,7 +1918,7 @@ QUARK_UNIT_TEST("vector-bool", "literal expression", "", ""){
 		R"(		[[ "vector", "^bool" ], [true, false, true]]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-bool", "=", "copy", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<bool> =", "copy", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let a = [true, false, true] result = a		)",
@@ -1699,7 +1926,7 @@ QUARK_UNIT_TEST("vector-bool", "=", "copy", ""){
 		R"(		[[ "vector", "^bool" ], [true, false, true]]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-bool", "==", "same values", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<bool> ==", "same values", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let result = [true, false] == [true, false]		)",
@@ -1707,7 +1934,7 @@ QUARK_UNIT_TEST("vector-bool", "==", "same values", ""){
 		R"(		[ "^bool", true]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-bool", "==", "different values", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<bool> ==", "different values", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let result = [false, false] == [true, false]		)",
@@ -1715,7 +1942,7 @@ QUARK_UNIT_TEST("vector-bool", "==", "different values", ""){
 		R"(		[ "^bool", false]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-bool", "<", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<bool> <", "", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let result = [true, true] < [true, true]		)",
@@ -1723,7 +1950,7 @@ QUARK_UNIT_TEST("vector-bool", "<", "", ""){
 		R"(		[ "^bool", false]	)"
 	);
 }
-QUARK_UNIT_TEST("vector-bool", "<", "different values", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<bool> <", "different values", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let result = [true, false] < [true, true]		)",
@@ -1731,14 +1958,14 @@ QUARK_UNIT_TEST("vector-bool", "<", "different values", ""){
 		R"(		[ "^bool", true]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-bool", "size()", "empty", "0"){
+QUARK_UNIT_TEST("Floyd test suite", "vector<bool> size()", "empty", "0"){
 	ut_verify_global_result_as_json(
 		QUARK_POS, R"(		let [bool] a = [] result = size(a)		)",
 		compilation_unit_mode::k_no_core_lib,
 		R"(		[ "^int", 0]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-bool", "size()", "2", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<bool> size()", "2", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let [bool] a = [true, false, true] result = size(a)		)",
@@ -1746,7 +1973,7 @@ QUARK_UNIT_TEST("vector-bool", "size()", "2", ""){
 		R"(		[ "^int", 3]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-bool", "+", "non-empty vectors", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<bool> +", "non-empty vectors", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let [bool] result = [true, false] + [true, true]		)",
@@ -1754,7 +1981,7 @@ QUARK_UNIT_TEST("vector-bool", "+", "non-empty vectors", ""){
 		R"(		[[ "vector", "^bool" ], [true, false, true, true]]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-bool", "push_back()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<bool> push_back()", "", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let [bool] result = push_back([true, false], true)		)",
@@ -1767,7 +1994,7 @@ QUARK_UNIT_TEST("vector-bool", "push_back()", "", ""){
 //////////////////////////////////////////		vector-int
 
 
-QUARK_UNIT_TEST("vector-int", "literal expression", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<int> literal expression", "", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let [int] result = [10, 20, 30]		)",
@@ -1775,7 +2002,7 @@ QUARK_UNIT_TEST("vector-int", "literal expression", "", ""){
 		R"(		[[ "vector", "^int" ], [10, 20, 30]]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-int", "=", "copy", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<int> =", "copy", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let a = [10, 20, 30] result = a;		)",
@@ -1783,7 +2010,7 @@ QUARK_UNIT_TEST("vector-int", "=", "copy", ""){
 		R"(		[[ "vector", "^int" ], [10, 20, 30]]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-int", "==", "same values", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<int> ==", "same values", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let result = [1, 2] == [1, 2]		)",
@@ -1791,7 +2018,7 @@ QUARK_UNIT_TEST("vector-int", "==", "same values", ""){
 		R"(		[ "^bool", true]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-int", "==", "different values", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<int> ==", "different values", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let result = [1, 3] == [1, 2]		)",
@@ -1799,7 +2026,7 @@ QUARK_UNIT_TEST("vector-int", "==", "different values", ""){
 		R"(		[ "^bool", false]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-int", "<", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<int> <", "", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let result = [1, 2] < [1, 2]		)",
@@ -1807,7 +2034,7 @@ QUARK_UNIT_TEST("vector-int", "<", "", ""){
 		R"(		[ "^bool", false]	)"
 	);
 }
-QUARK_UNIT_TEST("vector-int", "<", "different values", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<int> <", "different values", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let result = [1, 2] < [1, 3]		)",
@@ -1815,7 +2042,7 @@ QUARK_UNIT_TEST("vector-int", "<", "different values", ""){
 		R"(		[ "^bool", true]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-int", "size()", "empty", "0"){
+QUARK_UNIT_TEST("Floyd test suite", "vector<int> size()", "empty", "0"){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let [int] a = [] result = size(a)		)",
@@ -1823,7 +2050,7 @@ QUARK_UNIT_TEST("vector-int", "size()", "empty", "0"){
 		R"(		[ "^int", 0]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-int", "size()", "2", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<int> size()", "2", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let [int] a = [1, 2, 3] result = size(a)		)",
@@ -1831,7 +2058,7 @@ QUARK_UNIT_TEST("vector-int", "size()", "2", ""){
 		R"(		[ "^int", 3]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-int", "+", "non-empty vectors", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<int> +", "non-empty vectors", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let [int] result = [1, 2] + [3, 4]		)",
@@ -1839,7 +2066,7 @@ QUARK_UNIT_TEST("vector-int", "+", "non-empty vectors", ""){
 		R"(		[[ "vector", "^int" ], [1, 2, 3, 4]]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-int", "push_back()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<int> push_back()", "", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let [int] result = push_back([1, 2], 3)		)",
@@ -1852,7 +2079,7 @@ QUARK_UNIT_TEST("vector-int", "push_back()", "", ""){
 //////////////////////////////////////////		vector-double
 
 
-QUARK_UNIT_TEST("vector-double", "literal expression", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<double> literal expression", "", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let [double] result = [10.5, 20.5, 30.5]		)",
@@ -1860,7 +2087,7 @@ QUARK_UNIT_TEST("vector-double", "literal expression", "", ""){
 		R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-double", "=", "copy", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<double> =", "copy", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let a = [10.5, 20.5, 30.5] result = a		)",
@@ -1868,7 +2095,7 @@ QUARK_UNIT_TEST("vector-double", "=", "copy", ""){
 		R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-double", "==", "same values", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<double> ==", "same values", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let result = [1.5, 2.5] == [1.5, 2.5]		)",
@@ -1876,7 +2103,7 @@ QUARK_UNIT_TEST("vector-double", "==", "same values", ""){
 		R"(		[ "^bool", true]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-double", "==", "different values", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<double> ==", "different values", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let result = [1.5, 3.5] == [1.5, 2.5]		)",
@@ -1884,7 +2111,7 @@ QUARK_UNIT_TEST("vector-double", "==", "different values", ""){
 		R"(		[ "^bool", false]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-double", "<", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<double> <", "", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let result = [1.5, 2.5] < [1.5, 2.5]		)",
@@ -1892,7 +2119,7 @@ QUARK_UNIT_TEST("vector-double", "<", "", ""){
 		R"(		[ "^bool", false]	)"
 	);
 }
-QUARK_UNIT_TEST("vector-double", "<", "different values", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<double> <", "different values", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let result = [1.5, 2.5] < [1.5, 3.5]		)",
@@ -1900,7 +2127,7 @@ QUARK_UNIT_TEST("vector-double", "<", "different values", ""){
 		R"(		[ "^bool", true]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-double", "size()", "empty", "0"){
+QUARK_UNIT_TEST("Floyd test suite", "vector<double> size()", "empty", "0"){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let [double] a = [] result = size(a)		)",
@@ -1908,7 +2135,7 @@ QUARK_UNIT_TEST("vector-double", "size()", "empty", "0"){
 		R"(		[ "^int", 0]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-double", "size()", "2", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<double> size()", "2", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let [double] a = [1.5, 2.5, 3.5] result = size(a)		)",
@@ -1916,7 +2143,7 @@ QUARK_UNIT_TEST("vector-double", "size()", "2", ""){
 		R"(		[ "^int", 3]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-double", "+", "non-empty vectors", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<double> +", "non-empty vectors", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let [double] result = [1.5, 2.5] + [3.5, 4.5]		)",
@@ -1924,7 +2151,7 @@ QUARK_UNIT_TEST("vector-double", "+", "non-empty vectors", ""){
 		R"(		[[ "vector", "^double" ], [1.5, 2.5, 3.5, 4.5]]		)"
 	);
 }
-QUARK_UNIT_TEST("vector-double", "push_back()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<double> push_back()", "", ""){
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		let [double] result = push_back([1.5, 2.5], 3.5)		)",
@@ -2038,7 +2265,7 @@ QUARK_UNIT_TEST("Floyd test suite", "update()", "mutate element", "valid vector,
 //////////////////////////////////////////		DICT - TYPE
 
 
-QUARK_UNIT_TEST("dict", "construct", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict construct", "", ""){
 	run_closed(R"(
 
 		let [string: int] a = {"one": 1, "two": 2}
@@ -2046,7 +2273,7 @@ QUARK_UNIT_TEST("dict", "construct", "", ""){
 
 	)");
 }
-QUARK_UNIT_TEST("dict", "[]", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> []", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2060,7 +2287,7 @@ QUARK_UNIT_TEST("dict", "[]", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("dict", "", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> ", "", ""){
 	ut_verify_exception_nolib(QUARK_POS,
 		R"(
 
@@ -2073,7 +2300,7 @@ QUARK_UNIT_TEST("dict", "", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("dict", "[:]", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict constructor", "No type", "error"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -2087,7 +2314,7 @@ QUARK_UNIT_TEST("dict", "[:]", "", ""){
 }
 
 
-QUARK_UNIT_TEST("dict", "Infered type ", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> {}", "{}", "Infered type"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2100,7 +2327,7 @@ QUARK_UNIT_TEST("dict", "Infered type ", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("dict", "{}", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> {}", "{}", "Infered type"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2114,35 +2341,35 @@ QUARK_UNIT_TEST("dict", "{}", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("dict", "==", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> ==", "", ""){
 	run_closed(R"(
 
 		assert(({"one": 1, "two": 2} == {"one": 1, "two": 2}) == true)
 
 	)");
 }
-QUARK_UNIT_TEST("dict", "==", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> ==", "", ""){
 	run_closed(R"(
 
 		assert(({"one": 1, "two": 2} == {"two": 2}) == false)
 
 	)");
 }
-QUARK_UNIT_TEST("dict", "==", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> ==", "", ""){
 	run_closed(R"(
 
 		assert(({"one": 2, "two": 2} == {"one": 1, "two": 2}) == false)
 
 	)");
 }
-QUARK_UNIT_TEST("dict", "==", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> ==", "", ""){
 	run_closed(R"(
 
 		assert(({"one": 1, "two": 2} < {"one": 1, "two": 2}) == false)
 
 	)");
 }
-QUARK_UNIT_TEST("dict", "==", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> <", "", ""){
 	run_closed(R"(
 
 		assert(({"one": 1, "two": 1} < {"one": 1, "two": 2}) == true)
@@ -2150,7 +2377,7 @@ QUARK_UNIT_TEST("dict", "==", "", ""){
 	)");
 }
 
-QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
+QUARK_UNIT_TEST("Floyd test suite", "dict<> {}", "", "Error cannot infer type"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -2162,7 +2389,7 @@ QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 	);
 }
 
-QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
+QUARK_UNIT_TEST("Floyd test suite", "dict<> {}", "", "Error cannot infer type"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -2174,14 +2401,14 @@ QUARK_UNIT_TEST("dict", "size()", "[:]", "correct type"){
 	);
 }
 
-QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
+QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> size()", "", "1"){
 	run_closed(R"(
 
 		assert(size({"one":1}) == 1)
 
 	)");
 }
-QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
+QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> size()", "", "2"){
 	run_closed(R"(
 
 		assert(size({"one":1, "two":2}) == 2)
@@ -2189,7 +2416,7 @@ QUARK_UNIT_TEST("dict", "size()", "[:]", "correct size"){
 	)");
 }
 
-QUARK_UNIT_TEST("dict", "update()", "add element", "valid dict, without side effect on original dict"){
+QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> update()", "add", "correct dict, without side effect on original dict"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2207,7 +2434,7 @@ QUARK_UNIT_TEST("dict", "update()", "add element", "valid dict, without side eff
 	);
 }
 
-QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> update()", "replace element", "correct dict, without side effect on original dict"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2225,7 +2452,7 @@ QUARK_UNIT_TEST("dict", "update()", "replace element", ""){
 	);
 }
 
-QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> update()", "dest is empty dict", "error"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -2241,7 +2468,7 @@ QUARK_UNIT_TEST("dict", "update()", "dest is empty dict", ""){
 	);
 }
 
-QUARK_UNIT_TEST("dict", "exists()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> exists()", "", ""){
 	run_closed(R"(
 
 		let a = { "one": 1, "two": 2, "three" : 3}
@@ -2251,7 +2478,7 @@ QUARK_UNIT_TEST("dict", "exists()", "", ""){
 	)");
 }
 
-QUARK_UNIT_TEST("dict", "erase()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> erase()", "", ""){
 	run_closed(R"(
 
 		let a = { "one": 1, "two": 2, "three" : 3}
@@ -2263,6 +2490,7 @@ QUARK_UNIT_TEST("dict", "erase()", "", ""){
 
 
 //////////////////////////////////////////		STRUCT - TYPE
+
 
 
 QUARK_UNIT_TEST("Floyd test suite", "struct", "", ""){
@@ -2281,7 +2509,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "", ""){
 	)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "struct - check struct's type", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "check struct's type", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2294,7 +2522,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct - check struct's type", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "struct - check struct's type", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "check struct's type", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2308,7 +2536,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct - check struct's type", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "struct - read back struct member", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "read back struct member", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2322,7 +2550,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct - read back struct member", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "struct - instantiate nested structs", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "instantiate nested structs", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2343,7 +2571,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct - instantiate nested structs", "", "
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "struct - access member of nested structs", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "access member of nested structs", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2358,7 +2586,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct - access member of nested structs", 
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "return struct from function", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "return struct from function", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2376,7 +2604,7 @@ QUARK_UNIT_TEST("Floyd test suite", "return struct from function", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "return struct from function", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "return struct from function", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2393,7 +2621,7 @@ QUARK_UNIT_TEST("Floyd test suite", "return struct from function", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "struct - compare structs", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "compare structs", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2406,7 +2634,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct - compare structs", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "struct - compare structs", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "compare structs", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2419,7 +2647,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct - compare structs", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "Floyd test suite", "struct - compare structs different types", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "compare structs different types", ""){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -2432,7 +2660,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Floyd test suite", "struct - compare struct
 		"Expression type mismatch - cannot convert 'struct {int id;}' to 'struct {int red;int green;int blue;}. Line: 5 \"print(color(1, 2, 3) == file(404))\""
 	);
 }
-QUARK_UNIT_TEST("Floyd test suite", "struct - compare structs with <, different types", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "compare structs with <, different types", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2445,7 +2673,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct - compare structs with <, different 
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "struct - compare structs <", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "compare structs <", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2458,8 +2686,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct - compare structs <", "", ""){
 	);
 }
 
-
-QUARK_UNIT_TEST("Floyd test suite", "update struct manually", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "update struct manually", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2475,7 +2702,7 @@ QUARK_UNIT_TEST("Floyd test suite", "update struct manually", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "mutate struct member using = won't work", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "mutate struct member using = won't work", ""){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -2491,7 +2718,7 @@ QUARK_UNIT_TEST("Floyd test suite", "mutate struct member using = won't work", "
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "mutate struct member using update()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "mutate struct member using update()", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2507,7 +2734,7 @@ QUARK_UNIT_TEST("Floyd test suite", "mutate struct member using update()", "", "
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "mutate nested member", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "mutate nested member", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2527,40 +2754,74 @@ QUARK_UNIT_TEST("Floyd test suite", "mutate nested member", "", ""){
 	);
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "struct", "Error: Define struct with colliding name", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
 
+			let int a = 10
+			struct a { int x }
 
-//////////////////////////////////////////		PROTOCOL - TYPE
-
-
-QUARK_UNIT_TEST("Floyd test suite", "protocol", "", ""){
-	run_closed(R"(
-
-		protocol t {}
-
-	)");
+		)",
+		"Name \"a\" already used in current lexical scope. Line: 4 \"struct a { int x }\""
+	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "protocol", "", ""){
-	run_closed(R"(
+QUARK_UNIT_TEST("Floyd test suite", "struct", "Error: Access unknown struct member", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
 
-		protocol t {
-			func string f(int a, double b)
-		}
+			struct a { int x }
+			let b = a(13)
+			print(b.y)
 
-	)");
+		)",
+		"Unknown struct member \"y\". Line: 5 \"print(b.y)\""
+	);
 }
 
-#if 0
-QUARK_UNIT_TEST("Floyd test suite", "protocol - check protocol's type", "", ""){
-	run_closed(R"(
+QUARK_UNIT_TEST("Floyd test suite", "struct", "Error: Access member in non-struct", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
 
-		protocol t { int a }
-		print(t)
+			let a = 10
+			print(a.y)
 
-	)");
-	ut_verify(QUARK_POS, vm->_print_output, { "protocol {int a;}" });
+		)",
+		"Left hand side is not a struct value, it's of type \"int\". Line: 4 \"print(a.y)\""
+	);
 }
-#endif
+
+QUARK_UNIT_TEST("Floyd test suite", "struct", "", ""){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			struct pixel_t { double x double y }
+			let a = pixel_t(100.0, 200.0)
+			let result = a.x
+
+		)",
+		value_t::make_double(100.0)
+	);
+}
+
+
+QUARK_UNIT_TEST("Floyd test suite", "struct", "", ""){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			struct pixel_t { double x double y }
+			let c = [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)]
+			let result = c[1].y
+
+		)",
+		value_t::make_double(201.0)
+	);
+}
 
 
 //////////////////////////////////////////
@@ -2583,51 +2844,11 @@ QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
 	)");
 }
 
-//////////////////////////////////////////		Comments
-
-
-QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			//	XYZ
-			print("Hello")
-
-		)",
-		{ "Hello" }
-	);
-}
-
-QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			print("Hello")		//	XYZ
-
-		)",
-		{ "Hello" }
-	);
-}
-
-QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			print("Hello")/* xyz */print("Bye")
-
-		)",
-		{ "Hello", "Bye" }
-	);
-}
-
 
 //////////////////////////////////////////		json_value - TYPE
 
 
-QUARK_UNIT_TEST("json_value-string", "Infer json_value::string", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value<string> Infer json_value::string", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2639,7 +2860,7 @@ QUARK_UNIT_TEST("json_value-string", "Infer json_value::string", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("json_value-string", "string-size()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value<string> string-size()", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2652,7 +2873,19 @@ QUARK_UNIT_TEST("json_value-string", "string-size()", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("json_value-number", "construct number", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value()", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = json_value(123)", value_t::make_json_value(json_t(123.0)));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "json_value()", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = json_value(\"hello\")", value_t::make_json_value(json_t("hello")));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "json_value()", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = json_value([1,2,3])", value_t::make_json_value(json_t::make_array({1,2,3})));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "json_value<number> construct number", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2664,7 +2897,7 @@ QUARK_UNIT_TEST("json_value-number", "construct number", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("json_value-bool", "construct true", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value<true> construct true", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2675,7 +2908,7 @@ QUARK_UNIT_TEST("json_value-bool", "construct true", "", ""){
 		value_t::make_json_value(true)
 	);
 }
-QUARK_UNIT_TEST("json_value-bool", "construct false", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value<false> construct false", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2687,7 +2920,7 @@ QUARK_UNIT_TEST("json_value-bool", "construct false", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("json_value-array", "construct array", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value<array> construct array", "construct array", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2699,7 +2932,7 @@ QUARK_UNIT_TEST("json_value-array", "construct array", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value<string> read array member", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2711,7 +2944,7 @@ QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
 		value_t::make_string("hellobye")
 	);
 }
-QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value<string> read array member", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2724,7 +2957,7 @@ QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value<string> read array member", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2737,7 +2970,7 @@ QUARK_UNIT_TEST("json_value-array", "read array member", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("json_value-array", "size()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value<string> size()", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2751,7 +2984,7 @@ QUARK_UNIT_TEST("json_value-array", "size()", "", ""){
 }
 
 //	NOTICE: Floyd dict is stricter than JSON -- cannot have different types of values!
-QUARK_UNIT_TEST("json_value-object", "def", "mix value-types in dict", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value<string> construct", "mix value-types in dict", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2765,7 +2998,7 @@ QUARK_UNIT_TEST("json_value-object", "def", "mix value-types in dict", ""){
 }
 
 // JSON example snippets: http://json.org/example.html
-QUARK_UNIT_TEST("json_value-object", "def", "read world data", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value<string> construct", "read world data", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"___(
@@ -2792,7 +3025,7 @@ QUARK_UNIT_TEST("json_value-object", "def", "read world data", ""){
 	);
 }
 
-QUARK_UNIT_TEST("json_value-object", "{}", "expressions inside def", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value<string> construct", "expressions inside def", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"___(
@@ -2807,7 +3040,7 @@ QUARK_UNIT_TEST("json_value-object", "{}", "expressions inside def", ""){
 	);
 }
 
-QUARK_UNIT_TEST("json_value-object", "{}", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value<string> construct", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"___(
@@ -2821,7 +3054,7 @@ QUARK_UNIT_TEST("json_value-object", "{}", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("json_value-object", "size()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value<string> size()", "", ""){
 	run_closed(R"(
 
 		let json_value a = { "a": 1, "b": 2, "c": 3, "d": 4, "e": 5 }
@@ -2831,7 +3064,7 @@ QUARK_UNIT_TEST("json_value-object", "size()", "", ""){
 }
 
 
-QUARK_UNIT_TEST("json_value-null", "construct null", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value<null> construct", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2844,9 +3077,29 @@ QUARK_UNIT_TEST("json_value-null", "construct null", "", ""){
 }
 
 
+
+QUARK_UNIT_TEST("Floyd test suite", "json_value", "", "error"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			struct pixel_t { double x double y }
+
+			//	c is a json_value::object
+			let c = { "version": "1.0", "image": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] }
+			let result = c["image"][1].y
+
+		)",
+		"Dictionary of type [string:string] cannot hold an element of type [struct {double x;double y;}]. Line: 6 \"let c = { \"version\": \"1.0\", \"image\": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] }\""
+	);
+}
+
+
+
+
 //////////////////////////////////////////		TEST TYPE INFERING
 
-QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "{}", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value<string> {}", "Infer {}", "JSON object"){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2859,13 +3112,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "{}", ""){
 }
 
 
-
-//////////////////////////////////////////		json_value features
-
-
-
-
-QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "{}", ""){
+QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "", "1"){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2876,7 +3123,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "{}", ""){
 		value_t::make_int(1)
 	);
 }
-QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "[]", ""){
+QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "array", "2"){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2887,7 +3134,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "[]", ""){
 		value_t::make_int(2)
 	);
 }
-QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "string", ""){
+QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "string", "3"){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2898,7 +3145,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "string", ""){
 		value_t::make_int(3)
 	);
 }
-QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "number", ""){
+QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "number", "4"){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2909,7 +3156,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "number", ""){
 		value_t::make_int(4)
 	);
 }
-QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "number", ""){
+QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "true", "5"){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2920,7 +3167,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "number", ""){
 		value_t::make_int(5)
 	);
 }
-QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "number", ""){
+QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "false", "6"){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2932,7 +3179,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "number", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "null", ""){
+QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "null", "7"){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -2986,50 +3233,6 @@ QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "DOCUMENTATION SNIPPET", 
 }
 
 
-QUARK_UNIT_TEST("Floyd test suite", "???", "", ""){
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-		R"(
-
-			struct pixel_t { double x double y }
-			let a = pixel_t(100.0, 200.0)
-			let result = a.x
-
-		)",
-		value_t::make_double(100.0)
-	);
-}
-
-
-QUARK_UNIT_TEST("Floyd test suite", "???", "", ""){
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-		R"(
-
-			struct pixel_t { double x double y }
-			let c = [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)]
-			let result = c[1].y
-
-		)",
-		value_t::make_double(201.0)
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "???", "", ""){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			struct pixel_t { double x double y }
-
-			//	c is a json_value::object
-			let c = { "version": "1.0", "image": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] }
-			let result = c["image"][1].y
-
-		)",
-		"Dictionary of type [string:string] cannot hold an element of type [struct {double x;double y;}]. Line: 6 \"let c = { \"version\": \"1.0\", \"image\": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] }\""
-	);
-}
 
 
 //////////////////////////////////////////		script_to_jsonvalue()
@@ -3338,51 +3541,6 @@ QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "point_t", ""){
 
 
 
-///////////////////////////////////////////////////			TEST LIBRARY FEATURES
-
-
-//??? It IS OK to call impure functions from a pure function:
-//		1. The impure function modifies a local value only -- cannot leak out.
-
-QUARK_UNIT_TEST("Floyd test suite", "impure", "call pure->pure", "Compiles OK"){
-	run_closed(R"(
-
-		func int a(int p){ return p + 1 }
-		func int b(){ return a(100) }
-
-	)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "impure", "call impure->pure", "Compiles OK"){
-	run_closed(R"(
-
-		func int a(int p){ return p + 1 }
-		func int b() impure { return a(100) }
-
-	)");
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "impure", "call pure->impure", "Compilation error"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			func int a(int p) impure { return p + 1 }
-			func int b(){ return a(100) }
-
-		)",
-		"Cannot call impure function from a pure function. Line: 4 \"func int b(){ return a(100) }\""
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "impure", "call impure->impure", "Compiles OK"){
-	run_closed(R"(
-
-		func int a(int p) impure { return p + 1 }
-		func int b() impure { return a(100) }
-
-	)");
-}
-
 
 
 
@@ -3430,6 +3588,24 @@ QUARK_UNIT_TEST("Floyd test suite", "color__black", "", ""){
 	)");
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "", "pixel_t()", ""){
+	const auto pixel_t__def = std::vector<member_t>{
+		member_t(typeid_t::make_int(), "red"),
+		member_t(typeid_t::make_int(), "green"),
+		member_t(typeid_t::make_int(), "blue")
+	};
+
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+
+		"struct pixel_t { int red int green int blue } result = pixel_t(1,2,3)",
+
+		value_t::make_struct_value(
+			typeid_t::make_struct2(pixel_t__def),
+			std::vector<value_t>{ value_t::make_int(1), value_t::make_int(2), value_t::make_int(3) }
+		)
+	);
+}
 
 
 
@@ -3440,51 +3616,6 @@ QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
 	ut_verify_auto(QUARK_POS, a != b, true);
 }
 
-
-
-//////////////////////////////////////////		HOST FUNCTION - print()
-
-
-QUARK_UNIT_TEST("Floyd test suite", "Print Hello, world!", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"___(
-
-			print("Hello, World!")
-
-		)___",
-		{ "Hello, World!" }
-	);
-}
-
-
-QUARK_UNIT_TEST("Floyd test suite", "Test that VM state (print-log) escapes block!", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"___(
-
-			{
-				print("Hello, World!")
-			}
-
-		)___",
-		{ "Hello, World!" }
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "Test that VM state (print-log) escapes IF!", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"___(
-
-			if(true){
-				print("Hello, World!")
-			}
-
-		)___",
-		{ "Hello, World!" }
-	);
-}
 
 
 
@@ -3502,6 +3633,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
 	)");
 }
 
+//////////////////////////////////////////		HOST FUNCTION - calc_string_sha1()
 
 
 QUARK_UNIT_TEST("Floyd test suite", "calc_string_sha1()", "", ""){
@@ -3513,6 +3645,11 @@ QUARK_UNIT_TEST("Floyd test suite", "calc_string_sha1()", "", ""){
 
 	)");
 }
+
+
+//////////////////////////////////////////		HOST FUNCTION - calc_binary_sha1()
+
+
 QUARK_UNIT_TEST("Floyd test suite", "calc_binary_sha1()", "", ""){
 	run_closed(R"(
 
@@ -3714,10 +3851,6 @@ QUARK_UNIT_TEST("Floyd test suite", "supermap()", "No dependencies", ""){
 
 	)");
 }
-
-
-
-
 
 QUARK_UNIT_TEST("Floyd test suite", "supermap()", "complex", ""){
 	run_closed(R"(
@@ -4103,88 +4236,10 @@ QUARK_UNIT_TEST("Parser error", "", "", ""){
 //??? test accessing array->struct->array.
 //??? test structs in vectors.
 
-//	??? Add special error when local is not initialized.
-QUARK_UNIT_TEST("Edge case", "", "if with non-bool expression", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
 
-			mutable string row
 
-		)",
-		R"___(Expected '=' character. Line: 3 "mutable string row")___"
-	);
-}
 
-QUARK_UNIT_TEST("Edge case", "", "if with non-bool expression", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			if("not a bool"){
-			}
-			else{
-				assert(false)
-			}
-
-		)",
-		"Boolean condition required. Line: 3 \"if(\"not a bool\"){\""
-	);
-}
-
-QUARK_UNIT_TEST("Edge case", "", "assign to immutable local", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			let int a = 10
-			let int a = 11
-
-		)",
-		"Local identifier \"a\" already exists. Line: 4 \"let int a = 11\""
-	);
-}
-QUARK_UNIT_TEST("Edge case", "", "Define struct with colliding name", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			let int a = 10
-			struct a { int x }
-
-		)",
-		"Name \"a\" already used in current lexical scope. Line: 4 \"struct a { int x }\""
-	);
-}
-
-QUARK_UNIT_TEST("Edge case", "", "Access unknown struct member", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			struct a { int x }
-			let b = a(13)
-			print(b.y)
-
-		)",
-		"Unknown struct member \"y\". Line: 5 \"print(b.y)\""
-	);
-}
-
-QUARK_UNIT_TEST("Edge case", "", "Access unknown member in non-struct", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			let a = 10
-			print(a.y)
-
-		)",
-		"Left hand side is not a struct value, it's of type \"int\". Line: 4 \"print(a.y)\""
-	);
-}
-
-QUARK_UNIT_TEST("Edge case", "", "Lookup in string using non-int", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "string", "Error: Lookup in string using non-int", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -4197,7 +4252,7 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup in string using non-int", "exception"){
 	);
 }
 
-QUARK_UNIT_TEST("Edge case", "", "Lookup in vector using non-int", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "vector", "Error: Lookup in vector using non-int", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -4210,7 +4265,7 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup in vector using non-int", "exception"){
 	);
 }
 
-QUARK_UNIT_TEST("Edge case", "", "Lookup in dict using non-string key", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "dict", "Error: Lookup in dict using non-string key", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -4223,7 +4278,7 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup in dict using non-string key", "excepti
 	);
 }
 
-QUARK_UNIT_TEST("Edge case", "", "Access undefined variable", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "Access variable", "Access undefined variable", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -4235,7 +4290,7 @@ QUARK_UNIT_TEST("Edge case", "", "Access undefined variable", "exception"){
 	);
 }
 
-QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments in function call", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "Call", "Error: Wrong number of arguments in function call", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -4249,7 +4304,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments in function call", "
 }
 
 
-QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to struct-constructor", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "Struct", "Error: Wrong number of arguments to struct-constructor", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -4263,7 +4318,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to struct-constructo
 }
 
 //??? Also tell *which* argument is wrong type -- its name and index.
-QUARK_UNIT_TEST("Edge case", "", "Wrong TYPE of arguments to struct-constructor", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "Error: Wrong TYPE of arguments to struct-constructor", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -4276,7 +4331,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong TYPE of arguments to struct-constructor"
 	);
 }
 
-QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to int-constructor", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "int", "Wrong number of arguments to int-constructor", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -4288,7 +4343,7 @@ QUARK_UNIT_TEST("Edge case", "", "Wrong number of arguments to int-constructor",
 	);
 }
 
-QUARK_UNIT_TEST("Edge case", "", "Call non-function, non-struct, non-typeid", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "Call", "Call non-function, non-struct, non-typeid", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -4300,7 +4355,7 @@ QUARK_UNIT_TEST("Edge case", "", "Call non-function, non-struct, non-typeid", "e
 	);
 }
 
-QUARK_UNIT_TEST("Edge case", "", "Vector can not hold elements of different types.", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "vector", "Vector can not hold elements of different types.", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -4311,7 +4366,7 @@ QUARK_UNIT_TEST("Edge case", "", "Vector can not hold elements of different type
 		"Vector of type [int] cannot hold an element of type typeid. Line: 3 \"let a = [3, bool]\""
 	);
 }
-QUARK_UNIT_TEST("Edge case", "", "Dict can not hold elements of different types.", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "dict", "Dict can not hold elements of different types.", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -4324,7 +4379,7 @@ QUARK_UNIT_TEST("Edge case", "", "Dict can not hold elements of different types.
 }
 
 
-QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "Expression", "Error: mix types", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -4336,7 +4391,7 @@ QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
 	);
 }
 
-QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "Expression", "Error: mix types", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -4347,7 +4402,7 @@ QUARK_UNIT_TEST("Edge case", "", ".", "exception"){
 		"Expression type mismatch - cannot convert 'double' to 'int. Line: 3 \"let a = 3 * 3.2\""
 	);
 }
-QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
+QUARK_UNIT_TEST("Floyd test suite", "Expression", "Adding bools", "success"){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -4358,7 +4413,7 @@ QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
 		value_t::make_bool(true)
 	);
 }
-QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
+QUARK_UNIT_TEST("Floyd test suite", "Expression", "Adding bools", "success"){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -4369,7 +4424,7 @@ QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
 		value_t::make_bool(false)
 	);
 }
-QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
+QUARK_UNIT_TEST("Floyd test suite", "Expression", "Adding bools", "success"){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -4381,7 +4436,7 @@ QUARK_UNIT_TEST("Edge case", "Adding bools", ".", "success"){
 	);
 }
 
-QUARK_UNIT_TEST("Edge case", "", "Lookup the unlookupable", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "vector", "Error: Lookup the unlookupable", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -4394,7 +4449,7 @@ QUARK_UNIT_TEST("Edge case", "", "Lookup the unlookupable", "exception"){
 }
 
 
-QUARK_UNIT_TEST("vector-int", "size()", "3", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector constructor", "", "3"){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -4407,7 +4462,7 @@ QUARK_UNIT_TEST("vector-int", "size()", "3", ""){
 	);
 }
 
-QUARK_UNIT_TEST("vector-int", "size()", "3", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector<int> pushpush_back()", "", ""){
 	run_closed(
 		R"(
 
@@ -4418,128 +4473,6 @@ QUARK_UNIT_TEST("vector-int", "size()", "3", ""){
 	);
 }
 
-
-
-
-//////////////////////////////////////////		RETURN STATEMENT - ADVANCED USAGE
-
-
-QUARK_UNIT_TEST("call_function()", "print() supports ints and strings", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-			print("Hello, world!")
-			print(123)
-		)",
-		{ "Hello, world!", "123" }
-	);
-}
-
-//QUARK_UNIT_TEST_VIP
-QUARK_UNIT_TEST("call_function()", "return from middle of function", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			func string f(){
-				print("A")
-				return "B"
-				print("C")
-				return "D"
-			}
-			let string x = f()
-			print(x)
-
-		)",
-		{ "A", "B" }
-	);
-}
-
-QUARK_UNIT_TEST("call_function()", "return from within IF block", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			func string f(){
-				if(true){
-					print("A")
-					return "B"
-					print("C")
-				}
-				print("D")
-				return "E"
-			}
-			let string x = f()
-			print(x)
-
-		)",
-		{ "A", "B" }
-	);
-}
-
-QUARK_UNIT_TEST("call_function()", "return from within FOR block", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			func string f(){
-				for(e in 0...3){
-					print("A")
-					return "B"
-					print("C")
-				}
-				print("D")
-				return "E"
-			}
-			let string x = f()
-			print(x)
-
-		)",
-		{ "A", "B" }
-	);
-}
-
-// ??? add test for: return from ELSE
-
-QUARK_UNIT_TEST("call_function()", "return from within BLOCK", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			func string f(){
-				{
-					print("A")
-					return "B"
-					print("C")
-				}
-				print("D")
-				return "E"
-			}
-			let string x = f()
-			print(x)
-
-		)",
-		{ "A", "B" }
-	);
-}
-
-
-QUARK_UNIT_TEST("Floyd test suite", "Make sure returning wrong type => error", "", ""){
-	try {
-	test_run_container2(R"(
-
-func int f(){
-	return "x"
-}
-
-	)", {}, "", "");
-
-
-	}
-	catch(const std::runtime_error& e){
-		ut_verify(QUARK_POS, e.what(), "Expression type mismatch - cannot convert 'string' to 'int. Line: 4 \"return \"x\"\"");
-	}
-}
 
 
 
