@@ -995,7 +995,30 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 	auto lhs_temp = genllvm_expression(gen_acc, e._input_exprs[0]);
 	auto rhs_temp = genllvm_expression(gen_acc, e._input_exprs[1]);
 
-	if(type.is_bool() || type.is_int()){
+	if(type.is_bool()){
+		if(e._operation == expression_type::k_arithmetic_add__2){
+			return gen_acc.builder.CreateOr(lhs_temp, rhs_temp, "logical_or_tmp");
+		}
+		else if(e._operation == expression_type::k_arithmetic_subtract__2){
+		}
+		else if(e._operation == expression_type::k_arithmetic_multiply__2){
+		}
+		else if(e._operation == expression_type::k_arithmetic_divide__2){
+		}
+		else if(e._operation == expression_type::k_arithmetic_remainder__2){
+		}
+
+		else if(e._operation == expression_type::k_logical_and__2){
+			return gen_acc.builder.CreateAnd(lhs_temp, rhs_temp, "logical_and_tmp");
+		}
+		else if(e._operation == expression_type::k_logical_or__2){
+			return gen_acc.builder.CreateOr(lhs_temp, rhs_temp, "logical_or_tmp");
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+	else if(type.is_int()){
 		if(e._operation == expression_type::k_arithmetic_add__2){
 			return gen_acc.builder.CreateAdd(lhs_temp, rhs_temp, "add_tmp");
 		}

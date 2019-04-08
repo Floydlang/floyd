@@ -802,7 +802,7 @@ QUARK_UNIT_TEST("Floyd test suite", "func", "define additional function, call it
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "func", "use function inputs", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "func", "use function inputs", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
