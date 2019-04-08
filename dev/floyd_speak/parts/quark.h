@@ -849,10 +849,10 @@ inline std::string path_to_name(const std::string& path){
 inline bool run_test(const unit_test_def& test, bool oneline){
 	std::stringstream testInfo;
 	testInfo << test._source_file << ":" << std::to_string(test._source_line)
-		<< " " << test._class_under_test
-		<< " " << test._function_under_test
-		<< " " << test._scenario
-		<< " " << test._expected_result;
+		<< " | " << test._class_under_test
+		<< " | " << test._function_under_test
+		<< " | " << test._scenario
+		<< " | " << test._expected_result;
 
 	try{
 		if(oneline){
@@ -930,11 +930,12 @@ inline void trace_failures(const std::vector<unit_test_def>& tests, const std::v
 		if(test_results[index] == test_result::k_run_failed){
 
 			std::stringstream testInfo;
-			testInfo << test._source_file << ":" << std::to_string(test._source_line)
-				<< " " << test._class_under_test
-				<< " " << test._function_under_test
-				<< " " << test._scenario
-				<< " " << test._expected_result;
+			testInfo
+				<< test._source_file << ":" << std::to_string(test._source_line)
+				<< " | " << test._class_under_test
+				<< " | " << test._function_under_test
+				<< " | " << test._scenario
+				<< " | " << test._expected_result;
 
 			std::cout << testInfo.str() << std::endl;
 		}
