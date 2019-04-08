@@ -31,7 +31,7 @@ using namespace floyd;
 //??? Run all container2 tests for LLVM too!
 //???Make vistors-mechanism to support many sast passes, like expanding generics, making collection and layouts explicits etc.
 
-
+//??? use more nolib-tests too run tests faster
 
 
 //??? Run these tests for LLVM too!
@@ -441,6 +441,7 @@ QUARK_UNIT_TEST("run_main", "Can make and read global int", "", ""){
 			}
 
 		)",
+		compilation_unit_mode::k_no_core_lib,
 		{},
 		value_t::make_int(123)
 	);
@@ -457,19 +458,20 @@ QUARK_UNIT_TEST("run_main()", "minimal program 2", "", ""){
 			}
 
 		)",
+		compilation_unit_mode::k_no_core_lib,
 		std::vector<value_t>{value_t::make_string("")},
 		value_t::make_string("123456")
 	);
 }
 
 QUARK_UNIT_TEST("run_main()", "", "", ""){
-	ut_verify_mainfunc_return(QUARK_POS, "func bool main(){ return 4 < 5 }", {}, value_t::make_bool(true));
+	ut_verify_mainfunc_return(QUARK_POS, "func bool main(){ return 4 < 5 }", compilation_unit_mode::k_no_core_lib, {}, value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("run_main()", "", "", ""){
-	ut_verify_mainfunc_return(QUARK_POS, "func bool main(){ return 5 < 4 }", {}, value_t::make_bool(false));
+	ut_verify_mainfunc_return(QUARK_POS, "func bool main(){ return 5 < 4 }", compilation_unit_mode::k_no_core_lib, {}, value_t::make_bool(false));
 }
 QUARK_UNIT_TEST("run_main()", "", "", ""){
-	ut_verify_mainfunc_return(QUARK_POS, "func bool main(){ return 4 <= 4 }", {}, value_t::make_bool(true));
+	ut_verify_mainfunc_return(QUARK_POS, "func bool main(){ return 4 <= 4 }", compilation_unit_mode::k_no_core_lib, {}, value_t::make_bool(true));
 }
 
 QUARK_UNIT_TEST("call_function()", "minimal program", "", ""){
@@ -482,6 +484,7 @@ QUARK_UNIT_TEST("call_function()", "minimal program", "", ""){
 			}
 
 		)",
+		compilation_unit_mode::k_no_core_lib,
 		{ value_t::make_string("a") },
 		value_t::make_int(7)
 	);
@@ -566,7 +569,7 @@ unsupported syntax
 
 
 QUARK_UNIT_TEST("call_function()", "define additional function, call it several times", "", ""){
-	ut_verify_global_result_nolib(
+	ut_verify_mainfunc_return(
 		QUARK_POS,
 		R"(
 
@@ -576,6 +579,8 @@ QUARK_UNIT_TEST("call_function()", "define additional function, call it several 
 			}
 
 		)",
+		compilation_unit_mode::k_no_core_lib,
+		{ value_t::make_string("dummy-arg") },
 		value_t::make_int(15)
 	);
 }
@@ -3245,7 +3250,7 @@ QUARK_UNIT_TEST("", "impure", "call impure->impure", "Compiles OK"){
 
 
 QUARK_UNIT_TEST("", "cmath_pi", "", ""){
-	ut_verify_global_result_nolib(
+	ut_verify_global_result_lib(
 		QUARK_POS,
 		R"(
 
@@ -4785,6 +4790,7 @@ b = 11
 }
 
 
+#if 0
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "WHILE", "", ""){
 	//	Just make sure it compiles, don't run it!
 	ut_run_closed(R"(
@@ -4801,6 +4807,7 @@ while(expression){
 	compilation_unit_mode::k_no_core_lib
 	);
 }
+#endif
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "FOR", "", ""){

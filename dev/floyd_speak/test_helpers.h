@@ -44,7 +44,7 @@ void ut_verify_printout(const quark::call_context_t& context, const std::string&
 //	Has no output value: only compilation errors or floyd-asserts.
 void ut_run_closed(const std::string& program, compilation_unit_mode mode);
 
-void ut_verify_mainfunc_return(const quark::call_context_t& context, const std::string& program, const std::vector<floyd::value_t>& args, const value_t& expected_return);
+void ut_verify_mainfunc_return(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::vector<floyd::value_t>& args, const value_t& expected_return);
 
 void ut_verify_exception(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::string& expected_what);
 

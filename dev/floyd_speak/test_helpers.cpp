@@ -43,8 +43,8 @@ enum class executor_mode {
 };
 
 
-//executor_mode g_executor = executor_mode::bc_interpreter;
-executor_mode g_executor = executor_mode::llvm_jit;
+executor_mode g_executor = executor_mode::bc_interpreter;
+//executor_mode g_executor = executor_mode::llvm_jit;
 
 
 run_report_t make_result(const value_t& result){
@@ -194,7 +194,7 @@ void ut_run_closed(const std::string& program, compilation_unit_mode mode){
 	run_program(make_compilation_unit(program, "", mode), {});
 }
 
-void ut_verify_mainfunc_return(const quark::call_context_t& context, const std::string& program, const std::vector<floyd::value_t>& args, const value_t& expected_return){
+void ut_verify_mainfunc_return(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::vector<floyd::value_t>& args, const value_t& expected_return){
 	const auto result = run_program(make_compilation_unit_lib(program, ""), args);
 	ut_verify(
 		context,
