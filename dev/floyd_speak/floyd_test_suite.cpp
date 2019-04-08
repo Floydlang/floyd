@@ -1594,6 +1594,7 @@ QUARK_UNIT_TEST("vector-string", "literal expression", "", ""){
 			let [string] result = ["alpha", "beta"]
 
 		)",
+		compilation_unit_mode::k_no_core_lib,
 		R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)"
 	);
 }
@@ -1601,6 +1602,7 @@ QUARK_UNIT_TEST("vector-string", "literal expression, computed element", "", "")
 	ut_verify_global_result_as_json(
 		QUARK_POS,
 		R"(		func string get_beta(){ return "beta" } 	let [string] result = ["alpha", get_beta()]		)",
+		compilation_unit_mode::k_no_core_lib,
 		R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)"
 	);
 }
@@ -1690,34 +1692,83 @@ QUARK_UNIT_TEST("vector-string", "push_back()", "", ""){
 
 
 QUARK_UNIT_TEST("vector-bool", "literal expression", "", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let [bool] result = [true, false, true]		)", R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let [bool] result = [true, false, true]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[[ "vector", "^bool" ], [true, false, true]]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-bool", "=", "copy", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let a = [true, false, true] result = a		)", R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let a = [true, false, true] result = a		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[[ "vector", "^bool" ], [true, false, true]]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-bool", "==", "same values", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [true, false] == [true, false]		)", R"(		[ "^bool", true]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let result = [true, false] == [true, false]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^bool", true]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-bool", "==", "different values", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [false, false] == [true, false]		)", R"(		[ "^bool", false]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let result = [false, false] == [true, false]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^bool", false]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-bool", "<", "", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [true, true] < [true, true]		)", R"(		[ "^bool", false]	)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let result = [true, true] < [true, true]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^bool", false]	)"
+	);
 }
 QUARK_UNIT_TEST("vector-bool", "<", "different values", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [true, false] < [true, true]		)", R"(		[ "^bool", true]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let result = [true, false] < [true, true]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^bool", true]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-bool", "size()", "empty", "0"){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let [bool] a = [] result = size(a)		)", R"(		[ "^int", 0]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS, R"(		let [bool] a = [] result = size(a)		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^int", 0]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-bool", "size()", "2", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let [bool] a = [true, false, true] result = size(a)		)", R"(		[ "^int", 3]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let [bool] a = [true, false, true] result = size(a)		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^int", 3]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-bool", "+", "non-empty vectors", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let [bool] result = [true, false] + [true, true]		)", R"(		[[ "vector", "^bool" ], [true, false, true, true]]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let [bool] result = [true, false] + [true, true]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[[ "vector", "^bool" ], [true, false, true, true]]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-bool", "push_back()", "", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let [bool] result = push_back([true, false], true)		)", R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let [bool] result = push_back([true, false], true)		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[[ "vector", "^bool" ], [true, false, true]]		)"
+	);
 }
 
 
@@ -1725,34 +1776,84 @@ QUARK_UNIT_TEST("vector-bool", "push_back()", "", ""){
 
 
 QUARK_UNIT_TEST("vector-int", "literal expression", "", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let [int] result = [10, 20, 30]		)", R"(		[[ "vector", "^int" ], [10, 20, 30]]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let [int] result = [10, 20, 30]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[[ "vector", "^int" ], [10, 20, 30]]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-int", "=", "copy", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let a = [10, 20, 30] result = a;		)", R"(		[[ "vector", "^int" ], [10, 20, 30]]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let a = [10, 20, 30] result = a;		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[[ "vector", "^int" ], [10, 20, 30]]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-int", "==", "same values", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [1, 2] == [1, 2]		)", R"(		[ "^bool", true]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let result = [1, 2] == [1, 2]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^bool", true]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-int", "==", "different values", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [1, 3] == [1, 2]		)", R"(		[ "^bool", false]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let result = [1, 3] == [1, 2]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^bool", false]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-int", "<", "", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [1, 2] < [1, 2]		)", R"(		[ "^bool", false]	)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let result = [1, 2] < [1, 2]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^bool", false]	)"
+	);
 }
 QUARK_UNIT_TEST("vector-int", "<", "different values", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [1, 2] < [1, 3]		)", R"(		[ "^bool", true]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let result = [1, 2] < [1, 3]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^bool", true]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-int", "size()", "empty", "0"){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let [int] a = [] result = size(a)		)", R"(		[ "^int", 0]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let [int] a = [] result = size(a)		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^int", 0]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-int", "size()", "2", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let [int] a = [1, 2, 3] result = size(a)		)", R"(		[ "^int", 3]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let [int] a = [1, 2, 3] result = size(a)		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^int", 3]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-int", "+", "non-empty vectors", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let [int] result = [1, 2] + [3, 4]		)", R"(		[[ "vector", "^int" ], [1, 2, 3, 4]]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let [int] result = [1, 2] + [3, 4]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[[ "vector", "^int" ], [1, 2, 3, 4]]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-int", "push_back()", "", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let [int] result = push_back([1, 2], 3)		)", R"(		[[ "vector", "^int" ], [1, 2, 3]]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let [int] result = push_back([1, 2], 3)		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[[ "vector", "^int" ], [1, 2, 3]]		)"
+	);
 }
 
 
@@ -1760,34 +1861,84 @@ QUARK_UNIT_TEST("vector-int", "push_back()", "", ""){
 
 
 QUARK_UNIT_TEST("vector-double", "literal expression", "", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let [double] result = [10.5, 20.5, 30.5]		)", R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let [double] result = [10.5, 20.5, 30.5]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-double", "=", "copy", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let a = [10.5, 20.5, 30.5] result = a		)", R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let a = [10.5, 20.5, 30.5] result = a		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-double", "==", "same values", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [1.5, 2.5] == [1.5, 2.5]		)", R"(		[ "^bool", true]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let result = [1.5, 2.5] == [1.5, 2.5]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^bool", true]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-double", "==", "different values", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [1.5, 3.5] == [1.5, 2.5]		)", R"(		[ "^bool", false]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let result = [1.5, 3.5] == [1.5, 2.5]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^bool", false]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-double", "<", "", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [1.5, 2.5] < [1.5, 2.5]		)", R"(		[ "^bool", false]	)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let result = [1.5, 2.5] < [1.5, 2.5]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^bool", false]	)"
+	);
 }
 QUARK_UNIT_TEST("vector-double", "<", "different values", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let result = [1.5, 2.5] < [1.5, 3.5]		)", R"(		[ "^bool", true]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let result = [1.5, 2.5] < [1.5, 3.5]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^bool", true]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-double", "size()", "empty", "0"){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let [double] a = [] result = size(a)		)", R"(		[ "^int", 0]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let [double] a = [] result = size(a)		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^int", 0]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-double", "size()", "2", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let [double] a = [1.5, 2.5, 3.5] result = size(a)		)", R"(		[ "^int", 3]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let [double] a = [1.5, 2.5, 3.5] result = size(a)		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[ "^int", 3]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-double", "+", "non-empty vectors", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let [double] result = [1.5, 2.5] + [3.5, 4.5]		)", R"(		[[ "vector", "^double" ], [1.5, 2.5, 3.5, 4.5]]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let [double] result = [1.5, 2.5] + [3.5, 4.5]		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[[ "vector", "^double" ], [1.5, 2.5, 3.5, 4.5]]		)"
+	);
 }
 QUARK_UNIT_TEST("vector-double", "push_back()", "", ""){
-	ut_verify_global_result_as_json(QUARK_POS, R"(		let [double] result = push_back([1.5, 2.5], 3.5)		)", R"(		[[ "vector", "^double" ], [1.5, 2.5, 3.5]]		)");
+	ut_verify_global_result_as_json(
+		QUARK_POS,
+		R"(		let [double] result = push_back([1.5, 2.5], 3.5)		)",
+		compilation_unit_mode::k_no_core_lib,
+		R"(		[[ "vector", "^double" ], [1.5, 2.5, 3.5]]		)"
+	);
 }
 
 

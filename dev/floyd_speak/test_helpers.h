@@ -36,7 +36,7 @@ run_report_t run_program(const compilation_unit_t& cu, const std::vector<value_t
 
 void ut_verify_global_result(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const value_t& expected_result);
 
-void ut_verify_global_result_as_json(const quark::call_context_t& context, const std::string& program, const std::string& expected_json);
+void ut_verify_global_result_as_json(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::string& expected_json);
 
 
 void ut_verify_printout(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::vector<std::string>& printout);

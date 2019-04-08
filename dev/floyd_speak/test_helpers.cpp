@@ -174,9 +174,9 @@ void ut_verify_global_result(const quark::call_context_t& context, const std::st
 	);
 }
 
-void ut_verify_global_result_as_json(const quark::call_context_t& context, const std::string& program, const std::string& expected_json){
+void ut_verify_global_result_as_json(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::string& expected_json){
 	const auto expected_json2 = parse_json(seq_t(expected_json)).first;
-	const auto result = run_program(make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), {});
+	const auto result = run_program(make_compilation_unit(program, "", cu_mode), {});
 	ut_verify(
 		context,
 		value_and_type_to_ast_json(result.result_variable),
