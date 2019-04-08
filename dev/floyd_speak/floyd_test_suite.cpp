@@ -17,18 +17,30 @@
 #include "text_parser.h"
 #include "host_functions.h"
 #include "file_handling.h"
+#include "compiler_helpers.h"
 
 #include <string>
 #include <vector>
 #include <iostream>
-
-#if 1
 
 using namespace floyd;
 
 
 
 
+bc_program_t test_compile_to_bytecode(const std::string& source_code, const std::string& source_path){
+	const auto cu = make_compilation_unit_nolib(source_code, source_path);
+	return compile_to_bytecode(cu);
+}
+
+std::map<std::string, value_t> test_run_container2(const std::string& program, const std::vector<floyd::value_t>& args, const std::string& container_key, const std::string& source_file){
+	const auto cu = make_compilation_unit_lib(program, source_file);
+	return run_container2(cu, args, container_key);
+}
+
+void run_closed(const std::string& program){
+	ut_run_closed(program);
+}
 
 
 //////////////////////////////////////////		TEST GLOBAL CONSTANTS
@@ -39,26 +51,26 @@ QUARK_UNIT_TEST("Floyd test suite", "Global int variable", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "Global int variable", "", ""){
-	ut_verify_global_result(QUARK_POS, "let int result = 123", value_t::make_int(123));
+	ut_verify_global_result(QUARK_POS, "let int result = 123", false, value_t::make_int(123));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "bool constant expression", "", ""){
-	ut_verify_global_result(QUARK_POS, "let bool result = true", value_t::make_bool(true));
+	ut_verify_global_result(QUARK_POS, "let bool result = true", false, value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("Floyd test suite", "bool constant expression", "", ""){
-	ut_verify_global_result(QUARK_POS, "let bool result = false", value_t::make_bool(false));
+	ut_verify_global_result(QUARK_POS, "let bool result = false", false, value_t::make_bool(false));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "int constant expression", "", ""){
-	ut_verify_global_result(QUARK_POS, "let int result = 123", value_t::make_int(123));
+	ut_verify_global_result(QUARK_POS, "let int result = 123", false, value_t::make_int(123));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "double constant expression", "", ""){
-	ut_verify_global_result(QUARK_POS, "let double result = 3.5", value_t::make_double(double(3.5)));
+	ut_verify_global_result(QUARK_POS, "let double result = 3.5", false, value_t::make_double(double(3.5)));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "string constant expression", "", ""){
-	ut_verify_global_result(QUARK_POS, "let string result = \"xyz\"", value_t::make_string("xyz"));
+	ut_verify_global_result(QUARK_POS, "let string result = \"xyz\"", false, value_t::make_string("xyz"));
 }
 
 
@@ -66,17 +78,17 @@ QUARK_UNIT_TEST("Floyd test suite", "string constant expression", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "+", "", "") {
-	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2", value_t::make_int(3));
+	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2", false, value_t::make_int(3));
 }
 QUARK_UNIT_TEST("Floyd test suite", "+", "", ""){
-	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
+	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2 + 3", false, value_t::make_int(6));
 }
 QUARK_UNIT_TEST("Floyd test suite", "*", "", ""){
-	ut_verify_global_result(QUARK_POS, "let int result = 3 * 4", value_t::make_int(12));
+	ut_verify_global_result(QUARK_POS, "let int result = 3 * 4", false, value_t::make_int(12));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "parant", "", ""){
-	ut_verify_global_result(QUARK_POS, "let int result = (3 * 4) * 5", value_t::make_int(60));
+	ut_verify_global_result(QUARK_POS, "let int result = (3 * 4) * 5", false, value_t::make_int(60));
 }
 
 //??? test all types, like [int] etc.
@@ -95,19 +107,19 @@ QUARK_UNIT_TEST("Floyd test suite", "Infered bind", "", "") {
 
 
 QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
-	ut_verify_global_result(QUARK_POS, "let int result = true ? 98 : 99", value_t::make_int(98));
+	ut_verify_global_result(QUARK_POS, "let int result = true ? 98 : 99", false, value_t::make_int(98));
 }
 QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
-	ut_verify_global_result(QUARK_POS, "let int result = false ? 70 : 80", value_t::make_int(80));
+	ut_verify_global_result(QUARK_POS, "let int result = false ? 70 : 80", false, value_t::make_int(80));
 }
 
 //??? Test truthness off all variable types: strings, doubles
 
 QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
-	ut_verify_global_result(QUARK_POS, "let string result = true ? \"yes\" : \"no\"", value_t::make_string("yes"));
+	ut_verify_global_result(QUARK_POS, "let string result = true ? \"yes\" : \"no\"", false, value_t::make_string("yes"));
 }
 QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
-	ut_verify_global_result(QUARK_POS, "let string result = false ? \"yes\" : \"no\"", value_t::make_string("no"));
+	ut_verify_global_result(QUARK_POS, "let string result = false ? \"yes\" : \"no\"", false, value_t::make_string("no"));
 }
 
 
@@ -115,20 +127,20 @@ QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
 
 
 QUARK_UNIT_TEST("execute_expression()", "Parentheses", "", ""){
-	ut_verify_global_result(QUARK_POS, "let int result = 5*(4+4+1)", value_t::make_int(45));
+	ut_verify_global_result(QUARK_POS, "let int result = 5*(4+4+1)", false, value_t::make_int(45));
 }
 QUARK_UNIT_TEST("execute_expression()", "Parentheses", "", ""){
-	ut_verify_global_result(QUARK_POS, "let int result = 5*(2*(1+3)+1)", value_t::make_int(45));
+	ut_verify_global_result(QUARK_POS, "let int result = 5*(2*(1+3)+1)", false, value_t::make_int(45));
 }
 QUARK_UNIT_TEST("execute_expression()", "Parentheses", "", ""){
-	ut_verify_global_result(QUARK_POS, "let int result = 5*((1+3)*2+1)", value_t::make_int(45));
+	ut_verify_global_result(QUARK_POS, "let int result = 5*((1+3)*2+1)", false, value_t::make_int(45));
 }
 
 QUARK_UNIT_TEST("execute_expression()", "Sign before parentheses", "", ""){
-	ut_verify_global_result(QUARK_POS, "let int result = -(2+1)*4", value_t::make_int(-12));
+	ut_verify_global_result(QUARK_POS, "let int result = -(2+1)*4", false, value_t::make_int(-12));
 }
 QUARK_UNIT_TEST("execute_expression()", "Sign before parentheses", "", ""){
-	ut_verify_global_result(QUARK_POS, "let int result = -4*(2+1)", value_t::make_int(-12));
+	ut_verify_global_result(QUARK_POS, "let int result = -4*(2+1)", false, value_t::make_int(-12));
 }
 
 
@@ -349,9 +361,10 @@ QUARK_UNIT_TEST("execute_expression()", "||", "", ""){
 
 
 QUARK_UNIT_TEST("execute_expression()", "Type mismatch", "", "") {
-	ut_verify_exception(
+	ut_verify_exception2(
 		QUARK_POS,
 		"let int result = true",
+		compilation_unit_mode::k_no_core_lib,
 		"Expression type mismatch - cannot convert 'bool' to 'int. Line: 1 \"let int result = true\""
 	);
 }
@@ -450,15 +463,19 @@ QUARK_UNIT_TEST("call_function()", "minimal program", "", ""){
 	);
 }
 
+
+
 QUARK_UNIT_TEST("call_function()", "minimal program 2", "", ""){
-	auto ast = compile_to_bytecode(R"(
+	auto ast = test_compile_to_bytecode(
+		R"(
 
-		func string main(string args){
-			return "123" + "456"
-		}
+			func string main(string args){
+				return "123" + "456"
+			}
 
-	)",
-	"");
+		)",
+		""
+	);
 	interpreter_t vm(ast);
 	const auto f = find_global_symbol(vm, "main");
 	const auto result = call_function(vm, f, std::vector<value_t>{ value_t::make_string("program_name 1 2 3") });
@@ -544,7 +561,7 @@ unsupported syntax
 
 
 QUARK_UNIT_TEST("call_function()", "define additional function, call it several times", "", ""){
-	auto ast = compile_to_bytecode(R"(
+	auto ast = test_compile_to_bytecode(R"(
 
 		func int myfunc(){ return 5 }
 		func int main(string args){
@@ -560,7 +577,7 @@ QUARK_UNIT_TEST("call_function()", "define additional function, call it several 
 }
 
 QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
-	auto ast = compile_to_bytecode(R"(
+	auto ast = test_compile_to_bytecode(R"(
 
 		func string main(string args){
 			return "-" + args + "-"
@@ -582,7 +599,7 @@ QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
 
 
 QUARK_UNIT_TEST("call_function()", "use local variables", "", ""){
-	auto ast = compile_to_bytecode(R"(
+	auto ast = test_compile_to_bytecode(R"(
 
 		func string myfunc(string t){ return "<" + t + ">" }
 		func string main(string args){
@@ -682,8 +699,7 @@ QUARK_UNIT_TEST("", "run_main()", "test function args are always immutable", "")
 	);
 }
 
-//
-QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
+QUARK_UNIT_TEST("run_main()", "test reading from subscope", "", ""){
 	ut_verify_printout(
 		QUARK_POS,
 		R"(
@@ -786,7 +802,7 @@ QUARK_UNIT_TEST("run_init()", "", "", ""){
 //////////////////////////////////////////		HOST FUNCTION - typeof()
 
 
-QUARK_UNIT_TEST("", "typeof()", "", ""){
+OFF_QUARK_UNIT_TEST("", "typeof()", "", ""){
 	ut_verify_global_result(
 		QUARK_POS,
 		R"(
@@ -798,7 +814,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("", "typeof()", "", ""){
+OFF_QUARK_UNIT_TEST("", "typeof()", "", ""){
 	const auto input = R"(
 
 		let result = to_string(typeof(145))
@@ -807,7 +823,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 	ut_verify_global_result(QUARK_POS, input, value_t::make_string("int"));
 }
 
-QUARK_UNIT_TEST("", "typeof()", "", ""){
+OFF_QUARK_UNIT_TEST("", "typeof()", "", ""){
 	const auto input = R"(
 
 		let result = typeof("hello")
@@ -816,7 +832,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 	ut_verify_global_result(QUARK_POS, input, value_t::make_typeid_value(typeid_t::make_string()));
 }
 
-QUARK_UNIT_TEST("", "typeof()", "", ""){
+OFF_QUARK_UNIT_TEST("", "typeof()", "", ""){
 	ut_verify_global_result(
 		QUARK_POS,
 		R"(
@@ -828,7 +844,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("", "typeof()", "", ""){
+OFF_QUARK_UNIT_TEST("", "typeof()", "", ""){
 	ut_verify_global_result(
 		QUARK_POS,
 		R"(
@@ -839,7 +855,7 @@ QUARK_UNIT_TEST("", "typeof()", "", ""){
 		value_t::make_typeid_value(typeid_t::make_vector(typeid_t::make_int()))
 	);
 }
-QUARK_UNIT_TEST("", "typeof()", "", ""){
+OFF_QUARK_UNIT_TEST("", "typeof()", "", ""){
 	ut_verify_global_result(
 		QUARK_POS,
 		R"(
@@ -898,7 +914,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 
-//////////////////////////////////////////		BLOCKS AND SCOPING
+//////////////////////////////////////////		BLOCK & SCOPES & LOCALS
 
 
 QUARK_UNIT_TEST("run_init()", "Empty block", "", ""){
@@ -917,24 +933,185 @@ QUARK_UNIT_TEST("run_init()", "Block with local variable, no shadowing", "", "")
 	);
 }
 
-QUARK_UNIT_TEST("run_init()", "Block with local variable, no shadowing", "", ""){
+
+
+QUARK_UNIT_TEST("run_init", "Global block scopes, shadowing or not", "", ""){
 	ut_verify_printout(
 		QUARK_POS,
 		R"(
 
-			let int x = 3
-			print("B:" + to_string(x))
-			{
-				print("C:" + to_string(x))
-				let int x = 4
-				print("D:" + to_string(x))
-			}
-			print("E:" + to_string(x))
+			//	GLOBAL SCOPE
+			let a = 7
+			let b = 1007
 
+			assert(a == 7)	//	global-a
+			print(b = 1007)	//	global-b
+
+
+			//	BLOCK IN GLOBAL SCOPE, SHADOW GLOBAL
+			{
+				assert(a == 7)		//	global-a
+				assert(b = 1007)	//	global-b
+
+				let a = 10
+				assert(a == 10)		//	block local-a, shadowing global-a
+				assert(b == 1007)	//	global-b
+			}
+
+			//	Make we access the globals again.
+			assert(a == 7)	//	global-a
+			assert(b == 1007)	//	global-b
 		)",
-		{ "B:3", "C:3", "D:4", "E:3" }
+		{}
 	);
 }
+
+//???FAIL
+QUARK_UNIT_TEST("run_init", "Function arguments & locals & blocks vs globals, shadowing or not", "", ""){
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			//	GLOBAL SCOPE
+			let a = 7
+			let b = 1007
+
+			assert(a == 7)	//	global-a
+			print(b = 1007)	//	global-b
+
+			//	FUNCTION SCOPING
+			//	Argument-a will shadow the global-a
+			func test(int a){
+				assert(a == 8)		//	argument-a
+				assert(b == 1007)	//	global-b
+
+				//	Make local
+				let c = 2007
+
+				assert(c == 2007)	//	local-c
+
+				//	Shadow global-b
+				{
+					assert(a == 8)		//	argument-a
+					assert(b == 1007)	//	global-b
+					assert(c == 2007)	//	local-
+
+					int b = 3
+
+					assert(a == 8)	/	/	argument-a
+					assert(b == 3)		//	shadow global-b
+					assert(c == 2007)	//	local-c
+				}
+
+				assert(a == 8)		//	argument-a
+				assert(b == 1007)	//	global-b
+				assert(c == 2007)	//	local-c
+
+				//	Shadow argument-a
+				{
+					assert(a == 8))		//	argument-a
+					assert(b== 1007)	//	global-b
+					assert(c == 2007)	//	local-c
+
+					int a = 4
+
+					assert(a == 4)		//	block-local, shadowing argument-a
+					assert(b == 1007)	//	global-b
+					assert(c == 2007)	//	local-c
+				}
+
+				assert(a == 8)		//	argument-a
+				assert(b == 1007)	//	global-b
+				assert(c == 2007)	//	local-c
+			}
+
+			test(8)
+		)",
+		{}
+	);
+}
+
+//???FAIL
+QUARK_UNIT_TEST("run_init", "All block scopes, shadowing or not", "", ""){
+	ut_verify_printout(
+		QUARK_POS,
+		R"(
+
+			//	GLOBAL SCOPE
+			let a = 7
+			let b = 1007
+
+			assert(a == 7)	//	global-a
+			print(b = 1007)	//	global-b
+
+
+			//	BLOCK IN GLOBAL SCOPE, SHADOW GLOBAL
+			{
+				assert(a == 7)		//	global-a
+				assert(b = 1007)	//	global-b
+
+				let a = 10
+				assert(a == 10)		//	block local-a, shadowing global-a
+				assert(b == 1007)	//	global-b
+			}
+
+			//	Make we access the globals again.
+			assert(a == 7)	//	global-a
+			assert(b == 1007)	//	global-b
+
+
+			//	FUNCTION SCOPING
+			//	Argument-a will shadow the global-a
+			func test(int a){
+				assert(a == 8)		//	argument-a
+				assert(b == 1007)	//	global-b
+
+				//	Make local
+				let c = 2007
+
+				assert(c == 2007)	//	local-c
+
+				//	Shadow global-b
+				{
+					assert(a == 8)		//	argument-a
+					assert(b == 1007)	//	global-b
+					assert(c == 2007)	//	local-
+
+					int b = 3
+
+					assert(a == 8)	/	/	argument-a
+					assert(b == 3)		//	shadow global-b
+					assert(c == 2007)	//	local-c
+				}
+
+				assert(a == 8)		//	argument-a
+				assert(b == 1007)	//	global-b
+				assert(c == 2007)	//	local-c
+
+				//	Shadow argument-a
+				{
+					assert(a == 8))		//	argument-a
+					assert(b== 1007)	//	global-b
+					assert(c == 2007)	//	local-c
+
+					int a = 4
+
+					assert(a == 4)		//	block-local, shadowing argument-a
+					assert(b == 1007)	//	global-b
+					assert(c == 2007)	//	local-c
+				}
+
+				assert(a == 8)		//	argument-a
+				assert(b == 1007)	//	global-b
+				assert(c == 2007)	//	local-c
+			}
+
+			test(8)
+		)",
+		{}
+	);
+}
+
 
 
 //////////////////////////////////////////		IF STATEMENT
@@ -4224,7 +4401,7 @@ QUARK_UNIT_TEST("call_function()", "return from within BLOCK", "", ""){
 
 QUARK_UNIT_TEST("", "Make sure returning wrong type => error", "", ""){
 	try {
-	run_container2(R"(
+	test_run_container2(R"(
 
 func int f(){
 	return "x"
@@ -4251,7 +4428,7 @@ QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
 
 	for(const auto& s: program_recording){
 		try{
-		const auto bc = compile_to_bytecode(s, "");
+		const auto bc = test_compile_to_bytecode(s, "");
 		int instruction_count_sum = static_cast<int>(bc._globals._instructions.size());
 		int symbol_count_sum = static_cast<int>(bc._globals._symbols.size());
 
@@ -4369,7 +4546,7 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 
 	)";
 
-	const auto result = run_container2(test_ss2, {}, "iphone app", "");
+	const auto result = test_run_container2(test_ss2, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
 
@@ -4453,7 +4630,7 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 
 	)";
 
-	const auto result = run_container2(test_ss3, {}, "iphone app", "");
+	const auto result = test_run_container2(test_ss3, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
 
@@ -4540,7 +4717,7 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 
 	)";
 
-	const auto result = run_container2(test_ss3, {}, "iphone app", "");
+	const auto result = test_run_container2(test_ss3, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
 
@@ -4559,7 +4736,7 @@ QUARK_UNIT_TEST("", "hello_world.floyd", "", ""){
 	const auto path = get_working_dir() + "/examples/hello_world.floyd";
 	const auto program = read_text_file(path);
 
-	const auto result = run_container2(program, {}, "", "");
+	const auto result = test_run_container2(program, {}, "", "");
 	const std::map<std::string, value_t> expected = {{ "global", value_t::make_void() }};
 	QUARK_UT_VERIFY(result == expected);
 }
@@ -4568,7 +4745,7 @@ QUARK_UNIT_TEST("", "game_of_life.floyd", "", ""){
 	const auto path = get_working_dir() + "/examples/game_of_life.floyd";
 	const auto program = read_text_file(path);
 
-	const auto result = run_container2(program, {}, "", "");
+	const auto result = test_run_container2(program, {}, "", "");
 	const std::map<std::string, value_t> expected = {{ "global", value_t::make_void() }};
 	QUARK_UT_VERIFY(result == expected);
 }
@@ -4577,7 +4754,7 @@ QUARK_UNIT_TEST("", "process_test1.floyd", "", ""){
 	const auto path = get_working_dir() + "/examples/process_test1.floyd";
 	const auto program = read_text_file(path);
 
-	const auto result = run_container2(program, {}, "iphone app", "");
+	const auto result = test_run_container2(program, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
 
@@ -4596,7 +4773,7 @@ QUARK_UNIT_TEST("", "process_test1.floyd", "", ""){
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "TERNARY OPERATOR", "", ""){
-	run_container2(R"(
+	test_run_container2(R"(
 
 //	Snippets setup
 let b = ""
@@ -4609,7 +4786,7 @@ let a = b == "true" ? true : false
 }
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "COMMENTS", "", ""){
-	run_container2(R"(
+	test_run_container2(R"(
 
 /* Comment can span lines. */
 
@@ -4621,7 +4798,7 @@ let a = 10; // To end of line
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "LOCALS", "", ""){
-	run_container2(R"(
+	test_run_container2(R"(
 
 let a = 10
 mutable b = 10
@@ -4633,7 +4810,7 @@ b = 11
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "WHILE", "", ""){
 	//	Just make sure it compiles, don't run it!
-	compile_to_bytecode(R"(
+	test_compile_to_bytecode(R"(
 
 //	Snippets setup
 let expression = true
@@ -4649,7 +4826,7 @@ while(expression){
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "FOR", "", ""){
-	run_container2(R"(
+	test_run_container2(R"(
 
 for (index in 1 ... 5) {
 	print(index)
@@ -4663,7 +4840,7 @@ for (index in 1  ..< 5) {
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "IF ELSE", "", ""){
-	run_container2(R"(
+	test_run_container2(R"(
 
 //	Snippets setup
 let a = 1000
@@ -4685,7 +4862,7 @@ else{
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "BOOL", "", ""){
-	run_container2(R"(
+	test_run_container2(R"(
 
 let a = true
 if(a){
@@ -4695,7 +4872,7 @@ if(a){
 }
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "STRING", "", ""){
-	run_container2(R"(
+	test_run_container2(R"(
 
 let s1 = "Hello, world!"
 let s2 = "Title: " + s1
@@ -4712,7 +4889,7 @@ let s4 = to_string(12003)
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "FUNCTION", "", ""){
-	run_container2(R"(
+	test_run_container2(R"(
 
 func string f(double a, string s){
 	return to_string(a) + ":" + s
@@ -4724,7 +4901,7 @@ let a = f(3.14, "km")
 }
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "IMPURE FUNCTION", "", ""){
-	run_container2(R"(
+	test_run_container2(R"(
 
 func int main([string] args) impure {
 	return 1
@@ -4736,7 +4913,7 @@ func int main([string] args) impure {
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "STRUCT", "", ""){
-	run_container2(R"(
+	test_run_container2(R"(
 
 struct rect {
 	double width
@@ -4761,7 +4938,7 @@ assert(b.width == 100.0)
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "VECTOR", "", ""){
-	run_container2(R"(
+	test_run_container2(R"(
 
 let a = [ 1, 2, 3 ]
 assert(size(a) == 3)
@@ -4789,7 +4966,7 @@ for(i in 0 ..< size(a)){
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "DICTIONARY", "", ""){
-	run_container2(R"(
+	test_run_container2(R"(
 
 let a = { "one": 1, "two": 2 }
 assert(a["one"] == 1)
@@ -4803,7 +4980,7 @@ assert(b == { "one": 10, "two": 2 })
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "JSON_VALUE", "", ""){
-	run_container2(R"(
+	test_run_container2(R"(
 
 let json_value a = {
 	"one": 1,
@@ -4819,7 +4996,7 @@ let json_value a = {
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "MAP", "", ""){
-	run_container2(R"(
+	test_run_container2(R"(
 
 		func int f(int v){
 			return 1000 + v
@@ -4841,15 +5018,11 @@ QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "MAP", "", ""){
 #define MANUAL_SNIPPETS_TEST	QUARK_UNIT_TEST
 
 MANUAL_SNIPPETS_TEST("MANUAL SNIPPETS", "subset()", "", ""){
-	run_container2(R"(
+	test_run_container2(R"(
 
 		assert(subset("hello", 2, 4) == "ll")
 		assert(subset([ 10, 20, 30, 40 ], 1, 3 ) == [ 20, 30 ])
 
 	)", {}, "", "");
 }
-
-#endif
-
-
 

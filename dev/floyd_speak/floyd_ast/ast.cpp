@@ -655,6 +655,8 @@ general_purpose_ast_t json_to_gp_ast(const json_t& json){
 			{}
 		};
 	}
+
+	//	Pass 3 AST aka SAST: contains globals + function-defs.
 	else{
 		const auto globals0 = json.get_object_element("globals");
 		const auto function_defs = json.get_object_element("function_defs");

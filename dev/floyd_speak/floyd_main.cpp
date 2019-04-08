@@ -24,7 +24,7 @@
 #include "pass3.h"
 #include "floyd_llvm_codegen.h"
 #include "compiler_helpers.h"
-
+#include "compiler_basics.h"
 
 std::string floyd_version_string = "0.3";
 
@@ -199,7 +199,8 @@ int do_compile_command(const command_line_args_t& command_line_args){
 	if(command_line_args.extra_arguments.size() == 1){
 		const auto source_path = command_line_args.extra_arguments[0];
 		const auto source = read_text_file(source_path);
-		const auto ast = floyd::compile_to_sematic_ast__errors(source, source_path, floyd::compilation_unit_mode::k_include_core_lib);
+		const auto cu = floyd::make_compilation_unit_lib(source, source_path);
+		const auto ast = floyd::compile_to_sematic_ast__errors(cu);
 		const auto json = semantic_ast_to_json(ast);
 		std::cout << json_to_pretty_string(json._value);
 		std::cout << std::endl;
@@ -220,8 +221,8 @@ int do_run_command(const command_line_args_t& command_line_args){
 		const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
 
 		const auto source = read_text_file(source_path);
-
-		auto program = floyd::compile_to_bytecode(source, source_path);
+		const auto cu = floyd::make_compilation_unit_lib(source, source_path);
+		auto program = floyd::compile_to_bytecode(cu);
 
 		std::vector<floyd::value_t> args3;
 		for(const auto& e: args2){
@@ -374,7 +375,9 @@ json_t handle_server_request(const json_t& request) {
 			if(command == "run"){
 				const auto source_path = request.get_object_element("source_path").get_string();
 				const auto source = read_text_file(source_path);
-				auto program = floyd::compile_to_bytecode(source, source_path);
+
+				const auto cu = floyd::make_compilation_unit_lib(source, source_path);
+				auto program = floyd::compile_to_bytecode(cu);
 
 				const auto result = floyd::run_container(program, {}, program._container_def._name);
 				if(result.size() == 1 && result.find("main()") != result.end()){

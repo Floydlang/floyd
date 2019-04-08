@@ -15,6 +15,7 @@
 #include "host_functions.h"
 #include "bytecode_generator.h"
 #include "compiler_helpers.h"
+#include "compiler_basics.h"
 
 #include <thread>
 #include <deque>
@@ -42,6 +43,32 @@ parse_tree_json_t parse_program__errors(const compilation_unit_t& cu){
 }
 
 
+compilation_unit_t make_compilation_unit_nolib(const std::string& source_code, const std::string& source_path){
+	return compilation_unit_t{
+		.prefix_source = "",
+		.program_text = source_code,
+		.source_file_path = source_path
+	};
+}
+
+compilation_unit_t make_compilation_unit_lib(const std::string& source_code, const std::string& source_path){
+	return compilation_unit_t{
+		.prefix_source = k_builtin_types_and_constants + "\n",
+		.program_text = source_code,
+		.source_file_path = source_path
+	};
+}
+
+compilation_unit_t make_compilation_unit(const std::string& source_code, bool corelib){
+	if(corelib){
+		return make_compilation_unit_lib(source_code, "");
+	}
+	else{
+		return make_compilation_unit_nolib(source_code, "");
+	}
+}
+
+
 
 semantic_ast_t run_semantic_analysis__errors(const pass2_ast_t& pass2, const compilation_unit_t& cu){
 	try {
@@ -58,25 +85,10 @@ semantic_ast_t run_semantic_analysis__errors(const pass2_ast_t& pass2, const com
 	}
 }
 
-semantic_ast_t compile_to_sematic_ast__errors(const std::string& program, const std::string& file, compilation_unit_mode mode){
-	const auto pre = k_builtin_types_and_constants + "\n";
-
-	const auto cu = mode == compilation_unit_mode::k_no_core_lib ?
-		compilation_unit_t{
-			.prefix_source = "",
-			.program_text = program,
-			.source_file_path = file
-		}
-		:
-		compilation_unit_t{
-			.prefix_source = pre,
-			.program_text = program,
-			.source_file_path = file
-		};
+semantic_ast_t compile_to_sematic_ast__errors(const compilation_unit_t& cu){
 
 //	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
 	const auto parse_tree = parse_program__errors(cu);
-
 	const auto pass2 = parse_tree_to_pass2_ast(parse_tree);
 	const auto pass3 = run_semantic_analysis__errors(pass2, cu);
 	return pass3;

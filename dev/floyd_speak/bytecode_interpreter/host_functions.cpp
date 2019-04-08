@@ -1884,7 +1884,7 @@ std::vector<host_function_record_t> get_host_function_records(){
 	const auto k_fsentry_t__type = make__fsentry_t__type();
 
 	const std::vector<host_function_record_t> result = {
-		make_rec("assert", host__assert, 1001, typeid_t::make_function(VOID, { DYN }, epure::pure)),
+		make_rec("assert", host__assert, 1001, typeid_t::make_function(VOID, { typeid_t::make_bool() }, epure::pure)),
 		make_rec("to_string", host__to_string, 1002, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::pure)),
 		make_rec("to_pretty_string", host__to_pretty_string, 1003, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::pure)),
 		make_rec("typeof", host__typeof, 1004, typeid_t::make_function(typeid_t::make_typeid(), { DYN }, epure::pure)),

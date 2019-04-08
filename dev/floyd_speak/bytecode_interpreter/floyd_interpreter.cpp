@@ -371,8 +371,8 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vec
 
 
 
-bc_program_t compile_to_bytecode(const std::string& program, const std::string& file){
-	const auto pass3 = compile_to_sematic_ast__errors(program, file, compilation_unit_mode::k_include_core_lib);
+bc_program_t compile_to_bytecode(const compilation_unit_t& cu){
+	const auto pass3 = compile_to_sematic_ast__errors(cu);
 	const auto bc = generate_bytecode(pass3);
 	return bc;
 }
@@ -380,16 +380,16 @@ bc_program_t compile_to_bytecode(const std::string& program, const std::string& 
 
 
 
-std::shared_ptr<interpreter_t> run_global(const std::string& source, const std::string& file){
-	auto program = compile_to_bytecode(source, file);
+std::shared_ptr<interpreter_t> run_global(const compilation_unit_t& cu){
+	auto program = compile_to_bytecode(cu);
 	auto vm = std::make_shared<interpreter_t>(program);
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 	print_vm_printlog(*vm);
 	return vm;
 }
 
-std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(const std::string& source, const std::vector<floyd::value_t>& args, const std::string& file){
-	auto program = compile_to_bytecode(source, file);
+std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(const compilation_unit_t& cu, const std::vector<floyd::value_t>& args){
+	auto program = compile_to_bytecode(cu);
 
 	//	Runs global code.
 	auto interpreter = std::make_shared<interpreter_t>(program);
@@ -673,8 +673,8 @@ std::map<std::string, value_t> run_container(const bc_program_t& program, const 
 }
 
 
-std::map<std::string, value_t> run_container2(const std::string& source, const std::vector<floyd::value_t>& args, const std::string& container_key, const std::string& source_path){
-	auto program = compile_to_bytecode(source, source_path);
+std::map<std::string, value_t> run_container2(const compilation_unit_t& cu, const std::vector<floyd::value_t>& args, const std::string& container_key){
+	auto program = compile_to_bytecode(cu);
 	return run_container(program, args, container_key);
 }
 

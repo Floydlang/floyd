@@ -10,28 +10,42 @@
 
 
 #include "floyd_interpreter.h"
+//#include "host_functions.h"
+
 #include "floyd_llvm_codegen.h"
+
+#include "json_support.h"
+#include "text_parser.h"
+#include "file_handling.h"
 
 #include "ast_value.h"
 #include "expression.h"
-#include "json_support.h"
-#include "text_parser.h"
-#include "host_functions.h"
-#include "file_handling.h"
+#include "compiler_basics.h"
+#include "compiler_helpers.h"
+#include "floyd_parser.h"
+#include "pass3.h"
 
 #include <string>
 #include <vector>
 #include <iostream>
 
 
-#include "host_functions.h"
-#include "compiler_basics.h"
-#include "compiler_helpers.h"
-#include "floyd_parser.h"
-#include "pass3.h"
+
+
+
 
 
 namespace floyd {
+
+enum class executor_mode {
+	bc_interpreter,
+	llvm_jit
+};
+
+
+//executor_mode g_executor = executor_mode::bc_interpreter;
+executor_mode g_executor = executor_mode::llvm_jit;
+
 
 run_report_t make_result(const value_t& result){
 	return { result, value_t::make_undefined(), {}, {} };
@@ -45,9 +59,9 @@ void ut_verify(const quark::call_context_t& context, const run_report_t& result,
 
 
 //	Run program using Floyd bytecode interpreter
-static run_report_t run_program_bc(const std::string& program, const std::vector<value_t>& main_args){
+static run_report_t run_program_bc(const compilation_unit_t& cu, const std::vector<value_t>& main_args){
 	try {
-		const auto exe = compile_to_bytecode(program, "test");
+		const auto exe = compile_to_bytecode(cu);
 
 		//	Runs global code.
 		auto interpreter = interpreter_t(exe);
@@ -76,12 +90,12 @@ static run_report_t run_program_bc(const std::string& program, const std::vector
 
 
 //	Run program using LLVM.
-static run_report_t run_program_llvm(const std::string& program_source, const std::vector<value_t>& main_args){
+static run_report_t run_program_llvm(const compilation_unit_t& cu, const std::vector<value_t>& main_args){
 	try {
 		llvm_instance_t llvm_instance;
 
 		const auto file = "test567.floyd";
-		const auto pass3 = compile_to_sematic_ast__errors(program_source, file, floyd::compilation_unit_mode::k_no_core_lib);
+		const auto pass3 = compile_to_sematic_ast__errors(cu);
 		auto exe = generate_llvm_ir(llvm_instance, pass3, file);
 
 
@@ -103,9 +117,16 @@ static run_report_t run_program_llvm(const std::string& program_source, const st
 	}
 }
 
-run_report_t run_program(const std::string& program_source, const std::vector<value_t>& main_args){
-//	return run_program_bc(program_source, main_args);
-	return run_program_llvm(program_source, main_args);
+run_report_t run_program(const compilation_unit_t& cu, const std::vector<value_t>& main_args){
+	if(g_executor == executor_mode::bc_interpreter){
+		return run_program_bc(cu, main_args);
+	}
+	else if(g_executor == executor_mode::llvm_jit){
+		return run_program_llvm(cu, main_args);
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
 }
 
 
@@ -113,14 +134,14 @@ run_report_t run_program(const std::string& program_source, const std::vector<va
 QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
 	ut_verify(
 		QUARK_POS,
-		run_program("print(\"Hello, world!\")", {}),
+		run_program(make_compilation_unit("print(\"Hello, world!\")", true), {}),
 		run_report_t{ value_t::make_undefined(), value_t::make_undefined(), { "Hello, world!" }, ""}
 	);
 }
 QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
 	ut_verify(
 		QUARK_POS,
-		run_program("let result = 112", {}),
+		run_program(make_compilation_unit("let result = 112", true), {}),
 		run_report_t{ value_t::make_int(112), value_t::make_undefined(), {}, ""}
 	);
 }
@@ -128,7 +149,7 @@ QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
 	ut_verify(
 		QUARK_POS,
 		run_program(
-			"func int main([string] args){ return 1003 }",
+			make_compilation_unit("func int main([string] args){ return 1003 }", true),
 			{ value_t::make_vector_value(typeid_t::make_string(), { value_t::make_string("a"), value_t::make_string("b") }) }
 		),
 		run_report_t{ value_t::make_undefined(), value_t::make_int(1003), {}, ""}
@@ -137,24 +158,27 @@ QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
 QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
 	ut_verify(
 		QUARK_POS,
-		run_program("print(1) print(234)", {}),
+		run_program(make_compilation_unit("print(1) print(234)", true), {}),
 		run_report_t{ value_t::make_undefined(), value_t::make_undefined(), {"1", "234" }, ""}
 	);
 }
 
 
 
-void ut_verify_global_result(const quark::call_context_t& context, const std::string& program, const value_t& expected_result){
-	const auto result = run_program(program, {});
+void ut_verify_global_result(const quark::call_context_t& context, const std::string& program, bool corelib, const value_t& expected_result){
+	const auto result = run_program(make_compilation_unit(program, corelib), {});
 	ut_verify(
 		context,
 		value_and_type_to_ast_json(result.result_variable),
 		value_and_type_to_ast_json(expected_result)
 	);
 }
+void ut_verify_global_result(const quark::call_context_t& context, const std::string& program, const value_t& expected_result){
+	ut_verify_global_result(context, program, true, expected_result);
+}
 void ut_verify_global_result_as_json(const quark::call_context_t& context, const std::string& program, const std::string& expected_json){
 	const auto expected_json2 = parse_json(seq_t(expected_json)).first;
-	const auto result = run_program(program, {});
+	const auto result = run_program(make_compilation_unit(program, true), {});
 	ut_verify(
 		context,
 		value_and_type_to_ast_json(result.result_variable),
@@ -163,17 +187,17 @@ void ut_verify_global_result_as_json(const quark::call_context_t& context, const
 }
 
 void ut_verify_printout(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout){
-	const auto result = run_program(program, {});
+	const auto result = run_program(make_compilation_unit_lib(program, ""), {});
 	ut_verify(context, result.print_out, printout);
 }
 
 //	Has no output value: only compilation errors or floyd-asserts.
-void run_closed(const std::string& program){
-	run_global(program, "");
+void ut_run_closed(const std::string& program){
+	run_program(make_compilation_unit_lib(program, ""), {});
 }
 
 void ut_verify_mainfunc_return(const quark::call_context_t& context, const std::string& program, const std::vector<floyd::value_t>& args, const value_t& expected_return){
-	const auto result = run_program(program, args);
+	const auto result = run_program(make_compilation_unit_lib(program, ""), args);
 	ut_verify(
 		context,
 		value_and_type_to_ast_json(result.main_result),
@@ -182,13 +206,14 @@ void ut_verify_mainfunc_return(const quark::call_context_t& context, const std::
 }
 
 void ut_verify_exception(const quark::call_context_t& context, const std::string& program, const std::string& expected_what){
-	try{
-		run_closed(program);
-		fail_test(context);
-	}
-	catch(const std::runtime_error& e){
-		ut_verify(context, e.what(), expected_what);
-	}
+	const auto result = run_program(make_compilation_unit_lib(program, ""), {});
+	ut_verify(context, result.exception_what, expected_what);
+}
+
+void ut_verify_exception2(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::string& expected_what){
+	const auto cu = make_compilation_unit(program, cu_mode == compilation_unit_mode::k_include_core_lib);
+	const auto result = run_program(cu, {});
+	ut_verify(context, result.exception_what, expected_what);
 }
 
 

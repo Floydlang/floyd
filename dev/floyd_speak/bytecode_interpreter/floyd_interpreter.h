@@ -23,7 +23,7 @@
 namespace floyd {
 struct value_t;
 struct semantic_ast_t;
-
+struct compilation_unit_t;
 
 //////////////////////////////////////		Helpers for values.
 
@@ -40,9 +40,9 @@ value_t get_global(const interpreter_t& vm, const std::string& name);
 
 value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vector<value_t>& args);
 
-bc_program_t compile_to_bytecode(const std::string& program, const std::string& file);
+bc_program_t compile_to_bytecode(const compilation_unit_t& cu);
 
-std::shared_ptr<interpreter_t> run_global(const std::string& source, const std::string& file);
+std::shared_ptr<interpreter_t> run_global(const compilation_unit_t& cu);
 
 /*
 	Quickie that compiles a program and calls its main() with the args.
@@ -80,10 +80,9 @@ std::map<std::string, value_t> run_container(
 	const std::string& container_key
 );
 std::map<std::string, value_t> run_container2(
-	const std::string& source,
+	const compilation_unit_t& cu,
 	const std::vector<value_t>& args,
-	const std::string& container_key,
-	const std::string& source_path
+	const std::string& container_key
 );
 
 void print_vm_printlog(const interpreter_t& vm);
