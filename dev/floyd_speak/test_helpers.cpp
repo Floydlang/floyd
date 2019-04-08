@@ -43,8 +43,8 @@ enum class executor_mode {
 };
 
 
-executor_mode g_executor = executor_mode::bc_interpreter;
-//executor_mode g_executor = executor_mode::llvm_jit;
+//executor_mode g_executor = executor_mode::bc_interpreter;
+executor_mode g_executor = executor_mode::llvm_jit;
 
 
 run_report_t make_result(const value_t& result){
@@ -131,21 +131,21 @@ run_report_t run_program(const compilation_unit_t& cu, const std::vector<value_t
 
 
 
-QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
+QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 	ut_verify(
 		QUARK_POS,
 		run_program(make_compilation_unit("print(\"Hello, world!\")", "", compilation_unit_mode::k_include_core_lib), {}),
 		run_report_t{ value_t::make_undefined(), value_t::make_undefined(), { "Hello, world!" }, ""}
 	);
 }
-QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
+QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 	ut_verify(
 		QUARK_POS,
 		run_program(make_compilation_unit("let result = 112", "", compilation_unit_mode::k_include_core_lib), {}),
 		run_report_t{ value_t::make_int(112), value_t::make_undefined(), {}, ""}
 	);
 }
-QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
+QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 	ut_verify(
 		QUARK_POS,
 		run_program(
@@ -155,7 +155,7 @@ QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
 		run_report_t{ value_t::make_undefined(), value_t::make_int(1003), {}, ""}
 	);
 }
-QUARK_UNIT_TEST("Floyd test suite", "run_program()", "", ""){
+QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 	ut_verify(
 		QUARK_POS,
 		run_program(make_compilation_unit("print(1) print(234)", "", compilation_unit_mode::k_include_core_lib), {}),
