@@ -195,7 +195,7 @@ void ut_run_closed(const std::string& program, compilation_unit_mode mode){
 }
 
 void ut_verify_mainfunc_return(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::vector<floyd::value_t>& args, const value_t& expected_return){
-	const auto result = run_program(make_compilation_unit_lib(program, ""), args);
+	const auto result = run_program(make_compilation_unit(program, "", cu_mode), args);
 	ut_verify(
 		context,
 		value_and_type_to_ast_json(result.main_result),
