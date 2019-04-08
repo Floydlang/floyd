@@ -264,16 +264,88 @@ QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "Repeated operators"
 	ut_verify_global_result_nolib(QUARK_POS, "let int result = 2-+-2", value_t::make_int(4));
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "int", "Wrong number of arguments to int-constructor", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = int()
+
+		)",
+		"Wrong number of arguments in function call, got 0, expected 1. Line: 3 \"let a = int()\""
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "Expression", "Error: mix types", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = 3 < "hello"
+
+		)",
+		"Expression type mismatch - cannot convert 'string' to 'int. Line: 3 \"let a = 3 < \"hello\"\""
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "Expression", "Error: mix types", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = 3 * 3.2
+
+		)",
+		"Expression type mismatch - cannot convert 'double' to 'int. Line: 3 \"let a = 3 * 3.2\""
+	);
+}
+
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - BOOL
 
 
-QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "Bool", ""){
+QUARK_UNIT_TEST("Floyd test suite", "bool constructor", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let bool result = true", value_t::make_bool(true));
 }
-QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "Bool", ""){
+QUARK_UNIT_TEST("Floyd test suite", "bool constructor", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let bool result = false", value_t::make_bool(false));
 }
+
+QUARK_UNIT_TEST("Floyd test suite", "bool +", "", ""){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			let result = false + true
+
+		)",
+		value_t::make_bool(true)
+	);
+}
+QUARK_UNIT_TEST("Floyd test suite", "bool +", "", ""){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			let result = false + false
+
+		)",
+		value_t::make_bool(false)
+	);
+}
+QUARK_UNIT_TEST("Floyd test suite", "bool +", "", ""){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			let result = true + true
+
+		)",
+		value_t::make_bool(true)
+	);
+}
+
+
 
 
 
@@ -442,6 +514,19 @@ QUARK_UNIT_TEST("Floyd test suite", "Forgot let or mutable", "", "Exception"){
 		"Use 'mutable' or 'let' syntax. Line: 1 \"int test = 123\""
 	);
 }
+
+QUARK_UNIT_TEST("Floyd test suite", "Access variable", "Access undefined variable", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			print(a)
+
+		)",
+		"Undefined variable \"a\". Line: 3 \"print(a)\""
+	);
+}
+
 
 
 //////////////////////////////////////////		TEST CONSTRUCTOR - SIMPLE TYPES
@@ -760,7 +845,30 @@ QUARK_UNIT_TEST("Floyd test suite", "func", "Recursion: function calling itself 
 	);
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "Call", "Error: Wrong number of arguments in function call", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
 
+			func int f(int a){ return a + 1 }
+			let a = f(1, 2)
+
+		)",
+		"Wrong number of arguments in function call, got 2, expected 1. Line: 4 \"let a = f(1, 2)\""
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "Call", "Call non-function, non-struct, non-typeid", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = 3()
+
+		)",
+		"Cannot call non-function, its type is int. Line: 3 \"let a = 3()\""
+	);
+}
 
 
 //////////////////////////////////////////		RETURN STATEMENT - ADVANCED USAGE
@@ -1620,7 +1728,7 @@ QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 //////////////////////////////////////////		NULL - TYPE
 
 
-QUARK_UNIT_TEST("null", "", "", "0"){
+QUARK_UNIT_TEST("Floyd test suite", "json_value::null", "", ""){
 //	try{
 		run_closed(R"(let result = null)");
 /*
@@ -1707,6 +1815,18 @@ QUARK_UNIT_TEST("Floyd test suite", "string replace()", "combo", ""){
 	)");
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "string", "Error: Lookup in string using non-int", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			let string a = "test string"
+			print(a["not an integer"])
+
+		)",
+		"Strings can only be indexed by integers, not a \"string\". Line: 4 \"print(a[\"not an integer\"])\""
+	);
+}
 
 
 
@@ -2161,6 +2281,68 @@ QUARK_UNIT_TEST("Floyd test suite", "vector<double> push_back()", "", ""){
 }
 
 
+QUARK_UNIT_TEST("Floyd test suite", "vector", "Error: Lookup in vector using non-int", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			let [string] a = ["one", "two", "three"]
+			print(a["not an integer"])
+
+		)",
+		"Vector can only be indexed by integers, not a \"string\". Line: 4 \"print(a[\"not an integer\"])\""
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "vector", "Vector can not hold elements of different types.", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = [3, bool]
+
+		)",
+		"Vector of type [int] cannot hold an element of type typeid. Line: 3 \"let a = [3, bool]\""
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "vector", "Error: Lookup the unlookupable", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = 3[0]
+
+		)",
+		"Lookup using [] only works with strings, vectors, dicts and json_value - not a \"int\". Line: 3 \"let a = 3[0]\""
+	);
+}
+
+
+QUARK_UNIT_TEST("Floyd test suite", "vector constructor", "", "3"){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			let [int] a = [1, 2, 3]
+			let result = size(a)
+
+		)",
+		value_t::make_int(3)
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "vector<int> pushpush_back()", "", ""){
+	run_closed(
+		R"(
+
+			let result = push_back([1, 2], 3)
+			assert(result == [1, 2, 3])
+
+		)"
+	);
+}
+
 
 
 //////////////////////////////////////////		FIND()
@@ -2486,6 +2668,31 @@ QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> erase()", "", ""){
 		assert(b == { "two": 2, "three" : 3})
 
 	)");
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "dict", "Error: Lookup in dict using non-string key", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = { "one": 1, "two": 2 }
+			print(a[3])
+
+		)",
+		"Dictionary can only be looked up using string keys, not a \"int\". Line: 4 \"print(a[3])\""
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "dict", "Dict can not hold elements of different types.", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = {"one": 1, "two": bool}
+
+		)",
+		"Dictionary of type [string:int] cannot hold an element of type typeid. Line: 3 \"let a = {\"one\": 1, \"two\": bool}\""
+	);
 }
 
 
@@ -2820,6 +3027,33 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "", ""){
 
 		)",
 		value_t::make_double(201.0)
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "Struct", "Error: Wrong number of arguments to struct-constructor", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			struct pos { double x double y }
+			let a = pos(3)
+
+		)",
+		"Wrong number of arguments in function call, got 1, expected 2. Line: 4 \"let a = pos(3)\""
+	);
+}
+
+//??? Also tell *which* argument is wrong type -- its name and index.
+QUARK_UNIT_TEST("Floyd test suite", "struct", "Error: Wrong TYPE of arguments to struct-constructor", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			struct pos { double x double y }
+			let a = pos(3, "hello")
+
+		)",
+		"Expression type mismatch - cannot convert 'int' to 'double. Line: 4 \"let a = pos(3, \"hello\")\""
 	);
 }
 
@@ -4226,253 +4460,6 @@ QUARK_UNIT_TEST("Parser error", "", "", ""){
 		R"___(Incomplete escape sequence in string literal: "abc"! Line: 1 ""abc\")___"
 	);
 }
-
-
-
-///////////////////////////////////////////////////			EDGE CASES
-
-
-
-//??? test accessing array->struct->array.
-//??? test structs in vectors.
-
-
-
-
-QUARK_UNIT_TEST("Floyd test suite", "string", "Error: Lookup in string using non-int", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			let string a = "test string"
-			print(a["not an integer"])
-
-		)",
-		"Strings can only be indexed by integers, not a \"string\". Line: 4 \"print(a[\"not an integer\"])\""
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "vector", "Error: Lookup in vector using non-int", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			let [string] a = ["one", "two", "three"]
-			print(a["not an integer"])
-
-		)",
-		"Vector can only be indexed by integers, not a \"string\". Line: 4 \"print(a[\"not an integer\"])\""
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "dict", "Error: Lookup in dict using non-string key", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			let a = { "one": 1, "two": 2 }
-			print(a[3])
-
-		)",
-		"Dictionary can only be looked up using string keys, not a \"int\". Line: 4 \"print(a[3])\""
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "Access variable", "Access undefined variable", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			print(a)
-
-		)",
-		"Undefined variable \"a\". Line: 3 \"print(a)\""
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "Call", "Error: Wrong number of arguments in function call", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			func int f(int a){ return a + 1 }
-			let a = f(1, 2)
-
-		)",
-		"Wrong number of arguments in function call, got 2, expected 1. Line: 4 \"let a = f(1, 2)\""
-	);
-}
-
-
-QUARK_UNIT_TEST("Floyd test suite", "Struct", "Error: Wrong number of arguments to struct-constructor", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			struct pos { double x double y }
-			let a = pos(3)
-
-		)",
-		"Wrong number of arguments in function call, got 1, expected 2. Line: 4 \"let a = pos(3)\""
-	);
-}
-
-//??? Also tell *which* argument is wrong type -- its name and index.
-QUARK_UNIT_TEST("Floyd test suite", "struct", "Error: Wrong TYPE of arguments to struct-constructor", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			struct pos { double x double y }
-			let a = pos(3, "hello")
-
-		)",
-		"Expression type mismatch - cannot convert 'int' to 'double. Line: 4 \"let a = pos(3, \"hello\")\""
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "int", "Wrong number of arguments to int-constructor", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			let a = int()
-
-		)",
-		"Wrong number of arguments in function call, got 0, expected 1. Line: 3 \"let a = int()\""
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "Call", "Call non-function, non-struct, non-typeid", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			let a = 3()
-
-		)",
-		"Cannot call non-function, its type is int. Line: 3 \"let a = 3()\""
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "vector", "Vector can not hold elements of different types.", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			let a = [3, bool]
-
-		)",
-		"Vector of type [int] cannot hold an element of type typeid. Line: 3 \"let a = [3, bool]\""
-	);
-}
-QUARK_UNIT_TEST("Floyd test suite", "dict", "Dict can not hold elements of different types.", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			let a = {"one": 1, "two": bool}
-
-		)",
-		"Dictionary of type [string:int] cannot hold an element of type typeid. Line: 3 \"let a = {\"one\": 1, \"two\": bool}\""
-	);
-}
-
-
-QUARK_UNIT_TEST("Floyd test suite", "Expression", "Error: mix types", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			let a = 3 < "hello"
-
-		)",
-		"Expression type mismatch - cannot convert 'string' to 'int. Line: 3 \"let a = 3 < \"hello\"\""
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "Expression", "Error: mix types", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			let a = 3 * 3.2
-
-		)",
-		"Expression type mismatch - cannot convert 'double' to 'int. Line: 3 \"let a = 3 * 3.2\""
-	);
-}
-QUARK_UNIT_TEST("Floyd test suite", "Expression", "Adding bools", "success"){
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-		R"(
-
-			let result = false + true
-
-		)",
-		value_t::make_bool(true)
-	);
-}
-QUARK_UNIT_TEST("Floyd test suite", "Expression", "Adding bools", "success"){
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-		R"(
-
-			let result = false + false
-
-		)",
-		value_t::make_bool(false)
-	);
-}
-QUARK_UNIT_TEST("Floyd test suite", "Expression", "Adding bools", "success"){
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-		R"(
-
-			let result = true + true
-
-		)",
-		value_t::make_bool(true)
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "vector", "Error: Lookup the unlookupable", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			let a = 3[0]
-
-		)",
-		"Lookup using [] only works with strings, vectors, dicts and json_value - not a \"int\". Line: 3 \"let a = 3[0]\""
-	);
-}
-
-
-QUARK_UNIT_TEST("Floyd test suite", "vector constructor", "", "3"){
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-		R"(
-
-			let [int] a = [1, 2, 3]
-			let result = size(a)
-
-		)",
-		value_t::make_int(3)
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "vector<int> pushpush_back()", "", ""){
-	run_closed(
-		R"(
-
-			let result = push_back([1, 2], 3)
-			assert(result == [1, 2, 3])
-
-		)"
-	);
-}
-
 
 
 
