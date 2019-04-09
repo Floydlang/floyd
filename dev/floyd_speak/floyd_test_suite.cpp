@@ -571,8 +571,9 @@ QUARK_UNIT_TEST("Floyd test suite", "Expression statement", "", ""){
 	ut_verify_printout_nolib(QUARK_POS, "print(5)", { "5" });
 }
 
+/*
 QUARK_UNIT_TEST("Floyd test suite", "Call print()", "local variable without let", ""){
-	ut_verify_printout_nolib(
+	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
 
@@ -580,16 +581,19 @@ QUARK_UNIT_TEST("Floyd test suite", "Call print()", "local variable without let"
 			print(a)
 
 		)",
-		{ "7" }
+		"bla bla bla"
 	);
 }
+*/
 
 QUARK_UNIT_TEST("Floyd test suite", "print() supports ints and strings", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
+
 			print("Hello, world!")
 			print(123)
+
 		)",
 		{ "Hello, world!", "123" }
 	);

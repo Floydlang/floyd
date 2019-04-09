@@ -1828,21 +1828,21 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 			arg_values.push_back(arg2);
 		}
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_value){
-			llvm::Value* arg2 = genllvm_expression(gen_acc, e._input_exprs[out_arg.floyd_arg_index]);
+			llvm::Value* arg2 = genllvm_expression(gen_acc, e._input_exprs[1 + out_arg.floyd_arg_index]);
 
 			//	Actual type of the argument, as specified inside the call expression. The concrete type for the DYN value for this call.
-			const auto concrete_arg_type = e._input_exprs[out_arg.floyd_arg_index].get_output_type();
+			const auto concrete_arg_type = e._input_exprs[1 + out_arg.floyd_arg_index].get_output_type();
 
 			if(concrete_arg_type.is_function()){
-				llvm::Value* arg3 = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, llvm_gen_encoded, "pack function to GEN int64");
+				llvm::Value* arg3 = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, llvm_gen_encoded, "function_as_GEN");
 				arg_values.push_back(arg3);
 			}
 			else if(concrete_arg_type.is_double()){
-				llvm::Value* arg3 = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::BitCast, arg2, llvm_gen_encoded, "pack double to GEN int64");
+				llvm::Value* arg3 = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::BitCast, arg2, llvm_gen_encoded, "double_as_GEN");
 				arg_values.push_back(arg3);
 			}
 			else if(concrete_arg_type.is_string()){
-				llvm::Value* arg3 = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, llvm_gen_encoded, "pack string to GEN int64");
+				llvm::Value* arg3 = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, llvm_gen_encoded, "string_as_GEN");
 				arg_values.push_back(arg3);
 			}
 			else if(concrete_arg_type.is_int()){
@@ -2564,6 +2564,14 @@ std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> genllvm_al
 			gen_acc.globals = globals;
 		}
 	}
+
+/*
+	{
+		QUARK_SCOPED_TRACE("prototypes");
+		QUARK_TRACE_SS(floyd::print_gen(gen_acc));
+	}
+*/
+
 
 
 	//	GENERATE CODE for floyd_runtime_init()

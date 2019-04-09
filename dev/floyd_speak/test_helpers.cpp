@@ -115,6 +115,9 @@ static run_report_t run_program_llvm(const compilation_unit_t& cu, const std::ve
 	catch(const std::runtime_error& e){
 		return run_report_t{ {}, {}, {}, e.what() };
 	}
+	catch(...){
+		return run_report_t{ {}, {}, {}, "*** unknown exception***" };
+	}
 }
 
 run_report_t run_program(const compilation_unit_t& cu, const std::vector<value_t>& main_args){
