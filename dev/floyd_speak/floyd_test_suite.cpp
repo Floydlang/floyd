@@ -785,6 +785,37 @@ QUARK_UNIT_TEST("Floyd test suite", "main()", "minimal program", ""){
 //////////////////////////////////////////		func
 
 
+QUARK_UNIT_TEST("Floyd test suite", "func", "Simplest func", ""){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			func int f(){
+				return 1000;
+			}
+			result = f()
+
+		)",
+		value_t::make_int(1000)
+	);
+}
+
+//???FAILS
+QUARK_UNIT_TEST("Floyd test suite", "func", "Function with int argument", ""){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			func int f(int a){
+				return a + 1;
+			}
+			result = f(1000)
+
+		)",
+		value_t::make_int(1001)
+	);
+}
+
 QUARK_UNIT_TEST("Floyd test suite", "func", "define additional function, call it several times", ""){
 	ut_verify_mainfunc_return(
 		QUARK_POS,
@@ -802,7 +833,8 @@ QUARK_UNIT_TEST("Floyd test suite", "func", "define additional function, call it
 	);
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "func", "use function inputs", ""){
+//???FAILS
+QUARK_UNIT_TEST("Floyd test suite", "func", "use function inputs", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(

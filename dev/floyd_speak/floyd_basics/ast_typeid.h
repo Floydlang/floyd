@@ -467,7 +467,6 @@ struct member_t {
 
 	/////////////////////////////		STATE
 	public: floyd::typeid_t _type;
-
 	public: std::string _name;
 };
 
