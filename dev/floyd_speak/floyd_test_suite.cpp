@@ -801,7 +801,7 @@ QUARK_UNIT_TEST("Floyd test suite", "func", "Simplest func", ""){
 }
 
 //???FAILS
-QUARK_UNIT_TEST("Floyd test suite", "func", "Function with int argument", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "func", "Function with int argument", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(

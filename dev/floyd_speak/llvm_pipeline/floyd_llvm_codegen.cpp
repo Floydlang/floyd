@@ -523,169 +523,6 @@ global_v_t find_symbol(llvmgen_t& gen_acc, const variable_address_t& reg){
 }
 
 
-static const std::string k_expected_ir_fibonacci_text = R"ABC(
-; ModuleID = 'fibonacciModule'
-source_filename = "fibonacciModule"
-
-define i32 @FibonacciFnc() {
-entry:
-  %next = alloca i32
-  %first = alloca i32
-  %second = alloca i32
-  %count = alloca i32
-  store i32 0, i32* %next
-  store i32 0, i32* %first
-  store i32 1, i32* %second
-  store i32 0, i32* %count
-  br label %loopEntry
-
-loopEntry:                                        ; preds = %merge, %entry
-  %countVal = load i32, i32* %count
-  %enterLoopCond = icmp ult i32 %countVal, 21
-  br i1 %enterLoopCond, label %loop, label %exitLoop
-
-loop:                                             ; preds = %loopEntry
-  br label %if
-
-exitLoop:                                         ; preds = %loopEntry
-  %finalNext = load i32, i32* %next
-  ret i32 %finalNext
-
-if:                                               ; preds = %loop
-  %ifStmt = icmp ult i32 %countVal, 2
-  br i1 %ifStmt, label %ifTrue, label %else
-
-ifTrue:                                           ; preds = %if
-  %nextVal = load i32, i32* %count
-  store i32 %nextVal, i32* %next
-  br label %merge
-
-else:                                             ; preds = %if
-  %firstVal = load i32, i32* %first
-  %secondVal = load i32, i32* %second
-  %nextVal1 = add i32 %firstVal, %secondVal
-  store i32 %nextVal1, i32* %next
-  store i32 %secondVal, i32* %first
-  store i32 %nextVal1, i32* %second
-  br label %merge
-
-merge:                                            ; preds = %else, %ifTrue
-  %0 = add i32 %countVal, 1
-  store i32 %0, i32* %count
-  br label %loopEntry
-}
-)ABC";
-
-
-static llvm::Function* InitFibonacciFnc(llvm::LLVMContext& context, std::unique_ptr<llvm::Module> module, llvm::IRBuilder<>& builder, int targetFibNum){
-	llvm::Function* f = llvm::cast<llvm::Function>(
-		module->getOrInsertFunction("FibonacciFnc", llvm::Type::getInt32Ty(context))
-	);
-
-	llvm::Value* zero = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
-	llvm::Value* one = llvm::ConstantInt::get(builder.getInt32Ty(), 1);
-	llvm::Value* two = llvm::ConstantInt::get(builder.getInt32Ty(), 2);
-	llvm::Value* N = llvm::ConstantInt::get(builder.getInt32Ty(), targetFibNum);
-
-
-	////////////////////////		Create all basic blocks first, so we can branch between them when we start emitting instructions
-
-	llvm::BasicBlock* EntryBB = llvm::BasicBlock::Create(context, "entry", f);
-	llvm::BasicBlock* LoopEntryBB = llvm::BasicBlock::Create(context, "loopEntry", f);
-
-	llvm::BasicBlock* LoopBB = llvm::BasicBlock::Create(context, "loop", f);
-		llvm::BasicBlock* IfBB = llvm::BasicBlock::Create(context, "if"); 			//floating
-		llvm::BasicBlock* ThenBB = llvm::BasicBlock::Create(context, "ifTrue"); 	//floating
-		llvm::BasicBlock* ElseBB = llvm::BasicBlock::Create(context, "else"); 		//floating
-		llvm::BasicBlock* MergeBB = llvm::BasicBlock::Create(context, "merge"); 	//floating
-	llvm::BasicBlock* ExitLoopBB = llvm::BasicBlock::Create(context, "exitLoop", f);
-
-
-	////////////////////////		EntryBB
-
-	builder.SetInsertPoint(EntryBB);
-	llvm::Value* next = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "next");
-	llvm::Value* first = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "first");
-	llvm::Value* second = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "second");
-	llvm::Value* count = builder.CreateAlloca(llvm::Type::getInt32Ty(context), nullptr, "count");
-	builder.CreateStore(zero, next);
-	builder.CreateStore(zero, first);
-	builder.CreateStore(one, second);
-	builder.CreateStore(zero, count);
-
-	// continue to loop entry
-	builder.CreateBr(LoopEntryBB);
-
-
-	////////////////////////		LoopEntryBB
-
-	builder.SetInsertPoint(LoopEntryBB);
-	llvm::Value* countVal = builder.CreateLoad(count, "countVal");
-	llvm::Value* ifCountLTN = builder.CreateICmpULT(countVal, N, "enterLoopCond");
-	builder.CreateCondBr(ifCountLTN, LoopBB, ExitLoopBB);
-
-
-	////////////////////////		LoopBB
-
-	builder.SetInsertPoint(LoopBB);
-	builder.CreateBr(IfBB);
-
-
-		////////////////////////		IfBB
-
-		// Nested statements are attached just before adding to the block, so that
-		// their insertion point in LoopBB is certain.
-		f->getBasicBlockList().push_back(IfBB);
-		builder.SetInsertPoint(IfBB);
-		llvm::Value* ifCountLTTwo = builder.CreateICmpULT(countVal, two, "ifStmt");
-		builder.CreateCondBr(ifCountLTTwo, ThenBB, ElseBB);
-
-		////////////////////////		ThenBB
-
-		f->getBasicBlockList().push_back(ThenBB);
-		builder.SetInsertPoint(ThenBB);
-		llvm::Value* nextVal = builder.CreateLoad(count, "nextVal");
-		builder.CreateStore(nextVal, next);
-
-		// terminate ThenBB
-		builder.CreateBr(MergeBB);
-
-
-		////////////////////////		ElseBB
-
-		f->getBasicBlockList().push_back(ElseBB);
-		builder.SetInsertPoint(ElseBB);
-	
-		llvm::Value* firstVal = builder.CreateLoad(first, "firstVal");
-		llvm::Value* secondVal = builder.CreateLoad(second, "secondVal");
-		nextVal = builder.CreateAdd(firstVal, secondVal, "nextVal");
-		builder.CreateStore(nextVal, next);
-		builder.CreateStore(secondVal, first);
-		builder.CreateStore(nextVal, second);
-
-		// terminate ElseBB
-		builder.CreateBr(MergeBB);
-
-
-		////////////////////////		MergeBB
-
-		f->getBasicBlockList().push_back(MergeBB);
-		builder.SetInsertPoint(MergeBB);
-		countVal = builder.CreateAdd(countVal, one); //increment
-		builder.CreateStore(countVal, count);
-		builder.CreateBr(LoopEntryBB);
-
-
-	////////////////////////		ExitLoopBB
-
-	builder.SetInsertPoint(ExitLoopBB);
-	llvm::Value* finalFibNum = builder.CreateLoad(next, "finalNext");
-	llvm::ReturnInst::Create(context, finalFibNum, ExitLoopBB);
-
-	return f;
-}
-
-
 llvm::Type* intern_type(llvm::Module& module, const typeid_t& type);
 
 //	LLVM-functions pass GENs as two 64bit arguments.
@@ -1018,23 +855,11 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 	}
 }
 
-
 std::string get_function_def_name(int function_id, const function_definition_t& def){
 	const auto def_name = def._definition_name;
 	const auto funcdef_name = def_name.empty() ? std::string() + "floyd_unnamed_function_" + std::to_string(function_id) : std::string("floyd_funcdef__") + def_name;
 	return funcdef_name;
 }
-
-/*
-std::string make_host_function_label(int host_function_id){
-//	const auto s = "floyd_host_function_ABC";
-	const auto s = std::string() + "floyd_host_function_" + std::to_string(host_function_id);
-	return s;
-}
-*/
-
-
-
 
 
 
@@ -1230,8 +1055,6 @@ void genllvm_body(llvmgen_t& gen_acc, const floyd::body_t& body){
 
 
 
-
-
 llvm::Value* genllvm_literal_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1391,6 +1214,7 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 		}
 	}
 */
+
 	QUARK_ASSERT(false);
 	quark::throw_exception();
 
@@ -1532,9 +1356,6 @@ llvm::Value* genllvm_arithmetic_unary_minus_expression(llvmgen_t& gen_acc, const
 }
 
 
-
-
-
 /*
 	my_func
 		[BB entry]
@@ -1564,8 +1385,6 @@ llvm::Value* genllvm_arithmetic_unary_minus_expression(llvmgen_t& gen_acc, const
 		[BB join]
  			Value* phu(temp1, temp2)
 */
-
-
 
 llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -2569,30 +2388,7 @@ std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, c
 		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), -1, make_dummy_function_definition()});
 	}
 
-/*	//	Stub function for avoiding unresolved LLVM function declarations.
 	{
-		llvm::FunctionType* function_type = llvm::FunctionType::get(
-			llvm::Type::getVoidTy(context),
-			{
-				llvm::Type::getInt32PtrTy(context)
-			},
-			false
-		);
-		auto f = module.getOrInsertFunction("floyd_runtime__unresolved_func", function_type);
-		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), false, -1, make_dummy_function_definition()});
-	}
-*/
-
-	{
-/*
-		llvm::Function* f = make_function_prototype(
-			module,
-			"floyd_runtime_init",
-			floyd::typeid_t::make_function(floyd::typeid_t::make_int(), {}, floyd::epure::impure)
-		);
-		QUARK_ASSERT(check_invariant__function(f));
-		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), false, -1, make_dummy_function_definition()});
-*/
 		llvm::FunctionType* function_type = llvm::FunctionType::get(
 			llvm::Type::getInt64Ty(context),
 			{
@@ -2698,6 +2494,7 @@ std::pair<body_t, function_defs_t>  expand_generics(const body_t& body, const fu
 
 //	Find all calls of functions with dynamic arguments-types. This lets use generate-out variants of the function for those types.
 //		print("test") print(123) => print$string(string v), => print$int(int v)
+
 //	Alternative 2: transform funcdefs / calls of print(DYN) to print(int v_itype, uint64 v_packed)
 //	Replace all use of DYN arguments with explicit function-defs and calls.
 semantic_ast_t expand_generics(const semantic_ast_t& semantic_ast){
@@ -2807,8 +2604,6 @@ void* get_global_function(llvm_execution_engine_t& ee, const std::string& name){
 	return (void*)addr;
 }
 
-
-
 #if DEBUG && 1
 //	Verify that all global functions can be accessed. If *one* is unresolved, then all return NULL!?
 void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
@@ -2859,7 +2654,6 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 	auto ee2 = llvm_execution_engine_t{ k_debug_magic, ee1, program_breaks.debug_globals, program_breaks.function_defs, {} };
 	QUARK_ASSERT(ee2.check_invariant());
 
-
 	const std::map<std::string, void*> function_map = {
 		{ "floyd_runtime__compare_strings", reinterpret_cast<void *>(&floyd_runtime__compare_strings) },
 		{ "floyd_runtime__append_strings", reinterpret_cast<void *>(&floyd_runtime__append_strings) },
@@ -2905,7 +2699,6 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 		{ "floyd_funcdef__value_to_jsonvalue", reinterpret_cast<void *>(&floyd_host_function_1035) },
 		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&floyd_host_function_1036) }
 	};
-
 
 	//	Resolve all unresolved functions.
 	{
@@ -3037,7 +2830,6 @@ int64_t run_using_llvm_helper(const std::string& program_source, const std::stri
 }
 
 
-
 }	//	namespace floyd
 
 
@@ -3100,8 +2892,6 @@ LLVM_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'resul
 
 //	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
 }
-
-
 
 
 
