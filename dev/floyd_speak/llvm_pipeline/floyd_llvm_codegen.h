@@ -28,9 +28,10 @@ namespace llvm {
 namespace floyd {
 
 
-struct global_v_t {
+struct resolved_symbol_t {
 	llvm::Value* value_ptr;
 	std::string debug_str;
+	enum class esymtype { k_global, k_local, k_function_argument } symtype;
 };
 
 bool check_invariant__module(llvm::Module* module);
