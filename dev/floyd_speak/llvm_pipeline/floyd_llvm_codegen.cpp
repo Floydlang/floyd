@@ -665,7 +665,7 @@ llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::ty
 	return llvm_function_def_t { return_type, arg_results, llvm_args };
 }
 
-QUARK_UNIT_TEST_VIP("LLVM Codegen", "map_function_arguments()", "func void()", ""){
+QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void()", ""){
 	floyd::llvm_instance_t instance;
 	auto module = std::make_unique<llvm::Module>("test", instance.context);
 	const auto r = map_function_arguments(*module, typeid_t::make_function(typeid_t::make_void(), {}, epure::pure));
@@ -682,7 +682,7 @@ QUARK_UNIT_TEST_VIP("LLVM Codegen", "map_function_arguments()", "func void()", "
 	QUARK_UT_VERIFY(r.args[0].map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr);
 }
 
-QUARK_UNIT_TEST_VIP("LLVM Codegen", "map_function_arguments()", "func int()", ""){
+QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
 	floyd::llvm_instance_t instance;
 	auto module = std::make_unique<llvm::Module>("test", instance.context);
 	const auto r = map_function_arguments(*module, typeid_t::make_function(typeid_t::make_int(), {}, epure::pure));
@@ -699,7 +699,7 @@ QUARK_UNIT_TEST_VIP("LLVM Codegen", "map_function_arguments()", "func int()", ""
 	QUARK_UT_VERIFY(r.args[0].map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr);
 }
 
-QUARK_UNIT_TEST_VIP("LLVM Codegen", "map_function_arguments()", "func void(int)", ""){
+QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""){
 	floyd::llvm_instance_t instance;
 	auto module = std::make_unique<llvm::Module>("test", instance.context);
 	const auto r = map_function_arguments(*module, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_int() }, epure::pure));
@@ -722,7 +722,7 @@ QUARK_UNIT_TEST_VIP("LLVM Codegen", "map_function_arguments()", "func void(int)"
 	QUARK_UT_VERIFY(r.args[1].map_type == llvm_arg_mapping_t::map_type::k_simple_value);
 }
 
-QUARK_UNIT_TEST_VIP("LLVM Codegen", "map_function_arguments()", "func void(int, DYN, bool)", ""){
+QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int, DYN, bool)", ""){
 	floyd::llvm_instance_t instance;
 	auto module = std::make_unique<llvm::Module>("test", instance.context);
 	const auto r = map_function_arguments(*module, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_int(), typeid_t::make_internal_dynamic(), typeid_t::make_bool() }, epure::pure));
