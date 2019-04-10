@@ -1446,7 +1446,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: All block scopes, shadowing or not"
 //////////////////////////////////////////		IF STATEMENT
 
 
-QUARK_UNIT_TEST("Floyd test suite", "if", "if(true){}", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if(true){}", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1461,7 +1461,7 @@ QUARK_UNIT_TEST("Floyd test suite", "if", "if(true){}", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "if", "if(false){}", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if(false){}", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1476,7 +1476,7 @@ QUARK_UNIT_TEST("Floyd test suite", "if", "if(false){}", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "if", "if(true){}else{}", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if(true){}else{}", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1493,7 +1493,7 @@ QUARK_UNIT_TEST("Floyd test suite", "if", "if(true){}else{}", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "if", "if(false){}else{}", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if(false){}else{}", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1510,7 +1510,7 @@ QUARK_UNIT_TEST("Floyd test suite", "if", "if(false){}else{}", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "if", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if-elseif-elseif-else TRUE-FALSE-FALSE", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1533,7 +1533,7 @@ QUARK_UNIT_TEST("Floyd test suite", "if", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "if", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if-elseif-elseif-else FALSE-TRUE-FALSE", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1556,7 +1556,7 @@ QUARK_UNIT_TEST("Floyd test suite", "if", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "if", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if-elseif-elseif-else FALSE-FALSE-TRUE", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1579,7 +1579,7 @@ QUARK_UNIT_TEST("Floyd test suite", "if", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "if", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if-elseif-elseif-else FALSE-FALSE-FALSE", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1602,7 +1602,7 @@ QUARK_UNIT_TEST("Floyd test suite", "if", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "if", "Error: if with non-bool expression", "exception"){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "Error: if with non-bool expression", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -1618,7 +1618,7 @@ QUARK_UNIT_TEST("Floyd test suite", "if", "Error: if with non-bool expression", 
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "if+scope: Make sure a function can access global independent on how it's called in callstack", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "if+scope: Make sure a function can access global independent on how it's called in callstack", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1643,7 +1643,7 @@ QUARK_UNIT_TEST("Floyd test suite", "if+scope: Make sure a function can access g
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "if", "return from within IF block", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "return from within IF block", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1665,11 +1665,11 @@ QUARK_UNIT_TEST("Floyd test suite", "if", "return from within IF block", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "if", "Make sure return from ELSE works", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "Make sure return from ELSE works", ""){
 	QUARK_UT_VERIFY(false);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "if", "Compiler error: not all paths returns", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "Compiler error: not all paths returns", ""){
 	QUARK_UT_VERIFY(false);
 }
 
