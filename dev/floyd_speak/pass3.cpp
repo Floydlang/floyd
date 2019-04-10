@@ -598,7 +598,7 @@ std::pair<analyser_t, statement_t> analyse_while_statement(const analyser_t& a, 
 	const auto statement = std::get<statement_t::while_statement_t>(s._contents);
 	auto a_acc = a;
 
-	const auto condition2_expr = analyse_expression_no_target(a_acc, s, statement._condition);
+	const auto condition2_expr = analyse_expression_to_target(a_acc, s, statement._condition, typeid_t::make_bool());
 	a_acc = condition2_expr.first;
 
 	const auto result = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, return_type);

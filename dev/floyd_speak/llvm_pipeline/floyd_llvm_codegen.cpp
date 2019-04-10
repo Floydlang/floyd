@@ -2262,6 +2262,63 @@ gen_statement_mode llvmgen_for_statement(llvmgen_t& gen_acc, const statement_t::
 }
 
 
+gen_statement_mode llvmgen_while_statement(llvmgen_t& gen_acc, const statement_t::while_statement_t& statement){
+	QUARK_ASSERT(gen_acc.check_invariant());
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	llvm::Function* parent_function = builder.GetInsertBlock()->getParent();
+
+	auto while_cond_bb = llvm::BasicBlock::Create(context, "while-cond", parent_function);
+	auto while_loop_bb = llvm::BasicBlock::Create(context, "while-loop", parent_function);
+	auto while_join_bb = llvm::BasicBlock::Create(context, "while-join", parent_function);
+//	auto true_int = make_constant(gen_acc, value_t::make_bool(true));
+
+
+	////////	header
+
+
+	builder.CreateBr(while_cond_bb);
+	builder.SetInsertPoint(while_cond_bb);
+
+
+
+
+
+	////////	while_cond_bb
+
+
+	builder.SetInsertPoint(while_cond_bb);
+	llvm::Value* condition = genllvm_expression(gen_acc, statement._condition);
+//	auto test_value2 = builder.CreateICmp(pred, llvm::CmpInst::Predicate::ICMP_EQ, true_int);
+	builder.CreateCondBr(condition, while_loop_bb, while_join_bb);
+
+
+
+
+	////////	while_loop_bb
+
+
+	builder.SetInsertPoint(while_loop_bb);
+	const auto mode = llvmgen_block(gen_acc, statement._body);
+	builder.CreateBr(while_cond_bb);
+
+	if(mode == gen_statement_mode::more){
+	}
+	else{
+	}
+
+
+
+	////////	while_join_bb
+
+
+	builder.SetInsertPoint(while_join_bb);
+	return gen_statement_mode::more;
+}
+
+
 
 
 void genllvm_expression_statement(llvmgen_t& gen_acc, const statement_t::expression_statement_t& s){
@@ -2327,8 +2384,7 @@ gen_statement_mode genllvm_statement(llvmgen_t& gen_acc, const statement_t& stat
 			return llvmgen_for_statement(acc0, s);
 		}
 		gen_statement_mode operator()(const statement_t::while_statement_t& s) const{
-			NOT_IMPLEMENTED_YET();
-//					return bcgen_while_statement(_gen_acc, s, body_acc);
+			return llvmgen_while_statement(acc0, s);
 		}
 
 

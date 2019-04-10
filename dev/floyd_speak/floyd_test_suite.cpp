@@ -1909,6 +1909,7 @@ QUARK_UNIT_TEST("Floyd test suite", "for", "EXPR ... EXPR", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
+
 			func int magic(int x){
 				return x * x;
 			}
@@ -1931,26 +1932,90 @@ QUARK_UNIT_TEST("Floyd test suite", "for", "EXPR ... EXPR", ""){
 
 
 
-//	Parser thinks that "print(to_string(a))" is a type -- a function that returns a "print" and takes a function that returns a to_string and has a argument of type a.
-QUARK_UNIT_TEST("Floyd test suite", "while", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "while", "global while", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
 
 			mutable a = 100
 			while(a < 105){
-				print(to_string(a))
-				a = a + 1
+				print(a)
+				a = a + 2
 			}
 
 		)",
-		{ "100", "101", "102", "103", "104" }
+		{ "100", "102", "104" }
+	);
+}
+
+
+//??? Pass3 needs to check type of return statements.
+//??? Support return; Use in function with void-return.
+//??? disable return in global scope, only support inside functions.
+
+
+QUARK_UNIT_TEST("Floyd test suite", "while", "while inside function", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func int magic(int x){
+				mutable i = x
+				while(i != 9){
+					print(i)
+					i = i + 1
+				}
+				return i
+			}
+
+			let a = magic(5)
+
+		)",
+		{ "5", "6", "7", "8" }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "while", "Error: while with non-bool condition", ""){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			mutable a = 100
+			while(105){
+				print(a)
+				a = a + 2
+			}
+
+		)",
+		R"abc(Expression type mismatch - cannot convert 'int' to 'bool. Line: 4 "while(105){")abc"
 	);
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "while", "return from within while", ""){
-	QUARK_UT_VERIFY(false);
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func int magic(int x){
+				mutable i = x
+				while(i != 9){
+					print(i)
+					if(i == 7){
+						return 3
+					}
+					i = i + 1
+				}
+				return i
+			}
+
+			let a = magic(5)
+			print(a)
+
+		)",
+		{ "5", "6", "7", "3" }
+	);
 }
+
 
 
 
