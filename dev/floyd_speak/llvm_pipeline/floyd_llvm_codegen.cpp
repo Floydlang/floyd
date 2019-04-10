@@ -55,6 +55,18 @@
 typedef std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs_t;
 
 
+void NOT_IMPLEMENTED_YET() __dead2;
+void NOT_IMPLEMENTED_YET() {
+	throw std::exception();
+}
+
+void UNSUPPORTED() __dead2;
+void UNSUPPORTED() {
+	QUARK_ASSERT(false);
+	throw std::exception();
+}
+
+
 /*
 # ACCESSING INTEGER INSIDE GENERICVALUE
 
@@ -180,11 +192,11 @@ bool check_invariant__function(const llvm::Function* f){
 
 	std::string dump;
 	llvm::raw_string_ostream stream2(dump);
-	stream2 << "================================================================================\n";
 	bool errors = llvm::verifyFunction(*f, &stream2);
 	if(errors){
 		f->print(stream2);
 
+		QUARK_TRACE_SS("================================================================================");
 		QUARK_TRACE_SS("\n" << dump);
 
 //??? print("") and print(123) could be different functions.
@@ -411,16 +423,22 @@ value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
 		return value_t::make_string(s);
 	}
 	else if(type.is_json_value()){
+		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_typeid()){
+		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_struct()){
+		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_vector()){
+		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_dict()){
+		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_function()){
+		NOT_IMPLEMENTED_YET();
 	}
 	else{
 	}
@@ -835,7 +853,7 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 		return llvm::Type::getIntNTy(context, 16);
 	}
 	else if(type.is_unresolved_type_identifier()){
-		QUARK_ASSERT(false);
+		NOT_IMPLEMENTED_YET();
 		return llvm::Type::getIntNTy(context, 16);
 	}
 	else if(type.is_double()){
@@ -866,8 +884,7 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 		return make_function_type(module, type);
 	}
 	else{
-		QUARK_TRACE_SS(floyd::typeid_to_compact_string(type));
-		QUARK_ASSERT(false);
+		NOT_IMPLEMENTED_YET();
 		quark::throw_exception();
 	}
 }
@@ -909,8 +926,7 @@ llvm::Constant* make_constant(llvmgen_t& gen_acc, const value_t& value){
 		return llvm::ConstantInt::get(itype, 13);
 	}
 	else if(type.is_void()){
-		QUARK_ASSERT(false);
-		return nullptr;
+		UNSUPPORTED();
 	}
 	else if(type.is_bool()){
 		return llvm::ConstantInt::get(itype, value.get_bool_value() ? 1 : 0);
@@ -944,20 +960,16 @@ llvm::Constant* make_constant(llvmgen_t& gen_acc, const value_t& value){
 		return llvm::ConstantInt::get(itype, 6000);
 	}
 	else if(type.is_struct()){
-		QUARK_ASSERT(false);
-		return nullptr;
+		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_protocol()){
-		QUARK_ASSERT(false);
-		return nullptr;
+		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_vector()){
-		QUARK_ASSERT(false);
-		return nullptr;
+		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_dict()){
-		QUARK_ASSERT(false);
-		return nullptr;
+		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_function()){
 		const auto function_id = value.get_function_value();
@@ -970,8 +982,7 @@ llvm::Constant* make_constant(llvmgen_t& gen_acc, const value_t& value){
 		throw std::exception();
 	}
 	else if(type.is_unresolved_type_identifier()){
-		QUARK_ASSERT(false);
-		return nullptr;
+		UNSUPPORTED();
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -1138,7 +1149,7 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 			return gen_acc.builder.CreateOr(lhs_temp, rhs_temp, "logical_or_tmp");
 		}
 		else{
-			QUARK_ASSERT(false);
+			UNSUPPORTED();
 		}
 	}
 	else if(type.is_int()){
@@ -1165,7 +1176,7 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 			return gen_acc.builder.CreateOr(lhs_temp, rhs_temp, "logical_or_tmp");
 		}
 		else{
-			QUARK_ASSERT(false);
+			UNSUPPORTED();
 		}
 	}
 	else if(type.is_double()){
@@ -1182,16 +1193,13 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 			return gen_acc.builder.CreateFDiv(lhs_temp, rhs_temp, "divide_tmp");
 		}
 		else if(e._operation == expression_type::k_arithmetic_remainder__2){
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			UNSUPPORTED();
 		}
 		else if(e._operation == expression_type::k_logical_and__2){
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			UNSUPPORTED();
 		}
 		else if(e._operation == expression_type::k_logical_or__2){
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			UNSUPPORTED();
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -1261,8 +1269,7 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 	}
 */
 
-	QUARK_ASSERT(false);
-	quark::throw_exception();
+	UNSUPPORTED();
 
 	return nullptr;
 }
@@ -1356,7 +1363,7 @@ llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, expression_type o
 		return result2;
 	}
 	else{
-		QUARK_ASSERT(false);
+		NOT_IMPLEMENTED_YET();
 #if 0
 		//	Bool tells if to flip left / right.
 		static const std::map<expression_type, std::pair<bool, bc_opcode>> conv_opcode = {
@@ -1396,8 +1403,7 @@ llvm::Value* genllvm_arithmetic_unary_minus_expression(llvmgen_t& gen_acc, const
 		return genllvm_expression(gen_acc, e2);
 	}
 	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		UNSUPPORTED();
 	}
 }
 
@@ -1533,7 +1539,7 @@ std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, i
 //		return std::to_string(value);
 	}
 	else{
-		QUARK_ASSERT(false);
+		NOT_IMPLEMENTED_YET();
 	}
 }
 
@@ -1574,6 +1580,7 @@ extern "C" {
 		}
 		else{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	}
 
@@ -1881,7 +1888,7 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 				arg_values.push_back(arg2);
 			}
 			else{
-				QUARK_ASSERT(false);
+				NOT_IMPLEMENTED_YET();
 			}
 
 			//??? We assume that the next arg in the mapping is the dyn-type.
@@ -1907,7 +1914,7 @@ llvm::Value* llvmgen_construct_value_expression(llvmgen_t& gen_acc, const expres
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-QUARK_ASSERT(false);
+NOT_IMPLEMENTED_YET();
 
 	const auto target_type = e.get_output_type();
 //	const auto target_itype = intern_type(*gen_acc.module, target_type);
@@ -1923,7 +1930,7 @@ QUARK_ASSERT(false);
 
 
 	if(target_type.is_vector()){
-		QUARK_ASSERT(false);
+		NOT_IMPLEMENTED_YET();
 /*
 		if(encode_as_vector_w_inplace_elements(target_type)){
 			body_acc._instrs.push_back(bcgen_instruction_t(
@@ -1945,7 +1952,7 @@ QUARK_ASSERT(false);
 
 	}
 	else if(target_type.is_dict()){
-		QUARK_ASSERT(false);
+		NOT_IMPLEMENTED_YET();
 /*
 		if(encode_as_dict_w_inplace_values(target_type)){
 			body_acc._instrs.push_back(bcgen_instruction_t(
@@ -1967,7 +1974,7 @@ QUARK_ASSERT(false);
 
 	}
 	else if(target_type.is_struct()){
-		QUARK_ASSERT(false);
+		NOT_IMPLEMENTED_YET();
 /*
 		body_acc._instrs.push_back(bcgen_instruction_t(
 			bc_opcode::k_new_struct,
@@ -2022,13 +2029,11 @@ llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e){
 		return genllvm_literal_expression(gen_acc, e);
 	}
 	else if(op == expression_type::k_resolve_member){
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		NOT_IMPLEMENTED_YET();
 //		return bcgen_resolve_member_expression(gen_acc, target_reg, e, body);
 	}
 	else if(op == expression_type::k_lookup_element){
-		QUARK_ASSERT(false);
-		quark::throw_exception();
+		NOT_IMPLEMENTED_YET();
 //		return bcgen_lookup_element_expression(gen_acc, target_reg, e, body);
 	}
 	else if(op == expression_type::k_load2){
@@ -2130,25 +2135,20 @@ gen_statement_mode genllvm_statement(llvmgen_t& gen_acc, const statement_t& stat
 			return gen_statement_mode::skip_remaining_statements;
 		}
 		gen_statement_mode operator()(const statement_t::define_struct_statement_t& s) const{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			NOT_IMPLEMENTED_YET();
 		}
 		gen_statement_mode operator()(const statement_t::define_protocol_statement_t& s) const{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			NOT_IMPLEMENTED_YET();
 		}
 		gen_statement_mode operator()(const statement_t::define_function_statement_t& s) const{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			NOT_IMPLEMENTED_YET();
 		}
 
 		gen_statement_mode operator()(const statement_t::bind_local_t& s) const{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			UNSUPPORTED();
 		}
 		gen_statement_mode operator()(const statement_t::store_t& s) const{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			UNSUPPORTED();
 		}
 		gen_statement_mode operator()(const statement_t::store2_t& s) const{
 			genllvm_store2_statement(acc0, s);
@@ -2160,18 +2160,15 @@ gen_statement_mode genllvm_statement(llvmgen_t& gen_acc, const statement_t& stat
 		}
 
 		gen_statement_mode operator()(const statement_t::ifelse_statement_t& s) const{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			NOT_IMPLEMENTED_YET();
 //					return bcgen_ifelse_statement(_gen_acc, s, body_acc);
 		}
 		gen_statement_mode operator()(const statement_t::for_statement_t& s) const{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			NOT_IMPLEMENTED_YET();
 //					return bcgen_for_statement(_gen_acc, s, body_acc);
 		}
 		gen_statement_mode operator()(const statement_t::while_statement_t& s) const{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			NOT_IMPLEMENTED_YET();
 //					return bcgen_while_statement(_gen_acc, s, body_acc);
 		}
 
@@ -2181,13 +2178,11 @@ gen_statement_mode genllvm_statement(llvmgen_t& gen_acc, const statement_t& stat
 			return gen_statement_mode::more;
 		}
 		gen_statement_mode operator()(const statement_t::software_system_statement_t& s) const{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			NOT_IMPLEMENTED_YET();
 //					return body_acc;
 		}
 		gen_statement_mode operator()(const statement_t::container_def_statement_t& s) const{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			NOT_IMPLEMENTED_YET();
 //					return body_acc;
 		}
 	};
@@ -2451,21 +2446,20 @@ std::pair<statement_t, function_defs_t> expand_generics(const statement_t& state
 			return { in_statement, in_functions };
 		}
 		std::pair<statement_t, function_defs_t> operator()(const statement_t::define_struct_statement_t& s) const{
-			return { in_statement, in_functions };
+			UNSUPPORTED();
 		}
 		std::pair<statement_t, function_defs_t> operator()(const statement_t::define_protocol_statement_t& s) const{
-			return { in_statement, in_functions };
+			UNSUPPORTED();
 		}
 		std::pair<statement_t, function_defs_t> operator()(const statement_t::define_function_statement_t& s) const{
-			return { in_statement, in_functions };
+			UNSUPPORTED();
 		}
 
 		std::pair<statement_t, function_defs_t> operator()(const statement_t::bind_local_t& s) const{
-			return { in_statement, in_functions };
+			UNSUPPORTED();
 		}
 		std::pair<statement_t, function_defs_t> operator()(const statement_t::store_t& s) const{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
+			UNSUPPORTED();
 		}
 		std::pair<statement_t, function_defs_t> operator()(const statement_t::store2_t& s) const{
 			return { in_statement, in_functions };
