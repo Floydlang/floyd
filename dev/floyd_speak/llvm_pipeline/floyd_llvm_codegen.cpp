@@ -176,7 +176,7 @@ llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e);
 
 enum class gen_statement_mode {
 	more,
-	skip_remaining_statements
+	function_returning
 };
 
 gen_statement_mode genllvm_statements(llvmgen_t& gen_acc, const std::vector<statement_t>& statements);
@@ -2198,8 +2198,8 @@ gen_statement_mode llvmgen_ifelse_statement(llvmgen_t& gen_acc, const statement_
 
 
 	//	Scenario A: both then-block and else-block always returns = no need for join BB.
-	if(then_mode == gen_statement_mode::skip_remaining_statements && else_mode == gen_statement_mode::skip_remaining_statements){
-		return gen_statement_mode::skip_remaining_statements;//??? "ALWAYS RETURNING".
+	if(then_mode == gen_statement_mode::function_returning && else_mode == gen_statement_mode::function_returning){
+		return gen_statement_mode::function_returning;
 	}
 
 	//	Scenario B: eith then-block or else-block continues. We need a join-block where it can jump.
@@ -2250,7 +2250,7 @@ gen_statement_mode genllvm_statement(llvmgen_t& gen_acc, const statement_t& stat
 
 		gen_statement_mode operator()(const statement_t::return_statement_t& s) const{
 			llvmgen_return_statement(acc0, s);
-			return gen_statement_mode::skip_remaining_statements;
+			return gen_statement_mode::function_returning;
 		}
 		gen_statement_mode operator()(const statement_t::define_struct_statement_t& s) const{
 			NOT_IMPLEMENTED_YET();
@@ -2313,8 +2313,8 @@ gen_statement_mode genllvm_statements(llvmgen_t& gen_acc, const std::vector<stat
 		for(const auto& statement: statements){
 			QUARK_ASSERT(statement.check_invariant());
 			const auto mode = genllvm_statement(gen_acc, statement);
-			if(mode == gen_statement_mode::skip_remaining_statements){
-				return gen_statement_mode::skip_remaining_statements;
+			if(mode == gen_statement_mode::function_returning){
+				return gen_statement_mode::function_returning;
 			}
 		}
 	}
