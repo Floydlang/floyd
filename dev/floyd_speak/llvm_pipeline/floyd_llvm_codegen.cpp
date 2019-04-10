@@ -2151,6 +2151,7 @@ llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, const e
 }
 */
 
+//???????????????Don't use builder in ifelse -- its a mess!
 
 //???	Needs short-circuit evaluation here!
 gen_statement_mode llvmgen_ifelse_statement(llvmgen_t& gen_acc, const statement_t::ifelse_statement_t& statement){
@@ -2159,17 +2160,19 @@ gen_statement_mode llvmgen_ifelse_statement(llvmgen_t& gen_acc, const statement_
 	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
-	llvm::Value* condition_value = genllvm_expression(gen_acc, statement._condition);
-
 	llvm::Function* parent_function = builder.GetInsertBlock()->getParent();
 
-	// Create blocks for the then and else cases.  Insert the 'then' block at the
-	// end of the function.
-	llvm::BasicBlock* then_bb = llvm::BasicBlock::Create(context, "then", parent_function);
-	llvm::BasicBlock* else_bb = llvm::BasicBlock::Create(context, "else");
-	llvm::BasicBlock* join_bb = llvm::BasicBlock::Create(context, "join-then-else");
+	//	Notice that genllvm_expression() may create its own BBs and a different BB than then_bb may current when it returns.
+	llvm::Value* condition_value = genllvm_expression(gen_acc, statement._condition);
+	auto start_bb = builder.GetInsertBlock();
 
+//	auto start_bb = builder.GetInsertBlock();
+	auto then_bb = llvm::BasicBlock::Create(context, "then", parent_function);
+	auto else_bb = llvm::BasicBlock::Create(context, "else", parent_function);
+
+	builder.SetInsertPoint(start_bb);
 	builder.CreateCondBr(condition_value, then_bb, else_bb);
+
 
 
 	// Emit then-block.
@@ -2177,30 +2180,44 @@ gen_statement_mode llvmgen_ifelse_statement(llvmgen_t& gen_acc, const statement_
 
 	//	Notice that llvmgen_block() may create its own BBs and a different BB than then_bb may current when it returns.
 	const auto then_mode = llvmgen_block(gen_acc, statement._then_body);
-	const auto then_always_returns = then_mode == gen_statement_mode::skip_remaining_statements;
-	if(then_always_returns){
-	}
-	else{
-		builder.CreateBr(join_bb);
-	}
+	auto then_bb2 = builder.GetInsertBlock();
+
+
+
 
 	// Emit else-block.
-	parent_function->getBasicBlockList().push_back(else_bb);
 	builder.SetInsertPoint(else_bb);
 
 	//	Notice that llvmgen_block() may create its own BBs and a different BB than then_bb may current when it returns.
 	const auto else_mode = llvmgen_block(gen_acc, statement._else_body);
-	const auto else_always_returns = else_mode == gen_statement_mode::skip_remaining_statements;
-	if(else_always_returns){
+	auto else_bb2 = builder.GetInsertBlock();
+
+
+
+//	auto module = builder->GetInsertBlock()->getParent()->getParent();
+
+
+	//	Scenario A: both then-block and else-block always returns = no need for join BB.
+	if(then_mode == gen_statement_mode::skip_remaining_statements && else_mode == gen_statement_mode::skip_remaining_statements){
+		return gen_statement_mode::skip_remaining_statements;//??? "ALWAYS RETURNING".
 	}
+
+	//	Scenario B: eith then-block or else-block continues. We need a join-block where it can jump.
 	else{
-		builder.CreateBr(join_bb);
+		auto join_bb = llvm::BasicBlock::Create(context, "join-then-else", parent_function);
+
+		if(then_mode == gen_statement_mode::more){
+			builder.SetInsertPoint(then_bb2);
+			builder.CreateBr(join_bb);
+		}
+		if(else_mode == gen_statement_mode::more){
+			builder.SetInsertPoint(else_bb2);
+			builder.CreateBr(join_bb);
+		}
+
+		builder.SetInsertPoint(join_bb);
+		return gen_statement_mode::more;
 	}
-
-	parent_function->getBasicBlockList().push_back(join_bb);
-	builder.SetInsertPoint(join_bb);
-
-	return then_always_returns && else_always_returns ? gen_statement_mode::skip_remaining_statements : gen_statement_mode::more;
 }
 
 void genllvm_expression_statement(llvmgen_t& gen_acc, const statement_t::expression_statement_t& s){
@@ -2260,8 +2277,7 @@ gen_statement_mode genllvm_statement(llvmgen_t& gen_acc, const statement_t& stat
 		}
 
 		gen_statement_mode operator()(const statement_t::ifelse_statement_t& s) const{
-			llvmgen_ifelse_statement(acc0, s);
-			return gen_statement_mode::more;
+			return llvmgen_ifelse_statement(acc0, s);
 		}
 		gen_statement_mode operator()(const statement_t::for_statement_t& s) const{
 			NOT_IMPLEMENTED_YET();
