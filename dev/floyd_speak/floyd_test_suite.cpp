@@ -2149,7 +2149,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string []", "", ""){
 	)");
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "string size()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "string size()", "", ""){
 	run_closed(R"(
 
 		assert(size("") == 0)
@@ -2172,7 +2172,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string size()", "Embedded null characters -
 	)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "string push_back()", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "string push_back()", "", ""){
 	run_closed(R"(
 
 		a = push_back("one", 111)

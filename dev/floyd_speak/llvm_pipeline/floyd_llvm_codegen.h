@@ -32,6 +32,9 @@ struct resolved_symbol_t {
 	llvm::Value* value_ptr;
 	std::string debug_str;
 	enum class esymtype { k_global, k_local, k_function_argument } symtype;
+
+	std::string symbol_name;
+	symbol_t symbol;
 };
 
 bool check_invariant__module(llvm::Module* module);
@@ -47,6 +50,10 @@ struct llvm_instance_t {
 	llvm::LLVMContext context;
 };
 
+struct DYN_RETURN_T {
+	uint64_t value;
+	uint64_t type;
+};
 
 
 struct function_def_t {

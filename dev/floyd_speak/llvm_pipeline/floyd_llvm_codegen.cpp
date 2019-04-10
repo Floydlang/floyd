@@ -132,14 +132,10 @@ struct llvmgen_t {
 
 
 	llvm_instance_t* instance;
-
 	llvm::Module* module;
-
 	llvm::IRBuilder<> builder;
-
-	//	One element for each global symbol in AST. Same indexes as in symbol table.
-//	std::vector<resolved_symbol_t> globals;
 	std::vector<function_def_t> function_defs;
+
 
 /*
 	variable_address_t::_parent_steps
@@ -148,7 +144,6 @@ struct llvmgen_t {
 		1: parent scope. scope_path[scope_path.size() - 2]
 		2: parent scope. scope_path[scope_path.size() - 3]
 */
-
 	//	One element for each global symbol in AST. Same indexes as in symbol table.
 	std::vector<std::vector<resolved_symbol_t>> scope_path;
 
@@ -373,10 +368,10 @@ std::string print_gen(const llvmgen_t& gen){
 
 
 
-resolved_symbol_t make_resolved_symbol(llvm::Value* value_ptr, std::string debug_str, resolved_symbol_t::esymtype t){
+resolved_symbol_t make_resolved_symbol(llvm::Value* value_ptr, std::string debug_str, resolved_symbol_t::esymtype t, const std::string& symbol_name, const symbol_t& symbol){
 	QUARK_ASSERT(value_ptr != nullptr);
 
-	return { value_ptr, debug_str, t };
+	return { value_ptr, debug_str, t, symbol_name, symbol};
 }
 
 
@@ -684,7 +679,33 @@ llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::ty
 
 	auto& context = module.getContext();
 
-	auto return_type = intern_type(module, function_type.get_function_return());
+	const auto ret = function_type.get_function_return();
+#if 0
+	llvm::Type* return_type = nullptr;
+
+	if(ret.is_internal_dynamic()){
+		/*
+			struct DYN_RETURN_T {
+				uint64_t value;
+				uint64_t type;
+			};
+		*/
+
+		std::vector<llvm::Type*> members = {
+			llvm::Type::getIntNTy(context, 64),
+			llvm::Type::getIntNTy(context, 64)
+		};
+  		llvm::StructType* s = llvm::StructType::get(context, members, false);
+  		return_type = s;
+	}
+	else{
+		return_type = intern_type(module, ret);
+	}
+#else
+	llvm::Type* return_type = intern_type(module, ret);
+#endif
+
+
 	const auto args = function_type.get_function_args();
 	std::vector<llvm_arg_mapping_t> arg_results;
 
@@ -697,14 +718,14 @@ llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::ty
 		QUARK_ASSERT(arg.is_undefined() == false);
 		QUARK_ASSERT(arg.is_void() == false);
 
-		auto arg_itype = intern_type(module, arg);
-
 		//	For dynamic values, store its DYNTYPE as an extra argument.
 		if(arg.is_internal_dynamic()){
-			arg_results.push_back({ arg_itype, std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_dyn_value });
-			arg_results.push_back({ arg_itype, std::to_string(index), typeid_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
+			llvm::Type* int64type = llvm::Type::getIntNTy(context, 64);
+			arg_results.push_back({ int64type, std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_dyn_value });
+			arg_results.push_back({ int64type, std::to_string(index), typeid_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
 		}
 		else {
+			auto arg_itype = intern_type(module, arg);
 			arg_results.push_back({ arg_itype, std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_simple_value });
 		}
 	}
@@ -884,6 +905,7 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 	}
 
 	else if(type.is_internal_dynamic()){
+//		QUARK_ASSERT(false);
 		return llvm::Type::getIntNTy(context, 64);
 	}
 	else if(type.is_function()){
@@ -1064,7 +1086,7 @@ std::vector<resolved_symbol_t> genllvm_make_function_def_symbols(llvmgen_t& gen_
 
 			const auto debug_str = "<ARGUMENT> name:" + e.first + " symbol_t: " + symbol_to_string(e.second);
 
-			result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_function_argument));
+			result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_function_argument, e.first, e.second));
 		}
 
 		//	Reserve stack slot for each local. But not arguments, they already have stack slot.
@@ -1077,7 +1099,7 @@ std::vector<resolved_symbol_t> genllvm_make_function_def_symbols(llvmgen_t& gen_
 				gen_acc.builder.CreateStore(c, dest);
 			}
 			const auto debug_str = "<LOCAL> name:" + e.first + " symbol_t: " + symbol_to_string(e.second);
-			result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_local));
+			result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_local, e.first, e.second));
 		}
 	}
 	QUARK_ASSERT(result.size() == symbol_table._symbols.size());
@@ -1101,7 +1123,7 @@ std::vector<resolved_symbol_t> genllvm__alloc_symbols(llvmgen_t& gen_acc, const 
 			gen_acc.builder.CreateStore(c, dest);
 		}
 		const auto debug_str = "<LOCAL> name:" + e.first + " symbol_t: " + symbol_to_string(e.second);
-		result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_local));
+		result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_local, e.first, e.second));
 	}
 	return result;
 }
@@ -1777,8 +1799,31 @@ extern "C" {
 		r->_print_output.push_back(s);
 	}
 
-	extern void floyd_host_function_1021(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+
+	extern const char* floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
+		auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+		const auto type = (base_type)arg0_type;
+		if(type == base_type::k_int){
+			NOT_IMPLEMENTED_YET();
+//			const auto value = (int64_t)arg0_value;
+//			return std::to_string(value);
+		}
+		else if(type == base_type::k_string){
+			const auto value = (const char*)arg0_value;
+
+			std::size_t len = strlen(value);
+			char* s = reinterpret_cast<char*>(std::malloc(len + 1 + 1));
+			strcpy(s, value);
+			s[len + 0] = (char)arg1_value;
+			s[len + 1] = 0x00;
+			return s;
+
+//			return DYN_RETURN_T{ reinterpret_cast<uint64_t>(value), (uint64_t)base_type::k_string };
+		}
+		else{
+			NOT_IMPLEMENTED_YET();
+		}
 	}
 
 	extern void floyd_host_function_1022(void* floyd_runtime_ptr, int64_t arg){
@@ -1919,12 +1964,20 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(e._input_exprs.size() >= 1);
 
 	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
 
 	const auto call_function_type = e._input_exprs[0].get_output_type();
 
 	const auto call_arg_types = call_function_type.get_function_args();
 	const auto return_type = call_function_type.get_function_return();
-	const auto mapping = map_function_arguments(*gen_acc.module, call_function_type);
+	const auto mapping0 = map_function_arguments(*gen_acc.module, call_function_type);
+
+	//	Guess concrete return type based on concrete argument #0.
+	const auto concrete_return_type = return_type.is_internal_dynamic() ? intern_type(*gen_acc.module, e._input_exprs[1].get_output_type()) : mapping0.return_type;
+
+	//	Harden the mapping return type.
+//	const auto mapping = llvm_function_def_t{ return_type.is_internal_dynamic() ? intern_type(*gen_acc.module, e._input_exprs[1].get_output_type()) : mapping0.return_type, mapping0.args, mapping0.llvm_args };
+	const auto mapping = mapping0;
 
 	//	Verify that the actual argument expressions, their count and output types --all match call_function_type.
 	{
@@ -1965,15 +2018,15 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 			const auto concrete_arg_type = e._input_exprs[1 + out_arg.floyd_arg_index].get_output_type();
 
 			if(concrete_arg_type.is_function()){
-				llvm::Value* arg3 = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, llvm_gen_encoded, "function_as_GEN");
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, llvm_gen_encoded, "function_as_GEN");
 				arg_values.push_back(arg3);
 			}
 			else if(concrete_arg_type.is_double()){
-				llvm::Value* arg3 = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::BitCast, arg2, llvm_gen_encoded, "double_as_GEN");
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::BitCast, arg2, llvm_gen_encoded, "double_as_GEN");
 				arg_values.push_back(arg3);
 			}
 			else if(concrete_arg_type.is_string()){
-				llvm::Value* arg3 = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, llvm_gen_encoded, "string_as_GEN");
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, llvm_gen_encoded, "string_as_GEN");
 				arg_values.push_back(arg3);
 			}
 			else if(concrete_arg_type.is_int()){
@@ -1999,7 +2052,37 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 		}
 	}
 	QUARK_ASSERT(arg_values.size() == mapping.args.size());
-	auto result = gen_acc.builder.CreateCall(callee0_value, arg_values, return_type.is_void() ? "" : "temp_call");
+	auto result0 = builder.CreateCall(callee0_value, arg_values, return_type.is_void() ? "" : "temp_call");
+
+
+	llvm::Value* result = result0;
+
+	if(concrete_return_type->isPointerTy()){
+		result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, result0, llvm::Type::getInt8PtrTy(context), "function_as_GEN");
+	}
+	else{
+	}
+#if 0
+	if(call_function_type.get_function_return().is_internal_dynamic()){
+		const std::vector<llvm::Value*> element0_indexes = {
+			llvm::ConstantInt::get(builder.getInt32Ty(), 0)
+		};
+		const std::vector<llvm::Value*> element1_indexes = {
+			llvm::ConstantInt::get(builder.getInt32Ty(), 1)
+		};
+
+		auto element0_value = builder.CreateExtractValue(result, { 0 });
+		auto element1_value = builder.CreateExtractValue(result, { 1 });
+
+		
+
+
+//  %7 = extractvalue { i64, i64 } %4, 0
+	}
+	else{
+	}
+#endif
+
 	QUARK_ASSERT(gen_acc.check_invariant());
 	return result;
 }
@@ -2581,7 +2664,7 @@ std::vector<resolved_symbol_t> genllvm_make_globals(llvmgen_t& gen_acc, const se
 	for(const auto& e: symbol_table._symbols){
 		llvm::Value* value = genllvm_make_global(gen_acc, ast, e.first, e.second);
 		const auto debug_str = "name:" + e.first + " symbol_t: " + symbol_to_string(e.second);
-		result.push_back(make_resolved_symbol(value, debug_str, resolved_symbol_t::esymtype::k_global));
+		result.push_back(make_resolved_symbol(value, debug_str, resolved_symbol_t::esymtype::k_global, e.first, e.second));
 
 //		QUARK_TRACE_SS("result = " << floyd::print_program(gen_acc.program_acc));
 	}
@@ -3020,7 +3103,7 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 		{ "floyd_funcdef__map_string", reinterpret_cast<void *>(&floyd_host_function_1019) },
 
 		{ "floyd_funcdef__print", reinterpret_cast<void *>(&floyd_funcdef__print) },
-		{ "floyd_funcdef__push_back", reinterpret_cast<void *>(&floyd_host_function_1021) },
+		{ "floyd_funcdef__push_back", reinterpret_cast<void *>(&floyd_funcdef__push_back) },
 		{ "floyd_funcdef__read_text_file", reinterpret_cast<void *>(&floyd_host_function_1022) },
 		{ "floyd_funcdef__reduce", reinterpret_cast<void *>(&floyd_host_function_1023) },
 		{ "floyd_funcdef__rename_fsentry", reinterpret_cast<void *>(&floyd_host_function_1024) },
