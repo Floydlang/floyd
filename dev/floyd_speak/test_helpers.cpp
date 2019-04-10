@@ -43,8 +43,8 @@ enum class executor_mode {
 };
 
 
-//executor_mode g_executor = executor_mode::bc_interpreter;
-executor_mode g_executor = executor_mode::llvm_jit;
+executor_mode g_executor = executor_mode::bc_interpreter;
+//executor_mode g_executor = executor_mode::llvm_jit;
 
 
 run_report_t make_result(const value_t& result){
@@ -170,45 +170,68 @@ QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 
 void ut_verify_global_result(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const value_t& expected_result){
 	const auto result = run_program(make_compilation_unit(program, "", cu_mode), {});
-	QUARK_ASSERT(result.exception_what.empty());
-	ut_verify(
-		context,
-		value_and_type_to_ast_json(result.result_variable),
-		value_and_type_to_ast_json(expected_result)
-	);
+	if(result.exception_what.empty() == false){
+		std::cout << result.exception_what << std::endl;
+		throw std::exception();
+	}
+	else{
+		ut_verify(
+			context,
+			value_and_type_to_ast_json(result.result_variable),
+			value_and_type_to_ast_json(expected_result)
+		);
+	}
 }
 
 void ut_verify_global_result_as_json(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::string& expected_json){
 	const auto expected_json2 = parse_json(seq_t(expected_json)).first;
 	const auto result = run_program(make_compilation_unit(program, "", cu_mode), {});
-	QUARK_ASSERT(result.exception_what.empty());
-	ut_verify(
-		context,
-		value_and_type_to_ast_json(result.result_variable),
-		expected_json2
-	);
+	if(result.exception_what.empty() == false){
+		std::cout << result.exception_what << std::endl;
+		throw std::exception();
+	}
+	else{
+		ut_verify(
+			context,
+			value_and_type_to_ast_json(result.result_variable),
+			expected_json2
+		);
+	}
 }
 
 void ut_verify_printout(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::vector<std::string>& printout){
 	const auto result = run_program(make_compilation_unit(program, "", cu_mode), {});
-	QUARK_ASSERT(result.exception_what.empty());
-	ut_verify(context, result.print_out, printout);
+	if(result.exception_what.empty() == false){
+		std::cout << result.exception_what << std::endl;
+		throw std::exception();
+	}
+	else{
+		ut_verify(context, result.print_out, printout);
+	}
 }
 
 //	Has no output value: only compilation errors or floyd-asserts.
 void ut_run_closed(const std::string& program, compilation_unit_mode mode){
 	const auto result = run_program(make_compilation_unit(program, "", mode), {});
-	QUARK_ASSERT(result.exception_what.empty());
+	if(result.exception_what.empty() == false){
+		std::cout << result.exception_what << std::endl;
+		throw std::exception();
+	}
 }
 
 void ut_verify_mainfunc_return(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::vector<floyd::value_t>& args, const value_t& expected_return){
 	const auto result = run_program(make_compilation_unit(program, "", cu_mode), args);
-	QUARK_ASSERT(result.exception_what.empty());
-	ut_verify(
-		context,
-		value_and_type_to_ast_json(result.main_result),
-		value_and_type_to_ast_json(expected_return)
-	);
+	if(result.exception_what.empty() == false){
+		std::cout << result.exception_what << std::endl;
+		throw std::exception();
+	}
+	else{
+		ut_verify(
+			context,
+			value_and_type_to_ast_json(result.main_result),
+			value_and_type_to_ast_json(expected_return)
+		);
+	}
 }
 
 

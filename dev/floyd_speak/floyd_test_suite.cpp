@@ -54,6 +54,9 @@ std::map<std::string, value_t> test_run_container2(const std::string& program, c
 void run_closed(const std::string& program){
 	ut_run_closed(program, compilation_unit_mode::k_no_core_lib);
 }
+void run_closed_lib(const std::string& program){
+	ut_run_closed(program, compilation_unit_mode::k_include_core_lib);
+}
 
 
 void ut_verify_printout_lib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout){
@@ -1192,6 +1195,61 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: test mutating from a subscope", "",
 	);
 }
 
+
+QUARK_UNIT_TEST("Floyd test suite", "Scopes: global", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			//	GLOBAL SCOPE
+			let a = 7
+			let b = 1007
+
+			assert(a == 7)	//	global-a
+			print(b)		//	global-b
+		)",
+		{"1007"}
+	);
+}
+
+
+QUARK_UNIT_TEST("Floyd test suite", "Scopes: Three levels", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			//	GLOBAL SCOPE
+			let a = 1000
+			assert(a == 1000)
+
+			{
+				assert(a == 1000)
+				let a = 1001
+				let b = 2001
+				assert(a == 1001)
+				assert(b == 2001)
+
+				{
+					assert(a == 1001)
+					assert(b == 2001)
+					let a = 1002
+					let c = 3002
+					assert(a == 1002)
+					assert(b == 2001)
+					assert(c == 3002)
+				}
+				assert(a == 1001)
+				assert(b == 2001)
+			}
+			assert(a == 1000)
+
+		)",
+		{}
+	);
+}
+
+
+//???FAILS
 QUARK_UNIT_TEST("Floyd test suite", "Scopes: Global block scopes, shadowing or not", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -1202,13 +1260,71 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: Global block scopes, shadowing or n
 			let b = 1007
 
 			assert(a == 7)	//	global-a
-			print(b = 1007)	//	global-b
+			print(b)		//	global-b
 
 
 			//	BLOCK IN GLOBAL SCOPE, SHADOW GLOBAL
 			{
 				assert(a == 7)		//	global-a
-				assert(b = 1007)	//	global-b
+				assert(b == 1007)	//	global-b
+
+				let a = 10
+/*
+				assert(a == 10)		//	block local-a, shadowing global-a
+				assert(b == 1007)	//	global-b
+*/
+
+			}
+		)",
+		{"1007"}
+	);
+}
+
+
+QUARK_UNIT_TEST("Floyd test suite", "Scopes: Global block scopes, shadowing or not", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			//	GLOBAL SCOPE
+			let a = 7
+			let b = 1007
+
+			assert(a == 7)	//	global-a
+			print(b)		//	global-b
+
+
+			//	BLOCK IN GLOBAL SCOPE, SHADOW GLOBAL
+			{
+				assert(a == 7)		//	global-a
+				assert(b == 1007)	//	global-b
+
+				let a = 10
+				assert(a == 10)		//	block local-a, shadowing global-a
+				assert(b == 1007)	//	global-b
+			}
+		)",
+		{"1007"}
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "Scopes: Global block scopes, shadowing or not", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			//	GLOBAL SCOPE
+			let a = 7
+			let b = 1007
+
+			assert(a == 7)	//	global-a
+			print(b)		//	global-b
+
+
+			//	BLOCK IN GLOBAL SCOPE, SHADOW GLOBAL
+			{
+				assert(a == 7)		//	global-a
+				assert(b == 1007)	//	global-b
 
 				let a = 10
 				assert(a == 10)		//	block local-a, shadowing global-a
@@ -1219,12 +1335,12 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: Global block scopes, shadowing or n
 			assert(a == 7)	//	global-a
 			assert(b == 1007)	//	global-b
 		)",
-		{}
+		{"1007"}
 	);
 }
 
 //???FAIL
-QUARK_UNIT_TEST("Floyd test suite", "Scopes: Function arguments & locals & blocks vs globals, shadowing or not", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "Scopes: Function arguments & locals & blocks vs globals, shadowing or not", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1234,11 +1350,11 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: Function arguments & locals & block
 			let b = 1007
 
 			assert(a == 7)	//	global-a
-			print(b = 1007)	//	global-b
+			print(b)		//	global-b
 
 			//	FUNCTION SCOPING
 			//	Argument-a will shadow the global-a
-			func test(int a){
+			func int test(int a){
 				assert(a == 8)		//	argument-a
 				assert(b == 1007)	//	global-b
 
@@ -1247,15 +1363,17 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: Function arguments & locals & block
 
 				assert(c == 2007)	//	local-c
 
+
+
 				//	Shadow global-b
 				{
 					assert(a == 8)		//	argument-a
 					assert(b == 1007)	//	global-b
 					assert(c == 2007)	//	local-
 
-					int b = 3
+					let int b = 3
 
-					assert(a == 8)	/	/	argument-a
+					assert(a == 8)		//	argument-a
 					assert(b == 3)		//	shadow global-b
 					assert(c == 2007)	//	local-c
 				}
@@ -1266,11 +1384,11 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: Function arguments & locals & block
 
 				//	Shadow argument-a
 				{
-					assert(a == 8))		//	argument-a
-					assert(b== 1007)	//	global-b
+					assert(a == 8)		//	argument-a
+					assert(b == 1007)	//	global-b
 					assert(c == 2007)	//	local-c
 
-					int a = 4
+					let int a = 4
 
 					assert(a == 4)		//	block-local, shadowing argument-a
 					assert(b == 1007)	//	global-b
@@ -1280,11 +1398,14 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: Function arguments & locals & block
 				assert(a == 8)		//	argument-a
 				assert(b == 1007)	//	global-b
 				assert(c == 2007)	//	local-c
+
+
+				return 0
 			}
 
 			test(8)
 		)",
-		{}
+		{"1007"}
 	);
 }
 
@@ -1299,13 +1420,13 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: All block scopes, shadowing or not"
 			let b = 1007
 
 			assert(a == 7)	//	global-a
-			print(b = 1007)	//	global-b
+			print(b)	//	global-b
 
 
 			//	BLOCK IN GLOBAL SCOPE, SHADOW GLOBAL
 			{
 				assert(a == 7)		//	global-a
-				assert(b = 1007)	//	global-b
+				assert(b == 1007)	//	global-b
 
 				let a = 10
 				assert(a == 10)		//	block local-a, shadowing global-a
@@ -1313,13 +1434,13 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: All block scopes, shadowing or not"
 			}
 
 			//	Make we access the globals again.
-			assert(a == 7)	//	global-a
+			assert(a == 7)	//	global-ar
 			assert(b == 1007)	//	global-b
 
 
 			//	FUNCTION SCOPING
 			//	Argument-a will shadow the global-a
-			func test(int a){
+			func int test(int a){
 				assert(a == 8)		//	argument-a
 				assert(b == 1007)	//	global-b
 
@@ -1334,9 +1455,9 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: All block scopes, shadowing or not"
 					assert(b == 1007)	//	global-b
 					assert(c == 2007)	//	local-
 
-					int b = 3
+					let b = 3
 
-					assert(a == 8)	/	/	argument-a
+					assert(a == 8)		//	argument-a
 					assert(b == 3)		//	shadow global-b
 					assert(c == 2007)	//	local-c
 				}
@@ -1347,11 +1468,11 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: All block scopes, shadowing or not"
 
 				//	Shadow argument-a
 				{
-					assert(a == 8))		//	argument-a
-					assert(b== 1007)	//	global-b
+					assert(a == 8)		//	argument-a
+					assert(b == 1007)	//	global-b
 					assert(c == 2007)	//	local-c
 
-					int a = 4
+					let a = 4
 
 					assert(a == 4)		//	block-local, shadowing argument-a
 					assert(b == 1007)	//	global-b
@@ -1361,11 +1482,13 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: All block scopes, shadowing or not"
 				assert(a == 8)		//	argument-a
 				assert(b == 1007)	//	global-b
 				assert(c == 2007)	//	local-c
+
+				return 0
 			}
 
 			test(8)
 		)",
-		{}
+		{"1007"}
 	);
 }
 
@@ -3833,7 +3956,7 @@ QUARK_UNIT_TEST("Floyd test suite", "cmath_pi", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "color__black", "", ""){
-	run_closed(R"(
+	run_closed_lib(R"(
 
 		assert(color__black.red == 0.0)
 		assert(color__black.green == 0.0)
@@ -3845,7 +3968,7 @@ QUARK_UNIT_TEST("Floyd test suite", "color__black", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "color__black", "", ""){
-	run_closed(R"(
+	run_closed_lib(R"(
 
 		let r = add_colors(color_t(1.0, 2.0, 3.0, 4.0), color_t(1000.0, 2000.0, 3000.0, 4000.0))
 		print(to_string(r))
@@ -3920,7 +4043,7 @@ QUARK_UNIT_TEST("Floyd test suite", "calc_string_sha1()", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "calc_binary_sha1()", "", ""){
-	run_closed(R"(
+	run_closed_lib(R"(
 
 		let bin = binary_t("Violator is the seventh studio album by English electronic music band Depeche Mode.")
 		let a = calc_binary_sha1(bin)

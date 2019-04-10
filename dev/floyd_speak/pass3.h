@@ -22,6 +22,10 @@
 	- has the pass2_ast_t and symbol tables for all lexical scopes.
 	- Inserts host functions.
 	- Insert built-in types.
+
+	- All nested blocks remain and have their own symbols and statements.
+
+	Output is a program that is correct with no type/semantic errors.
 */
 
 #include "quark.h"
