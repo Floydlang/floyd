@@ -173,7 +173,13 @@ void end_function_emit(llvmgen_t& gen_acc){
 
 
 llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e);
-void genllvm_statements(llvmgen_t& gen_acc, const std::vector<statement_t>& statements);
+
+enum class gen_statement_mode {
+	more,
+	skip_remaining_statements
+};
+
+gen_statement_mode genllvm_statements(llvmgen_t& gen_acc, const std::vector<statement_t>& statements);
 
 std::string print_function(const llvm::Function* f);
 
@@ -1098,16 +1104,6 @@ std::vector<resolved_symbol_t> genllvm_block_symbols(llvmgen_t& gen_acc, const s
 		result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_local));
 	}
 	return result;
-}
-
-void genllvm_body(llvmgen_t& gen_acc, const floyd::body_t& body){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(body.check_invariant());
-
-	auto symbol_table_values = genllvm_block_symbols(gen_acc, body._symbol_table);
-	gen_acc.scope_path.push_back(symbol_table_values);
-	genllvm_statements(gen_acc, body._statements);
-	gen_acc.scope_path.pop_back();
 }
 
 
@@ -2085,17 +2081,18 @@ void genllvm_store2_statement(llvmgen_t& gen_acc, const statement_t::store2_t& s
 }
 
 
-void llvmgen_block_statement(llvmgen_t& gen_acc, const statement_t::block_statement_t& s){
+gen_statement_mode llvmgen_block_statement(llvmgen_t& gen_acc, const statement_t::block_statement_t& s){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(gen_acc.emit_function);
 
 	auto values = genllvm_block_symbols(gen_acc, s._body._symbol_table);
 
 	gen_acc.scope_path.push_back(values);
-	genllvm_statements(gen_acc, s._body._statements);
+	const auto more = genllvm_statements(gen_acc, s._body._statements);
 	gen_acc.scope_path.pop_back();
 
 	QUARK_ASSERT(gen_acc.check_invariant());
+	return more;
 }
 
 void genllvm_expression_statement(llvmgen_t& gen_acc, const statement_t::expression_statement_t& s){
@@ -2118,10 +2115,6 @@ llvm::Value* llvmgen_return_statement(llvmgen_t& gen_acc, const statement_t::ret
 	return gen_acc.builder.CreateRet(value);
 }
 
-enum class gen_statement_mode {
-	more,
-	skip_remaining_statements
-};
 
 gen_statement_mode genllvm_statement(llvmgen_t& gen_acc, const statement_t& statement){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -2155,8 +2148,7 @@ gen_statement_mode genllvm_statement(llvmgen_t& gen_acc, const statement_t& stat
 			return gen_statement_mode::more;
 		}
 		gen_statement_mode operator()(const statement_t::block_statement_t& s) const{
-			llvmgen_block_statement(acc0, s);
-			return gen_statement_mode::more;
+			return llvmgen_block_statement(acc0, s);
 		}
 
 		gen_statement_mode operator()(const statement_t::ifelse_statement_t& s) const{
@@ -2190,7 +2182,7 @@ gen_statement_mode genllvm_statement(llvmgen_t& gen_acc, const statement_t& stat
 	return std::visit(visitor_t{ gen_acc }, statement._contents);
 }
 
-void genllvm_statements(llvmgen_t& gen_acc, const std::vector<statement_t>& statements){
+gen_statement_mode genllvm_statements(llvmgen_t& gen_acc, const std::vector<statement_t>& statements){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	if(statements.empty() == false){
@@ -2198,10 +2190,11 @@ void genllvm_statements(llvmgen_t& gen_acc, const std::vector<statement_t>& stat
 			QUARK_ASSERT(statement.check_invariant());
 			const auto mode = genllvm_statement(gen_acc, statement);
 			if(mode == gen_statement_mode::skip_remaining_statements){
-				return;
+				return gen_statement_mode::skip_remaining_statements;
 			}
 		}
 	}
+	return gen_statement_mode::more;
 }
 
 llvm::Value* make_global(llvm::Module& module, const std::string& symbol_name, llvm::Type& itype, llvm::Constant* init_or_nullptr){
@@ -2293,7 +2286,7 @@ void genllvm_fill_function_def(llvmgen_t& gen_acc, int function_id, const floyd:
 		auto symbol_table_values = genllvm_make_function_def_symbols(gen_acc, function_def, f);
 
 		gen_acc.scope_path.push_back(symbol_table_values);
-		genllvm_statements(gen_acc, function_def._body->_statements);
+		const auto more = genllvm_statements(gen_acc, function_def._body->_statements);
 		gen_acc.scope_path.pop_back();
 
 		end_function_emit(gen_acc);
@@ -2577,7 +2570,7 @@ std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> genllvm_al
 			start_function_emit(gen_acc, f);
 
 			//	Global statements, using the global symbol scope.
-			genllvm_statements(gen_acc, semantic_ast._tree._globals._statements);
+			const auto more = genllvm_statements(gen_acc, semantic_ast._tree._globals._statements);
 
 			llvm::Value* dummy_result = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 667);
 			gen_acc.builder.CreateRet(dummy_result);
