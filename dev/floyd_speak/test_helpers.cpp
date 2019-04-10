@@ -217,6 +217,9 @@ void ut_run_closed(const std::string& program, compilation_unit_mode mode){
 		std::cout << result.exception_what << std::endl;
 		throw std::exception();
 	}
+	if(result.print_out.empty() == false){
+		throw std::exception();
+	}
 }
 
 void ut_verify_mainfunc_return(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::vector<floyd::value_t>& args, const value_t& expected_return){

@@ -1116,6 +1116,90 @@ llvm::Value* genllvm_literal_expression(llvmgen_t& gen_acc, const expression_t& 
 	return make_constant(gen_acc, literal);
 }
 
+
+
+llvm::Value* llvmgen_lookup_element_expression(llvmgen_t& gen_acc, const expression_t& e){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	auto parent_value = genllvm_expression(gen_acc, e._input_exprs[0]);
+	auto key_value = genllvm_expression(gen_acc, e._input_exprs[1]);
+
+	const auto parent_type =  e._input_exprs[0].get_output_type();
+	if(parent_type.is_string()){
+			auto element_index = key_value;
+
+//			llvm::Value* element_index = make_constant(gen_acc, value_t::make_int(0));
+
+/*
+  %3 = load i8*, i8** %1, align 8
+  %4 = getelementptr inbounds i8, i8* %3, i64 1
+*/
+	const auto index_list = std::vector<llvm::Value*>{ element_index };
+	llvm::Value* element_addr = builder.CreateGEP(llvm::Type::getIntNTy(context, 8), parent_value, index_list, "element_addr");
+
+	llvm::Value* element_value_8bit = builder.CreateLoad(element_addr, "element_tmp");
+	llvm::Type* output_type = llvm::Type::getIntNTy(context, 64);
+
+	llvm::Value* element_value = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::SExt, element_value_8bit, output_type, "char_to_int64");
+	return element_value;
+
+/*
+	gen_acc.builder.CreateGEP(parent_value, <#Value *Idx#>)
+
+//	llvm::Value* element_value = CreateGEP(Type *Ty, Value *Ptr, ArrayRef<Value *> IdxList, const Twine &Name = "");
+	llvm::Value* element_value = CreateGEP(Type *Ty, Value *Ptr, ArrayRef<Value *> IdxList, const Twine &Name = "");
+
+
+Value* arr = ...; // This is the instruction producing %arr
+Value* someValue = ...; // This is the instruction producing %some value
+
+// We need an array of index values
+//   Note - we need a type for constants, so use someValue's type
+Value* indexList[2] = {ConstantInt::get(someValue->getType(), 0), someValue};
+GetElementPtrInst* gepInst = GetElementPtrInst::Create(arr, ArrayRef<Value*>(indexList, 2), "arrayIdx", <some location to insert>);
+IRBuilder::CreateGEP(ptr, idxList, name)
+*/
+
+
+//		return bc_opcode::k_lookup_element_string;
+	}
+	else if(parent_type.is_json_value()){
+//		return bc_opcode::k_lookup_element_json_value;
+	}
+	else if(parent_type.is_vector()){
+/*
+		if(encode_as_vector_w_inplace_elements(parent_type)){
+			return bc_opcode::k_lookup_element_vector_w_inplace_elements;
+		}
+		else{
+			return bc_opcode::k_lookup_element_vector_w_external_elements;
+		}
+*/
+
+	}
+	else if(parent_type.is_dict()){
+/*
+		if(encode_as_dict_w_inplace_values(parent_type)){
+			return bc_opcode::k_lookup_element_dict_w_inplace_values;
+		}
+		else{
+			return bc_opcode::k_lookup_element_dict_w_external_values;
+		}
+*/
+
+	}
+	else{
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+	}
+	return nullptr;
+}
+
+
 llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type op, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -2029,8 +2113,7 @@ llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e){
 //		return bcgen_resolve_member_expression(gen_acc, target_reg, e, body);
 	}
 	else if(op == expression_type::k_lookup_element){
-		NOT_IMPLEMENTED_YET();
-//		return bcgen_lookup_element_expression(gen_acc, target_reg, e, body);
+		return llvmgen_lookup_element_expression(gen_acc, e);
 	}
 	else if(op == expression_type::k_load2){
 		//	No need / must not load function arguments.

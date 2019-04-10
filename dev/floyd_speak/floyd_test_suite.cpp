@@ -82,7 +82,7 @@ void ut_verify_exception_nolib(const quark::call_context_t& context, const std::
 }
 
 
-
+#if 0
 //////////////////////////////////////////		DEFINE VARIABLE, SIMPLE TYPES
 
 
@@ -2110,21 +2110,38 @@ QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 
 
 
-
+#endif
 
 //////////////////////////////////////////		STRING - TYPE
 
 
 //??? add tests for equality.
 
-QUARK_UNIT_TEST("Floyd test suite", "string []", "string", "0"){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "string []", "string", "0"){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let message = "hello"
+			print(message[0])
+			print(message[1])
+			print(message[2])
+			print(message[3])
+			print(message[4])
+
+		)",
+		{ "104", "101", "108", "108", "111" }
+	);
+}
+
+QUARK_UNIT_TEST_VIP("Floyd test suite", "string []", "string", "0"){
 	run_closed(R"(
 
 		assert("hello"[0] == 104)
 
 	)");
 }
-QUARK_UNIT_TEST("Floyd test suite", "string []", "string", "0"){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "string []", "string", "0"){
 	run_closed(R"(
 
 		assert("hello"[4] == 111)
@@ -2198,6 +2215,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string", "Error: Lookup in string using non
 }
 
 
+#if 0
 
 //////////////////////////////////////////		VECTOR - TYPE
 
@@ -5462,3 +5480,4 @@ MANUAL_SNIPPETS_TEST("MANUAL SNIPPETS", "subset()", "", ""){
 	)", {}, "", "");
 }
 
+#endif
