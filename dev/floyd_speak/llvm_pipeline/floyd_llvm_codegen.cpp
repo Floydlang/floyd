@@ -2067,8 +2067,6 @@ llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e){
 	quark::throw_exception();
 }
 
-
-
 void genllvm_store2_statement(llvmgen_t& gen_acc, const statement_t::store2_t& s){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
@@ -2081,18 +2079,128 @@ void genllvm_store2_statement(llvmgen_t& gen_acc, const statement_t::store2_t& s
 }
 
 
-gen_statement_mode llvmgen_block_statement(llvmgen_t& gen_acc, const statement_t::block_statement_t& s){
+gen_statement_mode llvmgen_block(llvmgen_t& gen_acc, const body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(gen_acc.emit_function);
 
-	auto values = genllvm_block_symbols(gen_acc, s._body._symbol_table);
+	auto values = genllvm_block_symbols(gen_acc, body._symbol_table);
 
 	gen_acc.scope_path.push_back(values);
-	const auto more = genllvm_statements(gen_acc, s._body._statements);
+	const auto more = genllvm_statements(gen_acc, body._statements);
 	gen_acc.scope_path.pop_back();
 
 	QUARK_ASSERT(gen_acc.check_invariant());
 	return more;
+}
+
+
+gen_statement_mode llvmgen_block_statement(llvmgen_t& gen_acc, const statement_t::block_statement_t& s){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(gen_acc.emit_function);
+
+	return llvmgen_block(gen_acc, s._body);
+}
+/*
+llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, const expression_t& e){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	const auto result_type = e.get_output_type();
+	const auto result_itype = intern_type(*gen_acc.module, result_type);
+
+	llvm::Value* condition_value = genllvm_expression(gen_acc, e._input_exprs[0]);
+
+	llvm::Function* parent_function = builder.GetInsertBlock()->getParent();
+
+	// Create blocks for the then and else cases.  Insert the 'then' block at the
+	// end of the function.
+	llvm::BasicBlock* then_bb = llvm::BasicBlock::Create(context, "then", parent_function);
+	llvm::BasicBlock* else_bb = llvm::BasicBlock::Create(context, "else");
+	llvm::BasicBlock* join_bb = llvm::BasicBlock::Create(context, "cond_operator-join");
+
+	builder.CreateCondBr(condition_value, then_bb, else_bb);
+
+
+	// Emit then-value.
+	builder.SetInsertPoint(then_bb);
+	llvm::Value* then_value = genllvm_expression(gen_acc, e._input_exprs[1]);
+	builder.CreateBr(join_bb);
+	// Codegen of 'Then' can change the current block, update then_bb.
+	llvm::BasicBlock* then_bb2 = builder.GetInsertBlock();
+
+
+	// Emit else block.
+	parent_function->getBasicBlockList().push_back(else_bb);
+	builder.SetInsertPoint(else_bb);
+	llvm::Value* else_value = genllvm_expression(gen_acc, e._input_exprs[2]);
+	builder.CreateBr(join_bb);
+	// Codegen of 'Else' can change the current block, update else_bb.
+	llvm::BasicBlock* else_bb2 = builder.GetInsertBlock();
+
+
+	// Emit join block.
+	parent_function->getBasicBlockList().push_back(join_bb);
+	builder.SetInsertPoint(join_bb);
+	llvm::PHINode* phiNode = builder.CreatePHI(result_itype, 2, "cond_operator-result");
+	phiNode->addIncoming(then_value, then_bb2);
+	phiNode->addIncoming(else_value, else_bb2);
+
+	return phiNode;
+}
+*/
+
+
+//???	Needs short-circuit evaluation here!
+gen_statement_mode llvmgen_ifelse_statement(llvmgen_t& gen_acc, const statement_t::ifelse_statement_t& statement){
+	QUARK_ASSERT(gen_acc.check_invariant());
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	llvm::Value* condition_value = genllvm_expression(gen_acc, statement._condition);
+
+	llvm::Function* parent_function = builder.GetInsertBlock()->getParent();
+
+	// Create blocks for the then and else cases.  Insert the 'then' block at the
+	// end of the function.
+	llvm::BasicBlock* then_bb = llvm::BasicBlock::Create(context, "then", parent_function);
+	llvm::BasicBlock* else_bb = llvm::BasicBlock::Create(context, "else");
+	llvm::BasicBlock* join_bb = llvm::BasicBlock::Create(context, "join-then-else");
+
+	builder.CreateCondBr(condition_value, then_bb, else_bb);
+
+
+	// Emit then-block.
+	builder.SetInsertPoint(then_bb);
+
+	//	Notice that llvmgen_block() may create its own BBs and a different BB than then_bb may current when it returns.
+	const auto then_mode = llvmgen_block(gen_acc, statement._then_body);
+	const auto then_always_returns = then_mode == gen_statement_mode::skip_remaining_statements;
+	if(then_always_returns){
+	}
+	else{
+		builder.CreateBr(join_bb);
+	}
+
+	// Emit else-block.
+	parent_function->getBasicBlockList().push_back(else_bb);
+	builder.SetInsertPoint(else_bb);
+
+	//	Notice that llvmgen_block() may create its own BBs and a different BB than then_bb may current when it returns.
+	const auto else_mode = llvmgen_block(gen_acc, statement._else_body);
+	const auto else_always_returns = else_mode == gen_statement_mode::skip_remaining_statements;
+	if(else_always_returns){
+	}
+	else{
+		builder.CreateBr(join_bb);
+	}
+
+	parent_function->getBasicBlockList().push_back(join_bb);
+	builder.SetInsertPoint(join_bb);
+
+	return then_always_returns && else_always_returns ? gen_statement_mode::skip_remaining_statements : gen_statement_mode::more;
 }
 
 void genllvm_expression_statement(llvmgen_t& gen_acc, const statement_t::expression_statement_t& s){
@@ -2152,8 +2260,8 @@ gen_statement_mode genllvm_statement(llvmgen_t& gen_acc, const statement_t& stat
 		}
 
 		gen_statement_mode operator()(const statement_t::ifelse_statement_t& s) const{
-			NOT_IMPLEMENTED_YET();
-//					return bcgen_ifelse_statement(_gen_acc, s, body_acc);
+			llvmgen_ifelse_statement(acc0, s);
+			return gen_statement_mode::more;
 		}
 		gen_statement_mode operator()(const statement_t::for_statement_t& s) const{
 			NOT_IMPLEMENTED_YET();
