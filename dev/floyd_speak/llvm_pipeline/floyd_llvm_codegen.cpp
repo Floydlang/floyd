@@ -85,7 +85,6 @@ With LLVM, we also have some things to be careful about. The first is the LLVM c
 
 
 struct llvmgen_generated_function_t {
-	std::vector<resolved_symbol_t> local_variable_symbols;
 	llvm::Function* f;
 };
 
@@ -104,6 +103,8 @@ struct llvmgen_t {
 		QUARK_ASSERT(check_invariant());
 	}
 	public: bool check_invariant() const {
+//		QUARK_ASSERT(scope_path.size() >= 1);
+
 		QUARK_ASSERT(instance);
 		QUARK_ASSERT(instance->check_invariant());
 		QUARK_ASSERT(module);
@@ -125,8 +126,19 @@ struct llvmgen_t {
 	llvm::IRBuilder<> builder;
 
 	//	One element for each global symbol in AST. Same indexes as in symbol table.
-	std::vector<resolved_symbol_t> globals;
+//	std::vector<resolved_symbol_t> globals;
 	std::vector<function_def_t> function_defs;
+
+/*
+	variable_address_t::_parent_steps
+		-1: global, uncoditionally.
+		0: current scope. scope_path[scope_path.size() - 1]
+		1: parent scope. scope_path[scope_path.size() - 2]
+		2: parent scope. scope_path[scope_path.size() - 3]
+*/
+
+	//	One element for each global symbol in AST. Same indexes as in symbol table.
+	std::vector<std::vector<resolved_symbol_t>> scope_path;
 
 
 	//	0: function is not being modified and should be correct. >0: function is being emitted, can be invalid state.
@@ -136,7 +148,7 @@ struct llvmgen_t {
 void start_function_emit(llvmgen_t& gen_acc, llvm::Function* stub){
 	QUARK_ASSERT(!gen_acc.emit_function);
 
-	auto temp = llvmgen_generated_function_t{ {}, stub};
+	auto temp = llvmgen_generated_function_t{ stub };
 	auto temp2 = std::make_unique<llvmgen_generated_function_t>(temp);
 	gen_acc.emit_function.swap(temp2);
 }
@@ -304,7 +316,7 @@ std::string print_value(llvm::Value* value){
 	}
 }
 
-std::string print_globals(const std::vector<resolved_symbol_t>& globals){
+std::string print_resolved_symbols(const std::vector<resolved_symbol_t>& globals){
 	std::stringstream out;
 
 	out << "{" << std::endl;
@@ -316,17 +328,27 @@ std::string print_globals(const std::vector<resolved_symbol_t>& globals){
 }
 
 
-
+//??? Print all symbols in scope_path
 std::string print_gen(const llvmgen_t& gen){
 //	QUARK_ASSERT(gen.check_invariant());
 
 	std::stringstream out;
 
+	out << "--------------------------------------------------------------------------------" << std::endl;
 	out << "module:"
 		<< print_module(*gen.module)
 		<< std::endl
-	<< "globals"
-		<< print_globals(gen.globals);
+
+	<< "scope_path" << std::endl;
+
+	int index = 0;
+	for(const auto& e: gen.scope_path){
+		out << "--------------------------------------------------------------------------------" << std::endl;
+		out << "scope #" << index << std::endl;
+		out << print_resolved_symbols(e);
+		index++;
+	}
+
 
 	return out.str();
 }
@@ -505,20 +527,26 @@ value_t load_global(const std::pair<void*, typeid_t>& v){
 
 resolved_symbol_t find_symbol(llvmgen_t& gen_acc, const variable_address_t& reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(reg._parent_steps == -1 || reg._parent_steps == 0);
+	QUARK_ASSERT(gen_acc.scope_path.size() >= 1);
+	QUARK_ASSERT(reg._parent_steps == -1 || (reg._parent_steps >= 0 && reg._parent_steps < gen_acc.scope_path.size()));
 
 	if(reg._parent_steps == -1){
-		QUARK_ASSERT(reg._index >=0 && reg._index < gen_acc.globals.size());
-		return gen_acc.globals[reg._index];
-	}
-	else if(reg._parent_steps == 0){
-		QUARK_ASSERT(gen_acc.emit_function);
-		QUARK_ASSERT(reg._index >=0 && reg._index < gen_acc.emit_function->local_variable_symbols.size());
+		QUARK_ASSERT(gen_acc.scope_path.size() >= 1);
 
-		return gen_acc.emit_function->local_variable_symbols[reg._index];
+		const auto& global_scope = gen_acc.scope_path.front();
+		QUARK_ASSERT(reg._index >= 0 && reg._index < global_scope.size());
+
+		return global_scope[reg._index];
 	}
-	else{
-		QUARK_ASSERT(false);
+	else {
+		//	0 == back().
+		const auto scope_index = gen_acc.scope_path.size() - reg._parent_steps - 1;
+		QUARK_ASSERT(scope_index >= 0 && scope_index < gen_acc.scope_path.size());
+
+		const auto& scope = gen_acc.scope_path[scope_index];
+		QUARK_ASSERT(reg._index >= 0 && reg._index < scope.size());
+
+		return scope[reg._index];
 	}
 }
 
@@ -1047,7 +1075,7 @@ std::vector<resolved_symbol_t> genllvm_block_symbols(llvmgen_t& gen_acc, const s
 		const auto type = e.second.get_type();
 		const auto itype = intern_type(*gen_acc.module, type);
 
-		//	Reserve stack slot for each local. But not arguments, they already have stack slot.
+		//	Reserve stack slot for each local.
 		llvm::Value* dest = gen_acc.builder.CreateAlloca(itype, nullptr, e.first);
 
 		//	Init the slot if needed.
@@ -1066,8 +1094,9 @@ void genllvm_body(llvmgen_t& gen_acc, const floyd::body_t& body){
 	QUARK_ASSERT(body.check_invariant());
 
 	auto symbol_table_values = genllvm_block_symbols(gen_acc, body._symbol_table);
-	gen_acc.emit_function->local_variable_symbols = symbol_table_values;
+	gen_acc.scope_path.push_back(symbol_table_values);
 	genllvm_statements(gen_acc, body._statements);
+	gen_acc.scope_path.pop_back();
 }
 
 
@@ -1807,7 +1836,7 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 	llvm::Type* llvm_gen_encoded = llvm::Type::getIntNTy(context, 64);
 
 	llvm::Value* callee0_value = genllvm_expression(gen_acc, e._input_exprs[0]);
-	QUARK_TRACE_SS("callee0_value: " << print_value(callee0_value));
+//	QUARK_TRACE_SS("callee0_value: " << print_value(callee0_value));
 //		QUARK_TRACE_SS("gen_acc: " << print_gen(gen_acc));
 
 	auto& caller = *gen_acc.emit_function;
@@ -2003,15 +2032,11 @@ llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e){
 //		return bcgen_lookup_element_expression(gen_acc, target_reg, e, body);
 	}
 	else if(op == expression_type::k_load2){
-		//	No need to load function arguments.
-		if(gen_acc.emit_function && e._address._parent_steps == 0){
-			const auto s = find_symbol(gen_acc, e._address);
-			if(s.symtype == resolved_symbol_t::esymtype::k_function_argument){
-				return s.value_ptr;
-			}
-			else{
-				return llvmgen_load2_expression(gen_acc, e);
-			}
+		//	No need / must not load function arguments.
+		const auto s = find_symbol(gen_acc, e._address);
+
+		if(s.symtype == resolved_symbol_t::esymtype::k_function_argument){
+			return s.value_ptr;
 		}
 		else{
 			return llvmgen_load2_expression(gen_acc, e);
@@ -2055,45 +2080,15 @@ void genllvm_store2_statement(llvmgen_t& gen_acc, const statement_t::store2_t& s
 }
 
 
-
-/*
-	//	current block at start of llvmgen_block_statement()
-	[block a]
-		...
-		...
-		br b
-
-	//	New BLOCK
-	[block b]
-		...
-		...
-		br c
-
-	//	New join-block
-	[block c]
-*/
-
 void llvmgen_block_statement(llvmgen_t& gen_acc, const statement_t::block_statement_t& s){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(gen_acc.emit_function);
 
-/*
-	llvm::Function* f = gen_acc.emit_function->f;
-	llvm::BasicBlock* b = llvm::BasicBlock::Create(gen_acc.instance->context, "block", f);
-	llvm::BasicBlock* c = llvm::BasicBlock::Create(gen_acc.instance->context, "block-join", f);
-	gen_acc.builder.SetInsertPoint(b);
-*/
-//	genllvm_body(gen_acc, s._body);
-
 	auto values = genllvm_block_symbols(gen_acc, s._body._symbol_table);
 
-//??? Must flatten all references to the symbols too!
-	//	We append the block's local variables to the current BB.
-	auto& dest = gen_acc.emit_function->local_variable_symbols;
-	dest.insert(dest.end(), values.begin(), values.end());
+	gen_acc.scope_path.push_back(values);
 	genllvm_statements(gen_acc, s._body._statements);
-
-//	gen_acc.builder.CreateBr(BasicBlock *Dest)
+	gen_acc.scope_path.pop_back();
 
 	QUARK_ASSERT(gen_acc.check_invariant());
 }
@@ -2301,9 +2296,11 @@ void genllvm_fill_function_def(llvmgen_t& gen_acc, int function_id, const floyd:
 	{
 		start_function_emit(gen_acc, f);
 		auto symbol_table_values = genllvm_make_function_def_symbols(gen_acc, function_def, f);
-		gen_acc.emit_function->local_variable_symbols = symbol_table_values;
+
+		gen_acc.scope_path.push_back(symbol_table_values);
 		genllvm_statements(gen_acc, function_def._body->_statements);
-//		genllvm_body(gen_acc, *function_def._body);
+		gen_acc.scope_path.pop_back();
+
 		end_function_emit(gen_acc);
 	}
 
@@ -2561,7 +2558,7 @@ std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> genllvm_al
 				semantic_ast,
 				semantic_ast._tree._globals._symbol_table
 			);
-			gen_acc.globals = globals;
+			gen_acc.scope_path = { globals };
 		}
 	}
 
@@ -2584,9 +2581,9 @@ std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> genllvm_al
 
 		{
 			start_function_emit(gen_acc, f);
-			gen_acc.emit_function->local_variable_symbols = gen_acc.globals;
+
+			//	Global statements, using the global symbol scope.
 			genllvm_statements(gen_acc, semantic_ast._tree._globals._statements);
-//			genllvm_body(gen_acc, semantic_ast._tree._globals);
 
 			llvm::Value* dummy_result = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 667);
 			gen_acc.builder.CreateRet(dummy_result);

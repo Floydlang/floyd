@@ -839,7 +839,6 @@ QUARK_UNIT_TEST("Floyd test suite", "func", "define additional function, call it
 	);
 }
 
-//???FAILS
 QUARK_UNIT_TEST("Floyd test suite", "func", "use function inputs", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
@@ -1213,6 +1212,33 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: global", "", ""){
 }
 
 
+QUARK_UNIT_TEST("Floyd test suite", "Scopes: Global block scopes, shadowing or not", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			//	GLOBAL SCOPE
+			let a = 7
+			let b = 1007
+
+			assert(a == 7)	//	global-a
+			print(b)		//	global-b
+
+
+			//	BLOCK IN GLOBAL SCOPE, SHADOW GLOBAL
+			{
+				assert(a == 7)		//	global-a
+				assert(b == 1007)	//	global-b
+
+				let a = 10
+				assert(a == 10)		//	block local-a, shadowing global-a
+				assert(b == 1007)	//	global-b
+			}
+		)",
+		{"1007"}
+	);
+}
+
 QUARK_UNIT_TEST("Floyd test suite", "Scopes: Three levels", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -1248,37 +1274,6 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: Three levels", "", ""){
 	);
 }
 
-
-//???FAILS
-QUARK_UNIT_TEST("Floyd test suite", "Scopes: Global block scopes, shadowing or not", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			//	GLOBAL SCOPE
-			let a = 7
-			let b = 1007
-
-			assert(a == 7)	//	global-a
-			print(b)		//	global-b
-
-
-			//	BLOCK IN GLOBAL SCOPE, SHADOW GLOBAL
-			{
-				assert(a == 7)		//	global-a
-				assert(b == 1007)	//	global-b
-
-				let a = 10
-/*
-				assert(a == 10)		//	block local-a, shadowing global-a
-				assert(b == 1007)	//	global-b
-*/
-
-			}
-		)",
-		{"1007"}
-	);
-}
 
 
 QUARK_UNIT_TEST("Floyd test suite", "Scopes: Global block scopes, shadowing or not", "", ""){
@@ -1339,7 +1334,6 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: Global block scopes, shadowing or n
 	);
 }
 
-//???FAIL
 QUARK_UNIT_TEST("Floyd test suite", "Scopes: Function arguments & locals & blocks vs globals, shadowing or not", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -1409,7 +1403,6 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: Function arguments & locals & block
 	);
 }
 
-//???FAIL
 QUARK_UNIT_TEST("Floyd test suite", "Scopes: All block scopes, shadowing or not", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
