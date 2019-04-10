@@ -2117,7 +2117,7 @@ QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 
 //??? add tests for equality.
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "string []", "string", "0"){
+QUARK_UNIT_TEST("Floyd test suite", "string []", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2134,14 +2134,14 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "string []", "string", "0"){
 	);
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "string []", "string", "0"){
+QUARK_UNIT_TEST("Floyd test suite", "string []", "", ""){
 	run_closed(R"(
 
 		assert("hello"[0] == 104)
 
 	)");
 }
-QUARK_UNIT_TEST_VIP("Floyd test suite", "string []", "string", "0"){
+QUARK_UNIT_TEST("Floyd test suite", "string []", "", ""){
 	run_closed(R"(
 
 		assert("hello"[4] == 111)
@@ -2149,14 +2149,14 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "string []", "string", "0"){
 	)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "string size()", "string", "0"){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "string size()", "", ""){
 	run_closed(R"(
 
 		assert(size("") == 0)
 
 	)");
 }
-QUARK_UNIT_TEST("Floyd test suite", "string size()", "string", "24"){
+QUARK_UNIT_TEST("Floyd test suite", "string size()", "", ""){
 	run_closed(R"(
 
 		assert(size("How long is this string?") == 24)
@@ -2164,7 +2164,15 @@ QUARK_UNIT_TEST("Floyd test suite", "string size()", "string", "24"){
 	)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "string push_back()", "string", "correct final vector"){
+QUARK_UNIT_TEST("Floyd test suite", "string size()", "Embedded null characters - check 8 bit clean", ""){
+	run_closed(R"(
+
+		assert(size("hello\0world\0\0") == 13)
+
+	)");
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "string push_back()", "", ""){
 	run_closed(R"(
 
 		a = push_back("one", 111)
@@ -2173,7 +2181,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string push_back()", "string", "correct fin
 	)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "string update()", "string", "correct final string"){
+QUARK_UNIT_TEST("Floyd test suite", "string update()", "", ""){
 	run_closed(R"(
 
 		a = update("hello", 1, 98)
@@ -2183,7 +2191,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string update()", "string", "correct final 
 }
 
 
-QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", "correct final vector"){
+QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
 	run_closed(R"(
 
 		assert(subset("abc", 0, 3) == "abc")
@@ -2213,6 +2221,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string", "Error: Lookup in string using non
 		"Strings can only be indexed by integers, not a \"string\". Line: 4 \"print(a[\"not an integer\"])\""
 	);
 }
+
 
 
 #if 0

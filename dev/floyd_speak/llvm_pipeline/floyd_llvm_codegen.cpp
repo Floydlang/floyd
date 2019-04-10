@@ -1805,8 +1805,23 @@ extern "C" {
 		hook(__FUNCTION__, floyd_runtime_ptr, arg);
 	}
 
-	extern void floyd_host_function_1028(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	extern int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
+		auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+		const auto type = (base_type)arg0_type;
+		if(type == base_type::k_int){
+			NOT_IMPLEMENTED_YET();
+//			const auto value = (int64_t)arg0_value;
+//			return std::to_string(value);
+		}
+		else if(type == base_type::k_string){
+			const auto value = (const char*)arg0_value;
+			//??? Strings are not clean.
+			return std::strlen(value);
+		}
+		else{
+			NOT_IMPLEMENTED_YET();
+		}
 	}
 
 	extern void floyd_host_function_1029(void* floyd_runtime_ptr, int64_t arg){
@@ -3012,7 +3027,7 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 		{ "floyd_funcdef__replace", reinterpret_cast<void *>(&floyd_host_function_1025) },
 		{ "floyd_funcdef__script_to_jsonvalue", reinterpret_cast<void *>(&floyd_host_function_1026) },
 		{ "floyd_funcdef__send", reinterpret_cast<void *>(&floyd_host_function_1027) },
-		{ "floyd_funcdef__size", reinterpret_cast<void *>(&floyd_host_function_1028) },
+		{ "floyd_funcdef__size", reinterpret_cast<void *>(&floyd_funcdef__size) },
 		{ "floyd_funcdef__subset", reinterpret_cast<void *>(&floyd_host_function_1029) },
 
 		{ "floyd_funcdef__supermap", reinterpret_cast<void *>(&floyd_host_function_1030) },
