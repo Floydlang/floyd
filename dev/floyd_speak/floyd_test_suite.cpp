@@ -1446,7 +1446,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: All block scopes, shadowing or not"
 //////////////////////////////////////////		IF STATEMENT
 
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if(true){}", ""){
+QUARK_UNIT_TEST("Floyd test suite", "if", "if(true){}", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1461,7 +1461,7 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if(true){}", ""){
 	);
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if(false){}", ""){
+QUARK_UNIT_TEST("Floyd test suite", "if", "if(false){}", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1476,7 +1476,7 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if(false){}", ""){
 	);
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if(true){}else{}", ""){
+QUARK_UNIT_TEST("Floyd test suite", "if", "if(true){}else{}", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1493,7 +1493,7 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if(true){}else{}", ""){
 	);
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if(false){}else{}", ""){
+QUARK_UNIT_TEST("Floyd test suite", "if", "if(false){}else{}", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1510,7 +1510,7 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if(false){}else{}", ""){
 	);
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if-elseif-elseif-else TRUE-FALSE-FALSE", ""){
+QUARK_UNIT_TEST("Floyd test suite", "if", "if-elseif-elseif-else TRUE-FALSE-FALSE", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1533,7 +1533,7 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if-elseif-elseif-else TRUE-FALSE-
 	);
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if-elseif-elseif-else FALSE-TRUE-FALSE", ""){
+QUARK_UNIT_TEST("Floyd test suite", "if", "if-elseif-elseif-else FALSE-TRUE-FALSE", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1556,7 +1556,7 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if-elseif-elseif-else FALSE-TRUE-
 	);
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if-elseif-elseif-else FALSE-FALSE-TRUE", ""){
+QUARK_UNIT_TEST("Floyd test suite", "if", "if-elseif-elseif-else FALSE-FALSE-TRUE", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1579,7 +1579,7 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if-elseif-elseif-else FALSE-FALSE
 	);
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if-elseif-elseif-else FALSE-FALSE-FALSE", ""){
+QUARK_UNIT_TEST("Floyd test suite", "if", "if-elseif-elseif-else FALSE-FALSE-FALSE", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1602,7 +1602,7 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "if-elseif-elseif-else FALSE-FALSE
 	);
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "Error: if with non-bool expression", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "if", "Error: if with non-bool expression", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -1618,7 +1618,7 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "Error: if with non-bool expressio
 	);
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "if+scope: Make sure a function can access global independent on how it's called in callstack", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "if+scope: Make sure a function can access global independent on how it's called in callstack", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1643,7 +1643,7 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "if+scope: Make sure a function can acce
 	);
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "return from within IF block", ""){
+QUARK_UNIT_TEST("Floyd test suite", "if", "return from within IF block", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1665,7 +1665,7 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "return from within IF block", "")
 	);
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "Make sure return from ELSE works", ""){
+QUARK_UNIT_TEST("Floyd test suite", "if", "Make sure return from ELSE works", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1692,7 +1692,7 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "Make sure return from ELSE works"
 	);
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "Compiler error: not all paths returns", ""){
+QUARK_UNIT_TEST("Floyd test suite", "if", "Compiler error: not all paths returns", ""){
 //	QUARK_UT_VERIFY(false);
 }
 
@@ -1701,50 +1701,149 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "if", "Compiler error: not all paths ret
 
 
 
-QUARK_UNIT_TEST("Floyd test suite", "for", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "for", "0 ... 0", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
 
-			for (i in 0...2) {
-				print("xyz")
+			for (i in 0 ... 0) {
+				print(i)
 			}
 
 		)",
-		{ "xyz", "xyz", "xyz" }
+		{ "0" }
 	);
 }
 
-
-QUARK_UNIT_TEST("Floyd test suite", "for", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "for", "0 ... 1", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
 
-			for (i in 0...2) {
-				print("Iteration: " + to_string(i))
+			for (i in 0 ... 1) {
+				print(i)
 			}
 
 		)",
-		{ "Iteration: 0", "Iteration: 1", "Iteration: 2" }
+		{ "0", "1" }
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "for", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "for", "0 ... 2", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
 
-			for (i in 0..<2) {
-				print("Iteration: " + to_string(i))
+			for (i in 0 ... 2) {
+				print(i)
 			}
 
 		)",
-		{ "Iteration: 0", "Iteration: 1" }
+		{ "0", "1", "2" }
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "fibonacci", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "for", "0 ... 3", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			for (i in 0 ... 3) {
+				print(i)
+			}
+
+		)",
+		{ "0", "1", "2", "3" }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "for", "1 ... 0", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			for (i in 1 ... 0) {
+				print(i)
+			}
+
+		)",
+		{ }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "for", "1000 ... 1002", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			for (i in 1000 ... 1002) {
+				print(i)
+			}
+
+		)",
+		{ "1000", "1001", "1002"
+		}
+	);
+}
+
+
+QUARK_UNIT_TEST("Floyd test suite", "for", "0 ..< 0", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			for (i in 0 ..< 0) {
+				print(i)
+			}
+
+		)",
+		{ }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "for", "0 ..< 1", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			for (i in 0 ..< 1) {
+				print(i)
+			}
+
+		)",
+		{ "0" }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "for", "0 ..< 2", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			for (i in 0 ..< 2) {
+				print(i)
+			}
+
+		)",
+		{ "0", "1" }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "for", "0 ..< 3", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			for (i in 0 ..< 3) {
+				print(i)
+			}
+
+		)",
+		{ "0", "1", "2" }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "for" "recusion test using fibonacci 10", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -1790,7 +1889,47 @@ QUARK_UNIT_TEST("Floyd test suite", "FOR", "return from within FOR block", ""){
 	);
 }
 
+
+
+QUARK_UNIT_TEST("Floyd test suite", "for", "bool ... bool", "Error"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			for (i in true ... false) {
+				print(i)
+			}
+
+		)",
+		R"abc(For-loop requires integer iterator, start type is bool. Line: 3 "for (i in true ... false) {")abc"
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "for", "EXPR ... EXPR", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+			func int magic(int x){
+				return x * x;
+			}
+
+			for (i in magic(2) ... magic(3)) {
+				print(i)
+			}
+
+		)",
+		{ "4", "5", "6", "7", "8", "9" }
+	);
+}
+
+
+
+
+
 //////////////////////////////////////////		WHILE STATEMENT
+
+
+
 
 //	Parser thinks that "print(to_string(a))" is a type -- a function that returns a "print" and takes a function that returns a to_string and has a argument of type a.
 QUARK_UNIT_TEST("Floyd test suite", "while", "", ""){
@@ -1906,23 +2045,6 @@ QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 
 
 
-
-//////////////////////////////////////////		NULL - TYPE
-
-
-QUARK_UNIT_TEST("Floyd test suite", "json_value::null", "", ""){
-//	try{
-		run_closed(R"(let result = null)");
-/*
-		fail_test(QUARK_POS);
-
- }
-	catch(const std::runtime_error& e){
-		ut_verify(QUARK_POS, e.what(), "Undefined variable \"null\".");
-	}
-*/
-
-}
 
 
 //////////////////////////////////////////		STRING - TYPE
@@ -3240,7 +3362,9 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "Error: Wrong TYPE of arguments to
 }
 
 
+
 //////////////////////////////////////////
+
 
 
 QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
@@ -3261,8 +3385,25 @@ QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
 }
 
 
+
 //////////////////////////////////////////		json_value - TYPE
 
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "json_value::null", "", ""){
+//	try{
+		run_closed(R"(let result = null)");
+/*
+		fail_test(QUARK_POS);
+
+ }
+	catch(const std::runtime_error& e){
+		ut_verify(QUARK_POS, e.what(), "Undefined variable \"null\".");
+	}
+*/
+
+}
 
 QUARK_UNIT_TEST("Floyd test suite", "json_value<string> Infer json_value::string", "", ""){
 	ut_verify_global_result_nolib(
