@@ -1340,7 +1340,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: Global block scopes, shadowing or n
 }
 
 //???FAIL
-QUARK_UNIT_TEST_VIP("Floyd test suite", "Scopes: Function arguments & locals & blocks vs globals, shadowing or not", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Scopes: Function arguments & locals & blocks vs globals, shadowing or not", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
