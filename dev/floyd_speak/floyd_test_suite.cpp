@@ -43,8 +43,11 @@ unsupported syntax
 //??? Make namespace for bytecode interpreter and LLVM code: floyd, floyd_bc, floyd_llvm.
 //??? Run all container2 tests for LLVM too!
 //??? Make vistors-mechanism to support many sast passes, like expanding generics, making collection and layouts explicits etc.
-//??? Test truthness off all variable types: strings, doubles
+
+
 //??? Add tests for arithmetic bounds, limiting, wrapping.
+//??? Test truthness off all variable types: strings, doubles
+
 
 std::map<std::string, value_t> test_run_container2(const std::string& program, const std::vector<floyd::value_t>& args, const std::string& container_key, const std::string& source_file){
 	const auto cu = make_compilation_unit_lib(program, source_file);
@@ -107,7 +110,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Define variable", "string", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let string result = \"xyz\"", value_t::make_string("xyz"));
 }
 
-//	??? Add special error when local is not initialized.
+//	??? Add special error message when local is not initialized.
 QUARK_UNIT_TEST("Floyd test suite", "Define variable", "Error: No initial assignment", "compiler error"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
@@ -908,7 +911,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Call", "Call non-function, non-struct, non-
 }
 
 
-//////////////////////////////////////////		RETURN STATEMENT - ADVANCED USAGE
+//////////////////////////////////////////		RETURN STATEMENT
 
 
 
@@ -931,52 +934,6 @@ QUARK_UNIT_TEST("Floyd test suite", "return", "return from middle of function", 
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "return", "return from within IF block", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			func string f(){
-				if(true){
-					print("A")
-					return "B"
-					print("C")
-				}
-				print("D")
-				return "E"
-			}
-			let string x = f()
-			print(x)
-
-		)",
-		{ "A", "B" }
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "return", "return from within FOR block", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			func string f(){
-				for(e in 0...3){
-					print("A")
-					return "B"
-					print("C")
-				}
-				print("D")
-				return "E"
-			}
-			let string x = f()
-			print(x)
-
-		)",
-		{ "A", "B" }
-	);
-}
-
-// ??? add test for: return from ELSE
-
 QUARK_UNIT_TEST("Floyd test suite", "return", "return from within BLOCK", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -998,7 +955,6 @@ QUARK_UNIT_TEST("Floyd test suite", "return", "return from within BLOCK", ""){
 		{ "A", "B" }
 	);
 }
-
 
 QUARK_UNIT_TEST("Floyd test suite", "return", "Make sure returning wrong type => error", ""){
 	try {
@@ -1686,6 +1642,35 @@ QUARK_UNIT_TEST("Floyd test suite", "if", "Error: if with non-bool expression", 
 	);
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "if", "return from within IF block", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func string f(){
+				if(true){
+					print("A")
+					return "B"
+					print("C")
+				}
+				print("D")
+				return "E"
+			}
+			let string x = f()
+			print(x)
+
+		)",
+		{ "A", "B" }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "if", "Make sure return from ELSE works", ""){
+	QUARK_UT_VERIFY(false);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "if", "Compiler error: not all paths returns", ""){
+	QUARK_UT_VERIFY(false);
+}
 
 
 //////////////////////////////////////////		FOR STATEMENT
@@ -1759,11 +1744,31 @@ QUARK_UNIT_TEST("Floyd test suite", "fibonacci", "", ""){
 	);
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "FOR", "return from within FOR block", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func string f(){
+				for(e in 0...3){
+					print("A")
+					return "B"
+					print("C")
+				}
+				print("D")
+				return "E"
+			}
+			let string x = f()
+			print(x)
+
+		)",
+		{ "A", "B" }
+	);
+}
 
 //////////////////////////////////////////		WHILE STATEMENT
 
 //	Parser thinks that "print(to_string(a))" is a type -- a function that returns a "print" and takes a function that returns a to_string and has a argument of type a.
-#if 0
 QUARK_UNIT_TEST("Floyd test suite", "while", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -1779,8 +1784,10 @@ QUARK_UNIT_TEST("Floyd test suite", "while", "", ""){
 		{ "100", "101", "102", "103", "104" }
 	);
 }
-#endif
 
+QUARK_UNIT_TEST("Floyd test suite", "while", "return from within while", ""){
+	QUARK_UT_VERIFY(false);
+}
 
 
 
