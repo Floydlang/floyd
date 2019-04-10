@@ -1441,30 +1441,6 @@ QUARK_UNIT_TEST("Floyd test suite", "Scopes: All block scopes, shadowing or not"
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "Scopes: Make sure a function can access global independent on how it's called in callstack", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			let int x = 13
-
-			func int add(bool t){
-				if(t == false){
-					return x + 1
-				}
-				else{
-					return add(false) + 1000
-				}
-			}
-
-			print(x)
-			print(add(false))
-			print(add(true))
-
-		)",
-		{ "13", "14", "1014" }
-	);
-}
 
 
 //////////////////////////////////////////		IF STATEMENT
@@ -1639,6 +1615,31 @@ QUARK_UNIT_TEST("Floyd test suite", "if", "Error: if with non-bool expression", 
 
 		)",
 		"Boolean condition required. Line: 3 \"if(\"not a bool\"){\""
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "if+scope: Make sure a function can access global independent on how it's called in callstack", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let int x = 13
+
+			func int add(bool t){
+				if(t == false){
+					return x + 1
+				}
+				else{
+					return add(false) + 1000
+				}
+			}
+
+			print(x)
+			print(add(false))
+			print(add(true))
+
+		)",
+		{ "13", "14", "1014" }
 	);
 }
 
