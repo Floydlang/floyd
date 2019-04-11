@@ -1657,7 +1657,7 @@ extern "C" {
 
 
 	extern int32_t floyd_runtime__compare_strings(void* floyd_runtime_ptr, int64_t op, const char* lhs, const char* rhs){
-		std:: cout << __FUNCTION__ << " " << std::string(lhs) << " comp " <<std::string(rhs) << std::endl;
+		QUARK_TRACE_SS( __FUNCTION__ << " " << std::string(lhs) << " comp " <<std::string(rhs));
 
 		const auto result = std::strcmp(lhs, rhs);
 		const auto op2 = static_cast<expression_type>(op);
@@ -1689,7 +1689,7 @@ extern "C" {
 	extern const char* floyd_runtime__append_strings(void* floyd_runtime_ptr, const char* lhs, const char* rhs){
 		QUARK_ASSERT(lhs != nullptr);
 		QUARK_ASSERT(rhs != nullptr);
-		std:: cout << __FUNCTION__ << " " << std::string(lhs) << " comp " <<std::string(rhs) << std::endl;
+		QUARK_TRACE_SS(__FUNCTION__ << " " << std::string(lhs) << " comp " <<std::string(rhs));
 
 		std::size_t len = strlen(lhs) + strlen(rhs);
 		char* s = reinterpret_cast<char*>(std::malloc(len + 1));
@@ -1955,11 +1955,11 @@ bc_value_t host__typeof(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	///////////////		TEST
 
 	extern void floyd_host_function_2002(void* floyd_runtime_ptr, int64_t arg){
-		std:: cout << __FUNCTION__ << arg << std::endl;
+		std::cout << __FUNCTION__ << arg << std::endl;
 	}
 
 	extern void floyd_host_function_2003(void* floyd_runtime_ptr, int64_t arg){
-		std:: cout << __FUNCTION__ << arg << std::endl;
+		std::cout << __FUNCTION__ << arg << std::endl;
 	}
 
 }
@@ -3001,7 +3001,7 @@ std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> genllvm_al
 		QUARK_ASSERT(check_invariant__function(f));
 	}
 
-	QUARK_TRACE_SS("result = " << floyd::print_gen(gen_acc));
+//	QUARK_TRACE_SS("result = " << floyd::print_gen(gen_acc));
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	genllvm_fill_functions_with_instructions(gen_acc, semantic_ast);
@@ -3013,7 +3013,7 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(llvm_instance_t& instance, c
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(ast0.check_invariant());
 	QUARK_ASSERT(module_name.empty() == false);
-	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast0)._value));
+//	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast0)._value));
 
 	auto ast = expand_generics(ast0);
 
@@ -3022,7 +3022,7 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(llvm_instance_t& instance, c
 	auto funcs = result0.second;
 
 	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, ast._tree._globals._symbol_table, funcs);
-	QUARK_TRACE_SS("result = " << floyd::print_program(*result));
+//	QUARK_TRACE_SS("result = " << floyd::print_program(*result));
 	return result;
 }
 
@@ -3057,7 +3057,7 @@ void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
 
 			const std::string suffix = f == nullptr ? " NULL POINTER" : "";
 			const uint64_t addr = reinterpret_cast<uint64_t>(f);
-			QUARK_TRACE_SS(index << " " << e.first << " " << addr << suffix);
+//			QUARK_TRACE_SS(index << " " << e.first << " " << addr << suffix);
 		}
 		else{
 		}
