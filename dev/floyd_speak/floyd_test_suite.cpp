@@ -2216,20 +2216,6 @@ QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
 
 
 
-
-QUARK_UNIT_TEST("Floyd test suite", "vector [string] - constructor", "Infer type", "valid vector"){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			let a = ["one", "two"]
-			print(a)
-
-		)",
-		{ R"(["one", "two"])" }
-	);
-}
-
 QUARK_UNIT_TEST("Floyd test suite", "vector [] - empty constructor", "cannot be infered", "error"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
@@ -2255,6 +2241,20 @@ QUARK_UNIT_TEST("Floyd test suite", "vector explit bind, is [string]", "Infer ty
 		{ R"(["one", "two"])" }
 	);
 }
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] - constructor", "Infer type", "valid vector"){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = ["one", "two"]
+			print(a)
+
+		)",
+		{ R"(["one", "two"])" }
+	);
+}
+
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string]", "empty vector", "valid vector"){
 	ut_verify_printout_nolib(
@@ -2290,16 +2290,8 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [] - constructor", "32 elements init
 }
 #endif
 
-
-QUARK_UNIT_TEST("Floyd test suite", "vector [string] literal expression", "", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [string] result = ["alpha", "beta"]		)", R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "vector [string] literal expression, computed element", "", ""){
-	ut_verify_global_result_as_json_nolib(
-		QUARK_POS,
-		R"(		func string get_beta(){ return "beta" } 	let [string] result = ["alpha", get_beta()]		)",
-		R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)"
-	);
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] constructor expression, computed element", "", ""){
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		func string get_beta(){ return "beta" } 	let [string] result = ["alpha", get_beta()]		)",		R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] =", "copy", ""){
@@ -2369,7 +2361,31 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] push_back()", "", ""){
 	)");
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] update()", "", "valid vector, without side effect on original vector"){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			a = [ "one", "two", "three"]
+			b = update(a, 1, "zwei")
+			print(a)
+			print(b)
+			assert(a == ["one","two","three"])
+			assert(b == ["one","zwei","three"])
+
+		)",
+		{
+			R"(["one", "two", "three"])",
+			R"(["one", "zwei", "three"])"
+		}
+	);
+}
+
+//??? Test all vactor core functions for [string]
+
 //??? test vector<struct>, vector<json_value>
+
+
 
 //////////////////////////////////////////		vector-bool
 
@@ -2441,8 +2457,70 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [int] push_back()", "", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [int] result = push_back([1, 2], 3)		)",		R"(		[[ "vector", "^int" ], [1, 2, 3]]		)");
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "vector [int] constructor", "", "3"){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			let [int] a = [1, 2, 3]
+			let result = size(a)
+
+		)",
+		value_t::make_int(3)
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [int] push_back()", "", ""){
+	run_closed(
+		R"(
+
+			let result = push_back([1, 2], 3)
+			assert(result == [1, 2, 3])
+
+		)"
+	);
+}
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [int] find()", "", ""){
+	run_closed(R"(		assert(find([1,2,3], 4) == -1)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [int] find()", "", ""){
+	run_closed(R"(		assert(find([1,2,3], 1) == 0)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [int] find()", "", ""){
+	run_closed(R"(		assert(find([1,2,2,2,3], 2) == 1)		)");
+}
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
+	run_closed(R"(		assert(subset([10,20,30], 0, 3) == [10,20,30])		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
+	run_closed(R"(		assert(subset([10,20,30], 1, 3) == [20,30])		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
+	run_closed(R"(		result = (subset([10,20,30], 0, 0) == [])		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
+	run_closed(R"(		assert(subset([10,20,30], 0, 0) == [])		)");
+}
+
+//??? Add tests for string, etc.
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [int] replace()", "", ""){
+	run_closed(R"(		assert(replace([ 1, 2, 3, 4, 5, 6 ], 2, 5, [20, 30]) == [1, 2, 20, 30, 6])		)");
+}
+// ### test pos limiting and edge cases.
+
+
+
+
 
 //////////////////////////////////////////		vector-double
+
 
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [double] literal expression", "", ""){
@@ -2477,7 +2555,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [double] push_back()", "", ""){
 }
 
 
-QUARK_UNIT_TEST("Floyd test suite", "vector [string]", "Error: Lookup in vector using non-int", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "vector []", "Error: Lookup in vector using non-int", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -2499,96 +2577,6 @@ QUARK_UNIT_TEST("Floyd test suite", "vector", "Error: Lookup the unlookupable", 
 }
 
 
-QUARK_UNIT_TEST("Floyd test suite", "vector [int] constructor", "", "3"){
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-		R"(
-
-			let [int] a = [1, 2, 3]
-			let result = size(a)
-
-		)",
-		value_t::make_int(3)
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "vector [int] push_back()", "", ""){
-	run_closed(
-		R"(
-
-			let result = push_back([1, 2], 3)
-			assert(result == [1, 2, 3])
-
-		)"
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "vector [int] find()", "", ""){
-	run_closed(R"(		assert(find([1,2,3], 4) == -1)		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "vector [int] find()", "", ""){
-	run_closed(R"(		assert(find([1,2,3], 1) == 0)		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "vector [int] find()", "", ""){
-	run_closed(R"(		assert(find([1,2,2,2,3], 2) == 1)		)");
-}
-
-
-
-//////////////////////////////////////////		SUBSET()
-
-
-//??? Add tests for string, etc.
-
-QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
-	run_closed(R"(		assert(subset([10,20,30], 0, 3) == [10,20,30])		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
-	run_closed(R"(		assert(subset([10,20,30], 1, 3) == [20,30])		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
-	run_closed(R"(		result = (subset([10,20,30], 0, 0) == [])		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
-	run_closed(R"(		assert(subset([10,20,30], 0, 0) == [])		)");
-}
-
-
-//////////////////////////////////////////		REPLACE()
-
-
-//??? Add tests for string, etc.
-
-QUARK_UNIT_TEST("Floyd test suite", "vector [int] replace()", "", ""){
-	run_closed(R"(		assert(replace([ 1, 2, 3, 4, 5, 6 ], 2, 5, [20, 30]) == [1, 2, 20, 30, 6])		)");
-}
-// ### test pos limiting and edge cases.
-
-
-//////////////////////////////////////////		UPDATE()
-
-
-//??? Add tests for string, etc.
-
-QUARK_UNIT_TEST("Floyd test suite", "vector [string] update()", "", "valid vector, without side effect on original vector"){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			a = [ "one", "two", "three"]
-			b = update(a, 1, "zwei")
-			print(a)
-			print(b)
-			assert(a == ["one","two","three"])
-			assert(b == ["one","zwei","three"])
-
-		)",
-		{
-			R"(["one", "two", "three"])",
-			R"(["one", "zwei", "three"])"
-		}
-	);
-}
 
 
 
