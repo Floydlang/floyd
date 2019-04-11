@@ -1804,12 +1804,7 @@ extern "C" {
 		auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 		const auto type = (base_type)arg0_type;
-		if(type == base_type::k_int){
-			NOT_IMPLEMENTED_YET();
-//			const auto value = (int64_t)arg0_value;
-//			return std::to_string(value);
-		}
-		else if(type == base_type::k_string){
+		if(type == base_type::k_string){
 			const auto value = (const char*)arg0_value;
 
 			std::size_t len = strlen(value);
@@ -1854,12 +1849,7 @@ extern "C" {
 		auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 		const auto type = (base_type)arg0_type;
-		if(type == base_type::k_int){
-			NOT_IMPLEMENTED_YET();
-//			const auto value = (int64_t)arg0_value;
-//			return std::to_string(value);
-		}
-		else if(type == base_type::k_string){
+		if(type == base_type::k_string){
 			const auto value = (const char*)arg0_value;
 			//??? Strings are not clean.
 			return std::strlen(value);
@@ -1908,8 +1898,35 @@ bc_value_t host__typeof(interpreter_t& vm, const bc_value_t args[], int arg_coun
 */
 	}
 
-	extern void floyd_host_function_1034(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	extern const char* floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type, int64_t arg2_value, int64_t arg2_type){
+		auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+		const auto type = (base_type)arg0_type;
+		if(type == base_type::k_string){
+			const auto str = (const char*)arg0_value;
+
+			QUARK_ASSERT(arg1_type == (int)base_type::k_int);
+			QUARK_ASSERT(arg2_type == (int)base_type::k_int);
+
+			const auto index = arg1_value;
+			const auto new_char = (char)arg2_value;
+
+
+			const auto len = strlen(str);
+
+			if(index < 0 || index >= len){
+				throw std::exception();
+			}
+
+			auto result = strdup(str);
+			result[index] = new_char;
+			return result;
+
+//			return DYN_RETURN_T{ reinterpret_cast<uint64_t>(value), (uint64_t)base_type::k_string };
+		}
+		else{
+			NOT_IMPLEMENTED_YET();
+		}
 	}
 
 	extern void floyd_host_function_1035(void* floyd_runtime_ptr, int64_t arg){
@@ -3117,7 +3134,7 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 		{ "floyd_funcdef__to_pretty_string", reinterpret_cast<void *>(&floyd_host_function_1031) },
 		{ "floyd_funcdef__to_string", reinterpret_cast<void *>(&floyd_host__to_string) },
 		{ "floyd_funcdef__typeof", reinterpret_cast<void *>(&floyd_host__typeof) },
-		{ "floyd_funcdef__update", reinterpret_cast<void *>(&floyd_host_function_1034) },
+		{ "floyd_funcdef__update", reinterpret_cast<void *>(&floyd_funcdef__update) },
 		{ "floyd_funcdef__value_to_jsonvalue", reinterpret_cast<void *>(&floyd_host_function_1035) },
 		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&floyd_host_function_1036) }
 	};

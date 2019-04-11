@@ -82,7 +82,7 @@ void ut_verify_exception_nolib(const quark::call_context_t& context, const std::
 }
 
 
-#if 0
+#if 1
 //////////////////////////////////////////		DEFINE VARIABLE, SIMPLE TYPES
 
 
@@ -2172,7 +2172,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string size()", "Embedded null characters -
 	)");
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "string push_back()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "string push_back()", "", ""){
 	run_closed(R"(
 
 		a = push_back("one", 111)
@@ -2189,6 +2189,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string update()", "", ""){
 
 	)");
 }
+//??? test for out-of-bounds
 
 
 QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
@@ -2224,7 +2225,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string", "Error: Lookup in string using non
 
 
 
-#if 0
+#if 1
 
 //////////////////////////////////////////		VECTOR - TYPE
 
