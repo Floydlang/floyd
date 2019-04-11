@@ -82,7 +82,7 @@ void ut_verify_exception_nolib(const quark::call_context_t& context, const std::
 }
 
 
-#if 0
+#if 1
 //////////////////////////////////////////		DEFINE VARIABLE, SIMPLE TYPES
 
 
@@ -2153,142 +2153,67 @@ QUARK_UNIT_TEST("Floyd test suite", "string []", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "string []", "", ""){
-	run_closed(R"(
-
-		assert("hello"[0] == 104)
-
-	)");
+	run_closed(R"(		assert("hello"[0] == 104)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string []", "", ""){
-	run_closed(R"(
-
-		assert("hello"[4] == 111)
-
-	)");
+	run_closed(R"(		assert("hello"[4] == 111)		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "string ==", "", ""){
-	run_closed(R"(
-
-		assert(("hello" == "hello") == true);
-
-	)");
+	run_closed(R"(		assert(("hello" == "hello") == true);		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string ==", "", ""){
-	run_closed(R"(
-
-		assert(("hello" == "Yello") == false);
-
-	)");
+	run_closed(R"(		assert(("hello" == "Yello") == false);		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string !=", "", ""){
-	run_closed(R"(
-
-		assert(("hello" != "yello") == true);
-
-	)");
+	run_closed(R"(		assert(("hello" != "yello") == true);		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string !=", "", ""){
-	run_closed(R"(
-
-		assert(("hello" != "hello") == false);
-
-	)");
+	run_closed(R"(		assert(("hello" != "hello") == false);		)");
 }
 
 
 QUARK_UNIT_TEST("Floyd test suite", "string <", "", ""){
-	run_closed(R"(
-
-		assert(("aaa" < "bbb") == true);
-
-	)");
+	run_closed(R"(		assert(("aaa" < "bbb") == true);		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string <", "", ""){
-	run_closed(R"(
-
-		assert(("aaa" < "aaa") == false);
-
-	)");
+	run_closed(R"(		assert(("aaa" < "aaa") == false);		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string <", "", ""){
-	run_closed(R"(
-
-		assert(("bbb" < "aaa") == false);
-
-	)");
+	run_closed(R"(		assert(("bbb" < "aaa") == false);		)");
 }
-
 
 
 QUARK_UNIT_TEST("Floyd test suite", "string <=", "", ""){
-	run_closed(R"(
-
-		assert(("aaa" <= "bbb") == true);
-
-	)");
+	run_closed(R"(		assert(("aaa" <= "bbb") == true);		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string <=", "", ""){
-	run_closed(R"(
-
-		assert(("aaa" <= "aaa") == true);
-
-	)");
+	run_closed(R"(		assert(("aaa" <= "aaa") == true);		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string <=", "", ""){
-	run_closed(R"(
-
-		assert(("bbb" <= "aaa") == false);
-
-	)");
+	run_closed(R"(		assert(("bbb" <= "aaa") == false);		)");
 }
-
 
 
 QUARK_UNIT_TEST("Floyd test suite", "string >", "", ""){
-	run_closed(R"(
-
-		assert(("bbb" > "aaa") == true);
-
-	)");
+	run_closed(R"(		assert(("bbb" > "aaa") == true);		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string >", "", ""){
-	run_closed(R"(
-
-		assert(("aaa" > "aaa") == false);
-
-	)");
+	run_closed(R"(		assert(("aaa" > "aaa") == false);		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string >", "", ""){
-	run_closed(R"(
-
-		assert(("aaa" > "bbb") == false);
-
-	)");
+	run_closed(R"(		assert(("aaa" > "bbb") == false);		)");
 }
 
 
-
 QUARK_UNIT_TEST("Floyd test suite", "string >=", "", ""){
-	run_closed(R"(
-
-		assert(("bbb" >= "aaa") == true);
-
-	)");
+	run_closed(R"(		assert(("bbb" >= "aaa") == true);		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string >=", "", ""){
-	run_closed(R"(
-
-		assert(("aaa" >= "aaa") == true);
-
-	)");
+	run_closed(R"(		assert(("aaa" >= "aaa") == true);		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string >=", "", ""){
-	run_closed(R"(
-
-		assert(("aaa" >= "bbb") == false);
-
-	)");
+	run_closed(R"(		assert(("aaa" >= "bbb") == false);		)");
 }
 
 
@@ -2322,26 +2247,14 @@ QUARK_UNIT_TEST("Floyd test suite", "string", "Error: Lookup in string using non
 */
 
 QUARK_UNIT_TEST("Floyd test suite", "string size()", "", ""){
-	run_closed(R"(
-
-		assert(size("") == 0)
-
-	)");
+	run_closed(R"(		assert(size("") == 0)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string size()", "", ""){
-	run_closed(R"(
-
-		assert(size("How long is this string?") == 24)
-
-	)");
+	run_closed(R"(		assert(size("How long is this string?") == 24)		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "string size()", "Embeded null characters - check 8 bit clean", ""){
-	run_closed(R"(
-
-		assert(size("hello\0world\0\0") == 13)
-
-	)");
+	run_closed(R"(		assert(size("hello\0world\0\0") == 13)		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "string push_back()", "", ""){
@@ -2378,80 +2291,44 @@ QUARK_UNIT_TEST("Floyd test suite", "string update()", "error: pos > len", "exce
 
 
 QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
-	run_closed(R"(
-
-		assert(subset("abc", 0, 3) == "abc")
-
-	)");
+	run_closed(R"(		assert(subset("abc", 0, 3) == "abc")		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
-	run_closed(R"(
-
-		assert(subset("abc", 1, 3) == "bc")
-
-	)");
+	run_closed(R"(		assert(subset("abc", 1, 3) == "bc")		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
-	run_closed(R"(
-
-		assert(subset("abc", 0, 0) == "")
-
-	)");
+	run_closed(R"(		assert(subset("abc", 0, 0) == "")		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
-	run_closed(R"(
-
-		assert(subset("abc", 0, 10) == "abc")
-
-	)");
+	run_closed(R"(		assert(subset("abc", 0, 10) == "abc")		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
-	run_closed(R"(
-
-		assert(subset("abc", 2, 10) == "c")
-
-	)");
+	run_closed(R"(		assert(subset("abc", 2, 10) == "c")		)");
 }
 
 
 
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "string replace()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", ""){
 	run_closed(R"(
 
 		assert(replace("One ring to rule them all", 4, 8, "rabbit") == "One rabbit to rule them all")
 
 	)");
 }
-QUARK_UNIT_TEST_VIP("Floyd test suite", "string replace()", "", ""){
-	run_closed(R"(
-
-		assert(replace("hello", 0, 5, "goodbye") == "goodbye")
-
-	)");
+QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", ""){
+	run_closed(R"(		assert(replace("hello", 0, 5, "goodbye") == "goodbye")		)");
 }
-QUARK_UNIT_TEST_VIP("Floyd test suite", "string replace()", "", ""){
-	run_closed(R"(
-
-		assert(replace("hello", 0, 6, "goodbye") == "goodbye")
-
-	)");
+QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", ""){
+	run_closed(R"(		assert(replace("hello", 0, 6, "goodbye") == "goodbye")		)");
 }
-QUARK_UNIT_TEST_VIP("Floyd test suite", "string replace()", "", ""){
-	run_closed(R"(
-
-		assert(replace("hello", 0, 0, "goodbye") == "goodbyehello")
-
-	)");
+QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", ""){
+	run_closed(R"(		assert(replace("hello", 0, 0, "goodbye") == "goodbyehello")		)");
 }
-QUARK_UNIT_TEST_VIP("Floyd test suite", "string replace()", "", ""){
-	run_closed(R"(
-
-		assert(replace("hello", 5, 5, "goodbye") == "hellogoodbye")
-
-	)");
+QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", ""){
+	run_closed(R"(		assert(replace("hello", 5, 5, "goodbye") == "hellogoodbye")		)");
 }
-QUARK_UNIT_TEST_VIP("Floyd test suite", "string replace()", "", "error"){
+QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", "error"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -2462,7 +2339,7 @@ QUARK_UNIT_TEST_VIP("Floyd test suite", "string replace()", "", "error"){
 		"replace() requires start <= end."
 	);
 }
-QUARK_UNIT_TEST_VIP("Floyd test suite", "string replace()", "", "error"){
+QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", "error"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -2489,7 +2366,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
 
 
 
-#if 0
+#if 1
 
 //////////////////////////////////////////		VECTOR - TYPE
 
