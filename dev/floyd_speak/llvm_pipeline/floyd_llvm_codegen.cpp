@@ -1657,8 +1657,15 @@ extern "C" {
 
 
 	extern int32_t floyd_runtime__compare_strings(void* floyd_runtime_ptr, int64_t op, const char* lhs, const char* rhs){
-		QUARK_TRACE_SS( __FUNCTION__ << " " << std::string(lhs) << " comp " <<std::string(rhs));
+//		QUARK_TRACE_SS( __FUNCTION__ << " " << std::string(lhs) << " comp " <<std::string(rhs));
 
+		/*
+			strcmp()
+				Greater than zero ( >0 ): A value greater than zero is returned when the first not matching character in leftStr have the greater ASCII value than the corresponding character in rightStr or we can also say
+
+				Less than Zero ( <0 ): A value less than zero is returned when the first not matching character in leftStr have lesser ASCII value than the corresponding character in rightStr.
+
+		*/
 		const auto result = std::strcmp(lhs, rhs);
 		const auto op2 = static_cast<expression_type>(op);
 		if(op2 == expression_type::k_comparison_smaller_or_equal__2){
@@ -1859,8 +1866,31 @@ extern "C" {
 		}
 	}
 
-	extern void floyd_host_function_1029(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	extern const char* floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end){
+		auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+		if(start < 0 || end < 0){
+			quark::throw_runtime_error("subset() requires start and end to be non-negative.");
+		}
+
+		const auto type = (base_type)arg0_type;
+		if(type == base_type::k_string){
+			const auto value = (const char*)arg0_value;
+
+			std::size_t len = strlen(value);
+
+			const std::size_t end2 = std::min(static_cast<std::size_t>(end), len);
+			const std::size_t start2 = std::min(static_cast<std::size_t>(start), end2);
+			std::size_t len2 = end2 - start2;
+
+			char* s = reinterpret_cast<char*>(std::malloc(len2 + 1));
+			std::memcpy(&s[0], &value[start2], len2);
+			s[len2] = 0x00;
+			return s;
+		}
+		else{
+			NOT_IMPLEMENTED_YET();
+		}
 	}
 
 
@@ -1915,7 +1945,7 @@ bc_value_t host__typeof(interpreter_t& vm, const bc_value_t args[], int arg_coun
 			const auto len = strlen(str);
 
 			if(index < 0 || index >= len){
-				throw std::exception();
+				throw std::runtime_error("Position argument to update() is outside collection span.");
 			}
 
 			auto result = strdup(str);
@@ -3128,7 +3158,7 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 		{ "floyd_funcdef__script_to_jsonvalue", reinterpret_cast<void *>(&floyd_host_function_1026) },
 		{ "floyd_funcdef__send", reinterpret_cast<void *>(&floyd_host_function_1027) },
 		{ "floyd_funcdef__size", reinterpret_cast<void *>(&floyd_funcdef__size) },
-		{ "floyd_funcdef__subset", reinterpret_cast<void *>(&floyd_host_function_1029) },
+		{ "floyd_funcdef__subset", reinterpret_cast<void *>(&floyd_funcdef__subset) },
 
 		{ "floyd_funcdef__supermap", reinterpret_cast<void *>(&floyd_host_function_1030) },
 		{ "floyd_funcdef__to_pretty_string", reinterpret_cast<void *>(&floyd_host_function_1031) },

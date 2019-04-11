@@ -82,7 +82,7 @@ void ut_verify_exception_nolib(const quark::call_context_t& context, const std::
 }
 
 
-#if 1
+#if 0
 //////////////////////////////////////////		DEFINE VARIABLE, SIMPLE TYPES
 
 
@@ -2115,7 +2115,25 @@ QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 //////////////////////////////////////////		STRING - TYPE
 
 
-//??? add tests for equality.
+
+//??? You can append two strings together using the + operation. ??? Replace with string append(string, string)
+
+/*
+ESCAPE SEQUENCE	RESULT CHARACTER, AS HEX	ASCII MEANING
+\a	0x07	BEL, bell, alarm, \a
+\b	0x08	BS, backspace, \b
+\f	0x0c	FF, NP, form feed, \f
+\n	0x0a	Newline (Line Feed)
+\r	0x0d	Carriage Return
+\t	0x09	Horizontal Tab
+\v	0x0b	Vertical Tab
+\\	0x5f	Backslash
+'	0x27	Single quotation mark
+\"
+*/
+
+
+
 
 QUARK_UNIT_TEST("Floyd test suite", "string []", "", ""){
 	ut_verify_printout_nolib(
@@ -2149,6 +2167,160 @@ QUARK_UNIT_TEST("Floyd test suite", "string []", "", ""){
 	)");
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "string ==", "", ""){
+	run_closed(R"(
+
+		assert(("hello" == "hello") == true);
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string ==", "", ""){
+	run_closed(R"(
+
+		assert(("hello" == "Yello") == false);
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string !=", "", ""){
+	run_closed(R"(
+
+		assert(("hello" != "yello") == true);
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string !=", "", ""){
+	run_closed(R"(
+
+		assert(("hello" != "hello") == false);
+
+	)");
+}
+
+
+QUARK_UNIT_TEST("Floyd test suite", "string <", "", ""){
+	run_closed(R"(
+
+		assert(("aaa" < "bbb") == true);
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string <", "", ""){
+	run_closed(R"(
+
+		assert(("aaa" < "aaa") == false);
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string <", "", ""){
+	run_closed(R"(
+
+		assert(("bbb" < "aaa") == false);
+
+	)");
+}
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "string <=", "", ""){
+	run_closed(R"(
+
+		assert(("aaa" <= "bbb") == true);
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string <=", "", ""){
+	run_closed(R"(
+
+		assert(("aaa" <= "aaa") == true);
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string <=", "", ""){
+	run_closed(R"(
+
+		assert(("bbb" <= "aaa") == false);
+
+	)");
+}
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "string >", "", ""){
+	run_closed(R"(
+
+		assert(("bbb" > "aaa") == true);
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string >", "", ""){
+	run_closed(R"(
+
+		assert(("aaa" > "aaa") == false);
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string >", "", ""){
+	run_closed(R"(
+
+		assert(("aaa" > "bbb") == false);
+
+	)");
+}
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "string >=", "", ""){
+	run_closed(R"(
+
+		assert(("bbb" >= "aaa") == true);
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string >=", "", ""){
+	run_closed(R"(
+
+		assert(("aaa" >= "aaa") == true);
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string >=", "", ""){
+	run_closed(R"(
+
+		assert(("aaa" >= "bbb") == false);
+
+	)");
+}
+
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "string", "Error: Lookup in string using non-int", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			let string a = "test string"
+			print(a["not an integer"])
+
+		)",
+		"Strings can only be indexed by integers, not a \"string\". Line: 4 \"print(a[\"not an integer\"])\""
+	);
+}
+
+
+
+//////////////////////////////////////////		STRING - CORE FUNCTIONS
+
+/*
+	print(): prints a string to the default output of the app.
+	update(): changes one character of the string and returns a new string.
+	size(): returns the number of characters in the string, as an integer.
+	find(): searches from left to right after a substring and returns its index or -1
+	push_back(): appends a character or string to the right side of the string. The character is stored in an int.
+	subset: extracts a range of characters from the string, as specified by start and end indexes. aka substr()
+	replace(): replaces a range of a string with another string. Can also be used to erase or insert.
+*/
+
 QUARK_UNIT_TEST("Floyd test suite", "string size()", "", ""){
 	run_closed(R"(
 
@@ -2164,7 +2336,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string size()", "", ""){
 	)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "string size()", "Embedded null characters - check 8 bit clean", ""){
+QUARK_UNIT_TEST("Floyd test suite", "string size()", "Embeded null characters - check 8 bit clean", ""){
 	run_closed(R"(
 
 		assert(size("hello\0world\0\0") == 13)
@@ -2189,18 +2361,60 @@ QUARK_UNIT_TEST("Floyd test suite", "string update()", "", ""){
 
 	)");
 }
-//??? test for out-of-bounds
+QUARK_UNIT_TEST("Floyd test suite", "string update()", "error: pos > len", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			a = update("hello", 5, 98)
+
+		)",
+		"Position argument to update() is outside collection span."
+	);
+}
+
+
+
 
 
 QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
 	run_closed(R"(
 
 		assert(subset("abc", 0, 3) == "abc")
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
+	run_closed(R"(
+
 		assert(subset("abc", 1, 3) == "bc")
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
+	run_closed(R"(
+
 		assert(subset("abc", 0, 0) == "")
 
 	)");
 }
+QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
+	run_closed(R"(
+
+		assert(subset("abc", 0, 10) == "abc")
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
+	run_closed(R"(
+
+		assert(subset("abc", 2, 10) == "c")
+
+	)");
+}
+
+
+
 
 QUARK_UNIT_TEST("Floyd test suite", "string replace()", "combo", ""){
 	run_closed(R"(
@@ -2210,22 +2424,20 @@ QUARK_UNIT_TEST("Floyd test suite", "string replace()", "combo", ""){
 	)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "string", "Error: Lookup in string using non-int", "exception"){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
+QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
+	run_closed(R"(
 
-			let string a = "test string"
-			print(a["not an integer"])
+		assert(find("hello, world", "he") == 0)
+		assert(find("hello, world", "e") == 1)
+		assert(find("hello, world", "x") == -1)
 
-		)",
-		"Strings can only be indexed by integers, not a \"string\". Line: 4 \"print(a[\"not an integer\"])\""
-	);
+	)");
 }
 
 
 
-#if 1
+
+#if 0
 
 //////////////////////////////////////////		VECTOR - TYPE
 
@@ -2742,12 +2954,12 @@ QUARK_UNIT_TEST("Floyd test suite", "vector<int> pushpush_back()", "", ""){
 
 
 
-//////////////////////////////////////////		FIND()
+//////////////////////////////////////////		FIND() --- move to each collection type.
 
 
 
 
-QUARK_UNIT_TEST("Floyd test suite", "find()", "int", ""){
+QUARK_UNIT_TEST("Floyd test suite", "find([int])", "", ""){
 	run_closed(R"(
 
 		assert(find([1,2,3], 4) == -1)
@@ -2757,42 +2969,35 @@ QUARK_UNIT_TEST("Floyd test suite", "find()", "int", ""){
 	)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "find()", "string", ""){
-	run_closed(R"(
-
-		assert(find("hello, world", "he") == 0)
-		assert(find("hello, world", "e") == 1)
-		assert(find("hello, world", "x") == -1)
-
-	)");
-}
 
 
 //////////////////////////////////////////		SUBSET()
 
 
-QUARK_UNIT_TEST("Floyd test suite", "subset()", "int", ""){
+//??? Add tests for string, etc.
+
+QUARK_UNIT_TEST("Floyd test suite", "subset()", "[int]", ""){
 	run_closed(R"(
 
 		assert(subset([10,20,30], 0, 3) == [10,20,30])
 
 	)");
 }
-QUARK_UNIT_TEST("Floyd test suite", "subset()", "int", ""){
+QUARK_UNIT_TEST("Floyd test suite", "subset()", "[int]", ""){
 	run_closed(R"(
 
 		assert(subset([10,20,30], 1, 3) == [20,30])
 
 	)");
 }
-QUARK_UNIT_TEST("Floyd test suite", "subset()", "int", ""){
+QUARK_UNIT_TEST("Floyd test suite", "subset()", "[int]", ""){
 	run_closed(R"(
 
 		result = (subset([10,20,30], 0, 0) == [])
 
 	)");
 }
-QUARK_UNIT_TEST("Floyd test suite", "subset()", "int", ""){
+QUARK_UNIT_TEST("Floyd test suite", "subset()", "[int]", ""){
 	run_closed(R"(
 
 		assert(subset([10,20,30], 0, 0) == [])
@@ -2804,7 +3009,9 @@ QUARK_UNIT_TEST("Floyd test suite", "subset()", "int", ""){
 //////////////////////////////////////////		REPLACE()
 
 
-QUARK_UNIT_TEST("Floyd test suite", "replace()", "int", ""){
+//??? Add tests for string, etc.
+
+QUARK_UNIT_TEST("Floyd test suite", "replace([int])", "", ""){
 	run_closed(R"(
 
 		assert(replace([ 1, 2, 3, 4, 5, 6 ], 2, 5, [20, 30]) == [1, 2, 20, 30, 6])
@@ -2817,7 +3024,9 @@ QUARK_UNIT_TEST("Floyd test suite", "replace()", "int", ""){
 //////////////////////////////////////////		UPDATE()
 
 
-QUARK_UNIT_TEST("Floyd test suite", "update()", "mutate element", "valid vector, without side effect on original vector"){
+//??? Add tests for string, etc.
+
+QUARK_UNIT_TEST("Floyd test suite", "update([string])", "", "valid vector, without side effect on original vector"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(

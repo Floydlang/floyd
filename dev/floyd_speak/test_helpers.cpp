@@ -137,14 +137,14 @@ run_report_t run_program(const compilation_unit_t& cu, const std::vector<value_t
 QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 	ut_verify(
 		QUARK_POS,
-		run_program(make_compilation_unit("print(\"Hello, world!\")", "", compilation_unit_mode::k_include_core_lib), {}),
+		run_program(make_compilation_unit("print(\"Hello, world!\")", "", compilation_unit_mode::k_no_core_lib), {}),
 		run_report_t{ value_t::make_undefined(), value_t::make_undefined(), { "Hello, world!" }, ""}
 	);
 }
 QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 	ut_verify(
 		QUARK_POS,
-		run_program(make_compilation_unit("let result = 112", "", compilation_unit_mode::k_include_core_lib), {}),
+		run_program(make_compilation_unit("let result = 112", "", compilation_unit_mode::k_no_core_lib), {}),
 		run_report_t{ value_t::make_int(112), value_t::make_undefined(), {}, ""}
 	);
 }
@@ -152,7 +152,7 @@ QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 	ut_verify(
 		QUARK_POS,
 		run_program(
-			make_compilation_unit("func int main([string] args){ return 1003 }", "", compilation_unit_mode::k_include_core_lib),
+			make_compilation_unit("func int main([string] args){ return 1003 }", "", compilation_unit_mode::k_no_core_lib),
 			{ value_t::make_vector_value(typeid_t::make_string(), { value_t::make_string("a"), value_t::make_string("b") }) }
 		),
 		run_report_t{ value_t::make_undefined(), value_t::make_int(1003), {}, ""}
@@ -161,7 +161,7 @@ QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 	ut_verify(
 		QUARK_POS,
-		run_program(make_compilation_unit("print(1) print(234)", "", compilation_unit_mode::k_include_core_lib), {}),
+		run_program(make_compilation_unit("print(1) print(234)", "", compilation_unit_mode::k_no_core_lib), {}),
 		run_report_t{ value_t::make_undefined(), value_t::make_undefined(), {"1", "234" }, ""}
 	);
 }
