@@ -1751,8 +1751,33 @@ extern "C" {
 		hook(__FUNCTION__, floyd_runtime_ptr, arg);
 	}
 
-	extern void floyd_host_function_1009(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+
+
+	extern int64_t floyd_funcdef__find__string(llvm_execution_engine_t* floyd_runtime_ptr, const char s[], const char find[]){
+		QUARK_ASSERT(s != nullptr);
+		QUARK_ASSERT(find != nullptr);
+
+		const auto str = std::string(s);
+		const auto wanted2 = std::string(find);
+
+		const auto r = str.find(wanted2);
+		const auto result = r == std::string::npos ? -1 : static_cast<int64_t>(r);
+		return result;
+	}
+
+	extern int64_t floyd_funcdef__find(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
+		auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+		const auto type = arg0_type;
+		if(type == (int)base_type::k_string){
+			if(arg1_type != (int)base_type::k_string){
+				quark::throw_runtime_error("find(string) requires argument 2 to be a string.");
+			}
+			return floyd_funcdef__find__string(r, (const char*)arg0_value, (const char*)arg1_value);
+		}
+		else{
+			NOT_IMPLEMENTED_YET();
+		}
 	}
 
 
@@ -3170,7 +3195,7 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 		{ "floyd_funcdef__erase", reinterpret_cast<void *>(&floyd_host_function_1006) },
 		{ "floyd_funcdef__exists", reinterpret_cast<void *>(&floyd_host_function_1007) },
 		{ "floyd_funcdef__filter", reinterpret_cast<void *>(&floyd_host_function_1008) },
-		{ "floyd_funcdef__find", reinterpret_cast<void *>(&floyd_host_function_1009) },
+		{ "floyd_funcdef__find", reinterpret_cast<void *>(&floyd_funcdef__find) },
 
 		{ "floyd_funcdef__get_fs_environment", reinterpret_cast<void *>(&floyd_host_function_1010) },
 		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&floyd_host_function_1011) },

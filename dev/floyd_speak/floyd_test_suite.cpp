@@ -2352,15 +2352,15 @@ QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", "error"){
 }
 
 
-
+//??? find() should have a start index.
 QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
-	run_closed(R"(
-
-		assert(find("hello, world", "he") == 0)
-		assert(find("hello, world", "e") == 1)
-		assert(find("hello, world", "x") == -1)
-
-	)");
+	run_closed(R"(		assert(find("hello, world", "he") == 0)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
+	run_closed(R"(		assert(find("hello, world", "e") == 1)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
+	run_closed(R"(		assert(find("hello, world", "x") == -1)		)");
 }
 
 
