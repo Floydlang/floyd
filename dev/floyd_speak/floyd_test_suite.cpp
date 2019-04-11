@@ -3158,26 +3158,6 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "Error: Wrong TYPE of arguments to
 
 
 
-//////////////////////////////////////////
-
-
-
-QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
-	run_closed(R"(
-
-		let start = get_time_of_day()
-		mutable b = 0
-		mutable t = [0]
-		for(i in 0...100){
-			b = b + 1
-			t = push_back(t, b)
-		}
-		end = get_time_of_day()
-		print("Duration: " + to_string(end - start) + ", number = " + to_string(b))
-		print(t)
-
-	)");
-}
 
 
 
@@ -3731,6 +3711,22 @@ QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
 
 //////////////////////////////////////////		HOST FUNCTION - get_time_of_day()
 
+QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
+	run_closed(R"(
+
+		let start = get_time_of_day()
+		mutable b = 0
+		mutable t = [0]
+		for(i in 0...100){
+			b = b + 1
+			t = push_back(t, b)
+		}
+		end = get_time_of_day()
+		print("Duration: " + to_string(end - start) + ", number = " + to_string(b))
+		print(t)
+
+	)");
+}
 
 QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
 	run_closed(R"(
