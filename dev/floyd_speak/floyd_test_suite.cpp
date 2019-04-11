@@ -2416,13 +2416,65 @@ QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
 
 
 
-QUARK_UNIT_TEST("Floyd test suite", "string replace()", "combo", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "string replace()", "", ""){
 	run_closed(R"(
 
 		assert(replace("One ring to rule them all", 4, 8, "rabbit") == "One rabbit to rule them all")
 
 	)");
 }
+QUARK_UNIT_TEST_VIP("Floyd test suite", "string replace()", "", ""){
+	run_closed(R"(
+
+		assert(replace("hello", 0, 5, "goodbye") == "goodbye")
+
+	)");
+}
+QUARK_UNIT_TEST_VIP("Floyd test suite", "string replace()", "", ""){
+	run_closed(R"(
+
+		assert(replace("hello", 0, 6, "goodbye") == "goodbye")
+
+	)");
+}
+QUARK_UNIT_TEST_VIP("Floyd test suite", "string replace()", "", ""){
+	run_closed(R"(
+
+		assert(replace("hello", 0, 0, "goodbye") == "goodbyehello")
+
+	)");
+}
+QUARK_UNIT_TEST_VIP("Floyd test suite", "string replace()", "", ""){
+	run_closed(R"(
+
+		assert(replace("hello", 5, 5, "goodbye") == "hellogoodbye")
+
+	)");
+}
+QUARK_UNIT_TEST_VIP("Floyd test suite", "string replace()", "", "error"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			assert(replace("hello", 5, 0, "goodbye") == "hellogoodbye")
+
+		)",
+		"replace() requires start <= end."
+	);
+}
+QUARK_UNIT_TEST_VIP("Floyd test suite", "string replace()", "", "error"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			assert(replace("hello", 5, 0, 666) == "")
+
+		)",
+		"replace(string) requires argument 4 to be a string."
+	);
+}
+
+
 
 QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
 	run_closed(R"(

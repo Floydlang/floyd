@@ -1840,8 +1840,43 @@ extern "C" {
 		hook(__FUNCTION__, floyd_runtime_ptr, arg);
 	}
 
-	extern void floyd_host_function_1025(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+
+	extern const char* floyd_funcdef__replace__string(llvm_execution_engine_t* floyd_runtime_ptr, const char s[], std::size_t start, std::size_t end, const char replace[]){
+		auto s_len = std::strlen(s);
+		auto replace_len = std::strlen(replace);
+		if(start > end){
+			quark::throw_runtime_error("replace() requires start <= end.");
+		}
+
+		auto end2 = std::min(end, s_len);
+		auto start2 = std::min(start, end2);
+
+		const std::size_t len2 = start2 + replace_len + (s_len - end2);
+		auto s2 = reinterpret_cast<char*>(std::malloc(len2 + 1));
+		std::memcpy(&s2[0], &s[0], start2);
+		std::memcpy(&s2[start2], &replace[0], replace_len);
+		std::memcpy(&s2[start2 + replace_len], &s[end2], s_len - end2);
+		s2[start2 + replace_len + (s_len - end2)] = 0x00;
+		return s2;
+	}
+
+	extern const char* floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end, int64_t arg3_value, int64_t arg3_type){
+		auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+		if(start < 0 || end < 0){
+			quark::throw_runtime_error("replace() requires start and end to be non-negative.");
+		}
+
+		const auto type = arg0_type;
+		if(type == (int)base_type::k_string){
+			if(arg3_type != (int)base_type::k_string){
+				quark::throw_runtime_error("replace(string) requires argument 4 to be a string.");
+			}
+			return floyd_funcdef__replace__string(r, (const char*)arg0_value, (std::size_t)start, (std::size_t)end, (const char*)arg3_value);
+		}
+		else{
+			NOT_IMPLEMENTED_YET();
+		}
 	}
 
 	extern void floyd_host_function_1026(void* floyd_runtime_ptr, int64_t arg){
@@ -1878,7 +1913,6 @@ extern "C" {
 			const auto value = (const char*)arg0_value;
 
 			std::size_t len = strlen(value);
-
 			const std::size_t end2 = std::min(static_cast<std::size_t>(end), len);
 			const std::size_t start2 = std::min(static_cast<std::size_t>(start), end2);
 			std::size_t len2 = end2 - start2;
@@ -3154,7 +3188,7 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 		{ "floyd_funcdef__read_text_file", reinterpret_cast<void *>(&floyd_host_function_1022) },
 		{ "floyd_funcdef__reduce", reinterpret_cast<void *>(&floyd_host_function_1023) },
 		{ "floyd_funcdef__rename_fsentry", reinterpret_cast<void *>(&floyd_host_function_1024) },
-		{ "floyd_funcdef__replace", reinterpret_cast<void *>(&floyd_host_function_1025) },
+		{ "floyd_funcdef__replace", reinterpret_cast<void *>(&floyd_funcdef__replace) },
 		{ "floyd_funcdef__script_to_jsonvalue", reinterpret_cast<void *>(&floyd_host_function_1026) },
 		{ "floyd_funcdef__send", reinterpret_cast<void *>(&floyd_host_function_1027) },
 		{ "floyd_funcdef__size", reinterpret_cast<void *>(&floyd_funcdef__size) },
