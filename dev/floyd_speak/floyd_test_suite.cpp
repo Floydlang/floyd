@@ -494,7 +494,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Forgot let or mutable", "", "Exception"){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "Access variable", "Access undefined variable", "exception"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		print(a)		)", "Undefined variable \"a\". Line: 3 \"print(a)\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		print(a)		)", "Undefined variable \"a\". Line: 1 \"print(a)\"");
 }
 
 
@@ -818,7 +818,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Call", "Error: Wrong number of arguments in
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "Call", "Call non-function, non-struct, non-typeid", "exception"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		let a = 3()		)", "Cannot call non-function, its type is int. Line: 3 \"let a = 3()\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		let a = 3()		)", "Cannot call non-function, its type is int. Line: 1 \"let a = 3()\"");
 }
 
 
@@ -2229,7 +2229,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [] - empty constructor", "cannot be 
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "vector explit bind, is [string]", "Infer type", "valid vector"){
+QUARK_UNIT_TEST("Floyd test suite", "vector explicit bind, is [string]", "Infer type", "valid vector"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2271,11 +2271,11 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string]", "empty vector", "valid ve
 
 //	We could support this if we had special type for empty-vector and empty-dict.
 QUARK_UNIT_TEST("Floyd test suite", "vector ==", "lhs and rhs are empty-typeless", ""){
-	ut_verify_exception_nolib(QUARK_POS, R"(		assert(([] == []) == true)		)", "Cannot infer vector element type, add explicit type. Line: 3 \"assert(([] == []) == true)\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		assert(([] == []) == true)		)", "Cannot infer vector element type, add explicit type. Line: 1 \"assert(([] == []) == true)\"");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector +", "add empty vectors", ""){
-	ut_verify_exception_nolib(QUARK_POS, R"(		let [int] a = [] + [] result = a == []		)", "Cannot infer vector element type, add explicit type. Line: 3 \"let [int] a = [] + [] result = a == []\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		let [int] a = [] + [] result = a == []		)", R"(Cannot infer vector element type, add explicit type. Line: 1 "let [int] a = [] + [] result = a == []")");
 }
 
 #if 0
@@ -2569,11 +2569,11 @@ QUARK_UNIT_TEST("Floyd test suite", "vector []", "Error: Lookup in vector using 
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector", "Vector can not hold elements of different types.", "exception"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		let a = [3, bool]		)", "Vector of type [int] cannot hold an element of type typeid. Line: 3 \"let a = [3, bool]\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		let a = [3, bool]		)", "Vector of type [int] cannot hold an element of type typeid. Line: 1 \"let a = [3, bool]\"");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector", "Error: Lookup the unlookupable", "exception"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		let a = 3[0]		)", "Lookup using [] only works with strings, vectors, dicts and json_value - not a \"int\". Line: 3 \"let a = 3[0]\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		let a = 3[0]		)", "Lookup using [] only works with strings, vectors, dicts and json_value - not a \"int\". Line: 1 \"let a = 3[0]\"");
 }
 
 
@@ -2679,11 +2679,11 @@ QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> <", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "dict<> {}", "", "Error cannot infer type"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		assert(size({}) == 0)		)", "Cannot infer type in construct-value-expression. Line: 3 \"assert(size({}) == 0)\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		assert(size({}) == 0)		)", "Cannot infer type in construct-value-expression. Line: 1 \"assert(size({}) == 0)\"");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "dict<> {}", "", "Error cannot infer type"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		print({})		)", "Cannot infer type in construct-value-expression. Line: 3 \"print({})\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		print({})		)", "Cannot infer type in construct-value-expression. Line: 1 \"print({})\"");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> size()", "", "1"){
@@ -4264,12 +4264,12 @@ QUARK_UNIT_TEST("Floyd test suite", "rename_fsentry()", "", ""){
 ///////////////////////////////////////////////////			PARSER ERRORS
 
 QUARK_UNIT_TEST("Parser error", "", "", ""){
-	ut_verify_exception_nolib(QUARK_POS, R"(		£		)", R"___(Illegal characters. Line: 1 "£		")___");
+	ut_verify_exception_nolib(QUARK_POS, R"(		£		)", R"___(Illegal characters. Line: 1 "£")___");
 }
 
 
 QUARK_UNIT_TEST("Parser error", "", "", ""){
-	ut_verify_exception_nolib(QUARK_POS, R"(		{ let a = 10		)", R"___(Block is missing end bracket '}'. Line: 1 "{ let a = 10		")___");
+	ut_verify_exception_nolib(QUARK_POS, R"(		{ let a = 10		)", R"___(Block is missing end bracket '}'. Line: 1 "{ let a = 10")___");
 }
 
 QUARK_UNIT_TEST("Parser error", "", "", ""){

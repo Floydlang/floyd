@@ -165,6 +165,17 @@ void end_function_emit(llvmgen_t& gen_acc){
 	gen_acc.emit_function.reset();
 }
 
+llvm::Value* get_callers_fcp(llvmgen_t& gen_acc){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(gen_acc.emit_function);
+
+	auto& emit_function = *gen_acc.emit_function;
+	auto args = emit_function.f->args();
+	QUARK_ASSERT((args.end() - args.begin()) >= 1);
+	auto floyd_context_arg_ptr = args.begin();
+	return floyd_context_arg_ptr;
+}
+
 
 
 llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e);
@@ -871,7 +882,9 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 		return llvm::Type::getIntNTy(context, 16);
 	}
 	else if(type.is_vector()){
-		return llvm::Type::getIntNTy(context, 16);
+		const auto element_type = type.get_vector_element_type();
+		const auto element_type2 = intern_type(module, element_type);
+		return element_type2->getPointerTo();
 	}
 	else if(type.is_typeid()){
 		return llvm::Type::getIntNTy(context, 16);
@@ -1031,17 +1044,6 @@ const function_def_t& find_function_def(llvmgen_t& gen_acc, const std::string& f
 	return find_function_def2(gen_acc.function_defs, function_name);
 }
 
-
-/*
-		//	Insert floyd_runtime_ptr as first argument to called function.
-		//	Function::ArgumentListType &getArgumentList()
-		auto args = emit_function.f->args();
-		QUARK_ASSERT((args.end() - args.begin()) >= 1);
-		auto floyd_context_arg_ptr = args.begin();
-//		callee_f->args();
-		args2.push_back(floyd_context_arg_ptr);
-*/
-
 std::vector<resolved_symbol_t> genllvm_make_function_def_symbols(llvmgen_t& gen_acc, const function_definition_t& function_def, llvm::Function* f){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
@@ -1170,11 +1172,6 @@ llvm::Value* llvmgen_lookup_element_expression(llvmgen_t& gen_acc, const express
 	return element_value;
 
 /*
-	gen_acc.builder.CreateGEP(parent_value, <#Value *Idx#>)
-
-//	llvm::Value* element_value = CreateGEP(Type *Ty, Value *Ptr, ArrayRef<Value *> IdxList, const Twine &Name = "");
-	llvm::Value* element_value = CreateGEP(Type *Ty, Value *Ptr, ArrayRef<Value *> IdxList, const Twine &Name = "");
-
 
 Value* arr = ...; // This is the instruction producing %arr
 Value* someValue = ...; // This is the instruction producing %some value
@@ -1316,11 +1313,7 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 		auto& emit_function = *gen_acc.emit_function;
 
 		//	Insert floyd_runtime_ptr as first argument to called function.
-		auto args = emit_function.f->args();
-		QUARK_ASSERT((args.end() - args.begin()) >= 1);
-		auto floyd_context_arg_ptr = args.begin();
-		args2.push_back(floyd_context_arg_ptr);
-
+		args2.push_back(get_callers_fcp(gen_acc));
 		args2.push_back(lhs_temp);
 		args2.push_back(rhs_temp);
 		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "append_strings");
@@ -1447,10 +1440,7 @@ llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, expression_type o
 		auto& emit_function = *gen_acc.emit_function;
 
 		//	Insert floyd_runtime_ptr as first argument to called function.
-		auto args = emit_function.f->args();
-		QUARK_ASSERT((args.end() - args.begin()) >= 1);
-		auto floyd_context_arg_ptr = args.begin();
-		args2.push_back(floyd_context_arg_ptr);
+		args2.push_back(get_callers_fcp(gen_acc));
 
 		llvm::Value* op_value = make_constant(gen_acc, value_t::make_int(static_cast<int64_t>(e._operation)));
 		args2.push_back(op_value);
@@ -1640,6 +1630,26 @@ std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, i
 		return double_to_string_always_decimals(value);
 //		return std::to_string(value);
 	}
+	else if(type == base_type::k_vector){
+
+		//??? we assume all vector are [string] right now!!
+
+		auto vector_strings = (const char**)arg_value;
+
+		std::vector<value_t> elements;
+		const int count = 2;
+		for(int i = 0 ; i < count ; i++){
+			const char* ss = vector_strings[i];
+			QUARK_ASSERT(ss != nullptr);
+
+			const auto e = std::string(ss);
+			elements.push_back(value_t::make_string(e));
+		}
+		const auto val = value_t::make_vector_value(typeid_t::make_string(), elements);
+		return to_compact_string2(val);
+
+
+	}
 	else{
 		NOT_IMPLEMENTED_YET();
 	}
@@ -1705,7 +1715,10 @@ extern "C" {
 		return s;
 	}
 
-
+	extern const uint8_t* floyd_runtime__allocate_memory(void* floyd_runtime_ptr, int64_t bytes){
+		auto s = reinterpret_cast<uint8_t*>(std::calloc(1, bytes));
+		return s;
+	}
 
 
 
@@ -2135,6 +2148,11 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, llvm_gen_encoded, "string_as_GEN");
 				arg_values.push_back(arg3);
 			}
+			else if(concrete_arg_type.is_vector()){
+				QUARK_ASSERT(concrete_arg_type.get_vector_element_type().is_string());
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, llvm_gen_encoded, "[string]_as_GEN");
+				arg_values.push_back(arg3);
+			}
 			else if(concrete_arg_type.is_int()){
 				arg_values.push_back(arg2);
 			}
@@ -2179,10 +2197,6 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 
 		auto element0_value = builder.CreateExtractValue(result, { 0 });
 		auto element1_value = builder.CreateExtractValue(result, { 1 });
-
-		
-
-
 //  %7 = extractvalue { i64, i64 } %4, 0
 	}
 	else{
@@ -2194,46 +2208,53 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 }
 
 
+
 llvm::Value* llvmgen_construct_value_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-NOT_IMPLEMENTED_YET();
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
 
 	const auto target_type = e.get_output_type();
-//	const auto target_itype = intern_type(*gen_acc.module, target_type);
-
-	const auto callee_arg_count = static_cast<int>(e._input_exprs.size());
-	std::vector<typeid_t> arg_types;
-	for(const auto& m: e._input_exprs){
-		arg_types.push_back(m.get_output_type());
-	}
-	const auto arg_count = callee_arg_count;
-
-//	const auto call_setup = gen_call_setup(gen_acc, arg_types, &e._input_exprs[0], arg_count, body_acc);
-
+	const auto caller_arg_count = static_cast<int>(e._input_exprs.size());
 
 	if(target_type.is_vector()){
-		NOT_IMPLEMENTED_YET();
-/*
-		if(encode_as_vector_w_inplace_elements(target_type)){
-			body_acc._instrs.push_back(bcgen_instruction_t(
-				bc_opcode::k_new_vector_w_inplace_elements,
-				target_reg2,
-				make_imm_int(0),
-				make_imm_int(arg_count)
-			));
+		const auto element_type0 = target_type.get_vector_element_type();
+
+		const auto def = find_function_def(gen_acc, "floyd_runtime__allocate_memory");
+
+		if(element_type0.is_string()){
+			auto bytes_value = make_constant(gen_acc, value_t::make_int(sizeof(char*) * caller_arg_count));
+
+			std::vector<llvm::Value*> args2;
+			args2.push_back(get_callers_fcp(gen_acc));
+			args2.push_back(bytes_value);
+
+			auto uint8ptr_type = llvm::Type::getInt8PtrTy(context);
+			auto uint8ptr_array_type = uint8ptr_type->getPointerTo();
+
+			auto vec_ptr0_value = builder.CreateCall(def.llvm_f, args2, "construct_vector-memalloc" + typeid_to_compact_string(target_type));
+			llvm::Value* uint8ptr_array_value = builder.CreateCast(llvm::Instruction::CastOps::BitCast, vec_ptr0_value, uint8ptr_array_type, "[string]_as_GEN");
+
+			int element_index = 0;
+			for(const auto& arg: e._input_exprs){
+				llvm::Value* arg_value = genllvm_expression(gen_acc, arg);
+
+				auto element_index_value = make_constant(gen_acc, value_t::make_int(element_index));
+
+				const auto index_list = std::vector<llvm::Value*>{ element_index_value };
+				llvm::Value* element_addr = builder.CreateGEP(uint8ptr_type, uint8ptr_array_value, index_list, "element_addr");
+				builder.CreateStore(arg_value, element_addr);
+
+				element_index++;
+			}
+
+			return uint8ptr_array_value;
 		}
 		else{
-			body_acc._instrs.push_back(bcgen_instruction_t(
-				bc_opcode::k_new_vector_w_external_elements,
-				target_reg2,
-				make_imm_int(target_itype),
-				make_imm_int(arg_count)
-			));
+			NOT_IMPLEMENTED_YET();
 		}
-*/
-
 	}
 	else if(target_type.is_dict()){
 		NOT_IMPLEMENTED_YET();
@@ -2270,7 +2291,8 @@ NOT_IMPLEMENTED_YET();
 
 	}
 	else{
-		QUARK_ASSERT(arg_count == 1);
+		NOT_IMPLEMENTED_YET();
+		QUARK_ASSERT(caller_arg_count == 1);
 
 /*
 		const auto source_itype = arg_count == 0 ? -1 : intern_type(gen_acc, e._input_exprs[0].get_output_type());
@@ -2909,6 +2931,20 @@ std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, c
 		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), -1, make_dummy_function_definition()});
 	}
 
+	//	floyd_runtime__allocate_memory()
+	{
+		llvm::FunctionType* function_type = llvm::FunctionType::get(
+			llvm::Type::getInt8PtrTy(context),
+			{
+				llvm::Type::getInt32PtrTy(context),
+				llvm::Type::getInt64Ty(context)
+			},
+			false
+		);
+		auto f = module.getOrInsertFunction("floyd_runtime__allocate_memory", function_type);
+		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), -1, make_dummy_function_definition()});
+	}
+
 	{
 		llvm::FunctionType* function_type = llvm::FunctionType::get(
 			llvm::Type::getInt64Ty(context),
@@ -3185,6 +3221,9 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 	const std::map<std::string, void*> function_map = {
 		{ "floyd_runtime__compare_strings", reinterpret_cast<void *>(&floyd_runtime__compare_strings) },
 		{ "floyd_runtime__append_strings", reinterpret_cast<void *>(&floyd_runtime__append_strings) },
+
+		{ "floyd_runtime__allocate_memory", reinterpret_cast<void *>(&floyd_runtime__allocate_memory) },
+
 
 		{ "floyd_funcdef__assert", reinterpret_cast<void *>(&floyd_funcdef__assert) },
 		{ "floyd_funcdef__calc_binary_sha1", reinterpret_cast<void *>(&floyd_host_function_1001) },
