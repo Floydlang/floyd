@@ -697,7 +697,7 @@ llvm::Type* make_frp_type(llvm::LLVMContext& context){
 llvm::Type* make_vec_type(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
 		//	element_ptr
-//		llvm::Type::getIntNTy(context, 64)->getPointerTo(),
+		llvm::Type::getIntNTy(context, 64)->getPointerTo(),
 
 		//	magic
 		llvm::Type::getIntNTy(context, 32),
@@ -861,7 +861,7 @@ llvm::Type* make_function_type(llvm::Module& module, const typeid_t& function_ty
 	return function_pointer_type;
 }
 
-
+//	Returns the LLVM type we chose to use to encode each Floyd type.
 llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
@@ -884,9 +884,12 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 		return llvm::Type::getIntNTy(context, 16);
 	}
 	else if(type.is_vector()){
+/*
 		const auto element_type = type.get_vector_element_type();
 		const auto element_type2 = intern_type(module, element_type);
 		return element_type2->getPointerTo();
+*/
+		return make_vec_type(context);
 	}
 	else if(type.is_typeid()){
 		return llvm::Type::getIntNTy(context, 16);
@@ -928,7 +931,6 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
-		quark::throw_exception();
 	}
 }
 
@@ -1312,8 +1314,6 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 		const auto def = find_function_def(gen_acc, "floyd_runtime__append_strings");
 		std::vector<llvm::Value*> args2;
 
-		auto& emit_function = *gen_acc.emit_function;
-
 		//	Insert floyd_runtime_ptr as first argument to called function.
 		args2.push_back(get_callers_fcp(gen_acc));
 		args2.push_back(lhs_temp);
@@ -1438,8 +1438,6 @@ llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, expression_type o
 	else if(type.is_string()){
 		const auto def = find_function_def(gen_acc, "floyd_runtime__compare_strings");
 		std::vector<llvm::Value*> args2;
-
-		auto& emit_function = *gen_acc.emit_function;
 
 		//	Insert floyd_runtime_ptr as first argument to called function.
 		args2.push_back(get_callers_fcp(gen_acc));
@@ -1647,12 +1645,14 @@ std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, i
 
 		//??? we assume all vector are [string] right now!!
 
-		auto vector_strings = (const char**)arg_value;
+		const auto vector_strings = (VEC_T*)arg_value;
+		QUARK_ASSERT(vector_strings != nullptr);
+		QUARK_ASSERT(vector_strings->magic == 0xDABBAD00);
 
 		std::vector<value_t> elements;
-		const int count = 2;
+		const int count = vector_strings->element_count;
 		for(int i = 0 ; i < count ; i++){
-			const char* ss = vector_strings[i];
+			const char* ss = (const char*)vector_strings->element_ptr[i];
 			QUARK_ASSERT(ss != nullptr);
 
 			const auto e = std::string(ss);
@@ -2239,7 +2239,17 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 			}
 			else if(concrete_arg_type.is_vector()){
 				QUARK_ASSERT(concrete_arg_type.get_vector_element_type().is_string());
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, llvm_gen_encoded, "[string]_as_GEN");
+
+				//	Encode a VEC_T usings its address.
+
+				auto alloc_value = builder.CreateAlloca(make_vec_type(context));
+				builder.CreateStore(arg2, alloc_value);
+
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, alloc_value, llvm_gen_encoded, "[string]_as_GEN");
+
+//				auto modifid_vec_value = builder.CreateLoad(alloc_value);
+
+
 				arg_values.push_back(arg3);
 			}
 			else if(concrete_arg_type.is_int()){
@@ -2311,35 +2321,60 @@ llvm::Value* llvmgen_construct_value_expression(llvmgen_t& gen_acc, const expres
 	if(target_type.is_vector()){
 		const auto element_type0 = target_type.get_vector_element_type();
 
-		const auto def = find_function_def(gen_acc, "floyd_runtime__allocate_memory");
+		const auto allocate_vector_func = find_function_def(gen_acc, "floyd_runtime__allocate_vector");
 
 		if(element_type0.is_string()){
-			auto bytes_value = make_constant(gen_acc, value_t::make_int(sizeof(char*) * caller_arg_count));
 
-			std::vector<llvm::Value*> args2;
-			args2.push_back(get_callers_fcp(gen_acc));
-			args2.push_back(bytes_value);
+			//	Each element is a char*.
+			auto element_type = llvm::Type::getInt8PtrTy(context);
 
+			const auto vec_type = make_vec_type(context);
+
+			const auto element_count = caller_arg_count;
+			const auto element_count_value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), element_count);
+
+			//	Local function, called once.
+			const auto vec_value = [&](){
+				std::vector<llvm::Value*> args2;
+				args2.push_back(get_callers_fcp(gen_acc));
+				args2.push_back(element_count_value);
+				auto result = builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_vector()" + typeid_to_compact_string(target_type));
+				return result;
+			}();
+
+/*
 			auto uint8ptr_type = llvm::Type::getInt8PtrTy(context);
 			auto uint8ptr_array_type = uint8ptr_type->getPointerTo();
-
-			auto vec_ptr0_value = builder.CreateCall(def.llvm_f, args2, "construct_vector-memalloc" + typeid_to_compact_string(target_type));
 			llvm::Value* uint8ptr_array_value = builder.CreateCast(llvm::Instruction::CastOps::BitCast, vec_ptr0_value, uint8ptr_array_type, "[string]_as_GEN");
+*/
 
+			//	Get element_ptr, which is member0 of VEC_T.
+/*
+			const auto gep_index_list = std::vector<llvm::Value*>{ 0, 0 };
+			llvm::Value* element_ptr_addr = builder.CreateGEP(vec_type, vec_value, gep_index_list, "element_ptr");
+			llvm::Value* element_ptr = builder.CreateLoad(element_ptr_addr, "element_ptr");
+*/
+			auto uint64_element_ptr = builder.CreateExtractValue(vec_value, { 0 });
+
+
+			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type->getPointerTo(), "");
+
+
+			//	Evaluate each element and store it directly into the the vector.
 			int element_index = 0;
 			for(const auto& arg: e._input_exprs){
 				llvm::Value* arg_value = genllvm_expression(gen_acc, arg);
 
 				auto element_index_value = make_constant(gen_acc, value_t::make_int(element_index));
 
-				const auto index_list = std::vector<llvm::Value*>{ element_index_value };
-				llvm::Value* element_addr = builder.CreateGEP(uint8ptr_type, uint8ptr_array_value, index_list, "element_addr");
-				builder.CreateStore(arg_value, element_addr);
+				const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_value };
+				llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "e_addr");
+				builder.CreateStore(arg_value, e_addr);
 
 				element_index++;
 			}
 
-			return uint8ptr_array_value;
+			return vec_value;
 		}
 		else{
 			NOT_IMPLEMENTED_YET();
