@@ -1601,7 +1601,12 @@ llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, const e
 
 
 
-////////////////////////////////	Host functions, automatically linked into the LLVM execution engine.
+
+
+//	Host functions, automatically called by the LLVM execution engine.
+////////////////////////////////////////////////////////////////////////////////
+
+
 
 /*
 @variable = global i32 21
@@ -1722,413 +1727,417 @@ extern const void floyd_runtime__delete_vector(void* floyd_runtime_ptr, VEC_T ve
 //	They must use C calling convention so llvm JIT can find them.
 //	Make sure they are not dead-stripped out of binary!
 
-	extern void floyd_runtime__unresolved_func(void* floyd_runtime_ptr){
-		std:: cout << __FUNCTION__ << std::endl;
-	}
+extern void floyd_runtime__unresolved_func(void* floyd_runtime_ptr){
+	std:: cout << __FUNCTION__ << std::endl;
+}
 
 
-	extern int32_t floyd_runtime__compare_strings(void* floyd_runtime_ptr, int64_t op, const char* lhs, const char* rhs){
+extern int32_t floyd_runtime__compare_strings(void* floyd_runtime_ptr, int64_t op, const char* lhs, const char* rhs){
 //		QUARK_TRACE_SS( __FUNCTION__ << " " << std::string(lhs) << " comp " <<std::string(rhs));
 
-		/*
-			strcmp()
-				Greater than zero ( >0 ): A value greater than zero is returned when the first not matching character in leftStr have the greater ASCII value than the corresponding character in rightStr or we can also say
+	/*
+		strcmp()
+			Greater than zero ( >0 ): A value greater than zero is returned when the first not matching character in leftStr have the greater ASCII value than the corresponding character in rightStr or we can also say
 
-				Less than Zero ( <0 ): A value less than zero is returned when the first not matching character in leftStr have lesser ASCII value than the corresponding character in rightStr.
+			Less than Zero ( <0 ): A value less than zero is returned when the first not matching character in leftStr have lesser ASCII value than the corresponding character in rightStr.
 
-		*/
-		const auto result = std::strcmp(lhs, rhs);
-		const auto op2 = static_cast<expression_type>(op);
-		if(op2 == expression_type::k_comparison_smaller_or_equal__2){
-			return result <= 0 ? 1 : 0;
-		}
-		else if(op2 == expression_type::k_comparison_smaller__2){
-			return result < 0 ? 1 : 0;
-		}
-		else if(op2 == expression_type::k_comparison_larger_or_equal__2){
-			return result >= 0 ? 1 : 0;
-		}
-		else if(op2 == expression_type::k_comparison_larger__2){
-			return result > 0 ? 1 : 0;
-		}
-
-		else if(op2 == expression_type::k_logical_equal__2){
-			return result == 0 ? 1 : 0;
-		}
-		else if(op2 == expression_type::k_logical_nonequal__2){
-			return result != 0 ? 1 : 0;
-		}
-		else{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
+	*/
+	const auto result = std::strcmp(lhs, rhs);
+	const auto op2 = static_cast<expression_type>(op);
+	if(op2 == expression_type::k_comparison_smaller_or_equal__2){
+		return result <= 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_comparison_smaller__2){
+		return result < 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_comparison_larger_or_equal__2){
+		return result >= 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_comparison_larger__2){
+		return result > 0 ? 1 : 0;
 	}
 
-	extern const char* floyd_runtime__append_strings(void* floyd_runtime_ptr, const char* lhs, const char* rhs){
-		QUARK_ASSERT(lhs != nullptr);
-		QUARK_ASSERT(rhs != nullptr);
-		QUARK_TRACE_SS(__FUNCTION__ << " " << std::string(lhs) << " comp " <<std::string(rhs));
+	else if(op2 == expression_type::k_logical_equal__2){
+		return result == 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_logical_nonequal__2){
+		return result != 0 ? 1 : 0;
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
 
-		std::size_t len = strlen(lhs) + strlen(rhs);
-		char* s = reinterpret_cast<char*>(std::malloc(len + 1));
-		strcpy(s, lhs);
-		strcpy(s + strlen(lhs), rhs);
+extern const char* floyd_runtime__append_strings(void* floyd_runtime_ptr, const char* lhs, const char* rhs){
+	QUARK_ASSERT(lhs != nullptr);
+	QUARK_ASSERT(rhs != nullptr);
+	QUARK_TRACE_SS(__FUNCTION__ << " " << std::string(lhs) << " comp " <<std::string(rhs));
+
+	std::size_t len = strlen(lhs) + strlen(rhs);
+	char* s = reinterpret_cast<char*>(std::malloc(len + 1));
+	strcpy(s, lhs);
+	strcpy(s + strlen(lhs), rhs);
+	return s;
+}
+
+extern const uint8_t* floyd_runtime__allocate_memory(void* floyd_runtime_ptr, int64_t bytes){
+	auto s = reinterpret_cast<uint8_t*>(std::calloc(1, bytes));
+	return s;
+}
+
+
+
+
+
+extern void floyd_funcdef__assert(void* floyd_runtime_ptr, int64_t arg){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	bool ok = arg == 0 ? false : true;
+	if(!ok){
+		r->_print_output.push_back("Assertion failed.");
+		quark::throw_runtime_error("Floyd assertion failed.");
+	}
+}
+
+extern void floyd_host_function_1001(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1002(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1003(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1004(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1005(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1006(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1007(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1008(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+
+
+extern int64_t floyd_funcdef__find__string(llvm_execution_engine_t* floyd_runtime_ptr, const char s[], const char find[]){
+	QUARK_ASSERT(s != nullptr);
+	QUARK_ASSERT(find != nullptr);
+
+	const auto str = std::string(s);
+	const auto wanted2 = std::string(find);
+
+	const auto r = str.find(wanted2);
+	const auto result = r == std::string::npos ? -1 : static_cast<int64_t>(r);
+	return result;
+}
+
+extern int64_t floyd_funcdef__find(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type = arg0_type;
+	if(type == (int)base_type::k_string){
+		if(arg1_type != (int)base_type::k_string){
+			quark::throw_runtime_error("find(string) requires argument 2 to be a string.");
+		}
+		return floyd_funcdef__find__string(r, (const char*)arg0_value, (const char*)arg1_value);
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
+
+
+
+extern void floyd_host_function_1010(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1011(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1012(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1013(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1014(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1015(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1016(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1017(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1018(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1019(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+
+
+
+//	??? Make visitor to handle different types.
+//	??? Extend GEN to support any type, not just base_type.
+extern void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+	const auto s = gen_to_string(r, arg0_value, arg0_type);
+	r->_print_output.push_back(s);
+}
+
+
+
+extern const char* floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type = (base_type)arg0_type;
+	if(type == base_type::k_string){
+		const auto value = (const char*)arg0_value;
+
+		std::size_t len = strlen(value);
+		char* s = reinterpret_cast<char*>(std::malloc(len + 1 + 1));
+		strcpy(s, value);
+		s[len + 0] = (char)arg1_value;
+		s[len + 1] = 0x00;
 		return s;
-	}
-
-	extern const uint8_t* floyd_runtime__allocate_memory(void* floyd_runtime_ptr, int64_t bytes){
-		auto s = reinterpret_cast<uint8_t*>(std::calloc(1, bytes));
-		return s;
-	}
-
-
-
-
-
-	extern void floyd_funcdef__assert(void* floyd_runtime_ptr, int64_t arg){
-		auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-		bool ok = arg == 0 ? false : true;
-		if(!ok){
-			r->_print_output.push_back("Assertion failed.");
-			quark::throw_runtime_error("Floyd assertion failed.");
-		}
-	}
-
-	extern void floyd_host_function_1001(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern void floyd_host_function_1002(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern void floyd_host_function_1003(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern void floyd_host_function_1004(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern void floyd_host_function_1005(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern void floyd_host_function_1006(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern void floyd_host_function_1007(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern void floyd_host_function_1008(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-
-
-	extern int64_t floyd_funcdef__find__string(llvm_execution_engine_t* floyd_runtime_ptr, const char s[], const char find[]){
-		QUARK_ASSERT(s != nullptr);
-		QUARK_ASSERT(find != nullptr);
-
-		const auto str = std::string(s);
-		const auto wanted2 = std::string(find);
-
-		const auto r = str.find(wanted2);
-		const auto result = r == std::string::npos ? -1 : static_cast<int64_t>(r);
-		return result;
-	}
-
-	extern int64_t floyd_funcdef__find(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
-		auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-		const auto type = arg0_type;
-		if(type == (int)base_type::k_string){
-			if(arg1_type != (int)base_type::k_string){
-				quark::throw_runtime_error("find(string) requires argument 2 to be a string.");
-			}
-			return floyd_funcdef__find__string(r, (const char*)arg0_value, (const char*)arg1_value);
-		}
-		else{
-			NOT_IMPLEMENTED_YET();
-		}
-	}
-
-
-
-	extern void floyd_host_function_1010(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern void floyd_host_function_1011(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern void floyd_host_function_1012(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern void floyd_host_function_1013(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern void floyd_host_function_1014(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern void floyd_host_function_1015(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern void floyd_host_function_1016(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern void floyd_host_function_1017(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern void floyd_host_function_1018(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern void floyd_host_function_1019(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-
-
-
-	//	??? Make visitor to handle different types.
-	//	??? Extend GEN to support any type, not just base_type.
-	extern void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
-		auto r = get_floyd_runtime(floyd_runtime_ptr);
-		const auto s = gen_to_string(r, arg0_value, arg0_type);
-		r->_print_output.push_back(s);
-	}
-
-
-
-	extern const char* floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
-		auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-		const auto type = (base_type)arg0_type;
-		if(type == base_type::k_string){
-			const auto value = (const char*)arg0_value;
-
-			std::size_t len = strlen(value);
-			char* s = reinterpret_cast<char*>(std::malloc(len + 1 + 1));
-			strcpy(s, value);
-			s[len + 0] = (char)arg1_value;
-			s[len + 1] = 0x00;
-			return s;
 
 //			return DYN_RETURN_T{ reinterpret_cast<uint64_t>(value), (uint64_t)base_type::k_string };
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
+
+extern void floyd_host_function_1022(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1023(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1024(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+
+extern const char* floyd_funcdef__replace__string(llvm_execution_engine_t* floyd_runtime_ptr, const char s[], std::size_t start, std::size_t end, const char replace[]){
+	auto s_len = std::strlen(s);
+	auto replace_len = std::strlen(replace);
+	if(start > end){
+		quark::throw_runtime_error("replace() requires start <= end.");
+	}
+
+	auto end2 = std::min(end, s_len);
+	auto start2 = std::min(start, end2);
+
+	const std::size_t len2 = start2 + replace_len + (s_len - end2);
+	auto s2 = reinterpret_cast<char*>(std::malloc(len2 + 1));
+	std::memcpy(&s2[0], &s[0], start2);
+	std::memcpy(&s2[start2], &replace[0], replace_len);
+	std::memcpy(&s2[start2 + replace_len], &s[end2], s_len - end2);
+	s2[start2 + replace_len + (s_len - end2)] = 0x00;
+	return s2;
+}
+
+extern const char* floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end, int64_t arg3_value, int64_t arg3_type){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	if(start < 0 || end < 0){
+		quark::throw_runtime_error("replace() requires start and end to be non-negative.");
+	}
+
+	const auto type = arg0_type;
+	if(type == (int)base_type::k_string){
+		if(arg3_type != (int)base_type::k_string){
+			quark::throw_runtime_error("replace(string) requires argument 4 to be a string.");
 		}
-		else{
-			NOT_IMPLEMENTED_YET();
-		}
+		return floyd_funcdef__replace__string(r, (const char*)arg0_value, (std::size_t)start, (std::size_t)end, (const char*)arg3_value);
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
+
+extern void floyd_host_function_1026(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1027(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type = (base_type)arg0_type;
+	if(type == base_type::k_string){
+		const auto value = (const char*)arg0_value;
+		//??? Strings are not clean.
+		return std::strlen(value);
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
+
+extern const char* floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	if(start < 0 || end < 0){
+		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
 
-	extern void floyd_host_function_1022(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	const auto type = (base_type)arg0_type;
+	if(type == base_type::k_string){
+		const auto value = (const char*)arg0_value;
+
+		std::size_t len = strlen(value);
+		const std::size_t end2 = std::min(static_cast<std::size_t>(end), len);
+		const std::size_t start2 = std::min(static_cast<std::size_t>(start), end2);
+		std::size_t len2 = end2 - start2;
+
+		char* s = reinterpret_cast<char*>(std::malloc(len2 + 1));
+		std::memcpy(&s[0], &value[start2], len2);
+		s[len2] = 0x00;
+		return s;
 	}
-
-	extern void floyd_host_function_1023(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	else{
+		NOT_IMPLEMENTED_YET();
 	}
-
-	extern void floyd_host_function_1024(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-
-	extern const char* floyd_funcdef__replace__string(llvm_execution_engine_t* floyd_runtime_ptr, const char s[], std::size_t start, std::size_t end, const char replace[]){
-		auto s_len = std::strlen(s);
-		auto replace_len = std::strlen(replace);
-		if(start > end){
-			quark::throw_runtime_error("replace() requires start <= end.");
-		}
-
-		auto end2 = std::min(end, s_len);
-		auto start2 = std::min(start, end2);
-
-		const std::size_t len2 = start2 + replace_len + (s_len - end2);
-		auto s2 = reinterpret_cast<char*>(std::malloc(len2 + 1));
-		std::memcpy(&s2[0], &s[0], start2);
-		std::memcpy(&s2[start2], &replace[0], replace_len);
-		std::memcpy(&s2[start2 + replace_len], &s[end2], s_len - end2);
-		s2[start2 + replace_len + (s_len - end2)] = 0x00;
-		return s2;
-	}
-
-	extern const char* floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end, int64_t arg3_value, int64_t arg3_type){
-		auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-		if(start < 0 || end < 0){
-			quark::throw_runtime_error("replace() requires start and end to be non-negative.");
-		}
-
-		const auto type = arg0_type;
-		if(type == (int)base_type::k_string){
-			if(arg3_type != (int)base_type::k_string){
-				quark::throw_runtime_error("replace(string) requires argument 4 to be a string.");
-			}
-			return floyd_funcdef__replace__string(r, (const char*)arg0_value, (std::size_t)start, (std::size_t)end, (const char*)arg3_value);
-		}
-		else{
-			NOT_IMPLEMENTED_YET();
-		}
-	}
-
-	extern void floyd_host_function_1026(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern void floyd_host_function_1027(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
-
-	extern int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
-		auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-		const auto type = (base_type)arg0_type;
-		if(type == base_type::k_string){
-			const auto value = (const char*)arg0_value;
-			//??? Strings are not clean.
-			return std::strlen(value);
-		}
-		else{
-			NOT_IMPLEMENTED_YET();
-		}
-	}
-
-	extern const char* floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end){
-		auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-		if(start < 0 || end < 0){
-			quark::throw_runtime_error("subset() requires start and end to be non-negative.");
-		}
-
-		const auto type = (base_type)arg0_type;
-		if(type == base_type::k_string){
-			const auto value = (const char*)arg0_value;
-
-			std::size_t len = strlen(value);
-			const std::size_t end2 = std::min(static_cast<std::size_t>(end), len);
-			const std::size_t start2 = std::min(static_cast<std::size_t>(start), end2);
-			std::size_t len2 = end2 - start2;
-
-			char* s = reinterpret_cast<char*>(std::malloc(len2 + 1));
-			std::memcpy(&s[0], &value[start2], len2);
-			s[len2] = 0x00;
-			return s;
-		}
-		else{
-			NOT_IMPLEMENTED_YET();
-		}
-	}
+}
 
 
 
 
-	extern void floyd_host_function_1030(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
+extern void floyd_host_function_1030(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
 
-	extern void floyd_host_function_1031(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
+extern void floyd_host_function_1031(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
 
-	extern const char* floyd_host__to_string(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
-		auto r = get_floyd_runtime(floyd_runtime_ptr);
+extern const char* floyd_host__to_string(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
-		const auto s = gen_to_string(r, arg0_value, arg0_type);
+	const auto s = gen_to_string(r, arg0_value, arg0_type);
 
-		//??? leaks.
-		return strdup(s.c_str());
-	}
+	//??? leaks.
+	return strdup(s.c_str());
+}
 
-	extern void floyd_host__typeof(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+extern void floyd_host__typeof(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 /*
 bc_value_t host__typeof(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
+QUARK_ASSERT(vm.check_invariant());
+QUARK_ASSERT(arg_count == 1);
 
-	const auto& value = args[0];
-	const auto type = value._type;
-	const auto result = value_t::make_typeid_value(type);
-	return value_to_bc(result);
+const auto& value = args[0];
+const auto type = value._type;
+const auto result = value_t::make_typeid_value(type);
+return value_to_bc(result);
 }
 */
-	}
+}
 
-	extern const char* floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type, int64_t arg2_value, int64_t arg2_type){
-		auto r = get_floyd_runtime(floyd_runtime_ptr);
+extern const char* floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type, int64_t arg2_value, int64_t arg2_type){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
-		const auto type = (base_type)arg0_type;
-		if(type == base_type::k_string){
-			const auto str = (const char*)arg0_value;
+	const auto type = (base_type)arg0_type;
+	if(type == base_type::k_string){
+		const auto str = (const char*)arg0_value;
 
-			QUARK_ASSERT(arg1_type == (int)base_type::k_int);
-			QUARK_ASSERT(arg2_type == (int)base_type::k_int);
+		QUARK_ASSERT(arg1_type == (int)base_type::k_int);
+		QUARK_ASSERT(arg2_type == (int)base_type::k_int);
 
-			const auto index = arg1_value;
-			const auto new_char = (char)arg2_value;
+		const auto index = arg1_value;
+		const auto new_char = (char)arg2_value;
 
 
-			const auto len = strlen(str);
+		const auto len = strlen(str);
 
-			if(index < 0 || index >= len){
-				throw std::runtime_error("Position argument to update() is outside collection span.");
-			}
+		if(index < 0 || index >= len){
+			throw std::runtime_error("Position argument to update() is outside collection span.");
+		}
 
-			auto result = strdup(str);
-			result[index] = new_char;
-			return result;
+		auto result = strdup(str);
+		result[index] = new_char;
+		return result;
 
 //			return DYN_RETURN_T{ reinterpret_cast<uint64_t>(value), (uint64_t)base_type::k_string };
-		}
-		else{
-			NOT_IMPLEMENTED_YET();
-		}
 	}
-
-	extern void floyd_host_function_1035(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
+	else{
+		NOT_IMPLEMENTED_YET();
 	}
+}
 
-	extern void floyd_host_function_1036(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
+extern void floyd_host_function_1035(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
 
-	extern void floyd_host_function_1037(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
+extern void floyd_host_function_1036(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
 
-	extern void floyd_host_function_1038(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
+extern void floyd_host_function_1037(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
 
-	extern void floyd_host_function_1039(void* floyd_runtime_ptr, int64_t arg){
-		hook(__FUNCTION__, floyd_runtime_ptr, arg);
-	}
+extern void floyd_host_function_1038(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+extern void floyd_host_function_1039(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
 
 
 
 
-	///////////////		TEST
+///////////////		TEST
 
-	extern void floyd_host_function_2002(void* floyd_runtime_ptr, int64_t arg){
-		std::cout << __FUNCTION__ << arg << std::endl;
-	}
+extern void floyd_host_function_2002(void* floyd_runtime_ptr, int64_t arg){
+	std::cout << __FUNCTION__ << arg << std::endl;
+}
 
-	extern void floyd_host_function_2003(void* floyd_runtime_ptr, int64_t arg){
-		std::cout << __FUNCTION__ << arg << std::endl;
-	}
+extern void floyd_host_function_2003(void* floyd_runtime_ptr, int64_t arg){
+	std::cout << __FUNCTION__ << arg << std::endl;
+}
+
+
+
+
 
 
 
