@@ -56,6 +56,26 @@ struct DYN_RETURN_T {
 };
 
 
+//??? need word for "encoded". How data is stuffed into the LLVM instruction set..
+
+/*
+	Vectors
+
+	- Vector instance is a 16 byte struct.
+	- No RC or shared state -- always copied fully.
+	- Mutation = copy entire vector every time.
+
+	- The runtime handles all vectors as std::vector<uint64_t>. You need to pack and address other types of data manually.
+*/
+struct VEC_T {
+	uint64_t* element_ptr;
+	uint32_t magic;	//	0xDABBAD00
+	uint32_t element_count;
+};
+
+
+
+
 struct function_def_t {
 	std::string def_name;
 	llvm::Function* llvm_f;

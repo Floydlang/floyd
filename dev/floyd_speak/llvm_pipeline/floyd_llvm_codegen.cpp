@@ -685,6 +685,25 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 	}
 }
 
+
+//	Makes a type for VEC_T.
+llvm::Type* make_vec_type(llvm::LLVMContext& context){
+	std::vector<llvm::Type*> members = {
+		//	element_ptr
+		llvm::Type::getIntNTy(context, 64)->getPointerTo(),
+
+		//	magic
+		llvm::Type::getIntNTy(context, 32),
+
+		//	element_count
+		llvm::Type::getIntNTy(context, 32)
+	};
+	llvm::StructType* s = llvm::StructType::get(context, members, false);
+	return s;
+}
+
+
+
 llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::typeid_t& function_type){
 	QUARK_ASSERT(function_type.is_function());
 
@@ -1656,10 +1675,52 @@ std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, i
 }
 
 
+
+
+
+
+std::pair<std::string, llvm::Type*> floyd_runtime__allocate_vector__make_type(llvm::LLVMContext& context){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getVoidTy(context),
+		{
+			llvm::Type::getInt32PtrTy(context),
+			llvm::Type::getInt64Ty(context)
+		},
+		false
+	);
+	return { "floyd_runtime__allocate_memory", function_type };
+}
+
+
+//	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
+extern const VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint32_t element_count){
+	auto element_ptr = reinterpret_cast<uint64_t*>(std::calloc(element_count, sizeof(uint64_t)));
+	if(element_ptr == nullptr){
+		throw std::exception();
+	}
+
+	VEC_T result;
+	result.magic = 0xDABBAD00;
+	result.element_ptr = element_ptr;
+	result.element_count = element_count;
+	return result;
+}
+
+extern const void floyd_runtime__delete_vector(void* floyd_runtime_ptr, VEC_T vec){
+	std::free(vec.element_ptr);
+	vec.element_ptr = nullptr;
+	vec.magic = 0xDEADD0D0;
+	vec.element_count = -vec.element_count;
+}
+
+
+
+
+
+
 //	The names of these are computed from the host-id in the symbol table, not the names of the functions/symbols.
 //	They must use C calling convention so llvm JIT can find them.
 //	Make sure they are not dead-stripped out of binary!
-extern "C" {
 
 	extern void floyd_runtime__unresolved_func(void* floyd_runtime_ptr){
 		std:: cout << __FUNCTION__ << std::endl;
@@ -1719,6 +1780,8 @@ extern "C" {
 		auto s = reinterpret_cast<uint8_t*>(std::calloc(1, bytes));
 		return s;
 	}
+
+
 
 
 
@@ -1836,6 +1899,8 @@ extern "C" {
 	}
 
 
+
+
 	//	??? Make visitor to handle different types.
 	//	??? Extend GEN to support any type, not just base_type.
 	extern void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
@@ -1843,6 +1908,7 @@ extern "C" {
 		const auto s = gen_to_string(r, arg0_value, arg0_type);
 		r->_print_output.push_back(s);
 	}
+
 
 
 	extern const char* floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
@@ -2064,7 +2130,6 @@ bc_value_t host__typeof(interpreter_t& vm, const bc_value_t args[], int arg_coun
 		std::cout << __FUNCTION__ << arg << std::endl;
 	}
 
-}
 
 
 /*
@@ -3942,4 +4007,5 @@ LLVM_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_
 	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"5"});
 }
 #endif
+
 
