@@ -226,15 +226,17 @@ bool check_invariant__module(llvm::Module* module){
 	bool module_errors_flag = llvm::verifyModule(*module, &stream2, nullptr);
 	if(module_errors_flag){
 		QUARK_TRACE_SS(dump);
+
+		const auto& functions = module->getFunctionList();
+		for(const auto& e: functions){
+			QUARK_ASSERT(check_invariant__function(&e));
+			llvm::verifyFunction(e);
+		}
+
 		QUARK_ASSERT(false);
 		return false;
 	}
 
-	const auto& functions = module->getFunctionList();
-	for(const auto& e: functions){
-		QUARK_ASSERT(check_invariant__function(&e));
-//		llvm::verifyFunction(e);
-	}
 	return true;
 }
 
@@ -686,11 +688,16 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 }
 
 
+//	floyd_runtime_ptr -- secrete function argument #0
+llvm::Type* make_frp_type(llvm::LLVMContext& context){
+	return llvm::Type::getInt32PtrTy(context);
+}
+
 //	Makes a type for VEC_T.
 llvm::Type* make_vec_type(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
 		//	element_ptr
-		llvm::Type::getIntNTy(context, 64)->getPointerTo(),
+//		llvm::Type::getIntNTy(context, 64)->getPointerTo(),
 
 		//	magic
 		llvm::Type::getIntNTy(context, 32),
@@ -710,38 +717,14 @@ llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::ty
 	auto& context = module.getContext();
 
 	const auto ret = function_type.get_function_return();
-#if 0
-	llvm::Type* return_type = nullptr;
-
-	if(ret.is_internal_dynamic()){
-		/*
-			struct DYN_RETURN_T {
-				uint64_t value;
-				uint64_t type;
-			};
-		*/
-
-		std::vector<llvm::Type*> members = {
-			llvm::Type::getIntNTy(context, 64),
-			llvm::Type::getIntNTy(context, 64)
-		};
-  		llvm::StructType* s = llvm::StructType::get(context, members, false);
-  		return_type = s;
-	}
-	else{
-		return_type = intern_type(module, ret);
-	}
-#else
 	llvm::Type* return_type = intern_type(module, ret);
-#endif
 
 
 	const auto args = function_type.get_function_args();
 	std::vector<llvm_arg_mapping_t> arg_results;
 
 	//	Pass Floyd runtime as extra, hidden argument #0. It has no representation in Floyd function type.
-	llvm::Type* frp = llvm::Type::getInt32PtrTy(context);
-	arg_results.push_back({ frp, "floyd_runtime_ptr", floyd::typeid_t::make_undefined(), -1, llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr });
+	arg_results.push_back({ make_frp_type(context), "floyd_runtime_ptr", floyd::typeid_t::make_undefined(), -1, llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr });
 
 	for(int index = 0 ; index < args.size() ; index++){
 		const auto& arg = args[index];
@@ -1607,6 +1590,13 @@ llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, const e
 ////////////////////////////////////////////////////////////////////////////////
 
 
+struct host_func_t {
+	std::string name_key;
+	llvm::FunctionType* function_type;
+	void* implementation_f;
+};
+
+
 
 /*
 @variable = global i32 21
@@ -1617,7 +1607,6 @@ store i32 %2, i32* @variable ; store instruction to write to global variable
 ret i32 %2
 }
 */
-
 
 llvm_execution_engine_t* get_floyd_runtime(void* floyd_runtime_ptr){
 	QUARK_ASSERT(floyd_runtime_ptr != nullptr);
@@ -1684,42 +1673,7 @@ std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, i
 
 
 
-std::pair<std::string, llvm::Type*> floyd_runtime__allocate_vector__make_type(llvm::LLVMContext& context){
-	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		llvm::Type::getVoidTy(context),
-		{
-			llvm::Type::getInt32PtrTy(context),
-			llvm::Type::getInt64Ty(context)
-		},
-		false
-	);
-	return { "floyd_runtime__allocate_memory", function_type };
-}
-
-
-//	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-const VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint32_t element_count){
-	auto element_ptr = reinterpret_cast<uint64_t*>(std::calloc(element_count, sizeof(uint64_t)));
-	if(element_ptr == nullptr){
-		throw std::exception();
-	}
-
-	VEC_T result;
-	result.magic = 0xDABBAD00;
-	result.element_ptr = element_ptr;
-	result.element_count = element_count;
-	return result;
-}
-
-const void floyd_runtime__delete_vector(void* floyd_runtime_ptr, VEC_T vec){
-	std::free(vec.element_ptr);
-	vec.element_ptr = nullptr;
-	vec.magic = 0xDEADD0D0;
-	vec.element_count = -vec.element_count;
-}
-
-
-
+//??? Make nicer mechanism to register all host functions, types and key-strings. Store explicit members like assert_f instead of search on string.
 
 
 
@@ -1785,6 +1739,67 @@ const uint8_t* floyd_runtime__allocate_memory(void* floyd_runtime_ptr, int64_t b
 	auto s = reinterpret_cast<uint8_t*>(std::calloc(1, bytes));
 	return s;
 }
+
+
+
+////////////////////////////////		allocate_vector()
+
+
+//	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
+const VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint32_t element_count){
+	auto element_ptr = reinterpret_cast<uint64_t*>(std::calloc(element_count, sizeof(uint64_t)));
+	if(element_ptr == nullptr){
+		throw std::exception();
+	}
+
+	VEC_T result;
+	result.magic = 0xDABBAD00;
+	result.element_ptr = element_ptr;
+	result.element_count = element_count;
+	return result;
+}
+
+host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		make_vec_type(context),
+		{
+			make_frp_type(context),
+			llvm::Type::getInt32Ty(context)
+		},
+		false
+	);
+
+//	QUARK_TRACE_SS(print_type(function_type));
+
+	return { "floyd_runtime__allocate_vector", function_type, reinterpret_cast<void*>(floyd_runtime__allocate_vector) };
+}
+
+////////////////////////////////		delete_vector()
+
+
+const void floyd_runtime__delete_vector(void* floyd_runtime_ptr, VEC_T* vec){
+	QUARK_ASSERT(vec != nullptr);
+	QUARK_ASSERT(vec->magic == 0xDABBAD00);
+
+	std::free(vec->element_ptr);
+	vec->element_ptr = nullptr;
+	vec->magic = 0xDEADD0D0;
+	vec->element_count = -vec->element_count;
+}
+
+host_func_t floyd_runtime__delete_vector__make(llvm::LLVMContext& context){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getVoidTy(context),
+		{
+			make_frp_type(context),
+			make_vec_type(context)->getPointerTo()
+		},
+		false
+	);
+	return { "floyd_runtime__delete_vector", function_type, reinterpret_cast<void*>(floyd_runtime__delete_vector) };
+}
+
+
 
 
 
@@ -2968,18 +2983,39 @@ function_definition_t make_dummy_function_definition(){
 	return { k_no_location, "", typeid_t::make_undefined(), {}, {}, -1 };
 }
 
+function_def_t make_host_proto(llvm::Module& module, const host_func_t& host_function){
+	QUARK_ASSERT(check_invariant__module(&module));
+//	QUARK_TRACE_SS(print_type(host_function.function_type));
+
+//	QUARK_TRACE_SS(print_module(module));
+	auto f = module.getOrInsertFunction(host_function.name_key, host_function.function_type);
+
+//	QUARK_TRACE_SS(print_module(module));
+
+	const auto result = function_def_t{ host_function.name_key, llvm::cast<llvm::Function>(f), -1, make_dummy_function_definition() };
+
+//	QUARK_TRACE_SS(print_module(module));
+
+	QUARK_ASSERT(check_invariant__module(&module));
+
+	return result;
+}
+
+
 //	Make LLVM functions -- runtime, floyd host functions, floyd functions.
 std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, const function_defs_t& defs){
 	std::vector<function_def_t> result;
 
 	auto& context = module.getContext();
 
+
+
 	//	floyd_runtime__compare_strings()
 	{
 		llvm::FunctionType* function_type = llvm::FunctionType::get(
 			llvm::Type::getInt32Ty(context),
 			{
-				llvm::Type::getInt32PtrTy(context),
+				make_frp_type(context),
 				llvm::Type::getInt64Ty(context),
 				llvm::Type::getInt8PtrTy(context),
 				llvm::Type::getInt8PtrTy(context)
@@ -2995,7 +3031,7 @@ std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, c
 		llvm::FunctionType* function_type = llvm::FunctionType::get(
 			llvm::Type::getInt8PtrTy(context),
 			{
-				llvm::Type::getInt32PtrTy(context),
+				make_frp_type(context),
 				llvm::Type::getInt8PtrTy(context),
 				llvm::Type::getInt8PtrTy(context)
 			},
@@ -3010,7 +3046,7 @@ std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, c
 		llvm::FunctionType* function_type = llvm::FunctionType::get(
 			llvm::Type::getInt8PtrTy(context),
 			{
-				llvm::Type::getInt32PtrTy(context),
+				make_frp_type(context),
 				llvm::Type::getInt64Ty(context)
 			},
 			false
@@ -3019,11 +3055,18 @@ std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, c
 		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), -1, make_dummy_function_definition()});
 	}
 
+
+	result.push_back(make_host_proto(module, floyd_runtime__allocate_vector__make(context)));
+	result.push_back(make_host_proto(module, floyd_runtime__delete_vector__make(context)));
+
+
+
+	//	floyd_runtime_init()
 	{
 		llvm::FunctionType* function_type = llvm::FunctionType::get(
 			llvm::Type::getInt64Ty(context),
 			{
-				llvm::Type::getInt32PtrTy(context)
+				make_frp_type(context)
 			},
 			false
 		);
@@ -3266,6 +3309,14 @@ void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
 #endif
 
 
+std::pair<std::string, void*> make_host_function_mapping(const host_func_t& host_function){
+	return {
+		host_function.name_key,
+		host_function.implementation_f
+	};
+}
+
+
 //	Destroys program, can only run it once!
 llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks){
 	QUARK_ASSERT(instance.check_invariant());
@@ -3295,8 +3346,10 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 	const std::map<std::string, void*> function_map = {
 		{ "floyd_runtime__compare_strings", reinterpret_cast<void *>(&floyd_runtime__compare_strings) },
 		{ "floyd_runtime__append_strings", reinterpret_cast<void *>(&floyd_runtime__append_strings) },
-
 		{ "floyd_runtime__allocate_memory", reinterpret_cast<void *>(&floyd_runtime__allocate_memory) },
+		make_host_function_mapping(floyd_runtime__allocate_vector__make(instance.context)),
+		make_host_function_mapping(floyd_runtime__delete_vector__make(instance.context)),
+
 
 
 		{ "floyd_funcdef__assert", reinterpret_cast<void *>(&floyd_funcdef__assert) },
