@@ -1621,6 +1621,18 @@ void hook(const std::string& s, void* floyd_runtime_ptr, int64_t arg){
 	throw std::runtime_error("HOST FUNCTION NOT IMPLEMENTED FOR LLVM");
 }
 
+//??? we assume all vector are [string] right now!!
+VEC_T* as_vector_w_string(llvm_execution_engine_t* runtime, int64_t arg_value, int64_t arg_type){
+	QUARK_ASSERT(arg_type == (int)base_type::k_vector);
+	const auto vector_strings = (VEC_T*)arg_value;
+	QUARK_ASSERT(vector_strings != nullptr);
+	QUARK_ASSERT(vector_strings->magic == 0xDABBAD00);
+
+	return vector_strings;
+}
+
+
+
 std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, int64_t arg_type){
 	const auto type = (base_type)arg_type;
 	if(type == base_type::k_int){
@@ -1642,17 +1654,13 @@ std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, i
 //		return std::to_string(value);
 	}
 	else if(type == base_type::k_vector){
-
 		//??? we assume all vector are [string] right now!!
-
-		const auto vector_strings = (VEC_T*)arg_value;
-		QUARK_ASSERT(vector_strings != nullptr);
-		QUARK_ASSERT(vector_strings->magic == 0xDABBAD00);
+		const auto vs = as_vector_w_string(runtime, arg_value, arg_type);
 
 		std::vector<value_t> elements;
-		const int count = vector_strings->element_count;
+		const int count = vs->element_count;
 		for(int i = 0 ; i < count ; i++){
-			const char* ss = (const char*)vector_strings->element_ptr[i];
+			const char* ss = (const char*)vs->element_ptr[i];
 			QUARK_ASSERT(ss != nullptr);
 
 			const auto e = std::string(ss);
@@ -1660,8 +1668,6 @@ std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, i
 		}
 		const auto val = value_t::make_vector_value(typeid_t::make_string(), elements);
 		return to_compact_string2(val);
-
-
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
@@ -2020,6 +2026,14 @@ int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, int64_t
 		//??? Strings are not clean.
 		return std::strlen(value);
 	}
+	else if(type == base_type::k_vector){
+		//??? we assume all vector are [string] right now!!
+		const auto vs = as_vector_w_string(r, arg0_value, arg0_type);
+
+		const int count = vs->element_count;
+		return count;
+	}
+
 	else{
 		NOT_IMPLEMENTED_YET();
 	}

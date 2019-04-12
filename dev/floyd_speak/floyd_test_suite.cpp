@@ -1,3 +1,5 @@
+	//??? we assume all vector are [string] right now!!
+	//??? we assume all vector are [string] right now!!
 //
 //  floyd_test_suite.cpp
 //  FloydSpeak
@@ -2229,7 +2231,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [] - empty constructor", "cannot be 
 	);
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "vector explicit bind, is [string]", "Infer type", "valid vector"){
+QUARK_UNIT_TEST("Floyd test suite", "vector explicit bind, is [string]", "Infer type", "valid vector"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2255,7 +2257,6 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] - constructor", "Infer type
 	);
 }
 
-//??TODO
 QUARK_UNIT_TEST("Floyd test suite", "vector [string]", "empty vector", "valid vector"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -2290,7 +2291,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [] - constructor", "32 elements init
 }
 #endif
 
-QUARK_UNIT_TEST("Floyd test suite", "vector [string] constructor expression, computed element", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "vector [string] constructor expression, computed element", "", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		func string get_beta(){ return "beta" } 	let [string] result = ["alpha", get_beta()]		)",		R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)");
 }
 
