@@ -718,6 +718,35 @@ llvm::Type* make_vec_type(llvm::LLVMContext& context){
 	return s;
 }
 
+llvm::Type* make_gen_value_type(llvm::LLVMContext& context){
+	return llvm::Type::getIntNTy(context, 64);
+}
+llvm::Type* make_gen_type_type(llvm::LLVMContext& context){
+	return llvm::Type::getIntNTy(context, 64);
+}
+llvm::Type* make_encode_type(llvm::LLVMContext& context){
+	return llvm::Type::getIntNTy(context, 64);
+}
+
+llvm::Value* get_vec_ptr(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue){
+	auto& context = builder.getContext();
+
+	auto alloc_value = builder.CreateAlloca(make_vec_type(context));
+	builder.CreateStore(vec_byvalue, alloc_value);
+	return alloc_value;
+}
+
+//	Encode a VEC_T usings its address.
+llvm::Value* get_vec_GEN(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue){
+	auto ptr = get_vec_ptr(builder, vec_byvalue);
+
+	auto encoded_type = make_gen_value_type(builder.getContext());
+	llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, ptr, encoded_type, "[]_as_GEN");
+	return arg3;
+}
+
+
+
 
 
 llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::typeid_t& function_type){
@@ -742,9 +771,8 @@ llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::ty
 
 		//	For dynamic values, store its DYNTYPE as an extra argument.
 		if(arg.is_internal_dynamic()){
-			llvm::Type* int64type = llvm::Type::getIntNTy(context, 64);
-			arg_results.push_back({ int64type, std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_dyn_value });
-			arg_results.push_back({ int64type, std::to_string(index), typeid_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
+			arg_results.push_back({ make_gen_value_type(context), std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_dyn_value });
+			arg_results.push_back({ make_gen_type_type(context), std::to_string(index), typeid_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
 		}
 		else {
 			auto arg_itype = intern_type(module, arg);
@@ -933,7 +961,7 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 
 	else if(type.is_internal_dynamic()){
 //		QUARK_ASSERT(false);
-		return llvm::Type::getIntNTy(context, 64);
+		return make_gen_type_type(context);
 	}
 	else if(type.is_function()){
 		return make_function_type(module, type);
@@ -1153,8 +1181,6 @@ llvm::Value* genllvm_literal_expression(llvmgen_t& gen_acc, const expression_t& 
 	return make_constant(gen_acc, literal);
 }
 
-
-
 llvm::Value* llvmgen_lookup_element_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1167,37 +1193,15 @@ llvm::Value* llvmgen_lookup_element_expression(llvmgen_t& gen_acc, const express
 
 	const auto parent_type =  e._input_exprs[0].get_output_type();
 	if(parent_type.is_string()){
-			auto element_index = key_value;
+		auto element_index = key_value;
+		const auto index_list = std::vector<llvm::Value*>{ element_index };
+		llvm::Value* element_addr = builder.CreateGEP(llvm::Type::getIntNTy(context, 8), parent_value, index_list, "element_addr");
 
-//			llvm::Value* element_index = make_constant(gen_acc, value_t::make_int(0));
+		llvm::Value* element_value_8bit = builder.CreateLoad(element_addr, "element_tmp");
+		llvm::Type* output_type = llvm::Type::getIntNTy(context, 64);
 
-/*
-  %3 = load i8*, i8** %1, align 8
-  %4 = getelementptr inbounds i8, i8* %3, i64 1
-*/
-	const auto index_list = std::vector<llvm::Value*>{ element_index };
-	llvm::Value* element_addr = builder.CreateGEP(llvm::Type::getIntNTy(context, 8), parent_value, index_list, "element_addr");
-
-	llvm::Value* element_value_8bit = builder.CreateLoad(element_addr, "element_tmp");
-	llvm::Type* output_type = llvm::Type::getIntNTy(context, 64);
-
-	llvm::Value* element_value = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::SExt, element_value_8bit, output_type, "char_to_int64");
-	return element_value;
-
-/*
-
-Value* arr = ...; // This is the instruction producing %arr
-Value* someValue = ...; // This is the instruction producing %some value
-
-// We need an array of index values
-//   Note - we need a type for constants, so use someValue's type
-Value* indexList[2] = {ConstantInt::get(someValue->getType(), 0), someValue};
-GetElementPtrInst* gepInst = GetElementPtrInst::Create(arr, ArrayRef<Value*>(indexList, 2), "arrayIdx", <some location to insert>);
-IRBuilder::CreateGEP(ptr, idxList, name)
-*/
-
-
-//		return bc_opcode::k_lookup_element_string;
+		llvm::Value* element_value = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::SExt, element_value_8bit, output_type, "char_to_int64");
+		return element_value;
 	}
 	else if(parent_type.is_json_value()){
 //		return bc_opcode::k_lookup_element_json_value;
@@ -1380,6 +1384,7 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 	return nullptr;
 }
 
+
 llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, expression_type op, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1447,17 +1452,29 @@ llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, expression_type o
 	else if(type.is_string()){
 		const auto def = find_function_def(gen_acc, "floyd_runtime__compare_strings");
 		std::vector<llvm::Value*> args2;
-
-		//	Insert floyd_runtime_ptr as first argument to called function.
-		args2.push_back(get_callers_fcp(gen_acc));
-
 		llvm::Value* op_value = make_constant(gen_acc, value_t::make_int(static_cast<int64_t>(e._operation)));
+		args2.push_back(get_callers_fcp(gen_acc));
 		args2.push_back(op_value);
-
 		args2.push_back(lhs_temp);
 		args2.push_back(rhs_temp);
 		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "compare_strings");
+		auto result2 = gen_acc.builder.CreateICmp(llvm::CmpInst::Predicate::ICMP_NE, result, llvm::ConstantInt::get(gen_acc.builder.getInt32Ty(), 0));
 
+		QUARK_ASSERT(gen_acc.check_invariant());
+		return result2;
+	}
+	else if(type.is_vector()){
+		const auto def = find_function_def(gen_acc, "floyd_runtime__compare_vectors");
+		llvm::Value* op_value = make_constant(gen_acc, value_t::make_int(static_cast<int64_t>(e._operation)));
+		auto lhs_vec_ptr = get_vec_ptr(gen_acc.builder, lhs_temp);
+		auto rhs_vec_ptr = get_vec_ptr(gen_acc.builder, rhs_temp);
+
+		std::vector<llvm::Value*> args2;
+		args2.push_back(get_callers_fcp(gen_acc));
+		args2.push_back(op_value);
+		args2.push_back(lhs_vec_ptr);
+		args2.push_back(rhs_vec_ptr);
+		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "compare_vectors");
 		auto result2 = gen_acc.builder.CreateICmp(llvm::CmpInst::Predicate::ICMP_NE, result, llvm::ConstantInt::get(gen_acc.builder.getInt32Ty(), 0));
 
 		QUARK_ASSERT(gen_acc.check_invariant());
@@ -1756,7 +1773,7 @@ const uint8_t* floyd_runtime__allocate_memory(void* floyd_runtime_ptr, int64_t b
 }
 
 
-
+//??? VEC_T for strings too!
 ////////////////////////////////		allocate_vector()
 
 
@@ -1783,11 +1800,9 @@ host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context){
 		},
 		false
 	);
-
-//	QUARK_TRACE_SS(print_type(function_type));
-
 	return { "floyd_runtime__allocate_vector", function_type, reinterpret_cast<void*>(floyd_runtime__allocate_vector) };
 }
+
 
 ////////////////////////////////		delete_vector()
 
@@ -1815,7 +1830,51 @@ host_func_t floyd_runtime__delete_vector__make(llvm::LLVMContext& context){
 }
 
 
+////////////////////////////////		compare_vectors()
 
+
+int32_t floyd_runtime__compare_vectors(void* floyd_runtime_ptr, int64_t op, const VEC_T* lhs, const VEC_T* rhs){
+//	const auto result = std::strcmp(lhs, rhs);
+	const auto result = 0;
+
+	const auto op2 = static_cast<expression_type>(op);
+	if(op2 == expression_type::k_comparison_smaller_or_equal__2){
+		return result <= 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_comparison_smaller__2){
+		return result < 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_comparison_larger_or_equal__2){
+		return result >= 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_comparison_larger__2){
+		return result > 0 ? 1 : 0;
+	}
+
+	else if(op2 == expression_type::k_logical_equal__2){
+		return result == 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_logical_nonequal__2){
+		return result != 0 ? 1 : 0;
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+host_func_t floyd_runtime__compare_vectors__make(llvm::LLVMContext& context){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getInt32Ty(context),
+		{
+			make_frp_type(context),
+			llvm::Type::getInt64Ty(context),
+			make_vec_type(context),
+			make_vec_type(context)
+		},
+		false
+	);
+	return { "floyd_runtime__compare_vectors", function_type, reinterpret_cast<void*>(floyd_runtime__compare_vectors) };
+}
 
 
 
@@ -2218,9 +2277,6 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 		//??? more
 	}
 
-	//	Type we use to encode all generic values.
-	llvm::Type* llvm_gen_encoded = llvm::Type::getIntNTy(context, 64);
-
 	llvm::Value* callee0_value = genllvm_expression(gen_acc, e._input_exprs[0]);
 //	QUARK_TRACE_SS("callee0_value: " << print_value(callee0_value));
 //		QUARK_TRACE_SS("gen_acc: " << print_gen(gen_acc));
@@ -2249,30 +2305,21 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 			const auto concrete_arg_type = e._input_exprs[1 + out_arg.floyd_arg_index].get_output_type();
 
 			if(concrete_arg_type.is_function()){
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, llvm_gen_encoded, "function_as_GEN");
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, make_gen_value_type(context), "function_as_GEN");
 				arg_values.push_back(arg3);
 			}
 			else if(concrete_arg_type.is_double()){
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::BitCast, arg2, llvm_gen_encoded, "double_as_GEN");
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::BitCast, arg2, make_gen_value_type(context), "double_as_GEN");
 				arg_values.push_back(arg3);
 			}
 			else if(concrete_arg_type.is_string()){
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, llvm_gen_encoded, "string_as_GEN");
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, make_gen_value_type(context), "string_as_GEN");
 				arg_values.push_back(arg3);
 			}
 			else if(concrete_arg_type.is_vector()){
 				QUARK_ASSERT(concrete_arg_type.get_vector_element_type().is_string());
 
-				//	Encode a VEC_T usings its address.
-
-				auto alloc_value = builder.CreateAlloca(make_vec_type(context));
-				builder.CreateStore(arg2, alloc_value);
-
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, alloc_value, llvm_gen_encoded, "[string]_as_GEN");
-
-//				auto modifid_vec_value = builder.CreateLoad(alloc_value);
-
-
+				llvm::Value* arg3 = get_vec_GEN(gen_acc.builder, arg2);
 				arg_values.push_back(arg3);
 			}
 			else if(concrete_arg_type.is_int()){
@@ -2285,11 +2332,12 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 				NOT_IMPLEMENTED_YET();
 			}
 
-			//??? We assume that the next arg in the mapping is the dyn-type.
-
+			// We assume that the next arg in the mapping is the dyn-type.
 			//??? We only support the base-types, not composite types.
-			const auto gen_type_id = (int64_t)concrete_arg_type.get_base_type();
-			arg_values.push_back(make_constant(gen_acc, value_t::make_int(gen_type_id)));
+			const auto base_type_id = (int64_t)concrete_arg_type.get_base_type();
+			llvm::Constant* gen_type = llvm::ConstantInt::get(make_gen_type_type(context), base_type_id);
+
+			arg_values.push_back(gen_type);
 		}
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_type){
 		}
@@ -2365,31 +2413,20 @@ llvm::Value* llvmgen_construct_value_expression(llvmgen_t& gen_acc, const expres
 				return result;
 			}();
 
-/*
-			auto uint8ptr_type = llvm::Type::getInt8PtrTy(context);
-			auto uint8ptr_array_type = uint8ptr_type->getPointerTo();
-			llvm::Value* uint8ptr_array_value = builder.CreateCast(llvm::Instruction::CastOps::BitCast, vec_ptr0_value, uint8ptr_array_type, "[string]_as_GEN");
-*/
-
 			//	Get element_ptr, which is member0 of VEC_T.
 /*
 			const auto gep_index_list = std::vector<llvm::Value*>{ 0, 0 };
 			llvm::Value* element_ptr_addr = builder.CreateGEP(vec_type, vec_value, gep_index_list, "element_ptr");
 			llvm::Value* element_ptr = builder.CreateLoad(element_ptr_addr, "element_ptr");
 */
-			auto uint64_element_ptr = builder.CreateExtractValue(vec_value, { 0 });
-
-
+			auto uint64_element_ptr = builder.CreateExtractValue(vec_value, { (int)VEC_T_MEMBERS::element_ptr });
 			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type->getPointerTo(), "");
-
 
 			//	Evaluate each element and store it directly into the the vector.
 			int element_index = 0;
 			for(const auto& arg: e._input_exprs){
 				llvm::Value* arg_value = genllvm_expression(gen_acc, arg);
-
 				auto element_index_value = make_constant(gen_acc, value_t::make_int(element_index));
-
 				const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_value };
 				llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "e_addr");
 				builder.CreateStore(arg_value, e_addr);
@@ -3116,7 +3153,7 @@ std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, c
 
 	result.push_back(make_host_proto(module, floyd_runtime__allocate_vector__make(context)));
 	result.push_back(make_host_proto(module, floyd_runtime__delete_vector__make(context)));
-
+	result.push_back(make_host_proto(module, floyd_runtime__compare_vectors__make(context)));
 
 
 	//	floyd_runtime_init()
@@ -3407,6 +3444,7 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 		{ "floyd_runtime__allocate_memory", reinterpret_cast<void *>(&floyd_runtime__allocate_memory) },
 		make_host_function_mapping(floyd_runtime__allocate_vector__make(instance.context)),
 		make_host_function_mapping(floyd_runtime__delete_vector__make(instance.context)),
+		make_host_function_mapping(floyd_runtime__compare_vectors__make(instance.context)),
 
 
 

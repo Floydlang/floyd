@@ -2353,7 +2353,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] size()", "2", ""){
 
 	)");
 }
-QUARK_UNIT_TEST("Floyd test suite", "vector [string] push_back()", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "vector [string] push_back()", "", ""){
 	run_closed(R"(
 
 		let [string] a = push_back(["one"], "two")

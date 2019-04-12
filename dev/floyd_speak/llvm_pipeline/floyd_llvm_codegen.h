@@ -73,6 +73,11 @@ struct VEC_T {
 	uint32_t element_count;
 };
 
+enum class VEC_T_MEMBERS {
+	element_ptr = 0
+};
+
+
 
 
 
