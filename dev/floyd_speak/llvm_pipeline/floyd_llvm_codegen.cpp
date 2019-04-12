@@ -1698,7 +1698,7 @@ std::pair<std::string, llvm::Type*> floyd_runtime__allocate_vector__make_type(ll
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-extern const VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint32_t element_count){
+const VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint32_t element_count){
 	auto element_ptr = reinterpret_cast<uint64_t*>(std::calloc(element_count, sizeof(uint64_t)));
 	if(element_ptr == nullptr){
 		throw std::exception();
@@ -1711,7 +1711,7 @@ extern const VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint3
 	return result;
 }
 
-extern const void floyd_runtime__delete_vector(void* floyd_runtime_ptr, VEC_T vec){
+const void floyd_runtime__delete_vector(void* floyd_runtime_ptr, VEC_T vec){
 	std::free(vec.element_ptr);
 	vec.element_ptr = nullptr;
 	vec.magic = 0xDEADD0D0;
@@ -1727,12 +1727,12 @@ extern const void floyd_runtime__delete_vector(void* floyd_runtime_ptr, VEC_T ve
 //	They must use C calling convention so llvm JIT can find them.
 //	Make sure they are not dead-stripped out of binary!
 
-extern void floyd_runtime__unresolved_func(void* floyd_runtime_ptr){
+void floyd_runtime__unresolved_func(void* floyd_runtime_ptr){
 	std:: cout << __FUNCTION__ << std::endl;
 }
 
 
-extern int32_t floyd_runtime__compare_strings(void* floyd_runtime_ptr, int64_t op, const char* lhs, const char* rhs){
+int32_t floyd_runtime__compare_strings(void* floyd_runtime_ptr, int64_t op, const char* lhs, const char* rhs){
 //		QUARK_TRACE_SS( __FUNCTION__ << " " << std::string(lhs) << " comp " <<std::string(rhs));
 
 	/*
@@ -1769,7 +1769,7 @@ extern int32_t floyd_runtime__compare_strings(void* floyd_runtime_ptr, int64_t o
 	}
 }
 
-extern const char* floyd_runtime__append_strings(void* floyd_runtime_ptr, const char* lhs, const char* rhs){
+const char* floyd_runtime__append_strings(void* floyd_runtime_ptr, const char* lhs, const char* rhs){
 	QUARK_ASSERT(lhs != nullptr);
 	QUARK_ASSERT(rhs != nullptr);
 	QUARK_TRACE_SS(__FUNCTION__ << " " << std::string(lhs) << " comp " <<std::string(rhs));
@@ -1781,7 +1781,7 @@ extern const char* floyd_runtime__append_strings(void* floyd_runtime_ptr, const 
 	return s;
 }
 
-extern const uint8_t* floyd_runtime__allocate_memory(void* floyd_runtime_ptr, int64_t bytes){
+const uint8_t* floyd_runtime__allocate_memory(void* floyd_runtime_ptr, int64_t bytes){
 	auto s = reinterpret_cast<uint8_t*>(std::calloc(1, bytes));
 	return s;
 }
@@ -1790,7 +1790,7 @@ extern const uint8_t* floyd_runtime__allocate_memory(void* floyd_runtime_ptr, in
 
 
 
-extern void floyd_funcdef__assert(void* floyd_runtime_ptr, int64_t arg){
+void floyd_funcdef__assert(void* floyd_runtime_ptr, int64_t arg){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	bool ok = arg == 0 ? false : true;
@@ -1800,41 +1800,41 @@ extern void floyd_funcdef__assert(void* floyd_runtime_ptr, int64_t arg){
 	}
 }
 
-extern void floyd_host_function_1001(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1001(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1002(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1002(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1003(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1003(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1004(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1004(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1005(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1005(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1006(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1006(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1007(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1007(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1008(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1008(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
 
 
-extern int64_t floyd_funcdef__find__string(llvm_execution_engine_t* floyd_runtime_ptr, const char s[], const char find[]){
+int64_t floyd_funcdef__find__string(llvm_execution_engine_t* floyd_runtime_ptr, const char s[], const char find[]){
 	QUARK_ASSERT(s != nullptr);
 	QUARK_ASSERT(find != nullptr);
 
@@ -1846,7 +1846,7 @@ extern int64_t floyd_funcdef__find__string(llvm_execution_engine_t* floyd_runtim
 	return result;
 }
 
-extern int64_t floyd_funcdef__find(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
+int64_t floyd_funcdef__find(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type = arg0_type;
@@ -1863,43 +1863,43 @@ extern int64_t floyd_funcdef__find(void* floyd_runtime_ptr, int64_t arg0_value, 
 
 
 
-extern void floyd_host_function_1010(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1010(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1011(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1011(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1012(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1012(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1013(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1013(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1014(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1014(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1015(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1015(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1016(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1016(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1017(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1017(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1018(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1018(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1019(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1019(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
@@ -1908,7 +1908,7 @@ extern void floyd_host_function_1019(void* floyd_runtime_ptr, int64_t arg){
 
 //	??? Make visitor to handle different types.
 //	??? Extend GEN to support any type, not just base_type.
-extern void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
+void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 	const auto s = gen_to_string(r, arg0_value, arg0_type);
 	r->_print_output.push_back(s);
@@ -1916,7 +1916,7 @@ extern void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg0_value, in
 
 
 
-extern const char* floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
+const char* floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type = (base_type)arg0_type;
@@ -1937,20 +1937,20 @@ extern const char* floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg
 	}
 }
 
-extern void floyd_host_function_1022(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1022(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1023(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1023(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1024(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1024(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
 
-extern const char* floyd_funcdef__replace__string(llvm_execution_engine_t* floyd_runtime_ptr, const char s[], std::size_t start, std::size_t end, const char replace[]){
+const char* floyd_funcdef__replace__string(llvm_execution_engine_t* floyd_runtime_ptr, const char s[], std::size_t start, std::size_t end, const char replace[]){
 	auto s_len = std::strlen(s);
 	auto replace_len = std::strlen(replace);
 	if(start > end){
@@ -1969,7 +1969,7 @@ extern const char* floyd_funcdef__replace__string(llvm_execution_engine_t* floyd
 	return s2;
 }
 
-extern const char* floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end, int64_t arg3_value, int64_t arg3_type){
+const char* floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end, int64_t arg3_value, int64_t arg3_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	if(start < 0 || end < 0){
@@ -1988,15 +1988,15 @@ extern const char* floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0_
 	}
 }
 
-extern void floyd_host_function_1026(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1026(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1027(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1027(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
+int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type = (base_type)arg0_type;
@@ -2010,7 +2010,7 @@ extern int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, 
 	}
 }
 
-extern const char* floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end){
+const char* floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	if(start < 0 || end < 0){
@@ -2039,15 +2039,15 @@ extern const char* floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_v
 
 
 
-extern void floyd_host_function_1030(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1030(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1031(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1031(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern const char* floyd_host__to_string(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
+const char* floyd_host__to_string(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto s = gen_to_string(r, arg0_value, arg0_type);
@@ -2056,7 +2056,7 @@ extern const char* floyd_host__to_string(void* floyd_runtime_ptr, int64_t arg0_v
 	return strdup(s.c_str());
 }
 
-extern void floyd_host__typeof(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host__typeof(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 /*
 bc_value_t host__typeof(interpreter_t& vm, const bc_value_t args[], int arg_count){
@@ -2071,7 +2071,7 @@ return value_to_bc(result);
 */
 }
 
-extern const char* floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type, int64_t arg2_value, int64_t arg2_type){
+const char* floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type, int64_t arg2_value, int64_t arg2_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type = (base_type)arg0_type;
@@ -2102,23 +2102,23 @@ extern const char* floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_v
 	}
 }
 
-extern void floyd_host_function_1035(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1035(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1036(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1036(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1037(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1037(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1038(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1038(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-extern void floyd_host_function_1039(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_1039(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
@@ -2127,11 +2127,11 @@ extern void floyd_host_function_1039(void* floyd_runtime_ptr, int64_t arg){
 
 ///////////////		TEST
 
-extern void floyd_host_function_2002(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_2002(void* floyd_runtime_ptr, int64_t arg){
 	std::cout << __FUNCTION__ << arg << std::endl;
 }
 
-extern void floyd_host_function_2003(void* floyd_runtime_ptr, int64_t arg){
+void floyd_host_function_2003(void* floyd_runtime_ptr, int64_t arg){
 	std::cout << __FUNCTION__ << arg << std::endl;
 }
 
