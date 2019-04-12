@@ -446,7 +446,16 @@ value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
 		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_vector()){
-		NOT_IMPLEMENTED_YET();
+		QUARK_ASSERT(type.get_vector_element_type().is_string());
+
+		auto vec = *static_cast<const VEC_T*>(global_ptr);
+		std::vector<value_t> vec2;
+		for(int i = 0 ; i < vec.element_count ; i++){
+			auto s = (const char*)vec.element_ptr[i];
+			const auto a = std::string(s);
+			vec2.push_back(value_t::make_string(a));
+		}
+		return value_t::make_vector_value(typeid_t::make_string(), vec2);
 	}
 	else if(type.is_dict()){
 		NOT_IMPLEMENTED_YET();

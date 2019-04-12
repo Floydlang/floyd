@@ -2291,7 +2291,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [] - constructor", "32 elements init
 }
 #endif
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "vector [string] constructor expression, computed element", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] constructor expression, computed element", "", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		func string get_beta(){ return "beta" } 	let [string] result = ["alpha", get_beta()]		)",		R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)");
 }
 
