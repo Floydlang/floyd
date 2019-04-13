@@ -465,6 +465,7 @@ value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
 	}
 	else{
 	}
+	NOT_IMPLEMENTED_YET();
 	QUARK_ASSERT(false);
 	throw std::exception();
 }
@@ -2348,6 +2349,11 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(arg_values.size() == mapping.args.size());
 	auto result0 = builder.CreateCall(callee0_value, arg_values, return_type.is_void() ? "" : "temp_call");
 
+	if(call_function_type.get_function_return().is_internal_dynamic()){
+		QUARK_TRACE_SS("");
+	}
+	else{
+	}
 
 	llvm::Value* result = result0;
 
