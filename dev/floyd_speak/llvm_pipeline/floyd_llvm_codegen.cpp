@@ -1998,7 +1998,7 @@ void floyd_host_function_1019(void* floyd_runtime_ptr, int64_t arg){
 
 
 //	??? Make visitor to handle different types.
-//	??? Extend GEN to support any type, not just base_type.
+//	??? Extend dynamic system to support any type, not just base_type.
 void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 	const auto s = gen_to_string(r, arg0_value, arg0_type);
@@ -2020,8 +2020,7 @@ const char* floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value
 		s[len + 0] = (char)arg1_value;
 		s[len + 1] = 0x00;
 		return s;
-
-//??????b		return DYN_RETURN_T{ reinterpret_cast<uint64_t>(value), (uint64_t)base_type::k_string };
+//		return DYN_RETURN_T{ reinterpret_cast<uint64_t>(value), (uint32_t)base_type::k_string };
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
@@ -2345,15 +2344,9 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(arg_values.size() == mapping.args.size());
 	auto result0 = builder.CreateCall(callee0_value, arg_values, return_type.is_void() ? "" : "temp_call");
 
-	if(call_function_type.get_function_return().is_internal_dynamic()){
-		QUARK_TRACE_SS("");
-	}
-	else{
-	}
-
+	//	We do not support or use DYN for return values -- all client code expect a static return type. We do C++-template type generics.
 	llvm::Value* result = result0;
 	if(return_type.is_internal_dynamic()){
-
 		//	Guess concrete return type based on concrete argument #0.
 		const auto concrete_return_type = return_type.is_internal_dynamic()
 			? intern_type(*gen_acc.module, e._input_exprs[1].get_output_type())
@@ -2364,17 +2357,12 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 		}
 		else{
 		}
-/*
-		const std::vector<llvm::Value*> element0_indexes = {
-			llvm::ConstantInt::get(builder.getInt32Ty(), 0)
-		};
-		const std::vector<llvm::Value*> element1_indexes = {
-			llvm::ConstantInt::get(builder.getInt32Ty(), 1)
-		};
 
-		auto element0_value = builder.CreateExtractValue(result, { 0 });
-		auto element1_value = builder.CreateExtractValue(result, { 1 });
-*/
+#if 0
+		auto dyn_encoded_value = builder.CreateExtractValue(result, { static_cast<int>(DYN_RETURN_MEMBERS::encoded_value) });
+		auto dyn_encoded_type = builder.CreateExtractValue(result, { static_cast<int>(DYN_RETURN_MEMBERS::value_type___base_type_for_now) });
+#endif
+
 	}
 	else{
 	}
