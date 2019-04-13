@@ -11,6 +11,7 @@
 #include "parser_primitives.h"
 #include "floyd_parser.h"
 
+#include "pass2.h"
 #include "pass3.h"
 #include "host_functions.h"
 #include "bytecode_generator.h"

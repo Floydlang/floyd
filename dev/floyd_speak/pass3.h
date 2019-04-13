@@ -35,6 +35,7 @@
 
 namespace floyd {
 
+struct pass2_ast_t;
 
 //////////////////////////////////////		semantic_ast_t
 

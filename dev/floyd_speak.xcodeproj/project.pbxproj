@@ -25,6 +25,8 @@
 		2C180490208B947C00F62480 /* ast_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180488208B947C00F62480 /* ast_basics.cpp */; };
 		2C180492208B947C00F62480 /* expression.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18048A208B947C00F62480 /* expression.cpp */; };
 		2C180494208B947C00F62480 /* statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18048C208B947C00F62480 /* statement.cpp */; };
+		2C3174AC2262125F0004E086 /* pass2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3174AA2262125F0004E086 /* pass2.cpp */; };
+		2C3174AD2262125F0004E086 /* pass2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3174AA2262125F0004E086 /* pass2.cpp */; };
 		2C36C083221DF09E00CAFEF4 /* test_main.floyd in Sources */ = {isa = PBXBuildFile; fileRef = 2C36C082221DEF0900CAFEF4 /* test_main.floyd */; };
 		2C36C084221DF17C00CAFEF4 /* test_main.floyd in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2C36C082221DEF0900CAFEF4 /* test_main.floyd */; };
 		2C36C086221DF1DA00CAFEF4 /* test.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2C36C085221DF1C600CAFEF4 /* test.json */; };
@@ -178,6 +180,8 @@
 		2C18048D208B947C00F62480 /* statement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = statement.h; sourceTree = "<group>"; };
 		2C182F1F220B17780003FC1F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		2C1D84DD1CA765A90042F0A8 /* floyd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = floyd; sourceTree = BUILT_PRODUCTS_DIR; };
+		2C3174AA2262125F0004E086 /* pass2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = pass2.cpp; sourceTree = "<group>"; };
+		2C3174AB2262125F0004E086 /* pass2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pass2.h; sourceTree = "<group>"; };
 		2C36C082221DEF0900CAFEF4 /* test_main.floyd */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test_main.floyd; sourceTree = "<group>"; };
 		2C36C085221DF1C600CAFEF4 /* test.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test.json; sourceTree = "<group>"; };
 		2C36C088221DF96000CAFEF4 /* pretty_json.floyd */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = pretty_json.floyd; sourceTree = "<group>"; };
@@ -691,15 +695,17 @@
 		2C1D84DF1CA765A90042F0A8 /* floyd_speak */ = {
 			isa = PBXGroup;
 			children = (
-				2C09395E2245022600383AA9 /* llvm_pipeline */,
 				2CEB57462071069B0005AC7A /* benchmark_basics.cpp */,
 				2CEB5748207106C60005AC7A /* benchmark_basics.h */,
 				2C4699AC214EC97A007216BE /* bytecode_interpreter */,
+				2C4574D322493DA2008A55B0 /* compiler_helpers.cpp */,
+				2C4574D422493DA2008A55B0 /* compiler_helpers.h */,
+				2CC0B3DD2224232700C9D584 /* compressed_vector_benchmark.cpp */,
 				2C00BC411F2428FF0087B8BB /* cpp_experiments.cpp */,
 				2C180485208B947C00F62480 /* floyd_ast */,
 				2C182F20220BCD410003FC1F /* floyd_basics */,
-				2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */,
 				2C69C49D2221D39B00E9D03E /* floyd_benchmark_main.cpp */,
+				2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */,
 				2C180464208B939700F62480 /* floyd_parser */,
 				2CC34CBF21EF8882000F3CB6 /* floyd_repl.cpp */,
 				2CC34CC021EF8882000F3CB6 /* floyd_repl.h */,
@@ -710,16 +716,16 @@
 				2CB2A513203C4ACB0001A19E /* interpretator_benchmark.h */,
 				2CC0B3DF22248E3E00C9D584 /* issue_regression_tests.cpp */,
 				2C00DE2222198B0300DB322E /* libs */,
+				2C09395E2245022600383AA9 /* llvm_pipeline */,
 				2CBCA7D81D569C6D000FAE81 /* parts */,
+				2C3174AA2262125F0004E086 /* pass2.cpp */,
+				2C3174AB2262125F0004E086 /* pass2.h */,
 				2CB2A515203D642B0001A19E /* pass3.cpp */,
 				2CB2A514203D64210001A19E /* pass3.h */,
 				2CB30737214ACF09007D2732 /* software_system.cpp */,
 				2CB30738214ACF09007D2732 /* software_system.h */,
-				2CC0B3DD2224232700C9D584 /* compressed_vector_benchmark.cpp */,
 				2CC0B3E122248EBD00C9D584 /* test_helpers.cpp */,
 				2CC0B3E222248EBD00C9D584 /* test_helpers.h */,
-				2C4574D322493DA2008A55B0 /* compiler_helpers.cpp */,
-				2C4574D422493DA2008A55B0 /* compiler_helpers.h */,
 			);
 			path = floyd_speak;
 			sourceTree = SOURCE_ROOT;
@@ -1500,6 +1506,7 @@
 				2CBCA7DE1D569E04000FAE81 /* sha1_class.cpp in Sources */,
 				2C5F8322224644FB009870FC /* floyd_llvm_codegen.cpp in Sources */,
 				2C8C03A22221D95F0085EBBE /* benchmark_register.cc in Sources */,
+				2C3174AC2262125F0004E086 /* pass2.cpp in Sources */,
 				2C4F355F1D4794CD0061CA93 /* ast_value.cpp in Sources */,
 				2C4574D522493DA2008A55B0 /* compiler_helpers.cpp in Sources */,
 				2C8C039B2221D90A0085EBBE /* gtest-all.cc in Sources */,
@@ -1522,6 +1529,7 @@
 				2C8C03B42221DBD70085EBBE /* hardware_caps.cpp in Sources */,
 				2C8C03B52221DBD70085EBBE /* gmock-all.cc in Sources */,
 				2C8C03B92221DBD70085EBBE /* csv_reporter.cc in Sources */,
+				2C3174AD2262125F0004E086 /* pass2.cpp in Sources */,
 				2C8C03BB2221DBD70085EBBE /* json_reporter.cc in Sources */,
 				2C8C03BD2221DBD70085EBBE /* reporter.cc in Sources */,
 				2C8C03BE2221DBD70085EBBE /* colorprint.cc in Sources */,

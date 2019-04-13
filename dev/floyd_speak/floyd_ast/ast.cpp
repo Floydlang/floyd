@@ -32,8 +32,6 @@ json_t statement_to_json(const statement_t& e);
 
 
 
-
-
 typeid_t resolve_type_name(const json_t& t){
 	const auto t2 = typeid_from_ast_json(t);
 	return t2;
@@ -679,20 +677,6 @@ general_purpose_ast_t json_to_gp_ast(const json_t& json){
 	}
 }
 
-
-
-
-
-ast_json_t pass2_ast_to_json(const pass2_ast_t& ast){
-	QUARK_ASSERT(ast.check_invariant());
-
-	return ast_json_t::make(gp_ast_to_json(ast._tree));
-}
-
-pass2_ast_t parse_tree_to_pass2_ast(const parse_tree_json_t& json){
-	const auto gp_ast = json_to_gp_ast(json._value);
-	return pass2_ast_t{ gp_ast };
-}
 
 
 

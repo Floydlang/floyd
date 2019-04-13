@@ -16,6 +16,7 @@
 #include "json_support.h"
 #include "host_functions.h"
 #include "text_parser.h"
+#include "pass2.h"
 
 namespace floyd {
 
