@@ -194,7 +194,7 @@ namespace floyd {
 			expression_t _expression;
 		};
 		public: static statement_t make__return_statement(const location_t& location, const expression_t& expression){
-			return statement_t{ .location = location, ._contents = {return_statement_t{expression}} };
+			return statement_t(location, { return_statement_t{ expression } });
 		}
 
 
@@ -210,7 +210,7 @@ namespace floyd {
 			std::shared_ptr<const struct_definition_t> _def;
 		};
 		public: static statement_t make__define_struct_statement(const location_t& location, const define_struct_statement_t& value){
-			return statement_t{ .location = location, ._contents = {define_struct_statement_t{value}} };
+			return statement_t(location, { define_struct_statement_t{ value } });
 		}
 
 
@@ -226,7 +226,7 @@ namespace floyd {
 			std::shared_ptr<const protocol_definition_t> _def;
 		};
 		public: static statement_t make__define_protocol_statement(const location_t& location, const define_protocol_statement_t& value){
-			return statement_t{ .location = location, ._contents = {define_protocol_statement_t{value}} };
+			return statement_t(location, { define_protocol_statement_t{ value } });
 		}
 
 
@@ -242,7 +242,7 @@ namespace floyd {
 			std::shared_ptr<const function_definition_t> _def;
 		};
 		public: static statement_t make__define_function_statement(const location_t& location, const define_function_statement_t& value){
-			return statement_t{ .location = location, ._contents = {define_function_statement_t{value}} };
+			return statement_t(location, { define_function_statement_t{ value } });
 		}
 
 
@@ -268,7 +268,7 @@ namespace floyd {
 			mutable_mode _locals_mutable_mode;
 		};
 		public: static statement_t make__bind_local(const location_t& location, const std::string& new_local_name, const typeid_t& bindtype, const expression_t& expression, bind_local_t::mutable_mode locals_mutable_mode){
-			return statement_t{ .location = location, ._contents = {bind_local_t{ new_local_name, bindtype, expression, locals_mutable_mode}} };
+			return statement_t(location, { bind_local_t{ new_local_name, bindtype, expression, locals_mutable_mode } });
 		}
 
 
@@ -285,7 +285,7 @@ namespace floyd {
 			expression_t _expression;
 		};
 		public: static statement_t make__store(const location_t& location, const std::string& local_name, const expression_t& expression){
-			return statement_t{ .location = location, ._contents = {store_t{ local_name, expression}} };
+			return statement_t(location, { store_t{ local_name, expression} });
 		}
 
 
@@ -303,7 +303,7 @@ namespace floyd {
 		};
 
 		public: static statement_t make__store2(const location_t& location, const variable_address_t& dest_variable, const expression_t& expression){
-			return statement_t{ .location = location, ._contents = {store2_t{ dest_variable, expression}} };
+			return statement_t(location, { store2_t{ dest_variable, expression} });
 		}
 
 
@@ -319,7 +319,7 @@ namespace floyd {
 		};
 
 		public: static statement_t make__block_statement(const location_t& location, const body_t& body){
-			return statement_t{ .location = location, ._contents = {block_statement_t{ body}} };
+			return statement_t(location, { block_statement_t{ body} });
 		}
 
 
@@ -346,7 +346,7 @@ namespace floyd {
 			const body_t& then_body,
 			const body_t& else_body
 		){
-			return statement_t{ .location = location, ._contents = {ifelse_statement_t{ condition, then_body, else_body}} };
+			return statement_t(location, { ifelse_statement_t{ condition, then_body, else_body} });
 		}
 
 
@@ -383,7 +383,7 @@ namespace floyd {
 			const body_t& body,
 			for_statement_t::range_type range_type
 		){
-			return statement_t{ .location = location, ._contents = {for_statement_t{ iterator_name, start_expression, end_expression, body, range_type }} };
+			return statement_t(location, { for_statement_t{ iterator_name, start_expression, end_expression, body, range_type } });
 		}
 
 
@@ -402,7 +402,7 @@ namespace floyd {
 			const location_t& location,
 			json_t json_data
 		){
-			return statement_t{ .location = location, ._contents = {software_system_statement_t{ json_data }} };
+			return statement_t(location, { software_system_statement_t{ json_data } });
 		}
 
 
@@ -421,7 +421,7 @@ namespace floyd {
 			const location_t& location,
 			json_t json_data
 		){
-			return statement_t{ .location = location, ._contents = {container_def_statement_t{ json_data }} };
+			return statement_t(location, { container_def_statement_t{ json_data } });
 		}
 
 
@@ -444,7 +444,7 @@ namespace floyd {
 			const expression_t& condition,
 			const body_t& body
 		){
-			return statement_t{ .location = location, ._contents = {while_statement_t{ condition, body }} };
+			return statement_t(location, { while_statement_t{ condition, body } });
 		}
 
 
@@ -459,12 +459,39 @@ namespace floyd {
 			expression_t _expression;
 		};
 		public: static statement_t make__expression_statement(const location_t& location, const expression_t& expression){
-			return statement_t{ .location = location, ._contents = {expression_statement_t{ expression }} };
+			return statement_t(location, { expression_statement_t{ expression } });
 		}
 
 
 		//////////////////////////////////////		statement_t
 
+
+		typedef std::variant<
+			return_statement_t,
+			define_struct_statement_t,
+			define_protocol_statement_t,
+			define_function_statement_t,
+			bind_local_t,
+			store_t,
+			store2_t,
+			block_statement_t,
+			ifelse_statement_t,
+			for_statement_t,
+			while_statement_t,
+			expression_statement_t,
+			software_system_statement_t,
+			container_def_statement_t
+		> statement_variant_t;
+
+		statement_t(const location_t& location, const statement_variant_t& contents) :
+			debug_string(""),
+			location(location),
+			_contents(contents)
+		{
+//			const auto json = statement_to_json(*this);
+//			debug_string = json_to_compact_string(json);
+
+		}
 
 		bool check_invariant() const {
 			return true;
@@ -552,24 +579,9 @@ namespace floyd {
 
 		//////////////////////////////////////		STATE
 
-
+		std::string debug_string;
 		location_t location;
-		std::variant<
-			return_statement_t,
-			define_struct_statement_t,
-			define_protocol_statement_t,
-			define_function_statement_t,
-			bind_local_t,
-			store_t,
-			store2_t,
-			block_statement_t,
-			ifelse_statement_t,
-			for_statement_t,
-			while_statement_t,
-			expression_statement_t,
-			software_system_statement_t,
-			container_def_statement_t
-		> _contents;
+		statement_variant_t _contents;
 	};
 
 	static bool operator==(const statement_t& lhs, const statement_t& rhs){
