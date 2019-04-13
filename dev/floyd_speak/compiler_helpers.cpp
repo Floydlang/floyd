@@ -27,11 +27,10 @@
 
 namespace floyd {
 
-parse_tree_json_t parse_program__errors(const compilation_unit_t& cu){
+parse_tree_t parse_program__errors(const compilation_unit_t& cu){
 	try {
 		const auto parse_tree = parse_program2(cu.prefix_source + cu.program_text);
-		const parse_tree_json_t p2(parse_tree._value);
-		return p2;
+		return parse_tree;
 	}
 	catch(const compiler_error& e){
 		const auto refined = refine_compiler_error_with_loc2(cu, e);

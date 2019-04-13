@@ -20,17 +20,6 @@ namespace floyd {
 	struct ast_json_t;
 
 
-	//////////////////////////////////////////////////		parse_tree_json_t
-
-
-	struct parse_tree_json_t {
-		explicit parse_tree_json_t(const json_t& v): _value(v)
-		{
-		}
-
-		json_t _value;
-	};
-
 
 
 	//////////////////////////////////////////////////		general_purpose_ast_t
