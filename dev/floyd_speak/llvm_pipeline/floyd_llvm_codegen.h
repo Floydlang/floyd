@@ -50,10 +50,6 @@ struct llvm_instance_t {
 	llvm::LLVMContext context;
 };
 
-struct DYN_RETURN_T {
-	uint64_t value;
-	uint64_t type;
-};
 
 
 //??? need word for "encoded". How data is stuffed into the LLVM instruction set..
@@ -79,12 +75,12 @@ enum class VEC_T_MEMBERS {
 
 
 //	??? Also use for arguments, not only return.
-struct GEN_RETURN_T {
+struct DYN_RETURN_T {
 	uint64_t encoded_value;
 	uint32_t value_type___base_type_for_now;
 };
 
-enum class GEN_RETURN_MEMBERS {
+enum class DYN_RETURN_MEMBERS {
 	encoded_value = 0,
 	value_type___base_type_for_now = 1
 };

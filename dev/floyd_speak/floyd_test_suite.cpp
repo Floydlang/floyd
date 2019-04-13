@@ -2382,7 +2382,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] update()", "", "valid vecto
 	);
 }
 
-//??? Test all vactor core functions for [string]
+//??? Test all vector core functions for [string]
 
 //??? test vector<struct>, vector<json_value>
 

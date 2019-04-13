@@ -719,10 +719,11 @@ llvm::Type* make_vec_type(llvm::LLVMContext& context){
 	return s;
 }
 
-llvm::Type* make_gen_value_type(llvm::LLVMContext& context){
+//??? replace with DYN_RETURN_T struct
+llvm::Type* make_dyn_value_type(llvm::LLVMContext& context){
 	return llvm::Type::getIntNTy(context, 64);
 }
-llvm::Type* make_gen_type_type(llvm::LLVMContext& context){
+llvm::Type* make_dyn_type_type(llvm::LLVMContext& context){
 	return llvm::Type::getIntNTy(context, 64);
 }
 llvm::Type* make_encode_type(llvm::LLVMContext& context){
@@ -737,12 +738,12 @@ llvm::Value* get_vec_ptr(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue){
 	return alloc_value;
 }
 
-//	Encode a VEC_T usings its address.
-llvm::Value* get_vec_GEN(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue){
+//	Encode a VEC_T usings its address. Alternative: could pass it as argument by-value.
+llvm::Value* get_vec_as_dyn(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue){
 	auto ptr = get_vec_ptr(builder, vec_byvalue);
 
-	auto encoded_type = make_gen_value_type(builder.getContext());
-	llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, ptr, encoded_type, "[]_as_GEN");
+	auto encoded_type = make_dyn_value_type(builder.getContext());
+	llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, ptr, encoded_type, "");
 	return arg3;
 }
 
@@ -770,10 +771,10 @@ llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::ty
 		QUARK_ASSERT(arg.is_undefined() == false);
 		QUARK_ASSERT(arg.is_void() == false);
 
-		//	For dynamic values, store its DYNTYPE as an extra argument.
+		//	For dynamic values, store its dynamic type as an extra argument.
 		if(arg.is_internal_dynamic()){
-			arg_results.push_back({ make_gen_value_type(context), std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_dyn_value });
-			arg_results.push_back({ make_gen_type_type(context), std::to_string(index), typeid_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
+			arg_results.push_back({ make_dyn_value_type(context), std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_dyn_value });
+			arg_results.push_back({ make_dyn_type_type(context), std::to_string(index), typeid_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
 		}
 		else {
 			auto arg_itype = intern_type(module, arg);
@@ -962,7 +963,7 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 
 	else if(type.is_internal_dynamic()){
 //		QUARK_ASSERT(false);
-		return make_gen_type_type(context);
+		return make_dyn_type_type(context);
 	}
 	else if(type.is_function()){
 		return make_function_type(module, type);
@@ -2020,7 +2021,7 @@ const char* floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value
 		s[len + 1] = 0x00;
 		return s;
 
-//			return DYN_RETURN_T{ reinterpret_cast<uint64_t>(value), (uint64_t)base_type::k_string };
+//??????b		return DYN_RETURN_T{ reinterpret_cast<uint64_t>(value), (uint64_t)base_type::k_string };
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
@@ -2261,14 +2262,7 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 
 	const auto call_arg_types = call_function_type.get_function_args();
 	const auto return_type = call_function_type.get_function_return();
-	const auto mapping0 = map_function_arguments(*gen_acc.module, call_function_type);
-
-	//	Guess concrete return type based on concrete argument #0.
-	const auto concrete_return_type = return_type.is_internal_dynamic() ? intern_type(*gen_acc.module, e._input_exprs[1].get_output_type()) : mapping0.return_type;
-
-	//	Harden the mapping return type.
-//	const auto mapping = llvm_function_def_t{ return_type.is_internal_dynamic() ? intern_type(*gen_acc.module, e._input_exprs[1].get_output_type()) : mapping0.return_type, mapping0.args, mapping0.llvm_args };
-	const auto mapping = mapping0;
+	const auto mapping = map_function_arguments(*gen_acc.module, call_function_type);
 
 	//	Verify that the actual argument expressions, their count and output types --all match call_function_type.
 	{
@@ -2299,6 +2293,8 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 			llvm::Value* arg2 = genllvm_expression(gen_acc, e._input_exprs[1 + out_arg.floyd_arg_index]);
 			arg_values.push_back(arg2);
 		}
+
+//??? make separate function of this.
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_value){
 			llvm::Value* arg2 = genllvm_expression(gen_acc, e._input_exprs[1 + out_arg.floyd_arg_index]);
 
@@ -2306,21 +2302,21 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 			const auto concrete_arg_type = e._input_exprs[1 + out_arg.floyd_arg_index].get_output_type();
 
 			if(concrete_arg_type.is_function()){
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, make_gen_value_type(context), "function_as_GEN");
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, make_dyn_value_type(context), "function_as_arg");
 				arg_values.push_back(arg3);
 			}
 			else if(concrete_arg_type.is_double()){
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::BitCast, arg2, make_gen_value_type(context), "double_as_GEN");
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::BitCast, arg2, make_dyn_value_type(context), "double_as_arg");
 				arg_values.push_back(arg3);
 			}
 			else if(concrete_arg_type.is_string()){
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, make_gen_value_type(context), "string_as_GEN");
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, make_dyn_value_type(context), "string_as_arg");
 				arg_values.push_back(arg3);
 			}
 			else if(concrete_arg_type.is_vector()){
 				QUARK_ASSERT(concrete_arg_type.get_vector_element_type().is_string());
 
-				llvm::Value* arg3 = get_vec_GEN(gen_acc.builder, arg2);
+				llvm::Value* arg3 = get_vec_as_dyn(gen_acc.builder, arg2);
 				arg_values.push_back(arg3);
 			}
 			else if(concrete_arg_type.is_int()){
@@ -2336,7 +2332,7 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 			// We assume that the next arg in the mapping is the dyn-type.
 			//??? We only support the base-types, not composite types.
 			const auto base_type_id = (int64_t)concrete_arg_type.get_base_type();
-			llvm::Constant* gen_type = llvm::ConstantInt::get(make_gen_type_type(context), base_type_id);
+			llvm::Constant* gen_type = llvm::ConstantInt::get(make_dyn_type_type(context), base_type_id);
 
 			arg_values.push_back(gen_type);
 		}
@@ -2356,14 +2352,19 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 	}
 
 	llvm::Value* result = result0;
+	if(return_type.is_internal_dynamic()){
 
-	if(concrete_return_type->isPointerTy()){
-		result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, result0, llvm::Type::getInt8PtrTy(context), "function_as_GEN");
-	}
-	else{
-	}
-#if 0
-	if(call_function_type.get_function_return().is_internal_dynamic()){
+		//	Guess concrete return type based on concrete argument #0.
+		const auto concrete_return_type = return_type.is_internal_dynamic()
+			? intern_type(*gen_acc.module, e._input_exprs[1].get_output_type())
+			: mapping.return_type;
+
+		if(concrete_return_type->isPointerTy()){
+			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, result0, llvm::Type::getInt8PtrTy(context), "function_as_return");
+		}
+		else{
+		}
+/*
 		const std::vector<llvm::Value*> element0_indexes = {
 			llvm::ConstantInt::get(builder.getInt32Ty(), 0)
 		};
@@ -2373,11 +2374,10 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 
 		auto element0_value = builder.CreateExtractValue(result, { 0 });
 		auto element1_value = builder.CreateExtractValue(result, { 1 });
-//  %7 = extractvalue { i64, i64 } %4, 0
+*/
 	}
 	else{
 	}
-#endif
 
 	QUARK_ASSERT(gen_acc.check_invariant());
 	return result;
@@ -3191,7 +3191,9 @@ std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, c
 
 
 
-
+//	Convert all use of dynamic host functions into explicit functions - a compile time transform like C++ templates.
+//	Currently this is a runtime-thing, using dynamic-type, which is like std::any<>.
+//	??? Keep dynamic-type and rename it "any"?
 std::pair<statement_t, function_defs_t> expand_generics(const statement_t& statement, const function_defs_t& functions){
 	QUARK_ASSERT(statement.check_invariant());
 
