@@ -1235,7 +1235,7 @@ llvm::Value* llvmgen_lookup_element_expression(llvmgen_t& gen_acc, const express
 }
 
 
-llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type op, const expression_t& e, const expression_t::simple_expression__2_t& details){
+llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type op, const expression_t& e, const expression_t::arithmetic_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -1384,7 +1384,7 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 }
 
 
-llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, expression_type op, const expression_t& e, const expression_t::simple_expression__2_t& details){
+llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, expression_type op, const expression_t& e, const expression_t::comparison_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -1512,11 +1512,11 @@ llvm::Value* genllvm_arithmetic_unary_minus_expression(llvmgen_t& gen_acc, const
 
 	const auto type = details.expr->get_output_type();
 	if(type.is_int()){
-		const auto e2 = expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), *details.expr, e._output_type);
+		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), *details.expr, e._output_type);
 		return genllvm_expression(gen_acc, e2);
 	}
 	else if(type.is_double()){
-		const auto e2 = expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_double(0), *details.expr, e._output_type);
+		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_double(0), *details.expr, e._output_type);
 		return genllvm_expression(gen_acc, e2);
 	}
 	else{
@@ -2500,19 +2500,11 @@ llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e){
 		llvm::Value* operator()(const expression_t::literal_exp_t& expr) const{
 			return genllvm_literal_expression(gen_acc, e);
 		}
-		llvm::Value* operator()(const expression_t::simple_expression__2_t& expr) const{
-
-			QUARK_ASSERT(is_arithmetic_expression(expr.op) || is_comparison_expression(expr.op));
-
-			if(is_arithmetic_expression(expr.op)){
-				return genllvm_arithmetic_expression(gen_acc, expr.op, e, expr);
-			}
-			else if(is_comparison_expression(expr.op)){
-				return llvmgen_comparison_expression(gen_acc, expr.op, e, expr);
-			}
-			else{
-				QUARK_ASSERT(false);
-			}
+		llvm::Value* operator()(const expression_t::arithmetic_t& expr) const{
+			return genllvm_arithmetic_expression(gen_acc, expr.op, e, expr);
+		}
+		llvm::Value* operator()(const expression_t::comparison_t& expr) const{
+			return llvmgen_comparison_expression(gen_acc, expr.op, e, expr);
 		}
 		llvm::Value* operator()(const expression_t::unary_minus_t& expr) const{
 			return genllvm_arithmetic_unary_minus_expression(gen_acc, e, expr);

@@ -1128,11 +1128,11 @@ expression_gen_t bcgen_arithmetic_unary_minus_expression(bcgenerator_t& gen_acc,
 	const auto type = details.expr->get_output_type();
 
 	if(type.is_int()){
-		const auto e2 = expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), *details.expr, e._output_type);
+		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), *details.expr, e._output_type);
 		return bcgen_expression(gen_acc, target_reg, e2, body);
 	}
 	else if(type.is_double()){
-		const auto e2 = expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_double(0), *details.expr, e._output_type);
+		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_double(0), *details.expr, e._output_type);
 		return bcgen_expression(gen_acc, target_reg, e2, body);
 	}
 	else{
@@ -1211,7 +1211,7 @@ expression_gen_t bcgen_conditional_operator_expression(bcgenerator_t& gen_acc, c
 	return { body_acc, target_reg2, result_itype };
 }
 
-expression_gen_t bcgen_comparison_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, expression_type op, const expression_t& e, const expression_t::simple_expression__2_t& details, const bcgen_body_t& body){
+expression_gen_t bcgen_comparison_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, expression_type op, const expression_t& e, const expression_t::comparison_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -1278,7 +1278,7 @@ expression_gen_t bcgen_comparison_expression(bcgenerator_t& gen_acc, const varia
 	return { body_acc, target_reg2, intern_type(gen_acc, typeid_t::make_bool()) };
 }
 
-expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, expression_type op, const expression_t& e, const expression_t::simple_expression__2_t& details, const bcgen_body_t& body){
+expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, expression_type op, const expression_t& e, const expression_t::arithmetic_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -1428,18 +1428,11 @@ expression_gen_t bcgen_expression(bcgenerator_t& gen_acc, const variable_address
 		expression_gen_t operator()(const expression_t::literal_exp_t& expr) const{
 			return bcgen_literal_expression(gen_acc, target_reg, e, expr, body);
 		}
-		expression_gen_t operator()(const expression_t::simple_expression__2_t& expr) const{
-			QUARK_ASSERT(is_arithmetic_expression(expr.op) || is_comparison_expression(expr.op));
-
-			if(is_arithmetic_expression(expr.op)){
-				return bcgen_arithmetic_expression(gen_acc, target_reg, expr.op, e, expr, body);
-			}
-			else if(is_comparison_expression(expr.op)){
-				return bcgen_comparison_expression(gen_acc, target_reg, expr.op, e, expr, body);
-			}
-			else{
-				QUARK_ASSERT(false);
-			}
+		expression_gen_t operator()(const expression_t::arithmetic_t& expr) const{
+			return bcgen_arithmetic_expression(gen_acc, target_reg, expr.op, e, expr, body);
+		}
+		expression_gen_t operator()(const expression_t::comparison_t& expr) const{
+			return bcgen_comparison_expression(gen_acc, target_reg, expr.op, e, expr, body);
 		}
 		expression_gen_t operator()(const expression_t::unary_minus_t& expr) const{
 			return bcgen_arithmetic_unary_minus_expression(gen_acc, target_reg, e, expr, body);

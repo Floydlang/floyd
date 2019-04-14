@@ -119,7 +119,7 @@ namespace floyd {
 			return std::get<literal_exp_t>(_contents).value;
 		}
 
-
+/*
 		////////////////////////////////		simple_expression__2_t
 
 		//??? Split into arithmetic vs comparison.
@@ -133,6 +133,37 @@ namespace floyd {
 			QUARK_ASSERT(is_arithmetic_expression(op) || is_comparison_expression(op));
 
 			return expression_t({ simple_expression__2_t{ op, std::make_shared<expression_t>(lhs), std::make_shared<expression_t>(rhs) } }, annotated_type);
+		}
+*/
+		////////////////////////////////		arithmetic_t
+
+		//??? Split into arithmetic vs comparison.
+		struct arithmetic_t {
+			expression_type op;
+			std::shared_ptr<expression_t> lhs;
+			std::shared_ptr<expression_t> rhs;
+		};
+
+		public: static expression_t make_arithmetic(expression_type op, const expression_t& lhs, const expression_t& rhs, const std::shared_ptr<typeid_t>& annotated_type){
+			QUARK_ASSERT(is_arithmetic_expression(op));
+
+			return expression_t({ arithmetic_t{ op, std::make_shared<expression_t>(lhs), std::make_shared<expression_t>(rhs) } }, annotated_type);
+		}
+
+
+		////////////////////////////////		comparison_t
+
+
+		struct comparison_t {
+			expression_type op;
+			std::shared_ptr<expression_t> lhs;
+			std::shared_ptr<expression_t> rhs;
+		};
+
+		public: static expression_t make_comparison(expression_type op, const expression_t& lhs, const expression_t& rhs, const std::shared_ptr<typeid_t>& annotated_type){
+			QUARK_ASSERT(is_comparison_expression(op));
+
+			return expression_t({ comparison_t{ op, std::make_shared<expression_t>(lhs), std::make_shared<expression_t>(rhs) } }, annotated_type);
 		}
 
 
@@ -340,7 +371,8 @@ namespace floyd {
 
 		typedef std::variant<
 			literal_exp_t,
-			simple_expression__2_t,
+			arithmetic_t,
+			comparison_t,
 			unary_minus_t,
 			conditional_t,
 			call_t,

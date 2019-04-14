@@ -99,7 +99,15 @@ expression_t astjson_to_expression(const json_t& e){
 		const auto lhs_expr = astjson_to_expression(e.get_array_n(1));
 		const auto rhs_expr = astjson_to_expression(e.get_array_n(2));
 		const auto annotated_type = get_optional_typeid(e, 3);
-		return expression_t::make_simple_expression__2(op2, lhs_expr, rhs_expr, annotated_type);
+		if(is_arithmetic_expression(op2)){
+			return expression_t::make_arithmetic(op2, lhs_expr, rhs_expr, annotated_type);
+		}
+		else if(is_comparison_expression(op2)){
+			return expression_t::make_comparison(op2, lhs_expr, rhs_expr, annotated_type);
+		}
+		else{
+			throw std::exception();
+		}
 	}
 	else if(op == expression_opcode_t::k_conditional_operator){
 		QUARK_ASSERT(e.get_array_size() == 4 || e.get_array_size() == 5);

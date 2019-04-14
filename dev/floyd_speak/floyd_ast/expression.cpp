@@ -126,7 +126,10 @@ bool expression_t::check_types_resolved() const{
 		bool operator()(const literal_exp_t& e) const{
 			return true;
 		}
-		bool operator()(const simple_expression__2_t& e) const{
+		bool operator()(const arithmetic_t& e) const{
+			return e.lhs->check_types_resolved() && e.rhs->check_types_resolved();
+		}
+		bool operator()(const comparison_t& e) const{
 			return e.lhs->check_types_resolved() && e.rhs->check_types_resolved();
 		}
 		bool operator()(const unary_minus_t& e) const{
@@ -195,7 +198,7 @@ QUARK_UNIT_TEST("expression_t", "expression_to_json()", "math2", ""){
 	ut_verify(
 		QUARK_POS,
 		expression_to_json_string(
-			expression_t::make_simple_expression__2(
+			expression_t::make_arithmetic(
 				expression_type::k_arithmetic_add__2, expression_t::make_literal_int(2), expression_t::make_literal_int(3), nullptr)
 			),
 		R"(["+", ["k", 2, "^int"], ["k", 3, "^int"]])"
@@ -248,7 +251,15 @@ json_t expression_to_json_internal(const expression_t& e){
 		json_t operator()(const expression_t::literal_exp_t& e) const{
 			return maker__make_constant(e.value);
 		}
-		json_t operator()(const expression_t::simple_expression__2_t& e) const{
+		json_t operator()(const expression_t::arithmetic_t& e) const{
+			return make_expression2(
+				expr.location,
+				expression_type_to_token(e.op),
+				expression_to_json(*e.lhs),
+				expression_to_json(*e.rhs)
+			);
+		}
+		json_t operator()(const expression_t::comparison_t& e) const{
 			return make_expression2(
 				expr.location,
 				expression_type_to_token(e.op),

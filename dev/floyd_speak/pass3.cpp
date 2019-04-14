@@ -989,7 +989,7 @@ std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(cons
 
 //	Term: Type inference
 
-std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser_t& a, const statement_t& parent, expression_type op, const expression_t& e, const expression_t::simple_expression__2_t& details){
+std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser_t& a, const statement_t& parent, expression_type op, const expression_t& e, const expression_t::comparison_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -1031,7 +1031,7 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 		}
 		return {
 			a_acc,
-			expression_t::make_simple_expression__2(
+			expression_t::make_comparison(
 				op,
 				left_expr.second,
 				right_expr.second,
@@ -1041,7 +1041,7 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser_t& a, const statement_t& parent, expression_type op, const expression_t& e, const expression_t::simple_expression__2_t& details){
+std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser_t& a, const statement_t& parent, expression_type op, const expression_t& e, const expression_t::arithmetic_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -1093,7 +1093,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 				quark::throw_exception();
 			}
 
-			return {a_acc, expression_t::make_simple_expression__2(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			return {a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	int
@@ -1118,7 +1118,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 				quark::throw_exception();
 			}
 
-			return {a_acc, expression_t::make_simple_expression__2(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			return {a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	double
@@ -1144,7 +1144,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 				quark::throw_exception();
 			}
 
-			return {a_acc, expression_t::make_simple_expression__2(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			return {a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	string
@@ -1176,7 +1176,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 				quark::throw_exception();
 			}
 
-			return {a_acc, expression_t::make_simple_expression__2(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			return {a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	struct
@@ -1210,7 +1210,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 				quark::throw_exception();
 			}
 
-			return {a_acc, expression_t::make_simple_expression__2(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			return {a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	vector
@@ -1243,7 +1243,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 				QUARK_ASSERT(false);
 				quark::throw_exception();
 			}
-			return {a_acc, expression_t::make_simple_expression__2(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			return {a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	function
@@ -1530,18 +1530,11 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 		std::pair<analyser_t, expression_t> operator()(const expression_t::literal_exp_t& expr) const{
 			return { a, e };
 		}
-		std::pair<analyser_t, expression_t> operator()(const expression_t::simple_expression__2_t& expr) const{
-			QUARK_ASSERT(is_arithmetic_expression(expr.op) || is_comparison_expression(expr.op));
-
-			if(is_arithmetic_expression(expr.op)){
-				return analyse_arithmetic_expression(a, parent, expr.op, e, expr);
-			}
-			else if(is_comparison_expression(expr.op)){
-				return analyse_comparison_expression(a, parent, expr.op, e, expr);
-			}
-			else{
-				QUARK_ASSERT(false);
-			}
+		std::pair<analyser_t, expression_t> operator()(const expression_t::arithmetic_t& expr) const{
+			return analyse_arithmetic_expression(a, parent, expr.op, e, expr);
+		}
+		std::pair<analyser_t, expression_t> operator()(const expression_t::comparison_t& expr) const{
+			return analyse_comparison_expression(a, parent, expr.op, e, expr);
 		}
 		std::pair<analyser_t, expression_t> operator()(const expression_t::unary_minus_t& expr) const{
 			return analyse_arithmetic_unary_minus_expression(a, parent, e, expr);
@@ -1700,7 +1693,7 @@ QUARK_UNIT_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 	const auto e3 = analyse_expression_no_target(
 		interpreter,
 		statement_t::make__bind_local(k_no_location, "xyz", typeid_t::make_string(), expression_t::make_literal_string("abc"), statement_t::bind_local_t::mutable_mode::k_immutable),
-		expression_t::make_simple_expression__2(
+		expression_t::make_arithmetic(
 			expression_type::k_arithmetic_add__2,
 			expression_t::make_literal_int(1),
 			expression_t::make_literal_int(2),
