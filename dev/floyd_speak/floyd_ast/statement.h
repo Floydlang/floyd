@@ -9,14 +9,13 @@
 #ifndef parser_statement_hpp
 #define parser_statement_hpp
 
-
+#include "expression.h"
 #include "quark.h"
+
 #include <vector>
 #include <string>
 //#include "../parts/xcode-libcxx-xcode9/variant"	//	https://github.com/youknowone/xcode-libcxx
 #include <variant>
-
-#include "expression.h"
 
 
 namespace floyd {
@@ -498,83 +497,9 @@ namespace floyd {
 		}
 
 		//??? make into free function
- 		public: static bool check_types_resolved(const std::vector<std::shared_ptr<statement_t>>& s){
-			for(const auto& e: s){
-				if(e->check_types_resolved() == false){
-					return false;
-				}
-			}
-			return true;
-		}
+ 		public: static bool check_types_resolved(const std::vector<std::shared_ptr<statement_t>>& s);
 
-		public: bool check_types_resolved() const{
-			QUARK_ASSERT(check_invariant());
-
-			struct visitor_t {
-				bool operator()(const return_statement_t& s) const{
-					return s._expression.check_types_resolved();
-				}
-				bool operator()(const define_struct_statement_t& s) const{
-					return s._def->check_types_resolved();
-				}
-				bool operator()(const define_protocol_statement_t& s) const{
-					return s._def->check_types_resolved();
-				}
-				bool operator()(const define_function_statement_t& s) const{
-					return s._def->check_types_resolved();
-				}
-
-				bool operator()(const bind_local_t& s) const{
-					return true
-						&& s._bindtype.check_types_resolved()
-						&& s._expression.check_types_resolved()
-						;
-				}
-				bool operator()(const store_t& s) const{
-					return s._expression.check_types_resolved();
-				}
-				bool operator()(const store2_t& s) const{
-					return s._expression.check_types_resolved();
-				}
-				bool operator()(const block_statement_t& s) const{
-					return s._body.check_types_resolved();
-				}
-
-				bool operator()(const ifelse_statement_t& s) const{
-					return true
-						&& s._condition.check_types_resolved()
-						&& s._then_body.check_types_resolved()
-						&& s._else_body.check_types_resolved()
-						;
-				}
-				bool operator()(const for_statement_t& s) const{
-					return true
-						&& s._start_expression.check_types_resolved()
-						&& s._end_expression.check_types_resolved()
-						&& s._body.check_types_resolved()
-						;
-				}
-				bool operator()(const while_statement_t& s) const{
-					return true
-						&& s._condition.check_types_resolved()
-						&& s._body.check_types_resolved()
-						;
-				}
-
-				bool operator()(const expression_statement_t& s) const{
-					return s._expression.check_types_resolved();
-				}
-				bool operator()(const software_system_statement_t& s) const{
-					return true;
-				}
-				bool operator()(const container_def_statement_t& s) const{
-					return true;
-				}
-			};
-
-			return std::visit(visitor_t{}, _contents);
-		}
-
+		public: bool check_types_resolved() const;
 
 
 		//////////////////////////////////////		STATE

@@ -1183,17 +1183,17 @@ llvm::Value* genllvm_literal_expression(llvmgen_t& gen_acc, const expression_t& 
 	return make_constant(gen_acc, literal);
 }
 
-llvm::Value* llvmgen_lookup_element_expression(llvmgen_t& gen_acc, const expression_t& e){
+llvm::Value* llvmgen_lookup_element_expression(llvmgen_t& gen_acc, const expression_t& e, const expression_t::lookup_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
-	auto parent_value = genllvm_expression(gen_acc, e._input_exprs[0]);
-	auto key_value = genllvm_expression(gen_acc, e._input_exprs[1]);
+	auto parent_value = genllvm_expression(gen_acc, *details.parent_address);
+	auto key_value = genllvm_expression(gen_acc, *details.lookup_key);
 
-	const auto parent_type =  e._input_exprs[0].get_output_type();
+	const auto parent_type =  details.parent_address->get_output_type();
 	if(parent_type.is_string()){
 		auto element_index = key_value;
 		const auto index_list = std::vector<llvm::Value*>{ element_index };
@@ -1238,32 +1238,32 @@ llvm::Value* llvmgen_lookup_element_expression(llvmgen_t& gen_acc, const express
 }
 
 
-llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type op, const expression_t& e){
+llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type op, const expression_t& e, const expression_t::simple_expression__2_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto type = e._input_exprs[0].get_output_type();
+	const auto type = details.lhs->get_output_type();
 
-	auto lhs_temp = genllvm_expression(gen_acc, e._input_exprs[0]);
-	auto rhs_temp = genllvm_expression(gen_acc, e._input_exprs[1]);
+	auto lhs_temp = genllvm_expression(gen_acc, *details.lhs);
+	auto rhs_temp = genllvm_expression(gen_acc, *details.rhs);
 
 	if(type.is_bool()){
-		if(e._operation == expression_type::k_arithmetic_add__2){
+		if(details.op == expression_type::k_arithmetic_add__2){
 			return gen_acc.builder.CreateOr(lhs_temp, rhs_temp, "logical_or_tmp");
 		}
-		else if(e._operation == expression_type::k_arithmetic_subtract__2){
+		else if(details.op == expression_type::k_arithmetic_subtract__2){
 		}
-		else if(e._operation == expression_type::k_arithmetic_multiply__2){
+		else if(details.op == expression_type::k_arithmetic_multiply__2){
 		}
-		else if(e._operation == expression_type::k_arithmetic_divide__2){
+		else if(details.op == expression_type::k_arithmetic_divide__2){
 		}
-		else if(e._operation == expression_type::k_arithmetic_remainder__2){
+		else if(details.op == expression_type::k_arithmetic_remainder__2){
 		}
 
-		else if(e._operation == expression_type::k_logical_and__2){
+		else if(details.op == expression_type::k_logical_and__2){
 			return gen_acc.builder.CreateAnd(lhs_temp, rhs_temp, "logical_and_tmp");
 		}
-		else if(e._operation == expression_type::k_logical_or__2){
+		else if(details.op == expression_type::k_logical_or__2){
 			return gen_acc.builder.CreateOr(lhs_temp, rhs_temp, "logical_or_tmp");
 		}
 		else{
@@ -1271,26 +1271,26 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 		}
 	}
 	else if(type.is_int()){
-		if(e._operation == expression_type::k_arithmetic_add__2){
+		if(details.op == expression_type::k_arithmetic_add__2){
 			return gen_acc.builder.CreateAdd(lhs_temp, rhs_temp, "add_tmp");
 		}
-		else if(e._operation == expression_type::k_arithmetic_subtract__2){
+		else if(details.op == expression_type::k_arithmetic_subtract__2){
 			return gen_acc.builder.CreateSub(lhs_temp, rhs_temp, "subtract_tmp");
 		}
-		else if(e._operation == expression_type::k_arithmetic_multiply__2){
+		else if(details.op == expression_type::k_arithmetic_multiply__2){
 			return gen_acc.builder.CreateMul(lhs_temp, rhs_temp, "mult_tmp");
 		}
-		else if(e._operation == expression_type::k_arithmetic_divide__2){
+		else if(details.op == expression_type::k_arithmetic_divide__2){
 			return gen_acc.builder.CreateSDiv(lhs_temp, rhs_temp, "divide_tmp");
 		}
-		else if(e._operation == expression_type::k_arithmetic_remainder__2){
+		else if(details.op == expression_type::k_arithmetic_remainder__2){
 			return gen_acc.builder.CreateSRem(lhs_temp, rhs_temp, "reminder_tmp");
 		}
 
-		else if(e._operation == expression_type::k_logical_and__2){
+		else if(details.op == expression_type::k_logical_and__2){
 			return gen_acc.builder.CreateAnd(lhs_temp, rhs_temp, "logical_and_tmp");
 		}
-		else if(e._operation == expression_type::k_logical_or__2){
+		else if(details.op == expression_type::k_logical_or__2){
 			return gen_acc.builder.CreateOr(lhs_temp, rhs_temp, "logical_or_tmp");
 		}
 		else{
@@ -1298,25 +1298,25 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 		}
 	}
 	else if(type.is_double()){
-		if(e._operation == expression_type::k_arithmetic_add__2){
+		if(details.op == expression_type::k_arithmetic_add__2){
 			return gen_acc.builder.CreateFAdd(lhs_temp, rhs_temp, "add_tmp");
 		}
-		else if(e._operation == expression_type::k_arithmetic_subtract__2){
+		else if(details.op == expression_type::k_arithmetic_subtract__2){
 			return gen_acc.builder.CreateFSub(lhs_temp, rhs_temp, "subtract_tmp");
 		}
-		else if(e._operation == expression_type::k_arithmetic_multiply__2){
+		else if(details.op == expression_type::k_arithmetic_multiply__2){
 			return gen_acc.builder.CreateFMul(lhs_temp, rhs_temp, "mult_tmp");
 		}
-		else if(e._operation == expression_type::k_arithmetic_divide__2){
+		else if(details.op == expression_type::k_arithmetic_divide__2){
 			return gen_acc.builder.CreateFDiv(lhs_temp, rhs_temp, "divide_tmp");
 		}
-		else if(e._operation == expression_type::k_arithmetic_remainder__2){
+		else if(details.op == expression_type::k_arithmetic_remainder__2){
 			UNSUPPORTED();
 		}
-		else if(e._operation == expression_type::k_logical_and__2){
+		else if(details.op == expression_type::k_logical_and__2){
 			UNSUPPORTED();
 		}
-		else if(e._operation == expression_type::k_logical_or__2){
+		else if(details.op == expression_type::k_logical_or__2){
 			UNSUPPORTED();
 		}
 		else{
@@ -1324,7 +1324,7 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 		}
 	}
 	else if(type.is_string()){
-		QUARK_ASSERT(e._operation == expression_type::k_arithmetic_add__2);
+		QUARK_ASSERT(details.op == expression_type::k_arithmetic_add__2);
 
 		const auto def = find_function_def(gen_acc, "floyd_runtime__append_strings");
 		std::vector<llvm::Value*> args2;
@@ -1349,7 +1349,7 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 			{ expression_type::k_logical_and__2, bc_opcode::k_nop },
 			{ expression_type::k_logical_or__2, bc_opcode::k_nop }
 		};
-		return conv_opcode.at(e._operation);
+		return conv_opcode.at(details.op);
 	}
 	else if(type.is_vector()){
 		if(encode_as_vector_w_inplace_elements(type)){
@@ -1363,7 +1363,7 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 				{ expression_type::k_logical_and__2, bc_opcode::k_nop },
 				{ expression_type::k_logical_or__2, bc_opcode::k_nop }
 			};
-			return conv_opcode.at(e._operation);
+			return conv_opcode.at(details.op);
 		}
 		else{
 			static const std::map<expression_type, bc_opcode> conv_opcode = {
@@ -1376,7 +1376,7 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 				{ expression_type::k_logical_and__2, bc_opcode::k_nop },
 				{ expression_type::k_logical_or__2, bc_opcode::k_nop }
 			};
-			return conv_opcode.at(e._operation);
+			return conv_opcode.at(details.op);
 		}
 	}
 */
@@ -1387,15 +1387,15 @@ llvm::Value* genllvm_arithmetic_expression(llvmgen_t& gen_acc, expression_type o
 }
 
 
-llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, expression_type op, const expression_t& e){
+llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, expression_type op, const expression_t& e, const expression_t::simple_expression__2_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	auto lhs_temp = genllvm_expression(gen_acc, e._input_exprs[0]);
-	auto rhs_temp = genllvm_expression(gen_acc, e._input_exprs[1]);
+	auto lhs_temp = genllvm_expression(gen_acc, *details.lhs);
+	auto rhs_temp = genllvm_expression(gen_acc, *details.rhs);
 
 	//	Type is the data the opcode works on -- comparing two ints, comparing two strings etc.
-	const auto type = e._input_exprs[0].get_output_type();
+	const auto type = details.lhs->get_output_type();
 
 	//	Output reg always a bool.
 	QUARK_ASSERT(e.get_output_type().is_bool());
@@ -1422,7 +1422,7 @@ llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, expression_type o
 			{ expression_type::k_logical_equal__2,							llvm::CmpInst::Predicate::ICMP_EQ },
 			{ expression_type::k_logical_nonequal__2,						llvm::CmpInst::Predicate::ICMP_NE }
 		};
-		const auto pred = conv_opcode_int.at(e._operation);
+		const auto pred = conv_opcode_int.at(details.op);
 		return gen_acc.builder.CreateICmp(pred, lhs_temp, rhs_temp);
 	}
 	else if(type.is_double()){
@@ -1448,13 +1448,13 @@ llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, expression_type o
 			{ expression_type::k_logical_equal__2,							llvm::CmpInst::Predicate::FCMP_OEQ },
 			{ expression_type::k_logical_nonequal__2,						llvm::CmpInst::Predicate::FCMP_ONE }
 		};
-		const auto pred = conv_opcode_int.at(e._operation);
+		const auto pred = conv_opcode_int.at(details.op);
 		return gen_acc.builder.CreateFCmp(pred, lhs_temp, rhs_temp);
 	}
 	else if(type.is_string()){
 		const auto def = find_function_def(gen_acc, "floyd_runtime__compare_strings");
 		std::vector<llvm::Value*> args2;
-		llvm::Value* op_value = make_constant(gen_acc, value_t::make_int(static_cast<int64_t>(e._operation)));
+		llvm::Value* op_value = make_constant(gen_acc, value_t::make_int(static_cast<int64_t>(details.op)));
 		args2.push_back(get_callers_fcp(gen_acc));
 		args2.push_back(op_value);
 		args2.push_back(lhs_temp);
@@ -1467,7 +1467,7 @@ llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, expression_type o
 	}
 	else if(type.is_vector()){
 		const auto def = find_function_def(gen_acc, "floyd_runtime__compare_vectors");
-		llvm::Value* op_value = make_constant(gen_acc, value_t::make_int(static_cast<int64_t>(e._operation)));
+		llvm::Value* op_value = make_constant(gen_acc, value_t::make_int(static_cast<int64_t>(details.op)));
 		auto lhs_vec_ptr = get_vec_ptr(gen_acc.builder, lhs_temp);
 		auto rhs_vec_ptr = get_vec_ptr(gen_acc.builder, rhs_temp);
 
@@ -1496,7 +1496,7 @@ llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, expression_type o
 			{ expression_type::k_logical_nonequal__2,						{ false, bc_opcode::k_logical_nonequal } }
 		};
 
-		const auto result = conv_opcode.at(e._operation);
+		const auto result = conv_opcode.at(details.op);
 		if(result.first == false){
 			body_acc._instrs.push_back(bcgen_instruction_t(result.second, target_reg2, left_expr._out, right_expr._out));
 		}
@@ -1509,17 +1509,17 @@ llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, expression_type o
 }
 
 
-llvm::Value* genllvm_arithmetic_unary_minus_expression(llvmgen_t& gen_acc, const expression_t& e){
+llvm::Value* genllvm_arithmetic_unary_minus_expression(llvmgen_t& gen_acc, const expression_t& e, const expression_t::unary_minus_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto type = e._input_exprs[0].get_output_type();
+	const auto type = details.expr->get_output_type();
 	if(type.is_int()){
-		const auto e2 = expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), e._input_exprs[0], e._output_type);
+		const auto e2 = expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), *details.expr, e._output_type);
 		return genllvm_expression(gen_acc, e2);
 	}
 	else if(type.is_double()){
-		const auto e2 = expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_double(0), e._input_exprs[0], e._output_type);
+		const auto e2 = expression_t::make_simple_expression__2(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_double(0), *details.expr, e._output_type);
 		return genllvm_expression(gen_acc, e2);
 	}
 	else{
@@ -1558,7 +1558,7 @@ llvm::Value* genllvm_arithmetic_unary_minus_expression(llvmgen_t& gen_acc, const
  			Value* phu(temp1, temp2)
 */
 
-llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, const expression_t& e){
+llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, const expression_t& e, const expression_t::conditional_t& conditional){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -1568,7 +1568,7 @@ llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, const e
 	const auto result_type = e.get_output_type();
 	const auto result_itype = intern_type(*gen_acc.module, result_type);
 
-	llvm::Value* condition_value = genllvm_expression(gen_acc, e._input_exprs[0]);
+	llvm::Value* condition_value = genllvm_expression(gen_acc, *conditional.condition);
 
 	llvm::Function* parent_function = builder.GetInsertBlock()->getParent();
 
@@ -1583,7 +1583,7 @@ llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, const e
 
 	// Emit then-value.
 	builder.SetInsertPoint(then_bb);
-	llvm::Value* then_value = genllvm_expression(gen_acc, e._input_exprs[1]);
+	llvm::Value* then_value = genllvm_expression(gen_acc, *conditional.a);
 	builder.CreateBr(join_bb);
 	// Codegen of 'Then' can change the current block, update then_bb.
 	llvm::BasicBlock* then_bb2 = builder.GetInsertBlock();
@@ -1592,7 +1592,7 @@ llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, const e
 	// Emit else block.
 	parent_function->getBasicBlockList().push_back(else_bb);
 	builder.SetInsertPoint(else_bb);
-	llvm::Value* else_value = genllvm_expression(gen_acc, e._input_exprs[2]);
+	llvm::Value* else_value = genllvm_expression(gen_acc, *conditional.b);
 	builder.CreateBr(join_bb);
 	// Codegen of 'Else' can change the current block, update else_bb.
 	llvm::BasicBlock* else_bb2 = builder.GetInsertBlock();
@@ -2236,9 +2236,6 @@ void floyd_host_function_2003(void* floyd_runtime_ptr, int64_t arg){
 
 
 
-
-
-
 /*
 	NOTICES: The function signature for the callee can hold DYNs. The actual arguments will be explicit types, never DYNs.
 
@@ -2247,31 +2244,25 @@ void floyd_host_function_2003(void* floyd_runtime_ptr, int64_t arg){
 	- In call's actual arguments types and output type.
 	- In function def
 */
-llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
+llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e, const expression_t::call_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
-
-	//	Expression [0] specifies the callee, which is required. [1] etc are the args, which are optional.
-	QUARK_ASSERT(e._input_exprs.size() >= 1);
 
 	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
-	const auto call_function_type = e._input_exprs[0].get_output_type();
+	const auto call_function_type = details.callee->get_output_type();
 
 	const auto call_arg_types = call_function_type.get_function_args();
 	const auto return_type = call_function_type.get_function_return();
 	const auto mapping = map_function_arguments(*gen_acc.module, call_function_type);
 
 	//	Verify that the actual argument expressions, their count and output types --all match call_function_type.
-	{
-		const auto call_arg_count = static_cast<int>(e._input_exprs.size()) - 1;
-		QUARK_ASSERT(call_arg_count == call_arg_types.size());
+	QUARK_ASSERT(details.args.size() == call_arg_types.size());
+	//??? more
 
-		//??? more
-	}
 
-	llvm::Value* callee0_value = genllvm_expression(gen_acc, e._input_exprs[0]);
+	llvm::Value* callee0_value = genllvm_expression(gen_acc, *details.callee);
 //	QUARK_TRACE_SS("callee0_value: " << print_value(callee0_value));
 //		QUARK_TRACE_SS("gen_acc: " << print_gen(gen_acc));
 
@@ -2289,16 +2280,16 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 			arg_values.push_back(floyd_context_arg_ptr);
 		}
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_simple_value){
-			llvm::Value* arg2 = genllvm_expression(gen_acc, e._input_exprs[1 + out_arg.floyd_arg_index]);
+			llvm::Value* arg2 = genllvm_expression(gen_acc, details.args[out_arg.floyd_arg_index]);
 			arg_values.push_back(arg2);
 		}
 
 //??? make separate function of this.
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_value){
-			llvm::Value* arg2 = genllvm_expression(gen_acc, e._input_exprs[1 + out_arg.floyd_arg_index]);
+			llvm::Value* arg2 = genllvm_expression(gen_acc, details.args[out_arg.floyd_arg_index]);
 
 			//	Actual type of the argument, as specified inside the call expression. The concrete type for the DYN value for this call.
-			const auto concrete_arg_type = e._input_exprs[1 + out_arg.floyd_arg_index].get_output_type();
+			const auto concrete_arg_type = details.args[out_arg.floyd_arg_index].get_output_type();
 
 			if(concrete_arg_type.is_function()){
 				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, make_dyn_value_type(context), "function_as_arg");
@@ -2346,10 +2337,10 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 
 	//	We do not support or use DYN for return values -- all client code expect a static return type. We do C++-template type generics.
 	llvm::Value* result = result0;
-	if(return_type.is_internal_dynamic()){
+	if(return_type.is_internal_dynamic() && details.args.size() > 0){
 		//	Guess concrete return type based on concrete argument #0.
 		const auto concrete_return_type = return_type.is_internal_dynamic()
-			? intern_type(*gen_acc.module, e._input_exprs[1].get_output_type())
+			? intern_type(*gen_acc.module, details.args[0].get_output_type())
 			: mapping.return_type;
 
 		if(concrete_return_type->isPointerTy()){
@@ -2373,7 +2364,7 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e){
 
 
 
-llvm::Value* llvmgen_construct_value_expression(llvmgen_t& gen_acc, const expression_t& e){
+llvm::Value* llvmgen_construct_value_expression(llvmgen_t& gen_acc, const expression_t& e, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -2381,7 +2372,7 @@ llvm::Value* llvmgen_construct_value_expression(llvmgen_t& gen_acc, const expres
 	auto& builder = gen_acc.builder;
 
 	const auto target_type = e.get_output_type();
-	const auto caller_arg_count = static_cast<int>(e._input_exprs.size());
+	const auto caller_arg_count = details.elements.size();
 
 	if(target_type.is_vector()){
 		const auto element_type0 = target_type.get_vector_element_type();
@@ -2418,7 +2409,7 @@ llvm::Value* llvmgen_construct_value_expression(llvmgen_t& gen_acc, const expres
 
 			//	Evaluate each element and store it directly into the the vector.
 			int element_index = 0;
-			for(const auto& arg: e._input_exprs){
+			for(const auto& arg: details.elements){
 				llvm::Value* arg_value = genllvm_expression(gen_acc, arg);
 				auto element_index_value = make_constant(gen_acc, value_t::make_int(element_index));
 				const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_value };
@@ -2491,67 +2482,91 @@ llvm::Value* llvmgen_construct_value_expression(llvmgen_t& gen_acc, const expres
 	return nullptr;
 }
 
-
-
-llvm::Value* llvmgen_load2_expression(llvmgen_t& gen_acc, const expression_t& e){
+llvm::Value* llvmgen_load2_expression(llvmgen_t& gen_acc, const expression_t& e, const expression_t::load2_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
 //	QUARK_TRACE_SS("result = " << floyd::print_program(gen_acc.program_acc));
 
-	auto dest = find_symbol(gen_acc, e._address);
+	auto dest = find_symbol(gen_acc, details.address);
 	return gen_acc.builder.CreateLoad(dest.value_ptr, "temp");
 }
 
-//??? use visitor and std::variant<>
 llvm::Value* genllvm_expression(llvmgen_t& gen_acc, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto op = e.get_operation();
-	if(op == expression_type::k_literal){
-		return genllvm_literal_expression(gen_acc, e);
-	}
-	else if(op == expression_type::k_resolve_member){
-		NOT_IMPLEMENTED_YET();
-//		return bcgen_resolve_member_expression(gen_acc, target_reg, e, body);
-	}
-	else if(op == expression_type::k_lookup_element){
-		return llvmgen_lookup_element_expression(gen_acc, e);
-	}
-	else if(op == expression_type::k_load2){
-		//	No need / must not load function arguments.
-		const auto s = find_symbol(gen_acc, e._address);
+	struct visitor_t {
+		llvmgen_t& gen_acc;
+		const expression_t& e;
 
-		if(s.symtype == resolved_symbol_t::esymtype::k_function_argument){
-			return s.value_ptr;
+		llvm::Value* operator()(const expression_t::literal_exp_t& expr) const{
+			return genllvm_literal_expression(gen_acc, e);
 		}
-		else{
-			return llvmgen_load2_expression(gen_acc, e);
+		llvm::Value* operator()(const expression_t::simple_expression__2_t& expr) const{
+
+			QUARK_ASSERT(is_arithmetic_expression(expr.op) || is_comparison_expression(expr.op));
+
+			if(is_arithmetic_expression(expr.op)){
+				return genllvm_arithmetic_expression(gen_acc, expr.op, e, expr);
+			}
+			else if(is_comparison_expression(expr.op)){
+				return llvmgen_comparison_expression(gen_acc, expr.op, e, expr);
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
 		}
-	}
-	else if(op == expression_type::k_call){
-		return llvmgen_call_expression(gen_acc, e);
-	}
-	else if(op == expression_type::k_value_constructor){
-		return llvmgen_construct_value_expression(gen_acc, e);
-	}
-	else if(op == expression_type::k_arithmetic_unary_minus__1){
-		return genllvm_arithmetic_unary_minus_expression(gen_acc, e);
-	}
-	else if(op == expression_type::k_conditional_operator3){
-		return llvmgen_conditional_operator_expression(gen_acc, e);
-	}
-	else if (is_arithmetic_expression(op)){
-		return genllvm_arithmetic_expression(gen_acc, op, e);
-	}
-	else if (is_comparison_expression(op)){
-		return llvmgen_comparison_expression(gen_acc, op, e);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-	quark::throw_exception();
+		llvm::Value* operator()(const expression_t::unary_minus_t& expr) const{
+			return genllvm_arithmetic_unary_minus_expression(gen_acc, e, expr);
+		}
+		llvm::Value* operator()(const expression_t::conditional_t& expr) const{
+			return llvmgen_conditional_operator_expression(gen_acc, e, expr);
+		}
+
+		llvm::Value* operator()(const expression_t::call_t& expr) const{
+			return llvmgen_call_expression(gen_acc, e, expr);
+		}
+
+
+		llvm::Value* operator()(const expression_t::struct_definition_expr_t& expr) const{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+		llvm::Value* operator()(const expression_t::function_definition_expr_t& expr) const{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+		llvm::Value* operator()(const expression_t::load_t& expr) const{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+		llvm::Value* operator()(const expression_t::load2_t& expr) const{
+			//	No need / must not load function arguments.
+			const auto s = find_symbol(gen_acc, expr.address);
+
+			if(s.symtype == resolved_symbol_t::esymtype::k_function_argument){
+				return s.value_ptr;
+			}
+			else{
+				return llvmgen_load2_expression(gen_acc, e, expr);
+			}
+		}
+
+		llvm::Value* operator()(const expression_t::resolve_member_t& expr) const{
+			NOT_IMPLEMENTED_YET();
+	//		return bcgen_resolve_member_expression(gen_acc, target_reg, e, body);
+		}
+		llvm::Value* operator()(const expression_t::lookup_t& expr) const{
+			return llvmgen_lookup_element_expression(gen_acc, e, expr);
+		}
+		llvm::Value* operator()(const expression_t::value_constructor_t& expr) const{
+			return llvmgen_construct_value_expression(gen_acc, e, expr);
+		}
+	};
+
+	llvm::Value* result = std::visit(visitor_t{ gen_acc, e }, e._contents);
+	return result;
 }
 
 void genllvm_store2_statement(llvmgen_t& gen_acc, const statement_t::store2_t& s){
@@ -3239,6 +3254,7 @@ std::pair<statement_t, function_defs_t> expand_generics(const statement_t& state
 
 	return std::visit(visitor_t{ statement, functions }, statement._contents);
 }
+
 //			[20, "print", { "init": { "function_id": 20 }, "symbol_type": "immutable_local", "value_type": ["func", "^void", ["^**dyn**"], true] }],
 std::pair<body_t, function_defs_t>  expand_generics(const body_t& body, const function_defs_t& functions){
 	auto functions2 = functions;

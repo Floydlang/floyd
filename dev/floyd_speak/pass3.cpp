@@ -632,72 +632,72 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 		const typeid_t return_type;
 
 
-		return_type_t operator()(const statement_t::return_statement_t& s) const{
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::return_statement_t& s) const{
 			const auto e = analyse_return_statement(a, statement, return_type);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		return_type_t operator()(const statement_t::define_struct_statement_t& s) const{
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::define_struct_statement_t& s) const{
 			const auto e = analyse_def_struct_statement(a, statement);
 			return { e, {} };
 		}
-		return_type_t operator()(const statement_t::define_protocol_statement_t& s) const{
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::define_protocol_statement_t& s) const{
 			const auto e = analyse_def_protocol_statement(a, statement);
 			return { e, {} };
 		}
-		return_type_t operator()(const statement_t::define_function_statement_t& s) const{
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::define_function_statement_t& s) const{
 			const auto e = analyse_def_function_statement(a, statement);
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 
-		return_type_t operator()(const statement_t::bind_local_t& s) const{
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::bind_local_t& s) const{
 			const auto e = analyse_bind_local_statement(a, statement);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		return_type_t operator()(const statement_t::store_t& s) const{
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::store_t& s) const{
 			const auto e = analyse_store_statement(a, statement);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		return_type_t operator()(const statement_t::store2_t& s) const{
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::store2_t& s) const{
 			QUARK_ASSERT(false);
 			quark::throw_exception();
 		}
-		return_type_t operator()(const statement_t::block_statement_t& s) const{
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::block_statement_t& s) const{
 			const auto e = analyse_block_statement(a, statement, return_type);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 
-		return_type_t operator()(const statement_t::ifelse_statement_t& s) const{
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::ifelse_statement_t& s) const{
 			const auto e = analyse_ifelse_statement(a, statement, return_type);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		return_type_t operator()(const statement_t::for_statement_t& s) const{
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::for_statement_t& s) const{
 			const auto e = analyse_for_statement(a, statement, return_type);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		return_type_t operator()(const statement_t::while_statement_t& s) const{
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::while_statement_t& s) const{
 			const auto e = analyse_while_statement(a, statement, return_type);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 
 
-		return_type_t operator()(const statement_t::expression_statement_t& s) const{
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::expression_statement_t& s) const{
 			const auto e = analyse_expression_statement(a, statement);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		return_type_t operator()(const statement_t::software_system_statement_t& s) const{
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::software_system_statement_t& s) const{
 			analyser_t temp = a;
 			temp._software_system = parse_software_system_json(s._json_data);
 			return { temp, std::make_shared<statement_t>(statement) };
 		}
-		return_type_t operator()(const statement_t::container_def_statement_t& s) const{
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::container_def_statement_t& s) const{
 			analyser_t temp = a;
 			temp._container_def = parse_container_def_json(s._json_data);
 			return { temp, std::make_shared<statement_t>(statement) };
@@ -713,11 +713,11 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 
 
 
-std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const analyser_t& a, const statement_t& parent, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::resolve_member_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
-	const auto parent_expr = analyse_expression_no_target(a_acc, parent, e._input_exprs[0]);
+	const auto parent_expr = analyse_expression_no_target(a_acc, parent, *details.parent_address);
 	a_acc = parent_expr.first;
 
 	const auto parent_type = parent_expr.second.get_output_type();
@@ -726,14 +726,14 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 		const auto struct_def = parent_type.get_struct();
 
 		//??? store index in new expression
-		int index = find_struct_member_index(struct_def, e._variable_name);
+		int index = find_struct_member_index(struct_def, details.member_name);
 		if(index == -1){
 			std::stringstream what;
-			what << "Unknown struct member \"" + e._variable_name + "\".";
+			what << "Unknown struct member \"" + details.member_name + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
 		const auto member_type = struct_def._members[index]._type;
-		return { a_acc, expression_t::make_resolve_member(parent_expr.second, e._variable_name, make_shared<typeid_t>(member_type))};
+		return { a_acc, expression_t::make_resolve_member(parent_expr.second, details.member_name, make_shared<typeid_t>(member_type))};
 	}
 	else{
 		std::stringstream what;
@@ -742,14 +742,14 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const analyser_t& a, const statement_t& parent, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::lookup_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
-	const auto parent_expr = analyse_expression_no_target(a_acc, parent, e._input_exprs[0]);
+	const auto parent_expr = analyse_expression_no_target(a_acc, parent, *details.parent_address);
 	a_acc = parent_expr.first;
 
-	const auto key_expr = analyse_expression_no_target(a_acc, parent, e._input_exprs[1]);
+	const auto key_expr = analyse_expression_no_target(a_acc, parent, *details.lookup_key);
 	a_acc = key_expr.first;
 
 	const auto parent_type = parent_expr.second.get_output_type();
@@ -795,17 +795,17 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const statement_t& parent,const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_load(const analyser_t& a, const statement_t& parent,const expression_t& e, const expression_t::load_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
-	const auto found = find_symbol_by_name(a_acc, e._variable_name);
+	const auto found = find_symbol_by_name(a_acc, details.variable_name);
 	if(found.first != nullptr){
 		return {a_acc, expression_t::make_load2(found.second, make_shared<typeid_t>(found.first->_value_type)) };
 	}
 	else{
 		std::stringstream what;
-		what << "Undefined variable \"" << e._variable_name << "\".";
+		what << "Undefined variable \"" << details.variable_name << "\".";
 		throw_compiler_error(parent.location, what.str());
 	}
 }
@@ -828,7 +828,7 @@ std::pair<analyser_t, expression_t> analyse_load2(const analyser_t& a, const exp
 
 	rhs is an invalid dict construction -- you can't mix string/int values in a floyd dict. BUT: it's a valid JSON!
 */
-std::pair<analyser_t, expression_t> analyse_construct_value_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type){
+std::pair<analyser_t, expression_t> analyse_construct_value_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::value_constructor_t& details, const typeid_t& target_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -841,7 +841,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			const auto element_type = typeid_t::make_json_value();
 
 			std::vector<expression_t> elements2;
-			for(const auto& m: e._input_exprs){
+			for(const auto& m: details.elements){
 				const auto element_expr = analyse_expression_to_target(a_acc, parent, m, element_type);
 				a_acc = element_expr.first;
 				elements2.push_back(element_expr.second);
@@ -863,7 +863,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 		else {
 			const auto element_type = current_type.get_vector_element_type();
 			std::vector<expression_t> elements2;
-			for(const auto& m: e._input_exprs){
+			for(const auto& m: details.elements){
 				const auto element_expr = analyse_expression_no_target(a_acc, parent, m);
 				a_acc = element_expr.first;
 				elements2.push_back(element_expr.second);
@@ -899,9 +899,9 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			const auto element_type = typeid_t::make_json_value();
 
 			std::vector<expression_t> elements2;
-			for(int i = 0 ; i < e._input_exprs.size() / 2 ; i++){
-				const auto& key = e._input_exprs[i * 2 + 0].get_literal().get_string_value();
-				const auto& value = e._input_exprs[i * 2 + 1];
+			for(int i = 0 ; i < details.elements.size() / 2 ; i++){
+				const auto& key = details.elements[i * 2 + 0].get_literal().get_string_value();
+				const auto& value = details.elements[i * 2 + 1];
 				const auto element_expr = analyse_expression_to_target(a_acc, parent, value, element_type);
 				a_acc = element_expr.first;
 				elements2.push_back(expression_t::make_literal_string(key));
@@ -923,14 +923,14 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			};
 		}
 		else {
-			QUARK_ASSERT(e._input_exprs.size() % 2 == 0);
+			QUARK_ASSERT(details.elements.size() % 2 == 0);
 
 			const auto element_type = current_type.get_dict_value_type();
 
 			std::vector<expression_t> elements2;
-			for(int i = 0 ; i < e._input_exprs.size() / 2 ; i++){
-				const auto& key = e._input_exprs[i * 2 + 0].get_literal().get_string_value();
-				const auto& value = e._input_exprs[i * 2 + 1];
+			for(int i = 0 ; i < details.elements.size() / 2 ; i++){
+				const auto& key = details.elements[i * 2 + 0].get_literal().get_string_value();
+				const auto& value = details.elements[i * 2 + 1];
 				const auto element_expr = analyse_expression_no_target(a_acc, parent, value);
 				a_acc = element_expr.first;
 				elements2.push_back(expression_t::make_literal_string(key));
@@ -960,11 +960,11 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	quark::throw_exception();
 }
 
-std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(const analyser_t& a, const statement_t& parent, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::unary_minus_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
-	const auto& expr2 = analyse_expression_no_target(a_acc, parent, e._input_exprs[0]);
+	const auto& expr2 = analyse_expression_no_target(a_acc, parent, *details.expr);
 	a_acc = expr2.first;
 
 	//??? We could simplify here and return [ "-", 0, expr]
@@ -979,19 +979,19 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(co
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(const analyser_t& analyser, const statement_t& parent, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(const analyser_t& analyser, const statement_t& parent, const expression_t& e, const expression_t::conditional_t& details){
 	QUARK_ASSERT(analyser.check_invariant());
 
 	auto analyser_acc = analyser;
 
 	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
-	const auto cond_result = analyse_expression_no_target(analyser_acc, parent, e._input_exprs[0]);
+	const auto cond_result = analyse_expression_no_target(analyser_acc, parent, *details.condition);
 	analyser_acc = cond_result.first;
 
-	const auto a = analyse_expression_no_target(analyser_acc, parent, e._input_exprs[1]);
+	const auto a = analyse_expression_no_target(analyser_acc, parent, *details.a);
 	analyser_acc = a.first;
 
-	const auto b = analyse_expression_no_target(analyser_acc, parent, e._input_exprs[2]);
+	const auto b = analyse_expression_no_target(analyser_acc, parent, *details.b);
 	analyser_acc = b.first;
 
 	const auto type = cond_result.second.get_output_type();
@@ -1021,19 +1021,19 @@ std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(cons
 
 //	Term: Type inference
 
-std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser_t& a, const statement_t& parent, expression_type op, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser_t& a, const statement_t& parent, expression_type op, const expression_t& e, const expression_t::simple_expression__2_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
 
 	//	First analyse all inputs to our operation.
-	const auto left_expr = analyse_expression_no_target(a_acc, parent, e._input_exprs[0]);
+	const auto left_expr = analyse_expression_no_target(a_acc, parent, *details.lhs);
 	a_acc = left_expr.first;
 
 	const auto lhs_type = left_expr.second.get_output_type();
 
 	//	Make rhs match left if needed/possible.
-	const auto right_expr = analyse_expression_to_target(a_acc, parent, e._input_exprs[1], lhs_type);
+	const auto right_expr = analyse_expression_to_target(a_acc, parent, *details.rhs, lhs_type);
 	a_acc = right_expr.first;
 	const auto rhs_type = right_expr.second.get_output_type();
 
@@ -1064,7 +1064,7 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 		return {
 			a_acc,
 			expression_t::make_simple_expression__2(
-				e.get_operation(),
+				op,
 				left_expr.second,
 				right_expr.second,
 				make_shared<typeid_t>(typeid_t::make_bool())
@@ -1073,19 +1073,19 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser_t& a, const statement_t& parent, expression_type op, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser_t& a, const statement_t& parent, expression_type op, const expression_t& e, const expression_t::simple_expression__2_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
 
 	//	First analyse both inputs to our operation.
-	const auto left_expr = analyse_expression_no_target(a_acc, parent, e._input_exprs[0]);
+	const auto left_expr = analyse_expression_no_target(a_acc, parent, *details.lhs);
 	a_acc = left_expr.first;
 
 	const auto lhs_type = left_expr.second.get_output_type();
 
 	//	Make rhs match lhs if needed/possible.
-	const auto right_expr = analyse_expression_to_target(a_acc, parent, e._input_exprs[1], lhs_type);
+	const auto right_expr = analyse_expression_to_target(a_acc, parent, *details.rhs, lhs_type);
 	a_acc = right_expr.first;
 
 	const auto rhs_type = right_expr.second.get_output_type();
@@ -1125,7 +1125,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 				quark::throw_exception();
 			}
 
-			return {a_acc, expression_t::make_simple_expression__2(e.get_operation(), left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			return {a_acc, expression_t::make_simple_expression__2(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	int
@@ -1150,7 +1150,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 				quark::throw_exception();
 			}
 
-			return {a_acc, expression_t::make_simple_expression__2(e.get_operation(), left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			return {a_acc, expression_t::make_simple_expression__2(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	double
@@ -1176,7 +1176,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 				quark::throw_exception();
 			}
 
-			return {a_acc, expression_t::make_simple_expression__2(e.get_operation(), left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			return {a_acc, expression_t::make_simple_expression__2(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	string
@@ -1208,7 +1208,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 				quark::throw_exception();
 			}
 
-			return {a_acc, expression_t::make_simple_expression__2(e.get_operation(), left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			return {a_acc, expression_t::make_simple_expression__2(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	struct
@@ -1242,7 +1242,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 				quark::throw_exception();
 			}
 
-			return {a_acc, expression_t::make_simple_expression__2(e.get_operation(), left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			return {a_acc, expression_t::make_simple_expression__2(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	vector
@@ -1275,7 +1275,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 				QUARK_ASSERT(false);
 				quark::throw_exception();
 			}
-			return {a_acc, expression_t::make_simple_expression__2(e.get_operation(), left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			return {a_acc, expression_t::make_simple_expression__2(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	function
@@ -1328,14 +1328,14 @@ std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& 
 }
 
 bool is_host_function_call(const analyser_t& a, const expression_t& callee_expr){
-	if(callee_expr.get_operation() == expression_type::k_load){
-		const auto function_name = callee_expr._variable_name;
+    if(auto load = std::get_if<expression_t::load_t>(&callee_expr._contents)){
+		const auto function_name = load->variable_name;
 
 		const auto find_it = a._imm->_host_functions.find(function_name);
 		return find_it != a._imm->_host_functions.end();
 	}
-	else if(callee_expr.get_operation() == expression_type::k_load2){
-		const auto callee = resolve_symbol_by_address(a, callee_expr._address);
+	else if(auto load2 = std::get_if<expression_t::load2_t>(&callee_expr._contents)){
+		const auto callee = resolve_symbol_by_address(a, load2->address);
 		QUARK_ASSERT(callee != nullptr);
 
 		if(callee->_init.is_function()){
@@ -1353,9 +1353,11 @@ bool is_host_function_call(const analyser_t& a, const expression_t& callee_expr)
 
 typeid_t get_host_function_return_type(const analyser_t& a, const statement_t& parent, const expression_t& callee_expr, const vector<expression_t>& args){
 	QUARK_ASSERT(is_host_function_call(a, callee_expr));
-	QUARK_ASSERT(callee_expr.get_operation() == expression_type::k_load2);
 
-	const auto callee = resolve_symbol_by_address(a, callee_expr._address);
+	auto load2 = std::get_if<expression_t::load2_t>(&callee_expr._contents);
+	QUARK_ASSERT(load2 != nullptr);
+
+	const auto callee = resolve_symbol_by_address(a, load2->address);
 	QUARK_ASSERT(callee != nullptr);
 
 	const auto& function_def = function_id_to_def(a, callee->_init.get_function_value());
@@ -1383,8 +1385,10 @@ typeid_t get_host_function_return_type(const analyser_t& a, const statement_t& p
 
 			const auto arg0 = args[0];
 			const auto arg1 = args[1];
-			if(arg1.get_operation() == expression_type::k_load2){
-				const auto symbol = resolve_symbol_by_address(a, arg1._address);
+
+
+			if(auto arg1_load2 = std::get_if<expression_t::load2_t>(&arg1._contents)){
+				const auto symbol = resolve_symbol_by_address(a, arg1_load2->address);
 				if(symbol != nullptr && symbol->_init.is_undefined() == false){
 					return symbol->_init.get_typeid_value();
 				}
@@ -1405,18 +1409,20 @@ typeid_t get_host_function_return_type(const analyser_t& a, const statement_t& p
 /*
 	Notice: e._input_expr[0] is callee, the remaining are arguments.
 */
-std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a, const statement_t& parent, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::call_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
 
-	const auto callee_expr0 = analyse_expression_no_target(a_acc, parent, e._input_exprs[0]);
+	const auto callee_expr0 = analyse_expression_no_target(a_acc, parent, *details.callee);
 	a_acc = callee_expr0.first;
 	const auto callee_expr = callee_expr0.second;
 
-	const auto args0 = vector<expression_t>(e._input_exprs.begin() + 1, e._input_exprs.end());
+	const auto args0 = details.args;
 
 	const auto callsite_pure = a_acc._lexical_scope_stack.back().pure;
+
+	auto callee_expr_load2 = std::get_if<expression_t::load2_t>(&callee_expr._contents);
 
 	//	This is a call to a function-value. Callee is a function-type.
 	const auto callee_type = callee_expr.get_output_type();
@@ -1443,8 +1449,8 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a,
 
 	//	Attempting to call a TYPE? Then this may be a constructor call.
 	//	Converts these calls to construct-value-expressions.
-	else if(callee_type.is_typeid() && callee_expr.get_operation() == expression_type::k_load2){
-		const auto found_symbol_ptr = resolve_symbol_by_address(a_acc, callee_expr._address);
+	else if(callee_type.is_typeid() && callee_expr_load2){
+		const auto found_symbol_ptr = resolve_symbol_by_address(a_acc, callee_expr_load2->address);
 		QUARK_ASSERT(found_symbol_ptr != nullptr);
 
 		if(found_symbol_ptr->_init.is_undefined()){
@@ -1480,11 +1486,11 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a,
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const analyser_t& a, const statement_t& parent, const expression_t& e0){
+std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const analyser_t& a, const statement_t& parent, const expression_t& e0, const expression_t::struct_definition_expr_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
-	const auto& struct_def = *e0._struct_def;
+	const auto& struct_def = *details.def;
 
 	//	Resolve member types in this scope.
 	std::vector<member_t> members2;
@@ -1500,12 +1506,12 @@ std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const a
 }
 
 // ??? Check that function returns a value, if so specified.
-std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& a, const statement_t& parent, const expression_t& e){
+std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::function_definition_expr_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
 
-	const auto function_def = e._function_def;
+	const auto function_def = details.def;
 	const auto function_type2 = resolve_type(a_acc, parent.location, function_def->_function_type);
 	const auto function_pure = function_type2.get_function_pure();
 
@@ -1530,7 +1536,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	a_acc = function_body_pair.first;
 	const auto function_body3 = function_body_pair.second;
 
-	const auto function_def2 = function_definition_t{ k_no_location, e._function_def->_definition_name, function_type2, args2, make_shared<body_t>(function_body3), 0 };
+	const auto function_def2 = function_definition_t{ k_no_location, function_def->_definition_name, function_type2, args2, make_shared<body_t>(function_body3), 0 };
 
 	QUARK_ASSERT(function_def2.check_types_resolved());
 
@@ -1547,58 +1553,66 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto op = e.get_operation();
+	struct visitor_t {
+		const analyser_t& a;
+		const statement_t& parent;
+		const expression_t& e;
+		const typeid_t& target_type;
 
-	if(op == expression_type::k_literal){
-		return { a, e };
-	}
-	else if(op == expression_type::k_resolve_member){
-		return analyse_resolve_member_expression(a, parent, e);
-	}
-	else if(op == expression_type::k_lookup_element){
-		return analyse_lookup_element_expression(a, parent, e);
-	}
-	else if(op == expression_type::k_load){
-		return analyse_load(a, parent, e);
-	}
-	else if(op == expression_type::k_load2){
-		return analyse_load2(a, e);
-	}
+		std::pair<analyser_t, expression_t> operator()(const expression_t::literal_exp_t& expr) const{
+			return { a, e };
+		}
+		std::pair<analyser_t, expression_t> operator()(const expression_t::simple_expression__2_t& expr) const{
+			QUARK_ASSERT(is_arithmetic_expression(expr.op) || is_comparison_expression(expr.op));
 
-	else if(op == expression_type::k_call){
-		return analyse_call_expression(a, parent, e);
-	}
+			if(is_arithmetic_expression(expr.op)){
+				return analyse_arithmetic_expression(a, parent, expr.op, e, expr);
+			}
+			else if(is_comparison_expression(expr.op)){
+				return analyse_comparison_expression(a, parent, expr.op, e, expr);
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
+		}
+		std::pair<analyser_t, expression_t> operator()(const expression_t::unary_minus_t& expr) const{
+			return analyse_arithmetic_unary_minus_expression(a, parent, e, expr);
+		}
+		std::pair<analyser_t, expression_t> operator()(const expression_t::conditional_t& expr) const{
+			return analyse_conditional_operator_expression(a, parent, e, expr);
+		}
 
-	else if(op == expression_type::k_struct_def){
-		return analyse_struct_definition_expression(a, parent, e);
-	}
+		std::pair<analyser_t, expression_t> operator()(const expression_t::call_t& expr) const{
+			return analyse_call_expression(a, parent, e, expr);
+		}
 
-	else if(op == expression_type::k_function_def){
-		return analyse_function_definition_expression(a, parent, e);
-	}
 
-	else if(op == expression_type::k_value_constructor){
-		return analyse_construct_value_expression(a, parent, e, target_type);
-	}
+		std::pair<analyser_t, expression_t> operator()(const expression_t::struct_definition_expr_t& expr) const{
+			return analyse_struct_definition_expression(a, parent, e, expr);
+		}
+		std::pair<analyser_t, expression_t> operator()(const expression_t::function_definition_expr_t& expr) const{
+			return analyse_function_definition_expression(a, parent, e, expr);
+		}
+		std::pair<analyser_t, expression_t> operator()(const expression_t::load_t& expr) const{
+			return analyse_load(a, parent, e, expr);
+		}
+		std::pair<analyser_t, expression_t> operator()(const expression_t::load2_t& expr) const{
+			return analyse_load2(a, e);
+		}
 
-	else if(op == expression_type::k_arithmetic_unary_minus__1){
-		return analyse_arithmetic_unary_minus_expression(a, parent, e);
-	}
+		std::pair<analyser_t, expression_t> operator()(const expression_t::resolve_member_t& expr) const{
+			return analyse_resolve_member_expression(a, parent, e, expr);
+		}
+		std::pair<analyser_t, expression_t> operator()(const expression_t::lookup_t& expr) const{
+			return analyse_lookup_element_expression(a, parent, e, expr);
+		}
+		std::pair<analyser_t, expression_t> operator()(const expression_t::value_constructor_t& expr) const{
+			return analyse_construct_value_expression(a, parent, e, expr, target_type);
+		}
+	};
 
-	//	Special-case since it uses 3 expressions & uses shortcut evaluation.
-	else if(op == expression_type::k_conditional_operator3){
-		return analyse_conditional_operator_expression(a, parent, e);
-	}
-	else if(is_comparison_expression(op)){
-		return analyse_comparison_expression(a, parent, op, e);
-	}
-	else if(is_arithmetic_expression(op)){
-		return analyse_arithmetic_expression(a, parent, op, e);
-	}
-	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
-	}
+	const auto result = std::visit(visitor_t{ a, parent, e, target_type }, e._contents);
+	return result;
 }
 
 
@@ -1642,6 +1656,12 @@ expression_t auto_cast_expression_type(const expression_t& e, const floyd::typei
 	}
 }
 
+std::string get_expression_name(const expression_t& e){
+	return "EXPR";
+//	expression_type_to_token();
+}
+
+
 //	Returned expression is guaranteed to be deep-resolved.
 std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type){
 	QUARK_ASSERT(a.check_invariant());
@@ -1656,7 +1676,7 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 	const auto e2b = e2_pair.second;
 	if(e2b.check_types_resolved() == false){
 		std::stringstream what;
-		what << "Cannot infer type in " << expression_type_to_token(e2b.get_operation()) << "-expression.";
+		what << "Cannot infer type in " << get_expression_name(e2b) << "-expression.";
 		throw_compiler_error(parent.location, what.str());
 	}
 

@@ -8,10 +8,20 @@
 
 #include "ast_basics.h"
 
+#include "quark.h"
+
 #include <string>
 
 
 namespace floyd {
 
 
+}
+
+
+QUARK_UNIT_TEST("", "", "", ""){
+	const floyd::variable_address_t dummy;
+	const auto copy(dummy);
+	floyd::variable_address_t b;
+	b = dummy;
 }
