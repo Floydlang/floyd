@@ -21,6 +21,30 @@ namespace floyd {
 
 
 
+	//////////////////////////////////////////////////		itype_t
+
+
+	struct itype_t {
+		int32_t itype;
+	};
+
+
+	//	Assigns 32bit ID to types. You can lookup the type using the ID.
+	//	This allows us to describe a type using a single 32bit integer (compact, fast to copy around).
+	//	Each type has exactly ONE ID.
+	struct type_interner_t {
+		bool check_invariant() const {
+			return true;
+		}
+		std::vector<std::pair<itype_t, typeid_t>> interned;
+	};
+
+
+	//////////////////////////////////////////////////		type_interner_t
+
+
+	std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid_t& type);
+
 
 	//////////////////////////////////////////////////		general_purpose_ast_t
 
@@ -33,17 +57,15 @@ namespace floyd {
 		/////////////////////////////		STATE
 		public: body_t _globals;
 		public: std::vector<std::shared_ptr<const floyd::function_definition_t>> _function_defs;
+		public: type_interner_t _interned_types;
 		public: software_system_t _software_system;
 		public: container_t _container_def;
 	};
 
+
+
 	json_t gp_ast_to_json(const general_purpose_ast_t& ast);
 	general_purpose_ast_t json_to_gp_ast(const json_t& json);
-
-	json_t body_to_json(const body_t& e);
-	body_t json_to_body(const json_t& json);
-
-	std::vector<json_t> symbols_to_json(const symbol_table_t& symbols);
 
 
 }	//	floyd

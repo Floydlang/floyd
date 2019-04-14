@@ -123,6 +123,24 @@ json_t maker__make_constant(const value_t& value){
 }
 
 
+std::pair<json_t, location_t> unpack_loc(const json_t& s){
+	QUARK_ASSERT(s.is_array());
+
+	const bool has_location = s.get_array_n(0).is_number();
+	if(has_location){
+		const location_t source_offset = has_location ? location_t(static_cast<std::size_t>(s.get_array_n(0).get_number())) : k_no_location;
+
+		const auto elements = s.get_array();
+		const std::vector<json_t> elements2 = { elements.begin() + 1, elements.end() };
+		const auto statement = json_t::make_array(elements2);
+
+		return { statement, source_offset };
+	}
+	else{
+		return { s, k_no_location };
+	}
+}
+
 location_t unpack_loc2(const json_t& s){
 	QUARK_ASSERT(s.is_array());
 
@@ -135,6 +153,8 @@ location_t unpack_loc2(const json_t& s){
 		return k_no_location;
 	}
 }
+
+
 
 void ut_verify_json_and_rest(const quark::call_context_t& context, const std::pair<json_t, seq_t>& result_pair, const std::string& expected_json, const std::string& expected_rest){
 	ut_verify(

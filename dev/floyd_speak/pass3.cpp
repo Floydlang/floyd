@@ -56,6 +56,7 @@ struct analyzer_imm_t {
 
 
 
+
 //////////////////////////////////////		analyser_t
 
 /*
@@ -69,12 +70,12 @@ struct lexical_scope_t {
 
 struct analyser_t {
 	public: analyser_t(const pass2_ast_t& ast);
-	public: analyser_t(const analyser_t& other);
-	public: const analyser_t& operator=(const analyser_t& other);
+//	public: analyser_t(const analyser_t& other);
+//	public: const analyser_t& operator=(const analyser_t& other);
 #if DEBUG
 	public: bool check_invariant() const;
 #endif
-	public: void swap(analyser_t& other) throw();
+//	public: void swap(analyser_t& other) throw();
 
 
 
@@ -82,12 +83,12 @@ struct analyser_t {
 
 	public: std::shared_ptr<const analyzer_imm_t> _imm;
 
-
 	//	Non-constant. Last scope is the current one. First scope is the root.
 	public: std::vector<lexical_scope_t> _lexical_scope_stack;
 
 	//	These are output functions, that have been fixed.
 	public: std::vector<std::shared_ptr<const floyd::function_definition_t>> _function_defs;
+	public: type_interner_t _types;
 
 	public: software_system_t _software_system;
 	public: container_t _container_def;
@@ -100,7 +101,6 @@ struct analyser_t {
 
 std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const typeid_t& return_type);
 floyd::semantic_ast_t analyse(const analyser_t& a);
-typeid_t resolve_type(const analyser_t& a, const location_t& loc, const typeid_t& type);
 
 /*
 	Return value:
@@ -184,6 +184,10 @@ const symbol_t* resolve_symbol_by_address(const analyser_t& a, const floyd::vari
 	return &env.symbols._symbols[s._index].second;
 }
 
+
+
+typeid_t resolve_type_internal2(const analyser_t& a, const location_t& loc, const typeid_t& type);
+
 typeid_t resolve_type_internal(const analyser_t& a, const location_t& loc, const typeid_t& type){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -224,25 +228,25 @@ typeid_t resolve_type_internal(const analyser_t& a, const location_t& loc, const
 		const auto& struct_def = type.get_struct();
 		std::vector<member_t> members2;
 		for(const auto& e: struct_def._members){
-			members2.push_back(member_t(resolve_type(a, loc, e._type), e._name));
+			members2.push_back(member_t(resolve_type_internal2(a, loc, e._type), e._name));
 		}
 		return typeid_t::make_struct2(members2);
 	}
 	else if(basetype == base_type::k_vector){
-		return typeid_t::make_vector(resolve_type(a, loc, type.get_vector_element_type()));
+		return typeid_t::make_vector(resolve_type_internal2(a, loc, type.get_vector_element_type()));
 	}
 	else if(basetype == base_type::k_dict){
-		return typeid_t::make_dict(resolve_type(a, loc, type.get_dict_value_type()));
+		return typeid_t::make_dict(resolve_type_internal2(a, loc, type.get_dict_value_type()));
 	}
 	else if(basetype == base_type::k_function){
 		const auto ret = type.get_function_return();
 		const auto args = type.get_function_args();
 		const auto pure = type.get_function_pure();
 
-		const auto ret2 = resolve_type(a, loc, ret);
+		const auto ret2 = resolve_type_internal2(a, loc, ret);
 		vector<typeid_t> args2;
 		for(const auto& e: args){
-			args2.push_back(resolve_type(a, loc, e));
+			args2.push_back(resolve_type_internal2(a, loc, e));
 		}
 		return typeid_t::make_function(ret2, args2, pure);
 	}
@@ -267,12 +271,22 @@ typeid_t resolve_type_internal(const analyser_t& a, const location_t& loc, const
 	}
 }
 
-typeid_t resolve_type(const analyser_t& a, const location_t& loc, const typeid_t& type){
+typeid_t resolve_type_internal2(const analyser_t& a, const location_t& loc, const typeid_t& type){
 	const auto result = resolve_type_internal(a, loc, type);
 	if(result.check_types_resolved() == false){
 		throw_compiler_error(loc, "Cannot resolve type");
 	}
 	return result;
+}
+
+
+
+
+
+typeid_t resolve_type(analyser_t& a, const location_t& loc, const typeid_t& type){
+	const auto type2 = resolve_type_internal2(a, loc, type);
+	intern_type(a._types, type2);
+	return type2;
 }
 
 
@@ -1721,7 +1735,7 @@ bool check_types_resolved(const general_purpose_ast_t& ast){
 	return true;
 }
 
-semantic_ast_t analyse(const analyser_t& a){
+semantic_ast_t analyse(analyser_t& a){
 	QUARK_ASSERT(a.check_invariant());
 
 	/*
@@ -1735,6 +1749,8 @@ semantic_ast_t analyse(const analyser_t& a){
 	for(auto hf_kv: a._imm->_host_functions){
 		const auto& function_name = hf_kv.first;
 		const auto& signature = hf_kv.second;
+
+		resolve_type(a, k_no_location, signature._function_type);
 
 		const auto args = [&](){
 			vector<member_t> result;
@@ -1776,20 +1792,24 @@ semantic_ast_t analyse(const analyser_t& a){
 	symbol_map.push_back({keyword_t::k_json_false, symbol_t::make_constant(value_t::make_int(6))});
 	symbol_map.push_back({keyword_t::k_json_null, symbol_t::make_constant(value_t::make_int(7))});
 
-	auto analyser2 = a;
-	analyser2._function_defs.swap(function_defs);
+	a._function_defs.swap(function_defs);
 
-	const auto body = body_t(analyser2._imm->_ast._tree._globals._statements, symbol_table_t{symbol_map});
-	const auto result = analyse_body(analyser2, body, epure::impure, typeid_t::make_undefined());
-	const auto result_ast0 = pass2_ast_t{general_purpose_ast_t{
-		._globals = result. second,
-		._function_defs = result.first._function_defs,
-		._software_system = result.first._software_system,
-		._container_def = result.first._container_def
-	}};
+	const auto body = body_t(a._imm->_ast._tree._globals._statements, symbol_table_t{symbol_map});
+	const auto result = analyse_body(a, body, epure::impure, typeid_t::make_undefined());
+
+	const auto result_ast0 = pass2_ast_t{
+		general_purpose_ast_t{
+			._globals = result. second,
+			._function_defs = result.first._function_defs,
+			._interned_types = a._types,
+			._software_system = result.first._software_system,
+			._container_def = result.first._container_def
+		}
+	};
 
 	QUARK_ASSERT(check_types_resolved(result_ast0._tree));
 	const auto result_ast1 = semantic_ast_t(result_ast0._tree);
+
 	QUARK_ASSERT(result_ast1._tree.check_invariant());
 	QUARK_ASSERT(check_types_resolved(result_ast1._tree));
 	return result_ast1;
@@ -1807,6 +1827,7 @@ analyser_t::analyser_t(const pass2_ast_t& ast){
 	const auto host_functions = floyd::get_host_function_signatures();
 	_imm = make_shared<analyzer_imm_t>(analyzer_imm_t{ast, host_functions});
 }
+/*
 
 analyser_t::analyser_t(const analyser_t& other) :
 	_imm(other._imm),
@@ -1832,6 +1853,7 @@ const analyser_t& analyser_t::operator=(const analyser_t& other){
 	swap(temp);
 	return *this;
 }
+*/
 
 #if DEBUG
 bool analyser_t::check_invariant() const {
@@ -1848,6 +1870,7 @@ semantic_ast_t run_semantic_analysis(const pass2_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	analyser_t a(ast);
+
 	const auto result = analyse(a);
 	return result;
 }

@@ -66,7 +66,6 @@
 
 
 namespace floyd {
-struct struct_definition_t;
 struct typeid_t;
 struct member_t;
 

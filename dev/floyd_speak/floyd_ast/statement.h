@@ -112,6 +112,7 @@ namespace floyd {
 	std::string symbol_to_string(const symbol_t& symbol);
 
 
+
 	//////////////////////////////////////		symbol_table_t
 
 
@@ -132,6 +133,11 @@ namespace floyd {
 	int add_temp(symbol_table_t& symbols, const std::string& name, const floyd::typeid_t& value_type);
 	const floyd::symbol_t* find_symbol(const symbol_table_t& symbol_table, const std::string& name);
 	const floyd::symbol_t& find_symbol_required(const symbol_table_t& symbol_table, const std::string& name);
+
+	std::vector<json_t> symbols_to_json(const symbol_table_t& symbols);
+	symbol_table_t astjson_to_symbols(const json_t& p);
+
+
 
 
 	//////////////////////////////////////		body_t
@@ -171,6 +177,10 @@ namespace floyd {
 			lhs._statements == rhs._statements
 			&& lhs._symbol_table == rhs._symbol_table;
 	}
+
+
+	json_t body_to_json(const body_t& e);
+	body_t json_to_body(const json_t& json);
 
 
 	//////////////////////////////////////		statement_t
@@ -495,6 +505,12 @@ namespace floyd {
 	static bool operator==(const statement_t& lhs, const statement_t& rhs){
 		return lhs.location == rhs.location && lhs._contents == rhs._contents;
 	}
+
+
+const std::vector<statement_t> astjson_to_statements(const json_t& p);
+json_t statement_to_json(const statement_t& e);
+
+
 
 	inline bool body_t::check_types_resolved() const{
 		for(const auto& e: _statements){

@@ -144,6 +144,8 @@ json_t maker__member_access(const json_t& address, const std::string& member_nam
 json_t maker__make_constant(const value_t& value);
 
 
+//	INPUT: [2, "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"]]
+std::pair<json_t, location_t> unpack_loc(const json_t& s);
 
 //	Reads a location_t from a statement, if one exists. Else it returns k_no_location.
 //	INPUT: [2, "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"]]

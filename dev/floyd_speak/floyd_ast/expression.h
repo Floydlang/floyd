@@ -385,6 +385,7 @@ namespace floyd {
 		public: std::shared_ptr<typeid_t> _output_type;
 	};
 
+	expression_t astjson_to_expression(const json_t& e);
 
 	expression_type get_opcode(const expression_t& e);
 
