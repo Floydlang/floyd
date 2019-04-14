@@ -1618,8 +1618,8 @@ expression_t auto_cast_expression_type(const expression_t& e, const floyd::typei
 }
 
 std::string get_expression_name(const expression_t& e){
-	return "EXPR";
-//	expression_type_to_token();
+	const expression_type op = get_opcode(e);
+	return expression_type_to_token(op);
 }
 
 

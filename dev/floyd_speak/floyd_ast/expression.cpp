@@ -356,6 +356,61 @@ std::string expression_to_json_string(const expression_t& e){
 }
 
 
+
+
+
+
+expression_type get_opcode(const expression_t& e){
+	struct visitor_t {
+		expression_type operator()(const expression_t::literal_exp_t& e) const{
+			return expression_type::k_literal;
+		}
+		expression_type operator()(const expression_t::arithmetic_t& e) const{
+			return e.op;
+		}
+		expression_type operator()(const expression_t::comparison_t& e) const{
+			return e.op;
+		}
+		expression_type operator()(const expression_t::unary_minus_t& e) const{
+			return expression_type::k_arithmetic_unary_minus__1;
+		}
+		expression_type operator()(const expression_t::conditional_t& e) const{
+			return expression_type::k_conditional_operator3;
+		}
+
+		expression_type operator()(const expression_t::call_t& e) const{
+			return expression_type::k_call;
+		}
+
+
+		expression_type operator()(const expression_t::struct_definition_expr_t& e) const{
+			return expression_type::k_struct_def;
+		}
+		expression_type operator()(const expression_t::function_definition_expr_t& e) const{
+			return expression_type::k_function_def;
+		}
+		expression_type operator()(const expression_t::load_t& e) const{
+			return expression_type::k_load;
+		}
+		expression_type operator()(const expression_t::load2_t& e) const{
+			return expression_type::k_load2;
+		}
+
+		expression_type operator()(const expression_t::resolve_member_t& e) const{
+			return expression_type::k_resolve_member;
+		}
+		expression_type operator()(const expression_t::lookup_t& e) const{
+			return expression_type::k_lookup_element;
+		}
+		expression_type operator()(const expression_t::value_constructor_t& e) const{
+			return expression_type::k_value_constructor;
+		}
+	};
+	return std::visit(visitor_t{}, e._contents);
+}
+
+
+
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto e = expression_t::make_literal(value_t::make_string("hello"));
 

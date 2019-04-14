@@ -2119,9 +2119,11 @@ QUARK_UNIT_TEST("Floyd test suite", "string size()", "", ""){
 	run_closed(R"(		assert(size("How long is this string?") == 24)		)");
 }
 
+#if 0
 QUARK_UNIT_TEST("Floyd test suite", "string size()", "Embeded null characters - check 8 bit clean", ""){
 	run_closed(R"(		assert(size("hello\0world\0\0") == 13)		)");
 }
+#endif
 
 QUARK_UNIT_TEST("Floyd test suite", "string push_back()", "", ""){
 	run_closed(R"(
@@ -2148,7 +2150,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string update()", "error: pos > len", "exce
 			a = update("hello", 5, 98)
 
 		)",
-		"Position argument to update() is outside collection span."
+		"String lookup out of bounds."
 	);
 }
 
@@ -2192,7 +2194,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", "error"){
 	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace("hello", 5, 0, "goodbye") == "hellogoodbye")		)", "replace() requires start <= end.");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", "error"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace("hello", 5, 0, 666) == "")		)", "replace(string) requires argument 4 to be a string.");
+	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace("hello", 2, 3, 666) == "")		)", "replace() requires 4th arg to be same as argument 0.");
 }
 
 
@@ -3658,7 +3660,6 @@ QUARK_UNIT_TEST("Floyd test suite", "color__black", "", ""){
 	run_closed_lib(R"(
 
 		let r = add_colors(color_t(1.0, 2.0, 3.0, 4.0), color_t(1000.0, 2000.0, 3000.0, 4000.0))
-		print(to_string(r))
 		assert(r.red == 1001.0)
 		assert(r.green == 2002.0)
 		assert(r.blue == 3003.0)
@@ -3711,8 +3712,8 @@ QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
 			t = push_back(t, b)
 		}
 		end = get_time_of_day()
-		print("Duration: " + to_string(end - start) + ", number = " + to_string(b))
-		print(t)
+//		print("Duration: " + to_string(end - start) + ", number = " + to_string(b))
+//		print(t)
 
 	)");
 }
@@ -3723,7 +3724,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
 		let int a = get_time_of_day()
 		let int b = get_time_of_day()
 		let int c = b - a
-		print("Delta time:" + to_string(a))
+//		print("Delta time:" + to_string(a))
 
 	)");
 }
@@ -3735,7 +3736,7 @@ QUARK_UNIT_TEST("Floyd test suite", "calc_string_sha1()", "", ""){
 	run_closed(R"(
 
 		let a = calc_string_sha1("Violator is the seventh studio album by English electronic music band Depeche Mode.")
-		print(to_string(a))
+//		print(to_string(a))
 		assert(a.ascii40 == "4d5a137b3b1faf855872a312a184dd9a24594387")
 
 	)");
@@ -3750,7 +3751,7 @@ QUARK_UNIT_TEST("Floyd test suite", "calc_binary_sha1()", "", ""){
 
 		let bin = binary_t("Violator is the seventh studio album by English electronic music band Depeche Mode.")
 		let a = calc_binary_sha1(bin)
-		print(to_string(a))
+//		print(to_string(a))
 		assert(a.ascii40 == "4d5a137b3b1faf855872a312a184dd9a24594387")
 
 	)");
@@ -3772,7 +3773,7 @@ QUARK_UNIT_TEST("Floyd test suite", "map()", "[int] map(int f(int))", ""){
 		}
 
 		let result = map(a, f)
-		print(to_string(result))
+//		print(to_string(result))
 		assert(result == [ 1010, 1011, 1012 ])
 
 	)");
@@ -3788,7 +3789,7 @@ QUARK_UNIT_TEST("Floyd test suite", "map()", "[string] map(string f(int))", ""){
 		}
 
 		let result = map(a, f)
-		print(to_string(result))
+//		print(to_string(result))
 		assert(result == [ "1010", "1011", "1012" ])
 
 	)");
@@ -3804,7 +3805,7 @@ QUARK_UNIT_TEST("Floyd test suite", "map()", "[int] map(int f(string))", ""){
 		}
 
 		let result = map(a, f)
-		print(to_string(result))
+//		print(to_string(result))
 		assert(result == [ 3, 4, 5 ])
 
 	)");
@@ -3828,7 +3829,7 @@ QUARK_UNIT_TEST("Floyd test suite", "map_string()", "", ""){
 		}
 
 		let result = map_string(a, f)
-		print(to_string(result))
+//		print(to_string(result))
 		assert(result == "656667")
 
 	)");
@@ -3849,7 +3850,7 @@ QUARK_UNIT_TEST("Floyd test suite", "reduce()", "int reduce([int], int, func int
 
 		let result = reduce([ 10, 11, 12 ], 2000, f)
 
-		print(to_string(result))
+//		print(to_string(result))
 		assert(result == 2066)
 
 	)");
@@ -3868,7 +3869,7 @@ QUARK_UNIT_TEST("Floyd test suite", "reduce()", "string reduce([int], string, fu
 		}
 
 		let result = reduce([ 2, 4, 1 ], "O", f)
-		print(to_string(result))
+//		print(to_string(result))
 		assert(result == "(<(<<<<(<<O>>)>>>>)>)")
 
 	)___");
@@ -3890,7 +3891,7 @@ QUARK_UNIT_TEST("Floyd test suite", "filter()", "int filter([int], int, func int
 
 		let result = filter([ 3, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 ], f)
 
-		print(to_string(result))
+//		print(to_string(result))
 		assert(result == [ 3, 3, 6, 9, 12 ])
 
 	)");
@@ -3905,7 +3906,7 @@ QUARK_UNIT_TEST("Floyd test suite", "filter()", "string filter([int], string, fu
 
 		let result = filter([ "one", "two", "three", "four", "five", "six", "seven" ], f)
 
-		print(to_string(result))
+//		print(to_string(result))
 		assert(result == [ "one", "two", "three", "six", "seven" ])
 
 	)___");
@@ -3927,7 +3928,7 @@ QUARK_UNIT_TEST("Floyd test suite", "supermap()", "No dependencies", ""){
 		}
 
 		let result = supermap([ "one", "ring", "to" ], [ -1, -1, -1 ], f)
-		print(to_string(result))
+//		print(to_string(result))
 		assert(result == [ "[one]", "[ring]", "[to]" ])
 
 	)");
@@ -3941,7 +3942,7 @@ QUARK_UNIT_TEST("Floyd test suite", "supermap()", "No dependencies", ""){
 		}
 
 		let result = supermap([ "one", "ring", "to" ], [ 1, 2, -1 ], f)
-		print(to_string(result))
+//		print(to_string(result))
 		assert(result == [ "[one]", "[ring]", "[to]" ])
 
 	)");
@@ -3965,7 +3966,7 @@ QUARK_UNIT_TEST("Floyd test suite", "supermap()", "complex", ""){
 		}
 
 		let result = supermap([ "D", "B", "A", "C", "E", "F" ], [ 4, 2, -1, 4, 2, 4 ], f)
-		print(to_string(result))
+//		print(to_string(result))
 		assert(result == [ "D[]", "B[]", "A[B[], E[D[], C[], F[]]]", "C[]", "E[D[], C[], F[]]", "F[]" ])
 
 	)");
@@ -4061,7 +4062,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_fsentries_deep()", "", ""){
 
 			let result = get_fsentries_deep("/Users/marcus/Desktop/")
 			assert(size(result) > 3)
-			print(to_pretty_string(result))
+//			print(to_pretty_string(result))
 
 		)"
 	);

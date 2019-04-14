@@ -85,6 +85,9 @@ static run_report_t run_program_bc(const compilation_unit_t& cu, const std::vect
 	catch(const std::runtime_error& e){
 		return run_report_t{ {}, {}, {}, e.what() };
 	}
+	catch(...){
+		throw std::exception();
+	}
 }
 
 

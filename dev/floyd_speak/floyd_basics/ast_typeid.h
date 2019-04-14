@@ -387,7 +387,7 @@ struct typeid_t {
 				return base_type::k_internal_undefined;
 			}
 			base_type operator()(const internal_dynamic& e) const{
-				return base_type::k_internal_undefined;
+				return base_type::k_internal_dynamic;
 			}
 
 			base_type operator()(const void_t& e) const{

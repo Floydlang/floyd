@@ -728,7 +728,7 @@ QUARK_UNIT_TESTQ("value_t::make_undefined()", "**undef**"){
 }
 
 
-QUARK_UNIT_TESTQ("value_t::make_internal_dynamic()", "**dynamic**"){
+QUARK_UNIT_TEST("", "value_t::make_internal_dynamic()", "**dynamic**", ""){
 	const auto a = value_t::make_internal_dynamic();
 	QUARK_TEST_VERIFY(!a.is_undefined());
 	QUARK_TEST_VERIFY(a.is_internal_dynamic());

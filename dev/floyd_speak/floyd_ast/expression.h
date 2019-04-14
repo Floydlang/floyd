@@ -72,9 +72,6 @@ namespace floyd {
 
 
 
-
-
-
 	//////////////////////////////////////////////////		expression_t
 
 	/*
@@ -119,25 +116,9 @@ namespace floyd {
 			return std::get<literal_exp_t>(_contents).value;
 		}
 
-/*
-		////////////////////////////////		simple_expression__2_t
 
-		//??? Split into arithmetic vs comparison.
-		struct simple_expression__2_t {
-			expression_type op;
-			std::shared_ptr<expression_t> lhs;
-			std::shared_ptr<expression_t> rhs;
-		};
-
-		public: static expression_t make_simple_expression__2(expression_type op, const expression_t& lhs, const expression_t& rhs, const std::shared_ptr<typeid_t>& annotated_type){
-			QUARK_ASSERT(is_arithmetic_expression(op) || is_comparison_expression(op));
-
-			return expression_t({ simple_expression__2_t{ op, std::make_shared<expression_t>(lhs), std::make_shared<expression_t>(rhs) } }, annotated_type);
-		}
-*/
 		////////////////////////////////		arithmetic_t
 
-		//??? Split into arithmetic vs comparison.
 		struct arithmetic_t {
 			expression_type op;
 			std::shared_ptr<expression_t> lhs;
@@ -152,7 +133,6 @@ namespace floyd {
 
 
 		////////////////////////////////		comparison_t
-
 
 		struct comparison_t {
 			expression_type op;
@@ -406,6 +386,7 @@ namespace floyd {
 	};
 
 
+	expression_type get_opcode(const expression_t& e);
 
 }	//	floyd
 

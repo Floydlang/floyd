@@ -796,6 +796,9 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 	if(start < 0 || end < 0){
 		quark::throw_runtime_error("replace() requires start and end to be non-negative.");
 	}
+	if(start > end){
+		quark::throw_runtime_error("replace() requires start <= end.");
+	}
 	if(args[3]._type != args[0]._type){
 		quark::throw_runtime_error("replace() requires 4th arg to be same as argument 0.");
 	}

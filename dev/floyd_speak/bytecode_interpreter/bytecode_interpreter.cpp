@@ -944,7 +944,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_ASSERT(value_object_size >= 8);
 
 	const auto bcvalue_size = sizeof(bc_value_t);
-	QUARK_ASSERT(bcvalue_size == 56);
+	QUARK_ASSERT(bcvalue_size == 72);
 
 	struct mockup_value_t {
 		private: bool _is_ext;
@@ -1045,7 +1045,6 @@ bc_value_t update_struct_member_deep(interpreter_t& vm, const bc_value_t& obj, c
 bc_value_t update_string_char(interpreter_t& vm, const bc_value_t s, int64_t lookup_index, int64_t ch){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s._type.is_string());
-	QUARK_ASSERT(lookup_index >= 0 && lookup_index < s.get_string_value().size());
 
 	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 

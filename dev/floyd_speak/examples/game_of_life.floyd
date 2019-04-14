@@ -149,7 +149,7 @@ func int test_main ([string] args) impure {
 
 	/* play game of life 5 times */
 
-	for (i in 0 ..< 5) {
+	for (i in 0 ..< 2) {
 		print(to_string(i) + ":")
 		print_board(board)
 		board = play(board)
