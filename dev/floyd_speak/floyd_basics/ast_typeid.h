@@ -467,7 +467,7 @@ struct typeid_t {
 #if DEBUG
 	private: std::string _DEBUG;
 #endif
-	private: type_variant_t _contents;
+	public: type_variant_t _contents;
 };
 
 std::string typeid_to_compact_string(const typeid_t& t);
