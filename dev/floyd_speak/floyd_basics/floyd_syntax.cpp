@@ -55,9 +55,6 @@ string base_type_to_string(const base_type t){
 	else if(t == base_type::k_struct){
 		return keyword_t::k_struct;
 	}
-	else if(t == base_type::k_protocol){
-		return keyword_t::k_protocol;
-	}
 	else if(t == base_type::k_vector){
 		return "vector";
 	}
@@ -108,9 +105,6 @@ QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
 
 QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_struct) == keyword_t::k_struct);
-}
-QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_protocol) == keyword_t::k_protocol);
 }
 QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_vector) == "vector");

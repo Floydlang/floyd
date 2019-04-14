@@ -213,22 +213,6 @@ namespace floyd {
 		}
 
 
-		//////////////////////////////////////		define_protocol_statement_t
-
-
-		struct define_protocol_statement_t {
-			bool operator==(const define_protocol_statement_t& other) const {
-				return _name == other._name && _def == other._def;
-			}
-
-			std::string _name;
-			std::shared_ptr<const protocol_definition_t> _def;
-		};
-		public: static statement_t make__define_protocol_statement(const location_t& location, const define_protocol_statement_t& value){
-			return statement_t(location, { define_protocol_statement_t{ value } });
-		}
-
-
 		//////////////////////////////////////		define_function_statement_t
 
 
@@ -468,7 +452,6 @@ namespace floyd {
 		typedef std::variant<
 			return_statement_t,
 			define_struct_statement_t,
-			define_protocol_statement_t,
 			define_function_statement_t,
 			bind_local_t,
 			store_t,

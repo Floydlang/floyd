@@ -106,6 +106,7 @@ std::pair<json_t, seq_t> parse_struct_definition_statement(const seq_t& s);
 //	Parses only the "{ MEMBERS }" part of the struct.
 std::pair<json_t, seq_t>  parse_struct_definition_body(const seq_t& s, const std::string& name);
 
+#if 0
 /*
 	OUTPUT
 
@@ -123,6 +124,8 @@ std::pair<json_t, seq_t> parse_protocol_definition_statement(const seq_t& s);
 
 //	Parses only the "{ MEMBERS }" part of the protocol definition.
 std::pair<json_t, seq_t>  parse_protocol_definition_body(const seq_t& s, const std::string& name);
+#endif
+
 
 /*
 	A:

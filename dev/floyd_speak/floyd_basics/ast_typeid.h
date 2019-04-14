@@ -38,10 +38,6 @@
 	json_value						k_json_value							"json_value"
 	"typeid"						k_typeid								"typeid"
 	struct red { int x;float y}		k_struct								["struct", [{"type": "in", "name": "x"}, {"type": "float", "name": "y"}]]
-	protocol reader {
-		[int] read()
-		int get_size()
-	}								k_protocol								["protocol", [{"type": ["function", ["vector, "int"]]], "name": "read"}, {"type": "["function", []]", "name": "get_size"}]]
 	[int]							k_vector								["vector", "int"]
 	[string: int]					k_dict									["dict", "int"]
 	int ()							k_function								["function", "int", []]
@@ -59,12 +55,14 @@
 	Use read_type(), read_required_type()
 */
 
-#include "quark.h"
-#include "utils.h"
-
 #include <string>
 #include <vector>
+#include <variant>
+
+#include "utils.h"
 #include "floyd_syntax.h"
+
+#include "quark.h"
 
 
 namespace floyd {
@@ -75,6 +73,7 @@ struct member_t;
 
 
 std::string typeid_to_compact_string(const typeid_t& t);
+
 
 
 //////////////////////////////////////////////////		struct_definition_t
@@ -102,26 +101,6 @@ std::string to_compact_string(const struct_definition_t& v);
 int find_struct_member_index(const struct_definition_t& def, const std::string& name);
 
 
-//////////////////////////////////////////////////		protocol_definition_t
-
-//	Protocol members are all function protoypes only.
-
-struct protocol_definition_t {
-	public: protocol_definition_t(const std::vector<member_t>& members) :
-		_members(members)
-	{
-		QUARK_ASSERT(check_invariant());
-	}
-	public: bool check_invariant() const;
-	public: bool operator==(const protocol_definition_t& other) const;
-	public: bool check_types_resolved() const;
-
-
-	////////////////////////////////////////		STATE
-	public: std::vector<member_t> _members;
-};
-
-std::string to_compact_string(const protocol_definition_t& v);
 
 
 enum class epure {
@@ -130,212 +109,227 @@ enum class epure {
 };
 
 
-//////////////////////////////////////		typeid_ext_imm_t
-
-
-//	Stores extra information for those types that need more than just a base_type.
-//	This requires an allocation.
-//	TODO: Simplify this code now that std::variant is available.
-
-struct typeid_ext_imm_t {
-	public: bool operator==(const typeid_ext_imm_t& other) const{
-		return true
-			&& _parts == other._parts
-			&& _unresolved_type_identifier == other._unresolved_type_identifier
-			&& compare_shared_values(_struct_def, other._struct_def)
-			&& compare_shared_values(_protocol_def, other._protocol_def)
-			&& _pure == other._pure
-			;
-	}
-
-	////////////////////////////////////////		STATE
-	public: const std::vector<typeid_t> _parts;
-
-	//	Used for k_internal_unresolved_type_identifier.
-	public: const std::string _unresolved_type_identifier;
-
-	public: const std::shared_ptr<const struct_definition_t> _struct_def;
-	public: const std::shared_ptr<const protocol_definition_t> _protocol_def;
-	public: epure _pure;
-};
-
-
 //////////////////////////////////////		typeid_t
 
-//??? use std::variant<> and its visitor.
+
 struct typeid_t {
+	struct internal_undefined_t {
+		bool operator==(const internal_undefined_t& other) const{	return true; };
+	};
+	struct internal_dynamic {
+		bool operator==(const internal_dynamic& other) const{	return true; };
+	};
+	struct void_t {
+		bool operator==(const void_t& other) const{	return true; };
+	};
+	struct bool_t {
+		bool operator==(const bool_t& other) const{	return true; };
+	};
+	struct int_t {
+		bool operator==(const int_t& other) const{	return true; };
+	};
+	struct double_t {
+		bool operator==(const double_t& other) const{	return true; };
+	};
+	struct string_t {
+		bool operator==(const string_t& other) const{	return true; };
+	};
+	struct json_type_t {
+		bool operator==(const json_type_t& other) const{	return true; };
+	};
+	struct typeid_type_t {
+		bool operator==(const typeid_type_t& other) const{	return true; };
+	};
+	struct struct_t {
+		bool operator==(const struct_t& other) const{	return *_struct_def == *other._struct_def; };
+
+		std::shared_ptr<const struct_definition_t> _struct_def;
+	};
+	struct vector_t {
+		bool operator==(const vector_t& other) const{	return _parts == other._parts; };
+
+		std::vector<typeid_t> _parts;
+	};
+	struct dict_t {
+		bool operator==(const dict_t& other) const{	return _parts == other._parts; };
+
+		std::vector<typeid_t> _parts;
+	};
+	struct function_t {
+		bool operator==(const function_t& other) const{	return _parts == other._parts; };
+
+		std::vector<typeid_t> _parts;
+		epure pure;
+	};
+	struct internal_unresolved_type_identifier_t {
+		bool operator==(const internal_unresolved_type_identifier_t& other) const{	return _unresolved_type_identifier == other._unresolved_type_identifier; };
+
+		std::string _unresolved_type_identifier;
+	};
+
+	typedef std::variant<
+		internal_undefined_t,
+		internal_dynamic,
+		void_t,
+		bool_t,
+		int_t,
+		double_t,
+		string_t,
+		json_type_t,
+		typeid_type_t,
+		struct_t,
+		vector_t,
+		dict_t,
+		function_t,
+		internal_unresolved_type_identifier_t
+	> type_variant_t;
+
 
 	////////////////////////////////////////		FUNCTIONS FOR EACH BASE-TYPE.
 
 	public: static typeid_t make_undefined(){
-		return { floyd::base_type::k_internal_undefined, {} };
+		return { internal_undefined_t() };
 	}
 	public: bool is_undefined() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _base_type == floyd::base_type::k_internal_undefined;
+		return std::holds_alternative<internal_undefined_t>(_contents);
 	}
 
 
 	public: static typeid_t make_internal_dynamic(){
-		return { floyd::base_type::k_internal_dynamic, {} };
+		return { internal_dynamic() };
 	}
 	public: bool is_internal_dynamic() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _base_type == floyd::base_type::k_internal_dynamic;
+		return std::holds_alternative<internal_dynamic>(_contents);
 	}
 
 
 	public: static typeid_t make_void(){
-		return { floyd::base_type::k_void, {} };
+		return { void_t() };
 	}
 	public: bool is_void() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _base_type == floyd::base_type::k_void;
+		return std::holds_alternative<void_t>(_contents);
 	}
 
 
 	public: static typeid_t make_bool(){
-		return { floyd::base_type::k_bool, {} };
+		return { bool_t() };
 	}
 	public: bool is_bool() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _base_type == base_type::k_bool;
+		return std::holds_alternative<bool_t>(_contents);
 	}
 
 
 	public: static typeid_t make_int(){
-		return { floyd::base_type::k_int, {} };
+		return { int_t() };
 	}
 	public: bool is_int() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _base_type == base_type::k_int;
+		return std::holds_alternative<int_t>(_contents);
 	}
 
 
 	public: static typeid_t make_double(){
-		return { floyd::base_type::k_double, {} };
+		return { double_t() };
 	}
 	public: bool is_double() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _base_type == base_type::k_double;
+		return std::holds_alternative<double_t>(_contents);
 	}
 
 
 	public: static typeid_t make_string(){
-		return { floyd::base_type::k_string, {} };
+		return { string_t() };
 	}
 	public: bool is_string() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _base_type == base_type::k_string;
+		return std::holds_alternative<string_t>(_contents);
 	}
 
 
 	public: static typeid_t make_json_value(){
-		return { floyd::base_type::k_json_value, {} };
+		return { json_type_t() };
 	}
 	public: bool is_json_value() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _base_type == base_type::k_json_value;
+		return std::holds_alternative<json_type_t>(_contents);
 	}
 
 
 	public: static typeid_t make_typeid(){
-		return { floyd::base_type::k_typeid, {} };
+		return { typeid_type_t() };
 	}
 	public: bool is_typeid() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _base_type == base_type::k_typeid;
+		return std::holds_alternative<typeid_type_t>(_contents);
 	}
 
 
 	public: static typeid_t make_struct1(const std::shared_ptr<const struct_definition_t>& def){
 		QUARK_ASSERT(def);
 
-		const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, "", def, {}, epure::pure});
-		return { floyd::base_type::k_struct, ext };
+		return { struct_t{ def } };
 	}
 	public: static typeid_t make_struct2(const std::vector<member_t>& members){
 		auto def = std::make_shared<const struct_definition_t>(members);
-		const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, "", def, {}, epure::pure});
-		return { floyd::base_type::k_struct, ext };
+		return { struct_t{ def } };
 	}
 	public: bool is_struct() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _base_type == base_type::k_struct;
+		return std::holds_alternative<struct_t>(_contents);
 	}
 	public: const struct_definition_t& get_struct() const{
 		QUARK_ASSERT(get_base_type() == base_type::k_struct);
 
-		return *_ext->_struct_def;
+		return *std::get<struct_t>(_contents)._struct_def;
 	}
 	public: const std::shared_ptr<const struct_definition_t>& get_struct_ref() const{
 		QUARK_ASSERT(get_base_type() == base_type::k_struct);
 
-		return _ext->_struct_def;
-	}
-
-
-	public: static typeid_t make_protocol(const std::vector<member_t>& members){
-		const auto def = std::make_shared<protocol_definition_t>(protocol_definition_t(members));
-		const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, "", {}, def, epure::pure });
-		return { floyd::base_type::k_protocol, ext };
-	}
-	public: bool is_protocol() const {
-		QUARK_ASSERT(check_invariant());
-
-		return _base_type == base_type::k_protocol;
-	}
-	public: const protocol_definition_t& get_protocol() const{
-		QUARK_ASSERT(get_base_type() == base_type::k_protocol);
-		QUARK_ASSERT(_ext->_protocol_def);
-		return *_ext->_protocol_def;
-	}
-	public: const std::shared_ptr<const protocol_definition_t>& get_protocol_ref() const{
-		QUARK_ASSERT(get_base_type() == base_type::k_protocol);
-
-		return _ext->_protocol_def;
+		return std::get<struct_t>(_contents)._struct_def;
 	}
 
 
 	public: static typeid_t make_vector(const typeid_t& element_type){
-		const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ { element_type }, "", {}, {}, epure::pure });
-		return { floyd::base_type::k_vector, ext };
+		return { vector_t{ { element_type } } };
 	}
 	public: bool is_vector() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _base_type == base_type::k_vector;
+		return std::holds_alternative<vector_t>(_contents);
 	}
 	public: const typeid_t& get_vector_element_type() const{
-		QUARK_ASSERT(get_base_type() == base_type::k_vector);
+		QUARK_ASSERT(check_invariant());
 
-		return _ext->_parts[0];
+		return std::get<vector_t>(_contents)._parts[0];
 	}
 
 
 	public: static typeid_t make_dict(const typeid_t& value_type){
-		const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ { value_type }, "", {}, {}, epure::pure });
-		return { floyd::base_type::k_dict, ext };
+		return { dict_t{ { value_type } } };
 	}
 	public: bool is_dict() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _base_type == base_type::k_dict;
+		return std::holds_alternative<dict_t>(_contents);
 	}
 	public: const typeid_t& get_dict_value_type() const{
 		QUARK_ASSERT(get_base_type() == base_type::k_dict);
 
-		return _ext->_parts[0];
+		return std::get<dict_t>(_contents)._parts[0];
 	}
 
 
@@ -343,57 +337,99 @@ struct typeid_t {
 		//	Functions use _parts[0] for return type always. _parts[1] is first argument, if any.
 		std::vector<typeid_t> parts = { ret };
 		parts.insert(parts.end(), args.begin(), args.end());
-		const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ parts, "", {}, {}, pure});
 
-		return { floyd::base_type::k_function, ext };
+		return { function_t{ parts, pure } };
 	}
 	public: bool is_function() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _base_type == base_type::k_function;
+		return std::holds_alternative<function_t>(_contents);
 	}
 	public: const typeid_t& get_function_return() const{
 		QUARK_ASSERT(get_base_type() == base_type::k_function);
 
-		return _ext->_parts[0];
+		return std::get<function_t>(_contents)._parts[0];
 	}
 	public: std::vector<typeid_t> get_function_args() const{
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(get_base_type() == base_type::k_function);
 
-		auto r = _ext->_parts;
+		auto r = std::get<function_t>(_contents)._parts;
 		r.erase(r.begin());
 		return r;
 	}
 	public: epure get_function_pure() const {
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(get_base_type() == base_type::k_function);
 
-		return _ext->_pure;
+		return std::get<function_t>(_contents).pure;
 	}
 
 
 	public: static typeid_t make_unresolved_type_identifier(const std::string& s){
-		const auto ext = std::make_shared<const typeid_ext_imm_t>(typeid_ext_imm_t{ {}, s, {}, {}, epure::pure});
-		return { floyd::base_type::k_internal_unresolved_type_identifier, ext };
+		return { internal_unresolved_type_identifier_t{ s } };
 	}
 	public: bool is_unresolved_type_identifier() const {
 		QUARK_ASSERT(check_invariant());
 
-		return _base_type == base_type::k_internal_unresolved_type_identifier;
+		return std::holds_alternative<internal_unresolved_type_identifier_t>(_contents);
 	}
 	public: std::string get_unresolved_type_identifier() const{
 		QUARK_ASSERT(check_invariant());
-		QUARK_ASSERT(get_base_type() == base_type::k_internal_unresolved_type_identifier);
 
-		return _ext->_unresolved_type_identifier;
+		return std::get<internal_unresolved_type_identifier_t>(_contents)._unresolved_type_identifier;
 	}
 
 
 	////////////////////////////////////////		BASICS
 
-	public: inline floyd::base_type get_base_type() const{
-		return _base_type;
+	public: floyd::base_type get_base_type() const{
+		struct visitor_t {
+			base_type operator()(const internal_undefined_t& e) const{
+				return base_type::k_internal_undefined;
+			}
+			base_type operator()(const internal_dynamic& e) const{
+				return base_type::k_internal_undefined;
+			}
+
+			base_type operator()(const void_t& e) const{
+				return base_type::k_void;
+			}
+			base_type operator()(const bool_t& e) const{
+				return base_type::k_bool;
+			}
+			base_type operator()(const int_t& e) const{
+				return base_type::k_int;
+			}
+			base_type operator()(const double_t& e) const{
+				return base_type::k_double;
+			}
+			base_type operator()(const string_t& e) const{
+				return base_type::k_string;
+			}
+
+			base_type operator()(const json_type_t& e) const{
+				return base_type::k_json_value;
+			}
+			base_type operator()(const typeid_type_t& e) const{
+				return base_type::k_typeid;
+			}
+
+			base_type operator()(const struct_t& e) const{
+				return base_type::k_struct;
+			}
+			base_type operator()(const vector_t& e) const{
+				return base_type::k_vector;
+			}
+			base_type operator()(const dict_t& e) const{
+				return base_type::k_dict;
+			}
+			base_type operator()(const function_t& e) const{
+				return base_type::k_function;
+			}
+			base_type operator()(const internal_unresolved_type_identifier_t& e) const{
+				return base_type::k_internal_unresolved_type_identifier;
+			}
+		};
+		return std::visit(visitor_t{}, _contents);
 	}
 
 	public: bool check_types_resolved() const;
@@ -406,8 +442,7 @@ struct typeid_t {
 #if DEBUG
 			&& _DEBUG == other._DEBUG
 #endif
-			&& _base_type == other._base_type
-			&& compare_shared_values(_ext, other._ext);
+			&& _contents == other._contents;
 	}
 	public: bool operator!=(const typeid_t& other) const{ return !(*this == other);}
 	public: bool check_invariant() const;
@@ -417,9 +452,8 @@ struct typeid_t {
 	////////////////////////////////////////		INTERNALS
 
 
-	private: typeid_t(floyd::base_type base_type, const std::shared_ptr<const typeid_ext_imm_t>& ext) :
-		_base_type(base_type),
-		_ext(ext)
+	private: typeid_t(const type_variant_t& contents) :
+		_contents(contents)
 	{
 
 #if DEBUG
@@ -433,11 +467,13 @@ struct typeid_t {
 #if DEBUG
 	private: std::string _DEBUG;
 #endif
-	private: floyd::base_type _base_type;
-	private: std::shared_ptr<const typeid_ext_imm_t> _ext;
+	private: type_variant_t _contents;
 };
 
 std::string typeid_to_compact_string(const typeid_t& t);
+
+
+
 
 
 //////////////////////////////////////		dynamic function

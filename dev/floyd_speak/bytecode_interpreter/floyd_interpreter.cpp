@@ -83,10 +83,6 @@ value_t bc_to_value(const bc_value_t& value){
 		}
 		return value_t::make_struct_value(type, members2);
 	}
-	else if(basetype == base_type::k_protocol){
-		QUARK_ASSERT(false);
-		return value_t::make_undefined();
-	}
 	else if(basetype == base_type::k_vector){
 		const auto& element_type  = type.get_vector_element_type();
 		std::vector<value_t> vec2;
@@ -184,10 +180,6 @@ bc_value_t value_to_bc(const value_t& value){
 	}
 	else if(basetype == base_type::k_struct){
 		return bc_value_t::make_struct_value(value.get_type(), values_to_bcs(value.get_struct_value()->_member_values));
-	}
-	else if(basetype == base_type::k_protocol){
-		QUARK_ASSERT(false);
-		return bc_value_t::make_undefined();
 	}
 
 	else if(basetype == base_type::k_vector){

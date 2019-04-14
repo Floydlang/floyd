@@ -604,6 +604,7 @@ QUARK_UNIT_TEST("parser", "parse_struct_definition_statement", "", ""){
 }
 
 
+#if 0
 //////////////////////////////////////////////////		parse_protocol_definition_statement()
 
 
@@ -699,6 +700,7 @@ OFF_QUARK_UNIT_TEST("parse_protocol_definition_statement", "", "", ""){
 	ut_verify(QUARK_POS, r.first, expected);
 	ut_verify(QUARK_POS, r.second.str(), "");
 }
+#endif
 
 
 //////////////////////////////////////////////////		parse_if()

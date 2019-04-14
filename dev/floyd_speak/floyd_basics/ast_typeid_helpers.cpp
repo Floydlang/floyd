@@ -31,14 +31,6 @@ json_t struct_definition_to_ast_json(const struct_definition_t& v){
 }
 
 
-json_t protocol_definition_to_ast_json(const protocol_definition_t& v){
-	QUARK_ASSERT(v.check_invariant());
-
-	return json_t::make_array({
-		members_to_json(v._members)
-	});
-}
-
 json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 	QUARK_ASSERT(t.check_invariant());
 
@@ -65,13 +57,6 @@ json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 		return json_t::make_array({
 			json_t(basetype_str_tagged),
 			struct_definition_to_ast_json(struct_def)
-		});
-	}
-	else if(b == base_type::k_protocol){
-		const auto protocol_def = t.get_protocol();
-		return json_t::make_array({
-			json_t(basetype_str_tagged),
-			protocol_definition_to_ast_json(protocol_def)
 		});
 	}
 	else if(b == base_type::k_vector){
@@ -188,13 +173,6 @@ typeid_t typeid_from_ast_json(const json_t& t2){
 
 			const std::vector<member_t> struct_members = members_from_json(member_array);
 			return typeid_t::make_struct2(struct_members);
-		}
-		if(s == keyword_t::k_protocol){
-			const auto protocol_def_array = a[1].get_array();
-			const auto member_array = protocol_def_array[0].get_array();
-
-			const std::vector<member_t> protocol_members = members_from_json(member_array);
-			return typeid_t::make_protocol(protocol_members);
 		}
 		else if(s == "vector"){
 			const auto element_type = typeid_from_ast_json(a[1]);

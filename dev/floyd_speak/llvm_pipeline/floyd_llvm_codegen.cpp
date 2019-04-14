@@ -1046,9 +1046,6 @@ llvm::Constant* make_constant(llvmgen_t& gen_acc, const value_t& value){
 	else if(type.is_struct()){
 		NOT_IMPLEMENTED_YET();
 	}
-	else if(type.is_protocol()){
-		NOT_IMPLEMENTED_YET();
-	}
 	else if(type.is_vector()){
 		NOT_IMPLEMENTED_YET();
 	}
@@ -2858,9 +2855,6 @@ gen_statement_mode genllvm_statement(llvmgen_t& gen_acc, const statement_t& stat
 		gen_statement_mode operator()(const statement_t::define_struct_statement_t& s) const{
 			NOT_IMPLEMENTED_YET();
 		}
-		gen_statement_mode operator()(const statement_t::define_protocol_statement_t& s) const{
-			NOT_IMPLEMENTED_YET();
-		}
 		gen_statement_mode operator()(const statement_t::define_function_statement_t& s) const{
 			NOT_IMPLEMENTED_YET();
 		}
@@ -3208,9 +3202,6 @@ std::pair<statement_t, function_defs_t> expand_generics(const statement_t& state
 			return { in_statement, in_functions };
 		}
 		std::pair<statement_t, function_defs_t> operator()(const statement_t::define_struct_statement_t& s) const{
-			UNSUPPORTED();
-		}
-		std::pair<statement_t, function_defs_t> operator()(const statement_t::define_protocol_statement_t& s) const{
 			UNSUPPORTED();
 		}
 		std::pair<statement_t, function_defs_t> operator()(const statement_t::define_function_statement_t& s) const{

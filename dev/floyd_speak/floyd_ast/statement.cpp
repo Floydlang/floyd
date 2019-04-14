@@ -85,9 +85,6 @@ bool statement_t::check_types_resolved() const{
 		bool operator()(const define_struct_statement_t& s) const{
 			return s._def->check_types_resolved();
 		}
-		bool operator()(const define_protocol_statement_t& s) const{
-			return s._def->check_types_resolved();
-		}
 		bool operator()(const define_function_statement_t& s) const{
 			return s._def->check_types_resolved();
 		}

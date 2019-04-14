@@ -78,7 +78,6 @@ enum class base_type {
 	k_typeid,
 
 	k_struct,
-	k_protocol,
 	k_vector,
 	k_dict,
 	k_function,
@@ -363,7 +362,6 @@ namespace keyword_t {
 	const std::string k_typeid = "typeid";
 	const std::string k_json_value = "json_value";
 	const std::string k_struct = "struct";
-	const std::string k_protocol = "protocol";
 
 	const std::string k_mutable = "mutable";
 	const std::string k_let = "let";

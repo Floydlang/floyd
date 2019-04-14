@@ -83,7 +83,6 @@ namespace statement_opcode_t {
 	const std::string k_block = "block";
 
 	const std::string k_def_struct = "def-struct";
-	const std::string k_def_protocol = "def-protocol";
 	const std::string k_def_func = "def-func";
 
 

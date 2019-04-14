@@ -270,18 +270,6 @@ statement_t astjson_to_statement__nonlossy(const json_t& statement0){
 		const auto s = statement_t::define_struct_statement_t{ name, std::make_shared<struct_definition_t>(struct_def2) };
 		return statement_t::make__define_struct_statement(loc, s);
 	}
-	else if(type == statement_opcode_t::k_def_protocol){
-		QUARK_ASSERT(statement.get_array_size() == 2);
-		const auto protocol_def = statement.get_array_n(1);
-		const auto name = protocol_def.get_object_element("name").get_string();
-		const auto members = protocol_def.get_object_element("members").get_array();
-
-		const auto members2 = members_from_json(members);
-		const auto protocol_def2 = protocol_definition_t(members2);
-
-		const auto s = statement_t::define_protocol_statement_t{ name, std::make_shared<protocol_definition_t>(protocol_def2) };
-		return statement_t::make__define_protocol_statement(loc, s);
-	}
 
 	else if(type == statement_opcode_t::k_def_func){
 		QUARK_ASSERT(statement.get_array_size() == 2);
@@ -508,9 +496,6 @@ json_t statement_to_json(const statement_t& e){
 		}
 		json_t operator()(const statement_t::define_struct_statement_t& s) const{
 			return make_statement2(k_no_location, statement_opcode_t::k_def_struct, json_t(s._name), struct_definition_to_ast_json(*s._def));
-		}
-		json_t operator()(const statement_t::define_protocol_statement_t& s) const{
-			return make_statement2(k_no_location, statement_opcode_t::k_def_protocol, json_t(s._name), protocol_definition_to_ast_json(*s._def));
 		}
 		json_t operator()(const statement_t::define_function_statement_t& s) const{
 			return make_statement3(

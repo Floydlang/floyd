@@ -736,9 +736,6 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 	else if(is_first(p2, keyword_t::k_struct)){
 		throw_compiler_error(location_t(p2.pos()), "No support for struct definition expressions!");
 	}
-	else if(is_first(p2, keyword_t::k_protocol)){
-		throw_compiler_error(location_t(p2.pos()), "No support for protocol definition expressions!");
-	}
 
 	/*
 		Vector definition: "[" EXPRESSION "," EXPRESSION... "]"

@@ -466,9 +466,6 @@ value_encoding type_to_encoding(const typeid_t& type){
 	else if(basetype == base_type::k_struct){
 		return value_encoding::k_external__struct;
 	}
-	else if(basetype == base_type::k_protocol){
-		return value_encoding::k_external__protocol;
-	}
 	else if(basetype == base_type::k_vector){
 		const auto& element_type = type.get_vector_element_type().get_base_type();
 		if(element_type == base_type::k_bool){
@@ -517,7 +514,6 @@ bool encode_as_external(const typeid_t& type){
 		|| basetype == base_type::k_json_value
 		|| basetype == base_type::k_typeid
 		|| basetype == base_type::k_struct
-		|| basetype == base_type::k_protocol
 		|| basetype == base_type::k_vector
 		|| basetype == base_type::k_dict
 		;
@@ -734,10 +730,6 @@ bool check_external_deep(const typeid_t& type, const bc_external_value_t* ext){
 		for(const auto& e: ext->_struct_members){
 			QUARK_ASSERT(e.check_invariant());
 		}
-	}
-	else if(basetype == base_type::k_protocol){
-		QUARK_ASSERT(false);
-		return false;
 	}
 	else if(basetype == base_type::k_vector){
 		const auto& element_type  = type.get_vector_element_type();

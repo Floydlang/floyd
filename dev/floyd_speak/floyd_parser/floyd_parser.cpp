@@ -38,9 +38,6 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 		else if(is_first(pos, keyword_t::k_struct)){
 			return parse_struct_definition_statement(pos);
 		}
-		else if(is_first(pos, keyword_t::k_protocol)){
-			return parse_protocol_definition_statement(pos);
-		}
 		else if(is_first(pos, keyword_t::k_if)){
 			return  parse_if_statement(pos);
 		}

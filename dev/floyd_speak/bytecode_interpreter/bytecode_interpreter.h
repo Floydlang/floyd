@@ -96,7 +96,6 @@ enum class value_encoding {
 	k_external__typeid,
 
 	k_external__struct,
-	k_external__protocol,
 	k_external__vector,
 	k_external__vector_pod64,
 	k_external__dict,
