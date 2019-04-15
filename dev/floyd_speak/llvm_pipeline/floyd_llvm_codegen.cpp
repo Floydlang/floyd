@@ -1089,7 +1089,9 @@ std::vector<resolved_symbol_t> genllvm_make_function_def_symbols(llvmgen_t& gen_
 	QUARK_ASSERT(function_def.check_invariant());
 	QUARK_ASSERT(f != nullptr);
 
-	const symbol_table_t& symbol_table = function_def._body->_symbol_table;
+	const auto floyd_func = std::get<function_definition_t::floyd_func_t>(function_def._contents);
+
+	const symbol_table_t& symbol_table = floyd_func._body->_symbol_table;
 
 	const auto mapping0 = map_function_arguments(*gen_acc.module, function_def._function_type);
 	const auto mapping = name_args(mapping0, function_def._args);
@@ -2980,7 +2982,7 @@ std::vector<resolved_symbol_t> genllvm_make_globals(llvmgen_t& gen_acc, const se
 
 
 //	NOTICE: Fills-in the body of an existing LLVM function prototype.
-void genllvm_fill_function_def(llvmgen_t& gen_acc, int function_id, const floyd::function_definition_t& function_def){
+void genllvm_fill_floyd_function_def(llvmgen_t& gen_acc, int function_id, const floyd::function_definition_t& function_def, const function_definition_t::floyd_func_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
 
@@ -2997,7 +2999,7 @@ void genllvm_fill_function_def(llvmgen_t& gen_acc, int function_id, const floyd:
 		auto symbol_table_values = genllvm_make_function_def_symbols(gen_acc, function_def, f);
 
 		gen_acc.scope_path.push_back(symbol_table_values);
-		const auto more = genllvm_statements(gen_acc, function_def._body->_statements);
+		const auto more = genllvm_statements(gen_acc, details._body->_statements);
 		gen_acc.scope_path.pop_back();
 
 		end_function_emit(gen_acc);
@@ -3014,11 +3016,22 @@ void genllvm_fill_functions_with_instructions(llvmgen_t& gen_acc, const semantic
 	for(int function_id = 0 ; function_id < semantic_ast._tree._function_defs.size() ; function_id++){
 		const auto& function_def = *semantic_ast._tree._function_defs[function_id];
 
-		if(function_def._host_function_id != k_no_host_function_id){
-		}
-		else{
-			genllvm_fill_function_def(gen_acc, function_id, function_def);
-		}
+
+		struct visitor_t {
+			llvmgen_t& gen_acc;
+			const int function_id;
+			const function_definition_t& function_def;
+
+			void operator()(const function_definition_t::empty_t& e) const{
+				QUARK_ASSERT(false);
+			}
+			void operator()(const function_definition_t::floyd_func_t& e) const{
+				genllvm_fill_floyd_function_def(gen_acc, function_id, function_def, e);
+			}
+			void operator()(const function_definition_t::host_func_t& e) const{
+			}
+		};
+		std::visit(visitor_t{ gen_acc, function_id, function_def }, function_def._contents);
 	}
 }
 
@@ -3068,9 +3081,9 @@ llvm::Function* make_function_prototype2(llvm::Module& module, const function_de
 }
 
 
-
+//??? have better mechanism to register these.
 function_definition_t make_dummy_function_definition(){
-	return { k_no_location, "", typeid_t::make_undefined(), {}, {}, -1 };
+	return function_definition_t::make_empty();
 }
 
 function_def_t make_host_proto(llvm::Module& module, const host_func_t& host_function){

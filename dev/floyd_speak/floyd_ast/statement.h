@@ -172,11 +172,7 @@ namespace floyd {
 		symbol_table_t _symbol_table;
 	};
 
-	static inline bool operator==(const body_t& lhs, const body_t& rhs){
-		return
-			lhs._statements == rhs._statements
-			&& lhs._symbol_table == rhs._symbol_table;
-	}
+	bool operator==(const body_t& lhs, const body_t& rhs);
 
 
 	json_t body_to_json(const body_t& e);

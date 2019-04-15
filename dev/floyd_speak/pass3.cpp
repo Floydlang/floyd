@@ -1302,7 +1302,7 @@ bool is_host_function_call(const analyser_t& a, const expression_t& callee_expr)
 
 		if(callee->_init.is_function()){
 			const auto& function_def = function_id_to_def(a, callee->_init.get_function_value());
-			return function_def._host_function_id != k_no_host_function_id;
+			return std::get<function_definition_t::host_func_t>(function_def._contents)._host_function_id != k_no_host_function_id;
 		}
 		else{
 			return false;
@@ -1324,7 +1324,7 @@ typeid_t get_host_function_return_type(const analyser_t& a, const statement_t& p
 
 	const auto& function_def = function_id_to_def(a, callee->_init.get_function_value());
 
-	const auto host_function_id = function_def._host_function_id;
+	const auto host_function_id = std::get<function_definition_t::host_func_t>(function_def._contents)._host_function_id;
 
 	const auto& host_functions = a._imm->_host_functions;
 	const auto found_it = find_if(host_functions.begin(), host_functions.end(), [&](const std::pair<std::string, floyd::host_function_signature_t>& kv){ return kv.second._function_id == host_function_id; });
@@ -1484,23 +1484,25 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 		args2.push_back(member_t(arg_type2, arg._name));
 	}
 
+	//??? Can there be a pure function inside an impure lexical scope?
+	const auto pure = function_pure;
+
+
+	const function_definition_t::floyd_func_t floyd_func = std::get<function_definition_t::floyd_func_t>(function_def->_contents);
+
+
 	//	Make function body with arguments injected FIRST in body as local symbols.
-	auto symbol_vec = function_def->_body->_symbol_table;
+	auto symbol_vec = floyd_func._body->_symbol_table;
 	for(const auto& arg: args2){
 		symbol_vec._symbols.push_back({arg._name , symbol_t::make_immutable_local(arg._type)});
 	}
-	const auto function_body2 = body_t(function_def->_body->_statements, symbol_vec);
-
-
-	//??? Can there be a pure function inside an impure lexical scope?
-	const auto pure = function_pure;
+	const auto function_body2 = body_t(floyd_func._body->_statements, symbol_vec);
 
 	const auto function_body_pair = analyse_body(a_acc, function_body2, pure, function_type2.get_function_return());
 	a_acc = function_body_pair.first;
 	const auto function_body3 = function_body_pair.second;
 
-	const auto function_def2 = function_definition_t{ k_no_location, function_def->_definition_name, function_type2, args2, make_shared<body_t>(function_body3), 0 };
-
+	const auto function_def2 = function_definition_t::make_floyd_func(k_no_location, function_def->_definition_name, function_type2, args2, make_shared<body_t>(function_body3));
 	QUARK_ASSERT(function_def2.check_types_resolved());
 
 	a_acc._function_defs.push_back(make_shared<function_definition_t>(function_def2));
@@ -1741,7 +1743,7 @@ semantic_ast_t analyse(analyser_t& a){
 			return result;
 		}();
 
-		const auto def = make_shared<function_definition_t>(function_definition_t{ k_no_location, function_name, signature._function_type, args, {}, signature._function_id });
+		const auto def = make_shared<function_definition_t>(function_definition_t::make_host_func(k_no_location, function_name, signature._function_type, args, signature._function_id));
 
 		const auto function_id = static_cast<int>(function_defs.size());
 		function_defs.push_back(def);

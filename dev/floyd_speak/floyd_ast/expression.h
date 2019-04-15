@@ -41,25 +41,72 @@ namespace floyd {
 
 
 	struct function_definition_t {
-		public: bool check_invariant() const {
-			if(_host_function_id != k_no_host_function_id){
-				QUARK_ASSERT(!_body);
-			}
-			else{
-				QUARK_ASSERT(_body);
-			}
-			return true;
+		struct empty_t {
+			bool operator==(const empty_t& other) const{ return true; };
+
+		};
+		struct floyd_func_t {
+			bool operator==(const floyd_func_t& other) const;
+
+			std::shared_ptr<const body_t> _body;
+		};
+		struct host_func_t {
+			bool operator==(const host_func_t& other) const { return _host_function_id == other._host_function_id; };
+
+			int _host_function_id;
+		};
+
+		typedef std::variant<empty_t, floyd_func_t, host_func_t> function_def_variant_t;
+
+
+		//	Placeholder.
+		static function_definition_t make_empty(){
+			return {
+				k_no_location,
+				"",
+				typeid_t::make_function(typeid_t::make_void(), {}, epure::pure),
+				{},
+				empty_t{ }
+			};
 		}
+
+		static function_definition_t make_floyd_func(const location_t& location, const std::string& definition_name, const typeid_t& function_type, const std::vector<member_t>& args, const std::shared_ptr<body_t>& body){
+			return {
+				location,
+				definition_name,
+				function_type,
+				args,
+				floyd_func_t{ body }
+			};
+		}
+		static function_definition_t make_host_func(const location_t& location, const std::string& definition_name, const typeid_t& function_type, const std::vector<member_t>& args, int host_function_id){
+			return {
+				location,
+				definition_name,
+				function_type,
+				args,
+				host_func_t{ host_function_id }
+			};
+		}
+
+		public: bool check_invariant() const;
 
 		public: bool check_types_resolved() const;
 
 
+		////////////////////////////////	STATE
+
+
 		location_t _location;
+
+		//	This is optional and may be different than the function name in the code. It's a hint only.
 		std::string _definition_name;
 		typeid_t _function_type;
+
+		//	Same types as in _function_type, but augumented with argument names.
 		std::vector<member_t> _args;
-		std::shared_ptr<body_t> _body;
-		int _host_function_id;
+
+		function_def_variant_t _contents;
 	};
 
 	bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);

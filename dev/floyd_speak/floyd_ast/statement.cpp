@@ -15,6 +15,13 @@ using std::make_shared;
 using std::vector;
 
 
+
+bool operator==(const body_t& lhs, const body_t& rhs){
+	return
+		lhs._statements == rhs._statements
+		&& lhs._symbol_table == rhs._symbol_table;
+}
+
 bool body_t::check_invariant() const {
 	for(const auto& i: _statements){
 		QUARK_ASSERT(i.check_invariant());
@@ -354,7 +361,7 @@ statement_t astjson_to_statement__nonlossy(const json_t& statement0){
 		const auto pure = impure.is_false();
 		const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2), pure ? epure::pure : epure::impure);
 		const auto body = body_t{fstatements2};
-		const auto function_def = function_definition_t{k_no_location, name2, function_typeid, args2, make_shared<body_t>(body), 0};
+		const auto function_def = function_definition_t::make_floyd_func(k_no_location, name2, function_typeid, args2, make_shared<body_t>(body));
 
 		const auto s = statement_t::define_function_statement_t{ name2, std::make_shared<function_definition_t>(function_def) };
 		return statement_t::make__define_function_statement(loc, s);

@@ -24,6 +24,32 @@ using namespace std;
 
 //////////////////////////////////////////////////		function_definition_t
 
+bool function_definition_t::check_invariant() const {
+	QUARK_ASSERT(_function_type.is_function());
+	QUARK_ASSERT(_function_type.get_function_args().size() == _args.size());
+
+	const auto args0 = _function_type.get_function_args();
+	for(int i = 0 ; i < args0.size(); i++){
+		QUARK_ASSERT(args0[i] == _args[i]._type);
+	}
+
+	struct visitor_t {
+		bool operator()(const empty_t& e) const{
+			return true;
+		}
+		bool operator()(const floyd_func_t& e) const{
+			QUARK_ASSERT(e._body->check_invariant());
+			return true;
+		}
+		bool operator()(const host_func_t& e) const{
+			return true;
+		}
+	};
+	bool result3 = std::visit(visitor_t{}, _contents);
+	QUARK_ASSERT(result3);
+
+	return true;
+}
 
 bool operator==(const function_definition_t& lhs, const function_definition_t& rhs){
 	return true
@@ -31,8 +57,7 @@ bool operator==(const function_definition_t& lhs, const function_definition_t& r
 		&& lhs._definition_name == rhs._definition_name
 		&& lhs._function_type == rhs._function_type
 		&& lhs._args == rhs._args
-		&& compare_shared_values(lhs._body, rhs._body)
-		&& lhs._host_function_id == rhs._host_function_id
+		&& lhs._contents == rhs._contents
 		;
 }
 
@@ -43,14 +68,18 @@ const typeid_t& get_function_type(const function_definition_t& f){
 json_t function_def_to_ast_json(const function_definition_t& v) {
 	typeid_t function_type = get_function_type(v);
 
+	auto floyd_func = std::get_if<function_definition_t::floyd_func_t>(&v._contents);
+	auto host_func = std::get_if<function_definition_t::host_func_t>(&v._contents);
+
+
 	return std::vector<json_t>{
 		typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state),
 		v._definition_name,
 		members_to_json(v._args),
 
-		v._body ? body_to_json(*v._body) : json_t(),
+		floyd_func ? body_to_json(*floyd_func->_body) : json_t(),
 
-		json_t(v._host_function_id)
+		host_func ? json_t(host_func->_host_function_id) : json_t(0)
 	};
 }
 
@@ -68,14 +97,24 @@ function_definition_t json_to_function_def(const json_t& p){
 	const std::vector<member_t> args1 = members_from_json(args0);
 	const std::shared_ptr<body_t> body1 = body0.is_null() ? std::shared_ptr<body_t>() : std::make_shared<body_t>(json_to_body(body0));
 
-	return function_definition_t{
-		location1,
-		definition_name1,
-		function_type1,
-		args1,
-		body1,
-		static_cast<int>(host_function_id0.get_number())
-	};
+	if(body1){
+		return function_definition_t::make_floyd_func(
+			location1,
+			definition_name1,
+			function_type1,
+			args1,
+			body1
+		);
+	}
+	else{
+		return function_definition_t::make_host_func(
+			location1,
+			definition_name1,
+			function_type1,
+			args1,
+			static_cast<int>(host_function_id0.get_number())
+		);
+	}
 }
 
 bool function_definition_t::check_types_resolved() const{
@@ -90,16 +129,45 @@ bool function_definition_t::check_types_resolved() const{
 			return false;
 		}
 	}
-	if(_body && _body->check_types_resolved() == false){
+
+	struct visitor_t {
+		bool operator()(const empty_t& e) const{
+			return true;
+		}
+		bool operator()(const floyd_func_t& e) const{
+			return e._body->check_types_resolved();
+		}
+		bool operator()(const host_func_t& e) const{
+			return true;
+		}
+	};
+	bool result3 = std::visit(visitor_t{}, _contents);
+	if(result3 == false){
 		return false;
 	}
 	return true;
 }
 
+bool function_definition_t::floyd_func_t::operator==(const floyd_func_t& other) const{
+	return compare_shared_values(_body, other._body);
+}
+
+
+
+QUARK_UNIT_TEST("", "", "", ""){
+	
+	const auto a = function_definition_t::make_floyd_func(k_no_location, "definition_name", typeid_t::make_function(typeid_t::make_string(), {}, epure::pure), {}, std::make_shared<body_t>());
+	QUARK_UT_VERIFY(a._args.empty());
+
+
+	QUARK_UT_VERIFY(a == a);
+}
 
 
 
 ////////////////////////////////////////////		expression_t
+
+
 
 
 
