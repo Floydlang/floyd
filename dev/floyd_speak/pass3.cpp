@@ -70,13 +70,9 @@ struct lexical_scope_t {
 
 struct analyser_t {
 	public: analyser_t(const pass2_ast_t& ast);
-//	public: analyser_t(const analyser_t& other);
-//	public: const analyser_t& operator=(const analyser_t& other);
 #if DEBUG
 	public: bool check_invariant() const;
 #endif
-//	public: void swap(analyser_t& other) throw();
-
 
 
 	////////////////////////		STATE
@@ -1368,11 +1364,19 @@ typeid_t get_host_function_return_type(const analyser_t& a, const statement_t& p
 	}
 }
 
+const typeid_t figure_out_return_type(const analyser_t& a, const statement_t& parent, const expression_t& callee_expr, const std::vector<expression_t>& call_args){
+	const auto callee_type = callee_expr.get_output_type();
+	const auto callee_return_value = callee_type.get_function_return();
 
+	if(is_host_function_call(a, callee_expr)){
+		const auto return_type = get_host_function_return_type(a, parent, callee_expr, call_args);
+		return return_type;
+	}
+	else{
+		return callee_return_value;
+	}
+}
 
-/*
-	Notice: e._input_expr[0] is callee, the remaining are arguments.
-*/
 std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::call_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
@@ -1382,7 +1386,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a,
 	a_acc = callee_expr0.first;
 	const auto callee_expr = callee_expr0.second;
 
-	const auto args0 = details.args;
+	const auto call_args = details.args;
 
 	const auto callsite_pure = a_acc._lexical_scope_stack.back().pure;
 
@@ -1399,15 +1403,11 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a,
 			throw_compiler_error(parent.location, "Cannot call impure function from a pure function.");
 		}
 
-		const auto call_args_pair = analyze_call_args(a_acc, parent, args0, callee_args);
+		const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_args);
 		a_acc = call_args_pair.first;
-		if(is_host_function_call(a, callee_expr)){
-			const auto return_type = get_host_function_return_type(a, parent, callee_expr, call_args_pair.second);
-			return { a_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(return_type)) };
-		}
-		else{
-			return { a_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(callee_return_value)) };
-		}
+
+		const auto call_return_type = figure_out_return_type(a, parent, callee_expr, call_args_pair.second);
+		return { a_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(call_return_type)) };
 	}
 
 	//	Attempting to call a TYPE? Then this may be a constructor call.
@@ -1426,7 +1426,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a,
 			if(callee_type2.is_struct()){
 				const auto& def = callee_type2.get_struct();
 				const auto callee_args = get_member_types(def._members);
-				const auto call_args_pair = analyze_call_args(a_acc, parent, args0, callee_args);
+				const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_args);
 				a_acc = call_args_pair.first;
 
 				return { a_acc, expression_t::make_construct_value_expr(callee_type2, call_args_pair.second) };
@@ -1436,7 +1436,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a,
 			else{
 				const auto callee_args = vector<typeid_t>{ callee_type2 };
 				QUARK_ASSERT(callee_args.size() == 1);
-				const auto call_args_pair = analyze_call_args(a_acc, parent, args0, callee_args);
+				const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_args);
 				a_acc = call_args_pair.first;
 				return { a_acc, expression_t::make_construct_value_expr(callee_type2, call_args_pair.second) };
 			}
@@ -1718,18 +1718,18 @@ bool check_types_resolved(const general_purpose_ast_t& ast){
 	return true;
 }
 
-semantic_ast_t analyse(analyser_t& a){
-	QUARK_ASSERT(a.check_invariant());
 
-	/*
-		Create built-in globla symbol map: built in data types, built-in functions (host functions).
-	*/
+struct builtins_t {
+	std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs;
+	std::vector<std::pair<std::string, symbol_t>> symbol_map;
+};
+
+builtins_t insert_builtin_functions(analyser_t& a, const std::map<std::string, floyd::host_function_signature_t>& host_functions, int function_def_start_id){
+	std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs;
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
-	auto function_defs = a._imm->_ast._tree._function_defs;
-
-	//	Insert built-in functions.
-	for(auto hf_kv: a._imm->_host_functions){
+	int function_id = function_def_start_id;
+	for(auto hf_kv: host_functions){
 		const auto& function_name = hf_kv.first;
 		const auto& signature = hf_kv.second;
 
@@ -1745,13 +1745,29 @@ semantic_ast_t analyse(analyser_t& a){
 
 		const auto def = make_shared<function_definition_t>(function_definition_t::make_host_func(k_no_location, function_name, signature._function_type, args, signature._function_id));
 
-		const auto function_id = static_cast<int>(function_defs.size());
 		function_defs.push_back(def);
 
 		const auto function_value = value_t::make_function_value(signature._function_type, function_id);
+		function_id++;
 
 		symbol_map.push_back({function_name, symbol_t::make_constant(function_value)});
 	}
+	return builtins_t{ function_defs, symbol_map };
+}
+
+semantic_ast_t analyse(analyser_t& a){
+	QUARK_ASSERT(a.check_invariant());
+
+	/*
+		Create built-in globla symbol map: built in data types, built-in functions (host functions).
+	*/
+	std::vector<std::pair<std::string, symbol_t>> symbol_map;
+
+	auto function_defs = a._imm->_ast._tree._function_defs;
+
+	const auto builtins = insert_builtin_functions(a, a._imm->_host_functions, static_cast<int>(function_defs.size()));
+	function_defs.insert(function_defs.end(), builtins.function_defs.begin(), builtins.function_defs.end());
+	symbol_map.insert(symbol_map.end(), builtins.symbol_map.begin(), builtins.symbol_map.end());
 
 	//	"null" is equivalent to json_value::null
 	symbol_map.push_back({"null", symbol_t::make_constant(value_t::make_json_value(json_t()))});
