@@ -3571,8 +3571,16 @@ QUARK_UNIT_TEST("Floyd test suite", "value_to_jsonvalue()", "[pixel_t]", ""){
 
 //////////////////////////////////////////		value_to_jsonvalue() -> jsonvalue_to_value() roundtrip
 
+#if 0
 
-QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "bool", ""){
+??? jsonvalue_to_value() is a broken concept. Use string(json_value), bool(json_value) etc instead.
+
+	int type = get_json_type(j);
+	if(type == 1){
+	}
+
+
+QUARK_UNIT_TEST_VIP("Floyd test suite", "jsonvalue_to_value()", "bool", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(true), bool)		)", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "bool", ""){
@@ -3616,7 +3624,7 @@ QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "point_t", ""){
 		expected
 	);
 }
-
+#endif
 
 
 

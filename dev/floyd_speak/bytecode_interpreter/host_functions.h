@@ -22,14 +22,14 @@
 
 namespace floyd {
 
+/*
 enum class host_function_id {
 	jsonvalue_to_value = 1020
 };
+*/
 
 
 extern const std::string k_builtin_types_and_constants;
-
-typedef typeid_t (*HOST_FUNCTION__CALC_RETURN_TYPE)(const std::vector<typeid_t>& args);
 
 
 struct host_function_record_t {
@@ -39,10 +39,6 @@ struct host_function_record_t {
 	int _function_id;
 
 	floyd::typeid_t _function_type;
-
-	//	Set to non-nullptr to override _function_type.get_return_type() depending on caller's argument types.
-	//	Use make_internal_dynamic() as return value and at least *one* input argument.
-	HOST_FUNCTION__CALC_RETURN_TYPE _dynamic_return_type;
 };
 
 std::vector<host_function_record_t> get_host_function_records();
@@ -51,7 +47,6 @@ std::vector<host_function_record_t> get_host_function_records();
 struct host_function_signature_t {
 	int _function_id;
 	floyd::typeid_t _function_type;
-	HOST_FUNCTION__CALC_RETURN_TYPE _dynamic_return_type;
 };
 
 std::map<std::string, host_function_signature_t> get_host_function_signatures();

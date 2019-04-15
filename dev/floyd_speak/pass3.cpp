@@ -1289,6 +1289,9 @@ std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& 
 }
 
 
+
+
+/*
 //	??? This only works when directly calling one of the host functions, via its global name.
 bool is_host_function_call(const analyser_t& a, const expression_t& callee_expr){
 	QUARK_ASSERT(std::get_if<expression_t::load_t>(&callee_expr._contents) == nullptr);
@@ -1362,7 +1365,7 @@ typeid_t get_host_function_return_type(const analyser_t& a, const statement_t& p
 	}
 }
 
-const typeid_t figure_out_return_type(const analyser_t& a, const statement_t& parent, const expression_t& callee_expr, const std::vector<expression_t>& call_args){
+const typeid_t figure_out_return_type_via_hf(const analyser_t& a, const statement_t& parent, const expression_t& callee_expr, const std::vector<expression_t>& call_args){
 	const auto callee_type = callee_expr.get_output_type();
 	const auto callee_return_value = callee_type.get_function_return();
 
@@ -1372,6 +1375,60 @@ const typeid_t figure_out_return_type(const analyser_t& a, const statement_t& pa
 	}
 	else{
 		return callee_return_value;
+	}
+}
+*/
+
+const typeid_t figure_out_return_type(const analyser_t& a, const statement_t& parent, const expression_t& callee_expr, const std::vector<expression_t>& call_args){
+	const auto callee_type = callee_expr.get_output_type();
+	const auto callee_return_value = callee_type.get_function_return();
+
+	const auto ret_type = callee_type.get_function_dyn_return_type();
+	switch(ret_type){
+		case typeid_t::return_dyn_type::none:
+			{
+				return callee_return_value;
+			}
+			break;
+
+		case typeid_t::return_dyn_type::arg0:
+			{
+				QUARK_ASSERT(call_args.size() > 0);
+
+				return call_args[0].get_output_type();
+			}
+			break;
+		case typeid_t::return_dyn_type::arg1:
+			{
+				QUARK_ASSERT(call_args.size() >= 2);
+
+				return call_args[1].get_output_type();
+			}
+			break;
+		case typeid_t::return_dyn_type::vector_of_arg1func_return:
+			{
+		//	x = make_vector(arg1.get_function_return());
+				QUARK_ASSERT(call_args.size() >= 2);
+
+				const auto f = call_args[1].get_output_type().get_function_return();
+				const auto ret = typeid_t::make_vector(f);
+				return ret;
+			}
+			break;
+		case typeid_t::return_dyn_type::vector_of_arg2func_return:
+			{
+		//	x = make_vector(arg2.get_function_return());
+			QUARK_ASSERT(call_args.size() >= 3);
+			const auto f = call_args[2].get_output_type().get_function_return();
+			const auto ret = typeid_t::make_vector(f);
+			return ret;
+			}
+			break;
+
+
+		default:
+			QUARK_ASSERT(false);
+			break;
 	}
 }
 
