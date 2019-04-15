@@ -13,7 +13,7 @@ Floyd is the programming language part of Floyd. It's an alternative to Java and
 
 1. BASIC CONCEPTS
 2. THE LANGUAGE
-3. BUILT-IN FUNCTIONS
+3. CORE FUNCTIONS
 4. COMMAND LINE TOOL
 5. REFERENCE
 
@@ -1672,7 +1672,7 @@ Protocol member functions can be tagged "impure" which allows it to be implement
 
 
 
-# 3. BUILT-IN FUNCTIONS
+# 3. CORE FUNCTIONS
 
 These functions are built into the language itself and are always available to your code. They are all pure so can be used in pure functions.
 

@@ -66,9 +66,6 @@ struct host_function_t {
 std::map<int, host_function_t> get_host_functions();
 
 
-typeid_t get_host_function_return_type(const std::string& function_name, const std::vector<typeid_t>& args);
-
-
 typeid_t make__fsentry_t__type();
 typeid_t make__fsentry_info_t__type();
 typeid_t make__fs_environment_t__type();

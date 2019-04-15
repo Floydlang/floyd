@@ -1273,50 +1273,30 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 
 //	callee (plural callees)
 //	(telephony) The person who is called by the caller (on the telephone).
-
-/*
-	Magic support variable argument functions ,like c-lang (...). Use a function taking ONE argument of type internal_dynamic.
-*/
 std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& a, const statement_t& parent, const vector<expression_t>& call_args, const std::vector<typeid_t>& callee_args){
-	if(callee_args.size() == 1 && callee_args[0].is_internal_dynamic()){
-		auto a_acc = a;
-		vector<expression_t> call_args2;
-		for(int i = 0 ; i < call_args.size() ; i++){
-			const auto call_arg_pair = analyse_expression_no_target(a_acc, parent, call_args[i]);
-			a_acc = call_arg_pair.first;
-			call_args2.push_back(call_arg_pair.second);
-		}
-		return { a_acc, call_args2 };
+	//	arity
+	if(call_args.size() != callee_args.size()){
+		std::stringstream what;
+		what << "Wrong number of arguments in function call, got " << std::to_string(call_args.size()) << ", expected " << std::to_string(callee_args.size()) << ".";
+		throw_compiler_error(parent.location, what.str());
 	}
-	else{
-		//	arity
-		if(call_args.size() != callee_args.size()){
-			std::stringstream what;
-			what << "Wrong number of arguments in function call, got " << std::to_string(call_args.size()) << ", expected " << std::to_string(callee_args.size()) << ".";
-			throw_compiler_error(parent.location, what.str());
-		}
 
-		auto a_acc = a;
-		vector<expression_t> call_args2;
-		for(int i = 0 ; i < callee_args.size() ; i++){
-			const auto callee_arg = callee_args[i];
-
-			const auto call_arg_pair = analyse_expression_to_target(a_acc, parent, call_args[i], callee_arg);
-			a_acc = call_arg_pair.first;
-			call_args2.push_back(call_arg_pair.second);
-		}
-		return { a_acc, call_args2 };
+	auto a_acc = a;
+	vector<expression_t> call_args2;
+	for(int i = 0 ; i < callee_args.size() ; i++){
+		const auto call_arg_pair = analyse_expression_to_target(a_acc, parent, call_args[i], callee_args[i]);
+		a_acc = call_arg_pair.first;
+		call_args2.push_back(call_arg_pair.second);
 	}
+	return { a_acc, call_args2 };
 }
 
-bool is_host_function_call(const analyser_t& a, const expression_t& callee_expr){
-    if(auto load = std::get_if<expression_t::load_t>(&callee_expr._contents)){
-		const auto function_name = load->variable_name;
 
-		const auto find_it = a._imm->_host_functions.find(function_name);
-		return find_it != a._imm->_host_functions.end();
-	}
-	else if(auto load2 = std::get_if<expression_t::load2_t>(&callee_expr._contents)){
+//	??? This only works when directly calling one of the host functions, via its global name.
+bool is_host_function_call(const analyser_t& a, const expression_t& callee_expr){
+	QUARK_ASSERT(std::get_if<expression_t::load_t>(&callee_expr._contents) == nullptr);
+
+	if(auto load2 = std::get_if<expression_t::load2_t>(&callee_expr._contents)){
 		const auto callee = resolve_symbol_by_address(a, load2->address);
 		QUARK_ASSERT(callee != nullptr);
 
@@ -1388,6 +1368,8 @@ typeid_t get_host_function_return_type(const analyser_t& a, const statement_t& p
 	}
 }
 
+
+
 /*
 	Notice: e._input_expr[0] is callee, the remaining are arguments.
 */
@@ -1416,7 +1398,6 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a,
 		if(callsite_pure == epure::pure && callee_pure == epure::impure){
 			throw_compiler_error(parent.location, "Cannot call impure function from a pure function.");
 		}
-
 
 		const auto call_args_pair = analyze_call_args(a_acc, parent, args0, callee_args);
 		a_acc = call_args_pair.first;
@@ -1797,6 +1778,10 @@ semantic_ast_t analyse(analyser_t& a){
 	const auto body = body_t(a._imm->_ast._tree._globals._statements, symbol_table_t{symbol_map});
 	const auto result = analyse_body(a, body, epure::impure, typeid_t::make_undefined());
 
+for(const auto& e: a._types.interned){
+	QUARK_TRACE_SS(typeid_to_compact_string(e.second));
+}
+
 	const auto result_ast0 = pass2_ast_t{
 		general_purpose_ast_t{
 			._globals = result. second,
@@ -1827,33 +1812,6 @@ analyser_t::analyser_t(const pass2_ast_t& ast){
 	const auto host_functions = floyd::get_host_function_signatures();
 	_imm = make_shared<analyzer_imm_t>(analyzer_imm_t{ast, host_functions});
 }
-/*
-
-analyser_t::analyser_t(const analyser_t& other) :
-	_imm(other._imm),
-	_lexical_scope_stack(other._lexical_scope_stack),
-	_function_defs(other._function_defs),
-	_software_system(other._software_system),
-	_container_def(other._container_def)
-{
-	QUARK_ASSERT(other.check_invariant());
-	QUARK_ASSERT(check_invariant());
-}
-
-void analyser_t::swap(analyser_t& other) throw() {
-	_imm.swap(other._imm);
-	_lexical_scope_stack.swap(other._lexical_scope_stack);
-	_function_defs.swap(other._function_defs);
-	std::swap(_software_system, other._software_system);
-	std::swap(_container_def, other._container_def);
-}
-
-const analyser_t& analyser_t::operator=(const analyser_t& other){
-	auto temp = other;
-	swap(temp);
-	return *this;
-}
-*/
 
 #if DEBUG
 bool analyser_t::check_invariant() const {
