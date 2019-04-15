@@ -192,7 +192,7 @@ bool expression_t::check_types_resolved() const{
 
 	struct visitor_t {
 		bool operator()(const literal_exp_t& e) const{
-			return true;
+			return e.value.get_type().check_types_resolved();
 		}
 		bool operator()(const arithmetic_t& e) const{
 			return e.lhs->check_types_resolved() && e.rhs->check_types_resolved();
@@ -213,13 +213,13 @@ bool expression_t::check_types_resolved() const{
 
 
 		bool operator()(const struct_definition_expr_t& e) const{
-			return true;
+			return e.def->check_types_resolved();
 		}
 		bool operator()(const function_definition_expr_t& e) const{
-			return true;
+			return e.def->check_types_resolved();
 		}
 		bool operator()(const load_t& e) const{
-			return true;
+			return false;
 		}
 		bool operator()(const load2_t& e) const{
 			return true;
