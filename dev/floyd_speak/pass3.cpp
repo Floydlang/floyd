@@ -238,13 +238,14 @@ typeid_t resolve_type_internal(const analyser_t& a, const location_t& loc, const
 		const auto ret = type.get_function_return();
 		const auto args = type.get_function_args();
 		const auto pure = type.get_function_pure();
+		const auto dyn_return_type = type.get_function_dyn_return_type();
 
 		const auto ret2 = resolve_type_internal2(a, loc, ret);
 		vector<typeid_t> args2;
 		for(const auto& e: args){
 			args2.push_back(resolve_type_internal2(a, loc, e));
 		}
-		return typeid_t::make_function(ret2, args2, pure);
+		return typeid_t::make_function3(ret2, args2, pure, dyn_return_type);
 	}
 
 	else if(basetype == base_type::k_internal_unresolved_type_identifier){
@@ -1310,8 +1311,6 @@ bool is_host_function_call(const analyser_t& a, const expression_t& callee_expr)
 }
 
 typeid_t get_host_function_return_type(const analyser_t& a, const statement_t& parent, const expression_t& callee_expr, const vector<expression_t>& args){
-	QUARK_ASSERT(is_host_function_call(a, callee_expr));
-
 	auto load2 = std::get_if<expression_t::load2_t>(&callee_expr._contents);
 	QUARK_ASSERT(load2 != nullptr);
 
@@ -1343,7 +1342,6 @@ typeid_t get_host_function_return_type(const analyser_t& a, const statement_t& p
 
 			const auto arg0 = args[0];
 			const auto arg1 = args[1];
-
 
 			if(auto arg1_load2 = std::get_if<expression_t::load2_t>(&arg1._contents)){
 				const auto symbol = resolve_symbol_by_address(a, arg1_load2->address);

@@ -112,6 +112,20 @@ enum class epure {
 
 
 struct typeid_t {
+	public: enum class return_dyn_type {
+		none,
+		arg0,
+		arg1,
+
+		//	x = make_vector(arg1.get_function_return());
+		vector_of_arg1func_return,
+
+		//	x = make_vector(arg2.get_function_return());
+		vector_of_arg2func_return
+	};
+
+
+
 	struct internal_undefined_t {
 		bool operator==(const internal_undefined_t& other) const{	return true; };
 	};
@@ -159,6 +173,9 @@ struct typeid_t {
 
 		std::vector<typeid_t> _parts;
 		epure pure;
+
+		//??? Make this property travel OK through JSON, print outs etc.
+		return_dyn_type dyn_return;
 	};
 	struct internal_unresolved_type_identifier_t {
 		bool operator==(const internal_unresolved_type_identifier_t& other) const{	return _unresolved_type_identifier == other._unresolved_type_identifier; };
@@ -331,14 +348,26 @@ struct typeid_t {
 		return std::get<dict_t>(_contents)._parts[0];
 	}
 
+	public: static typeid_t make_function3(const typeid_t& ret, const std::vector<typeid_t>& args, epure pure, return_dyn_type dyn_return){
+		QUARK_ASSERT(ret.is_internal_dynamic() == false || dyn_return != return_dyn_type::none);
 
-	public: static typeid_t make_function(const typeid_t& ret, const std::vector<typeid_t>& args, epure pure){
 		//	Functions use _parts[0] for return type always. _parts[1] is first argument, if any.
 		std::vector<typeid_t> parts = { ret };
 		parts.insert(parts.end(), args.begin(), args.end());
 
-		return { function_t{ parts, pure } };
+		return { function_t{ parts, pure, dyn_return } };
 	}
+
+	public: static typeid_t make_function_dyn_return(const std::vector<typeid_t>& args, epure pure, return_dyn_type dyn_return){
+		return make_function3(typeid_t::make_internal_dynamic(), args, pure, dyn_return);
+	}
+
+	public: static typeid_t make_function(const typeid_t& ret, const std::vector<typeid_t>& args, epure pure){
+		QUARK_ASSERT(ret.is_internal_dynamic() == false);
+
+		return make_function3(ret, args, pure, return_dyn_type::none);
+	}
+
 	public: bool is_function() const {
 		QUARK_ASSERT(check_invariant());
 
@@ -360,6 +389,11 @@ struct typeid_t {
 		QUARK_ASSERT(check_invariant());
 
 		return std::get<function_t>(_contents).pure;
+	}
+	public: return_dyn_type get_function_dyn_return_type() const {
+		QUARK_ASSERT(check_invariant());
+
+		return std::get<function_t>(_contents).dyn_return;
 	}
 
 

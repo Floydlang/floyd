@@ -1852,9 +1852,12 @@ There is never a file extension. You could add one if you want too.
 host_function_record_t make_rec(const std::string& name, HOST_FUNCTION_PTR f, int function_id, typeid_t function_type){
 	return host_function_record_t { name, f, function_id, function_type, nullptr };
 }
-host_function_record_t make_rec(const std::string& name, HOST_FUNCTION_PTR f, int function_id, typeid_t function_type, HOST_FUNCTION__CALC_RETURN_TYPE calc_return_type){
+host_function_record_t make_rec2(const std::string& name, HOST_FUNCTION_PTR f, int function_id, typeid_t function_type, HOST_FUNCTION__CALC_RETURN_TYPE calc_return_type){
 	return host_function_record_t { name, f, function_id, function_type, calc_return_type };
 }
+
+
+
 
 
 typeid_t return_type_sames_as_arg0(const std::vector<typeid_t>& args){
@@ -1881,6 +1884,9 @@ typeid_t return_type__supermap(const std::vector<typeid_t>& args){
 	return ret;
 }
 
+
+
+
 std::vector<host_function_record_t> get_host_function_records(){
 	const auto VOID = typeid_t::make_void();
 	const auto DYN = typeid_t::make_internal_dynamic();
@@ -1893,32 +1899,32 @@ std::vector<host_function_record_t> get_host_function_records(){
 		make_rec("to_pretty_string", host__to_pretty_string, 1003, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::pure)),
 		make_rec("typeof", host__typeof, 1004, typeid_t::make_function(typeid_t::make_typeid(), { DYN }, epure::pure)),
 
-		make_rec("update", host__update, 1006, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure), return_type_sames_as_arg0),
+		make_rec2("update", host__update, 1006, typeid_t::make_function_dyn_return({ DYN, DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg0), return_type_sames_as_arg0),
 
 		//	size() is translated to bc_opcode::k_get_size_vector_w_external_elements() etc.
 		make_rec("size", nullptr, 1007, typeid_t::make_function(typeid_t::make_int(), { DYN }, epure::pure)),
 
 		make_rec("find", host__find, 1008, typeid_t::make_function(typeid_t::make_int(), { DYN, DYN }, epure::pure)),
 		make_rec("exists", host__exists, 1009, typeid_t::make_function(typeid_t::make_bool(), { DYN, DYN }, epure::pure)),
-		make_rec("erase", host__erase, 1010, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure), return_type_sames_as_arg0),
+		make_rec2("erase", host__erase, 1010, typeid_t::make_function_dyn_return({ DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg0), return_type_sames_as_arg0),
 
 		//	push_back() is translated to bc_opcode::k_pushback_vector_w_inplace_elements() etc.
-		make_rec("push_back", nullptr, 1011, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure), return_type_sames_as_arg0),
+		make_rec2("push_back", nullptr, 1011, typeid_t::make_function_dyn_return({ DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg0), return_type_sames_as_arg0),
 
-		make_rec("subset", host__subset, 1012, typeid_t::make_function(DYN, { DYN, typeid_t::make_int(), typeid_t::make_int()}, epure::pure), return_type_sames_as_arg0),
-		make_rec("replace", host__replace, 1013, typeid_t::make_function(DYN, { DYN, typeid_t::make_int(), typeid_t::make_int(), DYN }, epure::pure), return_type_sames_as_arg0),
+		make_rec2("subset", host__subset, 1012, typeid_t::make_function_dyn_return({ DYN, typeid_t::make_int(), typeid_t::make_int()}, epure::pure, typeid_t::return_dyn_type::arg0), return_type_sames_as_arg0),
+		make_rec2("replace", host__replace, 1013, typeid_t::make_function_dyn_return({ DYN, typeid_t::make_int(), typeid_t::make_int(), DYN }, epure::pure, typeid_t::return_dyn_type::arg0), return_type_sames_as_arg0),
 
 
 		make_rec("script_to_jsonvalue", host__script_to_jsonvalue, 1017, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_string()}, epure::pure)),
 		make_rec("jsonvalue_to_script", host__jsonvalue_to_script, 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json_value()}, epure::pure)),
 		make_rec("value_to_jsonvalue", host__value_to_jsonvalue, 1019, typeid_t::make_function(typeid_t::make_json_value(), { DYN }, epure::pure)),
-		make_rec("jsonvalue_to_value", host__jsonvalue_to_value, 1020, typeid_t::make_function(DYN, { typeid_t::make_json_value(), typeid_t::make_typeid() }, epure::pure)),
+		make_rec("jsonvalue_to_value", host__jsonvalue_to_value, 1020, typeid_t::make_function_dyn_return({ typeid_t::make_json_value(), typeid_t::make_typeid() }, epure::pure, typeid_t::return_dyn_type::arg0)),
 		make_rec("get_json_type", host__get_json_type, 1021, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}, epure::pure)),
 
 		make_rec("calc_string_sha1", host__calc_string_sha1, 1031, typeid_t::make_function(make__sha1_t__type(), { typeid_t::make_string() }, epure::pure)),
 		make_rec("calc_binary_sha1", host__calc_binary_sha1, 1032, typeid_t::make_function(make__sha1_t__type(), { make__binary_t__type() }, epure::pure)),
 
-		make_rec("map", host__map, 1033, typeid_t::make_function(DYN, { DYN, DYN}, epure::pure), return_type__map),
+		make_rec2("map", host__map, 1033, typeid_t::make_function_dyn_return({ DYN, DYN}, epure::pure, typeid_t::return_dyn_type::vector_of_arg1func_return), return_type__map),
 		make_rec(
 			"map_string",
 			host__map_string,
@@ -1932,9 +1938,9 @@ std::vector<host_function_record_t> get_host_function_records(){
 				epure::pure
 			)
 		),
-		make_rec("filter", host__filter, 1036, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure), return_type_sames_as_arg0),
-		make_rec("reduce", host__reduce, 1035, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure), return_type_sames_as_arg1),
-		make_rec("supermap", host__supermap, 1037, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure), return_type__supermap),
+		make_rec2("filter", host__filter, 1036, typeid_t::make_function_dyn_return({ DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg0), return_type_sames_as_arg0),
+		make_rec2("reduce", host__reduce, 1035, typeid_t::make_function_dyn_return({ DYN, DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg1), return_type_sames_as_arg1),
+		make_rec2("supermap", host__supermap, 1037, typeid_t::make_function_dyn_return({ DYN, DYN, DYN }, epure::pure, typeid_t::return_dyn_type::vector_of_arg2func_return), return_type__supermap),
 
 		//	print = impure!
 		make_rec("print", host__print, 1000, typeid_t::make_function(VOID, { DYN }, epure::pure)),

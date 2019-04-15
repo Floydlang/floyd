@@ -71,7 +71,11 @@ bool typeid_t::check_invariant() const{
 			return true;
 		}
 		bool operator()(const function_t& e) const{
+			//	If function returns a DYN, it must have a dyn_return.
+			QUARK_ASSERT(e._parts[0].is_internal_dynamic() == false || e.dyn_return != return_dyn_type::none);
+
 			QUARK_ASSERT(e._parts.size() >= 1);
+
 			for(const auto& m: e._parts){
 				QUARK_ASSERT(m.check_invariant());
 			}
