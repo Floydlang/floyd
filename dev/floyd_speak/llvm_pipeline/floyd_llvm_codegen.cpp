@@ -2594,7 +2594,7 @@ void floyd_host_function_1024(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-
+//?????
 const char* floyd_funcdef__replace__string(llvm_execution_engine_t* floyd_runtime_ptr, const char s[], std::size_t start, std::size_t end, const char replace[]){
 	auto s_len = std::strlen(s);
 	auto replace_len = std::strlen(replace);
@@ -2663,7 +2663,7 @@ int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, int64_t
 		NOT_IMPLEMENTED_YET();
 	}
 }
-
+//?????
 const char* floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
@@ -2725,7 +2725,7 @@ return value_to_bc(result);
 */
 }
 
-const char* floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type, int64_t arg2_value, int64_t arg2_type){
+const DYN_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type, int64_t arg2_value, int64_t arg2_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type = (base_type)arg0_type;
@@ -2747,9 +2747,7 @@ const char* floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_value, i
 
 		auto result = strdup(str);
 		result[index] = new_char;
-		return result;
-
-//			return DYN_RETURN_T{ reinterpret_cast<uint64_t>(value), (uint64_t)base_type::k_string };
+		return make_dyn_return(result);
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
