@@ -292,6 +292,11 @@ DYN_RETURN_T make_dyn_return(uint64_t a, uint64_t b){
 	return DYN_RETURN_T{ a, b };
 }
 
+
+DYN_RETURN_T make_dyn_return(const char* s){
+	return DYN_RETURN_T{ reinterpret_cast<uint64_t>(s), 0 };
+}
+
 DYN_RETURN_T make_dyn_return(const VEC_T& vec){
 	return DYN_RETURN_T{ reinterpret_cast<uint64_t>(vec.element_ptr), vec.element_count };
 }

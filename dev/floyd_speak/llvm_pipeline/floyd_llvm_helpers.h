@@ -172,6 +172,7 @@ enum class DYN_RETURN_MEMBERS {
 
 
 DYN_RETURN_T make_dyn_return(uint64_t a, uint64_t b);
+DYN_RETURN_T make_dyn_return(const char* s);
 DYN_RETURN_T make_dyn_return(const VEC_T& vec);
 llvm::Type* make_dynreturn_type(llvm::LLVMContext& context);
 

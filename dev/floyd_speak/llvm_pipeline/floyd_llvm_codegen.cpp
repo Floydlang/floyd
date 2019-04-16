@@ -1502,8 +1502,8 @@ const char* floyd_funcdef__replace__string(llvm_execution_engine_t* floyd_runtim
 	s2[start2 + replace_len + (s_len - end2)] = 0x00;
 	return s2;
 }
-
-const char* floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end, int64_t arg3_value, int64_t arg3_type){
+//??? Pass DYN as arguments too, skip int64_t arg0_value and int64_t arg0_type
+const DYN_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end, int64_t arg3_value, int64_t arg3_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	if(start < 0 || end < 0){
@@ -1515,7 +1515,8 @@ const char* floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0_value, 
 		if(arg3_type != (int)base_type::k_string){
 			quark::throw_runtime_error("replace(string) requires argument 4 to be a string.");
 		}
-		return floyd_funcdef__replace__string(r, (const char*)arg0_value, (std::size_t)start, (std::size_t)end, (const char*)arg3_value);
+		const auto ret = floyd_funcdef__replace__string(r, (const char*)arg0_value, (std::size_t)start, (std::size_t)end, (const char*)arg3_value);
+		return make_dyn_return(ret);
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
