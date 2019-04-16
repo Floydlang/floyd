@@ -1775,58 +1775,19 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvm::Function& emit_f,
 	//	If the return type is dynamic, cast the returned int64 to the correct type.
 	llvm::Value* result = result0;
 	if(callee_function_type.get_function_return().is_internal_dynamic()){
-		auto dyn_a = builder.CreateExtractValue(result, { static_cast<int>(DYN_RETURN_MEMBERS::a) });
-		auto dyn_b = builder.CreateExtractValue(result, { static_cast<int>(DYN_RETURN_MEMBERS::b) });
-
 		if(resolved_call_type.is_string()){
+			auto dyn_a = builder.CreateExtractValue(result, { static_cast<int>(DYN_RETURN_MEMBERS::a) });
+			auto dyn_b = builder.CreateExtractValue(result, { static_cast<int>(DYN_RETURN_MEMBERS::b) });
 			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, dyn_a, llvm::Type::getInt8PtrTy(context), "encoded->string");
-		}
-		else if(resolved_call_type.is_vector()){
-			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, dyn_a, llvm::Type::getInt64PtrTy(context), "a->element_ptr");
-
-			auto element_count_value = builder.CreateTrunc(dyn_b, llvm::Type::getInt32Ty(context));
-
-			const auto vec_type = make_vec_type(context);
-			auto vec_value = builder.CreateAlloca(vec_type, nullptr, "temp_vec");
-
-			const auto gep_index_list = std::vector<llvm::Value*>{
-				llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0),
-				llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), static_cast<int>(VEC_T_MEMBERS::element_ptr)),
-			};
-			llvm::Value* e_addr = builder.CreateGEP(vec_type, vec_value, gep_index_list, "");
-
-			const auto gep_index_list2 = std::vector<llvm::Value*>{
-				llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0),
-				llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), static_cast<int>(VEC_T_MEMBERS::element_count))
-			};
-			llvm::Value* f_addr = builder.CreateGEP(vec_type, vec_value, gep_index_list2, "");
-
-			builder.CreateStore(element_ptr, e_addr);
-			builder.CreateStore(element_count_value, f_addr);
-			result = builder.CreateLoad(vec_value, "final");
-		}
-		else{
-			NOT_IMPLEMENTED_YET();
-		}
-	}
-
-
-#if 0
+/*
 !!!
-	//??? break out to func.
-	if(callee_function_type.get_function_return().is_internal_dynamic()){
-
-//		auto dyn_a = builder.CreateExtractValue(vec_ptr, { static_cast<int>(DYN_RETURN_MEMBERS::a) });
-//		auto dyn_b = builder.CreateExtractValue(vec_ptr, { static_cast<int>(DYN_RETURN_MEMBERS::b) });
-
-		if(resolved_call_type.is_string()){
 			llvm::Value* vec_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, result0, make_dynreturn_type(context), "encoded->string");
 			auto elements_ptr_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(DYN_RETURN_MEMBERS::a) });
 			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, elements_ptr_value, llvm::Type::getInt8PtrTy(context), "encoded->string");
-		}
+*/
+
+ }
 		else if(resolved_call_type.is_vector()){
-			llvm::Value* vec_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, result0, make_vec_type(context), "encoded->string");
-			result = vec_ptr;
 /*
 			auto vec_elements_ptr_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(VEC_T_MEMBERS::element_ptr) });
 			auto vec_magic_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(VEC_T_MEMBERS::magic) });
@@ -1856,9 +1817,17 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvm::Function& emit_f,
 			builder.CreateStore(element_count_value, f_addr);
 			result = builder.CreateLoad(vec_value, "final");
 */
-		}
-#endif
 
+			//	Store the DYN to memory, then cast it to VEC and load it again.
+			auto dyn_value = builder.CreateAlloca(make_dynreturn_type(context), nullptr, "temp_vec");
+			builder.CreateStore(result0, dyn_value);
+			auto x = builder.CreateCast(llvm::Instruction::CastOps::BitCast, dyn_value, make_vec_type(context)->getPointerTo(), "encoded-> [string]");
+			result = builder.CreateLoad(x, "final");
+		}
+		else{
+			NOT_IMPLEMENTED_YET();
+		}
+	}
 	else{
 	}
 
@@ -3063,7 +3032,7 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(llvm_instance_t& instance, c
 	auto funcs = result0.second;
 
 	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, ast._tree._globals._symbol_table, funcs);
-	QUARK_TRACE_SS("result = " << floyd::print_program(*result));
+//	QUARK_TRACE_SS("result = " << floyd::print_program(*result));
 	return result;
 }
 
