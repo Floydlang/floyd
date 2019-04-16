@@ -2219,6 +2219,23 @@ int32_t floyd_runtime__compare_strings(void* floyd_runtime_ptr, int64_t op, cons
 	}
 }
 
+host_func_t floyd_runtime__compare_strings__make(llvm::LLVMContext& context){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getInt32Ty(context),
+		{
+			make_frp_type(context),
+			llvm::Type::getInt64Ty(context),
+			llvm::Type::getInt8PtrTy(context),
+			llvm::Type::getInt8PtrTy(context)
+		},
+		false
+	);
+	return { "floyd_runtime__compare_strings", function_type, reinterpret_cast<void*>(floyd_runtime__compare_strings) };
+}
+
+
+
+
 const char* floyd_runtime__append_strings(void* floyd_runtime_ptr, const char* lhs, const char* rhs){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 	QUARK_ASSERT(lhs != nullptr);
@@ -2766,23 +2783,7 @@ std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, c
 
 	auto& context = module.getContext();
 
-
-
-	//	floyd_runtime__compare_strings()
-	{
-		llvm::FunctionType* function_type = llvm::FunctionType::get(
-			llvm::Type::getInt32Ty(context),
-			{
-				make_frp_type(context),
-				llvm::Type::getInt64Ty(context),
-				llvm::Type::getInt8PtrTy(context),
-				llvm::Type::getInt8PtrTy(context)
-			},
-			false
-		);
-		auto f = module.getOrInsertFunction("floyd_runtime__compare_strings", function_type);
-		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), -1, make_dummy_function_definition()});
-	}
+	result.push_back(make_host_proto(module, floyd_runtime__compare_strings__make(context)));
 
 	//	floyd_runtime__append_strings()
 	{
@@ -2858,7 +2859,7 @@ std::map<std::string, void*> reg_host_functions(llvm::LLVMContext& context){
 
 		////////////////////////////////		RUNTIME FUNCTIONS
 
-		{ "floyd_runtime__compare_strings", reinterpret_cast<void *>(&floyd_runtime__compare_strings) },
+		make_host_function_mapping(floyd_runtime__compare_strings__make(context)),
 		{ "floyd_runtime__append_strings", reinterpret_cast<void *>(&floyd_runtime__append_strings) },
 		{ "floyd_runtime__allocate_memory", reinterpret_cast<void *>(&floyd_runtime__allocate_memory) },
 		make_host_function_mapping(floyd_runtime__allocate_vector__make(context)),
