@@ -3591,7 +3591,7 @@ QUARK_UNIT_TEST("Floyd test suite", "value_to_jsonvalue()", "[pixel_t]", ""){
 	}
 
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "jsonvalue_to_value()", "bool", ""){
+QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "bool", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(true), bool)		)", value_t::make_bool(true));
 }
 QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "bool", ""){

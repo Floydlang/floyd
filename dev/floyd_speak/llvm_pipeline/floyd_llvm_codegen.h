@@ -52,51 +52,6 @@ struct llvm_instance_t {
 
 
 
-//??? need word for "encoded". How data is stuffed into the LLVM instruction set..
-
-/*
-	Vectors
-
-	- Vector instance is a 16 byte struct.
-	- No RC or shared state -- always copied fully.
-	- Mutation = copy entire vector every time.
-
-	- The runtime handles all vectors as std::vector<uint64_t>. You need to pack and address other types of data manually.
-*/
-struct VEC_T {
-	uint64_t* element_ptr;
-	uint32_t magic;	//	0xDABBAD00
-	uint32_t element_count;
-};
-
-enum class VEC_T_MEMBERS {
-	element_ptr = 0,
-	magic = 1,
-	element_count = 2
-};
-
-
-//	??? Also use for arguments, not only return.
-struct DYN_RETURN_T {
-	uint64_t a;
-	uint64_t b;
-};
-
-inline DYN_RETURN_T make_dyn_return(uint64_t a, uint64_t b){
-	return DYN_RETURN_T{ a, b };
-}
-inline DYN_RETURN_T make_dyn_return(const VEC_T& vec){
-	return DYN_RETURN_T{ reinterpret_cast<uint64_t>(vec.element_ptr), vec.element_count };
-}
-
-enum class DYN_RETURN_MEMBERS {
-	a = 0,
-	b = 1
-};
-
-
-
-
 struct function_def_t {
 	std::string def_name;
 	llvm::Function* llvm_f;
@@ -162,9 +117,7 @@ int64_t run_llvm_program(llvm_instance_t& instance, llvm_ir_program_t& program_b
 typedef int64_t (*FLOYD_RUNTIME_INIT)(void* floyd_runtime_ptr);
 typedef void (*FLOYD_RUNTIME_HOST_FUNCTION)(void* floyd_runtime_ptr, int64_t arg);
 
-//??? Temp - should be:
-//func int main([string] args){...}
-typedef int64_t (*FLOYD_RUNTIME_MAIN)();
+typedef int64_t (*FLOYD_RUNTIME_F)(void* floyd_runtime_ptr, const char* args);
 
 
 
@@ -183,6 +136,7 @@ struct llvm_execution_engine_t {
 		return true;
 	}
 
+	//	Must be first member, checked by LLVM code.
 	uint64_t debug_magic;
 
 	std::shared_ptr<llvm::ExecutionEngine> ee;
