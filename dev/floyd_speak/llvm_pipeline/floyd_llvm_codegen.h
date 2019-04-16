@@ -11,6 +11,7 @@
 
 #include "ast_value.h"
 #include "statement.h"
+#include "floyd_llvm_helpers.h"
 #include <string>
 
 #include <llvm/IR/LLVMContext.h>
@@ -37,18 +38,6 @@ struct resolved_symbol_t {
 	symbol_t symbol;
 };
 
-bool check_invariant__module(llvm::Module* module);
-bool check_invariant__function(const llvm::Function* f);
-
-
-//	Must LLVMContext be kept while using the execution engine? Keep it!
-struct llvm_instance_t {
-	bool check_invariant() const {
-		return true;
-	}
-
-	llvm::LLVMContext context;
-};
 
 
 
@@ -59,7 +48,6 @@ struct function_def_t {
 	int floyd_function_id;
 	function_definition_t floyd_fundef;
 };
-
 
 
 
@@ -101,10 +89,8 @@ struct llvm_ir_program_t {
 
 const function_def_t& find_function_def2(const std::vector<function_def_t>& function_defs, const std::string& function_name);
 
-
 //	Converts the semantic AST to LLVM IR code.
 std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(llvm_instance_t& instance, const semantic_ast_t& ast, const std::string& module_name);
-
 
 //	Runs the LLVM IR program.
 int64_t run_llvm_program(llvm_instance_t& instance, llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args);
@@ -120,11 +106,7 @@ typedef void (*FLOYD_RUNTIME_HOST_FUNCTION)(void* floyd_runtime_ptr, int64_t arg
 typedef int64_t (*FLOYD_RUNTIME_F)(void* floyd_runtime_ptr, const char* args);
 
 
-
-
 ////////////////////////////////		llvm_execution_engine_t
-
-
 
 
 //https://en.wikipedia.org/wiki/Hexspeak
@@ -144,6 +126,7 @@ struct llvm_execution_engine_t {
 	std::vector<function_def_t> function_defs;
 	public: std::vector<std::string> _print_output;
 };
+
 
 llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program);
 llvm_execution_engine_t make_engine_run_init(llvm_instance_t& instance, llvm_ir_program_t& program);

@@ -32,6 +32,7 @@
 		2C36C086221DF1DA00CAFEF4 /* test.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2C36C085221DF1C600CAFEF4 /* test.json */; };
 		2C36C08B221DF9FE00CAFEF4 /* pretty_json.floyd in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2C36C088221DF96000CAFEF4 /* pretty_json.floyd */; };
 		2C384AD41F3B604E0028C742 /* ast_json.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C384AD21F3B604E0028C742 /* ast_json.cpp */; };
+		2C3DE25622665E7E00807701 /* floyd_llvm_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C3DE25422665E7E00807701 /* floyd_llvm_helpers.cpp */; };
 		2C40A71F1D76E179003245E3 /* immutable_ref_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */; };
 		2C4574D522493DA2008A55B0 /* compiler_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4574D322493DA2008A55B0 /* compiler_helpers.cpp */; };
 		2C4574D622493DA2008A55B0 /* compiler_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4574D322493DA2008A55B0 /* compiler_helpers.cpp */; };
@@ -187,6 +188,8 @@
 		2C36C088221DF96000CAFEF4 /* pretty_json.floyd */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = pretty_json.floyd; sourceTree = "<group>"; };
 		2C384AD21F3B604E0028C742 /* ast_json.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ast_json.cpp; sourceTree = "<group>"; };
 		2C384AD31F3B604E0028C742 /* ast_json.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ast_json.h; sourceTree = "<group>"; };
+		2C3DE25422665E7E00807701 /* floyd_llvm_helpers.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm_helpers.cpp; sourceTree = "<group>"; };
+		2C3DE25522665E7E00807701 /* floyd_llvm_helpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_llvm_helpers.h; sourceTree = "<group>"; };
 		2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = immutable_ref_value.cpp; sourceTree = "<group>"; };
 		2C40A71E1D76E179003245E3 /* immutable_ref_value.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = immutable_ref_value.h; sourceTree = "<group>"; };
 		2C4574D322493DA2008A55B0 /* compiler_helpers.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = compiler_helpers.cpp; sourceTree = "<group>"; };
@@ -617,6 +620,8 @@
 				2C0939602245023700383AA9 /* fibonacci_recursive.cpp */,
 				2C5F8320224644FB009870FC /* floyd_llvm_codegen.cpp */,
 				2C5F8321224644FB009870FC /* floyd_llvm_codegen.h */,
+				2C3DE25422665E7E00807701 /* floyd_llvm_helpers.cpp */,
+				2C3DE25522665E7E00807701 /* floyd_llvm_helpers.h */,
 			);
 			path = llvm_pipeline;
 			sourceTree = "<group>";
@@ -1435,6 +1440,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = 2C1D84D41CA765A90042F0A8;
@@ -1462,6 +1468,7 @@
 				2C180475208B939800F62480 /* floyd_parser.cpp in Sources */,
 				2C8C03AA2221D95F0085EBBE /* json_reporter.cc in Sources */,
 				2C7200B421E8FB750013003B /* file_handling.cpp in Sources */,
+				2C3DE25622665E7E00807701 /* floyd_llvm_helpers.cpp in Sources */,
 				2C8C03AB2221D95F0085EBBE /* reporter.cc in Sources */,
 				2C8C03AC2221D95F0085EBBE /* colorprint.cc in Sources */,
 				2C574E4A203107D80035EA62 /* ast_typeid.cpp in Sources */,

@@ -10,7 +10,6 @@
 
 
 #include "floyd_interpreter.h"
-//#include "host_functions.h"
 
 #include "floyd_llvm_codegen.h"
 
@@ -28,10 +27,6 @@
 #include <string>
 #include <vector>
 #include <iostream>
-
-
-
-
 
 
 
