@@ -1043,8 +1043,7 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvm::Function& emit_f,
 	QUARK_ASSERT(details.args.size() == callee_function_type.get_function_args().size());
 
 	llvm::Value* callee0_value = genllvm_expression(gen_acc, emit_f, *details.callee);
-
-	//??? alter return type of callee0_value to match resolved_call_type.
+	// Alternative: alter return type of callee0_value to match resolved_call_type.
 
 	//	Generate code that evaluates all argument expressions.
 	std::vector<llvm::Value*> arg_values;
@@ -1060,7 +1059,6 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvm::Function& emit_f,
 			arg_values.push_back(arg2);
 		}
 
-		//??? make separate function of this.
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_value){
 			llvm::Value* arg2 = genllvm_expression(gen_acc, emit_f, details.args[out_arg.floyd_arg_index]);
 
@@ -2065,10 +2063,6 @@ llvm::Function* make_function_prototype2(llvm::Module& module, const function_de
 }
 
 
-//??? have better mechanism to register these.
-function_definition_t make_dummy_function_definition(){
-	return function_definition_t::make_empty();
-}
 
 
 
@@ -2411,6 +2405,21 @@ host_func_t floyd_runtime__compare_vectors__make(llvm::LLVMContext& context){
 }
 
 
+
+
+auto get_runtime_functions(llvm::LLVMContext& context){
+	std::vector<host_func_t> result = {
+		floyd_runtime__compare_strings__make(context),
+		floyd_runtime__append_strings__make(context),
+
+		floyd_runtime__allocate_memory__make(context),
+
+		floyd_runtime__allocate_vector__make(context),
+		floyd_runtime__delete_vector__make(context),
+		floyd_runtime__compare_vectors__make(context),
+	};
+	return result;
+}
 
 
 void floyd_funcdef__assert(void* floyd_runtime_ptr, int64_t arg){
@@ -2781,6 +2790,14 @@ void floyd_host_function_2003(void* floyd_runtime_ptr, int64_t arg){
 }
 
 
+
+
+//??? have better mechanism to register these.
+function_definition_t make_dummy_function_definition(){
+	return function_definition_t::make_empty();
+}
+
+//	Create llvm function prototypes for each function.
 function_def_t make_host_proto(llvm::Module& module, const host_func_t& host_function){
 	QUARK_ASSERT(check_invariant__module(&module));
 //	QUARK_TRACE_SS(print_type(host_function.function_type));
@@ -2799,27 +2816,21 @@ function_def_t make_host_proto(llvm::Module& module, const host_func_t& host_fun
 	return result;
 }
 
-
-
-
-
-
-
 //	Make LLVM functions -- runtime, floyd host functions, floyd functions.
 std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, const function_defs_t& defs){
 	std::vector<function_def_t> result;
 
 	auto& context = module.getContext();
 
-	result.push_back(make_host_proto(module, floyd_runtime__compare_strings__make(context)));
-	result.push_back(make_host_proto(module, floyd_runtime__append_strings__make(context)));
+	const auto runtime_functions = get_runtime_functions(context);
+	for(const auto& e: runtime_functions){
+		result.push_back(make_host_proto(module, e));
+	}
 
-	result.push_back(make_host_proto(module, floyd_runtime__allocate_memory__make(context)));
 
-	result.push_back(make_host_proto(module, floyd_runtime__allocate_vector__make(context)));
-	result.push_back(make_host_proto(module, floyd_runtime__delete_vector__make(context)));
-	result.push_back(make_host_proto(module, floyd_runtime__compare_vectors__make(context)));
-
+	//	Register all function defs as LLVM function prototypes.
+	//	host functions are later linked by LLVM execution engine, by matching the function names.
+	//	Floyd functions are later filled with instructions.
 
 	//	floyd_runtime_init()
 	{
@@ -2832,12 +2843,8 @@ std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, c
 		);
 		auto f = module.getOrInsertFunction("floyd_runtime_init", function_type);
 		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), -1, make_dummy_function_definition()});
-
 	}
 
-	//	Register all function defs as LLVM function prototypes.
-	//	host functions are later linked by LLVM execution engine, by matching the function names.
-	//	Floyd functions are later filled with instructions.
 	{
 		for(int function_id = 0 ; function_id < defs.size() ; function_id++){
 			const auto& function_def = *defs[function_id];
@@ -2848,30 +2855,17 @@ std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, c
 	return result;
 }
 
-std::pair<std::string, void*> make_host_function_mapping(const host_func_t& host_function){
-	return {
-		host_function.name_key,
-		host_function.implementation_f
-	};
-}
-
 std::map<std::string, void*> reg_host_functions(llvm::LLVMContext& context){
-	const std::map<std::string, void*> function_map = {
+	const auto runtime_functions = get_runtime_functions(context);
 
-		////////////////////////////////		RUNTIME FUNCTIONS
+	std::map<std::string, void*> runtime_functions_map;
+	for(const auto& e: runtime_functions){
+		const auto e2 = std::pair<std::string, void*>(e.name_key, e.implementation_f);
+		runtime_functions_map.insert(e2);
+	}
 
-		make_host_function_mapping(floyd_runtime__compare_strings__make(context)),
-		make_host_function_mapping(floyd_runtime__append_strings__make(context)),
-
-		make_host_function_mapping(floyd_runtime__allocate_memory__make(context)),
-
-		make_host_function_mapping(floyd_runtime__allocate_vector__make(context)),
-		make_host_function_mapping(floyd_runtime__delete_vector__make(context)),
-		make_host_function_mapping(floyd_runtime__compare_vectors__make(context)),
-
-
-		////////////////////////////////		CORE FUNCTIONS AND HOST FUNCTIONS
-
+	////////////////////////////////		CORE FUNCTIONS AND HOST FUNCTIONS
+	const std::map<std::string, void*> host_functions_map = {
 		{ "floyd_funcdef__assert", reinterpret_cast<void *>(&floyd_funcdef__assert) },
 		{ "floyd_funcdef__calc_binary_sha1", reinterpret_cast<void *>(&floyd_host_function_1001) },
 		{ "floyd_funcdef__calc_string_sha1", reinterpret_cast<void *>(&floyd_host_function_1002) },
@@ -2913,18 +2907,66 @@ std::map<std::string, void*> reg_host_functions(llvm::LLVMContext& context){
 		{ "floyd_funcdef__value_to_jsonvalue", reinterpret_cast<void *>(&floyd_host_function_1035) },
 		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&floyd_host_function_1036) }
 	};
+
+	std::map<std::string, void*> function_map = runtime_functions_map;
+	function_map.insert(host_functions_map.begin(), host_functions_map.end());
 	return function_map;
 }
 
 
 
 
+//	GENERATE CODE for floyd_runtime_init()
+//	Global instructions are packed into the "floyd_runtime_init"-function. LLVM doesn't have global instructions.
+void generate_floyd_runtime_init(llvmgen_t& gen_acc, const std::vector<statement_t>& global_statements){
+	QUARK_ASSERT(gen_acc.check_invariant());
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	const auto def = find_function_def(gen_acc, "floyd_runtime_init");
+	llvm::Function* f = def.llvm_f;
+	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(context, "entry", f);
+	builder.SetInsertPoint(entryBB);
+	llvm::Function& emit_f = *f;
+	{
+		//	Verify we've got a valid floyd_runtime_ptr as argument #0.
+		llvm::Value* magic_index_value = llvm::ConstantInt::get(builder.getInt64Ty(), 0);
+		const auto index_list = std::vector<llvm::Value*>{ magic_index_value };
+
+		auto args = f->args();
+		QUARK_ASSERT((args.end() - args.begin()) >= 1);
+		auto floyd_context_arg_ptr = args.begin();
+
+		llvm::Value* uint64ptr_value = builder.CreateCast(llvm::Instruction::CastOps::BitCast, floyd_context_arg_ptr, llvm::Type::getInt64Ty(context)->getPointerTo(), "");
+
+		llvm::Value* magic_addr = builder.CreateGEP(llvm::Type::getIntNTy(context, 64), uint64ptr_value, index_list, "magic_addr");
+		auto magic_value = builder.CreateLoad(magic_addr);
+		llvm::Value* correct_magic_value = llvm::ConstantInt::get(builder.getInt64Ty(), k_debug_magic);
+		auto cmp_result = builder.CreateICmpEQ(magic_value, correct_magic_value);
+
+		llvm::BasicBlock* contBB = llvm::BasicBlock::Create(context, "contBB", f);
+		llvm::BasicBlock* failBB = llvm::BasicBlock::Create(context, "failBB", f);
+		builder.CreateCondBr(cmp_result, contBB, failBB);
+
+		builder.SetInsertPoint(failBB);
+		llvm::Value* dummy_result2 = llvm::ConstantInt::get(builder.getInt64Ty(), 666);
+		builder.CreateRet(dummy_result2);
 
 
+		builder.SetInsertPoint(contBB);
 
+		//	Global statements, using the global symbol scope.
+		const auto more = genllvm_statements(gen_acc, emit_f, global_statements);
 
+		llvm::Value* dummy_result = llvm::ConstantInt::get(builder.getInt64Ty(), 667);
+		builder.CreateRet(dummy_result);
+	}
+	QUARK_ASSERT(check_invariant__function(f));
 
-
+//	QUARK_TRACE_SS("result = " << floyd::print_gen(gen_acc));
+	QUARK_ASSERT(gen_acc.check_invariant());
+}
 
 std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> genllvm_all(llvm_instance_t& instance, const std::string& module_name, const semantic_ast_t& semantic_ast){
 	QUARK_ASSERT(instance.check_invariant());
@@ -2935,9 +2977,6 @@ std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> genllvm_al
 	auto module = std::make_unique<llvm::Module>(module_name.c_str(), instance.context);
 
 	llvmgen_t gen_acc(instance, module.get());
-
-	auto& context = instance.context;
-	auto& builder = gen_acc.builder;
 
 	//	Generate all LLVM nodes: functions and globals.
 	//	This lets all other code reference them, even if they're not filled up with code yet.
@@ -2964,49 +3003,7 @@ std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> genllvm_al
 	}
 */
 
-	//	GENERATE CODE for floyd_runtime_init()
-	//	Global instructions are packed into the "floyd_runtime_init"-function. LLVM doesn't have global instructions.
-	{
-		const auto def = find_function_def(gen_acc, "floyd_runtime_init");
-		llvm::Function* f = def.llvm_f;
-		llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(context, "entry", f);
-		builder.SetInsertPoint(entryBB);
-		llvm::Function& emit_f = *f;
-		{
-			//	Verify we've got a valid floyd_runtime_ptr as argument #0.
-			llvm::Value* magic_index_value = llvm::ConstantInt::get(builder.getInt64Ty(), 0);
-			const auto index_list = std::vector<llvm::Value*>{ magic_index_value };
-
-			auto args = f->args();
-			QUARK_ASSERT((args.end() - args.begin()) >= 1);
-			auto floyd_context_arg_ptr = args.begin();
-
-			llvm::Value* uint64ptr_value = builder.CreateCast(llvm::Instruction::CastOps::BitCast, floyd_context_arg_ptr, llvm::Type::getInt64Ty(context)->getPointerTo(), "");
-
-			llvm::Value* magic_addr = builder.CreateGEP(llvm::Type::getIntNTy(context, 64), uint64ptr_value, index_list, "magic_addr");
-			auto magic_value = builder.CreateLoad(magic_addr);
-			llvm::Value* correct_magic_value = llvm::ConstantInt::get(builder.getInt64Ty(), k_debug_magic);
-			auto cmp_result = builder.CreateICmpEQ(magic_value, correct_magic_value);
-
-			llvm::BasicBlock* contBB = llvm::BasicBlock::Create(context, "contBB", f);
-			llvm::BasicBlock* failBB = llvm::BasicBlock::Create(context, "failBB", f);
-			builder.CreateCondBr(cmp_result, contBB, failBB);
-
-			builder.SetInsertPoint(failBB);
-			llvm::Value* dummy_result2 = llvm::ConstantInt::get(builder.getInt64Ty(), 666);
-			builder.CreateRet(dummy_result2);
-
-
-			builder.SetInsertPoint(contBB);
-
-			//	Global statements, using the global symbol scope.
-			const auto more = genllvm_statements(gen_acc, emit_f, semantic_ast._tree._globals._statements);
-
-			llvm::Value* dummy_result = llvm::ConstantInt::get(builder.getInt64Ty(), 667);
-			builder.CreateRet(dummy_result);
-		}
-		QUARK_ASSERT(check_invariant__function(f));
-	}
+	generate_floyd_runtime_init(gen_acc, semantic_ast._tree._globals._statements);
 
 //	QUARK_TRACE_SS("result = " << floyd::print_gen(gen_acc));
 	QUARK_ASSERT(gen_acc.check_invariant());
