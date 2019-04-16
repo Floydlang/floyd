@@ -504,27 +504,27 @@ QUARK_UNIT_TEST("Floyd test suite", "Access variable", "Access undefined variabl
 //////////////////////////////////////////		TEST CONSTRUCTOR - SIMPLE TYPES
 
 
-QUARK_UNIT_TEST("Floyd test suite", "", "bool()", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Construct value", "bool()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = bool(false)", value_t::make_bool(false));
 }
-QUARK_UNIT_TEST("Floyd test suite", "", "bool()", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Construct value", "bool()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = bool(true)", value_t::make_bool(true));
 }
-QUARK_UNIT_TEST("Floyd test suite", "", "int()", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Construct value", "int()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = int(123)", value_t::make_int(123));
 }
-QUARK_UNIT_TEST("Floyd test suite", "", "double()", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Construct value", "double()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = double(0.0)", value_t::make_double(0.0));
 }
-QUARK_UNIT_TEST("Floyd test suite", "", "double()", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Construct value", "double()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = double(123.456)", value_t::make_double(123.456));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "", "string()", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Construct value", "string()", ""){
 	ut_verify_exception_nolib(QUARK_POS, "let result = string()", "Wrong number of arguments in function call, got 0, expected 1. Line: 1 \"let result = string()\"");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "", "string()", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Construct value", "string()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = string(\"ABCD\")", value_t::make_string("ABCD"));
 }
 
@@ -2194,7 +2194,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", "error"){
 	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace("hello", 5, 0, "goodbye") == "hellogoodbye")		)", "replace() requires start <= end.");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", "error"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace("hello", 2, 3, 666) == "")		)", "replace() requires 4th arg to be same as argument 0.");
+	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace("hello", 2, 3, 666) == "")		)", "replace(string) requires argument 4 to be a string.");
 }
 
 
