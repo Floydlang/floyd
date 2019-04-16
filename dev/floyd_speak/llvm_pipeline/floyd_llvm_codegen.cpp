@@ -719,6 +719,20 @@ llvm::Type* make_vec_type(llvm::LLVMContext& context){
 	return s;
 }
 
+
+llvm::Type* make_dynresult_type(llvm::LLVMContext& context){
+	std::vector<llvm::Type*> members = {
+		//	a
+		llvm::Type::getIntNTy(context, 64),
+
+		//	b
+		llvm::Type::getIntNTy(context, 64)
+	};
+	llvm::StructType* s = llvm::StructType::get(context, members, false);
+	return s;
+}
+
+
 //??? replace with DYN_RETURN_T struct
 llvm::Type* make_dyn_value_type(llvm::LLVMContext& context){
 	return llvm::Type::getIntNTy(context, 64);
@@ -757,8 +771,7 @@ llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::ty
 	auto& context = module.getContext();
 
 	const auto ret = function_type.get_function_return();
-	llvm::Type* return_type = intern_type(module, ret);
-
+	llvm::Type* return_type = ret.is_internal_dynamic() ? make_dynresult_type(context) : intern_type(module, ret);
 
 	const auto args = function_type.get_function_args();
 	std::vector<llvm_arg_mapping_t> arg_results;
@@ -1869,8 +1882,8 @@ host_func_t floyd_runtime__compare_vectors__make(llvm::LLVMContext& context){
 		{
 			make_frp_type(context),
 			llvm::Type::getInt64Ty(context),
-			make_vec_type(context),
-			make_vec_type(context)
+			make_vec_type(context)->getPointerTo(),
+			make_vec_type(context)->getPointerTo()
 		},
 		false
 	);
@@ -2006,7 +2019,7 @@ void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg0_value, int64_t a
 
 
 
-const char* floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
+const DYN_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type = (base_type)arg0_type;
@@ -2018,8 +2031,22 @@ const char* floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value
 		strcpy(s, value);
 		s[len + 0] = (char)arg1_value;
 		s[len + 1] = 0x00;
-		return s;
-//		return DYN_RETURN_T{ reinterpret_cast<uint64_t>(value), (uint32_t)base_type::k_string };
+
+		return make_dyn_return(reinterpret_cast<uint64_t>(s), (uint32_t)base_type::k_string);
+	}
+	else if(type == base_type::k_vector){
+		//??? we assume all vector are [string] right now!!
+		const auto vs = as_vector_w_string(r, arg0_value, arg0_type);
+
+		QUARK_ASSERT(arg1_type == (int)base_type::k_string);
+		const auto element = (const char*)arg1_value;
+
+		VEC_T v2 = floyd_runtime__allocate_vector(floyd_runtime_ptr, vs->element_count + 1);
+		for(int i = 0 ; i < vs->element_count ; i++){
+			v2.element_ptr[i] = vs->element_ptr[i];
+		}
+		v2.element_ptr[vs->element_count] = reinterpret_cast<uint64_t>(element);
+		return make_dyn_return(v2);
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
@@ -2232,10 +2259,9 @@ void floyd_host_function_2003(void* floyd_runtime_ptr, int64_t arg){
 	std::cout << __FUNCTION__ << arg << std::endl;
 }
 
-
-
-
 /*
+	??? Improve map_function_arguments() it it correctly handles DYN returns.
+
 	NOTICES: The function signature for the callee can hold DYNs. The actual arguments will be explicit types, never DYNs.
 
 	Function signature
@@ -2250,28 +2276,25 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e, 
 	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
-	const auto call_function_type = details.callee->get_output_type();
+	const auto callee_function_type = details.callee->get_output_type();
+	const auto resolved_call_type = e.get_output_type();
 
-	const auto call_arg_types = call_function_type.get_function_args();
-	const auto return_type = call_function_type.get_function_return();
-	const auto mapping = map_function_arguments(*gen_acc.module, call_function_type);
+	const auto actual_call_arguments = mapf<typeid_t>(details.args, [](auto& e){ return e.get_output_type(); });
 
-	//	Verify that the actual argument expressions, their count and output types --all match call_function_type.
-	QUARK_ASSERT(details.args.size() == call_arg_types.size());
-	//??? more
+	const auto llvm_mapping = map_function_arguments(*gen_acc.module, callee_function_type);
 
+	//	Verify that the actual argument expressions, their count and output types -- all match callee_function_type.
+	QUARK_ASSERT(details.args.size() == callee_function_type.get_function_args().size());
 
 	llvm::Value* callee0_value = genllvm_expression(gen_acc, *details.callee);
-//	QUARK_TRACE_SS("callee0_value: " << print_value(callee0_value));
-//		QUARK_TRACE_SS("gen_acc: " << print_gen(gen_acc));
+
+	//??? alter return type of callee0_value to match resolved_call_type.
 
 	auto& caller = *gen_acc.emit_function;
 
-
 	//	Generate code that evaluates all argument expressions.
 	std::vector<llvm::Value*> arg_values;
-
-	for(const auto& out_arg: mapping.args){
+	for(const auto& out_arg: llvm_mapping.args){
 		if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr){
 			auto f_args = caller.f->args();
 			QUARK_ASSERT((f_args.end() - f_args.begin()) >= 1);
@@ -2283,7 +2306,7 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e, 
 			arg_values.push_back(arg2);
 		}
 
-//??? make separate function of this.
+		//??? make separate function of this.
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_value){
 			llvm::Value* arg2 = genllvm_expression(gen_acc, details.args[out_arg.floyd_arg_index]);
 
@@ -2318,7 +2341,7 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e, 
 				NOT_IMPLEMENTED_YET();
 			}
 
-			// We assume that the next arg in the mapping is the dyn-type.
+			// We assume that the next arg in the llvm_mapping is the dyn-type.
 			//??? We only support the base-types, not composite types.
 			const auto base_type_id = (int64_t)concrete_arg_type.get_base_type();
 			llvm::Constant* gen_type = llvm::ConstantInt::get(make_dyn_type_type(context), base_type_id);
@@ -2331,28 +2354,45 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e, 
 			QUARK_ASSERT(false);
 		}
 	}
-	QUARK_ASSERT(arg_values.size() == mapping.args.size());
-	auto result0 = builder.CreateCall(callee0_value, arg_values, return_type.is_void() ? "" : "temp_call");
+	QUARK_ASSERT(arg_values.size() == llvm_mapping.args.size());
+	auto result0 = builder.CreateCall(callee0_value, arg_values, callee_function_type.get_function_return().is_void() ? "" : "call_result");
 
-	//	We do not support or use DYN for return values -- all client code expect a static return type. We do C++-template type generics.
+	//	If the return type is dynamic, cast the returned int64 to the correct type.
 	llvm::Value* result = result0;
-	if(return_type.is_internal_dynamic() && details.args.size() > 0){
-		//	Guess concrete return type based on concrete argument #0.
-		const auto concrete_return_type = return_type.is_internal_dynamic()
-			? intern_type(*gen_acc.module, details.args[0].get_output_type())
-			: mapping.return_type;
+	if(callee_function_type.get_function_return().is_internal_dynamic()){
+		auto dyn_a = builder.CreateExtractValue(result, { static_cast<int>(DYN_RETURN_MEMBERS::a) });
+		auto dyn_b = builder.CreateExtractValue(result, { static_cast<int>(DYN_RETURN_MEMBERS::b) });
 
-		if(concrete_return_type->isPointerTy()){
-			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, result0, llvm::Type::getInt8PtrTy(context), "function_as_return");
+		if(resolved_call_type.is_string()){
+			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, dyn_a, llvm::Type::getInt8PtrTy(context), "encoded->string");
+		}
+		else if(resolved_call_type.is_vector()){
+			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, dyn_a, llvm::Type::getInt64PtrTy(context), "a->element_ptr");
+
+			auto element_count_value = builder.CreateTrunc(dyn_b, llvm::Type::getInt32Ty(context));
+
+			const auto vec_type = make_vec_type(context);
+			auto vec_value = builder.CreateAlloca(vec_type, nullptr, "temp_vec");
+
+			const auto gep_index_list = std::vector<llvm::Value*>{
+				llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0),
+				llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), static_cast<int>(VEC_T_MEMBERS::element_ptr)),
+			};
+			llvm::Value* e_addr = builder.CreateGEP(vec_type, vec_value, gep_index_list, "");
+
+			const auto gep_index_list2 = std::vector<llvm::Value*>{
+				llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0),
+				llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), static_cast<int>(VEC_T_MEMBERS::element_count))
+			};
+			llvm::Value* f_addr = builder.CreateGEP(vec_type, vec_value, gep_index_list2, "");
+
+			builder.CreateStore(element_ptr, e_addr);
+			builder.CreateStore(element_count_value, f_addr);
+			result = builder.CreateLoad(vec_value, "final");
 		}
 		else{
+			NOT_IMPLEMENTED_YET();
 		}
-
-#if 0
-		auto dyn_encoded_value = builder.CreateExtractValue(result, { static_cast<int>(DYN_RETURN_MEMBERS::encoded_value) });
-		auto dyn_encoded_type = builder.CreateExtractValue(result, { static_cast<int>(DYN_RETURN_MEMBERS::value_type___base_type_for_now) });
-#endif
-
 	}
 	else{
 	}

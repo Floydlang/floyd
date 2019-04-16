@@ -70,19 +70,28 @@ struct VEC_T {
 };
 
 enum class VEC_T_MEMBERS {
-	element_ptr = 0
+	element_ptr = 0,
+	magic = 1,
+	element_count = 2
 };
 
 
 //	??? Also use for arguments, not only return.
 struct DYN_RETURN_T {
-	uint64_t encoded_value;
-	uint32_t value_type___base_type_for_now;
+	uint64_t a;
+	uint64_t b;
 };
 
+inline DYN_RETURN_T make_dyn_return(uint64_t a, uint64_t b){
+	return DYN_RETURN_T{ a, b };
+}
+inline DYN_RETURN_T make_dyn_return(const VEC_T& vec){
+	return DYN_RETURN_T{ reinterpret_cast<uint64_t>(vec.element_ptr), vec.element_count };
+}
+
 enum class DYN_RETURN_MEMBERS {
-	encoded_value = 0,
-	value_type___base_type_for_now = 1
+	a = 0,
+	b = 1
 };
 
 

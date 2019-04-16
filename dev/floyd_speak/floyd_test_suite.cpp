@@ -2150,7 +2150,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string update()", "error: pos > len", "exce
 			a = update("hello", 5, 98)
 
 		)",
-		"String lookup out of bounds."
+		"Position argument to update() is outside collection span."
 	);
 }
 
@@ -2355,6 +2355,17 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] size()", "2", ""){
 
 	)");
 }
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] push_back()", "", ""){
+	run_closed(R"(
+
+		let [string] a = ["one"];
+		let [string] b = push_back(a, "two")
+		let [string] c = ["one", "two"];
+		assert(b == c)
+
+	)");
+}
+
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] push_back()", "", ""){
 	run_closed(R"(
 
