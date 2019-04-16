@@ -2760,10 +2760,6 @@ function_def_t make_host_proto(llvm::Module& module, const host_func_t& host_fun
 
 
 
-
-
-
-
 //	Make LLVM functions -- runtime, floyd host functions, floyd functions.
 std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, const function_defs_t& defs){
 	std::vector<function_def_t> result;
@@ -2849,6 +2845,79 @@ std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, c
 	}
 	return result;
 }
+
+std::pair<std::string, void*> make_host_function_mapping(const host_func_t& host_function){
+	return {
+		host_function.name_key,
+		host_function.implementation_f
+	};
+}
+
+std::map<std::string, void*> reg_host_functions(llvm::LLVMContext& context){
+	const std::map<std::string, void*> function_map = {
+
+		////////////////////////////////		RUNTIME FUNCTIONS
+
+		{ "floyd_runtime__compare_strings", reinterpret_cast<void *>(&floyd_runtime__compare_strings) },
+		{ "floyd_runtime__append_strings", reinterpret_cast<void *>(&floyd_runtime__append_strings) },
+		{ "floyd_runtime__allocate_memory", reinterpret_cast<void *>(&floyd_runtime__allocate_memory) },
+		make_host_function_mapping(floyd_runtime__allocate_vector__make(context)),
+		make_host_function_mapping(floyd_runtime__delete_vector__make(context)),
+		make_host_function_mapping(floyd_runtime__compare_vectors__make(context)),
+
+
+		////////////////////////////////		CORE FUNCTIONS AND HOST FUNCTIONS
+
+		{ "floyd_funcdef__assert", reinterpret_cast<void *>(&floyd_funcdef__assert) },
+		{ "floyd_funcdef__calc_binary_sha1", reinterpret_cast<void *>(&floyd_host_function_1001) },
+		{ "floyd_funcdef__calc_string_sha1", reinterpret_cast<void *>(&floyd_host_function_1002) },
+		{ "floyd_funcdef__create_directory_branch", reinterpret_cast<void *>(&floyd_host_function_1003) },
+		{ "floyd_funcdef__delete_fsentry_deep", reinterpret_cast<void *>(&floyd_host_function_1004) },
+		{ "floyd_funcdef__does_fsentry_exist", reinterpret_cast<void *>(&floyd_host_function_1005) },
+		{ "floyd_funcdef__erase", reinterpret_cast<void *>(&floyd_host_function_1006) },
+		{ "floyd_funcdef__exists", reinterpret_cast<void *>(&floyd_host_function_1007) },
+		{ "floyd_funcdef__filter", reinterpret_cast<void *>(&floyd_host_function_1008) },
+		{ "floyd_funcdef__find", reinterpret_cast<void *>(&floyd_funcdef__find) },
+
+		{ "floyd_funcdef__get_fs_environment", reinterpret_cast<void *>(&floyd_host_function_1010) },
+		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&floyd_host_function_1011) },
+		{ "floyd_funcdef__get_fsentries_shallow", reinterpret_cast<void *>(&floyd_host_function_1012) },
+		{ "floyd_funcdef__get_fsentry_info", reinterpret_cast<void *>(&floyd_host_function_1013) },
+		{ "floyd_funcdef__get_json_type", reinterpret_cast<void *>(&floyd_host_function_1014) },
+		{ "floyd_funcdef__get_time_of_day", reinterpret_cast<void *>(&floyd_host_function_1015) },
+		{ "floyd_funcdef__jsonvalue_to_script", reinterpret_cast<void *>(&floyd_host_function_1016) },
+		{ "floyd_funcdef__jsonvalue_to_value", reinterpret_cast<void *>(&floyd_host_function_1017) },
+		{ "floyd_funcdef__map", reinterpret_cast<void *>(&floyd_host_function_1018) },
+		{ "floyd_funcdef__map_string", reinterpret_cast<void *>(&floyd_host_function_1019) },
+
+		{ "floyd_funcdef__print", reinterpret_cast<void *>(&floyd_funcdef__print) },
+		{ "floyd_funcdef__push_back", reinterpret_cast<void *>(&floyd_funcdef__push_back) },
+		{ "floyd_funcdef__read_text_file", reinterpret_cast<void *>(&floyd_host_function_1022) },
+		{ "floyd_funcdef__reduce", reinterpret_cast<void *>(&floyd_host_function_1023) },
+		{ "floyd_funcdef__rename_fsentry", reinterpret_cast<void *>(&floyd_host_function_1024) },
+		{ "floyd_funcdef__replace", reinterpret_cast<void *>(&floyd_funcdef__replace) },
+		{ "floyd_funcdef__script_to_jsonvalue", reinterpret_cast<void *>(&floyd_host_function_1026) },
+		{ "floyd_funcdef__send", reinterpret_cast<void *>(&floyd_host_function_1027) },
+		{ "floyd_funcdef__size", reinterpret_cast<void *>(&floyd_funcdef__size) },
+		{ "floyd_funcdef__subset", reinterpret_cast<void *>(&floyd_funcdef__subset) },
+
+		{ "floyd_funcdef__supermap", reinterpret_cast<void *>(&floyd_host_function_1030) },
+		{ "floyd_funcdef__to_pretty_string", reinterpret_cast<void *>(&floyd_host_function_1031) },
+		{ "floyd_funcdef__to_string", reinterpret_cast<void *>(&floyd_host__to_string) },
+		{ "floyd_funcdef__typeof", reinterpret_cast<void *>(&floyd_host__typeof) },
+		{ "floyd_funcdef__update", reinterpret_cast<void *>(&floyd_funcdef__update) },
+		{ "floyd_funcdef__value_to_jsonvalue", reinterpret_cast<void *>(&floyd_host_function_1035) },
+		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&floyd_host_function_1036) }
+	};
+	return function_map;
+}
+
+
+
+
+
+
+
 
 
 
@@ -3001,13 +3070,6 @@ void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
 #endif
 
 
-std::pair<std::string, void*> make_host_function_mapping(const host_func_t& host_function){
-	return {
-		host_function.name_key,
-		host_function.implementation_f
-	};
-}
-
 
 //	Destroys program, can only run it once!
 llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks){
@@ -3035,57 +3097,7 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 	auto ee2 = llvm_execution_engine_t{ k_debug_magic, ee1, program_breaks.debug_globals, program_breaks.function_defs, {} };
 	QUARK_ASSERT(ee2.check_invariant());
 
-	const std::map<std::string, void*> function_map = {
-		{ "floyd_runtime__compare_strings", reinterpret_cast<void *>(&floyd_runtime__compare_strings) },
-		{ "floyd_runtime__append_strings", reinterpret_cast<void *>(&floyd_runtime__append_strings) },
-		{ "floyd_runtime__allocate_memory", reinterpret_cast<void *>(&floyd_runtime__allocate_memory) },
-		make_host_function_mapping(floyd_runtime__allocate_vector__make(instance.context)),
-		make_host_function_mapping(floyd_runtime__delete_vector__make(instance.context)),
-		make_host_function_mapping(floyd_runtime__compare_vectors__make(instance.context)),
-
-
-
-		{ "floyd_funcdef__assert", reinterpret_cast<void *>(&floyd_funcdef__assert) },
-		{ "floyd_funcdef__calc_binary_sha1", reinterpret_cast<void *>(&floyd_host_function_1001) },
-		{ "floyd_funcdef__calc_string_sha1", reinterpret_cast<void *>(&floyd_host_function_1002) },
-		{ "floyd_funcdef__create_directory_branch", reinterpret_cast<void *>(&floyd_host_function_1003) },
-		{ "floyd_funcdef__delete_fsentry_deep", reinterpret_cast<void *>(&floyd_host_function_1004) },
-		{ "floyd_funcdef__does_fsentry_exist", reinterpret_cast<void *>(&floyd_host_function_1005) },
-		{ "floyd_funcdef__erase", reinterpret_cast<void *>(&floyd_host_function_1006) },
-		{ "floyd_funcdef__exists", reinterpret_cast<void *>(&floyd_host_function_1007) },
-		{ "floyd_funcdef__filter", reinterpret_cast<void *>(&floyd_host_function_1008) },
-		{ "floyd_funcdef__find", reinterpret_cast<void *>(&floyd_funcdef__find) },
-
-		{ "floyd_funcdef__get_fs_environment", reinterpret_cast<void *>(&floyd_host_function_1010) },
-		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&floyd_host_function_1011) },
-		{ "floyd_funcdef__get_fsentries_shallow", reinterpret_cast<void *>(&floyd_host_function_1012) },
-		{ "floyd_funcdef__get_fsentry_info", reinterpret_cast<void *>(&floyd_host_function_1013) },
-		{ "floyd_funcdef__get_json_type", reinterpret_cast<void *>(&floyd_host_function_1014) },
-		{ "floyd_funcdef__get_time_of_day", reinterpret_cast<void *>(&floyd_host_function_1015) },
-		{ "floyd_funcdef__jsonvalue_to_script", reinterpret_cast<void *>(&floyd_host_function_1016) },
-		{ "floyd_funcdef__jsonvalue_to_value", reinterpret_cast<void *>(&floyd_host_function_1017) },
-		{ "floyd_funcdef__map", reinterpret_cast<void *>(&floyd_host_function_1018) },
-		{ "floyd_funcdef__map_string", reinterpret_cast<void *>(&floyd_host_function_1019) },
-
-		{ "floyd_funcdef__print", reinterpret_cast<void *>(&floyd_funcdef__print) },
-		{ "floyd_funcdef__push_back", reinterpret_cast<void *>(&floyd_funcdef__push_back) },
-		{ "floyd_funcdef__read_text_file", reinterpret_cast<void *>(&floyd_host_function_1022) },
-		{ "floyd_funcdef__reduce", reinterpret_cast<void *>(&floyd_host_function_1023) },
-		{ "floyd_funcdef__rename_fsentry", reinterpret_cast<void *>(&floyd_host_function_1024) },
-		{ "floyd_funcdef__replace", reinterpret_cast<void *>(&floyd_funcdef__replace) },
-		{ "floyd_funcdef__script_to_jsonvalue", reinterpret_cast<void *>(&floyd_host_function_1026) },
-		{ "floyd_funcdef__send", reinterpret_cast<void *>(&floyd_host_function_1027) },
-		{ "floyd_funcdef__size", reinterpret_cast<void *>(&floyd_funcdef__size) },
-		{ "floyd_funcdef__subset", reinterpret_cast<void *>(&floyd_funcdef__subset) },
-
-		{ "floyd_funcdef__supermap", reinterpret_cast<void *>(&floyd_host_function_1030) },
-		{ "floyd_funcdef__to_pretty_string", reinterpret_cast<void *>(&floyd_host_function_1031) },
-		{ "floyd_funcdef__to_string", reinterpret_cast<void *>(&floyd_host__to_string) },
-		{ "floyd_funcdef__typeof", reinterpret_cast<void *>(&floyd_host__typeof) },
-		{ "floyd_funcdef__update", reinterpret_cast<void *>(&floyd_funcdef__update) },
-		{ "floyd_funcdef__value_to_jsonvalue", reinterpret_cast<void *>(&floyd_host_function_1035) },
-		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&floyd_host_function_1036) }
-	};
+	auto function_map = reg_host_functions(instance.context);
 
 	//	Resolve all unresolved functions.
 	{
