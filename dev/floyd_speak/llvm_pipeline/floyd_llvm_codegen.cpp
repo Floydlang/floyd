@@ -457,6 +457,32 @@ value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
 		}
 		return value_t::make_vector_value(typeid_t::make_string(), vec2);
 	}
+/*
+!!!
+	else if(type.is_vector()){
+		auto vec = *static_cast<const VEC_T*>(global_ptr);
+		std::vector<value_t> vec2;
+		if(type.get_vector_element_type().is_string()){
+			for(int i = 0 ; i < vec.element_count ; i++){
+				auto s = (const char*)vec.element_ptr[i];
+				const auto a = std::string(s);
+				vec2.push_back(value_t::make_string(a));
+			}
+			return value_t::make_vector_value(typeid_t::make_string(), vec2);
+		}
+		else if(type.get_vector_element_type().is_bool()){
+			for(int i = 0 ; i < vec.element_count ; i++){
+				auto s = vec.element_ptr[i / 64];
+				bool masked = s & (1 << (i & 63));
+				vec2.push_back(value_t::make_bool(masked == 0 ? false : true));
+			}
+			return value_t::make_vector_value(typeid_t::make_bool(), vec2);
+		}
+		else{
+		NOT_IMPLEMENTED_YET();
+		}
+	}
+*/
 	else if(type.is_dict()){
 		NOT_IMPLEMENTED_YET();
 	}
@@ -1804,7 +1830,28 @@ const VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint32_t ele
 	result.element_count = element_count;
 	return result;
 }
+/*
+!!!
+VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint16_t element_bits, uint32_t element_count){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(element_bits <= 64);
 
+	const auto alloc_bits = element_count * element_bits;
+	const auto alloc_count = (alloc_bits / 64) + (alloc_bits & 64) ? 1 : 0;
+
+	auto element_ptr = reinterpret_cast<uint64_t*>(std::calloc(alloc_count, sizeof(uint64_t)));
+	if(element_ptr == nullptr){
+		throw std::exception();
+	}
+
+	VEC_T result;
+	result.element_ptr = element_ptr;
+	result.magic = 0xDABB;
+	result.element_bits = element_bits;
+	result.element_count = element_count;
+	return result;
+}
+*/
 host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_vec_type(context),
@@ -2394,11 +2441,79 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, const expression_t& e, 
 			NOT_IMPLEMENTED_YET();
 		}
 	}
+
+
+#if 0
+!!!
+	//??? break out to func.
+	if(callee_function_type.get_function_return().is_internal_dynamic()){
+
+//		auto dyn_a = builder.CreateExtractValue(vec_ptr, { static_cast<int>(DYN_RETURN_MEMBERS::a) });
+//		auto dyn_b = builder.CreateExtractValue(vec_ptr, { static_cast<int>(DYN_RETURN_MEMBERS::b) });
+
+		if(resolved_call_type.is_string()){
+			llvm::Value* vec_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, result0, make_dynresult_type(context), "encoded->string");
+			auto elements_ptr_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(DYN_RETURN_MEMBERS::a) });
+			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, elements_ptr_value, llvm::Type::getInt8PtrTy(context), "encoded->string");
+		}
+		else if(resolved_call_type.is_vector()){
+			llvm::Value* vec_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, result0, make_vec_type(context), "encoded->string");
+			result = vec_ptr;
+/*
+			auto vec_elements_ptr_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(VEC_T_MEMBERS::element_ptr) });
+			auto vec_magic_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(VEC_T_MEMBERS::magic) });
+			auto vec_element_bits_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(VEC_T_MEMBERS::element_bits) });
+			auto vec_element_count = builder.CreateExtractValue(vec_ptr, { static_cast<int>(VEC_T_MEMBERS::element_count) });
+
+			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, dyn_a, llvm::Type::getInt64PtrTy(context), "a->element_ptr");
+
+			auto element_count_value = builder.CreateTrunc(dyn_b, llvm::Type::getInt32Ty(context));
+
+			const auto vec_type = make_vec_type(context);
+			auto vec_value = builder.CreateAlloca(vec_type, nullptr, "temp_vec");
+
+			const auto gep_index_list = std::vector<llvm::Value*>{
+				llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0),
+				llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), static_cast<int>(VEC_T_MEMBERS::element_ptr)),
+			};
+			llvm::Value* e_addr = builder.CreateGEP(vec_type, vec_value, gep_index_list, "");
+
+			const auto gep_index_list2 = std::vector<llvm::Value*>{
+				llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0),
+				llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), static_cast<int>(VEC_T_MEMBERS::element_count))
+			};
+			llvm::Value* f_addr = builder.CreateGEP(vec_type, vec_value, gep_index_list2, "");
+
+			builder.CreateStore(element_ptr, e_addr);
+			builder.CreateStore(element_count_value, f_addr);
+			result = builder.CreateLoad(vec_value, "final");
+*/
+		}
+#endif
+
 	else{
 	}
 
 	QUARK_ASSERT(gen_acc.check_invariant());
 	return result;
+}
+
+llvm::Value* alloc_vec_int64(llvmgen_t& gen_acc, uint16_t element_bits, uint64_t element_count, const std::string& debug){
+	QUARK_ASSERT(gen_acc.check_invariant());
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	const auto allocate_vector_func = find_function_def(gen_acc, "floyd_runtime__allocate_vector");
+	const auto element_bits_value = llvm::ConstantInt::get(llvm::Type::getInt16Ty(context), element_bits);
+	const auto element_count_value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), element_count);
+
+	std::vector<llvm::Value*> args2;
+	args2.push_back(get_callers_fcp(gen_acc));
+	args2.push_back(element_bits_value);
+	args2.push_back(element_count_value);
+	auto vec = builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_vector()-" + debug);
+	return vec;
 }
 
 
@@ -2520,6 +2635,153 @@ llvm::Value* llvmgen_construct_value_expression(llvmgen_t& gen_acc, const expres
 */
 	return nullptr;
 }
+
+
+#if 0
+!!!
+llvm::Value* llvmgen_construct_value_expression(llvmgen_t& gen_acc, const expression_t& e, const expression_t::value_constructor_t& details){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	const auto target_type = e.get_output_type();
+	const auto caller_arg_count = details.elements.size();
+
+	if(target_type.is_vector()){
+		const auto element_type0 = target_type.get_vector_element_type();
+
+		if(element_type0.is_string()){
+			//	Each element is a char*.
+			auto element_type = llvm::Type::getInt8PtrTy(context);
+			auto element_count = caller_arg_count;
+			auto vec_value = alloc_vec_int64(gen_acc, 64, element_count, "[string]");
+
+			auto uint64_element_ptr = builder.CreateExtractValue(vec_value, { (int)VEC_T_MEMBERS::element_ptr });
+			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type->getPointerTo(), "");
+
+			//	Evaluate each element and store it directly into the the vector.
+			int element_index = 0;
+			for(const auto& arg: details.elements){
+				llvm::Value* arg_value = genllvm_expression(gen_acc, arg);
+				auto element_index_value = make_constant(gen_acc, value_t::make_int(element_index));
+				const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_value };
+				llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "e_addr");
+				builder.CreateStore(arg_value, e_addr);
+
+				element_index++;
+			}
+			return vec_value;
+		}
+		else if(element_type0.is_bool()){
+			const auto input_element_count = caller_arg_count;
+
+			//	Each element is a bit, packed into the 64bit elements of VEC_T.
+			auto output_element_count = (input_element_count / 64) + ((input_element_count & 63) ? 1 : 0);
+			auto vec_value = alloc_vec_int64(gen_acc, 1, output_element_count, "[bool]");
+
+			auto uint64_element_ptr = builder.CreateExtractValue(vec_value, { (int)VEC_T_MEMBERS::element_ptr });
+
+			//	Evaluate each element and store it directly into the the vector.
+			auto buffer_word = builder.CreateAlloca(gen_acc.builder.getInt64Ty());
+			auto zero = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 0);
+			auto one = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 1);
+
+			int input_element_index = 0;
+			int output_element_index = 0;
+			while(input_element_index < input_element_count){
+				//	Clear 64-bit word.
+				builder.CreateStore(zero, buffer_word);
+
+				const auto batch_size = std::min(input_element_count, (size_t)64);
+				for(int i = 0 ; i < batch_size ; i++){
+					auto arg_value = genllvm_expression(gen_acc, details.elements[input_element_index]);
+					auto arg32_value = builder.CreateZExt(arg_value, gen_acc.builder.getInt64Ty());
+
+					//	Store the bool into the buffer_word 64bit word at the correct bit position.
+					auto bit_value = builder.CreateShl(arg32_value, one);
+					auto word1 = builder.CreateLoad(buffer_word);
+					auto word2 = builder.CreateOr(word1, bit_value);
+					builder.CreateStore(word2, buffer_word);
+
+					input_element_index++;
+				}
+
+				//	Store the 64-bit word to the VEC_T.
+				auto word_out = builder.CreateLoad(buffer_word);
+
+				auto output_element_index_value = make_constant(gen_acc, value_t::make_int(output_element_index));
+				const auto gep_index_list2 = std::vector<llvm::Value*>{ output_element_index_value };
+				llvm::Value* e_addr = builder.CreateGEP(gen_acc.builder.getInt64Ty(), uint64_element_ptr, gep_index_list2, "e_addr");
+				builder.CreateStore(word_out, e_addr);
+
+				output_element_index++;
+			}
+			return vec_value;
+		}
+		else{
+			NOT_IMPLEMENTED_YET();
+		}
+	}
+	else if(target_type.is_dict()){
+		NOT_IMPLEMENTED_YET();
+/*
+		if(encode_as_dict_w_inplace_values(target_type)){
+			body_acc._instrs.push_back(bcgen_instruction_t(
+				bc_opcode::k_new_dict_w_inplace_values,
+				target_reg2,
+				make_imm_int(target_itype),
+				make_imm_int(arg_count)
+			));
+		}
+		else{
+			body_acc._instrs.push_back(bcgen_instruction_t(
+				bc_opcode::k_new_dict_w_external_values,
+				target_reg2,
+				make_imm_int(target_itype),
+				make_imm_int(arg_count)
+			));
+		}
+*/
+
+	}
+	else if(target_type.is_struct()){
+		NOT_IMPLEMENTED_YET();
+/*
+		body_acc._instrs.push_back(bcgen_instruction_t(
+			bc_opcode::k_new_struct,
+			target_reg2,
+			make_imm_int(target_itype),
+			make_imm_int(arg_count)
+		));
+*/
+
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+		QUARK_ASSERT(caller_arg_count == 1);
+
+/*
+		const auto source_itype = arg_count == 0 ? -1 : intern_type(gen_acc, e._input_exprs[0].get_output_type());
+		body_acc._instrs.push_back(bcgen_instruction_t(
+			bc_opcode::k_new_1,
+			target_reg2,
+			make_imm_int(target_itype),
+			make_imm_int(source_itype)
+		));
+*/
+
+	}
+
+/*
+	const auto extbits = pack_bools(call_setup._exts);
+	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_popn, make_imm_int(call_setup._stack_count), make_imm_int(extbits), {} ));
+*/
+	return nullptr;
+}
+
+#endif
 
 llvm::Value* llvmgen_load2_expression(llvmgen_t& gen_acc, const expression_t& e, const expression_t::load2_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
