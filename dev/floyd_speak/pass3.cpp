@@ -1851,9 +1851,11 @@ semantic_ast_t analyse(analyser_t& a){
 	const auto body = body_t(a._imm->_ast._tree._globals._statements, symbol_table_t{symbol_map});
 	const auto result = analyse_body(a, body, epure::impure, typeid_t::make_undefined());
 
-for(const auto& e: a._types.interned){
-	QUARK_TRACE_SS(typeid_to_compact_string(e.second));
-}
+#if 0
+	for(const auto& e: a._types.interned){
+		QUARK_TRACE_SS(typeid_to_compact_string(e.second));
+	}
+#endif
 
 	const auto result_ast0 = pass2_ast_t{
 		general_purpose_ast_t{
