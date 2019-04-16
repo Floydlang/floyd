@@ -943,7 +943,6 @@ llvm::Value* llvmgen_comparison_expression(llvmgen_t& gen_acc, llvm::Function& e
 	}
 }
 
-
 llvm::Value* genllvm_arithmetic_unary_minus_expression(llvmgen_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::unary_minus_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -1016,667 +1015,6 @@ llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, llvm::F
 
 
 
-
-//	Host functions, automatically called by the LLVM execution engine.
-////////////////////////////////////////////////////////////////////////////////
-
-
-struct host_func_t {
-	std::string name_key;
-	llvm::FunctionType* function_type;
-	void* implementation_f;
-};
-
-
-
-/*
-@variable = global i32 21
-define i32 @main() {
-%1 = load i32, i32* @variable ; load the global variable
-%2 = mul i32 %1, 2
-store i32 %2, i32* @variable ; store instruction to write to global variable
-ret i32 %2
-}
-*/
-
-llvm_execution_engine_t* get_floyd_runtime(void* floyd_runtime_ptr){
-	QUARK_ASSERT(floyd_runtime_ptr != nullptr);
-
-	auto ptr = reinterpret_cast<llvm_execution_engine_t*>(floyd_runtime_ptr);
-	QUARK_ASSERT(ptr != nullptr);
-	QUARK_ASSERT(ptr->debug_magic == k_debug_magic);
-	return ptr;
-}
-
-void hook(const std::string& s, void* floyd_runtime_ptr, int64_t arg){
-	std:: cout << s << arg << " arg: " << std::endl;
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-	throw std::runtime_error("HOST FUNCTION NOT IMPLEMENTED FOR LLVM");
-}
-
-//??? we assume all vector are [string] right now!!
-VEC_T* as_vector_w_string(llvm_execution_engine_t* runtime, int64_t arg_value, int64_t arg_type){
-	QUARK_ASSERT(arg_type == (int)base_type::k_vector);
-	const auto vector_strings = (VEC_T*)arg_value;
-	QUARK_ASSERT(vector_strings != nullptr);
-	QUARK_ASSERT(vector_strings->magic == 0xDABBAD00);
-
-	return vector_strings;
-}
-
-
-
-std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, int64_t arg_type){
-	const auto type = (base_type)arg_type;
-	if(type == base_type::k_int){
-		const auto value = (int64_t)arg_value;
-		return std::to_string(value);
-	}
-	else if(type == base_type::k_string){
-		const auto value = (const char*)arg_value;
-		return std::string(value);
-	}
-	else if(type == base_type::k_double){
-		const auto d = sizeof(double);
-		const auto i = sizeof(int64_t);
-		QUARK_ASSERT(d == i);
-
-		const auto value = *(double*)&arg_value;
-
-		return double_to_string_always_decimals(value);
-//		return std::to_string(value);
-	}
-	else if(type == base_type::k_vector){
-		//??? we assume all vector are [string] right now!!
-		const auto vs = as_vector_w_string(runtime, arg_value, arg_type);
-
-		std::vector<value_t> elements;
-		const int count = vs->element_count;
-		for(int i = 0 ; i < count ; i++){
-			const char* ss = (const char*)vs->element_ptr[i];
-			QUARK_ASSERT(ss != nullptr);
-
-			const auto e = std::string(ss);
-			elements.push_back(value_t::make_string(e));
-		}
-		const auto val = value_t::make_vector_value(typeid_t::make_string(), elements);
-		return to_compact_string2(val);
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
-}
-
-
-
-
-
-
-//??? Make nicer mechanism to register all host functions, types and key-strings. Store explicit members like assert_f instead of search on string.
-
-
-
-//	The names of these are computed from the host-id in the symbol table, not the names of the functions/symbols.
-//	They must use C calling convention so llvm JIT can find them.
-//	Make sure they are not dead-stripped out of binary!
-
-void floyd_runtime__unresolved_func(void* floyd_runtime_ptr){
-	std:: cout << __FUNCTION__ << std::endl;
-}
-
-
-int32_t floyd_runtime__compare_strings(void* floyd_runtime_ptr, int64_t op, const char* lhs, const char* rhs){
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-	/*
-		strcmp()
-			Greater than zero ( >0 ): A value greater than zero is returned when the first not matching character in leftStr have the greater ASCII value than the corresponding character in rightStr or we can also say
-
-			Less than Zero ( <0 ): A value less than zero is returned when the first not matching character in leftStr have lesser ASCII value than the corresponding character in rightStr.
-
-	*/
-	const auto result = std::strcmp(lhs, rhs);
-	const auto op2 = static_cast<expression_type>(op);
-	if(op2 == expression_type::k_comparison_smaller_or_equal__2){
-		return result <= 0 ? 1 : 0;
-	}
-	else if(op2 == expression_type::k_comparison_smaller__2){
-		return result < 0 ? 1 : 0;
-	}
-	else if(op2 == expression_type::k_comparison_larger_or_equal__2){
-		return result >= 0 ? 1 : 0;
-	}
-	else if(op2 == expression_type::k_comparison_larger__2){
-		return result > 0 ? 1 : 0;
-	}
-
-	else if(op2 == expression_type::k_logical_equal__2){
-		return result == 0 ? 1 : 0;
-	}
-	else if(op2 == expression_type::k_logical_nonequal__2){
-		return result != 0 ? 1 : 0;
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-}
-
-const char* floyd_runtime__append_strings(void* floyd_runtime_ptr, const char* lhs, const char* rhs){
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-	QUARK_ASSERT(lhs != nullptr);
-	QUARK_ASSERT(rhs != nullptr);
-	QUARK_TRACE_SS(__FUNCTION__ << " " << std::string(lhs) << " comp " <<std::string(rhs));
-
-	std::size_t len = strlen(lhs) + strlen(rhs);
-	char* s = reinterpret_cast<char*>(std::malloc(len + 1));
-	strcpy(s, lhs);
-	strcpy(s + strlen(lhs), rhs);
-	return s;
-}
-
-const uint8_t* floyd_runtime__allocate_memory(void* floyd_runtime_ptr, int64_t bytes){
-	auto s = reinterpret_cast<uint8_t*>(std::calloc(1, bytes));
-	return s;
-}
-
-
-////////////////////////////////		allocate_vector()
-
-
-//	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-const VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint32_t element_count){
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-	auto element_ptr = reinterpret_cast<uint64_t*>(std::calloc(element_count, sizeof(uint64_t)));
-	if(element_ptr == nullptr){
-		throw std::exception();
-	}
-
-	VEC_T result;
-	result.magic = 0xDABBAD00;
-	result.element_ptr = element_ptr;
-	result.element_count = element_count;
-	return result;
-}
-/*
-!!!
-VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint16_t element_bits, uint32_t element_count){
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-	QUARK_ASSERT(element_bits <= 64);
-
-	const auto alloc_bits = element_count * element_bits;
-	const auto alloc_count = (alloc_bits / 64) + (alloc_bits & 64) ? 1 : 0;
-
-	auto element_ptr = reinterpret_cast<uint64_t*>(std::calloc(alloc_count, sizeof(uint64_t)));
-	if(element_ptr == nullptr){
-		throw std::exception();
-	}
-
-	VEC_T result;
-	result.element_ptr = element_ptr;
-	result.magic = 0xDABB;
-	result.element_bits = element_bits;
-	result.element_count = element_count;
-	return result;
-}
-*/
-host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context){
-	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		make_vec_type(context),
-		{
-			make_frp_type(context),
-			llvm::Type::getInt32Ty(context)
-		},
-		false
-	);
-	return { "floyd_runtime__allocate_vector", function_type, reinterpret_cast<void*>(floyd_runtime__allocate_vector) };
-}
-
-
-////////////////////////////////		delete_vector()
-
-
-const void floyd_runtime__delete_vector(void* floyd_runtime_ptr, VEC_T* vec){
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-	QUARK_ASSERT(vec != nullptr);
-	QUARK_ASSERT(vec->magic == 0xDABBAD00);
-
-	std::free(vec->element_ptr);
-	vec->element_ptr = nullptr;
-	vec->magic = 0xDEADD0D0;
-	vec->element_count = -vec->element_count;
-}
-
-host_func_t floyd_runtime__delete_vector__make(llvm::LLVMContext& context){
-	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		llvm::Type::getVoidTy(context),
-		{
-			make_frp_type(context),
-			make_vec_type(context)->getPointerTo()
-		},
-		false
-	);
-	return { "floyd_runtime__delete_vector", function_type, reinterpret_cast<void*>(floyd_runtime__delete_vector) };
-}
-
-
-////////////////////////////////		compare_vectors()
-
-
-int32_t floyd_runtime__compare_vectors(void* floyd_runtime_ptr, int64_t op, const VEC_T* lhs, const VEC_T* rhs){
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-//	const auto result = std::strcmp(lhs, rhs);
-	const auto result = 0;
-
-	const auto op2 = static_cast<expression_type>(op);
-	if(op2 == expression_type::k_comparison_smaller_or_equal__2){
-		return result <= 0 ? 1 : 0;
-	}
-	else if(op2 == expression_type::k_comparison_smaller__2){
-		return result < 0 ? 1 : 0;
-	}
-	else if(op2 == expression_type::k_comparison_larger_or_equal__2){
-		return result >= 0 ? 1 : 0;
-	}
-	else if(op2 == expression_type::k_comparison_larger__2){
-		return result > 0 ? 1 : 0;
-	}
-
-	else if(op2 == expression_type::k_logical_equal__2){
-		return result == 0 ? 1 : 0;
-	}
-	else if(op2 == expression_type::k_logical_nonequal__2){
-		return result != 0 ? 1 : 0;
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-}
-host_func_t floyd_runtime__compare_vectors__make(llvm::LLVMContext& context){
-	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		llvm::Type::getInt32Ty(context),
-		{
-			make_frp_type(context),
-			llvm::Type::getInt64Ty(context),
-			make_vec_type(context)->getPointerTo(),
-			make_vec_type(context)->getPointerTo()
-		},
-		false
-	);
-	return { "floyd_runtime__compare_vectors", function_type, reinterpret_cast<void*>(floyd_runtime__compare_vectors) };
-}
-
-
-
-
-void floyd_funcdef__assert(void* floyd_runtime_ptr, int64_t arg){
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-	bool ok = arg == 0 ? false : true;
-	if(!ok){
-		r->_print_output.push_back("Assertion failed.");
-		quark::throw_runtime_error("Floyd assertion failed.");
-	}
-}
-
-void floyd_host_function_1001(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1002(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1003(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1004(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1005(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1006(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1007(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1008(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-
-
-int64_t floyd_funcdef__find__string(llvm_execution_engine_t* floyd_runtime_ptr, const char s[], const char find[]){
-	QUARK_ASSERT(s != nullptr);
-	QUARK_ASSERT(find != nullptr);
-
-	const auto str = std::string(s);
-	const auto wanted2 = std::string(find);
-
-	const auto r = str.find(wanted2);
-	const auto result = r == std::string::npos ? -1 : static_cast<int64_t>(r);
-	return result;
-}
-
-int64_t floyd_funcdef__find(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-	const auto type = arg0_type;
-	if(type == (int)base_type::k_string){
-		if(arg1_type != (int)base_type::k_string){
-			quark::throw_runtime_error("find(string) requires argument 2 to be a string.");
-		}
-		return floyd_funcdef__find__string(r, (const char*)arg0_value, (const char*)arg1_value);
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
-}
-
-
-
-void floyd_host_function_1010(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1011(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1012(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1013(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1014(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1015(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1016(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1017(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1018(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1019(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-
-
-
-//	??? Make visitor to handle different types.
-//	??? Extend dynamic system to support any type, not just base_type.
-void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-	const auto s = gen_to_string(r, arg0_value, arg0_type);
-	r->_print_output.push_back(s);
-}
-
-
-
-const DYN_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-	const auto type = (base_type)arg0_type;
-	if(type == base_type::k_string){
-		const auto value = (const char*)arg0_value;
-
-		std::size_t len = strlen(value);
-		char* s = reinterpret_cast<char*>(std::malloc(len + 1 + 1));
-		strcpy(s, value);
-		s[len + 0] = (char)arg1_value;
-		s[len + 1] = 0x00;
-
-		return make_dyn_return(reinterpret_cast<uint64_t>(s), (uint32_t)base_type::k_string);
-	}
-	else if(type == base_type::k_vector){
-		//??? we assume all vector are [string] right now!!
-		const auto vs = as_vector_w_string(r, arg0_value, arg0_type);
-
-		QUARK_ASSERT(arg1_type == (int)base_type::k_string);
-		const auto element = (const char*)arg1_value;
-
-		VEC_T v2 = floyd_runtime__allocate_vector(floyd_runtime_ptr, vs->element_count + 1);
-		for(int i = 0 ; i < vs->element_count ; i++){
-			v2.element_ptr[i] = vs->element_ptr[i];
-		}
-		v2.element_ptr[vs->element_count] = reinterpret_cast<uint64_t>(element);
-		return make_dyn_return(v2);
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
-}
-
-void floyd_host_function_1022(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1023(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1024(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-
-const char* floyd_funcdef__replace__string(llvm_execution_engine_t* floyd_runtime_ptr, const char s[], std::size_t start, std::size_t end, const char replace[]){
-	auto s_len = std::strlen(s);
-	auto replace_len = std::strlen(replace);
-	if(start > end){
-		quark::throw_runtime_error("replace() requires start <= end.");
-	}
-
-	auto end2 = std::min(end, s_len);
-	auto start2 = std::min(start, end2);
-
-	const std::size_t len2 = start2 + replace_len + (s_len - end2);
-	auto s2 = reinterpret_cast<char*>(std::malloc(len2 + 1));
-	std::memcpy(&s2[0], &s[0], start2);
-	std::memcpy(&s2[start2], &replace[0], replace_len);
-	std::memcpy(&s2[start2 + replace_len], &s[end2], s_len - end2);
-	s2[start2 + replace_len + (s_len - end2)] = 0x00;
-	return s2;
-}
-//??? Pass DYN as arguments too, skip int64_t arg0_value and int64_t arg0_type
-const DYN_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end, int64_t arg3_value, int64_t arg3_type){
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-	if(start < 0 || end < 0){
-		quark::throw_runtime_error("replace() requires start and end to be non-negative.");
-	}
-
-	const auto type = arg0_type;
-	if(type == (int)base_type::k_string){
-		if(arg3_type != (int)base_type::k_string){
-			quark::throw_runtime_error("replace(string) requires argument 4 to be a string.");
-		}
-		const auto ret = floyd_funcdef__replace__string(r, (const char*)arg0_value, (std::size_t)start, (std::size_t)end, (const char*)arg3_value);
-		return make_dyn_return(ret);
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
-}
-
-void floyd_host_function_1026(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1027(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-	const auto type = (base_type)arg0_type;
-	if(type == base_type::k_string){
-		const auto value = (const char*)arg0_value;
-		//??? Strings are not clean.
-		return std::strlen(value);
-	}
-	else if(type == base_type::k_vector){
-		//??? we assume all vector are [string] right now!!
-		const auto vs = as_vector_w_string(r, arg0_value, arg0_type);
-
-		const int count = vs->element_count;
-		return count;
-	}
-
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
-}
-
-const char* floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end){
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-	if(start < 0 || end < 0){
-		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
-	}
-
-	const auto type = (base_type)arg0_type;
-	if(type == base_type::k_string){
-		const auto value = (const char*)arg0_value;
-
-		std::size_t len = strlen(value);
-		const std::size_t end2 = std::min(static_cast<std::size_t>(end), len);
-		const std::size_t start2 = std::min(static_cast<std::size_t>(start), end2);
-		std::size_t len2 = end2 - start2;
-
-		char* s = reinterpret_cast<char*>(std::malloc(len2 + 1));
-		std::memcpy(&s[0], &value[start2], len2);
-		s[len2] = 0x00;
-		return s;
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
-}
-
-
-
-
-void floyd_host_function_1030(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1031(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-const char* floyd_host__to_string(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-	const auto s = gen_to_string(r, arg0_value, arg0_type);
-
-	//??? leaks.
-	return strdup(s.c_str());
-}
-
-void floyd_host__typeof(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-/*
-bc_value_t host__typeof(interpreter_t& vm, const bc_value_t args[], int arg_count){
-QUARK_ASSERT(vm.check_invariant());
-QUARK_ASSERT(arg_count == 1);
-
-const auto& value = args[0];
-const auto type = value._type;
-const auto result = value_t::make_typeid_value(type);
-return value_to_bc(result);
-}
-*/
-}
-
-const char* floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type, int64_t arg2_value, int64_t arg2_type){
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-
-	const auto type = (base_type)arg0_type;
-	if(type == base_type::k_string){
-		const auto str = (const char*)arg0_value;
-
-		QUARK_ASSERT(arg1_type == (int)base_type::k_int);
-		QUARK_ASSERT(arg2_type == (int)base_type::k_int);
-
-		const auto index = arg1_value;
-		const auto new_char = (char)arg2_value;
-
-
-		const auto len = strlen(str);
-
-		if(index < 0 || index >= len){
-			throw std::runtime_error("Position argument to update() is outside collection span.");
-		}
-
-		auto result = strdup(str);
-		result[index] = new_char;
-		return result;
-
-//			return DYN_RETURN_T{ reinterpret_cast<uint64_t>(value), (uint64_t)base_type::k_string };
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
-}
-
-void floyd_host_function_1035(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1036(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1037(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1038(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-void floyd_host_function_1039(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
-
-
-
-
-///////////////		TEST
-
-void floyd_host_function_2002(void* floyd_runtime_ptr, int64_t arg){
-	std::cout << __FUNCTION__ << arg << std::endl;
-}
-
-void floyd_host_function_2003(void* floyd_runtime_ptr, int64_t arg){
-	std::cout << __FUNCTION__ << arg << std::endl;
-}
 
 /*
 	NOTICES: The function signature for the callee can hold DYNs. The actual arguments will be explicit types, never DYNs.
@@ -2732,6 +2070,672 @@ function_definition_t make_dummy_function_definition(){
 	return function_definition_t::make_empty();
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+//	Host functions, automatically called by the LLVM execution engine.
+////////////////////////////////////////////////////////////////////////////////
+
+
+struct host_func_t {
+	std::string name_key;
+	llvm::FunctionType* function_type;
+	void* implementation_f;
+};
+
+
+/*
+@variable = global i32 21
+define i32 @main() {
+%1 = load i32, i32* @variable ; load the global variable
+%2 = mul i32 %1, 2
+store i32 %2, i32* @variable ; store instruction to write to global variable
+ret i32 %2
+}
+*/
+
+llvm_execution_engine_t* get_floyd_runtime(void* floyd_runtime_ptr){
+	QUARK_ASSERT(floyd_runtime_ptr != nullptr);
+
+	auto ptr = reinterpret_cast<llvm_execution_engine_t*>(floyd_runtime_ptr);
+	QUARK_ASSERT(ptr != nullptr);
+	QUARK_ASSERT(ptr->debug_magic == k_debug_magic);
+	return ptr;
+}
+
+void hook(const std::string& s, void* floyd_runtime_ptr, int64_t arg){
+	std:: cout << s << arg << " arg: " << std::endl;
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+	throw std::runtime_error("HOST FUNCTION NOT IMPLEMENTED FOR LLVM");
+}
+
+//??? we assume all vector are [string] right now!!
+VEC_T* as_vector_w_string(llvm_execution_engine_t* runtime, int64_t arg_value, int64_t arg_type){
+	QUARK_ASSERT(arg_type == (int)base_type::k_vector);
+	const auto vector_strings = (VEC_T*)arg_value;
+	QUARK_ASSERT(vector_strings != nullptr);
+	QUARK_ASSERT(vector_strings->magic == 0xDABBAD00);
+
+	return vector_strings;
+}
+
+
+
+std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, int64_t arg_type){
+	const auto type = (base_type)arg_type;
+	if(type == base_type::k_int){
+		const auto value = (int64_t)arg_value;
+		return std::to_string(value);
+	}
+	else if(type == base_type::k_string){
+		const auto value = (const char*)arg_value;
+		return std::string(value);
+	}
+	else if(type == base_type::k_double){
+		const auto d = sizeof(double);
+		const auto i = sizeof(int64_t);
+		QUARK_ASSERT(d == i);
+
+		const auto value = *(double*)&arg_value;
+
+		return double_to_string_always_decimals(value);
+//		return std::to_string(value);
+	}
+	else if(type == base_type::k_vector){
+		//??? we assume all vector are [string] right now!!
+		const auto vs = as_vector_w_string(runtime, arg_value, arg_type);
+
+		std::vector<value_t> elements;
+		const int count = vs->element_count;
+		for(int i = 0 ; i < count ; i++){
+			const char* ss = (const char*)vs->element_ptr[i];
+			QUARK_ASSERT(ss != nullptr);
+
+			const auto e = std::string(ss);
+			elements.push_back(value_t::make_string(e));
+		}
+		const auto val = value_t::make_vector_value(typeid_t::make_string(), elements);
+		return to_compact_string2(val);
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
+
+//??? Make nicer mechanism to register all host functions, types and key-strings. Store explicit members like assert_f instead of search on string.
+
+//	The names of these are computed from the host-id in the symbol table, not the names of the functions/symbols.
+//	They must use C calling convention so llvm JIT can find them.
+//	Make sure they are not dead-stripped out of binary!
+
+void floyd_runtime__unresolved_func(void* floyd_runtime_ptr){
+	std:: cout << __FUNCTION__ << std::endl;
+}
+
+int32_t floyd_runtime__compare_strings(void* floyd_runtime_ptr, int64_t op, const char* lhs, const char* rhs){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	/*
+		strcmp()
+			Greater than zero ( >0 ): A value greater than zero is returned when the first not matching character in leftStr have the greater ASCII value than the corresponding character in rightStr or we can also say
+
+			Less than Zero ( <0 ): A value less than zero is returned when the first not matching character in leftStr have lesser ASCII value than the corresponding character in rightStr.
+
+	*/
+	const auto result = std::strcmp(lhs, rhs);
+	const auto op2 = static_cast<expression_type>(op);
+	if(op2 == expression_type::k_comparison_smaller_or_equal__2){
+		return result <= 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_comparison_smaller__2){
+		return result < 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_comparison_larger_or_equal__2){
+		return result >= 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_comparison_larger__2){
+		return result > 0 ? 1 : 0;
+	}
+
+	else if(op2 == expression_type::k_logical_equal__2){
+		return result == 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_logical_nonequal__2){
+		return result != 0 ? 1 : 0;
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+const char* floyd_runtime__append_strings(void* floyd_runtime_ptr, const char* lhs, const char* rhs){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(lhs != nullptr);
+	QUARK_ASSERT(rhs != nullptr);
+	QUARK_TRACE_SS(__FUNCTION__ << " " << std::string(lhs) << " comp " <<std::string(rhs));
+
+	std::size_t len = strlen(lhs) + strlen(rhs);
+	char* s = reinterpret_cast<char*>(std::malloc(len + 1));
+	strcpy(s, lhs);
+	strcpy(s + strlen(lhs), rhs);
+	return s;
+}
+
+const uint8_t* floyd_runtime__allocate_memory(void* floyd_runtime_ptr, int64_t bytes){
+	auto s = reinterpret_cast<uint8_t*>(std::calloc(1, bytes));
+	return s;
+}
+
+
+////////////////////////////////		allocate_vector()
+
+
+//	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
+const VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint32_t element_count){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	auto element_ptr = reinterpret_cast<uint64_t*>(std::calloc(element_count, sizeof(uint64_t)));
+	if(element_ptr == nullptr){
+		throw std::exception();
+	}
+
+	VEC_T result;
+	result.magic = 0xDABBAD00;
+	result.element_ptr = element_ptr;
+	result.element_count = element_count;
+	return result;
+}
+/*
+!!!
+VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint16_t element_bits, uint32_t element_count){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(element_bits <= 64);
+
+	const auto alloc_bits = element_count * element_bits;
+	const auto alloc_count = (alloc_bits / 64) + (alloc_bits & 64) ? 1 : 0;
+
+	auto element_ptr = reinterpret_cast<uint64_t*>(std::calloc(alloc_count, sizeof(uint64_t)));
+	if(element_ptr == nullptr){
+		throw std::exception();
+	}
+
+	VEC_T result;
+	result.element_ptr = element_ptr;
+	result.magic = 0xDABB;
+	result.element_bits = element_bits;
+	result.element_count = element_count;
+	return result;
+}
+*/
+host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		make_vec_type(context),
+		{
+			make_frp_type(context),
+			llvm::Type::getInt32Ty(context)
+		},
+		false
+	);
+	return { "floyd_runtime__allocate_vector", function_type, reinterpret_cast<void*>(floyd_runtime__allocate_vector) };
+}
+
+
+////////////////////////////////		delete_vector()
+
+
+const void floyd_runtime__delete_vector(void* floyd_runtime_ptr, VEC_T* vec){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(vec != nullptr);
+	QUARK_ASSERT(vec->magic == 0xDABBAD00);
+
+	std::free(vec->element_ptr);
+	vec->element_ptr = nullptr;
+	vec->magic = 0xDEADD0D0;
+	vec->element_count = -vec->element_count;
+}
+
+host_func_t floyd_runtime__delete_vector__make(llvm::LLVMContext& context){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getVoidTy(context),
+		{
+			make_frp_type(context),
+			make_vec_type(context)->getPointerTo()
+		},
+		false
+	);
+	return { "floyd_runtime__delete_vector", function_type, reinterpret_cast<void*>(floyd_runtime__delete_vector) };
+}
+
+
+////////////////////////////////		compare_vectors()
+
+
+int32_t floyd_runtime__compare_vectors(void* floyd_runtime_ptr, int64_t op, const VEC_T* lhs, const VEC_T* rhs){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+//	const auto result = std::strcmp(lhs, rhs);
+	const auto result = 0;
+
+	const auto op2 = static_cast<expression_type>(op);
+	if(op2 == expression_type::k_comparison_smaller_or_equal__2){
+		return result <= 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_comparison_smaller__2){
+		return result < 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_comparison_larger_or_equal__2){
+		return result >= 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_comparison_larger__2){
+		return result > 0 ? 1 : 0;
+	}
+
+	else if(op2 == expression_type::k_logical_equal__2){
+		return result == 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_logical_nonequal__2){
+		return result != 0 ? 1 : 0;
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+host_func_t floyd_runtime__compare_vectors__make(llvm::LLVMContext& context){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getInt32Ty(context),
+		{
+			make_frp_type(context),
+			llvm::Type::getInt64Ty(context),
+			make_vec_type(context)->getPointerTo(),
+			make_vec_type(context)->getPointerTo()
+		},
+		false
+	);
+	return { "floyd_runtime__compare_vectors", function_type, reinterpret_cast<void*>(floyd_runtime__compare_vectors) };
+}
+
+
+
+
+void floyd_funcdef__assert(void* floyd_runtime_ptr, int64_t arg){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	bool ok = arg == 0 ? false : true;
+	if(!ok){
+		r->_print_output.push_back("Assertion failed.");
+		quark::throw_runtime_error("Floyd assertion failed.");
+	}
+}
+
+void floyd_host_function_1001(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1002(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1003(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1004(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1005(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1006(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1007(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1008(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+
+
+int64_t floyd_funcdef__find__string(llvm_execution_engine_t* floyd_runtime_ptr, const char s[], const char find[]){
+	QUARK_ASSERT(s != nullptr);
+	QUARK_ASSERT(find != nullptr);
+
+	const auto str = std::string(s);
+	const auto wanted2 = std::string(find);
+
+	const auto r = str.find(wanted2);
+	const auto result = r == std::string::npos ? -1 : static_cast<int64_t>(r);
+	return result;
+}
+
+int64_t floyd_funcdef__find(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type = arg0_type;
+	if(type == (int)base_type::k_string){
+		if(arg1_type != (int)base_type::k_string){
+			quark::throw_runtime_error("find(string) requires argument 2 to be a string.");
+		}
+		return floyd_funcdef__find__string(r, (const char*)arg0_value, (const char*)arg1_value);
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
+
+
+
+void floyd_host_function_1010(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1011(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1012(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1013(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1014(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1015(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1016(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1017(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1018(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1019(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+
+
+
+//	??? Make visitor to handle different types.
+//	??? Extend dynamic system to support any type, not just base_type.
+void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+	const auto s = gen_to_string(r, arg0_value, arg0_type);
+	r->_print_output.push_back(s);
+}
+
+
+
+const DYN_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type = (base_type)arg0_type;
+	if(type == base_type::k_string){
+		const auto value = (const char*)arg0_value;
+
+		std::size_t len = strlen(value);
+		char* s = reinterpret_cast<char*>(std::malloc(len + 1 + 1));
+		strcpy(s, value);
+		s[len + 0] = (char)arg1_value;
+		s[len + 1] = 0x00;
+
+		return make_dyn_return(s);
+	}
+	else if(type == base_type::k_vector){
+		//??? we assume all vector are [string] right now!!
+		const auto vs = as_vector_w_string(r, arg0_value, arg0_type);
+
+		QUARK_ASSERT(arg1_type == (int)base_type::k_string);
+		const auto element = (const char*)arg1_value;
+
+		VEC_T v2 = floyd_runtime__allocate_vector(floyd_runtime_ptr, vs->element_count + 1);
+		for(int i = 0 ; i < vs->element_count ; i++){
+			v2.element_ptr[i] = vs->element_ptr[i];
+		}
+		v2.element_ptr[vs->element_count] = reinterpret_cast<uint64_t>(element);
+		return make_dyn_return(v2);
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
+
+void floyd_host_function_1022(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1023(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1024(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+
+const char* floyd_funcdef__replace__string(llvm_execution_engine_t* floyd_runtime_ptr, const char s[], std::size_t start, std::size_t end, const char replace[]){
+	auto s_len = std::strlen(s);
+	auto replace_len = std::strlen(replace);
+	if(start > end){
+		quark::throw_runtime_error("replace() requires start <= end.");
+	}
+
+	auto end2 = std::min(end, s_len);
+	auto start2 = std::min(start, end2);
+
+	const std::size_t len2 = start2 + replace_len + (s_len - end2);
+	auto s2 = reinterpret_cast<char*>(std::malloc(len2 + 1));
+	std::memcpy(&s2[0], &s[0], start2);
+	std::memcpy(&s2[start2], &replace[0], replace_len);
+	std::memcpy(&s2[start2 + replace_len], &s[end2], s_len - end2);
+	s2[start2 + replace_len + (s_len - end2)] = 0x00;
+	return s2;
+}
+//??? Pass DYN as arguments too, skip int64_t arg0_value and int64_t arg0_type
+const DYN_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end, int64_t arg3_value, int64_t arg3_type){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	if(start < 0 || end < 0){
+		quark::throw_runtime_error("replace() requires start and end to be non-negative.");
+	}
+
+	const auto type = arg0_type;
+	if(type == (int)base_type::k_string){
+		if(arg3_type != (int)base_type::k_string){
+			quark::throw_runtime_error("replace(string) requires argument 4 to be a string.");
+		}
+		const auto ret = floyd_funcdef__replace__string(r, (const char*)arg0_value, (std::size_t)start, (std::size_t)end, (const char*)arg3_value);
+		return make_dyn_return(ret);
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
+
+void floyd_host_function_1026(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1027(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type = (base_type)arg0_type;
+	if(type == base_type::k_string){
+		const auto value = (const char*)arg0_value;
+		//??? Strings are not clean.
+		return std::strlen(value);
+	}
+	else if(type == base_type::k_vector){
+		//??? we assume all vector are [string] right now!!
+		const auto vs = as_vector_w_string(r, arg0_value, arg0_type);
+
+		const int count = vs->element_count;
+		return count;
+	}
+
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
+
+const char* floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	if(start < 0 || end < 0){
+		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
+	}
+
+	const auto type = (base_type)arg0_type;
+	if(type == base_type::k_string){
+		const auto value = (const char*)arg0_value;
+
+		std::size_t len = strlen(value);
+		const std::size_t end2 = std::min(static_cast<std::size_t>(end), len);
+		const std::size_t start2 = std::min(static_cast<std::size_t>(start), end2);
+		std::size_t len2 = end2 - start2;
+
+		char* s = reinterpret_cast<char*>(std::malloc(len2 + 1));
+		std::memcpy(&s[0], &value[start2], len2);
+		s[len2] = 0x00;
+		return s;
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
+
+
+
+
+void floyd_host_function_1030(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1031(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+const char* floyd_host__to_string(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto s = gen_to_string(r, arg0_value, arg0_type);
+
+	//??? leaks.
+	return strdup(s.c_str());
+}
+
+void floyd_host__typeof(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+/*
+bc_value_t host__typeof(interpreter_t& vm, const bc_value_t args[], int arg_count){
+QUARK_ASSERT(vm.check_invariant());
+QUARK_ASSERT(arg_count == 1);
+
+const auto& value = args[0];
+const auto type = value._type;
+const auto result = value_t::make_typeid_value(type);
+return value_to_bc(result);
+}
+*/
+}
+
+const char* floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type, int64_t arg2_value, int64_t arg2_type){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type = (base_type)arg0_type;
+	if(type == base_type::k_string){
+		const auto str = (const char*)arg0_value;
+
+		QUARK_ASSERT(arg1_type == (int)base_type::k_int);
+		QUARK_ASSERT(arg2_type == (int)base_type::k_int);
+
+		const auto index = arg1_value;
+		const auto new_char = (char)arg2_value;
+
+
+		const auto len = strlen(str);
+
+		if(index < 0 || index >= len){
+			throw std::runtime_error("Position argument to update() is outside collection span.");
+		}
+
+		auto result = strdup(str);
+		result[index] = new_char;
+		return result;
+
+//			return DYN_RETURN_T{ reinterpret_cast<uint64_t>(value), (uint64_t)base_type::k_string };
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
+
+void floyd_host_function_1035(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1036(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1037(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1038(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+void floyd_host_function_1039(void* floyd_runtime_ptr, int64_t arg){
+	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+}
+
+
+
+
+///////////////		TEST
+
+void floyd_host_function_2002(void* floyd_runtime_ptr, int64_t arg){
+	std::cout << __FUNCTION__ << arg << std::endl;
+}
+
+void floyd_host_function_2003(void* floyd_runtime_ptr, int64_t arg){
+	std::cout << __FUNCTION__ << arg << std::endl;
+}
+
+
 function_def_t make_host_proto(llvm::Module& module, const host_func_t& host_function){
 	QUARK_ASSERT(check_invariant__module(&module));
 //	QUARK_TRACE_SS(print_type(host_function.function_type));
@@ -2749,6 +2753,15 @@ function_def_t make_host_proto(llvm::Module& module, const host_func_t& host_fun
 
 	return result;
 }
+
+
+
+
+
+
+
+
+
 
 
 //	Make LLVM functions -- runtime, floyd host functions, floyd functions.
@@ -2838,96 +2851,6 @@ std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, c
 }
 
 
-
-//	Convert all use of dynamic host functions into explicit functions - a compile time transform like C++ templates.
-//	Currently this is a runtime-thing, using dynamic-type, which is like std::any<>.
-std::pair<statement_t, function_defs_t> expand_generics(const statement_t& statement, const function_defs_t& functions){
-	QUARK_ASSERT(statement.check_invariant());
-
-	struct visitor_t {
-		const statement_t& in_statement;
-		const function_defs_t& in_functions;
-
-		std::pair<statement_t, function_defs_t> operator()(const statement_t::return_statement_t& s) const{
-			return { in_statement, in_functions };
-		}
-		std::pair<statement_t, function_defs_t> operator()(const statement_t::define_struct_statement_t& s) const{
-			UNSUPPORTED();
-		}
-		std::pair<statement_t, function_defs_t> operator()(const statement_t::define_function_statement_t& s) const{
-			UNSUPPORTED();
-		}
-
-		std::pair<statement_t, function_defs_t> operator()(const statement_t::bind_local_t& s) const{
-			UNSUPPORTED();
-		}
-		std::pair<statement_t, function_defs_t> operator()(const statement_t::store_t& s) const{
-			UNSUPPORTED();
-		}
-		std::pair<statement_t, function_defs_t> operator()(const statement_t::store2_t& s) const{
-			return { in_statement, in_functions };
-		}
-		std::pair<statement_t, function_defs_t> operator()(const statement_t::block_statement_t& s) const{
-			return { in_statement, in_functions };
-		}
-
-		std::pair<statement_t, function_defs_t> operator()(const statement_t::ifelse_statement_t& s) const{
-			return { in_statement, in_functions };
-		}
-		std::pair<statement_t, function_defs_t> operator()(const statement_t::for_statement_t& s) const{
-			return { in_statement, in_functions };
-		}
-		std::pair<statement_t, function_defs_t> operator()(const statement_t::while_statement_t& s) const{
-			return { in_statement, in_functions };
-		}
-
-
-		std::pair<statement_t, function_defs_t> operator()(const statement_t::expression_statement_t& s) const{
-			return { in_statement, in_functions };
-		}
-		std::pair<statement_t, function_defs_t> operator()(const statement_t::software_system_statement_t& s) const{
-			return { in_statement, in_functions };
-		}
-		std::pair<statement_t, function_defs_t> operator()(const statement_t::container_def_statement_t& s) const{
-			return { in_statement, in_functions };
-		}
-	};
-
-	return std::visit(visitor_t{ statement, functions }, statement._contents);
-}
-
-//			[20, "print", { "init": { "function_id": 20 }, "symbol_type": "immutable_local", "value_type": ["func", "^void", ["^**dyn**"], true] }],
-std::pair<body_t, function_defs_t>  expand_generics(const body_t& body, const function_defs_t& functions){
-	auto functions2 = functions;
-
-	//??? How to expand symbols, like a function-value in the symbol table?
-
-	std::vector<statement_t> statements2;
-	symbol_table_t symbol_table2;
-	for(const auto& e: body._statements){
-		const auto r = expand_generics(e, functions2);
-		statements2.push_back(r.first);
-		functions2 = r.second;
-	}
-	return { body_t(statements2, body._symbol_table), functions2 };
-}
-
-
-//	Find all calls of functions with dynamic arguments-types. This lets use generate-out variants of the function for those types.
-//		print("test") print(123) => print$string(string v), => print$int(int v)
-
-//	Alternative 2: transform funcdefs / calls of print(DYN) to print(int v_itype, uint64 v_packed)
-//	Replace all use of DYN arguments with explicit function-defs and calls.
-semantic_ast_t expand_generics(const semantic_ast_t& semantic_ast){
-	//	Pass 1: find all *use* of generic functions and make those explicit with their types. Also collect all used variants of generic functions.
-	//	Pass 2: replace generic functions with 0...many explicitly typed versions.
-
-	//??? NOTICE: This can introduce semantic type-errors.
-	//??? NOTICE: Implementation of a generic function can use typeof(v) to find out exact type.
-
-//	auto globals2 = expand_generics(semantic_ast._tree._globals, semantic_ast._tree._function_defs);
-	return semantic_ast;
-}
 
 
 std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> genllvm_all(llvm_instance_t& instance, const std::string& module_name, const semantic_ast_t& semantic_ast){
@@ -3026,7 +2949,7 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(llvm_instance_t& instance, c
 	QUARK_ASSERT(module_name.empty() == false);
 //	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast0)._value));
 
-	auto ast = expand_generics(ast0);
+	auto ast = ast0;
 
 	auto result0 = genllvm_all(instance, module_name, ast);
 	auto module = std::move(result0.first);
