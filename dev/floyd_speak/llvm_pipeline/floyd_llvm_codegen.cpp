@@ -1033,7 +1033,9 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvm::Function& emit_f,
 	auto& builder = gen_acc.builder;
 
 	const auto callee_function_type = details.callee->get_output_type();
-	const auto resolved_call_type = e.get_output_type();
+	const auto resolved_call_return_type = e.get_output_type();
+	//	IDEA: Build a complete resolved_function_type: argument types from the actual arguments and return = resolved_call_return_type.
+	//	This lets us select specialisation of calls, like "string push_back(string, int)" vs [bool] push_back([bool], bool)
 
 	const auto actual_call_arguments = mapf<typeid_t>(details.args, [](auto& e){ return e.get_output_type(); });
 
@@ -1043,7 +1045,7 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvm::Function& emit_f,
 	QUARK_ASSERT(details.args.size() == callee_function_type.get_function_args().size());
 
 	llvm::Value* callee0_value = genllvm_expression(gen_acc, emit_f, *details.callee);
-	// Alternative: alter return type of callee0_value to match resolved_call_type.
+	// Alternative: alter return type of callee0_value to match resolved_call_return_type.
 
 	//	Generate code that evaluates all argument expressions.
 	std::vector<llvm::Value*> arg_values;
@@ -1112,7 +1114,7 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvm::Function& emit_f,
 	//	If the return type is dynamic, cast the returned int64 to the correct type.
 	llvm::Value* result = result0;
 	if(callee_function_type.get_function_return().is_internal_dynamic()){
-		if(resolved_call_type.is_string()){
+		if(resolved_call_return_type.is_string()){
 			auto dyn_a = builder.CreateExtractValue(result, { static_cast<int>(DYN_RETURN_MEMBERS::a) });
 			auto dyn_b = builder.CreateExtractValue(result, { static_cast<int>(DYN_RETURN_MEMBERS::b) });
 			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, dyn_a, llvm::Type::getInt8PtrTy(context), "encoded->string");
@@ -1124,7 +1126,7 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvm::Function& emit_f,
 */
 
  }
-		else if(resolved_call_type.is_vector()){
+		else if(resolved_call_return_type.is_vector()){
 /*
 			auto vec_elements_ptr_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(VEC_T_MEMBERS::element_ptr) });
 			auto vec_magic_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(VEC_T_MEMBERS::magic) });
@@ -2594,7 +2596,6 @@ void floyd_host_function_1024(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-//?????
 const char* floyd_funcdef__replace__string(llvm_execution_engine_t* floyd_runtime_ptr, const char s[], std::size_t start, std::size_t end, const char replace[]){
 	auto s_len = std::strlen(s);
 	auto replace_len = std::strlen(replace);
@@ -2613,6 +2614,7 @@ const char* floyd_funcdef__replace__string(llvm_execution_engine_t* floyd_runtim
 	s2[start2 + replace_len + (s_len - end2)] = 0x00;
 	return s2;
 }
+
 //??? Pass DYN as arguments too, skip int64_t arg0_value and int64_t arg0_type
 const DYN_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end, int64_t arg3_value, int64_t arg3_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
@@ -2663,8 +2665,8 @@ int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, int64_t
 		NOT_IMPLEMENTED_YET();
 	}
 }
-//?????
-const char* floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end){
+
+const DYN_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	if(start < 0 || end < 0){
@@ -2683,7 +2685,7 @@ const char* floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_value, i
 		char* s = reinterpret_cast<char*>(std::malloc(len2 + 1));
 		std::memcpy(&s[0], &value[start2], len2);
 		s[len2] = 0x00;
-		return s;
+		return make_dyn_return(s);
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
