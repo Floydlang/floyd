@@ -168,7 +168,7 @@ std::string print_resolved_symbols(const std::vector<resolved_symbol_t>& globals
 }
 
 
-//??? Print all symbols in scope_path
+//	Print all symbols in scope_path
 std::string print_gen(const llvmgen_t& gen){
 //	QUARK_ASSERT(gen.check_invariant());
 
@@ -229,9 +229,6 @@ resolved_symbol_t find_symbol(llvmgen_t& gen_acc, const variable_address_t& reg)
 	}
 }
 
-
-
-
 std::string print_program(const llvm_ir_program_t& program){
 	QUARK_ASSERT(program.check_invariant());
 
@@ -242,32 +239,7 @@ std::string print_program(const llvm_ir_program_t& program){
 	return print_module(*program.module);
 }
 
-
-
-
-/*
-First-class values
-
-LLVM has a distinction between first class values and other types of values.
-First class values can be returned by instructions, passed to functions,
-loaded, stored, PHI'd etc.  Currently the first class value types are:
-
-  1. Integer
-  2. Floating point
-  3. Pointer
-  4. Vector
-  5. Opaque (which is assumed to eventually resolve to 1-4)
-
-The non-first-class types are:
-
-  5. Array
-  6. Structure/Packed Structure
-  7. Function
-  8. Void
-  9. Label
-*/
-
-		//??? need mechanism to map Floyd types vs machine-types.
+//??? need mechanism to map Floyd types vs machine-types.
 value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
 	QUARK_ASSERT(global_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
@@ -1209,7 +1181,6 @@ const uint8_t* floyd_runtime__allocate_memory(void* floyd_runtime_ptr, int64_t b
 }
 
 
-//??? VEC_T for strings too!
 ////////////////////////////////		allocate_vector()
 
 
@@ -1707,8 +1678,6 @@ void floyd_host_function_2003(void* floyd_runtime_ptr, int64_t arg){
 }
 
 /*
-	??? Improve map_function_arguments() it it correctly handles DYN returns.
-
 	NOTICES: The function signature for the callee can hold DYNs. The actual arguments will be explicit types, never DYNs.
 
 	Function signature
@@ -2303,7 +2272,6 @@ gen_statement_mode llvmgen_block_statement(llvmgen_t& gen_acc, llvm::Function& e
 	return llvmgen_block(gen_acc, emit_f, s._body);
 }
 
-//???????????????Don't use builder in ifelse -- its a mess!
 
 //???	Needs short-circuit evaluation here!
 gen_statement_mode llvmgen_ifelse_statement(llvmgen_t& gen_acc, llvm::Function& emit_f, const statement_t::ifelse_statement_t& statement){
@@ -2903,7 +2871,6 @@ std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, c
 
 //	Convert all use of dynamic host functions into explicit functions - a compile time transform like C++ templates.
 //	Currently this is a runtime-thing, using dynamic-type, which is like std::any<>.
-//	??? Keep dynamic-type and rename it "any"?
 std::pair<statement_t, function_defs_t> expand_generics(const statement_t& statement, const function_defs_t& functions){
 	QUARK_ASSERT(statement.check_invariant());
 
@@ -3156,7 +3123,7 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 
 	std::string collectedErrors;
 
-	//??? Destroys p -- uses std::move().
+	//	WARNING: Destroys p -- uses std::move().
 	llvm::ExecutionEngine* exeEng = llvm::EngineBuilder(std::move(program_breaks.module))
 		.setErrorStr(&collectedErrors)
 		.setOptLevel(llvm::CodeGenOpt::Level::None)
@@ -3365,48 +3332,8 @@ int64_t run_using_llvm_helper(const std::string& program_source, const std::stri
 ////////////////////////////////		TESTS
 
 
-#define LLVM_TEST		QUARK_UNIT_TEST
-#define LLVM_TEST_VIP	QUARK_UNIT_TEST_VIP
 
-
-const std::string test_1_json = R"ABCD(
-{
-	"function_defs": [
-		[["func", "^void", [], true], "func_a", [], null, 2002],
-		[["func", "^void", [], true], "func_b", [], null, 2003],
-		[["func", "^void", ["^**dyn**"], true], "func_c", [{ "name": "dummy", "type": "^**dyn**" }], null, 1000]
-	],
-	"globals": {
-		"statements": [[0, "store2", 0, 2, ["+", ["+", ["k", 1, "^int"], ["k", 2, "^int"], "^int"], ["k", 3, "^int"], "^int"]]],
-		"symbols": [
-			[0, "assert", { "init": { "function_id": 0 }, "symbol_type": "immutable_local", "value_type": ["func", "^void", ["^**dyn**"], true] }],
-			[1, "print", { "init": { "function_id": 2 }, "symbol_type": "immutable_local", "value_type": ["func", "^void", ["^**dyn**"], true] }],
-			[2, "result", { "init": null, "symbol_type": "immutable_local", "value_type": "^int" }]
-		]
-	}
-}
-}
-")ABCD";
-
-#if 0
-LLVM_TEST_VIP("", "From JSON: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
-	std::pair<json_t, seq_t> a = parse_json(seq_t(test_1_json));
-
-	floyd::llvm_instance_t instance;
-	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
-	auto program = generate_llvm_ir(instance, pass3, "myfile.floyd");
-	auto ee = make_engine_run_init(instance, *program);
-
-	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(ee, "result"));
-	QUARK_ASSERT(result == 6);
-
-//	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
-}
-#endif
-
-LLVM_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
-//	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2 + 3", value_t::make_int(6));
-
+QUARK_UNIT_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
 	const auto cu = floyd::make_compilation_unit_nolib("let int result = 1 + 2 + 3", "myfile.floyd");
 	const auto pass3 = compile_to_sematic_ast__errors(cu);
 
@@ -3420,45 +3347,8 @@ LLVM_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'resul
 //	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
 }
 
-
-
-#if 0
-const std::string test_2_json = R"ABCD(
-{
-	"function_defs": [
-		[["func", "^void", ["^void"], true], [], null, 2002],
-		[["func", "^void", ["^void"], true], [], null, 2003],
-		[["func", "^void", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1000]
-	],
-	"globals": {
-		"statements": [[0, "expression-statement", ["call", ["@i", -1, 1, ["func", "^void", ["^**dyn**"], true]], [["k", 6, "^int"]], "^void"]]],
-		"symbols": [
-			[0, "assert", { "init": { "function_id": 0 }, "symbol_type": "immutable_local", "value_type": ["func", "^void", ["^**dyn**"], true] }],
-			[1, "print", { "init": { "function_id": 2 }, "symbol_type": "immutable_local", "value_type": ["func", "^void", ["^**dyn**"], true] }]
-		]
-	}
-}
-}
-")ABCD";
-
-#if 1
-//	Works! Calls print()!!!
-LLVM_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
-	std::pair<json_t, seq_t> a = parse_json(seq_t(test_2_json));
-	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
-
-	floyd::llvm_instance_t instance;
-	auto program = generate_llvm_ir(instance, pass3, "myfile.floyd");
-	auto ee = make_engine_run_init(instance, *program);
-	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"6"});
-}
-#endif
-#endif
-
-#if 1
-//??? all external functions referenced from code must be defined or print() will return nullptr.
 //	BROKEN!
-LLVM_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
+QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	const auto cu = floyd::make_compilation_unit_nolib("print(5)", "myfile.floyd");
 	const auto pass3 = compile_to_sematic_ast__errors(cu);
 
@@ -3467,440 +3357,3 @@ LLVM_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_
 	auto ee = make_engine_run_init(instance, *program);
 	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"5"});
 }
-#endif
-
-#if 0
-const std::string test_3_json = R"ABCD(
-
-{
-	"function_defs": [
-		[["func", "^void", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1001],
-		[
-			["func", ["^struct", [[{ "name": "ascii40", "type": "^string" }]]], [["^struct", [[{ "name": "bytes", "type": "^string" }]]]], true],
-			[{ "name": "dummy", "type": ["^struct", [[{ "name": "bytes", "type": "^string" }]]] }],
-			null,
-			1032
-		],
-		[["func", ["^struct", [[{ "name": "ascii40", "type": "^string" }]]], ["^string"], true], [{ "name": "dummy", "type": "^string" }], null, 1031],
-		[["func", "^void", ["^string"], false], [{ "name": "dummy", "type": "^string" }], null, 1028],
-		[["func", "^void", ["^string"], false], [{ "name": "dummy", "type": "^string" }], null, 1029],
-		[["func", "^bool", ["^string"], false], [{ "name": "dummy", "type": "^string" }], null, 1027],
-		[["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }], null, 1010],
-		[["func", "^bool", ["^**dyn**", "^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }], null, 1009],
-		[["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }], null, 1036],
-		[["func", "^int", ["^**dyn**", "^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }], null, 1008],
-		[
-			[
-				"func",
-				[
-					"^struct",
-					[
-						[
-							{ "name": "home_dir", "type": "^string" },
-							{ "name": "documents_dir", "type": "^string" },
-							{ "name": "desktop_dir", "type": "^string" },
-							{ "name": "hidden_persistence_dir", "type": "^string" },
-							{ "name": "preferences_dir", "type": "^string" },
-							{ "name": "cache_dir", "type": "^string" },
-							{ "name": "temp_dir", "type": "^string" },
-							{ "name": "executable_dir", "type": "^string" }
-						]
-					]
-				],
-				[],
-				false
-			],
-			[],
-			null,
-			1026
-		],
-		[
-			[
-				"func",
-				[
-					"vector",
-					["^struct", [[{ "name": "type", "type": "^string" }, { "name": "name", "type": "^string" }, { "name": "parent_path", "type": "^string" }]]]
-				],
-				["^string"],
-				false
-			],
-			[{ "name": "dummy", "type": "^string" }],
-			null,
-			1024
-		],
-		[
-			[
-				"func",
-				[
-					"vector",
-					["^struct", [[{ "name": "type", "type": "^string" }, { "name": "name", "type": "^string" }, { "name": "parent_path", "type": "^string" }]]]
-				],
-				["^string"],
-				false
-			],
-			[{ "name": "dummy", "type": "^string" }],
-			null,
-			1023
-		],
-		[
-			[
-				"func",
-				[
-					"^struct",
-					[
-						[
-							{ "name": "type", "type": "^string" },
-							{ "name": "name", "type": "^string" },
-							{ "name": "parent_path", "type": "^string" },
-							{ "name": "creation_date", "type": "^string" },
-							{ "name": "modification_date", "type": "^string" },
-							{ "name": "file_size", "type": "^int" }
-						]
-					]
-				],
-				["^string"],
-				false
-			],
-			[{ "name": "dummy", "type": "^string" }],
-			null,
-			1025
-		],
-		[["func", "^int", ["^json_value"], true], [{ "name": "dummy", "type": "^json_value" }], null, 1021],
-		[["func", "^int", [], false], [], null, 1005],
-		[["func", "^string", ["^json_value"], true], [{ "name": "dummy", "type": "^json_value" }], null, 1018],
-		[
-			["func", "^**dyn**", ["^json_value", "^typeid"], true],
-			[{ "name": "dummy", "type": "^json_value" }, { "name": "dummy", "type": "^typeid" }],
-			null,
-			1020
-		],
-		[["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }], null, 1033],
-		[
-			["func", "^string", ["^string", ["func", "^string", ["^string"], true]], true],
-			[{ "name": "dummy", "type": "^string" }, { "name": "dummy", "type": ["func", "^string", ["^string"], true] }],
-			null,
-			1034
-		],
-		[["func", "^void", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1000],
-		[["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }], null, 1011],
-		[["func", "^string", ["^string"], false], [{ "name": "dummy", "type": "^string" }], null, 1015],
-		[
-			["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true],
-			[{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }],
-			null,
-			1035
-		],
-		[["func", "^void", ["^string", "^string"], false], [{ "name": "dummy", "type": "^string" }, { "name": "dummy", "type": "^string" }], null, 1030],
-		[
-			["func", "^**dyn**", ["^**dyn**", "^int", "^int", "^**dyn**"], true],
-			[
-				{ "name": "dummy", "type": "^**dyn**" },
-				{ "name": "dummy", "type": "^int" },
-				{ "name": "dummy", "type": "^int" },
-				{ "name": "dummy", "type": "^**dyn**" }
-			],
-			null,
-			1013
-		],
-		[["func", "^json_value", ["^string"], true], [{ "name": "dummy", "type": "^string" }], null, 1017],
-		[["func", "^void", ["^string", "^json_value"], false], [{ "name": "dummy", "type": "^string" }, { "name": "dummy", "type": "^json_value" }], null, 1022],
-		[["func", "^int", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1007],
-		[
-			["func", "^**dyn**", ["^**dyn**", "^int", "^int"], true],
-			[{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^int" }, { "name": "dummy", "type": "^int" }],
-			null,
-			1012
-		],
-		[
-			["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true],
-			[{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }],
-			null,
-			1037
-		],
-		[["func", "^string", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1003],
-		[["func", "^string", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1002],
-		[["func", "^typeid", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1004],
-		[
-			["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true],
-			[{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }],
-			null,
-			1006
-		],
-		[["func", "^json_value", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1019],
-		[["func", "^void", ["^**dyn**", "^**dyn**"], false], [{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }], null, 1016]
-	],
-	"globals": {
-		"statements": [[0, "expression-statement", ["call", ["@i", -1, 20, ["func", "^void", ["^**dyn**"], true]], [["k", 5, "^int"]], "^void"]]],
-		"symbols": [
-			[0, "assert", { "init": { "function_id": 0 }, "symbol_type": "immutable_local", "value_type": ["func", "^void", ["^**dyn**"], true] }],
-			[
-				1,
-				"calc_binary_sha1",
-				{
-					"init": { "function_id": 1 },
-					"symbol_type": "immutable_local",
-					"value_type": [
-						"func",
-						["^struct", [[{ "name": "ascii40", "type": "^string" }]]],
-						[["^struct", [[{ "name": "bytes", "type": "^string" }]]]],
-						true
-					]
-				}
-			],
-			[
-				2,
-				"calc_string_sha1",
-				{
-					"init": { "function_id": 2 },
-					"symbol_type": "immutable_local",
-					"value_type": ["func", ["^struct", [[{ "name": "ascii40", "type": "^string" }]]], ["^string"], true]
-				}
-			],
-			[
-				3,
-				"create_directory_branch",
-				{ "init": { "function_id": 3 }, "symbol_type": "immutable_local", "value_type": ["func", "^void", ["^string"], false] }
-			],
-			[4, "delete_fsentry_deep", { "init": { "function_id": 4 }, "symbol_type": "immutable_local", "value_type": ["func", "^void", ["^string"], false] }],
-			[5, "does_fsentry_exist", { "init": { "function_id": 5 }, "symbol_type": "immutable_local", "value_type": ["func", "^bool", ["^string"], false] }],
-			[6, "erase", { "init": { "function_id": 6 }, "symbol_type": "immutable_local", "value_type": ["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true] }],
-			[7, "exists", { "init": { "function_id": 7 }, "symbol_type": "immutable_local", "value_type": ["func", "^bool", ["^**dyn**", "^**dyn**"], true] }],
-			[
-				8,
-				"filter",
-				{ "init": { "function_id": 8 }, "symbol_type": "immutable_local", "value_type": ["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true] }
-			],
-			[9, "find", { "init": { "function_id": 9 }, "symbol_type": "immutable_local", "value_type": ["func", "^int", ["^**dyn**", "^**dyn**"], true] }],
-			[
-				10,
-				"get_fs_environment",
-				{
-					"init": { "function_id": 10 },
-					"symbol_type": "immutable_local",
-					"value_type": [
-						"func",
-						[
-							"^struct",
-							[
-								[
-									{ "name": "home_dir", "type": "^string" },
-									{ "name": "documents_dir", "type": "^string" },
-									{ "name": "desktop_dir", "type": "^string" },
-									{ "name": "hidden_persistence_dir", "type": "^string" },
-									{ "name": "preferences_dir", "type": "^string" },
-									{ "name": "cache_dir", "type": "^string" },
-									{ "name": "temp_dir", "type": "^string" },
-									{ "name": "executable_dir", "type": "^string" }
-								]
-							]
-						],
-						[],
-						false
-					]
-				}
-			],
-			[
-				11,
-				"get_fsentries_deep",
-				{
-					"init": { "function_id": 11 },
-					"symbol_type": "immutable_local",
-					"value_type": [
-						"func",
-						[
-							"vector",
-							[
-								"^struct",
-								[[{ "name": "type", "type": "^string" }, { "name": "name", "type": "^string" }, { "name": "parent_path", "type": "^string" }]]
-							]
-						],
-						["^string"],
-						false
-					]
-				}
-			],
-			[
-				12,
-				"get_fsentries_shallow",
-				{
-					"init": { "function_id": 12 },
-					"symbol_type": "immutable_local",
-					"value_type": [
-						"func",
-						[
-							"vector",
-							[
-								"^struct",
-								[[{ "name": "type", "type": "^string" }, { "name": "name", "type": "^string" }, { "name": "parent_path", "type": "^string" }]]
-							]
-						],
-						["^string"],
-						false
-					]
-				}
-			],
-			[
-				13,
-				"get_fsentry_info",
-				{
-					"init": { "function_id": 13 },
-					"symbol_type": "immutable_local",
-					"value_type": [
-						"func",
-						[
-							"^struct",
-							[
-								[
-									{ "name": "type", "type": "^string" },
-									{ "name": "name", "type": "^string" },
-									{ "name": "parent_path", "type": "^string" },
-									{ "name": "creation_date", "type": "^string" },
-									{ "name": "modification_date", "type": "^string" },
-									{ "name": "file_size", "type": "^int" }
-								]
-							]
-						],
-						["^string"],
-						false
-					]
-				}
-			],
-			[14, "get_json_type", { "init": { "function_id": 14 }, "symbol_type": "immutable_local", "value_type": ["func", "^int", ["^json_value"], true] }],
-			[15, "get_time_of_day", { "init": { "function_id": 15 }, "symbol_type": "immutable_local", "value_type": ["func", "^int", [], false] }],
-			[
-				16,
-				"jsonvalue_to_script",
-				{ "init": { "function_id": 16 }, "symbol_type": "immutable_local", "value_type": ["func", "^string", ["^json_value"], true] }
-			],
-			[
-				17,
-				"jsonvalue_to_value",
-				{ "init": { "function_id": 17 }, "symbol_type": "immutable_local", "value_type": ["func", "^**dyn**", ["^json_value", "^typeid"], true] }
-			],
-			[18, "map", { "init": { "function_id": 18 }, "symbol_type": "immutable_local", "value_type": ["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true] }],
-			[
-				19,
-				"map_string",
-				{
-					"init": { "function_id": 19 },
-					"symbol_type": "immutable_local",
-					"value_type": ["func", "^string", ["^string", ["func", "^string", ["^string"], true]], true]
-				}
-			],
-			[20, "print", { "init": { "function_id": 20 }, "symbol_type": "immutable_local", "value_type": ["func", "^void", ["^**dyn**"], true] }],
-			[
-				21,
-				"push_back",
-				{ "init": { "function_id": 21 }, "symbol_type": "immutable_local", "value_type": ["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true] }
-			],
-			[22, "read_text_file", { "init": { "function_id": 22 }, "symbol_type": "immutable_local", "value_type": ["func", "^string", ["^string"], false] }],
-			[
-				23,
-				"reduce",
-				{
-					"init": { "function_id": 23 },
-					"symbol_type": "immutable_local",
-					"value_type": ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]
-				}
-			],
-			[
-				24,
-				"rename_fsentry",
-				{ "init": { "function_id": 24 }, "symbol_type": "immutable_local", "value_type": ["func", "^void", ["^string", "^string"], false] }
-			],
-			[
-				25,
-				"replace",
-				{
-					"init": { "function_id": 25 },
-					"symbol_type": "immutable_local",
-					"value_type": ["func", "^**dyn**", ["^**dyn**", "^int", "^int", "^**dyn**"], true]
-				}
-			],
-			[
-				26,
-				"script_to_jsonvalue",
-				{ "init": { "function_id": 26 }, "symbol_type": "immutable_local", "value_type": ["func", "^json_value", ["^string"], true] }
-			],
-			[
-				27,
-				"send",
-				{ "init": { "function_id": 27 }, "symbol_type": "immutable_local", "value_type": ["func", "^void", ["^string", "^json_value"], false] }
-			],
-			[28, "size", { "init": { "function_id": 28 }, "symbol_type": "immutable_local", "value_type": ["func", "^int", ["^**dyn**"], true] }],
-			[
-				29,
-				"subset",
-				{ "init": { "function_id": 29 }, "symbol_type": "immutable_local", "value_type": ["func", "^**dyn**", ["^**dyn**", "^int", "^int"], true] }
-			],
-			[
-				30,
-				"supermap",
-				{
-					"init": { "function_id": 30 },
-					"symbol_type": "immutable_local",
-					"value_type": ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]
-				}
-			],
-			[31, "to_pretty_string", { "init": { "function_id": 31 }, "symbol_type": "immutable_local", "value_type": ["func", "^string", ["^**dyn**"], true] }],
-			[32, "to_string", { "init": { "function_id": 32 }, "symbol_type": "immutable_local", "value_type": ["func", "^string", ["^**dyn**"], true] }],
-			[33, "typeof", { "init": { "function_id": 33 }, "symbol_type": "immutable_local", "value_type": ["func", "^typeid", ["^**dyn**"], true] }],
-			[
-				34,
-				"update",
-				{
-					"init": { "function_id": 34 },
-					"symbol_type": "immutable_local",
-					"value_type": ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]
-				}
-			],
-			[
-				35,
-				"value_to_jsonvalue",
-				{ "init": { "function_id": 35 }, "symbol_type": "immutable_local", "value_type": ["func", "^json_value", ["^**dyn**"], true] }
-			],
-			[
-				36,
-				"write_text_file",
-				{ "init": { "function_id": 36 }, "symbol_type": "immutable_local", "value_type": ["func", "^void", ["^**dyn**", "^**dyn**"], false] }
-			],
-			[37, "null", { "init": null, "symbol_type": "immutable_local", "value_type": "^json_value" }],
-			[38, "**undef**", { "init": null, "symbol_type": "immutable_local", "value_type": "^**undef**" }],
-			[39, "**dyn**", { "init": null, "symbol_type": "immutable_local", "value_type": "^**dyn**" }],
-			[40, "void", { "init": null, "symbol_type": "immutable_local", "value_type": "^void" }],
-			[41, "bool", { "init": "^bool", "symbol_type": "immutable_local", "value_type": "^typeid" }],
-			[42, "int", { "init": "^int", "symbol_type": "immutable_local", "value_type": "^typeid" }],
-			[43, "double", { "init": "^double", "symbol_type": "immutable_local", "value_type": "^typeid" }],
-			[44, "string", { "init": "^string", "symbol_type": "immutable_local", "value_type": "^typeid" }],
-			[45, "typeid", { "init": "^typeid", "symbol_type": "immutable_local", "value_type": "^typeid" }],
-			[46, "json_value", { "init": "^json_value", "symbol_type": "immutable_local", "value_type": "^typeid" }],
-			[47, "json_object", { "init": 1, "symbol_type": "immutable_local", "value_type": "^int" }],
-			[48, "json_array", { "init": 2, "symbol_type": "immutable_local", "value_type": "^int" }],
-			[49, "json_string", { "init": 3, "symbol_type": "immutable_local", "value_type": "^int" }],
-			[50, "json_number", { "init": 4, "symbol_type": "immutable_local", "value_type": "^int" }],
-			[51, "json_true", { "init": 5, "symbol_type": "immutable_local", "value_type": "^int" }],
-			[52, "json_false", { "init": 6, "symbol_type": "immutable_local", "value_type": "^int" }],
-			[53, "json_null", { "init": 7, "symbol_type": "immutable_local", "value_type": "^int" }]
-		]
-	}
-}
-")ABCD";
-
-
-LLVM_TEST("", "json_to_semantic_ast()", "Complex JSON with ^types", ""){
-	std::pair<json_t, seq_t> a = parse_json(seq_t(test_3_json));
-	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
-}
-
-LLVM_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
-	std::pair<json_t, seq_t> a = parse_json(seq_t(test_3_json));
-	const auto pass3 = floyd::json_to_semantic_ast(floyd::ast_json_t::make(a.first));
-
-	floyd::llvm_instance_t instance;
-	auto program = generate_llvm_ir(instance, pass3, "myfile.floyd");
-	auto ee = make_engine_run_init(instance, *program);
-	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"5"});
-}
-#endif
-
-

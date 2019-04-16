@@ -53,6 +53,28 @@ std::pair<llvm::Type*, bool> intern_type_generics(llvm::Module& module, const ty
 
 
 /*
+First-class values
+
+LLVM has a distinction between first class values and other types of values.
+First class values can be returned by instructions, passed to functions,
+loaded, stored, PHI'd etc.  Currently the first class value types are:
+
+  1. Integer
+  2. Floating point
+  3. Pointer
+  4. Vector
+  5. Opaque (which is assumed to eventually resolve to 1-4)
+
+The non-first-class types are:
+
+  5. Array
+  6. Structure/Packed Structure
+  7. Function
+  8. Void
+  9. Label
+*/
+
+/*
 	FLOYD ARGS				LLVM ARGS
 	----------				--------------------
 							int32*		"floyd_runtime_ptr"
@@ -105,6 +127,7 @@ llvm::Type* make_frp_type(llvm::LLVMContext& context);
 
 
 //??? need word for "encoded". How data is stuffed into the LLVM instruction set..
+//??? VEC_T for strings too!
 /*
 	Vectors
 
@@ -186,6 +209,8 @@ struct llvm_function_def_t {
 };
 
 llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<member_t>& args);
+
+//	??? Improve map_function_arguments() it it correctly handles DYN returns.
 llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::typeid_t& function_type);
 
 
