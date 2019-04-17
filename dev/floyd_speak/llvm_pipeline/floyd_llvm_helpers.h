@@ -142,12 +142,35 @@ struct VEC_T {
 	uint32_t magic;	//	0xDABBAD00
 	uint32_t element_count;
 };
+/*
+struct VEC_T {
+	uint64_t* element_ptr;
+	uint32_t element_count;
+	uint16_t magic;	//	0xDABB
+	uint16_t element_bits;
+};
+*/
 
+bool check_invariant_vector(const VEC_T& v);
+
+//	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
+VEC_T make_vec(uint32_t element_count);
+void delete_vec(VEC_T& vec);
+
+/*
+enum class VEC_T_MEMBERS {
+	element_ptr = 0,
+	element_count = 1,
+	magic = 2,
+	element_bits = 3
+};
+*/
 enum class VEC_T_MEMBERS {
 	element_ptr = 0,
 	magic = 1,
 	element_count = 2
 };
+
 
 //	Makes a type for VEC_T.
 llvm::Type* make_vec_type(llvm::LLVMContext& context);
@@ -179,10 +202,6 @@ llvm::Type* make_dynreturn_type(llvm::LLVMContext& context);
 llvm::Type* make_dyn_value_type(llvm::LLVMContext& context);
 llvm::Type* make_dyn_type_type(llvm::LLVMContext& context);
 
-llvm::Type* make_encode_type(llvm::LLVMContext& context);
-
-//	Encode a VEC_T usings its address. Alternative: could pass it as argument by-value.
-llvm::Value* get_vec_as_dyn(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue);
 
 
 

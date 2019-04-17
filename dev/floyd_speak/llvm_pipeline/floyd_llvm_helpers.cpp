@@ -258,7 +258,6 @@ llvm::Type* make_frp_type(llvm::LLVMContext& context){
 
 
 
-
 //	Makes a type for VEC_T.
 llvm::Type* make_vec_type(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
@@ -275,6 +274,27 @@ llvm::Type* make_vec_type(llvm::LLVMContext& context){
 	return s;
 }
 
+/*
+//	Makes a type for VEC_T.
+llvm::Type* make_vec_type(llvm::LLVMContext& context){
+	std::vector<llvm::Type*> members = {
+		//	element_ptr
+		llvm::Type::getIntNTy(context, 64)->getPointerTo(),
+
+		//	element_count
+		llvm::Type::getIntNTy(context, 32),
+
+		//	magic
+		llvm::Type::getIntNTy(context, 16),
+
+		//	element_bits
+		llvm::Type::getIntNTy(context, 16)
+	};
+	llvm::StructType* s = llvm::StructType::get(context, members, false);
+	return s;
+}
+*/
+
 llvm::Value* get_vec_ptr(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue){
 	auto& context = builder.getContext();
 
@@ -282,6 +302,64 @@ llvm::Value* get_vec_ptr(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue){
 	builder.CreateStore(vec_byvalue, alloc_value);
 	return alloc_value;
 }
+
+bool check_invariant_vector(const VEC_T& v){
+	QUARK_ASSERT(v.element_ptr != nullptr);
+//	QUARK_ASSERT(v.element_bits > 0 && v.element_bits < (8 * 128));
+	QUARK_ASSERT(v.magic == 0xDABBAD00);
+//	QUARK_ASSERT(v.magic == 0xDABB);
+	return true;
+}
+
+
+/*
+VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint16_t element_bits, uint32_t element_count){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(element_bits <= 64);
+
+	const auto alloc_bits = element_count * element_bits;
+	const auto alloc_count = (alloc_bits / 64) + (alloc_bits & 64) ? 1 : 0;
+
+	auto element_ptr = reinterpret_cast<uint64_t*>(std::calloc(alloc_count, sizeof(uint64_t)));
+	if(element_ptr == nullptr){
+		throw std::exception();
+	}
+
+	VEC_T result;
+	result.element_ptr = element_ptr;
+	result.magic = 0xDABB;
+	result.element_bits = element_bits;
+	result.element_count = element_count;
+	return result;
+}
+*/
+
+//	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
+VEC_T make_vec(uint32_t element_count){
+	auto element_ptr = reinterpret_cast<uint64_t*>(std::calloc(element_count, sizeof(uint64_t)));
+	if(element_ptr == nullptr){
+		throw std::exception();
+	}
+
+	VEC_T result;
+	result.element_ptr = element_ptr;
+	result.element_count = element_count;
+	result.magic = 0xDABBAD00;
+//	result.element_bits = 12345;
+
+	QUARK_ASSERT(check_invariant_vector(result));
+	return result;
+}
+
+void delete_vec(VEC_T& vec){
+	QUARK_ASSERT(check_invariant_vector(vec));
+
+	std::free(vec.element_ptr);
+	vec.element_ptr = nullptr;
+	vec.magic = 0xDEAD;
+	vec.element_count = -vec.element_count;
+}
+
 
 
 
@@ -322,18 +400,8 @@ llvm::Type* make_dyn_value_type(llvm::LLVMContext& context){
 llvm::Type* make_dyn_type_type(llvm::LLVMContext& context){
 	return llvm::Type::getIntNTy(context, 64);
 }
-llvm::Type* make_encode_type(llvm::LLVMContext& context){
-	return llvm::Type::getIntNTy(context, 64);
-}
 
 
-llvm::Value* get_vec_as_dyn(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue){
-	auto ptr = get_vec_ptr(builder, vec_byvalue);
-
-	auto encoded_type = make_dyn_value_type(builder.getContext());
-	llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, ptr, encoded_type, "");
-	return arg3;
-}
 
 
 

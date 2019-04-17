@@ -2233,7 +2233,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [] - empty constructor", "cannot be 
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "vector explicit bind, is [string]", "Infer type", "valid vector"){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "vector explicit bind, is [string]", "Infer type", "valid vector"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(

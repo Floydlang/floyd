@@ -1067,40 +1067,44 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvm::Function& emit_f,
 			//	Actual type of the argument, as specified inside the call expression. The concrete type for the DYN value for this call.
 			const auto concrete_arg_type = details.args[out_arg.floyd_arg_index].get_output_type();
 
+			// We assume that the next arg in the llvm_mapping is the dyn-type.
+			//??? We only support the base-types, not composite types.
+			const auto base_type_id = (int64_t)concrete_arg_type.get_base_type();
+
 			if(concrete_arg_type.is_function()){
 				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, make_dyn_value_type(context), "function_as_arg");
 				arg_values.push_back(arg3);
+				arg_values.push_back(llvm::ConstantInt::get(make_dyn_type_type(context), base_type_id));
 			}
 			else if(concrete_arg_type.is_double()){
 				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::BitCast, arg2, make_dyn_value_type(context), "double_as_arg");
 				arg_values.push_back(arg3);
+				arg_values.push_back(llvm::ConstantInt::get(make_dyn_type_type(context), base_type_id));
 			}
 			else if(concrete_arg_type.is_string()){
 				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, make_dyn_value_type(context), "string_as_arg");
 				arg_values.push_back(arg3);
+				arg_values.push_back(llvm::ConstantInt::get(make_dyn_type_type(context), base_type_id));
 			}
 			else if(concrete_arg_type.is_vector()){
 				QUARK_ASSERT(concrete_arg_type.get_vector_element_type().is_string());
 
-				llvm::Value* arg3 = get_vec_as_dyn(gen_acc.builder, arg2);
+				auto vec_ptr = get_vec_ptr(builder, arg2);
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, vec_ptr, make_dyn_value_type(context), "");
 				arg_values.push_back(arg3);
+				arg_values.push_back(llvm::ConstantInt::get(make_dyn_type_type(context), base_type_id));
 			}
 			else if(concrete_arg_type.is_int()){
 				arg_values.push_back(arg2);
+				arg_values.push_back(llvm::ConstantInt::get(make_dyn_type_type(context), base_type_id));
 			}
 			else if(concrete_arg_type.is_bool()){
 				arg_values.push_back(arg2);
+				arg_values.push_back(llvm::ConstantInt::get(make_dyn_type_type(context), base_type_id));
 			}
 			else{
 				NOT_IMPLEMENTED_YET();
 			}
-
-			// We assume that the next arg in the llvm_mapping is the dyn-type.
-			//??? We only support the base-types, not composite types.
-			const auto base_type_id = (int64_t)concrete_arg_type.get_base_type();
-			llvm::Constant* gen_type = llvm::ConstantInt::get(make_dyn_type_type(context), base_type_id);
-
-			arg_values.push_back(gen_type);
 		}
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_type){
 		}
@@ -1127,6 +1131,23 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvm::Function& emit_f,
 
  }
 		else if(resolved_call_return_type.is_vector()){
+			//	Store the DYN to memory, then cast it to VEC and load it again.
+			auto dyn_value = builder.CreateAlloca(make_dynreturn_type(context), nullptr, "temp_vec");
+			builder.CreateStore(result0, dyn_value);
+			auto x = builder.CreateCast(llvm::Instruction::CastOps::BitCast, dyn_value, make_vec_type(context)->getPointerTo(), "encoded-> [string]");
+			result = builder.CreateLoad(x, "final");
+		}
+		else{
+			NOT_IMPLEMENTED_YET();
+		}
+	}
+	else{
+	}
+
+	QUARK_ASSERT(gen_acc.check_invariant());
+	return result;
+}
+
 /*
 			auto vec_elements_ptr_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(VEC_T_MEMBERS::element_ptr) });
 			auto vec_magic_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(VEC_T_MEMBERS::magic) });
@@ -1157,22 +1178,6 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvm::Function& emit_f,
 			result = builder.CreateLoad(vec_value, "final");
 */
 
-			//	Store the DYN to memory, then cast it to VEC and load it again.
-			auto dyn_value = builder.CreateAlloca(make_dynreturn_type(context), nullptr, "temp_vec");
-			builder.CreateStore(result0, dyn_value);
-			auto x = builder.CreateCast(llvm::Instruction::CastOps::BitCast, dyn_value, make_vec_type(context)->getPointerTo(), "encoded-> [string]");
-			result = builder.CreateLoad(x, "final");
-		}
-		else{
-			NOT_IMPLEMENTED_YET();
-		}
-	}
-	else{
-	}
-
-	QUARK_ASSERT(gen_acc.check_invariant());
-	return result;
-}
 
 llvm::Value* alloc_vec_int64(llvmgen_t& gen_acc, llvm::Function& emit_f, uint16_t element_bits, uint64_t element_count, const std::string& debug){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1193,8 +1198,6 @@ llvm::Value* alloc_vec_int64(llvmgen_t& gen_acc, llvm::Function& emit_f, uint16_
 	auto vec = builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_vector()-" + debug);
 	return vec;
 }
-
-
 
 llvm::Value* llvmgen_construct_value_expression(llvmgen_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -2120,7 +2123,9 @@ VEC_T* as_vector_w_string(llvm_execution_engine_t* runtime, int64_t arg_value, i
 	QUARK_ASSERT(arg_type == (int)base_type::k_vector);
 	const auto vector_strings = (VEC_T*)arg_value;
 	QUARK_ASSERT(vector_strings != nullptr);
-	QUARK_ASSERT(vector_strings->magic == 0xDABBAD00);
+
+
+	QUARK_ASSERT(check_invariant_vector(*vector_strings));
 
 	return vector_strings;
 }
@@ -2286,39 +2291,10 @@ host_func_t floyd_runtime__allocate_memory__make(llvm::LLVMContext& context){
 const VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint32_t element_count){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
-	auto element_ptr = reinterpret_cast<uint64_t*>(std::calloc(element_count, sizeof(uint64_t)));
-	if(element_ptr == nullptr){
-		throw std::exception();
-	}
-
-	VEC_T result;
-	result.magic = 0xDABBAD00;
-	result.element_ptr = element_ptr;
-	result.element_count = element_count;
-	return result;
+	VEC_T v = make_vec(element_count);
+	return v;
 }
-/*
-!!!
-VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint16_t element_bits, uint32_t element_count){
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-	QUARK_ASSERT(element_bits <= 64);
 
-	const auto alloc_bits = element_count * element_bits;
-	const auto alloc_count = (alloc_bits / 64) + (alloc_bits & 64) ? 1 : 0;
-
-	auto element_ptr = reinterpret_cast<uint64_t*>(std::calloc(alloc_count, sizeof(uint64_t)));
-	if(element_ptr == nullptr){
-		throw std::exception();
-	}
-
-	VEC_T result;
-	result.element_ptr = element_ptr;
-	result.magic = 0xDABB;
-	result.element_bits = element_bits;
-	result.element_count = element_count;
-	return result;
-}
-*/
 host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_vec_type(context),
@@ -2338,12 +2314,9 @@ host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context){
 const void floyd_runtime__delete_vector(void* floyd_runtime_ptr, VEC_T* vec){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 	QUARK_ASSERT(vec != nullptr);
-	QUARK_ASSERT(vec->magic == 0xDABBAD00);
+	QUARK_ASSERT(check_invariant_vector(*vec));
 
-	std::free(vec->element_ptr);
-	vec->element_ptr = nullptr;
-	vec->magic = 0xDEADD0D0;
-	vec->element_count = -vec->element_count;
+	delete_vec(*vec);
 }
 
 host_func_t floyd_runtime__delete_vector__make(llvm::LLVMContext& context){
@@ -2364,6 +2337,14 @@ host_func_t floyd_runtime__delete_vector__make(llvm::LLVMContext& context){
 
 int32_t floyd_runtime__compare_vectors(void* floyd_runtime_ptr, int64_t op, const VEC_T* lhs, const VEC_T* rhs){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	QUARK_ASSERT(lhs != nullptr);
+	QUARK_ASSERT(check_invariant_vector(*lhs));
+
+	QUARK_ASSERT(rhs != nullptr);
+	QUARK_ASSERT(check_invariant_vector(*rhs));
+
+
 //	const auto result = std::strcmp(lhs, rhs);
 	const auto result = 0;
 
@@ -3026,7 +3007,7 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(llvm_instance_t& instance, c
 	auto funcs = result0.second;
 
 	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, ast._tree._globals._symbol_table, funcs);
-//	QUARK_TRACE_SS("result = " << floyd::print_program(*result));
+	QUARK_TRACE_SS("result = " << floyd::print_program(*result));
 	return result;
 }
 
