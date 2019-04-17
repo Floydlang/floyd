@@ -63,6 +63,45 @@ void UNSUPPORTED() {
 }
 
 
+/*
+LLVM return struct byvalue:
+http://lists.llvm.org/pipermail/llvm-dev/2009-June/023391.html
+struct Big {
+ int a, b, c;
+int d;
+};
+
+struct Big foo() {
+  struct Big result = {1, 2, 3, 4, 5};
+  return result;
+}
+
+
+> "Note that the code generator does not yet fully support large return
+> values. The specific sizes that are currently supported are dependent on the
+> target. For integers, on 32-bit targets the limit is often 64 bits, and on
+> 64-bit targets the limit is often 128 bits. For aggregate types, the current
+> limits are dependent on the element types; for example targets are often
+> limited to 2 total integer elements and 2 total floating-point elements."
+>
+> So, does this mean that I can't have a return type with more than two
+> integers? Is there any other way to support longer return structure?
+
+That's what it means (at least until someone like you contributes a
+patch to support larger return structs). To work around it, imitate
+what the C compiler does.
+
+Try typing:
+
+struct Big {
+ int a, b, c;
+};
+
+struct Big foo() {
+  struct Big result = {1, 2, 3};
+  return result;
+}
+*/
 
 
 
@@ -262,13 +301,13 @@ llvm::Type* make_frp_type(llvm::LLVMContext& context){
 llvm::Type* make_vec_type(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
 		//	element_ptr
-		llvm::Type::getIntNTy(context, 64)->getPointerTo(),
-
-		//	magic
-		llvm::Type::getIntNTy(context, 32),
+		llvm::Type::getInt64Ty(context)->getPointerTo(),
 
 		//	element_count
-		llvm::Type::getIntNTy(context, 32)
+		llvm::Type::getInt32Ty(context),
+
+		//	magic
+		llvm::Type::getInt32Ty(context)
 	};
 	llvm::StructType* s = llvm::StructType::get(context, members, false);
 	return s;
@@ -365,20 +404,6 @@ void delete_vec(VEC_T& vec){
 
 ////////////////////////////////		DYN_RETURN_T
 
-
-DYN_RETURN_T make_dyn_return(uint64_t a, uint64_t b){
-	return DYN_RETURN_T{ a, b };
-}
-
-
-DYN_RETURN_T make_dyn_return(const char* s){
-	return DYN_RETURN_T{ reinterpret_cast<uint64_t>(s), 0 };
-}
-
-DYN_RETURN_T make_dyn_return(const VEC_T& vec){
-	return DYN_RETURN_T{ reinterpret_cast<uint64_t>(vec.element_ptr), vec.element_count };
-}
-
 llvm::Type* make_dynreturn_type(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
 		//	a
@@ -393,13 +418,25 @@ llvm::Type* make_dynreturn_type(llvm::LLVMContext& context){
 
 
 
-//??? replace with DYN_RETURN_T struct
-llvm::Type* make_dyn_value_type(llvm::LLVMContext& context){
-	return llvm::Type::getIntNTy(context, 64);
+DYN_RETURN_T make_dyn_return(uint64_t a, uint64_t b){
+	return DYN_RETURN_T{ a, b };
 }
-llvm::Type* make_dyn_type_type(llvm::LLVMContext& context){
-	return llvm::Type::getIntNTy(context, 64);
+
+
+DYN_RETURN_T make_dyn_return(const char* s){
+	return DYN_RETURN_T{ reinterpret_cast<uint64_t>(s), 0 };
 }
+
+DYN_RETURN_T make_dyn_return(const VEC_T& vec){
+	return *reinterpret_cast<const DYN_RETURN_T*>(&vec);
+}
+
+VEC_T dynreturn_to_vec(const DYN_RETURN_T& ret){
+	return *reinterpret_cast<const VEC_T*>(&ret);
+}
+
+
+
 
 
 
@@ -478,8 +515,8 @@ llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::ty
 
 		//	For dynamic values, store its dynamic type as an extra argument.
 		if(arg.is_internal_dynamic()){
-			arg_results.push_back({ make_dyn_value_type(context), std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_dyn_value });
-			arg_results.push_back({ make_dyn_type_type(context), std::to_string(index), typeid_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
+			arg_results.push_back({ llvm::Type::getInt64Ty(context), std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_dyn_value });
+			arg_results.push_back({ llvm::Type::getInt64Ty(context), std::to_string(index), typeid_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
 		}
 		else {
 			auto arg_itype = intern_type(module, arg);
@@ -674,8 +711,9 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 	}
 
 	else if(type.is_internal_dynamic()){
+		//??? should return DYN
 //		QUARK_ASSERT(false);
-		return make_dyn_type_type(context);
+		return llvm::Type::getInt64Ty(context);
 	}
 	else if(type.is_function()){
 		return make_function_type(module, type);

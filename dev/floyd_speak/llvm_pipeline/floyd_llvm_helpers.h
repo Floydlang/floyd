@@ -139,8 +139,8 @@ llvm::Type* make_frp_type(llvm::LLVMContext& context);
 */
 struct VEC_T {
 	uint64_t* element_ptr;
-	uint32_t magic;	//	0xDABBAD00
 	uint32_t element_count;
+	uint32_t magic;	//	0xDABBAD00
 };
 /*
 struct VEC_T {
@@ -167,8 +167,8 @@ enum class VEC_T_MEMBERS {
 */
 enum class VEC_T_MEMBERS {
 	element_ptr = 0,
-	magic = 1,
-	element_count = 2
+	element_count = 1,
+	magic = 2
 };
 
 
@@ -194,14 +194,14 @@ enum class DYN_RETURN_MEMBERS {
 };
 
 
-DYN_RETURN_T make_dyn_return(uint64_t a, uint64_t b);
-DYN_RETURN_T make_dyn_return(const char* s);
-DYN_RETURN_T make_dyn_return(const VEC_T& vec);
 llvm::Type* make_dynreturn_type(llvm::LLVMContext& context);
 
-llvm::Type* make_dyn_value_type(llvm::LLVMContext& context);
-llvm::Type* make_dyn_type_type(llvm::LLVMContext& context);
+DYN_RETURN_T make_dyn_return(uint64_t a, uint64_t b);
 
+DYN_RETURN_T make_dyn_return(const char* s);
+
+DYN_RETURN_T make_dyn_return(const VEC_T& vec);
+VEC_T dynreturn_to_vec(const DYN_RETURN_T& ret);
 
 
 

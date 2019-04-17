@@ -630,10 +630,10 @@ llvm::Value* llvmgen_lookup_element_expression(llvmgen_t& gen_acc, llvm::Functio
 	if(parent_type.is_string()){
 		auto element_index = key_value;
 		const auto index_list = std::vector<llvm::Value*>{ element_index };
-		llvm::Value* element_addr = builder.CreateGEP(llvm::Type::getIntNTy(context, 8), parent_value, index_list, "element_addr");
+		llvm::Value* element_addr = builder.CreateGEP(llvm::Type::getInt8Ty(context), parent_value, index_list, "element_addr");
 
 		llvm::Value* element_value_8bit = builder.CreateLoad(element_addr, "element_tmp");
-		llvm::Type* output_type = llvm::Type::getIntNTy(context, 64);
+		llvm::Type* output_type = llvm::Type::getInt64Ty(context);
 
 		llvm::Value* element_value = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::SExt, element_value_8bit, output_type, "char_to_int64");
 		return element_value;
@@ -1013,6 +1013,16 @@ llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, llvm::F
 	return phiNode;
 }
 
+llvm::Value* convert_dynresult_to_vec(llvm::IRBuilder<>& builder, llvm::Value* dynresult){
+	auto& context = builder.getContext();
+
+	//	Store the DYN to memory, then cast it to VEC and load it again.
+	auto dyn_value = builder.CreateAlloca(make_dynreturn_type(context), nullptr, "temp_vec");
+	builder.CreateStore(dynresult, dyn_value);
+	auto x = builder.CreateCast(llvm::Instruction::CastOps::BitCast, dyn_value, make_vec_type(context)->getPointerTo(), "");
+	auto result = builder.CreateLoad(x, "final");
+	return result;
+}
 
 
 
@@ -1072,35 +1082,35 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvm::Function& emit_f,
 			const auto base_type_id = (int64_t)concrete_arg_type.get_base_type();
 
 			if(concrete_arg_type.is_function()){
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, make_dyn_value_type(context), "function_as_arg");
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, builder.getInt64Ty(), "function_as_arg");
 				arg_values.push_back(arg3);
-				arg_values.push_back(llvm::ConstantInt::get(make_dyn_type_type(context), base_type_id));
+				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), base_type_id));
 			}
 			else if(concrete_arg_type.is_double()){
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::BitCast, arg2, make_dyn_value_type(context), "double_as_arg");
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::BitCast, arg2, builder.getInt64Ty(), "double_as_arg");
 				arg_values.push_back(arg3);
-				arg_values.push_back(llvm::ConstantInt::get(make_dyn_type_type(context), base_type_id));
+				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), base_type_id));
 			}
 			else if(concrete_arg_type.is_string()){
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, make_dyn_value_type(context), "string_as_arg");
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, builder.getInt64Ty(), "string_as_arg");
 				arg_values.push_back(arg3);
-				arg_values.push_back(llvm::ConstantInt::get(make_dyn_type_type(context), base_type_id));
+				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), base_type_id));
 			}
 			else if(concrete_arg_type.is_vector()){
 				QUARK_ASSERT(concrete_arg_type.get_vector_element_type().is_string());
 
 				auto vec_ptr = get_vec_ptr(builder, arg2);
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, vec_ptr, make_dyn_value_type(context), "");
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, vec_ptr, builder.getInt64Ty(), "");
 				arg_values.push_back(arg3);
-				arg_values.push_back(llvm::ConstantInt::get(make_dyn_type_type(context), base_type_id));
+				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), base_type_id));
 			}
 			else if(concrete_arg_type.is_int()){
 				arg_values.push_back(arg2);
-				arg_values.push_back(llvm::ConstantInt::get(make_dyn_type_type(context), base_type_id));
+				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), base_type_id));
 			}
 			else if(concrete_arg_type.is_bool()){
 				arg_values.push_back(arg2);
-				arg_values.push_back(llvm::ConstantInt::get(make_dyn_type_type(context), base_type_id));
+				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), base_type_id));
 			}
 			else{
 				NOT_IMPLEMENTED_YET();
@@ -1120,7 +1130,7 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvm::Function& emit_f,
 	if(callee_function_type.get_function_return().is_internal_dynamic()){
 		if(resolved_call_return_type.is_string()){
 			auto dyn_a = builder.CreateExtractValue(result, { static_cast<int>(DYN_RETURN_MEMBERS::a) });
-			auto dyn_b = builder.CreateExtractValue(result, { static_cast<int>(DYN_RETURN_MEMBERS::b) });
+//			auto dyn_b = builder.CreateExtractValue(result, { static_cast<int>(DYN_RETURN_MEMBERS::b) });
 			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, dyn_a, llvm::Type::getInt8PtrTy(context), "encoded->string");
 /*
 !!!
@@ -1128,14 +1138,9 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvm::Function& emit_f,
 			auto elements_ptr_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(DYN_RETURN_MEMBERS::a) });
 			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, elements_ptr_value, llvm::Type::getInt8PtrTy(context), "encoded->string");
 */
-
- }
+		}
 		else if(resolved_call_return_type.is_vector()){
-			//	Store the DYN to memory, then cast it to VEC and load it again.
-			auto dyn_value = builder.CreateAlloca(make_dynreturn_type(context), nullptr, "temp_vec");
-			builder.CreateStore(result0, dyn_value);
-			auto x = builder.CreateCast(llvm::Instruction::CastOps::BitCast, dyn_value, make_vec_type(context)->getPointerTo(), "encoded-> [string]");
-			result = builder.CreateLoad(x, "final");
+			return convert_dynresult_to_vec(builder, result0);
 		}
 		else{
 			NOT_IMPLEMENTED_YET();
@@ -1226,25 +1231,22 @@ llvm::Value* llvmgen_construct_value_expression(llvmgen_t& gen_acc, llvm::Functi
 			const auto element_count_value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), element_count);
 
 			//	Local function, called once.
-			const auto vec_value = [&](){
+			const auto dynresult = [&](){
 				std::vector<llvm::Value*> args2;
 				args2.push_back(get_callers_fcp(emit_f));
 				args2.push_back(element_count_value);
-				auto result = builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_vector()" + typeid_to_compact_string(target_type));
-				return result;
+				auto dynresult = builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_vector()" + typeid_to_compact_string(target_type));
+				return dynresult;
 			}();
 
-			//	Get element_ptr, which is member0 of VEC_T.
-/*
-			const auto gep_index_list = std::vector<llvm::Value*>{ 0, 0 };
-			llvm::Value* element_ptr_addr = builder.CreateGEP(vec_type, vec_value, gep_index_list, "element_ptr");
-			llvm::Value* element_ptr = builder.CreateLoad(element_ptr_addr, "element_ptr");
-*/
+			auto vec_value = convert_dynresult_to_vec(builder, dynresult);
+
 			auto uint64_element_ptr = builder.CreateExtractValue(vec_value, { (int)VEC_T_MEMBERS::element_ptr });
 			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type->getPointerTo(), "");
 
 			//	Evaluate each element and store it directly into the the vector.
 			int element_index = 0;
+#if 1
 			for(const auto& arg: details.elements){
 				llvm::Value* arg_value = genllvm_expression(gen_acc, emit_f, arg);
 				auto element_index_value = make_constant(gen_acc, value_t::make_int(element_index));
@@ -1254,6 +1256,7 @@ llvm::Value* llvmgen_construct_value_expression(llvmgen_t& gen_acc, llvm::Functi
 
 				element_index++;
 			}
+#endif
 
 			return vec_value;
 		}
@@ -2288,16 +2291,16 @@ host_func_t floyd_runtime__allocate_memory__make(llvm::LLVMContext& context){
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-const VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint32_t element_count){
+const DYN_RETURN_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint32_t element_count){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	VEC_T v = make_vec(element_count);
-	return v;
+	return make_dyn_return(v);
 }
 
 host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		make_vec_type(context),
+		make_dynreturn_type(context),
 		{
 			make_frp_type(context),
 			llvm::Type::getInt32Ty(context)
@@ -2553,7 +2556,8 @@ const DYN_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg
 		QUARK_ASSERT(arg1_type == (int)base_type::k_string);
 		const auto element = (const char*)arg1_value;
 
-		VEC_T v2 = floyd_runtime__allocate_vector(floyd_runtime_ptr, vs->element_count + 1);
+		DYN_RETURN_T va = floyd_runtime__allocate_vector(floyd_runtime_ptr, vs->element_count + 1);
+		auto v2 = dynreturn_to_vec(va);
 		for(int i = 0 ; i < vs->element_count ; i++){
 			v2.element_ptr[i] = vs->element_ptr[i];
 		}
@@ -2921,7 +2925,7 @@ void generate_floyd_runtime_init(llvmgen_t& gen_acc, const std::vector<statement
 
 		llvm::Value* uint64ptr_value = builder.CreateCast(llvm::Instruction::CastOps::BitCast, floyd_context_arg_ptr, llvm::Type::getInt64Ty(context)->getPointerTo(), "");
 
-		llvm::Value* magic_addr = builder.CreateGEP(llvm::Type::getIntNTy(context, 64), uint64ptr_value, index_list, "magic_addr");
+		llvm::Value* magic_addr = builder.CreateGEP(llvm::Type::getInt64Ty(context), uint64ptr_value, index_list, "magic_addr");
 		auto magic_value = builder.CreateLoad(magic_addr);
 		llvm::Value* correct_magic_value = llvm::ConstantInt::get(builder.getInt64Ty(), k_debug_magic);
 		auto cmp_result = builder.CreateICmpEQ(magic_value, correct_magic_value);
@@ -3214,7 +3218,8 @@ int64_t run_using_llvm_helper(const std::string& program_source, const std::stri
 }	//	namespace floyd
 
 
-
+//??? Make consistent naming prefic: llvmgen_ etc.
+//??? Make separate prefixes for codegen, normal code & runtime code.
 
 ////////////////////////////////		TESTS
 
