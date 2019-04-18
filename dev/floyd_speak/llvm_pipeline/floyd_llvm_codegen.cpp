@@ -270,6 +270,13 @@ value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
 			}
 			return value_t::make_vector_value(element_type, vec2);
 		}
+		else if(element_type.is_int()){
+			for(int i = 0 ; i < vec.element_count ; i++){
+				auto s = vec.element_ptr[i];
+				vec2.push_back(value_t::make_int(s));
+			}
+			return value_t::make_vector_value(element_type, vec2);
+		}
 		else{
 			NOT_IMPLEMENTED_YET();
 		}
@@ -1161,24 +1168,28 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 */
 
 
-static llvm::Value* generate_alloc_vec(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, uint16_t element_bits, uint64_t element_count, const std::string& debug){
+static llvm::Value* generate_alloc_vec(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, uint64_t element_count, const std::string& debug){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
-	QUARK_ASSERT(element_bits > 0 && element_bits < (8 * 128));
 
 	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
 	const auto allocate_vector_func = find_function_def(gen_acc, "floyd_runtime__allocate_vector");
-	const auto element_bits_value = llvm::ConstantInt::get(llvm::Type::getInt16Ty(context), element_bits);
+
 	const auto element_count_value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), element_count);
 
-	std::vector<llvm::Value*> args2;
-	args2.push_back(get_callers_fcp(emit_f));
-	args2.push_back(element_bits_value);
-	args2.push_back(element_count_value);
-	auto vec = builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_vector()-" + debug);
-	return vec;
+	//	Local function, called once.
+	const auto wide_return_reg = [&](){
+		std::vector<llvm::Value*> args2;
+		args2.push_back(get_callers_fcp(emit_f));
+		args2.push_back(element_count_value);
+		auto x = builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_vector()" + debug);
+		return x;
+	}();
+
+	auto vec_reg = generate__convert_wide_return_to_vec(builder, wide_return_reg);
+	return vec_reg;
 }
 
 static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::value_constructor_t& details){
@@ -1190,7 +1201,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 	auto& builder = gen_acc.builder;
 
 	const auto target_type = e.get_output_type();
-	const auto caller_arg_count = details.elements.size();
+	const auto element_count = details.elements.size();
 
 	if(target_type.is_vector()){
 		const auto element_type0 = target_type.get_vector_element_type();
@@ -1198,24 +1209,12 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 		const auto allocate_vector_func = find_function_def(gen_acc, "floyd_runtime__allocate_vector");
 
 		if(element_type0.is_string()){
-			//	Each element is a char*.
-			auto element_type = llvm::Type::getInt8PtrTy(context);
-
-			const auto element_count = caller_arg_count;
-			const auto element_count_value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), element_count);
-
-			//	Local function, called once.
-			const auto wide_return_reg = [&](){
-				std::vector<llvm::Value*> args2;
-				args2.push_back(get_callers_fcp(emit_f));
-				args2.push_back(element_count_value);
-				auto x = builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_vector()" + typeid_to_compact_string(target_type));
-				return x;
-			}();
-
-			auto vec_reg = generate__convert_wide_return_to_vec(builder, wide_return_reg);
+			auto vec_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
 
 			auto uint64_element_ptr = builder.CreateExtractValue(vec_reg, { (int)VEC_T_MEMBERS::element_ptr });
+
+			//	Each element is a char*.
+			auto element_type = llvm::Type::getInt8PtrTy(context);
 			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type->getPointerTo(), "");
 
 			//	Evaluate each element and store it directly into the the vector.
@@ -1231,25 +1230,13 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			}
 			return vec_reg;
 		}
-		else if(element_type0.is_bool()){
-			//	Each element is a uint64_t ???
-			auto element_type = llvm::Type::getInt64Ty(context);
-
-			const auto element_count = caller_arg_count;
-			const auto element_count_value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), element_count);
-
-			//	Local function, called once.
-			const auto wide_return_reg = [&](){
-				std::vector<llvm::Value*> args2;
-				args2.push_back(get_callers_fcp(emit_f));
-				args2.push_back(element_count_value);
-				auto x = builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_vector()" + typeid_to_compact_string(target_type));
-				return x;
-			}();
-
-			auto vec_reg = generate__convert_wide_return_to_vec(builder, wide_return_reg);
+		else if(element_type0.is_bool() || element_type0.is_int()){
+			auto vec_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
 
 			auto uint64_element_ptr = builder.CreateExtractValue(vec_reg, { (int)VEC_T_MEMBERS::element_ptr });
+
+			//	Each element is a uint64_t ???
+			auto element_type = llvm::Type::getInt64Ty(context);
 			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type->getPointerTo(), "");
 
 			//	Evaluate each element and store it directly into the the vector.
@@ -1306,7 +1293,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
-		QUARK_ASSERT(caller_arg_count == 1);
+		QUARK_ASSERT(element_count == 1);
 
 /*
 		const auto source_itype = arg_count == 0 ? -1 : intern_type(gen_acc, e._input_exprs[0].get_output_type());
@@ -2475,12 +2462,28 @@ int64_t floyd_funcdef__find(void* floyd_runtime_ptr, int64_t arg0_value, int64_t
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type0 = unpack_itype(arg0_type);
+	const auto type1 = unpack_itype(arg1_type);
 	if(type0.is_string()){
-		const auto type1 = unpack_itype(arg1_type);
 		if(type1.is_string() == false){
 			quark::throw_runtime_error("find(string) requires argument 2 to be a string.");
 		}
 		return floyd_funcdef__find__string(r, (const char*)arg0_value, (const char*)arg1_value);
+	}
+	else if(type0.is_vector()){
+		if(type1 != type0.get_vector_element_type()){
+			quark::throw_runtime_error("find([]) requires argument 2 to be of vector's element type.");
+		}
+
+		const auto vec = unpack_vec_arg(r, arg0_value, arg0_type);
+
+		const auto it = std::find(vec->element_ptr, vec->element_ptr + vec->element_count, arg1_value);
+		if(it == vec->element_ptr + vec->element_count){
+			return -1;
+		}
+		else{
+			const auto pos = it - vec->element_ptr;
+			return pos;
+		}
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
@@ -2561,35 +2564,20 @@ const WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t ar
 		return make_wide_return_charptr(s);
 	}
 	else if(type0.is_vector()){
-		//??? we assume all vector are [string] right now!!
 		const auto vs = unpack_vec_arg(r, arg0_value, arg0_type);
 
 		const auto type1 = unpack_itype(arg1_type);
-		if(type1.is_string()){
-			const auto element = (const char*)arg1_value;
+		QUARK_ASSERT(type1 == type0.get_vector_element_type());
 
-			WIDE_RETURN_T va = floyd_runtime__allocate_vector(floyd_runtime_ptr, vs->element_count + 1);
-			auto v2 = wider_return_to_vec(va);
-			for(int i = 0 ; i < vs->element_count ; i++){
-				v2.element_ptr[i] = vs->element_ptr[i];
-			}
-			v2.element_ptr[vs->element_count] = reinterpret_cast<uint64_t>(element);
-			return make_wide_return_vec(v2);
-		}
-		else if(type1.is_bool()){
-			const auto element = arg1_value;
+		const auto element = (const char*)arg1_value;
 
-			WIDE_RETURN_T va = floyd_runtime__allocate_vector(floyd_runtime_ptr, vs->element_count + 1);
-			auto v2 = wider_return_to_vec(va);
-			for(int i = 0 ; i < vs->element_count ; i++){
-				v2.element_ptr[i] = vs->element_ptr[i];
-			}
-			v2.element_ptr[vs->element_count] = element;
-			return make_wide_return_vec(v2);
+		WIDE_RETURN_T va = floyd_runtime__allocate_vector(floyd_runtime_ptr, vs->element_count + 1);
+		auto v2 = wider_return_to_vec(va);
+		for(int i = 0 ; i < vs->element_count ; i++){
+			v2.element_ptr[i] = vs->element_ptr[i];
 		}
-		else {
-			QUARK_ASSERT(false);
-		}
+		v2.element_ptr[vs->element_count] = reinterpret_cast<uint64_t>(element);
+		return make_wide_return_vec(v2);
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
