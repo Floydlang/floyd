@@ -1013,15 +1013,19 @@ llvm::Value* llvmgen_conditional_operator_expression(llvmgen_t& gen_acc, llvm::F
 	return phiNode;
 }
 
-llvm::Value* convert_dynresult_to_vec(llvm::IRBuilder<>& builder, llvm::Value* dynresult){
+//??? Use _reg as suffix instead of _value.
+
+llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg){
 	auto& context = builder.getContext();
 
+	//	LLVM can¨t cast a struct-value to another struct value - need to store on stack and cast pointer instead.
+
 	//	Store the DYN to memory, then cast it to VEC and load it again.
-	auto dyn_value = builder.CreateAlloca(make_dynreturn_type(context), nullptr, "temp_vec");
-	builder.CreateStore(dynresult, dyn_value);
-	auto x = builder.CreateCast(llvm::Instruction::CastOps::BitCast, dyn_value, make_vec_type(context)->getPointerTo(), "");
-	auto result = builder.CreateLoad(x, "final");
-	return result;
+	auto wide_return_ptr_reg = builder.CreateAlloca(make_wide_return_type(context), nullptr, "temp_vec");
+	builder.CreateStore(wide_return_reg, wide_return_ptr_reg);
+	auto vec_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, wide_return_ptr_reg, make_vec_type(context)->getPointerTo(), "");
+	auto vec_reg = builder.CreateLoad(vec_ptr_reg, "final");
+	return vec_reg;
 }
 
 
@@ -1129,18 +1133,18 @@ llvm::Value* llvmgen_call_expression(llvmgen_t& gen_acc, llvm::Function& emit_f,
 	llvm::Value* result = result0;
 	if(callee_function_type.get_function_return().is_internal_dynamic()){
 		if(resolved_call_return_type.is_string()){
-			auto dyn_a = builder.CreateExtractValue(result, { static_cast<int>(DYN_RETURN_MEMBERS::a) });
-//			auto dyn_b = builder.CreateExtractValue(result, { static_cast<int>(DYN_RETURN_MEMBERS::b) });
-			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, dyn_a, llvm::Type::getInt8PtrTy(context), "encoded->string");
+			auto wide_return_a_reg = builder.CreateExtractValue(result, { static_cast<int>(WIDE_RETURN_MEMBERS::a) });
+//			auto dyn_b = builder.CreateExtractValue(result, { static_cast<int>(WIDE_RETURN_MEMBERS::b) });
+			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, wide_return_a_reg, llvm::Type::getInt8PtrTy(context), "encoded->string");
 /*
 !!!
-			llvm::Value* vec_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, result0, make_dynreturn_type(context), "encoded->string");
-			auto elements_ptr_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(DYN_RETURN_MEMBERS::a) });
+			llvm::Value* vec_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, result0, make_wide_return_type(context), "encoded->string");
+			auto elements_ptr_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(WIDE_RETURN_MEMBERS::a) });
 			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, elements_ptr_value, llvm::Type::getInt8PtrTy(context), "encoded->string");
 */
 		}
 		else if(resolved_call_return_type.is_vector()){
-			return convert_dynresult_to_vec(builder, result0);
+			return generate__convert_wide_return_to_vec(builder, result0);
 		}
 		else{
 			NOT_IMPLEMENTED_YET();
@@ -1239,7 +1243,7 @@ llvm::Value* llvmgen_construct_value_expression(llvmgen_t& gen_acc, llvm::Functi
 				return dynresult;
 			}();
 
-			auto vec_value = convert_dynresult_to_vec(builder, dynresult);
+			auto vec_value = generate__convert_wide_return_to_vec(builder, dynresult);
 
 			auto uint64_element_ptr = builder.CreateExtractValue(vec_value, { (int)VEC_T_MEMBERS::element_ptr });
 			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type->getPointerTo(), "");
@@ -2291,16 +2295,16 @@ host_func_t floyd_runtime__allocate_memory__make(llvm::LLVMContext& context){
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-const DYN_RETURN_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint32_t element_count){
+const WIDE_RETURN_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint32_t element_count){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	VEC_T v = make_vec(element_count);
-	return make_dyn_return(v);
+	return make_wide_return_vec(v);
 }
 
 host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		make_dynreturn_type(context),
+		make_wide_return_type(context),
 		{
 			make_frp_type(context),
 			llvm::Type::getInt32Ty(context)
@@ -2534,7 +2538,7 @@ void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg0_value, int64_t a
 
 
 
-const DYN_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
+const WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type = (base_type)arg0_type;
@@ -2547,7 +2551,7 @@ const DYN_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg
 		s[len + 0] = (char)arg1_value;
 		s[len + 1] = 0x00;
 
-		return make_dyn_return(s);
+		return make_wide_return_charptr(s);
 	}
 	else if(type == base_type::k_vector){
 		//??? we assume all vector are [string] right now!!
@@ -2556,13 +2560,13 @@ const DYN_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg
 		QUARK_ASSERT(arg1_type == (int)base_type::k_string);
 		const auto element = (const char*)arg1_value;
 
-		DYN_RETURN_T va = floyd_runtime__allocate_vector(floyd_runtime_ptr, vs->element_count + 1);
-		auto v2 = dynreturn_to_vec(va);
+		WIDE_RETURN_T va = floyd_runtime__allocate_vector(floyd_runtime_ptr, vs->element_count + 1);
+		auto v2 = wider_return_to_vec(va);
 		for(int i = 0 ; i < vs->element_count ; i++){
 			v2.element_ptr[i] = vs->element_ptr[i];
 		}
 		v2.element_ptr[vs->element_count] = reinterpret_cast<uint64_t>(element);
-		return make_dyn_return(v2);
+		return make_wide_return_vec(v2);
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
@@ -2601,7 +2605,7 @@ const char* floyd_funcdef__replace__string(llvm_execution_engine_t* floyd_runtim
 }
 
 //??? Pass DYN as arguments too, skip int64_t arg0_value and int64_t arg0_type
-const DYN_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end, int64_t arg3_value, int64_t arg3_type){
+const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end, int64_t arg3_value, int64_t arg3_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	if(start < 0 || end < 0){
@@ -2614,7 +2618,7 @@ const DYN_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0_
 			quark::throw_runtime_error("replace(string) requires argument 4 to be a string.");
 		}
 		const auto ret = floyd_funcdef__replace__string(r, (const char*)arg0_value, (std::size_t)start, (std::size_t)end, (const char*)arg3_value);
-		return make_dyn_return(ret);
+		return make_wide_return_charptr(ret);
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
@@ -2651,7 +2655,7 @@ int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, int64_t
 	}
 }
 
-const DYN_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end){
+const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	if(start < 0 || end < 0){
@@ -2670,7 +2674,7 @@ const DYN_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_v
 		char* s = reinterpret_cast<char*>(std::malloc(len2 + 1));
 		std::memcpy(&s[0], &value[start2], len2);
 		s[len2] = 0x00;
-		return make_dyn_return(s);
+		return make_wide_return_charptr(s);
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
@@ -2712,7 +2716,7 @@ return value_to_bc(result);
 */
 }
 
-const DYN_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type, int64_t arg2_value, int64_t arg2_type){
+const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type, int64_t arg2_value, int64_t arg2_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type = (base_type)arg0_type;
@@ -2734,7 +2738,7 @@ const DYN_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_v
 
 		auto result = strdup(str);
 		result[index] = new_char;
-		return make_dyn_return(result);
+		return make_wide_return_charptr(result);
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
@@ -3011,7 +3015,7 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir(llvm_instance_t& instance, c
 	auto funcs = result0.second;
 
 	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, ast._tree._globals._symbol_table, funcs);
-	QUARK_TRACE_SS("result = " << floyd::print_program(*result));
+//	QUARK_TRACE_SS("result = " << floyd::print_program(*result));
 	return result;
 }
 

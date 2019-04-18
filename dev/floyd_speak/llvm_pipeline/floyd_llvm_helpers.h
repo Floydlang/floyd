@@ -179,29 +179,32 @@ llvm::Value* get_vec_ptr(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue);
 
 
 
-////////////////////////////////		DYN_RETURN_T
+////////////////////////////////		WIDE_RETURN_T
+
+//	Used to return structs and bigger chunks of data from LLVM functions.
+//	Can only be two members in LLVM struct, each an word wide.
 
 
 //	??? Also use for arguments, not only return.
-struct DYN_RETURN_T {
+struct WIDE_RETURN_T {
 	uint64_t a;
 	uint64_t b;
 };
 
-enum class DYN_RETURN_MEMBERS {
+enum class WIDE_RETURN_MEMBERS {
 	a = 0,
 	b = 1
 };
 
 
-llvm::Type* make_dynreturn_type(llvm::LLVMContext& context);
+llvm::Type* make_wide_return_type(llvm::LLVMContext& context);
 
-DYN_RETURN_T make_dyn_return(uint64_t a, uint64_t b);
+WIDE_RETURN_T make_wide_return_2x64(uint64_t a, uint64_t b);
 
-DYN_RETURN_T make_dyn_return(const char* s);
+WIDE_RETURN_T make_wide_return_charptr(const char* s);
 
-DYN_RETURN_T make_dyn_return(const VEC_T& vec);
-VEC_T dynreturn_to_vec(const DYN_RETURN_T& ret);
+WIDE_RETURN_T make_wide_return_vec(const VEC_T& vec);
+VEC_T wider_return_to_vec(const WIDE_RETURN_T& ret);
 
 
 

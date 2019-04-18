@@ -402,9 +402,11 @@ void delete_vec(VEC_T& vec){
 
 
 
-////////////////////////////////		DYN_RETURN_T
+////////////////////////////////		WIDE_RETURN_T
 
-llvm::Type* make_dynreturn_type(llvm::LLVMContext& context){
+
+
+llvm::Type* make_wide_return_type(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
 		//	a
 		llvm::Type::getIntNTy(context, 64),
@@ -418,20 +420,20 @@ llvm::Type* make_dynreturn_type(llvm::LLVMContext& context){
 
 
 
-DYN_RETURN_T make_dyn_return(uint64_t a, uint64_t b){
-	return DYN_RETURN_T{ a, b };
+WIDE_RETURN_T make_wide_return_2x64(uint64_t a, uint64_t b){
+	return WIDE_RETURN_T{ a, b };
 }
 
 
-DYN_RETURN_T make_dyn_return(const char* s){
-	return DYN_RETURN_T{ reinterpret_cast<uint64_t>(s), 0 };
+WIDE_RETURN_T make_wide_return_charptr(const char* s){
+	return WIDE_RETURN_T{ reinterpret_cast<uint64_t>(s), 0 };
 }
 
-DYN_RETURN_T make_dyn_return(const VEC_T& vec){
-	return *reinterpret_cast<const DYN_RETURN_T*>(&vec);
+WIDE_RETURN_T make_wide_return_vec(const VEC_T& vec){
+	return *reinterpret_cast<const WIDE_RETURN_T*>(&vec);
 }
 
-VEC_T dynreturn_to_vec(const DYN_RETURN_T& ret){
+VEC_T wider_return_to_vec(const WIDE_RETURN_T& ret){
 	return *reinterpret_cast<const VEC_T*>(&ret);
 }
 
@@ -500,7 +502,7 @@ llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::ty
 	auto& context = module.getContext();
 
 	const auto ret = function_type.get_function_return();
-	llvm::Type* return_type = ret.is_internal_dynamic() ? make_dynreturn_type(context) : intern_type(module, ret);
+	llvm::Type* return_type = ret.is_internal_dynamic() ? make_wide_return_type(context) : intern_type(module, ret);
 
 	const auto args = function_type.get_function_args();
 	std::vector<llvm_arg_mapping_t> arg_results;
