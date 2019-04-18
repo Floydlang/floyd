@@ -1059,22 +1059,22 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 
 			// We assume that the next arg in the llvm_mapping is the dyn-type.
 
-			const auto base_type_id = (int64_t)concrete_arg_type.get_base_type();
+			const auto itype = pack_itype(concrete_arg_type);
 
 			if(concrete_arg_type.is_function()){
 				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, builder.getInt64Ty(), "function_as_arg");
 				arg_values.push_back(arg3);
-				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), base_type_id));
+				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
 			}
 			else if(concrete_arg_type.is_double()){
 				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::BitCast, arg2, builder.getInt64Ty(), "double_as_arg");
 				arg_values.push_back(arg3);
-				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), base_type_id));
+				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
 			}
 			else if(concrete_arg_type.is_string()){
 				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, builder.getInt64Ty(), "string_as_arg");
 				arg_values.push_back(arg3);
-				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), base_type_id));
+				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
 			}
 			else if(concrete_arg_type.is_vector()){
 				QUARK_ASSERT(concrete_arg_type.get_vector_element_type().is_string());
@@ -1082,15 +1082,15 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 				auto vec_ptr = get_vec_ptr(builder, arg2);
 				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, vec_ptr, builder.getInt64Ty(), "");
 				arg_values.push_back(arg3);
-				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), base_type_id));
+				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
 			}
 			else if(concrete_arg_type.is_int()){
 				arg_values.push_back(arg2);
-				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), base_type_id));
+				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
 			}
 			else if(concrete_arg_type.is_bool()){
 				arg_values.push_back(arg2);
-				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), base_type_id));
+				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
 			}
 			else{
 				NOT_IMPLEMENTED_YET();
@@ -2071,10 +2071,10 @@ void hook(const std::string& s, void* floyd_runtime_ptr, int64_t arg){
 }
 
 VEC_T* as_vector_w_string(llvm_execution_engine_t* runtime, int64_t arg_value, int64_t arg_type){
-	QUARK_ASSERT(arg_type == (int)base_type::k_vector);
+	const auto type = unpack_itype(arg_type);
+	QUARK_ASSERT(type.is_vector());
 	const auto vector_strings = (VEC_T*)arg_value;
 	QUARK_ASSERT(vector_strings != nullptr);
-
 
 	QUARK_ASSERT(check_invariant_vector(*vector_strings));
 
@@ -2082,18 +2082,18 @@ VEC_T* as_vector_w_string(llvm_execution_engine_t* runtime, int64_t arg_value, i
 }
 
 
-
 std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, int64_t arg_type){
-	const auto type = (base_type)arg_type;
-	if(type == base_type::k_int){
+	const auto type = unpack_itype(arg_type);
+
+	if(type.is_int()){
 		const auto value = (int64_t)arg_value;
 		return std::to_string(value);
 	}
-	else if(type == base_type::k_string){
+	else if(type.is_string()){
 		const auto value = (const char*)arg_value;
 		return std::string(value);
 	}
-	else if(type == base_type::k_double){
+	else if(type.is_double()){
 		const auto d = sizeof(double);
 		const auto i = sizeof(int64_t);
 		QUARK_ASSERT(d == i);
@@ -2103,8 +2103,11 @@ std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, i
 		return double_to_string_always_decimals(value);
 //		return std::to_string(value);
 	}
-	else if(type == base_type::k_vector){
+	else if(type.is_vector()){
+		const auto element_type = type.get_vector_element_type();
+
 		//??? we assume all vector are [string] right now!!
+		QUARK_ASSERT(element_type.is_string());
 		const auto vs = as_vector_w_string(runtime, arg_value, arg_type);
 
 		std::vector<value_t> elements;
@@ -2414,9 +2417,10 @@ int64_t floyd_funcdef__find__string(llvm_execution_engine_t* floyd_runtime_ptr, 
 int64_t floyd_funcdef__find(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type = arg0_type;
-	if(type == (int)base_type::k_string){
-		if(arg1_type != (int)base_type::k_string){
+	const auto type0 = unpack_itype(arg0_type);
+	if(type0.is_string()){
+		const auto type1 = unpack_itype(arg1_type);
+		if(type1.is_string() == false){
 			quark::throw_runtime_error("find(string) requires argument 2 to be a string.");
 		}
 		return floyd_funcdef__find__string(r, (const char*)arg0_value, (const char*)arg1_value);
@@ -2480,12 +2484,16 @@ void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg0_value, int64_t a
 
 
 
+
 const WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type = (base_type)arg0_type;
-	if(type == base_type::k_string){
+	const auto type0 = unpack_itype(arg0_type);
+	if(type0.is_string()){
 		const auto value = (const char*)arg0_value;
+
+		const auto type1 = unpack_itype(arg1_type);
+		QUARK_ASSERT(type1.is_int());
 
 		std::size_t len = strlen(value);
 		char* s = reinterpret_cast<char*>(std::malloc(len + 1 + 1));
@@ -2495,11 +2503,13 @@ const WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t ar
 
 		return make_wide_return_charptr(s);
 	}
-	else if(type == base_type::k_vector){
+	else if(type0.is_vector()){
 		//??? we assume all vector are [string] right now!!
 		const auto vs = as_vector_w_string(r, arg0_value, arg0_type);
 
-		QUARK_ASSERT(arg1_type == (int)base_type::k_string);
+		const auto type1 = unpack_itype(arg1_type);
+		QUARK_ASSERT(type1.is_string());
+
 		const auto element = (const char*)arg1_value;
 
 		WIDE_RETURN_T va = floyd_runtime__allocate_vector(floyd_runtime_ptr, vs->element_count + 1);
@@ -2553,9 +2563,11 @@ const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0
 		quark::throw_runtime_error("replace() requires start and end to be non-negative.");
 	}
 
-	const auto type = arg0_type;
-	if(type == (int)base_type::k_string){
-		if(arg3_type != (int)base_type::k_string){
+	const auto type0 = unpack_itype(arg0_type);
+	if(type0.is_string()){
+		const auto type3 = unpack_itype(arg3_type);
+
+		if(type3.is_string() == false){
 			quark::throw_runtime_error("replace(string) requires argument 4 to be a string.");
 		}
 		const auto ret = floyd_funcdef__replace__string(r, (const char*)arg0_value, (std::size_t)start, (std::size_t)end, (const char*)arg3_value);
@@ -2577,12 +2589,14 @@ void floyd_host_function_1027(void* floyd_runtime_ptr, int64_t arg){
 int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type = (base_type)arg0_type;
-	if(type == base_type::k_string){
+	const auto type0 = unpack_itype(arg0_type);
+	if(type0.is_string()){
 		const auto value = (const char*)arg0_value;
 		return std::strlen(value);
 	}
-	else if(type == base_type::k_vector){
+	else if(type0.is_vector()){
+		QUARK_ASSERT(type0.get_vector_element_type().is_string());
+
 		//??? we assume all vector are [string] right now!!
 		const auto vs = as_vector_w_string(r, arg0_value, arg0_type);
 
@@ -2602,8 +2616,8 @@ const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
 
-	const auto type = (base_type)arg0_type;
-	if(type == base_type::k_string){
+	const auto type0 = unpack_itype(arg0_type);
+	if(type0.is_string()){
 		const auto value = (const char*)arg0_value;
 
 		std::size_t len = strlen(value);
@@ -2656,15 +2670,22 @@ return value_to_bc(result);
 */
 }
 
+//	??? Range should be integers, not DYN! Change host function prototype.
 const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type, int64_t arg2_value, int64_t arg2_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type = (base_type)arg0_type;
-	if(type == base_type::k_string){
+	const auto type0 = unpack_itype(arg0_type);
+	if(type0.is_string()){
 		const auto str = (const char*)arg0_value;
 
-		QUARK_ASSERT(arg1_type == (int)base_type::k_int);
-		QUARK_ASSERT(arg2_type == (int)base_type::k_int);
+		const auto type1 = unpack_itype(arg1_type);
+		const auto type2 = unpack_itype(arg2_type);
+		if(type1.is_int() == false){
+			throw std::exception();
+		}
+		if(type2.is_int() == false){
+			throw std::exception();
+		}
 
 		const auto index = arg1_value;
 		const auto new_char = (char)arg2_value;

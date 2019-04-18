@@ -715,5 +715,157 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 	}
 }
 
+
+
+
+/*
+??? TEMP HACK TO STORE VECTOR & DICT IN ITYPE
+100 +  base_type => vector[base_type]
+200 +  base_type => dict[string: base_type]
+
+enum class base_type {
+	//	k_internal_undefined is never exposed in code, only used internally in compiler.
+	k_internal_undefined,
+
+	//	Used by host functions arguments / returns to tell this is a dynamic value, not static type.
+	k_internal_dynamic,
+
+	//	Means no value. Used as return type for print() etc.
+	k_void,
+
+	k_bool,
+	k_int,
+	k_double,
+	k_string,
+	k_json_value,
+
+	//	This is a type that specifies any other type at runtime.
+	k_typeid,
+
+	k_struct,
+	k_vector,
+	k_dict,
+	k_function,
+
+	//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
+	//	Keep the identifier so it can be resolved later
+	k_internal_unresolved_type_identifier
+};
+*/
+int64_t pack_itype(const typeid_t& type){
+	if(type.is_internal_dynamic()){
+		return static_cast<int64_t>(type.get_base_type());
+	}
+	else if(type.is_void()){
+		return static_cast<int64_t>(type.get_base_type());
+	}
+	else if(type.is_bool()){
+		return static_cast<int64_t>(type.get_base_type());
+	}
+	else if(type.is_int()){
+		return static_cast<int64_t>(type.get_base_type());
+	}
+	else if(type.is_double()){
+		return static_cast<int64_t>(type.get_base_type());
+	}
+	else if(type.is_string()){
+		return static_cast<int64_t>(type.get_base_type());
+	}
+	else if(type.is_json_value()){
+		return static_cast<int64_t>(type.get_base_type());
+	}
+	else if(type.is_typeid()){
+		return static_cast<int64_t>(type.get_base_type());
+	}
+	else if(type.is_struct()){
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+	else if(type.is_vector()){
+		return 200 + pack_itype(type.get_vector_element_type());
+	}
+	else if(type.is_dict()){
+		return 300 + pack_itype(type.get_dict_value_type());
+	}
+	else if(type.is_function()){
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+	else if(type.is_unresolved_type_identifier()){
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+}
+
+typeid_t unpack_itype(int64_t type){
+	switch(type){
+		case (int)base_type::k_internal_undefined:
+			return typeid_t::make_undefined();
+
+		case (int)base_type::k_internal_dynamic:
+			return typeid_t::make_internal_dynamic();
+
+		case (int)base_type::k_void:
+			return typeid_t::make_void();
+
+		case (int)base_type::k_bool:
+			return typeid_t::make_bool();
+
+		case (int)base_type::k_int:
+			return typeid_t::make_int();
+
+		case (int)base_type::k_double:
+			return typeid_t::make_double();
+
+		case (int)base_type::k_string:
+			return typeid_t::make_string();
+
+		case (int)base_type::k_json_value:
+			return typeid_t::make_json_value();
+
+		case (int)base_type::k_typeid:
+			return typeid_t::make_typeid();
+
+		case (int)base_type::k_struct:
+			QUARK_ASSERT(false);
+			throw std::exception();
+
+		case (int)base_type::k_vector:
+			QUARK_ASSERT(false);
+			throw std::exception();
+
+		case (int)base_type::k_dict:
+			QUARK_ASSERT(false);
+			throw std::exception();
+
+		case (int)base_type::k_function:
+			QUARK_ASSERT(false);
+			throw std::exception();
+
+		case (int)base_type::k_internal_unresolved_type_identifier:
+			QUARK_ASSERT(false);
+			throw std::exception();
+
+		default:
+			if(type > 200 && type < 300){
+				return typeid_t::make_vector(unpack_itype(type - 200));
+			}
+			else if(type > 300 && type < 400){
+				return typeid_t::make_dict(unpack_itype(type - 300));
+			}
+			else{
+				QUARK_ASSERT(false);
+				throw std::exception();
+			}
+	}
+}
+
+
+
+
 }	//	floyd
 
