@@ -96,9 +96,6 @@ The non-first-class types are:
 */
 
 
-
-
-
 bool check_invariant__function(const llvm::Function* f);
 bool check_invariant__module(llvm::Module* module);
 bool check_invariant__builder(llvm::IRBuilder<>* builder);

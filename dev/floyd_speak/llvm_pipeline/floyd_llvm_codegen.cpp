@@ -61,46 +61,13 @@ typedef std::vector<std::shared_ptr<const floyd::function_definition_t>> functio
 /*
 TODO:
 
-- Pass DYN as arguments too, skip int64_t arg0_value and int64_t arg0_type
-- Make separate prefixes for codegen, normal code & runtime code.
-- We only support the base-types, not composite types.
-- Support more vector types
-- Make strings pure - store a [char].
-- Needs short-circuit evaluation here!
-
 - Make nicer mechanism to register all host functions, types and key-strings.
 - Store explicit members like assert_f instead of search on string.
 - Use _reg as suffix instead of _value.
 - Need mechanism to map Floyd types vs machine-types.
-
-
-# ACCESSING INTEGER INSIDE GENERICVALUE
-
-//const int x = value.IntVal.U.VAL;
-//	const int64_t x = llvm::cast<llvm::ConstantInt>(value);
-//	QUARK_TRACE_SS("Fib = " << x);
-
-#if 0
-if (llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt*>(value)) {
-  if (CI->getBitWidth() <= 32) {
-    const auto constIntValue = CI->getSExtValue();
-    QUARK_TRACE_SS("Fib: " << constIntValue);
-  }
-}
-#endif
-//	llvm::CreateGenericValueOfInt(value);
-//	int value2 = value.as_float;
 */
 
 namespace floyd {
-
-/*
-http://blog.audio-tk.com/2018/09/18/compiling-c-code-in-memory-with-clang/
-With LLVM, we also have some things to be careful about. The first is the LLVM context we created before needs to stay alive as long as we use anything from this compilation unit. This is important because everything that is generated with the JIT will have to stay alive after this function and registers itself in the context until it is explicitly deleted.
-
-*/
-
-
 
 
 struct llvm_code_generator_t {

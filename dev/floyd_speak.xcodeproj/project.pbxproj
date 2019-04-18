@@ -210,6 +210,7 @@
 		2C5F8320224644FB009870FC /* floyd_llvm_codegen.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm_codegen.cpp; sourceTree = "<group>"; };
 		2C5F8321224644FB009870FC /* floyd_llvm_codegen.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_llvm_codegen.h; sourceTree = "<group>"; };
 		2C64578E2021E32E003625C8 /* libedit.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libedit.tbd; path = usr/lib/libedit.tbd; sourceTree = SDKROOT; };
+		2C687D3622691406003AC7CE /* floyd_llvm_readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = floyd_llvm_readme.md; sourceTree = "<group>"; };
 		2C69C49D2221D39B00E9D03E /* floyd_benchmark_main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_benchmark_main.cpp; sourceTree = "<group>"; };
 		2C69C4A12221D47800E9D03E /* strip_asm.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = strip_asm.py; sourceTree = "<group>"; };
 		2C69C4A32221D47800E9D03E /* util.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = util.py; sourceTree = "<group>"; };
@@ -622,6 +623,7 @@
 				2C5F8321224644FB009870FC /* floyd_llvm_codegen.h */,
 				2C3DE25422665E7E00807701 /* floyd_llvm_helpers.cpp */,
 				2C3DE25522665E7E00807701 /* floyd_llvm_helpers.h */,
+				2C687D3622691406003AC7CE /* floyd_llvm_readme.md */,
 			);
 			path = llvm_pipeline;
 			sourceTree = "<group>";
