@@ -133,20 +133,17 @@ llvm::Type* make_frp_type(llvm::LLVMContext& context);
 	- Mutation = copy entire vector every time.
 
 	- The runtime handles all vectors as std::vector<uint64_t>. You need to pack and address other types of data manually.
+
+	Invariant:
+		alloc_count = roundup(element_count * element_bits, 64) / 64
+		calloc(alloc_count, sizeof(uint64_t))
 */
 struct VEC_T {
 	uint64_t* element_ptr;
 	uint32_t element_count;
-	uint32_t magic;	//	0xDABBAD00
-};
-/*
-struct VEC_T {
-	uint64_t* element_ptr;
-	uint32_t element_count;
-	uint16_t magic;	//	0xDABB
+	uint16_t magic;
 	uint16_t element_bits;
 };
-*/
 
 bool check_invariant_vector(const VEC_T& v);
 
@@ -154,18 +151,11 @@ bool check_invariant_vector(const VEC_T& v);
 VEC_T make_vec(uint32_t element_count);
 void delete_vec(VEC_T& vec);
 
-/*
 enum class VEC_T_MEMBERS {
 	element_ptr = 0,
 	element_count = 1,
 	magic = 2,
 	element_bits = 3
-};
-*/
-enum class VEC_T_MEMBERS {
-	element_ptr = 0,
-	element_count = 1,
-	magic = 2
 };
 
 

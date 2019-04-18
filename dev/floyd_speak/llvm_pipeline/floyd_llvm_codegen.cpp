@@ -1211,15 +1211,15 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			const auto element_count_value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), element_count);
 
 			//	Local function, called once.
-			const auto dynresult = [&](){
+			const auto wide_return_reg = [&](){
 				std::vector<llvm::Value*> args2;
 				args2.push_back(get_callers_fcp(emit_f));
 				args2.push_back(element_count_value);
-				auto dynresult = builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_vector()" + typeid_to_compact_string(target_type));
-				return dynresult;
+				auto x = builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_vector()" + typeid_to_compact_string(target_type));
+				return x;
 			}();
 
-			auto vec_value = generate__convert_wide_return_to_vec(builder, dynresult);
+			auto vec_value = generate__convert_wide_return_to_vec(builder, wide_return_reg);
 
 			auto uint64_element_ptr = builder.CreateExtractValue(vec_value, { (int)VEC_T_MEMBERS::element_ptr });
 			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type->getPointerTo(), "");

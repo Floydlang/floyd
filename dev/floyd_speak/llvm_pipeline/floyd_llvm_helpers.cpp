@@ -307,32 +307,14 @@ llvm::Type* make_vec_type(llvm::LLVMContext& context){
 		llvm::Type::getInt32Ty(context),
 
 		//	magic
-		llvm::Type::getInt32Ty(context)
-	};
-	llvm::StructType* s = llvm::StructType::get(context, members, false);
-	return s;
-}
-
-/*
-//	Makes a type for VEC_T.
-llvm::Type* make_vec_type(llvm::LLVMContext& context){
-	std::vector<llvm::Type*> members = {
-		//	element_ptr
-		llvm::Type::getIntNTy(context, 64)->getPointerTo(),
-
-		//	element_count
-		llvm::Type::getIntNTy(context, 32),
-
-		//	magic
-		llvm::Type::getIntNTy(context, 16),
+		llvm::Type::getInt16Ty(context),
 
 		//	element_bits
-		llvm::Type::getIntNTy(context, 16)
+		llvm::Type::getInt16Ty(context)
 	};
 	llvm::StructType* s = llvm::StructType::get(context, members, false);
 	return s;
 }
-*/
 
 llvm::Value* get_vec_ptr(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue){
 	auto& context = builder.getContext();
@@ -344,12 +326,20 @@ llvm::Value* get_vec_ptr(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue){
 
 bool check_invariant_vector(const VEC_T& v){
 	QUARK_ASSERT(v.element_ptr != nullptr);
-//	QUARK_ASSERT(v.element_bits > 0 && v.element_bits < (8 * 128));
-	QUARK_ASSERT(v.magic == 0xDABBAD00);
-//	QUARK_ASSERT(v.magic == 0xDABB);
+	QUARK_ASSERT(v.element_bits > 0 && v.element_bits < (8 * 128));
+	QUARK_ASSERT(v.magic == 0xDABB);
 	return true;
 }
 
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto vec_struct_size = sizeof(VEC_T);
+	QUARK_UT_VERIFY(vec_struct_size == 16);
+}
+
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto wr_struct_size = sizeof(WIDE_RETURN_T);
+	QUARK_UT_VERIFY(wr_struct_size == 16);
+}
 
 /*
 VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint16_t element_bits, uint32_t element_count){
@@ -383,8 +373,8 @@ VEC_T make_vec(uint32_t element_count){
 	VEC_T result;
 	result.element_ptr = element_ptr;
 	result.element_count = element_count;
-	result.magic = 0xDABBAD00;
-//	result.element_bits = 12345;
+	result.magic = 0xDABB;
+	result.element_bits = 123;
 
 	QUARK_ASSERT(check_invariant_vector(result));
 	return result;
