@@ -251,16 +251,28 @@ value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
 		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_vector()){
-		QUARK_ASSERT(type.get_vector_element_type().is_string());
-
 		auto vec = *static_cast<const VEC_T*>(global_ptr);
 		std::vector<value_t> vec2;
-		for(int i = 0 ; i < vec.element_count ; i++){
-			auto s = (const char*)vec.element_ptr[i];
-			const auto a = std::string(s);
-			vec2.push_back(value_t::make_string(a));
+
+		const auto element_type = type.get_vector_element_type();
+		if(element_type.is_string()){
+			for(int i = 0 ; i < vec.element_count ; i++){
+				auto s = (const char*)vec.element_ptr[i];
+				const auto a = std::string(s);
+				vec2.push_back(value_t::make_string(a));
+			}
+			return value_t::make_vector_value(element_type, vec2);
 		}
-		return value_t::make_vector_value(typeid_t::make_string(), vec2);
+		else if(element_type.is_bool()){
+			for(int i = 0 ; i < vec.element_count ; i++){
+				auto s = vec.element_ptr[i];
+				vec2.push_back(value_t::make_bool(s != 0x00));
+			}
+			return value_t::make_vector_value(element_type, vec2);
+		}
+		else{
+			NOT_IMPLEMENTED_YET();
+		}
 	}
 /*
 !!!
@@ -654,6 +666,7 @@ static llvm::Value* generate_arithmetic_expression(llvm_code_generator_t& gen_ac
 	QUARK_ASSERT(e.check_invariant());
 
 	const auto type = details.lhs->get_output_type();
+	auto& builder = gen_acc.builder;
 
 	auto lhs_temp = generate_expression(gen_acc, emit_f, *details.lhs);
 	auto rhs_temp = generate_expression(gen_acc, emit_f, *details.rhs);
@@ -735,33 +748,31 @@ static llvm::Value* generate_arithmetic_expression(llvm_code_generator_t& gen_ac
 		}
 	}
 	else if(type.is_string()){
+		//	Only add supported. Future: don't use arithmetic add to concat collections!
 		QUARK_ASSERT(details.op == expression_type::k_arithmetic_add__2);
 
-		const auto def = find_function_def(gen_acc, "floyd_runtime__append_strings");
+		const auto def = find_function_def(gen_acc, "floyd_runtime__concatunate_strings");
 		std::vector<llvm::Value*> args2;
-
-		//	Insert floyd_runtime_ptr as first argument to called function.
 		args2.push_back(get_callers_fcp(emit_f));
 		args2.push_back(lhs_temp);
 		args2.push_back(rhs_temp);
-		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "append_strings");
+		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "concatunate_strings");
 		return result;
 	}
-/*
+	else if(type.is_vector()){
+		//	Only add supported. Future: don't use arithmetic add to concat collections!
+		QUARK_ASSERT(details.op == expression_type::k_arithmetic_add__2);
 
-	else if(type.is_string()){
-		static const std::map<expression_type, bc_opcode> conv_opcode = {
-			{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_strings },
-			{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
-			{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
-			{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
-			{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
-
-			{ expression_type::k_logical_and__2, bc_opcode::k_nop },
-			{ expression_type::k_logical_or__2, bc_opcode::k_nop }
-		};
-		return conv_opcode.at(details.op);
+		const auto def = find_function_def(gen_acc, "floyd_runtime__concatunate_vectors");
+		std::vector<llvm::Value*> args2;
+		args2.push_back(get_callers_fcp(emit_f));
+		args2.push_back(get_vec_ptr(builder, lhs_temp));
+		args2.push_back(get_vec_ptr(builder, rhs_temp));
+		auto wide_return_reg = gen_acc.builder.CreateCall(def.llvm_f, args2, "concatunate_vectors");
+		auto vec_reg = generate__convert_wide_return_to_vec(builder, wide_return_reg);
+		return vec_reg;
 	}
+/*
 	else if(type.is_vector()){
 		if(encode_as_vector_w_inplace_elements(type)){
 			static const std::map<expression_type, bc_opcode> conv_opcode = {
@@ -991,19 +1002,6 @@ static llvm::Value* generate_conditional_operator_expression(llvm_code_generator
 }
 
 
-static llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg){
-	auto& context = builder.getContext();
-
-	//	LLVM can¨t cast a struct-value to another struct value - need to store on stack and cast pointer instead.
-
-	//	Store the DYN to memory, then cast it to VEC and load it again.
-	auto wide_return_ptr_reg = builder.CreateAlloca(make_wide_return_type(context), nullptr, "temp_vec");
-	builder.CreateStore(wide_return_reg, wide_return_ptr_reg);
-	auto vec_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, wide_return_ptr_reg, make_vec_type(context)->getPointerTo(), "");
-	auto vec_reg = builder.CreateLoad(vec_ptr_reg, "final");
-	return vec_reg;
-}
-
 
 
 /*
@@ -1077,8 +1075,6 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
 			}
 			else if(concrete_arg_type.is_vector()){
-				QUARK_ASSERT(concrete_arg_type.get_vector_element_type().is_string());
-
 				auto vec_ptr = get_vec_ptr(builder, arg2);
 				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, vec_ptr, builder.getInt64Ty(), "");
 				arg_values.push_back(arg3);
@@ -1089,7 +1085,8 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
 			}
 			else if(concrete_arg_type.is_bool()){
-				arg_values.push_back(arg2);
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::ZExt, arg2, builder.getInt64Ty(), "bool_as_arg");
+				arg_values.push_back(arg3);
 				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
 			}
 			else{
@@ -1201,11 +1198,8 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 		const auto allocate_vector_func = find_function_def(gen_acc, "floyd_runtime__allocate_vector");
 
 		if(element_type0.is_string()){
-
 			//	Each element is a char*.
 			auto element_type = llvm::Type::getInt8PtrTy(context);
-
-			const auto vec_type = make_vec_type(context);
 
 			const auto element_count = caller_arg_count;
 			const auto element_count_value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), element_count);
@@ -1219,14 +1213,13 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 				return x;
 			}();
 
-			auto vec_value = generate__convert_wide_return_to_vec(builder, wide_return_reg);
+			auto vec_reg = generate__convert_wide_return_to_vec(builder, wide_return_reg);
 
-			auto uint64_element_ptr = builder.CreateExtractValue(vec_value, { (int)VEC_T_MEMBERS::element_ptr });
+			auto uint64_element_ptr = builder.CreateExtractValue(vec_reg, { (int)VEC_T_MEMBERS::element_ptr });
 			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type->getPointerTo(), "");
 
 			//	Evaluate each element and store it directly into the the vector.
 			int element_index = 0;
-#if 1
 			for(const auto& arg: details.elements){
 				llvm::Value* arg_value = generate_expression(gen_acc, emit_f, arg);
 				auto element_index_value = generate_constant(gen_acc, value_t::make_int(element_index));
@@ -1236,9 +1229,42 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 
 				element_index++;
 			}
-#endif
+			return vec_reg;
+		}
+		else if(element_type0.is_bool()){
+			//	Each element is a uint64_t ???
+			auto element_type = llvm::Type::getInt64Ty(context);
 
-			return vec_value;
+			const auto element_count = caller_arg_count;
+			const auto element_count_value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), element_count);
+
+			//	Local function, called once.
+			const auto wide_return_reg = [&](){
+				std::vector<llvm::Value*> args2;
+				args2.push_back(get_callers_fcp(emit_f));
+				args2.push_back(element_count_value);
+				auto x = builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_vector()" + typeid_to_compact_string(target_type));
+				return x;
+			}();
+
+			auto vec_reg = generate__convert_wide_return_to_vec(builder, wide_return_reg);
+
+			auto uint64_element_ptr = builder.CreateExtractValue(vec_reg, { (int)VEC_T_MEMBERS::element_ptr });
+			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type->getPointerTo(), "");
+
+			//	Evaluate each element and store it directly into the the vector.
+			int element_index = 0;
+			for(const auto& arg: details.elements){
+				llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, arg);
+				auto element_reg = builder.CreateCast(llvm::Instruction::CastOps::ZExt, element0_reg, builder.getInt64Ty(), "");
+				auto element_index_value = generate_constant(gen_acc, value_t::make_int(element_index));
+				const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_value };
+				llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "e_addr");
+				builder.CreateStore(element_reg, e_addr);
+
+				element_index++;
+			}
+			return vec_reg;
 		}
 		else{
 			NOT_IMPLEMENTED_YET();
@@ -2070,15 +2096,15 @@ void hook(const std::string& s, void* floyd_runtime_ptr, int64_t arg){
 	throw std::runtime_error("HOST FUNCTION NOT IMPLEMENTED FOR LLVM");
 }
 
-VEC_T* as_vector_w_string(llvm_execution_engine_t* runtime, int64_t arg_value, int64_t arg_type){
+VEC_T* unpack_vec_arg(llvm_execution_engine_t* runtime, int64_t arg_value, int64_t arg_type){
 	const auto type = unpack_itype(arg_type);
 	QUARK_ASSERT(type.is_vector());
-	const auto vector_strings = (VEC_T*)arg_value;
-	QUARK_ASSERT(vector_strings != nullptr);
+	const auto vec = (VEC_T*)arg_value;
+	QUARK_ASSERT(vec != nullptr);
 
-	QUARK_ASSERT(check_invariant_vector(*vector_strings));
+	QUARK_ASSERT(check_invariant_vector(*vec));
 
-	return vector_strings;
+	return vec;
 }
 
 
@@ -2108,7 +2134,7 @@ std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, i
 
 		//??? we assume all vector are [string] right now!!
 		QUARK_ASSERT(element_type.is_string());
-		const auto vs = as_vector_w_string(runtime, arg_value, arg_type);
+		const auto vs = unpack_vec_arg(runtime, arg_value, arg_type);
 
 		std::vector<value_t> elements;
 		const int count = vs->element_count;
@@ -2191,7 +2217,7 @@ host_func_t floyd_runtime__compare_strings__make(llvm::LLVMContext& context){
 }
 
 
-const char* floyd_runtime__append_strings(void* floyd_runtime_ptr, const char* lhs, const char* rhs){
+const char* floyd_runtime__concatunate_strings(void* floyd_runtime_ptr, const char* lhs, const char* rhs){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 	QUARK_ASSERT(lhs != nullptr);
 	QUARK_ASSERT(rhs != nullptr);
@@ -2204,7 +2230,7 @@ const char* floyd_runtime__append_strings(void* floyd_runtime_ptr, const char* l
 	return s;
 }
 
-host_func_t floyd_runtime__append_strings__make(llvm::LLVMContext& context){
+host_func_t floyd_runtime__concatunate_strings__make(llvm::LLVMContext& context){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getInt8PtrTy(context),
 		{
@@ -2214,7 +2240,7 @@ host_func_t floyd_runtime__append_strings__make(llvm::LLVMContext& context){
 		},
 		false
 	);
-	return { "floyd_runtime__append_strings", function_type, reinterpret_cast<void*>(floyd_runtime__append_strings) };
+	return { "floyd_runtime__concatunate_strings", function_type, reinterpret_cast<void*>(floyd_runtime__concatunate_strings) };
 }
 
 
@@ -2297,7 +2323,7 @@ int32_t floyd_runtime__compare_vectors(void* floyd_runtime_ptr, int64_t op, cons
 	QUARK_ASSERT(rhs != nullptr);
 	QUARK_ASSERT(check_invariant_vector(*rhs));
 
-
+//???
 //	const auto result = std::strcmp(lhs, rhs);
 	const auto result = 0;
 
@@ -2340,19 +2366,50 @@ host_func_t floyd_runtime__compare_vectors__make(llvm::LLVMContext& context){
 	return { "floyd_runtime__compare_vectors", function_type, reinterpret_cast<void*>(floyd_runtime__compare_vectors) };
 }
 
+const WIDE_RETURN_T floyd_runtime__concatunate_vectors(void* floyd_runtime_ptr, const VEC_T* lhs, const VEC_T* rhs){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(lhs != nullptr);
+	QUARK_ASSERT(check_invariant_vector(*lhs));
+	QUARK_ASSERT(rhs != nullptr);
+	QUARK_ASSERT(check_invariant_vector(*rhs));
+
+	auto result = make_vec(lhs->element_count + rhs->element_count);
+	for(int i = 0 ; i < lhs->element_count ; i++){
+		result.element_ptr[i] = lhs->element_ptr[i];
+	}
+	for(int i = 0 ; i < rhs->element_count ; i++){
+		result.element_ptr[lhs->element_count + i] = rhs->element_ptr[i];
+	}
+	return make_wide_return_vec(result);
+}
+
+host_func_t floyd_runtime__concatunate_vectors__make(llvm::LLVMContext& context){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		make_wide_return_type(context),
+		{
+			make_frp_type(context),
+			make_vec_type(context)->getPointerTo(),
+			make_vec_type(context)->getPointerTo()
+		},
+		false
+	);
+	return { "floyd_runtime__concatunate_vectors", function_type, reinterpret_cast<void*>(floyd_runtime__concatunate_vectors) };
+}
+
 
 
 
 auto get_runtime_functions(llvm::LLVMContext& context){
 	std::vector<host_func_t> result = {
 		floyd_runtime__compare_strings__make(context),
-		floyd_runtime__append_strings__make(context),
+		floyd_runtime__concatunate_strings__make(context),
 
 		floyd_runtime__allocate_memory__make(context),
 
 		floyd_runtime__allocate_vector__make(context),
 		floyd_runtime__delete_vector__make(context),
 		floyd_runtime__compare_vectors__make(context),
+		floyd_runtime__concatunate_vectors__make(context),
 	};
 	return result;
 }
@@ -2505,20 +2562,34 @@ const WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t ar
 	}
 	else if(type0.is_vector()){
 		//??? we assume all vector are [string] right now!!
-		const auto vs = as_vector_w_string(r, arg0_value, arg0_type);
+		const auto vs = unpack_vec_arg(r, arg0_value, arg0_type);
 
 		const auto type1 = unpack_itype(arg1_type);
-		QUARK_ASSERT(type1.is_string());
+		if(type1.is_string()){
+			const auto element = (const char*)arg1_value;
 
-		const auto element = (const char*)arg1_value;
-
-		WIDE_RETURN_T va = floyd_runtime__allocate_vector(floyd_runtime_ptr, vs->element_count + 1);
-		auto v2 = wider_return_to_vec(va);
-		for(int i = 0 ; i < vs->element_count ; i++){
-			v2.element_ptr[i] = vs->element_ptr[i];
+			WIDE_RETURN_T va = floyd_runtime__allocate_vector(floyd_runtime_ptr, vs->element_count + 1);
+			auto v2 = wider_return_to_vec(va);
+			for(int i = 0 ; i < vs->element_count ; i++){
+				v2.element_ptr[i] = vs->element_ptr[i];
+			}
+			v2.element_ptr[vs->element_count] = reinterpret_cast<uint64_t>(element);
+			return make_wide_return_vec(v2);
 		}
-		v2.element_ptr[vs->element_count] = reinterpret_cast<uint64_t>(element);
-		return make_wide_return_vec(v2);
+		else if(type1.is_bool()){
+			const auto element = arg1_value;
+
+			WIDE_RETURN_T va = floyd_runtime__allocate_vector(floyd_runtime_ptr, vs->element_count + 1);
+			auto v2 = wider_return_to_vec(va);
+			for(int i = 0 ; i < vs->element_count ; i++){
+				v2.element_ptr[i] = vs->element_ptr[i];
+			}
+			v2.element_ptr[vs->element_count] = element;
+			return make_wide_return_vec(v2);
+		}
+		else {
+			QUARK_ASSERT(false);
+		}
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
@@ -2595,13 +2666,8 @@ int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, int64_t
 		return std::strlen(value);
 	}
 	else if(type0.is_vector()){
-		QUARK_ASSERT(type0.get_vector_element_type().is_string());
-
-		//??? we assume all vector are [string] right now!!
-		const auto vs = as_vector_w_string(r, arg0_value, arg0_type);
-
-		const int count = vs->element_count;
-		return count;
+		const auto vs = unpack_vec_arg(r, arg0_value, arg0_type);
+		return vs->element_count;
 	}
 
 	else{
@@ -2674,22 +2740,21 @@ return value_to_bc(result);
 const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type, int64_t arg2_value, int64_t arg2_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
+	const auto type1 = unpack_itype(arg1_type);
+	if(type1.is_int() == false){
+		throw std::exception();
+	}
+	const auto index = arg1_value;
+
 	const auto type0 = unpack_itype(arg0_type);
 	if(type0.is_string()){
 		const auto str = (const char*)arg0_value;
 
-		const auto type1 = unpack_itype(arg1_type);
 		const auto type2 = unpack_itype(arg2_type);
-		if(type1.is_int() == false){
-			throw std::exception();
-		}
 		if(type2.is_int() == false){
 			throw std::exception();
 		}
-
-		const auto index = arg1_value;
 		const auto new_char = (char)arg2_value;
-
 
 		const auto len = strlen(str);
 
@@ -2700,6 +2765,47 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_
 		auto result = strdup(str);
 		result[index] = new_char;
 		return make_wide_return_charptr(result);
+	}
+	else if(type0.is_vector()){
+		const auto vec = unpack_vec_arg(r, arg0_value, arg0_type);
+		const auto element_type = type0.get_vector_element_type();
+		if(element_type.is_string()){
+			const auto type2 = unpack_itype(arg2_type);
+			if(type2.is_string() == false){
+				throw std::exception();
+			}
+
+			if(index < 0 || index >= vec->element_count){
+				throw std::runtime_error("Position argument to update() is outside collection span.");
+			}
+
+			auto result = make_vec(vec->element_count);
+			for(int i = 0 ; i < result.element_count ; i++){
+				result.element_ptr[i] = vec->element_ptr[i];
+			}
+			result.element_ptr[index] = arg2_value;
+			return make_wide_return_vec(result);
+		}
+		else if(element_type.is_bool()){
+			const auto type2 = unpack_itype(arg2_type);
+			if(type2.is_bool() == false){
+				throw std::exception();
+			}
+
+			if(index < 0 || index >= vec->element_count){
+				throw std::runtime_error("Position argument to update() is outside collection span.");
+			}
+
+			auto result = make_vec(vec->element_count);
+			for(int i = 0 ; i < result.element_count ; i++){
+				result.element_ptr[i] = vec->element_ptr[i];
+			}
+			result.element_ptr[index] = static_cast<int64_t>(arg2_value ? 1 : 0);
+			return make_wide_return_vec(result);
+		}
+		else{
+			NOT_IMPLEMENTED_YET();
+		}
 	}
 	else{
 		NOT_IMPLEMENTED_YET();

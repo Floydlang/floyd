@@ -1977,6 +1977,9 @@ QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 
 
 
+#endif		//	DISABLE TESTS BEFORE
+
+
 
 //////////////////////////////////////////		STRING - TYPE
 
@@ -2211,9 +2214,6 @@ QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
 
 
 
-#endif
-
-
 
 
 //////////////////////////////////////////		VECTOR - TYPE AND CORE FUNCTIONS
@@ -2436,6 +2436,8 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [bool] push_back()", "", ""){
 }
 
 
+#if 1
+
 //////////////////////////////////////////		vector-int
 
 
@@ -2594,7 +2596,6 @@ QUARK_UNIT_TEST("Floyd test suite", "vector", "Error: Lookup the unlookupable", 
 
 
 
-#if 1
 
 
 //////////////////////////////////////////		DICT - TYPE

@@ -196,6 +196,11 @@ VEC_T wider_return_to_vec(const WIDE_RETURN_T& ret);
 
 
 
+//	LLVM can't cast a struct-value to another struct value - need to store on stack and cast pointer instead.
+//	Store the DYN to memory, then cast it to VEC and load it again.
+llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg);
+
+
 
 
 

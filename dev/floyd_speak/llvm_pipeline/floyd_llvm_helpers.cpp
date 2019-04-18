@@ -432,6 +432,15 @@ VEC_T wider_return_to_vec(const WIDE_RETURN_T& ret){
 
 
 
+llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg){
+	auto& context = builder.getContext();
+
+	auto wide_return_ptr_reg = builder.CreateAlloca(make_wide_return_type(context), nullptr, "temp_vec");
+	builder.CreateStore(wide_return_reg, wide_return_ptr_reg);
+	auto vec_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, wide_return_ptr_reg, make_vec_type(context)->getPointerTo(), "");
+	auto vec_reg = builder.CreateLoad(vec_ptr_reg, "final");
+	return vec_reg;
+}
 
 
 
