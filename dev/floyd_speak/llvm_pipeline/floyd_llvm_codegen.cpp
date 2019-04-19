@@ -277,6 +277,14 @@ value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
 			}
 			return value_t::make_vector_value(element_type, vec2);
 		}
+		else if(element_type.is_double()){
+			for(int i = 0 ; i < vec.element_count ; i++){
+				auto s = vec.element_ptr[i];
+				auto d = *(double*)&s;
+				vec2.push_back(value_t::make_double(d));
+			}
+			return value_t::make_vector_value(element_type, vec2);
+		}
 		else{
 			NOT_IMPLEMENTED_YET();
 		}
@@ -1072,8 +1080,15 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
 			}
 			else if(concrete_arg_type.is_double()){
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::BitCast, arg2, builder.getInt64Ty(), "double_as_arg");
-				arg_values.push_back(arg3);
+#if 0
+				auto buffer_ptr_reg = builder.CreateAlloca(builder.getDoubleTy(), nullptr, "double_as_arg");
+				builder.CreateStore(arg2, buffer_ptr_reg);
+				auto buffer_ptr2_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, buffer_ptr_reg, builder.getInt64Ty()->getPointerTo(), "");
+				auto int64_reg = builder.CreateLoad(buffer_ptr2_reg, "");
+#else
+				llvm::Value* int64_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, arg2, builder.getInt64Ty(), "double_as_arg");
+#endif
+				arg_values.push_back(int64_reg);
 				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
 			}
 			else if(concrete_arg_type.is_string()){
@@ -1230,7 +1245,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			}
 			return vec_reg;
 		}
-		else if(element_type0.is_bool() || element_type0.is_int()){
+		else if(element_type0.is_bool() || element_type0.is_int()){
 			auto vec_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
 
 			auto uint64_element_ptr = builder.CreateExtractValue(vec_reg, { (int)VEC_T_MEMBERS::element_ptr });
@@ -1244,6 +1259,27 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			for(const auto& arg: details.elements){
 				llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, arg);
 				auto element_reg = builder.CreateCast(llvm::Instruction::CastOps::ZExt, element0_reg, builder.getInt64Ty(), "");
+				auto element_index_value = generate_constant(gen_acc, value_t::make_int(element_index));
+				const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_value };
+				llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "e_addr");
+				builder.CreateStore(element_reg, e_addr);
+
+				element_index++;
+			}
+			return vec_reg;
+		}
+		else if(element_type0.is_double()){
+			auto vec_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
+
+			auto uint64_element_ptr = builder.CreateExtractValue(vec_reg, { (int)VEC_T_MEMBERS::element_ptr });
+
+			auto element_type = builder.getDoubleTy();
+			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type->getPointerTo(), "");
+
+			//	Evaluate each element and store it directly into the the vector.
+			int element_index = 0;
+			for(const auto& arg: details.elements){
+				llvm::Value* element_reg = generate_expression(gen_acc, emit_f, arg);
 				auto element_index_value = generate_constant(gen_acc, value_t::make_int(element_index));
 				const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_value };
 				llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "e_addr");
@@ -3070,7 +3106,7 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 	auto funcs = result0.second;
 
 	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, ast._tree._globals._symbol_table, funcs);
-//	QUARK_TRACE_SS("result = " << floyd::print_program(*result));
+	QUARK_TRACE_SS("result = " << floyd::print_program(*result));
 	return result;
 }
 

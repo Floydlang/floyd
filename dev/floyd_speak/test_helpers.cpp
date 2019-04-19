@@ -85,7 +85,10 @@ static run_report_t run_program_bc(const compilation_unit_t& cu, const std::vect
 	}
 }
 
-
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto double_size = sizeof(double);
+	QUARK_UT_VERIFY(double_size == 8);
+}
 
 //	Run program using LLVM.
 static run_report_t run_program_llvm(const compilation_unit_t& cu, const std::vector<value_t>& main_args){
