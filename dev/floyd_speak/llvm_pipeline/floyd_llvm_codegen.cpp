@@ -2721,6 +2721,22 @@ const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_
 		s[len2] = 0x00;
 		return make_wide_return_charptr(s);
 	}
+	else if(type0.is_vector()){
+		const auto vec = unpack_vec_arg(r, arg0_value, arg0_type);
+
+		const std::size_t end2 = std::min(static_cast<std::size_t>(end), static_cast<std::size_t>(vec->element_count));
+		const std::size_t start2 = std::min(static_cast<std::size_t>(start), end2);
+		std::size_t len2 = end2 - start2;
+
+		if(len2 >= INT32_MAX){
+			throw std::exception();
+		}
+		VEC_T vec2 = make_vec(static_cast<int32_t>(len2));
+		for(int i = 0 ; i < len2 ; i++){
+			vec2.element_ptr[i] = vec->element_ptr[start2 + i];
+		}
+		return make_wide_return_vec(vec2);
+	}
 	else{
 		NOT_IMPLEMENTED_YET();
 	}
