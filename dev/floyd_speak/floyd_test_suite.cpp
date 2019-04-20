@@ -2216,8 +2216,28 @@ QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
 
 
 
-//////////////////////////////////////////		VECTOR - TYPE AND CORE FUNCTIONS
+//////////////////////////////////////////		VECTOR
 
+
+/*
+VECTOR FEATURES
+
+Constructor expression
+lookup
+assign
+concat operator +
+Comparisons x 6
+print()
+update()		-- string, vector, dict
+size()			-- string, vector, dict
+find()			-- string/vector. ??? dict?
+exists()		-- dict. ??? vector?
+erase()			--	dict. ??? also vector?
+push_back()		-- string, vector
+subset()		-- string vector
+replace()		-- string, vector
+typeof()
+*/
 
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [] - empty constructor", "cannot be infered", "error"){
@@ -2233,7 +2253,13 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [] - empty constructor", "cannot be 
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "vector explicit bind, is [string]", "Infer type", "valid vector"){
+
+
+//////////////////////////////////////////		VECTOR STRING
+
+//	Vector-string is the first vector-type we test. It does extensive testing of type inferrence etc. Other vector-types don't need to test all that.
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] - vector explicit bind", "Infer type", "valid vector"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2259,7 +2285,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] - constructor", "Infer type
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "vector [string]", "empty vector", "valid vector"){
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] - constructor", "empty vector", "valid vector"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2329,7 +2355,6 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] <", "different values", "")
 	run_closed(R"(		assert((["one", "a"] < ["one", "two"]) == true)		)");
 }
 
-//??? use append() instead of +-syntax.
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] +", "non-empty vectors", ""){
 	run_closed(R"(
 
@@ -2339,42 +2364,41 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] +", "non-empty vectors", ""
 	)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "vector [string] size()", "empty", "0"){
-	run_closed(R"(
 
-		let [string] a = []
-		assert(size(a) == 0)
+//////////////////////////////////////////		VECTOR STRING CORE FUNCTIONS
 
-	)");
+
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] print()", "empty", "[]"){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let [string] a = []
+			print(a))
+
+		)",
+		{
+			"[]"
+		}
+	);
 }
-QUARK_UNIT_TEST("Floyd test suite", "vector [string] size()", "2", ""){
-	run_closed(R"(
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] print()", "2 elements", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
 
-		let [string] a = ["one", "two"]
-		assert(size(a) == 2)
+			let a = ["one", "two", "three"]
+			print(a))
 
-	)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "vector [string] push_back()", "", ""){
-	run_closed(R"(
-
-		let [string] a = ["one"];
-		let [string] b = push_back(a, "two")
-		let [string] c = ["one", "two"];
-		assert(b == c)
-
-	)");
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "vector [string] push_back()", "", ""){
-	run_closed(R"(
-
-		let [string] a = push_back(["one"], "two")
-		assert(a == ["one", "two"])
-
-	)");
+		)",
+		{
+			R"(["one", "two", "three"])"
+		}
+	);
 }
 
+//??? test bounds error
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] update()", "", "valid vector, without side effect on original vector"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -2395,7 +2419,48 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] update()", "", "valid vecto
 	);
 }
 
-//??? Test all vector core functions for [string]
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] size()", "empty", "0"){
+	run_closed(R"(
+
+		let [string] a = []
+		assert(size(a) == 0)
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] size()", "2", ""){
+	run_closed(R"(
+
+		let [string] a = ["one", "two"]
+		assert(size(a) == 2)
+
+	)");
+}
+
+//???	find()
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] push_back()", "", ""){
+	run_closed(R"(
+
+		let [string] a = ["one"];
+		let [string] b = push_back(a, "two")
+		let [string] c = ["one", "two"];
+		assert(b == c)
+
+	)");
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] push_back()", "", ""){
+	run_closed(R"(
+
+		let [string] a = push_back(["one"], "two")
+		assert(a == ["one", "two"])
+
+	)");
+}
+
+//???	subset()
+//???	replace()
+
 
 //??? test vector<struct>, vector<json_value>
 
@@ -2403,8 +2468,25 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] update()", "", "valid vecto
 
 //////////////////////////////////////////		vector-bool
 
+/*
+VECTOR FEATURES
 
-QUARK_UNIT_TEST("Floyd test suite", "vector [bool] literal expression", "", ""){
+Constructor expression
+lookup
+assign
+concat operator +
+Comparisons x 6
+
+//???	print()
+//???	update()		-- string, vector, dict
+//???	size()			-- string, vector, dict
+//???	find()			-- string/vector. ??? dict?
+//???	push_back()		-- string, vector
+//???	subset()		-- string vector
+//???	replace()		-- string, vector
+*/
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [bool] construct-expression", "", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] result = [true, false, true]		)",				R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [bool] =", "copy", ""){
@@ -2422,27 +2504,49 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [bool] <", "", ""){
 QUARK_UNIT_TEST("Floyd test suite", "vector [bool] <", "different values", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [true, false] < [true, true]		)", 		R"(		[ "^bool", true]		)");
 }
-QUARK_UNIT_TEST("Floyd test suite", "vector [bool] size()", "empty", "0"){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] a = [] result = size(a)		)",					R"(		[ "^int", 0]		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "vector [bool] size()", "2", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] a = [true, false, true] result = size(a)		)", R"(		[ "^int", 3]		)");
-}
 QUARK_UNIT_TEST("Floyd test suite", "vector [bool] +", "non-empty vectors", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] result = [true, false] + [true, true]		)", R"(		[[ "vector", "^bool" ], [true, false, true, true]]		)");
 }
+
+//???	print()
+//???	update()		-- string, vector, dict
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [bool] size()", "empty", "0"){
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] a = [] result = size(a)		)",					R"(		[ "^int", 0]		)");
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [bool] size()", "2", ""){
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] a = [true, false, true] result = size(a)		)", R"(		[ "^int", 3]		)");
+}
+
+//??? find()
+
 QUARK_UNIT_TEST("Floyd test suite", "vector [bool] push_back()", "", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] result = push_back([true, false], true)		)", R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
 }
 
+//???	subset()		-- string vector
+//???	replace()		-- string, vector
 
 #if 1
 
 //////////////////////////////////////////		vector-int
 
 
-QUARK_UNIT_TEST("Floyd test suite", "vector [int] literal expression", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector [int] constructor expression", "", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [int] result = [10, 20, 30]		)",		R"(		[[ "vector", "^int" ], [10, 20, 30]]		)" );
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [int] constructor", "", "3"){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			let [int] a = [1, 2, 3]
+			let result = size(a)
+
+		)",
+		value_t::make_int(3)
+	);
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] =", "copy", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let a = [10, 20, 30] result = a;		)",	R"(		[[ "vector", "^int" ], [10, 20, 30]]		)"	);
@@ -2460,43 +2564,20 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [int] <", "", ""){
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] <", "different values", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1, 2] < [1, 3]		)",		R"(		[ "^bool", true]		)");
 }
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [int] +", "non-empty vectors", ""){
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [int] result = [1, 2] + [3, 4]		)",	R"(		[[ "vector", "^int" ], [1, 2, 3, 4]]		)");
+}
+
+//???	print()
+//???	update()		-- string, vector, dict
+
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] size()", "empty", "0"){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [int] a = [] result = size(a)		)",	R"(		[ "^int", 0]		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] size()", "2", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [int] a = [1, 2, 3] result = size(a)		)",		R"(		[ "^int", 3]		)");
 }
-QUARK_UNIT_TEST("Floyd test suite", "vector [int] +", "non-empty vectors", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [int] result = [1, 2] + [3, 4]		)",	R"(		[[ "vector", "^int" ], [1, 2, 3, 4]]		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "vector [int] push_back()", "", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [int] result = push_back([1, 2], 3)		)",		R"(		[[ "vector", "^int" ], [1, 2, 3]]		)");
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "vector [int] constructor", "", "3"){
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-		R"(
-
-			let [int] a = [1, 2, 3]
-			let result = size(a)
-
-		)",
-		value_t::make_int(3)
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "vector [int] push_back()", "", ""){
-	run_closed(
-		R"(
-
-			let result = push_back([1, 2], 3)
-			assert(result == [1, 2, 3])
-
-		)"
-	);
-}
-
 
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] find()", "", ""){
@@ -2509,7 +2590,20 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [int] find()", "", ""){
 	run_closed(R"(		assert(find([1,2,2,2,3], 2) == 1)		)");
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "vector [int] push_back()", "", ""){
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [int] result = push_back([1, 2], 3)		)",		R"(		[[ "vector", "^int" ], [1, 2, 3]]		)");
+}
 
+QUARK_UNIT_TEST("Floyd test suite", "vector [int] push_back()", "", ""){
+	run_closed(
+		R"(
+
+			let result = push_back([1, 2], 3)
+			assert(result == [1, 2, 3])
+
+		)"
+	);
+}
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
 	run_closed(R"(		assert(subset([10,20,30], 0, 3) == [10,20,30])		)");
@@ -2524,8 +2618,6 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
 	run_closed(R"(		assert(subset([10,20,30], 0, 0) == [])		)");
 }
 
-//??? Add tests for string, etc.
-
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] replace()", "", ""){
 	run_closed(R"(		assert(replace([ 1, 2, 3, 4, 5, 6 ], 2, 5, [20, 30]) == [1, 2, 20, 30, 6])		)");
 }
@@ -2534,40 +2626,15 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [int] replace()", "", ""){
 
 
 
-
 //////////////////////////////////////////		vector-double
 
 
 
-QUARK_UNIT_TEST("Floyd test suite", "vector [double] literal expression", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector [double] constructor-expression", "", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] result = [10.5, 20.5, 30.5]		)",	R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)");
 }
-QUARK_UNIT_TEST("Floyd test suite", "vector [double] =", "copy", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let a = [10.5, 20.5, 30.5] result = a		)",	R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "vector [double] ==", "same values", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] == [1.5, 2.5]		)",	R"(		[ "^bool", true]		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "vector [double] ==", "different values", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1.5, 3.5] == [1.5, 2.5]		)",	R"(		[ "^bool", false]		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "vector [double] <", "", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] < [1.5, 2.5]		)",	R"(		[ "^bool", false]	)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "vector [double] <", "different values", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] < [1.5, 3.5]		)",	R"(		[ "^bool", true]		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "vector [double] size()", "empty", "0"){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] a = [] result = size(a)		)",	R"(		[ "^int", 0]		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "vector [double] size()", "2", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] a = [1.5, 2.5, 3.5] result = size(a)		)",	R"(		[ "^int", 3]		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "vector [double] +", "non-empty vectors", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] result = [1.5, 2.5] + [3.5, 4.5]		)",		R"(		[[ "vector", "^double" ], [1.5, 2.5, 3.5, 4.5]]		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "vector [double] push_back()", "", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] result = push_back([1.5, 2.5], 3.5)		)",	R"(		[[ "vector", "^double" ], [1.5, 2.5, 3.5]]		)");
+QUARK_UNIT_TEST("Floyd test suite", "vector", "Vector can not hold elements of different types.", "exception"){
+	ut_verify_exception_nolib(QUARK_POS, R"(		let a = [3, bool]		)", "Vector of type [int] cannot hold an element of type typeid. Line: 1 \"let a = [3, bool]\"");
 }
 
 
@@ -2583,18 +2650,57 @@ QUARK_UNIT_TEST("Floyd test suite", "vector []", "Error: Lookup in vector using 
 		"Vector can only be indexed by integers, not a \"string\". Line: 4 \"print(a[\"not an integer\"])\""
 	);
 }
-
-QUARK_UNIT_TEST("Floyd test suite", "vector", "Vector can not hold elements of different types.", "exception"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		let a = [3, bool]		)", "Vector of type [int] cannot hold an element of type typeid. Line: 1 \"let a = [3, bool]\"");
-}
-
 QUARK_UNIT_TEST("Floyd test suite", "vector", "Error: Lookup the unlookupable", "exception"){
 	ut_verify_exception_nolib(QUARK_POS, R"(		let a = 3[0]		)", "Lookup using [] only works with strings, vectors, dicts and json_value - not a \"int\". Line: 1 \"let a = 3[0]\"");
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "vector [double] =", "copy", ""){
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let a = [10.5, 20.5, 30.5] result = a		)",	R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [double] ==", "same values", ""){
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] == [1.5, 2.5]		)",	R"(		[ "^bool", true]		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [double] ==", "different values", ""){
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1.5, 3.5] == [1.5, 2.5]		)",	R"(		[ "^bool", false]		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [double] <", "", ""){
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] < [1.5, 2.5]		)",	R"(		[ "^bool", false]	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [double] <", "different values", ""){
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] < [1.5, 3.5]		)",	R"(		[ "^bool", true]		)");
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [double] +", "non-empty vectors", ""){
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] result = [1.5, 2.5] + [3.5, 4.5]		)",		R"(		[[ "vector", "^double" ], [1.5, 2.5, 3.5, 4.5]]		)");
+}
+
+//???	print()
+//???	update()		-- string, vector, dict
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [double] size()", "empty", "0"){
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] a = [] result = size(a)		)",	R"(		[ "^int", 0]		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [double] size()", "2", ""){
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] a = [1.5, 2.5, 3.5] result = size(a)		)",	R"(		[ "^int", 3]		)");
+}
+
+//???	find()			-- string/vector. ??? dict?
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [double] push_back()", "", ""){
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] result = push_back([1.5, 2.5], 3.5)		)",	R"(		[[ "vector", "^double" ], [1.5, 2.5, 3.5]]		)");
+}
+
+//???	subset()		-- string vector
+//???	replace()		-- string, vector
 
 
 
+//??? test json_value element type
+//??? test struct element type
+//??? test typeid element type
+//??? test function element type
+//??? test vector element type
+//??? test dict element type
 
 
 

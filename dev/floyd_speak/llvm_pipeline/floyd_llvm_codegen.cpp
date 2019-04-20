@@ -3106,7 +3106,9 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 	auto funcs = result0.second;
 
 	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, ast._tree._globals._symbol_table, funcs);
+#if 0
 	QUARK_TRACE_SS("result = " << floyd::print_program(*result));
+#endif
 	return result;
 }
 
