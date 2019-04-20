@@ -1328,8 +1328,9 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 
 	}
 	else{
-		NOT_IMPLEMENTED_YET();
 		QUARK_ASSERT(element_count == 1);
+
+		return generate_expression(gen_acc, emit_f, details.elements[0]);
 
 /*
 		const auto source_itype = arg_count == 0 ? -1 : intern_type(gen_acc, e._input_exprs[0].get_output_type());
