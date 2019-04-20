@@ -2636,9 +2636,6 @@ void floyd_host_function_1024(void* floyd_runtime_ptr, int64_t arg){
 const char* floyd_funcdef__replace__string(llvm_execution_engine_t* floyd_runtime_ptr, const char s[], std::size_t start, std::size_t end, const char replace[]){
 	auto s_len = std::strlen(s);
 	auto replace_len = std::strlen(replace);
-	if(start > end){
-		quark::throw_runtime_error("replace() requires start <= end.");
-	}
 
 	auto end2 = std::min(end, s_len);
 	auto start2 = std::min(start, end2);
@@ -2652,22 +2649,50 @@ const char* floyd_funcdef__replace__string(llvm_execution_engine_t* floyd_runtim
 	return s2;
 }
 
+void copy_elements(uint64_t dest[], uint64_t source[], uint32_t count){
+	for(auto i = 0 ; i < count ; i++){
+		dest[i] = source[i];
+	}
+}
+
 const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end, int64_t arg3_value, int64_t arg3_type){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	if(start < 0 || end < 0){
 		quark::throw_runtime_error("replace() requires start and end to be non-negative.");
 	}
+	if(start > end){
+		quark::throw_runtime_error("replace() requires start <= end.");
+	}
 
 	const auto type0 = unpack_itype(arg0_type);
-	if(type0.is_string()){
-		const auto type3 = unpack_itype(arg3_type);
+	const auto type3 = unpack_itype(arg3_type);
 
-		if(type3.is_string() == false){
-			quark::throw_runtime_error("replace(string) requires argument 4 to be a string.");
-		}
+	if(type3 != type0){
+		quark::throw_runtime_error("replace() requires argument 4 to be same type of collection.");
+	}
+
+	if(type0.is_string()){
 		const auto ret = floyd_funcdef__replace__string(r, (const char*)arg0_value, (std::size_t)start, (std::size_t)end, (const char*)arg3_value);
 		return make_wide_return_charptr(ret);
+	}
+	else if(type0.is_vector()){
+		const auto vec = unpack_vec_arg(r, arg0_value, arg0_type);
+		const auto replace_vec = unpack_vec_arg(r, arg3_value, arg3_type);
+
+		auto end2 = std::min(static_cast<uint32_t>(end), vec->element_count);
+		auto start2 = std::min(static_cast<uint32_t>(start), end2);
+
+		const int32_t section1_len = start2;
+		const int32_t section2_len = replace_vec->element_count;
+		const int32_t section3_len = vec->element_count - end2;
+
+		const uint32_t len2 = section1_len + section2_len + section3_len;
+		auto vec2 = make_vec(len2);
+		copy_elements(&vec2.element_ptr[0], &vec->element_ptr[0], section1_len);
+		copy_elements(&vec2.element_ptr[section2_len], &replace_vec->element_ptr[0], section2_len);
+		copy_elements(&vec2.element_ptr[section1_len + section2_len], &vec->element_ptr[end2], section3_len);
+		return make_wide_return_vec(vec2);
 	}
 	else{
 		NOT_IMPLEMENTED_YET();

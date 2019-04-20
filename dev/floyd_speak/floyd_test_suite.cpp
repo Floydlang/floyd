@@ -2197,7 +2197,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", "error"){
 	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace("hello", 5, 0, "goodbye") == "hellogoodbye")		)", "replace() requires start <= end.");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", "error"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace("hello", 2, 3, 666) == "")		)", "replace(string) requires argument 4 to be a string.");
+	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace("hello", 2, 3, 666) == "")		)", "replace() requires argument 4 to be same type of collection.");
 }
 
 
