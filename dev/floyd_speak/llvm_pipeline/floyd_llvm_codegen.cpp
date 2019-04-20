@@ -35,6 +35,7 @@
 #include "llvm/Bitcode/BitstreamWriter.h"
 
 
+#include <map>
 #include <algorithm>
 #include <cstdlib>
 #include <memory>
@@ -135,6 +136,8 @@ static llvm::Value* generate_expression(llvm_code_generator_t& gen_acc, llvm::Fu
 
 
 
+struct runtime_external_handle_t {
+};
 
 
 
@@ -216,6 +219,568 @@ std::string print_program(const llvm_ir_program_t& program){
 
 	return print_module(*program.module);
 }
+
+
+
+
+
+
+
+
+//////////////////////////////////////////		COMPARE
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+int runtime_compare_value_true_deep(const uint64_t& left, const uint64_t& right, const typeid_t& type0);
+
+
+static int compare(int64_t value){
+	if(value < 0){
+		return -1;
+	}
+	else if(value > 0){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+int runtime_compare_string(const std::string& left, const std::string& right){
+	// ??? Better if it doesn't use c_ptr since that is non-pure string handling.
+	return compare(std::strcmp(left.c_str(), right.c_str()));
+}
+
+QUARK_UNIT_TEST("runtime_compare_string()", "", "", ""){
+	ut_verify_auto(QUARK_POS, runtime_compare_string("", ""), 0);
+}
+QUARK_UNIT_TEST("runtime_compare_string()", "", "", ""){
+	ut_verify_auto(QUARK_POS, runtime_compare_string("aaa", "aaa"), 0);
+}
+QUARK_UNIT_TEST("runtime_compare_string()", "", "", ""){
+	ut_verify_auto(QUARK_POS, runtime_compare_string("b", "a"), 1);
+}
+
+
+int runtime_compare_struct_true_deep(const std::vector<uint64_t>& left, const std::vector<uint64_t>& right, const typeid_t& type){
+	const auto& struct_def = type.get_struct();
+
+	for(int i = 0 ; i < struct_def._members.size() ; i++){
+		const auto& member_type = struct_def._members[i]._type;
+		int diff = runtime_compare_value_true_deep(left[i], right[i], member_type);
+		if(diff != 0){
+			return diff;
+		}
+	}
+	return 0;
+}
+
+/*
+int runtime_compare_vectors_obj(const std::vector<runtime_external_handle_t>& left, const std::vector<runtime_external_handle_t>& right, const typeid_t& type){
+	QUARK_ASSERT(type.is_vector());
+
+	const auto shared_count = std::min(left.size(), right.size());
+	const auto& element_type = typeid_t(type.get_vector_element_type());
+	for(int i = 0 ; i < shared_count ; i++){
+		const auto element_result = runtime_compare_value_true_deep(bc_value_t(element_type, left[i]), bc_value_t(element_type, right[i]), element_type);
+		if(element_result != 0){
+			return element_result;
+		}
+	}
+	if(left.size() == right.size()){
+		return 0;
+	}
+	else if(left.size() > right.size()){
+		return -1;
+	}
+	else{
+		return +1;
+	}
+}
+*/
+
+int compare_bools(const bool left, const bool right){
+	auto left2 = left ? 1 : 0;
+	auto right2 = right ? 1 : 0;
+	if(left2 < right2){
+		return -1;
+	}
+	else if(left2 > right2){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+int compare_ints(const int64_t left, const int64_t right){
+	if(left < right){
+		return -1;
+	}
+	else if(left > right){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+int compare_doubles(const double left, const double right){
+	if(left < right){
+		return -1;
+	}
+	else if(left > right){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+}
+
+int runtime_compare_vectors_bool(const VEC_T& left, const VEC_T& right){
+	QUARK_ASSERT(check_invariant_vector(left));
+	QUARK_ASSERT(check_invariant_vector(right));
+
+	const auto shared_count = std::min(left.size(), right.size());
+	for(int i = 0 ; i < shared_count ; i++){
+		int result = compare_bools(left[i] != 0x00, right[i] != 0x00);
+		if(result != 0){
+			return result;
+		}
+	}
+	if(left.size() == right.size()){
+		return 0;
+	}
+	else if(left.size() > right.size()){
+		return -1;
+	}
+	else{
+		return +1;
+	}
+}
+int runtime_compare_vectors_int(const VEC_T& left, const VEC_T& right){
+	QUARK_ASSERT(check_invariant_vector(left));
+	QUARK_ASSERT(check_invariant_vector(right));
+
+	const auto shared_count = std::min(left.size(), right.size());
+	for(int i = 0 ; i < shared_count ; i++){
+		int result = compare_ints(left[i], right[i]);
+		if(result != 0){
+			return result;
+		}
+	}
+	if(left.size() == right.size()){
+		return 0;
+	}
+	else if(left.size() > right.size()){
+		return -1;
+	}
+	else{
+		return +1;
+	}
+}
+int runtime_compare_vectors_double(const VEC_T& left, const VEC_T& right){
+	QUARK_ASSERT(check_invariant_vector(left));
+	QUARK_ASSERT(check_invariant_vector(right));
+
+	const auto shared_count = std::min(left.size(), right.size());
+	for(int i = 0 ; i < shared_count ; i++){
+		const uint64_t left2 = left[i];
+		const uint64_t right2 = right[i];
+		int result = compare_doubles(*(double*)&left2, *(double*)&right2);
+		if(result != 0){
+			return result;
+		}
+	}
+	if(left.size() == right.size()){
+		return 0;
+	}
+	else if(left.size() > right.size()){
+		return -1;
+	}
+	else{
+		return +1;
+	}
+}
+
+int runtime_compare_vectors_string(const VEC_T& left, const VEC_T& right){
+	QUARK_ASSERT(check_invariant_vector(left));
+	QUARK_ASSERT(check_invariant_vector(right));
+
+	const auto shared_count = std::min(left.size(), right.size());
+	for(int i = 0 ; i < shared_count ; i++){
+		int result = runtime_compare_string((const char*)left[i], (const char*)right[i]);
+		if(result != 0){
+			return result;
+		}
+	}
+	if(left.size() == right.size()){
+		return 0;
+	}
+	else if(left.size() > right.size()){
+		return -1;
+	}
+	else{
+		return +1;
+	}
+}
+
+
+
+template <typename Map> bool bc_map_compare(Map const &lhs, Map const &rhs) {
+	// No predicate needed because there is operator== for pairs already.
+	return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
+/*
+int bc_compare_dicts_obj(const std::map<std::string, runtime_external_handle_t>& left, const std::map<std::string, runtime_external_handle_t>& right, const typeid_t& type){
+	const auto& element_type = typeid_t(type.get_dict_value_type());
+
+	auto left_it = left.begin();
+	auto left_end_it = left.end();
+
+	auto right_it = right.begin();
+	auto right_end_it = right.end();
+
+	while(left_it != left_end_it && right_it != right_end_it){
+		auto left_key = (*left_it).first;
+		auto right_key = (*right_it).first;
+
+		const auto key_result = runtime_compare_string(left_key, right_key);
+		if(key_result != 0){
+			return key_result;
+		}
+
+		const auto element_result = runtime_compare_value_true_deep(bc_value_t(element_type, (*left_it).second), bc_value_t(element_type, (*right_it).second), element_type);
+		if(element_result != 0){
+			return element_result;
+		}
+
+		left_it++;
+		right_it++;
+	}
+
+	if(left_it == left_end_it && right_it == right_end_it){
+		return 0;
+	}
+	else if(left_it == left_end_it && right_it != right_end_it){
+		return 1;
+	}
+	else if(left_it != left_end_it && right_it == right_end_it){
+		return -1;
+	}
+	QUARK_ASSERT(false)
+	quark::throw_exception();
+}
+
+//??? make template.
+int bc_compare_dicts_bool(const std::map<std::string, uint64_t>& left, const std::map<std::string, uint64_t>& right){
+	auto left_it = left.begin();
+	auto left_end_it = left.end();
+
+	auto right_it = right.begin();
+	auto right_end_it = right.end();
+
+	while(left_it != left_end_it && right_it != right_end_it){
+		auto left_key = (*left_it).first;
+		auto right_key = (*right_it).first;
+
+		const auto key_result = runtime_compare_string(left_key, right_key);
+		if(key_result != 0){
+			return key_result;
+		}
+
+		int result = compare_bools((*left_it).second, (*right_it).second);
+		if(result != 0){
+			return result;
+		}
+
+		left_it++;
+		right_it++;
+	}
+
+	if(left_it == left_end_it && right_it == right_end_it){
+		return 0;
+	}
+	else if(left_it == left_end_it && right_it != right_end_it){
+		return 1;
+	}
+	else if(left_it != left_end_it && right_it == right_end_it){
+		return -1;
+	}
+	QUARK_ASSERT(false)
+	quark::throw_exception();
+}
+
+int bc_compare_dicts_int(const std::map<std::string, uint64_t>& left, const std::map<std::string, uint64_t>& right){
+	auto left_it = left.begin();
+	auto left_end_it = left.end();
+
+	auto right_it = right.begin();
+	auto right_end_it = right.end();
+
+	while(left_it != left_end_it && right_it != right_end_it){
+		auto left_key = (*left_it).first;
+		auto right_key = (*right_it).first;
+
+		const auto key_result = runtime_compare_string(left_key, right_key);
+		if(key_result != 0){
+			return key_result;
+		}
+
+		int result = compare_ints((*left_it).second, (*right_it).second);
+		if(result != 0){
+			return result;
+		}
+
+		left_it++;
+		right_it++;
+	}
+
+	if(left_it == left_end_it && right_it == right_end_it){
+		return 0;
+	}
+	else if(left_it == left_end_it && right_it != right_end_it){
+		return 1;
+	}
+	else if(left_it != left_end_it && right_it == right_end_it){
+		return -1;
+	}
+	QUARK_ASSERT(false)
+	quark::throw_exception();
+}
+
+int runtime_compare_dicts_double(const std::map<std::string, uint64_t>& left, const std::map<std::string, uint64_t>& right){
+	auto left_it = left.begin();
+	auto left_end_it = left.end();
+
+	auto right_it = right.begin();
+	auto right_end_it = right.end();
+
+	while(left_it != left_end_it && right_it != right_end_it){
+		auto left_key = (*left_it).first;
+		auto right_key = (*right_it).first;
+
+		const auto key_result = runtime_compare_string(left_key, right_key);
+		if(key_result != 0){
+			return key_result;
+		}
+
+		int result = compare_doubles((*left_it).second, (*right_it).second);
+		if(result != 0){
+			return result;
+		}
+
+		left_it++;
+		right_it++;
+	}
+
+	if(left_it == left_end_it && right_it == right_end_it){
+		return 0;
+	}
+	else if(left_it == left_end_it && right_it != right_end_it){
+		return 1;
+	}
+	else if(left_it != left_end_it && right_it == right_end_it){
+		return -1;
+	}
+	QUARK_ASSERT(false)
+	quark::throw_exception();
+}
+*/
+
+
+static int json_value_type_to_int(const json_t& value){
+	if(value.is_object()){
+		return 0;
+	}
+	else if(value.is_array()){
+		return 1;
+	}
+	else if(value.is_string()){
+		return 2;
+	}
+	else if(value.is_number()){
+		return 4;
+	}
+	else if(value.is_true()){
+		return 5;
+	}
+	else if(value.is_false()){
+		return 6;
+	}
+	else if(value.is_null()){
+		return 7;
+	}
+	else{
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+	}
+}
+
+
+int runtime_compare_json_values(const json_t& lhs, const json_t& rhs){
+	if(lhs == rhs){
+		return 0;
+	}
+	else{
+		const auto lhs_type = json_value_type_to_int(lhs);
+		const auto rhs_type = json_value_type_to_int(rhs);
+		int type_diff = rhs_type - lhs_type;
+		if(type_diff != 0){
+			return type_diff;
+		}
+		else{
+			if(lhs.is_object()){
+				QUARK_ASSERT(false);
+				quark::throw_exception();
+			}
+			else if(lhs.is_array()){
+				QUARK_ASSERT(false);
+				quark::throw_exception();
+			}
+			else if(lhs.is_string()){
+				const auto diff = std::strcmp(lhs.get_string().c_str(), rhs.get_string().c_str());
+				return diff < 0 ? -1 : 1;
+			}
+			else if(lhs.is_number()){
+				const auto lhs_number = lhs.get_number();
+				const auto rhs_number = rhs.get_number();
+				return lhs_number < rhs_number ? -1 : 1;
+			}
+			else if(lhs.is_true()){
+				QUARK_ASSERT(false);
+				quark::throw_exception();
+			}
+			else if(lhs.is_false()){
+				QUARK_ASSERT(false);
+				quark::throw_exception();
+			}
+			else if(lhs.is_null()){
+				QUARK_ASSERT(false);
+				quark::throw_exception();
+			}
+			else{
+				QUARK_ASSERT(false);
+				quark::throw_exception();
+			}
+		}
+	}
+}
+
+/*
+int runtime_compare_value_exts(const runtime_external_handle_t& left, const runtime_external_handle_t& right, const typeid_t& type){
+	return runtime_compare_value_true_deep(bc_value_t(type, left), bc_value_t(type, right), type);
+}
+*/
+
+int runtime_compare_value_true_deep(const uint64_t& left, const uint64_t& right, const typeid_t& type0){
+//	QUARK_ASSERT(left._type == right._type);
+//	QUARK_ASSERT(left.check_invariant());
+//	QUARK_ASSERT(right.check_invariant());
+
+	const auto type = type0;
+	if(type.is_undefined()){
+		return 0;
+	}
+	else if(type.is_bool()){
+		return (left == 0x00 ? 0 : 1) - (right == 0x00 ? 0 : 1);
+	}
+	else if(type.is_int()){
+		return compare_ints(left, right);
+	}
+	else if(type.is_double()){
+		return compare_doubles(left, right);
+	}
+	else if(type.is_string()){
+		return runtime_compare_string((const char*)left, (const char*)right);
+	}
+#if 0
+	else if(type.is_json_value()){
+		return runtime_compare_json_values(left.get_json_value(), right.get_json_value());
+	}
+	else if(type.is_typeid()){
+		if(left.get_typeid_value() == right.get_typeid_value()){
+			return 0;
+		}
+		else{
+			return -1;//??? Hack -- should return +1 depending on values.
+		}
+	}
+	else if(type.is_struct()){
+		//	Make sure the EXACT struct types are the same -- not only that they are both structs
+		return runtime_compare_struct_true_deep(left.get_struct_value(), right.get_struct_value(), type0);
+	}
+#endif
+	else if(type.is_vector()){
+		if(false){
+		}
+		else if(type.get_vector_element_type().is_bool()){
+			return runtime_compare_vectors_bool(*reinterpret_cast<const VEC_T*>(left), *reinterpret_cast<const VEC_T*>(right));
+		}
+		else if(type.get_vector_element_type().is_int()){
+			return runtime_compare_vectors_int(*(const VEC_T*)left, *(const VEC_T*)right);
+		}
+		else if(type.get_vector_element_type().is_double()){
+			return runtime_compare_vectors_double(*(const VEC_T*)left, *(const VEC_T*)right);
+		}
+		else if(type.get_vector_element_type().is_string()){
+			return runtime_compare_vectors_string(*(const VEC_T*)left, *(const VEC_T*)right);
+		}
+		else{
+			NOT_IMPLEMENTED_YET();
+/*
+			const auto& left_vec = get_vector_external_elements(left);
+			const auto& right_vec = get_vector_external_elements(right);
+			return runtime_compare_vectors_obj(*left_vec, *right_vec, type0);
+*/
+
+		}
+	}
+	else if(type.is_dict()){
+		NOT_IMPLEMENTED_YET();
+/*
+		if(false){
+		}
+		else if(type.get_dict_value_type().is_bool()){
+			return bc_compare_dicts_bool(left._pod._external->_dict_w_inplace_values, right._pod._external->_dict_w_inplace_values);
+		}
+		else if(type.get_dict_value_type().is_int()){
+			return bc_compare_dicts_int(left._pod._external->_dict_w_inplace_values, right._pod._external->_dict_w_inplace_values);
+		}
+		else if(type.get_dict_value_type().is_double()){
+			return runtime_compare_dicts_double(left._pod._external->_dict_w_inplace_values, right._pod._external->_dict_w_inplace_values);
+		}
+		else  {
+			const auto& left2 = get_dict_value(left);
+			const auto& right2 = get_dict_value(right);
+			return bc_compare_dicts_obj(left2, right2, type0);
+		}
+*/
+
+	}
+	else if(type.is_function()){
+		QUARK_ASSERT(false);
+		return 0;
+	}
+	else{
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+	}
+}
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
 
 value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
 	QUARK_ASSERT(global_ptr != nullptr);
@@ -906,12 +1471,15 @@ static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_ac
 	else if(type.is_vector()){
 		const auto def = find_function_def(gen_acc, "floyd_runtime__compare_vectors");
 		llvm::Value* op_value = generate_constant(gen_acc, value_t::make_int(static_cast<int64_t>(details.op)));
+		llvm::Value* itype_reg = generate_constant(gen_acc, value_t::make_int(pack_itype(type)));
+
 		auto lhs_vec_ptr = get_vec_ptr(gen_acc.builder, lhs_temp);
 		auto rhs_vec_ptr = get_vec_ptr(gen_acc.builder, rhs_temp);
 
 		std::vector<llvm::Value*> args2;
 		args2.push_back(get_callers_fcp(emit_f));
 		args2.push_back(op_value);
+		args2.push_back(itype_reg);
 		args2.push_back(lhs_vec_ptr);
 		args2.push_back(rhs_vec_ptr);
 		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "compare_vectors");
@@ -2200,6 +2768,7 @@ int32_t floyd_runtime__compare_strings(void* floyd_runtime_ptr, int64_t op, cons
 
 	*/
 	const auto result = std::strcmp(lhs, rhs);
+
 	const auto op2 = static_cast<expression_type>(op);
 	if(op2 == expression_type::k_comparison_smaller_or_equal__2){
 		return result <= 0 ? 1 : 0;
@@ -2338,7 +2907,7 @@ host_func_t floyd_runtime__delete_vector__make(llvm::LLVMContext& context){
 ////////////////////////////////		compare_vectors()
 
 
-int32_t floyd_runtime__compare_vectors(void* floyd_runtime_ptr, int64_t op, const VEC_T* lhs, const VEC_T* rhs){
+int32_t floyd_runtime__compare_vectors(void* floyd_runtime_ptr, int64_t op, const uint64_t vec_type, const VEC_T* lhs, const VEC_T* rhs){
 	auto r = get_floyd_runtime(floyd_runtime_ptr);
 
 	QUARK_ASSERT(lhs != nullptr);
@@ -2347,10 +2916,10 @@ int32_t floyd_runtime__compare_vectors(void* floyd_runtime_ptr, int64_t op, cons
 	QUARK_ASSERT(rhs != nullptr);
 	QUARK_ASSERT(check_invariant_vector(*rhs));
 
-//???
-//	const auto result = std::strcmp(lhs, rhs);
-	const auto result = 0;
+	const auto vector_type = unpack_itype(vec_type);
+	QUARK_ASSERT(vector_type.is_vector());
 
+	int result = runtime_compare_value_true_deep((const uint64_t)lhs, (const uint64_t)rhs, vector_type);
 	const auto op2 = static_cast<expression_type>(op);
 	if(op2 == expression_type::k_comparison_smaller_or_equal__2){
 		return result <= 0 ? 1 : 0;
@@ -2376,11 +2945,13 @@ int32_t floyd_runtime__compare_vectors(void* floyd_runtime_ptr, int64_t op, cons
 		throw std::exception();
 	}
 }
+
 host_func_t floyd_runtime__compare_vectors__make(llvm::LLVMContext& context){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getInt32Ty(context),
 		{
 			make_frp_type(context),
+			llvm::Type::getInt64Ty(context),
 			llvm::Type::getInt64Ty(context),
 			make_vec_type(context)->getPointerTo(),
 			make_vec_type(context)->getPointerTo()

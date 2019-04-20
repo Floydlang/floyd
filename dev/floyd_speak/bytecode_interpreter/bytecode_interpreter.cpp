@@ -1240,7 +1240,7 @@ int compare(int64_t value){
 }
 
 int bc_compare_string(const std::string& left, const std::string& right){
-	// ### Better if it doesn't use c_ptr since that is non-pure string handling.
+	// ??? Better if it doesn't use c_ptr since that is non-pure string handling.
 	return compare(std::strcmp(left.c_str(), right.c_str()));
 }
 

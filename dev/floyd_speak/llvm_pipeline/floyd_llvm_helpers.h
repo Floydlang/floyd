@@ -143,6 +143,14 @@ struct VEC_T {
 	uint32_t element_count;
 	uint16_t magic;
 	uint16_t element_bits;
+
+
+	inline uint32_t size() const {
+		return element_count;
+	}
+	inline uint64_t operator[](const uint32_t index) const {
+		return element_ptr[index];
+	}
 };
 
 bool check_invariant_vector(const VEC_T& v);
@@ -164,6 +172,17 @@ llvm::Type* make_vec_type(llvm::LLVMContext& context);
 
 llvm::Value* get_vec_ptr(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue);
 
+
+
+
+////////////////////////////////		DICT_T
+
+
+struct DICT_T {
+	inline uint32_t size() const {
+		return 666;
+	}
+};
 
 
 ////////////////////////////////		WIDE_RETURN_T
