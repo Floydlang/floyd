@@ -678,7 +678,7 @@ QUARK_UNIT_TEST("Floyd test suite", "main() - Can make and read global int", "",
 	);
 }
 
-//AAA
+
 QUARK_UNIT_TEST("Floyd test suite", "main()", "minimal program 2", ""){
 	ut_verify_mainfunc_return_nolib(
 		QUARK_POS,
@@ -2375,7 +2375,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] print()", "empty", "[]"){
 		R"(
 
 			let [string] a = []
-			print(a))
+			print(a)
 
 		)",
 		{
@@ -2389,7 +2389,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] print()", "2 elements", "")
 		R"(
 
 			let a = ["one", "two", "three"]
-			print(a))
+			print(a)
 
 		)",
 		{
