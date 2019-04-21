@@ -3627,6 +3627,7 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const st
 	builder.SetInsertPoint(entryBB);
 	llvm::Function& emit_f = *f;
 	{
+		//???	Remove floyd_runtime_ptr-check in release version.
 		//	Verify we've got a valid floyd_runtime_ptr as argument #0.
 		llvm::Value* magic_index_value = llvm::ConstantInt::get(builder.getInt64Ty(), 0);
 		const auto index_list = std::vector<llvm::Value*>{ magic_index_value };
