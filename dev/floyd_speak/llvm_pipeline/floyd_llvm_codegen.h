@@ -139,7 +139,7 @@ void* get_global_function(llvm_execution_engine_t& ee, const std::string& name);
 
 
 std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std::string& name);
-value_t call_function(const std::pair<void*, typeid_t>& f);
+value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f);
 
 std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name);
 value_t load_global(const std::pair<void*, typeid_t>& v);

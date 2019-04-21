@@ -951,12 +951,12 @@ std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std:
 	}
 }
 
-value_t call_function(const std::pair<void*, typeid_t>& f){
+value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f){
 	QUARK_ASSERT(f.first != nullptr);
 	QUARK_ASSERT(f.second.is_function());
 
 	const auto function_ptr = reinterpret_cast<FLOYD_RUNTIME_F*>(f.first);
-	int64_t return_encoded = (*function_ptr)(function_ptr, "?dummy arg to main()?");
+	int64_t return_encoded = (*function_ptr)(&ee, "?dummy arg to main()?");
 
 	const auto return_type = f.second.get_function_return();
 	return llvm_to_value(return_encoded, return_type);

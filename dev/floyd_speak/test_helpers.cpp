@@ -104,7 +104,7 @@ static run_report_t run_program_llvm(const compilation_unit_t& cu, const std::ve
 		auto ee = make_engine_run_init(llvm_instance, *exe);
 
 		const auto main_function = bind_function(ee, "main");
-		const auto main_result = main_function.first != nullptr ? call_function(main_function) : value_t();
+		const auto main_result = main_function.first != nullptr ? call_function(ee, main_function) : value_t();
 
 		const auto result_global0 = bind_global(ee, "result");
 		const auto result_global = result_global0.first != nullptr ? load_global(result_global0) : value_t();

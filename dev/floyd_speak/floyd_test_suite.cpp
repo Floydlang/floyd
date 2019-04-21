@@ -679,7 +679,7 @@ QUARK_UNIT_TEST("Floyd test suite", "main() - Can make and read global int", "",
 }
 
 
-QUARK_UNIT_TEST("Floyd test suite", "main()", "minimal program 2", ""){
+QUARK_UNIT_TEST("Floyd test suite", "main()", "string main(string)", ""){
 	ut_verify_mainfunc_return_nolib(
 		QUARK_POS,
 		R"(
@@ -704,7 +704,7 @@ QUARK_UNIT_TEST("Floyd test suite", "main()", "", ""){
 	ut_verify_mainfunc_return_nolib(QUARK_POS, "func bool main(){ return 4 <= 4 }", {}, value_t::make_bool(true));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "main()", "minimal program", ""){
+QUARK_UNIT_TEST("Floyd test suite", "main()", "int main(string)", ""){
 	ut_verify_mainfunc_return_nolib(
 		QUARK_POS,
 		R"(
