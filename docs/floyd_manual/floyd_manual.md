@@ -1907,7 +1907,7 @@ Notice: by specifying the same index in *start* and *length* you will __insert__
 
 ## typeof()
 
-Return the type of its input value. The returned typeid-value is a complete Floyd type and can be stored, compared and so on.
+Return the type of its input value. The returned typeid-value is a complete Floyd type and can be stored, compared and so on. The type is resolved at compile time so the same source code line will always return the same type. 
 
 ```
 typeid typeof(any)

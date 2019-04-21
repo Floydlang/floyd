@@ -399,10 +399,10 @@ void delete_vec(VEC_T& vec){
 llvm::Type* make_wide_return_type(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
 		//	a
-		llvm::Type::getIntNTy(context, 64),
+		llvm::Type::getInt64Ty(context),
 
 		//	b
-		llvm::Type::getIntNTy(context, 64)
+		llvm::Type::getInt64Ty(context)
 	};
 	llvm::StructType* s = llvm::StructType::get(context, members, false);
 	return s;
@@ -670,7 +670,7 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 		return llvm::Type::getInt8PtrTy(context);
 	}
 	else if(type.is_json_value()){
-		return llvm::Type::getIntNTy(context, 16);
+		return llvm::Type::getInt16Ty(context);
 	}
 	else if(type.is_vector()){
 /*
@@ -681,20 +681,20 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 		return make_vec_type(context);
 	}
 	else if(type.is_typeid()){
-		return llvm::Type::getIntNTy(context, 16);
+		return llvm::Type::getInt32Ty(context);
 	}
 	else if(type.is_undefined()){
-		return llvm::Type::getIntNTy(context, 16);
+		return llvm::Type::getInt16Ty(context);
 	}
 	else if(type.is_unresolved_type_identifier()){
 		NOT_IMPLEMENTED_YET();
-		return llvm::Type::getIntNTy(context, 16);
+		return llvm::Type::getInt16Ty(context);
 	}
 	else if(type.is_double()){
 		return llvm::Type::getDoubleTy(context);
 	}
 	else if(type.is_struct()){
-		return llvm::Type::getIntNTy(context, 16);
+		return llvm::Type::getInt16Ty(context);
 
 #if 0
 		std::vector<llvm::Type*> members;

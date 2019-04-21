@@ -810,7 +810,9 @@ value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
 		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_typeid()){
-		NOT_IMPLEMENTED_YET();
+		const auto temp = *static_cast<const uint32_t*>(global_ptr);
+		const auto type_value = unpack_itype(temp);
+		return value_t::make_typeid_value(type_value);
 	}
 	else if(type.is_struct()){
 		NOT_IMPLEMENTED_YET();
@@ -1040,7 +1042,8 @@ llvm::Constant* generate_constant(llvm_code_generator_t& gen_acc, const value_t&
 		return llvm::ConstantInt::get(itype, 7000);
 	}
 	else if(type.is_typeid()){
-		return llvm::ConstantInt::get(itype, 6000);
+		const auto t = pack_itype(value.get_type());
+		return llvm::ConstantInt::get(itype, t);
 	}
 	else if(type.is_struct()){
 		NOT_IMPLEMENTED_YET();
@@ -1648,14 +1651,7 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
 			}
 			else if(concrete_arg_type.is_double()){
-#if 0
-				auto buffer_ptr_reg = builder.CreateAlloca(builder.getDoubleTy(), nullptr, "double_as_arg");
-				builder.CreateStore(arg2, buffer_ptr_reg);
-				auto buffer_ptr2_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, buffer_ptr_reg, builder.getInt64Ty()->getPointerTo(), "");
-				auto int64_reg = builder.CreateLoad(buffer_ptr2_reg, "");
-#else
 				llvm::Value* int64_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, arg2, builder.getInt64Ty(), "double_as_arg");
-#endif
 				arg_values.push_back(int64_reg);
 				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
 			}
@@ -1672,6 +1668,11 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 			}
 			else if(concrete_arg_type.is_int()){
 				arg_values.push_back(arg2);
+				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
+			}
+			else if(concrete_arg_type.is_typeid()){
+				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::ZExt, arg2, builder.getInt64Ty(), "typeid_as_arg");
+				arg_values.push_back(arg3);
 				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
 			}
 			else if(concrete_arg_type.is_bool()){
@@ -2721,6 +2722,12 @@ std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, i
 		return double_to_string_always_decimals(value);
 //		return std::to_string(value);
 	}
+	else if(type.is_typeid()){
+		const auto type1 = unpack_itype(arg_value);
+		const auto type2 = value_t::make_typeid_value(type1);
+		const auto a = to_compact_string2(type2);
+		return a;
+	}
 	else if(type.is_vector()){
 		const auto element_type = type.get_vector_element_type();
 
@@ -3358,19 +3365,16 @@ const char* floyd_host__to_string(void* floyd_runtime_ptr, int64_t arg0_value, i
 	return strdup(s.c_str());
 }
 
-void floyd_host__typeof(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-/*
-bc_value_t host__typeof(interpreter_t& vm, const bc_value_t args[], int arg_count){
-QUARK_ASSERT(vm.check_invariant());
-QUARK_ASSERT(arg_count == 1);
 
-const auto& value = args[0];
-const auto type = value._type;
-const auto result = value_t::make_typeid_value(type);
-return value_to_bc(result);
-}
-*/
+
+//		make_rec("typeof", host__typeof, 1004, typeid_t::make_function(typeid_t::make_typeid(), { DYN }, epure::pure)),
+
+int32_t floyd_host__typeof(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
+	auto r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type0 = unpack_itype(arg0_type);
+	const auto type_value = static_cast<int32_t>(arg0_type);
+	return type_value;
 }
 
 //	??? Range should be integers, not DYN! Change host function prototype.
