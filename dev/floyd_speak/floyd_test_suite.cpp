@@ -2937,6 +2937,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "check struct's type", ""){
 	);
 }
 
+//HERE
 QUARK_UNIT_TEST("Floyd test suite", "struct", "check struct's type", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,

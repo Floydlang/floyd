@@ -649,6 +649,32 @@ llvm::Type* make_function_type(llvm::Module& module, const typeid_t& function_ty
 }
 
 
+llvm::Type* make_struct_type(llvm::Module& module, const typeid_t& type){
+	QUARK_ASSERT(type.is_struct());
+
+	auto& context = module.getContext();
+
+#if 0
+		std::vector<llvm::Type*> members;
+		for(const auto& m: type.get_struct_ref()->_members){
+			const auto m2 = intern_type(*gen_acc.module, m._type, encode);
+			members.push_back(m2);
+		}
+
+  		llvm::StructType* s = llvm::StructType::get(context, members, false);
+
+//		return llvm::StructType::get(context);
+//		return llvm::Type::getInt32Ty(context);
+		return s;
+#endif
+	std::vector<llvm::Type*> members;
+	for(const auto& m: type.get_struct_ref()->_members){
+		const auto m2 = intern_type(module, m._type);
+		members.push_back(m2);
+	}
+	llvm::StructType* s = llvm::StructType::get(context, members, false);
+	return s;
+}
 
 //	Returns the LLVM type we chose to use to encode each Floyd type.
 llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
@@ -694,21 +720,8 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 		return llvm::Type::getDoubleTy(context);
 	}
 	else if(type.is_struct()){
-		return llvm::Type::getInt16Ty(context);
-
-#if 0
-		std::vector<llvm::Type*> members;
-		for(const auto& m: type.get_struct_ref()->_members){
-			const auto m2 = intern_type(*gen_acc.module, m._type, encode);
-			members.push_back(m2);
-		}
-
-  		llvm::StructType* s = llvm::StructType::get(context, members, false);
-
-//		return llvm::StructType::get(context);
-//		return llvm::Type::getInt32Ty(context);
-		return s;
-#endif
+		return make_struct_type(module, type);
+//		return llvm::Type::getInt16Ty(context);
 	}
 
 	else if(type.is_internal_dynamic()){

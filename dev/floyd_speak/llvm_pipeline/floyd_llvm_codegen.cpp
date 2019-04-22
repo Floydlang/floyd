@@ -1587,6 +1587,42 @@ static llvm::Value* generate_conditional_operator_expression(llvm_code_generator
 	return phiNode;
 }
 
+//	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value, store as array element.
+static llvm::Value* generate_encoded_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(floyd_type.check_invariant());
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	// We assume that the next arg in the llvm_mapping is the dyn-type.
+
+	if(floyd_type.is_function()){
+		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "function_as_arg");
+	}
+	else if(floyd_type.is_double()){
+		return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value, builder.getInt64Ty(), "double_as_arg");
+	}
+	else if(floyd_type.is_string()){
+		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "string_as_arg");
+	}
+	else if(floyd_type.is_vector()){
+		auto vec_ptr = get_vec_ptr(builder, &value);
+		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, vec_ptr, builder.getInt64Ty(), "");
+	}
+	else if(floyd_type.is_int()){
+		return &value;
+	}
+	else if(floyd_type.is_typeid()){
+		return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, builder.getInt64Ty(), "typeid_as_arg");
+	}
+	else if(floyd_type.is_bool()){
+		return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, builder.getInt64Ty(), "bool_as_arg");
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
 
 
 
@@ -1641,48 +1677,11 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 			//	Actual type of the argument, as specified inside the call expression. The concrete type for the DYN value for this call.
 			const auto concrete_arg_type = details.args[out_arg.floyd_arg_index].get_output_type();
 
-			// We assume that the next arg in the llvm_mapping is the dyn-type.
-
+			// We assume that the next arg in the llvm_mapping is the dyn-type and store it too.
 			const auto itype = pack_itype(concrete_arg_type);
-
-			if(concrete_arg_type.is_function()){
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, builder.getInt64Ty(), "function_as_arg");
-				arg_values.push_back(arg3);
-				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
-			}
-			else if(concrete_arg_type.is_double()){
-				llvm::Value* int64_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, arg2, builder.getInt64Ty(), "double_as_arg");
-				arg_values.push_back(int64_reg);
-				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
-			}
-			else if(concrete_arg_type.is_string()){
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, arg2, builder.getInt64Ty(), "string_as_arg");
-				arg_values.push_back(arg3);
-				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
-			}
-			else if(concrete_arg_type.is_vector()){
-				auto vec_ptr = get_vec_ptr(builder, arg2);
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, vec_ptr, builder.getInt64Ty(), "");
-				arg_values.push_back(arg3);
-				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
-			}
-			else if(concrete_arg_type.is_int()){
-				arg_values.push_back(arg2);
-				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
-			}
-			else if(concrete_arg_type.is_typeid()){
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::ZExt, arg2, builder.getInt64Ty(), "typeid_as_arg");
-				arg_values.push_back(arg3);
-				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
-			}
-			else if(concrete_arg_type.is_bool()){
-				llvm::Value* arg3 = builder.CreateCast(llvm::Instruction::CastOps::ZExt, arg2, builder.getInt64Ty(), "bool_as_arg");
-				arg_values.push_back(arg3);
-				arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
-			}
-			else{
-				NOT_IMPLEMENTED_YET();
-			}
+			const auto packed_value = generate_encoded_value(gen_acc, *arg2, concrete_arg_type);
+			arg_values.push_back(packed_value);
+			arg_values.push_back(llvm::ConstantInt::get(builder.getInt64Ty(), itype));
 		}
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_type){
 		}
@@ -1882,20 +1881,33 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			));
 		}
 */
-
 	}
-	else if(target_type.is_struct()){
-		NOT_IMPLEMENTED_YET();
 /*
-		body_acc._instrs.push_back(bcgen_instruction_t(
-			bc_opcode::k_new_struct,
-			target_reg2,
-			make_imm_int(target_itype),
-			make_imm_int(arg_count)
-		));
-*/
+	else if(target_type.is_struct()){
+		const auto& struct_def = target_type.get_struct();
 
+		QUARK_ASSERT(struct_def._members.size() == element_count);
+
+		auto vec_reg = generate_alloc_vec(gen_acc, emit_f, struct_def._members.size(), typeid_to_compact_string(target_type));
+		auto uint64_element_ptr = builder.CreateExtractValue(vec_reg, { (int)VEC_T_MEMBERS::element_ptr });
+
+		auto element_type = llvm::Type::getInt64Ty(context);
+
+		int element_index = 0;
+		for(const auto& m: struct_def._members){
+			const auto& arg = details.elements[element_index];
+			llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, arg);
+			auto element_reg = builder.CreateCast(llvm::Instruction::CastOps::ZExt, element0_reg, builder.getInt64Ty(), "");
+			auto element_index_value = generate_constant(gen_acc, value_t::make_int(element_index));
+			const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_value };
+			llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "e_addr");
+			builder.CreateStore(element_reg, e_addr);
+
+			element_index++;
+		}
+		return vec_reg;
 	}
+*/
 	else{
 		QUARK_ASSERT(element_count == 1);
 
