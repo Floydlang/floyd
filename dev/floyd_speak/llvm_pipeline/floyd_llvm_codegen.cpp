@@ -900,6 +900,7 @@ value_t llvm_to_value(const uint64_t encoded_value, const typeid_t& type){
 
 	//??? more types.
 	if(type.is_undefined()){
+		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_bool()){
 		//??? How is int1 encoded by LLVM?
@@ -919,18 +920,24 @@ value_t llvm_to_value(const uint64_t encoded_value, const typeid_t& type){
 		return value_t::make_string(s);
 	}
 	else if(type.is_json_value()){
+		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_typeid()){
 	}
 	else if(type.is_struct()){
+		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_vector()){
+		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_dict()){
+		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_function()){
+		NOT_IMPLEMENTED_YET();
 	}
 	else{
+		NOT_IMPLEMENTED_YET();
 	}
 	QUARK_ASSERT(false);
 	throw std::exception();
@@ -1203,7 +1210,6 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 		auto element_index = key_value;
 		const auto index_list = std::vector<llvm::Value*>{ element_index };
 		llvm::Value* element_addr = builder.CreateGEP(llvm::Type::getInt8Ty(context), parent_value, index_list, "element_addr");
-
 		llvm::Value* element_value_8bit = builder.CreateLoad(element_addr, "element_tmp");
 		llvm::Type* output_type = llvm::Type::getInt64Ty(context);
 
@@ -1587,7 +1593,8 @@ static llvm::Value* generate_conditional_operator_expression(llvm_code_generator
 	return phiNode;
 }
 
-//	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value, store as array element.
+//	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value.
+//	If the value is big, it's stored on the stack and a pointer returned => the returned value is not standalone and lifetime limited to emit function scope.
 static llvm::Value* generate_encoded_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(floyd_type.check_invariant());
@@ -1618,6 +1625,12 @@ static llvm::Value* generate_encoded_value(llvm_code_generator_t& gen_acc, llvm:
 	}
 	else if(floyd_type.is_bool()){
 		return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, builder.getInt64Ty(), "bool_as_arg");
+	}
+	else if(floyd_type.is_struct()){
+		auto struct_type_llvm = make_struct_type(*gen_acc.module, floyd_type);
+		auto alloc_ptr_reg = builder.CreateAlloca(struct_type_llvm);
+		builder.CreateStore(&value, alloc_ptr_reg);
+		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, alloc_ptr_reg, builder.getInt64Ty(), "");
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
@@ -1775,6 +1788,50 @@ static llvm::Value* generate_alloc_vec(llvm_code_generator_t& gen_acc, llvm::Fun
 	return vec_reg;
 }
 
+static llvm::Value* generate_allocate_memory(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& bytes_reg){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+
+	const auto def = find_function_def(gen_acc, "floyd_runtime__allocate_memory");
+
+	std::vector<llvm::Value*> args;
+	args.push_back(get_callers_fcp(emit_f));
+	args.push_back(&bytes_reg);
+	auto result = gen_acc.builder.CreateCall(def.llvm_f, args, "allocate_memory");
+	return result;
+}
+
+
+
+static llvm::Value* generate_type_size_calculation(llvm_code_generator_t& gen_acc, llvm::Type& type){
+	auto& builder = gen_acc.builder;
+/*
+	Calc struct size for malloc:
+	%Size = getelementptr %T* null, i32 1
+	%SizeI = ptrtoint %T* %Size to i32
+*/
+
+	auto null_ptr = llvm::ConstantPointerNull::get(type.getPointerTo());
+	auto element_index_reg = generate_constant(gen_acc, value_t::make_int(0));
+
+	const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_reg };
+	llvm::Value* ptr_reg = builder.CreateGEP(&type, null_ptr, gep_index_list2, "");
+	auto int_reg = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, ptr_reg, builder.getInt64Ty(), "calcsize");
+	return int_reg;
+}
+
+static llvm::Value* allocate_instance(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Type& type){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+
+	auto& builder = gen_acc.builder;
+	auto size_reg = generate_type_size_calculation(gen_acc, type);
+	auto memory_ptr_reg = generate_allocate_memory(gen_acc, emit_f, *size_reg);
+	auto ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, memory_ptr_reg, type.getPointerTo(), "");
+	return ptr_reg;
+}
+
+
 static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -1813,6 +1870,55 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			}
 			return vec_reg;
 		}
+/*
+		//	Store 64 bits per uint64_t.
+		else if(element_type0.is_bool()){
+			const auto input_element_count = caller_arg_count;
+
+			//	Each element is a bit, packed into the 64bit elements of VEC_T.
+			auto output_element_count = (input_element_count / 64) + ((input_element_count & 63) ? 1 : 0);
+			auto vec_value = generate_alloc_vec(gen_acc, 1, output_element_count, "[bool]");
+
+			auto uint64_element_ptr = builder.CreateExtractValue(vec_value, { (int)VEC_T_MEMBERS::element_ptr });
+
+			//	Evaluate each element and store it directly into the the vector.
+			auto buffer_word = builder.CreateAlloca(gen_acc.builder.getInt64Ty());
+			auto zero = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 0);
+			auto one = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 1);
+
+			int input_element_index = 0;
+			int output_element_index = 0;
+			while(input_element_index < input_element_count){
+				//	Clear 64-bit word.
+				builder.CreateStore(zero, buffer_word);
+
+				const auto batch_size = std::min(input_element_count, (size_t)64);
+				for(int i = 0 ; i < batch_size ; i++){
+					auto arg_value = generate_expression(gen_acc, emit_f, details.elements[input_element_index]);
+					auto arg32_value = builder.CreateZExt(arg_value, gen_acc.builder.getInt64Ty());
+
+					//	Store the bool into the buffer_word 64bit word at the correct bit position.
+					auto bit_value = builder.CreateShl(arg32_value, one);
+					auto word1 = builder.CreateLoad(buffer_word);
+					auto word2 = builder.CreateOr(word1, bit_value);
+					builder.CreateStore(word2, buffer_word);
+
+					input_element_index++;
+				}
+
+				//	Store the 64-bit word to the VEC_T.
+				auto word_out = builder.CreateLoad(buffer_word);
+
+				auto output_element_index_value = generate_constant(gen_acc, value_t::make_int(output_element_index));
+				const auto gep_index_list2 = std::vector<llvm::Value*>{ output_element_index_value };
+				llvm::Value* e_addr = builder.CreateGEP(gen_acc.builder.getInt64Ty(), uint64_element_ptr, gep_index_list2, "e_addr");
+				builder.CreateStore(word_out, e_addr);
+
+				output_element_index++;
+			}
+			return vec_value;
+		}
+*/
 		else if(element_type0.is_bool() || element_type0.is_int()){
 			auto vec_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
 
@@ -1882,32 +1988,52 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 		}
 */
 	}
-/*
 	else if(target_type.is_struct()){
-		const auto& struct_def = target_type.get_struct();
+/*
 
+		%struct.MYS_T = type { i64, i32, double }
+
+		; Function Attrs: noinline nounwind optnone
+		define void @test(%struct.MYS_T* noalias sret) #0 {
+		  %2 = alloca %struct.MYS_T, align 8
+		  %3 = getelementptr inbounds %struct.MYS_T, %struct.MYS_T* %2, i32 0, i32 0
+		  store i64 1311953686388150836, i64* %3, align 8
+		  %4 = getelementptr inbounds %struct.MYS_T, %struct.MYS_T* %2, i32 0, i32 1
+		  store i32 -559038737, i32* %4, align 8
+		  %5 = getelementptr inbounds %struct.MYS_T, %struct.MYS_T* %2, i32 0, i32 2
+		  store double 3.141500e+00, double* %5, align 8
+		  %6 = bitcast %struct.MYS_T* %0 to i8*
+		  %7 = bitcast %struct.MYS_T* %2 to i8*
+		  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %6, i8* %7, i64 24, i32 8, i1 false)
+		  ret void
+		}
+*/
+
+		const auto& struct_def = target_type.get_struct();
+		auto& struct_type_llvm = *make_struct_type(*gen_acc.module, target_type);
 		QUARK_ASSERT(struct_def._members.size() == element_count);
 
-		auto vec_reg = generate_alloc_vec(gen_acc, emit_f, struct_def._members.size(), typeid_to_compact_string(target_type));
-		auto uint64_element_ptr = builder.CreateExtractValue(vec_reg, { (int)VEC_T_MEMBERS::element_ptr });
+		auto struct_ptr_reg = allocate_instance(gen_acc, emit_f, struct_type_llvm);
 
-		auto element_type = llvm::Type::getInt64Ty(context);
-
-		int element_index = 0;
+		int member_index = 0;
 		for(const auto& m: struct_def._members){
-			const auto& arg = details.elements[element_index];
-			llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, arg);
-			auto element_reg = builder.CreateCast(llvm::Instruction::CastOps::ZExt, element0_reg, builder.getInt64Ty(), "");
-			auto element_index_value = generate_constant(gen_acc, value_t::make_int(element_index));
-			const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_value };
-			llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "e_addr");
-			builder.CreateStore(element_reg, e_addr);
+			const auto& arg = details.elements[member_index];
+			llvm::Value* member_value_reg = generate_expression(gen_acc, emit_f, arg);
 
-			element_index++;
+			const auto gep = std::vector<llvm::Value*>{
+				//	Struct array index.
+				builder.getInt32(0),
+
+				//	Struct member index.
+				builder.getInt32(member_index)
+			};
+			llvm::Value* member_ptr_reg = builder.CreateGEP(&struct_type_llvm, struct_ptr_reg, gep, "");
+			builder.CreateStore(member_value_reg, member_ptr_reg);
+
+			member_index++;
 		}
-		return vec_reg;
+		return struct_ptr_reg;
 	}
-*/
 	else{
 		QUARK_ASSERT(element_count == 1);
 
@@ -1932,153 +2058,6 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 	return nullptr;
 }
 
-
-#if 0
-!!!
-llvm::Value* generate_construct_value_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::value_constructor_t& details){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(check_emitting_function(emit_f));
-	QUARK_ASSERT(e.check_invariant());
-
-	auto& context = gen_acc.instance->context;
-	auto& builder = gen_acc.builder;
-
-	const auto target_type = e.get_output_type();
-	const auto caller_arg_count = details.elements.size();
-
-	if(target_type.is_vector()){
-		const auto element_type0 = target_type.get_vector_element_type();
-
-		if(element_type0.is_string()){
-			//	Each element is a char*.
-			auto element_type = llvm::Type::getInt8PtrTy(context);
-			auto element_count = caller_arg_count;
-			auto vec_value = generate_alloc_vec(gen_acc, 64, element_count, "[string]");
-
-			auto uint64_element_ptr = builder.CreateExtractValue(vec_value, { (int)VEC_T_MEMBERS::element_ptr });
-			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type->getPointerTo(), "");
-
-			//	Evaluate each element and store it directly into the the vector.
-			int element_index = 0;
-			for(const auto& arg: details.elements){
-				llvm::Value* arg_value = generate_expression(gen_acc, emit_f, arg);
-				auto element_index_value = generate_constant(gen_acc, value_t::make_int(element_index));
-				const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_value };
-				llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "e_addr");
-				builder.CreateStore(arg_value, e_addr);
-
-				element_index++;
-			}
-			return vec_value;
-		}
-		else if(element_type0.is_bool()){
-			const auto input_element_count = caller_arg_count;
-
-			//	Each element is a bit, packed into the 64bit elements of VEC_T.
-			auto output_element_count = (input_element_count / 64) + ((input_element_count & 63) ? 1 : 0);
-			auto vec_value = generate_alloc_vec(gen_acc, 1, output_element_count, "[bool]");
-
-			auto uint64_element_ptr = builder.CreateExtractValue(vec_value, { (int)VEC_T_MEMBERS::element_ptr });
-
-			//	Evaluate each element and store it directly into the the vector.
-			auto buffer_word = builder.CreateAlloca(gen_acc.builder.getInt64Ty());
-			auto zero = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 0);
-			auto one = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 1);
-
-			int input_element_index = 0;
-			int output_element_index = 0;
-			while(input_element_index < input_element_count){
-				//	Clear 64-bit word.
-				builder.CreateStore(zero, buffer_word);
-
-				const auto batch_size = std::min(input_element_count, (size_t)64);
-				for(int i = 0 ; i < batch_size ; i++){
-					auto arg_value = generate_expression(gen_acc, emit_f, details.elements[input_element_index]);
-					auto arg32_value = builder.CreateZExt(arg_value, gen_acc.builder.getInt64Ty());
-
-					//	Store the bool into the buffer_word 64bit word at the correct bit position.
-					auto bit_value = builder.CreateShl(arg32_value, one);
-					auto word1 = builder.CreateLoad(buffer_word);
-					auto word2 = builder.CreateOr(word1, bit_value);
-					builder.CreateStore(word2, buffer_word);
-
-					input_element_index++;
-				}
-
-				//	Store the 64-bit word to the VEC_T.
-				auto word_out = builder.CreateLoad(buffer_word);
-
-				auto output_element_index_value = generate_constant(gen_acc, value_t::make_int(output_element_index));
-				const auto gep_index_list2 = std::vector<llvm::Value*>{ output_element_index_value };
-				llvm::Value* e_addr = builder.CreateGEP(gen_acc.builder.getInt64Ty(), uint64_element_ptr, gep_index_list2, "e_addr");
-				builder.CreateStore(word_out, e_addr);
-
-				output_element_index++;
-			}
-			return vec_value;
-		}
-		else{
-			NOT_IMPLEMENTED_YET();
-		}
-	}
-	else if(target_type.is_dict()){
-		NOT_IMPLEMENTED_YET();
-/*
-		if(encode_as_dict_w_inplace_values(target_type)){
-			body_acc._instrs.push_back(bcgen_instruction_t(
-				bc_opcode::k_new_dict_w_inplace_values,
-				target_reg2,
-				make_imm_int(target_itype),
-				make_imm_int(arg_count)
-			));
-		}
-		else{
-			body_acc._instrs.push_back(bcgen_instruction_t(
-				bc_opcode::k_new_dict_w_external_values,
-				target_reg2,
-				make_imm_int(target_itype),
-				make_imm_int(arg_count)
-			));
-		}
-*/
-
-	}
-	else if(target_type.is_struct()){
-		NOT_IMPLEMENTED_YET();
-/*
-		body_acc._instrs.push_back(bcgen_instruction_t(
-			bc_opcode::k_new_struct,
-			target_reg2,
-			make_imm_int(target_itype),
-			make_imm_int(arg_count)
-		));
-*/
-
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-		QUARK_ASSERT(caller_arg_count == 1);
-
-/*
-		const auto source_itype = arg_count == 0 ? -1 : intern_type(gen_acc, e._input_exprs[0].get_output_type());
-		body_acc._instrs.push_back(bcgen_instruction_t(
-			bc_opcode::k_new_1,
-			target_reg2,
-			make_imm_int(target_itype),
-			make_imm_int(source_itype)
-		));
-*/
-
-	}
-
-/*
-	const auto extbits = pack_bools(call_setup._exts);
-	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_popn, make_imm_int(call_setup._stack_count), make_imm_int(extbits), {} ));
-*/
-	return nullptr;
-}
-
-#endif
 
 static llvm::Value* generate_load2_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::load2_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -2863,7 +2842,7 @@ const uint8_t* floyd_runtime__allocate_memory(void* floyd_runtime_ptr, int64_t b
 
 host_func_t floyd_runtime__allocate_memory__make(llvm::LLVMContext& context){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		llvm::Type::getInt8PtrTy(context),
+		llvm::Type::getVoidTy(context)->getPointerTo(),
 		{
 			make_frp_type(context),
 			llvm::Type::getInt64Ty(context)
@@ -3638,6 +3617,15 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const st
 	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(context, "entry", f);
 	builder.SetInsertPoint(entryBB);
 	llvm::Function& emit_f = *f;
+
+	{
+		//	Global statements, using the global symbol scope.
+		const auto more = generate_statements(gen_acc, emit_f, global_statements);
+
+		llvm::Value* dummy_result = llvm::ConstantInt::get(builder.getInt64Ty(), 667);
+		builder.CreateRet(dummy_result);
+	}
+/*
 	{
 		//???	Remove floyd_runtime_ptr-check in release version.
 		//	Verify we've got a valid floyd_runtime_ptr as argument #0.
@@ -3672,6 +3660,7 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const st
 		llvm::Value* dummy_result = llvm::ConstantInt::get(builder.getInt64Ty(), 667);
 		builder.CreateRet(dummy_result);
 	}
+*/
 	QUARK_ASSERT(check_invariant__function(f));
 
 //	QUARK_TRACE_SS("result = " << floyd::print_gen(gen_acc));

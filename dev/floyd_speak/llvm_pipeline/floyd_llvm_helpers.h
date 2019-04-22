@@ -255,6 +255,8 @@ llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::ty
 
 llvm::Type* make_function_type(llvm::Module& module, const typeid_t& function_type);
 
+llvm::Type* make_struct_type(llvm::Module& module, const typeid_t& type);
+
 llvm::Type* intern_type(llvm::Module& module, const typeid_t& type);
 
 

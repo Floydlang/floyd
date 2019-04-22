@@ -2937,7 +2937,6 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "check struct's type", ""){
 	);
 }
 
-//HERE
 QUARK_UNIT_TEST("Floyd test suite", "struct", "check struct's type", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -2966,6 +2965,26 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "read back struct member", ""){
 	);
 }
 
+//HERE
+
+QUARK_UNIT_TEST("Floyd test suite", "struct", "instantiate nested structs", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			struct color { int red int green int blue }
+
+			let c = color(128, 192, 255)
+			print(c)
+
+		)",
+		{
+			"{red=128, green=192, blue=255}",
+		}
+	);
+}
+
+//??? Test all types of members in structs.
 QUARK_UNIT_TEST("Floyd test suite", "struct", "instantiate nested structs", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,

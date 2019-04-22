@@ -800,6 +800,11 @@ int64_t pack_itype(const typeid_t& type){
 		return static_cast<int64_t>(type.get_base_type());
 	}
 	else if(type.is_struct()){
+		if(type.get_struct()._members == std::vector<member_t>{ member_t{ typeid_t::make_int(), "red" }, member_t{ typeid_t::make_int(), "green" }, member_t{ typeid_t::make_int(), "blue" } }){
+			return 101;
+		}
+		else{
+		}
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
@@ -873,10 +878,21 @@ typeid_t unpack_itype(int64_t type){
 			throw std::exception();
 
 		default:
-			if(type > 200 && type < 300){
+			if(type >= 100 && type < 200){
+				if(type == 101){
+					const auto members = std::vector<member_t>{
+						member_t{ typeid_t::make_int(), "red" }, member_t{ typeid_t::make_int(), "green" }, member_t{ typeid_t::make_int(), "blue" }
+					};
+					return typeid_t::make_struct2(members);
+				}
+				else{
+					NOT_IMPLEMENTED_YET();
+				}
+			}
+			else if(type >= 200 && type < 300){
 				return typeid_t::make_vector(unpack_itype(type - 200));
 			}
-			else if(type > 300 && type < 400){
+			else if(type >= 300 && type < 400){
 				return typeid_t::make_dict(unpack_itype(type - 300));
 			}
 			else{
