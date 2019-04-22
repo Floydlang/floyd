@@ -144,7 +144,7 @@ value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid
 std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name);
 value_t load_global(const std::pair<void*, typeid_t>& v);
 
-value_t llvm_to_value(const uint64_t encoded_value, const typeid_t& type);
+value_t runtime_llvm_to_value(const uint64_t encoded_value, const typeid_t& type);
 
 
 //	Helper that goes directly from source to LLVM IR code.

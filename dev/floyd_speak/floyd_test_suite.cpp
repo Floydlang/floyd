@@ -2965,8 +2965,6 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "read back struct member", ""){
 	);
 }
 
-//HERE
-
 QUARK_UNIT_TEST("Floyd test suite", "struct", "instantiate nested structs", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,

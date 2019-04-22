@@ -132,6 +132,7 @@ enum class gen_statement_mode {
 static gen_statement_mode generate_statements(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const std::vector<statement_t>& statements);
 static llvm::Value* generate_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e);
 
+VEC_T* unpack_vec_arg(int64_t arg_value, int64_t arg_type);
 
 
 
@@ -780,10 +781,8 @@ int runtime_compare_value_true_deep(const uint64_t& left, const uint64_t& right,
 
 
 
-
-
-value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
-	QUARK_ASSERT(global_ptr != nullptr);
+value_t llvm_valueptr_to_value(const void* value_ptr, const typeid_t& type){
+	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
 
 	//??? more types.
@@ -791,26 +790,26 @@ value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
 	}
 	else if(type.is_bool()){
 		//??? How is int1 encoded by LLVM?
-		const auto temp = *static_cast<const uint8_t*>(global_ptr);
+		const auto temp = *static_cast<const uint8_t*>(value_ptr);
 		return value_t::make_bool(temp == 0 ? false : true);
 	}
 	else if(type.is_int()){
-		const auto temp = *static_cast<const uint64_t*>(global_ptr);
+		const auto temp = *static_cast<const uint64_t*>(value_ptr);
 		return value_t::make_int(temp);
 	}
 	else if(type.is_double()){
-		const auto temp = *static_cast<const double*>(global_ptr);
+		const auto temp = *static_cast<const double*>(value_ptr);
 		return value_t::make_double(temp);
 	}
 	else if(type.is_string()){
-		const char* s = *(const char**)(global_ptr);
+		const char* s = *(const char**)(value_ptr);
 		return value_t::make_string(s);
 	}
 	else if(type.is_json_value()){
 		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_typeid()){
-		const auto temp = *static_cast<const uint32_t*>(global_ptr);
+		const auto temp = *static_cast<const uint32_t*>(value_ptr);
 		const auto type_value = unpack_itype(temp);
 		return value_t::make_typeid_value(type_value);
 	}
@@ -818,7 +817,7 @@ value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
 		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_vector()){
-		auto vec = *static_cast<const VEC_T*>(global_ptr);
+		auto vec = *static_cast<const VEC_T*>(value_ptr);
 		std::vector<value_t> vec2;
 
 		const auto element_type = type.get_vector_element_type();
@@ -859,7 +858,7 @@ value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
 /*
 !!!
 	else if(type.is_vector()){
-		auto vec = *static_cast<const VEC_T*>(global_ptr);
+		auto vec = *static_cast<const VEC_T*>(value_ptr);
 		std::vector<value_t> vec2;
 		if(type.get_vector_element_type().is_string()){
 			for(int i = 0 ; i < vec.element_count ; i++){
@@ -895,7 +894,18 @@ value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
 	throw std::exception();
 }
 
-value_t llvm_to_value(const uint64_t encoded_value, const typeid_t& type){
+
+value_t llvm_global_to_value(const void* global_ptr, const typeid_t& type){
+	QUARK_ASSERT(global_ptr != nullptr);
+	QUARK_ASSERT(type.check_invariant());
+
+	return llvm_valueptr_to_value(global_ptr, type);
+}
+
+//??? Lose concept of "encoded" value ASAP.
+
+
+value_t runtime_llvm_to_value(const uint64_t encoded_value, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	//??? more types.
@@ -923,12 +933,44 @@ value_t llvm_to_value(const uint64_t encoded_value, const typeid_t& type){
 		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_typeid()){
+		const auto type1 = unpack_itype(encoded_value);
+		const auto type2 = value_t::make_typeid_value(type1);
+		return type2;
 	}
+
+//??? At compile-time, make a lookup for each struct with its member-offsets.
+
 	else if(type.is_struct()){
-		NOT_IMPLEMENTED_YET();
+		QUARK_ASSERT(pack_itype(type) == 101);
+		const auto& struct_def = type.get_struct();
+		std::vector<value_t> members;
+		int member_index = 0;
+		for(const auto& e: struct_def._members){
+			const auto member_ptr = reinterpret_cast<int64_t*>(encoded_value + member_index * 8);
+			const auto member_value = *member_ptr;
+			members.push_back(value_t::make_int(member_value));
+			member_index++;
+		}
+		return value_t::make_struct_value(type, members);
 	}
 	else if(type.is_vector()){
-		NOT_IMPLEMENTED_YET();
+		const auto element_type = type.get_vector_element_type();
+
+		//??? we assume all vector are [string] right now!!
+		QUARK_ASSERT(element_type.is_string());
+		const auto vec = unpack_vec_arg(encoded_value, pack_itype(type));
+
+		std::vector<value_t> elements;
+		const int count = vec->element_count;
+		for(int i = 0 ; i < count ; i++){
+			const char* ss = (const char*)vec->element_ptr[i];
+			QUARK_ASSERT(ss != nullptr);
+
+			const auto e = std::string(ss);
+			elements.push_back(value_t::make_string(e));
+		}
+		const auto val = value_t::make_vector_value(typeid_t::make_string(), elements);
+		return val;
 	}
 	else if(type.is_dict()){
 		NOT_IMPLEMENTED_YET();
@@ -966,7 +1008,7 @@ value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid
 	int64_t return_encoded = (*function_ptr)(&ee, "?dummy arg to main()?");
 
 	const auto return_type = f.second.get_function_return();
-	return llvm_to_value(return_encoded, return_type);
+	return runtime_llvm_to_value(return_encoded, return_type);
 }
 
 std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name){
@@ -1627,10 +1669,13 @@ static llvm::Value* generate_encoded_value(llvm_code_generator_t& gen_acc, llvm:
 		return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, builder.getInt64Ty(), "bool_as_arg");
 	}
 	else if(floyd_type.is_struct()){
+/*
 		auto struct_type_llvm = make_struct_type(*gen_acc.module, floyd_type);
 		auto alloc_ptr_reg = builder.CreateAlloca(struct_type_llvm);
 		builder.CreateStore(&value, alloc_ptr_reg);
 		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, alloc_ptr_reg, builder.getInt64Ty(), "");
+*/
+		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "");
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
@@ -1812,7 +1857,7 @@ static llvm::Value* generate_type_size_calculation(llvm_code_generator_t& gen_ac
 */
 
 	auto null_ptr = llvm::ConstantPointerNull::get(type.getPointerTo());
-	auto element_index_reg = generate_constant(gen_acc, value_t::make_int(0));
+	auto element_index_reg = generate_constant(gen_acc, value_t::make_int(1));
 
 	const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_reg };
 	llvm::Value* ptr_reg = builder.CreateGEP(&type, null_ptr, gep_index_list2, "");
@@ -2680,7 +2725,7 @@ void hook(const std::string& s, void* floyd_runtime_ptr, int64_t arg){
 	throw std::runtime_error("HOST FUNCTION NOT IMPLEMENTED FOR LLVM");
 }
 
-VEC_T* unpack_vec_arg(llvm_execution_engine_t* runtime, int64_t arg_value, int64_t arg_type){
+VEC_T* unpack_vec_arg(int64_t arg_value, int64_t arg_type){
 	const auto type = unpack_itype(arg_type);
 	QUARK_ASSERT(type.is_vector());
 	const auto vec = (VEC_T*)arg_value;
@@ -2695,6 +2740,10 @@ VEC_T* unpack_vec_arg(llvm_execution_engine_t* runtime, int64_t arg_value, int64
 std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, int64_t arg_type){
 	const auto type = unpack_itype(arg_type);
 
+	const auto value = runtime_llvm_to_value(arg_value, type);
+	const auto a = to_compact_string2(value);
+	return a;
+/*
 	if(type.is_int()){
 		const auto value = (int64_t)arg_value;
 		return std::to_string(value);
@@ -2738,9 +2787,27 @@ std::string gen_to_string(llvm_execution_engine_t* runtime, int64_t arg_value, i
 		const auto val = value_t::make_vector_value(typeid_t::make_string(), elements);
 		return to_compact_string2(val);
 	}
+	else if(type.is_struct()){
+		const auto& struct_def = type.get_struct();
+
+struct_def
+		std::vector<value_t> elements;
+		const int count = vs->element_count;
+		for(int i = 0 ; i < count ; i++){
+			const char* ss = (const char*)vs->element_ptr[i];
+			QUARK_ASSERT(ss != nullptr);
+
+			const auto e = std::string(ss);
+			elements.push_back(value_t::make_string(e));
+		}
+		const auto val = value_t::make_vector_value(typeid_t::make_string(), elements);
+		return to_compact_string2(val);
+	}
 	else{
 		NOT_IMPLEMENTED_YET();
 	}
+*/
+
 }
 
 
@@ -3080,7 +3147,7 @@ int64_t floyd_funcdef__find(void* floyd_runtime_ptr, int64_t arg0_value, int64_t
 			quark::throw_runtime_error("find([]) requires argument 2 to be of vector's element type.");
 		}
 
-		const auto vec = unpack_vec_arg(r, arg0_value, arg0_type);
+		const auto vec = unpack_vec_arg(arg0_value, arg0_type);
 
 		const auto it = std::find(vec->element_ptr, vec->element_ptr + vec->element_count, arg1_value);
 		if(it == vec->element_ptr + vec->element_count){
@@ -3170,7 +3237,7 @@ const WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t ar
 		return make_wide_return_charptr(s);
 	}
 	else if(type0.is_vector()){
-		const auto vs = unpack_vec_arg(r, arg0_value, arg0_type);
+		const auto vs = unpack_vec_arg(arg0_value, arg0_type);
 
 		const auto type1 = unpack_itype(arg1_type);
 		QUARK_ASSERT(type1 == type0.get_vector_element_type());
@@ -3246,8 +3313,8 @@ const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0
 		return make_wide_return_charptr(ret);
 	}
 	else if(type0.is_vector()){
-		const auto vec = unpack_vec_arg(r, arg0_value, arg0_type);
-		const auto replace_vec = unpack_vec_arg(r, arg3_value, arg3_type);
+		const auto vec = unpack_vec_arg(arg0_value, arg0_type);
+		const auto replace_vec = unpack_vec_arg(arg3_value, arg3_type);
 
 		auto end2 = std::min(static_cast<uint32_t>(end), vec->element_count);
 		auto start2 = std::min(static_cast<uint32_t>(start), end2);
@@ -3285,7 +3352,7 @@ int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, int64_t
 		return std::strlen(value);
 	}
 	else if(type0.is_vector()){
-		const auto vs = unpack_vec_arg(r, arg0_value, arg0_type);
+		const auto vs = unpack_vec_arg(arg0_value, arg0_type);
 		return vs->element_count;
 	}
 
@@ -3316,7 +3383,7 @@ const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_
 		return make_wide_return_charptr(s);
 	}
 	else if(type0.is_vector()){
-		const auto vec = unpack_vec_arg(r, arg0_value, arg0_type);
+		const auto vec = unpack_vec_arg(arg0_value, arg0_type);
 
 		const std::size_t end2 = std::min(static_cast<std::size_t>(end), static_cast<std::size_t>(vec->element_count));
 		const std::size_t start2 = std::min(static_cast<std::size_t>(start), end2);
@@ -3399,7 +3466,7 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_
 		return make_wide_return_charptr(result);
 	}
 	else if(type0.is_vector()){
-		const auto vec = unpack_vec_arg(r, arg0_value, arg0_type);
+		const auto vec = unpack_vec_arg(arg0_value, arg0_type);
 		const auto element_type = type0.get_vector_element_type();
 		if(element_type.is_string()){
 			const auto type2 = unpack_itype(arg2_type);

@@ -720,8 +720,7 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 		return llvm::Type::getDoubleTy(context);
 	}
 	else if(type.is_struct()){
-		return make_struct_type(module, type);
-//		return llvm::Type::getInt16Ty(context);
+		return make_struct_type(module, type)->getPointerTo();
 	}
 
 	else if(type.is_internal_dynamic()){
