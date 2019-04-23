@@ -193,10 +193,12 @@ struct typeid_t {
 		string_t,
 		json_type_t,
 		typeid_type_t,
+
 		struct_t,
 		vector_t,
 		dict_t,
 		function_t,
+
 		internal_unresolved_type_identifier_t
 	> type_variant_t;
 

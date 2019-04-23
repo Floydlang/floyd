@@ -27,6 +27,65 @@ namespace floyd {
 using namespace std;
 
 
+
+itype_t make_new_itype(type_interner_t& interner, const typeid_t& type){
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	struct visitor_t {
+		type_interner_t& interner;
+		const typeid_t& type;
+
+		int32_t operator()(const typeid_t::internal_undefined_t& e) const{
+			return interner.simple_next_id++;
+		}
+		int32_t operator()(const typeid_t::internal_dynamic& e) const{
+			return interner.simple_next_id++;
+		}
+
+		int32_t operator()(const typeid_t::void_t& e) const{
+			return interner.simple_next_id++;
+		}
+		int32_t operator()(const typeid_t::bool_t& e) const{
+			return interner.simple_next_id++;
+		}
+		int32_t operator()(const typeid_t::int_t& e) const{
+			return interner.simple_next_id++;
+		}
+		int32_t operator()(const typeid_t::double_t& e) const{
+			return interner.simple_next_id++;
+		}
+		int32_t operator()(const typeid_t::string_t& e) const{
+			return interner.simple_next_id++;
+		}
+
+		int32_t operator()(const typeid_t::json_type_t& e) const{
+			return interner.simple_next_id++;
+		}
+		int32_t operator()(const typeid_t::typeid_type_t& e) const{
+			return interner.simple_next_id++;
+		}
+
+		int32_t operator()(const typeid_t::struct_t& e) const{
+			return interner.struct_next_id++;
+		}
+		int32_t operator()(const typeid_t::vector_t& e) const{
+			return interner.vector_next_id++;
+		}
+		int32_t operator()(const typeid_t::dict_t& e) const{
+			return interner.dict_next_id++;
+		}
+		int32_t operator()(const typeid_t::function_t& e) const{
+			return interner.function_next_id++;
+		}
+		int32_t operator()(const typeid_t::internal_unresolved_type_identifier_t& e) const{
+			return interner.simple_next_id++;
+		}
+	};
+	const auto new_id = std::visit(visitor_t{ interner, type }, type._contents);
+	return { new_id };
+}
+
 std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -36,9 +95,8 @@ std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid
 		return *it;
 	}
 	else{
-		const auto itype = static_cast<int32_t>(interner.interned.size());
-		const auto itype2 = itype_t{ itype };
-		const auto p = std::pair<itype_t, typeid_t>{ itype2, type };
+		const auto itype = make_new_itype(interner, type);
+		const auto p = std::pair<itype_t, typeid_t>{ itype, type };
 		interner.interned.push_back(p);
 		return p;
 	}

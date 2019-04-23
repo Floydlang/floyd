@@ -33,10 +33,25 @@ namespace floyd {
 	//	This allows us to describe a type using a single 32bit integer (compact, fast to copy around).
 	//	Each type has exactly ONE ID.
 	struct type_interner_t {
+		type_interner_t() :
+			simple_next_id(0),
+			struct_next_id(100000000),
+			vector_next_id(200000000),
+			dict_next_id(300000000),
+			function_next_id(400000000)
+		{
+		}
+
 		bool check_invariant() const {
 			return true;
 		}
 		std::vector<std::pair<itype_t, typeid_t>> interned;
+
+		int32_t simple_next_id;
+		int32_t struct_next_id;
+		int32_t vector_next_id;
+		int32_t dict_next_id;
+		int32_t function_next_id;
 	};
 
 

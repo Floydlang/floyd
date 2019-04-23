@@ -182,108 +182,100 @@ const symbol_t* resolve_symbol_by_address(const analyser_t& a, const floyd::vari
 
 
 
-typeid_t resolve_type_internal2(const analyser_t& a, const location_t& loc, const typeid_t& type);
 
-typeid_t resolve_type_internal(const analyser_t& a, const location_t& loc, const typeid_t& type){
-	QUARK_ASSERT(a.check_invariant());
+typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, const typeid_t& type){
+	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto basetype = type.get_base_type();
+	struct visitor_t {
+		analyser_t& acc;
+		const location_t& loc;
+		const typeid_t& type;
 
-	if(basetype == base_type::k_internal_undefined){
-		throw_compiler_error(loc, "Cannot resolve type");
-	}
-	else if(basetype == base_type::k_internal_dynamic){
-		return type;
-	}
 
-	else if(basetype == base_type::k_void){
-		return type;
-	}
-	else if(basetype == base_type::k_bool){
-		return type;
-	}
-	else if(basetype == base_type::k_int){
-		return type;
-	}
-	else if(basetype == base_type::k_double){
-		return type;
-	}
-	else if(basetype == base_type::k_string){
-		return type;
-	}
-	else if(basetype == base_type::k_json_value){
-		return type;
-	}
-
-	else if(basetype == base_type::k_typeid){
-		return type;
-	}
-
-	else if(basetype == base_type::k_struct){
-		const auto& struct_def = type.get_struct();
-		std::vector<member_t> members2;
-		for(const auto& e: struct_def._members){
-			members2.push_back(member_t(resolve_type_internal2(a, loc, e._type), e._name));
+		typeid_t operator()(const typeid_t::internal_undefined_t& e) const{
+			throw_compiler_error(loc, "Cannot resolve type");
 		}
-		return typeid_t::make_struct2(members2);
-	}
-	else if(basetype == base_type::k_vector){
-		return typeid_t::make_vector(resolve_type_internal2(a, loc, type.get_vector_element_type()));
-	}
-	else if(basetype == base_type::k_dict){
-		return typeid_t::make_dict(resolve_type_internal2(a, loc, type.get_dict_value_type()));
-	}
-	else if(basetype == base_type::k_function){
-		const auto ret = type.get_function_return();
-		const auto args = type.get_function_args();
-		const auto pure = type.get_function_pure();
-		const auto dyn_return_type = type.get_function_dyn_return_type();
-
-		const auto ret2 = resolve_type_internal2(a, loc, ret);
-		vector<typeid_t> args2;
-		for(const auto& e: args){
-			args2.push_back(resolve_type_internal2(a, loc, e));
+		typeid_t operator()(const typeid_t::internal_dynamic& e) const{
+			return type;
 		}
-		return typeid_t::make_function3(ret2, args2, pure, dyn_return_type);
-	}
 
-	else if(basetype == base_type::k_internal_unresolved_type_identifier){
-		const auto found = find_symbol_by_name(a, type.get_unresolved_type_identifier());
-		if(found.first != nullptr){
-			if(found.first->_value_type.is_typeid()){
-				return found.first->_init.get_typeid_value();
+		typeid_t operator()(const typeid_t::void_t& e) const{
+			return type;
+		}
+		typeid_t operator()(const typeid_t::bool_t& e) const{
+			return type;
+		}
+		typeid_t operator()(const typeid_t::int_t& e) const{
+			return type;
+		}
+		typeid_t operator()(const typeid_t::double_t& e) const{
+			return type;
+		}
+		typeid_t operator()(const typeid_t::string_t& e) const{
+			return type;
+		}
+
+		typeid_t operator()(const typeid_t::json_type_t& e) const{
+			return type;
+		}
+		typeid_t operator()(const typeid_t::typeid_type_t& e) const{
+			return type;
+		}
+
+		typeid_t operator()(const typeid_t::struct_t& e) const{
+			const auto& struct_def = type.get_struct();
+			std::vector<member_t> members2;
+			for(const auto& m: struct_def._members){
+				members2.push_back(member_t(resolve_type_internal(acc, loc, m._type), m._name));
+			}
+			return typeid_t::make_struct2(members2);
+		}
+		typeid_t operator()(const typeid_t::vector_t& e) const{
+			return typeid_t::make_vector(resolve_type_internal(acc, loc, type.get_vector_element_type()));
+		}
+		typeid_t operator()(const typeid_t::dict_t& e) const{
+			return typeid_t::make_dict(resolve_type_internal(acc, loc, type.get_dict_value_type()));
+		}
+		typeid_t operator()(const typeid_t::function_t& e) const{
+			const auto ret = type.get_function_return();
+			const auto args = type.get_function_args();
+			const auto pure = type.get_function_pure();
+			const auto dyn_return_type = type.get_function_dyn_return_type();
+
+			const auto ret2 = resolve_type_internal(acc, loc, ret);
+			vector<typeid_t> args2;
+			for(const auto& m: args){
+				args2.push_back(resolve_type_internal(acc, loc, m));
+			}
+			return typeid_t::make_function3(ret2, args2, pure, dyn_return_type);
+		}
+		typeid_t operator()(const typeid_t::internal_unresolved_type_identifier_t& e) const{
+			const auto found = find_symbol_by_name(acc, type.get_unresolved_type_identifier());
+			if(found.first != nullptr){
+				if(found.first->_value_type.is_typeid()){
+					return found.first->_init.get_typeid_value();
+				}
+				else{
+					throw_compiler_error(loc, "Cannot resolve type");
+				}
 			}
 			else{
 				throw_compiler_error(loc, "Cannot resolve type");
 			}
 		}
-		else{
-			throw_compiler_error(loc, "Cannot resolve type");
-		}
-	}
-	else {
-		QUARK_ASSERT(false);
-		quark::throw_exception();
-	}
+	};
+	const auto resolved = std::visit(visitor_t{ acc, loc, type }, type._contents);
+	intern_type(acc._types, resolved);
+	return resolved;
 }
 
-typeid_t resolve_type_internal2(const analyser_t& a, const location_t& loc, const typeid_t& type){
-	const auto result = resolve_type_internal(a, loc, type);
+typeid_t resolve_type(analyser_t& acc, const location_t& loc, const typeid_t& type){
+	const auto result = resolve_type_internal(acc, loc, type);
 	if(result.check_types_resolved() == false){
 		throw_compiler_error(loc, "Cannot resolve type");
 	}
 	return result;
-}
-
-
-
-
-
-typeid_t resolve_type(analyser_t& a, const location_t& loc, const typeid_t& type){
-	const auto type2 = resolve_type_internal2(a, loc, type);
-	intern_type(a._types, type2);
-	return type2;
 }
 
 
@@ -1814,21 +1806,21 @@ semantic_ast_t analyse(analyser_t& a){
 	QUARK_ASSERT(a.check_invariant());
 
 	/*
-		Create built-in globla symbol map: built in data types, built-in functions (host functions).
+		Create built-in global symbol map: built in data types, built-in functions (host functions).
 	*/
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
-	auto function_defs = a._imm->_ast._tree._function_defs;
-
-	const auto builtins = insert_builtin_functions(a, a._imm->_host_functions, static_cast<int>(function_defs.size()));
-	function_defs.insert(function_defs.end(), builtins.function_defs.begin(), builtins.function_defs.end());
-	symbol_map.insert(symbol_map.end(), builtins.symbol_map.begin(), builtins.symbol_map.end());
-
-	//	"null" is equivalent to json_value::null
-	symbol_map.push_back({"null", symbol_t::make_constant(value_t::make_json_value(json_t()))});
-
-	symbol_map.push_back({keyword_t::k_internal_undefined, symbol_t::make_constant(value_t::make_undefined())});
-	symbol_map.push_back({keyword_t::k_internal_dynamic, symbol_t::make_constant(value_t::make_internal_dynamic())});
+	QUARK_ASSERT(a._types.simple_next_id == 0);
+	intern_type(a._types, typeid_t::make_undefined());
+	intern_type(a._types, typeid_t::make_internal_dynamic());
+	intern_type(a._types, typeid_t::make_void());
+	intern_type(a._types, typeid_t::make_bool());
+	intern_type(a._types, typeid_t::make_int());
+	intern_type(a._types, typeid_t::make_double());
+	intern_type(a._types, typeid_t::make_string());
+	intern_type(a._types, typeid_t::make_json_value());
+	intern_type(a._types, typeid_t::make_typeid());
+//	intern_type(a._types, typeid_t::make_unresolved_type_identifier());
 
 	symbol_map.push_back({keyword_t::k_void, symbol_t::make_type(typeid_t::make_void())});
 	symbol_map.push_back({keyword_t::k_bool, symbol_t::make_type(typeid_t::make_bool())});
@@ -1838,6 +1830,13 @@ semantic_ast_t analyse(analyser_t& a){
 	symbol_map.push_back({keyword_t::k_typeid, symbol_t::make_type(typeid_t::make_typeid())});
 	symbol_map.push_back({keyword_t::k_json_value, symbol_t::make_type(typeid_t::make_json_value())});
 
+
+	//	"null" is equivalent to json_value::null
+	symbol_map.push_back({"null", symbol_t::make_constant(value_t::make_json_value(json_t()))});
+
+	symbol_map.push_back({keyword_t::k_internal_undefined, symbol_t::make_constant(value_t::make_undefined())});
+	symbol_map.push_back({keyword_t::k_internal_dynamic, symbol_t::make_constant(value_t::make_internal_dynamic())});
+
 	symbol_map.push_back({keyword_t::k_json_object, symbol_t::make_constant(value_t::make_int(1))});
 	symbol_map.push_back({keyword_t::k_json_array, symbol_t::make_constant(value_t::make_int(2))});
 	symbol_map.push_back({keyword_t::k_json_string, symbol_t::make_constant(value_t::make_int(3))});
@@ -1846,14 +1845,23 @@ semantic_ast_t analyse(analyser_t& a){
 	symbol_map.push_back({keyword_t::k_json_false, symbol_t::make_constant(value_t::make_int(6))});
 	symbol_map.push_back({keyword_t::k_json_null, symbol_t::make_constant(value_t::make_int(7))});
 
+
+
+	std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs;
+
+	const auto builtins = insert_builtin_functions(a, a._imm->_host_functions, static_cast<int>(function_defs.size()));
+	function_defs.insert(function_defs.end(), builtins.function_defs.begin(), builtins.function_defs.end());
+	symbol_map.insert(symbol_map.end(), builtins.symbol_map.begin(), builtins.symbol_map.end());
+
+
 	a._function_defs.swap(function_defs);
 
 	const auto body = body_t(a._imm->_ast._tree._globals._statements, symbol_table_t{symbol_map});
 	const auto result = analyse_body(a, body, epure::impure, typeid_t::make_undefined());
 
-#if 0
+#if 1
 	for(const auto& e: a._types.interned){
-		QUARK_TRACE_SS(typeid_to_compact_string(e.second));
+		QUARK_TRACE_SS(e.first.itype << ": " << typeid_to_compact_string(e.second));
 	}
 #endif
 
@@ -1874,6 +1882,7 @@ semantic_ast_t analyse(analyser_t& a){
 	QUARK_ASSERT(check_types_resolved(result_ast1._tree));
 	return result_ast1;
 }
+
 
 
 
