@@ -107,7 +107,7 @@ static run_report_t run_program_llvm(const compilation_unit_t& cu, const std::ve
 		const auto main_result = main_function.first != nullptr ? call_function(ee, main_function) : value_t();
 
 		const auto result_global0 = bind_global(ee, "result");
-		const auto result_global = result_global0.first != nullptr ? load_global(result_global0) : value_t();
+		const auto result_global = result_global0.first != nullptr ? load_global(ee, result_global0) : value_t();
 
 //		print_vm_printlog(interpreter);
 

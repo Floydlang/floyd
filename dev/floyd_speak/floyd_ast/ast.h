@@ -25,6 +25,8 @@ namespace floyd {
 
 
 	struct itype_t {
+		itype_t(int32_t itype) : itype(itype){}
+
 		int32_t itype;
 	};
 
@@ -59,6 +61,8 @@ namespace floyd {
 
 
 	std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid_t& type);
+	itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type);
+	typeid_t lookup_type(const type_interner_t& interner, const itype_t& type);
 
 
 	//////////////////////////////////////////////////		general_purpose_ast_t

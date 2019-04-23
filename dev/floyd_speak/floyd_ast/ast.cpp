@@ -102,6 +102,22 @@ std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid
 	}
 }
 
+itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type){
+	const auto it = std::find_if(interner.interned.begin(), interner.interned.end(), [&](const std::pair<itype_t, typeid_t>& e){ return e.second == type; });
+	if(it != interner.interned.end()){
+		return it->first;
+	}
+	throw std::exception();
+}
+
+typeid_t lookup_type(const type_interner_t& interner, const itype_t& type){
+	const auto it = std::find_if(interner.interned.begin(), interner.interned.end(), [&](const std::pair<itype_t, typeid_t>& e){ return e.first.itype == type.itype; });
+	if(it != interner.interned.end()){
+		return it->second;
+	}
+	throw std::exception();
+}
+
 
 
 json_t gp_ast_to_json(const general_purpose_ast_t& ast){

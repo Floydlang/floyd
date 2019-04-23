@@ -11,6 +11,7 @@
 
 #include "ast_value.h"
 #include "statement.h"
+#include "ast.h"
 #include "floyd_llvm_helpers.h"
 #include <string>
 
@@ -58,8 +59,9 @@ struct llvm_ir_program_t {
 	llvm_ir_program_t(const llvm_ir_program_t& other) = delete;
 	llvm_ir_program_t& operator=(const llvm_ir_program_t& other) = delete;
 
-	explicit llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const symbol_table_t& globals, const std::vector<function_def_t>& function_defs) :
+	explicit llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const type_interner_t& interner, const symbol_table_t& globals, const std::vector<function_def_t>& function_defs) :
 		instance(instance),
+		type_interner(interner),
 		debug_globals(globals),
 		function_defs(function_defs)
 	{
@@ -83,6 +85,7 @@ struct llvm_ir_program_t {
 	//	Module must sit in a unique_ptr<> because llvm::EngineBuilder needs that.
 	std::unique_ptr<llvm::Module> module;
 
+	type_interner_t type_interner;
 	symbol_table_t debug_globals;
 	std::vector<function_def_t> function_defs;
 };
@@ -122,6 +125,7 @@ struct llvm_execution_engine_t {
 	uint64_t debug_magic;
 
 	std::shared_ptr<llvm::ExecutionEngine> ee;
+	type_interner_t type_interner;
 	symbol_table_t global_symbols;
 	std::vector<function_def_t> function_defs;
 	public: std::vector<std::string> _print_output;
@@ -142,9 +146,9 @@ std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std:
 value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f);
 
 std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name);
-value_t load_global(const std::pair<void*, typeid_t>& v);
+value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v);
 
-value_t runtime_llvm_to_value(const uint64_t encoded_value, const typeid_t& type);
+value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const uint64_t encoded_value, const typeid_t& type);
 
 
 //	Helper that goes directly from source to LLVM IR code.

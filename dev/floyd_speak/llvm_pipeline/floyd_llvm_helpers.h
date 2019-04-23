@@ -261,8 +261,8 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type);
 
 
 //	??? Temp implementation of itype that supports base_types + vector[base_type] and dict[base_type] only.
-int64_t pack_itype(const typeid_t& type);
-typeid_t unpack_itype(int64_t type);
+//int64_t pack_itype(const typeid_t& type);
+//typeid_t unpack_itype(int64_t type);
 
 
 }	//	floyd

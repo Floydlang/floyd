@@ -503,7 +503,7 @@ std::pair<analyser_t, statement_t> analyse_def_function_statement(const analyser
 	const auto& s2 = statement_t::make__bind_local(
 		s.location,
 		statement._name,
-		statement._def->_function_type,
+		resolve_type(a_acc, k_no_location, statement._def->_function_type),
 		function_def_expr,
 		statement_t::bind_local_t::k_immutable
 	);
@@ -842,13 +842,15 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 
 			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? elements2[0].get_output_type() : element_type;
 			const auto result_type0 = typeid_t::make_vector(element_type2);
-			const auto result_type = result_type0.check_types_resolved() == false && target_type.is_internal_dynamic() == false ? target_type : result_type0;
+			const auto result_type1 = result_type0.check_types_resolved() == false && target_type.is_internal_dynamic() == false ? target_type : result_type0;
 
-			if(result_type.check_types_resolved() == false){
+			if(result_type1.check_types_resolved() == false){
 				std::stringstream what;
 				what << "Cannot infer vector element type, add explicit type.";
 				throw_compiler_error(parent.location, what.str());
 			}
+
+			const auto result_type = resolve_type(a_acc, parent.location, result_type1);
 
 			for(const auto& m: elements2){
 				if(m.get_output_type() != element_type2){
@@ -1424,10 +1426,10 @@ const typeid_t figure_out_return_type(const analyser_t& a, const statement_t& pa
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::call_t& details){
-	QUARK_ASSERT(a.check_invariant());
+std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0, const statement_t& parent, const expression_t& e, const expression_t::call_t& details){
+	QUARK_ASSERT(a0.check_invariant());
 
-	auto a_acc = a;
+	auto a_acc = a0;
 
 	const auto callee_expr0 = analyse_expression_no_target(a_acc, parent, *details.callee);
 	a_acc = callee_expr0.first;
@@ -1453,7 +1455,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a,
 		const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_args);
 		a_acc = call_args_pair.first;
 
-		const auto call_return_type = figure_out_return_type(a, parent, callee_expr, call_args_pair.second);
+		const auto call_return_type = figure_out_return_type(a_acc, parent, callee_expr, call_args_pair.second);
 		return { a_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(call_return_type)) };
 	}
 
@@ -1858,6 +1860,7 @@ semantic_ast_t analyse(analyser_t& a){
 
 	const auto body = body_t(a._imm->_ast._tree._globals._statements, symbol_table_t{symbol_map});
 	const auto result = analyse_body(a, body, epure::impure, typeid_t::make_undefined());
+	a = result.first;
 
 #if 1
 	for(const auto& e: a._types.interned){

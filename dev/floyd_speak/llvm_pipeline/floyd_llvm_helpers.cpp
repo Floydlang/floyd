@@ -773,7 +773,7 @@ enum class base_type {
 	k_internal_unresolved_type_identifier
 };
 */
-int64_t pack_itype(const typeid_t& type){
+/*int64_t pack_itype(const typeid_t& type){
 	if(type.is_internal_dynamic()){
 		return static_cast<int64_t>(type.get_base_type());
 	}
@@ -900,7 +900,7 @@ typeid_t unpack_itype(int64_t type){
 			}
 	}
 }
-
+*/
 
 
 
