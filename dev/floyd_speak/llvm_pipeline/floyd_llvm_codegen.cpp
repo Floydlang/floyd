@@ -1127,7 +1127,7 @@ llvm::Constant* generate_constant(llvm_code_generator_t& gen_acc, const value_t&
 		return llvm::ConstantInt::get(itype, 7000);
 	}
 	else if(type.is_typeid()){
-		const auto t = pack_itype(gen_acc, value.get_type());
+		const auto t = pack_itype(gen_acc, value.get_typeid_value());
 		return llvm::ConstantInt::get(itype, t);
 	}
 	else if(type.is_struct()){
@@ -3823,7 +3823,9 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(ast0.check_invariant());
 	QUARK_ASSERT(module_name.empty() == false);
-//	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast0)._value));
+#if 1
+	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast0)._value));
+#endif
 
 	auto ast = ast0;
 
@@ -3832,7 +3834,7 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 	auto funcs = result0.second;
 
 	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, ast0._tree._interned_types, ast._tree._globals._symbol_table, funcs);
-#if 0
+#if 1
 	QUARK_TRACE_SS("result = " << floyd::print_program(*result));
 #endif
 	return result;
