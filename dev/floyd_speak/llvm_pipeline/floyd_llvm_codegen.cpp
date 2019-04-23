@@ -6,6 +6,9 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
+const bool k_trace_input_output = false;
+const bool k_trace_types = false;
+
 #include "floyd_llvm_codegen.h"
 
 #include "floyd_llvm_helpers.h"
@@ -1272,6 +1275,45 @@ static llvm::Value* generate_literal_expression(llvm_code_generator_t& gen_acc, 
 	return generate_constant(gen_acc, literal);
 }
 
+
+static llvm::Value* generate_resolve_member_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::resolve_member_t& details){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+	QUARK_ASSERT(e.check_invariant());
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	auto parent_struct_ptr_reg = generate_expression(gen_acc, emit_f, *details.parent_address);
+
+	const auto parent_type =  details.parent_address->get_output_type();
+	if(parent_type.is_struct()){
+		auto& struct_type_llvm = *make_struct_type(*gen_acc.module, parent_type);
+
+		const auto& struct_def = details.parent_address->get_output_type().get_struct();
+		int member_index = find_struct_member_index(struct_def, details.member_name);
+		QUARK_ASSERT(member_index != -1);
+
+
+		const auto gep = std::vector<llvm::Value*>{
+			//	Struct array index.
+			builder.getInt32(0),
+
+			//	Struct member index.
+			builder.getInt32(member_index)
+		};
+		llvm::Value* member_ptr_reg = builder.CreateGEP(&struct_type_llvm, parent_struct_ptr_reg, gep, "");
+		auto member_value_reg = builder.CreateLoad(member_ptr_reg);
+		return member_value_reg;
+	}
+	else{
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+	}
+	return nullptr;
+}
+
+
 static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::lookup_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -2208,8 +2250,7 @@ static llvm::Value* generate_expression(llvm_code_generator_t& gen_acc, llvm::Fu
 		}
 
 		llvm::Value* operator()(const expression_t::resolve_member_t& expr) const{
-			NOT_IMPLEMENTED_YET();
-	//		return bcgen_resolve_member_expression(gen_acc, emit_f, target_reg, e, body);
+			return generate_resolve_member_expression(gen_acc, emit_f, e, expr);
 		}
 		llvm::Value* operator()(const expression_t::lookup_t& expr) const{
 			return generate_lookup_element_expression(gen_acc, emit_f, e, expr);
@@ -3823,9 +3864,15 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(ast0.check_invariant());
 	QUARK_ASSERT(module_name.empty() == false);
-#if 1
-	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast0)._value));
-#endif
+
+	if(k_trace_input_output){
+		QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast0)._value));
+	}
+	if(k_trace_types){
+		for(const auto& e: ast0._tree._interned_types.interned){
+			QUARK_TRACE_SS(e.first.itype << ": " << typeid_to_compact_string(e.second));
+		}
+	}
 
 	auto ast = ast0;
 
@@ -3834,9 +3881,10 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 	auto funcs = result0.second;
 
 	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, ast0._tree._interned_types, ast._tree._globals._symbol_table, funcs);
-#if 1
-	QUARK_TRACE_SS("result = " << floyd::print_program(*result));
-#endif
+
+	if(k_trace_input_output){
+		QUARK_TRACE_SS("result = " << floyd::print_program(*result));
+	}
 	return result;
 }
 

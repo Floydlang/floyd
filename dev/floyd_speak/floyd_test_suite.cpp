@@ -2957,11 +2957,11 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "read back struct member", ""){
 		R"(
 
 			struct t { int a }
-			let temp = t(4)
+			let temp = t(42)
 			print(temp.a)
 
 		)",
-		{ "4" }
+		{ "42" }
 	);
 }
 

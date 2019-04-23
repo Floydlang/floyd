@@ -1862,7 +1862,7 @@ semantic_ast_t analyse(analyser_t& a){
 	const auto result = analyse_body(a, body, epure::impure, typeid_t::make_undefined());
 	a = result.first;
 
-#if 1
+#if 0
 	for(const auto& e: a._types.interned){
 		QUARK_TRACE_SS(e.first.itype << ": " << typeid_to_compact_string(e.second));
 	}
