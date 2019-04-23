@@ -239,7 +239,7 @@ std::string print_program(const llvm_ir_program_t& program){
 
 
 
-int runtime_compare_value_true_deep(const uint64_t& left, const uint64_t& right, const typeid_t& type0);
+int runtime_compare_value_true_deep(const llvm_execution_engine_t& runtime, const value_t& left, const value_t& right, const typeid_t& type0);
 
 
 static int compare(int64_t value){
@@ -270,12 +270,12 @@ QUARK_UNIT_TEST("runtime_compare_string()", "", "", ""){
 }
 
 
-int runtime_compare_struct_true_deep(const std::vector<uint64_t>& left, const std::vector<uint64_t>& right, const typeid_t& type){
+int runtime_compare_struct_true_deep(const llvm_execution_engine_t& runtime, const struct_value_t& left, const struct_value_t& right, const typeid_t& type){
 	const auto& struct_def = type.get_struct();
 
 	for(int i = 0 ; i < struct_def._members.size() ; i++){
 		const auto& member_type = struct_def._members[i]._type;
-		int diff = runtime_compare_value_true_deep(left[i], right[i], member_type);
+		int diff = runtime_compare_value_true_deep(runtime, left._member_values[i], right._member_values[i], member_type);
 		if(diff != 0){
 			return diff;
 		}
@@ -680,7 +680,7 @@ int runtime_compare_value_exts(const runtime_external_handle_t& left, const runt
 }
 */
 
-int runtime_compare_value_true_deep(const uint64_t& left, const uint64_t& right, const typeid_t& type0){
+int runtime_compare_value_true_deep(const llvm_execution_engine_t& runtime, const value_t& left, const value_t& right, const typeid_t& type0){
 //	QUARK_ASSERT(left._type == right._type);
 //	QUARK_ASSERT(left.check_invariant());
 //	QUARK_ASSERT(right.check_invariant());
@@ -690,16 +690,16 @@ int runtime_compare_value_true_deep(const uint64_t& left, const uint64_t& right,
 		return 0;
 	}
 	else if(type.is_bool()){
-		return (left == 0x00 ? 0 : 1) - (right == 0x00 ? 0 : 1);
+		return (left.get_bool_value() == false ? 0 : 1) - (right.get_bool_value() == false ? 0 : 1);
 	}
 	else if(type.is_int()){
-		return compare_ints(left, right);
+		return compare_ints(left.get_int_value(), right.get_int_value());
 	}
 	else if(type.is_double()){
-		return compare_doubles(left, right);
+		return compare_doubles(left.get_double_value(), right.get_double_value());
 	}
 	else if(type.is_string()){
-		return runtime_compare_string((const char*)left, (const char*)right);
+		return runtime_compare_string((const char*)left.get_string_value().c_str(), (const char*)right.get_string_value().c_str());
 	}
 #if 0
 	else if(type.is_json_value()){
@@ -713,12 +713,16 @@ int runtime_compare_value_true_deep(const uint64_t& left, const uint64_t& right,
 			return -1;//??? Hack -- should return +1 depending on values.
 		}
 	}
+#endif
 	else if(type.is_struct()){
 		//	Make sure the EXACT struct types are the same -- not only that they are both structs
-		return runtime_compare_struct_true_deep(left.get_struct_value(), right.get_struct_value(), type0);
+		return runtime_compare_struct_true_deep(runtime, *left.get_struct_value(), *right.get_struct_value(), type0);
 	}
-#endif
 	else if(type.is_vector()){
+//		const auto left2 = *reinterpret_cast<const VEC_T*>(left);
+//		const auto right2 = *reinterpret_cast<const VEC_T*>(right));
+		return -1;
+#if 0
 		if(false){
 		}
 		else if(type.get_vector_element_type().is_bool()){
@@ -733,15 +737,16 @@ int runtime_compare_value_true_deep(const uint64_t& left, const uint64_t& right,
 		else if(type.get_vector_element_type().is_string()){
 			return runtime_compare_vectors_string(*(const VEC_T*)left, *(const VEC_T*)right);
 		}
+#endif
+
+/*
 		else{
 			NOT_IMPLEMENTED_YET();
-/*
 			const auto& left_vec = get_vector_external_elements(left);
 			const auto& right_vec = get_vector_external_elements(right);
 			return runtime_compare_vectors_obj(*left_vec, *right_vec, type0);
-*/
-
 		}
+*/
 	}
 	else if(type.is_dict()){
 		NOT_IMPLEMENTED_YET();
@@ -1030,19 +1035,14 @@ value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const uint
 	}
 	else if(type.is_vector()){
 		const auto element_type = type.get_vector_element_type();
-
-		//??? we assume all vector are [string] right now!!
-		QUARK_ASSERT(element_type.is_string());
 		const auto vec = unpack_vec_arg(runtime, encoded_value, pack_itype(runtime, type));
 
 		std::vector<value_t> elements;
 		const int count = vec->element_count;
 		for(int i = 0 ; i < count ; i++){
-			const char* ss = (const char*)vec->element_ptr[i];
-			QUARK_ASSERT(ss != nullptr);
-
-			const auto e = std::string(ss);
-			elements.push_back(value_t::make_string(e));
+			const auto value_encoded = vec->element_ptr[i];
+			const auto value = runtime_llvm_to_value(runtime, value_encoded, element_type);
+			elements.push_back(value);
 		}
 		const auto val = value_t::make_vector_value(typeid_t::make_string(), elements);
 		return val;
@@ -1558,6 +1558,52 @@ static llvm::Value* generate_arithmetic_expression(llvm_code_generator_t& gen_ac
 	return nullptr;
 }
 
+//	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value.
+//	If the value is big, it's stored on the stack and a pointer returned => the returned value is not standalone and lifetime limited to emit function scope.
+static llvm::Value* generate_encoded_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(floyd_type.check_invariant());
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	// We assume that the next arg in the llvm_mapping is the dyn-type.
+
+	if(floyd_type.is_function()){
+		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "function_as_arg");
+	}
+	else if(floyd_type.is_double()){
+		return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value, builder.getInt64Ty(), "double_as_arg");
+	}
+	else if(floyd_type.is_string()){
+		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "string_as_arg");
+	}
+	else if(floyd_type.is_vector()){
+		auto vec_ptr = get_vec_ptr(builder, &value);
+		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, vec_ptr, builder.getInt64Ty(), "");
+	}
+	else if(floyd_type.is_int()){
+		return &value;
+	}
+	else if(floyd_type.is_typeid()){
+		return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, builder.getInt64Ty(), "typeid_as_arg");
+	}
+	else if(floyd_type.is_bool()){
+		return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, builder.getInt64Ty(), "bool_as_arg");
+	}
+	else if(floyd_type.is_struct()){
+/*
+		auto struct_type_llvm = make_struct_type(context, floyd_type);
+		auto alloc_ptr_reg = builder.CreateAlloca(struct_type_llvm);
+		builder.CreateStore(&value, alloc_ptr_reg);
+		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, alloc_ptr_reg, builder.getInt64Ty(), "");
+*/
+		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "");
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
 
 static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, expression_type op, const expression_t& e, const expression_t::comparison_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1639,20 +1685,34 @@ static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_ac
 		return result2;
 	}
 	else if(type.is_vector()){
-		const auto def = find_function_def(gen_acc, "floyd_runtime__compare_vectors");
+		const auto def = find_function_def(gen_acc, "floyd_runtime__compare_values");
 		llvm::Value* op_value = generate_constant(gen_acc, value_t::make_int(static_cast<int64_t>(details.op)));
 		llvm::Value* itype_reg = generate_constant(gen_acc, value_t::make_int(pack_itype(gen_acc, type)));
-
-		auto lhs_vec_ptr = get_vec_ptr(gen_acc.builder, lhs_temp);
-		auto rhs_vec_ptr = get_vec_ptr(gen_acc.builder, rhs_temp);
 
 		std::vector<llvm::Value*> args2;
 		args2.push_back(get_callers_fcp(emit_f));
 		args2.push_back(op_value);
 		args2.push_back(itype_reg);
-		args2.push_back(lhs_vec_ptr);
-		args2.push_back(rhs_vec_ptr);
+		args2.push_back(generate_encoded_value(gen_acc, *lhs_temp, type));
+		args2.push_back(generate_encoded_value(gen_acc, *rhs_temp, type));
 		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "compare_vectors");
+		auto result2 = gen_acc.builder.CreateICmp(llvm::CmpInst::Predicate::ICMP_NE, result, llvm::ConstantInt::get(gen_acc.builder.getInt32Ty(), 0));
+
+		QUARK_ASSERT(gen_acc.check_invariant());
+		return result2;
+	}
+	else if(type.is_struct()){
+		const auto def = find_function_def(gen_acc, "floyd_runtime__compare_values");
+		llvm::Value* op_value = generate_constant(gen_acc, value_t::make_int(static_cast<int64_t>(details.op)));
+		llvm::Value* itype_reg = generate_constant(gen_acc, value_t::make_int(pack_itype(gen_acc, type)));
+
+		std::vector<llvm::Value*> args2;
+		args2.push_back(get_callers_fcp(emit_f));
+		args2.push_back(op_value);
+		args2.push_back(itype_reg);
+		args2.push_back(generate_encoded_value(gen_acc, *lhs_temp, type));
+		args2.push_back(generate_encoded_value(gen_acc, *rhs_temp, type));
+		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "compare_struct");
 		auto result2 = gen_acc.builder.CreateICmp(llvm::CmpInst::Predicate::ICMP_NE, result, llvm::ConstantInt::get(gen_acc.builder.getInt32Ty(), 0));
 
 		QUARK_ASSERT(gen_acc.check_invariant());
@@ -1754,52 +1814,6 @@ static llvm::Value* generate_conditional_operator_expression(llvm_code_generator
 	return phiNode;
 }
 
-//	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value.
-//	If the value is big, it's stored on the stack and a pointer returned => the returned value is not standalone and lifetime limited to emit function scope.
-static llvm::Value* generate_encoded_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(floyd_type.check_invariant());
-
-	auto& context = gen_acc.instance->context;
-	auto& builder = gen_acc.builder;
-
-	// We assume that the next arg in the llvm_mapping is the dyn-type.
-
-	if(floyd_type.is_function()){
-		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "function_as_arg");
-	}
-	else if(floyd_type.is_double()){
-		return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value, builder.getInt64Ty(), "double_as_arg");
-	}
-	else if(floyd_type.is_string()){
-		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "string_as_arg");
-	}
-	else if(floyd_type.is_vector()){
-		auto vec_ptr = get_vec_ptr(builder, &value);
-		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, vec_ptr, builder.getInt64Ty(), "");
-	}
-	else if(floyd_type.is_int()){
-		return &value;
-	}
-	else if(floyd_type.is_typeid()){
-		return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, builder.getInt64Ty(), "typeid_as_arg");
-	}
-	else if(floyd_type.is_bool()){
-		return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, builder.getInt64Ty(), "bool_as_arg");
-	}
-	else if(floyd_type.is_struct()){
-/*
-		auto struct_type_llvm = make_struct_type(context, floyd_type);
-		auto alloc_ptr_reg = builder.CreateAlloca(struct_type_llvm);
-		builder.CreateStore(&value, alloc_ptr_reg);
-		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, alloc_ptr_reg, builder.getInt64Ty(), "");
-*/
-		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "");
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
-}
 
 
 
@@ -3031,19 +3045,16 @@ host_func_t floyd_runtime__delete_vector__make(llvm::LLVMContext& context){
 ////////////////////////////////		compare_vectors()
 
 
-int32_t floyd_runtime__compare_vectors(void* floyd_runtime_ptr, int64_t op, const uint64_t vec_type, const VEC_T* lhs, const VEC_T* rhs){
+int32_t floyd_runtime__compare_values(void* floyd_runtime_ptr, int64_t op, const uint64_t type, uint64_t lhs, uint64_t rhs){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	QUARK_ASSERT(lhs != nullptr);
-	QUARK_ASSERT(check_invariant_vector(*lhs));
+	const auto value_type = unpack_itype(r, type);
 
-	QUARK_ASSERT(rhs != nullptr);
-	QUARK_ASSERT(check_invariant_vector(*rhs));
+	const auto left_value = runtime_llvm_to_value(r, lhs, value_type);
+	const auto right_value = runtime_llvm_to_value(r, rhs, value_type);
 
-	const auto vector_type = unpack_itype(r, vec_type);
-	QUARK_ASSERT(vector_type.is_vector());
-
-	int result = runtime_compare_value_true_deep((const uint64_t)lhs, (const uint64_t)rhs, vector_type);
+	const int result = value_t::compare_value_true_deep(left_value, right_value);
+//	int result = runtime_compare_value_true_deep((const uint64_t)lhs, (const uint64_t)rhs, vector_type);
 	const auto op2 = static_cast<expression_type>(op);
 	if(op2 == expression_type::k_comparison_smaller_or_equal__2){
 		return result <= 0 ? 1 : 0;
@@ -3070,19 +3081,20 @@ int32_t floyd_runtime__compare_vectors(void* floyd_runtime_ptr, int64_t op, cons
 	}
 }
 
-host_func_t floyd_runtime__compare_vectors__make(llvm::LLVMContext& context){
+host_func_t floyd_runtime__compare_values__make(llvm::LLVMContext& context){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getInt32Ty(context),
 		{
 			make_frp_type(context),
 			llvm::Type::getInt64Ty(context),
 			llvm::Type::getInt64Ty(context),
-			make_vec_type(context)->getPointerTo(),
-			make_vec_type(context)->getPointerTo()
+
+			llvm::Type::getInt64Ty(context),
+			llvm::Type::getInt64Ty(context)
 		},
 		false
 	);
-	return { "floyd_runtime__compare_vectors", function_type, reinterpret_cast<void*>(floyd_runtime__compare_vectors) };
+	return { "floyd_runtime__compare_values", function_type, reinterpret_cast<void*>(floyd_runtime__compare_values) };
 }
 
 const WIDE_RETURN_T floyd_runtime__concatunate_vectors(void* floyd_runtime_ptr, const VEC_T* lhs, const VEC_T* rhs){
@@ -3127,7 +3139,7 @@ auto get_runtime_functions(llvm::LLVMContext& context){
 
 		floyd_runtime__allocate_vector__make(context),
 		floyd_runtime__delete_vector__make(context),
-		floyd_runtime__compare_vectors__make(context),
+		floyd_runtime__compare_values__make(context),
 		floyd_runtime__concatunate_vectors__make(context),
 	};
 	return result;
