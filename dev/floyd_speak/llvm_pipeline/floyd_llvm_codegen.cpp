@@ -34,6 +34,7 @@ const bool k_trace_types = false;
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_ostream.h>
+#include <llvm/IR/DataLayout.h>
 
 #include "llvm/Bitcode/BitstreamWriter.h"
 
@@ -816,6 +817,29 @@ int64_t pack_itype(const llvm_code_generator_t& gen, const typeid_t& type){
 }
 
 
+/*
+llvm::StructLayout Class Reference
+const StructLayout *getStructLayout(StructType *Ty) const;
+*/
+static size_t calc_struct_member_offset(const llvm_execution_engine_t& runtime, llvm::Type& type, int member_index){
+	llvm::StructType* s2 = llvm::cast<llvm::StructType>(&type);
+	const llvm::DataLayout& data_layout = runtime.ee->getDataLayout();
+
+//	int size = data_layout.getTypeAllocSize(T);
+
+	const auto member_count = s2->getNumElements();
+	std::vector<llvm::Type*> member_types;
+	for(int i = 0 ; i < member_count ; i++){
+		auto t = s2->getElementType(i);
+		member_types.push_back(t);
+	}
+
+	const llvm::StructLayout* layout = data_layout.getStructLayout(s2);
+	const auto struct_bytes = layout->getSizeInBytes();
+
+	const auto offset = layout->getElementOffset(member_index);
+	return offset;
+}
 
 
 
@@ -853,7 +877,22 @@ value_t llvm_valueptr_to_value(const llvm_execution_engine_t& runtime, const voi
 		return value_t::make_typeid_value(type_value);
 	}
 	else if(type.is_struct()){
-		NOT_IMPLEMENTED_YET();
+		const auto& struct_def = type.get_struct();
+		std::vector<value_t> members;
+		int member_index = 0;
+		auto t2 = make_struct_type(runtime.instance->context, type);
+
+		//	Read struct pointer.
+		const auto struct_ptr_as_int = *reinterpret_cast<const uint64_t*>(value_ptr);
+		const auto struct_ptr = reinterpret_cast<const uint8_t*>(struct_ptr_as_int);
+
+		for(const auto& e: struct_def._members){
+			const auto member_ptr = reinterpret_cast<const int64_t*>(struct_ptr + calc_struct_member_offset(runtime, *t2, member_index));
+			const auto member_value = llvm_valueptr_to_value(runtime, member_ptr, e._type);
+			members.push_back(member_value);
+			member_index++;
+		}
+		return value_t::make_struct_value(type, members);
 	}
 	else if(type.is_vector()){
 		auto vec = *static_cast<const VEC_T*>(value_ptr);
@@ -944,7 +983,6 @@ value_t llvm_global_to_value(const llvm_execution_engine_t& runtime, const void*
 
 //??? Lose concept of "encoded" value ASAP.
 
-
 value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const uint64_t encoded_value, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
@@ -977,17 +1015,15 @@ value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const uint
 		const auto type2 = value_t::make_typeid_value(type1);
 		return type2;
 	}
-
-//??? At compile-time, make a lookup for each struct with its member-offsets.
-
 	else if(type.is_struct()){
 		const auto& struct_def = type.get_struct();
 		std::vector<value_t> members;
 		int member_index = 0;
+		auto t2 = make_struct_type(runtime.instance->context, type);
 		for(const auto& e: struct_def._members){
-			const auto member_ptr = reinterpret_cast<int64_t*>(encoded_value + member_index * 8);
-			const auto member_value = *member_ptr;
-			members.push_back(value_t::make_int(member_value));
+			const auto member_ptr = reinterpret_cast<int64_t*>(encoded_value + calc_struct_member_offset(runtime, *t2, member_index));
+			const auto member_value = llvm_valueptr_to_value(runtime, member_ptr, e._type);
+			members.push_back(member_value);
 			member_index++;
 		}
 		return value_t::make_struct_value(type, members);
@@ -1089,9 +1125,10 @@ llvm::Constant* generate_constant(llvm_code_generator_t& gen_acc, const value_t&
 
 	auto& builder = gen_acc.builder;
 	auto& module = *gen_acc.module;
+	auto& context = gen_acc.module->getContext();
 
 	const auto type = value.get_type();
-	const auto itype = intern_type(module, type);
+	const auto itype = intern_type(context, type);
 
 	if(type.is_undefined()){
 		return llvm::ConstantInt::get(itype, 17);
@@ -1180,18 +1217,20 @@ std::vector<resolved_symbol_t> generate_function_symbols(llvm_code_generator_t& 
 	QUARK_ASSERT(function_def.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
+	auto& context = gen_acc.module->getContext();
+
 	const auto floyd_func = std::get<function_definition_t::floyd_func_t>(function_def._contents);
 
 	const symbol_table_t& symbol_table = floyd_func._body->_symbol_table;
 
-	const auto mapping0 = map_function_arguments(*gen_acc.module, function_def._function_type);
+	const auto mapping0 = map_function_arguments(context, function_def._function_type);
 	const auto mapping = name_args(mapping0, function_def._args);
 
 	//	Make a resolved_symbol_t for each element in the symbol table. Some are local variables, some are arguments.
 	std::vector<resolved_symbol_t> result;
 	for(const auto& e: symbol_table._symbols){
 		const auto type = e.second.get_type();
-		const auto itype = intern_type(*gen_acc.module, type);
+		const auto itype = intern_type(context, type);
 
 		//	Figure out if this symbol is an argument in function definition or a local variable.
 		//	Check if we can find an argument with this name => it's an argument.
@@ -1245,10 +1284,12 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_code_generator_
 	QUARK_ASSERT(check_emitting_function(emit_f));
 	QUARK_ASSERT(symbol_table.check_invariant());
 
+	auto& context = gen_acc.module->getContext();
+
 	std::vector<resolved_symbol_t> result;
 	for(const auto& e: symbol_table._symbols){
 		const auto type = e.second.get_type();
-		const auto itype = intern_type(*gen_acc.module, type);
+		const auto itype = intern_type(context, type);
 
 		//	Reserve stack slot for each local.
 		llvm::Value* dest = gen_acc.builder.CreateAlloca(itype, nullptr, e.first);
@@ -1288,7 +1329,7 @@ static llvm::Value* generate_resolve_member_expression(llvm_code_generator_t& ge
 
 	const auto parent_type =  details.parent_address->get_output_type();
 	if(parent_type.is_struct()){
-		auto& struct_type_llvm = *make_struct_type(*gen_acc.module, parent_type);
+		auto& struct_type_llvm = *make_struct_type(context, parent_type);
 
 		const auto& struct_def = details.parent_address->get_output_type().get_struct();
 		int member_index = find_struct_member_index(struct_def, details.member_name);
@@ -1671,7 +1712,7 @@ static llvm::Value* generate_conditional_operator_expression(llvm_code_generator
 	auto& builder = gen_acc.builder;
 
 	const auto result_type = e.get_output_type();
-	const auto result_itype = intern_type(*gen_acc.module, result_type);
+	const auto result_itype = intern_type(context, result_type);
 
 	llvm::Value* condition_value = generate_expression(gen_acc, emit_f, *conditional.condition);
 
@@ -1748,7 +1789,7 @@ static llvm::Value* generate_encoded_value(llvm_code_generator_t& gen_acc, llvm:
 	}
 	else if(floyd_type.is_struct()){
 /*
-		auto struct_type_llvm = make_struct_type(*gen_acc.module, floyd_type);
+		auto struct_type_llvm = make_struct_type(context, floyd_type);
 		auto alloc_ptr_reg = builder.CreateAlloca(struct_type_llvm);
 		builder.CreateStore(&value, alloc_ptr_reg);
 		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, alloc_ptr_reg, builder.getInt64Ty(), "");
@@ -1785,7 +1826,7 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 
 	const auto actual_call_arguments = mapf<typeid_t>(details.args, [](auto& e){ return e.get_output_type(); });
 
-	const auto llvm_mapping = map_function_arguments(*gen_acc.module, callee_function_type);
+	const auto llvm_mapping = map_function_arguments(context, callee_function_type);
 
 	//	Verify that the actual argument expressions, their count and output types -- all match callee_function_type.
 	QUARK_ASSERT(details.args.size() == callee_function_type.get_function_args().size());
@@ -2133,7 +2174,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 */
 
 		const auto& struct_def = target_type.get_struct();
-		auto& struct_type_llvm = *make_struct_type(*gen_acc.module, target_type);
+		auto& struct_type_llvm = *make_struct_type(context, target_type);
 		QUARK_ASSERT(struct_def._members.size() == element_count);
 
 		auto struct_ptr_reg = allocate_instance(gen_acc, emit_f, struct_type_llvm);
@@ -2631,8 +2672,10 @@ static llvm::Value* generate_global(llvm_code_generator_t& gen_acc, const std::s
 	QUARK_ASSERT(symbol.check_invariant());
 
 	auto& module = *gen_acc.module;
+	auto& context = gen_acc.module->getContext();
+
 	const auto type0 = symbol.get_type();
-	const auto itype = intern_type(module, type0);
+	const auto itype = intern_type(context, type0);
 
 	if(symbol._init.is_undefined()){
 		return generate_global0(module, symbol_name, *itype, nullptr);
@@ -2724,6 +2767,8 @@ static llvm::Function* generate_function_prototype(llvm::Module& module, const f
 	QUARK_ASSERT(function_def.check_invariant());
 	QUARK_ASSERT(function_id >= 0);
 
+	auto& context = module.getContext();
+
 	const auto function_type = function_def._function_type;
 	const auto funcdef_name = get_function_def_name(function_id, function_def);
 
@@ -2731,10 +2776,10 @@ static llvm::Function* generate_function_prototype(llvm::Module& module, const f
 	QUARK_ASSERT(existing_f == nullptr);
 
 
-	const auto mapping0 = map_function_arguments(module, function_type);
+	const auto mapping0 = map_function_arguments(context, function_type);
 	const auto mapping = name_args(mapping0, function_def._args);
 
-	llvm::Type* function_ptr_type = intern_type(module, function_type);
+	llvm::Type* function_ptr_type = intern_type(context, function_type);
 	const auto function_byvalue_type = deref_ptr(function_ptr_type);
 
 	//	IMPORTANT: Must cast to (llvm::FunctionType*) to get correct overload of getOrInsertFunction() to be called!
@@ -2822,71 +2867,6 @@ std::string gen_to_string(llvm_execution_engine_t& runtime, int64_t arg_value, i
 	const auto value = runtime_llvm_to_value(runtime, arg_value, type);
 	const auto a = to_compact_string2(value);
 	return a;
-/*
-	if(type.is_int()){
-		const auto value = (int64_t)arg_value;
-		return std::to_string(value);
-	}
-	else if(type.is_string()){
-		const auto value = (const char*)arg_value;
-		return std::string(value);
-	}
-	else if(type.is_double()){
-		const auto d = sizeof(double);
-		const auto i = sizeof(int64_t);
-		QUARK_ASSERT(d == i);
-
-		const auto value = *(double*)&arg_value;
-
-		return double_to_string_always_decimals(value);
-//		return std::to_string(value);
-	}
-	else if(type.is_typeid()){
-		const auto type1 = unpack_itype(r, arg_value);
-		const auto type2 = value_t::make_typeid_value(type1);
-		const auto a = to_compact_string2(type2);
-		return a;
-	}
-	else if(type.is_vector()){
-		const auto element_type = type.get_vector_element_type();
-
-		//??? we assume all vector are [string] right now!!
-		QUARK_ASSERT(element_type.is_string());
-		const auto vs = unpack_vec_arg(runtime, arg_value, arg_type);
-
-		std::vector<value_t> elements;
-		const int count = vs->element_count;
-		for(int i = 0 ; i < count ; i++){
-			const char* ss = (const char*)vs->element_ptr[i];
-			QUARK_ASSERT(ss != nullptr);
-
-			const auto e = std::string(ss);
-			elements.push_back(value_t::make_string(e));
-		}
-		const auto val = value_t::make_vector_value(typeid_t::make_string(), elements);
-		return to_compact_string2(val);
-	}
-	else if(type.is_struct()){
-		const auto& struct_def = type.get_struct();
-
-struct_def
-		std::vector<value_t> elements;
-		const int count = vs->element_count;
-		for(int i = 0 ; i < count ; i++){
-			const char* ss = (const char*)vs->element_ptr[i];
-			QUARK_ASSERT(ss != nullptr);
-
-			const auto e = std::string(ss);
-			elements.push_back(value_t::make_string(e));
-		}
-		const auto val = value_t::make_vector_value(typeid_t::make_string(), elements);
-		return to_compact_string2(val);
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
-*/
-
 }
 
 
@@ -3953,7 +3933,7 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 	QUARK_ASSERT(collectedErrors.empty());
 
 	auto ee1 = std::shared_ptr<llvm::ExecutionEngine>(exeEng);
-	auto ee2 = llvm_execution_engine_t{ k_debug_magic, ee1, program_breaks.type_interner, program_breaks.debug_globals, program_breaks.function_defs, {} };
+	auto ee2 = llvm_execution_engine_t{ k_debug_magic, &instance, ee1, program_breaks.type_interner, program_breaks.debug_globals, program_breaks.function_defs, {} };
 	QUARK_ASSERT(ee2.check_invariant());
 
 	auto function_map = register_c_functions(instance.context);

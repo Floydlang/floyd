@@ -2983,7 +2983,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "instantiate nested structs", ""){
 }
 
 //??? Test all types of members in structs.
-QUARK_UNIT_TEST("Floyd test suite", "struct", "instantiate nested structs", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "instantiate nested structs 2", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2991,14 +2991,11 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "instantiate nested structs", ""){
 			struct color { int red int green int blue }
 			struct image { color back color front }
 
-			let c = color(128, 192, 255)
-			print(c)
 			let i = image(color(1, 2, 3), color(200, 201, 202))
 			print(i)
 
 		)",
 		{
-			"{red=128, green=192, blue=255}",
 			"{back={red=1, green=2, blue=3}, front={red=200, green=201, blue=202}}"
 		}
 	);

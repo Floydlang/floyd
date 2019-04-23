@@ -245,7 +245,7 @@ struct llvm_function_def_t {
 llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<member_t>& args);
 
 //	??? Improve map_function_arguments() it it correctly handles DYN returns.
-llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::typeid_t& function_type);
+llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const floyd::typeid_t& function_type);
 
 
 
@@ -253,11 +253,11 @@ llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::ty
 
 ////////////////////////////////		intern_type()
 
-llvm::Type* make_function_type(llvm::Module& module, const typeid_t& function_type);
+llvm::Type* make_function_type(llvm::LLVMContext& context, const typeid_t& function_type);
 
-llvm::Type* make_struct_type(llvm::Module& module, const typeid_t& type);
+llvm::Type* make_struct_type(llvm::LLVMContext& context, const typeid_t& type);
 
-llvm::Type* intern_type(llvm::Module& module, const typeid_t& type);
+llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type);
 
 
 //	??? Temp implementation of itype that supports base_types + vector[base_type] and dict[base_type] only.

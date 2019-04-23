@@ -124,6 +124,7 @@ struct llvm_execution_engine_t {
 	//	Must be first member, checked by LLVM code.
 	uint64_t debug_magic;
 
+	llvm_instance_t* instance;
 	std::shared_ptr<llvm::ExecutionEngine> ee;
 	type_interner_t type_interner;
 	symbol_table_t global_symbols;

@@ -495,13 +495,11 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 	}
 }
 
-llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::typeid_t& function_type){
+llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const floyd::typeid_t& function_type){
 	QUARK_ASSERT(function_type.is_function());
 
-	auto& context = module.getContext();
-
 	const auto ret = function_type.get_function_return();
-	llvm::Type* return_type = ret.is_internal_dynamic() ? make_wide_return_type(context) : intern_type(module, ret);
+	llvm::Type* return_type = ret.is_internal_dynamic() ? make_wide_return_type(context) : intern_type(context, ret);
 
 	const auto args = function_type.get_function_args();
 	std::vector<llvm_arg_mapping_t> arg_results;
@@ -520,7 +518,7 @@ llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::ty
 			arg_results.push_back({ llvm::Type::getInt64Ty(context), std::to_string(index), typeid_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
 		}
 		else {
-			auto arg_itype = intern_type(module, arg);
+			auto arg_itype = intern_type(context, arg);
 			arg_results.push_back({ arg_itype, std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_simple_value });
 		}
 	}
@@ -536,7 +534,11 @@ llvm_function_def_t map_function_arguments(llvm::Module& module, const floyd::ty
 QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void()", ""){
 	llvm_instance_t instance;
 	auto module = std::make_unique<llvm::Module>("test", instance.context);
-	const auto r = map_function_arguments(*module, typeid_t::make_function(typeid_t::make_void(), {}, epure::pure));
+	auto& context = module->getContext();
+	const auto r = map_function_arguments(
+		context,
+		typeid_t::make_function(typeid_t::make_void(), {}, epure::pure)
+	);
 
 	QUARK_UT_VERIFY(r.return_type != nullptr);
 	QUARK_UT_VERIFY(r.return_type->isVoidTy());
@@ -553,7 +555,8 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void()", ""){
 QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
 	llvm_instance_t instance;
 	auto module = std::make_unique<llvm::Module>("test", instance.context);
-	const auto r = map_function_arguments(*module, typeid_t::make_function(typeid_t::make_int(), {}, epure::pure));
+	auto& context = module->getContext();
+	const auto r = map_function_arguments(context, typeid_t::make_function(typeid_t::make_int(), {}, epure::pure));
 
 	QUARK_UT_VERIFY(r.return_type != nullptr);
 	QUARK_UT_VERIFY(r.return_type->isIntegerTy(64));
@@ -570,7 +573,8 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
 QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""){
 	llvm_instance_t instance;
 	auto module = std::make_unique<llvm::Module>("test", instance.context);
-	const auto r = map_function_arguments(*module, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_int() }, epure::pure));
+	auto& context = module->getContext();
+	const auto r = map_function_arguments(context, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_int() }, epure::pure));
 
 	QUARK_UT_VERIFY(r.return_type != nullptr);
 	QUARK_UT_VERIFY(r.return_type->isVoidTy());
@@ -593,7 +597,8 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""
 QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int, DYN, bool)", ""){
 	llvm_instance_t instance;
 	auto module = std::make_unique<llvm::Module>("test", instance.context);
-	const auto r = map_function_arguments(*module, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_int(), typeid_t::make_internal_dynamic(), typeid_t::make_bool() }, epure::pure));
+	auto& context = module->getContext();
+	const auto r = map_function_arguments(context, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_int(), typeid_t::make_internal_dynamic(), typeid_t::make_bool() }, epure::pure));
 
 	QUARK_UT_VERIFY(r.return_type != nullptr);
 	QUARK_UT_VERIFY(r.return_type->isVoidTy());
@@ -638,38 +643,23 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int, DYN,
 ////////////////////////////////		intern_type()
 
 //	Function-types are always returned as pointer-to-function types.
-llvm::Type* make_function_type(llvm::Module& module, const typeid_t& function_type){
+llvm::Type* make_function_type(llvm::LLVMContext& context, const typeid_t& function_type){
 	QUARK_ASSERT(function_type.check_invariant());
 	QUARK_ASSERT(function_type.is_function());
 
-	const auto mapping = map_function_arguments(module, function_type);
+	const auto mapping = map_function_arguments(context, function_type);
 	llvm::FunctionType* function_type2 = llvm::FunctionType::get(mapping.return_type, mapping.llvm_args, false);
 	auto function_pointer_type = function_type2->getPointerTo();
 	return function_pointer_type;
 }
 
 
-llvm::Type* make_struct_type(llvm::Module& module, const typeid_t& type){
+llvm::Type* make_struct_type(llvm::LLVMContext& context, const typeid_t& type){
 	QUARK_ASSERT(type.is_struct());
 
-	auto& context = module.getContext();
-
-#if 0
-		std::vector<llvm::Type*> members;
-		for(const auto& m: type.get_struct_ref()->_members){
-			const auto m2 = intern_type(*gen_acc.module, m._type, encode);
-			members.push_back(m2);
-		}
-
-  		llvm::StructType* s = llvm::StructType::get(context, members, false);
-
-//		return llvm::StructType::get(context);
-//		return llvm::Type::getInt32Ty(context);
-		return s;
-#endif
 	std::vector<llvm::Type*> members;
 	for(const auto& m: type.get_struct_ref()->_members){
-		const auto m2 = intern_type(module, m._type);
+		const auto m2 = intern_type(context, m._type);
 		members.push_back(m2);
 	}
 	llvm::StructType* s = llvm::StructType::get(context, members, false);
@@ -677,10 +667,8 @@ llvm::Type* make_struct_type(llvm::Module& module, const typeid_t& type){
 }
 
 //	Returns the LLVM type we chose to use to encode each Floyd type.
-llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
+llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
-
-	auto& context = module.getContext();
 
 	if(type.is_void()){
 		return llvm::Type::getVoidTy(context);
@@ -720,7 +708,7 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 		return llvm::Type::getDoubleTy(context);
 	}
 	else if(type.is_struct()){
-		return make_struct_type(module, type)->getPointerTo();
+		return make_struct_type(context, type)->getPointerTo();
 	}
 
 	else if(type.is_internal_dynamic()){
@@ -729,7 +717,7 @@ llvm::Type* intern_type(llvm::Module& module, const typeid_t& type){
 		return llvm::Type::getInt64Ty(context);
 	}
 	else if(type.is_function()){
-		return make_function_type(module, type);
+		return make_function_type(context, type);
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
