@@ -47,7 +47,9 @@ const bool k_trace_types = false;
 #include <vector>
 #include <iostream>
 
+//??? split host_functions.h into defintions vs inmplementation for bc-interpreter.
 #include "host_functions.h"
+
 #include "compiler_basics.h"
 #include "compiler_helpers.h"
 #include "floyd_parser.h"
@@ -2291,17 +2293,6 @@ void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
 
 
 
-uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee){
-	QUARK_ASSERT(ee.check_invariant());
-
-	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, "floyd_runtime_init"));
-	QUARK_ASSERT(a_func != nullptr);
-
-	int64_t a_result = (*a_func)((void*)&ee);
-	QUARK_ASSERT(a_result == 667);
-	return a_result;
-}
-
 
 //	Destroys program, can only run it once!
 int64_t run_llvm_program(llvm_instance_t& instance, llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args){
@@ -2339,17 +2330,6 @@ std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instanc
 	return bc;
 }
 
-
-int64_t run_using_llvm_helper(const std::string& program_source, const std::string& file, const std::vector<floyd::value_t>& args){
-	const auto cu = floyd::make_compilation_unit_nolib(program_source, file);
-	const auto pass3 = compile_to_sematic_ast__errors(cu);
-
-	llvm_instance_t instance;
-	auto program = generate_llvm_ir_program(instance, pass3, file);
-	const auto result = run_llvm_program(instance, *program, args);
-	QUARK_TRACE_SS("Fib = " << result);
-	return result;
-}
 
 
 

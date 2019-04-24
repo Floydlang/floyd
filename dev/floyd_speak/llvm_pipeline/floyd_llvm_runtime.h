@@ -143,6 +143,9 @@ std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context);
 std::map<std::string, void*> get_host_functions_map2();
 
 
+uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee);
+
+
 }	//	namespace floyd
 
 

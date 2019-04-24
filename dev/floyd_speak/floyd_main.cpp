@@ -22,7 +22,7 @@
 #include "file_handling.h"
 
 #include "pass3.h"
-#include "floyd_llvm_codegen.h"
+#include "floyd_llvm.h"
 #include "compiler_helpers.h"
 #include "compiler_basics.h"
 

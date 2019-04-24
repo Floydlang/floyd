@@ -1862,4 +1862,16 @@ std::map<std::string, void*> get_host_functions_map2(){
 	return host_functions_map;
 }
 
+uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee){
+	QUARK_ASSERT(ee.check_invariant());
+
+	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, "floyd_runtime_init"));
+	QUARK_ASSERT(a_func != nullptr);
+
+	int64_t a_result = (*a_func)((void*)&ee);
+	QUARK_ASSERT(a_result == 667);
+	return a_result;
+}
+
+
 }	//	namespace floyd
