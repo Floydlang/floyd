@@ -6,8 +6,8 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-const bool k_trace_input_output = true;
-const bool k_trace_types = true;
+const bool k_trace_input_output = false;
+const bool k_trace_types = false;
 
 #include "floyd_llvm_codegen.h"
 
@@ -1395,11 +1395,9 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 		//	parent_reg is a VEC_T byvalue.
 		auto element_index = key_reg;
 
-		auto& vec_type = *make_vec_type(context);
 		auto uint64_element_ptr = builder.CreateExtractValue(parent_reg, { (int)VEC_T_MEMBERS::element_ptr });
 
 		const auto element_type0 = parent_type.get_vector_element_type();
-		auto element_type = intern_type(context, element_type0);
 
 		const auto gep = std::vector<llvm::Value*>{ element_index };
 		llvm::Value* element_addr_reg = builder.CreateGEP(builder.getInt64Ty(), uint64_element_ptr, gep, "element_addr");
@@ -1410,6 +1408,11 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 		}
 		else if(element_type0.is_string()){
 			llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, element_value_uint64_reg, llvm::Type::getInt8PtrTy(context), "");
+			return v;
+		}
+		else if(element_type0.is_struct()){
+			auto& struct_type = *make_struct_type(context, element_type0);
+			llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, element_value_uint64_reg, struct_type.getPointerTo(), "");
 			return v;
 		}
 		else{
