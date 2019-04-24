@@ -419,6 +419,10 @@ WIDE_RETURN_T make_wide_return_charptr(const char* s){
 	return WIDE_RETURN_T{ reinterpret_cast<uint64_t>(s), 0 };
 }
 
+WIDE_RETURN_T make_wide_return_structptr(const void* s){
+	return WIDE_RETURN_T{ reinterpret_cast<uint64_t>(s), 0 };
+}
+
 WIDE_RETURN_T make_wide_return_vec(const VEC_T& vec){
 	return *reinterpret_cast<const WIDE_RETURN_T*>(&vec);
 }
@@ -442,7 +446,33 @@ llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, ll
 	return vec_reg;
 }
 
+/*
+llvm::Value* generate__convert_wide_return_to_struct_ptr(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg, const typeid_t& struct_type){
+	auto& context = builder.getContext();
 
+	auto t = make_struct_type(builder.getContext(), struct_type);
+	auto ptr2_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, wide_return_ptr_reg, make_vec_type(context)->getPointerTo(), "");
+	auto vec_reg = builder.CreateLoad(vec_ptr_reg, "final");
+	return vec_reg;
+}
+*/
+
+
+
+
+void generate_struct_member_store(llvm::IRBuilder<>& builder, llvm::StructType& struct_type, llvm::Value& struct_ptr_reg, int member_index, llvm::Value& value_reg){
+	auto& context = builder.getContext();
+
+	const auto gep = std::vector<llvm::Value*>{
+		//	Struct array index.
+		builder.getInt32(0),
+
+		//	Struct member index.
+		builder.getInt32(member_index)
+	};
+	llvm::Value* member_ptr_reg = builder.CreateGEP(&struct_type, &struct_ptr_reg, gep, "");
+	builder.CreateStore(&value_reg, member_ptr_reg);
+}
 
 
 
@@ -654,7 +684,7 @@ llvm::Type* make_function_type(llvm::LLVMContext& context, const typeid_t& funct
 }
 
 
-llvm::Type* make_struct_type(llvm::LLVMContext& context, const typeid_t& type){
+llvm::StructType* make_struct_type(llvm::LLVMContext& context, const typeid_t& type){
 	QUARK_ASSERT(type.is_struct());
 
 	std::vector<llvm::Type*> members;

@@ -7,7 +7,7 @@
 //
 
 const bool k_trace_input_output = false;
-const bool k_trace_types = false;
+const bool k_trace_types = true;
 
 #include "floyd_llvm_codegen.h"
 
@@ -699,7 +699,7 @@ int runtime_compare_value_true_deep(const llvm_execution_engine_t& runtime, cons
 		return compare_doubles(left.get_double_value(), right.get_double_value());
 	}
 	else if(type.is_string()){
-		return runtime_compare_string((const char*)left.get_string_value().c_str(), (const char*)right.get_string_value().c_str());
+		return runtime_compare_string(left.get_string_value().c_str(), right.get_string_value().c_str());
 	}
 #if 0
 	else if(type.is_json_value()){
@@ -823,12 +823,13 @@ int64_t pack_itype(const llvm_code_generator_t& gen, const typeid_t& type){
 
 
 /*
+????????  static StructType *create(ArrayRef<Type *> Elements, StringRef Name, bool isPacked = false);
+
 llvm::StructLayout Class Reference
 const StructLayout *getStructLayout(StructType *Ty) const;
 */
-static size_t calc_struct_member_offset(const llvm_execution_engine_t& runtime, llvm::Type& type, int member_index){
+static size_t calc_struct_member_offset_Xxxx(const llvm::DataLayout& data_layout, llvm::Type& type, int member_index){
 	llvm::StructType* s2 = llvm::cast<llvm::StructType>(&type);
-	const llvm::DataLayout& data_layout = runtime.ee->getDataLayout();
 
 //	int size = data_layout.getTypeAllocSize(T);
 
@@ -891,8 +892,12 @@ value_t llvm_valueptr_to_value(const llvm_execution_engine_t& runtime, const voi
 		const auto struct_ptr_as_int = *reinterpret_cast<const uint64_t*>(value_ptr);
 		const auto struct_ptr = reinterpret_cast<const uint8_t*>(struct_ptr_as_int);
 
+		const llvm::DataLayout& data_layout = runtime.ee->getDataLayout();
+		const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
+
 		for(const auto& e: struct_def._members){
-			const auto member_ptr = reinterpret_cast<const int64_t*>(struct_ptr + calc_struct_member_offset(runtime, *t2, member_index));
+			const auto member_offset = layout->getElementOffset(member_index);
+			const auto member_ptr = reinterpret_cast<const int64_t*>(struct_ptr + member_offset);
 			const auto member_value = llvm_valueptr_to_value(runtime, member_ptr, e._type);
 			members.push_back(member_value);
 			member_index++;
@@ -1025,8 +1030,11 @@ value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const uint
 		std::vector<value_t> members;
 		int member_index = 0;
 		auto t2 = make_struct_type(runtime.instance->context, type);
+		const llvm::DataLayout& data_layout = runtime.ee->getDataLayout();
+		const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
 		for(const auto& e: struct_def._members){
-			const auto member_ptr = reinterpret_cast<int64_t*>(encoded_value + calc_struct_member_offset(runtime, *t2, member_index));
+			const auto offset = layout->getElementOffset(member_index);
+			const auto member_ptr = reinterpret_cast<int64_t*>(encoded_value + offset);
 			const auto member_value = llvm_valueptr_to_value(runtime, member_ptr, e._type);
 			members.push_back(member_value);
 			member_index++;
@@ -1334,7 +1342,6 @@ static llvm::Value* generate_resolve_member_expression(llvm_code_generator_t& ge
 		const auto& struct_def = details.parent_address->get_output_type().get_struct();
 		int member_index = find_struct_member_index(struct_def, details.member_name);
 		QUARK_ASSERT(member_index != -1);
-
 
 		const auto gep = std::vector<llvm::Value*>{
 			//	Struct array index.
@@ -1900,6 +1907,11 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 		else if(resolved_call_return_type.is_vector()){
 			return generate__convert_wide_return_to_vec(builder, result0);
 		}
+		else if(resolved_call_return_type.is_struct()){
+			auto struct_type = make_struct_type(context, resolved_call_return_type);
+			auto wide_return_a_reg = builder.CreateExtractValue(result, { static_cast<int>(WIDE_RETURN_MEMBERS::a) });
+			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, wide_return_a_reg, struct_type->getPointerTo(), "encoded->structptr");
+		}
 		else{
 			NOT_IMPLEMENTED_YET();
 		}
@@ -1980,7 +1992,7 @@ static llvm::Value* generate_allocate_memory(llvm_code_generator_t& gen_acc, llv
 }
 
 
-
+//??? Known at compile time!
 static llvm::Value* generate_type_size_calculation(llvm_code_generator_t& gen_acc, llvm::Type& type){
 	auto& builder = gen_acc.builder;
 /*
@@ -1998,7 +2010,7 @@ static llvm::Value* generate_type_size_calculation(llvm_code_generator_t& gen_ac
 	return int_reg;
 }
 
-static llvm::Value* allocate_instance(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Type& type){
+static llvm::Value* generate_allocate_instance(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Type& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
@@ -2191,23 +2203,13 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 		auto& struct_type_llvm = *make_struct_type(context, target_type);
 		QUARK_ASSERT(struct_def._members.size() == element_count);
 
-		auto struct_ptr_reg = allocate_instance(gen_acc, emit_f, struct_type_llvm);
+		auto struct_ptr_reg = generate_allocate_instance(gen_acc, emit_f, struct_type_llvm);
 
 		int member_index = 0;
 		for(const auto& m: struct_def._members){
 			const auto& arg = details.elements[member_index];
 			llvm::Value* member_value_reg = generate_expression(gen_acc, emit_f, arg);
-
-			const auto gep = std::vector<llvm::Value*>{
-				//	Struct array index.
-				builder.getInt32(0),
-
-				//	Struct member index.
-				builder.getInt32(member_index)
-			};
-			llvm::Value* member_ptr_reg = builder.CreateGEP(&struct_type_llvm, struct_ptr_reg, gep, "");
-			builder.CreateStore(member_value_reg, member_ptr_reg);
-
+			generate_struct_member_store(builder, struct_type_llvm, *struct_ptr_reg, member_index, *member_value_reg);
 			member_index++;
 		}
 		return struct_ptr_reg;
@@ -3508,24 +3510,27 @@ int32_t floyd_host__typeof(void* floyd_runtime_ptr, int64_t arg0_value, int64_t 
 	return type_value;
 }
 
+//	??? promote update() to a statement, rather than a function call. Replace all statement and expressions with function calls? LISP!
+//	???	Update of structs should resolve member-name at compile time, replace with index.
 //	??? Range should be integers, not DYN! Change host function prototype.
 const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type, int64_t arg2_value, int64_t arg2_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type1 = unpack_itype(r, arg1_type);
-	if(type1.is_int() == false){
-		throw std::exception();
-	}
-	const auto index = arg1_value;
+	auto& context = r.instance->context;
 
 	const auto type0 = unpack_itype(r, arg0_type);
+	const auto type1 = unpack_itype(r, arg1_type);
+	const auto type2 = unpack_itype(r, arg2_type);
 	if(type0.is_string()){
-		const auto str = (const char*)arg0_value;
-
-		const auto type2 = unpack_itype(r, arg2_type);
+		if(type1.is_int() == false){
+			throw std::exception();
+		}
 		if(type2.is_int() == false){
 			throw std::exception();
 		}
+
+		const auto str = (const char*)arg0_value;
+		const auto index = arg1_value;
 		const auto new_char = (char)arg2_value;
 
 		const auto len = strlen(str);
@@ -3539,14 +3544,17 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_
 		return make_wide_return_charptr(result);
 	}
 	else if(type0.is_vector()){
+		if(type1.is_int() == false){
+			throw std::exception();
+		}
+
 		const auto vec = unpack_vec_arg(r, arg0_value, arg0_type);
 		const auto element_type = type0.get_vector_element_type();
+		const auto index = arg1_value;
 		if(element_type.is_string()){
-			const auto type2 = unpack_itype(r, arg2_type);
 			if(type2.is_string() == false){
 				throw std::exception();
 			}
-
 			if(index < 0 || index >= vec->element_count){
 				throw std::runtime_error("Position argument to update() is outside collection span.");
 			}
@@ -3559,7 +3567,6 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_
 			return make_wide_return_vec(result);
 		}
 		else if(element_type.is_bool()){
-			const auto type2 = unpack_itype(r, arg2_type);
 			if(type2.is_bool() == false){
 				throw std::exception();
 			}
@@ -3578,6 +3585,66 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_
 		else{
 			NOT_IMPLEMENTED_YET();
 		}
+	}
+	else if(type0.is_struct()){
+		if(type1.is_string() == false){
+			throw std::exception();
+		}
+		if(type2.is_void() == true){
+			throw std::exception();
+		}
+
+		const auto source_struct_ptr = reinterpret_cast<void*>(arg0_value);
+
+		const auto member_name = runtime_llvm_to_value(r, arg1_value, typeid_t::make_string()).get_string_value();
+		if(member_name == ""){
+			throw std::runtime_error("Must provide name of struct member to update().");
+		}
+
+		const auto& struct_def = type0.get_struct();
+		int member_index = find_struct_member_index(struct_def, member_name);
+		if(member_index == -1){
+			throw std::runtime_error("Position argument to update() is outside collection span.");
+		}
+
+		const auto member_value = runtime_llvm_to_value(r, arg2_value, type2);
+
+
+		//	Make copy of struct, overwrite member in copy.
+ 
+		auto& struct_type_llvm = *make_struct_type(context, type0);
+
+		const llvm::DataLayout& data_layout = r.ee->getDataLayout();
+		const llvm::StructLayout* layout = data_layout.getStructLayout(&struct_type_llvm);
+		const auto struct_bytes = layout->getSizeInBytes();
+
+		//??? Touches memory twice.
+		auto struct_ptr = reinterpret_cast<uint8_t*>(std::calloc(1, struct_bytes));
+		std::memcpy(struct_ptr, source_struct_ptr, struct_bytes);
+
+		const auto member_offset = layout->getElementOffset(member_index);
+		const auto member_ptr = reinterpret_cast<const int64_t*>(struct_ptr + member_offset);
+
+		const auto member_type = struct_def._members[member_index]._type;
+
+		if(type2 != member_type){
+			throw std::runtime_error("New value must be same type as struct member's type.");
+		}
+
+		if(member_type.is_string()){
+			auto dest = *(char**)(member_ptr);
+			const char* source = member_value.get_string_value().c_str();
+			char* new_string = strdup(source);
+			dest = new_string;
+		}
+		else if(member_type.is_int()){
+			auto dest = (int64_t*)member_ptr;
+			*dest = member_value.get_int_value();
+		}
+		else{
+			NOT_IMPLEMENTED_YET();
+		}
+		return make_wide_return_structptr(reinterpret_cast<const void*>(struct_ptr));
 	}
 	else{
 		NOT_IMPLEMENTED_YET();

@@ -208,6 +208,7 @@ llvm::Type* make_wide_return_type(llvm::LLVMContext& context);
 WIDE_RETURN_T make_wide_return_2x64(uint64_t a, uint64_t b);
 
 WIDE_RETURN_T make_wide_return_charptr(const char* s);
+WIDE_RETURN_T make_wide_return_structptr(const void* s);
 
 WIDE_RETURN_T make_wide_return_vec(const VEC_T& vec);
 VEC_T wider_return_to_vec(const WIDE_RETURN_T& ret);
@@ -219,7 +220,10 @@ VEC_T wider_return_to_vec(const WIDE_RETURN_T& ret);
 //	Store the DYN to memory, then cast it to VEC and load it again.
 llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg);
 
+//llvm::Value* generate__convert_wide_return_to_struct_ptr(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg, const typeid_t& struct_type);
 
+
+void generate_struct_member_store(llvm::IRBuilder<>& builder, llvm::StructType& struct_type, llvm::Value& struct_ptr_reg, int member_index, llvm::Value& value_reg);
 
 
 
@@ -255,7 +259,7 @@ llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const flo
 
 llvm::Type* make_function_type(llvm::LLVMContext& context, const typeid_t& function_type);
 
-llvm::Type* make_struct_type(llvm::LLVMContext& context, const typeid_t& type);
+llvm::StructType* make_struct_type(llvm::LLVMContext& context, const typeid_t& type);
 
 llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type);
 
