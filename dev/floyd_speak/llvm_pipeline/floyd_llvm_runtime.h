@@ -31,6 +31,16 @@ namespace floyd {
 struct llvm_ir_program_t;
 
 
+////////////////////////////////		host_func_t
+
+
+struct host_func_t {
+	std::string name_key;
+	llvm::FunctionType* function_type;
+	void* implementation_f;
+};
+
+
 
 ////////////////////////////////		function_def_t
 
@@ -129,6 +139,8 @@ std::string gen_to_string(llvm_execution_engine_t& runtime, int64_t arg_value, i
 void floyd_runtime__unresolved_func(void* floyd_runtime_ptr);
 
 
+std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context);
+std::map<std::string, void*> get_host_functions_map2();
 
 
 }	//	namespace floyd
