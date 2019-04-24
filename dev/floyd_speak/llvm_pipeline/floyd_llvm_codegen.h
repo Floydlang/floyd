@@ -80,7 +80,6 @@ struct llvm_ir_program_t {
 	std::vector<function_def_t> function_defs;
 };
 
-const function_def_t& find_function_def2(const std::vector<function_def_t>& function_defs, const std::string& function_name);
 
 //	Converts the semantic AST to LLVM IR code.
 std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast, const std::string& module_name);
