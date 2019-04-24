@@ -12,13 +12,16 @@
 #include "ast_value.h"
 #include "statement.h"
 #include "ast.h"
+
 #include "floyd_llvm_helpers.h"
-#include <string>
+#include "floyd_llvm_runtime.h"
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Verifier.h>
+
+#include <string>
 
 namespace floyd {
 	struct semantic_ast_t;
@@ -28,6 +31,9 @@ namespace llvm {
 	struct ExecutionEngine;
 }
 namespace floyd {
+
+
+////////////////////////////////		resolved_symbol_t
 
 
 struct resolved_symbol_t {
@@ -42,6 +48,10 @@ struct resolved_symbol_t {
 
 
 
+////////////////////////////////		function_def_t
+
+
+
 struct function_def_t {
 	std::string def_name;
 	llvm::Function* llvm_f;
@@ -50,6 +60,32 @@ struct function_def_t {
 	function_definition_t floyd_fundef;
 };
 
+////////////////////////////////		llvm_execution_engine_t
+
+
+//https://en.wikipedia.org/wiki/Hexspeak
+const uint64_t k_debug_magic = 0xFACEFEED05050505;
+
+struct llvm_execution_engine_t {
+	bool check_invariant() const {
+		QUARK_ASSERT(ee);
+		return true;
+	}
+
+	//	Must be first member, checked by LLVM code.
+	uint64_t debug_magic;
+
+	llvm_instance_t* instance;
+	std::shared_ptr<llvm::ExecutionEngine> ee;
+	type_interner_t type_interner;
+	symbol_table_t global_symbols;
+	std::vector<function_def_t> function_defs;
+	public: std::vector<std::string> _print_output;
+};
+
+
+llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program);
+llvm_execution_engine_t make_engine_run_init(llvm_instance_t& instance, llvm_ir_program_t& program);
 
 
 ////////////////////////////////		llvm_ir_program_t
@@ -109,32 +145,6 @@ typedef void (*FLOYD_RUNTIME_HOST_FUNCTION)(void* floyd_runtime_ptr, int64_t arg
 typedef int64_t (*FLOYD_RUNTIME_F)(void* floyd_runtime_ptr, const char* args);
 
 
-////////////////////////////////		llvm_execution_engine_t
-
-
-//https://en.wikipedia.org/wiki/Hexspeak
-const uint64_t k_debug_magic = 0xFACEFEED05050505;
-
-struct llvm_execution_engine_t {
-	bool check_invariant() const {
-		QUARK_ASSERT(ee);
-		return true;
-	}
-
-	//	Must be first member, checked by LLVM code.
-	uint64_t debug_magic;
-
-	llvm_instance_t* instance;
-	std::shared_ptr<llvm::ExecutionEngine> ee;
-	type_interner_t type_interner;
-	symbol_table_t global_symbols;
-	std::vector<function_def_t> function_defs;
-	public: std::vector<std::string> _print_output;
-};
-
-
-llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program);
-llvm_execution_engine_t make_engine_run_init(llvm_instance_t& instance, llvm_ir_program_t& program);
 
 //	Cast to uint64_t* or other the required type, then access via it.
 void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name);
