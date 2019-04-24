@@ -2297,6 +2297,37 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] - constructor", "empty vect
 		{ R"([])" }
 	);
 }
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] [] lookup", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = ["one", "two"]
+			print(a[0])
+			print(a[1])
+
+		)",
+		{ "one", "two" }
+	);
+}
+
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] =", "copy", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = ["one", "two"]
+			let b = a
+			assert(a == b)
+			print(a)
+			print(b)
+
+		)",
+		{ R"(["one", "two"])", R"(["one", "two"])" }
+	);
+}
+
 
 //	We could support this if we had special type for empty-vector and empty-dict.
 QUARK_UNIT_TEST("Floyd test suite", "vector ==", "lhs and rhs are empty-typeless", ""){
@@ -2548,6 +2579,20 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [int] constructor", "", "3"){
 		value_t::make_int(3)
 	);
 }
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] [] lookup", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = [5, 6, 7]
+			print(a[0])
+			print(a[1])
+
+		)",
+		{ "5", "6" }
+	);
+}
+
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] =", "copy", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let a = [10, 20, 30] result = a;		)",	R"(		[[ "vector", "^int" ], [10, 20, 30]]		)"	);
 }
@@ -3239,7 +3284,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "", ""){
 }
 
 
-QUARK_UNIT_TEST("Floyd test suite", "struct", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "Read member of struct sitting in a vector", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(

@@ -6,7 +6,7 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-const bool k_trace_input_output = false;
+const bool k_trace_input_output = true;
 const bool k_trace_types = true;
 
 #include "floyd_llvm_codegen.h"
@@ -848,7 +848,7 @@ static size_t calc_struct_member_offset_Xxxx(const llvm::DataLayout& data_layout
 }
 
 
-
+//??? rename runtime_*
 value_t llvm_valueptr_to_value(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type){
 	QUARK_ASSERT(runtime.check_invariant());
 	QUARK_ASSERT(value_ptr != nullptr);
@@ -1361,7 +1361,6 @@ static llvm::Value* generate_resolve_member_expression(llvm_code_generator_t& ge
 	return nullptr;
 }
 
-
 static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::lookup_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -1370,14 +1369,16 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
-	auto parent_value = generate_expression(gen_acc, emit_f, *details.parent_address);
-	auto key_value = generate_expression(gen_acc, emit_f, *details.lookup_key);
+	auto parent_reg = generate_expression(gen_acc, emit_f, *details.parent_address);
+	auto key_reg = generate_expression(gen_acc, emit_f, *details.lookup_key);
 
 	const auto parent_type =  details.parent_address->get_output_type();
 	if(parent_type.is_string()){
-		auto element_index = key_value;
+		QUARK_ASSERT(key_reg->getType() == llvm::IntegerType::getInt64Ty(context));
+
+		auto element_index = key_reg;
 		const auto index_list = std::vector<llvm::Value*>{ element_index };
-		llvm::Value* element_addr = builder.CreateGEP(llvm::Type::getInt8Ty(context), parent_value, index_list, "element_addr");
+		llvm::Value* element_addr = builder.CreateGEP(llvm::Type::getInt8Ty(context), parent_reg, index_list, "element_addr");
 		llvm::Value* element_value_8bit = builder.CreateLoad(element_addr, "element_tmp");
 		llvm::Type* output_type = llvm::Type::getInt64Ty(context);
 
@@ -1385,20 +1386,38 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 		return element_value;
 	}
 	else if(parent_type.is_json_value()){
+		NOT_IMPLEMENTED_YET();
 //		return bc_opcode::k_lookup_element_json_value;
 	}
 	else if(parent_type.is_vector()){
-/*
-		if(encode_as_vector_w_inplace_elements(parent_type)){
-			return bc_opcode::k_lookup_element_vector_w_inplace_elements;
+		QUARK_ASSERT(key_reg->getType() == llvm::IntegerType::getInt64Ty(context));
+
+		//	parent_reg is a VEC_T byvalue.
+		auto element_index = key_reg;
+
+		auto& vec_type = *make_vec_type(context);
+		auto uint64_element_ptr = builder.CreateExtractValue(parent_reg, { (int)VEC_T_MEMBERS::element_ptr });
+
+		const auto element_type0 = parent_type.get_vector_element_type();
+		auto element_type = intern_type(context, element_type0);
+
+		const auto gep = std::vector<llvm::Value*>{ element_index };
+		llvm::Value* element_addr_reg = builder.CreateGEP(builder.getInt64Ty(), uint64_element_ptr, gep, "element_addr");
+		llvm::Value* element_value_uint64_reg = builder.CreateLoad(element_addr_reg, "element_tmp");
+
+		if(element_type0.is_int()){
+			return element_value_uint64_reg;
+		}
+		else if(element_type0.is_string()){
+			llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, element_value_uint64_reg, llvm::Type::getInt8PtrTy(context), "");
+			return v;
 		}
 		else{
-			return bc_opcode::k_lookup_element_vector_w_external_elements;
+			NOT_IMPLEMENTED_YET();
 		}
-*/
-
 	}
 	else if(parent_type.is_dict()){
+		NOT_IMPLEMENTED_YET();
 /*
 		if(encode_as_dict_w_inplace_values(parent_type)){
 			return bc_opcode::k_lookup_element_dict_w_inplace_values;
@@ -2053,7 +2072,31 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 				llvm::Value* arg_value = generate_expression(gen_acc, emit_f, arg);
 				auto element_index_value = generate_constant(gen_acc, value_t::make_int(element_index));
 				const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_value };
-				llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "e_addr");
+				llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "");
+				builder.CreateStore(arg_value, e_addr);
+
+				element_index++;
+			}
+			return vec_reg;
+		}
+		else if(element_type0.is_struct()){
+			auto vec_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
+
+			auto uint64_element_ptr = builder.CreateExtractValue(vec_reg, { (int)VEC_T_MEMBERS::element_ptr });
+
+			auto& struct_type = *make_struct_type(context, element_type0);
+			auto& element_type = *struct_type.getPointerTo();
+
+			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type.getPointerTo(), "");
+
+			//	Evaluate each element and store it directly into the the vector.
+			int element_index = 0;
+			for(const auto& arg: details.elements){
+				llvm::Value* arg_value = generate_expression(gen_acc, emit_f, arg);
+
+				auto element_index_value = generate_constant(gen_acc, value_t::make_int(element_index));
+				const auto gep = std::vector<llvm::Value*>{ element_index_value };
+				llvm::Value* e_addr = builder.CreateGEP(&element_type, element_ptr, gep, "");
 				builder.CreateStore(arg_value, e_addr);
 
 				element_index++;
@@ -2101,7 +2144,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 
 				auto output_element_index_value = generate_constant(gen_acc, value_t::make_int(output_element_index));
 				const auto gep_index_list2 = std::vector<llvm::Value*>{ output_element_index_value };
-				llvm::Value* e_addr = builder.CreateGEP(gen_acc.builder.getInt64Ty(), uint64_element_ptr, gep_index_list2, "e_addr");
+				llvm::Value* e_addr = builder.CreateGEP(gen_acc.builder.getInt64Ty(), uint64_element_ptr, gep_index_list2, "");
 				builder.CreateStore(word_out, e_addr);
 
 				output_element_index++;
@@ -2125,7 +2168,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 				auto element_reg = builder.CreateCast(llvm::Instruction::CastOps::ZExt, element0_reg, builder.getInt64Ty(), "");
 				auto element_index_value = generate_constant(gen_acc, value_t::make_int(element_index));
 				const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_value };
-				llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "e_addr");
+				llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "");
 				builder.CreateStore(element_reg, e_addr);
 
 				element_index++;
@@ -2146,7 +2189,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 				llvm::Value* element_reg = generate_expression(gen_acc, emit_f, arg);
 				auto element_index_value = generate_constant(gen_acc, value_t::make_int(element_index));
 				const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_value };
-				llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "e_addr");
+				llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "");
 				builder.CreateStore(element_reg, e_addr);
 
 				element_index++;
@@ -3317,14 +3360,14 @@ const WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t ar
 		const auto type1 = unpack_itype(r, arg1_type);
 		QUARK_ASSERT(type1 == type0.get_vector_element_type());
 
-		const auto element = (const char*)arg1_value;
+		const auto element = arg1_value;
 
 		WIDE_RETURN_T va = floyd_runtime__allocate_vector(floyd_runtime_ptr, vs->element_count + 1);
 		auto v2 = wider_return_to_vec(va);
 		for(int i = 0 ; i < vs->element_count ; i++){
 			v2.element_ptr[i] = vs->element_ptr[i];
 		}
-		v2.element_ptr[vs->element_count] = reinterpret_cast<uint64_t>(element);
+		v2.element_ptr[vs->element_count] = element;
 		return make_wide_return_vec(v2);
 	}
 	else{
