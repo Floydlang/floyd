@@ -10,6 +10,7 @@
 #define floyd_llvm_hpp
 
 #include "floyd_llvm_codegen.h"
+#include "floyd_llvm_runtime.h"
 
 
 namespace floyd {

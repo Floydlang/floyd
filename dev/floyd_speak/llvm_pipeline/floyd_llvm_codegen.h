@@ -14,7 +14,6 @@
 #include "ast.h"
 
 #include "floyd_llvm_helpers.h"
-#include "floyd_llvm_runtime.h"
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
@@ -25,6 +24,8 @@
 
 namespace floyd {
 	struct semantic_ast_t;
+	struct function_def_t;
+	struct llvm_execution_engine_t;
 }
 namespace llvm {
 	struct Module;

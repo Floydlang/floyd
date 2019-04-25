@@ -11,7 +11,7 @@
 
 #include "floyd_interpreter.h"
 
-#include "floyd_llvm_codegen.h"
+#include "floyd_llvm.h"
 
 #include "json_support.h"
 #include "text_parser.h"

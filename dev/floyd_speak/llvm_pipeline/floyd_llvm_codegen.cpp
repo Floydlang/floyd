@@ -11,6 +11,7 @@ const bool k_trace_types = false;
 
 #include "floyd_llvm_codegen.h"
 
+#include "floyd_llvm_runtime.h"
 #include "floyd_llvm_helpers.h"
 
 #include "ast_value.h"
