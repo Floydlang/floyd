@@ -22,13 +22,10 @@
 #include <vector>
 
 namespace llvm {
-	struct Module;
 	struct ExecutionEngine;
 }
 
 namespace floyd {
-
-struct llvm_ir_program_t;
 
 
 ////////////////////////////////		host_func_t
@@ -43,7 +40,6 @@ struct host_func_t {
 
 
 ////////////////////////////////		function_def_t
-
 
 
 
@@ -86,9 +82,6 @@ typedef void (*FLOYD_RUNTIME_HOST_FUNCTION)(void* floyd_runtime_ptr, int64_t arg
 typedef int64_t (*FLOYD_RUNTIME_F)(void* floyd_runtime_ptr, const char* args);
 
 
-
-
-
 const function_def_t& find_function_def2(const std::vector<function_def_t>& function_defs, const std::string& function_name);
 
 
@@ -97,7 +90,6 @@ void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name);
 
 //	Cast to function pointer, then call it.
 void* get_global_function(llvm_execution_engine_t& ee, const std::string& name);
-
 
 std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std::string& name);
 value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f);
@@ -115,8 +107,6 @@ value_t llvm_global_to_value(const llvm_execution_engine_t& runtime, const void*
 value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const uint64_t encoded_value, const typeid_t& type);
 
 
-
-
 typeid_t unpack_itype(const llvm_execution_engine_t& runtime, int64_t itype);
 int64_t pack_itype(const llvm_execution_engine_t& runtime, const typeid_t& type);
 
@@ -124,19 +114,8 @@ int64_t pack_itype(const llvm_execution_engine_t& runtime, const typeid_t& type)
 value_t llvm_valueptr_to_value(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type);
 
 
-
-
-
-
-llvm_execution_engine_t& get_floyd_runtime(void* floyd_runtime_ptr);
 void hook(const std::string& s, void* floyd_runtime_ptr, int64_t arg);
 std::string gen_to_string(llvm_execution_engine_t& runtime, int64_t arg_value, int64_t arg_type);
-
-//	The names of these are computed from the host-id in the symbol table, not the names of the functions/symbols.
-//	They must use C calling convention so llvm JIT can find them.
-//	Make sure they are not dead-stripped out of binary!
-
-void floyd_runtime__unresolved_func(void* floyd_runtime_ptr);
 
 
 std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context);

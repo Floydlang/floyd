@@ -36,6 +36,26 @@ namespace floyd {
 
 
 
+//	The names of these are computed from the host-id in the symbol table, not the names of the functions/symbols.
+//	They must use C calling convention so llvm JIT can find them.
+//	Make sure they are not dead-stripped out of binary!
+void floyd_runtime__unresolved_func(void* floyd_runtime_ptr);
+
+llvm_execution_engine_t& get_floyd_runtime(void* floyd_runtime_ptr);
+
+
+
+/*
+	auto gv = program.module->getGlobalVariable("result");
+	const auto p3 = exeEng->getPointerToGlobal(gv);
+
+	const auto result = *(uint64_t*)p3;
+
+	const auto p = exeEng->getPointerToGlobalIfAvailable("result");
+	llvm::GlobalVariable* p2 = exeEng->FindGlobalVariableNamed("result", true);
+*/
+
+
 const function_def_t& find_function_def2(const std::vector<function_def_t>& function_defs, const std::string& function_name){
 	auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.def_name == function_name; } );
 	QUARK_ASSERT(it != function_defs.end());
@@ -50,6 +70,8 @@ const function_def_t& find_function_def2(const std::vector<function_def_t>& func
 //////////////////////////////////////////		COMPARE
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct runtime_external_handle_t {
+};
 
 
 int runtime_compare_value_true_deep(const llvm_execution_engine_t& runtime, const value_t& left, const value_t& right, const typeid_t& type0);
