@@ -100,12 +100,6 @@ value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid
 std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name);
 value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v);
 
-value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const encoded_native_value_t encoded_value, const typeid_t& type);
-
-VEC_T* unpack_vec_arg(const llvm_execution_engine_t& runtime, encoded_native_value_t arg_value, encoded_native_value_t arg_type);
-
-value_t llvm_global_to_value(const llvm_execution_engine_t& runtime, const void* global_ptr, const typeid_t& type);
-value_t llvm_valueptr_to_value(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type);
 
 std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context);
 std::map<std::string, void*> get_host_functions_map2();

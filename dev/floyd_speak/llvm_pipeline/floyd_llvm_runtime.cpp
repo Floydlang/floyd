@@ -43,6 +43,11 @@ void floyd_runtime__unresolved_func(void* floyd_runtime_ptr);
 
 llvm_execution_engine_t& get_floyd_runtime(void* floyd_runtime_ptr);
 
+value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const encoded_native_value_t encoded_value, const typeid_t& type);
+
+value_t llvm_global_to_value(const llvm_execution_engine_t& runtime, const void* global_ptr, const typeid_t& type);
+value_t llvm_valueptr_to_value(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type);
+
 
 const function_def_t& find_function_def2(const std::vector<function_def_t>& function_defs, const std::string& function_name){
 	auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.def_name == function_name; } );
@@ -684,7 +689,7 @@ encoded_native_value_t pack_encoded_itype(const itype_t& itype){
 	return itype.itype;
 }
 
-VEC_T* unpack_vec_arg(const llvm_execution_engine_t& r, encoded_native_value_t arg_value, encoded_native_value_t arg_type){
+static VEC_T* unpack_vec_arg(const llvm_execution_engine_t& r, encoded_native_value_t arg_value, encoded_native_value_t arg_type){
 	const auto type = lookup_type(r.type_interner, unpack_encoded_itype(arg_type));
 	QUARK_ASSERT(type.is_vector());
 	const auto vec = (VEC_T*)arg_value;
