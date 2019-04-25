@@ -304,8 +304,6 @@ static llvm::Value* generate_encoded_value(llvm_code_generator_t& gen_acc, llvm:
 	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
-	// We assume that the next arg in the llvm_mapping is the dyn-type.
-
 	if(floyd_type.is_function()){
 		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "function_as_arg");
 	}
@@ -316,7 +314,7 @@ static llvm::Value* generate_encoded_value(llvm_code_generator_t& gen_acc, llvm:
 		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "string_as_arg");
 	}
 	else if(floyd_type.is_vector()){
-		auto vec_ptr = get_vec_ptr(builder, &value);
+		auto vec_ptr = generate_vec_alloca(builder, &value);
 		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, vec_ptr, builder.getInt64Ty(), "");
 	}
 	else if(floyd_type.is_int()){
@@ -762,8 +760,8 @@ static llvm::Value* generate_arithmetic_expression(llvm_code_generator_t& gen_ac
 		const auto def = find_function_def(gen_acc, "floyd_runtime__concatunate_vectors");
 		std::vector<llvm::Value*> args2;
 		args2.push_back(get_callers_fcp(emit_f));
-		args2.push_back(get_vec_ptr(builder, lhs_temp));
-		args2.push_back(get_vec_ptr(builder, rhs_temp));
+		args2.push_back(generate_vec_alloca(builder, lhs_temp));
+		args2.push_back(generate_vec_alloca(builder, rhs_temp));
 		auto wide_return_reg = gen_acc.builder.CreateCall(def.llvm_f, args2, "concatunate_vectors");
 		auto vec_reg = generate__convert_wide_return_to_vec(builder, wide_return_reg);
 		return vec_reg;
@@ -1797,7 +1795,7 @@ static gen_statement_mode generate_statements(llvm_code_generator_t& gen_acc, ll
 
 
 
-
+//	Generates local symbols for arguments and local variables.
 std::vector<resolved_symbol_t> generate_function_symbols(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const function_definition_t& function_def){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
@@ -1821,7 +1819,7 @@ std::vector<resolved_symbol_t> generate_function_symbols(llvm_code_generator_t& 
 		//	Figure out if this symbol is an argument in function definition or a local variable.
 		//	Check if we can find an argument with this name => it's an argument.
 		//	TODO: SAST could contain argument/local information to make this tighter.
-
+		//	Reserve stack slot for each local. But not arguments, they already have stack slot.
 		const auto arg_it = std::find_if(mapping.args.begin(), mapping.args.end(), [&](const llvm_arg_mapping_t& arg) -> bool {
 			QUARK_TRACE_SS(arg.floyd_name);
 			return arg.floyd_name == e.first;
@@ -1831,7 +1829,7 @@ std::vector<resolved_symbol_t> generate_function_symbols(llvm_code_generator_t& 
 			//	Find Value* for the argument by matching the argument index. Remember that we always add a floyd_runtime_ptr to all LLVM functions.
 			auto f_args = emit_f.args();
 			const auto f_args_size = f_args.end() - f_args.begin();
-			
+
 			QUARK_ASSERT(f_args_size >= 1);
 			QUARK_ASSERT(f_args_size == mapping.args.size());
 
@@ -1847,8 +1845,6 @@ std::vector<resolved_symbol_t> generate_function_symbols(llvm_code_generator_t& 
 
 			result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_function_argument, e.first, e.second));
 		}
-
-		//	Reserve stack slot for each local. But not arguments, they already have stack slot.
 		else{
 			llvm::Value* dest = gen_acc.builder.CreateAlloca(itype, nullptr, e.first);
 

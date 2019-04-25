@@ -316,8 +316,7 @@ llvm::Type* make_vec_type(llvm::LLVMContext& context){
 	return s;
 }
 
-//??? generate*
-llvm::Value* get_vec_ptr(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue){
+llvm::Value* generate_vec_alloca(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue){
 	auto& context = builder.getContext();
 
 	auto alloc_value = builder.CreateAlloca(make_vec_type(context));
