@@ -250,10 +250,38 @@ std::string print_value(llvm::Value* value){
 
 
 
+////////////////////////////////		WIDE_RETURN_T
+
+
+
+llvm::Type* make_wide_return_type(llvm::LLVMContext& context){
+	std::vector<llvm::Type*> members = {
+		//	a
+		llvm::Type::getInt64Ty(context),
+
+		//	b
+		llvm::Type::getInt64Ty(context)
+	};
+	llvm::StructType* s = llvm::StructType::get(context, members, false);
+	return s;
+}
+
+WIDE_RETURN_T make_wide_return_2x64(encoded_native_value_t a, encoded_native_value_t b){
+	return WIDE_RETURN_T{ a, b };
+}
+
+WIDE_RETURN_T make_wide_return_charptr(const char* s){
+	return WIDE_RETURN_T{ reinterpret_cast<uint64_t>(s), 0 };
+}
+
+WIDE_RETURN_T make_wide_return_structptr(const void* s){
+	return WIDE_RETURN_T{ reinterpret_cast<uint64_t>(s), 0 };
+}
 
 
 
 ////////////////////////////////	floyd_runtime_ptr
+
 
 
 bool check_callers_fcp(llvm::Function& emit_f){
@@ -264,7 +292,6 @@ bool check_callers_fcp(llvm::Function& emit_f){
 	QUARK_ASSERT(floyd_context_arg_ptr->getType()->getPointerElementType()->isIntegerTy(32));
 	return true;
 }
-
 
 bool check_emitting_function(llvm::Function& emit_f){
 	QUARK_ASSERT(check_callers_fcp(emit_f));
@@ -283,13 +310,9 @@ llvm::Value* get_callers_fcp(llvm::Function& emit_f){
 	return floyd_context_arg_ptr;
 }
 
-
-
 llvm::Type* make_frp_type(llvm::LLVMContext& context){
 	return llvm::Type::getInt32PtrTy(context);
 }
-
-
 
 
 
@@ -341,31 +364,8 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_UT_VERIFY(wr_struct_size == 16);
 }
 
-/*
-VEC_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint16_t element_bits, uint32_t element_count){
-	auto r = get_floyd_runtime(floyd_runtime_ptr);
-	QUARK_ASSERT(element_bits <= 64);
-
-	const auto alloc_bits = element_count * element_bits;
-	const auto alloc_count = (alloc_bits / 64) + (alloc_bits & 64) ? 1 : 0;
-
-	auto element_ptr = reinterpret_cast<uint64_t*>(std::calloc(alloc_count, sizeof(uint64_t)));
-	if(element_ptr == nullptr){
-		throw std::exception();
-	}
-
-	VEC_T result;
-	result.element_ptr = element_ptr;
-	result.magic = 0xDABB;
-	result.element_bits = element_bits;
-	result.element_count = element_count;
-	return result;
-}
-*/
-
-//	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
 VEC_T make_vec(uint32_t element_count){
-	auto element_ptr = reinterpret_cast<uint64_t*>(std::calloc(element_count, sizeof(uint64_t)));
+	auto element_ptr = reinterpret_cast<encoded_native_value_t*>(std::calloc(element_count, sizeof(encoded_native_value_t)));
 	if(element_ptr == nullptr){
 		throw std::exception();
 	}
@@ -389,40 +389,6 @@ void delete_vec(VEC_T& vec){
 	vec.element_count = -vec.element_count;
 }
 
-
-
-
-////////////////////////////////		WIDE_RETURN_T
-
-
-
-llvm::Type* make_wide_return_type(llvm::LLVMContext& context){
-	std::vector<llvm::Type*> members = {
-		//	a
-		llvm::Type::getInt64Ty(context),
-
-		//	b
-		llvm::Type::getInt64Ty(context)
-	};
-	llvm::StructType* s = llvm::StructType::get(context, members, false);
-	return s;
-}
-
-
-
-WIDE_RETURN_T make_wide_return_2x64(uint64_t a, uint64_t b){
-	return WIDE_RETURN_T{ a, b };
-}
-
-
-WIDE_RETURN_T make_wide_return_charptr(const char* s){
-	return WIDE_RETURN_T{ reinterpret_cast<uint64_t>(s), 0 };
-}
-
-WIDE_RETURN_T make_wide_return_structptr(const void* s){
-	return WIDE_RETURN_T{ reinterpret_cast<uint64_t>(s), 0 };
-}
-
 WIDE_RETURN_T make_wide_return_vec(const VEC_T& vec){
 	return *reinterpret_cast<const WIDE_RETURN_T*>(&vec);
 }
@@ -430,11 +396,6 @@ WIDE_RETURN_T make_wide_return_vec(const VEC_T& vec){
 VEC_T wider_return_to_vec(const WIDE_RETURN_T& ret){
 	return *reinterpret_cast<const VEC_T*>(&ret);
 }
-
-
-
-
-
 
 llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg){
 	auto& context = builder.getContext();
@@ -446,16 +407,6 @@ llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, ll
 	return vec_reg;
 }
 
-/*
-llvm::Value* generate__convert_wide_return_to_struct_ptr(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg, const typeid_t& struct_type){
-	auto& context = builder.getContext();
-
-	auto t = make_struct_type(builder.getContext(), struct_type);
-	auto ptr2_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, wide_return_ptr_reg, make_vec_type(context)->getPointerTo(), "");
-	auto vec_reg = builder.CreateLoad(vec_ptr_reg, "final");
-	return vec_reg;
-}
-*/
 
 
 
@@ -544,8 +495,8 @@ llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const flo
 
 		//	For dynamic values, store its dynamic type as an extra argument.
 		if(arg.is_internal_dynamic()){
-			arg_results.push_back({ llvm::Type::getInt64Ty(context), std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_dyn_value });
-			arg_results.push_back({ llvm::Type::getInt64Ty(context), std::to_string(index), typeid_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
+			arg_results.push_back({ make_dyn_value_type(context), std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_dyn_value });
+			arg_results.push_back({ make_dyn_value_type_type(context), std::to_string(index), typeid_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
 		}
 		else {
 			auto arg_itype = intern_type(context, arg);
@@ -672,6 +623,8 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int, DYN,
 
 ////////////////////////////////		intern_type()
 
+
+
 //	Function-types are always returned as pointer-to-function types.
 llvm::Type* make_function_type(llvm::LLVMContext& context, const typeid_t& function_type){
 	QUARK_ASSERT(function_type.check_invariant());
@@ -742,9 +695,7 @@ llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type){
 	}
 
 	else if(type.is_internal_dynamic()){
-		//??? should return DYN
-//		QUARK_ASSERT(false);
-		return llvm::Type::getInt64Ty(context);
+		return make_dyn_value_type(context);
 	}
 	else if(type.is_function()){
 		return make_function_type(context, type);

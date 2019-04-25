@@ -28,6 +28,8 @@ namespace llvm {
 namespace floyd {
 
 
+
+
 ////////////////////////////////		host_func_t
 
 
@@ -79,7 +81,10 @@ struct llvm_execution_engine_t {
 typedef int64_t (*FLOYD_RUNTIME_INIT)(void* floyd_runtime_ptr);
 typedef void (*FLOYD_RUNTIME_HOST_FUNCTION)(void* floyd_runtime_ptr, int64_t arg);
 
-typedef int64_t (*FLOYD_RUNTIME_F)(void* floyd_runtime_ptr, const char* args);
+
+//??? How to do this?
+typedef encoded_native_value_t (*FLOYD_RUNTIME_F)(void* floyd_runtime_ptr, const char* args);
+
 
 const function_def_t& find_function_def2(const std::vector<function_def_t>& function_defs, const std::string& function_name);
 
@@ -95,12 +100,11 @@ value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid
 std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name);
 value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v);
 
-value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const uint64_t encoded_value, const typeid_t& type);
+value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const encoded_native_value_t encoded_value, const typeid_t& type);
 
-VEC_T* unpack_vec_arg(const llvm_execution_engine_t& runtime, int64_t arg_value, int64_t arg_type);
+VEC_T* unpack_vec_arg(const llvm_execution_engine_t& runtime, encoded_native_value_t arg_value, encoded_native_value_t arg_type);
 
 value_t llvm_global_to_value(const llvm_execution_engine_t& runtime, const void* global_ptr, const typeid_t& type);
-value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const uint64_t encoded_value, const typeid_t& type);
 value_t llvm_valueptr_to_value(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type);
 
 std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context);

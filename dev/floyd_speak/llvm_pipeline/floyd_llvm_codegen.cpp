@@ -326,12 +326,6 @@ static llvm::Value* generate_encoded_value(llvm_code_generator_t& gen_acc, llvm:
 		return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, builder.getInt64Ty(), "bool_as_arg");
 	}
 	else if(floyd_type.is_struct()){
-/*
-		auto struct_type_llvm = make_struct_type(context, floyd_type);
-		auto alloc_ptr_reg = builder.CreateAlloca(struct_type_llvm);
-		builder.CreateStore(&value, alloc_ptr_reg);
-		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, alloc_ptr_reg, builder.getInt64Ty(), "");
-*/
 		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "");
 	}
 	else{
@@ -1064,36 +1058,6 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 	return result;
 }
 
-/*
-			auto vec_elements_ptr_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(VEC_T_MEMBERS::element_ptr) });
-			auto vec_magic_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(VEC_T_MEMBERS::magic) });
-			auto vec_element_bits_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(VEC_T_MEMBERS::element_bits) });
-			auto vec_element_count = builder.CreateExtractValue(vec_ptr, { static_cast<int>(VEC_T_MEMBERS::element_count) });
-
-			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, dyn_a, llvm::Type::getInt64PtrTy(context), "a->element_ptr");
-
-			auto element_count_value = builder.CreateTrunc(dyn_b, llvm::Type::getInt32Ty(context));
-
-			const auto vec_type = make_vec_type(context);
-			auto vec_value = builder.CreateAlloca(vec_type, nullptr, "temp_vec");
-
-			const auto gep_index_list = std::vector<llvm::Value*>{
-				llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0),
-				llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), static_cast<int>(VEC_T_MEMBERS::element_ptr)),
-			};
-			llvm::Value* e_addr = builder.CreateGEP(vec_type, vec_value, gep_index_list, "");
-
-			const auto gep_index_list2 = std::vector<llvm::Value*>{
-				llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0),
-				llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), static_cast<int>(VEC_T_MEMBERS::element_count))
-			};
-			llvm::Value* f_addr = builder.CreateGEP(vec_type, vec_value, gep_index_list2, "");
-
-			builder.CreateStore(element_ptr, e_addr);
-			builder.CreateStore(element_count_value, f_addr);
-			result = builder.CreateLoad(vec_value, "final");
-*/
-
 static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -1460,9 +1424,6 @@ static gen_statement_mode generate_ifelse_statement(llvm_code_generator_t& gen_a
 	//	Notice that generate_block() may create its own BBs and a different BB than then_bb may current when it returns.
 	const auto else_mode = generate_block(gen_acc, emit_f, statement._else_body);
 	auto else_bb2 = builder.GetInsertBlock();
-
-
-//	auto module = builder->GetInsertBlock()->getParent()->getParent();
 
 
 	//	Scenario A: both then-block and else-block always returns = no need for join BB.
@@ -2305,8 +2266,8 @@ llvm_execution_engine_t make_engine_run_init(llvm_instance_t& instance, llvm_ir_
 		QUARK_ASSERT(print_global_ptr != nullptr);
 
 		const auto print_f = *print_global_ptr;
+		QUARK_ASSERT(print_f != nullptr);
 		if(print_f){
-			QUARK_ASSERT(print_f != nullptr);
 
 //			(*print_f)(&ee, 109);
 		}

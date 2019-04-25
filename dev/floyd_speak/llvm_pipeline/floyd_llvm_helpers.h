@@ -112,6 +112,30 @@ std::string print_value(llvm::Value* value);
 
 ////////////////////////////////	floyd_runtime_ptr
 
+typedef uint64_t encoded_native_value_t;
+inline llvm::Type* make_encoded_native_value_type(llvm::LLVMContext& context){
+	return llvm::Type::getInt64Ty(context);
+}
+
+typedef uint64_t dyn_value_argument_t;
+
+inline llvm::Type* make_dyn_value_type(llvm::LLVMContext& context){
+	return llvm::Type::getInt64Ty(context);
+}
+
+
+//??? should be 32bit
+typedef uint64_t dyn_value_type_argument_t;
+
+inline llvm::Type* make_dyn_value_type_type(llvm::LLVMContext& context){
+	return llvm::Type::getInt64Ty(context);
+}
+
+
+
+
+////////////////////////////////	floyd_runtime_ptr
+
 
 //	This pointer is passed as argument 0 to all compiled floyd functions and all runtime functions.
 
@@ -122,13 +146,38 @@ llvm::Type* make_frp_type(llvm::LLVMContext& context);
 
 
 
+////////////////////////////////		WIDE_RETURN_T
+
+
+//	Used to return structs and bigger chunks of data from LLVM functions.
+//	Can only be two members in LLVM struct, each a word wide.
+
+
+//	??? Also use for arguments, not only return.
+struct WIDE_RETURN_T {
+	uint64_t a;
+	uint64_t b;
+};
+
+enum class WIDE_RETURN_MEMBERS {
+	a = 0,
+	b = 1
+};
+
+
+llvm::Type* make_wide_return_type(llvm::LLVMContext& context);
+
+WIDE_RETURN_T make_wide_return_2x64(encoded_native_value_t a, encoded_native_value_t b);
+WIDE_RETURN_T make_wide_return_charptr(const char* s);
+WIDE_RETURN_T make_wide_return_structptr(const void* s);
+
+
+
 
 ////////////////////////////////		VEC_T
 
 
 
-//??? need word for "encoded". How data is stuffed into the LLVM instruction set..
-//??? VEC_T for strings too!
 /*
 	Vectors
 
@@ -143,7 +192,7 @@ llvm::Type* make_frp_type(llvm::LLVMContext& context);
 		calloc(alloc_count, sizeof(uint64_t))
 */
 struct VEC_T {
-	uint64_t* element_ptr;
+	encoded_native_value_t* element_ptr;
 	uint32_t element_count;
 	uint16_t magic;
 	uint16_t element_bits;
@@ -177,6 +226,14 @@ llvm::Type* make_vec_type(llvm::LLVMContext& context);
 llvm::Value* generate_vec_alloca(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue);
 
 
+WIDE_RETURN_T make_wide_return_vec(const VEC_T& vec);
+VEC_T wider_return_to_vec(const WIDE_RETURN_T& ret);
+
+
+//	LLVM can't cast a struct-value to another struct value - need to store on stack and cast pointer instead.
+//	Store the DYN to memory, then cast it to VEC and load it again.
+llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg);
+
 
 
 ////////////////////////////////		DICT_T
@@ -189,40 +246,6 @@ struct DICT_T {
 };
 
 
-////////////////////////////////		WIDE_RETURN_T
-
-//	Used to return structs and bigger chunks of data from LLVM functions.
-//	Can only be two members in LLVM struct, each an word wide.
-
-
-//	??? Also use for arguments, not only return.
-struct WIDE_RETURN_T {
-	uint64_t a;
-	uint64_t b;
-};
-
-enum class WIDE_RETURN_MEMBERS {
-	a = 0,
-	b = 1
-};
-
-
-llvm::Type* make_wide_return_type(llvm::LLVMContext& context);
-
-WIDE_RETURN_T make_wide_return_2x64(uint64_t a, uint64_t b);
-
-WIDE_RETURN_T make_wide_return_charptr(const char* s);
-WIDE_RETURN_T make_wide_return_structptr(const void* s);
-
-WIDE_RETURN_T make_wide_return_vec(const VEC_T& vec);
-VEC_T wider_return_to_vec(const WIDE_RETURN_T& ret);
-
-
-
-
-//	LLVM can't cast a struct-value to another struct value - need to store on stack and cast pointer instead.
-//	Store the DYN to memory, then cast it to VEC and load it again.
-llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg);
 
 //llvm::Value* generate__convert_wide_return_to_struct_ptr(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg, const typeid_t& struct_type);
 
@@ -261,15 +284,9 @@ llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const flo
 ////////////////////////////////		intern_type()
 
 llvm::Type* make_function_type(llvm::LLVMContext& context, const typeid_t& function_type);
-
 llvm::StructType* make_struct_type(llvm::LLVMContext& context, const typeid_t& type);
 
 llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type);
-
-
-//	??? Temp implementation of itype that supports base_types + vector[base_type] and dict[base_type] only.
-//int64_t pack_itype(const typeid_t& type);
-//typeid_t unpack_itype(int64_t type);
 
 
 }	//	floyd

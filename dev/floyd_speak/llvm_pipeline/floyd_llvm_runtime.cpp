@@ -44,18 +44,6 @@ void floyd_runtime__unresolved_func(void* floyd_runtime_ptr);
 llvm_execution_engine_t& get_floyd_runtime(void* floyd_runtime_ptr);
 
 
-
-/*
-	auto gv = program.module->getGlobalVariable("result");
-	const auto p3 = exeEng->getPointerToGlobal(gv);
-
-	const auto result = *(uint64_t*)p3;
-
-	const auto p = exeEng->getPointerToGlobalIfAvailable("result");
-	llvm::GlobalVariable* p2 = exeEng->FindGlobalVariableNamed("result", true);
-*/
-
-
 const function_def_t& find_function_def2(const std::vector<function_def_t>& function_defs, const std::string& function_name){
 	auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.def_name == function_name; } );
 	QUARK_ASSERT(it != function_defs.end());
@@ -68,7 +56,8 @@ const function_def_t& find_function_def2(const std::vector<function_def_t>& func
 
 
 //////////////////////////////////////////		COMPARE
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 struct runtime_external_handle_t {
 };
@@ -620,8 +609,6 @@ int runtime_compare_value_true_deep(const llvm_execution_engine_t& runtime, cons
 
 
 
-
-
 void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name){
 	QUARK_ASSERT(ee.check_invariant());
 	QUARK_ASSERT(name.empty() == false);
@@ -637,8 +624,6 @@ void* get_global_function(llvm_execution_engine_t& ee, const std::string& name){
 	const auto addr = ee.ee->getFunctionAddress(name);
 	return (void*)addr;
 }
-
-
 
 
 std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std::string& name){
@@ -661,7 +646,7 @@ value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid
 	QUARK_ASSERT(f.second.is_function());
 
 	const auto function_ptr = reinterpret_cast<FLOYD_RUNTIME_F*>(f.first);
-	int64_t return_encoded = (*function_ptr)(&ee, "?dummy arg to main()?");
+	encoded_native_value_t return_encoded = (*function_ptr)(&ee, "?dummy arg to main()?");
 
 	const auto return_type = f.second.get_function_return();
 	return runtime_llvm_to_value(ee, return_encoded, return_type);
@@ -691,15 +676,15 @@ value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t
 }
 
 
-itype_t unpack_encoded_itype(int64_t itype){
+itype_t unpack_encoded_itype(encoded_native_value_t itype){
 	return itype_t(static_cast<uint32_t>(itype));
 }
 
-int64_t pack_encoded_itype(const itype_t& itype){
+encoded_native_value_t pack_encoded_itype(const itype_t& itype){
 	return itype.itype;
 }
 
-VEC_T* unpack_vec_arg(const llvm_execution_engine_t& r, int64_t arg_value, int64_t arg_type){
+VEC_T* unpack_vec_arg(const llvm_execution_engine_t& r, encoded_native_value_t arg_value, encoded_native_value_t arg_type){
 	const auto type = lookup_type(r.type_interner, unpack_encoded_itype(arg_type));
 	QUARK_ASSERT(type.is_vector());
 	const auto vec = (VEC_T*)arg_value;
@@ -725,7 +710,7 @@ value_t llvm_global_to_value(const llvm_execution_engine_t& runtime, const void*
 
 //??? Lose concept of "encoded" value ASAP.
 
-value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const uint64_t encoded_value, const typeid_t& type){
+value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const encoded_native_value_t encoded_value, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	//??? more types.
@@ -766,7 +751,7 @@ value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const uint
 		const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
 		for(const auto& e: struct_def._members){
 			const auto offset = layout->getElementOffset(member_index);
-			const auto member_ptr = reinterpret_cast<int64_t*>(encoded_value + offset);
+			const auto member_ptr = reinterpret_cast<const void*>(encoded_value + offset);
 			const auto member_value = llvm_valueptr_to_value(runtime, member_ptr, e._type);
 			members.push_back(member_value);
 			member_index++;
@@ -853,7 +838,7 @@ value_t llvm_valueptr_to_value(const llvm_execution_engine_t& runtime, const voi
 
 		for(const auto& e: struct_def._members){
 			const auto member_offset = layout->getElementOffset(member_index);
-			const auto member_ptr = reinterpret_cast<const int64_t*>(struct_ptr + member_offset);
+			const auto member_ptr = reinterpret_cast<const void*>(struct_ptr + member_offset);
 			const auto member_value = llvm_valueptr_to_value(runtime, member_ptr, e._type);
 			members.push_back(member_value);
 			member_index++;
@@ -962,7 +947,7 @@ llvm_execution_engine_t& get_floyd_runtime(void* floyd_runtime_ptr){
 	return *ptr;
 }
 
-void hook(const std::string& s, void* floyd_runtime_ptr, int64_t arg){
+void hook(const std::string& s, void* floyd_runtime_ptr, encoded_native_value_t arg){
 	std:: cout << s << arg << " arg: " << std::endl;
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 	throw std::runtime_error("HOST FUNCTION NOT IMPLEMENTED FOR LLVM");
@@ -970,7 +955,7 @@ void hook(const std::string& s, void* floyd_runtime_ptr, int64_t arg){
 
 
 
-std::string gen_to_string(llvm_execution_engine_t& runtime, int64_t arg_value, int64_t arg_type){
+std::string gen_to_string(llvm_execution_engine_t& runtime, encoded_native_value_t arg_value, encoded_native_value_t arg_type){
 	QUARK_ASSERT(runtime.check_invariant());
 
 	const auto type = lookup_type(runtime.type_interner, unpack_encoded_itype(arg_type));
@@ -1158,7 +1143,7 @@ host_func_t floyd_runtime__delete_vector__make(llvm::LLVMContext& context){
 ////////////////////////////////		compare_vectors()
 
 
-int32_t floyd_runtime__compare_values(void* floyd_runtime_ptr, int64_t op, const uint64_t type, uint64_t lhs, uint64_t rhs){
+int32_t floyd_runtime__compare_values(void* floyd_runtime_ptr, int64_t op, const uint64_t type, dyn_value_argument_t lhs, dyn_value_argument_t rhs){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto value_type = lookup_type(r.type_interner, unpack_encoded_itype(type));
@@ -1202,8 +1187,8 @@ host_func_t floyd_runtime__compare_values__make(llvm::LLVMContext& context){
 			llvm::Type::getInt64Ty(context),
 			llvm::Type::getInt64Ty(context),
 
-			llvm::Type::getInt64Ty(context),
-			llvm::Type::getInt64Ty(context)
+			make_dyn_value_type(context),
+			make_dyn_value_type(context)
 		},
 		false
 	);
@@ -1287,7 +1272,7 @@ std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context){
 
 
 
-
+//??? should be an int1?
 void floyd_funcdef__assert(void* floyd_runtime_ptr, int64_t arg){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
@@ -1345,8 +1330,9 @@ int64_t floyd_funcdef__find__string(llvm_execution_engine_t& floyd_runtime_ptr, 
 }
 
 
+//??? use int32 for types.
 
-int64_t floyd_funcdef__find(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
+int64_t floyd_funcdef__find(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, int64_t arg0_type, dyn_value_argument_t arg1_value, int64_t arg1_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
@@ -1425,7 +1411,7 @@ void floyd_host_function_1019(void* floyd_runtime_ptr, int64_t arg){
 
 
 //	??? Make visitor to handle different types.
-void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
+void floyd_funcdef__print(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, int64_t arg0_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 	const auto s = gen_to_string(r, arg0_value, arg0_type);
 	r._print_output.push_back(s);
@@ -1434,7 +1420,7 @@ void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg0_value, int64_t a
 
 
 
-const WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
+const WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, int64_t arg0_type, dyn_value_argument_t arg1_value, int64_t arg1_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
@@ -1506,7 +1492,7 @@ void copy_elements(uint64_t dest[], uint64_t source[], uint32_t count){
 	}
 }
 
-const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end, int64_t arg3_value, int64_t arg3_type){
+const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, int64_t arg0_type, int64_t start, int64_t end, dyn_value_argument_t arg3_value, int64_t arg3_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	if(start < 0 || end < 0){
@@ -1558,7 +1544,7 @@ void floyd_host_function_1027(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
+int64_t floyd_funcdef__size(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, int64_t arg0_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
@@ -1576,7 +1562,7 @@ int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, int64_t
 	}
 }
 
-const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t start, int64_t end){
+const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, int64_t arg0_type, int64_t start, int64_t end){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	if(start < 0 || end < 0){
@@ -1629,7 +1615,7 @@ void floyd_host_function_1031(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-const char* floyd_host__to_string(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
+const char* floyd_host__to_string(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, int64_t arg0_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto s = gen_to_string(r, arg0_value, arg0_type);
@@ -1642,7 +1628,7 @@ const char* floyd_host__to_string(void* floyd_runtime_ptr, int64_t arg0_value, i
 
 //		make_rec("typeof", host__typeof, 1004, typeid_t::make_function(typeid_t::make_typeid(), { DYN }, epure::pure)),
 
-int32_t floyd_host__typeof(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
+int32_t floyd_host__typeof(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, int64_t arg0_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
@@ -1653,7 +1639,7 @@ int32_t floyd_host__typeof(void* floyd_runtime_ptr, int64_t arg0_value, int64_t 
 //	??? promote update() to a statement, rather than a function call. Replace all statement and expressions with function calls? LISP!
 //	???	Update of structs should resolve member-name at compile time, replace with index.
 //	??? Range should be integers, not DYN! Change host function prototype.
-const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type, int64_t arg2_value, int64_t arg2_type){
+const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, int64_t arg0_type, dyn_value_argument_t arg1_value, int64_t arg1_type, dyn_value_argument_t arg2_value, int64_t arg2_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	auto& context = r.instance->context;
@@ -1719,7 +1705,7 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_
 			for(int i = 0 ; i < result.element_count ; i++){
 				result.element_ptr[i] = vec->element_ptr[i];
 			}
-			result.element_ptr[index] = static_cast<int64_t>(arg2_value ? 1 : 0);
+			result.element_ptr[index] = static_cast<encoded_native_value_t>(arg2_value ? 1 : 0);
 			return make_wide_return_vec(result);
 		}
 		else{
@@ -1763,7 +1749,7 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_
 		std::memcpy(struct_ptr, source_struct_ptr, struct_bytes);
 
 		const auto member_offset = layout->getElementOffset(member_index);
-		const auto member_ptr = reinterpret_cast<const int64_t*>(struct_ptr + member_offset);
+		const auto member_ptr = reinterpret_cast<const void*>(struct_ptr + member_offset);
 
 		const auto member_type = struct_def._members[member_index]._type;
 
