@@ -148,6 +148,7 @@ static llvm::Value* generate_expression(llvm_code_generator_t& gen_acc, llvm::Fu
 
 
 
+////////////////////////////////		DEBUG
 
 
 std::string print_resolved_symbols(const std::vector<resolved_symbol_t>& globals){
@@ -198,6 +199,11 @@ std::string print_program(const llvm_ir_program_t& program){
 
 
 
+
+////////////////////////////////		PRIMITIVES
+
+
+
 const function_def_t& find_function_def(llvm_code_generator_t& gen_acc, const std::string& function_name){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
@@ -234,13 +240,6 @@ resolved_symbol_t find_symbol(llvm_code_generator_t& gen_acc, const variable_add
 		return scope[reg._index];
 	}
 }
-
-
-
-
-
-
-
 
 
 typeid_t unpack_itype(const llvm_code_generator_t& gen, int64_t itype){
@@ -289,10 +288,95 @@ std::string compose_function_def_name(int function_id, const function_definition
 
 
 
+////////////////////////////////		CODE GENERATION PRIMITIVES
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+//??? Get rid of encoded-value concept!
+//	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value.
+//	If the value is big, it's stored on the stack and a pointer returned => the returned value is not standalone and lifetime limited to emit function scope.
+static llvm::Value* generate_encoded_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(floyd_type.check_invariant());
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	// We assume that the next arg in the llvm_mapping is the dyn-type.
+
+	if(floyd_type.is_function()){
+		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "function_as_arg");
+	}
+	else if(floyd_type.is_double()){
+		return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value, builder.getInt64Ty(), "double_as_arg");
+	}
+	else if(floyd_type.is_string()){
+		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "string_as_arg");
+	}
+	else if(floyd_type.is_vector()){
+		auto vec_ptr = get_vec_ptr(builder, &value);
+		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, vec_ptr, builder.getInt64Ty(), "");
+	}
+	else if(floyd_type.is_int()){
+		return &value;
+	}
+	else if(floyd_type.is_typeid()){
+		return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, builder.getInt64Ty(), "typeid_as_arg");
+	}
+	else if(floyd_type.is_bool()){
+		return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, builder.getInt64Ty(), "bool_as_arg");
+	}
+	else if(floyd_type.is_struct()){
+/*
+		auto struct_type_llvm = make_struct_type(context, floyd_type);
+		auto alloc_ptr_reg = builder.CreateAlloca(struct_type_llvm);
+		builder.CreateStore(&value, alloc_ptr_reg);
+		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, alloc_ptr_reg, builder.getInt64Ty(), "");
+*/
+		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "");
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
+
+static llvm::Value* generate_alloc_vec(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, uint64_t element_count, const std::string& debug){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	const auto allocate_vector_func = find_function_def(gen_acc, "floyd_runtime__allocate_vector");
+
+	const auto element_count_value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), element_count);
+
+	//	Local function, called once.
+	const auto wide_return_reg = [&](){
+		std::vector<llvm::Value*> args2;
+		args2.push_back(get_callers_fcp(emit_f));
+		args2.push_back(element_count_value);
+		auto x = builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_vector()" + debug);
+		return x;
+	}();
+
+	auto vec_reg = generate__convert_wide_return_to_vec(builder, wide_return_reg);
+	return vec_reg;
+}
+
+static llvm::Value* generate_allocate_memory(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& bytes_reg){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+
+	const auto def = find_function_def(gen_acc, "floyd_runtime__allocate_memory");
+
+	std::vector<llvm::Value*> args;
+	args.push_back(get_callers_fcp(emit_f));
+	args.push_back(&bytes_reg);
+	auto result = gen_acc.builder.CreateCall(def.llvm_f, args, "allocate_memory");
+	return result;
+}
 
 //	Makes constant from a Floyd value.
 llvm::Constant* generate_constant(llvm_code_generator_t& gen_acc, const value_t& value){
@@ -373,71 +457,33 @@ llvm::Constant* generate_constant(llvm_code_generator_t& gen_acc, const value_t&
 	}
 }
 
-std::vector<resolved_symbol_t> generate_function_symbols(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const function_definition_t& function_def){
+//??? Known at compile time!
+static llvm::Value* generate_type_size_calculation(llvm_code_generator_t& gen_acc, llvm::Type& type){
+	auto& builder = gen_acc.builder;
+/*
+	Calc struct size for malloc:
+	%Size = getelementptr %T* null, i32 1
+	%SizeI = ptrtoint %T* %Size to i32
+*/
+
+	auto null_ptr = llvm::ConstantPointerNull::get(type.getPointerTo());
+	auto element_index_reg = generate_constant(gen_acc, value_t::make_int(1));
+
+	const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_reg };
+	llvm::Value* ptr_reg = builder.CreateGEP(&type, null_ptr, gep_index_list2, "");
+	auto int_reg = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, ptr_reg, builder.getInt64Ty(), "calcsize");
+	return int_reg;
+}
+
+static llvm::Value* generate_allocate_instance(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Type& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(function_def.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
-	auto& context = gen_acc.module->getContext();
-
-	const auto floyd_func = std::get<function_definition_t::floyd_func_t>(function_def._contents);
-
-	const symbol_table_t& symbol_table = floyd_func._body->_symbol_table;
-
-	const auto mapping0 = map_function_arguments(context, function_def._function_type);
-	const auto mapping = name_args(mapping0, function_def._args);
-
-	//	Make a resolved_symbol_t for each element in the symbol table. Some are local variables, some are arguments.
-	std::vector<resolved_symbol_t> result;
-	for(const auto& e: symbol_table._symbols){
-		const auto type = e.second.get_type();
-		const auto itype = intern_type(context, type);
-
-		//	Figure out if this symbol is an argument in function definition or a local variable.
-		//	Check if we can find an argument with this name => it's an argument.
-		//	TODO: SAST could contain argument/local information to make this tighter.
-
-		const auto arg_it = std::find_if(mapping.args.begin(), mapping.args.end(), [&](const llvm_arg_mapping_t& arg) -> bool {
-			QUARK_TRACE_SS(arg.floyd_name);
-			return arg.floyd_name == e.first;
-		});
-		bool is_arg = arg_it != mapping.args.end();
-		if(is_arg){
-			//	Find Value* for the argument by matching the argument index. Remember that we always add a floyd_runtime_ptr to all LLVM functions.
-			auto f_args = emit_f.args();
-			const auto f_args_size = f_args.end() - f_args.begin();
-			
-			QUARK_ASSERT(f_args_size >= 1);
-			QUARK_ASSERT(f_args_size == mapping.args.size());
-
-			const auto llvm_arg_index = arg_it - mapping.args.begin();
-			QUARK_ASSERT(llvm_arg_index < f_args_size);
-
-			llvm::Argument* f_arg_ptr = f_args.begin() + llvm_arg_index;
-
-			//	The argument is used as the llvm::Value*.
-			llvm::Value* dest = f_arg_ptr;
-
-			const auto debug_str = "<ARGUMENT> name:" + e.first + " symbol_t: " + symbol_to_string(e.second);
-
-			result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_function_argument, e.first, e.second));
-		}
-
-		//	Reserve stack slot for each local. But not arguments, they already have stack slot.
-		else{
-			llvm::Value* dest = gen_acc.builder.CreateAlloca(itype, nullptr, e.first);
-
-			//	Init the slot if needed.
-			if(e.second._init.is_undefined() == false){
-				llvm::Value* c = generate_constant(gen_acc, e.second._init);
-				gen_acc.builder.CreateStore(c, dest);
-			}
-			const auto debug_str = "<LOCAL> name:" + e.first + " symbol_t: " + symbol_to_string(e.second);
-			result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_local, e.first, e.second));
-		}
-	}
-	QUARK_ASSERT(result.size() == symbol_table._symbols.size());
-	return result;
+	auto& builder = gen_acc.builder;
+	auto size_reg = generate_type_size_calculation(gen_acc, type);
+	auto memory_ptr_reg = generate_allocate_memory(gen_acc, emit_f, *size_reg);
+	auto ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, memory_ptr_reg, type.getPointerTo(), "");
+	return ptr_reg;
 }
 
 static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const symbol_table_t& symbol_table){
@@ -465,6 +511,26 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_code_generator_
 	}
 	return result;
 }
+
+
+static gen_statement_mode generate_block(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const body_t& body){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+
+	auto values = generate_symbol_slots(gen_acc, emit_f, body._symbol_table);
+
+	gen_acc.scope_path.push_back(values);
+	const auto more = generate_statements(gen_acc, emit_f, body._statements);
+	gen_acc.scope_path.pop_back();
+
+	QUARK_ASSERT(gen_acc.check_invariant());
+	return more;
+}
+
+
+////////////////////////////////		EXPRESSIONS
+
+
 
 static llvm::Value* generate_literal_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -735,54 +801,6 @@ static llvm::Value* generate_arithmetic_expression(llvm_code_generator_t& gen_ac
 	UNSUPPORTED();
 
 	return nullptr;
-}
-
-//??? Get rid of encoded-value concept!
-//	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value.
-//	If the value is big, it's stored on the stack and a pointer returned => the returned value is not standalone and lifetime limited to emit function scope.
-static llvm::Value* generate_encoded_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(floyd_type.check_invariant());
-
-	auto& context = gen_acc.instance->context;
-	auto& builder = gen_acc.builder;
-
-	// We assume that the next arg in the llvm_mapping is the dyn-type.
-
-	if(floyd_type.is_function()){
-		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "function_as_arg");
-	}
-	else if(floyd_type.is_double()){
-		return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value, builder.getInt64Ty(), "double_as_arg");
-	}
-	else if(floyd_type.is_string()){
-		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "string_as_arg");
-	}
-	else if(floyd_type.is_vector()){
-		auto vec_ptr = get_vec_ptr(builder, &value);
-		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, vec_ptr, builder.getInt64Ty(), "");
-	}
-	else if(floyd_type.is_int()){
-		return &value;
-	}
-	else if(floyd_type.is_typeid()){
-		return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, builder.getInt64Ty(), "typeid_as_arg");
-	}
-	else if(floyd_type.is_bool()){
-		return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, builder.getInt64Ty(), "bool_as_arg");
-	}
-	else if(floyd_type.is_struct()){
-/*
-		auto struct_type_llvm = make_struct_type(context, floyd_type);
-		auto alloc_ptr_reg = builder.CreateAlloca(struct_type_llvm);
-		builder.CreateStore(&value, alloc_ptr_reg);
-		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, alloc_ptr_reg, builder.getInt64Ty(), "");
-*/
-		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "");
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
 }
 
 static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, expression_type op, const expression_t& e, const expression_t::comparison_t& details){
@@ -1124,87 +1142,6 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 			result = builder.CreateLoad(vec_value, "final");
 */
 
-
-static gen_statement_mode generate_block(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const body_t& body){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(check_emitting_function(emit_f));
-
-	auto values = generate_symbol_slots(gen_acc, emit_f, body._symbol_table);
-
-	gen_acc.scope_path.push_back(values);
-	const auto more = generate_statements(gen_acc, emit_f, body._statements);
-	gen_acc.scope_path.pop_back();
-
-	QUARK_ASSERT(gen_acc.check_invariant());
-	return more;
-}
-
-static llvm::Value* generate_alloc_vec(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, uint64_t element_count, const std::string& debug){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(check_emitting_function(emit_f));
-
-	auto& context = gen_acc.instance->context;
-	auto& builder = gen_acc.builder;
-
-	const auto allocate_vector_func = find_function_def(gen_acc, "floyd_runtime__allocate_vector");
-
-	const auto element_count_value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), element_count);
-
-	//	Local function, called once.
-	const auto wide_return_reg = [&](){
-		std::vector<llvm::Value*> args2;
-		args2.push_back(get_callers_fcp(emit_f));
-		args2.push_back(element_count_value);
-		auto x = builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_vector()" + debug);
-		return x;
-	}();
-
-	auto vec_reg = generate__convert_wide_return_to_vec(builder, wide_return_reg);
-	return vec_reg;
-}
-
-static llvm::Value* generate_allocate_memory(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& bytes_reg){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(check_emitting_function(emit_f));
-
-	const auto def = find_function_def(gen_acc, "floyd_runtime__allocate_memory");
-
-	std::vector<llvm::Value*> args;
-	args.push_back(get_callers_fcp(emit_f));
-	args.push_back(&bytes_reg);
-	auto result = gen_acc.builder.CreateCall(def.llvm_f, args, "allocate_memory");
-	return result;
-}
-
-//??? Known at compile time!
-static llvm::Value* generate_type_size_calculation(llvm_code_generator_t& gen_acc, llvm::Type& type){
-	auto& builder = gen_acc.builder;
-/*
-	Calc struct size for malloc:
-	%Size = getelementptr %T* null, i32 1
-	%SizeI = ptrtoint %T* %Size to i32
-*/
-
-	auto null_ptr = llvm::ConstantPointerNull::get(type.getPointerTo());
-	auto element_index_reg = generate_constant(gen_acc, value_t::make_int(1));
-
-	const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_reg };
-	llvm::Value* ptr_reg = builder.CreateGEP(&type, null_ptr, gep_index_list2, "");
-	auto int_reg = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, ptr_reg, builder.getInt64Ty(), "calcsize");
-	return int_reg;
-}
-
-static llvm::Value* generate_allocate_instance(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Type& type){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(check_emitting_function(emit_f));
-
-	auto& builder = gen_acc.builder;
-	auto size_reg = generate_type_size_calculation(gen_acc, type);
-	auto memory_ptr_reg = generate_allocate_memory(gen_acc, emit_f, *size_reg);
-	auto ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, memory_ptr_reg, type.getPointerTo(), "");
-	return ptr_reg;
-}
-
 static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -1445,7 +1382,6 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 	return nullptr;
 }
 
-
 static llvm::Value* generate_load2_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::load2_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -1527,6 +1463,15 @@ static llvm::Value* generate_expression(llvm_code_generator_t& gen_acc, llvm::Fu
 	llvm::Value* result = std::visit(visitor_t{ gen_acc, e, emit_f }, e._contents);
 	return result;
 }
+
+
+
+
+////////////////////////////////		STATEMENTS
+
+
+
+
 
 static void generate_store2_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t::store2_t& s){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1765,7 +1710,6 @@ static llvm::Value* generate_return_statement(llvm_code_generator_t& gen_acc, ll
 	return gen_acc.builder.CreateRet(value);
 }
 
-
 static gen_statement_mode generate_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t& statement){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -1840,6 +1784,84 @@ static gen_statement_mode generate_statements(llvm_code_generator_t& gen_acc, ll
 		}
 	}
 	return gen_statement_mode::more;
+}
+
+
+
+
+
+
+////////////////////////////////		GLOBALS
+
+
+
+
+
+std::vector<resolved_symbol_t> generate_function_symbols(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const function_definition_t& function_def){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(function_def.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+
+	auto& context = gen_acc.module->getContext();
+
+	const auto floyd_func = std::get<function_definition_t::floyd_func_t>(function_def._contents);
+
+	const symbol_table_t& symbol_table = floyd_func._body->_symbol_table;
+
+	const auto mapping0 = map_function_arguments(context, function_def._function_type);
+	const auto mapping = name_args(mapping0, function_def._args);
+
+	//	Make a resolved_symbol_t for each element in the symbol table. Some are local variables, some are arguments.
+	std::vector<resolved_symbol_t> result;
+	for(const auto& e: symbol_table._symbols){
+		const auto type = e.second.get_type();
+		const auto itype = intern_type(context, type);
+
+		//	Figure out if this symbol is an argument in function definition or a local variable.
+		//	Check if we can find an argument with this name => it's an argument.
+		//	TODO: SAST could contain argument/local information to make this tighter.
+
+		const auto arg_it = std::find_if(mapping.args.begin(), mapping.args.end(), [&](const llvm_arg_mapping_t& arg) -> bool {
+			QUARK_TRACE_SS(arg.floyd_name);
+			return arg.floyd_name == e.first;
+		});
+		bool is_arg = arg_it != mapping.args.end();
+		if(is_arg){
+			//	Find Value* for the argument by matching the argument index. Remember that we always add a floyd_runtime_ptr to all LLVM functions.
+			auto f_args = emit_f.args();
+			const auto f_args_size = f_args.end() - f_args.begin();
+			
+			QUARK_ASSERT(f_args_size >= 1);
+			QUARK_ASSERT(f_args_size == mapping.args.size());
+
+			const auto llvm_arg_index = arg_it - mapping.args.begin();
+			QUARK_ASSERT(llvm_arg_index < f_args_size);
+
+			llvm::Argument* f_arg_ptr = f_args.begin() + llvm_arg_index;
+
+			//	The argument is used as the llvm::Value*.
+			llvm::Value* dest = f_arg_ptr;
+
+			const auto debug_str = "<ARGUMENT> name:" + e.first + " symbol_t: " + symbol_to_string(e.second);
+
+			result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_function_argument, e.first, e.second));
+		}
+
+		//	Reserve stack slot for each local. But not arguments, they already have stack slot.
+		else{
+			llvm::Value* dest = gen_acc.builder.CreateAlloca(itype, nullptr, e.first);
+
+			//	Init the slot if needed.
+			if(e.second._init.is_undefined() == false){
+				llvm::Value* c = generate_constant(gen_acc, e.second._init);
+				gen_acc.builder.CreateStore(c, dest);
+			}
+			const auto debug_str = "<LOCAL> name:" + e.first + " symbol_t: " + symbol_to_string(e.second);
+			result.push_back(make_resolved_symbol(dest, debug_str, resolved_symbol_t::esymtype::k_local, e.first, e.second));
+		}
+	}
+	QUARK_ASSERT(result.size() == symbol_table._symbols.size());
+	return result;
 }
 
 static llvm::Value* generate_global0(llvm::Module& module, const std::string& symbol_name, llvm::Type& itype, llvm::Constant* init_or_nullptr){
@@ -2004,9 +2026,6 @@ static llvm::Function* generate_function_prototype(llvm::Module& module, const f
 	QUARK_ASSERT(check_invariant__module(&module));
 	return f;
 }
-
-
-
 
 
 
@@ -2251,8 +2270,6 @@ void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
 	}
 }
 #endif
-
-
 
 
 //	Destroys program, can only run it once!
