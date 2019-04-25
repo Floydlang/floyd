@@ -51,6 +51,7 @@ struct function_def_t {
 	function_definition_t floyd_fundef;
 };
 
+
 ////////////////////////////////		llvm_execution_engine_t
 
 
@@ -75,15 +76,12 @@ struct llvm_execution_engine_t {
 };
 
 
-
 typedef int64_t (*FLOYD_RUNTIME_INIT)(void* floyd_runtime_ptr);
 typedef void (*FLOYD_RUNTIME_HOST_FUNCTION)(void* floyd_runtime_ptr, int64_t arg);
 
 typedef int64_t (*FLOYD_RUNTIME_F)(void* floyd_runtime_ptr, const char* args);
 
-
 const function_def_t& find_function_def2(const std::vector<function_def_t>& function_defs, const std::string& function_name);
-
 
 //	Cast to uint64_t* or other the required type, then access via it.
 void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name);
@@ -101,25 +99,12 @@ value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const uint
 
 VEC_T* unpack_vec_arg(const llvm_execution_engine_t& runtime, int64_t arg_value, int64_t arg_type);
 
-
 value_t llvm_global_to_value(const llvm_execution_engine_t& runtime, const void* global_ptr, const typeid_t& type);
-
 value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const uint64_t encoded_value, const typeid_t& type);
-
-
-int64_t pack_itype(const llvm_execution_engine_t& runtime, const typeid_t& type);
-
-
 value_t llvm_valueptr_to_value(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type);
-
-
-void hook(const std::string& s, void* floyd_runtime_ptr, int64_t arg);
-std::string gen_to_string(llvm_execution_engine_t& runtime, int64_t arg_value, int64_t arg_type);
-
 
 std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context);
 std::map<std::string, void*> get_host_functions_map2();
-
 
 uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee);
 

@@ -53,28 +53,8 @@ std::pair<llvm::Type*, bool> intern_type_generics(llvm::Module& module, const ty
 
 
 /*
-FLOYD TYPE
 
-	k_internal_undefined,
 
-	k_internal_dynamic,
-
-	k_void,										void
-
-	k_bool,										int1
-	k_int,										int64
-	k_double,									double
-	k_string,									char*
-	k_json_value,
-
-	k_typeid,									int32
-
-	k_struct,									void*
-	k_vector,									VEC_T
-	k_dict,										?
-	k_function,									?
-
-	k_internal_unresolved_type_identifier
 
 
 First-class values

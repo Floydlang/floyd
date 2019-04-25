@@ -695,11 +695,8 @@ itype_t unpack_encoded_itype(int64_t itype){
 	return itype_t(static_cast<uint32_t>(itype));
 }
 
-int64_t pack_itype(const llvm_execution_engine_t& runtime, const typeid_t& type){
-	QUARK_ASSERT(runtime.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	return lookup_itype(runtime.type_interner, type).itype;
+int64_t pack_encoded_itype(const itype_t& itype){
+	return itype.itype;
 }
 
 VEC_T* unpack_vec_arg(const llvm_execution_engine_t& r, int64_t arg_value, int64_t arg_type){
@@ -778,7 +775,9 @@ value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const uint
 	}
 	else if(type.is_vector()){
 		const auto element_type = type.get_vector_element_type();
-		const auto vec = unpack_vec_arg(runtime, encoded_value, pack_itype(runtime, type));
+
+		const auto encoded_itype = pack_encoded_itype(lookup_itype(runtime.type_interner, type));
+		const auto vec = unpack_vec_arg(runtime, encoded_value, encoded_itype);
 
 		std::vector<value_t> elements;
 		const int count = vec->element_count;
