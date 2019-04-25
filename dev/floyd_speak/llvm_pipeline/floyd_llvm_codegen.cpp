@@ -294,7 +294,6 @@ std::string compose_function_def_name(int function_id, const function_definition
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-//??? Get rid of encoded-value concept!
 //	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value.
 //	If the value is big, it's stored on the stack and a pointer returned => the returned value is not standalone and lifetime limited to emit function scope.
 static llvm::Value* generate_encoded_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type){
@@ -636,15 +635,6 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 	}
 	else if(parent_type.is_dict()){
 		NOT_IMPLEMENTED_YET();
-/*
-		if(encode_as_dict_w_inplace_values(parent_type)){
-			return bc_opcode::k_lookup_element_dict_w_inplace_values;
-		}
-		else{
-			return bc_opcode::k_lookup_element_dict_w_external_values;
-		}
-*/
-
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -766,40 +756,9 @@ static llvm::Value* generate_arithmetic_expression(llvm_code_generator_t& gen_ac
 		auto vec_reg = generate__convert_wide_return_to_vec(builder, wide_return_reg);
 		return vec_reg;
 	}
-/*
-	else if(type.is_vector()){
-		if(encode_as_vector_w_inplace_elements(type)){
-			static const std::map<expression_type, bc_opcode> conv_opcode = {
-				{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_w_inplace_elements },
-				{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
-
-				{ expression_type::k_logical_and__2, bc_opcode::k_nop },
-				{ expression_type::k_logical_or__2, bc_opcode::k_nop }
-			};
-			return conv_opcode.at(details.op);
-		}
-		else{
-			static const std::map<expression_type, bc_opcode> conv_opcode = {
-				{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_w_external_elements },
-				{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
-
-				{ expression_type::k_logical_and__2, bc_opcode::k_nop },
-				{ expression_type::k_logical_or__2, bc_opcode::k_nop }
-			};
-			return conv_opcode.at(details.op);
-		}
+	else{
 	}
-*/
-
 	UNSUPPORTED();
-
-	return nullptr;
 }
 
 static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, expression_type op, const expression_t& e, const expression_t::comparison_t& details){
@@ -1085,12 +1044,6 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 			auto wide_return_a_reg = builder.CreateExtractValue(result, { static_cast<int>(WIDE_RETURN_MEMBERS::a) });
 //			auto dyn_b = builder.CreateExtractValue(result, { static_cast<int>(WIDE_RETURN_MEMBERS::b) });
 			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, wide_return_a_reg, llvm::Type::getInt8PtrTy(context), "encoded->string");
-/*
-!!!
-			llvm::Value* vec_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, result0, make_wide_return_type(context), "encoded->string");
-			auto elements_ptr_value = builder.CreateExtractValue(vec_ptr, { static_cast<int>(WIDE_RETURN_MEMBERS::a) });
-			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, elements_ptr_value, llvm::Type::getInt8PtrTy(context), "encoded->string");
-*/
 		}
 		else if(resolved_call_return_type.is_vector()){
 			return generate__convert_wide_return_to_vec(builder, result0);
@@ -1302,24 +1255,6 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 	}
 	else if(target_type.is_dict()){
 		NOT_IMPLEMENTED_YET();
-/*
-		if(encode_as_dict_w_inplace_values(target_type)){
-			body_acc._instrs.push_back(bcgen_instruction_t(
-				bc_opcode::k_new_dict_w_inplace_values,
-				target_reg2,
-				make_imm_int(target_itype),
-				make_imm_int(arg_count)
-			));
-		}
-		else{
-			body_acc._instrs.push_back(bcgen_instruction_t(
-				bc_opcode::k_new_dict_w_external_values,
-				target_reg2,
-				make_imm_int(target_itype),
-				make_imm_int(arg_count)
-			));
-		}
-*/
 	}
 	else if(target_type.is_struct()){
 /*

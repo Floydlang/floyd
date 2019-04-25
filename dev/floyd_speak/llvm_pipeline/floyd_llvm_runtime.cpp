@@ -691,9 +691,19 @@ value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t
 }
 
 
+itype_t unpack_encoded_itype(int64_t itype){
+	return itype_t(static_cast<uint32_t>(itype));
+}
+
+int64_t pack_itype(const llvm_execution_engine_t& runtime, const typeid_t& type){
+	QUARK_ASSERT(runtime.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	return lookup_itype(runtime.type_interner, type).itype;
+}
 
 VEC_T* unpack_vec_arg(const llvm_execution_engine_t& r, int64_t arg_value, int64_t arg_type){
-	const auto type = unpack_itype(r, arg_type);
+	const auto type = lookup_type(r.type_interner, unpack_encoded_itype(arg_type));
 	QUARK_ASSERT(type.is_vector());
 	const auto vec = (VEC_T*)arg_value;
 	QUARK_ASSERT(vec != nullptr);
@@ -746,7 +756,7 @@ value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const uint
 		NOT_IMPLEMENTED_YET();
 	}
 	else if(type.is_typeid()){
-		const auto type1 = unpack_itype(runtime, encoded_value);
+		const auto type1 = lookup_type(runtime.type_interner, unpack_encoded_itype(encoded_value));
 		const auto type2 = value_t::make_typeid_value(type1);
 		return type2;
 	}
@@ -795,23 +805,6 @@ value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const uint
 
 
 
-
-typeid_t unpack_itype(const llvm_execution_engine_t& runtime, int64_t itype){
-	QUARK_ASSERT(runtime.check_invariant());
-
-	const itype_t t(static_cast<uint32_t>(itype));
-	return lookup_type(runtime.type_interner, t);
-}
-
-int64_t pack_itype(const llvm_execution_engine_t& runtime, const typeid_t& type){
-	QUARK_ASSERT(runtime.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	return lookup_itype(runtime.type_interner, type).itype;
-}
-
-
-
 //??? rename runtime_*
 value_t llvm_valueptr_to_value(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type){
 	QUARK_ASSERT(runtime.check_invariant());
@@ -843,7 +836,7 @@ value_t llvm_valueptr_to_value(const llvm_execution_engine_t& runtime, const voi
 	}
 	else if(type.is_typeid()){
 		const auto value = *static_cast<const int32_t*>(value_ptr);
-		const auto type_value = unpack_itype(runtime, value);
+		const auto type_value = lookup_type(runtime.type_interner, unpack_encoded_itype(value));
 		return value_t::make_typeid_value(type_value);
 	}
 	else if(type.is_struct()){
@@ -981,8 +974,7 @@ void hook(const std::string& s, void* floyd_runtime_ptr, int64_t arg){
 std::string gen_to_string(llvm_execution_engine_t& runtime, int64_t arg_value, int64_t arg_type){
 	QUARK_ASSERT(runtime.check_invariant());
 
-	const auto type = unpack_itype(runtime, arg_type);
-
+	const auto type = lookup_type(runtime.type_interner, unpack_encoded_itype(arg_type));
 	const auto value = runtime_llvm_to_value(runtime, arg_value, type);
 	const auto a = to_compact_string2(value);
 	return a;
@@ -1170,7 +1162,7 @@ host_func_t floyd_runtime__delete_vector__make(llvm::LLVMContext& context){
 int32_t floyd_runtime__compare_values(void* floyd_runtime_ptr, int64_t op, const uint64_t type, uint64_t lhs, uint64_t rhs){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto value_type = unpack_itype(r, type);
+	const auto value_type = lookup_type(r.type_interner, unpack_encoded_itype(type));
 
 	const auto left_value = runtime_llvm_to_value(r, lhs, value_type);
 	const auto right_value = runtime_llvm_to_value(r, rhs, value_type);
@@ -1358,8 +1350,9 @@ int64_t floyd_funcdef__find__string(llvm_execution_engine_t& floyd_runtime_ptr, 
 int64_t floyd_funcdef__find(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type0 = unpack_itype(r, arg0_type);
-	const auto type1 = unpack_itype(r, arg1_type);
+	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
+	const auto type1 = lookup_type(r.type_interner, unpack_encoded_itype(arg1_type));
+
 	if(type0.is_string()){
 		if(type1.is_string() == false){
 			quark::throw_runtime_error("find(string) requires argument 2 to be a string.");
@@ -1445,11 +1438,11 @@ void floyd_funcdef__print(void* floyd_runtime_ptr, int64_t arg0_value, int64_t a
 const WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type, int64_t arg1_value, int64_t arg1_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type0 = unpack_itype(r, arg0_type);
+	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
+	const auto type1 = lookup_type(r.type_interner, unpack_encoded_itype(arg1_type));
 	if(type0.is_string()){
 		const auto value = (const char*)arg0_value;
 
-		const auto type1 = unpack_itype(r, arg1_type);
 		QUARK_ASSERT(type1.is_int());
 
 		std::size_t len = strlen(value);
@@ -1463,7 +1456,6 @@ const WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, int64_t ar
 	else if(type0.is_vector()){
 		const auto vs = unpack_vec_arg(r, arg0_value, arg0_type);
 
-		const auto type1 = unpack_itype(r, arg1_type);
 		QUARK_ASSERT(type1 == type0.get_vector_element_type());
 
 		const auto element = arg1_value;
@@ -1525,8 +1517,8 @@ const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, int64_t arg0
 		quark::throw_runtime_error("replace() requires start <= end.");
 	}
 
-	const auto type0 = unpack_itype(r, arg0_type);
-	const auto type3 = unpack_itype(r, arg3_type);
+	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
+	const auto type3 = lookup_type(r.type_interner, unpack_encoded_itype(arg3_type));
 
 	if(type3 != type0){
 		quark::throw_runtime_error("replace() requires argument 4 to be same type of collection.");
@@ -1570,7 +1562,7 @@ void floyd_host_function_1027(void* floyd_runtime_ptr, int64_t arg){
 int64_t floyd_funcdef__size(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type0 = unpack_itype(r, arg0_type);
+	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
 	if(type0.is_string()){
 		const auto value = (const char*)arg0_value;
 		return std::strlen(value);
@@ -1592,7 +1584,7 @@ const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, int64_t arg0_
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
 
-	const auto type0 = unpack_itype(r, arg0_type);
+	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
 	if(type0.is_string()){
 		const auto value = (const char*)arg0_value;
 
@@ -1654,7 +1646,7 @@ const char* floyd_host__to_string(void* floyd_runtime_ptr, int64_t arg0_value, i
 int32_t floyd_host__typeof(void* floyd_runtime_ptr, int64_t arg0_value, int64_t arg0_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type0 = unpack_itype(r, arg0_type);
+	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
 	const auto type_value = static_cast<int32_t>(arg0_type);
 	return type_value;
 }
@@ -1667,9 +1659,9 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, int64_t arg0_
 
 	auto& context = r.instance->context;
 
-	const auto type0 = unpack_itype(r, arg0_type);
-	const auto type1 = unpack_itype(r, arg1_type);
-	const auto type2 = unpack_itype(r, arg2_type);
+	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
+	const auto type1 = lookup_type(r.type_interner, unpack_encoded_itype(arg1_type));
+	const auto type2 = lookup_type(r.type_interner, unpack_encoded_itype(arg2_type));
 	if(type0.is_string()){
 		if(type1.is_int() == false){
 			throw std::exception();

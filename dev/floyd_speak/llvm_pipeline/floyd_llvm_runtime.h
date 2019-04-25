@@ -107,7 +107,6 @@ value_t llvm_global_to_value(const llvm_execution_engine_t& runtime, const void*
 value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const uint64_t encoded_value, const typeid_t& type);
 
 
-typeid_t unpack_itype(const llvm_execution_engine_t& runtime, int64_t itype);
 int64_t pack_itype(const llvm_execution_engine_t& runtime, const typeid_t& type);
 
 
