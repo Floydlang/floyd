@@ -103,7 +103,7 @@ bc_value_t bc_value_t::make_undefined(){
 //////////////////////////////////////		internal-dynamic type
 
 
-bc_value_t bc_value_t::make_internal_dynamic(){
+bc_value_t bc_value_t::make_any(){
 	return bc_value_t();
 }
 
@@ -439,7 +439,7 @@ value_encoding type_to_encoding(const typeid_t& type){
 	else if(basetype == base_type::k_internal_undefined){
 		return value_encoding::k_none;
 	}
-	else if(basetype == base_type::k_internal_dynamic){
+	else if(basetype == base_type::k_any){
 		return value_encoding::k_none;
 	}
 	else if(basetype == base_type::k_void){
@@ -2187,7 +2187,7 @@ json_t bcvalue_to_json(const bc_value_t& v){
 	if(v._type.is_undefined()){
 		return json_t();
 	}
-	else if(v._type.is_internal_dynamic()){
+	else if(v._type.is_any()){
 		return json_t();
 	}
 	else if(v._type.is_void()){
@@ -3105,7 +3105,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				std::vector<bc_value_t> arg_values;
 				for(int a = 0 ; a < function_def_arg_count ; a++){
 					const auto& func_arg_type = function_def._args[a]._type;
-					if(func_arg_type.is_internal_dynamic()){
+					if(func_arg_type.is_any()){
 						const auto arg_itype = stack.load_intq(stack_pos);
 						const auto& arg_type = lookup_full_type(vm, static_cast<int16_t>(arg_itype));
 						const auto arg_value = stack.load_value(stack_pos + 1, arg_type);
@@ -3124,7 +3124,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 				if(function_return_type.is_void() == true){
 				}
-				else if(function_return_type.is_internal_dynamic()){
+				else if(function_return_type.is_any()){
 					stack.write_register(i._a, bc_result);
 				}
 				else{

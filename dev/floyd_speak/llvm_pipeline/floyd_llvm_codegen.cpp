@@ -384,7 +384,7 @@ llvm::Constant* generate_constant(llvm_code_generator_t& gen_acc, const value_t&
 	if(type.is_undefined()){
 		return llvm::ConstantInt::get(itype, 17);
 	}
-	else if(type.is_internal_dynamic()){
+	else if(type.is_any()){
 		return llvm::ConstantInt::get(itype, 13);
 	}
 	else if(type.is_void()){
@@ -1033,7 +1033,7 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 
 	//	If the return type is dynamic, cast the returned int64 to the correct type.
 	llvm::Value* result = result0;
-	if(callee_function_type.get_function_return().is_internal_dynamic()){
+	if(callee_function_type.get_function_return().is_any()){
 		if(resolved_call_return_type.is_string()){
 			auto wide_return_a_reg = builder.CreateExtractValue(result, { static_cast<int>(WIDE_RETURN_MEMBERS::a) });
 //			auto dyn_b = builder.CreateExtractValue(result, { static_cast<int>(WIDE_RETURN_MEMBERS::b) });

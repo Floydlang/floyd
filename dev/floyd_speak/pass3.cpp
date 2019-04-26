@@ -196,7 +196,7 @@ typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, const typ
 		typeid_t operator()(const typeid_t::internal_undefined_t& e) const{
 			throw_compiler_error(loc, "Cannot resolve type");
 		}
-		typeid_t operator()(const typeid_t::internal_dynamic& e) const{
+		typeid_t operator()(const typeid_t::any_t& e) const{
 			return type;
 		}
 
@@ -842,7 +842,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 
 			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? elements2[0].get_output_type() : element_type;
 			const auto result_type0 = typeid_t::make_vector(element_type2);
-			const auto result_type1 = result_type0.check_types_resolved() == false && target_type.is_internal_dynamic() == false ? target_type : result_type0;
+			const auto result_type1 = result_type0.check_types_resolved() == false && target_type.is_any() == false ? target_type : result_type0;
 
 			if(result_type1.check_types_resolved() == false){
 				std::stringstream what;
@@ -913,7 +913,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			//	Infer type of dictionary based on first value.
 			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? elements2[0 * 2 + 1].get_output_type() : element_type;
 			const auto result_type0 = typeid_t::make_dict(element_type2);
-			const auto result_type = result_type0.check_types_resolved() == false && target_type.is_internal_dynamic() == false ? target_type : result_type0;
+			const auto result_type = result_type0.check_types_resolved() == false && target_type.is_any() == false ? target_type : result_type0;
 
 			//	Make sure all elements have the correct type.
 			for(int i = 0 ; i < elements2.size() / 2 ; i++){
@@ -1633,7 +1633,7 @@ expression_t auto_cast_expression_type(const expression_t& e, const floyd::typei
 
 	const auto current_type = e.get_output_type();
 
-	if(wanted_type.is_internal_dynamic()){
+	if(wanted_type.is_any()){
 		return e;
 	}
 	else if(wanted_type.is_string()){
@@ -1689,7 +1689,7 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 
 	const auto e3 = auto_cast_expression_type(e2b, target_type);
 
-	if(target_type.is_internal_dynamic()){
+	if(target_type.is_any()){
 	}
 	else if(e3.get_output_type() == target_type){
 	}
@@ -1713,7 +1713,7 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 
 //	Returned expression is guaranteed to be deep-resolved.
 std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_t& a, const statement_t& parent, const expression_t& e){
-	return analyse_expression_to_target(a, parent, e, typeid_t::make_internal_dynamic());
+	return analyse_expression_to_target(a, parent, e, typeid_t::make_any());
 }
 
 void test__analyse_expression(const statement_t& parent, const expression_t& e, const expression_t& expected){
@@ -1814,7 +1814,7 @@ semantic_ast_t analyse(analyser_t& a){
 
 	QUARK_ASSERT(a._types.simple_next_id == 0);
 	intern_type(a._types, typeid_t::make_undefined());
-	intern_type(a._types, typeid_t::make_internal_dynamic());
+	intern_type(a._types, typeid_t::make_any());
 	intern_type(a._types, typeid_t::make_void());
 	intern_type(a._types, typeid_t::make_bool());
 	intern_type(a._types, typeid_t::make_int());
@@ -1837,7 +1837,7 @@ semantic_ast_t analyse(analyser_t& a){
 	symbol_map.push_back({"null", symbol_t::make_constant(value_t::make_json_value(json_t()))});
 
 	symbol_map.push_back({keyword_t::k_internal_undefined, symbol_t::make_constant(value_t::make_undefined())});
-	symbol_map.push_back({keyword_t::k_internal_dynamic, symbol_t::make_constant(value_t::make_internal_dynamic())});
+	symbol_map.push_back({keyword_t::k_any, symbol_t::make_constant(value_t::make_any())});
 
 	symbol_map.push_back({keyword_t::k_json_object, symbol_t::make_constant(value_t::make_int(1))});
 	symbol_map.push_back({keyword_t::k_json_array, symbol_t::make_constant(value_t::make_int(2))});

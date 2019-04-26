@@ -330,7 +330,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 		value_t operator()(const typeid_t::internal_undefined_t& e) const{
 			quark::throw_runtime_error("Invalid json schema, found null - unsupported by Floyd.");
 		}
-		value_t operator()(const typeid_t::internal_dynamic& e) const{
+		value_t operator()(const typeid_t::any_t& e) const{
 			QUARK_ASSERT(false);
 		}
 
@@ -1859,7 +1859,7 @@ host_function_record_t make_rec(const std::string& name, HOST_FUNCTION_PTR f, in
 
 std::vector<host_function_record_t> get_host_function_records(){
 	const auto VOID = typeid_t::make_void();
-	const auto DYN = typeid_t::make_internal_dynamic();
+	const auto DYN = typeid_t::make_any();
 
 	const auto k_fsentry_t__type = make__fsentry_t__type();
 

@@ -49,8 +49,8 @@ value_t bc_to_value(const bc_value_t& value){
 	if(basetype == base_type::k_internal_undefined){
 		return value_t::make_undefined();
 	}
-	else if(basetype == base_type::k_internal_dynamic){
-		return value_t::make_internal_dynamic();
+	else if(basetype == base_type::k_any){
+		return value_t::make_any();
 	}
 	else if(basetype == base_type::k_void){
 		return value_t::make_void();
@@ -150,8 +150,8 @@ bc_value_t value_to_bc(const value_t& value){
 	if(basetype == base_type::k_internal_undefined){
 		return bc_value_t::make_undefined();
 	}
-	else if(basetype == base_type::k_internal_dynamic){
-		return bc_value_t::make_internal_dynamic();
+	else if(basetype == base_type::k_any){
+		return bc_value_t::make_any();
 	}
 	else if(basetype == base_type::k_void){
 		return bc_value_t::make_void();

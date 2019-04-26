@@ -28,7 +28,7 @@ bool typeid_t::check_invariant() const{
 		bool operator()(const internal_undefined_t& e) const{
 			return true;
 		}
-		bool operator()(const internal_dynamic& e) const{
+		bool operator()(const any_t& e) const{
 			return true;
 		}
 
@@ -72,7 +72,7 @@ bool typeid_t::check_invariant() const{
 		}
 		bool operator()(const function_t& e) const{
 			//	If function returns a DYN, it must have a dyn_return.
-			QUARK_ASSERT(e._parts[0].is_internal_dynamic() == false || e.dyn_return != return_dyn_type::none);
+			QUARK_ASSERT(e._parts[0].is_any() == false || e.dyn_return != return_dyn_type::none);
 
 			QUARK_ASSERT(e._parts.size() >= 1);
 
@@ -114,14 +114,14 @@ QUARK_UNIT_TESTQ("typeid_t", "is_undefined()"){
 }
 
 
-QUARK_UNIT_TESTQ("typeid_t", "make_internal_dynamic()"){
-	ut_verify(QUARK_POS, typeid_t::make_internal_dynamic().get_base_type(), base_type::k_internal_dynamic);
+QUARK_UNIT_TESTQ("typeid_t", "make_any()"){
+	ut_verify(QUARK_POS, typeid_t::make_any().get_base_type(), base_type::k_any);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_internal_dynamic()"){
-	ut_verify_auto(QUARK_POS, typeid_t::make_internal_dynamic().is_internal_dynamic(), true);
+QUARK_UNIT_TESTQ("typeid_t", "is_any()"){
+	ut_verify_auto(QUARK_POS, typeid_t::make_any().is_any(), true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_internal_dynamic()"){
-	ut_verify_auto(QUARK_POS, typeid_t::make_bool().is_internal_dynamic(), false);
+QUARK_UNIT_TESTQ("typeid_t", "is_any()"){
+	ut_verify_auto(QUARK_POS, typeid_t::make_bool().is_any(), false);
 }
 
 
@@ -645,7 +645,7 @@ bool typeid_t::check_types_resolved() const{
 		bool operator()(const internal_undefined_t& e) const{
 			return false;
 		}
-		bool operator()(const internal_dynamic& e) const{
+		bool operator()(const any_t& e) const{
 			return true;
 		}
 
@@ -695,7 +695,7 @@ bool typeid_t::check_types_resolved() const{
 int count_function_dynamic_args(const std::vector<typeid_t>& args){
 	int count = 0;
 	for(const auto& e: args){
-		if(e.is_internal_dynamic()){
+		if(e.is_any()){
 			count++;
 		}
 	}

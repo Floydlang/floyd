@@ -141,7 +141,7 @@ namespace floyd {
 			return make_literal(value_t::make_undefined());
 		}
 		public: static expression_t make_literal_internal_dynamic(){
-			return make_literal(value_t::make_internal_dynamic());
+			return make_literal(value_t::make_any());
 		}
 		public: static expression_t make_literal_void(){
 			return make_literal(value_t::make_void());

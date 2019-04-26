@@ -307,7 +307,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	if(left.is_undefined()){
 		return 0;
 	}
-	else if(left.is_internal_dynamic()){
+	else if(left.is_any()){
 		return 0;
 	}
 	else if(left.is_void()){
@@ -399,7 +399,7 @@ bool value_t::check_invariant() const{
 	const auto type_int = _basetype;
 	if(type_int == base_type::k_internal_undefined){
 	}
-	else if(type_int == base_type::k_internal_dynamic){
+	else if(type_int == base_type::k_any){
 	}
 	else if(type_int == base_type::k_void){
 	}
@@ -444,8 +444,8 @@ std::string to_compact_string2(const value_t& value) {
 	if(base_type == base_type::k_internal_undefined){
 		return keyword_t::k_internal_undefined;
 	}
-	else if(base_type == base_type::k_internal_dynamic){
-		return keyword_t::k_internal_dynamic;
+	else if(base_type == base_type::k_any){
+		return keyword_t::k_any;
 	}
 	else if(base_type == base_type::k_void){
 		return keyword_t::k_void;
@@ -509,7 +509,7 @@ std::string value_and_type_to_string(const value_t& value) {
 	if(value.is_undefined()){
 		return type_string;
 	}
-	else if(value.is_internal_dynamic()){
+	else if(value.is_any()){
 		return type_string;
 	}
 	else if(value.is_void()){
@@ -710,7 +710,7 @@ std::string value_and_type_to_string(const value_t& value) {
 QUARK_UNIT_TESTQ("value_t::make_undefined()", "**undef**"){
 	const auto a = value_t::make_undefined();
 	QUARK_TEST_VERIFY(a.is_undefined());
-	QUARK_TEST_VERIFY(!a.is_internal_dynamic());
+	QUARK_TEST_VERIFY(!a.is_any());
 	QUARK_TEST_VERIFY(!a.is_void());
 	QUARK_TEST_VERIFY(!a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
@@ -728,10 +728,10 @@ QUARK_UNIT_TESTQ("value_t::make_undefined()", "**undef**"){
 }
 
 
-QUARK_UNIT_TEST("", "value_t::make_internal_dynamic()", "**dynamic**", ""){
-	const auto a = value_t::make_internal_dynamic();
+QUARK_UNIT_TEST("", "value_t::make_any()", "**dynamic**", ""){
+	const auto a = value_t::make_any();
 	QUARK_TEST_VERIFY(!a.is_undefined());
-	QUARK_TEST_VERIFY(a.is_internal_dynamic());
+	QUARK_TEST_VERIFY(a.is_any());
 	QUARK_TEST_VERIFY(!a.is_void());
 	QUARK_TEST_VERIFY(!a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
@@ -742,17 +742,17 @@ QUARK_UNIT_TEST("", "value_t::make_internal_dynamic()", "**dynamic**", ""){
 	QUARK_TEST_VERIFY(!a.is_dict());
 	QUARK_TEST_VERIFY(!a.is_function());
 
-	QUARK_TEST_VERIFY(a == value_t::make_internal_dynamic());
+	QUARK_TEST_VERIFY(a == value_t::make_any());
 	QUARK_TEST_VERIFY(a != value_t::make_string("test"));
-	QUARK_TEST_VERIFY(to_compact_string2(a) == "**dyn**");
-	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "**dyn**");
+	QUARK_TEST_VERIFY(to_compact_string2(a) == "any");
+	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "any");
 }
 
 
 QUARK_UNIT_TESTQ("value_t::make_void()", "void"){
 	const auto a = value_t::make_void();
 	QUARK_TEST_VERIFY(!a.is_undefined());
-	QUARK_TEST_VERIFY(!a.is_internal_dynamic());
+	QUARK_TEST_VERIFY(!a.is_any());
 	QUARK_TEST_VERIFY(a.is_void());
 	QUARK_TEST_VERIFY(!a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
@@ -773,7 +773,7 @@ QUARK_UNIT_TESTQ("value_t::make_void()", "void"){
 QUARK_UNIT_TESTQ("value_t()", "bool - true"){
 	const auto a = value_t::make_bool(true);
 	QUARK_TEST_VERIFY(!a.is_undefined());
-	QUARK_TEST_VERIFY(!a.is_internal_dynamic());
+	QUARK_TEST_VERIFY(!a.is_any());
 	QUARK_TEST_VERIFY(!a.is_void());
 	QUARK_TEST_VERIFY(a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
@@ -793,7 +793,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - true"){
 QUARK_UNIT_TESTQ("value_t()", "bool - false"){
 	const auto a = value_t::make_bool(false);
 	QUARK_TEST_VERIFY(!a.is_undefined());
-	QUARK_TEST_VERIFY(!a.is_internal_dynamic());
+	QUARK_TEST_VERIFY(!a.is_any());
 	QUARK_TEST_VERIFY(!a.is_void());
 	QUARK_TEST_VERIFY(a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
@@ -814,7 +814,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - false"){
 QUARK_UNIT_TESTQ("value_t()", "int"){
 	const auto a = value_t::make_int(13);
 	QUARK_TEST_VERIFY(!a.is_undefined());
-	QUARK_TEST_VERIFY(!a.is_internal_dynamic());
+	QUARK_TEST_VERIFY(!a.is_any());
 	QUARK_TEST_VERIFY(!a.is_void());
 	QUARK_TEST_VERIFY(!a.is_bool());
 	QUARK_TEST_VERIFY(a.is_int());
@@ -834,7 +834,7 @@ QUARK_UNIT_TESTQ("value_t()", "int"){
 QUARK_UNIT_TESTQ("value_t()", "double"){
 	const auto a = value_t::make_double(13.5f);
 	QUARK_TEST_VERIFY(!a.is_undefined());
-	QUARK_TEST_VERIFY(!a.is_internal_dynamic());
+	QUARK_TEST_VERIFY(!a.is_any());
 	QUARK_TEST_VERIFY(!a.is_void());
 	QUARK_TEST_VERIFY(!a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
@@ -854,7 +854,7 @@ QUARK_UNIT_TESTQ("value_t()", "double"){
 QUARK_UNIT_TESTQ("value_t()", "string"){
 	const auto a = value_t::make_string("xyz");
 	QUARK_TEST_VERIFY(!a.is_undefined());
-	QUARK_TEST_VERIFY(!a.is_internal_dynamic());
+	QUARK_TEST_VERIFY(!a.is_any());
 	QUARK_TEST_VERIFY(!a.is_void());
 	QUARK_TEST_VERIFY(!a.is_bool());
 	QUARK_TEST_VERIFY(!a.is_int());
@@ -903,7 +903,7 @@ value_t ast_json_to_value(const typeid_t& type, const json_t& v){
 	if(type.is_undefined()){
 		return value_t();
 	}
-	else if(type.is_internal_dynamic()){
+	else if(type.is_any()){
 		return make_def(type);
 	}
 	else if(type.is_void()){
@@ -985,7 +985,7 @@ json_t value_to_ast_json(const value_t& v, json_tags tags){
 	if(v.is_undefined()){
 		return json_t();
 	}
-	else if(v.is_internal_dynamic()){
+	else if(v.is_any()){
 		return json_t();
 	}
 	else if(v.is_void()){
@@ -1073,8 +1073,8 @@ QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
 			if(_basetype == base_type::k_internal_undefined){
 				return typeid_t::make_undefined();
 			}
-			else if(_basetype == base_type::k_internal_dynamic){
-				return typeid_t::make_internal_dynamic();
+			else if(_basetype == base_type::k_any){
+				return typeid_t::make_any();
 			}
 			else if(_basetype == base_type::k_void){
 				return typeid_t::make_void();
@@ -1182,8 +1182,8 @@ value_t make_def(const typeid_t& type){
 	else if(bt == base_type::k_internal_undefined){
 		return value_t::make_undefined();
 	}
-	else if(bt == base_type::k_internal_dynamic){
-		return value_t::make_internal_dynamic();
+	else if(bt == base_type::k_any){
+		return value_t::make_any();
 	}
 	else{
 	}

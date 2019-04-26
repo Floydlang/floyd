@@ -129,8 +129,8 @@ struct typeid_t {
 	struct internal_undefined_t {
 		bool operator==(const internal_undefined_t& other) const{	return true; };
 	};
-	struct internal_dynamic {
-		bool operator==(const internal_dynamic& other) const{	return true; };
+	struct any_t {
+		bool operator==(const any_t& other) const{	return true; };
 	};
 	struct void_t {
 		bool operator==(const void_t& other) const{	return true; };
@@ -185,7 +185,7 @@ struct typeid_t {
 
 	typedef std::variant<
 		internal_undefined_t,
-		internal_dynamic,
+		any_t,
 		void_t,
 		bool_t,
 		int_t,
@@ -215,13 +215,13 @@ struct typeid_t {
 	}
 
 
-	public: static typeid_t make_internal_dynamic(){
-		return { internal_dynamic() };
+	public: static typeid_t make_any(){
+		return { any_t() };
 	}
-	public: bool is_internal_dynamic() const {
+	public: bool is_any() const {
 		QUARK_ASSERT(check_invariant());
 
-		return std::holds_alternative<internal_dynamic>(_contents);
+		return std::holds_alternative<any_t>(_contents);
 	}
 
 
@@ -351,7 +351,7 @@ struct typeid_t {
 	}
 
 	public: static typeid_t make_function3(const typeid_t& ret, const std::vector<typeid_t>& args, epure pure, return_dyn_type dyn_return){
-		QUARK_ASSERT(ret.is_internal_dynamic() == false || dyn_return != return_dyn_type::none);
+		QUARK_ASSERT(ret.is_any() == false || dyn_return != return_dyn_type::none);
 
 		//	Functions use _parts[0] for return type always. _parts[1] is first argument, if any.
 		std::vector<typeid_t> parts = { ret };
@@ -361,11 +361,11 @@ struct typeid_t {
 	}
 
 	public: static typeid_t make_function_dyn_return(const std::vector<typeid_t>& args, epure pure, return_dyn_type dyn_return){
-		return make_function3(typeid_t::make_internal_dynamic(), args, pure, dyn_return);
+		return make_function3(typeid_t::make_any(), args, pure, dyn_return);
 	}
 
 	public: static typeid_t make_function(const typeid_t& ret, const std::vector<typeid_t>& args, epure pure){
-		QUARK_ASSERT(ret.is_internal_dynamic() == false);
+		QUARK_ASSERT(ret.is_any() == false);
 
 		return make_function3(ret, args, pure, return_dyn_type::none);
 	}
@@ -421,8 +421,8 @@ struct typeid_t {
 			base_type operator()(const internal_undefined_t& e) const{
 				return base_type::k_internal_undefined;
 			}
-			base_type operator()(const internal_dynamic& e) const{
-				return base_type::k_internal_dynamic;
+			base_type operator()(const any_t& e) const{
+				return base_type::k_any;
 			}
 
 			base_type operator()(const void_t& e) const{
@@ -515,8 +515,8 @@ std::string typeid_to_compact_string(const typeid_t& t);
 
 //	Dynamic values are "fat" values that also keep their type. This is used right now for Floyd's host functions
 //	that accepts many/any type of arguments. Like size().
-//	A dynamic function has one or several arguments of type k_internal_dynamic.
-//	The argument types for k_internal_dynamic arguments must be supplied for each function invocation.
+//	A dynamic function has one or several arguments of type k_any.
+//	The argument types for k_any arguments must be supplied for each function invocation.
 bool is_dynamic_function(const typeid_t& function_type);
 
 int count_function_dynamic_args(const std::vector<typeid_t>& args);

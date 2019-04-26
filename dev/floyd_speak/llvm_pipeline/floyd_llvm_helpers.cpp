@@ -480,7 +480,7 @@ llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const flo
 	QUARK_ASSERT(function_type.is_function());
 
 	const auto ret = function_type.get_function_return();
-	llvm::Type* return_type = ret.is_internal_dynamic() ? make_wide_return_type(context) : intern_type(context, ret);
+	llvm::Type* return_type = ret.is_any() ? make_wide_return_type(context) : intern_type(context, ret);
 
 	const auto args = function_type.get_function_args();
 	std::vector<llvm_arg_mapping_t> arg_results;
@@ -494,7 +494,7 @@ llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const flo
 		QUARK_ASSERT(arg.is_void() == false);
 
 		//	For dynamic values, store its dynamic type as an extra argument.
-		if(arg.is_internal_dynamic()){
+		if(arg.is_any()){
 			arg_results.push_back({ make_dyn_value_type(context), std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_dyn_value });
 			arg_results.push_back({ make_dyn_value_type_type(context), std::to_string(index), typeid_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
 		}
@@ -579,7 +579,7 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int, DYN,
 	llvm_instance_t instance;
 	auto module = std::make_unique<llvm::Module>("test", instance.context);
 	auto& context = module->getContext();
-	const auto r = map_function_arguments(context, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_int(), typeid_t::make_internal_dynamic(), typeid_t::make_bool() }, epure::pure));
+	const auto r = map_function_arguments(context, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_int(), typeid_t::make_any(), typeid_t::make_bool() }, epure::pure));
 
 	QUARK_UT_VERIFY(r.return_type != nullptr);
 	QUARK_UT_VERIFY(r.return_type->isVoidTy());
@@ -600,7 +600,7 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int, DYN,
 
 	QUARK_UT_VERIFY(r.args[2].llvm_type->isIntegerTy(64));
 	QUARK_UT_VERIFY(r.args[2].floyd_name == "1");
-	QUARK_UT_VERIFY(r.args[2].floyd_type.is_internal_dynamic());
+	QUARK_UT_VERIFY(r.args[2].floyd_type.is_any());
 	QUARK_UT_VERIFY(r.args[2].floyd_arg_index == 1);
 	QUARK_UT_VERIFY(r.args[2].map_type == llvm_arg_mapping_t::map_type::k_dyn_value);
 
@@ -694,7 +694,7 @@ llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type){
 		return make_struct_type(context, type)->getPointerTo();
 	}
 
-	else if(type.is_internal_dynamic()){
+	else if(type.is_any()){
 		return make_dyn_value_type(context);
 	}
 	else if(type.is_function()){

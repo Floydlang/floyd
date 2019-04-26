@@ -143,7 +143,7 @@ struct bc_value_t {
 
 
 	//////////////////////////////////////		internal-dynamic type
-	public: static bc_value_t make_internal_dynamic();
+	public: static bc_value_t make_any();
 
 
 	//////////////////////////////////////		void

@@ -63,7 +63,7 @@ enum class base_type {
 	k_internal_undefined,
 
 	//	Used by host functions arguments / returns to tell this is a dynamic value, not static type.
-	k_internal_dynamic,
+	k_any,
 
 	//	Means no value. Used as return type for print() etc.
 	k_void,
@@ -350,7 +350,7 @@ namespace keyword_t {
 	const std::string k_impure = "impure";
 
 	const std::string k_internal_undefined = "**undef**";
-	const std::string k_internal_dynamic = "**dyn**";
+	const std::string k_any = "any";
 	const std::string k_void = "void";
 	const std::string k_false = "false";
 	const std::string k_true = "true";

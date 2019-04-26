@@ -25,8 +25,8 @@ string base_type_to_string(const base_type t){
 	if(t == base_type::k_internal_undefined){
 		return keyword_t::k_internal_undefined;
 	}
-	else if(t == base_type::k_internal_dynamic){
-		return keyword_t::k_internal_dynamic;
+	else if(t == base_type::k_any){
+		return keyword_t::k_any;
 	}
 
 	else if(t == base_type::k_void){
@@ -77,7 +77,7 @@ QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_internal_undefined) == "**undef**");
 }
 QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_internal_dynamic) == "**dyn**");
+	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_any) == "any");
 }
 QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_void) == keyword_t::k_void);

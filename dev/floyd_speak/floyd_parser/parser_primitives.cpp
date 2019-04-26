@@ -344,8 +344,8 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_basic_type(const seq_t& s){
 	else if(pos1.first == keyword_t::k_internal_undefined){
 		return { make_shared<typeid_t>(typeid_t::make_undefined()), pos1.second };
 	}
-	else if(pos1.first == keyword_t::k_internal_dynamic){
-		return { make_shared<typeid_t>(typeid_t::make_internal_dynamic()), pos1.second };
+	else if(pos1.first == keyword_t::k_any){
+		return { make_shared<typeid_t>(typeid_t::make_any()), pos1.second };
 	}
 	else if(pos1.first == keyword_t::k_void){
 		return { make_shared<typeid_t>(typeid_t::make_void()), pos1.second };
@@ -534,7 +534,7 @@ QUARK_UNIT_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("**undef**")).first == typeid_t::make_undefined());
 }
 QUARK_UNIT_TEST("", "read_type()", "", ""){
-	QUARK_TEST_VERIFY(*read_type(seq_t("**dyn**")).first == typeid_t::make_internal_dynamic());
+	QUARK_TEST_VERIFY(*read_type(seq_t("any")).first == typeid_t::make_any());
 }
 QUARK_UNIT_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("void")).first == typeid_t::make_void());

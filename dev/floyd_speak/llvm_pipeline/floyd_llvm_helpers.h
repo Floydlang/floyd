@@ -42,7 +42,7 @@ std::pair<llvm::Type*, bool> intern_type_generics(llvm::Module& module, const ty
 
 	auto& context = module.getContext();
 
-	if(type.is_internal_dynamic()){
+	if(type.is_any()){
 		return { llvm::Type::getIntNTy(context, 64), llvm::Type::getIntNTy(context, 64) };
 	}
 	else{

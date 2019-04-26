@@ -829,7 +829,7 @@ call_setup_t gen_call_setup(bcgenerator_t& gen_acc, const std::vector<typeid_t>&
 		const auto& func_arg_type = function_def_arg_type[i];
 
 		//	Prepend internal-dynamic arguments with the itype of the actual callee-argument.
-		if(func_arg_type.is_internal_dynamic()){
+		if(func_arg_type.is_any()){
 			const auto arg_type_reg = add_local_const(body_acc, value_t::make_int(callee_arg_type), "DYN type arg #" + std::to_string(i));
 			body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_push_inplace_value, arg_type_reg, {}, {} ));
 
@@ -1017,7 +1017,7 @@ expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const variable_ad
 		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, e.get_output_type(), "temp: call return") : target_reg;
 
 		//??? No need to allocate return register if functions returns void.
-		QUARK_ASSERT(return_type.is_internal_dynamic() == false && return_type.is_undefined() == false)
+		QUARK_ASSERT(return_type.is_any() == false && return_type.is_undefined() == false)
 		body_acc._instrs.push_back(bcgen_instruction_t(
 			bc_opcode::k_call,
 			target_reg2,

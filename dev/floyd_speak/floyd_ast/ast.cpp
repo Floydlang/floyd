@@ -39,7 +39,7 @@ itype_t make_new_itype(type_interner_t& interner, const typeid_t& type){
 		int32_t operator()(const typeid_t::internal_undefined_t& e) const{
 			return interner.simple_next_id++;
 		}
-		int32_t operator()(const typeid_t::internal_dynamic& e) const{
+		int32_t operator()(const typeid_t::any_t& e) const{
 			return interner.simple_next_id++;
 		}
 

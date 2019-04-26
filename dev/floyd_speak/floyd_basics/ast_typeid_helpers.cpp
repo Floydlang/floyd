@@ -40,7 +40,7 @@ json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 
 	if(false
 		|| b == base_type::k_internal_undefined
-		|| b == base_type::k_internal_dynamic
+		|| b == base_type::k_any
 
 		|| b == base_type::k_void
 		|| b == base_type::k_bool
@@ -118,8 +118,8 @@ typeid_t typeid_from_ast_json(const json_t& t2){
 			else if(s == keyword_t::k_internal_undefined){
 				return typeid_t::make_undefined();
 			}
-			else if(s == keyword_t::k_internal_dynamic){
-				return typeid_t::make_internal_dynamic();
+			else if(s == keyword_t::k_any){
+				return typeid_t::make_any();
 			}
 			else if(s == keyword_t::k_void){
 				return typeid_t::make_void();

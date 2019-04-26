@@ -264,13 +264,13 @@ std::string make_value_debug_str(const value_t& v);
 		//------------------------------------------------		internal-dynamic
 
 
-		public: static value_t make_internal_dynamic(){
-			return value_t(base_type::k_internal_dynamic);
+		public: static value_t make_any(){
+			return value_t(base_type::k_any);
 		}
-		public: bool is_internal_dynamic() const {
+		public: bool is_any() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _basetype == base_type::k_internal_dynamic;
+			return _basetype == base_type::k_any;
 		}
 
 
@@ -518,7 +518,7 @@ std::string make_value_debug_str(const value_t& v);
 			if(_basetype == base_type::k_internal_undefined){
 				return true;
 			}
-			else if(_basetype == base_type::k_internal_dynamic){
+			else if(_basetype == base_type::k_any){
 				return true;
 			}
 			else if(_basetype == base_type::k_void){

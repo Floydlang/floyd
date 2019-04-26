@@ -1,6 +1,6 @@
 {
 	"function_defs": [
-		["function-def", ["func", "^void", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1001, "^void"],
+		["function-def", ["func", "^void", ["^any"], true], [{ "name": "dummy", "type": "^any" }], null, 1001, "^void"],
 		[
 			"function-def",
 			["func", ["^struct", [[{ "name": "ascii40", "type": "^string" }]]], [["^struct", [[{ "name": "bytes", "type": "^string" }]]]], true],
@@ -22,32 +22,32 @@
 		["function-def", ["func", "^bool", ["^string"], false], [{ "name": "dummy", "type": "^string" }], null, 1027, "^bool"],
 		[
 			"function-def",
-			["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true],
-			[{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }],
+			["func", "^any", ["^any", "^any"], true],
+			[{ "name": "dummy", "type": "^any" }, { "name": "dummy", "type": "^any" }],
 			null,
 			1010,
-			"^**dyn**"
+			"^any"
 		],
 		[
 			"function-def",
-			["func", "^bool", ["^**dyn**", "^**dyn**"], true],
-			[{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }],
+			["func", "^bool", ["^any", "^any"], true],
+			[{ "name": "dummy", "type": "^any" }, { "name": "dummy", "type": "^any" }],
 			null,
 			1009,
 			"^bool"
 		],
 		[
 			"function-def",
-			["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true],
-			[{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }],
+			["func", "^any", ["^any", "^any"], true],
+			[{ "name": "dummy", "type": "^any" }, { "name": "dummy", "type": "^any" }],
 			null,
 			1036,
-			"^**dyn**"
+			"^any"
 		],
 		[
 			"function-def",
-			["func", "^int", ["^**dyn**", "^**dyn**"], true],
-			[{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }],
+			["func", "^int", ["^any", "^any"], true],
+			[{ "name": "dummy", "type": "^any" }, { "name": "dummy", "type": "^any" }],
 			null,
 			1008,
 			"^int"
@@ -173,19 +173,19 @@
 		["function-def", ["func", "^string", ["^json_value"], true], [{ "name": "dummy", "type": "^json_value" }], null, 1018, "^string"],
 		[
 			"function-def",
-			["func", "^**dyn**", ["^json_value", "^typeid"], true],
+			["func", "^any", ["^json_value", "^typeid"], true],
 			[{ "name": "dummy", "type": "^json_value" }, { "name": "dummy", "type": "^typeid" }],
 			null,
 			1020,
-			"^**dyn**"
+			"^any"
 		],
 		[
 			"function-def",
-			["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true],
-			[{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }],
+			["func", "^any", ["^any", "^any"], true],
+			[{ "name": "dummy", "type": "^any" }, { "name": "dummy", "type": "^any" }],
 			null,
 			1033,
-			"^**dyn**"
+			"^any"
 		],
 		[
 			"function-def",
@@ -195,23 +195,23 @@
 			1034,
 			"^string"
 		],
-		["function-def", ["func", "^void", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1000, "^void"],
+		["function-def", ["func", "^void", ["^any"], true], [{ "name": "dummy", "type": "^any" }], null, 1000, "^void"],
 		[
 			"function-def",
-			["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true],
-			[{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }],
+			["func", "^any", ["^any", "^any"], true],
+			[{ "name": "dummy", "type": "^any" }, { "name": "dummy", "type": "^any" }],
 			null,
 			1011,
-			"^**dyn**"
+			"^any"
 		],
 		["function-def", ["func", "^string", ["^string"], false], [{ "name": "dummy", "type": "^string" }], null, 1015, "^string"],
 		[
 			"function-def",
-			["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true],
-			[{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }],
+			["func", "^any", ["^any", "^any", "^any"], true],
+			[{ "name": "dummy", "type": "^any" }, { "name": "dummy", "type": "^any" }, { "name": "dummy", "type": "^any" }],
 			null,
 			1035,
-			"^**dyn**"
+			"^any"
 		],
 		[
 			"function-def",
@@ -223,16 +223,16 @@
 		],
 		[
 			"function-def",
-			["func", "^**dyn**", ["^**dyn**", "^int", "^int", "^**dyn**"], true],
+			["func", "^any", ["^any", "^int", "^int", "^any"], true],
 			[
-				{ "name": "dummy", "type": "^**dyn**" },
+				{ "name": "dummy", "type": "^any" },
 				{ "name": "dummy", "type": "^int" },
 				{ "name": "dummy", "type": "^int" },
-				{ "name": "dummy", "type": "^**dyn**" }
+				{ "name": "dummy", "type": "^any" }
 			],
 			null,
 			1013,
-			"^**dyn**"
+			"^any"
 		],
 		["function-def", ["func", "^json_value", ["^string"], true], [{ "name": "dummy", "type": "^string" }], null, 1017, "^json_value"],
 		[
@@ -243,39 +243,39 @@
 			1022,
 			"^void"
 		],
-		["function-def", ["func", "^int", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1007, "^int"],
+		["function-def", ["func", "^int", ["^any"], true], [{ "name": "dummy", "type": "^any" }], null, 1007, "^int"],
 		[
 			"function-def",
-			["func", "^**dyn**", ["^**dyn**", "^int", "^int"], true],
-			[{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^int" }, { "name": "dummy", "type": "^int" }],
+			["func", "^any", ["^any", "^int", "^int"], true],
+			[{ "name": "dummy", "type": "^any" }, { "name": "dummy", "type": "^int" }, { "name": "dummy", "type": "^int" }],
 			null,
 			1012,
-			"^**dyn**"
+			"^any"
 		],
 		[
 			"function-def",
-			["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true],
-			[{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }],
+			["func", "^any", ["^any", "^any", "^any"], true],
+			[{ "name": "dummy", "type": "^any" }, { "name": "dummy", "type": "^any" }, { "name": "dummy", "type": "^any" }],
 			null,
 			1037,
-			"^**dyn**"
+			"^any"
 		],
-		["function-def", ["func", "^string", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1003, "^string"],
-		["function-def", ["func", "^string", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1002, "^string"],
-		["function-def", ["func", "^typeid", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1004, "^typeid"],
+		["function-def", ["func", "^string", ["^any"], true], [{ "name": "dummy", "type": "^any" }], null, 1003, "^string"],
+		["function-def", ["func", "^string", ["^any"], true], [{ "name": "dummy", "type": "^any" }], null, 1002, "^string"],
+		["function-def", ["func", "^typeid", ["^any"], true], [{ "name": "dummy", "type": "^any" }], null, 1004, "^typeid"],
 		[
 			"function-def",
-			["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true],
-			[{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }],
+			["func", "^any", ["^any", "^any", "^any"], true],
+			[{ "name": "dummy", "type": "^any" }, { "name": "dummy", "type": "^any" }, { "name": "dummy", "type": "^any" }],
 			null,
 			1006,
-			"^**dyn**"
+			"^any"
 		],
-		["function-def", ["func", "^json_value", ["^**dyn**"], true], [{ "name": "dummy", "type": "^**dyn**" }], null, 1019, "^json_value"],
+		["function-def", ["func", "^json_value", ["^any"], true], [{ "name": "dummy", "type": "^any" }], null, 1019, "^json_value"],
 		[
 			"function-def",
-			["func", "^void", ["^**dyn**", "^**dyn**"], false],
-			[{ "name": "dummy", "type": "^**dyn**" }, { "name": "dummy", "type": "^**dyn**" }],
+			["func", "^void", ["^any", "^any"], false],
+			[{ "name": "dummy", "type": "^any" }, { "name": "dummy", "type": "^any" }],
 			null,
 			1016,
 			"^void"
@@ -634,7 +634,7 @@
 									1,
 									[
 										"call",
-										["@i", -1, 21, ["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true]],
+										["@i", -1, 21, ["func", "^any", ["^any", "^any"], true]],
 										[["@i", 1, 1, ["vector", "^int"]], ["k", 0, "^int"]],
 										["vector", "^int"]
 									]
@@ -658,7 +658,7 @@
 									0,
 									[
 										"call",
-										["@i", -1, 21, ["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true]],
+										["@i", -1, 21, ["func", "^any", ["^any", "^any"], true]],
 										[["@i", 1, 0, ["vector", ["vector", "^int"]]], ["@i", 1, 1, ["vector", "^int"]]],
 										["vector", ["vector", "^int"]]
 									]
@@ -906,13 +906,13 @@
 												1,
 												[
 													"call",
-													["@i", -1, 34, ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]],
+													["@i", -1, 34, ["func", "^any", ["^any", "^any", "^any"], true]],
 													[
 														["@i", 2, 1, ["vector", ["vector", "^int"]]],
 														["@i", 1, 0, "^int"],
 														[
 															"call",
-															["@i", -1, 34, ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]],
+															["@i", -1, 34, ["func", "^any", ["^any", "^any", "^any"], true]],
 															[
 																["[]", ["@i", 2, 1, ["vector", ["vector", "^int"]]], ["@i", 1, 0, "^int"], ["vector", "^int"]],
 																["@i", 0, 0, "^int"],
@@ -976,7 +976,7 @@
 												1,
 												[
 													"call",
-													["@i", -1, 21, ["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true]],
+													["@i", -1, 21, ["func", "^any", ["^any", "^any"], true]],
 													[
 														["@i", 1, 1, "^string"],
 														[
@@ -1012,7 +1012,7 @@
 								[
 									5105,
 									"expression-statement",
-									["call", ["@i", -1, 20, ["func", "^void", ["^**dyn**"], true]], [["@i", 0, 1, "^string"]], "^void"]
+									["call", ["@i", -1, 20, ["func", "^void", ["^any"], true]], [["@i", 0, 1, "^string"]], "^void"]
 								]
 							],
 							"symbols": [
@@ -1041,13 +1041,13 @@
 						1,
 						[
 							"call",
-							["@i", -1, 34, ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]],
+							["@i", -1, 34, ["func", "^any", ["^any", "^any", "^any"], true]],
 							[
 								["@i", 0, 1, ["vector", ["vector", "^int"]]],
 								["+", ["k", 0, "^int"], ["/", ["@i", -1, 83, "^int"], ["k", 2, "^int"], "^int"], "^int"],
 								[
 									"call",
-									["@i", -1, 34, ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]],
+									["@i", -1, 34, ["func", "^any", ["^any", "^any", "^any"], true]],
 									[
 										[
 											"[]",
@@ -1071,13 +1071,13 @@
 						1,
 						[
 							"call",
-							["@i", -1, 34, ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]],
+							["@i", -1, 34, ["func", "^any", ["^any", "^any", "^any"], true]],
 							[
 								["@i", 0, 1, ["vector", ["vector", "^int"]]],
 								["+", ["k", 1, "^int"], ["/", ["@i", -1, 83, "^int"], ["k", 2, "^int"], "^int"], "^int"],
 								[
 									"call",
-									["@i", -1, 34, ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]],
+									["@i", -1, 34, ["func", "^any", ["^any", "^any", "^any"], true]],
 									[
 										[
 											"[]",
@@ -1101,13 +1101,13 @@
 						1,
 						[
 							"call",
-							["@i", -1, 34, ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]],
+							["@i", -1, 34, ["func", "^any", ["^any", "^any", "^any"], true]],
 							[
 								["@i", 0, 1, ["vector", ["vector", "^int"]]],
 								["+", ["k", 1, "^int"], ["/", ["@i", -1, 83, "^int"], ["k", 2, "^int"], "^int"], "^int"],
 								[
 									"call",
-									["@i", -1, 34, ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]],
+									["@i", -1, 34, ["func", "^any", ["^any", "^any", "^any"], true]],
 									[
 										[
 											"[]",
@@ -1131,13 +1131,13 @@
 						1,
 						[
 							"call",
-							["@i", -1, 34, ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]],
+							["@i", -1, 34, ["func", "^any", ["^any", "^any", "^any"], true]],
 							[
 								["@i", 0, 1, ["vector", ["vector", "^int"]]],
 								["+", ["k", 2, "^int"], ["/", ["@i", -1, 83, "^int"], ["k", 2, "^int"], "^int"], "^int"],
 								[
 									"call",
-									["@i", -1, 34, ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]],
+									["@i", -1, 34, ["func", "^any", ["^any", "^any", "^any"], true]],
 									[
 										[
 											"[]",
@@ -1161,13 +1161,13 @@
 						1,
 						[
 							"call",
-							["@i", -1, 34, ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]],
+							["@i", -1, 34, ["func", "^any", ["^any", "^any", "^any"], true]],
 							[
 								["@i", 0, 1, ["vector", ["vector", "^int"]]],
 								["+", ["k", 2, "^int"], ["/", ["@i", -1, 83, "^int"], ["k", 2, "^int"], "^int"], "^int"],
 								[
 									"call",
-									["@i", -1, 34, ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]],
+									["@i", -1, 34, ["func", "^any", ["^any", "^any", "^any"], true]],
 									[
 										[
 											"[]",
@@ -1191,13 +1191,13 @@
 						1,
 						[
 							"call",
-							["@i", -1, 34, ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]],
+							["@i", -1, 34, ["func", "^any", ["^any", "^any", "^any"], true]],
 							[
 								["@i", 0, 1, ["vector", ["vector", "^int"]]],
 								["+", ["k", 3, "^int"], ["/", ["@i", -1, 83, "^int"], ["k", 2, "^int"], "^int"], "^int"],
 								[
 									"call",
-									["@i", -1, 34, ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]],
+									["@i", -1, 34, ["func", "^any", ["^any", "^any", "^any"], true]],
 									[
 										[
 											"[]",
@@ -1221,13 +1221,13 @@
 						1,
 						[
 							"call",
-							["@i", -1, 34, ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]],
+							["@i", -1, 34, ["func", "^any", ["^any", "^any", "^any"], true]],
 							[
 								["@i", 0, 1, ["vector", ["vector", "^int"]]],
 								["+", ["k", 3, "^int"], ["/", ["@i", -1, 83, "^int"], ["k", 2, "^int"], "^int"], "^int"],
 								[
 									"call",
-									["@i", -1, 34, ["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true]],
+									["@i", -1, 34, ["func", "^any", ["^any", "^any", "^any"], true]],
 									[
 										[
 											"[]",
@@ -1257,11 +1257,11 @@
 									"expression-statement",
 									[
 										"call",
-										["@i", -1, 20, ["func", "^void", ["^**dyn**"], true]],
+										["@i", -1, 20, ["func", "^void", ["^any"], true]],
 										[
 											[
 												"+",
-												["call", ["@i", -1, 32, ["func", "^string", ["^**dyn**"], true]], [["@i", 0, 0, "^int"]], "^string"],
+												["call", ["@i", -1, 32, ["func", "^string", ["^any"], true]], [["@i", 0, 0, "^int"]], "^string"],
 												["k", ":", "^string"],
 												"^string"
 											]
@@ -1416,7 +1416,7 @@
 			]
 		],
 		"symbols": [
-			[0, "assert", "CONST", [["func", "^void", ["^**dyn**"], true], { "function_id": 0 }]],
+			[0, "assert", "CONST", [["func", "^void", ["^any"], true], { "function_id": 0 }]],
 			[
 				1,
 				"calc_binary_sha1",
@@ -1430,10 +1430,10 @@
 			[3, "create_directory_branch", "CONST", [["func", "^void", ["^string"], false], { "function_id": 3 }]],
 			[4, "delete_fsentry_deep", "CONST", [["func", "^void", ["^string"], false], { "function_id": 4 }]],
 			[5, "does_fsentry_exist", "CONST", [["func", "^bool", ["^string"], false], { "function_id": 5 }]],
-			[6, "erase", "CONST", [["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true], { "function_id": 6 }]],
-			[7, "exists", "CONST", [["func", "^bool", ["^**dyn**", "^**dyn**"], true], { "function_id": 7 }]],
-			[8, "filter", "CONST", [["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true], { "function_id": 8 }]],
-			[9, "find", "CONST", [["func", "^int", ["^**dyn**", "^**dyn**"], true], { "function_id": 9 }]],
+			[6, "erase", "CONST", [["func", "^any", ["^any", "^any"], true], { "function_id": 6 }]],
+			[7, "exists", "CONST", [["func", "^bool", ["^any", "^any"], true], { "function_id": 7 }]],
+			[8, "filter", "CONST", [["func", "^any", ["^any", "^any"], true], { "function_id": 8 }]],
+			[9, "find", "CONST", [["func", "^int", ["^any", "^any"], true], { "function_id": 9 }]],
 			[
 				10,
 				"get_fs_environment",
@@ -1531,29 +1531,29 @@
 			[14, "get_json_type", "CONST", [["func", "^int", ["^json_value"], true], { "function_id": 14 }]],
 			[15, "get_time_of_day", "CONST", [["func", "^int", [], false], { "function_id": 15 }]],
 			[16, "jsonvalue_to_script", "CONST", [["func", "^string", ["^json_value"], true], { "function_id": 16 }]],
-			[17, "jsonvalue_to_value", "CONST", [["func", "^**dyn**", ["^json_value", "^typeid"], true], { "function_id": 17 }]],
-			[18, "map", "CONST", [["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true], { "function_id": 18 }]],
+			[17, "jsonvalue_to_value", "CONST", [["func", "^any", ["^json_value", "^typeid"], true], { "function_id": 17 }]],
+			[18, "map", "CONST", [["func", "^any", ["^any", "^any"], true], { "function_id": 18 }]],
 			[19, "map_string", "CONST", [["func", "^string", ["^string", ["func", "^string", ["^string"], true]], true], { "function_id": 19 }]],
-			[20, "print", "CONST", [["func", "^void", ["^**dyn**"], true], { "function_id": 20 }]],
-			[21, "push_back", "CONST", [["func", "^**dyn**", ["^**dyn**", "^**dyn**"], true], { "function_id": 21 }]],
+			[20, "print", "CONST", [["func", "^void", ["^any"], true], { "function_id": 20 }]],
+			[21, "push_back", "CONST", [["func", "^any", ["^any", "^any"], true], { "function_id": 21 }]],
 			[22, "read_text_file", "CONST", [["func", "^string", ["^string"], false], { "function_id": 22 }]],
-			[23, "reduce", "CONST", [["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true], { "function_id": 23 }]],
+			[23, "reduce", "CONST", [["func", "^any", ["^any", "^any", "^any"], true], { "function_id": 23 }]],
 			[24, "rename_fsentry", "CONST", [["func", "^void", ["^string", "^string"], false], { "function_id": 24 }]],
-			[25, "replace", "CONST", [["func", "^**dyn**", ["^**dyn**", "^int", "^int", "^**dyn**"], true], { "function_id": 25 }]],
+			[25, "replace", "CONST", [["func", "^any", ["^any", "^int", "^int", "^any"], true], { "function_id": 25 }]],
 			[26, "script_to_jsonvalue", "CONST", [["func", "^json_value", ["^string"], true], { "function_id": 26 }]],
 			[27, "send", "CONST", [["func", "^void", ["^string", "^json_value"], false], { "function_id": 27 }]],
-			[28, "size", "CONST", [["func", "^int", ["^**dyn**"], true], { "function_id": 28 }]],
-			[29, "subset", "CONST", [["func", "^**dyn**", ["^**dyn**", "^int", "^int"], true], { "function_id": 29 }]],
-			[30, "supermap", "CONST", [["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true], { "function_id": 30 }]],
-			[31, "to_pretty_string", "CONST", [["func", "^string", ["^**dyn**"], true], { "function_id": 31 }]],
-			[32, "to_string", "CONST", [["func", "^string", ["^**dyn**"], true], { "function_id": 32 }]],
-			[33, "typeof", "CONST", [["func", "^typeid", ["^**dyn**"], true], { "function_id": 33 }]],
-			[34, "update", "CONST", [["func", "^**dyn**", ["^**dyn**", "^**dyn**", "^**dyn**"], true], { "function_id": 34 }]],
-			[35, "value_to_jsonvalue", "CONST", [["func", "^json_value", ["^**dyn**"], true], { "function_id": 35 }]],
-			[36, "write_text_file", "CONST", [["func", "^void", ["^**dyn**", "^**dyn**"], false], { "function_id": 36 }]],
+			[28, "size", "CONST", [["func", "^int", ["^any"], true], { "function_id": 28 }]],
+			[29, "subset", "CONST", [["func", "^any", ["^any", "^int", "^int"], true], { "function_id": 29 }]],
+			[30, "supermap", "CONST", [["func", "^any", ["^any", "^any", "^any"], true], { "function_id": 30 }]],
+			[31, "to_pretty_string", "CONST", [["func", "^string", ["^any"], true], { "function_id": 31 }]],
+			[32, "to_string", "CONST", [["func", "^string", ["^any"], true], { "function_id": 32 }]],
+			[33, "typeof", "CONST", [["func", "^typeid", ["^any"], true], { "function_id": 33 }]],
+			[34, "update", "CONST", [["func", "^any", ["^any", "^any", "^any"], true], { "function_id": 34 }]],
+			[35, "value_to_jsonvalue", "CONST", [["func", "^json_value", ["^any"], true], { "function_id": 35 }]],
+			[36, "write_text_file", "CONST", [["func", "^void", ["^any", "^any"], false], { "function_id": 36 }]],
 			[37, "null", "CONST", ["^json_value", null]],
 			[38, "**undef**", "LOCAL", { "type": "immutable_local", "value_type": "^**undef**" }],
-			[39, "**dyn**", "CONST", ["^**dyn**", null]],
+			[39, "any", "CONST", ["^any", null]],
 			[40, "void", "CONST", ["^void", null]],
 			[41, "bool", "CONST", ["^typeid", "^bool"]],
 			[42, "int", "CONST", ["^typeid", "^int"]],
