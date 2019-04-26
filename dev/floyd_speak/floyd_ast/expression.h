@@ -343,7 +343,7 @@ namespace floyd {
 
 		public: bool check_invariant() const{
 			//	QUARK_ASSERT(_debug.size() > 0);
-			//	QUARK_ASSERT(_result_type._base_type != base_type::k_internal_undefined && _result_type.check_invariant());
+			//	QUARK_ASSERT(_result_type._base_type != base_type::k_undefined && _result_type.check_invariant());
 			QUARK_ASSERT(_output_type == nullptr || _output_type->check_invariant());
 			return true;
 		}

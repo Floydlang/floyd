@@ -341,7 +341,7 @@ std::pair<shared_ptr<typeid_t>, seq_t> read_basic_type(const seq_t& s){
 	if(pos1.first.empty()){
 		return { nullptr, pos1.second };
 	}
-	else if(pos1.first == keyword_t::k_internal_undefined){
+	else if(pos1.first == keyword_t::k_undefined){
 		return { make_shared<typeid_t>(typeid_t::make_undefined()), pos1.second };
 	}
 	else if(pos1.first == keyword_t::k_any){

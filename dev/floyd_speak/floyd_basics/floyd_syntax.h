@@ -59,8 +59,9 @@ const std::string valid_expression_chars = k_c99_identifier_chars + k_c99_number
 */
 
 enum class base_type {
-	//	k_internal_undefined is never exposed in code, only used internally in compiler.
-	k_internal_undefined,
+	//	k_undefined is never exposed in code, only used internally in compiler.
+	//	??? Maybe we can use void for this and remove k_undefined?
+	k_undefined,
 
 	//	Used by host functions arguments / returns to tell this is a dynamic value, not static type.
 	k_any,
@@ -83,8 +84,8 @@ enum class base_type {
 	k_function,
 
 	//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
-	//	Keep the identifier so it can be resolved later
-	k_internal_unresolved_type_identifier
+	//	Keep the identifier so it can be resolved later.
+	k_unresolved
 };
 
 std::string base_type_to_string(const base_type t);
@@ -349,7 +350,7 @@ namespace keyword_t {
 	const std::string k_func = "func";
 	const std::string k_impure = "impure";
 
-	const std::string k_internal_undefined = "**undef**";
+	const std::string k_undefined = "**undef**";
 	const std::string k_any = "any";
 	const std::string k_void = "void";
 	const std::string k_false = "false";

@@ -397,7 +397,7 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 
 bool value_t::check_invariant() const{
 	const auto type_int = _basetype;
-	if(type_int == base_type::k_internal_undefined){
+	if(type_int == base_type::k_undefined){
 	}
 	else if(type_int == base_type::k_any){
 	}
@@ -441,8 +441,8 @@ std::string to_compact_string2(const value_t& value) {
 	QUARK_ASSERT(value.check_invariant());
 
 	const auto base_type = value.get_type().get_base_type();
-	if(base_type == base_type::k_internal_undefined){
-		return keyword_t::k_internal_undefined;
+	if(base_type == base_type::k_undefined){
+		return keyword_t::k_undefined;
 	}
 	else if(base_type == base_type::k_any){
 		return keyword_t::k_any;
@@ -482,7 +482,7 @@ std::string to_compact_string2(const value_t& value) {
 	else if(base_type == base_type::k_function){
 		return floyd::typeid_to_compact_string(value.get_type());
 	}
-	else if(base_type == base_type::k_internal_unresolved_type_identifier){
+	else if(base_type == base_type::k_unresolved){
 		QUARK_ASSERT(false);
 		return "";
 	}
@@ -1070,7 +1070,7 @@ QUARK_UNIT_TESTQ("value_to_ast_json()", ""){
 		typeid_t value_t::get_type() const{
 //			QUARK_ASSERT(check_invariant());
 
-			if(_basetype == base_type::k_internal_undefined){
+			if(_basetype == base_type::k_undefined){
 				return typeid_t::make_undefined();
 			}
 			else if(_basetype == base_type::k_any){
@@ -1116,7 +1116,7 @@ value_t value_t::make_typeid_value(const typeid_t& type_id){
 
 value_t value_t::make_struct_value(const typeid_t& struct_type, const std::vector<value_t>& values){
 	QUARK_ASSERT(struct_type.check_invariant());
-	QUARK_ASSERT(struct_type.get_base_type() != base_type::k_internal_unresolved_type_identifier);
+	QUARK_ASSERT(struct_type.get_base_type() != base_type::k_unresolved);
 	QUARK_ASSERT(struct_type.get_struct()._members.size() == values.size());
 
 	auto instance = std::make_shared<struct_value_t>(struct_value_t{struct_type.get_struct_ref(), values});
@@ -1179,7 +1179,7 @@ value_t make_def(const typeid_t& type){
 	else if(bt == base_type::k_function){
 		return value_t::make_function_value(type, 0);
 	}
-	else if(bt == base_type::k_internal_undefined){
+	else if(bt == base_type::k_undefined){
 		return value_t::make_undefined();
 	}
 	else if(bt == base_type::k_any){

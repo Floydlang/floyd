@@ -46,7 +46,7 @@ value_t bc_to_value(const bc_value_t& value){
 	const auto& type = value._type;
 	const auto basetype = value._type.get_base_type();
 
-	if(basetype == base_type::k_internal_undefined){
+	if(basetype == base_type::k_undefined){
 		return value_t::make_undefined();
 	}
 	else if(basetype == base_type::k_any){
@@ -147,7 +147,7 @@ bc_value_t value_to_bc(const value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 
 	const auto basetype = value.get_basetype();
-	if(basetype == base_type::k_internal_undefined){
+	if(basetype == base_type::k_undefined){
 		return bc_value_t::make_undefined();
 	}
 	else if(basetype == base_type::k_any){
@@ -283,7 +283,7 @@ bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, 
 			const auto v = arg_values[i];
 			const auto a = def->_members[i];
 			QUARK_ASSERT(v.check_invariant());
-			QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_internal_unresolved_type_identifier);
+			QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_unresolved);
 			QUARK_ASSERT(v.get_type() == a._type);
 		}
 	#endif

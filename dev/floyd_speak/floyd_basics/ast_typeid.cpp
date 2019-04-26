@@ -25,7 +25,7 @@ namespace floyd {
 
 bool typeid_t::check_invariant() const{
 	struct visitor_t {
-		bool operator()(const internal_undefined_t& e) const{
+		bool operator()(const undefined_t& e) const{
 			return true;
 		}
 		bool operator()(const any_t& e) const{
@@ -81,7 +81,7 @@ bool typeid_t::check_invariant() const{
 			}
 			return true;
 		}
-		bool operator()(const internal_unresolved_type_identifier_t& e) const{
+		bool operator()(const unresolved_t& e) const{
 			QUARK_ASSERT(e._unresolved_type_identifier.empty() == false);
 			return true;
 		}
@@ -104,7 +104,7 @@ void typeid_t::swap(typeid_t& other){
 
 
 QUARK_UNIT_TESTQ("typeid_t", "make_undefined()"){
-	ut_verify(QUARK_POS, typeid_t::make_undefined().get_base_type(), base_type::k_internal_undefined);
+	ut_verify(QUARK_POS, typeid_t::make_undefined().get_base_type(), base_type::k_undefined);
 }
 QUARK_UNIT_TESTQ("typeid_t", "is_undefined()"){
 	ut_verify_auto(QUARK_POS, typeid_t::make_undefined().is_undefined(), true);
@@ -316,7 +316,7 @@ QUARK_UNIT_TESTQ("typeid_t", "get_function_args()"){
 
 QUARK_UNIT_TESTQ("typeid_t", "make_unresolved_type_identifier()"){
 	const auto t = typeid_t::make_unresolved_type_identifier("xyz");
-	QUARK_UT_VERIFY(t.get_base_type() == base_type::k_internal_unresolved_type_identifier);
+	QUARK_UT_VERIFY(t.get_base_type() == base_type::k_unresolved);
 }
 
 QUARK_UNIT_TESTQ("typeid_t", "is_unresolved_type_identifier()"){
@@ -327,13 +327,13 @@ QUARK_UNIT_TESTQ("typeid_t", "is_unresolved_type_identifier()"){
 	QUARK_UT_VERIFY(typeid_t::make_bool().is_unresolved_type_identifier() == false);
 }
 
-QUARK_UNIT_TESTQ("typeid_t", "get_unresolved_type_identifier()"){
+QUARK_UNIT_TESTQ("typeid_t", "get_unresolved()"){
 	const auto t = typeid_t::make_unresolved_type_identifier("xyz");
-	QUARK_UT_VERIFY(t.get_unresolved_type_identifier() == "xyz");
+	QUARK_UT_VERIFY(t.get_unresolved() == "xyz");
 }
-QUARK_UNIT_TESTQ("typeid_t", "get_unresolved_type_identifier()"){
+QUARK_UNIT_TESTQ("typeid_t", "get_unresolved()"){
 	const auto t = typeid_t::make_unresolved_type_identifier("123");
-	QUARK_UT_VERIFY(t.get_unresolved_type_identifier() == "123");
+	QUARK_UT_VERIFY(t.get_unresolved() == "123");
 }
 
 
@@ -390,8 +390,8 @@ std::string typeid_to_compact_string_int(const typeid_t& t){
 
 	const auto basetype = t.get_base_type();
 
-	if(basetype == floyd::base_type::k_internal_unresolved_type_identifier){
-		return std::string() + "•" + t.get_unresolved_type_identifier() + "•";
+	if(basetype == floyd::base_type::k_unresolved){
+		return std::string() + "•" + t.get_unresolved() + "•";
 	}
 /*
 	else if(basetype == floyd::base_type::k_typeid){
@@ -444,7 +444,7 @@ const std::vector<typeid_str_test_t> make_typeid_str_tests(){
 	const auto s1 = typeid_t::make_struct2({});
 
 	const auto tests = std::vector<typeid_str_test_t>{
-		{ typeid_t::make_undefined(), quote(keyword_t::k_internal_undefined), keyword_t::k_internal_undefined },
+		{ typeid_t::make_undefined(), quote(keyword_t::k_undefined), keyword_t::k_undefined },
 		{ typeid_t::make_bool(), quote(keyword_t::k_bool), keyword_t::k_bool },
 		{ typeid_t::make_int(), quote(keyword_t::k_int), keyword_t::k_int },
 		{ typeid_t::make_double(), quote(keyword_t::k_double), keyword_t::k_double },
@@ -642,7 +642,7 @@ bool typeid_t::check_types_resolved() const{
 	QUARK_ASSERT(check_invariant());
 
 	struct visitor_t {
-		bool operator()(const internal_undefined_t& e) const{
+		bool operator()(const undefined_t& e) const{
 			return false;
 		}
 		bool operator()(const any_t& e) const{
@@ -684,7 +684,7 @@ bool typeid_t::check_types_resolved() const{
 		bool operator()(const function_t& e) const{
 			return check_types_resolved_int(e._parts);
 		}
-		bool operator()(const internal_unresolved_type_identifier_t& e) const{
+		bool operator()(const unresolved_t& e) const{
 			return false;
 		}
 	};

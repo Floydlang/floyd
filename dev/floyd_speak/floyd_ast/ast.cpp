@@ -36,7 +36,7 @@ itype_t make_new_itype(type_interner_t& interner, const typeid_t& type){
 		type_interner_t& interner;
 		const typeid_t& type;
 
-		int32_t operator()(const typeid_t::internal_undefined_t& e) const{
+		int32_t operator()(const typeid_t::undefined_t& e) const{
 			return interner.simple_next_id++;
 		}
 		int32_t operator()(const typeid_t::any_t& e) const{
@@ -78,7 +78,7 @@ itype_t make_new_itype(type_interner_t& interner, const typeid_t& type){
 		int32_t operator()(const typeid_t::function_t& e) const{
 			return interner.function_next_id++;
 		}
-		int32_t operator()(const typeid_t::internal_unresolved_type_identifier_t& e) const{
+		int32_t operator()(const typeid_t::unresolved_t& e) const{
 			return interner.simple_next_id++;
 		}
 	};

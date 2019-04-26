@@ -436,7 +436,7 @@ value_encoding type_to_encoding(const typeid_t& type){
 	const auto basetype = type.get_base_type();
 	if(false){
 	}
-	else if(basetype == base_type::k_internal_undefined){
+	else if(basetype == base_type::k_undefined){
 		return value_encoding::k_none;
 	}
 	else if(basetype == base_type::k_any){
@@ -487,7 +487,7 @@ value_encoding type_to_encoding(const typeid_t& type){
 	else if(basetype == base_type::k_function){
 		return value_encoding::k_inplace__function;
 	}
-	else if(basetype == base_type::k_internal_unresolved_type_identifier){
+	else if(basetype == base_type::k_unresolved){
 	}
 	else{
 	}
@@ -1915,7 +1915,7 @@ bc_static_frame_t::bc_static_frame_t(const std::vector<bc_instruction_t>& instrs
 		//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
 		//	Problem is that IF this is an RC_object, it WILL be decremented when written to.
 		//	Use a placeholder object of correct type.
-		if(symbol.second._const_value._type.get_base_type() == base_type::k_internal_undefined){
+		if(symbol.second._const_value._type.get_base_type() == base_type::k_undefined){
 			if(is_ext){
 				const auto value = bc_value_t(symbol.second._value_type, bc_value_t::mode::k_unwritten_ext_value);
 				_locals.push_back(value);

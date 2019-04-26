@@ -39,7 +39,7 @@ json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 	const auto basetype_str_tagged = tags == json_tags::k_tag_resolve_state ? (std::string() + tag_resolved_type_char + basetype_str) : basetype_str;
 
 	if(false
-		|| b == base_type::k_internal_undefined
+		|| b == base_type::k_undefined
 		|| b == base_type::k_any
 
 		|| b == base_type::k_void
@@ -81,8 +81,8 @@ json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 			t.get_function_pure() == epure::pure ? true : false
 		});
 	}
-	else if(b == base_type::k_internal_unresolved_type_identifier){
-		return std::string() + std::string(1, tag_unresolved_type_char) + t.get_unresolved_type_identifier();
+	else if(b == base_type::k_unresolved){
+		return std::string() + std::string(1, tag_unresolved_type_char) + t.get_unresolved();
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -115,7 +115,7 @@ typeid_t typeid_from_ast_json(const json_t& t2){
 			if(s == ""){
 				return typeid_t::make_undefined();
 			}
-			else if(s == keyword_t::k_internal_undefined){
+			else if(s == keyword_t::k_undefined){
 				return typeid_t::make_undefined();
 			}
 			else if(s == keyword_t::k_any){

@@ -193,7 +193,7 @@ typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, const typ
 		const typeid_t& type;
 
 
-		typeid_t operator()(const typeid_t::internal_undefined_t& e) const{
+		typeid_t operator()(const typeid_t::undefined_t& e) const{
 			throw_compiler_error(loc, "Cannot resolve type");
 		}
 		typeid_t operator()(const typeid_t::any_t& e) const{
@@ -250,8 +250,8 @@ typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, const typ
 			}
 			return typeid_t::make_function3(ret2, args2, pure, dyn_return_type);
 		}
-		typeid_t operator()(const typeid_t::internal_unresolved_type_identifier_t& e) const{
-			const auto found = find_symbol_by_name(acc, type.get_unresolved_type_identifier());
+		typeid_t operator()(const typeid_t::unresolved_t& e) const{
+			const auto found = find_symbol_by_name(acc, type.get_unresolved());
 			if(found.first != nullptr){
 				if(found.first->_value_type.is_typeid()){
 					return found.first->_init.get_typeid_value();
@@ -1836,7 +1836,7 @@ semantic_ast_t analyse(analyser_t& a){
 	//	"null" is equivalent to json_value::null
 	symbol_map.push_back({"null", symbol_t::make_constant(value_t::make_json_value(json_t()))});
 
-	symbol_map.push_back({keyword_t::k_internal_undefined, symbol_t::make_constant(value_t::make_undefined())});
+	symbol_map.push_back({keyword_t::k_undefined, symbol_t::make_constant(value_t::make_undefined())});
 	symbol_map.push_back({keyword_t::k_any, symbol_t::make_constant(value_t::make_any())});
 
 	symbol_map.push_back({keyword_t::k_json_object, symbol_t::make_constant(value_t::make_int(1))});

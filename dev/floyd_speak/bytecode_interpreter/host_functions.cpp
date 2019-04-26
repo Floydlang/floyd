@@ -327,7 +327,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 		const typeid_t& target_type;
 		const json_t& v;
 
-		value_t operator()(const typeid_t::internal_undefined_t& e) const{
+		value_t operator()(const typeid_t::undefined_t& e) const{
 			quark::throw_runtime_error("Invalid json schema, found null - unsupported by Floyd.");
 		}
 		value_t operator()(const typeid_t::any_t& e) const{
@@ -434,7 +434,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 		value_t operator()(const typeid_t::function_t& e) const{
 			quark::throw_runtime_error("Invalid json schema, cannot unflatten functions.");
 		}
-		value_t operator()(const typeid_t::internal_unresolved_type_identifier_t& e) const{
+		value_t operator()(const typeid_t::unresolved_t& e) const{
 			QUARK_ASSERT(false);
 		}
 	};

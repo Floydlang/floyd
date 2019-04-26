@@ -221,7 +221,7 @@ std::string make_value_debug_str(const value_t& v);
 		//////////////////////////////////////////////////		PUBLIC - SPECIFIC TO TYPE
 
 		public: value_t() :
-			_basetype(base_type::k_internal_undefined)
+			_basetype(base_type::k_undefined)
 		{
 			_value_internals._int = 0xdeadbeef;
 #if DEBUG
@@ -252,12 +252,12 @@ std::string make_value_debug_str(const value_t& v);
 
 
 		public: static value_t make_undefined(){
-			return value_t(base_type::k_internal_undefined);
+			return value_t(base_type::k_undefined);
 		}
 		public: bool is_undefined() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _basetype == base_type::k_internal_undefined;
+			return _basetype == base_type::k_undefined;
 		}
 
 
@@ -515,7 +515,7 @@ std::string make_value_debug_str(const value_t& v);
 				return false;
 			}
 
-			if(_basetype == base_type::k_internal_undefined){
+			if(_basetype == base_type::k_undefined){
 				return true;
 			}
 			else if(_basetype == base_type::k_any){

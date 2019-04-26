@@ -30,7 +30,7 @@
 
 	Source code						base_type								AST JSON
 	================================================================================================================
-	null							k_internal_undefined					"null"
+	null							k_undefined					"null"
 	bool							k_bool									"bool"
 	int								k_int									"int"
 	double							k_double								"double"
@@ -42,7 +42,7 @@
 	[string: int]					k_dict									["dict", "int"]
 	int ()							k_function								["function", "int", []]
 	int (double, [string])			k_function								["function", "int", ["double", ["vector", "string"]]]
-	randomize_player			k_internal_unresolved_type_identifier		["internal_unresolved_type_identifier", "randomize_player"]
+	randomize_player			k_unresolved		["internal_unresolved_type_identifier", "randomize_player"]
 
 
 	AST JSON
@@ -126,8 +126,8 @@ struct typeid_t {
 
 
 
-	struct internal_undefined_t {
-		bool operator==(const internal_undefined_t& other) const{	return true; };
+	struct undefined_t {
+		bool operator==(const undefined_t& other) const{	return true; };
 	};
 	struct any_t {
 		bool operator==(const any_t& other) const{	return true; };
@@ -177,14 +177,14 @@ struct typeid_t {
 		//??? Make this property travel OK through JSON, print outs etc.
 		return_dyn_type dyn_return;
 	};
-	struct internal_unresolved_type_identifier_t {
-		bool operator==(const internal_unresolved_type_identifier_t& other) const{	return _unresolved_type_identifier == other._unresolved_type_identifier; };
+	struct unresolved_t {
+		bool operator==(const unresolved_t& other) const{	return _unresolved_type_identifier == other._unresolved_type_identifier; };
 
 		std::string _unresolved_type_identifier;
 	};
 
 	typedef std::variant<
-		internal_undefined_t,
+		undefined_t,
 		any_t,
 		void_t,
 		bool_t,
@@ -199,19 +199,19 @@ struct typeid_t {
 		dict_t,
 		function_t,
 
-		internal_unresolved_type_identifier_t
+		unresolved_t
 	> type_variant_t;
 
 
 	////////////////////////////////////////		FUNCTIONS FOR EACH BASE-TYPE.
 
 	public: static typeid_t make_undefined(){
-		return { internal_undefined_t() };
+		return { undefined_t() };
 	}
 	public: bool is_undefined() const {
 		QUARK_ASSERT(check_invariant());
 
-		return std::holds_alternative<internal_undefined_t>(_contents);
+		return std::holds_alternative<undefined_t>(_contents);
 	}
 
 
@@ -400,17 +400,17 @@ struct typeid_t {
 
 
 	public: static typeid_t make_unresolved_type_identifier(const std::string& s){
-		return { internal_unresolved_type_identifier_t{ s } };
+		return { unresolved_t{ s } };
 	}
 	public: bool is_unresolved_type_identifier() const {
 		QUARK_ASSERT(check_invariant());
 
-		return std::holds_alternative<internal_unresolved_type_identifier_t>(_contents);
+		return std::holds_alternative<unresolved_t>(_contents);
 	}
-	public: std::string get_unresolved_type_identifier() const{
+	public: std::string get_unresolved() const{
 		QUARK_ASSERT(check_invariant());
 
-		return std::get<internal_unresolved_type_identifier_t>(_contents)._unresolved_type_identifier;
+		return std::get<unresolved_t>(_contents)._unresolved_type_identifier;
 	}
 
 
@@ -418,8 +418,8 @@ struct typeid_t {
 
 	public: floyd::base_type get_base_type() const{
 		struct visitor_t {
-			base_type operator()(const internal_undefined_t& e) const{
-				return base_type::k_internal_undefined;
+			base_type operator()(const undefined_t& e) const{
+				return base_type::k_undefined;
 			}
 			base_type operator()(const any_t& e) const{
 				return base_type::k_any;
@@ -460,8 +460,8 @@ struct typeid_t {
 			base_type operator()(const function_t& e) const{
 				return base_type::k_function;
 			}
-			base_type operator()(const internal_unresolved_type_identifier_t& e) const{
-				return base_type::k_internal_unresolved_type_identifier;
+			base_type operator()(const unresolved_t& e) const{
+				return base_type::k_unresolved;
 			}
 		};
 		return std::visit(visitor_t{}, _contents);
