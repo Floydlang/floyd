@@ -1260,8 +1260,6 @@ WIDE_RETURN_T floyd_runtime__store_dict(void* floyd_runtime_ptr, DICT_T* dict, c
 
 	auto v = make_dict();
 
-//	const auto value = runtime_llvm_to_value(runtime, arg_value, type);
-
 	//	Deep copy dict.
 	v.body_ptr->map = dict->body_ptr->map;
 	if(element_type2.is_int()){
@@ -1287,6 +1285,8 @@ host_func_t floyd_runtime__store_dict__make(llvm::LLVMContext& context){
 	);
 	return { "floyd_runtime__store_dict", function_type, reinterpret_cast<void*>(floyd_runtime__store_dict) };
 }
+
+
 
 ////////////////////////////////		lookup_dict()
 
@@ -1316,8 +1316,6 @@ host_func_t floyd_runtime__lookup_dict__make(llvm::LLVMContext& context){
 	);
 	return { "floyd_runtime__lookup_dict", function_type, reinterpret_cast<void*>(floyd_runtime__lookup_dict) };
 }
-
-
 
 
 
@@ -1463,12 +1461,46 @@ void floyd_host_function_1005(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-void floyd_host_function_1006(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+WIDE_RETURN_T floyd_host_function__erase(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, dyn_value_type_argument_t arg0_type, dyn_value_argument_t arg1_value, dyn_value_type_argument_t arg1_type){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
+	const auto type1 = lookup_type(r.type_interner, unpack_encoded_itype(arg1_type));
+
+	if(type0.is_dict()){
+		const auto& dict = unpack_dict_arg(r, arg0_value, arg0_type);
+
+		//	Deep copy dict.
+		auto dict2 = make_dict();
+		dict2.body_ptr->map = dict->body_ptr->map;
+
+		const auto key_strptr = reinterpret_cast<const char*>(arg1_value);
+		const auto key_string = std::string(key_strptr);
+		const auto erase_count = dict2.body_ptr->map.erase(key_string);
+		return make_wide_return_dict(dict2);
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
 }
 
-void floyd_host_function_1007(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+uint32_t floyd_funcdef__exists(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, dyn_value_type_argument_t arg0_type, dyn_value_argument_t arg1_value, dyn_value_type_argument_t arg1_type){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
+	const auto type1 = lookup_type(r.type_interner, unpack_encoded_itype(arg1_type));
+
+	if(type0.is_dict()){
+		const auto& dict = unpack_dict_arg(r, arg0_value, arg0_type);
+		const auto key_strptr = reinterpret_cast<const char*>(arg1_value);
+		const auto key_string = std::string(key_strptr);
+
+		const auto it = dict->body_ptr->map.find(key_string);
+		return it != dict->body_ptr->map.end() ? 1 : 0;
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
 }
 
 void floyd_host_function_1008(void* floyd_runtime_ptr, int64_t arg){
@@ -1492,7 +1524,7 @@ int64_t floyd_funcdef__find__string(llvm_execution_engine_t& floyd_runtime_ptr, 
 
 //??? use int32 for types.
 
-int64_t floyd_funcdef__find(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, int64_t arg0_type, dyn_value_argument_t arg1_value, int64_t arg1_type){
+int64_t floyd_funcdef__find(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, dyn_value_type_argument_t arg0_type, dyn_value_argument_t arg1_value, dyn_value_type_argument_t arg1_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
@@ -1882,9 +1914,9 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, dyn_value_arg
 		}
 		const auto key_strptr = reinterpret_cast<const char*>(arg1_value);
 		const auto dict = unpack_dict_arg(r, arg0_value, arg0_type);
-		auto dict2 = make_dict();
 
 		//	Deep copy dict.
+		auto dict2 = make_dict();
 		dict2.body_ptr->map = dict->body_ptr->map;
 
 		dict2.body_ptr->map.insert_or_assign(std::string(key_strptr), arg2_value);
@@ -2001,8 +2033,8 @@ std::map<std::string, void*> get_host_functions_map2(){
 		{ "floyd_funcdef__create_directory_branch", reinterpret_cast<void *>(&floyd_host_function_1003) },
 		{ "floyd_funcdef__delete_fsentry_deep", reinterpret_cast<void *>(&floyd_host_function_1004) },
 		{ "floyd_funcdef__does_fsentry_exist", reinterpret_cast<void *>(&floyd_host_function_1005) },
-		{ "floyd_funcdef__erase", reinterpret_cast<void *>(&floyd_host_function_1006) },
-		{ "floyd_funcdef__exists", reinterpret_cast<void *>(&floyd_host_function_1007) },
+		{ "floyd_funcdef__erase", reinterpret_cast<void *>(&floyd_host_function__erase) },
+		{ "floyd_funcdef__exists", reinterpret_cast<void *>(&floyd_funcdef__exists) },
 		{ "floyd_funcdef__filter", reinterpret_cast<void *>(&floyd_host_function_1008) },
 		{ "floyd_funcdef__find", reinterpret_cast<void *>(&floyd_funcdef__find) },
 
