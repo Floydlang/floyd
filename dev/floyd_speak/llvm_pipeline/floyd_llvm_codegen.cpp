@@ -604,12 +604,12 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 		//	parent_reg is a VEC_T byvalue.
 		auto element_index = key_reg;
 
-		auto uint64_element_ptr = builder.CreateExtractValue(parent_reg, { (int)VEC_T_MEMBERS::element_ptr });
+		auto uint64_array_ptr_reg = builder.CreateExtractValue(parent_reg, { (int)VEC_T_MEMBERS::element_ptr });
 
 		const auto element_type0 = parent_type.get_vector_element_type();
 
 		const auto gep = std::vector<llvm::Value*>{ element_index };
-		llvm::Value* element_addr_reg = builder.CreateGEP(builder.getInt64Ty(), uint64_element_ptr, gep, "element_addr");
+		llvm::Value* element_addr_reg = builder.CreateGEP(builder.getInt64Ty(), uint64_array_ptr_reg, gep, "element_addr");
 		llvm::Value* element_value_uint64_reg = builder.CreateLoad(element_addr_reg, "element_tmp");
 
 		if(element_type0.is_int()){
@@ -1075,18 +1075,18 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 
 		const auto allocate_vector_func = find_function_def(gen_acc, "floyd_runtime__allocate_vector");
 		auto vec_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
-		auto uint64_element_ptr = builder.CreateExtractValue(vec_reg, { (int)VEC_T_MEMBERS::element_ptr });
+		auto uint64_array_ptr_reg = builder.CreateExtractValue(vec_reg, { (int)VEC_T_MEMBERS::element_ptr });
 
 		if(element_type0.is_string()){
 			//	Each element is a char*.
 			auto element_type = llvm::Type::getInt8PtrTy(context);
-			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type->getPointerTo(), "");
+			auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_array_ptr_reg, element_type->getPointerTo(), "");
 
 			//	Evaluate each element and store it directly into the the vector.
 			int element_index = 0;
 			for(const auto& arg: details.elements){
 				llvm::Value* element_value_reg = generate_expression(gen_acc, emit_f, arg);
-				generate_array_element_store(builder, *element_ptr, element_index, *element_value_reg);
+				generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
 				element_index++;
 			}
 			return vec_reg;
@@ -1095,13 +1095,14 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			auto& struct_type = *make_struct_type(context, element_type0);
 			auto& element_type = *struct_type.getPointerTo();
 
-			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type.getPointerTo(), "");
+			auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_array_ptr_reg, element_type.getPointerTo(), "");
 
+b			//??? Make shared function for all these element loops. Most don't need any casting.
 			//	Evaluate each element and store it directly into the the vector.
 			int element_index = 0;
 			for(const auto& arg: details.elements){
 				llvm::Value* element_value_reg = generate_expression(gen_acc, emit_f, arg);
-				generate_array_element_store(builder, *element_ptr, element_index, *element_value_reg);
+				generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
 				element_index++;
 			}
 			return vec_reg;
@@ -1115,7 +1116,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			auto output_element_count = (input_element_count / 64) + ((input_element_count & 63) ? 1 : 0);
 			auto vec_value = generate_alloc_vec(gen_acc, 1, output_element_count, "[bool]");
 
-			auto uint64_element_ptr = builder.CreateExtractValue(vec_value, { (int)VEC_T_MEMBERS::element_ptr });
+			auto uint64_array_ptr_reg = builder.CreateExtractValue(vec_value, { (int)VEC_T_MEMBERS::array_ptr_reg });
 
 			//	Evaluate each element and store it directly into the the vector.
 			auto buffer_word = builder.CreateAlloca(gen_acc.builder.getInt64Ty());
@@ -1147,7 +1148,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 
 				auto output_element_index_value = generate_constant(gen_acc, value_t::make_int(output_element_index));
 				const auto gep_index_list2 = std::vector<llvm::Value*>{ output_element_index_value };
-				llvm::Value* e_addr = builder.CreateGEP(gen_acc.builder.getInt64Ty(), uint64_element_ptr, gep_index_list2, "");
+				llvm::Value* e_addr = builder.CreateGEP(gen_acc.builder.getInt64Ty(), uint64_array_ptr_reg, gep_index_list2, "");
 				builder.CreateStore(word_out, e_addr);
 
 				output_element_index++;
@@ -1159,27 +1160,27 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 
 			//	Each element is a uint64_t ???
 			auto element_type = llvm::Type::getInt64Ty(context);
-			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type->getPointerTo(), "");
+			auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_array_ptr_reg, element_type->getPointerTo(), "");
 
 			//	Evaluate each element and store it directly into the the vector.
 			int element_index = 0;
 			for(const auto& arg: details.elements){
 				llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, arg);
 				auto element_value_reg = builder.CreateCast(llvm::Instruction::CastOps::ZExt, element0_reg, builder.getInt64Ty(), "");
-				generate_array_element_store(builder, *element_ptr, element_index, *element_value_reg);
+				generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
 				element_index++;
 			}
 			return vec_reg;
 		}
 		else if(element_type0.is_double()){
 			auto element_type = builder.getDoubleTy();
-			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type->getPointerTo(), "");
+			auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_array_ptr_reg, element_type->getPointerTo(), "");
 
 			//	Evaluate each element and store it directly into the the vector.
 			int element_index = 0;
 			for(const auto& arg: details.elements){
 				llvm::Value* element_value_reg = generate_expression(gen_acc, emit_f, arg);
-				generate_array_element_store(builder, *element_ptr, element_index, *element_value_reg);
+				generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
 				element_index++;
 			}
 			return vec_reg;
