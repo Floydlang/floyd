@@ -1153,6 +1153,9 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 		else if(resolved_call_return_type.is_vector()){
 			return generate__convert_wide_return_to_vec(builder, result0);
 		}
+		else if(resolved_call_return_type.is_dict()){
+			return generate__convert_wide_return_to_dict(builder, result0);
+		}
 		else if(resolved_call_return_type.is_struct()){
 			auto struct_type = make_struct_type(context, resolved_call_return_type);
 			auto wide_return_a_reg = builder.CreateExtractValue(result, { static_cast<int>(WIDE_RETURN_MEMBERS::a) });

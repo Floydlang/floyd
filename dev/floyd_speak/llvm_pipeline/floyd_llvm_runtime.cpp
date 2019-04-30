@@ -1265,8 +1265,7 @@ WIDE_RETURN_T floyd_runtime__store_dict(void* floyd_runtime_ptr, DICT_T* dict, c
 	//	Deep copy dict.
 	v.body_ptr->map = dict->body_ptr->map;
 	if(element_type2.is_int()){
-		std::pair<std::string, uint64_t> e(std::string(key_string), element_value);
-		v.body_ptr->map.insert(e);
+		v.body_ptr->map.insert_or_assign(std::string(key_string), element_value);
 		return make_wide_return_dict(v);
 	}
 	else{
@@ -1876,6 +1875,20 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, dyn_value_arg
 		else{
 			NOT_IMPLEMENTED_YET();
 		}
+	}
+	else if(type0.is_dict()){
+		if(type1.is_string() == false){
+			throw std::exception();
+		}
+		const auto key_strptr = reinterpret_cast<const char*>(arg1_value);
+		const auto dict = unpack_dict_arg(r, arg0_value, arg0_type);
+		auto dict2 = make_dict();
+
+		//	Deep copy dict.
+		dict2.body_ptr->map = dict->body_ptr->map;
+
+		dict2.body_ptr->map.insert_or_assign(std::string(key_strptr), arg2_value);
+		return make_wide_return_dict(dict2);
 	}
 	else if(type0.is_struct()){
 		if(type1.is_string() == false){
