@@ -912,6 +912,8 @@ static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_ac
 			rhs_temp,
 		};
 		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "compare_strings");
+
+		//??? Return i1 directly, no need to compare again.
 		auto result2 = gen_acc.builder.CreateICmp(llvm::CmpInst::Predicate::ICMP_NE, result, llvm::ConstantInt::get(gen_acc.builder.getInt32Ty(), 0));
 
 		QUARK_ASSERT(gen_acc.check_invariant());
@@ -929,7 +931,29 @@ static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_ac
 			generate_encoded_value(gen_acc, *lhs_temp, type),
 			generate_encoded_value(gen_acc, *rhs_temp, type)
 		};
-		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "compare_vectors");
+		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "floyd_runtime__compare_values");
+
+		//??? Return i1 directly, no need to compare again.
+		auto result2 = gen_acc.builder.CreateICmp(llvm::CmpInst::Predicate::ICMP_NE, result, llvm::ConstantInt::get(gen_acc.builder.getInt32Ty(), 0));
+
+		QUARK_ASSERT(gen_acc.check_invariant());
+		return result2;
+	}
+	else if(type.is_dict()){
+		const auto def = find_function_def(gen_acc, "floyd_runtime__compare_values");
+		llvm::Value* op_value = generate_constant(gen_acc, value_t::make_int(static_cast<int64_t>(details.op)));
+		llvm::Value* itype_reg = generate_constant(gen_acc, value_t::make_int(pack_itype(gen_acc, type)));
+
+		std::vector<llvm::Value*> args2 = {
+			get_callers_fcp(emit_f),
+			op_value,
+			itype_reg,
+			generate_encoded_value(gen_acc, *lhs_temp, type),
+			generate_encoded_value(gen_acc, *rhs_temp, type)
+		};
+		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "floyd_runtime__compare_values");
+
+		//??? Return i1 directly, no need to compare again.
 		auto result2 = gen_acc.builder.CreateICmp(llvm::CmpInst::Predicate::ICMP_NE, result, llvm::ConstantInt::get(gen_acc.builder.getInt32Ty(), 0));
 
 		QUARK_ASSERT(gen_acc.check_invariant());
@@ -947,7 +971,9 @@ static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_ac
 			generate_encoded_value(gen_acc, *lhs_temp, type),
 			generate_encoded_value(gen_acc, *rhs_temp, type)
 		};
-		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "compare_struct");
+		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "floyd_runtime__compare_values");
+
+		//??? Return i1 directly, no need to compare again.
 		auto result2 = gen_acc.builder.CreateICmp(llvm::CmpInst::Predicate::ICMP_NE, result, llvm::ConstantInt::get(gen_acc.builder.getInt32Ty(), 0));
 
 		QUARK_ASSERT(gen_acc.check_invariant());
