@@ -3210,7 +3210,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "mutate struct member using update
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "struct", "mutate nested member", ""){
+OFF_QUARK_UNIT_TEST("Floyd test suite", "struct", "mutate nested member", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(

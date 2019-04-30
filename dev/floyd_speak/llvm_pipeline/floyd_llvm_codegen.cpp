@@ -1059,6 +1059,43 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 	return result;
 }
 
+//	Evaluate each element and store it directly into the array.
+static void generate_fill_array(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& uint64_array_ptr_reg, llvm::Type& element_type, const std::vector<expression_t>& elements){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, &uint64_array_ptr_reg, element_type.getPointerTo(), "");
+
+	int element_index = 0;
+	for(const auto& element_value: elements){
+		llvm::Value* element_value_reg = generate_expression(gen_acc, emit_f, element_value);
+		generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
+		element_index++;
+	}
+}
+
+/*
+		%struct.MYS_T = type { i64, i32, double }
+
+		; Function Attrs: noinline nounwind optnone
+		define void @test(%struct.MYS_T* noalias sret) #0 {
+		  %2 = alloca %struct.MYS_T, align 8
+		  %3 = getelementptr inbounds %struct.MYS_T, %struct.MYS_T* %2, i32 0, i32 0
+		  store i64 1311953686388150836, i64* %3, align 8
+		  %4 = getelementptr inbounds %struct.MYS_T, %struct.MYS_T* %2, i32 0, i32 1
+		  store i32 -559038737, i32* %4, align 8
+		  %5 = getelementptr inbounds %struct.MYS_T, %struct.MYS_T* %2, i32 0, i32 2
+		  store double 3.141500e+00, double* %5, align 8
+		  %6 = bitcast %struct.MYS_T* %0 to i8*
+		  %7 = bitcast %struct.MYS_T* %2 to i8*
+		  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %6, i8* %7, i64 24, i32 8, i1 false)
+		  ret void
+		}
+*/
+
 static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -1071,45 +1108,31 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 	const auto element_count = details.elements.size();
 
 	if(target_type.is_vector()){
+		//??? Try storing vectors in vectors
+
 		const auto element_type0 = target_type.get_vector_element_type();
 
 		const auto allocate_vector_func = find_function_def(gen_acc, "floyd_runtime__allocate_vector");
 		auto vec_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
 		auto uint64_array_ptr_reg = builder.CreateExtractValue(vec_reg, { (int)VEC_T_MEMBERS::element_ptr });
 
-		if(element_type0.is_string()){
-			//	Each element is a char*.
-			auto element_type = llvm::Type::getInt8PtrTy(context);
+		if(element_type0.is_bool()){
+			//	Each element is a uint64_t ???
+			auto element_type = llvm::Type::getInt64Ty(context);
 			auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_array_ptr_reg, element_type->getPointerTo(), "");
 
 			//	Evaluate each element and store it directly into the the vector.
 			int element_index = 0;
 			for(const auto& arg: details.elements){
-				llvm::Value* element_value_reg = generate_expression(gen_acc, emit_f, arg);
+				llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, arg);
+				auto element_value_reg = builder.CreateCast(llvm::Instruction::CastOps::ZExt, element0_reg, builder.getInt64Ty(), "");
 				generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
 				element_index++;
 			}
 			return vec_reg;
-		}
-		else if(element_type0.is_struct()){
-			auto& struct_type = *make_struct_type(context, element_type0);
-			auto& element_type = *struct_type.getPointerTo();
 
-			auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_array_ptr_reg, element_type.getPointerTo(), "");
-
-			//??? Make shared function for all these element loops. Most don't need any casting.
-			//	Evaluate each element and store it directly into the the vector.
-			int element_index = 0;
-			for(const auto& arg: details.elements){
-				llvm::Value* element_value_reg = generate_expression(gen_acc, emit_f, arg);
-				generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
-				element_index++;
-			}
-			return vec_reg;
-		}
 /*
-		//	Store 64 bits per uint64_t.
-		else if(element_type0.is_bool()){
+			//	Store 64 bits per uint64_t.
 			const auto input_element_count = caller_arg_count;
 
 			//	Each element is a bit, packed into the 64bit elements of VEC_T.
@@ -1156,33 +1179,24 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			return vec_value;
 		}
 */
-		else if(element_type0.is_bool() || element_type0.is_int()){
 
-			//	Each element is a uint64_t ???
-			auto element_type = llvm::Type::getInt64Ty(context);
-			auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_array_ptr_reg, element_type->getPointerTo(), "");
-
-			//	Evaluate each element and store it directly into the the vector.
-			int element_index = 0;
-			for(const auto& arg: details.elements){
-				llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, arg);
-				auto element_value_reg = builder.CreateCast(llvm::Instruction::CastOps::ZExt, element0_reg, builder.getInt64Ty(), "");
-				generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
-				element_index++;
-			}
+		}
+		else if(element_type0.is_string()){
+			//	Each string element is a char*.
+			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *llvm::Type::getInt8PtrTy(context), details.elements);
+			return vec_reg;
+		}
+		else if(element_type0.is_struct()){
+			//	Structs are stored as pointer-to-struct in the vector elements.
+			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *make_struct_type(context, element_type0)->getPointerTo(), details.elements);
+			return vec_reg;
+		}
+		else if(element_type0.is_int()){
+			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *llvm::Type::getInt64Ty(context), details.elements);
 			return vec_reg;
 		}
 		else if(element_type0.is_double()){
-			auto element_type = builder.getDoubleTy();
-			auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_array_ptr_reg, element_type->getPointerTo(), "");
-
-			//	Evaluate each element and store it directly into the the vector.
-			int element_index = 0;
-			for(const auto& arg: details.elements){
-				llvm::Value* element_value_reg = generate_expression(gen_acc, emit_f, arg);
-				generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
-				element_index++;
-			}
+			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *builder.getDoubleTy(), details.elements);
 			return vec_reg;
 		}
 		//??? All types of elements must be possible in a vector!
@@ -1194,26 +1208,6 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 		NOT_IMPLEMENTED_YET();
 	}
 	else if(target_type.is_struct()){
-/*
-
-		%struct.MYS_T = type { i64, i32, double }
-
-		; Function Attrs: noinline nounwind optnone
-		define void @test(%struct.MYS_T* noalias sret) #0 {
-		  %2 = alloca %struct.MYS_T, align 8
-		  %3 = getelementptr inbounds %struct.MYS_T, %struct.MYS_T* %2, i32 0, i32 0
-		  store i64 1311953686388150836, i64* %3, align 8
-		  %4 = getelementptr inbounds %struct.MYS_T, %struct.MYS_T* %2, i32 0, i32 1
-		  store i32 -559038737, i32* %4, align 8
-		  %5 = getelementptr inbounds %struct.MYS_T, %struct.MYS_T* %2, i32 0, i32 2
-		  store double 3.141500e+00, double* %5, align 8
-		  %6 = bitcast %struct.MYS_T* %0 to i8*
-		  %7 = bitcast %struct.MYS_T* %2 to i8*
-		  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %6, i8* %7, i64 24, i32 8, i1 false)
-		  ret void
-		}
-*/
-
 		const auto& struct_def = target_type.get_struct();
 		auto& struct_type_llvm = *make_struct_type(context, target_type);
 		QUARK_ASSERT(struct_def._members.size() == element_count);
@@ -1246,10 +1240,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 
 	}
 
-/*
-	const auto extbits = pack_bools(call_setup._exts);
-	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_popn, make_imm_int(call_setup._stack_count), make_imm_int(extbits), {} ));
-*/
+	NOT_IMPLEMENTED_YET();
 	return nullptr;
 }
 
