@@ -2755,6 +2755,13 @@ QUARK_UNIT_TEST("Floyd test suite", "dict construct", "", ""){
 	run_closed(R"(
 
 		let [string: int] a = {"one": 1, "two": 2}
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "dict construct", "", ""){
+	run_closed(R"(
+
+		let [string: int] a = {"one": 1, "two": 2}
 		assert(size(a) == 2)
 
 	)");

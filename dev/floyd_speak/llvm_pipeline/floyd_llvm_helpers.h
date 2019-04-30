@@ -238,15 +238,14 @@ llvm::StructType* make_vec_type(llvm::LLVMContext& context);
 
 llvm::Value* generate_vec_alloca(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue);
 
-
-WIDE_RETURN_T make_wide_return_vec(const VEC_T& vec);
-VEC_T wider_return_to_vec(const WIDE_RETURN_T& ret);
-
-
 //	LLVM can't cast a struct-value to another struct value - need to store on stack and cast pointer instead.
 //	Store the DYN to memory, then cast it to VEC and load it again.
 llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg);
 
+
+WIDE_RETURN_T make_wide_return_vec(const VEC_T& vec);
+VEC_T wider_return_to_vec(const WIDE_RETURN_T& ret);
+//??? wide, not wider
 
 
 
@@ -281,7 +280,7 @@ struct DICT_T {
 
 
 //	Creates a new DICT_T with element_count. All elements are blank. Caller owns the result.
-DICT_T make_dict(uint32_t element_count);
+DICT_T make_dict();
 void delete_dict(DICT_T& v);
 
 enum class DICT_T_MEMBERS {
@@ -290,6 +289,15 @@ enum class DICT_T_MEMBERS {
 
 //	Makes a type for DICT_T.
 llvm::StructType* make_dict_type(llvm::LLVMContext& context);
+
+llvm::Value* generate_dict_alloca(llvm::IRBuilder<>& builder, llvm::Value* dict_reg);
+
+//	LLVM can't cast a struct-value to another struct value - need to store on stack and cast pointer instead.
+llvm::Value* generate__convert_wide_return_to_dict(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg);
+
+WIDE_RETURN_T make_wide_return_dict(const DICT_T& dict);
+DICT_T wide_return_to_dict(const WIDE_RETURN_T& ret);
+
 
 
 

@@ -320,33 +320,6 @@ llvm::Type* make_frp_type(llvm::LLVMContext& context){
 
 
 
-//	Makes a type for VEC_T.
-llvm::StructType* make_vec_type(llvm::LLVMContext& context){
-	std::vector<llvm::Type*> members = {
-		//	element_ptr
-		llvm::Type::getInt64Ty(context)->getPointerTo(),
-
-		//	element_count
-		llvm::Type::getInt32Ty(context),
-
-		//	magic
-		llvm::Type::getInt16Ty(context),
-
-		//	element_bits
-		llvm::Type::getInt16Ty(context)
-	};
-	llvm::StructType* s = llvm::StructType::get(context, members, false);
-	return s;
-}
-
-llvm::Value* generate_vec_alloca(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue){
-	auto& context = builder.getContext();
-
-	auto alloc_value = builder.CreateAlloca(make_vec_type(context));
-	builder.CreateStore(vec_byvalue, alloc_value);
-	return alloc_value;
-}
-
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto vec_struct_size = sizeof(VEC_T);
 	QUARK_UT_VERIFY(vec_struct_size == 16);
@@ -382,12 +355,31 @@ void delete_vec(VEC_T& vec){
 	vec.element_count = -vec.element_count;
 }
 
-WIDE_RETURN_T make_wide_return_vec(const VEC_T& vec){
-	return *reinterpret_cast<const WIDE_RETURN_T*>(&vec);
+
+llvm::StructType* make_vec_type(llvm::LLVMContext& context){
+	std::vector<llvm::Type*> members = {
+		//	element_ptr
+		llvm::Type::getInt64Ty(context)->getPointerTo(),
+
+		//	element_count
+		llvm::Type::getInt32Ty(context),
+
+		//	magic
+		llvm::Type::getInt16Ty(context),
+
+		//	element_bits
+		llvm::Type::getInt16Ty(context)
+	};
+	llvm::StructType* s = llvm::StructType::get(context, members, false);
+	return s;
 }
 
-VEC_T wider_return_to_vec(const WIDE_RETURN_T& ret){
-	return *reinterpret_cast<const VEC_T*>(&ret);
+llvm::Value* generate_vec_alloca(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue){
+	auto& context = builder.getContext();
+
+	auto alloc_value = builder.CreateAlloca(make_vec_type(context));
+	builder.CreateStore(vec_byvalue, alloc_value);
+	return alloc_value;
 }
 
 llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg){
@@ -400,6 +392,15 @@ llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, ll
 	return vec_reg;
 }
 
+WIDE_RETURN_T make_wide_return_vec(const VEC_T& vec){
+	return *reinterpret_cast<const WIDE_RETURN_T*>(&vec);
+}
+
+VEC_T wider_return_to_vec(const WIDE_RETURN_T& ret){
+	return *reinterpret_cast<const VEC_T*>(&ret);
+}
+
+
 
 
 
@@ -410,7 +411,7 @@ llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, ll
 
 
 
-DICT_T make_dict(uint32_t element_count){
+DICT_T make_dict(){
 	DICT_BODY_T* body_ptr = new DICT_BODY_T();
 	DICT_T result;
 	result.body_ptr = body_ptr;
@@ -427,6 +428,9 @@ void delete_dict(DICT_T& v){
 }
 
 
+
+
+
 llvm::StructType* make_dict_type(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
 		//	body_otr
@@ -435,6 +439,35 @@ llvm::StructType* make_dict_type(llvm::LLVMContext& context){
 	llvm::StructType* s = llvm::StructType::get(context, members, false);
 	return s;
 }
+
+llvm::Value* generate_dict_alloca(llvm::IRBuilder<>& builder, llvm::Value* dict_reg){
+	auto& context = builder.getContext();
+
+	auto alloc_value = builder.CreateAlloca(make_dict_type(context));
+	builder.CreateStore(dict_reg, alloc_value);
+	return alloc_value;
+}
+
+llvm::Value* generate__convert_wide_return_to_dict(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg){
+	auto& context = builder.getContext();
+
+	auto wide_return_ptr_reg = builder.CreateAlloca(make_wide_return_type(context), nullptr, "temp_dict");
+	builder.CreateStore(wide_return_reg, wide_return_ptr_reg);
+	auto dict_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, wide_return_ptr_reg, make_dict_type(context)->getPointerTo(), "");
+	auto dict_reg = builder.CreateLoad(dict_ptr_reg, "final");
+	return dict_reg;
+}
+
+WIDE_RETURN_T make_wide_return_dict(const DICT_T& dict){
+	return *reinterpret_cast<const WIDE_RETURN_T*>(&dict);
+}
+
+DICT_T wide_return_to_dict(const WIDE_RETURN_T& ret){
+	return *reinterpret_cast<const DICT_T*>(&ret);
+}
+
+
+
 
 
 

@@ -431,6 +431,10 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 		else{
 			//	Updated the symbol with the real function defintion.
 			a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = {new_local_name, bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type2) : symbol_t::make_immutable_local(lhs_type2)};
+
+
+			resolve_type(a_acc, s.location, rhs_expr_pair.second.get_output_type());
+
 			return {
 				a_acc,
 				statement_t::make__store2(s.location, floyd::variable_address_t::make_variable_address(0, (int)local_name_index), rhs_expr_pair.second)
