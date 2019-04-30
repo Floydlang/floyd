@@ -1100,12 +1100,8 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			//	Evaluate each element and store it directly into the the vector.
 			int element_index = 0;
 			for(const auto& arg: details.elements){
-				llvm::Value* arg_value = generate_expression(gen_acc, emit_f, arg);
-				auto element_index_value = generate_constant(gen_acc, value_t::make_int(element_index));
-				const auto gep = std::vector<llvm::Value*>{ element_index_value };
-				llvm::Value* e_addr = builder.CreateGEP(&element_type, element_ptr, gep, "");
-				builder.CreateStore(arg_value, e_addr);
-
+				llvm::Value* element_value_reg = generate_expression(gen_acc, emit_f, arg);
+				generate_array_element_store(builder, *element_ptr, element_index, *element_value_reg);
 				element_index++;
 			}
 			return vec_reg;
@@ -1169,12 +1165,8 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			int element_index = 0;
 			for(const auto& arg: details.elements){
 				llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, arg);
-				auto element_reg = builder.CreateCast(llvm::Instruction::CastOps::ZExt, element0_reg, builder.getInt64Ty(), "");
-				auto element_index_value = generate_constant(gen_acc, value_t::make_int(element_index));
-				const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_value };
-				llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "");
-				builder.CreateStore(element_reg, e_addr);
-
+				auto element_value_reg = builder.CreateCast(llvm::Instruction::CastOps::ZExt, element0_reg, builder.getInt64Ty(), "");
+				generate_array_element_store(builder, *element_ptr, element_index, *element_value_reg);
 				element_index++;
 			}
 			return vec_reg;
@@ -1186,12 +1178,8 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			//	Evaluate each element and store it directly into the the vector.
 			int element_index = 0;
 			for(const auto& arg: details.elements){
-				llvm::Value* element_reg = generate_expression(gen_acc, emit_f, arg);
-				auto element_index_value = generate_constant(gen_acc, value_t::make_int(element_index));
-				const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_value };
-				llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "");
-				builder.CreateStore(element_reg, e_addr);
-
+				llvm::Value* element_value_reg = generate_expression(gen_acc, emit_f, arg);
+				generate_array_element_store(builder, *element_ptr, element_index, *element_value_reg);
 				element_index++;
 			}
 			return vec_reg;

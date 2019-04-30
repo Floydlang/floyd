@@ -445,8 +445,11 @@ llvm::StructType* make_dict_type(llvm::LLVMContext& context){
 
 void generate_array_element_store(llvm::IRBuilder<>& builder, llvm::Value& array_ptr_reg, uint64_t element_index, llvm::Value& element_reg){
 	QUARK_ASSERT(array_ptr_reg.getType()->isPointerTy());
+	QUARK_ASSERT(array_ptr_reg.getType()->isPointerTy());
 
 	auto element_type = array_ptr_reg.getType()->getPointerElementType();
+
+	QUARK_ASSERT(element_type == element_reg.getType());
 
 	auto element_index_reg = llvm::ConstantInt::get(builder.getInt64Ty(), element_index);
 	const auto gep = std::vector<llvm::Value*>{ element_index_reg };
