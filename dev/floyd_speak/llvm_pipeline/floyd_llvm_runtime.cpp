@@ -1114,7 +1114,7 @@ host_func_t floyd_runtime__allocate_memory__make(llvm::LLVMContext& context){
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-const WIDE_RETURN_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint32_t element_count){
+WIDE_RETURN_T floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint32_t element_count){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	VEC_T v = make_vec(element_count);
@@ -1137,7 +1137,7 @@ host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context){
 ////////////////////////////////		delete_vector()
 
 
-const void floyd_runtime__delete_vector(void* floyd_runtime_ptr, VEC_T* vec){
+void floyd_runtime__delete_vector(void* floyd_runtime_ptr, VEC_T* vec){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 	QUARK_ASSERT(vec != nullptr);
 	QUARK_ASSERT(vec->check_invariant());
@@ -1157,7 +1157,7 @@ host_func_t floyd_runtime__delete_vector__make(llvm::LLVMContext& context){
 	return { "floyd_runtime__delete_vector", function_type, reinterpret_cast<void*>(floyd_runtime__delete_vector) };
 }
 
-const WIDE_RETURN_T floyd_runtime__concatunate_vectors(void* floyd_runtime_ptr, const VEC_T* lhs, const VEC_T* rhs){
+WIDE_RETURN_T floyd_runtime__concatunate_vectors(void* floyd_runtime_ptr, const VEC_T* lhs, const VEC_T* rhs){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 	QUARK_ASSERT(lhs != nullptr);
 	QUARK_ASSERT(lhs->check_invariant());
@@ -1190,14 +1190,10 @@ host_func_t floyd_runtime__concatunate_vectors__make(llvm::LLVMContext& context)
 
 
 
-
-
-
-
 ////////////////////////////////		allocate_dict()
 
 
-const WIDE_RETURN_T floyd_runtime__allocate_dict(void* floyd_runtime_ptr){
+WIDE_RETURN_T floyd_runtime__allocate_dict(void* floyd_runtime_ptr){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	auto v = make_dict();
@@ -1219,7 +1215,7 @@ host_func_t floyd_runtime__allocate_dict__make(llvm::LLVMContext& context){
 ////////////////////////////////		delete_dict()
 
 
-const void floyd_runtime__delete_dict(void* floyd_runtime_ptr, DICT_T* dict){
+void floyd_runtime__delete_dict(void* floyd_runtime_ptr, DICT_T* dict){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 	QUARK_ASSERT(dict != nullptr);
 	QUARK_ASSERT(dict->check_invariant());
@@ -1243,7 +1239,7 @@ host_func_t floyd_runtime__delete_dict__make(llvm::LLVMContext& context){
 ////////////////////////////////		store_dict()
 
 
-const WIDE_RETURN_T floyd_runtime__store_dict(void* floyd_runtime_ptr, DICT_T* dict, const char* key_string, encoded_native_value_t element_value, dyn_value_type_argument_t element_type){
+WIDE_RETURN_T floyd_runtime__store_dict(void* floyd_runtime_ptr, DICT_T* dict, const char* key_string, encoded_native_value_t element_value, dyn_value_type_argument_t element_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto element_type2 = lookup_type(r.type_interner, unpack_encoded_itype(element_type));
@@ -1277,6 +1273,35 @@ host_func_t floyd_runtime__store_dict__make(llvm::LLVMContext& context){
 		false
 	);
 	return { "floyd_runtime__store_dict", function_type, reinterpret_cast<void*>(floyd_runtime__store_dict) };
+}
+
+////////////////////////////////		lookup_dict()
+
+
+encoded_native_value_t floyd_runtime__lookup_dict(void* floyd_runtime_ptr, DICT_T* dict, const char* key_string){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+//	const auto element_type2 = lookup_type(r.type_interner, unpack_encoded_itype(element_type));
+	const auto it = dict->body_ptr->map.find(std::string(key_string));
+	if(it == dict->body_ptr->map.end()){
+		throw std::exception();
+	}
+	else{
+		return it->second;
+	}
+}
+
+host_func_t floyd_runtime__lookup_dict__make(llvm::LLVMContext& context){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		make_encoded_native_value_type(context),
+		{
+			make_frp_type(context),
+			make_dict_type(context)->getPointerTo(),
+			llvm::Type::getInt8PtrTy(context)
+		},
+		false
+	);
+	return { "floyd_runtime__lookup_dict", function_type, reinterpret_cast<void*>(floyd_runtime__lookup_dict) };
 }
 
 
@@ -1358,6 +1383,7 @@ std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context){
 		floyd_runtime__allocate_dict__make(context),
 		floyd_runtime__delete_dict__make(context),
 		floyd_runtime__store_dict__make(context),
+		floyd_runtime__lookup_dict__make(context),
 
 		floyd_runtime__compare_values__make(context)
 	};

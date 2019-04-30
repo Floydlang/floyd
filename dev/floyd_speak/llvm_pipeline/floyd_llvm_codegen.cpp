@@ -398,6 +398,24 @@ static llvm::Value* generate_store_dict(llvm_code_generator_t& gen_acc, llvm::Fu
 	return dict2_reg;
 }
 
+static llvm::Value* generate_lookup_dict(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& dict_reg, llvm::Value& key_charptr_reg){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	const auto f = find_function_def(gen_acc, "floyd_runtime__lookup_dict");
+
+	std::vector<llvm::Value*> args2 = {
+		get_callers_fcp(emit_f),
+		generate_dict_alloca(builder, &dict_reg),
+		&key_charptr_reg
+	};
+	auto encoded_value_reg = builder.CreateCall(f.llvm_f, args2, "lookup_dict:");
+	return encoded_value_reg;
+}
+
 static llvm::Value* generate_allocate_memory(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& bytes_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -671,7 +689,26 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 		}
 	}
 	else if(parent_type.is_dict()){
-		NOT_IMPLEMENTED_YET();
+		QUARK_ASSERT(key_reg->getType() == llvm::Type::getInt8PtrTy(context));
+		const auto element_type0 = parent_type.get_dict_value_type();
+
+	//??? copied from vector equivalent
+		auto element_value_uint64_reg = generate_lookup_dict(gen_acc, emit_f, *parent_reg, *key_reg);
+		if(element_type0.is_int()){
+			return element_value_uint64_reg;
+		}
+		else if(element_type0.is_string()){
+			llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, element_value_uint64_reg, llvm::Type::getInt8PtrTy(context), "");
+			return v;
+		}
+		else if(element_type0.is_struct()){
+			auto& struct_type = *make_struct_type(context, element_type0);
+			llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, element_value_uint64_reg, struct_type.getPointerTo(), "");
+			return v;
+		}
+		else{
+			NOT_IMPLEMENTED_YET();
+		}
 	}
 	else{
 		QUARK_ASSERT(false);

@@ -1623,7 +1623,13 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 	};
 
 	const auto result = std::visit(visitor_t{ a, parent, e, target_type }, e._contents);
-	return result;
+
+	//	Record all output type, if there is one.
+	auto a_acc = result.first;
+	if(result.second.check_types_resolved()){
+		resolve_type(a_acc, parent.location, result.second.get_output_type());
+	}
+	return { a_acc, result.second };
 }
 
 
