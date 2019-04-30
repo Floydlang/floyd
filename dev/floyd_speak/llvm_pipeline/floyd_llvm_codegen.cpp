@@ -1097,7 +1097,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 
 			auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_array_ptr_reg, element_type.getPointerTo(), "");
 
-b			//??? Make shared function for all these element loops. Most don't need any casting.
+			//??? Make shared function for all these element loops. Most don't need any casting.
 			//	Evaluate each element and store it directly into the the vector.
 			int element_index = 0;
 			for(const auto& arg: details.elements){
