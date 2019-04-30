@@ -254,7 +254,7 @@ std::string print_value(llvm::Value* value){
 
 
 
-llvm::Type* make_wide_return_type(llvm::LLVMContext& context){
+llvm::StructType* make_wide_return_type(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
 		//	a
 		llvm::Type::getInt64Ty(context),
@@ -321,7 +321,7 @@ llvm::Type* make_frp_type(llvm::LLVMContext& context){
 
 
 //	Makes a type for VEC_T.
-llvm::Type* make_vec_type(llvm::LLVMContext& context){
+llvm::StructType* make_vec_type(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
 		//	element_ptr
 		llvm::Type::getInt64Ty(context)->getPointerTo(),
@@ -347,13 +347,6 @@ llvm::Value* generate_vec_alloca(llvm::IRBuilder<>& builder, llvm::Value* vec_by
 	return alloc_value;
 }
 
-bool check_invariant_vector(const VEC_T& v){
-	QUARK_ASSERT(v.element_ptr != nullptr);
-	QUARK_ASSERT(v.element_bits > 0 && v.element_bits < (8 * 128));
-	QUARK_ASSERT(v.magic == 0xDABB);
-	return true;
-}
-
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto vec_struct_size = sizeof(VEC_T);
 	QUARK_UT_VERIFY(vec_struct_size == 16);
@@ -376,12 +369,12 @@ VEC_T make_vec(uint32_t element_count){
 	result.magic = 0xDABB;
 	result.element_bits = 123;
 
-	QUARK_ASSERT(check_invariant_vector(result));
+	QUARK_ASSERT(result.check_invariant());
 	return result;
 }
 
 void delete_vec(VEC_T& vec){
-	QUARK_ASSERT(check_invariant_vector(vec));
+	QUARK_ASSERT(vec.check_invariant());
 
 	std::free(vec.element_ptr);
 	vec.element_ptr = nullptr;
@@ -411,8 +404,59 @@ llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, ll
 
 
 
+////////////////////////////////		DICT_T
+
+
+
+
+
+DICT_T make_dict(uint32_t element_count){
+	DICT_BODY_T* body_ptr = new DICT_BODY_T();
+	DICT_T result;
+	result.body_ptr = body_ptr;
+
+	QUARK_ASSERT(result.check_invariant());
+	return result;
+}
+
+void delete_dict(DICT_T& v){
+	QUARK_ASSERT(v.check_invariant());
+
+	delete v.body_ptr;
+	v.body_ptr = nullptr;
+}
+
+
+llvm::StructType* make_dict_type(llvm::LLVMContext& context){
+	std::vector<llvm::Type*> members = {
+		//	body_otr
+		llvm::Type::getInt64Ty(context)->getPointerTo()
+	};
+	llvm::StructType* s = llvm::StructType::get(context, members, false);
+	return s;
+}
+
+
+
+////////////////////////////////		HELPERS
+
+
+
+
+void generate_array_element_store(llvm::IRBuilder<>& builder, llvm::Value& array_ptr_reg, uint64_t element_index, llvm::Value& element_reg){
+	QUARK_ASSERT(array_ptr_reg.getType()->isPointerTy());
+
+	auto element_type = array_ptr_reg.getType()->getPointerElementType();
+
+	auto element_index_reg = llvm::ConstantInt::get(builder.getInt64Ty(), element_index);
+	const auto gep = std::vector<llvm::Value*>{ element_index_reg };
+	llvm::Value* element_n_ptr = builder.CreateGEP(element_type, &array_ptr_reg, gep, "");
+	builder.CreateStore(&element_reg, element_n_ptr);
+}
+
+
+
 void generate_struct_member_store(llvm::IRBuilder<>& builder, llvm::StructType& struct_type, llvm::Value& struct_ptr_reg, int member_index, llvm::Value& value_reg){
-	auto& context = builder.getContext();
 
 	const auto gep = std::vector<llvm::Value*>{
 		//	Struct array index.
@@ -670,12 +714,10 @@ llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type){
 		return llvm::Type::getInt16Ty(context);
 	}
 	else if(type.is_vector()){
-/*
-		const auto element_type = type.get_vector_element_type();
-		const auto element_type2 = intern_type(module, element_type);
-		return element_type2->getPointerTo();
-*/
 		return make_vec_type(context);
+	}
+	else if(type.is_dict()){
+		return make_dict_type(context);
 	}
 	else if(type.is_typeid()){
 		return llvm::Type::getInt32Ty(context);

@@ -1,5 +1,3 @@
-	//??? we assume all vector are [string] right now!!
-	//??? we assume all vector are [string] right now!!
 //
 //  floyd_test_suite.cpp
 //  FloydSpeak
@@ -26,6 +24,10 @@
 #include <iostream>
 
 using namespace floyd;
+
+
+#define INCLUDE_OUTOFFOCUS_TESTS	1
+
 
 /*
 unsupported syntax
@@ -84,7 +86,8 @@ void ut_verify_exception_nolib(const quark::call_context_t& context, const std::
 }
 
 
-#if 1
+#if INCLUDE_OUTOFFOCUS_TESTS
+
 //////////////////////////////////////////		DEFINE VARIABLE, SIMPLE TYPES
 
 
@@ -1960,8 +1963,6 @@ QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_string(typeof([1,2,3]))		)",value_t::make_string("[int]") );
 }
 
-#if 0
-//??? add support for typeof(int)
 QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
@@ -1970,14 +1971,12 @@ QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 			let result = to_string(typeof(int));
 
 		)",
-		value_t::make_string("int")
+		value_t::make_string("typeid")
 	);
 }
-#endif
 
 
 
-#endif		//	DISABLE TESTS BEFORE
 
 
 
@@ -2559,7 +2558,6 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [bool] push_back()", "", ""){
 //???	subset()		-- string vector
 //???	replace()		-- string, vector
 
-#if 1
 
 //////////////////////////////////////////		vector-int
 
@@ -2747,6 +2745,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [double] push_back()", "", ""){
 //??? test vector element type
 //??? test dict element type
 
+#endif		//	INCLUDE_OUTOFFOCUS_TESTS
 
 
 //////////////////////////////////////////		DICT - TYPE
@@ -2956,6 +2955,8 @@ QUARK_UNIT_TEST("Floyd test suite", "dict", "Dict can not hold elements of diffe
 	);
 }
 
+
+#if INCLUDE_OUTOFFOCUS_TESTS
 
 //////////////////////////////////////////		STRUCT - TYPE
 
@@ -5106,4 +5107,4 @@ MANUAL_SNIPPETS_TEST("MANUAL SNIPPETS", "subset()", "", ""){
 	)", {}, "", "");
 }
 
-#endif
+#endif	//	INCLUDE_OUTOFFOCUS_TESTS

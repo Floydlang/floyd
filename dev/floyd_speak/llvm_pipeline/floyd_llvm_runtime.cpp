@@ -174,8 +174,8 @@ int compare_doubles(const double left, const double right){
 }
 
 int runtime_compare_vectors_bool(const VEC_T& left, const VEC_T& right){
-	QUARK_ASSERT(check_invariant_vector(left));
-	QUARK_ASSERT(check_invariant_vector(right));
+	QUARK_ASSERT(left.check_invariant());
+	QUARK_ASSERT(right.check_invariant());
 
 	const auto shared_count = std::min(left.size(), right.size());
 	for(int i = 0 ; i < shared_count ; i++){
@@ -195,8 +195,8 @@ int runtime_compare_vectors_bool(const VEC_T& left, const VEC_T& right){
 	}
 }
 int runtime_compare_vectors_int(const VEC_T& left, const VEC_T& right){
-	QUARK_ASSERT(check_invariant_vector(left));
-	QUARK_ASSERT(check_invariant_vector(right));
+	QUARK_ASSERT(left.check_invariant());
+	QUARK_ASSERT(right.check_invariant());
 
 	const auto shared_count = std::min(left.size(), right.size());
 	for(int i = 0 ; i < shared_count ; i++){
@@ -216,8 +216,8 @@ int runtime_compare_vectors_int(const VEC_T& left, const VEC_T& right){
 	}
 }
 int runtime_compare_vectors_double(const VEC_T& left, const VEC_T& right){
-	QUARK_ASSERT(check_invariant_vector(left));
-	QUARK_ASSERT(check_invariant_vector(right));
+	QUARK_ASSERT(left.check_invariant());
+	QUARK_ASSERT(right.check_invariant());
 
 	const auto shared_count = std::min(left.size(), right.size());
 	for(int i = 0 ; i < shared_count ; i++){
@@ -240,8 +240,8 @@ int runtime_compare_vectors_double(const VEC_T& left, const VEC_T& right){
 }
 
 int runtime_compare_vectors_string(const VEC_T& left, const VEC_T& right){
-	QUARK_ASSERT(check_invariant_vector(left));
-	QUARK_ASSERT(check_invariant_vector(right));
+	QUARK_ASSERT(left.check_invariant());
+	QUARK_ASSERT(right.check_invariant());
 
 	const auto shared_count = std::min(left.size(), right.size());
 	for(int i = 0 ; i < shared_count ; i++){
@@ -695,7 +695,7 @@ static VEC_T* unpack_vec_arg(const llvm_execution_engine_t& r, encoded_native_va
 	const auto vec = (VEC_T*)arg_value;
 	QUARK_ASSERT(vec != nullptr);
 
-	QUARK_ASSERT(check_invariant_vector(*vec));
+	QUARK_ASSERT(vec->check_invariant());
 
 	return vec;
 }
@@ -1127,7 +1127,7 @@ host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context){
 const void floyd_runtime__delete_vector(void* floyd_runtime_ptr, VEC_T* vec){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 	QUARK_ASSERT(vec != nullptr);
-	QUARK_ASSERT(check_invariant_vector(*vec));
+	QUARK_ASSERT(vec->check_invariant());
 
 	delete_vec(*vec);
 }
@@ -1203,9 +1203,9 @@ host_func_t floyd_runtime__compare_values__make(llvm::LLVMContext& context){
 const WIDE_RETURN_T floyd_runtime__concatunate_vectors(void* floyd_runtime_ptr, const VEC_T* lhs, const VEC_T* rhs){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 	QUARK_ASSERT(lhs != nullptr);
-	QUARK_ASSERT(check_invariant_vector(*lhs));
+	QUARK_ASSERT(lhs->check_invariant());
 	QUARK_ASSERT(rhs != nullptr);
-	QUARK_ASSERT(check_invariant_vector(*rhs));
+	QUARK_ASSERT(rhs->check_invariant());
 
 	auto result = make_vec(lhs->element_count + rhs->element_count);
 	for(int i = 0 ; i < lhs->element_count ; i++){

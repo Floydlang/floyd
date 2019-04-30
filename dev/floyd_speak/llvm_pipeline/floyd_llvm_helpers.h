@@ -165,7 +165,7 @@ enum class WIDE_RETURN_MEMBERS {
 };
 
 
-llvm::Type* make_wide_return_type(llvm::LLVMContext& context);
+llvm::StructType* make_wide_return_type(llvm::LLVMContext& context);
 
 WIDE_RETURN_T make_wide_return_2x64(encoded_native_value_t a, encoded_native_value_t b);
 WIDE_RETURN_T make_wide_return_charptr(const char* s);
@@ -177,9 +177,10 @@ WIDE_RETURN_T make_wide_return_structptr(const void* s);
 ////////////////////////////////		VEC_T
 
 
-
 /*
 	Vectors
+
+	Encoded in LLVM as one 16 byte struct, VEC_T by value.
 
 	- Vector instance is a 16 byte struct.
 	- No RC or shared state -- always copied fully.
@@ -198,15 +199,27 @@ struct VEC_T {
 	uint16_t element_bits;
 
 
+	bool check_invariant() const {
+		QUARK_ASSERT(this->element_ptr != nullptr);
+		QUARK_ASSERT(this->element_bits > 0 && this->element_bits < (8 * 128));
+		QUARK_ASSERT(this->magic == 0xDABB);
+		return true;
+	}
+
+
+
 	inline uint32_t size() const {
+		QUARK_ASSERT(check_invariant());
+
 		return element_count;
 	}
 	inline uint64_t operator[](const uint32_t index) const {
+		QUARK_ASSERT(check_invariant());
+
 		return element_ptr[index];
 	}
 };
 
-bool check_invariant_vector(const VEC_T& v);
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
 VEC_T make_vec(uint32_t element_count);
@@ -221,7 +234,7 @@ enum class VEC_T_MEMBERS {
 
 
 //	Makes a type for VEC_T.
-llvm::Type* make_vec_type(llvm::LLVMContext& context);
+llvm::StructType* make_vec_type(llvm::LLVMContext& context);
 
 llvm::Value* generate_vec_alloca(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue);
 
@@ -236,20 +249,56 @@ llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, ll
 
 
 
+
+
 ////////////////////////////////		DICT_T
 
 
+
+/*
+	Encoded in LLVM as an 8 byte struct. By value.
+*/
+
+struct DICT_BODY_T {
+	std::map<std::string, uint64_t> map;
+};
+
 struct DICT_T {
+	DICT_BODY_T* body_ptr;
+
+	bool check_invariant() const{
+		QUARK_ASSERT(this->body_ptr != nullptr);
+		return true;
+	}
+
 	inline uint32_t size() const {
-		return 666;
+		QUARK_ASSERT(check_invariant());
+
+		return body_ptr->map.size();
 	}
 };
 
 
 
-//llvm::Value* generate__convert_wide_return_to_struct_ptr(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg, const typeid_t& struct_type);
+//	Creates a new DICT_T with element_count. All elements are blank. Caller owns the result.
+DICT_T make_dict(uint32_t element_count);
+void delete_dict(DICT_T& v);
+
+enum class DICT_T_MEMBERS {
+	body_ptr = 0
+};
+
+//	Makes a type for DICT_T.
+llvm::StructType* make_dict_type(llvm::LLVMContext& context);
 
 
+
+////////////////////////////////		HELPERS
+
+
+
+
+void generate_array_element_store(llvm::IRBuilder<>& builder, llvm::Value& array_ptr_reg, uint64_t element_index, llvm::Value& element_reg);
 void generate_struct_member_store(llvm::IRBuilder<>& builder, llvm::StructType& struct_type, llvm::Value& struct_ptr_reg, int member_index, llvm::Value& value_reg);
 
 

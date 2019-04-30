@@ -370,6 +370,7 @@ static llvm::Value* generate_allocate_memory(llvm_code_generator_t& gen_acc, llv
 	return result;
 }
 
+//??? Make this function take a builder, not gen_acc.
 //	Makes constant from a Floyd value.
 llvm::Constant* generate_constant(llvm_code_generator_t& gen_acc, const value_t& value){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1073,12 +1074,10 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 		const auto element_type0 = target_type.get_vector_element_type();
 
 		const auto allocate_vector_func = find_function_def(gen_acc, "floyd_runtime__allocate_vector");
+		auto vec_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
+		auto uint64_element_ptr = builder.CreateExtractValue(vec_reg, { (int)VEC_T_MEMBERS::element_ptr });
 
 		if(element_type0.is_string()){
-			auto vec_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
-
-			auto uint64_element_ptr = builder.CreateExtractValue(vec_reg, { (int)VEC_T_MEMBERS::element_ptr });
-
 			//	Each element is a char*.
 			auto element_type = llvm::Type::getInt8PtrTy(context);
 			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type->getPointerTo(), "");
@@ -1086,21 +1085,13 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			//	Evaluate each element and store it directly into the the vector.
 			int element_index = 0;
 			for(const auto& arg: details.elements){
-				llvm::Value* arg_value = generate_expression(gen_acc, emit_f, arg);
-				auto element_index_value = generate_constant(gen_acc, value_t::make_int(element_index));
-				const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_value };
-				llvm::Value* e_addr = builder.CreateGEP(element_type, element_ptr, gep_index_list2, "");
-				builder.CreateStore(arg_value, e_addr);
-
+				llvm::Value* element_value_reg = generate_expression(gen_acc, emit_f, arg);
+				generate_array_element_store(builder, *element_ptr, element_index, *element_value_reg);
 				element_index++;
 			}
 			return vec_reg;
 		}
 		else if(element_type0.is_struct()){
-			auto vec_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
-
-			auto uint64_element_ptr = builder.CreateExtractValue(vec_reg, { (int)VEC_T_MEMBERS::element_ptr });
-
 			auto& struct_type = *make_struct_type(context, element_type0);
 			auto& element_type = *struct_type.getPointerTo();
 
@@ -1110,7 +1101,6 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			int element_index = 0;
 			for(const auto& arg: details.elements){
 				llvm::Value* arg_value = generate_expression(gen_acc, emit_f, arg);
-
 				auto element_index_value = generate_constant(gen_acc, value_t::make_int(element_index));
 				const auto gep = std::vector<llvm::Value*>{ element_index_value };
 				llvm::Value* e_addr = builder.CreateGEP(&element_type, element_ptr, gep, "");
@@ -1170,9 +1160,6 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 		}
 */
 		else if(element_type0.is_bool() || element_type0.is_int()){
-			auto vec_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
-
-			auto uint64_element_ptr = builder.CreateExtractValue(vec_reg, { (int)VEC_T_MEMBERS::element_ptr });
 
 			//	Each element is a uint64_t ???
 			auto element_type = llvm::Type::getInt64Ty(context);
@@ -1193,10 +1180,6 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			return vec_reg;
 		}
 		else if(element_type0.is_double()){
-			auto vec_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
-
-			auto uint64_element_ptr = builder.CreateExtractValue(vec_reg, { (int)VEC_T_MEMBERS::element_ptr });
-
 			auto element_type = builder.getDoubleTy();
 			auto element_ptr = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_element_ptr, element_type->getPointerTo(), "");
 
@@ -1213,6 +1196,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			}
 			return vec_reg;
 		}
+		//??? All types of elements must be possible in a vector!
 		else{
 			NOT_IMPLEMENTED_YET();
 		}
