@@ -452,7 +452,9 @@ void generate_array_element_store(llvm::IRBuilder<>& builder, llvm::Value& array
 	QUARK_ASSERT(element_type == element_reg.getType());
 
 	auto element_index_reg = llvm::ConstantInt::get(builder.getInt64Ty(), element_index);
-	const auto gep = std::vector<llvm::Value*>{ element_index_reg };
+	const auto gep = std::vector<llvm::Value*>{
+		element_index_reg
+	};
 	llvm::Value* element_n_ptr = builder.CreateGEP(element_type, &array_ptr_reg, gep, "");
 	builder.CreateStore(&element_reg, element_n_ptr);
 }
