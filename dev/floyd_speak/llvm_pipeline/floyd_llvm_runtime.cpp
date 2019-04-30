@@ -777,6 +777,7 @@ value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const enco
 	else if(type.is_vector()){
 		const auto element_type = type.get_vector_element_type();
 
+		//??? test with non-string vectors.
 		const auto encoded_itype = pack_encoded_itype(lookup_itype(runtime.type_interner, type));
 		const auto vec = unpack_vec_arg(runtime, encoded_value, encoded_itype);
 
@@ -787,11 +788,24 @@ value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const enco
 			const auto value = runtime_llvm_to_value(runtime, value_encoded, element_type);
 			elements.push_back(value);
 		}
-		const auto val = value_t::make_vector_value(typeid_t::make_string(), elements);
+		const auto val = value_t::make_vector_value(element_type, elements);
 		return val;
 	}
 	else if(type.is_dict()){
-		NOT_IMPLEMENTED_YET();
+		const auto value_type = type.get_dict_value_type();
+
+		const auto encoded_itype = pack_encoded_itype(lookup_itype(runtime.type_interner, type));
+		const auto dict = unpack_dict_arg(runtime, encoded_value, encoded_itype);
+
+		std::map<std::string, value_t> values;
+		const auto& map2 = dict->body_ptr->map;
+		for(const auto& e: map2){
+			const auto value_encoded = e.second;
+			const auto value = runtime_llvm_to_value(runtime, value_encoded, value_type);
+			values.insert({ e.first, value} );
+		}
+		const auto val = value_t::make_dict_value(type, values);
+		return val;
 	}
 	else if(type.is_function()){
 		NOT_IMPLEMENTED_YET();
