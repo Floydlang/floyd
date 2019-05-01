@@ -7,7 +7,7 @@
 //
 
 const bool k_trace_input_output = false;
-const bool k_trace_types = false;
+const bool k_trace_types = true;
 
 #include "floyd_llvm_codegen.h"
 
@@ -1411,6 +1411,10 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 		else if(element_type0.is_string()){
 			//	Each string element is a char*.
 			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *llvm::Type::getInt8PtrTy(context), details.elements);
+			return vec_reg;
+		}
+		else if(element_type0.is_json_value()){
+			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *llvm::Type::getInt16PtrTy(context), details.elements);
 			return vec_reg;
 		}
 		else if(element_type0.is_struct()){

@@ -26,7 +26,7 @@
 using namespace floyd;
 
 
-#define INCLUDE_OUTOFFOCUS_TESTS	1
+#define INCLUDE_OUTOFFOCUS_TESTS	0
 
 
 /*
@@ -3379,7 +3379,7 @@ QUARK_UNIT_TEST("Floyd test suite", "json_value()", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value()", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "json_value()", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = json_value([1,2,3])", value_t::make_json_value(json_t::make_array({1,2,3})));
 }
 
