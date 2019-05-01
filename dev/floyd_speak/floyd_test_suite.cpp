@@ -3566,8 +3566,44 @@ QUARK_UNIT_TEST("Floyd test suite", "json_value<string> {}", "Infer {}", "JSON o
 QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "", "1"){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json_value({}))		)", value_t::make_int(1));
 }
+
+#if 0
 QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "", "1"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json_value({ "color": "black"}))		)", value_t::make_int(1));
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let result = { "color": "black" }
+			print(result)
+
+		)",
+		{ "xxx" }
+	);
+}
+#endif
+
+QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "", "1"){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let result = json_value({ "color": "black"})
+			print(result)
+
+		)",
+		{ R"xyz({ "color": "black" })xyz" }
+	);
+}
+QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "", "1"){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			let result = get_json_type(json_value({ "color": "black"}))
+
+		)",
+		value_t::make_int(1)
+	);
 }
 QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "array", "2"){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json_value([]))		)", value_t::make_int(2));
@@ -3617,6 +3653,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "DOCUMENTATION SNIPPET", 
 			}
 			else {
 				assert(false)
+				return "error"
 			}
 		}
 

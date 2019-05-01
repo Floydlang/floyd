@@ -376,7 +376,7 @@ static llvm::Value* generate_alloc_dict(llvm_code_generator_t& gen_acc, llvm::Fu
 	return generate__convert_wide_return_to_dict(builder, wide_return_reg);
 }
 
-static llvm::Value* generate_store_dict(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& dict_reg, llvm::Value& key_charptr_reg, llvm::Value& value_reg, llvm::Value& value_type_reg){
+static llvm::Value* generate_store_dict(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& dict_reg, llvm::Value& key_charptr_reg, llvm::Value& value_reg, const typeid_t& value_type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
@@ -385,14 +385,12 @@ static llvm::Value* generate_store_dict(llvm_code_generator_t& gen_acc, llvm::Fu
 
 	const auto f = find_function_def(gen_acc, "floyd_runtime__store_dict");
 
-//???			const auto packed_value = generate_encoded_value(gen_acc, *arg2, concrete_arg_type);
-
 	std::vector<llvm::Value*> args2 = {
 		get_callers_fcp(emit_f),
 		generate_dict_alloca(builder, &dict_reg),
 		&key_charptr_reg,
-		&value_reg,
-		&value_type_reg
+		generate_encoded_value(gen_acc, value_reg, value_type),
+		llvm::ConstantInt::get(builder.getInt64Ty(), pack_itype(gen_acc, value_type))
 	};
 	auto wide_return_reg = builder.CreateCall(f.llvm_f, args2, "store_dict:");
 	return generate__convert_wide_return_to_dict(builder, wide_return_reg);
@@ -434,20 +432,6 @@ static llvm::Value* generate_alloc_json(llvm_code_generator_t& gen_acc, llvm::Fu
 	};
 	return builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_json");
 }
-
-/*
-			auto value_reg = generate_alloc_json(gen_acc, emit_f, input_value_type, element0_reg);
-			if(input_value_type.is_string()){
-				auto json = new json_t(
-				return element0_reg;
-	//			const auto arg = bcvalue_to_json(input_value);
-	//			return bc_value_t::make_json_value(arg);
-			}
-			else{
-				NOT_IMPLEMENTED_YET();
-			}
-		}
-*/
 
 static llvm::Value* generate_lookup_json(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& json_reg, llvm::Value& key_reg, const typeid_t& key_type){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1432,7 +1416,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			for(int element_index = 0 ; element_index < count ; element_index++){
 				llvm::Value* key0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 0]);
 				llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 1]);
-				auto dict2_reg = generate_store_dict(gen_acc, emit_f, *dict_acc_reg, *key0_reg, *element0_reg, *value_type_reg);
+				auto dict2_reg = generate_store_dict(gen_acc, emit_f, *dict_acc_reg, *key0_reg, *element0_reg, element_type0);
 
 				dict_acc_reg = dict2_reg;
 			}
@@ -1445,7 +1429,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			for(int element_index = 0 ; element_index < count ; element_index++){
 				llvm::Value* key0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 0]);
 				llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 1]);
-				auto dict2_reg = generate_store_dict(gen_acc, emit_f, *dict_acc_reg, *key0_reg, *element0_reg, *value_type_reg);
+				auto dict2_reg = generate_store_dict(gen_acc, emit_f, *dict_acc_reg, *key0_reg, *element0_reg, element_type0);
 
 				dict_acc_reg = dict2_reg;
 			}

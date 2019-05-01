@@ -1256,6 +1256,11 @@ WIDE_RETURN_T floyd_runtime__store_dict(void* floyd_runtime_ptr, DICT_T* dict, c
 		v.body_ptr->map.insert_or_assign(std::string(key_string), element_value);
 		return make_wide_return_dict(v);
 	}
+	if(element_type2.is_json_value()){
+		v.body_ptr->map.insert_or_assign(std::string(key_string), element_value);
+		return make_wide_return_dict(v);
+	}
+	//??? more
 	else{
 		NOT_IMPLEMENTED_YET();
 	}
