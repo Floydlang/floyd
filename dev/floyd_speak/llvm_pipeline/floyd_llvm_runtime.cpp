@@ -425,42 +425,13 @@ int runtime_compare_dicts_double(const std::map<std::string, uint64_t>& left, co
 */
 
 
-static int json_value_type_to_int(const json_t& value){
-	if(value.is_object()){
-		return 0;
-	}
-	else if(value.is_array()){
-		return 1;
-	}
-	else if(value.is_string()){
-		return 2;
-	}
-	else if(value.is_number()){
-		return 4;
-	}
-	else if(value.is_true()){
-		return 5;
-	}
-	else if(value.is_false()){
-		return 6;
-	}
-	else if(value.is_null()){
-		return 7;
-	}
-	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
-	}
-}
-
-
 int runtime_compare_json_values(const json_t& lhs, const json_t& rhs){
 	if(lhs == rhs){
 		return 0;
 	}
 	else{
-		const auto lhs_type = json_value_type_to_int(lhs);
-		const auto rhs_type = json_value_type_to_int(rhs);
+		const auto lhs_type = get_json_type(lhs);
+		const auto rhs_type = get_json_type(rhs);
 		int type_diff = rhs_type - lhs_type;
 		if(type_diff != 0){
 			return type_diff;
@@ -1348,6 +1319,11 @@ int16_t* floyd_runtime__allocate_json(void* floyd_runtime_ptr, dyn_value_argumen
 	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
 	const auto value = runtime_llvm_to_value(r, arg0_value, type0);
 
+	const auto a = value_to_ast_json(value, json_tags::k_plain);
+	auto result = new json_t(a);
+	return reinterpret_cast<int16_t*>(result);
+
+#if 0
 	if(type0.is_string()){
 		auto result = new json_t(value.get_string_value());
 		return reinterpret_cast<int16_t*>(result);
@@ -1365,6 +1341,19 @@ int16_t* floyd_runtime__allocate_json(void* floyd_runtime_ptr, dyn_value_argumen
 	}
 	else if(type0.is_vector()){
 		QUARK_ASSERT(type0.get_vector_element_type().is_json_value());
+
+		const auto v = value.get_vector_value();
+		std::vector<json_t> json_vec;
+		for(const auto& e: v){
+			json_vec.push_back(e.get_json_value());
+		}
+
+		auto result = new json_t(json_vec);
+		return reinterpret_cast<int16_t*>(result);
+	}
+	else if(type0.is_dict()){
+		QUARK_ASSERT(type0.get_dict_value_type().is_json_value());
+
 		const auto v = value.get_vector_value();
 		std::vector<json_t> json_vec;
 		for(const auto& e: v){
@@ -1377,6 +1366,8 @@ int16_t* floyd_runtime__allocate_json(void* floyd_runtime_ptr, dyn_value_argumen
 	else{
 		NOT_IMPLEMENTED_YET();
 	}
+#endif
+
 }
 
 host_func_t floyd_runtime__allocate_json__make(llvm::LLVMContext& context){
@@ -1740,8 +1731,13 @@ void floyd_host_function_1013(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-void floyd_host_function_1014(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+int64_t floyd_host_function__get_json_type(void* floyd_runtime_ptr, uint16_t* json_ptr){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto& json = *reinterpret_cast<const json_t*>(json_ptr);
+
+	const auto result = get_json_type(json);
+	return result;
 }
 
 void floyd_host_function_1015(void* floyd_runtime_ptr, int64_t arg){
@@ -2230,7 +2226,7 @@ std::map<std::string, void*> get_host_functions_map2(){
 		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&floyd_host_function_1011) },
 		{ "floyd_funcdef__get_fsentries_shallow", reinterpret_cast<void *>(&floyd_host_function_1012) },
 		{ "floyd_funcdef__get_fsentry_info", reinterpret_cast<void *>(&floyd_host_function_1013) },
-		{ "floyd_funcdef__get_json_type", reinterpret_cast<void *>(&floyd_host_function_1014) },
+		{ "floyd_funcdef__get_json_type", reinterpret_cast<void *>(&floyd_host_function__get_json_type) },
 		{ "floyd_funcdef__get_time_of_day", reinterpret_cast<void *>(&floyd_host_function_1015) },
 		{ "floyd_funcdef__jsonvalue_to_script", reinterpret_cast<void *>(&floyd_host_function_1016) },
 		{ "floyd_funcdef__jsonvalue_to_value", reinterpret_cast<void *>(&floyd_host_function_1017) },

@@ -1544,44 +1544,13 @@ int bc_compare_dicts_double(const immer::map<std::string, bc_inplace_value_t>& l
 	quark::throw_exception();
 }
 
-
-
-int json_value_type_to_int(const json_t& value){
-	if(value.is_object()){
-		return 0;
-	}
-	else if(value.is_array()){
-		return 1;
-	}
-	else if(value.is_string()){
-		return 2;
-	}
-	else if(value.is_number()){
-		return 4;
-	}
-	else if(value.is_true()){
-		return 5;
-	}
-	else if(value.is_false()){
-		return 6;
-	}
-	else if(value.is_null()){
-		return 7;
-	}
-	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
-	}
-}
-
-
 int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
 	if(lhs == rhs){
 		return 0;
 	}
 	else{
-		const auto lhs_type = json_value_type_to_int(lhs);
-		const auto rhs_type = json_value_type_to_int(rhs);
+		const auto lhs_type = get_json_type(lhs);
+		const auto rhs_type = get_json_type(rhs);
 		int type_diff = rhs_type - lhs_type;
 		if(type_diff != 0){
 			return type_diff;

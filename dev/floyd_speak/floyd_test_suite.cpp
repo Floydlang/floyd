@@ -3562,10 +3562,12 @@ QUARK_UNIT_TEST("Floyd test suite", "json_value<string> {}", "Infer {}", "JSON o
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let json_value result = {}		)", value_t::make_json_value(json_t::make_object()));
 }
 
-//??? object?
 
 QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "", "1"){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json_value({}))		)", value_t::make_int(1));
+}
+QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "", "1"){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json_value({ "color": "black"}))		)", value_t::make_int(1));
 }
 QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "array", "2"){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json_value([]))		)", value_t::make_int(2));

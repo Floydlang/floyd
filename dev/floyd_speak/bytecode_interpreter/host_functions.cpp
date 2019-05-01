@@ -901,6 +901,7 @@ bc_value_t host__jsonvalue_to_value(interpreter_t& vm, const bc_value_t args[], 
 	return value_to_bc(result);
 }
 
+
 bc_value_t host__get_json_type(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
@@ -908,31 +909,7 @@ bc_value_t host__get_json_type(interpreter_t& vm, const bc_value_t args[], int a
 
 
 	const auto json_value = args[0].get_json_value();
-	if(json_value.is_object()){
-		return bc_value_t::make_int(1);
-	}
-	else if(json_value.is_array()){
-		return bc_value_t::make_int(2);
-	}
-	else if(json_value.is_string()){
-		return bc_value_t::make_int(3);
-	}
-	else if(json_value.is_number()){
-		return bc_value_t::make_int(4);
-	}
-	else if(json_value.is_true()){
-		return bc_value_t::make_int(5);
-	}
-	else if(json_value.is_false()){
-		return bc_value_t::make_int(6);
-	}
-	else if(json_value.is_null()){
-		return bc_value_t::make_int(7);
-	}
-	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
-	}
+	return bc_value_t::make_int(get_json_type(json_value));
 }
 
 

@@ -547,8 +547,6 @@ llvm::Constant* generate_constant(llvm_code_generator_t& gen_acc, llvm::Function
 		const auto& json_value0 = value.get_json_value();
 		if(json_value0.is_null()){
 			return llvm::ConstantPointerNull::get(llvm::Type::getInt16PtrTy(context));
-//			auto void_value_reg = llvm::ConstantInt::get(builder.getInt64Ty(), 665);
-//			return generate_alloc_json(gen_acc, emit_f, *void_value_reg, typeid_t::make_void());
 		}
 		else{
 			UNSUPPORTED();
@@ -1428,6 +1426,19 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 		auto value_type_reg = llvm::ConstantInt::get(builder.getInt64Ty(), value_itype.itype);
 
 		if(element_type0.is_int()){
+			//	Elements are stored as pairs.
+			QUARK_ASSERT((details.elements.size() & 1) == 0);
+			const auto count = details.elements.size() / 2;
+			for(int element_index = 0 ; element_index < count ; element_index++){
+				llvm::Value* key0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 0]);
+				llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 1]);
+				auto dict2_reg = generate_store_dict(gen_acc, emit_f, *dict_acc_reg, *key0_reg, *element0_reg, *value_type_reg);
+
+				dict_acc_reg = dict2_reg;
+			}
+			return dict_acc_reg;
+		}
+		else if(element_type0.is_json_value()){
 			//	Elements are stored as pairs.
 			QUARK_ASSERT((details.elements.size() & 1) == 0);
 			const auto count = details.elements.size() / 2;

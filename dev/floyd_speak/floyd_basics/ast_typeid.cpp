@@ -19,6 +19,39 @@
 namespace floyd {
 
 
+//////////////////////////////////////////////////		get_json_type()
+
+
+int get_json_type(const json_t& value){
+	QUARK_ASSERT(value.check_invariant());
+
+	if(value.is_object()){
+		return 1;
+	}
+	else if(value.is_array()){
+		return 2;
+	}
+	else if(value.is_string()){
+		return 3;
+	}
+	else if(value.is_number()){
+		return 4;
+	}
+	else if(value.is_true()){
+		return 5;
+	}
+	else if(value.is_false()){
+		return 6;
+	}
+	else if(value.is_null()){
+		return 7;
+	}
+	else{
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+	}
+}
+
 
 //////////////////////////////////////////////////		typeid_t
 

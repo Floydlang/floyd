@@ -64,6 +64,7 @@
 
 #include "quark.h"
 
+struct json_t;
 
 namespace floyd {
 struct typeid_t;
@@ -73,6 +74,11 @@ struct member_t;
 
 std::string typeid_to_compact_string(const typeid_t& t);
 
+
+//////////////////////////////////////////////////		get_json_type()
+
+
+int get_json_type(const json_t& value);
 
 
 //////////////////////////////////////////////////		struct_definition_t
