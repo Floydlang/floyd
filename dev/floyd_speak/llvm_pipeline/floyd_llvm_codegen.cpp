@@ -356,8 +356,7 @@ static llvm::Value* generate_alloc_vec(llvm_code_generator_t& gen_acc, llvm::Fun
 		element_count_value
 	};
 	auto wide_return_reg = builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_vector:" + debug);
-	auto vec_reg = generate__convert_wide_return_to_vec(builder, wide_return_reg);
-	return vec_reg;
+	return generate__convert_wide_return_to_vec(builder, wide_return_reg);
 }
 
 static llvm::Value* generate_alloc_dict(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const std::string& debug){
@@ -374,8 +373,7 @@ static llvm::Value* generate_alloc_dict(llvm_code_generator_t& gen_acc, llvm::Fu
 		get_callers_fcp(emit_f)
 	};
 	auto wide_return_reg = builder.CreateCall(f.llvm_f, args2, "allocate_dict:" + debug);
-	auto dict_reg = generate__convert_wide_return_to_dict(builder, wide_return_reg);
-	return dict_reg;
+	return generate__convert_wide_return_to_dict(builder, wide_return_reg);
 }
 
 static llvm::Value* generate_store_dict(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& dict_reg, llvm::Value& key_charptr_reg, llvm::Value& value_reg, llvm::Value& value_type_reg){
@@ -397,8 +395,7 @@ static llvm::Value* generate_store_dict(llvm_code_generator_t& gen_acc, llvm::Fu
 		&value_type_reg
 	};
 	auto wide_return_reg = builder.CreateCall(f.llvm_f, args2, "store_dict:");
-	auto dict2_reg = generate__convert_wide_return_to_dict(builder, wide_return_reg);
-	return dict2_reg;
+	return generate__convert_wide_return_to_dict(builder, wide_return_reg);
 }
 
 static llvm::Value* generate_lookup_dict(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& dict_reg, llvm::Value& key_charptr_reg){
@@ -415,8 +412,7 @@ static llvm::Value* generate_lookup_dict(llvm_code_generator_t& gen_acc, llvm::F
 		generate_dict_alloca(builder, &dict_reg),
 		&key_charptr_reg
 	};
-	auto encoded_value_reg = builder.CreateCall(f.llvm_f, args2, "lookup_dict:");
-	return encoded_value_reg;
+	return builder.CreateCall(f.llvm_f, args2, "lookup_dict:");
 }
 
 
@@ -436,16 +432,12 @@ static llvm::Value* generate_alloc_json(llvm_code_generator_t& gen_acc, llvm::Fu
 		generate_encoded_value(gen_acc, input_value_reg, input_type),
 		type_reg
 	};
-	auto json_ptr_reg = builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_json");
-	return json_ptr_reg;
+	return builder.CreateCall(allocate_vector_func.llvm_f, args2, "allocate_json");
 }
+
 /*
 			auto value_reg = generate_alloc_json(gen_acc, emit_f, input_value_type, element0_reg);
-
 			if(input_value_type.is_string()){
-
-
-
 				auto json = new json_t(
 				return element0_reg;
 	//			const auto arg = bcvalue_to_json(input_value);
@@ -457,8 +449,38 @@ static llvm::Value* generate_alloc_json(llvm_code_generator_t& gen_acc, llvm::Fu
 		}
 */
 
+static llvm::Value* generate_lookup_json(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& json_reg, llvm::Value& key_reg, const typeid_t& key_type){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+
+	auto& builder = gen_acc.builder;
+
+	const auto f = find_function_def(gen_acc, "floyd_runtime__lookup_json");
+
+	std::vector<llvm::Value*> args = {
+		get_callers_fcp(emit_f),
+		&json_reg,
+		generate_encoded_value(gen_acc, key_reg, key_type),
+		llvm::ConstantInt::get(builder.getInt64Ty(), pack_itype(gen_acc, key_type))
+	};
+	return builder.CreateCall(f.llvm_f, args, "lookup_json");
+}
 
 
+static llvm::Value* generate_json_to_string(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& json_reg){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+
+	auto& builder = gen_acc.builder;
+
+	const auto f = find_function_def(gen_acc, "floyd_runtime__json_to_string");
+
+	std::vector<llvm::Value*> args = {
+		get_callers_fcp(emit_f),
+		&json_reg
+	};
+	return builder.CreateCall(f.llvm_f, args, "json_to_string");
+}
 
 
 static llvm::Value* generate_allocate_memory(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& bytes_reg){
@@ -471,8 +493,7 @@ static llvm::Value* generate_allocate_memory(llvm_code_generator_t& gen_acc, llv
 		get_callers_fcp(emit_f),
 		&bytes_reg
 	};
-	auto result = gen_acc.builder.CreateCall(def.llvm_f, args, "allocate_memory");
-	return result;
+	return gen_acc.builder.CreateCall(def.llvm_f, args, "allocate_memory");
 }
 
 //??? Make this function take a builder, not gen_acc.
@@ -695,10 +716,11 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 
 	auto parent_reg = generate_expression(gen_acc, emit_f, *details.parent_address);
 	auto key_reg = generate_expression(gen_acc, emit_f, *details.lookup_key);
+	const auto key_type = details.lookup_key->get_output_type();
 
 	const auto parent_type =  details.parent_address->get_output_type();
 	if(parent_type.is_string()){
-		QUARK_ASSERT(key_reg->getType() == llvm::IntegerType::getInt64Ty(context));
+		QUARK_ASSERT(key_type.is_int());
 
 		auto element_index = key_reg;
 		const auto index_list = std::vector<llvm::Value*>{ element_index };
@@ -710,58 +732,13 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 		return element_value;
 	}
 	else if(parent_type.is_json_value()){
+		QUARK_ASSERT(key_type.is_int() || key_type.is_string());
 
-		//??? tested at runtime.
-#if 0
-		const auto& parent_json = *reinterpret_cast<const json_t*>();
-			const auto& parent_json_value = regs[i._b]._external->_json_value;
-
-			if(parent_json_value->is_object()){
-				QUARK_ASSERT(stack.check_reg_string(i._c));
-
-				const auto& lookup_key = regs[i._c]._external->_string;
-
-				//	get_object_element() throws if key can't be found.
-				const auto& value = parent_json_value->get_object_element(lookup_key);
-
-				//??? no need to create full bc_value_t here! We only need pod.
-				const auto value2 = bc_value_t::make_json_value(value);
-
-				value2._pod._external->_rc++;
-				release_pod_external(regs[i._a]);
-				regs[i._a] = value2._pod;
-			}
-			else if(parent_json_value->is_array()){
-				QUARK_ASSERT(stack.check_reg_int(i._c));
-
-				const auto lookup_index = regs[i._c]._inplace._int64;
-				if(lookup_index < 0 || lookup_index >= parent_json_value->get_array_size()){
-					quark::throw_runtime_error("Lookup in json_value array: out of bounds.");
-				}
-				else{
-					const auto& value = parent_json_value->get_array_n(lookup_index);
-
-					//??? value2 will soon go out of scope - avoid creating bc_value_t all together.
-					//??? no need to create full bc_value_t here! We only need pod.
-					const auto value2 = bc_value_t::make_json_value(value);
-
-					value2._pod._external->_rc++;
-					release_pod_external(regs[i._a]);
-					regs[i._a] = value2._pod;
-				}
-			}
-			else{
-				quark::throw_runtime_error("Lookup using [] on json_value only works on objects and arrays.");
-			}
-			QUARK_ASSERT(vm.check_invariant());
-			break;
-		}
-
-#endif
-		NOT_IMPLEMENTED_YET();
+		//	Notice that we only know at runtime if the json_value can be looked up: it needs to be json-object or a json-array. The key is either a string or an integer.
+		return generate_lookup_json(gen_acc, emit_f, *parent_reg, *key_reg, key_type);
 	}
 	else if(parent_type.is_vector()){
-		QUARK_ASSERT(key_reg->getType() == llvm::IntegerType::getInt64Ty(context));
+		QUARK_ASSERT(key_type.is_int());
 
 		//	parent_reg is a VEC_T byvalue.
 		auto element_index = key_reg;
@@ -797,7 +774,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 		}
 	}
 	else if(parent_type.is_dict()){
-		QUARK_ASSERT(key_reg->getType() == llvm::Type::getInt8PtrTy(context));
+		QUARK_ASSERT(key_type.is_string());
 		const auto element_type0 = parent_type.get_dict_value_type();
 
 		//??? copied from vector equivalent. Use util function for all member-values: vector and dicts alike -- no testing here.
@@ -1497,14 +1474,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 
 		//	Automatically transform a json_value::string => string at runtime?
 		else if(target_type.is_string() && input_value_type.is_json_value()){
-/*
-			if(input_value.get_json_value().is_string()){
-				return bc_value_t::make_string(input_value.get_json_value().get_string());
-			}
-			else
-*/			{
-				quark::throw_runtime_error("Attempting to assign a non-string JSON to a string.");
-			}
+			return generate_json_to_string(gen_acc, emit_f, *element0_reg);
 		}
 		else if(target_type.is_json_value()){
 			return generate_alloc_json(gen_acc, emit_f, *element0_reg, input_value_type);

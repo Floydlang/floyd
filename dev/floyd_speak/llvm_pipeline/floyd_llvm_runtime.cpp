@@ -1395,6 +1395,90 @@ host_func_t floyd_runtime__allocate_json__make(llvm::LLVMContext& context){
 
 
 
+////////////////////////////////		lookup_json()
+
+
+
+int16_t* floyd_runtime__lookup_json(void* floyd_runtime_ptr, int16_t* json_ptr, dyn_value_argument_t arg0_value, dyn_value_type_argument_t arg0_type){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto& json = *reinterpret_cast<const json_t*>(json_ptr);
+	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
+	const auto value = runtime_llvm_to_value(r, arg0_value, type0);
+
+	if(json.is_object()){
+		if(type0.is_string() == false){
+			quark::throw_runtime_error("Attempting to lookup a json-object with a key that is not a string.");
+		}
+
+		const auto result = json.get_object_element(value.get_string_value());
+		return reinterpret_cast<int16_t*>(new json_t(result));
+	}
+	else if(json.is_array()){
+		if(type0.is_int() == false){
+			quark::throw_runtime_error("Attempting to lookup a json-object with a key that is not a number.");
+		}
+
+		const auto result = json.get_array_n(value.get_int_value());
+		return reinterpret_cast<int16_t*>(new json_t(result));
+	}
+	else{
+		quark::throw_runtime_error("Attempting to lookup a json value -- lookup requires json-array or json-object.");
+	}
+}
+
+host_func_t floyd_runtime__lookup_json__make(llvm::LLVMContext& context){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getInt16PtrTy(context),
+		{
+			make_frp_type(context),
+			llvm::Type::getInt16PtrTy(context),
+			make_dyn_value_type(context),
+			make_dyn_value_type_type(context)
+		},
+		false
+	);
+	return { "floyd_runtime__lookup_json", function_type, reinterpret_cast<void*>(floyd_runtime__lookup_json) };
+}
+
+
+
+
+
+
+
+////////////////////////////////		json_to_string()
+
+
+char* floyd_runtime__json_to_string(void* floyd_runtime_ptr, uint16_t* json_ptr){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto& json = *reinterpret_cast<const json_t*>(json_ptr);
+
+	if(json.is_string()){
+		auto new_str = strdup(json.get_string().c_str());
+		return new_str;
+	}
+	else{
+		quark::throw_runtime_error("Attempting to assign a non-string JSON to a string.");
+	}
+}
+
+host_func_t floyd_runtime__json_to_string__make(llvm::LLVMContext& context){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getInt8PtrTy(context),
+		{
+			make_frp_type(context),
+			llvm::Type::getInt16PtrTy(context),
+		},
+		false
+	);
+	return { "floyd_runtime__json_to_string", function_type, reinterpret_cast<void*>(floyd_runtime__json_to_string) };
+}
+
+
+
+
 
 
 ////////////////////////////////		compare_values()
@@ -1472,6 +1556,9 @@ std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context){
 		floyd_runtime__lookup_dict__make(context),
 
 		floyd_runtime__allocate_json__make(context),
+		floyd_runtime__lookup_json__make(context),
+
+		floyd_runtime__json_to_string__make(context),
 
 		floyd_runtime__compare_values__make(context)
 	};

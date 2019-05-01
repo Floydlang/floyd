@@ -3404,10 +3404,10 @@ QUARK_UNIT_TEST("Floyd test suite", "json_value<string> read array member", "", 
 		R"(
 
 			let json_value a = ["hello", "bye"]
-			let result = string(a[0]) + string(a[1])
+			let result = a[0]
 
 		)",
-		value_t::make_string("hellobye")
+		value_t::make_json_value("hello")
 	);
 }
 QUARK_UNIT_TEST("Floyd test suite", "json_value<string> read array member", "", ""){
@@ -3416,10 +3416,10 @@ QUARK_UNIT_TEST("Floyd test suite", "json_value<string> read array member", "", 
 		R"(
 
 			let json_value a = ["hello", "bye"]
-			let result = a[0]
+			let result = string(a[0]) + string(a[1])
 
 		)",
-		value_t::make_json_value("hello")
+		value_t::make_string("hellobye")
 	);
 }
 
