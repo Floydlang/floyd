@@ -3363,7 +3363,7 @@ QUARK_UNIT_TEST("Floyd test suite", "json_value<string> string-size()", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json_value()", "json_value(123)", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = json_value(123)", value_t::make_json_value(json_t(123.0)));
 }
 

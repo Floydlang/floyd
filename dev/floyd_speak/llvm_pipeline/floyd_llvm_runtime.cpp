@@ -1355,6 +1355,10 @@ int16_t* floyd_runtime__allocate_json(void* floyd_runtime_ptr, dyn_value_argumen
 	else if(type0.is_json_value()){
 		return reinterpret_cast<int16_t*>(arg0_value);
 	}
+	else if(type0.is_int()){
+		auto result = new json_t(value.get_int_value());
+		return reinterpret_cast<int16_t*>(result);
+	}
 	else{
 		NOT_IMPLEMENTED_YET();
 	}
