@@ -2381,12 +2381,14 @@ void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, in
 		if(target_type.is_bool() || target_type.is_int() || target_type.is_double() || target_type.is_typeid()){
 			return input_value;
 		}
-		else if(target_type.is_string()){
-			if(input_value_type.is_json_value() && input_value.get_json_value().is_string()){
+
+		//	Automatically transform a json_value::string => string at runtime?
+		else if(target_type.is_string() && input_value_type.is_json_value()){
+			if(input_value.get_json_value().is_string()){
 				return bc_value_t::make_string(input_value.get_json_value().get_string());
 			}
 			else{
-				return input_value;
+				quark::throw_runtime_error("Attempting to assign a non-string JSON to a string.");
 			}
 		}
 		else if(target_type.is_json_value()){

@@ -751,8 +751,13 @@ value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const enco
 		return value_t::make_string(s);
 	}
 	else if(type.is_json_value()){
-		const auto& s = *(const json_t*)(encoded_value);
-		return value_t::make_json_value(s);
+		const auto s = (const json_t*)(encoded_value);
+		if(s == nullptr){
+			return value_t::make_json_value(json_t());
+		}
+		else{
+			return value_t::make_json_value(*s);
+		}
 	}
 	else if(type.is_typeid()){
 		const auto type1 = lookup_type(runtime.type_interner, unpack_encoded_itype(encoded_value));
@@ -1334,6 +1339,43 @@ host_func_t floyd_runtime__lookup_dict__make(llvm::LLVMContext& context){
 
 
 
+////////////////////////////////		allocate_json()
+
+
+int16_t* floyd_runtime__allocate_json(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, dyn_value_type_argument_t arg0_type){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
+	const auto value = runtime_llvm_to_value(r, arg0_value, type0);
+
+	if(type0.is_string()){
+		auto result = new json_t(value.get_string_value());
+		return reinterpret_cast<int16_t*>(result);
+	}
+	else if(type0.is_json_value()){
+		return reinterpret_cast<int16_t*>(arg0_value);
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
+
+host_func_t floyd_runtime__allocate_json__make(llvm::LLVMContext& context){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getInt16PtrTy(context),
+		{
+			make_frp_type(context),
+			make_dyn_value_type(context),
+			make_dyn_value_type_type(context)
+		},
+		false
+	);
+	return { "floyd_runtime__allocate_json", function_type, reinterpret_cast<void*>(floyd_runtime__allocate_json) };
+}
+
+
+
+
 
 
 ////////////////////////////////		compare_values()
@@ -1409,6 +1451,8 @@ std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context){
 		floyd_runtime__delete_dict__make(context),
 		floyd_runtime__store_dict__make(context),
 		floyd_runtime__lookup_dict__make(context),
+
+		floyd_runtime__allocate_json__make(context),
 
 		floyd_runtime__compare_values__make(context)
 	};

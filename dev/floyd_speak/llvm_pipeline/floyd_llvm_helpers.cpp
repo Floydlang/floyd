@@ -764,7 +764,7 @@ llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type){
 		return llvm::Type::getInt16Ty(context);
 	}
 	else if(type.is_unresolved_type_identifier()){
-		NOT_IMPLEMENTED_YET();
+		UNSUPPORTED();
 		return llvm::Type::getInt16Ty(context);
 	}
 	else if(type.is_double()){
