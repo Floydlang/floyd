@@ -1359,6 +1359,10 @@ int16_t* floyd_runtime__allocate_json(void* floyd_runtime_ptr, dyn_value_argumen
 		auto result = new json_t(value.get_int_value());
 		return reinterpret_cast<int16_t*>(result);
 	}
+	else if(type0.is_bool()){
+		auto result = new json_t(value.get_bool_value());
+		return reinterpret_cast<int16_t*>(result);
+	}
 	else if(type0.is_vector()){
 		QUARK_ASSERT(type0.get_vector_element_type().is_json_value());
 		const auto v = value.get_vector_value();

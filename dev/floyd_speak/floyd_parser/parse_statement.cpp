@@ -584,7 +584,7 @@ QUARK_UNIT_TEST("parser", "parse_struct_definition_statement", "", ""){
 
 	const auto expected =
 	json_t::make_array({
-		0,
+		json_t(0),
 		"def-struct",
 		json_t::make_object({
 			{ "name", "a" },
