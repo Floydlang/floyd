@@ -1359,6 +1359,17 @@ int16_t* floyd_runtime__allocate_json(void* floyd_runtime_ptr, dyn_value_argumen
 		auto result = new json_t(value.get_int_value());
 		return reinterpret_cast<int16_t*>(result);
 	}
+	else if(type0.is_vector()){
+		QUARK_ASSERT(type0.get_vector_element_type().is_json_value());
+		const auto v = value.get_vector_value();
+		std::vector<json_t> json_vec;
+		for(const auto& e: v){
+			json_vec.push_back(e.get_json_value());
+		}
+
+		auto result = new json_t(json_vec);
+		return reinterpret_cast<int16_t*>(result);
+	}
 	else{
 		NOT_IMPLEMENTED_YET();
 	}

@@ -27,8 +27,7 @@ namespace floyd {
 using namespace std;
 
 
-
-itype_t make_new_itype(type_interner_t& interner, const typeid_t& type){
+itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -67,15 +66,25 @@ itype_t make_new_itype(type_interner_t& interner, const typeid_t& type){
 		}
 
 		int32_t operator()(const typeid_t::struct_t& e) const{
+			for(const auto& m: e._struct_def->_members){
+				intern_type(interner, m._type);
+			}
 			return interner.struct_next_id++;
 		}
 		int32_t operator()(const typeid_t::vector_t& e) const{
+			QUARK_ASSERT(e._parts.size() == 1);
+			intern_type(interner, e._parts[0]);
 			return interner.vector_next_id++;
 		}
 		int32_t operator()(const typeid_t::dict_t& e) const{
+			QUARK_ASSERT(e._parts.size() == 1);
+			intern_type(interner, e._parts[0]);
 			return interner.dict_next_id++;
 		}
 		int32_t operator()(const typeid_t::function_t& e) const{
+			for(const auto& m: e._parts){
+				intern_type(interner, m);
+			}
 			return interner.function_next_id++;
 		}
 		int32_t operator()(const typeid_t::unresolved_t& e) const{
@@ -95,12 +104,15 @@ std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid
 		return *it;
 	}
 	else{
-		const auto itype = make_new_itype(interner, type);
+		const auto itype = make_new_itype_recursive(interner, type);
 		const auto p = std::pair<itype_t, typeid_t>{ itype, type };
 		interner.interned.push_back(p);
 		return p;
 	}
 }
+
+
+
 
 itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type){
 	const auto it = std::find_if(interner.interned.begin(), interner.interned.end(), [&](const std::pair<itype_t, typeid_t>& e){ return e.second == type; });

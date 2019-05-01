@@ -7,7 +7,7 @@
 //
 
 const bool k_trace_input_output = false;
-const bool k_trace_types = true;
+const bool k_trace_types = false;
 
 #include "floyd_llvm_codegen.h"
 
@@ -2351,18 +2351,37 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> gen
 	return { std::move(module), gen_acc.function_defs };
 }
 
+
+
+
+
 std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast0, const std::string& module_name){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(ast0.check_invariant());
 	QUARK_ASSERT(module_name.empty() == false);
 
+//	type_interner_t types = collect_used_types(ast0._tree);
+//	QUARK_ASSERT(types.interned.size() == ast0._tree._interned_types.interned.size());
+
 	if(k_trace_input_output){
 		QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast0)._value));
 	}
 	if(k_trace_types){
-		for(const auto& e: ast0._tree._interned_types.interned){
-			QUARK_TRACE_SS(e.first.itype << ": " << typeid_to_compact_string(e.second));
+		{
+			QUARK_SCOPED_TRACE("ast0 types");
+			for(const auto& e: ast0._tree._interned_types.interned){
+				QUARK_TRACE_SS(e.first.itype << ": " << typeid_to_compact_string(e.second));
+			}
 		}
+/*
+		{
+			QUARK_SCOPED_TRACE("collected types");
+			for(const auto& e: types.interned){
+				QUARK_TRACE_SS(e.first.itype << ": " << typeid_to_compact_string(e.second));
+			}
+		}
+*/
+
 	}
 
 	auto ast = ast0;
