@@ -749,7 +749,7 @@ llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type){
 		return llvm::Type::getInt8PtrTy(context);
 	}
 	else if(type.is_json_value()){
-		return llvm::Type::getInt16Ty(context);
+		return llvm::Type::getInt16PtrTy(context);
 	}
 	else if(type.is_vector()){
 		return make_vec_type(context);

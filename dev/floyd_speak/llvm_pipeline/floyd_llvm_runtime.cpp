@@ -751,7 +751,8 @@ value_t runtime_llvm_to_value(const llvm_execution_engine_t& runtime, const enco
 		return value_t::make_string(s);
 	}
 	else if(type.is_json_value()){
-		NOT_IMPLEMENTED_YET();
+		const auto& s = *(const json_t*)(encoded_value);
+		return value_t::make_json_value(s);
 	}
 	else if(type.is_typeid()){
 		const auto type1 = lookup_type(runtime.type_interner, unpack_encoded_itype(encoded_value));
@@ -846,7 +847,13 @@ value_t llvm_valueptr_to_value(const llvm_execution_engine_t& runtime, const voi
 		return value_t::make_string(s);
 	}
 	else if(type.is_json_value()){
-		NOT_IMPLEMENTED_YET();
+		const json_t* json_ptr = *(const json_t**)(value_ptr);
+		if(json_ptr == nullptr){
+			return value_t::make_json_value(json_t());
+		}
+		else{
+			return value_t::make_json_value(*json_ptr);
+		}
 	}
 	else if(type.is_typeid()){
 		const auto value = *static_cast<const int32_t*>(value_ptr);
@@ -885,6 +892,13 @@ value_t llvm_valueptr_to_value(const llvm_execution_engine_t& runtime, const voi
 				auto s = (const char*)vec.element_ptr[i];
 				const auto a = std::string(s);
 				vec2.push_back(value_t::make_string(a));
+			}
+			return value_t::make_vector_value(element_type, vec2);
+		}
+		else if(element_type.is_json_value()){
+			for(int i = 0 ; i < vec.element_count ; i++){
+				const auto& s = *reinterpret_cast<const json_t*>(vec.element_ptr[i]);
+				vec2.push_back(value_t::make_json_value(s));
 			}
 			return value_t::make_vector_value(element_type, vec2);
 		}
@@ -1553,7 +1567,8 @@ int64_t floyd_funcdef__find(void* floyd_runtime_ptr, dyn_value_argument_t arg0_v
 		}
 	}
 	else{
-		NOT_IMPLEMENTED_YET();
+		//	No other types allowed.
+		throw std::exception();
 	}
 }
 
@@ -1646,7 +1661,8 @@ const WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, dyn_value_
 		return make_wide_return_vec(v2);
 	}
 	else{
-		NOT_IMPLEMENTED_YET();
+		//	No other types allowed.
+		throw std::exception();
 	}
 }
 
@@ -1724,7 +1740,8 @@ const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, dyn_value_ar
 		return make_wide_return_vec(vec2);
 	}
 	else{
-		NOT_IMPLEMENTED_YET();
+		//	No other types allowed.
+		throw std::exception();
 	}
 }
 
@@ -1736,6 +1753,8 @@ void floyd_host_function_1027(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
+
+
 int64_t floyd_funcdef__size(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, int64_t arg0_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
@@ -1743,6 +1762,22 @@ int64_t floyd_funcdef__size(void* floyd_runtime_ptr, dyn_value_argument_t arg0_v
 	if(type0.is_string()){
 		const auto value = (const char*)arg0_value;
 		return std::strlen(value);
+	}
+	else if(type0.is_json_value()){
+		const auto& json_value = *(const json_t*)arg0_value;
+
+		if(json_value.is_object()){
+			return json_value.get_object_size();
+		}
+		else if(json_value.is_array()){
+			return json_value.get_array_size();
+		}
+		else if(json_value.is_string()){
+			return json_value.get_string().size();
+		}
+		else{
+			quark::throw_runtime_error("Calling size() on unsupported type of value.");
+		}
 	}
 	else if(type0.is_vector()){
 		const auto vs = unpack_vec_arg(r, arg0_value, arg0_type);
@@ -1752,9 +1787,9 @@ int64_t floyd_funcdef__size(void* floyd_runtime_ptr, dyn_value_argument_t arg0_v
 		DICT_T* dict = unpack_dict_arg(r, arg0_value, arg0_type);
 		return dict->body_ptr->map.size();
 	}
-
 	else{
-		NOT_IMPLEMENTED_YET();
+		//	No other types allowed.
+		throw std::exception();
 	}
 }
 
@@ -1796,7 +1831,8 @@ const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, dyn_value_arg
 		return make_wide_return_vec(vec2);
 	}
 	else{
-		NOT_IMPLEMENTED_YET();
+		//	No other types allowed.
+		throw std::exception();
 	}
 }
 
@@ -1983,7 +2019,9 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, dyn_value_arg
 		return make_wide_return_structptr(reinterpret_cast<const void*>(struct_ptr));
 	}
 	else{
-		NOT_IMPLEMENTED_YET();
+		//??? same idea as UNSUPPORTED().
+		//	No other types allowed.
+		throw std::exception();
 	}
 }
 

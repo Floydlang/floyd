@@ -3340,7 +3340,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "Error: Wrong TYPE of arguments to
 //////////////////////////////////////////		json_value - TYPE
 
 
-
+//??? document or disable using json-value directly as lookup parent.
 
 QUARK_UNIT_TEST("Floyd test suite", "json_value::null", "", ""){
 	run_closed(R"(		let result = null		)");

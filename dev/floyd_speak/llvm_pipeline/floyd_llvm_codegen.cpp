@@ -312,6 +312,9 @@ static llvm::Value* generate_encoded_value(llvm_code_generator_t& gen_acc, llvm:
 	else if(floyd_type.is_string()){
 		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "string_as_arg");
 	}
+	else if(floyd_type.is_json_value()){
+		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, builder.getInt64Ty(), "json_as_arg");
+	}
 	else if(floyd_type.is_vector()){
 		auto ptr = generate_vec_alloca(builder, &value);
 		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, ptr, builder.getInt64Ty(), "");
@@ -476,7 +479,15 @@ llvm::Constant* generate_constant(llvm_code_generator_t& gen_acc, const value_t&
 //		return gen_acc.builder.CreateGlobalStringPtr(llvm::StringRef(value.get_string_value()));
 	}
 	else if(type.is_json_value()){
-		return llvm::ConstantInt::get(itype, 7000);
+		const auto& json_value0 = value.get_json_value();
+		if(json_value0.is_null()){
+			return nullptr;
+		}
+		else{
+			QUARK_ASSERT(false);
+			const auto copy = new json_t(json_value0);
+			return llvm::ConstantInt::get(itype, 7000);
+		}
 	}
 	else if(type.is_typeid()){
 		const auto t = pack_itype(gen_acc, value.get_typeid_value());
@@ -655,8 +666,55 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 		return element_value;
 	}
 	else if(parent_type.is_json_value()){
+
+		//??? tested at runtime.
+#if 0
+		const auto& parent_json = *reinterpret_cast<const json_t*>();
+			const auto& parent_json_value = regs[i._b]._external->_json_value;
+
+			if(parent_json_value->is_object()){
+				QUARK_ASSERT(stack.check_reg_string(i._c));
+
+				const auto& lookup_key = regs[i._c]._external->_string;
+
+				//	get_object_element() throws if key can't be found.
+				const auto& value = parent_json_value->get_object_element(lookup_key);
+
+				//??? no need to create full bc_value_t here! We only need pod.
+				const auto value2 = bc_value_t::make_json_value(value);
+
+				value2._pod._external->_rc++;
+				release_pod_external(regs[i._a]);
+				regs[i._a] = value2._pod;
+			}
+			else if(parent_json_value->is_array()){
+				QUARK_ASSERT(stack.check_reg_int(i._c));
+
+				const auto lookup_index = regs[i._c]._inplace._int64;
+				if(lookup_index < 0 || lookup_index >= parent_json_value->get_array_size()){
+					quark::throw_runtime_error("Lookup in json_value array: out of bounds.");
+				}
+				else{
+					const auto& value = parent_json_value->get_array_n(lookup_index);
+
+					//??? value2 will soon go out of scope - avoid creating bc_value_t all together.
+					//??? no need to create full bc_value_t here! We only need pod.
+					const auto value2 = bc_value_t::make_json_value(value);
+
+					value2._pod._external->_rc++;
+					release_pod_external(regs[i._a]);
+					regs[i._a] = value2._pod;
+				}
+			}
+			else{
+				quark::throw_runtime_error("Lookup using [] on json_value only works on objects and arrays.");
+			}
+			QUARK_ASSERT(vm.check_invariant());
+			break;
+		}
+
+#endif
 		NOT_IMPLEMENTED_YET();
-//		return bc_opcode::k_lookup_element_json_value;
 	}
 	else if(parent_type.is_vector()){
 		QUARK_ASSERT(key_reg->getType() == llvm::IntegerType::getInt64Ty(context));
@@ -672,11 +730,17 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 		llvm::Value* element_addr_reg = builder.CreateGEP(builder.getInt64Ty(), uint64_array_ptr_reg, gep, "element_addr");
 		llvm::Value* element_value_uint64_reg = builder.CreateLoad(element_addr_reg, "element_tmp");
 
+		//??? copied from vector equivalent. Use util function for all member-values: vector and dicts alike -- no testing here.
+
 		if(element_type0.is_int()){
 			return element_value_uint64_reg;
 		}
 		else if(element_type0.is_string()){
 			llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, element_value_uint64_reg, llvm::Type::getInt8PtrTy(context), "");
+			return v;
+		}
+		else if(element_type0.is_json_value()){
+			llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, element_value_uint64_reg, llvm::Type::getInt16PtrTy(context), "");
 			return v;
 		}
 		else if(element_type0.is_struct()){
@@ -692,13 +756,18 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 		QUARK_ASSERT(key_reg->getType() == llvm::Type::getInt8PtrTy(context));
 		const auto element_type0 = parent_type.get_dict_value_type();
 
-	//??? copied from vector equivalent
+		//??? copied from vector equivalent. Use util function for all member-values: vector and dicts alike -- no testing here.
+
 		auto element_value_uint64_reg = generate_lookup_dict(gen_acc, emit_f, *parent_reg, *key_reg);
 		if(element_type0.is_int()){
 			return element_value_uint64_reg;
 		}
 		else if(element_type0.is_string()){
 			llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, element_value_uint64_reg, llvm::Type::getInt8PtrTy(context), "");
+			return v;
+		}
+		else if(element_type0.is_json_value()){
+			llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, element_value_uint64_reg, llvm::Type::getInt16PtrTy(context), "");
 			return v;
 		}
 		else if(element_type0.is_struct()){
@@ -833,6 +902,8 @@ static llvm::Value* generate_arithmetic_expression(llvm_code_generator_t& gen_ac
 		return vec_reg;
 	}
 	else{
+		//	No other types allowed.
+		throw std::exception();
 	}
 	UNSUPPORTED();
 }
@@ -1368,21 +1439,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 		QUARK_ASSERT(element_count == 1);
 
 		return generate_expression(gen_acc, emit_f, details.elements[0]);
-
-/*
-		const auto source_itype = arg_count == 0 ? -1 : intern_type(gen_acc, e._input_exprs[0].get_output_type());
-		body_acc._instrs.push_back(bcgen_instruction_t(
-			bc_opcode::k_new_1,
-			target_reg2,
-			make_imm_int(target_itype),
-			make_imm_int(source_itype)
-		));
-*/
-
 	}
-
-	NOT_IMPLEMENTED_YET();
-	return nullptr;
 }
 
 static llvm::Value* generate_load2_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::load2_t& details){
