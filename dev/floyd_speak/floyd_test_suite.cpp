@@ -2745,7 +2745,6 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [double] push_back()", "", ""){
 //??? test vector element type
 //??? test dict element type
 
-#endif		//	INCLUDE_OUTOFFOCUS_TESTS
 
 
 //////////////////////////////////////////		DICT - TYPE
@@ -2962,8 +2961,6 @@ QUARK_UNIT_TEST("Floyd test suite", "dict", "Dict can not hold elements of diffe
 	);
 }
 
-
-#if INCLUDE_OUTOFFOCUS_TESTS
 
 //////////////////////////////////////////		STRUCT - TYPE
 
@@ -3334,6 +3331,8 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "Error: Wrong TYPE of arguments to
 }
 
 
+#endif		//	INCLUDE_OUTOFFOCUS_TESTS
+
 
 
 
@@ -3548,12 +3547,14 @@ QUARK_UNIT_TEST("Floyd test suite", "json_value", "", "error"){
 
 
 
+
 //////////////////////////////////////////		TEST TYPE INFERING
 
 QUARK_UNIT_TEST("Floyd test suite", "json_value<string> {}", "Infer {}", "JSON object"){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let json_value result = {}		)", value_t::make_json_value(json_t::make_object()));
 }
 
+//??? object?
 
 QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "", "1"){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json_value({}))		)", value_t::make_int(1));
@@ -3816,6 +3817,7 @@ QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "point_t", ""){
 
 
 
+#if INCLUDE_OUTOFFOCUS_TESTS
 
 
 

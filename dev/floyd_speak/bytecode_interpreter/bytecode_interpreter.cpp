@@ -1588,10 +1588,12 @@ int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
 		}
 		else{
 			if(lhs.is_object()){
+				//??? NOT IMPLEMENTED YET
 				QUARK_ASSERT(false);
 				quark::throw_exception();
 			}
 			else if(lhs.is_array()){
+				//??? NOT IMPLEMENTED YET
 				QUARK_ASSERT(false);
 				quark::throw_exception();
 			}
@@ -1605,16 +1607,13 @@ int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
 				return lhs_number < rhs_number ? -1 : 1;
 			}
 			else if(lhs.is_true()){
-				QUARK_ASSERT(false);
-				quark::throw_exception();
+				return 0;
 			}
 			else if(lhs.is_false()){
-				QUARK_ASSERT(false);
-				quark::throw_exception();
+				return 0;
 			}
 			else if(lhs.is_null()){
-				QUARK_ASSERT(false);
-				quark::throw_exception();
+				return 0;
 			}
 			else{
 				QUARK_ASSERT(false);
