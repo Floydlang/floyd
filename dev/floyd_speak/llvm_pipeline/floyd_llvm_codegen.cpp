@@ -295,10 +295,9 @@ std::string compose_function_def_name(int function_id, const function_definition
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-//???	Rename to: generate_cast_to_runtime_value()
 //	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value.
 //	If the value is big, it's stored on the stack and a pointer returned => the returned value is not standalone and lifetime limited to emit function scope.
-static llvm::Value* generate_encoded_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type){
+static llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(floyd_type.check_invariant());
 
@@ -345,23 +344,25 @@ static llvm::Value* generate_encoded_value(llvm_code_generator_t& gen_acc, llvm:
 //	Returns the specific LLVM type for the value, like VEC_T* etc.
 static llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& runtime_value_reg, const typeid_t& type){
 	auto& context = gen_acc.instance->context;
-	auto& builder = gen_acc.builder;
 
 	if(type.is_int()){
 		return &runtime_value_reg;
 	}
 	else if(type.is_string()){
-		llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, llvm::Type::getInt8PtrTy(context), "");
-		return v;
+		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, llvm::Type::getInt8PtrTy(context), "");
 	}
 	else if(type.is_json_value()){
-		llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, llvm::Type::getInt16PtrTy(context), "");
-		return v;
+		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, llvm::Type::getInt16PtrTy(context), "");
 	}
 	else if(type.is_struct()){
 		auto& struct_type = *make_struct_type(context, type);
-		llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, struct_type.getPointerTo(), "");
-		return v;
+		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, struct_type.getPointerTo(), "");
+	}
+	else if(type.is_vector()){
+		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_vec_type(context)->getPointerTo(), "");
+	}
+	else if(type.is_dict()){
+		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_dict_type(context)->getPointerTo(), "");
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
@@ -415,7 +416,7 @@ static llvm::Value* generate_store_dict(llvm_code_generator_t& gen_acc, llvm::Fu
 		get_callers_fcp(emit_f),
 		&dict_reg,
 		&key_charptr_reg,
-		generate_encoded_value(gen_acc, value_reg, value_type),
+		generate_cast_to_runtime_value(gen_acc, value_reg, value_type),
 		llvm::ConstantInt::get(make_runtime_type_type(context), pack_itype(gen_acc, value_type))
 	};
 	return builder.CreateCall(f.llvm_f, args2, "store_dict:");
@@ -452,7 +453,7 @@ static llvm::Value* generate_alloc_json(llvm_code_generator_t& gen_acc, llvm::Fu
 	const auto f = find_function_def(gen_acc, "floyd_runtime__allocate_json");
 	std::vector<llvm::Value*> args2 = {
 		get_callers_fcp(emit_f),
-		generate_encoded_value(gen_acc, input_value_reg, input_type),
+		generate_cast_to_runtime_value(gen_acc, input_value_reg, input_type),
 		type_reg
 	};
 	return builder.CreateCall(f.llvm_f, args2, "allocate_json");
@@ -470,7 +471,7 @@ static llvm::Value* generate_lookup_json(llvm_code_generator_t& gen_acc, llvm::F
 	std::vector<llvm::Value*> args = {
 		get_callers_fcp(emit_f),
 		&json_reg,
-		generate_encoded_value(gen_acc, key_reg, key_type),
+		generate_cast_to_runtime_value(gen_acc, key_reg, key_type),
 		llvm::ConstantInt::get(make_runtime_type_type(context), pack_itype(gen_acc, key_type))
 	};
 	return builder.CreateCall(f.llvm_f, args, "lookup_json");
@@ -742,9 +743,8 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 	if(parent_type.is_string()){
 		QUARK_ASSERT(key_type.is_int());
 
-		auto element_index = key_reg;
-		const auto index_list = std::vector<llvm::Value*>{ element_index };
-		llvm::Value* element_addr = builder.CreateGEP(llvm::Type::getInt8Ty(context), parent_reg, index_list, "element_addr");
+		const auto gep = std::vector<llvm::Value*>{ key_reg };
+		llvm::Value* element_addr = builder.CreateGEP(llvm::Type::getInt8Ty(context), parent_reg, gep, "element_addr");
 		llvm::Value* element_value_8bit = builder.CreateLoad(element_addr, "element_tmp");
 		llvm::Type* output_type = llvm::Type::getInt64Ty(context);
 
@@ -917,8 +917,8 @@ static llvm::Value* generate_compare_values(llvm_code_generator_t& gen_acc, llvm
 		get_callers_fcp(emit_f),
 		op_reg,
 		itype_reg,
-		generate_encoded_value(gen_acc, lhs_reg, type),
-		generate_encoded_value(gen_acc, rhs_reg, type)
+		generate_cast_to_runtime_value(gen_acc, lhs_reg, type),
+		generate_cast_to_runtime_value(gen_acc, rhs_reg, type)
 	};
 	auto result = gen_acc.builder.CreateCall(def.llvm_f, args, "floyd_runtime__compare_values");
 
@@ -1171,7 +1171,7 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 
 			// We assume that the next arg in the llvm_mapping is the dyn-type and store it too.
 			const auto itype = pack_itype(gen_acc, concrete_arg_type);
-			const auto packed_value = generate_encoded_value(gen_acc, *arg2, concrete_arg_type);
+			const auto packed_value = generate_cast_to_runtime_value(gen_acc, *arg2, concrete_arg_type);
 			arg_values.push_back(packed_value);
 			arg_values.push_back(llvm::ConstantInt::get(make_runtime_type_type(context), itype));
 		}
@@ -1188,23 +1188,7 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 	llvm::Value* result = result0;
 	if(callee_function_type.get_function_return().is_any()){
 		auto wide_return_a_reg = builder.CreateExtractValue(result, { static_cast<int>(WIDE_RETURN_MEMBERS::a) });
-
-		if(resolved_call_return_type.is_string()){
-			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, wide_return_a_reg, llvm::Type::getInt8PtrTy(context), "encoded->string");
-		}
-		else if(resolved_call_return_type.is_vector()){
-			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, wide_return_a_reg, make_vec_type(context)->getPointerTo(), "");
-		}
-		else if(resolved_call_return_type.is_dict()){
-			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, wide_return_a_reg, make_dict_type(context)->getPointerTo(), "");
-		}
-		else if(resolved_call_return_type.is_struct()){
-			auto struct_type = make_struct_type(context, resolved_call_return_type);
-			result = builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, wide_return_a_reg, struct_type->getPointerTo(), "encoded->structptr");
-		}
-		else{
-			NOT_IMPLEMENTED_YET();
-		}
+		result = generate_cast_from_runtime_value(gen_acc, *wide_return_a_reg, resolved_call_return_type);
 	}
 	else{
 	}
@@ -1274,7 +1258,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			//	Each element is a uint64_t ???
 			auto element_type = llvm::Type::getInt64Ty(context);
 			auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_array_ptr_reg, element_type->getPointerTo(), "");
-
+//?????????
 			//	Evaluate each element and store it directly into the the vector.
 			int element_index = 0;
 			for(const auto& arg: details.elements){
@@ -1371,7 +1355,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 
 /*
 			const auto itype = pack_itype(gen_acc, concrete_arg_type);
-			const auto packed_value = generate_encoded_value(gen_acc, *arg2, concrete_arg_type);
+			const auto packed_value = generate_cast_to_runtime_value(gen_acc, *arg2, concrete_arg_type);
 */
 
 		auto value_type_reg = llvm::ConstantInt::get(make_runtime_type_type(context), value_itype.itype);
