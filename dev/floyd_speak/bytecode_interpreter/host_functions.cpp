@@ -11,6 +11,12 @@
 #include "json_support.h"
 #include "ast_typeid_helpers.h"
 
+#include "text_parser.h"
+#include "file_handling.h"
+#include "sha1_class.h"
+#include "ast_value.h"
+#include "ast_json.h"
+
 #include <cmath>
 #include <sys/time.h>
 
@@ -19,11 +25,7 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
-#include "text_parser.h"
-#include "file_handling.h"
-#include "sha1_class.h"
-#include "ast_value.h"
-#include "ast_json.h"
+
 
 
 namespace floyd {
@@ -243,11 +245,6 @@ typeid_t make__date_t__type(){
 	return temp;
 }
 
-/*
-	struct sha1_t {
-		string ascii40
-	}
-*/
 typeid_t make__sha1_t__type(){
 	const auto temp = typeid_t::make_struct2({
 		{ typeid_t::make_string(), "ascii40" }
@@ -255,11 +252,6 @@ typeid_t make__sha1_t__type(){
 	return temp;
 }
 
-/*
-	struct binary_t {
-		string bytes
-	}
-*/
 typeid_t make__binary_t__type(){
 	const auto temp = typeid_t::make_struct2({
 		{ typeid_t::make_string(), "bytes" }

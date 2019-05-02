@@ -8,6 +8,10 @@
 
 #include "floyd_llvm_runtime.h"
 
+#include "sha1_class.h"
+#include "text_parser.h"
+#include "host_functions.h"
+
 #include <llvm/ADT/APInt.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
@@ -31,7 +35,6 @@
 
 #include "llvm/Bitcode/BitstreamWriter.h"
 
-#include "text_parser.h"
 
 namespace floyd {
 
@@ -1567,26 +1570,13 @@ std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context){
 
 
 
+struct native_binary_t {
+	const char* ascii40;
+};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+struct native_sha1_t {
+	const char* ascii40;
+};
 
 
 
@@ -1602,12 +1592,32 @@ void floyd_funcdef__assert(void* floyd_runtime_ptr, int64_t arg){
 	}
 }
 
-void floyd_host_function_1001(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+void* floyd_funcdef__calc_binary_sha1(void* floyd_runtime_ptr, void* binary_ptr){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(binary_ptr != nullptr);
+
+	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr);
+
+	const auto& s = std::string(binary.ascii40);
+	const auto sha1 = CalcSHA1(s);
+	const auto ascii40 = SHA1ToStringPlain(sha1);
+
+	auto result = new native_sha1_t();
+	result->ascii40 = strdup(ascii40.c_str());
+	return reinterpret_cast<uint32_t*>(result);
 }
 
-void floyd_host_function_1002(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+void* floyd_funcdef__calc_string_sha1(void* floyd_runtime_ptr, const char* str_ptr){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(str_ptr != nullptr);
+
+	const auto& s = std::string(str_ptr);
+	const auto sha1 = CalcSHA1(s);
+	const auto ascii40 = SHA1ToStringPlain(sha1);
+
+	auto result = new native_sha1_t();
+	result->ascii40 = strdup(ascii40.c_str());
+	return reinterpret_cast<void*>(result);
 }
 
 void floyd_host_function_1003(void* floyd_runtime_ptr, int64_t arg){
@@ -2243,8 +2253,8 @@ std::map<std::string, void*> get_host_functions_map2(){
 	////////////////////////////////		CORE FUNCTIONS AND HOST FUNCTIONS
 	const std::map<std::string, void*> host_functions_map = {
 		{ "floyd_funcdef__assert", reinterpret_cast<void *>(&floyd_funcdef__assert) },
-		{ "floyd_funcdef__calc_binary_sha1", reinterpret_cast<void *>(&floyd_host_function_1001) },
-		{ "floyd_funcdef__calc_string_sha1", reinterpret_cast<void *>(&floyd_host_function_1002) },
+		{ "floyd_funcdef__calc_binary_sha1", reinterpret_cast<void *>(&floyd_funcdef__calc_binary_sha1) },
+		{ "floyd_funcdef__calc_string_sha1", reinterpret_cast<void *>(&floyd_funcdef__calc_string_sha1) },
 		{ "floyd_funcdef__create_directory_branch", reinterpret_cast<void *>(&floyd_host_function_1003) },
 		{ "floyd_funcdef__delete_fsentry_deep", reinterpret_cast<void *>(&floyd_host_function_1004) },
 		{ "floyd_funcdef__does_fsentry_exist", reinterpret_cast<void *>(&floyd_host_function_1005) },

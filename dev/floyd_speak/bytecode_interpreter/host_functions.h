@@ -66,6 +66,20 @@ typeid_t make__fsentry_info_t__type();
 typeid_t make__fs_environment_t__type();
 
 
+/*
+	struct sha1_t {
+		string ascii40
+	}
+*/
+typeid_t make__sha1_t__type();
+
+/*
+	struct binary_t {
+		string bytes
+	}
+*/
+typeid_t make__binary_t__type();
+
 }	//	floyd
 
 #endif /* host_functions_hpp */
