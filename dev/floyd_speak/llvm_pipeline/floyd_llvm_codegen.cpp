@@ -342,6 +342,32 @@ static llvm::Value* generate_encoded_value(llvm_code_generator_t& gen_acc, llvm:
 	}
 }
 
+//	Returns the specific LLVM type for the value, like VEC_T* etc.
+static llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& runtime_value_reg, const typeid_t& type){
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	if(type.is_int()){
+		return &runtime_value_reg;
+	}
+	else if(type.is_string()){
+		llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, llvm::Type::getInt8PtrTy(context), "");
+		return v;
+	}
+	else if(type.is_json_value()){
+		llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, llvm::Type::getInt16PtrTy(context), "");
+		return v;
+	}
+	else if(type.is_struct()){
+		auto& struct_type = *make_struct_type(context, type);
+		llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, struct_type.getPointerTo(), "");
+		return v;
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
+
 static llvm::Value* generate_alloc_vec(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, uint64_t element_count, const std::string& debug){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -480,7 +506,6 @@ static llvm::Value* generate_allocate_memory(llvm_code_generator_t& gen_acc, llv
 	return gen_acc.builder.CreateCall(def.llvm_f, args, "allocate_memory");
 }
 
-//??? Make this function take a builder, not gen_acc.
 //	Makes constant from a Floyd value.
 
 //	??? => generate_constant_reg()
@@ -514,18 +539,12 @@ llvm::Constant* generate_constant(llvm_code_generator_t& gen_acc, llvm::Function
 	}
 	else if(type.is_string()){
 //		llvm::Constant* array = llvm::ConstantDataArray::getString(context, value.get_string_value(), true);
-
-		// The type of your string will be [n x i8], it needs to be i8*, so we cast here. We
-		// explicitly use the type of printf's first arg to guarantee we are always right.
-
-//		llvm::PointerType* int8Ptr_type = llvm::Type::getInt8PtrTy(context);
+//		llvm::Constant* c = gen_acc.builder.CreatePointerCast(array, int8Ptr_type);
 
 		llvm::Constant* c2 = builder.CreateGlobalStringPtr(value.get_string_value());
 		//	, "cast [n x i8] to i8*"
-//		llvm::Constant* c = gen_acc.builder.CreatePointerCast(array, int8Ptr_type);
 		return c2;
 
-//		return gen_acc.builder.CreateGlobalStringPtr(llvm::StringRef(value.get_string_value()));
 	}
 	else if(type.is_json_value()){
 		const auto& json_value0 = value.get_json_value();
@@ -741,65 +760,18 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 	else if(parent_type.is_vector()){
 		QUARK_ASSERT(key_type.is_int());
 
-		//	parent_reg is a VEC_T byvalue.
-		auto element_index = key_reg;
-
-		auto uint64_array_ptr_reg = generate_get_vec_element_ptr(gen_acc, emit_f, *parent_reg);
-
 		const auto element_type0 = parent_type.get_vector_element_type();
-
-		const auto gep = std::vector<llvm::Value*>{ element_index };
+		auto uint64_array_ptr_reg = generate_get_vec_element_ptr(gen_acc, emit_f, *parent_reg);
+		const auto gep = std::vector<llvm::Value*>{ key_reg };
 		llvm::Value* element_addr_reg = builder.CreateGEP(builder.getInt64Ty(), uint64_array_ptr_reg, gep, "element_addr");
 		llvm::Value* element_value_uint64_reg = builder.CreateLoad(element_addr_reg, "element_tmp");
-
-		//??? copied from vector equivalent. Use util function for all member-values: vector and dicts alike -- no testing here.
-
-		if(element_type0.is_int()){
-			return element_value_uint64_reg;
-		}
-		else if(element_type0.is_string()){
-			llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, element_value_uint64_reg, llvm::Type::getInt8PtrTy(context), "");
-			return v;
-		}
-		else if(element_type0.is_json_value()){
-			llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, element_value_uint64_reg, llvm::Type::getInt16PtrTy(context), "");
-			return v;
-		}
-		else if(element_type0.is_struct()){
-			auto& struct_type = *make_struct_type(context, element_type0);
-			llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, element_value_uint64_reg, struct_type.getPointerTo(), "");
-			return v;
-		}
-		else{
-			NOT_IMPLEMENTED_YET();
-		}
+		return generate_cast_from_runtime_value(gen_acc, *element_value_uint64_reg, element_type0);
 	}
 	else if(parent_type.is_dict()){
 		QUARK_ASSERT(key_type.is_string());
 		const auto element_type0 = parent_type.get_dict_value_type();
-
-		//??? copied from vector equivalent. Use util function for all member-values: vector and dicts alike -- no testing here.
-
 		auto element_value_uint64_reg = generate_lookup_dict(gen_acc, emit_f, *parent_reg, *key_reg);
-		if(element_type0.is_int()){
-			return element_value_uint64_reg;
-		}
-		else if(element_type0.is_string()){
-			llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, element_value_uint64_reg, llvm::Type::getInt8PtrTy(context), "");
-			return v;
-		}
-		else if(element_type0.is_json_value()){
-			llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, element_value_uint64_reg, llvm::Type::getInt16PtrTy(context), "");
-			return v;
-		}
-		else if(element_type0.is_struct()){
-			auto& struct_type = *make_struct_type(context, element_type0);
-			llvm::Value* v = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, element_value_uint64_reg, struct_type.getPointerTo(), "");
-			return v;
-		}
-		else{
-			NOT_IMPLEMENTED_YET();
-		}
+		return generate_cast_from_runtime_value(gen_acc, *element_value_uint64_reg, element_type0);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -928,14 +900,6 @@ static llvm::Value* generate_arithmetic_expression(llvm_code_generator_t& gen_ac
 	UNSUPPORTED();
 }
 
-
-
-#if 0
-llvm::Value* make_constant__runtime_type_reg(llvm::LLVMContext& context, runtime_type_t){
-	const auto t = pack_itype(gen_acc, value.get_typeid_value());
-	return llvm::ConstantInt::get(make_runtime_type_type(context), t);
-}
-#endif
 
 
 static llvm::Value* generate_compare_values(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, expression_type op, const typeid_t& type, llvm::Value& lhs_reg, llvm::Value& rhs_reg){
