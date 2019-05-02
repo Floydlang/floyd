@@ -90,7 +90,7 @@ sha1_t calc_binary_sha1(binary_t d)
 
 # FUNCTIONAL-STYLE MAP FUNCTIONS
 
-IMPORTANT: Thsese functions *also* exposed parallelism opportunities that allows the Floyd runtime to process each element on a separate hardware code, like shaders works in a graphics card. The supplied function must be pure.
+IMPORTANT: These functions replace custom loops but *also* expose parallelism opportunities that allows the Floyd runtime to process each element on a separate hardware core, like shaders works in a graphics card. The supplied function must be pure.
 
 ## map()
 

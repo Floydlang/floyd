@@ -1781,8 +1781,77 @@ void floyd_host_function_1017(void* floyd_runtime_ptr, int64_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-void floyd_host_function_1018(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+
+
+
+VEC_T valuevec_to_vec(const value_t& v){
+	QUARK_ASSERT(v.get_type().is_vector());
+
+	//??? Limited to int-vectors!
+	QUARK_ASSERT(v.get_type().get_vector_element_type().is_int());
+
+	const auto vec2 = v.get_vector_value();
+
+	VEC_T vec3 = make_vec((uint32_t)vec2.size());
+	for(int i = 0 ; i < vec2.size() ; i++){
+		vec3.element_ptr[i] = vec2[i].get_int_value();
+	}
+	return vec3;
+}
+
+
+
+	typedef WIDE_RETURN_T (*map_callback_t)(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value);
+
+WIDE_RETURN_T floyd_funcdef__map(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, dyn_value_type_argument_t arg0_type, dyn_value_argument_t arg1_value, dyn_value_type_argument_t arg1_type){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
+	const auto type1 = lookup_type(r.type_interner, unpack_encoded_itype(arg1_type));
+	if(type0.is_vector() == false){
+		quark::throw_runtime_error("map() arg 1 must be a vector.");
+	}
+	const auto e_type = type0.get_vector_element_type();
+
+	if(type1.is_function() == false){
+		quark::throw_runtime_error("map() requires start and end to be integers.");
+	}
+	const auto f_arg_types = type1.get_function_args();
+	const auto r_type = type1.get_function_return();
+
+	if(f_arg_types.size() != 1){
+		quark::throw_runtime_error("map() function f requries 1 argument.");
+	}
+
+	if(f_arg_types[0] != e_type){
+		quark::throw_runtime_error("map() function f must accept collection elements as its argument.");
+	}
+
+	const auto input_element_type = f_arg_types[0];
+	const auto output_element_type = r_type;
+
+	const auto f = reinterpret_cast<map_callback_t>(arg1_value);
+
+	const auto input_vec0 = runtime_llvm_to_value(r, arg0_value, type0);
+	const auto input_vec = input_vec0.get_vector_value();
+	std::vector<value_t> vec2;
+	for(const auto& e: input_vec){
+		if(input_element_type.is_int()){
+			const auto encoded_value = e.get_int_value();
+			const auto wide_result1 = (*f)(floyd_runtime_ptr, encoded_value);
+			if(output_element_type.is_int()){
+				vec2.push_back(value_t::make_int(wide_result1.a));
+			}
+			else{
+			}
+
+		}
+		else{
+			NOT_IMPLEMENTED_YET();
+		}
+	}
+	const auto result = value_t::make_vector_value(r_type, vec2);
+	return make_wide_return_vec(valuevec_to_vec(result));
 }
 
 void floyd_host_function_1019(void* floyd_runtime_ptr, int64_t arg){
@@ -1802,7 +1871,7 @@ void floyd_funcdef__print(void* floyd_runtime_ptr, dyn_value_argument_t arg0_val
 
 
 
-const WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, int64_t arg0_type, dyn_value_argument_t arg1_value, int64_t arg1_type){
+WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, int64_t arg0_type, dyn_value_argument_t arg1_value, int64_t arg1_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
@@ -2271,7 +2340,7 @@ std::map<std::string, void*> get_host_functions_map2(){
 		{ "floyd_funcdef__get_time_of_day", reinterpret_cast<void *>(&floyd_funcdef__get_time_of_day) },
 		{ "floyd_funcdef__jsonvalue_to_script", reinterpret_cast<void *>(&floyd_funcdef__jsonvalue_to_script) },
 		{ "floyd_funcdef__jsonvalue_to_value", reinterpret_cast<void *>(&floyd_host_function_1017) },
-		{ "floyd_funcdef__map", reinterpret_cast<void *>(&floyd_host_function_1018) },
+		{ "floyd_funcdef__map", reinterpret_cast<void *>(&floyd_funcdef__map) },
 		{ "floyd_funcdef__map_string", reinterpret_cast<void *>(&floyd_host_function_1019) },
 
 		{ "floyd_funcdef__print", reinterpret_cast<void *>(&floyd_funcdef__print) },
