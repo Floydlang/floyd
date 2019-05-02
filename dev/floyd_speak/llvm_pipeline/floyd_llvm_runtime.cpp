@@ -1175,7 +1175,7 @@ void floyd_host_function_1017(void* floyd_runtime_ptr, runtime_value_t arg){
 //??? test map() with complex types of values
 //??? map() and other functions should be select at compile time, not runtime!
 
-	typedef WIDE_RETURN_T (*map_callback_t)(void* floyd_runtime_ptr, runtime_value_t arg0_value);
+	typedef WIDE_RETURN_T (*MAP_F)(void* floyd_runtime_ptr, runtime_value_t arg0_value);
 
 WIDE_RETURN_T floyd_funcdef__map(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
@@ -1204,7 +1204,7 @@ WIDE_RETURN_T floyd_funcdef__map(void* floyd_runtime_ptr, runtime_value_t arg0_v
 	const auto input_element_type = f_arg_types[0];
 	const auto output_element_type = r_type;
 
-	const auto f = reinterpret_cast<map_callback_t>(arg1_value.function_ptr);
+	const auto f = reinterpret_cast<MAP_F>(arg1_value.function_ptr);
 
 	auto count = arg0_value.vector_ptr->element_count;
 	auto result_vec = new VEC_T(make_vec(count));
@@ -1215,8 +1215,27 @@ WIDE_RETURN_T floyd_funcdef__map(void* floyd_runtime_ptr, runtime_value_t arg0_v
 	return make_wide_return_vec(result_vec);
 }
 
-void floyd_host_function_1019(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+
+
+//??? should use int to send character around, not string.
+//??? Also function should always return ONE character, not a string!
+typedef const char* (*MAP_STRING_F)(void* floyd_runtime_ptr, const char* char_s);
+
+const char* floyd_funcdef__map_string(void* floyd_runtime_ptr, runtime_value_t string_s, runtime_value_t func){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const char* input_string = string_s.string_ptr;
+	const auto f = reinterpret_cast<MAP_STRING_F>(func.function_ptr);
+
+	auto count = strlen(input_string);
+
+	std::string acc;
+	for(int i = 0 ; i < count ; i++){
+		const char element_str[2] = { input_string[i], 0x00 };
+		const auto temp_char_str = (*f)(floyd_runtime_ptr, element_str);
+		acc.insert(acc.end(), temp_char_str, temp_char_str + strlen(temp_char_str));
+	}
+	return strdup(acc.c_str());
 }
 
 
@@ -1681,7 +1700,7 @@ std::map<std::string, void*> get_host_functions_map2(){
 		{ "floyd_funcdef__jsonvalue_to_script", reinterpret_cast<void *>(&floyd_funcdef__jsonvalue_to_script) },
 		{ "floyd_funcdef__jsonvalue_to_value", reinterpret_cast<void *>(&floyd_host_function_1017) },
 		{ "floyd_funcdef__map", reinterpret_cast<void *>(&floyd_funcdef__map) },
-		{ "floyd_funcdef__map_string", reinterpret_cast<void *>(&floyd_host_function_1019) },
+		{ "floyd_funcdef__map_string", reinterpret_cast<void *>(&floyd_funcdef__map_string) },
 
 		{ "floyd_funcdef__print", reinterpret_cast<void *>(&floyd_funcdef__print) },
 		{ "floyd_funcdef__push_back", reinterpret_cast<void *>(&floyd_funcdef__push_back) },
