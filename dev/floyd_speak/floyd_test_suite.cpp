@@ -1929,54 +1929,6 @@ QUARK_UNIT_TEST("Floyd test suite", "while", "return from within while", ""){
 
 
 
-//////////////////////////////////////////		HOST FUNCTION - typeof()
-
-
-QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-		R"(
-
-			let result = typeof(145)
-
-		)",
-		value_t::make_typeid_value(typeid_t::make_int())
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_string(typeof(145))		)", value_t::make_string("int"));
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = typeof("hello")		)", value_t::make_typeid_value(typeid_t::make_string()));
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_string(typeof("hello"))		)",	value_t::make_string("string"));
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = typeof([1,2,3])		)", value_t::make_typeid_value(typeid_t::make_vector(typeid_t::make_int()))	);
-}
-QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_string(typeof([1,2,3]))		)",value_t::make_string("[int]") );
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-		R"(
-
-			let result = to_string(typeof(int));
-
-		)",
-		value_t::make_string("typeid")
-	);
-}
-
-
-
 
 
 
@@ -2350,7 +2302,16 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [] - constructor", "32 elements init
 #endif
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] constructor expression, computed element", "", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		func string get_beta(){ return "beta" } 	let [string] result = ["alpha", get_beta()]		)",		R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)");
+	ut_verify_global_result_as_json_nolib(
+		QUARK_POS,
+		R"(
+
+			func string get_beta(){ return "beta" }
+			let [string] result = ["alpha", get_beta()]
+
+		)",
+		R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)"
+	);
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] =", "copy", ""){
@@ -3665,6 +3626,56 @@ QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "DOCUMENTATION SNIPPET", 
 		assert(get_name(json_value(false)) == "json_false")
 
 	)___");
+}
+
+
+
+
+
+//////////////////////////////////////////		HOST FUNCTION - typeof()
+
+
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			let result = typeof(145)
+
+		)",
+		value_t::make_typeid_value(typeid_t::make_int())
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_string(typeof(145))		)", value_t::make_string("int"));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = typeof("hello")		)", value_t::make_typeid_value(typeid_t::make_string()));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_string(typeof("hello"))		)",	value_t::make_string("string"));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = typeof([1,2,3])		)", value_t::make_typeid_value(typeid_t::make_vector(typeid_t::make_int()))	);
+}
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_string(typeof([1,2,3]))		)",value_t::make_string("[int]") );
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+		R"(
+
+			let result = to_string(typeof(int));
+
+		)",
+		value_t::make_string("typeid")
+	);
 }
 
 

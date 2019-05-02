@@ -56,27 +56,71 @@ namespace floyd {
 
 
 
+////////////////////////////////	runtime_type_t
+
+
+llvm::Type* make_runtime_type_type(llvm::LLVMContext& context){
+	return llvm::Type::getInt32Ty(context);
+/*
+	std::vector<llvm::Type*> members = {
+		llvm::Type::getInt32Ty(context)
+	};
+	llvm::StructType* s = llvm::StructType::get(context, members, false);
+	return s;
+*/
+
+}
+
+runtime_type_t make_runtime_type(int32_t itype){
+	return runtime_type_t{ itype };
+}
+
+
+
+
+
 ////////////////////////////////	native_value_t
 
 
-//??? lose now that we have runtime_value_t
-itype_t unpack_encoded_itype(encoded_native_value_t itype){
-	return itype_t(static_cast<uint32_t>(itype));
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto s = sizeof(runtime_value_t);
+	QUARK_UT_VERIFY(s == 8);
 }
 
-//??? lose now that we have runtime_value_t
-encoded_native_value_t pack_encoded_itype(const itype_t& itype){
-	return itype.itype;
+
+
+QUARK_UNIT_TEST("", "", "", ""){
+	auto y = make_runtime_int(8);
+	auto a = make_runtime_int(1234);
+
+	y = a;
+
+	runtime_value_t c(y);
 }
 
+
+llvm::Type* make_runtime_value_type(llvm::LLVMContext& context){
+	return llvm::Type::getInt64Ty(context);
+}
+
+
+runtime_value_t make_runtime_int(int64_t value){
+	return { .int_value = value };
+}
+runtime_value_t make_runtime_typeid(runtime_type_t type){
+	return { .typeid_itype = type };
+}
+runtime_value_t make_runtime_struct(void* struct_ptr){
+	return { .struct_ptr = struct_ptr };
+}
 
 
 
 
 //??? dont use llvm_execution_engine_t as argument, use type_interner.
-VEC_T* unpack_vec_arg(const type_interner_t& types, runtime_value_t arg_value, encoded_native_value_t arg_type){
+VEC_T* unpack_vec_arg(const type_interner_t& types, runtime_value_t arg_value, runtime_type_t arg_type){
 #if DEBUG
-	const auto type = lookup_type(types, unpack_encoded_itype(arg_type));
+	const auto type = lookup_type(types, arg_type);
 #endif
 	QUARK_ASSERT(type.is_vector());
 	QUARK_ASSERT(arg_value.vector_ptr != nullptr);
@@ -85,9 +129,9 @@ VEC_T* unpack_vec_arg(const type_interner_t& types, runtime_value_t arg_value, e
 	return arg_value.vector_ptr;
 }
 
-DICT_T* unpack_dict_arg(const type_interner_t& types, runtime_value_t arg_value, encoded_native_value_t arg_type){
+DICT_T* unpack_dict_arg(const type_interner_t& types, runtime_value_t arg_value, runtime_type_t arg_type){
 #if DEBUG
-	const auto type = lookup_type(types, unpack_encoded_itype(arg_type));
+	const auto type = lookup_type(types, arg_type);
 #endif
 	QUARK_ASSERT(type.is_dict());
 	QUARK_ASSERT(arg_value.dict_ptr != nullptr);
@@ -95,6 +139,16 @@ DICT_T* unpack_dict_arg(const type_interner_t& types, runtime_value_t arg_value,
 	QUARK_ASSERT(arg_value.dict_ptr->check_invariant());
 
 	return arg_value.dict_ptr;
+}
+
+
+
+typeid_t lookup_type(const type_interner_t& interner, const runtime_type_t& type){
+	const auto it = std::find_if(interner.interned.begin(), interner.interned.end(), [&](const std::pair<itype_t, typeid_t>& e){ return e.first.itype == type; });
+	if(it != interner.interned.end()){
+		return it->second;
+	}
+	throw std::exception();
 }
 
 
@@ -116,10 +170,6 @@ void UNSUPPORTED() {
 
 
 
-QUARK_UNIT_TEST("", "", "", ""){
-	const auto s = sizeof(runtime_value_t);
-	QUARK_UT_VERIFY(s == 8);
-}
 
 
 /*
@@ -325,7 +375,7 @@ llvm::StructType* make_wide_return_type(llvm::LLVMContext& context){
 	return s;
 }
 
-WIDE_RETURN_T make_wide_return_2x64(encoded_native_value_t a, encoded_native_value_t b){
+WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b){
 	return WIDE_RETURN_T{ a, b };
 }
 
@@ -390,7 +440,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 VEC_T make_vec(uint32_t element_count){
-	auto element_ptr = reinterpret_cast<encoded_native_value_t*>(std::calloc(element_count, sizeof(encoded_native_value_t)));
+	auto element_ptr = reinterpret_cast<runtime_value_t*>(std::calloc(element_count, sizeof(runtime_value_t)));
 	if(element_ptr == nullptr){
 		throw std::exception();
 	}
@@ -433,6 +483,7 @@ llvm::StructType* make_vec_type(llvm::LLVMContext& context){
 	return s;
 }
 
+/*
 llvm::Value* generate_vec_alloca(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue){
 	auto& context = builder.getContext();
 
@@ -440,7 +491,9 @@ llvm::Value* generate_vec_alloca(llvm::IRBuilder<>& builder, llvm::Value* vec_by
 	builder.CreateStore(vec_byvalue, alloc_value);
 	return alloc_value;
 }
+*/
 
+/*
 llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg){
 	auto& context = builder.getContext();
 
@@ -450,13 +503,15 @@ llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, ll
 	auto vec_reg = builder.CreateLoad(vec_ptr_reg, "final");
 	return vec_reg;
 }
-
-WIDE_RETURN_T make_wide_return_vec(const VEC_T& vec){
-	return *reinterpret_cast<const WIDE_RETURN_T*>(&vec);
+*/
+WIDE_RETURN_T make_wide_return_vec(VEC_T* vec){
+	return make_wide_return_2x64(runtime_value_t{.vector_ptr = vec}, runtime_value_t{.int_value = 0});
+//	return *reinterpret_cast<const WIDE_RETURN_T*>(&vec);
 }
 
-VEC_T wider_return_to_vec(const WIDE_RETURN_T& ret){
-	return *reinterpret_cast<const VEC_T*>(&ret);
+VEC_T* wider_return_to_vec(const WIDE_RETURN_T& ret){
+	return ret.a.vector_ptr;
+//	return *reinterpret_cast<const VEC_T*>(&ret);
 }
 
 
@@ -499,6 +554,7 @@ llvm::StructType* make_dict_type(llvm::LLVMContext& context){
 	return s;
 }
 
+/*
 llvm::Value* generate_dict_alloca(llvm::IRBuilder<>& builder, llvm::Value* dict_reg){
 	auto& context = builder.getContext();
 
@@ -516,13 +572,16 @@ llvm::Value* generate__convert_wide_return_to_dict(llvm::IRBuilder<>& builder, l
 	auto dict_reg = builder.CreateLoad(dict_ptr_reg, "final");
 	return dict_reg;
 }
+*/
 
-WIDE_RETURN_T make_wide_return_dict(const DICT_T& dict){
-	return *reinterpret_cast<const WIDE_RETURN_T*>(&dict);
+WIDE_RETURN_T make_wide_return_dict(DICT_T* dict){
+	return make_wide_return_2x64({ .dict_ptr = dict }, { .int_value = 0 });
+//	return *reinterpret_cast<const WIDE_RETURN_T*>(&dict);
 }
 
-DICT_T wide_return_to_dict(const WIDE_RETURN_T& ret){
-	return *reinterpret_cast<const DICT_T*>(&ret);
+DICT_T* wide_return_to_dict(const WIDE_RETURN_T& ret){
+	return ret.a.dict_ptr;
+//	return *reinterpret_cast<const DICT_T*>(&ret);
 }
 
 
@@ -636,8 +695,8 @@ llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const flo
 
 		//	For dynamic values, store its dynamic type as an extra argument.
 		if(arg.is_any()){
-			arg_results.push_back({ make_dyn_value_type(context), std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_dyn_value });
-			arg_results.push_back({ make_dyn_value_type_type(context), std::to_string(index), typeid_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
+			arg_results.push_back({ make_runtime_value_type(context), std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_dyn_value });
+			arg_results.push_back({ make_runtime_type_type(context), std::to_string(index), typeid_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
 		}
 		else {
 			auto arg_itype = intern_type(context, arg);
@@ -745,10 +804,11 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int, DYN,
 	QUARK_UT_VERIFY(r.args[2].floyd_arg_index == 1);
 	QUARK_UT_VERIFY(r.args[2].map_type == llvm_arg_mapping_t::map_type::k_dyn_value);
 
-	QUARK_UT_VERIFY(r.args[3].llvm_type->isIntegerTy(64));
+	QUARK_UT_VERIFY(r.args[3].llvm_type->isIntegerTy(32));
 	QUARK_UT_VERIFY(r.args[3].floyd_name == "1");
 	QUARK_UT_VERIFY(r.args[3].floyd_type.is_undefined());
-	QUARK_UT_VERIFY(r.args[3].floyd_arg_index == 1);QUARK_UT_VERIFY(r.args[3].map_type == llvm_arg_mapping_t::map_type::k_dyn_type);
+	QUARK_UT_VERIFY(r.args[3].floyd_arg_index == 1);
+	QUARK_UT_VERIFY(r.args[3].map_type == llvm_arg_mapping_t::map_type::k_dyn_type);
 
 	QUARK_UT_VERIFY(r.args[4].llvm_type->isIntegerTy(1));
 	QUARK_UT_VERIFY(r.args[4].floyd_name == "2");
@@ -811,13 +871,13 @@ llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type){
 		return llvm::Type::getInt16PtrTy(context);
 	}
 	else if(type.is_vector()){
-		return make_vec_type(context);
+		return make_vec_type(context)->getPointerTo();
 	}
 	else if(type.is_dict()){
-		return make_dict_type(context);
+		return make_dict_type(context)->getPointerTo();
 	}
 	else if(type.is_typeid()){
-		return llvm::Type::getInt32Ty(context);
+		return make_runtime_type_type(context);
 	}
 	else if(type.is_undefined()){
 		return llvm::Type::getInt16Ty(context);
@@ -834,7 +894,7 @@ llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type){
 	}
 
 	else if(type.is_any()){
-		return make_dyn_value_type(context);
+		return make_runtime_value_type(context);
 	}
 	else if(type.is_function()){
 		return make_function_type(context, type);

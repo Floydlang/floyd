@@ -132,6 +132,7 @@ typeid_t lookup_type(const type_interner_t& interner, const itype_t& type){
 
 
 
+
 json_t gp_ast_to_json(const general_purpose_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 

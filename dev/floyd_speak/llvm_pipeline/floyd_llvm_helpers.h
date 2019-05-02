@@ -22,12 +22,26 @@ struct DICT_T;
 struct type_interner_t;
 
 
+
+
+////////////////////////////////	runtime_type_t
+
+
+typedef int32_t runtime_type_t;
+
+llvm::Type* make_runtime_type_type(llvm::LLVMContext& context);
+
+runtime_type_t make_runtime_type(int32_t itype);
+
+
+
+typeid_t lookup_type(const type_interner_t& interner, const runtime_type_t& type);
+
+
+
+
 ////////////////////////////////	native_value_t
 
-
-typedef uint64_t encoded_native_value_t;
-//??? should be 32bit
-typedef uint64_t dyn_value_type_argument_t;
 
 
 //	Native, runtime value, as used by x86 code when running optimized program. Executing.
@@ -36,7 +50,7 @@ typedef uint64_t dyn_value_type_argument_t;
 union runtime_value_t {
 	uint64_t bool_value;
 	int64_t int_value;
-	uint32_t typeid_itype;
+	int32_t typeid_itype;
 	double double_value;
 	char* string_ptr;
 	VEC_T* vector_ptr;
@@ -46,30 +60,17 @@ union runtime_value_t {
 	void* function_ptr;
 };
 
-inline runtime_value_t make_native_int(int64_t value){
-	return { .int_value = value };
-}
 
-itype_t unpack_encoded_itype(encoded_native_value_t itype);
-encoded_native_value_t pack_encoded_itype(const itype_t& itype);
+llvm::Type* make_runtime_value_type(llvm::LLVMContext& context);
 
 
-//??? these are casts, rename them!
-inline runtime_value_t runtime_value_from_uint64(uint64_t v){
-	QUARK_ASSERT(sizeof(uint64_t) == sizeof(runtime_value_t));
-	runtime_value_t v2 = *(runtime_value_t*)&v;
-	return v2;
-}
-inline uint64_t runtime_value_to_uint64(runtime_value_t v){
-	QUARK_ASSERT(sizeof(uint64_t) == sizeof(runtime_value_t));
-	uint64_t v2 = *(uint64_t*)&v;
-	return v2;
-}
+runtime_value_t make_runtime_int(int64_t value);
+runtime_value_t make_runtime_typeid(runtime_type_t type);
+runtime_value_t make_runtime_struct(void* struct_ptr);
 
 
-
-VEC_T* unpack_vec_arg(const type_interner_t& types, runtime_value_t arg_value, encoded_native_value_t arg_type);
-DICT_T* unpack_dict_arg(const type_interner_t& types, runtime_value_t arg_value, encoded_native_value_t arg_type);
+VEC_T* unpack_vec_arg(const type_interner_t& types, runtime_value_t arg_value, runtime_type_t arg_type);
+DICT_T* unpack_dict_arg(const type_interner_t& types, runtime_value_t arg_value, runtime_type_t arg_type);
 
 
 
@@ -173,7 +174,7 @@ std::string print_value(llvm::Value* value);
 
 ////////////////////////////////	floyd_runtime_ptr
 
-
+/*
 inline llvm::Type* make_encoded_native_value_type(llvm::LLVMContext& context){
 	return llvm::Type::getInt64Ty(context);
 }
@@ -188,7 +189,7 @@ inline llvm::Type* make_dyn_value_type(llvm::LLVMContext& context){
 inline llvm::Type* make_dyn_value_type_type(llvm::LLVMContext& context){
 	return llvm::Type::getInt64Ty(context);
 }
-
+*/
 
 
 
@@ -213,8 +214,8 @@ llvm::Type* make_frp_type(llvm::LLVMContext& context);
 
 //	??? Also use for arguments, not only return.
 struct WIDE_RETURN_T {
-	uint64_t a;
-	uint64_t b;
+	runtime_value_t a;
+	runtime_value_t b;
 };
 
 enum class WIDE_RETURN_MEMBERS {
@@ -225,7 +226,7 @@ enum class WIDE_RETURN_MEMBERS {
 
 llvm::StructType* make_wide_return_type(llvm::LLVMContext& context);
 
-WIDE_RETURN_T make_wide_return_2x64(encoded_native_value_t a, encoded_native_value_t b);
+WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
 WIDE_RETURN_T make_wide_return_charptr(const char* s);
 WIDE_RETURN_T make_wide_return_structptr(const void* s);
 
@@ -251,7 +252,7 @@ WIDE_RETURN_T make_wide_return_structptr(const void* s);
 		calloc(alloc_count, sizeof(uint64_t))
 */
 struct VEC_T {
-	encoded_native_value_t* element_ptr;
+	runtime_value_t* element_ptr;
 	uint32_t element_count;
 	uint16_t magic;
 	uint16_t element_bits;
@@ -271,7 +272,7 @@ struct VEC_T {
 
 		return element_count;
 	}
-	inline uint64_t operator[](const uint32_t index) const {
+	inline runtime_value_t operator[](const uint32_t index) const {
 		QUARK_ASSERT(check_invariant());
 
 		return element_ptr[index];
@@ -294,15 +295,15 @@ enum class VEC_T_MEMBERS {
 //	Makes a type for VEC_T.
 llvm::StructType* make_vec_type(llvm::LLVMContext& context);
 
-llvm::Value* generate_vec_alloca(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue);
+//llvm::Value* generate_vec_alloca(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue);
 
 //	LLVM can't cast a struct-value to another struct value - need to store on stack and cast pointer instead.
 //	Store the DYN to memory, then cast it to VEC and load it again.
-llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg);
+//llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg);
 
 
-WIDE_RETURN_T make_wide_return_vec(const VEC_T& vec);
-VEC_T wider_return_to_vec(const WIDE_RETURN_T& ret);
+WIDE_RETURN_T make_wide_return_vec(VEC_T* vec);
+VEC_T* wider_return_to_vec(const WIDE_RETURN_T& ret);
 //??? wide, not wider
 
 
@@ -317,7 +318,7 @@ VEC_T wider_return_to_vec(const WIDE_RETURN_T& ret);
 */
 
 struct DICT_BODY_T {
-	std::map<std::string, uint64_t> map;
+	std::map<std::string, runtime_value_t> map;
 };
 
 struct DICT_T {
@@ -348,13 +349,13 @@ enum class DICT_T_MEMBERS {
 //	Makes a type for DICT_T.
 llvm::StructType* make_dict_type(llvm::LLVMContext& context);
 
-llvm::Value* generate_dict_alloca(llvm::IRBuilder<>& builder, llvm::Value* dict_reg);
+//llvm::Value* generate_dict_alloca(llvm::IRBuilder<>& builder, llvm::Value* dict_reg);
 
 //	LLVM can't cast a struct-value to another struct value - need to store on stack and cast pointer instead.
-llvm::Value* generate__convert_wide_return_to_dict(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg);
+//llvm::Value* generate__convert_wide_return_to_dict(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg);
 
-WIDE_RETURN_T make_wide_return_dict(const DICT_T& dict);
-DICT_T wide_return_to_dict(const WIDE_RETURN_T& ret);
+WIDE_RETURN_T make_wide_return_dict(DICT_T* dict);
+DICT_T* wide_return_to_dict(const WIDE_RETURN_T& ret);
 
 
 
