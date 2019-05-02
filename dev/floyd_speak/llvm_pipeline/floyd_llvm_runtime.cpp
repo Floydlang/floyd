@@ -142,14 +142,10 @@ value_t llvm_global_to_value(const llvm_execution_engine_t& runtime, const void*
 }
 
 
-
-
-//??? Lose concept of "encoded" value ASAP.
-
 value_t runtime_value_to_floyd(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
-	//??? more types.
+	//??? more types. Use visitor.
 	if(type.is_undefined()){
 		NOT_IMPLEMENTED_YET();
 	}
@@ -186,13 +182,11 @@ value_t runtime_value_to_floyd(const llvm_execution_engine_t& runtime, const run
 		auto t2 = make_struct_type(runtime.instance->context, type);
 		const llvm::DataLayout& data_layout = runtime.ee->getDataLayout();
 		const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
+		const auto struct_base_ptr = reinterpret_cast<const uint8_t*>(encoded_value.struct_ptr);
 		for(const auto& e: struct_def._members){
 			const auto offset = layout->getElementOffset(member_index);
-			const auto member_ptr = reinterpret_cast<const void*>((uint8_t*)encoded_value.struct_ptr + offset);
-
-
-			//??? don't use llvm_valueptr_to_value() for this!
-			const auto member_value = llvm_valueptr_to_value(runtime, member_ptr, e._type);
+			const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
+			const auto member_value = runtime_value_to_floyd(runtime, *member_ptr, e._type);
 			members.push_back(member_value);
 			member_index++;
 		}
@@ -312,8 +306,8 @@ value_t runtime_value_to_floyd(const llvm_execution_engine_t& runtime, const run
 
 
 
-//??? IMPORTANT: The value can be a global variable of various sizes, for example a BYTE. We cannot dereference pointer as a uint64*!!
-//??? IMPORTANT: Make this function return a shallow runtime_value_t, no deep unpacking. Make deep unpacking to value_t separate!
+// IMPORTANT: The value can be a global variable of various sizes, for example a BYTE. We cannot dereference pointer as a uint64*!!
+
 
 //??? Use visitor for typeid
 //??? rename runtime_*
@@ -1203,7 +1197,7 @@ void floyd_host_function_1017(void* floyd_runtime_ptr, runtime_value_t arg){
 
 
 
-VEC_T* valuevec_to_vec(const value_t& v){
+VEC_T* valuevec_to_vec(const value_t& v){//????????????????????? delete
 	QUARK_ASSERT(v.get_type().is_vector());
 
 	//??? Limited to int-vectors!

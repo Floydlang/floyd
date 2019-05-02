@@ -48,7 +48,6 @@ const bool k_trace_types = false;
 #include <vector>
 #include <iostream>
 
-//??? split host_functions.h into defintions vs inmplementation for bc-interpreter.
 #include "host_functions.h"
 
 #include "compiler_basics.h"
@@ -508,8 +507,6 @@ static llvm::Value* generate_allocate_memory(llvm_code_generator_t& gen_acc, llv
 }
 
 //	Makes constant from a Floyd value.
-
-//	??? => generate_constant_reg()
 llvm::Constant* generate_constant(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const value_t& value){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
@@ -1598,9 +1595,9 @@ static gen_statement_mode generate_ifelse_statement(llvm_code_generator_t& gen_a
 
 
 		start_value = start_expression
-		???
+		...
 		end_value = end_expression
-		???
+		...
 		store start_value in ITERATOR
 		if start_value < end_value { goto for-loop } else { goto for-end }
 

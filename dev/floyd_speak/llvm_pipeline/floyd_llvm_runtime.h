@@ -85,7 +85,6 @@ typedef int64_t (*FLOYD_RUNTIME_INIT)(void* floyd_runtime_ptr);
 typedef void (*FLOYD_RUNTIME_HOST_FUNCTION)(void* floyd_runtime_ptr, int64_t arg);
 
 
-//??? How to do this?
 typedef runtime_value_t (*FLOYD_RUNTIME_F)(void* floyd_runtime_ptr, const char* args);
 
 
