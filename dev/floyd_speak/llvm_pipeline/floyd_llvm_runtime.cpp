@@ -2191,8 +2191,14 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, dyn_value_arg
 	}
 }
 
-void floyd_host_function_1035(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+int16_t* floyd_funcdef__value_to_jsonvalue(void* floyd_runtime_ptr, dyn_value_argument_t arg0_value, int64_t arg0_type){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type0 = lookup_type(r.type_interner, unpack_encoded_itype(arg0_type));
+	const auto value0 = runtime_llvm_to_value(r, arg0_value, type0);
+	const auto j = value_to_ast_json(value0, json_tags::k_plain);
+	auto result = new json_t(j);
+	return reinterpret_cast<int16_t*>(result);
 }
 
 void floyd_host_function_1036(void* floyd_runtime_ptr, int64_t arg){
@@ -2269,7 +2275,7 @@ std::map<std::string, void*> get_host_functions_map2(){
 		{ "floyd_funcdef__to_string", reinterpret_cast<void *>(&floyd_host__to_string) },
 		{ "floyd_funcdef__typeof", reinterpret_cast<void *>(&floyd_host__typeof) },
 		{ "floyd_funcdef__update", reinterpret_cast<void *>(&floyd_funcdef__update) },
-		{ "floyd_funcdef__value_to_jsonvalue", reinterpret_cast<void *>(&floyd_host_function_1035) },
+		{ "floyd_funcdef__value_to_jsonvalue", reinterpret_cast<void *>(&floyd_funcdef__value_to_jsonvalue) },
 		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&floyd_host_function_1036) }
 	};
 	return host_functions_map;
