@@ -259,7 +259,8 @@ int64_t pack_itype(const llvm_code_generator_t& gen, const typeid_t& type){
 
 
 /*
-????????  static StructType *create(ArrayRef<Type *> Elements, StringRef Name, bool isPacked = false);
+Named struct types:
+???		static StructType *create(ArrayRef<Type *> Elements, StringRef Name, bool isPacked = false);
 */
 
 static size_t get_struct_info____keep_for_copypaste(const llvm::DataLayout& data_layout, llvm::Type& type, int member_index){

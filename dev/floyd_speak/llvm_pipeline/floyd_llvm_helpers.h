@@ -94,30 +94,7 @@ struct llvm_instance_t {
 
 
 
-//	LLVM-functions pass GENs as two 64bit arguments.
-//	Return: First is the type of the value. Second is tells if
 /*
-std::pair<llvm::Type*, bool> intern_type_generics(llvm::Module& module, const typeid_t& type){
-	QUARK_ASSERT(type.check_invariant());
-	QUARK_ASSERT(type.is_function() == false);
-
-	auto& context = module.getContext();
-
-	if(type.is_any()){
-		return { llvm::Type::getIntNTy(context, 64), llvm::Type::getIntNTy(context, 64) };
-	}
-	else{
-		return { intern_type(module, type), nullptr };
-	}
-}
-*/
-
-
-/*
-
-
-
-
 First-class values
 
 LLVM has a distinction between first class values and other types of values.
@@ -139,27 +116,6 @@ The non-first-class types are:
   9. Label
 */
 
-/*
-	FLOYD ARGS				LLVM ARGS
-	----------				--------------------
-							int32*		"floyd_runtime_ptr"
-	int icecreams			int			icecreams
-	----------				--------------------
-							int32*		"floyd_runtime_ptr"
-	string nick				int8*		nick
-	----------				--------------------
-							int32*		"floyd_runtime_ptr"
-	DYN val					int64_t		val-DYNVAL
-							int64_t		val-typei
-	----------				--------------------
-							int32*		"floyd_runtime_ptr"
-	int icecreams			int			icecreams
-	DYN val					int64_t		val-dynval
-							int64_t		val-type
-	string nick				int8*		nick
-
-*/
-
 
 bool check_invariant__function(const llvm::Function* f);
 bool check_invariant__module(llvm::Module* module);
@@ -169,27 +125,6 @@ std::string print_module(llvm::Module& module);
 std::string print_type(llvm::Type* type);
 std::string print_function(const llvm::Function* f);
 std::string print_value(llvm::Value* value);
-
-
-
-////////////////////////////////	floyd_runtime_ptr
-
-/*
-inline llvm::Type* make_encoded_native_value_type(llvm::LLVMContext& context){
-	return llvm::Type::getInt64Ty(context);
-}
-
-
-inline llvm::Type* make_dyn_value_type(llvm::LLVMContext& context){
-	return llvm::Type::getInt64Ty(context);
-}
-
-
-
-inline llvm::Type* make_dyn_value_type_type(llvm::LLVMContext& context){
-	return llvm::Type::getInt64Ty(context);
-}
-*/
 
 
 
@@ -212,7 +147,7 @@ llvm::Type* make_frp_type(llvm::LLVMContext& context);
 //	Can only be two members in LLVM struct, each a word wide.
 
 
-//	??? Also use for arguments, not only return.
+//	### Also use for arguments, not only return.
 struct WIDE_RETURN_T {
 	runtime_value_t a;
 	runtime_value_t b;
@@ -295,16 +230,9 @@ enum class VEC_T_MEMBERS {
 //	Makes a type for VEC_T.
 llvm::StructType* make_vec_type(llvm::LLVMContext& context);
 
-//llvm::Value* generate_vec_alloca(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue);
-
-//	LLVM can't cast a struct-value to another struct value - need to store on stack and cast pointer instead.
-//	Store the DYN to memory, then cast it to VEC and load it again.
-//llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg);
-
 
 WIDE_RETURN_T make_wide_return_vec(VEC_T* vec);
-VEC_T* wider_return_to_vec(const WIDE_RETURN_T& ret);
-//??? wide, not wider
+VEC_T* wide_return_to_vec(const WIDE_RETURN_T& ret);
 
 
 

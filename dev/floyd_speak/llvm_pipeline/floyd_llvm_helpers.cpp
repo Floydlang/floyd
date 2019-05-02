@@ -115,9 +115,6 @@ runtime_value_t make_runtime_struct(void* struct_ptr){
 }
 
 
-
-
-//??? dont use llvm_execution_engine_t as argument, use type_interner.
 VEC_T* unpack_vec_arg(const type_interner_t& types, runtime_value_t arg_value, runtime_type_t arg_type){
 #if DEBUG
 	const auto type = lookup_type(types, arg_type);
@@ -233,8 +230,6 @@ bool check_invariant__function(const llvm::Function* f){
 
 		QUARK_TRACE_SS("================================================================================");
 		QUARK_TRACE_SS("\n" << dump);
-
-//??? print("") and print(123) could be different functions.
 
 		QUARK_ASSERT(false);
 	}
@@ -380,11 +375,11 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b){
 }
 
 WIDE_RETURN_T make_wide_return_charptr(const char* s){
-	return WIDE_RETURN_T{ reinterpret_cast<uint64_t>(s), 0 };
+	return WIDE_RETURN_T{ { reinterpret_cast<uint64_t>(s) }, 0 };
 }
 
 WIDE_RETURN_T make_wide_return_structptr(const void* s){
-	return WIDE_RETURN_T{ reinterpret_cast<uint64_t>(s), 0 };
+	return WIDE_RETURN_T{ { reinterpret_cast<uint64_t>(s) }, 0 };
 }
 
 
@@ -483,35 +478,12 @@ llvm::StructType* make_vec_type(llvm::LLVMContext& context){
 	return s;
 }
 
-/*
-llvm::Value* generate_vec_alloca(llvm::IRBuilder<>& builder, llvm::Value* vec_byvalue){
-	auto& context = builder.getContext();
-
-	auto alloc_value = builder.CreateAlloca(make_vec_type(context));
-	builder.CreateStore(vec_byvalue, alloc_value);
-	return alloc_value;
-}
-*/
-
-/*
-llvm::Value* generate__convert_wide_return_to_vec(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg){
-	auto& context = builder.getContext();
-
-	auto wide_return_ptr_reg = builder.CreateAlloca(make_wide_return_type(context), nullptr, "temp_vec");
-	builder.CreateStore(wide_return_reg, wide_return_ptr_reg);
-	auto vec_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, wide_return_ptr_reg, make_vec_type(context)->getPointerTo(), "");
-	auto vec_reg = builder.CreateLoad(vec_ptr_reg, "final");
-	return vec_reg;
-}
-*/
 WIDE_RETURN_T make_wide_return_vec(VEC_T* vec){
 	return make_wide_return_2x64(runtime_value_t{.vector_ptr = vec}, runtime_value_t{.int_value = 0});
-//	return *reinterpret_cast<const WIDE_RETURN_T*>(&vec);
 }
 
-VEC_T* wider_return_to_vec(const WIDE_RETURN_T& ret){
+VEC_T* wide_return_to_vec(const WIDE_RETURN_T& ret){
 	return ret.a.vector_ptr;
-//	return *reinterpret_cast<const VEC_T*>(&ret);
 }
 
 
