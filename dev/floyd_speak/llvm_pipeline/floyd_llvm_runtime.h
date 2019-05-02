@@ -86,7 +86,7 @@ typedef void (*FLOYD_RUNTIME_HOST_FUNCTION)(void* floyd_runtime_ptr, int64_t arg
 
 
 //??? How to do this?
-typedef encoded_native_value_t (*FLOYD_RUNTIME_F)(void* floyd_runtime_ptr, const char* args);
+typedef runtime_value_t (*FLOYD_RUNTIME_F)(void* floyd_runtime_ptr, const char* args);
 
 
 const function_def_t& find_function_def2(const std::vector<function_def_t>& function_defs, const std::string& function_name);

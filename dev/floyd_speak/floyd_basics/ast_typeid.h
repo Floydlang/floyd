@@ -108,6 +108,17 @@ int find_struct_member_index(const struct_definition_t& def, const std::string& 
 
 
 
+//////////////////////////////////////////////////		itype_t
+
+
+struct itype_t {
+	itype_t(int32_t itype) : itype(itype){}
+
+	int32_t itype;
+};
+
+
+
 enum class epure {
 	pure,
 	impure

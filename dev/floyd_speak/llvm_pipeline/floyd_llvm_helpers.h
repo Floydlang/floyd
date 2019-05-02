@@ -13,8 +13,68 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 
+struct json_t;
+
 namespace floyd {
 
+struct VEC_T;
+struct DICT_T;
+struct type_interner_t;
+
+
+////////////////////////////////	native_value_t
+
+
+typedef uint64_t encoded_native_value_t;
+//??? should be 32bit
+typedef uint64_t dyn_value_type_argument_t;
+
+
+//	Native, runtime value, as used by x86 code when running optimized program. Executing.
+
+//	64 bits
+union runtime_value_t {
+	uint64_t bool_value;
+	int64_t int_value;
+	uint32_t typeid_itype;
+	double double_value;
+	char* string_ptr;
+	VEC_T* vector_ptr;
+	DICT_T* dict_ptr;
+	json_t* json_ptr;
+	void* struct_ptr;
+	void* function_ptr;
+};
+
+inline runtime_value_t make_native_int(int64_t value){
+	return { .int_value = value };
+}
+
+itype_t unpack_encoded_itype(encoded_native_value_t itype);
+encoded_native_value_t pack_encoded_itype(const itype_t& itype);
+
+
+//??? these are casts, rename them!
+inline runtime_value_t runtime_value_from_uint64(uint64_t v){
+	QUARK_ASSERT(sizeof(uint64_t) == sizeof(runtime_value_t));
+	runtime_value_t v2 = *(runtime_value_t*)&v;
+	return v2;
+}
+inline uint64_t runtime_value_to_uint64(runtime_value_t v){
+	QUARK_ASSERT(sizeof(uint64_t) == sizeof(runtime_value_t));
+	uint64_t v2 = *(uint64_t*)&v;
+	return v2;
+}
+
+
+
+VEC_T* unpack_vec_arg(const type_interner_t& types, runtime_value_t arg_value, encoded_native_value_t arg_type);
+DICT_T* unpack_dict_arg(const type_interner_t& types, runtime_value_t arg_value, encoded_native_value_t arg_type);
+
+
+
+
+////////////////////////////////	MISSING FEATURES
 
 
 
@@ -110,22 +170,20 @@ std::string print_function(const llvm::Function* f);
 std::string print_value(llvm::Value* value);
 
 
+
 ////////////////////////////////	floyd_runtime_ptr
 
-typedef uint64_t encoded_native_value_t;
+
 inline llvm::Type* make_encoded_native_value_type(llvm::LLVMContext& context){
 	return llvm::Type::getInt64Ty(context);
 }
 
-typedef uint64_t dyn_value_argument_t;
 
 inline llvm::Type* make_dyn_value_type(llvm::LLVMContext& context){
 	return llvm::Type::getInt64Ty(context);
 }
 
 
-//??? should be 32bit
-typedef uint64_t dyn_value_type_argument_t;
 
 inline llvm::Type* make_dyn_value_type_type(llvm::LLVMContext& context){
 	return llvm::Type::getInt64Ty(context);

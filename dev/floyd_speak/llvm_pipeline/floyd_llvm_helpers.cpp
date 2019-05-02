@@ -53,6 +53,58 @@
 
 namespace floyd {
 
+
+
+
+////////////////////////////////	native_value_t
+
+
+//??? lose now that we have runtime_value_t
+itype_t unpack_encoded_itype(encoded_native_value_t itype){
+	return itype_t(static_cast<uint32_t>(itype));
+}
+
+//??? lose now that we have runtime_value_t
+encoded_native_value_t pack_encoded_itype(const itype_t& itype){
+	return itype.itype;
+}
+
+
+
+
+
+//??? dont use llvm_execution_engine_t as argument, use type_interner.
+VEC_T* unpack_vec_arg(const type_interner_t& types, runtime_value_t arg_value, encoded_native_value_t arg_type){
+#if DEBUG
+	const auto type = lookup_type(types, unpack_encoded_itype(arg_type));
+#endif
+	QUARK_ASSERT(type.is_vector());
+	QUARK_ASSERT(arg_value.vector_ptr != nullptr);
+	QUARK_ASSERT(arg_value.vector_ptr->check_invariant());
+
+	return arg_value.vector_ptr;
+}
+
+DICT_T* unpack_dict_arg(const type_interner_t& types, runtime_value_t arg_value, encoded_native_value_t arg_type){
+#if DEBUG
+	const auto type = lookup_type(types, unpack_encoded_itype(arg_type));
+#endif
+	QUARK_ASSERT(type.is_dict());
+	QUARK_ASSERT(arg_value.dict_ptr != nullptr);
+
+	QUARK_ASSERT(arg_value.dict_ptr->check_invariant());
+
+	return arg_value.dict_ptr;
+}
+
+
+
+
+////////////////////////////////	MISSING FEATURES
+
+
+
+
 void NOT_IMPLEMENTED_YET() {
 	throw std::exception();
 }
@@ -60,6 +112,13 @@ void NOT_IMPLEMENTED_YET() {
 void UNSUPPORTED() {
 	QUARK_ASSERT(false);
 	throw std::exception();
+}
+
+
+
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto s = sizeof(runtime_value_t);
+	QUARK_UT_VERIFY(s == 8);
 }
 
 

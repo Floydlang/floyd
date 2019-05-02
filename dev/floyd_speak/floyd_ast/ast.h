@@ -21,14 +21,9 @@ namespace floyd {
 
 
 
-	//////////////////////////////////////////////////		itype_t
+	//////////////////////////////////////////////////		type_interner_t
 
 
-	struct itype_t {
-		itype_t(int32_t itype) : itype(itype){}
-
-		int32_t itype;
-	};
 
 
 	//	Assigns 32bit ID to types. You can lookup the type using the ID.
