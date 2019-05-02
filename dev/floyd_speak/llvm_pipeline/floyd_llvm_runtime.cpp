@@ -1218,8 +1218,8 @@ VEC_T* valuevec_to_vec(const value_t& v){
 	return new VEC_T(vec3);
 }
 
-
-
+//??? test map() with complex types of values
+//??? map() and other functions should be select at compile time, not runtime!
 	typedef WIDE_RETURN_T (*map_callback_t)(void* floyd_runtime_ptr, runtime_value_t arg0_value);
 
 WIDE_RETURN_T floyd_funcdef__map(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
@@ -1251,27 +1251,13 @@ WIDE_RETURN_T floyd_funcdef__map(void* floyd_runtime_ptr, runtime_value_t arg0_v
 
 	const auto f = reinterpret_cast<map_callback_t>(arg1_value.function_ptr);
 
-	const auto input_vec0 = runtime_value_to_floyd(r, arg0_value, type0);
-	const auto input_vec = input_vec0.get_vector_value();
-	std::vector<value_t> vec2;
-	for(const auto& e: input_vec){
-		if(input_element_type.is_int()){
-			const auto encoded_value = e.get_int_value();
-			const auto wide_result1 = (*f)(floyd_runtime_ptr, make_runtime_int(encoded_value));
-			if(output_element_type.is_int()){
-			//??? limited to integers
-				vec2.push_back(value_t::make_int(wide_result1.a.int_value));
-			}
-			else{
-			}
-
-		}
-		else{
-			NOT_IMPLEMENTED_YET();
-		}
+	auto count = arg0_value.vector_ptr->element_count;
+	auto result_vec = new VEC_T(make_vec(count));
+	for(int i = 0 ; i < count ; i++){
+		const auto wide_result1 = (*f)(floyd_runtime_ptr, arg0_value.vector_ptr->element_ptr[i]);
+		result_vec->element_ptr[i] = wide_result1.a;
 	}
-	const auto result = value_t::make_vector_value(r_type, vec2);
-	return make_wide_return_vec(valuevec_to_vec(result));
+	return make_wide_return_vec(result_vec);
 }
 
 void floyd_host_function_1019(void* floyd_runtime_ptr, runtime_value_t arg){
