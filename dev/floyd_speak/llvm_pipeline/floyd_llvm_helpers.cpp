@@ -148,6 +148,10 @@ typeid_t lookup_type(const type_interner_t& interner, const runtime_type_t& type
 	throw std::exception();
 }
 
+runtime_type_t lookup_runtime_type(const type_interner_t& interner, const typeid_t& type){
+	const auto a = lookup_itype(interner, type);
+	return make_runtime_type(a.itype);
+}
 
 
 

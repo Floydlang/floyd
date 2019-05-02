@@ -1292,9 +1292,52 @@ void floyd_host_function_1022(void* floyd_runtime_ptr, runtime_value_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-void floyd_host_function_1023(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+
+
+//		make_rec("reduce", host__reduce, 1035, typeid_t::make_function_dyn_return({ DYN, DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg1)),
+
+	typedef runtime_value_t (*REDUCE_F)(void* floyd_runtime_ptr, runtime_value_t acc_value, runtime_value_t element_value);
+
+//	R map([E] elements, R init, R f(R acc, E e))
+WIDE_RETURN_T floyd_funcdef__reduce(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type0 = lookup_type(r.type_interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner, arg1_type);
+	const auto type2 = lookup_type(r.type_interner, arg2_type);
+
+	if(type0.is_vector() == false || type2.is_function() == false || type2.get_function_args().size () != 2){
+		quark::throw_runtime_error("reduce() parameter error.");
+	}
+
+	const auto& vec = *arg0_value.vector_ptr;
+	const auto& init = arg1_value;
+	const auto f = reinterpret_cast<REDUCE_F>(arg2_value.function_ptr);
+
+/*
+	if(
+		elements._type.get_vector_element_type() != f._type.get_function_args()[1]
+		&& init._type != f._type.get_function_args()[0]
+	)
+	{
+		quark::throw_runtime_error("R reduce([E] elements, R init_value, R (R acc, E element) f");
+	}
+*/
+
+	const auto e_type = lookup_runtime_type(r.type_interner, type0.get_vector_element_type());
+	const auto r_type = lookup_runtime_type(r.type_interner, type2.get_function_return());
+
+	auto count = vec.element_count;
+
+	runtime_value_t acc = init;
+	for(int i = 0 ; i < count ; i++){
+		const auto element_value = vec.element_ptr[i];
+		const auto acc2 = (*f)(floyd_runtime_ptr, acc, element_value);
+		acc = acc2;
+	}
+	return make_wide_return_2x64(acc, {} );
 }
+
 
 void floyd_host_function_1024(void* floyd_runtime_ptr, runtime_value_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
@@ -1705,7 +1748,7 @@ std::map<std::string, void*> get_host_functions_map2(){
 		{ "floyd_funcdef__print", reinterpret_cast<void *>(&floyd_funcdef__print) },
 		{ "floyd_funcdef__push_back", reinterpret_cast<void *>(&floyd_funcdef__push_back) },
 		{ "floyd_funcdef__read_text_file", reinterpret_cast<void *>(&floyd_host_function_1022) },
-		{ "floyd_funcdef__reduce", reinterpret_cast<void *>(&floyd_host_function_1023) },
+		{ "floyd_funcdef__reduce", reinterpret_cast<void *>(&floyd_funcdef__reduce) },
 		{ "floyd_funcdef__rename_fsentry", reinterpret_cast<void *>(&floyd_host_function_1024) },
 		{ "floyd_funcdef__replace", reinterpret_cast<void *>(&floyd_funcdef__replace) },
 		{ "floyd_funcdef__script_to_jsonvalue", reinterpret_cast<void *>(&floyd_funcdef__script_to_jsonvalue) },
