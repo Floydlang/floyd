@@ -3772,7 +3772,7 @@ QUARK_UNIT_TEST("Floyd test suite", "value_to_jsonvalue()", "{}", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "value_to_jsonvalue()", "pixel_t", ""){
+QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_script()", "pixel_t", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -3787,7 +3787,7 @@ QUARK_UNIT_TEST("Floyd test suite", "value_to_jsonvalue()", "pixel_t", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "value_to_jsonvalue()", "[pixel_t]", ""){
+QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_script()", "[pixel_t]", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(

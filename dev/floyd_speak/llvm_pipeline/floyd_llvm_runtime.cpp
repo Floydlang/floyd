@@ -31,6 +31,7 @@
 
 #include "llvm/Bitcode/BitstreamWriter.h"
 
+#include "text_parser.h"
 
 namespace floyd {
 
@@ -1896,8 +1897,14 @@ const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, dyn_value_ar
 	}
 }
 
-void floyd_host_function_1026(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+int16_t* floyd_funcdef__script_to_jsonvalue(void* floyd_runtime_ptr, const char* string_s){
+	QUARK_ASSERT(string_s != nullptr);
+
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	std::pair<json_t, seq_t> result0 = parse_json(seq_t(string_s));
+	auto result = new json_t(result0.first);
+	return reinterpret_cast<int16_t*>(result);
 }
 
 void floyd_host_function_1027(void* floyd_runtime_ptr, int64_t arg){
@@ -2244,7 +2251,7 @@ std::map<std::string, void*> get_host_functions_map2(){
 		{ "floyd_funcdef__reduce", reinterpret_cast<void *>(&floyd_host_function_1023) },
 		{ "floyd_funcdef__rename_fsentry", reinterpret_cast<void *>(&floyd_host_function_1024) },
 		{ "floyd_funcdef__replace", reinterpret_cast<void *>(&floyd_funcdef__replace) },
-		{ "floyd_funcdef__script_to_jsonvalue", reinterpret_cast<void *>(&floyd_host_function_1026) },
+		{ "floyd_funcdef__script_to_jsonvalue", reinterpret_cast<void *>(&floyd_funcdef__script_to_jsonvalue) },
 		{ "floyd_funcdef__send", reinterpret_cast<void *>(&floyd_host_function_1027) },
 		{ "floyd_funcdef__size", reinterpret_cast<void *>(&floyd_funcdef__size) },
 		{ "floyd_funcdef__subset", reinterpret_cast<void *>(&floyd_funcdef__subset) },
