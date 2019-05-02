@@ -1235,6 +1235,7 @@ static void generate_fill_array(llvm_code_generator_t& gen_acc, llvm::Function& 
 */
 
 
+//??? Try storing vectors in vectors
 static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -1247,18 +1248,17 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 	const auto element_count = details.elements.size();
 
 	if(target_type.is_vector()){
-		//??? Try storing vectors in vectors
-
 		const auto element_type0 = target_type.get_vector_element_type();
 
 		auto vec_ptr_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
 		auto uint64_array_ptr_reg = generate_get_vec_element_ptr(gen_acc, emit_f, *vec_ptr_reg);
 
+		//??? support all types of elements.
 		if(element_type0.is_bool()){
 			//	Each element is a uint64_t ???
 			auto element_type = llvm::Type::getInt64Ty(context);
 			auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_array_ptr_reg, element_type->getPointerTo(), "");
-//?????????
+
 			//	Evaluate each element and store it directly into the the vector.
 			int element_index = 0;
 			for(const auto& arg: details.elements){
@@ -1317,7 +1317,6 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			return vec_value;
 		}
 */
-
 		}
 		else if(element_type0.is_string()){
 			//	Each string element is a char*.
@@ -1346,20 +1345,12 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			NOT_IMPLEMENTED_YET();
 		}
 	}
+
+	//??? All types of elements must be possible in a vector!
 	else if(target_type.is_dict()){
 		const auto element_type0 = target_type.get_dict_value_type();
-
 		auto dict_acc_ptr_reg = generate_alloc_dict(gen_acc, emit_f, typeid_to_compact_string(target_type));
-
 		auto value_itype = lookup_itype(gen_acc.interner, element_type0);
-
-/*
-			const auto itype = pack_itype(gen_acc, concrete_arg_type);
-			const auto packed_value = generate_cast_to_runtime_value(gen_acc, *arg2, concrete_arg_type);
-*/
-
-		auto value_type_reg = llvm::ConstantInt::get(make_runtime_type_type(context), value_itype.itype);
-
 		if(element_type0.is_int()){
 			//	Elements are stored as pairs.
 			QUARK_ASSERT((details.elements.size() & 1) == 0);
