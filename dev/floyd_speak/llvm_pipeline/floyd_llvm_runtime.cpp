@@ -39,7 +39,6 @@
 namespace floyd {
 
 
-value_t llvm_valueptr_to_value(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type);
 
 //	The names of these are computed from the host-id in the symbol table, not the names of the functions/symbols.
 //	They must use C calling convention so llvm JIT can find them.
@@ -48,9 +47,8 @@ void floyd_runtime__unresolved_func(void* floyd_runtime_ptr);
 
 llvm_execution_engine_t& get_floyd_runtime(void* floyd_runtime_ptr);
 
-value_t runtime_value_to_floyd(const llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type);
+value_t runtime_value_to_floyd(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type);
 
-value_t llvm_global_to_value(const llvm_execution_engine_t& runtime, const void* global_ptr, const typeid_t& type);
 
 
 const function_def_t& find_function_def2(const std::vector<function_def_t>& function_defs, const std::string& function_name){
@@ -125,22 +123,75 @@ std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::s
 	}
 }
 
+//??? Use visitor for typeid
+// IMPORTANT: The value can be a global variable of various sizes, for example a BYTE. We cannot dereference pointer as a uint64*!!
+value_t load_global_from_ptr(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type){
+	QUARK_ASSERT(runtime.check_invariant());
+	QUARK_ASSERT(value_ptr != nullptr);
+	QUARK_ASSERT(type.check_invariant());
+
+	//??? more types.
+	if(type.is_undefined()){
+	}
+	else if(type.is_bool()){
+		//??? How is int1 encoded by LLVM?
+		const auto temp = *static_cast<const uint8_t*>(value_ptr);
+		return value_t::make_bool(temp == 0 ? false : true);
+	}
+	else if(type.is_int()){
+		const auto temp = *static_cast<const uint64_t*>(value_ptr);
+		return value_t::make_int(temp);
+	}
+	else if(type.is_double()){
+		const auto temp = *static_cast<const double*>(value_ptr);
+		return value_t::make_double(temp);
+	}
+	else if(type.is_string()){
+		const char* s = *(const char**)(value_ptr);
+		return value_t::make_string(s);
+	}
+	else if(type.is_json_value()){
+		const json_t* json_ptr = *(const json_t**)(value_ptr);
+		if(json_ptr == nullptr){
+			return value_t::make_json_value(json_t());
+		}
+		else{
+			return value_t::make_json_value(*json_ptr);
+		}
+	}
+	else if(type.is_typeid()){
+		const auto value = *static_cast<const int32_t*>(value_ptr);
+		const auto runtime_type = make_runtime_type(value);
+		return runtime_value_to_floyd(runtime, make_runtime_typeid(runtime_type), type);
+	}
+	else if(type.is_struct()){
+		const auto struct_ptr_as_int = *reinterpret_cast<const uint64_t*>(value_ptr);
+		auto struct_ptr = reinterpret_cast<void*>(struct_ptr_as_int);
+		return runtime_value_to_floyd(runtime, make_runtime_struct(struct_ptr), type);
+	}
+	else if(type.is_vector()){
+		auto vec0 = *static_cast<const runtime_value_t*>(value_ptr);
+		return runtime_value_to_floyd(runtime, vec0, type);
+	}
+	else if(type.is_dict()){
+		NOT_IMPLEMENTED_YET();
+	}
+	else if(type.is_function()){
+		NOT_IMPLEMENTED_YET();
+	}
+	else{
+	}
+	NOT_IMPLEMENTED_YET();
+	QUARK_ASSERT(false);
+	throw std::exception();
+}
+
 value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v){
 	QUARK_ASSERT(v.first != nullptr);
 	QUARK_ASSERT(v.second.is_undefined() == false);
 
-	return llvm_global_to_value(ee, v.first, v.second);
+	return load_global_from_ptr(ee, v.first, v.second);
 }
-
-
-value_t llvm_global_to_value(const llvm_execution_engine_t& runtime, const void* global_ptr, const typeid_t& type){
-	QUARK_ASSERT(runtime.check_invariant());
-	QUARK_ASSERT(global_ptr != nullptr);
-	QUARK_ASSERT(type.check_invariant());
-
-	return llvm_valueptr_to_value(runtime, global_ptr, type);
-}
-
 
 value_t runtime_value_to_floyd(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
@@ -301,78 +352,6 @@ value_t runtime_value_to_floyd(const llvm_execution_engine_t& runtime, const run
 	QUARK_ASSERT(false);
 	throw std::exception();
 }
-
-
-
-
-
-// IMPORTANT: The value can be a global variable of various sizes, for example a BYTE. We cannot dereference pointer as a uint64*!!
-
-
-//??? Use visitor for typeid
-//??? rename runtime_*
-value_t llvm_valueptr_to_value(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type){
-	QUARK_ASSERT(runtime.check_invariant());
-	QUARK_ASSERT(value_ptr != nullptr);
-	QUARK_ASSERT(type.check_invariant());
-
-	//??? more types.
-	if(type.is_undefined()){
-	}
-	else if(type.is_bool()){
-		//??? How is int1 encoded by LLVM?
-		const auto temp = *static_cast<const uint8_t*>(value_ptr);
-		return value_t::make_bool(temp == 0 ? false : true);
-	}
-	else if(type.is_int()){
-		const auto temp = *static_cast<const uint64_t*>(value_ptr);
-		return value_t::make_int(temp);
-	}
-	else if(type.is_double()){
-		const auto temp = *static_cast<const double*>(value_ptr);
-		return value_t::make_double(temp);
-	}
-	else if(type.is_string()){
-		const char* s = *(const char**)(value_ptr);
-		return value_t::make_string(s);
-	}
-	else if(type.is_json_value()){
-		const json_t* json_ptr = *(const json_t**)(value_ptr);
-		if(json_ptr == nullptr){
-			return value_t::make_json_value(json_t());
-		}
-		else{
-			return value_t::make_json_value(*json_ptr);
-		}
-	}
-	else if(type.is_typeid()){
-		const auto value = *static_cast<const int32_t*>(value_ptr);
-		const auto runtime_type = make_runtime_type(value);
-		return runtime_value_to_floyd(runtime, make_runtime_typeid(runtime_type), type);
-	}
-	else if(type.is_struct()){
-		const auto struct_ptr_as_int = *reinterpret_cast<const uint64_t*>(value_ptr);
-		auto struct_ptr = reinterpret_cast<void*>(struct_ptr_as_int);
-		return runtime_value_to_floyd(runtime, make_runtime_struct(struct_ptr), type);
-	}
-	else if(type.is_vector()){
-		auto vec0 = *static_cast<const runtime_value_t*>(value_ptr);
-		return runtime_value_to_floyd(runtime, vec0, type);
-	}
-	else if(type.is_dict()){
-		NOT_IMPLEMENTED_YET();
-	}
-	else if(type.is_function()){
-		NOT_IMPLEMENTED_YET();
-	}
-	else{
-	}
-	NOT_IMPLEMENTED_YET();
-	QUARK_ASSERT(false);
-	throw std::exception();
-}
-
-
 
 
 
@@ -1103,9 +1082,6 @@ int64_t floyd_funcdef__find__string(llvm_execution_engine_t& floyd_runtime_ptr, 
 	return result;
 }
 
-
-//??? use int32 for types.
-
 int64_t floyd_funcdef__find(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, const runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
@@ -1196,24 +1172,9 @@ void floyd_host_function_1017(void* floyd_runtime_ptr, runtime_value_t arg){
 
 
 
-
-VEC_T* valuevec_to_vec(const value_t& v){//????????????????????? delete
-	QUARK_ASSERT(v.get_type().is_vector());
-
-	//??? Limited to int-vectors!
-	QUARK_ASSERT(v.get_type().get_vector_element_type().is_int());
-
-	const auto vec2 = v.get_vector_value();
-
-	VEC_T vec3 = make_vec((uint32_t)vec2.size());
-	for(int i = 0 ; i < vec2.size() ; i++){
-		vec3.element_ptr[i].int_value = vec2[i].get_int_value();
-	}
-	return new VEC_T(vec3);
-}
-
 //??? test map() with complex types of values
 //??? map() and other functions should be select at compile time, not runtime!
+
 	typedef WIDE_RETURN_T (*map_callback_t)(void* floyd_runtime_ptr, runtime_value_t arg0_value);
 
 WIDE_RETURN_T floyd_funcdef__map(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
@@ -1261,7 +1222,6 @@ void floyd_host_function_1019(void* floyd_runtime_ptr, runtime_value_t arg){
 
 
 
-//	??? Make visitor to handle different types.
 void floyd_funcdef__print(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 	const auto s = gen_to_string(r, arg0_value, arg0_type);
@@ -1501,7 +1461,7 @@ const char* floyd_host__to_string(void* floyd_runtime_ptr, runtime_value_t arg0_
 
 	const auto s = gen_to_string(r, arg0_value, arg0_type);
 
-	//??? leaks.
+	//??? leaks. Lose new(), calloc() strdup() etc.
 	return strdup(s.c_str());
 }
 
@@ -1518,6 +1478,7 @@ int32_t floyd_host__typeof(void* floyd_runtime_ptr, runtime_value_t arg0_value, 
 #endif
 	return arg0_type;
 }
+
 
 //	??? promote update() to a statement, rather than a function call. Replace all statement and expressions with function calls? LISP!
 //	???	Update of structs should resolve member-name at compile time, replace with index.
@@ -1561,42 +1522,20 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 		const auto element_type = type0.get_vector_element_type();
 		const auto index = arg1_value.int_value;
 
-		//??? do these on runtime_value_t, not specific types of elements.
-
-		if(element_type.is_string()){
-			if(type2.is_string() == false){
-				throw std::exception();
-			}
-			if(index < 0 || index >= vec->element_count){
-				throw std::runtime_error("Position argument to update() is outside collection span.");
-			}
-
-			auto result = make_vec(vec->element_count);
-			for(int i = 0 ; i < result.element_count ; i++){
-				result.element_ptr[i] = vec->element_ptr[i];
-			}
-			result.element_ptr[index] = arg2_value;
-			return make_wide_return_vec(new VEC_T(result));
+		if(element_type != type2){
+			throw std::runtime_error("New value's type must match vector's element type.");
 		}
-		else if(element_type.is_bool()){
-			if(type2.is_bool() == false){
-				throw std::exception();
-			}
 
-			if(index < 0 || index >= vec->element_count){
-				throw std::runtime_error("Position argument to update() is outside collection span.");
-			}
+		if(index < 0 || index >= vec->element_count){
+			throw std::runtime_error("Position argument to update() is outside collection span.");
+		}
 
-			auto result = make_vec(vec->element_count);
-			for(int i = 0 ; i < result.element_count ; i++){
-				result.element_ptr[i] = vec->element_ptr[i];
-			}
-			result.element_ptr[index] = arg2_value;
-			return make_wide_return_vec(new VEC_T(result));
+		auto result = make_vec(vec->element_count);
+		for(int i = 0 ; i < result.element_count ; i++){
+			result.element_ptr[i] = vec->element_ptr[i];
 		}
-		else{
-			NOT_IMPLEMENTED_YET();
-		}
+		result.element_ptr[index] = arg2_value;
+		return make_wide_return_vec(new VEC_T(result));
 	}
 	else if(type0.is_dict()){
 		if(type1.is_string() == false){
@@ -1635,7 +1574,6 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 
 		const auto member_value = runtime_value_to_floyd(r, arg2_value, type2);
 
-
 		//	Make copy of struct, overwrite member in copy.
  
 		auto& struct_type_llvm = *make_struct_type(context, type0);
@@ -1673,7 +1611,6 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 		return make_wide_return_structptr(reinterpret_cast<const void*>(struct_ptr));
 	}
 	else{
-		//??? same idea as UNSUPPORTED().
 		//	No other types allowed.
 		throw std::exception();
 	}

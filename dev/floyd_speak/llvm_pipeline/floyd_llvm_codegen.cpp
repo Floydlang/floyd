@@ -1232,7 +1232,7 @@ static void generate_fill_array(llvm_code_generator_t& gen_acc, llvm::Function& 
 */
 
 
-//??? Try storing vectors in vectors
+//??? Test storing vectors in vectors
 static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
