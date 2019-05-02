@@ -378,12 +378,12 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b){
 	return WIDE_RETURN_T{ a, b };
 }
 
-WIDE_RETURN_T make_wide_return_charptr(const char* s){
-	return WIDE_RETURN_T{ { reinterpret_cast<uint64_t>(s) }, 0 };
+WIDE_RETURN_T make_wide_return_charptr(char* s){
+	return WIDE_RETURN_T{ { .string_ptr = s }, { .int_value = 0 } };
 }
 
-WIDE_RETURN_T make_wide_return_structptr(const void* s){
-	return WIDE_RETURN_T{ { reinterpret_cast<uint64_t>(s) }, 0 };
+WIDE_RETURN_T make_wide_return_structptr(void* s){
+	return WIDE_RETURN_T{ { .struct_ptr = s }, { .int_value = 0 } };
 }
 
 

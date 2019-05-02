@@ -60,6 +60,11 @@ const function_def_t& find_function_def2(const std::vector<function_def_t>& func
 }
 
 
+void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint32_t count){
+	for(auto i = 0 ; i < count ; i++){
+		dest[i] = source[i];
+	}
+}
 
 
 
@@ -1064,10 +1069,53 @@ uint32_t floyd_funcdef__exists(void* floyd_runtime_ptr, runtime_value_t arg0_val
 	}
 }
 
-void floyd_host_function_1008(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
-}
 
+
+
+
+typedef runtime_value_t (*FILTER_F)(void* floyd_runtime_ptr, runtime_value_t element_value);
+
+
+//	[E] filter([E], bool f(E e))
+WIDE_RETURN_T floyd_funcdef__filter(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type0 = lookup_type(r.type_interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner, arg1_type);
+
+/*
+	if(type0.is_vector() == false || type2.is_function() == false || type2.get_function_args().size () != 2){
+		quark::throw_runtime_error("reduce() parameter error.");
+	}
+*/
+
+	const auto& vec = *arg0_value.vector_ptr;
+	const auto f = reinterpret_cast<FILTER_F>(arg1_value.function_ptr);
+
+	const auto e_type = lookup_runtime_type(r.type_interner, type0.get_vector_element_type());
+	auto count = vec.element_count;
+
+	std::vector<runtime_value_t> acc;
+
+	for(int i = 0 ; i < count ; i++){
+		const auto element_value = vec.element_ptr[i];
+		const auto keep = (*f)(floyd_runtime_ptr, element_value);
+		if(keep.bool_value != 0){
+			acc.push_back(element_value);
+		}
+	}
+
+	const auto count2 = (int32_t)acc.size();
+	auto result_vec = new VEC_T(make_vec(count2));
+
+	if(count2 > 0){
+		//	Count > 0 required to get address to first element in acc.
+		copy_elements(result_vec->element_ptr, &acc[0], count2);
+	}
+	return make_wide_return_vec(result_vec);
+}
+	
+	
 
 
 int64_t floyd_funcdef__find__string(llvm_execution_engine_t& floyd_runtime_ptr, const char s[], const char find[]){
@@ -1343,7 +1391,7 @@ void floyd_host_function_1024(void* floyd_runtime_ptr, runtime_value_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-const char* floyd_funcdef__replace__string(llvm_execution_engine_t& floyd_runtime_ptr, const char s[], std::size_t start, std::size_t end, const char replace[]){
+char* floyd_funcdef__replace__string(llvm_execution_engine_t& floyd_runtime_ptr, const char s[], std::size_t start, std::size_t end, const char replace[]){
 	auto s_len = std::strlen(s);
 	auto replace_len = std::strlen(replace);
 
@@ -1359,11 +1407,6 @@ const char* floyd_funcdef__replace__string(llvm_execution_engine_t& floyd_runtim
 	return s2;
 }
 
-void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint32_t count){
-	for(auto i = 0 ; i < count ; i++){
-		dest[i] = source[i];
-	}
-}
 
 const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, int64_t start, int64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
@@ -1383,7 +1426,7 @@ const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, runtime_valu
 	}
 
 	if(type0.is_string()){
-		const auto ret = floyd_funcdef__replace__string(r, arg0_value.string_ptr, (std::size_t)start, (std::size_t)end, arg3_value.string_ptr);
+		auto ret = floyd_funcdef__replace__string(r, arg0_value.string_ptr, (std::size_t)start, (std::size_t)end, arg3_value.string_ptr);
 		return make_wide_return_charptr(ret);
 	}
 	else if(type0.is_vector()){
@@ -1670,7 +1713,7 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 		else{
 			NOT_IMPLEMENTED_YET();
 		}
-		return make_wide_return_structptr(reinterpret_cast<const void*>(struct_ptr));
+		return make_wide_return_structptr(struct_ptr);
 	}
 	else{
 		//	No other types allowed.
@@ -1731,7 +1774,7 @@ std::map<std::string, void*> get_host_functions_map2(){
 		{ "floyd_funcdef__does_fsentry_exist", reinterpret_cast<void *>(&floyd_host_function_1005) },
 		{ "floyd_funcdef__erase", reinterpret_cast<void *>(&floyd_host_function__erase) },
 		{ "floyd_funcdef__exists", reinterpret_cast<void *>(&floyd_funcdef__exists) },
-		{ "floyd_funcdef__filter", reinterpret_cast<void *>(&floyd_host_function_1008) },
+		{ "floyd_funcdef__filter", reinterpret_cast<void *>(&floyd_funcdef__filter) },
 		{ "floyd_funcdef__find", reinterpret_cast<void *>(&floyd_funcdef__find) },
 
 		{ "floyd_funcdef__get_fs_environment", reinterpret_cast<void *>(&floyd_host_function_1010) },

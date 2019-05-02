@@ -49,7 +49,7 @@ runtime_type_t lookup_runtime_type(const type_interner_t& interner, const typeid
 
 //	64 bits
 union runtime_value_t {
-	uint64_t bool_value;
+	uint8_t bool_value;
 	int64_t int_value;
 	int32_t typeid_itype;
 	double double_value;
@@ -163,8 +163,8 @@ enum class WIDE_RETURN_MEMBERS {
 llvm::StructType* make_wide_return_type(llvm::LLVMContext& context);
 
 WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
-WIDE_RETURN_T make_wide_return_charptr(const char* s);
-WIDE_RETURN_T make_wide_return_structptr(const void* s);
+WIDE_RETURN_T make_wide_return_charptr(char* s);
+WIDE_RETURN_T make_wide_return_structptr(void* s);
 
 
 

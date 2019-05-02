@@ -1856,7 +1856,7 @@ std::vector<resolved_symbol_t> generate_function_symbols(llvm_code_generator_t& 
 		//	TODO: SAST could contain argument/local information to make this tighter.
 		//	Reserve stack slot for each local. But not arguments, they already have stack slot.
 		const auto arg_it = std::find_if(mapping.args.begin(), mapping.args.end(), [&](const llvm_arg_mapping_t& arg) -> bool {
-			QUARK_TRACE_SS(arg.floyd_name);
+//			QUARK_TRACE_SS(arg.floyd_name);
 			return arg.floyd_name == e.first;
 		});
 		bool is_arg = arg_it != mapping.args.end();
