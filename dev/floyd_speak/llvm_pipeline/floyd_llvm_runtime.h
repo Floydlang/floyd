@@ -75,6 +75,9 @@ struct llvm_execution_engine_t {
 	symbol_table_t global_symbols;
 	std::vector<function_def_t> function_defs;
 	public: std::vector<std::string> _print_output;
+
+
+	public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
 };
 
 

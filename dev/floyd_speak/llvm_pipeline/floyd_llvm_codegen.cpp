@@ -2435,8 +2435,19 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 	}
 	QUARK_ASSERT(collectedErrors.empty());
 
+	const auto start_time = std::chrono::high_resolution_clock::now();
+
 	auto ee1 = std::shared_ptr<llvm::ExecutionEngine>(exeEng);
-	auto ee2 = llvm_execution_engine_t{ k_debug_magic, &instance, ee1, program_breaks.type_interner, program_breaks.debug_globals, program_breaks.function_defs, {} };
+	auto ee2 = llvm_execution_engine_t{
+		k_debug_magic,
+		&instance,
+		ee1,
+		program_breaks.type_interner,
+		program_breaks.debug_globals,
+		program_breaks.function_defs,
+		{},
+		start_time
+	};
 	QUARK_ASSERT(ee2.check_invariant());
 
 	auto function_map = register_c_functions(instance.context);

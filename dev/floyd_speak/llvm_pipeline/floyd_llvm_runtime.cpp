@@ -1746,8 +1746,13 @@ int64_t floyd_host_function__get_json_type(void* floyd_runtime_ptr, uint16_t* js
 	return result;
 }
 
-void floyd_host_function_1015(void* floyd_runtime_ptr, int64_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+int64_t floyd_funcdef__get_time_of_day(void* floyd_runtime_ptr){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> elapsed_seconds = t - r._start_time;
+	const auto ms = elapsed_seconds.count() * 1000.0;
+	return static_cast<int64_t>(ms);
 }
 
 char* floyd_funcdef__jsonvalue_to_script(void* floyd_runtime_ptr, int32_t* json_ptr){
@@ -2253,7 +2258,7 @@ std::map<std::string, void*> get_host_functions_map2(){
 		{ "floyd_funcdef__get_fsentries_shallow", reinterpret_cast<void *>(&floyd_host_function_1012) },
 		{ "floyd_funcdef__get_fsentry_info", reinterpret_cast<void *>(&floyd_host_function_1013) },
 		{ "floyd_funcdef__get_json_type", reinterpret_cast<void *>(&floyd_host_function__get_json_type) },
-		{ "floyd_funcdef__get_time_of_day", reinterpret_cast<void *>(&floyd_host_function_1015) },
+		{ "floyd_funcdef__get_time_of_day", reinterpret_cast<void *>(&floyd_funcdef__get_time_of_day) },
 		{ "floyd_funcdef__jsonvalue_to_script", reinterpret_cast<void *>(&floyd_funcdef__jsonvalue_to_script) },
 		{ "floyd_funcdef__jsonvalue_to_value", reinterpret_cast<void *>(&floyd_host_function_1017) },
 		{ "floyd_funcdef__map", reinterpret_cast<void *>(&floyd_host_function_1018) },
