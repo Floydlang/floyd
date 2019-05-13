@@ -198,6 +198,130 @@ value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t
 	return load_global_from_ptr(ee, v.first, v.second);
 }
 
+/*
+	floyd			C++			runtime_value_t			native func arg/return
+	--------------------------------------------------------------------------------------------------------------------
+	bool			bool		uint8					uint1
+	int							int64_t					int64
+	string			string		char*					char*
+	vector[T]		vector<T>	VEC_T*					VEC_T*
+	json_t			json_t		json_t*					int16*
+*/
+
+//	Convert a floyd value to a runtime_value_t.
+runtime_value_t floyd_value_to_runtime_value(const llvm_execution_engine_t& runtime, const value_t& value){
+	QUARK_ASSERT(runtime.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+
+	const auto type = value.get_type();
+
+	struct visitor_t {
+		const value_t& value;
+
+		runtime_value_t operator()(const typeid_t::undefined_t& e) const{
+			QUARK_ASSERT(false);
+		}
+		runtime_value_t operator()(const typeid_t::any_t& e) const{
+			QUARK_ASSERT(false);
+		}
+
+		runtime_value_t operator()(const typeid_t::void_t& e) const{
+			QUARK_ASSERT(false);
+		}
+		runtime_value_t operator()(const typeid_t::bool_t& e) const{
+			return { .bool_value = (uint8_t)(value.get_bool_value() ? 1 : 0) };
+		}
+		runtime_value_t operator()(const typeid_t::int_t& e) const{
+			return { .int_value = value.get_int_value() };
+		}
+		runtime_value_t operator()(const typeid_t::double_t& e) const{
+			return { .double_value = value.get_double_value() };
+		}
+		runtime_value_t operator()(const typeid_t::string_t& e) const{
+			return { .string_ptr = strdup(value.get_string_value().c_str()) };
+		}
+
+		runtime_value_t operator()(const typeid_t::json_type_t& e) const{
+			QUARK_ASSERT(false);
+		}
+		runtime_value_t operator()(const typeid_t::typeid_type_t& e) const{
+			QUARK_ASSERT(false);
+		}
+
+		runtime_value_t operator()(const typeid_t::struct_t& e) const{
+			QUARK_ASSERT(false);
+		}
+		runtime_value_t operator()(const typeid_t::vector_t& e) const{
+			QUARK_ASSERT(false);
+		}
+		runtime_value_t operator()(const typeid_t::dict_t& e) const{
+			QUARK_ASSERT(false);
+		}
+		runtime_value_t operator()(const typeid_t::function_t& e) const{
+#if 0
+			//	If function returns a DYN, it must have a dyn_return.
+			QUARK_ASSERT(e._parts[0].is_any() == false || e.dyn_return != return_dyn_type::none);
+
+			QUARK_ASSERT(e._parts.size() >= 1);
+
+			for(const auto& m: e._parts){
+				QUARK_ASSERT(m.check_invariant());
+			}
+#endif
+			QUARK_ASSERT(false);
+		}
+		runtime_value_t operator()(const typeid_t::unresolved_t& e) const{
+			QUARK_ASSERT(false);
+		}
+	};
+	return std::visit(visitor_t{ value }, type._contents);
+}
+#if 0
+	if(type0.is_string()){
+		auto result = new json_t(value.get_string_value());
+		return reinterpret_cast<int16_t*>(result);
+	}
+	else if(type0.is_json_value()){
+		return reinterpret_cast<int16_t*>(arg0_value);
+	}
+	else if(type0.is_int()){
+		auto result = new json_t(value.get_int_value());
+		return reinterpret_cast<int16_t*>(result);
+	}
+	else if(type0.is_bool()){
+		auto result = new json_t(value.get_bool_value());
+		return reinterpret_cast<int16_t*>(result);
+	}
+	else if(type0.is_vector()){
+		QUARK_ASSERT(type0.get_vector_element_type().is_json_value());
+
+		const auto v = value.get_vector_value();
+		std::vector<json_t> json_vec;
+		for(const auto& e: v){
+			json_vec.push_back(e.get_json_value());
+		}
+
+		auto result = new json_t(json_vec);
+		return reinterpret_cast<int16_t*>(result);
+	}
+	else if(type0.is_dict()){
+		QUARK_ASSERT(type0.get_dict_value_type().is_json_value());
+
+		const auto v = value.get_vector_value();
+		std::vector<json_t> json_vec;
+		for(const auto& e: v){
+			json_vec.push_back(e.get_json_value());
+		}
+
+		auto result = new json_t(json_vec);
+		return reinterpret_cast<int16_t*>(result);
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+#endif
+
+
 value_t runtime_value_to_floyd(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
@@ -719,6 +843,7 @@ host_func_t floyd_runtime__lookup_dict__make(llvm::LLVMContext& context){
 
 ////////////////////////////////		allocate_json()
 
+//??? Make named types for all function-argument / return types, like: typedef int16_t* native_json_ptr
 
 int16_t* floyd_runtime__allocate_json(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
@@ -729,52 +854,6 @@ int16_t* floyd_runtime__allocate_json(void* floyd_runtime_ptr, runtime_value_t a
 	const auto a = value_to_ast_json(value, json_tags::k_plain);
 	auto result = new json_t(a);
 	return reinterpret_cast<int16_t*>(result);
-
-#if 0
-	if(type0.is_string()){
-		auto result = new json_t(value.get_string_value());
-		return reinterpret_cast<int16_t*>(result);
-	}
-	else if(type0.is_json_value()){
-		return reinterpret_cast<int16_t*>(arg0_value);
-	}
-	else if(type0.is_int()){
-		auto result = new json_t(value.get_int_value());
-		return reinterpret_cast<int16_t*>(result);
-	}
-	else if(type0.is_bool()){
-		auto result = new json_t(value.get_bool_value());
-		return reinterpret_cast<int16_t*>(result);
-	}
-	else if(type0.is_vector()){
-		QUARK_ASSERT(type0.get_vector_element_type().is_json_value());
-
-		const auto v = value.get_vector_value();
-		std::vector<json_t> json_vec;
-		for(const auto& e: v){
-			json_vec.push_back(e.get_json_value());
-		}
-
-		auto result = new json_t(json_vec);
-		return reinterpret_cast<int16_t*>(result);
-	}
-	else if(type0.is_dict()){
-		QUARK_ASSERT(type0.get_dict_value_type().is_json_value());
-
-		const auto v = value.get_vector_value();
-		std::vector<json_t> json_vec;
-		for(const auto& e: v){
-			json_vec.push_back(e.get_json_value());
-		}
-
-		auto result = new json_t(json_vec);
-		return reinterpret_cast<int16_t*>(result);
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
-#endif
-
 }
 
 host_func_t floyd_runtime__allocate_json__make(llvm::LLVMContext& context){
@@ -1214,8 +1293,16 @@ char* floyd_funcdef__jsonvalue_to_script(void* floyd_runtime_ptr, int32_t* json_
 	return reinterpret_cast<char*>(result);
 }
 
-void floyd_host_function_1017(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+runtime_value_t floyd_funcdef__jsonvalue_to_value(void* floyd_runtime_ptr, uint32_t* json_ptr, runtime_type_t target_type){
+	QUARK_ASSERT(json_ptr != nullptr);
+
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto& json_value = *reinterpret_cast<const json_t*>(json_ptr);
+	const auto target_type2 = lookup_type(r.type_interner, target_type);
+
+	const auto result = unflatten_json_to_specific_type(json_value, target_type2);
+	return floyd_value_to_runtime_value(r, result);
 }
 
 
@@ -1784,7 +1871,7 @@ std::map<std::string, void*> get_host_functions_map2(){
 		{ "floyd_funcdef__get_json_type", reinterpret_cast<void *>(&floyd_host_function__get_json_type) },
 		{ "floyd_funcdef__get_time_of_day", reinterpret_cast<void *>(&floyd_funcdef__get_time_of_day) },
 		{ "floyd_funcdef__jsonvalue_to_script", reinterpret_cast<void *>(&floyd_funcdef__jsonvalue_to_script) },
-		{ "floyd_funcdef__jsonvalue_to_value", reinterpret_cast<void *>(&floyd_host_function_1017) },
+		{ "floyd_funcdef__jsonvalue_to_value", reinterpret_cast<void *>(&floyd_funcdef__jsonvalue_to_value) },
 		{ "floyd_funcdef__map", reinterpret_cast<void *>(&floyd_funcdef__map) },
 		{ "floyd_funcdef__map_string", reinterpret_cast<void *>(&floyd_funcdef__map_string) },
 

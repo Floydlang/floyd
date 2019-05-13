@@ -28,6 +28,7 @@ enum class host_function_id {
 };
 */
 
+value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_type);
 
 extern const std::string k_builtin_types_and_constants;
 

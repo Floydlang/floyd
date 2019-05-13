@@ -3816,18 +3816,20 @@ QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_script()", "[pixel_t]", ""){
 
 //////////////////////////////////////////		value_to_jsonvalue() -> jsonvalue_to_value() roundtrip
 
-#if 0
-
-??? jsonvalue_to_value() is a broken concept. Use string(json_value), bool(json_value) etc instead.
+/*
+jsonvalue_to_value() returns different types depending on its 2nd argument.??? jsonvalue_to_value() is a broken concept. Use string(json_value), bool(json_value) etc instead.
 
 	int type = get_json_type(j);
 	if(type == 1){
 	}
+*/
 
-
+#if 0
 QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "bool", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(true), bool)		)", value_t::make_bool(true));
 }
+#endif
+#if 0
 QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "bool", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(false), bool)		)", value_t::make_bool(false));
 }
