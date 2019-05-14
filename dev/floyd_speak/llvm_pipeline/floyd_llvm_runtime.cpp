@@ -337,53 +337,76 @@ runtime_value_t to_runtime_value(const llvm_execution_engine_t& runtime, const v
 value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
-	//??? more types. Use visitor.
-	if(type.is_undefined()){
-		UNSUPPORTED();
-	}
-	else if(type.is_bool()){
-		//??? How is int1 encoded by LLVM?
-		return value_t::make_bool(encoded_value.bool_value == 0 ? false : true);
-	}
-	else if(type.is_int()){
-		return value_t::make_int(encoded_value.int_value);
-	}
-	else if(type.is_double()){
-		return value_t::make_double(encoded_value.double_value);
-	}
-	else if(type.is_string()){
-		return value_t::make_string(encoded_value.string_ptr);
-	}
-	else if(type.is_json_value()){
-		if(encoded_value.json_ptr == nullptr){
-			return value_t::make_json_value(json_t());
+	struct visitor_t {
+		const llvm_execution_engine_t& runtime;
+		const runtime_value_t& encoded_value;
+		const typeid_t& type;
+
+		value_t operator()(const typeid_t::undefined_t& e) const{
+			UNSUPPORTED();
 		}
-		else{
-			return value_t::make_json_value(*encoded_value.json_ptr);
+		value_t operator()(const typeid_t::any_t& e) const{
+			UNSUPPORTED();
 		}
-	}
-	else if(type.is_typeid()){
-		const auto type1 = lookup_type(runtime.type_interner, encoded_value.typeid_itype);
-		const auto type2 = value_t::make_typeid_value(type1);
-		return type2;
-	}
-	else if(type.is_struct()){
-		return from_runtime_struct(runtime, encoded_value, type);
-	}
-	else if(type.is_vector()){
-		return from_runtime_vector(runtime, encoded_value, type);
-	}
-	else if(type.is_dict()){
-		return from_runtime_dict(runtime, encoded_value, type);
-	}
-	else if(type.is_function()){
-		NOT_IMPLEMENTED_YET();
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
-	QUARK_ASSERT(false);
-	throw std::exception();
+
+		value_t operator()(const typeid_t::void_t& e) const{
+			UNSUPPORTED();
+		}
+		value_t operator()(const typeid_t::bool_t& e) const{
+			return value_t::make_bool(encoded_value.bool_value == 0 ? false : true);
+		}
+		value_t operator()(const typeid_t::int_t& e) const{
+			return value_t::make_int(encoded_value.int_value);
+		}
+		value_t operator()(const typeid_t::double_t& e) const{
+			return value_t::make_double(encoded_value.double_value);
+		}
+		value_t operator()(const typeid_t::string_t& e) const{
+			return value_t::make_string(encoded_value.string_ptr);
+		}
+
+		value_t operator()(const typeid_t::json_type_t& e) const{
+			if(encoded_value.json_ptr == nullptr){
+				return value_t::make_json_value(json_t());
+			}
+			else{
+				return value_t::make_json_value(*encoded_value.json_ptr);
+			}
+		}
+		value_t operator()(const typeid_t::typeid_type_t& e) const{
+			const auto type1 = lookup_type(runtime.type_interner, encoded_value.typeid_itype);
+			const auto type2 = value_t::make_typeid_value(type1);
+			return type2;
+		}
+
+		value_t operator()(const typeid_t::struct_t& e) const{
+			return from_runtime_struct(runtime, encoded_value, type);
+		}
+		value_t operator()(const typeid_t::vector_t& e) const{
+			return from_runtime_vector(runtime, encoded_value, type);
+		}
+		value_t operator()(const typeid_t::dict_t& e) const{
+			return from_runtime_dict(runtime, encoded_value, type);
+		}
+		value_t operator()(const typeid_t::function_t& e) const{
+			UNSUPPORTED();
+#if 0
+			//	If function returns a DYN, it must have a dyn_return.
+			QUARK_ASSERT(e._parts[0].is_any() == false || e.dyn_return != return_dyn_type::none);
+
+			QUARK_ASSERT(e._parts.size() >= 1);
+
+			for(const auto& m: e._parts){
+				QUARK_ASSERT(m.check_invariant());
+			}
+#endif
+			QUARK_ASSERT(false);
+		}
+		value_t operator()(const typeid_t::unresolved_t& e) const{
+			UNSUPPORTED();
+		}
+	};
+	return std::visit(visitor_t{ runtime, encoded_value, type }, type._contents);
 }
 
 
