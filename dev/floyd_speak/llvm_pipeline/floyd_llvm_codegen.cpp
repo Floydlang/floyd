@@ -260,25 +260,6 @@ Named struct types:
 ???		static StructType *create(ArrayRef<Type *> Elements, StringRef Name, bool isPacked = false);
 */
 
-static size_t get_struct_info____keep_for_copypaste(const llvm::DataLayout& data_layout, llvm::Type& type, int member_index){
-	llvm::StructType* s2 = llvm::cast<llvm::StructType>(&type);
-
-//	int size = data_layout.getTypeAllocSize(T);
-
-	const auto member_count = s2->getNumElements();
-	std::vector<llvm::Type*> member_types;
-	for(int i = 0 ; i < member_count ; i++){
-		auto t = s2->getElementType(i);
-		member_types.push_back(t);
-	}
-
-	const llvm::StructLayout* layout = data_layout.getStructLayout(s2);
-	const auto struct_bytes = layout->getSizeInBytes();
-
-	const auto offset = layout->getElementOffset(member_index);
-	return offset;
-}
-
 std::string compose_function_def_name(int function_id, const function_definition_t& def){
 	const auto def_name = def._definition_name;
 	const auto funcdef_name = def_name.empty() ? std::string() + "floyd_unnamed_function_" + std::to_string(function_id) : std::string("floyd_funcdef__") + def_name;
@@ -400,7 +381,6 @@ static llvm::Value* generate_alloc_dict(llvm_code_generator_t& gen_acc, llvm::Fu
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
-	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
 	const auto f = find_function_def(gen_acc, "floyd_runtime__allocate_dict");
@@ -435,7 +415,6 @@ static llvm::Value* generate_lookup_dict(llvm_code_generator_t& gen_acc, llvm::F
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
-	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
 	const auto f = find_function_def(gen_acc, "floyd_runtime__lookup_dict");
@@ -798,7 +777,6 @@ static llvm::Value* generate_arithmetic_expression(llvm_code_generator_t& gen_ac
 	QUARK_ASSERT(e.check_invariant());
 
 	const auto type = details.lhs->get_output_type();
-	auto& builder = gen_acc.builder;
 
 	auto lhs_temp = generate_expression(gen_acc, emit_f, *details.lhs);
 	auto rhs_temp = generate_expression(gen_acc, emit_f, *details.rhs);
@@ -1213,7 +1191,6 @@ static void generate_fill_array(llvm_code_generator_t& gen_acc, llvm::Function& 
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
-	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
 	auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, &uint64_array_ptr_reg, element_type.getPointerTo(), "");
@@ -1361,7 +1338,6 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 	else if(target_type.is_dict()){
 		const auto element_type0 = target_type.get_dict_value_type();
 		auto dict_acc_ptr_reg = generate_alloc_dict(gen_acc, emit_f, typeid_to_compact_string(target_type));
-		auto value_itype = lookup_itype(gen_acc.interner, element_type0);
 		if(element_type0.is_int()){
 			//	Elements are stored as pairs.
 			QUARK_ASSERT((details.elements.size() & 1) == 0);
@@ -2333,7 +2309,7 @@ void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
 //				QUARK_ASSERT(f != nullptr);
 
 			const std::string suffix = f == nullptr ? " NULL POINTER" : "";
-			const uint64_t addr = reinterpret_cast<uint64_t>(f);
+//			const uint64_t addr = reinterpret_cast<uint64_t>(f);
 //			QUARK_TRACE_SS(index << " " << e.first << " " << addr << suffix);
 		}
 		else{
