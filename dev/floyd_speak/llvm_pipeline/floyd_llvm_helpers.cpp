@@ -1015,6 +1015,105 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 	std::visit(visitor_t{ value_ptr, value }, type._contents);
 }
 
+llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, llvm::Value& value, const typeid_t& floyd_type){
+	QUARK_ASSERT(floyd_type.check_invariant());
+
+	auto& context = builder.getContext();
+
+	struct visitor_t {
+		llvm::LLVMContext& context;
+		llvm::IRBuilder<>& builder;
+		llvm::Value& value;
+
+		llvm::Value* operator()(const typeid_t::undefined_t& e) const{
+			UNSUPPORTED();
+		}
+		llvm::Value* operator()(const typeid_t::any_t& e) const{
+			UNSUPPORTED();
+		}
+
+		llvm::Value* operator()(const typeid_t::void_t& e) const{
+			UNSUPPORTED();
+		}
+		llvm::Value* operator()(const typeid_t::bool_t& e) const{
+			return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, make_runtime_value_type(context), "bool_as_arg");
+		}
+		llvm::Value* operator()(const typeid_t::int_t& e) const{
+			return &value;
+		}
+		llvm::Value* operator()(const typeid_t::double_t& e) const{
+			return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value, make_runtime_value_type(context), "double_as_arg");
+		}
+		llvm::Value* operator()(const typeid_t::string_t& e) const{
+			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "string_as_arg");
+		}
+
+		llvm::Value* operator()(const typeid_t::json_type_t& e) const{
+			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "json_as_arg");
+		}
+		llvm::Value* operator()(const typeid_t::typeid_type_t& e) const{
+			return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, make_runtime_value_type(context), "typeid_as_arg");
+		}
+
+		llvm::Value* operator()(const typeid_t::struct_t& e) const{
+			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "");
+		}
+		llvm::Value* operator()(const typeid_t::vector_t& e) const{
+			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "");
+		}
+		llvm::Value* operator()(const typeid_t::dict_t& e) const{
+			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "");
+		}
+		llvm::Value* operator()(const typeid_t::function_t& e) const{
+			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "function_as_arg");
+		}
+		llvm::Value* operator()(const typeid_t::unresolved_t& e) const{
+			UNSUPPORTED();
+		}
+	};
+	return std::visit(visitor_t{ context, builder, value }, floyd_type._contents);
+}
+
+//??? use visit()!
+llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, llvm::Value& runtime_value_reg, const typeid_t& type){
+	QUARK_ASSERT(type.check_invariant());
+
+	auto& context = builder.getContext();
+
+	//??? This function is tightly coupled to intern_type().
+	if(type.is_int()){
+		return &runtime_value_reg;
+	}
+	else if(type.is_bool()){
+		return builder.CreateCast(llvm::Instruction::CastOps::Trunc, &runtime_value_reg, llvm::Type::getInt1Ty(context), "");
+	}
+	else if(type.is_double()){
+		return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &runtime_value_reg, llvm::Type::getDoubleTy(context), "");
+	}
+	else if(type.is_typeid()){
+		return builder.CreateCast(llvm::Instruction::CastOps::Trunc, &runtime_value_reg, llvm::Type::getInt32Ty(context), "");
+	}
+	else if(type.is_string()){
+		return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, llvm::Type::getInt8PtrTy(context), "");
+	}
+	else if(type.is_json_value()){
+		return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, llvm::Type::getInt16PtrTy(context), "");
+	}
+	else if(type.is_struct()){
+		auto& struct_type = *make_struct_type(context, type);
+		return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, struct_type.getPointerTo(), "");
+	}
+	else if(type.is_vector()){
+		return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_vec_type(context)->getPointerTo(), "");
+	}
+	else if(type.is_dict()){
+		return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_dict_type(context)->getPointerTo(), "");
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
+
 
 }	//	floyd
 

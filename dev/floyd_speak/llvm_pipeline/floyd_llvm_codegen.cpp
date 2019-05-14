@@ -273,90 +273,17 @@ std::string compose_function_def_name(int function_id, const function_definition
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-//??? use visit()!
-//	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value.
-//	If the value is big, it's stored on the stack and a pointer returned => the returned value is not standalone and lifetime limited to emit function scope.
 static llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(floyd_type.check_invariant());
 
-	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
-
-	if(floyd_type.is_function()){
-		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "function_as_arg");
-	}
-	else if(floyd_type.is_double()){
-		return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value, make_runtime_value_type(context), "double_as_arg");
-	}
-	else if(floyd_type.is_string()){
-		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "string_as_arg");
-	}
-	else if(floyd_type.is_json_value()){
-		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "json_as_arg");
-	}
-	else if(floyd_type.is_vector()){
-//		auto ptr = generate_vec_alloca(builder, &value);
-		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "");
-	}
-	else if(floyd_type.is_dict()){
-//		auto ptr = generate_dict_alloca(builder, &value);
-		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "");
-	}
-	else if(floyd_type.is_int()){
-		return &value;
-	}
-	else if(floyd_type.is_typeid()){
-		return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, make_runtime_value_type(context), "typeid_as_arg");
-	}
-	else if(floyd_type.is_bool()){
-		return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, make_runtime_value_type(context), "bool_as_arg");
-	}
-	else if(floyd_type.is_struct()){
-		return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "");
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
+	return generate_cast_to_runtime_value2(builder, value, floyd_type);
 }
 
-//??? use visit()!
-//	Returns the specific LLVM type for the value, like VEC_T* etc.
 static llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& runtime_value_reg, const typeid_t& type){
-	auto& context = gen_acc.instance->context;
-
-	//??? This function is tightly coupled to intern_type().
-	if(type.is_int()){
-		return &runtime_value_reg;
-	}
-	else if(type.is_bool()){
-		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::Trunc, &runtime_value_reg, llvm::Type::getInt1Ty(context), "");
-	}
-	else if(type.is_double()){
-		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::BitCast, &runtime_value_reg, llvm::Type::getDoubleTy(context), "");
-	}
-	else if(type.is_typeid()){
-		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::Trunc, &runtime_value_reg, llvm::Type::getInt32Ty(context), "");
-	}
-	else if(type.is_string()){
-		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, llvm::Type::getInt8PtrTy(context), "");
-	}
-	else if(type.is_json_value()){
-		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, llvm::Type::getInt16PtrTy(context), "");
-	}
-	else if(type.is_struct()){
-		auto& struct_type = *make_struct_type(context, type);
-		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, struct_type.getPointerTo(), "");
-	}
-	else if(type.is_vector()){
-		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_vec_type(context)->getPointerTo(), "");
-	}
-	else if(type.is_dict()){
-		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_dict_type(context)->getPointerTo(), "");
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
+	auto& builder = gen_acc.builder;
+	return generate_cast_from_runtime_value2(builder, runtime_value_reg, type);
 }
 
 static llvm::Value* generate_alloc_vec(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, uint64_t element_count, const std::string& debug){
