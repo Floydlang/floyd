@@ -839,58 +839,61 @@ llvm::StructType* make_struct_type(llvm::LLVMContext& context, const typeid_t& t
 }
 
 //	Returns the LLVM type we chose to use to encode each Floyd type.
-//	??? Use visitor for typeid
 llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
-	if(type.is_void()){
-		return llvm::Type::getVoidTy(context);
-	}
-	else if(type.is_int()){
-		return llvm::Type::getInt64Ty(context);
-	}
-	else if(type.is_bool()){
-		return llvm::Type::getInt1Ty(context);
-	}
+	struct visitor_t {
+		llvm::LLVMContext& context;
+		const typeid_t& type;
 
-	else if(type.is_string()){
-		return llvm::Type::getInt8PtrTy(context);
-	}
-	else if(type.is_json_value()){
-		return llvm::Type::getInt16PtrTy(context);
-	}
-	else if(type.is_vector()){
-		return make_vec_type(context)->getPointerTo();
-	}
-	else if(type.is_dict()){
-		return make_dict_type(context)->getPointerTo();
-	}
-	else if(type.is_typeid()){
-		return make_runtime_type_type(context);
-	}
-	else if(type.is_undefined()){
-		return llvm::Type::getInt16Ty(context);
-	}
-	else if(type.is_unresolved_type_identifier()){
-		UNSUPPORTED();
-		return llvm::Type::getInt16Ty(context);
-	}
-	else if(type.is_double()){
-		return llvm::Type::getDoubleTy(context);
-	}
-	else if(type.is_struct()){
-		return make_struct_type(context, type)->getPointerTo();
-	}
+		llvm::Type* operator()(const typeid_t::undefined_t& e) const{
+			return llvm::Type::getInt16Ty(context);
+		}
+		llvm::Type* operator()(const typeid_t::any_t& e) const{
+			return make_runtime_value_type(context);
+		}
 
-	else if(type.is_any()){
-		return make_runtime_value_type(context);
-	}
-	else if(type.is_function()){
-		return make_function_type(context, type);
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
+		llvm::Type* operator()(const typeid_t::void_t& e) const{
+			return llvm::Type::getVoidTy(context);
+		}
+		llvm::Type* operator()(const typeid_t::bool_t& e) const{
+			return llvm::Type::getInt1Ty(context);
+		}
+		llvm::Type* operator()(const typeid_t::int_t& e) const{
+			return llvm::Type::getInt64Ty(context);
+		}
+		llvm::Type* operator()(const typeid_t::double_t& e) const{
+			return llvm::Type::getDoubleTy(context);
+		}
+		llvm::Type* operator()(const typeid_t::string_t& e) const{
+			return llvm::Type::getInt8PtrTy(context);
+		}
+
+		llvm::Type* operator()(const typeid_t::json_type_t& e) const{
+			return llvm::Type::getInt16PtrTy(context);
+		}
+		llvm::Type* operator()(const typeid_t::typeid_type_t& e) const{
+			return make_runtime_type_type(context);
+		}
+
+		llvm::Type* operator()(const typeid_t::struct_t& e) const{
+			return make_struct_type(context, type)->getPointerTo();
+		}
+		llvm::Type* operator()(const typeid_t::vector_t& e) const{
+			return make_vec_type(context)->getPointerTo();
+		}
+		llvm::Type* operator()(const typeid_t::dict_t& e) const{
+			return make_dict_type(context)->getPointerTo();
+		}
+		llvm::Type* operator()(const typeid_t::function_t& e) const{
+			return make_function_type(context, type);
+		}
+		llvm::Type* operator()(const typeid_t::unresolved_t& e) const{
+			UNSUPPORTED();
+			return llvm::Type::getInt16Ty(context);
+		}
+	};
+	return std::visit(visitor_t{ context, type }, type._contents);
 }
 
 
