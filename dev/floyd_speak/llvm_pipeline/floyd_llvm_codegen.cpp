@@ -422,7 +422,6 @@ static llvm::Value* generate_allocate_memory(llvm_code_generator_t& gen_acc, llv
 	return gen_acc.builder.CreateCall(def.llvm_f, args, "allocate_memory");
 }
 
-//??? Use visit()
 //	Makes constant from a Floyd value.
 llvm::Constant* generate_constant(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const value_t& value){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -434,78 +433,86 @@ llvm::Constant* generate_constant(llvm_code_generator_t& gen_acc, llvm::Function
 	const auto type = value.get_type();
 	const auto itype = intern_type(context, type);
 
-	if(type.is_undefined()){
-		return llvm::ConstantInt::get(itype, 17);
-	}
-	else if(type.is_any()){
-		return llvm::ConstantInt::get(itype, 13);
-	}
-	else if(type.is_void()){
-		UNSUPPORTED();
-	}
-	else if(type.is_bool()){
-		return llvm::ConstantInt::get(itype, value.get_bool_value() ? 1 : 0);
-	}
-	else if(type.is_int()){
-		return llvm::ConstantInt::get(itype, value.get_int_value());
-	}
-	else if(type.is_double()){
-		return llvm::ConstantFP::get(itype, value.get_double_value());
-	}
-	else if(type.is_string()){
-//		llvm::Constant* array = llvm::ConstantDataArray::getString(context, value.get_string_value(), true);
-//		llvm::Constant* c = gen_acc.builder.CreatePointerCast(array, int8Ptr_type);
+	struct visitor_t {
+		llvm_code_generator_t& gen_acc;
+		llvm::IRBuilder<>& builder;
+		llvm::LLVMContext& context;
+		llvm::Type* itype;
+		const value_t& value;
 
-		llvm::Constant* c2 = builder.CreateGlobalStringPtr(value.get_string_value());
-		//	, "cast [n x i8] to i8*"
-		return c2;
-
-	}
-	else if(type.is_json_value()){
-		const auto& json_value0 = value.get_json_value();
-
-		//	??? There is no clean way to embedd a json_value containing a json-null into the code segment.
-		//	Here we use a nullptr instead of json_t*. This means we have to be prepared for json_t::null AND nullptr.
-		if(json_value0.is_null()){
-			return llvm::ConstantPointerNull::get(llvm::Type::getInt16PtrTy(context));
+		llvm::Constant* operator()(const typeid_t::undefined_t& e) const{
+			UNSUPPORTED();
+			return llvm::ConstantInt::get(itype, 17);
 		}
-		else{
+		llvm::Constant* operator()(const typeid_t::any_t& e) const{
+			return llvm::ConstantInt::get(itype, 13);
+		}
+
+		llvm::Constant* operator()(const typeid_t::void_t& e) const{
 			UNSUPPORTED();
 		}
-	}
-	else if(type.is_typeid()){
-		const auto t = pack_itype(gen_acc, value.get_typeid_value());
-		return llvm::ConstantInt::get(itype, t);
-	}
-	else if(type.is_struct()){
-		UNSUPPORTED();
-	}
-	else if(type.is_vector()){
-		UNSUPPORTED();
-	}
-	else if(type.is_dict()){
-		UNSUPPORTED();
-	}
-	else if(type.is_function()){
-		const auto function_id = value.get_function_value();
-		for(const auto& e: gen_acc.function_defs){
-			if(e.floyd_function_id == function_id){
-				return e.llvm_f;
+		llvm::Constant* operator()(const typeid_t::bool_t& e) const{
+			return llvm::ConstantInt::get(itype, value.get_bool_value() ? 1 : 0);
+		}
+		llvm::Constant* operator()(const typeid_t::int_t& e) const{
+			return llvm::ConstantInt::get(itype, value.get_int_value());
+		}
+		llvm::Constant* operator()(const typeid_t::double_t& e) const{
+			return llvm::ConstantFP::get(itype, value.get_double_value());
+		}
+		llvm::Constant* operator()(const typeid_t::string_t& e) const{
+	//		llvm::Constant* array = llvm::ConstantDataArray::getString(context, value.get_string_value(), true);
+	//		llvm::Constant* c = gen_acc.builder.CreatePointerCast(array, int8Ptr_type);
+
+			llvm::Constant* c2 = builder.CreateGlobalStringPtr(value.get_string_value());
+			//	, "cast [n x i8] to i8*"
+			return c2;
+		}
+
+		llvm::Constant* operator()(const typeid_t::json_type_t& e) const{
+			const auto& json_value0 = value.get_json_value();
+
+			//	NOTICE:There is no clean way to embedd a json_value containing a json-null into the code segment.
+			//	Here we use a nullptr instead of json_t*. This means we have to be prepared for json_t::null AND nullptr.
+			if(json_value0.is_null()){
+				return llvm::ConstantPointerNull::get(llvm::Type::getInt16PtrTy(context));
+			}
+			else{
+				UNSUPPORTED();
 			}
 		}
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
-	else if(type.is_unresolved_type_identifier()){
-		UNSUPPORTED();
-	}
-	else{
-		QUARK_ASSERT(false);
-		return nullptr;
-	}
+		llvm::Constant* operator()(const typeid_t::typeid_type_t& e) const{
+			const auto t = pack_itype(gen_acc, value.get_typeid_value());
+			return llvm::ConstantInt::get(itype, t);
+		}
+
+		llvm::Constant* operator()(const typeid_t::struct_t& e) const{
+			UNSUPPORTED();
+		}
+		llvm::Constant* operator()(const typeid_t::vector_t& e) const{
+			UNSUPPORTED();
+		}
+		llvm::Constant* operator()(const typeid_t::dict_t& e) const{
+			UNSUPPORTED();
+		}
+		llvm::Constant* operator()(const typeid_t::function_t& e2) const{
+			const auto function_id = value.get_function_value();
+			for(const auto& e: gen_acc.function_defs){
+				if(e.floyd_function_id == function_id){
+					return e.llvm_f;
+				}
+			}
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+		llvm::Constant* operator()(const typeid_t::unresolved_t& e) const{
+			UNSUPPORTED();
+		}
+	};
+	return std::visit(visitor_t{ gen_acc, builder, context, itype, value }, type._contents);
 }
 
-//??? Known at compile time!
+#if 0
 static llvm::Value* generate_type_size_calculation(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Type& type){
 	auto& builder = gen_acc.builder;
 	auto& context = gen_acc.module->getContext();
@@ -523,13 +530,19 @@ static llvm::Value* generate_type_size_calculation(llvm_code_generator_t& gen_ac
 	auto int_reg = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, ptr_reg, make_runtime_value_type(context), "calcsize");
 	return int_reg;
 }
+#endif
 
-static llvm::Value* generate_allocate_instance(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Type& type){
+static llvm::Value* generate_allocate_instance(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::StructType& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
 	auto& builder = gen_acc.builder;
-	auto size_reg = generate_type_size_calculation(gen_acc, emit_f, type);
+
+	const llvm::DataLayout& data_layout = gen_acc.module->getDataLayout();
+	const llvm::StructLayout* layout = data_layout.getStructLayout(&type);
+	const auto struct_bytes = layout->getSizeInBytes();
+	auto size_reg = llvm::ConstantInt::get(builder.getInt64Ty(), struct_bytes);
+
 	auto memory_ptr_reg = generate_allocate_memory(gen_acc, emit_f, *size_reg);
 	auto ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, memory_ptr_reg, type.getPointerTo(), "");
 	return ptr_reg;
@@ -1149,8 +1162,6 @@ static void generate_fill_array(llvm_code_generator_t& gen_acc, llvm::Function& 
 		}
 */
 
-
-//??? Test storing vectors in vectors
 static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -1255,13 +1266,12 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *builder.getDoubleTy(), details.elements);
 			return vec_ptr_reg;
 		}
-		//??? All types of elements must be possible in a vector!
 		else{
 			NOT_IMPLEMENTED_YET();
 		}
 	}
 
-	//??? All types of elements must be possible in a vector!
+	//??? All types of elements must be possible in a dict!
 	else if(target_type.is_dict()){
 		const auto element_type0 = target_type.get_dict_value_type();
 		auto dict_acc_ptr_reg = generate_alloc_dict(gen_acc, emit_f, typeid_to_compact_string(target_type));
