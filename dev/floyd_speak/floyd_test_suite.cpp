@@ -3831,11 +3831,9 @@ QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "int", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(91), int)		)", value_t::make_int(91));
 }
 
-#if 0
 QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "double", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(-0.125), double)		)", value_t::make_double(-0.125));
 }
-#endif
 
 QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "string", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(""), string)		)", value_t::make_string(""));

@@ -352,6 +352,9 @@ static llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_
 	else if(type.is_bool()){
 		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::Trunc, &runtime_value_reg, llvm::Type::getInt1Ty(context), "");
 	}
+	else if(type.is_double()){
+		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::BitCast, &runtime_value_reg, llvm::Type::getDoubleTy(context), "");
+	}
 	else if(type.is_typeid()){
 		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::Trunc, &runtime_value_reg, llvm::Type::getInt32Ty(context), "");
 	}
