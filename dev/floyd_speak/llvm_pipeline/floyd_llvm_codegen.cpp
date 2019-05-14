@@ -292,6 +292,7 @@ std::string compose_function_def_name(int function_id, const function_definition
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+//??? use visit()!
 //	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value.
 //	If the value is big, it's stored on the stack and a pointer returned => the returned value is not standalone and lifetime limited to emit function scope.
 static llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type){
@@ -338,11 +339,11 @@ static llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_ac
 	}
 }
 
+//??? use visit()!
 //	Returns the specific LLVM type for the value, like VEC_T* etc.
 static llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& runtime_value_reg, const typeid_t& type){
 	auto& context = gen_acc.instance->context;
 
-	//??? use visit()!
 	//??? This function is tightly coupled to intern_type().
 	if(type.is_int()){
 		return &runtime_value_reg;
