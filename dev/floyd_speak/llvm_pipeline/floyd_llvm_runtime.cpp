@@ -128,10 +128,11 @@ std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::s
 	}
 }
 
-//??? rename to "load_via_ptr()".
 //??? Use visitor for typeid
+//??? Return runtime_value_t
+
 // IMPORTANT: The value can be a global variable of various sizes, for example a BYTE. We cannot dereference pointer as a uint64*!!
-value_t load_global_from_ptr(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type){
+value_t load_via_ptr(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type){
 	QUARK_ASSERT(runtime.check_invariant());
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
@@ -196,7 +197,7 @@ value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t
 	QUARK_ASSERT(v.first != nullptr);
 	QUARK_ASSERT(v.second.is_undefined() == false);
 
-	return load_global_from_ptr(ee, v.first, v.second);
+	return load_via_ptr(ee, v.first, v.second);
 }
 
 /*
@@ -208,7 +209,6 @@ value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t
 	vector[T]		vector<T>	VEC_T*					VEC_T*
 	json_t			json_t		json_t*					int16*
 */
-
 
 
 //??? more types
@@ -254,6 +254,26 @@ runtime_value_t floyd_value_to_runtime_value__struct(const llvm_execution_engine
 		member_index++;
 	}
 	return make_runtime_struct((void*)struct_base_ptr);
+}
+
+value_t runtime_value_to_floyd__struct(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto& struct_def = type.get_struct();
+	std::vector<value_t> members;
+	int member_index = 0;
+	auto t2 = make_struct_type(runtime.instance->context, type);
+	const llvm::DataLayout& data_layout = runtime.ee->getDataLayout();
+	const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
+	const auto struct_base_ptr = reinterpret_cast<const uint8_t*>(encoded_value.struct_ptr);
+	for(const auto& e: struct_def._members){
+		const auto offset = layout->getElementOffset(member_index);
+		const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
+		const auto member_value = runtime_value_to_floyd(runtime, *member_ptr, e._type);
+		members.push_back(member_value);
+		member_index++;
+	}
+	return value_t::make_struct_value(type, members);
 }
 
 //	Convert a floyd value to a runtime_value_t.
@@ -370,73 +390,24 @@ runtime_value_t floyd_value_to_runtime_value(const llvm_execution_engine_t& runt
 	}
 #endif
 
-
-value_t runtime_value_to_floyd(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
+value_t runtime_value_to_floyd__vector(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
-	//??? more types. Use visitor.
-	if(type.is_undefined()){
-		NOT_IMPLEMENTED_YET();
-	}
-	else if(type.is_bool()){
-		//??? How is int1 encoded by LLVM?
-		return value_t::make_bool(encoded_value.bool_value == 0 ? false : true);
-	}
-	else if(type.is_int()){
-		return value_t::make_int(encoded_value.int_value);
-	}
-	else if(type.is_double()){
-		return value_t::make_double(encoded_value.double_value);
-	}
-	else if(type.is_string()){
-		return value_t::make_string(encoded_value.string_ptr);
-	}
-	else if(type.is_json_value()){
-		if(encoded_value.json_ptr == nullptr){
-			return value_t::make_json_value(json_t());
-		}
-		else{
-			return value_t::make_json_value(*encoded_value.json_ptr);
-		}
-	}
-	else if(type.is_typeid()){
-		const auto type1 = lookup_type(runtime.type_interner, encoded_value.typeid_itype);
-		const auto type2 = value_t::make_typeid_value(type1);
-		return type2;
-	}
-	else if(type.is_struct()){
-		const auto& struct_def = type.get_struct();
-		std::vector<value_t> members;
-		int member_index = 0;
-		auto t2 = make_struct_type(runtime.instance->context, type);
-		const llvm::DataLayout& data_layout = runtime.ee->getDataLayout();
-		const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
-		const auto struct_base_ptr = reinterpret_cast<const uint8_t*>(encoded_value.struct_ptr);
-		for(const auto& e: struct_def._members){
-			const auto offset = layout->getElementOffset(member_index);
-			const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
-			const auto member_value = runtime_value_to_floyd(runtime, *member_ptr, e._type);
-			members.push_back(member_value);
-			member_index++;
-		}
-		return value_t::make_struct_value(type, members);
-	}
-	else if(type.is_vector()){
-		const auto element_type = type.get_vector_element_type();
+	const auto element_type = type.get_vector_element_type();
 
-		//??? test with non-string vectors.
-		const auto vec = encoded_value.vector_ptr;
+	//??? test with non-string vectors.
+	const auto vec = encoded_value.vector_ptr;
 
-		std::vector<value_t> elements;
-		const int count = vec->element_count;
-		for(int i = 0 ; i < count ; i++){
-			const auto value_encoded = vec->element_ptr[i];
-			const auto value = runtime_value_to_floyd(runtime, value_encoded, element_type);
-			elements.push_back(value);
-		}
-		const auto val = value_t::make_vector_value(element_type, elements);
-		return val;
-
+	std::vector<value_t> elements;
+	const int count = vec->element_count;
+	for(int i = 0 ; i < count ; i++){
+		const auto value_encoded = vec->element_ptr[i];
+		const auto value = runtime_value_to_floyd(runtime, value_encoded, element_type);
+		elements.push_back(value);
+	}
+	const auto val = value_t::make_vector_value(element_type, elements);
+	return val;
+}
 /*
 		std::vector<value_t> vec2;
 		const auto element_type = type.get_vector_element_type();
@@ -507,6 +478,46 @@ value_t runtime_value_to_floyd(const llvm_execution_engine_t& runtime, const run
 		}
 	}
 */
+
+
+value_t runtime_value_to_floyd(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
+	QUARK_ASSERT(type.check_invariant());
+
+	//??? more types. Use visitor.
+	if(type.is_undefined()){
+		NOT_IMPLEMENTED_YET();
+	}
+	else if(type.is_bool()){
+		//??? How is int1 encoded by LLVM?
+		return value_t::make_bool(encoded_value.bool_value == 0 ? false : true);
+	}
+	else if(type.is_int()){
+		return value_t::make_int(encoded_value.int_value);
+	}
+	else if(type.is_double()){
+		return value_t::make_double(encoded_value.double_value);
+	}
+	else if(type.is_string()){
+		return value_t::make_string(encoded_value.string_ptr);
+	}
+	else if(type.is_json_value()){
+		if(encoded_value.json_ptr == nullptr){
+			return value_t::make_json_value(json_t());
+		}
+		else{
+			return value_t::make_json_value(*encoded_value.json_ptr);
+		}
+	}
+	else if(type.is_typeid()){
+		const auto type1 = lookup_type(runtime.type_interner, encoded_value.typeid_itype);
+		const auto type2 = value_t::make_typeid_value(type1);
+		return type2;
+	}
+	else if(type.is_struct()){
+		return runtime_value_to_floyd__struct(runtime, encoded_value, type);
+	}
+	else if(type.is_vector()){
+		runtime_value_to_floyd__vector(runtime, encoded_value, type);
 	}
 	else if(type.is_dict()){
 		const auto value_type = type.get_dict_value_type();
