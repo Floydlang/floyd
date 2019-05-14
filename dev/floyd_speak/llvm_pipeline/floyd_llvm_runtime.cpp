@@ -466,7 +466,7 @@ std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value_t arg_
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int32_t floyd_runtime__compare_strings(void* floyd_runtime_ptr, int64_t op, const char* lhs, const char* rhs){
+int8_t floyd_runtime__compare_strings(void* floyd_runtime_ptr, int64_t op, const char* lhs, const char* rhs){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	/*
