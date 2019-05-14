@@ -158,6 +158,9 @@ void store_via_ptr(const llvm_execution_engine_t& runtime, const typeid_t& membe
 
 
 
+//	TO RUNTIME_VALUE_T AND BACK
+///////////////////////////////////////////////////////////////////////////////////////
+
 
 
 runtime_value_t to_runtime_struct(const llvm_execution_engine_t& runtime, const typeid_t::struct_t& exact_type, const value_t& value){
@@ -206,51 +209,6 @@ value_t from_runtime_struct(const llvm_execution_engine_t& runtime, const runtim
 	return value_t::make_struct_value(type, members);
 }
 
-#if 0
-	if(type0.is_string()){
-		auto result = new json_t(value.get_string_value());
-		return reinterpret_cast<int16_t*>(result);
-	}
-	else if(type0.is_json_value()){
-		return reinterpret_cast<int16_t*>(arg0_value);
-	}
-	else if(type0.is_int()){
-		auto result = new json_t(value.get_int_value());
-		return reinterpret_cast<int16_t*>(result);
-	}
-	else if(type0.is_bool()){
-		auto result = new json_t(value.get_bool_value());
-		return reinterpret_cast<int16_t*>(result);
-	}
-	else if(type0.is_vector()){
-		QUARK_ASSERT(type0.get_vector_element_type().is_json_value());
-
-		const auto v = value.get_vector_value();
-		std::vector<json_t> json_vec;
-		for(const auto& e: v){
-			json_vec.push_back(e.get_json_value());
-		}
-
-		auto result = new json_t(json_vec);
-		return reinterpret_cast<int16_t*>(result);
-	}
-	else if(type0.is_dict()){
-		QUARK_ASSERT(type0.get_dict_value_type().is_json_value());
-
-		const auto v = value.get_vector_value();
-		std::vector<json_t> json_vec;
-		for(const auto& e: v){
-			json_vec.push_back(e.get_json_value());
-		}
-
-		auto result = new json_t(json_vec);
-		return reinterpret_cast<int16_t*>(result);
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
-#endif
-
 runtime_value_t to_runtime_vector(const llvm_execution_engine_t& runtime, const typeid_t::vector_t& exact_type, const value_t& value){
 	QUARK_ASSERT(runtime.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
@@ -277,76 +235,6 @@ value_t from_runtime_vector(const llvm_execution_engine_t& runtime, const runtim
 	const auto val = value_t::make_vector_value(element_type, elements);
 	return val;
 }
-/*
-		std::vector<value_t> vec2;
-		const auto element_type = type.get_vector_element_type();
-		if(element_type.is_string()){
-			for(int i = 0 ; i < vec.element_count ; i++){
-				auto s = (const char*)vec.element_ptr[i];
-				const auto a = std::string(s);
-				vec2.push_back(value_t::make_string(a));
-			}
-			return value_t::make_vector_value(element_type, vec2);
-		}
-		else if(element_type.is_json_value()){
-			for(int i = 0 ; i < vec.element_count ; i++){
-				const auto& s = *reinterpret_cast<const json_t*>(vec.element_ptr[i]);
-				vec2.push_back(value_t::make_json_value(s));
-			}
-			return value_t::make_vector_value(element_type, vec2);
-		}
-		else if(element_type.is_bool()){
-			for(int i = 0 ; i < vec.element_count ; i++){
-				auto s = vec.element_ptr[i];
-				vec2.push_back(value_t::make_bool(s != 0x00));
-			}
-			return value_t::make_vector_value(element_type, vec2);
-		}
-		else if(element_type.is_int()){
-			for(int i = 0 ; i < vec.element_count ; i++){
-				auto s = vec.element_ptr[i];
-				vec2.push_back(value_t::make_int(s));
-			}
-			return value_t::make_vector_value(element_type, vec2);
-		}
-		else if(element_type.is_double()){
-			for(int i = 0 ; i < vec.element_count ; i++){
-				auto s = vec.element_ptr[i];
-				auto d = *(double*)&s;
-				vec2.push_back(value_t::make_double(d));
-			}
-			return value_t::make_vector_value(element_type, vec2);
-		}
-		else{
-			NOT_IMPLEMENTED_YET();
-		}
-*/
-/*
-!!!
-	else if(type.is_vector()){
-		auto vec = *static_cast<const VEC_T*>(value_ptr);
-		std::vector<value_t> vec2;
-		if(type.get_vector_element_type().is_string()){
-			for(int i = 0 ; i < vec.element_count ; i++){
-				auto s = (const char*)vec.element_ptr[i];
-				const auto a = std::string(s);
-				vec2.push_back(value_t::make_string(a));
-			}
-			return value_t::make_vector_value(typeid_t::make_string(), vec2);
-		}
-		else if(type.get_vector_element_type().is_bool()){
-			for(int i = 0 ; i < vec.element_count ; i++){
-				auto s = vec.element_ptr[i / 64];
-				bool masked = s & (1 << (i & 63));
-				vec2.push_back(value_t::make_bool(masked == 0 ? false : true));
-			}
-			return value_t::make_vector_value(typeid_t::make_bool(), vec2);
-		}
-		else{
-		NOT_IMPLEMENTED_YET();
-		}
-	}
-*/
 
 runtime_value_t to_runtime_dict(const llvm_execution_engine_t& runtime, const typeid_t::dict_t& exact_type, const value_t& value){
 	QUARK_ASSERT(runtime.check_invariant());
@@ -501,6 +389,11 @@ value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime
 
 
 
+////////////////////////////////	HELPERS FOR RUNTIME CALLBACKS
+
+
+
+
 /*
 @variable = global i32 21
 define i32 @main() {
@@ -544,13 +437,6 @@ std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value_t arg_
 void floyd_runtime__unresolved_func(void* floyd_runtime_ptr){
 	std:: cout << __FUNCTION__ << std::endl;
 }
-
-
-
-
-
-
-
 
 
 
