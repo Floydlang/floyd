@@ -143,6 +143,14 @@ DICT_T* unpack_dict_arg(const type_interner_t& types, runtime_value_t arg_value,
 }
 
 
+base_type get_base_type(const type_interner_t& interner, const runtime_type_t& type){
+	const auto a = lookup_type(interner, type);
+	const auto a_basetype = a.get_base_type();
+
+	//??? We know ranges where type.itype maps to base_type -- no need to look up in type_interner.
+	return a_basetype;
+}
+
 
 typeid_t lookup_type(const type_interner_t& interner, const runtime_type_t& type){
 	const auto it = std::find_if(interner.interned.begin(), interner.interned.end(), [&](const std::pair<itype_t, typeid_t>& e){ return e.first.itype == type; });

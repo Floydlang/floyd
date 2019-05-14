@@ -707,8 +707,6 @@ host_func_t floyd_runtime__delete_dict__make(llvm::LLVMContext& context){
 DICT_T* floyd_runtime__store_dict(void* floyd_runtime_ptr, DICT_T* dict, const char* key_string, runtime_value_t element_value, runtime_type_t element_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-//	const auto element_type2 = lookup_type(r.type_interner, element_type);
-
 	//	Deep copy dict.
 	auto v = make_dict();
 	v.body_ptr->map = dict->body_ptr->map;
@@ -740,7 +738,6 @@ host_func_t floyd_runtime__store_dict__make(llvm::LLVMContext& context){
 runtime_value_t floyd_runtime__lookup_dict(void* floyd_runtime_ptr, DICT_T* dict, const char* key_string){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-//	const auto element_type2 = lookup_type(r.type_interner, element_type);
 	const auto it = dict->body_ptr->map.find(std::string(key_string));
 	if(it == dict->body_ptr->map.end()){
 		throw std::exception();
@@ -982,7 +979,6 @@ struct native_sha1_t {
 
 
 
-//??? should be an int1?
 void floyd_funcdef__assert(void* floyd_runtime_ptr, runtime_value_t arg){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
@@ -1051,7 +1047,7 @@ WIDE_RETURN_T floyd_host_function__erase(void* floyd_runtime_ptr, runtime_value_
 		return make_wide_return_dict(new DICT_T(dict2));
 	}
 	else{
-		NOT_IMPLEMENTED_YET();
+		UNSUPPORTED();
 	}
 }
 
@@ -1069,7 +1065,7 @@ uint32_t floyd_funcdef__exists(void* floyd_runtime_ptr, runtime_value_t arg0_val
 		return it != dict->body_ptr->map.end() ? 1 : 0;
 	}
 	else{
-		NOT_IMPLEMENTED_YET();
+		UNSUPPORTED();
 	}
 }
 
@@ -1087,20 +1083,22 @@ WIDE_RETURN_T floyd_funcdef__filter(void* floyd_runtime_ptr, runtime_value_t arg
 	const auto type0 = lookup_type(r.type_interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner, arg1_type);
 
-/*
-	if(type0.is_vector() == false || type2.is_function() == false || type2.get_function_args().size () != 2){
-		quark::throw_runtime_error("reduce() parameter error.");
+	if(type0.is_vector() == false){
+		quark::throw_runtime_error("filter() requires argument 1 to be a vector.");
 	}
-*/
+	if(type1.is_function() == false){
+		quark::throw_runtime_error("filter() requires argument 2 to be a function.");
+	}
+	if(type1.get_function_args().size() != 2){
+		quark::throw_runtime_error("filter() requires argument 2 function to take 2 arguments.");
+	}
 
 	const auto& vec = *arg0_value.vector_ptr;
 	const auto f = reinterpret_cast<FILTER_F>(arg1_value.function_ptr);
 
-	const auto e_type = lookup_runtime_type(r.type_interner, type0.get_vector_element_type());
 	auto count = vec.element_count;
 
 	std::vector<runtime_value_t> acc;
-
 	for(int i = 0 ; i < count ; i++){
 		const auto element_value = vec.element_ptr[i];
 		const auto keep = (*f)(floyd_runtime_ptr, element_value);
@@ -1166,7 +1164,7 @@ int64_t floyd_funcdef__find(void* floyd_runtime_ptr, runtime_value_t arg0_value,
 	}
 	else{
 		//	No other types allowed.
-		throw std::exception();
+		UNSUPPORTED();
 	}
 }
 
@@ -1190,9 +1188,9 @@ void floyd_host_function_1013(void* floyd_runtime_ptr, runtime_value_t arg){
 
 int64_t floyd_host_function__get_json_type(void* floyd_runtime_ptr, uint16_t* json_ptr){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(json_ptr != nullptr);
 
 	const auto& json = *reinterpret_cast<const json_t*>(json_ptr);
-
 	const auto result = get_json_type(json);
 	return result;
 }
@@ -1207,9 +1205,8 @@ int64_t floyd_funcdef__get_time_of_day(void* floyd_runtime_ptr){
 }
 
 char* floyd_funcdef__jsonvalue_to_script(void* floyd_runtime_ptr, int32_t* json_ptr){
-	QUARK_ASSERT(json_ptr != nullptr);
-
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(json_ptr != nullptr);
 
 	const auto& json = *reinterpret_cast<const json_t*>(json_ptr);
 
@@ -1219,9 +1216,8 @@ char* floyd_funcdef__jsonvalue_to_script(void* floyd_runtime_ptr, int32_t* json_
 }
 
 runtime_value_t floyd_funcdef__jsonvalue_to_value(void* floyd_runtime_ptr, uint32_t* json_ptr, runtime_type_t target_type){
-	QUARK_ASSERT(json_ptr != nullptr);
-
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(json_ptr != nullptr);
 
 	const auto& json_value = *reinterpret_cast<const json_t*>(json_ptr);
 	const auto target_type2 = lookup_type(r.type_interner, target_type);
@@ -1232,6 +1228,7 @@ runtime_value_t floyd_funcdef__jsonvalue_to_value(void* floyd_runtime_ptr, uint3
 }
 
 
+//??? No need to call lookup_type() to check which basic type it is!
 
 //??? test map() with complex types of values
 //??? map() and other functions should be select at compile time, not runtime!
@@ -1246,7 +1243,7 @@ WIDE_RETURN_T floyd_funcdef__map(void* floyd_runtime_ptr, runtime_value_t arg0_v
 	if(type0.is_vector() == false){
 		quark::throw_runtime_error("map() arg 1 must be a vector.");
 	}
-	const auto e_type = type0.get_vector_element_type();
+	const auto element_type = type0.get_vector_element_type();
 
 	if(type1.is_function() == false){
 		quark::throw_runtime_error("map() requires start and end to be integers.");
@@ -1258,7 +1255,7 @@ WIDE_RETURN_T floyd_funcdef__map(void* floyd_runtime_ptr, runtime_value_t arg0_v
 		quark::throw_runtime_error("map() function f requries 1 argument.");
 	}
 
-	if(f_arg_types[0] != e_type){
+	if(f_arg_types[0] != element_type){
 		quark::throw_runtime_error("map() function f must accept collection elements as its argument.");
 	}
 
@@ -1282,10 +1279,10 @@ WIDE_RETURN_T floyd_funcdef__map(void* floyd_runtime_ptr, runtime_value_t arg0_v
 //??? Also function should always return ONE character, not a string!
 typedef const char* (*MAP_STRING_F)(void* floyd_runtime_ptr, const char* char_s);
 
-const char* floyd_funcdef__map_string(void* floyd_runtime_ptr, runtime_value_t string_s, runtime_value_t func){
+const char* floyd_funcdef__map_string(void* floyd_runtime_ptr, const char* input_string, runtime_value_t func){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(input_string != nullptr);
 
-	const char* input_string = string_s.string_ptr;
 	const auto f = reinterpret_cast<MAP_STRING_F>(func.function_ptr);
 
 	auto count = strlen(input_string);
@@ -1304,6 +1301,7 @@ const char* floyd_funcdef__map_string(void* floyd_runtime_ptr, runtime_value_t s
 
 void floyd_funcdef__print(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
 	const auto s = gen_to_string(r, arg0_value, arg0_type);
 	r._print_output.push_back(s);
 }
@@ -1345,7 +1343,7 @@ WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, runtime_value_t 
 	}
 	else{
 		//	No other types allowed.
-		throw std::exception();
+		UNSUPPORTED();
 	}
 }
 
@@ -1375,21 +1373,7 @@ WIDE_RETURN_T floyd_funcdef__reduce(void* floyd_runtime_ptr, runtime_value_t arg
 	const auto& init = arg1_value;
 	const auto f = reinterpret_cast<REDUCE_F>(arg2_value.function_ptr);
 
-/*
-	if(
-		elements._type.get_vector_element_type() != f._type.get_function_args()[1]
-		&& init._type != f._type.get_function_args()[0]
-	)
-	{
-		quark::throw_runtime_error("R reduce([E] elements, R init_value, R (R acc, E element) f");
-	}
-*/
-
-	const auto e_type = lookup_runtime_type(r.type_interner, type0.get_vector_element_type());
-	const auto r_type = lookup_runtime_type(r.type_interner, type2.get_function_return());
-
 	auto count = vec.element_count;
-
 	runtime_value_t acc = init;
 	for(int i = 0 ; i < count ; i++){
 		const auto element_value = vec.element_ptr[i];
@@ -1462,14 +1446,13 @@ const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, runtime_valu
 	}
 	else{
 		//	No other types allowed.
-		throw std::exception();
+		UNSUPPORTED();
 	}
 }
 
 int16_t* floyd_funcdef__script_to_jsonvalue(void* floyd_runtime_ptr, const char* string_s){
-	QUARK_ASSERT(string_s != nullptr);
-
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(string_s != nullptr);
 
 	std::pair<json_t, seq_t> result0 = parse_json(seq_t(string_s));
 	auto result = new json_t(result0.first);
@@ -1516,7 +1499,7 @@ int64_t floyd_funcdef__size(void* floyd_runtime_ptr, runtime_value_t arg0_value,
 	}
 	else{
 		//	No other types allowed.
-		throw std::exception();
+		UNSUPPORTED();
 	}
 }
 
@@ -1559,7 +1542,7 @@ const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, runtime_value
 	}
 	else{
 		//	No other types allowed.
-		throw std::exception();
+		UNSUPPORTED();
 	}
 }
 
@@ -1719,7 +1702,7 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 	}
 	else{
 		//	No other types allowed.
-		throw std::exception();
+		UNSUPPORTED();
 	}
 }
 

@@ -34,6 +34,7 @@ llvm::Type* make_runtime_type_type(llvm::LLVMContext& context);
 runtime_type_t make_runtime_type(int32_t itype);
 
 
+base_type get_base_type(const type_interner_t& interner, const runtime_type_t& type);
 
 typeid_t lookup_type(const type_interner_t& interner, const runtime_type_t& type);
 runtime_type_t lookup_runtime_type(const type_interner_t& interner, const typeid_t& type);
