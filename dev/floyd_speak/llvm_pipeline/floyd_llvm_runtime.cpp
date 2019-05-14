@@ -1302,7 +1302,8 @@ runtime_value_t floyd_funcdef__jsonvalue_to_value(void* floyd_runtime_ptr, uint3
 	const auto target_type2 = lookup_type(r.type_interner, target_type);
 
 	const auto result = unflatten_json_to_specific_type(json_value, target_type2);
-	return floyd_value_to_runtime_value(r, result);
+	const auto result2 = floyd_value_to_runtime_value(r, result);
+	return result2;
 }
 
 

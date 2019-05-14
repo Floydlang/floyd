@@ -134,6 +134,8 @@ struct typeid_t {
 		arg0,
 		arg1,
 
+		arg1_typeid_constant_type,
+
 		//	x = make_vector(arg1.get_function_return());
 		vector_of_arg1func_return,
 

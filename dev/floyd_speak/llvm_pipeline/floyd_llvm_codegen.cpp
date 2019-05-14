@@ -344,8 +344,16 @@ static llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_ac
 static llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& runtime_value_reg, const typeid_t& type){
 	auto& context = gen_acc.instance->context;
 
+	//??? use visit()!
+	//??? This function is tightly coupled to intern_type().
 	if(type.is_int()){
 		return &runtime_value_reg;
+	}
+	else if(type.is_bool()){
+		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::Trunc, &runtime_value_reg, llvm::Type::getInt1Ty(context), "");
+	}
+	else if(type.is_typeid()){
+		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::Trunc, &runtime_value_reg, llvm::Type::getInt32Ty(context), "");
 	}
 	else if(type.is_string()){
 		return gen_acc.builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, llvm::Type::getInt8PtrTy(context), "");
@@ -546,6 +554,9 @@ llvm::Constant* generate_constant(llvm_code_generator_t& gen_acc, llvm::Function
 	}
 	else if(type.is_json_value()){
 		const auto& json_value0 = value.get_json_value();
+
+		//	??? There is no clean way to embedd a json_value containing a json-null into the code segment.
+		//	Here we use a nullptr instead of json_t*. This means we have to be prepared for json_t::null AND nullptr.
 		if(json_value0.is_null()){
 			return llvm::ConstantPointerNull::get(llvm::Type::getInt16PtrTy(context));
 		}

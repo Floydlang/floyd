@@ -1474,97 +1474,7 @@ std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& 
 	return { a_acc, call_args2 };
 }
 
-
-
-
-/*
-//	??? This only works when directly calling one of the host functions, via its global name.
-bool is_host_function_call(const analyser_t& a, const expression_t& callee_expr){
-	QUARK_ASSERT(std::get_if<expression_t::load_t>(&callee_expr._contents) == nullptr);
-
-	if(auto load2 = std::get_if<expression_t::load2_t>(&callee_expr._contents)){
-		const auto callee = resolve_symbol_by_address(a, load2->address);
-		QUARK_ASSERT(callee != nullptr);
-
-		if(callee->_init.is_function()){
-			const auto& function_def = function_id_to_def(a, callee->_init.get_function_value());
-			return std::get<function_definition_t::host_func_t>(function_def._contents)._host_function_id != k_no_host_function_id;
-		}
-		else{
-			return false;
-		}
-	}
-	else{
-		return false;
-	}
-}
-
-typeid_t get_host_function_return_type(const analyser_t& a, const statement_t& parent, const expression_t& callee_expr, const vector<expression_t>& args){
-	auto load2 = std::get_if<expression_t::load2_t>(&callee_expr._contents);
-	QUARK_ASSERT(load2 != nullptr);
-
-	const auto callee = resolve_symbol_by_address(a, load2->address);
-	QUARK_ASSERT(callee != nullptr);
-
-	const auto& function_def = function_id_to_def(a, callee->_init.get_function_value());
-
-	const auto host_function_id = std::get<function_definition_t::host_func_t>(function_def._contents)._host_function_id;
-
-	const auto& host_functions = a._imm->_host_functions;
-	const auto found_it = find_if(host_functions.begin(), host_functions.end(), [&](const std::pair<std::string, floyd::host_function_signature_t>& kv){ return kv.second._function_id == host_function_id; });
-	QUARK_ASSERT(found_it != host_functions.end());
-
-	const auto calc_dyn_type = found_it->second._dynamic_return_type;
-	if(calc_dyn_type){
-		std::vector<typeid_t> arg_types;
-		for(const auto& e: args){
-			arg_types.push_back(e.get_output_type());
-		}
-		return calc_dyn_type(arg_types);
-	}
-	else{
-		const auto function_name = found_it->first;
-
-		//	jsonvalue_to_value() supports argument 2 that is a compile-time type name.
-		if(found_it->second._function_id == static_cast<int>(host_function_id::jsonvalue_to_value)){
-			QUARK_ASSERT(args.size() == 2);
-
-			const auto arg0 = args[0];
-			const auto arg1 = args[1];
-
-			if(auto arg1_load2 = std::get_if<expression_t::load2_t>(&arg1._contents)){
-				const auto symbol = resolve_symbol_by_address(a, arg1_load2->address);
-				if(symbol != nullptr && symbol->_init.is_undefined() == false){
-					return symbol->_init.get_typeid_value();
-				}
-				else{
-					throw_compiler_error(parent.location, "Cannot resolve type for jsonvalue_to_value().");
-				}
-			}
-			else{
-				throw_compiler_error(parent.location, "Cannot resolve type for jsonvalue_to_value().");
-			}
-		}
-		else{
-			return callee_expr.get_output_type().get_function_return();
-		}
-	}
-}
-
-const typeid_t figure_out_return_type_via_hf(const analyser_t& a, const statement_t& parent, const expression_t& callee_expr, const std::vector<expression_t>& call_args){
-	const auto callee_type = callee_expr.get_output_type();
-	const auto callee_return_value = callee_type.get_function_return();
-
-	if(is_host_function_call(a, callee_expr)){
-		const auto return_type = get_host_function_return_type(a, parent, callee_expr, call_args);
-		return return_type;
-	}
-	else{
-		return callee_return_value;
-	}
-}
-*/
-
+//??? Factor-out this functions and put lower in stack.
 const typeid_t figure_out_return_type(const analyser_t& a, const statement_t& parent, const expression_t& callee_expr, const std::vector<expression_t>& call_args){
 	const auto callee_type = callee_expr.get_output_type();
 	const auto callee_return_value = callee_type.get_function_return();
@@ -1589,6 +1499,25 @@ const typeid_t figure_out_return_type(const analyser_t& a, const statement_t& pa
 				QUARK_ASSERT(call_args.size() >= 2);
 
 				return call_args[1].get_output_type();
+			}
+			break;
+		case typeid_t::return_dyn_type::arg1_typeid_constant_type:
+			{
+				QUARK_ASSERT(call_args.size() >= 2);
+
+				const auto e = call_args[1];
+				if(std::holds_alternative<expression_t::load2_t>(e._contents) == false){
+					std::stringstream what;
+					what << "Argument 2 must be a typeid literal.";
+					throw_compiler_error(parent.location, what.str());
+				}
+				const auto& load = std::get<expression_t::load2_t>(e._contents);
+				QUARK_ASSERT(load.address._parent_steps == -1);
+
+				const auto& x = a._lexical_scope_stack[0].symbols._symbols[load.address._index];
+
+//				QUARK_ASSERT(x.value.is_typeid());
+				return x.second._init.get_typeid_value();
 			}
 			break;
 		case typeid_t::return_dyn_type::vector_of_arg1func_return:

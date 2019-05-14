@@ -3817,19 +3817,12 @@ QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_script()", "[pixel_t]", ""){
 //////////////////////////////////////////		value_to_jsonvalue() -> jsonvalue_to_value() roundtrip
 
 /*
-jsonvalue_to_value() returns different types depending on its 2nd argument.??? jsonvalue_to_value() is a broken concept. Use string(json_value), bool(json_value) etc instead.
-
-	int type = get_json_type(j);
-	if(type == 1){
-	}
+	jsonvalue_to_value() returns different types depending on its 2nd argument.		??? test all types!
 */
-
-#if 0
 QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "bool", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(true), bool)		)", value_t::make_bool(true));
 }
-#endif
-#if 0
+
 QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "bool", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(false), bool)		)", value_t::make_bool(false));
 }
@@ -3838,9 +3831,11 @@ QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "int", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(91), int)		)", value_t::make_int(91));
 }
 
+#if 0
 QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "double", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(-0.125), double)		)", value_t::make_double(-0.125));
 }
+#endif
 
 QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "string", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(""), string)		)", value_t::make_string(""));
@@ -3850,6 +3845,7 @@ QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "string", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue("cola"), string)		)", value_t::make_string("cola"));
 }
 
+#if 0
 QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "point_t", ""){
 	const auto point_t_def = std::vector<member_t>{
 		member_t(typeid_t::make_double(), "x"),
