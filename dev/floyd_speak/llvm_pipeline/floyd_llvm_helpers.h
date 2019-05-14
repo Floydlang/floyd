@@ -335,6 +335,24 @@ llvm::StructType* make_struct_type(llvm::LLVMContext& context, const typeid_t& t
 llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type);
 
 
+
+/*
+	floyd			C++			runtime_value_t			native func arg/return
+	--------------------------------------------------------------------------------------------------------------------
+	bool			bool		uint8					uint1
+	int							int64_t					int64
+	string			string		char*					char*
+	vector[T]		vector<T>	VEC_T*					VEC_T*
+	json_t			json_t		json_t*					int16*
+*/
+
+
+
+runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type);
+void store_via_ptr2(const typeid_t& member_type, void* value_ptr, const runtime_value_t& value);
+
+
+
 }	//	floyd
 
 #endif /* floyd_llvm_helpers_hpp */

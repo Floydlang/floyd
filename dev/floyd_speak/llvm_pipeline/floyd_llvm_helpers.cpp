@@ -885,5 +885,84 @@ llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type){
 }
 
 
+
+
+
+
+//??? Use visitor for typeid
+//??? Return runtime_value_t
+// IMPORTANT: The value can be a global variable of various sizes, for example a BYTE. We cannot dereference pointer as a uint64*!!
+runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type){
+	QUARK_ASSERT(value_ptr != nullptr);
+	QUARK_ASSERT(type.check_invariant());
+
+	//??? more types.
+	if(type.is_undefined()){
+	}
+	else if(type.is_bool()){
+		const auto temp = *static_cast<const uint8_t*>(value_ptr);
+		return runtime_value_t{ .bool_value = temp };
+	}
+	else if(type.is_int()){
+		const auto temp = *static_cast<const uint64_t*>(value_ptr);
+		return make_runtime_int(temp);
+	}
+	else if(type.is_double()){
+		const auto temp = *static_cast<const double*>(value_ptr);
+		return runtime_value_t{ .double_value = temp };
+	}
+	else if(type.is_string()){
+		char* s = *(char**)(value_ptr);
+		return runtime_value_t{ .string_ptr = s };
+	}
+	else if(type.is_json_value()){
+		json_t* json_ptr = *(json_t**)(value_ptr);
+		return runtime_value_t{ .json_ptr = json_ptr };
+	}
+	else if(type.is_typeid()){
+		const auto value = *static_cast<const int32_t*>(value_ptr);
+		return runtime_value_t{ .typeid_itype = value };
+	}
+	else if(type.is_struct()){
+		const auto struct_ptr_as_int = *reinterpret_cast<const uint64_t*>(value_ptr);
+		auto struct_ptr = reinterpret_cast<void*>(struct_ptr_as_int);
+		return make_runtime_struct(struct_ptr);
+	}
+	else if(type.is_vector()){
+		return *static_cast<const runtime_value_t*>(value_ptr);
+	}
+	else if(type.is_dict()){
+		return *static_cast<const runtime_value_t*>(value_ptr);
+	}
+	else if(type.is_function()){
+		NOT_IMPLEMENTED_YET();
+	}
+	else{
+	}
+	NOT_IMPLEMENTED_YET();
+	QUARK_ASSERT(false);
+	throw std::exception();
+}
+
+
+
+//??? more types
+//??? Use runtime_value_t, not value_t!
+void store_via_ptr2(const typeid_t& member_type, void* value_ptr, const runtime_value_t& value){
+	if(member_type.is_double()){
+		*static_cast<double*>(value_ptr) = value.double_value;
+	}
+	else if(member_type.is_string()){
+		*(char**)(value_ptr) = value.string_ptr;
+	}
+	else if(member_type.is_int()){
+		*(int64_t*)value_ptr = value.int_value;
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
+
+
 }	//	floyd
 
