@@ -59,6 +59,10 @@ union runtime_value_t {
 	json_t* json_ptr;
 	void* struct_ptr;
 	void* function_ptr;
+
+	bool check_invariant() const {
+		return true;
+	}
 };
 
 

@@ -158,7 +158,9 @@ void store_via_ptr(const llvm_execution_engine_t& runtime, const typeid_t& membe
 
 
 
-runtime_value_t to_runtime_struct(const llvm_execution_engine_t& runtime, const typeid_t::struct_t& struct_type, const value_t& value){
+
+
+runtime_value_t to_runtime_struct(const llvm_execution_engine_t& runtime, const typeid_t::struct_t& exact_type, const value_t& value){
 	QUARK_ASSERT(runtime.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
@@ -204,77 +206,6 @@ value_t from_runtime_struct(const llvm_execution_engine_t& runtime, const runtim
 	return value_t::make_struct_value(type, members);
 }
 
-
-
-//	Convert a floyd value to a runtime_value_t.
-runtime_value_t to_runtime_value(const llvm_execution_engine_t& runtime, const value_t& value){
-	QUARK_ASSERT(runtime.check_invariant());
-	QUARK_ASSERT(value.check_invariant());
-
-	const auto type = value.get_type();
-
-	struct visitor_t {
-		const llvm_execution_engine_t& runtime;
-		const value_t& value;
-
-		runtime_value_t operator()(const typeid_t::undefined_t& e) const{
-			QUARK_ASSERT(false);
-		}
-		runtime_value_t operator()(const typeid_t::any_t& e) const{
-			QUARK_ASSERT(false);
-		}
-
-		runtime_value_t operator()(const typeid_t::void_t& e) const{
-			QUARK_ASSERT(false);
-		}
-		runtime_value_t operator()(const typeid_t::bool_t& e) const{
-			return { .bool_value = (uint8_t)(value.get_bool_value() ? 1 : 0) };
-		}
-		runtime_value_t operator()(const typeid_t::int_t& e) const{
-			return { .int_value = value.get_int_value() };
-		}
-		runtime_value_t operator()(const typeid_t::double_t& e) const{
-			return { .double_value = value.get_double_value() };
-		}
-		runtime_value_t operator()(const typeid_t::string_t& e) const{
-			return { .string_ptr = strdup(value.get_string_value().c_str()) };
-		}
-
-		runtime_value_t operator()(const typeid_t::json_type_t& e) const{
-			QUARK_ASSERT(false);
-		}
-		runtime_value_t operator()(const typeid_t::typeid_type_t& e) const{
-			QUARK_ASSERT(false);
-		}
-
-		runtime_value_t operator()(const typeid_t::struct_t& e) const{
-			return to_runtime_struct(runtime, e, value);
-		}
-		runtime_value_t operator()(const typeid_t::vector_t& e) const{
-			QUARK_ASSERT(false);
-		}
-		runtime_value_t operator()(const typeid_t::dict_t& e) const{
-			QUARK_ASSERT(false);
-		}
-		runtime_value_t operator()(const typeid_t::function_t& e) const{
-#if 0
-			//	If function returns a DYN, it must have a dyn_return.
-			QUARK_ASSERT(e._parts[0].is_any() == false || e.dyn_return != return_dyn_type::none);
-
-			QUARK_ASSERT(e._parts.size() >= 1);
-
-			for(const auto& m: e._parts){
-				QUARK_ASSERT(m.check_invariant());
-			}
-#endif
-			QUARK_ASSERT(false);
-		}
-		runtime_value_t operator()(const typeid_t::unresolved_t& e) const{
-			QUARK_ASSERT(false);
-		}
-	};
-	return std::visit(visitor_t{ runtime, value }, type._contents);
-}
 #if 0
 	if(type0.is_string()){
 		auto result = new json_t(value.get_string_value());
@@ -320,7 +251,15 @@ runtime_value_t to_runtime_value(const llvm_execution_engine_t& runtime, const v
 	}
 #endif
 
+runtime_value_t to_runtime_vector(const llvm_execution_engine_t& runtime, const typeid_t::vector_t& exact_type, const value_t& value){
+	QUARK_ASSERT(runtime.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+
+	return runtime_value_t{ .vector_ptr = nullptr };
+}
+
 value_t from_runtime_vector(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
+	QUARK_ASSERT(runtime.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto element_type = type.get_vector_element_type();
@@ -409,13 +348,110 @@ value_t from_runtime_vector(const llvm_execution_engine_t& runtime, const runtim
 	}
 */
 
+runtime_value_t to_runtime_dict(const llvm_execution_engine_t& runtime, const typeid_t::dict_t& exact_type, const value_t& value){
+	QUARK_ASSERT(runtime.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+
+	return runtime_value_t{ .vector_ptr = nullptr };
+}
+
+value_t from_runtime_dict(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
+	QUARK_ASSERT(runtime.check_invariant());
+	QUARK_ASSERT(encoded_value.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto value_type = type.get_dict_value_type();
+	const auto dict = encoded_value.dict_ptr;
+
+	std::map<std::string, value_t> values;
+	const auto& map2 = dict->body_ptr->map;
+	for(const auto& e: map2){
+		const auto value = from_runtime_value(runtime, e.second, value_type);
+		values.insert({ e.first, value} );
+	}
+	const auto val = value_t::make_dict_value(type, values);
+	return val;
+}
+
+runtime_value_t to_runtime_value(const llvm_execution_engine_t& runtime, const value_t& value){
+	QUARK_ASSERT(runtime.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+
+	const auto type = value.get_type();
+
+	struct visitor_t {
+		const llvm_execution_engine_t& runtime;
+		const value_t& value;
+
+		runtime_value_t operator()(const typeid_t::undefined_t& e) const{
+			UNSUPPORTED();
+		}
+		runtime_value_t operator()(const typeid_t::any_t& e) const{
+			UNSUPPORTED();
+		}
+
+		runtime_value_t operator()(const typeid_t::void_t& e) const{
+			UNSUPPORTED();
+		}
+		runtime_value_t operator()(const typeid_t::bool_t& e) const{
+			return { .bool_value = (uint8_t)(value.get_bool_value() ? 1 : 0) };
+		}
+		runtime_value_t operator()(const typeid_t::int_t& e) const{
+			return { .int_value = value.get_int_value() };
+		}
+		runtime_value_t operator()(const typeid_t::double_t& e) const{
+			return { .double_value = value.get_double_value() };
+		}
+		runtime_value_t operator()(const typeid_t::string_t& e) const{
+			return { .string_ptr = strdup(value.get_string_value().c_str()) };
+		}
+
+		runtime_value_t operator()(const typeid_t::json_type_t& e) const{
+			auto result = new json_t(value.get_json_value());
+			return runtime_value_t { .json_ptr = result };
+		}
+		runtime_value_t operator()(const typeid_t::typeid_type_t& e) const{
+			const auto t0 = value.get_typeid_value();
+			const auto t1 = lookup_runtime_type(runtime.type_interner, t0);
+			return make_runtime_typeid(t1);
+		}
+
+		runtime_value_t operator()(const typeid_t::struct_t& e) const{
+			return to_runtime_struct(runtime, e, value);
+		}
+		runtime_value_t operator()(const typeid_t::vector_t& e) const{
+			return to_runtime_vector(runtime, e, value);
+		}
+		runtime_value_t operator()(const typeid_t::dict_t& e) const{
+			return to_runtime_dict(runtime, e, value);
+		}
+		runtime_value_t operator()(const typeid_t::function_t& e) const{
+			UNSUPPORTED();
+#if 0
+			//	If function returns a DYN, it must have a dyn_return.
+			QUARK_ASSERT(e._parts[0].is_any() == false || e.dyn_return != return_dyn_type::none);
+
+			QUARK_ASSERT(e._parts.size() >= 1);
+
+			for(const auto& m: e._parts){
+				QUARK_ASSERT(m.check_invariant());
+			}
+#endif
+			QUARK_ASSERT(false);
+		}
+		runtime_value_t operator()(const typeid_t::unresolved_t& e) const{
+			UNSUPPORTED();
+		}
+	};
+	return std::visit(visitor_t{ runtime, value }, type._contents);
+}
 
 value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	//??? more types. Use visitor.
 	if(type.is_undefined()){
-		NOT_IMPLEMENTED_YET();
+		UNSUPPORTED();
 	}
 	else if(type.is_bool()){
 		//??? How is int1 encoded by LLVM?
@@ -450,17 +486,7 @@ value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime
 		return from_runtime_vector(runtime, encoded_value, type);
 	}
 	else if(type.is_dict()){
-		const auto value_type = type.get_dict_value_type();
-		const auto dict = encoded_value.dict_ptr;
-
-		std::map<std::string, value_t> values;
-		const auto& map2 = dict->body_ptr->map;
-		for(const auto& e: map2){
-			const auto value = from_runtime_value(runtime, e.second, value_type);
-			values.insert({ e.first, value} );
-		}
-		const auto val = value_t::make_dict_value(type, values);
-		return val;
+		return from_runtime_dict(runtime, encoded_value, type);
 	}
 	else if(type.is_function()){
 		NOT_IMPLEMENTED_YET();
