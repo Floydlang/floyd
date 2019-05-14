@@ -354,7 +354,7 @@ llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type);
 
 
 runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type);
-void store_via_ptr2(const typeid_t& member_type, void* value_ptr, const runtime_value_t& value);
+void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t& value);
 
 
 

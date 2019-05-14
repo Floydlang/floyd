@@ -896,82 +896,123 @@ llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type){
 	return std::visit(visitor_t{ context, type }, type._contents);
 }
 
-
-
-
-
-
-//??? Use visitor for typeid
 // IMPORTANT: Different types will access different number of bytes, for example a BYTE. We cannot dereference pointer as a uint64*!!
 runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type){
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
 
-	//??? more types.
-	if(type.is_undefined()){
-	}
-	else if(type.is_bool()){
-		const auto temp = *static_cast<const uint8_t*>(value_ptr);
-		return runtime_value_t{ .bool_value = temp };
-	}
-	else if(type.is_int()){
-		const auto temp = *static_cast<const uint64_t*>(value_ptr);
-		return make_runtime_int(temp);
-	}
-	else if(type.is_double()){
-		const auto temp = *static_cast<const double*>(value_ptr);
-		return runtime_value_t{ .double_value = temp };
-	}
-	else if(type.is_string()){
-		char* s = *(char**)(value_ptr);
-		return runtime_value_t{ .string_ptr = s };
-	}
-	else if(type.is_json_value()){
-		json_t* json_ptr = *(json_t**)(value_ptr);
-		return runtime_value_t{ .json_ptr = json_ptr };
-	}
-	else if(type.is_typeid()){
-		const auto value = *static_cast<const int32_t*>(value_ptr);
-		return runtime_value_t{ .typeid_itype = value };
-	}
-	else if(type.is_struct()){
-		const auto struct_ptr_as_int = *reinterpret_cast<const uint64_t*>(value_ptr);
-		auto struct_ptr = reinterpret_cast<void*>(struct_ptr_as_int);
-		return make_runtime_struct(struct_ptr);
-	}
-	else if(type.is_vector()){
-		return *static_cast<const runtime_value_t*>(value_ptr);
-	}
-	else if(type.is_dict()){
-		return *static_cast<const runtime_value_t*>(value_ptr);
-	}
-	else if(type.is_function()){
-		NOT_IMPLEMENTED_YET();
-	}
-	else{
-	}
-	NOT_IMPLEMENTED_YET();
-	QUARK_ASSERT(false);
-	throw std::exception();
+	struct visitor_t {
+		const void* value_ptr;
+
+		runtime_value_t operator()(const typeid_t::undefined_t& e) const{
+			UNSUPPORTED();
+		}
+		runtime_value_t operator()(const typeid_t::any_t& e) const{
+			UNSUPPORTED();
+		}
+
+		runtime_value_t operator()(const typeid_t::void_t& e) const{
+			UNSUPPORTED();
+		}
+		runtime_value_t operator()(const typeid_t::bool_t& e) const{
+			const auto temp = *static_cast<const uint8_t*>(value_ptr);
+			return runtime_value_t{ .bool_value = temp };
+		}
+		runtime_value_t operator()(const typeid_t::int_t& e) const{
+			const auto temp = *static_cast<const uint64_t*>(value_ptr);
+			return make_runtime_int(temp);
+		}
+		runtime_value_t operator()(const typeid_t::double_t& e) const{
+			const auto temp = *static_cast<const double*>(value_ptr);
+			return runtime_value_t{ .double_value = temp };
+		}
+		runtime_value_t operator()(const typeid_t::string_t& e) const{
+			char* s = *(char**)(value_ptr);
+			return runtime_value_t{ .string_ptr = s };
+		}
+
+		runtime_value_t operator()(const typeid_t::json_type_t& e) const{
+			json_t* json_ptr = *(json_t**)(value_ptr);
+			return runtime_value_t{ .json_ptr = json_ptr };
+		}
+		runtime_value_t operator()(const typeid_t::typeid_type_t& e) const{
+			const auto value = *static_cast<const int32_t*>(value_ptr);
+			return runtime_value_t{ .typeid_itype = value };
+		}
+
+		runtime_value_t operator()(const typeid_t::struct_t& e) const{
+			void* struct_ptr = *reinterpret_cast<void* const *>(value_ptr);
+			return make_runtime_struct(struct_ptr);
+		}
+		runtime_value_t operator()(const typeid_t::vector_t& e) const{
+			return *static_cast<const runtime_value_t*>(value_ptr);
+		}
+		runtime_value_t operator()(const typeid_t::dict_t& e) const{
+			return *static_cast<const runtime_value_t*>(value_ptr);
+		}
+		runtime_value_t operator()(const typeid_t::function_t& e) const{
+			return *static_cast<const runtime_value_t*>(value_ptr);
+		}
+		runtime_value_t operator()(const typeid_t::unresolved_t& e) const{
+			UNSUPPORTED();
+		}
+	};
+	return std::visit(visitor_t{ value_ptr }, type._contents);
 }
 
+// IMPORTANT: Different types will access different number of bytes, for example a BYTE. We cannot dereference pointer as a uint64*!!
+void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t& value){
+	struct visitor_t {
+		void* value_ptr;
+		const runtime_value_t& value;
 
+		void operator()(const typeid_t::undefined_t& e) const{
+			UNSUPPORTED();
+		}
+		void operator()(const typeid_t::any_t& e) const{
+			UNSUPPORTED();
+		}
 
-//??? more types
-//??? Use runtime_value_t, not value_t!
-void store_via_ptr2(const typeid_t& member_type, void* value_ptr, const runtime_value_t& value){
-	if(member_type.is_double()){
-		*static_cast<double*>(value_ptr) = value.double_value;
-	}
-	else if(member_type.is_string()){
-		*(char**)(value_ptr) = value.string_ptr;
-	}
-	else if(member_type.is_int()){
-		*(int64_t*)value_ptr = value.int_value;
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
+		void operator()(const typeid_t::void_t& e) const{
+			UNSUPPORTED();
+		}
+		void operator()(const typeid_t::bool_t& e) const{
+			*static_cast<uint8_t*>(value_ptr) = value.bool_value;
+		}
+		void operator()(const typeid_t::int_t& e) const{
+			*(int64_t*)value_ptr = value.int_value;
+		}
+		void operator()(const typeid_t::double_t& e) const{
+			*static_cast<double*>(value_ptr) = value.double_value;
+		}
+		void operator()(const typeid_t::string_t& e) const{
+			*(char**)(value_ptr) = value.string_ptr;
+		}
+
+		void operator()(const typeid_t::json_type_t& e) const{
+			*(json_t**)(value_ptr) = value.json_ptr;
+		}
+		void operator()(const typeid_t::typeid_type_t& e) const{
+			*static_cast<int32_t*>(value_ptr) = value.typeid_itype;
+		}
+
+		void operator()(const typeid_t::struct_t& e) const{
+			*reinterpret_cast<void**>(value_ptr) = value.struct_ptr;
+		}
+		void operator()(const typeid_t::vector_t& e) const{
+			*static_cast<runtime_value_t*>(value_ptr) = value;
+		}
+		void operator()(const typeid_t::dict_t& e) const{
+			*static_cast<runtime_value_t*>(value_ptr) = value;
+		}
+		void operator()(const typeid_t::function_t& e) const{
+			*static_cast<runtime_value_t*>(value_ptr) = value;
+		}
+		void operator()(const typeid_t::unresolved_t& e) const{
+			UNSUPPORTED();
+		}
+	};
+	std::visit(visitor_t{ value_ptr, value }, type._contents);
 }
 
 

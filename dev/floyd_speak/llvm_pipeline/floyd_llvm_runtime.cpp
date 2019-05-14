@@ -149,7 +149,7 @@ void store_via_ptr(const llvm_execution_engine_t& runtime, const typeid_t& membe
 	QUARK_ASSERT(value.check_invariant());
 
 	const auto value2 = to_runtime_value(runtime, value);
-	store_via_ptr2(member_type, value_ptr, value2);
+	store_via_ptr2(value_ptr, member_type, value2);
 }
 
 

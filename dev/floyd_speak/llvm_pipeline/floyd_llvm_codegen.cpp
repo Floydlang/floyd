@@ -70,8 +70,6 @@ TODO:
 
 - Make nicer mechanism to register all host functions, types and key-strings.
 - Store explicit members like assert_f instead of search on string.
-- Use _reg as suffix instead of _value.
-- Need mechanism to map Floyd types vs machine-types.
 */
 
 namespace floyd {
@@ -388,11 +386,11 @@ static llvm::Value* generate_alloc_vec(llvm_code_generator_t& gen_acc, llvm::Fun
 
 	const auto f = find_function_def(gen_acc, "floyd_runtime__allocate_vector");
 
-	const auto element_count_value = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), element_count);
+	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), element_count);
 
 	std::vector<llvm::Value*> args2 = {
 		get_callers_fcp(emit_f),
-		element_count_value
+		element_count_reg
 	};
 	return builder.CreateCall(f.llvm_f, args2, "allocate_vector:" + debug);
 }
@@ -517,6 +515,7 @@ static llvm::Value* generate_allocate_memory(llvm_code_generator_t& gen_acc, llv
 	return gen_acc.builder.CreateCall(def.llvm_f, args, "allocate_memory");
 }
 
+//??? Use visit()
 //	Makes constant from a Floyd value.
 llvm::Constant* generate_constant(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const value_t& value){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -759,8 +758,8 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 		llvm::Value* element_value_8bit = builder.CreateLoad(element_addr, "element_tmp");
 		llvm::Type* output_type = llvm::Type::getInt64Ty(context);
 
-		llvm::Value* element_value = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::SExt, element_value_8bit, output_type, "char_to_int64");
-		return element_value;
+		llvm::Value* element_reg = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::SExt, element_value_8bit, output_type, "char_to_int64");
+		return element_reg;
 	}
 	else if(parent_type.is_json_value()){
 		QUARK_ASSERT(key_type.is_int() || key_type.is_string());
@@ -1008,10 +1007,10 @@ static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_ac
 	}
 	else if(type.is_string()){
 		const auto def = find_function_def(gen_acc, "floyd_runtime__compare_strings");
-		llvm::Value* op_value = generate_constant(gen_acc, emit_f, value_t::make_int(static_cast<int64_t>(details.op)));
+		llvm::Value* op_reg = generate_constant(gen_acc, emit_f, value_t::make_int(static_cast<int64_t>(details.op)));
 		std::vector<llvm::Value*> args2 = {
 			get_callers_fcp(emit_f),
-			op_value,
+			op_reg,
 			lhs_temp,
 			rhs_temp,
 		};
@@ -1088,7 +1087,7 @@ static llvm::Value* generate_conditional_operator_expression(llvm_code_generator
 	const auto result_type = e.get_output_type();
 	const auto result_itype = intern_type(context, result_type);
 
-	llvm::Value* condition_value = generate_expression(gen_acc, emit_f, *conditional.condition);
+	llvm::Value* condition_reg = generate_expression(gen_acc, emit_f, *conditional.condition);
 
 	llvm::Function* parent_function = builder.GetInsertBlock()->getParent();
 
@@ -1098,12 +1097,12 @@ static llvm::Value* generate_conditional_operator_expression(llvm_code_generator
 	llvm::BasicBlock* else_bb = llvm::BasicBlock::Create(context, "else");
 	llvm::BasicBlock* join_bb = llvm::BasicBlock::Create(context, "cond_operator-join");
 
-	builder.CreateCondBr(condition_value, then_bb, else_bb);
+	builder.CreateCondBr(condition_reg, then_bb, else_bb);
 
 
 	// Emit then-value.
 	builder.SetInsertPoint(then_bb);
-	llvm::Value* then_value = generate_expression(gen_acc, emit_f, *conditional.a);
+	llvm::Value* then_reg = generate_expression(gen_acc, emit_f, *conditional.a);
 	builder.CreateBr(join_bb);
 	// Codegen of 'Then' can change the current block, update then_bb.
 	llvm::BasicBlock* then_bb2 = builder.GetInsertBlock();
@@ -1112,7 +1111,7 @@ static llvm::Value* generate_conditional_operator_expression(llvm_code_generator
 	// Emit else block.
 	parent_function->getBasicBlockList().push_back(else_bb);
 	builder.SetInsertPoint(else_bb);
-	llvm::Value* else_value = generate_expression(gen_acc, emit_f, *conditional.b);
+	llvm::Value* else_reg = generate_expression(gen_acc, emit_f, *conditional.b);
 	builder.CreateBr(join_bb);
 	// Codegen of 'Else' can change the current block, update else_bb.
 	llvm::BasicBlock* else_bb2 = builder.GetInsertBlock();
@@ -1122,8 +1121,8 @@ static llvm::Value* generate_conditional_operator_expression(llvm_code_generator
 	parent_function->getBasicBlockList().push_back(join_bb);
 	builder.SetInsertPoint(join_bb);
 	llvm::PHINode* phiNode = builder.CreatePHI(result_itype, 2, "cond_operator-result");
-	phiNode->addIncoming(then_value, then_bb2);
-	phiNode->addIncoming(else_value, else_bb2);
+	phiNode->addIncoming(then_reg, then_bb2);
+	phiNode->addIncoming(else_reg, else_bb2);
 
 	return phiNode;
 }
@@ -1157,21 +1156,21 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 	//	Verify that the actual argument expressions, their count and output types -- all match callee_function_type.
 	QUARK_ASSERT(details.args.size() == callee_function_type.get_function_args().size());
 
-	llvm::Value* callee0_value = generate_expression(gen_acc, emit_f, *details.callee);
-	// Alternative: alter return type of callee0_value to match resolved_call_return_type.
+	llvm::Value* callee0_reg = generate_expression(gen_acc, emit_f, *details.callee);
+	// Alternative: alter return type of callee0_reg to match resolved_call_return_type.
 
 	//	Generate code that evaluates all argument expressions.
-	std::vector<llvm::Value*> arg_values;
+	std::vector<llvm::Value*> arg_regs;
 	for(const auto& out_arg: llvm_mapping.args){
 		if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr){
 			auto f_args = emit_f.args();
 			QUARK_ASSERT((f_args.end() - f_args.begin()) >= 1);
 			auto floyd_context_arg_ptr = f_args.begin();
-			arg_values.push_back(floyd_context_arg_ptr);
+			arg_regs.push_back(floyd_context_arg_ptr);
 		}
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_simple_value){
 			llvm::Value* arg2 = generate_expression(gen_acc, emit_f, details.args[out_arg.floyd_arg_index]);
-			arg_values.push_back(arg2);
+			arg_regs.push_back(arg2);
 		}
 
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_value){
@@ -1182,9 +1181,9 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 
 			// We assume that the next arg in the llvm_mapping is the dyn-type and store it too.
 			const auto itype = pack_itype(gen_acc, concrete_arg_type);
-			const auto packed_value = generate_cast_to_runtime_value(gen_acc, *arg2, concrete_arg_type);
-			arg_values.push_back(packed_value);
-			arg_values.push_back(llvm::ConstantInt::get(make_runtime_type_type(context), itype));
+			const auto packed_reg = generate_cast_to_runtime_value(gen_acc, *arg2, concrete_arg_type);
+			arg_regs.push_back(packed_reg);
+			arg_regs.push_back(llvm::ConstantInt::get(make_runtime_type_type(context), itype));
 		}
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_type){
 		}
@@ -1192,8 +1191,8 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 			QUARK_ASSERT(false);
 		}
 	}
-	QUARK_ASSERT(arg_values.size() == llvm_mapping.args.size());
-	auto result0 = builder.CreateCall(callee0_value, arg_values, callee_function_type.get_function_return().is_void() ? "" : "call_result");
+	QUARK_ASSERT(arg_regs.size() == llvm_mapping.args.size());
+	auto result0 = builder.CreateCall(callee0_reg, arg_regs, callee_function_type.get_function_return().is_void() ? "" : "call_result");
 
 	//	If the return type is dynamic, cast the returned int64 to the correct type.
 	llvm::Value* result = result0;
@@ -1553,14 +1552,14 @@ static gen_statement_mode generate_ifelse_statement(llvm_code_generator_t& gen_a
 	llvm::Function* parent_function = builder.GetInsertBlock()->getParent();
 
 	//	Notice that generate_expression() may create its own BBs and a different BB than then_bb may current when it returns.
-	llvm::Value* condition_value = generate_expression(gen_acc, emit_f, statement._condition);
+	llvm::Value* condition_reg = generate_expression(gen_acc, emit_f, statement._condition);
 	auto start_bb = builder.GetInsertBlock();
 
 	auto then_bb = llvm::BasicBlock::Create(context, "then", parent_function);
 	auto else_bb = llvm::BasicBlock::Create(context, "else", parent_function);
 
 	builder.SetInsertPoint(start_bb);
-	builder.CreateCondBr(condition_value, then_bb, else_bb);
+	builder.CreateCondBr(condition_reg, then_bb, else_bb);
 
 
 	// Emit then-block.
@@ -1649,23 +1648,23 @@ static gen_statement_mode generate_for_statement(llvm_code_generator_t& gen_acc,
 	//	EMIT LOOP SETUP INTO CURRENT BB
 
 	//	Notice that generate_expression() may create its own BBs and a different BB than then_bb may current when it returns.
-	llvm::Value* start_value = generate_expression(gen_acc, emit_f, statement._start_expression);
-	llvm::Value* end_value = generate_expression(gen_acc, emit_f, statement._end_expression);
+	llvm::Value* start_reg = generate_expression(gen_acc, emit_f, statement._start_expression);
+	llvm::Value* end_reg = generate_expression(gen_acc, emit_f, statement._end_expression);
 
 	auto values = generate_symbol_slots(gen_acc, emit_f, statement._body._symbol_table);
 
 	//	IMPORTANT: Iterator register is the FIRST symbol of the loop body's symbol table.
-	llvm::Value* counter_value = values[0].value_ptr;
-	builder.CreateStore(start_value, counter_value);
+	llvm::Value* counter_reg = values[0].value_ptr;
+	builder.CreateStore(start_reg, counter_reg);
 
-	llvm::Value* add_value = generate_constant(gen_acc, emit_f, value_t::make_int(1));
+	llvm::Value* add_reg = generate_constant(gen_acc, emit_f, value_t::make_int(1));
 
 	llvm::CmpInst::Predicate pred = statement._range_type == statement_t::for_statement_t::k_closed_range
 		? llvm::CmpInst::Predicate::ICMP_SLE
 		: llvm::CmpInst::Predicate::ICMP_SLT;
 
-	auto test_value = builder.CreateICmp(pred, start_value, end_value);
-	builder.CreateCondBr(test_value, forloop_bb, forend_bb);
+	auto test_reg = builder.CreateICmp(pred, start_reg, end_reg);
+	builder.CreateCondBr(test_reg, forloop_bb, forend_bb);
 
 
 
@@ -1678,12 +1677,12 @@ static gen_statement_mode generate_for_statement(llvm_code_generator_t& gen_acc,
 	gen_acc.scope_path.pop_back();
 
 	if(more == gen_statement_mode::more){
-		llvm::Value* counter2 = builder.CreateLoad(counter_value);
-		llvm::Value* counter3 = builder.CreateAdd(counter2, add_value, "inc_for_counter");
-		builder.CreateStore(counter3, counter_value);
+		llvm::Value* counter2 = builder.CreateLoad(counter_reg);
+		llvm::Value* counter3 = builder.CreateAdd(counter2, add_reg, "inc_for_counter");
+		builder.CreateStore(counter3, counter_reg);
 
-		auto test_value2 = builder.CreateICmp(pred, counter3, end_value);
-		builder.CreateCondBr(test_value2, forloop_bb, forend_bb);
+		auto test_reg2 = builder.CreateICmp(pred, counter3, end_reg);
+		builder.CreateCondBr(test_reg2, forloop_bb, forend_bb);
 	}
 	else{
 	}
@@ -1944,7 +1943,7 @@ static llvm::Value* generate_global(llvm_code_generator_t& gen_acc, llvm::Functi
 	}
 	else{
 		llvm::Constant* init = generate_constant(gen_acc, emit_f, symbol._init);
-		//	dest->setInitializer(constant_value);
+		//	dest->setInitializer(constant_reg);
 		return generate_global0(module, symbol_name, *itype, init);
 	}
 }
