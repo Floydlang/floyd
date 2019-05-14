@@ -104,6 +104,10 @@ llvm::Type* make_runtime_value_type(llvm::LLVMContext& context){
 }
 
 
+runtime_value_t make_runtime_bool(bool value){
+	return { .bool_value = value };
+}
+
 runtime_value_t make_runtime_int(int64_t value){
 	return { .int_value = value };
 }

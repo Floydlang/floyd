@@ -103,6 +103,9 @@ std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::s
 value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v);
 
 
+runtime_value_t floyd_value_to_runtime_value(const llvm_execution_engine_t& runtime, const value_t& value);
+
+
 std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context);
 std::map<std::string, void*> get_host_functions_map2();
 

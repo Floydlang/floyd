@@ -132,8 +132,7 @@ std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::s
 //??? Return runtime_value_t
 
 // IMPORTANT: The value can be a global variable of various sizes, for example a BYTE. We cannot dereference pointer as a uint64*!!
-value_t load_via_ptr(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type){
-	QUARK_ASSERT(runtime.check_invariant());
+runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type){
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
 
@@ -141,47 +140,39 @@ value_t load_via_ptr(const llvm_execution_engine_t& runtime, const void* value_p
 	if(type.is_undefined()){
 	}
 	else if(type.is_bool()){
-		//??? How is int1 encoded by LLVM?
 		const auto temp = *static_cast<const uint8_t*>(value_ptr);
-		return value_t::make_bool(temp == 0 ? false : true);
+		return runtime_value_t{ .bool_value = temp };
 	}
 	else if(type.is_int()){
 		const auto temp = *static_cast<const uint64_t*>(value_ptr);
-		return value_t::make_int(temp);
+		return make_runtime_int(temp);
 	}
 	else if(type.is_double()){
 		const auto temp = *static_cast<const double*>(value_ptr);
-		return value_t::make_double(temp);
+		return runtime_value_t{ .double_value = temp };
 	}
 	else if(type.is_string()){
-		const char* s = *(const char**)(value_ptr);
-		return value_t::make_string(s);
+		char* s = *(char**)(value_ptr);
+		return runtime_value_t{ .string_ptr = s };
 	}
 	else if(type.is_json_value()){
-		const json_t* json_ptr = *(const json_t**)(value_ptr);
-		if(json_ptr == nullptr){
-			return value_t::make_json_value(json_t());
-		}
-		else{
-			return value_t::make_json_value(*json_ptr);
-		}
+		json_t* json_ptr = *(json_t**)(value_ptr);
+		return runtime_value_t{ .json_ptr = json_ptr };
 	}
 	else if(type.is_typeid()){
 		const auto value = *static_cast<const int32_t*>(value_ptr);
-		const auto runtime_type = make_runtime_type(value);
-		return runtime_value_to_floyd(runtime, make_runtime_typeid(runtime_type), type);
+		return runtime_value_t{ .typeid_itype = value };
 	}
 	else if(type.is_struct()){
 		const auto struct_ptr_as_int = *reinterpret_cast<const uint64_t*>(value_ptr);
 		auto struct_ptr = reinterpret_cast<void*>(struct_ptr_as_int);
-		return runtime_value_to_floyd(runtime, make_runtime_struct(struct_ptr), type);
+		return make_runtime_struct(struct_ptr);
 	}
 	else if(type.is_vector()){
-		auto vec0 = *static_cast<const runtime_value_t*>(value_ptr);
-		return runtime_value_to_floyd(runtime, vec0, type);
+		return *static_cast<const runtime_value_t*>(value_ptr);
 	}
 	else if(type.is_dict()){
-		NOT_IMPLEMENTED_YET();
+		return *static_cast<const runtime_value_t*>(value_ptr);
 	}
 	else if(type.is_function()){
 		NOT_IMPLEMENTED_YET();
@@ -191,6 +182,15 @@ value_t load_via_ptr(const llvm_execution_engine_t& runtime, const void* value_p
 	NOT_IMPLEMENTED_YET();
 	QUARK_ASSERT(false);
 	throw std::exception();
+}
+value_t load_via_ptr(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type){
+	QUARK_ASSERT(runtime.check_invariant());
+	QUARK_ASSERT(value_ptr != nullptr);
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto result = load_via_ptr2(value_ptr, type);
+	const auto result2 = runtime_value_to_floyd(runtime, result, type);
+	return result2;
 }
 
 value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v){
@@ -213,25 +213,29 @@ value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t
 
 //??? more types
 //??? Use runtime_value_t, not value_t!
-void store_via_ptr(const typeid_t& member_type, void* value_ptr, const value_t& value){
+void store_via_ptr2(const typeid_t& member_type, void* value_ptr, const runtime_value_t& value){
 	if(member_type.is_double()){
-		*static_cast<double*>(value_ptr) = value.get_double_value();
+		*static_cast<double*>(value_ptr) = value.double_value;
 	}
 	else if(member_type.is_string()){
-		auto dest = *(char**)(value_ptr);
-
-		const char* source = value.get_string_value().c_str();
-		char* new_string = strdup(source);
-		dest = new_string;
+		*(char**)(value_ptr) = value.string_ptr;
 	}
 	else if(member_type.is_int()){
-		auto dest = (int64_t*)value_ptr;
-
-		*dest = value.get_int_value();
+		*(int64_t*)value_ptr = value.int_value;
 	}
 	else{
 		NOT_IMPLEMENTED_YET();
 	}
+}
+
+void store_via_ptr(const llvm_execution_engine_t& runtime, const typeid_t& member_type, void* value_ptr, const value_t& value){
+	QUARK_ASSERT(runtime.check_invariant());
+	QUARK_ASSERT(member_type.check_invariant());
+	QUARK_ASSERT(value_ptr != nullptr);
+	QUARK_ASSERT(value.check_invariant());
+
+	const auto value2 = floyd_value_to_runtime_value(runtime, value);
+	store_via_ptr2(member_type, value_ptr, value2);
 }
 
 runtime_value_t floyd_value_to_runtime_value__struct(const llvm_execution_engine_t& runtime, const typeid_t::struct_t& struct_type, const value_t& value){
@@ -250,7 +254,7 @@ runtime_value_t floyd_value_to_runtime_value__struct(const llvm_execution_engine
 	for(const auto& e: struct_data->_member_values){
 		const auto offset = layout->getElementOffset(member_index);
 		const auto member_ptr = reinterpret_cast<void*>(struct_base_ptr + offset);
-		store_via_ptr(e.get_type(), member_ptr, e);
+		store_via_ptr(runtime, e.get_type(), member_ptr, e);
 		member_index++;
 	}
 	return make_runtime_struct((void*)struct_base_ptr);
@@ -517,7 +521,7 @@ value_t runtime_value_to_floyd(const llvm_execution_engine_t& runtime, const run
 		return runtime_value_to_floyd__struct(runtime, encoded_value, type);
 	}
 	else if(type.is_vector()){
-		runtime_value_to_floyd__vector(runtime, encoded_value, type);
+		return runtime_value_to_floyd__vector(runtime, encoded_value, type);
 	}
 	else if(type.is_dict()){
 		const auto value_type = type.get_dict_value_type();
@@ -1848,7 +1852,7 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 		if(type2 != member_type){
 			throw std::runtime_error("New value must be same type as struct member's type.");
 		}
-		store_via_ptr(member_type, member_ptr, member_value);
+		store_via_ptr(r, member_type, member_ptr, member_value);
 
 		return make_wide_return_structptr(struct_ptr);
 	}
