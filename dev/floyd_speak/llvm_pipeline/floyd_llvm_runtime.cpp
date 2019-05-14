@@ -40,10 +40,6 @@ namespace floyd {
 
 
 
-//	The names of these are computed from the host-id in the symbol table, not the names of the functions/symbols.
-//	They must use C calling convention so llvm JIT can find them.
-//	Make sure they are not dead-stripped out of binary!
-void floyd_runtime__unresolved_func(void* floyd_runtime_ptr);
 
 llvm_execution_engine_t& get_floyd_runtime(void* floyd_runtime_ptr);
 
@@ -216,13 +212,13 @@ runtime_value_t to_runtime_vector(const llvm_execution_engine_t& runtime, const 
 	return runtime_value_t{ .vector_ptr = nullptr };
 }
 
+
 value_t from_runtime_vector(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
 	QUARK_ASSERT(runtime.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto element_type = type.get_vector_element_type();
 
-	//??? test with non-string vectors.
 	const auto vec = encoded_value.vector_ptr;
 
 	std::vector<value_t> elements;
@@ -453,13 +449,6 @@ std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value_t arg_
 }
 
 
-//	The names of these are computed from the host-id in the symbol table, not the names of the functions/symbols.
-//	They must use C calling convention so llvm JIT can find them.
-//	Make sure they are not dead-stripped out of binary!
-
-void floyd_runtime__unresolved_func(void* floyd_runtime_ptr){
-	std:: cout << __FUNCTION__ << std::endl;
-}
 
 
 
@@ -471,6 +460,9 @@ void floyd_runtime__unresolved_func(void* floyd_runtime_ptr){
 
 
 //	Host functions, automatically called by the LLVM execution engine.
+//	The names of these are computed from the host-id in the symbol table, not the names of the functions/symbols.
+//	They must use C calling convention so llvm JIT can find them.
+//	Make sure they are not dead-stripped out of binary!
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1089,8 +1081,8 @@ WIDE_RETURN_T floyd_funcdef__filter(void* floyd_runtime_ptr, runtime_value_t arg
 	if(type1.is_function() == false){
 		quark::throw_runtime_error("filter() requires argument 2 to be a function.");
 	}
-	if(type1.get_function_args().size() != 2){
-		quark::throw_runtime_error("filter() requires argument 2 function to take 2 arguments.");
+	if(type1.get_function_args().size() != 1){
+		quark::throw_runtime_error("filter() requires argument 2 function to take 1 argument.");
 	}
 
 	const auto& vec = *arg0_value.vector_ptr;
@@ -1230,8 +1222,7 @@ runtime_value_t floyd_funcdef__jsonvalue_to_value(void* floyd_runtime_ptr, uint3
 
 //??? No need to call lookup_type() to check which basic type it is!
 
-//??? test map() with complex types of values
-//??? map() and other functions should be select at compile time, not runtime!
+
 
 	typedef WIDE_RETURN_T (*MAP_F)(void* floyd_runtime_ptr, runtime_value_t arg0_value);
 
@@ -1275,8 +1266,8 @@ WIDE_RETURN_T floyd_funcdef__map(void* floyd_runtime_ptr, runtime_value_t arg0_v
 
 
 
-//??? should use int to send character around, not string.
-//??? Also function should always return ONE character, not a string!
+
+
 typedef const char* (*MAP_STRING_F)(void* floyd_runtime_ptr, const char* char_s);
 
 const char* floyd_funcdef__map_string(void* floyd_runtime_ptr, const char* input_string, runtime_value_t func){
@@ -1582,9 +1573,9 @@ int32_t floyd_host__typeof(void* floyd_runtime_ptr, runtime_value_t arg0_value, 
 
 
 
-//	??? promote update() to a statement, rather than a function call. Replace all statement and expressions with function calls? LISP!
-//	???	Update of structs should resolve member-name at compile time, replace with index.
-//	??? Range should be integers, not DYN! Change host function prototype.
+
+
+
 const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 

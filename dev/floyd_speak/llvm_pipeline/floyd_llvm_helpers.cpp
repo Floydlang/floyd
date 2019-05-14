@@ -839,6 +839,7 @@ llvm::StructType* make_struct_type(llvm::LLVMContext& context, const typeid_t& t
 }
 
 //	Returns the LLVM type we chose to use to encode each Floyd type.
+//	??? Use visitor for typeid
 llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
@@ -898,8 +899,7 @@ llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type){
 
 
 //??? Use visitor for typeid
-//??? Return runtime_value_t
-// IMPORTANT: The value can be a global variable of various sizes, for example a BYTE. We cannot dereference pointer as a uint64*!!
+// IMPORTANT: Different types will access different number of bytes, for example a BYTE. We cannot dereference pointer as a uint64*!!
 runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type){
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
