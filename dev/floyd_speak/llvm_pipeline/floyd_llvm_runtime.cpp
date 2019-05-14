@@ -128,6 +128,7 @@ std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::s
 	}
 }
 
+//??? rename to "load_via_ptr()".
 //??? Use visitor for typeid
 // IMPORTANT: The value can be a global variable of various sizes, for example a BYTE. We cannot dereference pointer as a uint64*!!
 value_t load_global_from_ptr(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type){
@@ -208,6 +209,53 @@ value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t
 	json_t			json_t		json_t*					int16*
 */
 
+
+
+//??? more types
+//??? Use runtime_value_t, not value_t!
+void store_via_ptr(const typeid_t& member_type, void* value_ptr, const value_t& value){
+	if(member_type.is_double()){
+		*static_cast<double*>(value_ptr) = value.get_double_value();
+	}
+	else if(member_type.is_string()){
+		auto dest = *(char**)(value_ptr);
+
+		const char* source = value.get_string_value().c_str();
+		char* new_string = strdup(source);
+		dest = new_string;
+	}
+	else if(member_type.is_int()){
+		auto dest = (int64_t*)value_ptr;
+
+		*dest = value.get_int_value();
+	}
+	else{
+		NOT_IMPLEMENTED_YET();
+	}
+}
+
+runtime_value_t floyd_value_to_runtime_value__struct(const llvm_execution_engine_t& runtime, const typeid_t::struct_t& struct_type, const value_t& value){
+	QUARK_ASSERT(runtime.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+
+	int member_index = 0;
+	auto t2 = make_struct_type(runtime.instance->context, value.get_type());
+	const llvm::DataLayout& data_layout = runtime.ee->getDataLayout();
+	const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
+	const auto struct_bytes = layout->getSizeInBytes();
+	const auto struct_base_ptr = reinterpret_cast<uint8_t*>(calloc(1, struct_bytes));
+
+	const auto& struct_data = value.get_struct_value();
+
+	for(const auto& e: struct_data->_member_values){
+		const auto offset = layout->getElementOffset(member_index);
+		const auto member_ptr = reinterpret_cast<void*>(struct_base_ptr + offset);
+		store_via_ptr(e.get_type(), member_ptr, e);
+		member_index++;
+	}
+	return make_runtime_struct((void*)struct_base_ptr);
+}
+
 //	Convert a floyd value to a runtime_value_t.
 runtime_value_t floyd_value_to_runtime_value(const llvm_execution_engine_t& runtime, const value_t& value){
 	QUARK_ASSERT(runtime.check_invariant());
@@ -216,6 +264,7 @@ runtime_value_t floyd_value_to_runtime_value(const llvm_execution_engine_t& runt
 	const auto type = value.get_type();
 
 	struct visitor_t {
+		const llvm_execution_engine_t& runtime;
 		const value_t& value;
 
 		runtime_value_t operator()(const typeid_t::undefined_t& e) const{
@@ -249,7 +298,7 @@ runtime_value_t floyd_value_to_runtime_value(const llvm_execution_engine_t& runt
 		}
 
 		runtime_value_t operator()(const typeid_t::struct_t& e) const{
-			QUARK_ASSERT(false);
+			return floyd_value_to_runtime_value__struct(runtime, e, value);
 		}
 		runtime_value_t operator()(const typeid_t::vector_t& e) const{
 			QUARK_ASSERT(false);
@@ -274,7 +323,7 @@ runtime_value_t floyd_value_to_runtime_value(const llvm_execution_engine_t& runt
 			QUARK_ASSERT(false);
 		}
 	};
-	return std::visit(visitor_t{ value }, type._contents);
+	return std::visit(visitor_t{ runtime, value }, type._contents);
 }
 #if 0
 	if(type0.is_string()){
@@ -1673,6 +1722,7 @@ int32_t floyd_host__typeof(void* floyd_runtime_ptr, runtime_value_t arg0_value, 
 }
 
 
+
 //	??? promote update() to a statement, rather than a function call. Replace all statement and expressions with function calls? LISP!
 //	???	Update of structs should resolve member-name at compile time, replace with index.
 //	??? Range should be integers, not DYN! Change host function prototype.
@@ -1780,27 +1830,15 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 		std::memcpy(struct_ptr, source_struct_ptr, struct_bytes);
 
 		const auto member_offset = layout->getElementOffset(member_index);
-		const auto member_ptr = reinterpret_cast<const void*>(struct_ptr + member_offset);
+		const auto member_ptr = reinterpret_cast<void*>(struct_ptr + member_offset);
 
 		const auto member_type = struct_def._members[member_index]._type;
 
 		if(type2 != member_type){
 			throw std::runtime_error("New value must be same type as struct member's type.");
 		}
+		store_via_ptr(member_type, member_ptr, member_value);
 
-		if(member_type.is_string()){
-			auto dest = *(char**)(member_ptr);
-			const char* source = member_value.get_string_value().c_str();
-			char* new_string = strdup(source);
-			dest = new_string;
-		}
-		else if(member_type.is_int()){
-			auto dest = (int64_t*)member_ptr;
-			*dest = member_value.get_int_value();
-		}
-		else{
-			NOT_IMPLEMENTED_YET();
-		}
 		return make_wide_return_structptr(struct_ptr);
 	}
 	else{

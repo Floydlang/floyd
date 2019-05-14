@@ -3817,7 +3817,8 @@ QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_script()", "[pixel_t]", ""){
 //////////////////////////////////////////		value_to_jsonvalue() -> jsonvalue_to_value() roundtrip
 
 /*
-	jsonvalue_to_value() returns different types depending on its 2nd argument.		??? test all types!
+	jsonvalue_to_value() returns different types depending on its 2nd argument.
+	??? test all types!
 */
 QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "bool", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(true), bool)		)", value_t::make_bool(true));
@@ -3843,7 +3844,6 @@ QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "string", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue("cola"), string)		)", value_t::make_string("cola"));
 }
 
-#if 0
 QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "point_t", ""){
 	const auto point_t_def = std::vector<member_t>{
 		member_t(typeid_t::make_double(), "x"),
@@ -3865,9 +3865,6 @@ QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "point_t", ""){
 		expected
 	);
 }
-#endif
-
-
 
 
 
