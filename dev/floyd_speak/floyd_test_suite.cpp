@@ -478,6 +478,7 @@ QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "Type mismatch", "")
 	);
 }
 
+#if 0
 QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "Division by zero", "") {
 	ut_verify_exception_nolib(QUARK_POS, "let int result = 2/0", "EEE_DIVIDE_BY_ZERO");
 }
@@ -485,6 +486,10 @@ QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "Division by zero", 
 QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "Division by zero", ""){
 	ut_verify_exception_nolib(QUARK_POS, "let int result = 3+1/(5-5)+4", "EEE_DIVIDE_BY_ZERO");
 }
+QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "Division by zero", ""){
+	ut_verify_exception_nolib(QUARK_POS, "let double result = 2.0 / 1.0", "EEE_DIVIDE_BY_ZERO");
+}
+#endif
 
 QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "-true", "") {
 	ut_verify_exception_nolib(
