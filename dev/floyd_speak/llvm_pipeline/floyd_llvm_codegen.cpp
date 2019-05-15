@@ -2149,7 +2149,6 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const st
 
 static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> generate_module(llvm_instance_t& instance, const std::string& module_name, const semantic_ast_t& semantic_ast){
 	QUARK_ASSERT(instance.check_invariant());
-	QUARK_ASSERT(module_name.empty() == false);
 	QUARK_ASSERT(semantic_ast.check_invariant());
 
 	//	Module must sit in a unique_ptr<> because llvm::EngineBuilder needs that.
@@ -2203,7 +2202,7 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> gen
 std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast0, const std::string& module_name){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(ast0.check_invariant());
-	QUARK_ASSERT(module_name.empty() == false);
+//	QUARK_ASSERT(module_name.empty() == false);
 
 //	type_interner_t types = collect_used_types(ast0._tree);
 //	QUARK_ASSERT(types.interned.size() == ast0._tree._interned_types.interned.size());

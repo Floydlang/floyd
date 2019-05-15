@@ -1574,7 +1574,7 @@ const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, runtime_valu
 		const uint32_t len2 = section1_len + section2_len + section3_len;
 		auto vec2 = make_vec(len2);
 		copy_elements(&vec2.element_ptr[0], &vec->element_ptr[0], section1_len);
-		copy_elements(&vec2.element_ptr[section2_len], &replace_vec->element_ptr[0], section2_len);
+		copy_elements(&vec2.element_ptr[section1_len], &replace_vec->element_ptr[0], section2_len);
 		copy_elements(&vec2.element_ptr[section1_len + section2_len], &vec->element_ptr[end2], section3_len);
 		return make_wide_return_vec(new VEC_T(vec2));
 	}

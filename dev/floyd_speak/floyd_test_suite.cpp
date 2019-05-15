@@ -1772,7 +1772,7 @@ QUARK_UNIT_TEST("Floyd test suite", "for" "recusion test using fibonacci 10", ""
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "FOR", "return from within FOR block", ""){
+QUARK_UNIT_TEST("Floyd test suite", "for", "return from within FOR block", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2174,6 +2174,8 @@ QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", "error"){
 }
 
 
+
+
 //??? find() should have a start index.
 QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
 	run_closed(R"(		assert(find("hello, world", "he") == 0)		)");
@@ -2475,6 +2477,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] push_back()", "", ""){
 //???	replace()
 
 
+
 //??? test vector<struct>, vector<json_value>
 
 
@@ -2647,6 +2650,18 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] replace()", "", ""){
 	run_closed(R"(		assert(replace([ 1, 2, 3, 4, 5, 6 ], 2, 5, [20, 30]) == [1, 2, 20, 30, 6])		)");
 }
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [int] replace()", "", ""){
+	run_closed(
+		R"(
+
+			let h = replace([ 1, 2, 3, 4, 5 ], 1, 4, [ 8, 9 ])
+			assert(h == [ 1, 8, 9, 5 ])
+
+		)"
+	);
+}
+
 // ### test pos limiting and edge cases.
 
 

@@ -1892,7 +1892,7 @@ vector replace(vector a, int start, int end, vector new)
 |TYPE		  	| EXAMPLE						| RESULT |
 |:---			|:---							|:---
 | string		|replace("hello", 0, 2, "bori")	| borillo
-| vector		|replace([1,2,3,4,5], 1, 4, [8, 9])	| [1,8,9,45]
+| vector		|replace([1,2,3,4,5], 1, 4, [8, 9])	| [1,8,9,5]
 | dictionary	| 								|
 | struct		|								|
 | json_value:array	|							|
