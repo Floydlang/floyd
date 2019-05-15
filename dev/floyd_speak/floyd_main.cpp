@@ -20,29 +20,21 @@
 #include "text_parser.h"
 #include "interpretator_benchmark.h"
 #include "file_handling.h"
-
 #include "pass3.h"
-
 #include "libs/Celero-master/include/celero/Celero.h"
 #include "libs/Celero-master/include/celero/Executor.h"
 
-std::string floyd_version_string = "0.3";
 
-
-//////////////////////////////////////////////////		main()
-
-
-
+const std::string floyd_version_string = "0.3";
 bool trace_on = true;
 
 
-void run_tests(){
+void run_tests() {
 	//	Cherry-picked list of files who's tests we run first.
 	//	Ideally you should run the test for the lowest level source first.
 	quark::run_tests(
 		{
 			"quark.cpp",
-
 			"text_parser.cpp",
 			"steady_vector.cpp",
 			"unused_bits.cpp",
@@ -51,169 +43,149 @@ void run_tests(){
 			"json_parser.cpp",
 			"json_support.cpp",
 			"json_writer.cpp",
-
 			"floyd_basics.cpp",
-
-
 			"parser_expression.cpp",
 			"parser_value.cpp",
 			"parser_primitives.cpp",
-
 			"parser_function.cpp",
 			"parser_statement.cpp",
 			"parser_struct.cpp",
 			"parse_prefixless_statement.cpp",
 			"floyd_parser.cpp",
-
 			"floyd_test_suite.cpp",
 			"interpretator_benchmark.cpp",
-
 			"ast_typeid.cpp",
-
 			"pass2.cpp",
 			"pass3.cpp",
-
 			"parse_statement.cpp",
 			"floyd_interpreter.cpp",
-
-			//	Core libs
-	/*
-			"parser_ast.cpp",
-			"ast_utils.cpp",
-			"experimental_runtime.cpp",
-			"expressions.cpp",
-			"llvm_code_gen.cpp",
-			"utils.cpp",
-			"pass3.cpp",
-			"floyd_main.cpp",
-	*/
 		},
-		trace_on ? false: true
-	);
+		!trace_on);
 }
 
 
-////////////////////////////////	floyd_tracer
-
-//	Patch into quark's tracing system to get more control over tracing.
+/*
+* floyd_tracer
+*/
 
 struct floyd_tracer : public quark::trace_i {
+	//	Patch into quark's tracing system to get more control over tracing.
+
 	public: floyd_tracer();
 
 	public: virtual void trace_i__trace(const char s[]) const;
 	public: virtual void trace_i__open_scope(const char s[]) const;
 	public: virtual void trace_i__close_scope(const char s[]) const;
 
-
-	///////////////		State.
+	/*
+	* State
+	*/
 	public: quark::default_tracer_t def;
 };
 
-floyd_tracer::floyd_tracer(){
-}
+floyd_tracer::floyd_tracer() {}
 
 void floyd_tracer::trace_i__trace(const char s[]) const {
-	if(trace_on){
+	if (trace_on) {
 		def.trace_i__trace(s);
 	}
 }
 
 void floyd_tracer::trace_i__open_scope(const char s[]) const {
-	if(trace_on){
+	if (trace_on) {
 		def.trace_i__open_scope(s);
 	}
 }
 
 void floyd_tracer::trace_i__close_scope(const char s[]) const{
-	if(trace_on){
+	if (trace_on) {
 		def.trace_i__close_scope(s);
 	}
 }
 
 
-////////////////////////////////	floyd_quark_runtime
-
-//	Patch into quark's runtime system to get control over assert and unit tests.
+/*
+* floyd_quark_runtime
+*/
 
 struct floyd_quark_runtime : public quark::runtime_i {
+	//	Patch into quark's runtime system to get control over assert and unit tests.
+
 	floyd_quark_runtime(const std::string& test_data_root);
 
 	public: virtual void runtime_i__on_assert(const quark::source_code_location& location, const char expression[]);
 	public: virtual void runtime_i__on_unit_test_failed(const quark::source_code_location& location, const char expression[]);
 
-
-	///////////////		State.
-		const std::string _test_data_root;
-		long _indent;
+	/*
+	* State
+	*/
+	const std::string _test_data_root;
+	long _indent;
 };
 
-floyd_quark_runtime::floyd_quark_runtime(const std::string& test_data_root) :
-	_test_data_root(test_data_root),
-	_indent(0)
-{
-}
+floyd_quark_runtime::floyd_quark_runtime(const std::string& test_data_root) : _test_data_root(test_data_root), _indent(0) {}
 
-void floyd_quark_runtime::runtime_i__on_assert(const quark::source_code_location& location, const char expression[]){
+void floyd_quark_runtime::runtime_i__on_assert(const quark::source_code_location& location, const char expression[]) {
 	QUARK_TRACE_SS(std::string("Assertion failed ") << location._source_file << ", " << location._line_number << " \"" << expression << "\"");
 	perror("perror() says");
 	throw std::logic_error("assert");
 }
 
-void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_code_location& location, const char expression[]){
+void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_code_location& location, const char expression[]) {
 	QUARK_TRACE_SS("Unit test failed " << location._source_file << ", " << location._line_number << " \"" << expression << "\"");
 	perror("perror() says");
-
 	throw std::logic_error("Unit test failed");
 }
 
 
-////////////////////////////////	BENCHMARKS
-
+/*
+* BENCHMARKS
+*/
 
 static void celero_run(const std::vector<std::string>& command_line_args) {
 	std::vector<const char*> ptrs;
-	for(const auto& e: command_line_args){
+	for(const auto& e: command_line_args) {
 		ptrs.push_back(e.c_str());
 	}
-	celero::Run(static_cast<int>(ptrs.size()), (char**)&ptrs[0]);
-//celero::executor::RunAll();
+	celero::Run(static_cast<int>(ptrs.size()), (char**) &ptrs[0]);
 }
 
 
-void run_benchmark(){
-#if 1
-	const auto dirs = GetDirectories();
-	const std::vector<std::string> inputs = {
-		"myapp",
-		std::string() + "--outputTable",
-		dirs.desktop_dir + "/bench.txt"
-	};
+void run_benchmark() {
+	if (1) {
+		const auto dirs = GetDirectories();
+		const std::vector<std::string> inputs = {
+			"myapp",
+			std::string() + "--outputTable",
+			dirs.desktop_dir + "/bench.txt"
+		};
 
-	celero_run(inputs);
-#else
-	floyd_benchmark();
-#endif
+		celero_run(inputs);
+	} else {
+		floyd_benchmark();
+	}
 }
 
 
-
+void help() {
 //	Print usage instructions to stdio.
-void help(){
+
 std::cout << "Floyd Speak Programming Language " << floyd_version_string << " MIT." <<
-	
+
 R"(
 Usage:
-floyd run mygame.floyd		- compile and run the floyd program "mygame.floyd"
-floyd compile mygame.floyd	- compile the floyd program "mygame.floyd" to an AST, in JSON format
-floyd help					- Show built in help for command line tool
-floyd runtests				- Runs Floyds internal unit tests
-floyd benchmark 			- Runs Floyd built in suite of benchmark tests and prints the results.
-floyd run -t mygame.floyd	- the -t turns on tracing, which shows Floyd compilation steps and internal states
+		floyd run mygame.floyd		- compile and run the floyd program "mygame.floyd"
+		floyd compile mygame.floyd	- compile the floyd program "mygame.floyd" to an AST, in JSON format
+		floyd help					- Show built in help for command line tool
+		floyd runtests				- Runs Floyds internal unit tests
+		floyd benchmark 			- Runs Floyd built in suite of benchmark tests and prints the results.
+		floyd run -t mygame.floyd	- the -t turns on tracing, which shows Floyd compilation steps and internal states
+
 )";
 }
 
 //	Runs one of the commands, args depends on which command.
-int run_command(const std::vector<std::string>& args){
+int run_command(const std::vector<std::string>& args) {
 	const auto command_line_args = parse_command_line_args_subcommands(args, "t");
 	const auto path_parts = SplitPath(command_line_args.command);
 	QUARK_ASSERT(path_parts.fName == "floyd" || path_parts.fName == "floydut");
@@ -240,15 +212,13 @@ int run_command(const std::vector<std::string>& args){
 			std::cout << json_to_pretty_string(json._value);
 			std::cout << std::endl;
 		}
-		else{
-		}
 		return EXIT_SUCCESS;
 	}
 	else if(command_line_args.subcommand == "run"){
 
 		//	Run provided script file.
 		if(command_line_args.extra_arguments.size() >= 1){
-//			const auto floyd_args = std::vector<std::string>(command_line_args.extra_arguments.begin() + 1, command_line_args.extra_arguments.end());
+
 			const auto floyd_args = command_line_args.extra_arguments;
 
 			const auto source_path = floyd_args[0];
@@ -284,7 +254,7 @@ int run_command(const std::vector<std::string>& args){
 	}
 }
 
-int main(int argc, const char * argv[]) {
+int main(int argc, const char ** argv) {
 	floyd_quark_runtime q("");
 	quark::set_runtime(&q);
 
@@ -292,19 +262,19 @@ int main(int argc, const char * argv[]) {
 	quark::set_trace(&tracer);
 
 	const auto args = args_to_vector(argc, argv);
-	try{
+	try {
 		const int result = run_command(args);
 		return result;
 	}
-	catch(const std::runtime_error& e){
+	catch (const std::runtime_error& e) {
 		const auto what = std::string(e.what());
 		std::cout << what << std::endl;
 		return EXIT_FAILURE;
 	}
-	catch(const std::exception& e){
+	catch (const std::exception& e) {
 		return EXIT_FAILURE;
 	}
-	catch(...){
+	catch (...) {
 		std::cout << "Error" << std::endl;
 		return EXIT_FAILURE;
 	}
@@ -315,8 +285,8 @@ int main(int argc, const char * argv[]) {
 #if 0
 
 
-//CELERO_MAIN
-int main(int argc, const char * argv[]) {
+// CELERO_MAIN
+int main(int argc, const char ** argv) {
 	const auto dirs = GetDirectories();
 	const std::vector<std::string> inputs = {
 		"myapp",

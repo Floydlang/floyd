@@ -7,7 +7,6 @@
 //
 
 #include "bytecode_generator.h"
-
 #include "pass3.h"
 #include "floyd_interpreter.h"
 
@@ -15,10 +14,8 @@
 #include <algorithm>
 #include <cstdint>
 
-
 namespace floyd {
 struct semantic_ast_t;
-
 
 
 //	Replace by int when we have flattened local bodies.

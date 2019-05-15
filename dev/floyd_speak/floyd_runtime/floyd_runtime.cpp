@@ -7,13 +7,7 @@
 //
 
 #include "floyd_runtime.h"
-
-
-
-
-
 #include <celero/Celero.h>
-
 #include <random>
 
 #ifndef WIN32

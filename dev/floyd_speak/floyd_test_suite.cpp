@@ -6,10 +6,12 @@
 //  Copyright © 2018 Marcus Zetterquist. All rights reserved.
 //
 
+#include <iostream>
+#include <string>
+#include <vector>
+
 #include "floyd_test_suite.h"
-
 #include "test_helpers.h"
-
 #include "floyd_interpreter.h"
 #include "ast_value.h"
 #include "expression.h"
@@ -18,21 +20,11 @@
 #include "host_functions.h"
 #include "file_handling.h"
 
-#include <string>
-#include <vector>
-#include <iostream>
-
 #if 1
 
 using namespace floyd;
 
-
-
-
-
-
 //////////////////////////////////////////		TEST GLOBAL CONSTANTS
-
 
 QUARK_UNIT_TEST("Floyd test suite", "Global int variable", "", ""){
 	run_closed("{}");
@@ -61,9 +53,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string constant expression", "", ""){
 	ut_verify_global_result(QUARK_POS, "let string result = \"xyz\"", value_t::make_string("xyz"));
 }
 
-
 //////////////////////////////////////////		BASIC EXPRESSIONS
-
 
 QUARK_UNIT_TEST("Floyd test suite", "+", "", "") {
 	ut_verify_global_result(QUARK_POS, "let int result = 1 + 2", value_t::make_int(3));
@@ -112,7 +102,6 @@ QUARK_UNIT_TEST("run_main()", "conditional expression", "", ""){
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - PARANTHESES
 
-
 QUARK_UNIT_TEST("execute_expression()", "Parentheses", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 5*(4+4+1)", value_t::make_int(45));
 }
@@ -133,7 +122,6 @@ QUARK_UNIT_TEST("execute_expression()", "Sign before parentheses", "", ""){
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - SPACES
 
-
 QUARK_UNIT_TEST("execute_expression()", "Spaces", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 5 * ((1 + 3) * 2 + 1)", value_t::make_int(45));
 }
@@ -146,7 +134,6 @@ QUARK_UNIT_TEST("execute_expression()", "Spaces", "", ""){
 
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - double
-
 
 QUARK_UNIT_TEST("", "execute_expression()", "Fractional numbers", "") {
 	ut_verify_global_result(QUARK_POS, "let double result = 2.8/2.0", value_t::make_double(1.4));
@@ -167,8 +154,8 @@ QUARK_UNIT_TEST("execute_expression()", "Fractional numbers", "", ""){
 	ut_verify_global_result(QUARK_POS, "let double result = .25 / 2.0 * .5", value_t::make_double(0.0625));
 }
 
-//////////////////////////////////////////		BASIC EXPRESSIONS - EDGE CASES
 
+//////////////////////////////////////////		BASIC EXPRESSIONS - EDGE CASES
 
 QUARK_UNIT_TEST("execute_expression()", "Repeated operators", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = 1+-2", value_t::make_int(-1));
@@ -186,7 +173,6 @@ QUARK_UNIT_TEST("execute_expression()", "Repeated operators", "", ""){
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - BOOL
 
-
 QUARK_UNIT_TEST("execute_expression()", "Bool", "", ""){
 	ut_verify_global_result(QUARK_POS, "let bool result = true", value_t::make_bool(true));
 }
@@ -196,7 +182,6 @@ QUARK_UNIT_TEST("execute_expression()", "Bool", "", ""){
 
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - CONDITIONAL EXPRESSION
-
 
 QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
 	ut_verify_global_result(QUARK_POS, "let int result = true ? 4 : 6", value_t::make_int(4));
@@ -223,7 +208,6 @@ QUARK_UNIT_TEST("execute_expression()", "?:", "", ""){
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR ==
 
-
 QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
 	ut_verify_global_result(QUARK_POS, "let bool result = 1 == 1", value_t::make_bool(true));
 }
@@ -242,7 +226,6 @@ QUARK_UNIT_TEST("execute_expression()", "==", "", ""){
 
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - OPERATOR <
-
 
 QUARK_UNIT_TEST("execute_expression()", "<", "", "") {
 	ut_verify_global_result(QUARK_POS, "let bool result = 1 < 2", value_t::make_bool(true));
@@ -344,8 +327,6 @@ QUARK_UNIT_TEST("execute_expression()", "||", "", ""){
 
 //////////////////////////////////////////		BASIC EXPRESSIONS - ERRORS
 
-
-
 QUARK_UNIT_TEST("execute_expression()", "Type mismatch", "", "") {
 	ut_verify_exception(
 		QUARK_POS,
@@ -353,7 +334,6 @@ QUARK_UNIT_TEST("execute_expression()", "Type mismatch", "", "") {
 		"Expression type mismatch - cannot convert 'bool' to 'int. Line: 1 \"let int result = true\""
 	);
 }
-
 
 QUARK_UNIT_TEST("", "execute_expression()", "Division by zero", "") {
 	ut_verify_exception(
@@ -381,7 +361,6 @@ QUARK_UNIT_TEST("execute_expression()", "-true", "", "") {
 
 
 //////////////////////////////////////////		MINIMAL PROGRAMS
-
 
 QUARK_UNIT_TEST("run_main", "Forgot let or mutable", "", "Exception"){
 	ut_verify_exception(
@@ -465,7 +444,6 @@ QUARK_UNIT_TEST("call_function()", "minimal program 2", "", ""){
 
 //////////////////////////////////////////		TEST CONSTRUCTOR FOR ALL TYPES
 
-
 QUARK_UNIT_TEST("", "bool()", "", ""){
 	ut_verify_global_result(QUARK_POS, "let result = bool(false)", value_t::make_bool(false));
 }
@@ -539,7 +517,6 @@ unsupported syntax
 
 //////////////////////////////////////////		CALL FUNCTIONS
 
-
 QUARK_UNIT_TEST("call_function()", "define additional function, call it several times", "", ""){
 	auto ast = compile_to_bytecode(R"(
 
@@ -577,7 +554,6 @@ QUARK_UNIT_TEST("call_function()", "use function inputs", "", ""){
 
 //////////////////////////////////////////		USE LOCAL VARIABLES IN FUNCTION
 
-
 QUARK_UNIT_TEST("call_function()", "use local variables", "", ""){
 	auto ast = compile_to_bytecode(R"(
 
@@ -604,7 +580,6 @@ QUARK_UNIT_TEST("call_function()", "use local variables", "", ""){
 
 //////////////////////////////////////////		MUTATE VARIABLES
 
-
 QUARK_UNIT_TEST("call_function()", "local variable without let", "", ""){
 	ut_verify_printout(
 		QUARK_POS,
@@ -621,7 +596,6 @@ QUARK_UNIT_TEST("call_function()", "local variable without let", "", ""){
 
 
 //////////////////////////////////////////		MUTATE VARIABLES
-
 
 QUARK_UNIT_TEST("call_function()", "mutate local", "", ""){
 	ut_verify_printout(
@@ -743,8 +717,6 @@ QUARK_UNIT_TEST("run_main()", "test mutating from a subscope", "", ""){
 
 //////////////////////////////////////////		RETURN STATEMENT - ADVANCED USAGE
 
-
-
 QUARK_UNIT_TEST("call_function()", "return from middle of function", "", ""){
 	ut_verify_printout(
 		QUARK_POS,
@@ -851,10 +823,7 @@ func int f(){
 }
 
 
-
-
 //////////////////////////////////////////		HOST FUNCTION - to_string()
-
 
 QUARK_UNIT_TEST("run_init()", "", "", ""){
 	ut_verify_global_result(QUARK_POS,
@@ -890,7 +859,6 @@ QUARK_UNIT_TEST("run_init()", "", "", ""){
 
 
 //////////////////////////////////////////		HOST FUNCTION - typeof()
-
 
 QUARK_UNIT_TEST("", "typeof()", "", ""){
 	ut_verify_global_result(
@@ -971,7 +939,6 @@ OFF_QUARK_UNIT_TEST("", "typeof()", "", ""){
 }
 
 
-
 //////////////////////////////////////////		HOST FUNCTION - assert()
 
 //??? add file + line to Floyd's asserts
@@ -1001,10 +968,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
-
-
 //////////////////////////////////////////		BLOCKS AND SCOPING
-
 
 QUARK_UNIT_TEST("run_init()", "Empty block", "", ""){
 	run_closed(
@@ -1043,7 +1007,6 @@ QUARK_UNIT_TEST("run_init()", "Block with local variable, no shadowing", "", "")
 
 
 //////////////////////////////////////////		IF STATEMENT
-
 
 QUARK_UNIT_TEST("run_init()", "if(true){}", "", ""){
 	ut_verify_printout(
@@ -1242,7 +1205,6 @@ QUARK_UNIT_TEST("run_init()", "Make sure a function can access global independen
 
 
 //////////////////////////////////////////		FOR STATEMENT
-
 
 QUARK_UNIT_TEST("run_init()", "for", "", ""){
 	ut_verify_printout(
@@ -3009,7 +2971,7 @@ QUARK_UNIT_TEST("", "value_to_jsonvalue()", "pixel_t", ""){
 	ut_verify_global_result(
 		QUARK_POS,
 		R"(
-	
+
 			struct pixel_t { double x double y }
 			let c = pixel_t(100.0, 200.0)
 			let a = value_to_jsonvalue(c)

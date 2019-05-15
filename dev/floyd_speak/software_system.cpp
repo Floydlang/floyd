@@ -13,7 +13,6 @@ using std::string;
 using std::vector;
 
 
-
 vector<person_t> unpack_persons(const json_t& persons_obj){
 	vector<person_t> result;
 	const auto temp = persons_obj.get_object();
@@ -54,7 +53,7 @@ container_t unpack_container(const json_t& container_obj){
 	:
 		container_t{
 		._name = container_obj.get_object_element("name").get_string(),
-		._desc = container_obj.get_object_element("desc").get_string(),	
+		._desc = container_obj.get_object_element("desc").get_string(),
 		._tech = container_obj.get_object_element("tech").get_string(),
 		._clock_busses = unpack_clock_busses(container_obj.get_object_element("clocks")),
 		._connections = {},

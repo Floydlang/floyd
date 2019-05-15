@@ -7,7 +7,6 @@
 //
 
 #include "parse_expression.h"
-
 #include "ast_json.h"
 #include "json_support.h"
 #include "ast_typeid.h"
@@ -744,7 +743,7 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 		Vector definition: "[" EXPRESSION "," EXPRESSION... "]"
 		 	[ 1, 2, 3 ]
 		 	[ calc_pi(), 2.8, calc_pi * 2.0]
-	
+
 		OR
 
 		Dict definition: "{" EXPRESSION ":" EXPRESSION, EXPRESSION ":" EXPRESSION, ... "}"

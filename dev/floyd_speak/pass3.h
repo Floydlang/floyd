@@ -8,7 +8,6 @@
 
 #ifndef pass3_hpp
 #define pass3_hpp
-
 /*
 	Performs semantic analysis of a Floyd program.
 
@@ -23,40 +22,35 @@
 	- Inserts host functions.
 	- Insert built-in types.
 */
-
 #include "quark.h"
-
 #include <string>
 #include "ast.h"
 
 namespace floyd {
 
+	//////////////////////////////////////		semantic_ast_t
 
-//////////////////////////////////////		semantic_ast_t
+	/*
+		The semantic_ast_t is a ready-to-run program, all symbols resolved, all semantics are OK.
+	*/
+	struct semantic_ast_t {
+		public: semantic_ast_t(const ast_t& checked_ast);
 
-/*
-	The semantic_ast_t is a ready-to-run program, all symbols resolved, all semantics are OK.
-*/
-struct semantic_ast_t {
-	public: semantic_ast_t(const ast_t& checked_ast);
-
-#if DEBUG
-	public: bool check_invariant() const;
-#endif
-
-
-	////////////////////////////////	STATE
-	public: ast_t _checked_ast;
-};
+	#if DEBUG
+		public: bool check_invariant() const;
+	#endif
 
 
-/*
-	Semantic Analysis -> SYMBOL TABLE + annotated AST
-*/
-semantic_ast_t run_semantic_analysis(const ast_t& ast);
+		////////////////////////////////	STATE
+		public: ast_t _checked_ast;
+	};
+
+
+	/*
+		Semantic Analysis -> SYMBOL TABLE + annotated AST
+	*/
+	semantic_ast_t run_semantic_analysis(const ast_t& ast);
 
 
 }	// Floyd
 #endif /* pass3_hpp */
-
-
