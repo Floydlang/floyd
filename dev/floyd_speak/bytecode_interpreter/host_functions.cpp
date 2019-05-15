@@ -1573,7 +1573,6 @@ bool is_valid_absolute_dir_path(const std::string& s){
 	return true;
 }
 
-//??? use absolute_path_t as argument!
 bc_value_t host__get_fsentries_shallow(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
@@ -1606,7 +1605,7 @@ bc_value_t host__get_fsentries_deep(interpreter_t& vm, const bc_value_t args[], 
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("get_fsentries_shallow() illegal input path.");
+		quark::throw_runtime_error("get_fsentries_deep() illegal input path.");
 	}
 
 	const auto a = GetDirItemsDeep(path);

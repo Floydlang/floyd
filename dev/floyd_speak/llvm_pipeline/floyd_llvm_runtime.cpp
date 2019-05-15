@@ -1208,8 +1208,28 @@ runtime_value_t floyd_funcdef__get_fs_environment(void* floyd_runtime_ptr){
 	return v;
 }
 
-void floyd_host_function_1011(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+VEC_T* floyd_funcdef__get_fsentries_deep(void* floyd_runtime_ptr, const char* path0){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	QUARK_ASSERT(path0 != nullptr);
+
+	const auto path = std::string(path0);
+	if(is_valid_absolute_dir_path(path) == false){
+		quark::throw_runtime_error("get_fsentries_shallow() illegal input path.");
+	}
+
+	const auto a = GetDirItemsDeep(path);
+	const auto elements = directory_entries_to_values(a);
+	const auto k_fsentry_t__type = make__fsentry_t__type();
+	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(vec2);
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	const auto v = to_runtime_value(r, vec2);
+	return v.vector_ptr;
 }
 
 
@@ -2012,7 +2032,7 @@ std::map<std::string, void*> get_host_functions_map2(){
 		{ "floyd_funcdef__find", reinterpret_cast<void *>(&floyd_funcdef__find) },
 
 		{ "floyd_funcdef__get_fs_environment", reinterpret_cast<void *>(&floyd_funcdef__get_fs_environment) },
-		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&floyd_host_function_1011) },
+		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&floyd_funcdef__get_fsentries_deep) },
 		{ "floyd_funcdef__get_fsentries_shallow", reinterpret_cast<void *>(&floyd_funcdef__get_fsentries_shallow) },
 		{ "floyd_funcdef__get_fsentry_info", reinterpret_cast<void *>(&floyd_host_function_1013) },
 		{ "floyd_funcdef__get_json_type", reinterpret_cast<void *>(&floyd_host_function__get_json_type) },
