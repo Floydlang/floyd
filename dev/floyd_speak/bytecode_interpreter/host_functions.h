@@ -20,6 +20,8 @@
 #include "ast_typeid.h"
 #include "floyd_interpreter.h"
 
+class TDirEntry;
+
 namespace floyd {
 
 /*
@@ -80,6 +82,12 @@ typeid_t make__sha1_t__type();
 	}
 */
 typeid_t make__binary_t__type();
+
+
+
+bool is_valid_absolute_dir_path(const std::string& s);
+std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v);
+
 
 }	//	floyd
 

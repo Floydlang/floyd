@@ -4281,7 +4281,7 @@ QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
 //////////////////////////////////////////		HOST FUNCTION - get_directory_entries()
 
 
-QUARK_UNIT_TEST("Floyd test suite", "get_directory_entries()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "get_fsentries_shallow()", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(

@@ -208,11 +208,22 @@ value_t from_runtime_struct(const llvm_execution_engine_t& runtime, const runtim
 	return value_t::make_struct_value(type, members);
 }
 
-runtime_value_t to_runtime_vector(const llvm_execution_engine_t& runtime, const typeid_t::vector_t& exact_type, const value_t& value){
-	QUARK_ASSERT(runtime.check_invariant());
+runtime_value_t to_runtime_vector(const llvm_execution_engine_t& r, const typeid_t::vector_t& exact_type, const value_t& value){
+	QUARK_ASSERT(r.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(value.get_type().is_vector());
 
-	return runtime_value_t{ .vector_ptr = nullptr };
+	const auto& v0 = value.get_vector_value();
+
+	const auto count = static_cast<uint32_t>(v0.size());
+	auto v = new VEC_T(make_vec(count));
+	for(int i = 0 ; i < count ; i++){
+		const auto& e = v0[i];
+		const auto a = to_runtime_value(r, e);
+		v->element_ptr[i] = a;
+	}
+
+	return runtime_value_t{ .vector_ptr = v };
 }
 
 
@@ -238,7 +249,9 @@ value_t from_runtime_vector(const llvm_execution_engine_t& runtime, const runtim
 runtime_value_t to_runtime_dict(const llvm_execution_engine_t& runtime, const typeid_t::dict_t& exact_type, const value_t& value){
 	QUARK_ASSERT(runtime.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(value.get_type().is_dict());
 
+	NOT_IMPLEMENTED_YET();
 	return runtime_value_t{ .vector_ptr = nullptr };
 }
 
@@ -1199,8 +1212,29 @@ void floyd_host_function_1011(void* floyd_runtime_ptr, runtime_value_t arg){
 	hook(__FUNCTION__, floyd_runtime_ptr, arg);
 }
 
-void floyd_host_function_1012(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+
+VEC_T* floyd_funcdef__get_fsentries_shallow(void* floyd_runtime_ptr, const char* path0){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	QUARK_ASSERT(path0 != nullptr);
+
+	const auto path = std::string(path0);
+	if(is_valid_absolute_dir_path(path) == false){
+		quark::throw_runtime_error("get_fsentries_shallow() illegal input path.");
+	}
+
+	const auto a = GetDirItems(path);
+	const auto elements = directory_entries_to_values(a);
+	const auto k_fsentry_t__type = make__fsentry_t__type();
+	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(vec2);
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	const auto v = to_runtime_value(r, vec2);
+	return v.vector_ptr;
 }
 
 void floyd_host_function_1013(void* floyd_runtime_ptr, runtime_value_t arg){
@@ -1979,7 +2013,7 @@ std::map<std::string, void*> get_host_functions_map2(){
 
 		{ "floyd_funcdef__get_fs_environment", reinterpret_cast<void *>(&floyd_funcdef__get_fs_environment) },
 		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&floyd_host_function_1011) },
-		{ "floyd_funcdef__get_fsentries_shallow", reinterpret_cast<void *>(&floyd_host_function_1012) },
+		{ "floyd_funcdef__get_fsentries_shallow", reinterpret_cast<void *>(&floyd_funcdef__get_fsentries_shallow) },
 		{ "floyd_funcdef__get_fsentry_info", reinterpret_cast<void *>(&floyd_host_function_1013) },
 		{ "floyd_funcdef__get_json_type", reinterpret_cast<void *>(&floyd_host_function__get_json_type) },
 		{ "floyd_funcdef__get_time_of_day", reinterpret_cast<void *>(&floyd_funcdef__get_time_of_day) },
