@@ -793,7 +793,7 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 		quark::throw_runtime_error("replace() requires start <= end.");
 	}
 	if(args[3]._type != args[0]._type){
-		quark::throw_runtime_error("replace() requires 4th arg to be same as argument 0.");
+		quark::throw_runtime_error("replace() requires argument 4 to be same type of collection.");
 	}
 
 	if(obj._type.is_string()){

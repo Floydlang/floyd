@@ -1050,7 +1050,7 @@ bc_value_t update_string_char(interpreter_t& vm, const bc_value_t s, int64_t loo
 
 	std::string s2 = s.get_string_value();
 	if(lookup_index < 0 || lookup_index >= s2.size()){
-		quark::throw_runtime_error("String lookup out of bounds.");
+		quark::throw_runtime_error("Position argument to update() is outside collection span.");
 	}
 	else{
 		s2[lookup_index] = static_cast<char>(ch);
