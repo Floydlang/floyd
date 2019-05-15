@@ -70,6 +70,8 @@ union runtime_value_t {
 llvm::Type* make_runtime_value_type(llvm::LLVMContext& context);
 
 
+runtime_value_t make_blank_runtime_value();
+
 runtime_value_t make_runtime_bool(bool value);
 runtime_value_t make_runtime_int(int64_t value);
 runtime_value_t make_runtime_typeid(runtime_type_t type);

@@ -1538,10 +1538,174 @@ const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, runtime_value
 }
 
 
+typedef WIDE_RETURN_T (*SUPERMAP_F)(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_value_t arg1_value);
+
+WIDE_RETURN_T floyd_funcdef__supermap(
+	void* floyd_runtime_ptr,
+	runtime_value_t arg0_value,
+	runtime_type_t arg0_type,
+	runtime_value_t arg1_value,
+	runtime_type_t arg1_type,
+	runtime_value_t arg2_value,
+	runtime_type_t arg2_type
+){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type0 = lookup_type(r.type_interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner, arg1_type);
+	const auto type2 = lookup_type(r.type_interner, arg2_type);
+
+	//	Check topology.
+	if(type0.is_vector() && type1 == typeid_t::make_vector(typeid_t::make_int()) && type2.is_function() && type2.get_function_args().size () == 2){
+	}
+	else{
+		quark::throw_runtime_error("supermap() arguments are wrong.");
+	}
 
 
-void floyd_host_function_1030(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+
+	const auto& elements = arg0_value;
+	const auto& e_type = type0.get_vector_element_type();
+	const auto& parents = arg1_value;
+	const auto& f = arg2_value;
+	const auto& r_type = type2.get_function_return();
+	if(
+		e_type == type2.get_function_args()[0]
+		&& r_type == type2.get_function_args()[1].get_vector_element_type()
+	){
+	}
+	else {
+		quark::throw_runtime_error("R supermap([E] elements, R init_value, R (R acc, E element) f");
+	}
+
+	const auto f2 = reinterpret_cast<SUPERMAP_F>(f.function_ptr);
+
+	const auto elements2 = elements.vector_ptr;
+	const auto parents2 = parents.vector_ptr;
+
+	if(elements2->element_count != parents2->element_count) {
+		quark::throw_runtime_error("supermap() requires elements and parents be the same count.");
+	}
+
+	auto elements_todo = elements2->element_count;
+	std::vector<int> rcs(elements2->element_count, 0);
+
+	std::vector<runtime_value_t> complete(elements2->element_count, runtime_value_t());
+
+	for(int i = 0 ; i < parents2->element_count ; i++){
+		const auto& e = parents2->element_ptr[i];
+		const auto parent_index = e.int_value;
+
+		const auto count = static_cast<int64_t>(elements2->element_count);
+		QUARK_ASSERT(parent_index >= -1);
+		QUARK_ASSERT(parent_index < count);
+
+		if(parent_index != -1){
+			rcs[parent_index]++;
+		}
+	}
+
+	while(elements_todo > 0){
+		std::vector<int> pass_ids;
+		for(int i = 0 ; i < elements2->element_count ; i++){
+			const auto rc = rcs[i];
+			if(rc == 0){
+				pass_ids.push_back(i);
+				rcs[i] = -1;
+			}
+		}
+
+		if(pass_ids.empty()){
+			quark::throw_runtime_error("supermap() dependency cycle error.");
+		}
+
+		for(const auto element_index: pass_ids){
+			const auto& e = elements2->element_ptr[element_index];
+
+			//	Make list of the element's inputs -- the must all be complete now.
+			std::vector<runtime_value_t> solved_deps;
+			for(int element_index2 = 0 ; element_index2 < parents2->element_count ; element_index2++){
+				const auto& p = parents2->element_ptr[element_index2];
+				const auto parent_index = p.int_value;
+				if(parent_index == element_index){
+					QUARK_ASSERT(element_index2 != -1);
+					QUARK_ASSERT(element_index2 >= -1 && element_index2 < elements2->element_count);
+					QUARK_ASSERT(rcs[element_index2] == -1);
+					const auto& solved = complete[element_index2];
+					solved_deps.push_back(solved);
+				}
+			}
+
+			VEC_T solved_deps2 = make_vec(static_cast<int32_t>(solved_deps.size()));
+			for(int i = 0 ; i < solved_deps.size() ; i++){
+				solved_deps2.element_ptr[i] = solved_deps[i];
+			}
+			runtime_value_t solved_deps3 { .vector_ptr = &solved_deps2 };
+
+			const auto wide_result = (*f2)(floyd_runtime_ptr, e, solved_deps3);
+			const auto result1 = wide_result.a;
+
+//			const bc_value_t f_args[2] = { e, make_vector(r_type, solved_deps) };
+//			const auto result1 = call_function_bc(vm, f, f_args, 2);
+
+
+			const auto parent_index = parents2->element_ptr[element_index].int_value;
+			if(parent_index != -1){
+				rcs[parent_index]--;
+			}
+			complete[element_index] = result1;
+			elements_todo--;
+		}
+	}
+
+//	const auto result = make_vector(r_type, complete);
+
+	const auto count = static_cast<uint32_t>(complete.size());
+	auto result_vec = new VEC_T(make_vec(count));
+	for(int i = 0 ; i < count ; i++){
+		result_vec->element_ptr[i] = complete[i];
+	}
+
+#if 1
+//	return runtime_value_t{ .vector_ptr = nullptr };
+	const auto vec_r = runtime_value_t{ .vector_ptr = result_vec };
+	const auto result_value = from_runtime_value(r, vec_r, typeid_t::make_vector(r_type));
+	const auto debug = value_and_type_to_ast_json(result_value);
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	return make_wide_return_vec(result_vec);
+
+/*
+	const auto element_type = type0.get_vector_element_type();
+
+	if(type1.is_function() == false){
+		quark::throw_runtime_error("map() requires start and end to be integers.");
+	}
+	const auto f_arg_types = type1.get_function_args();
+	const auto r_type = type1.get_function_return();
+
+	if(f_arg_types.size() != 1){
+		quark::throw_runtime_error("map() function f requries 1 argument.");
+	}
+
+	if(f_arg_types[0] != element_type){
+		quark::throw_runtime_error("map() function f must accept collection elements as its argument.");
+	}
+
+	const auto input_element_type = f_arg_types[0];
+	const auto output_element_type = r_type;
+
+	const auto f = reinterpret_cast<MAP_F>(arg1_value.function_ptr);
+
+	auto count = arg0_value.vector_ptr->element_count;
+	auto result_vec = new VEC_T(make_vec(count));
+	for(int i = 0 ; i < count ; i++){
+		const auto wide_result1 = (*f)(floyd_runtime_ptr, arg0_value.vector_ptr->element_ptr[i]);
+		result_vec->element_ptr[i] = wide_result1.a;
+	}
+	return make_wide_return_vec(result_vec);
+*/
 }
 
 void floyd_host_function_1031(void* floyd_runtime_ptr, runtime_value_t arg){
@@ -1775,7 +1939,7 @@ std::map<std::string, void*> get_host_functions_map2(){
 		{ "floyd_funcdef__size", reinterpret_cast<void *>(&floyd_funcdef__size) },
 		{ "floyd_funcdef__subset", reinterpret_cast<void *>(&floyd_funcdef__subset) },
 
-		{ "floyd_funcdef__supermap", reinterpret_cast<void *>(&floyd_host_function_1030) },
+		{ "floyd_funcdef__supermap", reinterpret_cast<void *>(&floyd_funcdef__supermap) },
 		{ "floyd_funcdef__to_pretty_string", reinterpret_cast<void *>(&floyd_host_function_1031) },
 		{ "floyd_funcdef__to_string", reinterpret_cast<void *>(&floyd_host__to_string) },
 		{ "floyd_funcdef__typeof", reinterpret_cast<void *>(&floyd_host__typeof) },
