@@ -810,6 +810,32 @@ QUARK_UNIT_TEST("Floyd test suite", "func", "Recursion: function calling itself 
 	run_closed(R"(		func int fx(int a){ return fx(a + 1) }		)");
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "func", "return from void function", "error"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			func void f (int x) impure {
+				return 3
+			}
+
+		)",
+		R"xxx(Cannot return value from function with void-return. Line: 4 "return 3")xxx"
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "func", "void function, no return statement", ""){
+	run_closed(
+		R"(
+
+			func void f (int x) impure {
+			}
+
+		)"
+	);
+}
+
+
 QUARK_UNIT_TEST("Floyd test suite", "Call", "Error: Wrong number of arguments in function call", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
@@ -826,6 +852,8 @@ QUARK_UNIT_TEST("Floyd test suite", "Call", "Error: Wrong number of arguments in
 QUARK_UNIT_TEST("Floyd test suite", "Call", "Call non-function, non-struct, non-typeid", "exception"){
 	ut_verify_exception_nolib(QUARK_POS, R"(		let a = 3()		)", "Cannot call non-function, its type is int. Line: 1 \"let a = 3()\"");
 }
+
+
 
 
 //////////////////////////////////////////		RETURN STATEMENT
@@ -1847,6 +1875,32 @@ QUARK_UNIT_TEST("Floyd test suite", "for", "nested for loops", ""){
 			"0", "100", "101", "102",
 			"1", "1100", "1101", "1102",
 			"2", "2100", "2101", "2102"
+		}
+	);
+}
+
+
+QUARK_UNIT_TEST("Floyd test suite", "for", "print_board()", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let BOARD_WIDTH = 79
+			let BOARD_HEIGHT = 24
+
+			func int print_board ([[int]] board) impure {
+				for (j in 0 ..< BOARD_HEIGHT) {
+					mutable string row = ""
+					for (i in 0 ..< BOARD_WIDTH) {
+						row = push_back(row, board[i][j] != 0 ? 120 : 45)
+					}
+					print(row)
+				}
+				return 3
+			}
+
+		)",
+		{
 		}
 	);
 }

@@ -550,7 +550,7 @@ const char* floyd_runtime__concatunate_strings(void* floyd_runtime_ptr, const ch
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 	QUARK_ASSERT(lhs != nullptr);
 	QUARK_ASSERT(rhs != nullptr);
-	QUARK_TRACE_SS(__FUNCTION__ << " " << std::string(lhs) << " comp " <<std::string(rhs));
+//	QUARK_TRACE_SS(__FUNCTION__ << " " << std::string(lhs) << " comp " <<std::string(rhs));
 
 	std::size_t len = strlen(lhs) + strlen(rhs);
 	char* s = reinterpret_cast<char*>(std::malloc(len + 1));

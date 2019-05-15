@@ -1915,6 +1915,10 @@ static void generate_floyd_function_body(llvm_code_generator_t& gen_acc, int fun
 	generate_statements(gen_acc, *f, body._statements);
 	gen_acc.scope_path.pop_back();
 
+	if(function_def._function_type.get_function_return().is_void()){
+		gen_acc.builder.CreateRetVoid();
+	}
+
 	QUARK_ASSERT(check_invariant__function(f));
 }
 

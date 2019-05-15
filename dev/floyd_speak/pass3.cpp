@@ -649,6 +649,12 @@ std::pair<analyser_t, statement_t> analyse_block_statement(const analyser_t& a, 
 std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
+	if(return_type.is_void()){
+		std::stringstream what;
+		what << "Cannot return value from function with void-return.";
+		throw_compiler_error(s.location, what.str());
+	}
+
 	const auto statement = std::get<statement_t::return_statement_t>(s._contents);
 	auto a_acc = a;
 	const auto expr = statement._expression;
