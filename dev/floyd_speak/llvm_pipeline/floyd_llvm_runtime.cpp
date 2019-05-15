@@ -11,6 +11,7 @@
 #include "sha1_class.h"
 #include "text_parser.h"
 #include "host_functions.h"
+#include "file_handling.h"
 
 #include <llvm/ADT/APInt.h>
 #include <llvm/IR/Verifier.h>
@@ -35,6 +36,8 @@
 
 #include "llvm/Bitcode/BitstreamWriter.h"
 
+#include <iostream>
+#include <fstream>
 
 namespace floyd {
 
@@ -1162,8 +1165,34 @@ int64_t floyd_funcdef__find(void* floyd_runtime_ptr, runtime_value_t arg0_value,
 
 
 
-void floyd_host_function_1010(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+runtime_value_t floyd_funcdef__get_fs_environment(void* floyd_runtime_ptr){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto dirs = GetDirectories();
+
+	const auto result = value_t::make_struct_value(
+		make__fs_environment_t__type(),
+		{
+			value_t::make_string(dirs.home_dir),
+			value_t::make_string(dirs.documents_dir),
+			value_t::make_string(dirs.desktop_dir),
+
+			value_t::make_string(dirs.application_support),
+			value_t::make_string(dirs.preferences_dir),
+			value_t::make_string(dirs.cache_dir),
+			value_t::make_string(dirs.temp_dir),
+
+			value_t::make_string(dirs.process_dir)
+		}
+	);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(result);
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	const auto v = to_runtime_value(r, result);
+	return v;
 }
 
 void floyd_host_function_1011(void* floyd_runtime_ptr, runtime_value_t arg){
@@ -1708,8 +1737,16 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 */
 }
 
-void floyd_host_function_1031(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+char* floyd_funcdef__to_pretty_string(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type0 = lookup_type(r.type_interner, arg0_type);
+	const auto& value = from_runtime_value(r, arg0_value, type0);
+	const auto json = value_to_ast_json(value, json_tags::k_plain);
+	const auto s = json_to_pretty_string(json, 0, pretty_t{ 80, 4 });
+
+	//??? leaks. Lose new(), calloc() strdup() etc.
+	return strdup(s.c_str());
 }
 
 const char* floyd_host__to_string(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
@@ -1871,8 +1908,31 @@ int16_t* floyd_funcdef__value_to_jsonvalue(void* floyd_runtime_ptr, runtime_valu
 	return reinterpret_cast<int16_t*>(result);
 }
 
-void floyd_host_function_1036(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+
+
+	static void write_text_file(const std::string& abs_path, const std::string& data){
+		const auto up = UpDir2(abs_path);
+
+		MakeDirectoriesDeep(up.first);
+
+		std::ofstream outputFile;
+		outputFile.open(abs_path);
+		if (outputFile.fail()) {
+			quark::throw_exception();
+		}
+
+		outputFile << data;
+		outputFile.close();
+	}
+
+void floyd_funcdef__write_text_file(void* floyd_runtime_ptr, const char* path0, const char* data0){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(path0 != nullptr);
+	QUARK_ASSERT(data0 != nullptr);
+
+	const auto path = std::string(path0);
+	const auto file_contents = std::string(data0);
+	write_text_file(path, file_contents);
 }
 
 void floyd_host_function_1037(void* floyd_runtime_ptr, runtime_value_t arg){
@@ -1917,7 +1977,7 @@ std::map<std::string, void*> get_host_functions_map2(){
 		{ "floyd_funcdef__filter", reinterpret_cast<void *>(&floyd_funcdef__filter) },
 		{ "floyd_funcdef__find", reinterpret_cast<void *>(&floyd_funcdef__find) },
 
-		{ "floyd_funcdef__get_fs_environment", reinterpret_cast<void *>(&floyd_host_function_1010) },
+		{ "floyd_funcdef__get_fs_environment", reinterpret_cast<void *>(&floyd_funcdef__get_fs_environment) },
 		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&floyd_host_function_1011) },
 		{ "floyd_funcdef__get_fsentries_shallow", reinterpret_cast<void *>(&floyd_host_function_1012) },
 		{ "floyd_funcdef__get_fsentry_info", reinterpret_cast<void *>(&floyd_host_function_1013) },
@@ -1940,12 +2000,12 @@ std::map<std::string, void*> get_host_functions_map2(){
 		{ "floyd_funcdef__subset", reinterpret_cast<void *>(&floyd_funcdef__subset) },
 
 		{ "floyd_funcdef__supermap", reinterpret_cast<void *>(&floyd_funcdef__supermap) },
-		{ "floyd_funcdef__to_pretty_string", reinterpret_cast<void *>(&floyd_host_function_1031) },
+		{ "floyd_funcdef__to_pretty_string", reinterpret_cast<void *>(&floyd_funcdef__to_pretty_string) },
 		{ "floyd_funcdef__to_string", reinterpret_cast<void *>(&floyd_host__to_string) },
 		{ "floyd_funcdef__typeof", reinterpret_cast<void *>(&floyd_host__typeof) },
 		{ "floyd_funcdef__update", reinterpret_cast<void *>(&floyd_funcdef__update) },
 		{ "floyd_funcdef__value_to_jsonvalue", reinterpret_cast<void *>(&floyd_funcdef__value_to_jsonvalue) },
-		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&floyd_host_function_1036) }
+		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&floyd_funcdef__write_text_file) }
 	};
 	return host_functions_map;
 }

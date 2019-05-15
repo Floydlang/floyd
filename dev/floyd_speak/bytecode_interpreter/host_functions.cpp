@@ -463,7 +463,7 @@ bc_value_t host__to_pretty_string(interpreter_t& vm, const bc_value_t args[], in
 
 	const auto& value = args[0];
 	const auto json = bcvalue_to_json(value);
-	const auto s = json_to_pretty_string(json, 0, pretty_t{80, 4});
+	const auto s = json_to_pretty_string(json, 0, pretty_t{ 80, 4 });
 	return bc_value_t::make_string(s);
 }
 
@@ -1891,7 +1891,7 @@ std::vector<host_function_record_t> get_host_function_records(){
 
 
 		make_rec("read_text_file", host__read_text_file, 1015, typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_string() }, epure::impure)),
-		make_rec("write_text_file", host__write_text_file, 1016, typeid_t::make_function(VOID, { DYN, DYN }, epure::impure)),
+		make_rec("write_text_file", host__write_text_file, 1016, typeid_t::make_function(VOID, { typeid_t::make_string(), typeid_t::make_string() }, epure::impure)),
 		make_rec(
 			"get_fsentries_shallow",
 			host__get_fsentries_shallow,
