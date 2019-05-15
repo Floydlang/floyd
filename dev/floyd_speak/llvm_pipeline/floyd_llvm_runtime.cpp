@@ -1422,6 +1422,7 @@ void floyd_funcdef__print(void* floyd_runtime_ptr, runtime_value_t arg0_value, r
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto s = gen_to_string(r, arg0_value, arg0_type);
+	printf("%s\n", s.c_str());
 	r._print_output.push_back(s);
 }
 
