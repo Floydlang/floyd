@@ -53,10 +53,6 @@ unsupported syntax
 //??? Test truthness off all variable types: strings, doubles
 
 
-std::map<std::string, value_t> test_run_container2(const std::string& program, const std::vector<floyd::value_t>& args, const std::string& container_key, const std::string& source_file){
-	const auto cu = make_compilation_unit_lib(program, source_file);
-	return bc_run_container2(cu, args, container_key);
-}
 
 void run_closed(const std::string& program){
 	ut_run_closed(program, compilation_unit_mode::k_no_core_lib);
@@ -1833,6 +1829,27 @@ QUARK_UNIT_TEST("Floyd test suite", "for", "EXPR ... EXPR", ""){
 }
 
 
+
+QUARK_UNIT_TEST("Floyd test suite", "for", "nested for loops", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			for (a in 0 ... 2) {
+				print(a)
+				for (b in 100 ... 102) {
+					print(a * 1000 + b)
+				}
+			}
+
+		)",
+		{
+			"0", "100", "101", "102",
+			"1", "1100", "1101", "1102",
+			"2", "2100", "2101", "2102"
+		}
+	);
+}
 
 
 

@@ -27,6 +27,7 @@ namespace llvm {
 
 namespace floyd {
 
+	struct llvm_ir_program_t;
 
 
 
@@ -93,6 +94,12 @@ const function_def_t& find_function_def2(const std::vector<function_def_t>& func
 //	Cast to uint64_t* or other the required type, then access via it.
 void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name);
 
+struct llvm_bind_t {
+	std::string name;
+	void* address;
+	typeid_t type;
+};
+
 //	Cast to function pointer, then call it.
 void* get_global_function(llvm_execution_engine_t& ee, const std::string& name);
 
@@ -107,6 +114,9 @@ std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context);
 std::map<std::string, void*> get_host_functions_map2();
 
 uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee);
+
+
+std::map<std::string, value_t> run_container(llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args, const std::string& container_key);
 
 
 }	//	namespace floyd

@@ -38,8 +38,8 @@ enum class executor_mode {
 };
 
 
-executor_mode g_executor = executor_mode::bc_interpreter;
-//executor_mode g_executor = executor_mode::llvm_jit;
+//executor_mode g_executor = executor_mode::bc_interpreter;
+executor_mode g_executor = executor_mode::llvm_jit;
 
 
 run_report_t make_result(const value_t& result){
@@ -52,7 +52,7 @@ void ut_verify(const quark::call_context_t& context, const run_report_t& result,
 	ut_verify(context, result.print_out, expected.print_out);
 }
 
-
+//??? Move to interpreter sources.
 //	Run program using Floyd bytecode interpreter
 static run_report_t run_program_bc(const compilation_unit_t& cu, const std::vector<value_t>& main_args){
 	try {
@@ -90,6 +90,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_UT_VERIFY(double_size == 8);
 }
 
+//??? Refact out to floyd_llvm_runtime.h
 //	Run program using LLVM.
 static run_report_t run_program_llvm(const compilation_unit_t& cu, const std::vector<value_t>& main_args){
 	try {
@@ -127,6 +128,26 @@ run_report_t run_program(const compilation_unit_t& cu, const std::vector<value_t
 	}
 	else if(g_executor == executor_mode::llvm_jit){
 		return run_program_llvm(cu, main_args);
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+std::map<std::string, value_t> test_run_container2(const std::string& program, const std::vector<floyd::value_t>& args, const std::string& container_key, const std::string& source_file){
+	const auto cu = make_compilation_unit_lib(program, source_file);
+
+	if(g_executor == executor_mode::bc_interpreter){
+		return bc_run_container2(cu, args, container_key);
+	}
+	else if(g_executor == executor_mode::llvm_jit){
+		llvm_instance_t llvm_instance;
+		auto program_breaks = compile_to_ir_helper(llvm_instance, cu);
+
+
+//	std::map<std::string, value_t> run_container(llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args, const std::string& container_key);
+
+		return run_container(*program_breaks, args, container_key);
 	}
 	else{
 		QUARK_ASSERT(false);

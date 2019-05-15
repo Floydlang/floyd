@@ -8,10 +8,13 @@
 
 #include "floyd_llvm_runtime.h"
 
+#include "floyd_llvm_codegen.h"
+
 #include "sha1_class.h"
 #include "text_parser.h"
 #include "host_functions.h"
 #include "file_handling.h"
+#include "os_process.h"
 
 #include <llvm/ADT/APInt.h>
 #include <llvm/IR/Verifier.h>
@@ -36,8 +39,16 @@
 
 #include "llvm/Bitcode/BitstreamWriter.h"
 
+
+
 #include <iostream>
 #include <fstream>
+
+#include <thread>
+#include <deque>
+#include <future>
+
+#include <condition_variable>
 
 namespace floyd {
 
@@ -106,7 +117,7 @@ value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid
 	QUARK_ASSERT(f.second.is_function());
 
 	const auto function_ptr = reinterpret_cast<FLOYD_RUNTIME_F*>(f.first);
-	runtime_value_t result = (*function_ptr)(&ee, "?dummy arg to main()?");
+	runtime_value_t result = (*function_ptr)(&ee, "?dummy arg to main()?");//???
 
 	const auto return_type = f.second.get_function_return();
 	return from_runtime_value(ee, result, return_type);
@@ -2123,5 +2134,252 @@ uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee){
 	QUARK_ASSERT(a_result == 667);
 	return a_result;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//////////////////////////////////////		process_runtime_t
+
+/*
+	We use only one LLVM execution engine to run main() and all Floyd processes.
+	They each have a separate process_t-instance and their own runtime-pointer.
+*/
+
+/*
+	Try using C++ multithreading maps etc?
+	Explore std::packaged_task
+*/
+//	https://en.cppreference.com/w/cpp/thread/condition_variable/wait
+
+
+struct process_interface {
+	virtual ~process_interface(){};
+	virtual void on_message(const json_t& message) = 0;
+	virtual void on_init() = 0;
+};
+
+
+//	NOTICE: Each process inbox has its own mutex + condition variable.
+//	No mutex protects cout.
+struct process_t {
+	std::condition_variable _inbox_condition_variable;
+	std::mutex _inbox_mutex;
+	std::deque<json_t> _inbox;
+
+	std::string _name_key;
+	std::string _function_key;
+	std::thread::id _thread_id;
+
+	std::shared_ptr<interpreter_t> _interpreter;
+	std::shared_ptr<llvm_bind_t> _init_function;
+	std::shared_ptr<llvm_bind_t> _process_function;
+	value_t _process_state;
+	std::shared_ptr<process_interface> _processor;
+};
+
+struct process_runtime_t {
+	container_t _container;
+	std::map<std::string, std::string> _process_infos;
+	std::thread::id _main_thread_id;
+
+	llvm_execution_engine_t* ee;
+
+	std::vector<std::shared_ptr<process_t>> _processes;
+	std::vector<std::thread> _worker_threads;
+};
+
+/*
+??? have ONE runtime PER computer or one per interpreter?
+??? Separate system-interpreter (all processes and many clock busses) vs ONE thread of execution?
+*/
+
+static void send_message(process_runtime_t& runtime, int process_id, const json_t& message){
+	auto& process = *runtime._processes[process_id];
+
+    {
+        std::lock_guard<std::mutex> lk(process._inbox_mutex);
+        process._inbox.push_front(message);
+        QUARK_TRACE("Notifying...");
+    }
+    process._inbox_condition_variable.notify_one();
+//    process._inbox_condition_variable.notify_all();
+}
+
+#if 0
+static void run_process(process_runtime_t& runtime, int process_id){
+	auto& process = *runtime._processes[process_id];
+	bool stop = false;
+
+	const auto thread_name = get_current_thread_name();
+
+	if(process._processor){
+		process._processor->on_init();
+	}
+
+	if(process._init_function != nullptr){
+		const std::vector<value_t> args = {};
+		process._process_state = call_function(*process._interpreter, bc_to_value(process._init_function->_value), args);
+	}
+
+	while(stop == false){
+		json_t message;
+		{
+			std::unique_lock<std::mutex> lk(process._inbox_mutex);
+
+        	QUARK_TRACE_SS(thread_name << ": waiting......");
+			process._inbox_condition_variable.wait(lk, [&]{ return process._inbox.empty() == false; });
+        	QUARK_TRACE_SS(thread_name << ": continue");
+
+			//	Pop message.
+			QUARK_ASSERT(process._inbox.empty() == false);
+			message = process._inbox.back();
+			process._inbox.pop_back();
+		}
+		QUARK_TRACE_SS("RECEIVED: " << json_to_pretty_string(message));
+
+		if(message.is_string() && message.get_string() == "stop"){
+			stop = true;
+        	QUARK_TRACE_SS(thread_name << ": STOP");
+		}
+		else{
+			if(process._processor){
+				process._processor->on_message(message);
+			}
+
+			if(process._process_function != nullptr){
+				const std::vector<value_t> args = { process._process_state, value_t::make_json_value(message) };
+				const auto& state2 = call_function(*process._interpreter, bc_to_value(process._process_function->_value), args);
+				process._process_state = state2;
+			}
+		}
+	}
+}
+#endif
+
+static std::map<std::string, value_t> run_container_int(llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args, const std::string& container_key){
+	QUARK_ASSERT(container_key.empty() == false);
+
+	process_runtime_t runtime;
+	runtime._main_thread_id = std::this_thread::get_id();
+
+
+	//??? Confusing. Support several containers!
+	if(std::find(program_breaks.software_system._containers.begin(), program_breaks.software_system._containers.end(), container_key) == program_breaks.software_system._containers.end()){
+		quark::throw_runtime_error("Unknown container-key");
+	}
+
+	if(program_breaks.container_def._name != container_key){
+		quark::throw_runtime_error("Unknown container-key");
+	}
+
+	runtime._container = program_breaks.container_def;
+
+	runtime._process_infos = reduce(runtime._container._clock_busses, std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const std::pair<std::string, clock_bus_t>& e){
+		auto acc2 = acc;
+		acc2.insert(e.second._processes.begin(), e.second._processes.end());
+		return acc2;
+	});
+
+	struct my_interpreter_handler_t : public interpreter_handler_i {
+		my_interpreter_handler_t(process_runtime_t& runtime) : _runtime(runtime) {}
+
+		virtual void on_send(const std::string& process_id, const json_t& message){
+			const auto it = std::find_if(_runtime._processes.begin(), _runtime._processes.end(), [&](const std::shared_ptr<process_t>& process){ return process->_name_key == process_id; });
+			if(it != _runtime._processes.end()){
+				const auto process_index = it - _runtime._processes.begin();
+				send_message(_runtime, static_cast<int>(process_index), message);
+			}
+		}
+
+		process_runtime_t& _runtime;
+	};
+	auto my_interpreter_handler = my_interpreter_handler_t{runtime};
+
+#if 0
+	for(const auto& t: runtime._process_infos){
+		auto process = std::make_shared<process_t>();
+		process->_name_key = t.first;
+		process->_function_key = t.second;
+		process->_interpreter = std::make_shared<interpreter_t>(program, &my_interpreter_handler);
+		process->_init_function = find_global_symbol2(*process->_interpreter, t.second + "__init");
+		process->_process_function = find_global_symbol2(*process->_interpreter, t.second);
+
+		runtime._processes.push_back(process);
+	}
+
+	//	Remember that current thread (main) is also a thread, no need to create a worker thread for one process.
+	runtime._processes[0]->_thread_id = runtime._main_thread_id;
+
+	for(int process_id = 1 ; process_id < runtime._processes.size() ; process_id++){
+		runtime._worker_threads.push_back(std::thread([&](int process_id){
+
+//			const auto native_thread = thread::native_handle();
+
+			std::stringstream thread_name;
+			thread_name << std::string() << "process " << process_id << " thread";
+#ifdef __APPLE__
+			pthread_setname_np(/*pthread_self(),*/ thread_name.str().c_str());
+#endif
+
+			run_process(runtime, process_id);
+		}, process_id));
+	}
+
+	run_process(runtime, 0);
+
+	for(auto &t: runtime._worker_threads){
+		t.join();
+	}
+
+#endif
+	return {};
+}
+
+
+//??? Create separate llvm_execution_engine_t instances for each Floyd process?
+//??? move make_engine_run_init() into this source file.
+
+std::map<std::string, value_t> run_container(llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args, const std::string& container_key){
+	if(container_key.empty()){
+		// ??? instance is already known via program_breaks.
+		//	Runs global init code.
+		llvm_execution_engine_t ee = make_engine_run_init(*program_breaks.instance, program_breaks);
+
+		const auto main_function = bind_function(ee, "main");
+		if(main_function.first != nullptr){
+			const auto result = call_function(ee, main_function);
+			return {{ "main()", result }};
+		}
+		else{
+			return {{ "global", value_t::make_void() }};
+		}
+	}
+	else{
+		return run_container_int(program_breaks, args, container_key);
+	}
+}
+
+
 
 }	//	namespace floyd

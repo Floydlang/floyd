@@ -15,12 +15,12 @@
 #include "host_functions.h"
 #include "bytecode_generator.h"
 #include "compiler_helpers.h"
+#include "os_process.h"
 
 #include <thread>
 #include <deque>
 #include <future>
 
-#include <pthread.h>
 #include <condition_variable>
 
 namespace floyd {
@@ -241,89 +241,6 @@ bc_value_t value_to_bc(const value_t& value){
 
 
 
-
-
-#if 0
-bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const typeid_t& arg0_type, const vector<bc_value_t>& arg_values){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	if(type.is_json_value()){
-		QUARK_ASSERT(arg_values.size() == 1);
-
-		const auto& arg0 = arg_values[0];
-		const auto arg = bc_to_value(arg0, arg0_type);
-		const auto value = value_to_ast_json(arg, json_tags::k_plain);
-		return bc_value_t::make_json_value(value._value);
-	}
-	else if(type.is_bool() || type.is_int() || type.is_double() || type.is_string() || type.is_typeid()){
-		QUARK_ASSERT(arg_values.size() == 1);
-
-		const auto& arg = arg_values[0];
-		if(type.is_string()){
-			if(arg0_type.is_json_value() && arg.get_json_value().is_string()){
-				return bc_value_t::make_string(arg.get_json_value().get_string());
-			}
-			else if(arg0_type.is_string()){
-			}
-		}
-		else{
-			if(arg0_type != type){
-			}
-		}
-		return arg;
-	}
-	else if(type.is_struct()){
-/*
-	#if DEBUG
-		const auto def = type.get_struct_ref();
-		QUARK_ASSERT(arg_values.size() == def->_members.size());
-
-		for(int i = 0 ; i < def->_members.size() ; i++){
-			const auto v = arg_values[i];
-			const auto a = def->_members[i];
-			QUARK_ASSERT(v.check_invariant());
-			QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_unresolved);
-			QUARK_ASSERT(v.get_type() == a._type);
-		}
-	#endif
-*/
-		const auto instance = bc_value_t::make_struct_value(type, arg_values);
-//		QUARK_TRACE(to_compact_string2(instance));
-
-		return instance;
-	}
-	else if(type.is_vector()){
-		const auto& element_type = type.get_vector_element_type();
-		QUARK_ASSERT(element_type.is_undefined() == false);
-
-		return bc_value_t::make_vector(element_type, arg_values);
-	}
-	else if(type.is_dict()){
-		const auto& element_type = type.get_dict_value_type();
-		QUARK_ASSERT(element_type.is_undefined() == false);
-
-		std::map<string, bc_value_t> m;
-		for(auto i = 0 ; i < arg_values.size() / 2 ; i++){
-			const auto& key = arg_values[i * 2 + 0].get_string_value();
-			const auto& value = arg_values[i * 2 + 1];
-			m.insert({ key, value });
-		}
-		return bc_value_t::make_dict_value(element_type, m);
-	}
-	else if(type.is_function()){
-	}
-	else if(type.is_unresolved_type_identifier()){
-	}
-	else{
-	}
-
-	QUARK_ASSERT(false);
-	quark::throw_exception();
-}
-#endif
-
-
 floyd::value_t find_global_symbol(const interpreter_t& vm, const std::string& s){
 	QUARK_ASSERT(vm.check_invariant());
 
@@ -416,25 +333,7 @@ void print_vm_printlog(const interpreter_t& vm){
 std::packaged_task
 */
 
-
 //	https://en.cppreference.com/w/cpp/thread/condition_variable/wait
-
-std::string get_current_thread_name(){
-	char name[16];
-
-#ifndef __EMSCRIPTEN_PTHREADS__
-	//pthread_setname_np(pthread_self(), s.c_str()); // set the name (pthread_self() returns the pthread_t of the current thread)
-	pthread_getname_np(pthread_self(), &name[0], sizeof(name));
-#else
-	strcpy(name, "");
-#endif
-	if(strlen(name) == 0){
-		return "main";
-	}
-	else{
-		return std::string(name);
-	}
-}
 
 
 struct process_interface {
@@ -477,7 +376,7 @@ struct process_runtime_t {
 ??? Separate system-interpreter (all processes and many clock busses) vs ONE thread of execution?
 */
 
-void send_message(process_runtime_t& runtime, int process_id, const json_t& message){
+static void send_message(process_runtime_t& runtime, int process_id, const json_t& message){
 	auto& process = *runtime._processes[process_id];
 
     {
@@ -489,7 +388,7 @@ void send_message(process_runtime_t& runtime, int process_id, const json_t& mess
 //    process._inbox_condition_variable.notify_all();
 }
 
-void process_process(process_runtime_t& runtime, int process_id){
+static void process_process(process_runtime_t& runtime, int process_id){
 	auto& process = *runtime._processes[process_id];
 	bool stop = false;
 
@@ -538,7 +437,7 @@ void process_process(process_runtime_t& runtime, int process_id){
 	}
 }
 
-std::map<std::string, value_t> run_container_int(const bc_program_t& program, const std::vector<floyd::value_t>& args, const std::string& container_key){
+static std::map<std::string, value_t> run_container_int(const bc_program_t& program, const std::vector<floyd::value_t>& args, const std::string& container_key){
 	process_runtime_t runtime;
 	runtime._main_thread_id = std::this_thread::get_id();
 

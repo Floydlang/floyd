@@ -1249,24 +1249,28 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 		}
 		else if(element_type0.is_string()){
 			//	Each string element is a char*.
-			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *llvm::Type::getInt8PtrTy(context), details.elements);
+			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *intern_type(context, element_type0), details.elements);
 			return vec_ptr_reg;
 		}
 		else if(element_type0.is_json_value()){
-			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *llvm::Type::getInt16PtrTy(context), details.elements);
+			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *intern_type(context, element_type0), details.elements);
 			return vec_ptr_reg;
 		}
 		else if(element_type0.is_struct()){
 			//	Structs are stored as pointer-to-struct in the vector elements.
-			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *make_struct_type(context, element_type0)->getPointerTo(), details.elements);
+			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *intern_type(context, element_type0), details.elements);
 			return vec_ptr_reg;
 		}
 		else if(element_type0.is_int()){
-			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *llvm::Type::getInt64Ty(context), details.elements);
+			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *intern_type(context, element_type0), details.elements);
 			return vec_ptr_reg;
 		}
 		else if(element_type0.is_double()){
-			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *builder.getDoubleTy(), details.elements);
+			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *intern_type(context, element_type0), details.elements);
+			return vec_ptr_reg;
+		}
+		else if(element_type0.is_vector()){
+			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *intern_type(context, element_type0), details.elements);
 			return vec_ptr_reg;
 		}
 		else{
@@ -1724,10 +1728,12 @@ static gen_statement_mode generate_statement(llvm_code_generator_t& gen_acc, llv
 			return gen_statement_mode::more;
 		}
 		gen_statement_mode operator()(const statement_t::software_system_statement_t& s) const{
+			//??? There are already parsed and stored in the AST!?
 			acc0.software_system = s._json_data;
 			return gen_statement_mode::more;
 		}
 		gen_statement_mode operator()(const statement_t::container_def_statement_t& s) const{
+			//??? There are already parsed and stored in the AST!?
 			acc0.container_def = s._json_data;
 			return gen_statement_mode::more;
 		}
@@ -2277,12 +2283,11 @@ int64_t run_llvm_program(llvm_instance_t& instance, llvm_ir_program_t& program_b
 
 
 
-std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instance, const std::string& program, const std::string& file){
+std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instance, const compilation_unit_t& cu){
 	QUARK_ASSERT(instance.check_invariant());
 
-	const auto cu = floyd::make_compilation_unit_nolib(program, file);
 	const auto pass3 = compile_to_sematic_ast__errors(cu);
-	auto bc = generate_llvm_ir_program(instance, pass3, file);
+	auto bc = generate_llvm_ir_program(instance, pass3, cu.source_file_path);
 	return bc;
 }
 

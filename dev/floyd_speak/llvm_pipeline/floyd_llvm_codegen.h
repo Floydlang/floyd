@@ -70,6 +70,8 @@ struct llvm_ir_program_t {
 	type_interner_t type_interner;
 	symbol_table_t debug_globals;
 	std::vector<function_def_t> function_defs;
+	software_system_t software_system;
+	container_t container_def;
 };
 
 
@@ -81,7 +83,7 @@ int64_t run_llvm_program(llvm_instance_t& instance, llvm_ir_program_t& program_b
 
 
 //	Helper that goes directly from source to LLVM IR code.
-std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instance, const std::string& program_source, const std::string& file);
+std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instance, const compilation_unit_t& cu);
 
 
 llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program);

@@ -111,6 +111,8 @@
 		2CBB527D21F6673A00E5024A /* game_of_life.floyd in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2CBB527C21F6606E00E5024A /* game_of_life.floyd */; };
 		2CBCA7DE1D569E04000FAE81 /* sha1_class.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */; };
 		2CBCA7DF1D569E07000FAE81 /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DA1D569C6D000FAE81 /* sha1.cpp */; };
+		2CBD8932228C9B2900C10CDD /* os_process.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBD8930228C9B2900C10CDD /* os_process.cpp */; };
+		2CBD8933228C9B2900C10CDD /* os_process.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBD8930228C9B2900C10CDD /* os_process.cpp */; };
 		2CC0B3DE2224232700C9D584 /* compressed_vector_benchmark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC0B3DD2224232700C9D584 /* compressed_vector_benchmark.cpp */; };
 		2CC0B3E022248E3E00C9D584 /* issue_regression_tests.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC0B3DF22248E3E00C9D584 /* issue_regression_tests.cpp */; };
 		2CC0B3E322248EBD00C9D584 /* test_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC0B3E122248EBD00C9D584 /* test_helpers.cpp */; };
@@ -560,6 +562,8 @@
 		2CBCA7DB1D569C6D000FAE81 /* sha1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sha1.h; sourceTree = "<group>"; };
 		2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = sha1_class.cpp; sourceTree = "<group>"; };
 		2CBCA7DD1D569C6D000FAE81 /* sha1_class.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sha1_class.h; sourceTree = "<group>"; };
+		2CBD8930228C9B2900C10CDD /* os_process.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = os_process.cpp; sourceTree = "<group>"; };
+		2CBD8931228C9B2900C10CDD /* os_process.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = os_process.h; sourceTree = "<group>"; };
 		2CBF330C202143BD0030AE98 /* libncurses.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libncurses.tbd; path = usr/lib/libncurses.tbd; sourceTree = SDKROOT; };
 		2CC0B3DD2224232700C9D584 /* compressed_vector_benchmark.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = compressed_vector_benchmark.cpp; sourceTree = "<group>"; };
 		2CC0B3DF22248E3E00C9D584 /* issue_regression_tests.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = issue_regression_tests.cpp; sourceTree = "<group>"; };
@@ -1353,15 +1357,17 @@
 		2CBCA7D81D569C6D000FAE81 /* parts */ = {
 			isa = PBXGroup;
 			children = (
-				2C5E343B21527C6700B02262 /* hardware_caps.cpp */,
-				2C5E343E21527C8B00B02262 /* hardware_caps.h */,
 				2C7200B321E8FB750013003B /* file_handling.cpp */,
 				2C7200B221E8FB750013003B /* file_handling.h */,
+				2C5E343B21527C6700B02262 /* hardware_caps.cpp */,
+				2C5E343E21527C8B00B02262 /* hardware_caps.h */,
 				2CCC0D222141DCC700788BCB /* immer-master */,
 				2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */,
 				2C40A71E1D76E179003245E3 /* immutable_ref_value.h */,
 				2C18045B208B917500F62480 /* json_support.cpp */,
 				2C18045A208B917500F62480 /* json_support.h */,
+				2CBD8930228C9B2900C10CDD /* os_process.cpp */,
+				2CBD8931228C9B2900C10CDD /* os_process.h */,
 				2C180454208B911A00F62480 /* quark.cpp */,
 				2C180453208B911A00F62480 /* quark.h */,
 				2CBCA7D91D569C6D000FAE81 /* sha1 */,
@@ -1526,6 +1532,7 @@
 				2C8C039E2221D95F0085EBBE /* commandlineflags.cc in Sources */,
 				2CBCA7DE1D569E04000FAE81 /* sha1_class.cpp in Sources */,
 				2C5F8322224644FB009870FC /* floyd_llvm_codegen.cpp in Sources */,
+				2CBD8932228C9B2900C10CDD /* os_process.cpp in Sources */,
 				2C8C03A22221D95F0085EBBE /* benchmark_register.cc in Sources */,
 				2C3174AC2262125F0004E086 /* pass2.cpp in Sources */,
 				2C4F355F1D4794CD0061CA93 /* ast_value.cpp in Sources */,
@@ -1560,6 +1567,7 @@
 				2C8C03C82221DBD70085EBBE /* utils.cpp in Sources */,
 				2C8C03CA2221DBD70085EBBE /* sha1.cpp in Sources */,
 				2C8C03CD2221DBD70085EBBE /* benchmark_runner.cc in Sources */,
+				2CBD8933228C9B2900C10CDD /* os_process.cpp in Sources */,
 				2C8C04002221DC190085EBBE /* floyd_benchmark_main.cpp in Sources */,
 				2C8C03D02221DBD70085EBBE /* quark.cpp in Sources */,
 				2CC0B3DE2224232700C9D584 /* compressed_vector_benchmark.cpp in Sources */,
