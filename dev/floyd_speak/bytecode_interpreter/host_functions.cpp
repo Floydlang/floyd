@@ -1630,16 +1630,10 @@ std::string posix_timespec__to__utc(const time_t& t){
 }
 
 
-bc_value_t host__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_string());
-
-	const string path = args[0].get_string_value();
+value_t impl__get_fsentry_info(const std::string& path){
 	if(is_valid_absolute_dir_path(path) == false){
 		quark::throw_runtime_error("get_fsentry_info() illegal input path.");
 	}
-
 
 	TFileInfo info;
 	bool ok = GetFileInfo(path, info);
@@ -1678,6 +1672,17 @@ bc_value_t host__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], in
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
+	return result;
+}
+
+
+bc_value_t host__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_string());
+
+	const string path = args[0].get_string_value();
+	const auto result = impl__get_fsentry_info(path);
 	const auto v = value_to_bc(result);
 	return v;
 }

@@ -88,6 +88,8 @@ typeid_t make__binary_t__type();
 bool is_valid_absolute_dir_path(const std::string& s);
 std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v);
 
+value_t impl__get_fsentry_info(const std::string& path);
+
 
 }	//	floyd
 

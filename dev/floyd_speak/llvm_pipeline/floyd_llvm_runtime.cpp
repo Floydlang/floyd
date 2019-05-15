@@ -1257,8 +1257,14 @@ VEC_T* floyd_funcdef__get_fsentries_shallow(void* floyd_runtime_ptr, const char*
 	return v.vector_ptr;
 }
 
-void floyd_host_function_1013(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+void* floyd_funcdef__get_fsentry_info(void* floyd_runtime_ptr, const char* path0){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	QUARK_ASSERT(path0 != nullptr);
+
+	const auto result = impl__get_fsentry_info(std::string(path0));
+	const auto v = to_runtime_value(r, result);
+	return v.struct_ptr;
 }
 
 int64_t floyd_host_function__get_json_type(void* floyd_runtime_ptr, uint16_t* json_ptr){
@@ -2034,7 +2040,7 @@ std::map<std::string, void*> get_host_functions_map2(){
 		{ "floyd_funcdef__get_fs_environment", reinterpret_cast<void *>(&floyd_funcdef__get_fs_environment) },
 		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&floyd_funcdef__get_fsentries_deep) },
 		{ "floyd_funcdef__get_fsentries_shallow", reinterpret_cast<void *>(&floyd_funcdef__get_fsentries_shallow) },
-		{ "floyd_funcdef__get_fsentry_info", reinterpret_cast<void *>(&floyd_host_function_1013) },
+		{ "floyd_funcdef__get_fsentry_info", reinterpret_cast<void *>(&floyd_funcdef__get_fsentry_info) },
 		{ "floyd_funcdef__get_json_type", reinterpret_cast<void *>(&floyd_host_function__get_json_type) },
 		{ "floyd_funcdef__get_time_of_day", reinterpret_cast<void *>(&floyd_funcdef__get_time_of_day) },
 		{ "floyd_funcdef__jsonvalue_to_script", reinterpret_cast<void *>(&floyd_funcdef__jsonvalue_to_script) },
