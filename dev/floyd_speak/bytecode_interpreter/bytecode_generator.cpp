@@ -482,7 +482,8 @@ bcgen_body_t bcgen_for_statement(bcgenerator_t& gen_acc, const statement_t::for_
 		statement._range_type == statement_t::for_statement_t::k_closed_range
 		|| statement._range_type ==statement_t::for_statement_t::k_open_range
 	);
-	const auto condition_opcode = statement._range_type == statement_t::for_statement_t::k_closed_range ? bc_opcode::k_branch_smaller_or_equal_int : bc_opcode::k_branch_smaller_int;
+	const auto condition_opcode1 = statement._range_type == statement_t::for_statement_t::k_closed_range ? bc_opcode::k_branch_smaller_int : bc_opcode::k_branch_smaller_or_equal_int;
+	const auto condition_opcode2 = statement._range_type == statement_t::for_statement_t::k_closed_range ? bc_opcode::k_branch_smaller_or_equal_int : bc_opcode::k_branch_smaller_int;
 
 	//	IMPORTANT: Iterator register is the FIRST symbol of the loop body's symbol table.
 	const auto counter_reg = variable_address_t::make_variable_address(0, static_cast<int>(body_acc._symbol_table._symbols.size()));
@@ -491,13 +492,15 @@ bcgen_body_t bcgen_for_statement(bcgenerator_t& gen_acc, const statement_t::for_
 	// Reuse start value as our counter.
 	// Notice: we need to store iterator value in body's first register.
 	int leave_pc = 1 + body_instr_count + 2;
-	body_acc._instrs.push_back(bcgen_instruction_t(condition_opcode, end_expr._out, counter_reg, make_imm_int(leave_pc - get_count(body_acc._instrs))));
+
+	//	Skip entire loop?
+	body_acc._instrs.push_back(bcgen_instruction_t(condition_opcode1, end_expr._out, counter_reg, make_imm_int(leave_pc - get_count(body_acc._instrs))));
 
 	int body_start_pc = get_count(body_acc._instrs);
 
 	body_acc = flatten_body(gen_acc, body_acc, loop_body);
 	body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_add_int, counter_reg, counter_reg, const1_reg));
-	body_acc._instrs.push_back(bcgen_instruction_t(condition_opcode, counter_reg, end_expr._out, make_imm_int(body_start_pc - get_count(body_acc._instrs))));
+	body_acc._instrs.push_back(bcgen_instruction_t(condition_opcode2, counter_reg, end_expr._out, make_imm_int(body_start_pc - get_count(body_acc._instrs))));
 
 	QUARK_ASSERT(body_acc.check_invariant());
 	return body_acc;
