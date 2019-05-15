@@ -131,6 +131,9 @@ struct llvm_code_generator_t {
 	*/
 	//	One element for each global symbol in AST. Same indexes as in symbol table.
 	std::vector<std::vector<resolved_symbol_t>> scope_path;
+
+	json_t software_system;
+	json_t container_def;
 };
 
 
@@ -1721,10 +1724,12 @@ static gen_statement_mode generate_statement(llvm_code_generator_t& gen_acc, llv
 			return gen_statement_mode::more;
 		}
 		gen_statement_mode operator()(const statement_t::software_system_statement_t& s) const{
-			NOT_IMPLEMENTED_YET();
+			acc0.software_system = s._json_data;
+			return gen_statement_mode::more;
 		}
 		gen_statement_mode operator()(const statement_t::container_def_statement_t& s) const{
-			NOT_IMPLEMENTED_YET();
+			acc0.container_def = s._json_data;
+			return gen_statement_mode::more;
 		}
 	};
 
