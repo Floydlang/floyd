@@ -864,12 +864,12 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::software_system_statement_t& s) const{
 			analyser_t temp = a;
 			temp._software_system = parse_software_system_json(s._json_data);
-			return { temp, std::make_shared<statement_t>(statement) };
+			return { temp, {} };
 		}
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::container_def_statement_t& s) const{
 			analyser_t temp = a;
 			temp._container_def = parse_container_def_json(s._json_data);
-			return { temp, std::make_shared<statement_t>(statement) };
+			return { temp, {} };
 		}
 	};
 

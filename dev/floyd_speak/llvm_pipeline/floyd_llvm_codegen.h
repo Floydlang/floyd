@@ -70,8 +70,9 @@ struct llvm_ir_program_t {
 	type_interner_t type_interner;
 	symbol_table_t debug_globals;
 	std::vector<function_def_t> function_defs;
-	software_system_t software_system;
+
 	container_t container_def;
+	software_system_t software_system;
 };
 
 

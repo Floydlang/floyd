@@ -9,6 +9,7 @@
 #include "floyd_llvm_runtime.h"
 
 #include "floyd_llvm_codegen.h"
+#include "floyd_runtime.h"
 
 #include "sha1_class.h"
 #include "text_parser.h"
@@ -112,6 +113,7 @@ std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std:
 	}
 }
 
+//??????? Better if each caller casts function pointer before calling. Make wrapper function for each call signature.
 value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f){
 	QUARK_ASSERT(f.first != nullptr);
 	QUARK_ASSERT(f.second.is_function());
@@ -164,6 +166,23 @@ void store_via_ptr(const llvm_execution_engine_t& runtime, const typeid_t& membe
 
 	const auto value2 = to_runtime_value(runtime, value);
 	store_via_ptr2(value_ptr, member_type, value2);
+}
+
+
+
+llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const std::string& name){
+	std::pair<void*, typeid_t> a = bind_function(ee, name);
+	return llvm_bind_t {
+		name,
+		a.first,
+		a.second
+	};
+}
+value_t call_function(llvm_execution_engine_t& ee, llvm_bind_t& f){
+	//value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f);
+
+	const auto result = call_function(ee, std::pair<void*, typeid_t>(f.address, f.type));
+	return result;
 }
 
 
@@ -1594,8 +1613,18 @@ int16_t* floyd_funcdef__script_to_jsonvalue(void* floyd_runtime_ptr, const char*
 	return reinterpret_cast<int16_t*>(result);
 }
 
-void floyd_host_function_1027(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+void floyd_funcdef__send(void* floyd_runtime_ptr, const char* process_id0, const json_t* message_json_ptr){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	QUARK_ASSERT(process_id0 != nullptr);
+	QUARK_ASSERT(message_json_ptr != nullptr);
+
+	const auto& process_id = std::string(process_id0);
+	const auto& message_json = *message_json_ptr;
+
+	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
+
+	r._handler->on_send(process_id, message_json);
 }
 
 
@@ -2110,7 +2139,7 @@ std::map<std::string, void*> get_host_functions_map2(){
 		{ "floyd_funcdef__rename_fsentry", reinterpret_cast<void *>(&floyd_funcdef__rename_fsentry) },
 		{ "floyd_funcdef__replace", reinterpret_cast<void *>(&floyd_funcdef__replace) },
 		{ "floyd_funcdef__script_to_jsonvalue", reinterpret_cast<void *>(&floyd_funcdef__script_to_jsonvalue) },
-		{ "floyd_funcdef__send", reinterpret_cast<void *>(&floyd_host_function_1027) },
+		{ "floyd_funcdef__send", reinterpret_cast<void *>(&floyd_funcdef__send) },
 		{ "floyd_funcdef__size", reinterpret_cast<void *>(&floyd_funcdef__size) },
 		{ "floyd_funcdef__subset", reinterpret_cast<void *>(&floyd_funcdef__subset) },
 
@@ -2227,7 +2256,6 @@ static void send_message(process_runtime_t& runtime, int process_id, const json_
 //    process._inbox_condition_variable.notify_all();
 }
 
-#if 0
 static void run_process(process_runtime_t& runtime, int process_id){
 	auto& process = *runtime._processes[process_id];
 	bool stop = false;
@@ -2240,7 +2268,8 @@ static void run_process(process_runtime_t& runtime, int process_id){
 
 	if(process._init_function != nullptr){
 		const std::vector<value_t> args = {};
-		process._process_state = call_function(*process._interpreter, bc_to_value(process._init_function->_value), args);
+		//??? args?
+		process._process_state = call_function(*runtime.ee, *process._init_function);
 	}
 
 	while(stop == false){
@@ -2270,20 +2299,23 @@ static void run_process(process_runtime_t& runtime, int process_id){
 
 			if(process._process_function != nullptr){
 				const std::vector<value_t> args = { process._process_state, value_t::make_json_value(message) };
-				const auto& state2 = call_function(*process._interpreter, bc_to_value(process._process_function->_value), args);
+				//???args
+				const auto& state2 = call_function(*runtime.ee, *process._process_function);
 				process._process_state = state2;
 			}
 		}
 	}
 }
-#endif
+
 
 static std::map<std::string, value_t> run_container_int(llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args, const std::string& container_key){
 	QUARK_ASSERT(container_key.empty() == false);
 
+	llvm_execution_engine_t ee = make_engine_run_init(*program_breaks.instance, program_breaks);
+
 	process_runtime_t runtime;
 	runtime._main_thread_id = std::this_thread::get_id();
-
+	runtime.ee = &ee;
 
 	//??? Confusing. Support several containers!
 	if(std::find(program_breaks.software_system._containers.begin(), program_breaks.software_system._containers.end(), container_key) == program_breaks.software_system._containers.end()){
@@ -2302,7 +2334,8 @@ static std::map<std::string, value_t> run_container_int(llvm_ir_program_t& progr
 		return acc2;
 	});
 
-	struct my_interpreter_handler_t : public interpreter_handler_i {
+
+	struct my_interpreter_handler_t : public runtime_handler_i {
 		my_interpreter_handler_t(process_runtime_t& runtime) : _runtime(runtime) {}
 
 		virtual void on_send(const std::string& process_id, const json_t& message){
@@ -2317,14 +2350,18 @@ static std::map<std::string, value_t> run_container_int(llvm_ir_program_t& progr
 	};
 	auto my_interpreter_handler = my_interpreter_handler_t{runtime};
 
-#if 0
+//??? We need to pass unique runtime-object to each Floyd process -- not the ee!
+
+	ee._handler = &my_interpreter_handler;
+
 	for(const auto& t: runtime._process_infos){
 		auto process = std::make_shared<process_t>();
 		process->_name_key = t.first;
 		process->_function_key = t.second;
-		process->_interpreter = std::make_shared<interpreter_t>(program, &my_interpreter_handler);
-		process->_init_function = find_global_symbol2(*process->_interpreter, t.second + "__init");
-		process->_process_function = find_global_symbol2(*process->_interpreter, t.second);
+//		process->_interpreter = std::make_shared<interpreter_t>(program, &my_interpreter_handler);
+
+		process->_init_function = std::make_shared<llvm_bind_t>(bind_function2(*runtime.ee, t.second + "__init"));
+		process->_process_function = std::make_shared<llvm_bind_t>(bind_function2(*runtime.ee, t.second));
 
 		runtime._processes.push_back(process);
 	}
@@ -2353,7 +2390,6 @@ static std::map<std::string, value_t> run_container_int(llvm_ir_program_t& progr
 		t.join();
 	}
 
-#endif
 	return {};
 }
 

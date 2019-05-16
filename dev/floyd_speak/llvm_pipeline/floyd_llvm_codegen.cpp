@@ -131,9 +131,6 @@ struct llvm_code_generator_t {
 	*/
 	//	One element for each global symbol in AST. Same indexes as in symbol table.
 	std::vector<std::vector<resolved_symbol_t>> scope_path;
-
-	json_t software_system;
-	json_t container_def;
 };
 
 
@@ -873,7 +870,7 @@ static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_ac
 	//	Type is the data the opcode works on -- comparing two ints, comparing two strings etc.
 	const auto type = details.lhs->get_output_type();
 
-	//	Output reg always a bool.
+	//	Output reg is always a bool.
 	QUARK_ASSERT(e.get_output_type().is_bool());
 
 	if(type.is_bool() || type.is_int()){
@@ -953,29 +950,11 @@ static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_ac
 	else if(type.is_struct()){
 		return generate_compare_values(gen_acc, emit_f, details.op, type, *lhs_temp, *rhs_temp);
 	}
+	else if(type.is_json_value()){
+		return generate_compare_values(gen_acc, emit_f, details.op, type, *lhs_temp, *rhs_temp);
+	}
 	else{
-		NOT_IMPLEMENTED_YET();
-#if 0
-		//	Bool tells if to flip left / right.
-		static const std::map<expression_type, std::pair<bool, bc_opcode>> conv_opcode = {
-			{ expression_type::k_comparison_smaller_or_equal__2,			{ false, bc_opcode::k_comparison_smaller_or_equal } },
-			{ expression_type::k_comparison_smaller__2,						{ false, bc_opcode::k_comparison_smaller } },
-			{ expression_type::k_comparison_larger_or_equal__2,				{ true, bc_opcode::k_comparison_smaller_or_equal } },
-			{ expression_type::k_comparison_larger__2,						{ true, bc_opcode::k_comparison_smaller } },
-
-			{ expression_type::k_logical_equal__2,							{ false, bc_opcode::k_logical_equal } },
-			{ expression_type::k_logical_nonequal__2,						{ false, bc_opcode::k_logical_nonequal } }
-		};
-
-		const auto result = conv_opcode.at(details.op);
-		if(result.first == false){
-			body_acc._instrs.push_back(bcgen_instruction_t(result.second, target_reg2, left_expr._out, right_expr._out));
-		}
-		else{
-			body_acc._instrs.push_back(bcgen_instruction_t(result.second, target_reg2, right_expr._out, left_expr._out));
-		}
-#endif
-		return nullptr;
+		UNSUPPORTED();
 	}
 }
 
@@ -1728,14 +1707,10 @@ static gen_statement_mode generate_statement(llvm_code_generator_t& gen_acc, llv
 			return gen_statement_mode::more;
 		}
 		gen_statement_mode operator()(const statement_t::software_system_statement_t& s) const{
-			//??? There are already parsed and stored in the AST!?
-			acc0.software_system = s._json_data;
-			return gen_statement_mode::more;
+			UNSUPPORTED();
 		}
 		gen_statement_mode operator()(const statement_t::container_def_statement_t& s) const{
-			//??? There are already parsed and stored in the AST!?
-			acc0.container_def = s._json_data;
-			return gen_statement_mode::more;
+			UNSUPPORTED();
 		}
 	};
 
@@ -2240,6 +2215,9 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 
 	auto result = std::make_unique<llvm_ir_program_t>(&instance, module, ast0._tree._interned_types, ast._tree._globals._symbol_table, funcs);
 
+	result->container_def = ast0._tree._container_def;
+	result->software_system = ast0._tree._software_system;
+
 	if(k_trace_input_output){
 		QUARK_TRACE_SS("result = " << floyd::print_program(*result));
 	}
@@ -2294,7 +2272,7 @@ std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instanc
 	return bc;
 }
 
-
+//??? Move init functions to runtime source file.
 //	Destroys program, can only run it once!
 llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks){
 	QUARK_ASSERT(instance.check_invariant());
@@ -2328,6 +2306,7 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 		program_breaks.debug_globals,
 		program_breaks.function_defs,
 		{},
+		nullptr,
 		start_time
 	};
 	QUARK_ASSERT(ee2.check_invariant());

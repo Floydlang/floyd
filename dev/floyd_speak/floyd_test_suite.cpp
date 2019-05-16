@@ -4724,7 +4724,7 @@ QUARK_UNIT_TEST("software-system", "parse software-system", "", ""){
 	run_closed(test_ss);
 }
 
-QUARK_UNIT_TEST("software-system", "run one process", "", ""){
+QUARK_UNIT_TEST_VIP("software-system", "run one process", "", ""){
 	const auto test_ss2 = R"(
 
 		software-system {
@@ -4770,6 +4770,7 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 			}
 			else{
 				assert(false)
+				return state
 			}
 		}
 

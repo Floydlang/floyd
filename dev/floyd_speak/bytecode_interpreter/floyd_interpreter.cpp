@@ -10,6 +10,7 @@
 
 #include "parser_primitives.h"
 #include "floyd_parser.h"
+#include "floyd_runtime.h"
 
 #include "pass3.h"
 #include "host_functions.h"
@@ -466,7 +467,7 @@ static std::map<std::string, value_t> run_container_int(const bc_program_t& prog
 		return acc2;
 	});
 
-	struct my_interpreter_handler_t : public interpreter_handler_i {
+	struct my_interpreter_handler_t : public runtime_handler_i {
 		my_interpreter_handler_t(process_runtime_t& runtime) : _runtime(runtime) {}
 
 		virtual void on_send(const std::string& process_id, const json_t& message){

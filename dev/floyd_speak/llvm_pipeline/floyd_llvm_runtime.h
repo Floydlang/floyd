@@ -28,7 +28,7 @@ namespace llvm {
 namespace floyd {
 
 	struct llvm_ir_program_t;
-
+	struct runtime_handler_i;
 
 
 ////////////////////////////////		host_func_t
@@ -77,6 +77,7 @@ struct llvm_execution_engine_t {
 	std::vector<function_def_t> function_defs;
 	public: std::vector<std::string> _print_output;
 
+	public: runtime_handler_i* _handler;
 
 	public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
 };
@@ -94,13 +95,7 @@ const function_def_t& find_function_def2(const std::vector<function_def_t>& func
 //	Cast to uint64_t* or other the required type, then access via it.
 void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name);
 
-struct llvm_bind_t {
-	std::string name;
-	void* address;
-	typeid_t type;
-};
 
-//	Cast to function pointer, then call it.
 void* get_global_function(llvm_execution_engine_t& ee, const std::string& name);
 
 std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std::string& name);
@@ -108,6 +103,21 @@ value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid
 
 std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name);
 value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v);
+
+
+
+
+struct llvm_bind_t {
+	std::string name;
+	void* address;
+	typeid_t type;
+};
+
+llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const std::string& name);
+value_t call_function(llvm_execution_engine_t& ee, llvm_bind_t& f);
+
+
+
 
 
 std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context);

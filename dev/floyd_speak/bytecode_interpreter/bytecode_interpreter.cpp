@@ -2261,7 +2261,7 @@ json_t bcvalue_and_type_to_json(const bc_value_t& v){
 
 
 
-interpreter_t::interpreter_t(const bc_program_t& program, interpreter_handler_i* handler) :
+interpreter_t::interpreter_t(const bc_program_t& program, runtime_handler_i* handler) :
 	_stack(nullptr),
 	_handler(handler)
 {
