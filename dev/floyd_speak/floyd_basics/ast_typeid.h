@@ -188,7 +188,7 @@ struct typeid_t {
 		std::vector<typeid_t> _parts;
 	};
 	struct function_t {
-		bool operator==(const function_t& other) const{	return _parts == other._parts; };
+		bool operator==(const function_t& other) const{	return _parts == other._parts && pure == other.pure && dyn_return == other.dyn_return; };
 
 		std::vector<typeid_t> _parts;
 		epure pure;

@@ -294,7 +294,6 @@ int compare_json_values(const json_t& lhs, const json_t& rhs){
 	}
 	else{
 		// ??? implement compare.
-		assert(false);
 		return 1;
 	}
 }

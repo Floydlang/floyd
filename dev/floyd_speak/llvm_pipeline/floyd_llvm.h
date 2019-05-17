@@ -16,7 +16,7 @@
 namespace floyd {
 
 //	Compiles and runs the program.
-int64_t run_using_llvm_helper(const std::string& program_source, const std::string& file, const std::vector<floyd::value_t>& args);
+int64_t run_using_llvm_helper(const std::string& program_source, const std::string& file, const std::vector<std::string>& main_args);
 
 }	//	floyd
 

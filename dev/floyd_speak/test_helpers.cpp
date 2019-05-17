@@ -90,6 +90,11 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_UT_VERIFY(double_size == 8);
 }
 
+
+
+
+
+//??? Make abstract runtime interface to send to llvm runtime functions, not llvm_execution_engine_t.
 //??? Refact out to floyd_llvm_runtime.h
 //	Run program using LLVM.
 static run_report_t run_program_llvm(const compilation_unit_t& cu, const std::vector<value_t>& main_args){
@@ -105,7 +110,7 @@ static run_report_t run_program_llvm(const compilation_unit_t& cu, const std::ve
 		auto ee = make_engine_run_init(llvm_instance, *exe);
 
 		const auto main_function = bind_function(ee, "main");
-		const auto main_result = main_function.first != nullptr ? call_function(ee, main_function) : value_t();
+		const value_t main_result = main_function.first != nullptr ? value_t::make_int(call_main(ee, main_function, {})) : value_t();
 
 		const auto result_global0 = bind_global(ee, "result");
 		const auto result_global = result_global0.first != nullptr ? load_global(ee, result_global0) : value_t();
@@ -134,7 +139,7 @@ run_report_t run_program(const compilation_unit_t& cu, const std::vector<value_t
 	}
 }
 
-std::map<std::string, value_t> test_run_container2(const std::string& program, const std::vector<floyd::value_t>& args, const std::string& container_key, const std::string& source_file){
+std::map<std::string, value_t> test_run_container2(const std::string& program, const std::vector<std::string>& args, const std::string& container_key, const std::string& source_file){
 	const auto cu = make_compilation_unit_lib(program, source_file);
 
 	if(g_executor == executor_mode::bc_interpreter){
@@ -147,7 +152,7 @@ std::map<std::string, value_t> test_run_container2(const std::string& program, c
 
 //	std::map<std::string, value_t> run_container(llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args, const std::string& container_key);
 
-		return run_container(*program_breaks, args, container_key);
+		return run_llvm_container(*program_breaks, args, container_key);
 	}
 	else{
 		QUARK_ASSERT(false);

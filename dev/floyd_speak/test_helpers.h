@@ -33,7 +33,7 @@ void ut_verify(const quark::call_context_t& context, const run_report_t& result,
 
 run_report_t run_program(const compilation_unit_t& cu, const std::vector<value_t>& main_args);
 
-std::map<std::string, value_t> test_run_container2(const std::string& program, const std::vector<floyd::value_t>& args, const std::string& container_key, const std::string& source_file);
+std::map<std::string, value_t> test_run_container2(const std::string& program, const std::vector<std::string>& args, const std::string& container_key, const std::string& source_file);
 
 
 void ut_verify_global_result(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const value_t& expected_result);

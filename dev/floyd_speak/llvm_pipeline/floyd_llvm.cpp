@@ -14,13 +14,13 @@
 namespace floyd {
 
 
-int64_t run_using_llvm_helper(const std::string& program_source, const std::string& file, const std::vector<floyd::value_t>& args){
+int64_t run_using_llvm_helper(const std::string& program_source, const std::string& file, const std::vector<std::string>& main_args){
 	const auto cu = floyd::make_compilation_unit_nolib(program_source, file);
 	const auto pass3 = compile_to_sematic_ast__errors(cu);
 
 	llvm_instance_t instance;
 	auto program = generate_llvm_ir_program(instance, pass3, file);
-	const auto result = run_llvm_program(instance, *program, args);
+	const auto result = run_llvm_program(instance, *program, main_args);
 	QUARK_TRACE_SS("Fib = " << result);
 	return result;
 }

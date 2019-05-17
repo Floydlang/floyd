@@ -748,6 +748,12 @@ bool is_dynamic_function(const typeid_t& function_type){
 
 
 
+
+QUARK_UNIT_TEST("typeid_t", "operator==()", "", ""){
+	const auto a = typeid_t::make_function(typeid_t::make_int(), {}, epure::pure);
+	const auto b = typeid_t::make_function(typeid_t::make_int(), {}, epure::pure);
+	QUARK_UT_VERIFY(a == b);
 }
 
 
+}	//	floyd

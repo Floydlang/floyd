@@ -1174,7 +1174,7 @@ container-def {
 
 	"clocks": {
 		"main": {
-			"a": "my_gui_main",
+			"a": "my_gui",
 			"b": "iphone-ux"
 		},
 
@@ -1248,7 +1248,7 @@ container-def {
 
 	"clocks": {
 		"main": {
-			"a": "my_gui_main",
+			"a": "my_gui",
 			"b": "iphone-ux"
 		},
 
@@ -1271,6 +1271,29 @@ container-def {
 		"Free Game Engine-component",
 		"iphone-ux-component"
 	]
+}
+```
+
+For each process you've listed under "clocks", ("my_gui", "iphone-ux", "server_com" and "renderer" in example above) you need to implement two functions. The init-function and the message handler. These functions are named based on the process.
+
+The init function is called x__init() where x is a placeholder. It takes no arguments, is impure and returns a value of type of your choice. This type is your process' memory slot -- the only mutable state your process has access to.
+
+The message handler is named like your process, takes two arguments: the current state of your memory, of type T and a message to process. It's am impure function. It returns the next state of it's memory. The memory type must be the same between the init and message handler functions. It's usually a struct that represents the top level of your process' entire state.
+
+The message is represented as a json_value for now. This is a workaround until there is a proper sumtype feature in Floyd.
+
+
+```
+func my_gui_state_t my_gui__init() impure {
+	send("a", "dec")
+	send("a", "dec")
+	send("a", "dec")
+	send("a", "dec")
+	send("a", "stop")
+	return my_gui_state_t(1000)
+}
+
+func my_gui_state_t my_gui(my_gui_state_t state, json_value message) impure{
 }
 ```
 
@@ -1969,7 +1992,7 @@ container-def {
 
 	"clocks": {
 		"main": {
-			"a": "my_gui_main",
+			"a": "my_gui",
 			"b": "iphone-ux"
 		},
 
@@ -1994,7 +2017,7 @@ container-def {
 	]
 }
 
-func string my_gui_main__init() impure {
+func string my_gui__init() impure {
 	print("HELLO")
 	send("a", "stop")
 	send("b", "stop")

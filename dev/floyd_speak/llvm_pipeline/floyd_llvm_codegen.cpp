@@ -6,7 +6,7 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-const bool k_trace_input_output = false;
+const bool k_trace_input_output = true;
 const bool k_trace_types = false;
 
 #include "floyd_llvm_codegen.h"
@@ -2250,9 +2250,11 @@ void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
 
 
 //	Destroys program, can only run it once!
-int64_t run_llvm_program(llvm_instance_t& instance, llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args){
+int64_t run_llvm_program(llvm_instance_t& instance, llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(program_breaks.check_invariant());
+
+//???main_args
 
 	auto ee = make_engine_run_init(instance, program_breaks);
 	return 0;

@@ -438,7 +438,7 @@ static void process_process(process_runtime_t& runtime, int process_id){
 	}
 }
 
-static std::map<std::string, value_t> run_container_int(const bc_program_t& program, const std::vector<floyd::value_t>& args, const std::string& container_key){
+static std::map<std::string, value_t> run_container_int(const bc_program_t& program, const std::vector<std::string>& args, const std::string& container_key){
 	process_runtime_t runtime;
 	runtime._main_thread_id = std::this_thread::get_id();
 
@@ -541,14 +541,18 @@ static std::map<std::string, value_t> run_container_int(const bc_program_t& prog
 	}
 */
 
-std::map<std::string, value_t> run_container(const bc_program_t& program, const std::vector<floyd::value_t>& args, const std::string& container_key){
+std::map<std::string, value_t> run_container(const bc_program_t& program, const std::vector<std::string>& main_args, const std::string& container_key){
 	if(container_key.empty()){
 		//	Create interpreter, run global code.
 		auto vm = std::make_shared<interpreter_t>(program);
 
 		const auto& main_function = find_global_symbol2(*vm, "main");
 		if(main_function != nullptr){
-			const auto arg_vec = value_t::make_vector_value(typeid_t::make_string(), args);
+			std::vector<value_t> args2;
+			for(const auto& e: main_args){
+				args2.push_back(value_t::make_string(e));
+			}
+			const auto arg_vec = value_t::make_vector_value(typeid_t::make_string(), args2);
 //			const auto bc_args = value_to_bc(arg_vec);
 			const auto& result = call_function(*vm, bc_to_value(main_function->_value), { arg_vec });
 			print_vm_printlog(*vm);
@@ -560,14 +564,14 @@ std::map<std::string, value_t> run_container(const bc_program_t& program, const 
 		}
 	}
 	else{
-		return run_container_int(program, args, container_key);
+		return run_container_int(program, main_args, container_key);
 	}
 }
 
 
-std::map<std::string, value_t> bc_run_container2(const compilation_unit_t& cu, const std::vector<floyd::value_t>& args, const std::string& container_key){
+std::map<std::string, value_t> bc_run_container2(const compilation_unit_t& cu, const std::vector<std::string>& main_args, const std::string& container_key){
 	auto program = compile_to_bytecode(cu);
-	return run_container(program, args, container_key);
+	return run_container(program, main_args, container_key);
 }
 
 

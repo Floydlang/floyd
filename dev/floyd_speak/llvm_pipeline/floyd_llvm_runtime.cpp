@@ -114,6 +114,7 @@ std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std:
 }
 
 //??????? Better if each caller casts function pointer before calling. Make wrapper function for each call signature.
+/*
 value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f){
 	QUARK_ASSERT(f.first != nullptr);
 	QUARK_ASSERT(f.second.is_function());
@@ -124,6 +125,7 @@ value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid
 	const auto return_type = f.second.get_function_return();
 	return from_runtime_value(ee, result, return_type);
 }
+*/
 
 std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name){
 	QUARK_ASSERT(ee.check_invariant());
@@ -178,13 +180,43 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const std::string& name)
 		a.second
 	};
 }
+
+/*
 value_t call_function(llvm_execution_engine_t& ee, llvm_bind_t& f){
 	//value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f);
 
 	const auto result = call_function(ee, std::pair<void*, typeid_t>(f.address, f.type));
 	return result;
 }
+*/
 
+
+int64_t call_main(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f, const std::vector<std::string>& main_args){
+	QUARK_ASSERT(f.first != nullptr);
+
+	//??? Check this earlier.
+	if(f.second == get_main_signature_arg_impure() || f.second == get_main_signature_arg_pure()){
+		const auto f2 = *reinterpret_cast<FLOYD_RUNTIME_MAIN_ARGS_IMPURE*>(f.first);
+
+		//??? Slow path via value_t
+		std::vector<value_t> main_args2;
+		for(const auto& e: main_args){
+			main_args2.push_back(value_t::make_string(e));
+		}
+		const auto main_args3 = value_t::make_vector_value(typeid_t::make_string(), main_args2);
+		const auto main_args4 = to_runtime_value(ee, main_args3);
+		const auto main_result_int = (*f2)(&ee, main_args4);
+		return main_result_int;
+	}
+	else if(f.second == get_main_signature_no_arg_impure() || f.second == get_main_signature_no_arg_pure()){
+		const auto f2 = *reinterpret_cast<FLOYD_RUNTIME_MAIN_NO_ARGS_IMPURE*>(f.first);
+		const auto main_result_int = (*f2)(&ee);
+		return main_result_int;
+	}
+	else{
+		throw std::exception();
+	}
+}
 
 
 //	TO RUNTIME_VALUE_T AND BACK
@@ -2221,7 +2253,7 @@ struct process_t {
 	std::string _function_key;
 	std::thread::id _thread_id;
 
-	std::shared_ptr<interpreter_t> _interpreter;
+//	std::shared_ptr<interpreter_t> _interpreter;
 	std::shared_ptr<llvm_bind_t> _init_function;
 	std::shared_ptr<llvm_bind_t> _process_function;
 	value_t _process_state;
@@ -2262,14 +2294,21 @@ static void run_process(process_runtime_t& runtime, int process_id){
 
 	const auto thread_name = get_current_thread_name();
 
+	const typeid_t process_state_type = process._init_function != nullptr ? process._init_function->type.get_function_return() : typeid_t::make_undefined();
+
 	if(process._processor){
 		process._processor->on_init();
 	}
 
 	if(process._init_function != nullptr){
-		const std::vector<value_t> args = {};
-		//??? args?
-		process._process_state = call_function(*runtime.ee, *process._init_function);
+		//	!!! This validation should be done earlier in the startup process / compilation process.
+		if(process._init_function->type != make_process_init_type(process_state_type)){
+			quark::throw_runtime_error("Invalid function prototype for process-init");
+		}
+
+		auto f = *reinterpret_cast<FLOYD_RUNTIME_PROCESS_INIT*>(process._init_function->address);
+		const auto result = (*f)(runtime.ee);
+		process._process_state = from_runtime_value(*runtime.ee, result, process._init_function->type.get_function_return());
 	}
 
 	while(stop == false){
@@ -2298,17 +2337,23 @@ static void run_process(process_runtime_t& runtime, int process_id){
 			}
 
 			if(process._process_function != nullptr){
-				const std::vector<value_t> args = { process._process_state, value_t::make_json_value(message) };
-				//???args
-				const auto& state2 = call_function(*runtime.ee, *process._process_function);
-				process._process_state = state2;
+				//	!!! This validation should be done earlier in the startup process / compilation process.
+				if(process._process_function->type != make_process_message_handler_type(process_state_type)){
+					quark::throw_runtime_error("Invalid function prototype for process message handler");
+				}
+
+				auto f = *reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE*>(process._process_function->address);
+				const auto state2 = to_runtime_value(*runtime.ee, process._process_state);
+				const auto message2 = to_runtime_value(*runtime.ee, value_t::make_json_value(message));
+				const auto result = (*f)(runtime.ee, state2, message2);
+				process._process_state = from_runtime_value(*runtime.ee, result, process._process_function->type.get_function_return());
 			}
 		}
 	}
 }
 
 
-static std::map<std::string, value_t> run_container_int(llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args, const std::string& container_key){
+static std::map<std::string, value_t> run_container_int(llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args, const std::string& container_key){
 	QUARK_ASSERT(container_key.empty() == false);
 
 	llvm_execution_engine_t ee = make_engine_run_init(*program_breaks.instance, program_breaks);
@@ -2394,10 +2439,9 @@ static std::map<std::string, value_t> run_container_int(llvm_ir_program_t& progr
 }
 
 
-//??? Create separate llvm_execution_engine_t instances for each Floyd process?
 //??? move make_engine_run_init() into this source file.
 
-std::map<std::string, value_t> run_container(llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args, const std::string& container_key){
+std::map<std::string, value_t> run_llvm_container(llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args, const std::string& container_key){
 	if(container_key.empty()){
 		// ??? instance is already known via program_breaks.
 		//	Runs global init code.
@@ -2405,7 +2449,8 @@ std::map<std::string, value_t> run_container(llvm_ir_program_t& program_breaks, 
 
 		const auto main_function = bind_function(ee, "main");
 		if(main_function.first != nullptr){
-			const auto result = call_function(ee, main_function);
+			const auto main_result_int = call_main(ee, main_function, main_args);
+			const auto result = value_t::make_int(main_result_int);
 			return {{ "main()", result }};
 		}
 		else{
@@ -2413,7 +2458,7 @@ std::map<std::string, value_t> run_container(llvm_ir_program_t& program_breaks, 
 		}
 	}
 	else{
-		return run_container_int(program_breaks, args, container_key);
+		return run_container_int(program_breaks, main_args, container_key);
 	}
 }
 

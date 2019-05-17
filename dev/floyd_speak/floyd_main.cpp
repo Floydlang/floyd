@@ -224,12 +224,7 @@ int do_run_command(const command_line_args_t& command_line_args){
 		const auto cu = floyd::make_compilation_unit_lib(source, source_path);
 		auto program = floyd::compile_to_bytecode(cu);
 
-		std::vector<floyd::value_t> args3;
-		for(const auto& e: args2){
-			args3.push_back(floyd::value_t::make_string(e));
-		}
-
-		const auto result = floyd::run_container(program, args3, program._container_def._name);
+		const auto result = floyd::run_container(program, args2, program._container_def._name);
 		if(result.size() == 1 && result.find("main()") != result.end()){
 			const auto main_return = *result.begin();
 			const auto error_code = main_return.second.is_int() ? main_return.second.get_int_value() : EXIT_SUCCESS;
@@ -252,13 +247,8 @@ int do_run_llvm_command(const command_line_args_t& command_line_args){
 		const auto source_path = floyd_args[0];
 		const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
 
-		std::vector<floyd::value_t> args3;
-		for(const auto& e: args2){
-			args3.push_back(floyd::value_t::make_string(e));
-		}
-
 		const auto source = read_text_file(source_path);
-		int error_code = run_using_llvm_helper(source, source_path, args3);
+		const auto error_code = floyd::run_using_llvm_helper(source, source_path, args2);
 		return static_cast<int>(error_code);
 	}
 	else{

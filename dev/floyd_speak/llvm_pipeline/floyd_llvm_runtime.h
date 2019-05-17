@@ -87,6 +87,32 @@ typedef int64_t (*FLOYD_RUNTIME_INIT)(void* floyd_runtime_ptr);
 typedef void (*FLOYD_RUNTIME_HOST_FUNCTION)(void* floyd_runtime_ptr, int64_t arg);
 
 
+
+
+//	func int main([string] args) impure
+typedef int64_t (*FLOYD_RUNTIME_MAIN_ARGS_IMPURE)(void* floyd_runtime_ptr, runtime_value_t args);
+
+//	func int main() impure
+typedef int64_t (*FLOYD_RUNTIME_MAIN_NO_ARGS_IMPURE)(void* floyd_runtime_ptr);
+
+//	func int main([string] args) pure
+typedef int64_t (*FLOYD_RUNTIME_MAIN_ARGS_PURE)(void* floyd_runtime_ptr, runtime_value_t args);
+
+//	func int main() impure
+typedef int64_t (*FLOYD_RUNTIME_MAIN_NO_ARGS_PURE)(void* floyd_runtime_ptr);
+
+
+
+
+//		func my_gui_state_t my_gui__init() impure { }
+typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_INIT)(void* floyd_runtime_ptr);
+
+//		func my_gui_state_t my_gui(my_gui_state_t state, json_value message) impure{
+typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_MESSAGE)(void* floyd_runtime_ptr, runtime_value_t state, runtime_value_t message);
+
+
+
+
 typedef runtime_value_t (*FLOYD_RUNTIME_F)(void* floyd_runtime_ptr, const char* args);
 
 
@@ -99,7 +125,6 @@ void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name);
 void* get_global_function(llvm_execution_engine_t& ee, const std::string& name);
 
 std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std::string& name);
-value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f);
 
 std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name);
 value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v);
@@ -114,11 +139,9 @@ struct llvm_bind_t {
 };
 
 llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const std::string& name);
-value_t call_function(llvm_execution_engine_t& ee, llvm_bind_t& f);
 
 
-
-
+int64_t call_main(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f, const std::vector<std::string>& main_args);
 
 std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context);
 std::map<std::string, void*> get_host_functions_map2();
@@ -126,7 +149,7 @@ std::map<std::string, void*> get_host_functions_map2();
 uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee);
 
 
-std::map<std::string, value_t> run_container(llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args, const std::string& container_key);
+std::map<std::string, value_t> run_llvm_container(llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args, const std::string& container_key);
 
 
 }	//	namespace floyd

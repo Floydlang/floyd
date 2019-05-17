@@ -4724,6 +4724,48 @@ QUARK_UNIT_TEST("software-system", "parse software-system", "", ""){
 	run_closed(test_ss);
 }
 
+#if 0
+QUARK_UNIT_TEST_VIP("", "try calling LLVM function", "", ""){
+	const auto p = R"(
+
+		software-system {
+			"name": "My Arcade Game",
+			"desc": "Space shooter for mobile devices, with connection to a server.",
+			"people": {},
+			"connections": [],
+			"containers": [
+				"iphone app"
+			]
+		}
+
+		container-def {
+			"name": "iphone app",
+			"tech": "Swift, iOS, Xcode, Open GL",
+			"desc": "Mobile shooter game for iOS.",
+			"clocks": {
+				"main": {
+					"a": "my_gui"
+				}
+			}
+		}
+
+		func double my_gui__init() impure {
+			return 3.14
+		}
+
+		func double my_gui(double state, json_value message) impure{
+			print("received: " + to_string(message) + ", state: " + to_string(state))
+			return state
+		}
+
+	)";
+
+	const auto result = test_run_container2(p, {}, "iphone app", "");
+	QUARK_UT_VERIFY(result.empty());
+}
+#endif
+
+
 QUARK_UNIT_TEST_VIP("software-system", "run one process", "", ""){
 	const auto test_ss2 = R"(
 
@@ -4759,7 +4801,7 @@ QUARK_UNIT_TEST_VIP("software-system", "run one process", "", ""){
 			return my_gui_state_t(1000)
 		}
 
-		func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
+		func my_gui_state_t my_gui(my_gui_state_t state, json_value message) impure{
 			print("received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "inc"){
@@ -4779,6 +4821,8 @@ QUARK_UNIT_TEST_VIP("software-system", "run one process", "", ""){
 	const auto result = test_run_container2(test_ss2, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
+
+#if 0
 
 QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 	const auto test_ss3 = R"(
@@ -4950,7 +4994,7 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 	const auto result = test_run_container2(test_ss3, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
-
+#endif
 
 
 
@@ -4980,6 +5024,7 @@ QUARK_UNIT_TEST("Floyd test suite", "game_of_life.floyd", "", ""){
 	QUARK_UT_VERIFY(result == expected);
 }
 
+#if 0
 QUARK_UNIT_TEST("Floyd test suite", "process_test1.floyd", "", ""){
 	const auto path = get_working_dir() + "/examples/process_test1.floyd";
 	const auto program = read_text_file(path);
@@ -4987,7 +5032,7 @@ QUARK_UNIT_TEST("Floyd test suite", "process_test1.floyd", "", ""){
 	const auto result = test_run_container2(program, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
-
+#endif
 
 
 

@@ -76,12 +76,12 @@ std::pair<std::shared_ptr<interpreter_t>, value_t> bc_run_main(
 */
 std::map<std::string, value_t> run_container(
 	const bc_program_t& program,
-	const std::vector<value_t>& args,
+	const std::vector<std::string>& main_args,
 	const std::string& container_key
 );
 std::map<std::string, value_t> bc_run_container2(
 	const compilation_unit_t& cu,
-	const std::vector<value_t>& args,
+	const std::vector<std::string>& main_args,
 	const std::string& container_key
 );
 
