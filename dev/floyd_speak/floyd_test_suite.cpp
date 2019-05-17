@@ -683,12 +683,13 @@ QUARK_UNIT_TEST("Floyd test suite", "main() - Can make and read global int", "",
 }
 
 
+#if 0
 QUARK_UNIT_TEST("Floyd test suite", "main()", "string main(string)", ""){
 	ut_verify_mainfunc_return_nolib(
 		QUARK_POS,
 		R"(
 
-			func string main(string args){
+			func string main(){
 				return "123" + "456"
 			}
 
@@ -707,13 +708,14 @@ QUARK_UNIT_TEST("Floyd test suite", "main()", "", ""){
 QUARK_UNIT_TEST("Floyd test suite", "main()", "", ""){
 	ut_verify_mainfunc_return_nolib(QUARK_POS, "func bool main(){ return 4 <= 4 }", {}, value_t::make_bool(true));
 }
+#endif
 
-QUARK_UNIT_TEST("Floyd test suite", "main()", "int main(string)", ""){
+QUARK_UNIT_TEST("Floyd test suite", "main()", "int main()", ""){
 	ut_verify_mainfunc_return_nolib(
 		QUARK_POS,
 		R"(
 
-			func int main(string args){
+			func int main(){
 				return 3 + 4
 			}
 
@@ -765,7 +767,7 @@ QUARK_UNIT_TEST("Floyd test suite", "func", "define additional function, call it
 		R"(
 
 			func int myfunc(){ return 5 }
-			func int main(string args){
+			func int main(){
 				return myfunc() + myfunc() * 2
 			}
 
@@ -4725,7 +4727,7 @@ QUARK_UNIT_TEST("software-system", "parse software-system", "", ""){
 }
 
 #if 0
-QUARK_UNIT_TEST_VIP("", "try calling LLVM function", "", ""){
+QUARK_UNIT_TEST("", "try calling LLVM function", "", ""){
 	const auto p = R"(
 
 		software-system {
@@ -4766,7 +4768,7 @@ QUARK_UNIT_TEST_VIP("", "try calling LLVM function", "", ""){
 #endif
 
 
-QUARK_UNIT_TEST_VIP("software-system", "run one process", "", ""){
+QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 	const auto test_ss2 = R"(
 
 		software-system {
@@ -4822,7 +4824,6 @@ QUARK_UNIT_TEST_VIP("software-system", "run one process", "", ""){
 	QUARK_UT_VERIFY(result.empty());
 }
 
-#if 0
 
 QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 	const auto test_ss3 = R"(
@@ -4874,6 +4875,7 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 			}
 			else{
 				assert(false)
+				return state
 			}
 		}
 
@@ -4899,6 +4901,7 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 			}
 			else{
 				assert(false)
+				return state
 			}
 		}
 
@@ -4907,6 +4910,7 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 	const auto result = test_run_container2(test_ss3, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
+
 
 QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 	const auto test_ss3 = R"(
@@ -4958,6 +4962,7 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 			}
 			else{
 				assert(false)
+				return state
 			}
 		}
 
@@ -4986,6 +4991,7 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 			}
 			else{
 				assert(false)
+				return state
 			}
 		}
 
@@ -4994,7 +5000,6 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 	const auto result = test_run_container2(test_ss3, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
-#endif
 
 
 
