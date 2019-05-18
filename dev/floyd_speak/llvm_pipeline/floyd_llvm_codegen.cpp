@@ -314,7 +314,7 @@ static llvm::Value* generate_alloc_vec(llvm_code_generator_t& gen_acc, llvm::Fun
 
 	const auto f = find_function_def(gen_acc, "floyd_runtime__allocate_vector");
 
-	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), element_count);
+	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), element_count);
 
 	std::vector<llvm::Value*> args2 = {
 		get_callers_fcp(emit_f),

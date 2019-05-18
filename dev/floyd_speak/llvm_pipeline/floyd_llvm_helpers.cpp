@@ -128,14 +128,14 @@ runtime_value_t make_runtime_struct(void* struct_ptr){
 
 char* get_vec_chars(runtime_value_t str){
 	QUARK_ASSERT(str.vector_ptr != nullptr);
+
 	return reinterpret_cast<char*>(str.vector_ptr->element_ptr);
 }
 
-size_t get_vec_string_size(runtime_value_t str){
+uint64_t get_vec_string_size(runtime_value_t str){
 	QUARK_ASSERT(str.vector_ptr != nullptr);
 
-	const auto char_count = str.vector_ptr->element_bits;
-	return char_count;
+	return str.vector_ptr->element_count;
 }
 
 
@@ -463,7 +463,7 @@ llvm::Type* make_frp_type(llvm::LLVMContext& context){
 
 QUARK_UNIT_TEST("", "", "", ""){
 	const auto vec_struct_size = sizeof(VEC_T);
-	QUARK_UT_VERIFY(vec_struct_size == 16);
+//	QUARK_UT_VERIFY(vec_struct_size == 16);
 }
 
 QUARK_UNIT_TEST("", "", "", ""){
@@ -471,29 +471,38 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_UT_VERIFY(wr_struct_size == 16);
 }
 
-VEC_T make_vec(uint32_t element_count){
-	auto element_ptr = reinterpret_cast<runtime_value_t*>(std::calloc(element_count, sizeof(runtime_value_t)));
-	if(element_ptr == nullptr){
-		throw std::exception();
-	}
 
-	VEC_T result;
-	result.element_ptr = element_ptr;
-	result.element_count = element_count;
-	result.magic = 0xDABB;
-	result.element_bits = 123;
-
-	QUARK_ASSERT(result.check_invariant());
-	return result;
+VEC_T::VEC_T(uint64_t allocation_count, uint64_t element_count) :
+	element_ptr(reinterpret_cast<runtime_value_t*>(std::calloc(allocation_count, sizeof(runtime_value_t)))),
+	allocation_count(allocation_count),
+	magic(0xDABBAD0D),
+	element_count(element_count),
+	rc(1)
+{
 }
 
-void delete_vec(VEC_T& vec){
-	QUARK_ASSERT(vec.check_invariant());
+VEC_T::~VEC_T(){
+	QUARK_ASSERT(check_invariant());
+	QUARK_ASSERT(rc == 0);
+	std::free(element_ptr);
+	element_ptr = nullptr;
+}
 
-	std::free(vec.element_ptr);
-	vec.element_ptr = nullptr;
-	vec.magic = 0xDEAD;
-	vec.element_count = -vec.element_count;
+bool VEC_T::check_invariant() const {
+	QUARK_ASSERT(this->element_ptr != nullptr);
+	QUARK_ASSERT(this->magic == 0xDABBAD0D);
+	return true;
+}
+
+void vec_addref(VEC_T& vec){
+	vec.rc = vec.rc + 1;
+}
+void vec_releaseref(VEC_T* vec){
+	vec->rc = vec->rc - 1;
+	if(vec->rc == 0){
+		delete vec;
+		vec = nullptr;
+	}
 }
 
 

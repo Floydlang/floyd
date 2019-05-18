@@ -215,21 +215,17 @@ int64_t call_main(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>&
 runtime_value_t to_runtime_string(const llvm_execution_engine_t& r, const std::string& s){
 	QUARK_ASSERT(r.check_invariant());
 
-	const auto count = static_cast<uint32_t>(s.size());
+	const auto count = static_cast<uint64_t>(s.size());
+	const auto element_count_ceiling = (count >> 3) + ((count & 7) > 0 ? 1 : 0);
 
-	const auto word_count_ceiling = (count >> 3) + ((count & 7) > 0 ? 1 : 0);
+	auto v = new VEC_T(element_count_ceiling, count);
+	auto result = runtime_value_t{ .vector_ptr = v };
 
-	auto v = new VEC_T(make_vec(word_count_ceiling));
-
-	//??? Need better solution for char count vs element_count.
-	v->element_bits = count;
-
-	char* char_ptr = reinterpret_cast<char*>(v->element_ptr);
+	char* char_ptr = get_vec_chars(result);
 	for(int i = 0 ; i < count ; i++){
 		char_ptr[i] = s[i];
 	}
-
-	return runtime_value_t{ .vector_ptr = v };
+	return result;
 }
 
 std::string from_runtime_string(const llvm_execution_engine_t& r, runtime_value_t encoded_value){
@@ -300,15 +296,16 @@ runtime_value_t to_runtime_vector(const llvm_execution_engine_t& r, const value_
 
 	const auto& v0 = value.get_vector_value();
 
-	const auto count = static_cast<uint32_t>(v0.size());
-	auto v = new VEC_T(make_vec(count));
+	const auto count = v0.size();
+	auto v = new VEC_T(count, count);
+	auto result = runtime_value_t{ .vector_ptr = v };
+
 	for(int i = 0 ; i < count ; i++){
 		const auto& e = v0[i];
 		const auto a = to_runtime_value(r, e);
 		v->element_ptr[i] = a;
 	}
-
-	return runtime_value_t{ .vector_ptr = v };
+	return result;
 }
 
 value_t from_runtime_vector(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
@@ -319,7 +316,7 @@ value_t from_runtime_vector(const llvm_execution_engine_t& runtime, const runtim
 	const auto vec = encoded_value.vector_ptr;
 
 	std::vector<value_t> elements;
-	const int count = vec->element_count;
+	const auto count = vec->element_count;
 	for(int i = 0 ; i < count ; i++){
 		const auto value_encoded = vec->element_ptr[i];
 		const auto value = from_runtime_value(runtime, value_encoded, element_type);
@@ -591,11 +588,11 @@ host_func_t floyd_runtime__allocate_memory__make(llvm::LLVMContext& context){
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-VEC_T* floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint32_t element_count){
+VEC_T* floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint64_t element_count){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	VEC_T v = make_vec(element_count);
-	return new VEC_T(v);
+	auto v = new VEC_T(element_count, element_count);
+	return v;
 }
 
 host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context){
@@ -603,7 +600,7 @@ host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context){
 		make_vec_type(context)->getPointerTo(),
 		{
 			make_frp_type(context),
-			llvm::Type::getInt32Ty(context)
+			llvm::Type::getInt64Ty(context)
 		},
 		false
 	);
@@ -644,7 +641,7 @@ void floyd_runtime__delete_vector(void* floyd_runtime_ptr, VEC_T* vec){
 	QUARK_ASSERT(vec != nullptr);
 	QUARK_ASSERT(vec->check_invariant());
 
-	delete_vec(*vec);
+	vec_releaseref(vec);
 }
 
 host_func_t floyd_runtime__delete_vector__make(llvm::LLVMContext& context){
@@ -672,14 +669,16 @@ VEC_T* floyd_runtime__concatunate_vectors(void* floyd_runtime_ptr, runtime_type_
 		return to_runtime_string(r, result).vector_ptr;
 	}
 	else{
-		auto result = make_vec(lhs->element_count + rhs->element_count);
+		auto count2 = lhs->element_count + rhs->element_count;
+
+		auto result = new VEC_T(count2, count2);
 		for(int i = 0 ; i < lhs->element_count ; i++){
-			result.element_ptr[i] = lhs->element_ptr[i];
+			result->element_ptr[i] = lhs->element_ptr[i];
 		}
 		for(int i = 0 ; i < rhs->element_count ; i++){
-			result.element_ptr[lhs->element_count + i] = rhs->element_ptr[i];
+			result->element_ptr[lhs->element_count + i] = rhs->element_ptr[i];
 		}
-		return new VEC_T(result);
+		return result;
 	}
 }
 
@@ -1186,7 +1185,7 @@ WIDE_RETURN_T floyd_funcdef__filter(void* floyd_runtime_ptr, runtime_value_t arg
 	}
 
 	const auto count2 = (int32_t)acc.size();
-	auto result_vec = new VEC_T(make_vec(count2));
+	auto result_vec = new VEC_T(count2, count2);
 
 	if(count2 > 0){
 		//	Count > 0 required to get address to first element in acc.
@@ -1402,7 +1401,7 @@ WIDE_RETURN_T floyd_funcdef__map(void* floyd_runtime_ptr, runtime_value_t arg0_v
 	const auto f = reinterpret_cast<MAP_F>(arg1_value.function_ptr);
 
 	auto count = arg0_value.vector_ptr->element_count;
-	auto result_vec = new VEC_T(make_vec(count));
+	auto result_vec = new VEC_T(count,count);
 	for(int i = 0 ; i < count ; i++){
 		const auto wide_result1 = (*f)(floyd_runtime_ptr, arg0_value.vector_ptr->element_ptr[i]);
 		result_vec->element_ptr[i] = wide_result1.a;
@@ -1555,7 +1554,7 @@ std::string floyd_funcdef__replace__string(llvm_execution_engine_t& floyd_runtim
 }
 
 
-const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, int64_t start, int64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
+const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	if(start < 0 || end < 0){
@@ -1583,19 +1582,19 @@ const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, runtime_valu
 		const auto vec = unpack_vec_arg(r.type_interner, arg0_value, arg0_type);
 		const auto replace_vec = unpack_vec_arg(r.type_interner, arg3_value, arg3_type);
 
-		auto end2 = std::min(static_cast<uint32_t>(end), vec->element_count);
-		auto start2 = std::min(static_cast<uint32_t>(start), end2);
+		auto end2 = std::min(end, vec->element_count);
+		auto start2 = std::min(start, end2);
 
-		const int32_t section1_len = start2;
-		const int32_t section2_len = replace_vec->element_count;
-		const int32_t section3_len = vec->element_count - end2;
+		const auto section1_len = start2;
+		const auto section2_len = replace_vec->element_count;
+		const auto section3_len = vec->element_count - end2;
 
-		const uint32_t len2 = section1_len + section2_len + section3_len;
-		auto vec2 = make_vec(len2);
-		copy_elements(&vec2.element_ptr[0], &vec->element_ptr[0], section1_len);
-		copy_elements(&vec2.element_ptr[section1_len], &replace_vec->element_ptr[0], section2_len);
-		copy_elements(&vec2.element_ptr[section1_len + section2_len], &vec->element_ptr[end2], section3_len);
-		return make_wide_return_vec(new VEC_T(vec2));
+		const auto len2 = section1_len + section2_len + section3_len;
+		auto vec2 = new VEC_T(len2, len2);
+		copy_elements(&vec2->element_ptr[0], &vec->element_ptr[0], section1_len);
+		copy_elements(&vec2->element_ptr[section1_len], &replace_vec->element_ptr[0], section2_len);
+		copy_elements(&vec2->element_ptr[section1_len + section2_len], &vec->element_ptr[end2], section3_len);
+		return make_wide_return_vec(vec2);
 	}
 	else{
 		//	No other types allowed.
@@ -1665,7 +1664,7 @@ int64_t floyd_funcdef__size(void* floyd_runtime_ptr, runtime_value_t arg0_value,
 	}
 }
 
-const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, int64_t start, int64_t end){
+const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	if(start < 0 || end < 0){
@@ -1676,10 +1675,10 @@ const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, runtime_value
 	if(type0.is_string()){
 		const auto value = from_runtime_string(r, arg0_value);
 
-		std::size_t len = get_vec_string_size(arg0_value);
-		const std::size_t end2 = std::min(static_cast<std::size_t>(end), len);
-		const std::size_t start2 = std::min(static_cast<std::size_t>(start), end2);
-		std::size_t len2 = end2 - start2;
+		const auto len = get_vec_string_size(arg0_value);
+		const auto end2 = std::min(end, len);
+		const auto start2 = std::min(start, end2);
+		const auto len2 = end2 - start2;
 
 		const auto s = std::string(&value[start2], &value[start2 + len2]);
 		const auto result = to_runtime_string(r, s);
@@ -1688,18 +1687,18 @@ const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, runtime_value
 	else if(type0.is_vector()){
 		const auto vec = unpack_vec_arg(r.type_interner, arg0_value, arg0_type);
 
-		const std::size_t end2 = std::min(static_cast<std::size_t>(end), static_cast<std::size_t>(vec->element_count));
-		const std::size_t start2 = std::min(static_cast<std::size_t>(start), end2);
-		std::size_t len2 = end2 - start2;
+		const auto end2 = std::min(end, vec->element_count);
+		const auto start2 = std::min(start, end2);
+		const auto len2 = end2 - start2;
 
 		if(len2 >= INT32_MAX){
 			throw std::exception();
 		}
-		VEC_T vec2 = make_vec(static_cast<int32_t>(len2));
+		VEC_T* vec2 = new VEC_T(len2, len2);
 		for(int i = 0 ; i < len2 ; i++){
-			vec2.element_ptr[i] = vec->element_ptr[start2 + i];
+			vec2->element_ptr[i] = vec->element_ptr[start2 + i];
 		}
-		return make_wide_return_vec(new VEC_T(vec2));
+		return make_wide_return_vec(vec2);
 	}
 	else{
 		//	No other types allowed.
@@ -1806,18 +1805,14 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 				}
 			}
 
-			VEC_T solved_deps2 = make_vec(static_cast<int32_t>(solved_deps.size()));
+			auto solved_deps2 = new VEC_T(solved_deps.size(), solved_deps.size());
 			for(int i = 0 ; i < solved_deps.size() ; i++){
-				solved_deps2.element_ptr[i] = solved_deps[i];
+				solved_deps2->element_ptr[i] = solved_deps[i];
 			}
-			runtime_value_t solved_deps3 { .vector_ptr = &solved_deps2 };
+			runtime_value_t solved_deps3 { .vector_ptr = solved_deps2 };
 
 			const auto wide_result = (*f2)(floyd_runtime_ptr, e, solved_deps3);
 			const auto result1 = wide_result.a;
-
-//			const bc_value_t f_args[2] = { e, make_vector(r_type, solved_deps) };
-//			const auto result1 = call_function_bc(vm, f, f_args, 2);
-
 
 			const auto parent_index = parents2->element_ptr[element_index].int_value;
 			if(parent_index != -1){
@@ -1830,14 +1825,13 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 
 //	const auto result = make_vector(r_type, complete);
 
-	const auto count = static_cast<uint32_t>(complete.size());
-	auto result_vec = new VEC_T(make_vec(count));
+	const auto count = complete.size();
+	auto result_vec = new VEC_T(count, count);
 	for(int i = 0 ; i < count ; i++){
 		result_vec->element_ptr[i] = complete[i];
 	}
 
 #if 1
-//	return runtime_value_t{ .vector_ptr = nullptr };
 	const auto vec_r = runtime_value_t{ .vector_ptr = result_vec };
 	const auto result_value = from_runtime_value(r, vec_r, typeid_t::make_vector(r_type));
 	const auto debug = value_and_type_to_ast_json(result_value);
@@ -1962,12 +1956,12 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 			throw std::runtime_error("Position argument to update() is outside collection span.");
 		}
 
-		auto result = make_vec(vec->element_count);
-		for(int i = 0 ; i < result.element_count ; i++){
-			result.element_ptr[i] = vec->element_ptr[i];
+		auto result = new VEC_T(vec->element_count, vec->element_count);
+		for(int i = 0 ; i < result->element_count ; i++){
+			result->element_ptr[i] = vec->element_ptr[i];
 		}
-		result.element_ptr[index] = arg2_value;
-		return make_wide_return_vec(new VEC_T(result));
+		result->element_ptr[index] = arg2_value;
+		return make_wide_return_vec(result);
 	}
 	else if(type0.is_dict()){
 		if(type1.is_string() == false){

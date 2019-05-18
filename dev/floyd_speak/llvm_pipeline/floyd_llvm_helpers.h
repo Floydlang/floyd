@@ -81,7 +81,7 @@ runtime_value_t make_runtime_typeid(runtime_type_t type);
 runtime_value_t make_runtime_struct(void* struct_ptr);
 
 char* get_vec_chars(runtime_value_t str);
-size_t get_vec_string_size(runtime_value_t str);
+uint64_t get_vec_string_size(runtime_value_t str);
 
 
 
@@ -206,37 +206,35 @@ WIDE_RETURN_T make_wide_return_structptr(void* s);
 		calloc(alloc_count, sizeof(uint64_t))
 */
 struct VEC_T {
-	runtime_value_t* element_ptr;
-	uint32_t element_count;
-	uint16_t magic;
-	uint16_t element_bits;
+	VEC_T(uint64_t allocation_count, uint64_t element_count);
+	~VEC_T();
+	bool check_invariant() const;
 
-
-	bool check_invariant() const {
-		QUARK_ASSERT(this->element_ptr != nullptr);
-//		QUARK_ASSERT(this->element_bits > 0 && this->element_bits < (8 * 128));
-		QUARK_ASSERT(this->magic == 0xDABB);
-		return true;
-	}
-
-
-
-	inline uint32_t size() const {
+	inline uint64_t get_element_count() const {
 		QUARK_ASSERT(check_invariant());
 
 		return element_count;
 	}
-	inline runtime_value_t operator[](const uint32_t index) const {
+	inline runtime_value_t operator[](const uint64_t index) const {
 		QUARK_ASSERT(check_invariant());
 
 		return element_ptr[index];
 	}
+
+
+	////////////////////////////////		STATE
+		runtime_value_t* element_ptr;
+
+		//	The number of uint64_t:s allocated.
+		uint64_t allocation_count;
+
+		uint32_t magic;
+
+		//	The number of elements encoded into the VEC_T.
+		uint64_t element_count;
+
+		uint32_t rc;
 };
-
-
-//	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-VEC_T make_vec(uint32_t element_count);
-void delete_vec(VEC_T& vec);
 
 enum class VEC_T_MEMBERS {
 	element_ptr = 0,
@@ -245,10 +243,12 @@ enum class VEC_T_MEMBERS {
 	element_bits = 3
 };
 
+void vec_addref(VEC_T& vec);
+void vec_releaseref(VEC_T* vec);
+
 
 //	Makes a type for VEC_T.
 llvm::StructType* make_vec_type(llvm::LLVMContext& context);
-
 
 WIDE_RETURN_T make_wide_return_vec(VEC_T* vec);
 VEC_T* wide_return_to_vec(const WIDE_RETURN_T& ret);
