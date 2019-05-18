@@ -123,6 +123,24 @@ runtime_value_t make_runtime_struct(void* struct_ptr){
 }
 
 
+
+
+
+char* get_vec_chars(runtime_value_t str){
+	QUARK_ASSERT(str.vector_ptr != nullptr);
+	return reinterpret_cast<char*>(str.vector_ptr->element_ptr);
+}
+
+size_t get_vec_string_size(runtime_value_t str){
+	QUARK_ASSERT(str.vector_ptr != nullptr);
+
+	const auto char_count = str.vector_ptr->element_bits;
+	return char_count;
+}
+
+
+
+
 VEC_T* unpack_vec_arg(const type_interner_t& types, runtime_value_t arg_value, runtime_type_t arg_type){
 #if DEBUG
 	const auto type = lookup_type(types, arg_type);
@@ -145,6 +163,9 @@ DICT_T* unpack_dict_arg(const type_interner_t& types, runtime_value_t arg_value,
 
 	return arg_value.dict_ptr;
 }
+
+
+
 
 
 base_type get_base_type(const type_interner_t& interner, const runtime_type_t& type){
@@ -394,10 +415,6 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b){
 	return WIDE_RETURN_T{ a, b };
 }
 
-WIDE_RETURN_T make_wide_return_charptr(char* s){
-	return WIDE_RETURN_T{ { .string_ptr = s }, { .int_value = 0 } };
-}
-
 WIDE_RETURN_T make_wide_return_structptr(void* s){
 	return WIDE_RETURN_T{ { .struct_ptr = s }, { .int_value = 0 } };
 }
@@ -617,6 +634,19 @@ void generate_struct_member_store(llvm::IRBuilder<>& builder, llvm::StructType& 
 	builder.CreateStore(&value_reg, member_ptr_reg);
 }
 
+llvm::Type* deref_ptr(llvm::Type* type){
+	QUARK_ASSERT(type != nullptr);
+
+	if(type->isPointerTy()){
+		llvm::PointerType* type2 = llvm::cast<llvm::PointerType>(type);
+  		llvm::Type* element_type = type2->getElementType();
+  		return element_type;
+	}
+	else{
+		QUARK_ASSERT(false);
+		return type;
+	}
+}
 
 
 ////////////////////////////////		llvm_arg_mapping_t
@@ -811,6 +841,23 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int, DYN,
 
 
 
+llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& symbol_name, llvm::Type& itype, llvm::Constant* init_or_nullptr){
+//	QUARK_ASSERT(check_invariant__module(&module));
+	QUARK_ASSERT(symbol_name.empty() == false);
+
+	llvm::GlobalVariable* gv = new llvm::GlobalVariable(
+		module,
+		&itype,
+		false,	//	isConstant
+		llvm::GlobalValue::ExternalLinkage,
+		init_or_nullptr ? init_or_nullptr : llvm::Constant::getNullValue(&itype),
+		symbol_name
+	);
+
+//	QUARK_ASSERT(check_invariant__module(&module));
+
+	return gv;
+}
 
 
 
@@ -870,7 +917,7 @@ llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type){
 			return llvm::Type::getDoubleTy(context);
 		}
 		llvm::Type* operator()(const typeid_t::string_t& e) const{
-			return llvm::Type::getInt8PtrTy(context);
+			return make_vec_type(context)->getPointerTo();
 		}
 
 		llvm::Type* operator()(const typeid_t::json_type_t& e) const{
@@ -931,8 +978,7 @@ runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type){
 			return runtime_value_t{ .double_value = temp };
 		}
 		runtime_value_t operator()(const typeid_t::string_t& e) const{
-			char* s = *(char**)(value_ptr);
-			return runtime_value_t{ .string_ptr = s };
+			return *static_cast<const runtime_value_t*>(value_ptr);
 		}
 
 		runtime_value_t operator()(const typeid_t::json_type_t& e) const{
@@ -990,7 +1036,7 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 			*static_cast<double*>(value_ptr) = value.double_value;
 		}
 		void operator()(const typeid_t::string_t& e) const{
-			*(char**)(value_ptr) = value.string_ptr;
+			*static_cast<runtime_value_t*>(value_ptr) = value;
 		}
 
 		void operator()(const typeid_t::json_type_t& e) const{
@@ -1109,7 +1155,7 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, llvm:
 			return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &runtime_value_reg, llvm::Type::getDoubleTy(context), "");
 		}
 		llvm::Value* operator()(const typeid_t::string_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, llvm::Type::getInt8PtrTy(context), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_vec_type(context)->getPointerTo(), "");
 		}
 
 		llvm::Value* operator()(const typeid_t::json_type_t& e) const{

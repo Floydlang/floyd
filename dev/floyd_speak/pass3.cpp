@@ -609,7 +609,6 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 		const auto rhs_type = rhs_expr_pair.second.get_output_type();
 		const auto lhs_type2 = lhs_type.is_undefined() ? rhs_type : lhs_type;
 
-		//??? always true?
 		if(lhs_type2 != lhs_type2){
 			std::stringstream what;
 			what << "Types not compatible in bind - cannot convert '"
@@ -684,6 +683,8 @@ analyser_t analyse_def_struct_statement(const analyser_t& a, const statement_t& 
 	const auto struct_typeid1 = typeid_t::make_struct2(statement._def->_members);
 	const auto struct_typeid2 = resolve_type(a_acc, s.location, struct_typeid1);
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
+
+	// ??? Alternative solution is to use store2 to write constant into global.
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({struct_name, symbol_t::make_constant(struct_typeid_value)});
 
 	return a_acc;

@@ -54,7 +54,10 @@ union runtime_value_t {
 	int64_t int_value;
 	int32_t typeid_itype;
 	double double_value;
-	char* string_ptr;
+
+	//	Strings are encoded as VEC_T:s
+//	char* string_ptr;
+
 	VEC_T* vector_ptr;
 	DICT_T* dict_ptr;
 	json_t* json_ptr;
@@ -77,9 +80,14 @@ runtime_value_t make_runtime_int(int64_t value);
 runtime_value_t make_runtime_typeid(runtime_type_t type);
 runtime_value_t make_runtime_struct(void* struct_ptr);
 
+char* get_vec_chars(runtime_value_t str);
+size_t get_vec_string_size(runtime_value_t str);
+
+
 
 VEC_T* unpack_vec_arg(const type_interner_t& types, runtime_value_t arg_value, runtime_type_t arg_type);
 DICT_T* unpack_dict_arg(const type_interner_t& types, runtime_value_t arg_value, runtime_type_t arg_type);
+
 
 
 
@@ -171,7 +179,9 @@ enum class WIDE_RETURN_MEMBERS {
 llvm::StructType* make_wide_return_type(llvm::LLVMContext& context);
 
 WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
-WIDE_RETURN_T make_wide_return_charptr(char* s);
+inline WIDE_RETURN_T make_wide_return_1x64(runtime_value_t a){
+	return make_wide_return_2x64(a, make_blank_runtime_value());
+}
 WIDE_RETURN_T make_wide_return_structptr(void* s);
 
 
@@ -204,7 +214,7 @@ struct VEC_T {
 
 	bool check_invariant() const {
 		QUARK_ASSERT(this->element_ptr != nullptr);
-		QUARK_ASSERT(this->element_bits > 0 && this->element_bits < (8 * 128));
+//		QUARK_ASSERT(this->element_bits > 0 && this->element_bits < (8 * 128));
 		QUARK_ASSERT(this->magic == 0xDABB);
 		return true;
 	}
@@ -305,6 +315,7 @@ DICT_T* wide_return_to_dict(const WIDE_RETURN_T& ret);
 void generate_array_element_store(llvm::IRBuilder<>& builder, llvm::Value& array_ptr_reg, uint64_t element_index, llvm::Value& element_reg);
 void generate_struct_member_store(llvm::IRBuilder<>& builder, llvm::StructType& struct_type, llvm::Value& struct_ptr_reg, int member_index, llvm::Value& value_reg);
 
+llvm::Type* deref_ptr(llvm::Type* type);
 
 
 ////////////////////////////////		llvm_arg_mapping_t
@@ -332,6 +343,7 @@ llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const flo
 
 
 
+llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& symbol_name, llvm::Type& itype, llvm::Constant* init_or_nullptr);
 
 
 ////////////////////////////////		intern_type()

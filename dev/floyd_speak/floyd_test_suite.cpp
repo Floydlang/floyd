@@ -108,7 +108,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Define variable", "double", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "Define variable", "string", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let string result = \"xyz\"", value_t::make_string("xyz"));
+	ut_verify_global_result_nolib(QUARK_POS, R"xxx(let string result = "xyz")xxx", value_t::make_string("xyz"));
 }
 
 //	??? Add special error message when local is not initialized.
@@ -681,34 +681,6 @@ QUARK_UNIT_TEST("Floyd test suite", "main() - Can make and read global int", "",
 		value_t::make_int(123)
 	);
 }
-
-
-#if 0
-QUARK_UNIT_TEST("Floyd test suite", "main()", "string main(string)", ""){
-	ut_verify_mainfunc_return_nolib(
-		QUARK_POS,
-		R"(
-
-			func string main(){
-				return "123" + "456"
-			}
-
-		)",
-		std::vector<value_t>{value_t::make_string("")},
-		value_t::make_string("123456")
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "main()", "", ""){
-	ut_verify_mainfunc_return_nolib(QUARK_POS, "func bool main(){ return 4 < 5 }", {}, value_t::make_bool(true));
-}
-QUARK_UNIT_TEST("Floyd test suite", "main()", "", ""){
-	ut_verify_mainfunc_return_nolib(QUARK_POS, "func bool main(){ return 5 < 4 }", {}, value_t::make_bool(false));
-}
-QUARK_UNIT_TEST("Floyd test suite", "main()", "", ""){
-	ut_verify_mainfunc_return_nolib(QUARK_POS, "func bool main(){ return 4 <= 4 }", {}, value_t::make_bool(true));
-}
-#endif
 
 QUARK_UNIT_TEST("Floyd test suite", "main()", "int main()", ""){
 	ut_verify_mainfunc_return_nolib(
