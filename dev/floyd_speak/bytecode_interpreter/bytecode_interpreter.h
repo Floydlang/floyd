@@ -120,8 +120,8 @@ bool encode_as_external(const typeid_t& type);
 /*
 	Efficent representation of any value supported by the interpreter.
 	It's immutable and uses value-semantics.
-	Holds either and inplace value or an external value. Handles reference counting automatically when required.
-	??? replace my variant<>
+	Holds either an inplace value or an external value. Handles reference counting automatically when required.
+	??? replace with variant<>
 */
 
 struct bc_value_t {

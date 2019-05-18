@@ -561,6 +561,75 @@ std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value_t arg_
 //	Make sure they are not dead-stripped out of binary!
 ////////////////////////////////////////////////////////////////////////////////
 
+
+////////////////////////////////		addref()
+
+
+void floyd_runtime__addref(void* floyd_runtime_ptr, runtime_value_t arg0, runtime_type_t type0){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type = lookup_type(r.type_interner, type0);
+	if(type.is_string() || type.is_vector()){
+		QUARK_ASSERT(arg0.vector_ptr != nullptr);
+
+		vec_addref(*arg0.vector_ptr);
+	}
+	else{
+	}
+}
+
+host_func_t floyd_runtime__addref__make(llvm::LLVMContext& context){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getVoidTy(context),
+		{
+			make_frp_type(context),
+			make_runtime_value_type(context),
+			make_runtime_type_type(context)
+		},
+		false
+	);
+	return { "floyd_runtime__addref", function_type, reinterpret_cast<void*>(floyd_runtime__addref) };
+}
+
+
+
+////////////////////////////////		releaseref()
+
+
+void floyd_runtime__releaseref(void* floyd_runtime_ptr, runtime_value_t arg0, runtime_type_t type0){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type = lookup_type(r.type_interner, type0);
+	if(type.is_string() || type.is_vector()){
+		QUARK_ASSERT(arg0.vector_ptr != nullptr);
+
+		vec_releaseref(arg0.vector_ptr);
+	}
+	else{
+	}
+}
+
+host_func_t floyd_runtime__releaseref__make(llvm::LLVMContext& context){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getVoidTy(context),
+		{
+			make_frp_type(context),
+			make_runtime_value_type(context),
+			make_runtime_type_type(context)
+		},
+		false
+	);
+	return { "floyd_runtime__releaseref", function_type, reinterpret_cast<void*>(floyd_runtime__releaseref) };
+}
+
+
+
+
+
+
+
+
+
 ////////////////////////////////		allocate_memory()
 
 
@@ -985,6 +1054,9 @@ host_func_t floyd_runtime__compare_values__make(llvm::LLVMContext& context){
 
 std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context){
 	std::vector<host_func_t> result = {
+		floyd_runtime__addref__make(context),
+		floyd_runtime__releaseref__make(context),
+
 		floyd_runtime__allocate_memory__make(context),
 
 		floyd_runtime__allocate_vector__make(context),

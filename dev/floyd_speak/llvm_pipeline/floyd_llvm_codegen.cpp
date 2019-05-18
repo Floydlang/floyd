@@ -252,25 +252,65 @@ resolved_symbol_t find_symbol(llvm_code_generator_t& gen_acc, const variable_add
 }
 
 
-typeid_t unpack_itype(const llvm_code_generator_t& gen, int64_t itype){
-	QUARK_ASSERT(gen.check_invariant());
+typeid_t unpack_itype(const llvm_code_generator_t& gen_acc, int64_t itype){
+	QUARK_ASSERT(gen_acc.check_invariant());
 
 	const itype_t t(static_cast<uint32_t>(itype));
-	return lookup_type(gen.interner, t);
+	return lookup_type(gen_acc.interner, t);
 }
 
-int64_t pack_itype(const llvm_code_generator_t& gen, const typeid_t& type){
-	QUARK_ASSERT(gen.check_invariant());
+int64_t pack_itype(const llvm_code_generator_t& gen_acc, const typeid_t& type){
+	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	return lookup_itype(gen.interner, type).itype;
+	return lookup_itype(gen_acc.interner, type).itype;
 }
 
 llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, const typeid_t& type){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
 	auto& context = gen_acc.instance->context;
 	auto itype = pack_itype(gen_acc, type);
 	auto t = make_runtime_type_type(context);
  	return llvm::ConstantInt::get(t, itype);
+}
+
+void generate_addref(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& value, const typeid_t& type){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+	QUARK_ASSERT(type.check_invariant());
+
+	auto& builder = gen_acc.builder;
+	if(type.is_string() || type.is_vector()){
+		const auto f = find_function_def(gen_acc, "floyd_runtime__addref");
+		std::vector<llvm::Value*> args = {
+			get_callers_fcp(emit_f),
+			generate_itype_constant(gen_acc, type),
+			&value
+		};
+		builder.CreateCall(f.llvm_f, args, "addref");
+	}
+	else{
+	}
+}
+void generate_reelaseref(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& value, const typeid_t& type){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+	QUARK_ASSERT(type.check_invariant());
+
+	auto& builder = gen_acc.builder;
+	if(type.is_string() || type.is_vector()){
+		const auto f = find_function_def(gen_acc, "floyd_runtime__releaseref");
+		std::vector<llvm::Value*> args = {
+			get_callers_fcp(emit_f),
+			&value,
+			generate_itype_constant(gen_acc, type)
+		};
+		builder.CreateCall(f.llvm_f, args, "releaseref");
+	}
+	else{
+	}
 }
 
 
@@ -627,26 +667,6 @@ llvm::Value* generate_constant(llvm_code_generator_t& gen_acc, llvm::Function& e
 	return std::visit(visitor_t{ gen_acc, builder, context, itype, value, emit_f }, type._contents);
 }
 
-#if 0
-static llvm::Value* generate_type_size_calculation(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Type& type){
-	auto& builder = gen_acc.builder;
-	auto& context = gen_acc.module->getContext();
-/*
-	Calc struct size for malloc:
-	%Size = getelementptr %T* null, i32 1
-	%SizeI = ptrtoint %T* %Size to i32
-*/
-
-	auto null_ptr = llvm::ConstantPointerNull::get(type.getPointerTo());
-	auto element_index_reg = generate_constant(gen_acc, emit_f, value_t::make_int(1));
-
-	const auto gep_index_list2 = std::vector<llvm::Value*>{ element_index_reg };
-	llvm::Value* ptr_reg = builder.CreateGEP(&type, null_ptr, gep_index_list2, "");
-	auto int_reg = builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, ptr_reg, make_runtime_value_type(context), "calcsize");
-	return int_reg;
-}
-#endif
-
 static llvm::Value* generate_allocate_instance(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::StructType& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -713,7 +733,7 @@ static llvm::Value* generate_get_vec_element_ptr(llvm_code_generator_t& gen_acc,
 
 	const auto gep = std::vector<llvm::Value*>{
 		builder.getInt32(0),
-		builder.getInt32(0),
+		builder.getInt32(static_cast<int32_t>(VEC_T_MEMBERS::element_ptr)),
 	};
 	auto uint64_array_ptr_ptr_reg = builder.CreateGEP(make_vec_type(context), &vec_ptr_reg, gep, "");
 	auto uint64_array_ptr_reg = builder.CreateLoad(uint64_array_ptr_ptr_reg);
