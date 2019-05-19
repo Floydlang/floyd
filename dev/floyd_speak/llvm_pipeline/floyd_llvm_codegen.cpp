@@ -16,6 +16,15 @@ const bool k_trace_types = false;
 
 #include "ast_value.h"
 
+#include "host_functions.h"
+
+#include "floyd_parser.h"
+#include "ast_json.h"
+#include "pass3.h"
+
+#include "quark.h"
+
+
 #include <llvm/ADT/APInt.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
@@ -39,7 +48,6 @@ const bool k_trace_types = false;
 
 #include "llvm/Bitcode/BitstreamWriter.h"
 
-
 #include <map>
 #include <algorithm>
 #include <cstdlib>
@@ -48,16 +56,6 @@ const bool k_trace_types = false;
 #include <vector>
 #include <iostream>
 
-#include "host_functions.h"
-
-#include "compiler_basics.h"
-#include "compiler_helpers.h"
-#include "floyd_parser.h"
-#include "pass3.h"
-#include "text_parser.h"
-#include "ast_json.h"
-
-#include "quark.h"
 
 //http://releases.llvm.org/2.6/docs/tutorial/JITTutorial2.html
 
@@ -368,7 +366,6 @@ static llvm::Value* generate_alloc_string_from_strptr(llvm_code_generator_t& gen
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
-	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
 	const auto f = find_function_def(gen_acc, "floyd_runtime__allocate_string_from_strptr");
@@ -399,7 +396,6 @@ static llvm::Value* generate_store_dict(llvm_code_generator_t& gen_acc, llvm::Fu
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
-	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
 	const auto f = find_function_def(gen_acc, "floyd_runtime__store_dict");
@@ -436,7 +432,6 @@ static llvm::Value* generate_alloc_json(llvm_code_generator_t& gen_acc, llvm::Fu
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
-	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
 	const auto f = find_function_def(gen_acc, "floyd_runtime__allocate_json");
@@ -452,7 +447,6 @@ static llvm::Value* generate_lookup_json(llvm_code_generator_t& gen_acc, llvm::F
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
-	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
 	const auto f = find_function_def(gen_acc, "floyd_runtime__lookup_json");
@@ -570,7 +564,6 @@ llvm::Value* generate_constant_string(llvm_code_generator_t& gen_acc, llvm::Func
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	auto& builder = gen_acc.builder;
-	auto& context = gen_acc.module->getContext();
 
 	//	Make a global string constant.
 	llvm::Constant* str_ptr = builder.CreateGlobalStringPtr(s);
@@ -959,7 +952,6 @@ static llvm::Value* generate_compare_values(llvm_code_generator_t& gen_acc, llvm
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
-	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
 	const auto def = find_function_def(gen_acc, "floyd_runtime__compare_values");
@@ -2135,22 +2127,6 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 	return result;
 }
 
-static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& context){
-	const auto runtime_functions = get_runtime_functions(context);
-
-	std::map<std::string, void*> runtime_functions_map;
-	for(const auto& e: runtime_functions){
-		const auto e2 = std::pair<std::string, void*>(e.name_key, e.implementation_f);
-		runtime_functions_map.insert(e2);
-	}
-	const auto host_functions_map = get_host_functions_map2();
-
-	std::map<std::string, void*> function_map = runtime_functions_map;
-	function_map.insert(host_functions_map.begin(), host_functions_map.end());
-
-	return function_map;
-}
-
 /*
 //	GENERATE CODE for floyd_runtime_init()
 	Floyd's global instructions are packed into the "floyd_runtime_init"-function. LLVM doesn't have global instructions.
@@ -2323,30 +2299,6 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 }
 
 
-#if DEBUG && 1
-//	Verify that all global functions can be accessed. If *one* is unresolved, then all return NULL!?
-void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
-	int index = 0;
-	for(const auto& e: p.debug_globals._symbols){
-		if(e.second.get_type().is_function()){
-			const auto global_var = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(ee2, e.first);
-			QUARK_ASSERT(global_var != nullptr);
-
-			const auto f = *global_var;
-//				QUARK_ASSERT(f != nullptr);
-
-			const std::string suffix = f == nullptr ? " NULL POINTER" : "";
-//			const uint64_t addr = reinterpret_cast<uint64_t>(f);
-//			QUARK_TRACE_SS(index << " " << e.first << " " << addr << suffix);
-		}
-		else{
-		}
-		index++;
-	}
-}
-#endif
-
-
 //	Destroys program, can only run it once!
 int64_t run_llvm_program(llvm_instance_t& instance, llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args){
 	QUARK_ASSERT(instance.check_invariant());
@@ -2360,157 +2312,4 @@ int64_t run_llvm_program(llvm_instance_t& instance, llvm_ir_program_t& program_b
 
 
 
-////////////////////////////////		HELPERS
-
-
-
-std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instance, const compilation_unit_t& cu){
-	QUARK_ASSERT(instance.check_invariant());
-
-	const auto pass3 = compile_to_sematic_ast__errors(cu);
-	auto bc = generate_llvm_ir_program(instance, pass3, cu.source_file_path);
-	return bc;
-}
-
-//??? Move init functions to runtime source file.
-//	Destroys program, can only run it once!
-llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks){
-	QUARK_ASSERT(instance.check_invariant());
-	QUARK_ASSERT(program_breaks.check_invariant());
-
-	std::string collectedErrors;
-
-	//	WARNING: Destroys p -- uses std::move().
-	llvm::ExecutionEngine* exeEng = llvm::EngineBuilder(std::move(program_breaks.module))
-		.setErrorStr(&collectedErrors)
-		.setOptLevel(llvm::CodeGenOpt::Level::None)
-		.setVerifyModules(true)
-		.setEngineKind(llvm::EngineKind::JIT)
-		.create();
-
-	if (exeEng == nullptr){
-		std::string error = "Unable to construct execution engine: " + collectedErrors;
-		perror(error.c_str());
-		throw std::exception();
-	}
-	QUARK_ASSERT(collectedErrors.empty());
-
-	const auto start_time = std::chrono::high_resolution_clock::now();
-
-	auto ee1 = std::shared_ptr<llvm::ExecutionEngine>(exeEng);
-	auto ee2 = llvm_execution_engine_t{
-		k_debug_magic,
-		&instance,
-		ee1,
-		program_breaks.type_interner,
-		program_breaks.debug_globals,
-		program_breaks.function_defs,
-		{},
-		nullptr,
-		start_time
-	};
-	QUARK_ASSERT(ee2.check_invariant());
-
-	auto function_map = register_c_functions(instance.context);
-
-	//	Resolve all unresolved functions.
-	{
-		//	https://stackoverflow.com/questions/33328562/add-mapping-to-c-lambda-from-llvm
-		auto lambda = [&](const std::string& s) -> void* {
-			QUARK_ASSERT(s.empty() == false);
-			QUARK_ASSERT(s[0] == '_');
-			const auto s2 = s.substr(1);
-
-			const auto it = function_map.find(s2);
-			if(it != function_map.end()){
-				return it->second;
-			}
-			else{
-			}
-
-			return nullptr;
-		};
-		std::function<void*(const std::string&)> on_lazy_function_creator2 = lambda;
-
-		//	NOTICE! Patch during finalizeObject() only, then restore!
-		ee2.ee->InstallLazyFunctionCreator(on_lazy_function_creator2);
-		ee2.ee->finalizeObject();
-		ee2.ee->InstallLazyFunctionCreator(nullptr);
-
-	//	ee2.ee->DisableGVCompilation(false);
-	//	ee2.ee->DisableSymbolSearching(false);
-	}
-
-	check_nulls(ee2, program_breaks);
-
-//	llvm::WriteBitcodeToFile(exeEng->getVerifyModules(), raw_ostream &Out);
-	return ee2;
-}
-
-//	Destroys program, can only run it once!
-//	Automatically runs floyd_runtime_init() to execute Floyd's global functions and initialize global constants.
-llvm_execution_engine_t make_engine_run_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks){
-	QUARK_ASSERT(instance.check_invariant());
-	QUARK_ASSERT(program_breaks.check_invariant());
-
-	llvm_execution_engine_t ee = make_engine_no_init(instance, program_breaks);
-
-#if DEBUG
-	{
-		const auto print_global_ptr = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(ee, "print");
-		QUARK_ASSERT(print_global_ptr != nullptr);
-
-		const auto print_f = *print_global_ptr;
-		QUARK_ASSERT(print_f != nullptr);
-		if(print_f){
-
-//			(*print_f)(&ee, 109);
-		}
-	}
-
-	{
-		auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, "floyd_runtime_init"));
-		QUARK_ASSERT(a_func != nullptr);
-	}
-#endif
-
-	const auto init_result = call_floyd_runtime_init(ee);
-	QUARK_ASSERT(init_result == 667);
-
-	check_nulls(ee, program_breaks);
-
-	return ee;
-}
-
-
-}	//	namespace floyd
-
-
-////////////////////////////////		TESTS
-
-
-
-QUARK_UNIT_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
-	const auto cu = floyd::make_compilation_unit_nolib("let int result = 1 + 2 + 3", "myfile.floyd");
-	const auto pass3 = compile_to_sematic_ast__errors(cu);
-
-	floyd::llvm_instance_t instance;
-	auto program = generate_llvm_ir_program(instance, pass3, "myfile.floyd");
-	auto ee = make_engine_run_init(instance, *program);
-
-	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(ee, "result"));
-	QUARK_ASSERT(result == 6);
-
-//	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
-}
-
-//	BROKEN!
-QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
-	const auto cu = floyd::make_compilation_unit_nolib("print(5)", "myfile.floyd");
-	const auto pass3 = compile_to_sematic_ast__errors(cu);
-
-	floyd::llvm_instance_t instance;
-	auto program = generate_llvm_ir_program(instance, pass3, "myfile.floyd");
-	auto ee = make_engine_run_init(instance, *program);
-	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"5"});
-}
+}	//	floyd

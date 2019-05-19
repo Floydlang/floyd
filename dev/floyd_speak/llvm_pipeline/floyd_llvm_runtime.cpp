@@ -16,6 +16,8 @@
 #include "host_functions.h"
 #include "file_handling.h"
 #include "os_process.h"
+#include "compiler_helpers.h"
+#include "pass3.h"
 
 #include <llvm/ADT/APInt.h>
 #include <llvm/IR/Verifier.h>
@@ -39,8 +41,6 @@
 #include <llvm/IR/DataLayout.h>
 
 #include "llvm/Bitcode/BitstreamWriter.h"
-
-
 
 #include <iostream>
 #include <fstream>
@@ -2465,7 +2465,6 @@ static std::map<std::string, value_t> run_container_int(llvm_ir_program_t& progr
 }
 
 
-//??? move make_engine_run_init() into this source file.
 
 std::map<std::string, value_t> run_llvm_container(llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args, const std::string& container_key){
 	if(container_key.empty()){
@@ -2490,4 +2489,188 @@ std::map<std::string, value_t> run_llvm_container(llvm_ir_program_t& program_bre
 
 
 
+
+#if DEBUG && 1
+//	Verify that all global functions can be accessed. If *one* is unresolved, then all return NULL!?
+void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
+	int index = 0;
+	for(const auto& e: p.debug_globals._symbols){
+		if(e.second.get_type().is_function()){
+			const auto global_var = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(ee2, e.first);
+			QUARK_ASSERT(global_var != nullptr);
+
+			const auto f = *global_var;
+//				QUARK_ASSERT(f != nullptr);
+
+			const std::string suffix = f == nullptr ? " NULL POINTER" : "";
+//			const uint64_t addr = reinterpret_cast<uint64_t>(f);
+//			QUARK_TRACE_SS(index << " " << e.first << " " << addr << suffix);
+		}
+		else{
+		}
+		index++;
+	}
+}
+#endif
+
+static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& context){
+	const auto runtime_functions = get_runtime_functions(context);
+
+	std::map<std::string, void*> runtime_functions_map;
+	for(const auto& e: runtime_functions){
+		const auto e2 = std::pair<std::string, void*>(e.name_key, e.implementation_f);
+		runtime_functions_map.insert(e2);
+	}
+	const auto host_functions_map = get_host_functions_map2();
+
+	std::map<std::string, void*> function_map = runtime_functions_map;
+	function_map.insert(host_functions_map.begin(), host_functions_map.end());
+
+	return function_map;
+}
+
+
+//??? Move init functions to runtime source file.
+//	Destroys program, can only run it once!
+llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks){
+	QUARK_ASSERT(instance.check_invariant());
+	QUARK_ASSERT(program_breaks.check_invariant());
+
+	std::string collectedErrors;
+
+	//	WARNING: Destroys p -- uses std::move().
+	llvm::ExecutionEngine* exeEng = llvm::EngineBuilder(std::move(program_breaks.module))
+		.setErrorStr(&collectedErrors)
+		.setOptLevel(llvm::CodeGenOpt::Level::None)
+		.setVerifyModules(true)
+		.setEngineKind(llvm::EngineKind::JIT)
+		.create();
+
+	if (exeEng == nullptr){
+		std::string error = "Unable to construct execution engine: " + collectedErrors;
+		perror(error.c_str());
+		throw std::exception();
+	}
+	QUARK_ASSERT(collectedErrors.empty());
+
+	const auto start_time = std::chrono::high_resolution_clock::now();
+
+	auto ee1 = std::shared_ptr<llvm::ExecutionEngine>(exeEng);
+	auto ee2 = llvm_execution_engine_t{
+		k_debug_magic,
+		&instance,
+		ee1,
+		program_breaks.type_interner,
+		program_breaks.debug_globals,
+		program_breaks.function_defs,
+		{},
+		nullptr,
+		start_time
+	};
+	QUARK_ASSERT(ee2.check_invariant());
+
+	auto function_map = register_c_functions(instance.context);
+
+	//	Resolve all unresolved functions.
+	{
+		//	https://stackoverflow.com/questions/33328562/add-mapping-to-c-lambda-from-llvm
+		auto lambda = [&](const std::string& s) -> void* {
+			QUARK_ASSERT(s.empty() == false);
+			QUARK_ASSERT(s[0] == '_');
+			const auto s2 = s.substr(1);
+
+			const auto it = function_map.find(s2);
+			if(it != function_map.end()){
+				return it->second;
+			}
+			else{
+			}
+
+			return nullptr;
+		};
+		std::function<void*(const std::string&)> on_lazy_function_creator2 = lambda;
+
+		//	NOTICE! Patch during finalizeObject() only, then restore!
+		ee2.ee->InstallLazyFunctionCreator(on_lazy_function_creator2);
+		ee2.ee->finalizeObject();
+		ee2.ee->InstallLazyFunctionCreator(nullptr);
+
+	//	ee2.ee->DisableGVCompilation(false);
+	//	ee2.ee->DisableSymbolSearching(false);
+	}
+
+	check_nulls(ee2, program_breaks);
+
+//	llvm::WriteBitcodeToFile(exeEng->getVerifyModules(), raw_ostream &Out);
+	return ee2;
+}
+
+//	Destroys program, can only run it once!
+//	Automatically runs floyd_runtime_init() to execute Floyd's global functions and initialize global constants.
+llvm_execution_engine_t make_engine_run_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks){
+	QUARK_ASSERT(instance.check_invariant());
+	QUARK_ASSERT(program_breaks.check_invariant());
+
+	llvm_execution_engine_t ee = make_engine_no_init(instance, program_breaks);
+
+#if DEBUG
+	{
+		const auto print_global_ptr = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(ee, "print");
+		QUARK_ASSERT(print_global_ptr != nullptr);
+
+		const auto print_f = *print_global_ptr;
+		QUARK_ASSERT(print_f != nullptr);
+		if(print_f){
+
+//			(*print_f)(&ee, 109);
+		}
+	}
+
+	{
+		auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, "floyd_runtime_init"));
+		QUARK_ASSERT(a_func != nullptr);
+	}
+#endif
+
+	const auto init_result = call_floyd_runtime_init(ee);
+	QUARK_ASSERT(init_result == 667);
+
+	check_nulls(ee, program_breaks);
+
+	return ee;
+}
+
 }	//	namespace floyd
+
+
+
+////////////////////////////////		TESTS
+
+
+
+QUARK_UNIT_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
+	const auto cu = floyd::make_compilation_unit_nolib("let int result = 1 + 2 + 3", "myfile.floyd");
+	const auto pass3 = compile_to_sematic_ast__errors(cu);
+
+	floyd::llvm_instance_t instance;
+	auto program = generate_llvm_ir_program(instance, pass3, "myfile.floyd");
+	auto ee = make_engine_run_init(instance, *program);
+
+	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(ee, "result"));
+	QUARK_ASSERT(result == 6);
+
+//	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
+}
+
+//	BROKEN!
+QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
+	const auto cu = floyd::make_compilation_unit_nolib("print(5)", "myfile.floyd");
+	const auto pass3 = compile_to_sematic_ast__errors(cu);
+
+	floyd::llvm_instance_t instance;
+	auto program = generate_llvm_ir_program(instance, pass3, "myfile.floyd");
+	auto ee = make_engine_run_init(instance, *program);
+	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"5"});
+}
+
+

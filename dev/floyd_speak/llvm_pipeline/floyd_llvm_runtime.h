@@ -149,6 +149,9 @@ std::map<std::string, void*> get_host_functions_map2();
 uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee);
 
 
+llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program);
+llvm_execution_engine_t make_engine_run_init(llvm_instance_t& instance, llvm_ir_program_t& program);
+
 std::map<std::string, value_t> run_llvm_container(llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args, const std::string& container_key);
 
 
