@@ -54,6 +54,24 @@ struct function_def_t {
 	function_definition_t floyd_fundef;
 };
 
+//	This header is followed by a number of uint64_t elements in the same heap block.
+//	This header represents a sharepoint of many clients and holds an RC to count clients.
+//	If you want to change the size of the allocation, allocate 0 following elements and make separate dynamic allocation and stuff its pointer into data1.
+struct heap_alloc_64_t {
+	public: virtual ~heap_alloc_64_t(){};
+
+
+	////////////////////////////////		STATE
+	uint64_t allocation_word_count;
+	uint64_t element_count;
+	int32_t rc;
+	int32_t data0;
+	uint64_t data1;
+	uint64_t data2;
+	uint64_t data3;
+	char debug_info[16];
+};
+
 
 ////////////////////////////////		llvm_execution_engine_t
 
@@ -80,6 +98,9 @@ struct llvm_execution_engine_t {
 	public: runtime_handler_i* _handler;
 
 	public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
+
+
+	public: std::vector<heap_alloc_64_t> heap_allocs;
 };
 
 

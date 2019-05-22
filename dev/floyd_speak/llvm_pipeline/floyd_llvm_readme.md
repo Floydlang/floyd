@@ -12,15 +12,37 @@ With LLVM, we also have some things to be careful about. The first is the LLVM c
 */
 
 
-
-# Return structs from functions
-
-Use 
+LLVM returning structs: only support 2 members of 64bit each.
 
 
-# DYNAMIC VALUES
+# ANY VALUES
 
 When used in function arguments, we use two uint64_t arguments, first is the value or its pointer, the second is its itype.
 
 When returning DYN from a function we always know at compile time which type so we just return the value, as a WIDE_RETURN_T. This lets us copy a lot of stuff directly in the return value.
+
+
+
+
+
+
+# FLOYD TYPES
+
+bool
+int
+double
+typeid
+
+string
+function?
+struct
+vector
+dictionary
+
+json_value
+
+
+
+??? Build thin language on top of LLVM backend. It can do more low-level types, like vector_rc[uint8]. Some are directly translated to IR, some are provided by floyd runtime, like heap allocation and RC.
+
 
