@@ -24,6 +24,88 @@ struct type_interner_t;
 
 
 
+
+
+
+////////////////////////////////		heap_t
+
+
+
+struct heap_t;
+
+static const uint64_t ALLOC_64_MAGIC = 0x0a110c64;
+
+//	This header is followed by a number of uint64_t elements in the same heap block.
+//	This header represents a sharepoint of many clients and holds an RC to count clients.
+//	If you want to change the size of the allocation, allocate 0 following elements and make separate dynamic allocation and stuff its pointer into data1.
+struct heap_alloc_64_t {
+//	public: virtual ~heap_alloc_64_t(){};
+	public: bool check_invariant() const;
+
+
+	////////////////////////////////		STATE
+	uint64_t allocation_word_count;
+	uint64_t element_count;
+	uint32_t rc;
+	uint32_t data0;
+	uint64_t data1;
+	uint64_t magic;
+	heap_t* heap64;
+	char debug_info[16];
+};
+
+struct heap_rec_t {
+	heap_alloc_64_t* alloc_ptr;
+	bool in_use;
+};
+
+static const uint64_t HEAP_MAGIC = 0xf00d1234;
+
+struct heap_t {
+	heap_t() :
+		magic(0xf00d1234)
+	{
+	}
+	~heap_t();
+	public: bool check_invariant() const;
+	public: int count_used() const;
+
+
+	////////////////////////////////		STATE
+	uint64_t magic;
+	std::vector<heap_rec_t> alloc_records;
+};
+
+/*
+	Allocates a block of data using malloc().
+
+	It consists of two parts: the header and the dynamic elements.
+
+	Header:
+		64 byte header with reference counter and possibility to store custom data.
+	Dynamic elements: N number of 8 byte elements.
+
+	Pointer is always aligned to 8 or 16 bytes.
+	Returned alloc has RC = 1
+	The allocation is recorded into the heap_t.
+	Only delete the block using release_ref(), never std::free() or c++ delete.
+
+	DEBUG VERSION: We never actually free the heap blocks, we keep them around for debugging.
+*/
+heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count);
+
+//	Returns pointer to the allocated words that sits after the
+void* get_alloc_ptr(heap_alloc_64_t& alloc);
+const void* get_alloc_ptr(const heap_alloc_64_t& alloc);
+void add_ref(heap_alloc_64_t& alloc);
+void release_ref(heap_alloc_64_t& alloc);
+
+void trace_heap(heap_t& heap);
+
+
+
+
+
 ////////////////////////////////	runtime_type_t
 
 
@@ -206,43 +288,55 @@ WIDE_RETURN_T make_wide_return_structptr(void* s);
 		calloc(alloc_count, sizeof(uint64_t))
 */
 struct VEC_T {
-	VEC_T(uint64_t allocation_count, uint64_t element_count);
 	~VEC_T();
 	bool check_invariant() const;
 
-	inline uint64_t get_element_count() const {
+	inline uint64_t get_allocation_count() const{
 		QUARK_ASSERT(check_invariant());
 
-		return element_count;
+		return alloc.allocation_word_count;
 	}
+
+	inline uint64_t get_element_count() const{
+		QUARK_ASSERT(check_invariant());
+
+		return alloc.element_count;
+	}
+
+	inline const runtime_value_t* get_element_ptr() const{
+		QUARK_ASSERT(check_invariant());
+
+		auto p = static_cast<const runtime_value_t*>(get_alloc_ptr(alloc));
+		return p;
+	}
+	inline runtime_value_t* get_element_ptr(){
+		QUARK_ASSERT(check_invariant());
+
+		auto p = static_cast<runtime_value_t*>(get_alloc_ptr(alloc));
+		return p;
+	}
+
 	inline runtime_value_t operator[](const uint64_t index) const {
 		QUARK_ASSERT(check_invariant());
 
-		return element_ptr[index];
+		auto p = static_cast<const runtime_value_t*>(get_alloc_ptr(alloc));
+		return p[index];
 	}
 
 
 	////////////////////////////////		STATE
-		runtime_value_t* element_ptr;
-
-		//	The number of uint64_t:s allocated.
-		uint64_t allocation_count;
-
-		uint32_t magic;
-
-		//	The number of elements encoded into the VEC_T.
-		uint64_t element_count;
-
-		uint32_t rc;
+	heap_alloc_64_t alloc;
 };
 
+/*
 enum class VEC_T_MEMBERS {
 	element_ptr = 0,
 	element_count = 1,
 	magic = 2,
 	element_bits = 3
 };
-
+*/
+VEC_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count);
 void vec_addref(VEC_T& vec);
 void vec_releaseref(VEC_T* vec);
 

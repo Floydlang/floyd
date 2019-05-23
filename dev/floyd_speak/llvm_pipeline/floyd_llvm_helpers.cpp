@@ -56,6 +56,182 @@ namespace floyd {
 
 
 
+
+////////////////////////////////		heap_t
+
+heap_t::~heap_t(){
+	QUARK_ASSERT(check_invariant());
+	for(const auto& e: alloc_records){
+		if(e.in_use == true){
+			QUARK_TRACE_SS("LEAKING");
+		}
+	}
+}
+
+
+
+heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count){
+	const auto header_size = sizeof(heap_alloc_64_t);
+	QUARK_ASSERT(header_size == 64);
+
+	const auto malloc_size = header_size + allocation_word_count * sizeof(uint64_t);
+	void* alloc0 = std::malloc(malloc_size);
+	if(alloc0 == nullptr){
+		throw std::exception();
+	}
+
+	auto alloc = reinterpret_cast<heap_alloc_64_t*>(alloc0);
+	alloc->allocation_word_count = allocation_word_count;
+	alloc->element_count = 0;
+	alloc->rc = 1;
+	alloc->data0 = 0;
+	alloc->data1 = 0;
+	alloc->magic = ALLOC_64_MAGIC;
+	alloc->heap64 = &heap;
+	memset(&alloc->debug_info[0], 0x00, 16);
+
+	heap.alloc_records.push_back({ alloc, true });
+
+
+	QUARK_ASSERT(alloc->check_invariant());
+	return alloc;
+}
+
+QUARK_UNIT_TEST("heap_t", "alloc_64()", "", ""){
+	heap_t heap;
+	QUARK_UT_VERIFY(heap.check_invariant());
+}
+
+QUARK_UNIT_TEST("heap_t", "alloc_64()", "", ""){
+	heap_t heap;
+	auto a = alloc_64(heap, 0);
+	QUARK_UT_VERIFY(a != nullptr);
+	QUARK_UT_VERIFY(a->check_invariant());
+	QUARK_UT_VERIFY(a->element_count == 0);
+	QUARK_UT_VERIFY(a->allocation_word_count == 0);
+	QUARK_UT_VERIFY(a->rc == 1);
+
+	//	Must release alloc or heap will detect leakage.
+	release_ref(*a);
+}
+
+QUARK_UNIT_TEST("heap_t", "add_ref()", "", ""){
+	heap_t heap;
+	auto a = alloc_64(heap, 0);
+	add_ref(*a);
+	QUARK_UT_VERIFY(a->rc == 2);
+
+	//	Must release alloc or heap will detect leakage.
+	release_ref(*a);
+	release_ref(*a);
+}
+
+QUARK_UNIT_TEST("heap_t", "release_ref()", "", ""){
+	heap_t heap;
+	auto a = alloc_64(heap, 0);
+
+	QUARK_UT_VERIFY(a->rc == 1);
+	release_ref(*a);
+	QUARK_UT_VERIFY(a->rc == 0);
+
+	const auto count = heap.count_used();
+	QUARK_UT_VERIFY(count == 0);
+}
+
+
+
+void* get_alloc_ptr(heap_alloc_64_t& alloc){
+	QUARK_ASSERT(alloc.check_invariant());
+
+	auto p = &alloc;
+	return p + 1;
+}
+const void* get_alloc_ptr(const heap_alloc_64_t& alloc){
+	QUARK_ASSERT(alloc.check_invariant());
+
+	auto p = &alloc;
+	return p + 1;
+}
+
+
+bool heap_alloc_64_t::check_invariant() const{
+	QUARK_ASSERT(magic == ALLOC_64_MAGIC);
+	QUARK_ASSERT(heap64 != nullptr);
+	QUARK_ASSERT(heap64->magic == HEAP_MAGIC);
+
+//	auto it = std::find_if(heap64->alloc_records.begin(), heap64->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == this; });
+//	QUARK_ASSERT(it != heap64->alloc_records.end());
+
+	return true;
+}
+
+void add_ref(heap_alloc_64_t& alloc){
+	QUARK_ASSERT(alloc.check_invariant());
+
+	alloc.rc++;
+}
+
+void release_ref(heap_alloc_64_t& alloc){
+	QUARK_ASSERT(alloc.check_invariant());
+
+	if(alloc.rc == 0){
+		throw std::exception();
+	}
+
+	alloc.rc--;
+
+	if(alloc.rc == 0){
+		auto it = std::find_if(alloc.heap64->alloc_records.begin(), alloc.heap64->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == &alloc; });
+		QUARK_ASSERT(it != alloc.heap64->alloc_records.end());
+
+		QUARK_ASSERT(it->in_use);
+		it->in_use = false;
+
+		//??? we don't delete the malloc() block in debug version.
+	}
+}
+
+bool heap_t::check_invariant() const{
+	for(const auto& e: alloc_records){
+		QUARK_ASSERT(e.alloc_ptr != nullptr);
+		QUARK_ASSERT(e.alloc_ptr->heap64 == this);
+		QUARK_ASSERT(e.alloc_ptr->check_invariant());
+
+		if(e.in_use){
+			QUARK_ASSERT(e.alloc_ptr->rc > 0);
+		}
+		else{
+			QUARK_ASSERT(e.alloc_ptr->rc == 0);
+		}
+	}
+	return true;
+}
+
+int heap_t::count_used() const {
+	QUARK_ASSERT(check_invariant());
+
+	int result = 0;
+	for(const auto& e: alloc_records){
+		if(e.in_use){
+			result = result + 1;
+		}
+	}
+	return result;
+}
+
+
+void trace_heap(heap_t& heap){
+	QUARK_ASSERT(heap.check_invariant());
+
+	QUARK_SCOPED_TRACE("HEAP");
+	for(int i = 0 ; i < heap.alloc_records.size() ; i++){
+		const auto& e = heap.alloc_records[i];
+
+		QUARK_TRACE_SS(i << "\t used: " << e.in_use << " element_count: " << e.alloc_ptr->element_count << " rc: " << e.alloc_ptr->rc);
+	}
+}
+
+
 ////////////////////////////////	runtime_type_t
 
 
@@ -129,13 +305,13 @@ runtime_value_t make_runtime_struct(void* struct_ptr){
 char* get_vec_chars(runtime_value_t str){
 	QUARK_ASSERT(str.vector_ptr != nullptr);
 
-	return reinterpret_cast<char*>(str.vector_ptr->element_ptr);
+	return reinterpret_cast<char*>(str.vector_ptr->get_element_ptr());
 }
 
 uint64_t get_vec_string_size(runtime_value_t str){
 	QUARK_ASSERT(str.vector_ptr != nullptr);
 
-	return str.vector_ptr->element_count;
+	return str.vector_ptr->get_element_count();
 }
 
 
@@ -472,40 +648,40 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
-VEC_T::VEC_T(uint64_t allocation_count, uint64_t element_count) :
-	element_ptr(reinterpret_cast<runtime_value_t*>(std::calloc(allocation_count, sizeof(runtime_value_t)))),
-	allocation_count(allocation_count),
-	magic(0xDABBAD0D),
-	element_count(element_count),
-	rc(1)
-{
-}
-
 VEC_T::~VEC_T(){
 	QUARK_ASSERT(check_invariant());
-	QUARK_ASSERT(rc == 0);
-	std::free(element_ptr);
-	element_ptr = nullptr;
 }
 
 bool VEC_T::check_invariant() const {
-	QUARK_ASSERT(this->element_ptr != nullptr);
-	QUARK_ASSERT(this->magic == 0xDABBAD0D);
+	QUARK_ASSERT(this->alloc.check_invariant());
 	return true;
 }
 
+VEC_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count){
+	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count);
+	alloc->element_count = element_count;
+
+	auto vec = reinterpret_cast<VEC_T*>(alloc);
+	return vec;
+}
+
 void vec_addref(VEC_T& vec){
-	vec.rc = vec.rc + 1;
+	QUARK_ASSERT(vec.check_invariant());
+
+	add_ref(vec.alloc);
+
+	QUARK_ASSERT(vec.check_invariant());
 }
 void vec_releaseref(VEC_T* vec){
-	vec->rc = vec->rc - 1;
-	if(vec->rc == 0){
-		delete vec;
-		vec = nullptr;
-	}
+	QUARK_ASSERT(vec != nullptr);
+	QUARK_ASSERT(vec->check_invariant());
+
+	release_ref(vec->alloc);
+
+	QUARK_ASSERT(vec->check_invariant());
 }
 
-
+/*
 llvm::StructType* make_vec_type(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
 		//	element_ptr
@@ -523,6 +699,23 @@ llvm::StructType* make_vec_type(llvm::LLVMContext& context){
 	llvm::StructType* s = llvm::StructType::get(context, members, false);
 	return s;
 }
+*/
+llvm::StructType* make_vec_type(llvm::LLVMContext& context){
+	std::vector<llvm::Type*> members = {
+		llvm::Type::getInt64Ty(context)->getPointerTo(),
+		llvm::Type::getInt64Ty(context)->getPointerTo(),
+		llvm::Type::getInt64Ty(context)->getPointerTo(),
+		llvm::Type::getInt64Ty(context)->getPointerTo(),
+		llvm::Type::getInt64Ty(context)->getPointerTo(),
+		llvm::Type::getInt64Ty(context)->getPointerTo(),
+		llvm::Type::getInt64Ty(context)->getPointerTo(),
+		llvm::Type::getInt64Ty(context)->getPointerTo()
+	};
+	llvm::StructType* s = llvm::StructType::get(context, members, false);
+	return s;
+}
+
+
 
 WIDE_RETURN_T make_wide_return_vec(VEC_T* vec){
 	return make_wide_return_2x64(runtime_value_t{.vector_ptr = vec}, runtime_value_t{.int_value = 0});

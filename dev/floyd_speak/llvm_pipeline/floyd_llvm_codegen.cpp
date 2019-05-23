@@ -717,6 +717,7 @@ static gen_statement_mode generate_block(llvm_code_generator_t& gen_acc, llvm::F
 	return more;
 }
 
+/*
 static llvm::Value* generate_get_vec_element_ptr(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& vec_ptr_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -730,6 +731,21 @@ static llvm::Value* generate_get_vec_element_ptr(llvm_code_generator_t& gen_acc,
 	};
 	auto uint64_array_ptr_ptr_reg = builder.CreateGEP(make_vec_type(context), &vec_ptr_reg, gep, "");
 	auto uint64_array_ptr_reg = builder.CreateLoad(uint64_array_ptr_ptr_reg);
+	return uint64_array_ptr_reg;
+}
+*/
+static llvm::Value* generate_get_vec_element_ptr(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& vec_ptr_reg){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	const auto gep = std::vector<llvm::Value*>{
+		builder.getInt32(1)
+	};
+	auto after_alloc64_ptr_reg = builder.CreateGEP(make_vec_type(context), &vec_ptr_reg, gep, "");
+	auto uint64_array_ptr_reg = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::BitCast, after_alloc64_ptr_reg, builder.getInt64Ty()->getPointerTo(), "");
 	return uint64_array_ptr_reg;
 }
 

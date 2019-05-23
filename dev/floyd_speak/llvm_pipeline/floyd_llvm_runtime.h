@@ -56,59 +56,6 @@ struct function_def_t {
 
 
 
-////////////////////////////////		heap_t
-
-
-
-struct heap_t;
-
-//	This header is followed by a number of uint64_t elements in the same heap block.
-//	This header represents a sharepoint of many clients and holds an RC to count clients.
-//	If you want to change the size of the allocation, allocate 0 following elements and make separate dynamic allocation and stuff its pointer into data1.
-struct heap_alloc_64_t {
-	public: virtual ~heap_alloc_64_t(){};
-
-
-	////////////////////////////////		STATE
-	uint64_t allocation_word_count;
-	uint64_t element_count;
-	uint32_t rc;
-	uint32_t data0;
-	uint64_t data1;
-	uint64_t data2;
-	heap_t* heap64;
-	char debug_info[16];
-};
-
-struct heap_rec_t {
-	heap_alloc_64_t* alloc_ptr;
-	bool in_use;
-};
-
-struct heap_t {
-	std::vector<heap_rec_t> alloc_records;
-};
-
-/*
-	Allocates a block of data using malloc().
-	You get a 64byte header and after the header is N 8byte elements.
-	Pointer is always aligned to 8 or 16 bytes.
-	The allocation is recorded into the heap_t.
-	Only delete the block using free_64(), never std::free() or c++ delete.
-
-	Returned alloc has RC = 1
-
-	DEBUG VERSION: We never actually free the heap blocks, we keep them around for debugging.
-*/
-heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count);
-bool check_heap_alloc(heap_alloc_64_t& alloc);
-void add_ref(heap_alloc_64_t& alloc);
-void release_ref(heap_alloc_64_t& alloc);
-
-bool check_heap(heap_t& heap);
-void trace_heap(heap_t& heap);
-
-
 
 
 
@@ -121,6 +68,7 @@ const uint64_t k_debug_magic = 0xFACEFEED05050505;
 struct llvm_execution_engine_t {
 	bool check_invariant() const {
 		QUARK_ASSERT(ee);
+		QUARK_ASSERT(heap.check_invariant());
 		return true;
 	}
 
