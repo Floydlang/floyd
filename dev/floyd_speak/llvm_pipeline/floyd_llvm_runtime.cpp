@@ -56,6 +56,70 @@ namespace floyd {
 
 
 
+////////////////////////////////		heap_t
+
+
+heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count){
+	const auto header_size = sizeof(heap_alloc_64_t);
+	QUARK_ASSERT(header_size == 64);
+
+	const auto malloc_size = header_size + allocation_word_count * sizeof(uint64_t);
+	void* alloc0 = std::malloc(malloc_size);
+	if(alloc0 == nullptr){
+		throw std::exception();
+	}
+
+	auto alloc = reinterpret_cast<heap_alloc_64_t*>(alloc0);
+	alloc->allocation_word_count = allocation_word_count;
+	alloc->element_count = 0;
+	alloc->rc = 1;
+	alloc->data0 = 0;
+	alloc->data1 = 0;
+	alloc->data2 = 0;
+	alloc->heap64 = &heap;
+	memset(&alloc->debug_info[0], 0x00, 16);
+
+	QUARK_ASSERT(check_heap_alloc(*alloc));
+	return alloc;
+}
+
+bool check_heap_alloc(heap_alloc_64_t& alloc){
+	QUARK_ASSERT(alloc.heap64 != nullptr);
+	return true;
+}
+
+void add_ref(heap_alloc_64_t& alloc){
+	QUARK_ASSERT(check_heap_alloc(alloc));
+	alloc.rc++;
+}
+
+void release_ref(heap_alloc_64_t& alloc){
+	QUARK_ASSERT(check_heap_alloc(alloc));
+	alloc.rc--;
+}
+
+bool check_heap(heap_t& heap){
+	for(const auto& e: heap.alloc_records){
+		if(e.in_use){
+			QUARK_ASSERT(e.alloc_ptr->rc > 0);
+			QUARK_ASSERT(e.alloc_ptr->heap64 == &heap);
+		}
+		else{
+			QUARK_ASSERT(e.alloc_ptr->rc == 0);
+			QUARK_ASSERT(e.alloc_ptr->heap64 == &heap);
+		}
+	}
+	return true;
+}
+
+void trace_heap(heap_t& heap){
+}
+
+
+
+
+
+
 llvm_execution_engine_t& get_floyd_runtime(void* floyd_runtime_ptr);
 
 value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type);
