@@ -38,8 +38,8 @@ enum class executor_mode {
 };
 
 
-//executor_mode g_executor = executor_mode::bc_interpreter;
-executor_mode g_executor = executor_mode::llvm_jit;
+executor_mode g_executor = executor_mode::bc_interpreter;
+//executor_mode g_executor = executor_mode::llvm_jit;
 
 
 run_report_t make_result(const value_t& result){

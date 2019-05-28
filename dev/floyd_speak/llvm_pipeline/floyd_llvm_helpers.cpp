@@ -702,14 +702,14 @@ llvm::StructType* make_vec_type(llvm::LLVMContext& context){
 */
 llvm::StructType* make_vec_type(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
-		llvm::Type::getInt64Ty(context)->getPointerTo(),
-		llvm::Type::getInt64Ty(context)->getPointerTo(),
-		llvm::Type::getInt64Ty(context)->getPointerTo(),
-		llvm::Type::getInt64Ty(context)->getPointerTo(),
-		llvm::Type::getInt64Ty(context)->getPointerTo(),
-		llvm::Type::getInt64Ty(context)->getPointerTo(),
-		llvm::Type::getInt64Ty(context)->getPointerTo(),
-		llvm::Type::getInt64Ty(context)->getPointerTo()
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context)
 	};
 	llvm::StructType* s = llvm::StructType::get(context, members, false);
 	return s;
