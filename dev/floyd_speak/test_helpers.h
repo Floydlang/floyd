@@ -20,19 +20,19 @@ namespace floyd {
 
 struct compilation_unit_t;
 
-struct run_report_t {
+struct test_report_t {
 	floyd::value_t result_variable;
 	int64_t main_result;
 	std::vector<std::string> print_out;
 	std::string exception_what;
 };
 
-run_report_t make_result(const value_t& result);
+test_report_t make_result(const value_t& result);
 
-void ut_verify(const quark::call_context_t& context, const run_report_t& result, const run_report_t& expected);
+void ut_verify(const quark::call_context_t& context, const test_report_t& result, const test_report_t& expected);
 
-run_report_t run_program(const compilation_unit_t& cu, const std::vector<std::string>& main_args);
-run_report_t run_program2(const compilation_unit_t& cu, const std::vector<std::string>& main_args, const std::string& container_key);
+test_report_t run_program(const compilation_unit_t& cu, const std::vector<std::string>& main_args);
+test_report_t run_program2(const compilation_unit_t& cu, const std::vector<std::string>& main_args, const std::string& container_key);
 
 std::map<std::string, value_t> test_run_container2(const compilation_unit_t& cu, const std::vector<std::string>& args, const std::string& container_key);
 std::map<std::string, value_t> test_run_container2(const std::string& program, const std::vector<std::string>& args, const std::string& container_key, const std::string& source_file);

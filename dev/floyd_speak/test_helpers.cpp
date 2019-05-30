@@ -43,11 +43,11 @@ enum class executor_mode {
 executor_mode g_executor = executor_mode::llvm_jit;
 
 
-run_report_t make_result(const value_t& result){
+test_report_t make_result(const value_t& result){
 	return { result, 0, {}, {} };
 }
 
-void ut_verify(const quark::call_context_t& context, const run_report_t& result, const run_report_t& expected){
+void ut_verify(const quark::call_context_t& context, const test_report_t& result, const test_report_t& expected){
 	ut_verify_values(context, result.result_variable, expected.result_variable);
 	ut_verify_auto(context, result.main_result, expected.main_result);
 	ut_verify(context, result.print_out, expected.print_out);
@@ -78,7 +78,7 @@ int64_t bc_call_main(interpreter_t& interpreter, const floyd::value_t& f, const 
 
 //??? Move to interpreter sources.
 //	Run program using Floyd bytecode interpreter
-static run_report_t run_program_bc(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
+static test_report_t run_program_bc(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
 	try {
 		const auto exe = compile_to_bytecode(cu);
 
@@ -94,7 +94,7 @@ static run_report_t run_program_bc(const compilation_unit_t& cu, const std::vect
 
 			const auto main_result_int = bc_call_main(interpreter, f, main_args);
 
-			return run_report_t{ {}, main_result_int, interpreter._print_output, "" };
+			return test_report_t{ {}, main_result_int, interpreter._print_output, "" };
 		}
 
 		value_t result_global;
@@ -104,10 +104,10 @@ static run_report_t run_program_bc(const compilation_unit_t& cu, const std::vect
 
 		print_vm_printlog(interpreter);
 
-		return run_report_t{ result_global, 0, interpreter._print_output, "" };
+		return test_report_t{ result_global, 0, interpreter._print_output, "" };
 	}
 	catch(const std::runtime_error& e){
-		return run_report_t{ {}, {}, {}, e.what() };
+		return test_report_t{ {}, {}, {}, e.what() };
 	}
 	catch(...){
 		throw std::exception();
@@ -126,7 +126,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 //??? Make abstract runtime interface to send to llvm runtime functions, not llvm_execution_engine_t.
 //??? Refact out to floyd_llvm_runtime.h
 //	Run program using LLVM.
-static run_report_t run_program_llvm(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
+static test_report_t run_program_llvm(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
 	try {
 		llvm_instance_t llvm_instance;
 
@@ -146,21 +146,21 @@ static run_report_t run_program_llvm(const compilation_unit_t& cu, const std::ve
 
 //		print_vm_printlog(interpreter);
 
-		return run_report_t{ result_global, main_result, ee._print_output, "" };
+		return test_report_t{ result_global, main_result, ee._print_output, "" };
 	}
 	catch(const std::runtime_error& e){
-		return run_report_t{ {}, {}, {}, e.what() };
+		return test_report_t{ {}, {}, {}, e.what() };
 	}
 	catch(...){
-		return run_report_t{ {}, {}, {}, "*** unknown exception***" };
+		return test_report_t{ {}, {}, {}, "*** unknown exception***" };
 	}
 }
 
-run_report_t run_program(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
+test_report_t run_program(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
 	return run_program2(cu, main_args, "");
 }
 
-run_report_t run_program2(const compilation_unit_t& cu, const std::vector<std::string>& main_args, const std::string& container_key){
+test_report_t run_program2(const compilation_unit_t& cu, const std::vector<std::string>& main_args, const std::string& container_key){
 	if(g_executor == executor_mode::bc_interpreter){
 		return run_program_bc(cu, main_args);
 	}
@@ -197,14 +197,14 @@ QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 	ut_verify(
 		QUARK_POS,
 		run_program(make_compilation_unit("print(\"Hello, world!\")", "", compilation_unit_mode::k_no_core_lib), {}),
-		run_report_t{ value_t::make_undefined(), 0, { "Hello, world!" }, ""}
+		test_report_t{ value_t::make_undefined(), 0, { "Hello, world!" }, ""}
 	);
 }
 QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 	ut_verify(
 		QUARK_POS,
 		run_program(make_compilation_unit("let result = 112", "", compilation_unit_mode::k_no_core_lib), {}),
-		run_report_t{ value_t::make_int(112), 0, {}, ""}
+		test_report_t{ value_t::make_int(112), 0, {}, ""}
 	);
 }
 QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
@@ -214,14 +214,14 @@ QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 			make_compilation_unit("func int main([string] args){ return 1003 }", "", compilation_unit_mode::k_no_core_lib),
 			{ "a", "b" }
 		),
-		run_report_t{ value_t::make_undefined(), 1003, { }, ""}
+		test_report_t{ value_t::make_undefined(), 1003, { }, ""}
 	);
 }
 QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 	ut_verify(
 		QUARK_POS,
 		run_program(make_compilation_unit("print(1) print(234)", "", compilation_unit_mode::k_no_core_lib), {}),
-		run_report_t{ value_t::make_undefined(), 0, {"1", "234" }, ""}
+		test_report_t{ value_t::make_undefined(), 0, {"1", "234" }, ""}
 	);
 }
 
