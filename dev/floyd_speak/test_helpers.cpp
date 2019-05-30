@@ -142,7 +142,9 @@ static test_report_t run_program_llvm(const compilation_unit_t& cu, const std::v
 		const auto result_global0 = bind_global(ee, "result");
 		const auto result_global = result_global0.first != nullptr ? load_global(ee, result_global0) : value_t();
 
-//		print_vm_printlog(interpreter);
+		if(ee.heap.count_leaks() > 0){
+			throw std::exception();
+		}
 
 		return test_report_t{ result_global, main_result, ee._print_output, "" };
 	}

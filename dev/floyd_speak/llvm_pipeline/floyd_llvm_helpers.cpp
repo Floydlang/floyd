@@ -59,13 +59,23 @@ namespace floyd {
 
 ////////////////////////////////		heap_t
 
-heap_t::~heap_t(){
-	QUARK_ASSERT(check_invariant());
+
+int heap_t::count_leaks() const{
+	int leak_count = 0;
+
 	for(const auto& e: alloc_records){
 		if(e.in_use == true){
+			leak_count++;
 			QUARK_TRACE_SS("LEAKING");
 		}
 	}
+	return leak_count;
+}
+
+
+heap_t::~heap_t(){
+	QUARK_ASSERT(check_invariant());
+	count_leaks();
 }
 
 
