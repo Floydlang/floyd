@@ -39,8 +39,8 @@ enum class executor_mode {
 };
 
 
-executor_mode g_executor = executor_mode::bc_interpreter;
-//executor_mode g_executor = executor_mode::llvm_jit;
+//executor_mode g_executor = executor_mode::bc_interpreter;
+executor_mode g_executor = executor_mode::llvm_jit;
 
 
 run_report_t make_result(const value_t& result){
@@ -157,6 +157,10 @@ static run_report_t run_program_llvm(const compilation_unit_t& cu, const std::ve
 }
 
 run_report_t run_program(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
+	return run_program2(cu, main_args, "");
+}
+
+run_report_t run_program2(const compilation_unit_t& cu, const std::vector<std::string>& main_args, const std::string& container_key){
 	if(g_executor == executor_mode::bc_interpreter){
 		return run_program_bc(cu, main_args);
 	}
@@ -168,24 +172,23 @@ run_report_t run_program(const compilation_unit_t& cu, const std::vector<std::st
 	}
 }
 
-std::map<std::string, value_t> test_run_container2(const std::string& program, const std::vector<std::string>& args, const std::string& container_key, const std::string& source_file){
-	const auto cu = make_compilation_unit_lib(program, source_file);
-
+std::map<std::string, value_t> test_run_container2(const compilation_unit_t& cu, const std::vector<std::string>& args, const std::string& container_key){
 	if(g_executor == executor_mode::bc_interpreter){
 		return bc_run_container2(cu, args, container_key);
 	}
 	else if(g_executor == executor_mode::llvm_jit){
 		llvm_instance_t llvm_instance;
 		auto program_breaks = compile_to_ir_helper(llvm_instance, cu);
-
-
-//	std::map<std::string, value_t> run_container(llvm_ir_program_t& program_breaks, const std::vector<floyd::value_t>& args, const std::string& container_key);
-
 		return run_llvm_container(*program_breaks, args, container_key);
 	}
 	else{
 		QUARK_ASSERT(false);
 	}
+}
+
+std::map<std::string, value_t> test_run_container2(const std::string& program, const std::vector<std::string>& args, const std::string& container_key, const std::string& source_file){
+	const auto cu = make_compilation_unit_lib(program, source_file);
+	return test_run_container2(cu, args, container_key);
 }
 
 
