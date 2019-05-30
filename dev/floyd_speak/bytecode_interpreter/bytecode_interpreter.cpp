@@ -3555,7 +3555,10 @@ std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, cons
 			it->second,
 			static_cast<int>(index)
 		};
-		return std::make_shared<value_entry_t>(value_entry);
+        QUARK_ASSERT(value_entry.check_invariant());
+		auto a = std::make_shared<value_entry_t>(value_entry);
+        QUARK_ASSERT(a->check_invariant());
+        return a;
 	}
 	else{
 		return nullptr;

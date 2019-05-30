@@ -180,7 +180,7 @@ value_t call_function(llvm_execution_engine_t& ee, llvm_bind_t& f){
 */
 
 
-int64_t call_main(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f, const std::vector<std::string>& main_args){
+int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f, const std::vector<std::string>& main_args){
 	QUARK_ASSERT(f.first != nullptr);
 
 	//??? Check this earlier.
@@ -2251,11 +2251,11 @@ uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee){
 
 
 
-//////////////////////////////////////		process_runtime_t
+//////////////////////////////////////		llvm_process_runtime_t
 
 /*
 	We use only one LLVM execution engine to run main() and all Floyd processes.
-	They each have a separate process_t-instance and their own runtime-pointer.
+	They each have a separate llvm_process_t-instance and their own runtime-pointer.
 */
 
 /*
@@ -2274,7 +2274,7 @@ struct process_interface {
 
 //	NOTICE: Each process inbox has its own mutex + condition variable.
 //	No mutex protects cout.
-struct process_t {
+struct llvm_process_t {
 	std::condition_variable _inbox_condition_variable;
 	std::mutex _inbox_mutex;
 	std::deque<json_t> _inbox;
@@ -2290,14 +2290,14 @@ struct process_t {
 	std::shared_ptr<process_interface> _processor;
 };
 
-struct process_runtime_t {
+struct llvm_process_runtime_t {
 	container_t _container;
 	std::map<std::string, std::string> _process_infos;
 	std::thread::id _main_thread_id;
 
 	llvm_execution_engine_t* ee;
 
-	std::vector<std::shared_ptr<process_t>> _processes;
+	std::vector<std::shared_ptr<llvm_process_t>> _processes;
 	std::vector<std::thread> _worker_threads;
 };
 
@@ -2306,7 +2306,7 @@ struct process_runtime_t {
 ??? Separate system-interpreter (all processes and many clock busses) vs ONE thread of execution?
 */
 
-static void send_message(process_runtime_t& runtime, int process_id, const json_t& message){
+static void send_message(llvm_process_runtime_t& runtime, int process_id, const json_t& message){
 	auto& process = *runtime._processes[process_id];
 
     {
@@ -2318,7 +2318,7 @@ static void send_message(process_runtime_t& runtime, int process_id, const json_
 //    process._inbox_condition_variable.notify_all();
 }
 
-static void run_process(process_runtime_t& runtime, int process_id){
+static void run_process(llvm_process_runtime_t& runtime, int process_id){
 	auto& process = *runtime._processes[process_id];
 	bool stop = false;
 
@@ -2388,7 +2388,7 @@ static std::map<std::string, value_t> run_container_int(llvm_ir_program_t& progr
 
 	llvm_execution_engine_t ee = make_engine_run_init(*program_breaks.instance, program_breaks);
 
-	process_runtime_t runtime;
+	llvm_process_runtime_t runtime;
 	runtime._main_thread_id = std::this_thread::get_id();
 	runtime.ee = &ee;
 
@@ -2411,17 +2411,17 @@ static std::map<std::string, value_t> run_container_int(llvm_ir_program_t& progr
 
 
 	struct my_interpreter_handler_t : public runtime_handler_i {
-		my_interpreter_handler_t(process_runtime_t& runtime) : _runtime(runtime) {}
+		my_interpreter_handler_t(llvm_process_runtime_t& runtime) : _runtime(runtime) {}
 
 		virtual void on_send(const std::string& process_id, const json_t& message){
-			const auto it = std::find_if(_runtime._processes.begin(), _runtime._processes.end(), [&](const std::shared_ptr<process_t>& process){ return process->_name_key == process_id; });
+			const auto it = std::find_if(_runtime._processes.begin(), _runtime._processes.end(), [&](const std::shared_ptr<llvm_process_t>& process){ return process->_name_key == process_id; });
 			if(it != _runtime._processes.end()){
 				const auto process_index = it - _runtime._processes.begin();
 				send_message(_runtime, static_cast<int>(process_index), message);
 			}
 		}
 
-		process_runtime_t& _runtime;
+		llvm_process_runtime_t& _runtime;
 	};
 	auto my_interpreter_handler = my_interpreter_handler_t{runtime};
 
@@ -2430,7 +2430,7 @@ static std::map<std::string, value_t> run_container_int(llvm_ir_program_t& progr
 	ee._handler = &my_interpreter_handler;
 
 	for(const auto& t: runtime._process_infos){
-		auto process = std::make_shared<process_t>();
+		auto process = std::make_shared<llvm_process_t>();
 		process->_name_key = t.first;
 		process->_function_key = t.second;
 //		process->_interpreter = std::make_shared<interpreter_t>(program, &my_interpreter_handler);
@@ -2478,7 +2478,7 @@ std::map<std::string, value_t> run_llvm_container(llvm_ir_program_t& program_bre
 
 		const auto main_function = bind_function(ee, "main");
 		if(main_function.first != nullptr){
-			const auto main_result_int = call_main(ee, main_function, main_args);
+			const auto main_result_int = llvm_call_main(ee, main_function, main_args);
 			const auto result = value_t::make_int(main_result_int);
 
 			trace_heap(ee.heap);

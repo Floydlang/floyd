@@ -345,7 +345,7 @@ struct process_interface {
 
 
 //	NOTICE: Each process inbox has its own mutex + condition variable. No mutex protects cout.
-struct process_t {
+struct bc_process_t {
 	std::condition_variable _inbox_condition_variable;
 	std::mutex _inbox_mutex;
 	std::deque<json_t> _inbox;
@@ -363,12 +363,12 @@ struct process_t {
 	std::shared_ptr<process_interface> _processor;
 };
 
-struct process_runtime_t {
+struct bc_process_runtime_t {
 	container_t _container;
 	std::map<std::string, std::string> _process_infos;
 	std::thread::id _main_thread_id;
 
-	std::vector<std::shared_ptr<process_t>> _processes;
+	std::vector<std::shared_ptr<bc_process_t>> _processes;
 	std::vector<std::thread> _worker_threads;
 };
 
@@ -377,7 +377,7 @@ struct process_runtime_t {
 ??? Separate system-interpreter (all processes and many clock busses) vs ONE thread of execution?
 */
 
-static void send_message(process_runtime_t& runtime, int process_id, const json_t& message){
+static void send_message(bc_process_runtime_t& runtime, int process_id, const json_t& message){
 	auto& process = *runtime._processes[process_id];
 
     {
@@ -389,7 +389,7 @@ static void send_message(process_runtime_t& runtime, int process_id, const json_
 //    process._inbox_condition_variable.notify_all();
 }
 
-static void process_process(process_runtime_t& runtime, int process_id){
+static void process_process(bc_process_runtime_t& runtime, int process_id){
 	auto& process = *runtime._processes[process_id];
 	bool stop = false;
 
@@ -439,7 +439,7 @@ static void process_process(process_runtime_t& runtime, int process_id){
 }
 
 static std::map<std::string, value_t> run_container_int(const bc_program_t& program, const std::vector<std::string>& args, const std::string& container_key){
-	process_runtime_t runtime;
+	bc_process_runtime_t runtime;
 	runtime._main_thread_id = std::this_thread::get_id();
 
 /*
@@ -468,23 +468,23 @@ static std::map<std::string, value_t> run_container_int(const bc_program_t& prog
 	});
 
 	struct my_interpreter_handler_t : public runtime_handler_i {
-		my_interpreter_handler_t(process_runtime_t& runtime) : _runtime(runtime) {}
+		my_interpreter_handler_t(bc_process_runtime_t& runtime) : _runtime(runtime) {}
 
 		virtual void on_send(const std::string& process_id, const json_t& message){
-			const auto it = std::find_if(_runtime._processes.begin(), _runtime._processes.end(), [&](const std::shared_ptr<process_t>& process){ return process->_name_key == process_id; });
+			const auto it = std::find_if(_runtime._processes.begin(), _runtime._processes.end(), [&](const std::shared_ptr<bc_process_t>& process){ return process->_name_key == process_id; });
 			if(it != _runtime._processes.end()){
 				const auto process_index = it - _runtime._processes.begin();
 				send_message(_runtime, static_cast<int>(process_index), message);
 			}
 		}
 
-		process_runtime_t& _runtime;
+		bc_process_runtime_t& _runtime;
 	};
 	auto my_interpreter_handler = my_interpreter_handler_t{runtime};
 
 
 	for(const auto& t: runtime._process_infos){
-		auto process = std::make_shared<process_t>();
+		auto process = std::make_shared<bc_process_t>();
 		process->_name_key = t.first;
 		process->_function_key = t.second;
 		process->_interpreter = std::make_shared<interpreter_t>(program, &my_interpreter_handler);

@@ -1348,6 +1348,14 @@ struct interpreter_imm_t {
 //	Allows the interpreter's clients to access values in the interpreter.
 
 struct value_entry_t {
+	bool check_invariant() const {
+		QUARK_ASSERT(_value.check_invariant());
+		QUARK_ASSERT(_symbol_name.empty() == false);
+		QUARK_ASSERT(_symbol.check_invariant());
+		QUARK_ASSERT(_global_index >= 0);
+		return true;
+	}
+
 	bc_value_t _value;
 	std::string _symbol_name;
 	bc_symbol_t _symbol;

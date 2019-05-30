@@ -150,7 +150,7 @@ struct llvm_bind_t {
 llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const std::string& name);
 
 
-int64_t call_main(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f, const std::vector<std::string>& main_args);
+int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f, const std::vector<std::string>& main_args);
 
 std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context);
 std::map<std::string, void*> get_host_functions_map2();

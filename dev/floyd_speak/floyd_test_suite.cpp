@@ -678,7 +678,7 @@ QUARK_UNIT_TEST("Floyd test suite", "main() - Can make and read global int", "",
 
 		)",
 		{},
-		value_t::make_int(123)
+		123
 	);
 }
 
@@ -692,8 +692,8 @@ QUARK_UNIT_TEST("Floyd test suite", "main()", "int main()", ""){
 			}
 
 		)",
-		{ value_t::make_string("a") },
-		value_t::make_int(7)
+		{ "a" },
+		7
 	);
 }
 
@@ -744,8 +744,8 @@ QUARK_UNIT_TEST("Floyd test suite", "func", "define additional function, call it
 			}
 
 		)",
-		{ value_t::make_string("dummy-arg") },
-		value_t::make_int(15)
+		{ "dummy-arg" },
+		15
 	);
 }
 
@@ -4739,7 +4739,6 @@ QUARK_UNIT_TEST("", "try calling LLVM function", "", ""){
 }
 #endif
 
-
 QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 	const auto test_ss2 = R"(
 
@@ -4795,7 +4794,6 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 	const auto result = test_run_container2(test_ss2, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
-
 
 QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 	const auto test_ss3 = R"(

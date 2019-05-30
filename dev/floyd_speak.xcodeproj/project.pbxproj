@@ -10,9 +10,8 @@
 		2C00BC421F2428FF0087B8BB /* cpp_experiments.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00BC411F2428FF0087B8BB /* cpp_experiments.cpp */; };
 		2C00DEC822198C6300DB322E /* floyd_runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C00DEC622198C6300DB322E /* floyd_runtime.cpp */; };
 		2C02667C2014CAF000A82AD6 /* floyd_test_suite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */; };
-		2C0939612245023700383AA9 /* fibonacci_loop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C09395F2245023700383AA9 /* fibonacci_loop.cpp */; };
-		2C0939622245023700383AA9 /* fibonacci_recursive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C0939602245023700383AA9 /* fibonacci_recursive.cpp */; };
-		2C0D8639224561240057CDDE /* libLLVM.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C0D8638224561240057CDDE /* libLLVM.dylib */; };
+		2C13DBE422A00EE100C1A54B /* libLLVM.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C13DBE322A00EE100C1A54B /* libLLVM.dylib */; };
+		2C13DBE522A00EE100C1A54B /* libLLVM.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C13DBE322A00EE100C1A54B /* libLLVM.dylib */; };
 		2C18044B208B90E900F62480 /* utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180448208B90E800F62480 /* utils.cpp */; };
 		2C18044D208B90E900F62480 /* text_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C18044A208B90E800F62480 /* text_parser.cpp */; };
 		2C180455208B911B00F62480 /* quark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C180454208B911A00F62480 /* quark.cpp */; };
@@ -156,9 +155,7 @@
 		2C00DEC722198C6300DB322E /* floyd_runtime.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_runtime.h; sourceTree = "<group>"; };
 		2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_test_suite.cpp; sourceTree = "<group>"; };
 		2C02667B2014CAF000A82AD6 /* floyd_test_suite.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_test_suite.h; sourceTree = "<group>"; };
-		2C09395F2245023700383AA9 /* fibonacci_loop.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fibonacci_loop.cpp; sourceTree = "<group>"; };
-		2C0939602245023700383AA9 /* fibonacci_recursive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fibonacci_recursive.cpp; sourceTree = "<group>"; };
-		2C0D8638224561240057CDDE /* libLLVM.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libLLVM.dylib; path = ../../../../../../usr/local/Cellar/llvm/8.0.0/lib/libLLVM.dylib; sourceTree = "<group>"; };
+		2C13DBE322A00EE100C1A54B /* libLLVM.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libLLVM.dylib; path = ../../../../../usr/local/Cellar/llvm/8.0.0_1/lib/libLLVM.dylib; sourceTree = "<group>"; };
 		2C180447208B90E800F62480 /* text_parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = text_parser.h; sourceTree = "<group>"; };
 		2C180448208B90E800F62480 /* utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = utils.cpp; sourceTree = "<group>"; };
 		2C180449208B90E800F62480 /* utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = utils.h; sourceTree = "<group>"; };
@@ -588,7 +585,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2C530C3021EDF23F00F962FB /* CoreFoundation.framework in Frameworks */,
-				2C0D8639224561240057CDDE /* libLLVM.dylib in Frameworks */,
+				2C13DBE422A00EE100C1A54B /* libLLVM.dylib in Frameworks */,
 				2C64578F2021E32E003625C8 /* libedit.tbd in Frameworks */,
 				2C530C3121EE0D0300F962FB /* libncurses.tbd in Frameworks */,
 			);
@@ -599,6 +596,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2C8C03F02221DBD70085EBBE /* CoreFoundation.framework in Frameworks */,
+				2C13DBE522A00EE100C1A54B /* libLLVM.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -627,8 +625,6 @@
 		2C09395E2245022600383AA9 /* llvm_pipeline */ = {
 			isa = PBXGroup;
 			children = (
-				2C09395F2245023700383AA9 /* fibonacci_loop.cpp */,
-				2C0939602245023700383AA9 /* fibonacci_recursive.cpp */,
 				2C5F8320224644FB009870FC /* floyd_llvm_codegen.cpp */,
 				2C5F8321224644FB009870FC /* floyd_llvm_codegen.h */,
 				2C3DE25422665E7E00807701 /* floyd_llvm_helpers.cpp */,
@@ -1393,7 +1389,7 @@
 		2CBF330B202143BC0030AE98 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				2C0D8638224561240057CDDE /* libLLVM.dylib */,
+				2C13DBE322A00EE100C1A54B /* libLLVM.dylib */,
 				2C530C2E21EA1DBE00F962FB /* CoreFoundation.framework */,
 				2C64578E2021E32E003625C8 /* libedit.tbd */,
 				2CBF330C202143BD0030AE98 /* libncurses.tbd */,
@@ -1506,7 +1502,6 @@
 				2CBCA7DF1D569E07000FAE81 /* sha1.cpp in Sources */,
 				2CEB57472071069B0005AC7A /* benchmark_basics.cpp in Sources */,
 				2CC0B3E022248E3E00C9D584 /* issue_regression_tests.cpp in Sources */,
-				2C0939622245023700383AA9 /* fibonacci_recursive.cpp in Sources */,
 				2CEB5745207106560005AC7A /* game_of_life.cpp in Sources */,
 				2C8C03A02221D95F0085EBBE /* benchmark_runner.cc in Sources */,
 				2C180494208B947C00F62480 /* statement.cpp in Sources */,
@@ -1539,7 +1534,6 @@
 				2C4574D522493DA2008A55B0 /* compiler_helpers.cpp in Sources */,
 				2C8C039B2221D90A0085EBBE /* gtest-all.cc in Sources */,
 				2C00BC421F2428FF0087B8BB /* cpp_experiments.cpp in Sources */,
-				2C0939612245023700383AA9 /* fibonacci_loop.cpp in Sources */,
 				2CB2A512203C4AA80001A19E /* interpretator_benchmark.cpp in Sources */,
 				2C8C03AF2221D9990085EBBE /* benchmark.cc in Sources */,
 				2C36C083221DF09E00CAFEF4 /* test_main.floyd in Sources */,
@@ -1652,7 +1646,7 @@
 				);
 				LLVM_LTO = YES;
 				SDKROOT = macosx;
-				SYSTEM_HEADER_SEARCH_PATHS = "/usr/local/Cellar/llvm/7.0.1/include /usr/local/Cellar/zlib/1.2.11/include";
+				SYSTEM_HEADER_SEARCH_PATHS = "/usr/local/Cellar/zlib/1.2.11/include /usr/local/Cellar/llvm/8.0.0_1/include";
 			};
 			name = "Release - Profiling";
 		};
@@ -1661,11 +1655,9 @@
 			buildSettings = {
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/Cellar/llvm/7.0.1/lib,
-					/usr/local/Cellar/llvm/8.0.0/lib,
+					/usr/local/Cellar/llvm/8.0.0_1/lib,
 				);
 				PRODUCT_NAME = floyd;
-				SYSTEM_HEADER_SEARCH_PATHS = "/usr/local/Cellar/llvm/8.0.0/include /usr/local/Cellar/zlib/1.2.11/include";
 			};
 			name = "Release - Profiling";
 		};
@@ -1727,7 +1719,7 @@
 				);
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
-				SYSTEM_HEADER_SEARCH_PATHS = "/usr/local/Cellar/llvm/7.0.1/include /usr/local/Cellar/zlib/1.2.11/include";
+				SYSTEM_HEADER_SEARCH_PATHS = "/usr/local/Cellar/zlib/1.2.11/include /usr/local/Cellar/llvm/8.0.0_1/include";
 			};
 			name = Debug;
 		};
@@ -1789,7 +1781,7 @@
 				);
 				LLVM_LTO = YES;
 				SDKROOT = macosx;
-				SYSTEM_HEADER_SEARCH_PATHS = "/usr/local/Cellar/llvm/7.0.1/include /usr/local/Cellar/zlib/1.2.11/include";
+				SYSTEM_HEADER_SEARCH_PATHS = "/usr/local/Cellar/zlib/1.2.11/include /usr/local/Cellar/llvm/8.0.0_1/include";
 			};
 			name = Release;
 		};
@@ -1798,11 +1790,9 @@
 			buildSettings = {
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/Cellar/llvm/7.0.1/lib,
-					/usr/local/Cellar/llvm/8.0.0/lib,
+					/usr/local/Cellar/llvm/8.0.0_1/lib,
 				);
 				PRODUCT_NAME = floyd;
-				SYSTEM_HEADER_SEARCH_PATHS = "/usr/local/Cellar/llvm/8.0.0/include /usr/local/Cellar/zlib/1.2.11/include";
 			};
 			name = Debug;
 		};
@@ -1811,17 +1801,19 @@
 			buildSettings = {
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/Cellar/llvm/7.0.1/lib,
-					/usr/local/Cellar/llvm/8.0.0/lib,
+					/usr/local/Cellar/llvm/8.0.0_1/lib,
 				);
 				PRODUCT_NAME = floyd;
-				SYSTEM_HEADER_SEARCH_PATHS = "/usr/local/Cellar/llvm/8.0.0/include /usr/local/Cellar/zlib/1.2.11/include";
 			};
 			name = Release;
 		};
 		2C8C03FC2221DBD70085EBBE /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/llvm/8.0.0_1/lib,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1829,6 +1821,10 @@
 		2C8C03FD2221DBD70085EBBE /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/llvm/8.0.0_1/lib,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -1836,6 +1832,10 @@
 		2C8C03FE2221DBD70085EBBE /* Release - Profiling */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/llvm/8.0.0_1/lib,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Release - Profiling";
