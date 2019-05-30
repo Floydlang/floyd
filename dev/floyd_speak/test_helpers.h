@@ -57,7 +57,6 @@ inline void ut_verify_mainfunc_return_nolib(const quark::call_context_t& context
 
 void ut_verify_exception(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::string& expected_what);
 
-
-}
+} // floyd
 
 #endif /* test_helpers_hpp */
