@@ -130,10 +130,8 @@ static test_report_t run_program_llvm(const compilation_unit_t& cu, const std::v
 	try {
 		llvm_instance_t llvm_instance;
 
-		const auto file = "test567.floyd";
 		const auto pass3 = compile_to_sematic_ast__errors(cu);
-		auto exe = generate_llvm_ir_program(llvm_instance, pass3, file);
-
+		auto exe = generate_llvm_ir_program(llvm_instance, pass3, cu.source_file_path);
 
 		//	Runs global init code.
 		auto ee = make_engine_run_init(llvm_instance, *exe);
@@ -306,4 +304,4 @@ void ut_verify_exception(const quark::call_context_t& context, const std::string
 
 
 
-}
+} // floyd
