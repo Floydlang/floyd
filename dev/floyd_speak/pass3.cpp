@@ -513,8 +513,7 @@ std::pair<analyser_t, body_t > analyse_body(const analyser_t& a, const floyd::bo
 }
 
 /*
-	- Can update an existing local (if local is mutable).
-	- Can implicitly create a new local
+	Can update an existing local (if local is mutable).
 */
 std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& a, const statement_t& s){
 	QUARK_ASSERT(a.check_invariant());
@@ -549,15 +548,11 @@ std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& a, 
 		}
 	}
 
-	//	Bind new value -- infer type.
+	//	Unknown identifier in lexical scope path.
 	else{
-		const auto rhs_expr2 = analyse_expression_no_target(a_acc, s, statement._expression);
-		a_acc = rhs_expr2.first;
-		const auto rhs_expr2_type = rhs_expr2.second.get_output_type();
-
-		a_acc._lexical_scope_stack.back().symbols._symbols.push_back({local_name, symbol_t::make_immutable_local(rhs_expr2_type)});
-		int variable_index = (int)(a_acc._lexical_scope_stack.back().symbols._symbols.size() - 1);
-		return { a_acc, statement_t::make__store2(s.location, floyd::variable_address_t::make_variable_address(0, variable_index), rhs_expr2.second) };
+		std::stringstream what;
+		what << "Unknown identifier '" << local_name << "'.";
+		throw_compiler_error(s.location, what.str());
 	}
 }
 

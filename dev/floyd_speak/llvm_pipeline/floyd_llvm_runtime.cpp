@@ -2482,9 +2482,11 @@ std::map<std::string, value_t> run_llvm_container(llvm_ir_program_t& program_bre
 			const auto result = value_t::make_int(main_result_int);
 
 			trace_heap(ee.heap);
+#if 0
 			if(ee.heap.count_leaks() > 0){
 				throw std::exception();
 			}
+#endif
 
 			return {{ "main()", result }};
 		}

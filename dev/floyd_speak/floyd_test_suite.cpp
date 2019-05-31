@@ -136,6 +136,17 @@ QUARK_UNIT_TEST("Floyd test suite", "Define variable", "Error: assign to immutab
 	);
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "Define variable", "Error: assign to unknown local", "exception"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			a = 10
+
+		)",
+		"Unknown identifier 'a'. Line: 3 \"a = 10\""
+	);
+}
 
 
 //////////////////////////////////////////		BASIC EXPRESSIONS, SIMPLE TYPES
@@ -711,7 +722,7 @@ QUARK_UNIT_TEST("Floyd test suite", "func", "Simplest func", ""){
 			func int f(){
 				return 1000;
 			}
-			result = f()
+			let result = f()
 
 		)",
 		value_t::make_int(1000)
@@ -726,7 +737,7 @@ QUARK_UNIT_TEST("Floyd test suite", "func", "Function with int argument", ""){
 			func int f(int a){
 				return a + 1;
 			}
-			result = f(1000)
+			let result = f(1000)
 
 		)",
 		value_t::make_int(1001)
@@ -2132,7 +2143,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string size()", "Embeded null characters - 
 QUARK_UNIT_TEST("Floyd test suite", "string push_back()", "", ""){
 	run_closed(R"(
 
-		a = push_back("one", 111)
+		let a = push_back("one", 111)
 		assert(a == "oneo")
 
 	)");
@@ -2141,7 +2152,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string push_back()", "", ""){
 QUARK_UNIT_TEST("Floyd test suite", "string update()", "", ""){
 	run_closed(R"(
 
-		a = update("hello", 1, 98)
+		let a = update("hello", 1, 98)
 		assert(a == "hbllo")
 
 	)");
@@ -2151,7 +2162,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string update()", "error: pos > len", "exce
 		QUARK_POS,
 		R"(
 
-			a = update("hello", 5, 98)
+			let a = update("hello", 5, 98)
 
 		)",
 		"Position argument to update() is outside collection span."
@@ -2447,8 +2458,8 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] update()", "", "valid vecto
 		QUARK_POS,
 		R"(
 
-			a = [ "one", "two", "three"]
-			b = update(a, 1, "zwei")
+			let a = [ "one", "two", "three"]
+			let b = update(a, 1, "zwei")
 			print(a)
 			print(b)
 			assert(a == ["one","two","three"])
@@ -2534,7 +2545,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [bool] construct-expression", "", ""
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] result = [true, false, true]		)",				R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [bool] =", "copy", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let a = [true, false, true] result = a		)",				R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let a = [true, false, true] let result = a		)",				R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [bool] ==", "same values", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [true, false] == [true, false]		)",			R"(		[ "^bool", true]		)" );
@@ -2556,11 +2567,11 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [bool] +", "non-empty vectors", ""){
 //???	update()		-- string, vector, dict
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [bool] size()", "empty", "0"){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] a = [] result = size(a)		)",					R"(		[ "^int", 0]		)");
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] a = [] let result = size(a)		)",					R"(		[ "^int", 0]		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [bool] size()", "2", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] a = [true, false, true] result = size(a)		)", R"(		[ "^int", 3]		)");
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] a = [true, false, true] let result = size(a)		)", R"(		[ "^int", 3]		)");
 }
 
 //??? find()
@@ -2606,7 +2617,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] [] lookup", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] =", "copy", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let a = [10, 20, 30] result = a;		)",	R"(		[[ "vector", "^int" ], [10, 20, 30]]		)"	);
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let a = [10, 20, 30] let result = a;		)",	R"(		[[ "vector", "^int" ], [10, 20, 30]]		)"	);
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] ==", "same values", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1, 2] == [1, 2]		)",		R"(		[ "^bool", true]		)");
@@ -2630,10 +2641,10 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [int] +", "non-empty vectors", ""){
 //???	update()		-- string, vector, dict
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] size()", "empty", "0"){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [int] a = [] result = size(a)		)",	R"(		[ "^int", 0]		)");
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [int] a = [] let result = size(a)		)",	R"(		[ "^int", 0]		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] size()", "2", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [int] a = [1, 2, 3] result = size(a)		)",		R"(		[ "^int", 3]		)");
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [int] a = [1, 2, 3] let result = size(a)		)",		R"(		[ "^int", 3]		)");
 }
 
 
@@ -2669,7 +2680,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
 	run_closed(R"(		assert(subset([10,20,30], 1, 3) == [20,30])		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
-	run_closed(R"(		result = (subset([10,20,30], 0, 0) == [])		)");
+	run_closed(R"(		let result = (subset([10,20,30], 0, 0) == [])		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
 	run_closed(R"(		assert(subset([10,20,30], 0, 0) == [])		)");
@@ -2724,7 +2735,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector", "Error: Lookup the unlookupable", 
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [double] =", "copy", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let a = [10.5, 20.5, 30.5] result = a		)",	R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)");
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let a = [10.5, 20.5, 30.5] let result = a		)",	R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [double] ==", "same values", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] == [1.5, 2.5]		)",	R"(		[ "^bool", true]		)");
@@ -2747,10 +2758,10 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [double] +", "non-empty vectors", ""
 //???	update()		-- string, vector, dict
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [double] size()", "empty", "0"){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] a = [] result = size(a)		)",	R"(		[ "^int", 0]		)");
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] a = [] let result = size(a)		)",	R"(		[ "^int", 0]		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [double] size()", "2", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] a = [1.5, 2.5, 3.5] result = size(a)		)",	R"(		[ "^int", 3]		)");
+	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] a = [1.5, 2.5, 3.5] let result = size(a)		)",	R"(		[ "^int", 3]		)");
 }
 
 //???	find()			-- string/vector. ??? dict?
@@ -3655,7 +3666,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "DOCUMENTATION SNIPPET", 
 	run_closed(R"___(
 
 		func string get_name(json_value value){
-			t = get_json_type(value)
+			let t = get_json_type(value)
 			if(t == json_object){
 				return "json_object"
 			}
@@ -3990,7 +4001,7 @@ QUARK_UNIT_TEST("Floyd test suite", "", "pixel_t()", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 
-		"struct pixel_t { int red int green int blue } result = pixel_t(1,2,3)",
+		"struct pixel_t { int red int green int blue } let result = pixel_t(1,2,3)",
 
 		value_t::make_struct_value(
 			typeid_t::make_struct2(pixel_t__def),
@@ -4023,7 +4034,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
 			b = b + 1
 			t = push_back(t, b)
 		}
-		end = get_time_of_day()
+		let end = get_time_of_day()
 //		print("Duration: " + to_string(end - start) + ", number = " + to_string(b))
 //		print(t)
 

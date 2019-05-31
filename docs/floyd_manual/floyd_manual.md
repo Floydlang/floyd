@@ -922,7 +922,7 @@ let hello = "Greeting message."
 
 | let pixel x = 20 |
 | let int x = {"a": 1, "b": 2} |
-| let  int x = 10 |
+| let int x = 10 |
 | let int (string a) x = f(4 == 5) |
 
 
