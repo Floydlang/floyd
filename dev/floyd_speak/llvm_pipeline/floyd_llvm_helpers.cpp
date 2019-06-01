@@ -1284,6 +1284,10 @@ llvm::StructType* make_struct_type(const llvm_type_interner_t& interner, const t
 
 
 
+bool is_rc_value(const typeid_t& type){
+//	return type.is_string() || type.is_vector() || type.is_dict() || type.is_struct() || type.is_json_value();
+	return type.is_string() || type.is_vector();
+}
 
 
 

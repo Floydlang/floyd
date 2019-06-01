@@ -471,6 +471,9 @@ llvm::Type* make_function_type(const llvm_type_interner_t& interner, const typei
 llvm::StructType* make_struct_type(const llvm_type_interner_t& interner, const typeid_t& type);
 
 
+bool is_rc_value(const typeid_t& type);
+
+
 /*
 	floyd			C++			runtime_value_t			native func arg/return
 	--------------------------------------------------------------------------------------------------------------------

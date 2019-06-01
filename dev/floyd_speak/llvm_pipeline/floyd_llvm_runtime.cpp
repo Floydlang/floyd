@@ -569,20 +569,29 @@ std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value_t arg_
 ////////////////////////////////		addref()
 
 
-void floyd_runtime__addref(void* floyd_runtime_ptr, runtime_value_t arg0, runtime_type_t type0){
+void fr_rc_retain(void* floyd_runtime_ptr, runtime_value_t arg0, runtime_type_t type0){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type = lookup_type(r.type_interner.interner, type0);
+	QUARK_ASSERT(is_rc_value(type));
+
 	if(type.is_string() || type.is_vector()){
 		QUARK_ASSERT(arg0.vector_ptr != nullptr);
 
 		vec_addref(*arg0.vector_ptr);
 	}
+	else if(type.is_dict()){
+	}
+	else if(type.is_struct()){
+	}
+	else if(type.is_json_value()){
+	}
 	else{
+		NOT_IMPLEMENTED_YET();
 	}
 }
 
-host_func_t floyd_runtime__addref__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
+host_func_t fr_rc_retain__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
@@ -592,7 +601,7 @@ host_func_t floyd_runtime__addref__make(llvm::LLVMContext& context, const llvm_t
 		},
 		false
 	);
-	return { "floyd_runtime__addref", function_type, reinterpret_cast<void*>(floyd_runtime__addref) };
+	return { "fr_rc_retain", function_type, reinterpret_cast<void*>(fr_rc_retain) };
 }
 
 
@@ -600,20 +609,29 @@ host_func_t floyd_runtime__addref__make(llvm::LLVMContext& context, const llvm_t
 ////////////////////////////////		releaseref()
 
 
-void floyd_runtime__releaseref(void* floyd_runtime_ptr, runtime_value_t arg0, runtime_type_t type0){
+void fr_rc_release(void* floyd_runtime_ptr, runtime_value_t arg0, runtime_type_t type0){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type = lookup_type(r.type_interner.interner, type0);
+	QUARK_ASSERT(is_rc_value(type));
+
 	if(type.is_string() || type.is_vector()){
 		QUARK_ASSERT(arg0.vector_ptr != nullptr);
 
-//		vec_releaseref(arg0.vector_ptr);
+		vec_releaseref(arg0.vector_ptr);
+	}
+	else if(type.is_dict()){
+	}
+	else if(type.is_struct()){
+	}
+	else if(type.is_json_value()){
 	}
 	else{
+		NOT_IMPLEMENTED_YET();
 	}
 }
 
-host_func_t floyd_runtime__releaseref__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
+host_func_t fr_rc_release__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
@@ -623,7 +641,7 @@ host_func_t floyd_runtime__releaseref__make(llvm::LLVMContext& context, const ll
 		},
 		false
 	);
-	return { "floyd_runtime__releaseref", function_type, reinterpret_cast<void*>(floyd_runtime__releaseref) };
+	return { "fr_rc_release", function_type, reinterpret_cast<void*>(fr_rc_release) };
 }
 
 
@@ -1058,8 +1076,8 @@ host_func_t floyd_runtime__compare_values__make(llvm::LLVMContext& context, cons
 
 std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	std::vector<host_func_t> result = {
-		floyd_runtime__addref__make(context, interner),
-		floyd_runtime__releaseref__make(context, interner),
+		fr_rc_retain__make(context, interner),
+		fr_rc_release__make(context, interner),
 
 		floyd_runtime__allocate_memory__make(context, interner),
 

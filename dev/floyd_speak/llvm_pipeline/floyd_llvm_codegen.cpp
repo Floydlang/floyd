@@ -296,8 +296,8 @@ void generate_addref(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llv
 	QUARK_ASSERT(type.check_invariant());
 
 	auto& builder = gen_acc.builder;
-	if(type.is_string() || type.is_vector()){
-		const auto f = find_function_def(gen_acc, "floyd_runtime__addref");
+	if(is_rc_value(type)){
+		const auto f = find_function_def(gen_acc, "fr_rc_retain");
 		std::vector<llvm::Value*> args = {
 			get_callers_fcp(emit_f),
 			generate_itype_constant(gen_acc, type),
@@ -308,14 +308,14 @@ void generate_addref(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llv
 	else{
 	}
 }
-void generate_releaseref(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& value_reg, const typeid_t& type){
+void generate_rc_release(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& value_reg, const typeid_t& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 	QUARK_ASSERT(type.check_invariant());
 
 	auto& builder = gen_acc.builder;
-	if(type.is_string() || type.is_vector()){
-		const auto f = find_function_def(gen_acc, "floyd_runtime__releaseref");
+	if(is_rc_value(type)){
+		const auto f = find_function_def(gen_acc, "fr_rc_release");
 		std::vector<llvm::Value*> args = {
 			get_callers_fcp(emit_f),
 
@@ -960,8 +960,8 @@ static llvm::Value* generate_arithmetic_expression(llvm_code_generator_t& gen_ac
 			rhs_temp
 		};
 		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "concatunate_vectors");
-		generate_releaseref(gen_acc, emit_f, *lhs_temp, *details.lhs->_output_type);
-		generate_releaseref(gen_acc, emit_f, *rhs_temp, *details.rhs->_output_type);
+		generate_rc_release(gen_acc, emit_f, *lhs_temp, *details.lhs->_output_type);
+		generate_rc_release(gen_acc, emit_f, *rhs_temp, *details.rhs->_output_type);
 		return result;
 	}
 	else{
@@ -1066,8 +1066,8 @@ static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_ac
 	}
 	else if(type.is_string() || type.is_vector()){
 		auto result = generate_compare_values(gen_acc, emit_f, details.op, type, *lhs_temp, *rhs_temp);
-		generate_releaseref(gen_acc, emit_f, *lhs_temp, *details.lhs->_output_type);
-		generate_releaseref(gen_acc, emit_f, *rhs_temp, *details.rhs->_output_type);
+		generate_rc_release(gen_acc, emit_f, *lhs_temp, *details.lhs->_output_type);
+		generate_rc_release(gen_acc, emit_f, *rhs_temp, *details.rhs->_output_type);
 		return result;
 	}
 	else if(type.is_dict()){
@@ -1229,7 +1229,7 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 	auto result0 = builder.CreateCall(callee0_reg, arg_regs, callee_function_type.get_function_return().is_void() ? "" : "call_result");
 
 	for(const auto& m: destroy){
-		generate_releaseref(gen_acc, emit_f, *m.first, m.second);
+		generate_rc_release(gen_acc, emit_f, *m.first, m.second);
 	}
 
 	//	If the return type is dynamic, cast the returned int64 to the correct type.
@@ -2230,9 +2230,11 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const bo
 		for(const auto& e: gen_acc.scope_path.front()){
 			if(e.symtype == resolved_symbol_t::esymtype::k_global || e.symtype == resolved_symbol_t::esymtype::k_local){
 				const auto type = e.symbol.get_type();
-				if(type.is_string() || type.is_vector()){
+				if(is_rc_value(type)){
 					auto reg = builder.CreateLoad(e.value_ptr);
-					generate_releaseref(gen_acc, emit_f, *reg, type);
+					generate_rc_release(gen_acc, emit_f, *reg, type);
+				}
+				else{
 				}
 			}
 		}
