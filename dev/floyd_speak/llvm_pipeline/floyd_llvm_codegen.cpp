@@ -369,7 +369,7 @@ static llvm::Value* generate_alloc_vec(llvm_code_generator_t& gen_acc, llvm::Fun
 		get_callers_fcp(emit_f),
 		element_count_reg
 	};
-	return builder.CreateCall(f.llvm_f, args2, "allocate_vector:" + debug);
+	return builder.CreateCall(f.llvm_f, args2, "");
 }
 
 //	Allocates a new string with the contents of a 8bit string.
@@ -728,23 +728,6 @@ static gen_statement_mode generate_block(llvm_code_generator_t& gen_acc, llvm::F
 	return more;
 }
 
-/*
-static llvm::Value* generate_get_vec_element_ptr(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& vec_ptr_reg){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(check_emitting_function(emit_f));
-
-	auto& context = gen_acc.instance->context;
-	auto& builder = gen_acc.builder;
-
-	const auto gep = std::vector<llvm::Value*>{
-		builder.getInt32(0),
-		builder.getInt32(static_cast<int32_t>(VEC_T_MEMBERS::element_ptr)),
-	};
-	auto uint64_array_ptr_ptr_reg = builder.CreateGEP(make_vec_type(context), &vec_ptr_reg, gep, "");
-	auto uint64_array_ptr_reg = builder.CreateLoad(uint64_array_ptr_ptr_reg);
-	return uint64_array_ptr_reg;
-}
-*/
 static llvm::Value* generate_get_vec_element_ptr(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& vec_ptr_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -1344,11 +1327,12 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 
 	if(target_type.is_vector()){
 		const auto element_type0 = target_type.get_vector_element_type();
+		auto& element_type1 = *intern_type(gen_acc.interner, element_type0);
 
 		auto vec_ptr_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
 		auto uint64_array_ptr_reg = generate_get_vec_element_ptr(gen_acc, emit_f, *vec_ptr_reg);
 
-		//??? support all types of elements.
+		//??? support all types of elements. Use std::visit().
 		if(element_type0.is_bool()){
 			//	Each element is a uint64_t ???
 			auto element_type = llvm::Type::getInt64Ty(context);
@@ -1363,80 +1347,29 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 				element_index++;
 			}
 			return vec_ptr_reg;
-
-/*
-			//	Store 64 bits per uint64_t.
-			const auto input_element_count = caller_arg_count;
-
-			//	Each element is a bit, packed into the 64bit elements of VEC_T.
-			auto output_element_count = (input_element_count / 64) + ((input_element_count & 63) ? 1 : 0);
-			auto vec_value = generate_alloc_vec(gen_acc, 1, output_element_count, "[bool]");
-
-			auto uint64_array_ptr_reg = builder.CreateExtractValue(vec_value, { (int)VEC_T_MEMBERS::array_ptr_reg });
-
-			//	Evaluate each element and store it directly into the the vector.
-			auto buffer_word = builder.CreateAlloca(gen_acc.builder.getInt64Ty());
-			auto zero = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 0);
-			auto one = llvm::ConstantInt::get(gen_acc.builder.getInt64Ty(), 1);
-
-			int input_element_index = 0;
-			int output_element_index = 0;
-			while(input_element_index < input_element_count){
-				//	Clear 64-bit word.
-				builder.CreateStore(zero, buffer_word);
-
-				const auto batch_size = std::min(input_element_count, (size_t)64);
-				for(int i = 0 ; i < batch_size ; i++){
-					auto arg_value = generate_expression(gen_acc, emit_f, details.elements[input_element_index]);
-					auto arg32_value = builder.CreateZExt(arg_value, gen_acc.builder.getInt64Ty());
-
-					//	Store the bool into the buffer_word 64bit word at the correct bit position.
-					auto bit_value = builder.CreateShl(arg32_value, one);
-					auto word1 = builder.CreateLoad(buffer_word);
-					auto word2 = builder.CreateOr(word1, bit_value);
-					builder.CreateStore(word2, buffer_word);
-
-					input_element_index++;
-				}
-
-				//	Store the 64-bit word to the VEC_T.
-				auto word_out = builder.CreateLoad(buffer_word);
-
-				auto output_element_index_value = generate_constant(gen_acc, value_t::make_int(output_element_index));
-				const auto gep_index_list2 = std::vector<llvm::Value*>{ output_element_index_value };
-				llvm::Value* e_addr = builder.CreateGEP(gen_acc.builder.getInt64Ty(), uint64_array_ptr_reg, gep_index_list2, "");
-				builder.CreateStore(word_out, e_addr);
-
-				output_element_index++;
-			}
-			return vec_value;
-		}
-*/
 		}
 		else if(element_type0.is_string()){
-			//	Each string element is a char*.
-			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *intern_type(gen_acc.interner, element_type0), details.elements);
+			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, element_type1, details.elements);
 			return vec_ptr_reg;
 		}
 		else if(element_type0.is_json_value()){
-			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *intern_type(gen_acc.interner, element_type0), details.elements);
+			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, element_type1, details.elements);
 			return vec_ptr_reg;
 		}
 		else if(element_type0.is_struct()){
-			//	Structs are stored as pointer-to-struct in the vector elements.
-			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *intern_type(gen_acc.interner, element_type0), details.elements);
+			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, element_type1, details.elements);
 			return vec_ptr_reg;
 		}
 		else if(element_type0.is_int()){
-			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *intern_type(gen_acc.interner, element_type0), details.elements);
+			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, element_type1, details.elements);
 			return vec_ptr_reg;
 		}
 		else if(element_type0.is_double()){
-			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *intern_type(gen_acc.interner, element_type0), details.elements);
+			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, element_type1, details.elements);
 			return vec_ptr_reg;
 		}
 		else if(element_type0.is_vector()){
-			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, *intern_type(gen_acc.interner, element_type0), details.elements);
+			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, element_type1, details.elements);
 			return vec_ptr_reg;
 		}
 		else{

@@ -2409,7 +2409,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] <", "different values", "")
 	run_closed(R"(		assert((["one", "a"] < ["one", "two"]) == true)		)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "vector [string] +", "non-empty vectors", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "vector [string] +", "non-empty vectors", ""){
 	run_closed(R"(
 
 		let [string] a = ["one"] + ["two"]
