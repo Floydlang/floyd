@@ -2040,10 +2040,34 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 		}
 
 		auto result = alloc_vec(r.heap, vec->get_element_count(), vec->get_element_count());
-		for(int i = 0 ; i < result->get_element_count() ; i++){
-			result->get_element_ptr()[i] = vec->get_element_ptr()[i];
+		auto dest_ptr = result->get_element_ptr();
+		auto source_ptr = vec->get_element_ptr();
+		if(is_rc_value(element_type)){
+			if(element_type.is_string() || element_type.is_vector()){
+				vec_addref(*arg2_value.vector_ptr);
+
+				for(int i = 0 ; i < result->get_element_count() ; i++){
+					vec_addref(*source_ptr[i].vector_ptr);
+					dest_ptr[i] = source_ptr[i];
+				}
+
+				release_vec_deep(r, dest_ptr[index].vector_ptr, element_type);
+				dest_ptr[index] = arg2_value;
+			}
+			else{
+				for(int i = 0 ; i < result->get_element_count() ; i++){
+					dest_ptr[i] = source_ptr[i];
+				}
+				dest_ptr[index] = arg2_value;
+			}
 		}
-		result->get_element_ptr()[index] = arg2_value;
+		else{
+			for(int i = 0 ; i < result->get_element_count() ; i++){
+				dest_ptr[i] = source_ptr[i];
+			}
+			dest_ptr[index] = arg2_value;
+		}
+
 		return make_wide_return_vec(result);
 	}
 	else if(type0.is_dict()){
