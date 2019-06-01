@@ -166,6 +166,12 @@ variable_address_t add_local_temp(bcgen_body_t& body_acc, const typeid_t& type, 
 	return variable_address_t::make_variable_address(0, id);
 }
 
+int add_constant_literal(symbol_table_t& symbols, const std::string& name, const floyd::value_t& value){
+	const auto s = symbol_t::make_immutable_precalc(value);
+	symbols._symbols.push_back(std::pair<std::string, symbol_t>(name, s));
+	return static_cast<int>(symbols._symbols.size() - 1);
+}
+
 variable_address_t add_local_const(bcgen_body_t& body_acc, const value_t& value, const std::string& name){
 	QUARK_ASSERT(body_acc.check_invariant());
 	QUARK_ASSERT(value.check_invariant());

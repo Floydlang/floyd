@@ -685,8 +685,9 @@ analyser_t analyse_def_struct_statement(const analyser_t& a, const statement_t& 
 	const auto struct_typeid2 = resolve_type(a_acc, s.location, struct_typeid1);
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
 
+	//	Record the struct type as a typeid-symbol in the current lexical scope.
 	// ??? Alternative solution is to use assign2 to write constant into global.
-	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({struct_name, symbol_t::make_immutable_precalc(struct_typeid_value)});
+	a_acc._lexical_scope_stack.back().symbols._symbols.push_back( {struct_name, symbol_t::make_immutable_precalc(struct_typeid_value) } );
 
 	return a_acc;
 }

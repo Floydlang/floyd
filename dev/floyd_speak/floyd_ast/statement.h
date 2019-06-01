@@ -125,7 +125,6 @@ namespace floyd {
 		public: std::vector<std::pair<std::string, symbol_t>> _symbols;
 	};
 
-	int add_constant_literal(symbol_table_t& symbols, const std::string& name, const floyd::value_t& value);
 	int add_temp(symbol_table_t& symbols, const std::string& name, const floyd::typeid_t& value_type);
 	const floyd::symbol_t* find_symbol(const symbol_table_t& symbol_table, const std::string& name);
 	const floyd::symbol_t& find_symbol_required(const symbol_table_t& symbol_table, const std::string& name);
