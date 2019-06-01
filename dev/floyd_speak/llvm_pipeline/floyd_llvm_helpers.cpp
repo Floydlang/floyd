@@ -249,7 +249,7 @@ void detect_leaks(const heap_t& heap){
 
 	trace_heap(heap);
 	const auto leaks = heap.count_leaks();
-#if 1
+#if 0
 	if(leaks > 0){
 		throw std::exception();
 	}
@@ -601,17 +601,6 @@ std::string print_value(llvm::Value* value){
 
 
 
-llvm::StructType* make_wide_return_type(llvm::LLVMContext& context){
-	std::vector<llvm::Type*> members = {
-		//	a
-		llvm::Type::getInt64Ty(context),
-
-		//	b
-		llvm::Type::getInt64Ty(context)
-	};
-	llvm::StructType* s = llvm::StructType::get(context, members, false);
-	return s;
-}
 
 WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b){
 	return WIDE_RETURN_T{ a, b };
@@ -707,40 +696,6 @@ void vec_releaseref(VEC_T* vec){
 	QUARK_ASSERT(vec->check_invariant());
 }
 
-/*
-llvm::StructType* make_vec_type(llvm::LLVMContext& context){
-	std::vector<llvm::Type*> members = {
-		//	element_ptr
-		llvm::Type::getInt64Ty(context)->getPointerTo(),
-
-		//	element_count
-		llvm::Type::getInt32Ty(context),
-
-		//	magic
-		llvm::Type::getInt16Ty(context),
-
-		//	element_bits
-		llvm::Type::getInt16Ty(context)
-	};
-	llvm::StructType* s = llvm::StructType::get(context, members, false);
-	return s;
-}
-*/
-llvm::StructType* make_vec_type(llvm::LLVMContext& context){
-	std::vector<llvm::Type*> members = {
-		llvm::Type::getInt64Ty(context),
-		llvm::Type::getInt64Ty(context),
-		llvm::Type::getInt64Ty(context),
-		llvm::Type::getInt64Ty(context),
-		llvm::Type::getInt64Ty(context),
-		llvm::Type::getInt64Ty(context),
-		llvm::Type::getInt64Ty(context),
-		llvm::Type::getInt64Ty(context)
-	};
-	llvm::StructType* s = llvm::StructType::get(context, members, false);
-	return s;
-}
-
 
 
 WIDE_RETURN_T make_wide_return_vec(VEC_T* vec){
@@ -778,18 +733,6 @@ void delete_dict(DICT_T& v){
 	v.body_ptr = nullptr;
 }
 
-
-
-
-
-llvm::StructType* make_dict_type(llvm::LLVMContext& context){
-	std::vector<llvm::Type*> members = {
-		//	body_otr
-		llvm::Type::getInt64Ty(context)->getPointerTo()
-	};
-	llvm::StructType* s = llvm::StructType::get(context, members, false);
-	return s;
-}
 
 /*
 llvm::Value* generate_dict_alloca(llvm::IRBuilder<>& builder, llvm::Value* dict_reg){
@@ -926,11 +869,11 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 	}
 }
 
-llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const floyd::typeid_t& function_type){
+llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const llvm_type_interner_t& interner, const floyd::typeid_t& function_type){
 	QUARK_ASSERT(function_type.is_function());
 
 	const auto ret = function_type.get_function_return();
-	llvm::Type* return_type = ret.is_any() ? make_wide_return_type(context) : intern_type(context, ret);
+	llvm::Type* return_type = ret.is_any() ? make_wide_return_type(interner) : intern_type(interner, ret);
 
 	const auto args = function_type.get_function_args();
 	std::vector<llvm_arg_mapping_t> arg_results;
@@ -949,7 +892,7 @@ llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const flo
 			arg_results.push_back({ make_runtime_type_type(context), std::to_string(index), typeid_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
 		}
 		else {
-			auto arg_itype = intern_type(context, arg);
+			auto arg_itype = intern_type(interner, arg);
 			arg_results.push_back({ arg_itype, std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_simple_value });
 		}
 	}
@@ -962,12 +905,18 @@ llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const flo
 	return llvm_function_def_t { return_type, arg_results, llvm_args };
 }
 
+static llvm_type_interner_t make_basic_interner(llvm::LLVMContext& context);
+
+
 QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void()", ""){
 	llvm_instance_t instance;
+	const auto interner = make_basic_interner(instance.context);
 	auto module = std::make_unique<llvm::Module>("test", instance.context);
 	auto& context = module->getContext();
+
 	const auto r = map_function_arguments(
 		context,
+		interner,
 		typeid_t::make_function(typeid_t::make_void(), {}, epure::pure)
 	);
 
@@ -985,9 +934,11 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void()", ""){
 
 QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
 	llvm_instance_t instance;
+	const auto interner = make_basic_interner(instance.context);
 	auto module = std::make_unique<llvm::Module>("test", instance.context);
 	auto& context = module->getContext();
-	const auto r = map_function_arguments(context, typeid_t::make_function(typeid_t::make_int(), {}, epure::pure));
+
+	const auto r = map_function_arguments(context, interner, typeid_t::make_function(typeid_t::make_int(), {}, epure::pure));
 
 	QUARK_UT_VERIFY(r.return_type != nullptr);
 	QUARK_UT_VERIFY(r.return_type->isIntegerTy(64));
@@ -1003,9 +954,11 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func int()", ""){
 
 QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""){
 	llvm_instance_t instance;
+	const auto interner = make_basic_interner(instance.context);
 	auto module = std::make_unique<llvm::Module>("test", instance.context);
 	auto& context = module->getContext();
-	const auto r = map_function_arguments(context, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_int() }, epure::pure));
+
+	const auto r = map_function_arguments(context, interner, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_int() }, epure::pure));
 
 	QUARK_UT_VERIFY(r.return_type != nullptr);
 	QUARK_UT_VERIFY(r.return_type->isVoidTy());
@@ -1027,9 +980,11 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""
 
 QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int, DYN, bool)", ""){
 	llvm_instance_t instance;
+	const auto interner = make_basic_interner(instance.context);
 	auto module = std::make_unique<llvm::Module>("test", instance.context);
 	auto& context = module->getContext();
-	const auto r = map_function_arguments(context, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_int(), typeid_t::make_any(), typeid_t::make_bool() }, epure::pure));
+
+	const auto r = map_function_arguments(context, interner, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_int(), typeid_t::make_any(), typeid_t::make_bool() }, epure::pure));
 
 	QUARK_UT_VERIFY(r.return_type != nullptr);
 	QUARK_UT_VERIFY(r.return_type->isVoidTy());
@@ -1093,36 +1048,110 @@ llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& 
 
 
 
+
 //	Function-types are always returned as pointer-to-function types.
-llvm::Type* make_function_type(llvm::LLVMContext& context, const typeid_t& function_type){
+static llvm::Type* make_function_type_internal(llvm::LLVMContext& context, const llvm_type_interner_t& interner, const typeid_t& function_type){
 	QUARK_ASSERT(function_type.check_invariant());
+	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(function_type.is_function());
 
-	const auto mapping = map_function_arguments(context, function_type);
+	const auto mapping = map_function_arguments(context, interner, function_type);
 	llvm::FunctionType* function_type2 = llvm::FunctionType::get(mapping.return_type, mapping.llvm_args, false);
 	auto function_pointer_type = function_type2->getPointerTo();
 	return function_pointer_type;
 }
 
-
-llvm::StructType* make_struct_type(llvm::LLVMContext& context, const typeid_t& type){
+static llvm::StructType* make_struct_type_internal(llvm::LLVMContext& context, const llvm_type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(type.is_struct());
 
 	std::vector<llvm::Type*> members;
 	for(const auto& m: type.get_struct_ref()->_members){
-		const auto m2 = intern_type(context, m._type);
+		const auto m2 = intern_type(interner, m._type);
 		members.push_back(m2);
 	}
 	llvm::StructType* s = llvm::StructType::get(context, members, false);
 	return s;
 }
 
-//	Returns the LLVM type we chose to use to encode each Floyd type.
-llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type){
+
+static llvm::StructType* make_wide_return_type_internal(llvm::LLVMContext& context){
+	std::vector<llvm::Type*> members = {
+		//	a
+		llvm::Type::getInt64Ty(context),
+
+		//	b
+		llvm::Type::getInt64Ty(context)
+	};
+	llvm::StructType* s = llvm::StructType::get(context, members, false);
+	return s;
+}
+
+/*
+static llvm::StructType* make_vec_type_internal(llvm::LLVMContext& context){
+	std::vector<llvm::Type*> members = {
+		//	element_ptr
+		llvm::Type::getInt64Ty(context)->getPointerTo(),
+
+		//	element_count
+		llvm::Type::getInt32Ty(context),
+
+		//	magic
+		llvm::Type::getInt16Ty(context),
+
+		//	element_bits
+		llvm::Type::getInt16Ty(context)
+	};
+	llvm::StructType* s = llvm::StructType::get(context, members, false);
+	return s;
+}
+
+static llvm::StructType* make_vec_type_internal(llvm::LLVMContext& context){
+	std::vector<llvm::Type*> members = {
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context)
+	};
+	llvm::StructType* s = llvm::StructType::get(context, members, false);
+	return s;
+}
+*/
+
+static llvm::StructType* make_vec_type_internal(llvm::LLVMContext& context){
+	std::vector<llvm::Type*> members = {
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context),
+		llvm::Type::getInt64Ty(context)
+	};
+
+	llvm::StructType* s = llvm::StructType::create(context, members, "vec");
+	return s;
+}
+
+static llvm::StructType* make_dict_type_internal(llvm::LLVMContext& context){
+	std::vector<llvm::Type*> members = {
+		//	body_otr
+		llvm::Type::getInt64Ty(context)->getPointerTo()
+	};
+	llvm::StructType* s = llvm::StructType::get(context, members, false);
+	return s;
+}
+
+static llvm::Type* intern_type_internal(llvm::LLVMContext& context, llvm_type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	struct visitor_t {
 		llvm::LLVMContext& context;
+		llvm_type_interner_t& interner;
 		const typeid_t& type;
 
 		llvm::Type* operator()(const typeid_t::undefined_t& e) const{
@@ -1145,7 +1174,7 @@ llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type){
 			return llvm::Type::getDoubleTy(context);
 		}
 		llvm::Type* operator()(const typeid_t::string_t& e) const{
-			return make_vec_type(context)->getPointerTo();
+			return make_vec_type(interner)->getPointerTo();
 		}
 
 		llvm::Type* operator()(const typeid_t::json_type_t& e) const{
@@ -1156,24 +1185,114 @@ llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type){
 		}
 
 		llvm::Type* operator()(const typeid_t::struct_t& e) const{
-			return make_struct_type(context, type)->getPointerTo();
+			return make_struct_type_internal(context, interner, type)->getPointerTo();
 		}
 		llvm::Type* operator()(const typeid_t::vector_t& e) const{
-			return make_vec_type(context)->getPointerTo();
+			return make_vec_type(interner)->getPointerTo();
 		}
 		llvm::Type* operator()(const typeid_t::dict_t& e) const{
-			return make_dict_type(context)->getPointerTo();
+			return make_dict_type(interner)->getPointerTo();
 		}
 		llvm::Type* operator()(const typeid_t::function_t& e) const{
-			return make_function_type(context, type);
+			return make_function_type_internal(context, interner, type);
 		}
 		llvm::Type* operator()(const typeid_t::unresolved_t& e) const{
 			UNSUPPORTED();
 			return llvm::Type::getInt16Ty(context);
 		}
 	};
-	return std::visit(visitor_t{ context, type }, type._contents);
+	return std::visit(visitor_t{ context, interner, type }, type._contents);
 }
+
+
+
+////////////////////////////////		llvm_type_interner_t()
+
+
+static llvm_type_interner_t make_basic_interner(llvm::LLVMContext& context){
+	type_interner_t temp;
+	intern_type(temp, typeid_t::make_void());
+	intern_type(temp, typeid_t::make_int());
+	intern_type(temp, typeid_t::make_bool());
+	intern_type(temp, typeid_t::make_string());
+	return llvm_type_interner_t(context, temp);
+}
+
+
+
+
+llvm_type_interner_t::llvm_type_interner_t(llvm::LLVMContext& context, const type_interner_t& i){
+	vec_type = make_vec_type_internal(context);
+	dict_type = make_dict_type_internal(context);
+	wide_return_type = make_wide_return_type_internal(context);
+
+	for(const auto& e: i.interned){
+		const auto llvm_type = intern_type_internal(context, *this, e.second);
+		intern_type(interner, e.second);
+		llvm_types.push_back(llvm_type);
+	}
+
+	QUARK_ASSERT(check_invariant());
+}
+
+bool llvm_type_interner_t::check_invariant() const {
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(interner.interned.size() == llvm_types.size());
+
+	QUARK_ASSERT(vec_type != nullptr);
+	QUARK_ASSERT(dict_type != nullptr);
+	QUARK_ASSERT(wide_return_type != nullptr);
+	return true;
+}
+
+llvm::Type* intern_type(const llvm_type_interner_t& i, const typeid_t& type){
+	const auto it = std::find_if(i.interner.interned.begin(), i.interner.interned.end(), [&](const std::pair<itype_t, typeid_t>& e){ return e.second == type; });
+	if(it == i.interner.interned.end()){
+		throw std::exception();
+	}
+	const auto index = it - i.interner.interned.begin();
+	QUARK_ASSERT(index >= 0 && index < i.llvm_types.size());
+
+	return i.llvm_types[index];
+}
+
+llvm::StructType* make_wide_return_type(const llvm_type_interner_t& interner){
+	return interner.wide_return_type;
+}
+
+llvm::Type* make_vec_type(const llvm_type_interner_t& interner){
+	return interner.vec_type;
+}
+
+llvm::Type* make_dict_type(const llvm_type_interner_t& interner){
+	return interner.dict_type;
+}
+
+
+
+
+
+llvm::Type* make_function_type(const llvm_type_interner_t& interner, const typeid_t& function_type){
+	return intern_type(interner, function_type);
+}
+
+llvm::StructType* make_struct_type(const llvm_type_interner_t& interner, const typeid_t& type){
+	auto struct_ptr = intern_type(interner, type);
+	auto struct_byvalue = deref_ptr(struct_ptr);
+	return llvm::cast<llvm::StructType>(struct_byvalue);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 // IMPORTANT: Different types will access different number of bytes, for example a BYTE. We cannot dereference pointer as a uint64*!!
 runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type){
@@ -1352,13 +1471,14 @@ llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, llvm::V
 	return std::visit(visitor_t{ context, builder, value }, floyd_type._contents);
 }
 
-llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, llvm::Value& runtime_value_reg, const typeid_t& type){
+llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_interner_t& interner, llvm::Value& runtime_value_reg, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	auto& context = builder.getContext();
 
 	struct visitor_t {
 		llvm::IRBuilder<>& builder;
+		const llvm_type_interner_t& interner;
 		llvm::LLVMContext& context;
 		llvm::Value& runtime_value_reg;
 		const typeid_t& type;
@@ -1383,7 +1503,7 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, llvm:
 			return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &runtime_value_reg, llvm::Type::getDoubleTy(context), "");
 		}
 		llvm::Value* operator()(const typeid_t::string_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_vec_type(context)->getPointerTo(), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_vec_type(interner)->getPointerTo(), "");
 		}
 
 		llvm::Value* operator()(const typeid_t::json_type_t& e) const{
@@ -1394,23 +1514,23 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, llvm:
 		}
 
 		llvm::Value* operator()(const typeid_t::struct_t& e) const{
-			auto& struct_type = *make_struct_type(context, type);
+			auto& struct_type = *make_struct_type(interner, type);
 			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, struct_type.getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::vector_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_vec_type(context)->getPointerTo(), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_vec_type(interner)->getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::dict_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_dict_type(context)->getPointerTo(), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_dict_type(interner)->getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::function_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_function_type(context, type), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_function_type(interner, type), "");
 		}
 		llvm::Value* operator()(const typeid_t::unresolved_t& e) const{
 			UNSUPPORTED();
 		}
 	};
-	return std::visit(visitor_t{ builder, context, runtime_value_reg, type }, type._contents);
+	return std::visit(visitor_t{ builder, interner, context, runtime_value_reg, type }, type._contents);
 }
 
 

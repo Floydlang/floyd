@@ -248,7 +248,7 @@ runtime_value_t to_runtime_struct(llvm_execution_engine_t& runtime, const typeid
 	QUARK_ASSERT(value.check_invariant());
 
 	const llvm::DataLayout& data_layout = runtime.ee->getDataLayout();
-	auto t2 = make_struct_type(runtime.instance->context, value.get_type());
+	auto t2 = make_struct_type(runtime.type_interner, value.get_type());
 	const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
 
 	const auto struct_bytes = layout->getSizeInBytes();
@@ -274,7 +274,7 @@ value_t from_runtime_struct(const llvm_execution_engine_t& runtime, const runtim
 	const auto struct_base_ptr = reinterpret_cast<const uint8_t*>(encoded_value.struct_ptr);
 
 	const llvm::DataLayout& data_layout = runtime.ee->getDataLayout();
-	auto t2 = make_struct_type(runtime.instance->context, type);
+	auto t2 = make_struct_type(runtime.type_interner, type);
 	const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
 
 	std::vector<value_t> members;
@@ -396,7 +396,7 @@ runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t
 		}
 		runtime_value_t operator()(const typeid_t::typeid_type_t& e) const{
 			const auto t0 = value.get_typeid_value();
-			const auto t1 = lookup_runtime_type(runtime.type_interner, t0);
+			const auto t1 = lookup_runtime_type(runtime.type_interner.interner, t0);
 			return make_runtime_typeid(t1);
 		}
 
@@ -470,7 +470,7 @@ value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime
 			}
 		}
 		value_t operator()(const typeid_t::typeid_type_t& e) const{
-			const auto type1 = lookup_type(runtime.type_interner, encoded_value.typeid_itype);
+			const auto type1 = lookup_type(runtime.type_interner.interner, encoded_value.typeid_itype);
 			const auto type2 = value_t::make_typeid_value(type1);
 			return type2;
 		}
@@ -542,7 +542,7 @@ void hook(const std::string& s, void* floyd_runtime_ptr, runtime_value_t arg){
 std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value_t arg_value, runtime_type_t arg_type){
 	QUARK_ASSERT(runtime.check_invariant());
 
-	const auto type = lookup_type(runtime.type_interner, arg_type);
+	const auto type = lookup_type(runtime.type_interner.interner, arg_type);
 	const auto value = from_runtime_value(runtime, arg_value, type);
 	const auto a = to_compact_string2(value);
 	return a;
@@ -572,7 +572,7 @@ std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value_t arg_
 void floyd_runtime__addref(void* floyd_runtime_ptr, runtime_value_t arg0, runtime_type_t type0){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type = lookup_type(r.type_interner, type0);
+	const auto type = lookup_type(r.type_interner.interner, type0);
 	if(type.is_string() || type.is_vector()){
 		QUARK_ASSERT(arg0.vector_ptr != nullptr);
 
@@ -582,7 +582,7 @@ void floyd_runtime__addref(void* floyd_runtime_ptr, runtime_value_t arg0, runtim
 	}
 }
 
-host_func_t floyd_runtime__addref__make(llvm::LLVMContext& context){
+host_func_t floyd_runtime__addref__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
@@ -603,17 +603,17 @@ host_func_t floyd_runtime__addref__make(llvm::LLVMContext& context){
 void floyd_runtime__releaseref(void* floyd_runtime_ptr, runtime_value_t arg0, runtime_type_t type0){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type = lookup_type(r.type_interner, type0);
+	const auto type = lookup_type(r.type_interner.interner, type0);
 	if(type.is_string() || type.is_vector()){
 		QUARK_ASSERT(arg0.vector_ptr != nullptr);
 
-		vec_releaseref(arg0.vector_ptr);
+//		vec_releaseref(arg0.vector_ptr);
 	}
 	else{
 	}
 }
 
-host_func_t floyd_runtime__releaseref__make(llvm::LLVMContext& context){
+host_func_t floyd_runtime__releaseref__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
@@ -642,7 +642,7 @@ const uint8_t* floyd_runtime__allocate_memory(void* floyd_runtime_ptr, int64_t b
 	return s;
 }
 
-host_func_t floyd_runtime__allocate_memory__make(llvm::LLVMContext& context){
+host_func_t floyd_runtime__allocate_memory__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context)->getPointerTo(),
 		{
@@ -668,9 +668,9 @@ VEC_T* floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint64_t element_
 	return v;
 }
 
-host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context){
+host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		make_vec_type(context)->getPointerTo(),
+		make_vec_type(interner)->getPointerTo(),
 		{
 			make_frp_type(context),
 			llvm::Type::getInt64Ty(context)
@@ -685,16 +685,16 @@ host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context){
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-VEC_T* floyd_runtime__allocate_string_from_strptr(void* floyd_runtime_ptr, const char* s, uint64_t size){
+VEC_T* FR_alloc_kstr(void* floyd_runtime_ptr, const char* s, uint64_t size){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto a = to_runtime_string(r, std::string(s, s + size));
 	return a.vector_ptr;
 }
 
-host_func_t floyd_runtime__allocate_string_from_strptr__make(llvm::LLVMContext& context){
+host_func_t FR_alloc_kstr__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		make_vec_type(context)->getPointerTo(),
+		make_vec_type(interner)->getPointerTo(),
 		{
 			make_frp_type(context),
 			llvm::Type::getInt8PtrTy(context),
@@ -702,7 +702,7 @@ host_func_t floyd_runtime__allocate_string_from_strptr__make(llvm::LLVMContext& 
 		},
 		false
 	);
-	return { "floyd_runtime__allocate_string_from_strptr", function_type, reinterpret_cast<void*>(floyd_runtime__allocate_string_from_strptr) };
+	return { "FR_alloc_kstr", function_type, reinterpret_cast<void*>(FR_alloc_kstr) };
 }
 
 
@@ -717,12 +717,12 @@ void floyd_runtime__delete_vector(void* floyd_runtime_ptr, VEC_T* vec){
 	vec_releaseref(vec);
 }
 
-host_func_t floyd_runtime__delete_vector__make(llvm::LLVMContext& context){
+host_func_t floyd_runtime__delete_vector__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(context),
-			make_vec_type(context)->getPointerTo()
+			make_vec_type(interner)->getPointerTo()
 		},
 		false
 	);
@@ -736,7 +736,7 @@ VEC_T* floyd_runtime__concatunate_vectors(void* floyd_runtime_ptr, runtime_type_
 	QUARK_ASSERT(rhs != nullptr);
 	QUARK_ASSERT(rhs->check_invariant());
 
-	const auto type0 = lookup_type(r.type_interner, type);
+	const auto type0 = lookup_type(r.type_interner.interner, type);
 	if(type0.is_string()){
 		const auto result = from_runtime_string(r, runtime_value_t{ .vector_ptr = lhs }) + from_runtime_string(r, runtime_value_t{ .vector_ptr = rhs } );
 		return to_runtime_string(r, result).vector_ptr;
@@ -755,14 +755,14 @@ VEC_T* floyd_runtime__concatunate_vectors(void* floyd_runtime_ptr, runtime_type_
 	}
 }
 
-host_func_t floyd_runtime__concatunate_vectors__make(llvm::LLVMContext& context){
+host_func_t floyd_runtime__concatunate_vectors__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		make_vec_type(context)->getPointerTo(),
+		make_vec_type(interner)->getPointerTo(),
 		{
 			make_frp_type(context),
 			make_runtime_type_type(context),
-			make_vec_type(context)->getPointerTo(),
-			make_vec_type(context)->getPointerTo()
+			make_vec_type(interner)->getPointerTo(),
+			make_vec_type(interner)->getPointerTo()
 		},
 		false
 	);
@@ -782,9 +782,9 @@ void* floyd_runtime__allocate_dict(void* floyd_runtime_ptr){
 	return new DICT_T(v);
 }
 
-host_func_t floyd_runtime__allocate_dict__make(llvm::LLVMContext& context){
+host_func_t floyd_runtime__allocate_dict__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		make_dict_type(context)->getPointerTo(),
+		make_dict_type(interner)->getPointerTo(),
 		{
 			make_frp_type(context)
 		},
@@ -805,12 +805,12 @@ void floyd_runtime__delete_dict(void* floyd_runtime_ptr, DICT_T* dict){
 	delete_dict(*dict);
 }
 
-host_func_t floyd_runtime__delete_dict__make(llvm::LLVMContext& context){
+host_func_t floyd_runtime__delete_dict__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(context),
-			make_dict_type(context)->getPointerTo()
+			make_dict_type(interner)->getPointerTo()
 		},
 		false
 	);
@@ -834,13 +834,13 @@ DICT_T* floyd_runtime__store_dict(void* floyd_runtime_ptr, DICT_T* dict, runtime
 	return new DICT_T(v);
 }
 
-host_func_t floyd_runtime__store_dict__make(llvm::LLVMContext& context){
+host_func_t floyd_runtime__store_dict__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		make_dict_type(context)->getPointerTo(),
+		make_dict_type(interner)->getPointerTo(),
 		{
 			make_frp_type(context),
-			make_dict_type(context)->getPointerTo(),
-			intern_type(context, typeid_t::make_string()),
+			make_dict_type(interner)->getPointerTo(),
+			intern_type(interner, typeid_t::make_string()),
 			make_runtime_value_type(context),
 			make_runtime_type_type(context)
 		},
@@ -867,13 +867,13 @@ runtime_value_t floyd_runtime__lookup_dict(void* floyd_runtime_ptr, DICT_T* dict
 	}
 }
 
-host_func_t floyd_runtime__lookup_dict__make(llvm::LLVMContext& context){
+host_func_t floyd_runtime__lookup_dict__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_runtime_value_type(context),
 		{
 			make_frp_type(context),
-			make_dict_type(context)->getPointerTo(),
-			intern_type(context, typeid_t::make_string())
+			make_dict_type(interner)->getPointerTo(),
+			intern_type(interner, typeid_t::make_string())
 		},
 		false
 	);
@@ -890,7 +890,7 @@ host_func_t floyd_runtime__lookup_dict__make(llvm::LLVMContext& context){
 int16_t* floyd_runtime__allocate_json(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type0 = lookup_type(r.type_interner, arg0_type);
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto value = from_runtime_value(r, arg0_value, type0);
 
 	const auto a = value_to_ast_json(value, json_tags::k_plain);
@@ -898,9 +898,9 @@ int16_t* floyd_runtime__allocate_json(void* floyd_runtime_ptr, runtime_value_t a
 	return reinterpret_cast<int16_t*>(result);
 }
 
-host_func_t floyd_runtime__allocate_json__make(llvm::LLVMContext& context){
+host_func_t floyd_runtime__allocate_json__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		intern_type(context, typeid_t::make_json_value()),
+		intern_type(interner, typeid_t::make_json_value()),
 		{
 			make_frp_type(context),
 			make_runtime_value_type(context),
@@ -922,7 +922,7 @@ int16_t* floyd_runtime__lookup_json(void* floyd_runtime_ptr, int16_t* json_ptr, 
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto& json = *reinterpret_cast<const json_t*>(json_ptr);
-	const auto type0 = lookup_type(r.type_interner, arg0_type);
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto value = from_runtime_value(r, arg0_value, type0);
 
 	if(json.is_object()){
@@ -946,12 +946,12 @@ int16_t* floyd_runtime__lookup_json(void* floyd_runtime_ptr, int16_t* json_ptr, 
 	}
 }
 
-host_func_t floyd_runtime__lookup_json__make(llvm::LLVMContext& context){
+host_func_t floyd_runtime__lookup_json__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		intern_type(context, typeid_t::make_json_value()),
+		intern_type(interner, typeid_t::make_json_value()),
 		{
 			make_frp_type(context),
-			intern_type(context, typeid_t::make_json_value()),
+			intern_type(interner, typeid_t::make_json_value()),
 			make_runtime_value_type(context),
 			make_runtime_type_type(context)
 		},
@@ -982,12 +982,12 @@ runtime_value_t floyd_runtime__json_to_string(void* floyd_runtime_ptr, uint16_t*
 	}
 }
 
-host_func_t floyd_runtime__json_to_string__make(llvm::LLVMContext& context){
+host_func_t floyd_runtime__json_to_string__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		intern_type(context, typeid_t::make_string()),
+		intern_type(interner, typeid_t::make_string()),
 		{
 			make_frp_type(context),
-			intern_type(context, typeid_t::make_json_value())
+			intern_type(interner, typeid_t::make_json_value())
 		},
 		false
 	);
@@ -1005,7 +1005,7 @@ host_func_t floyd_runtime__json_to_string__make(llvm::LLVMContext& context){
 int32_t floyd_runtime__compare_values(void* floyd_runtime_ptr, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto value_type = lookup_type(r.type_interner, type);
+	const auto value_type = lookup_type(r.type_interner.interner, type);
 
 	const auto left_value = from_runtime_value(r, lhs, value_type);
 	const auto right_value = from_runtime_value(r, rhs, value_type);
@@ -1038,7 +1038,7 @@ int32_t floyd_runtime__compare_values(void* floyd_runtime_ptr, int64_t op, const
 	}
 }
 
-host_func_t floyd_runtime__compare_values__make(llvm::LLVMContext& context){
+host_func_t floyd_runtime__compare_values__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getInt32Ty(context),
 		{
@@ -1056,29 +1056,29 @@ host_func_t floyd_runtime__compare_values__make(llvm::LLVMContext& context){
 
 
 
-std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context){
+std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	std::vector<host_func_t> result = {
-		floyd_runtime__addref__make(context),
-		floyd_runtime__releaseref__make(context),
+		floyd_runtime__addref__make(context, interner),
+		floyd_runtime__releaseref__make(context, interner),
 
-		floyd_runtime__allocate_memory__make(context),
+		floyd_runtime__allocate_memory__make(context, interner),
 
-		floyd_runtime__allocate_vector__make(context),
-		floyd_runtime__allocate_string_from_strptr__make(context),
-		floyd_runtime__delete_vector__make(context),
-		floyd_runtime__concatunate_vectors__make(context),
+		floyd_runtime__allocate_vector__make(context, interner),
+		FR_alloc_kstr__make(context, interner),
+		floyd_runtime__delete_vector__make(context, interner),
+		floyd_runtime__concatunate_vectors__make(context, interner),
 
-		floyd_runtime__allocate_dict__make(context),
-		floyd_runtime__delete_dict__make(context),
-		floyd_runtime__store_dict__make(context),
-		floyd_runtime__lookup_dict__make(context),
+		floyd_runtime__allocate_dict__make(context, interner),
+		floyd_runtime__delete_dict__make(context, interner),
+		floyd_runtime__store_dict__make(context, interner),
+		floyd_runtime__lookup_dict__make(context, interner),
 
-		floyd_runtime__allocate_json__make(context),
-		floyd_runtime__lookup_json__make(context),
+		floyd_runtime__allocate_json__make(context, interner),
+		floyd_runtime__lookup_json__make(context, interner),
 
-		floyd_runtime__json_to_string__make(context),
+		floyd_runtime__json_to_string__make(context, interner),
 
-		floyd_runtime__compare_values__make(context)
+		floyd_runtime__compare_values__make(context, interner)
 	};
 	return result;
 }
@@ -1181,15 +1181,15 @@ uint8_t floyd_funcdef__does_fsentry_exist(void* floyd_runtime_ptr, runtime_value
 WIDE_RETURN_T floyd_host_function__erase(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type0 = lookup_type(r.type_interner, arg0_type);
-	const auto type1 = lookup_type(r.type_interner, arg1_type);
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
 
 	if(type0.is_dict()){
 		if(type1.is_string() == false){
 			quark::throw_runtime_error("Argument 2 needs to be a string key.");
 		}
 
-		const auto& dict = unpack_dict_arg(r.type_interner, arg0_value, arg0_type);
+		const auto& dict = unpack_dict_arg(r.type_interner.interner, arg0_value, arg0_type);
 
 		//	Deep copy dict.
 		auto dict2 = make_dict();
@@ -1207,11 +1207,11 @@ WIDE_RETURN_T floyd_host_function__erase(void* floyd_runtime_ptr, runtime_value_
 uint32_t floyd_funcdef__exists(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type0 = lookup_type(r.type_interner, arg0_type);
-	const auto type1 = lookup_type(r.type_interner, arg1_type);
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
 
 	if(type0.is_dict()){
-		const auto& dict = unpack_dict_arg(r.type_interner, arg0_value, arg0_type);
+		const auto& dict = unpack_dict_arg(r.type_interner.interner, arg0_value, arg0_type);
 		const auto key_string = from_runtime_string(r, arg1_value);
 
 		const auto it = dict->body_ptr->map.find(key_string);
@@ -1233,8 +1233,8 @@ typedef runtime_value_t (*FILTER_F)(void* floyd_runtime_ptr, runtime_value_t ele
 WIDE_RETURN_T floyd_funcdef__filter(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type0 = lookup_type(r.type_interner, arg0_type);
-	const auto type1 = lookup_type(r.type_interner, arg1_type);
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
 
 	if(type0.is_vector() == false){
 		quark::throw_runtime_error("filter() requires argument 1 to be a vector.");
@@ -1282,8 +1282,8 @@ int64_t floyd_funcdef__find__string(llvm_execution_engine_t& floyd_runtime_ptr, 
 int64_t floyd_funcdef__find(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, const runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type0 = lookup_type(r.type_interner, arg0_type);
-	const auto type1 = lookup_type(r.type_interner, arg1_type);
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
 
 	if(type0.is_string()){
 		if(type1.is_string() == false){
@@ -1296,7 +1296,7 @@ int64_t floyd_funcdef__find(void* floyd_runtime_ptr, runtime_value_t arg0_value,
 			quark::throw_runtime_error("find([]) requires argument 2 to be of vector's element type.");
 		}
 
-		const auto vec = unpack_vec_arg(r.type_interner, arg0_value, arg0_type);
+		const auto vec = unpack_vec_arg(r.type_interner.interner, arg0_value, arg0_type);
 
 //		auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.def_name == function_name; } );
 		const auto it = std::find_if(vec->get_element_ptr(), vec->get_element_ptr() + vec->get_element_count(), [&] (const runtime_value_t& e) { return e.int_value == arg1_value.int_value; } );
@@ -1433,7 +1433,7 @@ runtime_value_t floyd_funcdef__jsonvalue_to_value(void* floyd_runtime_ptr, uint3
 	QUARK_ASSERT(json_ptr != nullptr);
 
 	const auto& json_value = *reinterpret_cast<const json_t*>(json_ptr);
-	const auto target_type2 = lookup_type(r.type_interner, target_type);
+	const auto target_type2 = lookup_type(r.type_interner.interner, target_type);
 
 	const auto result = unflatten_json_to_specific_type(json_value, target_type2);
 	const auto result2 = to_runtime_value(r, result);
@@ -1450,8 +1450,8 @@ runtime_value_t floyd_funcdef__jsonvalue_to_value(void* floyd_runtime_ptr, uint3
 WIDE_RETURN_T floyd_funcdef__map(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type0 = lookup_type(r.type_interner, arg0_type);
-	const auto type1 = lookup_type(r.type_interner, arg1_type);
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
 	if(type0.is_vector() == false){
 		quark::throw_runtime_error("map() arg 1 must be a vector.");
 	}
@@ -1527,8 +1527,8 @@ void floyd_funcdef__print(void* floyd_runtime_ptr, runtime_value_t arg0_value, r
 WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type0 = lookup_type(r.type_interner, arg0_type);
-	const auto type1 = lookup_type(r.type_interner, arg1_type);
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
 	if(type0.is_string()){
 		auto value = from_runtime_string(r, arg0_value);
 
@@ -1539,7 +1539,7 @@ WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, runtime_value_t 
 		return make_wide_return_1x64(result2);
 	}
 	else if(type0.is_vector()){
-		const auto vs = unpack_vec_arg(r.type_interner, arg0_value, arg0_type);
+		const auto vs = unpack_vec_arg(r.type_interner.interner, arg0_value, arg0_type);
 
 		QUARK_ASSERT(type1 == type0.get_vector_element_type());
 
@@ -1572,9 +1572,9 @@ void floyd_host_function_1022(void* floyd_runtime_ptr, runtime_value_t arg){
 WIDE_RETURN_T floyd_funcdef__reduce(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type0 = lookup_type(r.type_interner, arg0_type);
-	const auto type1 = lookup_type(r.type_interner, arg1_type);
-	const auto type2 = lookup_type(r.type_interner, arg2_type);
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
+	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
 
 	if(type0.is_vector() == false || type2.is_function() == false || type2.get_function_args().size () != 2){
 		quark::throw_runtime_error("reduce() parameter error.");
@@ -1640,8 +1640,8 @@ const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, runtime_valu
 		quark::throw_runtime_error("replace() requires start <= end.");
 	}
 
-	const auto type0 = lookup_type(r.type_interner, arg0_type);
-	const auto type3 = lookup_type(r.type_interner, arg3_type);
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
+	const auto type3 = lookup_type(r.type_interner.interner, arg3_type);
 
 	if(type3 != type0){
 		quark::throw_runtime_error("replace() requires argument 4 to be same type of collection.");
@@ -1655,8 +1655,8 @@ const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, runtime_valu
 		return make_wide_return_1x64(result2);
 	}
 	else if(type0.is_vector()){
-		const auto vec = unpack_vec_arg(r.type_interner, arg0_value, arg0_type);
-		const auto replace_vec = unpack_vec_arg(r.type_interner, arg3_value, arg3_type);
+		const auto vec = unpack_vec_arg(r.type_interner.interner, arg0_value, arg0_type);
+		const auto replace_vec = unpack_vec_arg(r.type_interner.interner, arg3_value, arg3_type);
 
 		auto end2 = std::min(end, vec->get_element_count());
 		auto start2 = std::min(start, end2);
@@ -1706,7 +1706,7 @@ void floyd_funcdef__send(void* floyd_runtime_ptr, runtime_value_t process_id0, c
 int64_t floyd_funcdef__size(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type0 = lookup_type(r.type_interner, arg0_type);
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	if(type0.is_string()){
 		return get_vec_string_size(arg0_value);
 	}
@@ -1727,11 +1727,11 @@ int64_t floyd_funcdef__size(void* floyd_runtime_ptr, runtime_value_t arg0_value,
 		}
 	}
 	else if(type0.is_vector()){
-		const auto vs = unpack_vec_arg(r.type_interner, arg0_value, arg0_type);
+		const auto vs = unpack_vec_arg(r.type_interner.interner, arg0_value, arg0_type);
 		return vs->get_element_count();
 	}
 	else if(type0.is_dict()){
-		DICT_T* dict = unpack_dict_arg(r.type_interner, arg0_value, arg0_type);
+		DICT_T* dict = unpack_dict_arg(r.type_interner.interner, arg0_value, arg0_type);
 		return dict->body_ptr->map.size();
 	}
 	else{
@@ -1747,7 +1747,7 @@ const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, runtime_value
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
 
-	const auto type0 = lookup_type(r.type_interner, arg0_type);
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	if(type0.is_string()){
 		const auto value = from_runtime_string(r, arg0_value);
 
@@ -1761,7 +1761,7 @@ const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, runtime_value
 		return make_wide_return_1x64(result);
 	}
 	else if(type0.is_vector()){
-		const auto vec = unpack_vec_arg(r.type_interner, arg0_value, arg0_type);
+		const auto vec = unpack_vec_arg(r.type_interner.interner, arg0_value, arg0_type);
 
 		const auto end2 = std::min(end, vec->get_element_count());
 		const auto start2 = std::min(start, end2);
@@ -1796,9 +1796,9 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 ){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type0 = lookup_type(r.type_interner, arg0_type);
-	const auto type1 = lookup_type(r.type_interner, arg1_type);
-	const auto type2 = lookup_type(r.type_interner, arg2_type);
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
+	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
 
 	//	Check topology.
 	if(type0.is_vector() && type1 == typeid_t::make_vector(typeid_t::make_int()) && type2.is_function() && type2.get_function_args().size () == 2){
@@ -1951,7 +1951,7 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 runtime_value_t floyd_funcdef__to_pretty_string(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type0 = lookup_type(r.type_interner, arg0_type);
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto& value = from_runtime_value(r, arg0_value, type0);
 	const auto json = value_to_ast_json(value, json_tags::k_plain);
 	const auto s = json_to_pretty_string(json, 0, pretty_t{ 80, 4 });
@@ -1973,7 +1973,7 @@ int32_t floyd_host__typeof(void* floyd_runtime_ptr, runtime_value_t arg0_value, 
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 #if DEBUG
-	const auto type0 = lookup_type(r.type_interner, arg0_type);
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	QUARK_ASSERT(type0.check_invariant());
 #endif
 	return arg0_type;
@@ -1989,9 +1989,9 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 
 	auto& context = r.instance->context;
 
-	const auto type0 = lookup_type(r.type_interner, arg0_type);
-	const auto type1 = lookup_type(r.type_interner, arg1_type);
-	const auto type2 = lookup_type(r.type_interner, arg2_type);
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
+	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
 	if(type0.is_string()){
 		if(type1.is_int() == false){
 			throw std::exception();
@@ -2020,7 +2020,7 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 			throw std::exception();
 		}
 
-		const auto vec = unpack_vec_arg(r.type_interner, arg0_value, arg0_type);
+		const auto vec = unpack_vec_arg(r.type_interner.interner, arg0_value, arg0_type);
 		const auto element_type = type0.get_vector_element_type();
 		const auto index = arg1_value.int_value;
 
@@ -2044,7 +2044,7 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 			throw std::exception();
 		}
 		const auto key = from_runtime_string(r, arg1_value);
-		const auto dict = unpack_dict_arg(r.type_interner, arg0_value, arg0_type);
+		const auto dict = unpack_dict_arg(r.type_interner.interner, arg0_value, arg0_type);
 
 		//	Deep copy dict.
 		auto dict2 = make_dict();
@@ -2078,7 +2078,7 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 
 		//	Make copy of struct, overwrite member in copy.
  
-		auto& struct_type_llvm = *make_struct_type(context, type0);
+		auto& struct_type_llvm = *make_struct_type(r.type_interner, type0);
 
 		const llvm::DataLayout& data_layout = r.ee->getDataLayout();
 		const llvm::StructLayout* layout = data_layout.getStructLayout(&struct_type_llvm);
@@ -2109,7 +2109,7 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 int16_t* floyd_funcdef__value_to_jsonvalue(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	const auto type0 = lookup_type(r.type_interner, arg0_type);
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto value0 = from_runtime_value(r, arg0_value, type0);
 	const auto j = value_to_ast_json(value0, json_tags::k_plain);
 	auto result = new json_t(j);
@@ -2520,8 +2520,8 @@ void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
 }
 #endif
 
-static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& context){
-	const auto runtime_functions = get_runtime_functions(context);
+static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
+	const auto runtime_functions = get_runtime_functions(context, interner);
 
 	std::map<std::string, void*> runtime_functions_map;
 	for(const auto& e: runtime_functions){
@@ -2576,7 +2576,7 @@ llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_p
 	};
 	QUARK_ASSERT(ee2.check_invariant());
 
-	auto function_map = register_c_functions(instance.context);
+	auto function_map = register_c_functions(instance.context, program_breaks.type_interner);
 
 	//	Resolve all unresolved functions.
 	{

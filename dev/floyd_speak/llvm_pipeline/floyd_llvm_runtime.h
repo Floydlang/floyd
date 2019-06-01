@@ -80,7 +80,7 @@ struct llvm_execution_engine_t {
 
 	llvm_instance_t* instance;
 	std::shared_ptr<llvm::ExecutionEngine> ee;
-	type_interner_t type_interner;
+	llvm_type_interner_t type_interner;
 	symbol_table_t global_symbols;
 	std::vector<function_def_t> function_defs;
 	public: std::vector<std::string> _print_output;
@@ -152,7 +152,7 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const std::string& name)
 
 int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f, const std::vector<std::string>& main_args);
 
-std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context);
+std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_interner_t& interner);
 std::map<std::string, void*> get_host_functions_map2();
 
 uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee);

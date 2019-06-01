@@ -10,6 +10,7 @@
 #define floyd_llvm_helpers_hpp
 
 #include "ast_typeid.h"
+#include "ast.h"
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 
@@ -264,7 +265,7 @@ enum class WIDE_RETURN_MEMBERS {
 };
 
 
-llvm::StructType* make_wide_return_type(llvm::LLVMContext& context);
+
 
 WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
 inline WIDE_RETURN_T make_wide_return_1x64(runtime_value_t a){
@@ -347,9 +348,6 @@ void vec_addref(VEC_T& vec);
 void vec_releaseref(VEC_T* vec);
 
 
-//	Makes a type for VEC_T.
-llvm::StructType* make_vec_type(llvm::LLVMContext& context);
-
 WIDE_RETURN_T make_wide_return_vec(VEC_T* vec);
 VEC_T* wide_return_to_vec(const WIDE_RETURN_T& ret);
 
@@ -393,8 +391,6 @@ enum class DICT_T_MEMBERS {
 	body_ptr = 0
 };
 
-//	Makes a type for DICT_T.
-llvm::StructType* make_dict_type(llvm::LLVMContext& context);
 
 //llvm::Value* generate_dict_alloca(llvm::IRBuilder<>& builder, llvm::Value* dict_reg);
 
@@ -420,6 +416,7 @@ llvm::Type* deref_ptr(llvm::Type* type);
 
 ////////////////////////////////		llvm_arg_mapping_t
 
+struct llvm_type_interner_t;
 
 //	One element for each LLVM argument.
 struct llvm_arg_mapping_t {
@@ -439,7 +436,7 @@ struct llvm_function_def_t {
 
 llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<member_t>& args);
 
-llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const floyd::typeid_t& function_type);
+llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const llvm_type_interner_t& interner, const floyd::typeid_t& function_type);
 
 
 
@@ -448,11 +445,30 @@ llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& 
 
 ////////////////////////////////		intern_type()
 
-llvm::Type* make_function_type(llvm::LLVMContext& context, const typeid_t& function_type);
-llvm::StructType* make_struct_type(llvm::LLVMContext& context, const typeid_t& type);
 
-llvm::Type* intern_type(llvm::LLVMContext& context, const typeid_t& type);
+struct llvm_type_interner_t {
+	llvm_type_interner_t(llvm::LLVMContext& context, const type_interner_t& interner);
+	bool check_invariant() const;
 
+
+	////////////////////////////////		STATE
+	//	Notice: we match indexes of the lookup vectors between interner.interned and llvm_types.
+	type_interner_t interner;
+	std::vector<llvm::Type*> llvm_types;
+
+	llvm::StructType* vec_type;
+	llvm::StructType* dict_type;
+	llvm::StructType* wide_return_type;
+};
+
+llvm::Type* intern_type(const llvm_type_interner_t& interner, const typeid_t& type);
+llvm::StructType* make_wide_return_type(const llvm_type_interner_t& interner);
+llvm::Type* make_vec_type(const llvm_type_interner_t& interner);
+llvm::Type* make_dict_type(const llvm_type_interner_t& interner);
+
+
+llvm::Type* make_function_type(const llvm_type_interner_t& interner, const typeid_t& function_type);
+llvm::StructType* make_struct_type(const llvm_type_interner_t& interner, const typeid_t& type);
 
 
 /*
@@ -474,7 +490,7 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, llvm::Value& value, const typeid_t& floyd_type);
 
 //	Returns the specific LLVM type for the value, like VEC_T* etc.
-llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, llvm::Value& runtime_value_reg, const typeid_t& type);
+llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_interner_t& interner, llvm::Value& runtime_value_reg, const typeid_t& type);
 
 
 }	//	floyd

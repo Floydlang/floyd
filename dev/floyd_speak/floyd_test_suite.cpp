@@ -4806,6 +4806,7 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 	QUARK_UT_VERIFY(result.empty());
 }
 
+#if 0
 QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 	const auto test_ss3 = R"(
 
@@ -4981,7 +4982,7 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 	const auto result = test_run_container2(test_ss3, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
-
+#endif
 
 
 
