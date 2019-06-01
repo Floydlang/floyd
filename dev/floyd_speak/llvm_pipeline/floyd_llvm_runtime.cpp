@@ -566,82 +566,58 @@ std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value_t arg_
 ////////////////////////////////////////////////////////////////////////////////
 
 
-////////////////////////////////		addref()
+////////////////////////////////		fr_retain_vec()
 
 
-void fr_rc_retain(void* floyd_runtime_ptr, runtime_value_t arg0, runtime_type_t type0){
+void fr_retain_vec(void* floyd_runtime_ptr, VEC_T* vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
-
+	QUARK_ASSERT(vec != nullptr);
 	const auto type = lookup_type(r.type_interner.interner, type0);
 	QUARK_ASSERT(is_rc_value(type));
 
-	if(type.is_string() || type.is_vector()){
-		QUARK_ASSERT(arg0.vector_ptr != nullptr);
+	QUARK_ASSERT(type.is_string() || type.is_vector());
 
-		vec_addref(*arg0.vector_ptr);
-	}
-	else if(type.is_dict()){
-	}
-	else if(type.is_struct()){
-	}
-	else if(type.is_json_value()){
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
+	vec_addref(*vec);
 }
 
-host_func_t fr_rc_retain__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
+host_func_t fr_retain_vec__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(context),
-			make_runtime_value_type(context),
+			make_vec_type(interner)->getPointerTo(),
 			make_runtime_type_type(context)
 		},
 		false
 	);
-	return { "fr_rc_retain", function_type, reinterpret_cast<void*>(fr_rc_retain) };
+	return { "fr_retain_vec", function_type, reinterpret_cast<void*>(fr_retain_vec) };
 }
 
 
 
-////////////////////////////////		releaseref()
+////////////////////////////////		fr_release_vec()
 
 
-void fr_rc_release(void* floyd_runtime_ptr, runtime_value_t arg0, runtime_type_t type0){
+void fr_release_vec(void* floyd_runtime_ptr, VEC_T* vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
-
+	QUARK_ASSERT(vec != nullptr);
 	const auto type = lookup_type(r.type_interner.interner, type0);
-	QUARK_ASSERT(is_rc_value(type));
+	QUARK_ASSERT(type.is_string() || type.is_vector());
 
-	if(type.is_string() || type.is_vector()){
-		QUARK_ASSERT(arg0.vector_ptr != nullptr);
-
-		vec_releaseref(arg0.vector_ptr);
-	}
-	else if(type.is_dict()){
-	}
-	else if(type.is_struct()){
-	}
-	else if(type.is_json_value()){
-	}
-	else{
-		NOT_IMPLEMENTED_YET();
-	}
+	vec_releaseref(vec);
 }
 
-host_func_t fr_rc_release__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
+host_func_t fr_release_vec__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(context),
-			make_runtime_value_type(context),
+			make_vec_type(interner)->getPointerTo(),
 			make_runtime_type_type(context)
 		},
 		false
 	);
-	return { "fr_rc_release", function_type, reinterpret_cast<void*>(fr_rc_release) };
+	return { "fr_release_vec", function_type, reinterpret_cast<void*>(fr_release_vec) };
 }
 
 
@@ -703,14 +679,14 @@ host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context, con
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-VEC_T* FR_alloc_kstr(void* floyd_runtime_ptr, const char* s, uint64_t size){
+VEC_T* fr_alloc_kstr(void* floyd_runtime_ptr, const char* s, uint64_t size){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto a = to_runtime_string(r, std::string(s, s + size));
 	return a.vector_ptr;
 }
 
-host_func_t FR_alloc_kstr__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
+host_func_t fr_alloc_kstr__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_vec_type(interner)->getPointerTo(),
 		{
@@ -720,7 +696,7 @@ host_func_t FR_alloc_kstr__make(llvm::LLVMContext& context, const llvm_type_inte
 		},
 		false
 	);
-	return { "FR_alloc_kstr", function_type, reinterpret_cast<void*>(FR_alloc_kstr) };
+	return { "fr_alloc_kstr", function_type, reinterpret_cast<void*>(fr_alloc_kstr) };
 }
 
 
@@ -1076,13 +1052,13 @@ host_func_t floyd_runtime__compare_values__make(llvm::LLVMContext& context, cons
 
 std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	std::vector<host_func_t> result = {
-		fr_rc_retain__make(context, interner),
-		fr_rc_release__make(context, interner),
+		fr_retain_vec__make(context, interner),
+		fr_release_vec__make(context, interner),
 
 		floyd_runtime__allocate_memory__make(context, interner),
 
 		floyd_runtime__allocate_vector__make(context, interner),
-		FR_alloc_kstr__make(context, interner),
+		fr_alloc_kstr__make(context, interner),
 		floyd_runtime__delete_vector__make(context, interner),
 		floyd_runtime__concatunate_vectors__make(context, interner),
 

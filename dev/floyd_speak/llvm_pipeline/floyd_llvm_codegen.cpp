@@ -6,7 +6,7 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-const bool k_trace_input_output = true;
+const bool k_trace_input_output = false;
 const bool k_trace_types = false;
 
 #include "floyd_llvm_codegen.h"
@@ -290,41 +290,46 @@ llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, co
  	return llvm::ConstantInt::get(t, itype);
 }
 
-void generate_addref(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& value, const typeid_t& type){
+void generate_retain(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& value_reg, const typeid_t& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 	QUARK_ASSERT(type.check_invariant());
 
 	auto& builder = gen_acc.builder;
 	if(is_rc_value(type)){
-		const auto f = find_function_def(gen_acc, "fr_rc_retain");
-		std::vector<llvm::Value*> args = {
-			get_callers_fcp(emit_f),
-			generate_itype_constant(gen_acc, type),
-			&value
-		};
-		builder.CreateCall(f.llvm_f, args, "addref");
+		if(type.is_string() || type.is_vector()){
+			const auto f = find_function_def(gen_acc, "fr_retain_vec");
+			std::vector<llvm::Value*> args = {
+				get_callers_fcp(emit_f),
+				&value_reg,
+				generate_itype_constant(gen_acc, type)
+			};
+			builder.CreateCall(f.llvm_f, args, "");
+		}
+		else{
+		}
 	}
 	else{
 	}
 }
-void generate_rc_release(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& value_reg, const typeid_t& type){
+void generate_release(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& value_reg, const typeid_t& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 	QUARK_ASSERT(type.check_invariant());
 
 	auto& builder = gen_acc.builder;
 	if(is_rc_value(type)){
-		const auto f = find_function_def(gen_acc, "fr_rc_release");
-		std::vector<llvm::Value*> args = {
-			get_callers_fcp(emit_f),
-
-			generate_cast_to_runtime_value(gen_acc, value_reg, type),
-			generate_itype_constant(gen_acc, type)
-//			&value,
-//			generate_itype_constant(gen_acc, type)
-		};
-		builder.CreateCall(f.llvm_f, args);
+		if(type.is_string() || type.is_vector()){
+			const auto f = find_function_def(gen_acc, "fr_release_vec");
+			std::vector<llvm::Value*> args = {
+				get_callers_fcp(emit_f),
+				&value_reg,
+				generate_itype_constant(gen_acc, type)
+			};
+			builder.CreateCall(f.llvm_f, args);
+		}
+		else{
+		}
 	}
 	else{
 	}
@@ -374,13 +379,13 @@ static llvm::Value* generate_alloc_string_from_strptr(llvm_code_generator_t& gen
 
 	auto& builder = gen_acc.builder;
 
-	const auto f = find_function_def(gen_acc, "FR_alloc_kstr");
+	const auto f = find_function_def(gen_acc, "fr_alloc_kstr");
 	std::vector<llvm::Value*> args = {
 		get_callers_fcp(emit_f),
 		&char_ptr_reg,
 		&size_reg
 	};
-	return builder.CreateCall(f.llvm_f, args, "FR_kstr");
+	return builder.CreateCall(f.llvm_f, args, "");
 }
 
 static llvm::Value* generate_alloc_dict(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const std::string& debug){
@@ -789,6 +794,8 @@ static llvm::Value* generate_resolve_member_expression(llvm_code_generator_t& ge
 		int member_index = find_struct_member_index(struct_def, details.member_name);
 		QUARK_ASSERT(member_index != -1);
 
+		const auto& member_type = struct_def._members[member_index]._type;
+
 		const auto gep = std::vector<llvm::Value*>{
 			//	Struct array index.
 			builder.getInt32(0),
@@ -798,6 +805,9 @@ static llvm::Value* generate_resolve_member_expression(llvm_code_generator_t& ge
 		};
 		llvm::Value* member_ptr_reg = builder.CreateGEP(&struct_type_llvm, parent_struct_ptr_reg, gep, "");
 		auto member_value_reg = builder.CreateLoad(member_ptr_reg);
+		generate_retain(gen_acc, emit_f, *member_value_reg, member_type);
+		generate_release(gen_acc, emit_f, *parent_struct_ptr_reg, parent_type);
+
 		return member_value_reg;
 	}
 	else{
@@ -830,13 +840,20 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 		llvm::Value* element_addr = builder.CreateGEP(llvm::Type::getInt8Ty(context), char_ptr_reg, gep, "element_addr");
 		llvm::Value* element_value_8bit = builder.CreateLoad(element_addr, "element_tmp");
 		llvm::Value* element_reg = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::SExt, element_value_8bit, builder.getInt64Ty(), "char_to_int64");
+
+		generate_release(gen_acc, emit_f, *parent_reg, parent_type);
+
+		//	No need to retain/release the element - it's an integer.
+
 		return element_reg;
 	}
 	else if(parent_type.is_json_value()){
 		QUARK_ASSERT(key_type.is_int() || key_type.is_string());
 
 		//	Notice that we only know at runtime if the json_value can be looked up: it needs to be json-object or a json-array. The key is either a string or an integer.
-		return generate_lookup_json(gen_acc, emit_f, *parent_reg, *key_reg, key_type);
+		auto result = generate_lookup_json(gen_acc, emit_f, *parent_reg, *key_reg, key_type);
+		generate_release(gen_acc, emit_f, *parent_reg, parent_type);
+		return result;
 	}
 	else if(parent_type.is_vector()){
 		QUARK_ASSERT(key_type.is_int());
@@ -846,13 +863,24 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 		const auto gep = std::vector<llvm::Value*>{ key_reg };
 		llvm::Value* element_addr_reg = builder.CreateGEP(builder.getInt64Ty(), uint64_array_ptr_reg, gep, "element_addr");
 		llvm::Value* element_value_uint64_reg = builder.CreateLoad(element_addr_reg, "element_tmp");
-		return generate_cast_from_runtime_value(gen_acc, *element_value_uint64_reg, element_type0);
+		auto result_reg = generate_cast_from_runtime_value(gen_acc, *element_value_uint64_reg, element_type0);
+
+		generate_retain(gen_acc, emit_f, *result_reg, element_type0);
+		generate_release(gen_acc, emit_f, *parent_reg, parent_type);
+
+		return result_reg;
 	}
 	else if(parent_type.is_dict()){
 		QUARK_ASSERT(key_type.is_string());
+
 		const auto element_type0 = parent_type.get_dict_value_type();
 		auto element_value_uint64_reg = generate_lookup_dict(gen_acc, emit_f, *parent_reg, *key_reg);
-		return generate_cast_from_runtime_value(gen_acc, *element_value_uint64_reg, element_type0);
+		auto result_reg = generate_cast_from_runtime_value(gen_acc, *element_value_uint64_reg, element_type0);
+
+		generate_retain(gen_acc, emit_f, *result_reg, element_type0);
+		generate_release(gen_acc, emit_f, *parent_reg, parent_type);
+
+		return result_reg;
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -959,9 +987,9 @@ static llvm::Value* generate_arithmetic_expression(llvm_code_generator_t& gen_ac
 			lhs_temp,
 			rhs_temp
 		};
-		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "concatunate_vectors");
-		generate_rc_release(gen_acc, emit_f, *lhs_temp, *details.lhs->_output_type);
-		generate_rc_release(gen_acc, emit_f, *rhs_temp, *details.rhs->_output_type);
+		auto result = gen_acc.builder.CreateCall(def.llvm_f, args2, "");
+		generate_release(gen_acc, emit_f, *lhs_temp, *details.lhs->_output_type);
+		generate_release(gen_acc, emit_f, *rhs_temp, *details.rhs->_output_type);
 		return result;
 	}
 	else{
@@ -1065,19 +1093,28 @@ static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_ac
 		return gen_acc.builder.CreateFCmp(pred, lhs_temp, rhs_temp);
 	}
 	else if(type.is_string() || type.is_vector()){
-		auto result = generate_compare_values(gen_acc, emit_f, details.op, type, *lhs_temp, *rhs_temp);
-		generate_rc_release(gen_acc, emit_f, *lhs_temp, *details.lhs->_output_type);
-		generate_rc_release(gen_acc, emit_f, *rhs_temp, *details.rhs->_output_type);
-		return result;
+		auto result_reg = generate_compare_values(gen_acc, emit_f, details.op, type, *lhs_temp, *rhs_temp);
+		generate_release(gen_acc, emit_f, *lhs_temp, *details.lhs->_output_type);
+		generate_release(gen_acc, emit_f, *rhs_temp, *details.rhs->_output_type);
+		return result_reg;
 	}
 	else if(type.is_dict()){
-		return generate_compare_values(gen_acc, emit_f, details.op, type, *lhs_temp, *rhs_temp);
+		auto result_reg = generate_compare_values(gen_acc, emit_f, details.op, type, *lhs_temp, *rhs_temp);
+		generate_release(gen_acc, emit_f, *lhs_temp, *details.lhs->_output_type);
+		generate_release(gen_acc, emit_f, *rhs_temp, *details.rhs->_output_type);
+		return result_reg;
 	}
 	else if(type.is_struct()){
-		return generate_compare_values(gen_acc, emit_f, details.op, type, *lhs_temp, *rhs_temp);
+		auto result_reg = generate_compare_values(gen_acc, emit_f, details.op, type, *lhs_temp, *rhs_temp);
+		generate_release(gen_acc, emit_f, *lhs_temp, *details.lhs->_output_type);
+		generate_release(gen_acc, emit_f, *rhs_temp, *details.rhs->_output_type);
+		return result_reg;
 	}
 	else if(type.is_json_value()){
-		return generate_compare_values(gen_acc, emit_f, details.op, type, *lhs_temp, *rhs_temp);
+		auto result_reg = generate_compare_values(gen_acc, emit_f, details.op, type, *lhs_temp, *rhs_temp);
+		generate_release(gen_acc, emit_f, *lhs_temp, *details.lhs->_output_type);
+		generate_release(gen_acc, emit_f, *rhs_temp, *details.rhs->_output_type);
+		return result_reg;
 	}
 	else{
 		UNSUPPORTED();
@@ -1151,6 +1188,9 @@ static llvm::Value* generate_conditional_operator_expression(llvm_code_generator
 	phiNode->addIncoming(then_reg, then_bb2);
 	phiNode->addIncoming(else_reg, else_bb2);
 
+	//	Meaningless but shows that we handle condition_reg.
+	generate_release(gen_acc, emit_f, *condition_reg, typeid_t::make_bool());
+
 	return phiNode;
 }
 
@@ -1200,7 +1240,7 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 			auto floyd_context_arg_ptr = f_args.begin();
 			arg_regs.push_back(floyd_context_arg_ptr);
 		}
-		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_simple_value){
+		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_known_value_type){
 			llvm::Value* arg2 = generate_expression(gen_acc, emit_f, arg_details);
 			arg_regs.push_back(arg2);
 			destroy.push_back({ arg2, arg_details.get_output_type() });
@@ -1229,10 +1269,13 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 	auto result0 = builder.CreateCall(callee0_reg, arg_regs, callee_function_type.get_function_return().is_void() ? "" : "call_result");
 
 	for(const auto& m: destroy){
-		generate_rc_release(gen_acc, emit_f, *m.first, m.second);
+		generate_release(gen_acc, emit_f, *m.first, m.second);
 	}
+	//	Release callee?
+
 
 	//	If the return type is dynamic, cast the returned int64 to the correct type.
+	//	It must be retained already.
 	llvm::Value* result = result0;
 	if(callee_function_type.get_function_return().is_any()){
 		auto wide_return_a_reg = builder.CreateExtractValue(result, { static_cast<int>(WIDE_RETURN_MEMBERS::a) });
@@ -1256,6 +1299,9 @@ static void generate_fill_array(llvm_code_generator_t& gen_acc, llvm::Function& 
 
 	int element_index = 0;
 	for(const auto& element_value: elements){
+
+		//	Move ownwership from temp to member element, no need for retain-release.
+
 		llvm::Value* element_value_reg = generate_expression(gen_acc, emit_f, element_value);
 		generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
 		element_index++;
@@ -1280,6 +1326,10 @@ static void generate_fill_array(llvm_code_generator_t& gen_acc, llvm::Function& 
 		  ret void
 		}
 */
+
+
+//??? Destroy composite/struct/vector/dict/json must also release all retained member values.
+
 
 static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1403,6 +1453,8 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			QUARK_ASSERT((details.elements.size() & 1) == 0);
 			const auto count = details.elements.size() / 2;
 			for(int element_index = 0 ; element_index < count ; element_index++){
+
+				//	Retain-release should be correct.
 				llvm::Value* key0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 0]);
 				llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 1]);
 				auto dict2_ptr_reg = generate_store_dict(gen_acc, emit_f, *dict_acc_ptr_reg, *key0_reg, *element0_reg, element_type0);
@@ -1416,6 +1468,8 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			QUARK_ASSERT((details.elements.size() & 1) == 0);
 			const auto count = details.elements.size() / 2;
 			for(int element_index = 0 ; element_index < count ; element_index++){
+
+				//	Retain-release should be correct.
 				llvm::Value* key0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 0]);
 				llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 1]);
 				auto dict2_ptr_reg = generate_store_dict(gen_acc, emit_f, *dict_acc_ptr_reg, *key0_reg, *element0_reg, element_type0);
@@ -1437,6 +1491,9 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 
 		int member_index = 0;
 		for(const auto& m: struct_def._members){
+
+			//	Retain-release should be correct.
+
 			const auto& arg = details.elements[member_index];
 			llvm::Value* member_value_reg = generate_expression(gen_acc, emit_f, arg);
 			generate_struct_member_store(builder, struct_type_llvm, *struct_ptr_reg, member_index, *member_value_reg);
@@ -1444,6 +1501,8 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 		}
 		return struct_ptr_reg;
 	}
+
+	//	Construct a primitive, using int(113) or double(3.14)
 	else{
 		QUARK_ASSERT(element_count == 1);
 
@@ -1477,7 +1536,9 @@ static llvm::Value* generate_load2_expression(llvm_code_generator_t& gen_acc, ll
 //	QUARK_TRACE_SS("result = " << floyd::print_program(gen_acc.program_acc));
 
 	auto dest = find_symbol(gen_acc, details.address);
-	return gen_acc.builder.CreateLoad(dest.value_ptr, "temp");
+	auto result = gen_acc.builder.CreateLoad(dest.value_ptr, "temp");
+	generate_retain(gen_acc, emit_f, *result, e.get_output_type());
+	return result;
 }
 
 static llvm::Value* generate_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e){
@@ -1527,9 +1588,10 @@ static llvm::Value* generate_expression(llvm_code_generator_t& gen_acc, llvm::Fu
 		llvm::Value* operator()(const expression_t::load2_t& expr) const{
 			//	No need / must not load function arguments.
 			const auto s = find_symbol(gen_acc, expr.address);
-
 			if(s.symtype == resolved_symbol_t::esymtype::k_function_argument){
-				return s.value_ptr;
+				auto result = s.value_ptr;
+				generate_retain(gen_acc, emit_f, *result, e.get_output_type());
+				return result;
 			}
 			else{
 				return generate_load2_expression(gen_acc, emit_f, e, expr);
@@ -1567,7 +1629,18 @@ static void generate_assign2_statement(llvm_code_generator_t& gen_acc, llvm::Fun
 	llvm::Value* value = generate_expression(gen_acc, emit_f, s._expression);
 
 	auto dest = find_symbol(gen_acc, s._dest_variable);
-	gen_acc.builder.CreateStore(value, dest.value_ptr);
+	const auto type = dest.symbol.get_type();
+
+	if(is_rc_value(type)){
+		auto prev_value = gen_acc.builder.CreateLoad(dest.value_ptr);
+		generate_release(gen_acc, emit_f, *prev_value, type);
+
+		//	No need to retain new value. generate_expression() takes care of that.
+		gen_acc.builder.CreateStore(value, dest.value_ptr);
+	}
+	else{
+		gen_acc.builder.CreateStore(value, dest.value_ptr);
+	}
 
 	QUARK_ASSERT(gen_acc.check_invariant());
 }
@@ -1579,6 +1652,8 @@ static void generate_init2_statement(llvm_code_generator_t& gen_acc, llvm::Funct
 	llvm::Value* value = generate_expression(gen_acc, emit_f, s._expression);
 
 	auto dest = find_symbol(gen_acc, s._dest_variable);
+
+	//	No need to retain new value. generate_expression() takes care of that.
 	gen_acc.builder.CreateStore(value, dest.value_ptr);
 
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1792,7 +1867,8 @@ static void generate_expression_statement(llvm_code_generator_t& gen_acc, llvm::
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
-	generate_expression(gen_acc, emit_f, s._expression);
+	auto result_reg = generate_expression(gen_acc, emit_f, s._expression);
+	generate_release(gen_acc, emit_f, *result_reg, s._expression.get_output_type());
 
 	QUARK_ASSERT(gen_acc.check_invariant());
 }
@@ -2232,7 +2308,7 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const bo
 				const auto type = e.symbol.get_type();
 				if(is_rc_value(type)){
 					auto reg = builder.CreateLoad(e.value_ptr);
-					generate_rc_release(gen_acc, emit_f, *reg, type);
+					generate_release(gen_acc, emit_f, *reg, type);
 				}
 				else{
 				}

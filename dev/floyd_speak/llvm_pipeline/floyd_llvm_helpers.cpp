@@ -249,7 +249,7 @@ void detect_leaks(const heap_t& heap){
 
 	trace_heap(heap);
 	const auto leaks = heap.count_leaks();
-#if 0
+#if 1
 	if(leaks > 0){
 		throw std::exception();
 	}
@@ -839,7 +839,7 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 			auto arg_copy = def.args[out_index];
 			if(arg_copy.map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr){
 			}
-			else if(arg_copy.map_type == llvm_arg_mapping_t::map_type::k_simple_value){
+			else if(arg_copy.map_type == llvm_arg_mapping_t::map_type::k_known_value_type){
 				auto floyd_arg_index = arg_copy.floyd_arg_index;
 				const auto& floyd_arg = args[floyd_arg_index];
 				QUARK_ASSERT(arg_copy.floyd_type == floyd_arg._type);
@@ -893,7 +893,7 @@ llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const llv
 		}
 		else {
 			auto arg_itype = intern_type(interner, arg);
-			arg_results.push_back({ arg_itype, std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_simple_value });
+			arg_results.push_back({ arg_itype, std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_known_value_type });
 		}
 	}
 
@@ -975,7 +975,7 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""
 	QUARK_UT_VERIFY(r.args[1].floyd_name == "0");
 	QUARK_UT_VERIFY(r.args[1].floyd_type.is_int());
 	QUARK_UT_VERIFY(r.args[1].floyd_arg_index == 0);
-	QUARK_UT_VERIFY(r.args[1].map_type == llvm_arg_mapping_t::map_type::k_simple_value);
+	QUARK_UT_VERIFY(r.args[1].map_type == llvm_arg_mapping_t::map_type::k_known_value_type);
 }
 
 QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int, DYN, bool)", ""){
@@ -1001,7 +1001,7 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int, DYN,
 	QUARK_UT_VERIFY(r.args[1].floyd_name == "0");
 	QUARK_UT_VERIFY(r.args[1].floyd_type.is_int());
 	QUARK_UT_VERIFY(r.args[1].floyd_arg_index == 0);
-	QUARK_UT_VERIFY(r.args[1].map_type == llvm_arg_mapping_t::map_type::k_simple_value);
+	QUARK_UT_VERIFY(r.args[1].map_type == llvm_arg_mapping_t::map_type::k_known_value_type);
 
 	QUARK_UT_VERIFY(r.args[2].llvm_type->isIntegerTy(64));
 	QUARK_UT_VERIFY(r.args[2].floyd_name == "1");
@@ -1019,7 +1019,7 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int, DYN,
 	QUARK_UT_VERIFY(r.args[4].floyd_name == "2");
 	QUARK_UT_VERIFY(r.args[4].floyd_type.is_bool());
 	QUARK_UT_VERIFY(r.args[4].floyd_arg_index == 2);
-	QUARK_UT_VERIFY(r.args[4].map_type == llvm_arg_mapping_t::map_type::k_simple_value);
+	QUARK_UT_VERIFY(r.args[4].map_type == llvm_arg_mapping_t::map_type::k_known_value_type);
 }
 
 
@@ -1437,23 +1437,23 @@ llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, llvm::V
 			UNSUPPORTED();
 		}
 		llvm::Value* operator()(const typeid_t::bool_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, make_runtime_value_type(context), "bool_as_arg");
+			return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, make_runtime_value_type(context), "");
 		}
 		llvm::Value* operator()(const typeid_t::int_t& e) const{
 			return &value;
 		}
 		llvm::Value* operator()(const typeid_t::double_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value, make_runtime_value_type(context), "double_as_arg");
+			return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value, make_runtime_value_type(context), "");
 		}
 		llvm::Value* operator()(const typeid_t::string_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "string_as_arg");
+			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "");
 		}
 
 		llvm::Value* operator()(const typeid_t::json_type_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "json_as_arg");
+			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "");
 		}
 		llvm::Value* operator()(const typeid_t::typeid_type_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, make_runtime_value_type(context), "typeid_as_arg");
+			return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, make_runtime_value_type(context), "");
 		}
 
 		llvm::Value* operator()(const typeid_t::struct_t& e) const{
@@ -1466,7 +1466,7 @@ llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, llvm::V
 			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "");
 		}
 		llvm::Value* operator()(const typeid_t::function_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "function_as_arg");
+			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(context), "");
 		}
 		llvm::Value* operator()(const typeid_t::unresolved_t& e) const{
 			UNSUPPORTED();

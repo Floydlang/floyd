@@ -760,7 +760,7 @@ QUARK_UNIT_TEST("Floyd test suite", "func", "define additional function, call it
 	);
 }
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "func", "use function inputs", ""){
+QUARK_UNIT_TEST("Floyd test suite", "func", "use function inputs", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
@@ -4271,6 +4271,7 @@ QUARK_UNIT_TEST("Floyd test suite", "supermap()", "No dependencies", ""){
 	)");
 }
 
+#if 0
 QUARK_UNIT_TEST("Floyd test suite", "supermap()", "complex", ""){
 	run_closed(R"(
 
@@ -4294,8 +4295,7 @@ QUARK_UNIT_TEST("Floyd test suite", "supermap()", "complex", ""){
 
 	)");
 }
-
-
+#endif
 
 
 
