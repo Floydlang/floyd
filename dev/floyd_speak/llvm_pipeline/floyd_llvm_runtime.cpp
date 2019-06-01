@@ -1551,12 +1551,36 @@ WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, runtime_value_t 
 		QUARK_ASSERT(type1 == type0.get_vector_element_type());
 
 		const auto element = arg1_value;
+		const auto element_type = type1;
 
 		auto v2 = floyd_runtime__allocate_vector(floyd_runtime_ptr, vs->get_element_count() + 1);
-		for(int i = 0 ; i < vs->get_element_count() ; i++){
-			v2->get_element_ptr()[i] = vs->get_element_ptr()[i];
+
+		auto dest_ptr = v2->get_element_ptr();
+		auto source_ptr = vs->get_element_ptr();
+
+		if(is_rc_value(element_type)){
+			if(element_type.is_string() || element_type.is_vector()){
+				vec_addref(*element.vector_ptr);
+
+				for(int i = 0 ; i < vs->get_element_count() ; i++){
+					vec_addref(*source_ptr[i].vector_ptr);
+					dest_ptr[i] = source_ptr[i];
+				}
+				dest_ptr[vs->get_element_count()] = element;
+			}
+			else{
+				for(int i = 0 ; i < vs->get_element_count() ; i++){
+					dest_ptr[i] = source_ptr[i];
+				}
+				dest_ptr[vs->get_element_count()] = element;
+			}
 		}
-		v2->get_element_ptr()[vs->get_element_count()] = element;
+		else{
+			for(int i = 0 ; i < vs->get_element_count() ; i++){
+				dest_ptr[i] = source_ptr[i];
+			}
+			dest_ptr[vs->get_element_count()] = element;
+		}
 		return make_wide_return_vec(v2);
 	}
 	else{
