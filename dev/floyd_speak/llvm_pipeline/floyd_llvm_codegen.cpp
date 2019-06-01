@@ -1548,6 +1548,18 @@ static void generate_assign2_statement(llvm_code_generator_t& gen_acc, llvm::Fun
 	QUARK_ASSERT(gen_acc.check_invariant());
 }
 
+static void generate_init2_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t::init2_t& s){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+
+	llvm::Value* value = generate_expression(gen_acc, emit_f, s._expression);
+
+	auto dest = find_symbol(gen_acc, s._dest_variable);
+	gen_acc.builder.CreateStore(value, dest.value_ptr);
+
+	QUARK_ASSERT(gen_acc.check_invariant());
+}
+
 static gen_statement_mode generate_block_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t::block_statement_t& s){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -1798,6 +1810,10 @@ static gen_statement_mode generate_statement(llvm_code_generator_t& gen_acc, llv
 		}
 		gen_statement_mode operator()(const statement_t::assign2_t& s) const{
 			generate_assign2_statement(acc0, emit_f, s);
+			return gen_statement_mode::more;
+		}
+		gen_statement_mode operator()(const statement_t::init2_t& s) const{
+			generate_init2_statement(acc0, emit_f, s);
 			return gen_statement_mode::more;
 		}
 		gen_statement_mode operator()(const statement_t::block_statement_t& s) const{

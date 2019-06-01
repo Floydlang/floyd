@@ -293,6 +293,9 @@ static void collect_used_types(type_interner_t& acc, const statement_t& statemen
 		void operator()(const statement_t::assign2_t& s) const{
 			collect_used_types(acc, s._expression);
 		}
+		void operator()(const statement_t::init2_t& s) const{
+			collect_used_types(acc, s._expression);
+		}
 		void operator()(const statement_t::block_statement_t& s) const{
 			collect_used_types(acc, s._body);
 		}
@@ -614,14 +617,14 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 			throw_compiler_error(s.location, what.str());
 		}
 		else{
-			//	Replave the temporary symbol with the real function defintion.
+			//	Replace the temporary symbol with the real function defintion.
 			const auto symbol2 = mutable_flag ? symbol_t::make_mutable(lhs_type2) : symbol_t::make_immutable(lhs_type2);
 			a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
 			resolve_type(a_acc, s.location, rhs_expr_pair.second.get_output_type());
 
 			return {
 				a_acc,
-				statement_t::make__assign2(
+				statement_t::make__init2(
 					s.location,
 					floyd::variable_address_t::make_variable_address(0, (int)local_name_index),
 					rhs_expr_pair.second
@@ -833,6 +836,10 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::assign2_t& s) const{
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+		}
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::init2_t& s) const{
 			QUARK_ASSERT(false);
 			quark::throw_exception();
 		}

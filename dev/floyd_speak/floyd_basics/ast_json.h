@@ -80,6 +80,7 @@ namespace statement_opcode_t {
 	const std::string k_bind = "bind";
 	const std::string k_assign = "assign";
 	const std::string k_assign2 = "assign2";
+	const std::string k_init2 = "init2";
 	const std::string k_block = "block";
 
 	const std::string k_def_struct = "def-struct";

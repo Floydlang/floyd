@@ -217,6 +217,9 @@ bool statement_t::check_types_resolved() const{
 		bool operator()(const assign2_t& s) const{
 			return s._expression.check_types_resolved();
 		}
+		bool operator()(const init2_t& s) const{
+			return s._expression.check_types_resolved();
+		}
 		bool operator()(const block_statement_t& s) const{
 			return s._body.check_types_resolved();
 		}
@@ -314,6 +317,17 @@ statement_t astjson_to_statement__nonlossy(const json_t& statement0){
 
 		const auto expr2 = astjson_to_expression(expr);
 		return statement_t::make__assign2(loc, variable_address_t::make_variable_address(parent_index, variable_index), expr2);
+	}
+
+	//	[ "init2", parent_index, variable_index, EXPRESSION ]
+	else if(type == statement_opcode_t::k_init2){
+		QUARK_ASSERT(statement.get_array_size() == 4);
+		const auto parent_index = (int)statement.get_array_n(1).get_number();
+		const auto variable_index = (int)statement.get_array_n(2).get_number();
+		const auto expr = statement.get_array_n(3);
+
+		const auto expr2 = astjson_to_expression(expr);
+		return statement_t::make__init2(loc, variable_address_t::make_variable_address(parent_index, variable_index), expr2);
 	}
 
 	//	[ "block", [ STATEMENTS ] ]
@@ -507,6 +521,15 @@ json_t statement_to_json(const statement_t& e){
 			return make_statement3(
 				statement.location,
 				statement_opcode_t::k_assign2,
+				s._dest_variable._parent_steps,
+				s._dest_variable._index,
+				expression_to_json(s._expression)
+			);
+		}
+		json_t operator()(const statement_t::init2_t& s) const{
+			return make_statement3(
+				statement.location,
+				statement_opcode_t::k_init2,
 				s._dest_variable._parent_steps,
 				s._dest_variable._index,
 				expression_to_json(s._expression)

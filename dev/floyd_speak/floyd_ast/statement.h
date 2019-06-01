@@ -295,6 +295,26 @@ namespace floyd {
 		}
 
 
+		//////////////////////////////////////		init2_t
+
+
+		//	Initialise an existing variable, specified by resolved scope ID.
+
+		struct init2_t {
+			bool operator==(const init2_t& other) const {
+				return _dest_variable == other._dest_variable
+					&& _expression == other._expression;
+			}
+
+			variable_address_t _dest_variable;
+			expression_t _expression;
+		};
+
+		public: static statement_t make__init2(const location_t& location, const variable_address_t& dest_variable, const expression_t& expression){
+			return statement_t(location, { init2_t{ dest_variable, expression} });
+		}
+
+
 		//////////////////////////////////////		block_statement_t
 
 
@@ -461,6 +481,7 @@ namespace floyd {
 			bind_local_t,
 			assign_t,
 			assign2_t,
+			init2_t,
 			block_statement_t,
 			ifelse_statement_t,
 			for_statement_t,
