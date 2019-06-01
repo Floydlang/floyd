@@ -594,9 +594,45 @@ host_func_t fr_retain_vec__make(llvm::LLVMContext& context, const llvm_type_inte
 }
 
 
-
 ////////////////////////////////		fr_release_vec()
 
+
+void release_vec_deep(llvm_execution_engine_t& runtime, VEC_T* vec, const typeid_t& type){
+	QUARK_ASSERT(vec != nullptr);
+	QUARK_ASSERT(type.is_string() || type.is_vector());
+
+	//??? Make atomic. CAS?
+	//??? unsafe hack. SOme other code could stop rc from becoming 0.
+	if(vec->alloc.rc == 1){
+
+		if(type.is_string()){
+		}
+		else if(type.is_vector()){
+			//	Release all elements.
+			const auto element_type = type.get_vector_element_type();
+			if(is_rc_value(element_type)){
+				auto element_ptr = vec->get_element_ptr();
+				for(int i = 0 ; i < vec->get_element_count() ; i++){
+					if(element_type.is_string() || element_type.is_vector()){
+						VEC_T* element = element_ptr[i].vector_ptr;
+						QUARK_ASSERT(element != nullptr);
+						release_vec_deep(runtime, element, element_type);
+					}
+
+					//??? Also free other RC types like dicts, json_value etc.
+					else{
+					}
+				}
+			}
+		}
+
+		//??? Also free other RC types like dicts, json_value etc.
+		else{
+		}
+	}
+
+	vec_releaseref(vec);
+}
 
 void fr_release_vec(void* floyd_runtime_ptr, VEC_T* vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
@@ -604,7 +640,7 @@ void fr_release_vec(void* floyd_runtime_ptr, VEC_T* vec, runtime_type_t type0){
 	const auto type = lookup_type(r.type_interner.interner, type0);
 	QUARK_ASSERT(type.is_string() || type.is_vector());
 
-	vec_releaseref(vec);
+	release_vec_deep(r, vec, type);
 }
 
 host_func_t fr_release_vec__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
@@ -700,28 +736,8 @@ host_func_t fr_alloc_kstr__make(llvm::LLVMContext& context, const llvm_type_inte
 }
 
 
-////////////////////////////////		delete_vector()
+////////////////////////////////		floyd_runtime__concatunate_vectors()
 
-
-void floyd_runtime__delete_vector(void* floyd_runtime_ptr, VEC_T* vec){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
-	QUARK_ASSERT(vec != nullptr);
-	QUARK_ASSERT(vec->check_invariant());
-
-	vec_releaseref(vec);
-}
-
-host_func_t floyd_runtime__delete_vector__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
-	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		llvm::Type::getVoidTy(context),
-		{
-			make_frp_type(context),
-			make_vec_type(interner)->getPointerTo()
-		},
-		false
-	);
-	return { "floyd_runtime__delete_vector", function_type, reinterpret_cast<void*>(floyd_runtime__delete_vector) };
-}
 
 VEC_T* floyd_runtime__concatunate_vectors(void* floyd_runtime_ptr, runtime_type_t type, VEC_T* lhs, VEC_T* rhs){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
@@ -787,29 +803,6 @@ host_func_t floyd_runtime__allocate_dict__make(llvm::LLVMContext& context, const
 	return { "floyd_runtime__allocate_dict", function_type, reinterpret_cast<void*>(floyd_runtime__allocate_dict) };
 }
 
-
-////////////////////////////////		delete_dict()
-
-
-void floyd_runtime__delete_dict(void* floyd_runtime_ptr, DICT_T* dict){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
-	QUARK_ASSERT(dict != nullptr);
-	QUARK_ASSERT(dict->check_invariant());
-
-	delete_dict(*dict);
-}
-
-host_func_t floyd_runtime__delete_dict__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
-	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		llvm::Type::getVoidTy(context),
-		{
-			make_frp_type(context),
-			make_dict_type(interner)->getPointerTo()
-		},
-		false
-	);
-	return { "floyd_runtime__delete_dict", function_type, reinterpret_cast<void*>(floyd_runtime__delete_dict) };
-}
 
 
 ////////////////////////////////		store_dict()
@@ -1059,11 +1052,9 @@ std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const
 
 		floyd_runtime__allocate_vector__make(context, interner),
 		fr_alloc_kstr__make(context, interner),
-		floyd_runtime__delete_vector__make(context, interner),
 		floyd_runtime__concatunate_vectors__make(context, interner),
 
 		floyd_runtime__allocate_dict__make(context, interner),
-		floyd_runtime__delete_dict__make(context, interner),
 		floyd_runtime__store_dict__make(context, interner),
 		floyd_runtime__lookup_dict__make(context, interner),
 
