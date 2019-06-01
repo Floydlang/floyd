@@ -49,12 +49,12 @@ namespace floyd {
 	*/
 
 	struct symbol_t {
-		enum type {
-			immutable_local = 10,
-			mutable_local
+		enum class mutable_mode {
+			immutable,
+			mutable1
 		};
 
-		type _symbol_type;
+		mutable_mode _mutable_mode;
 		floyd::typeid_t _value_type;
 
 		//	If there is no initialization value, this member must be value_t::make_undefined();
@@ -63,7 +63,7 @@ namespace floyd {
 
 		bool operator==(const symbol_t& other) const {
 			return true
-				&& _symbol_type == other._symbol_type
+				&& _mutable_mode == other._mutable_mode
 				&& _value_type == other._value_type
 				&& _init == other._init
 				;
@@ -74,10 +74,10 @@ namespace floyd {
 			return true;
 		}
 
-		public: symbol_t(type symbol_type, const floyd::typeid_t& value_type, const floyd::value_t& const_value) :
-			_symbol_type(symbol_type),
+		public: symbol_t(mutable_mode mutable_mode, const floyd::typeid_t& value_type, const floyd::value_t& init_value) :
+			_mutable_mode(mutable_mode),
 			_value_type(value_type),
-			_init(const_value)
+			_init(init_value)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
@@ -89,25 +89,23 @@ namespace floyd {
 		}
 
 		public: static symbol_t make_immutable_local(const floyd::typeid_t& value_type){
-			return symbol_t{ type::immutable_local, value_type, {} };
+			return symbol_t{ mutable_mode::immutable, value_type, {} };
 		}
 
 		public: static symbol_t make_mutable_local(const floyd::typeid_t& value_type){
-			return symbol_t{ type::mutable_local, value_type, {} };
+			return symbol_t{ mutable_mode::mutable1, value_type, {} };
 		}
 
-		public: static symbol_t make_constant(const floyd::value_t& value){
-			return symbol_t{ type::immutable_local, value.get_type(), value };
+		public: static symbol_t make_immutable_precalc(const floyd::value_t& init_value){
+			return symbol_t{ mutable_mode::immutable, init_value.get_type(), init_value };
 		}
 
-		public: static symbol_t make_type(const floyd::typeid_t& t){
-			return symbol_t{
-				type::immutable_local,
-				floyd::typeid_t::make_typeid(),
-				floyd::value_t::make_typeid_value(t)
-			};
-		}
 	};
+
+	inline static symbol_t make_type_symbol(const floyd::typeid_t& t){
+		const auto a = value_t::make_typeid_value(t);
+		return symbol_t::make_immutable_precalc(a);
+	}
 
 	std::string symbol_to_string(const symbol_t& symbol);
 
@@ -126,7 +124,7 @@ namespace floyd {
 		}
 
 
-		public: std::vector<std::pair<std::string, floyd::symbol_t>> _symbols;
+		public: std::vector<std::pair<std::string, symbol_t>> _symbols;
 	};
 
 	int add_constant_literal(symbol_table_t& symbols, const std::string& name, const floyd::value_t& value);

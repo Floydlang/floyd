@@ -34,7 +34,7 @@ std::string symbol_to_string(const symbol_t& s){
 	std::stringstream out;
 
 	out << "<symbol> {"
-		<< (s._symbol_type == symbol_t::type::immutable_local ? "immutable_local" : "mutable_local" )
+		<< (s._mutable_mode == symbol_t::mutable_mode::immutable ? "immutable_local" : "mutable_local" )
 		<< " type: " << typeid_to_compact_string(s._value_type)
 		<< " init: " << (s._init.is_undefined() ? "<none>" : value_and_type_to_string(s._init))
 	<< "}";
@@ -42,7 +42,7 @@ std::string symbol_to_string(const symbol_t& s){
 }
 
 int add_constant_literal(symbol_table_t& symbols, const std::string& name, const floyd::value_t& value){
-	const auto s = symbol_t::make_constant(value);
+	const auto s = symbol_t::make_immutable_precalc(value);
 	symbols._symbols.push_back(std::pair<std::string, symbol_t>(name, s));
 	return static_cast<int>(symbols._symbols.size() - 1);
 }
@@ -82,7 +82,7 @@ const floyd::symbol_t& find_symbol_required(const symbol_table_t& symbol_table, 
 
 
 json_t symbol_to_json(const symbol_t& symbol){
-	const auto symbol_type_str = symbol._symbol_type == symbol_t::immutable_local ? "immutable_local" : "mutable_local";
+	const auto symbol_type_str = symbol._mutable_mode == symbol_t::mutable_mode::immutable ? "immutable_local" : "mutable_local";
 	const auto value_type = typeid_to_ast_json(symbol._value_type, json_tags::k_tag_resolve_state);
 
 	const auto e2 = json_t::make_object({
@@ -102,7 +102,7 @@ symbol_t json_to_symbol(const json_t& e){
 	else{
 		throw std::exception();
 	}
-	const auto symbol_type1 = symbol_type == "immutable_local" ? symbol_t::immutable_local : symbol_t::mutable_local;
+	const auto symbol_type1 = symbol_type == "immutable_local" ? symbol_t::mutable_mode::immutable : symbol_t::mutable_mode::mutable1;
 	const auto value_type1 = typeid_from_ast_json(value_type);
 	const auto init = e.get_object_element("init");
 	const auto init_value1 = init.is_null() ? value_t::make_undefined() : ast_json_to_value(value_type1, init);

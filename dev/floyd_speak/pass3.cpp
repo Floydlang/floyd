@@ -525,7 +525,7 @@ std::pair<analyser_t, statement_t> analyse_assign_statement(const analyser_t& a,
 
 	//	Attempt to mutate existing value!
 	if(existing_value_deep_ptr.first != nullptr){
-		if(existing_value_deep_ptr.first->_symbol_type != symbol_t::mutable_local){
+		if(existing_value_deep_ptr.first->_mutable_mode != symbol_t::mutable_mode::mutable1){
 			throw_compiler_error(s.location, "Cannot assign to immutable identifier \"" + local_name + "\".");
 		}
 		else{
@@ -686,7 +686,7 @@ analyser_t analyse_def_struct_statement(const analyser_t& a, const statement_t& 
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
 
 	// ??? Alternative solution is to use assign2 to write constant into global.
-	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({struct_name, symbol_t::make_constant(struct_typeid_value)});
+	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({struct_name, symbol_t::make_immutable_precalc(struct_typeid_value)});
 
 	return a_acc;
 }
@@ -1934,7 +1934,7 @@ builtins_t insert_builtin_functions(analyser_t& a, const std::map<std::string, f
 		const auto function_value = value_t::make_function_value(signature._function_type, function_id);
 		function_id++;
 
-		symbol_map.push_back({function_name, symbol_t::make_constant(function_value)});
+		symbol_map.push_back({function_name, symbol_t::make_immutable_precalc(function_value)});
 	}
 	return builtins_t{ function_defs, symbol_map };
 }
@@ -1959,28 +1959,28 @@ semantic_ast_t analyse(analyser_t& a){
 	intern_type(a._types, typeid_t::make_typeid());
 //	intern_type(a._types, typeid_t::make_unresolved_type_identifier());
 
-	symbol_map.push_back({keyword_t::k_void, symbol_t::make_type(typeid_t::make_void())});
-	symbol_map.push_back({keyword_t::k_bool, symbol_t::make_type(typeid_t::make_bool())});
-	symbol_map.push_back({keyword_t::k_int, symbol_t::make_type(typeid_t::make_int())});
-	symbol_map.push_back({keyword_t::k_double, symbol_t::make_type(typeid_t::make_double())});
-	symbol_map.push_back({keyword_t::k_string, symbol_t::make_type(typeid_t::make_string())});
-	symbol_map.push_back({keyword_t::k_typeid, symbol_t::make_type(typeid_t::make_typeid())});
-	symbol_map.push_back({keyword_t::k_json_value, symbol_t::make_type(typeid_t::make_json_value())});
+	symbol_map.push_back({keyword_t::k_void, make_type_symbol(typeid_t::make_void())});
+	symbol_map.push_back({keyword_t::k_bool, make_type_symbol(typeid_t::make_bool())});
+	symbol_map.push_back({keyword_t::k_int, make_type_symbol(typeid_t::make_int())});
+	symbol_map.push_back({keyword_t::k_double, make_type_symbol(typeid_t::make_double())});
+	symbol_map.push_back({keyword_t::k_string, make_type_symbol(typeid_t::make_string())});
+	symbol_map.push_back({keyword_t::k_typeid, make_type_symbol(typeid_t::make_typeid())});
+	symbol_map.push_back({keyword_t::k_json_value, make_type_symbol(typeid_t::make_json_value())});
 
 
 	//	"null" is equivalent to json_value::null
-	symbol_map.push_back({"null", symbol_t::make_constant(value_t::make_json_value(json_t()))});
+	symbol_map.push_back({"null", symbol_t::make_immutable_precalc(value_t::make_json_value(json_t()))});
 
-	symbol_map.push_back({keyword_t::k_undefined, symbol_t::make_constant(value_t::make_undefined())});
-	symbol_map.push_back({keyword_t::k_any, symbol_t::make_constant(value_t::make_any())});
+	symbol_map.push_back({keyword_t::k_undefined, symbol_t::make_immutable_precalc(value_t::make_undefined())});
+	symbol_map.push_back({keyword_t::k_any, symbol_t::make_immutable_precalc(value_t::make_any())});
 
-	symbol_map.push_back({keyword_t::k_json_object, symbol_t::make_constant(value_t::make_int(1))});
-	symbol_map.push_back({keyword_t::k_json_array, symbol_t::make_constant(value_t::make_int(2))});
-	symbol_map.push_back({keyword_t::k_json_string, symbol_t::make_constant(value_t::make_int(3))});
-	symbol_map.push_back({keyword_t::k_json_number, symbol_t::make_constant(value_t::make_int(4))});
-	symbol_map.push_back({keyword_t::k_json_true, symbol_t::make_constant(value_t::make_int(5))});
-	symbol_map.push_back({keyword_t::k_json_false, symbol_t::make_constant(value_t::make_int(6))});
-	symbol_map.push_back({keyword_t::k_json_null, symbol_t::make_constant(value_t::make_int(7))});
+	symbol_map.push_back({keyword_t::k_json_object, symbol_t::make_immutable_precalc(value_t::make_int(1))});
+	symbol_map.push_back({keyword_t::k_json_array, symbol_t::make_immutable_precalc(value_t::make_int(2))});
+	symbol_map.push_back({keyword_t::k_json_string, symbol_t::make_immutable_precalc(value_t::make_int(3))});
+	symbol_map.push_back({keyword_t::k_json_number, symbol_t::make_immutable_precalc(value_t::make_int(4))});
+	symbol_map.push_back({keyword_t::k_json_true, symbol_t::make_immutable_precalc(value_t::make_int(5))});
+	symbol_map.push_back({keyword_t::k_json_false, symbol_t::make_immutable_precalc(value_t::make_int(6))});
+	symbol_map.push_back({keyword_t::k_json_null, symbol_t::make_immutable_precalc(value_t::make_int(7))});
 
 
 
