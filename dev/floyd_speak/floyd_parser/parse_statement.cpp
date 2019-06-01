@@ -367,7 +367,7 @@ std::pair<json_t, seq_t> parse_assign_statement(const seq_t& s){
 	const auto rhs_seq = skip_whitespace(equal_pos);
 	const auto expression_fr = parse_expression(rhs_seq);
 
-	const auto statement = make_statement_n(location_t(start.pos()), statement_opcode_t::k_store, { variable_pos.first, expression_fr.first });
+	const auto statement = make_statement_n(location_t(start.pos()), statement_opcode_t::k_assign, { variable_pos.first, expression_fr.first });
 	return { statement, expression_fr.second };
 }
 
@@ -376,7 +376,7 @@ QUARK_UNIT_TEST("", "parse_assign_statement()", "", ""){
 		parse_assign_statement(seq_t("x = 10;")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "store","x",["k",10,"^int"] ]
+				[ 0, "assign","x",["k",10,"^int"] ]
 			)"
 		)).first
 	);

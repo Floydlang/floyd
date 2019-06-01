@@ -237,6 +237,7 @@ namespace floyd {
 
 		//////////////////////////////////////		bind_local_t
 
+		//	Created a new name in current lexical scope and initialises it with an expression.
 
 		struct bind_local_t {
 			enum mutable_mode {
@@ -261,11 +262,12 @@ namespace floyd {
 		}
 
 
-		//////////////////////////////////////		store_t
+		//////////////////////////////////////		assign_t
 
+		//	Mutate an existing variable, specified by name.
 
-		struct store_t {
-			bool operator==(const store_t& other) const {
+		struct assign_t {
+			bool operator==(const assign_t& other) const {
 				return _local_name == other._local_name
 					&& _expression == other._expression;
 			}
@@ -273,16 +275,18 @@ namespace floyd {
 			std::string _local_name;
 			expression_t _expression;
 		};
-		public: static statement_t make__store(const location_t& location, const std::string& local_name, const expression_t& expression){
-			return statement_t(location, { store_t{ local_name, expression} });
+		public: static statement_t make__assign(const location_t& location, const std::string& local_name, const expression_t& expression){
+			return statement_t(location, { assign_t{ local_name, expression} });
 		}
 
 
-		//////////////////////////////////////		store2_t
+		//////////////////////////////////////		assign2_t
 
-		//	Resolved store-operation.
-		struct store2_t {
-			bool operator==(const store2_t& other) const {
+
+		//	Mutate an existing variable, specified by resolved scope ID.
+
+		struct assign2_t {
+			bool operator==(const assign2_t& other) const {
 				return _dest_variable == other._dest_variable
 					&& _expression == other._expression;
 			}
@@ -291,8 +295,8 @@ namespace floyd {
 			expression_t _expression;
 		};
 
-		public: static statement_t make__store2(const location_t& location, const variable_address_t& dest_variable, const expression_t& expression){
-			return statement_t(location, { store2_t{ dest_variable, expression} });
+		public: static statement_t make__assign2(const location_t& location, const variable_address_t& dest_variable, const expression_t& expression){
+			return statement_t(location, { assign2_t{ dest_variable, expression} });
 		}
 
 
@@ -460,8 +464,8 @@ namespace floyd {
 			define_struct_statement_t,
 			define_function_statement_t,
 			bind_local_t,
-			store_t,
-			store2_t,
+			assign_t,
+			assign2_t,
 			block_statement_t,
 			ifelse_statement_t,
 			for_statement_t,

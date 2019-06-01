@@ -366,7 +366,7 @@ bcgen_body_t copy_value(const typeid_t& type, const reg_t& dest_reg, const reg_t
 
 //??? need logic that knows that globals can be treated as locals for instructions in global scope.
 
-bcgen_body_t bcgen_store2_statement(bcgenerator_t& gen_acc, const statement_t::store2_t& statement, const bcgen_body_t& body){
+bcgen_body_t bcgen_assign2_statement(bcgenerator_t& gen_acc, const statement_t::assign2_t& statement, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
@@ -566,12 +566,12 @@ bcgen_body_t bcgen_body_block_statements(bcgenerator_t& gen_acc, const bcgen_bod
 					QUARK_ASSERT(false);
 					quark::throw_exception();
 				}
-				bcgen_body_t operator()(const statement_t::store_t& s) const{
+				bcgen_body_t operator()(const statement_t::assign_t& s) const{
 					QUARK_ASSERT(false);
 					quark::throw_exception();
 				}
-				bcgen_body_t operator()(const statement_t::store2_t& s) const{
-					return bcgen_store2_statement(_gen_acc, s, body_acc);
+				bcgen_body_t operator()(const statement_t::assign2_t& s) const{
+					return bcgen_assign2_statement(_gen_acc, s, body_acc);
 				}
 				bcgen_body_t operator()(const statement_t::block_statement_t& s) const{
 					return bcgen_block_statement(_gen_acc, s, body_acc);

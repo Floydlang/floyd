@@ -287,10 +287,10 @@ static void collect_used_types(type_interner_t& acc, const statement_t& statemen
 			intern_type(acc, s._bindtype);
 			collect_used_types(acc, s._expression);
 		}
-		void operator()(const statement_t::store_t& s) const{
+		void operator()(const statement_t::assign_t& s) const{
 			collect_used_types(acc, s._expression);
 		}
-		void operator()(const statement_t::store2_t& s) const{
+		void operator()(const statement_t::assign2_t& s) const{
 			collect_used_types(acc, s._expression);
 		}
 		void operator()(const statement_t::block_statement_t& s) const{
@@ -515,11 +515,11 @@ std::pair<analyser_t, body_t > analyse_body(const analyser_t& a, const floyd::bo
 /*
 	Can update an existing local (if local is mutable).
 */
-std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& a, const statement_t& s){
+std::pair<analyser_t, statement_t> analyse_assign_statement(const analyser_t& a, const statement_t& s){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
-	const auto statement = std::get<statement_t::store_t>(s._contents);
+	const auto statement = std::get<statement_t::assign_t>(s._contents);
 	const auto local_name = statement._local_name;
 	const auto existing_value_deep_ptr = find_symbol_by_name(a_acc, local_name);
 
@@ -538,12 +538,12 @@ std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& a, 
 
 			if(lhs_type != rhs_expr3.get_output_type()){
 				std::stringstream what;
-				what << "Types not compatible in bind - cannot convert '"
+				what << "Types not compatible in assignment - cannot convert '"
 				<< typeid_to_compact_string(rhs_expr3.get_output_type()) << "' to '" << typeid_to_compact_string(lhs_type) << ".";
 				throw_compiler_error(s.location, what.str());
 			}
 			else{
-				return { a_acc, statement_t::make__store2(s.location, existing_value_deep_ptr.second, rhs_expr3) };
+				return { a_acc, statement_t::make__assign2(s.location, existing_value_deep_ptr.second, rhs_expr3) };
 			}
 		}
 	}
@@ -557,11 +557,10 @@ std::pair<analyser_t, statement_t> analyse_store_statement(const analyser_t& a, 
 }
 
 /*
-Assign with target type info.
-- Always creates a new local.
+Assign with target type info. Always creates a new local.
 
 Ex:
-	int a = 10
+	let int a = 10
 	mutable a = 10
 	mutable = 10
 */
@@ -573,9 +572,14 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 
 	const auto new_local_name = statement._new_local_name;
 	const auto lhs_type0 = statement._bindtype;
-	const auto lhs_type = lhs_type0.check_types_resolved() == false && lhs_type0.is_undefined() == false ? resolve_type(a_acc, s.location, lhs_type0) : lhs_type0;
 
-	const auto bind_statement_mutable_tag_flag = statement._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
+	//	If lhs may be
+	//		(1) undefined, if input is "let a = 10" for example. Then we need to infer its type.
+	//		(2) have a type, but it might not be fully resolved yet.
+//	const auto lhs_type = (lhs_type0.check_types_resolved() == false && lhs_type0.is_undefined() == false) ? resolve_type(a_acc, s.location, lhs_type0) : lhs_type0;
+	const auto lhs_type = lhs_type0.is_undefined() ? lhs_type0 : resolve_type(a_acc, s.location, lhs_type0);
+
+	const auto mutable_flag = statement._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
 
 	const auto value_exists_in_env = does_symbol_exist_shallow(a_acc, new_local_name);
 	if(value_exists_in_env){
@@ -584,13 +588,12 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 		throw_compiler_error(s.location, what.str());
 	}
 
-	//	Setup temporary simply so function definition can find itself = recursive.
-	//	Notice: the final type may not be correct yet, but for function defintions it is.
-	//	This logic should be available for infered binds too, in analyse_store_statement().
-	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({
-		new_local_name,
-		bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type) : symbol_t::make_immutable_local(lhs_type)
-	});
+	//	Setup temporary symbol so function definition can find itself = recursive.
+	//	Notice: the final type may not be correct yet, but for function definitions it is.
+	//	This logic should be available for infered binds too, in analyse_assign_statement().
+
+	const auto new_symbol = mutable_flag ? symbol_t::make_mutable_local(lhs_type) : symbol_t::make_immutable_local(lhs_type);
+	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ new_local_name, new_symbol });
 	const auto local_name_index = a_acc._lexical_scope_stack.back().symbols._symbols.size() - 1;
 
 	try {
@@ -599,7 +602,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 			: analyse_expression_to_target(a_acc, s, statement._expression, lhs_type);
 		a_acc = rhs_expr_pair.first;
 
-		//??? if expression is a k_define_struct, k_define_function -- make it a constant in symbol table and emit no store-statement!
+		//??? if expression is a k_define_struct, k_define_function -- make it a constant in symbol table and emit no assign-statement!
 
 		const auto rhs_type = rhs_expr_pair.second.get_output_type();
 		const auto lhs_type2 = lhs_type.is_undefined() ? rhs_type : lhs_type;
@@ -611,15 +614,18 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 			throw_compiler_error(s.location, what.str());
 		}
 		else{
-			//	Updated the symbol with the real function defintion.
-			a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = {new_local_name, bind_statement_mutable_tag_flag ? symbol_t::make_mutable_local(lhs_type2) : symbol_t::make_immutable_local(lhs_type2)};
-
-
+			//	Replave the temporary symbol with the real function defintion.
+			const auto symbol2 = mutable_flag ? symbol_t::make_mutable_local(lhs_type2) : symbol_t::make_immutable_local(lhs_type2);
+			a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
 			resolve_type(a_acc, s.location, rhs_expr_pair.second.get_output_type());
 
 			return {
 				a_acc,
-				statement_t::make__store2(s.location, floyd::variable_address_t::make_variable_address(0, (int)local_name_index), rhs_expr_pair.second)
+				statement_t::make__assign2(
+					s.location,
+					floyd::variable_address_t::make_variable_address(0, (int)local_name_index),
+					rhs_expr_pair.second
+				)
 			};
 		}
 	}
@@ -679,7 +685,7 @@ analyser_t analyse_def_struct_statement(const analyser_t& a, const statement_t& 
 	const auto struct_typeid2 = resolve_type(a_acc, s.location, struct_typeid1);
 	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
 
-	// ??? Alternative solution is to use store2 to write constant into global.
+	// ??? Alternative solution is to use assign2 to write constant into global.
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({struct_name, symbol_t::make_constant(struct_typeid_value)});
 
 	return a_acc;
@@ -820,12 +826,12 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::store_t& s) const{
-			const auto e = analyse_store_statement(a, statement);
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::assign_t& s) const{
+			const auto e = analyse_assign_statement(a, statement);
 			QUARK_ASSERT(e.second.check_types_resolved());
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::store2_t& s) const{
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::assign2_t& s) const{
 			QUARK_ASSERT(false);
 			quark::throw_exception();
 		}

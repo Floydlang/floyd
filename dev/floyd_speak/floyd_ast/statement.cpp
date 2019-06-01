@@ -212,10 +212,10 @@ bool statement_t::check_types_resolved() const{
 				&& s._expression.check_types_resolved()
 				;
 		}
-		bool operator()(const store_t& s) const{
+		bool operator()(const assign_t& s) const{
 			return s._expression.check_types_resolved();
 		}
-		bool operator()(const store2_t& s) const{
+		bool operator()(const assign2_t& s) const{
 			return s._expression.check_types_resolved();
 		}
 		bool operator()(const block_statement_t& s) const{
@@ -295,26 +295,26 @@ statement_t astjson_to_statement__nonlossy(const json_t& statement0){
 		return statement_t::make__bind_local(loc, name2, bind_type2, expr2, mutable_mode);
 	}
 
-	//	[ "store", "x", EXPRESSION ]
-	else if(type == statement_opcode_t::k_store){
+	//	[ "assign", "x", EXPRESSION ]
+	else if(type == statement_opcode_t::k_assign){
 		QUARK_ASSERT(statement.get_array_size() == 3);
 		const auto name = statement.get_array_n(1);
 		const auto expr = statement.get_array_n(2);
 
 		const auto name2 = name.get_string();
 		const auto expr2 = astjson_to_expression(expr);
-		return statement_t::make__store(loc, name2, expr2);
+		return statement_t::make__assign(loc, name2, expr2);
 	}
 
-	//	[ "store2", parent_index, variable_index, EXPRESSION ]
-	else if(type == statement_opcode_t::k_store2){
+	//	[ "assign2", parent_index, variable_index, EXPRESSION ]
+	else if(type == statement_opcode_t::k_assign2){
 		QUARK_ASSERT(statement.get_array_size() == 4);
 		const auto parent_index = (int)statement.get_array_n(1).get_number();
 		const auto variable_index = (int)statement.get_array_n(2).get_number();
 		const auto expr = statement.get_array_n(3);
 
 		const auto expr2 = astjson_to_expression(expr);
-		return statement_t::make__store2(loc, variable_address_t::make_variable_address(parent_index, variable_index), expr2);
+		return statement_t::make__assign2(loc, variable_address_t::make_variable_address(parent_index, variable_index), expr2);
 	}
 
 	//	[ "block", [ STATEMENTS ] ]
@@ -496,18 +496,18 @@ json_t statement_to_json(const statement_t& e){
 				meta
 			);
 		}
-		json_t operator()(const statement_t::store_t& s) const{
+		json_t operator()(const statement_t::assign_t& s) const{
 			return make_statement2(
 				statement.location,
-				statement_opcode_t::k_store,
+				statement_opcode_t::k_assign,
 				s._local_name,
 				expression_to_json(s._expression)
 			);
 		}
-		json_t operator()(const statement_t::store2_t& s) const{
+		json_t operator()(const statement_t::assign2_t& s) const{
 			return make_statement3(
 				statement.location,
-				statement_opcode_t::k_store2,
+				statement_opcode_t::k_assign2,
 				s._dest_variable._parent_steps,
 				s._dest_variable._index,
 				expression_to_json(s._expression)

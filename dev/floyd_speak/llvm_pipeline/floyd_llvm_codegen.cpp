@@ -1536,7 +1536,7 @@ static llvm::Value* generate_expression(llvm_code_generator_t& gen_acc, llvm::Fu
 
 
 
-static void generate_store2_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t::store2_t& s){
+static void generate_assign2_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t::assign2_t& s){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
@@ -1793,11 +1793,11 @@ static gen_statement_mode generate_statement(llvm_code_generator_t& gen_acc, llv
 		gen_statement_mode operator()(const statement_t::bind_local_t& s) const{
 			UNSUPPORTED();
 		}
-		gen_statement_mode operator()(const statement_t::store_t& s) const{
+		gen_statement_mode operator()(const statement_t::assign_t& s) const{
 			UNSUPPORTED();
 		}
-		gen_statement_mode operator()(const statement_t::store2_t& s) const{
-			generate_store2_statement(acc0, emit_f, s);
+		gen_statement_mode operator()(const statement_t::assign2_t& s) const{
+			generate_assign2_statement(acc0, emit_f, s);
 			return gen_statement_mode::more;
 		}
 		gen_statement_mode operator()(const statement_t::block_statement_t& s) const{

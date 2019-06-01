@@ -617,8 +617,8 @@
 			[],
 			{
 				"statements": [
-					[3373, "store2", 0, 0, ["value-constructor", ["vector", ["vector", "^int"]], []]],
-					[3402, "store2", 0, 1, ["value-constructor", ["vector", "^int"], []]],
+					[3373, "assign2", 0, 0, ["value-constructor", ["vector", ["vector", "^int"]], []]],
+					[3402, "assign2", 0, 1, ["value-constructor", ["vector", "^int"], []]],
 					[
 						3429,
 						"for",
@@ -629,7 +629,7 @@
 							"statements": [
 								[
 									3463,
-									"store2",
+									"assign2",
 									1,
 									1,
 									[
@@ -653,7 +653,7 @@
 							"statements": [
 								[
 									3530,
-									"store2",
+									"assign2",
 									1,
 									0,
 									[
@@ -683,18 +683,18 @@
 			[{ "name": "i0", "type": "^int" }, { "name": "a", "type": "^int" }],
 			{
 				"statements": [
-					[3677, "store2", 0, 2, ["+", ["@i", 0, 0, "^int"], ["@i", 0, 1, "^int"], "^int"]],
+					[3677, "assign2", 0, 2, ["+", ["@i", 0, 0, "^int"], ["@i", 0, 1, "^int"], "^int"]],
 					[
 						3697,
 						"while",
 						["<", ["@i", 0, 2, "^int"], ["k", 0, "^int"], "^bool"],
-						{ "statements": [[3712, "store2", 1, 2, ["+", ["@i", 1, 2, "^int"], ["@i", -1, 83, "^int"], "^int"]]], "symbols": [] }
+						{ "statements": [[3712, "assign2", 1, 2, ["+", ["@i", 1, 2, "^int"], ["@i", -1, 83, "^int"], "^int"]]], "symbols": [] }
 					],
 					[
 						3735,
 						"while",
 						[">=", ["@i", 0, 2, "^int"], ["@i", -1, 83, "^int"], "^bool"],
-						{ "statements": [[3761, "store2", 1, 2, ["-", ["@i", 1, 2, "^int"], ["@i", -1, 83, "^int"], "^int"]]], "symbols": [] }
+						{ "statements": [[3761, "assign2", 1, 2, ["-", ["@i", 1, 2, "^int"], ["@i", -1, 83, "^int"], "^int"]]], "symbols": [] }
 					],
 					["return", ["@i", 0, 2, "^int"]]
 				],
@@ -713,18 +713,18 @@
 			[{ "name": "i0", "type": "^int" }, { "name": "a", "type": "^int" }],
 			{
 				"statements": [
-					[3875, "store2", 0, 2, ["+", ["@i", 0, 0, "^int"], ["@i", 0, 1, "^int"], "^int"]],
+					[3875, "assign2", 0, 2, ["+", ["@i", 0, 0, "^int"], ["@i", 0, 1, "^int"], "^int"]],
 					[
 						3895,
 						"while",
 						["<", ["@i", 0, 2, "^int"], ["k", 0, "^int"], "^bool"],
-						{ "statements": [[3910, "store2", 1, 2, ["+", ["@i", 1, 2, "^int"], ["@i", -1, 84, "^int"], "^int"]]], "symbols": [] }
+						{ "statements": [[3910, "assign2", 1, 2, ["+", ["@i", 1, 2, "^int"], ["@i", -1, 84, "^int"], "^int"]]], "symbols": [] }
 					],
 					[
 						3934,
 						"while",
 						[">=", ["@i", 0, 2, "^int"], ["@i", -1, 84, "^int"], "^bool"],
-						{ "statements": [[3961, "store2", 1, 2, ["-", ["@i", 1, 2, "^int"], ["@i", -1, 84, "^int"], "^int"]]], "symbols": [] }
+						{ "statements": [[3961, "assign2", 1, 2, ["-", ["@i", 1, 2, "^int"], ["@i", -1, 84, "^int"], "^int"]]], "symbols": [] }
 					],
 					["return", ["@i", 0, 2, "^int"]]
 				],
@@ -743,7 +743,7 @@
 			[{ "name": "board", "type": ["vector", ["vector", "^int"]] }, { "name": "i", "type": "^int" }, { "name": "j", "type": "^int" }],
 			{
 				"statements": [
-					[4113, "store2", 0, 3, ["k", 0, "^int"]],
+					[4113, "assign2", 0, 3, ["k", 0, "^int"]],
 					[
 						4160,
 						"for",
@@ -801,7 +801,7 @@
 																"^bool"
 															],
 															{
-																"statements": [[4337, "store2", 4, 3, ["+", ["@i", 4, 3, "^int"], ["k", 1, "^int"], "^int"]]],
+																"statements": [[4337, "assign2", 4, 3, ["+", ["@i", 4, 3, "^int"], ["k", 1, "^int"], "^int"]]],
 																"symbols": []
 															},
 															{ "statements": [], "symbols": [] }
@@ -837,7 +837,7 @@
 			[{ "name": "board", "type": ["vector", ["vector", "^int"]] }],
 			{
 				"statements": [
-					[4427, "store2", 0, 1, ["@i", 0, 0, ["vector", ["vector", "^int"]]]],
+					[4427, "assign2", 0, 1, ["@i", 0, 0, ["vector", ["vector", "^int"]]]],
 					[
 						4501,
 						"for",
@@ -856,7 +856,7 @@
 										"statements": [
 											[
 												4568,
-												"store2",
+												"assign2",
 												0,
 												1,
 												[
@@ -868,7 +868,7 @@
 											],
 											[
 												4605,
-												"store2",
+												"assign2",
 												0,
 												2,
 												[
@@ -882,26 +882,26 @@
 												4662,
 												"if",
 												["==", ["@i", 0, 1, "^int"], ["k", 3, "^int"], "^bool"],
-												{ "statements": [[4675, "store2", 1, 2, ["k", 1, "^int"]]], "symbols": [] },
+												{ "statements": [[4675, "assign2", 1, 2, ["k", 1, "^int"]]], "symbols": [] },
 												{ "statements": [], "symbols": [] }
 											],
 											[
 												4686,
 												"if",
 												["<", ["@i", 0, 1, "^int"], ["k", 2, "^int"], "^bool"],
-												{ "statements": [[4698, "store2", 1, 2, ["k", 0, "^int"]]], "symbols": [] },
+												{ "statements": [[4698, "assign2", 1, 2, ["k", 0, "^int"]]], "symbols": [] },
 												{ "statements": [], "symbols": [] }
 											],
 											[
 												4709,
 												"if",
 												[">", ["@i", 0, 1, "^int"], ["k", 3, "^int"], "^bool"],
-												{ "statements": [[4721, "store2", 1, 2, ["k", 0, "^int"]]], "symbols": [] },
+												{ "statements": [[4721, "assign2", 1, 2, ["k", 0, "^int"]]], "symbols": [] },
 												{ "statements": [], "symbols": [] }
 											],
 											[
 												4732,
-												"store2",
+												"assign2",
 												2,
 												1,
 												[
@@ -960,7 +960,7 @@
 						["@i", -1, 84, "^int"],
 						{
 							"statements": [
-								[4989, "store2", 0, 1, ["k", "", "^string"]],
+								[4989, "assign2", 0, 1, ["k", "", "^string"]],
 								[
 									5015,
 									"for",
@@ -971,7 +971,7 @@
 										"statements": [
 											[
 												5049,
-												"store2",
+												"assign2",
 												1,
 												1,
 												[
@@ -1033,10 +1033,10 @@
 			[{ "name": "args", "type": ["vector", "^string"] }],
 			{
 				"statements": [
-					[5187, "store2", 0, 1, ["call", ["@i", -1, 85, ["func", ["vector", ["vector", "^int"]], [], true]], [], ["vector", ["vector", "^int"]]]],
+					[5187, "assign2", 0, 1, ["call", ["@i", -1, 85, ["func", ["vector", ["vector", "^int"]], [], true]], [], ["vector", ["vector", "^int"]]]],
 					[
 						5225,
-						"store2",
+						"assign2",
 						0,
 						1,
 						[
@@ -1066,7 +1066,7 @@
 					],
 					[
 						5332,
-						"store2",
+						"assign2",
 						0,
 						1,
 						[
@@ -1096,7 +1096,7 @@
 					],
 					[
 						5439,
-						"store2",
+						"assign2",
 						0,
 						1,
 						[
@@ -1126,7 +1126,7 @@
 					],
 					[
 						5546,
-						"store2",
+						"assign2",
 						0,
 						1,
 						[
@@ -1156,7 +1156,7 @@
 					],
 					[
 						5653,
-						"store2",
+						"assign2",
 						0,
 						1,
 						[
@@ -1186,7 +1186,7 @@
 					],
 					[
 						5760,
-						"store2",
+						"assign2",
 						0,
 						1,
 						[
@@ -1216,7 +1216,7 @@
 					],
 					[
 						5867,
-						"store2",
+						"assign2",
 						0,
 						1,
 						[
@@ -1281,7 +1281,7 @@
 								],
 								[
 									6081,
-									"store2",
+									"assign2",
 									1,
 									1,
 									[
@@ -1308,10 +1308,10 @@
 	],
 	"globals": {
 		"statements": [
-			[2, "store2", 0, 54, ["k", 3.14159, "^double"]],
+			[2, "assign2", 0, 54, ["k", 3.14159, "^double"]],
 			[
 				1149,
-				"store2",
+				"assign2",
 				0,
 				77,
 				[
@@ -1332,7 +1332,7 @@
 			],
 			[
 				1197,
-				"store2",
+				"assign2",
 				0,
 				78,
 				[
@@ -1353,7 +1353,7 @@
 			],
 			[
 				1247,
-				"store2",
+				"assign2",
 				0,
 				79,
 				[
@@ -1400,15 +1400,15 @@
 					]
 				]
 			],
-			[3265, "store2", 0, 83, ["k", 79, "^int"]],
-			[3286, "store2", 0, 84, ["k", 24, "^int"]],
-			[3338, "store2", 0, 85, ["k", { "function_id": 38 }, ["func", ["vector", ["vector", "^int"]], [], true]]],
-			[3644, "store2", 0, 86, ["k", { "function_id": 39 }, ["func", "^int", ["^int", "^int"], true]]],
-			[3842, "store2", 0, 87, ["k", { "function_id": 40 }, ["func", "^int", ["^int", "^int"], true]]],
-			[4059, "store2", 0, 88, ["k", { "function_id": 41 }, ["func", "^int", [["vector", ["vector", "^int"]], "^int", "^int"], true]]],
-			[4390, "store2", 0, 89, ["k", { "function_id": 42 }, ["func", ["vector", ["vector", "^int"]], [["vector", ["vector", "^int"]]], true]]],
-			[4846, "store2", 0, 90, ["k", { "function_id": 43 }, ["func", "^void", [["vector", ["vector", "^int"]]], false]]],
-			[5142, "store2", 0, 91, ["k", { "function_id": 44 }, ["func", "^int", [["vector", "^string"]], false]]],
+			[3265, "assign2", 0, 83, ["k", 79, "^int"]],
+			[3286, "assign2", 0, 84, ["k", 24, "^int"]],
+			[3338, "assign2", 0, 85, ["k", { "function_id": 38 }, ["func", ["vector", ["vector", "^int"]], [], true]]],
+			[3644, "assign2", 0, 86, ["k", { "function_id": 39 }, ["func", "^int", ["^int", "^int"], true]]],
+			[3842, "assign2", 0, 87, ["k", { "function_id": 40 }, ["func", "^int", ["^int", "^int"], true]]],
+			[4059, "assign2", 0, 88, ["k", { "function_id": 41 }, ["func", "^int", [["vector", ["vector", "^int"]], "^int", "^int"], true]]],
+			[4390, "assign2", 0, 89, ["k", { "function_id": 42 }, ["func", ["vector", ["vector", "^int"]], [["vector", ["vector", "^int"]]], true]]],
+			[4846, "assign2", 0, 90, ["k", { "function_id": 43 }, ["func", "^void", [["vector", ["vector", "^int"]]], false]]],
+			[5142, "assign2", 0, 91, ["k", { "function_id": 44 }, ["func", "^int", [["vector", "^string"]], false]]],
 			[
 				6118,
 				"expression-statement",
