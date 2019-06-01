@@ -563,7 +563,7 @@
 						"a",
 						"LOCAL",
 						{
-							"type": "immutable_local",
+							"type": "immutable",
 							"value_type": [
 								"^struct",
 								[
@@ -582,7 +582,7 @@
 						"b",
 						"LOCAL",
 						{
-							"type": "immutable_local",
+							"type": "immutable",
 							"value_type": [
 								"^struct",
 								[
@@ -640,7 +640,7 @@
 									]
 								]
 							],
-							"symbols": [[0, "j", "LOCAL", { "type": "immutable_local", "value_type": "^int" }]]
+							"symbols": [[0, "j", "LOCAL", { "type": "immutable", "value_type": "^int" }]]
 						}
 					],
 					[
@@ -664,14 +664,14 @@
 									]
 								]
 							],
-							"symbols": [[0, "i", "LOCAL", { "type": "immutable_local", "value_type": "^int" }]]
+							"symbols": [[0, "i", "LOCAL", { "type": "immutable", "value_type": "^int" }]]
 						}
 					],
 					["return", ["@i", 0, 0, ["vector", ["vector", "^int"]]]]
 				],
 				"symbols": [
-					[0, "board", "LOCAL", { "type": "mutable_local", "value_type": ["vector", ["vector", "^int"]] }],
-					[1, "column", "LOCAL", { "type": "mutable_local", "value_type": ["vector", "^int"] }]
+					[0, "board", "LOCAL", { "type": "mutable", "value_type": ["vector", ["vector", "^int"]] }],
+					[1, "column", "LOCAL", { "type": "mutable", "value_type": ["vector", "^int"] }]
 				]
 			},
 			0,
@@ -699,9 +699,9 @@
 					["return", ["@i", 0, 2, "^int"]]
 				],
 				"symbols": [
-					[0, "i0", "LOCAL", { "type": "immutable_local", "value_type": "^int" }],
-					[1, "a", "LOCAL", { "type": "immutable_local", "value_type": "^int" }],
-					[2, "i", "LOCAL", { "type": "mutable_local", "value_type": "^int" }]
+					[0, "i0", "LOCAL", { "type": "immutable", "value_type": "^int" }],
+					[1, "a", "LOCAL", { "type": "immutable", "value_type": "^int" }],
+					[2, "i", "LOCAL", { "type": "mutable", "value_type": "^int" }]
 				]
 			},
 			0,
@@ -729,9 +729,9 @@
 					["return", ["@i", 0, 2, "^int"]]
 				],
 				"symbols": [
-					[0, "i0", "LOCAL", { "type": "immutable_local", "value_type": "^int" }],
-					[1, "a", "LOCAL", { "type": "immutable_local", "value_type": "^int" }],
-					[2, "i", "LOCAL", { "type": "mutable_local", "value_type": "^int" }]
+					[0, "i0", "LOCAL", { "type": "immutable", "value_type": "^int" }],
+					[1, "a", "LOCAL", { "type": "immutable", "value_type": "^int" }],
+					[2, "i", "LOCAL", { "type": "mutable", "value_type": "^int" }]
 				]
 			},
 			0,
@@ -812,20 +812,20 @@
 												{ "statements": [], "symbols": [] }
 											]
 										],
-										"symbols": [[0, "l", "LOCAL", { "type": "immutable_local", "value_type": "^int" }]]
+										"symbols": [[0, "l", "LOCAL", { "type": "immutable", "value_type": "^int" }]]
 									}
 								]
 							],
-							"symbols": [[0, "k", "LOCAL", { "type": "immutable_local", "value_type": "^int" }]]
+							"symbols": [[0, "k", "LOCAL", { "type": "immutable", "value_type": "^int" }]]
 						}
 					],
 					["return", ["@i", 0, 3, "^int"]]
 				],
 				"symbols": [
-					[0, "board", "LOCAL", { "type": "immutable_local", "value_type": ["vector", ["vector", "^int"]] }],
-					[1, "i", "LOCAL", { "type": "immutable_local", "value_type": "^int" }],
-					[2, "j", "LOCAL", { "type": "immutable_local", "value_type": "^int" }],
-					[3, "count", "LOCAL", { "type": "mutable_local", "value_type": "^int" }]
+					[0, "board", "LOCAL", { "type": "immutable", "value_type": ["vector", ["vector", "^int"]] }],
+					[1, "i", "LOCAL", { "type": "immutable", "value_type": "^int" }],
+					[2, "j", "LOCAL", { "type": "immutable", "value_type": "^int" }],
+					[3, "count", "LOCAL", { "type": "mutable", "value_type": "^int" }]
 				]
 			},
 			0,
@@ -926,21 +926,21 @@
 											]
 										],
 										"symbols": [
-											[0, "j", "LOCAL", { "type": "immutable_local", "value_type": "^int" }],
-											[1, "a", "LOCAL", { "type": "immutable_local", "value_type": "^int" }],
-											[2, "v", "LOCAL", { "type": "mutable_local", "value_type": "^int" }]
+											[0, "j", "LOCAL", { "type": "immutable", "value_type": "^int" }],
+											[1, "a", "LOCAL", { "type": "immutable", "value_type": "^int" }],
+											[2, "v", "LOCAL", { "type": "mutable", "value_type": "^int" }]
 										]
 									}
 								]
 							],
-							"symbols": [[0, "i", "LOCAL", { "type": "immutable_local", "value_type": "^int" }]]
+							"symbols": [[0, "i", "LOCAL", { "type": "immutable", "value_type": "^int" }]]
 						}
 					],
 					["return", ["@i", 0, 1, ["vector", ["vector", "^int"]]]]
 				],
 				"symbols": [
-					[0, "board", "LOCAL", { "type": "immutable_local", "value_type": ["vector", ["vector", "^int"]] }],
-					[1, "newboard", "LOCAL", { "type": "mutable_local", "value_type": ["vector", ["vector", "^int"]] }]
+					[0, "board", "LOCAL", { "type": "immutable", "value_type": ["vector", ["vector", "^int"]] }],
+					[1, "newboard", "LOCAL", { "type": "mutable", "value_type": ["vector", ["vector", "^int"]] }]
 				]
 			},
 			0,
@@ -1006,7 +1006,7 @@
 												]
 											]
 										],
-										"symbols": [[0, "i", "LOCAL", { "type": "immutable_local", "value_type": "^int" }]]
+										"symbols": [[0, "i", "LOCAL", { "type": "immutable", "value_type": "^int" }]]
 									}
 								],
 								[
@@ -1016,13 +1016,13 @@
 								]
 							],
 							"symbols": [
-								[0, "j", "LOCAL", { "type": "immutable_local", "value_type": "^int" }],
-								[1, "row", "LOCAL", { "type": "mutable_local", "value_type": "^string" }]
+								[0, "j", "LOCAL", { "type": "immutable", "value_type": "^int" }],
+								[1, "row", "LOCAL", { "type": "mutable", "value_type": "^string" }]
 							]
 						}
 					]
 				],
-				"symbols": [[0, "board", "LOCAL", { "type": "immutable_local", "value_type": ["vector", ["vector", "^int"]] }]]
+				"symbols": [[0, "board", "LOCAL", { "type": "immutable", "value_type": ["vector", ["vector", "^int"]] }]]
 			},
 			0,
 			"^void"
@@ -1292,14 +1292,14 @@
 									]
 								]
 							],
-							"symbols": [[0, "i", "LOCAL", { "type": "immutable_local", "value_type": "^int" }]]
+							"symbols": [[0, "i", "LOCAL", { "type": "immutable", "value_type": "^int" }]]
 						}
 					],
 					["return", ["k", 0, "^int"]]
 				],
 				"symbols": [
-					[0, "args", "LOCAL", { "type": "immutable_local", "value_type": ["vector", "^string"] }],
-					[1, "board", "LOCAL", { "type": "mutable_local", "value_type": ["vector", ["vector", "^int"]] }]
+					[0, "args", "LOCAL", { "type": "immutable", "value_type": ["vector", "^string"] }],
+					[1, "board", "LOCAL", { "type": "mutable", "value_type": ["vector", ["vector", "^int"]] }]
 				]
 			},
 			0,
@@ -1552,7 +1552,7 @@
 			[35, "value_to_jsonvalue", "CONST", [["func", "^json_value", ["^any"], true], { "function_id": 35 }]],
 			[36, "write_text_file", "CONST", [["func", "^void", ["^any", "^any"], false], { "function_id": 36 }]],
 			[37, "null", "CONST", ["^json_value", null]],
-			[38, "**undef**", "LOCAL", { "type": "immutable_local", "value_type": "^**undef**" }],
+			[38, "**undef**", "LOCAL", { "type": "immutable", "value_type": "^**undef**" }],
 			[39, "any", "CONST", ["^any", null]],
 			[40, "void", "CONST", ["^void", null]],
 			[41, "bool", "CONST", ["^typeid", "^bool"]],
@@ -1568,7 +1568,7 @@
 			[51, "json_true", "CONST", ["^int", 5]],
 			[52, "json_false", "CONST", ["^int", 6]],
 			[53, "json_null", "CONST", ["^int", 7]],
-			[54, "cmath_pi", "LOCAL", { "type": "immutable_local", "value_type": "^double" }],
+			[54, "cmath_pi", "LOCAL", { "type": "immutable", "value_type": "^double" }],
 			[55, "cpu_address_t", "CONST", ["^typeid", ["^struct", [[{ "name": "address", "type": "^int" }]]]]],
 			[56, "size_t", "CONST", ["^typeid", ["^struct", [[{ "name": "address", "type": "^int" }]]]]],
 			[57, "file_pos_t", "CONST", ["^typeid", ["^struct", [[{ "name": "pos", "type": "^int" }]]]]],
@@ -1658,7 +1658,7 @@
 				"color__black",
 				"LOCAL",
 				{
-					"type": "immutable_local",
+					"type": "immutable",
 					"value_type": [
 						"^struct",
 						[
@@ -1677,7 +1677,7 @@
 				"color__white",
 				"LOCAL",
 				{
-					"type": "immutable_local",
+					"type": "immutable",
 					"value_type": [
 						"^struct",
 						[
@@ -1696,7 +1696,7 @@
 				"add_colors",
 				"LOCAL",
 				{
-					"type": "immutable_local",
+					"type": "immutable",
 					"value_type": [
 						"func",
 						[
@@ -1794,15 +1794,15 @@
 					]
 				]
 			],
-			[83, "BOARD_WIDTH", "LOCAL", { "type": "immutable_local", "value_type": "^int" }],
-			[84, "BOARD_HEIGHT", "LOCAL", { "type": "immutable_local", "value_type": "^int" }],
-			[85, "initialize_board", "LOCAL", { "type": "immutable_local", "value_type": ["func", ["vector", ["vector", "^int"]], [], true] }],
-			[86, "xadd", "LOCAL", { "type": "immutable_local", "value_type": ["func", "^int", ["^int", "^int"], true] }],
-			[87, "yadd", "LOCAL", { "type": "immutable_local", "value_type": ["func", "^int", ["^int", "^int"], true] }],
-			[88, "adjacent_to", "LOCAL", { "type": "immutable_local", "value_type": ["func", "^int", [["vector", ["vector", "^int"]], "^int", "^int"], true] }],
-			[89, "play", "LOCAL", { "type": "immutable_local", "value_type": ["func", ["vector", ["vector", "^int"]], [["vector", ["vector", "^int"]]], true] }],
-			[90, "print_board", "LOCAL", { "type": "immutable_local", "value_type": ["func", "^void", [["vector", ["vector", "^int"]]], false] }],
-			[91, "test_main", "LOCAL", { "type": "immutable_local", "value_type": ["func", "^int", [["vector", "^string"]], false] }]
+			[83, "BOARD_WIDTH", "LOCAL", { "type": "immutable", "value_type": "^int" }],
+			[84, "BOARD_HEIGHT", "LOCAL", { "type": "immutable", "value_type": "^int" }],
+			[85, "initialize_board", "LOCAL", { "type": "immutable", "value_type": ["func", ["vector", ["vector", "^int"]], [], true] }],
+			[86, "xadd", "LOCAL", { "type": "immutable", "value_type": ["func", "^int", ["^int", "^int"], true] }],
+			[87, "yadd", "LOCAL", { "type": "immutable", "value_type": ["func", "^int", ["^int", "^int"], true] }],
+			[88, "adjacent_to", "LOCAL", { "type": "immutable", "value_type": ["func", "^int", [["vector", ["vector", "^int"]], "^int", "^int"], true] }],
+			[89, "play", "LOCAL", { "type": "immutable", "value_type": ["func", ["vector", ["vector", "^int"]], [["vector", ["vector", "^int"]]], true] }],
+			[90, "print_board", "LOCAL", { "type": "immutable", "value_type": ["func", "^void", [["vector", ["vector", "^int"]]], false] }],
+			[91, "test_main", "LOCAL", { "type": "immutable", "value_type": ["func", "^int", [["vector", "^string"]], false] }]
 		]
 	}
 }

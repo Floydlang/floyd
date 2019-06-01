@@ -1569,7 +1569,7 @@ bc_static_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_
 		const auto e2 = std::pair<std::string, bc_symbol_t>{
 			e.first,
 			bc_symbol_t{
-				e.second._mutable_mode == symbol_t::mutable_mode::immutable ? bc_symbol_t::immutable_local : bc_symbol_t::mutable_local,
+				e.second._mutable_mode == symbol_t::mutable_mode::immutable ? bc_symbol_t::immutable : bc_symbol_t::mutable1,
 				e.second._value_type,
 				value_to_bc(e.second._init)
 			}

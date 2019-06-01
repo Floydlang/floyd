@@ -3587,7 +3587,7 @@ std::vector<json_t> bc_symbols_to_json(const std::vector<std::pair<std::string, 
 	int symbol_index = 0;
 	for(const auto& e: symbols){
 		const auto& symbol = e.second;
-		const auto symbol_type_str = symbol._symbol_type == bc_symbol_t::immutable_local ? "immutable_local" : "mutable_local";
+		const auto symbol_type_str = symbol._symbol_type == bc_symbol_t::immutable ? "immutable" : "mutable";
 
 		if(symbol._const_value._type.is_undefined() == false){
 			const auto e2 = json_t::make_array({

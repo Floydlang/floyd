@@ -317,8 +317,8 @@ int bc_compare_value_exts(const bc_external_handle_t& left, const bc_external_ha
 
 struct bc_symbol_t {
 	enum type {
-		immutable_local = 10,
-		mutable_local
+		immutable = 10,
+		mutable1
 	};
 
 	public: bool check_invariant() const {

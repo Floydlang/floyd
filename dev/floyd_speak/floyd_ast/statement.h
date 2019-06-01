@@ -28,21 +28,23 @@ namespace floyd {
 	/*
 		This is an entry in the symbol table, kept for each environment/stack frame.
 		When you make a local variable it gets an entry in symbol table, with a type and name but no value. Like a reservered slot.
-		You can also add constants directly to the symbol table.
+		You can also add precalculated constants directly to the symbol table.
 
 
-		# Functions
+		# Function values
 		These are stored as local variable reservations of correct function-signature-type. They are inited
-		during execution, not const-values in symbol table. Function calls needs to evaluate callee expression.
+		during execution, not const-values in symbol table.
+
+		Function calls needs to evaluate callee expression.
 		??? TODO: make functions const-values when possible.
 
 
 		# Structs
-		These are const-values in symbol table -- the *type* of the struct that is.
+		Struct-types are stored in symbol table as precalculated values. Struct instances are not.
 
 		struct pixel_t { int red; int green; int blue; }
 
-		- needs to become a const variable "pixel_t" so print(pixel_t) etc works.
+		- needs to become a precalculated symbol called "pixel_t" so print(pixel_t) etc works.
 		- pixel_t variable =
 			type: typeid_t = struct{ int red; int green; int blue; }
 			const: value_t::typeid_value =
@@ -53,13 +55,6 @@ namespace floyd {
 			immutable,
 			mutable1
 		};
-
-		mutable_mode _mutable_mode;
-		floyd::typeid_t _value_type;
-
-		//	If there is no initialization value, this member must be value_t::make_undefined();
-		floyd::value_t _init;
-
 
 		bool operator==(const symbol_t& other) const {
 			return true
@@ -88,11 +83,11 @@ namespace floyd {
 			return _value_type;
 		}
 
-		public: static symbol_t make_immutable_local(const floyd::typeid_t& value_type){
+		public: static symbol_t make_immutable(const floyd::typeid_t& value_type){
 			return symbol_t{ mutable_mode::immutable, value_type, {} };
 		}
 
-		public: static symbol_t make_mutable_local(const floyd::typeid_t& value_type){
+		public: static symbol_t make_mutable(const floyd::typeid_t& value_type){
 			return symbol_t{ mutable_mode::mutable1, value_type, {} };
 		}
 
@@ -100,13 +95,16 @@ namespace floyd {
 			return symbol_t{ mutable_mode::immutable, init_value.get_type(), init_value };
 		}
 
+
+		//////////////////////////////////////		STATE
+		mutable_mode _mutable_mode;
+		floyd::typeid_t _value_type;
+
+		//	If there is no initialization value, this member must be value_t::make_undefined();
+		floyd::value_t _init;
 	};
 
-	inline static symbol_t make_type_symbol(const floyd::typeid_t& t){
-		const auto a = value_t::make_typeid_value(t);
-		return symbol_t::make_immutable_precalc(a);
-	}
-
+	symbol_t make_type_symbol(const floyd::typeid_t& t);
 	std::string symbol_to_string(const symbol_t& symbol);
 
 

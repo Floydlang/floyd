@@ -592,7 +592,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	//	Notice: the final type may not be correct yet, but for function definitions it is.
 	//	This logic should be available for infered binds too, in analyse_assign_statement().
 
-	const auto new_symbol = mutable_flag ? symbol_t::make_mutable_local(lhs_type) : symbol_t::make_immutable_local(lhs_type);
+	const auto new_symbol = mutable_flag ? symbol_t::make_mutable(lhs_type) : symbol_t::make_immutable(lhs_type);
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ new_local_name, new_symbol });
 	const auto local_name_index = a_acc._lexical_scope_stack.back().symbols._symbols.size() - 1;
 
@@ -615,7 +615,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 		}
 		else{
 			//	Replave the temporary symbol with the real function defintion.
-			const auto symbol2 = mutable_flag ? symbol_t::make_mutable_local(lhs_type2) : symbol_t::make_immutable_local(lhs_type2);
+			const auto symbol2 = mutable_flag ? symbol_t::make_mutable(lhs_type2) : symbol_t::make_immutable(lhs_type2);
 			a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
 			resolve_type(a_acc, s.location, rhs_expr_pair.second.get_output_type());
 
@@ -756,7 +756,7 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 		throw_compiler_error(s.location, what.str());
 	}
 
-	const auto iterator_symbol = symbol_t::make_immutable_local(typeid_t::make_int());
+	const auto iterator_symbol = symbol_t::make_immutable(typeid_t::make_int());
 
 	//	Add the iterator as a symbol to the body of the for-loop.
 	auto symbols = statement._body._symbol_table;
@@ -1672,7 +1672,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	//	Make function body with arguments injected FIRST in body as local symbols.
 	auto symbol_vec = floyd_func._body->_symbol_table;
 	for(const auto& arg: args2){
-		symbol_vec._symbols.push_back({arg._name , symbol_t::make_immutable_local(arg._type)});
+		symbol_vec._symbols.push_back({arg._name , symbol_t::make_immutable(arg._type)});
 	}
 	const auto function_body2 = body_t(floyd_func._body->_statements, symbol_vec);
 
