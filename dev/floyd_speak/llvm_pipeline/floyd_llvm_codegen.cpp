@@ -1182,7 +1182,12 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 
 	//	Generate code that evaluates all argument expressions.
 	std::vector<llvm::Value*> arg_regs;
+
+	std::vector<std::pair<llvm::Value*, typeid_t> > destroy;
+
 	for(const auto& out_arg: llvm_mapping.args){
+		const auto& arg_details = details.args[out_arg.floyd_arg_index];
+
 		if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr){
 			auto f_args = emit_f.args();
 			QUARK_ASSERT((f_args.end() - f_args.begin()) >= 1);
@@ -1190,15 +1195,18 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 			arg_regs.push_back(floyd_context_arg_ptr);
 		}
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_simple_value){
-			llvm::Value* arg2 = generate_expression(gen_acc, emit_f, details.args[out_arg.floyd_arg_index]);
+			llvm::Value* arg2 = generate_expression(gen_acc, emit_f, arg_details);
 			arg_regs.push_back(arg2);
+			destroy.push_back({ arg2, arg_details.get_output_type() });
 		}
 
 		else if(out_arg.map_type == llvm_arg_mapping_t::map_type::k_dyn_value){
-			llvm::Value* arg2 = generate_expression(gen_acc, emit_f, details.args[out_arg.floyd_arg_index]);
+			llvm::Value* arg2 = generate_expression(gen_acc, emit_f, arg_details);
+
+			destroy.push_back({ arg2, arg_details.get_output_type() });
 
 			//	Actual type of the argument, as specified inside the call expression. The concrete type for the DYN value for this call.
-			const auto concrete_arg_type = details.args[out_arg.floyd_arg_index].get_output_type();
+			const auto concrete_arg_type = arg_details.get_output_type();
 
 			// We assume that the next arg in the llvm_mapping is the dyn-type and store it too.
 			const auto packed_reg = generate_cast_to_runtime_value(gen_acc, *arg2, concrete_arg_type);
@@ -1213,6 +1221,10 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 	}
 	QUARK_ASSERT(arg_regs.size() == llvm_mapping.args.size());
 	auto result0 = builder.CreateCall(callee0_reg, arg_regs, callee_function_type.get_function_return().is_void() ? "" : "call_result");
+
+	for(const auto& e: destroy){
+		generate_releaseref(gen_acc, emit_f, *e.first, e.second);
+	}
 
 	//	If the return type is dynamic, cast the returned int64 to the correct type.
 	llvm::Value* result = result0;
