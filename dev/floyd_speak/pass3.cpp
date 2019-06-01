@@ -1680,7 +1680,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	//	Make function body with arguments injected FIRST in body as local symbols.
 	auto symbol_vec = floyd_func._body->_symbol_table;
 	for(const auto& arg: args2){
-		symbol_vec._symbols.push_back({arg._name , symbol_t::make_immutable(arg._type)});
+		symbol_vec._symbols.push_back({arg._name , symbol_t::make_immutable_arg(arg._type)});
 	}
 	const auto function_body2 = body_t(floyd_func._body->_statements, symbol_vec);
 

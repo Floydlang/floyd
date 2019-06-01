@@ -60,7 +60,10 @@ namespace floyd {
 ////////////////////////////////		heap_t
 
 
+
 int heap_t::count_leaks() const{
+	QUARK_ASSERT(check_invariant());
+
 	int leak_count = 0;
 
 	for(const auto& e: alloc_records){
@@ -230,7 +233,7 @@ int heap_t::count_used() const {
 }
 
 
-void trace_heap(heap_t& heap){
+void trace_heap(const heap_t& heap){
 	QUARK_ASSERT(heap.check_invariant());
 
 	QUARK_SCOPED_TRACE("HEAP");
@@ -240,6 +243,19 @@ void trace_heap(heap_t& heap){
 		QUARK_TRACE_SS(i << "\t used: " << e.in_use << " element_count: " << e.alloc_ptr->element_count << " rc: " << e.alloc_ptr->rc);
 	}
 }
+
+void detect_leaks(const heap_t& heap){
+	QUARK_ASSERT(heap.check_invariant());
+
+	trace_heap(heap);
+	const auto leaks = heap.count_leaks();
+#if 1
+	if(leaks > 0){
+		throw std::exception();
+	}
+#endif
+}
+
 
 
 ////////////////////////////////	runtime_type_t
@@ -870,12 +886,12 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 		return def;
 	}
 	else{
+		//	Skip arg #0, which is "floyd_runtime_ptr".
 		const auto floyd_arg_count = def.args.back().floyd_arg_index + 1;
 		QUARK_ASSERT(floyd_arg_count == args.size());
 
 		std::vector<llvm_arg_mapping_t> arg_results;
 
-		//	Skip arg #0, which is "floyd_runtime_ptr".
 		for(int out_index = 0 ; out_index < def.args.size() ; out_index++){
 			auto arg_copy = def.args[out_index];
 			if(arg_copy.map_type == llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr){

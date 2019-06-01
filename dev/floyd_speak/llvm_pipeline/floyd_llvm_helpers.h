@@ -105,7 +105,8 @@ const void* get_alloc_ptr(const heap_alloc_64_t& alloc);
 void add_ref(heap_alloc_64_t& alloc);
 void release_ref(heap_alloc_64_t& alloc);
 
-void trace_heap(heap_t& heap);
+void trace_heap(const heap_t& heap);
+void detect_leaks(const heap_t& heap);
 
 
 

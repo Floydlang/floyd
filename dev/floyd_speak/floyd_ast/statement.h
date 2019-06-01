@@ -87,6 +87,10 @@ namespace floyd {
 			return symbol_t{ mutable_mode::immutable, value_type, {} };
 		}
 
+		public: static symbol_t make_immutable_arg(const floyd::typeid_t& value_type){
+			return symbol_t{ mutable_mode::immutable, value_type, {} };
+		}
+
 		public: static symbol_t make_mutable(const floyd::typeid_t& value_type){
 			return symbol_t{ mutable_mode::mutable1, value_type, {} };
 		}

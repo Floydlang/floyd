@@ -212,6 +212,19 @@ std::string print_program(const llvm_ir_program_t& program){
 
 
 
+static llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(floyd_type.check_invariant());
+
+	auto& builder = gen_acc.builder;
+	return generate_cast_to_runtime_value2(builder, value, floyd_type);
+}
+
+static llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& runtime_value_reg, const typeid_t& type){
+	auto& builder = gen_acc.builder;
+	return generate_cast_from_runtime_value2(builder, runtime_value_reg, type);
+}
+
 const function_def_t& find_function_def(llvm_code_generator_t& gen_acc, const std::string& function_name){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
@@ -292,7 +305,7 @@ void generate_addref(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llv
 	else{
 	}
 }
-void generate_reelaseref(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& value, const typeid_t& type){
+void generate_releaseref(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& value_reg, const typeid_t& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 	QUARK_ASSERT(type.check_invariant());
@@ -302,10 +315,13 @@ void generate_reelaseref(llvm_code_generator_t& gen_acc, llvm::Function& emit_f,
 		const auto f = find_function_def(gen_acc, "floyd_runtime__releaseref");
 		std::vector<llvm::Value*> args = {
 			get_callers_fcp(emit_f),
-			&value,
+
+			generate_cast_to_runtime_value(gen_acc, value_reg, type),
 			generate_itype_constant(gen_acc, type)
+//			&value,
+//			generate_itype_constant(gen_acc, type)
 		};
-		builder.CreateCall(f.llvm_f, args, "releaseref");
+		builder.CreateCall(f.llvm_f, args);
 	}
 	else{
 	}
@@ -329,19 +345,6 @@ std::string compose_function_def_name(int function_id, const function_definition
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-static llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& value, const typeid_t& floyd_type){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(floyd_type.check_invariant());
-
-	auto& builder = gen_acc.builder;
-	return generate_cast_to_runtime_value2(builder, value, floyd_type);
-}
-
-static llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& runtime_value_reg, const typeid_t& type){
-	auto& builder = gen_acc.builder;
-	return generate_cast_from_runtime_value2(builder, runtime_value_reg, type);
-}
 
 static llvm::Value* generate_alloc_vec(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, uint64_t element_count, const std::string& debug){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1056,7 +1059,10 @@ static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_ac
 		return gen_acc.builder.CreateFCmp(pred, lhs_temp, rhs_temp);
 	}
 	else if(type.is_string() || type.is_vector()){
-		return generate_compare_values(gen_acc, emit_f, details.op, type, *lhs_temp, *rhs_temp);
+		auto result = generate_compare_values(gen_acc, emit_f, details.op, type, *lhs_temp, *rhs_temp);
+		generate_releaseref(gen_acc, emit_f, *lhs_temp, *details.lhs->_output_type);
+		generate_releaseref(gen_acc, emit_f, *rhs_temp, *details.rhs->_output_type);
+		return result;
 	}
 	else if(type.is_dict()){
 		return generate_compare_values(gen_acc, emit_f, details.op, type, *lhs_temp, *rhs_temp);
@@ -1871,9 +1877,8 @@ static gen_statement_mode generate_statements(llvm_code_generator_t& gen_acc, ll
 
 
 
-
-//	Generates local symbols for arguments and local variables.
-std::vector<resolved_symbol_t> generate_function_symbols(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const function_definition_t& function_def){
+//	Generates local symbols for arguments and local variables. Only toplevel of function, not nested scopes.
+std::vector<resolved_symbol_t> generate_function_local_symbols(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const function_definition_t& function_def){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -1893,7 +1898,7 @@ std::vector<resolved_symbol_t> generate_function_symbols(llvm_code_generator_t& 
 		const auto type = e.second.get_type();
 		const auto itype = intern_type(context, type);
 
-		//	Figure out if this symbol is an argument in function definition or a local variable.
+		//	Figure out if this symbol is an argument or a local variable.
 		//	Check if we can find an argument with this name => it's an argument.
 		//	TODO: SAST could contain argument/local information to make this tighter.
 		//	Reserve stack slot for each local. But not arguments, they already have stack slot.
@@ -1902,6 +1907,7 @@ std::vector<resolved_symbol_t> generate_function_symbols(llvm_code_generator_t& 
 			return arg.floyd_name == e.first;
 		});
 		bool is_arg = arg_it != mapping.args.end();
+
 		if(is_arg){
 			//	Find Value* for the argument by matching the argument index. Remember that we always add a floyd_runtime_ptr to all LLVM functions.
 			auto f_args = emit_f.args();
@@ -1975,7 +1981,7 @@ static llvm::Value* generate_global(llvm_code_generator_t& gen_acc, llvm::Functi
 
 //	Make LLVM globals for every global in the AST.
 //	Inits the globals when possible.
-//	Other globals are uninitialised and global statements will store to them from floyd_runtime_init().
+//	Other globals are uninitialised and global init2-statements will store to them from floyd_runtime_init().
 static std::vector<resolved_symbol_t> generate_globals_from_ast(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const semantic_ast_t& ast, const symbol_table_t& symbol_table){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(ast.check_invariant());
@@ -2010,7 +2016,8 @@ static void generate_floyd_function_body(llvm_code_generator_t& gen_acc, int fun
 	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(gen_acc.instance->context, "entry", f);
 	gen_acc.builder.SetInsertPoint(entryBB);
 
-	auto symbol_table_values = generate_function_symbols(gen_acc, emit_f, function_def);
+	auto symbol_table_values = generate_function_local_symbols(gen_acc, emit_f, function_def);
+
 	gen_acc.scope_path.push_back(symbol_table_values);
 	generate_statements(gen_acc, *f, body._statements);
 	gen_acc.scope_path.pop_back();
@@ -2164,8 +2171,10 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 	Floyd's global instructions are packed into the "floyd_runtime_init"-function. LLVM doesn't have global instructions.
 	All Floyd's global statements becomes instructions in floyd_init()-function that is called by Floyd runtime before any other function is called.
 */
-static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const std::vector<statement_t>& global_statements){
+static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const body_t& globals){
 	QUARK_ASSERT(gen_acc.check_invariant());
+
+	const std::vector<statement_t>& global_statements = globals._statements;
 
 	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
@@ -2178,10 +2187,22 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const st
 
 	{
 		//	Global statements, using the global symbol scope.
+		//	This includes init2-statements to initialise global variables.
 		generate_statements(gen_acc, emit_f, global_statements);
 
 		for(const auto& e: gen_acc.global_constructors){
 			e->store_constant(gen_acc, emit_f);
+		}
+
+		//	Destruct global variables.
+		for(const auto& e: gen_acc.scope_path.front()){
+			if(e.symtype == resolved_symbol_t::esymtype::k_global || e.symtype == resolved_symbol_t::esymtype::k_local){
+				const auto type = e.symbol.get_type();
+				if(type.is_string() || type.is_vector()){
+					auto reg = builder.CreateLoad(e.value_ptr);
+					generate_releaseref(gen_acc, emit_f, *reg, type);
+				}
+			}
 		}
 
 		llvm::Value* dummy_result = llvm::ConstantInt::get(builder.getInt64Ty(), 667);
@@ -2245,7 +2266,6 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> gen
 	//	This lets all other code reference them, even if they're not filled up with code yet.
 	{
 		const auto funcs = make_all_function_prototypes(*module, semantic_ast._tree._function_defs);
-
 		gen_acc.function_defs = funcs;
 
 		//	Global variables.
@@ -2275,7 +2295,7 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> gen
 
 	generate_all_floyd_function_bodies(gen_acc, semantic_ast);
 
-	generate_floyd_runtime_init(gen_acc, semantic_ast._tree._globals._statements);
+	generate_floyd_runtime_init(gen_acc, semantic_ast._tree._globals);
 
 	return { std::move(module), gen_acc.function_defs };
 }
