@@ -6,7 +6,7 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-const bool k_trace_input_output = true;
+const bool k_trace_input_output = false;
 const bool k_trace_types = false;
 
 #include "floyd_llvm_codegen.h"
@@ -728,18 +728,27 @@ static gen_statement_mode generate_block(llvm_code_generator_t& gen_acc, llvm::F
 	return more;
 }
 
-static llvm::Value* generate_get_vec_element_ptr(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& vec_ptr_reg){
+static llvm::Value* generate_get_vec_element_ptr2(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& vec_ptr_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
-	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
 	const auto gep = std::vector<llvm::Value*>{
 		builder.getInt32(1)
 	};
 	auto after_alloc64_ptr_reg = builder.CreateGEP(make_vec_type(gen_acc.interner), &vec_ptr_reg, gep, "");
-	auto uint64_array_ptr_reg = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::BitCast, after_alloc64_ptr_reg, builder.getInt64Ty()->getPointerTo(), "");
+	return after_alloc64_ptr_reg;
+}
+
+static llvm::Value* generate_get_vec_element_ptr(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& vec_ptr_reg){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+
+	auto& builder = gen_acc.builder;
+
+	auto ptr_reg = generate_get_vec_element_ptr2(gen_acc, emit_f, vec_ptr_reg);
+	auto uint64_array_ptr_reg = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::BitCast, ptr_reg, builder.getInt64Ty()->getPointerTo(), "");
 	return uint64_array_ptr_reg;
 }
 
@@ -764,7 +773,6 @@ static llvm::Value* generate_resolve_member_expression(llvm_code_generator_t& ge
 	QUARK_ASSERT(check_emitting_function(emit_f));
 	QUARK_ASSERT(e.check_invariant());
 
-	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
 	auto parent_struct_ptr_reg = generate_expression(gen_acc, emit_f, *details.parent_address);
@@ -816,8 +824,8 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 	if(parent_type.is_string()){
 		QUARK_ASSERT(key_type.is_int());
 
-		auto uint64_array_ptr_reg = generate_get_vec_element_ptr(gen_acc, emit_f, *parent_reg);
-		auto char_ptr_reg = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_array_ptr_reg, builder.getInt8PtrTy(), "");
+		auto element_ptr_reg = generate_get_vec_element_ptr2(gen_acc, emit_f, *parent_reg);
+		auto char_ptr_reg = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::BitCast, element_ptr_reg, builder.getInt8PtrTy(), "");
 
 		const auto gep = std::vector<llvm::Value*>{ key_reg };
 		llvm::Value* element_addr = builder.CreateGEP(llvm::Type::getInt8Ty(context), char_ptr_reg, gep, "element_addr");
@@ -1272,13 +1280,13 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 }
 
 //	Evaluate each element and store it directly into the array.
-static void generate_fill_array(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& uint64_array_ptr_reg, llvm::Type& element_type, const std::vector<expression_t>& elements){
+static void generate_fill_array(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& element_ptr_reg, llvm::Type& element_type, const std::vector<expression_t>& elements){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
 	auto& builder = gen_acc.builder;
 
-	auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, &uint64_array_ptr_reg, element_type.getPointerTo(), "");
+	auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, &element_ptr_reg, element_type.getPointerTo(), "");
 
 	int element_index = 0;
 	for(const auto& element_value: elements){
@@ -1330,13 +1338,13 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 		auto& element_type1 = *intern_type(gen_acc.interner, element_type0);
 
 		auto vec_ptr_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
-		auto uint64_array_ptr_reg = generate_get_vec_element_ptr(gen_acc, emit_f, *vec_ptr_reg);
+		auto ptr_reg = generate_get_vec_element_ptr2(gen_acc, emit_f, *vec_ptr_reg);
 
 		//??? support all types of elements. Use std::visit().
 		if(element_type0.is_bool()){
 			//	Each element is a uint64_t ???
 			auto element_type = llvm::Type::getInt64Ty(context);
-			auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, uint64_array_ptr_reg, element_type->getPointerTo(), "");
+			auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, ptr_reg, element_type->getPointerTo(), "");
 
 			//	Evaluate each element and store it directly into the the vector.
 			int element_index = 0;
@@ -1349,27 +1357,27 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			return vec_ptr_reg;
 		}
 		else if(element_type0.is_string()){
-			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, element_type1, details.elements);
+			generate_fill_array(gen_acc, emit_f, *ptr_reg, element_type1, details.elements);
 			return vec_ptr_reg;
 		}
 		else if(element_type0.is_json_value()){
-			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, element_type1, details.elements);
+			generate_fill_array(gen_acc, emit_f, *ptr_reg, element_type1, details.elements);
 			return vec_ptr_reg;
 		}
 		else if(element_type0.is_struct()){
-			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, element_type1, details.elements);
+			generate_fill_array(gen_acc, emit_f, *ptr_reg, element_type1, details.elements);
 			return vec_ptr_reg;
 		}
 		else if(element_type0.is_int()){
-			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, element_type1, details.elements);
+			generate_fill_array(gen_acc, emit_f, *ptr_reg, element_type1, details.elements);
 			return vec_ptr_reg;
 		}
 		else if(element_type0.is_double()){
-			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, element_type1, details.elements);
+			generate_fill_array(gen_acc, emit_f, *ptr_reg, element_type1, details.elements);
 			return vec_ptr_reg;
 		}
 		else if(element_type0.is_vector()){
-			generate_fill_array(gen_acc, emit_f, *uint64_array_ptr_reg, element_type1, details.elements);
+			generate_fill_array(gen_acc, emit_f, *ptr_reg, element_type1, details.elements);
 			return vec_ptr_reg;
 		}
 		else{

@@ -755,11 +755,33 @@ VEC_T* floyd_runtime__concatunate_vectors(void* floyd_runtime_ptr, runtime_type_
 		auto count2 = lhs->get_element_count() + rhs->get_element_count();
 
 		auto result = alloc_vec(r.heap, count2, count2);
-		for(int i = 0 ; i < lhs->get_element_count() ; i++){
-			result->get_element_ptr()[i] = lhs->get_element_ptr()[i];
+
+		const auto element_type = type0.get_vector_element_type();
+
+		auto dest_ptr = result->get_element_ptr();
+		auto dest_ptr2 = dest_ptr + lhs->get_element_count();
+		auto lhs_ptr = lhs->get_element_ptr();
+		auto rhs_ptr = rhs->get_element_ptr();
+
+		if(is_rc_value(element_type)){
+			for(int i = 0 ; i < lhs->get_element_count() ; i++){
+				vec_addref(*lhs_ptr[i].vector_ptr);
+
+				dest_ptr[i] = lhs_ptr[i];
+			}
+			for(int i = 0 ; i < rhs->get_element_count() ; i++){
+				vec_addref(*rhs_ptr[i].vector_ptr);
+
+				dest_ptr2[i] = rhs_ptr[i];
+			}
 		}
-		for(int i = 0 ; i < rhs->get_element_count() ; i++){
-			result->get_element_ptr()[lhs->get_element_count() + i] = rhs->get_element_ptr()[i];
+		else{
+			for(int i = 0 ; i < lhs->get_element_count() ; i++){
+				dest_ptr[i] = lhs_ptr[i];
+			}
+			for(int i = 0 ; i < rhs->get_element_count() ; i++){
+				dest_ptr2[i] = rhs_ptr[i];
+			}
 		}
 		return result;
 	}
