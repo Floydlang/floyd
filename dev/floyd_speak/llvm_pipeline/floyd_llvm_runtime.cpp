@@ -566,9 +566,13 @@ static void retain_value(llvm_execution_engine_t& runtime, runtime_value_t value
 		else if(type.is_dict()){
 			dict_addref(*value.dict_ptr);
 		}
+		else if(type.is_json_value()){
+			json_addref(*value.json_ptr);
+		}
 
 		//??? Also free other RC types like dicts, json_value etc.
 		else{
+			NOT_IMPLEMENTED_YET();
 		}
 	}
 }
@@ -588,9 +592,13 @@ static void release_deep(llvm_execution_engine_t& runtime, runtime_value_t value
 		else if(type.is_dict()){
 			release_dict_deep(runtime, value.dict_ptr, type);
 		}
+		else if(type.is_json_value()){
+			json_releaseref(value.json_ptr);
+		}
 
 		//??? Also free other RC types like dicts, json_value etc.
 		else{
+			NOT_IMPLEMENTED_YET();
 		}
 	}
 }
@@ -638,9 +646,8 @@ static void release_vec_deep(llvm_execution_engine_t& runtime, VEC_T* vec, const
 				}
 			}
 		}
-
-		//??? Also free other RC types like dicts, json_value etc.
 		else{
+			QUARK_ASSERT(false);
 		}
 	}
 
@@ -2469,6 +2476,17 @@ uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee){
 	return a_result;
 }
 
+uint64_t call_floyd_runtime_deinit(llvm_execution_engine_t& ee){
+	QUARK_ASSERT(ee.check_invariant());
+
+	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, "floyd_runtime_deinit"));
+	QUARK_ASSERT(a_func != nullptr);
+
+	int64_t a_result = (*a_func)((void*)&ee);
+	QUARK_ASSERT(a_result == 668);
+	return a_result;
+}
+
 
 
 
@@ -2707,6 +2725,8 @@ static std::map<std::string, value_t> run_container_int(llvm_ir_program_t& progr
 		t.join();
 	}
 
+	call_floyd_runtime_deinit(ee);
+
 	return {};
 }
 
@@ -2715,7 +2735,6 @@ static std::map<std::string, value_t> run_container_int(llvm_ir_program_t& progr
 std::map<std::string, value_t> run_llvm_container(llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args, const std::string& container_key){
 	if(container_key.empty()){
 		// ??? instance is already known via program_breaks.
-		//	Runs global init code.
 		llvm_execution_engine_t ee = make_engine_run_init(*program_breaks.instance, program_breaks);
 
 		const auto main_function = bind_function(ee, "main");
@@ -2723,11 +2742,14 @@ std::map<std::string, value_t> run_llvm_container(llvm_ir_program_t& program_bre
 			const auto main_result_int = llvm_call_main(ee, main_function, main_args);
 			const auto result = value_t::make_int(main_result_int);
 
+			call_floyd_runtime_deinit(ee);
+
 			detect_leaks(ee.heap);
 
 			return {{ "main()", result }};
 		}
 		else{
+			call_floyd_runtime_deinit(ee);
 			return {{ "global", value_t::make_void() }};
 		}
 	}
@@ -2781,7 +2803,7 @@ static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& cont
 
 //??? Move init functions to runtime source file.
 //	Destroys program, can only run it once!
-llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks){
+static llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, llvm_ir_program_t& program_breaks){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(program_breaks.check_invariant());
 
@@ -2886,7 +2908,7 @@ llvm_execution_engine_t make_engine_run_init(llvm_instance_t& instance, llvm_ir_
 	const auto init_result = call_floyd_runtime_init(ee);
 	QUARK_ASSERT(init_result == 667);
 
-	check_nulls(ee, program_breaks);
+//	check_nulls(ee, program_breaks);
 
 	trace_heap(ee.heap);
 
@@ -2912,6 +2934,8 @@ QUARK_UNIT_TEST("", "From source: Check that floyd_runtime_init() runs and sets 
 	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(ee, "result"));
 	QUARK_ASSERT(result == 6);
 
+	call_floyd_runtime_deinit(ee);
+
 //	QUARK_TRACE_SS("result = " << floyd::print_program(*program));
 }
 
@@ -2924,6 +2948,7 @@ QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_ru
 	auto program = generate_llvm_ir_program(instance, pass3, "myfile.floyd");
 	auto ee = make_engine_run_init(instance, *program);
 	QUARK_ASSERT(ee._print_output == std::vector<std::string>{"5"});
+	call_floyd_runtime_deinit(ee);
 }
 
 

@@ -1452,6 +1452,9 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 				llvm::Value* key0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 0]);
 				llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 1]);
 				generate_store_dict_mutable(gen_acc, emit_f, *dict_acc_ptr_reg, *key0_reg, *element0_reg, element_type0);
+
+				generate_release(gen_acc, emit_f, *key0_reg, typeid_t::make_string());
+//				generate_release(gen_acc, emit_f, *element0_reg, element_type0);
 			}
 			return dict_acc_ptr_reg;
 		}
@@ -2388,7 +2391,7 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 			}
 		}
 
-		llvm::Value* dummy_result = llvm::ConstantInt::get(builder.getInt64Ty(), 667);
+		llvm::Value* dummy_result = llvm::ConstantInt::get(builder.getInt64Ty(), 668);
 		builder.CreateRet(dummy_result);
 	}
 
@@ -2512,6 +2515,7 @@ int64_t run_llvm_program(llvm_instance_t& instance, llvm_ir_program_t& program_b
 //???main_args
 
 	auto ee = make_engine_run_init(instance, program_breaks);
+	call_floyd_runtime_deinit(ee);
 	return 0;
 }
 

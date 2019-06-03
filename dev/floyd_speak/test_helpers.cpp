@@ -142,6 +142,8 @@ static test_report_t run_program_llvm(const compilation_unit_t& cu, const std::v
 		const auto result_global0 = bind_global(ee, "result");
 		const auto result_global = result_global0.first != nullptr ? load_global(ee, result_global0) : value_t();
 
+		call_floyd_runtime_deinit(ee);
+
 		detect_leaks(ee.heap);
 
 		return test_report_t{ result_global, main_result, ee._print_output, "" };

@@ -76,7 +76,6 @@ struct heap_t {
 	~heap_t();
 	public: bool check_invariant() const;
 	public: int count_used() const;
-	public: int count_leaks() const;
 
 
 	////////////////////////////////		STATE

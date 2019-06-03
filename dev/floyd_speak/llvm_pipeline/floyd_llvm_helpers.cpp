@@ -61,24 +61,54 @@ namespace floyd {
 
 
 
-int heap_t::count_leaks() const{
-	QUARK_ASSERT(check_invariant());
+void trace_alloc(const heap_rec_t& e){
+	QUARK_TRACE_SS(
+		"used: " << e.in_use
+		<< " rc: " << e.alloc_ptr->rc
+		<< " debug[0]: " << e.alloc_ptr->debug_info[0]
+		<< " data_a: " << e.alloc_ptr->data_a
+	);
+}
 
-	int leak_count = 0;
+void trace_heap(const heap_t& heap){
+	QUARK_ASSERT(heap.check_invariant());
 
-	for(const auto& e: alloc_records){
-		if(e.in_use == true){
-			leak_count++;
-			QUARK_TRACE_SS("LEAKING");
-		}
+	QUARK_SCOPED_TRACE("HEAP");
+	for(int i = 0 ; i < heap.alloc_records.size() ; i++){
+		const auto& e = heap.alloc_records[i];
+		trace_alloc(e);
 	}
-	return leak_count;
+}
+
+void detect_leaks(const heap_t& heap){
+	QUARK_ASSERT(heap.check_invariant());
+
+	const auto leaks = heap.count_used();
+	if(leaks > 0){
+		QUARK_SCOPED_TRACE("LEAKS");
+
+		trace_heap(heap);
+
+#if 1
+		if(leaks > 0){
+			throw std::exception();
+		}
+#endif
+	}
 }
 
 
 heap_t::~heap_t(){
 	QUARK_ASSERT(check_invariant());
-	count_leaks();
+
+#if DEBUG
+	const auto leaks = count_used();
+	if(leaks > 0){
+		QUARK_SCOPED_TRACE("LEAKS");
+		trace_heap(*this);
+	}
+#endif
+
 }
 
 
@@ -234,29 +264,6 @@ int heap_t::count_used() const {
 }
 
 
-void trace_heap(const heap_t& heap){
-	QUARK_ASSERT(heap.check_invariant());
-
-	QUARK_SCOPED_TRACE("HEAP");
-	for(int i = 0 ; i < heap.alloc_records.size() ; i++){
-		const auto& e = heap.alloc_records[i];
-
-		QUARK_TRACE_SS(i << "\t used: " << e.in_use << " data_a: " << e.alloc_ptr->data_a << " rc: " << e.alloc_ptr->rc);
-	}
-}
-
-void detect_leaks(const heap_t& heap){
-	QUARK_ASSERT(heap.check_invariant());
-
-	trace_heap(heap);
-	const auto leaks = heap.count_leaks();
-
-#if 0
-	if(leaks > 0){
-		throw std::exception();
-	}
-#endif
-}
 
 
 
@@ -677,6 +684,9 @@ bool VEC_T::check_invariant() const {
 VEC_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count){
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count);
 	alloc->data_a = element_count;
+	alloc->debug_info[0] = 'V';
+	alloc->debug_info[1] = 'E';
+	alloc->debug_info[2] = 'C';
 
 	auto vec = reinterpret_cast<VEC_T*>(alloc);
 	return vec;
@@ -736,6 +746,11 @@ DICT_T* alloc_dict(heap_t& heap){
 	heap_alloc_64_t* alloc = alloc_64(heap, 0);
 	auto dict = reinterpret_cast<DICT_T*>(alloc);
 
+	alloc->debug_info[0] = 'D';
+	alloc->debug_info[1] = 'I';
+	alloc->debug_info[2] = 'C';
+	alloc->debug_info[3] = 'T';
+
 	auto& m = dict->get_map_mut();
     new (&m) STDMAP();
 	return dict;
@@ -794,6 +809,12 @@ JSON_T* alloc_json(heap_t& heap, const json_t& init){
 	QUARK_ASSERT(init.check_invariant());
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0);
+
+	alloc->debug_info[0] = 'J';
+	alloc->debug_info[1] = 'S';
+	alloc->debug_info[2] = 'O';
+	alloc->debug_info[3] = 'N';
+
 	auto json = reinterpret_cast<JSON_T*>(alloc);
 	auto copy = new json_t(init);
 	json->alloc.data_a = reinterpret_cast<uint64_t>(copy);
