@@ -1147,41 +1147,6 @@ static llvm::StructType* make_wide_return_type_internal(llvm::LLVMContext& conte
 	return s;
 }
 
-/*
-static llvm::StructType* make_vec_type_internal(llvm::LLVMContext& context){
-	std::vector<llvm::Type*> members = {
-		//	element_ptr
-		llvm::Type::getInt64Ty(context)->getPointerTo(),
-
-		//	element_count
-		llvm::Type::getInt32Ty(context),
-
-		//	magic
-		llvm::Type::getInt16Ty(context),
-
-		//	element_bits
-		llvm::Type::getInt16Ty(context)
-	};
-	llvm::StructType* s = llvm::StructType::get(context, members, false);
-	return s;
-}
-
-static llvm::StructType* make_vec_type_internal(llvm::LLVMContext& context){
-	std::vector<llvm::Type*> members = {
-		llvm::Type::getInt64Ty(context),
-		llvm::Type::getInt64Ty(context),
-		llvm::Type::getInt64Ty(context),
-		llvm::Type::getInt64Ty(context),
-		llvm::Type::getInt64Ty(context),
-		llvm::Type::getInt64Ty(context),
-		llvm::Type::getInt64Ty(context),
-		llvm::Type::getInt64Ty(context)
-	};
-	llvm::StructType* s = llvm::StructType::get(context, members, false);
-	return s;
-}
-*/
-
 static llvm::StructType* make_vec_type_internal(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
 		llvm::Type::getInt64Ty(context),
@@ -1200,10 +1165,9 @@ static llvm::StructType* make_vec_type_internal(llvm::LLVMContext& context){
 
 static llvm::StructType* make_dict_type_internal(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
-		//	body_otr
 		llvm::Type::getInt64Ty(context)->getPointerTo()
 	};
-	llvm::StructType* s = llvm::StructType::get(context, members, false);
+	llvm::StructType* s = llvm::StructType::create(context, members, "dict");
 	return s;
 }
 
