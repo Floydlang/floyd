@@ -552,8 +552,97 @@ std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value_t arg_
 
 
 
+static void retain_value(llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type){
+	if(is_rc_value(type)){
+		if(type.is_string()){
+			vec_addref(*value.vector_ptr);
+		}
+		else if(type.is_vector()){
+			vec_addref(*value.vector_ptr);
+		}
+		else if(type.is_dict()){
+			dict_addref(*value.dict_ptr);
+		}
 
+		//??? Also free other RC types like dicts, json_value etc.
+		else{
+		}
+	}
+}
 
+//??? use these in all runtime code
+static void release_dict_deep(llvm_execution_engine_t& runtime, DICT_T* dict, const typeid_t& type);
+static void release_vec_deep(llvm_execution_engine_t& runtime, VEC_T* vec, const typeid_t& type);
+
+static void release_deep(llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type){
+	if(is_rc_value(type)){
+		if(type.is_string()){
+			release_vec_deep(runtime, value.vector_ptr, type);
+		}
+		else if(type.is_vector()){
+			release_vec_deep(runtime, value.vector_ptr, type);
+		}
+		else if(type.is_dict()){
+			release_dict_deep(runtime, value.dict_ptr, type);
+		}
+
+		//??? Also free other RC types like dicts, json_value etc.
+		else{
+		}
+	}
+}
+
+static void release_dict_deep(llvm_execution_engine_t& runtime, DICT_T* dict, const typeid_t& type){
+	QUARK_ASSERT(dict != nullptr);
+	QUARK_ASSERT(type.is_dict());
+
+	//??? Make atomic. CAS?
+	//??? unsafe hack. Some other code could stop rc from becoming 0.
+	if(dict->alloc.rc == 1){
+
+		//	Release all elements.
+		const auto element_type = type.get_dict_value_type();
+		if(is_rc_value(element_type)){
+			auto m = dict->get_map();
+			for(const auto& e: m){
+				release_deep(runtime, e.second, element_type);
+			}
+		}
+	}
+
+	dict_releaseref(dict);
+}
+
+static void release_vec_deep(llvm_execution_engine_t& runtime, VEC_T* vec, const typeid_t& type){
+	QUARK_ASSERT(vec != nullptr);
+	QUARK_ASSERT(type.is_string() || type.is_vector());
+
+	//??? Make atomic. CAS?
+	//??? unsafe hack. Some other code could stop rc from becoming 0.
+	if(vec->alloc.rc == 1){
+
+		if(type.is_string()){
+			//	String has no elements to release.
+		}
+		else if(type.is_vector()){
+			//	Release all elements.
+			const auto element_type = type.get_vector_element_type();
+			if(is_rc_value(element_type)){
+				auto element_ptr = vec->get_element_ptr();
+				for(int i = 0 ; i < vec->get_element_count() ; i++){
+					const auto& element = element_ptr[i];
+					release_deep(runtime, element, element_type);
+				}
+			}
+		}
+
+		//??? Also free other RC types like dicts, json_value etc.
+		else{
+		}
+	}
+
+	vec_releaseref(vec);
+}
 
 
 
@@ -597,43 +686,6 @@ host_func_t fr_retain_vec__make(llvm::LLVMContext& context, const llvm_type_inte
 ////////////////////////////////		fr_release_vec()
 
 
-void release_vec_deep(llvm_execution_engine_t& runtime, VEC_T* vec, const typeid_t& type){
-	QUARK_ASSERT(vec != nullptr);
-	QUARK_ASSERT(type.is_string() || type.is_vector());
-
-	//??? Make atomic. CAS?
-	//??? unsafe hack. SOme other code could stop rc from becoming 0.
-	if(vec->alloc.rc == 1){
-
-		if(type.is_string()){
-		}
-		else if(type.is_vector()){
-			//	Release all elements.
-			const auto element_type = type.get_vector_element_type();
-			if(is_rc_value(element_type)){
-				auto element_ptr = vec->get_element_ptr();
-				for(int i = 0 ; i < vec->get_element_count() ; i++){
-					if(element_type.is_string() || element_type.is_vector()){
-						VEC_T* element = element_ptr[i].vector_ptr;
-						QUARK_ASSERT(element != nullptr);
-						release_vec_deep(runtime, element, element_type);
-					}
-
-					//??? Also free other RC types like dicts, json_value etc.
-					else{
-					}
-				}
-			}
-		}
-
-		//??? Also free other RC types like dicts, json_value etc.
-		else{
-		}
-	}
-
-	vec_releaseref(vec);
-}
-
 void fr_release_vec(void* floyd_runtime_ptr, VEC_T* vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 	QUARK_ASSERT(vec != nullptr);
@@ -655,6 +707,67 @@ host_func_t fr_release_vec__make(llvm::LLVMContext& context, const llvm_type_int
 	);
 	return { "fr_release_vec", function_type, reinterpret_cast<void*>(fr_release_vec) };
 }
+
+
+
+
+
+////////////////////////////////		fr_retain_dict()
+
+
+void fr_retain_dict(void* floyd_runtime_ptr, DICT_T* dict, runtime_type_t type0){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(dict != nullptr);
+	const auto type = lookup_type(r.type_interner.interner, type0);
+	QUARK_ASSERT(is_rc_value(type));
+
+	QUARK_ASSERT(type.is_dict());
+
+	dict_addref(*dict);
+}
+
+host_func_t fr_retain_dict__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getVoidTy(context),
+		{
+			make_frp_type(context),
+			make_dict_type(interner)->getPointerTo(),
+			make_runtime_type_type(context)
+		},
+		false
+	);
+	return { "fr_retain_dict", function_type, reinterpret_cast<void*>(fr_retain_dict) };
+}
+
+
+////////////////////////////////		fr_release_dict()
+
+
+
+void fr_release_dict(void* floyd_runtime_ptr, DICT_T* dict, runtime_type_t type0){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(dict != nullptr);
+	const auto type = lookup_type(r.type_interner.interner, type0);
+	QUARK_ASSERT(type.is_dict());
+
+	release_dict_deep(r, dict, type);
+}
+
+host_func_t fr_release_dict__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getVoidTy(context),
+		{
+			make_frp_type(context),
+			make_dict_type(interner)->getPointerTo(),
+			make_runtime_type_type(context)
+		},
+		false
+	);
+	return { "fr_release_dict", function_type, reinterpret_cast<void*>(fr_release_dict) };
+}
+
+
+
 
 
 
@@ -765,13 +878,11 @@ VEC_T* floyd_runtime__concatunate_vectors(void* floyd_runtime_ptr, runtime_type_
 
 		if(is_rc_value(element_type)){
 			for(int i = 0 ; i < lhs->get_element_count() ; i++){
-				vec_addref(*lhs_ptr[i].vector_ptr);
-
+				retain_value(r, lhs_ptr[i], element_type);
 				dest_ptr[i] = lhs_ptr[i];
 			}
 			for(int i = 0 ; i < rhs->get_element_count() ; i++){
-				vec_addref(*rhs_ptr[i].vector_ptr);
-
+				retain_value(r, rhs_ptr[i], element_type);
 				dest_ptr2[i] = rhs_ptr[i];
 			}
 		}
@@ -830,22 +941,17 @@ host_func_t floyd_runtime__allocate_dict__make(llvm::LLVMContext& context, const
 ////////////////////////////////		store_dict()
 
 
-DICT_T* floyd_runtime__store_dict(void* floyd_runtime_ptr, DICT_T* dict, runtime_value_t key, runtime_value_t element_value, runtime_type_t element_type){
+void floyd_runtime__store_dict_mutable(void* floyd_runtime_ptr, DICT_T* dict, runtime_value_t key, runtime_value_t element_value, runtime_type_t element_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto key_string = from_runtime_string(r, key);
 
-	//	Deep copy dict.
-	auto v = alloc_dict(r.heap);
-	v->get_map_mut() = dict->get_map();
-
-	v->get_map_mut().insert_or_assign(key_string, element_value);
-	return v;
+	dict->get_map_mut().insert_or_assign(key_string, element_value);
 }
 
-host_func_t floyd_runtime__store_dict__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
+host_func_t floyd_runtime__store_dict_mutable__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		make_dict_type(interner)->getPointerTo(),
+		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(context),
 			make_dict_type(interner)->getPointerTo(),
@@ -855,7 +961,7 @@ host_func_t floyd_runtime__store_dict__make(llvm::LLVMContext& context, const ll
 		},
 		false
 	);
-	return { "floyd_runtime__store_dict", function_type, reinterpret_cast<void*>(floyd_runtime__store_dict) };
+	return { "floyd_runtime__store_dict_mutable", function_type, reinterpret_cast<void*>(floyd_runtime__store_dict_mutable) };
 }
 
 
@@ -1071,6 +1177,9 @@ std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const
 		fr_retain_vec__make(context, interner),
 		fr_release_vec__make(context, interner),
 
+		fr_retain_dict__make(context, interner),
+		fr_release_dict__make(context, interner),
+
 		floyd_runtime__allocate_memory__make(context, interner),
 
 		floyd_runtime__allocate_vector__make(context, interner),
@@ -1078,7 +1187,7 @@ std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const
 		floyd_runtime__concatunate_vectors__make(context, interner),
 
 		floyd_runtime__allocate_dict__make(context, interner),
-		floyd_runtime__store_dict__make(context, interner),
+		floyd_runtime__store_dict_mutable__make(context, interner),
 		floyd_runtime__lookup_dict__make(context, interner),
 
 		floyd_runtime__allocate_json__make(context, interner),
@@ -1270,14 +1379,8 @@ WIDE_RETURN_T floyd_funcdef__filter(void* floyd_runtime_ptr, runtime_value_t arg
 			acc.push_back(element_value);
 
 			if(is_rc_value(e_element_type)){
-				if(e_element_type.is_string() || e_element_type.is_vector()){
-					vec_addref(*element_value.vector_ptr);
-				}
-				else{
-				}
+				retain_value(r, element_value, e_element_type);
 			}
-
-
 		}
 		else{
 		}
@@ -1575,21 +1678,13 @@ WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, runtime_value_t 
 		auto source_ptr = vs->get_element_ptr();
 
 		if(is_rc_value(element_type)){
-			if(element_type.is_string() || element_type.is_vector()){
-				vec_addref(*element.vector_ptr);
+			retain_value(r, element, element_type);
 
-				for(int i = 0 ; i < vs->get_element_count() ; i++){
-					vec_addref(*source_ptr[i].vector_ptr);
-					dest_ptr[i] = source_ptr[i];
-				}
-				dest_ptr[vs->get_element_count()] = element;
+			for(int i = 0 ; i < vs->get_element_count() ; i++){
+				retain_value(r, source_ptr[i], element_type);
+				dest_ptr[i] = source_ptr[i];
 			}
-			else{
-				for(int i = 0 ; i < vs->get_element_count() ; i++){
-					dest_ptr[i] = source_ptr[i];
-				}
-				dest_ptr[vs->get_element_count()] = element;
-			}
+			dest_ptr[vs->get_element_count()] = element;
 		}
 		else{
 			for(int i = 0 ; i < vs->get_element_count() ; i++){
@@ -2083,23 +2178,14 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 		auto dest_ptr = result->get_element_ptr();
 		auto source_ptr = vec->get_element_ptr();
 		if(is_rc_value(element_type)){
-			if(element_type.is_string() || element_type.is_vector()){
-				vec_addref(*arg2_value.vector_ptr);
-
-				for(int i = 0 ; i < result->get_element_count() ; i++){
-					vec_addref(*source_ptr[i].vector_ptr);
-					dest_ptr[i] = source_ptr[i];
-				}
-
-				release_vec_deep(r, dest_ptr[index].vector_ptr, element_type);
-				dest_ptr[index] = arg2_value;
+			retain_value(r, arg2_value, element_type);
+			for(int i = 0 ; i < result->get_element_count() ; i++){
+				retain_value(r, source_ptr[i], element_type);
+				dest_ptr[i] = source_ptr[i];
 			}
-			else{
-				for(int i = 0 ; i < result->get_element_count() ; i++){
-					dest_ptr[i] = source_ptr[i];
-				}
-				dest_ptr[index] = arg2_value;
-			}
+
+			release_vec_deep(r, dest_ptr[index].vector_ptr, element_type);
+			dest_ptr[index] = arg2_value;
 		}
 		else{
 			for(int i = 0 ; i < result->get_element_count() ; i++){
@@ -2116,12 +2202,21 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 		}
 		const auto key = from_runtime_string(r, arg1_value);
 		const auto dict = unpack_dict_arg(r.type_interner.interner, arg0_value, arg0_type);
+		const auto value_type = type0.get_dict_value_type();
 
 		//	Deep copy dict.
 		auto dict2 = alloc_dict(r.heap);
 		dict2->get_map_mut() = dict->get_map();
 
 		dict2->get_map_mut().insert_or_assign(key, arg2_value);
+
+		if(is_rc_value(value_type)){
+			for(const auto& e: dict2->get_map()){
+				retain_value(r, e.second, value_type);
+			}
+		}
+
+
 		return make_wide_return_dict(dict2);
 	}
 	else if(type0.is_struct()){

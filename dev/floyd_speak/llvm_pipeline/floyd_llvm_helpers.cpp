@@ -250,7 +250,7 @@ void detect_leaks(const heap_t& heap){
 
 	trace_heap(heap);
 	const auto leaks = heap.count_leaks();
-#if 0
+#if 1
 	if(leaks > 0){
 		throw std::exception();
 	}
@@ -1309,7 +1309,7 @@ llvm::StructType* make_struct_type(const llvm_type_interner_t& interner, const t
 
 bool is_rc_value(const typeid_t& type){
 //	return type.is_string() || type.is_vector() || type.is_dict() || type.is_struct() || type.is_json_value();
-	return type.is_string() || type.is_vector();
+	return type.is_string() || type.is_vector() || type.is_dict();
 }
 
 

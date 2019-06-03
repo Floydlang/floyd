@@ -306,6 +306,15 @@ void generate_retain(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llv
 			};
 			builder.CreateCall(f.llvm_f, args, "");
 		}
+		else if(type.is_dict()){
+			const auto f = find_function_def(gen_acc, "fr_retain_dict");
+			std::vector<llvm::Value*> args = {
+				get_callers_fcp(emit_f),
+				&value_reg,
+				generate_itype_constant(gen_acc, type)
+			};
+			builder.CreateCall(f.llvm_f, args, "");
+		}
 		else{
 		}
 	}
@@ -321,6 +330,15 @@ void generate_release(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, ll
 	if(is_rc_value(type)){
 		if(type.is_string() || type.is_vector()){
 			const auto f = find_function_def(gen_acc, "fr_release_vec");
+			std::vector<llvm::Value*> args = {
+				get_callers_fcp(emit_f),
+				&value_reg,
+				generate_itype_constant(gen_acc, type)
+			};
+			builder.CreateCall(f.llvm_f, args);
+		}
+		else if(type.is_dict()){
+			const auto f = find_function_def(gen_acc, "fr_release_dict");
 			std::vector<llvm::Value*> args = {
 				get_callers_fcp(emit_f),
 				&value_reg,
@@ -400,16 +418,16 @@ static llvm::Value* generate_alloc_dict(llvm_code_generator_t& gen_acc, llvm::Fu
 	std::vector<llvm::Value*> args2 = {
 		get_callers_fcp(emit_f)
 	};
-	return builder.CreateCall(f.llvm_f, args2, "allocate_dict:" + debug);
+	return builder.CreateCall(f.llvm_f, args2, "");
 }
 
-static llvm::Value* generate_store_dict(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& dict_reg, llvm::Value& key_charptr_reg, llvm::Value& value_reg, const typeid_t& value_type){
+static void generate_store_dict_mutable(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& dict_reg, llvm::Value& key_charptr_reg, llvm::Value& value_reg, const typeid_t& value_type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
 	auto& builder = gen_acc.builder;
 
-	const auto f = find_function_def(gen_acc, "floyd_runtime__store_dict");
+	const auto f = find_function_def(gen_acc, "floyd_runtime__store_dict_mutable");
 
 	std::vector<llvm::Value*> args2 = {
 		get_callers_fcp(emit_f),
@@ -418,7 +436,7 @@ static llvm::Value* generate_store_dict(llvm_code_generator_t& gen_acc, llvm::Fu
 		generate_cast_to_runtime_value(gen_acc, value_reg, value_type),
 		generate_itype_constant(gen_acc, value_type)
 	};
-	return builder.CreateCall(f.llvm_f, args2, "store_dict:");
+	builder.CreateCall(f.llvm_f, args2, "");
 }
 
 static llvm::Value* generate_lookup_dict(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& dict_reg, llvm::Value& key_charptr_reg){
@@ -434,7 +452,7 @@ static llvm::Value* generate_lookup_dict(llvm_code_generator_t& gen_acc, llvm::F
 		&dict_reg,
 		&key_charptr_reg
 	};
-	return builder.CreateCall(f.llvm_f, args2, "lookup_dict:");
+	return builder.CreateCall(f.llvm_f, args2, "");
 }
 
 
@@ -451,7 +469,7 @@ static llvm::Value* generate_alloc_json(llvm_code_generator_t& gen_acc, llvm::Fu
 		generate_cast_to_runtime_value(gen_acc, input_value_reg, input_type),
 		generate_itype_constant(gen_acc, input_type)
 	};
-	return builder.CreateCall(f.llvm_f, args2, "allocate_json");
+	return builder.CreateCall(f.llvm_f, args2, "");
 }
 
 static llvm::Value* generate_lookup_json(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& json_reg, llvm::Value& key_reg, const typeid_t& key_type){
@@ -468,7 +486,7 @@ static llvm::Value* generate_lookup_json(llvm_code_generator_t& gen_acc, llvm::F
 		generate_cast_to_runtime_value(gen_acc, key_reg, key_type),
 		generate_itype_constant(gen_acc, key_type)
 	};
-	return builder.CreateCall(f.llvm_f, args, "lookup_json");
+	return builder.CreateCall(f.llvm_f, args, "");
 }
 
 
@@ -484,7 +502,7 @@ static llvm::Value* generate_json_to_string(llvm_code_generator_t& gen_acc, llvm
 		get_callers_fcp(emit_f),
 		&json_reg
 	};
-	return builder.CreateCall(f.llvm_f, args, "json_to_string");
+	return builder.CreateCall(f.llvm_f, args, "");
 }
 
 
@@ -498,7 +516,7 @@ static llvm::Value* generate_allocate_memory(llvm_code_generator_t& gen_acc, llv
 		get_callers_fcp(emit_f),
 		&bytes_reg
 	};
-	return gen_acc.builder.CreateCall(def.llvm_f, args, "allocate_memory");
+	return gen_acc.builder.CreateCall(def.llvm_f, args, "");
 }
 
 
@@ -870,6 +888,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 
 		generate_retain(gen_acc, emit_f, *result_reg, element_type0);
 		generate_release(gen_acc, emit_f, *parent_reg, parent_type);
+		generate_release(gen_acc, emit_f, *key_reg, key_type);
 
 		return result_reg;
 	}
@@ -1008,7 +1027,7 @@ static llvm::Value* generate_compare_values(llvm_code_generator_t& gen_acc, llvm
 		generate_cast_to_runtime_value(gen_acc, lhs_reg, type),
 		generate_cast_to_runtime_value(gen_acc, rhs_reg, type)
 	};
-	auto result = gen_acc.builder.CreateCall(def.llvm_f, args, "floyd_runtime__compare_values");
+	auto result = gen_acc.builder.CreateCall(def.llvm_f, args, "");
 
 	//??? Return i1 directly, no need to compare again.
 	auto result2 = gen_acc.builder.CreateICmp(llvm::CmpInst::Predicate::ICMP_NE, result, llvm::ConstantInt::get(gen_acc.builder.getInt32Ty(), 0));
@@ -1257,7 +1276,7 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 		}
 	}
 	QUARK_ASSERT(arg_regs.size() == llvm_mapping.args.size());
-	auto result0 = builder.CreateCall(callee0_reg, arg_regs, callee_function_type.get_function_return().is_void() ? "" : "call_result");
+	auto result0 = builder.CreateCall(callee0_reg, arg_regs, callee_function_type.get_function_return().is_void() ? "" : "");
 
 	for(const auto& m: destroy){
 		generate_release(gen_acc, emit_f, *m.first, m.second);
@@ -1398,9 +1417,9 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 				//	Retain-release should be correct.
 				llvm::Value* key0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 0]);
 				llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 1]);
-				auto dict2_ptr_reg = generate_store_dict(gen_acc, emit_f, *dict_acc_ptr_reg, *key0_reg, *element0_reg, element_type0);
+				generate_store_dict_mutable(gen_acc, emit_f, *dict_acc_ptr_reg, *key0_reg, *element0_reg, element_type0);
 
-				dict_acc_ptr_reg = dict2_ptr_reg;
+				generate_release(gen_acc, emit_f, *key0_reg, typeid_t::make_string());
 			}
 			return dict_acc_ptr_reg;
 		}
@@ -1413,9 +1432,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 				//	Retain-release should be correct.
 				llvm::Value* key0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 0]);
 				llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 1]);
-				auto dict2_ptr_reg = generate_store_dict(gen_acc, emit_f, *dict_acc_ptr_reg, *key0_reg, *element0_reg, element_type0);
-
-				dict_acc_ptr_reg = dict2_ptr_reg;
+				generate_store_dict_mutable(gen_acc, emit_f, *dict_acc_ptr_reg, *key0_reg, *element0_reg, element_type0);
 			}
 			return dict_acc_ptr_reg;
 		}
