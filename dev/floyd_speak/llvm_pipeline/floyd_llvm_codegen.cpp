@@ -315,6 +315,15 @@ void generate_retain(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llv
 			};
 			builder.CreateCall(f.llvm_f, args, "");
 		}
+		else if(type.is_json_value()){
+			const auto f = find_function_def(gen_acc, "fr_retain_json");
+			std::vector<llvm::Value*> args = {
+				get_callers_fcp(emit_f),
+				&value_reg,
+				generate_itype_constant(gen_acc, type)
+			};
+			builder.CreateCall(f.llvm_f, args, "");
+		}
 		else{
 		}
 	}
@@ -339,6 +348,15 @@ void generate_release(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, ll
 		}
 		else if(type.is_dict()){
 			const auto f = find_function_def(gen_acc, "fr_release_dict");
+			std::vector<llvm::Value*> args = {
+				get_callers_fcp(emit_f),
+				&value_reg,
+				generate_itype_constant(gen_acc, type)
+			};
+			builder.CreateCall(f.llvm_f, args);
+		}
+		else if(type.is_json_value()){
+			const auto f = find_function_def(gen_acc, "fr_release_json");
 			std::vector<llvm::Value*> args = {
 				get_callers_fcp(emit_f),
 				&value_reg,

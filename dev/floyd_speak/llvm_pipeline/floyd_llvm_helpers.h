@@ -20,6 +20,7 @@ namespace floyd {
 
 struct VEC_T;
 struct DICT_T;
+struct JSON_T;
 struct type_interner_t;
 
 
@@ -358,8 +359,6 @@ VEC_T* wide_return_to_vec(const WIDE_RETURN_T& ret);
 
 
 /*
-	Encoded in LLVM as an 8 byte struct. By value.
-
 	A std::map<> is stored inplace into alloc.data_a / alloc.data_b / alloc.data-c.
 */
 
@@ -393,6 +392,40 @@ void dict_releaseref(DICT_T* vec);
 
 WIDE_RETURN_T make_wide_return_dict(DICT_T* dict);
 DICT_T* wide_return_to_dict(const WIDE_RETURN_T& ret);
+
+
+
+
+
+////////////////////////////////		JSON_T
+
+
+/*
+	Store a json_t* in data_a. It need to be new/deletes via C++.
+*/
+
+	typedef std::map<std::string, runtime_value_t> STDMAP;
+
+struct JSON_T {
+	bool check_invariant() const;
+
+	const json_t& get_json() const {
+		return *reinterpret_cast<const json_t*>(alloc.data_a);
+	}
+
+
+	////////////////////////////////		STATE
+	heap_alloc_64_t alloc;
+};
+
+JSON_T* alloc_json(heap_t& heap, const json_t& init);
+void json_addref(JSON_T& vec);
+void json_releaseref(JSON_T* vec);
+
+WIDE_RETURN_T make_wide_return_json(JSON_T* dict);
+JSON_T* wide_return_to_json(const WIDE_RETURN_T& ret);
+
+
 
 
 

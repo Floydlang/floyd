@@ -775,6 +775,66 @@ host_func_t fr_release_dict__make(llvm::LLVMContext& context, const llvm_type_in
 
 
 
+////////////////////////////////		fr_retain_json()
+
+
+void fr_retain_json(void* floyd_runtime_ptr, JSON_T* json, runtime_type_t type0){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(json != nullptr);
+	const auto type = lookup_type(r.type_interner.interner, type0);
+	QUARK_ASSERT(is_rc_value(type));
+
+	QUARK_ASSERT(type.is_json_value());
+
+	json_addref(*json);
+}
+
+host_func_t fr_retain_json__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getVoidTy(context),
+		{
+			make_frp_type(context),
+			intern_type(interner, typeid_t::make_json_value()),
+			make_runtime_type_type(context)
+		},
+		false
+	);
+	return { "fr_retain_json", function_type, reinterpret_cast<void*>(fr_retain_json) };
+}
+
+
+////////////////////////////////		fr_release_json()
+
+
+
+void fr_release_json(void* floyd_runtime_ptr, JSON_T* json, runtime_type_t type0){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+	QUARK_ASSERT(json != nullptr);
+	const auto type = lookup_type(r.type_interner.interner, type0);
+	QUARK_ASSERT(type.is_json_value());
+
+	json_releaseref(json);
+}
+
+host_func_t fr_release_json__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getVoidTy(context),
+		{
+			make_frp_type(context),
+			intern_type(interner, typeid_t::make_json_value()),
+			make_runtime_type_type(context)
+		},
+		false
+	);
+	return { "fr_release_json", function_type, reinterpret_cast<void*>(fr_release_json) };
+}
+
+
+
+
+
+
+
 
 
 ////////////////////////////////		allocate_memory()
@@ -1179,6 +1239,9 @@ std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const
 
 		fr_retain_dict__make(context, interner),
 		fr_release_dict__make(context, interner),
+
+		fr_retain_json__make(context, interner),
+		fr_release_json__make(context, interner),
 
 		floyd_runtime__allocate_memory__make(context, interner),
 

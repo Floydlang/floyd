@@ -751,6 +751,12 @@ void dict_releaseref(DICT_T* dict){
 	QUARK_ASSERT(dict != nullptr);
 	QUARK_ASSERT(dict->check_invariant());
 
+#if 0
+	//??? atomic needed!
+	if(dict->alloc.rc == 1){
+   		dict->get_map_mut().~STDMAP();
+	}
+#endif
 	release_ref(dict->alloc);
 }
 
@@ -786,6 +792,62 @@ DICT_T* wide_return_to_dict(const WIDE_RETURN_T& ret){
 	return ret.a.dict_ptr;
 //	return *reinterpret_cast<const DICT_T*>(&ret);
 }
+
+
+
+
+
+////////////////////////////////		JSON_T
+
+
+
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto size = sizeof(STDMAP);
+	QUARK_ASSERT(size == 24);
+}
+
+bool JSON_T::check_invariant() const{
+	QUARK_ASSERT(alloc.check_invariant());
+	QUARK_ASSERT(get_json().check_invariant());
+	return true;
+}
+
+JSON_T* alloc_json(heap_t& heap, const json_t& init){
+	heap_alloc_64_t* alloc = alloc_64(heap, 0);
+	auto json = reinterpret_cast<JSON_T*>(alloc);
+	auto copy = new json_t(init);
+	json->alloc.data_a = reinterpret_cast<uint64_t>(copy);
+	return json;
+}
+
+void json_addref(JSON_T& json){
+	QUARK_ASSERT(json.check_invariant());
+
+	add_ref(json.alloc);
+
+	QUARK_ASSERT(json.check_invariant());
+}
+void json_releaseref(JSON_T* json){
+	QUARK_ASSERT(json != nullptr);
+	QUARK_ASSERT(json->check_invariant());
+
+	//??? atomic needed!
+	if(json->alloc.rc == 1){
+		delete &json->get_json();
+		json->alloc.data_a = 0x00;
+	}
+	release_ref(json->alloc);
+}
+
+#if 0
+WIDE_RETURN_T make_wide_return_json(JSON_T* json){
+	return make_wide_return_2x64({ .json_ptr = json }, { .int_value = 0 });
+}
+
+JSON_T* wide_return_to_json(const WIDE_RETURN_T& ret){
+	return ret.a.json_ptr;
+}
+#endif
 
 
 
