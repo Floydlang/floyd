@@ -751,12 +751,11 @@ void dict_releaseref(DICT_T* dict){
 	QUARK_ASSERT(dict != nullptr);
 	QUARK_ASSERT(dict->check_invariant());
 
-#if 0
 	//??? atomic needed!
 	if(dict->alloc.rc == 1){
    		dict->get_map_mut().~STDMAP();
 	}
-#endif
+
 	release_ref(dict->alloc);
 }
 
