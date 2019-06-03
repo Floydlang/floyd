@@ -34,11 +34,12 @@ struct type_interner_t;
 
 struct heap_t;
 
-static const uint64_t ALLOC_64_MAGIC = 0x0a110c64;
+static const uint64_t ALLOC_64_MAGIC = 0xa110a11c;
 
 //	This header is followed by a number of uint64_t elements in the same heap block.
 //	This header represents a sharepoint of many clients and holds an RC to count clients.
 //	If you want to change the size of the allocation, allocate 0 following elements and make separate dynamic allocation and stuff its pointer into data1.
+//	Designed to be 64 bytes = 1 cacheline.
 struct heap_alloc_64_t {
 //	public: virtual ~heap_alloc_64_t(){};
 	public: bool check_invariant() const;
@@ -46,11 +47,15 @@ struct heap_alloc_64_t {
 
 	////////////////////////////////		STATE
 	uint64_t allocation_word_count;
-	uint64_t element_count;
+
 	uint32_t rc;
-	uint32_t data0;
-	uint64_t data1;
-	uint64_t magic;
+	uint32_t magic;
+
+	//	 data_*: 3 x 8 bytes.
+	uint64_t data_a;
+	uint64_t data_b;
+	uint64_t data_c;
+
 	heap_t* heap64;
 	char debug_info[16];
 };
@@ -292,7 +297,9 @@ WIDE_RETURN_T make_wide_return_structptr(void* s);
 
 	Invariant:
 		alloc_count = roundup(element_count * element_bits, 64) / 64
-		calloc(alloc_count, sizeof(uint64_t))
+
+
+	Store element count in data_a.
 */
 struct VEC_T {
 	~VEC_T();
@@ -307,7 +314,7 @@ struct VEC_T {
 	inline uint64_t get_element_count() const{
 		QUARK_ASSERT(check_invariant());
 
-		return alloc.element_count;
+		return alloc.data_a;
 	}
 
 	inline const runtime_value_t* get_element_ptr() const{
@@ -335,14 +342,6 @@ struct VEC_T {
 	heap_alloc_64_t alloc;
 };
 
-/*
-enum class VEC_T_MEMBERS {
-	element_ptr = 0,
-	element_count = 1,
-	magic = 2,
-	element_bits = 3
-};
-*/
 VEC_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count);
 void vec_addref(VEC_T& vec);
 void vec_releaseref(VEC_T* vec);
@@ -360,36 +359,31 @@ VEC_T* wide_return_to_vec(const WIDE_RETURN_T& ret);
 
 /*
 	Encoded in LLVM as an 8 byte struct. By value.
+
+	A std::map<> is stored inplace into alloc.data_a / alloc.data_b / alloc.data-c.
 */
 
-struct DICT_BODY_T {
-	std::map<std::string, runtime_value_t> map;
-};
+	typedef std::map<std::string, runtime_value_t> STDMAP;
 
 struct DICT_T {
-	DICT_BODY_T* body_ptr;
+	bool check_invariant() const;
+	uint64_t size() const;
 
-	bool check_invariant() const{
-		QUARK_ASSERT(this->body_ptr != nullptr);
-		return true;
+	const STDMAP& get_map() const {
+		return *reinterpret_cast<const STDMAP*>(&alloc.data_a);
+	}
+	STDMAP& get_map_mut(){
+		return *reinterpret_cast<STDMAP*>(&alloc.data_a);
 	}
 
-	inline uint32_t size() const {
-		QUARK_ASSERT(check_invariant());
 
-		return body_ptr->map.size();
-	}
+	////////////////////////////////		STATE
+	heap_alloc_64_t alloc;
 };
 
-
-
-//	Creates a new DICT_T with element_count. All elements are blank. Caller owns the result.
-DICT_T make_dict();
-void delete_dict(DICT_T& v);
-
-enum class DICT_T_MEMBERS {
-	body_ptr = 0
-};
+DICT_T* alloc_dict(heap_t& heap);
+void dict_addref(DICT_T& vec);
+void dict_releaseref(DICT_T* vec);
 
 
 //llvm::Value* generate_dict_alloca(llvm::IRBuilder<>& builder, llvm::Value* dict_reg);

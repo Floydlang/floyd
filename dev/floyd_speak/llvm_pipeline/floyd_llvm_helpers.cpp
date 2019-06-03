@@ -94,17 +94,19 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count){
 	}
 
 	auto alloc = reinterpret_cast<heap_alloc_64_t*>(alloc0);
+
 	alloc->allocation_word_count = allocation_word_count;
-	alloc->element_count = 0;
 	alloc->rc = 1;
-	alloc->data0 = 0;
-	alloc->data1 = 0;
 	alloc->magic = ALLOC_64_MAGIC;
+
+	alloc->data_a = 0;
+	alloc->data_b = 0;
+	alloc->data_c = 0;
+
 	alloc->heap64 = &heap;
 	memset(&alloc->debug_info[0], 0x00, 16);
 
 	heap.alloc_records.push_back({ alloc, true });
-
 
 	QUARK_ASSERT(alloc->check_invariant());
 	return alloc;
@@ -120,7 +122,6 @@ QUARK_UNIT_TEST("heap_t", "alloc_64()", "", ""){
 	auto a = alloc_64(heap, 0);
 	QUARK_UT_VERIFY(a != nullptr);
 	QUARK_UT_VERIFY(a->check_invariant());
-	QUARK_UT_VERIFY(a->element_count == 0);
 	QUARK_UT_VERIFY(a->allocation_word_count == 0);
 	QUARK_UT_VERIFY(a->rc == 1);
 
@@ -240,7 +241,7 @@ void trace_heap(const heap_t& heap){
 	for(int i = 0 ; i < heap.alloc_records.size() ; i++){
 		const auto& e = heap.alloc_records[i];
 
-		QUARK_TRACE_SS(i << "\t used: " << e.in_use << " element_count: " << e.alloc_ptr->element_count << " rc: " << e.alloc_ptr->rc);
+		QUARK_TRACE_SS(i << "\t used: " << e.in_use << " data_a: " << e.alloc_ptr->data_a << " rc: " << e.alloc_ptr->rc);
 	}
 }
 
@@ -249,7 +250,7 @@ void detect_leaks(const heap_t& heap){
 
 	trace_heap(heap);
 	const auto leaks = heap.count_leaks();
-#if 1
+#if 0
 	if(leaks > 0){
 		throw std::exception();
 	}
@@ -653,8 +654,8 @@ llvm::Type* make_frp_type(llvm::LLVMContext& context){
 
 
 QUARK_UNIT_TEST("", "", "", ""){
-	const auto vec_struct_size = sizeof(VEC_T);
-//	QUARK_UT_VERIFY(vec_struct_size == 16);
+	const auto vec_struct_size = sizeof(std::vector<int>);
+	QUARK_UT_VERIFY(vec_struct_size == 24);
 }
 
 QUARK_UNIT_TEST("", "", "", ""){
@@ -674,7 +675,7 @@ bool VEC_T::check_invariant() const {
 
 VEC_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count){
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count);
-	alloc->element_count = element_count;
+	alloc->data_a = element_count;
 
 	auto vec = reinterpret_cast<VEC_T*>(alloc);
 	return vec;
@@ -692,8 +693,6 @@ void vec_releaseref(VEC_T* vec){
 	QUARK_ASSERT(vec->check_invariant());
 
 	release_ref(vec->alloc);
-
-	QUARK_ASSERT(vec->check_invariant());
 }
 
 
@@ -715,23 +714,47 @@ VEC_T* wide_return_to_vec(const WIDE_RETURN_T& ret){
 
 
 
-
-
-DICT_T make_dict(){
-	DICT_BODY_T* body_ptr = new DICT_BODY_T();
-	DICT_T result;
-	result.body_ptr = body_ptr;
-
-	QUARK_ASSERT(result.check_invariant());
-	return result;
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto size = sizeof(STDMAP);
+	QUARK_ASSERT(size == 24);
 }
 
-void delete_dict(DICT_T& v){
-	QUARK_ASSERT(v.check_invariant());
-
-	delete v.body_ptr;
-	v.body_ptr = nullptr;
+bool DICT_T::check_invariant() const{
+	QUARK_ASSERT(alloc.check_invariant());
+	return true;
 }
+
+uint64_t DICT_T::size() const {
+	QUARK_ASSERT(check_invariant());
+
+	const auto& d = get_map();
+	return d.size();
+}
+
+DICT_T* alloc_dict(heap_t& heap){
+	heap_alloc_64_t* alloc = alloc_64(heap, 0);
+	auto dict = reinterpret_cast<DICT_T*>(alloc);
+
+	auto& m = dict->get_map_mut();
+    new (&m) STDMAP();
+	return dict;
+}
+
+void dict_addref(DICT_T& dict){
+	QUARK_ASSERT(dict.check_invariant());
+
+	add_ref(dict.alloc);
+
+	QUARK_ASSERT(dict.check_invariant());
+}
+void dict_releaseref(DICT_T* dict){
+	QUARK_ASSERT(dict != nullptr);
+	QUARK_ASSERT(dict->check_invariant());
+
+	release_ref(dict->alloc);
+}
+
+
 
 
 /*

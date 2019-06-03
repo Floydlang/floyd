@@ -348,7 +348,7 @@ value_t from_runtime_dict(const llvm_execution_engine_t& runtime, const runtime_
 	const auto dict = encoded_value.dict_ptr;
 
 	std::map<std::string, value_t> values;
-	const auto& map2 = dict->body_ptr->map;
+	const auto& map2 = dict->get_map();
 	for(const auto& e: map2){
 		const auto value = from_runtime_value(runtime, e.second, value_type);
 		values.insert({ e.first, value} );
@@ -810,8 +810,8 @@ host_func_t floyd_runtime__concatunate_vectors__make(llvm::LLVMContext& context,
 void* floyd_runtime__allocate_dict(void* floyd_runtime_ptr){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
-	auto v = make_dict();
-	return new DICT_T(v);
+	auto v = alloc_dict(r.heap);
+	return v;
 }
 
 host_func_t floyd_runtime__allocate_dict__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
@@ -836,11 +836,11 @@ DICT_T* floyd_runtime__store_dict(void* floyd_runtime_ptr, DICT_T* dict, runtime
 	const auto key_string = from_runtime_string(r, key);
 
 	//	Deep copy dict.
-	auto v = make_dict();
-	v.body_ptr->map = dict->body_ptr->map;
+	auto v = alloc_dict(r.heap);
+	v->get_map_mut() = dict->get_map();
 
-	v.body_ptr->map.insert_or_assign(key_string, element_value);
-	return new DICT_T(v);
+	v->get_map_mut().insert_or_assign(key_string, element_value);
+	return v;
 }
 
 host_func_t floyd_runtime__store_dict__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
@@ -866,9 +866,10 @@ host_func_t floyd_runtime__store_dict__make(llvm::LLVMContext& context, const ll
 runtime_value_t floyd_runtime__lookup_dict(void* floyd_runtime_ptr, DICT_T* dict, runtime_value_t s){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
+	const auto& m = dict->get_map();
 	const auto key_string = from_runtime_string(r, s);
-	const auto it = dict->body_ptr->map.find(key_string);
-	if(it == dict->body_ptr->map.end()){
+	const auto it = m.find(key_string);
+	if(it == m.end()){
 		throw std::exception();
 	}
 	else{
@@ -1199,12 +1200,12 @@ WIDE_RETURN_T floyd_host_function__erase(void* floyd_runtime_ptr, runtime_value_
 		const auto& dict = unpack_dict_arg(r.type_interner.interner, arg0_value, arg0_type);
 
 		//	Deep copy dict.
-		auto dict2 = make_dict();
-		dict2.body_ptr->map = dict->body_ptr->map;
+		auto dict2 = alloc_dict(r.heap);
+		dict2->get_map_mut() = dict->get_map();
 
 		const auto key_string = from_runtime_string(r, arg1_value);
-		dict2.body_ptr->map.erase(key_string);
-		return make_wide_return_dict(new DICT_T(dict2));
+		dict2->get_map_mut().erase(key_string);
+		return make_wide_return_dict(dict2);
 	}
 	else{
 		UNSUPPORTED();
@@ -1221,8 +1222,9 @@ uint32_t floyd_funcdef__exists(void* floyd_runtime_ptr, runtime_value_t arg0_val
 		const auto& dict = unpack_dict_arg(r.type_interner.interner, arg0_value, arg0_type);
 		const auto key_string = from_runtime_string(r, arg1_value);
 
-		const auto it = dict->body_ptr->map.find(key_string);
-		return it != dict->body_ptr->map.end() ? 1 : 0;
+		const auto& m = dict->get_map();
+		const auto it = m.find(key_string);
+		return it != m.end() ? 1 : 0;
 	}
 	else{
 		UNSUPPORTED();
@@ -1258,12 +1260,26 @@ WIDE_RETURN_T floyd_funcdef__filter(void* floyd_runtime_ptr, runtime_value_t arg
 
 	auto count = vec.get_element_count();
 
+	const auto e_element_type = type0.get_vector_element_type();
+
 	std::vector<runtime_value_t> acc;
 	for(int i = 0 ; i < count ; i++){
 		const auto element_value = vec.get_element_ptr()[i];
 		const auto keep = (*f)(floyd_runtime_ptr, element_value);
 		if(keep.bool_value != 0){
 			acc.push_back(element_value);
+
+			if(is_rc_value(e_element_type)){
+				if(e_element_type.is_string() || e_element_type.is_vector()){
+					vec_addref(*element_value.vector_ptr);
+				}
+				else{
+				}
+			}
+
+
+		}
+		else{
 		}
 	}
 
@@ -1763,7 +1779,7 @@ int64_t floyd_funcdef__size(void* floyd_runtime_ptr, runtime_value_t arg0_value,
 	}
 	else if(type0.is_dict()){
 		DICT_T* dict = unpack_dict_arg(r.type_interner.interner, arg0_value, arg0_type);
-		return dict->body_ptr->map.size();
+		return dict->size();
 	}
 	else{
 		//	No other types allowed.
@@ -2102,11 +2118,11 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 		const auto dict = unpack_dict_arg(r.type_interner.interner, arg0_value, arg0_type);
 
 		//	Deep copy dict.
-		auto dict2 = make_dict();
-		dict2.body_ptr->map = dict->body_ptr->map;
+		auto dict2 = alloc_dict(r.heap);
+		dict2->get_map_mut() = dict->get_map();
 
-		dict2.body_ptr->map.insert_or_assign(key, arg2_value);
-		return make_wide_return_dict(new DICT_T(dict2));
+		dict2->get_map_mut().insert_or_assign(key, arg2_value);
+		return make_wide_return_dict(dict2);
 	}
 	else if(type0.is_struct()){
 		if(type1.is_string() == false){
