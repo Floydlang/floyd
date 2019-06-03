@@ -1175,8 +1175,7 @@ static llvm::StructType* make_json_type_internal(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
 		llvm::Type::getInt64Ty(context)->getPointerTo()
 	};
-	llvm::StructType* s = llvm::StructType::get(context, members, false);
-//	llvm::StructType* s = llvm::StructType::create(context, members, "json");
+	llvm::StructType* s = llvm::StructType::create(context, members, "json");
 	return s;
 }
 
@@ -1212,7 +1211,7 @@ static llvm::Type* intern_type_internal(llvm::LLVMContext& context, llvm_type_in
 		}
 
 		llvm::Type* operator()(const typeid_t::json_type_t& e) const{
-			return llvm::Type::getInt16PtrTy(context);
+			return make_json_type(interner)->getPointerTo();
 		}
 		llvm::Type* operator()(const typeid_t::typeid_type_t& e) const{
 			return make_runtime_type_type(context);
@@ -1258,6 +1257,7 @@ static llvm_type_interner_t make_basic_interner(llvm::LLVMContext& context){
 llvm_type_interner_t::llvm_type_interner_t(llvm::LLVMContext& context, const type_interner_t& i){
 	vec_type = make_vec_type_internal(context);
 	dict_type = make_dict_type_internal(context);
+	json_type = make_json_type_internal(context);
 	wide_return_type = make_wide_return_type_internal(context);
 
 	for(const auto& e: i.interned){
@@ -1549,7 +1549,8 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 		}
 
 		llvm::Value* operator()(const typeid_t::json_type_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, llvm::Type::getInt16PtrTy(context), "");
+//			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, llvm::Type::getInt16PtrTy(context), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_json_type(interner)->getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::typeid_type_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::Trunc, &runtime_value_reg, llvm::Type::getInt32Ty(context), "");

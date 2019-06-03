@@ -1063,7 +1063,7 @@ host_func_t floyd_runtime__lookup_dict__make(llvm::LLVMContext& context, const l
 
 //??? Make named types for all function-argument / return types, like: typedef int16_t* native_json_ptr
 
-int16_t* floyd_runtime__allocate_json(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
+JSON_T* floyd_runtime__allocate_json(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
@@ -1071,7 +1071,7 @@ int16_t* floyd_runtime__allocate_json(void* floyd_runtime_ptr, runtime_value_t a
 
 	const auto a = value_to_ast_json(value, json_tags::k_plain);
 	auto result = new json_t(a);
-	return reinterpret_cast<int16_t*>(result);
+	return reinterpret_cast<JSON_T*>(result);
 }
 
 host_func_t floyd_runtime__allocate_json__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
@@ -1094,7 +1094,7 @@ host_func_t floyd_runtime__allocate_json__make(llvm::LLVMContext& context, const
 
 
 
-int16_t* floyd_runtime__lookup_json(void* floyd_runtime_ptr, int16_t* json_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
+JSON_T* floyd_runtime__lookup_json(void* floyd_runtime_ptr, JSON_T* json_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto& json = *reinterpret_cast<const json_t*>(json_ptr);
@@ -1107,7 +1107,7 @@ int16_t* floyd_runtime__lookup_json(void* floyd_runtime_ptr, int16_t* json_ptr, 
 		}
 
 		const auto result = json.get_object_element(value.get_string_value());
-		return reinterpret_cast<int16_t*>(new json_t(result));
+		return reinterpret_cast<JSON_T*>(new json_t(result));
 	}
 	else if(json.is_array()){
 		if(type0.is_int() == false){
@@ -1115,7 +1115,7 @@ int16_t* floyd_runtime__lookup_json(void* floyd_runtime_ptr, int16_t* json_ptr, 
 		}
 
 		const auto result = json.get_array_n(value.get_int_value());
-		return reinterpret_cast<int16_t*>(new json_t(result));
+		return reinterpret_cast<JSON_T*>(new json_t(result));
 	}
 	else{
 		quark::throw_runtime_error("Attempting to lookup a json value -- lookup requires json-array or json-object.");
@@ -1145,7 +1145,7 @@ host_func_t floyd_runtime__lookup_json__make(llvm::LLVMContext& context, const l
 ////////////////////////////////		json_to_string()
 
 
-runtime_value_t floyd_runtime__json_to_string(void* floyd_runtime_ptr, uint16_t* json_ptr){
+runtime_value_t floyd_runtime__json_to_string(void* floyd_runtime_ptr, JSON_T* json_ptr){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto& json = *reinterpret_cast<const json_t*>(json_ptr);
@@ -1589,7 +1589,7 @@ void* floyd_funcdef__get_fsentry_info(void* floyd_runtime_ptr, runtime_value_t p
 	return v.struct_ptr;
 }
 
-int64_t floyd_host_function__get_json_type(void* floyd_runtime_ptr, uint16_t* json_ptr){
+int64_t floyd_host_function__get_json_type(void* floyd_runtime_ptr, JSON_T* json_ptr){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 	QUARK_ASSERT(json_ptr != nullptr);
 
@@ -1883,14 +1883,14 @@ const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, runtime_valu
 	}
 }
 
-int16_t* floyd_funcdef__script_to_jsonvalue(void* floyd_runtime_ptr, runtime_value_t string_s0){
+JSON_T* floyd_funcdef__script_to_jsonvalue(void* floyd_runtime_ptr, runtime_value_t string_s0){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto string_s = from_runtime_string(r, string_s0);
 
 	std::pair<json_t, seq_t> result0 = parse_json(seq_t(string_s));
 	auto result = new json_t(result0.first);
-	return reinterpret_cast<int16_t*>(result);
+	return reinterpret_cast<JSON_T*>(result);
 }
 
 void floyd_funcdef__send(void* floyd_runtime_ptr, runtime_value_t process_id0, const json_t* message_json_ptr){
@@ -2335,14 +2335,14 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 	}
 }
 
-int16_t* floyd_funcdef__value_to_jsonvalue(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
+JSON_T* floyd_funcdef__value_to_jsonvalue(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto value0 = from_runtime_value(r, arg0_value, type0);
 	const auto j = value_to_ast_json(value0, json_tags::k_plain);
 	auto result = new json_t(j);
-	return reinterpret_cast<int16_t*>(result);
+	return reinterpret_cast<JSON_T*>(result);
 }
 
 

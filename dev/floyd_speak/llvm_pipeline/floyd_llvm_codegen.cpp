@@ -474,7 +474,7 @@ static llvm::Value* generate_lookup_dict(llvm_code_generator_t& gen_acc, llvm::F
 }
 
 
-
+//	Put a value_t into a json_t
 static llvm::Value* generate_alloc_json(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& input_value_reg, const typeid_t& input_type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -501,6 +501,8 @@ static llvm::Value* generate_lookup_json(llvm_code_generator_t& gen_acc, llvm::F
 	std::vector<llvm::Value*> args = {
 		get_callers_fcp(emit_f),
 		&json_reg,
+
+		//??? Use static type
 		generate_cast_to_runtime_value(gen_acc, key_reg, key_type),
 		generate_itype_constant(gen_acc, key_type)
 	};
@@ -671,7 +673,10 @@ llvm::Value* generate_constant(llvm_code_generator_t& gen_acc, llvm::Function& e
 			//	NOTICE:There is no clean way to embedd a json_value containing a json-null into the code segment.
 			//	Here we use a nullptr instead of json_t*. This means we have to be prepared for json_t::null AND nullptr.
 			if(json_value0.is_null()){
-				return llvm::ConstantPointerNull::get(llvm::Type::getInt16PtrTy(context));
+//				auto json_type = llvm::Type::getInt16PtrTy(context);
+				auto json_type = intern_type(gen_acc.interner, typeid_t::make_json_value());
+				llvm::PointerType* pointer_type = llvm::cast<llvm::PointerType>(json_type);
+				return llvm::ConstantPointerNull::get(pointer_type);
 			}
 			else{
 				UNSUPPORTED();
