@@ -155,7 +155,7 @@ union runtime_value_t {
 
 	VEC_T* vector_ptr;
 	DICT_T* dict_ptr;
-	json_t* json_ptr;
+	JSON_T* json_ptr;
 	void* struct_ptr;
 	void* function_ptr;
 

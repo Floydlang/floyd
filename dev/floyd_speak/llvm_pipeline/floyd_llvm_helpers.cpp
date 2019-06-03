@@ -250,6 +250,7 @@ void detect_leaks(const heap_t& heap){
 
 	trace_heap(heap);
 	const auto leaks = heap.count_leaks();
+
 #if 0
 	if(leaks > 0){
 		throw std::exception();
@@ -789,10 +790,15 @@ bool JSON_T::check_invariant() const{
 }
 
 JSON_T* alloc_json(heap_t& heap, const json_t& init){
+	QUARK_ASSERT(heap.check_invariant());
+	QUARK_ASSERT(init.check_invariant());
+
 	heap_alloc_64_t* alloc = alloc_64(heap, 0);
 	auto json = reinterpret_cast<JSON_T*>(alloc);
 	auto copy = new json_t(init);
 	json->alloc.data_a = reinterpret_cast<uint64_t>(copy);
+
+	QUARK_ASSERT(json->check_invariant());
 	return json;
 }
 
@@ -810,7 +816,7 @@ void json_releaseref(JSON_T* json){
 	//??? atomic needed!
 	if(json->alloc.rc == 1){
 		delete &json->get_json();
-		json->alloc.data_a = 0x00;
+		json->alloc.data_a = 666;
 	}
 	release_ref(json->alloc);
 }
@@ -1324,7 +1330,7 @@ llvm::StructType* make_struct_type(const llvm_type_interner_t& interner, const t
 
 bool is_rc_value(const typeid_t& type){
 //	return type.is_string() || type.is_vector() || type.is_dict() || type.is_struct() || type.is_json_value();
-	return type.is_string() || type.is_vector() || type.is_dict();
+	return type.is_string() || type.is_vector() || type.is_dict() || type.is_json_value();
 }
 
 
@@ -1371,8 +1377,7 @@ runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type){
 		}
 
 		runtime_value_t operator()(const typeid_t::json_type_t& e) const{
-			json_t* json_ptr = *(json_t**)(value_ptr);
-			return runtime_value_t{ .json_ptr = json_ptr };
+			return *static_cast<const runtime_value_t*>(value_ptr);
 		}
 		runtime_value_t operator()(const typeid_t::typeid_type_t& e) const{
 			const auto value = *static_cast<const int32_t*>(value_ptr);
@@ -1429,7 +1434,7 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 		}
 
 		void operator()(const typeid_t::json_type_t& e) const{
-			*(json_t**)(value_ptr) = value.json_ptr;
+			*static_cast<runtime_value_t*>(value_ptr) = value;
 		}
 		void operator()(const typeid_t::typeid_type_t& e) const{
 			*static_cast<int32_t*>(value_ptr) = value.typeid_itype;

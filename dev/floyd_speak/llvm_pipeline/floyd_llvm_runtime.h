@@ -93,6 +93,7 @@ struct llvm_execution_engine_t {
 
 
 typedef int64_t (*FLOYD_RUNTIME_INIT)(void* floyd_runtime_ptr);
+typedef int64_t (*FLOYD_RUNTIME_DEINIT)(void* floyd_runtime_ptr);
 typedef void (*FLOYD_RUNTIME_HOST_FUNCTION)(void* floyd_runtime_ptr, int64_t arg);
 
 
