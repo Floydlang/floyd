@@ -250,7 +250,7 @@ void detect_leaks(const heap_t& heap){
 
 	trace_heap(heap);
 	const auto leaks = heap.count_leaks();
-#if 1
+#if 0
 	if(leaks > 0){
 		throw std::exception();
 	}
@@ -761,35 +761,12 @@ void dict_releaseref(DICT_T* dict){
 
 
 
-
-/*
-llvm::Value* generate_dict_alloca(llvm::IRBuilder<>& builder, llvm::Value* dict_reg){
-	auto& context = builder.getContext();
-
-	auto alloc_value = builder.CreateAlloca(make_dict_type(context));
-	builder.CreateStore(dict_reg, alloc_value);
-	return alloc_value;
-}
-
-llvm::Value* generate__convert_wide_return_to_dict(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg){
-	auto& context = builder.getContext();
-
-	auto wide_return_ptr_reg = builder.CreateAlloca(make_wide_return_type(context), nullptr, "temp_dict");
-	builder.CreateStore(wide_return_reg, wide_return_ptr_reg);
-	auto dict_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, wide_return_ptr_reg, make_dict_type(context)->getPointerTo(), "");
-	auto dict_reg = builder.CreateLoad(dict_ptr_reg, "final");
-	return dict_reg;
-}
-*/
-
 WIDE_RETURN_T make_wide_return_dict(DICT_T* dict){
 	return make_wide_return_2x64({ .dict_ptr = dict }, { .int_value = 0 });
-//	return *reinterpret_cast<const WIDE_RETURN_T*>(&dict);
 }
 
 DICT_T* wide_return_to_dict(const WIDE_RETURN_T& ret){
 	return ret.a.dict_ptr;
-//	return *reinterpret_cast<const DICT_T*>(&ret);
 }
 
 
@@ -1230,6 +1207,15 @@ static llvm::StructType* make_dict_type_internal(llvm::LLVMContext& context){
 	return s;
 }
 
+static llvm::StructType* make_json_type_internal(llvm::LLVMContext& context){
+	std::vector<llvm::Type*> members = {
+		llvm::Type::getInt64Ty(context)->getPointerTo()
+	};
+	llvm::StructType* s = llvm::StructType::get(context, members, false);
+//	llvm::StructType* s = llvm::StructType::create(context, members, "json");
+	return s;
+}
+
 static llvm::Type* intern_type_internal(llvm::LLVMContext& context, llvm_type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
@@ -1325,6 +1311,7 @@ bool llvm_type_interner_t::check_invariant() const {
 
 	QUARK_ASSERT(vec_type != nullptr);
 	QUARK_ASSERT(dict_type != nullptr);
+	QUARK_ASSERT(json_type != nullptr);
 	QUARK_ASSERT(wide_return_type != nullptr);
 	return true;
 }
@@ -1352,6 +1339,9 @@ llvm::Type* make_dict_type(const llvm_type_interner_t& interner){
 	return interner.dict_type;
 }
 
+llvm::Type* make_json_type(const llvm_type_interner_t& interner){
+	return interner.json_type;
+}
 
 
 

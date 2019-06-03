@@ -347,7 +347,6 @@ VEC_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count
 void vec_addref(VEC_T& vec);
 void vec_releaseref(VEC_T* vec);
 
-
 WIDE_RETURN_T make_wide_return_vec(VEC_T* vec);
 VEC_T* wide_return_to_vec(const WIDE_RETURN_T& ret);
 
@@ -383,12 +382,6 @@ struct DICT_T {
 DICT_T* alloc_dict(heap_t& heap);
 void dict_addref(DICT_T& vec);
 void dict_releaseref(DICT_T* vec);
-
-
-//llvm::Value* generate_dict_alloca(llvm::IRBuilder<>& builder, llvm::Value* dict_reg);
-
-//	LLVM can't cast a struct-value to another struct value - need to store on stack and cast pointer instead.
-//llvm::Value* generate__convert_wide_return_to_dict(llvm::IRBuilder<>& builder, llvm::Value* wide_return_reg);
 
 WIDE_RETURN_T make_wide_return_dict(DICT_T* dict);
 DICT_T* wide_return_to_dict(const WIDE_RETURN_T& ret);
@@ -485,6 +478,7 @@ struct llvm_type_interner_t {
 
 	llvm::StructType* vec_type;
 	llvm::StructType* dict_type;
+	llvm::StructType* json_type;
 	llvm::StructType* wide_return_type;
 };
 
@@ -492,6 +486,7 @@ llvm::Type* intern_type(const llvm_type_interner_t& interner, const typeid_t& ty
 llvm::StructType* make_wide_return_type(const llvm_type_interner_t& interner);
 llvm::Type* make_vec_type(const llvm_type_interner_t& interner);
 llvm::Type* make_dict_type(const llvm_type_interner_t& interner);
+llvm::Type* make_json_type(const llvm_type_interner_t& interner);
 
 
 llvm::Type* make_function_type(const llvm_type_interner_t& interner, const typeid_t& function_type);
