@@ -149,12 +149,12 @@ struct llvm_code_generator_t {
 
 
 
-enum class gen_statement_mode {
-	more,
+enum class function_return_mode {
+	partial_or_no_return,
 	return_from_function
 };
 
-static gen_statement_mode generate_statements(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const std::vector<statement_t>& statements);
+static function_return_mode generate_statements(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const std::vector<statement_t>& statements);
 static llvm::Value* generate_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e);
 
 
@@ -806,17 +806,30 @@ static void generate_destruct_scope_locals(llvm_code_generator_t& gen_acc, llvm:
 
 }
 
-static gen_statement_mode generate_block(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const body_t& body){
+
+static function_return_mode generate_body(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const std::vector<resolved_symbol_t>& resolved_symbols, const std::vector<statement_t>& statements){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+
+	gen_acc.scope_path.push_back(resolved_symbols);
+	const auto return_mode = generate_statements(gen_acc, emit_f, statements);
+	gen_acc.scope_path.pop_back();
+
+	QUARK_ASSERT(gen_acc.check_invariant());
+	return return_mode;
+}
+
+
+
+static function_return_mode generate_block(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
 	auto values = generate_symbol_slots(gen_acc, emit_f, body._symbol_table);
-	gen_acc.scope_path.push_back(values);
-	const auto more = generate_statements(gen_acc, emit_f, body._statements);
-	gen_acc.scope_path.pop_back();
+	const auto return_mode = generate_body(gen_acc, emit_f, values, body._statements);
 
 	QUARK_ASSERT(gen_acc.check_invariant());
-	return more;
+	return return_mode;
 }
 
 static llvm::Value* generate_get_vec_element_ptr2(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& vec_ptr_reg){
@@ -1732,14 +1745,14 @@ static void generate_init2_statement(llvm_code_generator_t& gen_acc, llvm::Funct
 	QUARK_ASSERT(gen_acc.check_invariant());
 }
 
-static gen_statement_mode generate_block_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t::block_statement_t& s){
+static function_return_mode generate_block_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t::block_statement_t& s){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
 	return generate_block(gen_acc, emit_f, s._body);
 }
 
-static gen_statement_mode generate_ifelse_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t::ifelse_statement_t& statement){
+static function_return_mode generate_ifelse_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t::ifelse_statement_t& statement){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
@@ -1776,25 +1789,25 @@ static gen_statement_mode generate_ifelse_statement(llvm_code_generator_t& gen_a
 
 
 	//	Scenario A: both then-block and else-block always returns = no need for join BB.
-	if(then_mode == gen_statement_mode::return_from_function && else_mode == gen_statement_mode::return_from_function){
-		return gen_statement_mode::return_from_function;
+	if(then_mode == function_return_mode::return_from_function && else_mode == function_return_mode::return_from_function){
+		return function_return_mode::return_from_function;
 	}
 
 	//	Scenario B: eith then-block or else-block continues. We need a join-block where it can jump.
 	else{
 		auto join_bb = llvm::BasicBlock::Create(context, "join-then-else", parent_function);
 
-		if(then_mode == gen_statement_mode::more){
+		if(then_mode == function_return_mode::partial_or_no_return){
 			builder.SetInsertPoint(then_bb2);
 			builder.CreateBr(join_bb);
 		}
-		if(else_mode == gen_statement_mode::more){
+		if(else_mode == function_return_mode::partial_or_no_return){
 			builder.SetInsertPoint(else_bb2);
 			builder.CreateBr(join_bb);
 		}
 
 		builder.SetInsertPoint(join_bb);
-		return gen_statement_mode::more;
+		return function_return_mode::partial_or_no_return;
 	}
 }
 
@@ -1824,7 +1837,7 @@ static gen_statement_mode generate_ifelse_statement(llvm_code_generator_t& gen_a
 	for-end:
 		<CURRENT POS AT RETURN>
 */
-static gen_statement_mode generate_for_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t::for_statement_t& statement){
+static function_return_mode generate_for_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t::for_statement_t& statement){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 	QUARK_ASSERT(
@@ -1869,11 +1882,9 @@ static gen_statement_mode generate_for_statement(llvm_code_generator_t& gen_acc,
 
 	builder.SetInsertPoint(forloop_bb);
 
-	gen_acc.scope_path.push_back(values);
-	const auto more = generate_statements(gen_acc, emit_f, statement._body._statements);
-	gen_acc.scope_path.pop_back();
+	const auto return_mode = generate_body(gen_acc, emit_f, values, statement._body._statements);
 
-	if(more == gen_statement_mode::more){
+	if(return_mode == function_return_mode::partial_or_no_return){
 		llvm::Value* counter2 = builder.CreateLoad(counter_reg);
 		llvm::Value* counter3 = builder.CreateAdd(counter2, add_reg, "inc_for_counter");
 		builder.CreateStore(counter3, counter_reg);
@@ -1888,10 +1899,10 @@ static gen_statement_mode generate_for_statement(llvm_code_generator_t& gen_acc,
 	//	EMIT LOOP END BB
 
 	builder.SetInsertPoint(forend_bb);
-	return gen_statement_mode::more;
+	return function_return_mode::partial_or_no_return;
 }
 
-static gen_statement_mode generate_while_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t::while_statement_t& statement){
+static function_return_mode generate_while_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t::while_statement_t& statement){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
@@ -1905,10 +1916,9 @@ static gen_statement_mode generate_while_statement(llvm_code_generator_t& gen_ac
 	auto while_join_bb = llvm::BasicBlock::Create(context, "while-join", parent_function);
 
 
-	////////	header
+	////////	current BB
 
 	builder.CreateBr(while_cond_bb);
-	builder.SetInsertPoint(while_cond_bb);
 
 
 	////////	while_cond_bb
@@ -1924,7 +1934,7 @@ static gen_statement_mode generate_while_statement(llvm_code_generator_t& gen_ac
 	const auto mode = generate_block(gen_acc, emit_f, statement._body);
 	builder.CreateBr(while_cond_bb);
 
-	if(mode == gen_statement_mode::more){
+	if(mode == function_return_mode::partial_or_no_return){
 	}
 	else{
 	}
@@ -1933,7 +1943,7 @@ static gen_statement_mode generate_while_statement(llvm_code_generator_t& gen_ac
 	////////	while_join_bb
 
 	builder.SetInsertPoint(while_join_bb);
-	return gen_statement_mode::more;
+	return function_return_mode::partial_or_no_return;
 }
 
 static void generate_expression_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t::expression_statement_t& s){
@@ -1955,7 +1965,7 @@ static llvm::Value* generate_return_statement(llvm_code_generator_t& gen_acc, ll
 	return gen_acc.builder.CreateRet(value);
 }
 
-static gen_statement_mode generate_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t& statement){
+static function_return_mode generate_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t& statement){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 	QUARK_ASSERT(statement.check_invariant());
@@ -1964,54 +1974,54 @@ static gen_statement_mode generate_statement(llvm_code_generator_t& gen_acc, llv
 		llvm_code_generator_t& acc0;
 		llvm::Function& emit_f;
 
-		gen_statement_mode operator()(const statement_t::return_statement_t& s) const{
+		function_return_mode operator()(const statement_t::return_statement_t& s) const{
 			generate_return_statement(acc0, emit_f, s);
-			return gen_statement_mode::return_from_function;
+			return function_return_mode::return_from_function;
 		}
-		gen_statement_mode operator()(const statement_t::define_struct_statement_t& s) const{
+		function_return_mode operator()(const statement_t::define_struct_statement_t& s) const{
 			NOT_IMPLEMENTED_YET();
 		}
-		gen_statement_mode operator()(const statement_t::define_function_statement_t& s) const{
+		function_return_mode operator()(const statement_t::define_function_statement_t& s) const{
 			NOT_IMPLEMENTED_YET();
 		}
 
-		gen_statement_mode operator()(const statement_t::bind_local_t& s) const{
+		function_return_mode operator()(const statement_t::bind_local_t& s) const{
 			UNSUPPORTED();
 		}
-		gen_statement_mode operator()(const statement_t::assign_t& s) const{
+		function_return_mode operator()(const statement_t::assign_t& s) const{
 			UNSUPPORTED();
 		}
-		gen_statement_mode operator()(const statement_t::assign2_t& s) const{
+		function_return_mode operator()(const statement_t::assign2_t& s) const{
 			generate_assign2_statement(acc0, emit_f, s);
-			return gen_statement_mode::more;
+			return function_return_mode::partial_or_no_return;
 		}
-		gen_statement_mode operator()(const statement_t::init2_t& s) const{
+		function_return_mode operator()(const statement_t::init2_t& s) const{
 			generate_init2_statement(acc0, emit_f, s);
-			return gen_statement_mode::more;
+			return function_return_mode::partial_or_no_return;
 		}
-		gen_statement_mode operator()(const statement_t::block_statement_t& s) const{
+		function_return_mode operator()(const statement_t::block_statement_t& s) const{
 			return generate_block_statement(acc0, emit_f, s);
 		}
 
-		gen_statement_mode operator()(const statement_t::ifelse_statement_t& s) const{
+		function_return_mode operator()(const statement_t::ifelse_statement_t& s) const{
 			return generate_ifelse_statement(acc0, emit_f, s);
 		}
-		gen_statement_mode operator()(const statement_t::for_statement_t& s) const{
+		function_return_mode operator()(const statement_t::for_statement_t& s) const{
 			return generate_for_statement(acc0, emit_f, s);
 		}
-		gen_statement_mode operator()(const statement_t::while_statement_t& s) const{
+		function_return_mode operator()(const statement_t::while_statement_t& s) const{
 			return generate_while_statement(acc0, emit_f, s);
 		}
 
 
-		gen_statement_mode operator()(const statement_t::expression_statement_t& s) const{
+		function_return_mode operator()(const statement_t::expression_statement_t& s) const{
 			generate_expression_statement(acc0, emit_f, s);
-			return gen_statement_mode::more;
+			return function_return_mode::partial_or_no_return;
 		}
-		gen_statement_mode operator()(const statement_t::software_system_statement_t& s) const{
+		function_return_mode operator()(const statement_t::software_system_statement_t& s) const{
 			UNSUPPORTED();
 		}
-		gen_statement_mode operator()(const statement_t::container_def_statement_t& s) const{
+		function_return_mode operator()(const statement_t::container_def_statement_t& s) const{
 			UNSUPPORTED();
 		}
 	};
@@ -2019,7 +2029,7 @@ static gen_statement_mode generate_statement(llvm_code_generator_t& gen_acc, llv
 	return std::visit(visitor_t{ gen_acc, emit_f }, statement._contents);
 }
 
-static gen_statement_mode generate_statements(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const std::vector<statement_t>& statements){
+static function_return_mode generate_statements(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const std::vector<statement_t>& statements){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
@@ -2027,12 +2037,12 @@ static gen_statement_mode generate_statements(llvm_code_generator_t& gen_acc, ll
 		for(const auto& statement: statements){
 			QUARK_ASSERT(statement.check_invariant());
 			const auto mode = generate_statement(gen_acc, emit_f, statement);
-			if(mode == gen_statement_mode::return_from_function){
-				return gen_statement_mode::return_from_function;
+			if(mode == function_return_mode::return_from_function){
+				return function_return_mode::return_from_function;
 			}
 		}
 	}
-	return gen_statement_mode::more;
+	return function_return_mode::partial_or_no_return;
 }
 
 
@@ -2180,9 +2190,12 @@ static void generate_floyd_function_body(llvm_code_generator_t& gen_acc, int fun
 
 	auto symbol_table_values = generate_function_local_symbols(gen_acc, emit_f, function_def);
 
-	gen_acc.scope_path.push_back(symbol_table_values);
-	generate_statements(gen_acc, *f, body._statements);
-	gen_acc.scope_path.pop_back();
+	const auto return_mode = generate_body(gen_acc, emit_f, symbol_table_values, body._statements);
+
+	//	Not all paths returns a value!
+	if(return_mode == function_return_mode::partial_or_no_return && function_def._function_type.get_function_return().is_void() == false){
+		throw std::exception();
+	}
 
 	if(function_def._function_type.get_function_return().is_void()){
 		gen_acc.builder.CreateRetVoid();
