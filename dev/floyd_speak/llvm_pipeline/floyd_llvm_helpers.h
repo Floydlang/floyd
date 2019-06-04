@@ -23,8 +23,7 @@ struct DICT_T;
 struct JSON_T;
 struct STRUCT_T;
 struct type_interner_t;
-
-
+struct llvm_type_interner_t;
 
 
 
@@ -115,7 +114,7 @@ void release_ref(heap_alloc_64_t& alloc);
 void trace_heap(const heap_t& heap);
 void detect_leaks(const heap_t& heap);
 
-
+uint64_t size_to_allocation_blocks(std::size_t size);
 
 
 
@@ -420,6 +419,44 @@ JSON_T* wide_return_to_json(const WIDE_RETURN_T& ret);
 
 
 
+////////////////////////////////		STRUCT_T
+
+
+
+struct STRUCT_T {
+	~STRUCT_T();
+	bool check_invariant() const;
+
+	inline const uint8_t* get_data_ptr() const{
+		QUARK_ASSERT(check_invariant());
+
+		auto p = static_cast<const uint8_t*>(get_alloc_ptr(alloc));
+		return p;
+	}
+	inline uint8_t* get_data_ptr(){
+		QUARK_ASSERT(check_invariant());
+
+		auto p = static_cast<uint8_t*>(get_alloc_ptr(alloc));
+		return p;
+	}
+
+
+
+	////////////////////////////////		STATE
+	heap_alloc_64_t alloc;
+};
+
+STRUCT_T* alloc_struct(heap_t& heap, std::size_t size);
+void struct_addref(STRUCT_T& v);
+void struct_releaseref(STRUCT_T* v);
+
+WIDE_RETURN_T make_wide_return_struct(STRUCT_T* v);
+STRUCT_T* wide_return_to_struct(const WIDE_RETURN_T& ret);
+
+
+
+//llvm::StructType* make_exact_struct_type(llvm::LLVMContext& context, const llvm_type_interner_t& interner, const typeid_t& type);
+
 
 
 
@@ -429,14 +466,12 @@ JSON_T* wide_return_to_json(const WIDE_RETURN_T& ret);
 
 
 void generate_array_element_store(llvm::IRBuilder<>& builder, llvm::Value& array_ptr_reg, uint64_t element_index, llvm::Value& element_reg);
-void generate_struct_member_store(llvm::IRBuilder<>& builder, llvm::StructType& struct_type, llvm::Value& struct_ptr_reg, int member_index, llvm::Value& value_reg);
 
 llvm::Type* deref_ptr(llvm::Type* type);
 
 
 ////////////////////////////////		llvm_arg_mapping_t
 
-struct llvm_type_interner_t;
 
 //	One element for each LLVM argument.
 struct llvm_arg_mapping_t {
@@ -472,27 +507,33 @@ struct llvm_type_interner_t {
 
 
 	////////////////////////////////		STATE
-	//	Notice: we match indexes of the lookup vectors between interner.interned and llvm_types.
+	//	Notice: we match indexes of the lookup vectors between interner.interned and exact_llvm_types.
 	type_interner_t interner;
-	std::vector<llvm::Type*> llvm_types;
+	std::vector<llvm::Type*> exact_llvm_types;
 
-	llvm::StructType* vec_type;
-	llvm::StructType* dict_type;
+	llvm::StructType* generic_vec_type;
+	llvm::StructType* generic_dict_type;
 	llvm::StructType* json_type;
-	llvm::StructType* struct_type;
+	llvm::StructType* generic_struct_type;
 	llvm::StructType* wide_return_type;
 };
 
+//	Returns the LLVM type used to pass this type of value around. It uses generic types for vector, dict and struct.
 llvm::Type* intern_type(const llvm_type_interner_t& interner, const typeid_t& type);
+
+//	Returns the exact LLVM struct layout that maps to the struct members, without any alloc-64 header. Not a pointer.
+llvm::StructType* get_exact_struct_type(const llvm_type_interner_t& interner, const typeid_t& type);
+
 llvm::StructType* make_wide_return_type(const llvm_type_interner_t& interner);
+
+//	Returns generic types.
 llvm::Type* make_vec_type(const llvm_type_interner_t& interner);
 llvm::Type* make_dict_type(const llvm_type_interner_t& interner);
 llvm::Type* make_json_type(const llvm_type_interner_t& interner);
-llvm::Type* make_struct_type(const llvm_type_interner_t& interner);
+llvm::Type* get_generic_struct_type(const llvm_type_interner_t& interner);
 
 
 llvm::Type* make_function_type(const llvm_type_interner_t& interner, const typeid_t& function_type);
-llvm::StructType* make_struct_type(const llvm_type_interner_t& interner, const typeid_t& type);
 
 
 bool is_rc_value(const typeid_t& type);

@@ -218,9 +218,8 @@ runtime_value_t to_runtime_string(llvm_execution_engine_t& r, const std::string&
 	QUARK_ASSERT(r.check_invariant());
 
 	const auto count = static_cast<uint64_t>(s.size());
-	const auto element_count_ceiling = (count >> 3) + ((count & 7) > 0 ? 1 : 0);
-
-	auto v = alloc_vec(r.heap, element_count_ceiling, count);
+	const auto allocation_count = size_to_allocation_blocks(s.size());
+	auto v = alloc_vec(r.heap, allocation_count, count);
 	auto result = runtime_value_t{ .vector_ptr = v };
 
 	char* char_ptr = get_vec_chars(result);
@@ -248,12 +247,13 @@ runtime_value_t to_runtime_struct(llvm_execution_engine_t& runtime, const typeid
 	QUARK_ASSERT(value.check_invariant());
 
 	const llvm::DataLayout& data_layout = runtime.ee->getDataLayout();
-	auto t2 = make_struct_type(runtime.type_interner, value.get_type());
+	auto t2 = get_exact_struct_type(runtime.type_interner, value.get_type());
 	const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
 
 	const auto struct_bytes = layout->getSizeInBytes();
 
-	const auto struct_base_ptr = reinterpret_cast<uint8_t*>(calloc(1, struct_bytes));
+	auto s = alloc_struct(runtime.heap, struct_bytes);
+	const auto struct_base_ptr = s->get_data_ptr();
 
 	int member_index = 0;
 	const auto& struct_data = value.get_struct_value();
@@ -264,17 +264,19 @@ runtime_value_t to_runtime_struct(llvm_execution_engine_t& runtime, const typeid
 		store_via_ptr(runtime, e.get_type(), member_ptr, e);
 		member_index++;
 	}
-	return make_runtime_struct(reinterpret_cast<STRUCT_T*>(struct_base_ptr));
+	return make_runtime_struct(s);
 }
 
 value_t from_runtime_struct(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
+	auto& context = runtime.instance->context;
+
 	const auto& struct_def = type.get_struct();
-	const auto struct_base_ptr = reinterpret_cast<const uint8_t*>(encoded_value.struct_ptr);
+	const auto struct_base_ptr = encoded_value.struct_ptr->get_data_ptr();
 
 	const llvm::DataLayout& data_layout = runtime.ee->getDataLayout();
-	auto t2 = make_struct_type(runtime.type_interner, type);
+	auto t2 = get_exact_struct_type(runtime.type_interner, type);
 	const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
 
 	std::vector<value_t> members;
@@ -570,7 +572,7 @@ static void retain_value(llvm_execution_engine_t& runtime, runtime_value_t value
 			json_addref(*value.json_ptr);
 		}
 		else if(type.is_struct()){
-//???			struct_addref(*value.struct_ptr);
+			struct_addref(*value.struct_ptr);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -598,7 +600,7 @@ static void release_deep(llvm_execution_engine_t& runtime, runtime_value_t value
 			json_releaseref(value.json_ptr);
 		}
 		else if(type.is_struct()){
-//???			release_struct_deep(value.struct_ptr);
+			release_struct_deep(runtime, value.struct_ptr, type);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -661,24 +663,28 @@ static void release_vec_deep(llvm_execution_engine_t& runtime, VEC_T* vec, const
 static void release_struct_deep(llvm_execution_engine_t& runtime, STRUCT_T* s, const typeid_t& type){
 	QUARK_ASSERT(s != nullptr);
 
-#if 0
 	//??? Make atomic. CAS?
 	//??? unsafe hack. Some other code could stop rc from becoming 0.
-	if(vec->alloc.rc == 1){
+	if(s->alloc.rc == 1){
+		const auto& struct_def = type.get_struct();
+		const auto struct_base_ptr = s->get_data_ptr();
 
-		//	Release all members.
-		const auto element_type = type.get_vector_element_type();
-		if(is_rc_value(element_type)){
-			auto element_ptr = vec->get_element_ptr();
-			for(int i = 0 ; i < vec->get_element_count() ; i++){
-				const auto& element = element_ptr[i];
-				release_deep(runtime, element, element_type);
+		const llvm::DataLayout& data_layout = runtime.ee->getDataLayout();
+		auto t2 = get_exact_struct_type(runtime.type_interner, type);
+		const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
+
+		int member_index = 0;
+		for(const auto& e: struct_def._members){
+			if(is_rc_value(e._type)){
+				const auto offset = layout->getElementOffset(member_index);
+				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
+				release_deep(runtime, *member_ptr, e._type);
+				member_index++;
 			}
 		}
 	}
 
-	vec_releaseref(vec);
-#endif
+	struct_releaseref(s);
 }
 
 
@@ -886,8 +892,7 @@ void fr_retain_struct(void* floyd_runtime_ptr, STRUCT_T* v, runtime_type_t type0
 	QUARK_ASSERT(is_rc_value(type));
 	QUARK_ASSERT(type.is_struct());
 
-//???
-//	struct_addref(*v);
+	struct_addref(*v);
 }
 
 host_func_t fr_retain_struct__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
@@ -895,7 +900,7 @@ host_func_t fr_retain_struct__make(llvm::LLVMContext& context, const llvm_type_i
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(context),
-			make_struct_type(interner),
+			get_generic_struct_type(interner)->getPointerTo(),
 			make_runtime_type_type(context)
 		},
 		false
@@ -913,7 +918,7 @@ void fr_release_struct(void* floyd_runtime_ptr, STRUCT_T* v, runtime_type_t type
 	QUARK_ASSERT(type.is_struct());
 
 	QUARK_ASSERT(v != nullptr);
-//???	struct_releaseref(v);
+	release_struct_deep(r, v, type);
 }
 
 host_func_t fr_release_struct__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
@@ -921,7 +926,7 @@ host_func_t fr_release_struct__make(llvm::LLVMContext& context, const llvm_type_
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(context),
-			make_struct_type(interner),
+			get_generic_struct_type(interner)->getPointerTo(),
 			make_runtime_type_type(context)
 		},
 		false
@@ -1330,6 +1335,30 @@ host_func_t floyd_runtime__compare_values__make(llvm::LLVMContext& context, cons
 }
 
 
+////////////////////////////////		allocate_vector()
+
+
+//	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
+STRUCT_T* floyd_runtime__allocate_struct(void* floyd_runtime_ptr, uint64_t size){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	auto v = alloc_struct(r.heap, size);
+	return v;
+}
+
+host_func_t floyd_runtime__allocate_struct__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		get_generic_struct_type(interner)->getPointerTo(),
+		{
+			make_frp_type(context),
+			llvm::Type::getInt64Ty(context)
+		},
+		false
+	);
+	return { "floyd_runtime__allocate_struct", function_type, reinterpret_cast<void*>(floyd_runtime__allocate_vector) };
+}
+
+
 
 
 std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
@@ -1361,7 +1390,9 @@ std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const
 
 		floyd_runtime__json_to_string__make(context, interner),
 
-		floyd_runtime__compare_values__make(context, interner)
+		floyd_runtime__compare_values__make(context, interner),
+
+		floyd_runtime__allocate_struct__make(context, interner)
 	};
 	return result;
 }
@@ -1392,19 +1423,23 @@ void floyd_funcdef__assert(void* floyd_runtime_ptr, runtime_value_t arg){
 	}
 }
 
-STRUCT_T* floyd_funcdef__calc_binary_sha1(void* floyd_runtime_ptr, void* binary_ptr){
+STRUCT_T* floyd_funcdef__calc_binary_sha1(void* floyd_runtime_ptr, STRUCT_T* binary_ptr){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 	QUARK_ASSERT(binary_ptr != nullptr);
 
-	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr);
+	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr->get_data_ptr());
 
 	const auto& s = from_runtime_string(r, runtime_value_t { .vector_ptr = binary.ascii40 });
 	const auto sha1 = CalcSHA1(s);
 	const auto ascii40 = SHA1ToStringPlain(sha1);
 
-	auto result = new native_sha1_t();
-	result->ascii40 = to_runtime_string(r, ascii40).vector_ptr;
-	return reinterpret_cast<STRUCT_T*>(result);
+	const auto a = value_t::make_struct_value(
+		typeid_t::make_struct2({ member_t{ typeid_t::make_string(), "ascii40" } }),
+		{ value_t::make_string(ascii40) }
+	);
+
+	auto result = to_runtime_value(r, a);
+	return result.struct_ptr;
 }
 
 STRUCT_T* floyd_funcdef__calc_string_sha1(void* floyd_runtime_ptr, runtime_value_t s0){
@@ -2410,18 +2445,19 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 
 		//	Make copy of struct, overwrite member in copy.
  
-		auto& struct_type_llvm = *make_struct_type(r.type_interner, type0);
+		auto& struct_type_llvm = *get_exact_struct_type(r.type_interner, type0);
 
 		const llvm::DataLayout& data_layout = r.ee->getDataLayout();
 		const llvm::StructLayout* layout = data_layout.getStructLayout(&struct_type_llvm);
 		const auto struct_bytes = layout->getSizeInBytes();
 
 		//??? Touches memory twice.
-		auto struct_ptr = reinterpret_cast<uint8_t*>(std::calloc(1, struct_bytes));
-		std::memcpy(struct_ptr, source_struct_ptr, struct_bytes);
+		auto struct_ptr = alloc_struct(r.heap, struct_bytes);
+		auto struct_base_ptr = struct_ptr->get_data_ptr();
+		std::memcpy(struct_base_ptr, source_struct_ptr->get_data_ptr(), struct_bytes);
 
 		const auto member_offset = layout->getElementOffset(member_index);
-		const auto member_ptr = reinterpret_cast<void*>(struct_ptr + member_offset);
+		const auto member_ptr = reinterpret_cast<void*>(struct_base_ptr + member_offset);
 
 		const auto member_type = struct_def._members[member_index]._type;
 
@@ -2430,7 +2466,20 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 		}
 		store_via_ptr(r, member_type, member_ptr, member_value);
 
-		return make_wide_return_structptr(reinterpret_cast<STRUCT_T*>(struct_ptr));
+		//	Retain every member of new struct.
+		{
+			int member_index = 0;
+			for(const auto& e: struct_def._members){
+				if(is_rc_value(e._type)){
+					const auto offset = layout->getElementOffset(member_index);
+					const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
+					retain_value(r, *member_ptr, e._type);
+					member_index++;
+				}
+			}
+		}
+
+		return make_wide_return_structptr(struct_ptr);
 	}
 	else{
 		//	No other types allowed.

@@ -326,9 +326,11 @@ void generate_retain(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llv
 		}
 		else if(type.is_struct()){
 			const auto f = find_function_def(gen_acc, "fr_retain_struct");
+
+			auto generic_vec_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value_reg, get_generic_struct_type(gen_acc.interner)->getPointerTo(), "");
 			std::vector<llvm::Value*> args = {
 				get_callers_fcp(emit_f),
-				&value_reg,
+				generic_vec_reg,
 				generate_itype_constant(gen_acc, type)
 			};
 			builder.CreateCall(f.llvm_f, args, "");
@@ -375,10 +377,11 @@ void generate_release(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, ll
 			builder.CreateCall(f.llvm_f, args);
 		}
 		else if(type.is_struct()){
-			const auto f = find_function_def(gen_acc, "fr_struct_json");
+			const auto f = find_function_def(gen_acc, "fr_release_struct");
+			auto generic_vec_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value_reg, get_generic_struct_type(gen_acc.interner)->getPointerTo(), "");
 			std::vector<llvm::Value*> args = {
 				get_callers_fcp(emit_f),
-				&value_reg,
+				generic_vec_reg,
 				generate_itype_constant(gen_acc, type)
 			};
 			builder.CreateCall(f.llvm_f, args);
@@ -391,11 +394,6 @@ void generate_release(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, ll
 	}
 }
 
-
-/*
-Named struct types:
-???		static StructType *create(ArrayRef<Type *> Elements, StringRef Name, bool isPacked = false);
-*/
 
 std::string compose_function_def_name(int function_id, const function_definition_t& def){
 	const auto def_name = def._definition_name;
@@ -558,6 +556,23 @@ static llvm::Value* generate_allocate_memory(llvm_code_generator_t& gen_acc, llv
 	return gen_acc.builder.CreateCall(def.llvm_f, args, "");
 }
 
+static llvm::Value* generate_alloc_struct(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, std::size_t size){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	const auto f = find_function_def(gen_acc, "floyd_runtime__allocate_struct");
+
+	const auto size_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), size);
+
+	std::vector<llvm::Value*> args2 = {
+		get_callers_fcp(emit_f),
+		size_reg
+	};
+	return builder.CreateCall(f.llvm_f, args2, "");
+}
 
 
 
@@ -730,20 +745,19 @@ llvm::Value* generate_constant(llvm_code_generator_t& gen_acc, llvm::Function& e
 	return std::visit(visitor_t{ gen_acc, builder, context, itype, value, emit_f }, type._contents);
 }
 
-static llvm::Value* generate_allocate_instance(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::StructType& type){
+//	Returns STRUCT_T*.
+static llvm::Value* generate_allocate_instance(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::StructType& exact_type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
 	auto& builder = gen_acc.builder;
 
 	const llvm::DataLayout& data_layout = gen_acc.module->getDataLayout();
-	const llvm::StructLayout* layout = data_layout.getStructLayout(&type);
+	const llvm::StructLayout* layout = data_layout.getStructLayout(&exact_type);
 	const auto struct_bytes = layout->getSizeInBytes();
-	auto size_reg = llvm::ConstantInt::get(builder.getInt64Ty(), struct_bytes);
-
-	auto memory_ptr_reg = generate_allocate_memory(gen_acc, emit_f, *size_reg);
-	auto ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, memory_ptr_reg, type.getPointerTo(), "");
-	return ptr_reg;
+	auto memory_ptr_reg = generate_alloc_struct(gen_acc, emit_f, struct_bytes);
+//	auto ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, memory_ptr_reg, type.getPointerTo(), "");
+	return memory_ptr_reg;
 }
 
 static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const symbol_table_t& symbol_table){
@@ -811,6 +825,25 @@ static llvm::Value* generate_get_vec_element_ptr(llvm_code_generator_t& gen_acc,
 	return uint64_array_ptr_reg;
 }
 
+//	Returns pointer to the first byte of the first struct member.
+static llvm::Value* generate_get_struct_base_ptr(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& struct_ptr_reg, const typeid_t& final_type){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+
+	auto& builder = gen_acc.builder;
+
+	auto type = get_generic_struct_type(gen_acc.interner);
+	auto ptr_reg = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::BitCast, &struct_ptr_reg, type->getPointerTo(), "");
+
+	const auto gep = std::vector<llvm::Value*>{
+		builder.getInt32(1)
+	};
+	auto ptr2_reg = builder.CreateGEP(type, ptr_reg, gep, "");
+	auto final_type2 = get_exact_struct_type(gen_acc.interner, final_type);
+	auto ptr3_reg = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::BitCast, ptr2_reg, final_type2->getPointerTo(), "");
+	return ptr3_reg;
+}
+
 
 
 
@@ -838,13 +871,15 @@ static llvm::Value* generate_resolve_member_expression(llvm_code_generator_t& ge
 
 	const auto parent_type =  details.parent_address->get_output_type();
 	if(parent_type.is_struct()){
-		auto& struct_type_llvm = *make_struct_type(gen_acc.interner, parent_type);
+		auto& struct_type_llvm = *get_exact_struct_type(gen_acc.interner, parent_type);
 
 		const auto& struct_def = details.parent_address->get_output_type().get_struct();
 		int member_index = find_struct_member_index(struct_def, details.member_name);
 		QUARK_ASSERT(member_index != -1);
 
 		const auto& member_type = struct_def._members[member_index]._type;
+
+		auto base_ptr_reg = generate_get_struct_base_ptr(gen_acc, emit_f, *parent_struct_ptr_reg, parent_type);
 
 		const auto gep = std::vector<llvm::Value*>{
 			//	Struct array index.
@@ -853,7 +888,7 @@ static llvm::Value* generate_resolve_member_expression(llvm_code_generator_t& ge
 			//	Struct member index.
 			builder.getInt32(member_index)
 		};
-		llvm::Value* member_ptr_reg = builder.CreateGEP(&struct_type_llvm, parent_struct_ptr_reg, gep, "");
+		llvm::Value* member_ptr_reg = builder.CreateGEP(&struct_type_llvm, base_ptr_reg, gep, "");
 		auto member_value_reg = builder.CreateLoad(member_ptr_reg);
 		generate_retain(gen_acc, emit_f, *member_value_reg, member_type);
 		generate_release(gen_acc, emit_f, *parent_struct_ptr_reg, parent_type);
@@ -1380,6 +1415,8 @@ static void generate_fill_array(llvm_code_generator_t& gen_acc, llvm::Function& 
 */
 
 
+
+
 static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
@@ -1485,10 +1522,13 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 	}
 	else if(target_type.is_struct()){
 		const auto& struct_def = target_type.get_struct();
-		auto& struct_type_llvm = *make_struct_type(gen_acc.interner, target_type);
+		auto& exact_struct_type = *get_exact_struct_type(gen_acc.interner, target_type);
 		QUARK_ASSERT(struct_def._members.size() == element_count);
 
-		auto struct_ptr_reg = generate_allocate_instance(gen_acc, emit_f, struct_type_llvm);
+		//!!! We basically inline the entire constructor here -- bad idea?
+
+		auto generic_struct_ptr_reg = generate_allocate_instance(gen_acc, emit_f, exact_struct_type);
+		auto base_ptr_reg = generate_get_struct_base_ptr(gen_acc, emit_f, *generic_struct_ptr_reg, target_type);
 
 		int member_index = 0;
 		for(const auto& m: struct_def._members){
@@ -1497,10 +1537,20 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 
 			const auto& arg = details.elements[member_index];
 			llvm::Value* member_value_reg = generate_expression(gen_acc, emit_f, arg);
-			generate_struct_member_store(builder, struct_type_llvm, *struct_ptr_reg, member_index, *member_value_reg);
+
+			const auto gep = std::vector<llvm::Value*>{
+				//	Struct array index.
+				builder.getInt32(0),
+
+				//	Struct member index.
+				builder.getInt32(member_index)
+			};
+			llvm::Value* member_ptr_reg = builder.CreateGEP(&exact_struct_type, base_ptr_reg, gep, "");
+			builder.CreateStore(member_value_reg, member_ptr_reg);
+
 			member_index++;
 		}
-		return struct_ptr_reg;
+		return generic_struct_ptr_reg;
 	}
 
 	//	Construct a primitive, using int(113) or double(3.14)
@@ -2054,6 +2104,7 @@ static llvm::Value* generate_global(llvm_code_generator_t& gen_acc, llvm::Functi
 
 	const auto type0 = symbol.get_type();
 	const auto itype = intern_type(gen_acc.interner, type0);
+//	const auto itype = type0.is_struct() ? get_generic_struct_type(gen_acc.interner)->getPointerTo() : intern_type(gen_acc.interner, type0);
 
 	if(symbol._init.is_undefined()){
 		return generate_global0(module, symbol_name, *itype, nullptr);

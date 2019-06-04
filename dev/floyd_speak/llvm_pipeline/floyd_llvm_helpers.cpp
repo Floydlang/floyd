@@ -89,7 +89,7 @@ void detect_leaks(const heap_t& heap){
 
 		trace_heap(heap);
 
-#if 1
+#if 0
 		if(leaks > 0){
 			throw std::exception();
 		}
@@ -261,6 +261,16 @@ int heap_t::count_used() const {
 		}
 	}
 	return result;
+}
+
+
+uint64_t size_to_allocation_blocks(std::size_t size){
+	const auto r = (size >> 3) + ((size & 7) > 0 ? 1 : 0);
+
+	QUARK_ASSERT((r * sizeof(uint64_t) - size) >= 0);
+	QUARK_ASSERT((r * sizeof(uint64_t) - size) < sizeof(uint64_t));
+
+	return r;
 }
 
 
@@ -615,9 +625,6 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b){
 	return WIDE_RETURN_T{ a, b };
 }
 
-WIDE_RETURN_T make_wide_return_structptr(STRUCT_T* s){
-	return WIDE_RETURN_T{ { .struct_ptr = s }, { .int_value = 0 } };
-}
 
 
 
@@ -854,7 +861,59 @@ JSON_T* wide_return_to_json(const WIDE_RETURN_T& ret){
 
 
 
-////////////////////////////////		STRUCT_T
+
+////////////////////////////////		VEC_T
+
+
+
+
+STRUCT_T::~STRUCT_T(){
+	QUARK_ASSERT(check_invariant());
+}
+
+bool STRUCT_T::check_invariant() const {
+	QUARK_ASSERT(this->alloc.check_invariant());
+	return true;
+}
+
+STRUCT_T* alloc_struct(heap_t& heap, std::size_t size){
+	const auto allocation_count = size_to_allocation_blocks(size);
+
+	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count);
+	alloc->debug_info[0] = 'S';
+	alloc->debug_info[1] = 'T';
+	alloc->debug_info[2] = 'R';
+	alloc->debug_info[3] = 'U';
+	alloc->debug_info[4] = 'C';
+	alloc->debug_info[5] = 'T';
+
+	auto vec = reinterpret_cast<STRUCT_T*>(alloc);
+	return vec;
+}
+
+void struct_addref(STRUCT_T& vec){
+	QUARK_ASSERT(vec.check_invariant());
+
+	add_ref(vec.alloc);
+
+	QUARK_ASSERT(vec.check_invariant());
+}
+void struct_releaseref(STRUCT_T* vec){
+	QUARK_ASSERT(vec != nullptr);
+	QUARK_ASSERT(vec->check_invariant());
+
+	release_ref(vec->alloc);
+}
+
+
+
+WIDE_RETURN_T make_wide_return_structptr(STRUCT_T* s){
+	return WIDE_RETURN_T{ { .struct_ptr = s }, { .int_value = 0 } };
+}
+
+STRUCT_T* wide_return_to_struct(const WIDE_RETURN_T& ret){
+	return ret.a.struct_ptr;
+}
 
 
 
@@ -882,19 +941,6 @@ void generate_array_element_store(llvm::IRBuilder<>& builder, llvm::Value& array
 }
 
 
-
-void generate_struct_member_store(llvm::IRBuilder<>& builder, llvm::StructType& struct_type, llvm::Value& struct_ptr_reg, int member_index, llvm::Value& value_reg){
-
-	const auto gep = std::vector<llvm::Value*>{
-		//	Struct array index.
-		builder.getInt32(0),
-
-		//	Struct member index.
-		builder.getInt32(member_index)
-	};
-	llvm::Value* member_ptr_reg = builder.CreateGEP(&struct_type, &struct_ptr_reg, gep, "");
-	builder.CreateStore(&value_reg, member_ptr_reg);
-}
 
 llvm::Type* deref_ptr(llvm::Type* type){
 	QUARK_ASSERT(type != nullptr);
@@ -1152,7 +1198,7 @@ static llvm::Type* make_function_type_internal(llvm::LLVMContext& context, const
 	return function_pointer_type;
 }
 
-static llvm::StructType* make_struct_type_internal(llvm::LLVMContext& context, const llvm_type_interner_t& interner, const typeid_t& type){
+static llvm::StructType* make_exact_struct_type(llvm::LLVMContext& context, const llvm_type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(type.is_struct());
 
 	std::vector<llvm::Type*> members;
@@ -1177,7 +1223,7 @@ static llvm::StructType* make_wide_return_type_internal(llvm::LLVMContext& conte
 	return s;
 }
 
-static llvm::StructType* make_vec_type_internal(llvm::LLVMContext& context){
+static llvm::StructType* make_generic_vec_type_internal(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
 		llvm::Type::getInt64Ty(context),
 		llvm::Type::getInt64Ty(context),
@@ -1193,7 +1239,7 @@ static llvm::StructType* make_vec_type_internal(llvm::LLVMContext& context){
 	return s;
 }
 
-static llvm::StructType* make_dict_type_internal(llvm::LLVMContext& context){
+static llvm::StructType* make_generic_dict_type_internal(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
 		llvm::Type::getInt64Ty(context)->getPointerTo()
 	};
@@ -1209,15 +1255,22 @@ static llvm::StructType* make_json_type_internal(llvm::LLVMContext& context){
 	return s;
 }
 
-static llvm::StructType* make_struct_type_internal(llvm::LLVMContext& context){
+static llvm::StructType* make_generic_struct_type_internal(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
+		llvm::Type::getInt64Ty(context)->getPointerTo(),
+		llvm::Type::getInt64Ty(context)->getPointerTo(),
+		llvm::Type::getInt64Ty(context)->getPointerTo(),
+		llvm::Type::getInt64Ty(context)->getPointerTo(),
+		llvm::Type::getInt64Ty(context)->getPointerTo(),
+		llvm::Type::getInt64Ty(context)->getPointerTo(),
+		llvm::Type::getInt64Ty(context)->getPointerTo(),
 		llvm::Type::getInt64Ty(context)->getPointerTo()
 	};
 	llvm::StructType* s = llvm::StructType::create(context, members, "struct");
 	return s;
 }
 
-static llvm::Type* intern_type_internal(llvm::LLVMContext& context, llvm_type_interner_t& interner, const typeid_t& type){
+static llvm::Type* make_exact_type_internal(llvm::LLVMContext& context, llvm_type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	struct visitor_t {
@@ -1256,7 +1309,8 @@ static llvm::Type* intern_type_internal(llvm::LLVMContext& context, llvm_type_in
 		}
 
 		llvm::Type* operator()(const typeid_t::struct_t& e) const{
-			return make_struct_type_internal(context, interner, type)->getPointerTo();
+			return make_exact_struct_type(context, interner, type)->getPointerTo();
+//			return get_generic_struct_type(interner)->getPointerTo();
 		}
 		llvm::Type* operator()(const typeid_t::vector_t& e) const{
 			return make_vec_type(interner)->getPointerTo();
@@ -1290,19 +1344,17 @@ static llvm_type_interner_t make_basic_interner(llvm::LLVMContext& context){
 }
 
 
-
-
 llvm_type_interner_t::llvm_type_interner_t(llvm::LLVMContext& context, const type_interner_t& i){
-	vec_type = make_vec_type_internal(context);
-	dict_type = make_dict_type_internal(context);
+	generic_vec_type = make_generic_vec_type_internal(context);
+	generic_dict_type = make_generic_dict_type_internal(context);
 	json_type = make_json_type_internal(context);
-	struct_type = make_struct_type_internal(context);
+	generic_struct_type = make_generic_struct_type_internal(context);
 	wide_return_type = make_wide_return_type_internal(context);
 
 	for(const auto& e: i.interned){
-		const auto llvm_type = intern_type_internal(context, *this, e.second);
+		const auto llvm_type = make_exact_type_internal(context, *this, e.second);
 		intern_type(interner, e.second);
-		llvm_types.push_back(llvm_type);
+		exact_llvm_types.push_back(llvm_type);
 	}
 
 	QUARK_ASSERT(check_invariant());
@@ -1310,25 +1362,60 @@ llvm_type_interner_t::llvm_type_interner_t(llvm::LLVMContext& context, const typ
 
 bool llvm_type_interner_t::check_invariant() const {
 	QUARK_ASSERT(interner.check_invariant());
-	QUARK_ASSERT(interner.interned.size() == llvm_types.size());
+	QUARK_ASSERT(interner.interned.size() == exact_llvm_types.size());
 
-	QUARK_ASSERT(vec_type != nullptr);
-	QUARK_ASSERT(dict_type != nullptr);
+	QUARK_ASSERT(generic_vec_type != nullptr);
+	QUARK_ASSERT(generic_dict_type != nullptr);
 	QUARK_ASSERT(json_type != nullptr);
-	QUARK_ASSERT(struct_type != nullptr);
+	QUARK_ASSERT(generic_struct_type != nullptr);
 	QUARK_ASSERT(wide_return_type != nullptr);
 	return true;
 }
 
 llvm::Type* intern_type(const llvm_type_interner_t& i, const typeid_t& type){
+	if(type.is_vector()){
+		return i.generic_vec_type->getPointerTo();
+	}
+	else if(type.is_dict()){
+		return i.generic_dict_type->getPointerTo();
+	}
+	else if(type.is_struct()){
+		return i.generic_struct_type->getPointerTo();
+	}
+	else{
+		const auto it = std::find_if(i.interner.interned.begin(), i.interner.interned.end(), [&](const std::pair<itype_t, typeid_t>& e){ return e.second == type; });
+		if(it == i.interner.interned.end()){
+			throw std::exception();
+		}
+		const auto index = it - i.interner.interned.begin();
+		QUARK_ASSERT(index >= 0 && index < i.exact_llvm_types.size());
+		return i.exact_llvm_types[index];
+	}
+}
+
+
+//??? Make intern_type() return vector, struct etc. directly, not getPointerTo().
+llvm::StructType* get_exact_struct_type(const llvm_type_interner_t& i, const typeid_t& type){
+	QUARK_ASSERT(type.is_struct());
+
 	const auto it = std::find_if(i.interner.interned.begin(), i.interner.interned.end(), [&](const std::pair<itype_t, typeid_t>& e){ return e.second == type; });
 	if(it == i.interner.interned.end()){
 		throw std::exception();
 	}
 	const auto index = it - i.interner.interned.begin();
-	QUARK_ASSERT(index >= 0 && index < i.llvm_types.size());
+	QUARK_ASSERT(index >= 0 && index < i.exact_llvm_types.size());
+	auto result = i.exact_llvm_types[index];
 
-	return i.llvm_types[index];
+	auto result2 = deref_ptr(result);
+	return llvm::cast<llvm::StructType>(result2);
+//	return make_exact_struct_type(context, interner, type)->getPointerTo();
+
+/*
+	auto result = intern_type(interner, type);
+	auto result2 = deref_ptr(result);
+	return llvm::cast<llvm::StructType>(result2);
+*/
+
 }
 
 llvm::StructType* make_wide_return_type(const llvm_type_interner_t& interner){
@@ -1336,19 +1423,19 @@ llvm::StructType* make_wide_return_type(const llvm_type_interner_t& interner){
 }
 
 llvm::Type* make_vec_type(const llvm_type_interner_t& interner){
-	return interner.vec_type;
+	return interner.generic_vec_type;
 }
 
 llvm::Type* make_dict_type(const llvm_type_interner_t& interner){
-	return interner.dict_type;
+	return interner.generic_dict_type;
 }
 
 llvm::Type* make_json_type(const llvm_type_interner_t& interner){
 	return interner.json_type;
 }
 
-llvm::Type* make_struct_type(const llvm_type_interner_t& interner){
-	return interner.struct_type;
+llvm::Type* get_generic_struct_type(const llvm_type_interner_t& interner){
+	return interner.generic_struct_type;
 }
 
 
@@ -1367,7 +1454,7 @@ llvm::StructType* make_struct_type(const llvm_type_interner_t& interner, const t
 
 
 bool is_rc_value(const typeid_t& type){
-	return type.is_string() || type.is_vector() || type.is_dict() || /*type.is_struct() ||*/ type.is_json_value();
+	return type.is_string() || type.is_vector() || type.is_dict() || type.is_struct() || type.is_json_value();
 }
 
 
@@ -1591,7 +1678,6 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 		}
 
 		llvm::Value* operator()(const typeid_t::json_type_t& e) const{
-//			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, llvm::Type::getInt16PtrTy(context), "");
 			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_json_type(interner)->getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::typeid_type_t& e) const{
@@ -1599,8 +1685,7 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 		}
 
 		llvm::Value* operator()(const typeid_t::struct_t& e) const{
-			auto& struct_type = *make_struct_type(interner, type);
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, struct_type.getPointerTo(), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_generic_struct_type(interner)->getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::vector_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_vec_type(interner)->getPointerTo(), "");
