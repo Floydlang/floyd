@@ -1449,9 +1449,13 @@ STRUCT_T* floyd_funcdef__calc_string_sha1(void* floyd_runtime_ptr, runtime_value
 	const auto sha1 = CalcSHA1(s);
 	const auto ascii40 = SHA1ToStringPlain(sha1);
 
-	auto result = new native_sha1_t();
-	result->ascii40 = to_runtime_string(r, ascii40).vector_ptr;
-	return reinterpret_cast<STRUCT_T*>(result);
+	const auto a = value_t::make_struct_value(
+		typeid_t::make_struct2({ member_t{ typeid_t::make_string(), "ascii40" } }),
+		{ value_t::make_string(ascii40) }
+	);
+
+	auto result = to_runtime_value(r, a);
+	return result.struct_ptr;
 }
 
 void floyd_funcdef__create_directory_branch(void* floyd_runtime_ptr, runtime_value_t path0){
@@ -1724,7 +1728,7 @@ STRUCT_T* floyd_funcdef__get_fsentry_info(void* floyd_runtime_ptr, runtime_value
 
 	const auto result = impl__get_fsentry_info(from_runtime_string(r, path0));
 	const auto v = to_runtime_value(r, result);
-	return reinterpret_cast<STRUCT_T*>(v.struct_ptr);
+	return v.struct_ptr;
 }
 
 int64_t floyd_host_function__get_json_type(void* floyd_runtime_ptr, JSON_T* json_ptr){
