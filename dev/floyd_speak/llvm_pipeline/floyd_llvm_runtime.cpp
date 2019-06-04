@@ -569,10 +569,11 @@ static void retain_value(llvm_execution_engine_t& runtime, runtime_value_t value
 		else if(type.is_json_value()){
 			json_addref(*value.json_ptr);
 		}
-
-		//??? Also free other RC types like dicts, json_value etc.
+		else if(type.is_struct()){
+//???			struct_addref(*value.struct_ptr);
+		}
 		else{
-			NOT_IMPLEMENTED_YET();
+			QUARK_ASSERT(false);
 		}
 	}
 }
@@ -580,6 +581,7 @@ static void retain_value(llvm_execution_engine_t& runtime, runtime_value_t value
 //??? use these in all runtime code
 static void release_dict_deep(llvm_execution_engine_t& runtime, DICT_T* dict, const typeid_t& type);
 static void release_vec_deep(llvm_execution_engine_t& runtime, VEC_T* vec, const typeid_t& type);
+static void release_struct_deep(llvm_execution_engine_t& runtime, void* s, const typeid_t& type);
 
 static void release_deep(llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type){
 	if(is_rc_value(type)){
@@ -595,10 +597,11 @@ static void release_deep(llvm_execution_engine_t& runtime, runtime_value_t value
 		else if(type.is_json_value()){
 			json_releaseref(value.json_ptr);
 		}
-
-		//??? Also free other RC types like dicts, json_value etc.
+		else if(type.is_struct()){
+//???			release_struct_deep(value.struct_ptr);
+		}
 		else{
-			NOT_IMPLEMENTED_YET();
+			QUARK_ASSERT(false);
 		}
 	}
 }
@@ -652,6 +655,30 @@ static void release_vec_deep(llvm_execution_engine_t& runtime, VEC_T* vec, const
 	}
 
 	vec_releaseref(vec);
+}
+
+
+static void release_struct_deep(llvm_execution_engine_t& runtime, void* s, const typeid_t& type){
+	QUARK_ASSERT(s != nullptr);
+
+#if 0
+	//??? Make atomic. CAS?
+	//??? unsafe hack. Some other code could stop rc from becoming 0.
+	if(vec->alloc.rc == 1){
+
+		//	Release all members.
+		const auto element_type = type.get_vector_element_type();
+		if(is_rc_value(element_type)){
+			auto element_ptr = vec->get_element_ptr();
+			for(int i = 0 ; i < vec->get_element_count() ; i++){
+				const auto& element = element_ptr[i];
+				release_deep(runtime, element, element_type);
+			}
+		}
+	}
+
+	vec_releaseref(vec);
+#endif
 }
 
 
@@ -777,14 +804,6 @@ host_func_t fr_release_dict__make(llvm::LLVMContext& context, const llvm_type_in
 }
 
 
-
-
-
-
-
-
-
-
 ////////////////////////////////		fr_retain_json()
 
 
@@ -848,6 +867,67 @@ host_func_t fr_release_json__make(llvm::LLVMContext& context, const llvm_type_in
 	return { "fr_release_json", function_type, reinterpret_cast<void*>(fr_release_json) };
 }
 
+
+
+
+
+
+
+
+
+
+////////////////////////////////		fr_retain_struct()
+
+
+void fr_retain_struct(void* floyd_runtime_ptr, void* v, runtime_type_t type0){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+
+	const auto type = lookup_type(r.type_interner.interner, type0);
+	QUARK_ASSERT(is_rc_value(type));
+	QUARK_ASSERT(type.is_struct());
+
+//???
+//	struct_addref(*v);
+}
+
+host_func_t fr_retain_struct__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getVoidTy(context),
+		{
+			make_frp_type(context),
+			make_struct_type(interner),
+			make_runtime_type_type(context)
+		},
+		false
+	);
+	return { "fr_retain_struct", function_type, reinterpret_cast<void*>(fr_retain_struct) };
+}
+
+
+////////////////////////////////		fr_release_struct()
+
+
+void fr_release_struct(void* floyd_runtime_ptr, void* v, runtime_type_t type0){
+	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+	const auto type = lookup_type(r.type_interner.interner, type0);
+	QUARK_ASSERT(type.is_struct());
+
+	QUARK_ASSERT(v != nullptr);
+//???	struct_releaseref(v);
+}
+
+host_func_t fr_release_struct__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getVoidTy(context),
+		{
+			make_frp_type(context),
+			make_struct_type(interner),
+			make_runtime_type_type(context)
+		},
+		false
+	);
+	return { "fr_release_struct", function_type, reinterpret_cast<void*>(fr_release_struct) };
+}
 
 
 
@@ -1262,6 +1342,9 @@ std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const
 
 		fr_retain_json__make(context, interner),
 		fr_release_json__make(context, interner),
+
+		fr_retain_struct__make(context, interner),
+		fr_release_struct__make(context, interner),
 
 		floyd_runtime__allocate_memory__make(context, interner),
 

@@ -854,6 +854,9 @@ JSON_T* wide_return_to_json(const WIDE_RETURN_T& ret){
 
 
 
+////////////////////////////////		STRUCT_T
+
+
 
 
 
@@ -1206,6 +1209,14 @@ static llvm::StructType* make_json_type_internal(llvm::LLVMContext& context){
 	return s;
 }
 
+static llvm::StructType* make_struct_type_internal(llvm::LLVMContext& context){
+	std::vector<llvm::Type*> members = {
+		llvm::Type::getInt64Ty(context)->getPointerTo()
+	};
+	llvm::StructType* s = llvm::StructType::create(context, members, "struct");
+	return s;
+}
+
 static llvm::Type* intern_type_internal(llvm::LLVMContext& context, llvm_type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
@@ -1285,6 +1296,7 @@ llvm_type_interner_t::llvm_type_interner_t(llvm::LLVMContext& context, const typ
 	vec_type = make_vec_type_internal(context);
 	dict_type = make_dict_type_internal(context);
 	json_type = make_json_type_internal(context);
+	struct_type = make_struct_type_internal(context);
 	wide_return_type = make_wide_return_type_internal(context);
 
 	for(const auto& e: i.interned){
@@ -1303,6 +1315,7 @@ bool llvm_type_interner_t::check_invariant() const {
 	QUARK_ASSERT(vec_type != nullptr);
 	QUARK_ASSERT(dict_type != nullptr);
 	QUARK_ASSERT(json_type != nullptr);
+	QUARK_ASSERT(struct_type != nullptr);
 	QUARK_ASSERT(wide_return_type != nullptr);
 	return true;
 }
@@ -1334,6 +1347,10 @@ llvm::Type* make_json_type(const llvm_type_interner_t& interner){
 	return interner.json_type;
 }
 
+llvm::Type* make_struct_type(const llvm_type_interner_t& interner){
+	return interner.struct_type;
+}
+
 
 
 
@@ -1350,8 +1367,7 @@ llvm::StructType* make_struct_type(const llvm_type_interner_t& interner, const t
 
 
 bool is_rc_value(const typeid_t& type){
-//	return type.is_string() || type.is_vector() || type.is_dict() || type.is_struct() || type.is_json_value();
-	return type.is_string() || type.is_vector() || type.is_dict() || type.is_json_value();
+	return type.is_string() || type.is_vector() || type.is_dict() || /*type.is_struct() ||*/ type.is_json_value();
 }
 
 

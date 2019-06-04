@@ -478,6 +478,7 @@ struct llvm_type_interner_t {
 	llvm::StructType* vec_type;
 	llvm::StructType* dict_type;
 	llvm::StructType* json_type;
+	llvm::StructType* struct_type;
 	llvm::StructType* wide_return_type;
 };
 
@@ -486,6 +487,7 @@ llvm::StructType* make_wide_return_type(const llvm_type_interner_t& interner);
 llvm::Type* make_vec_type(const llvm_type_interner_t& interner);
 llvm::Type* make_dict_type(const llvm_type_interner_t& interner);
 llvm::Type* make_json_type(const llvm_type_interner_t& interner);
+llvm::Type* make_struct_type(const llvm_type_interner_t& interner);
 
 
 llvm::Type* make_function_type(const llvm_type_interner_t& interner, const typeid_t& function_type);

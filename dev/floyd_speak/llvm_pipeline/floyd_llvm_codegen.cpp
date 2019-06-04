@@ -6,7 +6,7 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-const bool k_trace_input_output = true;
+const bool k_trace_input_output = false;
 const bool k_trace_types = false;
 
 #include "floyd_llvm_codegen.h"
@@ -324,7 +324,17 @@ void generate_retain(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llv
 			};
 			builder.CreateCall(f.llvm_f, args, "");
 		}
+		else if(type.is_struct()){
+			const auto f = find_function_def(gen_acc, "fr_retain_struct");
+			std::vector<llvm::Value*> args = {
+				get_callers_fcp(emit_f),
+				&value_reg,
+				generate_itype_constant(gen_acc, type)
+			};
+			builder.CreateCall(f.llvm_f, args, "");
+		}
 		else{
+			QUARK_ASSERT(false);
 		}
 	}
 	else{
@@ -364,7 +374,17 @@ void generate_release(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, ll
 			};
 			builder.CreateCall(f.llvm_f, args);
 		}
+		else if(type.is_struct()){
+			const auto f = find_function_def(gen_acc, "fr_struct_json");
+			std::vector<llvm::Value*> args = {
+				get_callers_fcp(emit_f),
+				&value_reg,
+				generate_itype_constant(gen_acc, type)
+			};
+			builder.CreateCall(f.llvm_f, args);
+		}
 		else{
+			QUARK_ASSERT(false);
 		}
 	}
 	else{
@@ -2300,20 +2320,6 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const bo
 	{
 		builder.SetInsertPoint(destructBB);
 
-/*
-		//	Destruct global variables.
-		for(const auto& e: gen_acc.scope_path.front()){
-			if(e.symtype == resolved_symbol_t::esymtype::k_global || e.symtype == resolved_symbol_t::esymtype::k_local){
-				const auto type = e.symbol.get_type();
-				if(is_rc_value(type)){
-					auto reg = builder.CreateLoad(e.value_ptr);
-					generate_release(gen_acc, emit_f, *reg, type);
-				}
-				else{
-				}
-			}
-		}
-*/
 		llvm::Value* dummy_result = llvm::ConstantInt::get(builder.getInt64Ty(), 667);
 		builder.CreateRet(dummy_result);
 	}
