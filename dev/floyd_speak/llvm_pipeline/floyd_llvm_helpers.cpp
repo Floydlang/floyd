@@ -329,7 +329,7 @@ runtime_value_t make_runtime_int(int64_t value){
 runtime_value_t make_runtime_typeid(runtime_type_t type){
 	return { .typeid_itype = type };
 }
-runtime_value_t make_runtime_struct(void* struct_ptr){
+runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
 	return { .struct_ptr = struct_ptr };
 }
 
@@ -615,7 +615,7 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b){
 	return WIDE_RETURN_T{ a, b };
 }
 
-WIDE_RETURN_T make_wide_return_structptr(void* s){
+WIDE_RETURN_T make_wide_return_structptr(STRUCT_T* s){
 	return WIDE_RETURN_T{ { .struct_ptr = s }, { .int_value = 0 } };
 }
 
@@ -1422,7 +1422,7 @@ runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type){
 		}
 
 		runtime_value_t operator()(const typeid_t::struct_t& e) const{
-			void* struct_ptr = *reinterpret_cast<void* const *>(value_ptr);
+			STRUCT_T* struct_ptr = *reinterpret_cast<STRUCT_T* const *>(value_ptr);
 			return make_runtime_struct(struct_ptr);
 		}
 		runtime_value_t operator()(const typeid_t::vector_t& e) const{
@@ -1478,7 +1478,7 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 		}
 
 		void operator()(const typeid_t::struct_t& e) const{
-			*reinterpret_cast<void**>(value_ptr) = value.struct_ptr;
+			*reinterpret_cast<STRUCT_T**>(value_ptr) = value.struct_ptr;
 		}
 		void operator()(const typeid_t::vector_t& e) const{
 			*static_cast<runtime_value_t*>(value_ptr) = value;

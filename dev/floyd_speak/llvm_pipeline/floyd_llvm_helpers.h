@@ -21,6 +21,7 @@ namespace floyd {
 struct VEC_T;
 struct DICT_T;
 struct JSON_T;
+struct STRUCT_T;
 struct type_interner_t;
 
 
@@ -155,7 +156,7 @@ union runtime_value_t {
 	VEC_T* vector_ptr;
 	DICT_T* dict_ptr;
 	JSON_T* json_ptr;
-	void* struct_ptr;
+	STRUCT_T* struct_ptr;
 	void* function_ptr;
 
 	bool check_invariant() const {
@@ -172,7 +173,7 @@ runtime_value_t make_blank_runtime_value();
 runtime_value_t make_runtime_bool(bool value);
 runtime_value_t make_runtime_int(int64_t value);
 runtime_value_t make_runtime_typeid(runtime_type_t type);
-runtime_value_t make_runtime_struct(void* struct_ptr);
+runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr);
 
 char* get_vec_chars(runtime_value_t str);
 uint64_t get_vec_string_size(runtime_value_t str);
@@ -276,7 +277,7 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
 inline WIDE_RETURN_T make_wide_return_1x64(runtime_value_t a){
 	return make_wide_return_2x64(a, make_blank_runtime_value());
 }
-WIDE_RETURN_T make_wide_return_structptr(void* s);
+WIDE_RETURN_T make_wide_return_structptr(STRUCT_T* s);
 
 
 

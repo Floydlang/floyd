@@ -264,7 +264,7 @@ runtime_value_t to_runtime_struct(llvm_execution_engine_t& runtime, const typeid
 		store_via_ptr(runtime, e.get_type(), member_ptr, e);
 		member_index++;
 	}
-	return make_runtime_struct((void*)struct_base_ptr);
+	return make_runtime_struct(reinterpret_cast<STRUCT_T*>(struct_base_ptr));
 }
 
 value_t from_runtime_struct(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
@@ -581,7 +581,7 @@ static void retain_value(llvm_execution_engine_t& runtime, runtime_value_t value
 //??? use these in all runtime code
 static void release_dict_deep(llvm_execution_engine_t& runtime, DICT_T* dict, const typeid_t& type);
 static void release_vec_deep(llvm_execution_engine_t& runtime, VEC_T* vec, const typeid_t& type);
-static void release_struct_deep(llvm_execution_engine_t& runtime, void* s, const typeid_t& type);
+static void release_struct_deep(llvm_execution_engine_t& runtime, STRUCT_T* s, const typeid_t& type);
 
 static void release_deep(llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type){
 	if(is_rc_value(type)){
@@ -658,7 +658,7 @@ static void release_vec_deep(llvm_execution_engine_t& runtime, VEC_T* vec, const
 }
 
 
-static void release_struct_deep(llvm_execution_engine_t& runtime, void* s, const typeid_t& type){
+static void release_struct_deep(llvm_execution_engine_t& runtime, STRUCT_T* s, const typeid_t& type){
 	QUARK_ASSERT(s != nullptr);
 
 #if 0
@@ -879,7 +879,7 @@ host_func_t fr_release_json__make(llvm::LLVMContext& context, const llvm_type_in
 ////////////////////////////////		fr_retain_struct()
 
 
-void fr_retain_struct(void* floyd_runtime_ptr, void* v, runtime_type_t type0){
+void fr_retain_struct(void* floyd_runtime_ptr, STRUCT_T* v, runtime_type_t type0){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto type = lookup_type(r.type_interner.interner, type0);
@@ -907,7 +907,7 @@ host_func_t fr_retain_struct__make(llvm::LLVMContext& context, const llvm_type_i
 ////////////////////////////////		fr_release_struct()
 
 
-void fr_release_struct(void* floyd_runtime_ptr, void* v, runtime_type_t type0){
+void fr_release_struct(void* floyd_runtime_ptr, STRUCT_T* v, runtime_type_t type0){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 	const auto type = lookup_type(r.type_interner.interner, type0);
 	QUARK_ASSERT(type.is_struct());
@@ -1392,7 +1392,7 @@ void floyd_funcdef__assert(void* floyd_runtime_ptr, runtime_value_t arg){
 	}
 }
 
-void* floyd_funcdef__calc_binary_sha1(void* floyd_runtime_ptr, void* binary_ptr){
+STRUCT_T* floyd_funcdef__calc_binary_sha1(void* floyd_runtime_ptr, void* binary_ptr){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 	QUARK_ASSERT(binary_ptr != nullptr);
 
@@ -1404,10 +1404,10 @@ void* floyd_funcdef__calc_binary_sha1(void* floyd_runtime_ptr, void* binary_ptr)
 
 	auto result = new native_sha1_t();
 	result->ascii40 = to_runtime_string(r, ascii40).vector_ptr;
-	return result;
+	return reinterpret_cast<STRUCT_T*>(result);
 }
 
-void* floyd_funcdef__calc_string_sha1(void* floyd_runtime_ptr, runtime_value_t s0){
+STRUCT_T* floyd_funcdef__calc_string_sha1(void* floyd_runtime_ptr, runtime_value_t s0){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto& s = from_runtime_string(r, s0);
@@ -1416,7 +1416,7 @@ void* floyd_funcdef__calc_string_sha1(void* floyd_runtime_ptr, runtime_value_t s
 
 	auto result = new native_sha1_t();
 	result->ascii40 = to_runtime_string(r, ascii40).vector_ptr;
-	return result;
+	return reinterpret_cast<STRUCT_T*>(result);
 }
 
 void floyd_funcdef__create_directory_branch(void* floyd_runtime_ptr, runtime_value_t path0){
@@ -1684,12 +1684,12 @@ VEC_T* floyd_funcdef__get_fsentries_shallow(void* floyd_runtime_ptr, runtime_val
 	return v.vector_ptr;
 }
 
-void* floyd_funcdef__get_fsentry_info(void* floyd_runtime_ptr, runtime_value_t path0){
+STRUCT_T* floyd_funcdef__get_fsentry_info(void* floyd_runtime_ptr, runtime_value_t path0){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
 	const auto result = impl__get_fsentry_info(from_runtime_string(r, path0));
 	const auto v = to_runtime_value(r, result);
-	return v.struct_ptr;
+	return reinterpret_cast<STRUCT_T*>(v.struct_ptr);
 }
 
 int64_t floyd_host_function__get_json_type(void* floyd_runtime_ptr, JSON_T* json_ptr){
@@ -2430,7 +2430,7 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 		}
 		store_via_ptr(r, member_type, member_ptr, member_value);
 
-		return make_wide_return_structptr(struct_ptr);
+		return make_wide_return_structptr(reinterpret_cast<STRUCT_T*>(struct_ptr));
 	}
 	else{
 		//	No other types allowed.
