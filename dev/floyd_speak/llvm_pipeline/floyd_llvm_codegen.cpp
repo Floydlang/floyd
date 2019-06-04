@@ -151,7 +151,7 @@ struct llvm_code_generator_t {
 
 enum class gen_statement_mode {
 	more,
-	function_returning
+	return_from_function
 };
 
 static gen_statement_mode generate_statements(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const std::vector<statement_t>& statements);
@@ -786,13 +786,31 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_code_generator_
 	return result;
 }
 
+static void generate_destruct_scope_locals(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const std::vector<resolved_symbol_t>& symbols){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(emit_f));
+
+	auto& builder = gen_acc.builder;
+
+	for(const auto& e: symbols){
+		if(e.symtype == resolved_symbol_t::esymtype::k_global || e.symtype == resolved_symbol_t::esymtype::k_local){
+			const auto type = e.symbol.get_type();
+			if(is_rc_value(type)){
+				auto reg = builder.CreateLoad(e.value_ptr);
+				generate_release(gen_acc, emit_f, *reg, type);
+			}
+			else{
+			}
+		}
+	}
+
+}
 
 static gen_statement_mode generate_block(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
 	auto values = generate_symbol_slots(gen_acc, emit_f, body._symbol_table);
-
 	gen_acc.scope_path.push_back(values);
 	const auto more = generate_statements(gen_acc, emit_f, body._statements);
 	gen_acc.scope_path.pop_back();
@@ -1758,8 +1776,8 @@ static gen_statement_mode generate_ifelse_statement(llvm_code_generator_t& gen_a
 
 
 	//	Scenario A: both then-block and else-block always returns = no need for join BB.
-	if(then_mode == gen_statement_mode::function_returning && else_mode == gen_statement_mode::function_returning){
-		return gen_statement_mode::function_returning;
+	if(then_mode == gen_statement_mode::return_from_function && else_mode == gen_statement_mode::return_from_function){
+		return gen_statement_mode::return_from_function;
 	}
 
 	//	Scenario B: eith then-block or else-block continues. We need a join-block where it can jump.
@@ -1948,7 +1966,7 @@ static gen_statement_mode generate_statement(llvm_code_generator_t& gen_acc, llv
 
 		gen_statement_mode operator()(const statement_t::return_statement_t& s) const{
 			generate_return_statement(acc0, emit_f, s);
-			return gen_statement_mode::function_returning;
+			return gen_statement_mode::return_from_function;
 		}
 		gen_statement_mode operator()(const statement_t::define_struct_statement_t& s) const{
 			NOT_IMPLEMENTED_YET();
@@ -2009,20 +2027,14 @@ static gen_statement_mode generate_statements(llvm_code_generator_t& gen_acc, ll
 		for(const auto& statement: statements){
 			QUARK_ASSERT(statement.check_invariant());
 			const auto mode = generate_statement(gen_acc, emit_f, statement);
-			if(mode == gen_statement_mode::function_returning){
-				return gen_statement_mode::function_returning;
+			if(mode == gen_statement_mode::return_from_function){
+				return gen_statement_mode::return_from_function;
 			}
 		}
 	}
 	return gen_statement_mode::more;
 }
 
-
-
-
-
-
-////////////////////////////////		GLOBALS
 
 
 
@@ -2340,8 +2352,6 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const body_t& globals){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
-	const std::vector<statement_t>& global_statements = globals._statements;
-
 	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
@@ -2358,7 +2368,7 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const bo
 
 		//	Global statements, using the global symbol scope.
 		//	This includes init2-statements to initialise global variables.
-		generate_statements(gen_acc, emit_f, global_statements);
+		generate_statements(gen_acc, emit_f, globals._statements);
 
 		for(const auto& e: gen_acc.global_constructors){
 			e->store_constant(gen_acc, emit_f);
@@ -2374,42 +2384,7 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const bo
 		llvm::Value* dummy_result = llvm::ConstantInt::get(builder.getInt64Ty(), 667);
 		builder.CreateRet(dummy_result);
 	}
-#if 0
-	{
-		//???	Remove floyd_runtime_ptr-check in release version.
-		//	Verify we've got a valid floyd_runtime_ptr as argument #0.
-		llvm::Value* magic_index_value = llvm::ConstantInt::get(builder.getInt64Ty(), 0);
-		const auto index_list = std::vector<llvm::Value*>{ magic_index_value };
 
-		auto args = f->args();
-		QUARK_ASSERT((args.end() - args.begin()) >= 1);
-		auto floyd_context_arg_ptr = args.begin();
-
-		llvm::Value* uint64ptr_value = builder.CreateCast(llvm::Instruction::CastOps::BitCast, floyd_context_arg_ptr, llvm::Type::getInt64Ty(context)->getPointerTo(), "");
-
-		llvm::Value* magic_addr = builder.CreateGEP(llvm::Type::getInt64Ty(context), uint64ptr_value, index_list, "magic_addr");
-		auto magic_value = builder.CreateLoad(magic_addr);
-		llvm::Value* correct_magic_value = llvm::ConstantInt::get(builder.getInt64Ty(), k_debug_magic);
-		auto cmp_result = builder.CreateICmpEQ(magic_value, correct_magic_value);
-
-		llvm::BasicBlock* contBB = llvm::BasicBlock::Create(context, "contBB", f);
-		llvm::BasicBlock* failBB = llvm::BasicBlock::Create(context, "failBB", f);
-		builder.CreateCondBr(cmp_result, contBB, failBB);
-
-		builder.SetInsertPoint(failBB);
-		llvm::Value* dummy_result2 = llvm::ConstantInt::get(builder.getInt64Ty(), 666);
-		builder.CreateRet(dummy_result2);
-
-
-		builder.SetInsertPoint(contBB);
-
-		//	Global statements, using the global symbol scope.
-		const auto more = generate_statements(gen_acc, emit_f, global_statements);
-
-		llvm::Value* dummy_result = llvm::ConstantInt::get(builder.getInt64Ty(), 667);
-		builder.CreateRet(dummy_result);
-	}
-#endif
 		if(k_trace_input_output){
 		QUARK_TRACE_SS(print_module(*gen_acc.module));
 	}

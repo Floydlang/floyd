@@ -1939,9 +1939,13 @@ WIDE_RETURN_T floyd_funcdef__reduce(void* floyd_runtime_ptr, runtime_value_t arg
 
 	auto count = vec.get_element_count();
 	runtime_value_t acc = init;
+	retain_value(r, acc, type1);
+
 	for(int i = 0 ; i < count ; i++){
 		const auto element_value = vec.get_element_ptr()[i];
 		const auto acc2 = (*f)(floyd_runtime_ptr, acc, element_value);
+
+		release_deep(r, acc, type1);
 		acc = acc2;
 	}
 	return make_wide_return_2x64(acc, {} );

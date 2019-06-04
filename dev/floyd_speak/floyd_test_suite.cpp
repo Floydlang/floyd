@@ -635,6 +635,43 @@ QUARK_UNIT_TEST("Floyd test suite", "Mutate", "Store to immutable", "compiler er
 }
 
 
+QUARK_UNIT_TEST("Floyd test suite", "", "String (which requires RC)", ""){
+	run_closed(R"___(
+
+		func void f(){
+			let s = "A"
+		}
+
+		f()
+
+	)___");
+}
+QUARK_UNIT_TEST("Floyd test suite", "Mutate", "String (which requires RC)", ""){
+	run_closed(R"___(
+
+		func string f(){
+			mutable s = "A"
+			return s
+		}
+
+		f()
+
+	)___");
+}
+QUARK_UNIT_TEST("Floyd test suite", "Mutate", "String (which requires RC)", ""){
+	run_closed(R"___(
+
+		func string f(){
+			mutable s = "A"
+			s = "<" + s + ">"
+			return s
+		}
+
+		let result = f()
+		assert(result == "<A>")
+
+	)___");
+}
 
 
 

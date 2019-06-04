@@ -89,7 +89,7 @@ void detect_leaks(const heap_t& heap){
 
 		trace_heap(heap);
 
-#if 1
+#if 0
 		if(leaks > 0){
 			throw std::exception();
 		}
