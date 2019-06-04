@@ -1819,6 +1819,7 @@ WIDE_RETURN_T floyd_funcdef__map(void* floyd_runtime_ptr, runtime_value_t arg0_v
 
 
 
+//??? Can mutate the acc string internally.
 
 typedef runtime_value_t (*MAP_STRING_F)(void* floyd_runtime_ptr, runtime_value_t s);
 
@@ -1834,9 +1835,14 @@ runtime_value_t floyd_funcdef__map_string(void* floyd_runtime_ptr, runtime_value
 	std::string acc;
 	for(int i = 0 ; i < count ; i++){
 		const auto element = { input_string[i] };
-		const auto temp = (*f)(floyd_runtime_ptr, to_runtime_string(r, element));
+		const auto x = to_runtime_string(r, element);
+		const auto temp = (*f)(floyd_runtime_ptr, x);
+
+		release_vec_deep(r, x.vector_ptr, typeid_t::make_string());
+
 		const auto temp2 = from_runtime_string(r, temp);
 		acc.insert(acc.end(), temp2.begin(), temp2.end());
+		release_vec_deep(r, temp.vector_ptr, typeid_t::make_string());
 	}
 	return to_runtime_string(r, acc);
 }
