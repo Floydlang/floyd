@@ -815,6 +815,10 @@ static function_return_mode generate_body(llvm_code_generator_t& gen_acc, llvm::
 	const auto return_mode = generate_statements(gen_acc, emit_f, statements);
 	gen_acc.scope_path.pop_back();
 
+	if(return_mode == function_return_mode::partial_or_no_return){
+		generate_destruct_scope_locals(gen_acc, emit_f, resolved_symbols);
+	}
+
 	QUARK_ASSERT(gen_acc.check_invariant());
 	return return_mode;
 }
@@ -1962,6 +1966,10 @@ static llvm::Value* generate_return_statement(llvm_code_generator_t& gen_acc, ll
 	QUARK_ASSERT(check_emitting_function(emit_f));
 
 	llvm::Value* value = generate_expression(gen_acc, emit_f, s._expression);
+
+	//	Destruct all locals before unwinding.
+	generate_destruct_scope_locals(gen_acc, emit_f, gen_acc.scope_path.back());
+
 	return gen_acc.builder.CreateRet(value);
 }
 

@@ -1986,7 +1986,7 @@ std::string floyd_funcdef__replace__string(llvm_execution_engine_t& floyd_runtim
 	return result;
 }
 
-
+//??? test with RC-elements
 const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
@@ -2097,6 +2097,7 @@ int64_t floyd_funcdef__size(void* floyd_runtime_ptr, runtime_value_t arg0_value,
 	}
 }
 
+//??? Test with RC-elements
 const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
 	auto& r = get_floyd_runtime(floyd_runtime_ptr);
 
@@ -2164,8 +2165,6 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 		quark::throw_runtime_error("supermap() arguments are wrong.");
 	}
 
-
-
 	const auto& elements = arg0_value;
 	const auto& e_type = type0.get_vector_element_type();
 	const auto& parents = arg1_value;
@@ -2208,6 +2207,7 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 	}
 
 	while(elements_todo > 0){
+		//	Find all elements that are free to process -- they are not blocked on a depenency.
 		std::vector<int> pass_ids;
 		for(int i = 0 ; i < elements2->get_element_count() ; i++){
 			const auto rc = rcs[i];
@@ -2216,7 +2216,6 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 				rcs[i] = -1;
 			}
 		}
-
 		if(pass_ids.empty()){
 			quark::throw_runtime_error("supermap() dependency cycle error.");
 		}
@@ -2224,7 +2223,7 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 		for(const auto element_index: pass_ids){
 			const auto& e = elements2->get_element_ptr()[element_index];
 
-			//	Make list of the element's inputs -- the must all be complete now.
+			//	Make list of the element's inputs -- they must all be complete now.
 			std::vector<runtime_value_t> solved_deps;
 			for(int element_index2 = 0 ; element_index2 < parents2->get_element_count() ; element_index2++){
 				const auto& p = parents2->get_element_ptr()[element_index2];
@@ -2233,6 +2232,7 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 					QUARK_ASSERT(element_index2 != -1);
 					QUARK_ASSERT(element_index2 >= -1 && element_index2 < elements2->get_element_count());
 					QUARK_ASSERT(rcs[element_index2] == -1);
+
 					const auto& solved = complete[element_index2];
 					solved_deps.push_back(solved);
 				}
@@ -2245,6 +2245,8 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 			runtime_value_t solved_deps3 { .vector_ptr = solved_deps2 };
 
 			const auto wide_result = (*f2)(floyd_runtime_ptr, e, solved_deps3);
+			release_vec_deep(r, solved_deps2, typeid_t::make_vector(r_type));
+
 			const auto result1 = wide_result.a;
 
 			const auto parent_index = parents2->get_element_ptr()[element_index].int_value;
@@ -2256,11 +2258,11 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 		}
 	}
 
-//	const auto result = make_vector(r_type, complete);
-
+	//??? No need to copy all elements -- could store them directly into the VEC_T.
 	const auto count = complete.size();
 	auto result_vec = alloc_vec(r.heap, count, count);
 	for(int i = 0 ; i < count ; i++){
+		retain_value(r, complete[i], r_type);
 		result_vec->get_element_ptr()[i] = complete[i];
 	}
 
@@ -2273,36 +2275,6 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 
 	return make_wide_return_vec(result_vec);
 
-/*
-	const auto element_type = type0.get_vector_element_type();
-
-	if(type1.is_function() == false){
-		quark::throw_runtime_error("map() requires start and end to be integers.");
-	}
-	const auto f_arg_types = type1.get_function_args();
-	const auto r_type = type1.get_function_return();
-
-	if(f_arg_types.size() != 1){
-		quark::throw_runtime_error("map() function f requries 1 argument.");
-	}
-
-	if(f_arg_types[0] != element_type){
-		quark::throw_runtime_error("map() function f must accept collection elements as its argument.");
-	}
-
-	const auto input_element_type = f_arg_types[0];
-	const auto output_element_type = r_type;
-
-	const auto f = reinterpret_cast<MAP_F>(arg1_value.function_ptr);
-
-	auto count = arg0_value.vector_ptr->get_element_count();
-	auto result_vec = new VEC_T(make_vec(count));
-	for(int i = 0 ; i < count ; i++){
-		const auto wide_result1 = (*f)(floyd_runtime_ptr, arg0_value.vector_ptr->get_element_ptr()[i]);
-		result_vec->get_element_ptr()[i] = wide_result1.a;
-	}
-	return make_wide_return_vec(result_vec);
-*/
 }
 
 runtime_value_t floyd_funcdef__to_pretty_string(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
