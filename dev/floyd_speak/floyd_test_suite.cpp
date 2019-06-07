@@ -4280,7 +4280,7 @@ QUARK_UNIT_TEST("Floyd test suite", "filter()", "string filter([int], string, fu
 
 
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "supermap()", "No dependencies", ""){
+QUARK_UNIT_TEST("Floyd test suite", "supermap()", "No dependencies", ""){
 	run_closed(R"(
 
 		func string f(string v, [string] inputs){

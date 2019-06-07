@@ -6,7 +6,7 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-const bool k_trace_input_output = true;
+const bool k_trace_input_output = false;
 const bool k_trace_types = false;
 
 #include "floyd_llvm_codegen.h"
@@ -1680,6 +1680,8 @@ static llvm::Value* generate_expression(llvm_code_generator_t& gen_acc, llvm::Fu
 			const auto s = find_symbol(gen_acc, expr.address);
 			if(s.symtype == resolved_symbol_t::esymtype::k_function_argument){
 				auto result = s.value_ptr;
+
+				//	No need to retain function arguments! We should track which expression-outputs that need release.
 				generate_retain(gen_acc, emit_f, *result, e.get_output_type());
 				return result;
 			}

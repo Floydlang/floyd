@@ -54,6 +54,7 @@
 namespace floyd {
 
 
+static void release_deep(llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type);
 
 
 
@@ -195,6 +196,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typei
 		const auto main_args3 = value_t::make_vector_value(typeid_t::make_string(), main_args2);
 		const auto main_args4 = to_runtime_value(ee, main_args3);
 		const auto main_result_int = (*f2)(&ee, main_args4);
+		release_deep(ee, main_args4, typeid_t::make_vector(typeid_t::make_string()));
 		return main_result_int;
 	}
 	else if(f.second == get_main_signature_no_arg_impure() || f.second == get_main_signature_no_arg_pure()){
@@ -2245,7 +2247,9 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 			runtime_value_t solved_deps3 { .vector_ptr = solved_deps2 };
 
 			const auto wide_result = (*f2)(floyd_runtime_ptr, e, solved_deps3);
-			release_vec_deep(r, solved_deps2, typeid_t::make_vector(r_type));
+
+			//	Releas just the vec, not the elements. The elements are aliases for complete-vector.
+			vec_releaseref(solved_deps2);
 
 			const auto result1 = wide_result.a;
 
@@ -2262,11 +2266,11 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 	const auto count = complete.size();
 	auto result_vec = alloc_vec(r.heap, count, count);
 	for(int i = 0 ; i < count ; i++){
-		retain_value(r, complete[i], r_type);
+//		retain_value(r, complete[i], r_type);
 		result_vec->get_element_ptr()[i] = complete[i];
 	}
 
-#if 1
+#if 0
 	const auto vec_r = runtime_value_t{ .vector_ptr = result_vec };
 	const auto result_value = from_runtime_value(r, vec_r, typeid_t::make_vector(r_type));
 	const auto debug = value_and_type_to_ast_json(result_value);
@@ -2274,7 +2278,6 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 #endif
 
 	return make_wide_return_vec(result_vec);
-
 }
 
 runtime_value_t floyd_funcdef__to_pretty_string(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
