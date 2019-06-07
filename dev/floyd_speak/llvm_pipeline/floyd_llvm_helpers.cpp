@@ -57,13 +57,26 @@ namespace floyd {
 
 
 
+#if 0
+void save_page(const std::string &url){
+    // simulate a long page fetch
+//    std::this_thread::sleep_for(std::chrono::seconds(2));
+    std::string result = "fake content";
+	
+    std::lock_guard<std::recursive_mutex> guard(g_pages_mutex);
+    g_pages[url] = result;
+}
+#endif
+
+
+
 ////////////////////////////////		heap_t
 
 
 
 void trace_alloc(const heap_rec_t& e){
-	QUARK_TRACE_SS(
-		"used: " << e.in_use
+	QUARK_TRACE_SS(""
+//		<< "used: " << e.in_use
 		<< " rc: " << e.alloc_ptr->rc
 		<< " debug[0]: " << e.alloc_ptr->debug_info[0]
 		<< " data_a: " << e.alloc_ptr->data_a
@@ -75,6 +88,9 @@ void trace_heap(const heap_t& heap){
 
 	if(false){
 		QUARK_SCOPED_TRACE("HEAP");
+
+		std::lock_guard<std::recursive_mutex> guard(*heap.alloc_records_mutex);
+
 		for(int i = 0 ; i < heap.alloc_records.size() ; i++){
 			const auto& e = heap.alloc_records[i];
 			trace_alloc(e);
@@ -116,32 +132,40 @@ heap_t::~heap_t(){
 
 
 heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count){
+	QUARK_ASSERT(heap.check_invariant());
+
 	const auto header_size = sizeof(heap_alloc_64_t);
 	QUARK_ASSERT(header_size == 64);
 
-	const auto malloc_size = header_size + allocation_word_count * sizeof(uint64_t);
-	void* alloc0 = std::malloc(malloc_size);
-	if(alloc0 == nullptr){
-		throw std::exception();
+	{
+		std::lock_guard<std::recursive_mutex> guard(*heap.alloc_records_mutex);
+
+
+		const auto malloc_size = header_size + allocation_word_count * sizeof(uint64_t);
+		void* alloc0 = std::malloc(malloc_size);
+		if(alloc0 == nullptr){
+			throw std::exception();
+		}
+
+		auto alloc = reinterpret_cast<heap_alloc_64_t*>(alloc0);
+
+		alloc->allocation_word_count = allocation_word_count;
+		alloc->rc = 1;
+		alloc->magic = ALLOC_64_MAGIC;
+
+		alloc->data_a = 0;
+		alloc->data_b = 0;
+		alloc->data_c = 0;
+
+		alloc->heap64 = &heap;
+		memset(&alloc->debug_info[0], 0x00, 16);
+
+		heap.alloc_records.push_back({ alloc });
+
+		QUARK_ASSERT(alloc->check_invariant());
+		QUARK_ASSERT(heap.check_invariant());
+		return alloc;
 	}
-
-	auto alloc = reinterpret_cast<heap_alloc_64_t*>(alloc0);
-
-	alloc->allocation_word_count = allocation_word_count;
-	alloc->rc = 1;
-	alloc->magic = ALLOC_64_MAGIC;
-
-	alloc->data_a = 0;
-	alloc->data_b = 0;
-	alloc->data_c = 0;
-
-	alloc->heap64 = &heap;
-	memset(&alloc->debug_info[0], 0x00, 16);
-
-	heap.alloc_records.push_back({ alloc, true });
-
-	QUARK_ASSERT(alloc->check_invariant());
-	return alloc;
 }
 
 QUARK_UNIT_TEST("heap_t", "alloc_64()", "", ""){
@@ -242,11 +266,13 @@ void add_ref(heap_alloc_64_t& alloc){
 void dispose_alloc(heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
 
+	std::lock_guard<std::recursive_mutex> guard(*alloc.heap64->alloc_records_mutex);
+
 	auto it = std::find_if(alloc.heap64->alloc_records.begin(), alloc.heap64->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == &alloc; });
 	QUARK_ASSERT(it != alloc.heap64->alloc_records.end());
 
-	QUARK_ASSERT(it->in_use);
-	it->in_use = false;
+//	QUARK_ASSERT(it->in_use);
+//	it->in_use = false;
 
 	//??? we don't delete the malloc() block in debug version.
 }
@@ -261,17 +287,21 @@ void release_ref(heap_alloc_64_t& alloc){
 }
 
 bool heap_t::check_invariant() const{
+	std::lock_guard<std::recursive_mutex> guard(*alloc_records_mutex);
 	for(const auto& e: alloc_records){
 		QUARK_ASSERT(e.alloc_ptr != nullptr);
 		QUARK_ASSERT(e.alloc_ptr->heap64 == this);
 		QUARK_ASSERT(e.alloc_ptr->check_invariant());
 
+/*
 		if(e.in_use){
 			QUARK_ASSERT(e.alloc_ptr->rc > 0);
 		}
 		else{
 			QUARK_ASSERT(e.alloc_ptr->rc == 0);
 		}
+*/
+
 	}
 	return true;
 }
@@ -280,8 +310,9 @@ int heap_t::count_used() const {
 	QUARK_ASSERT(check_invariant());
 
 	int result = 0;
+	std::lock_guard<std::recursive_mutex> guard(*alloc_records_mutex);
 	for(const auto& e: alloc_records){
-		if(e.in_use){
+		if(e.alloc_ptr->rc){
 			result = result + 1;
 		}
 	}
@@ -711,6 +742,8 @@ bool VEC_T::check_invariant() const {
 }
 
 VEC_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count){
+	QUARK_ASSERT(heap.check_invariant());
+
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count);
 	alloc->data_a = element_count;
 	alloc->debug_info[0] = 'V';
@@ -718,6 +751,10 @@ VEC_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count
 	alloc->debug_info[2] = 'C';
 
 	auto vec = reinterpret_cast<VEC_T*>(alloc);
+
+	QUARK_ASSERT(vec->check_invariant());
+	QUARK_ASSERT(heap.check_invariant());
+
 	return vec;
 }
 
@@ -725,6 +762,7 @@ void dispose_vec(VEC_T& vec){
 	QUARK_ASSERT(vec.check_invariant());
 
 	dispose_alloc(vec.alloc);
+	QUARK_ASSERT(vec.alloc.heap64->check_invariant());
 }
 
 
@@ -764,6 +802,8 @@ uint64_t DICT_T::size() const {
 }
 
 DICT_T* alloc_dict(heap_t& heap){
+	QUARK_ASSERT(heap.check_invariant());
+
 	heap_alloc_64_t* alloc = alloc_64(heap, 0);
 	auto dict = reinterpret_cast<DICT_T*>(alloc);
 
@@ -774,6 +814,10 @@ DICT_T* alloc_dict(heap_t& heap){
 
 	auto& m = dict->get_map_mut();
     new (&m) STDMAP();
+
+	QUARK_ASSERT(heap.check_invariant());
+	QUARK_ASSERT(dict->check_invariant());
+
 	return dict;
 }
 
@@ -782,6 +826,7 @@ void dispose_dict(DICT_T& dict){
 
 	dict.get_map_mut().~STDMAP();
 	dispose_alloc(dict.alloc);
+	QUARK_ASSERT(dict.alloc.heap64->check_invariant());
 }
 
 
@@ -829,6 +874,7 @@ JSON_T* alloc_json(heap_t& heap, const json_t& init){
 	json->alloc.data_a = reinterpret_cast<uint64_t>(copy);
 
 	QUARK_ASSERT(json->check_invariant());
+	QUARK_ASSERT(heap.check_invariant());
 	return json;
 }
 
@@ -838,13 +884,15 @@ void dispose_json(JSON_T& json){
 	delete &json.get_json();
 	json.alloc.data_a = 666;
 	dispose_alloc(json.alloc);
+
+	QUARK_ASSERT(json.alloc.heap64->check_invariant());
 }
 
 
 
 
 
-////////////////////////////////		VEC_T
+////////////////////////////////		STRUCT_T
 
 
 
@@ -877,6 +925,8 @@ void dispose_struct(STRUCT_T& s){
 	QUARK_ASSERT(s.check_invariant());
 
 	dispose_alloc(s.alloc);
+
+	QUARK_ASSERT(s.alloc.heap64->check_invariant());
 }
 
 

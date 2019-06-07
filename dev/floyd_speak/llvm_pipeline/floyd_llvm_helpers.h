@@ -76,7 +76,7 @@ struct heap_alloc_64_t {
 
 struct heap_rec_t {
 	heap_alloc_64_t* alloc_ptr;
-	bool in_use;
+//	bool in_use;
 };
 
 static const uint64_t HEAP_MAGIC = 0xf00d1234;
@@ -85,6 +85,7 @@ struct heap_t {
 	heap_t() :
 		magic(0xf00d1234)
 	{
+		alloc_records_mutex = std::make_shared<std::recursive_mutex>();
 	}
 	~heap_t();
 	public: bool check_invariant() const;
@@ -93,6 +94,7 @@ struct heap_t {
 
 	////////////////////////////////		STATE
 	uint64_t magic;
+	std::shared_ptr<std::recursive_mutex> alloc_records_mutex;
 	std::vector<heap_rec_t> alloc_records;
 };
 

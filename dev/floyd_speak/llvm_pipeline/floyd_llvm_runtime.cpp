@@ -536,6 +536,7 @@ llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp){
 	auto ptr = reinterpret_cast<llvm_execution_engine_t*>(frp);
 	QUARK_ASSERT(ptr != nullptr);
 	QUARK_ASSERT(ptr->debug_magic == k_debug_magic);
+	QUARK_ASSERT(ptr->check_invariant());
 	return *ptr;
 }
 
