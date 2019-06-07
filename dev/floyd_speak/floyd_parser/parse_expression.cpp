@@ -231,8 +231,10 @@ Escape sequence	Hex value in ASCII	Character represented
 \uhhhhnote 4	none	Unicode code point below 10000 hexadecimal
 */
 //??? add tests for this.
-char expand_one_char_escape(const char ch2){
+int64_t expand_one_char_escape(const char ch2){
 	switch(ch2){
+		case '0':
+			return 0x00;
 		case 'a':
 			return 0x07;
 		case 'b':
@@ -254,7 +256,7 @@ char expand_one_char_escape(const char ch2){
 		case '"':
 			return 0x22;
 		default:
-			return 0;
+			return -1;
 	}
 }
 
@@ -272,12 +274,13 @@ std::pair<std::string, seq_t> parse_string_literal(const seq_t& s){
 			}
 			else{
 				const auto ch2 = pos.first(2)[1];
-				const char expanded_char = expand_one_char_escape(ch2);
-				if(expanded_char == 0x00){
+				const auto expanded_char = expand_one_char_escape(ch2);
+				if(expanded_char == -1){
 					throw_compiler_error_nopos("Unknown escape character \"" + std::string(1, ch2) + "\" in string literal: \"" + result + "\"!");
 				}
 				else{
-					result += std::string(1, expanded_char);
+					QUARK_ASSERT(expanded_char >= 0 && expanded_char < 256);
+					result += std::string(1, static_cast<uint8_t>(expanded_char));
 					pos = pos.rest(2);
 				}
 			}
@@ -314,6 +317,9 @@ QUARK_UNIT_TEST("parser", "parse_string_literal()", "", ""){
 	);
 }
 
+QUARK_UNIT_TEST("parser", "parse_string_literal()", "Escape \0", ""){
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\0" xxx)___")), std::pair<std::string, seq_t>(std::string(1, '\0'), seq_t(" xxx")));
+}
 QUARK_UNIT_TEST("parser", "parse_string_literal()", "Escape \t", ""){
 	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\t" xxx)___")), std::pair<std::string, seq_t>("\t", seq_t(" xxx")));
 }

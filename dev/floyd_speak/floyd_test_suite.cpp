@@ -2171,11 +2171,9 @@ QUARK_UNIT_TEST("Floyd test suite", "string size()", "", ""){
 	run_closed(R"(		assert(size("How long is this string?") == 24)		)");
 }
 
-#if 0
 QUARK_UNIT_TEST("Floyd test suite", "string size()", "Embeded null characters - check 8 bit clean", ""){
 	run_closed(R"(		assert(size("hello\0world\0\0") == 13)		)");
 }
-#endif
 
 QUARK_UNIT_TEST("Floyd test suite", "string push_back()", "", ""){
 	run_closed(R"(

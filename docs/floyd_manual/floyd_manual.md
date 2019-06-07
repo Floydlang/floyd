@@ -1391,6 +1391,7 @@ You can use these escape characters in string literals by entering \n or \' or \
 
 |ESCAPE SEQUENCE	| RESULT CHARACTER, AS HEX		| ASCII MEANING
 |:---				|:---						|:---
+| \0		| 0x00	| ZERO
 | \a		| 0x07	| BEL, bell, alarm, \a
 | \b		| 0x08	| BS, backspace, \b
 | \f		| 0x0c	| FF, NP, form feed, \f
