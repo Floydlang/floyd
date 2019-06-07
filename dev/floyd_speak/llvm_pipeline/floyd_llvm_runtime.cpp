@@ -836,7 +836,7 @@ host_func_t fr_retain_json__make(llvm::LLVMContext& context, const llvm_type_int
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(interner),
-			intern_type(interner, typeid_t::make_json_value()),
+			get_exact_llvm_type(interner, typeid_t::make_json_value()),
 			make_runtime_type_type(context)
 		},
 		false
@@ -867,7 +867,7 @@ host_func_t fr_release_json__make(llvm::LLVMContext& context, const llvm_type_in
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(interner),
-			intern_type(interner, typeid_t::make_json_value()),
+			get_exact_llvm_type(interner, typeid_t::make_json_value()),
 			make_runtime_type_type(context)
 		},
 		false
@@ -1121,7 +1121,7 @@ host_func_t floyd_runtime__store_dict_mutable__make(llvm::LLVMContext& context, 
 		{
 			make_frp_type(interner),
 			make_generic_dict_type(interner)->getPointerTo(),
-			intern_type(interner, typeid_t::make_string()),
+			get_exact_llvm_type(interner, typeid_t::make_string()),
 			make_runtime_value_type(context),
 			make_runtime_type_type(context)
 		},
@@ -1155,7 +1155,7 @@ host_func_t floyd_runtime__lookup_dict__make(llvm::LLVMContext& context, const l
 		{
 			make_frp_type(interner),
 			make_generic_dict_type(interner)->getPointerTo(),
-			intern_type(interner, typeid_t::make_string())
+			get_exact_llvm_type(interner, typeid_t::make_string())
 		},
 		false
 	);
@@ -1182,7 +1182,7 @@ JSON_T* floyd_runtime__allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_
 
 host_func_t floyd_runtime__allocate_json__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		intern_type(interner, typeid_t::make_json_value()),
+		get_exact_llvm_type(interner, typeid_t::make_json_value()),
 		{
 			make_frp_type(interner),
 			make_runtime_value_type(context),
@@ -1231,10 +1231,10 @@ JSON_T* floyd_runtime__lookup_json(floyd_runtime_t* frp, JSON_T* json_ptr, runti
 
 host_func_t floyd_runtime__lookup_json__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		intern_type(interner, typeid_t::make_json_value()),
+		get_exact_llvm_type(interner, typeid_t::make_json_value()),
 		{
 			make_frp_type(interner),
-			intern_type(interner, typeid_t::make_json_value()),
+			get_exact_llvm_type(interner, typeid_t::make_json_value()),
 			make_runtime_value_type(context),
 			make_runtime_type_type(context)
 		},
@@ -1267,10 +1267,10 @@ runtime_value_t floyd_runtime__json_to_string(floyd_runtime_t* frp, JSON_T* json
 
 host_func_t floyd_runtime__json_to_string__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		intern_type(interner, typeid_t::make_string()),
+		get_exact_llvm_type(interner, typeid_t::make_string()),
 		{
 			make_frp_type(interner),
-			intern_type(interner, typeid_t::make_json_value())
+			get_exact_llvm_type(interner, typeid_t::make_json_value())
 		},
 		false
 	);

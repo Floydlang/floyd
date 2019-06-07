@@ -1010,7 +1010,7 @@ llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const llv
 	QUARK_ASSERT(function_type.is_function());
 
 	const auto ret = function_type.get_function_return();
-	llvm::Type* return_type = ret.is_any() ? make_wide_return_type(interner) : intern_type(interner, ret);
+	llvm::Type* return_type = ret.is_any() ? make_wide_return_type(interner) : get_exact_llvm_type(interner, ret);
 
 	const auto args = function_type.get_function_args();
 	std::vector<llvm_arg_mapping_t> arg_results;
@@ -1029,7 +1029,7 @@ llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const llv
 			arg_results.push_back({ make_runtime_type_type(context), std::to_string(index), typeid_t::make_undefined(), index, llvm_arg_mapping_t::map_type::k_dyn_type });
 		}
 		else {
-			auto arg_itype = intern_type(interner, arg);
+			auto arg_itype = get_exact_llvm_type(interner, arg);
 			arg_results.push_back({ arg_itype, std::to_string(index), arg, index, llvm_arg_mapping_t::map_type::k_known_value_type });
 		}
 	}
@@ -1181,7 +1181,7 @@ llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& 
 
 
 
-////////////////////////////////		intern_type()
+////////////////////////////////		get_exact_llvm_type()
 
 
 
@@ -1203,7 +1203,7 @@ static llvm::StructType* make_exact_struct_type(llvm::LLVMContext& context, cons
 
 	std::vector<llvm::Type*> members;
 	for(const auto& m: type.get_struct_ref()->_members){
-		const auto m2 = intern_type(interner, m._type);
+		const auto m2 = get_exact_llvm_type(interner, m._type);
 		members.push_back(m2);
 	}
 	llvm::StructType* s = llvm::StructType::get(context, members, false);
@@ -1318,7 +1318,6 @@ static llvm::Type* make_exact_type_internal(llvm::LLVMContext& context, llvm_typ
 
 		llvm::Type* operator()(const typeid_t::struct_t& e) const{
 			return make_exact_struct_type(context, interner, type)->getPointerTo();
-//			return get_generic_struct_type(interner)->getPointerTo();
 		}
 		llvm::Type* operator()(const typeid_t::vector_t& e) const{
 			return make_generic_vec_type(interner)->getPointerTo();
@@ -1381,7 +1380,7 @@ bool llvm_type_interner_t::check_invariant() const {
 	return true;
 }
 
-llvm::Type* intern_type(const llvm_type_interner_t& i, const typeid_t& type){
+llvm::Type* get_exact_llvm_type(const llvm_type_interner_t& i, const typeid_t& type){
 	if(type.is_vector()){
 		return i.generic_vec_type->getPointerTo();
 	}
@@ -1403,7 +1402,7 @@ llvm::Type* intern_type(const llvm_type_interner_t& i, const typeid_t& type){
 }
 
 
-//??? Make intern_type() return vector, struct etc. directly, not getPointerTo().
+//??? Make get_exact_llvm_type() return vector, struct etc. directly, not getPointerTo().
 llvm::StructType* get_exact_struct_type(const llvm_type_interner_t& i, const typeid_t& type){
 	QUARK_ASSERT(type.is_struct());
 
@@ -1420,7 +1419,7 @@ llvm::StructType* get_exact_struct_type(const llvm_type_interner_t& i, const typ
 //	return make_exact_struct_type(context, interner, type)->getPointerTo();
 
 /*
-	auto result = intern_type(interner, type);
+	auto result = get_exact_llvm_type(interner, type);
 	auto result2 = deref_ptr(result);
 	return llvm::cast<llvm::StructType>(result2);
 */
@@ -1455,11 +1454,11 @@ llvm::Type* get_generic_runtime_type(const llvm_type_interner_t& interner){
 
 
 llvm::Type* make_function_type(const llvm_type_interner_t& interner, const typeid_t& function_type){
-	return intern_type(interner, function_type);
+	return get_exact_llvm_type(interner, function_type);
 }
 
 llvm::StructType* make_struct_type(const llvm_type_interner_t& interner, const typeid_t& type){
-	auto struct_ptr = intern_type(interner, type);
+	auto struct_ptr = get_exact_llvm_type(interner, type);
 	auto struct_byvalue = deref_ptr(struct_ptr);
 	return llvm::cast<llvm::StructType>(struct_byvalue);
 }

@@ -519,7 +519,7 @@ llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const llv
 llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& symbol_name, llvm::Type& itype, llvm::Constant* init_or_nullptr);
 
 
-////////////////////////////////		intern_type()
+////////////////////////////////		get_exact_llvm_type()
 
 /*
 	Type interner: keeps a list of all types used statically in the program, their itype, their LLVM type and their Floyd type.
@@ -547,7 +547,7 @@ struct llvm_type_interner_t {
 };
 
 //	Returns the LLVM type used to pass this type of value around. It uses generic types for vector, dict and struct.
-llvm::Type* intern_type(const llvm_type_interner_t& interner, const typeid_t& type);
+llvm::Type* get_exact_llvm_type(const llvm_type_interner_t& interner, const typeid_t& type);
 
 //	Returns the exact LLVM struct layout that maps to the struct members, without any alloc-64 header. Not a pointer.
 llvm::StructType* get_exact_struct_type(const llvm_type_interner_t& interner, const typeid_t& type);

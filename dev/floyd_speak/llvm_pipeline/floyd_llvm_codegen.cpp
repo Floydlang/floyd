@@ -592,7 +592,7 @@ static llvm::Value* generate_alloc_struct(llvm_code_generator_t& gen_acc, llvm::
 
 //	llvm::Constant* str_size = llvm::ConstantInt::get(builder.getInt64Ty(), s.size());
 
-	auto vec_ptr_type = intern_type(context, typeid_t::make_string());
+	auto vec_ptr_type = get_exact_llvm_type(context, typeid_t::make_string());
 
 	//	Cannot init the VEC_T completely at runtime since its element_ptr is static and should not be freed!?
 	llvm::Constant* element_ptr = nullptr;
@@ -668,7 +668,7 @@ llvm::Value* generate_constant(llvm_code_generator_t& gen_acc, llvm::Function& e
 	auto& context = gen_acc.module->getContext();
 
 	const auto type = value.get_type();
-	const auto itype = intern_type(gen_acc.interner, type);
+	const auto itype = get_exact_llvm_type(gen_acc.interner, type);
 
 	struct visitor_t {
 		llvm_code_generator_t& gen_acc;
@@ -707,7 +707,7 @@ llvm::Value* generate_constant(llvm_code_generator_t& gen_acc, llvm::Function& e
 			//	NOTICE: There is no clean way to embedd a json_value containing a json-null into the code segment.
 			//	Here we use a nullptr instead of json_t*. This means we have to be prepared for json_t::null AND nullptr.
 			if(json_value0.is_null()){
-				auto json_type = intern_type(gen_acc.interner, typeid_t::make_json_value());
+				auto json_type = get_exact_llvm_type(gen_acc.interner, typeid_t::make_json_value());
 				llvm::PointerType* pointer_type = llvm::cast<llvm::PointerType>(json_type);
 				return llvm::ConstantPointerNull::get(pointer_type);
 			}
@@ -770,7 +770,7 @@ static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_code_generator_
 	std::vector<resolved_symbol_t> result;
 	for(const auto& e: symbol_table._symbols){
 		const auto type = e.second.get_type();
-		const auto itype = intern_type(gen_acc.interner, type);
+		const auto itype = get_exact_llvm_type(gen_acc.interner, type);
 
 		//	Reserve stack slot for each local.
 		llvm::Value* dest = gen_acc.builder.CreateAlloca(itype, nullptr, e.first);
@@ -1271,7 +1271,7 @@ static llvm::Value* generate_conditional_operator_expression(llvm_code_generator
 	auto& builder = gen_acc.builder;
 
 	const auto result_type = e.get_output_type();
-	const auto result_itype = intern_type(gen_acc.interner, result_type);
+	const auto result_itype = get_exact_llvm_type(gen_acc.interner, result_type);
 
 	llvm::Value* condition_reg = generate_expression(gen_acc, emit_f, *conditional.condition);
 
@@ -1465,7 +1465,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 
 	if(target_type.is_vector()){
 		const auto element_type0 = target_type.get_vector_element_type();
-		auto& element_type1 = *intern_type(gen_acc.interner, element_type0);
+		auto& element_type1 = *get_exact_llvm_type(gen_acc.interner, element_type0);
 
 		auto vec_ptr_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
 		auto ptr_reg = generate_get_vec_element_ptr2(gen_acc, emit_f, *vec_ptr_reg);
@@ -2077,7 +2077,7 @@ std::vector<resolved_symbol_t> generate_function_local_symbols(llvm_code_generat
 	std::vector<resolved_symbol_t> result;
 	for(const auto& e: symbol_table._symbols){
 		const auto type = e.second.get_type();
-		const auto itype = intern_type(gen_acc.interner, type);
+		const auto itype = get_exact_llvm_type(gen_acc.interner, type);
 
 		//	Figure out if this symbol is an argument or a local variable.
 		//	Check if we can find an argument with this name => it's an argument.
@@ -2135,8 +2135,8 @@ static llvm::Value* generate_global(llvm_code_generator_t& gen_acc, llvm::Functi
 	auto& context = gen_acc.module->getContext();
 
 	const auto type0 = symbol.get_type();
-	const auto itype = intern_type(gen_acc.interner, type0);
-//	const auto itype = type0.is_struct() ? get_generic_struct_type(gen_acc.interner)->getPointerTo() : intern_type(gen_acc.interner, type0);
+	const auto itype = get_exact_llvm_type(gen_acc.interner, type0);
+//	const auto itype = type0.is_struct() ? get_generic_struct_type(gen_acc.interner)->getPointerTo() : get_exact_llvm_type(gen_acc.interner, type0);
 
 	if(symbol._init.is_undefined()){
 		return generate_global0(module, symbol_name, *itype, nullptr);
@@ -2262,7 +2262,7 @@ static llvm::Function* generate_function_prototype(llvm::Module& module, const l
 	const auto mapping0 = map_function_arguments(context, interner, function_type);
 	const auto mapping = name_args(mapping0, function_def._args);
 
-	llvm::Type* function_ptr_type = intern_type(interner, function_type);
+	llvm::Type* function_ptr_type = get_exact_llvm_type(interner, function_type);
 	const auto function_byvalue_type = deref_ptr(function_ptr_type);
 
 	//	IMPORTANT: Must cast to (llvm::FunctionType*) to get correct overload of getOrInsertFunction() to be called!
