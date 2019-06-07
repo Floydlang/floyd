@@ -59,7 +59,7 @@ static void release_deep(llvm_execution_engine_t& runtime, runtime_value_t value
 
 
 
-llvm_execution_engine_t& get_floyd_runtime(void* floyd_runtime_ptr);
+llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp);
 
 value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type);
 runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t& value);
@@ -195,13 +195,13 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typei
 		}
 		const auto main_args3 = value_t::make_vector_value(typeid_t::make_string(), main_args2);
 		const auto main_args4 = to_runtime_value(ee, main_args3);
-		const auto main_result_int = (*f2)(&ee, main_args4);
+		const auto main_result_int = (*f2)(reinterpret_cast<floyd_runtime_t*>(&ee), main_args4);
 		release_deep(ee, main_args4, typeid_t::make_vector(typeid_t::make_string()));
 		return main_result_int;
 	}
 	else if(f.second == get_main_signature_no_arg_impure() || f.second == get_main_signature_no_arg_pure()){
 		const auto f2 = *reinterpret_cast<FLOYD_RUNTIME_MAIN_NO_ARGS_IMPURE*>(f.first);
-		const auto main_result_int = (*f2)(&ee);
+		const auto main_result_int = (*f2)(reinterpret_cast<floyd_runtime_t*>(&ee));
 		return main_result_int;
 	}
 	else{
@@ -530,17 +530,17 @@ ret i32 %2
 }
 */
 
-llvm_execution_engine_t& get_floyd_runtime(void* floyd_runtime_ptr){
-	QUARK_ASSERT(floyd_runtime_ptr != nullptr);
+llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp){
+	QUARK_ASSERT(frp != nullptr);
 
-	auto ptr = reinterpret_cast<llvm_execution_engine_t*>(floyd_runtime_ptr);
+	auto ptr = reinterpret_cast<llvm_execution_engine_t*>(frp);
 	QUARK_ASSERT(ptr != nullptr);
 	QUARK_ASSERT(ptr->debug_magic == k_debug_magic);
 	return *ptr;
 }
 
-void hook(const std::string& s, void* floyd_runtime_ptr, runtime_value_t arg){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void hook(const std::string& s, floyd_runtime_t* frp, runtime_value_t arg){
+	auto& r = get_floyd_runtime(frp);
 	throw std::runtime_error("HOST FUNCTION NOT IMPLEMENTED FOR LLVM");
 }
 
@@ -703,8 +703,8 @@ static void release_struct_deep(llvm_execution_engine_t& runtime, STRUCT_T* s, c
 ////////////////////////////////		fr_retain_vec()
 
 
-void fr_retain_vec(void* floyd_runtime_ptr, VEC_T* vec, runtime_type_t type0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void fr_retain_vec(floyd_runtime_t* frp, VEC_T* vec, runtime_type_t type0){
+	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(vec != nullptr);
 	const auto type = lookup_type(r.type_interner.interner, type0);
 	QUARK_ASSERT(is_rc_value(type));
@@ -731,8 +731,8 @@ host_func_t fr_retain_vec__make(llvm::LLVMContext& context, const llvm_type_inte
 ////////////////////////////////		fr_release_vec()
 
 
-void fr_release_vec(void* floyd_runtime_ptr, VEC_T* vec, runtime_type_t type0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void fr_release_vec(floyd_runtime_t* frp, VEC_T* vec, runtime_type_t type0){
+	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(vec != nullptr);
 	const auto type = lookup_type(r.type_interner.interner, type0);
 	QUARK_ASSERT(type.is_string() || type.is_vector());
@@ -760,8 +760,8 @@ host_func_t fr_release_vec__make(llvm::LLVMContext& context, const llvm_type_int
 ////////////////////////////////		fr_retain_dict()
 
 
-void fr_retain_dict(void* floyd_runtime_ptr, DICT_T* dict, runtime_type_t type0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void fr_retain_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_type_t type0){
+	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(dict != nullptr);
 	const auto type = lookup_type(r.type_interner.interner, type0);
 	QUARK_ASSERT(is_rc_value(type));
@@ -789,8 +789,8 @@ host_func_t fr_retain_dict__make(llvm::LLVMContext& context, const llvm_type_int
 
 
 
-void fr_release_dict(void* floyd_runtime_ptr, DICT_T* dict, runtime_type_t type0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void fr_release_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_type_t type0){
+	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(dict != nullptr);
 	const auto type = lookup_type(r.type_interner.interner, type0);
 	QUARK_ASSERT(type.is_dict());
@@ -815,8 +815,8 @@ host_func_t fr_release_dict__make(llvm::LLVMContext& context, const llvm_type_in
 ////////////////////////////////		fr_retain_json()
 
 
-void fr_retain_json(void* floyd_runtime_ptr, JSON_T* json, runtime_type_t type0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void fr_retain_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto type = lookup_type(r.type_interner.interner, type0);
 	QUARK_ASSERT(is_rc_value(type));
@@ -848,8 +848,8 @@ host_func_t fr_retain_json__make(llvm::LLVMContext& context, const llvm_type_int
 ////////////////////////////////		fr_release_json()
 
 
-void fr_release_json(void* floyd_runtime_ptr, JSON_T* json, runtime_type_t type0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void fr_release_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
+	auto& r = get_floyd_runtime(frp);
 	const auto type = lookup_type(r.type_interner.interner, type0);
 	QUARK_ASSERT(type.is_json_value());
 
@@ -887,8 +887,8 @@ host_func_t fr_release_json__make(llvm::LLVMContext& context, const llvm_type_in
 ////////////////////////////////		fr_retain_struct()
 
 
-void fr_retain_struct(void* floyd_runtime_ptr, STRUCT_T* v, runtime_type_t type0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void fr_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_type_t type0){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto type = lookup_type(r.type_interner.interner, type0);
 	QUARK_ASSERT(is_rc_value(type));
@@ -914,8 +914,8 @@ host_func_t fr_retain_struct__make(llvm::LLVMContext& context, const llvm_type_i
 ////////////////////////////////		fr_release_struct()
 
 
-void fr_release_struct(void* floyd_runtime_ptr, STRUCT_T* v, runtime_type_t type0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void fr_release_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_type_t type0){
+	auto& r = get_floyd_runtime(frp);
 	const auto type = lookup_type(r.type_interner.interner, type0);
 	QUARK_ASSERT(type.is_struct());
 
@@ -946,7 +946,7 @@ host_func_t fr_release_struct__make(llvm::LLVMContext& context, const llvm_type_
 ////////////////////////////////		allocate_memory()
 
 
-const uint8_t* floyd_runtime__allocate_memory(void* floyd_runtime_ptr, int64_t bytes){
+const uint8_t* floyd_runtime__allocate_memory(floyd_runtime_t* frp, int64_t bytes){
 	auto s = reinterpret_cast<uint8_t*>(std::calloc(1, bytes));
 	return s;
 }
@@ -970,8 +970,8 @@ host_func_t floyd_runtime__allocate_memory__make(llvm::LLVMContext& context, con
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-VEC_T* floyd_runtime__allocate_vector(void* floyd_runtime_ptr, uint64_t element_count){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+VEC_T* floyd_runtime__allocate_vector(floyd_runtime_t* frp, uint64_t element_count){
+	auto& r = get_floyd_runtime(frp);
 
 	auto v = alloc_vec(r.heap, element_count, element_count);
 	return v;
@@ -994,8 +994,8 @@ host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context, con
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-VEC_T* fr_alloc_kstr(void* floyd_runtime_ptr, const char* s, uint64_t size){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+VEC_T* fr_alloc_kstr(floyd_runtime_t* frp, const char* s, uint64_t size){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto a = to_runtime_string(r, std::string(s, s + size));
 	return a.vector_ptr;
@@ -1018,8 +1018,8 @@ host_func_t fr_alloc_kstr__make(llvm::LLVMContext& context, const llvm_type_inte
 ////////////////////////////////		floyd_runtime__concatunate_vectors()
 
 
-VEC_T* floyd_runtime__concatunate_vectors(void* floyd_runtime_ptr, runtime_type_t type, VEC_T* lhs, VEC_T* rhs){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+VEC_T* floyd_runtime__concatunate_vectors(floyd_runtime_t* frp, runtime_type_t type, VEC_T* lhs, VEC_T* rhs){
+	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(lhs != nullptr);
 	QUARK_ASSERT(lhs->check_invariant());
 	QUARK_ASSERT(rhs != nullptr);
@@ -1084,8 +1084,8 @@ host_func_t floyd_runtime__concatunate_vectors__make(llvm::LLVMContext& context,
 ////////////////////////////////		allocate_dict()
 
 
-void* floyd_runtime__allocate_dict(void* floyd_runtime_ptr){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void* floyd_runtime__allocate_dict(floyd_runtime_t* frp){
+	auto& r = get_floyd_runtime(frp);
 
 	auto v = alloc_dict(r.heap);
 	return v;
@@ -1107,8 +1107,8 @@ host_func_t floyd_runtime__allocate_dict__make(llvm::LLVMContext& context, const
 ////////////////////////////////		store_dict()
 
 
-void floyd_runtime__store_dict_mutable(void* floyd_runtime_ptr, DICT_T* dict, runtime_value_t key, runtime_value_t element_value, runtime_type_t element_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void floyd_runtime__store_dict_mutable(floyd_runtime_t* frp, DICT_T* dict, runtime_value_t key, runtime_value_t element_value, runtime_type_t element_type){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto key_string = from_runtime_string(r, key);
 
@@ -1135,8 +1135,8 @@ host_func_t floyd_runtime__store_dict_mutable__make(llvm::LLVMContext& context, 
 ////////////////////////////////		lookup_dict()
 
 
-runtime_value_t floyd_runtime__lookup_dict(void* floyd_runtime_ptr, DICT_T* dict, runtime_value_t s){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+runtime_value_t floyd_runtime__lookup_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_value_t s){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto& m = dict->get_map();
 	const auto key_string = from_runtime_string(r, s);
@@ -1169,8 +1169,8 @@ host_func_t floyd_runtime__lookup_dict__make(llvm::LLVMContext& context, const l
 
 //??? Make named types for all function-argument / return types, like: typedef int16_t* native_json_ptr
 
-JSON_T* floyd_runtime__allocate_json(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+JSON_T* floyd_runtime__allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto value = from_runtime_value(r, arg0_value, type0);
@@ -1200,8 +1200,8 @@ host_func_t floyd_runtime__allocate_json__make(llvm::LLVMContext& context, const
 
 
 
-JSON_T* floyd_runtime__lookup_json(void* floyd_runtime_ptr, JSON_T* json_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+JSON_T* floyd_runtime__lookup_json(floyd_runtime_t* frp, JSON_T* json_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto& json = json_ptr->get_json();
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
@@ -1252,8 +1252,8 @@ host_func_t floyd_runtime__lookup_json__make(llvm::LLVMContext& context, const l
 ////////////////////////////////		json_to_string()
 
 
-runtime_value_t floyd_runtime__json_to_string(void* floyd_runtime_ptr, JSON_T* json_ptr){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+runtime_value_t floyd_runtime__json_to_string(floyd_runtime_t* frp, JSON_T* json_ptr){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto& json = json_ptr->get_json();
 
@@ -1285,8 +1285,8 @@ host_func_t floyd_runtime__json_to_string__make(llvm::LLVMContext& context, cons
 ////////////////////////////////		compare_values()
 
 
-int32_t floyd_runtime__compare_values(void* floyd_runtime_ptr, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+int32_t floyd_runtime__compare_values(floyd_runtime_t* frp, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto value_type = lookup_type(r.type_interner.interner, type);
 
@@ -1341,8 +1341,8 @@ host_func_t floyd_runtime__compare_values__make(llvm::LLVMContext& context, cons
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-STRUCT_T* floyd_runtime__allocate_struct(void* floyd_runtime_ptr, uint64_t size){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+STRUCT_T* floyd_runtime__allocate_struct(floyd_runtime_t* frp, uint64_t size){
+	auto& r = get_floyd_runtime(frp);
 
 	auto v = alloc_struct(r.heap, size);
 	return v;
@@ -1415,8 +1415,8 @@ struct native_sha1_t {
 
 
 
-void floyd_funcdef__assert(void* floyd_runtime_ptr, runtime_value_t arg){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void floyd_funcdef__assert(floyd_runtime_t* frp, runtime_value_t arg){
+	auto& r = get_floyd_runtime(frp);
 
 	bool ok = arg.bool_value == 0 ? false : true;
 	if(!ok){
@@ -1425,8 +1425,8 @@ void floyd_funcdef__assert(void* floyd_runtime_ptr, runtime_value_t arg){
 	}
 }
 
-STRUCT_T* floyd_funcdef__calc_binary_sha1(void* floyd_runtime_ptr, STRUCT_T* binary_ptr){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+STRUCT_T* floyd_funcdef__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* binary_ptr){
+	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(binary_ptr != nullptr);
 
 	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr->get_data_ptr());
@@ -1444,8 +1444,8 @@ STRUCT_T* floyd_funcdef__calc_binary_sha1(void* floyd_runtime_ptr, STRUCT_T* bin
 	return result.struct_ptr;
 }
 
-STRUCT_T* floyd_funcdef__calc_string_sha1(void* floyd_runtime_ptr, runtime_value_t s0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+STRUCT_T* floyd_funcdef__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t s0){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto& s = from_runtime_string(r, s0);
 	const auto sha1 = CalcSHA1(s);
@@ -1460,8 +1460,8 @@ STRUCT_T* floyd_funcdef__calc_string_sha1(void* floyd_runtime_ptr, runtime_value
 	return result.struct_ptr;
 }
 
-void floyd_funcdef__create_directory_branch(void* floyd_runtime_ptr, runtime_value_t path0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void floyd_funcdef__create_directory_branch(floyd_runtime_t* frp, runtime_value_t path0){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
 	if(is_valid_absolute_dir_path(path) == false){
@@ -1471,8 +1471,8 @@ void floyd_funcdef__create_directory_branch(void* floyd_runtime_ptr, runtime_val
 	MakeDirectoriesDeep(path);
 }
 
-void floyd_funcdef__delete_fsentry_deep(void* floyd_runtime_ptr, runtime_value_t path0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void floyd_funcdef__delete_fsentry_deep(floyd_runtime_t* frp, runtime_value_t path0){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
 	if(is_valid_absolute_dir_path(path) == false){
@@ -1482,8 +1482,8 @@ void floyd_funcdef__delete_fsentry_deep(void* floyd_runtime_ptr, runtime_value_t
 	DeleteDeep(path);
 }
 
-uint8_t floyd_funcdef__does_fsentry_exist(void* floyd_runtime_ptr, runtime_value_t path0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+uint8_t floyd_funcdef__does_fsentry_exist(floyd_runtime_t* frp, runtime_value_t path0){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
 	if(is_valid_absolute_dir_path(path) == false){
@@ -1502,8 +1502,8 @@ uint8_t floyd_funcdef__does_fsentry_exist(void* floyd_runtime_ptr, runtime_value
 
 
 
-WIDE_RETURN_T floyd_host_function__erase(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+WIDE_RETURN_T floyd_host_function__erase(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
@@ -1528,8 +1528,8 @@ WIDE_RETURN_T floyd_host_function__erase(void* floyd_runtime_ptr, runtime_value_
 	}
 }
 
-uint32_t floyd_funcdef__exists(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+uint32_t floyd_funcdef__exists(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
@@ -1551,12 +1551,12 @@ uint32_t floyd_funcdef__exists(void* floyd_runtime_ptr, runtime_value_t arg0_val
 
 
 
-typedef runtime_value_t (*FILTER_F)(void* floyd_runtime_ptr, runtime_value_t element_value);
+typedef runtime_value_t (*FILTER_F)(floyd_runtime_t* frp, runtime_value_t element_value);
 
 
 //	[E] filter([E], bool f(E e))
-WIDE_RETURN_T floyd_funcdef__filter(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+WIDE_RETURN_T floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
@@ -1581,7 +1581,7 @@ WIDE_RETURN_T floyd_funcdef__filter(void* floyd_runtime_ptr, runtime_value_t arg
 	std::vector<runtime_value_t> acc;
 	for(int i = 0 ; i < count ; i++){
 		const auto element_value = vec.get_element_ptr()[i];
-		const auto keep = (*f)(floyd_runtime_ptr, element_value);
+		const auto keep = (*f)(frp, element_value);
 		if(keep.bool_value != 0){
 			acc.push_back(element_value);
 
@@ -1606,14 +1606,14 @@ WIDE_RETURN_T floyd_funcdef__filter(void* floyd_runtime_ptr, runtime_value_t arg
 	
 
 
-int64_t floyd_funcdef__find__string(llvm_execution_engine_t& floyd_runtime_ptr, const std::string& str, const std::string& wanted2){
+int64_t floyd_funcdef__find__string(llvm_execution_engine_t& frp, const std::string& str, const std::string& wanted2){
 	const auto r = str.find(wanted2);
 	const auto result = r == std::string::npos ? -1 : static_cast<int64_t>(r);
 	return result;
 }
 
-int64_t floyd_funcdef__find(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, const runtime_value_t arg1_value, runtime_type_t arg1_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+int64_t floyd_funcdef__find(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, const runtime_value_t arg1_value, runtime_type_t arg1_type){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
@@ -1650,8 +1650,8 @@ int64_t floyd_funcdef__find(void* floyd_runtime_ptr, runtime_value_t arg0_value,
 
 
 
-runtime_value_t floyd_funcdef__get_fs_environment(void* floyd_runtime_ptr){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+runtime_value_t floyd_funcdef__get_fs_environment(floyd_runtime_t* frp){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto dirs = GetDirectories();
 
@@ -1680,8 +1680,8 @@ runtime_value_t floyd_funcdef__get_fs_environment(void* floyd_runtime_ptr){
 	return v;
 }
 
-VEC_T* floyd_funcdef__get_fsentries_deep(void* floyd_runtime_ptr, runtime_value_t path0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+VEC_T* floyd_funcdef__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
 	if(is_valid_absolute_dir_path(path) == false){
@@ -1703,8 +1703,8 @@ VEC_T* floyd_funcdef__get_fsentries_deep(void* floyd_runtime_ptr, runtime_value_
 }
 
 
-VEC_T* floyd_funcdef__get_fsentries_shallow(void* floyd_runtime_ptr, runtime_value_t path0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+VEC_T* floyd_funcdef__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
 	if(is_valid_absolute_dir_path(path) == false){
@@ -1725,16 +1725,16 @@ VEC_T* floyd_funcdef__get_fsentries_shallow(void* floyd_runtime_ptr, runtime_val
 	return v.vector_ptr;
 }
 
-STRUCT_T* floyd_funcdef__get_fsentry_info(void* floyd_runtime_ptr, runtime_value_t path0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+STRUCT_T* floyd_funcdef__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto result = impl__get_fsentry_info(from_runtime_string(r, path0));
 	const auto v = to_runtime_value(r, result);
 	return v.struct_ptr;
 }
 
-int64_t floyd_host_function__get_json_type(void* floyd_runtime_ptr, JSON_T* json_ptr){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+int64_t floyd_host_function__get_json_type(floyd_runtime_t* frp, JSON_T* json_ptr){
+	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(json_ptr != nullptr);
 
 	const auto& json = json_ptr->get_json();
@@ -1742,8 +1742,8 @@ int64_t floyd_host_function__get_json_type(void* floyd_runtime_ptr, JSON_T* json
 	return result;
 }
 
-int64_t floyd_funcdef__get_time_of_day(void* floyd_runtime_ptr){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+int64_t floyd_funcdef__get_time_of_day(floyd_runtime_t* frp){
+	auto& r = get_floyd_runtime(frp);
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> elapsed_seconds = t - r._start_time;
@@ -1751,8 +1751,8 @@ int64_t floyd_funcdef__get_time_of_day(void* floyd_runtime_ptr){
 	return static_cast<int64_t>(ms);
 }
 
-runtime_value_t floyd_funcdef__jsonvalue_to_script(void* floyd_runtime_ptr, JSON_T* json_ptr){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+runtime_value_t floyd_funcdef__jsonvalue_to_script(floyd_runtime_t* frp, JSON_T* json_ptr){
+	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(json_ptr != nullptr);
 
 	const auto& json = json_ptr->get_json();
@@ -1761,8 +1761,8 @@ runtime_value_t floyd_funcdef__jsonvalue_to_script(void* floyd_runtime_ptr, JSON
 	return to_runtime_string(r, s);
 }
 
-runtime_value_t floyd_funcdef__jsonvalue_to_value(void* floyd_runtime_ptr, JSON_T* json_ptr, runtime_type_t target_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+runtime_value_t floyd_funcdef__jsonvalue_to_value(floyd_runtime_t* frp, JSON_T* json_ptr, runtime_type_t target_type){
+	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(json_ptr != nullptr);
 
 	const auto& json_value = json_ptr->get_json();
@@ -1778,10 +1778,10 @@ runtime_value_t floyd_funcdef__jsonvalue_to_value(void* floyd_runtime_ptr, JSON_
 
 
 
-	typedef WIDE_RETURN_T (*MAP_F)(void* floyd_runtime_ptr, runtime_value_t arg0_value);
+	typedef WIDE_RETURN_T (*MAP_F)(floyd_runtime_t* frp, runtime_value_t arg0_value);
 
-WIDE_RETURN_T floyd_funcdef__map(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+WIDE_RETURN_T floyd_funcdef__map(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
@@ -1812,7 +1812,7 @@ WIDE_RETURN_T floyd_funcdef__map(void* floyd_runtime_ptr, runtime_value_t arg0_v
 	auto count = arg0_value.vector_ptr->get_element_count();
 	auto result_vec = alloc_vec(r.heap, count, count);
 	for(int i = 0 ; i < count ; i++){
-		const auto wide_result1 = (*f)(floyd_runtime_ptr, arg0_value.vector_ptr->get_element_ptr()[i]);
+		const auto wide_result1 = (*f)(frp, arg0_value.vector_ptr->get_element_ptr()[i]);
 		result_vec->get_element_ptr()[i] = wide_result1.a;
 	}
 	return make_wide_return_vec(result_vec);
@@ -1823,10 +1823,10 @@ WIDE_RETURN_T floyd_funcdef__map(void* floyd_runtime_ptr, runtime_value_t arg0_v
 
 //??? Can mutate the acc string internally.
 
-typedef runtime_value_t (*MAP_STRING_F)(void* floyd_runtime_ptr, runtime_value_t s);
+typedef runtime_value_t (*MAP_STRING_F)(floyd_runtime_t* frp, runtime_value_t s);
 
-runtime_value_t floyd_funcdef__map_string(void* floyd_runtime_ptr, runtime_value_t input_string0, runtime_value_t func){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+runtime_value_t floyd_funcdef__map_string(floyd_runtime_t* frp, runtime_value_t input_string0, runtime_value_t func){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto f = reinterpret_cast<MAP_STRING_F>(func.function_ptr);
 
@@ -1838,7 +1838,7 @@ runtime_value_t floyd_funcdef__map_string(void* floyd_runtime_ptr, runtime_value
 	for(int i = 0 ; i < count ; i++){
 		const auto element = { input_string[i] };
 		const auto x = to_runtime_string(r, element);
-		const auto temp = (*f)(floyd_runtime_ptr, x);
+		const auto temp = (*f)(frp, x);
 
 		release_vec_deep(r, x.vector_ptr, typeid_t::make_string());
 
@@ -1852,8 +1852,8 @@ runtime_value_t floyd_funcdef__map_string(void* floyd_runtime_ptr, runtime_value
 
 
 
-void floyd_funcdef__print(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void floyd_funcdef__print(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto s = gen_to_string(r, arg0_value, arg0_type);
 	printf("%s\n", s.c_str());
@@ -1863,8 +1863,8 @@ void floyd_funcdef__print(void* floyd_runtime_ptr, runtime_value_t arg0_value, r
 
 
 
-WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+WIDE_RETURN_T floyd_funcdef__push_back(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
@@ -1885,7 +1885,7 @@ WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, runtime_value_t 
 		const auto element = arg1_value;
 		const auto element_type = type1;
 
-		auto v2 = floyd_runtime__allocate_vector(floyd_runtime_ptr, vs->get_element_count() + 1);
+		auto v2 = floyd_runtime__allocate_vector(frp, vs->get_element_count() + 1);
 
 		auto dest_ptr = v2->get_element_ptr();
 		auto source_ptr = vs->get_element_ptr();
@@ -1913,19 +1913,19 @@ WIDE_RETURN_T floyd_funcdef__push_back(void* floyd_runtime_ptr, runtime_value_t 
 	}
 }
 
-void floyd_host_function_1022(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+void floyd_host_function_1022(floyd_runtime_t* frp, runtime_value_t arg){
+	hook(__FUNCTION__, frp, arg);
 }
 
 
 
 //		make_rec("reduce", host__reduce, 1035, typeid_t::make_function_dyn_return({ DYN, DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg1)),
 
-	typedef runtime_value_t (*REDUCE_F)(void* floyd_runtime_ptr, runtime_value_t acc_value, runtime_value_t element_value);
+	typedef runtime_value_t (*REDUCE_F)(floyd_runtime_t* frp, runtime_value_t acc_value, runtime_value_t element_value);
 
 //	R map([E] elements, R init, R f(R acc, E e))
-WIDE_RETURN_T floyd_funcdef__reduce(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+WIDE_RETURN_T floyd_funcdef__reduce(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
@@ -1945,7 +1945,7 @@ WIDE_RETURN_T floyd_funcdef__reduce(void* floyd_runtime_ptr, runtime_value_t arg
 
 	for(int i = 0 ; i < count ; i++){
 		const auto element_value = vec.get_element_ptr()[i];
-		const auto acc2 = (*f)(floyd_runtime_ptr, acc, element_value);
+		const auto acc2 = (*f)(frp, acc, element_value);
 
 		release_deep(r, acc, type1);
 		acc = acc2;
@@ -1954,8 +1954,8 @@ WIDE_RETURN_T floyd_funcdef__reduce(void* floyd_runtime_ptr, runtime_value_t arg
 }
 
 
-void floyd_funcdef__rename_fsentry(void* floyd_runtime_ptr, runtime_value_t path0, runtime_value_t name0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void floyd_funcdef__rename_fsentry(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t name0){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
 
@@ -1971,7 +1971,7 @@ void floyd_funcdef__rename_fsentry(void* floyd_runtime_ptr, runtime_value_t path
 }
 
 
-std::string floyd_funcdef__replace__string(llvm_execution_engine_t& floyd_runtime_ptr, const std::string& s, std::size_t start, std::size_t end, const std::string& replace){
+std::string floyd_funcdef__replace__string(llvm_execution_engine_t& frp, const std::string& s, std::size_t start, std::size_t end, const std::string& replace){
 	auto s_len = s.size();
 	auto replace_len = replace.size();
 
@@ -1989,8 +1989,8 @@ std::string floyd_funcdef__replace__string(llvm_execution_engine_t& floyd_runtim
 }
 
 //??? test with RC-elements
-const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+const WIDE_RETURN_T floyd_funcdef__replace(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
+	auto& r = get_floyd_runtime(frp);
 
 	if(start < 0 || end < 0){
 		quark::throw_runtime_error("replace() requires start and end to be non-negative.");
@@ -2037,8 +2037,8 @@ const WIDE_RETURN_T floyd_funcdef__replace(void* floyd_runtime_ptr, runtime_valu
 	}
 }
 
-JSON_T* floyd_funcdef__script_to_jsonvalue(void* floyd_runtime_ptr, runtime_value_t string_s0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+JSON_T* floyd_funcdef__script_to_jsonvalue(floyd_runtime_t* frp, runtime_value_t string_s0){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto string_s = from_runtime_string(r, string_s0);
 
@@ -2047,8 +2047,8 @@ JSON_T* floyd_funcdef__script_to_jsonvalue(void* floyd_runtime_ptr, runtime_valu
 	return result;
 }
 
-void floyd_funcdef__send(void* floyd_runtime_ptr, runtime_value_t process_id0, const JSON_T* message_json_ptr){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void floyd_funcdef__send(floyd_runtime_t* frp, runtime_value_t process_id0, const JSON_T* message_json_ptr){
+	auto& r = get_floyd_runtime(frp);
 
 	QUARK_ASSERT(message_json_ptr != nullptr);
 
@@ -2062,8 +2062,8 @@ void floyd_funcdef__send(void* floyd_runtime_ptr, runtime_value_t process_id0, c
 
 
 
-int64_t floyd_funcdef__size(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+int64_t floyd_funcdef__size(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	if(type0.is_string()){
@@ -2100,8 +2100,8 @@ int64_t floyd_funcdef__size(void* floyd_runtime_ptr, runtime_value_t arg0_value,
 }
 
 //??? Test with RC-elements
-const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+const WIDE_RETURN_T floyd_funcdef__subset(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
+	auto& r = get_floyd_runtime(frp);
 
 	if(start < 0 || end < 0){
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
@@ -2143,10 +2143,10 @@ const WIDE_RETURN_T floyd_funcdef__subset(void* floyd_runtime_ptr, runtime_value
 }
 
 
-typedef WIDE_RETURN_T (*SUPERMAP_F)(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_value_t arg1_value);
+typedef WIDE_RETURN_T (*SUPERMAP_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value);
 
 WIDE_RETURN_T floyd_funcdef__supermap(
-	void* floyd_runtime_ptr,
+	floyd_runtime_t* frp,
 	runtime_value_t arg0_value,
 	runtime_type_t arg0_type,
 	runtime_value_t arg1_value,
@@ -2154,7 +2154,7 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 	runtime_value_t arg2_value,
 	runtime_type_t arg2_type
 ){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
@@ -2246,7 +2246,7 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 			}
 			runtime_value_t solved_deps3 { .vector_ptr = solved_deps2 };
 
-			const auto wide_result = (*f2)(floyd_runtime_ptr, e, solved_deps3);
+			const auto wide_result = (*f2)(frp, e, solved_deps3);
 
 			//	Releas just the vec, not the elements. The elements are aliases for complete-vector.
 			vec_releaseref(solved_deps2);
@@ -2280,8 +2280,8 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 	return make_wide_return_vec(result_vec);
 }
 
-runtime_value_t floyd_funcdef__to_pretty_string(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+runtime_value_t floyd_funcdef__to_pretty_string(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto& value = from_runtime_value(r, arg0_value, type0);
@@ -2290,8 +2290,8 @@ runtime_value_t floyd_funcdef__to_pretty_string(void* floyd_runtime_ptr, runtime
 	return to_runtime_string(r, s);
 }
 
-runtime_value_t floyd_host__to_string(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+runtime_value_t floyd_host__to_string(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto s = gen_to_string(r, arg0_value, arg0_type);
 	return to_runtime_string(r, s);
@@ -2301,8 +2301,8 @@ runtime_value_t floyd_host__to_string(void* floyd_runtime_ptr, runtime_value_t a
 
 //		make_rec("typeof", host__typeof, 1004, typeid_t::make_function(typeid_t::make_typeid(), { DYN }, epure::pure)),
 
-int32_t floyd_host__typeof(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+int32_t floyd_host__typeof(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+	auto& r = get_floyd_runtime(frp);
 
 #if DEBUG
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
@@ -2316,8 +2316,8 @@ int32_t floyd_host__typeof(void* floyd_runtime_ptr, runtime_value_t arg0_value, 
 
 
 
-const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+const WIDE_RETURN_T floyd_funcdef__update(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+	auto& r = get_floyd_runtime(frp);
 
 	auto& context = r.instance->context;
 
@@ -2476,8 +2476,8 @@ const WIDE_RETURN_T floyd_funcdef__update(void* floyd_runtime_ptr, runtime_value
 	}
 }
 
-JSON_T* floyd_funcdef__value_to_jsonvalue(void* floyd_runtime_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+JSON_T* floyd_funcdef__value_to_jsonvalue(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto value0 = from_runtime_value(r, arg0_value, type0);
@@ -2503,24 +2503,24 @@ JSON_T* floyd_funcdef__value_to_jsonvalue(void* floyd_runtime_ptr, runtime_value
 		outputFile.close();
 	}
 
-void floyd_funcdef__write_text_file(void* floyd_runtime_ptr, runtime_value_t path0, runtime_value_t data0){
-	auto& r = get_floyd_runtime(floyd_runtime_ptr);
+void floyd_funcdef__write_text_file(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t data0){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
 	const auto file_contents = from_runtime_string(r, data0);
 	write_text_file(path, file_contents);
 }
 
-void floyd_host_function_1037(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+void floyd_host_function_1037(floyd_runtime_t* frp, runtime_value_t arg){
+	hook(__FUNCTION__, frp, arg);
 }
 
-void floyd_host_function_1038(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+void floyd_host_function_1038(floyd_runtime_t* frp, runtime_value_t arg){
+	hook(__FUNCTION__, frp, arg);
 }
 
-void floyd_host_function_1039(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+void floyd_host_function_1039(floyd_runtime_t* frp, runtime_value_t arg){
+	hook(__FUNCTION__, frp, arg);
 }
 
 
@@ -2528,12 +2528,12 @@ void floyd_host_function_1039(void* floyd_runtime_ptr, runtime_value_t arg){
 
 ///////////////		TEST
 
-void floyd_host_function_2002(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+void floyd_host_function_2002(floyd_runtime_t* frp, runtime_value_t arg){
+	hook(__FUNCTION__, frp, arg);
 }
 
-void floyd_host_function_2003(void* floyd_runtime_ptr, runtime_value_t arg){
-	hook(__FUNCTION__, floyd_runtime_ptr, arg);
+void floyd_host_function_2003(floyd_runtime_t* frp, runtime_value_t arg){
+	hook(__FUNCTION__, frp, arg);
 }
 
 
@@ -2592,7 +2592,7 @@ uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee){
 	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, "floyd_runtime_init"));
 	QUARK_ASSERT(a_func != nullptr);
 
-	int64_t a_result = (*a_func)((void*)&ee);
+	int64_t a_result = (*a_func)(reinterpret_cast<floyd_runtime_t*>(&ee));
 	QUARK_ASSERT(a_result == 667);
 	return a_result;
 }
@@ -2603,7 +2603,7 @@ uint64_t call_floyd_runtime_deinit(llvm_execution_engine_t& ee){
 	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, "floyd_runtime_deinit"));
 	QUARK_ASSERT(a_func != nullptr);
 
-	int64_t a_result = (*a_func)((void*)&ee);
+	int64_t a_result = (*a_func)(reinterpret_cast<floyd_runtime_t*>(&ee));
 	QUARK_ASSERT(a_result == 668);
 	return a_result;
 }
@@ -2718,7 +2718,7 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 		}
 
 		auto f = *reinterpret_cast<FLOYD_RUNTIME_PROCESS_INIT*>(process._init_function->address);
-		const auto result = (*f)(runtime.ee);
+		const auto result = (*f)(reinterpret_cast<floyd_runtime_t*>(runtime.ee));
 		process._process_state = from_runtime_value(*runtime.ee, result, process._init_function->type.get_function_return());
 	}
 
@@ -2756,7 +2756,7 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 				auto f = *reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE*>(process._process_function->address);
 				const auto state2 = to_runtime_value(*runtime.ee, process._process_state);
 				const auto message2 = to_runtime_value(*runtime.ee, value_t::make_json_value(message));
-				const auto result = (*f)(runtime.ee, state2, message2);
+				const auto result = (*f)(reinterpret_cast<floyd_runtime_t*>(runtime.ee), state2, message2);
 				process._process_state = from_runtime_value(*runtime.ee, result, process._process_function->type.get_function_return());
 			}
 		}

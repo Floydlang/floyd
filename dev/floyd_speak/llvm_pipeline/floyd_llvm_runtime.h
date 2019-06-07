@@ -92,38 +92,38 @@ struct llvm_execution_engine_t {
 };
 
 
-typedef int64_t (*FLOYD_RUNTIME_INIT)(void* floyd_runtime_ptr);
-typedef int64_t (*FLOYD_RUNTIME_DEINIT)(void* floyd_runtime_ptr);
-typedef void (*FLOYD_RUNTIME_HOST_FUNCTION)(void* floyd_runtime_ptr, int64_t arg);
+typedef int64_t (*FLOYD_RUNTIME_INIT)(floyd_runtime_t* frp);
+typedef int64_t (*FLOYD_RUNTIME_DEINIT)(floyd_runtime_t* frp);
+typedef void (*FLOYD_RUNTIME_HOST_FUNCTION)(floyd_runtime_t* frp, int64_t arg);
 
 
 
 
 //	func int main([string] args) impure
-typedef int64_t (*FLOYD_RUNTIME_MAIN_ARGS_IMPURE)(void* floyd_runtime_ptr, runtime_value_t args);
+typedef int64_t (*FLOYD_RUNTIME_MAIN_ARGS_IMPURE)(floyd_runtime_t* frp, runtime_value_t args);
 
 //	func int main() impure
-typedef int64_t (*FLOYD_RUNTIME_MAIN_NO_ARGS_IMPURE)(void* floyd_runtime_ptr);
+typedef int64_t (*FLOYD_RUNTIME_MAIN_NO_ARGS_IMPURE)(floyd_runtime_t* frp);
 
 //	func int main([string] args) pure
-typedef int64_t (*FLOYD_RUNTIME_MAIN_ARGS_PURE)(void* floyd_runtime_ptr, runtime_value_t args);
+typedef int64_t (*FLOYD_RUNTIME_MAIN_ARGS_PURE)(floyd_runtime_t* frp, runtime_value_t args);
 
 //	func int main() impure
-typedef int64_t (*FLOYD_RUNTIME_MAIN_NO_ARGS_PURE)(void* floyd_runtime_ptr);
+typedef int64_t (*FLOYD_RUNTIME_MAIN_NO_ARGS_PURE)(floyd_runtime_t* frp);
 
 
 
 
 //		func my_gui_state_t my_gui__init() impure { }
-typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_INIT)(void* floyd_runtime_ptr);
+typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_INIT)(floyd_runtime_t* frp);
 
 //		func my_gui_state_t my_gui(my_gui_state_t state, json_value message) impure{
-typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_MESSAGE)(void* floyd_runtime_ptr, runtime_value_t state, runtime_value_t message);
+typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_MESSAGE)(floyd_runtime_t* frp, runtime_value_t state, runtime_value_t message);
 
 
 
 
-typedef runtime_value_t (*FLOYD_RUNTIME_F)(void* floyd_runtime_ptr, const char* args);
+typedef runtime_value_t (*FLOYD_RUNTIME_F)(floyd_runtime_t* frp, const char* args);
 
 
 const function_def_t& find_function_def2(const std::vector<function_def_t>& function_defs, const std::string& function_name);
