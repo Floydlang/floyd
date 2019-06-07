@@ -2006,7 +2006,6 @@ QUARK_UNIT_TEST("Floyd test suite", "while", "return from within while", ""){
 
 //////////////////////////////////////////		TYPEID - TYPE
 
-//	??? Test converting different types to jsons
 
 
 
@@ -2016,8 +2015,6 @@ QUARK_UNIT_TEST("Floyd test suite", "while", "return from within while", ""){
 //////////////////////////////////////////		STRING - TYPE
 
 
-
-//??? You can append two strings together using the + operation. ??? Replace with string append(string, string)
 
 /*
 ESCAPE SEQUENCE	RESULT CHARACTER, AS HEX	ASCII MEANING
@@ -2032,6 +2029,40 @@ ESCAPE SEQUENCE	RESULT CHARACTER, AS HEX	ASCII MEANING
 '	0x27	Single quotation mark
 \"
 */
+
+
+QUARK_UNIT_TEST("Floyd test suite", "string constructor", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = string(\"ABCD\")", value_t::make_string("ABCD"));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "string constructor", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = \"ABCD\"", value_t::make_string("ABCD"));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "parse_string_literal()", "Escape \0", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\0")___", value_t::make_string(std::string(1, '\0')));
+}
+QUARK_UNIT_TEST("Floyd test suite", "parse_string_literal()", "Escape \t", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\t")___", value_t::make_string("\t"));
+}
+QUARK_UNIT_TEST("Floyd test suite", "parse_string_literal()", "Escape \\", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\\")___", value_t::make_string("\\"));
+}
+QUARK_UNIT_TEST("Floyd test suite", "parse_string_literal()", "Escape \n", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\n")___", value_t::make_string("\n"));
+}
+QUARK_UNIT_TEST("Floyd test suite", "parse_string_literal()", "Escape \r", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\r")___", value_t::make_string("\r"));
+}
+QUARK_UNIT_TEST("Floyd test suite", "parse_string_literal()", "Escape \"", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\"")___", value_t::make_string("\""));
+}
+QUARK_UNIT_TEST("Floyd test suite", "parse_string_literal()", "Escape \'", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\'")___", value_t::make_string("\'"));
+}
+
+
+
 
 
 
@@ -2255,10 +2286,11 @@ QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
 VECTOR FEATURES
 
 Constructor expression
-lookup
-assign
-concat operator +
+Lookup
+Assign
+Concatunation operator +
 Comparisons x 6
+
 print()
 update()		-- string, vector, dict
 size()			-- string, vector, dict

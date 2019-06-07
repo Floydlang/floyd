@@ -919,11 +919,7 @@ let hello = "Greeting message."
 | let d = 8.5				| Allocate an immutable local "d" and initialize it with 8.5. Type will be inferred to double.
 | let e = "hello"				| Allocate an immutable local "e" and initialize it with "hello". Type will be inferred to string.
 | let f = f(3) == 2		| Allocate an immutable local "f" and initialize it true/false. Type will be bool.
-
-| let pixel x = 20 |
-| let int x = {"a": 1, "b": 2} |
-| let int x = 10 |
-| let int (string a) x = f(4 == 5) |
+| let int x = {"a": 1, "b": 2} | Allocate a new dictionary.
 
 
 
@@ -1421,7 +1417,7 @@ Floyd string literals do not support insert hex sequences or Unicode code points
 - __size()__: returns the number of characters in the string, as an integer.
 - __find()__: searches from left to right after a substring and returns its index or -1
 - __push_back()__: appends a character or string to the right side of the string. The character is stored in an int.
-- __subset__: extracts a range of characters from the string, as specified by start and end indexes. aka substr()
+- __subset()__: extracts a range of characters from the string, as specified by start and end indexes. aka substr()
 - __replace()__: replaces a range of a string with another string. Can also be used to erase or insert.
 
 
@@ -1470,7 +1466,7 @@ assert(a == [ 10, 20, 30, 40, 50 ])
 - __size()__: returns the number of elements in the vector, as an integer.
 - __find()__: searches from left to right after a sub-vector and returns its index or -1
 - __push_back()__: appends an element to the right side of the vector.
-- __subset__: extracts a range of elements from the vector, as specified by start and end indexes.
+- __subset()__: extracts a range of elements from the vector, as specified by start and end indexes.
 - __replace()__: replaces a range of a vector with another vector. Can also be used to erase or insert.
 
 
