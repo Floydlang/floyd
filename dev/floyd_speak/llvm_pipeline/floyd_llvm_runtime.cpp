@@ -718,7 +718,7 @@ host_func_t fr_retain_vec__make(llvm::LLVMContext& context, const llvm_type_inte
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			make_vec_type(interner)->getPointerTo(),
 			make_runtime_type_type(context)
 		},
@@ -744,7 +744,7 @@ host_func_t fr_release_vec__make(llvm::LLVMContext& context, const llvm_type_int
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			make_vec_type(interner)->getPointerTo(),
 			make_runtime_type_type(context)
 		},
@@ -775,7 +775,7 @@ host_func_t fr_retain_dict__make(llvm::LLVMContext& context, const llvm_type_int
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			make_dict_type(interner)->getPointerTo(),
 			make_runtime_type_type(context)
 		},
@@ -802,7 +802,7 @@ host_func_t fr_release_dict__make(llvm::LLVMContext& context, const llvm_type_in
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			make_dict_type(interner)->getPointerTo(),
 			make_runtime_type_type(context)
 		},
@@ -835,7 +835,7 @@ host_func_t fr_retain_json__make(llvm::LLVMContext& context, const llvm_type_int
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			intern_type(interner, typeid_t::make_json_value()),
 			make_runtime_type_type(context)
 		},
@@ -866,7 +866,7 @@ host_func_t fr_release_json__make(llvm::LLVMContext& context, const llvm_type_in
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			intern_type(interner, typeid_t::make_json_value()),
 			make_runtime_type_type(context)
 		},
@@ -901,7 +901,7 @@ host_func_t fr_retain_struct__make(llvm::LLVMContext& context, const llvm_type_i
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			get_generic_struct_type(interner)->getPointerTo(),
 			make_runtime_type_type(context)
 		},
@@ -927,7 +927,7 @@ host_func_t fr_release_struct__make(llvm::LLVMContext& context, const llvm_type_
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			get_generic_struct_type(interner)->getPointerTo(),
 			make_runtime_type_type(context)
 		},
@@ -955,7 +955,7 @@ host_func_t floyd_runtime__allocate_memory__make(llvm::LLVMContext& context, con
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context)->getPointerTo(),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			llvm::Type::getInt64Ty(context)
 		},
 		false
@@ -981,7 +981,7 @@ host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context, con
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_vec_type(interner)->getPointerTo(),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			llvm::Type::getInt64Ty(context)
 		},
 		false
@@ -1005,7 +1005,7 @@ host_func_t fr_alloc_kstr__make(llvm::LLVMContext& context, const llvm_type_inte
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_vec_type(interner)->getPointerTo(),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			llvm::Type::getInt8PtrTy(context),
 			llvm::Type::getInt64Ty(context)
 		},
@@ -1068,7 +1068,7 @@ host_func_t floyd_runtime__concatunate_vectors__make(llvm::LLVMContext& context,
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_vec_type(interner)->getPointerTo(),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			make_runtime_type_type(context),
 			make_vec_type(interner)->getPointerTo(),
 			make_vec_type(interner)->getPointerTo()
@@ -1095,7 +1095,7 @@ host_func_t floyd_runtime__allocate_dict__make(llvm::LLVMContext& context, const
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_dict_type(interner)->getPointerTo(),
 		{
-			make_frp_type(context)
+			make_frp_type(interner)
 		},
 		false
 	);
@@ -1119,7 +1119,7 @@ host_func_t floyd_runtime__store_dict_mutable__make(llvm::LLVMContext& context, 
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			make_dict_type(interner)->getPointerTo(),
 			intern_type(interner, typeid_t::make_string()),
 			make_runtime_value_type(context),
@@ -1153,7 +1153,7 @@ host_func_t floyd_runtime__lookup_dict__make(llvm::LLVMContext& context, const l
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_runtime_value_type(context),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			make_dict_type(interner)->getPointerTo(),
 			intern_type(interner, typeid_t::make_string())
 		},
@@ -1184,7 +1184,7 @@ host_func_t floyd_runtime__allocate_json__make(llvm::LLVMContext& context, const
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		intern_type(interner, typeid_t::make_json_value()),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			make_runtime_value_type(context),
 			make_runtime_type_type(context)
 		},
@@ -1233,7 +1233,7 @@ host_func_t floyd_runtime__lookup_json__make(llvm::LLVMContext& context, const l
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		intern_type(interner, typeid_t::make_json_value()),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			intern_type(interner, typeid_t::make_json_value()),
 			make_runtime_value_type(context),
 			make_runtime_type_type(context)
@@ -1269,7 +1269,7 @@ host_func_t floyd_runtime__json_to_string__make(llvm::LLVMContext& context, cons
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		intern_type(interner, typeid_t::make_string()),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			intern_type(interner, typeid_t::make_json_value())
 		},
 		false
@@ -1325,7 +1325,7 @@ host_func_t floyd_runtime__compare_values__make(llvm::LLVMContext& context, cons
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getInt32Ty(context),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			llvm::Type::getInt64Ty(context),
 			make_runtime_type_type(context),
 			make_runtime_value_type(context),
@@ -1352,7 +1352,7 @@ host_func_t floyd_runtime__allocate_struct__make(llvm::LLVMContext& context, con
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		get_generic_struct_type(interner)->getPointerTo(),
 		{
-			make_frp_type(context),
+			make_frp_type(interner),
 			llvm::Type::getInt64Ty(context)
 		},
 		false

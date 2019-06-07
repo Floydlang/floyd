@@ -242,12 +242,20 @@ std::string print_value(llvm::Value* value);
 ////////////////////////////////	floyd_runtime_ptr
 
 
+/*
+	The Floyd runtime doesn't use global variables at all. Not even for memory heaps etc.
+	Instead it passes around an invisible argumen to all functions, called Floyd Runtime Ptr (FRP).
+*/
+
+struct floyd_runtime_t {
+};
+
 //	This pointer is passed as argument 0 to all compiled floyd functions and all runtime functions.
 
-bool check_callers_fcp(llvm::Function& emit_f);
-bool check_emitting_function(llvm::Function& emit_f);
-llvm::Value* get_callers_fcp(llvm::Function& emit_f);
-llvm::Type* make_frp_type(llvm::LLVMContext& context);
+bool check_callers_fcp(const llvm_type_interner_t& interner, llvm::Function& emit_f);
+bool check_emitting_function(const llvm_type_interner_t& interner, llvm::Function& emit_f);
+llvm::Value* get_callers_fcp(const llvm_type_interner_t& interner, llvm::Function& emit_f);
+llvm::Type* make_frp_type(const llvm_type_interner_t& interner);
 
 
 
@@ -516,6 +524,7 @@ struct llvm_type_interner_t {
 	llvm::StructType* json_type;
 	llvm::StructType* generic_struct_type;
 	llvm::StructType* wide_return_type;
+	llvm::Type* runtime_ptr_type;
 };
 
 //	Returns the LLVM type used to pass this type of value around. It uses generic types for vector, dict and struct.

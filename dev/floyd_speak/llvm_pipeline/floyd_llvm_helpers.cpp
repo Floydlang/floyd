@@ -632,34 +632,34 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b){
 
 
 
-bool check_callers_fcp(llvm::Function& emit_f){
-	auto args = emit_f.args();
-	QUARK_ASSERT((args.end() - args.begin()) >= 1);
-	auto floyd_context_arg_ptr = args.begin();
-	QUARK_ASSERT(floyd_context_arg_ptr->getType()->isPointerTy());
-	QUARK_ASSERT(floyd_context_arg_ptr->getType()->getPointerElementType()->isIntegerTy(32));
-	return true;
-}
-
-bool check_emitting_function(llvm::Function& emit_f){
-	QUARK_ASSERT(check_callers_fcp(emit_f));
-	return true;
-}
-
-llvm::Value* get_callers_fcp(llvm::Function& emit_f){
-	QUARK_ASSERT(check_callers_fcp(emit_f));
+bool check_callers_fcp(const llvm_type_interner_t& interner, llvm::Function& emit_f){
+	QUARK_ASSERT(interner.check_invariant());
 
 	auto args = emit_f.args();
 	QUARK_ASSERT((args.end() - args.begin()) >= 1);
 	auto floyd_context_arg_ptr = args.begin();
+	QUARK_ASSERT(floyd_context_arg_ptr->getType() == make_frp_type(interner));
+	return true;
+}
 
-	QUARK_ASSERT(floyd_context_arg_ptr->getType()->isPointerTy());
-	QUARK_ASSERT(floyd_context_arg_ptr->getType()->getPointerElementType()->isIntegerTy(32));
+bool check_emitting_function(const llvm_type_interner_t& interner, llvm::Function& emit_f){
+	QUARK_ASSERT(interner.check_invariant());
+
+	QUARK_ASSERT(check_callers_fcp(interner, emit_f));
+	return true;
+}
+
+llvm::Value* get_callers_fcp(const llvm_type_interner_t& interner, llvm::Function& emit_f){
+	QUARK_ASSERT(check_callers_fcp(interner, emit_f));
+
+	auto args = emit_f.args();
+	QUARK_ASSERT((args.end() - args.begin()) >= 1);
+	auto floyd_context_arg_ptr = args.begin();
 	return floyd_context_arg_ptr;
 }
 
-llvm::Type* make_frp_type(llvm::LLVMContext& context){
-	return llvm::Type::getInt32PtrTy(context);
+llvm::Type* make_frp_type(const llvm_type_interner_t& interner){
+	return interner.runtime_ptr_type;
 }
 
 
@@ -1016,7 +1016,7 @@ llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const llv
 	std::vector<llvm_arg_mapping_t> arg_results;
 
 	//	Pass Floyd runtime as extra, hidden argument #0. It has no representation in Floyd function type.
-	arg_results.push_back({ make_frp_type(context), "floyd_runtime_ptr", floyd::typeid_t::make_undefined(), -1, llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr });
+	arg_results.push_back({ make_frp_type(interner), "floyd_runtime_ptr", floyd::typeid_t::make_undefined(), -1, llvm_arg_mapping_t::map_type::k_floyd_runtime_ptr });
 
 	for(int index = 0 ; index < args.size() ; index++){
 		const auto& arg = args[index];
@@ -1255,6 +1255,14 @@ static llvm::StructType* make_json_type_internal(llvm::LLVMContext& context){
 	return s;
 }
 
+static llvm::StructType* make_generic_runtime_type_internal(llvm::LLVMContext& context){
+	std::vector<llvm::Type*> members = {
+		llvm::Type::getInt16Ty(context)
+	};
+	llvm::StructType* s = llvm::StructType::create(context, members, "frp");
+	return s;
+}
+
 static llvm::StructType* make_generic_struct_type_internal(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
 		llvm::Type::getInt64Ty(context)->getPointerTo(),
@@ -1350,6 +1358,7 @@ llvm_type_interner_t::llvm_type_interner_t(llvm::LLVMContext& context, const typ
 	json_type = make_json_type_internal(context);
 	generic_struct_type = make_generic_struct_type_internal(context);
 	wide_return_type = make_wide_return_type_internal(context);
+	runtime_ptr_type = make_generic_runtime_type_internal(context)->getPointerTo();
 
 	for(const auto& e: i.interned){
 		const auto llvm_type = make_exact_type_internal(context, *this, e.second);
@@ -1435,6 +1444,10 @@ llvm::Type* make_json_type(const llvm_type_interner_t& interner){
 }
 
 llvm::Type* get_generic_struct_type(const llvm_type_interner_t& interner){
+	return interner.generic_struct_type;
+}
+
+llvm::Type* get_generic_runtime_type(const llvm_type_interner_t& interner){
 	return interner.generic_struct_type;
 }
 
