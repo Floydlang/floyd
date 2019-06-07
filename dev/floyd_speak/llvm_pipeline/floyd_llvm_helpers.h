@@ -14,6 +14,8 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 
+#include <atomic>
+
 struct json_t;
 
 namespace floyd {
@@ -60,7 +62,7 @@ struct heap_alloc_64_t {
 	////////////////////////////////		STATE
 	uint64_t allocation_word_count;
 
-	uint32_t rc;
+	std::atomic<int32_t> rc;
 	uint32_t magic;
 
 	//	 data_*: 3 x 8 bytes.
@@ -123,6 +125,12 @@ void detect_leaks(const heap_t& heap);
 
 uint64_t size_to_allocation_blocks(std::size_t size);
 
+//	Returns updated RC, no need to atomically read it yourself.
+//	If returned RC is 0, there is no way for any other client to bump it up again.
+int32_t dec_rc(heap_alloc_64_t& alloc);
+int32_t inc_rc(heap_alloc_64_t& alloc);
+
+void dispose_alloc(heap_alloc_64_t& alloc);
 
 
 
@@ -364,8 +372,7 @@ struct VEC_T {
 };
 
 VEC_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count);
-void vec_addref(VEC_T& vec);
-void vec_releaseref(VEC_T* vec);
+void dispose_vec(VEC_T& vec);
 
 WIDE_RETURN_T make_wide_return_vec(VEC_T* vec);
 VEC_T* wide_return_to_vec(const WIDE_RETURN_T& ret);
@@ -400,8 +407,7 @@ struct DICT_T {
 };
 
 DICT_T* alloc_dict(heap_t& heap);
-void dict_addref(DICT_T& vec);
-void dict_releaseref(DICT_T* vec);
+void dispose_dict(DICT_T& vec);
 
 WIDE_RETURN_T make_wide_return_dict(DICT_T* dict);
 DICT_T* wide_return_to_dict(const WIDE_RETURN_T& ret);
@@ -432,11 +438,8 @@ struct JSON_T {
 };
 
 JSON_T* alloc_json(heap_t& heap, const json_t& init);
-void json_addref(JSON_T& vec);
-void json_releaseref(JSON_T* vec);
+void dispose_json(JSON_T& vec);
 
-WIDE_RETURN_T make_wide_return_json(JSON_T* dict);
-JSON_T* wide_return_to_json(const WIDE_RETURN_T& ret);
 
 
 
@@ -467,8 +470,7 @@ struct STRUCT_T {
 };
 
 STRUCT_T* alloc_struct(heap_t& heap, std::size_t size);
-void struct_addref(STRUCT_T& v);
-void struct_releaseref(STRUCT_T* v);
+void dispose_struct(STRUCT_T& v);
 
 WIDE_RETURN_T make_wide_return_struct(STRUCT_T* v);
 STRUCT_T* wide_return_to_struct(const WIDE_RETURN_T& ret);

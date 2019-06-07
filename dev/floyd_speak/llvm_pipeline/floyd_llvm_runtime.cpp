@@ -562,19 +562,19 @@ std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value_t arg_
 static void retain_value(llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type){
 	if(is_rc_value(type)){
 		if(type.is_string()){
-			vec_addref(*value.vector_ptr);
+			inc_rc(value.vector_ptr->alloc);
 		}
 		else if(type.is_vector()){
-			vec_addref(*value.vector_ptr);
+			inc_rc(value.vector_ptr->alloc);
 		}
 		else if(type.is_dict()){
-			dict_addref(*value.dict_ptr);
+			inc_rc(value.dict_ptr->alloc);
 		}
 		else if(type.is_json_value()){
-			json_addref(*value.json_ptr);
+			inc_rc(value.json_ptr->alloc);
 		}
 		else if(type.is_struct()){
-			struct_addref(*value.struct_ptr);
+			inc_rc(value.struct_ptr->alloc);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -582,7 +582,7 @@ static void retain_value(llvm_execution_engine_t& runtime, runtime_value_t value
 	}
 }
 
-//??? use these in all runtime code
+
 static void release_dict_deep(llvm_execution_engine_t& runtime, DICT_T* dict, const typeid_t& type);
 static void release_vec_deep(llvm_execution_engine_t& runtime, VEC_T* vec, const typeid_t& type);
 static void release_struct_deep(llvm_execution_engine_t& runtime, STRUCT_T* s, const typeid_t& type);
@@ -599,7 +599,9 @@ static void release_deep(llvm_execution_engine_t& runtime, runtime_value_t value
 			release_dict_deep(runtime, value.dict_ptr, type);
 		}
 		else if(type.is_json_value()){
-			json_releaseref(value.json_ptr);
+			if(dec_rc(value.json_ptr->alloc) == 0){
+				dispose_json(*value.json_ptr);
+			}
 		}
 		else if(type.is_struct()){
 			release_struct_deep(runtime, value.struct_ptr, type);
@@ -614,9 +616,7 @@ static void release_dict_deep(llvm_execution_engine_t& runtime, DICT_T* dict, co
 	QUARK_ASSERT(dict != nullptr);
 	QUARK_ASSERT(type.is_dict());
 
-	//??? Make atomic. CAS?
-	//??? unsafe hack. Some other code could stop rc from becoming 0.
-	if(dict->alloc.rc == 1){
+	if(dec_rc(dict->alloc) == 0){
 
 		//	Release all elements.
 		const auto element_type = type.get_dict_value_type();
@@ -626,19 +626,15 @@ static void release_dict_deep(llvm_execution_engine_t& runtime, DICT_T* dict, co
 				release_deep(runtime, e.second, element_type);
 			}
 		}
+		dispose_dict(*dict);
 	}
-
-	dict_releaseref(dict);
 }
 
 static void release_vec_deep(llvm_execution_engine_t& runtime, VEC_T* vec, const typeid_t& type){
 	QUARK_ASSERT(vec != nullptr);
 	QUARK_ASSERT(type.is_string() || type.is_vector());
 
-	//??? Make atomic. CAS?
-	//??? unsafe hack. Some other code could stop rc from becoming 0.
-	if(vec->alloc.rc == 1){
-
+	if(dec_rc(vec->alloc) == 0){
 		if(type.is_string()){
 			//	String has no elements to release.
 		}
@@ -656,18 +652,15 @@ static void release_vec_deep(llvm_execution_engine_t& runtime, VEC_T* vec, const
 		else{
 			QUARK_ASSERT(false);
 		}
+		dispose_vec(*vec);
 	}
-
-	vec_releaseref(vec);
 }
 
 
 static void release_struct_deep(llvm_execution_engine_t& runtime, STRUCT_T* s, const typeid_t& type){
 	QUARK_ASSERT(s != nullptr);
 
-	//??? Make atomic. CAS?
-	//??? unsafe hack. Some other code could stop rc from becoming 0.
-	if(s->alloc.rc == 1){
+	if(dec_rc(s->alloc) == 0){
 		const auto& struct_def = type.get_struct();
 		const auto struct_base_ptr = s->get_data_ptr();
 
@@ -684,9 +677,8 @@ static void release_struct_deep(llvm_execution_engine_t& runtime, STRUCT_T* s, c
 				member_index++;
 			}
 		}
+		dispose_struct(*s);
 	}
-
-	struct_releaseref(s);
 }
 
 
@@ -705,13 +697,14 @@ static void release_struct_deep(llvm_execution_engine_t& runtime, STRUCT_T* s, c
 
 void fr_retain_vec(floyd_runtime_t* frp, VEC_T* vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
+#if DEBUG
 	QUARK_ASSERT(vec != nullptr);
 	const auto type = lookup_type(r.type_interner.interner, type0);
-	QUARK_ASSERT(is_rc_value(type));
-
 	QUARK_ASSERT(type.is_string() || type.is_vector());
+	QUARK_ASSERT(is_rc_value(type));
+#endif
 
-	vec_addref(*vec);
+	inc_rc(vec->alloc);
 }
 
 host_func_t fr_retain_vec__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
@@ -768,7 +761,7 @@ void fr_retain_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_type_t type0){
 
 	QUARK_ASSERT(type.is_dict());
 
-	dict_addref(*dict);
+	inc_rc(dict->alloc);
 }
 
 host_func_t fr_retain_dict__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
@@ -827,7 +820,7 @@ void fr_retain_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
 	else{
 		QUARK_ASSERT(type.is_json_value());
 
-		json_addref(*json);
+		inc_rc(json->alloc);
 	}
 }
 
@@ -858,7 +851,9 @@ void fr_release_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
 	}
 	else{
 		QUARK_ASSERT(json != nullptr);
-		json_releaseref(json);
+		if(dec_rc(json->alloc) == 0){
+			dispose_json(*json);
+		}
 	}
 }
 
@@ -894,7 +889,7 @@ void fr_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_type_t type0){
 	QUARK_ASSERT(is_rc_value(type));
 	QUARK_ASSERT(type.is_struct());
 
-	struct_addref(*v);
+	inc_rc(v->alloc);
 }
 
 host_func_t fr_retain_struct__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
@@ -2248,8 +2243,10 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 
 			const auto wide_result = (*f2)(frp, e, solved_deps3);
 
-			//	Releas just the vec, not the elements. The elements are aliases for complete-vector.
-			vec_releaseref(solved_deps2);
+			//	Release just the vec, **not the elements**. The elements are aliases for complete-vector.
+			if(dec_rc(solved_deps2->alloc) == 0){
+				dispose_vec(*solved_deps2);
+			}
 
 			const auto result1 = wide_result.a;
 

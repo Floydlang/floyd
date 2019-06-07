@@ -73,10 +73,12 @@ void trace_alloc(const heap_rec_t& e){
 void trace_heap(const heap_t& heap){
 	QUARK_ASSERT(heap.check_invariant());
 
-	QUARK_SCOPED_TRACE("HEAP");
-	for(int i = 0 ; i < heap.alloc_records.size() ; i++){
-		const auto& e = heap.alloc_records[i];
-		trace_alloc(e);
+	if(false){
+		QUARK_SCOPED_TRACE("HEAP");
+		for(int i = 0 ; i < heap.alloc_records.size() ; i++){
+			const auto& e = heap.alloc_records[i];
+			trace_alloc(e);
+		}
 	}
 }
 
@@ -209,29 +211,52 @@ bool heap_alloc_64_t::check_invariant() const{
 	return true;
 }
 
+int32_t dec_rc(heap_alloc_64_t& alloc){
+	QUARK_ASSERT(alloc.check_invariant());
+
+	const auto prev_rc = std::atomic_fetch_sub_explicit(&alloc.rc, 1, std::memory_order_relaxed);
+	const auto rc2 = prev_rc - 1;
+
+	if(rc2 < 0){
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
+
+	return rc2;
+}
+int32_t inc_rc(heap_alloc_64_t& alloc){
+	QUARK_ASSERT(alloc.check_invariant());
+
+	const auto prev_rc = std::atomic_fetch_add_explicit(&alloc.rc, 1, std::memory_order_relaxed);
+	const auto rc2 = prev_rc + 1;
+	return rc2;
+}
+
 void add_ref(heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
 
-	alloc.rc++;
+	inc_rc(alloc);
 }
+
+
+void dispose_alloc(heap_alloc_64_t& alloc){
+	QUARK_ASSERT(alloc.check_invariant());
+
+	auto it = std::find_if(alloc.heap64->alloc_records.begin(), alloc.heap64->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == &alloc; });
+	QUARK_ASSERT(it != alloc.heap64->alloc_records.end());
+
+	QUARK_ASSERT(it->in_use);
+	it->in_use = false;
+
+	//??? we don't delete the malloc() block in debug version.
+}
+
 
 void release_ref(heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
 
-	if(alloc.rc == 0){
-		throw std::exception();
-	}
-
-	alloc.rc--;
-
-	if(alloc.rc == 0){
-		auto it = std::find_if(alloc.heap64->alloc_records.begin(), alloc.heap64->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == &alloc; });
-		QUARK_ASSERT(it != alloc.heap64->alloc_records.end());
-
-		QUARK_ASSERT(it->in_use);
-		it->in_use = false;
-
-		//??? we don't delete the malloc() block in debug version.
+	if(dec_rc(alloc) == 0){
+		dispose_alloc(alloc);
 	}
 }
 
@@ -272,9 +297,6 @@ uint64_t size_to_allocation_blocks(std::size_t size){
 
 	return r;
 }
-
-
-
 
 
 ////////////////////////////////	runtime_type_t
@@ -699,18 +721,10 @@ VEC_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count
 	return vec;
 }
 
-void vec_addref(VEC_T& vec){
+void dispose_vec(VEC_T& vec){
 	QUARK_ASSERT(vec.check_invariant());
 
-	add_ref(vec.alloc);
-
-	QUARK_ASSERT(vec.check_invariant());
-}
-void vec_releaseref(VEC_T* vec){
-	QUARK_ASSERT(vec != nullptr);
-	QUARK_ASSERT(vec->check_invariant());
-
-	release_ref(vec->alloc);
+	dispose_alloc(vec.alloc);
 }
 
 
@@ -763,23 +777,11 @@ DICT_T* alloc_dict(heap_t& heap){
 	return dict;
 }
 
-void dict_addref(DICT_T& dict){
+void dispose_dict(DICT_T& dict){
 	QUARK_ASSERT(dict.check_invariant());
 
-	add_ref(dict.alloc);
-
-	QUARK_ASSERT(dict.check_invariant());
-}
-void dict_releaseref(DICT_T* dict){
-	QUARK_ASSERT(dict != nullptr);
-	QUARK_ASSERT(dict->check_invariant());
-
-	//??? atomic needed!
-	if(dict->alloc.rc == 1){
-   		dict->get_map_mut().~STDMAP();
-	}
-
-	release_ref(dict->alloc);
+	dict.get_map_mut().~STDMAP();
+	dispose_alloc(dict.alloc);
 }
 
 
@@ -830,34 +832,14 @@ JSON_T* alloc_json(heap_t& heap, const json_t& init){
 	return json;
 }
 
-void json_addref(JSON_T& json){
+void dispose_json(JSON_T& json){
 	QUARK_ASSERT(json.check_invariant());
 
-	add_ref(json.alloc);
-
-	QUARK_ASSERT(json.check_invariant());
-}
-void json_releaseref(JSON_T* json){
-	QUARK_ASSERT(json != nullptr);
-	QUARK_ASSERT(json->check_invariant());
-
-	//??? atomic needed!
-	if(json->alloc.rc == 1){
-		delete &json->get_json();
-		json->alloc.data_a = 666;
-	}
-	release_ref(json->alloc);
+	delete &json.get_json();
+	json.alloc.data_a = 666;
+	dispose_alloc(json.alloc);
 }
 
-#if 0
-WIDE_RETURN_T make_wide_return_json(JSON_T* json){
-	return make_wide_return_2x64({ .json_ptr = json }, { .int_value = 0 });
-}
-
-JSON_T* wide_return_to_json(const WIDE_RETURN_T& ret){
-	return ret.a.json_ptr;
-}
-#endif
 
 
 
@@ -891,18 +873,10 @@ STRUCT_T* alloc_struct(heap_t& heap, std::size_t size){
 	return vec;
 }
 
-void struct_addref(STRUCT_T& vec){
-	QUARK_ASSERT(vec.check_invariant());
+void dispose_struct(STRUCT_T& s){
+	QUARK_ASSERT(s.check_invariant());
 
-	add_ref(vec.alloc);
-
-	QUARK_ASSERT(vec.check_invariant());
-}
-void struct_releaseref(STRUCT_T* vec){
-	QUARK_ASSERT(vec != nullptr);
-	QUARK_ASSERT(vec->check_invariant());
-
-	release_ref(vec->alloc);
+	dispose_alloc(s.alloc);
 }
 
 

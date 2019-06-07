@@ -3639,21 +3639,6 @@ QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "", "1"){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json_value({}))		)", value_t::make_int(1));
 }
 
-#if 0
-QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "", "1"){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			let result = { "color": "black" }
-			print(result)
-
-		)",
-		{ "xxx" }
-	);
-}
-#endif
-
 QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "", "1"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -4306,7 +4291,6 @@ QUARK_UNIT_TEST("Floyd test suite", "supermap()", "No dependencies", ""){
 	)");
 }
 
-#if 0
 QUARK_UNIT_TEST("Floyd test suite", "supermap()", "complex", ""){
 	run_closed(R"(
 
@@ -4330,7 +4314,6 @@ QUARK_UNIT_TEST("Floyd test suite", "supermap()", "complex", ""){
 
 	)");
 }
-#endif
 
 
 
