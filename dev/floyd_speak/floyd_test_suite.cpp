@@ -26,7 +26,6 @@
 using namespace floyd;
 
 
-#define INCLUDE_OUTOFFOCUS_TESTS	1
 
 
 /*
@@ -42,13 +41,8 @@ unsupported syntax
 	R"(result = [{string: int}]({"a":1,"b":2,"c":3}, {"d":4,"e":5,"f":6});)",
 }
 */
-//??? Decide if string is a simple type or composite-type. Move to the corresponding place in this source file.
 
-//??? Make namespace for bytecode interpreter and LLVM code: floyd, floyd_bc, floyd_llvm.
 //??? Run all container2 tests for LLVM too!
-//??? Make vistors-mechanism to support many sast passes, like expanding generics, making collection and layouts explicits etc.
-
-
 //??? Add tests for arithmetic bounds, limiting, wrapping.
 //??? Test truthness off all variable types: strings, doubles
 
@@ -82,7 +76,6 @@ void ut_verify_exception_nolib(const quark::call_context_t& context, const std::
 }
 
 
-#if INCLUDE_OUTOFFOCUS_TESTS
 
 //////////////////////////////////////////		DEFINE VARIABLE, SIMPLE TYPES
 
@@ -554,21 +547,6 @@ QUARK_UNIT_TEST("Floyd test suite", "Expression statement", "", ""){
 	ut_verify_printout_nolib(QUARK_POS, "print(5)", { "5" });
 }
 
-/*
-QUARK_UNIT_TEST("Floyd test suite", "Call print()", "local variable without let", ""){
-	ut_verify_exception_nolib(
-		QUARK_POS,
-		R"(
-
-			a = 7
-			print(a)
-
-		)",
-		"bla bla bla"
-	);
-}
-*/
-
 QUARK_UNIT_TEST("Floyd test suite", "print() supports ints and strings", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -586,11 +564,9 @@ QUARK_UNIT_TEST("Floyd test suite", "print() supports ints and strings", "", "")
 
 
 
-
-
-
-
 //////////////////////////////////////////		MUTATE VARIABLES
+
+
 
 
 QUARK_UNIT_TEST("Floyd test suite", "Mutate", "mutate local", ""){
@@ -925,21 +901,31 @@ QUARK_UNIT_TEST("Floyd test suite", "return", "return from within BLOCK", ""){
 
 QUARK_UNIT_TEST("Floyd test suite", "return", "Make sure returning wrong type => error", ""){
 	try {
-	test_run_container2(R"(
+		test_run_container2(R"(
 
-func int f(){
-	return "x"
-}
+			func int f(){
+				return "x"
+			}
 
-	)", {}, "", "");
-
-
+		)", {}, "", "");
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Expression type mismatch - cannot convert 'string' to 'int. Line: 4 \"return \"x\"\"");
 	}
 }
 
+
+QUARK_UNIT_TEST("Floyd test suite", "return", "You can't return from global scope", "error"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			return "hello"
+
+		)",
+		R"___(Cannot return value from function with void-return. Line: 3 "return "hello"")___"
+	);
+}
 
 
 
@@ -1951,9 +1937,6 @@ QUARK_UNIT_TEST("Floyd test suite", "while", "global while", ""){
 }
 
 
-//??? Pass3 needs to check type of return statements.
-//??? Support return; Use in function with void-return.
-//??? disable return in global scope, only support inside functions.
 
 
 QUARK_UNIT_TEST("Floyd test suite", "while", "while inside function", ""){
@@ -3403,7 +3386,6 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "Error: Wrong TYPE of arguments to
 }
 
 
-#endif		//	INCLUDE_OUTOFFOCUS_TESTS
 
 
 
@@ -3964,7 +3946,6 @@ QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "point_t", ""){
 
 
 
-#if INCLUDE_OUTOFFOCUS_TESTS
 
 
 
@@ -5307,4 +5288,3 @@ MANUAL_SNIPPETS_TEST("MANUAL SNIPPETS", "subset()", "", ""){
 	)", {}, "", "");
 }
 
-#endif	//	INCLUDE_OUTOFFOCUS_TESTS

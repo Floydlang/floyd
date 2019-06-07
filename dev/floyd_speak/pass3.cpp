@@ -2002,7 +2002,7 @@ semantic_ast_t analyse(analyser_t& a){
 	a._function_defs.swap(function_defs);
 
 	const auto body = body_t(a._imm->_ast._tree._globals._statements, symbol_table_t{symbol_map});
-	const auto result = analyse_body(a, body, epure::impure, typeid_t::make_undefined());
+	const auto result = analyse_body(a, body, epure::impure, typeid_t::make_void());
 	a = result.first;
 
 #if 0
