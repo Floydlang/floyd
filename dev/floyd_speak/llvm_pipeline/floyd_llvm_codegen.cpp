@@ -599,7 +599,7 @@ static llvm::Value* generate_alloc_struct(llvm_code_generator_t& gen_acc, llvm::
 	llvm::Constant* element_count = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
 	llvm::Constant* magic = llvm::ConstantInt::get(builder.getInt16Ty(), 0xDABB);
 	llvm::Constant* element_bits = llvm::ConstantInt::get(builder.getInt16Ty(), s.size());
-	llvm::Constant* vec_space = llvm::ConstantStruct::get(make_vec_type(context), { element_ptr, element_count, magic, element_bits });
+	llvm::Constant* vec_space = llvm::ConstantStruct::get(make_generic_vec_type(context), { element_ptr, element_count, magic, element_bits });
 
 	llvm::Constant *Zero = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0);
 	llvm::Constant* vec_space_ptr = llvm::ConstantExpr::getInBoundsGetElementPtr(vec_space->getType(), vec_space, llvm::ArrayRef<llvm::Constant *>{ Zero, Zero });
@@ -845,7 +845,7 @@ static llvm::Value* generate_get_vec_element_ptr2(llvm_code_generator_t& gen_acc
 	const auto gep = std::vector<llvm::Value*>{
 		builder.getInt32(1)
 	};
-	auto after_alloc64_ptr_reg = builder.CreateGEP(make_vec_type(gen_acc.interner), &vec_ptr_reg, gep, "");
+	auto after_alloc64_ptr_reg = builder.CreateGEP(make_generic_vec_type(gen_acc.interner), &vec_ptr_reg, gep, "");
 	return after_alloc64_ptr_reg;
 }
 

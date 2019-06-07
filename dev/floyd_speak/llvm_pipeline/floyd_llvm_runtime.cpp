@@ -719,7 +719,7 @@ host_func_t fr_retain_vec__make(llvm::LLVMContext& context, const llvm_type_inte
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(interner),
-			make_vec_type(interner)->getPointerTo(),
+			make_generic_vec_type(interner)->getPointerTo(),
 			make_runtime_type_type(context)
 		},
 		false
@@ -745,7 +745,7 @@ host_func_t fr_release_vec__make(llvm::LLVMContext& context, const llvm_type_int
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(interner),
-			make_vec_type(interner)->getPointerTo(),
+			make_generic_vec_type(interner)->getPointerTo(),
 			make_runtime_type_type(context)
 		},
 		false
@@ -776,7 +776,7 @@ host_func_t fr_retain_dict__make(llvm::LLVMContext& context, const llvm_type_int
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(interner),
-			make_dict_type(interner)->getPointerTo(),
+			make_generic_dict_type(interner)->getPointerTo(),
 			make_runtime_type_type(context)
 		},
 		false
@@ -803,7 +803,7 @@ host_func_t fr_release_dict__make(llvm::LLVMContext& context, const llvm_type_in
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(interner),
-			make_dict_type(interner)->getPointerTo(),
+			make_generic_dict_type(interner)->getPointerTo(),
 			make_runtime_type_type(context)
 		},
 		false
@@ -979,7 +979,7 @@ VEC_T* floyd_runtime__allocate_vector(floyd_runtime_t* frp, uint64_t element_cou
 
 host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		make_vec_type(interner)->getPointerTo(),
+		make_generic_vec_type(interner)->getPointerTo(),
 		{
 			make_frp_type(interner),
 			llvm::Type::getInt64Ty(context)
@@ -1003,7 +1003,7 @@ VEC_T* fr_alloc_kstr(floyd_runtime_t* frp, const char* s, uint64_t size){
 
 host_func_t fr_alloc_kstr__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		make_vec_type(interner)->getPointerTo(),
+		make_generic_vec_type(interner)->getPointerTo(),
 		{
 			make_frp_type(interner),
 			llvm::Type::getInt8PtrTy(context),
@@ -1066,12 +1066,12 @@ VEC_T* floyd_runtime__concatunate_vectors(floyd_runtime_t* frp, runtime_type_t t
 
 host_func_t floyd_runtime__concatunate_vectors__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		make_vec_type(interner)->getPointerTo(),
+		make_generic_vec_type(interner)->getPointerTo(),
 		{
 			make_frp_type(interner),
 			make_runtime_type_type(context),
-			make_vec_type(interner)->getPointerTo(),
-			make_vec_type(interner)->getPointerTo()
+			make_generic_vec_type(interner)->getPointerTo(),
+			make_generic_vec_type(interner)->getPointerTo()
 		},
 		false
 	);
@@ -1093,7 +1093,7 @@ void* floyd_runtime__allocate_dict(floyd_runtime_t* frp){
 
 host_func_t floyd_runtime__allocate_dict__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		make_dict_type(interner)->getPointerTo(),
+		make_generic_dict_type(interner)->getPointerTo(),
 		{
 			make_frp_type(interner)
 		},
@@ -1120,7 +1120,7 @@ host_func_t floyd_runtime__store_dict_mutable__make(llvm::LLVMContext& context, 
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(interner),
-			make_dict_type(interner)->getPointerTo(),
+			make_generic_dict_type(interner)->getPointerTo(),
 			intern_type(interner, typeid_t::make_string()),
 			make_runtime_value_type(context),
 			make_runtime_type_type(context)
@@ -1154,7 +1154,7 @@ host_func_t floyd_runtime__lookup_dict__make(llvm::LLVMContext& context, const l
 		make_runtime_value_type(context),
 		{
 			make_frp_type(interner),
-			make_dict_type(interner)->getPointerTo(),
+			make_generic_dict_type(interner)->getPointerTo(),
 			intern_type(interner, typeid_t::make_string())
 		},
 		false

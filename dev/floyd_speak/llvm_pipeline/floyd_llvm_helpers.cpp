@@ -1306,7 +1306,7 @@ static llvm::Type* make_exact_type_internal(llvm::LLVMContext& context, llvm_typ
 			return llvm::Type::getDoubleTy(context);
 		}
 		llvm::Type* operator()(const typeid_t::string_t& e) const{
-			return make_vec_type(interner)->getPointerTo();
+			return make_generic_vec_type(interner)->getPointerTo();
 		}
 
 		llvm::Type* operator()(const typeid_t::json_type_t& e) const{
@@ -1321,10 +1321,10 @@ static llvm::Type* make_exact_type_internal(llvm::LLVMContext& context, llvm_typ
 //			return get_generic_struct_type(interner)->getPointerTo();
 		}
 		llvm::Type* operator()(const typeid_t::vector_t& e) const{
-			return make_vec_type(interner)->getPointerTo();
+			return make_generic_vec_type(interner)->getPointerTo();
 		}
 		llvm::Type* operator()(const typeid_t::dict_t& e) const{
-			return make_dict_type(interner)->getPointerTo();
+			return make_generic_dict_type(interner)->getPointerTo();
 		}
 		llvm::Type* operator()(const typeid_t::function_t& e) const{
 			return make_function_type_internal(context, interner, type);
@@ -1431,11 +1431,11 @@ llvm::StructType* make_wide_return_type(const llvm_type_interner_t& interner){
 	return interner.wide_return_type;
 }
 
-llvm::Type* make_vec_type(const llvm_type_interner_t& interner){
+llvm::Type* make_generic_vec_type(const llvm_type_interner_t& interner){
 	return interner.generic_vec_type;
 }
 
-llvm::Type* make_dict_type(const llvm_type_interner_t& interner){
+llvm::Type* make_generic_dict_type(const llvm_type_interner_t& interner){
 	return interner.generic_dict_type;
 }
 
@@ -1687,7 +1687,7 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 			return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &runtime_value_reg, llvm::Type::getDoubleTy(context), "");
 		}
 		llvm::Value* operator()(const typeid_t::string_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_vec_type(interner)->getPointerTo(), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_vec_type(interner)->getPointerTo(), "");
 		}
 
 		llvm::Value* operator()(const typeid_t::json_type_t& e) const{
@@ -1701,10 +1701,10 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_generic_struct_type(interner)->getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::vector_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_vec_type(interner)->getPointerTo(), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_vec_type(interner)->getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::dict_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_dict_type(interner)->getPointerTo(), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_dict_type(interner)->getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::function_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_function_type(interner, type), "");

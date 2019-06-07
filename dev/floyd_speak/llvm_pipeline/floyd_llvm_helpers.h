@@ -27,10 +27,21 @@ struct llvm_type_interner_t;
 
 
 
-
-
 ////////////////////////////////		heap_t
 
+/*
+	Why: we need out own memory heap handling for:
+	- Having a unified memory handler / RC / GC / arena.
+	- Running separate heaps for separate threads / process
+	- Tracking stats and heat maps
+	- Finding problems.
+	- Reducing the number of mallocs - by putting head and body into the same alloc.
+	- Fitting data tighter than malloc()
+	- Controlling alignment and letting us address allocations more effectively than 64 bit pointers.
+	- Support never reusing the same allocation pointer/ID.
+
+	NOTICE: Right now each alloc is made using malloc(). In the future we can switch to private heap / arena / pooling.
+*/
 
 
 struct heap_t;
@@ -83,10 +94,6 @@ struct heap_t {
 	std::vector<heap_rec_t> alloc_records;
 };
 
-
-
-
-
 /*
 	Allocates a block of data using malloc().
 
@@ -118,8 +125,14 @@ uint64_t size_to_allocation_blocks(std::size_t size);
 
 
 
+
+
 ////////////////////////////////	runtime_type_t
 
+/*
+	An integer that specifies a unique type a type interner. Use this to specify types in running program.
+	Avoid using floyd::typeid_t
+*/
 
 typedef int32_t runtime_type_t;
 
@@ -139,8 +152,12 @@ runtime_type_t lookup_runtime_type(const type_interner_t& interner, const typeid
 ////////////////////////////////	native_value_t
 
 
+/*
+	Native, runtime value, as used by x86 code when running optimized program. Executing.
+	Usually this is a 64 bit value that holds either an integer / double etc OR a pointer to a separate allocation.
 
-//	Native, runtime value, as used by x86 code when running optimized program. Executing.
+	Future: these can have different sizes. A vector can use SSO and embedd head + some body directly here.
+*/
 
 //	64 bits
 union runtime_value_t {
@@ -163,9 +180,7 @@ union runtime_value_t {
 	}
 };
 
-
 llvm::Type* make_runtime_value_type(llvm::LLVMContext& context);
-
 
 runtime_value_t make_blank_runtime_value();
 
@@ -176,8 +191,6 @@ runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr);
 
 char* get_vec_chars(runtime_value_t str);
 uint64_t get_vec_string_size(runtime_value_t str);
-
-
 
 VEC_T* unpack_vec_arg(const type_interner_t& types, runtime_value_t arg_value, runtime_type_t arg_type);
 DICT_T* unpack_dict_arg(const type_interner_t& types, runtime_value_t arg_value, runtime_type_t arg_type);
@@ -194,7 +207,11 @@ void NOT_IMPLEMENTED_YET() __dead2;
 void UNSUPPORTED() __dead2;
 
 
-//	Must LLVMContext be kept while using the execution engine? Keep it!
+
+
+
+
+//	Must LLVMContext be kept while using the execution engine? Yes!
 struct llvm_instance_t {
 	bool check_invariant() const {
 		return true;
@@ -277,9 +294,6 @@ enum class WIDE_RETURN_MEMBERS {
 	b = 1
 };
 
-
-
-
 WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
 inline WIDE_RETURN_T make_wide_return_1x64(runtime_value_t a){
 	return make_wide_return_2x64(a, make_blank_runtime_value());
@@ -305,7 +319,6 @@ WIDE_RETURN_T make_wide_return_structptr(STRUCT_T* s);
 
 	Invariant:
 		alloc_count = roundup(element_count * element_bits, 64) / 64
-
 
 	Store element count in data_a.
 */
@@ -368,7 +381,7 @@ VEC_T* wide_return_to_vec(const WIDE_RETURN_T& ret);
 	A std::map<> is stored inplace into alloc.data_a / alloc.data_b / alloc.data-c.
 */
 
-	typedef std::map<std::string, runtime_value_t> STDMAP;
+typedef std::map<std::string, runtime_value_t> STDMAP;
 
 struct DICT_T {
 	bool check_invariant() const;
@@ -404,7 +417,7 @@ DICT_T* wide_return_to_dict(const WIDE_RETURN_T& ret);
 	Store a json_t* in data_a. It need to be new/deletes via C++.
 */
 
-	typedef std::map<std::string, runtime_value_t> STDMAP;
+typedef std::map<std::string, runtime_value_t> STDMAP;
 
 struct JSON_T {
 	bool check_invariant() const;
@@ -428,7 +441,6 @@ JSON_T* wide_return_to_json(const WIDE_RETURN_T& ret);
 
 
 ////////////////////////////////		STRUCT_T
-
 
 
 struct STRUCT_T {
@@ -478,6 +490,7 @@ void generate_array_element_store(llvm::IRBuilder<>& builder, llvm::Value& array
 llvm::Type* deref_ptr(llvm::Type* type);
 
 
+
 ////////////////////////////////		llvm_arg_mapping_t
 
 
@@ -508,6 +521,12 @@ llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& 
 
 ////////////////////////////////		intern_type()
 
+/*
+	Type interner: keeps a list of all types used statically in the program, their itype, their LLVM type and their Floyd type.
+
+	Generic-type: vector (and string), dictionary, json_value and struct are passed around as 4 different types,
+	not one for each vector type, struct type etc. These generic types are 64 bytes big, the same size as heap_alloc_64_t.
+*/
 
 struct llvm_type_interner_t {
 	llvm_type_interner_t(llvm::LLVMContext& context, const type_interner_t& interner);
@@ -536,8 +555,8 @@ llvm::StructType* get_exact_struct_type(const llvm_type_interner_t& interner, co
 llvm::StructType* make_wide_return_type(const llvm_type_interner_t& interner);
 
 //	Returns generic types.
-llvm::Type* make_vec_type(const llvm_type_interner_t& interner);
-llvm::Type* make_dict_type(const llvm_type_interner_t& interner);
+llvm::Type* make_generic_vec_type(const llvm_type_interner_t& interner);
+llvm::Type* make_generic_dict_type(const llvm_type_interner_t& interner);
 llvm::Type* make_json_type(const llvm_type_interner_t& interner);
 llvm::Type* get_generic_struct_type(const llvm_type_interner_t& interner);
 
