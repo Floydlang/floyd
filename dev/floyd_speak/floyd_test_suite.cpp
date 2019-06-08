@@ -976,6 +976,55 @@ QUARK_UNIT_TEST("Floyd test suite", "return", "You can't return from global scop
 }
 
 
+QUARK_UNIT_TEST("Floyd test suite", "return", "return RC-value from nested block", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func string f(){
+				let a = "test"
+				if(true) {
+					return "B"
+				}
+				else{
+					return "C"
+				}
+			}
+			print(f())
+
+		)",
+		{ "B" }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "return", "return RC-value from nested block", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+			let q = "q"
+
+			func string f(){
+				let a = "a"
+				for(e in 0...3){
+					let b = "b"
+					if(true) {
+						let c = "c"
+						return "1"
+					}
+					else{
+						let d = "d"
+						return "2"
+					}
+				}
+				return "3"
+			}
+			print(f())
+
+		)",
+		{ "1" }
+	);
+}
+
 
 
 

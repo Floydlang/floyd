@@ -150,8 +150,8 @@ struct llvm_code_generator_t {
 
 
 enum class function_return_mode {
-	partial_or_no_return,
-	return_from_function
+	some_path_not_returned,
+	return_executed
 };
 
 static function_return_mode generate_statements(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const std::vector<statement_t>& statements);
@@ -803,8 +803,33 @@ static void generate_destruct_scope_locals(llvm_code_generator_t& gen_acc, llvm:
 			}
 		}
 	}
-
 }
+
+#if 0
+//	Destructs all functions in all nested scopes - up until function is left.
+//	FUTURE: If we do nestes function definitions / lambas -- then we need to track where in callstack each function ends.
+static void generate_destruct_scope_locals2(llvm_code_generator_t& gen_acc, llvm::Function& emit_f){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+
+	auto& builder = gen_acc.builder;
+
+	//	Unwind all scopes of function, but not including global scope.
+	for(int i = gen_acc.scope_path.size() ; i > 0 ; i--){
+		for(const auto& e: symbols){
+			if(e.symtype == resolved_symbol_t::esymtype::k_global || e.symtype == resolved_symbol_t::esymtype::k_local){
+				const auto type = e.symbol.get_type();
+				if(is_rc_value(type)){
+					auto reg = builder.CreateLoad(e.value_ptr);
+					generate_release(gen_acc, emit_f, *reg, type);
+				}
+				else{
+				}
+			}
+		}
+	}
+}
+#endif
 
 
 static function_return_mode generate_body(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const std::vector<resolved_symbol_t>& resolved_symbols, const std::vector<statement_t>& statements){
@@ -815,8 +840,11 @@ static function_return_mode generate_body(llvm_code_generator_t& gen_acc, llvm::
 	const auto return_mode = generate_statements(gen_acc, emit_f, statements);
 	gen_acc.scope_path.pop_back();
 
-	if(return_mode == function_return_mode::partial_or_no_return){
+	//	Destruct body's locals. Unless return_executed.
+	if(return_mode == function_return_mode::some_path_not_returned){
 		generate_destruct_scope_locals(gen_acc, emit_f, resolved_symbols);
+	}
+	else{
 	}
 
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1750,25 +1778,25 @@ static function_return_mode generate_ifelse_statement(llvm_code_generator_t& gen
 
 
 	//	Scenario A: both then-block and else-block always returns = no need for join BB.
-	if(then_mode == function_return_mode::return_from_function && else_mode == function_return_mode::return_from_function){
-		return function_return_mode::return_from_function;
+	if(then_mode == function_return_mode::return_executed && else_mode == function_return_mode::return_executed){
+		return function_return_mode::return_executed;
 	}
 
 	//	Scenario B: eith then-block or else-block continues. We need a join-block where it can jump.
 	else{
 		auto join_bb = llvm::BasicBlock::Create(context, "join-then-else", parent_function);
 
-		if(then_mode == function_return_mode::partial_or_no_return){
+		if(then_mode == function_return_mode::some_path_not_returned){
 			builder.SetInsertPoint(then_bb2);
 			builder.CreateBr(join_bb);
 		}
-		if(else_mode == function_return_mode::partial_or_no_return){
+		if(else_mode == function_return_mode::some_path_not_returned){
 			builder.SetInsertPoint(else_bb2);
 			builder.CreateBr(join_bb);
 		}
 
 		builder.SetInsertPoint(join_bb);
-		return function_return_mode::partial_or_no_return;
+		return function_return_mode::some_path_not_returned;
 	}
 }
 
@@ -1845,7 +1873,7 @@ static function_return_mode generate_for_statement(llvm_code_generator_t& gen_ac
 
 	const auto return_mode = generate_body(gen_acc, emit_f, values, statement._body._statements);
 
-	if(return_mode == function_return_mode::partial_or_no_return){
+	if(return_mode == function_return_mode::some_path_not_returned){
 		llvm::Value* counter2 = builder.CreateLoad(counter_reg);
 		llvm::Value* counter3 = builder.CreateAdd(counter2, add_reg, "inc_for_counter");
 		builder.CreateStore(counter3, counter_reg);
@@ -1860,7 +1888,7 @@ static function_return_mode generate_for_statement(llvm_code_generator_t& gen_ac
 	//	EMIT LOOP END BB
 
 	builder.SetInsertPoint(forend_bb);
-	return function_return_mode::partial_or_no_return;
+	return function_return_mode::some_path_not_returned;
 }
 
 static function_return_mode generate_while_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t::while_statement_t& statement){
@@ -1895,7 +1923,7 @@ static function_return_mode generate_while_statement(llvm_code_generator_t& gen_
 	const auto mode = generate_block(gen_acc, emit_f, statement._body);
 	builder.CreateBr(while_cond_bb);
 
-	if(mode == function_return_mode::partial_or_no_return){
+	if(mode == function_return_mode::some_path_not_returned){
 	}
 	else{
 	}
@@ -1904,7 +1932,7 @@ static function_return_mode generate_while_statement(llvm_code_generator_t& gen_
 	////////	while_join_bb
 
 	builder.SetInsertPoint(while_join_bb);
-	return function_return_mode::partial_or_no_return;
+	return function_return_mode::some_path_not_returned;
 }
 
 static void generate_expression_statement(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const statement_t::expression_statement_t& s){
@@ -1925,7 +1953,11 @@ static llvm::Value* generate_return_statement(llvm_code_generator_t& gen_acc, ll
 	llvm::Value* value = generate_expression(gen_acc, emit_f, s._expression);
 
 	//	Destruct all locals before unwinding.
-	generate_destruct_scope_locals(gen_acc, emit_f, gen_acc.scope_path.back());
+	auto path = gen_acc.scope_path;
+	while(path.size() > 1){
+		generate_destruct_scope_locals(gen_acc, emit_f, path.back());
+		path.pop_back();
+	}
 
 	return gen_acc.builder.CreateRet(value);
 }
@@ -1941,7 +1973,7 @@ static function_return_mode generate_statement(llvm_code_generator_t& gen_acc, l
 
 		function_return_mode operator()(const statement_t::return_statement_t& s) const{
 			generate_return_statement(acc0, emit_f, s);
-			return function_return_mode::return_from_function;
+			return function_return_mode::return_executed;
 		}
 		function_return_mode operator()(const statement_t::define_struct_statement_t& s) const{
 			NOT_IMPLEMENTED_YET();
@@ -1958,11 +1990,11 @@ static function_return_mode generate_statement(llvm_code_generator_t& gen_acc, l
 		}
 		function_return_mode operator()(const statement_t::assign2_t& s) const{
 			generate_assign2_statement(acc0, emit_f, s);
-			return function_return_mode::partial_or_no_return;
+			return function_return_mode::some_path_not_returned;
 		}
 		function_return_mode operator()(const statement_t::init2_t& s) const{
 			generate_init2_statement(acc0, emit_f, s);
-			return function_return_mode::partial_or_no_return;
+			return function_return_mode::some_path_not_returned;
 		}
 		function_return_mode operator()(const statement_t::block_statement_t& s) const{
 			return generate_block_statement(acc0, emit_f, s);
@@ -1981,7 +2013,7 @@ static function_return_mode generate_statement(llvm_code_generator_t& gen_acc, l
 
 		function_return_mode operator()(const statement_t::expression_statement_t& s) const{
 			generate_expression_statement(acc0, emit_f, s);
-			return function_return_mode::partial_or_no_return;
+			return function_return_mode::some_path_not_returned;
 		}
 		function_return_mode operator()(const statement_t::software_system_statement_t& s) const{
 			UNSUPPORTED();
@@ -2002,12 +2034,12 @@ static function_return_mode generate_statements(llvm_code_generator_t& gen_acc, 
 		for(const auto& statement: statements){
 			QUARK_ASSERT(statement.check_invariant());
 			const auto mode = generate_statement(gen_acc, emit_f, statement);
-			if(mode == function_return_mode::return_from_function){
-				return function_return_mode::return_from_function;
+			if(mode == function_return_mode::return_executed){
+				return function_return_mode::return_executed;
 			}
 		}
 	}
-	return function_return_mode::partial_or_no_return;
+	return function_return_mode::some_path_not_returned;
 }
 
 
@@ -2158,7 +2190,7 @@ static void generate_floyd_function_body(llvm_code_generator_t& gen_acc, functio
 	const auto return_mode = generate_body(gen_acc, emit_f, symbol_table_values, body._statements);
 
 	//	Not all paths returns a value!
-	if(return_mode == function_return_mode::partial_or_no_return && function_def._function_type.get_function_return().is_void() == false){
+	if(return_mode == function_return_mode::some_path_not_returned && function_def._function_type.get_function_return().is_void() == false){
 		throw std::exception();
 	}
 
