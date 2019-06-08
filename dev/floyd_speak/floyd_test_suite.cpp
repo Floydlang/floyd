@@ -833,6 +833,23 @@ QUARK_UNIT_TEST("Floyd test suite", "func", "void function, no return statement"
 	);
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "Function value", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func int a(string s){
+				return 2
+			}
+			print(a)
+
+		)",
+		{
+			"function int(string) pure"
+		 }
+	);
+}
+
 
 QUARK_UNIT_TEST("Floyd test suite", "Call", "Error: Wrong number of arguments in function call", "exception"){
 	ut_verify_exception_nolib(
@@ -2903,23 +2920,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [typeid] constructor", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
-
-			func int a(string s){
-				return 2
-			}
-			print(a)
-
-		)",
-		{
-			"function int(string) pure"
-		 }
-	);
-}
-QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector [func] constructor", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2961,6 +2962,66 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [func] constructor", "", ""){
 		{
 			"[function int(string) pure, function int(string) pure, function int(string) pure]"
 		 }
+	);
+}
+
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [struct] constructor", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			struct person_t { string name int birth_year }
+
+			let d = [person_t("Mozart", 1782), person_t("Bono", 1955)]
+			print(d)
+
+		)",
+		{
+			R"___([{name="Mozart", birth_year=1782}, {name="Bono", birth_year=1955}])___"
+		 }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [vector[string]] constructor", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let d = [["red", "blue"], ["one", "two", "three"]]
+			print(d)
+
+		)",
+		{
+			R"___([["red", "blue"], ["one", "two", "three"]])___"
+		 }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [dict[string]] constructor", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let d = [{"color": "red", "color2": "blue"}, {"num": "one", "num2": "two", "num3": "three"}]
+			print(d)
+
+		)",
+		{
+			R"___([{"color": "red", "color2": "blue"}, {"num": "one", "num2": "two", "num3": "three"}])___"
+		 }
+	);
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [dict[string]] constructor", "Mixing dict types in a vector", "Compilation error"){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			let d = [{"color": "red", "color2": "blue"}, {"num": 100, "num2": 200, "num3": 300}]
+			print(d)
+
+		)",
+		R"___(Vector of type [[string:string]] cannot hold an element of type [string:int]. Line: 3 "let d = [{"color": "red", "color2": "blue"}, {"num": 100, "num2": 200, "num3": 300}]")___"
 	);
 }
 

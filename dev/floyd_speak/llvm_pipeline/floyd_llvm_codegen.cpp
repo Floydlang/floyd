@@ -1470,7 +1470,7 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 		auto vec_ptr_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
 		auto ptr_reg = generate_get_vec_element_ptr2(gen_acc, emit_f, *vec_ptr_reg);
 
-		//??? support all types of elements. Use std::visit().
+
 		if(element_type0.is_bool()){
 			//	Each element is a uint64_t ???
 			auto element_type = llvm::Type::getInt64Ty(context);
@@ -1492,44 +1492,23 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 		}
 	}
 
-	//??? All types of elements must be possible in a dict!
 	else if(target_type.is_dict()){
 		const auto element_type0 = target_type.get_dict_value_type();
 		auto dict_acc_ptr_reg = generate_alloc_dict(gen_acc, emit_f, typeid_to_compact_string(target_type));
-		if(element_type0.is_int()){
-			//	Elements are stored as pairs.
-			QUARK_ASSERT((details.elements.size() & 1) == 0);
-			const auto count = details.elements.size() / 2;
-			for(int element_index = 0 ; element_index < count ; element_index++){
 
-				//	Retain-release should be correct.
-				llvm::Value* key0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 0]);
-				llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 1]);
-				generate_store_dict_mutable(gen_acc, emit_f, *dict_acc_ptr_reg, *key0_reg, *element0_reg, element_type0);
+		//	Elements are stored as pairs.
+		QUARK_ASSERT((details.elements.size() & 1) == 0);
+		const auto count = details.elements.size() / 2;
+		for(int element_index = 0 ; element_index < count ; element_index++){
 
-				generate_release(gen_acc, emit_f, *key0_reg, typeid_t::make_string());
-			}
-			return dict_acc_ptr_reg;
+			//	Retain-release should be correct.
+			llvm::Value* key0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 0]);
+			llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 1]);
+			generate_store_dict_mutable(gen_acc, emit_f, *dict_acc_ptr_reg, *key0_reg, *element0_reg, element_type0);
+
+			generate_release(gen_acc, emit_f, *key0_reg, typeid_t::make_string());
 		}
-		else if(element_type0.is_json_value()){
-			//	Elements are stored as pairs.
-			QUARK_ASSERT((details.elements.size() & 1) == 0);
-			const auto count = details.elements.size() / 2;
-			for(int element_index = 0 ; element_index < count ; element_index++){
-
-				//	Retain-release should be correct.
-				llvm::Value* key0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 0]);
-				llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 1]);
-				generate_store_dict_mutable(gen_acc, emit_f, *dict_acc_ptr_reg, *key0_reg, *element0_reg, element_type0);
-
-				generate_release(gen_acc, emit_f, *key0_reg, typeid_t::make_string());
-			}
-			return dict_acc_ptr_reg;
-		}
-		else{
-			//???
-			NOT_IMPLEMENTED_YET();
-		}
+		return dict_acc_ptr_reg;
 	}
 	else if(target_type.is_struct()){
 		const auto& struct_def = target_type.get_struct();
