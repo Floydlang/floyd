@@ -3025,6 +3025,20 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [dict[string]] constructor", "Mixing
 	);
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "vector [json_value] constructor", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let d = [json_value("red"), json_value("blue")]
+			print(d)
+
+		)",
+		{
+			R"___(["red", "blue"])___"
+		 }
+	);
+}
 
 
 
