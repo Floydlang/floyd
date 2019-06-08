@@ -1494,12 +1494,22 @@ WIDE_RETURN_T floyd_host_function__erase(floyd_runtime_t* frp, runtime_value_t a
 
 		const auto& dict = unpack_dict_arg(r.type_interner.interner, arg0_value, arg0_type);
 
+		const auto value_type = type0.get_dict_value_type();
+
 		//	Deep copy dict.
 		auto dict2 = alloc_dict(r.heap);
-		dict2->get_map_mut() = dict->get_map();
+		auto& m = dict2->get_map_mut();
+		m = dict->get_map();
 
 		const auto key_string = from_runtime_string(r, arg1_value);
-		dict2->get_map_mut().erase(key_string);
+		m.erase(key_string);
+
+		if(is_rc_value(value_type)){
+			for(auto& e: m){
+				retain_value(r, e.second, value_type);
+			}
+		}
+
 		return make_wide_return_dict(dict2);
 	}
 	else{
