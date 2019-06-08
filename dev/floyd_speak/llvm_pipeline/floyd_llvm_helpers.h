@@ -173,7 +173,7 @@ runtime_type_t lookup_runtime_type(const type_interner_t& interner, const typeid
 union runtime_value_t {
 	uint8_t bool_value;
 	int64_t int_value;
-	int32_t typeid_itype;
+	int64_t typeid_itype;
 	double double_value;
 
 	//	Strings are encoded as VEC_T:s
@@ -189,6 +189,7 @@ union runtime_value_t {
 		return true;
 	}
 };
+
 
 llvm::Type* make_runtime_value_type(llvm::LLVMContext& context);
 

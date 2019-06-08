@@ -1464,7 +1464,7 @@ assert(a == [ 10, 20, 30, 40, 50 ])
 - __print()__: prints a vector to the default output of the app.
 - __update()__: changes one element of the vector and returns a new vector.
 - __size()__: returns the number of elements in the vector, as an integer.
-- __find()__: searches from left to right after a sub-vector and returns its index or -1
+- __find()__: searches from left to right after a element and returns its index or -1
 - __push_back()__: appends an element to the right side of the vector.
 - __subset()__: extracts a range of elements from the vector, as specified by start and end indexes.
 - __replace()__: replaces a range of a vector with another vector. Can also be used to erase or insert.
@@ -1810,7 +1810,7 @@ int size(obj)
 
 ## find()
 
-Searched for a value in a collection and returns its index or -1.
+Searches for a value in a collection and returns its index or -1.
 
 ```
 int find(obj, value)

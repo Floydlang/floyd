@@ -2016,20 +2016,6 @@ QUARK_UNIT_TEST("Floyd test suite", "while", "return from within while", ""){
 
 
 
-/*
-ESCAPE SEQUENCE	RESULT CHARACTER, AS HEX	ASCII MEANING
-\a	0x07	BEL, bell, alarm, \a
-\b	0x08	BS, backspace, \b
-\f	0x0c	FF, NP, form feed, \f
-\n	0x0a	Newline (Line Feed)
-\r	0x0d	Carriage Return
-\t	0x09	Horizontal Tab
-\v	0x0b	Vertical Tab
-\\	0x5f	Backslash
-'	0x27	Single quotation mark
-\"
-*/
-
 
 QUARK_UNIT_TEST("Floyd test suite", "string constructor", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = string(\"ABCD\")", value_t::make_string("ABCD"));
@@ -2039,31 +2025,103 @@ QUARK_UNIT_TEST("Floyd test suite", "string constructor", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = \"ABCD\"", value_t::make_string("ABCD"));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "parse_string_literal()", "Escape \0", ""){
+QUARK_UNIT_TEST("Floyd test suite", "string literal", "Escape \0", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\0")___", value_t::make_string(std::string(1, '\0')));
 }
-QUARK_UNIT_TEST("Floyd test suite", "parse_string_literal()", "Escape \t", ""){
+QUARK_UNIT_TEST("Floyd test suite", "string literal", "Escape \t", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\t")___", value_t::make_string("\t"));
 }
-QUARK_UNIT_TEST("Floyd test suite", "parse_string_literal()", "Escape \\", ""){
+QUARK_UNIT_TEST("Floyd test suite", "string literal", "Escape \\", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\\")___", value_t::make_string("\\"));
 }
-QUARK_UNIT_TEST("Floyd test suite", "parse_string_literal()", "Escape \n", ""){
+QUARK_UNIT_TEST("Floyd test suite", "string literal", "Escape \n", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\n")___", value_t::make_string("\n"));
 }
-QUARK_UNIT_TEST("Floyd test suite", "parse_string_literal()", "Escape \r", ""){
+QUARK_UNIT_TEST("Floyd test suite", "string literal", "Escape \r", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\r")___", value_t::make_string("\r"));
 }
-QUARK_UNIT_TEST("Floyd test suite", "parse_string_literal()", "Escape \"", ""){
+QUARK_UNIT_TEST("Floyd test suite", "string literal", "Escape \"", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\"")___", value_t::make_string("\""));
 }
-QUARK_UNIT_TEST("Floyd test suite", "parse_string_literal()", "Escape \'", ""){
+QUARK_UNIT_TEST("Floyd test suite", "string literal", "Escape \'", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\'")___", value_t::make_string("\'"));
 }
 
+QUARK_UNIT_TEST("Floyd test suite", "string =", "", ""){
+	run_closed(R"(
+
+		let a = "hello"
+		let b = a
+		assert(b == "hello")
+
+	)");
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "string +", "", ""){
+	run_closed(R"(		assert("a" + "b" == "ab")		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string +", "", ""){
+	run_closed(R"(		assert("a" + "b" + "c" == "abc")		)");
+}
 
 
 
+QUARK_UNIT_TEST("Floyd test suite", "string ==", "", ""){
+	run_closed(R"(		assert(("hello" == "hello") == true)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string ==", "", ""){
+	run_closed(R"(		assert(("hello" == "Yello") == false)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string !=", "", ""){
+	run_closed(R"(		assert(("hello" != "yello") == true)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string !=", "", ""){
+	run_closed(R"(		assert(("hello" != "hello") == false)		)");
+}
+
+
+QUARK_UNIT_TEST("Floyd test suite", "string <", "", ""){
+	run_closed(R"(		assert(("aaa" < "bbb") == true)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string <", "", ""){
+	run_closed(R"(		assert(("aaa" < "aaa") == false)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string <", "", ""){
+	run_closed(R"(		assert(("bbb" < "aaa") == false)		)");
+}
+
+
+QUARK_UNIT_TEST("Floyd test suite", "string <=", "", ""){
+	run_closed(R"(		assert(("aaa" <= "bbb") == true)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string <=", "", ""){
+	run_closed(R"(		assert(("aaa" <= "aaa") == true)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string <=", "", ""){
+	run_closed(R"(		assert(("bbb" <= "aaa") == false)		)");
+}
+
+
+QUARK_UNIT_TEST("Floyd test suite", "string >", "", ""){
+	run_closed(R"(		assert(("bbb" > "aaa") == true)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string >", "", ""){
+	run_closed(R"(		assert(("aaa" > "aaa") == false)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string >", "", ""){
+	run_closed(R"(		assert(("aaa" > "bbb") == false)		)");
+}
+
+
+QUARK_UNIT_TEST("Floyd test suite", "string >=", "", ""){
+	run_closed(R"(		assert(("bbb" >= "aaa") == true)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string >=", "", ""){
+	run_closed(R"(		assert(("aaa" >= "aaa") == true)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string >=", "", ""){
+	run_closed(R"(		assert(("aaa" >= "bbb") == false)		)");
+}
 
 
 
@@ -2087,69 +2145,10 @@ QUARK_UNIT_TEST("Floyd test suite", "string []", "", ""){
 QUARK_UNIT_TEST("Floyd test suite", "string []", "", ""){
 	run_closed(R"(		assert("hello"[0] == 104)		)");
 }
+
 QUARK_UNIT_TEST("Floyd test suite", "string []", "", ""){
 	run_closed(R"(		assert("hello"[4] == 111)		)");
 }
-
-QUARK_UNIT_TEST("Floyd test suite", "string ==", "", ""){
-	run_closed(R"(		assert(("hello" == "hello") == true);		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "string ==", "", ""){
-	run_closed(R"(		assert(("hello" == "Yello") == false);		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "string !=", "", ""){
-	run_closed(R"(		assert(("hello" != "yello") == true);		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "string !=", "", ""){
-	run_closed(R"(		assert(("hello" != "hello") == false);		)");
-}
-
-
-QUARK_UNIT_TEST("Floyd test suite", "string <", "", ""){
-	run_closed(R"(		assert(("aaa" < "bbb") == true);		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "string <", "", ""){
-	run_closed(R"(		assert(("aaa" < "aaa") == false);		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "string <", "", ""){
-	run_closed(R"(		assert(("bbb" < "aaa") == false);		)");
-}
-
-
-QUARK_UNIT_TEST("Floyd test suite", "string <=", "", ""){
-	run_closed(R"(		assert(("aaa" <= "bbb") == true);		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "string <=", "", ""){
-	run_closed(R"(		assert(("aaa" <= "aaa") == true);		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "string <=", "", ""){
-	run_closed(R"(		assert(("bbb" <= "aaa") == false);		)");
-}
-
-
-QUARK_UNIT_TEST("Floyd test suite", "string >", "", ""){
-	run_closed(R"(		assert(("bbb" > "aaa") == true);		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "string >", "", ""){
-	run_closed(R"(		assert(("aaa" > "aaa") == false);		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "string >", "", ""){
-	run_closed(R"(		assert(("aaa" > "bbb") == false);		)");
-}
-
-
-QUARK_UNIT_TEST("Floyd test suite", "string >=", "", ""){
-	run_closed(R"(		assert(("bbb" >= "aaa") == true);		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "string >=", "", ""){
-	run_closed(R"(		assert(("aaa" >= "aaa") == true);		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "string >=", "", ""){
-	run_closed(R"(		assert(("aaa" >= "bbb") == false);		)");
-}
-
-
-
 
 QUARK_UNIT_TEST("Floyd test suite", "string", "Error: Lookup in string using non-int", "exception"){
 	ut_verify_exception_nolib(
@@ -2165,38 +2164,15 @@ QUARK_UNIT_TEST("Floyd test suite", "string", "Error: Lookup in string using non
 }
 
 
-
-//////////////////////////////////////////		STRING - CORE FUNCTIONS
-
 /*
-	print(): prints a string to the default output of the app.
-	update(): changes one character of the string and returns a new string.
-	size(): returns the number of characters in the string, as an integer.
-	find(): searches from left to right after a substring and returns its index or -1
-	push_back(): appends a character or string to the right side of the string. The character is stored in an int.
-	subset: extracts a range of characters from the string, as specified by start and end indexes. aka substr()
-	replace(): replaces a range of a string with another string. Can also be used to erase or insert.
+(print())
+update()
+size()
+find()
+push_back()
+subset()
+replace()
 */
-
-QUARK_UNIT_TEST("Floyd test suite", "string size()", "", ""){
-	run_closed(R"(		assert(size("") == 0)		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "string size()", "", ""){
-	run_closed(R"(		assert(size("How long is this string?") == 24)		)");
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "string size()", "Embeded null characters - check 8 bit clean", ""){
-	run_closed(R"(		assert(size("hello\0world\0\0") == 13)		)");
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "string push_back()", "", ""){
-	run_closed(R"(
-
-		let a = push_back("one", 111)
-		assert(a == "oneo")
-
-	)");
-}
 
 QUARK_UNIT_TEST("Floyd test suite", "string update()", "", ""){
 	run_closed(R"(
@@ -2216,6 +2192,43 @@ QUARK_UNIT_TEST("Floyd test suite", "string update()", "error: pos > len", "exce
 		)",
 		"Position argument to update() is outside collection span."
 	);
+}
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "string size()", "", ""){
+	run_closed(R"(		assert(size("") == 0)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string size()", "", ""){
+	run_closed(R"(		assert(size("How long is this string?") == 24)		)");
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "string size()", "Embeded null characters - check 8 bit clean", ""){
+	run_closed(R"(		assert(size("hello\0world\0\0") == 13)		)");
+}
+
+
+
+//??? find() should have a start index.
+QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
+	run_closed(R"(		assert(find("hello, world", "he") == 0)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
+	run_closed(R"(		assert(find("hello, world", "e") == 1)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
+	run_closed(R"(		assert(find("hello, world", "x") == -1)		)");
+}
+
+
+//??? Add character-literal / type.
+QUARK_UNIT_TEST("Floyd test suite", "string push_back()", "", ""){
+	run_closed(R"(
+
+		let a = push_back("one", 111)
+		assert(a == "oneo")
+
+	)");
 }
 
 
@@ -2264,16 +2277,6 @@ QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", "error"){
 
 
 
-//??? find() should have a start index.
-QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
-	run_closed(R"(		assert(find("hello, world", "he") == 0)		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
-	run_closed(R"(		assert(find("hello, world", "e") == 1)		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
-	run_closed(R"(		assert(find("hello, world", "x") == -1)		)");
-}
 
 
 
@@ -2283,8 +2286,6 @@ QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
 
 
 /*
-VECTOR FEATURES
-
 Constructor expression
 Lookup
 Assign
@@ -2323,7 +2324,8 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [] - empty constructor", "cannot be 
 
 //	Vector-string is the first vector-type we test. It does extensive testing of type inferrence etc. Other vector-types don't need to test all that.
 
-QUARK_UNIT_TEST("Floyd test suite", "vector [string] - vector explicit bind", "Infer type", "valid vector"){
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] - constructor", "Infer type", "valid vector"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2361,20 +2363,11 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] - constructor", "empty vect
 		{ R"([])" }
 	);
 }
-QUARK_UNIT_TEST("Floyd test suite", "vector [string] [] lookup", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
 
-			let a = ["one", "two"]
-			print(a[0])
-			print(a[1])
-
-		)",
-		{ "one", "two" }
-	);
+//	We could support this if we had special type for empty-vector and empty-dict.
+QUARK_UNIT_TEST("Floyd test suite", "vector ==", "lhs and rhs are empty-typeless", ""){
+	ut_verify_exception_nolib(QUARK_POS, R"(		assert(([] == []) == true)		)", "Cannot infer vector element type, add explicit type. Line: 1 \"assert(([] == []) == true)\"");
 }
-
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] =", "copy", ""){
 	ut_verify_printout_nolib(
@@ -2390,12 +2383,6 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] =", "copy", ""){
 		)",
 		{ R"(["one", "two"])", R"(["one", "two"])" }
 	);
-}
-
-
-//	We could support this if we had special type for empty-vector and empty-dict.
-QUARK_UNIT_TEST("Floyd test suite", "vector ==", "lhs and rhs are empty-typeless", ""){
-	ut_verify_exception_nolib(QUARK_POS, R"(		assert(([] == []) == true)		)", "Cannot infer vector element type, add explicit type. Line: 1 \"assert(([] == []) == true)\"");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector +", "add empty vectors", ""){
@@ -2427,7 +2414,10 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] constructor expression, com
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "vector [string] =", "copy", ""){
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] =", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2442,6 +2432,17 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] =", "copy", ""){
 		{ R"(["one", "two"])", R"(["one", "two"])" }
 	);
 }
+
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] +", "non-empty vectors", ""){
+	run_closed(R"(
+
+		let [string] a = ["one"] + ["two"]
+		assert(a == ["one", "two"])
+
+	)");
+}
+
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] ==", "same values", ""){
 	run_closed(R"(		assert((["one", "two"] == ["one", "two"]) == true)		)");
@@ -2459,17 +2460,21 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] <", "different values", "")
 	run_closed(R"(		assert((["one", "a"] < ["one", "two"]) == true)		)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "vector [string] +", "non-empty vectors", ""){
-	run_closed(R"(
 
-		let [string] a = ["one"] + ["two"]
-		assert(a == ["one", "two"])
 
-	)");
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] [] lookup", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = ["one", "two"]
+			print(a[0])
+			print(a[1])
+
+		)",
+		{ "one", "two" }
+	);
 }
-
-
-//////////////////////////////////////////		VECTOR STRING CORE FUNCTIONS
 
 
 
@@ -2540,7 +2545,19 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] size()", "2", ""){
 	)");
 }
 
-//???	find()
+
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] find()", "", ""){
+	run_closed(R"(		assert(find(["one", "two", "three", "four"], "one") == 0)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] find()", "", ""){
+	run_closed(R"(		assert(find(["one", "two", "three", "four"], "two") == 1)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] find()", "", ""){
+	run_closed(R"(		assert(find(["one", "two", "three", "four"], "five") == -1)		)");
+}
+
+
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] push_back()", "", ""){
 	run_closed(R"(
@@ -2562,34 +2579,50 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] push_back()", "", ""){
 	)");
 }
 
-//???	subset()
-//???	replace()
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] subset()", "", ""){
+	run_closed(R"(		assert(subset(["one", "two", "three"], 0, 3) == ["one", "two", "three"])		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] subset()", "", ""){
+	run_closed(R"(		assert(subset(["one", "two", "three"], 1, 3) == ["two", "three"])		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] subset()", "", ""){
+	run_closed(R"(		assert(subset(["one", "two", "three"], 0, 0) == [])		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] subset()", "", ""){
+	run_closed(R"(		assert(subset(["one", "two", "three"], 0, 10) == ["one", "two", "three"])		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] subset()", "", ""){
+	run_closed(R"(		assert(subset(["one", "two", "three"], 2, 10) == ["three"])		)");
+}
 
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] replace()", "", ""){
+	run_closed(R"(		assert(replace(["one", "two", "three", "four", "five"], 0, 5, ["goodbye"]) == ["goodbye"])		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] replace()", "", ""){
+	run_closed(R"(		assert(replace(["one", "two", "three", "four", "five"], 0, 6, ["goodbye"]) == ["goodbye"])		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] replace()", "", ""){
+	run_closed(R"(		assert(replace(["one", "two", "three", "four", "five"], 0, 0, ["goodbye"]) == ["goodbye", "one", "two", "three", "four", "five"])		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] replace()", "", ""){
+	run_closed(R"(		assert(replace(["one", "two", "three", "four", "five"], 5, 5, ["goodbye"]) == ["one", "two", "three", "four", "five", "goodbye"])		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] replace()", "", "error"){
+	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace(["one", "two", "three", "four", "five"], 5, 0, ["goodbye"]) == ["hellogoodbye"])		)", "replace() requires start <= end.");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] replace()", "", "error"){
+	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace(["one", "two", "three", "four", "five"], 2, 3, 666) == [])		)", "replace() requires argument 4 to be same type of collection.");
+}
 
 
 //??? test vector<struct>, vector<json_value>
 
 
-
 //////////////////////////////////////////		vector-bool
 
-/*
-VECTOR FEATURES
-
-Constructor expression
-lookup
-assign
-concat operator +
-Comparisons x 6
-
-//???	print()
-//???	update()		-- string, vector, dict
-//???	size()			-- string, vector, dict
-//???	find()			-- string/vector. ??? dict?
-//???	push_back()		-- string, vector
-//???	subset()		-- string vector
-//???	replace()		-- string, vector
-*/
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [bool] construct-expression", "", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] result = [true, false, true]		)",				R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
@@ -2613,7 +2646,6 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [bool] +", "non-empty vectors", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] result = [true, false] + [true, true]		)", R"(		[[ "vector", "^bool" ], [true, false, true, true]]		)");
 }
 
-//???	print()
 //???	update()		-- string, vector, dict
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [bool] size()", "empty", "0"){
@@ -2832,6 +2864,77 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [double] push_back()", "", ""){
 //??? test vector element type
 //??? test dict element type
 
+
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [bool] constructor", "", ""){
+	run_closed(R"(		assert(to_string([true, false, true]) == "[true, false, true]")		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [int] constructor", "", ""){
+	run_closed(R"(		assert(to_string([1, 2, 3]) == "[1, 2, 3]")		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [double] constructor", "", ""){
+	run_closed(R"(		assert(to_string([1.0, 2.0, 3.0]) == "[1.0, 2.0, 3.0]")		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "vector [double] constructor", "", ""){
+	run_closed(R"(		assert(to_string(["one", "two", "three"]) == "[\"one\", \"two\", \"three\"]")		)");
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [double] constructor", "", ""){
+	run_closed(R"(		assert(to_string([int, bool, string]) == "[int, bool, string]")		)");
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "vector [typeid] constructor", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+			let a = typeof(3)
+			let b = typeof(true)
+			let c = typeof("str")
+			print(a)
+			print(b)
+			print(c)
+
+			let d = [a, b, c]
+			print(d)
+		)",
+		{
+			"int",
+			"bool",
+			"string",
+			"[int, bool, string]"
+		 }
+	);
+}
+
+#if 0
+QUARK_UNIT_TEST("Floyd test suite", "vector [func] constructor", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+			func int a(string s){
+				return 2
+			}
+
+			func int b(string s){
+				return 3
+			}
+
+			func int c(string s){
+				return 4
+			}
+
+			let d = [a, b, c]
+			print(d)
+		)",
+		{
+			"int",
+			"bool",
+			"string",
+			"[int, bool, string]"
+		 }
+	);
+}
+#endif
 
 
 //////////////////////////////////////////		DICT - TYPE

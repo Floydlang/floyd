@@ -334,7 +334,7 @@ uint64_t size_to_allocation_blocks(std::size_t size){
 
 
 llvm::Type* make_runtime_type_type(llvm::LLVMContext& context){
-	return llvm::Type::getInt32Ty(context);
+	return llvm::Type::getInt64Ty(context);
 /*
 	std::vector<llvm::Type*> members = {
 		llvm::Type::getInt32Ty(context)
@@ -395,6 +395,7 @@ runtime_value_t make_runtime_typeid(runtime_type_t type){
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
 	return { .struct_ptr = struct_ptr };
 }
+
 
 
 
@@ -1139,7 +1140,8 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int)", ""
 	QUARK_UT_VERIFY(r.args[1].map_type == llvm_arg_mapping_t::map_type::k_known_value_type);
 }
 
-QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int, DYN, bool)", ""){
+QUARK_UNIT_TEST
+("LLVM Codegen", "map_function_arguments()", "func void(int, DYN, bool)", ""){
 	llvm_instance_t instance;
 	const auto interner = make_basic_interner(instance.context);
 	auto module = std::make_unique<llvm::Module>("test", instance.context);
@@ -1170,7 +1172,7 @@ QUARK_UNIT_TEST("LLVM Codegen", "map_function_arguments()", "func void(int, DYN,
 	QUARK_UT_VERIFY(r.args[2].floyd_arg_index == 1);
 	QUARK_UT_VERIFY(r.args[2].map_type == llvm_arg_mapping_t::map_type::k_dyn_value);
 
-	QUARK_UT_VERIFY(r.args[3].llvm_type->isIntegerTy(32));
+	QUARK_UT_VERIFY(r.args[3].llvm_type->isIntegerTy(64));
 	QUARK_UT_VERIFY(r.args[3].floyd_name == "1");
 	QUARK_UT_VERIFY(r.args[3].floyd_type.is_undefined());
 	QUARK_UT_VERIFY(r.args[3].floyd_arg_index == 1);

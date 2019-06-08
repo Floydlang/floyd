@@ -54,6 +54,7 @@
 namespace floyd {
 
 
+static void retain_value(llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type);
 static void release_deep(llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type);
 
 
@@ -306,10 +307,12 @@ runtime_value_t to_runtime_vector(llvm_execution_engine_t& r, const value_t& val
 	auto v = alloc_vec(r.heap, count, count);
 	auto result = runtime_value_t{ .vector_ptr = v };
 
+	const auto element_type = value.get_type().get_vector_element_type();
 	auto p = v->get_element_ptr();
 	for(int i = 0 ; i < count ; i++){
 		const auto& e = v0[i];
 		const auto a = to_runtime_value(r, e);
+//		retain_value(r, a, element_type);
 		p[i] = a;
 	}
 	return result;
@@ -1628,8 +1631,13 @@ int64_t floyd_funcdef__find(floyd_runtime_t* frp, runtime_value_t arg0_value, ru
 		const auto vec = unpack_vec_arg(r.type_interner.interner, arg0_value, arg0_type);
 
 //		auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.def_name == function_name; } );
-		const auto it = std::find_if(vec->get_element_ptr(), vec->get_element_ptr() + vec->get_element_count(), [&] (const runtime_value_t& e) { return e.int_value == arg1_value.int_value; } );
-//		const auto it = std::find(vec->element_ptr, vec->element_ptr + vec->element_count, arg1_value);
+		const auto it = std::find_if(
+			vec->get_element_ptr(),
+			vec->get_element_ptr() + vec->get_element_count(),
+			[&] (const runtime_value_t& e) {
+				return floyd_runtime__compare_values(frp, static_cast<int64_t>(expression_type::k_logical_equal__2), arg1_type, e, arg1_value) == 1;
+			}
+		);
 		if(it == vec->get_element_ptr() + vec->get_element_count()){
 			return -1;
 		}
@@ -1681,7 +1689,7 @@ VEC_T* floyd_funcdef__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t p
 
 	const auto path = from_runtime_string(r, path0);
 	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("get_fsentries_shallow() illegal input path.");
+		quark::throw_runtime_error("get_fsentries_deep() illegal input path.");
 	}
 
 	const auto a = GetDirItemsDeep(path);
@@ -1984,7 +1992,6 @@ std::string floyd_funcdef__replace__string(llvm_execution_engine_t& frp, const s
 	return result;
 }
 
-//??? test with RC-elements
 const WIDE_RETURN_T floyd_funcdef__replace(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
 	auto& r = get_floyd_runtime(frp);
 
@@ -2010,6 +2017,8 @@ const WIDE_RETURN_T floyd_funcdef__replace(floyd_runtime_t* frp, runtime_value_t
 		return make_wide_return_1x64(result2);
 	}
 	else if(type0.is_vector()){
+		const auto element_type = type0.get_vector_element_type();
+
 		const auto vec = unpack_vec_arg(r.type_interner.interner, arg0_value, arg0_type);
 		const auto replace_vec = unpack_vec_arg(r.type_interner.interner, arg3_value, arg3_type);
 
@@ -2025,6 +2034,13 @@ const WIDE_RETURN_T floyd_funcdef__replace(floyd_runtime_t* frp, runtime_value_t
 		copy_elements(&vec2->get_element_ptr()[0], &vec->get_element_ptr()[0], section1_len);
 		copy_elements(&vec2->get_element_ptr()[section1_len], &replace_vec->get_element_ptr()[0], section2_len);
 		copy_elements(&vec2->get_element_ptr()[section1_len + section2_len], &vec->get_element_ptr()[end2], section3_len);
+
+		if(is_rc_value(element_type)){
+			for(int i = 0 ; i < len2 ; i++){
+				retain_value(r, vec2->get_element_ptr()[i], element_type);
+			}
+		}
+
 		return make_wide_return_vec(vec2);
 	}
 	else{
@@ -2095,7 +2111,6 @@ int64_t floyd_funcdef__size(floyd_runtime_t* frp, runtime_value_t arg0_value, ru
 	}
 }
 
-//??? Test with RC-elements
 const WIDE_RETURN_T floyd_funcdef__subset(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
 	auto& r = get_floyd_runtime(frp);
 
@@ -2117,6 +2132,7 @@ const WIDE_RETURN_T floyd_funcdef__subset(floyd_runtime_t* frp, runtime_value_t 
 		return make_wide_return_1x64(result);
 	}
 	else if(type0.is_vector()){
+		const auto element_type = type0.get_vector_element_type();
 		const auto vec = unpack_vec_arg(r.type_interner.interner, arg0_value, arg0_type);
 
 		const auto end2 = std::min(end, vec->get_element_count());
@@ -2127,8 +2143,16 @@ const WIDE_RETURN_T floyd_funcdef__subset(floyd_runtime_t* frp, runtime_value_t 
 			throw std::exception();
 		}
 		VEC_T* vec2 = alloc_vec(r.heap, len2, len2);
-		for(int i = 0 ; i < len2 ; i++){
-			vec2->get_element_ptr()[i] = vec->get_element_ptr()[start2 + i];
+		if(is_rc_value(element_type)){
+			for(int i = 0 ; i < len2 ; i++){
+				vec2->get_element_ptr()[i] = vec->get_element_ptr()[start2 + i];
+				retain_value(r, vec2->get_element_ptr()[i], element_type);
+			}
+		}
+		else{
+			for(int i = 0 ; i < len2 ; i++){
+				vec2->get_element_ptr()[i] = vec->get_element_ptr()[start2 + i];
+			}
 		}
 		return make_wide_return_vec(vec2);
 	}
@@ -2299,7 +2323,7 @@ runtime_value_t floyd_host__to_string(floyd_runtime_t* frp, runtime_value_t arg0
 
 //		make_rec("typeof", host__typeof, 1004, typeid_t::make_function(typeid_t::make_typeid(), { DYN }, epure::pure)),
 
-int32_t floyd_host__typeof(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+runtime_type_t floyd_host__typeof(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
 #if DEBUG

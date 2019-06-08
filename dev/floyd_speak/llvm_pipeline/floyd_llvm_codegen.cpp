@@ -1486,32 +1486,9 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 			}
 			return vec_ptr_reg;
 		}
-		else if(element_type0.is_string()){
-			generate_fill_array(gen_acc, emit_f, *ptr_reg, element_type1, details.elements);
-			return vec_ptr_reg;
-		}
-		else if(element_type0.is_json_value()){
-			generate_fill_array(gen_acc, emit_f, *ptr_reg, element_type1, details.elements);
-			return vec_ptr_reg;
-		}
-		else if(element_type0.is_struct()){
-			generate_fill_array(gen_acc, emit_f, *ptr_reg, element_type1, details.elements);
-			return vec_ptr_reg;
-		}
-		else if(element_type0.is_int()){
-			generate_fill_array(gen_acc, emit_f, *ptr_reg, element_type1, details.elements);
-			return vec_ptr_reg;
-		}
-		else if(element_type0.is_double()){
-			generate_fill_array(gen_acc, emit_f, *ptr_reg, element_type1, details.elements);
-			return vec_ptr_reg;
-		}
-		else if(element_type0.is_vector()){
-			generate_fill_array(gen_acc, emit_f, *ptr_reg, element_type1, details.elements);
-			return vec_ptr_reg;
-		}
 		else{
-			NOT_IMPLEMENTED_YET();
+			generate_fill_array(gen_acc, emit_f, *ptr_reg, element_type1, details.elements);
+			return vec_ptr_reg;
 		}
 	}
 
@@ -1546,7 +1523,6 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 				generate_store_dict_mutable(gen_acc, emit_f, *dict_acc_ptr_reg, *key0_reg, *element0_reg, element_type0);
 
 				generate_release(gen_acc, emit_f, *key0_reg, typeid_t::make_string());
-//				generate_release(gen_acc, emit_f, *element0_reg, element_type0);
 			}
 			return dict_acc_ptr_reg;
 		}
