@@ -17,6 +17,14 @@
 
 namespace floyd {
 
+
+////////////////////////////////////////		function_id_t
+
+
+typedef int64_t function_id_t;
+
+
+
 ////////////////////////////////////////		location_t
 
 

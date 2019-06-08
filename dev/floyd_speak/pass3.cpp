@@ -122,7 +122,7 @@ std::pair<analyser_t, floyd::expression_t> analyse_expression_no_target(const an
 
 
 
-const function_definition_t& function_id_to_def(const analyser_t& a, int function_id){
+const function_definition_t& function_id_to_def(const analyser_t& a, function_id_t function_id){
 	QUARK_ASSERT(function_id >= 0 && function_id < a._function_defs.size());
 
 	return *a._function_defs[function_id];
@@ -1693,7 +1693,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 
 	a_acc._function_defs.push_back(make_shared<function_definition_t>(function_def2));
 
-	const int function_id = static_cast<int>(a_acc._function_defs.size() - 1);
+	const function_id_t function_id = static_cast<int>(a_acc._function_defs.size() - 1);
 	const auto r = expression_t::make_literal(value_t::make_function_value(function_type2, function_id));
 
 	return {a_acc, r };
@@ -1920,7 +1920,7 @@ builtins_t insert_builtin_functions(analyser_t& a, const std::map<std::string, f
 	std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs;
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
-	int function_id = function_def_start_id;
+	function_id_t function_id = function_def_start_id;
 	for(auto hf_kv: host_functions){
 		const auto& function_name = hf_kv.first;
 		const auto& signature = hf_kv.second;

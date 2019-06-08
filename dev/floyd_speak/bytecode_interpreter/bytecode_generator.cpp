@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <cstdint>
 
+const auto trace_io_flag = false;
 
 namespace floyd {
 struct semantic_ast_t;
@@ -875,7 +876,7 @@ call_setup_t gen_call_setup(bcgenerator_t& gen_acc, const std::vector<typeid_t>&
 	return { body_acc, exts, stack_count };
 }
 
-int get_host_function_id(bcgenerator_t& gen_acc, const expression_t::call_t& call_e){
+function_id_t get_host_function_id(bcgenerator_t& gen_acc, const expression_t::call_t& call_e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	const auto load2 = std::get_if<expression_t::load2_t>(&call_e.callee->_contents);
@@ -975,7 +976,7 @@ expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const variable_ad
 	QUARK_ASSERT(callee_arg_count == function_def_arg_types.size());
 	const auto arg_count = callee_arg_count;
 
-	int host_function_id = get_host_function_id(gen_acc, details);
+	auto host_function_id = get_host_function_id(gen_acc, details);
 
 	//	a = size(b)
 	if(host_function_id == 1007 && arg_count == 1){
@@ -1600,15 +1601,17 @@ bc_static_frame_t make_frame(const bcgen_body_t& body, const std::vector<typeid_
 bc_program_t generate_bytecode(const semantic_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-//	QUARK_SCOPED_TRACE("generate_bytecode");
-//	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(ast_to_json(ast._checked_ast)._value));
+	if(trace_io_flag){
+	//	QUARK_SCOPED_TRACE("generate_bytecode");
+		QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(gp_ast_to_json(ast._tree)));
+	}
 
 	bcgenerator_t a(ast);
 
 	bcgen_globals(a, a._ast_imm->_tree._globals);
 
 	std::vector<bc_function_definition_t> function_defs2;
-	for(int function_id = 0 ; function_id < ast._tree._function_defs.size() ; function_id++){
+	for(auto function_id = 0 ; function_id < ast._tree._function_defs.size() ; function_id++){
 		const auto& function_def = *ast._tree._function_defs[function_id];
 
 		struct visitor_t {
@@ -1652,7 +1655,9 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 		ast._tree._container_def
 	};
 
-//	QUARK_TRACE_SS("OUTPUT: " << json_to_pretty_string(bcprogram_to_json(result)));
+	if(trace_io_flag){
+		QUARK_TRACE_SS("OUTPUT: " << json_to_pretty_string(bcprogram_to_json(result)));
+	}
 
 	return result;
 }

@@ -144,7 +144,7 @@ void dispose_alloc(heap_alloc_64_t& alloc);
 	Avoid using floyd::typeid_t
 */
 
-typedef int32_t runtime_type_t;
+typedef int64_t runtime_type_t;
 
 llvm::Type* make_runtime_type_type(llvm::LLVMContext& context);
 
@@ -173,7 +173,7 @@ runtime_type_t lookup_runtime_type(const type_interner_t& interner, const typeid
 union runtime_value_t {
 	uint8_t bool_value;
 	int64_t int_value;
-	int64_t typeid_itype;
+	runtime_type_t typeid_itype;
 	double double_value;
 
 	//	Strings are encoded as VEC_T:s

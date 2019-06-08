@@ -395,7 +395,7 @@ void generate_release(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, ll
 }
 
 
-std::string compose_function_def_name(int function_id, const function_definition_t& def){
+std::string compose_function_def_name(function_id_t function_id, const function_definition_t& def){
 	const auto def_name = def._definition_name;
 	const auto funcdef_name = def_name.empty() ? std::string() + "floyd_unnamed_function_" + std::to_string(function_id) : std::string("floyd_funcdef__") + def_name;
 	return funcdef_name;
@@ -2160,7 +2160,7 @@ static std::vector<resolved_symbol_t> generate_globals_from_ast(llvm_code_genera
 }
 
 //	NOTICE: Fills-in the body of an existing LLVM function prototype.
-static void generate_floyd_function_body(llvm_code_generator_t& gen_acc, int function_id, const floyd::function_definition_t& function_def, const body_t& body){
+static void generate_floyd_function_body(llvm_code_generator_t& gen_acc, function_id_t function_id, const floyd::function_definition_t& function_def, const body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
@@ -2195,12 +2195,12 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 	QUARK_ASSERT(semantic_ast.check_invariant());
 
 	//	We have already generate the LLVM function-prototypes for the global functions in generate_module().
-	for(int function_id = 0 ; function_id < semantic_ast._tree._function_defs.size() ; function_id++){
+	for(function_id_t function_id = 0 ; function_id < semantic_ast._tree._function_defs.size() ; function_id++){
 		const auto& function_def = *semantic_ast._tree._function_defs[function_id];
 
 		struct visitor_t {
 			llvm_code_generator_t& gen_acc;
-			const int function_id;
+			const function_id_t function_id;
 			const function_definition_t& function_def;
 
 			void operator()(const function_definition_t::empty_t& e) const{
@@ -2220,7 +2220,7 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 //	The AST contains statements that initializes the global variables, including global functions.
 
 //	Function prototype must NOT EXIST already.
-static llvm::Function* generate_function_prototype(llvm::Module& module, const llvm_type_interner_t& interner, const function_definition_t& function_def, int function_id){
+static llvm::Function* generate_function_prototype(llvm::Module& module, const llvm_type_interner_t& interner, const function_definition_t& function_def, function_id_t function_id){
 	QUARK_ASSERT(check_invariant__module(&module));
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
@@ -2334,7 +2334,7 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 	}
 
 	{
-		for(int function_id = 0 ; function_id < defs.size() ; function_id++){
+		for(function_id_t function_id = 0 ; function_id < defs.size() ; function_id++){
 			const auto& function_def = *defs[function_id];
 			auto f = generate_function_prototype(module, interner, function_def, function_id);
 			result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), function_id, function_def});

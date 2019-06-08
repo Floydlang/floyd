@@ -39,7 +39,7 @@ struct host_function_record_t {
 	std::string _name;
 	HOST_FUNCTION_PTR _f;
 
-	int _function_id;
+	function_id_t _function_id;
 
 	floyd::typeid_t _function_type;
 };
@@ -48,7 +48,7 @@ std::vector<host_function_record_t> get_host_function_records();
 
 
 struct host_function_signature_t {
-	int _function_id;
+	function_id_t _function_id;
 	floyd::typeid_t _function_type;
 };
 

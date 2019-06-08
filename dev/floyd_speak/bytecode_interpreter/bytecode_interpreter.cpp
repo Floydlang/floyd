@@ -267,7 +267,7 @@ bc_value_t::bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t
 //////////////////////////////////////		function
 
 
-bc_value_t bc_value_t::make_function_value(const typeid_t& function_type, int function_id){
+bc_value_t bc_value_t::make_function_value(const typeid_t& function_type, function_id_t function_id){
 	return bc_value_t{ function_type, function_id, true };
 }
 int bc_value_t::get_function_value() const{
@@ -275,7 +275,7 @@ int bc_value_t::get_function_value() const{
 
 	return _pod._inplace._function_id;
 }
-bc_value_t::bc_value_t(const typeid_t& function_type, int function_id, bool dummy) :
+bc_value_t::bc_value_t(const typeid_t& function_type, function_id_t function_id, bool dummy) :
 	_type(function_type)
 {
 	_pod._inplace._function_id = function_id;
@@ -422,7 +422,7 @@ bool bc_external_handle_t::check_invariant() const {
 
 
 bool encode_as_inplace(const typeid_t& type){
-	return type.is_bool() || type.is_int() || type.is_double();
+	return type.is_bool() || type.is_int() || type.is_double() || type.is_function();
 }
 bool encode_as_vector_w_inplace_elements(const typeid_t& type){
 	return type.is_vector() && encode_as_inplace(type.get_vector_element_type());
@@ -467,14 +467,8 @@ value_encoding type_to_encoding(const typeid_t& type){
 		return value_encoding::k_external__struct;
 	}
 	else if(basetype == base_type::k_vector){
-		const auto& element_type = type.get_vector_element_type().get_base_type();
-		if(element_type == base_type::k_bool){
-			return value_encoding::k_external__vector_pod64;
-		}
-		else if(element_type == base_type::k_int){
-			return value_encoding::k_external__vector_pod64;
-		}
-		else if(element_type == base_type::k_double){
+		const auto& element_type = type.get_vector_element_type();
+		if(encode_as_inplace(element_type)){
 			return value_encoding::k_external__vector_pod64;
 		}
 		else{
@@ -1930,7 +1924,7 @@ bc_function_definition_t::bc_function_definition_t(
 	const typeid_t& function_type,
 	const std::vector<member_t>& args,
 	const std::shared_ptr<bc_static_frame_t>& frame,
-	int host_function_id
+	function_id_t host_function_id
 ) :
 	_function_type(function_type),
 	_args(args),
@@ -2073,7 +2067,7 @@ json_t interpreter_stack_t::stack_to_json() const{
 //////////////////////////////////////////		GLOBAL FUNCTIONS
 
 
-const bc_function_definition_t& get_function_def(const interpreter_t& vm, int function_id){
+const bc_function_definition_t& get_function_def(const interpreter_t& vm, function_id_t function_id){
 	QUARK_ASSERT(vm.check_invariant());
 
 	QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
@@ -3051,7 +3045,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_function(i._b));
 
-			const int function_id = regs[i._b]._inplace._function_id;
+			const function_id_t function_id = regs[i._b]._inplace._function_id;
 			const int callee_arg_count = i._c;
 			QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
 

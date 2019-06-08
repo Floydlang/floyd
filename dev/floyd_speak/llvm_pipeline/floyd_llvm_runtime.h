@@ -50,7 +50,7 @@ struct function_def_t {
 	std::string def_name;
 	llvm::Function* llvm_f;
 
-	int floyd_function_id;
+	function_id_t floyd_function_id;
 	function_definition_t floyd_fundef;
 };
 

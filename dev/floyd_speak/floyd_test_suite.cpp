@@ -2857,12 +2857,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [double] push_back()", "", ""){
 
 
 
-//??? test json_value element type
-//??? test struct element type
-//??? test typeid element type
-//??? test function element type
-//??? test vector element type
-//??? test dict element type
+
 
 
 
@@ -2887,6 +2882,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [typeid] constructor", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
+
 			let a = typeof(3)
 			let b = typeof(true)
 			let c = typeof("str")
@@ -2896,6 +2892,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [typeid] constructor", "", ""){
 
 			let d = [a, b, c]
 			print(d)
+
 		)",
 		{
 			"int",
@@ -2906,11 +2903,45 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [typeid] constructor", "", ""){
 	);
 }
 
-#if 0
+QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func int a(string s){
+				return 2
+			}
+			print(a)
+
+		)",
+		{
+			"function int(string) pure"
+		 }
+	);
+}
+QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func int a(string s){
+				return 2
+			}
+			let d = [a]
+			print(d)
+
+		)",
+		{
+			"[function int(string) pure]"
+		 }
+	);
+}
+
 QUARK_UNIT_TEST("Floyd test suite", "vector [func] constructor", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
+
 			func int a(string s){
 				return 2
 			}
@@ -2925,16 +2956,15 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [func] constructor", "", ""){
 
 			let d = [a, b, c]
 			print(d)
+
 		)",
 		{
-			"int",
-			"bool",
-			"string",
-			"[int, bool, string]"
+			"[function int(string) pure, function int(string) pure, function int(string) pure]"
 		 }
 	);
 }
-#endif
+
+
 
 
 //////////////////////////////////////////		DICT - TYPE

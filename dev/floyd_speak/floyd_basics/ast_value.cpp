@@ -124,7 +124,7 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		value_ext_t::value_ext_t(const typeid_t& type, int function_id) :
+		value_ext_t::value_ext_t(const typeid_t& type, function_id_t function_id) :
 			_rc(1),
 			_type(type),
 			_function_id(function_id)
@@ -690,7 +690,7 @@ std::string value_and_type_to_string(const value_t& value) {
 			QUARK_ASSERT(check_invariant());
 		}
 
-		value_t::value_t(const typeid_t& type, int function_id) :
+		value_t::value_t(const typeid_t& type, function_id_t function_id) :
 			_basetype(base_type::k_function)
 		{
 			_value_internals._ext = new value_ext_t{type, function_id};
@@ -1130,7 +1130,7 @@ value_t value_t::make_dict_value(const typeid_t& value_type, const std::map<std:
 	return value_t(value_type, entries);
 }
 
-value_t value_t::make_function_value(const typeid_t& function_type, int function_id){
+value_t value_t::make_function_value(const typeid_t& function_type, function_id_t function_id){
 	QUARK_ASSERT(function_type.check_invariant());
 	return value_t(function_type, function_id);
 }

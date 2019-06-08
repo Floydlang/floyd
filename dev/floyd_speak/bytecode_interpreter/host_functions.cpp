@@ -1822,7 +1822,7 @@ There is never a file extension. You could add one if you want too.
 */
 
 
-host_function_record_t make_rec(const std::string& name, HOST_FUNCTION_PTR f, int function_id, typeid_t function_type){
+host_function_record_t make_rec(const std::string& name, HOST_FUNCTION_PTR f, function_id_t function_id, typeid_t function_type){
 	return host_function_record_t { name, f, function_id, function_type };
 }
 

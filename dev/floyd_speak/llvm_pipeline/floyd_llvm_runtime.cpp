@@ -419,17 +419,7 @@ runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t
 			return to_runtime_dict(runtime, e, value);
 		}
 		runtime_value_t operator()(const typeid_t::function_t& e) const{
-			UNSUPPORTED();
-#if 0
-			//	If function returns a DYN, it must have a dyn_return.
-			QUARK_ASSERT(e._parts[0].is_any() == false || e.dyn_return != return_dyn_type::none);
-
-			QUARK_ASSERT(e._parts.size() >= 1);
-
-			for(const auto& m: e._parts){
-				QUARK_ASSERT(m.check_invariant());
-			}
-#endif
+			NOT_IMPLEMENTED_YET();
 			QUARK_ASSERT(false);
 		}
 		runtime_value_t operator()(const typeid_t::unresolved_t& e) const{
@@ -495,18 +485,8 @@ value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime
 			return from_runtime_dict(runtime, encoded_value, type);
 		}
 		value_t operator()(const typeid_t::function_t& e) const{
-			UNSUPPORTED();
-#if 0
-			//	If function returns a DYN, it must have a dyn_return.
-			QUARK_ASSERT(e._parts[0].is_any() == false || e.dyn_return != return_dyn_type::none);
-
-			QUARK_ASSERT(e._parts.size() >= 1);
-
-			for(const auto& m: e._parts){
-				QUARK_ASSERT(m.check_invariant());
-			}
-#endif
-			QUARK_ASSERT(false);
+			QUARK_ASSERT(sizeof(function_id_t) == sizeof(void*));
+			return value_t::make_function_value(type, reinterpret_cast<function_id_t>(encoded_value.function_ptr));
 		}
 		value_t operator()(const typeid_t::unresolved_t& e) const{
 			UNSUPPORTED();

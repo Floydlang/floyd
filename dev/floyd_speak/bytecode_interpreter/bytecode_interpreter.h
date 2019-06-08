@@ -26,6 +26,7 @@
 #include "json_support.h"
 #include "software_system.h"
 #include "quark.h"
+#include "compiler_basics.h"
 
 #include <string>
 #include <vector>
@@ -63,7 +64,7 @@ union bc_inplace_value_t {
 	int64_t _int64;
 	double _double;
 
-	int _function_id;
+	function_id_t _function_id;
 	const bc_static_frame_t* _frame_ptr;
 };
 
@@ -194,9 +195,9 @@ struct bc_value_t {
 
 
 	//////////////////////////////////////		function
-	public: static bc_value_t make_function_value(const typeid_t& function_type, int function_id);
+	public: static bc_value_t make_function_value(const typeid_t& function_type, function_id_t function_id);
 	public: int get_function_value() const;
-	private: explicit bc_value_t(const typeid_t& function_type, int function_id, bool dummy);
+	private: explicit bc_value_t(const typeid_t& function_type, function_id_t function_id, bool dummy);
 
 
 	//	Bumps RC if needed.
@@ -770,7 +771,7 @@ struct bc_function_definition_t {
 		const typeid_t& function_type,
 		const std::vector<member_t>& args,
 		const std::shared_ptr<bc_static_frame_t>& frame,
-		int host_function_id
+		function_id_t host_function_id
 	);
 #if DEBUG
 	public: bool check_invariant() const;
@@ -781,7 +782,7 @@ struct bc_function_definition_t {
 	typeid_t _function_type;
 	std::vector<member_t> _args;
 	std::shared_ptr<bc_static_frame_t> _frame_ptr;
-	int _host_function_id;
+	function_id_t _host_function_id;
 
 	int _dyn_arg_count;
 	bool _return_is_ext;

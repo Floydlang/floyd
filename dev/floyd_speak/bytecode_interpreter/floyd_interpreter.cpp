@@ -87,19 +87,10 @@ value_t bc_to_value(const bc_value_t& value){
 	else if(basetype == base_type::k_vector){
 		const auto& element_type  = type.get_vector_element_type();
 		std::vector<value_t> vec2;
-		if(element_type.is_bool()){
+		const bool vector_w_inplace_elements = encode_as_vector_w_inplace_elements(type);
+		if(vector_w_inplace_elements){
 			for(const auto e: value._pod._external->_vector_w_inplace_elements){
-				vec2.push_back(value_t::make_bool(e._bool));
-			}
-		}
-		else if(element_type.is_int()){
-			for(const auto e: value._pod._external->_vector_w_inplace_elements){
-				vec2.push_back(value_t::make_int(e._int64));
-			}
-		}
-		else if(element_type.is_double()){
-			for(const auto e: value._pod._external->_vector_w_inplace_elements){
-				vec2.push_back(value_t::make_double(e._double));
+				vec2.push_back(bc_to_value(bc_value_t(element_type, e)));
 			}
 		}
 		else{
@@ -112,20 +103,11 @@ value_t bc_to_value(const bc_value_t& value){
 	}
 	else if(basetype == base_type::k_dict){
 		const auto& value_type  = type.get_dict_value_type();
+		const bool dict_w_inplace_values = encode_as_dict_w_inplace_values(type);
 		std::map<std::string, value_t> entries2;
-		if(value_type.is_bool()){
+		if(dict_w_inplace_values){
 			for(const auto& e: value._pod._external->_dict_w_inplace_values){
-				entries2.insert({ e.first, value_t::make_bool(e.second._bool) });
-			}
-		}
-		else if(value_type.is_int()){
-			for(const auto& e: value._pod._external->_dict_w_inplace_values){
-				entries2.insert({ e.first, value_t::make_int(e.second._int64) });
-			}
-		}
-		else if(value_type.is_double()){
-			for(const auto& e: value._pod._external->_dict_w_inplace_values){
-				entries2.insert({ e.first, value_t::make_double(e.second._double) });
+				entries2.insert({ e.first, bc_to_value(bc_value_t(value_type, e.second)) });
 			}
 		}
 		else{
@@ -190,20 +172,9 @@ bc_value_t value_to_bc(const value_t& value){
 		if(encode_as_vector_w_inplace_elements(vector_type)){
 			const auto& vec = value.get_vector_value();
 			immer::vector<bc_inplace_value_t> vec2;
-			if(element_type.is_bool()){
-				for(const auto& e: vec){
-					vec2.push_back(bc_inplace_value_t{._bool = e.get_bool_value()});
-				}
-			}
-			else if(element_type.is_int()){
-				for(const auto& e: vec){
-					vec2.push_back(bc_inplace_value_t{._int64 = e.get_int_value()});
-				}
-			}
-			else if(element_type.is_double()){
-				for(const auto& e: vec){
-					vec2.push_back(bc_inplace_value_t{._double = e.get_double_value()});
-				}
+			for(const auto& e: vec){
+				const auto bc = value_to_bc(e);
+				vec2.push_back(bc._pod._inplace);
 			}
 			return make_vector(element_type, vec2);
 		}
@@ -213,7 +184,7 @@ bc_value_t value_to_bc(const value_t& value){
 			for(const auto& e: vec){
 				const auto bc = value_to_bc(e);
 				const auto hand = bc_external_handle_t(bc);
-				vec2 =vec2.push_back(hand);
+				vec2 = vec2.push_back(hand);
 			}
 			return make_vector(element_type, vec2);
 		}
@@ -221,11 +192,17 @@ bc_value_t value_to_bc(const value_t& value){
 	else if(basetype == base_type::k_dict){
 		const auto dict_type = value.get_type();
 		const auto value_type = dict_type.get_dict_value_type();
-//??? add handling for int, bool, double
+
 		const auto elements = value.get_dict_value();
 		immer::map<std::string, bc_external_handle_t> entries2;
-		for(const auto& e: elements){
-			entries2 = entries2.insert({e.first, bc_external_handle_t(value_to_bc(e.second))});
+
+		if(encode_as_dict_w_inplace_values(dict_type)){
+			QUARK_ASSERT(false);//??? fix
+		}
+		else{
+			for(const auto& e: elements){
+				entries2 = entries2.insert({e.first, bc_external_handle_t(value_to_bc(e.second))});
+			}
 		}
 		return make_dict(value_type, entries2);
 	}

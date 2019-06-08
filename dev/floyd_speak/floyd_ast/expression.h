@@ -24,7 +24,7 @@ namespace floyd {
 	struct statement_t;
 	struct expression_t;
 
-	const int k_no_host_function_id = 0;
+	const function_id_t k_no_host_function_id = 0;
 
 
 	/*
@@ -53,7 +53,7 @@ namespace floyd {
 		struct host_func_t {
 			bool operator==(const host_func_t& other) const { return _host_function_id == other._host_function_id; };
 
-			int _host_function_id;
+			function_id_t _host_function_id;
 		};
 
 		typedef std::variant<empty_t, floyd_func_t, host_func_t> function_def_variant_t;
@@ -79,7 +79,7 @@ namespace floyd {
 				floyd_func_t{ body }
 			};
 		}
-		static function_definition_t make_host_func(const location_t& location, const std::string& definition_name, const typeid_t& function_type, const std::vector<member_t>& args, int host_function_id){
+		static function_definition_t make_host_func(const location_t& location, const std::string& definition_name, const typeid_t& function_type, const std::vector<member_t>& args, function_id_t host_function_id){
 			return {
 				location,
 				definition_name,

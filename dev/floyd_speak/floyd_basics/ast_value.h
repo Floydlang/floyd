@@ -45,6 +45,8 @@
 #include "ast_typeid.h"
 #include "ast_typeid_helpers.h"
 #include "json_support.h"
+#include "compiler_basics.h"
+
 
 
 namespace floyd {
@@ -197,7 +199,7 @@ std::string make_value_debug_str(const value_t& v);
 		public: value_ext_t(const typeid_t& type, std::shared_ptr<struct_value_t>& s);
 		public: value_ext_t(const typeid_t& type, const std::vector<value_t>& s);
 		public: value_ext_t(const typeid_t& type, const std::map<std::string, value_t>& s);
-		public: value_ext_t(const typeid_t& type, int function_id);
+		public: value_ext_t(const typeid_t& type, function_id_t function_id);
 
 
 		//	??? NOTICE: Use std::variant or subclasses.
@@ -209,7 +211,7 @@ std::string make_value_debug_str(const value_t& v);
 		public: std::shared_ptr<struct_value_t> _struct;
 		public: std::vector<value_t> _vector_elements;
 		public: std::map<std::string, value_t> _dict_entries;
-		public: int _function_id = -1;
+		public: function_id_t _function_id = -1;
 	};
 
 
@@ -432,7 +434,7 @@ std::string make_value_debug_str(const value_t& v);
 		//------------------------------------------------		function
 
 
-		public: static value_t make_function_value(const typeid_t& function_type, int function_id);
+		public: static value_t make_function_value(const typeid_t& function_type, function_id_t function_id);
 		public: bool is_function() const {
 			QUARK_ASSERT(check_invariant());
 
@@ -616,7 +618,7 @@ std::string make_value_debug_str(const value_t& v);
 		private: explicit value_t(const typeid_t& struct_type, std::shared_ptr<struct_value_t>& instance);
 		private: explicit value_t(const typeid_t& element_type, const std::vector<value_t>& elements);
 		private: explicit value_t(const typeid_t& value_type, const std::map<std::string, value_t>& entries);
-		private: explicit value_t(const typeid_t& type, int function_id);
+		private: explicit value_t(const typeid_t& type, function_id_t function_id);
 
 
 		//////////////////////////////////////////////////		STATE
