@@ -3045,41 +3045,29 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [json_value] constructor", "", ""){
 //////////////////////////////////////////		DICT - TYPE
 
 
-QUARK_UNIT_TEST("Floyd test suite", "dict construct", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] construct", "", ""){
 	run_closed(R"(
 
-		let [string: int] a = {"one": 1, "two": 2}
+		let [string: int] a = { "one": 1, "two": 2 }
 
 	)");
 }
-QUARK_UNIT_TEST("Floyd test suite", "dict construct", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] construct", "", ""){
 	run_closed(R"(
 
-		let [string: int] a = {"one": 1, "two": 2}
+		let [string: int] a = { "one": 1, "two": 2 }
 		assert(size(a) == 2)
 
 	)");
 }
-QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> []", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
 
-			let [string: int] a = {"one": 1, "two": 2}
-			print(a["one"])
-			print(a["two"])
 
-		)",
-		{ "1", "2" }
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> ", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] constructor", "", "Compilation error"){
 	ut_verify_exception_nolib(QUARK_POS,
 		R"(
 
 			mutable a = {}
-			a = {"hello": 1}
+			a = { "hello": 1 }
 			print(a)
 
 		)",
@@ -3101,7 +3089,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict constructor", "No type", "error"){
 }
 
 
-QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> {}", "{}", "Infered type"){
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] constructor", "{}", "Infered type"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -3114,7 +3102,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> {}", "{}", "Infered type")
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> {}", "{}", "Infered type"){
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] constructor", "{}", "Infered type"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -3128,38 +3116,59 @@ QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> {}", "{}", "Infered type")
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> ==", "", ""){
-	run_closed(R"(		assert(({"one": 1, "two": 2} == {"one": 1, "two": 2}) == true)		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> ==", "", ""){
-	run_closed(R"(		assert(({"one": 1, "two": 2} == {"two": 2}) == false)		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> ==", "", ""){
-	run_closed(R"(		assert(({"one": 2, "two": 2} == {"one": 1, "two": 2}) == false)		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> ==", "", ""){
-	run_closed(R"(		assert(({"one": 1, "two": 2} < {"one": 1, "two": 2}) == false)		)");
-}
-QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> <", "", ""){
-	run_closed(R"(		assert(({"one": 1, "two": 1} < {"one": 1, "two": 2}) == true)		)");
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "dict<> {}", "", "Error cannot infer type"){
+QUARK_UNIT_TEST("Floyd test suite", "dict constructor", "", "Error cannot infer type"){
 	ut_verify_exception_nolib(QUARK_POS, R"(		assert(size({}) == 0)		)", "Cannot infer type in construct-value-expression. Line: 1 \"assert(size({}) == 0)\"");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "dict<> {}", "", "Error cannot infer type"){
+QUARK_UNIT_TEST("Floyd test suite", "dict constructor", "", "Error cannot infer type"){
 	ut_verify_exception_nolib(QUARK_POS, R"(		print({})		)", "Cannot infer type in construct-value-expression. Line: 1 \"print({})\"");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> size()", "", "1"){
+
+
+
+
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] []", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let [string: int] a = { "one": 1, "two": 2 }
+			print(a["one"])
+			print(a["two"])
+
+		)",
+		{ "1", "2" }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] ==", "", ""){
+	run_closed(R"(		assert(({"one": 1, "two": 2} == {"one": 1, "two": 2}) == true)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] ==", "", ""){
+	run_closed(R"(		assert(({"one": 1, "two": 2} == {"two": 2}) == false)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] ==", "", ""){
+	run_closed(R"(		assert(({"one": 2, "two": 2} == {"one": 1, "two": 2}) == false)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] ==", "", ""){
+	run_closed(R"(		assert(({"one": 1, "two": 2} < {"one": 1, "two": 2}) == false)		)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] <", "", ""){
+	run_closed(R"(		assert(({"one": 1, "two": 1} < {"one": 1, "two": 2}) == true)		)");
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] size()", "", "1"){
 	run_closed(R"(		assert(size({"one":1}) == 1)		)");
 }
-QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> size()", "", "2"){
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] size()", "", "2"){
 	run_closed(R"(		assert(size({"one":1, "two":2}) == 2)		)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> update()", "add", "correct dict, without side effect on original dict"){
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] update()", "add", "correct dict, without side effect on original dict"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -3177,7 +3186,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> update()", "add", "correct
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> update()", "replace element", "correct dict, without side effect on original dict"){
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] update()", "replace element", "correct dict, without side effect on original dict"){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -3195,7 +3204,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> update()", "replace elemen
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> update()", "dest is empty dict", "error"){
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] update()", "dest is empty dict", "error"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -3211,7 +3220,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> update()", "dest is empty 
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> exists()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] exists()", "", ""){
 	run_closed(R"(
 
 		let a = { "one": 1, "two": 2, "three" : 3}
@@ -3221,7 +3230,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> exists()", "", ""){
 	)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> erase()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] erase()", "", ""){
 	run_closed(R"(
 
 		let a = { "one": 1, "two": 2, "three" : 3}
@@ -3231,7 +3240,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict<string:int> erase()", "", ""){
 	)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "dict", "Error: Lookup in dict using non-string key", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "dict [int]", "Error: Lookup in dict using non-string key", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -3244,7 +3253,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict", "Error: Lookup in dict using non-str
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "dict", "Dict can not hold elements of different types.", "exception"){
+QUARK_UNIT_TEST("Floyd test suite", "dict [int]", "Dict can not hold elements of different types.", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -3257,7 +3266,10 @@ QUARK_UNIT_TEST("Floyd test suite", "dict", "Dict can not hold elements of diffe
 }
 
 
+
+
 //////////////////////////////////////////		STRUCT - TYPE
+
 
 
 
