@@ -2887,11 +2887,11 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [int] constructor", "", ""){
 QUARK_UNIT_TEST("Floyd test suite", "vector [double] constructor", "", ""){
 	run_closed(R"(		assert(to_string([1.0, 2.0, 3.0]) == "[1.0, 2.0, 3.0]")		)");
 }
-QUARK_UNIT_TEST("Floyd test suite", "vector [double] constructor", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector [string] constructor", "", ""){
 	run_closed(R"(		assert(to_string(["one", "two", "three"]) == "[\"one\", \"two\", \"three\"]")		)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "vector [double] constructor", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector [typeid] constructor", "", ""){
 	run_closed(R"(		assert(to_string([int, bool, string]) == "[int, bool, string]")		)");
 }
 
@@ -3042,7 +3042,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [json_value] constructor", "", ""){
 
 
 
-//////////////////////////////////////////		DICT - TYPE
+//////////////////////////////////////////		DICT [INT]
 
 
 QUARK_UNIT_TEST("Floyd test suite", "dict [int] construct", "", ""){
@@ -3123,9 +3123,6 @@ QUARK_UNIT_TEST("Floyd test suite", "dict constructor", "", "Error cannot infer 
 QUARK_UNIT_TEST("Floyd test suite", "dict constructor", "", "Error cannot infer type"){
 	ut_verify_exception_nolib(QUARK_POS, R"(		print({})		)", "Cannot infer type in construct-value-expression. Line: 1 \"print({})\"");
 }
-
-
-
 
 
 
@@ -3264,6 +3261,190 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [int]", "Dict can not hold elements of
 		"Dictionary of type [string:int] cannot hold an element of type typeid. Line: 3 \"let a = {\"one\": 1, \"two\": bool}\""
 	);
 }
+
+
+
+
+
+//??? test dict of RC-values, maybe string.
+
+
+
+
+
+
+
+
+
+///??? fix to use dict instead of vector
+
+//	Notice: the order of dict-values is implementation specific: to_string() can give different results.
+QUARK_UNIT_TEST("Floyd test suite", "dict [bool] constructor", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = to_string({ "one": true, "two": false, "three": true })
+			print(a)
+
+		)",
+		{ "{\"one\": true, \"three\": true, \"two\": false}" }
+	);
+}
+
+//	Notice: the order of dict-values is implementation specific: to_string() can give different results.
+QUARK_UNIT_TEST("Floyd test suite", "dict [int] constructor", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = to_string({ "one": 1000, "two": 2000, "three": 3000 })
+			print(a)
+
+		)",
+		{ "{\"one\": 1000, \"three\": 3000, \"two\": 2000}" }
+	);
+}
+QUARK_UNIT_TEST("Floyd test suite", "dict [double] constructor", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = to_string({ "one": 1.0, "two": 2.0, "three": 3.0 })
+			print(a)
+
+		)",
+		{ "{\"one\": 1.0, \"three\": 3.0, \"two\": 2.0}" }
+	);
+}
+QUARK_UNIT_TEST("Floyd test suite", "dict [string] constructor", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = to_string({ "one": "1000", "two": "2000", "three": "3000" })
+			print(a)
+
+		)",
+		{ R"___({"one": "1000", "three": "3000", "two": "2000"})___" }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "dict [typeid] constructor", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = to_string({ "one": int, "two": bool, "three": string })
+			print(a)
+
+		)",
+		{ R"___({"one": int, "three": string, "two": bool})___" }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "dict [func] constructor", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func int a(string s){
+				return 2
+			}
+
+			func int b(string s){
+				return 3
+			}
+
+			func int c(string s){
+				return 4
+			}
+
+			let d = {"one": a, "two": b, "three": c}
+			print(d)
+
+		)",
+		{
+			R"___({"one": function int(string) pure, "three": function int(string) pure, "two": function int(string) pure})___"
+		 }
+	);
+}
+
+
+QUARK_UNIT_TEST("Floyd test suite", "dict [struct] constructor", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			struct person_t { string name int birth_year }
+
+			let d = { "one": person_t("Mozart", 1782), "two": person_t("Bono", 1955) }
+			print(d)
+
+		)",
+		{
+			R"___({"one": {name="Mozart", birth_year=1782}, "two": {name="Bono", birth_year=1955}})___"
+		 }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "dict [vector[string]] constructor", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let d = { "a": ["red", "blue"], "b": ["one", "two", "three"] }
+			print(d)
+
+		)",
+		{
+			R"___({"a": ["red", "blue"], "b": ["one", "two", "three"]})___"
+		 }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "dict [dict[string]] constructor", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let d = { "a": {"color": "red", "color2": "blue"}, "b": {"num": "one", "num2": "two", "num3": "three"} }
+			print(d)
+
+		)",
+		{
+			R"___({"a": {"color": "red", "color2": "blue"}, "b": {"num": "one", "num2": "two", "num3": "three"}})___"
+		 }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "dict [json_value] constructor", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let d = { "a": json_value("red"), "b": json_value("blue") }
+			print(d)
+
+		)",
+		{
+			R"___({"a": "red", "b": "blue"})___"
+		 }
+	);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
