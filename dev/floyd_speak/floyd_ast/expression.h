@@ -354,7 +354,9 @@ namespace floyd {
 			QUARK_ASSERT(other.check_invariant());
 
 			return true
+#if DEBUG
 				&& _debug == other._debug
+#endif
 				&& location == other.location
 //				&& _contents == other._contents
 				&& compare_shared_values(_output_type, other._output_type)
@@ -413,7 +415,9 @@ namespace floyd {
 		> expression_variant_t;
 
 		private: expression_t(const expression_variant_t& contents, const std::shared_ptr<typeid_t>& output_type) :
+#if DEBUG
 			_debug(""),
+#endif
 			location(k_no_location),
 			_contents(contents),
 			_output_type(output_type)

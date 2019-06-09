@@ -3003,7 +3003,9 @@ static llvm_execution_engine_t make_engine_no_init(llvm_instance_t& instance, ll
 	//	ee2.ee->DisableSymbolSearching(false);
 	}
 
+#if DEBUG
 	check_nulls(ee2, program_breaks);
+#endif
 
 //	llvm::WriteBitcodeToFile(exeEng->getVerifyModules(), raw_ostream &Out);
 	return ee2;

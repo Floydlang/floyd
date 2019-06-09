@@ -68,6 +68,7 @@ compilation_unit_t make_compilation_unit(const std::string& source_code, const s
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 

@@ -324,10 +324,12 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 		}
 		value_t operator()(const typeid_t::any_t& e) const{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 
 		value_t operator()(const typeid_t::void_t& e) const{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 		value_t operator()(const typeid_t::bool_t& e) const{
 			if(v.is_true()){
@@ -428,6 +430,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 		}
 		value_t operator()(const typeid_t::unresolved_t& e) const{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 	};
 	return std::visit(visitor_t{ target_type, v}, target_type._contents);

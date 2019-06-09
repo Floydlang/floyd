@@ -172,6 +172,7 @@ test_report_t run_program2(const compilation_unit_t& cu, const std::vector<std::
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 
@@ -186,6 +187,7 @@ std::map<std::string, value_t> test_run_container2(const compilation_unit_t& cu,
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 

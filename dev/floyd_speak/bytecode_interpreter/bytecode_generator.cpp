@@ -1620,6 +1620,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 
 			bc_function_definition_t operator()(const function_definition_t::empty_t& e) const{
 				QUARK_ASSERT(false);
+				throw std::exception();
 			}
 			bc_function_definition_t operator()(const function_definition_t::floyd_func_t& e) const{
 				const auto body2 = bcgen_function(gen_acc, function_def);
