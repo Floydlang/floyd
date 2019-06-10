@@ -24,11 +24,10 @@ using namespace std;
 #include "quark.h"
 
 
+#ifdef __APPLE__
+
 #include <mach/machine.h>
 
-
-
-#ifdef __APPLE__
 
 namespace floyd {
 

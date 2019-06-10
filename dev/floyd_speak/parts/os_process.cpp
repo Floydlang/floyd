@@ -13,7 +13,7 @@
 #include <pthread.h>
 #include <condition_variable>
 
-
+#include <cstring>
 
 std::string get_current_thread_name(){
 	char name[16];
