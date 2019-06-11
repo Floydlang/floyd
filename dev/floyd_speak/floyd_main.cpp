@@ -22,9 +22,9 @@
 #include "file_handling.h"
 
 #include "pass3.h"
-
-#include "libs/Celero-master/include/celero/Celero.h"
-#include "libs/Celero-master/include/celero/Executor.h"
+#include "floyd_llvm.h"
+#include "compiler_helpers.h"
+#include "compiler_basics.h"
 
 std::string floyd_version_string = "0.3";
 
@@ -170,31 +170,11 @@ void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_cod
 ////////////////////////////////	BENCHMARKS
 
 
-static void celero_run(const std::vector<std::string>& command_line_args) {
-	std::vector<const char*> ptrs;
-	for(const auto& e: command_line_args){
-		ptrs.push_back(e.c_str());
-	}
-	celero::Run(static_cast<int>(ptrs.size()), (char**)&ptrs[0]);
-//celero::executor::RunAll();
-}
 
 
 void run_benchmark(){
-#if 1
-	const auto dirs = GetDirectories();
-	const std::vector<std::string> inputs = {
-		"myapp",
-		std::string() + "--outputTable",
-		dirs.desktop_dir + "/bench.txt"
-	};
-
-	celero_run(inputs);
-#else
 	floyd_benchmark();
-#endif
 }
-
 
 
 //	Print usage instructions to stdio.
@@ -211,6 +191,73 @@ floyd benchmark 			- Runs Floyd built in suite of benchmark tests and prints the
 floyd run -t mygame.floyd	- the -t turns on tracing, which shows Floyd compilation steps and internal states
 )";
 }
+
+
+
+
+int do_compile_command(const command_line_args_t& command_line_args){
+	if(command_line_args.extra_arguments.size() == 1){
+		const auto source_path = command_line_args.extra_arguments[0];
+		const auto source = read_text_file(source_path);
+		const auto cu = floyd::make_compilation_unit_lib(source, source_path);
+		const auto ast = floyd::compile_to_sematic_ast__errors(cu);
+		const auto json = semantic_ast_to_json(ast);
+		std::cout << json_to_pretty_string(json._value);
+		std::cout << std::endl;
+	}
+	else{
+	}
+	return EXIT_SUCCESS;
+}
+
+
+int do_run_command(const command_line_args_t& command_line_args){
+	//	Run provided script file.
+	if(command_line_args.extra_arguments.size() >= 1){
+//			const auto floyd_args = std::vector<std::string>(command_line_args.extra_arguments.begin() + 1, command_line_args.extra_arguments.end());
+		const auto floyd_args = command_line_args.extra_arguments;
+
+		const auto source_path = floyd_args[0];
+		const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
+
+		const auto source = read_text_file(source_path);
+		const auto cu = floyd::make_compilation_unit_lib(source, source_path);
+		auto program = floyd::compile_to_bytecode(cu);
+
+		const auto result = floyd::run_container(program, args2, program._container_def._name);
+		if(result.size() == 1 && result.find("main()") != result.end()){
+			const auto main_return = *result.begin();
+			const auto error_code = main_return.second.is_int() ? main_return.second.get_int_value() : EXIT_SUCCESS;
+			return static_cast<int>(error_code);
+		}
+		else{
+			return EXIT_SUCCESS;
+		}
+	}
+	else{
+		help();
+		return EXIT_SUCCESS;
+	}
+}
+
+int do_run_llvm_command(const command_line_args_t& command_line_args){
+	//	Run provided script file.
+	if(command_line_args.extra_arguments.size() >= 1){
+		const auto floyd_args = command_line_args.extra_arguments;
+		const auto source_path = floyd_args[0];
+		const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
+
+		const auto source = read_text_file(source_path);
+		const auto error_code = floyd::run_using_llvm_helper(source, source_path, args2);
+		return static_cast<int>(error_code);
+	}
+	else{
+		help();
+		return EXIT_SUCCESS;
+	}
+}
+
+
 
 //	Runs one of the commands, args depends on which command.
 int run_command(const std::vector<std::string>& args){
@@ -232,51 +279,13 @@ int run_command(const std::vector<std::string>& args){
 		return EXIT_SUCCESS;
 	}
 	else if(command_line_args.subcommand == "compile"){
-		if(command_line_args.extra_arguments.size() == 1){
-			const auto source_path = command_line_args.extra_arguments[0];
-			const auto source = read_text_file(source_path);
-			const auto ast = floyd::compile_to_sematic_ast(source, source_path);
-			const auto json = ast_to_json(ast._checked_ast);
-			std::cout << json_to_pretty_string(json._value);
-			std::cout << std::endl;
-		}
-		else{
-		}
-		return EXIT_SUCCESS;
+		return do_compile_command(command_line_args);
 	}
 	else if(command_line_args.subcommand == "run"){
-
-		//	Run provided script file.
-		if(command_line_args.extra_arguments.size() >= 1){
-//			const auto floyd_args = std::vector<std::string>(command_line_args.extra_arguments.begin() + 1, command_line_args.extra_arguments.end());
-			const auto floyd_args = command_line_args.extra_arguments;
-
-			const auto source_path = floyd_args[0];
-			const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
-
-			const auto source = read_text_file(source_path);
-
-			auto program = floyd::compile_to_bytecode(source, source_path);
-
-			std::vector<floyd::value_t> args3;
-			for(const auto& e: args2){
-				args3.push_back(floyd::value_t::make_string(e));
-			}
-
-			const auto result = floyd::run_container(program, args3, program._container_def._name);
-			if(result.size() == 1 && result.find("main()") != result.end()){
-				const auto main_return = *result.begin();
-				const auto error_code = main_return.second.is_int() ? main_return.second.get_int_value() : EXIT_SUCCESS;
-				return static_cast<int>(error_code);
-			}
-			else{
-				return EXIT_SUCCESS;
-			}
-		}
-		else{
-			help();
-			return EXIT_SUCCESS;
-		}
+		return do_run_command(command_line_args);
+	}
+	else if(command_line_args.subcommand == "run_llvm"){
+		return do_run_llvm_command(command_line_args);
 	}
 	else{
 		help();
@@ -356,7 +365,9 @@ json_t handle_server_request(const json_t& request) {
 			if(command == "run"){
 				const auto source_path = request.get_object_element("source_path").get_string();
 				const auto source = read_text_file(source_path);
-				auto program = floyd::compile_to_bytecode(source, source_path);
+
+				const auto cu = floyd::make_compilation_unit_lib(source, source_path);
+				auto program = floyd::compile_to_bytecode(cu);
 
 				const auto result = floyd::run_container(program, {}, program._container_def._name);
 				if(result.size() == 1 && result.find("main()") != result.end()){

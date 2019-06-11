@@ -9,18 +9,19 @@ project( floyd_speak)
 
 cmake_minimum_required (VERSION 3.4)
 
-add_subdirectory(libs/Celero-master)
+#add_subdirectory(libs/Celero-master)
 
-SET (CMAKE_BUILD_TYPE Release)
-#SET (CMAKE_BUILD_TYPE Debug)
+#SET (CMAKE_BUILD_TYPE Release)
+SET (CMAKE_BUILD_TYPE Debug)
 
-include_directories(parts floyd_basics floyd_ast bytecode_interpreter celero parts/immer-master floyd_parser parts/sha1 libs/Celero-master/include  .)
+include_directories(parts /usr/include floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
 
 # for newer cmake 
 #add_compile_definitions(DEBUG)
 add_definitions(-DDEBUG)
 
-set(CMAKE_CXX_FLAGS "-std=c++17")
+# -fno-exceptions
+set(CMAKE_CXX_FLAGS "-std=c++17 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
 
 #Options for emscripten
 #set(CMAKE_CXX_FLAGS "--closure 1 -std=c++1z -s USE_PTHREADS=1 -Os -s WASM=0 -s ASSERTIONS=1 -s DISABLE_EXCEPTION_CATCHING=0 --bind")
@@ -31,6 +32,8 @@ floyd_basics/ast_typeid.cpp
 floyd_basics/ast_typeid_helpers.cpp
 floyd_basics/ast_value.cpp
 benchmark_basics.cpp
+compiler_helpers.cpp
+pass2.cpp
 #benchmark_game_of_life.cpp
 bytecode_interpreter/bytecode_generator.cpp
 bytecode_interpreter/bytecode_interpreter.cpp
@@ -58,6 +61,7 @@ floyd_parser/parser_primitives.cpp
 parts/hardware_caps.cpp
 interpretator_benchmark.cpp
 parts/immutable_ref_value.cpp
+parts/os_process.cpp
 #parts/json_parser.cpp
 parts/json_support.cpp
 #parts/json_writer.cpp
@@ -69,8 +73,20 @@ parts/utils.cpp
 parts/file_handling.cpp
 pass3.cpp
 software_system.cpp
+floyd_runtime/floyd_runtime.cpp
+floyd_runtime/variable_length_quantity.cpp 
+llvm_pipeline/floyd_llvm.cpp  
+llvm_pipeline/floyd_llvm_codegen.cpp  
+llvm_pipeline/floyd_llvm_helpers.cpp  
+llvm_pipeline/floyd_llvm_runtime.cpp
 )
 
+# llvm-config --cxxflags --ldflags --system-libs --libs engine interpreter
+#
+# -I/usr/include -std=c++17  -fno-exceptions -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS
+# -L/usr/lib
+# -lLLVM-8
+#
 ##
 ## floyd_speak Files
 ##
@@ -126,8 +142,7 @@ target_include_directories( floyd
 
 target_link_libraries( floyd
 ${FLOYD_SPEAK_STATIC_DEPENDENCIES}
-${FLOYD_SPEAK_DEPENDENCIES} pthread
-celero
+${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM-8
 )
 
 
@@ -136,7 +151,7 @@ celero
 ##
 
 
-add_executable( floyd-UT MACOSX_BUNDLE
+add_executable( floydut MACOSX_BUNDLE
 ${FLOYD_SOURCES}
 ${FLOYD_SPEAK__UT_SOURCES}
 ${FLOYD_SPEAK__UT_PUBLIC_HEADERS}
@@ -145,14 +160,13 @@ ${FLOYD_SPEAK__UT_PRIVATE_HEADERS}
 ${FLOYD_SPEAK__UT_RESOURCES}
 )
 
-target_compile_definitions(floyd-UT PRIVATE DEBUG=1)
+target_compile_definitions(floydut PRIVATE DEBUG=1)
 
-target_include_directories( floyd-UT
+target_include_directories( floydut
    PUBLIC
 )
 
-target_link_libraries( floyd-UT
+target_link_libraries( floydut
 ${FLOYD_SPEAK__UT_STATIC_DEPENDENCIES}
-${FLOYD_SPEAK__UT_DEPENDENCIES} pthread
-celero
+${FLOYD_SPEAK__UT_DEPENDENCIES} pthread LLVM-8
 )

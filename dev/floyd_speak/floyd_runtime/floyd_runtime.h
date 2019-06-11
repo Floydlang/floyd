@@ -9,6 +9,52 @@
 #ifndef floyd_runtime_hpp
 #define floyd_runtime_hpp
 
-#include <stdio.h>
+
+#include <string>
+#include "ast_typeid.h"
+
+struct json_t;
+
+namespace floyd {
+
+
+//////////////////////////////////////		runtime_handler_i
+
+/*
+	This is a callback from the interpreter (really the host functions run from the interpeter)
+	that allows the interpreter to indirectly control the outside runtime that hosts the interpreter.
+	FUTURE: Needs neater solution than this.
+*/
+struct runtime_handler_i {
+	virtual ~runtime_handler_i(){};
+	virtual void on_send(const std::string& process_id, const json_t& message) = 0;
+};
+
+
+inline typeid_t get_main_signature_arg_impure(){
+	return typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_vector(typeid_t::make_string()) }, epure::impure);
+}
+
+inline typeid_t get_main_signature_no_arg_impure(){
+ 	return typeid_t::make_function(typeid_t::make_int(), { }, epure::impure);
+}
+
+
+inline typeid_t get_main_signature_arg_pure(){
+	return typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_vector(typeid_t::make_string()) }, epure::pure);
+}
+
+inline typeid_t get_main_signature_no_arg_pure(){
+	return typeid_t::make_function(typeid_t::make_int(), { }, epure::pure);
+}
+
+//	T x_init() impure
+typeid_t make_process_init_type(const typeid_t& t);
+
+//	T x(T state, json_value message) impure
+typeid_t make_process_message_handler_type(const typeid_t& t);
+
+
+}	//	floyd
 
 #endif /* floyd_runtime_hpp */

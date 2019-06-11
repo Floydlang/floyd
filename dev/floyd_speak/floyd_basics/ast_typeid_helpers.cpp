@@ -22,24 +22,16 @@ std::vector<typeid_t> typeids_from_json_array(const std::vector<json_t>& m);
 
 
 
-ast_json_t struct_definition_to_ast_json(const struct_definition_t& v){
+json_t struct_definition_to_ast_json(const struct_definition_t& v){
 	QUARK_ASSERT(v.check_invariant());
 
-	return ast_json_t::make(json_t::make_array({
+	return json_t::make_array({
 		members_to_json(v._members)
-	}));
+	});
 }
 
 
-ast_json_t protocol_definition_to_ast_json(const protocol_definition_t& v){
-	QUARK_ASSERT(v.check_invariant());
-
-	return ast_json_t::make(json_t::make_array({
-		members_to_json(v._members)
-	}));
-}
-
-ast_json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
+json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 	QUARK_ASSERT(t.check_invariant());
 
 	const auto b = t.get_base_type();
@@ -47,8 +39,8 @@ ast_json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 	const auto basetype_str_tagged = tags == json_tags::k_tag_resolve_state ? (std::string() + tag_resolved_type_char + basetype_str) : basetype_str;
 
 	if(false
-		|| b == base_type::k_internal_undefined
-		|| b == base_type::k_internal_dynamic
+		|| b == base_type::k_undefined
+		|| b == base_type::k_any
 
 		|| b == base_type::k_void
 		|| b == base_type::k_bool
@@ -58,52 +50,39 @@ ast_json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 		|| b == base_type::k_json_value
 		|| b == base_type::k_typeid
 	){
-		return ast_json_t::make(basetype_str_tagged);
+		return basetype_str_tagged;
 	}
 	else if(b == base_type::k_struct){
 		const auto struct_def = t.get_struct();
-		return ast_json_t::make(
-			json_t::make_array({
-				json_t(basetype_str_tagged),
-				struct_definition_to_ast_json(struct_def)._value
-			})
-		);
-	}
-	else if(b == base_type::k_protocol){
-		const auto protocol_def = t.get_protocol();
-		return ast_json_t::make(
-			json_t::make_array({
-				json_t(basetype_str_tagged),
-				protocol_definition_to_ast_json(protocol_def)._value
-			})
-		);
+		return json_t::make_array({
+			json_t(basetype_str_tagged),
+			struct_definition_to_ast_json(struct_def)
+		});
 	}
 	else if(b == base_type::k_vector){
 		const auto d = t.get_vector_element_type();
-		return ast_json_t::make(json_t::make_array({
+		return json_t::make_array({
 			json_t(basetype_str),
-			typeid_to_ast_json(d, tags)._value
-		}));
+			typeid_to_ast_json(d, tags)
+		});
 	}
 	else if(b == base_type::k_dict){
 		const auto d = t.get_dict_value_type();
-		return ast_json_t::make(json_t::make_array({
+		return json_t::make_array({
 			json_t(basetype_str),
-			typeid_to_ast_json(d, tags)._value
-		}));
+			typeid_to_ast_json(d, tags)
+		});
 	}
 	else if(b == base_type::k_function){
-		return ast_json_t::make(json_t::make_array({
+		return json_t::make_array({
 			basetype_str,
-			typeid_to_ast_json(t.get_function_return(), tags)._value,
+			typeid_to_ast_json(t.get_function_return(), tags),
 			typeids_to_json_array(t.get_function_args()),
 			t.get_function_pure() == epure::pure ? true : false
-		}));
+		});
 	}
-	else if(b == base_type::k_internal_unresolved_type_identifier){
-		return ast_json_t::make(
-			std::string() + std::string(1, tag_unresolved_type_char) + t.get_unresolved_type_identifier()
-		);
+	else if(b == base_type::k_unresolved){
+		return std::string() + std::string(1, tag_unresolved_type_char) + t.get_unresolved();
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -111,23 +90,36 @@ ast_json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 	}
 }
 
-typeid_t typeid_from_ast_json(const ast_json_t& t2){
-	QUARK_ASSERT(t2._value.check_invariant());
+std::string strip_resolve_tag(const std::string& s){
+	QUARK_ASSERT(s.size() > 1);
 
-	const auto t = t2._value;
+	if(s[0] == '^'){
+		return s.substr(1);
+	}
+	else if(s[0] == '#'){
+		return s.substr(1);
+	}
+	else{
+		return s;
+	}
+}
+
+typeid_t typeid_from_ast_json(const json_t& t2){
+	QUARK_ASSERT(t2.check_invariant());
+
+	const auto t = t2;
 	if(t.is_string()){
 		const auto s0 = t.get_string();
-		auto s = std::string(s0.begin() + 1, s0.end());
-
 		if(s0.front() == tag_resolved_type_char){
+			const auto s = s0.substr(1);
 			if(s == ""){
 				return typeid_t::make_undefined();
 			}
-			else if(s == keyword_t::k_internal_undefined){
+			else if(s == keyword_t::k_undefined){
 				return typeid_t::make_undefined();
 			}
-			else if(s == keyword_t::k_internal_dynamic){
-				return typeid_t::make_internal_dynamic();
+			else if(s == keyword_t::k_any){
+				return typeid_t::make_any();
 			}
 			else if(s == keyword_t::k_void){
 				return typeid_t::make_void();
@@ -155,6 +147,7 @@ typeid_t typeid_from_ast_json(const ast_json_t& t2){
 			}
 		}
 		else if(s0.front() == tag_unresolved_type_char){
+			const auto s = s0.substr(1);
 			return typeid_t::make_unresolved_type_identifier(s);
 		}
 		else{
@@ -163,10 +156,13 @@ typeid_t typeid_from_ast_json(const ast_json_t& t2){
 	}
 	else if(t.is_array()){
 		const auto a = t.get_array();
-		const auto s = a[0].get_string();
+		const auto s0 = a[0].get_string();
+//		QUARK_ASSERT(s0.front() != '^');
+		QUARK_ASSERT(s0.front() != '#');
+		const auto s = s0.front() == '^' ? s0.substr(1) : s0;
 /*
 		if(s == "typeid"){
-			const auto t3 = typeid_from_ast_json(ast_json_t{a[1]});
+			const auto t3 = typeid_from_ast_json(json_t{a[1]});
 			return typeid_t::make_typeid(t3);
 		}
 		else
@@ -178,23 +174,16 @@ typeid_t typeid_from_ast_json(const ast_json_t& t2){
 			const std::vector<member_t> struct_members = members_from_json(member_array);
 			return typeid_t::make_struct2(struct_members);
 		}
-		if(s == keyword_t::k_protocol){
-			const auto protocol_def_array = a[1].get_array();
-			const auto member_array = protocol_def_array[0].get_array();
-
-			const std::vector<member_t> protocol_members = members_from_json(member_array);
-			return typeid_t::make_protocol(protocol_members);
-		}
 		else if(s == "vector"){
-			const auto element_type = typeid_from_ast_json(ast_json_t::make(a[1]));
+			const auto element_type = typeid_from_ast_json(a[1]);
 			return typeid_t::make_vector(element_type);
 		}
 		else if(s == "dict"){
-			const auto value_type = typeid_from_ast_json(ast_json_t::make(a[1]));
+			const auto value_type = typeid_from_ast_json(a[1]);
 			return typeid_t::make_dict(value_type);
 		}
 		else if(s == "func"){
-			const auto ret_type = typeid_from_ast_json(ast_json_t::make(a[1]));
+			const auto ret_type = typeid_from_ast_json(a[1]);
 			const auto arg_types_array = a[2].get_array();
 			const std::vector<typeid_t> arg_types = typeids_from_json_array(arg_types_array);
 
@@ -223,14 +212,14 @@ typeid_t typeid_from_ast_json(const ast_json_t& t2){
 std::vector<json_t> typeids_to_json_array(const std::vector<typeid_t>& m){
 	std::vector<json_t> r;
 	for(const auto& a: m){
-		r.push_back(typeid_to_ast_json(a, json_tags::k_tag_resolve_state)._value);
+		r.push_back(typeid_to_ast_json(a, json_tags::k_tag_resolve_state));
 	}
 	return r;
 }
 std::vector<typeid_t> typeids_from_json_array(const std::vector<json_t>& m){
 	std::vector<typeid_t> r;
 	for(const auto& a: m){
-		r.push_back(typeid_from_ast_json(ast_json_t::make(a)));
+		r.push_back(typeid_from_ast_json(a));
 	}
 	return r;
 }
@@ -241,7 +230,7 @@ json_t members_to_json(const std::vector<member_t>& members){
 	std::vector<json_t> r;
 	for(const auto& i: members){
 		const auto member = make_object({
-			{ "type", typeid_to_ast_json(i._type, json_tags::k_tag_resolve_state)._value },
+			{ "type", typeid_to_ast_json(i._type, json_tags::k_tag_resolve_state) },
 			{ "name", json_t(i._name) }
 		});
 		r.push_back(json_t(member));
@@ -255,7 +244,7 @@ std::vector<member_t> members_from_json(const json_t& members){
 	std::vector<member_t> r;
 	for(const auto& i: members.get_array()){
 		const auto m = member_t(
-			typeid_from_ast_json(ast_json_t::make(i.get_object_element("type"))),
+			typeid_from_ast_json(i.get_object_element("type")),
 			i.get_object_element("name").get_string()
 		);
 
@@ -270,8 +259,8 @@ void ut_verify(const quark::call_context_t& context, const typeid_t& result, con
 
 	ut_verify(
 		context,
-		typeid_to_ast_json(result, json_tags::k_plain)._value,
-		typeid_to_ast_json(expected, json_tags::k_plain)._value
+		typeid_to_ast_json(result, json_tags::k_plain),
+		typeid_to_ast_json(expected, json_tags::k_plain)
 	);
 }
 

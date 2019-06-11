@@ -17,6 +17,14 @@
 
 namespace floyd {
 
+
+////////////////////////////////////////		function_id_t
+
+
+typedef int64_t function_id_t;
+
+
+
 ////////////////////////////////////////		location_t
 
 
@@ -27,6 +35,9 @@ struct location_t {
 		offset(offset)
 	{
 	}
+
+	location_t(const location_t& other) = default;
+	location_t& operator=(const location_t& other) = default;
 
 	std::size_t offset;
 };

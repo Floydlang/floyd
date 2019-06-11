@@ -32,9 +32,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2C1D84DC1CA765A90042F0A8"
-            BuildableName = "floyd"
-            BlueprintName = "floyd_speak"
+            BlueprintIdentifier = "2C8C03B22221DBD70085EBBE"
+            BuildableName = "benchmark"
+            BlueprintName = "benchmark"
             ReferencedContainer = "container:floyd_speak.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -55,20 +55,16 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2C1D84DC1CA765A90042F0A8"
-            BuildableName = "floyd"
-            BlueprintName = "floyd_speak"
+            BlueprintIdentifier = "2C8C03B22221DBD70085EBBE"
+            BuildableName = "benchmark"
+            BlueprintName = "benchmark"
             ReferencedContainer = "container:floyd_speak.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "benchmark"
+            argument = "--benchmark_counters_tabular=true"
             isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "-t"
-            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>
@@ -77,16 +73,16 @@
    <ProfileAction
       buildConfiguration = "Release"
       shouldUseLaunchSchemeArgsEnv = "YES"
-      savedToolIdentifier = ""
+      savedToolIdentifier = "/Applications/Xcode.app/Contents/Applications/Instruments.app/Contents/Resources/templates/Time Profiler.tracetemplate"
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
       <BuildableProductRunnable
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2C1D84DC1CA765A90042F0A8"
-            BuildableName = "floyd"
-            BlueprintName = "floyd_speak"
+            BlueprintIdentifier = "2C8C03B22221DBD70085EBBE"
+            BuildableName = "benchmark"
+            BlueprintName = "benchmark"
             ReferencedContainer = "container:floyd_speak.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

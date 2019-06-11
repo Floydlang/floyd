@@ -13,7 +13,7 @@ Floyd is programming language as an alternative to Java and C++, JavaScript and 
 
 1. BASIC CONCEPTS
 2. THE LANGUAGE
-3. BUILT-IN FUNCTIONS
+3. CORE FUNCTIONS
 4. COMMAND LINE TOOL
 5. REFERENCE
 
@@ -917,11 +917,7 @@ let hello = "Greeting message."
 | let d = 8.5				| Allocate an immutable local "d" and initialize it with 8.5. Type will be inferred to double.
 | let e = "hello"				| Allocate an immutable local "e" and initialize it with "hello". Type will be inferred to string.
 | let f = f(3) == 2		| Allocate an immutable local "f" and initialize it true/false. Type will be bool.
-
-| let pixel x = 20 |
-| let int x = {"a": 1, "b": 2} |
-| let  int x = 10 |
-| let int (string a) x = f(4 == 5) |
+| let int x = {"a": 1, "b": 2} | Allocate a new dictionary.
 
 
 
@@ -1172,7 +1168,7 @@ container-def {
 
 	"clocks": {
 		"main": {
-			"a": "my_gui_main",
+			"a": "my_gui",
 			"b": "iphone-ux"
 		},
 
@@ -1246,7 +1242,7 @@ container-def {
 
 	"clocks": {
 		"main": {
-			"a": "my_gui_main",
+			"a": "my_gui",
 			"b": "iphone-ux"
 		},
 
@@ -1269,6 +1265,29 @@ container-def {
 		"Free Game Engine-component",
 		"iphone-ux-component"
 	]
+}
+```
+
+For each process you've listed under "clocks", ("my_gui", "iphone-ux", "server_com" and "renderer" in example above) you need to implement two functions. The init-function and the message handler. These functions are named based on the process.
+
+The init function is called x__init() where x is a placeholder. It takes no arguments, is impure and returns a value of type of your choice. This type is your process' memory slot -- the only mutable state your process has access to.
+
+The message handler is named like your process, takes two arguments: the current state of your memory, of type T and a message to process. It's am impure function. It returns the next state of it's memory. The memory type must be the same between the init and message handler functions. It's usually a struct that represents the top level of your process' entire state.
+
+The message is represented as a json_value for now. This is a workaround until there is a proper sumtype feature in Floyd.
+
+
+```
+func my_gui_state_t my_gui__init() impure {
+	send("a", "dec")
+	send("a", "dec")
+	send("a", "dec")
+	send("a", "dec")
+	send("a", "stop")
+	return my_gui_state_t(1000)
+}
+
+func my_gui_state_t my_gui(my_gui_state_t state, json_value message) impure{
 }
 ```
 
@@ -1366,6 +1385,7 @@ You can use these escape characters in string literals by entering \n or \' or \
 
 |ESCAPE SEQUENCE	| RESULT CHARACTER, AS HEX		| ASCII MEANING
 |:---				|:---						|:---
+| \0		| 0x00	| ZERO
 | \a		| 0x07	| BEL, bell, alarm, \a
 | \b		| 0x08	| BS, backspace, \b
 | \f		| 0x0c	| FF, NP, form feed, \f
@@ -1395,7 +1415,7 @@ Floyd string literals do not support insert hex sequences or Unicode code points
 - __size()__: returns the number of characters in the string, as an integer.
 - __find()__: searches from left to right after a substring and returns its index or -1
 - __push_back()__: appends a character or string to the right side of the string. The character is stored in an int.
-- __subset__: extracts a range of characters from the string, as specified by start and end indexes. aka substr()
+- __subset()__: extracts a range of characters from the string, as specified by start and end indexes. aka substr()
 - __replace()__: replaces a range of a string with another string. Can also be used to erase or insert.
 
 
@@ -1442,9 +1462,9 @@ assert(a == [ 10, 20, 30, 40, 50 ])
 - __print()__: prints a vector to the default output of the app.
 - __update()__: changes one element of the vector and returns a new vector.
 - __size()__: returns the number of elements in the vector, as an integer.
-- __find()__: searches from left to right after a sub-vector and returns its index or -1
+- __find()__: searches from left to right after a element and returns its index or -1
 - __push_back()__: appends an element to the right side of the vector.
-- __subset__: extracts a range of elements from the vector, as specified by start and end indexes.
+- __subset()__: extracts a range of elements from the vector, as specified by start and end indexes.
 - __replace()__: replaces a range of a vector with another vector. Can also be used to erase or insert.
 
 
@@ -1670,7 +1690,7 @@ Protocol member functions can be tagged "impure" which allows it to be implement
 
 
 
-# 3. BUILT-IN FUNCTIONS
+# 3. CORE FUNCTIONS
 
 These functions are built into the language itself and are always available to your code. They are all pure so can be used in pure functions.
 
@@ -1788,7 +1808,7 @@ int size(obj)
 
 ## find()
 
-Searched for a value in a collection and returns its index or -1.
+Searches for a value in a collection and returns its index or -1.
 
 ```
 int find(obj, value)
@@ -1890,7 +1910,7 @@ vector replace(vector a, int start, int end, vector new)
 |TYPE		  	| EXAMPLE						| RESULT |
 |:---			|:---							|:---
 | string		|replace("hello", 0, 2, "bori")	| borillo
-| vector		|replace([1,2,3,4,5], 1, 4, [8, 9])	| [1,8,9,45]
+| vector		|replace([1,2,3,4,5], 1, 4, [8, 9])	| [1,8,9,5]
 | dictionary	| 								|
 | struct		|								|
 | json_value:array	|							|
@@ -1905,7 +1925,7 @@ Notice: by specifying the same index in *start* and *length* you will __insert__
 
 ## typeof()
 
-Return the type of its input value. The returned typeid-value is a complete Floyd type and can be stored, compared and so on.
+Return the type of its input value. The returned typeid-value is a complete Floyd type and can be stored, compared and so on. The type is resolved at compile time so the same source code line will always return the same type. 
 
 ```
 typeid typeof(any)
@@ -1967,7 +1987,7 @@ container-def {
 
 	"clocks": {
 		"main": {
-			"a": "my_gui_main",
+			"a": "my_gui",
 			"b": "iphone-ux"
 		},
 
@@ -1992,7 +2012,7 @@ container-def {
 	]
 }
 
-func string my_gui_main__init() impure {
+func string my_gui__init() impure {
 	print("HELLO")
 	send("a", "stop")
 	send("b", "stop")

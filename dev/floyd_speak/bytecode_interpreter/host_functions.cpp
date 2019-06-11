@@ -11,6 +11,12 @@
 #include "json_support.h"
 #include "ast_typeid_helpers.h"
 
+#include "text_parser.h"
+#include "file_handling.h"
+#include "sha1_class.h"
+#include "ast_value.h"
+#include "ast_json.h"
+
 #include <cmath>
 #include <sys/time.h>
 
@@ -19,12 +25,8 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
-#include "text_parser.h"
-#include "file_handling.h"
-#include "sha1_class.h"
-#include "ast_value.h"
-#include "ast_json.h"
 
+#include "floyd_runtime.h"
 
 namespace floyd {
 
@@ -39,7 +41,7 @@ using std::make_shared;
 //??? Remove usage of value_t
 value_t value_to_jsonvalue(const value_t& value){
 	const auto j = value_to_ast_json(value, json_tags::k_plain);
-	value_t json_value = value_t::make_json_value(j._value);
+	value_t json_value = value_t::make_json_value(j);
 	return json_value;
 }
 
@@ -243,11 +245,6 @@ typeid_t make__date_t__type(){
 	return temp;
 }
 
-/*
-	struct sha1_t {
-		string ascii40
-	}
-*/
 typeid_t make__sha1_t__type(){
 	const auto temp = typeid_t::make_struct2({
 		{ typeid_t::make_string(), "ascii40" }
@@ -255,11 +252,6 @@ typeid_t make__sha1_t__type(){
 	return temp;
 }
 
-/*
-	struct binary_t {
-		string bytes
-	}
-*/
 typeid_t make__binary_t__type(){
 	const auto temp = typeid_t::make_struct2({
 		{ typeid_t::make_string(), "bytes" }
@@ -318,126 +310,130 @@ typeid_t make__fsentry_info_t__type(){
 
 
 
-
-
-
-
-
-
-
-
 //??? remove usage of value_t
 value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_type){
 	QUARK_ASSERT(v.check_invariant());
 
-	if(target_type.is_undefined()){
-		quark::throw_runtime_error("Invalid json schema, found null - unsupported by Floyd.");
-	}
-	else if(target_type.is_bool()){
-		if(v.is_true()){
-			return value_t::make_bool(true);
-		}
-		else if(v.is_false()){
-			return value_t::make_bool(false);
-		}
-		else{
-			quark::throw_runtime_error("Invalid json schema, expected true or false.");
-		}
-	}
-	else if(target_type.is_int()){
-		if(v.is_number()){
-			return value_t::make_int((int)v.get_number());
-		}
-		else{
-			quark::throw_runtime_error("Invalid json schema, expected number.");
-		}
-	}
-	else if(target_type.is_double()){
-		if(v.is_number()){
-			return value_t::make_double((double)v.get_number());
-		}
-		else{
-			quark::throw_runtime_error("Invalid json schema, expected number.");
-		}
-	}
-	else if(target_type.is_string()){
-		if(v.is_string()){
-			return value_t::make_string(v.get_string());
-		}
-		else{
-			quark::throw_runtime_error("Invalid json schema, expected string.");
-		}
-	}
-	else if(target_type.is_json_value()){
-		return value_t::make_json_value(v);
-	}
-	else if(target_type.is_typeid()){
-		const auto typeid_value = typeid_from_ast_json(ast_json_t::make(v));
-		return value_t::make_typeid_value(typeid_value);
-	}
-	else if(target_type.is_struct()){
-		if(v.is_object()){
-			const auto struct_def = target_type.get_struct();
-			vector<value_t> members2;
-			for(const auto& member: struct_def._members){
-				const auto member_value0 = v.get_object_element(member._name);
-				const auto member_value1 = unflatten_json_to_specific_type(member_value0, member._type);
-				members2.push_back(member_value1);
-			}
-			const auto result = value_t::make_struct_value(target_type, members2);
-			return result;
-		}
-		else{
-			quark::throw_runtime_error("Invalid json schema for Floyd struct, expected JSON object.");
-		}
-	}
 
-	else if(target_type.is_vector()){
-		if(v.is_array()){
-			const auto target_element_type = target_type.get_vector_element_type();
-			vector<value_t> elements2;
-			for(int i = 0 ; i < v.get_array_size() ; i++){
-				const auto member_value0 = v.get_array_n(i);
-				const auto member_value1 = unflatten_json_to_specific_type(member_value0, target_element_type);
-				elements2.push_back(member_value1);
+	struct visitor_t {
+		const typeid_t& target_type;
+		const json_t& v;
+
+		value_t operator()(const typeid_t::undefined_t& e) const{
+			quark::throw_runtime_error("Invalid json schema, found null - unsupported by Floyd.");
+		}
+		value_t operator()(const typeid_t::any_t& e) const{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+
+		value_t operator()(const typeid_t::void_t& e) const{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+		value_t operator()(const typeid_t::bool_t& e) const{
+			if(v.is_true()){
+				return value_t::make_bool(true);
 			}
-			const auto result = value_t::make_vector_value(target_element_type, elements2);
-			return result;
-		}
-		else{
-			quark::throw_runtime_error("Invalid json schema for Floyd vector, expected JSON array.");
-		}
-	}
-	else if(target_type.is_dict()){
-		if(v.is_object()){
-			const auto value_type = target_type.get_dict_value_type();
-			const auto source_obj = v.get_object();
-			std::map<std::string, value_t> obj2;
-			for(const auto& member: source_obj){
-				const auto member_name = member.first;
-				const auto member_value0 = member.second;
-				const auto member_value1 = unflatten_json_to_specific_type(member_value0, value_type);
-				obj2[member_name] = member_value1;
+			else if(v.is_false()){
+				return value_t::make_bool(false);
 			}
-			const auto result = value_t::make_dict_value(value_type, obj2);
-			return result;
+			else{
+				quark::throw_runtime_error("Invalid json schema, expected true or false.");
+			}
 		}
-		else{
-			quark::throw_runtime_error("Invalid json schema, expected JSON object.");
+		value_t operator()(const typeid_t::int_t& e) const{
+			if(v.is_number()){
+				return value_t::make_int((int)v.get_number());
+			}
+			else{
+				quark::throw_runtime_error("Invalid json schema, expected number.");
+			}
 		}
-	}
-	else if(target_type.is_function()){
-		quark::throw_runtime_error("Invalid json schema, cannot unflatten functions.");
-	}
-	else if(target_type.is_unresolved_type_identifier()){
-		QUARK_ASSERT(false);
-		quark::throw_exception();
-//		quark::throw_runtime_error("Invalid json schema, cannot unflatten functions.");
-	}
-	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
-	}
+		value_t operator()(const typeid_t::double_t& e) const{
+			if(v.is_number()){
+				return value_t::make_double((double)v.get_number());
+			}
+			else{
+				quark::throw_runtime_error("Invalid json schema, expected number.");
+			}
+		}
+		value_t operator()(const typeid_t::string_t& e) const{
+			if(v.is_string()){
+				return value_t::make_string(v.get_string());
+			}
+			else{
+				quark::throw_runtime_error("Invalid json schema, expected string.");
+			}
+		}
+
+		value_t operator()(const typeid_t::json_type_t& e) const{
+			return value_t::make_json_value(v);
+		}
+		value_t operator()(const typeid_t::typeid_type_t& e) const{
+			const auto typeid_value = typeid_from_ast_json(v);
+			return value_t::make_typeid_value(typeid_value);
+		}
+
+		value_t operator()(const typeid_t::struct_t& e) const{
+			if(v.is_object()){
+				const auto& struct_def = *e._struct_def;
+				vector<value_t> members2;
+				for(const auto& member: struct_def._members){
+					const auto member_value0 = v.get_object_element(member._name);
+					const auto member_value1 = unflatten_json_to_specific_type(member_value0, member._type);
+					members2.push_back(member_value1);
+				}
+				const auto result = value_t::make_struct_value(target_type, members2);
+				return result;
+			}
+			else{
+				quark::throw_runtime_error("Invalid json schema for Floyd struct, expected JSON object.");
+			}
+		}
+		value_t operator()(const typeid_t::vector_t& e) const{
+			if(v.is_array()){
+				const auto target_element_type = target_type.get_vector_element_type();
+				vector<value_t> elements2;
+				for(int i = 0 ; i < v.get_array_size() ; i++){
+					const auto member_value0 = v.get_array_n(i);
+					const auto member_value1 = unflatten_json_to_specific_type(member_value0, target_element_type);
+					elements2.push_back(member_value1);
+				}
+				const auto result = value_t::make_vector_value(target_element_type, elements2);
+				return result;
+			}
+			else{
+				quark::throw_runtime_error("Invalid json schema for Floyd vector, expected JSON array.");
+			}
+		}
+		value_t operator()(const typeid_t::dict_t& e) const{
+			if(v.is_object()){
+				const auto value_type = target_type.get_dict_value_type();
+				const auto source_obj = v.get_object();
+				std::map<std::string, value_t> obj2;
+				for(const auto& member: source_obj){
+					const auto member_name = member.first;
+					const auto member_value0 = member.second;
+					const auto member_value1 = unflatten_json_to_specific_type(member_value0, value_type);
+					obj2[member_name] = member_value1;
+				}
+				const auto result = value_t::make_dict_value(value_type, obj2);
+				return result;
+			}
+			else{
+				quark::throw_runtime_error("Invalid json schema, expected JSON object.");
+			}
+		}
+		value_t operator()(const typeid_t::function_t& e) const{
+			quark::throw_runtime_error("Invalid json schema, cannot unflatten functions.");
+		}
+		value_t operator()(const typeid_t::unresolved_t& e) const{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+	};
+	return std::visit(visitor_t{ target_type, v}, target_type._contents);
 }
 
 
@@ -470,7 +466,7 @@ bc_value_t host__to_pretty_string(interpreter_t& vm, const bc_value_t args[], in
 
 	const auto& value = args[0];
 	const auto json = bcvalue_to_json(value);
-	const auto s = json_to_pretty_string(json, 0, pretty_t{80, 4});
+	const auto s = json_to_pretty_string(json, 0, pretty_t{ 80, 4 });
 	return bc_value_t::make_string(s);
 }
 
@@ -796,8 +792,11 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 	if(start < 0 || end < 0){
 		quark::throw_runtime_error("replace() requires start and end to be non-negative.");
 	}
+	if(start > end){
+		quark::throw_runtime_error("replace() requires start <= end.");
+	}
 	if(args[3]._type != args[0]._type){
-		quark::throw_runtime_error("replace() requires 4th arg to be same as argument 0.");
+		quark::throw_runtime_error("replace() requires argument 4 to be same type of collection.");
 	}
 
 	if(obj._type.is_string()){
@@ -897,6 +896,7 @@ bc_value_t host__jsonvalue_to_value(interpreter_t& vm, const bc_value_t args[], 
 	return value_to_bc(result);
 }
 
+
 bc_value_t host__get_json_type(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
@@ -904,31 +904,7 @@ bc_value_t host__get_json_type(interpreter_t& vm, const bc_value_t args[], int a
 
 
 	const auto json_value = args[0].get_json_value();
-	if(json_value.is_object()){
-		return bc_value_t::make_int(1);
-	}
-	else if(json_value.is_array()){
-		return bc_value_t::make_int(2);
-	}
-	else if(json_value.is_string()){
-		return bc_value_t::make_int(3);
-	}
-	else if(json_value.is_number()){
-		return bc_value_t::make_int(4);
-	}
-	else if(json_value.is_true()){
-		return bc_value_t::make_int(5);
-	}
-	else if(json_value.is_false()){
-		return bc_value_t::make_int(6);
-	}
-	else if(json_value.is_null()){
-		return bc_value_t::make_int(7);
-	}
-	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
-	}
+	return bc_value_t::make_int(get_json_type(json_value));
 }
 
 
@@ -973,7 +949,7 @@ bc_value_t host__calc_string_sha1(interpreter_t& vm, const bc_value_t args[], in
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	const auto v = value_to_bc(result);
@@ -1004,7 +980,7 @@ bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], in
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	const auto v = value_to_bc(result);
@@ -1053,7 +1029,7 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	return result;
@@ -1095,7 +1071,7 @@ bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	return result;
@@ -1144,7 +1120,7 @@ bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	return result;
@@ -1196,7 +1172,7 @@ bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	return result;
@@ -1309,7 +1285,7 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	return result;
@@ -1436,7 +1412,7 @@ bc_value_t host__supermap2(interpreter_t& vm, const bc_value_t args[], int arg_c
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	return result;
@@ -1600,7 +1576,6 @@ bool is_valid_absolute_dir_path(const std::string& s){
 	return true;
 }
 
-//??? use absolute_path_t as argument!
 bc_value_t host__get_fsentries_shallow(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
@@ -1618,7 +1593,7 @@ bc_value_t host__get_fsentries_shallow(interpreter_t& vm, const bc_value_t args[
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(vec2);
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	const auto v = value_to_bc(vec2);
@@ -1633,7 +1608,7 @@ bc_value_t host__get_fsentries_deep(interpreter_t& vm, const bc_value_t args[], 
 
 	const string path = args[0].get_string_value();
 	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("get_fsentries_shallow() illegal input path.");
+		quark::throw_runtime_error("get_fsentries_deep() illegal input path.");
 	}
 
 	const auto a = GetDirItemsDeep(path);
@@ -1658,16 +1633,10 @@ std::string posix_timespec__to__utc(const time_t& t){
 }
 
 
-bc_value_t host__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_string());
-
-	const string path = args[0].get_string_value();
+value_t impl__get_fsentry_info(const std::string& path){
 	if(is_valid_absolute_dir_path(path) == false){
 		quark::throw_runtime_error("get_fsentry_info() illegal input path.");
 	}
-
 
 	TFileInfo info;
 	bool ok = GetFileInfo(path, info);
@@ -1703,9 +1672,20 @@ bc_value_t host__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], in
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
+	return result;
+}
+
+
+bc_value_t host__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_string());
+
+	const string path = args[0].get_string_value();
+	const auto result = impl__get_fsentry_info(path);
 	const auto v = value_to_bc(result);
 	return v;
 }
@@ -1735,7 +1715,7 @@ bc_value_t host__get_fs_environment(interpreter_t& vm, const bc_value_t args[], 
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	const auto v = value_to_bc(result);
@@ -1758,7 +1738,7 @@ bc_value_t host__does_fsentry_exist(interpreter_t& vm, const bc_value_t args[], 
 	const auto result = value_t::make_bool(exists);
 #if 1
 	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug._value));
+	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
 	const auto v = value_to_bc(result);
@@ -1845,76 +1825,55 @@ There is never a file extension. You could add one if you want too.
 */
 
 
-host_function_record_t make_rec(const std::string& name, HOST_FUNCTION_PTR f, int function_id, typeid_t function_type){
-	return host_function_record_t { name, f, function_id, function_type, nullptr };
-}
-host_function_record_t make_rec(const std::string& name, HOST_FUNCTION_PTR f, int function_id, typeid_t function_type, HOST_FUNCTION__CALC_RETURN_TYPE calc_return_type){
-	return host_function_record_t { name, f, function_id, function_type, calc_return_type };
+host_function_record_t make_rec(const std::string& name, HOST_FUNCTION_PTR f, function_id_t function_id, typeid_t function_type){
+	return host_function_record_t { name, f, function_id, function_type };
 }
 
 
-typeid_t return_type_sames_as_arg0(const std::vector<typeid_t>& args){
-	QUARK_ASSERT(args.size() > 0);
 
-	return args[0];
-}
-typeid_t return_type_sames_as_arg1(const std::vector<typeid_t>& args){
-	QUARK_ASSERT(args.size() >= 2);
 
-	return args[1];
-}
-typeid_t return_type__map(const std::vector<typeid_t>& args){
-	QUARK_ASSERT(args.size() >= 2);
-
-	const auto f = args[1].get_function_return();
-	const auto ret = typeid_t::make_vector(f);
-	return ret;
-}
-
-typeid_t return_type__supermap(const std::vector<typeid_t>& args){
-	const auto f = args[2].get_function_return();
-	const auto ret = typeid_t::make_vector(f);
-	return ret;
-}
 
 std::vector<host_function_record_t> get_host_function_records(){
 	const auto VOID = typeid_t::make_void();
-	const auto DYN = typeid_t::make_internal_dynamic();
+	const auto DYN = typeid_t::make_any();
 
 	const auto k_fsentry_t__type = make__fsentry_t__type();
 
 	const std::vector<host_function_record_t> result = {
-		make_rec("assert", host__assert, 1001, typeid_t::make_function(VOID, { DYN }, epure::pure)),
+		make_rec("assert", host__assert, 1001, typeid_t::make_function(VOID, { typeid_t::make_bool() }, epure::pure)),
 		make_rec("to_string", host__to_string, 1002, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::pure)),
 		make_rec("to_pretty_string", host__to_pretty_string, 1003, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::pure)),
 		make_rec("typeof", host__typeof, 1004, typeid_t::make_function(typeid_t::make_typeid(), { DYN }, epure::pure)),
 
-		make_rec("update", host__update, 1006, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure), return_type_sames_as_arg0),
+		make_rec("update", host__update, 1006, typeid_t::make_function_dyn_return({ DYN, DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg0)),
 
 		//	size() is translated to bc_opcode::k_get_size_vector_w_external_elements() etc.
 		make_rec("size", nullptr, 1007, typeid_t::make_function(typeid_t::make_int(), { DYN }, epure::pure)),
 
 		make_rec("find", host__find, 1008, typeid_t::make_function(typeid_t::make_int(), { DYN, DYN }, epure::pure)),
 		make_rec("exists", host__exists, 1009, typeid_t::make_function(typeid_t::make_bool(), { DYN, DYN }, epure::pure)),
-		make_rec("erase", host__erase, 1010, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure), return_type_sames_as_arg0),
+		make_rec("erase", host__erase, 1010, typeid_t::make_function_dyn_return({ DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg0)),
 
 		//	push_back() is translated to bc_opcode::k_pushback_vector_w_inplace_elements() etc.
-		make_rec("push_back", nullptr, 1011, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure), return_type_sames_as_arg0),
+		make_rec("push_back", nullptr, 1011, typeid_t::make_function_dyn_return({ DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg0)),
 
-		make_rec("subset", host__subset, 1012, typeid_t::make_function(DYN, { DYN, typeid_t::make_int(), typeid_t::make_int()}, epure::pure), return_type_sames_as_arg0),
-		make_rec("replace", host__replace, 1013, typeid_t::make_function(DYN, { DYN, typeid_t::make_int(), typeid_t::make_int(), DYN }, epure::pure), return_type_sames_as_arg0),
+		make_rec("subset", host__subset, 1012, typeid_t::make_function_dyn_return({ DYN, typeid_t::make_int(), typeid_t::make_int()}, epure::pure, typeid_t::return_dyn_type::arg0)),
+		make_rec("replace", host__replace, 1013, typeid_t::make_function_dyn_return({ DYN, typeid_t::make_int(), typeid_t::make_int(), DYN }, epure::pure, typeid_t::return_dyn_type::arg0)),
 
 
 		make_rec("script_to_jsonvalue", host__script_to_jsonvalue, 1017, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_string()}, epure::pure)),
 		make_rec("jsonvalue_to_script", host__jsonvalue_to_script, 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json_value()}, epure::pure)),
 		make_rec("value_to_jsonvalue", host__value_to_jsonvalue, 1019, typeid_t::make_function(typeid_t::make_json_value(), { DYN }, epure::pure)),
-		make_rec("jsonvalue_to_value", host__jsonvalue_to_value, 1020, typeid_t::make_function(DYN, { typeid_t::make_json_value(), typeid_t::make_typeid() }, epure::pure)),
+
+		//	??? Tricky. How to we compute the return type from the input arguments?
+		make_rec("jsonvalue_to_value", host__jsonvalue_to_value, 1020, typeid_t::make_function_dyn_return({ typeid_t::make_json_value(), typeid_t::make_typeid() }, epure::pure, typeid_t::return_dyn_type::arg1_typeid_constant_type)),
+
 		make_rec("get_json_type", host__get_json_type, 1021, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}, epure::pure)),
 
 		make_rec("calc_string_sha1", host__calc_string_sha1, 1031, typeid_t::make_function(make__sha1_t__type(), { typeid_t::make_string() }, epure::pure)),
 		make_rec("calc_binary_sha1", host__calc_binary_sha1, 1032, typeid_t::make_function(make__sha1_t__type(), { make__binary_t__type() }, epure::pure)),
 
-		make_rec("map", host__map, 1033, typeid_t::make_function(DYN, { DYN, DYN}, epure::pure), return_type__map),
+		make_rec("map", host__map, 1033, typeid_t::make_function_dyn_return({ DYN, DYN}, epure::pure, typeid_t::return_dyn_type::vector_of_arg1func_return)),
 		make_rec(
 			"map_string",
 			host__map_string,
@@ -1928,9 +1887,9 @@ std::vector<host_function_record_t> get_host_function_records(){
 				epure::pure
 			)
 		),
-		make_rec("filter", host__filter, 1036, typeid_t::make_function(DYN, { DYN, DYN }, epure::pure), return_type_sames_as_arg0),
-		make_rec("reduce", host__reduce, 1035, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure), return_type_sames_as_arg1),
-		make_rec("supermap", host__supermap, 1037, typeid_t::make_function(DYN, { DYN, DYN, DYN }, epure::pure), return_type__supermap),
+		make_rec("filter", host__filter, 1036, typeid_t::make_function_dyn_return({ DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg0)),
+		make_rec("reduce", host__reduce, 1035, typeid_t::make_function_dyn_return({ DYN, DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg1)),
+		make_rec("supermap", host__supermap, 1037, typeid_t::make_function_dyn_return({ DYN, DYN, DYN }, epure::pure, typeid_t::return_dyn_type::vector_of_arg2func_return)),
 
 		//	print = impure!
 		make_rec("print", host__print, 1000, typeid_t::make_function(VOID, { DYN }, epure::pure)),
@@ -1939,7 +1898,7 @@ std::vector<host_function_record_t> get_host_function_records(){
 
 
 		make_rec("read_text_file", host__read_text_file, 1015, typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_string() }, epure::impure)),
-		make_rec("write_text_file", host__write_text_file, 1016, typeid_t::make_function(VOID, { DYN, DYN }, epure::impure)),
+		make_rec("write_text_file", host__write_text_file, 1016, typeid_t::make_function(VOID, { typeid_t::make_string(), typeid_t::make_string() }, epure::impure)),
 		make_rec(
 			"get_fsentries_shallow",
 			host__get_fsentries_shallow,
@@ -2024,17 +1983,17 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 
 	std::map<std::string, host_function_signature_t> result;
 	for(const auto& e: a){
-		result.insert({ e._name, { e._function_id, e._function_type, e._dynamic_return_type } });
+		result.insert({ e._name, { e._function_id, e._function_type } });
 	}
 	return result;
 }
 
-std::map<int,  host_function_t> get_host_functions(){
+std::map<int, host_function_t> get_host_functions(){
 	const auto a = get_host_function_records();
 
 	std::map<int, host_function_t> result;
 	for(const auto& e: a){
-		const auto sign = host_function_signature_t{ e._function_id, e._function_type, e._dynamic_return_type };
+		const auto sign = host_function_signature_t{ e._function_id, e._function_type };
 		result.insert(
 			{ e._function_id, host_function_t{ sign, e._name, e._f } }
 		);

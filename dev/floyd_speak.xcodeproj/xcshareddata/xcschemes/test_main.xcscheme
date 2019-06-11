@@ -75,7 +75,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "test_main.floyd"
+            argument = "examples/test_main.floyd"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

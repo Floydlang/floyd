@@ -26,6 +26,7 @@
 #include "json_support.h"
 #include "software_system.h"
 #include "quark.h"
+#include "compiler_basics.h"
 
 #include <string>
 #include <vector>
@@ -41,6 +42,7 @@ namespace floyd {
 struct interpreter_t;
 struct bc_program_t;
 struct bc_static_frame_t;
+struct runtime_handler_i;
 
 struct bc_value_t;
 union bc_pod_value_t;
@@ -62,7 +64,7 @@ union bc_inplace_value_t {
 	int64_t _int64;
 	double _double;
 
-	int _function_id;
+	function_id_t _function_id;
 	const bc_static_frame_t* _frame_ptr;
 };
 
@@ -96,7 +98,6 @@ enum class value_encoding {
 	k_external__typeid,
 
 	k_external__struct,
-	k_external__protocol,
 	k_external__vector,
 	k_external__vector_pod64,
 	k_external__dict,
@@ -120,8 +121,8 @@ bool encode_as_external(const typeid_t& type);
 /*
 	Efficent representation of any value supported by the interpreter.
 	It's immutable and uses value-semantics.
-	Holds either and inplace value or an external value. Handles reference counting automatically when required.
-	??? replace my variant<>
+	Holds either an inplace value or an external value. Handles reference counting automatically when required.
+	??? replace with variant<>
 */
 
 struct bc_value_t {
@@ -144,7 +145,7 @@ struct bc_value_t {
 
 
 	//////////////////////////////////////		internal-dynamic type
-	public: static bc_value_t make_internal_dynamic();
+	public: static bc_value_t make_any();
 
 
 	//////////////////////////////////////		void
@@ -194,9 +195,9 @@ struct bc_value_t {
 
 
 	//////////////////////////////////////		function
-	public: static bc_value_t make_function_value(const typeid_t& function_type, int function_id);
+	public: static bc_value_t make_function_value(const typeid_t& function_type, function_id_t function_id);
 	public: int get_function_value() const;
-	private: explicit bc_value_t(const typeid_t& function_type, int function_id, bool dummy);
+	private: explicit bc_value_t(const typeid_t& function_type, function_id_t function_id, bool dummy);
 
 
 	//	Bumps RC if needed.
@@ -317,8 +318,8 @@ int bc_compare_value_exts(const bc_external_handle_t& left, const bc_external_ha
 
 struct bc_symbol_t {
 	enum type {
-		immutable_local = 10,
-		mutable_local
+		immutable = 10,
+		mutable1
 	};
 
 	public: bool check_invariant() const {
@@ -770,7 +771,7 @@ struct bc_function_definition_t {
 		const typeid_t& function_type,
 		const std::vector<member_t>& args,
 		const std::shared_ptr<bc_static_frame_t>& frame,
-		int host_function_id
+		function_id_t host_function_id
 	);
 #if DEBUG
 	public: bool check_invariant() const;
@@ -781,7 +782,7 @@ struct bc_function_definition_t {
 	typeid_t _function_type;
 	std::vector<member_t> _args;
 	std::shared_ptr<bc_static_frame_t> _frame_ptr;
-	int _host_function_id;
+	function_id_t _host_function_id;
 
 	int _dyn_arg_count;
 	bool _return_is_ext;
@@ -1331,18 +1332,6 @@ struct interpreter_stack_t {
 };
 
 
-//////////////////////////////////////		interpreter_t
-
-/*
-	This is a callback from the interpreter (really the host functions run from the interpeter)
-	that allows the interpreter to indirectly control the outside runtime that hosts the interpreter.
-	FUTURE: Needs neater solution than this.
-*/
-struct interpreter_handler_i {
-	virtual ~interpreter_handler_i(){};
-	virtual void on_send(const std::string& process_id, const json_t& message) = 0;
-};
-
 
 //////////////////////////////////////		interpreter_imm_t
 
@@ -1360,6 +1349,14 @@ struct interpreter_imm_t {
 //	Allows the interpreter's clients to access values in the interpreter.
 
 struct value_entry_t {
+	bool check_invariant() const {
+		QUARK_ASSERT(_value.check_invariant());
+		QUARK_ASSERT(_symbol_name.empty() == false);
+		QUARK_ASSERT(_symbol.check_invariant());
+		QUARK_ASSERT(_global_index >= 0);
+		return true;
+	}
+
 	bc_value_t _value;
 	std::string _symbol_name;
 	bc_symbol_t _symbol;
@@ -1377,7 +1374,7 @@ struct value_entry_t {
 
 struct interpreter_t {
 	public: explicit interpreter_t(const bc_program_t& program);
-	public: explicit interpreter_t(const bc_program_t& program, interpreter_handler_i* handler);
+	public: explicit interpreter_t(const bc_program_t& program, runtime_handler_i* handler);
 	public: interpreter_t(const interpreter_t& other) = delete;
 	public: const interpreter_t& operator=(const interpreter_t& other)= delete;
 #if DEBUG
@@ -1388,7 +1385,7 @@ struct interpreter_t {
 
 	////////////////////////		STATE
 	public: std::shared_ptr<interpreter_imm_t> _imm;
-	public: interpreter_handler_i* _handler;
+	public: runtime_handler_i* _handler;
 
 	//	Holds all values for all environments.
 	//	Notice: stack holds refs to RC-counted objects!

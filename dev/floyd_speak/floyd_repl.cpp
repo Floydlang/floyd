@@ -18,6 +18,9 @@
 #include "floyd_interpreter.h"
 #include "floyd_parser/floyd_parser.h"
 #include "ast_value.h"
+#include "compiler_helpers.h"
+#include "compiler_basics.h"
+
 #include "json_support.h"
 #include "ast_basics.h"
 #include "text_parser.h"
@@ -210,7 +213,8 @@ int handle_repl_input(int print_pos, std::shared_ptr<floyd::interpreter_t>& vm_m
 void run_repl(){
 	init_terminal();
 
-	auto program = floyd::compile_to_bytecode("", "");
+	const auto cu = floyd::make_compilation_unit_lib("", "");
+	auto program = floyd::compile_to_bytecode(cu);
 	auto vm = std::make_shared<floyd::interpreter_t>(program);
 
 	std::cout << R"(Floyd " << floyd_version_string << " MIT.)" << std::endl;

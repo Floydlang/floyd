@@ -140,10 +140,10 @@ void floyd_benchmark(){
 		};
 
 		const std::string floyd_str = R"(
-			void f(){
-				mutable result = 0;
+			func void f(){
+				mutable result = 0
 				for(i in 0 ..< 50000000){
-					result = result + 1;
+					result = result + 1
 				}
 			}
 		)";
@@ -169,15 +169,15 @@ void floyd_benchmark(){
 		};
 
 		const std::string floyd_str = R"(
-			void f(){
-				mutable result = 0;
+			func void f(){
+				mutable result = 0
 				for(i in 0 ..< 10000000){
-					a = result + i * i + 2 * i - result;
+					let a = result + i * i + 2 * i - result
 					if(a > 0){
-						result = -a;
+						result = -a
 					}
 					else{
-						result = a;
+						result = a
 					}
 				}
 			}
@@ -202,14 +202,14 @@ void floyd_benchmark(){
 		};
 
 		const std::string floyd_str = R"(
-			void f(){
-				mutable int result1 = 0;
-				mutable int result2 = 0;
-				mutable int result3 = 0;
+			func void f(){
+				mutable int result1 = 0
+				mutable int result2 = 0
+				mutable int result3 = 0
 				for(i in 0 ..< 20000000){
-					result1 = result1 + i * 2;
-					result2 = result2 + result1 * 2;
-					result3 = result3 + result1 + result1;
+					result1 = result1 + i * 2
+					result2 = result2 + result1 * 2
+					result3 = result3 + result1 + result1
 				}
 			}
 		)";
@@ -239,18 +239,18 @@ void floyd_benchmark(){
 		};
 
 		const std::string floyd_str = R"(
-			int fibonacci(int n) {
+			func int fibonacci(int n) {
 				if (n <= 1){
-					return n;
+					return n
 				}
-				return fibonacci(n - 2) + fibonacci(n - 1);
+				return fibonacci(n - 2) + fibonacci(n - 1)
 			}
 
-			int f(){
+			func int f(){
 				for (i in 0..<32) {
-					a = fibonacci(i);
+					let a = fibonacci(i)
 				}
-				return 8;
+				return 8
 			}
 		)";
 

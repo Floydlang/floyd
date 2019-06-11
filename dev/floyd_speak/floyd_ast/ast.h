@@ -20,15 +20,49 @@ namespace floyd {
 	struct ast_json_t;
 
 
-	//////////////////////////////////////////////////		ast_t
 
-	/*
-		The Abstract Syntax Tree. It may contain unresolved symbols.
-		It can optionally be annotated with all expression types OR NOT.
-		Immutable
-	*/
+	//////////////////////////////////////////////////		type_interner_t
 
-	struct ast_t {
+
+
+
+	//	Assigns 32bit ID to types. You can lookup the type using the ID.
+	//	This allows us to describe a type using a single 32bit integer (compact, fast to copy around).
+	//	Each type has exactly ONE ID.
+	struct type_interner_t {
+		type_interner_t() :
+			simple_next_id(0),
+			struct_next_id(100000000),
+			vector_next_id(200000000),
+			dict_next_id(300000000),
+			function_next_id(400000000)
+		{
+		}
+
+		bool check_invariant() const {
+			return true;
+		}
+		std::vector<std::pair<itype_t, typeid_t>> interned;
+
+		int32_t simple_next_id;
+		int32_t struct_next_id;
+		int32_t vector_next_id;
+		int32_t dict_next_id;
+		int32_t function_next_id;
+	};
+
+
+	//////////////////////////////////////////////////		type_interner_t
+
+
+	std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid_t& type);
+	itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type);
+	typeid_t lookup_type(const type_interner_t& interner, const itype_t& type);
+
+
+	//////////////////////////////////////////////////		general_purpose_ast_t
+
+	struct general_purpose_ast_t {
 		public: bool check_invariant() const{
 			QUARK_ASSERT(_globals.check_invariant());
 			return true;
@@ -37,33 +71,15 @@ namespace floyd {
 		/////////////////////////////		STATE
 		public: body_t _globals;
 		public: std::vector<std::shared_ptr<const floyd::function_definition_t>> _function_defs;
+		public: type_interner_t _interned_types;
 		public: software_system_t _software_system;
 		public: container_t _container_def;
 	};
 
 
 
-	/*
-		Why: converts and AST from (1) JSON-data to (2) C++ AST (statement_t, and expression_t, typeid_t) and back to JSON data.
-		Transform is *mechanical* and non-lossy roundtrip. This means that the JSON and the C++AST can hold anything
-		constructs the parser can deliver -- including some redundant things that are syntactical shortcuts.
-		But: going to C++ AST may throw exceptions if the data is too loose to store in C++ AST. Identifier names are
-		checked for OK characters and so on. The C++ AST is stricter.
-
-		??? verify roundtrip works 100%
-
-		Parser reads source and generates the AST as JSON. Pass2 translates it to C++ AST.
-		Future: generate AST as JSON, process AST as JSON etc.
-	*/
-	ast_json_t ast_to_json(const ast_t& ast);
-	ast_t json_to_ast(const ast_json_t& parse_tree);
-
-
-
-	ast_json_t body_to_json(const body_t& e);
-
-	ast_json_t symbol_to_json(const symbol_t& e);
-	std::vector<json_t> symbols_to_json(const std::vector<std::pair<std::string, symbol_t>>& symbols);
+	json_t gp_ast_to_json(const general_purpose_ast_t& ast);
+	general_purpose_ast_t json_to_gp_ast(const json_t& json);
 
 
 }	//	floyd

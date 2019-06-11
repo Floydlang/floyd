@@ -45,6 +45,8 @@
 #include "ast_typeid.h"
 #include "ast_typeid_helpers.h"
 #include "json_support.h"
+#include "compiler_basics.h"
+
 
 
 namespace floyd {
@@ -58,7 +60,7 @@ struct value_ext_t;
 std::string make_value_debug_str(const value_t& v);
 #endif
 
-//??? make internal class tht can be used in struct_value_t and protocol_value_t.
+
 
 	//////////////////////////////////////////////////		struct_value_t
 
@@ -80,29 +82,6 @@ std::string make_value_debug_str(const value_t& v);
 
 		////////////////////////////////////////		STATE
 		public: std::shared_ptr<const struct_definition_t> _def;
-		public: std::vector<value_t> _member_values;
-	};
-
-
-	//////////////////////////////////////////////////		protocol_value_t
-
-	/*
-		An instance of a protocol-type.
-	*/
-	struct protocol_value_t {
-		public: protocol_value_t(const std::shared_ptr<const protocol_definition_t>& def, const std::vector<value_t>& member_values) :
-			_def(def),
-			_member_values(member_values)
-		{
-			QUARK_ASSERT(_def && _def->check_invariant());
-
-			QUARK_ASSERT(check_invariant());
-		}
-		public: bool check_invariant() const;
-		public: bool operator==(const protocol_value_t& other) const;
-
-
-		public: std::shared_ptr<const protocol_definition_t> _def;
 		public: std::vector<value_t> _member_values;
 	};
 
@@ -218,10 +197,9 @@ std::string make_value_debug_str(const value_t& v);
 		public: value_ext_t(const typeid_t& s);
 
 		public: value_ext_t(const typeid_t& type, std::shared_ptr<struct_value_t>& s);
-		public: value_ext_t(const typeid_t& type, std::shared_ptr<protocol_value_t>& s);
 		public: value_ext_t(const typeid_t& type, const std::vector<value_t>& s);
 		public: value_ext_t(const typeid_t& type, const std::map<std::string, value_t>& s);
-		public: value_ext_t(const typeid_t& type, int function_id);
+		public: value_ext_t(const typeid_t& type, function_id_t function_id);
 
 
 		//	??? NOTICE: Use std::variant or subclasses.
@@ -231,10 +209,9 @@ std::string make_value_debug_str(const value_t& v);
 		public: std::shared_ptr<json_t> _json_value;
 		public: typeid_t _typeid_value = typeid_t::make_undefined();
 		public: std::shared_ptr<struct_value_t> _struct;
-		public: std::shared_ptr<protocol_value_t> _protocol;
 		public: std::vector<value_t> _vector_elements;
 		public: std::map<std::string, value_t> _dict_entries;
-		public: int _function_id = -1;
+		public: function_id_t _function_id = -1;
 	};
 
 
@@ -246,7 +223,7 @@ std::string make_value_debug_str(const value_t& v);
 		//////////////////////////////////////////////////		PUBLIC - SPECIFIC TO TYPE
 
 		public: value_t() :
-			_basetype(base_type::k_internal_undefined)
+			_basetype(base_type::k_undefined)
 		{
 			_value_internals._int = 0xdeadbeef;
 #if DEBUG
@@ -277,25 +254,25 @@ std::string make_value_debug_str(const value_t& v);
 
 
 		public: static value_t make_undefined(){
-			return value_t(base_type::k_internal_undefined);
+			return value_t(base_type::k_undefined);
 		}
 		public: bool is_undefined() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _basetype == base_type::k_internal_undefined;
+			return _basetype == base_type::k_undefined;
 		}
 
 
 		//------------------------------------------------		internal-dynamic
 
 
-		public: static value_t make_internal_dynamic(){
-			return value_t(base_type::k_internal_dynamic);
+		public: static value_t make_any(){
+			return value_t(base_type::k_any);
 		}
-		public: bool is_internal_dynamic() const {
+		public: bool is_any() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _basetype == base_type::k_internal_dynamic;
+			return _basetype == base_type::k_any;
 		}
 
 
@@ -430,18 +407,6 @@ std::string make_value_debug_str(const value_t& v);
 		public: std::shared_ptr<struct_value_t> get_struct_value() const;
 
 
-		//------------------------------------------------		protocol
-
-
-		public: static value_t make_protocol_value(const typeid_t& protocol_type, const std::vector<value_t>& values);
-		public: bool is_protocol() const {
-			QUARK_ASSERT(check_invariant());
-
-			return _basetype == base_type::k_protocol;
-		}
-		public: std::shared_ptr<protocol_value_t> get_protocol_value() const;
-
-
 		//------------------------------------------------		vector
 
 
@@ -469,7 +434,7 @@ std::string make_value_debug_str(const value_t& v);
 		//------------------------------------------------		function
 
 
-		public: static value_t make_function_value(const typeid_t& function_type, int function_id);
+		public: static value_t make_function_value(const typeid_t& function_type, function_id_t function_id);
 		public: bool is_function() const {
 			QUARK_ASSERT(check_invariant());
 
@@ -487,7 +452,6 @@ std::string make_value_debug_str(const value_t& v);
 				|| basetype == base_type::k_json_value
 				|| basetype == base_type::k_typeid
 				|| basetype == base_type::k_struct
-				|| basetype == base_type::k_protocol
 				|| basetype == base_type::k_vector
 				|| basetype == base_type::k_dict
 				|| basetype == base_type::k_function;
@@ -553,10 +517,10 @@ std::string make_value_debug_str(const value_t& v);
 				return false;
 			}
 
-			if(_basetype == base_type::k_internal_undefined){
+			if(_basetype == base_type::k_undefined){
 				return true;
 			}
-			else if(_basetype == base_type::k_internal_dynamic){
+			else if(_basetype == base_type::k_any){
 				return true;
 			}
 			else if(_basetype == base_type::k_void){
@@ -652,10 +616,9 @@ std::string make_value_debug_str(const value_t& v);
 		private: explicit value_t(const std::shared_ptr<json_t>& s);
 		private: explicit value_t(const typeid_t& type);
 		private: explicit value_t(const typeid_t& struct_type, std::shared_ptr<struct_value_t>& instance);
-		private: explicit value_t(const typeid_t& protocol_type, std::shared_ptr<protocol_value_t>& instance);
 		private: explicit value_t(const typeid_t& element_type, const std::vector<value_t>& elements);
 		private: explicit value_t(const typeid_t& value_type, const std::map<std::string, value_t>& entries);
-		private: explicit value_t(const typeid_t& type, int function_id);
+		private: explicit value_t(const typeid_t& type, function_id_t function_id);
 
 
 		//////////////////////////////////////////////////		STATE
@@ -699,8 +662,16 @@ std::string make_value_debug_str(const value_t& v);
 	*/
 	std::string value_and_type_to_string(const value_t& value);
 
-	ast_json_t value_to_ast_json(const value_t& v, json_tags tags);
-	ast_json_t value_and_type_to_ast_json(const value_t& v);
+	json_t value_to_ast_json(const value_t& v, json_tags tags);
+	value_t ast_json_to_value(const typeid_t& type, const json_t& v);
+
+
+	//	json array: [ TYPE, VALUE ]
+	json_t value_and_type_to_ast_json(const value_t& v);
+
+	//	json array: [ TYPE, VALUE ]
+	value_t ast_json_to_value_and_type(const json_t& v);
+
 
 	json_t values_to_json_array(const std::vector<value_t>& values);
 

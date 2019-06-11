@@ -27,8 +27,8 @@ std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s);
 
 
 std::pair<json_t, seq_t> parse_statement(const seq_t& s){
+	const auto pos = skip_whitespace(s);
 	try {
-		const auto pos = skip_whitespace(s);
 		if(is_first(pos, "{")){
 			return parse_block(pos);
 		}
@@ -37,9 +37,6 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 		}
 		else if(is_first(pos, keyword_t::k_struct)){
 			return parse_struct_definition_statement(pos);
-		}
-		else if(is_first(pos, keyword_t::k_protocol)){
-			return parse_protocol_definition_statement(pos);
 		}
 		else if(is_first(pos, keyword_t::k_if)){
 			return  parse_if_statement(pos);
@@ -75,14 +72,17 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 	catch(const compiler_error& e){
 		if(e.location == k_no_location){
 			QUARK_ASSERT(e.location2.loc == k_no_location);
+			throw_compiler_error(location_t(pos.pos()), e.what());
 		}
-		throw_compiler_error(location_t(s.pos()), e.what());
+		else{
+			throw;
+		}
 	}
 	catch(const std::runtime_error& e){
-		throw_compiler_error(location_t(s.pos()), e.what());
+		throw_compiler_error(location_t(pos.pos()), e.what());
 	}
 	catch(const std::exception& e){
-		throw_compiler_error(location_t(s.pos()), "Failed to parse statement.");
+		throw_compiler_error(location_t(pos.pos()), "Failed to parse statement.");
 	}
 }
 

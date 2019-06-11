@@ -10,16 +10,18 @@
 
 #include "parser_primitives.h"
 #include "floyd_parser.h"
+#include "floyd_runtime.h"
 
 #include "pass3.h"
 #include "host_functions.h"
 #include "bytecode_generator.h"
+#include "compiler_helpers.h"
+#include "os_process.h"
 
 #include <thread>
 #include <deque>
 #include <future>
 
-#include <pthread.h>
 #include <condition_variable>
 
 namespace floyd {
@@ -45,11 +47,11 @@ value_t bc_to_value(const bc_value_t& value){
 	const auto& type = value._type;
 	const auto basetype = value._type.get_base_type();
 
-	if(basetype == base_type::k_internal_undefined){
+	if(basetype == base_type::k_undefined){
 		return value_t::make_undefined();
 	}
-	else if(basetype == base_type::k_internal_dynamic){
-		return value_t::make_internal_dynamic();
+	else if(basetype == base_type::k_any){
+		return value_t::make_any();
 	}
 	else if(basetype == base_type::k_void){
 		return value_t::make_void();
@@ -82,26 +84,13 @@ value_t bc_to_value(const bc_value_t& value){
 		}
 		return value_t::make_struct_value(type, members2);
 	}
-	else if(basetype == base_type::k_protocol){
-		QUARK_ASSERT(false);
-		return value_t::make_undefined();
-	}
 	else if(basetype == base_type::k_vector){
 		const auto& element_type  = type.get_vector_element_type();
 		std::vector<value_t> vec2;
-		if(element_type.is_bool()){
+		const bool vector_w_inplace_elements = encode_as_vector_w_inplace_elements(type);
+		if(vector_w_inplace_elements){
 			for(const auto e: value._pod._external->_vector_w_inplace_elements){
-				vec2.push_back(value_t::make_bool(e._bool));
-			}
-		}
-		else if(element_type.is_int()){
-			for(const auto e: value._pod._external->_vector_w_inplace_elements){
-				vec2.push_back(value_t::make_int(e._int64));
-			}
-		}
-		else if(element_type.is_double()){
-			for(const auto e: value._pod._external->_vector_w_inplace_elements){
-				vec2.push_back(value_t::make_double(e._double));
+				vec2.push_back(bc_to_value(bc_value_t(element_type, e)));
 			}
 		}
 		else{
@@ -114,20 +103,11 @@ value_t bc_to_value(const bc_value_t& value){
 	}
 	else if(basetype == base_type::k_dict){
 		const auto& value_type  = type.get_dict_value_type();
+		const bool dict_w_inplace_values = encode_as_dict_w_inplace_values(type);
 		std::map<std::string, value_t> entries2;
-		if(value_type.is_bool()){
+		if(dict_w_inplace_values){
 			for(const auto& e: value._pod._external->_dict_w_inplace_values){
-				entries2.insert({ e.first, value_t::make_bool(e.second._bool) });
-			}
-		}
-		else if(value_type.is_int()){
-			for(const auto& e: value._pod._external->_dict_w_inplace_values){
-				entries2.insert({ e.first, value_t::make_int(e.second._int64) });
-			}
-		}
-		else if(value_type.is_double()){
-			for(const auto& e: value._pod._external->_dict_w_inplace_values){
-				entries2.insert({ e.first, value_t::make_double(e.second._double) });
+				entries2.insert({ e.first, bc_to_value(bc_value_t(value_type, e.second)) });
 			}
 		}
 		else{
@@ -150,11 +130,11 @@ bc_value_t value_to_bc(const value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 
 	const auto basetype = value.get_basetype();
-	if(basetype == base_type::k_internal_undefined){
+	if(basetype == base_type::k_undefined){
 		return bc_value_t::make_undefined();
 	}
-	else if(basetype == base_type::k_internal_dynamic){
-		return bc_value_t::make_internal_dynamic();
+	else if(basetype == base_type::k_any){
+		return bc_value_t::make_any();
 	}
 	else if(basetype == base_type::k_void){
 		return bc_value_t::make_void();
@@ -184,10 +164,6 @@ bc_value_t value_to_bc(const value_t& value){
 	else if(basetype == base_type::k_struct){
 		return bc_value_t::make_struct_value(value.get_type(), values_to_bcs(value.get_struct_value()->_member_values));
 	}
-	else if(basetype == base_type::k_protocol){
-		QUARK_ASSERT(false);
-		return bc_value_t::make_undefined();
-	}
 
 	else if(basetype == base_type::k_vector){
 		const auto vector_type = value.get_type();
@@ -196,20 +172,9 @@ bc_value_t value_to_bc(const value_t& value){
 		if(encode_as_vector_w_inplace_elements(vector_type)){
 			const auto& vec = value.get_vector_value();
 			immer::vector<bc_inplace_value_t> vec2;
-			if(element_type.is_bool()){
-				for(const auto& e: vec){
-					vec2.push_back(bc_inplace_value_t{._bool = e.get_bool_value()});
-				}
-			}
-			else if(element_type.is_int()){
-				for(const auto& e: vec){
-					vec2.push_back(bc_inplace_value_t{._int64 = e.get_int_value()});
-				}
-			}
-			else if(element_type.is_double()){
-				for(const auto& e: vec){
-					vec2.push_back(bc_inplace_value_t{._double = e.get_double_value()});
-				}
+			for(const auto& e: vec){
+				const auto bc = value_to_bc(e);
+				vec2.push_back(bc._pod._inplace);
 			}
 			return make_vector(element_type, vec2);
 		}
@@ -219,7 +184,7 @@ bc_value_t value_to_bc(const value_t& value){
 			for(const auto& e: vec){
 				const auto bc = value_to_bc(e);
 				const auto hand = bc_external_handle_t(bc);
-				vec2 =vec2.push_back(hand);
+				vec2 = vec2.push_back(hand);
 			}
 			return make_vector(element_type, vec2);
 		}
@@ -227,11 +192,17 @@ bc_value_t value_to_bc(const value_t& value){
 	else if(basetype == base_type::k_dict){
 		const auto dict_type = value.get_type();
 		const auto value_type = dict_type.get_dict_value_type();
-//??? add handling for int, bool, double
+
 		const auto elements = value.get_dict_value();
 		immer::map<std::string, bc_external_handle_t> entries2;
-		for(const auto& e: elements){
-			entries2 = entries2.insert({e.first, bc_external_handle_t(value_to_bc(e.second))});
+
+		if(encode_as_dict_w_inplace_values(dict_type)){
+			QUARK_ASSERT(false);//??? fix
+		}
+		else{
+			for(const auto& e: elements){
+				entries2 = entries2.insert({e.first, bc_external_handle_t(value_to_bc(e.second))});
+			}
 		}
 		return make_dict(value_type, entries2);
 	}
@@ -246,89 +217,6 @@ bc_value_t value_to_bc(const value_t& value){
 
 //??? add tests!
 
-
-
-
-
-#if 0
-bc_value_t construct_value_from_typeid(interpreter_t& vm, const typeid_t& type, const typeid_t& arg0_type, const vector<bc_value_t>& arg_values){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	if(type.is_json_value()){
-		QUARK_ASSERT(arg_values.size() == 1);
-
-		const auto& arg0 = arg_values[0];
-		const auto arg = bc_to_value(arg0, arg0_type);
-		const auto value = value_to_ast_json(arg, json_tags::k_plain);
-		return bc_value_t::make_json_value(value._value);
-	}
-	else if(type.is_bool() || type.is_int() || type.is_double() || type.is_string() || type.is_typeid()){
-		QUARK_ASSERT(arg_values.size() == 1);
-
-		const auto& arg = arg_values[0];
-		if(type.is_string()){
-			if(arg0_type.is_json_value() && arg.get_json_value().is_string()){
-				return bc_value_t::make_string(arg.get_json_value().get_string());
-			}
-			else if(arg0_type.is_string()){
-			}
-		}
-		else{
-			if(arg0_type != type){
-			}
-		}
-		return arg;
-	}
-	else if(type.is_struct()){
-/*
-	#if DEBUG
-		const auto def = type.get_struct_ref();
-		QUARK_ASSERT(arg_values.size() == def->_members.size());
-
-		for(int i = 0 ; i < def->_members.size() ; i++){
-			const auto v = arg_values[i];
-			const auto a = def->_members[i];
-			QUARK_ASSERT(v.check_invariant());
-			QUARK_ASSERT(v.get_type().get_base_type() != base_type::k_internal_unresolved_type_identifier);
-			QUARK_ASSERT(v.get_type() == a._type);
-		}
-	#endif
-*/
-		const auto instance = bc_value_t::make_struct_value(type, arg_values);
-//		QUARK_TRACE(to_compact_string2(instance));
-
-		return instance;
-	}
-	else if(type.is_vector()){
-		const auto& element_type = type.get_vector_element_type();
-		QUARK_ASSERT(element_type.is_undefined() == false);
-
-		return bc_value_t::make_vector(element_type, arg_values);
-	}
-	else if(type.is_dict()){
-		const auto& element_type = type.get_dict_value_type();
-		QUARK_ASSERT(element_type.is_undefined() == false);
-
-		std::map<string, bc_value_t> m;
-		for(auto i = 0 ; i < arg_values.size() / 2 ; i++){
-			const auto& key = arg_values[i * 2 + 0].get_string_value();
-			const auto& value = arg_values[i * 2 + 1];
-			m.insert({ key, value });
-		}
-		return bc_value_t::make_dict_value(element_type, m);
-	}
-	else if(type.is_function()){
-	}
-	else if(type.is_unresolved_type_identifier()){
-	}
-	else{
-	}
-
-	QUARK_ASSERT(false);
-	quark::throw_exception();
-}
-#endif
 
 
 floyd::value_t find_global_symbol(const interpreter_t& vm, const std::string& s){
@@ -369,88 +257,26 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vec
 
 
 
-parse_tree_t parse_program__errors(const compilation_unit_t& cu){
-	try {
-		const auto parse_tree = parse_program2(cu.prefix_source + cu.program_text);
-		return parse_tree;
-	}
-	catch(const compiler_error& e){
-		const auto refined = refine_compiler_error_with_loc2(cu, e);
-		throw_compiler_error(refined.first, refined.second);
-	}
-	catch(const std::exception& e){
-		throw;
-//		const auto location = find_source_line(const std::string& program, const std::string& file, bool corelib, const location_t& loc){
-	}
-}
 
-semantic_ast_t run_semantic_analysis__errors(const ast_t& pass2, const compilation_unit_t& cu){
-	try {
-		const auto pass3 = run_semantic_analysis(pass2);
-		return pass3;
-	}
-	catch(const compiler_error& e){
-		const auto refined = refine_compiler_error_with_loc2(cu, e);
-		throw_compiler_error(refined.first, refined.second);
-	}
-	catch(const std::exception& e){
-		throw;
-//		const auto location = find_source_line(const std::string& program, const std::string& file, bool corelib, const location_t& loc){
-	}
-}
-
-
-bc_program_t compile_to_bytecode(const std::string& program, const std::string& file){
-	const auto pre = k_builtin_types_and_constants;
-
-	const auto cu = compilation_unit_t{
-		.prefix_source = pre,
-		.program_text = program,
-		.source_file_path = file
-	};
-
-//	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
-	const auto parse_tree = parse_program__errors(cu);
-
-	QUARK_TRACE_SS(		"OUTPUT: " << json_to_pretty_string(parse_tree._value)	);
-
-	const auto pass2 = json_to_ast(ast_json_t::make(parse_tree._value));
-
-	const auto pass3 = run_semantic_analysis__errors(pass2, cu);
+bc_program_t compile_to_bytecode(const compilation_unit_t& cu){
+	const auto pass3 = compile_to_sematic_ast__errors(cu);
 	const auto bc = generate_bytecode(pass3);
-
 	return bc;
 }
 
 
-semantic_ast_t compile_to_sematic_ast(const std::string& program, const std::string& file){
-	const auto pre = k_builtin_types_and_constants + "\n";
-
-	const auto cu = compilation_unit_t{
-		.prefix_source = pre,
-		.program_text = program,
-		.source_file_path = file
-	};
-
-//	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
-	const auto parse_tree = parse_program__errors(cu);
-
-	const auto pass2 = json_to_ast(ast_json_t::make(parse_tree._value));
-	const auto pass3 = run_semantic_analysis__errors(pass2, cu);
-	return pass3;
-}
 
 
-std::shared_ptr<interpreter_t> run_global(const std::string& source, const std::string& file){
-	auto program = compile_to_bytecode(source, file);
+std::shared_ptr<interpreter_t> run_global(const compilation_unit_t& cu){
+	auto program = compile_to_bytecode(cu);
 	auto vm = std::make_shared<interpreter_t>(program);
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 	print_vm_printlog(*vm);
 	return vm;
 }
 
-std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(const std::string& source, const std::vector<floyd::value_t>& args, const std::string& file){
-	auto program = compile_to_bytecode(source, file);
+std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(const compilation_unit_t& cu, const std::vector<floyd::value_t>& args){
+	auto program = compile_to_bytecode(cu);
 
 	//	Runs global code.
 	auto interpreter = std::make_shared<interpreter_t>(program);
@@ -485,25 +311,7 @@ void print_vm_printlog(const interpreter_t& vm){
 std::packaged_task
 */
 
-
 //	https://en.cppreference.com/w/cpp/thread/condition_variable/wait
-
-std::string get_current_thread_name(){
-	char name[16];
-
-#ifndef __EMSCRIPTEN_PTHREADS__
-	//pthread_setname_np(pthread_self(), s.c_str()); // set the name (pthread_self() returns the pthread_t of the current thread)
-	pthread_getname_np(pthread_self(), &name[0], sizeof(name));
-#else
-	strcpy(name, "");
-#endif
-	if(strlen(name) == 0){
-		return "main";
-	}
-	else{
-		return std::string(name);
-	}
-}
 
 
 struct process_interface {
@@ -514,7 +322,7 @@ struct process_interface {
 
 
 //	NOTICE: Each process inbox has its own mutex + condition variable. No mutex protects cout.
-struct process_t {
+struct bc_process_t {
 	std::condition_variable _inbox_condition_variable;
 	std::mutex _inbox_mutex;
 	std::deque<json_t> _inbox;
@@ -532,12 +340,12 @@ struct process_t {
 	std::shared_ptr<process_interface> _processor;
 };
 
-struct process_runtime_t {
+struct bc_process_runtime_t {
 	container_t _container;
 	std::map<std::string, std::string> _process_infos;
 	std::thread::id _main_thread_id;
 
-	std::vector<std::shared_ptr<process_t>> _processes;
+	std::vector<std::shared_ptr<bc_process_t>> _processes;
 	std::vector<std::thread> _worker_threads;
 };
 
@@ -546,7 +354,7 @@ struct process_runtime_t {
 ??? Separate system-interpreter (all processes and many clock busses) vs ONE thread of execution?
 */
 
-void send_message(process_runtime_t& runtime, int process_id, const json_t& message){
+static void send_message(bc_process_runtime_t& runtime, int process_id, const json_t& message){
 	auto& process = *runtime._processes[process_id];
 
     {
@@ -558,7 +366,7 @@ void send_message(process_runtime_t& runtime, int process_id, const json_t& mess
 //    process._inbox_condition_variable.notify_all();
 }
 
-void process_process(process_runtime_t& runtime, int process_id){
+static void process_process(bc_process_runtime_t& runtime, int process_id){
 	auto& process = *runtime._processes[process_id];
 	bool stop = false;
 
@@ -607,8 +415,8 @@ void process_process(process_runtime_t& runtime, int process_id){
 	}
 }
 
-std::map<std::string, value_t> run_container_int(const bc_program_t& program, const std::vector<floyd::value_t>& args, const std::string& container_key){
-	process_runtime_t runtime;
+static std::map<std::string, value_t> run_container_int(const bc_program_t& program, const std::vector<std::string>& args, const std::string& container_key){
+	bc_process_runtime_t runtime;
 	runtime._main_thread_id = std::this_thread::get_id();
 
 /*
@@ -636,24 +444,24 @@ std::map<std::string, value_t> run_container_int(const bc_program_t& program, co
 		return acc2;
 	});
 
-	struct my_interpreter_handler_t : public interpreter_handler_i {
-		my_interpreter_handler_t(process_runtime_t& runtime) : _runtime(runtime) {}
+	struct my_interpreter_handler_t : public runtime_handler_i {
+		my_interpreter_handler_t(bc_process_runtime_t& runtime) : _runtime(runtime) {}
 
 		virtual void on_send(const std::string& process_id, const json_t& message){
-			const auto it = std::find_if(_runtime._processes.begin(), _runtime._processes.end(), [&](const std::shared_ptr<process_t>& process){ return process->_name_key == process_id; });
+			const auto it = std::find_if(_runtime._processes.begin(), _runtime._processes.end(), [&](const std::shared_ptr<bc_process_t>& process){ return process->_name_key == process_id; });
 			if(it != _runtime._processes.end()){
 				const auto process_index = it - _runtime._processes.begin();
 				send_message(_runtime, static_cast<int>(process_index), message);
 			}
 		}
 
-		process_runtime_t& _runtime;
+		bc_process_runtime_t& _runtime;
 	};
 	auto my_interpreter_handler = my_interpreter_handler_t{runtime};
 
 
 	for(const auto& t: runtime._process_infos){
-		auto process = std::make_shared<process_t>();
+		auto process = std::make_shared<bc_process_t>();
 		process->_name_key = t.first;
 		process->_function_key = t.second;
 		process->_interpreter = std::make_shared<interpreter_t>(program, &my_interpreter_handler);
@@ -710,14 +518,18 @@ std::map<std::string, value_t> run_container_int(const bc_program_t& program, co
 	}
 */
 
-std::map<std::string, value_t> run_container(const bc_program_t& program, const std::vector<floyd::value_t>& args, const std::string& container_key){
+std::map<std::string, value_t> run_container(const bc_program_t& program, const std::vector<std::string>& main_args, const std::string& container_key){
 	if(container_key.empty()){
 		//	Create interpreter, run global code.
 		auto vm = std::make_shared<interpreter_t>(program);
 
 		const auto& main_function = find_global_symbol2(*vm, "main");
 		if(main_function != nullptr){
-			const auto arg_vec = value_t::make_vector_value(typeid_t::make_string(), args);
+			std::vector<value_t> args2;
+			for(const auto& e: main_args){
+				args2.push_back(value_t::make_string(e));
+			}
+			const auto arg_vec = value_t::make_vector_value(typeid_t::make_string(), args2);
 //			const auto bc_args = value_to_bc(arg_vec);
 			const auto& result = call_function(*vm, bc_to_value(main_function->_value), { arg_vec });
 			print_vm_printlog(*vm);
@@ -729,14 +541,14 @@ std::map<std::string, value_t> run_container(const bc_program_t& program, const 
 		}
 	}
 	else{
-		return run_container_int(program, args, container_key);
+		return run_container_int(program, main_args, container_key);
 	}
 }
 
 
-std::map<std::string, value_t> run_container2(const std::string& source, const std::vector<floyd::value_t>& args, const std::string& container_key, const std::string& source_path){
-	auto program = compile_to_bytecode(source, source_path);
-	return run_container(program, args, container_key);
+std::map<std::string, value_t> bc_run_container2(const compilation_unit_t& cu, const std::vector<std::string>& main_args, const std::string& container_key){
+	auto program = compile_to_bytecode(cu);
+	return run_container(program, main_args, container_key);
 }
 
 

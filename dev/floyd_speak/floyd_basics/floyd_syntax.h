@@ -59,11 +59,12 @@ const std::string valid_expression_chars = k_c99_identifier_chars + k_c99_number
 */
 
 enum class base_type {
-	//	k_internal_undefined is never exposed in code, only used internally in compiler.
-	k_internal_undefined,
+	//	k_undefined is never exposed in code, only used internally in compiler.
+	//	??? Maybe we can use void for this and remove k_undefined?
+	k_undefined,
 
 	//	Used by host functions arguments / returns to tell this is a dynamic value, not static type.
-	k_internal_dynamic,
+	k_any,
 
 	//	Means no value. Used as return type for print() etc.
 	k_void,
@@ -78,14 +79,13 @@ enum class base_type {
 	k_typeid,
 
 	k_struct,
-	k_protocol,
 	k_vector,
 	k_dict,
 	k_function,
 
 	//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
-	//	Keep the identifier so it can be resolved later
-	k_internal_unresolved_type_identifier
+	//	Keep the identifier so it can be resolved later.
+	k_unresolved
 };
 
 std::string base_type_to_string(const base_type t);
@@ -93,7 +93,7 @@ std::string base_type_to_string(const base_type t);
 void ut_verify(const quark::call_context_t& context, const base_type& result, const base_type& expected);
 
 
-//??? use lookup for statements vs their JSON-strings: k_store2, "store" and "def-struct".
+//??? use lookup for statements vs their JSON-strings: k_assign2, "assign" and "def-struct".
 
 
 
@@ -350,8 +350,8 @@ namespace keyword_t {
 	const std::string k_func = "func";
 	const std::string k_impure = "impure";
 
-	const std::string k_internal_undefined = "**undef**";
-	const std::string k_internal_dynamic = "**dyn**";
+	const std::string k_undefined = "**undef**";
+	const std::string k_any = "any";
 	const std::string k_void = "void";
 	const std::string k_false = "false";
 	const std::string k_true = "true";
@@ -363,7 +363,6 @@ namespace keyword_t {
 	const std::string k_typeid = "typeid";
 	const std::string k_json_value = "json_value";
 	const std::string k_struct = "struct";
-	const std::string k_protocol = "protocol";
 
 	const std::string k_mutable = "mutable";
 	const std::string k_let = "let";

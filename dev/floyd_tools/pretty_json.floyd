@@ -1,0 +1,22 @@
+
+
+func int main([string] args) impure {
+//	print(args)
+
+	if(size(args) != 1){
+		print("pretty_json requires ONE input argument, specifying input JSON file.")
+		print("The prettified JSON will be sent to stdout.")
+		return 1
+	}
+	let input_path = args[0]
+	let s = read_text_file(input_path)
+//	print(s)
+
+	let j = script_to_jsonvalue(s)
+//	print(j)
+
+	let pretty = to_pretty_string(j)
+	print(pretty)
+
+	return 0
+}

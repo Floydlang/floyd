@@ -10,6 +10,8 @@
 
 #include "ast_value.h"
 #include "benchmark_basics.h"
+#include "compiler_helpers.h"
+#include "compiler_basics.h"
 
 #include <string>
 #include <vector>
@@ -65,7 +67,8 @@ void trace_result(const bench_result_t& result){
 }
 
 int64_t measure_floyd_function_f(const std::string& floyd_program, int count){
-	const auto program = compile_to_bytecode(floyd_program, "");
+	const auto cu = make_compilation_unit_lib(floyd_program, "");
+	const auto program = compile_to_bytecode(cu);
 
 
 	const auto s = json_to_pretty_string(bcprogram_to_json(program));

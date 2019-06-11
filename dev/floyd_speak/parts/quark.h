@@ -746,6 +746,7 @@ inline void ut_verify(const quark::call_context_t& context, const std::vector<st
 			QUARK_SCOPED_TRACE(std::to_string(i));
 
 			ut_verify(context, result[i], expected[i]);
+			QUARK_TRACE_SS(result[i] << "==" << expected[i]);
 		}
 
 		quark::fail_test(context);
@@ -848,10 +849,10 @@ inline std::string path_to_name(const std::string& path){
 inline bool run_test(const unit_test_def& test, bool oneline){
 	std::stringstream testInfo;
 	testInfo << test._source_file << ":" << std::to_string(test._source_line)
-		<< " " << test._class_under_test
-		<< " " << test._function_under_test
-		<< " " << test._scenario
-		<< " " << test._expected_result;
+		<< " | " << test._class_under_test
+		<< " | " << test._function_under_test
+		<< " | " << test._scenario
+		<< " | " << test._expected_result;
 
 	try{
 		if(oneline){
@@ -917,6 +918,30 @@ inline int count_vip_tests(const std::vector<unit_test_def>& tests){
 	return count;
 }
 
+enum class test_result {
+	k_run_failed,
+	k_run_succeeded,
+	k_not_run
+};
+
+inline void trace_failures(const std::vector<unit_test_def>& tests, const std::vector<test_result>& test_results){
+	int index = 0;
+	for(const auto& test: tests){
+		if(test_results[index] == test_result::k_run_failed){
+
+			std::stringstream testInfo;
+			testInfo
+				<< test._source_file << ":" << std::to_string(test._source_line)
+				<< " | " << test._class_under_test
+				<< " | " << test._function_under_test
+				<< " | " << test._scenario
+				<< " | " << test._expected_result;
+
+			std::cout << testInfo.str() << std::endl;
+		}
+		index++;
+	}
+}
 
 ////////////////////////////		run_tests()
 /*
@@ -931,6 +956,7 @@ inline void run_tests(const unit_test_registry& registry, const std::vector<std:
 	const auto total_test_count = registry._tests.size();
 
 	if(vip_count > 0){
+		std::vector<test_result> test_results;
 		std::cout << "Running SUBSET of tests: " << vip_count << " / " << total_test_count << std::endl;
 
 		int fail_count = 0;
@@ -939,19 +965,30 @@ inline void run_tests(const unit_test_registry& registry, const std::vector<std:
 				bool success = run_test(test, oneline);
 				if(success == false){
 					fail_count++;
+					test_results.push_back(test_result::k_run_failed);
 				}
+				else{
+					test_results.push_back(test_result::k_not_run);
+				}
+			}
+			else{
+				test_results.push_back(test_result::k_not_run);
 			}
 		}
 
 		if(fail_count == 0){
-			std::cout << "Succeess SUBSET " << vip_count << " / " << total_test_count << std::endl;
+			std::cout << "================================================================================" << std::endl;
+			std::cout << "Success SUBSET " << vip_count << " / " << total_test_count << std::endl;
 		}
 		else{
+			std::cout << "================================================================================" << std::endl;
 			std::cout << "Failure SUBSET " << fail_count << std::endl;
+			trace_failures(sorted_tests, test_results);
 			exit(-1);
 		}
 	}
 	else{
+		std::vector<test_result> test_results;
 		std::cout << "Running tests: " << total_test_count << std::endl;
 
 		int fail_count = 0;
@@ -959,14 +996,21 @@ inline void run_tests(const unit_test_registry& registry, const std::vector<std:
 			bool success = run_test(test, oneline);
 			if(success == false){
 				fail_count++;
+				test_results.push_back(test_result::k_run_failed);
+			}
+			else{
+				test_results.push_back(test_result::k_run_succeeded);
 			}
 		}
 
 		if(fail_count == 0){
-			std::cout << "Succeess ALL  " << sorted_tests.size() << std::endl;
+			std::cout << "================================================================================" << std::endl;
+			std::cout << "Success ALL  " << sorted_tests.size() << std::endl;
 		}
 		else{
+			std::cout << "================================================================================" << std::endl;
 			std::cout << "Failure ALL " << fail_count << std::endl;
+			trace_failures(sorted_tests, test_results);
 			exit(-1);
 		}
 	}

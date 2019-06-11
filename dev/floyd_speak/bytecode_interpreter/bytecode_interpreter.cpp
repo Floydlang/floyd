@@ -103,7 +103,7 @@ bc_value_t bc_value_t::make_undefined(){
 //////////////////////////////////////		internal-dynamic type
 
 
-bc_value_t bc_value_t::make_internal_dynamic(){
+bc_value_t bc_value_t::make_any(){
 	return bc_value_t();
 }
 
@@ -267,7 +267,7 @@ bc_value_t::bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t
 //////////////////////////////////////		function
 
 
-bc_value_t bc_value_t::make_function_value(const typeid_t& function_type, int function_id){
+bc_value_t bc_value_t::make_function_value(const typeid_t& function_type, function_id_t function_id){
 	return bc_value_t{ function_type, function_id, true };
 }
 int bc_value_t::get_function_value() const{
@@ -275,7 +275,7 @@ int bc_value_t::get_function_value() const{
 
 	return _pod._inplace._function_id;
 }
-bc_value_t::bc_value_t(const typeid_t& function_type, int function_id, bool dummy) :
+bc_value_t::bc_value_t(const typeid_t& function_type, function_id_t function_id, bool dummy) :
 	_type(function_type)
 {
 	_pod._inplace._function_id = function_id;
@@ -422,7 +422,7 @@ bool bc_external_handle_t::check_invariant() const {
 
 
 bool encode_as_inplace(const typeid_t& type){
-	return type.is_bool() || type.is_int() || type.is_double();
+	return type.is_bool() || type.is_int() || type.is_double() || type.is_function();
 }
 bool encode_as_vector_w_inplace_elements(const typeid_t& type){
 	return type.is_vector() && encode_as_inplace(type.get_vector_element_type());
@@ -436,10 +436,10 @@ value_encoding type_to_encoding(const typeid_t& type){
 	const auto basetype = type.get_base_type();
 	if(false){
 	}
-	else if(basetype == base_type::k_internal_undefined){
+	else if(basetype == base_type::k_undefined){
 		return value_encoding::k_none;
 	}
-	else if(basetype == base_type::k_internal_dynamic){
+	else if(basetype == base_type::k_any){
 		return value_encoding::k_none;
 	}
 	else if(basetype == base_type::k_void){
@@ -466,18 +466,9 @@ value_encoding type_to_encoding(const typeid_t& type){
 	else if(basetype == base_type::k_struct){
 		return value_encoding::k_external__struct;
 	}
-	else if(basetype == base_type::k_protocol){
-		return value_encoding::k_external__protocol;
-	}
 	else if(basetype == base_type::k_vector){
-		const auto& element_type = type.get_vector_element_type().get_base_type();
-		if(element_type == base_type::k_bool){
-			return value_encoding::k_external__vector_pod64;
-		}
-		else if(element_type == base_type::k_int){
-			return value_encoding::k_external__vector_pod64;
-		}
-		else if(element_type == base_type::k_double){
+		const auto& element_type = type.get_vector_element_type();
+		if(encode_as_inplace(element_type)){
 			return value_encoding::k_external__vector_pod64;
 		}
 		else{
@@ -490,7 +481,7 @@ value_encoding type_to_encoding(const typeid_t& type){
 	else if(basetype == base_type::k_function){
 		return value_encoding::k_inplace__function;
 	}
-	else if(basetype == base_type::k_internal_unresolved_type_identifier){
+	else if(basetype == base_type::k_unresolved){
 	}
 	else{
 	}
@@ -517,7 +508,6 @@ bool encode_as_external(const typeid_t& type){
 		|| basetype == base_type::k_json_value
 		|| basetype == base_type::k_typeid
 		|| basetype == base_type::k_struct
-		|| basetype == base_type::k_protocol
 		|| basetype == base_type::k_vector
 		|| basetype == base_type::k_dict
 		;
@@ -735,10 +725,6 @@ bool check_external_deep(const typeid_t& type, const bc_external_value_t* ext){
 			QUARK_ASSERT(e.check_invariant());
 		}
 	}
-	else if(basetype == base_type::k_protocol){
-		QUARK_ASSERT(false);
-		return false;
-	}
 	else if(basetype == base_type::k_vector){
 		const auto& element_type  = type.get_vector_element_type();
 		if(encode_as_external(element_type)){
@@ -952,7 +938,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_ASSERT(value_object_size >= 8);
 
 	const auto bcvalue_size = sizeof(bc_value_t);
-	QUARK_ASSERT(bcvalue_size == 56);
+	QUARK_ASSERT(bcvalue_size == 72);
 
 	struct mockup_value_t {
 		private: bool _is_ext;
@@ -1053,13 +1039,12 @@ bc_value_t update_struct_member_deep(interpreter_t& vm, const bc_value_t& obj, c
 bc_value_t update_string_char(interpreter_t& vm, const bc_value_t s, int64_t lookup_index, int64_t ch){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s._type.is_string());
-	QUARK_ASSERT(lookup_index >= 0 && lookup_index < s.get_string_value().size());
 
 	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
 	std::string s2 = s.get_string_value();
 	if(lookup_index < 0 || lookup_index >= s2.size()){
-		quark::throw_runtime_error("String lookup out of bounds.");
+		quark::throw_runtime_error("Position argument to update() is outside collection span.");
 	}
 	else{
 		s2[lookup_index] = static_cast<char>(ch);
@@ -1249,7 +1234,7 @@ int compare(int64_t value){
 }
 
 int bc_compare_string(const std::string& left, const std::string& right){
-	// ### Better if it doesn't use c_ptr since that is non-pure string handling.
+	// ??? Better if it doesn't use c_ptr since that is non-pure string handling.
 	return compare(std::strcmp(left.c_str(), right.c_str()));
 }
 
@@ -1553,54 +1538,25 @@ int bc_compare_dicts_double(const immer::map<std::string, bc_inplace_value_t>& l
 	quark::throw_exception();
 }
 
-
-
-int json_value_type_to_int(const json_t& value){
-	if(value.is_object()){
-		return 0;
-	}
-	else if(value.is_array()){
-		return 1;
-	}
-	else if(value.is_string()){
-		return 2;
-	}
-	else if(value.is_number()){
-		return 4;
-	}
-	else if(value.is_true()){
-		return 5;
-	}
-	else if(value.is_false()){
-		return 6;
-	}
-	else if(value.is_null()){
-		return 7;
-	}
-	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
-	}
-}
-
-
 int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
 	if(lhs == rhs){
 		return 0;
 	}
 	else{
-		const auto lhs_type = json_value_type_to_int(lhs);
-		const auto rhs_type = json_value_type_to_int(rhs);
+		const auto lhs_type = get_json_type(lhs);
+		const auto rhs_type = get_json_type(rhs);
 		int type_diff = rhs_type - lhs_type;
 		if(type_diff != 0){
 			return type_diff;
 		}
 		else{
 			if(lhs.is_object()){
+				//??? NOT IMPLEMENTED YET
 				QUARK_ASSERT(false);
 				quark::throw_exception();
 			}
 			else if(lhs.is_array()){
+				//??? NOT IMPLEMENTED YET
 				QUARK_ASSERT(false);
 				quark::throw_exception();
 			}
@@ -1614,16 +1570,13 @@ int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
 				return lhs_number < rhs_number ? -1 : 1;
 			}
 			else if(lhs.is_true()){
-				QUARK_ASSERT(false);
-				quark::throw_exception();
+				return 0;
 			}
 			else if(lhs.is_false()){
-				QUARK_ASSERT(false);
-				quark::throw_exception();
+				return 0;
 			}
 			else if(lhs.is_null()){
-				QUARK_ASSERT(false);
-				quark::throw_exception();
+				return 0;
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -1924,7 +1877,7 @@ bc_static_frame_t::bc_static_frame_t(const std::vector<bc_instruction_t>& instrs
 		//	This is just a variable slot without constant. We need to put something there, but that don't confuse RC.
 		//	Problem is that IF this is an RC_object, it WILL be decremented when written to.
 		//	Use a placeholder object of correct type.
-		if(symbol.second._const_value._type.get_base_type() == base_type::k_internal_undefined){
+		if(symbol.second._const_value._type.get_base_type() == base_type::k_undefined){
 			if(is_ext){
 				const auto value = bc_value_t(symbol.second._value_type, bc_value_t::mode::k_unwritten_ext_value);
 				_locals.push_back(value);
@@ -1971,7 +1924,7 @@ bc_function_definition_t::bc_function_definition_t(
 	const typeid_t& function_type,
 	const std::vector<member_t>& args,
 	const std::shared_ptr<bc_static_frame_t>& frame,
-	int host_function_id
+	function_id_t host_function_id
 ) :
 	_function_type(function_type),
 	_args(args),
@@ -2096,7 +2049,7 @@ json_t interpreter_stack_t::stack_to_json() const{
 
 		auto a = json_t::make_array({
 			json_t(i),
-			typeid_to_ast_json(debug_type, json_tags::k_plain)._value,
+			typeid_to_ast_json(debug_type, json_tags::k_plain),
 			unwritten ? json_t("UNWRITTEN") : bcvalue_to_json(bc_value_t{bc})
 		});
 		elements.push_back(a);
@@ -2114,7 +2067,7 @@ json_t interpreter_stack_t::stack_to_json() const{
 //////////////////////////////////////////		GLOBAL FUNCTIONS
 
 
-const bc_function_definition_t& get_function_def(const interpreter_t& vm, int function_id){
+const bc_function_definition_t& get_function_def(const interpreter_t& vm, function_id_t function_id){
 	QUARK_ASSERT(vm.check_invariant());
 
 	QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
@@ -2196,7 +2149,7 @@ json_t bcvalue_to_json(const bc_value_t& v){
 	if(v._type.is_undefined()){
 		return json_t();
 	}
-	else if(v._type.is_internal_dynamic()){
+	else if(v._type.is_any()){
 		return json_t();
 	}
 	else if(v._type.is_void()){
@@ -2218,7 +2171,7 @@ json_t bcvalue_to_json(const bc_value_t& v){
 		return v.get_json_value();
 	}
 	else if(v._type.is_typeid()){
-		return typeid_to_ast_json(v.get_typeid_value(), json_tags::k_plain)._value;
+		return typeid_to_ast_json(v.get_typeid_value(), json_tags::k_plain);
 	}
 	else if(v._type.is_struct()){
 		const auto& struct_value = v.get_struct_value();
@@ -2279,7 +2232,7 @@ json_t bcvalue_to_json(const bc_value_t& v){
 	else if(v._type.is_function()){
 		return json_t::make_object(
 			{
-				{ "funtyp", typeid_to_ast_json(v._type, json_tags::k_plain)._value }
+				{ "funtyp", typeid_to_ast_json(v._type, json_tags::k_plain) }
 			}
 		);
 	}
@@ -2291,7 +2244,7 @@ json_t bcvalue_to_json(const bc_value_t& v){
 
 json_t bcvalue_and_type_to_json(const bc_value_t& v){
 	return json_t::make_array({
-		typeid_to_ast_json(v._type, json_tags::k_plain)._value,
+		typeid_to_ast_json(v._type, json_tags::k_plain),
 		bcvalue_to_json(v)
 	});
 }
@@ -2302,7 +2255,7 @@ json_t bcvalue_and_type_to_json(const bc_value_t& v){
 
 
 
-interpreter_t::interpreter_t(const bc_program_t& program, interpreter_handler_i* handler) :
+interpreter_t::interpreter_t(const bc_program_t& program, runtime_handler_i* handler) :
 	_stack(nullptr),
 	_handler(handler)
 {
@@ -2391,12 +2344,14 @@ void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, in
 		if(target_type.is_bool() || target_type.is_int() || target_type.is_double() || target_type.is_typeid()){
 			return input_value;
 		}
-		else if(target_type.is_string()){
-			if(input_value_type.is_json_value() && input_value.get_json_value().is_string()){
+
+		//	Automatically transform a json_value::string => string at runtime?
+		else if(target_type.is_string() && input_value_type.is_json_value()){
+			if(input_value.get_json_value().is_string()){
 				return bc_value_t::make_string(input_value.get_json_value().get_string());
 			}
 			else{
-				return input_value;
+				quark::throw_runtime_error("Attempting to assign a non-string JSON to a string.");
 			}
 		}
 		else if(target_type.is_json_value()){
@@ -3090,7 +3045,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_function(i._b));
 
-			const int function_id = regs[i._b]._inplace._function_id;
+			const function_id_t function_id = regs[i._b]._inplace._function_id;
 			const int callee_arg_count = i._c;
 			QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
 
@@ -3114,7 +3069,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				std::vector<bc_value_t> arg_values;
 				for(int a = 0 ; a < function_def_arg_count ; a++){
 					const auto& func_arg_type = function_def._args[a]._type;
-					if(func_arg_type.is_internal_dynamic()){
+					if(func_arg_type.is_any()){
 						const auto arg_itype = stack.load_intq(stack_pos);
 						const auto& arg_type = lookup_full_type(vm, static_cast<int16_t>(arg_itype));
 						const auto arg_value = stack.load_value(stack_pos + 1, arg_type);
@@ -3133,7 +3088,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 				if(function_return_type.is_void() == true){
 				}
-				else if(function_return_type.is_internal_dynamic()){
+				else if(function_return_type.is_any()){
 					stack.write_register(i._a, bc_result);
 				}
 				else{
@@ -3594,7 +3549,10 @@ std::shared_ptr<value_entry_t> find_global_symbol2(const interpreter_t& vm, cons
 			it->second,
 			static_cast<int>(index)
 		};
-		return std::make_shared<value_entry_t>(value_entry);
+        QUARK_ASSERT(value_entry.check_invariant());
+		auto a = std::make_shared<value_entry_t>(value_entry);
+        QUARK_ASSERT(a->check_invariant());
+        return a;
 	}
 	else{
 		return nullptr;
@@ -3623,7 +3581,7 @@ std::vector<json_t> bc_symbols_to_json(const std::vector<std::pair<std::string, 
 	int symbol_index = 0;
 	for(const auto& e: symbols){
 		const auto& symbol = e.second;
-		const auto symbol_type_str = symbol._symbol_type == bc_symbol_t::immutable_local ? "immutable_local" : "mutable_local";
+		const auto symbol_type_str = symbol._symbol_type == bc_symbol_t::immutable ? "immutable" : "mutable";
 
 		if(symbol._const_value._type.is_undefined() == false){
 			const auto e2 = json_t::make_array({
@@ -3640,7 +3598,7 @@ std::vector<json_t> bc_symbols_to_json(const std::vector<std::pair<std::string, 
 				e.first,
 				"LOCAL",
 				json_t::make_object({
-					{ "value_type", typeid_to_ast_json(symbol._value_type, json_tags::k_tag_resolve_state)._value },
+					{ "value_type", typeid_to_ast_json(symbol._value_type, json_tags::k_tag_resolve_state) },
 					{ "type", symbol_type_str }
 				})
 			});
@@ -3689,7 +3647,7 @@ json_t types_to_json(const std::vector<typeid_t>& types){
 	for(const auto& e: types){
 		const auto i = json_t::make_array({
 			id,
-			typeid_to_ast_json(e, json_tags::k_plain)._value
+			typeid_to_ast_json(e, json_tags::k_plain)
 		});
 		r.push_back(i);
 		id++;

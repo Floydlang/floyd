@@ -93,6 +93,36 @@ You optimise your program by running it and *augmenting* your Floyd processes an
 
 ![](floyd_optimization.png)
 
+# INSTALLATION
+
+There is no compiled distribution of Floyd yet. You need to clone the github repository and build yourself.
+
+#### MACOS
+
+1. Clone the Floyd repository from Github. Use the master branch
+
+2. Install the Homebrew package manager, if you don't already have it. https://brew.sh/
+
+3. In your terminal, run "brew install llvm@8.0.0" -- this installs the LLVM library on your Mac. It's installed in "/usr/local/Cellar/llvm/8.0.0_1" - so it won't conflict with Xcode or other versions of LLVM.
+
+4. Open the Floyd xcode project: Floyd/dev/floyd_speak.xcodeproj
+
+5. Make sure the current xcode scheme is "unit tests". Select from the top-left popup menu, looking like a stop-button.
+
+6. Select menu Product/Run
+
+	This builds the project and runs the unit tests. Output in the Xcode console.
+	
+#### UNIX
+
+TBD
+
+
+#### WINDOWS
+
+TBD
+
+
 # STATUS
 
 The essentials of Floyd are up and running and very robust (approximately 1000 tests), including the concurrent Floyd processes. The compiler generates bytecode that runs at about 5-10% of native speed on the interpreter. The manual is complete.

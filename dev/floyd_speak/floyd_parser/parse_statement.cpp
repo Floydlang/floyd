@@ -88,7 +88,7 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 std::pair<json_t, seq_t> parse_block(const seq_t& s){
 	const auto start = skip_whitespace(s);
 	const auto body = parse_statement_body(start);
-	return { make_statement1(location_t(start.pos()), statement_opcode_t::k_block, body.ast)._value, body.pos };
+	return { make_statement1(location_t(start.pos()), statement_opcode_t::k_block, body.ast), body.pos };
 }
 
 QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
@@ -120,7 +120,7 @@ std::pair<json_t, seq_t> parse_return_statement(const seq_t& s){
 	const auto pos2 = skip_whitespace(token_pos.second);
 	const auto expression1 = parse_expression(pos2);
 
-	const auto statement = make_statement1(location_t(start.pos()), statement_opcode_t::k_return, expression1.first)._value;
+	const auto statement = make_statement1(location_t(start.pos()), statement_opcode_t::k_return, expression1.first);
 	const auto pos = skip_whitespace(expression1.second.rest1());
 	return { statement, pos };
 }
@@ -178,10 +178,10 @@ a_result_t parse_a(const seq_t& p, const location_t& loc){
 	}
 	else if(!optional_type_pos.first && identifier_pos.first != ""){
 		QUARK_ASSERT(false);
-		return a_result_t{ typeid_t::make_undefined(), optional_type_pos.first->get_unresolved_type_identifier(), identifier_pos.second };
+		return a_result_t{ typeid_t::make_undefined(), optional_type_pos.first->get_unresolved(), identifier_pos.second };
 	}
 	else if(optional_type_pos.first && optional_type_pos.first->is_unresolved_type_identifier() && identifier_pos.first == ""){
-		return a_result_t{ typeid_t::make_undefined(), optional_type_pos.first->get_unresolved_type_identifier(), identifier_pos.second };
+		return a_result_t{ typeid_t::make_undefined(), optional_type_pos.first->get_unresolved(), identifier_pos.second };
 	}
 	else{
 		throw_compiler_error(loc, "Require a value for new bind.");
@@ -197,11 +197,11 @@ std::pair<json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
 	const auto expression_pos = parse_expression(equal_sign);
 
 	const auto params = std::vector<json_t>{
-		typeid_to_ast_json(a_result.type, json_tags::k_tag_resolve_state)._value,
+		typeid_to_ast_json(a_result.type, json_tags::k_tag_resolve_state),
 		a_result.identifier,
 		expression_pos.first,
 	};
-	const auto statement = make_statement_n(loc, statement_opcode_t::k_bind, params)._value;
+	const auto statement = make_statement_n(loc, statement_opcode_t::k_bind, params);
 	return { statement, expression_pos.second };
 }
 
@@ -216,12 +216,12 @@ std::pair<json_t, seq_t> parse_mutable(const seq_t& pos, const location_t& loc){
 	const auto meta = (json_t::make_object({ std::pair<std::string, json_t>{"mutable", true } }));
 
 	const auto params = std::vector<json_t>{
-		typeid_to_ast_json(a_result.type, json_tags::k_tag_resolve_state)._value,
+		typeid_to_ast_json(a_result.type, json_tags::k_tag_resolve_state),
 		a_result.identifier,
 		expression_pos.first,
 		meta
 	};
-	const auto statement = make_statement_n(loc, statement_opcode_t::k_bind, params)._value;
+	const auto statement = make_statement_n(loc, statement_opcode_t::k_bind, params);
 
 	return { statement, expression_pos.second };
 }
@@ -367,7 +367,7 @@ std::pair<json_t, seq_t> parse_assign_statement(const seq_t& s){
 	const auto rhs_seq = skip_whitespace(equal_pos);
 	const auto expression_fr = parse_expression(rhs_seq);
 
-	const auto statement = make_statement_n(location_t(start.pos()), statement_opcode_t::k_store, { variable_pos.first, expression_fr.first })._value;
+	const auto statement = make_statement_n(location_t(start.pos()), statement_opcode_t::k_assign, { variable_pos.first, expression_fr.first });
 	return { statement, expression_fr.second };
 }
 
@@ -376,7 +376,7 @@ QUARK_UNIT_TEST("", "parse_assign_statement()", "", ""){
 		parse_assign_statement(seq_t("x = 10;")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "store","x",["k",10,"^int"] ]
+				[ 0, "assign","x",["k",10,"^int"] ]
 			)"
 		)).first
 	);
@@ -390,7 +390,7 @@ std::pair<json_t, seq_t> parse_expression_statement(const seq_t& s){
 	const auto start = skip_whitespace(s);
 	const auto expression_fr = parse_expression(start);
 
-	const auto statement = make_statement1(location_t(start.pos()), statement_opcode_t::k_expression_statement, expression_fr.first)._value;
+	const auto statement = make_statement1(location_t(start.pos()), statement_opcode_t::k_expression_statement, expression_fr.first);
 	return { statement, expression_fr.second };
 }
 
@@ -428,10 +428,10 @@ std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
 			{ "name", function_name },
 			{ "args", args },
 			{ "statements", body.ast },
-			{ "return_type", typeid_to_ast_json(return_type_pos.first, json_tags::k_tag_resolve_state)._value },
+			{ "return_type", typeid_to_ast_json(return_type_pos.first, json_tags::k_tag_resolve_state) },
 			{ "impure", impure_pos.first }
 		})
-	)._value;
+	);
 	return { function_def, body.pos };
 }
 
@@ -560,7 +560,7 @@ std::pair<json_t, seq_t>  parse_struct_definition_body(const seq_t& p, const std
 			{ "name", name },
 			{ "members", members_to_json(members) }
 		})
-	)._value;
+	);
 	return { r, skip_whitespace(pos) };
 }
 
@@ -584,7 +584,7 @@ QUARK_UNIT_TEST("parser", "parse_struct_definition_statement", "", ""){
 
 	const auto expected =
 	json_t::make_array({
-		0,
+		json_t(0),
 		"def-struct",
 		json_t::make_object({
 			{ "name", "a" },
@@ -604,6 +604,7 @@ QUARK_UNIT_TEST("parser", "parse_struct_definition_statement", "", ""){
 }
 
 
+#if 0
 //////////////////////////////////////////////////		parse_protocol_definition_statement()
 
 
@@ -643,7 +644,7 @@ std::pair<json_t, seq_t>  parse_protocol_definition_body(const seq_t& p, const s
 			{ "members", members_to_json(functions)
 			}
 		})
-	)._value;
+	);
 	return { r, skip_whitespace(body_pos.second) };
 }
 
@@ -699,6 +700,7 @@ OFF_QUARK_UNIT_TEST("parse_protocol_definition_statement", "", "", ""){
 	ut_verify(QUARK_POS, r.first, expected);
 	ut_verify(QUARK_POS, r.second.str(), "");
 }
+#endif
 
 
 //////////////////////////////////////////////////		parse_if()
@@ -720,7 +722,7 @@ std::pair<json_t, seq_t> parse_if(const seq_t& pos){
 	const auto condition2 = parse_expression(seq_t(condition.first));
 
 	return {
-		make_statement2(location_t(start.pos()), statement_opcode_t::k_if, condition2.first, then_body.ast)._value,
+		make_statement2(location_t(start.pos()), statement_opcode_t::k_if, condition2.first, then_body.ast),
 		then_body.pos
 	};
 }
@@ -752,7 +754,7 @@ std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
 					if_statement2.first.get_array_n(2),
 					if_statement2.first.get_array_n(3),
 					json_t::make_array({elseif_statement2.first})
-				)._value,
+				),
 				elseif_statement2.second
 			};
 		}
@@ -766,7 +768,7 @@ std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
 					if_statement2.first.get_array_n(2),
 					if_statement2.first.get_array_n(3),
 					else_body.ast
-				)._value,
+				),
 				else_body.pos
 			};
 		}
@@ -937,7 +939,7 @@ std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
 			end_expr,
 			body.ast
 		}
-	)._value;
+	);
 	return { r, body.pos };
 }
 
@@ -1001,7 +1003,7 @@ std::pair<json_t, seq_t> parse_while_statement(const seq_t& pos){
 			condition_expr,
 			body.ast
 		}
-	)._value;
+	);
 	return { r, body.pos };
 }
 
@@ -1047,7 +1049,7 @@ std::pair<json_t, seq_t> parse_software_system_statement(const seq_t& s){
 
 	//??? Instead of parsing a static JSON literal, we could parse a Floyd expression that results in a JSON value = use variables etc.
 	std::pair<json_t, seq_t> json_pos = parse_json(ss_pos.second);
-	const auto r = make_statement1(loc, statement_opcode_t::k_software_system, json_pos.first)._value;
+	const auto r = make_statement1(loc, statement_opcode_t::k_software_system, json_pos.first);
 	return { r, json_pos.second };
 }
 
@@ -1069,7 +1071,7 @@ std::pair<json_t, seq_t> parse_container_def_statement(const seq_t& s){
 	//??? Instead of parsing a static JSON literal, we could parse a Floyd expression that results in a JSON value = use variables etc.
 	std::pair<json_t, seq_t> json_pos = parse_json(ss_pos.second);
 
-	const auto r = make_statement1(loc, statement_opcode_t::k_container_def, json_pos.first)._value;
+	const auto r = make_statement1(loc, statement_opcode_t::k_container_def, json_pos.first);
 	return { r, json_pos.second };
 }
 

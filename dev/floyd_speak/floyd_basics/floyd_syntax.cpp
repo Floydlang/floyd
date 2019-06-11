@@ -22,11 +22,11 @@ namespace floyd {
 
 
 string base_type_to_string(const base_type t){
-	if(t == base_type::k_internal_undefined){
-		return keyword_t::k_internal_undefined;
+	if(t == base_type::k_undefined){
+		return keyword_t::k_undefined;
 	}
-	else if(t == base_type::k_internal_dynamic){
-		return keyword_t::k_internal_dynamic;
+	else if(t == base_type::k_any){
+		return keyword_t::k_any;
 	}
 
 	else if(t == base_type::k_void){
@@ -55,9 +55,6 @@ string base_type_to_string(const base_type t){
 	else if(t == base_type::k_struct){
 		return keyword_t::k_struct;
 	}
-	else if(t == base_type::k_protocol){
-		return keyword_t::k_protocol;
-	}
 	else if(t == base_type::k_vector){
 		return "vector";
 	}
@@ -67,7 +64,7 @@ string base_type_to_string(const base_type t){
 	else if(t == base_type::k_function){
 		return "func";
 	}
-	else if(t == base_type::k_internal_unresolved_type_identifier){
+	else if(t == base_type::k_unresolved){
 		return "**unknown-identifier**";
 	}
 	else{
@@ -77,10 +74,10 @@ string base_type_to_string(const base_type t){
 }
 
 QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_internal_undefined) == "**undef**");
+	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_undefined) == "**undef**");
 }
 QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_internal_dynamic) == "**dyn**");
+	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_any) == "any");
 }
 QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_void) == keyword_t::k_void);
@@ -110,9 +107,6 @@ QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_struct) == keyword_t::k_struct);
 }
 QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_protocol) == keyword_t::k_protocol);
-}
-QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_vector) == "vector");
 }
 QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
@@ -123,7 +117,7 @@ QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
 }
 
 QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_internal_unresolved_type_identifier) == "**unknown-identifier**");
+	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_unresolved) == "**unknown-identifier**");
 }
 
 void ut_verify(const quark::call_context_t& context, const base_type& result, const base_type& expected){
