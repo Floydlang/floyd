@@ -117,6 +117,9 @@ There is no compiled distribution of Floyd yet. You need to clone the github rep
 
 Cmake is used to build floyd 
 
+
+
+
 ##### Building with arch linux
 
 1. Install llvm, sudo pacman -Sy llvm
@@ -128,6 +131,16 @@ Cmake is used to build floyd
 4. cmake ..
 
 5. make
+
+##### Builing quicker with ninja
+ 
+ 0. sudo pacman -Sy ninja
+
+ 1-3. as above 
+
+ 4. cmake .. -G Ninja
+
+ 5. ninja
 
 #### WINDOWS
 

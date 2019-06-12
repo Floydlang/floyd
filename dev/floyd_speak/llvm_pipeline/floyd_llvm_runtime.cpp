@@ -1830,7 +1830,7 @@ runtime_value_t floyd_funcdef__map_string(floyd_runtime_t* frp, runtime_value_t 
 
 	std::string acc;
 	for(int i = 0 ; i < count ; i++){
-		const auto element = { input_string[i] };
+		const std::string  element = { input_string[i] };
 		const auto x = to_runtime_string(r, element);
 		const auto temp = (*f)(frp, x);
 
