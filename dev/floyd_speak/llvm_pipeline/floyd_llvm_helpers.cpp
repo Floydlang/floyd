@@ -393,7 +393,10 @@ runtime_value_t make_runtime_typeid(runtime_type_t type){
 	return { .typeid_itype = type };
 }
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
-	return { .struct_ptr = struct_ptr };
+	runtime_value_t tmp;
+	tmp.struct_ptr = struct_ptr;
+	return   tmp;
+	//return { .struct_ptr = struct_ptr };
 }
 
 
@@ -833,7 +836,10 @@ void dispose_dict(DICT_T& dict){
 
 
 WIDE_RETURN_T make_wide_return_dict(DICT_T* dict){
-	return make_wide_return_2x64({ .dict_ptr = dict }, { .int_value = 0 });
+	runtime_value_t tmp;
+	tmp.dict_ptr=dict;
+	return make_wide_return_2x64(tmp, { .int_value = 0 });
+	//return make_wide_return_2x64({ .dict_ptr = dict }, { .int_value = 0 });
 }
 
 DICT_T* wide_return_to_dict(const WIDE_RETURN_T& ret){
