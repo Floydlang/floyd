@@ -115,8 +115,19 @@ There is no compiled distribution of Floyd yet. You need to clone the github rep
 	
 #### UNIX
 
-TBD
+Cmake is used to build floyd 
 
+##### Building with arch linux
+
+1. Install llvm, sudo pacman -Sy llvm
+
+2. cd floyd/dev/floyd_speak
+
+3. mkdir build;cd build
+
+4. cmake ..
+
+5. make
 
 #### WINDOWS
 
