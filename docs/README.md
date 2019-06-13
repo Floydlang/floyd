@@ -13,11 +13,13 @@
 
 **IN THE REPO:** This Github repository holds the compiler, the bytecode interpreter and documentation.
 
+**BLOG:** [FLOYD BLOG](https://medium.com/floyd-programming-language "Floyd Blog")
+
 **2019:** 1) first generation of Injector (optimiser), 2) Flesh out language, approx 15% more features.
 
 **ROADMAP:** [ROADMAP](https://github.com/marcusz/floyd/projects/1 "Floyd Roadmap")
 
-**CURRENT MILESTONE:** [CURRENT MILESTONE](https://github.com/marcusz/floyd/projects/4 "Milestone 2")
+**CURRENT MILESTONE:** [CURRENT MILESTONE](https://github.com/marcusz/floyd/projects/4 "Milestone")
 
 
 # WHAT IS FLOYD?
