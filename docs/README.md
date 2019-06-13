@@ -15,7 +15,7 @@
 
 **2019:** 1) first generation of Injector (optimiser), 2) Flesh out language, approx 15% more features.
 
-[[FLOYD BLOG]](https://medium.com/floyd-programming-language "Floyd Blog") [[ROADMAP]](https://github.com/marcusz/floyd/projects/1 "Floyd Roadmap") [[CURRENT MILESTONE]](https://github.com/marcusz/floyd/projects/4 "Milestone")
+[**[FLOYD BLOG]**](https://medium.com/floyd-programming-language "Floyd Blog") [**[ROADMAP]**](https://github.com/marcusz/floyd/projects/1 "Floyd Roadmap") [**[CURRENT MILESTONE]**](https://github.com/marcusz/floyd/projects/4 "Milestone")
 
 
 
