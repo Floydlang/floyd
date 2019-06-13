@@ -5,7 +5,7 @@
 
 
 # TL;DR
-**WHAT:** General-purpose programming language with unique take on execution performance and and programming.
+**WHAT:** General-purpose programming language with a unique take on programming and performance.
 
 **LICENCE:** MIT
  
@@ -15,7 +15,7 @@
 
 **2019:** 1) first generation of Injector (optimiser), 2) Flesh out language, approx 15% more features.
 
-[**[FLOYD BLOG]**](https://medium.com/floyd-programming-language "Floyd Blog") [**[ROADMAP]**](https://github.com/marcusz/floyd/projects/1 "Floyd Roadmap") [**[CURRENT MILESTONE]**](https://github.com/marcusz/floyd/projects/4 "Milestone")
+[**[FLOYD BLOG]**](https://medium.com/floyd-programming-language "Floyd Blog") - [**[ROADMAP]**](https://github.com/marcusz/floyd/projects/1 "Floyd Roadmap") - [**[CURRENT MILESTONE]**](https://github.com/marcusz/floyd/projects/4 "Milestone") - [**[MANUAL]**](floyd_manual/floyd_manual.md "Manual") - [**[LIBRARY]**](floyd_manual/floyd_speak_corelibs.md "Core library")
 
 
 
