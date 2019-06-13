@@ -11,15 +11,12 @@
  
 **STATUS:** Alpha 2. All the basics of the language are finished and robust. Runs natively using LLVM JIT backend (passes all tests, but not optimised). A byte code interpreter is also available. Production ready for smaller programs.
 
-**IN THE REPO:** This Github repository holds the compiler, the bytecode interpreter and documentation.
-
-**BLOG:** [FLOYD BLOG](https://medium.com/floyd-programming-language "Floyd Blog")
+**THIS REPO:** This Github repository holds the compiler, the bytecode interpreter and documentation.
 
 **2019:** 1) first generation of Injector (optimiser), 2) Flesh out language, approx 15% more features.
 
-**ROADMAP:** [ROADMAP](https://github.com/marcusz/floyd/projects/1 "Floyd Roadmap")
+[[FLOYD BLOG]](https://medium.com/floyd-programming-language "Floyd Blog") [[ROADMAP]](https://github.com/marcusz/floyd/projects/1 "Floyd Roadmap") [[CURRENT MILESTONE]](https://github.com/marcusz/floyd/projects/4 "Milestone")
 
-**CURRENT MILESTONE:** [CURRENT MILESTONE](https://github.com/marcusz/floyd/projects/4 "Milestone")
 
 
 # WHAT IS FLOYD?
