@@ -15,9 +15,10 @@
 #include "expression.h"
 #include "json_support.h"
 #include "text_parser.h"
-#include "host_functions.h"
+#include "bytecode_host_functions.h"
 #include "file_handling.h"
 #include "compiler_helpers.h"
+#include "floyd_filelib.h"
 
 #include <string>
 #include <vector>

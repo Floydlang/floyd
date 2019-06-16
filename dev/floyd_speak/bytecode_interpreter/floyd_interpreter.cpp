@@ -13,7 +13,7 @@
 #include "floyd_runtime.h"
 
 #include "pass3.h"
-#include "host_functions.h"
+#include "bytecode_host_functions.h"
 #include "bytecode_generator.h"
 #include "compiler_helpers.h"
 #include "os_process.h"

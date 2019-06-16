@@ -14,7 +14,7 @@
 #include "ast_basics.h"
 #include "utils.h"
 #include "json_support.h"
-#include "host_functions.h"
+#include "bytecode_host_functions.h"
 #include "text_parser.h"
 #include "pass2.h"
 

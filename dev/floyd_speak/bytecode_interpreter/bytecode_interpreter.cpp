@@ -8,7 +8,7 @@
 
 #include "bytecode_interpreter.h"
 
-#include "host_functions.h"
+#include "bytecode_host_functions.h"
 #include "text_parser.h"
 #include "ast_value.h"
 #include "ast_json.h"
@@ -2263,7 +2263,7 @@ interpreter_t::interpreter_t(const bc_program_t& program, runtime_handler_i* han
 
 	//	Make lookup table from host-function ID to an implementation of that host function in the interpreter.
 	const auto& host_functions = get_host_functions();
-	std::map<int, HOST_FUNCTION_PTR> host_functions2;
+	std::map<int, BC_HOST_FUNCTION_PTR> host_functions2;
 	for(auto& hf_kv: host_functions){
 		const auto& function_id = hf_kv.second._signature._function_id;
 		const auto& function_ptr = hf_kv.second._f;

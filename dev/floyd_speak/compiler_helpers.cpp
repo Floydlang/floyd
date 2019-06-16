@@ -13,10 +13,11 @@
 
 #include "pass2.h"
 #include "pass3.h"
-#include "host_functions.h"
+#include "bytecode_host_functions.h"
 #include "bytecode_generator.h"
 #include "compiler_helpers.h"
 #include "compiler_basics.h"
+#include "floyd_filelib.h"
 
 #include <thread>
 #include <deque>
@@ -53,7 +54,7 @@ compilation_unit_t make_compilation_unit_nolib(const std::string& source_code, c
 
 compilation_unit_t make_compilation_unit_lib(const std::string& source_code, const std::string& source_path){
 	return compilation_unit_t{
-		.prefix_source = k_builtin_types_and_constants + "\n",
+		.prefix_source = k_filelib_builtin_types_and_constants + "\n",
 		.program_text = source_code,
 		.source_file_path = source_path
 	};

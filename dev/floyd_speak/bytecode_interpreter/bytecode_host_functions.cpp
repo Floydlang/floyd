@@ -6,7 +6,7 @@
 //  Copyright © 2018 Marcus Zetterquist. All rights reserved.
 //
 
-#include "host_functions.h"
+#include "bytecode_host_functions.h"
 
 #include "json_support.h"
 #include "ast_typeid_helpers.h"
@@ -27,6 +27,8 @@
 #include <fstream>
 
 #include "floyd_runtime.h"
+#include "floyd_filelib.h"
+
 
 namespace floyd {
 
@@ -38,6 +40,18 @@ using std::make_shared;
 
 
 
+
+struct host_function_record_t {
+	std::string _name;
+	BC_HOST_FUNCTION_PTR _f;
+
+	function_id_t _function_id;
+
+	floyd::typeid_t _function_type;
+};
+
+
+
 //??? Remove usage of value_t
 value_t value_to_jsonvalue(const value_t& value){
 	const auto j = value_to_ast_json(value, json_tags::k_plain);
@@ -46,395 +60,7 @@ value_t value_to_jsonvalue(const value_t& value){
 }
 
 
-extern const std::string k_builtin_types_and_constants = R"(
-	let double cmath_pi = 3.14159265358979323846
 
-	struct cpu_address_t {
-		int address
-	}
-
-	struct size_t {
-		int address
-	}
-
-	struct file_pos_t {
-		int pos
-	}
-
-	struct time_ms_t {
-		int pos
-	}
-
-	struct uuid_t {
-		int high64
-		int low64
-	}
-
-
-	struct ip_address_t {
-		int high64
-		int low_64_bits
-	}
-
-
-	struct url_t {
-		string absolute_url
-	}
-
-	struct url_parts_t {
-		string protocol
-		string domain
-		string path
-		[string:string] query_strings
-		int port
-	}
-
-	struct quick_hash_t {
-		int hash
-	}
-
-	struct key_t {
-		quick_hash_t hash
-	}
-
-	struct date_t {
-		string utc_date
-	}
-
-	struct sha1_t {
-		string ascii40
-	}
-
-
-	struct relative_path_t {
-		string relative_path
-	}
-
-	struct absolute_path_t {
-		string absolute_path
-	}
-
-	struct binary_t {
-		string bytes
-	}
-
-	struct text_location_t {
-		absolute_path_t source_file
-		int line_number
-		int pos_in_line
-	}
-
-	struct seq_t {
-		string str
-		size_t pos
-	}
-
-	struct text_t {
-		binary_t data
-	}
-
-	struct text_resource_id {
-		quick_hash_t id
-	}
-
-	struct image_id_t {
-		int id
-	}
-
-	struct color_t {
-		double red
-		double green
-		double blue
-		double alpha
-	}
-
-	struct vector2_t {
-		double x
-		double y
-	}
-
-
-
-	let color__black = color_t(0.0, 0.0, 0.0, 1.0)
-	let color__white = color_t(1.0, 1.0, 1.0, 1.0)
-
-
-	func color_t add_colors(color_t a, color_t b){
-		return color_t(
-			a.red + b.red,
-			a.green + b.green,
-			a.blue + b.blue,
-			a.alpha + b.alpha
-		)
-	}
-
-
-	////////////////////////////		FILE SYSTEM TYPES
-
-
-	struct fsentry_t {
-		string type	//	"dir" or "file"
-		string abs_parent_path
-		string name
-	}
-
-	struct fsentry_info_t {
-		string type	//	"file" or "dir"
-		string name
-		string abs_parent_path
-
-		string creation_date
-		string modification_date
-		int file_size
-	}
-
-	struct fs_environment_t {
-		string home_dir
-		string documents_dir
-		string desktop_dir
-
-		string hidden_persistence_dir
-		string preferences_dir
-		string cache_dir
-		string temp_dir
-
-		string executable_dir
-	}
-)";
-
-
-
-/////////////////////////////////////////		STRUCT PACKERS
-
-
-
-typeid_t make__fs_environment_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "home_dir" },
-		{ typeid_t::make_string(), "documents_dir" },
-		{ typeid_t::make_string(), "desktop_dir" },
-
-		{ typeid_t::make_string(), "hidden_persistence_dir" },
-		{ typeid_t::make_string(), "preferences_dir" },
-		{ typeid_t::make_string(), "cache_dir" },
-		{ typeid_t::make_string(), "temp_dir" },
-
-		{ typeid_t::make_string(), "executable_dir" }
-	});
-	return temp;
-}
-
-typeid_t make__fsentry_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "type" },
-		{ typeid_t::make_string(), "name" },
-		{ typeid_t::make_string(), "parent_path" }
-	});
-	return temp;
-}
-
-/*
-	struct date_t {
-		string utd_date
-	}
-*/
-typeid_t make__date_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "utd_date" }
-	});
-	return temp;
-}
-
-typeid_t make__sha1_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "ascii40" }
-	});
-	return temp;
-}
-
-typeid_t make__binary_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "bytes" }
-	});
-	return temp;
-}
-
-/*
-	struct absolute_path_t {
-		string absolute_path
-	}
-*/
-typeid_t make__absolute_path_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "absolute_path" }
-	});
-	return temp;
-}
-
-/*
-	struct file_pos_t {
-		int pos
-	}
-*/
-typeid_t make__file_pos_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_int(), "pos" }
-	});
-	return temp;
-}
-
-/*
-	struct fsentry_info_t {
-		string type	//	"file" or "dir"
-		string name
-		absolute_path_t parent_path
-
-		date_t creation_date
-		date_t modification_date
-		file_pos_t file_size
-	}
-*/
-typeid_t make__fsentry_info_t__type(){
-	const auto temp = typeid_t::make_struct2({
-		{ typeid_t::make_string(), "type" },
-		{ typeid_t::make_string(), "name" },
-		{ typeid_t::make_string(), "parent_path" },
-
-		{ typeid_t::make_string(), "creation_date" },
-		{ typeid_t::make_string(), "modification_date" },
-		{ typeid_t::make_int(), "file_size" }
-	});
-	return temp;
-}
-
-
-
-
-//??? remove usage of value_t
-value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_type){
-	QUARK_ASSERT(v.check_invariant());
-
-
-	struct visitor_t {
-		const typeid_t& target_type;
-		const json_t& v;
-
-		value_t operator()(const typeid_t::undefined_t& e) const{
-			quark::throw_runtime_error("Invalid json schema, found null - unsupported by Floyd.");
-		}
-		value_t operator()(const typeid_t::any_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-
-		value_t operator()(const typeid_t::void_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-		value_t operator()(const typeid_t::bool_t& e) const{
-			if(v.is_true()){
-				return value_t::make_bool(true);
-			}
-			else if(v.is_false()){
-				return value_t::make_bool(false);
-			}
-			else{
-				quark::throw_runtime_error("Invalid json schema, expected true or false.");
-			}
-		}
-		value_t operator()(const typeid_t::int_t& e) const{
-			if(v.is_number()){
-				return value_t::make_int((int)v.get_number());
-			}
-			else{
-				quark::throw_runtime_error("Invalid json schema, expected number.");
-			}
-		}
-		value_t operator()(const typeid_t::double_t& e) const{
-			if(v.is_number()){
-				return value_t::make_double((double)v.get_number());
-			}
-			else{
-				quark::throw_runtime_error("Invalid json schema, expected number.");
-			}
-		}
-		value_t operator()(const typeid_t::string_t& e) const{
-			if(v.is_string()){
-				return value_t::make_string(v.get_string());
-			}
-			else{
-				quark::throw_runtime_error("Invalid json schema, expected string.");
-			}
-		}
-
-		value_t operator()(const typeid_t::json_type_t& e) const{
-			return value_t::make_json_value(v);
-		}
-		value_t operator()(const typeid_t::typeid_type_t& e) const{
-			const auto typeid_value = typeid_from_ast_json(v);
-			return value_t::make_typeid_value(typeid_value);
-		}
-
-		value_t operator()(const typeid_t::struct_t& e) const{
-			if(v.is_object()){
-				const auto& struct_def = *e._struct_def;
-				vector<value_t> members2;
-				for(const auto& member: struct_def._members){
-					const auto member_value0 = v.get_object_element(member._name);
-					const auto member_value1 = unflatten_json_to_specific_type(member_value0, member._type);
-					members2.push_back(member_value1);
-				}
-				const auto result = value_t::make_struct_value(target_type, members2);
-				return result;
-			}
-			else{
-				quark::throw_runtime_error("Invalid json schema for Floyd struct, expected JSON object.");
-			}
-		}
-		value_t operator()(const typeid_t::vector_t& e) const{
-			if(v.is_array()){
-				const auto target_element_type = target_type.get_vector_element_type();
-				vector<value_t> elements2;
-				for(int i = 0 ; i < v.get_array_size() ; i++){
-					const auto member_value0 = v.get_array_n(i);
-					const auto member_value1 = unflatten_json_to_specific_type(member_value0, target_element_type);
-					elements2.push_back(member_value1);
-				}
-				const auto result = value_t::make_vector_value(target_element_type, elements2);
-				return result;
-			}
-			else{
-				quark::throw_runtime_error("Invalid json schema for Floyd vector, expected JSON array.");
-			}
-		}
-		value_t operator()(const typeid_t::dict_t& e) const{
-			if(v.is_object()){
-				const auto value_type = target_type.get_dict_value_type();
-				const auto source_obj = v.get_object();
-				std::map<std::string, value_t> obj2;
-				for(const auto& member: source_obj){
-					const auto member_name = member.first;
-					const auto member_value0 = member.second;
-					const auto member_value1 = unflatten_json_to_specific_type(member_value0, value_type);
-					obj2[member_name] = member_value1;
-				}
-				const auto result = value_t::make_dict_value(value_type, obj2);
-				return result;
-			}
-			else{
-				quark::throw_runtime_error("Invalid json schema, expected JSON object.");
-			}
-		}
-		value_t operator()(const typeid_t::function_t& e) const{
-			quark::throw_runtime_error("Invalid json schema, cannot unflatten functions.");
-		}
-		value_t operator()(const typeid_t::unresolved_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
-	};
-	return std::visit(visitor_t{ target_type, v}, target_type._contents);
-}
 
 
 bc_value_t host__assert(interpreter_t& vm, const bc_value_t args[], int arg_count){
@@ -1560,21 +1186,6 @@ std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v
 
 
 
-	//??? check path is valid dir
-bool is_valid_absolute_dir_path(const std::string& s){
-	if(s.empty()){
-		return false;
-	}
-	else{
-/*
-		if(s.back() != '/'){
-			return false;
-		}
-*/
-
-	}
-	return true;
-}
 
 bc_value_t host__get_fsentries_shallow(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -1825,7 +1436,7 @@ There is never a file extension. You could add one if you want too.
 */
 
 
-host_function_record_t make_rec(const std::string& name, HOST_FUNCTION_PTR f, function_id_t function_id, typeid_t function_type){
+host_function_record_t make_rec(const std::string& name, BC_HOST_FUNCTION_PTR f, function_id_t function_id, typeid_t function_type){
 	return host_function_record_t { name, f, function_id, function_type };
 }
 
@@ -1988,14 +1599,14 @@ std::map<std::string, host_function_signature_t> get_host_function_signatures(){
 	return result;
 }
 
-std::map<int, host_function_t> get_host_functions(){
+std::map<int, bc_host_function_t> get_host_functions(){
 	const auto a = get_host_function_records();
 
-	std::map<int, host_function_t> result;
+	std::map<int, bc_host_function_t> result;
 	for(const auto& e: a){
 		const auto sign = host_function_signature_t{ e._function_id, e._function_type };
 		result.insert(
-			{ e._function_id, host_function_t{ sign, e._name, e._f } }
+			{ e._function_id, bc_host_function_t{ sign, e._name, e._f } }
 		);
 	}
 	return result;

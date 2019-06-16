@@ -17,6 +17,8 @@ struct json_t;
 
 namespace floyd {
 
+struct value_t;
+
 
 //////////////////////////////////////		runtime_handler_i
 
@@ -54,6 +56,23 @@ typeid_t make_process_init_type(const typeid_t& t);
 //	T x(T state, json_value message) impure
 typeid_t make_process_message_handler_type(const typeid_t& t);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_type);
 
 }	//	floyd
 

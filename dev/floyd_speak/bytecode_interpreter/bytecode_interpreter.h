@@ -50,7 +50,7 @@ struct bc_external_value_t;
 struct bc_external_handle_t;
 
 
-typedef bc_value_t (*HOST_FUNCTION_PTR)(interpreter_t& vm, const bc_value_t args[], int arg_count);
+typedef bc_value_t (*BC_HOST_FUNCTION_PTR)(interpreter_t& vm, const bc_value_t args[], int arg_count);
 typedef int16_t bc_typeid_t;
 
 
@@ -1340,7 +1340,7 @@ struct interpreter_stack_t {
 struct interpreter_imm_t {
 	public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
 	public: const bc_program_t _program;
-	public: const std::map<int, HOST_FUNCTION_PTR> _host_functions;
+	public: const std::map<int, BC_HOST_FUNCTION_PTR> _host_functions;
 };
 
 
