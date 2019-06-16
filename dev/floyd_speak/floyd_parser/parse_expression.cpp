@@ -543,9 +543,16 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 				if(a_pos.first._has_keys){
 					throw_compiler_error_nopos("Cannot name arguments in function call!");
 				}
+
 				const auto values = get_values(a_pos.first);
-				const auto call = maker__call(lhs, values);
-				return parse_optional_operation_rightward(a_pos.second, call, precedence);
+				if(lhs == json_t::make_array({ "@" , "update" }) && values.size() == 3){
+					const auto call = maker__update(values[0], values[1], values[2]);
+					return parse_optional_operation_rightward(a_pos.second, call, precedence);
+				}
+				else{
+					const auto call = maker__call(lhs, values);
+					return parse_optional_operation_rightward(a_pos.second, call, precedence);
+				}
 			}
 
 			//	Member access
@@ -1321,6 +1328,20 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "struct member access -- whitesp
 		" xxx"
 	);
 }
+
+
+//////////////////////////////////			UPDATE
+
+
+
+QUARK_UNIT_TEST("parser", "parse_expression()", "update struct member", ""){
+	ut_verify__parse_expression(QUARK_POS, "update(a, red, 10) xxx", R"___(["update", ["@", "a"], ["@", "red"], [ "k", 10, "^int"]])___", " xxx");
+}
+QUARK_UNIT_TEST("parser", "parse_expression()", "update dict member", ""){
+	ut_verify__parse_expression(QUARK_POS, "update(a, \"name\", 10) xxx", R"___(["update", ["@", "a"], ["k", "name", "^string"], ["k", 10, "^int"]])___", " xxx");
+}
+
+
 
 
 //////////////////////////////////			LOOKUP

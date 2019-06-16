@@ -923,21 +923,19 @@ std::pair<analyser_t, expression_t> analyse_update_expression(const analyser_t& 
 	const auto parent_expr = analyse_expression_no_target(a_acc, parent, *details.parent_address);
 	a_acc = parent_expr.first;
 
-	const auto key_expr = analyse_expression_no_target(a_acc, parent, *details.key);
-	a_acc = key_expr.first;
-
-
 	const auto new_value_expr = analyse_expression_no_target(a_acc, parent, *details.new_value);
 	a_acc = new_value_expr.first;
 
 	const auto parent_type = parent_expr.second.get_output_type();
-	const auto key_type = key_expr.second.get_output_type();
 
 	if(parent_type.is_struct()){
 		const auto struct_def = parent_type.get_struct();
 
-		if(get_opcode(key_expr.second) == expression_type::k_literal && key_type.is_string()){
-			const auto member_name = key_expr.second.get_literal().get_string_value();
+		//	The key needs to be the name of an identifier. It's a compile-time constant.
+		//	It's encoded as a load which is confusing.
+
+		if(get_opcode(*details.key) == expression_type::k_load){
+			const auto member_name = std::get<expression_t::load_t>(details.key->_contents).variable_name;
 			int member_index = find_struct_member_index(struct_def, member_name);
 			if(member_index == -1){
 				std::stringstream what;
@@ -952,11 +950,15 @@ std::pair<analyser_t, expression_t> analyse_update_expression(const analyser_t& 
 		}
 		else{
 			std::stringstream what;
-			what << "Struct member needs to be a string literal, not a \"" + typeid_to_compact_string(key_type) + "\".";
+			what << "Struct member needs to be a string literal.";
 			throw_compiler_error(parent.location, what.str());
 		}
 	}
 	else if(parent_type.is_string()){
+		const auto key_expr = analyse_expression_no_target(a_acc, parent, *details.key);
+		a_acc = key_expr.first;
+		const auto key_type = key_expr.second.get_output_type();
+
 		if(key_type.is_int()){
 			return {
 				a_acc,
@@ -970,6 +972,10 @@ std::pair<analyser_t, expression_t> analyse_update_expression(const analyser_t& 
 		}
 	}
 	else if(parent_type.is_vector()){
+		const auto key_expr = analyse_expression_no_target(a_acc, parent, *details.key);
+		a_acc = key_expr.first;
+		const auto key_type = key_expr.second.get_output_type();
+
 		if(key_type.is_int()){
 			return {
 				a_acc,
@@ -983,6 +989,9 @@ std::pair<analyser_t, expression_t> analyse_update_expression(const analyser_t& 
 		}
 	}
 	else if(parent_type.is_dict()){
+		const auto key_expr = analyse_expression_no_target(a_acc, parent, *details.key);
+		a_acc = key_expr.first;
+		const auto key_type = key_expr.second.get_output_type();
 		if(key_type.is_string()){
 			return {
 				a_acc,

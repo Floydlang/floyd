@@ -152,6 +152,8 @@ static expression_t desugar_expression(desugar_t& acc, const expression_t& expre
 				args.push_back(desugar_expression(acc, a));
 			}
 
+//	No need to desugar update() anymore. That is built into parser now.
+#if 0
 			const auto load = std::get_if<expression_t::load_t>(&callee._contents);
 			if(load){
 //				QUARK_TRACE_SS(load->variable_name);
@@ -166,6 +168,7 @@ static expression_t desugar_expression(desugar_t& acc, const expression_t& expre
 				QUARK_TRACE_SS(load2->address._parent_steps);
 				QUARK_TRACE_SS(load2->address._index);
 			}
+#endif
 
 			return expression_t::make_call(callee, args, expression._output_type);
 		}
@@ -369,7 +372,7 @@ pass2_ast_t desugar_pass(const pass2_ast_t& pass2){
 	desugar_t acc;
 	const auto result = desugar(acc, pass2._tree);
 
-	QUARK_TRACE_SS("OUTPUT:  " << json_to_pretty_string(gp_ast_to_json(result)));
+//	QUARK_TRACE_SS("OUTPUT:  " << json_to_pretty_string(gp_ast_to_json(result)));
 	return pass2_ast_t { result };
 }
 

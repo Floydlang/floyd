@@ -3688,6 +3688,24 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [json_value] constructor", "", ""){
 
 
 
+QUARK_UNIT_TEST("Floyd test suite", "struct", "update without quoting member name", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			struct color { int red int green int blue }
+			let a = color(0, 1, 2)
+			let b = update(a, green, 100)
+			print(b)
+
+		)",
+		{ "{red=0, green=100, blue=2}" }
+	);
+}
+
+
+
+
 QUARK_UNIT_TEST("Floyd test suite", "struct", "", ""){
 	run_closed(R"(		struct t {}		)");
 }
@@ -3927,7 +3945,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "mutate struct member using update
 
 			struct color { int red int green int blue }
 			let a = color(255,128,128)
-			let b = update(a, "green", 3)
+			let b = update(a, green, 3)
 			print(a)
 			print(b)
 
@@ -5479,10 +5497,10 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 			print("received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "inc"){
-				return update(state, "_count", state._count + 1)
+				return update(state, _count, state._count + 1)
 			}
 			else if(message == "dec"){
-				return update(state, "_count", state._count - 1)
+				return update(state, _count, state._count - 1)
 			}
 			else{
 				assert(false)
@@ -5539,10 +5557,10 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 			print("my_gui --- received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "inc"){
-				return update(state, "_count", state._count + 1)
+				return update(state, _count, state._count + 1)
 			}
 			else if(message == "dec"){
-				return update(state, "_count", state._count - 1)
+				return update(state, _count, state._count - 1)
 			}
 			else{
 				assert(false)
@@ -5568,7 +5586,7 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 			print("my_audio --- received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "process"){
-				return update(state, "_audio", state._audio + 1)
+				return update(state, _audio, state._audio + 1)
 			}
 			else{
 				assert(false)
@@ -5623,12 +5641,12 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 
 			if(message == "2"){
 				send("b", "3")
-				return update(state, "_count", state._count + 1)
+				return update(state, _count, state._count + 1)
 			}
 			else if(message == "4"){
 				send("a", "stop")
 				send("b", "stop")
-				return update(state, "_count", state._count + 10)
+				return update(state, _count, state._count + 10)
 			}
 			else{
 				assert(false)
@@ -5653,11 +5671,11 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 
 			if(message == "1"){
 				send("a", "2")
-				return update(state, "_audio", state._audio + 1)
+				return update(state, _audio, state._audio + 1)
 			}
 			else if(message == "3"){
 				send("a", "4")
-				return update(state, "_audio", state._audio + 4)
+				return update(state, _audio, state._audio + 4)
 			}
 			else{
 				assert(false)
@@ -5883,7 +5901,7 @@ assert(a == rect(0.0, 3.0))
 assert(a != rect(1.0, 1.0))
 assert(a < rect(0.0, 4.0))
 
-let b = update(a, "width", 100.0)
+let b = update(a, width, 100.0)
 assert(a.width == 0.0)
 assert(b.width == 100.0)
 
