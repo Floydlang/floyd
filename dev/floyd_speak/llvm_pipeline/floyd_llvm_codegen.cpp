@@ -1553,6 +1553,15 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 	return result;
 }
 
+
+static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::corecall_t& details){
+	QUARK_ASSERT(false);
+}
+
+
+
+
+
 //	Evaluate each element and store it directly into the array.
 static void generate_fill_array(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& element_ptr_reg, llvm::Type& element_type, const std::vector<expression_t>& elements){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1759,6 +1768,9 @@ static llvm::Value* generate_expression(llvm_code_generator_t& gen_acc, llvm::Fu
 		llvm::Value* operator()(const expression_t::call_t& expr) const{
 			return generate_call_expression(gen_acc, emit_f, e, expr);
 		}
+		llvm::Value* operator()(const expression_t::corecall_t& expr) const{
+			return generate_corecall_expression(gen_acc, emit_f, e, expr);
+		}
 
 
 		llvm::Value* operator()(const expression_t::struct_definition_expr_t& expr) const{
@@ -1805,7 +1817,7 @@ static llvm::Value* generate_expression(llvm_code_generator_t& gen_acc, llvm::Fu
 		}
 	};
 
-	llvm::Value* result = std::visit(visitor_t{ gen_acc, e, emit_f }, e._contents);
+	llvm::Value* result = std::visit(visitor_t{ gen_acc, e, emit_f }, e._expression_variant);
 	return result;
 }
 

@@ -126,6 +126,26 @@ namespace floyd {
 	*/
 	struct expression_t {
 
+		////////////////////////////////		corecall_t
+
+		struct corecall_t {
+			std::string call_name;
+			std::vector<expression_t> args;
+		};
+
+		public: static expression_t make_corecall(
+			const std::string& call_name,
+			const std::vector<expression_t>& args,
+			const std::shared_ptr<typeid_t>& annotated_type
+		){
+			return expression_t(
+				{ corecall_t { call_name, args } },
+				annotated_type
+			);
+		}
+
+
+
 		////////////////////////////////		literal_exp_t
 
 		struct literal_exp_t {
@@ -160,7 +180,7 @@ namespace floyd {
 		}
 
 		const value_t& get_literal() const{
-			return std::get<literal_exp_t>(_contents).value;
+			return std::get<literal_exp_t>(_expression_variant).value;
 		}
 
 
@@ -403,7 +423,7 @@ namespace floyd {
 				&& _debug == other._debug
 #endif
 				&& location == other.location
-//				&& _contents == other._contents
+//				&& _expression_variant == other._expression_variant
 				&& compare_shared_values(_output_type, other._output_type)
 				;
 		}
@@ -425,10 +445,10 @@ namespace floyd {
 			QUARK_ASSERT(check_invariant());
 
 			return false
-				|| std::holds_alternative<literal_exp_t>(_contents)
-				|| std::holds_alternative<struct_definition_expr_t>(_contents)
-				|| std::holds_alternative<function_definition_expr_t>(_contents)
-				|| std::holds_alternative<value_constructor_t>(_contents)
+				|| std::holds_alternative<literal_exp_t>(_expression_variant)
+				|| std::holds_alternative<struct_definition_expr_t>(_expression_variant)
+				|| std::holds_alternative<function_definition_expr_t>(_expression_variant)
+				|| std::holds_alternative<value_constructor_t>(_expression_variant)
 				;
 		}
 
@@ -444,6 +464,7 @@ namespace floyd {
 
 
 		typedef std::variant<
+			corecall_t,
 			literal_exp_t,
 			arithmetic_t,
 			comparison_t,
@@ -466,7 +487,7 @@ namespace floyd {
 			_debug(""),
 #endif
 			location(k_no_location),
-			_contents(contents),
+			_expression_variant(contents),
 			_output_type(output_type)
 		{
 		#if DEBUG
@@ -479,7 +500,7 @@ namespace floyd {
 		public: std::string _debug;
 #endif
 		public: location_t location;
-		public: expression_variant_t _contents;
+		public: expression_variant_t _expression_variant;
 		public: std::shared_ptr<typeid_t> _output_type;
 	};
 

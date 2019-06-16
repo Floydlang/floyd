@@ -277,6 +277,8 @@ enum class expression_type {
 	//	c99: a(b, c)		token: "call"
 	k_call,
 
+	k_corecall,
+
 	//	c99: a				token: "@"
 	k_load,
 

@@ -223,6 +223,11 @@ static void collect_used_types_expression(type_interner_t& acc, const expression
 				collect_used_types_expression(acc, a);
 			}
 		}
+		void operator()(const expression_t::corecall_t& e) const{
+			for(const auto& a: e.args){
+				collect_used_types_expression(acc, a);
+			}
+		}
 
 
 		void operator()(const expression_t::struct_definition_expr_t& e) const{
@@ -262,7 +267,7 @@ static void collect_used_types_expression(type_interner_t& acc, const expression
 			}
 		}
 	};
-	std::visit(visitor_t{ acc, expression }, expression._contents);
+	std::visit(visitor_t{ acc, expression }, expression._expression_variant);
 	intern_type(acc, expression.get_output_type());
 }
 
@@ -935,7 +940,7 @@ std::pair<analyser_t, expression_t> analyse_update_expression(const analyser_t& 
 		//	It's encoded as a load which is confusing.
 
 		if(get_opcode(*details.key) == expression_type::k_load){
-			const auto member_name = std::get<expression_t::load_t>(details.key->_contents).variable_name;
+			const auto member_name = std::get<expression_t::load_t>(details.key->_expression_variant).variable_name;
 			int member_index = find_struct_member_index(struct_def, member_name);
 			if(member_index == -1){
 				std::stringstream what;
@@ -1613,12 +1618,12 @@ const typeid_t figure_out_return_type(const analyser_t& a, const statement_t& pa
 				QUARK_ASSERT(call_args.size() >= 2);
 
 				const auto e = call_args[1];
-				if(std::holds_alternative<expression_t::load2_t>(e._contents) == false){
+				if(std::holds_alternative<expression_t::load2_t>(e._expression_variant) == false){
 					std::stringstream what;
 					what << "Argument 2 must be a typeid literal.";
 					throw_compiler_error(parent.location, what.str());
 				}
-				const auto& load = std::get<expression_t::load2_t>(e._contents);
+				const auto& load = std::get<expression_t::load2_t>(e._expression_variant);
 				QUARK_ASSERT(load.address._parent_steps == -1);
 
 				const auto& x = a._lexical_scope_stack[0].symbols._symbols[load.address._index];
@@ -1739,6 +1744,7 @@ static bc_opcode convert_call_to_pushback_opcode(const typeid_t& arg1_type){
 
 
 
+
 std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0, const statement_t& parent, const expression_t& e, const expression_t::call_t& details){
 	QUARK_ASSERT(a0.check_invariant());
 
@@ -1752,7 +1758,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 
 	const auto callsite_pure = a_acc._lexical_scope_stack.back().pure;
 
-	auto callee_expr_load2 = std::get_if<expression_t::load2_t>(&callee_expr._contents);
+	auto callee_expr_load2 = std::get_if<expression_t::load2_t>(&callee_expr._expression_variant);
 
 	//	This is a call to a function-value. Callee is a function-type.
 	const auto callee_type = callee_expr.get_output_type();
@@ -1810,6 +1816,85 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 		throw_compiler_error(parent.location, what.str());
 	}
 }
+
+
+
+std::pair<analyser_t, expression_t> analyse_corecall_expression(const analyser_t& a0, const statement_t& parent, const expression_t& e, const expression_t::corecall_t& details){
+	QUARK_ASSERT(a0.check_invariant());
+
+	QUARK_ASSERT(false);
+#if 0
+	auto a_acc = a0;
+
+	const auto call_args = details.args;
+
+	const auto callsite_pure = a_acc._lexical_scope_stack.back().pure;
+
+	auto callee_expr_load2 = std::get_if<expression_t::load2_t>(&callee_expr._expression_variant);
+
+	//	This is a call to a function-value. Callee is a function-type.
+	const auto callee_type = callee_expr.get_output_type();
+	if(callee_type.is_function()){
+		const auto callee_args = callee_type.get_function_args();
+		const auto callee_return_value = callee_type.get_function_return();
+		const auto callee_pure = callee_type.get_function_pure();
+
+		if(callsite_pure == epure::pure && callee_pure == epure::impure){
+			throw_compiler_error(parent.location, "Cannot call impure function from a pure function.");
+		}
+
+		const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_args);
+		a_acc = call_args_pair.first;
+
+		const auto call_return_type = figure_out_return_type(a_acc, parent, callee_expr, call_args_pair.second);
+		return { a_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(call_return_type)) };
+	}
+
+	//	Attempting to call a TYPE? Then this may be a constructor call.
+	//	Converts these calls to construct-value-expressions.
+	else if(callee_type.is_typeid() && callee_expr_load2){
+		const auto found_symbol_ptr = resolve_symbol_by_address(a_acc, callee_expr_load2->address);
+		QUARK_ASSERT(found_symbol_ptr != nullptr);
+
+		if(found_symbol_ptr->_init.is_undefined()){
+			throw_compiler_error(parent.location, "Cannot resolve callee.");
+		}
+		else{
+			const auto callee_type2 = found_symbol_ptr->_init.get_typeid_value();
+
+			//	Convert calls to struct-type into construct-value expression.
+			if(callee_type2.is_struct()){
+				const auto& def = callee_type2.get_struct();
+				const auto callee_args = get_member_types(def._members);
+				const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_args);
+				a_acc = call_args_pair.first;
+
+				return { a_acc, expression_t::make_construct_value_expr(callee_type2, call_args_pair.second) };
+			}
+
+			//	One argument for primitive types.
+			else{
+				const auto callee_args = vector<typeid_t>{ callee_type2 };
+				QUARK_ASSERT(callee_args.size() == 1);
+				const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_args);
+				a_acc = call_args_pair.first;
+				return { a_acc, expression_t::make_construct_value_expr(callee_type2, call_args_pair.second) };
+			}
+		}
+	}
+	else{
+		std::stringstream what;
+		what << "Cannot call non-function, its type is " << typeid_to_compact_string(callee_type) << ".";
+		throw_compiler_error(parent.location, what.str());
+	}
+#endif
+}
+
+
+
+
+
+
 
 std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const analyser_t& a, const statement_t& parent, const expression_t& e0, const expression_t::struct_definition_expr_t& details){
 	QUARK_ASSERT(a.check_invariant());
@@ -1905,6 +1990,9 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 		std::pair<analyser_t, expression_t> operator()(const expression_t::call_t& expr) const{
 			return analyse_call_expression(a, parent, e, expr);
 		}
+		std::pair<analyser_t, expression_t> operator()(const expression_t::corecall_t& expr) const{
+			return analyse_corecall_expression(a, parent, e, expr);
+		}
 
 
 		std::pair<analyser_t, expression_t> operator()(const expression_t::struct_definition_expr_t& expr) const{
@@ -1939,7 +2027,7 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 		}
 	};
 
-	const auto result = std::visit(visitor_t{ a, parent, e, target_type }, e._contents);
+	const auto result = std::visit(visitor_t{ a, parent, e, target_type }, e._expression_variant);
 
 	//	Record all output type, if there is one.
 	auto a_acc = result.first;

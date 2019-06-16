@@ -172,6 +172,13 @@ static expression_t desugar_expression(desugar_t& acc, const expression_t& expre
 
 			return expression_t::make_call(callee, args, expression._output_type);
 		}
+		expression_t operator()(const expression_t::corecall_t& e) const{
+			std::vector<expression_t> args;
+			for(const auto& a: e.args){
+				args.push_back(desugar_expression(acc, a));
+			}
+			return expression_t::make_corecall(e.call_name, args, expression._output_type);
+		}
 
 
 		expression_t operator()(const expression_t::struct_definition_expr_t& e) const{
@@ -217,7 +224,7 @@ static expression_t desugar_expression(desugar_t& acc, const expression_t& expre
 			return expression_t::make_construct_value_expr(e.value_type, elements);
 		}
 	};
-	const auto r = std::visit(visitor_t{ acc, expression }, expression._contents);
+	const auto r = std::visit(visitor_t{ acc, expression }, expression._expression_variant);
 	return r;
 }
 

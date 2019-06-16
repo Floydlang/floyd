@@ -947,7 +947,7 @@ call_setup_t gen_call_setup(bcgenerator_t& gen_acc, const std::vector<typeid_t>&
 static function_id_t get_host_function_id(bcgenerator_t& gen_acc, const expression_t::call_t& call_e){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
-	const auto load2 = std::get_if<expression_t::load2_t>(&call_e.callee->_contents);
+	const auto load2 = std::get_if<expression_t::load2_t>(&call_e.callee->_expression_variant);
 
 	if(load2 && load2->address._parent_steps == -1){
 		const auto global_index = load2->address._index;
@@ -1121,6 +1121,10 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const vari
 		QUARK_ASSERT(body_acc.check_invariant());
 		return { body_acc, target_reg2, intern_type(gen_acc, return_type) };
 	}
+}
+
+static expression_gen_t bcgen_corecall_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const typeid_t& call_output_type, const expression_t::corecall_t& details, const bcgen_body_t& body){
+	QUARK_ASSERT(false);
 }
 
 //??? Submit dest-register to all gen-functions = minimize temps.
@@ -1537,6 +1541,9 @@ expression_gen_t bcgen_expression(bcgenerator_t& gen_acc, const variable_address
 		expression_gen_t operator()(const expression_t::call_t& expr) const{
 			return bcgen_call_expression(gen_acc, target_reg, e.get_output_type(), expr, body);
 		}
+		expression_gen_t operator()(const expression_t::corecall_t& expr) const{
+			return bcgen_corecall_expression(gen_acc, target_reg, e.get_output_type(), expr, body);
+		}
 
 		expression_gen_t operator()(const expression_t::struct_definition_expr_t& expr) const{
 			QUARK_ASSERT(false);
@@ -1571,7 +1578,7 @@ expression_gen_t bcgen_expression(bcgenerator_t& gen_acc, const variable_address
 		}
 	};
 
-	auto result = std::visit(visitor_t{ gen_acc, target_reg, e, body }, e._contents);
+	auto result = std::visit(visitor_t{ gen_acc, target_reg, e, body }, e._expression_variant);
 	return result;
 }
 
