@@ -382,10 +382,10 @@ func my_gui_state_t my_gui__init(){
 
 func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
 	if(message == "inc"){
-		return update(state, "_count", state._count + 1)
+		return update(state, _count, state._count + 1)
 	}
 	else if(message == "dec"){
-		return update(state, "_count", state._count - 1)
+		return update(state, _count, state._count - 1)
 	}
 	else{
 		assert(false)
@@ -1577,11 +1577,11 @@ struct point {
 let a = point(0, 3)
 
 //	Nothing happens! Setting width to 100 returns us a new point but we don't keep it.
-update(a,"x", 100)
+update(a, x, 100)
 assert(a.x == 0)
 
 //	Modifying a member creates a new instance, we assign it to b
-let b = update(a,"x", 100)
+let b = update(a, x, 100)
 
 //	Now we have the original, unmodified a and the new, updated b.
 assert(a.x == 0)
@@ -1600,7 +1600,7 @@ let a = image("Cat image.png", point(512, 256))
 assert(a.size.x == 512)
 
 //	Update the width-member inside the image's size-member. The result is a brand-new image, b!
-let b = update(a, "size.x", 100)
+let b = update(a, size.x, 100)
 assert(a.size.x == 512)
 assert(b.size.x == 100)
 ```
@@ -1770,7 +1770,7 @@ This is how you modify a field of a struct, an element in a vector or string or 
 | string		| update("hello", 3, 120)		| "helxo"
 | vector		| update([1,2,3,4], 2, 33)		| [1,2,33,4]
 | dictionary	| update({"a": 1, "b": 2, "c": 3}, "a", 11) | {"a":11,"b":2,"c":3}
-| struct		| update(pixel,"red", 123)		| pixel(123,---,---)
+| struct		| update(pixel, red, 123)		| pixel(123,---,---)
 | json_value:array		| 
 | json_value:object		| 
 
@@ -1778,7 +1778,7 @@ For dictionaries it can be used to add completely new elements too.
 
 |TYPE		  	| EXAMPLE						| RESULT
 |:---			|:---							|:---
-| dictionary	| update({"a": 1}, "b", 2] | {"a":1,"b":2}
+| dictionary	| update({ "a": 1 }, "b", 2] | { "a": 1, "b": 2 }
 
 
 
