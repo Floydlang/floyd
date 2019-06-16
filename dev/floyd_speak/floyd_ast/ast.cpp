@@ -27,6 +27,72 @@ namespace floyd {
 using namespace std;
 
 
+
+
+struct itype_lookup {
+};
+
+
+//////////////////////////////////////////////////		type_interner_t
+
+
+
+type_interner_t::type_interner_t() :
+	simple_next_id(0),
+	struct_next_id(100000000),
+	vector_next_id(200000000),
+	dict_next_id(300000000),
+	function_next_id(400000000)
+{
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(0), typeid_t::make_undefined() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(1), typeid_t::make_any() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(2), typeid_t::make_void() });
+
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(3), typeid_t::make_bool() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(4), typeid_t::make_int() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(5), typeid_t::make_double() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(6), typeid_t::make_string() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(7), typeid_t::make_json_value() });
+
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(8), typeid_t::make_typeid() });
+	simple_next_id = static_cast<int32_t>(interned.size());
+
+	QUARK_ASSERT(check_invariant());
+}
+
+
+bool check_basetype(const type_interner_t& interner, base_type type){
+	const int index = static_cast<int>(type);
+	const auto& i = interner.interned[index];
+
+	QUARK_ASSERT(i.first.itype == index);
+	QUARK_ASSERT(i.second.get_base_type() == type);
+	return true;
+}
+
+bool type_interner_t::check_invariant() const {
+	QUARK_ASSERT(check_basetype(*this, base_type::k_undefined));
+	QUARK_ASSERT(check_basetype(*this, base_type::k_any));
+	QUARK_ASSERT(check_basetype(*this, base_type::k_void));
+
+	QUARK_ASSERT(check_basetype(*this, base_type::k_bool));
+	QUARK_ASSERT(check_basetype(*this, base_type::k_int));
+	QUARK_ASSERT(check_basetype(*this, base_type::k_double));
+	QUARK_ASSERT(check_basetype(*this, base_type::k_string));
+	QUARK_ASSERT(check_basetype(*this, base_type::k_json_value));
+
+	QUARK_ASSERT(check_basetype(*this, base_type::k_typeid));
+
+	//!!! We don't register struct, vector, dict and function, since those get explicit types.
+
+
+	//	Make sure each itype
+
+	return true;
+}
+
+
+
 itype_t make_new_itype_recursive(type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -112,8 +178,6 @@ std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid
 }
 
 
-
-
 itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type){
 	const auto it = std::find_if(interner.interned.begin(), interner.interned.end(), [&](const std::pair<itype_t, typeid_t>& e){ return e.second == type; });
 	if(it != interner.interned.end()){
@@ -129,6 +193,14 @@ typeid_t lookup_type(const type_interner_t& interner, const itype_t& type){
 	}
 	throw std::exception();
 }
+
+
+
+
+
+
+//////////////////////////////////////////////////		general_purpose_ast_t
+
 
 
 

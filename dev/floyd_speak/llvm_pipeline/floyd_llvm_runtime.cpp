@@ -1343,8 +1343,11 @@ host_func_t floyd_runtime__allocate_struct__make(llvm::LLVMContext& context, con
 
 
 //??? optimize for speed. Most things can be precalculated.
+//??? Generate an add_ref-function for each struct type.
 const WIDE_RETURN_T fr_update_struct_member(floyd_runtime_t* frp, STRUCT_T* s, runtime_type_t struct_type, int64_t member_index, runtime_value_t new_value, runtime_type_t new_value_type){
 	auto& r = get_floyd_runtime(frp);
+	QUARK_ASSERT(s != nullptr);
+	QUARK_ASSERT(member_index != -1);
 
 	auto& context = r.instance->context;
 
@@ -1354,9 +1357,6 @@ const WIDE_RETURN_T fr_update_struct_member(floyd_runtime_t* frp, STRUCT_T* s, r
 
 	const auto source_struct_ptr = s;
 
-	if(member_index == -1){
-		throw std::runtime_error("Position argument to update() is outside collection span.");
-	}
 
 	const auto& struct_def = type0.get_struct();
 
