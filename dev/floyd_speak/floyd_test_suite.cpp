@@ -3888,7 +3888,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "compare structs <", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "struct", "update struct manually", ""){
+QUARK_UNIT_TEST("Floyd test suite", "struct", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -5866,7 +5866,7 @@ func int main([string] args) impure {
 
 
 
-QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "STRUCT", "", ""){
+QUARK_UNIT_TEST("QUICK REFERENCE SNIPPETS", "STRUCT", "", ""){
 	test_run_container2(R"(
 
 struct rect {

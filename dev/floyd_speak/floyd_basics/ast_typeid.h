@@ -84,6 +84,9 @@ int get_json_type(const json_t& value);
 //////////////////////////////////////////////////		struct_definition_t
 
 
+//??? This struct should be *separate* from the actual struct_definition_t,
+//	which should go next to function_definition_t in expression.h
+
 struct struct_definition_t {
 	public: struct_definition_t(const std::vector<member_t>& members) :
 		_members(members)

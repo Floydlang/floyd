@@ -107,6 +107,8 @@ namespace expression_opcode_t {
 	const std::string k_load = "@";
 	const std::string k_load2 = "@i";
 	const std::string k_resolve_member = "->";
+	const std::string k_update = "update";
+	const std::string k_update_member = "<-";
 	const std::string k_unary_minus = "unary-minus";
 	const std::string k_conditional_operator = "?:";
 	const std::string k_struct_def = "struct-def";

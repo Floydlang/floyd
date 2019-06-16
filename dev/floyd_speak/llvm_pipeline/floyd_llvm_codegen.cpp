@@ -574,6 +574,55 @@ static llvm::Value* generate_alloc_struct(llvm_code_generator_t& gen_acc, llvm::
 	return builder.CreateCall(f.llvm_f, args2, "");
 }
 
+static llvm::Value* generate_update_struct(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& struct_ptr_reg, const typeid_t& struct_type, llvm::Value& member_index_reg, llvm::Value& new_value_reg, const typeid_t& member_type){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	const auto f = find_function_def(gen_acc, "fr_update_struct_member");
+
+	std::vector<llvm::Value*> args2 = {
+		get_callers_fcp(gen_acc.interner, emit_f),
+		&struct_ptr_reg,
+		generate_itype_constant(gen_acc, struct_type),
+		&member_index_reg,
+
+		generate_cast_to_runtime_value(gen_acc, new_value_reg, member_type),
+		generate_itype_constant(gen_acc, member_type)
+	};
+	return builder.CreateCall(f.llvm_f, args2, "");
+}
+
+static llvm::Value* generate_update(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& parent_reg, const typeid_t& parent_type, llvm::Value& key_reg, const typeid_t& key_type, llvm::Value& new_value_reg, const typeid_t& value_type){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	//	NOTICE: Calls host function!
+	const auto f = find_function_def(gen_acc, "floyd_funcdef__update");
+
+	std::vector<llvm::Value*> args2 = {
+		get_callers_fcp(gen_acc.interner, emit_f),
+
+		generate_cast_to_runtime_value(gen_acc, parent_reg, parent_type),
+		generate_itype_constant(gen_acc, parent_type),
+
+		generate_cast_to_runtime_value(gen_acc, key_reg, key_type),
+		generate_itype_constant(gen_acc, key_type),
+
+		generate_cast_to_runtime_value(gen_acc, new_value_reg, value_type),
+		generate_itype_constant(gen_acc, value_type)
+	};
+	auto result = builder.CreateCall(f.llvm_f, args2, "");
+
+	auto wide_return_a_reg = builder.CreateExtractValue(result, { static_cast<int>(WIDE_RETURN_MEMBERS::a) });
+	auto result2 = generate_cast_from_runtime_value(gen_acc, *wide_return_a_reg, parent_type);
+	return result2;
+}
 
 
 /*
@@ -963,6 +1012,72 @@ static llvm::Value* generate_resolve_member_expression(llvm_code_generator_t& ge
 		quark::throw_exception();
 	}
 	return nullptr;
+}
+
+static llvm::Value* generate_update_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::update_t& details){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+	QUARK_ASSERT(e.check_invariant());
+
+	auto& builder = gen_acc.builder;
+
+	auto parent_reg = generate_expression(gen_acc, emit_f, *details.parent_address);
+	auto key_reg = generate_expression(gen_acc, emit_f, *details.key);
+	auto new_value_reg = generate_expression(gen_acc, emit_f, *details.new_value);
+
+	const auto parent_type = details.parent_address->get_output_type();
+	if(parent_type.is_string()){
+		const auto key_type = typeid_t::make_int();
+		const auto value_type = typeid_t::make_int();
+		auto result = generate_update(gen_acc, emit_f, *parent_reg, parent_type, *key_reg, key_type, *new_value_reg, value_type);
+		generate_release(gen_acc, emit_f, *parent_reg, parent_type);
+		generate_release(gen_acc, emit_f, *key_reg, key_type);
+		generate_release(gen_acc, emit_f, *new_value_reg, value_type);
+		return result;
+	}
+	else if(parent_type.is_vector()){
+		const auto key_type = typeid_t::make_int();
+		const auto value_type = parent_type.get_vector_element_type();
+		auto result = generate_update(gen_acc, emit_f, *parent_reg, parent_type, *key_reg, key_type, *new_value_reg, value_type);
+		generate_release(gen_acc, emit_f, *parent_reg, parent_type);
+		generate_release(gen_acc, emit_f, *key_reg, key_type);
+		generate_release(gen_acc, emit_f, *new_value_reg, value_type);
+		return result;
+	}
+	else if(parent_type.is_dict()){
+		const auto key_type = typeid_t::make_string();
+		const auto value_type = parent_type.get_dict_value_type();
+		auto result = generate_update(gen_acc, emit_f, *parent_reg, parent_type, *key_reg, key_type, *new_value_reg, value_type);
+		generate_release(gen_acc, emit_f, *parent_reg, parent_type);
+		generate_release(gen_acc, emit_f, *key_reg, key_type);
+		generate_release(gen_acc, emit_f, *new_value_reg, value_type);
+		return result;
+	}
+	else{
+		UNSUPPORTED();
+	}
+}
+
+static llvm::Value* generate_update_member_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::update_member_t& details){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+	QUARK_ASSERT(e.check_invariant());
+
+	auto& builder = gen_acc.builder;
+
+	auto parent_struct_ptr_reg = generate_expression(gen_acc, emit_f, *details.parent_address);
+	auto new_value_reg = generate_expression(gen_acc, emit_f, *details.new_value);
+
+	const auto struct_type = details.parent_address->get_output_type();
+	llvm::Value* member_index_reg = llvm::ConstantInt::get(builder.getInt64Ty(), details.member_index);
+	const auto member_type = details.new_value->get_output_type();
+
+	auto struct2_ptr_reg = generate_update_struct(gen_acc, emit_f, *parent_struct_ptr_reg, struct_type, *member_index_reg, *new_value_reg, member_type);
+
+	generate_release(gen_acc, emit_f, *new_value_reg, member_type);
+	generate_release(gen_acc, emit_f, *parent_struct_ptr_reg, struct_type);
+
+	return struct2_ptr_reg;
 }
 
 static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::lookup_t& details){
@@ -1675,6 +1790,12 @@ static llvm::Value* generate_expression(llvm_code_generator_t& gen_acc, llvm::Fu
 
 		llvm::Value* operator()(const expression_t::resolve_member_t& expr) const{
 			return generate_resolve_member_expression(gen_acc, emit_f, e, expr);
+		}
+		llvm::Value* operator()(const expression_t::update_t& expr) const{
+			return generate_update_expression(gen_acc, emit_f, e, expr);
+		}
+		llvm::Value* operator()(const expression_t::update_member_t& expr) const{
+			return generate_update_member_expression(gen_acc, emit_f, e, expr);
 		}
 		llvm::Value* operator()(const expression_t::lookup_t& expr) const{
 			return generate_lookup_element_expression(gen_acc, emit_f, e, expr);

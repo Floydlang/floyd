@@ -1342,6 +1342,81 @@ host_func_t floyd_runtime__allocate_struct__make(llvm::LLVMContext& context, con
 
 
 
+//??? optimize for speed. Most things can be precalculated.
+const WIDE_RETURN_T fr_update_struct_member(floyd_runtime_t* frp, STRUCT_T* s, runtime_type_t struct_type, int64_t member_index, runtime_value_t new_value, runtime_type_t new_value_type){
+	auto& r = get_floyd_runtime(frp);
+
+	auto& context = r.instance->context;
+
+	const auto type0 = lookup_type(r.type_interner.interner, struct_type);
+	const auto new_value_type0 = lookup_type(r.type_interner.interner, new_value_type);
+	QUARK_ASSERT(type0.is_struct());
+
+	const auto source_struct_ptr = s;
+
+	if(member_index == -1){
+		throw std::runtime_error("Position argument to update() is outside collection span.");
+	}
+
+	const auto& struct_def = type0.get_struct();
+
+	const auto member_value = from_runtime_value(r, new_value, new_value_type0);
+
+	//	Make copy of struct, overwrite member in copy.
+
+	auto& struct_type_llvm = *get_exact_struct_type(r.type_interner, type0);
+
+	const llvm::DataLayout& data_layout = r.ee->getDataLayout();
+	const llvm::StructLayout* layout = data_layout.getStructLayout(&struct_type_llvm);
+	const auto struct_bytes = layout->getSizeInBytes();
+
+	//??? Touches memory twice.
+	auto struct_ptr = alloc_struct(r.heap, struct_bytes);
+	auto struct_base_ptr = struct_ptr->get_data_ptr();
+	std::memcpy(struct_base_ptr, source_struct_ptr->get_data_ptr(), struct_bytes);
+
+	const auto member_offset = layout->getElementOffset(member_index);
+	const auto member_ptr = reinterpret_cast<void*>(struct_base_ptr + member_offset);
+	store_via_ptr(r, new_value_type0, member_ptr, member_value);
+
+	//	Retain every member of new struct.
+	{
+		int member_index = 0;
+		for(const auto& e: struct_def._members){
+			if(is_rc_value(e._type)){
+				const auto offset = layout->getElementOffset(member_index);
+				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
+				retain_value(r, *member_ptr, e._type);
+				member_index++;
+			}
+		}
+	}
+
+	return make_wide_return_structptr(struct_ptr);
+}
+host_func_t fr_update_struct_member__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		get_generic_struct_type(interner)->getPointerTo(),
+		{
+			make_frp_type(interner),
+			get_generic_struct_type(interner)->getPointerTo(),
+			make_runtime_type_type(context),
+			llvm::Type::getInt64Ty(context),
+			make_runtime_value_type(context),
+			make_runtime_type_type(context)
+		},
+		false
+	);
+	return { "fr_update_struct_member", function_type, reinterpret_cast<void*>(fr_update_struct_member) };
+}
+
+
+
+
+
+
+
+
 std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	std::vector<host_func_t> result = {
 		fr_retain_vec__make(context, interner),
@@ -1373,10 +1448,22 @@ std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const
 
 		floyd_runtime__compare_values__make(context, interner),
 
-		floyd_runtime__allocate_struct__make(context, interner)
+		floyd_runtime__allocate_struct__make(context, interner),
+
+		fr_update_struct_member__make(context, interner)
 	};
 	return result;
 }
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	HOST FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -2327,7 +2414,7 @@ runtime_type_t floyd_host__typeof(floyd_runtime_t* frp, runtime_value_t arg0_val
 
 
 
-
+//??? Split into string/vector/dict versions.
 const WIDE_RETURN_T floyd_funcdef__update(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(frp);
 
@@ -2422,6 +2509,9 @@ const WIDE_RETURN_T floyd_funcdef__update(floyd_runtime_t* frp, runtime_value_t 
 		return make_wide_return_dict(dict2);
 	}
 	else if(type0.is_struct()){
+
+		QUARK_ASSERT(false);
+
 		if(type1.is_string() == false){
 			throw std::exception();
 		}

@@ -286,6 +286,12 @@ enum class expression_type {
 	//	c99: a.b			token: "->"
 	k_resolve_member,
 
+	//						token: "update"
+	k_update,
+
+	//						token: "<-"
+	k_update_member,
+
 	//	c99: a[b]			token: "[]"
 	k_lookup_element,
 

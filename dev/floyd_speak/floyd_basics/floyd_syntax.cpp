@@ -188,6 +188,7 @@ static std::map<expression_type, string> operation_to_string_lookup = {
 	{ expression_type::k_load, "@" },
 	{ expression_type::k_load2, "@i" },
 	{ expression_type::k_resolve_member, "->" },
+	{ expression_type::k_update_member, "<-" },
 
 	{ expression_type::k_lookup_element, "[]" },
 

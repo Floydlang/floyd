@@ -155,13 +155,13 @@ floyd_quark_runtime::floyd_quark_runtime(const std::string& test_data_root) :
 
 void floyd_quark_runtime::runtime_i__on_assert(const quark::source_code_location& location, const char expression[]){
 	QUARK_TRACE_SS(std::string("Assertion failed ") << location._source_file << ", " << location._line_number << " \"" << expression << "\"");
-	perror("perror() says");
+//	perror("perror() says");
 	throw std::logic_error("assert");
 }
 
 void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_code_location& location, const char expression[]){
 	QUARK_TRACE_SS("Unit test failed " << location._source_file << ", " << location._line_number << " \"" << expression << "\"");
-	perror("perror() says");
+//	perror("perror() says");
 
 	throw std::logic_error("Unit test failed");
 }
