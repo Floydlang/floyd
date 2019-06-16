@@ -14,7 +14,8 @@
 #include "ast_basics.h"
 #include "utils.h"
 #include "json_support.h"
-#include "bytecode_host_functions.h"
+#include "floyd_runtime.h"
+
 #include "text_parser.h"
 #include "pass2.h"
 
@@ -1653,91 +1654,6 @@ const typeid_t figure_out_return_type(const analyser_t& a, const statement_t& pa
 			break;
 	}
 }
-
-
-
-
-#if 0
-function_id_t get_host_function_id(analyser_t& a, const expression_t::call_t& call_e){
-	QUARK_ASSERT(a.check_invariant());
-
-	const auto load2 = std::get_if<expression_t::load2_t>(&call_e.callee->_contents);
-	if(load2 && load2->address._parent_steps == -1){
-		const auto global_index = load2->address._index;
-
-		QUARK_ASSERT(global_index >= 0 && global_index < a._globals._symbol_table._symbols.size());
-		const auto& global_symbol = a._globals._symbol_table._symbols[global_index];
-		if(global_symbol.second._init.is_function()){
-			const auto function_id = global_symbol.second._init.get_function_value();
-			const auto& function_def = a._ast_imm->_tree._function_defs[function_id];
-
-			const auto host_func = std::get<function_definition_t::host_func_t>(function_def->_contents);
-
-			return host_func._host_function_id;
-		}
-		else{
-			return -1;
-		}
-	}
-	else{
-		return -1;
-	}
-}
-#endif
-
-//	a = size(b)
-static bc_opcode convert_call_to_size_opcode(const typeid_t& arg1_type){
-	QUARK_ASSERT(arg1_type.check_invariant());
-
-	if(arg1_type.is_vector()){
-		if(encode_as_vector_w_inplace_elements(arg1_type)){
-			return bc_opcode::k_get_size_vector_w_inplace_elements;
-		}
-		else{
-			return bc_opcode::k_get_size_vector_w_external_elements;
-		}
-	}
-	else if(arg1_type.is_dict()){
-		if(encode_as_dict_w_inplace_values(arg1_type)){
-			return bc_opcode::k_get_size_dict_w_inplace_values;
-		}
-		else{
-			return bc_opcode::k_get_size_dict_w_external_values;
-		}
-	}
-	else if(arg1_type.is_string()){
-		return bc_opcode::k_get_size_string;
-	}
-	else if(arg1_type.is_json_value()){
-		return bc_opcode::k_get_size_jsonvalue;
-	}
-	else{
-		return bc_opcode::k_nop;
-	}
-}
-
-static bc_opcode convert_call_to_pushback_opcode(const typeid_t& arg1_type){
-	QUARK_ASSERT(arg1_type.check_invariant());
-
-	if(arg1_type.is_vector()){
-		if(encode_as_vector_w_inplace_elements(arg1_type)){
-			return bc_opcode::k_pushback_vector_w_inplace_elements;
-		}
-		else{
-			return bc_opcode::k_pushback_vector_w_external_elements;
-		}
-	}
-	else if(arg1_type.is_string()){
-		return bc_opcode::k_pushback_string;
-	}
-	else{
-		return bc_opcode::k_nop;
-	}
-}
-
-
-
-
 
 
 std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0, const statement_t& parent, const expression_t& e, const expression_t::call_t& details){
