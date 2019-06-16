@@ -78,6 +78,55 @@ struct host_function_signature_t {
 	floyd::typeid_t _function_type;
 };
 
+host_function_signature_t make_assert_signature();
+host_function_signature_t make_to_string_signature();
+host_function_signature_t make_to_pretty_string_signature();
+host_function_signature_t make_typeof_signature();
+host_function_signature_t make_update_signature();
+host_function_signature_t make_size_signature();
+host_function_signature_t make_find_signature();
+host_function_signature_t make_exists_signature();
+host_function_signature_t make_erase_signature();
+host_function_signature_t make_push_back_signature();
+host_function_signature_t make_subset_signature();
+host_function_signature_t make_replace_signature();
+
+host_function_signature_t make_script_to_jsonvalue_signature();
+host_function_signature_t make_jsonvalue_to_script_signature();
+host_function_signature_t make_value_to_jsonvalue_signature();
+host_function_signature_t make_jsonvalue_to_value_signature();
+
+host_function_signature_t make_get_json_type_signature();
+
+host_function_signature_t make_calc_string_sha1_signature();
+host_function_signature_t make_calc_binary_sha1_signature();
+
+host_function_signature_t make_map_signature();
+host_function_signature_t make_map_string_signature();
+host_function_signature_t make_filter_signature();
+host_function_signature_t make_reduce_signature();
+host_function_signature_t make_supermap_signature();
+
+
+host_function_signature_t make_print_signature();
+host_function_signature_t make_send_signature();
+host_function_signature_t make_get_time_of_day_signature();
+
+host_function_signature_t make_read_text_file_signature();
+host_function_signature_t make_write_text_file_signature();
+
+host_function_signature_t make_get_fsentries_shallow_signature();
+host_function_signature_t make_get_fsentries_deep_signature();
+host_function_signature_t make_get_fsentry_info_signature();
+host_function_signature_t make_get_fs_environment_signature();
+host_function_signature_t make_does_fsentry_exist_signature();
+host_function_signature_t make_create_directory_branch_signature();
+host_function_signature_t make_delete_fsentry_deep_signature();
+host_function_signature_t make_rename_fsentry_signature();
+
+
+
+
 std::map<std::string, host_function_signature_t> get_host_function_signatures();
 
 

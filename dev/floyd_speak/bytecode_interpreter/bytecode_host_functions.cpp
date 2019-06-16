@@ -1407,178 +1407,12 @@ bc_value_t host__rename_fsentry(interpreter_t& vm, const bc_value_t args[], int 
 
 
 
-host_function_record_t make_rec(const host_function_signature_t& signature, BC_HOST_FUNCTION_PTR f){
+static host_function_record_t make_rec(const host_function_signature_t& signature, BC_HOST_FUNCTION_PTR f){
 	return host_function_record_t { signature, f };
 }
 
-
-
-#define VOID typeid_t::make_void()
-#define DYN typeid_t::make_any()
-
-host_function_signature_t make_assert_signature(){
-	return host_function_signature_t{ "assert", 1001, typeid_t::make_function(VOID, { typeid_t::make_bool() }, epure::pure) };
-}
-host_function_signature_t make_to_string_signature(){
-	return host_function_signature_t{ "to_string", 1002, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::pure) };
-}
-
-host_function_signature_t make_to_pretty_string_signature(){
-	return host_function_signature_t{ "to_pretty_string", 1003, typeid_t::make_function(typeid_t::make_string(), { DYN }, epure::pure) };
-}
-host_function_signature_t make_typeof_signature(){
-	return host_function_signature_t{ "typeof", 1004, typeid_t::make_function(typeid_t::make_typeid(), { DYN }, epure::pure) };
-}
-
-
-host_function_signature_t make_update_signature(){
-	return host_function_signature_t{ "update", 1006, typeid_t::make_function_dyn_return({ DYN, DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg0) };
-}
-
-host_function_signature_t make_size_signature(){
-	return host_function_signature_t{ "size", 1007, typeid_t::make_function(typeid_t::make_int(), { DYN }, epure::pure) };
-}
-
-
-host_function_signature_t make_find_signature(){
-	return host_function_signature_t{ "find", 1008, typeid_t::make_function(typeid_t::make_int(), { DYN, DYN }, epure::pure) };
-}
-host_function_signature_t make_exists_signature(){
-	return host_function_signature_t{ "exists", 1009, typeid_t::make_function(typeid_t::make_bool(), { DYN, DYN }, epure::pure) };
-}
-
-host_function_signature_t make_erase_signature(){
-	return host_function_signature_t{ "erase", 1010, typeid_t::make_function_dyn_return({ DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg0) };
-}
-
-
-host_function_signature_t make_push_back_signature(){
-	return host_function_signature_t{ "push_back", 1011, typeid_t::make_function_dyn_return({ DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg0) };
-}
-
-host_function_signature_t make_subset_signature(){
-	return host_function_signature_t{ "subset", 1012, typeid_t::make_function_dyn_return({ DYN, typeid_t::make_int(), typeid_t::make_int()}, epure::pure, typeid_t::return_dyn_type::arg0) };
-}
-host_function_signature_t make_replace_signature(){
-	return host_function_signature_t{ "replace", 1013, typeid_t::make_function_dyn_return({ DYN, typeid_t::make_int(), typeid_t::make_int(), DYN }, epure::pure, typeid_t::return_dyn_type::arg0) };
-}
-
-host_function_signature_t make_script_to_jsonvalue_signature(){
-	return host_function_signature_t{ "script_to_jsonvalue", 1017, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_string()}, epure::pure) };
-}
-
-host_function_signature_t make_jsonvalue_to_script_signature(){
-	return host_function_signature_t{ "jsonvalue_to_script", 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json_value()}, epure::pure) };
-}
-
-
-host_function_signature_t make_value_to_jsonvalue_signature(){
-	return host_function_signature_t{ "value_to_jsonvalue", 1019, typeid_t::make_function(typeid_t::make_json_value(), { DYN }, epure::pure) };
-}
-
-
-host_function_signature_t make_jsonvalue_to_value_signature(){
-	//	??? Tricky. How to we compute the return type from the input arguments?
-	return host_function_signature_t{ "jsonvalue_to_value", 1020, typeid_t::make_function_dyn_return({ typeid_t::make_json_value(), typeid_t::make_typeid() }, epure::pure, typeid_t::return_dyn_type::arg1_typeid_constant_type) };
-}
-
-
-host_function_signature_t make_get_json_type_signature(){
-	return host_function_signature_t{ "get_json_type", 1021, typeid_t::make_function(typeid_t::make_int(), {typeid_t::make_json_value()}, epure::pure) };
-}
-
-
-host_function_signature_t make_calc_string_sha1_signature(){
-	return host_function_signature_t{ "calc_string_sha1", 1031, typeid_t::make_function(make__sha1_t__type(), { typeid_t::make_string() }, epure::pure) };
-}
-
-
-host_function_signature_t make_calc_binary_sha1_signature(){
-	return host_function_signature_t{ "calc_binary_sha1", 1032, typeid_t::make_function(make__sha1_t__type(), { make__binary_t__type() }, epure::pure) };
-}
-
-
-host_function_signature_t make_map_signature(){
-	return host_function_signature_t{ "map", 1033, typeid_t::make_function_dyn_return({ DYN, DYN}, epure::pure, typeid_t::return_dyn_type::vector_of_arg1func_return) };
-}
-
-host_function_signature_t make_map_string_signature(){
-	return host_function_signature_t{
-		"map_string",
-		1034,
-		typeid_t::make_function(
-			typeid_t::make_string(),
-			{
-				typeid_t::make_string(),
-				typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_string() }, epure::pure)
-			},
-			epure::pure
-		)
-	};
-}
-
-host_function_signature_t make_filter_signature(){
-	return host_function_signature_t{ "filter", 1036, typeid_t::make_function_dyn_return({ DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg0) };
-}
-host_function_signature_t make_reduce_signature(){
-	return host_function_signature_t{ "reduce", 1035, typeid_t::make_function_dyn_return({ DYN, DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg1) };
-}
-host_function_signature_t make_supermap_signature(){
-	return host_function_signature_t{ "supermap", 1037, typeid_t::make_function_dyn_return({ DYN, DYN, DYN }, epure::pure, typeid_t::return_dyn_type::vector_of_arg2func_return) };
-}
-
-
-host_function_signature_t make_print_signature(){
-	return host_function_signature_t{ "print", 1000, typeid_t::make_function(VOID, { DYN }, epure::pure) };
-}
-host_function_signature_t make_send_signature(){
-	return host_function_signature_t{ "send", 1022, typeid_t::make_function(VOID, { typeid_t::make_string(), typeid_t::make_json_value() }, epure::impure) };
-}
-host_function_signature_t make_get_time_of_day_signature(){
-	return host_function_signature_t{ "get_time_of_day", 1005, typeid_t::make_function(typeid_t::make_int(), {}, epure::impure) };
-}
-
-
-host_function_signature_t make_read_text_file_signature(){
-	return host_function_signature_t{ "read_text_file", 1015, typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_string() }, epure::impure) };
-}
-host_function_signature_t make_write_text_file_signature(){
-	return host_function_signature_t{ "write_text_file", 1016, typeid_t::make_function(VOID, { typeid_t::make_string(), typeid_t::make_string() }, epure::impure) };
-}
-
-
-host_function_signature_t make_get_fsentries_shallow_signature(){
-	const auto k_fsentry_t__type = make__fsentry_t__type();
-	return host_function_signature_t{ "get_fsentries_shallow", 1023, typeid_t::make_function(typeid_t::make_vector(k_fsentry_t__type), { typeid_t::make_string() }, epure::impure) };
-}
-host_function_signature_t make_get_fsentries_deep_signature(){
-	const auto k_fsentry_t__type = make__fsentry_t__type();
-	return host_function_signature_t{ "get_fsentries_deep", 1024, typeid_t::make_function(typeid_t::make_vector(k_fsentry_t__type), { typeid_t::make_string() }, epure::impure) };
-}
-host_function_signature_t make_get_fsentry_info_signature(){
-	return host_function_signature_t{ "get_fsentry_info", 1025, typeid_t::make_function(make__fsentry_info_t__type(), { typeid_t::make_string() }, epure::impure) };
-}
-host_function_signature_t make_get_fs_environment_signature(){
-	return host_function_signature_t{ "get_fs_environment", 1026, typeid_t::make_function(make__fs_environment_t__type(), {}, epure::impure) };
-}
-host_function_signature_t make_does_fsentry_exist_signature(){
-	return host_function_signature_t{ "does_fsentry_exist", 1027, typeid_t::make_function(typeid_t::make_bool(), { typeid_t::make_string() }, epure::impure) };
-}
-host_function_signature_t make_create_directory_branch_signature(){
-	return host_function_signature_t{ "create_directory_branch", 1028, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string() }, epure::impure) };
-}
-host_function_signature_t make_delete_fsentry_deep_signature(){
-	return host_function_signature_t{ "delete_fsentry_deep", 1029, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string() }, epure::impure)};
-}
-host_function_signature_t make_rename_fsentry_signature(){
-	return host_function_signature_t{ "rename_fsentry", 1030, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string(), typeid_t::make_string() }, epure::impure)};
-}
-
-
-
-std::vector<host_function_record_t> get_host_function_records(){
-
-	const std::vector<host_function_record_t> result = {
+static std::vector<host_function_record_t> get_host_function_records(){
+	static const std::vector<host_function_record_t> result = {
 		make_rec(make_assert_signature(), host__assert),
 		make_rec(make_to_string_signature(), host__to_string),
 		make_rec(make_to_pretty_string_signature(), host__to_pretty_string),
@@ -1638,17 +1472,6 @@ std::vector<host_function_record_t> get_host_function_records(){
 	return result;
 }
 
-
-
-std::map<std::string, host_function_signature_t> get_host_function_signatures(){
-	const auto a = get_host_function_records();
-
-	std::map<std::string, host_function_signature_t> result;
-	for(const auto& e: a){
-		result.insert({ e.signature.name, e.signature });
-	}
-	return result;
-}
 
 std::map<int, bc_host_function_t> bc_get_host_functions(){
 	const auto a = get_host_function_records();
