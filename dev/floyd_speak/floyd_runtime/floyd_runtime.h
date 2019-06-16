@@ -73,6 +73,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 
 
 struct host_function_signature_t {
+	std::string name;
 	function_id_t _function_id;
 	floyd::typeid_t _function_type;
 };

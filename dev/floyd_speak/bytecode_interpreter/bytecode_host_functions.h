@@ -29,11 +29,10 @@ namespace floyd {
 
 struct bc_host_function_t {
 	host_function_signature_t _signature;
-	std::string _name;
 	BC_HOST_FUNCTION_PTR _f;
 };
 
-std::map<int, bc_host_function_t> get_host_functions();
+std::map<int, bc_host_function_t> bc_get_host_functions();
 
 
 
