@@ -2162,20 +2162,6 @@ semantic_ast_t analyse(analyser_t& a){
 	*/
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
-/*
-	QUARK_ASSERT(a._types.simple_next_id == 0);
-	intern_type(a._types, typeid_t::make_undefined());
-	intern_type(a._types, typeid_t::make_any());
-	intern_type(a._types, typeid_t::make_void());
-	intern_type(a._types, typeid_t::make_bool());
-	intern_type(a._types, typeid_t::make_int());
-	intern_type(a._types, typeid_t::make_double());
-	intern_type(a._types, typeid_t::make_string());
-	intern_type(a._types, typeid_t::make_json_value());
-	intern_type(a._types, typeid_t::make_typeid());
-//	intern_type(a._types, typeid_t::make_unresolved_type_identifier());
-*/
-
 	symbol_map.push_back({keyword_t::k_void, make_type_symbol(typeid_t::make_void())});
 	symbol_map.push_back({keyword_t::k_bool, make_type_symbol(typeid_t::make_bool())});
 	symbol_map.push_back({keyword_t::k_int, make_type_symbol(typeid_t::make_int())});

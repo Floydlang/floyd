@@ -12,6 +12,7 @@
 
 #include <string>
 #include "ast_typeid.h"
+#include "compiler_basics.h"
 
 struct json_t;
 
@@ -60,19 +61,25 @@ typeid_t make_process_message_handler_type(const typeid_t& t);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_type);
+
+
+
+
+
+//////////////////////////////////////		HOST FUNCTIONS
+
+
+
+
+struct host_function_signature_t {
+	function_id_t _function_id;
+	floyd::typeid_t _function_type;
+};
+
+std::map<std::string, host_function_signature_t> get_host_function_signatures();
+
+
 
 }	//	floyd
 

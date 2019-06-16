@@ -17,7 +17,6 @@
 
 #include <string>
 #include <map>
-#include "ast_typeid.h"
 #include "floyd_runtime.h"
 #include "floyd_interpreter.h"
 
@@ -26,12 +25,6 @@ namespace floyd {
 
 
 
-struct host_function_signature_t {
-	function_id_t _function_id;
-	floyd::typeid_t _function_type;
-};
-
-std::map<std::string, host_function_signature_t> get_host_function_signatures();
 
 
 struct bc_host_function_t {

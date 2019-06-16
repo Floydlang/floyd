@@ -1409,32 +1409,6 @@ bc_value_t host__rename_fsentry(interpreter_t& vm, const bc_value_t args[], int 
 
 
 
-/*
-std::string GetTemporaryFile(const std::string& name){
-	//	char *tmpnam(char *str)
-	//	tempnam()
-
-	char* temp_buffer = std::tempnam(const char *dir, const char *pfx);
-	std::free(temp_buffer);
-	temp_buffer = nullptr;
-
-
-}
-
-
-## make\_temporary\_path()
-
-Returns a path where you can write a file or a directory and it goes into the file system. The name will be randomized. The operating system will delete this data at some point.
-
-	string make_temporary_path() impure
-
-Example:
-
-	"/var/folders/kw/7178zwsx7p3_g10y7rp2mt5w0000gn/T/g10y/7178zwsxp3_g10y7rp2mt
-
-There is never a file extension. You could add one if you want too.
-*/
-
 
 host_function_record_t make_rec(const std::string& name, BC_HOST_FUNCTION_PTR f, function_id_t function_id, typeid_t function_type){
 	return host_function_record_t { name, f, function_id, function_type };
