@@ -32,19 +32,14 @@
 
 namespace floyd {
 
+
+//??? remove using
 using std::vector;
 using std::string;
 using std::pair;
 using std::shared_ptr;
 using std::make_shared;
 
-
-
-
-struct host_function_record_t {
-	host_function_signature_t signature;
-	BC_HOST_FUNCTION_PTR _f;
-};
 
 
 
@@ -1406,87 +1401,80 @@ bc_value_t host__rename_fsentry(interpreter_t& vm, const bc_value_t args[], int 
 
 
 
+static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls_internal(){
+	std::map<function_id_t, BC_HOST_FUNCTION_PTR> result;
 
-static host_function_record_t make_rec(const host_function_signature_t& signature, BC_HOST_FUNCTION_PTR f){
-	return host_function_record_t { signature, f };
-}
+	result.find(make_assert_signature()._function_id)->second = host__assert;
+	result.find(make_to_string_signature()._function_id)->second = host__to_string;
+	result.find(make_to_pretty_string_signature()._function_id)->second = host__to_pretty_string;
+	result.find(make_typeof_signature()._function_id)->second = host__typeof;
 
-static std::vector<host_function_record_t> get_host_function_records(){
-	static const std::vector<host_function_record_t> result = {
-		make_rec(make_assert_signature(), host__assert),
-		make_rec(make_to_string_signature(), host__to_string),
-		make_rec(make_to_pretty_string_signature(), host__to_pretty_string),
-		make_rec(make_typeof_signature(), host__typeof),
+	result.find(make_update_signature()._function_id)->second = host__update;
 
-		make_rec(make_update_signature(), host__update),
+	//	size() is translated to bc_opcode::k_get_size_vector_w_external_elements() etc.
+//	result.find(make_size_signature()._function_id)->second = nullptr;
 
-		//	size() is translated to bc_opcode::k_get_size_vector_w_external_elements() etc.
-		make_rec(make_size_signature(), nullptr),
+	result.find(make_find_signature()._function_id)->second = host__find;
+	result.find(make_exists_signature()._function_id)->second = host__exists;
+	result.find(make_erase_signature()._function_id)->second = host__erase;
 
-		make_rec(make_find_signature(), host__find),
-		make_rec(make_exists_signature(), host__exists),
-		make_rec(make_erase_signature(), host__erase),
+	//	push_back() is translated to bc_opcode::k_pushback_vector_w_inplace_elements() etc.
+//	result.find(make_push_back_signature()._function_id)->second = nullptr;
 
-		//	push_back() is translated to bc_opcode::k_pushback_vector_w_inplace_elements() etc.
-		make_rec(make_push_back_signature(), nullptr),
-
-		make_rec(make_subset_signature(), host__subset),
-		make_rec(make_replace_signature(), host__replace),
+	result.find(make_subset_signature()._function_id)->second = host__subset;
+	result.find(make_replace_signature()._function_id)->second = host__replace;
 
 
-		make_rec(make_script_to_jsonvalue_signature(), host__script_to_jsonvalue),
-		make_rec(make_jsonvalue_to_script_signature(), host__jsonvalue_to_script),
-		make_rec(make_value_to_jsonvalue_signature(), host__value_to_jsonvalue),
+	result.find(make_script_to_jsonvalue_signature()._function_id)->second = host__script_to_jsonvalue;
+	result.find(make_jsonvalue_to_script_signature()._function_id)->second = host__jsonvalue_to_script;
+	result.find(make_value_to_jsonvalue_signature()._function_id)->second = host__value_to_jsonvalue;
 
-		make_rec(make_jsonvalue_to_value_signature(), host__jsonvalue_to_value),
+	result.find(make_jsonvalue_to_value_signature()._function_id)->second = host__jsonvalue_to_value;
 
-		make_rec(make_get_json_type_signature(), host__get_json_type),
+	result.find(make_get_json_type_signature()._function_id)->second = host__get_json_type;
 
-		make_rec(make_calc_string_sha1_signature(), host__calc_string_sha1),
-		make_rec(make_calc_binary_sha1_signature(), host__calc_binary_sha1),
+	result.find(make_calc_string_sha1_signature()._function_id)->second = host__calc_string_sha1;
+	result.find(make_calc_binary_sha1_signature()._function_id)->second = host__calc_binary_sha1;
 
-		make_rec(make_map_signature(), host__map),
-		make_rec(make_map_string_signature(), host__map_string),
-		make_rec(make_filter_signature(), host__filter),
-		make_rec(make_reduce_signature(), host__reduce),
-		make_rec(make_supermap_signature(), host__supermap),
+	result.find(make_map_signature()._function_id)->second = host__map;
+	result.find(make_map_string_signature()._function_id)->second = host__map_string;
+	result.find(make_filter_signature()._function_id)->second = host__filter;
+	result.find(make_reduce_signature()._function_id)->second = host__reduce;
+	result.find(make_supermap_signature()._function_id)->second = host__supermap;
 
-		make_rec(make_print_signature(), host__print),
-		make_rec(make_send_signature(), host__send),
-		make_rec(make_get_time_of_day_signature(), host__get_time_of_day),
-
-
-		make_rec(make_read_text_file_signature(), host__read_text_file),
-		make_rec(make_write_text_file_signature(), host__write_text_file),
-
-		make_rec(make_get_fsentries_shallow_signature(), host__get_fsentries_shallow),
-		make_rec(make_get_fsentries_deep_signature(), host__get_fsentries_deep),
-		make_rec(make_get_fsentry_info_signature(), host__get_fsentry_info),
-		make_rec(make_get_fs_environment_signature(), host__get_fs_environment),
-		make_rec(make_does_fsentry_exist_signature(), host__does_fsentry_exist),
-		make_rec(make_create_directory_branch_signature(), host__create_directory_branch),
-		make_rec(make_delete_fsentry_deep_signature(), host__delete_fsentry_deep),
-		make_rec(make_rename_fsentry_signature(), host__rename_fsentry)
-
-	};
+	result.find(make_print_signature()._function_id)->second = host__print;
+	result.find(make_send_signature()._function_id)->second = host__send;
 	return result;
 }
 
 
-std::map<int, bc_host_function_t> bc_get_host_functions(){
-	const auto a = get_host_function_records();
+static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_filelib_internal(){
+	std::map<function_id_t, BC_HOST_FUNCTION_PTR> result;
 
-	std::map<int, bc_host_function_t> result;
-	for(const auto& e: a){
-		result.insert(
-			{
-				e.signature._function_id,
-				bc_host_function_t{ e.signature, e._f }
-			}
-		);
-	}
+	result.find(make_get_time_of_day_signature()._function_id)->second = host__get_time_of_day;
+
+	result.find(make_read_text_file_signature()._function_id)->second = host__read_text_file;
+	result.find(make_write_text_file_signature()._function_id)->second = host__write_text_file;
+
+	result.find(make_get_fsentries_shallow_signature()._function_id)->second = host__get_fsentries_shallow;
+	result.find(make_get_fsentries_deep_signature()._function_id)->second = host__get_fsentries_deep;
+	result.find(make_get_fsentry_info_signature()._function_id)->second = host__get_fsentry_info;
+	result.find(make_get_fs_environment_signature()._function_id)->second = host__get_fs_environment;
+	result.find(make_does_fsentry_exist_signature()._function_id)->second = host__does_fsentry_exist;
+	result.find(make_create_directory_branch_signature()._function_id)->second = host__create_directory_branch;
+	result.find(make_delete_fsentry_deep_signature()._function_id)->second = host__delete_fsentry_deep;
+	result.find(make_rename_fsentry_signature()._function_id)->second = host__rename_fsentry;
 	return result;
 }
 
-
+std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls(){
+	static const auto f = bc_get_corecalls_internal();
+	return f;
 }
+std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_filelib_calls(){
+	static const auto f = bc_get_filelib_internal();
+	return f;
+}
+
+
+}	// floyd

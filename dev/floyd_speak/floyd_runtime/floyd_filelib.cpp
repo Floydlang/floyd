@@ -10,6 +10,7 @@
 
 
 #include "ast_typeid.h"
+#include "floyd_runtime.h"
 
 namespace floyd {
 
@@ -332,6 +333,90 @@ typeid_t make__file_pos_t__type(){
 	});
 	return temp;
 }
+
+
+
+
+
+
+//////////////////////////////////////		FILELIB
+
+
+
+#define VOID typeid_t::make_void()
+#define DYN typeid_t::make_any()
+
+libfunc_signature_t make_get_time_of_day_signature(){
+	return libfunc_signature_t{ "get_time_of_day", 1005, typeid_t::make_function(typeid_t::make_int(), {}, epure::impure) };
+}
+
+
+libfunc_signature_t make_read_text_file_signature(){
+	return libfunc_signature_t{ "read_text_file", 1015, typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_string() }, epure::impure) };
+}
+libfunc_signature_t make_write_text_file_signature(){
+	return libfunc_signature_t{ "write_text_file", 1016, typeid_t::make_function(VOID, { typeid_t::make_string(), typeid_t::make_string() }, epure::impure) };
+}
+
+
+libfunc_signature_t make_get_fsentries_shallow_signature(){
+	const auto k_fsentry_t__type = make__fsentry_t__type();
+	return libfunc_signature_t{ "get_fsentries_shallow", 1023, typeid_t::make_function(typeid_t::make_vector(k_fsentry_t__type), { typeid_t::make_string() }, epure::impure) };
+}
+libfunc_signature_t make_get_fsentries_deep_signature(){
+	const auto k_fsentry_t__type = make__fsentry_t__type();
+	return libfunc_signature_t{ "get_fsentries_deep", 1024, typeid_t::make_function(typeid_t::make_vector(k_fsentry_t__type), { typeid_t::make_string() }, epure::impure) };
+}
+libfunc_signature_t make_get_fsentry_info_signature(){
+	return libfunc_signature_t{ "get_fsentry_info", 1025, typeid_t::make_function(make__fsentry_info_t__type(), { typeid_t::make_string() }, epure::impure) };
+}
+libfunc_signature_t make_get_fs_environment_signature(){
+	return libfunc_signature_t{ "get_fs_environment", 1026, typeid_t::make_function(make__fs_environment_t__type(), {}, epure::impure) };
+}
+libfunc_signature_t make_does_fsentry_exist_signature(){
+	return libfunc_signature_t{ "does_fsentry_exist", 1027, typeid_t::make_function(typeid_t::make_bool(), { typeid_t::make_string() }, epure::impure) };
+}
+libfunc_signature_t make_create_directory_branch_signature(){
+	return libfunc_signature_t{ "create_directory_branch", 1028, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string() }, epure::impure) };
+}
+libfunc_signature_t make_delete_fsentry_deep_signature(){
+	return libfunc_signature_t{ "delete_fsentry_deep", 1029, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string() }, epure::impure)};
+}
+libfunc_signature_t make_rename_fsentry_signature(){
+	return libfunc_signature_t{ "rename_fsentry", 1030, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string(), typeid_t::make_string() }, epure::impure)};
+}
+
+
+
+
+
+static std::vector<libfunc_signature_t> get_host_function_records(){
+	const std::vector<libfunc_signature_t> result = {
+		make_get_time_of_day_signature(),
+
+		make_read_text_file_signature(),
+		make_write_text_file_signature(),
+
+		make_get_fsentries_shallow_signature(),
+		make_get_fsentries_deep_signature(),
+		make_get_fsentry_info_signature(),
+		make_get_fs_environment_signature(),
+		make_does_fsentry_exist_signature(),
+		make_create_directory_branch_signature(),
+		make_delete_fsentry_deep_signature(),
+		make_rename_fsentry_signature()
+	};
+	return result;
+}
+
+
+std::vector<libfunc_signature_t> get_filelib_signatures(){
+	static const auto a = get_host_function_records();
+
+	return a;
+}
+
+
 
 
 

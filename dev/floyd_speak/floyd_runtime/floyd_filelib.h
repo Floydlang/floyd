@@ -9,7 +9,9 @@
 #ifndef floyd_filelib_hpp
 #define floyd_filelib_hpp
 
+
 #include <string>
+#include <map>
 #include <vector>
 
 class TDirEntry;
@@ -20,7 +22,7 @@ namespace floyd {
 
 struct value_t;
 struct typeid_t;
-
+struct libfunc_signature_t;
 
 extern const std::string k_filelib_builtin_types_and_constants;
 
@@ -50,6 +52,32 @@ typeid_t make__sha1_t__type();
 	}
 */
 typeid_t make__binary_t__type();
+
+
+
+
+
+
+//////////////////////////////////////		FILELIB
+
+
+
+libfunc_signature_t make_get_time_of_day_signature();
+
+libfunc_signature_t make_read_text_file_signature();
+libfunc_signature_t make_write_text_file_signature();
+
+libfunc_signature_t make_get_fsentries_shallow_signature();
+libfunc_signature_t make_get_fsentries_deep_signature();
+libfunc_signature_t make_get_fsentry_info_signature();
+libfunc_signature_t make_get_fs_environment_signature();
+libfunc_signature_t make_does_fsentry_exist_signature();
+libfunc_signature_t make_create_directory_branch_signature();
+libfunc_signature_t make_delete_fsentry_deep_signature();
+libfunc_signature_t make_rename_fsentry_signature();
+
+std::vector<libfunc_signature_t> get_filelib_signatures();
+
 
 
 }	//	floyd

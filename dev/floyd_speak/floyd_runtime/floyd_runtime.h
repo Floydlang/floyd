@@ -66,68 +66,62 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 
 
 
-
-//////////////////////////////////////		HOST FUNCTIONS
-
+//////////////////////////////////////		libfunc_signature_t
 
 
 
-struct host_function_signature_t {
+struct libfunc_signature_t {
 	std::string name;
 	function_id_t _function_id;
 	floyd::typeid_t _function_type;
 };
 
-host_function_signature_t make_assert_signature();
-host_function_signature_t make_to_string_signature();
-host_function_signature_t make_to_pretty_string_signature();
-host_function_signature_t make_typeof_signature();
-host_function_signature_t make_update_signature();
-host_function_signature_t make_size_signature();
-host_function_signature_t make_find_signature();
-host_function_signature_t make_exists_signature();
-host_function_signature_t make_erase_signature();
-host_function_signature_t make_push_back_signature();
-host_function_signature_t make_subset_signature();
-host_function_signature_t make_replace_signature();
 
-host_function_signature_t make_script_to_jsonvalue_signature();
-host_function_signature_t make_jsonvalue_to_script_signature();
-host_function_signature_t make_value_to_jsonvalue_signature();
-host_function_signature_t make_jsonvalue_to_value_signature();
-
-host_function_signature_t make_get_json_type_signature();
-
-host_function_signature_t make_calc_string_sha1_signature();
-host_function_signature_t make_calc_binary_sha1_signature();
-
-host_function_signature_t make_map_signature();
-host_function_signature_t make_map_string_signature();
-host_function_signature_t make_filter_signature();
-host_function_signature_t make_reduce_signature();
-host_function_signature_t make_supermap_signature();
-
-
-host_function_signature_t make_print_signature();
-host_function_signature_t make_send_signature();
-host_function_signature_t make_get_time_of_day_signature();
-
-host_function_signature_t make_read_text_file_signature();
-host_function_signature_t make_write_text_file_signature();
-
-host_function_signature_t make_get_fsentries_shallow_signature();
-host_function_signature_t make_get_fsentries_deep_signature();
-host_function_signature_t make_get_fsentry_info_signature();
-host_function_signature_t make_get_fs_environment_signature();
-host_function_signature_t make_does_fsentry_exist_signature();
-host_function_signature_t make_create_directory_branch_signature();
-host_function_signature_t make_delete_fsentry_deep_signature();
-host_function_signature_t make_rename_fsentry_signature();
+//////////////////////////////////////		CORE CALLS
 
 
 
 
-std::map<std::string, host_function_signature_t> get_host_function_signatures();
+struct corecall_signature_t {
+	std::string name;
+	function_id_t _function_id;
+	floyd::typeid_t _function_type;
+};
+
+corecall_signature_t make_assert_signature();
+corecall_signature_t make_to_string_signature();
+corecall_signature_t make_to_pretty_string_signature();
+corecall_signature_t make_typeof_signature();
+corecall_signature_t make_update_signature();
+corecall_signature_t make_size_signature();
+corecall_signature_t make_find_signature();
+corecall_signature_t make_exists_signature();
+corecall_signature_t make_erase_signature();
+corecall_signature_t make_push_back_signature();
+corecall_signature_t make_subset_signature();
+corecall_signature_t make_replace_signature();
+
+corecall_signature_t make_script_to_jsonvalue_signature();
+corecall_signature_t make_jsonvalue_to_script_signature();
+corecall_signature_t make_value_to_jsonvalue_signature();
+corecall_signature_t make_jsonvalue_to_value_signature();
+
+corecall_signature_t make_get_json_type_signature();
+
+corecall_signature_t make_calc_string_sha1_signature();
+corecall_signature_t make_calc_binary_sha1_signature();
+
+corecall_signature_t make_map_signature();
+corecall_signature_t make_map_string_signature();
+corecall_signature_t make_filter_signature();
+corecall_signature_t make_reduce_signature();
+corecall_signature_t make_supermap_signature();
+
+
+corecall_signature_t make_print_signature();
+corecall_signature_t make_send_signature();
+
+std::vector<corecall_signature_t> get_corecall_signatures();
 
 
 

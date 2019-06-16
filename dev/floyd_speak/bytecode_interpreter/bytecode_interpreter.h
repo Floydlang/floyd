@@ -1340,7 +1340,7 @@ struct interpreter_stack_t {
 struct interpreter_imm_t {
 	public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
 	public: const bc_program_t _program;
-	public: const std::map<int, BC_HOST_FUNCTION_PTR> _host_functions;
+	public: const std::map<function_id_t, BC_HOST_FUNCTION_PTR> _host_functions;
 };
 
 

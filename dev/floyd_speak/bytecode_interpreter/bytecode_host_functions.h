@@ -27,12 +27,10 @@ namespace floyd {
 
 
 
-struct bc_host_function_t {
-	host_function_signature_t _signature;
-	BC_HOST_FUNCTION_PTR _f;
-};
+//	Create lookup from function id -> C function pointer.
+std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls();
 
-std::map<int, bc_host_function_t> bc_get_host_functions();
+std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_filelib_calls();
 
 
 

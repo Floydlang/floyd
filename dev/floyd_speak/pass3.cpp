@@ -15,6 +15,7 @@
 #include "utils.h"
 #include "json_support.h"
 #include "floyd_runtime.h"
+#include "floyd_filelib.h"
 
 #include "text_parser.h"
 #include "pass2.h"
@@ -51,8 +52,11 @@ bool semantic_ast_t::check_invariant() const{
 //	Immutable data used by analyser.
 
 struct analyzer_imm_t {
-	public: pass2_ast_t _ast;
-	public: std::map<std::string, floyd::host_function_signature_t> _host_functions;
+	pass2_ast_t _ast;
+//	std::map<std::string, host_function_signature_t> _host_functions;
+
+	std::vector<corecall_signature_t> corecall_signatures;
+	std::vector<libfunc_signature_t> filelib_signatures;
 };
 
 
@@ -84,7 +88,7 @@ struct analyser_t {
 	public: std::vector<lexical_scope_t> _lexical_scope_stack;
 
 	//	These are output functions, that have been fixed.
-	public: std::vector<std::shared_ptr<const floyd::function_definition_t>> _function_defs;
+	public: std::vector<std::shared_ptr<const function_definition_t>> _function_defs;
 	public: type_interner_t _types;
 
 	public: software_system_t _software_system;
@@ -97,14 +101,14 @@ struct analyser_t {
 
 
 std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const typeid_t& return_type);
-floyd::semantic_ast_t analyse(const analyser_t& a);
+semantic_ast_t analyse(const analyser_t& a);
 
 /*
 	Return value:
 		null = statements were all executed through.
 		value = return statement returned a value.
 */
-std::pair<analyser_t, std::vector<std::shared_ptr<floyd::statement_t>> > analyse_statements(const analyser_t& a, const std::vector<std::shared_ptr<floyd::statement_t>>& statements, const typeid_t& return_type);
+std::pair<analyser_t, std::vector<std::shared_ptr<statement_t>> > analyse_statements(const analyser_t& a, const std::vector<std::shared_ptr<statement_t>>& statements, const typeid_t& return_type);
 
 
 
@@ -113,8 +117,8 @@ std::pair<analyser_t, std::vector<std::shared_ptr<floyd::statement_t>> > analyse
 	return == _constant != nullptr:	the expression was completely analysed and resulted in a constant value.
 	return == _constant == nullptr: the expression was partially analyse.
 */
-std::pair<analyser_t, floyd::expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const floyd::expression_t& e, const floyd::typeid_t& target_type);
-std::pair<analyser_t, floyd::expression_t> analyse_expression_no_target(const analyser_t& a, const statement_t& parent, const floyd::expression_t& e);
+std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type);
+std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_t& a, const statement_t& parent, const expression_t& e);
 
 
 
@@ -136,7 +140,7 @@ const function_definition_t& function_id_to_def(const analyser_t& a, function_id
 
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-std::pair<const symbol_t*, floyd::variable_address_t> resolve_env_variable_deep(const analyser_t& a, int depth, const std::string& s){
+std::pair<const symbol_t*, variable_address_t> resolve_env_variable_deep(const analyser_t& a, int depth, const std::string& s){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(depth >= 0 && depth < a._lexical_scope_stack.size());
 	QUARK_ASSERT(s.size() > 0);
@@ -144,23 +148,23 @@ std::pair<const symbol_t*, floyd::variable_address_t> resolve_env_variable_deep(
     const auto it = std::find_if(
     	a._lexical_scope_stack[depth].symbols._symbols.begin(),
     	a._lexical_scope_stack[depth].symbols._symbols.end(),
-    	[&s](const std::pair<std::string, floyd::symbol_t>& e) { return e.first == s; }
+    	[&s](const std::pair<std::string, symbol_t>& e) { return e.first == s; }
 	);
 
 	if(it != a._lexical_scope_stack[depth].symbols._symbols.end()){
 		const auto parent_index = depth == 0 ? -1 : (int)(a._lexical_scope_stack.size() - depth - 1);
 		const auto variable_index = (int)(it - a._lexical_scope_stack[depth].symbols._symbols.begin());
-		return { &it->second, floyd::variable_address_t::make_variable_address(parent_index, variable_index) };
+		return { &it->second, variable_address_t::make_variable_address(parent_index, variable_index) };
 	}
 	else if(depth > 0){
 		return resolve_env_variable_deep(a, depth - 1, s);
 	}
 	else{
-		return { nullptr, floyd::variable_address_t::make_variable_address(0, 0) };
+		return { nullptr, variable_address_t::make_variable_address(0, 0) };
 	}
 }
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-std::pair<const symbol_t*, floyd::variable_address_t> find_symbol_by_name(const analyser_t& a, const std::string& s){
+std::pair<const symbol_t*, variable_address_t> find_symbol_by_name(const analyser_t& a, const std::string& s){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(s.size() > 0);
 
@@ -168,12 +172,12 @@ std::pair<const symbol_t*, floyd::variable_address_t> find_symbol_by_name(const 
 }
 
 bool does_symbol_exist_shallow(const analyser_t& a, const std::string& s){
-    const auto it = std::find_if(a._lexical_scope_stack.back().symbols._symbols.begin(), a._lexical_scope_stack.back().symbols._symbols.end(),  [&s](const std::pair<std::string, floyd::symbol_t>& e) { return e.first == s; });
+    const auto it = std::find_if(a._lexical_scope_stack.back().symbols._symbols.begin(), a._lexical_scope_stack.back().symbols._symbols.end(),  [&s](const std::pair<std::string, symbol_t>& e) { return e.first == s; });
 	return it != a._lexical_scope_stack.back().symbols._symbols.end();
 }
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-const symbol_t* resolve_symbol_by_address(const analyser_t& a, const floyd::variable_address_t& s){
+const symbol_t* resolve_symbol_by_address(const analyser_t& a, const variable_address_t& s){
 	QUARK_ASSERT(a.check_invariant());
 
 	const auto env_index = s._parent_steps == -1 ? 0 : a._lexical_scope_stack.size() - s._parent_steps - 1;
@@ -332,7 +336,7 @@ static void collect_used_types(type_interner_t& acc, const statement_t& statemen
 	std::visit(visitor_t{ acc, statement }, statement._contents);
 }
 
-void collect_used_types_symbol(type_interner_t& acc, const std::string& name, const floyd::symbol_t& symbol){
+void collect_used_types_symbol(type_interner_t& acc, const std::string& name, const symbol_t& symbol){
 	intern_type(acc, symbol.get_type());
 }
 
@@ -493,7 +497,7 @@ std::pair<analyser_t, vector<statement_t>> analyse_statements(const analyser_t& 
 	return { a_acc, statements2 };
 }
 
-std::pair<analyser_t, body_t > analyse_body(const analyser_t& a, const floyd::body_t& body, epure pure, const typeid_t& return_type){
+std::pair<analyser_t, body_t > analyse_body(const analyser_t& a, const body_t& body, epure pure, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -622,7 +626,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 				a_acc,
 				statement_t::make__init2(
 					s.location,
-					floyd::variable_address_t::make_variable_address(0, (int)local_name_index),
+					variable_address_t::make_variable_address(0, (int)local_name_index),
 					rhs_expr_pair.second
 				)
 			};
@@ -1808,7 +1812,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 
 	a_acc._function_defs.push_back(make_shared<function_definition_t>(function_def2));
 
-	const function_id_t function_id = static_cast<int>(a_acc._function_defs.size() - 1);
+	const function_id_t function_id = static_cast<function_id_t>(a_acc._function_defs.size() - 1);
 	const auto r = expression_t::make_literal(value_t::make_function_value(function_type2, function_id));
 
 	return {a_acc, r };
@@ -1892,7 +1896,7 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 /*
 	- Insert automatic type-conversions from string -> json_value etc.
 */
-expression_t auto_cast_expression_type(const expression_t& e, const floyd::typeid_t& wanted_type){
+expression_t auto_cast_expression_type(const expression_t& e, const typeid_t& wanted_type){
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(wanted_type.check_invariant());
 	QUARK_ASSERT(wanted_type.is_undefined() == false);
@@ -2035,44 +2039,57 @@ bool check_types_resolved(const general_purpose_ast_t& ast){
 
 
 struct builtins_t {
-	std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs;
+	std::vector<std::shared_ptr<const function_definition_t>> function_defs;
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 };
 
-builtins_t insert_builtin_functions(analyser_t& a, const std::map<std::string, floyd::host_function_signature_t>& host_functions, int function_def_start_id){
-	std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs;
+
+builtins_t generate_corecalls(analyser_t& a, const std::vector<corecall_signature_t>& host_functions, function_id_t function_def_start_id){
+	std::vector<std::shared_ptr<const function_definition_t>> function_defs;
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
 	function_id_t function_id = function_def_start_id;
-	for(auto hf_kv: host_functions){
-		const auto& function_name = hf_kv.first;
-		const auto& signature = hf_kv.second;
-
+	for(auto signature: host_functions){
 		resolve_type(a, k_no_location, signature._function_type);
 
-		const auto args = [&](){
-			vector<member_t> result;
-			for(const auto& e: signature._function_type.get_function_args()){
-				result.push_back(member_t(e, "dummy"));
-			}
-			return result;
-		}();
-
-		const auto def = make_shared<function_definition_t>(function_definition_t::make_host_func(k_no_location, function_name, signature._function_type, args, signature._function_id));
+		vector<member_t> args;
+		for(const auto& e: signature._function_type.get_function_args()){
+			args.push_back(member_t(e, "dummy"));
+		}
+		const auto def = std::make_shared<function_definition_t>(function_definition_t::make_host_func(k_no_location, signature.name, signature._function_type, args, signature._function_id));
+		const auto function_value = value_t::make_function_value(signature._function_type, function_id);
 
 		function_defs.push_back(def);
-
-		const auto function_value = value_t::make_function_value(signature._function_type, function_id);
+		symbol_map.push_back({ signature.name, symbol_t::make_immutable_precalc(function_value) });
 		function_id++;
-
-		symbol_map.push_back({function_name, symbol_t::make_immutable_precalc(function_value)});
 	}
 	return builtins_t{ function_defs, symbol_map };
 }
 
-semantic_ast_t analyse(analyser_t& a){
-	QUARK_ASSERT(a.check_invariant());
+builtins_t generate_lib_calls(analyser_t& a, const std::vector<libfunc_signature_t>& host_functions, function_id_t function_def_start_id){
+	std::vector<std::shared_ptr<const function_definition_t>> function_defs;
+	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
+	function_id_t function_id = function_def_start_id;
+	for(auto signature: host_functions){
+		resolve_type(a, k_no_location, signature._function_type);
+
+		vector<member_t> args;
+		for(const auto& e: signature._function_type.get_function_args()){
+			args.push_back(member_t(e, "dummy"));
+		}
+		const auto def = std::make_shared<function_definition_t>(function_definition_t::make_host_func(k_no_location, signature.name, signature._function_type, args, signature._function_id));
+		const auto function_value = value_t::make_function_value(signature._function_type, function_id);
+
+		function_defs.push_back(def);
+		symbol_map.push_back({ signature.name, symbol_t::make_immutable_precalc(function_value) });
+		function_id++;
+	}
+	return builtins_t{ function_defs, symbol_map };
+}
+
+
+builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	/*
 		Create built-in global symbol map: built in data types, built-in functions (host functions).
 	*/
@@ -2103,25 +2120,49 @@ semantic_ast_t analyse(analyser_t& a){
 
 
 
-	std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs;
+	std::vector<std::shared_ptr<const function_definition_t>> function_defs;
+	const auto corecalls = generate_corecalls(a, input.corecall_signatures, static_cast<function_id_t>(function_defs.size()));
+	function_defs.insert(function_defs.end(), corecalls.function_defs.begin(), corecalls.function_defs.end());
+	symbol_map.insert(symbol_map.end(), corecalls.symbol_map.begin(), corecalls.symbol_map.end());
+	return builtins_t{ function_defs, symbol_map };
+}
 
-	const auto builtins = insert_builtin_functions(a, a._imm->_host_functions, static_cast<int>(function_defs.size()));
-	function_defs.insert(function_defs.end(), builtins.function_defs.begin(), builtins.function_defs.end());
-	symbol_map.insert(symbol_map.end(), builtins.symbol_map.begin(), builtins.symbol_map.end());
 
+
+
+semantic_ast_t analyse(analyser_t& a){
+	QUARK_ASSERT(a.check_invariant());
+
+	////////////////////////////////	Create built-in global symbol map: built in data types, built-in functions (host functions).
+
+	const auto builtins = generate_builtins(a, *a._imm);
+	function_id_t function_id = static_cast<function_id_t>(builtins.function_defs.size());
+
+	std::vector<std::pair<std::string, symbol_t>> symbol_map = builtins.symbol_map;
+	std::vector<std::shared_ptr<const function_definition_t>> function_defs = builtins.function_defs;
+
+	const auto filelib_calls = generate_lib_calls(a, a._imm->filelib_signatures, function_id);
+	function_defs.insert(function_defs.end(), filelib_calls.function_defs.begin(), filelib_calls.function_defs.end());
+	symbol_map.insert(symbol_map.end(), filelib_calls.symbol_map.begin(), filelib_calls.symbol_map.end());
 
 	a._function_defs.swap(function_defs);
 
-	const auto body = body_t(a._imm->_ast._tree._globals._statements, symbol_table_t{symbol_map});
+
+
+	////////////////////////////////	Analyze global namespace, including all Floyd functions defined there.
+	const auto body = body_t(a._imm->_ast._tree._globals._statements, symbol_table_t{ symbol_map });
 	const auto result = analyse_body(a, body, epure::impure, typeid_t::make_void());
 	a = result.first;
+
+
+
+	////////////////////////////////	Make AST
 
 #if 0
 	for(const auto& e: a._types.interned){
 		QUARK_TRACE_SS(e.first.itype << ": " << typeid_to_compact_string(e.second));
 	}
 #endif
-
 
 
 	auto gp1 = general_purpose_ast_t{
@@ -2157,8 +2198,9 @@ semantic_ast_t analyse(analyser_t& a){
 analyser_t::analyser_t(const pass2_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	const auto host_functions = floyd::get_host_function_signatures();
-	_imm = make_shared<analyzer_imm_t>(analyzer_imm_t{ast, host_functions});
+	const auto corecalls = get_corecall_signatures();
+	const auto filelib_calls = get_filelib_signatures();
+	_imm = make_shared<analyzer_imm_t>(analyzer_imm_t{ ast, corecalls, filelib_calls });
 }
 
 #if DEBUG
