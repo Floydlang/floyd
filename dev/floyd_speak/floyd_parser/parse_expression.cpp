@@ -545,7 +545,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 				}
 
 				const auto values = get_values(a_pos.first);
-				if(lhs == json_t::make_array({ "@" , "update" }) && values.size() == 3){
+				if(lhs == json_t::make_array({ "@" , keyword_t::k_update }) && values.size() == 3){
 					const auto call = maker__update(values[0], values[1], values[2]);
 					return parse_optional_operation_rightward(a_pos.second, call, precedence);
 				}

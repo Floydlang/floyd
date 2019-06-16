@@ -348,6 +348,7 @@ inline bool is_simple_expression__2(const std::string& op){
 
 //	Keywords in source code.
 namespace keyword_t {
+	const std::string k_update = "update";
 	const std::string k_return = "return";
 	const std::string k_while = "while";
 	const std::string k_for = "for";
