@@ -322,31 +322,6 @@ namespace floyd {
 		}
 
 
-		////////////////////////////////		update_t
-
-		struct update_t {
-			std::shared_ptr<expression_t> parent_address;
-			std::shared_ptr<expression_t> key;
-			std::shared_ptr<expression_t> new_value;
-		};
-
-		public: static expression_t make_update(
-			const expression_t& parent_address,
-			const expression_t& key,
-			const expression_t& new_value,
-			const std::shared_ptr<typeid_t>& annotated_type
-		){
-			return expression_t(
-				{ update_t{
-					std::make_shared<expression_t>(parent_address),
-					std::make_shared<expression_t>(key),
-					std::make_shared<expression_t>(new_value)
-				} },
-				annotated_type
-			);
-		}
-
-
 		////////////////////////////////		update_member_t
 
 		struct update_member_t {
@@ -476,7 +451,6 @@ namespace floyd {
 			load_t,
 			load2_t,
 			resolve_member_t,
-			update_t,
 			update_member_t,
 			lookup_t,
 			value_constructor_t

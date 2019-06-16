@@ -544,9 +544,10 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 					throw_compiler_error_nopos("Cannot name arguments in function call!");
 				}
 
+				//	Detect corecall functions, like update().
 				const auto values = get_values(a_pos.first);
 				if(lhs == json_t::make_array({ "@" , keyword_t::k_update }) && values.size() == 3){
-					const auto call = maker__update(values[0], values[1], values[2]);
+					const auto call = maker__corecall(expression_corecall_opcode_t::k_update, values);
 					return parse_optional_operation_rightward(a_pos.second, call, precedence);
 				}
 				else{
@@ -1335,10 +1336,10 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "struct member access -- whitesp
 
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "update struct member", ""){
-	ut_verify__parse_expression(QUARK_POS, "update(a, red, 10) xxx", R"___(["update", ["@", "a"], ["@", "red"], [ "k", 10, "^int"]])___", " xxx");
+	ut_verify__parse_expression(QUARK_POS, "update(a, red, 10) xxx", R"___(["corecall", "$update", [["@", "a"], ["@", "red"], ["k", 10, "^int"]]])___", " xxx");
 }
 QUARK_UNIT_TEST("parser", "parse_expression()", "update dict member", ""){
-	ut_verify__parse_expression(QUARK_POS, "update(a, \"name\", 10) xxx", R"___(["update", ["@", "a"], ["k", "name", "^string"], ["k", 10, "^int"]])___", " xxx");
+	ut_verify__parse_expression(QUARK_POS, "update(a, \"name\", 10) xxx", R"___(["corecall", "$update", [["@", "a"], ["k", "name", "^string"], ["k", 10, "^int"]]])___", " xxx");
 }
 
 

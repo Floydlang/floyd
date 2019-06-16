@@ -200,12 +200,6 @@ static expression_t desugar_expression(desugar_t& acc, const expression_t& expre
 			const auto a = desugar_expression(acc, *e.parent_address);
 			return expression_t::make_resolve_member(a, e.member_name, expression._output_type);
 		}
-		expression_t operator()(const expression_t::update_t& e) const{
-			const auto parent = desugar_expression(acc, *e.parent_address);
-			const auto key = desugar_expression(acc, *e.key);
-			const auto new_value = desugar_expression(acc, *e.new_value);
-			return expression_t::make_update(parent, key, new_value, expression._output_type);
-		}
 		expression_t operator()(const expression_t::update_member_t& e) const{
 			const auto parent = desugar_expression(acc, *e.parent_address);
 			const auto new_value = desugar_expression(acc, *e.new_value);

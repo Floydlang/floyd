@@ -231,9 +231,6 @@ bool expression_t::check_types_resolved() const{
 		bool operator()(const resolve_member_t& e) const{
 			return e.parent_address->check_types_resolved();
 		}
-		bool operator()(const update_t& e) const{
-			return e.parent_address->check_types_resolved() && e.key->check_types_resolved() && e.new_value->check_types_resolved();
-		}
 		bool operator()(const update_member_t& e) const{
 			return e.parent_address->check_types_resolved();
 		}
@@ -387,15 +384,6 @@ json_t expression_to_json_internal(const expression_t& e){
 
 		json_t operator()(const expression_t::resolve_member_t& e) const{
 			return make_expression2(expr.location, expression_opcode_t::k_resolve_member, expression_to_json(*e.parent_address), json_t(e.member_name));
-		}
-		json_t operator()(const expression_t::update_t& e) const{
-			return make_expression3(
-				expr.location,
-				expression_opcode_t::k_update,
-				expression_to_json(*e.parent_address),
-				expression_to_json(*e.key),
-				expression_to_json(*e.new_value)
-			);
 		}
 		json_t operator()(const expression_t::update_member_t& e) const{
 			return make_expression3(
@@ -570,15 +558,6 @@ expression_t astjson_to_expression(const json_t& e){
 		const auto annotated_type = get_optional_typeid(e, 3);
 		return expression_t::make_resolve_member(base_expr, member, annotated_type);
 	}
-	else if(op == expression_opcode_t::k_update){
-		QUARK_ASSERT(e.get_array_size() == 4 || e.get_array_size() == 4);
-
-		const auto base_expr = astjson_to_expression(e.get_array_n(1));
-		const auto key_expr = astjson_to_expression(e.get_array_n(2));
-		const auto new_value_expr = astjson_to_expression(e.get_array_n(3));
-		const auto annotated_type = get_optional_typeid(e, 4);
-		return expression_t::make_update(base_expr, key_expr, new_value_expr, annotated_type);
-	}
 	else if(op == expression_opcode_t::k_update_member){
 		QUARK_ASSERT(e.get_array_size() == 4 || e.get_array_size() == 5);
 
@@ -683,9 +662,6 @@ expression_type get_opcode(const expression_t& e){
 
 		expression_type operator()(const expression_t::resolve_member_t& e) const{
 			return expression_type::k_resolve_member;
-		}
-		expression_type operator()(const expression_t::update_t& e) const{
-			return expression_type::k_update;
 		}
 		expression_type operator()(const expression_t::update_member_t& e) const{
 			return expression_type::k_update_member;

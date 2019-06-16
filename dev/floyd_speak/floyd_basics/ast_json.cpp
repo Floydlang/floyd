@@ -98,9 +98,6 @@ json_t maker__call(const json_t& f, const std::vector<json_t>& args){
 json_t maker__corecall(const std::string& name, const std::vector<json_t>& args){
 	return make_expression2(floyd::k_no_location, expression_opcode_t::k_corecall, name, json_t::make_array(args));
 }
-json_t maker__update(const json_t& parent, const json_t& key, const json_t& new_value){
-	return make_expression3(floyd::k_no_location, expression_opcode_t::k_update, parent, key, new_value);
-}
 
 json_t maker_vector_definition(const std::string& element_type, const std::vector<json_t>& elements){
 	QUARK_ASSERT(element_type == "");

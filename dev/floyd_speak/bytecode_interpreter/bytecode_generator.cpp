@@ -721,6 +721,8 @@ expression_gen_t make_update_call(bcgenerator_t& gen_acc, const variable_address
 
 	//	Find host update-function
 	const auto& symbols = gen_acc._globals._symbol_table._symbols;
+
+	//??? hardcoded string!
     const auto it = std::find_if(symbols.begin(), symbols.end(), [](const std::pair<std::string, symbol_t>& e) {return e.first == "update"; } );
     QUARK_ASSERT(it != symbols.end());
 
@@ -760,13 +762,6 @@ expression_gen_t bcgen_update_member_expression(bcgenerator_t& gen_acc, const va
 	return make_update_call(gen_acc, target_reg, e.get_output_type(), *details.parent_address, member_name_expr, *details.new_value, body);
 }
 
-//	Converts expression ot a call to host update() function.
-expression_gen_t bcgen_update_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const expression_t& e, const expression_t::update_t& details, const bcgen_body_t& body){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(body.check_invariant());
-
-	return make_update_call(gen_acc, target_reg, e.get_output_type(), *details.parent_address, *details.key, *details.new_value, body);
-}
 
 
 
@@ -1124,8 +1119,24 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const vari
 }
 
 static expression_gen_t bcgen_corecall_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const typeid_t& call_output_type, const expression_t::corecall_t& details, const bcgen_body_t& body){
-	QUARK_ASSERT(false);
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(target_reg.check_invariant());
+	QUARK_ASSERT(call_output_type.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
+
+
+	if(details.call_name == expression_corecall_opcode_t::k_update){
+		//	Converts expression ot a call to host update() function.
+
+		QUARK_ASSERT(details.args.size() == 3);
+		return make_update_call(gen_acc, target_reg, call_output_type, details.args[0], details.args[1], details.args[2], body);
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
 }
+
+
 
 //??? Submit dest-register to all gen-functions = minimize temps.
 //??? Wrap itype in struct to make it typesafe.
@@ -1566,9 +1577,6 @@ expression_gen_t bcgen_expression(bcgenerator_t& gen_acc, const variable_address
 		}
 		expression_gen_t operator()(const expression_t::update_member_t& expr) const{
 			return bcgen_update_member_expression(gen_acc, target_reg, e, expr, body);
-		}
-		expression_gen_t operator()(const expression_t::update_t& expr) const{
-			return bcgen_update_expression(gen_acc, target_reg, e, expr, body);
 		}
 		expression_gen_t operator()(const expression_t::lookup_t& expr) const{
 			return bcgen_lookup_element_expression(gen_acc, target_reg, e, expr, body);

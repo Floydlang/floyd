@@ -108,7 +108,6 @@ namespace expression_opcode_t {
 	const std::string k_load = "@";
 	const std::string k_load2 = "@i";
 	const std::string k_resolve_member = "->";
-	const std::string k_update = "update";
 	const std::string k_update_member = "<-";
 	const std::string k_unary_minus = "unary-minus";
 	const std::string k_conditional_operator = "?:";
@@ -118,6 +117,10 @@ namespace expression_opcode_t {
 	const std::string k_lookup_element = "[]";
 };
 
+
+namespace expression_corecall_opcode_t {
+	const std::string k_update = "$update";
+};
 
 
 
@@ -143,7 +146,6 @@ json_t maker__make2(const std::string op, const json_t& lhs, const json_t& rhs);
 json_t maker__make_conditional_operator(const json_t& e1, const json_t& e2, const json_t& e3);
 json_t maker__call(const json_t& f, const std::vector<json_t>& args);
 json_t maker__corecall(const std::string& name, const std::vector<json_t>& args);
-json_t maker__update(const json_t& parent, const json_t& key, const json_t& new_value);
 json_t maker_vector_definition(const std::string& element_type, const std::vector<json_t>& elements);
 json_t maker_dict_definition(const std::string& value_type, const std::vector<json_t>& elements);
 json_t maker__member_access(const json_t& address, const std::string& member_name);

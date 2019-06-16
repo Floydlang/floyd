@@ -1014,18 +1014,17 @@ static llvm::Value* generate_resolve_member_expression(llvm_code_generator_t& ge
 	return nullptr;
 }
 
-static llvm::Value* generate_update_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::update_t& details){
+static llvm::Value* generate_update_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t& parent_address, const expression_t& key, const expression_t& new_value){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
-	QUARK_ASSERT(e.check_invariant());
 
 	auto& builder = gen_acc.builder;
 
-	auto parent_reg = generate_expression(gen_acc, emit_f, *details.parent_address);
-	auto key_reg = generate_expression(gen_acc, emit_f, *details.key);
-	auto new_value_reg = generate_expression(gen_acc, emit_f, *details.new_value);
+	auto parent_reg = generate_expression(gen_acc, emit_f, parent_address);
+	auto key_reg = generate_expression(gen_acc, emit_f, key);
+	auto new_value_reg = generate_expression(gen_acc, emit_f, new_value);
 
-	const auto parent_type = details.parent_address->get_output_type();
+	const auto parent_type = parent_address.get_output_type();
 	if(parent_type.is_string()){
 		const auto key_type = typeid_t::make_int();
 		const auto value_type = typeid_t::make_int();
@@ -1555,7 +1554,19 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 
 
 static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::corecall_t& details){
-	QUARK_ASSERT(false);
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+	QUARK_ASSERT(e.check_invariant());
+
+	if(details.call_name == expression_corecall_opcode_t::k_update){
+		//	Converts expression ot a call to host update() function.
+
+		QUARK_ASSERT(details.args.size() == 3);
+		return generate_update_expression(gen_acc, emit_f, e, details.args[0], details.args[1], details.args[2]);
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
 }
 
 
@@ -1802,9 +1813,6 @@ static llvm::Value* generate_expression(llvm_code_generator_t& gen_acc, llvm::Fu
 
 		llvm::Value* operator()(const expression_t::resolve_member_t& expr) const{
 			return generate_resolve_member_expression(gen_acc, emit_f, e, expr);
-		}
-		llvm::Value* operator()(const expression_t::update_t& expr) const{
-			return generate_update_expression(gen_acc, emit_f, e, expr);
 		}
 		llvm::Value* operator()(const expression_t::update_member_t& expr) const{
 			return generate_update_member_expression(gen_acc, emit_f, e, expr);
