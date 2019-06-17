@@ -303,6 +303,9 @@ corecall_signature_t make_send_signature(){
 
 
 
+std::string get_opcode(const corecall_signature_t& signature){
+	return std::string() + "$" + signature.name;
+}
 
 
 

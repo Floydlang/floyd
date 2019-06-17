@@ -547,7 +547,11 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 				//	Detect corecall functions, like update().
 				const auto values = get_values(a_pos.first);
 				if(lhs == json_t::make_array({ "@" , keyword_t::k_update }) && values.size() == 3){
-					const auto call = maker__corecall(expression_corecall_opcode_t::k_update, values);
+					const auto call = maker__corecall("$update", values);
+					return parse_optional_operation_rightward(a_pos.second, call, precedence);
+				}
+				else if(lhs == json_t::make_array({ "@" , keyword_t::k_push_back }) && values.size() == 2){
+					const auto call = maker__corecall("$push_back", values);
 					return parse_optional_operation_rightward(a_pos.second, call, precedence);
 				}
 				else{

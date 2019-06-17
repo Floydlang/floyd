@@ -24,6 +24,7 @@
 
 #include "pass3.h"
 #include "floyd_interpreter.h"
+#include "floyd_runtime.h"
 
 #include <cmath>
 #include <algorithm>
@@ -997,25 +998,6 @@ static bc_opcode convert_call_to_size_opcode(const typeid_t& arg1_type){
 	}
 }
 
-static bc_opcode convert_call_to_pushback_opcode(const typeid_t& arg1_type){
-	QUARK_ASSERT(arg1_type.check_invariant());
-
-	if(arg1_type.is_vector()){
-		if(encode_as_vector_w_inplace_elements(arg1_type)){
-			return bc_opcode::k_pushback_vector_w_inplace_elements;
-		}
-		else{
-			return bc_opcode::k_pushback_vector_w_external_elements;
-		}
-	}
-	else if(arg1_type.is_string()){
-		return bc_opcode::k_pushback_string;
-	}
-	else{
-		return bc_opcode::k_nop;
-	}
-}
-
 /*
 	Handles a call-expression. Output is one of these:
 
@@ -1061,30 +1043,7 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const vari
 
 	//	a = push_back(b, c)
 	else if(host_function_id == 1011 && arg_count == 2){
-		QUARK_ASSERT(call_output_type == details.args[0].get_output_type());
-
-		const auto arg1_type = details.args[0].get_output_type();
-		bc_opcode opcode = convert_call_to_pushback_opcode(arg1_type);
-		if(opcode != bc_opcode::k_nop){
-			//	push_back() used DYN-arguments which are resolved at runtime. When we make opcodes we need to check at compile time = now.
-			if(arg1_type.is_string() && details.args[1].get_output_type().is_int() == false){
-				quark::throw_runtime_error("Bad element to push_back(). Require push_back(string, int)");
-			}
-
-			const auto& arg1_expr = bcgen_expression(gen_acc, {}, details.args[0], body_acc);
-			body_acc = arg1_expr._body;
-
-			const auto& arg2_expr = bcgen_expression(gen_acc, {}, details.args[1], body_acc);
-			body_acc = arg2_expr._body;
-
-			const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, call_output_type, "temp: result for k_pushback_x") : target_reg;
-
-			body_acc._instrs.push_back(bcgen_instruction_t(opcode, target_reg2, arg1_expr._out, arg2_expr._out));
-			QUARK_ASSERT(body_acc.check_invariant());
-			return { body_acc, target_reg2, intern_type(gen_acc, return_type) };
-		}
-		else{
-		}
+		QUARK_ASSERT(false);
 	}
 
 
@@ -1118,6 +1077,27 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const vari
 	}
 }
 
+
+static bc_opcode convert_call_to_pushback_opcode(const typeid_t& arg1_type){
+	QUARK_ASSERT(arg1_type.check_invariant());
+
+	if(arg1_type.is_vector()){
+		if(encode_as_vector_w_inplace_elements(arg1_type)){
+			return bc_opcode::k_pushback_vector_w_inplace_elements;
+		}
+		else{
+			return bc_opcode::k_pushback_vector_w_external_elements;
+		}
+	}
+	else if(arg1_type.is_string()){
+		return bc_opcode::k_pushback_string;
+	}
+	else{
+		return bc_opcode::k_nop;
+	}
+}
+
+
 static expression_gen_t bcgen_corecall_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const typeid_t& call_output_type, const expression_t::corecall_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(target_reg.check_invariant());
@@ -1125,11 +1105,45 @@ static expression_gen_t bcgen_corecall_expression(bcgenerator_t& gen_acc, const 
 	QUARK_ASSERT(body.check_invariant());
 
 
-	if(details.call_name == expression_corecall_opcode_t::k_update){
-		//	Converts expression ot a call to host update() function.
+	if(details.call_name == get_opcode(make_update_signature())){
+		//	Converts expression to a call to host update() function.
 
 		QUARK_ASSERT(details.args.size() == 3);
 		return make_update_call(gen_acc, target_reg, call_output_type, details.args[0], details.args[1], details.args[2], body);
+	}
+	else if(details.call_name == get_opcode(make_push_back_signature())){
+		//	Converts expression to a call to host push_back() function.
+
+		QUARK_ASSERT(details.args.size() == 2);
+
+		auto body_acc = body;
+
+
+		QUARK_ASSERT(call_output_type == details.args[0].get_output_type());
+
+		const auto arg1_type = details.args[0].get_output_type();
+		bc_opcode opcode = convert_call_to_pushback_opcode(arg1_type);
+		if(opcode != bc_opcode::k_nop){
+			//	push_back() used DYN-arguments which are resolved at runtime. When we make opcodes we need to check at compile time = now.
+			if(arg1_type.is_string() && details.args[1].get_output_type().is_int() == false){
+				quark::throw_runtime_error("Bad element to push_back(). Require push_back(string, int)");
+			}
+
+			const auto& arg1_expr = bcgen_expression(gen_acc, {}, details.args[0], body_acc);
+			body_acc = arg1_expr._body;
+
+			const auto& arg2_expr = bcgen_expression(gen_acc, {}, details.args[1], body_acc);
+			body_acc = arg2_expr._body;
+
+			const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, call_output_type, "temp: result for k_pushback_x") : target_reg;
+
+			body_acc._instrs.push_back(bcgen_instruction_t(opcode, target_reg2, arg1_expr._out, arg2_expr._out));
+			QUARK_ASSERT(body_acc.check_invariant());
+			return { body_acc, target_reg2, intern_type(gen_acc, arg1_type) };
+		}
+		else{
+			throw std::exception();
+		}
 	}
 	else{
 		QUARK_ASSERT(false);

@@ -967,7 +967,7 @@ std::pair<analyser_t, expression_t> analyse_update_expression(const analyser_t& 
 		if(key_type.is_int()){
 			return {
 				a_acc,
-				expression_t::make_corecall(expression_corecall_opcode_t::k_update, { parent_expr.second, key_expr.second, new_value_expr.second }, make_shared<typeid_t>(parent_type))
+				expression_t::make_corecall(get_opcode(make_update_signature()), { parent_expr.second, key_expr.second, new_value_expr.second }, make_shared<typeid_t>(parent_type))
 			};
 		}
 		else{
@@ -984,7 +984,7 @@ std::pair<analyser_t, expression_t> analyse_update_expression(const analyser_t& 
 		if(key_type.is_int()){
 			return {
 				a_acc,
-				expression_t::make_corecall(expression_corecall_opcode_t::k_update, { parent_expr.second, key_expr.second, new_value_expr.second }, make_shared<typeid_t>(parent_type))
+				expression_t::make_corecall(get_opcode(make_update_signature()), { parent_expr.second, key_expr.second, new_value_expr.second }, make_shared<typeid_t>(parent_type))
 			};
 		}
 		else{
@@ -1000,7 +1000,7 @@ std::pair<analyser_t, expression_t> analyse_update_expression(const analyser_t& 
 		if(key_type.is_string()){
 			return {
 				a_acc,
-				expression_t::make_corecall(expression_corecall_opcode_t::k_update, { parent_expr.second, key_expr.second, new_value_expr.second }, make_shared<typeid_t>(parent_type))
+				expression_t::make_corecall(get_opcode(make_update_signature()), { parent_expr.second, key_expr.second, new_value_expr.second }, make_shared<typeid_t>(parent_type))
 			};
 		}
 		else{
@@ -1012,7 +1012,53 @@ std::pair<analyser_t, expression_t> analyse_update_expression(const analyser_t& 
 
 	else{
 		std::stringstream what;
-		what << "Left hand side is not a struct value, it's of type \"" + typeid_to_compact_string(parent_type) + "\".";
+		what << "Left hand side does not support update() - it's of type \"" + typeid_to_compact_string(parent_type) + "\".";
+		throw_compiler_error(parent.location, what.str());
+	}
+}
+
+std::pair<analyser_t, expression_t> analyse_push_back_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t& parent_address, const expression_t& new_value){
+	QUARK_ASSERT(a.check_invariant());
+
+	auto a_acc = a;
+	const auto parent_expr = analyse_expression_no_target(a_acc, parent, parent_address);
+	a_acc = parent_expr.first;
+
+	const auto new_value_expr = analyse_expression_no_target(a_acc, parent, new_value);
+	a_acc = new_value_expr.first;
+
+	const auto parent_type = parent_expr.second.get_output_type();
+	const auto value_type = new_value_expr.second.get_output_type();
+
+	if(parent_type.is_string()){
+		if(value_type.is_int()){
+			return {
+				a_acc,
+				expression_t::make_corecall(get_opcode(make_push_back_signature()), { parent_expr.second, new_value_expr.second }, make_shared<typeid_t>(parent_type))
+			};
+		}
+		else{
+			std::stringstream what;
+			what << "string push_back() needs an integer element, not a \"" + typeid_to_compact_string(value_type) + "\".";
+			throw_compiler_error(parent.location, what.str());
+		}
+	}
+	else if(parent_type.is_vector()){
+		if(value_type == parent_type.get_vector_element_type()){
+			return {
+				a_acc,
+				expression_t::make_corecall(get_opcode(make_push_back_signature()), { parent_expr.second, new_value_expr.second }, make_shared<typeid_t>(parent_type))
+			};
+		}
+		else{
+			std::stringstream what;
+			what << "Vector push_back() has mismatching element type vs supplies a \"" + typeid_to_compact_string(value_type) + "\".";
+			throw_compiler_error(parent.location, what.str());
+		}
+	}
+	else{
+		std::stringstream what;
+		what << "Left hand side does not support push_back() - it's of type \"" + typeid_to_compact_string(parent_type) + "\".";
 		throw_compiler_error(parent.location, what.str());
 	}
 }
@@ -1739,9 +1785,13 @@ std::pair<analyser_t, expression_t> analyse_corecall_expression(const analyser_t
 	QUARK_ASSERT(parent.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	if(details.call_name == expression_corecall_opcode_t::k_update){
+	if(details.call_name == get_opcode(make_update_signature())){
 		QUARK_ASSERT(details.args.size() == 3);
 		return analyse_update_expression(a, parent, e, details.args[0], details.args[1], details.args[2]);
+	}
+	else if(details.call_name == get_opcode(make_push_back_signature())){
+		QUARK_ASSERT(details.args.size() == 2);
+		return analyse_push_back_expression(a, parent, e, details.args[0], details.args[1]);
 	}
 	else{
 		QUARK_ASSERT(false);

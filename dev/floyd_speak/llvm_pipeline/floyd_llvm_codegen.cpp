@@ -625,6 +625,35 @@ static llvm::Value* generate_update(llvm_code_generator_t& gen_acc, llvm::Functi
 }
 
 
+//??? Make specific version for common types.
+static llvm::Value* generate_push_back(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& parent_reg, const typeid_t& parent_type, llvm::Value& new_value_reg, const typeid_t& value_type){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	//	NOTICE: Calls host function!
+	const auto f = find_function_def(gen_acc, "floyd_funcdef__push_back");
+
+	std::vector<llvm::Value*> args2 = {
+		get_callers_fcp(gen_acc.interner, emit_f),
+
+		generate_cast_to_runtime_value(gen_acc, parent_reg, parent_type),
+		generate_itype_constant(gen_acc, parent_type),
+
+		generate_cast_to_runtime_value(gen_acc, new_value_reg, value_type),
+		generate_itype_constant(gen_acc, value_type)
+	};
+	auto result = builder.CreateCall(f.llvm_f, args2, "");
+
+	auto wide_return_a_reg = builder.CreateExtractValue(result, { static_cast<int>(WIDE_RETURN_MEMBERS::a) });
+	auto result2 = generate_cast_from_runtime_value(gen_acc, *wide_return_a_reg, parent_type);
+	return result2;
+}
+
+
+
 /*
 //		llvm::Constant* array = llvm::ConstantDataArray::getString(context, value.get_string_value(), true);
 //		llvm::Constant* c = gen_acc.builder.CreatePointerCast(array, int8Ptr_type);
@@ -1056,6 +1085,37 @@ static llvm::Value* generate_update_expression(llvm_code_generator_t& gen_acc, l
 		UNSUPPORTED();
 	}
 }
+
+static llvm::Value* generate_push_back_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t& parent_address, const expression_t& new_value){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+
+	auto& builder = gen_acc.builder;
+
+	auto parent_reg = generate_expression(gen_acc, emit_f, parent_address);
+	auto new_value_reg = generate_expression(gen_acc, emit_f, new_value);
+
+	const auto parent_type = parent_address.get_output_type();
+	if(parent_type.is_string()){
+		const auto value_type = typeid_t::make_int();
+		auto result = generate_push_back(gen_acc, emit_f, *parent_reg, parent_type, *new_value_reg, value_type);
+		generate_release(gen_acc, emit_f, *parent_reg, parent_type);
+		generate_release(gen_acc, emit_f, *new_value_reg, value_type);
+		return result;
+	}
+	else if(parent_type.is_vector()){
+		const auto value_type = parent_type.get_vector_element_type();
+		auto result = generate_push_back(gen_acc, emit_f, *parent_reg, parent_type, *new_value_reg, value_type);
+		generate_release(gen_acc, emit_f, *parent_reg, parent_type);
+		generate_release(gen_acc, emit_f, *new_value_reg, value_type);
+		return result;
+	}
+	else{
+		UNSUPPORTED();
+	}
+}
+
+
 
 static llvm::Value* generate_update_member_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::update_member_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1558,11 +1618,13 @@ static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc,
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 	QUARK_ASSERT(e.check_invariant());
 
-	if(details.call_name == expression_corecall_opcode_t::k_update){
-		//	Converts expression ot a call to host update() function.
-
+	if(details.call_name == get_opcode(make_update_signature())){
 		QUARK_ASSERT(details.args.size() == 3);
 		return generate_update_expression(gen_acc, emit_f, e, details.args[0], details.args[1], details.args[2]);
+	}
+	else if(details.call_name == get_opcode(make_push_back_signature())){
+		QUARK_ASSERT(details.args.size() == 2);
+		return generate_push_back_expression(gen_acc, emit_f, e, details.args[0], details.args[1]);
 	}
 	else{
 		QUARK_ASSERT(false);

@@ -1404,6 +1404,11 @@ bc_value_t host__rename_fsentry(interpreter_t& vm, const bc_value_t args[], int 
 static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls_internal(){
 	std::map<function_id_t, BC_HOST_FUNCTION_PTR> result;
 
+	const auto corecalls = get_corecall_signatures();
+	for(const auto& e: corecalls){
+		result.insert({ e._function_id, nullptr });
+	}
+
 	result.find(make_assert_signature()._function_id)->second = host__assert;
 	result.find(make_to_string_signature()._function_id)->second = host__to_string;
 	result.find(make_to_pretty_string_signature()._function_id)->second = host__to_pretty_string;
@@ -1450,6 +1455,11 @@ static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls_internal()
 
 static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_filelib_internal(){
 	std::map<function_id_t, BC_HOST_FUNCTION_PTR> result;
+
+	const auto filelib_calls = get_filelib_signatures();
+	for(const auto& e: filelib_calls){
+		result.insert({ e._function_id, nullptr });
+	}
 
 	result.find(make_get_time_of_day_signature()._function_id)->second = host__get_time_of_day;
 

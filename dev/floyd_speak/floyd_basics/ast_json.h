@@ -118,9 +118,6 @@ namespace expression_opcode_t {
 };
 
 
-namespace expression_corecall_opcode_t {
-	const std::string k_update = "$update";
-};
 
 
 
