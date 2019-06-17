@@ -109,9 +109,6 @@ corecall_signature_t make_jsonvalue_to_value_signature();
 
 corecall_signature_t make_get_json_type_signature();
 
-corecall_signature_t make_calc_string_sha1_signature();
-corecall_signature_t make_calc_binary_sha1_signature();
-
 corecall_signature_t make_map_signature();
 corecall_signature_t make_map_string_signature();
 corecall_signature_t make_filter_signature();

@@ -76,6 +76,10 @@ libfunc_signature_t make_create_directory_branch_signature();
 libfunc_signature_t make_delete_fsentry_deep_signature();
 libfunc_signature_t make_rename_fsentry_signature();
 
+//	Move to some other lib.
+libfunc_signature_t make_calc_string_sha1_signature();
+libfunc_signature_t make_calc_binary_sha1_signature();
+
 std::vector<libfunc_signature_t> get_filelib_signatures();
 
 
