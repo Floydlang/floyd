@@ -1780,30 +1780,34 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 			throw_compiler_error(parent.location, "Cannot call impure function from a pure function.");
 		}
 
-		const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_args);
-		a_acc = call_args_pair.first;
-
-		const auto call_return_type = figure_out_return_type(a_acc, parent, callee_expr, call_args_pair.second);
 
 		//	Detect use of corecalls.
 		if(callee_expr_load2){
 			const auto found_symbol_ptr = resolve_symbol_by_address(a_acc, callee_expr_load2->address);
 			if(found_symbol_ptr != nullptr){
-				if(found_symbol_ptr->first == "assert"){
-					QUARK_ASSERT(details.args.size() == 1);
+				if(found_symbol_ptr->first == make_assert_signature().name){
 					return analyse_corecall_assert_expression(a_acc, parent, e, details);
 				}
+				else if(found_symbol_ptr->first == make_update_signature().name){
+					return analyse_corecall_update_expression(a_acc, parent, e, details.args[0], details.args[1], details.args[2]);
+				}
+				else if(found_symbol_ptr->first == make_push_back_signature().name){
+					return analyse_corecall_push_back_expression(a_acc, parent, e, details.args[0], details.args[1]);
+				}
+				else if(found_symbol_ptr->first == make_size_signature().name){
+					return analyse_corecall_size_expression(a_acc, parent, e, details.args[0]);
+				}
 				else{
-					return { a_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(call_return_type)) };
 				}
 			}
 			else{
-				return { a_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(call_return_type)) };
 			}
 		}
-		else{
-			return { a_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(call_return_type)) };
-		}
+
+		const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_args);
+		a_acc = call_args_pair.first;
+		const auto call_return_type = figure_out_return_type(a_acc, parent, callee_expr, call_args_pair.second);
+		return { a_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(call_return_type)) };
 	}
 
 	//	Attempting to call a TYPE? Then this may be a constructor call.
@@ -1852,6 +1856,9 @@ std::pair<analyser_t, expression_t> analyse_corecall_expression(const analyser_t
 	QUARK_ASSERT(parent.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
+	QUARK_ASSERT(false);
+
+#if 0
 	if(details.call_name == get_opcode(make_update_signature())){
 		QUARK_ASSERT(details.args.size() == 3);
 		return analyse_corecall_update_expression(a, parent, e, details.args[0], details.args[1], details.args[2]);
@@ -1867,6 +1874,8 @@ std::pair<analyser_t, expression_t> analyse_corecall_expression(const analyser_t
 	else{
 		QUARK_ASSERT(false);
 	}
+#endif
+
 }
 
 
