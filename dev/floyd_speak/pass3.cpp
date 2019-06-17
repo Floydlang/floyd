@@ -921,16 +921,17 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t& parent_address, const expression_t& key, const expression_t& new_value){
+std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
-	const auto parent_expr = analyse_expression_no_target(a_acc, parent, parent_address);
+	const auto parent_expr = analyse_expression_no_target(a_acc, parent, args[0]);
 	a_acc = parent_expr.first;
 
-	const auto new_value_expr = analyse_expression_no_target(a_acc, parent, new_value);
+	const auto new_value_expr = analyse_expression_no_target(a_acc, parent, args[2]);
 	a_acc = new_value_expr.first;
 
+	const auto& key = args[1];
 	const auto parent_type = parent_expr.second.get_output_type();
 
 	if(parent_type.is_struct()){
@@ -1017,14 +1018,15 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_corecall_push_back_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t& parent_address, const expression_t& new_value){
+std::pair<analyser_t, expression_t> analyse_corecall_push_back_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 
+
 	auto a_acc = a;
-	const auto parent_expr = analyse_expression_no_target(a_acc, parent, parent_address);
+	const auto parent_expr = analyse_expression_no_target(a_acc, parent, args[0]);
 	a_acc = parent_expr.first;
 
-	const auto new_value_expr = analyse_expression_no_target(a_acc, parent, new_value);
+	const auto new_value_expr = analyse_expression_no_target(a_acc, parent, args[1]);
 	a_acc = new_value_expr.first;
 
 	const auto parent_type = parent_expr.second.get_output_type();
@@ -1063,14 +1065,13 @@ std::pair<analyser_t, expression_t> analyse_corecall_push_back_expression(const 
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_corecall_size_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t& parent_address){
+std::pair<analyser_t, expression_t> analyse_corecall_size_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
-	QUARK_ASSERT(parent_address.check_invariant());
 
 	auto a_acc = a;
-	const auto parent_expr = analyse_expression_no_target(a_acc, parent, parent_address);
+	const auto parent_expr = analyse_expression_no_target(a_acc, parent, args[0]);
 	a_acc = parent_expr.first;
 
 	const auto parent_type = parent_expr.second.get_output_type();
@@ -1788,14 +1789,15 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 				if(found_symbol_ptr->first == make_assert_signature().name){
 					return analyse_corecall_assert_expression(a_acc, parent, e, details);
 				}
+
 				else if(found_symbol_ptr->first == make_update_signature().name){
-					return analyse_corecall_update_expression(a_acc, parent, e, details.args[0], details.args[1], details.args[2]);
-				}
-				else if(found_symbol_ptr->first == make_push_back_signature().name){
-					return analyse_corecall_push_back_expression(a_acc, parent, e, details.args[0], details.args[1]);
+					return analyse_corecall_update_expression(a_acc, parent, e, details.args);
 				}
 				else if(found_symbol_ptr->first == make_size_signature().name){
-					return analyse_corecall_size_expression(a_acc, parent, e, details.args[0]);
+					return analyse_corecall_size_expression(a_acc, parent, e, details.args);
+				}
+				else if(found_symbol_ptr->first == make_push_back_signature().name){
+					return analyse_corecall_push_back_expression(a_acc, parent, e, details.args);
 				}
 				else{
 				}
@@ -1851,6 +1853,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 
 
 
+#if 0
 std::pair<analyser_t, expression_t> analyse_corecall_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::corecall_t& details){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
@@ -1858,7 +1861,6 @@ std::pair<analyser_t, expression_t> analyse_corecall_expression(const analyser_t
 
 	QUARK_ASSERT(false);
 
-#if 0
 	if(details.call_name == get_opcode(make_update_signature())){
 		QUARK_ASSERT(details.args.size() == 3);
 		return analyse_corecall_update_expression(a, parent, e, details.args[0], details.args[1], details.args[2]);
@@ -1874,10 +1876,8 @@ std::pair<analyser_t, expression_t> analyse_corecall_expression(const analyser_t
 	else{
 		QUARK_ASSERT(false);
 	}
-#endif
-
 }
-
+#endif
 
 
 
@@ -1979,7 +1979,7 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 			return analyse_call_expression(a, parent, e, expr);
 		}
 		std::pair<analyser_t, expression_t> operator()(const expression_t::corecall_t& expr) const{
-			return analyse_corecall_expression(a, parent, e, expr);
+			QUARK_ASSERT(false);
 		}
 
 

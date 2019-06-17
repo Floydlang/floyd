@@ -93,6 +93,7 @@ corecall_signature_t make_assert_signature();
 corecall_signature_t make_to_string_signature();
 corecall_signature_t make_to_pretty_string_signature();
 corecall_signature_t make_typeof_signature();
+
 corecall_signature_t make_update_signature();
 corecall_signature_t make_size_signature();
 corecall_signature_t make_find_signature();
@@ -114,7 +115,6 @@ corecall_signature_t make_map_string_signature();
 corecall_signature_t make_filter_signature();
 corecall_signature_t make_reduce_signature();
 corecall_signature_t make_supermap_signature();
-
 
 corecall_signature_t make_print_signature();
 corecall_signature_t make_send_signature();
