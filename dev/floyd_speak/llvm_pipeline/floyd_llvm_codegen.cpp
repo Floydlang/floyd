@@ -1078,17 +1078,18 @@ static llvm::Value* generate_resolve_member_expression(llvm_code_generator_t& ge
 	return nullptr;
 }
 
-static llvm::Value* generate_corecall_update_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t& parent_address, const expression_t& key, const expression_t& new_value){
+static llvm::Value* generate_corecall_update_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const std::vector<expression_t>& args){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+	QUARK_ASSERT(args.size() == 3);
 
 	auto& builder = gen_acc.builder;
 
-	auto parent_reg = generate_expression(gen_acc, emit_f, parent_address);
-	auto key_reg = generate_expression(gen_acc, emit_f, key);
-	auto new_value_reg = generate_expression(gen_acc, emit_f, new_value);
+	auto parent_reg = generate_expression(gen_acc, emit_f, args[0]);
+	auto key_reg = generate_expression(gen_acc, emit_f, args[1]);
+	auto new_value_reg = generate_expression(gen_acc, emit_f, args[2]);
 
-	const auto parent_type = parent_address.get_output_type();
+	const auto parent_type = args[0].get_output_type();
 	if(parent_type.is_string()){
 		const auto key_type = typeid_t::make_int();
 		const auto value_type = typeid_t::make_int();
@@ -1121,16 +1122,17 @@ static llvm::Value* generate_corecall_update_expression(llvm_code_generator_t& g
 	}
 }
 
-static llvm::Value* generate_corecall_push_back_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t& parent_address, const expression_t& new_value){
+static llvm::Value* generate_corecall_push_back_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const std::vector<expression_t>& args){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+	QUARK_ASSERT(args.size() == 2);
 
 	auto& builder = gen_acc.builder;
 
-	auto parent_reg = generate_expression(gen_acc, emit_f, parent_address);
-	auto new_value_reg = generate_expression(gen_acc, emit_f, new_value);
+	auto parent_reg = generate_expression(gen_acc, emit_f, args[0]);
+	auto new_value_reg = generate_expression(gen_acc, emit_f, args[1]);
 
-	const auto parent_type = parent_address.get_output_type();
+	const auto parent_type = args[0].get_output_type();
 	if(parent_type.is_string()){
 		const auto value_type = typeid_t::make_int();
 		auto result = generate_push_back(gen_acc, emit_f, *parent_reg, parent_type, *new_value_reg, value_type);
@@ -1150,14 +1152,15 @@ static llvm::Value* generate_corecall_push_back_expression(llvm_code_generator_t
 	}
 }
 
-static llvm::Value* generate_corecall_size_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t& parent_address){
+static llvm::Value* generate_corecall_size_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const std::vector<expression_t>& args){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+	QUARK_ASSERT(args.size() == 1);
 
 	auto& builder = gen_acc.builder;
 
-	auto parent_reg = generate_expression(gen_acc, emit_f, parent_address);
-	const auto parent_type = parent_address.get_output_type();
+	auto parent_reg = generate_expression(gen_acc, emit_f, args[0]);
+	const auto parent_type = args[0].get_output_type();
 	if(parent_type.is_string() || parent_type.is_json_value() || parent_type.is_vector() || parent_type.is_dict()){
 		auto result = generate_size(gen_acc, emit_f, *parent_reg, parent_type);
 		generate_release(gen_acc, emit_f, *parent_reg, parent_type);
@@ -1168,13 +1171,14 @@ static llvm::Value* generate_corecall_size_expression(llvm_code_generator_t& gen
 	}
 }
 
-static llvm::Value* generate_corecall_assert_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t& arg){
+static llvm::Value* generate_corecall_assert_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const std::vector<expression_t>& args){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+	QUARK_ASSERT(args.size() == 1);
 
 	auto& builder = gen_acc.builder;
 
-	auto arg_expr = generate_expression(gen_acc, emit_f, arg);
+	auto arg_expr = generate_expression(gen_acc, emit_f, args[0]);
 	auto result = generate_assert(gen_acc, emit_f, *arg_expr);
 	return result;
 }
@@ -1682,21 +1686,21 @@ static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc,
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 	QUARK_ASSERT(e.check_invariant());
 
-	if(details.call_name == get_opcode(make_update_signature())){
-		QUARK_ASSERT(details.args.size() == 3);
-		return generate_corecall_update_expression(gen_acc, emit_f, e, details.args[0], details.args[1], details.args[2]);
+	if(details.call_name == get_opcode(make_assert_signature())){
+		QUARK_ASSERT(details.args.size() == 1);
+		return generate_corecall_assert_expression(gen_acc, emit_f, e, details.args);
 	}
-	else if(details.call_name == get_opcode(make_push_back_signature())){
-		QUARK_ASSERT(details.args.size() == 2);
-		return generate_corecall_push_back_expression(gen_acc, emit_f, e, details.args[0], details.args[1]);
+
+	else if(details.call_name == get_opcode(make_update_signature())){
+		return generate_corecall_update_expression(gen_acc, emit_f, e, details.args);
 	}
 	else if(details.call_name == get_opcode(make_size_signature())){
 		QUARK_ASSERT(details.args.size() == 1);
-		return generate_corecall_size_expression(gen_acc, emit_f, e, details.args[0]);
+		return generate_corecall_size_expression(gen_acc, emit_f, e, details.args);
 	}
-	else if(details.call_name == get_opcode(make_assert_signature())){
-		QUARK_ASSERT(details.args.size() == 1);
-		return generate_corecall_assert_expression(gen_acc, emit_f, e, details.args[0]);
+	else if(details.call_name == get_opcode(make_push_back_signature())){
+		QUARK_ASSERT(details.args.size() == 2);
+		return generate_corecall_push_back_expression(gen_acc, emit_f, e, details.args);
 	}
 	else{
 		QUARK_ASSERT(false);
