@@ -671,6 +671,23 @@ static llvm::Value* generate_size(llvm_code_generator_t& gen_acc, llvm::Function
 }
 
 
+static llvm::Value* generate_assert(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& bool_expr){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	const auto f = find_function_def(gen_acc, "floyd_funcdef__assert");
+	std::vector<llvm::Value*> args2 = {
+		get_callers_fcp(gen_acc.interner, emit_f),
+		&bool_expr
+	};
+	auto result = builder.CreateCall(f.llvm_f, args2, "");
+	return result;
+}
+
+
 
 /*
 //		llvm::Constant* array = llvm::ConstantDataArray::getString(context, value.get_string_value(), true);
@@ -1061,7 +1078,7 @@ static llvm::Value* generate_resolve_member_expression(llvm_code_generator_t& ge
 	return nullptr;
 }
 
-static llvm::Value* generate_update_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t& parent_address, const expression_t& key, const expression_t& new_value){
+static llvm::Value* generate_corecall_update_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t& parent_address, const expression_t& key, const expression_t& new_value){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 
@@ -1104,7 +1121,7 @@ static llvm::Value* generate_update_expression(llvm_code_generator_t& gen_acc, l
 	}
 }
 
-static llvm::Value* generate_push_back_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t& parent_address, const expression_t& new_value){
+static llvm::Value* generate_corecall_push_back_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t& parent_address, const expression_t& new_value){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 
@@ -1133,7 +1150,7 @@ static llvm::Value* generate_push_back_expression(llvm_code_generator_t& gen_acc
 	}
 }
 
-static llvm::Value* generate_size_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t& parent_address){
+static llvm::Value* generate_corecall_size_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t& parent_address){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 
@@ -1149,6 +1166,17 @@ static llvm::Value* generate_size_expression(llvm_code_generator_t& gen_acc, llv
 	else{
 		UNSUPPORTED();
 	}
+}
+
+static llvm::Value* generate_corecall_assert_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t& arg){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+
+	auto& builder = gen_acc.builder;
+
+	auto arg_expr = generate_expression(gen_acc, emit_f, arg);
+	auto result = generate_assert(gen_acc, emit_f, *arg_expr);
+	return result;
 }
 
 
@@ -1656,15 +1684,19 @@ static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc,
 
 	if(details.call_name == get_opcode(make_update_signature())){
 		QUARK_ASSERT(details.args.size() == 3);
-		return generate_update_expression(gen_acc, emit_f, e, details.args[0], details.args[1], details.args[2]);
+		return generate_corecall_update_expression(gen_acc, emit_f, e, details.args[0], details.args[1], details.args[2]);
 	}
 	else if(details.call_name == get_opcode(make_push_back_signature())){
 		QUARK_ASSERT(details.args.size() == 2);
-		return generate_push_back_expression(gen_acc, emit_f, e, details.args[0], details.args[1]);
+		return generate_corecall_push_back_expression(gen_acc, emit_f, e, details.args[0], details.args[1]);
 	}
 	else if(details.call_name == get_opcode(make_size_signature())){
 		QUARK_ASSERT(details.args.size() == 1);
-		return generate_size_expression(gen_acc, emit_f, e, details.args[0]);
+		return generate_corecall_size_expression(gen_acc, emit_f, e, details.args[0]);
+	}
+	else if(details.call_name == get_opcode(make_assert_signature())){
+		QUARK_ASSERT(details.args.size() == 1);
+		return generate_corecall_assert_expression(gen_acc, emit_f, e, details.args[0]);
 	}
 	else{
 		QUARK_ASSERT(false);

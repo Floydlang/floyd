@@ -1438,9 +1438,6 @@ static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls_internal()
 
 	result.find(make_get_json_type_signature()._function_id)->second = host__get_json_type;
 
-	result.find(make_calc_string_sha1_signature()._function_id)->second = host__calc_string_sha1;
-	result.find(make_calc_binary_sha1_signature()._function_id)->second = host__calc_binary_sha1;
-
 	result.find(make_map_signature()._function_id)->second = host__map;
 	result.find(make_map_string_signature()._function_id)->second = host__map_string;
 	result.find(make_filter_signature()._function_id)->second = host__filter;
@@ -1474,6 +1471,10 @@ static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_filelib_internal(){
 	result.find(make_create_directory_branch_signature()._function_id)->second = host__create_directory_branch;
 	result.find(make_delete_fsentry_deep_signature()._function_id)->second = host__delete_fsentry_deep;
 	result.find(make_rename_fsentry_signature()._function_id)->second = host__rename_fsentry;
+
+	result.find(make_calc_string_sha1_signature()._function_id)->second = host__calc_string_sha1;
+	result.find(make_calc_binary_sha1_signature()._function_id)->second = host__calc_binary_sha1;
+
 	return result;
 }
 

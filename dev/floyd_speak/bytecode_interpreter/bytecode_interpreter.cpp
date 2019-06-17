@@ -3059,6 +3059,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			if(function_def._host_function_id != 0){
 				const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
+				QUARK_ASSERT(host_function != nullptr);
 
 				const int arg0_stack_pos = stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
 				int stack_pos = arg0_stack_pos;

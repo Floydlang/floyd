@@ -177,12 +177,12 @@ bool does_symbol_exist_shallow(const analyser_t& a, const std::string& s){
 }
 
 //	Warning: returns reference to the found value-entry -- this could be in any environment in the call stack.
-const symbol_t* resolve_symbol_by_address(const analyser_t& a, const variable_address_t& s){
+const std::pair<std::string, symbol_t>* resolve_symbol_by_address(const analyser_t& a, const variable_address_t& s){
 	QUARK_ASSERT(a.check_invariant());
 
 	const auto env_index = s._parent_steps == -1 ? 0 : a._lexical_scope_stack.size() - s._parent_steps - 1;
 	auto& env = a._lexical_scope_stack[env_index];
-	return &env.symbols._symbols[s._index].second;
+	return &env.symbols._symbols[s._index];
 }
 
 
@@ -921,7 +921,7 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_update_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t& parent_address, const expression_t& key, const expression_t& new_value){
+std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t& parent_address, const expression_t& key, const expression_t& new_value){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -1017,7 +1017,7 @@ std::pair<analyser_t, expression_t> analyse_update_expression(const analyser_t& 
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_push_back_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t& parent_address, const expression_t& new_value){
+std::pair<analyser_t, expression_t> analyse_corecall_push_back_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t& parent_address, const expression_t& new_value){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -1063,7 +1063,7 @@ std::pair<analyser_t, expression_t> analyse_push_back_expression(const analyser_
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_size_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t& parent_address){
+std::pair<analyser_t, expression_t> analyse_corecall_size_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t& parent_address){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1075,7 +1075,7 @@ std::pair<analyser_t, expression_t> analyse_size_expression(const analyser_t& a,
 
 	const auto parent_type = parent_expr.second.get_output_type();
 
-	if(parent_type.is_string() | parent_type.is_json_value() || parent_type.is_vector() || parent_type.is_dict()){
+	if(parent_type.is_string() || parent_type.is_json_value() || parent_type.is_vector() || parent_type.is_dict()){
 		return {
 			a_acc,
 			expression_t::make_corecall(get_opcode(make_size_signature()), { parent_expr.second }, make_shared<typeid_t>(make_size_signature()._function_type.get_function_return()))
@@ -1733,6 +1733,27 @@ const typeid_t figure_out_return_type(const analyser_t& a, const statement_t& pa
 }
 
 
+//	Call has already been matched with make_assert_signature().
+//	All types are explicit.
+std::pair<analyser_t, expression_t> analyse_corecall_assert_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::call_t& details){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(parent.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	QUARK_ASSERT(details.args.size() == 1);
+
+	auto a_acc = a;
+	const auto arg_expr = analyse_expression_no_target(a_acc, parent, details.args[0]);
+	a_acc = arg_expr.first;
+
+	QUARK_ASSERT(arg_expr.second.get_output_type().is_bool());
+
+	return {
+		a_acc,
+		expression_t::make_corecall(get_opcode(make_assert_signature()), { arg_expr.second }, make_shared<typeid_t>(make_assert_signature()._function_type.get_function_return()))
+	};
+}
+
 std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0, const statement_t& parent, const expression_t& e, const expression_t::call_t& details){
 	QUARK_ASSERT(a0.check_invariant());
 
@@ -1763,7 +1784,26 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 		a_acc = call_args_pair.first;
 
 		const auto call_return_type = figure_out_return_type(a_acc, parent, callee_expr, call_args_pair.second);
-		return { a_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(call_return_type)) };
+
+		//	Detect use of corecalls.
+		if(callee_expr_load2){
+			const auto found_symbol_ptr = resolve_symbol_by_address(a_acc, callee_expr_load2->address);
+			if(found_symbol_ptr != nullptr){
+				if(found_symbol_ptr->first == "assert"){
+					QUARK_ASSERT(details.args.size() == 1);
+					return analyse_corecall_assert_expression(a_acc, parent, e, details);
+				}
+				else{
+					return { a_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(call_return_type)) };
+				}
+			}
+			else{
+				return { a_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(call_return_type)) };
+			}
+		}
+		else{
+			return { a_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(call_return_type)) };
+		}
 	}
 
 	//	Attempting to call a TYPE? Then this may be a constructor call.
@@ -1772,11 +1812,11 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 		const auto found_symbol_ptr = resolve_symbol_by_address(a_acc, callee_expr_load2->address);
 		QUARK_ASSERT(found_symbol_ptr != nullptr);
 
-		if(found_symbol_ptr->_init.is_undefined()){
+		if(found_symbol_ptr->second._init.is_undefined()){
 			throw_compiler_error(parent.location, "Cannot resolve callee.");
 		}
 		else{
-			const auto callee_type2 = found_symbol_ptr->_init.get_typeid_value();
+			const auto callee_type2 = found_symbol_ptr->second._init.get_typeid_value();
 
 			//	Convert calls to struct-type into construct-value expression.
 			if(callee_type2.is_struct()){
@@ -1814,15 +1854,15 @@ std::pair<analyser_t, expression_t> analyse_corecall_expression(const analyser_t
 
 	if(details.call_name == get_opcode(make_update_signature())){
 		QUARK_ASSERT(details.args.size() == 3);
-		return analyse_update_expression(a, parent, e, details.args[0], details.args[1], details.args[2]);
+		return analyse_corecall_update_expression(a, parent, e, details.args[0], details.args[1], details.args[2]);
 	}
 	else if(details.call_name == get_opcode(make_push_back_signature())){
 		QUARK_ASSERT(details.args.size() == 2);
-		return analyse_push_back_expression(a, parent, e, details.args[0], details.args[1]);
+		return analyse_corecall_push_back_expression(a, parent, e, details.args[0], details.args[1]);
 	}
 	else if(details.call_name == get_opcode(make_size_signature())){
 		QUARK_ASSERT(details.args.size() == 1);
-		return analyse_size_expression(a, parent, e, details.args[0]);
+		return analyse_corecall_size_expression(a, parent, e, details.args[0]);
 	}
 	else{
 		QUARK_ASSERT(false);
