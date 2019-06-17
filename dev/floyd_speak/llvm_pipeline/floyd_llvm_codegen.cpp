@@ -630,9 +630,6 @@ static llvm::Value* generate_push_back(llvm_code_generator_t& gen_acc, llvm::Fun
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 
-	auto& context = gen_acc.instance->context;
-	auto& builder = gen_acc.builder;
-
 	const auto f = find_function_def(gen_acc, "floyd_funcdef__push_back");
 
 	std::vector<llvm::Value*> args2 = {
@@ -644,48 +641,15 @@ static llvm::Value* generate_push_back(llvm_code_generator_t& gen_acc, llvm::Fun
 		generate_cast_to_runtime_value(gen_acc, new_value_reg, value_type),
 		generate_itype_constant(gen_acc, value_type)
 	};
-	auto result = builder.CreateCall(f.llvm_f, args2, "");
+	auto result = gen_acc.builder.CreateCall(f.llvm_f, args2, "");
 
-	auto wide_return_a_reg = builder.CreateExtractValue(result, { static_cast<int>(WIDE_RETURN_MEMBERS::a) });
+	auto wide_return_a_reg = gen_acc.builder.CreateExtractValue(result, { static_cast<int>(WIDE_RETURN_MEMBERS::a) });
 	auto result2 = generate_cast_from_runtime_value(gen_acc, *wide_return_a_reg, parent_type);
 	return result2;
 }
 
-static llvm::Value* generate_size(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& parent_reg, const typeid_t& parent_type){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
-
-	auto& context = gen_acc.instance->context;
-	auto& builder = gen_acc.builder;
-
-	const auto f = find_function_def(gen_acc, "floyd_funcdef__size");
-
-	std::vector<llvm::Value*> args2 = {
-		get_callers_fcp(gen_acc.interner, emit_f),
-
-		generate_cast_to_runtime_value(gen_acc, parent_reg, parent_type),
-		generate_itype_constant(gen_acc, parent_type)
-	};
-	auto result = builder.CreateCall(f.llvm_f, args2, "");
-	return result;
-}
 
 
-static llvm::Value* generate_assert(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& bool_expr){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
-
-	auto& context = gen_acc.instance->context;
-	auto& builder = gen_acc.builder;
-
-	const auto f = find_function_def(gen_acc, "floyd_funcdef__assert");
-	std::vector<llvm::Value*> args2 = {
-		get_callers_fcp(gen_acc.interner, emit_f),
-		&bool_expr
-	};
-	auto result = builder.CreateCall(f.llvm_f, args2, "");
-	return result;
-}
 
 
 
@@ -1127,8 +1091,6 @@ static llvm::Value* generate_corecall_push_back_expression(llvm_code_generator_t
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 	QUARK_ASSERT(args.size() == 2);
 
-	auto& builder = gen_acc.builder;
-
 	auto parent_reg = generate_expression(gen_acc, emit_f, args[0]);
 	auto new_value_reg = generate_expression(gen_acc, emit_f, args[1]);
 
@@ -1157,12 +1119,18 @@ static llvm::Value* generate_corecall_size_expression(llvm_code_generator_t& gen
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 	QUARK_ASSERT(args.size() == 1);
 
-	auto& builder = gen_acc.builder;
-
 	auto parent_reg = generate_expression(gen_acc, emit_f, args[0]);
 	const auto parent_type = args[0].get_output_type();
 	if(parent_type.is_string() || parent_type.is_json_value() || parent_type.is_vector() || parent_type.is_dict()){
-		auto result = generate_size(gen_acc, emit_f, *parent_reg, parent_type);
+		const auto f = find_function_def(gen_acc, "floyd_funcdef__size");
+		std::vector<llvm::Value*> args2 = {
+			get_callers_fcp(gen_acc.interner, emit_f),
+
+			generate_cast_to_runtime_value(gen_acc, *parent_reg, parent_type),
+			generate_itype_constant(gen_acc, parent_type)
+		};
+		auto result = gen_acc.builder.CreateCall(f.llvm_f, args2, "");
+
 		generate_release(gen_acc, emit_f, *parent_reg, parent_type);
 		return result;
 	}
@@ -1176,10 +1144,33 @@ static llvm::Value* generate_corecall_assert_expression(llvm_code_generator_t& g
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 	QUARK_ASSERT(args.size() == 1);
 
-	auto& builder = gen_acc.builder;
+	auto arg_expr = generate_expression(gen_acc, emit_f, args[0]);
+	const auto f = find_function_def(gen_acc, "floyd_funcdef__assert");
+	auto result = gen_acc.builder.CreateCall(f.llvm_f, { get_callers_fcp(gen_acc.interner, emit_f), arg_expr }, "");
+	return result;
+}
+
+static llvm::Value* generate_corecall_to_pretty_string_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const std::vector<expression_t>& args){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+	QUARK_ASSERT(args.size() == 1);
 
 	auto arg_expr = generate_expression(gen_acc, emit_f, args[0]);
-	auto result = generate_assert(gen_acc, emit_f, *arg_expr);
+	const auto arg_type = args[0].get_output_type();
+
+	const auto f = find_function_def(gen_acc, "floyd_funcdef__to_pretty_string");
+	auto result = gen_acc.builder.CreateCall(
+		f.llvm_f,
+		{
+			get_callers_fcp(gen_acc.interner, emit_f),
+
+			generate_cast_to_runtime_value(gen_acc, *arg_expr, arg_type),
+			generate_itype_constant(gen_acc, arg_type)
+		},
+		""
+	);
+	generate_release(gen_acc, emit_f, *arg_expr, args[0].get_output_type());
 	return result;
 }
 
@@ -1595,16 +1586,16 @@ static llvm::Value* generate_conditional_operator_expression(llvm_code_generator
 	- In call's actual arguments types and output type.
 	- In function def
 */
-static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::call_t& details){
+static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e0, const expression_t::call_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
-	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(e0.check_invariant());
 
 	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
 	const auto callee_function_type = details.callee->get_output_type();
-	const auto resolved_call_return_type = e.get_output_type();
+	const auto resolved_call_return_type = e0.get_output_type();
 	//	IDEA: Build a complete resolved_function_type: argument types from the actual arguments and return = resolved_call_return_type.
 	//	This lets us select specialisation of calls, like "string push_back(string, int)" vs [bool] push_back([bool], bool)
 
@@ -1681,6 +1672,29 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 }
 
 
+//	Generates a call to the global function that implements the corecall.
+static llvm::Value* generate_fallthrough_corecall(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::corecall_t& details){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+	QUARK_ASSERT(e.check_invariant());
+
+	//	Find function
+	const auto& symbols = gen_acc.scope_path[0];
+    const auto it = std::find_if(symbols.begin(), symbols.end(), [&details](const resolved_symbol_t& e) { return (std::string("$") + e.symbol_name) == details.call_name; } );
+    QUARK_ASSERT(it != symbols.end());
+	const auto function_type = std::make_shared<typeid_t>(it->symbol.get_type());
+	int global_index = static_cast<int>(it - symbols.begin());
+
+	const auto call_details = expression_t::call_t {
+		std::make_shared<expression_t>(expression_t::make_load2(variable_address_t::make_variable_address(-1, global_index), function_type)),
+		details.args
+	};
+
+	const auto e2 = expression_t::make_call(*call_details.callee, call_details.args, std::make_shared<typeid_t>(e.get_output_type()));
+	return generate_call_expression(gen_acc, emit_f, e2, call_details);
+}
+
+
 static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::corecall_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
@@ -1688,19 +1702,29 @@ static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc,
 
 	if(details.call_name == get_opcode(make_assert_signature())){
 		QUARK_ASSERT(details.args.size() == 1);
-		return generate_corecall_assert_expression(gen_acc, emit_f, e, details.args);
+//		return generate_corecall_assert_expression(gen_acc, emit_f, e, details.args);
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+	else if(details.call_name == get_opcode(make_to_string_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+	else if(details.call_name == get_opcode(make_to_pretty_string_signature())){
+//		return generate_corecall_to_pretty_string_expression(gen_acc, emit_f, e, details.args);
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 
 	else if(details.call_name == get_opcode(make_update_signature())){
 		return generate_corecall_update_expression(gen_acc, emit_f, e, details.args);
 	}
 	else if(details.call_name == get_opcode(make_size_signature())){
-		QUARK_ASSERT(details.args.size() == 1);
-		return generate_corecall_size_expression(gen_acc, emit_f, e, details.args);
+//		QUARK_ASSERT(details.args.size() == 1);
+//		return generate_corecall_size_expression(gen_acc, emit_f, e, details.args);
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 	else if(details.call_name == get_opcode(make_push_back_signature())){
 		QUARK_ASSERT(details.args.size() == 2);
-		return generate_corecall_push_back_expression(gen_acc, emit_f, e, details.args);
+//		return generate_corecall_push_back_expression(gen_acc, emit_f, e, details.args);
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 	else{
 		QUARK_ASSERT(false);

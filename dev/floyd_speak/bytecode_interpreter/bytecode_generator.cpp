@@ -1154,18 +1154,27 @@ static expression_gen_t bcgen_corecall_expression(bcgenerator_t& gen_acc, const 
 	QUARK_ASSERT(body.check_invariant());
 
 
-	if(details.call_name == get_opcode(make_update_signature())){
+	if(details.call_name == get_opcode(make_assert_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_opcode(make_push_back_signature())){
-		return bcgen_corecall_push_back_expression(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_opcode(make_to_string_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_to_pretty_string_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+
+	else if(details.call_name == get_opcode(make_update_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
 	else if(details.call_name == get_opcode(make_size_signature())){
 		return bcgen_corecall_size_expression(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_opcode(make_assert_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_opcode(make_push_back_signature())){
+		return bcgen_corecall_push_back_expression(gen_acc, target_reg, call_output_type, details, body);
 	}
+
+
 	else{
 		QUARK_ASSERT(false);
 	}

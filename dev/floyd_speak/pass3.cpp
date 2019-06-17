@@ -53,7 +53,6 @@ bool semantic_ast_t::check_invariant() const{
 
 struct analyzer_imm_t {
 	pass2_ast_t _ast;
-//	std::map<std::string, host_function_signature_t> _host_functions;
 
 	std::vector<corecall_signature_t> corecall_signatures;
 	std::vector<libfunc_signature_t> filelib_signatures;
@@ -1736,15 +1735,15 @@ const typeid_t figure_out_return_type(const analyser_t& a, const statement_t& pa
 
 //	Call has already been matched with make_assert_signature().
 //	All types are explicit.
-std::pair<analyser_t, expression_t> analyse_corecall_assert_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::call_t& details){
+std::pair<analyser_t, expression_t> analyse_corecall_assert_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	QUARK_ASSERT(details.args.size() == 1);
+	QUARK_ASSERT(args.size() == 1);
 
 	auto a_acc = a;
-	const auto arg_expr = analyse_expression_no_target(a_acc, parent, details.args[0]);
+	const auto arg_expr = analyse_expression_no_target(a_acc, parent, args[0]);
 	a_acc = arg_expr.first;
 
 	QUARK_ASSERT(arg_expr.second.get_output_type().is_bool());
@@ -1752,6 +1751,40 @@ std::pair<analyser_t, expression_t> analyse_corecall_assert_expression(const ana
 	return {
 		a_acc,
 		expression_t::make_corecall(get_opcode(make_assert_signature()), { arg_expr.second }, make_shared<typeid_t>(make_assert_signature()._function_type.get_function_return()))
+	};
+}
+
+std::pair<analyser_t, expression_t> analyse_corecall_to_string_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& args){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(parent.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	QUARK_ASSERT(args.size() == 1);
+
+	auto a_acc = a;
+	const auto arg_expr = analyse_expression_no_target(a_acc, parent, args[0]);
+	a_acc = arg_expr.first;
+
+	return {
+		a_acc,
+		expression_t::make_corecall(get_opcode(make_to_string_signature()), { arg_expr.second }, make_shared<typeid_t>(make_to_string_signature()._function_type.get_function_return()))
+	};
+}
+
+std::pair<analyser_t, expression_t> analyse_corecall_to_pretty_string_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& args){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(parent.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+
+	QUARK_ASSERT(args.size() == 1);
+
+	auto a_acc = a;
+	const auto arg_expr = analyse_expression_no_target(a_acc, parent, args[0]);
+	a_acc = arg_expr.first;
+
+	return {
+		a_acc,
+		expression_t::make_corecall(get_opcode(make_to_pretty_string_signature()), { arg_expr.second }, make_shared<typeid_t>(make_to_pretty_string_signature()._function_type.get_function_return()))
 	};
 }
 
@@ -1787,7 +1820,13 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 			const auto found_symbol_ptr = resolve_symbol_by_address(a_acc, callee_expr_load2->address);
 			if(found_symbol_ptr != nullptr){
 				if(found_symbol_ptr->first == make_assert_signature().name){
-					return analyse_corecall_assert_expression(a_acc, parent, e, details);
+					return analyse_corecall_assert_expression(a_acc, parent, e, details.args);
+				}
+				else if(found_symbol_ptr->first == make_to_string_signature().name){
+					return analyse_corecall_to_string_expression(a_acc, parent, e, details.args);
+				}
+				else if(found_symbol_ptr->first == make_to_pretty_string_signature().name){
+					return analyse_corecall_to_pretty_string_expression(a_acc, parent, e, details.args);
 				}
 
 				else if(found_symbol_ptr->first == make_update_signature().name){
