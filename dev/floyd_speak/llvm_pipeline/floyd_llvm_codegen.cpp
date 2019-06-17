@@ -882,31 +882,6 @@ static void generate_destruct_scope_locals(llvm_code_generator_t& gen_acc, llvm:
 	}
 }
 
-#if 0
-//	Destructs all functions in all nested scopes - up until function is left.
-//	FUTURE: If we do nestes function definitions / lambas -- then we need to track where in callstack each function ends.
-static void generate_destruct_scope_locals2(llvm_code_generator_t& gen_acc, llvm::Function& emit_f){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
-
-	auto& builder = gen_acc.builder;
-
-	//	Unwind all scopes of function, but not including global scope.
-	for(int i = gen_acc.scope_path.size() ; i > 0 ; i--){
-		for(const auto& e: symbols){
-			if(e.symtype == resolved_symbol_t::esymtype::k_global || e.symtype == resolved_symbol_t::esymtype::k_local){
-				const auto type = e.symbol.get_type();
-				if(is_rc_value(type)){
-					auto reg = builder.CreateLoad(e.value_ptr);
-					generate_release(gen_acc, emit_f, *reg, type);
-				}
-				else{
-				}
-			}
-		}
-	}
-}
-#endif
 
 
 static function_return_mode generate_body(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const std::vector<resolved_symbol_t>& resolved_symbols, const std::vector<statement_t>& statements){
@@ -1042,7 +1017,7 @@ static llvm::Value* generate_resolve_member_expression(llvm_code_generator_t& ge
 	return nullptr;
 }
 
-static llvm::Value* generate_corecall_update_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const std::vector<expression_t>& args){
+static llvm::Value* XXXX_generate_corecall_update_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const std::vector<expression_t>& args){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 	QUARK_ASSERT(args.size() == 3);
@@ -1086,7 +1061,7 @@ static llvm::Value* generate_corecall_update_expression(llvm_code_generator_t& g
 	}
 }
 
-static llvm::Value* generate_corecall_push_back_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const std::vector<expression_t>& args){
+static llvm::Value* XXXX_generate_corecall_push_back_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const std::vector<expression_t>& args){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 	QUARK_ASSERT(args.size() == 2);
@@ -1114,7 +1089,7 @@ static llvm::Value* generate_corecall_push_back_expression(llvm_code_generator_t
 	}
 }
 
-static llvm::Value* generate_corecall_size_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const std::vector<expression_t>& args){
+static llvm::Value* XXXX_generate_corecall_size_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const std::vector<expression_t>& args){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 	QUARK_ASSERT(args.size() == 1);
@@ -1139,7 +1114,7 @@ static llvm::Value* generate_corecall_size_expression(llvm_code_generator_t& gen
 	}
 }
 
-static llvm::Value* generate_corecall_assert_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const std::vector<expression_t>& args){
+static llvm::Value* XXXX_generate_corecall_assert_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const std::vector<expression_t>& args){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 	QUARK_ASSERT(args.size() == 1);
@@ -1150,7 +1125,7 @@ static llvm::Value* generate_corecall_assert_expression(llvm_code_generator_t& g
 	return result;
 }
 
-static llvm::Value* generate_corecall_to_pretty_string_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const std::vector<expression_t>& args){
+static llvm::Value* XXXX_generate_corecall_to_pretty_string_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const std::vector<expression_t>& args){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
@@ -1702,19 +1677,20 @@ static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc,
 
 	if(details.call_name == get_opcode(make_assert_signature())){
 		QUARK_ASSERT(details.args.size() == 1);
-//		return generate_corecall_assert_expression(gen_acc, emit_f, e, details.args);
+//		return XXXX_generate_corecall_assert_expression(gen_acc, emit_f, e, details.args);
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 	else if(details.call_name == get_opcode(make_to_string_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 	else if(details.call_name == get_opcode(make_to_pretty_string_signature())){
-//		return generate_corecall_to_pretty_string_expression(gen_acc, emit_f, e, details.args);
+//		return XXXX_generate_corecall_to_pretty_string_expression(gen_acc, emit_f, e, details.args);
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 
 	else if(details.call_name == get_opcode(make_update_signature())){
-		return generate_corecall_update_expression(gen_acc, emit_f, e, details.args);
+//		return XXXX_generate_corecall_update_expression(gen_acc, emit_f, e, details.args);
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 	else if(details.call_name == get_opcode(make_size_signature())){
 //		QUARK_ASSERT(details.args.size() == 1);
