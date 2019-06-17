@@ -1063,6 +1063,33 @@ std::pair<analyser_t, expression_t> analyse_push_back_expression(const analyser_
 	}
 }
 
+std::pair<analyser_t, expression_t> analyse_size_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t& parent_address){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(parent.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(parent_address.check_invariant());
+
+	auto a_acc = a;
+	const auto parent_expr = analyse_expression_no_target(a_acc, parent, parent_address);
+	a_acc = parent_expr.first;
+
+	const auto parent_type = parent_expr.second.get_output_type();
+
+	if(parent_type.is_string() | parent_type.is_json_value() || parent_type.is_vector() || parent_type.is_dict()){
+		return {
+			a_acc,
+			expression_t::make_corecall(get_opcode(make_size_signature()), { parent_expr.second }, make_shared<typeid_t>(make_size_signature()._function_type.get_function_return()))
+		};
+	}
+	else{
+		std::stringstream what;
+		what << "Left hand side does not support size() - it's of type \"" + typeid_to_compact_string(parent_type) + "\".";
+		throw_compiler_error(parent.location, what.str());
+	}
+}
+
+
+
 std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::lookup_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
@@ -1792,6 +1819,10 @@ std::pair<analyser_t, expression_t> analyse_corecall_expression(const analyser_t
 	else if(details.call_name == get_opcode(make_push_back_signature())){
 		QUARK_ASSERT(details.args.size() == 2);
 		return analyse_push_back_expression(a, parent, e, details.args[0], details.args[1]);
+	}
+	else if(details.call_name == get_opcode(make_size_signature())){
+		QUARK_ASSERT(details.args.size() == 1);
+		return analyse_size_expression(a, parent, e, details.args[0]);
 	}
 	else{
 		QUARK_ASSERT(false);

@@ -633,7 +633,6 @@ static llvm::Value* generate_push_back(llvm_code_generator_t& gen_acc, llvm::Fun
 	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
-	//	NOTICE: Calls host function!
 	const auto f = find_function_def(gen_acc, "floyd_funcdef__push_back");
 
 	std::vector<llvm::Value*> args2 = {
@@ -650,6 +649,25 @@ static llvm::Value* generate_push_back(llvm_code_generator_t& gen_acc, llvm::Fun
 	auto wide_return_a_reg = builder.CreateExtractValue(result, { static_cast<int>(WIDE_RETURN_MEMBERS::a) });
 	auto result2 = generate_cast_from_runtime_value(gen_acc, *wide_return_a_reg, parent_type);
 	return result2;
+}
+
+static llvm::Value* generate_size(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& parent_reg, const typeid_t& parent_type){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	const auto f = find_function_def(gen_acc, "floyd_funcdef__size");
+
+	std::vector<llvm::Value*> args2 = {
+		get_callers_fcp(gen_acc.interner, emit_f),
+
+		generate_cast_to_runtime_value(gen_acc, parent_reg, parent_type),
+		generate_itype_constant(gen_acc, parent_type)
+	};
+	auto result = builder.CreateCall(f.llvm_f, args2, "");
+	return result;
 }
 
 
@@ -1108,6 +1126,24 @@ static llvm::Value* generate_push_back_expression(llvm_code_generator_t& gen_acc
 		auto result = generate_push_back(gen_acc, emit_f, *parent_reg, parent_type, *new_value_reg, value_type);
 		generate_release(gen_acc, emit_f, *parent_reg, parent_type);
 		generate_release(gen_acc, emit_f, *new_value_reg, value_type);
+		return result;
+	}
+	else{
+		UNSUPPORTED();
+	}
+}
+
+static llvm::Value* generate_size_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t& parent_address){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+
+	auto& builder = gen_acc.builder;
+
+	auto parent_reg = generate_expression(gen_acc, emit_f, parent_address);
+	const auto parent_type = parent_address.get_output_type();
+	if(parent_type.is_string() || parent_type.is_json_value() || parent_type.is_vector() || parent_type.is_dict()){
+		auto result = generate_size(gen_acc, emit_f, *parent_reg, parent_type);
+		generate_release(gen_acc, emit_f, *parent_reg, parent_type);
 		return result;
 	}
 	else{
@@ -1625,6 +1661,10 @@ static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc,
 	else if(details.call_name == get_opcode(make_push_back_signature())){
 		QUARK_ASSERT(details.args.size() == 2);
 		return generate_push_back_expression(gen_acc, emit_f, e, details.args[0], details.args[1]);
+	}
+	else if(details.call_name == get_opcode(make_size_signature())){
+		QUARK_ASSERT(details.args.size() == 1);
+		return generate_size_expression(gen_acc, emit_f, e, details.args[0]);
 	}
 	else{
 		QUARK_ASSERT(false);

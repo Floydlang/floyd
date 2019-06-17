@@ -349,6 +349,7 @@ inline bool is_simple_expression__2(const std::string& op){
 namespace keyword_t {
 	const std::string k_update = "update";
 	const std::string k_push_back = "push_back";
+	const std::string k_size = "size";
 
 	const std::string k_return = "return";
 	const std::string k_while = "while";

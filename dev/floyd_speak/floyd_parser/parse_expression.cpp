@@ -554,6 +554,10 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 					const auto call = maker__corecall("$push_back", values);
 					return parse_optional_operation_rightward(a_pos.second, call, precedence);
 				}
+				else if(lhs == json_t::make_array({ "@" , keyword_t::k_size }) && values.size() == 1){
+					const auto call = maker__corecall("$size", values);
+					return parse_optional_operation_rightward(a_pos.second, call, precedence);
+				}
 				else{
 					const auto call = maker__call(lhs, values);
 					return parse_optional_operation_rightward(a_pos.second, call, precedence);

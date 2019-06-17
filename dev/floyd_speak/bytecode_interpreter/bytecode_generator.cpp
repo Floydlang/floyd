@@ -967,37 +967,6 @@ static function_id_t get_host_function_id(bcgenerator_t& gen_acc, const expressi
 	}
 }
 
-//	a = size(b)
-static bc_opcode convert_call_to_size_opcode(const typeid_t& arg1_type){
-	QUARK_ASSERT(arg1_type.check_invariant());
-
-	if(arg1_type.is_vector()){
-		if(encode_as_vector_w_inplace_elements(arg1_type)){
-			return bc_opcode::k_get_size_vector_w_inplace_elements;
-		}
-		else{
-			return bc_opcode::k_get_size_vector_w_external_elements;
-		}
-	}
-	else if(arg1_type.is_dict()){
-		if(encode_as_dict_w_inplace_values(arg1_type)){
-			return bc_opcode::k_get_size_dict_w_inplace_values;
-		}
-		else{
-			return bc_opcode::k_get_size_dict_w_external_values;
-		}
-	}
-	else if(arg1_type.is_string()){
-		return bc_opcode::k_get_size_string;
-	}
-	else if(arg1_type.is_json_value()){
-		return bc_opcode::k_get_size_jsonvalue;
-	}
-	else{
-		return bc_opcode::k_nop;
-	}
-}
-
 /*
 	Handles a call-expression. Output is one of these:
 
@@ -1025,6 +994,8 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const vari
 
 	//	a = size(b)
 	if(host_function_id == 1007 && arg_count == 1){
+		QUARK_ASSERT(false);
+#if 0
 		const auto arg1_type = details.args[0].get_output_type();
 
 		bc_opcode opcode = convert_call_to_size_opcode(arg1_type);
@@ -1039,6 +1010,8 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const vari
 		}
 		else{
 		}
+#endif
+
 	}
 
 	//	a = push_back(b, c)
@@ -1078,6 +1051,10 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const vari
 }
 
 
+
+
+
+
 static bc_opcode convert_call_to_pushback_opcode(const typeid_t& arg1_type){
 	QUARK_ASSERT(arg1_type.check_invariant());
 
@@ -1091,6 +1068,37 @@ static bc_opcode convert_call_to_pushback_opcode(const typeid_t& arg1_type){
 	}
 	else if(arg1_type.is_string()){
 		return bc_opcode::k_pushback_string;
+	}
+	else{
+		return bc_opcode::k_nop;
+	}
+}
+
+//	a = size(b)
+static bc_opcode convert_call_to_size_opcode(const typeid_t& arg1_type){
+	QUARK_ASSERT(arg1_type.check_invariant());
+
+	if(arg1_type.is_vector()){
+		if(encode_as_vector_w_inplace_elements(arg1_type)){
+			return bc_opcode::k_get_size_vector_w_inplace_elements;
+		}
+		else{
+			return bc_opcode::k_get_size_vector_w_external_elements;
+		}
+	}
+	else if(arg1_type.is_dict()){
+		if(encode_as_dict_w_inplace_values(arg1_type)){
+			return bc_opcode::k_get_size_dict_w_inplace_values;
+		}
+		else{
+			return bc_opcode::k_get_size_dict_w_external_values;
+		}
+	}
+	else if(arg1_type.is_string()){
+		return bc_opcode::k_get_size_string;
+	}
+	else if(arg1_type.is_json_value()){
+		return bc_opcode::k_get_size_jsonvalue;
 	}
 	else{
 		return bc_opcode::k_nop;
@@ -1140,6 +1148,26 @@ static expression_gen_t bcgen_corecall_expression(bcgenerator_t& gen_acc, const 
 			body_acc._instrs.push_back(bcgen_instruction_t(opcode, target_reg2, arg1_expr._out, arg2_expr._out));
 			QUARK_ASSERT(body_acc.check_invariant());
 			return { body_acc, target_reg2, intern_type(gen_acc, arg1_type) };
+		}
+		else{
+			throw std::exception();
+		}
+	}
+	else if(details.call_name == get_opcode(make_size_signature())){
+		QUARK_ASSERT(details.args.size() == 1);
+		const auto arg1_type = details.args[0].get_output_type();
+
+		auto body_acc = body;
+
+		bc_opcode opcode = convert_call_to_size_opcode(arg1_type);
+		if(opcode != bc_opcode::k_nop){
+			const auto& arg1_expr = bcgen_expression(gen_acc, {}, details.args[0], body_acc);
+			body_acc = arg1_expr._body;
+
+			const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, call_output_type, "temp: result for k_get_size_vector_x") : target_reg;
+			body_acc._instrs.push_back(bcgen_instruction_t(opcode, target_reg2, arg1_expr._out, make_imm_int(0)));
+			QUARK_ASSERT(body_acc.check_invariant());
+			return { body_acc, target_reg2, intern_type(gen_acc, make_size_signature()._function_type.get_function_return()) };
 		}
 		else{
 			throw std::exception();
