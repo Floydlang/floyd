@@ -90,9 +90,12 @@ struct corecall_signature_t {
 std::string get_opcode(const corecall_signature_t& signature);
 
 corecall_signature_t make_assert_signature();
+
 corecall_signature_t make_to_string_signature();
 corecall_signature_t make_to_pretty_string_signature();
+
 corecall_signature_t make_typeof_signature();
+
 corecall_signature_t make_update_signature();
 corecall_signature_t make_size_signature();
 corecall_signature_t make_find_signature();
@@ -101,6 +104,7 @@ corecall_signature_t make_erase_signature();
 corecall_signature_t make_push_back_signature();
 corecall_signature_t make_subset_signature();
 corecall_signature_t make_replace_signature();
+corecall_signature_t make_concat_signature();
 
 corecall_signature_t make_script_to_jsonvalue_signature();
 corecall_signature_t make_jsonvalue_to_script_signature();

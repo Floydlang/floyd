@@ -219,6 +219,9 @@ corecall_signature_t make_subset_signature(){
 corecall_signature_t make_replace_signature(){
 	return { "replace", 1013, typeid_t::make_function_dyn_return({ DYN, typeid_t::make_int(), typeid_t::make_int(), DYN }, epure::pure, typeid_t::return_dyn_type::arg0) };
 }
+corecall_signature_t make_concat_signature(){
+	return { "concat", 1014, typeid_t::make_function_dyn_return({ DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg0) };
+}
 
 corecall_signature_t make_script_to_jsonvalue_signature(){
 	return { "script_to_jsonvalue", 1017, typeid_t::make_function(typeid_t::make_json_value(), {typeid_t::make_string()}, epure::pure) };
@@ -320,6 +323,7 @@ static std::vector<corecall_signature_t> get_host_function_records(){
 
 		make_subset_signature(),
 		make_replace_signature(),
+		make_concat_signature(),
 
 
 		make_script_to_jsonvalue_signature(),

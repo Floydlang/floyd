@@ -2127,6 +2127,47 @@ const WIDE_RETURN_T floyd_funcdef__replace(floyd_runtime_t* frp, runtime_value_t
 	}
 }
 
+const WIDE_RETURN_T floyd_funcdef__concat(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
+
+	if(type0 != type1){
+		quark::throw_runtime_error("replace() requires argument 4 to be same type of collection.");
+	}
+
+	if(type0.is_string()){
+		const auto a = from_runtime_string(r, arg0_value);
+		const auto b = from_runtime_string(r, arg1_value);
+		const auto result2 = to_runtime_string(r, a + b);
+		return make_wide_return_1x64(result2);
+	}
+	else if(type0.is_vector()){
+		const auto element_type = type0.get_vector_element_type();
+
+		const auto a = unpack_vec_arg(r.type_interner.interner, arg0_value, arg0_type);
+		const auto b = unpack_vec_arg(r.type_interner.interner, arg1_value, arg1_type);
+
+		const auto len2 = a->get_element_count() + b->get_element_count();
+		auto c = alloc_vec(r.heap, len2, len2);
+		copy_elements(&c->get_element_ptr()[0], &a->get_element_ptr()[0], a->get_element_count());
+		copy_elements(&c->get_element_ptr()[a->get_element_count()], &b->get_element_ptr()[0], b->get_element_count());
+
+		if(is_rc_value(element_type)){
+			for(int i = 0 ; i < len2 ; i++){
+				retain_value(r, c->get_element_ptr()[i], element_type);
+			}
+		}
+
+		return make_wide_return_vec(c);
+	}
+	else{
+		//	No other types allowed.
+		UNSUPPORTED();
+	}
+}
+
 JSON_T* floyd_funcdef__script_to_jsonvalue(floyd_runtime_t* frp, runtime_value_t string_s0){
 	auto& r = get_floyd_runtime(frp);
 
@@ -2656,6 +2697,7 @@ std::map<std::string, void*> get_host_functions_map2(){
 		{ "floyd_funcdef__exists", reinterpret_cast<void *>(&floyd_funcdef__exists) },
 		{ "floyd_funcdef__filter", reinterpret_cast<void *>(&floyd_funcdef__filter) },
 		{ "floyd_funcdef__find", reinterpret_cast<void *>(&floyd_funcdef__find) },
+		{ "floyd_funcdef__concat", reinterpret_cast<void *>(&floyd_funcdef__concat) },
 
 		{ "floyd_funcdef__get_fs_environment", reinterpret_cast<void *>(&floyd_funcdef__get_fs_environment) },
 		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&floyd_funcdef__get_fsentries_deep) },

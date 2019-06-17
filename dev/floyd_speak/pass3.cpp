@@ -1075,7 +1075,7 @@ std::pair<analyser_t, expression_t> analyse_size_expression(const analyser_t& a,
 
 	const auto parent_type = parent_expr.second.get_output_type();
 
-	if(parent_type.is_string() | parent_type.is_json_value() || parent_type.is_vector() || parent_type.is_dict()){
+	if(parent_type.is_string() || parent_type.is_json_value() || parent_type.is_vector() || parent_type.is_dict()){
 		return {
 			a_acc,
 			expression_t::make_corecall(get_opcode(make_size_signature()), { parent_expr.second }, make_shared<typeid_t>(make_size_signature()._function_type.get_function_return()))
@@ -1084,6 +1084,32 @@ std::pair<analyser_t, expression_t> analyse_size_expression(const analyser_t& a,
 	else{
 		std::stringstream what;
 		what << "Left hand side does not support size() - it's of type \"" + typeid_to_compact_string(parent_type) + "\".";
+		throw_compiler_error(parent.location, what.str());
+	}
+}
+
+std::pair<analyser_t, expression_t> analyse_concat_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t& lhs, const expression_t& rhs){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(parent.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(lhs.check_invariant());
+	QUARK_ASSERT(rhs.check_invariant());
+
+	auto a_acc = a;
+	const auto lhs_expr = analyse_expression_no_target(a_acc, parent, lhs);
+	a_acc = lhs_expr.first;
+
+	const auto lhs_type = lhs_expr.second.get_output_type();
+
+	if(lhs_type.is_string() || lhs_type.is_vector()){
+		return {
+			a_acc,
+			expression_t::make_corecall(get_opcode(make_concat_signature()), { lhs_expr.second }, make_shared<typeid_t>(make_concat_signature()._function_type.get_function_return()))
+		};
+	}
+	else{
+		std::stringstream what;
+		what << "Only strings and vectors can use concat() - not a type \"" + typeid_to_compact_string(lhs_type) + "\".";
 		throw_compiler_error(parent.location, what.str());
 	}
 }
@@ -1531,106 +1557,22 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 
 		//	string
 		else if(shared_type.is_string()){
-			if(op == expression_type::k_arithmetic_add__2){
-			}
-
-			else if(op == expression_type::k_arithmetic_subtract__2){
-				throw_compiler_error(parent.location, "Operation not allowed on string.");
-			}
-			else if(op == expression_type::k_arithmetic_multiply__2){
-				throw_compiler_error(parent.location, "Operation not allowed on string.");
-			}
-			else if(op == expression_type::k_arithmetic_divide__2){
-				throw_compiler_error(parent.location, "Operation not allowed on string.");
-			}
-			else if(op == expression_type::k_arithmetic_remainder__2){
-				throw_compiler_error(parent.location, "Operation not allowed on string.");
-			}
-
-			else if(op == expression_type::k_logical_and__2){
-				throw_compiler_error(parent.location, "Operation not allowed on string.");
-			}
-			else if(op == expression_type::k_logical_or__2){
-				throw_compiler_error(parent.location, "Operation not allowed on string.");
-			}
-			else{
-				QUARK_ASSERT(false);
-				quark::throw_exception();
-			}
-
-			return {a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			throw_compiler_error(parent.location, "Cannot perform operations on string values.");
 		}
 
 		//	struct
 		else if(shared_type.is_struct()){
-			//	Structs must be exactly the same type to match.
-
-			if(op == expression_type::k_arithmetic_add__2){
-				throw_compiler_error(parent.location, "Operation not allowed on structs.");
-			}
-			else if(op == expression_type::k_arithmetic_subtract__2){
-				throw_compiler_error(parent.location, "Operation not allowed on structs.");
-			}
-			else if(op == expression_type::k_arithmetic_multiply__2){
-				throw_compiler_error(parent.location, "Operation not allowed on structs.");
-			}
-			else if(op == expression_type::k_arithmetic_divide__2){
-				throw_compiler_error(parent.location, "Operation not allowed on structs.");
-			}
-			else if(op == expression_type::k_arithmetic_remainder__2){
-				throw_compiler_error(parent.location, "Operation not allowed on structs.");
-			}
-
-			else if(op == expression_type::k_logical_and__2){
-				throw_compiler_error(parent.location, "Operation not allowed on structs.");
-			}
-			else if(op == expression_type::k_logical_or__2){
-				throw_compiler_error(parent.location, "Operation not allowed on structs.");
-			}
-			else{
-				QUARK_ASSERT(false);
-				quark::throw_exception();
-			}
-
-			return {a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			throw_compiler_error(parent.location, "Cannot perform operations on struct values.");
 		}
 
 		//	vector
 		else if(shared_type.is_vector()){
-			const auto element_type = shared_type.get_vector_element_type();
-			if(op == expression_type::k_arithmetic_add__2){
-			}
-
-			else if(op == expression_type::k_arithmetic_subtract__2){
-				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
-			}
-			else if(op == expression_type::k_arithmetic_multiply__2){
-				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
-			}
-			else if(op == expression_type::k_arithmetic_divide__2){
-				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
-			}
-			else if(op == expression_type::k_arithmetic_remainder__2){
-				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
-			}
-
-
-			else if(op == expression_type::k_logical_and__2){
-				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
-			}
-			else if(op == expression_type::k_logical_or__2){
-				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
-			}
-			else{
-				QUARK_ASSERT(false);
-				quark::throw_exception();
-			}
-			return {a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			throw_compiler_error(parent.location, "Cannot perform operations on vector values.");
 		}
 
 		//	function
 		else if(shared_type.is_function()){
-			throw_compiler_error(parent.location, "Cannot perform operations on two function values.");
+			throw_compiler_error(parent.location, "Cannot perform operations on function values.");
 		}
 		else{
 			throw_compiler_error(parent.location, "Arithmetics failed.");
@@ -1823,6 +1765,10 @@ std::pair<analyser_t, expression_t> analyse_corecall_expression(const analyser_t
 	else if(details.call_name == get_opcode(make_size_signature())){
 		QUARK_ASSERT(details.args.size() == 1);
 		return analyse_size_expression(a, parent, e, details.args[0]);
+	}
+	else if(details.call_name == get_opcode(make_concat_signature())){
+		QUARK_ASSERT(details.args.size() == 2);
+		return analyse_concat_expression(a, parent, e, details.args[0], details.args[1]);
 	}
 	else{
 		QUARK_ASSERT(false);

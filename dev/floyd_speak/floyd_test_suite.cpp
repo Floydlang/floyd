@@ -626,12 +626,12 @@ QUARK_UNIT_TEST("Floyd test suite", "Mutate", "String (which requires RC)", ""){
 
 	)___");
 }
-QUARK_UNIT_TEST("Floyd test suite", "Mutate", "String (which requires RC)", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "Mutate", "String (which requires RC)", ""){
 	run_closed(R"___(
 
 		func string f(){
 			mutable s = "A"
-			s = "<" + s + ">"
+			s = concat("<" , ">"
 			return s
 		}
 

@@ -466,6 +466,54 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 		quark::throw_runtime_error("Calling replace() on unsupported type of value.");
 	}
 }
+
+
+#if 0
+//	c = concat(a, b)
+bc_value_t host__concat(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 2);
+
+	const auto obj = args[0];
+
+	if(obj._type.is_string()){
+		string str2 = obj.get_string_value() + args[1].get_string_value();
+		const auto v = bc_value_t::make_string(str2);
+		return v;
+	}
+	else if(obj._type.is_vector()){
+		if(encode_as_vector_w_inplace_elements(obj._type)){
+			const auto element_type = obj._type.get_vector_element_type();
+			const auto& a = obj._pod._external->_vector_w_inplace_elements;
+			const auto& b = args[1]._pod._external->_vector_w_inplace_elements;
+
+			auto result = immer::vector<bc_inplace_value_t>(a);
+			for(int i = 0 ; i < b.size() ; i++){
+				result = result.push_back(b[i]);
+			}
+			const auto v = make_vector(element_type, result);
+			return v;
+		}
+		else{
+			const auto& a = obj._pod._external->_vector_w_external_elements;
+			const auto element_type = obj._type.get_vector_element_type();
+			const auto& b = args[1]._pod._external->_vector_w_external_elements;
+
+			auto result = immer::vector<bc_external_handle_t>(a);
+			for(int i = 0 ; i < b.size() ; i++){
+				result = result.push_back(b[i]);
+			}
+			const auto v = make_vector(element_type, result);
+			return v;
+		}
+	}
+	else{
+		quark::throw_runtime_error("Calling replace() on unsupported type of value.");
+	}
+}
+#endif
+
+
 /*
 	Reads json from a text string, returning an unpacked json_value.
 */
@@ -1428,6 +1476,7 @@ static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls_internal()
 
 	result.find(make_subset_signature()._function_id)->second = host__subset;
 	result.find(make_replace_signature()._function_id)->second = host__replace;
+	result.find(make_concat_signature()._function_id)->second = nullptr;
 
 
 	result.find(make_script_to_jsonvalue_signature()._function_id)->second = host__script_to_jsonvalue;

@@ -1666,6 +1666,10 @@ static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc,
 		QUARK_ASSERT(details.args.size() == 1);
 		return generate_size_expression(gen_acc, emit_f, e, details.args[0]);
 	}
+	else if(details.call_name == get_opcode(make_concat_signature())){
+		QUARK_ASSERT(details.args.size() == 1);
+		return generate_size_expression(gen_acc, emit_f, e, details.args[0]);
+	}
 	else{
 		QUARK_ASSERT(false);
 	}

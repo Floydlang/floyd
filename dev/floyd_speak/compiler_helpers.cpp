@@ -128,6 +128,7 @@ static expression_t desugar_expression(desugar_t& acc, const expression_t& expre
 		expression_t operator()(const expression_t::arithmetic_t& e) const{
 			const auto lhs = desugar_expression(acc, *e.lhs);
 			const auto rhs = desugar_expression(acc, *e.rhs);
+
 			return expression_t::make_arithmetic(e.op, lhs, rhs, expression._output_type);
 		}
 		expression_t operator()(const expression_t::comparison_t& e) const{

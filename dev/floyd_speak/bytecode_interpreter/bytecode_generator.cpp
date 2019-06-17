@@ -1173,6 +1173,39 @@ static expression_gen_t bcgen_corecall_expression(bcgenerator_t& gen_acc, const 
 			throw std::exception();
 		}
 	}
+	else if(details.call_name == get_opcode(make_concat_signature())){
+		auto body_acc = body;
+
+		const auto& left_expr = bcgen_expression(gen_acc, {}, details.args[0], body_acc);
+		body_acc = left_expr._body;
+
+		const auto& right_expr = bcgen_expression(gen_acc, {}, details.args[1], body_acc);
+		body_acc = right_expr._body;
+
+		const auto type = details.args[0].get_output_type();
+		const auto itype = intern_type(gen_acc, type);
+
+		const auto target_reg2 = target_reg.is_empty() ? add_local_temp(body_acc, type, "temp: arithmetic output") : target_reg;
+
+		if(type.is_string()){
+			body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_concat_strings, target_reg2, left_expr._out, right_expr._out));
+		}
+		else if(type.is_vector()){
+			if(encode_as_vector_w_inplace_elements(type)){
+				body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_concat_vectors_w_inplace_elements, target_reg2, left_expr._out, right_expr._out));
+			}
+			else{
+				body_acc._instrs.push_back(bcgen_instruction_t(bc_opcode::k_concat_vectors_w_external_elements, target_reg2, left_expr._out, right_expr._out));
+			}
+		}
+		else{
+			QUARK_ASSERT(false);
+			quark::throw_exception();
+		}
+
+		QUARK_ASSERT(body_acc.check_invariant());
+		return { body_acc, target_reg2, itype };
+	}
 	else{
 		QUARK_ASSERT(false);
 	}
@@ -1487,45 +1520,10 @@ expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& gen_acc, const varia
 			return conv_opcode.at(details.op);
 		}
 		else if(type.is_string()){
-			static const std::map<expression_type, bc_opcode> conv_opcode = {
-				{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_strings },
-				{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
-
-				{ expression_type::k_logical_and__2, bc_opcode::k_nop },
-				{ expression_type::k_logical_or__2, bc_opcode::k_nop }
-			};
-			return conv_opcode.at(details.op);
+			throw std::exception();
 		}
 		else if(type.is_vector()){
-			if(encode_as_vector_w_inplace_elements(type)){
-				static const std::map<expression_type, bc_opcode> conv_opcode = {
-					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_w_inplace_elements },
-					{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
-
-					{ expression_type::k_logical_and__2, bc_opcode::k_nop },
-					{ expression_type::k_logical_or__2, bc_opcode::k_nop }
-				};
-				return conv_opcode.at(details.op);
-			}
-			else{
-				static const std::map<expression_type, bc_opcode> conv_opcode = {
-					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_w_external_elements },
-					{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
-
-					{ expression_type::k_logical_and__2, bc_opcode::k_nop },
-					{ expression_type::k_logical_or__2, bc_opcode::k_nop }
-				};
-				return conv_opcode.at(details.op);
-			}
+			throw std::exception();
 		}
 		else{
 			QUARK_ASSERT(false);

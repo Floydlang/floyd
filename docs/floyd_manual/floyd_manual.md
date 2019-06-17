@@ -1370,10 +1370,10 @@ assert(a == "e")
 Notice 1: You cannot modify the string using [], only read. Use update() to change a character.
 Notice 2: Floyd returns the character as an int, which is 64 bit signed.
 
-You can append two strings together using the + operation.
+You can concatunate two strings together using the concat()-function. You cannot use the + operator, like some other languages.
 
 ```
-let a = "Hello" + ", world!"
+let a = concat("Hello", ", world!")
 assert(a == "Hello, world!")
 ```
 
@@ -1417,7 +1417,7 @@ Floyd string literals do not support insert hex sequences or Unicode code points
 - __push_back()__: appends a character or string to the right side of the string. The character is stored in an int.
 - __subset()__: extracts a range of characters from the string, as specified by start and end indexes. aka substr()
 - __replace()__: replaces a range of a string with another string. Can also be used to erase or insert.
-
+- __concat()__: glues two strings together.
 
 
 ## VECTOR DATA TYPE
@@ -1450,10 +1450,10 @@ assert(a == 20)
 
 Notice: You cannot modify the vector using [], only read. Use update() to change an element.
 
-You can append two vectors together using the + operation.
+You can append two vectors together using the concat() function.
 
 ```
-let a = [ 10, 20, 30 ] + [ 40, 50 ]
+let a = concat([ 10, 20, 30 ], [ 40, 50 ])
 assert(a == [ 10, 20, 30, 40, 50 ])
 ```
 
@@ -1466,6 +1466,7 @@ assert(a == [ 10, 20, 30, 40, 50 ])
 - __push_back()__: appends an element to the right side of the vector.
 - __subset()__: extracts a range of elements from the vector, as specified by start and end indexes.
 - __replace()__: replaces a range of a vector with another vector. Can also be used to erase or insert.
+- __concat()__: glues two vectors together.
 
 
 
@@ -1920,6 +1921,19 @@ vector replace(vector a, int start, int end, vector new)
 Notice: if you use an empty collection for *new*, you will actually erase the range.
 Notice: by specifying the same index in *start* and *length* you will __insert__ the new collection into the existing collection.
 
+## concat()
+
+Works on strings and vectors. Appends two strings / vectors together to form a new one.
+
+```
+string concat(string a, string b)
+vector concat(vector a, vector b)
+```
+
+|TYPE		  	| EXAMPLE						| RESULT |
+|:---			|:---							|:---
+| string		|concat("hello", " - bye")	| "hello - bye"
+| vector		|concat([1,2,3], [4, 5])	| [1, 2, 3, 4, 5]
 
 
 
