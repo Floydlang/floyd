@@ -923,6 +923,7 @@ host_func_t fr_release_struct__make(llvm::LLVMContext& context, const llvm_type_
 
 
 
+/*
 ////////////////////////////////		allocate_memory()
 
 
@@ -942,7 +943,7 @@ host_func_t floyd_runtime__allocate_memory__make(llvm::LLVMContext& context, con
 	);
 	return { "floyd_runtime__allocate_memory", function_type, reinterpret_cast<void*>(floyd_runtime__allocate_memory) };
 }
-
+*/
 
 
 
@@ -1432,7 +1433,7 @@ std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const
 		fr_retain_struct__make(context, interner),
 		fr_release_struct__make(context, interner),
 
-		floyd_runtime__allocate_memory__make(context, interner),
+//		floyd_runtime__allocate_memory__make(context, interner),
 
 		floyd_runtime__allocate_vector__make(context, interner),
 		fr_alloc_kstr__make(context, interner),
