@@ -1753,7 +1753,7 @@ const typeid_t figure_out_callee_return_type(const analyser_t& a, const statemen
 
 struct fully_resolved_call_t {
 	std::vector<expression_t> args;
-	typeid_t resolved_function_type;
+	typeid_t function_type;
 };
 
 /*
@@ -1817,7 +1817,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_fallthrough_expression(cons
 		expression_t::make_corecall(
 			get_opcode(sign),
 			resolved_call.second.args,
-			make_shared<typeid_t>(resolved_call.second.resolved_function_type.get_function_return())
+			make_shared<typeid_t>(resolved_call.second.function_type.get_function_return())
 		)
 	};
 }
@@ -1950,10 +1950,9 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 			}
 		}
 
-		const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_arg_types);
-		a_acc = call_args_pair.first;
-		const auto call_return_type = figure_out_callee_return_type(a_acc, parent, callee_expr.get_output_type(), call_args_pair.second);
-		return { a_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(call_return_type)) };
+		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, callee_type);
+		a_acc = resolved_call.first;
+		return { a_acc, expression_t::make_call(callee_expr, resolved_call.second.args, make_shared<typeid_t>(resolved_call.second.function_type.get_function_return())) };
 	}
 
 	//	Attempting to call a TYPE? Then this may be a constructor call.
@@ -1966,25 +1965,26 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 			throw_compiler_error(parent.location, "Cannot resolve callee.");
 		}
 		else{
-			const auto callee_type2 = found_symbol_ptr->second._init.get_typeid_value();
+			const auto construct_value_type = found_symbol_ptr->second._init.get_typeid_value();
 
 			//	Convert calls to struct-type into construct-value expression.
-			if(callee_type2.is_struct()){
-				const auto& def = callee_type2.get_struct();
-				const auto callee_arg_types = get_member_types(def._members);
-				const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_arg_types);
-				a_acc = call_args_pair.first;
+			if(construct_value_type.is_struct()){
+				const auto& def = construct_value_type.get_struct();
 
-				return { a_acc, expression_t::make_construct_value_expr(callee_type2, call_args_pair.second) };
+				//	This looks funky but isn't. The struct automatically supports a contruct_value-expression where the arguments are its member values.
+				const auto struct_constructor_callee_type = typeid_t::make_function(construct_value_type, get_member_types(def._members), epure::pure);
+				const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, struct_constructor_callee_type);
+				a_acc = resolved_call.first;
+
+				return { a_acc, expression_t::make_construct_value_expr(construct_value_type, resolved_call.second.args) };
 			}
 
 			//	One argument for primitive types.
 			else{
-				const auto callee_arg_types = vector<typeid_t>{ callee_type2 };
-
-				const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_arg_types);
-				a_acc = call_args_pair.first;
-				return { a_acc, expression_t::make_construct_value_expr(callee_type2, call_args_pair.second) };
+				const auto primitive_constructor_callee_type = typeid_t::make_function(construct_value_type, { construct_value_type }, epure::pure);
+				const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, primitive_constructor_callee_type);
+				a_acc = resolved_call.first;
+				return { a_acc, expression_t::make_construct_value_expr(construct_value_type, resolved_call.second.args) };
 			}
 		}
 	}
