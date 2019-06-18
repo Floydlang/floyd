@@ -1659,25 +1659,6 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 
 
 
-
-std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& a, const statement_t& parent, const vector<expression_t>& call_args, const std::vector<typeid_t>& callee_arg_types){
-	//	arity
-	if(call_args.size() != callee_arg_types.size()){
-		std::stringstream what;
-		what << "Wrong number of arguments in function call, got " << std::to_string(call_args.size()) << ", expected " << std::to_string(callee_arg_types.size()) << ".";
-		throw_compiler_error(parent.location, what.str());
-	}
-
-	auto a_acc = a;
-	vector<expression_t> call_args2;
-	for(int i = 0 ; i < callee_arg_types.size() ; i++){
-		const auto call_arg_pair = analyse_expression_to_target(a_acc, parent, call_args[i], callee_arg_types[i]);
-		a_acc = call_arg_pair.first;
-		call_args2.push_back(call_arg_pair.second);
-	}
-	return { a_acc, call_args2 };
-}
-
 //	When callee has "any" as return type, we need to figure out its return type using its algorithm and the actual types
 const typeid_t figure_out_callee_return_type(const analyser_t& a, const statement_t& parent, const typeid_t& callee_type, const std::vector<expression_t>& call_args){
 	const auto callee_return_type = callee_type.get_function_return();
@@ -1769,16 +1750,28 @@ std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(const ana
 	const std::vector<typeid_t> callee_arg_types = callee_type.get_function_args();
 
 	auto a_acc = a;
-	const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_arg_types);
-	a_acc = call_args_pair.first;
 
-	const auto callee_return_type = figure_out_callee_return_type(a_acc, parent, callee_type, call_args_pair.second);
+	//	arity
+	if(call_args.size() != callee_arg_types.size()){
+		std::stringstream what;
+		what << "Wrong number of arguments in function call, got " << std::to_string(call_args.size()) << ", expected " << std::to_string(callee_arg_types.size()) << ".";
+		throw_compiler_error(parent.location, what.str());
+	}
+
+	std::vector<expression_t> call_args2;
+	for(int i = 0 ; i < callee_arg_types.size() ; i++){
+		const auto call_arg_pair = analyse_expression_to_target(a_acc, parent, call_args[i], callee_arg_types[i]);
+		a_acc = call_arg_pair.first;
+		call_args2.push_back(call_arg_pair.second);
+	}
+
+	const auto callee_return_type = figure_out_callee_return_type(a_acc, parent, callee_type, call_args2);
 	std::vector<typeid_t> resolved_arg_types;
-	for(const auto& e: call_args_pair.second){
+	for(const auto& e: call_args2){
 		resolved_arg_types.push_back(e.get_output_type());
 	}
 	const auto resolved_function_type = typeid_t::make_function(callee_return_type, resolved_arg_types, callee_type.get_function_pure());
-	return { a_acc, { call_args_pair.second, resolved_function_type } };
+	return { a_acc, { call_args2, resolved_function_type } };
 }
 
 
