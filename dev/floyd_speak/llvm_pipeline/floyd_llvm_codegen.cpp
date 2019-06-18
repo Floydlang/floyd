@@ -409,37 +409,8 @@ std::string compose_function_def_name(function_id_t function_id, const function_
 
 
 
-//	Put a value_t into a json
-static llvm::Value* generate_alloc_json(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& input_value_reg, const typeid_t& input_type){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
-
-	auto& builder = gen_acc.builder;
-
-	const auto f = find_function_def(gen_acc, "floyd_runtime__allocate_json");
-	std::vector<llvm::Value*> args2 = {
-		get_callers_fcp(gen_acc.interner, emit_f),
-		generate_cast_to_runtime_value(gen_acc, input_value_reg, input_type),
-		generate_itype_constant(gen_acc, input_type)
-	};
-	return builder.CreateCall(f.llvm_f, args2, "");
-}
 
 
-static llvm::Value* generate_json_to_string(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& json_reg){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
-
-	auto& builder = gen_acc.builder;
-
-	const auto f = find_function_def(gen_acc, "floyd_runtime__json_to_string");
-
-	std::vector<llvm::Value*> args = {
-		get_callers_fcp(gen_acc.interner, emit_f),
-		&json_reg
-	};
-	return builder.CreateCall(f.llvm_f, args, "");
-}
 
 
 /*
@@ -461,7 +432,7 @@ static llvm::Value* generate_allocate_memory(llvm_code_generator_t& gen_acc, llv
 
 
 //??? Make specific version for common types.
-static llvm::Value* generate_push_back(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& parent_reg, const typeid_t& parent_type, llvm::Value& new_value_reg, const typeid_t& value_type){
+static llvm::Value* XXXX_generate_push_back(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& parent_reg, const typeid_t& parent_type, llvm::Value& new_value_reg, const typeid_t& value_type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 
@@ -865,14 +836,14 @@ static llvm::Value* XXXX_generate_corecall_push_back_expression(llvm_code_genera
 	const auto parent_type = args[0].get_output_type();
 	if(parent_type.is_string()){
 		const auto value_type = typeid_t::make_int();
-		auto result = generate_push_back(gen_acc, emit_f, *parent_reg, parent_type, *new_value_reg, value_type);
+		auto result = XXXX_generate_push_back(gen_acc, emit_f, *parent_reg, parent_type, *new_value_reg, value_type);
 		generate_release(gen_acc, emit_f, *parent_reg, parent_type);
 		generate_release(gen_acc, emit_f, *new_value_reg, value_type);
 		return result;
 	}
 	else if(parent_type.is_vector()){
 		const auto value_type = parent_type.get_vector_element_type();
-		auto result = generate_push_back(gen_acc, emit_f, *parent_reg, parent_type, *new_value_reg, value_type);
+		auto result = XXXX_generate_push_back(gen_acc, emit_f, *parent_reg, parent_type, *new_value_reg, value_type);
 		generate_release(gen_acc, emit_f, *parent_reg, parent_type);
 		generate_release(gen_acc, emit_f, *new_value_reg, value_type);
 		return result;
@@ -1726,12 +1697,26 @@ static llvm::Value* generate_construct_primitive(llvm_code_generator_t& gen_acc,
 
 	//	Automatically transform a json_value::string => string at runtime?
 	else if(target_type.is_string() && input_value_type.is_json_value()){
-		auto result = generate_json_to_string(gen_acc, emit_f, *element0_reg);
+		const auto f = find_function_def(gen_acc, "floyd_runtime__json_to_string");
+		std::vector<llvm::Value*> args = {
+			get_callers_fcp(gen_acc.interner, emit_f),
+			element0_reg
+		};
+		auto result = gen_acc.builder.CreateCall(f.llvm_f, args, "");
+
 		generate_release(gen_acc, emit_f, *element0_reg, input_value_type);
 		return result;
 	}
 	else if(target_type.is_json_value()){
-		auto result = generate_alloc_json(gen_acc, emit_f, *element0_reg, input_value_type);
+		//	Put a value_t into a json
+		const auto f = find_function_def(gen_acc, "floyd_runtime__allocate_json");
+		std::vector<llvm::Value*> args2 = {
+			get_callers_fcp(gen_acc.interner, emit_f),
+			generate_cast_to_runtime_value(gen_acc, *element0_reg, input_value_type),
+			generate_itype_constant(gen_acc, input_value_type)
+		};
+		auto result = gen_acc.builder.CreateCall(f.llvm_f, args2, "");
+
 		generate_release(gen_acc, emit_f, *element0_reg, input_value_type);
 		return result;
 	}
