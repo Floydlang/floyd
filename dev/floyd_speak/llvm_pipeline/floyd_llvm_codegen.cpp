@@ -91,10 +91,6 @@ struct resolved_symbol_t {
 
 struct llvm_code_generator_t;
 
-struct global_constructor_t {
-	virtual ~global_constructor_t(){};
-	virtual void store_constant(llvm_code_generator_t& gen_acc, llvm::Function& emit_f) = 0;
-};
 
 
 
@@ -142,8 +138,6 @@ struct llvm_code_generator_t {
 	*/
 	//	One element for each global symbol in AST. Same indexes as in symbol table.
 	std::vector<std::vector<resolved_symbol_t>> scope_path;
-
-	std::vector<std::shared_ptr<global_constructor_t>> global_constructors;
 };
 
 
@@ -603,8 +597,6 @@ static llvm::Value* generate_push_back(llvm_code_generator_t& gen_acc, llvm::Fun
 
 
 
-
-
 /*
 //		llvm::Constant* array = llvm::ConstantDataArray::getString(context, value.get_string_value(), true);
 //		llvm::Constant* c = gen_acc.builder.CreatePointerCast(array, int8Ptr_type);
@@ -643,27 +635,6 @@ static llvm::Value* generate_push_back(llvm_code_generator_t& gen_acc, llvm::Fun
 	llvm::Constant* result3 = llvm::ConstantExpr::getInBoundsGetElementPtr(temp_vec_ptr->getType(), temp_vec_ptr, llvm::ArrayRef<llvm::Constant *>{ Zero, Zero });
 	return result3;
 */
-
-struct init_vec_t : global_constructor_t {
-	init_vec_t(llvm::Constant* vec_space, const std::string& str) :
-		vec_space(vec_space),
-		str(str)
-	{
-	}
-	llvm::Constant* vec_space;
-	std::string str;
-
-	void store_constant(llvm_code_generator_t& gen_acc, llvm::Function& emit_f) override {
-		auto& builder = gen_acc.builder;
-
-		//	Make a global string constant.
-		llvm::Constant* str_ptr = builder.CreateGlobalStringPtr(str);
-
-		llvm::Constant* str_size = llvm::ConstantInt::get(builder.getInt64Ty(), str.size());
-		auto string_vec_ptr_reg = generate_alloc_string_from_strptr(gen_acc, emit_f, *str_ptr, *str_size, "string literal");
-		builder.CreateStore(string_vec_ptr_reg, vec_space);
-	}
-};
 
 /*
 	Put the string characters in a LLVM constant,
@@ -1814,8 +1785,6 @@ static llvm::Value* generate_construct_primitive(llvm_code_generator_t& gen_acc,
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 //	QUARK_ASSERT(details.value_type.is_struct());
 
-	auto& builder = gen_acc.builder;
-
 	const auto target_type = details.value_type;
 	const auto element_count = details.elements.size();
 	QUARK_ASSERT(element_count == 1);
@@ -2392,11 +2361,9 @@ static llvm::Value* generate_global(llvm_code_generator_t& gen_acc, llvm::Functi
 	QUARK_ASSERT(symbol.check_invariant());
 
 	auto& module = *gen_acc.module;
-	auto& context = gen_acc.module->getContext();
 
 	const auto type0 = symbol.get_type();
 	const auto itype = get_exact_llvm_type(gen_acc.interner, type0);
-//	const auto itype = type0.is_struct() ? get_generic_struct_type(gen_acc.interner)->getPointerTo() : get_exact_llvm_type(gen_acc.interner, type0);
 
 	if(symbol._init.is_undefined()){
 		return generate_global0(module, symbol_name, *itype, nullptr);
@@ -2413,7 +2380,6 @@ static llvm::Value* generate_global(llvm_code_generator_t& gen_acc, llvm::Functi
 				constIntValue = CI->getSExtValue();
 			}
 */
-
 		}
 		else{
 			return generate_global0(module, symbol_name, *itype, nullptr);
@@ -2653,10 +2619,6 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const bo
 		//	This includes init2-statements to initialise global variables.
 		generate_statements(gen_acc, emit_f, globals._statements);
 
-		for(const auto& e: gen_acc.global_constructors){
-			e->store_constant(gen_acc, emit_f);
-		}
-
 		builder.CreateBr(destructBB);
 	}
 
@@ -2768,8 +2730,6 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> gen
 
 	return { std::move(module), gen_acc.function_defs };
 }
-
-
 
 
 
