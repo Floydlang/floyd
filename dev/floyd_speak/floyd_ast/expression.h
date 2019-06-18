@@ -143,6 +143,16 @@ namespace floyd {
 				annotated_type
 			);
 		}
+		public: static expression_t make_corecall(
+			const std::string& call_name,
+			const std::vector<expression_t>& args,
+			const typeid_t& annotated_type
+		){
+			return expression_t(
+				{ corecall_t { call_name, args } },
+				std::make_shared<typeid_t>(annotated_type)
+			);
+		}
 
 
 

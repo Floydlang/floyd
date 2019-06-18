@@ -1558,13 +1558,6 @@ WIDE_RETURN_T floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_v
 }
 
 
-
-int64_t floyd_funcdef__find__string(llvm_execution_engine_t& frp, const std::string& str, const std::string& wanted2){
-	const auto r = str.find(wanted2);
-	const auto result = r == std::string::npos ? -1 : static_cast<int64_t>(r);
-	return result;
-}
-
 int64_t floyd_funcdef__find(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, const runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
