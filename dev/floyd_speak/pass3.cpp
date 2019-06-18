@@ -1658,32 +1658,36 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 }
 
 
-std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& a, const statement_t& parent, const vector<expression_t>& call_args, const std::vector<typeid_t>& callee_args){
+
+
+std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& a, const statement_t& parent, const vector<expression_t>& call_args, const std::vector<typeid_t>& callee_arg_types){
 	//	arity
-	if(call_args.size() != callee_args.size()){
+	if(call_args.size() != callee_arg_types.size()){
 		std::stringstream what;
-		what << "Wrong number of arguments in function call, got " << std::to_string(call_args.size()) << ", expected " << std::to_string(callee_args.size()) << ".";
+		what << "Wrong number of arguments in function call, got " << std::to_string(call_args.size()) << ", expected " << std::to_string(callee_arg_types.size()) << ".";
 		throw_compiler_error(parent.location, what.str());
 	}
 
 	auto a_acc = a;
 	vector<expression_t> call_args2;
-	for(int i = 0 ; i < callee_args.size() ; i++){
-		const auto call_arg_pair = analyse_expression_to_target(a_acc, parent, call_args[i], callee_args[i]);
+	for(int i = 0 ; i < callee_arg_types.size() ; i++){
+		const auto call_arg_pair = analyse_expression_to_target(a_acc, parent, call_args[i], callee_arg_types[i]);
 		a_acc = call_arg_pair.first;
 		call_args2.push_back(call_arg_pair.second);
 	}
 	return { a_acc, call_args2 };
 }
 
-const typeid_t figure_out_return_type(const analyser_t& a, const statement_t& parent, const typeid_t& callee_type, const std::vector<expression_t>& call_args){
-	const auto callee_return_value = callee_type.get_function_return();
+//	When callee has "any" as return type, we need to figure out its return type using its algorithm and the actual types
+const typeid_t figure_out_callee_return_type(const analyser_t& a, const statement_t& parent, const typeid_t& callee_type, const std::vector<expression_t>& call_args){
+	const auto callee_return_type = callee_type.get_function_return();
 
 	const auto ret_type_algo = callee_type.get_function_dyn_return_type();
 	switch(ret_type_algo){
 		case typeid_t::return_dyn_type::none:
 			{
-				return callee_return_value;
+				QUARK_ASSERT(callee_return_type.is_any() == false);
+				return callee_return_type;
 			}
 			break;
 
@@ -1747,6 +1751,37 @@ const typeid_t figure_out_return_type(const analyser_t& a, const statement_t& pa
 	}
 }
 
+struct fully_resolved_call_t {
+	std::vector<expression_t> args;
+	typeid_t resolved_function_type;
+};
+
+/*
+	Generates code for computing arguments and figuring out each argument type.
+	Checks the call vs the callee_type.
+	It matches up if the callee uses ANY for argument(s) or return type.
+
+	Returns the computed call arguments and the final, resolved function type which also matches the arguments.
+
+	Throws errors on type mismatches.
+*/
+std::pair<analyser_t, fully_resolved_call_t> analyze_resolve_call_type(const analyser_t& a, const statement_t& parent, const vector<expression_t>& call_args, const typeid_t& callee_type){
+	const std::vector<typeid_t> callee_arg_types = callee_type.get_function_args();
+
+	auto a_acc = a;
+	const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_arg_types);
+	a_acc = call_args_pair.first;
+
+	const auto callee_return_type = figure_out_callee_return_type(a_acc, parent, callee_type, call_args_pair.second);
+	std::vector<typeid_t> resolved_arg_types;
+	for(const auto& e: call_args_pair.second){
+		resolved_arg_types.push_back(e.get_output_type());
+	}
+	const auto resolved_function_type = typeid_t::make_function(callee_return_type, resolved_arg_types, callee_type.get_function_pure());
+	return { a_acc, { call_args_pair.second, resolved_function_type } };
+}
+
+
 
 /*
 	FUNCTION CALLS, CORECALLS
@@ -1775,13 +1810,15 @@ std::pair<analyser_t, expression_t> analyse_corecall_fallthrough_expression(cons
 
 	auto a_acc = a;
 
-	const auto call_args2_kv = analyze_call_args(a_acc, parent, call_args, sign._function_type.get_function_args());
-	a_acc = call_args2_kv.first;
-
-	const auto call_return_type = figure_out_return_type(a_acc, parent, sign._function_type, call_args2_kv.second);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, sign._function_type);
+	a_acc = resolved_call.first;
 	return {
 		a_acc,
-		expression_t::make_corecall(get_opcode(sign), call_args2_kv.second, make_shared<typeid_t>(call_return_type))
+		expression_t::make_corecall(
+			get_opcode(sign),
+			resolved_call.second.args,
+			make_shared<typeid_t>(resolved_call.second.resolved_function_type.get_function_return())
+		)
 	};
 }
 
@@ -1814,8 +1851,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 	//	This is a call to a function-value. Callee is a function-type.
 	const auto callee_type = callee_expr.get_output_type();
 	if(callee_type.is_function()){
-		const auto callee_args = callee_type.get_function_args();
-		const auto callee_return_value = callee_type.get_function_return();
+		const auto callee_arg_types = callee_type.get_function_args();
 		const auto callee_pure = callee_type.get_function_pure();
 
 		if(callsite_pure == epure::pure && callee_pure == epure::impure){
@@ -1914,9 +1950,9 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 			}
 		}
 
-		const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_args);
+		const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_arg_types);
 		a_acc = call_args_pair.first;
-		const auto call_return_type = figure_out_return_type(a_acc, parent, callee_expr.get_output_type(), call_args_pair.second);
+		const auto call_return_type = figure_out_callee_return_type(a_acc, parent, callee_expr.get_output_type(), call_args_pair.second);
 		return { a_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(call_return_type)) };
 	}
 
@@ -1935,8 +1971,8 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 			//	Convert calls to struct-type into construct-value expression.
 			if(callee_type2.is_struct()){
 				const auto& def = callee_type2.get_struct();
-				const auto callee_args = get_member_types(def._members);
-				const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_args);
+				const auto callee_arg_types = get_member_types(def._members);
+				const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_arg_types);
 				a_acc = call_args_pair.first;
 
 				return { a_acc, expression_t::make_construct_value_expr(callee_type2, call_args_pair.second) };
@@ -1944,9 +1980,9 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 
 			//	One argument for primitive types.
 			else{
-				const auto callee_args = vector<typeid_t>{ callee_type2 };
-				QUARK_ASSERT(callee_args.size() == 1);
-				const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_args);
+				const auto callee_arg_types = vector<typeid_t>{ callee_type2 };
+
+				const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_arg_types);
 				a_acc = call_args_pair.first;
 				return { a_acc, expression_t::make_construct_value_expr(callee_type2, call_args_pair.second) };
 			}
@@ -1958,38 +1994,6 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 		throw_compiler_error(parent.location, what.str());
 	}
 }
-
-
-
-#if 0
-std::pair<analyser_t, expression_t> analyse_corecall_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::corecall_t& details){
-	QUARK_ASSERT(a.check_invariant());
-	QUARK_ASSERT(parent.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	QUARK_ASSERT(false);
-
-	if(details.call_name == get_opcode(make_update_signature())){
-		QUARK_ASSERT(details.args.size() == 3);
-		return analyse_corecall_update_expression(a, parent, e, details.args[0], details.args[1], details.args[2]);
-	}
-	else if(details.call_name == get_opcode(make_push_back_signature())){
-		QUARK_ASSERT(details.args.size() == 2);
-		return analyse_corecall_push_back_expression(a, parent, e, details.args[0], details.args[1]);
-	}
-	else if(details.call_name == get_opcode(make_size_signature())){
-		QUARK_ASSERT(details.args.size() == 1);
-		return analyse_corecall_size_expression(a, parent, e, details.args[0]);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-}
-#endif
-
-
-
-
 
 
 std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const analyser_t& a, const statement_t& parent, const expression_t& e0, const expression_t::struct_definition_expr_t& details){
