@@ -343,8 +343,7 @@ typeid_t make__file_pos_t__type(){
 
 
 
-#define VOID typeid_t::make_void()
-#define DYN typeid_t::make_any()
+
 
 libfunc_signature_t make_get_time_of_day_signature(){
 	return { "get_time_of_day", 1005, typeid_t::make_function(typeid_t::make_int(), {}, epure::impure) };
@@ -355,7 +354,7 @@ libfunc_signature_t make_read_text_file_signature(){
 	return { "read_text_file", 1015, typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_string() }, epure::impure) };
 }
 libfunc_signature_t make_write_text_file_signature(){
-	return { "write_text_file", 1016, typeid_t::make_function(VOID, { typeid_t::make_string(), typeid_t::make_string() }, epure::impure) };
+	return { "write_text_file", 1016, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string(), typeid_t::make_string() }, epure::impure) };
 }
 
 
