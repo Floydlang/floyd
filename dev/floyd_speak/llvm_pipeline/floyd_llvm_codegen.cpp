@@ -408,23 +408,6 @@ std::string compose_function_def_name(function_id_t function_id, const function_
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-static llvm::Value* generate_alloc_vec(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, uint64_t element_count, const std::string& debug){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
-
-	auto& context = gen_acc.instance->context;
-	auto& builder = gen_acc.builder;
-
-	const auto f = find_function_def(gen_acc, "floyd_runtime__allocate_vector");
-
-	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), element_count);
-
-	std::vector<llvm::Value*> args2 = {
-		get_callers_fcp(gen_acc.interner, emit_f),
-		element_count_reg
-	};
-	return builder.CreateCall(f.llvm_f, args2, "");
-}
 
 //??? Pass llvm::Value* for runtime-pointer, not emit_f.
 //	Allocates a new string with the contents of a 8bit string.
@@ -443,20 +426,6 @@ static llvm::Value* generate_alloc_string_from_strptr(llvm_code_generator_t& gen
 	return builder.CreateCall(f.llvm_f, args, "");
 }
 
-static llvm::Value* generate_alloc_dict(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const std::string& debug){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
-
-	auto& builder = gen_acc.builder;
-
-	const auto f = find_function_def(gen_acc, "floyd_runtime__allocate_dict");
-
-	//	Local function, called once.
-	std::vector<llvm::Value*> args2 = {
-		get_callers_fcp(gen_acc.interner, emit_f)
-	};
-	return builder.CreateCall(f.llvm_f, args2, "");
-}
 
 static void generate_store_dict_mutable(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& dict_reg, llvm::Value& key_charptr_reg, llvm::Value& value_reg, const typeid_t& value_type){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -556,23 +525,6 @@ static llvm::Value* generate_allocate_memory(llvm_code_generator_t& gen_acc, llv
 	return gen_acc.builder.CreateCall(def.llvm_f, args, "");
 }
 
-static llvm::Value* generate_alloc_struct(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, std::size_t size){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
-
-	auto& context = gen_acc.instance->context;
-	auto& builder = gen_acc.builder;
-
-	const auto f = find_function_def(gen_acc, "floyd_runtime__allocate_struct");
-
-	const auto size_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), size);
-
-	std::vector<llvm::Value*> args2 = {
-		get_callers_fcp(gen_acc.interner, emit_f),
-		size_reg
-	};
-	return builder.CreateCall(f.llvm_f, args2, "");
-}
 
 static llvm::Value* generate_update_struct(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& struct_ptr_reg, const typeid_t& struct_type, llvm::Value& member_index_reg, llvm::Value& new_value_reg, const typeid_t& member_type){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -822,20 +774,6 @@ llvm::Value* generate_constant(llvm_code_generator_t& gen_acc, llvm::Function& e
 	return std::visit(visitor_t{ gen_acc, builder, context, itype, value, emit_f }, type._contents);
 }
 
-//	Returns STRUCT_T*.
-static llvm::Value* generate_allocate_instance(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::StructType& exact_type){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
-
-	auto& builder = gen_acc.builder;
-
-	const llvm::DataLayout& data_layout = gen_acc.module->getDataLayout();
-	const llvm::StructLayout* layout = data_layout.getStructLayout(&exact_type);
-	const auto struct_bytes = layout->getSizeInBytes();
-	auto memory_ptr_reg = generate_alloc_struct(gen_acc, emit_f, struct_bytes);
-//	auto ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, memory_ptr_reg, type.getPointerTo(), "");
-	return memory_ptr_reg;
-}
 
 static std::vector<resolved_symbol_t> generate_symbol_slots(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const symbol_table_t& symbol_table){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -1752,125 +1690,181 @@ static void generate_fill_array(llvm_code_generator_t& gen_acc, llvm::Function& 
 
 
 
+static llvm::Value* generate_construct_vector(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t::value_constructor_t& details){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+	QUARK_ASSERT(details.value_type.is_vector());
+
+	auto& context = gen_acc.instance->context;
+	auto& builder = gen_acc.builder;
+
+	const auto element_count = details.elements.size();
+	const auto element_type0 = details.value_type.get_vector_element_type();
+	auto& element_type1 = *get_exact_llvm_type(gen_acc.interner, element_type0);
+
+	const auto f = find_function_def(gen_acc, "floyd_runtime__allocate_vector");
+	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), element_count);
+	auto vec_ptr_reg = builder.CreateCall(f.llvm_f, { get_callers_fcp(gen_acc.interner, emit_f), element_count_reg }, "");
+	auto ptr_reg = generate_get_vec_element_ptr2(gen_acc, emit_f, *vec_ptr_reg);
+
+	if(element_type0.is_bool()){
+		//	Each bool element is a uint64_t ???
+		auto element_type = llvm::Type::getInt64Ty(context);
+		auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, ptr_reg, element_type->getPointerTo(), "");
+
+		//	Evaluate each element and store it directly into the the vector.
+		int element_index = 0;
+		for(const auto& arg: details.elements){
+			llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, arg);
+			auto element_value_reg = builder.CreateCast(llvm::Instruction::CastOps::ZExt, element0_reg, make_runtime_value_type(context), "");
+			generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
+			element_index++;
+		}
+		return vec_ptr_reg;
+	}
+	else{
+		generate_fill_array(gen_acc, emit_f, *ptr_reg, element_type1, details.elements);
+		return vec_ptr_reg;
+	}
+}
+
+static llvm::Value* generate_construct_dict(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t::value_constructor_t& details){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+	QUARK_ASSERT(details.value_type.is_dict());
+
+	auto& builder = gen_acc.builder;
+
+	const auto element_type0 = details.value_type.get_dict_value_type();
+
+	const auto f = find_function_def(gen_acc, "floyd_runtime__allocate_dict");
+	auto dict_acc_ptr_reg = builder.CreateCall(f.llvm_f, { get_callers_fcp(gen_acc.interner, emit_f) }, "");
+
+	//	Elements are stored as pairs.
+	QUARK_ASSERT((details.elements.size() & 1) == 0);
+
+	const auto count = details.elements.size() / 2;
+	for(int element_index = 0 ; element_index < count ; element_index++){
+		llvm::Value* key0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 0]);
+		llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 1]);
+		generate_store_dict_mutable(gen_acc, emit_f, *dict_acc_ptr_reg, *key0_reg, *element0_reg, element_type0);
+
+		generate_release(gen_acc, emit_f, *key0_reg, typeid_t::make_string());
+	}
+	return dict_acc_ptr_reg;
+}
+
+static llvm::Value* generate_construct_struct(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t::value_constructor_t& details){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+	QUARK_ASSERT(details.value_type.is_struct());
+
+	auto& builder = gen_acc.builder;
+	auto& context = gen_acc.module->getContext();
+
+	const auto target_type = details.value_type;
+	const auto element_count = details.elements.size();
+
+	const auto& struct_def = target_type.get_struct();
+	auto& exact_struct_type = *get_exact_struct_type(gen_acc.interner, target_type);
+	QUARK_ASSERT(struct_def._members.size() == element_count);
+
+
+	const llvm::DataLayout& data_layout = gen_acc.module->getDataLayout();
+	const llvm::StructLayout* layout = data_layout.getStructLayout(&exact_struct_type);
+	const auto struct_bytes = layout->getSizeInBytes();
+
+
+	const auto f = find_function_def(gen_acc, "floyd_runtime__allocate_struct");
+	const auto size_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), struct_bytes);
+	std::vector<llvm::Value*> args2 = {
+		get_callers_fcp(gen_acc.interner, emit_f),
+		size_reg
+	};
+	//	Returns STRUCT_T*.
+	auto generic_struct_ptr_reg = gen_acc.builder.CreateCall(f.llvm_f, args2, "");
+
+
+	//!!! We basically inline the entire constructor here -- bad idea? Maybe generate a construction function and call it.
+	auto base_ptr_reg = generate_get_struct_base_ptr(gen_acc, emit_f, *generic_struct_ptr_reg, target_type);
+
+	int member_index = 0;
+	for(const auto& m: struct_def._members){
+		const auto& arg = details.elements[member_index];
+		llvm::Value* member_value_reg = generate_expression(gen_acc, emit_f, arg);
+
+		const auto gep = std::vector<llvm::Value*>{
+			//	Struct array index.
+			builder.getInt32(0),
+
+			//	Struct member index.
+			builder.getInt32(member_index)
+		};
+		llvm::Value* member_ptr_reg = builder.CreateGEP(&exact_struct_type, base_ptr_reg, gep, "");
+		builder.CreateStore(member_value_reg, member_ptr_reg);
+
+		member_index++;
+	}
+	return generic_struct_ptr_reg;
+}
+
+
+static llvm::Value* generate_construct_primitive(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t::value_constructor_t& details){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+//	QUARK_ASSERT(details.value_type.is_struct());
+
+	auto& builder = gen_acc.builder;
+
+	const auto target_type = details.value_type;
+	const auto element_count = details.elements.size();
+	QUARK_ASSERT(element_count == 1);
+
+	//	Construct a primitive, using int(113) or double(3.14)
+
+	auto element0_reg = generate_expression(gen_acc, emit_f, details.elements[0]);
+	const auto input_value_type = details.elements[0].get_output_type();
+
+	if(target_type.is_bool() || target_type.is_int() || target_type.is_double() || target_type.is_typeid()){
+		return element0_reg;
+	}
+
+	//	NOTICE: string -> json_value needs to be handled at runtime.
+
+	//	Automatically transform a json_value::string => string at runtime?
+	else if(target_type.is_string() && input_value_type.is_json_value()){
+		auto result = generate_json_to_string(gen_acc, emit_f, *element0_reg);
+		generate_release(gen_acc, emit_f, *element0_reg, input_value_type);
+		return result;
+	}
+	else if(target_type.is_json_value()){
+		auto result = generate_alloc_json(gen_acc, emit_f, *element0_reg, input_value_type);
+		generate_release(gen_acc, emit_f, *element0_reg, input_value_type);
+		return result;
+	}
+	else{
+		return element0_reg;
+	}
+}
 
 static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 	QUARK_ASSERT(e.check_invariant());
 
-	auto& context = gen_acc.instance->context;
-	auto& builder = gen_acc.builder;
-
-	const auto target_type = e.get_output_type();
-	const auto element_count = details.elements.size();
-
-	if(target_type.is_vector()){
-		const auto element_type0 = target_type.get_vector_element_type();
-		auto& element_type1 = *get_exact_llvm_type(gen_acc.interner, element_type0);
-
-		auto vec_ptr_reg = generate_alloc_vec(gen_acc, emit_f, element_count, typeid_to_compact_string(target_type));
-		auto ptr_reg = generate_get_vec_element_ptr2(gen_acc, emit_f, *vec_ptr_reg);
-
-
-		if(element_type0.is_bool()){
-			//	Each element is a uint64_t ???
-			auto element_type = llvm::Type::getInt64Ty(context);
-			auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, ptr_reg, element_type->getPointerTo(), "");
-
-			//	Evaluate each element and store it directly into the the vector.
-			int element_index = 0;
-			for(const auto& arg: details.elements){
-				llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, arg);
-				auto element_value_reg = builder.CreateCast(llvm::Instruction::CastOps::ZExt, element0_reg, make_runtime_value_type(context), "");
-				generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
-				element_index++;
-			}
-			return vec_ptr_reg;
-		}
-		else{
-			generate_fill_array(gen_acc, emit_f, *ptr_reg, element_type1, details.elements);
-			return vec_ptr_reg;
-		}
+	if(details.value_type.is_vector()){
+		return generate_construct_vector(gen_acc, emit_f, details);
 	}
-
-	else if(target_type.is_dict()){
-		const auto element_type0 = target_type.get_dict_value_type();
-		auto dict_acc_ptr_reg = generate_alloc_dict(gen_acc, emit_f, typeid_to_compact_string(target_type));
-
-		//	Elements are stored as pairs.
-		QUARK_ASSERT((details.elements.size() & 1) == 0);
-		const auto count = details.elements.size() / 2;
-		for(int element_index = 0 ; element_index < count ; element_index++){
-
-			//	Retain-release should be correct.
-			llvm::Value* key0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 0]);
-			llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, details.elements[element_index * 2 + 1]);
-			generate_store_dict_mutable(gen_acc, emit_f, *dict_acc_ptr_reg, *key0_reg, *element0_reg, element_type0);
-
-			generate_release(gen_acc, emit_f, *key0_reg, typeid_t::make_string());
-		}
-		return dict_acc_ptr_reg;
+	else if(details.value_type.is_dict()){
+		return generate_construct_dict(gen_acc, emit_f, details);
 	}
-	else if(target_type.is_struct()){
-		const auto& struct_def = target_type.get_struct();
-		auto& exact_struct_type = *get_exact_struct_type(gen_acc.interner, target_type);
-		QUARK_ASSERT(struct_def._members.size() == element_count);
-
-		//!!! We basically inline the entire constructor here -- bad idea?
-
-		auto generic_struct_ptr_reg = generate_allocate_instance(gen_acc, emit_f, exact_struct_type);
-		auto base_ptr_reg = generate_get_struct_base_ptr(gen_acc, emit_f, *generic_struct_ptr_reg, target_type);
-
-		int member_index = 0;
-		for(const auto& m: struct_def._members){
-
-			//	Retain-release should be correct.
-
-			const auto& arg = details.elements[member_index];
-			llvm::Value* member_value_reg = generate_expression(gen_acc, emit_f, arg);
-
-			const auto gep = std::vector<llvm::Value*>{
-				//	Struct array index.
-				builder.getInt32(0),
-
-				//	Struct member index.
-				builder.getInt32(member_index)
-			};
-			llvm::Value* member_ptr_reg = builder.CreateGEP(&exact_struct_type, base_ptr_reg, gep, "");
-			builder.CreateStore(member_value_reg, member_ptr_reg);
-
-			member_index++;
-		}
-		return generic_struct_ptr_reg;
+	else if(details.value_type.is_struct()){
+		return generate_construct_struct(gen_acc, emit_f, details);
 	}
 
 	//	Construct a primitive, using int(113) or double(3.14)
 	else{
-		QUARK_ASSERT(element_count == 1);
-
-		auto element0_reg = generate_expression(gen_acc, emit_f, details.elements[0]);
-		const auto input_value_type = details.elements[0].get_output_type();
-
-		if(target_type.is_bool() || target_type.is_int() || target_type.is_double() || target_type.is_typeid()){
-			return element0_reg;
-		}
-
-		//	NOTICE: string -> json_value needs to be handled at runtime.
-
-		//	Automatically transform a json_value::string => string at runtime?
-		else if(target_type.is_string() && input_value_type.is_json_value()){
-			auto result = generate_json_to_string(gen_acc, emit_f, *element0_reg);
-			generate_release(gen_acc, emit_f, *element0_reg, input_value_type);
-			return result;
-		}
-		else if(target_type.is_json_value()){
-			auto result = generate_alloc_json(gen_acc, emit_f, *element0_reg, input_value_type);
-			generate_release(gen_acc, emit_f, *element0_reg, input_value_type);
-			return result;
-		}
-		else{
-			return element0_reg;
-		}
+		return generate_construct_primitive(gen_acc, emit_f, details);
 	}
 }
 
