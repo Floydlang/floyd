@@ -1266,7 +1266,7 @@ host_func_t floyd_runtime__json_to_string__make(llvm::LLVMContext& context, cons
 ////////////////////////////////		compare_values()
 
 
-int32_t floyd_runtime__compare_values(floyd_runtime_t* frp, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
+int8_t floyd_runtime__compare_values(floyd_runtime_t* frp, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto value_type = lookup_type(r.type_interner.interner, type);
@@ -1304,7 +1304,7 @@ int32_t floyd_runtime__compare_values(floyd_runtime_t* frp, int64_t op, const ru
 
 host_func_t floyd_runtime__compare_values__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		llvm::Type::getInt32Ty(context),
+		llvm::Type::getInt1Ty(context),
 		{
 			make_frp_type(interner),
 			llvm::Type::getInt64Ty(context),
