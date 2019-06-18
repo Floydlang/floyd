@@ -1211,7 +1211,7 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 		}
 	}
 	else {
-		quark::throw_runtime_error("Can only update string, vector, dict or struct.");
+		UNSUPPORTED();
 	}
 }
 

@@ -210,13 +210,6 @@ DICT_T* unpack_dict_arg(const type_interner_t& types, runtime_value_t arg_value,
 
 
 
-////////////////////////////////	MISSING FEATURES
-
-
-
-void NOT_IMPLEMENTED_YET() __dead2;
-void UNSUPPORTED() __dead2;
-
 
 
 

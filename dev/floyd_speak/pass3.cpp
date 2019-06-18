@@ -924,17 +924,18 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
-	const auto parent_expr = analyse_expression_no_target(a_acc, parent, args[0]);
-	a_acc = parent_expr.first;
+	const auto collection_expr = analyse_expression_no_target(a_acc, parent, args[0]);
+	a_acc = collection_expr.first;
 
 	const auto new_value_expr = analyse_expression_no_target(a_acc, parent, args[2]);
 	a_acc = new_value_expr.first;
+	const auto collection_type = collection_expr.second.get_output_type();
 
 	const auto& key = args[1];
-	const auto parent_type = parent_expr.second.get_output_type();
+	const auto new_value_type = new_value_expr.second.get_output_type();
 
-	if(parent_type.is_struct()){
-		const auto struct_def = parent_type.get_struct();
+	if(collection_type.is_struct()){
+		const auto struct_def = collection_type.get_struct();
 
 		//	The key needs to be the name of an identifier. It's a compile-time constant.
 		//	It's encoded as a load which is confusing.
@@ -948,9 +949,13 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 				throw_compiler_error(parent.location, what.str());
 			}
 			const auto member_type = struct_def._members[member_index]._type;
+			if(new_value_type != member_type){
+				throw std::runtime_error("New value's type does not match struct member's type.");
+			}
+
 			return {
 				a_acc,
-				expression_t::make_update_member(parent_expr.second, member_index, new_value_expr.second, make_shared<typeid_t>(parent_type))
+				expression_t::make_update_member(collection_expr.second, member_index, new_value_expr.second, make_shared<typeid_t>(collection_type))
 			};
 		}
 		else{
@@ -959,60 +964,74 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 			throw_compiler_error(parent.location, what.str());
 		}
 	}
-	else if(parent_type.is_string()){
+	else if(collection_type.is_string()){
 		const auto key_expr = analyse_expression_no_target(a_acc, parent, key);
 		a_acc = key_expr.first;
 		const auto key_type = key_expr.second.get_output_type();
 
-		if(key_type.is_int()){
-			return {
-				a_acc,
-				expression_t::make_corecall(get_opcode(make_update_signature()), { parent_expr.second, key_expr.second, new_value_expr.second }, make_shared<typeid_t>(parent_type))
-			};
-		}
-		else{
+		if(key_type.is_int() == false){
 			std::stringstream what;
 			what << "Updating string needs an integer index, not a \"" + typeid_to_compact_string(key_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
+
+		if(new_value_type.is_int() == false){
+			std::stringstream what;
+			what << "Updating string needs an integer value, not a \"" + typeid_to_compact_string(key_type) + "\".";
+			throw_compiler_error(parent.location, what.str());
+		}
+
+		return {
+			a_acc,
+			expression_t::make_corecall(get_opcode(make_update_signature()), { collection_expr.second, key_expr.second, new_value_expr.second }, make_shared<typeid_t>(collection_type))
+		};
 	}
-	else if(parent_type.is_vector()){
+	else if(collection_type.is_vector()){
 		const auto key_expr = analyse_expression_no_target(a_acc, parent, key);
 		a_acc = key_expr.first;
 		const auto key_type = key_expr.second.get_output_type();
 
-		if(key_type.is_int()){
-			return {
-				a_acc,
-				expression_t::make_corecall(get_opcode(make_update_signature()), { parent_expr.second, key_expr.second, new_value_expr.second }, make_shared<typeid_t>(parent_type))
-			};
-		}
-		else{
+		if(key_type.is_int() == false){
 			std::stringstream what;
 			what << "Updating vector needs and integer index, not a \"" + typeid_to_compact_string(key_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
+
+		const auto element_type = collection_type.get_vector_element_type();
+		if(element_type != new_value_type){
+			throw std::runtime_error("New value's type must match vector's element type.");
+		}
+
+		return {
+			a_acc,
+			expression_t::make_corecall(get_opcode(make_update_signature()), { collection_expr.second, key_expr.second, new_value_expr.second }, make_shared<typeid_t>(collection_type))
+		};
 	}
-	else if(parent_type.is_dict()){
+	else if(collection_type.is_dict()){
 		const auto key_expr = analyse_expression_no_target(a_acc, parent, key);
 		a_acc = key_expr.first;
 		const auto key_type = key_expr.second.get_output_type();
-		if(key_type.is_string()){
-			return {
-				a_acc,
-				expression_t::make_corecall(get_opcode(make_update_signature()), { parent_expr.second, key_expr.second, new_value_expr.second }, make_shared<typeid_t>(parent_type))
-			};
-		}
-		else{
+
+		if(key_type.is_string() == false){
 			std::stringstream what;
 			what << "Updating dictionary requires string key, not a \"" + typeid_to_compact_string(key_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
+
+		const auto element_type = collection_type.get_dict_value_type();
+		if(element_type != new_value_type){
+			throw std::runtime_error("New value's type must match dict's value type.");
+		}
+
+		return {
+			a_acc,
+			expression_t::make_corecall(get_opcode(make_update_signature()), { collection_expr.second, key_expr.second, new_value_expr.second }, make_shared<typeid_t>(collection_type))
+		};
 	}
 
 	else{
 		std::stringstream what;
-		what << "Left hand side does not support update() - it's of type \"" + typeid_to_compact_string(parent_type) + "\".";
+		what << "Left hand side does not support update() - it's of type \"" + typeid_to_compact_string(collection_type) + "\".";
 		throw_compiler_error(parent.location, what.str());
 	}
 }
@@ -1729,62 +1748,6 @@ const typeid_t figure_out_return_type(const analyser_t& a, const statement_t& pa
 }
 
 
-//	Call has already been matched with make_assert_signature().
-//	All types are explicit.
-std::pair<analyser_t, expression_t> analyse_corecall_assert_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& args){
-	QUARK_ASSERT(a.check_invariant());
-	QUARK_ASSERT(parent.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	QUARK_ASSERT(args.size() == 1);
-
-	auto a_acc = a;
-	const auto arg_expr = analyse_expression_no_target(a_acc, parent, args[0]);
-	a_acc = arg_expr.first;
-
-	QUARK_ASSERT(arg_expr.second.get_output_type().is_bool());
-
-	return {
-		a_acc,
-		expression_t::make_corecall(get_opcode(make_assert_signature()), { arg_expr.second }, make_shared<typeid_t>(make_assert_signature()._function_type.get_function_return()))
-	};
-}
-
-std::pair<analyser_t, expression_t> analyse_corecall_to_string_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& args){
-	QUARK_ASSERT(a.check_invariant());
-	QUARK_ASSERT(parent.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	QUARK_ASSERT(args.size() == 1);
-
-	auto a_acc = a;
-	const auto arg_expr = analyse_expression_no_target(a_acc, parent, args[0]);
-	a_acc = arg_expr.first;
-
-	return {
-		a_acc,
-		expression_t::make_corecall(get_opcode(make_to_string_signature()), { arg_expr.second }, make_shared<typeid_t>(make_to_string_signature()._function_type.get_function_return()))
-	};
-}
-
-std::pair<analyser_t, expression_t> analyse_corecall_to_pretty_string_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& args){
-	QUARK_ASSERT(a.check_invariant());
-	QUARK_ASSERT(parent.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	QUARK_ASSERT(args.size() == 1);
-
-	auto a_acc = a;
-	const auto arg_expr = analyse_expression_no_target(a_acc, parent, args[0]);
-	a_acc = arg_expr.first;
-
-	return {
-		a_acc,
-		expression_t::make_corecall(get_opcode(make_to_pretty_string_signature()), { arg_expr.second }, make_shared<typeid_t>(make_to_pretty_string_signature()._function_type.get_function_return()))
-	};
-}
-
-
 /*
 	FUNCTION CALLS, CORECALLS
 
@@ -1865,13 +1828,13 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 			const auto found_symbol_ptr = resolve_symbol_by_address(a_acc, callee_expr_load2->address);
 			if(found_symbol_ptr != nullptr){
 				if(found_symbol_ptr->first == make_assert_signature().name){
-					return analyse_corecall_assert_expression(a_acc, parent, e, details.args);
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_assert_signature());
 				}
 				else if(found_symbol_ptr->first == make_to_string_signature().name){
-					return analyse_corecall_to_string_expression(a_acc, parent, e, details.args);
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_to_string_signature());
 				}
 				else if(found_symbol_ptr->first == make_to_pretty_string_signature().name){
-					return analyse_corecall_to_pretty_string_expression(a_acc, parent, e, details.args);
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_to_pretty_string_signature());
 				}
 
 				else if(found_symbol_ptr->first == make_typeof_signature().name){

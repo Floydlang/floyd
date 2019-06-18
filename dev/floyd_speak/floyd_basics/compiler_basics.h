@@ -133,6 +133,17 @@ location2_t find_source_line(const std::string& program, const std::string& file
 
 std::pair<location2_t, std::string> refine_compiler_error_with_loc2(const compilation_unit_t& cu, const compiler_error& e);
 
+
+
+
+////////////////////////////////	MISSING FEATURES
+
+
+
+void NOT_IMPLEMENTED_YET() __dead2;
+void UNSUPPORTED() __dead2;
+
+
 }	// floyd
 
 #endif /* compiler_basics_hpp */

@@ -1575,7 +1575,11 @@ int64_t floyd_funcdef__find(floyd_runtime_t* frp, runtime_value_t arg0_value, ru
 		if(type1.is_string() == false){
 			quark::throw_runtime_error("find(string) requires argument 2 to be a string.");
 		}
-		return floyd_funcdef__find__string(r, from_runtime_string(r, arg0_value), from_runtime_string(r, arg1_value));
+		const auto str = from_runtime_string(r, arg0_value);
+		const auto wanted2 = from_runtime_string(r, arg1_value);
+		const auto pos = str.find(wanted2);
+		const auto result = pos == std::string::npos ? -1 : static_cast<int64_t>(pos);
+		return result;
 	}
 	else if(type0.is_vector()){
 		if(type1 != type0.get_vector_element_type()){
@@ -2165,8 +2169,6 @@ runtime_value_t floyd_host__to_string(floyd_runtime_t* frp, runtime_value_t arg0
 
 
 
-//		make_rec("typeof", host__typeof, 1004, typeid_t::make_function(typeid_t::make_typeid(), { DYN }, epure::pure)),
-
 runtime_type_t floyd_host__typeof(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
@@ -2179,24 +2181,16 @@ runtime_type_t floyd_host__typeof(floyd_runtime_t* frp, runtime_value_t arg0_val
 
 
 
-
-
 //??? Split into string/vector/dict versions.
 const WIDE_RETURN_T floyd_funcdef__update(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(frp);
-
-	auto& context = r.instance->context;
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
 	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
 	if(type0.is_string()){
-		if(type1.is_int() == false){
-			throw std::exception();
-		}
-		if(type2.is_int() == false){
-			throw std::exception();
-		}
+		QUARK_ASSERT(type1.is_int());
+		QUARK_ASSERT(type2.is_int());
 
 		const auto str = from_runtime_string(r, arg0_value);
 		const auto index = arg1_value.int_value;
@@ -2214,17 +2208,13 @@ const WIDE_RETURN_T floyd_funcdef__update(floyd_runtime_t* frp, runtime_value_t 
 		return make_wide_return_1x64(result2);
 	}
 	else if(type0.is_vector()){
-		if(type1.is_int() == false){
-			throw std::exception();
-		}
+		QUARK_ASSERT(type1.is_int());
 
 		const auto vec = unpack_vec_arg(r.type_interner.interner, arg0_value, arg0_type);
 		const auto element_type = type0.get_vector_element_type();
 		const auto index = arg1_value.int_value;
 
-		if(element_type != type2){
-			throw std::runtime_error("New value's type must match vector's element type.");
-		}
+		QUARK_ASSERT(element_type == type2);
 
 		if(index < 0 || index >= vec->get_element_count()){
 			throw std::runtime_error("Position argument to update() is outside collection span.");
@@ -2253,9 +2243,8 @@ const WIDE_RETURN_T floyd_funcdef__update(floyd_runtime_t* frp, runtime_value_t 
 		return make_wide_return_vec(result);
 	}
 	else if(type0.is_dict()){
-		if(type1.is_string() == false){
-			throw std::exception();
-		}
+		QUARK_ASSERT(type1.is_string());
+
 		const auto key = from_runtime_string(r, arg1_value);
 		const auto dict = unpack_dict_arg(r.type_interner.interner, arg0_value, arg0_type);
 		const auto value_type = type0.get_dict_value_type();
@@ -2272,71 +2261,10 @@ const WIDE_RETURN_T floyd_funcdef__update(floyd_runtime_t* frp, runtime_value_t 
 			}
 		}
 
-
 		return make_wide_return_dict(dict2);
 	}
 	else if(type0.is_struct()){
 		QUARK_ASSERT(false);
-
-		if(type1.is_string() == false){
-			throw std::exception();
-		}
-		if(type2.is_void() == true){
-			throw std::exception();
-		}
-
-		const auto source_struct_ptr = arg0_value.struct_ptr;
-
-		const auto member_name = from_runtime_string(r, arg1_value);
-		if(member_name == ""){
-			throw std::runtime_error("Must provide name of struct member to update().");
-		}
-
-		const auto& struct_def = type0.get_struct();
-		int member_index = find_struct_member_index(struct_def, member_name);
-		if(member_index == -1){
-			throw std::runtime_error("Position argument to update() is outside collection span.");
-		}
-
-		const auto member_value = from_runtime_value(r, arg2_value, type2);
-
-		//	Make copy of struct, overwrite member in copy.
- 
-		auto& struct_type_llvm = *get_exact_struct_type(r.type_interner, type0);
-
-		const llvm::DataLayout& data_layout = r.ee->getDataLayout();
-		const llvm::StructLayout* layout = data_layout.getStructLayout(&struct_type_llvm);
-		const auto struct_bytes = layout->getSizeInBytes();
-
-		//??? Touches memory twice.
-		auto struct_ptr = alloc_struct(r.heap, struct_bytes);
-		auto struct_base_ptr = struct_ptr->get_data_ptr();
-		std::memcpy(struct_base_ptr, source_struct_ptr->get_data_ptr(), struct_bytes);
-
-		const auto member_offset = layout->getElementOffset(member_index);
-		const auto member_ptr = reinterpret_cast<void*>(struct_base_ptr + member_offset);
-
-		const auto member_type = struct_def._members[member_index]._type;
-
-		if(type2 != member_type){
-			throw std::runtime_error("New value must be same type as struct member's type.");
-		}
-		store_via_ptr(r, member_type, member_ptr, member_value);
-
-		//	Retain every member of new struct.
-		{
-			int member_index = 0;
-			for(const auto& e: struct_def._members){
-				if(is_rc_value(e._type)){
-					const auto offset = layout->getElementOffset(member_index);
-					const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
-					retain_value(r, *member_ptr, e._type);
-					member_index++;
-				}
-			}
-		}
-
-		return make_wide_return_structptr(struct_ptr);
 	}
 	else{
 		//	No other types allowed.

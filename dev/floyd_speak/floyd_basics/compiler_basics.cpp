@@ -20,6 +20,15 @@ const location_t k_no_location(std::numeric_limits<std::size_t>::max());
 
 
 
+void NOT_IMPLEMENTED_YET() {
+	throw std::exception();
+}
+
+void UNSUPPORTED() {
+	QUARK_ASSERT(false);
+	throw std::exception();
+}
+
 
 //	Return one entry per source line PLUS one extra end-marker. int tells byte offset of files that maps to this line-start.
 //	Never returns empty vector, at least 2 elements.
