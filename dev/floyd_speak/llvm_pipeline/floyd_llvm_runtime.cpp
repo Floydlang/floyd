@@ -274,8 +274,6 @@ runtime_value_t to_runtime_struct(llvm_execution_engine_t& runtime, const typeid
 value_t from_runtime_struct(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
-	auto& context = runtime.instance->context;
-
 	const auto& struct_def = type.get_struct();
 	const auto struct_base_ptr = encoded_value.struct_ptr->get_data_ptr();
 
@@ -294,7 +292,6 @@ value_t from_runtime_struct(const llvm_execution_engine_t& runtime, const runtim
 	}
 	return value_t::make_struct_value(type, members);
 }
-
 
 
 runtime_value_t to_runtime_vector(llvm_execution_engine_t& r, const value_t& value){
@@ -919,34 +916,6 @@ host_func_t fr_release_struct__make(llvm::LLVMContext& context, const llvm_type_
 
 
 
-
-
-
-
-/*
-////////////////////////////////		allocate_memory()
-
-
-const uint8_t* floyd_runtime__allocate_memory(floyd_runtime_t* frp, int64_t bytes){
-	auto s = reinterpret_cast<uint8_t*>(std::calloc(1, bytes));
-	return s;
-}
-
-host_func_t floyd_runtime__allocate_memory__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
-	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		llvm::Type::getVoidTy(context)->getPointerTo(),
-		{
-			make_frp_type(interner),
-			llvm::Type::getInt64Ty(context)
-		},
-		false
-	);
-	return { "floyd_runtime__allocate_memory", function_type, reinterpret_cast<void*>(floyd_runtime__allocate_memory) };
-}
-*/
-
-
-
 ////////////////////////////////		allocate_vector()
 
 
@@ -1351,8 +1320,6 @@ const WIDE_RETURN_T fr_update_struct_member(floyd_runtime_t* frp, STRUCT_T* s, r
 	QUARK_ASSERT(s != nullptr);
 	QUARK_ASSERT(member_index != -1);
 
-	auto& context = r.instance->context;
-
 	const auto type0 = lookup_type(r.type_interner.interner, struct_type);
 	const auto new_value_type0 = lookup_type(r.type_interner.interner, new_value_type);
 	QUARK_ASSERT(type0.is_struct());
@@ -1415,10 +1382,6 @@ host_func_t fr_update_struct_member__make(llvm::LLVMContext& context, const llvm
 
 
 
-
-
-
-
 std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	std::vector<host_func_t> result = {
 		fr_retain_vec__make(context, interner),
@@ -1433,23 +1396,16 @@ std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const
 		fr_retain_struct__make(context, interner),
 		fr_release_struct__make(context, interner),
 
-//		floyd_runtime__allocate_memory__make(context, interner),
-
 		floyd_runtime__allocate_vector__make(context, interner),
 		fr_alloc_kstr__make(context, interner),
 		floyd_runtime__concatunate_vectors__make(context, interner),
-
 		floyd_runtime__allocate_dict__make(context, interner),
 		floyd_runtime__store_dict_mutable__make(context, interner),
 		floyd_runtime__lookup_dict__make(context, interner),
-
 		floyd_runtime__allocate_json__make(context, interner),
 		floyd_runtime__lookup_json__make(context, interner),
-
 		floyd_runtime__json_to_string__make(context, interner),
-
 		floyd_runtime__compare_values__make(context, interner),
-
 		floyd_runtime__allocate_struct__make(context, interner),
 
 		fr_update_struct_member__make(context, interner)
@@ -1470,8 +1426,6 @@ std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const
 
 
 
-
-
 struct native_binary_t {
 	VEC_T* ascii40;
 };
@@ -1485,6 +1439,7 @@ struct native_sha1_t {
 
 void floyd_funcdef__assert(floyd_runtime_t* frp, runtime_value_t arg){
 	auto& r = get_floyd_runtime(frp);
+	QUARK_ASSERT(arg.bool_value == 0 || arg.bool_value == 1);
 
 	bool ok = arg.bool_value == 0 ? false : true;
 	if(!ok){
@@ -1492,82 +1447,6 @@ void floyd_funcdef__assert(floyd_runtime_t* frp, runtime_value_t arg){
 		quark::throw_runtime_error("Floyd assertion failed.");
 	}
 }
-
-STRUCT_T* floyd_funcdef__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* binary_ptr){
-	auto& r = get_floyd_runtime(frp);
-	QUARK_ASSERT(binary_ptr != nullptr);
-
-	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr->get_data_ptr());
-
-	const auto& s = from_runtime_string(r, runtime_value_t { .vector_ptr = binary.ascii40 });
-	const auto sha1 = CalcSHA1(s);
-	const auto ascii40 = SHA1ToStringPlain(sha1);
-
-	const auto a = value_t::make_struct_value(
-		typeid_t::make_struct2({ member_t{ typeid_t::make_string(), "ascii40" } }),
-		{ value_t::make_string(ascii40) }
-	);
-
-	auto result = to_runtime_value(r, a);
-	return result.struct_ptr;
-}
-
-STRUCT_T* floyd_funcdef__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t s0){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto& s = from_runtime_string(r, s0);
-	const auto sha1 = CalcSHA1(s);
-	const auto ascii40 = SHA1ToStringPlain(sha1);
-
-	const auto a = value_t::make_struct_value(
-		typeid_t::make_struct2({ member_t{ typeid_t::make_string(), "ascii40" } }),
-		{ value_t::make_string(ascii40) }
-	);
-
-	auto result = to_runtime_value(r, a);
-	return result.struct_ptr;
-}
-
-void floyd_funcdef__create_directory_branch(floyd_runtime_t* frp, runtime_value_t path0){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto path = from_runtime_string(r, path0);
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("create_directory_branch() illegal input path.");
-	}
-
-	MakeDirectoriesDeep(path);
-}
-
-void floyd_funcdef__delete_fsentry_deep(floyd_runtime_t* frp, runtime_value_t path0){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto path = from_runtime_string(r, path0);
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("delete_fsentry_deep() illegal input path.");
-	}
-
-	DeleteDeep(path);
-}
-
-uint8_t floyd_funcdef__does_fsentry_exist(floyd_runtime_t* frp, runtime_value_t path0){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto path = from_runtime_string(r, path0);
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("does_fsentry_exist() illegal input path.");
-	}
-
-	bool exists = DoesEntryExist(path);
-	const auto result = value_t::make_bool(exists);
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-	return exists ? 0x01 : 0x00;
-}
-
 
 
 WIDE_RETURN_T floyd_host_function__erase(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
@@ -1627,10 +1506,7 @@ uint32_t floyd_funcdef__exists(floyd_runtime_t* frp, runtime_value_t arg0_value,
 
 
 
-
-
 typedef runtime_value_t (*FILTER_F)(floyd_runtime_t* frp, runtime_value_t element_value);
-
 
 //	[E] filter([E], bool f(E e))
 WIDE_RETURN_T floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
@@ -1680,8 +1556,7 @@ WIDE_RETURN_T floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_v
 	}
 	return make_wide_return_vec(result_vec);
 }
-	
-	
+
 
 
 int64_t floyd_funcdef__find__string(llvm_execution_engine_t& frp, const std::string& str, const std::string& wanted2){
@@ -1731,91 +1606,6 @@ int64_t floyd_funcdef__find(floyd_runtime_t* frp, runtime_value_t arg0_value, ru
 	}
 }
 
-
-
-runtime_value_t floyd_funcdef__get_fs_environment(floyd_runtime_t* frp){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto dirs = GetDirectories();
-
-	const auto result = value_t::make_struct_value(
-		make__fs_environment_t__type(),
-		{
-			value_t::make_string(dirs.home_dir),
-			value_t::make_string(dirs.documents_dir),
-			value_t::make_string(dirs.desktop_dir),
-
-			value_t::make_string(dirs.application_support),
-			value_t::make_string(dirs.preferences_dir),
-			value_t::make_string(dirs.cache_dir),
-			value_t::make_string(dirs.temp_dir),
-
-			value_t::make_string(dirs.process_dir)
-		}
-	);
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	const auto v = to_runtime_value(r, result);
-	return v;
-}
-
-VEC_T* floyd_funcdef__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto path = from_runtime_string(r, path0);
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("get_fsentries_deep() illegal input path.");
-	}
-
-	const auto a = GetDirItemsDeep(path);
-	const auto elements = directory_entries_to_values(a);
-	const auto k_fsentry_t__type = make__fsentry_t__type();
-	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(vec2);
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	const auto v = to_runtime_value(r, vec2);
-	return v.vector_ptr;
-}
-
-
-VEC_T* floyd_funcdef__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto path = from_runtime_string(r, path0);
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("get_fsentries_shallow() illegal input path.");
-	}
-
-	const auto a = GetDirItems(path);
-	const auto elements = directory_entries_to_values(a);
-	const auto k_fsentry_t__type = make__fsentry_t__type();
-	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(vec2);
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	const auto v = to_runtime_value(r, vec2);
-	return v.vector_ptr;
-}
-
-STRUCT_T* floyd_funcdef__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto result = impl__get_fsentry_info(from_runtime_string(r, path0));
-	const auto v = to_runtime_value(r, result);
-	return v.struct_ptr;
-}
-
 int64_t floyd_host_function__get_json_type(floyd_runtime_t* frp, JSON_T* json_ptr){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(json_ptr != nullptr);
@@ -1825,14 +1615,6 @@ int64_t floyd_host_function__get_json_type(floyd_runtime_t* frp, JSON_T* json_pt
 	return result;
 }
 
-int64_t floyd_funcdef__get_time_of_day(floyd_runtime_t* frp){
-	auto& r = get_floyd_runtime(frp);
-
-	std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> elapsed_seconds = t - r._start_time;
-	const auto ms = elapsed_seconds.count() * 1000.0;
-	return static_cast<int64_t>(ms);
-}
 
 runtime_value_t floyd_funcdef__jsonvalue_to_script(floyd_runtime_t* frp, JSON_T* json_ptr){
 	auto& r = get_floyd_runtime(frp);
@@ -2002,7 +1784,6 @@ void floyd_host_function_1022(floyd_runtime_t* frp, runtime_value_t arg){
 
 
 
-//		make_rec("reduce", host__reduce, 1035, typeid_t::make_function_dyn_return({ DYN, DYN, DYN }, epure::pure, typeid_t::return_dyn_type::arg1)),
 
 	typedef runtime_value_t (*REDUCE_F)(floyd_runtime_t* frp, runtime_value_t acc_value, runtime_value_t element_value);
 
@@ -2034,23 +1815,6 @@ WIDE_RETURN_T floyd_funcdef__reduce(floyd_runtime_t* frp, runtime_value_t arg0_v
 		acc = acc2;
 	}
 	return make_wide_return_2x64(acc, {} );
-}
-
-
-void floyd_funcdef__rename_fsentry(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t name0){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto path = from_runtime_string(r, path0);
-
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("rename_fsentry() illegal input path.");
-	}
-	const auto n = from_runtime_string(r, name0);
-	if(n.empty()){
-		quark::throw_runtime_error("rename_fsentry() illegal input name.");
-	}
-
-	RenameEntry(path, n);
 }
 
 
@@ -2512,7 +2276,6 @@ const WIDE_RETURN_T floyd_funcdef__update(floyd_runtime_t* frp, runtime_value_t 
 		return make_wide_return_dict(dict2);
 	}
 	else if(type0.is_struct()){
-
 		QUARK_ASSERT(false);
 
 		if(type1.is_string() == false){
@@ -2593,6 +2356,96 @@ JSON_T* floyd_funcdef__value_to_jsonvalue(floyd_runtime_t* frp, runtime_value_t 
 
 
 
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	FILELIB FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+STRUCT_T* floyd_funcdef__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* binary_ptr){
+	auto& r = get_floyd_runtime(frp);
+	QUARK_ASSERT(binary_ptr != nullptr);
+
+	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr->get_data_ptr());
+
+	const auto& s = from_runtime_string(r, runtime_value_t { .vector_ptr = binary.ascii40 });
+	const auto sha1 = CalcSHA1(s);
+	const auto ascii40 = SHA1ToStringPlain(sha1);
+
+	const auto a = value_t::make_struct_value(
+		typeid_t::make_struct2({ member_t{ typeid_t::make_string(), "ascii40" } }),
+		{ value_t::make_string(ascii40) }
+	);
+
+	auto result = to_runtime_value(r, a);
+	return result.struct_ptr;
+}
+
+STRUCT_T* floyd_funcdef__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t s0){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto& s = from_runtime_string(r, s0);
+	const auto sha1 = CalcSHA1(s);
+	const auto ascii40 = SHA1ToStringPlain(sha1);
+
+	const auto a = value_t::make_struct_value(
+		typeid_t::make_struct2({ member_t{ typeid_t::make_string(), "ascii40" } }),
+		{ value_t::make_string(ascii40) }
+	);
+
+	auto result = to_runtime_value(r, a);
+	return result.struct_ptr;
+}
+
+void floyd_funcdef__create_directory_branch(floyd_runtime_t* frp, runtime_value_t path0){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto path = from_runtime_string(r, path0);
+	if(is_valid_absolute_dir_path(path) == false){
+		quark::throw_runtime_error("create_directory_branch() illegal input path.");
+	}
+
+	MakeDirectoriesDeep(path);
+}
+
+void floyd_funcdef__delete_fsentry_deep(floyd_runtime_t* frp, runtime_value_t path0){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto path = from_runtime_string(r, path0);
+	if(is_valid_absolute_dir_path(path) == false){
+		quark::throw_runtime_error("delete_fsentry_deep() illegal input path.");
+	}
+
+	DeleteDeep(path);
+}
+
+uint8_t floyd_funcdef__does_fsentry_exist(floyd_runtime_t* frp, runtime_value_t path0){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto path = from_runtime_string(r, path0);
+	if(is_valid_absolute_dir_path(path) == false){
+		quark::throw_runtime_error("does_fsentry_exist() illegal input path.");
+	}
+
+	bool exists = DoesEntryExist(path);
+	const auto result = value_t::make_bool(exists);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(result);
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+	return exists ? 0x01 : 0x00;
+}
+
+
 	static void write_text_file(const std::string& abs_path, const std::string& data){
 		const auto up = UpDir2(abs_path);
 
@@ -2616,30 +2469,118 @@ void floyd_funcdef__write_text_file(floyd_runtime_t* frp, runtime_value_t path0,
 	write_text_file(path, file_contents);
 }
 
-void floyd_host_function_1037(floyd_runtime_t* frp, runtime_value_t arg){
-	hook(__FUNCTION__, frp, arg);
+runtime_value_t floyd_funcdef__get_fs_environment(floyd_runtime_t* frp){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto dirs = GetDirectories();
+
+	const auto result = value_t::make_struct_value(
+		make__fs_environment_t__type(),
+		{
+			value_t::make_string(dirs.home_dir),
+			value_t::make_string(dirs.documents_dir),
+			value_t::make_string(dirs.desktop_dir),
+
+			value_t::make_string(dirs.application_support),
+			value_t::make_string(dirs.preferences_dir),
+			value_t::make_string(dirs.cache_dir),
+			value_t::make_string(dirs.temp_dir),
+
+			value_t::make_string(dirs.process_dir)
+		}
+	);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(result);
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	const auto v = to_runtime_value(r, result);
+	return v;
 }
 
-void floyd_host_function_1038(floyd_runtime_t* frp, runtime_value_t arg){
-	hook(__FUNCTION__, frp, arg);
+VEC_T* floyd_funcdef__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto path = from_runtime_string(r, path0);
+	if(is_valid_absolute_dir_path(path) == false){
+		quark::throw_runtime_error("get_fsentries_deep() illegal input path.");
+	}
+
+	const auto a = GetDirItemsDeep(path);
+	const auto elements = directory_entries_to_values(a);
+	const auto k_fsentry_t__type = make__fsentry_t__type();
+	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(vec2);
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	const auto v = to_runtime_value(r, vec2);
+	return v.vector_ptr;
 }
 
-void floyd_host_function_1039(floyd_runtime_t* frp, runtime_value_t arg){
-	hook(__FUNCTION__, frp, arg);
+
+VEC_T* floyd_funcdef__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto path = from_runtime_string(r, path0);
+	if(is_valid_absolute_dir_path(path) == false){
+		quark::throw_runtime_error("get_fsentries_shallow() illegal input path.");
+	}
+
+	const auto a = GetDirItems(path);
+	const auto elements = directory_entries_to_values(a);
+	const auto k_fsentry_t__type = make__fsentry_t__type();
+	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(vec2);
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	const auto v = to_runtime_value(r, vec2);
+	return v.vector_ptr;
+}
+
+STRUCT_T* floyd_funcdef__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto result = impl__get_fsentry_info(from_runtime_string(r, path0));
+	const auto v = to_runtime_value(r, result);
+	return v.struct_ptr;
+}
+
+int64_t floyd_funcdef__get_time_of_day(floyd_runtime_t* frp){
+	auto& r = get_floyd_runtime(frp);
+
+	std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> elapsed_seconds = t - r._start_time;
+	const auto ms = elapsed_seconds.count() * 1000.0;
+	return static_cast<int64_t>(ms);
+}
+
+void floyd_funcdef__rename_fsentry(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t name0){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto path = from_runtime_string(r, path0);
+
+	if(is_valid_absolute_dir_path(path) == false){
+		quark::throw_runtime_error("rename_fsentry() illegal input path.");
+	}
+	const auto n = from_runtime_string(r, name0);
+	if(n.empty()){
+		quark::throw_runtime_error("rename_fsentry() illegal input name.");
+	}
+
+	RenameEntry(path, n);
 }
 
 
 
 
-///////////////		TEST
 
-void floyd_host_function_2002(floyd_runtime_t* frp, runtime_value_t arg){
-	hook(__FUNCTION__, frp, arg);
-}
-
-void floyd_host_function_2003(floyd_runtime_t* frp, runtime_value_t arg){
-	hook(__FUNCTION__, frp, arg);
-}
 
 
 
@@ -2647,46 +2588,57 @@ std::map<std::string, void*> get_host_functions_map2(){
 
 	////////////////////////////////		CORE FUNCTIONS AND HOST FUNCTIONS
 	const std::map<std::string, void*> host_functions_map = {
+
+		////////////////////////////////		CORECALLS
+
 		{ "floyd_funcdef__assert", reinterpret_cast<void *>(&floyd_funcdef__assert) },
+		{ "floyd_funcdef__to_string", reinterpret_cast<void *>(&floyd_host__to_string) },
+		{ "floyd_funcdef__to_pretty_string", reinterpret_cast<void *>(&floyd_funcdef__to_pretty_string) },
+		{ "floyd_funcdef__typeof", reinterpret_cast<void *>(&floyd_host__typeof) },
+
+		{ "floyd_funcdef__update", reinterpret_cast<void *>(&floyd_funcdef__update) },
+		{ "floyd_funcdef__size", reinterpret_cast<void *>(&floyd_funcdef__size) },
+		{ "floyd_funcdef__find", reinterpret_cast<void *>(&floyd_funcdef__find) },
+		{ "floyd_funcdef__exists", reinterpret_cast<void *>(&floyd_funcdef__exists) },
+		{ "floyd_funcdef__erase", reinterpret_cast<void *>(&floyd_host_function__erase) },
+		{ "floyd_funcdef__push_back", reinterpret_cast<void *>(&floyd_funcdef__push_back) },
+		{ "floyd_funcdef__subset", reinterpret_cast<void *>(&floyd_funcdef__subset) },
+		{ "floyd_funcdef__replace", reinterpret_cast<void *>(&floyd_funcdef__replace) },
+
+		{ "floyd_funcdef__jsonvalue_to_script", reinterpret_cast<void *>(&floyd_funcdef__jsonvalue_to_script) },
+		{ "floyd_funcdef__jsonvalue_to_value", reinterpret_cast<void *>(&floyd_funcdef__jsonvalue_to_value) },
+		{ "floyd_funcdef__script_to_jsonvalue", reinterpret_cast<void *>(&floyd_funcdef__script_to_jsonvalue) },
+		{ "floyd_funcdef__value_to_jsonvalue", reinterpret_cast<void *>(&floyd_funcdef__value_to_jsonvalue) },
+
+		{ "floyd_funcdef__get_json_type", reinterpret_cast<void *>(&floyd_host_function__get_json_type) },
+
+		{ "floyd_funcdef__map", reinterpret_cast<void *>(&floyd_funcdef__map) },
+		{ "floyd_funcdef__map_string", reinterpret_cast<void *>(&floyd_funcdef__map_string) },
+		{ "floyd_funcdef__filter", reinterpret_cast<void *>(&floyd_funcdef__filter) },
+		{ "floyd_funcdef__reduce", reinterpret_cast<void *>(&floyd_funcdef__reduce) },
+		{ "floyd_funcdef__supermap", reinterpret_cast<void *>(&floyd_funcdef__supermap) },
+
+		{ "floyd_funcdef__print", reinterpret_cast<void *>(&floyd_funcdef__print) },
+		{ "floyd_funcdef__send", reinterpret_cast<void *>(&floyd_funcdef__send) },
+
+
+
+		////////////////////////////////		FILE LIB
+
+		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&floyd_funcdef__write_text_file) },
+		{ "floyd_funcdef__read_text_file", reinterpret_cast<void *>(&floyd_host_function_1022) },
+		{ "floyd_funcdef__rename_fsentry", reinterpret_cast<void *>(&floyd_funcdef__rename_fsentry) },
 		{ "floyd_funcdef__calc_binary_sha1", reinterpret_cast<void *>(&floyd_funcdef__calc_binary_sha1) },
 		{ "floyd_funcdef__calc_string_sha1", reinterpret_cast<void *>(&floyd_funcdef__calc_string_sha1) },
 		{ "floyd_funcdef__create_directory_branch", reinterpret_cast<void *>(&floyd_funcdef__create_directory_branch) },
 		{ "floyd_funcdef__delete_fsentry_deep", reinterpret_cast<void *>(&floyd_funcdef__delete_fsentry_deep) },
 		{ "floyd_funcdef__does_fsentry_exist", reinterpret_cast<void *>(&floyd_funcdef__does_fsentry_exist) },
-		{ "floyd_funcdef__erase", reinterpret_cast<void *>(&floyd_host_function__erase) },
-		{ "floyd_funcdef__exists", reinterpret_cast<void *>(&floyd_funcdef__exists) },
-		{ "floyd_funcdef__filter", reinterpret_cast<void *>(&floyd_funcdef__filter) },
-		{ "floyd_funcdef__find", reinterpret_cast<void *>(&floyd_funcdef__find) },
 
 		{ "floyd_funcdef__get_fs_environment", reinterpret_cast<void *>(&floyd_funcdef__get_fs_environment) },
 		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&floyd_funcdef__get_fsentries_deep) },
 		{ "floyd_funcdef__get_fsentries_shallow", reinterpret_cast<void *>(&floyd_funcdef__get_fsentries_shallow) },
 		{ "floyd_funcdef__get_fsentry_info", reinterpret_cast<void *>(&floyd_funcdef__get_fsentry_info) },
-		{ "floyd_funcdef__get_json_type", reinterpret_cast<void *>(&floyd_host_function__get_json_type) },
-		{ "floyd_funcdef__get_time_of_day", reinterpret_cast<void *>(&floyd_funcdef__get_time_of_day) },
-		{ "floyd_funcdef__jsonvalue_to_script", reinterpret_cast<void *>(&floyd_funcdef__jsonvalue_to_script) },
-		{ "floyd_funcdef__jsonvalue_to_value", reinterpret_cast<void *>(&floyd_funcdef__jsonvalue_to_value) },
-		{ "floyd_funcdef__map", reinterpret_cast<void *>(&floyd_funcdef__map) },
-		{ "floyd_funcdef__map_string", reinterpret_cast<void *>(&floyd_funcdef__map_string) },
-
-		{ "floyd_funcdef__print", reinterpret_cast<void *>(&floyd_funcdef__print) },
-		{ "floyd_funcdef__push_back", reinterpret_cast<void *>(&floyd_funcdef__push_back) },
-		{ "floyd_funcdef__read_text_file", reinterpret_cast<void *>(&floyd_host_function_1022) },
-		{ "floyd_funcdef__reduce", reinterpret_cast<void *>(&floyd_funcdef__reduce) },
-		{ "floyd_funcdef__rename_fsentry", reinterpret_cast<void *>(&floyd_funcdef__rename_fsentry) },
-		{ "floyd_funcdef__replace", reinterpret_cast<void *>(&floyd_funcdef__replace) },
-		{ "floyd_funcdef__script_to_jsonvalue", reinterpret_cast<void *>(&floyd_funcdef__script_to_jsonvalue) },
-		{ "floyd_funcdef__send", reinterpret_cast<void *>(&floyd_funcdef__send) },
-		{ "floyd_funcdef__size", reinterpret_cast<void *>(&floyd_funcdef__size) },
-		{ "floyd_funcdef__subset", reinterpret_cast<void *>(&floyd_funcdef__subset) },
-
-		{ "floyd_funcdef__supermap", reinterpret_cast<void *>(&floyd_funcdef__supermap) },
-		{ "floyd_funcdef__to_pretty_string", reinterpret_cast<void *>(&floyd_funcdef__to_pretty_string) },
-		{ "floyd_funcdef__to_string", reinterpret_cast<void *>(&floyd_host__to_string) },
-		{ "floyd_funcdef__typeof", reinterpret_cast<void *>(&floyd_host__typeof) },
-		{ "floyd_funcdef__update", reinterpret_cast<void *>(&floyd_funcdef__update) },
-		{ "floyd_funcdef__value_to_jsonvalue", reinterpret_cast<void *>(&floyd_funcdef__value_to_jsonvalue) },
-		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&floyd_funcdef__write_text_file) }
+		{ "floyd_funcdef__get_time_of_day", reinterpret_cast<void *>(&floyd_funcdef__get_time_of_day) }
 	};
 	return host_functions_map;
 }
@@ -2712,27 +2664,6 @@ uint64_t call_floyd_runtime_deinit(llvm_execution_engine_t& ee){
 	QUARK_ASSERT(a_result == 668);
 	return a_result;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

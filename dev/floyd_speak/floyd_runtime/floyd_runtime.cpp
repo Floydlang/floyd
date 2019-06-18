@@ -287,22 +287,17 @@ static std::vector<corecall_signature_t> get_host_function_records(){
 		make_typeof_signature(),
 
 		make_update_signature(),
-
 		make_size_signature(),
-
 		make_find_signature(),
 		make_exists_signature(),
 		make_erase_signature(),
 		make_push_back_signature(),
-
 		make_subset_signature(),
 		make_replace_signature(),
-
 
 		make_script_to_jsonvalue_signature(),
 		make_jsonvalue_to_script_signature(),
 		make_value_to_jsonvalue_signature(),
-
 		make_jsonvalue_to_value_signature(),
 
 		make_get_json_type_signature(),
