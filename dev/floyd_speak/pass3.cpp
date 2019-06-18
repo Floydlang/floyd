@@ -1639,8 +1639,6 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 }
 
 
-//	callee (plural callees)
-//	(telephony) The person who is called by the caller (on the telephone).
 std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& a, const statement_t& parent, const vector<expression_t>& call_args, const std::vector<typeid_t>& callee_args){
 	//	arity
 	if(call_args.size() != callee_args.size()){
@@ -1659,13 +1657,11 @@ std::pair<analyser_t, vector<expression_t>> analyze_call_args(const analyser_t& 
 	return { a_acc, call_args2 };
 }
 
-//??? Factor-out this functions and put lower in stack.
-const typeid_t figure_out_return_type(const analyser_t& a, const statement_t& parent, const expression_t& callee_expr, const std::vector<expression_t>& call_args){
-	const auto callee_type = callee_expr.get_output_type();
+const typeid_t figure_out_return_type(const analyser_t& a, const statement_t& parent, const typeid_t& callee_type, const std::vector<expression_t>& call_args){
 	const auto callee_return_value = callee_type.get_function_return();
 
-	const auto ret_type = callee_type.get_function_dyn_return_type();
-	switch(ret_type){
+	const auto ret_type_algo = callee_type.get_function_dyn_return_type();
+	switch(ret_type_algo){
 		case typeid_t::return_dyn_type::none:
 			{
 				return callee_return_value;
@@ -1788,6 +1784,55 @@ std::pair<analyser_t, expression_t> analyse_corecall_to_pretty_string_expression
 	};
 }
 
+
+/*
+	FUNCTION CALLS, CORECALLS
+
+	"call" = the expression that wants to make a call. It needs to tell will callee (the target function value) it wants to call. It includes arguments to pass to the call.
+
+	"callee" (plural callees)
+	"As a noun callee is  (telephony) the person who is called by the caller (on the telephone).". The function value to call. The callee value has a function-type.
+
+	Since Floyd uses static typing, the call's argument types and number (arity) needs to match excactly.
+	BUT: Function values can have arguments of type ANY and return ANY.
+
+
+	The call will either match 100% or, if the callee has any-type as return and/or arguments, then the call will have *more* type info than callee.
+
+	After pass3 has run (or any of the analys_*() functions returns an expression), then the actual types of all call arguments/returns are 100% known.
+
+	callee:						void print(any)
+	pass2 call expression:		print(13)
+	pass3 call expression:		print(int)
+*/
+
+std::pair<analyser_t, expression_t> analyse_corecall_fallthrough_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& call_args, const corecall_signature_t& sign){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(parent.check_invariant());
+
+	auto a_acc = a;
+
+	const auto call_args2_kv = analyze_call_args(a_acc, parent, call_args, sign._function_type.get_function_args());
+	a_acc = call_args2_kv.first;
+
+	const auto call_return_type = figure_out_return_type(a_acc, parent, sign._function_type, call_args2_kv.second);
+	return {
+		a_acc,
+		expression_t::make_corecall(get_opcode(sign), call_args2_kv.second, make_shared<typeid_t>(call_return_type))
+	};
+}
+
+//??? Cleanup and simplify call, callee, matching with ANY etc.
+/*
+	There are several types of calls in the input AST.
+
+	1. Normal function call: via a function value. Supports any-type.
+
+	2. Corecalls: like assert() and update(). Those calls are intercepted and converted from function calls to
+		corecall-expressions. Each corecall has its own special type checking. Supports any-type in its callee function type.
+
+	3. Callee is a type: Example: my_color_t(0, 0, 255). This call is converted to a construct-value expression.
+*/
 std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0, const statement_t& parent, const expression_t& e, const expression_t::call_t& details){
 	QUARK_ASSERT(a0.check_invariant());
 
@@ -1829,15 +1874,76 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 					return analyse_corecall_to_pretty_string_expression(a_acc, parent, e, details.args);
 				}
 
+				else if(found_symbol_ptr->first == make_typeof_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_typeof_signature());
+				}
+
 				else if(found_symbol_ptr->first == make_update_signature().name){
 					return analyse_corecall_update_expression(a_acc, parent, e, details.args);
 				}
 				else if(found_symbol_ptr->first == make_size_signature().name){
 					return analyse_corecall_size_expression(a_acc, parent, e, details.args);
 				}
+				else if(found_symbol_ptr->first == make_find_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_find_signature());
+				}
+				else if(found_symbol_ptr->first == make_exists_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_exists_signature());
+				}
+				else if(found_symbol_ptr->first == make_erase_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_erase_signature());
+				}
 				else if(found_symbol_ptr->first == make_push_back_signature().name){
 					return analyse_corecall_push_back_expression(a_acc, parent, e, details.args);
 				}
+				else if(found_symbol_ptr->first == make_subset_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_subset_signature());
+				}
+				else if(found_symbol_ptr->first == make_replace_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_replace_signature());
+				}
+
+
+				else if(found_symbol_ptr->first == make_script_to_jsonvalue_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_script_to_jsonvalue_signature());
+				}
+				else if(found_symbol_ptr->first == make_jsonvalue_to_script_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_jsonvalue_to_script_signature());
+				}
+				else if(found_symbol_ptr->first == make_value_to_jsonvalue_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_value_to_jsonvalue_signature());
+				}
+				else if(found_symbol_ptr->first == make_jsonvalue_to_value_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_jsonvalue_to_value_signature());
+				}
+
+				else if(found_symbol_ptr->first == make_get_json_type_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_get_json_type_signature());
+				}
+
+				else if(found_symbol_ptr->first == make_map_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_map_signature());
+				}
+				else if(found_symbol_ptr->first == make_map_string_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_map_string_signature());
+				}
+				else if(found_symbol_ptr->first == make_filter_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_filter_signature());
+				}
+				else if(found_symbol_ptr->first == make_reduce_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_reduce_signature());
+				}
+				else if(found_symbol_ptr->first == make_supermap_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_supermap_signature());
+				}
+
+				else if(found_symbol_ptr->first == make_print_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_print_signature());
+				}
+				else if(found_symbol_ptr->first == make_send_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_send_signature());
+				}
+
 				else{
 				}
 			}
@@ -1847,7 +1953,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 
 		const auto call_args_pair = analyze_call_args(a_acc, parent, call_args, callee_args);
 		a_acc = call_args_pair.first;
-		const auto call_return_type = figure_out_return_type(a_acc, parent, callee_expr, call_args_pair.second);
+		const auto call_return_type = figure_out_return_type(a_acc, parent, callee_expr.get_output_type(), call_args_pair.second);
 		return { a_acc, expression_t::make_call(callee_expr, call_args_pair.second, make_shared<typeid_t>(call_return_type)) };
 	}
 

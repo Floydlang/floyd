@@ -1164,14 +1164,79 @@ static expression_gen_t bcgen_corecall_expression(bcgenerator_t& gen_acc, const 
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
 
+
+	else if(details.call_name == get_opcode(make_typeof_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+
+
 	else if(details.call_name == get_opcode(make_update_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
 	else if(details.call_name == get_opcode(make_size_signature())){
 		return bcgen_corecall_size_expression(gen_acc, target_reg, call_output_type, details, body);
 	}
+	else if(details.call_name == get_opcode(make_find_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_exists_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_erase_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
 	else if(details.call_name == get_opcode(make_push_back_signature())){
 		return bcgen_corecall_push_back_expression(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_subset_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_replace_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+
+
+	else if(details.call_name == get_opcode(make_script_to_jsonvalue_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_jsonvalue_to_script_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_value_to_jsonvalue_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_jsonvalue_to_value_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+
+
+	else if(details.call_name == get_opcode(make_get_json_type_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+
+
+	else if(details.call_name == get_opcode(make_map_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_map_string_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_filter_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_reduce_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_supermap_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+
+
+	else if(details.call_name == get_opcode(make_print_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_send_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
 
 
