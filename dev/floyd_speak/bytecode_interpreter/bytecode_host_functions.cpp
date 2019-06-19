@@ -240,25 +240,19 @@ bc_value_t host__exists(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	const auto obj = args[0];
 	const auto key = args[1];
 
-	if(obj._type.is_dict()){
-		if(key._type.is_string() == false){
-			quark::throw_runtime_error("Key must be string.");
-		}
+	QUARK_ASSERT(obj._type.is_dict());
+	QUARK_ASSERT(key._type.is_string());
 
-		const auto key_string = key.get_string_value();
+	const auto key_string = key.get_string_value();
 
-		if(encode_as_dict_w_inplace_values(obj._type)){
-			const auto found_ptr = obj._pod._external->_dict_w_inplace_values.find(key_string);
-			return bc_value_t::make_bool(found_ptr != nullptr);
-		}
-		else{
-			const auto entries = get_dict_value(obj);
-			const auto found_ptr = entries.find(key_string);
-			return bc_value_t::make_bool(found_ptr != nullptr);
-		}
+	if(encode_as_dict_w_inplace_values(obj._type)){
+		const auto found_ptr = obj._pod._external->_dict_w_inplace_values.find(key_string);
+		return bc_value_t::make_bool(found_ptr != nullptr);
 	}
 	else{
-		quark::throw_runtime_error("Calling exist() on unsupported type of value.");
+		const auto entries = get_dict_value(obj);
+		const auto found_ptr = entries.find(key_string);
+		return bc_value_t::make_bool(found_ptr != nullptr);
 	}
 }
 
@@ -269,27 +263,22 @@ bc_value_t host__erase(interpreter_t& vm, const bc_value_t args[], int arg_count
 	const auto obj = args[0];
 	const auto key = args[1];
 
-	if(obj._type.is_dict()){
-		if(key._type.is_string() == false){
-			quark::throw_runtime_error("Key must be string.");
-		}
-		const auto key_string = key.get_string_value();
+	QUARK_ASSERT(obj._type.is_dict());
+	QUARK_ASSERT(key._type.is_string());
 
-		const auto value_type = obj._type.get_dict_value_type();
-		if(encode_as_dict_w_inplace_values(obj._type)){
-			auto entries2 = obj._pod._external->_dict_w_inplace_values.erase(key_string);
-			const auto value2 = make_dict(value_type, entries2);
-			return value2;
-		}
-		else{
-			auto entries2 = get_dict_value(obj);
-			entries2 = entries2.erase(key_string);
-			const auto value2 = make_dict(value_type, entries2);
-			return value2;
-		}
+	const auto key_string = key.get_string_value();
+
+	const auto value_type = obj._type.get_dict_value_type();
+	if(encode_as_dict_w_inplace_values(obj._type)){
+		auto entries2 = obj._pod._external->_dict_w_inplace_values.erase(key_string);
+		const auto value2 = make_dict(value_type, entries2);
+		return value2;
 	}
 	else{
-		quark::throw_runtime_error("Calling exist() on unsupported type of value.");
+		auto entries2 = get_dict_value(obj);
+		entries2 = entries2.erase(key_string);
+		const auto value2 = make_dict(value_type, entries2);
+		return value2;
 	}
 }
 
@@ -410,9 +399,7 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 	if(start > end){
 		quark::throw_runtime_error("replace() requires start <= end.");
 	}
-	if(args[3]._type != args[0]._type){
-		quark::throw_runtime_error("replace() requires argument 4 to be same type of collection.");
-	}
+	QUARK_ASSERT(args[3]._type == args[0]._type);
 
 	if(obj._type.is_string()){
 		const auto str = obj.get_string_value();
@@ -612,25 +599,17 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
-	if(args[0]._type.is_vector() == false){
-		quark::throw_runtime_error("map() arg 1 must be a vector.");
-	}
+	QUARK_ASSERT(args[0]._type.is_vector());
+	QUARK_ASSERT(args[1]._type.is_function());
+
 	const auto e_type = args[0]._type.get_vector_element_type();
 
-	if(args[1]._type.is_function() == false){
-		quark::throw_runtime_error("map() requires start and end to be integers.");
-	}
 	const auto f = args[1];
 	const auto f_arg_types = f._type.get_function_args();
 	const auto r_type = f._type.get_function_return();
 
-	if(f_arg_types.size() != 1){
-		quark::throw_runtime_error("map() function f requries 1 argument.");
-	}
-
-	if(f_arg_types[0] != e_type){
-		quark::throw_runtime_error("map() function f must accept collection elements as its argument.");
-	}
+	QUARK_ASSERT(f_arg_types.size() == 1);
+	QUARK_ASSERT(f_arg_types[0] == e_type);
 
 	const auto input_vec = get_vector(args[0]);
 	immer::vector<bc_value_t> vec2;

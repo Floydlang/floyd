@@ -1258,6 +1258,141 @@ std::pair<analyser_t, expression_t> analyse_corecall_find_expression(const analy
 	};
 }
 
+std::pair<analyser_t, expression_t> analyse_corecall_exists_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(parent.check_invariant());
+
+	const auto sign = make_exists_signature();
+	auto a_acc = a;
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	a_acc = resolved_call.first;
+
+	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
+	const auto wanted_type = resolved_call.second.function_type.get_function_args()[1];
+
+	if(parent_type.is_dict() == false){
+		quark::throw_runtime_error("exists([]) requires a dictionary.");
+	}
+	if(wanted_type.is_string() == false){
+		quark::throw_runtime_error("exists() requires a string key.");
+	}
+
+	return {
+		a_acc,
+		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+	};
+}
+
+std::pair<analyser_t, expression_t> analyse_corecall_erase_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(parent.check_invariant());
+
+	const auto sign = make_erase_signature();
+	auto a_acc = a;
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	a_acc = resolved_call.first;
+
+	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
+	const auto key_type = resolved_call.second.function_type.get_function_args()[1];
+
+	if(parent_type.is_dict() == false){
+		quark::throw_runtime_error("erase([]) requires a dictionary.");
+	}
+	if(key_type.is_string() == false){
+		quark::throw_runtime_error("erase() requires a string key.");
+	}
+
+	return {
+		a_acc,
+		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+	};
+}
+
+std::pair<analyser_t, expression_t> analyse_corecall_subset_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(parent.check_invariant());
+
+	const auto sign = make_subset_signature();
+	auto a_acc = a;
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	a_acc = resolved_call.first;
+
+	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
+	const auto key_type = resolved_call.second.function_type.get_function_args()[1];
+
+	if(parent_type.is_string() == false && parent_type.is_vector() == false){
+		quark::throw_runtime_error("subset([]) requires a string or a vector.");
+	}
+
+	return {
+		a_acc,
+		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+	};
+}
+
+std::pair<analyser_t, expression_t> analyse_corecall_replace_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(parent.check_invariant());
+
+	const auto sign = make_replace_signature();
+	auto a_acc = a;
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	a_acc = resolved_call.first;
+
+	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
+	const auto replace_with_type = resolved_call.second.function_type.get_function_args()[3];
+
+	if(parent_type != replace_with_type){
+		quark::throw_runtime_error("replace() requires argument 4 to be same type of collection.");
+	}
+
+	if(parent_type.is_string() == false && parent_type.is_vector() == false){
+		quark::throw_runtime_error("replace([]) requires a string or a vector.");
+	}
+
+	return {
+		a_acc,
+		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+	};
+}
+//??? pass around location_t instead of statement_t& parent!
+std::pair<analyser_t, expression_t> analyse_corecall_map_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(parent.check_invariant());
+
+	const auto sign = make_map_signature();
+	auto a_acc = a;
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	a_acc = resolved_call.first;
+
+	const auto collection_type = resolved_call.second.function_type.get_function_args()[0];
+	const auto func_type = resolved_call.second.function_type.get_function_args()[1];
+
+	if(collection_type.is_vector() == false){
+		quark::throw_runtime_error("map() arg 1 must be a vector.");
+	}
+	if(func_type.is_function() == false){
+		quark::throw_runtime_error("map() arg 2 must be a function.");
+	}
+
+	if(func_type.get_function_args().size() != 1){
+		quark::throw_runtime_error("map() function f requries 1 argument.");
+	}
+
+	const auto element_type = collection_type.get_vector_element_type();
+
+	if(func_type.get_function_args()[0] != element_type){
+		quark::throw_runtime_error("map() function f must accept collection elements as its argument.");
+	}
+
+	return {
+		a_acc,
+		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+	};
+}
+
+
+	
 
 
 std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::lookup_t& details){
@@ -1912,19 +2047,19 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 					return analyse_corecall_find_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_exists_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_exists_signature());
+					return analyse_corecall_exists_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_erase_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_erase_signature());
+					return analyse_corecall_erase_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_push_back_signature().name){
 					return analyse_corecall_push_back_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_subset_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_subset_signature());
+					return analyse_corecall_subset_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_replace_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_replace_signature());
+					return analyse_corecall_replace_expression(a_acc, parent, details.args);
 				}
 
 
@@ -1946,7 +2081,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 				}
 
 				else if(found_symbol_ptr->first == make_map_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_map_signature());
+					return analyse_corecall_map_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_map_string_signature().name){
 					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_map_string_signature());

@@ -1455,34 +1455,28 @@ WIDE_RETURN_T floyd_host_function__erase(floyd_runtime_t* frp, runtime_value_t a
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
 
-	if(type0.is_dict()){
-		if(type1.is_string() == false){
-			quark::throw_runtime_error("Argument 2 needs to be a string key.");
+	QUARK_ASSERT(type0.is_dict());
+	QUARK_ASSERT(type1.is_string());
+
+	const auto& dict = unpack_dict_arg(r.type_interner.interner, arg0_value, arg0_type);
+
+	const auto value_type = type0.get_dict_value_type();
+
+	//	Deep copy dict.
+	auto dict2 = alloc_dict(r.heap);
+	auto& m = dict2->get_map_mut();
+	m = dict->get_map();
+
+	const auto key_string = from_runtime_string(r, arg1_value);
+	m.erase(key_string);
+
+	if(is_rc_value(value_type)){
+		for(auto& e: m){
+			retain_value(r, e.second, value_type);
 		}
-
-		const auto& dict = unpack_dict_arg(r.type_interner.interner, arg0_value, arg0_type);
-
-		const auto value_type = type0.get_dict_value_type();
-
-		//	Deep copy dict.
-		auto dict2 = alloc_dict(r.heap);
-		auto& m = dict2->get_map_mut();
-		m = dict->get_map();
-
-		const auto key_string = from_runtime_string(r, arg1_value);
-		m.erase(key_string);
-
-		if(is_rc_value(value_type)){
-			for(auto& e: m){
-				retain_value(r, e.second, value_type);
-			}
-		}
-
-		return make_wide_return_dict(dict2);
 	}
-	else{
-		UNSUPPORTED();
-	}
+
+	return make_wide_return_dict(dict2);
 }
 
 uint32_t floyd_funcdef__exists(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
@@ -1640,31 +1634,22 @@ WIDE_RETURN_T floyd_funcdef__map(floyd_runtime_t* frp, runtime_value_t arg0_valu
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
-	if(type0.is_vector() == false){
-		quark::throw_runtime_error("map() arg 1 must be a vector.");
-	}
+	QUARK_ASSERT(type0.is_vector());
+	QUARK_ASSERT(type1.is_function());
+
 	const auto element_type = type0.get_vector_element_type();
 
-	if(type1.is_function() == false){
-		quark::throw_runtime_error("map() requires start and end to be integers.");
-	}
 	const auto f_arg_types = type1.get_function_args();
 	const auto r_type = type1.get_function_return();
-
-	if(f_arg_types.size() != 1){
-		quark::throw_runtime_error("map() function f requries 1 argument.");
-	}
-
-	if(f_arg_types[0] != element_type){
-		quark::throw_runtime_error("map() function f must accept collection elements as its argument.");
-	}
+	QUARK_ASSERT(f_arg_types.size() == 1);
+	QUARK_ASSERT(f_arg_types[0] == element_type);
 
 	const auto input_element_type = f_arg_types[0];
 	const auto output_element_type = r_type;
 
 	const auto f = reinterpret_cast<MAP_F>(arg1_value.function_ptr);
 
-	auto count = arg0_value.vector_ptr->get_element_count();
+	const auto count = arg0_value.vector_ptr->get_element_count();
 	auto result_vec = alloc_vec(r.heap, count, count);
 	for(int i = 0 ; i < count ; i++){
 		const auto wide_result1 = (*f)(frp, arg0_value.vector_ptr->get_element_ptr()[i]);
@@ -1838,9 +1823,7 @@ const WIDE_RETURN_T floyd_funcdef__replace(floyd_runtime_t* frp, runtime_value_t
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type3 = lookup_type(r.type_interner.interner, arg3_type);
 
-	if(type3 != type0){
-		quark::throw_runtime_error("replace() requires argument 4 to be same type of collection.");
-	}
+	QUARK_ASSERT(type3 == type0);
 
 	if(type0.is_string()){
 		const auto s = from_runtime_string(r, arg0_value);
