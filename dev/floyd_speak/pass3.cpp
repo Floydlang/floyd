@@ -1356,6 +1356,9 @@ std::pair<analyser_t, expression_t> analyse_corecall_replace_expression(const an
 	};
 }
 //??? pass around location_t instead of statement_t& parent!
+
+
+//	[R] map([E], R f(E e))
 std::pair<analyser_t, expression_t> analyse_corecall_map_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
@@ -1365,24 +1368,91 @@ std::pair<analyser_t, expression_t> analyse_corecall_map_expression(const analys
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto collection_type = resolved_call.second.function_type.get_function_args()[0];
-	const auto func_type = resolved_call.second.function_type.get_function_args()[1];
-
-	if(collection_type.is_vector() == false){
+	const auto arg1_type = resolved_call.second.function_type.get_function_args()[0];
+	if(arg1_type.is_vector() == false){
 		quark::throw_runtime_error("map() arg 1 must be a vector.");
 	}
-	if(func_type.is_function() == false){
+	const auto e_type = arg1_type.get_vector_element_type();
+
+	const auto arg2_type = resolved_call.second.function_type.get_function_args()[1];
+	if(arg2_type.is_function() == false){
 		quark::throw_runtime_error("map() arg 2 must be a function.");
 	}
 
-	if(func_type.get_function_args().size() != 1){
-		quark::throw_runtime_error("map() function f requries 1 argument.");
+	const auto r_type = arg2_type.get_function_return();
+
+
+	const auto expected = typeid_t::make_function(
+		typeid_t::make_vector(r_type),
+		{
+			typeid_t::make_vector(e_type),
+			typeid_t::make_function(r_type, { e_type }, epure::pure)
+		},
+		epure::pure
+	);
+
+	if(resolved_call.second.function_type != expected){
+		quark::throw_runtime_error("Call to map() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
 	}
 
-	const auto element_type = collection_type.get_vector_element_type();
+	return {
+		a_acc,
+		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+	};
+}
 
-	if(func_type.get_function_args()[0] != element_type){
-		quark::throw_runtime_error("map() function f must accept collection elements as its argument.");
+//	string map_string(string in, func string(string e) f)
+std::pair<analyser_t, expression_t> analyse_corecall_map_string_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(parent.check_invariant());
+
+	const auto sign = make_map_string_signature();
+	auto a_acc = a;
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	a_acc = resolved_call.first;
+
+	const auto expected = typeid_t::make_function(
+		typeid_t::make_string(),
+		{ typeid_t::make_string(), typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_string() }, epure::pure) },
+		epure::pure
+	);
+	if(resolved_call.second.function_type != expected){
+		quark::throw_runtime_error("Call to map_string() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
+	}
+
+	return {
+		a_acc,
+		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+	};
+}
+
+//	[E] filter([E], bool f(E e))
+std::pair<analyser_t, expression_t> analyse_corecall_filter_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(parent.check_invariant());
+
+	const auto sign = make_filter_signature();
+	auto a_acc = a;
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	a_acc = resolved_call.first;
+
+	const auto arg1_type = resolved_call.second.function_type.get_function_args()[0];
+	if(arg1_type.is_vector() == false){
+		quark::throw_runtime_error("map() arg 1 must be a vector.");
+	}
+	const auto e_type = arg1_type.get_vector_element_type();
+
+
+	const auto expected = typeid_t::make_function(
+		typeid_t::make_vector(e_type),
+		{
+			typeid_t::make_vector(e_type),
+			typeid_t::make_function(typeid_t::make_bool(), { e_type }, epure::pure)
+		},
+		epure::pure
+	);
+	if(resolved_call.second.function_type != expected){
+		quark::throw_runtime_error("Call to filter() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", expected to be \"" + typeid_to_compact_string(expected) + "\".");
 	}
 
 	return {
@@ -2084,10 +2154,10 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 					return analyse_corecall_map_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_map_string_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_map_string_signature());
+					return analyse_corecall_map_string_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_filter_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_filter_signature());
+					return analyse_corecall_filter_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_reduce_signature().name){
 					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_reduce_signature());

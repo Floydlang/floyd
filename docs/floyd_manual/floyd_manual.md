@@ -1692,13 +1692,342 @@ Protocol member functions can be tagged "impure" which allows it to be implement
 
 # 3. CORE FUNCTIONS
 
-These functions are built into the language itself and are always available to your code. They are all pure so can be used in pure functions.
+These functions are built into the language itself and are always available to your code. They are all pure unless explicitly specified to be impure.
+
+
+### print() -- IMPURE
+
+** IMPURE FUNCTION **
+This outputs one line of text to the default output of the application. It can print any type of value. If you want to compose output of many parts you need to convert them to strings and add them. Also works with types, like a struct-type.
+
+	print(any)
+
+
+| Example										| Result |
+|---											| ---
+| print(3)										| 3
+| print("shark")								| shark
+| print("Number four: " + to_string(4))			| Number four: 4
+| print(int)									| int
+| print([int])									| [int]
+| print({string: double})						| {string:double}
+| print([7, 8, 9])								| [7, 8, 9]
+| print({"a": 1})								| {"a": 1}
+| print(json_value("b"))						| b
+| print(json_value(5.3))						| 5.3
+| print(json_value({"x": 0, "y": -1}))			| {"a": 0, "b": -1}
+| print(json_value(["q", "u", "v"]))			| ["q", "u", "v"]
+| print(json_value(true))						| true
+| print(json_value(false))						| false
+| print(json_value(null))						| null
 
 
 
-## get\_json_type()
 
-Returns the actual type of this value stores inside the json\_value. It can be one of the types supported by JSON.
+### assert()
+
+Used this to check your code for programming errors, and check the inputs of your function for misuse by its callers.
+
+	assert(bool)
+
+If the expression evaluates to false, the program will log to the output, then be aborted via an exception.
+
+Example:
+
+```
+func f(int x){
+	assert(x >= 0)
+}
+```
+
+
+### to_string()
+
+Converts its input to a string. This works with any type of values. It also works with types themselves, which is useful for debugging.
+
+	string to_string(any)
+
+You often use this function to convert numbers to strings.
+
+
+
+### to\_pretty\_string()
+
+Converts its input to a string of JSON data that is formatted nicely with indentations. It works with any Floyd value.
+
+
+
+### typeof()
+
+Return the type of its input value. The returned typeid-value is a complete Floyd type and can be stored, compared and so on. The type is resolved at compile time so the same source code line will always return the same type. 
+
+```
+typeid typeof(any)
+```
+
+
+
+### send() -- IMPURE
+
+Sends a message to the inbox of a Floyd process, possibly your own process.
+
+The process may run on a different OS thread but send() is guaranteed to be thread safe.
+
+	send(string process_key, json_value message) impure
+
+The send function returns immediately.
+
+
+
+
+
+## WORKING WITH COLLECTIONS
+
+### update()
+
+This is how you modify a field of a struct, an element in a vector or string or a dictionary. It replaces the value of the specified key and returns a completely new object. The original object (struct, vector etc) is unchanged.
+
+	let obj_b = update(obj_a, key, new_value)
+
+
+|TYPE		  	| EXAMPLE						| RESULT |
+|:---			|:---							|:---
+| string		| update("hello", 3, 120)		| "helxo"
+| vector		| update([1,2,3,4], 2, 33)		| [1,2,33,4]
+| dictionary	| update({"a": 1, "b": 2, "c": 3}, "a", 11) | {"a":11,"b":2,"c":3}
+| struct		| update(pixel, red, 123)		| pixel(123,---,---)
+| json_value:array		| 
+| json_value:object		| 
+
+For dictionaries it can be used to add completely new elements too.
+
+|TYPE		  	| EXAMPLE						| RESULT
+|:---			|:---							|:---
+| dictionary	| update({ "a": 1 }, "b", 2] | { "a": 1, "b": 2 }
+
+
+
+TODO 1.0 - Update nested collections and structs.
+
+
+
+### size()
+
+Returns the size of a collection -- the number of elements.
+
+```
+int size(obj)
+```
+
+|TYPE		  		| EXAMPLE					| RESULT
+|:---				|:---						|:---
+| string			| size("hello")				| 5
+| vector			| size([1,2,3,4])			| 4
+| dictionary		| size({"a": 1, "b": })		| 2
+| struct			|							|
+| json_value:array	| size(json_value([1,2,3])	| 3
+| json_value:object	| size(json_value({"a": 9})	| 1
+
+
+
+
+
+### push_back()
+
+Appends an element to the end of a collection. A new collection is returned, the original unaffected.
+
+|TYPE		  	| EXAMPLE						| RESULT |
+|:---			|:---							|:---
+| string		| push_back("hello", 120)		| hellox
+| vector		| push_back([1,2,3], 7)			| [1,2,3,7]
+| dictionary	| 								|
+| struct		|								|
+| json_value:array	|							|
+| json_value:object	| 							|
+
+
+
+
+
+### subset()
+
+This returns a range of elements from the collection.
+
+```
+string subset(string a, int start, int end)
+vector subset(vector a, int start, int end)
+```
+
+start: 0 or larger. If it is larger than the collection, it will be clipped to the size.
+end: 0 or larger. If it is larger than the collection, it will be clipped to the size.
+
+
+|TYPE		  	| EXAMPLE						| RESULT |
+|:---			|:---							|:---
+| string		| subset("hello", 2, 4)			| ll
+| vector		| subset([10,20,30,40, 1, 3)	| [20,30]
+| dictionary	| 								|
+| struct		|								|
+| json_value:array	|							|
+| json_value:object	| 							|
+
+
+
+### replace()
+
+Replaces a range of a collection with the contents of another collection.
+
+```
+string replace(string a, int start, int end, string new)
+vector replace(vector a, int start, int end, vector new)
+```
+
+
+|TYPE		  	| EXAMPLE						| RESULT |
+|:---			|:---							|:---
+| string		|replace("hello", 0, 2, "bori")	| borillo
+| vector		|replace([1,2,3,4,5], 1, 4, [8, 9])	| [1,8,9,5]
+| dictionary	| 								|
+| struct		|								|
+| json_value:array	|							|
+| json_value:object	| 							|
+
+
+Notice: if you use an empty collection for *new*, you will actually erase the range.
+Notice: by specifying the same index in *start* and *length* you will __insert__ the new collection into the existing collection.
+
+
+
+### find()
+
+Searches for a value in a collection and returns its index or -1.
+
+```
+int find(obj, value)
+```
+
+|TYPE		  	| EXAMPLE						| RESULT |
+|:---			|:---							|:---
+| string		| find("hello", "o")			| 4
+| string		| find("hello", "x")			| -1
+| vector		| find([10,20,30,40], 30)		| 2
+| dictionary	| 								|
+| struct		|								|
+| json_value:array	|							|
+| json_value:object	| 							|
+
+
+
+### exists()
+
+Checks if the dictionary has an element with this key. Returns true or false.
+
+```
+bool exists(dict, string key)
+```
+
+|TYPE		  	| EXAMPLE						| RESULT |
+|:---			|:---							|:---
+| string		| 								|
+| vector		| 								|
+| dictionary	| exists({"a":1,"b":2,"c":3), "b")	| true
+| dictionary	| exists({"a":1,"b":2,"c":3), "f")	| false
+| struct		|								|
+| json_value:array	|							|
+| json_value:object	| 							|
+
+
+
+
+### erase()
+
+Erase an element in a dictionary, as specified using its key.
+
+```
+dict erase(dict, string key)
+```
+
+
+
+
+## FUNCTIONAL-STYLE COLLECTION FUNCTIONS
+
+IMPORTANT: These functions replace custom loops but *also* expose parallelism opportunities that allows the Floyd runtime to process each element on a separate hardware core, like shaders works in a graphics card. The supplied function must be pure.
+
+### map()
+
+Processes a vector of values one by one using function f. It returns a vector of the same size, but with values of type R.
+
+```
+[R] map([E], R f(E e))
+```
+
+Supports mapping over
+- vectors
+- characters in a string
+
+
+#### map_string()
+
+This is special version of map designed to process strings.
+
+	string map_string(string in, func string(string e) f)
+
+The function f is called with each character in the input string, stored as a 1-character string in _e_. All the calls to f() will be appended together and returned from map_string().
+
+
+### filter()
+
+Processes a vector of values and returns each that function f decides to include.
+
+```
+[E] filter([E], bool f(E e))
+```
+
+
+### reduce()
+
+Processes a vector or values using the supplied function. Result is *one* value.
+
+```
+R reduce([E], R init, R f(R accumulator, E element))
+```
+
+
+### supermap()
+
+	[R] supermap([E] values, [int] depends_on, R (E, [R]) f)
+
+This function runs a bunch of tasks with dependencies between them. When supermap() returns, all tasks have been executed.
+
+- Tasks can call blocking functions or impure functions. This makes the supermap() call impure too.
+- Tasks cannot generate new tasks.
+- A task *can* call supermap.
+- Task will not start until all its dependencies have been finished.
+- There is no way for any code to observe partially executed supermap(). It's done or not.
+
+- **values**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The indexes are the indexes into the tasks-vector. Use index -1 to mean *depends on nothing*.
+
+- **f**: this is your function that processes one T and returns a result R. The function must not depend on the order in which tasks execute. When f is called, all the tasks dependency tasks have already been executed and you get their results in [R].
+
+- **result**: a vector with one element for each element in the tasks-argument. The order of the elements is the same as the input vector.
+
+
+Notice: your function f can send messages to a clock — this means another clock can start consuming results while supermap() is still running.
+
+Notice: using this function exposes potential for parallelism.
+
+
+
+
+
+
+## WORKING WITH JSON
+
+
+### get\_json_type()
+
+If you have a json_value, this is how you find out if it's a string or a number and so on. It can be one of the types supported by JSON.
 
 ```
 typeid get_json_type(json_value v)
@@ -1757,180 +2086,32 @@ assert(get_name(json_value(false)) == "json_false")
 ```
 
 
+### jsonvalue\_to\_script()
 
-## update()
+Pack a JSON value to a JSON script string, ready to write to a file, send via protocol etc. The string is unescaped.
 
-This is how you modify a field of a struct, an element in a vector or string or a dictionary. It replaces the value of the specified key and returns a completely new object. The original object (struct, vector etc) is unchanged.
+	string jsonvalue_to_script(json_value v)
 
-	let obj_b = update(obj_a, key, new_value)
+The result is a valid JSON script string that can be handed to another system to be unpacked.
 
 
-|TYPE		  	| EXAMPLE						| RESULT |
-|:---			|:---							|:---
-| string		| update("hello", 3, 120)		| "helxo"
-| vector		| update([1,2,3,4], 2, 33)		| [1,2,33,4]
-| dictionary	| update({"a": 1, "b": 2, "c": 3}, "a", 11) | {"a":11,"b":2,"c":3}
-| struct		| update(pixel, red, 123)		| pixel(123,---,---)
-| json_value:array		| 
-| json_value:object		| 
+### script\_to\_jsonvalue()
 
-For dictionaries it can be used to add completely new elements too.
+Make a new Floyd JSON value from a JSON-script string. If the string is malformed, exceptions will be thrown. The string is unescaped.
+ 
+	json_value script_to_jsonvalue(string s)
 
-|TYPE		  	| EXAMPLE						| RESULT
-|:---			|:---							|:---
-| dictionary	| update({ "a": 1 }, "b", 2] | { "a": 1, "b": 2 }
 
 
+### value\_to\_jsonvalue()
 
-TODO 1.0 - Update nested collections and structs.
+	json_value value_to_jsonvalue(any v)
 
 
 
-## size()
+### jsonvalue\_to\_value()
 
-Returns the size of a collection -- the number of elements.
-
-```
-int size(obj)
-```
-
-|TYPE		  		| EXAMPLE					| RESULT
-|:---				|:---						|:---
-| string			| size("hello")				| 5
-| vector			| size([1,2,3,4])			| 4
-| dictionary		| size({"a": 1, "b": })		| 2
-| struct			|							|
-| json_value:array	| size(json_value([1,2,3])	| 3
-| json_value:object	| size(json_value({"a": 9})	| 1
-
-
-
-
-## find()
-
-Searches for a value in a collection and returns its index or -1.
-
-```
-int find(obj, value)
-```
-
-|TYPE		  	| EXAMPLE						| RESULT |
-|:---			|:---							|:---
-| string		| find("hello", "o")			| 4
-| string		| find("hello", "x")			| -1
-| vector		| find([10,20,30,40], 30)		| 2
-| dictionary	| 								|
-| struct		|								|
-| json_value:array	|							|
-| json_value:object	| 							|
-
-
-
-
-## exists()
-
-Checks if the dictionary has an element with this key. Returns true or false.
-
-```
-bool exists(dict, string key)
-```
-
-|TYPE		  	| EXAMPLE						| RESULT |
-|:---			|:---							|:---
-| string		| 								|
-| vector		| 								|
-| dictionary	| exists({"a":1,"b":2,"c":3), "b")	| true
-| dictionary	| exists({"a":1,"b":2,"c":3), "f")	| false
-| struct		|								|
-| json_value:array	|							|
-| json_value:object	| 							|
-
-
-
-
-## erase()
-
-Erase an element in a dictionary, as specified using its key.
-
-```
-dict erase(dict, string key)
-```
-
-
-
-## push_back()
-
-Appends an element to the end of a collection. A new collection is returned, the original unaffected.
-
-|TYPE		  	| EXAMPLE						| RESULT |
-|:---			|:---							|:---
-| string		| push_back("hello", 120)		| hellox
-| vector		| push_back([1,2,3], 7)			| [1,2,3,7]
-| dictionary	| 								|
-| struct		|								|
-| json_value:array	|							|
-| json_value:object	| 							|
-
-
-
-## subset()
-
-This returns a range of elements from the collection.
-
-```
-string subset(string a, int start, int end)
-vector subset(vector a, int start, int end)
-```
-
-start: 0 or larger. If it is larger than the collection, it will be clipped to the size.
-end: 0 or larger. If it is larger than the collection, it will be clipped to the size.
-
-
-|TYPE		  	| EXAMPLE						| RESULT |
-|:---			|:---							|:---
-| string		| subset("hello", 2, 4)			| ll
-| vector		| subset([10,20,30,40, 1, 3)	| [20,30]
-| dictionary	| 								|
-| struct		|								|
-| json_value:array	|							|
-| json_value:object	| 							|
-
-
-
-## replace()
-
-Replaces a range of a collection with the contents of another collection.
-
-```
-string replace(string a, int start, int end, string new)
-vector replace(vector a, int start, int end, vector new)
-```
-
-
-|TYPE		  	| EXAMPLE						| RESULT |
-|:---			|:---							|:---
-| string		|replace("hello", 0, 2, "bori")	| borillo
-| vector		|replace([1,2,3,4,5], 1, 4, [8, 9])	| [1,8,9,5]
-| dictionary	| 								|
-| struct		|								|
-| json_value:array	|							|
-| json_value:object	| 							|
-
-
-Notice: if you use an empty collection for *new*, you will actually erase the range.
-Notice: by specifying the same index in *start* and *length* you will __insert__ the new collection into the existing collection.
-
-
-
-
-## typeof()
-
-Return the type of its input value. The returned typeid-value is a complete Floyd type and can be stored, compared and so on. The type is resolved at compile time so the same source code line will always return the same type. 
-
-```
-typeid typeof(any)
-```
-
+	any jsonvalue_to_value(json_value v)
 
 
 

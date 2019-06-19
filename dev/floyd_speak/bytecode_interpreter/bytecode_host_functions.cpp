@@ -644,13 +644,8 @@ bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_
 	const auto f_arg_types = f._type.get_function_args();
 	const auto r_type = f._type.get_function_return();
 
-	if(f_arg_types.size() != 1){
-		quark::throw_runtime_error("map_string() function f requries 1 argument.");
-	}
-
-	if(f_arg_types[0] != typeid_t::make_string()){
-		quark::throw_runtime_error("map_string() function f must accept collection elements as its argument.");
-	}
+	QUARK_ASSERT(f_arg_types.size() == 1);
+	QUARK_ASSERT(f_arg_types[0].is_string());
 
 	const auto input_vec = args[0].get_string_value();
 	std::string vec2;
@@ -734,20 +729,15 @@ bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	QUARK_ASSERT(arg_count == 2);
 
 	//	Check topology.
-	if(args[0]._type.is_vector() == false || args[1]._type.is_function() == false || args[1]._type.get_function_args().size () != 1){
-		quark::throw_runtime_error("filter() requires 2 arguments.");
-	}
+	QUARK_ASSERT(args[0]._type.is_vector());
+	QUARK_ASSERT(args[1]._type.is_function());
+	QUARK_ASSERT(args[1]._type.get_function_args().size() == 1);
 
 	const auto& elements = args[0];
 	const auto& f = args[1];
 	const auto& e_type = elements._type.get_vector_element_type();
 
-	if(
-		elements._type.get_vector_element_type() != f._type.get_function_args()[0]
-	)
-	{
-		quark::throw_runtime_error("[E] filter([E], bool f(E e))");
-	}
+	QUARK_ASSERT(elements._type.get_vector_element_type() == f._type.get_function_args()[0]);
 
 	const auto input_vec = get_vector(elements);
 	immer::vector<bc_value_t> vec2;

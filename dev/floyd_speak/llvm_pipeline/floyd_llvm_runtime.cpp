@@ -1505,15 +1505,9 @@ WIDE_RETURN_T floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_v
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
 
-	if(type0.is_vector() == false){
-		quark::throw_runtime_error("filter() requires argument 1 to be a vector.");
-	}
-	if(type1.is_function() == false){
-		quark::throw_runtime_error("filter() requires argument 2 to be a function.");
-	}
-	if(type1.get_function_args().size() != 1){
-		quark::throw_runtime_error("filter() requires argument 2 function to take 1 argument.");
-	}
+	QUARK_ASSERT(type0.is_vector());
+	QUARK_ASSERT(type1.is_function());
+	QUARK_ASSERT(type1.get_function_args().size() == 1);
 
 	const auto& vec = *arg0_value.vector_ptr;
 	const auto f = reinterpret_cast<FILTER_F>(arg1_value.function_ptr);
