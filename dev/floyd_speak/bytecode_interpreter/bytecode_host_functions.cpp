@@ -182,11 +182,9 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 	}
 	else if(obj._type.is_vector()){
 		const auto element_type = obj._type.get_vector_element_type();
-		if(wanted._type != element_type){
-			QUARK_ASSERT(false);
-			quark::throw_runtime_error("Type mismatch.");
-		}
-		else if(obj._type.get_vector_element_type().is_bool()){
+		QUARK_ASSERT(wanted._type == element_type);
+
+		if(obj._type.get_vector_element_type().is_bool()){
 			const auto& vec = obj._pod._external->_vector_w_inplace_elements;
 			int index = 0;
 			const auto size = vec.size();
@@ -228,7 +226,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 		}
 	}
 	else{
-		quark::throw_runtime_error("Calling find() on unsupported type of value.");
+		UNSUPPORTED();
 	}
 }
 

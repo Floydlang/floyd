@@ -1046,15 +1046,17 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 
+	const auto sign = make_update_signature();
 	auto a_acc = a;
 	const auto collection_expr = analyse_expression_no_target(a_acc, parent, args[0]);
 	a_acc = collection_expr.first;
+
+	//	IMPORTANT: For structs we manipulate the key-expression. We can't analyse key expression - it's encoded as a variable resolve.
 
 	const auto new_value_expr = analyse_expression_no_target(a_acc, parent, args[2]);
 	a_acc = new_value_expr.first;
 	const auto collection_type = collection_expr.second.get_output_type();
 
-	//	IMPORTANT: For structs we manipulate the key-expression. We can't analyse key expression - it's encoded as a variable resolve.
 
 	const auto& key = args[1];
 	const auto new_value_type = new_value_expr.second.get_output_type();
@@ -1108,7 +1110,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 
 		return {
 			a_acc,
-			expression_t::make_corecall(get_opcode(make_update_signature()), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
+			expression_t::make_corecall(get_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
 		};
 	}
 	else if(collection_type.is_vector()){
@@ -1129,7 +1131,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 
 		return {
 			a_acc,
-			expression_t::make_corecall(get_opcode(make_update_signature()), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
+			expression_t::make_corecall(get_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
 		};
 	}
 	else if(collection_type.is_dict()){
@@ -1150,7 +1152,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 
 		return {
 			a_acc,
-			expression_t::make_corecall(get_opcode(make_update_signature()), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
+			expression_t::make_corecall(get_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
 		};
 	}
 
@@ -1161,37 +1163,26 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_corecall_push_back_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_corecall_push_back_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 
+	const auto sign = make_push_back_signature();
 	auto a_acc = a;
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, make_push_back_signature()._function_type);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
 	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
 	const auto value_type = resolved_call.second.function_type.get_function_args()[1];
 
 	if(parent_type.is_string()){
-		if(value_type.is_int()){
-			return {
-				a_acc,
-				expression_t::make_corecall(get_opcode(make_push_back_signature()), resolved_call.second.args, parent_type)
-			};
-		}
-		else{
+		if(value_type.is_int() == false){
 			std::stringstream what;
 			what << "string push_back() needs an integer element, not a \"" + typeid_to_compact_string(value_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
 		}
 	}
 	else if(parent_type.is_vector()){
-		if(value_type == parent_type.get_vector_element_type()){
-			return {
-				a_acc,
-				expression_t::make_corecall(get_opcode(make_push_back_signature()), resolved_call.second.args, parent_type)
-			};
-		}
-		else{
+		if(value_type != parent_type.get_vector_element_type()){
 			std::stringstream what;
 			what << "Vector push_back() has mismatching element type vs supplies a \"" + typeid_to_compact_string(value_type) + "\".";
 			throw_compiler_error(parent.location, what.str());
@@ -1202,15 +1193,20 @@ std::pair<analyser_t, expression_t> analyse_corecall_push_back_expression(const 
 		what << "Left hand side does not support push_back() - it's of type \"" + typeid_to_compact_string(parent_type) + "\".";
 		throw_compiler_error(parent.location, what.str());
 	}
+
+	return {
+		a_acc,
+		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, parent_type)
+	};
 }
 
-std::pair<analyser_t, expression_t> analyse_corecall_size_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_corecall_size_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
 
+	const auto sign = make_size_signature();
 	auto a_acc = a;
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, make_size_signature()._function_type);
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
 	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
@@ -1224,7 +1220,41 @@ std::pair<analyser_t, expression_t> analyse_corecall_size_expression(const analy
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_opcode(make_size_signature()), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+	};
+}
+
+std::pair<analyser_t, expression_t> analyse_corecall_find_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(parent.check_invariant());
+
+	const auto sign = make_find_signature();
+	auto a_acc = a;
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	a_acc = resolved_call.first;
+
+	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
+	const auto wanted_type = resolved_call.second.function_type.get_function_args()[1];
+
+	if(parent_type.is_string()){
+		if(wanted_type.is_string() == false){
+			quark::throw_runtime_error("find() requires argument 2 to be a string.");
+		}
+	}
+	else if(parent_type.is_vector()){
+		if(wanted_type != parent_type.get_vector_element_type()){
+			quark::throw_runtime_error("find([]) requires argument 2 to be of vector's element type.");
+		}
+	}
+	else{
+		std::stringstream what;
+		what << "Function find() doesn not work on type \"" + typeid_to_compact_string(parent_type) + "\".";
+		throw_compiler_error(parent.location, what.str());
+	}
+
+	return {
+		a_acc,
+		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
@@ -1876,10 +1906,10 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 					return analyse_corecall_update_expression(a_acc, parent, e, details.args);
 				}
 				else if(found_symbol_ptr->first == make_size_signature().name){
-					return analyse_corecall_size_expression(a_acc, parent, e, details.args);
+					return analyse_corecall_size_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_find_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_find_signature());
+					return analyse_corecall_find_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_exists_signature().name){
 					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_exists_signature());
@@ -1888,7 +1918,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_erase_signature());
 				}
 				else if(found_symbol_ptr->first == make_push_back_signature().name){
-					return analyse_corecall_push_back_expression(a_acc, parent, e, details.args);
+					return analyse_corecall_push_back_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_subset_signature().name){
 					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_subset_signature());

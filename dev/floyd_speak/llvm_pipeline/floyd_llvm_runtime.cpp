@@ -1490,18 +1490,14 @@ uint32_t floyd_funcdef__exists(floyd_runtime_t* frp, runtime_value_t arg0_value,
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
+	QUARK_ASSERT(type0.is_dict());
 
-	if(type0.is_dict()){
-		const auto& dict = unpack_dict_arg(r.type_interner.interner, arg0_value, arg0_type);
-		const auto key_string = from_runtime_string(r, arg1_value);
+	const auto& dict = unpack_dict_arg(r.type_interner.interner, arg0_value, arg0_type);
+	const auto key_string = from_runtime_string(r, arg1_value);
 
-		const auto& m = dict->get_map();
-		const auto it = m.find(key_string);
-		return it != m.end() ? 1 : 0;
-	}
-	else{
-		UNSUPPORTED();
-	}
+	const auto& m = dict->get_map();
+	const auto it = m.find(key_string);
+	return it != m.end() ? 1 : 0;
 }
 
 
@@ -1565,9 +1561,8 @@ int64_t floyd_funcdef__find(floyd_runtime_t* frp, runtime_value_t arg0_value, ru
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
 
 	if(type0.is_string()){
-		if(type1.is_string() == false){
-			quark::throw_runtime_error("find(string) requires argument 2 to be a string.");
-		}
+		QUARK_ASSERT(type1.is_string());
+
 		const auto str = from_runtime_string(r, arg0_value);
 		const auto wanted2 = from_runtime_string(r, arg1_value);
 		const auto pos = str.find(wanted2);
@@ -1575,9 +1570,7 @@ int64_t floyd_funcdef__find(floyd_runtime_t* frp, runtime_value_t arg0_value, ru
 		return result;
 	}
 	else if(type0.is_vector()){
-		if(type1 != type0.get_vector_element_type()){
-			quark::throw_runtime_error("find([]) requires argument 2 to be of vector's element type.");
-		}
+		QUARK_ASSERT(type1 == type0.get_vector_element_type());
 
 		const auto vec = unpack_vec_arg(r.type_interner.interner, arg0_value, arg0_type);
 
