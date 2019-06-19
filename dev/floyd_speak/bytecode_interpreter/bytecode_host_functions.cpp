@@ -674,27 +674,20 @@ bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_
 
 
 //	R map([E] elements, R init, R f(R acc, E e))
-
 bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
 
 	//	Check topology.
-	if(args[0]._type.is_vector() == false || args[2]._type.is_function() == false || args[2]._type.get_function_args().size () != 2){
-		quark::throw_runtime_error("reduce() requires 3 arguments.");
-	}
+	QUARK_ASSERT(args[0]._type.is_vector());
+	QUARK_ASSERT(args[2]._type.is_function());
+	QUARK_ASSERT(args[2]._type.get_function_args().size () == 2);
 
 	const auto& elements = args[0];
 	const auto& init = args[1];
 	const auto& f = args[2];
 
-	if(
-		elements._type.get_vector_element_type() != f._type.get_function_args()[1]
-		&& init._type != f._type.get_function_args()[0]
-	)
-	{
-		quark::throw_runtime_error("R reduce([E] elements, R init_value, R (R acc, E element) f");
-	}
+	QUARK_ASSERT(elements._type.get_vector_element_type() == f._type.get_function_args()[1] && init._type == f._type.get_function_args()[0]);
 
 	const auto input_vec = get_vector(elements);
 
@@ -721,9 +714,8 @@ bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_coun
 /////////////////////////////////////////		PURE -- filter()
 
 
+
 //	[E] filter([E], bool f(E e))
-
-
 bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
@@ -771,7 +763,6 @@ bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 
 //	[R] supermap([E] values, [int] parents, R (E, [R]) f)
-
 bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
@@ -878,7 +869,6 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 //	Input dependencies are specified for as 1... many integers per E, in order. [-1] or [a, -1] or [a, b, -1 ] etc.
 //
 //	[R] supermap([E] values, [int] parents, R (E, [R]) f)
-
 struct dep_t {
 	int64_t incomplete_count;
 	std::vector<int64_t> depends_in_element_index;

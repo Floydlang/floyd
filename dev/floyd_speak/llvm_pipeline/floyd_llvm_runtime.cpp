@@ -1764,9 +1764,9 @@ WIDE_RETURN_T floyd_funcdef__reduce(floyd_runtime_t* frp, runtime_value_t arg0_v
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
 	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
 
-	if(type0.is_vector() == false || type2.is_function() == false || type2.get_function_args().size () != 2){
-		quark::throw_runtime_error("reduce() parameter error.");
-	}
+	QUARK_ASSERT(type0.is_vector());
+	QUARK_ASSERT(type2.is_function());
+	QUARK_ASSERT(type2.get_function_args().size () == 2);
 
 	const auto& vec = *arg0_value.vector_ptr;
 	const auto& init = arg1_value;
