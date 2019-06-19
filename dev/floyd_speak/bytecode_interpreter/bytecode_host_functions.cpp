@@ -777,25 +777,19 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 	QUARK_ASSERT(arg_count == 3);
 
 	//	Check topology.
-	if(args[0]._type.is_vector() && args[1]._type == typeid_t::make_vector(typeid_t::make_int()) && args[2]._type.is_function() && args[2]._type.get_function_args().size () == 2){
-	}
-	else{
-		quark::throw_runtime_error("supermap() requires 3 arguments.");
-	}
+	QUARK_ASSERT(args[0]._type.is_vector());
+	QUARK_ASSERT(args[1]._type == typeid_t::make_vector(typeid_t::make_int()));
+	QUARK_ASSERT(args[2]._type.is_function() && args[2]._type.get_function_args().size () == 2);
 
 	const auto& elements = args[0];
 	const auto& e_type = elements._type.get_vector_element_type();
 	const auto& parents = args[1];
 	const auto& f = args[2];
 	const auto& r_type = args[2]._type.get_function_return();
-	if(
+	QUARK_ASSERT(
 		e_type == f._type.get_function_args()[0]
 		&& r_type == f._type.get_function_args()[1].get_vector_element_type()
-	){
-	}
-	else {
-		quark::throw_runtime_error("R supermap([E] elements, R init_value, R (R acc, E element) f");
-	}
+	);
 
 	const auto elements2 = get_vector(elements);
 	const auto parents2 = get_vector(parents);

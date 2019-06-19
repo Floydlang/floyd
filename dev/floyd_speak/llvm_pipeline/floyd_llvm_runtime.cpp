@@ -1992,25 +1992,18 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
 
 	//	Check topology.
-	if(type0.is_vector() && type1 == typeid_t::make_vector(typeid_t::make_int()) && type2.is_function() && type2.get_function_args().size () == 2){
-	}
-	else{
-		quark::throw_runtime_error("supermap() arguments are wrong.");
-	}
+	QUARK_ASSERT(type0.is_vector());
+	QUARK_ASSERT(type1 == typeid_t::make_vector(typeid_t::make_int()));
+	QUARK_ASSERT(type2.is_function());
+	QUARK_ASSERT(type2.get_function_args().size () == 2);
 
 	const auto& elements = arg0_value;
 	const auto& e_type = type0.get_vector_element_type();
 	const auto& parents = arg1_value;
 	const auto& f = arg2_value;
 	const auto& r_type = type2.get_function_return();
-	if(
-		e_type == type2.get_function_args()[0]
-		&& r_type == type2.get_function_args()[1].get_vector_element_type()
-	){
-	}
-	else {
-		quark::throw_runtime_error("R supermap([E] elements, R init_value, R (R acc, E element) f");
-	}
+
+	QUARK_ASSERT(e_type == type2.get_function_args()[0] && r_type == type2.get_function_args()[1].get_vector_element_type());
 
 	const auto f2 = reinterpret_cast<SUPERMAP_F>(f.function_ptr);
 
