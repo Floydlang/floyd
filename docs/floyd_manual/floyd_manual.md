@@ -239,11 +239,11 @@ Notice that string has many qualities of an array of characters. You can ask for
 
 ## SOFTWARE SYSTEM - C4
 
-Floyd uses the C4 model to navigate and present your code. It's completely optional to use this feature. The C4 features gives you a very fast and lightweight way to think about your system automatically generate a few great diagrams that helps you can reason about the system.
+Floyd uses the C4 model to navigate and present your code. It's completely optional to use this feature. The C4 features gives you a very fast and lightweight way to think about your system and automatically generate a few great diagrams that helps you reason about it.
 
 Read more here: https://c4model.com/
 
-The C4 model and the diagrams lets you have a complete overview over your entire system and how users interact with it, then drill down to individual containers and further down to components and the code itself.
+The C4 diagrams lets you have a complete overview over your entire system and how users interact with it, then drill down to individual containers and further down to components and the code itself.
 
 In Floyd you describe your system using the keywords **software-system** and **container-def**, which use C4 terminology.
 
@@ -741,7 +741,10 @@ any jsonvalue_to_value(json_value v)
 
 ## MAIN()
 
-You can implement a function called "main" that will called by the Floyd runtime after all global statements have been executed. The main() function is optional, but the only way to get command line arguments and return a command line error code.
+You can implement a function called "main" that will called by the Floyd runtime after all global statements have been executed. The main() function is optional, but the only way to get command line arguments and return a command line error code. Main can have two different forms:
+- int main(){} -- which uses no input arguments or
+- int main([string] args){} -- that receives command line input.
+
 
 ```
 func int main([string] args){
@@ -755,6 +758,18 @@ func int main([string] args){
 >floyd run my_program.floyd -a output.txt
 
 ...will call your main() function with ["-a", "output.txt"]
+
+
+## EXECUTING CODE: MAIN(), PROCESS, GLOBAL STATEMENTS AND COMPILE TIME
+
+
+These are the steps used by the Floyd runtime to executing a Floyd program:
+
+1. Main thread initialises all Globals and constants
+2. Main thread executes all global statements 
+3. Main thread starts all floyd processes running in non-main threads. How they execute is undefined here but under your control
+4. Main thread calls main()
+5. When main() returns and all floyd processs have exited, the runtime is taken down and the OS executable is exited
 
 
 
