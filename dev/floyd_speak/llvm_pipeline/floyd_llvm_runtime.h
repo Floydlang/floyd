@@ -26,7 +26,7 @@ namespace llvm {
 }
 
 namespace floyd {
-
+	struct semantic_ast_t;
 	struct llvm_ir_program_t;
 	struct runtime_handler_i;
 
@@ -151,18 +151,54 @@ struct llvm_bind_t {
 llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const std::string& name);
 
 
-int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f, const std::vector<std::string>& main_args);
-
+//	These are the support function built into the runtime, like RC primitives.
 std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_interner_t& interner);
-std::map<std::string, void*> get_host_functions_map2();
+std::map<std::string, void*> get_c_function_ptrs();
 
 uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee);
 uint64_t call_floyd_runtime_deinit(llvm_execution_engine_t& ee);
 
+int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f, const std::vector<std::string>& main_args);
 
-llvm_execution_engine_t make_engine_run_init(llvm_instance_t& instance, llvm_ir_program_t& program);
+
+
+
+
+std::unique_ptr<llvm_execution_engine_t> make_engine_run_init(llvm_ir_program_t& program);
+
 
 std::map<std::string, value_t> run_llvm_container(llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args, const std::string& container_key);
+
+
+struct llvm_executor_t {
+	~llvm_executor_t(){
+		call_floyd_runtime_deinit(*ee);
+
+		detect_leaks(ee->heap);
+	}
+
+
+
+	////////////////////////////////		STATE
+	std::unique_ptr<llvm_execution_engine_t> ee;
+};
+
+
+std::unique_ptr<llvm_executor_t> run_program_llvm(std::unique_ptr<llvm_ir_program_t> exe, const std::vector<std::string>& main_args);
+
+
+//	Runs the LLVM IR program.
+int64_t run_llvm_program(llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args);
+
+
+
+
+//	Helper that goes directly from source to LLVM IR code.
+std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instance, const compilation_unit_t& cu);
+
+//	Compiles and runs the program.
+int64_t run_using_llvm_helper(const std::string& program_source, const std::string& file, const std::vector<std::string>& main_args);
+
 
 
 }	//	namespace floyd

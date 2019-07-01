@@ -137,19 +137,19 @@ static test_report_t run_program_llvm(const compilation_unit_t& cu, const std::v
 		auto exe = generate_llvm_ir_program(llvm_instance, pass3, cu.source_file_path);
 
 		//	Runs global init code.
-		auto ee = make_engine_run_init(llvm_instance, *exe);
+		auto ee = make_engine_run_init(*exe);
 
-		const auto main_function = bind_function(ee, "main");
-		const auto main_result = main_function.first != nullptr ? llvm_call_main(ee, main_function, main_args) : 0;
+		const auto main_function = bind_function(*ee, "main");
+		const auto main_result = main_function.first != nullptr ? llvm_call_main(*ee, main_function, main_args) : 0;
 
-		const auto result_global0 = bind_global(ee, "result");
-		const auto result_global = result_global0.first != nullptr ? load_global(ee, result_global0) : value_t();
+		const auto result_global0 = bind_global(*ee, "result");
+		const auto result_global = result_global0.first != nullptr ? load_global(*ee, result_global0) : value_t();
 
-		call_floyd_runtime_deinit(ee);
+		call_floyd_runtime_deinit(*ee);
 
-		detect_leaks(ee.heap);
+		detect_leaks(ee->heap);
 
-		return test_report_t{ result_global, main_result, ee._print_output, "" };
+		return test_report_t{ result_global, main_result, ee->_print_output, "" };
 	}
 	catch(const std::runtime_error& e){
 		return test_report_t{ {}, {}, {}, e.what() };

@@ -2504,19 +2504,4 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 	return result;
 }
 
-
-//	Destroys program, can only run it once!
-int64_t run_llvm_program(llvm_instance_t& instance, llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args){
-	QUARK_ASSERT(instance.check_invariant());
-	QUARK_ASSERT(program_breaks.check_invariant());
-
-//???main_args
-
-	auto ee = make_engine_run_init(instance, program_breaks);
-	call_floyd_runtime_deinit(ee);
-	return 0;
-}
-
-
-
 }	//	floyd

@@ -756,14 +756,21 @@ func int main([string] args){
 ## EXECUTING CODE: MAIN(), PROCESS, GLOBAL STATEMENTS AND COMPILE TIME
 
 
-These are the steps used by the Floyd runtime to executing a Floyd program:
+These are the steps used by the Floyd runtime to executing a Floyd program that has a main() function
 
-1. Main thread initialises all Globals and constants
+1. Main thread initialises all globals and constants
 2. Main thread executes all global statements 
-3. Main thread starts all floyd processes running in non-main threads. How they execute is undefined here but under your control
-4. Main thread calls main()
-5. When main() returns and all floyd processs have exited, the runtime is taken down and the OS executable is exited
+3. Main thread calls main()
+4. When main() returns, the runtime is taken down and the OS executable is exited
 
+These are the steps used by the Floyd runtime to executing a Floyd program that has no main() function
+
+1. Main thread initialises all globals and constants
+2. Main thread executes all global statements 
+3. Main thread starts all floyd processes in separate threads. How they execute is undefined here but under your control
+4. When all floyd processs have exited, the runtime is taken down and the OS executable is exited.
+
+A Floyd program either has a main() function or processes.
 
 
 # 2. THE LANGUAGE REFERENCE
