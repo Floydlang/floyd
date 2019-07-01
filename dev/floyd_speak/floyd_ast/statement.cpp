@@ -440,7 +440,7 @@ statement_t astjson_to_statement__nonlossy(const json_t& statement0){
 		return statement_t::make__expression_statement(loc, expr2);
 	}
 
-	else if(type == statement_opcode_t::k_software_system){
+	else if(type == statement_opcode_t::k_software_system_def){
 		QUARK_ASSERT(statement.get_array_size() == 2);
 		const auto json_data = statement.get_array_n(1);
 
@@ -579,7 +579,7 @@ json_t statement_to_json(const statement_t& e){
 		json_t operator()(const statement_t::software_system_statement_t& s) const{
 			return make_statement1(
 				statement.location,
-				statement_opcode_t::k_software_system,
+				statement_opcode_t::k_software_system_def,
 				s._json_data
 			);
 		}

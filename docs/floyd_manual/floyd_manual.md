@@ -239,13 +239,13 @@ Notice that string has many qualities of an array of characters. You can ask for
 
 ## SOFTWARE SYSTEM - C4
 
-Floyd uses the C4 model to navigate and present your code. It's completely optional to use this feature. The C4 features gives you a very fast and lightweight way to think about your system and automatically generate a few great diagrams that helps you reason about it.
+Floyd uses the C4 model to navigate and present your code. It's completely optional to use this feature. The C4 features gives you a very fast and lightweight way method to think about your system and to automatically generate a few great diagrams that helps you reason about it.
 
 Read more here: https://c4model.com/
 
 The C4 diagrams lets you have a complete overview over your entire system and how users interact with it, then drill down to individual containers and further down to components and the code itself.
 
-In Floyd you describe your system using the keywords **software-system** and **container-def**, which use C4 terminology.
+In Floyd you describe your system using the keywords **software-system-def** and **container-def**, which use C4 terminology.
 
 ![Software Systems](floyd_systems_software_system.png)
 
@@ -266,14 +266,14 @@ This describes the entire software system you are building -- something that del
 
 Zooms into your software system and shows the different containers (apps) that makes up the system.
 
-There are proxy-containers that lets you place things like Amazon S3 or an email server into your system.
+You can use a mix of your own custom containers and proxy-containers for things like Amazon S3 or an email server. They are all part of the diagram.
 
 ![Level2](floyd_systems_level2_diagram.png)
 
 
 ### CONTAINERS
 
-Containers is where the bulk of the programming happens. A container represents something that hosts code or data. A container is a thing that needs to be running in order for the overall software system to work. A mobile app, a server-side web application, a client-side web application, a micro service: all examples of containers.
+A container is a thing that needs to be running in order for the overall software system to work. A mobile app, a server-side web application, a client-side web application, a micro service.
 
 A container is usually a single OS-process. It looks for resources and knows how to string things together inside the container, does its own processing of events and so forth, has its own state and handles runtimer errors. Sockets, file systems, concurrency, messages and screens are handled here.
 
@@ -293,15 +293,9 @@ This diagram zooms into an individual container to show the components inside.
 
 ### COMPONENTS
 
-A component is the same as a library, package or module. It's a group of related features encapsulated behind a well-defined interface. You can make your own components, use built-in component and get 3rd party components.
+A component is the same as a library, package or module. It's a group of related features encapsulated behind a well-defined API. You can make your own components, use built-in component and get 3rd party components.
 
 Examples: JPEG library, JSON lib. Custom component for syncing with your server. Amazon S3 library, socket library.
-
-Does not span processes. A component can be fully pure. Pure components have no side effects, have no internal state and are passive, like a ZIP library or a matrix-math library. These can be used from any Floyd code in the call graph -- both pure and impure functions.
-
-Or they can be impure. Impure components may take aktive decisions (detecting mouse clicks and calling your code) and may affect the world around you or give different results for each call and keeps their own internal state. get_time() and get_mouse_pos(), on_mouse_click(). read_directory_elements(). These can only be accessed from impure Floyd functions at the top of the call graph.
-
-Notice: a component used in several containers or a piece of code that appears in several components will appear in each -- they will look like they are duplicates in C4 diagrams, but they aren't. The perspective of the diagrams is **logic dependencies**. These diagrams don't show the physical dependencies -- which source files or libraries that depends on each other.
 
 
 ### LEVEL 4 - CODE DIAGRAM
@@ -311,14 +305,14 @@ Classes. Instance diagram. Examples. Passive. You often use a simple UML diagram
 ![Level3](floyd_systems_level4_diagram.png)
 
 
-TODO: Make script that generates diagrams from software-system JSON.
+TODO: Make script that generates diagrams from software-system-def JSON.
 
 
 ### EXAMPLE SOFTWARE SYSTEM STATEMENT
 
 
 ```
-software-system {
+software-system-def {
 	"name": "My Arcade Game",
 	"desc": "Space shooter for mobile devices, with connection to a server.",
 
@@ -339,7 +333,6 @@ software-system {
 ```
 
 TODO: support proxy software-systems
-
 TODO: support connections between components inside containers.
 
 
@@ -773,7 +766,7 @@ These are the steps used by the Floyd runtime to executing a Floyd program:
 
 
 
-# 2. THE LANGUAGE
+# 2. THE LANGUAGE REFERENCE
 
 
 
@@ -1103,9 +1096,9 @@ The return statement aborts the execution of the current function as the functio
 
 
 
-## SOFTWARE-SYSTEM STATEMENT
+## SOFTWARE-SYSTEM-DEF STATEMENT
 
-This is a dedicated keyword for defining software systems: **software-system**. Its contents is encoded as a JSON object and designed to be either hand-coded or processed by tools. You only have one of these in a software system.
+This is a dedicated keyword for defining software systems: **software-system-def**. Its contents is encoded as a JSON object and designed to be either hand-coded or processed by tools. You only have one of these in a software system.
 
 |Key		| Meaning
 |:---	|:---	
@@ -1146,8 +1139,8 @@ This is an object where each key is the name of a persona and a short descriptio
 
 |Key		| Meaning
 |:---	|:---	
-|**source**		| the name of the container or user, as listed in the software-system
-|**dest**		| the name of the container or user, as listed in the software-system
+|**source**		| the name of the container or user, as listed in the software-system-def
+|**dest**		| the name of the container or user, as listed in the software-system-def
 |**interaction**		| "user plays game on device" or "server sends order notification"
 |**tech**		| "webhook", "REST command"
 
@@ -1161,7 +1154,7 @@ This is a dedicated keyword. It defines *one* container, its name, its internal 
 
 |Key		| Meaning
 |:---	|:---	
-|**name**		| Needs to match the name listed in software-systems, containers.
+|**name**		| Needs to match the name listed in software-system-defs, containers.
 |**tech**		| short string that lists the most important technologies, languages, toolkits.
 |**desc**		| short string that tells what this component is and does.
 |**clocks**		| defines every clock (concurrent process) in this container and lists which processes that are synced to each of these clocks
@@ -1235,7 +1228,7 @@ This is a dedicated keyword. It defines *one* container, it's name, its internal
 
 |Key		| Meaning
 |:---	|:---	
-|**name**		| Needs to match the name listed in software-systems, containers.
+|**name**		| Needs to match the name listed in software-system-defs, containers.
 |**tech**		| short string that lists the most important technologies, languages, toolkits.
 |**desc**		| short string that tells what this component is and does.
 |**clocks**		| defines every clock (concurrent process) in this container and lists which processes that are synced to each of these clocks
@@ -2156,7 +2149,7 @@ Make a new Floyd JSON value from a JSON-script string. If the string is malforme
 
 
 ```
-software-system {
+software-system-def {
 	"name": "My Arcade Game",
 	"desc": "Space shooter for mobile devices, with connection to a server.",
 
@@ -2294,7 +2287,7 @@ Here is the DAG for the complete syntax of Floyd.
  		BIND-MUTABLE-INFERCETYPE			"mutable" IDENTIFIER "=" EXPRESSION
 		EXPRESSION-STATEMENT 			EXPRESSION
  		ASSIGNMENT	 				IDENTIFIER "=" EXPRESSION
-		SOFTWARE-SYSTEM				"software-system" JSON_BODY
+		SOFTWARE-SYSTEM-DEF				"software-system-def" JSON_BODY
 		COMPONENT-DEF					"component-def" JSON_BODY
 
 

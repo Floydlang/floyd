@@ -92,7 +92,7 @@ namespace statement_opcode_t {
 	const std::string k_while = "while";
 
 	const std::string k_expression_statement = "expression-statement";
-	const std::string k_software_system = "software-system";
+	const std::string k_software_system_def = "software-system-def";
 	const std::string k_container_def = "container-def";
 };
 

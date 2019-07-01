@@ -57,7 +57,7 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 			return parse_bind_statement(pos);
 		}
 		else if(is_first(pos, keyword_t::k_software_system)){
-			return parse_software_system_statement(pos);
+			return parse_software_system_def_statement(pos);
 		}
 		else if(is_first(pos, keyword_t::k_container_def)){
 			return parse_container_def_statement(pos);

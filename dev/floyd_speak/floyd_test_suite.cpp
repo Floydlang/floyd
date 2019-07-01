@@ -5376,16 +5376,16 @@ QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
 
 
 //######################################################################################################################
-//	SOFTWARE-SYSTEM
+//	SOFTWARE-SYSTEM-DEF
 //######################################################################################################################
 
 
 
 
-QUARK_UNIT_TEST("software-system", "parse software-system", "", ""){
+QUARK_UNIT_TEST("software-system-def", "parse software-system-def", "", ""){
 	const auto test_ss = R"(
 
-		software-system {
+		software-system-def {
 			"name": "My Arcade Game",
 			"desc": "Space shooter for mobile devices, with connection to a server.",
 
@@ -5413,7 +5413,7 @@ QUARK_UNIT_TEST("software-system", "parse software-system", "", ""){
 QUARK_UNIT_TEST("", "try calling LLVM function", "", ""){
 	const auto p = R"(
 
-		software-system {
+		software-system-def {
 			"name": "My Arcade Game",
 			"desc": "Space shooter for mobile devices, with connection to a server.",
 			"people": {},
@@ -5459,10 +5459,10 @@ QUARK_UNIT_TEST("", "try calling LLVM function", "", ""){
 
 
 
-QUARK_UNIT_TEST("software-system", "run one process", "", ""){
+QUARK_UNIT_TEST("software-system-def", "run one process", "", ""){
 	const auto test_ss2 = R"(
 
-		software-system {
+		software-system-def {
 			"name": "My Arcade Game",
 			"desc": "Space shooter for mobile devices, with connection to a server.",
 			"people": {},
@@ -5515,10 +5515,10 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 	QUARK_UT_VERIFY(result.empty());
 }
 
-QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
+QUARK_UNIT_TEST("software-system-def", "run two unconnected processs", "", ""){
 	const auto test_ss3 = R"(
 
-		software-system {
+		software-system-def {
 			"name": "My Arcade Game",
 			"desc": "Space shooter for mobile devices, with connection to a server.",
 			"people": {},
@@ -5601,10 +5601,10 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 	QUARK_UT_VERIFY(result.empty());
 }
 
-QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
+QUARK_UNIT_TEST("software-system-def", "run two CONNECTED processes", "", ""){
 	const auto test_ss3 = R"(
 
-		software-system {
+		software-system-def {
 			"name": "My Arcade Game",
 			"desc": "Space shooter for mobile devices, with connection to a server.",
 			"people": {},
