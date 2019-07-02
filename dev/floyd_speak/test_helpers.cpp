@@ -81,7 +81,7 @@ int64_t bc_call_main(interpreter_t& interpreter, const floyd::value_t& f, const 
 
 //??? Move to interpreter sources.
 //	Run program using Floyd bytecode interpreter
-static test_report_t run_program_bc(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
+static test_report_t run_test_program_bc(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
 	try {
 		const auto exe = compile_to_bytecode(cu);
 
@@ -129,7 +129,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 //??? Make abstract runtime interface to send to llvm runtime functions, not llvm_execution_engine_t.
 //??? Refact out to floyd_llvm_runtime.h
 //	Run program using LLVM.
-static test_report_t run_program_llvm(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
+static test_report_t run_test_program_lvm(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
 	try {
 		llvm_instance_t llvm_instance;
 
@@ -137,17 +137,12 @@ static test_report_t run_program_llvm(const compilation_unit_t& cu, const std::v
 		auto exe = generate_llvm_ir_program(llvm_instance, pass3, cu.source_file_path);
 
 		//	Runs global init code.
-		auto ee = make_engine_run_init(*exe);
+		auto ee = start_program(*exe);
 
-		const auto main_function = bind_function(*ee, "main");
-		const auto main_result = main_function.first != nullptr ? llvm_call_main(*ee, main_function, main_args) : 0;
+		const auto main_result = ee->main_function.first != nullptr ? llvm_call_main(*ee, ee->main_function, main_args) : 0;
 
 		const auto result_global0 = bind_global(*ee, "result");
 		const auto result_global = result_global0.first != nullptr ? load_global(*ee, result_global0) : value_t();
-
-		call_floyd_runtime_deinit(*ee);
-
-		detect_leaks(ee->heap);
 
 		return test_report_t{ result_global, main_result, ee->_print_output, "" };
 	}
@@ -165,10 +160,10 @@ test_report_t run_program(const compilation_unit_t& cu, const std::vector<std::s
 
 test_report_t run_program2(const compilation_unit_t& cu, const std::vector<std::string>& main_args, const std::string& container_key){
 	if(g_executor == executor_mode::bc_interpreter){
-		return run_program_bc(cu, main_args);
+		return run_test_program_bc(cu, main_args);
 	}
 	else if(g_executor == executor_mode::llvm_jit){
-		return run_program_llvm(cu, main_args);
+		return run_test_program_lvm(cu, main_args);
 	}
 	else{
 		QUARK_ASSERT(false);

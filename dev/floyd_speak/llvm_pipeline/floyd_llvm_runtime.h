@@ -65,12 +65,11 @@ struct function_def_t {
 //https://en.wikipedia.org/wiki/Hexspeak
 const uint64_t k_debug_magic = 0xFACEFEED05050505;
 
+
 struct llvm_execution_engine_t {
-	bool check_invariant() const {
-		QUARK_ASSERT(ee);
-		QUARK_ASSERT(heap.check_invariant());
-		return true;
-	}
+	~llvm_execution_engine_t();
+	bool check_invariant() const;
+
 
 
 	////////////////////////////////		STATE
@@ -89,6 +88,9 @@ struct llvm_execution_engine_t {
 
 	public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
 	public: heap_t heap;
+
+	std::pair<void*, typeid_t> main_function;
+	bool inited;
 };
 
 
@@ -161,36 +163,11 @@ uint64_t call_floyd_runtime_deinit(llvm_execution_engine_t& ee);
 int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f, const std::vector<std::string>& main_args);
 
 
-
-
-
-std::unique_ptr<llvm_execution_engine_t> make_engine_run_init(llvm_ir_program_t& program);
+//	Calls init() and will perform deinit() when engine is destructed later.
+std::unique_ptr<llvm_execution_engine_t> start_program(llvm_ir_program_t& program);
 
 
 std::map<std::string, value_t> run_llvm_container(llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args, const std::string& container_key);
-
-
-struct llvm_executor_t {
-	llvm_executor_t() :
-		main_result(-666)
-	{
-	}
-
-	~llvm_executor_t(){
-		call_floyd_runtime_deinit(*ee);
-		detect_leaks(ee->heap);
-	}
-
-
-
-	////////////////////////////////		STATE
-	std::unique_ptr<llvm_execution_engine_t> ee;
-	int64_t main_result;
-};
-
-
-std::unique_ptr<llvm_executor_t> start_program(std::unique_ptr<llvm_ir_program_t>& exe, const std::vector<std::string>& main_args);
-
 
 
 
