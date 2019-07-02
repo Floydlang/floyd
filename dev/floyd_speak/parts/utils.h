@@ -51,14 +51,18 @@ template <typename T> bool compare_shared_value_vectors(const std::vector<T>& ve
 
 //	Returns new collection.
 template <typename T> std::vector<T> concat(const std::vector<T>& lhs, const std::vector<T>& rhs){
-	std::vector<T> temp = lhs;
+	std::vector<T> temp;
+	temp.reserve(lhs.size() + rhs.size());
+	temp.insert(temp.end(), lhs.begin(), lhs.end());
 	temp.insert(temp.end(), rhs.begin(), rhs.end());
 	return temp;
 }
 
 //	Returns new collection.
 template <typename T> std::vector<T> concat(const std::vector<T>& lhs, const T& rhs){
-	std::vector<T> temp = lhs;
+	std::vector<T> temp;
+	temp.reserve(lhs.size() + 1);
+	temp.insert(temp.end(), lhs.begin(), lhs.end());
 	temp.push_back(rhs);
 	return temp;
 }
