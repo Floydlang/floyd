@@ -2817,12 +2817,11 @@ int64_t run_using_llvm_helper(const std::string& program_source, const std::stri
 
 	llvm_instance_t instance;
 	auto program = generate_llvm_ir_program(instance, pass3, file);
-	const auto result = run_llvm_program(*program, main_args);
-	QUARK_TRACE_SS("Fib = " << result);
-	return result;
+	auto result = start_program(program, main_args);
+	return result->main_result;
 }
 
-std::unique_ptr<llvm_executor_t> run_program_llvm(std::unique_ptr<llvm_ir_program_t> exe, const std::vector<std::string>& main_args){
+std::unique_ptr<llvm_executor_t> start_program(std::unique_ptr<llvm_ir_program_t>& exe, const std::vector<std::string>& main_args){
 	//	Runs global init code.
 	auto ee = make_engine_run_init(*exe);
 
@@ -2835,22 +2834,13 @@ std::unique_ptr<llvm_executor_t> run_program_llvm(std::unique_ptr<llvm_ir_progra
 
 	auto result = std::unique_ptr<llvm_executor_t>();
 	result->ee.swap(ee);
+	result->main_result = main_result;
 	return result;
 }
 
 
 
 
-//	Destroys program, can only run it once!
-int64_t run_llvm_program(llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args){
-	QUARK_ASSERT(program_breaks.check_invariant());
-
-//???main_args
-
-	auto ee = make_engine_run_init(program_breaks);
-	call_floyd_runtime_deinit(*ee);
-	return 0;
-}
 
 
 

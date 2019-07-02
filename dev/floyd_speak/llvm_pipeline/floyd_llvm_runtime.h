@@ -171,9 +171,13 @@ std::map<std::string, value_t> run_llvm_container(llvm_ir_program_t& program_bre
 
 
 struct llvm_executor_t {
+	llvm_executor_t() :
+		main_result(-666)
+	{
+	}
+
 	~llvm_executor_t(){
 		call_floyd_runtime_deinit(*ee);
-
 		detect_leaks(ee->heap);
 	}
 
@@ -181,14 +185,13 @@ struct llvm_executor_t {
 
 	////////////////////////////////		STATE
 	std::unique_ptr<llvm_execution_engine_t> ee;
+	int64_t main_result;
 };
 
 
-std::unique_ptr<llvm_executor_t> run_program_llvm(std::unique_ptr<llvm_ir_program_t> exe, const std::vector<std::string>& main_args);
+std::unique_ptr<llvm_executor_t> start_program(std::unique_ptr<llvm_ir_program_t>& exe, const std::vector<std::string>& main_args);
 
 
-//	Runs the LLVM IR program.
-int64_t run_llvm_program(llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args);
 
 
 
