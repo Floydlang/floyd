@@ -59,8 +59,6 @@ void ut_verify(const quark::call_context_t& context, const test_report_t& result
 }
 
 
-//??? Move to interpreter sources.
-//	Run program using Floyd bytecode interpreter
 static test_report_t run_test_program_bc(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
 	try {
 		const auto exe = compile_to_bytecode(cu);
