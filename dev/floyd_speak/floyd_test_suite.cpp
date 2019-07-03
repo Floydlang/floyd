@@ -5512,7 +5512,7 @@ QUARK_UNIT_TEST("software-system-def", "run one process", "", ""){
 	)";
 
 	const auto result = test_run_container2(test_ss2, {}, "iphone app", "");
-	QUARK_UT_VERIFY(result.empty());
+	QUARK_UT_VERIFY(result == run_output_t());
 }
 
 QUARK_UNIT_TEST("software-system-def", "run two unconnected processs", "", ""){
@@ -5598,7 +5598,7 @@ QUARK_UNIT_TEST("software-system-def", "run two unconnected processs", "", ""){
 	)";
 
 	const auto result = test_run_container2(test_ss3, {}, "iphone app", "");
-	QUARK_UT_VERIFY(result.empty());
+	QUARK_UT_VERIFY(result == run_output_t());
 }
 
 QUARK_UNIT_TEST("software-system-def", "run two CONNECTED processes", "", ""){
@@ -5687,7 +5687,7 @@ QUARK_UNIT_TEST("software-system-def", "run two CONNECTED processes", "", ""){
 	)";
 
 	const auto result = test_run_container2(test_ss3, {}, "iphone app", "");
-	QUARK_UT_VERIFY(result.empty());
+	QUARK_UT_VERIFY(result == run_output_t() );
 }
 
 
@@ -5706,7 +5706,7 @@ QUARK_UNIT_TEST("Floyd test suite", "hello_world.floyd", "", ""){
 	const auto program = read_text_file(path);
 
 	const auto result = test_run_container2(program, {}, "", "");
-	const std::map<std::string, value_t> expected = {{ "global", value_t::make_void() }};
+	const run_output_t expected = {};
 	QUARK_UT_VERIFY(result == expected);
 }
 
@@ -5715,7 +5715,7 @@ QUARK_UNIT_TEST("Floyd test suite", "game_of_life.floyd", "", ""){
 	const auto program = read_text_file(path);
 
 	const auto result = test_run_container2(program, {}, "", "");
-	const std::map<std::string, value_t> expected = {{ "global", value_t::make_void() }};
+	const run_output_t expected = {};
 	QUARK_UT_VERIFY(result == expected);
 }
 

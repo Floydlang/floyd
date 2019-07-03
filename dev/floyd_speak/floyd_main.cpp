@@ -22,9 +22,10 @@
 #include "file_handling.h"
 
 #include "pass3.h"
-#include "floyd_llvm.h"
 #include "compiler_helpers.h"
 #include "compiler_basics.h"
+
+#include "floyd_llvm_runtime.h"
 
 std::string floyd_version_string = "0.3";
 
@@ -223,12 +224,10 @@ int do_run_command(const command_line_args_t& command_line_args){
 		const auto source = read_text_file(source_path);
 		const auto cu = floyd::make_compilation_unit_lib(source, source_path);
 		auto program = floyd::compile_to_bytecode(cu);
-
-		const auto result = floyd::run_container(program, args2, program._container_def._name);
-		if(result.size() == 1 && result.find("main()") != result.end()){
-			const auto main_return = *result.begin();
-			const auto error_code = main_return.second.is_int() ? main_return.second.get_int_value() : EXIT_SUCCESS;
-			return static_cast<int>(error_code);
+		auto interpreter = floyd::interpreter_t(program);
+		const auto result = floyd::run_program_bc(interpreter, args2);
+		if(result.process_results.size() == 0){
+			return static_cast<int>(result.main_result);
 		}
 		else{
 			return EXIT_SUCCESS;
@@ -248,8 +247,13 @@ int do_run_llvm_command(const command_line_args_t& command_line_args){
 		const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
 
 		const auto source = read_text_file(source_path);
-		const auto error_code = floyd::run_using_llvm_helper(source, source_path, args2);
-		return static_cast<int>(error_code);
+		const auto run_results = floyd::run_program_helper(source, source_path, args2);
+		if(run_results.process_results.empty()){
+			return static_cast<int>(run_results.main_result);
+		}
+		else{
+			return -1;
+		}
 	}
 	else{
 		help();
@@ -368,12 +372,11 @@ json_t handle_server_request(const json_t& request) {
 
 				const auto cu = floyd::make_compilation_unit_lib(source, source_path);
 				auto program = floyd::compile_to_bytecode(cu);
+				auto interpreter = floyd::interpreter_t(program);
 
-				const auto result = floyd::run_container(program, {}, program._container_def._name);
-				if(result.size() == 1 && result.find("main()") != result.end()){
-					const auto main_return = *result.begin();
-					const auto error_code = main_return.second.is_int() ? main_return.second.get_int_value() : EXIT_SUCCESS;
-					const auto output_value = static_cast<int>(error_code);
+				const auto result = floyd::run_program_bc(interpreter, {});
+				if(result.process_results.size() == 0){
+					const auto output_value = static_cast<int>(result.main_result);
 					return json_t::make_object({{ "output", json_t(output_value) }});
 				}
 				else{

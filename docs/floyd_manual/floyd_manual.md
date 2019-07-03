@@ -1113,7 +1113,7 @@ This is a dedicated keyword for defining software systems: **software-system-def
 |**desc**		| longer description of your software system. JSON String.
 |**people**	| personas involved in using or maintaining your system. Don't go crazy. JSON object.
 |**connections**	| the most important relationships between people and the containers. Be specific "user sends email using gmail" or "user plays game on device" or "mobile app pulls user account from server based on login". JSON array.
-|**containers**	| Your iOS app, your server, the email system. Notice that you map gmail-server as a container, even though it's a gigantic software system by itself. JSON array with container names as strings. These strings are used as keys to identify containers.
+|**containers**	| Your iOS app, your server, the email system. Notice that you gmail-server is a container, even though it's a gigantic software system by itself. JSON array with container names as strings. These strings are used as keys to identify containers.
 
 
 
@@ -1172,8 +1172,7 @@ This is a dedicated keyword. It defines *one* container, its name, its internal 
 
 You should keep this statement close to process-code that makes up the container. That handles messages, stores their mutable state, does all communication with the real world. Keep the logic code out of here as much as possible, the Floyd processes are about communication and state and time only.
 
-
-Example container:
+##### EXAMPLE CONTAINER
 
 ```
 container-def {
@@ -1230,60 +1229,9 @@ container-def {
 }
 ```
 
+##### CONTAINER CODE
 
-This is a dedicated keyword. It defines *one* container, it's name, its internal processes and how they interact.
-
-|Key		| Meaning
-|:---	|:---	
-|**name**		| Needs to match the name listed in software-system-defs, containers.
-|**tech**		| short string that lists the most important technologies, languages, toolkits.
-|**desc**		| short string that tells what this component is and does.
-|**clocks**		| defines every clock (concurrent process) in this container and lists which processes that are synced to each of these clocks
-|**connections**		| connects the processes together using virtual wires. Source-process-name, dest-process-name, interaction-description.
-|**probes\_and\_tweakers**		| lists all probes and tweakers used in this container. Notice that the same function or component can have a different set of probes and tweakers per container or share them.
-|**components**		| lists all imported components needed for this container
-
-
-You should keep this statement close to process-code that makes up the container. That handles messages, stores their mutable state, does all communication with the real world. Keep the logic code out of here as much as possible, the Floyd processes are about communication and state and time only.
-
-
-Example container:
-
-```
-container-def {
-	"name": "iphone app",
-	"tech": "Swift, iOS, Xcode, Open GL",
-	"desc": "Mobile shooter game for iOS.",
-
-	"clocks": {
-		"main": {
-			"a": "my_gui",
-			"b": "iphone-ux"
-		},
-
-		"com-clock": {
-			"c": "server_com"
-		},
-		"opengl_feeder": {
-			"d": "renderer"
-		}
-	},
-	"connections": [
-		{ "source": "b", "dest": "a", "interaction": "b sends messages to a", "tech": "OS call" },
-		{ "source": "b", "dest": "c", "interaction": "b also sends messages to c, which is another clock", "tech": "OS call" }
-	],
-	"components": [
-		"My Arcade Game-iphone-app",
-		"My Arcade Game-logic",
-		"My Arcade Game-servercom",
-		"OpenGL-component",
-		"Free Game Engine-component",
-		"iphone-ux-component"
-	]
-}
-```
-
-For each process you've listed under "clocks", ("my_gui", "iphone-ux", "server_com" and "renderer" in example above) you need to implement two functions. The init-function and the message handler. These functions are named based on the process.
+For each floyd process you've listed under "clocks", ("my_gui", "iphone-ux", "server_com" and "renderer" in example above) you need to implement two functions. The init-function and the message handler. These functions are named based on the process.
 
 The init function is called x__init() where x is a placeholder. It takes no arguments, is impure and returns a value of type of your choice. This type is your process' memory slot -- the only mutable state your process has access to.
 
@@ -1305,28 +1253,6 @@ func my_gui_state_t my_gui__init() impure {
 func my_gui_state_t my_gui(my_gui_state_t state, json_value message) impure{
 }
 ```
-
-##### PROXY CONTAINER
-
-If you use an external component or software system, like for example gmail, you list it here so we can represent it, as a proxy.
-
-```
-container-def {
-	"name": "gmail mail server"
-}
-```
-
-or 
-
-```
-container-def {
-	"name": "gmail mail server"
-	"tech": "Google tech",
-	"desc": "Use gmail to store all gamer notifications."
-}
-```
-
-
 
 
 ### TODO: SWITCH STATEMENT

@@ -17,6 +17,8 @@
 #include "quark.h"
 
 #include "bytecode_interpreter.h"
+#include "compiler_helpers.h"
+
 #include <string>
 #include <vector>
 
@@ -54,36 +56,7 @@ std::pair<std::shared_ptr<interpreter_t>, value_t> bc_run_main(
 );
 
 
-/*
-	SCENARIOS:
-	1) container_key specifies a container, as defined in software_system.
-	This runs all processes.
-
-	ARGS: No use of args.
-	RETURN: none.
-
-	2) container_key == "" and there is no "main()" function defined
-	Run global code only.
-
-	ARGS: No use of args()
-	RETURN: {{"global", void }}
-
-	3) container_key == "" and main() function specified
-	Run global code, then call main() function with args. Result value of main() (call it X) is returned by run_container.
-
-	ARGS: Sent as as arguments to main().
-	RETURN: {{ "main()", X }}
-*/
-std::map<std::string, value_t> run_container(
-	const bc_program_t& program,
-	const std::vector<std::string>& main_args,
-	const std::string& container_key
-);
-std::map<std::string, value_t> bc_run_container2(
-	const compilation_unit_t& cu,
-	const std::vector<std::string>& main_args,
-	const std::string& container_key
-);
+run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& main_args);
 
 void print_vm_printlog(const interpreter_t& vm);
 

@@ -415,141 +415,138 @@ static void process_process(bc_process_runtime_t& runtime, int process_id){
 	}
 }
 
-static std::map<std::string, value_t> run_container_int(const bc_program_t& program, const std::vector<std::string>& args, const std::string& container_key){
-	bc_process_runtime_t runtime;
-	runtime._main_thread_id = std::this_thread::get_id();
+static std::map<std::string, value_t> run_floyd_processes(const interpreter_t& vm, const std::vector<std::string>& args){
+	const auto& container_def = vm._imm->_program._container_def;
 
-/*
-	if(program._software_system._name == ""){
-		quark::throw_exception();
-	}
-*/
-	QUARK_ASSERT(container_key.empty() == false);
-
-
-	//??? Confusing. Support several containers!
-	if(std::find(program._software_system._containers.begin(), program._software_system._containers.end(), container_key) == program._software_system._containers.end()){
-		quark::throw_runtime_error("Unknown container-key");
-	}
-
-	if(program._container_def._name != container_key){
-		quark::throw_runtime_error("Unknown container-key");
-	}
-
-	runtime._container = program._container_def;
-
-	runtime._process_infos = reduce(runtime._container._clock_busses, std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const std::pair<std::string, clock_bus_t>& e){
-		auto acc2 = acc;
-		acc2.insert(e.second._processes.begin(), e.second._processes.end());
-		return acc2;
-	});
-
-	struct my_interpreter_handler_t : public runtime_handler_i {
-		my_interpreter_handler_t(bc_process_runtime_t& runtime) : _runtime(runtime) {}
-
-		virtual void on_send(const std::string& process_id, const json_t& message){
-			const auto it = std::find_if(_runtime._processes.begin(), _runtime._processes.end(), [&](const std::shared_ptr<bc_process_t>& process){ return process->_name_key == process_id; });
-			if(it != _runtime._processes.end()){
-				const auto process_index = it - _runtime._processes.begin();
-				send_message(_runtime, static_cast<int>(process_index), message);
-			}
-		}
-
-		bc_process_runtime_t& _runtime;
-	};
-	auto my_interpreter_handler = my_interpreter_handler_t{runtime};
-
-
-	for(const auto& t: runtime._process_infos){
-		auto process = std::make_shared<bc_process_t>();
-		process->_name_key = t.first;
-		process->_function_key = t.second;
-		process->_interpreter = std::make_shared<interpreter_t>(program, &my_interpreter_handler);
-		process->_init_function = find_global_symbol2(*process->_interpreter, t.second + "__init");
-		process->_process_function = find_global_symbol2(*process->_interpreter, t.second);
-
-		runtime._processes.push_back(process);
-	}
-
-	//	Remember that current thread (main) is also a thread, no need to create a worker thread for one process.
-	runtime._processes[0]->_thread_id = runtime._main_thread_id;
-
-	for(int process_id = 1 ; process_id < runtime._processes.size() ; process_id++){
-		runtime._worker_threads.push_back(std::thread([&](int process_id){
-
-//			const auto native_thread = thread::native_handle();
-
-			std::stringstream thread_name;
-			thread_name << std::string() << "process " << process_id << " thread";
-#ifdef __APPLE__
-			pthread_setname_np(/*pthread_self(),*/ thread_name.str().c_str());
-#endif
-
-			process_process(runtime, process_id);
-		}, process_id));
-	}
-
-	process_process(runtime, 0);
-
-	for(auto &t: runtime._worker_threads){
-		t.join();
-	}
-
-#if 0
-	const auto result_vec = mapf<pair<string, value_t>>(
-		runtime._processes,
-		[](const auto& process){ return pair<string, value_t>{ process->_name_key, process->_process_state };}
-	);
-	std::map<string, value_t> result_map;
-	for(const auto& e: result_vec){
-		const pair<string, value_t> v(e.first, e.second);
-		result_map.insert(v);
-	}
-
-	return result_map;
-#endif
-	return {};
-//	QUARK_UT_VERIFY(runtime._processes[0]->_process_state.get_struct_value()->_member_values[0].get_int_value() == 998);
-}
-
-/*
-	if(program._software_system._name == ""){
-		quark::throw_exception();
-	}
-*/
-
-std::map<std::string, value_t> run_container(const bc_program_t& program, const std::vector<std::string>& main_args, const std::string& container_key){
-	if(container_key.empty()){
-		//	Create interpreter, run global code.
-		auto vm = std::make_shared<interpreter_t>(program);
-
-		const auto& main_function = find_global_symbol2(*vm, "main");
-		if(main_function != nullptr){
-			std::vector<value_t> args2;
-			for(const auto& e: main_args){
-				args2.push_back(value_t::make_string(e));
-			}
-			const auto arg_vec = value_t::make_vector_value(typeid_t::make_string(), args2);
-//			const auto bc_args = value_to_bc(arg_vec);
-			const auto& result = call_function(*vm, bc_to_value(main_function->_value), { arg_vec });
-			print_vm_printlog(*vm);
-			return {{ "main()", result }};
-		}
-		else{
-			print_vm_printlog(*vm);
-			return {{ "global", value_t::make_void() }};
-		}
+	if(container_def._clock_busses.empty()){
+		return {};
 	}
 	else{
-		return run_container_int(program, main_args, container_key);
+		bc_process_runtime_t runtime;
+		runtime._main_thread_id = std::this_thread::get_id();
+
+	/*
+		if(program._software_system._name == ""){
+			quark::throw_exception();
+		}
+	*/
+
+		runtime._container = container_def;
+
+		runtime._process_infos = reduce(runtime._container._clock_busses, std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const std::pair<std::string, clock_bus_t>& e){
+			auto acc2 = acc;
+			acc2.insert(e.second._processes.begin(), e.second._processes.end());
+			return acc2;
+		});
+
+		struct my_interpreter_handler_t : public runtime_handler_i {
+			my_interpreter_handler_t(bc_process_runtime_t& runtime) : _runtime(runtime) {}
+
+			virtual void on_send(const std::string& process_id, const json_t& message){
+				const auto it = std::find_if(_runtime._processes.begin(), _runtime._processes.end(), [&](const std::shared_ptr<bc_process_t>& process){ return process->_name_key == process_id; });
+				if(it != _runtime._processes.end()){
+					const auto process_index = it - _runtime._processes.begin();
+					send_message(_runtime, static_cast<int>(process_index), message);
+				}
+			}
+
+			bc_process_runtime_t& _runtime;
+		};
+		auto my_interpreter_handler = my_interpreter_handler_t{runtime};
+
+
+		for(const auto& t: runtime._process_infos){
+			auto process = std::make_shared<bc_process_t>();
+			process->_name_key = t.first;
+			process->_function_key = t.second;
+			process->_interpreter = std::make_shared<interpreter_t>(vm._imm->_program, &my_interpreter_handler);
+			process->_init_function = find_global_symbol2(*process->_interpreter, t.second + "__init");
+			process->_process_function = find_global_symbol2(*process->_interpreter, t.second);
+
+			runtime._processes.push_back(process);
+		}
+
+		//	Remember that current thread (main) is also a thread, no need to create a worker thread for one process.
+		runtime._processes[0]->_thread_id = runtime._main_thread_id;
+
+		for(int process_id = 1 ; process_id < runtime._processes.size() ; process_id++){
+			runtime._worker_threads.push_back(std::thread([&](int process_id){
+
+	//			const auto native_thread = thread::native_handle();
+
+				std::stringstream thread_name;
+				thread_name << std::string() << "process " << process_id << " thread";
+	#ifdef __APPLE__
+				pthread_setname_np(/*pthread_self(),*/ thread_name.str().c_str());
+	#endif
+
+				process_process(runtime, process_id);
+			}, process_id));
+		}
+
+		process_process(runtime, 0);
+
+		for(auto &t: runtime._worker_threads){
+			t.join();
+		}
+
+	#if 0
+		const auto result_vec = mapf<pair<string, value_t>>(
+			runtime._processes,
+			[](const auto& process){ return pair<string, value_t>{ process->_name_key, process->_process_state };}
+		);
+		std::map<string, value_t> result_map;
+		for(const auto& e: result_vec){
+			const pair<string, value_t> v(e.first, e.second);
+			result_map.insert(v);
+		}
+
+		return result_map;
+	#endif
+		return {};
+	//	QUARK_UT_VERIFY(runtime._processes[0]->_process_state.get_struct_value()->_member_values[0].get_int_value() == 998);
 	}
 }
 
 
-std::map<std::string, value_t> bc_run_container2(const compilation_unit_t& cu, const std::vector<std::string>& main_args, const std::string& container_key){
-	auto program = compile_to_bytecode(cu);
-	return run_container(program, main_args, container_key);
+
+static int64_t bc_call_main(interpreter_t& interpreter, const floyd::value_t& f, const std::vector<std::string>& main_args){
+	QUARK_ASSERT(interpreter.check_invariant());
+	QUARK_ASSERT(f.check_invariant());
+
+	//??? Check this earlier.
+	if(f.get_type() == get_main_signature_arg_impure() || f.get_type() == get_main_signature_arg_pure()){
+		const auto main_args2 = mapf<value_t>(main_args, [](auto& e){ return value_t::make_string(e); });
+		const auto main_args3 = value_t::make_vector_value(typeid_t::make_string(), main_args2);
+		const auto main_result = call_function(interpreter, f, { main_args3 });
+		const auto main_result_int = main_result.get_int_value();
+		return main_result_int;
+	}
+	else if(f.get_type() == get_main_signature_no_arg_impure() || f.get_type() == get_main_signature_no_arg_pure()){
+		const auto main_result = call_function(interpreter, f, {});
+		const auto main_result_int = main_result.get_int_value();
+		return main_result_int;
+	}
+	else{
+		throw std::exception();
+	}
 }
+
+run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& main_args){
+	const auto& main_function = find_global_symbol2(vm, "main");
+	if(main_function != nullptr){
+		const auto main_result_int = bc_call_main(vm, bc_to_value(main_function->_value), main_args);
+		print_vm_printlog(vm);
+		return { main_result_int, {} };
+	}
+	else{
+		const auto output = run_floyd_processes(vm, main_args);
+		print_vm_printlog(vm);
+		return run_output_t(-1, output);
+	}
+}
+
+
 
 
 

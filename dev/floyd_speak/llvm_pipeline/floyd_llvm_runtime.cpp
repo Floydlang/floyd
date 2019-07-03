@@ -1350,13 +1350,13 @@ const WIDE_RETURN_T fr_update_struct_member(floyd_runtime_t* frp, STRUCT_T* s, r
 
 	//	Retain every member of new struct.
 	{
-		int member_index = 0;
+		int i = 0;
 		for(const auto& e: struct_def._members){
 			if(is_rc_value(e._type)){
-				const auto offset = layout->getElementOffset(member_index);
+				const auto offset = layout->getElementOffset(i);
 				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
 				retain_value(r, *member_ptr, e._type);
-				member_index++;
+				i++;
 			}
 		}
 	}
@@ -2645,6 +2645,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 	auto ee2 = std::unique_ptr<llvm_execution_engine_t>(
 		new llvm_execution_engine_t{
 			k_debug_magic,
+			program_breaks.container_def,
 			&instance,
 			ee1,
 			program_breaks.type_interner,
@@ -2700,7 +2701,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 
 //	Destroys program, can only run it once!
 //	Automatically runs floyd_runtime_init() to execute Floyd's global functions and initialize global constants.
-std::unique_ptr<llvm_execution_engine_t> start_program(llvm_ir_program_t& program_breaks){
+std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program_breaks){
 	QUARK_ASSERT(program_breaks.check_invariant());
 
 	auto ee = make_engine_no_init(*program_breaks.instance, program_breaks);
@@ -2731,8 +2732,6 @@ std::unique_ptr<llvm_execution_engine_t> start_program(llvm_ir_program_t& progra
 	const auto init_result = call_floyd_runtime_init(*ee);
 	QUARK_ASSERT(init_result == 667);
 	ee->inited = true;
-
-//	check_nulls(ee, program_breaks);
 
 	trace_heap(ee->heap);
 
@@ -2876,111 +2875,96 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 }
 
 
-static std::map<std::string, value_t> run_container_int(llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args, const std::string& container_key){
-	QUARK_ASSERT(container_key.empty() == false);
-
-	auto ee = start_program(program_breaks);
-
-	llvm_process_runtime_t runtime;
-	runtime._main_thread_id = std::this_thread::get_id();
-	runtime.ee = ee.get();
-
-	//??? Confusing. Support several containers!
-	if(std::find(program_breaks.software_system._containers.begin(), program_breaks.software_system._containers.end(), container_key) == program_breaks.software_system._containers.end()){
-		quark::throw_runtime_error("Unknown container-key");
-	}
-
-	if(program_breaks.container_def._name != container_key){
-		quark::throw_runtime_error("Unknown container-key");
-	}
-
-	runtime._container = program_breaks.container_def;
-
-	runtime._process_infos = reduce(runtime._container._clock_busses, std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const std::pair<std::string, clock_bus_t>& e){
-		auto acc2 = acc;
-		acc2.insert(e.second._processes.begin(), e.second._processes.end());
-		return acc2;
-	});
-
-
-	struct my_interpreter_handler_t : public runtime_handler_i {
-		my_interpreter_handler_t(llvm_process_runtime_t& runtime) : _runtime(runtime) {}
-
-		virtual void on_send(const std::string& process_id, const json_t& message){
-			const auto it = std::find_if(_runtime._processes.begin(), _runtime._processes.end(), [&](const std::shared_ptr<llvm_process_t>& process){ return process->_name_key == process_id; });
-			if(it != _runtime._processes.end()){
-				const auto process_index = it - _runtime._processes.begin();
-				send_message(_runtime, static_cast<int>(process_index), message);
-			}
-		}
-
-		llvm_process_runtime_t& _runtime;
-	};
-	auto my_interpreter_handler = my_interpreter_handler_t{runtime};
-
-//??? We need to pass unique runtime-object to each Floyd process -- not the ee!
-
-	ee->_handler = &my_interpreter_handler;
-
-	for(const auto& t: runtime._process_infos){
-		auto process = std::make_shared<llvm_process_t>();
-		process->_name_key = t.first;
-		process->_function_key = t.second;
-//		process->_interpreter = std::make_shared<interpreter_t>(program, &my_interpreter_handler);
-
-		process->_init_function = std::make_shared<llvm_bind_t>(bind_function2(*runtime.ee, t.second + "__init"));
-		process->_process_function = std::make_shared<llvm_bind_t>(bind_function2(*runtime.ee, t.second));
-
-		runtime._processes.push_back(process);
-	}
-
-	//	Remember that current thread (main) is also a thread, no need to create a worker thread for one process.
-	runtime._processes[0]->_thread_id = runtime._main_thread_id;
-
-	for(int process_id = 1 ; process_id < runtime._processes.size() ; process_id++){
-		runtime._worker_threads.push_back(std::thread([&](int process_id){
-
-//			const auto native_thread = thread::native_handle();
-
-			std::stringstream thread_name;
-			thread_name << std::string() << "process " << process_id << " thread";
-#ifdef __APPLE__
-			pthread_setname_np(/*pthread_self(),*/ thread_name.str().c_str());
-#endif
-
-			run_process(runtime, process_id);
-		}, process_id));
-	}
-
-	run_process(runtime, 0);
-
-	for(auto &t: runtime._worker_threads){
-		t.join();
-	}
-
-	return {};
-}
-
-
-
-std::map<std::string, value_t> run_llvm_container(llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args, const std::string& container_key){
-	if(container_key.empty()){
-		// ??? instance is already known via program_breaks.
-		auto ee = start_program(program_breaks);
-
-		if(ee->main_function.first != nullptr){
-			const auto main_result_int = llvm_call_main(*ee, ee->main_function, main_args);
-			const auto result = value_t::make_int(main_result_int);
-			return {{ "main()", result }};
-		}
-		else{
-			return {{ "global", value_t::make_void() }};
-		}
+static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee){
+	if(ee.container_def._clock_busses.empty() == true){
+		return {};
 	}
 	else{
-		return run_container_int(program_breaks, main_args, container_key);
+		llvm_process_runtime_t runtime;
+		runtime._main_thread_id = std::this_thread::get_id();
+		runtime.ee = &ee;
+
+		runtime._container = ee.container_def;
+
+		runtime._process_infos = reduce(runtime._container._clock_busses, std::map<std::string, std::string>(), [](const std::map<std::string, std::string>& acc, const std::pair<std::string, clock_bus_t>& e){
+			auto acc2 = acc;
+			acc2.insert(e.second._processes.begin(), e.second._processes.end());
+			return acc2;
+		});
+
+		struct my_interpreter_handler_t : public runtime_handler_i {
+			my_interpreter_handler_t(llvm_process_runtime_t& runtime) : _runtime(runtime) {}
+
+			virtual void on_send(const std::string& process_id, const json_t& message){
+				const auto it = std::find_if(_runtime._processes.begin(), _runtime._processes.end(), [&](const std::shared_ptr<llvm_process_t>& process){ return process->_name_key == process_id; });
+				if(it != _runtime._processes.end()){
+					const auto process_index = it - _runtime._processes.begin();
+					send_message(_runtime, static_cast<int>(process_index), message);
+				}
+			}
+
+			llvm_process_runtime_t& _runtime;
+		};
+		auto my_interpreter_handler = my_interpreter_handler_t{runtime};
+
+	//??? We need to pass unique runtime-object to each Floyd process -- not the ee!
+
+		ee._handler = &my_interpreter_handler;
+
+		for(const auto& t: runtime._process_infos){
+			auto process = std::make_shared<llvm_process_t>();
+			process->_name_key = t.first;
+			process->_function_key = t.second;
+	//		process->_interpreter = std::make_shared<interpreter_t>(program, &my_interpreter_handler);
+
+			process->_init_function = std::make_shared<llvm_bind_t>(bind_function2(*runtime.ee, t.second + "__init"));
+			process->_process_function = std::make_shared<llvm_bind_t>(bind_function2(*runtime.ee, t.second));
+
+			runtime._processes.push_back(process);
+		}
+
+		//	Remember that current thread (main) is also a thread, no need to create a worker thread for one process.
+		runtime._processes[0]->_thread_id = runtime._main_thread_id;
+
+		for(int process_id = 1 ; process_id < runtime._processes.size() ; process_id++){
+			runtime._worker_threads.push_back(std::thread([&](int process_id){
+
+	//			const auto native_thread = thread::native_handle();
+
+				std::stringstream thread_name;
+				thread_name << std::string() << "process " << process_id << " thread";
+	#ifdef __APPLE__
+				pthread_setname_np(/*pthread_self(),*/ thread_name.str().c_str());
+	#endif
+
+				run_process(runtime, process_id);
+			}, process_id));
+		}
+
+		run_process(runtime, 0);
+
+		for(auto &t: runtime._worker_threads){
+			t.join();
+		}
+
+		return {};
 	}
 }
+
+
+
+run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::string>& main_args){
+	if(ee.main_function.first != nullptr){
+		const auto main_result_int = llvm_call_main(ee, ee.main_function, main_args);
+		return { main_result_int, {} };
+	}
+	else{
+		const auto result = run_processes(ee);
+		return { -1, result };
+	}
+}
+
+
 
 
 
@@ -2997,16 +2981,15 @@ std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instanc
 }
 
 
-int64_t run_using_llvm_helper(const std::string& program_source, const std::string& file, const std::vector<std::string>& main_args){
+run_output_t run_program_helper(const std::string& program_source, const std::string& file, const std::vector<std::string>& main_args){
 	const auto cu = floyd::make_compilation_unit_nolib(program_source, file);
 	const auto pass3 = compile_to_sematic_ast__errors(cu);
 
 	llvm_instance_t instance;
 	auto program = generate_llvm_ir_program(instance, pass3, file);
-	auto ee = start_program(*program);
-
-	const auto main_result = ee->main_function.first != nullptr ? llvm_call_main(*ee, ee->main_function, main_args) : 0;
-	return main_result;
+	auto ee = init_program(*program);
+	const auto result = run_program(*ee, main_args);
+	return result;
 }
 
 
@@ -3025,7 +3008,7 @@ QUARK_UNIT_TEST("", "From source: Check that floyd_runtime_init() runs and sets 
 
 	floyd::llvm_instance_t instance;
 	auto program = generate_llvm_ir_program(instance, pass3, "myfile.floyd");
-	auto ee = start_program(*program);
+	auto ee = init_program(*program);
 
 	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(*ee, "result"));
 	QUARK_ASSERT(result == 6);
@@ -3040,7 +3023,7 @@ QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_ru
 
 	floyd::llvm_instance_t instance;
 	auto program = generate_llvm_ir_program(instance, pass3, "myfile.floyd");
-	auto ee = start_program(*program);
+	auto ee = init_program(*program);
 	QUARK_ASSERT(ee->_print_output == std::vector<std::string>{"5"});
 }
 

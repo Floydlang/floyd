@@ -28,6 +28,41 @@
 
 namespace floyd {
 
+
+
+bool operator==(const run_output_t& lhs, const run_output_t& rhs){
+	return lhs.main_result == rhs.main_result && lhs.process_results == rhs.process_results;
+}
+
+void ut_verify_run_output(const quark::call_context_t& context, const run_output_t& result, const run_output_t& expected){
+	if(result == expected){
+	}
+	else{
+		{
+			QUARK_SCOPED_TRACE("  result: ");
+			QUARK_TRACE_SS("main_result: " << result.main_result);
+			QUARK_SCOPED_TRACE("process_results");
+			for(const auto& e: result.process_results){
+				QUARK_TRACE_SS(e.first << ":\t" << value_and_type_to_string(e.second));
+			}
+		}
+
+		{
+			QUARK_SCOPED_TRACE("expected:");
+			QUARK_TRACE_SS("main_result: " << expected.main_result);
+			QUARK_SCOPED_TRACE("process_results");
+			for(const auto& e: expected.process_results){
+				QUARK_TRACE_SS(e.first << ":\t" << value_and_type_to_string(e.second));
+			}
+		}
+
+		fail_test(context);
+	}
+}
+
+
+
+
 parse_tree_t parse_program__errors(const compilation_unit_t& cu){
 	try {
 		const auto parse_tree = parse_program2(cu.prefix_source + cu.program_text);
