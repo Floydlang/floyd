@@ -1882,8 +1882,6 @@ void floyd_funcdef__send(floyd_runtime_t* frp, runtime_value_t process_id0, cons
 	r._handler->on_send(process_id, message_json);
 }
 
-
-//??? all all host functions are now checked at codegen -- remove runtime test here!
 int64_t floyd_funcdef__size(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
