@@ -100,6 +100,7 @@ corecall_signature_t make_size_signature();
 corecall_signature_t make_find_signature();
 corecall_signature_t make_exists_signature();
 corecall_signature_t make_erase_signature();
+corecall_signature_t make_get_keys_signature();
 corecall_signature_t make_push_back_signature();
 corecall_signature_t make_subset_signature();
 corecall_signature_t make_replace_signature();

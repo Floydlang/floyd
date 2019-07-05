@@ -250,7 +250,7 @@ bc_value_t host__exists(interpreter_t& vm, const bc_value_t args[], int arg_coun
 		return bc_value_t::make_bool(found_ptr != nullptr);
 	}
 	else{
-		const auto entries = get_dict_value(obj);
+		const auto entries = get_dict_external_values(obj);
 		const auto found_ptr = entries.find(key_string);
 		return bc_value_t::make_bool(found_ptr != nullptr);
 	}
@@ -275,11 +275,44 @@ bc_value_t host__erase(interpreter_t& vm, const bc_value_t args[], int arg_count
 		return value2;
 	}
 	else{
-		auto entries2 = get_dict_value(obj);
+		auto entries2 = get_dict_external_values(obj);
 		entries2 = entries2.erase(key_string);
 		const auto value2 = make_dict(value_type, entries2);
 		return value2;
 	}
+}
+
+bc_value_t host__get_keys(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+
+	const auto obj = args[0];
+	QUARK_ASSERT(obj._type.is_dict());
+
+	std::vector<value_t> keys;
+	if(encode_as_dict_w_inplace_values(obj._type)){
+		const auto& entries = obj._pod._external->_dict_w_inplace_values;
+		for(const auto& e: entries){
+			const auto& key = e.first;
+			const auto key2 = value_t::make_string(key);
+			keys.push_back(key2);
+		}
+	}
+	else{
+		const auto& entries = get_dict_external_values(obj);
+		for(const auto& e: entries){
+			const auto& key = e.first;
+			const auto key2 = value_t::make_string(key);
+			keys.push_back(key2);
+		}
+	}
+
+
+
+
+	const auto keys2 = value_t::make_vector_value(typeid_t::make_string(), keys);
+	const auto result = value_to_bc(keys2);
+	return result;
 }
 
 /*
@@ -1373,6 +1406,7 @@ static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls_internal()
 	result.find(make_find_signature()._function_id)->second = host__find;
 	result.find(make_exists_signature()._function_id)->second = host__exists;
 	result.find(make_erase_signature()._function_id)->second = host__erase;
+	result.find(make_get_keys_signature()._function_id)->second = host__get_keys;
 
 	//	push_back() is translated to bc_opcode::k_pushback_vector_w_inplace_elements() etc.
 //	result.find(make_push_back_signature()._function_id)->second = nullptr;

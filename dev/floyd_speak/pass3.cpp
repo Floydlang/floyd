@@ -1271,7 +1271,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_exists_expression(const ana
 	const auto wanted_type = resolved_call.second.function_type.get_function_args()[1];
 
 	if(parent_type.is_dict() == false){
-		quark::throw_runtime_error("exists([]) requires a dictionary.");
+		quark::throw_runtime_error("exists() requires a dictionary.");
 	}
 	if(wanted_type.is_string() == false){
 		quark::throw_runtime_error("exists() requires a string key.");
@@ -1296,10 +1296,33 @@ std::pair<analyser_t, expression_t> analyse_corecall_erase_expression(const anal
 	const auto key_type = resolved_call.second.function_type.get_function_args()[1];
 
 	if(parent_type.is_dict() == false){
-		quark::throw_runtime_error("erase([]) requires a dictionary.");
+		quark::throw_runtime_error("erase() requires a dictionary.");
 	}
 	if(key_type.is_string() == false){
 		quark::throw_runtime_error("erase() requires a string key.");
+	}
+
+	return {
+		a_acc,
+		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+	};
+}
+
+//??? const statement_t& parent == very confusing. Rename parent => statement!
+
+std::pair<analyser_t, expression_t> analyse_corecall_get_keys_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(parent.check_invariant());
+
+	const auto sign = make_get_keys_signature();
+	auto a_acc = a;
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	a_acc = resolved_call.first;
+
+	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
+
+	if(parent_type.is_dict() == false){
+		quark::throw_runtime_error("get_keys() requires a dictionary.");
 	}
 
 	return {
@@ -2204,6 +2227,9 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 				}
 				else if(found_symbol_ptr->first == make_erase_signature().name){
 					return analyse_corecall_erase_expression(a_acc, parent, details.args);
+				}
+				else if(found_symbol_ptr->first == make_get_keys_signature().name){
+					return analyse_corecall_get_keys_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_push_back_signature().name){
 					return analyse_corecall_push_back_expression(a_acc, parent, details.args);

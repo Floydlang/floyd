@@ -1479,6 +1479,29 @@ WIDE_RETURN_T floyd_host_function__erase(floyd_runtime_t* frp, runtime_value_t a
 	return make_wide_return_dict(dict2);
 }
 
+WIDE_RETURN_T floyd_host_function__get_keys(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
+
+	QUARK_ASSERT(type0.is_dict());
+
+	const auto& dict = unpack_dict_arg(r.type_interner.interner, arg0_value, arg0_type);
+	auto& m = dict->get_map();
+	const auto count = (int32_t)m.size();
+
+	auto result_vec = alloc_vec(r.heap, count, count);
+
+	int index = 0;
+	for(const auto& e: m){
+		//	Notice that the internal representation of dictionary keys are std::string, not floyd-strings, so we need to create new key-strings from scratch.
+		const auto key = to_runtime_string(r, e.first);
+		result_vec->get_element_ptr()[index] = key;
+		index++;
+	}
+	return make_wide_return_vec(result_vec);
+}
+
 uint32_t floyd_funcdef__exists(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
@@ -2482,6 +2505,7 @@ std::map<std::string, void*> get_c_function_ptrs(){
 		{ "floyd_funcdef__find", reinterpret_cast<void *>(&floyd_funcdef__find) },
 		{ "floyd_funcdef__exists", reinterpret_cast<void *>(&floyd_funcdef__exists) },
 		{ "floyd_funcdef__erase", reinterpret_cast<void *>(&floyd_host_function__erase) },
+		{ "floyd_funcdef__get_keys", reinterpret_cast<void *>(&floyd_host_function__get_keys) },
 		{ "floyd_funcdef__push_back", reinterpret_cast<void *>(&floyd_funcdef__push_back) },
 		{ "floyd_funcdef__subset", reinterpret_cast<void *>(&floyd_funcdef__subset) },
 		{ "floyd_funcdef__replace", reinterpret_cast<void *>(&floyd_funcdef__replace) },

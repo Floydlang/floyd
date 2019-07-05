@@ -1283,6 +1283,9 @@ static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc,
 	else if(details.call_name == get_opcode(make_erase_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
+	else if(details.call_name == get_opcode(make_get_keys_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
 	else if(details.call_name == get_opcode(make_push_back_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}

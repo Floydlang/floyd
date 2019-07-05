@@ -877,10 +877,17 @@ bc_value_t make_vector(const typeid_t& element_type, const immer::vector<bc_inpl
 
 
 
-const immer::map<std::string, bc_external_handle_t>& get_dict_value(const bc_value_t& value){
+const immer::map<std::string, bc_external_handle_t>& get_dict_external_values(const bc_value_t& value){
 	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(encode_as_dict_w_inplace_values(value._type) == false);
 
 	return value._pod._external->_dict_w_external_values;
+}
+const immer::map<std::string, bc_inplace_value_t>& get_dict_inplace_values(const bc_value_t& value){
+	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(encode_as_dict_w_inplace_values(value._type) == true);
+
+	return value._pod._external->_dict_w_inplace_values;
 }
 
 bc_value_t make_dict(const typeid_t& value_type, const immer::map<std::string, bc_external_handle_t>& entries){
@@ -1115,7 +1122,7 @@ bc_value_t update_dict_entry(interpreter_t& vm, const bc_value_t dict, const std
 		return value2;
 	}
 	else{
-		const auto entries = get_dict_value(dict);
+		const auto entries = get_dict_external_values(dict);
 		auto entries2 = entries.set(key, bc_external_handle_t(value));
 		const auto value2 = make_dict(value_type, entries2);
 		return value2;
@@ -1667,8 +1674,10 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 			return bc_compare_dicts_double(left._pod._external->_dict_w_inplace_values, right._pod._external->_dict_w_inplace_values);
 		}
 		else  {
-			const auto& left2 = get_dict_value(left);
-			const auto& right2 = get_dict_value(right);
+			QUARK_ASSERT(encode_as_dict_w_inplace_values(type) == false);
+
+			const auto& left2 = get_dict_external_values(left);
+			const auto& right2 = get_dict_external_values(right);
 			return bc_compare_dicts_obj(left2, right2, type0);
 		}
 	}
@@ -2220,14 +2229,24 @@ json_t bcvalue_to_json(const bc_value_t& v){
 	}
 	else if(v._type.is_dict()){
 		const auto value_type = v._type.get_dict_value_type();
-		const auto entries = get_dict_value(v);
-		std::map<std::string, json_t> result;
-		for(const auto& e: entries){
-			const auto value2 = e.second;
-			//??? works for all types? Use that technique in all thunking! Slower but less code.
-			result[e.first] = bcvalue_to_json(bc_value_t(value_type, value2));
+		if(encode_as_dict_w_inplace_values(v._type)){
+			const auto entries = get_dict_inplace_values(v);
+			std::map<std::string, json_t> result;
+			for(const auto& e: entries){
+				const auto value2 = e.second;
+				result[e.first] = bcvalue_to_json(bc_value_t(value_type, value2));
+			}
+			return result;
 		}
-		return result;
+		else{
+			const auto entries = get_dict_external_values(v);
+			std::map<std::string, json_t> result;
+			for(const auto& e: entries){
+				const auto value2 = e.second;
+				result[e.first] = bcvalue_to_json(bc_value_t(value_type, value2));
+			}
+			return result;
+		}
 	}
 	else if(v._type.is_function()){
 		return json_t::make_object(

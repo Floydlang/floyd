@@ -1889,6 +1889,25 @@ dict erase(dict, string key)
 ```
 
 
+### get_keys()
+
+Use this with a dictionary to get a vector with all the dictionary's keys. Then you can loop through the keys to get to all the values of the dictionary.
+
+```
+vector get_keys(dict)
+```
+
+Example
+```
+let a = { "a": 1, "b": 2, "c" : 3 }
+let b = get_keys(a)
+assert(b == [ "a", "b", "c"])
+```
+
+Notice that the *order* of the keys is undefined and may change depending on the what backend is used for the dictionary.
+
+
+
 
 
 ## FUNCTIONAL-STYLE COLLECTION FUNCTIONS

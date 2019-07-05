@@ -193,6 +193,9 @@ corecall_signature_t make_exists_signature(){
 corecall_signature_t make_erase_signature(){
 	return { "erase", 1010, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) };
 }
+corecall_signature_t make_get_keys_signature(){
+	return { "get_keys", 1014, typeid_t::make_function(typeid_t::make_vector(typeid_t::make_string()), { ANY_TYPE }, epure::pure) };
+}
 
 
 corecall_signature_t make_push_back_signature(){
@@ -291,6 +294,7 @@ static std::vector<corecall_signature_t> get_host_function_records(){
 		make_find_signature(),
 		make_exists_signature(),
 		make_erase_signature(),
+		make_get_keys_signature(),
 		make_push_back_signature(),
 		make_subset_signature(),
 		make_replace_signature(),

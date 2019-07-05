@@ -300,7 +300,9 @@ bc_value_t make_vector(const typeid_t& element_type, const immer::vector<bc_valu
 bc_value_t make_vector(const typeid_t& element_type, const immer::vector<bc_external_handle_t>& elements);
 bc_value_t make_vector(const typeid_t& element_type, const immer::vector<bc_inplace_value_t>& elements);
 
-const immer::map<std::string, bc_external_handle_t>& get_dict_value(const bc_value_t& value);
+const immer::map<std::string, bc_external_handle_t>& get_dict_external_values(const bc_value_t& value);
+const immer::map<std::string, bc_inplace_value_t>& get_dict_inplace_values(const bc_value_t& value);
+
 bc_value_t make_dict(const typeid_t& value_type, const immer::map<std::string, bc_external_handle_t>& entries);
 bc_value_t make_dict(const typeid_t& value_type, const immer::map<std::string, bc_inplace_value_t>& entries);
 

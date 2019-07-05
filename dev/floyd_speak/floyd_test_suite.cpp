@@ -3487,12 +3487,55 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [string] exists()", "", ""){
 QUARK_UNIT_TEST("Floyd test suite", "dict [string] erase()", "", ""){
 	run_closed(R"(
 
-		let a = { "a": "1000", "b": "2000", "c" : "3000"}
+		let a = { "a": "1000", "b": "2000", "c" : "3000" }
 		let b = erase(a, "a")
 		assert(b == { "b": "2000", "c" : "3000"})
 
 	)");
 }
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
+	run_closed(R"(
+
+		let [string: int] a = {}
+		let b = get_keys(a)
+		assert(b == [])
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
+	run_closed(R"(
+
+		let a = { "a": 10 }
+		let b = get_keys(a)
+//		assert(b == [ "a", "b", "c"])
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
+	run_closed(R"(
+
+		let a = { "a": "ten" }
+		let b = get_keys(a)
+//		assert(b == [ "a", "b", "c"])
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
+	run_closed(R"(
+
+		let a = { "a": 1, "b": 2, "c" : 3 }
+		let b = get_keys(a)
+		assert(b == [ "a", "b", "c" ] || b == [ "c", "b", "a" ])
+
+	)");
+}
+
+
+
+
 
 QUARK_UNIT_TEST("Floyd test suite", "dict [string]", "Error: Lookup in dict using non-string key", "exception"){
 	ut_verify_exception_nolib(
@@ -3506,6 +3549,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [string]", "Error: Lookup in dict usin
 		"Dictionary can only be looked up using string keys, not a \"int\". Line: 4 \"print(a[3])\""
 	);
 }
+
 
 
 
