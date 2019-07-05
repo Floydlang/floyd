@@ -1296,16 +1296,16 @@ static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc,
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 
-	else if(details.call_name == get_opcode(make_script_to_jsonvalue_signature())){
+	else if(details.call_name == get_opcode(make_parse_json_script_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
-	else if(details.call_name == get_opcode(make_jsonvalue_to_script_signature())){
+	else if(details.call_name == get_opcode(make_generate_json_script_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
-	else if(details.call_name == get_opcode(make_value_to_jsonvalue_signature())){
+	else if(details.call_name == get_opcode(make_to_json_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
-	else if(details.call_name == get_opcode(make_jsonvalue_to_value_signature())){
+	else if(details.call_name == get_opcode(make_from_json_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 

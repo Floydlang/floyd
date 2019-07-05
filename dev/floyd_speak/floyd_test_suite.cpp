@@ -4498,19 +4498,19 @@ QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 
 
 
-//////////////////////////////////////////		script_to_jsonvalue()
+//////////////////////////////////////////		parse_json_script()
 
 
-QUARK_UNIT_TEST("Floyd test suite", "script_to_jsonvalue()", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = script_to_jsonvalue("\"genelec\"")		)", value_t::make_json_value(json_t("genelec")));
+QUARK_UNIT_TEST("Floyd test suite", "parse_json_script()", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = parse_json_script("\"genelec\"")		)", value_t::make_json_value(json_t("genelec")));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "script_to_jsonvalue()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "parse_json_script()", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"___(
 
-			let a = script_to_jsonvalue("{ \"magic\": 1234 }")
+			let a = parse_json_script("{ \"magic\": 1234 }")
 			print(a)
 
 		)___",
@@ -4519,16 +4519,16 @@ QUARK_UNIT_TEST("Floyd test suite", "script_to_jsonvalue()", "", ""){
 }
 
 
-//////////////////////////////////////////		jsonvalue_to_script()
+//////////////////////////////////////////		generate_json_script()
 
 
-QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_script()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "generate_json_script()", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"___(
 
 			let json_value a = "cheat"
-			let b = jsonvalue_to_script(a)
+			let b = generate_json_script(a)
 			print(b)
 
 		)___",
@@ -4537,13 +4537,13 @@ QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_script()", "", ""){
 }
 
 
-QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_script()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "generate_json_script()", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"___(
 
 			let json_value a = { "magic": 1234 }
-			let b = jsonvalue_to_script(a)
+			let b = generate_json_script(a)
 			print(b)
 
 		)___",
@@ -4552,46 +4552,46 @@ QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_script()", "", ""){
 }
 
 
-//////////////////////////////////////////		value_to_jsonvalue()
+//////////////////////////////////////////		to_json()
 
 
-QUARK_UNIT_TEST("Floyd test suite", "value_to_jsonvalue()", "bool", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = value_to_jsonvalue(true)		)", value_t::make_json_value(json_t(true)));
+QUARK_UNIT_TEST("Floyd test suite", "to_json()", "bool", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(true)		)", value_t::make_json_value(json_t(true)));
 }
-QUARK_UNIT_TEST("Floyd test suite", "value_to_jsonvalue()", "bool", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = value_to_jsonvalue(false)		)", value_t::make_json_value(json_t(false)));
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "value_to_jsonvalue()", "int", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = value_to_jsonvalue(789)		)", value_t::make_json_value(json_t(789.0)));
-}
-QUARK_UNIT_TEST("Floyd test suite", "value_to_jsonvalue()", "int", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = value_to_jsonvalue(-987)		)", value_t::make_json_value(json_t(-987.0)));
+QUARK_UNIT_TEST("Floyd test suite", "to_json()", "bool", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(false)		)", value_t::make_json_value(json_t(false)));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "value_to_jsonvalue()", "double", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = value_to_jsonvalue(-0.125)		)", value_t::make_json_value(json_t(-0.125)));
+QUARK_UNIT_TEST("Floyd test suite", "to_json()", "int", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(789)		)", value_t::make_json_value(json_t(789.0)));
+}
+QUARK_UNIT_TEST("Floyd test suite", "to_json()", "int", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(-987)		)", value_t::make_json_value(json_t(-987.0)));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "to_json()", "double", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(-0.125)		)", value_t::make_json_value(json_t(-0.125)));
 }
 
 
-QUARK_UNIT_TEST("Floyd test suite", "value_to_jsonvalue()", "string", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = value_to_jsonvalue("fanta")		)", value_t::make_json_value(json_t("fanta")));
+QUARK_UNIT_TEST("Floyd test suite", "to_json()", "string", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json("fanta")		)", value_t::make_json_value(json_t("fanta")));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "value_to_jsonvalue()", "typeid", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = value_to_jsonvalue(typeof([2,2,3]))		)", value_t::make_json_value(json_t::make_array({ "vector", "int"})));
+QUARK_UNIT_TEST("Floyd test suite", "to_json()", "typeid", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(typeof([2,2,3]))		)", value_t::make_json_value(json_t::make_array({ "vector", "int"})));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "value_to_jsonvalue()", "[]", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = value_to_jsonvalue([1,2,3])		)", value_t::make_json_value(json_t::make_array({ 1, 2, 3 })));
+QUARK_UNIT_TEST("Floyd test suite", "to_json()", "[]", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json([1,2,3])		)", value_t::make_json_value(json_t::make_array({ 1, 2, 3 })));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "value_to_jsonvalue()", "{}", ""){
+QUARK_UNIT_TEST("Floyd test suite", "to_json()", "{}", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
 
-			let result = value_to_jsonvalue({"ten": 10, "eleven": 11})
+			let result = to_json({"ten": 10, "eleven": 11})
 
 		)",
 		value_t::make_json_value(
@@ -4600,30 +4600,30 @@ QUARK_UNIT_TEST("Floyd test suite", "value_to_jsonvalue()", "{}", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_script()", "pixel_t", ""){
+QUARK_UNIT_TEST("Floyd test suite", "generate_json_script()", "pixel_t", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
 	
 			struct pixel_t { double x double y }
 			let c = pixel_t(100.0, 200.0)
-			let a = value_to_jsonvalue(c)
-			let result = jsonvalue_to_script(a)
+			let a = to_json(c)
+			let result = generate_json_script(a)
 
 		)",
 		value_t::make_string("{ \"x\": 100, \"y\": 200 }")
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_script()", "[pixel_t]", ""){
+QUARK_UNIT_TEST("Floyd test suite", "generate_json_script()", "[pixel_t]", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
 
 			struct pixel_t { double x double y }
 			let c = [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)]
-			let a = value_to_jsonvalue(c)
-			let result = jsonvalue_to_script(a)
+			let a = to_json(c)
+			let result = generate_json_script(a)
 
 		)",
 		value_t::make_string("[{ \"x\": 100, \"y\": 200 }, { \"x\": 101, \"y\": 201 }]")
@@ -4631,37 +4631,37 @@ QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_script()", "[pixel_t]", ""){
 }
 
 
-//////////////////////////////////////////		value_to_jsonvalue() -> jsonvalue_to_value() roundtrip
+//////////////////////////////////////////		to_json() -> from_json() roundtrip
 
 /*
-	jsonvalue_to_value() returns different types depending on its 2nd argument.
+	from_json() returns different types depending on its 2nd argument.
 	??? test all types!
 */
-QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "bool", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(true), bool)		)", value_t::make_bool(true));
+QUARK_UNIT_TEST("Floyd test suite", "from_json()", "bool", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json(true), bool)		)", value_t::make_bool(true));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "bool", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(false), bool)		)", value_t::make_bool(false));
+QUARK_UNIT_TEST("Floyd test suite", "from_json()", "bool", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json(false), bool)		)", value_t::make_bool(false));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "int", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(91), int)		)", value_t::make_int(91));
+QUARK_UNIT_TEST("Floyd test suite", "from_json()", "int", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json(91), int)		)", value_t::make_int(91));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "double", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(-0.125), double)		)", value_t::make_double(-0.125));
+QUARK_UNIT_TEST("Floyd test suite", "from_json()", "double", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json(-0.125), double)		)", value_t::make_double(-0.125));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "string", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue(""), string)		)", value_t::make_string(""));
+QUARK_UNIT_TEST("Floyd test suite", "from_json()", "string", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json(""), string)		)", value_t::make_string(""));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "string", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = jsonvalue_to_value(value_to_jsonvalue("cola"), string)		)", value_t::make_string("cola"));
+QUARK_UNIT_TEST("Floyd test suite", "from_json()", "string", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = from_json(to_json("cola"), string)		)", value_t::make_string("cola"));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "point_t", ""){
+QUARK_UNIT_TEST("Floyd test suite", "from_json()", "point_t", ""){
 	const auto point_t_def = std::vector<member_t>{
 		member_t(typeid_t::make_double(), "x"),
 		member_t(typeid_t::make_double(), "y")
@@ -4676,7 +4676,7 @@ QUARK_UNIT_TEST("Floyd test suite", "jsonvalue_to_value()", "point_t", ""){
 		R"(
 
 			struct point_t { double x double y }
-			let result = jsonvalue_to_value(value_to_jsonvalue(point_t(1.0, 3.0)), point_t)
+			let result = from_json(to_json(point_t(1.0, 3.0)), point_t)
 
 		)",
 		expected

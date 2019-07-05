@@ -1199,16 +1199,16 @@ static expression_gen_t bcgen_corecall_expression(bcgenerator_t& gen_acc, const 
 	}
 
 
-	else if(details.call_name == get_opcode(make_script_to_jsonvalue_signature())){
+	else if(details.call_name == get_opcode(make_parse_json_script_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_opcode(make_jsonvalue_to_script_signature())){
+	else if(details.call_name == get_opcode(make_generate_json_script_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_opcode(make_value_to_jsonvalue_signature())){
+	else if(details.call_name == get_opcode(make_to_json_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_opcode(make_jsonvalue_to_value_signature())){
+	else if(details.call_name == get_opcode(make_from_json_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
 

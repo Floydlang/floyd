@@ -1617,7 +1617,7 @@ int64_t floyd_host_function__get_json_type(floyd_runtime_t* frp, JSON_T* json_pt
 }
 
 
-runtime_value_t floyd_funcdef__jsonvalue_to_script(floyd_runtime_t* frp, JSON_T* json_ptr){
+runtime_value_t floyd_funcdef__generate_json_script(floyd_runtime_t* frp, JSON_T* json_ptr){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(json_ptr != nullptr);
 
@@ -1627,7 +1627,7 @@ runtime_value_t floyd_funcdef__jsonvalue_to_script(floyd_runtime_t* frp, JSON_T*
 	return to_runtime_string(r, s);
 }
 
-runtime_value_t floyd_funcdef__jsonvalue_to_value(floyd_runtime_t* frp, JSON_T* json_ptr, runtime_type_t target_type){
+runtime_value_t floyd_funcdef__from_json(floyd_runtime_t* frp, JSON_T* json_ptr, runtime_type_t target_type){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(json_ptr != nullptr);
 
@@ -1882,7 +1882,7 @@ const WIDE_RETURN_T floyd_funcdef__replace(floyd_runtime_t* frp, runtime_value_t
 	}
 }
 
-JSON_T* floyd_funcdef__script_to_jsonvalue(floyd_runtime_t* frp, runtime_value_t string_s0){
+JSON_T* floyd_funcdef__parse_json_script(floyd_runtime_t* frp, runtime_value_t string_s0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto string_s = from_runtime_string(r, string_s0);
@@ -2249,7 +2249,7 @@ const WIDE_RETURN_T floyd_funcdef__update(floyd_runtime_t* frp, runtime_value_t 
 	}
 }
 
-JSON_T* floyd_funcdef__value_to_jsonvalue(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+JSON_T* floyd_funcdef__to_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
@@ -2510,10 +2510,10 @@ std::map<std::string, void*> get_c_function_ptrs(){
 		{ "floyd_funcdef__subset", reinterpret_cast<void *>(&floyd_funcdef__subset) },
 		{ "floyd_funcdef__replace", reinterpret_cast<void *>(&floyd_funcdef__replace) },
 
-		{ "floyd_funcdef__jsonvalue_to_script", reinterpret_cast<void *>(&floyd_funcdef__jsonvalue_to_script) },
-		{ "floyd_funcdef__jsonvalue_to_value", reinterpret_cast<void *>(&floyd_funcdef__jsonvalue_to_value) },
-		{ "floyd_funcdef__script_to_jsonvalue", reinterpret_cast<void *>(&floyd_funcdef__script_to_jsonvalue) },
-		{ "floyd_funcdef__value_to_jsonvalue", reinterpret_cast<void *>(&floyd_funcdef__value_to_jsonvalue) },
+		{ "floyd_funcdef__generate_json_script", reinterpret_cast<void *>(&floyd_funcdef__generate_json_script) },
+		{ "floyd_funcdef__from_json", reinterpret_cast<void *>(&floyd_funcdef__from_json) },
+		{ "floyd_funcdef__parse_json_script", reinterpret_cast<void *>(&floyd_funcdef__parse_json_script) },
+		{ "floyd_funcdef__to_json", reinterpret_cast<void *>(&floyd_funcdef__to_json) },
 
 		{ "floyd_funcdef__get_json_type", reinterpret_cast<void *>(&floyd_host_function__get_json_type) },
 

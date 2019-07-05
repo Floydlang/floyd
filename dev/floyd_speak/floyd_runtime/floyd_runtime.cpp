@@ -209,23 +209,23 @@ corecall_signature_t make_replace_signature(){
 	return { "replace", 1013, typeid_t::make_function_dyn_return({ ANY_TYPE, typeid_t::make_int(), typeid_t::make_int(), ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) };
 }
 
-corecall_signature_t make_script_to_jsonvalue_signature(){
-	return { "script_to_jsonvalue", 1017, typeid_t::make_function(typeid_t::make_json_value(), { typeid_t::make_string() }, epure::pure) };
+corecall_signature_t make_parse_json_script_signature(){
+	return { "parse_json_script", 1017, typeid_t::make_function(typeid_t::make_json_value(), { typeid_t::make_string() }, epure::pure) };
 }
 
-corecall_signature_t make_jsonvalue_to_script_signature(){
-	return { "jsonvalue_to_script", 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json_value() }, epure::pure) };
-}
-
-
-corecall_signature_t make_value_to_jsonvalue_signature(){
-	return { "value_to_jsonvalue", 1019, typeid_t::make_function(typeid_t::make_json_value(), { ANY_TYPE }, epure::pure) };
+corecall_signature_t make_generate_json_script_signature(){
+	return { "generate_json_script", 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json_value() }, epure::pure) };
 }
 
 
-corecall_signature_t make_jsonvalue_to_value_signature(){
+corecall_signature_t make_to_json_signature(){
+	return { "to_json", 1019, typeid_t::make_function(typeid_t::make_json_value(), { ANY_TYPE }, epure::pure) };
+}
+
+
+corecall_signature_t make_from_json_signature(){
 	//	??? Tricky. How to we compute the return type from the input arguments?
-	return { "jsonvalue_to_value", 1020, typeid_t::make_function_dyn_return({ typeid_t::make_json_value(), typeid_t::make_typeid() }, epure::pure, typeid_t::return_dyn_type::arg1_typeid_constant_type) };
+	return { "from_json", 1020, typeid_t::make_function_dyn_return({ typeid_t::make_json_value(), typeid_t::make_typeid() }, epure::pure, typeid_t::return_dyn_type::arg1_typeid_constant_type) };
 }
 
 
@@ -299,10 +299,10 @@ static std::vector<corecall_signature_t> get_host_function_records(){
 		make_subset_signature(),
 		make_replace_signature(),
 
-		make_script_to_jsonvalue_signature(),
-		make_jsonvalue_to_script_signature(),
-		make_value_to_jsonvalue_signature(),
-		make_jsonvalue_to_value_signature(),
+		make_parse_json_script_signature(),
+		make_generate_json_script_signature(),
+		make_to_json_signature(),
+		make_from_json_signature(),
 
 		make_get_json_type_signature(),
 

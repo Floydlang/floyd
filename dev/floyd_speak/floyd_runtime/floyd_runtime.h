@@ -105,10 +105,10 @@ corecall_signature_t make_push_back_signature();
 corecall_signature_t make_subset_signature();
 corecall_signature_t make_replace_signature();
 
-corecall_signature_t make_script_to_jsonvalue_signature();
-corecall_signature_t make_jsonvalue_to_script_signature();
-corecall_signature_t make_value_to_jsonvalue_signature();
-corecall_signature_t make_jsonvalue_to_value_signature();
+corecall_signature_t make_parse_json_script_signature();
+corecall_signature_t make_generate_json_script_signature();
+corecall_signature_t make_to_json_signature();
+corecall_signature_t make_from_json_signature();
 
 corecall_signature_t make_get_json_type_signature();
 

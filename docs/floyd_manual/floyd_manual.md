@@ -713,21 +713,21 @@ Different destinations have different limitations and escape mechanisms and will
 Converting a floyd json\_value to a JSON string and back. The JSON-string can be directly read or written to a text file, sent via a protocol and so on.
 
 ```
-string jsonvalue_to_script(json_value v)
-json_value script_to_jsonvalue(string s)
+string generate_json_script(json_value v)
+json_value parse_json_script(string s)
 ```
 
-Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json\_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json\_value, using jsonvalue_to_value().
+Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json\_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json\_value, using from_json().
 
 ```
-json_value value_to_jsonvalue(any v)
-any jsonvalue_to_value(json_value v)
+json_value to_json(any v)
+any from_json(json_value v)
 ```
 
-- __jsonvalue\_to\_script()__
-- __script\_to\_jsonvalue()__
-- __value\_to\_jsonvalue()__
-- __jsonvalue\_to\_value()__
+- __generate\_json\_script()__
+- __parse\_json\_script()__
+- __to\_json()__
+- __from\_json()__
 
 
 
@@ -1609,10 +1609,10 @@ Many of the core functions work with json\_value, but it often depends on the ac
 
 - __get\_json\_type()__
 - __size()__
-- __jsonvalue\_to\_script()__
-- __script\_to_jsonvalue()__
-- __value\_to\_jsonvalue()__
-- __jsonvalue\_to\_value()__
+- __generate\_json\_script()__
+- __parse\_json\_script()__
+- __to\_json()__
+- __from\_json()__
 
 
 
@@ -2046,32 +2046,32 @@ assert(get_name(json_value(false)) == "json_false")
 ```
 
 
-### jsonvalue\_to\_script()
+### generate\_json\_script()
 
 Pack a JSON value to a JSON script string, ready to write to a file, send via protocol etc. The string is unescaped.
 
-	string jsonvalue_to_script(json_value v)
+	string generate_json_script(json_value v)
 
 The result is a valid JSON script string that can be handed to another system to be unpacked.
 
 
-### script\_to\_jsonvalue()
+### parse\_json\_script()
 
 Make a new Floyd JSON value from a JSON-script string. If the string is malformed, exceptions will be thrown. The string is unescaped.
  
-	json_value script_to_jsonvalue(string s)
+	json_value parse_json_script(string s)
 
 
 
-### value\_to\_jsonvalue()
+### to\_json()
 
-	json_value value_to_jsonvalue(any v)
+	json_value to_json(any v)
 
 
 
-### jsonvalue\_to\_value()
+### from\_json()
 
-	any jsonvalue_to_value(json_value v)
+	any from_json(json_value v)
 
 
 

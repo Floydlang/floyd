@@ -487,7 +487,7 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 /*
 	Reads json from a text string, returning an unpacked json_value.
 */
-bc_value_t host__script_to_jsonvalue(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__parse_json_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
@@ -498,7 +498,7 @@ bc_value_t host__script_to_jsonvalue(interpreter_t& vm, const bc_value_t args[],
 	return json_value;
 }
 
-bc_value_t host__jsonvalue_to_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__generate_json_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_json_value());
@@ -509,7 +509,7 @@ bc_value_t host__jsonvalue_to_script(interpreter_t& vm, const bc_value_t args[],
 }
 
 
-bc_value_t host__value_to_jsonvalue(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__to_json(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -519,7 +519,7 @@ bc_value_t host__value_to_jsonvalue(interpreter_t& vm, const bc_value_t args[], 
 	return value_to_bc(result);
 }
 
-bc_value_t host__jsonvalue_to_value(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__from_json(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 	QUARK_ASSERT(args[0]._type.is_json_value());
@@ -1415,11 +1415,11 @@ static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls_internal()
 	result.find(make_replace_signature()._function_id)->second = host__replace;
 
 
-	result.find(make_script_to_jsonvalue_signature()._function_id)->second = host__script_to_jsonvalue;
-	result.find(make_jsonvalue_to_script_signature()._function_id)->second = host__jsonvalue_to_script;
-	result.find(make_value_to_jsonvalue_signature()._function_id)->second = host__value_to_jsonvalue;
+	result.find(make_parse_json_script_signature()._function_id)->second = host__parse_json_script;
+	result.find(make_generate_json_script_signature()._function_id)->second = host__generate_json_script;
+	result.find(make_to_json_signature()._function_id)->second = host__to_json;
 
-	result.find(make_jsonvalue_to_value_signature()._function_id)->second = host__jsonvalue_to_value;
+	result.find(make_from_json_signature()._function_id)->second = host__from_json;
 
 	result.find(make_get_json_type_signature()._function_id)->second = host__get_json_type;
 

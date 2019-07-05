@@ -2242,17 +2242,17 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 				}
 
 
-				else if(found_symbol_ptr->first == make_script_to_jsonvalue_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_script_to_jsonvalue_signature());
+				else if(found_symbol_ptr->first == make_parse_json_script_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_parse_json_script_signature());
 				}
-				else if(found_symbol_ptr->first == make_jsonvalue_to_script_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_jsonvalue_to_script_signature());
+				else if(found_symbol_ptr->first == make_generate_json_script_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_generate_json_script_signature());
 				}
-				else if(found_symbol_ptr->first == make_value_to_jsonvalue_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_value_to_jsonvalue_signature());
+				else if(found_symbol_ptr->first == make_to_json_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_to_json_signature());
 				}
-				else if(found_symbol_ptr->first == make_jsonvalue_to_value_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_jsonvalue_to_value_signature());
+				else if(found_symbol_ptr->first == make_from_json_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_from_json_signature());
 				}
 
 				else if(found_symbol_ptr->first == make_get_json_type_signature().name){
