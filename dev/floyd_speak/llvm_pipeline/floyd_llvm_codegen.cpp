@@ -1283,6 +1283,9 @@ static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc,
 	else if(details.call_name == get_opcode(make_erase_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
+	else if(details.call_name == get_opcode(make_get_keys_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
 	else if(details.call_name == get_opcode(make_push_back_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
@@ -2503,20 +2506,5 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 	}
 	return result;
 }
-
-
-//	Destroys program, can only run it once!
-int64_t run_llvm_program(llvm_instance_t& instance, llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args){
-	QUARK_ASSERT(instance.check_invariant());
-	QUARK_ASSERT(program_breaks.check_invariant());
-
-//???main_args
-
-	auto ee = make_engine_run_init(instance, program_breaks);
-	call_floyd_runtime_deinit(ee);
-	return 0;
-}
-
-
 
 }	//	floyd

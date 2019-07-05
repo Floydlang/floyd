@@ -1036,10 +1036,10 @@ QUARK_UNIT_TEST("", "parse_while_statement()", "while(){}", ""){
 //////////////////////////////////////////////////		parse_software_system_statement()
 
 /*
-	software-system: JSON
+	software-system-def: JSON
 */
 
-std::pair<json_t, seq_t> parse_software_system_statement(const seq_t& s){
+std::pair<json_t, seq_t> parse_software_system_def_statement(const seq_t& s){
 	const auto start = skip_whitespace(s);
 	const auto loc = location_t(start.pos());
 	const auto ss_pos = if_first(start, keyword_t::k_software_system);
@@ -1049,7 +1049,7 @@ std::pair<json_t, seq_t> parse_software_system_statement(const seq_t& s){
 
 	//??? Instead of parsing a static JSON literal, we could parse a Floyd expression that results in a JSON value = use variables etc.
 	std::pair<json_t, seq_t> json_pos = parse_json(ss_pos.second);
-	const auto r = make_statement1(loc, statement_opcode_t::k_software_system, json_pos.first);
+	const auto r = make_statement1(loc, statement_opcode_t::k_software_system_def, json_pos.first);
 	return { r, json_pos.second };
 }
 

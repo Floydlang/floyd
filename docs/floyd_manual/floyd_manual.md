@@ -239,13 +239,13 @@ Notice that string has many qualities of an array of characters. You can ask for
 
 ## SOFTWARE SYSTEM - C4
 
-Floyd uses the C4 model to navigate and present your code. It's completely optional to use this feature. The C4 features gives you a very fast and lightweight way to think about your system automatically generate a few great diagrams that helps you can reason about the system.
+Floyd uses the C4 model to navigate and present your code. It's completely optional to use this feature. The C4 features gives you a very fast and lightweight way method to think about your system and to automatically generate a few great diagrams that helps you reason about it.
 
 Read more here: https://c4model.com/
 
-The C4 model and the diagrams lets you have a complete overview over your entire system and how users interact with it, then drill down to individual containers and further down to components and the code itself.
+The C4 diagrams lets you have a complete overview over your entire system and how users interact with it, then drill down to individual containers and further down to components and the code itself.
 
-In Floyd you describe your system using the keywords **software-system** and **container-def**, which use C4 terminology.
+In Floyd you describe your system using the keywords **software-system-def** and **container-def**, which use C4 terminology.
 
 ![Software Systems](floyd_systems_software_system.png)
 
@@ -266,14 +266,14 @@ This describes the entire software system you are building -- something that del
 
 Zooms into your software system and shows the different containers (apps) that makes up the system.
 
-There are proxy-containers that lets you place things like Amazon S3 or an email server into your system.
+You can use a mix of your own custom containers and proxy-containers for things like Amazon S3 or an email server. They are all part of the diagram.
 
 ![Level2](floyd_systems_level2_diagram.png)
 
 
 ### CONTAINERS
 
-Containers is where the bulk of the programming happens. A container represents something that hosts code or data. A container is a thing that needs to be running in order for the overall software system to work. A mobile app, a server-side web application, a client-side web application, a micro service: all examples of containers.
+A container is a thing that needs to be running in order for the overall software system to work. A mobile app, a server-side web application, a client-side web application, a micro service.
 
 A container is usually a single OS-process. It looks for resources and knows how to string things together inside the container, does its own processing of events and so forth, has its own state and handles runtimer errors. Sockets, file systems, concurrency, messages and screens are handled here.
 
@@ -293,15 +293,9 @@ This diagram zooms into an individual container to show the components inside.
 
 ### COMPONENTS
 
-A component is the same as a library, package or module. It's a group of related features encapsulated behind a well-defined interface. You can make your own components, use built-in component and get 3rd party components.
+A component is the same as a library, package or module. It's a group of related features encapsulated behind a well-defined API. You can make your own components, use built-in component and get 3rd party components.
 
 Examples: JPEG library, JSON lib. Custom component for syncing with your server. Amazon S3 library, socket library.
-
-Does not span processes. A component can be fully pure. Pure components have no side effects, have no internal state and are passive, like a ZIP library or a matrix-math library. These can be used from any Floyd code in the call graph -- both pure and impure functions.
-
-Or they can be impure. Impure components may take aktive decisions (detecting mouse clicks and calling your code) and may affect the world around you or give different results for each call and keeps their own internal state. get_time() and get_mouse_pos(), on_mouse_click(). read_directory_elements(). These can only be accessed from impure Floyd functions at the top of the call graph.
-
-Notice: a component used in several containers or a piece of code that appears in several components will appear in each -- they will look like they are duplicates in C4 diagrams, but they aren't. The perspective of the diagrams is **logic dependencies**. These diagrams don't show the physical dependencies -- which source files or libraries that depends on each other.
 
 
 ### LEVEL 4 - CODE DIAGRAM
@@ -311,14 +305,14 @@ Classes. Instance diagram. Examples. Passive. You often use a simple UML diagram
 ![Level3](floyd_systems_level4_diagram.png)
 
 
-TODO: Make script that generates diagrams from software-system JSON.
+TODO: Make script that generates diagrams from software-system-def JSON.
 
 
 ### EXAMPLE SOFTWARE SYSTEM STATEMENT
 
 
 ```
-software-system {
+software-system-def {
 	"name": "My Arcade Game",
 	"desc": "Space shooter for mobile devices, with connection to a server.",
 
@@ -339,7 +333,6 @@ software-system {
 ```
 
 TODO: support proxy software-systems
-
 TODO: support connections between components inside containers.
 
 
@@ -741,7 +734,10 @@ any jsonvalue_to_value(json_value v)
 
 ## MAIN()
 
-You can implement a function called "main" that will called by the Floyd runtime after all global statements have been executed. The main() function is optional, but the only way to get command line arguments and return a command line error code.
+You can implement a function called "main" that will called by the Floyd runtime after all global statements have been executed. The main() function is optional, but the only way to get command line arguments and return a command line error code. Main can have two different forms:
+- int main(){} -- which uses no input arguments or
+- int main([string] args){} -- that receives command line input.
+
 
 ```
 func int main([string] args){
@@ -757,8 +753,27 @@ func int main([string] args){
 ...will call your main() function with ["-a", "output.txt"]
 
 
+## EXECUTING CODE: MAIN(), PROCESS, GLOBAL STATEMENTS AND COMPILE TIME
 
-# 2. THE LANGUAGE
+
+These are the steps used by the Floyd runtime to executing a Floyd program that has a main() function
+
+1. Main thread initialises all globals and constants
+2. Main thread executes all global statements 
+3. Main thread calls main()
+4. When main() returns, the runtime is taken down and the OS executable is exited
+
+These are the steps used by the Floyd runtime to executing a Floyd program that has no main() function
+
+1. Main thread initialises all globals and constants
+2. Main thread executes all global statements 
+3. Main thread starts all floyd processes in separate threads. How they execute is undefined here but under your control
+4. When all floyd processs have exited, the runtime is taken down and the OS executable is exited.
+
+A Floyd program either has a main() function or processes.
+
+
+# 2. THE LANGUAGE REFERENCE
 
 
 
@@ -1088,9 +1103,9 @@ The return statement aborts the execution of the current function as the functio
 
 
 
-## SOFTWARE-SYSTEM STATEMENT
+## SOFTWARE-SYSTEM-DEF STATEMENT
 
-This is a dedicated keyword for defining software systems: **software-system**. Its contents is encoded as a JSON object and designed to be either hand-coded or processed by tools. You only have one of these in a software system.
+This is a dedicated keyword for defining software systems: **software-system-def**. Its contents is encoded as a JSON object and designed to be either hand-coded or processed by tools. You only have one of these in a software system.
 
 |Key		| Meaning
 |:---	|:---	
@@ -1098,7 +1113,7 @@ This is a dedicated keyword for defining software systems: **software-system**. 
 |**desc**		| longer description of your software system. JSON String.
 |**people**	| personas involved in using or maintaining your system. Don't go crazy. JSON object.
 |**connections**	| the most important relationships between people and the containers. Be specific "user sends email using gmail" or "user plays game on device" or "mobile app pulls user account from server based on login". JSON array.
-|**containers**	| Your iOS app, your server, the email system. Notice that you map gmail-server as a container, even though it's a gigantic software system by itself. JSON array with container names as strings. These strings are used as keys to identify containers.
+|**containers**	| Your iOS app, your server, the email system. Notice that you gmail-server is a container, even though it's a gigantic software system by itself. JSON array with container names as strings. These strings are used as keys to identify containers.
 
 
 
@@ -1131,8 +1146,8 @@ This is an object where each key is the name of a persona and a short descriptio
 
 |Key		| Meaning
 |:---	|:---	
-|**source**		| the name of the container or user, as listed in the software-system
-|**dest**		| the name of the container or user, as listed in the software-system
+|**source**		| the name of the container or user, as listed in the software-system-def
+|**dest**		| the name of the container or user, as listed in the software-system-def
 |**interaction**		| "user plays game on device" or "server sends order notification"
 |**tech**		| "webhook", "REST command"
 
@@ -1146,7 +1161,7 @@ This is a dedicated keyword. It defines *one* container, its name, its internal 
 
 |Key		| Meaning
 |:---	|:---	
-|**name**		| Needs to match the name listed in software-systems, containers.
+|**name**		| Needs to match the name listed in software-system-defs, containers.
 |**tech**		| short string that lists the most important technologies, languages, toolkits.
 |**desc**		| short string that tells what this component is and does.
 |**clocks**		| defines every clock (concurrent process) in this container and lists which processes that are synced to each of these clocks
@@ -1157,8 +1172,7 @@ This is a dedicated keyword. It defines *one* container, its name, its internal 
 
 You should keep this statement close to process-code that makes up the container. That handles messages, stores their mutable state, does all communication with the real world. Keep the logic code out of here as much as possible, the Floyd processes are about communication and state and time only.
 
-
-Example container:
+##### EXAMPLE CONTAINER
 
 ```
 container-def {
@@ -1215,60 +1229,9 @@ container-def {
 }
 ```
 
+##### CONTAINER CODE
 
-This is a dedicated keyword. It defines *one* container, it's name, its internal processes and how they interact.
-
-|Key		| Meaning
-|:---	|:---	
-|**name**		| Needs to match the name listed in software-systems, containers.
-|**tech**		| short string that lists the most important technologies, languages, toolkits.
-|**desc**		| short string that tells what this component is and does.
-|**clocks**		| defines every clock (concurrent process) in this container and lists which processes that are synced to each of these clocks
-|**connections**		| connects the processes together using virtual wires. Source-process-name, dest-process-name, interaction-description.
-|**probes\_and\_tweakers**		| lists all probes and tweakers used in this container. Notice that the same function or component can have a different set of probes and tweakers per container or share them.
-|**components**		| lists all imported components needed for this container
-
-
-You should keep this statement close to process-code that makes up the container. That handles messages, stores their mutable state, does all communication with the real world. Keep the logic code out of here as much as possible, the Floyd processes are about communication and state and time only.
-
-
-Example container:
-
-```
-container-def {
-	"name": "iphone app",
-	"tech": "Swift, iOS, Xcode, Open GL",
-	"desc": "Mobile shooter game for iOS.",
-
-	"clocks": {
-		"main": {
-			"a": "my_gui",
-			"b": "iphone-ux"
-		},
-
-		"com-clock": {
-			"c": "server_com"
-		},
-		"opengl_feeder": {
-			"d": "renderer"
-		}
-	},
-	"connections": [
-		{ "source": "b", "dest": "a", "interaction": "b sends messages to a", "tech": "OS call" },
-		{ "source": "b", "dest": "c", "interaction": "b also sends messages to c, which is another clock", "tech": "OS call" }
-	],
-	"components": [
-		"My Arcade Game-iphone-app",
-		"My Arcade Game-logic",
-		"My Arcade Game-servercom",
-		"OpenGL-component",
-		"Free Game Engine-component",
-		"iphone-ux-component"
-	]
-}
-```
-
-For each process you've listed under "clocks", ("my_gui", "iphone-ux", "server_com" and "renderer" in example above) you need to implement two functions. The init-function and the message handler. These functions are named based on the process.
+For each floyd process you've listed under "clocks", ("my_gui", "iphone-ux", "server_com" and "renderer" in example above) you need to implement two functions. The init-function and the message handler. These functions are named based on the process.
 
 The init function is called x__init() where x is a placeholder. It takes no arguments, is impure and returns a value of type of your choice. This type is your process' memory slot -- the only mutable state your process has access to.
 
@@ -1290,28 +1253,6 @@ func my_gui_state_t my_gui__init() impure {
 func my_gui_state_t my_gui(my_gui_state_t state, json_value message) impure{
 }
 ```
-
-##### PROXY CONTAINER
-
-If you use an external component or software system, like for example gmail, you list it here so we can represent it, as a proxy.
-
-```
-container-def {
-	"name": "gmail mail server"
-}
-```
-
-or 
-
-```
-container-def {
-	"name": "gmail mail server"
-	"tech": "Google tech",
-	"desc": "Use gmail to store all gamer notifications."
-}
-```
-
-
 
 
 ### TODO: SWITCH STATEMENT
@@ -1948,6 +1889,25 @@ dict erase(dict, string key)
 ```
 
 
+### get_keys()
+
+Use this with a dictionary to get a vector with all the dictionary's keys. Then you can loop through the keys to get to all the values of the dictionary.
+
+```
+vector get_keys(dict)
+```
+
+Example
+```
+let a = { "a": 1, "b": 2, "c" : 3 }
+let b = get_keys(a)
+assert(b == [ "a", "b", "c"])
+```
+
+Notice that the *order* of the keys is undefined and may change depending on the what backend is used for the dictionary.
+
+
+
 
 
 ## FUNCTIONAL-STYLE COLLECTION FUNCTIONS
@@ -2141,7 +2101,7 @@ Make a new Floyd JSON value from a JSON-script string. If the string is malforme
 
 
 ```
-software-system {
+software-system-def {
 	"name": "My Arcade Game",
 	"desc": "Space shooter for mobile devices, with connection to a server.",
 
@@ -2279,7 +2239,7 @@ Here is the DAG for the complete syntax of Floyd.
  		BIND-MUTABLE-INFERCETYPE			"mutable" IDENTIFIER "=" EXPRESSION
 		EXPRESSION-STATEMENT 			EXPRESSION
  		ASSIGNMENT	 				IDENTIFIER "=" EXPRESSION
-		SOFTWARE-SYSTEM				"software-system" JSON_BODY
+		SOFTWARE-SYSTEM-DEF				"software-system-def" JSON_BODY
 		COMPONENT-DEF					"component-def" JSON_BODY
 
 

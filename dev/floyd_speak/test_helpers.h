@@ -22,7 +22,7 @@ struct compilation_unit_t;
 
 struct test_report_t {
 	floyd::value_t result_variable;
-	int64_t main_result;
+	run_output_t output;
 	std::vector<std::string> print_out;
 	std::string exception_what;
 };
@@ -31,11 +31,10 @@ test_report_t make_result(const value_t& result);
 
 void ut_verify(const quark::call_context_t& context, const test_report_t& result, const test_report_t& expected);
 
-test_report_t run_program(const compilation_unit_t& cu, const std::vector<std::string>& main_args);
-test_report_t run_program2(const compilation_unit_t& cu, const std::vector<std::string>& main_args, const std::string& container_key);
+test_report_t test_floyd_program(const compilation_unit_t& cu, const std::vector<std::string>& main_args);
 
-std::map<std::string, value_t> test_run_container2(const compilation_unit_t& cu, const std::vector<std::string>& args, const std::string& container_key);
-std::map<std::string, value_t> test_run_container2(const std::string& program, const std::vector<std::string>& args, const std::string& container_key, const std::string& source_file);
+run_output_t test_run_container2(const compilation_unit_t& cu, const std::vector<std::string>& main_args, const std::string& container_key);
+run_output_t test_run_container2(const std::string& program, const std::vector<std::string>& main_args, const std::string& container_key, const std::string& source_file);
 
 
 void ut_verify_global_result(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const value_t& expected_result);

@@ -3487,12 +3487,55 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [string] exists()", "", ""){
 QUARK_UNIT_TEST("Floyd test suite", "dict [string] erase()", "", ""){
 	run_closed(R"(
 
-		let a = { "a": "1000", "b": "2000", "c" : "3000"}
+		let a = { "a": "1000", "b": "2000", "c" : "3000" }
 		let b = erase(a, "a")
 		assert(b == { "b": "2000", "c" : "3000"})
 
 	)");
 }
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
+	run_closed(R"(
+
+		let [string: int] a = {}
+		let b = get_keys(a)
+		assert(b == [])
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
+	run_closed(R"(
+
+		let a = { "a": 10 }
+		let b = get_keys(a)
+//		assert(b == [ "a", "b", "c"])
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
+	run_closed(R"(
+
+		let a = { "a": "ten" }
+		let b = get_keys(a)
+//		assert(b == [ "a", "b", "c"])
+
+	)");
+}
+QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
+	run_closed(R"(
+
+		let a = { "a": 1, "b": 2, "c" : 3 }
+		let b = get_keys(a)
+		assert(b == [ "a", "b", "c" ] || b == [ "c", "b", "a" ])
+
+	)");
+}
+
+
+
+
 
 QUARK_UNIT_TEST("Floyd test suite", "dict [string]", "Error: Lookup in dict using non-string key", "exception"){
 	ut_verify_exception_nolib(
@@ -3506,6 +3549,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [string]", "Error: Lookup in dict usin
 		"Dictionary can only be looked up using string keys, not a \"int\". Line: 4 \"print(a[3])\""
 	);
 }
+
 
 
 
@@ -5376,16 +5420,16 @@ QUARK_UNIT_TEST("Analyse all test programs", "", "", ""){
 
 
 //######################################################################################################################
-//	SOFTWARE-SYSTEM
+//	SOFTWARE-SYSTEM-DEF
 //######################################################################################################################
 
 
 
 
-QUARK_UNIT_TEST("software-system", "parse software-system", "", ""){
+QUARK_UNIT_TEST("software-system-def", "parse software-system-def", "", ""){
 	const auto test_ss = R"(
 
-		software-system {
+		software-system-def {
 			"name": "My Arcade Game",
 			"desc": "Space shooter for mobile devices, with connection to a server.",
 
@@ -5413,7 +5457,7 @@ QUARK_UNIT_TEST("software-system", "parse software-system", "", ""){
 QUARK_UNIT_TEST("", "try calling LLVM function", "", ""){
 	const auto p = R"(
 
-		software-system {
+		software-system-def {
 			"name": "My Arcade Game",
 			"desc": "Space shooter for mobile devices, with connection to a server.",
 			"people": {},
@@ -5459,10 +5503,10 @@ QUARK_UNIT_TEST("", "try calling LLVM function", "", ""){
 
 
 
-QUARK_UNIT_TEST("software-system", "run one process", "", ""){
+QUARK_UNIT_TEST("software-system-def", "run one process", "", ""){
 	const auto test_ss2 = R"(
 
-		software-system {
+		software-system-def {
 			"name": "My Arcade Game",
 			"desc": "Space shooter for mobile devices, with connection to a server.",
 			"people": {},
@@ -5512,13 +5556,13 @@ QUARK_UNIT_TEST("software-system", "run one process", "", ""){
 	)";
 
 	const auto result = test_run_container2(test_ss2, {}, "iphone app", "");
-	QUARK_UT_VERIFY(result.empty());
+	QUARK_UT_VERIFY(result == run_output_t());
 }
 
-QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
+QUARK_UNIT_TEST("software-system-def", "run two unconnected processs", "", ""){
 	const auto test_ss3 = R"(
 
-		software-system {
+		software-system-def {
 			"name": "My Arcade Game",
 			"desc": "Space shooter for mobile devices, with connection to a server.",
 			"people": {},
@@ -5598,13 +5642,13 @@ QUARK_UNIT_TEST("software-system", "run two unconnected processs", "", ""){
 	)";
 
 	const auto result = test_run_container2(test_ss3, {}, "iphone app", "");
-	QUARK_UT_VERIFY(result.empty());
+	QUARK_UT_VERIFY(result == run_output_t());
 }
 
-QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
+QUARK_UNIT_TEST("software-system-def", "run two CONNECTED processes", "", ""){
 	const auto test_ss3 = R"(
 
-		software-system {
+		software-system-def {
 			"name": "My Arcade Game",
 			"desc": "Space shooter for mobile devices, with connection to a server.",
 			"people": {},
@@ -5687,7 +5731,7 @@ QUARK_UNIT_TEST("software-system", "run two CONNECTED processes", "", ""){
 	)";
 
 	const auto result = test_run_container2(test_ss3, {}, "iphone app", "");
-	QUARK_UT_VERIFY(result.empty());
+	QUARK_UT_VERIFY(result == run_output_t() );
 }
 
 
@@ -5706,7 +5750,7 @@ QUARK_UNIT_TEST("Floyd test suite", "hello_world.floyd", "", ""){
 	const auto program = read_text_file(path);
 
 	const auto result = test_run_container2(program, {}, "", "");
-	const std::map<std::string, value_t> expected = {{ "global", value_t::make_void() }};
+	const run_output_t expected = {};
 	QUARK_UT_VERIFY(result == expected);
 }
 
@@ -5715,7 +5759,7 @@ QUARK_UNIT_TEST("Floyd test suite", "game_of_life.floyd", "", ""){
 	const auto program = read_text_file(path);
 
 	const auto result = test_run_container2(program, {}, "", "");
-	const std::map<std::string, value_t> expected = {{ "global", value_t::make_void() }};
+	const run_output_t expected = {};
 	QUARK_UT_VERIFY(result == expected);
 }
 

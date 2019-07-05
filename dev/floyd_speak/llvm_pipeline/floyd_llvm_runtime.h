@@ -25,10 +25,13 @@ namespace llvm {
 	struct ExecutionEngine;
 }
 
-namespace floyd {
+//??? make floyd_llvm-namespace. Reduces collisions with byte code interpreter.
 
+namespace floyd {
+	struct semantic_ast_t;
 	struct llvm_ir_program_t;
 	struct runtime_handler_i;
+	struct run_output_t;
 
 
 ////////////////////////////////		host_func_t
@@ -65,18 +68,19 @@ struct function_def_t {
 //https://en.wikipedia.org/wiki/Hexspeak
 const uint64_t k_debug_magic = 0xFACEFEED05050505;
 
+
 struct llvm_execution_engine_t {
-	bool check_invariant() const {
-		QUARK_ASSERT(ee);
-		QUARK_ASSERT(heap.check_invariant());
-		return true;
-	}
+	~llvm_execution_engine_t();
+	bool check_invariant() const;
+
 
 
 	////////////////////////////////		STATE
 
 	//	Must be first member, checked by LLVM code.
 	uint64_t debug_magic;
+
+	container_t container_def;
 
 	llvm_instance_t* instance;
 	std::shared_ptr<llvm::ExecutionEngine> ee;
@@ -89,6 +93,9 @@ struct llvm_execution_engine_t {
 
 	public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
 	public: heap_t heap;
+
+	std::pair<void*, typeid_t> main_function;
+	bool inited;
 };
 
 
@@ -151,18 +158,31 @@ struct llvm_bind_t {
 llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const std::string& name);
 
 
-int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f, const std::vector<std::string>& main_args);
-
+//	These are the support function built into the runtime, like RC primitives.
 std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_interner_t& interner);
-std::map<std::string, void*> get_host_functions_map2();
+std::map<std::string, void*> get_c_function_ptrs();
 
 uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee);
 uint64_t call_floyd_runtime_deinit(llvm_execution_engine_t& ee);
 
+int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f, const std::vector<std::string>& main_args);
 
-llvm_execution_engine_t make_engine_run_init(llvm_instance_t& instance, llvm_ir_program_t& program);
 
-std::map<std::string, value_t> run_llvm_container(llvm_ir_program_t& program_breaks, const std::vector<std::string>& main_args, const std::string& container_key);
+
+//	Calls init() and will perform deinit() when engine is destructed later.
+std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program);
+
+
+//	Calls main() if it exists, else runs the floyd processes. Returns when execution is done.
+run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::string>& main_args);
+
+
+//	Helper that goes directly from source to LLVM IR code.
+std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instance, const compilation_unit_t& cu);
+
+//	Compiles and runs the program. Returns results.
+run_output_t run_program_helper(const std::string& program_source, const std::string& file, const std::vector<std::string>& main_args);
+
 
 
 }	//	namespace floyd

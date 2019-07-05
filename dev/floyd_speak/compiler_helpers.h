@@ -10,15 +10,50 @@
 #define compiler_helpers_hpp
 
 #include "quark.h"
+
+
+#include "ast_value.h"
+
 #include <string>
 #include <vector>
+#include <map>
 
 namespace floyd {
-struct value_t;
 struct semantic_ast_t;
 struct compilation_unit_t;
 struct pass2_ast_t;
 struct parse_tree_t;
+
+
+////////////////////////////////		run_output_t
+
+//??? Use enum to tell if output is for main/processes/none
+struct run_output_t {
+	run_output_t() :
+		main_result(-1)
+	{}
+
+	run_output_t(int64_t main_result, std::map<std::string, value_t> process_results) :
+		main_result(main_result),
+		process_results(process_results)
+	{}
+
+
+	////////////////////////////////		STATE
+
+	int64_t main_result;
+	std::map<std::string, value_t> process_results;
+};
+
+bool operator==(const run_output_t& lhs, const run_output_t& rhs);
+
+void ut_verify_run_output(const quark::call_context_t& context, const run_output_t& result, const run_output_t& expected);
+
+
+
+////////////////////////////////		ERRORS
+
+
 
 parse_tree_t parse_program__errors(const compilation_unit_t& cu);
 semantic_ast_t run_semantic_analysis__errors(const pass2_ast_t& pass2, const compilation_unit_t& cu);

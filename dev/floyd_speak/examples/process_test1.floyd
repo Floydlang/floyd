@@ -1,5 +1,5 @@
 
-software-system {
+software-system-def {
 	"name": "My Arcade Game",
 	"desc": "Space shooter for mobile devices, with connection to a server.",
 

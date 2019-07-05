@@ -376,7 +376,7 @@ namespace keyword_t {
 	const std::string k_mutable = "mutable";
 	const std::string k_let = "let";
 
-	const std::string k_software_system = "software-system";
+	const std::string k_software_system = "software-system-def";
 	const std::string k_container_def = "container-def";
 
 	const std::string k_json_object = "json_object";
