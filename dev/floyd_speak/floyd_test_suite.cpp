@@ -3523,7 +3523,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
 
 	)");
 }
-QUARKY_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
 	run_closed(R"(
 
 		let a = { "a": 1, "b": 2, "c" : 3 }
@@ -4981,39 +4981,39 @@ QUARK_UNIT_TEST("Floyd test suite", "filter()", "string filter([int], string, fu
 
 
 
-//////////////////////////////////////////		HOST FUNCTION - supermap()
+//////////////////////////////////////////		HOST FUNCTION - map_dag()
 
 
 
-QUARK_UNIT_TEST("Floyd test suite", "supermap()", "No dependencies", ""){
+QUARK_UNIT_TEST("Floyd test suite", "map_dag()", "No dependencies", ""){
 	run_closed(R"(
 
 		func string f(string v, [string] inputs){
 			return "[" + v + "]"
 		}
 
-		let result = supermap([ "one", "ring", "to" ], [ -1, -1, -1 ], f)
+		let result = map_dag([ "one", "ring", "to" ], [ -1, -1, -1 ], f)
 //		print(to_string(result))
 		assert(result == [ "[one]", "[ring]", "[to]" ])
 
 	)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "supermap()", "No dependencies", ""){
+QUARK_UNIT_TEST("Floyd test suite", "map_dag()", "No dependencies", ""){
 	run_closed(R"(
 
 		func string f(string v, [string] inputs){
 			return "[" + v + "]"
 		}
 
-		let result = supermap([ "one", "ring", "to" ], [ 1, 2, -1 ], f)
+		let result = map_dag([ "one", "ring", "to" ], [ 1, 2, -1 ], f)
 //		print(to_string(result))
 		assert(result == [ "[one]", "[ring]", "[to]" ])
 
 	)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "supermap()", "complex", ""){
+QUARK_UNIT_TEST("Floyd test suite", "map_dag()", "complex", ""){
 	run_closed(R"(
 
 		func string f2(string acc, string element){
@@ -5030,7 +5030,7 @@ QUARK_UNIT_TEST("Floyd test suite", "supermap()", "complex", ""){
 			return v + "[" + s + "]"
 		}
 
-		let result = supermap([ "D", "B", "A", "C", "E", "F" ], [ 4, 2, -1, 4, 2, 4 ], f)
+		let result = map_dag([ "D", "B", "A", "C", "E", "F" ], [ 4, 2, -1, 4, 2, 4 ], f)
 //		print(to_string(result))
 		assert(result == [ "D[]", "B[]", "A[B[], E[D[], C[], F[]]]", "C[]", "E[D[], C[], F[]]", "F[]" ])
 

@@ -1544,7 +1544,7 @@
 			[27, "send", "CONST", [["func", "^void", ["^string", "^json"], false], { "function_id": 27 }]],
 			[28, "size", "CONST", [["func", "^int", ["^any"], true], { "function_id": 28 }]],
 			[29, "subset", "CONST", [["func", "^any", ["^any", "^int", "^int"], true], { "function_id": 29 }]],
-			[30, "supermap", "CONST", [["func", "^any", ["^any", "^any", "^any"], true], { "function_id": 30 }]],
+			[30, "map_dag", "CONST", [["func", "^any", ["^any", "^any", "^any"], true], { "function_id": 30 }]],
 			[31, "to_pretty_string", "CONST", [["func", "^string", ["^any"], true], { "function_id": 31 }]],
 			[32, "to_string", "CONST", [["func", "^string", ["^any"], true], { "function_id": 32 }]],
 			[33, "typeof", "CONST", [["func", "^typeid", ["^any"], true], { "function_id": 33 }]],

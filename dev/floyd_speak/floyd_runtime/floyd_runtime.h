@@ -116,7 +116,7 @@ corecall_signature_t make_map_signature();
 corecall_signature_t make_map_string_signature();
 corecall_signature_t make_filter_signature();
 corecall_signature_t make_reduce_signature();
-corecall_signature_t make_supermap_signature();
+corecall_signature_t make_map_dag_signature();
 
 corecall_signature_t make_print_signature();
 corecall_signature_t make_send_signature();

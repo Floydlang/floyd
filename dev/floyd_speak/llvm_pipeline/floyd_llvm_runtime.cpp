@@ -1995,9 +1995,9 @@ const WIDE_RETURN_T floyd_funcdef__subset(floyd_runtime_t* frp, runtime_value_t 
 }
 
 
-typedef WIDE_RETURN_T (*SUPERMAP_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value);
+typedef WIDE_RETURN_T (*map_dag_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value);
 
-WIDE_RETURN_T floyd_funcdef__supermap(
+WIDE_RETURN_T floyd_funcdef__map_dag(
 	floyd_runtime_t* frp,
 	runtime_value_t arg0_value,
 	runtime_type_t arg0_type,
@@ -2026,13 +2026,13 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 
 	QUARK_ASSERT(e_type == type2.get_function_args()[0] && r_type == type2.get_function_args()[1].get_vector_element_type());
 
-	const auto f2 = reinterpret_cast<SUPERMAP_F>(f.function_ptr);
+	const auto f2 = reinterpret_cast<map_dag_F>(f.function_ptr);
 
 	const auto elements2 = elements.vector_ptr;
 	const auto parents2 = parents.vector_ptr;
 
 	if(elements2->get_element_count() != parents2->get_element_count()) {
-		quark::throw_runtime_error("supermap() requires elements and parents be the same count.");
+		quark::throw_runtime_error("map_dag() requires elements and parents be the same count.");
 	}
 
 	auto elements_todo = elements2->get_element_count();
@@ -2064,7 +2064,7 @@ WIDE_RETURN_T floyd_funcdef__supermap(
 			}
 		}
 		if(pass_ids.empty()){
-			quark::throw_runtime_error("supermap() dependency cycle error.");
+			quark::throw_runtime_error("map_dag() dependency cycle error.");
 		}
 
 		for(const auto element_index: pass_ids){
@@ -2521,7 +2521,7 @@ std::map<std::string, void*> get_c_function_ptrs(){
 		{ "floyd_funcdef__map_string", reinterpret_cast<void *>(&floyd_funcdef__map_string) },
 		{ "floyd_funcdef__filter", reinterpret_cast<void *>(&floyd_funcdef__filter) },
 		{ "floyd_funcdef__reduce", reinterpret_cast<void *>(&floyd_funcdef__reduce) },
-		{ "floyd_funcdef__supermap", reinterpret_cast<void *>(&floyd_funcdef__supermap) },
+		{ "floyd_funcdef__map_dag", reinterpret_cast<void *>(&floyd_funcdef__map_dag) },
 
 		{ "floyd_funcdef__print", reinterpret_cast<void *>(&floyd_funcdef__print) },
 		{ "floyd_funcdef__send", reinterpret_cast<void *>(&floyd_funcdef__send) },

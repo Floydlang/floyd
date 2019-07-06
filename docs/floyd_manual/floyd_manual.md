@@ -485,7 +485,7 @@ Sometimes we introduce concurrency to make more parallelism possible: multithrea
 |3	| Perform non-blocking impure background calculation (auto save doc) | Copy document, create worker thread | Use process, use data directly
 |4	| Run process concurrently, like analyze game world to prefetch assets | Manually synchronize all shared data, use separate thread | Use process -- data is immutable
 |5	| Handle requests from OS quickly, like call to audio buffer switch process() | Use callback function | Use process and set its clock to sync to clock of buffer switch
-|6	| Improve performance using concurrency + parallelism / fan-in-fan-out / processing pipeline | Split work into small tasks that are independent, queue them to a thread team, resolve dependencies somehow, use end-fence with competition notification | call map() or supermap() from a process.
+|6	| Improve performance using concurrency + parallelism / fan-in-fan-out / processing pipeline | Split work into small tasks that are independent, queue them to a thread team, resolve dependencies somehow, use end-fence with competition notification | call map() or map_dag() from a process.
 |7	| Spread heavy work across time (do some processing each game frame) | Use coroutine or thread that sleeps after doing some work. Wake it next frame. | Process does work. It calls select() inside a loop to wait on next trigger to continue work.
 |8	| Do work regularly, independent of other threads (like a timer interrupt) | Call timer with callback / make thread that sleeps on event | Use process that calls post_at_time(now() + 100) to itself
 |9	| Small server | Write loop that listens to socket | Use process that waits for messages
@@ -581,13 +581,13 @@ Tweakers are inserted onto the wires and clocks and functions and expressions of
 
 In Floyd you accelerate the performance of your code by making it expose where there are dependencies between computations and where there are not. Then you can orchestrate how to best execute your container from the top level -- using tweak probes and profiling probes, affecting how the hardware is mapped to your logic.
 
-Easy ways to expose parallelism is by writing pure functions (their results can be cached or precomputed) and by using functions like map(), fold(), filter() and supermap(). These function work on individual elements of a collection and each computation is independent of the others. This lets the runtime process the different elements on parallel hardware.
+Easy ways to expose parallelism is by writing pure functions (their results can be cached or precomputed) and by using functions like map(), fold(), filter() and map_dag(). These function work on individual elements of a collection and each computation is independent of the others. This lets the runtime process the different elements on parallel hardware.
 
-The functions map() and supermap() replaces FAN-IN-FAN-OUT-mechanisms.
+The functions map() and map_dag() replaces FAN-IN-FAN-OUT-mechanisms.
 
 You can inspect in code and visually how the elements are distributed as tasks.
 
-supermap() works like map(), but each element also has dependencies to other elements in the collection.
+map_dag() works like map(), but each element also has dependencies to other elements in the collection.
 
 Accelerating computations (parallelism) is done using tweaks — a separate mechanism. It supports moving computations in time (lazy, eager, caching) and running work in parallel.
 
@@ -604,7 +604,7 @@ let image2 = map(image1, my_pixel_shader) and the pixels can be processed in par
 ???
 **Task** - this is a work item that takes usually approximately 0.5 - 10 ms to execute and has an end. The runtime generates these when it wants to run map() elements in parallel. All tasks in the entire container are scheduled together.
 
-Notice: map() and supermap() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
+Notice: map() and map_dag() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
 
 
 
@@ -1954,17 +1954,17 @@ R reduce([E], R init, R f(R accumulator, E element))
 ```
 
 
-### supermap()
+### map_dag()
 
-	[R] supermap([E] values, [int] depends_on, R (E, [R]) f)
+	[R] map_dag([E] values, [int] depends_on, R (E, [R]) f)
 
-This function runs a bunch of tasks with dependencies between them. When supermap() returns, all tasks have been executed.
+This function runs a bunch of tasks with dependencies between them. When map_dag() returns, all tasks have been executed.
 
-- Tasks can call blocking functions or impure functions. This makes the supermap() call impure too.
+- Tasks can call blocking functions or impure functions. This makes the map_dag() call impure too.
 - Tasks cannot generate new tasks.
-- A task *can* call supermap.
+- A task *can* call map_dag.
 - Task will not start until all its dependencies have been finished.
-- There is no way for any code to observe partially executed supermap(). It's done or not.
+- There is no way for any code to observe partially executed map_dag(). It's done or not.
 
 - **values**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The indexes are the indexes into the tasks-vector. Use index -1 to mean *depends on nothing*.
 
@@ -1973,7 +1973,7 @@ This function runs a bunch of tasks with dependencies between them. When superma
 - **result**: a vector with one element for each element in the tasks-argument. The order of the elements is the same as the input vector.
 
 
-Notice: your function f can send messages to a clock — this means another clock can start consuming results while supermap() is still running.
+Notice: your function f can send messages to a clock — this means another clock can start consuming results while map_dag() is still running.
 
 Notice: using this function exposes potential for parallelism.
 

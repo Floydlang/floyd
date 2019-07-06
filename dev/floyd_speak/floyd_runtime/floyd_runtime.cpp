@@ -260,8 +260,8 @@ corecall_signature_t make_filter_signature(){
 corecall_signature_t make_reduce_signature(){
 	return { "reduce", 1035, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg1) };
 }
-corecall_signature_t make_supermap_signature(){
-	return { "supermap", 1037, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::vector_of_arg2func_return) };
+corecall_signature_t make_map_dag_signature(){
+	return { "map_dag", 1037, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::vector_of_arg2func_return) };
 }
 
 
@@ -310,7 +310,7 @@ static std::vector<corecall_signature_t> get_host_function_records(){
 		make_map_string_signature(),
 		make_filter_signature(),
 		make_reduce_signature(),
-		make_supermap_signature(),
+		make_map_dag_signature(),
 
 		make_print_signature(),
 		make_send_signature()

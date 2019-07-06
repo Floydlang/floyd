@@ -1449,25 +1449,25 @@ std::pair<analyser_t, expression_t> analyse_corecall_map_string_expression(const
 	};
 }
 
-//	[R] supermap([E] values, [int] depends_on, R (E, [R]) f)
-std::pair<analyser_t, expression_t> analyse_corecall_supermap_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+//	[R] map_dag([E] values, [int] depends_on, R (E, [R]) f)
+std::pair<analyser_t, expression_t> analyse_corecall_map_dag_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
-	const auto sign = make_supermap_signature();
+	const auto sign = make_map_dag_signature();
 	auto a_acc = a;
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
 	const auto arg1_type = resolved_call.second.function_type.get_function_args()[0];
 	if(arg1_type.is_vector() == false){
-		quark::throw_runtime_error("supermap() arg 1 must be a vector.");
+		quark::throw_runtime_error("map_dag() arg 1 must be a vector.");
 	}
 	const auto e_type = arg1_type.get_vector_element_type();
 
 	const auto arg3_type = resolved_call.second.function_type.get_function_args()[2];
 	if(arg3_type.is_function() == false){
-		quark::throw_runtime_error("supermap() arg 3 must be a function.");
+		quark::throw_runtime_error("map_dag() arg 3 must be a function.");
 	}
 
 	const auto r_type = arg3_type.get_function_return();
@@ -1484,7 +1484,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_supermap_expression(const a
 	);
 
 	if(resolved_call.second.function_type != expected){
-		quark::throw_runtime_error("Call to supermap() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
+		quark::throw_runtime_error("Call to map_dag() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
 	}
 
 	return {
@@ -2271,8 +2271,8 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 				else if(found_symbol_ptr->first == make_reduce_signature().name){
 					return analyse_corecall_reduce_expression(a_acc, parent, details.args);
 				}
-				else if(found_symbol_ptr->first == make_supermap_signature().name){
-					return analyse_corecall_supermap_expression(a_acc, parent, details.args);
+				else if(found_symbol_ptr->first == make_map_dag_signature().name){
+					return analyse_corecall_map_dag_expression(a_acc, parent, details.args);
 				}
 
 				else if(found_symbol_ptr->first == make_print_signature().name){

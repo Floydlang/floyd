@@ -77,7 +77,7 @@ The bulk of your program should be blue code - pure code.
 
 *(Implementation in progress)*
 
-Safe parallelism is built in using map() reduce() filter() and supermap(). Like shaders running on a GPU. They share an internal OS thread team with the Floyd processes.
+Safe parallelism is built in using map() reduce() filter() and map_dag(). Like shaders running on a GPU. They share an internal OS thread team with the Floyd processes.
 
 
 

@@ -1230,7 +1230,7 @@ static expression_gen_t bcgen_corecall_expression(bcgenerator_t& gen_acc, const 
 	else if(details.call_name == get_opcode(make_reduce_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_opcode(make_supermap_signature())){
+	else if(details.call_name == get_opcode(make_map_dag_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
 

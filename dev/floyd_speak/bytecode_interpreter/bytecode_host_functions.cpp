@@ -792,11 +792,11 @@ bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 
 
-/////////////////////////////////////////		PURE -- SUPERMAP()
+/////////////////////////////////////////		PURE -- map_dag()
 
 
-//	[R] supermap([E] values, [int] parents, R (E, [R]) f)
-bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_count){
+//	[R] map_dag([E] values, [int] parents, R (E, [R]) f)
+bc_value_t host__map_dag(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
 
@@ -819,7 +819,7 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 	const auto parents2 = get_vector(parents);
 
 	if(elements2.size() != parents2.size()) {
-		quark::throw_runtime_error("supermap() requires elements and parents be the same count.");
+		quark::throw_runtime_error("map_dag() requires elements and parents be the same count.");
 	}
 
 	auto elements_todo = elements2.size();
@@ -850,7 +850,7 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 		}
 
 		if(pass_ids.empty()){
-			quark::throw_runtime_error("supermap() dependency cycle error.");
+			quark::throw_runtime_error("map_dag() dependency cycle error.");
 		}
 
 		for(const auto element_index: pass_ids){
@@ -897,18 +897,18 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 
 
 
-/////////////////////////////////////////		PURE -- SUPERMAP2()
+/////////////////////////////////////////		PURE -- map_dag2()
 
 //	Input dependencies are specified for as 1... many integers per E, in order. [-1] or [a, -1] or [a, b, -1 ] etc.
 //
-//	[R] supermap([E] values, [int] parents, R (E, [R]) f)
+//	[R] map_dag([E] values, [int] parents, R (E, [R]) f)
 struct dep_t {
 	int64_t incomplete_count;
 	std::vector<int64_t> depends_in_element_index;
 };
 
 
-bc_value_t host__supermap2(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__map_dag2(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
 
@@ -916,7 +916,7 @@ bc_value_t host__supermap2(interpreter_t& vm, const bc_value_t args[], int arg_c
 	if(args[0]._type.is_vector() && args[1]._type == typeid_t::make_vector(typeid_t::make_int()) && args[2]._type.is_function() && args[2]._type.get_function_args().size () == 2){
 	}
 	else{
-		quark::throw_runtime_error("supermap() requires 3 arguments.");
+		quark::throw_runtime_error("map_dag() requires 3 arguments.");
 	}
 
 	const auto& elements = args[0];
@@ -930,7 +930,7 @@ bc_value_t host__supermap2(interpreter_t& vm, const bc_value_t args[], int arg_c
 	){
 	}
 	else {
-		quark::throw_runtime_error("R supermap([E] elements, R init_value, R (R acc, E element) f");
+		quark::throw_runtime_error("R map_dag([E] elements, R init_value, R (R acc, E element) f");
 	}
 
 	const auto elements2 = get_vector(elements);
@@ -979,7 +979,7 @@ bc_value_t host__supermap2(interpreter_t& vm, const bc_value_t args[], int arg_c
 		}
 
 		if(pass_ids.empty()){
-			quark::throw_runtime_error("supermap() dependency cycle error.");
+			quark::throw_runtime_error("map_dag() dependency cycle error.");
 		}
 
 		for(const auto element_index: pass_ids){
@@ -1427,7 +1427,7 @@ static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls_internal()
 	result.find(make_map_string_signature()._function_id)->second = host__map_string;
 	result.find(make_filter_signature()._function_id)->second = host__filter;
 	result.find(make_reduce_signature()._function_id)->second = host__reduce;
-	result.find(make_supermap_signature()._function_id)->second = host__supermap;
+	result.find(make_map_dag_signature()._function_id)->second = host__map_dag;
 
 	result.find(make_print_signature()._function_id)->second = host__print;
 	result.find(make_send_signature()._function_id)->second = host__send;
