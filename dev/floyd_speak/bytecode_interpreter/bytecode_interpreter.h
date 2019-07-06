@@ -93,7 +93,7 @@ enum class value_encoding {
 	k_inplace__int_as_uint64,
 	k_inplace__double,
 	k_external__string,
-	k_external__json_value,
+	k_external__json,
 
 	k_external__typeid,
 
@@ -176,9 +176,9 @@ struct bc_value_t {
 	private: explicit bc_value_t(const std::string& value);
 
 
-	//////////////////////////////////////		json_value
-	public: static bc_value_t make_json_value(const json_t& v);
-	public: json_t get_json_value() const;
+	//////////////////////////////////////		json
+	public: static bc_value_t make_json(const json_t& v);
+	public: json_t get_json() const;
 	private: explicit bc_value_t(const std::shared_ptr<json_t>& value);
 
 
@@ -279,7 +279,7 @@ struct bc_external_value_t {
 	public: typeid_t _debug_type;
 #endif
 	public: std::string _string;
-	public: std::shared_ptr<json_t> _json_value;
+	public: std::shared_ptr<json_t> _json;
 	public: typeid_t _typeid_value = typeid_t::make_undefined();
 	public: std::vector<bc_value_t> _struct_members;
 	public: immer::vector<bc_external_handle_t> _vector_w_external_elements;
@@ -397,11 +397,11 @@ enum class bc_opcode: uint8_t {
 
 	/*
 		A: Register: where to put result
-		B: Register: string object/vector object/json_value/dict
+		B: Register: string object/vector object/json/dict
 		C: Register: index (int)
 	*/
 	k_lookup_element_string,
-	k_lookup_element_json_value,
+	k_lookup_element_json,
 	k_lookup_element_vector_w_external_elements,
 	k_lookup_element_vector_w_inplace_elements,
 	k_lookup_element_dict_w_external_values,
@@ -1092,7 +1092,7 @@ struct interpreter_stack_t {
 	public: bool check_reg_json(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_json_value());
+		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_json());
 		return true;
 	}
 

@@ -54,7 +54,7 @@ inline typeid_t get_main_signature_no_arg_pure(){
 //	T x_init() impure
 typeid_t make_process_init_type(const typeid_t& t);
 
-//	T x(T state, json_value message) impure
+//	T x(T state, json message) impure
 typeid_t make_process_message_handler_type(const typeid_t& t);
 
 

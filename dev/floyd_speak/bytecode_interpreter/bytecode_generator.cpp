@@ -865,7 +865,7 @@ static bc_opcode convert_call_to_size_opcode(const typeid_t& arg1_type){
 	else if(arg1_type.is_string()){
 		return bc_opcode::k_get_size_string;
 	}
-	else if(arg1_type.is_json_value()){
+	else if(arg1_type.is_json()){
 		return bc_opcode::k_get_size_jsonvalue;
 	}
 	else{
@@ -932,8 +932,8 @@ expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& gen_acc, const v
 		if(parent_type.is_string()){
 			return bc_opcode::k_lookup_element_string;
 		}
-		else if(parent_type.is_json_value()){
-			return bc_opcode::k_lookup_element_json_value;
+		else if(parent_type.is_json()){
+			return bc_opcode::k_lookup_element_json;
 		}
 		else if(parent_type.is_vector()){
 			if(encode_as_vector_w_inplace_elements(parent_type)){

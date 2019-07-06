@@ -310,7 +310,7 @@ void generate_retain(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llv
 			};
 			builder.CreateCall(f.llvm_f, args, "");
 		}
-		else if(type.is_json_value()){
+		else if(type.is_json()){
 			const auto f = find_function_def(gen_acc, "fr_retain_json");
 			std::vector<llvm::Value*> args = {
 				get_callers_fcp(gen_acc.interner, emit_f),
@@ -362,7 +362,7 @@ void generate_release(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, ll
 			};
 			builder.CreateCall(f.llvm_f, args);
 		}
-		else if(type.is_json_value()){
+		else if(type.is_json()){
 			const auto f = find_function_def(gen_acc, "fr_release_json");
 			std::vector<llvm::Value*> args = {
 				get_callers_fcp(gen_acc.interner, emit_f),
@@ -477,12 +477,12 @@ llvm::Value* generate_constant(llvm_code_generator_t& gen_acc, llvm::Function& e
 			return generate_constant_string(gen_acc, emit_f, value.get_string_value());
 		}
 		llvm::Value* operator()(const typeid_t::json_type_t& e) const{
-			const auto& json_value0 = value.get_json_value();
+			const auto& json0 = value.get_json();
 
-			//	NOTICE: There is no clean way to embedd a json_value containing a json-null into the code segment.
+			//	NOTICE: There is no clean way to embedd a json containing a json-null into the code segment.
 			//	Here we use a nullptr instead of json_t*. This means we have to be prepared for json_t::null AND nullptr.
-			if(json_value0.is_null()){
-				auto json_type = get_exact_llvm_type(gen_acc.interner, typeid_t::make_json_value());
+			if(json0.is_null()){
+				auto json_type = get_exact_llvm_type(gen_acc.interner, typeid_t::make_json());
 				llvm::PointerType* pointer_type = llvm::cast<llvm::PointerType>(json_type);
 				return llvm::ConstantPointerNull::get(pointer_type);
 			}
@@ -763,10 +763,10 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 
 		return element_reg;
 	}
-	else if(parent_type.is_json_value()){
+	else if(parent_type.is_json()){
 		QUARK_ASSERT(key_type.is_int() || key_type.is_string());
 
-		//	Notice that we only know at RUNTIME if the json_value can be looked up: it needs to be json-object or a
+		//	Notice that we only know at RUNTIME if the json can be looked up: it needs to be json-object or a
 		//	json-array. The key is either a string or an integer.
 
 		const auto f = find_function_def(gen_acc, "floyd_runtime__lookup_json");
@@ -1047,7 +1047,7 @@ static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_ac
 		generate_release(gen_acc, emit_f, *rhs_temp, *details.rhs->_output_type);
 		return result_reg;
 	}
-	else if(type.is_json_value()){
+	else if(type.is_json()){
 		auto result_reg = generate_compare_values(gen_acc, emit_f, details.op, type, *lhs_temp, *rhs_temp);
 		generate_release(gen_acc, emit_f, *lhs_temp, *details.lhs->_output_type);
 		generate_release(gen_acc, emit_f, *rhs_temp, *details.rhs->_output_type);
@@ -1510,10 +1510,10 @@ static llvm::Value* generate_construct_primitive(llvm_code_generator_t& gen_acc,
 		return element0_reg;
 	}
 
-	//	NOTICE: string -> json_value needs to be handled at runtime.
+	//	NOTICE: string -> json needs to be handled at runtime.
 
-	//	Automatically transform a json_value::string => string at runtime?
-	else if(target_type.is_string() && input_value_type.is_json_value()){
+	//	Automatically transform a json::string => string at runtime?
+	else if(target_type.is_string() && input_value_type.is_json()){
 		const auto f = find_function_def(gen_acc, "floyd_runtime__json_to_string");
 		std::vector<llvm::Value*> args = {
 			get_callers_fcp(gen_acc.interner, emit_f),
@@ -1524,7 +1524,7 @@ static llvm::Value* generate_construct_primitive(llvm_code_generator_t& gen_acc,
 		generate_release(gen_acc, emit_f, *element0_reg, input_value_type);
 		return result;
 	}
-	else if(target_type.is_json_value()){
+	else if(target_type.is_json()){
 		//	Put a value_t into a json
 		const auto f = find_function_def(gen_acc, "floyd_runtime__allocate_json");
 		std::vector<llvm::Value*> args2 = {

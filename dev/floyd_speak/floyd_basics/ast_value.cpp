@@ -143,8 +143,8 @@ namespace floyd {
 			if(base_type == base_type::k_string){
 				return _string == other._string;
 			}
-			else if(base_type == base_type::k_json_value){
-				return *_json_value == *other._json_value;
+			else if(base_type == base_type::k_json){
+				return *_json == *other._json;
 			}
 			else if(base_type == base_type::k_typeid){
 				return _typeid_value == other._typeid_value;
@@ -288,7 +288,7 @@ int compare_dict_true_deep(const std::map<std::string, value_t>& left, const std
 }
 
 
-int compare_json_values(const json_t& lhs, const json_t& rhs){
+int compare_jsons(const json_t& lhs, const json_t& rhs){
 	if(lhs == rhs){
 		return 0;
 	}
@@ -334,8 +334,8 @@ int value_t::compare_value_true_deep(const value_t& left, const value_t& right){
 	else if(left.is_string()){
 		return compare_string(left.get_string_value(), right.get_string_value());
 	}
-	else if(left.is_json_value()){
-		return compare_json_values(left.get_json_value(), right.get_json_value());
+	else if(left.is_json()){
+		return compare_jsons(left.get_json(), right.get_json());
 	}
 	else if(left.is_typeid()){
 	//???
@@ -411,7 +411,7 @@ bool value_t::check_invariant() const{
 	else if(type_int == base_type::k_string){
 		QUARK_ASSERT(_value_internals._ext && _value_internals._ext->check_invariant());
 	}
-	else if(type_int == base_type::k_json_value){
+	else if(type_int == base_type::k_json){
 		QUARK_ASSERT(_value_internals._ext && _value_internals._ext->check_invariant());
 	}
 	else if(type_int == base_type::k_typeid){
@@ -463,8 +463,8 @@ std::string to_compact_string2(const value_t& value) {
 	else if(base_type == base_type::k_string){
 		return value.get_string_value();
 	}
-	else if(base_type == base_type::k_json_value){
-		return json_to_compact_string(value.get_json_value());
+	else if(base_type == base_type::k_json){
+		return json_to_compact_string(value.get_json());
 	}
 	else if(base_type == base_type::k_typeid){
 		return floyd::typeid_to_compact_string(value.get_typeid_value());
@@ -530,13 +530,13 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 
-		json_t value_t::get_json_value() const{
+		json_t value_t::get_json() const{
 			QUARK_ASSERT(check_invariant());
-			if(!is_json_value()){
+			if(!is_json()){
 				quark::throw_runtime_error("Type mismatch!");
 			}
 
-			return *_value_internals._ext->_json_value;
+			return *_value_internals._ext->_json;
 		}
 
 
@@ -618,7 +618,7 @@ std::string value_and_type_to_string(const value_t& value) {
 		}
 
 		value_t::value_t(const std::shared_ptr<json_t>& s) :
-			_basetype(base_type::k_json_value)
+			_basetype(base_type::k_json)
 		{
 			QUARK_ASSERT(s != nullptr && s->check_invariant());
 
@@ -925,8 +925,8 @@ value_t ast_json_to_value(const typeid_t& type, const json_t& v){
 	else if(type.is_string()){
 		return value_t::make_string(v.get_string());
 	}
-	else if(type.is_json_value()){
-		return value_t::make_json_value(v);
+	else if(type.is_json()){
+		return value_t::make_json(v);
 	}
 	else if(type.is_typeid()){
 		const auto t = typeid_from_ast_json(v);
@@ -1002,8 +1002,8 @@ json_t value_to_ast_json(const value_t& v, json_tags tags){
 	else if(v.is_string()){
 		return json_t(v.get_string_value());
 	}
-	else if(v.is_json_value()){
-		return v.get_json_value();
+	else if(v.is_json()){
+		return v.get_json();
 	}
 	else if(v.is_typeid()){
 		return typeid_to_ast_json(v.get_typeid_value(), tags);
@@ -1104,7 +1104,7 @@ value_t value_t::make_double(double value){
 }
 
 
-value_t value_t::make_json_value(const json_t& v){
+value_t value_t::make_json(const json_t& v){
 	auto f = std::make_shared<json_t>(v);
 	return value_t(f);
 }
@@ -1164,8 +1164,8 @@ value_t make_def(const typeid_t& type){
 	else if(bt == base_type::k_string){
 		return value_t::make_string("");
 	}
-	else if(bt == base_type::k_json_value){
-		return value_t::make_json_value(json_t());
+	else if(bt == base_type::k_json){
+		return value_t::make_json(json_t());
 	}
 	else if(bt == base_type::k_typeid){
 		return value_t::make_typeid_value(typeid_t::make_void());

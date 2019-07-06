@@ -47,7 +47,7 @@ json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 		|| b == base_type::k_int
 		|| b == base_type::k_double
 		|| b == base_type::k_string
-		|| b == base_type::k_json_value
+		|| b == base_type::k_json
 		|| b == base_type::k_typeid
 	){
 		return basetype_str_tagged;
@@ -139,8 +139,8 @@ typeid_t typeid_from_ast_json(const json_t& t2){
 			else if(s == keyword_t::k_typeid){
 				return typeid_t::make_typeid();
 			}
-			else if(s == keyword_t::k_json_value){
-				return typeid_t::make_json_value();
+			else if(s == keyword_t::k_json){
+				return typeid_t::make_json();
 			}
 			else{
 				quark::throw_exception();

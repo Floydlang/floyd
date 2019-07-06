@@ -52,7 +52,7 @@ type_interner_t::type_interner_t() :
 	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(4), typeid_t::make_int() });
 	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(5), typeid_t::make_double() });
 	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(6), typeid_t::make_string() });
-	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(7), typeid_t::make_json_value() });
+	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(7), typeid_t::make_json() });
 
 	interned.push_back(std::pair<itype_t, typeid_t>{ itype_t(8), typeid_t::make_typeid() });
 	simple_next_id = static_cast<int32_t>(interned.size());
@@ -79,7 +79,7 @@ bool type_interner_t::check_invariant() const {
 	QUARK_ASSERT(check_basetype(*this, base_type::k_int));
 	QUARK_ASSERT(check_basetype(*this, base_type::k_double));
 	QUARK_ASSERT(check_basetype(*this, base_type::k_string));
-	QUARK_ASSERT(check_basetype(*this, base_type::k_json_value));
+	QUARK_ASSERT(check_basetype(*this, base_type::k_json));
 
 	QUARK_ASSERT(check_basetype(*this, base_type::k_typeid));
 

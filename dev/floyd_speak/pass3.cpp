@@ -1210,7 +1210,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_size_expression(const analy
 	a_acc = resolved_call.first;
 
 	const auto parent_type = resolved_call.second.function_type.get_function_args()[0];
-	if(parent_type.is_string() || parent_type.is_json_value() || parent_type.is_vector() || parent_type.is_dict()){
+	if(parent_type.is_string() || parent_type.is_json() || parent_type.is_vector() || parent_type.is_dict()){
 	}
 	else{
 		std::stringstream what;
@@ -1594,8 +1594,8 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 			return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(typeid_t::make_int())) };
 		}
 	}
-	else if(parent_type.is_json_value()){
-		return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(typeid_t::make_json_value())) };
+	else if(parent_type.is_json()){
+		return { a_acc, expression_t::make_lookup(parent_expr.second, key_expr.second, make_shared<typeid_t>(typeid_t::make_json())) };
 	}
 	else if(parent_type.is_vector()){
 		if(key_type.is_int() == false){
@@ -1619,7 +1619,7 @@ std::pair<analyser_t, expression_t> analyse_lookup_element_expression(const anal
 	}
 	else {
 		std::stringstream what;
-		what << "Lookup using [] only works with strings, vectors, dicts and json_value - not a \"" + typeid_to_compact_string(parent_type) + "\".";
+		what << "Lookup using [] only works with strings, vectors, dicts and json - not a \"" + typeid_to_compact_string(parent_type) + "\".";
 		throw_compiler_error(parent.location, what.str());
 	}
 }
@@ -1664,10 +1664,10 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 
 	const auto current_type = *e._output_type;
 	if(current_type.is_vector()){
-		//	JSON constants supports mixed element types: convert each element into a json_value.
-		//	Encode as [json_value]
-		if(target_type.is_json_value()){
-			const auto element_type = typeid_t::make_json_value();
+		//	JSON constants supports mixed element types: convert each element into a json.
+		//	Encode as [json]
+		if(target_type.is_json()){
+			const auto element_type = typeid_t::make_json();
 
 			std::vector<expression_t> elements2;
 			for(const auto& m: details.elements){
@@ -1675,7 +1675,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				a_acc = element_expr.first;
 				elements2.push_back(element_expr.second);
 			}
-			const auto result_type = typeid_t::make_vector(typeid_t::make_json_value());
+			const auto result_type = typeid_t::make_vector(typeid_t::make_json());
 			if(result_type.check_types_resolved() == false){
 				std::stringstream what;
 				what << "Cannot infer vector element type, add explicit type.";
@@ -1684,8 +1684,8 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			return {
 				a_acc,
 				expression_t::make_construct_value_expr(
-					typeid_t::make_json_value(),
-					{ expression_t::make_construct_value_expr(typeid_t::make_vector(typeid_t::make_json_value()), elements2) }
+					typeid_t::make_json(),
+					{ expression_t::make_construct_value_expr(typeid_t::make_vector(typeid_t::make_json()), elements2) }
 				)
 			};
 		}
@@ -1724,10 +1724,10 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 
 	//	Dicts uses pairs of (string,value). This is stored in _args as interleaved expression: string0, value0, string1, value1.
 	else if(current_type.is_dict()){
-		//	JSON constants supports mixed element types: convert each element into a json_value.
-		//	Encode as [string:json_value]
-		if(target_type.is_json_value()){
-			const auto element_type = typeid_t::make_json_value();
+		//	JSON constants supports mixed element types: convert each element into a json.
+		//	Encode as [string:json]
+		if(target_type.is_json()){
+			const auto element_type = typeid_t::make_json();
 
 			std::vector<expression_t> elements2;
 			for(int i = 0 ; i < details.elements.size() / 2 ; i++){
@@ -1739,7 +1739,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				elements2.push_back(element_expr.second);
 			}
 
-			const auto result_type = typeid_t::make_dict(typeid_t::make_json_value());
+			const auto result_type = typeid_t::make_dict(typeid_t::make_json());
 			if(result_type.check_types_resolved() == false){
 				std::stringstream what;
 				what << "Cannot infer dictionary element type, add explicit type.";
@@ -1748,8 +1748,8 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			return {
 				a_acc,
 				expression_t::make_construct_value_expr(
-					typeid_t::make_json_value(),
-					{ expression_t::make_construct_value_expr(typeid_t::make_dict(typeid_t::make_json_value()), elements2) }
+					typeid_t::make_json(),
+					{ expression_t::make_construct_value_expr(typeid_t::make_dict(typeid_t::make_json()), elements2) }
 				)
 			};
 		}
@@ -2475,7 +2475,7 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 
 
 /*
-	- Insert automatic type-conversions from string -> json_value etc.
+	- Insert automatic type-conversions from string -> json etc.
 */
 expression_t auto_cast_expression_type(const expression_t& e, const typeid_t& wanted_type){
 	QUARK_ASSERT(e.check_invariant());
@@ -2488,14 +2488,14 @@ expression_t auto_cast_expression_type(const expression_t& e, const typeid_t& wa
 		return e;
 	}
 	else if(wanted_type.is_string()){
-		if(current_type.is_json_value()){
+		if(current_type.is_json()){
 			return expression_t::make_construct_value_expr(wanted_type, { e });
 		}
 		else{
 			return e;
 		}
 	}
-	else if(wanted_type.is_json_value()){
+	else if(wanted_type.is_json()){
 		if(current_type.is_int() || current_type.is_double() || current_type.is_string() || current_type.is_bool()){
 			return expression_t::make_construct_value_expr(wanted_type, { e });
 		}
@@ -2682,11 +2682,11 @@ builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	symbol_map.push_back({keyword_t::k_double, make_type_symbol(typeid_t::make_double())});
 	symbol_map.push_back({keyword_t::k_string, make_type_symbol(typeid_t::make_string())});
 	symbol_map.push_back({keyword_t::k_typeid, make_type_symbol(typeid_t::make_typeid())});
-	symbol_map.push_back({keyword_t::k_json_value, make_type_symbol(typeid_t::make_json_value())});
+	symbol_map.push_back({keyword_t::k_json, make_type_symbol(typeid_t::make_json())});
 
 
-	//	"null" is equivalent to json_value::null
-	symbol_map.push_back({"null", symbol_t::make_immutable_precalc(value_t::make_json_value(json_t()))});
+	//	"null" is equivalent to json::null
+	symbol_map.push_back({"null", symbol_t::make_immutable_precalc(value_t::make_json(json_t()))});
 
 	symbol_map.push_back({keyword_t::k_undefined, symbol_t::make_immutable_precalc(value_t::make_undefined())});
 	symbol_map.push_back({keyword_t::k_any, symbol_t::make_immutable_precalc(value_t::make_any())});

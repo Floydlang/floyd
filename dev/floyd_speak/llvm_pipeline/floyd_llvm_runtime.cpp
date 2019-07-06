@@ -396,9 +396,9 @@ runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t
 		}
 
 		runtime_value_t operator()(const typeid_t::json_type_t& e) const{
-//			auto result = new json_t(value.get_json_value());
+//			auto result = new json_t(value.get_json());
 //			return runtime_value_t { .json_ptr = result };
-			auto result = alloc_json(runtime.heap, value.get_json_value());
+			auto result = alloc_json(runtime.heap, value.get_json());
 			return runtime_value_t { .json_ptr = result };
 		}
 		runtime_value_t operator()(const typeid_t::typeid_type_t& e) const{
@@ -460,11 +460,11 @@ value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime
 
 		value_t operator()(const typeid_t::json_type_t& e) const{
 			if(encoded_value.json_ptr == nullptr){
-				return value_t::make_json_value(json_t());
+				return value_t::make_json(json_t());
 			}
 			else{
 				const auto& j = encoded_value.json_ptr->get_json();
-				return value_t::make_json_value(j);
+				return value_t::make_json(j);
 			}
 		}
 		value_t operator()(const typeid_t::typeid_type_t& e) const{
@@ -552,7 +552,7 @@ static void retain_value(llvm_execution_engine_t& runtime, runtime_value_t value
 		else if(type.is_dict()){
 			inc_rc(value.dict_ptr->alloc);
 		}
-		else if(type.is_json_value()){
+		else if(type.is_json()){
 			inc_rc(value.json_ptr->alloc);
 		}
 		else if(type.is_struct()){
@@ -580,7 +580,7 @@ static void release_deep(llvm_execution_engine_t& runtime, runtime_value_t value
 		else if(type.is_dict()){
 			release_dict_deep(runtime, value.dict_ptr, type);
 		}
-		else if(type.is_json_value()){
+		else if(type.is_json()){
 			if(dec_rc(value.json_ptr->alloc) == 0){
 				dispose_json(*value.json_ptr);
 			}
@@ -796,11 +796,11 @@ void fr_retain_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
 	const auto type = lookup_type(r.type_interner.interner, type0);
 	QUARK_ASSERT(is_rc_value(type));
 
-	//	NOTICE: Floyd runtime() init will destruct globals, including json_value::null.
+	//	NOTICE: Floyd runtime() init will destruct globals, including json::null.
 	if(json == nullptr){
 	}
 	else{
-		QUARK_ASSERT(type.is_json_value());
+		QUARK_ASSERT(type.is_json());
 
 		inc_rc(json->alloc);
 	}
@@ -811,7 +811,7 @@ host_func_t fr_retain_json__make(llvm::LLVMContext& context, const llvm_type_int
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(interner),
-			get_exact_llvm_type(interner, typeid_t::make_json_value()),
+			get_exact_llvm_type(interner, typeid_t::make_json()),
 			make_runtime_type_type(context)
 		},
 		false
@@ -826,9 +826,9 @@ host_func_t fr_retain_json__make(llvm::LLVMContext& context, const llvm_type_int
 void fr_release_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	const auto type = lookup_type(r.type_interner.interner, type0);
-	QUARK_ASSERT(type.is_json_value());
+	QUARK_ASSERT(type.is_json());
 
-	//	NOTICE: Floyd runtime() init will destruct globals, including json_value::null.
+	//	NOTICE: Floyd runtime() init will destruct globals, including json::null.
 	if(json == nullptr){
 	}
 	else{
@@ -844,7 +844,7 @@ host_func_t fr_release_json__make(llvm::LLVMContext& context, const llvm_type_in
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(interner),
-			get_exact_llvm_type(interner, typeid_t::make_json_value()),
+			get_exact_llvm_type(interner, typeid_t::make_json()),
 			make_runtime_type_type(context)
 		},
 		false
@@ -1132,7 +1132,7 @@ JSON_T* floyd_runtime__allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_
 
 host_func_t floyd_runtime__allocate_json__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		get_exact_llvm_type(interner, typeid_t::make_json_value()),
+		get_exact_llvm_type(interner, typeid_t::make_json()),
 		{
 			make_frp_type(interner),
 			make_runtime_value_type(context),
@@ -1181,10 +1181,10 @@ JSON_T* floyd_runtime__lookup_json(floyd_runtime_t* frp, JSON_T* json_ptr, runti
 
 host_func_t floyd_runtime__lookup_json__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		get_exact_llvm_type(interner, typeid_t::make_json_value()),
+		get_exact_llvm_type(interner, typeid_t::make_json()),
 		{
 			make_frp_type(interner),
-			get_exact_llvm_type(interner, typeid_t::make_json_value()),
+			get_exact_llvm_type(interner, typeid_t::make_json()),
 			make_runtime_value_type(context),
 			make_runtime_type_type(context)
 		},
@@ -1220,7 +1220,7 @@ host_func_t floyd_runtime__json_to_string__make(llvm::LLVMContext& context, cons
 		get_exact_llvm_type(interner, typeid_t::make_string()),
 		{
 			make_frp_type(interner),
-			get_exact_llvm_type(interner, typeid_t::make_json_value())
+			get_exact_llvm_type(interner, typeid_t::make_json())
 		},
 		false
 	);
@@ -1631,10 +1631,10 @@ runtime_value_t floyd_funcdef__from_json(floyd_runtime_t* frp, JSON_T* json_ptr,
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(json_ptr != nullptr);
 
-	const auto& json_value = json_ptr->get_json();
+	const auto& json = json_ptr->get_json();
 	const auto target_type2 = lookup_type(r.type_interner.interner, target_type);
 
-	const auto result = unflatten_json_to_specific_type(json_value, target_type2);
+	const auto result = unflatten_json_to_specific_type(json, target_type2);
 	const auto result2 = to_runtime_value(r, result);
 	return result2;
 }
@@ -1913,17 +1913,17 @@ int64_t floyd_funcdef__size(floyd_runtime_t* frp, runtime_value_t arg0_value, ru
 	if(type0.is_string()){
 		return get_vec_string_size(arg0_value);
 	}
-	else if(type0.is_json_value()){
-		const auto& json_value = arg0_value.json_ptr->get_json();
+	else if(type0.is_json()){
+		const auto& json = arg0_value.json_ptr->get_json();
 
-		if(json_value.is_object()){
-			return json_value.get_object_size();
+		if(json.is_object()){
+			return json.get_object_size();
 		}
-		else if(json_value.is_array()){
-			return json_value.get_array_size();
+		else if(json.is_array()){
+			return json.get_array_size();
 		}
-		else if(json_value.is_string()){
-			return json_value.get_string().size();
+		else if(json.is_string()){
+			return json.get_string().size();
 		}
 		else{
 			quark::throw_runtime_error("Calling size() on unsupported type of value.");
@@ -2888,7 +2888,7 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 
 				auto f = *reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE*>(process._process_function->address);
 				const auto state2 = to_runtime_value(*runtime.ee, process._process_state);
-				const auto message2 = to_runtime_value(*runtime.ee, value_t::make_json_value(message));
+				const auto message2 = to_runtime_value(*runtime.ee, value_t::make_json(message));
 				const auto result = (*f)(reinterpret_cast<floyd_runtime_t*>(runtime.ee), state2, message2);
 				process._process_state = from_runtime_value(*runtime.ee, result, process._process_function->type.get_function_return());
 			}

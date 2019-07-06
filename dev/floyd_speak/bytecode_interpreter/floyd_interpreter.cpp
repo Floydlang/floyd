@@ -68,8 +68,8 @@ value_t bc_to_value(const bc_value_t& value){
 	else if(basetype == base_type::k_string){
 		return value_t::make_string(value.get_string_value());
 	}
-	else if(basetype == base_type::k_json_value){
-		return value_t::make_json_value(value.get_json_value());
+	else if(basetype == base_type::k_json){
+		return value_t::make_json(value.get_json());
 	}
 	else if(basetype == base_type::k_typeid){
 		return value_t::make_typeid_value(value.get_typeid_value());
@@ -155,8 +155,8 @@ bc_value_t value_to_bc(const value_t& value){
 	else if(basetype == base_type::k_string){
 		return bc_value_t::make_string(value.get_string_value());
 	}
-	else if(basetype == base_type::k_json_value){
-		return bc_value_t::make_json_value(value.get_json_value());
+	else if(basetype == base_type::k_json){
+		return bc_value_t::make_json(value.get_json());
 	}
 	else if(basetype == base_type::k_typeid){
 		return bc_value_t::make_typeid_value(value.get_typeid_value());
@@ -408,7 +408,7 @@ static void process_process(bc_process_runtime_t& runtime, int process_id){
 			}
 
 			if(process._process_function != nullptr){
-				const std::vector<value_t> args = { process._process_state, value_t::make_json_value(message) };
+				const std::vector<value_t> args = { process._process_state, value_t::make_json(message) };
 				const auto& state2 = call_function(*process._interpreter, bc_to_value(process._process_function->_value), args);
 				process._process_state = state2;
 			}

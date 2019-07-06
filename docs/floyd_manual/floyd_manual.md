@@ -221,7 +221,7 @@ It also promotes composability since all Floyd code can rely on these types and 
 |__struct__		| Like C struct or classes or tuples. A value object.
 |__vector__		| A continuous array of elements addressed via indexes.
 |__dictionary__	| Lookup values using string keys.
-|__json_value__	| A value that holds a JSON-compatible value, can be a big JSON tree.
+|__json__	| A value that holds a JSON-compatible value, can be a big JSON tree.
 |TODO: __protocol__	| A value that hold a number of callable functions. Also called interface or abstract base class.
 |TODO: __sum-type__		| Tagged union.
 |TODO: __float__		| 32-bit floating point number
@@ -373,7 +373,7 @@ func my_gui_state_t my_gui__init(){
 	return my_gui_state_t(0	);
 }
 
-func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
+func my_gui_state_t my_gui(my_gui_state_t state, json message){
 	if(message == "inc"){
 		return update(state, _count, state._count + 1)
 	}
@@ -389,7 +389,7 @@ func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
 |Part		| Details
 |:---	|:---	
 |**my\_gui\_state_t**		| this is a struct that holds the mutable memory of this process and any component instances needed by the container.
-|**my\_gui()**				| this function is specified in the software-system/"containers"/"my_iphone_app"/"clocks". The message is always a json_value. You can decide how to encode the message into that.
+|**my\_gui()**				| this function is specified in the software-system/"containers"/"my_iphone_app"/"clocks". The message is always a json. You can decide how to encode the message into that.
 |**my\_gui__init()**		| this is the init function -- it has the same name with "__init" at the end. It has no arguments and returns the initial state of the process.
 
 
@@ -622,10 +622,10 @@ You can directly embed JSON inside Floyd source code file. This is extremely sim
 Example JSON:
 
 ```
-let json_value a = 13
-let json_value b = "Hello!"
-let json_value c = { "hello": 1, "bye": 3 }
-let json_value d = { "pigcount": 3, "pigcolor": "pink" }
+let json a = 13
+let json b = "Hello!"
+let json c = { "hello": 1, "bye": 3 }
+let json d = { "pigcount": 3, "pigcolor": "pink" }
 
 assert(a == 13)
 assert(b == "Hello!")
@@ -633,7 +633,7 @@ assert(c["hello"] == 1)
 assert(c["bye"] == 3)
 assert(size(c) == 2)
 
-let test_json2 = json_value(
+let test_json2 = json(
 	{
 		"one": 1,
 		"two": 2,
@@ -713,15 +713,15 @@ Different destinations have different limitations and escape mechanisms and will
 Converting a floyd json\_value to a JSON string and back. The JSON-string can be directly read or written to a text file, sent via a protocol and so on.
 
 ```
-string generate_json_script(json_value v)
-json_value parse_json_script(string s)
+string generate_json_script(json v)
+json parse_json_script(string s)
 ```
 
 Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json\_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json\_value, using from_json().
 
 ```
-json_value to_json(any v)
-any from_json(json_value v)
+json to_json(any v)
+any from_json(json v)
 ```
 
 - __generate\_json\_script()__
@@ -805,7 +805,7 @@ This is a value that is fully defined directly in the code. Like the number 3.
 | "Hello, world!	| String literal
 | [ "one", "two", "three" ] | Vector-of-strings literal
 | { "a": 100, "b": 200 } | Dictionary of string-integer literal.
-| ...			| Any literal that is compatible with json_value_t can be a JSON literal
+| ...			| Any literal that is compatible with json_t can be a JSON literal
 
 
 ### VECTOR-CONSTRUCTOR
@@ -1237,7 +1237,7 @@ The init function is called x__init() where x is a placeholder. It takes no argu
 
 The message handler is named like your process, takes two arguments: the current state of your memory, of type T and a message to process. It's am impure function. It returns the next state of it's memory. The memory type must be the same between the init and message handler functions. It's usually a struct that represents the top level of your process' entire state.
 
-The message is represented as a json_value for now. This is a workaround until there is a proper sumtype feature in Floyd.
+The message is represented as a json for now. This is a workaround until there is a proper sumtype feature in Floyd.
 
 
 ```
@@ -1250,7 +1250,7 @@ func my_gui_state_t my_gui__init() impure {
 	return my_gui_state_t(1000)
 }
 
-func my_gui_state_t my_gui(my_gui_state_t state, json_value message) impure{
+func my_gui_state_t my_gui(my_gui_state_t state, json message) impure{
 }
 ```
 
@@ -1567,7 +1567,7 @@ A typeid is a proper Floyd value: you can copy it, compare it, convert it to str
 
 
 
-## JSON_VALUE DATA TYPE
+## JSON DATA TYPE
 
 Why JSON? JSON is very central to Floyd. Floyd is based on values (simple ones or entire data models as one value) JSON is a simple and standard way to store composite values in a tree shape in a simple and standardized way. It also makes it easy to serializing any Floyd value to text and back. JSON is built directly into the language as the default serialized format for Floyd values.
 
@@ -1599,7 +1599,7 @@ Notice that json\_value can contain an entire huge JSON file, with a big tree of
 
 Returns the actual type of this value stores inside the json\_value. It can be one of the types supported by JSON.
 
-	typeid get_json_type(json_value v)
+	typeid get_json_type(json v)
 
 This needs to be queried at runtime since JSON is dynamically typed.
 
@@ -1654,13 +1654,13 @@ This outputs one line of text to the default output of the application. It can p
 | print({string: double})						| {string:double}
 | print([7, 8, 9])								| [7, 8, 9]
 | print({"a": 1})								| {"a": 1}
-| print(json_value("b"))						| b
-| print(json_value(5.3))						| 5.3
-| print(json_value({"x": 0, "y": -1}))			| {"a": 0, "b": -1}
-| print(json_value(["q", "u", "v"]))			| ["q", "u", "v"]
-| print(json_value(true))						| true
-| print(json_value(false))						| false
-| print(json_value(null))						| null
+| print(json("b"))						| b
+| print(json(5.3))						| 5.3
+| print(json({"x": 0, "y": -1}))			| {"a": 0, "b": -1}
+| print(json(["q", "u", "v"]))			| ["q", "u", "v"]
+| print(json(true))						| true
+| print(json(false))						| false
+| print(json(null))						| null
 
 
 
@@ -1714,7 +1714,7 @@ Sends a message to the inbox of a Floyd process, possibly your own process.
 
 The process may run on a different OS thread but send() is guaranteed to be thread safe.
 
-	send(string process_key, json_value message) impure
+	send(string process_key, json message) impure
 
 The send function returns immediately.
 
@@ -1737,8 +1737,8 @@ This is how you modify a field of a struct, an element in a vector or string or 
 | vector		| update([1,2,3,4], 2, 33)		| [1,2,33,4]
 | dictionary	| update({"a": 1, "b": 2, "c": 3}, "a", 11) | {"a":11,"b":2,"c":3}
 | struct		| update(pixel, red, 123)		| pixel(123,---,---)
-| json_value:array		| 
-| json_value:object		| 
+| json:array		| 
+| json:object		| 
 
 For dictionaries it can be used to add completely new elements too.
 
@@ -1766,8 +1766,8 @@ int size(obj)
 | vector			| size([1,2,3,4])			| 4
 | dictionary		| size({"a": 1, "b": })		| 2
 | struct			|							|
-| json_value:array	| size(json_value([1,2,3])	| 3
-| json_value:object	| size(json_value({"a": 9})	| 1
+| json:array	| size(json([1,2,3])	| 3
+| json:object	| size(json({"a": 9})	| 1
 
 
 
@@ -1783,8 +1783,8 @@ Appends an element to the end of a collection. A new collection is returned, the
 | vector		| push_back([1,2,3], 7)			| [1,2,3,7]
 | dictionary	| 								|
 | struct		|								|
-| json_value:array	|							|
-| json_value:object	| 							|
+| json:array	|							|
+| json:object	| 							|
 
 
 
@@ -1809,8 +1809,8 @@ end: 0 or larger. If it is larger than the collection, it will be clipped to the
 | vector		| subset([10,20,30,40, 1, 3)	| [20,30]
 | dictionary	| 								|
 | struct		|								|
-| json_value:array	|							|
-| json_value:object	| 							|
+| json:array	|							|
+| json:object	| 							|
 
 
 
@@ -1830,8 +1830,8 @@ vector replace(vector a, int start, int end, vector new)
 | vector		|replace([1,2,3,4,5], 1, 4, [8, 9])	| [1,8,9,5]
 | dictionary	| 								|
 | struct		|								|
-| json_value:array	|							|
-| json_value:object	| 							|
+| json:array	|							|
+| json:object	| 							|
 
 
 Notice: if you use an empty collection for *new*, you will actually erase the range.
@@ -1854,8 +1854,8 @@ int find(obj, value)
 | vector		| find([10,20,30,40], 30)		| 2
 | dictionary	| 								|
 | struct		|								|
-| json_value:array	|							|
-| json_value:object	| 							|
+| json:array	|							|
+| json:object	| 							|
 
 
 
@@ -1874,8 +1874,8 @@ bool exists(dict, string key)
 | dictionary	| exists({"a":1,"b":2,"c":3), "b")	| true
 | dictionary	| exists({"a":1,"b":2,"c":3), "f")	| false
 | struct		|								|
-| json_value:array	|							|
-| json_value:object	| 							|
+| json:array	|							|
+| json:object	| 							|
 
 
 
@@ -1987,29 +1987,29 @@ Notice: using this function exposes potential for parallelism.
 
 ### get\_json_type()
 
-If you have a json_value, this is how you find out if it's a string or a number and so on. It can be one of the types supported by JSON.
+If you have a json, this is how you find out if it's a string or a number and so on. It can be one of the types supported by JSON.
 
 ```
-typeid get_json_type(json_value v)
+typeid get_json_type(json v)
 ```
 
 This is how you check the type of JSON value and reads their different values.
 
 |INPUT						| RESULT 		| INT
 |:---						|:---			|:---
-| json_value({"a": 1})		| json_object	| 1
-| json_value([1, 2, 3])		| json_array	| 2
-| json_value("hi")			| json_string	| 3
-| json_value(13)			| json_number	| 4
-| json_value(true)			| json_true		| 5
-| json_value(false)			| json_false	| 6
+| json({"a": 1})		| json_object	| 1
+| json([1, 2, 3])		| json_array	| 2
+| json("hi")			| json_string	| 3
+| json(13)			| json_number	| 4
+| json(true)			| json_true		| 5
+| json(false)			| json_false	| 6
 | 							| json_null		| 7
 
 
 Demo snippet, that checks type of a json\_value:
 
 ```
-func string get_name(json_value value){
+func string get_name(json value){
 	let t = get_json_type(value)
 	if(t == json_object){
 		return "json_object"
@@ -2037,12 +2037,12 @@ func string get_name(json_value value){
 	}
 }
 	
-assert(get_name(json_value({"a": 1, "b": 2})) == "json_object")
-assert(get_name(json_value([1,2,3])) == "json_array")
-assert(get_name(json_value("crash")) == "json_string")
-assert(get_name(json_value(0.125)) == "json_number")
-assert(get_name(json_value(true)) == "json_true")
-assert(get_name(json_value(false)) == "json_false")
+assert(get_name(json({"a": 1, "b": 2})) == "json_object")
+assert(get_name(json([1,2,3])) == "json_array")
+assert(get_name(json("crash")) == "json_string")
+assert(get_name(json(0.125)) == "json_number")
+assert(get_name(json(true)) == "json_true")
+assert(get_name(json(false)) == "json_false")
 ```
 
 
@@ -2050,7 +2050,7 @@ assert(get_name(json_value(false)) == "json_false")
 
 Pack a JSON value to a JSON script string, ready to write to a file, send via protocol etc. The string is unescaped.
 
-	string generate_json_script(json_value v)
+	string generate_json_script(json v)
 
 The result is a valid JSON script string that can be handed to another system to be unpacked.
 
@@ -2059,19 +2059,19 @@ The result is a valid JSON script string that can be handed to another system to
 
 Make a new Floyd JSON value from a JSON-script string. If the string is malformed, exceptions will be thrown. The string is unescaped.
  
-	json_value parse_json_script(string s)
+	json parse_json_script(string s)
 
 
 
 ### to\_json()
 
-	json_value to_json(any v)
+	json to_json(any v)
 
 
 
 ### from\_json()
 
-	any from_json(json_value v)
+	any from_json(json v)
 
 
 

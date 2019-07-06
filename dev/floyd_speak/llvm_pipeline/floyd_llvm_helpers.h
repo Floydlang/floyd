@@ -522,7 +522,7 @@ llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& 
 /*
 	Type interner: keeps a list of all types used statically in the program, their itype, their LLVM type and their Floyd type.
 
-	Generic-type: vector (and string), dictionary, json_value and struct are passed around as 4 different types,
+	Generic-type: vector (and string), dictionary, json and struct are passed around as 4 different types,
 	not one for each vector type, struct type etc. These generic types are 64 bytes big, the same size as heap_alloc_64_t.
 */
 

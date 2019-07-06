@@ -101,28 +101,28 @@ std::string make_value_debug_str(const value_t& v);
 			const auto base_type = _type.get_base_type();
 			if(base_type == base_type::k_string){
 //				QUARK_ASSERT(_string);
-				QUARK_ASSERT(_json_value == nullptr);
+				QUARK_ASSERT(_json == nullptr);
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
 				QUARK_ASSERT(_function_id == -1);
 			}
-			else if(base_type == base_type::k_json_value){
+			else if(base_type == base_type::k_json){
 				QUARK_ASSERT(_string.empty());
-				QUARK_ASSERT(_json_value != nullptr);
+				QUARK_ASSERT(_json != nullptr);
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
 				QUARK_ASSERT(_function_id == -1);
 
-				QUARK_ASSERT(_json_value->check_invariant());
+				QUARK_ASSERT(_json->check_invariant());
 			}
 
 			else if(base_type == base_type::k_typeid){
 				QUARK_ASSERT(_string.empty());
-				QUARK_ASSERT(_json_value == nullptr);
+				QUARK_ASSERT(_json == nullptr);
 		//		QUARK_ASSERT(_typeid_value != typeid_t::make_undefined());
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
@@ -133,7 +133,7 @@ std::string make_value_debug_str(const value_t& v);
 			}
 			else if(base_type == base_type::k_struct){
 				QUARK_ASSERT(_string.empty());
-				QUARK_ASSERT(_json_value == nullptr);
+				QUARK_ASSERT(_json == nullptr);
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct != nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
@@ -144,7 +144,7 @@ std::string make_value_debug_str(const value_t& v);
 			}
 			else if(base_type == base_type::k_vector){
 				QUARK_ASSERT(_string.empty());
-				QUARK_ASSERT(_json_value == nullptr);
+				QUARK_ASSERT(_json == nullptr);
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct == nullptr);
 		//		QUARK_ASSERT(_vector_elements.empty());
@@ -153,7 +153,7 @@ std::string make_value_debug_str(const value_t& v);
 			}
 			else if(base_type == base_type::k_dict){
 				QUARK_ASSERT(_string.empty());
-				QUARK_ASSERT(_json_value == nullptr);
+				QUARK_ASSERT(_json == nullptr);
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
@@ -162,7 +162,7 @@ std::string make_value_debug_str(const value_t& v);
 			}
 			else if(base_type == base_type::k_function){
 				QUARK_ASSERT(_string.empty());
-				QUARK_ASSERT(_json_value == nullptr);
+				QUARK_ASSERT(_json == nullptr);
 				QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
@@ -188,8 +188,8 @@ std::string make_value_debug_str(const value_t& v);
 
 		public: value_ext_t(const std::shared_ptr<json_t>& s) :
 			_rc(1),
-			_type(typeid_t::make_json_value()),
-			_json_value(s)
+			_type(typeid_t::make_json()),
+			_json(s)
 		{
 			QUARK_ASSERT(check_invariant());
 		}
@@ -206,7 +206,7 @@ std::string make_value_debug_str(const value_t& v);
 		public: int _rc;
 		public: typeid_t _type;
 		public: std::string _string;
-		public: std::shared_ptr<json_t> _json_value;
+		public: std::shared_ptr<json_t> _json;
 		public: typeid_t _typeid_value = typeid_t::make_undefined();
 		public: std::shared_ptr<struct_value_t> _struct;
 		public: std::vector<value_t> _vector_elements;
@@ -371,16 +371,16 @@ std::string make_value_debug_str(const value_t& v);
 		public: std::string get_string_value() const;
 
 
-		//------------------------------------------------		json_value
+		//------------------------------------------------		json
 
 
-		public: static value_t make_json_value(const json_t& v);
-		public: bool is_json_value() const {
+		public: static value_t make_json(const json_t& v);
+		public: bool is_json() const {
 			QUARK_ASSERT(check_invariant());
 
-			return _basetype == base_type::k_json_value;
+			return _basetype == base_type::k_json;
 		}
-		public: json_t get_json_value() const;
+		public: json_t get_json() const;
 
 
 		//------------------------------------------------		typeid
@@ -449,7 +449,7 @@ std::string make_value_debug_str(const value_t& v);
 		private: static bool is_ext_slow(base_type basetype){
 			return false
 				|| basetype == base_type::k_string
-				|| basetype == base_type::k_json_value
+				|| basetype == base_type::k_json
 				|| basetype == base_type::k_typeid
 				|| basetype == base_type::k_struct
 				|| basetype == base_type::k_vector

@@ -2929,7 +2929,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector []", "Error: Lookup in vector using 
 	);
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector", "Error: Lookup the unlookupable", "exception"){
-	ut_verify_exception_nolib(QUARK_POS, R"(		let a = 3[0]		)", "Lookup using [] only works with strings, vectors, dicts and json_value - not a \"int\". Line: 1 \"let a = 3[0]\"");
+	ut_verify_exception_nolib(QUARK_POS, R"(		let a = 3[0]		)", "Lookup using [] only works with strings, vectors, dicts and json - not a \"int\". Line: 1 \"let a = 3[0]\"");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [double] =", "copy", ""){
@@ -3126,12 +3126,12 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [dict[string]] constructor", "Mixing
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "vector [json_value] constructor", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "vector [json] constructor", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
 
-			let d = [json_value("red"), json_value("blue")]
+			let d = [json("red"), json("blue")]
 			print(d)
 
 		)",
@@ -3523,7 +3523,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
 
 	)");
 }
-QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
+QUARKY_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
 	run_closed(R"(
 
 		let a = { "a": 1, "b": 2, "c" : 3 }
@@ -3703,12 +3703,12 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [dict[string]] constructor", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "dict [json_value] constructor", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "dict [json] constructor", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
 
-			let d = { "a": json_value("red"), "b": json_value("blue") }
+			let d = { "a": json("red"), "b": json("blue") }
 			print(d)
 
 		)",
@@ -4120,7 +4120,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "Error: Wrong TYPE of arguments to
 
 
 //######################################################################################################################
-//	JSON_VALUE
+//	json
 //######################################################################################################################
 
 
@@ -4129,20 +4129,20 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "Error: Wrong TYPE of arguments to
 
 //??? document or disable using json-value directly as lookup parent.
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value::null", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json::null", "", ""){
 	run_closed(R"(		let result = null		)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value<string> Infer json_value::string", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let json_value result = "hello"		)", value_t::make_json_value("hello"));
+QUARK_UNIT_TEST("Floyd test suite", "json<string> Infer json::string", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = "hello"		)", value_t::make_json("hello"));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value<string> string-size()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json<string> string-size()", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
 
-			let json_value a = "hello"
+			let json a = "hello"
 			let result = size(a);
 
 		)",
@@ -4150,59 +4150,59 @@ QUARK_UNIT_TEST("Floyd test suite", "json_value<string> string-size()", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value()", "json_value(123)", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = json_value(123)", value_t::make_json_value(json_t(123.0)));
+QUARK_UNIT_TEST("Floyd test suite", "json()", "json(123)", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = json(123)", value_t::make_json(json_t(123.0)));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json()", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
 
-			let result = json_value("hello")
+			let result = json("hello")
 
 		)",
-		value_t::make_json_value(json_t("hello"))
+		value_t::make_json(json_t("hello"))
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value()", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = json_value([1,2,3])", value_t::make_json_value(json_t::make_array({1,2,3})));
+QUARK_UNIT_TEST("Floyd test suite", "json()", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = json([1,2,3])", value_t::make_json(json_t::make_array({1,2,3})));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value<number> construct number", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let json_value result = 13		)", value_t::make_json_value(13));
+QUARK_UNIT_TEST("Floyd test suite", "json<number> construct number", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = 13		)", value_t::make_json(13));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value<true> construct true", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let json_value result = true		)", value_t::make_json_value(true));
+QUARK_UNIT_TEST("Floyd test suite", "json<true> construct true", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = true		)", value_t::make_json(true));
 }
-QUARK_UNIT_TEST("Floyd test suite", "json_value<false> construct false", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let json_value result = false		)", value_t::make_json_value(false));
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "json_value<array> construct array", "construct array", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let json_value result = ["hello", "bye"]		)", value_t::make_json_value(json_t::make_array(std::vector<json_t>{ "hello", "bye" }))	);
+QUARK_UNIT_TEST("Floyd test suite", "json<false> construct false", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = false		)", value_t::make_json(false));
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value<string> read array member", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json<array> construct array", "construct array", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = ["hello", "bye"]		)", value_t::make_json(json_t::make_array(std::vector<json_t>{ "hello", "bye" }))	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "json<string> read array member", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
 
-			let json_value a = ["hello", "bye"]
+			let json a = ["hello", "bye"]
 			let result = a[0]
 
 		)",
-		value_t::make_json_value("hello")
+		value_t::make_json("hello")
 	);
 }
-QUARK_UNIT_TEST("Floyd test suite", "json_value<string> read array member", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json<string> read array member", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
 
-			let json_value a = ["hello", "bye"]
+			let json a = ["hello", "bye"]
 			let result = string(a[0]) + string(a[1])
 
 		)",
@@ -4210,25 +4210,25 @@ QUARK_UNIT_TEST("Floyd test suite", "json_value<string> read array member", "", 
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value<string> read array member", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json<string> read array member", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
 
-			let json_value a = ["hello", "bye"]
+			let json a = ["hello", "bye"]
 			let result = a[1]
 
 		)",
-		value_t::make_json_value("bye")
+		value_t::make_json("bye")
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value<string> size()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json<string> size()", "", ""){
 	ut_verify_global_result_nolib(
 		QUARK_POS,
 		R"(
 
-			let json_value a = ["a", "b", "c", "d"]
+			let json a = ["a", "b", "c", "d"]
 			let result = size(a)
 
 		)",
@@ -4237,12 +4237,12 @@ QUARK_UNIT_TEST("Floyd test suite", "json_value<string> size()", "", ""){
 }
 
 //	NOTICE: Floyd dict is stricter than JSON -- cannot have different types of values!
-QUARK_UNIT_TEST("Floyd test suite", "json_value<string> construct", "mix value-types in dict", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json<string> construct", "mix value-types in dict", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
 
-			let json_value a = { "pigcount": 3, "pigcolor": "pink" }
+			let json a = { "pigcount": 3, "pigcolor": "pink" }
 			print(a)
 
 		)",
@@ -4251,12 +4251,12 @@ QUARK_UNIT_TEST("Floyd test suite", "json_value<string> construct", "mix value-t
 }
 
 // JSON example snippets: http://json.org/example.html
-QUARK_UNIT_TEST("Floyd test suite", "json_value<string> construct", "read world data", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json<string> construct", "read world data", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"___(
 
-			let json_value a = {
+			let json a = {
 				"menu": {
 				  "id": "file",
 				  "value": "File",
@@ -4278,12 +4278,12 @@ QUARK_UNIT_TEST("Floyd test suite", "json_value<string> construct", "read world 
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value<string> construct", "expressions inside def", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json<string> construct", "expressions inside def", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"___(
 
-			let json_value a = { "pigcount": 1 + 2, "pigcolor": "pi" + "nk" }
+			let json a = { "pigcount": 1 + 2, "pigcolor": "pi" + "nk" }
 			print(a)
 
 		)___",
@@ -4293,12 +4293,12 @@ QUARK_UNIT_TEST("Floyd test suite", "json_value<string> construct", "expressions
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value<string> construct", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json<string> construct", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"___(
 
-			let json_value a = { "pigcount": 3, "pigcolor": "pink" }
+			let json a = { "pigcount": 3, "pigcolor": "pink" }
 			print(a["pigcount"])
 			print(a["pigcolor"])
 
@@ -4307,30 +4307,30 @@ QUARK_UNIT_TEST("Floyd test suite", "json_value<string> construct", "", ""){
 	);
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value<string> size()", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "json<string> size()", "", ""){
 	run_closed(R"(
 
-		let json_value a = { "a": 1, "b": 2, "c": 3, "d": 4, "e": 5 }
+		let json a = { "a": 1, "b": 2, "c": 3, "d": 4, "e": 5 }
 		assert(size(a) == 5)
 
 	)");
 }
 
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value<null> construct", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let json_value result = null		)", value_t::make_json_value(json_t()));
+QUARK_UNIT_TEST("Floyd test suite", "json<null> construct", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = null		)", value_t::make_json(json_t()));
 }
 
 
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value", "", "error"){
+QUARK_UNIT_TEST("Floyd test suite", "json", "", "error"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
 
 			struct pixel_t { double x double y }
 
-			//	c is a json_value::object
+			//	c is a json::object
 			let c = { "version": "1.0", "image": [pixel_t(100.0, 200.0), pixel_t(101.0, 201.0)] }
 			let result = c["image"][1].y
 
@@ -4348,13 +4348,13 @@ QUARK_UNIT_TEST("Floyd test suite", "json_value", "", "error"){
 
 
 
-QUARK_UNIT_TEST("Floyd test suite", "json_value<string> {}", "Infer {}", "JSON object"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let json_value result = {}		)", value_t::make_json_value(json_t::make_object()));
+QUARK_UNIT_TEST("Floyd test suite", "json<string> {}", "Infer {}", "JSON object"){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let json result = {}		)", value_t::make_json(json_t::make_object()));
 }
 
 
 QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "", "1"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json_value({}))		)", value_t::make_int(1));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json({}))		)", value_t::make_int(1));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "", "1"){
@@ -4362,7 +4362,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "", "1"){
 		QUARK_POS,
 		R"(
 
-			let result = json_value({ "color": "black"})
+			let result = json({ "color": "black"})
 			print(result)
 
 		)",
@@ -4374,36 +4374,36 @@ QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "", "1"){
 		QUARK_POS,
 		R"(
 
-			let result = get_json_type(json_value({ "color": "black"}))
+			let result = get_json_type(json({ "color": "black"}))
 
 		)",
 		value_t::make_int(1)
 	);
 }
 QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "array", "2"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json_value([]))		)", value_t::make_int(2));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json([]))		)", value_t::make_int(2));
 }
 QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "string", "3"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json_value("hello"))		)", value_t::make_int(3));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json("hello"))		)", value_t::make_int(3));
 }
 QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "number", "4"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json_value(13))		)", value_t::make_int(4));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json(13))		)", value_t::make_int(4));
 }
 QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "true", "5"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json_value(true))		)", value_t::make_int(5));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json(true))		)", value_t::make_int(5));
 }
 QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "false", "6"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json_value(false))		)", value_t::make_int(6));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json(false))		)", value_t::make_int(6));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "null", "7"){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json_value(null))		)", value_t::make_int(7));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = get_json_type(json(null))		)", value_t::make_int(7));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "DOCUMENTATION SNIPPET", ""){
 	run_closed(R"___(
 
-		func string get_name(json_value value){
+		func string get_name(json value){
 			let t = get_json_type(value)
 			if(t == json_object){
 				return "json_object"
@@ -4432,12 +4432,12 @@ QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "DOCUMENTATION SNIPPET", 
 			}
 		}
 
-		assert(get_name(json_value({"a": 1, "b": 2})) == "json_object")
-		assert(get_name(json_value([1,2,3])) == "json_array")
-		assert(get_name(json_value("crash")) == "json_string")
-		assert(get_name(json_value(0.125)) == "json_number")
-		assert(get_name(json_value(true)) == "json_true")
-		assert(get_name(json_value(false)) == "json_false")
+		assert(get_name(json({"a": 1, "b": 2})) == "json_object")
+		assert(get_name(json([1,2,3])) == "json_array")
+		assert(get_name(json("crash")) == "json_string")
+		assert(get_name(json(0.125)) == "json_number")
+		assert(get_name(json(true)) == "json_true")
+		assert(get_name(json(false)) == "json_false")
 
 	)___");
 }
@@ -4502,7 +4502,7 @@ QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "parse_json_script()", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = parse_json_script("\"genelec\"")		)", value_t::make_json_value(json_t("genelec")));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = parse_json_script("\"genelec\"")		)", value_t::make_json(json_t("genelec")));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "parse_json_script()", "", ""){
@@ -4527,7 +4527,7 @@ QUARK_UNIT_TEST("Floyd test suite", "generate_json_script()", "", ""){
 		QUARK_POS,
 		R"___(
 
-			let json_value a = "cheat"
+			let json a = "cheat"
 			let b = generate_json_script(a)
 			print(b)
 
@@ -4542,7 +4542,7 @@ QUARK_UNIT_TEST("Floyd test suite", "generate_json_script()", "", ""){
 		QUARK_POS,
 		R"___(
 
-			let json_value a = { "magic": 1234 }
+			let json a = { "magic": 1234 }
 			let b = generate_json_script(a)
 			print(b)
 
@@ -4556,34 +4556,34 @@ QUARK_UNIT_TEST("Floyd test suite", "generate_json_script()", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "to_json()", "bool", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(true)		)", value_t::make_json_value(json_t(true)));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(true)		)", value_t::make_json(json_t(true)));
 }
 QUARK_UNIT_TEST("Floyd test suite", "to_json()", "bool", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(false)		)", value_t::make_json_value(json_t(false)));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(false)		)", value_t::make_json(json_t(false)));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "to_json()", "int", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(789)		)", value_t::make_json_value(json_t(789.0)));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(789)		)", value_t::make_json(json_t(789.0)));
 }
 QUARK_UNIT_TEST("Floyd test suite", "to_json()", "int", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(-987)		)", value_t::make_json_value(json_t(-987.0)));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(-987)		)", value_t::make_json(json_t(-987.0)));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "to_json()", "double", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(-0.125)		)", value_t::make_json_value(json_t(-0.125)));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(-0.125)		)", value_t::make_json(json_t(-0.125)));
 }
 
 
 QUARK_UNIT_TEST("Floyd test suite", "to_json()", "string", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json("fanta")		)", value_t::make_json_value(json_t("fanta")));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json("fanta")		)", value_t::make_json(json_t("fanta")));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "to_json()", "typeid", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(typeof([2,2,3]))		)", value_t::make_json_value(json_t::make_array({ "vector", "int"})));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json(typeof([2,2,3]))		)", value_t::make_json(json_t::make_array({ "vector", "int"})));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "to_json()", "[]", ""){
-	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json([1,2,3])		)", value_t::make_json_value(json_t::make_array({ 1, 2, 3 })));
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = to_json([1,2,3])		)", value_t::make_json(json_t::make_array({ 1, 2, 3 })));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "to_json()", "{}", ""){
@@ -4594,7 +4594,7 @@ QUARK_UNIT_TEST("Floyd test suite", "to_json()", "{}", ""){
 			let result = to_json({"ten": 10, "eleven": 11})
 
 		)",
-		value_t::make_json_value(
+		value_t::make_json(
 			json_t::make_object({{ "ten", 10 }, { "eleven", 11 }})
 		)
 	);
@@ -5482,7 +5482,7 @@ QUARK_UNIT_TEST("", "try calling LLVM function", "", ""){
 			return 3.14
 		}
 
-		func double my_gui(double state, json_value message) impure{
+		func double my_gui(double state, json message) impure{
 			print("received: " + to_string(message) + ", state: " + to_string(state))
 			return state
 		}
@@ -5538,7 +5538,7 @@ QUARK_UNIT_TEST("software-system-def", "run one process", "", ""){
 			return my_gui_state_t(1000)
 		}
 
-		func my_gui_state_t my_gui(my_gui_state_t state, json_value message) impure{
+		func my_gui_state_t my_gui(my_gui_state_t state, json message) impure{
 			print("received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "inc"){
@@ -5598,7 +5598,7 @@ QUARK_UNIT_TEST("software-system-def", "run two unconnected processs", "", ""){
 			return my_gui_state_t(1000)
 		}
 
-		func my_gui_state_t my_gui(my_gui_state_t state, json_value message) impure {
+		func my_gui_state_t my_gui(my_gui_state_t state, json message) impure {
 			print("my_gui --- received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "inc"){
@@ -5627,7 +5627,7 @@ QUARK_UNIT_TEST("software-system-def", "run two unconnected processs", "", ""){
 			return my_audio_state_t(0)
 		}
 
-		func my_audio_state_t my_audio(my_audio_state_t state, json_value message) impure {
+		func my_audio_state_t my_audio(my_audio_state_t state, json message) impure {
 			print("my_audio --- received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "process"){
@@ -5681,7 +5681,7 @@ QUARK_UNIT_TEST("software-system-def", "run two CONNECTED processes", "", ""){
 			return my_gui_state_t(1000)
 		}
 
-		func my_gui_state_t my_gui(my_gui_state_t state, json_value message) impure {
+		func my_gui_state_t my_gui(my_gui_state_t state, json message) impure {
 			print("my_gui --- received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "2"){
@@ -5711,7 +5711,7 @@ QUARK_UNIT_TEST("software-system-def", "run two CONNECTED processes", "", ""){
 			return my_audio_state_t(0)
 		}
 
-		func my_audio_state_t my_audio(my_audio_state_t state, json_value message) impure {
+		func my_audio_state_t my_audio(my_audio_state_t state, json message) impure {
 			print("my_audio --- received: " + to_string(message) + ", state: " + to_string(state))
 
 			if(message == "1"){
@@ -5996,10 +5996,10 @@ assert(b == { "one": 10, "two": 2 })
 }
 
 
-QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "JSON_VALUE", "", ""){
+QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "json", "", ""){
 	test_run_container2(R"(
 
-let json_value a = {
+let json a = {
 	"one": 1,
 	"three": "three",
 	"five": { "A": 10, "B": 20 }

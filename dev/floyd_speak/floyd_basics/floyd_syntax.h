@@ -73,7 +73,7 @@ enum class base_type {
 	k_int,
 	k_double,
 	k_string,
-	k_json_value,
+	k_json,
 
 	//	This is a type that specifies any other type at runtime.
 	k_typeid,
@@ -370,7 +370,7 @@ namespace keyword_t {
 	const std::string k_double = "double";
 	const std::string k_string = "string";
 	const std::string k_typeid = "typeid";
-	const std::string k_json_value = "json_value";
+	const std::string k_json = "json";
 	const std::string k_struct = "struct";
 
 	const std::string k_mutable = "mutable";

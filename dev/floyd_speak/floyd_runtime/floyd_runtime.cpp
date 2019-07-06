@@ -23,7 +23,7 @@ typeid_t make_process_init_type(const typeid_t& t){
 }
 
 typeid_t make_process_message_handler_type(const typeid_t& t){
-	return typeid_t::make_function(t, { t, typeid_t::make_json_value() }, epure::impure);
+	return typeid_t::make_function(t, { t, typeid_t::make_json() }, epure::impure);
 }
 
 
@@ -85,7 +85,7 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 		}
 
 		value_t operator()(const typeid_t::json_type_t& e) const{
-			return value_t::make_json_value(v);
+			return value_t::make_json(v);
 		}
 		value_t operator()(const typeid_t::typeid_type_t& e) const{
 			const auto typeid_value = typeid_from_ast_json(v);
@@ -210,27 +210,27 @@ corecall_signature_t make_replace_signature(){
 }
 
 corecall_signature_t make_parse_json_script_signature(){
-	return { "parse_json_script", 1017, typeid_t::make_function(typeid_t::make_json_value(), { typeid_t::make_string() }, epure::pure) };
+	return { "parse_json_script", 1017, typeid_t::make_function(typeid_t::make_json(), { typeid_t::make_string() }, epure::pure) };
 }
 
 corecall_signature_t make_generate_json_script_signature(){
-	return { "generate_json_script", 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json_value() }, epure::pure) };
+	return { "generate_json_script", 1018, typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json() }, epure::pure) };
 }
 
 
 corecall_signature_t make_to_json_signature(){
-	return { "to_json", 1019, typeid_t::make_function(typeid_t::make_json_value(), { ANY_TYPE }, epure::pure) };
+	return { "to_json", 1019, typeid_t::make_function(typeid_t::make_json(), { ANY_TYPE }, epure::pure) };
 }
 
 
 corecall_signature_t make_from_json_signature(){
 	//	??? Tricky. How to we compute the return type from the input arguments?
-	return { "from_json", 1020, typeid_t::make_function_dyn_return({ typeid_t::make_json_value(), typeid_t::make_typeid() }, epure::pure, typeid_t::return_dyn_type::arg1_typeid_constant_type) };
+	return { "from_json", 1020, typeid_t::make_function_dyn_return({ typeid_t::make_json(), typeid_t::make_typeid() }, epure::pure, typeid_t::return_dyn_type::arg1_typeid_constant_type) };
 }
 
 
 corecall_signature_t make_get_json_type_signature(){
-	return { "get_json_type", 1021, typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_json_value() }, epure::pure) };
+	return { "get_json_type", 1021, typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_json() }, epure::pure) };
 }
 
 
@@ -269,7 +269,7 @@ corecall_signature_t make_print_signature(){
 	return { "print", 1000, typeid_t::make_function(typeid_t::make_void(), { ANY_TYPE }, epure::pure) };
 }
 corecall_signature_t make_send_signature(){
-	return { "send", 1022, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string(), typeid_t::make_json_value() }, epure::impure) };
+	return { "send", 1022, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string(), typeid_t::make_json() }, epure::impure) };
 }
 
 

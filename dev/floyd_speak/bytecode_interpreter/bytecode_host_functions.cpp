@@ -46,8 +46,8 @@ using std::make_shared;
 //??? Remove usage of value_t
 value_t value_to_jsonvalue(const value_t& value){
 	const auto j = value_to_ast_json(value, json_tags::k_plain);
-	value_t json_value = value_t::make_json_value(j);
-	return json_value;
+	value_t json = value_t::make_json(j);
+	return json;
 }
 
 
@@ -121,8 +121,8 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 		const auto size = obj.get_string_value().size();
 		return bc_value_t::make_int(static_cast<int>(size));
 	}
-	else if(obj._type.is_json_value()){
-		const auto value = obj.get_json_value();
+	else if(obj._type.is_json()){
+		const auto value = obj.get_json();
 		if(value.is_object()){
 			const auto size = value.get_object_size();
 			return bc_value_t::make_int(static_cast<int>(size));
@@ -485,7 +485,7 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 	}
 }
 /*
-	Reads json from a text string, returning an unpacked json_value.
+	Reads json from a text string, returning an unpacked json.
 */
 bc_value_t host__parse_json_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -494,16 +494,16 @@ bc_value_t host__parse_json_script(interpreter_t& vm, const bc_value_t args[], i
 
 	const string s = args[0].get_string_value();
 	std::pair<json_t, seq_t> result = parse_json(seq_t(s));
-	const auto json_value = bc_value_t::make_json_value(result.first);
-	return json_value;
+	const auto json = bc_value_t::make_json(result.first);
+	return json;
 }
 
 bc_value_t host__generate_json_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_json_value());
+	QUARK_ASSERT(args[0]._type.is_json());
 
-	const auto value0 = args[0].get_json_value();
+	const auto value0 = args[0].get_json();
 	const string s = json_to_compact_string(value0);
 	return bc_value_t::make_string(s);
 }
@@ -522,12 +522,12 @@ bc_value_t host__to_json(interpreter_t& vm, const bc_value_t args[], int arg_cou
 bc_value_t host__from_json(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
-	QUARK_ASSERT(args[0]._type.is_json_value());
+	QUARK_ASSERT(args[0]._type.is_json());
 	QUARK_ASSERT(args[1]._type.is_typeid());
 
-	const auto json_value = args[0].get_json_value();
+	const auto json = args[0].get_json();
 	const auto target_type = args[1].get_typeid_value();
-	const auto result = unflatten_json_to_specific_type(json_value, target_type);
+	const auto result = unflatten_json_to_specific_type(json, target_type);
 	return value_to_bc(result);
 }
 
@@ -535,11 +535,11 @@ bc_value_t host__from_json(interpreter_t& vm, const bc_value_t args[], int arg_c
 bc_value_t host__get_json_type(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_json_value());
+	QUARK_ASSERT(args[0]._type.is_json());
 
 
-	const auto json_value = args[0].get_json_value();
-	return bc_value_t::make_int(get_json_type(json_value));
+	const auto json = args[0].get_json();
+	return bc_value_t::make_int(get_json_type(json));
 }
 
 
@@ -1046,10 +1046,10 @@ bc_value_t host__send(interpreter_t& vm, const bc_value_t args[], int arg_count)
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 	QUARK_ASSERT(args[0]._type.is_string());
-	QUARK_ASSERT(args[1]._type.is_json_value());
+	QUARK_ASSERT(args[1]._type.is_json());
 
 	const auto& process_id = args[0].get_string_value();
-	const auto& message_json = args[1].get_json_value();
+	const auto& message_json = args[1].get_json();
 
 	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
 

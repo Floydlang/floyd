@@ -168,13 +168,13 @@
 				]
 			]
 		],
-		["function-def", ["func", "^int", ["^json_value"], true], [{ "name": "dummy", "type": "^json_value" }], null, 1021, "^int"],
+		["function-def", ["func", "^int", ["^json"], true], [{ "name": "dummy", "type": "^json" }], null, 1021, "^int"],
 		["function-def", ["func", "^int", [], false], [], null, 1005, "^int"],
-		["function-def", ["func", "^string", ["^json_value"], true], [{ "name": "dummy", "type": "^json_value" }], null, 1018, "^string"],
+		["function-def", ["func", "^string", ["^json"], true], [{ "name": "dummy", "type": "^json" }], null, 1018, "^string"],
 		[
 			"function-def",
-			["func", "^any", ["^json_value", "^typeid"], true],
-			[{ "name": "dummy", "type": "^json_value" }, { "name": "dummy", "type": "^typeid" }],
+			["func", "^any", ["^json", "^typeid"], true],
+			[{ "name": "dummy", "type": "^json" }, { "name": "dummy", "type": "^typeid" }],
 			null,
 			1020,
 			"^any"
@@ -234,11 +234,11 @@
 			1013,
 			"^any"
 		],
-		["function-def", ["func", "^json_value", ["^string"], true], [{ "name": "dummy", "type": "^string" }], null, 1017, "^json_value"],
+		["function-def", ["func", "^json", ["^string"], true], [{ "name": "dummy", "type": "^string" }], null, 1017, "^json"],
 		[
 			"function-def",
-			["func", "^void", ["^string", "^json_value"], false],
-			[{ "name": "dummy", "type": "^string" }, { "name": "dummy", "type": "^json_value" }],
+			["func", "^void", ["^string", "^json"], false],
+			[{ "name": "dummy", "type": "^string" }, { "name": "dummy", "type": "^json" }],
 			null,
 			1022,
 			"^void"
@@ -271,7 +271,7 @@
 			1006,
 			"^any"
 		],
-		["function-def", ["func", "^json_value", ["^any"], true], [{ "name": "dummy", "type": "^any" }], null, 1019, "^json_value"],
+		["function-def", ["func", "^json", ["^any"], true], [{ "name": "dummy", "type": "^any" }], null, 1019, "^json"],
 		[
 			"function-def",
 			["func", "^void", ["^any", "^any"], false],
@@ -1528,10 +1528,10 @@
 					{ "function_id": 13 }
 				]
 			],
-			[14, "get_json_type", "CONST", [["func", "^int", ["^json_value"], true], { "function_id": 14 }]],
+			[14, "get_json_type", "CONST", [["func", "^int", ["^json"], true], { "function_id": 14 }]],
 			[15, "get_time_of_day", "CONST", [["func", "^int", [], false], { "function_id": 15 }]],
-			[16, "generate_json_script", "CONST", [["func", "^string", ["^json_value"], true], { "function_id": 16 }]],
-			[17, "from_json", "CONST", [["func", "^any", ["^json_value", "^typeid"], true], { "function_id": 17 }]],
+			[16, "generate_json_script", "CONST", [["func", "^string", ["^json"], true], { "function_id": 16 }]],
+			[17, "from_json", "CONST", [["func", "^any", ["^json", "^typeid"], true], { "function_id": 17 }]],
 			[18, "map", "CONST", [["func", "^any", ["^any", "^any"], true], { "function_id": 18 }]],
 			[19, "map_string", "CONST", [["func", "^string", ["^string", ["func", "^string", ["^string"], true]], true], { "function_id": 19 }]],
 			[20, "print", "CONST", [["func", "^void", ["^any"], true], { "function_id": 20 }]],
@@ -1540,8 +1540,8 @@
 			[23, "reduce", "CONST", [["func", "^any", ["^any", "^any", "^any"], true], { "function_id": 23 }]],
 			[24, "rename_fsentry", "CONST", [["func", "^void", ["^string", "^string"], false], { "function_id": 24 }]],
 			[25, "replace", "CONST", [["func", "^any", ["^any", "^int", "^int", "^any"], true], { "function_id": 25 }]],
-			[26, "parse_json_script", "CONST", [["func", "^json_value", ["^string"], true], { "function_id": 26 }]],
-			[27, "send", "CONST", [["func", "^void", ["^string", "^json_value"], false], { "function_id": 27 }]],
+			[26, "parse_json_script", "CONST", [["func", "^json", ["^string"], true], { "function_id": 26 }]],
+			[27, "send", "CONST", [["func", "^void", ["^string", "^json"], false], { "function_id": 27 }]],
 			[28, "size", "CONST", [["func", "^int", ["^any"], true], { "function_id": 28 }]],
 			[29, "subset", "CONST", [["func", "^any", ["^any", "^int", "^int"], true], { "function_id": 29 }]],
 			[30, "supermap", "CONST", [["func", "^any", ["^any", "^any", "^any"], true], { "function_id": 30 }]],
@@ -1549,9 +1549,9 @@
 			[32, "to_string", "CONST", [["func", "^string", ["^any"], true], { "function_id": 32 }]],
 			[33, "typeof", "CONST", [["func", "^typeid", ["^any"], true], { "function_id": 33 }]],
 			[34, "update", "CONST", [["func", "^any", ["^any", "^any", "^any"], true], { "function_id": 34 }]],
-			[35, "to_json", "CONST", [["func", "^json_value", ["^any"], true], { "function_id": 35 }]],
+			[35, "to_json", "CONST", [["func", "^json", ["^any"], true], { "function_id": 35 }]],
 			[36, "write_text_file", "CONST", [["func", "^void", ["^any", "^any"], false], { "function_id": 36 }]],
-			[37, "null", "CONST", ["^json_value", null]],
+			[37, "null", "CONST", ["^json", null]],
 			[38, "**undef**", "LOCAL", { "type": "immutable", "value_type": "^**undef**" }],
 			[39, "any", "CONST", ["^any", null]],
 			[40, "void", "CONST", ["^void", null]],
@@ -1560,7 +1560,7 @@
 			[43, "double", "CONST", ["^typeid", "^double"]],
 			[44, "string", "CONST", ["^typeid", "^string"]],
 			[45, "typeid", "CONST", ["^typeid", "^typeid"]],
-			[46, "json_value", "CONST", ["^typeid", "^json_value"]],
+			[46, "json", "CONST", ["^typeid", "^json"]],
 			[47, "json_object", "CONST", ["^int", 1]],
 			[48, "json_array", "CONST", ["^int", 2]],
 			[49, "json_string", "CONST", ["^int", 3]],
