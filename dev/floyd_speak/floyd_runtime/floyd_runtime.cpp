@@ -276,6 +276,32 @@ corecall_signature_t make_send_signature(){
 
 
 
+corecall_signature_t make_bw_not_signature(){
+	return { "bw_not", 1040, typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int() }, epure::pure) };
+}
+corecall_signature_t make_bw_and_signature(){
+	return { "bw_and", 1041, typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) };
+}
+corecall_signature_t make_bw_or_signature(){
+	return { "bw_or", 1042, typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) };
+}
+corecall_signature_t make_bw_xor_signature(){
+	return { "bw_xor", 1043, typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) };
+}
+corecall_signature_t make_bw_shift_left_signature(){
+	return { "bw_shift_left", 1044, typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) };
+}
+corecall_signature_t make_bw_shift_right_signature(){
+	return { "bw_shift_right", 1045, typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) };
+}
+corecall_signature_t make_bw_shift_right_arithmetic_signature(){
+	return { "bw_shift_right_arithmetic", 1046, typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) };
+}
+
+
+
+
+
 
 
 std::string get_opcode(const corecall_signature_t& signature){
@@ -313,7 +339,15 @@ static std::vector<corecall_signature_t> get_host_function_records(){
 		make_map_dag_signature(),
 
 		make_print_signature(),
-		make_send_signature()
+		make_send_signature(),
+
+		make_bw_not_signature(),
+		make_bw_and_signature(),
+		make_bw_or_signature(),
+		make_bw_xor_signature(),
+		make_bw_shift_left_signature(),
+		make_bw_shift_right_signature(),
+		make_bw_shift_right_arithmetic_signature()
 	};
 	return result;
 }

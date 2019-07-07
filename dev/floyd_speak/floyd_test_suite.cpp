@@ -478,6 +478,32 @@ QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "||", ""){
 }
 
 
+
+
+//////////////////////////////////////////		BASIC EXPRESSIONS - BITWISE OPERATORS
+
+
+//	2^63: 9223372036854775807
+//	2^64: 18446744073709551616
+
+QUARK_UNIT_TEST("Floyd test suite", "", "bw_not()", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(0)", value_t::make_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111));
+}
+QUARK_UNIT_TEST("Floyd test suite", "", "bw_not()", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(18446744073709551615)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000));
+}
+QUARK_UNIT_TEST("Floyd test suite", "", "bw_not()", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(1)", value_t::make_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111110));
+}
+QUARK_UNIT_TEST("Floyd test suite", "", "bw_not()", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(9223372036854775807)", value_t::make_int(0));
+}
+
+
+//??? more
+
+
+
 //////////////////////////////////////////		BASIC EXPRESSIONS - ERRORS
 
 

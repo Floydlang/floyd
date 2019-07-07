@@ -1345,8 +1345,8 @@ const WIDE_RETURN_T fr_update_struct_member(floyd_runtime_t* frp, STRUCT_T* s, r
 	std::memcpy(struct_base_ptr, source_struct_ptr->get_data_ptr(), struct_bytes);
 
 	const auto member_offset = layout->getElementOffset(member_index);
-	const auto member_ptr = reinterpret_cast<void*>(struct_base_ptr + member_offset);
-	store_via_ptr(r, new_value_type0, member_ptr, member_value);
+	const auto member_ptr0 = reinterpret_cast<void*>(struct_base_ptr + member_offset);
+	store_via_ptr(r, new_value_type0, member_ptr0, member_value);
 
 	//	Retain every member of new struct.
 	{
@@ -2487,6 +2487,12 @@ void floyd_funcdef__rename_fsentry(floyd_runtime_t* frp, runtime_value_t path0, 
 
 
 
+int64_t floyd_funcdef__dummy(floyd_runtime_t* frp){
+	auto& r = get_floyd_runtime(frp);
+	QUARK_ASSERT(false);
+	return -666;
+}
+
 
 std::map<std::string, void*> get_c_function_ptrs(){
 
@@ -2525,6 +2531,14 @@ std::map<std::string, void*> get_c_function_ptrs(){
 
 		{ "floyd_funcdef__print", reinterpret_cast<void *>(&floyd_funcdef__print) },
 		{ "floyd_funcdef__send", reinterpret_cast<void *>(&floyd_funcdef__send) },
+
+		{ "floyd_funcdef__bw_not", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
+		{ "floyd_funcdef__bw_and", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
+		{ "floyd_funcdef__bw_or", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
+		{ "floyd_funcdef__bw_xor", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
+		{ "floyd_funcdef__bw_shift_left", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
+		{ "floyd_funcdef__bw_shift_right", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
+		{ "floyd_funcdef__bw_shift_right_arithmetic", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
 
 
 

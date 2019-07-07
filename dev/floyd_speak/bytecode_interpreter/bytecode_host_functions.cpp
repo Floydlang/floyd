@@ -1091,6 +1091,88 @@ QUARK_UNIT_TEST("get_time_of_day_ms()", "", "", ""){
 
 
 
+
+bc_value_t host__bw_not(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_int());
+
+	const auto a = args[0].get_int_value();
+	const auto result = ~a;
+	return bc_value_t::make_int(result);
+}
+bc_value_t host__bw_and(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 2);
+	QUARK_ASSERT(args[0]._type.is_int());
+	QUARK_ASSERT(args[1]._type.is_int());
+
+	const auto a = args[0].get_int_value();
+	const auto b = args[1].get_int_value();
+	const auto result = a & b;
+	return bc_value_t::make_int(result);
+}
+bc_value_t host__bw_or(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 2);
+	QUARK_ASSERT(args[0]._type.is_int());
+	QUARK_ASSERT(args[1]._type.is_int());
+
+	const auto a = args[0].get_int_value();
+	const auto b = args[1].get_int_value();
+	const auto result = a | b;
+	return bc_value_t::make_int(result);
+}
+bc_value_t host__bw_xor(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 2);
+	QUARK_ASSERT(args[0]._type.is_int());
+	QUARK_ASSERT(args[1]._type.is_int());
+
+	const auto a = args[0].get_int_value();
+	const auto b = args[1].get_int_value();
+	const auto result = a ^ b;
+	return bc_value_t::make_int(result);
+}
+bc_value_t host__bw_shift_left(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 2);
+	QUARK_ASSERT(args[0]._type.is_int());
+	QUARK_ASSERT(args[1]._type.is_int());
+
+	const auto a = args[0].get_int_value();
+	const auto count = args[1].get_int_value();
+	const auto result = a << count;
+	return bc_value_t::make_int(result);
+}
+bc_value_t host__bw_shift_right(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 2);
+	QUARK_ASSERT(args[0]._type.is_int());
+	QUARK_ASSERT(args[1]._type.is_int());
+
+	const uint64_t a = args[0].get_int_value();
+	const uint64_t count = args[1].get_int_value();
+	const auto result = a >> count;
+	return bc_value_t::make_int(result);
+}
+bc_value_t host__bw_shift_right_arithmetic(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 2);
+	QUARK_ASSERT(args[0]._type.is_int());
+	QUARK_ASSERT(args[1]._type.is_int());
+
+	const auto a = args[0].get_int_value();
+	const auto count = args[1].get_int_value();
+	const auto result = a >> count;
+	return bc_value_t::make_int(result);
+}
+
+
+
+
+
+
 /////////////////////////////////////////		IMPURE -- FILE SYSTEM
 
 
@@ -1431,8 +1513,21 @@ static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls_internal()
 
 	result.find(make_print_signature()._function_id)->second = host__print;
 	result.find(make_send_signature()._function_id)->second = host__send;
+
+
+	result.find(make_bw_not_signature()._function_id)->second = host__bw_not;
+	result.find(make_bw_and_signature()._function_id)->second = host__bw_and;
+	result.find(make_bw_or_signature()._function_id)->second = host__bw_or;
+	result.find(make_bw_xor_signature()._function_id)->second = host__bw_xor;
+	result.find(make_bw_shift_left_signature()._function_id)->second = host__bw_shift_left;
+	result.find(make_bw_shift_right_signature()._function_id)->second = host__bw_shift_right;
+	result.find(make_bw_shift_right_arithmetic_signature()._function_id)->second = host__bw_shift_right_arithmetic;
 	return result;
 }
+
+
+
+
 
 
 static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_filelib_internal(){

@@ -1243,6 +1243,29 @@ static expression_gen_t bcgen_corecall_expression(bcgenerator_t& gen_acc, const 
 	}
 
 
+	else if(details.call_name == get_opcode(make_bw_not_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_bw_and_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_bw_or_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_bw_xor_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_bw_shift_left_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_bw_shift_right_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_bw_shift_right_arithmetic_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+
+
 	else{
 		QUARK_ASSERT(false);
 	}

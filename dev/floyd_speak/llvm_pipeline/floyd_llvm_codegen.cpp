@@ -6,7 +6,7 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-const bool k_trace_input_output = false;
+const bool k_trace_input_output = true;
 const bool k_trace_types = false;
 
 #include "floyd_llvm_codegen.h"
@@ -1058,6 +1058,73 @@ static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_ac
 	}
 }
 
+enum class bitwize_operator {
+	bw_not,
+	bw_and,
+	bw_or,
+	bw_xor,
+	bw_shift_left,
+	bw_shift_right,
+	bw_shift_right_arithmetic
+};
+
+static llvm::Value* generate_bitwize_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, bitwize_operator op, const expression_t& e, const std::vector<expression_t>& operands){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(e.get_output_type().is_int());
+	QUARK_ASSERT(operands.size() == 1 || operands.size() == 2);
+
+	if(operands.size() == 1){
+		QUARK_ASSERT(operands[0].get_output_type().is_int());
+
+		auto a = generate_expression(gen_acc, emit_f, operands[0]);
+
+		if(op == bitwize_operator::bw_not){
+			return gen_acc.builder.CreateNot(a);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+	else if(operands.size() == 2){
+		QUARK_ASSERT(operands[0].get_output_type().is_int());
+		QUARK_ASSERT(operands[1].get_output_type().is_int());
+
+		auto a = generate_expression(gen_acc, emit_f, operands[0]);
+		auto b = generate_expression(gen_acc, emit_f, operands[1]);
+
+		if(op == bitwize_operator::bw_not){
+			QUARK_ASSERT(false);
+		}
+		else if(op == bitwize_operator::bw_and){
+			return gen_acc.builder.CreateAnd(a, b);
+		}
+		else if(op == bitwize_operator::bw_or){
+			return gen_acc.builder.CreateOr(a, b);
+		}
+		else if(op == bitwize_operator::bw_xor){
+			return gen_acc.builder.CreateXor(a, b);
+		}
+
+		else if(op == bitwize_operator::bw_shift_left){
+			return gen_acc.builder.CreateShl(a, b);
+		}
+		else if(op == bitwize_operator::bw_shift_right){
+			return gen_acc.builder.CreateLShr(a, b);
+		}
+		else if(op == bitwize_operator::bw_shift_right_arithmetic){
+			return gen_acc.builder.CreateAShr(a, b);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
 static llvm::Value* generate_arithmetic_unary_minus_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::unary_minus_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
@@ -1335,6 +1402,30 @@ static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc,
 	else if(details.call_name == get_opcode(make_send_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
+
+
+	else if(details.call_name == get_opcode(make_bw_not_signature())){
+		return generate_bitwize_expression(gen_acc, emit_f, bitwize_operator::bw_not, e, details.args);
+	}
+	else if(details.call_name == get_opcode(make_bw_and_signature())){
+		return generate_bitwize_expression(gen_acc, emit_f, bitwize_operator::bw_and, e, details.args);
+	}
+	else if(details.call_name == get_opcode(make_bw_or_signature())){
+		return generate_bitwize_expression(gen_acc, emit_f, bitwize_operator::bw_or, e, details.args);
+	}
+	else if(details.call_name == get_opcode(make_bw_xor_signature())){
+		return generate_bitwize_expression(gen_acc, emit_f, bitwize_operator::bw_xor, e, details.args);
+	}
+	else if(details.call_name == get_opcode(make_bw_shift_left_signature())){
+		return generate_bitwize_expression(gen_acc, emit_f, bitwize_operator::bw_shift_left, e, details.args);
+	}
+	else if(details.call_name == get_opcode(make_bw_shift_right_signature())){
+		return generate_bitwize_expression(gen_acc, emit_f, bitwize_operator::bw_shift_right, e, details.args);
+	}
+	else if(details.call_name == get_opcode(make_bw_shift_right_arithmetic_signature())){
+		return generate_bitwize_expression(gen_acc, emit_f, bitwize_operator::bw_shift_right_arithmetic, e, details.args);
+	}
+
 
 	else{
 		QUARK_ASSERT(false);

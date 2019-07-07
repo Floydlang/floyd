@@ -884,6 +884,21 @@ assert(is_polite("hiya!") == false)
 assert(is_polite("hello") == true)
 ```
 
+### BITWISE OPERATORS
+
+Floyd uses explicit names for all bitwise operators, not special language operators like C does. C uses "&" for AND and "<<" for shift left. This is to make evaluation order clear and to avoid accidental mixup between logical operators and bitwise operators.
+
+|OPERATOR		| EXPLANATION
+|:---	|:---
+| int bw_not(int v)		| inverts all bits in the integer v.
+| int bw_and(int a, int b)		| ands each bit in a with the corresponding bit in b
+| int bw_or(int a, int b)		| ors each bit in a with the corresponding bit in b
+| int bw_xor(int a, int b)		| xors each bit in a with the corresponding bit in b
+| int bw_shift_left(int v, int count)		| shifts the bits in v left, the number of bits specified by count. New bits are set to 0.
+| int bw_shift_right(int v, int count)		| shifts the bits in v right, the number of bits specified by count. New bits are set to 0.
+| int bw_shift_right_arithmetic(int v, int count)		| shifts the bits in v right, the number of bits specified by count. New bits are copied from bit 63, which sign-extends the number		| it doesn't lose its negativeness.
+
+
 
 ### EXAMPLE EXPRESSIONS
 

@@ -121,6 +121,14 @@ corecall_signature_t make_map_dag_signature();
 corecall_signature_t make_print_signature();
 corecall_signature_t make_send_signature();
 
+corecall_signature_t make_bw_not_signature();
+corecall_signature_t make_bw_and_signature();
+corecall_signature_t make_bw_or_signature();
+corecall_signature_t make_bw_xor_signature();
+corecall_signature_t make_bw_shift_left_signature();
+corecall_signature_t make_bw_shift_right_signature();
+corecall_signature_t make_bw_shift_right_arithmetic_signature();
+
 std::vector<corecall_signature_t> get_corecall_signatures();
 
 

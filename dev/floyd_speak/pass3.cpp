@@ -2282,6 +2282,30 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_send_signature());
 				}
 
+
+
+				else if(found_symbol_ptr->first == make_bw_not_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_bw_not_signature());
+				}
+				else if(found_symbol_ptr->first == make_bw_and_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_bw_and_signature());
+				}
+				else if(found_symbol_ptr->first == make_bw_or_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_bw_or_signature());
+				}
+				else if(found_symbol_ptr->first == make_bw_xor_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_bw_xor_signature());
+				}
+				else if(found_symbol_ptr->first == make_bw_shift_left_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_bw_shift_left_signature());
+				}
+				else if(found_symbol_ptr->first == make_bw_shift_right_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_bw_shift_right_signature());
+				}
+				else if(found_symbol_ptr->first == make_bw_shift_right_arithmetic_signature().name){
+					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_bw_shift_right_arithmetic_signature());
+				}
+
 				else{
 				}
 			}
