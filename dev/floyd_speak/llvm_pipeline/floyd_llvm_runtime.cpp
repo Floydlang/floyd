@@ -2487,11 +2487,6 @@ void floyd_funcdef__rename_fsentry(floyd_runtime_t* frp, runtime_value_t path0, 
 
 
 
-int64_t floyd_funcdef__dummy(floyd_runtime_t* frp){
-	auto& r = get_floyd_runtime(frp);
-	QUARK_ASSERT(false);
-	return -666;
-}
 
 
 std::map<std::string, void*> get_c_function_ptrs(){
@@ -2532,6 +2527,7 @@ std::map<std::string, void*> get_c_function_ptrs(){
 		{ "floyd_funcdef__print", reinterpret_cast<void *>(&floyd_funcdef__print) },
 		{ "floyd_funcdef__send", reinterpret_cast<void *>(&floyd_funcdef__send) },
 
+/*
 		{ "floyd_funcdef__bw_not", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
 		{ "floyd_funcdef__bw_and", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
 		{ "floyd_funcdef__bw_or", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
@@ -2539,7 +2535,7 @@ std::map<std::string, void*> get_c_function_ptrs(){
 		{ "floyd_funcdef__bw_shift_left", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
 		{ "floyd_funcdef__bw_shift_right", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
 		{ "floyd_funcdef__bw_shift_right_arithmetic", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
-
+*/
 
 
 		////////////////////////////////		FILE LIB
@@ -2610,6 +2606,8 @@ void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
 #endif
 
 static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
+	////////	Functions to support the runtime
+
 	const auto runtime_functions = get_runtime_functions(context, interner);
 
 	std::map<std::string, void*> runtime_functions_map;
@@ -2617,12 +2615,22 @@ static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& cont
 		const auto e2 = std::pair<std::string, void*>(e.name_key, e.implementation_f);
 		runtime_functions_map.insert(e2);
 	}
+
+
+	////////	Host functions
+
 	const auto host_functions_map = get_c_function_ptrs();
 
 	std::map<std::string, void*> function_map = runtime_functions_map;
 	function_map.insert(host_functions_map.begin(), host_functions_map.end());
 
 	return function_map;
+}
+
+int64_t floyd_funcdef__dummy(floyd_runtime_t* frp){
+	auto& r = get_floyd_runtime(frp);
+	QUARK_ASSERT(false);
+	return -666;
 }
 
 
@@ -2712,6 +2720,8 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 				return it->second;
 			}
 			else{
+				return (void*)&floyd_funcdef__dummy;
+//				throw std::exception();
 			}
 
 			return nullptr;
@@ -2744,22 +2754,15 @@ std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program
 
 	trace_heap(ee->heap);
 
+	//	Make sure linking went well - test that by trying to resolve a function we know exists.
 #if DEBUG
 	{
-		const auto print_global_ptr = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(*ee, "print");
-		QUARK_ASSERT(print_global_ptr != nullptr);
-
-		const auto print_f = *print_global_ptr;
-		QUARK_ASSERT(print_f != nullptr);
-		if(print_f){
-
-//			(*print_f)(&ee, 109);
+		{
+			const auto print_global_ptr_ptr = (FLOYD_RUNTIME_HOST_FUNCTION*)floyd::get_global_ptr(*ee, "print");
+			QUARK_ASSERT(print_global_ptr_ptr != nullptr);
+			const auto print_ptr = *print_global_ptr_ptr;
+			QUARK_ASSERT(print_ptr != nullptr);
 		}
-	}
-
-	{
-		auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(*ee, "floyd_runtime_init"));
-		QUARK_ASSERT(a_func != nullptr);
 	}
 #endif
 
