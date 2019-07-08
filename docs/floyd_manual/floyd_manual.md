@@ -798,7 +798,7 @@ Comparisons are deep: for a composite value they consider all members values and
 This is a value that is fully defined directly in the code. Like the number 3.
 
 
-|OPERATOR		| EXPLANATION
+|CODE		| EXPLANATION
 |:---			|:---	
 | 0				| Integer literal
 | 0.3			| Double literal
@@ -806,6 +806,33 @@ This is a value that is fully defined directly in the code. Like the number 3.
 | [ "one", "two", "three" ] | Vector-of-strings literal
 | { "a": 100, "b": 200 } | Dictionary of string-integer literal.
 | ...			| Any literal that is compatible with json_t can be a JSON literal
+
+
+Floyd supports decimal literals, as above, but also hexadecimal and binary literals.
+
+
+	
+
+
+
+|CODE		| EXPLANATION
+|:---											|:---	
+| 0x0											| Hexadecimal number 0, decimal 0
+| 0xff											| Hexadecimal number FF, decimal 255
+| 0xabcd										| Hexadecimal number ABCD, decimal 43981
+| 0xffff1111										| Hexadecimal number FFFF1111, decimal 4294906129
+| 0b00000000										| Binary number 00000000, decimal 0
+| 0b00000001										| Binary number 00000001, decimal 1
+| 0b10000000										| Binary number 10000000, decimal 128
+| 0b11111111										| Binary number 11111111, decimal 255
+| 0b11111111000000000000000011111111				| Binary number 11111111000000000000000011111111, decimal 255
+
+You can use the ' character as a dividier between groups of 8 number for both hex and binary literals. But not for decima literals. This makes longer sequences of numbers easier to read.
+
+|CODE		| EXPLANATION
+|:---											|:---	
+| 0xffff1111'00000000'00000fff'fff00000				| Hexadecimal number with separators
+| 0b11111111000000000000000011111111				| Binary number with separators
 
 
 ### VECTOR-CONSTRUCTOR
@@ -898,6 +925,7 @@ Floyd uses explicit names for all bitwise operators, not special language operat
 | int bw_shift_right(int v, int count)		| shifts the bits in v right, the number of bits specified by count. New bits are set to 0.
 | int bw_shift_right_arithmetic(int v, int count)		| shifts the bits in v right, the number of bits specified by count. New bits are copied from bit 63, which sign-extends the number		| it doesn't lose its negativeness.
 
+When doing bitwise manipulation it is often convenient to use binary literals or hexadecimal literals, rather than normal decimal literals.
 
 
 ### EXAMPLE EXPRESSIONS

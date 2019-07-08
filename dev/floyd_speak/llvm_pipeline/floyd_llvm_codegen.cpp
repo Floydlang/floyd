@@ -6,7 +6,7 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-const bool k_trace_input_output = true;
+const bool k_trace_input_output = false;
 const bool k_trace_types = false;
 
 #include "floyd_llvm_codegen.h"

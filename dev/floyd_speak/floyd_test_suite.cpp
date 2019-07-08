@@ -483,7 +483,7 @@ QUARK_UNIT_TEST("Floyd test suite", "execute_expression()", "||", ""){
 //////////////////////////////////////////		BASIC EXPRESSIONS - BITWISE OPERATORS
 
 
-//	2^63: 9223372036854775807
+//	2^63: 9223372036854775808
 //	2^64: 18446744073709551616
 
 QUARK_UNIT_TEST("Floyd test suite", "", "bw_not()", ""){
@@ -496,7 +496,43 @@ QUARK_UNIT_TEST("Floyd test suite", "", "bw_not()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(1)", value_t::make_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111110));
 }
 QUARK_UNIT_TEST("Floyd test suite", "", "bw_not()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(9223372036854775807)", value_t::make_int(0));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(9223372036854775808)", value_t::make_int(0));
+}
+
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "", "bw_and()", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_and(3, 1)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001));
+}
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "", "bw_or()", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_or(2, 1)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011));
+}
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "", "bw_xor()", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_xor(3, 1)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000010));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "", "bw_shift_left()", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_left(3, 1)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "", "bw_shift_right()", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_right(3, 1)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001));
+}
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "", "floyd_funcdef__bw_shift_right_arithmetic()", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_right_arithmetic(7, 1)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011));
+}
+QUARK_UNIT_TEST("Floyd test suite", "", "floyd_funcdef__bw_shift_right_arithmetic()", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_right_arithmetic(-2, 1)", value_t::make_int(-1));
 }
 
 

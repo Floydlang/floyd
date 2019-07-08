@@ -41,7 +41,7 @@ enum class executor_mode {
 };
 
 
-#if 0
+#if 1
 executor_mode g_executor = executor_mode::bc_interpreter;
 #else
 executor_mode g_executor = executor_mode::llvm_jit;
