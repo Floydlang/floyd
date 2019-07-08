@@ -615,6 +615,25 @@ QUARK_UNIT_TEST("Floyd test suite", "Construct value", "string()", ""){
 
 
 
+//////////////////////////////////////////		TEST BINARY LITERALS
+
+
+QUARK_UNIT_TEST("Floyd test suite", "Binary literal", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0b0", value_t::make_int(0b0));
+}
+QUARK_UNIT_TEST("Floyd test suite", "Binary literal", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0b10000000", value_t::make_int(0b10000000));
+}
+QUARK_UNIT_TEST_VIP("Floyd test suite", "Binary literal", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0b1000000000000000000000000000000000000000000000000000000000000001", value_t::make_int(0b1000000000000000000000000000000000000000000000000000000000000001));
+}
+
+
+//??? hex literals
+
+
+
+
 
 //######################################################################################################################
 //	MUTATE VARIABLES

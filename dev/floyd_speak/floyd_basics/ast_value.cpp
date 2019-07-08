@@ -917,7 +917,18 @@ value_t ast_json_to_value(const typeid_t& type, const json_t& v){
 		}
 	}
 	else if(type.is_int()){
-		return value_t::make_int(static_cast<int64_t>(v.get_number()));
+		if(v.is_object()){
+			const auto tag = v.get_object_element("big-int");
+			const auto value = v.get_object_element("value").get_string();
+  			const auto i = std::stol(value);
+  			return value_t::make_int(i);
+		}
+		else if(v.is_number()){
+			return value_t::make_int(static_cast<int64_t>(v.get_number()));
+		}
+		else{
+			quark::throw_exception();
+		}
 	}
 	else if(type.is_double()){
 		return value_t::make_double(v.get_number());
@@ -980,6 +991,13 @@ value_t ast_json_to_value(const typeid_t& type, const json_t& v){
 	}
 }
 
+bool store_as_big_int(int64_t value){
+	uint64_t u = value;
+	uint64_t high = u & 0xffffffff'00000000;
+	return (high == 0xffffffff'00000000 || high == 0x00000000'00000000) ? false : true;
+}
+
+
 json_t value_to_ast_json(const value_t& v, json_tags tags){
 	if(v.is_undefined()){
 		return json_t();
@@ -994,7 +1012,16 @@ json_t value_to_ast_json(const value_t& v, json_tags tags){
 		return json_t(v.get_bool_value());
 	}
 	else if(v.is_int()){
-		return json_t(static_cast<double>(v.get_int_value()));
+		const auto i = v.get_int_value();
+		if(store_as_big_int(i)){
+			std::map<string, json_t> result;
+			result["big-int"] = json_t(64);
+			result["value"] = std::to_string(i);
+			return result;
+		}
+		else{
+			return json_t(static_cast<double>(i));
+		}
 	}
 	else if(v.is_double()){
 		return json_t(static_cast<double>(v.get_double_value()));

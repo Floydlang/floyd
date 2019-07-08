@@ -469,6 +469,10 @@ expression_t astjson_to_expression(const json_t& e){
 		const auto type = e.get_array_n(2);
 		const auto type2 = typeid_from_ast_json(type);
 
+
+		const auto value2 = ast_json_to_value(type2, value);
+		return expression_t::make_literal(value2);
+/*
 		if(type2.is_undefined()){
 			return expression_t::make_literal_undefined();
 		}
@@ -488,6 +492,8 @@ expression_t astjson_to_expression(const json_t& e){
 			QUARK_ASSERT(false);
 			quark::throw_exception();
 		}
+*/
+
 	}
 	else if(op == expression_opcode_t::k_unary_minus){
 		QUARK_ASSERT(e.get_array_size() == 2 || e.get_array_size() == 3);

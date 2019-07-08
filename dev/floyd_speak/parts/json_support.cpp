@@ -265,6 +265,17 @@ QUARK_UNIT_TESTQ("json_t()", ""){
 	QUARK_UT_VERIFY(a.is_null());
 }
 
+/*
+QUARK_UNIT_TEST_VIP("json_t", "json_t()", "", ""){
+	const uint64_t k = 0b1000000000000000000000000000000000000000000000000000000000000001;
+	const auto a = json_t((int64_t)k);
+	const auto d = a.get_number();
+	const uint64_t i = d;
+	QUARK_ASSERT(i == k);
+}
+*/
+
+
 
 ////////////////////////////////////////		HELPERS
 

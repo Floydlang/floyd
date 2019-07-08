@@ -587,6 +587,11 @@ QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
 	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
 }
 QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	const auto a = parse_binary_literal(seq_t("0b1000000000000000000000000000000000000000000000000000000000000001 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 0b1000000000000000000000000000000000000000000000000000000000000001);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
 	try {
 		const auto a = parse_binary_literal(seq_t("0b000011112 xxx"));
 		QUARK_ASSERT(false);
