@@ -624,12 +624,33 @@ QUARK_UNIT_TEST("Floyd test suite", "Binary literal", "", ""){
 QUARK_UNIT_TEST("Floyd test suite", "Binary literal", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = 0b10000000", value_t::make_int(0b10000000));
 }
-QUARK_UNIT_TEST_VIP("Floyd test suite", "Binary literal", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Binary literal", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = 0b1000000000000000000000000000000000000000000000000000000000000001", value_t::make_int(0b1000000000000000000000000000000000000000000000000000000000000001));
+}
+QUARK_UNIT_TEST("Floyd test suite", "Binary literal", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001", value_t::make_int(0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001));
 }
 
 
-//??? hex literals
+//////////////////////////////////////////		TEST HEXADECIMAL LITERALS
+
+
+QUARK_UNIT_TEST("Floyd test suite", "Hexadecimal literal", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0x0", value_t::make_int(0x0));
+}
+QUARK_UNIT_TEST("Floyd test suite", "Hexadecimal literal", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0xff", value_t::make_int(0xff));
+}
+QUARK_UNIT_TEST("Floyd test suite", "Hexadecimal literal", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0xabcd", value_t::make_int(0xabcd));
+}
+QUARK_UNIT_TEST("Floyd test suite", "Hexadecimal literal", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0xabcdef01'23456789", value_t::make_int(0xabcdef01'23456789));
+}
+QUARK_UNIT_TEST("Floyd test suite", "Hexadecimal literal", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 0xffffffff'ffffffff", value_t::make_int(0xffffffff'ffffffff));
+}
+
 
 
 

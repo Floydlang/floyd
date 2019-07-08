@@ -20,6 +20,7 @@ namespace floyd {
 
 
 static const char k_literal_divider_char = '\'';
+const std::string k_hex_chars = "0123456789abcdef";
 
 
 QUARK_UNIT_TEST("parser", "C++ operators", "", ""){
@@ -638,7 +639,6 @@ QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
 
 
 
-const std::string k_hex_chars = "0123456789abcdef";
 
 
 std::pair<value_t, seq_t> parse_hexadecimal_literal(const seq_t& p) {
