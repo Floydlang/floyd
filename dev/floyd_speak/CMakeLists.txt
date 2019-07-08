@@ -82,7 +82,7 @@ floyd_runtime/floyd_runtime.cpp
 floyd_runtime/floyd_runtime.h
 floyd_runtime/variable_length_quantity.cpp
 floyd_runtime/variable_length_quantity.h
-llvm_pipeline/floyd_llvm.cpp  
+#llvm_pipeline/floyd_llvm.cpp  
 llvm_pipeline/floyd_llvm_codegen.cpp  
 llvm_pipeline/floyd_llvm_helpers.cpp  
 llvm_pipeline/floyd_llvm_runtime.cpp
