@@ -525,6 +525,10 @@ std::pair<value_t, seq_t> parse_binary_literal(const seq_t& p) {
 	}
 
 	const auto s = strip_optional_dividers(number_pos.first);
+	if(s.size() > 64){
+		throw_compiler_error_nopos(std::string() + "Binary literal bigger than supported 64 bits.");
+	}
+
 	uint64_t acc = 0;
 	for(int i = 0 ; i < s.size() ; i++){
 		acc = acc << 1;
@@ -612,6 +616,22 @@ QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
 	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
 }
 
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	const auto a = parse_binary_literal(seq_t("0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 0x8000000000000001);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	try {
+		const auto a = parse_binary_literal(seq_t("0b1'10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001 xxx"));
+		QUARK_ASSERT(false);
+	}
+	catch(...){
+	}
+}
+
+
 
 const std::string k_hex_chars = "0123456789abcdef";
 
@@ -626,6 +646,10 @@ std::pair<value_t, seq_t> parse_hexadecimal_literal(const seq_t& p) {
 	}
 
 	const auto s = strip_optional_dividers(number_pos.first);
+	if(s.size() > 16){
+		throw_compiler_error_nopos(std::string() + "Hexadecimal literal bigger than supported 64 bits.");
+	}
+
 	uint64_t acc = 0;
 	for(int i = 0 ; i < s.size() ; i++){
 		acc = acc << 4;
@@ -682,6 +706,15 @@ QUARK_UNIT_TEST("parser", "parse_hexadecimal_literal()", "", ""){
 	const auto a = parse_hexadecimal_literal(seq_t("0xABCD xxx"));
 	QUARK_UT_VERIFY(a.first.get_int_value() == 0xabcd);
 	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	try {
+		const auto a = parse_hexadecimal_literal(seq_t("0xf'abcdef01'23456789 xxx"));
+		QUARK_ASSERT(false);
+	}
+	catch(...){
+	}
 }
 
 
