@@ -15,12 +15,15 @@
 #include <llvm/IR/IRBuilder.h>
 
 #include <atomic>
+#include "immer/vector.hpp"
+#include "immer/map.hpp"
 
 struct json_t;
 
 namespace floyd {
 
 struct VEC_T;
+struct VEC_HAMT_T;
 struct DICT_T;
 struct JSON_T;
 struct STRUCT_T;
@@ -60,16 +63,16 @@ struct heap_alloc_64_t {
 
 
 	////////////////////////////////		STATE
-	uint64_t allocation_word_count;
 
 	std::atomic<int32_t> rc;
 	uint32_t magic;
 
-	//	 data_*: 4 x 8 bytes.
+	//	 data_*: 5 x 8 bytes.
 	uint64_t data_a;
 	uint64_t data_b;
 	uint64_t data_c;
 	uint64_t data_d;
+	uint64_t data_e;
 
 	heap_t* heap64;
 	char debug_info[8];
@@ -184,6 +187,7 @@ union runtime_value_t {
 //	char* string_ptr;
 
 	VEC_T* vector_ptr;
+	VEC_HAMT_T* vector_hamt_ptr;
 	DICT_T* dict_ptr;
 	JSON_T* json_ptr;
 	STRUCT_T* struct_ptr;
@@ -313,15 +317,10 @@ WIDE_RETURN_T make_wide_return_structptr(STRUCT_T* s);
 
 
 /*
-	Vectors
+	A fixed-size immutable vector with RC.
 
-	Encoded in LLVM as one 16 byte struct, VEC_T by value.
-
-	- Vector instance is a 16 byte struct.
-	- No RC or shared state -- always copied fully.
 	- Mutation = copy entire vector every time.
-
-	- The runtime handles all vectors as std::vector<uint64_t>. You need to pack and address other types of data manually.
+	- Elements are always runtime_value_t. You need to pack and address other types of data manually.
 
 	Invariant:
 		alloc_count = roundup(element_count * element_bits, 64) / 64
@@ -335,7 +334,7 @@ struct VEC_T {
 	inline uint64_t get_allocation_count() const{
 		QUARK_ASSERT(check_invariant());
 
-		return alloc.allocation_word_count;
+		return alloc.data_b;
 	}
 
 	inline uint64_t get_element_count() const{
@@ -348,7 +347,7 @@ struct VEC_T {
 		return static_cast<const runtime_value_t*>(get_alloc_ptr(alloc));
 	}
 	inline const runtime_value_t* end() const {
-		return static_cast<const runtime_value_t*>(get_alloc_ptr(alloc)) + alloc.allocation_word_count;
+		return static_cast<const runtime_value_t*>(get_alloc_ptr(alloc)) + get_allocation_count();
 	}
 
 
@@ -389,7 +388,83 @@ VEC_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count
 void dispose_vec(VEC_T& vec);
 
 WIDE_RETURN_T make_wide_return_vec(VEC_T* vec);
-VEC_T* wide_return_to_vec(const WIDE_RETURN_T& ret);
+
+
+
+
+////////////////////////////////		VEC_HAMT_T
+
+
+/*
+	A fixed-size immutable vector with RC.
+
+	- Mutation = copy entire vector every time.
+	- Elements are always runtime_value_t. You need to pack and address other types of data manually.
+
+	Invariant:
+		alloc_count = roundup(element_count * element_bits, 64) / 64
+
+	Embeds immer::vector<runtime_value_t> in data_a, data_b, data_c, data_d.
+*/
+typedef immer::vector<runtime_value_t> VEC_HAMT_IMPL_T;
+
+struct VEC_HAMT_T {
+	~VEC_HAMT_T();
+	bool check_invariant() const;
+
+	const VEC_HAMT_IMPL_T& get_vecref() const {
+		return *reinterpret_cast<const VEC_HAMT_IMPL_T*>(&alloc.data_a);
+	}
+	VEC_HAMT_IMPL_T& get_vecref_mut(){
+		return *reinterpret_cast<VEC_HAMT_IMPL_T*>(&alloc.data_a);
+	}
+
+	inline uint64_t get_element_count() const{
+		QUARK_ASSERT(check_invariant());
+
+		const auto vecref = get_vecref();
+		return vecref.size();
+	}
+
+	inline VEC_HAMT_IMPL_T::const_iterator begin() const {
+		QUARK_ASSERT(check_invariant());
+
+		const auto vecref = get_vecref();
+		return vecref.begin();
+	}
+	inline VEC_HAMT_IMPL_T::const_iterator end() const {
+		QUARK_ASSERT(check_invariant());
+
+		const auto vecref = get_vecref();
+		return vecref.end();
+	}
+
+	inline runtime_value_t operator[](const uint64_t index) const {
+		QUARK_ASSERT(check_invariant());
+
+		const auto vecref = get_vecref();
+		const auto temp = vecref[index];
+		return temp;
+	}
+
+	//	Mutates the VEC_HAMT_T implace -- only OK while constructing it when no other observers exists.
+	inline void store(const uint64_t index, runtime_value_t value){
+		QUARK_ASSERT(check_invariant());
+
+		const auto vecref = get_vecref();
+		const auto v2 = vecref.set(index, value);
+		get_vecref_mut() = v2;
+	}
+
+
+	////////////////////////////////		STATE
+	heap_alloc_64_t alloc;
+};
+
+VEC_HAMT_T* alloc_vec_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count);
+void dispose_vec_hamt(VEC_HAMT_T& vec);
+
+WIDE_RETURN_T make_wide_return_vec_hamt(VEC_HAMT_T* vec);
 
 
 
