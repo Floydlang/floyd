@@ -159,9 +159,10 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count){
 		alloc->data_a = 0;
 		alloc->data_b = 0;
 		alloc->data_c = 0;
+		alloc->data_d = 0;
 
 		alloc->heap64 = &heap;
-		memset(&alloc->debug_info[0], 0x00, 16);
+		memset(&alloc->debug_info[0], 0x00, 8);
 
 		heap.alloc_records.push_back({ alloc });
 

@@ -597,7 +597,8 @@ static function_return_mode generate_block(llvm_code_generator_t& gen_acc, llvm:
 	return return_mode;
 }
 
-static llvm::Value* generate_get_vec_element_ptr2(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& vec_ptr_reg){
+//	Returns pointer to first element of data after the alloc64. The returned pointer-type is struct { unit64_t x 8 }, so it needs to be cast to an element-ptr.
+static llvm::Value* generate_get_vec_element_ptr_needs_cast(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& vec_ptr_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 
@@ -608,17 +609,6 @@ static llvm::Value* generate_get_vec_element_ptr2(llvm_code_generator_t& gen_acc
 	};
 	auto after_alloc64_ptr_reg = builder.CreateGEP(make_generic_vec_type(gen_acc.interner), &vec_ptr_reg, gep, "");
 	return after_alloc64_ptr_reg;
-}
-
-static llvm::Value* generate_get_vec_element_ptr(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, llvm::Value& vec_ptr_reg){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
-
-	auto& builder = gen_acc.builder;
-
-	auto ptr_reg = generate_get_vec_element_ptr2(gen_acc, emit_f, vec_ptr_reg);
-	auto uint64_array_ptr_reg = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::BitCast, ptr_reg, builder.getInt64Ty()->getPointerTo(), "");
-	return uint64_array_ptr_reg;
 }
 
 //	Returns pointer to the first byte of the first struct member.
@@ -749,7 +739,7 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 	if(parent_type.is_string()){
 		QUARK_ASSERT(key_type.is_int());
 
-		auto element_ptr_reg = generate_get_vec_element_ptr2(gen_acc, emit_f, *parent_reg);
+		auto element_ptr_reg = generate_get_vec_element_ptr_needs_cast(gen_acc, emit_f, *parent_reg);
 		auto char_ptr_reg = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::BitCast, element_ptr_reg, builder.getInt8PtrTy(), "");
 
 		const auto gep = std::vector<llvm::Value*>{ key_reg };
@@ -787,9 +777,11 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 		QUARK_ASSERT(key_type.is_int());
 
 		const auto element_type0 = parent_type.get_vector_element_type();
-		auto uint64_array_ptr_reg = generate_get_vec_element_ptr(gen_acc, emit_f, *parent_reg);
+		auto ptr_reg = generate_get_vec_element_ptr_needs_cast(gen_acc, emit_f, *parent_reg);
+		auto int64_ptr_reg = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::BitCast, ptr_reg, builder.getInt64Ty()->getPointerTo(), "");
+
 		const auto gep = std::vector<llvm::Value*>{ key_reg };
-		llvm::Value* element_addr_reg = builder.CreateGEP(builder.getInt64Ty(), uint64_array_ptr_reg, gep, "element_addr");
+		llvm::Value* element_addr_reg = builder.CreateGEP(builder.getInt64Ty(), int64_ptr_reg, gep, "element_addr");
 		llvm::Value* element_value_uint64_reg = builder.CreateLoad(element_addr_reg, "element_tmp");
 		auto result_reg = generate_cast_from_runtime_value(gen_acc, *element_value_uint64_reg, element_type0);
 
@@ -1470,7 +1462,7 @@ static llvm::Value* generate_construct_vector(llvm_code_generator_t& gen_acc, ll
 	const auto f = find_function_def(gen_acc, "floyd_runtime__allocate_vector");
 	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), element_count);
 	auto vec_ptr_reg = builder.CreateCall(f.llvm_f, { get_callers_fcp(gen_acc.interner, emit_f), element_count_reg }, "");
-	auto ptr_reg = generate_get_vec_element_ptr2(gen_acc, emit_f, *vec_ptr_reg);
+	auto ptr_reg = generate_get_vec_element_ptr_needs_cast(gen_acc, emit_f, *vec_ptr_reg);
 
 	if(element_type0.is_bool()){
 		//	Each bool element is a uint64_t ???

@@ -65,13 +65,14 @@ struct heap_alloc_64_t {
 	std::atomic<int32_t> rc;
 	uint32_t magic;
 
-	//	 data_*: 3 x 8 bytes.
+	//	 data_*: 4 x 8 bytes.
 	uint64_t data_a;
 	uint64_t data_b;
 	uint64_t data_c;
+	uint64_t data_d;
 
 	heap_t* heap64;
-	char debug_info[16];
+	char debug_info[8];
 };
 
 
