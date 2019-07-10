@@ -32,6 +32,9 @@
 
 #include "llvm/Bitcode/BitstreamWriter.h"
 
+#include "immer/vector.hpp"
+#include "immer/map.hpp"
+
 
 #include <algorithm>
 #include <cstdlib>
@@ -404,17 +407,6 @@ runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
 
 
 
-char* get_vec_chars(runtime_value_t str){
-	QUARK_ASSERT(str.vector_ptr != nullptr);
-
-	return reinterpret_cast<char*>(str.vector_ptr->get_element_ptr());
-}
-
-uint64_t get_vec_string_size(runtime_value_t str){
-	QUARK_ASSERT(str.vector_ptr != nullptr);
-
-	return str.vector_ptr->get_element_count();
-}
 
 
 
@@ -773,6 +765,26 @@ VEC_T* wide_return_to_vec(const WIDE_RETURN_T& ret){
 
 
 
+QUARK_UNIT_TEST("VEC_T", "", "", ""){
+	const auto vec_struct_size1 = sizeof(std::vector<int>);
+	const auto vec_struct_size2 = sizeof(immer::vector<int>);
+	QUARK_UT_VERIFY(vec_struct_size1 == 24);
+}
+
+QUARK_UNIT_TEST("VEC_T", "", "", ""){
+	heap_t heap;
+	detect_leaks(heap);
+
+	VEC_T* v = alloc_vec(heap, 3, 3);
+	QUARK_UT_VERIFY(v != nullptr);
+
+	if(dec_rc(v->alloc) == 0){
+		dispose_vec(*v);
+	}
+
+	QUARK_UT_VERIFY(heap.check_invariant());
+	detect_leaks(heap);
+}
 
 
 

@@ -74,10 +74,13 @@ struct heap_alloc_64_t {
 	char debug_info[16];
 };
 
+
 struct heap_rec_t {
 	heap_alloc_64_t* alloc_ptr;
 //	bool in_use;
 };
+
+
 
 static const uint64_t HEAP_MAGIC = 0xf00d1234;
 
@@ -200,8 +203,6 @@ runtime_value_t make_runtime_int(int64_t value);
 runtime_value_t make_runtime_typeid(runtime_type_t type);
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr);
 
-char* get_vec_chars(runtime_value_t str);
-uint64_t get_vec_string_size(runtime_value_t str);
 
 VEC_T* unpack_vec_arg(const type_interner_t& types, runtime_value_t arg_value, runtime_type_t arg_type);
 DICT_T* unpack_dict_arg(const type_interner_t& types, runtime_value_t arg_value, runtime_type_t arg_type);
@@ -342,6 +343,14 @@ struct VEC_T {
 		return alloc.data_a;
 	}
 
+	inline const runtime_value_t* begin() const {
+		return static_cast<const runtime_value_t*>(get_alloc_ptr(alloc));
+	}
+	inline const runtime_value_t* end() const {
+		return static_cast<const runtime_value_t*>(get_alloc_ptr(alloc)) + alloc.allocation_word_count;
+	}
+
+
 	inline const runtime_value_t* get_element_ptr() const{
 		QUARK_ASSERT(check_invariant());
 
@@ -359,7 +368,15 @@ struct VEC_T {
 		QUARK_ASSERT(check_invariant());
 
 		auto p = static_cast<const runtime_value_t*>(get_alloc_ptr(alloc));
-		return p[index];
+		const auto temp = p[index];
+		return temp;
+	}
+
+	inline void store(const uint64_t index, runtime_value_t value){
+		QUARK_ASSERT(check_invariant());
+
+		auto p = static_cast<runtime_value_t*>(get_alloc_ptr(alloc));
+		p[index] = value;
 	}
 
 

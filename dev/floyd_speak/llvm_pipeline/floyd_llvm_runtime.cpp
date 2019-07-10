@@ -217,30 +217,101 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typei
 
 
 
+static uint64_t get_vec_string_size(runtime_value_t str){
+	QUARK_ASSERT(str.vector_ptr != nullptr);
 
-runtime_value_t to_runtime_string(llvm_execution_engine_t& r, const std::string& s){
-	QUARK_ASSERT(r.check_invariant());
+	return str.vector_ptr->get_element_count();
+}
+
+
+
+
+runtime_value_t to_runtime_string0(heap_t& heap, const std::string& s){
+	QUARK_ASSERT(heap.check_invariant());
 
 	const auto count = static_cast<uint64_t>(s.size());
 	const auto allocation_count = size_to_allocation_blocks(s.size());
-	auto v = alloc_vec(r.heap, allocation_count, count);
+	auto v = alloc_vec(heap, allocation_count, count);
 	auto result = runtime_value_t{ .vector_ptr = v };
 
-	char* char_ptr = get_vec_chars(result);
-	for(int i = 0 ; i < count ; i++){
-		char_ptr[i] = s[i];
+	size_t char_pos = 0;
+	int element_index = 0;
+	uint64_t acc = 0;
+	while(char_pos < s.size()){
+		const uint64_t ch = s[char_pos];
+		const auto x = (char_pos & 7) * 8;
+		acc = acc | (ch << x);
+		char_pos++;
+
+		if(((char_pos & 7) == 0) || (char_pos == s.size())){
+			v->store(element_index, runtime_value_t{ .int_value = static_cast<int64_t>(acc) });
+			element_index = element_index + 1;
+			acc = 0;
+		}
 	}
 	return result;
 }
 
-std::string from_runtime_string(const llvm_execution_engine_t& r, runtime_value_t encoded_value){
+
+QUARK_UNIT_TEST("VEC_T", "", "", ""){
+	heap_t heap;
+	const auto a = to_runtime_string0(heap, "hello, world!");
+
+	QUARK_UT_VERIFY(a.vector_ptr->get_element_count() == 13);
+
+	//	int64_t	'hello, w'
+//	QUARK_UT_VERIFY(a.vector_ptr->operator[](0).int_value == 0x68656c6c6f2c2077);
+	QUARK_UT_VERIFY(a.vector_ptr->operator[](0).int_value == 0x77202c6f6c6c6568);
+
+	//int_value	int64_t	'orld!\0\0\0'
+//	QUARK_UT_VERIFY(a.vector_ptr->operator[](1).int_value == 0x6f726c6421000000);
+	QUARK_UT_VERIFY(a.vector_ptr->operator[](1).int_value == 0x00000021646c726f);
+}
+
+runtime_value_t to_runtime_string(llvm_execution_engine_t& r, const std::string& s){
 	QUARK_ASSERT(r.check_invariant());
+
+	return to_runtime_string0(r.heap, s);
+}
+
+
+
+std::string from_runtime_string0(runtime_value_t encoded_value){
 	QUARK_ASSERT(encoded_value.vector_ptr != nullptr);
 
-	const auto ptr = get_vec_chars(encoded_value);
-	const auto size = get_vec_string_size(encoded_value);
+	const size_t size = get_vec_string_size(encoded_value);
 
-	return std::string(ptr, ptr + size);
+	std::string result;
+
+	//	Read 8 characters at a time.
+	size_t char_pos = 0;
+	const auto begin0 = encoded_value.vector_ptr->begin();
+	const auto end0 = encoded_value.vector_ptr->end();
+	for(auto it = begin0 ; it != end0 ; it++){
+		const size_t copy_chars = std::min(size - char_pos, (size_t)8);
+		const uint64_t element = it->int_value;
+		for(int i = 0 ; i < copy_chars ; i++){
+			const uint64_t x = i * 8;
+			const uint64_t ch = (element >> x) & 0xff;
+			result.push_back(static_cast<char>(ch));
+		}
+		char_pos += copy_chars;
+	}
+
+	QUARK_ASSERT(result.size() == size);
+	return result;
+}
+
+QUARK_UNIT_TEST("VEC_T", "", "", ""){
+	heap_t heap;
+	const auto a = to_runtime_string0(heap, "hello, world!");
+
+	const auto r = from_runtime_string0(a);
+	QUARK_UT_VERIFY(r == "hello, world!");
+}
+
+std::string from_runtime_string(const llvm_execution_engine_t& r, runtime_value_t encoded_value){
+	return from_runtime_string0(encoded_value);
 }
 
 
@@ -523,6 +594,7 @@ llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp){
 
 void hook(const std::string& s, floyd_runtime_t* frp, runtime_value_t arg){
 	auto& r = get_floyd_runtime(frp);
+	(void)r;
 	throw std::runtime_error("HOST FUNCTION NOT IMPLEMENTED FOR LLVM");
 }
 
@@ -943,7 +1015,7 @@ host_func_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context, con
 ////////////////////////////////		allocate_string_from_strptr()
 
 
-//	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
+//	Creates a new VEC_T with the contents of the string. Caller owns the result.
 VEC_T* fr_alloc_kstr(floyd_runtime_t* frp, const char* s, uint64_t size){
 	auto& r = get_floyd_runtime(frp);
 
@@ -1311,7 +1383,7 @@ host_func_t floyd_runtime__allocate_struct__make(llvm::LLVMContext& context, con
 }
 
 
-
+//??? Split all corecalls into dedicated for each type, even RC/vs simple types.
 
 //??? optimize for speed. Most things can be precalculated.
 //??? Generate an add_ref-function for each struct type.
@@ -1344,7 +1416,7 @@ const WIDE_RETURN_T fr_update_struct_member(floyd_runtime_t* frp, STRUCT_T* s, r
 	auto struct_base_ptr = struct_ptr->get_data_ptr();
 	std::memcpy(struct_base_ptr, source_struct_ptr->get_data_ptr(), struct_bytes);
 
-	const auto member_offset = layout->getElementOffset(member_index);
+	const auto member_offset = layout->getElementOffset(static_cast<int>(member_index));
 	const auto member_ptr0 = reinterpret_cast<void*>(struct_base_ptr + member_offset);
 	store_via_ptr(r, new_value_type0, member_ptr0, member_value);
 
@@ -1609,6 +1681,7 @@ int64_t floyd_funcdef__find(floyd_runtime_t* frp, runtime_value_t arg0_value, ru
 
 int64_t floyd_host_function__get_json_type(floyd_runtime_t* frp, JSON_T* json_ptr){
 	auto& r = get_floyd_runtime(frp);
+	(void)r;
 	QUARK_ASSERT(json_ptr != nullptr);
 
 	const auto& json = json_ptr->get_json();
@@ -2629,6 +2702,7 @@ static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& cont
 
 int64_t floyd_funcdef__dummy(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
+	(void)r;
 	QUARK_ASSERT(false);
 	return -666;
 }

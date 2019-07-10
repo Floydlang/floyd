@@ -2340,21 +2340,50 @@ QUARK_UNIT_TEST("Floyd test suite", "string >=", "", ""){
 }
 
 
-
 QUARK_UNIT_TEST("Floyd test suite", "string []", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
 
-			let message = "hello"
+			let message = "helloxyz12345678"
 			print(message[0])
 			print(message[1])
 			print(message[2])
 			print(message[3])
 			print(message[4])
+			print(message[5])
+			print(message[6])
+			print(message[7])
+
+			print(message[8])
+			print(message[9])
+			print(message[10])
+			print(message[11])
+			print(message[12])
+			print(message[13])
+			print(message[14])
+			print(message[15])
 
 		)",
-		{ "104", "101", "108", "108", "111" }
+		{
+			"104",
+			"101",
+			"108",
+			"108",
+			"111",
+			"120",
+			"121",
+			"122",
+
+			"49",
+			"50",
+			"51",
+			"52",
+			"53",
+			"54",
+			"55",
+			"56"
+		}
 	);
 }
 
