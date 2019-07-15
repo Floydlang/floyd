@@ -1025,38 +1025,47 @@ bc_value_t host__map_dag2(interpreter_t& vm, const bc_value_t args[], int arg_co
 /////////////////////////////////////////		PURE -- stable_sort()
 
 
+//	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
 
 bc_value_t host__stable_sort(interpreter_t& vm, const bc_value_t args[], int arg_count){
-QUARK_ASSERT(false);
-
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 2);
+	QUARK_ASSERT(arg_count == 3);
 
 	//	Check topology.
 	QUARK_ASSERT(args[0]._type.is_vector());
 	QUARK_ASSERT(args[1]._type.is_function());
-	QUARK_ASSERT(args[1]._type.get_function_args().size() == 1);
+	QUARK_ASSERT(args[1]._type.get_function_args().size() == 3);
 
 	const auto& elements = args[0];
 	const auto& f = args[1];
 	const auto& e_type = elements._type.get_vector_element_type();
 
-	QUARK_ASSERT(elements._type.get_vector_element_type() == f._type.get_function_args()[0]);
+	QUARK_ASSERT(f._type.get_function_return() == typeid_t::make_bool());
+	QUARK_ASSERT(e_type == f._type.get_function_args()[0]);
+	QUARK_ASSERT(e_type == f._type.get_function_args()[1]);
+	QUARK_ASSERT(args[2]._type == f._type.get_function_args()[2]);
 
 	const auto input_vec = get_vector(elements);
-	immer::vector<bc_value_t> vec2;
+	std::vector<bc_value_t> mutate_inplace_elements(input_vec.begin(), input_vec.end());
 
-	for(const auto& e: input_vec){
-		const bc_value_t f_args[1] = { e };
-		const auto result1 = call_function_bc(vm, f, f_args, 1);
-		QUARK_ASSERT(result1._type.is_bool());
-
-		if(result1.get_bool_value()){
-			vec2 = vec2.push_back(e);
+	struct sort_functor_r {
+		bool operator() (const bc_value_t &a, const bc_value_t &b) {
+			const bc_value_t f_args[] = { a, b, context };
+			const auto result1 = call_function_bc(vm, f, f_args, 3);
+			QUARK_ASSERT(result1._type.is_bool());
+			return result1.get_bool_value();
 		}
-	}
 
-	const auto result = make_vector(e_type, vec2);
+		interpreter_t& vm;
+		bc_value_t context;
+		bc_value_t f;
+	};
+
+	const sort_functor_r sort_functor { vm, args[2], args[1] };
+	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
+
+	const auto mutate_inplace_elements2 = immer::vector<bc_value_t>(mutate_inplace_elements.begin(), mutate_inplace_elements.end());
+	const auto result = make_vector(e_type, mutate_inplace_elements2);
 
 #if 1
 	const auto debug = value_and_type_to_ast_json(bc_to_value(result));

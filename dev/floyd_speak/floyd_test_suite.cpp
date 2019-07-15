@@ -5175,7 +5175,7 @@ QUARK_UNIT_TEST("Floyd test suite", "map_dag()", "complex", ""){
 
 
 
-QUARK_UNIT_TEST("Floyd test suite", "stable_sort()", "No dependencies", ""){
+QUARK_UNIT_TEST("Floyd test suite", "stable_sort()", "[int]", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -5186,12 +5186,73 @@ QUARK_UNIT_TEST("Floyd test suite", "stable_sort()", "No dependencies", ""){
 
 			let result = stable_sort([ 1, 2, 8, 4 ], less_f, "hello")
 			print(result)
-			assert(result == [ 1, 2, 4, 8 ])
 
 		)",
 		{ "[1, 2, 4, 8]" }
 	);
 }
+
+QUARK_UNIT_TEST("Floyd test suite", "stable_sort()", "[int] reverse", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func bool less_f(int left, int right, string s){
+				return left > right
+			}
+
+			let result = stable_sort([ 1, 2, 8, 4 ], less_f, "hello")
+			print(result)
+
+		)",
+		{ "[8, 4, 2, 1]" }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "stable_sort()", "Test context argument", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			struct state_t {
+				string s
+				bool less_flag
+			}
+
+			func bool less_f(int left, int right, state_t s){
+				assert(s.s == "xyz")
+				return s.less_flag ? left < right : right < left
+			}
+
+			let result1 = stable_sort([ 1, 2, 8, 4 ], less_f, state_t("xyz", true))
+			print(result1)
+			let result2 = stable_sort([ 1, 2, 8, 4 ], less_f, state_t("xyz", false))
+			print(result2)
+
+		)",
+		{ "[1, 2, 4, 8]", "[8, 4, 2, 1]" }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "stable_sort()", "[string]", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func bool less_f(string left, string right, string s){
+				return left < right
+			}
+
+			let result = stable_sort([ "1", "2", "8", "4" ], less_f, "hello")
+			print(result)
+
+		)",
+		{ R"___(["1", "2", "4", "8"])___" }
+	);
+}
+
+
+
 
 
 //////////////////////////////////////////		HOST FUNCTION - read_text_file()
