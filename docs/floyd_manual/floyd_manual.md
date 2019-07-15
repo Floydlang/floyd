@@ -2021,6 +2021,14 @@ Notice: your function f can send messages to a clock — this means another cloc
 Notice: using this function exposes potential for parallelism.
 
 
+### stable_sort()
+
+Sort a vector and return a new sorted vector. The existing vector is unchanged.
+
+```
+[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
+```
+
 
 
 

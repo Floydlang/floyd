@@ -1022,6 +1022,52 @@ bc_value_t host__map_dag2(interpreter_t& vm, const bc_value_t args[], int arg_co
 
 
 
+/////////////////////////////////////////		PURE -- stable_sort()
+
+
+
+bc_value_t host__stable_sort(interpreter_t& vm, const bc_value_t args[], int arg_count){
+QUARK_ASSERT(false);
+
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 2);
+
+	//	Check topology.
+	QUARK_ASSERT(args[0]._type.is_vector());
+	QUARK_ASSERT(args[1]._type.is_function());
+	QUARK_ASSERT(args[1]._type.get_function_args().size() == 1);
+
+	const auto& elements = args[0];
+	const auto& f = args[1];
+	const auto& e_type = elements._type.get_vector_element_type();
+
+	QUARK_ASSERT(elements._type.get_vector_element_type() == f._type.get_function_args()[0]);
+
+	const auto input_vec = get_vector(elements);
+	immer::vector<bc_value_t> vec2;
+
+	for(const auto& e: input_vec){
+		const bc_value_t f_args[1] = { e };
+		const auto result1 = call_function_bc(vm, f, f_args, 1);
+		QUARK_ASSERT(result1._type.is_bool());
+
+		if(result1.get_bool_value()){
+			vec2 = vec2.push_back(e);
+		}
+	}
+
+	const auto result = make_vector(e_type, vec2);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	return result;
+}
+
+
+
 
 /////////////////////////////////////////		IMPURE -- MISC
 
@@ -1510,6 +1556,9 @@ static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls_internal()
 	result.find(make_filter_signature()._function_id)->second = host__filter;
 	result.find(make_reduce_signature()._function_id)->second = host__reduce;
 	result.find(make_map_dag_signature()._function_id)->second = host__map_dag;
+
+	result.find(make_stable_sort_signature()._function_id)->second = host__stable_sort;
+
 
 	result.find(make_print_signature()._function_id)->second = host__print;
 	result.find(make_send_signature()._function_id)->second = host__send;

@@ -49,6 +49,7 @@
 #include <thread>
 #include <deque>
 #include <future>
+#include <algorithm>
 
 #include <condition_variable>
 
@@ -2200,6 +2201,95 @@ WIDE_RETURN_T floyd_funcdef__map_dag(
 	return make_wide_return_vec(result_vec);
 }
 
+
+
+
+typedef uint8_t (*stable_sort_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value, runtime_value_t arg2_value);
+
+//	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
+WIDE_RETURN_T floyd_funcdef__stable_sort(
+	floyd_runtime_t* frp,
+	runtime_value_t arg0_value,
+	runtime_type_t arg0_type,
+	runtime_value_t arg1_value,
+	runtime_type_t arg1_type,
+	runtime_value_t arg2_value,
+	runtime_type_t arg2_type
+){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
+	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
+
+	//	Check topology.
+	QUARK_ASSERT(type0.is_vector());
+	QUARK_ASSERT(type1.is_function());
+	QUARK_ASSERT(type1.get_function_args().size() == 3);
+
+	const auto& elements = arg0_value;
+	const auto& e_type = type0.get_vector_element_type();
+	const auto& f = arg1_value;
+	const auto& context = arg2_value;
+
+	const auto elements2 = from_runtime_value(r, elements, type0);
+	const auto f2 = reinterpret_cast<stable_sort_F>(f.function_ptr);
+//	const auto context2 = from_runtime_value(r, context, type1);
+
+	struct sort_functor_r {
+		bool operator() (const value_t &a, const value_t &b) {
+			auto& r = get_floyd_runtime(frp);
+			const auto left = to_runtime_value(r, a);
+			const auto right = to_runtime_value(r, b);
+			uint8_t result = (*f)(frp, left, right, context);
+			return result == 1 ? true : false;
+		}
+
+
+		floyd_runtime_t* frp;
+		runtime_value_t context;
+		stable_sort_F f;
+	};
+
+	const sort_functor_r sort_functor { frp, context, f2 };
+
+	auto mutate_inplace_elements = elements2.get_vector_value();
+	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
+
+	const auto result = to_runtime_value(r, value_t::make_vector_value(type0, mutate_inplace_elements));
+	return make_wide_return_vec(result.vector_ptr);
+}
+struct myclass {
+  bool operator() (int i,int j) { return (i<j);}
+} myobject;
+
+
+/*
+	auto& r = get_floyd_runtime(frp);
+
+	const auto value_type = lookup_type(r.type_interner.interner, type);
+
+	const auto left_value = from_runtime_value(r, lhs, value_type);
+	const auto right_value = from_runtime_value(r, rhs, value_type);
+
+	const int result = value_t::compare_value_true_deep(left_value, right_value);
+//	int result = runtime_compare_value_true_deep((const uint64_t)lhs, (const uint64_t)rhs, vector_type);
+	const auto op2 = static_cast<expression_type>(op);
+	if(op2 == expression_type::k_comparison_smaller_or_equal__2){
+		return result <= 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_comparison_smaller__2){
+		return result < 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_comparison_larger_or_equal__2){
+		return result >= 0 ? 1 : 0;
+	}
+	else if(op2 == expression_type::k_comparison_larger__2){
+*/
+
+
+
+
 runtime_value_t floyd_funcdef__to_pretty_string(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
@@ -2596,6 +2686,8 @@ std::map<std::string, void*> get_c_function_ptrs(){
 		{ "floyd_funcdef__filter", reinterpret_cast<void *>(&floyd_funcdef__filter) },
 		{ "floyd_funcdef__reduce", reinterpret_cast<void *>(&floyd_funcdef__reduce) },
 		{ "floyd_funcdef__map_dag", reinterpret_cast<void *>(&floyd_funcdef__map_dag) },
+
+		{ "floyd_funcdef__stable_sort", reinterpret_cast<void *>(&floyd_funcdef__stable_sort) },
 
 		{ "floyd_funcdef__print", reinterpret_cast<void *>(&floyd_funcdef__print) },
 		{ "floyd_funcdef__send", reinterpret_cast<void *>(&floyd_funcdef__send) },

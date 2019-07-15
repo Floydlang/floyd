@@ -744,8 +744,8 @@ static llvm::Value* generate_lookup_element_expression(llvm_code_generator_t& ge
 
 		const auto gep = std::vector<llvm::Value*>{ key_reg };
 		llvm::Value* element_addr = builder.CreateGEP(llvm::Type::getInt8Ty(context), char_ptr_reg, gep, "element_addr");
-		llvm::Value* element_value_8bit = builder.CreateLoad(element_addr, "element_tmp");
-		llvm::Value* element_reg = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::SExt, element_value_8bit, builder.getInt64Ty(), "char_to_int64");
+		llvm::Value* value_8bit_reg = builder.CreateLoad(element_addr, "element_tmp");
+		llvm::Value* element_reg = gen_acc.builder.CreateCast(llvm::Instruction::CastOps::SExt, value_8bit_reg, builder.getInt64Ty(), "char_to_int64");
 
 		generate_release(gen_acc, emit_f, *parent_reg, parent_type);
 
@@ -1387,6 +1387,12 @@ static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc,
 	else if(details.call_name == get_opcode(make_map_dag_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
+
+
+	else if(details.call_name == get_opcode(make_stable_sort_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+
 
 	else if(details.call_name == get_opcode(make_print_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);

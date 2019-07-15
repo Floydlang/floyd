@@ -265,6 +265,14 @@ corecall_signature_t make_map_dag_signature(){
 }
 
 
+
+corecall_signature_t make_stable_sort_signature(){
+	return { "stable_sort", 1038, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) };
+}
+
+
+
+
 corecall_signature_t make_print_signature(){
 	return { "print", 1000, typeid_t::make_function(typeid_t::make_void(), { ANY_TYPE }, epure::pure) };
 }
@@ -337,6 +345,8 @@ static std::vector<corecall_signature_t> get_host_function_records(){
 		make_filter_signature(),
 		make_reduce_signature(),
 		make_map_dag_signature(),
+
+		make_stable_sort_signature(),
 
 		make_print_signature(),
 		make_send_signature(),

@@ -5170,6 +5170,30 @@ QUARK_UNIT_TEST("Floyd test suite", "map_dag()", "complex", ""){
 
 
 
+
+//////////////////////////////////////////		HOST FUNCTION - stable_sort()
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "stable_sort()", "No dependencies", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func bool less_f(int left, int right, string s){
+				return left < right
+			}
+
+			let result = stable_sort([ 1, 2, 8, 4 ], less_f, "hello")
+			print(result)
+			assert(result == [ 1, 2, 4, 8 ])
+
+		)",
+		{ "[1, 2, 4, 8]" }
+	);
+}
+
+
 //////////////////////////////////////////		HOST FUNCTION - read_text_file()
 
 /*
