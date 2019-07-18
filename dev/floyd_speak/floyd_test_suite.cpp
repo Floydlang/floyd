@@ -4150,6 +4150,20 @@ OFF_QUARK_UNIT_TEST("Floyd test suite", "struct", "mutate nested member", ""){
 	);
 }
 
+//??? add more tests for struct with non-simple members
+QUARK_UNIT_TEST("Floyd test suite", "struct", "string member", ""){
+	run_closed(R"(
+
+		struct context_t {
+			double a
+			string b
+		}
+		let x = context_t( 2000.0, "twenty")
+
+	)");
+}
+
+
 QUARK_UNIT_TEST("Floyd test suite", "struct", "Error: Define struct with colliding name", "exception"){
 	ut_verify_exception_nolib(
 		QUARK_POS,
@@ -4959,53 +4973,72 @@ QUARK_UNIT_TEST("Floyd test suite", "calc_binary_sha1()", "", ""){
 
 
 
-QUARK_UNIT_TEST("Floyd test suite", "map()", "[int] map(int f(int))", ""){
+QUARK_UNIT_TEST("Floyd test suite", "map()", "map over [int]", ""){
 	run_closed(R"(
 
 		let a = [ 10, 11, 12 ]
 
-		func int f(int v){
+		func int f(int v, string context){
+			assert(context == "some context")
 			return 1000 + v
 		}
 
-		let result = map(a, f)
+		let result = map(a, f, "some context")
 //		print(to_string(result))
 		assert(result == [ 1010, 1011, 1012 ])
 
 	)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "map()", "[string] map(string f(int))", ""){
+QUARK_UNIT_TEST("Floyd test suite", "map()", "map over [int]", ""){
 	run_closed(R"(
 
 		let a = [ 10, 11, 12 ]
 
-		func string f(int v){
+		func string f(int v, string context){
 			return to_string(1000 + v)
 		}
 
-		let result = map(a, f)
+		let result = map(a, f, "some context")
 //		print(to_string(result))
 		assert(result == [ "1010", "1011", "1012" ])
 
 	)");
 }
 
-QUARK_UNIT_TEST("Floyd test suite", "map()", "[int] map(int f(string))", ""){
+QUARK_UNIT_TEST("Floyd test suite", "map()", "map over [string]", ""){
 	run_closed(R"(
 
 		let a = [ "one", "two_", "three" ]
 
-		func int f(string v){
+		func int f(string v, string context){
 			return size(v)
 		}
 
-		let result = map(a, f)
+		let result = map(a, f, "some context")
 //		print(to_string(result))
 		assert(result == [ 3, 4, 5 ])
 
 	)");
 }
+
+QUARK_UNIT_TEST	("Floyd test suite", "map()", "context struct", ""){
+	run_closed(R"(
+
+		struct context_t { int a string b }
+
+		func int f(int v, context_t context){
+			assert(context.a == 2000)
+			assert(context.b == "twenty")
+			return context.a + v
+		}
+
+		let result = map([ 10, 11, 12 ], f, context_t( 2000, "twenty"))
+		assert(result == [ 2010, 2011, 2012 ])
+
+	)");
+}
+//??? make sure f() can't be impure!
 
 
 //////////////////////////////////////////		HOST FUNCTION - map_string()

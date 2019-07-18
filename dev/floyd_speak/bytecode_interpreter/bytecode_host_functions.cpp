@@ -624,13 +624,16 @@ bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], in
 
 /////////////////////////////////////////		PURE -- FUNCTIONAL
 
+
+
 /////////////////////////////////////////		PURE -- MAP()
 
-//	[R] map([E], R f(E e))
-//??? need to provide context property to map() and pass to f().
+
+
+//	[R] map([E] elements, func R (E e, C context) f, C context)
 bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 2);
+	QUARK_ASSERT(arg_count == 3);
 
 	QUARK_ASSERT(args[0]._type.is_vector());
 	QUARK_ASSERT(args[1]._type.is_function());
@@ -641,14 +644,17 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	const auto f_arg_types = f._type.get_function_args();
 	const auto r_type = f._type.get_function_return();
 
-	QUARK_ASSERT(f_arg_types.size() == 1);
+	const auto& context = args[2];
+
+	QUARK_ASSERT(f_arg_types.size() == 2);
 	QUARK_ASSERT(f_arg_types[0] == e_type);
+	QUARK_ASSERT(f_arg_types[1] == args[2]._type);
 
 	const auto input_vec = get_vector(args[0]);
 	immer::vector<bc_value_t> vec2;
 	for(const auto& e: input_vec){
-		const bc_value_t f_args[1] = { e };
-		const auto result1 = call_function_bc(vm, f, f_args, 1);
+		const bc_value_t f_args[] = { e, context };
+		const auto result1 = call_function_bc(vm, f, f_args, 2);
 		vec2 = vec2.push_back(result1);
 	}
 

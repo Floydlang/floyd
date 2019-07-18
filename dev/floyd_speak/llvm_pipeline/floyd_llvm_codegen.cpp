@@ -373,10 +373,10 @@ void generate_release(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, ll
 		}
 		else if(type.is_struct()){
 			const auto f = find_function_def(gen_acc, "fr_release_struct");
-			auto generic_vec_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value_reg, get_generic_struct_type(gen_acc.interner)->getPointerTo(), "");
+//			auto generic_vec_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value_reg, get_generic_struct_type(gen_acc.interner)->getPointerTo(), "");
 			std::vector<llvm::Value*> args = {
 				get_callers_fcp(gen_acc.interner, emit_f),
-				generic_vec_reg,
+				&value_reg,
 				generate_itype_constant(gen_acc, type)
 			};
 			builder.CreateCall(f.llvm_f, args);

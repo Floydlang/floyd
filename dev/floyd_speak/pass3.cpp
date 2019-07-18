@@ -1381,7 +1381,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_replace_expression(const an
 //??? pass around location_t instead of statement_t& parent!
 
 
-//	[R] map([E], R f(E e))
+//	[R] map([E] elements, func R (E e, C context) f, C context)
 std::pair<analyser_t, expression_t> analyse_corecall_map_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
@@ -1405,11 +1405,15 @@ std::pair<analyser_t, expression_t> analyse_corecall_map_expression(const analys
 	const auto r_type = arg2_type.get_function_return();
 
 
+	const auto arg3_type = resolved_call.second.function_type.get_function_args()[2];
+
+
 	const auto expected = typeid_t::make_function(
 		typeid_t::make_vector(r_type),
 		{
 			typeid_t::make_vector(e_type),
-			typeid_t::make_function(r_type, { e_type }, epure::pure)
+			typeid_t::make_function(r_type, { e_type, arg3_type }, epure::pure),
+			arg3_type
 		},
 		epure::pure
 	);

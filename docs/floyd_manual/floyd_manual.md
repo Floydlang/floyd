@@ -1962,7 +1962,7 @@ IMPORTANT: These functions replace custom loops but *also* expose parallelism op
 Processes a vector of values one by one using function f. It returns a vector of the same size, but with values of type R.
 
 ```
-[R] map([E], R f(E e))
+[R] map([E] elements, func R (E e, C context) f, C context)
 ```
 
 Supports mapping over
@@ -1974,7 +1974,7 @@ Supports mapping over
 
 This is special version of map designed to process strings.
 
-	string map_string(string in, func string(string e) f)
+	string map_string(string s, func string(string e) f)
 
 The function f is called with each character in the input string, stored as a 1-character string in _e_. All the calls to f() will be appended together and returned from map_string().
 
@@ -1984,7 +1984,7 @@ The function f is called with each character in the input string, stored as a 1-
 Processes a vector of values and returns each that function f decides to include.
 
 ```
-[E] filter([E], bool f(E e))
+[E] filter([E] elements, func bool (E e) f)
 ```
 
 
@@ -1993,13 +1993,13 @@ Processes a vector of values and returns each that function f decides to include
 Processes a vector or values using the supplied function. Result is *one* value.
 
 ```
-R reduce([E], R init, R f(R accumulator, E element))
+R reduce([E] elements, R accumulator_init, func R (R accumulator, E element) f)
 ```
 
 
 ### map_dag()
 
-	[R] map_dag([E] values, [int] depends_on, R (E, [R]) f)
+	[R] map_dag([E] elements, [int] depends_on, func R (E, [R]) f)
 
 This function runs a bunch of tasks with dependencies between them. When map_dag() returns, all tasks have been executed.
 
@@ -2026,7 +2026,7 @@ Notice: using this function exposes potential for parallelism.
 Sort a vector and return a new sorted vector. The existing vector is unchanged.
 
 ```
-[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
+[T] stable_sort([T] elements, func bool (T left, T right, C context) less, C context)
 ```
 
 

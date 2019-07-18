@@ -236,7 +236,7 @@ corecall_signature_t make_get_json_type_signature(){
 
 
 corecall_signature_t make_map_signature(){
-	return { "map", 1033, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::vector_of_arg1func_return) };
+	return { "map", 1033, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::vector_of_arg1func_return) };
 }
 
 corecall_signature_t make_map_string_signature(){

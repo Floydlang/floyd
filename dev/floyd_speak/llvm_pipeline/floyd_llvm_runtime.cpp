@@ -729,8 +729,8 @@ static void release_struct_deep(llvm_execution_engine_t& runtime, STRUCT_T* s, c
 				const auto offset = layout->getElementOffset(member_index);
 				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
 				release_deep(runtime, *member_ptr, e._type);
-				member_index++;
 			}
+			member_index++;
 		}
 		dispose_struct(*s);
 	}
@@ -1380,7 +1380,7 @@ host_func_t floyd_runtime__allocate_struct__make(llvm::LLVMContext& context, con
 		},
 		false
 	);
-	return { "floyd_runtime__allocate_struct", function_type, reinterpret_cast<void*>(floyd_runtime__allocate_vector) };
+	return { "floyd_runtime__allocate_struct", function_type, reinterpret_cast<void*>(floyd_runtime__allocate_struct) };
 }
 
 
@@ -1429,8 +1429,8 @@ const WIDE_RETURN_T fr_update_struct_member(floyd_runtime_t* frp, STRUCT_T* s, r
 				const auto offset = layout->getElementOffset(i);
 				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
 				retain_value(r, *member_ptr, e._type);
-				i++;
 			}
+			i++;
 		}
 	}
 
@@ -1718,32 +1718,31 @@ runtime_value_t floyd_funcdef__from_json(floyd_runtime_t* frp, JSON_T* json_ptr,
 
 
 
-	typedef WIDE_RETURN_T (*MAP_F)(floyd_runtime_t* frp, runtime_value_t arg0_value);
+	typedef WIDE_RETURN_T (*MAP_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value);
 
-WIDE_RETURN_T floyd_funcdef__map(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
+//	[R] map([E] elements, func R (E e, C context) f, C context)
+WIDE_RETURN_T floyd_funcdef__map(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
+	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
 	QUARK_ASSERT(type0.is_vector());
 	QUARK_ASSERT(type1.is_function());
 
-	const auto element_type = type0.get_vector_element_type();
-
+	const auto e_type = type0.get_vector_element_type();
 	const auto f_arg_types = type1.get_function_args();
 	const auto r_type = type1.get_function_return();
-	QUARK_ASSERT(f_arg_types.size() == 1);
-	QUARK_ASSERT(f_arg_types[0] == element_type);
-
-	const auto input_element_type = f_arg_types[0];
-	const auto output_element_type = r_type;
+	QUARK_ASSERT(f_arg_types.size() == 2);
+	QUARK_ASSERT(f_arg_types[0] == e_type);
+	QUARK_ASSERT(f_arg_types[1] == type2);
 
 	const auto f = reinterpret_cast<MAP_F>(arg1_value.function_ptr);
 
 	const auto count = arg0_value.vector_ptr->get_element_count();
 	auto result_vec = alloc_vec(r.heap, count, count);
 	for(int i = 0 ; i < count ; i++){
-		const auto wide_result1 = (*f)(frp, arg0_value.vector_ptr->get_element_ptr()[i]);
+		const auto wide_result1 = (*f)(frp, arg0_value.vector_ptr->get_element_ptr()[i], arg2_value);
 		result_vec->get_element_ptr()[i] = wide_result1.a;
 	}
 	return make_wide_return_vec(result_vec);
