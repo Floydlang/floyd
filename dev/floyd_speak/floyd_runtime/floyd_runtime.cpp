@@ -247,7 +247,8 @@ corecall_signature_t make_map_string_signature(){
 			typeid_t::make_string(),
 			{
 				typeid_t::make_string(),
-				typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_string() }, epure::pure)
+				ANY_TYPE,
+				ANY_TYPE
 			},
 			epure::pure
 		)
@@ -255,13 +256,13 @@ corecall_signature_t make_map_string_signature(){
 }
 
 corecall_signature_t make_filter_signature(){
-	return { "filter", 1036, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) };
+	return { "filter", 1036, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) };
 }
 corecall_signature_t make_reduce_signature(){
-	return { "reduce", 1035, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg1) };
+	return { "reduce", 1035, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg1) };
 }
 corecall_signature_t make_map_dag_signature(){
-	return { "map_dag", 1037, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::vector_of_arg2func_return) };
+	return { "map_dag", 1037, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::vector_of_arg2func_return) };
 }
 
 

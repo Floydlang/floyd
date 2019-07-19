@@ -1592,10 +1592,10 @@ uint32_t floyd_funcdef__exists(floyd_runtime_t* frp, runtime_value_t arg0_value,
 
 
 
-typedef runtime_value_t (*FILTER_F)(floyd_runtime_t* frp, runtime_value_t element_value);
+typedef runtime_value_t (*FILTER_F)(floyd_runtime_t* frp, runtime_value_t element_value, runtime_value_t context);
 
-//	[E] filter([E], bool f(E e))
-WIDE_RETURN_T floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
+//	[E] filter([E] elements, func bool (E e, C context) f, C context)
+WIDE_RETURN_T floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t context, runtime_type_t context_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
@@ -1603,7 +1603,7 @@ WIDE_RETURN_T floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_v
 
 	QUARK_ASSERT(type0.is_vector());
 	QUARK_ASSERT(type1.is_function());
-	QUARK_ASSERT(type1.get_function_args().size() == 1);
+	QUARK_ASSERT(type1.get_function_args().size() == 2);
 
 	const auto& vec = *arg0_value.vector_ptr;
 	const auto f = reinterpret_cast<FILTER_F>(arg1_value.function_ptr);
@@ -1615,7 +1615,7 @@ WIDE_RETURN_T floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_v
 	std::vector<runtime_value_t> acc;
 	for(int i = 0 ; i < count ; i++){
 		const auto element_value = vec.get_element_ptr()[i];
-		const auto keep = (*f)(frp, element_value);
+		const auto keep = (*f)(frp, element_value, context);
 		if(keep.bool_value != 0){
 			acc.push_back(element_value);
 
@@ -1753,9 +1753,9 @@ WIDE_RETURN_T floyd_funcdef__map(floyd_runtime_t* frp, runtime_value_t arg0_valu
 
 //??? Can mutate the acc string internally.
 
-typedef runtime_value_t (*MAP_STRING_F)(floyd_runtime_t* frp, runtime_value_t s);
+typedef runtime_value_t (*MAP_STRING_F)(floyd_runtime_t* frp, runtime_value_t s, runtime_value_t context);
 
-runtime_value_t floyd_funcdef__map_string(floyd_runtime_t* frp, runtime_value_t input_string0, runtime_value_t func){
+runtime_value_t floyd_funcdef__map_string(floyd_runtime_t* frp, runtime_value_t input_string0, runtime_value_t func, runtime_type_t func_type, runtime_value_t context, runtime_type_t context_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto f = reinterpret_cast<MAP_STRING_F>(func.function_ptr);
@@ -1768,7 +1768,7 @@ runtime_value_t floyd_funcdef__map_string(floyd_runtime_t* frp, runtime_value_t 
 	for(int i = 0 ; i < count ; i++){
 		const std::string  element = { input_string[i] };
 		const auto x = to_runtime_string(r, element);
-		const auto temp = (*f)(frp, x);
+		const auto temp = (*f)(frp, x, context);
 
 		release_vec_deep(r, x.vector_ptr, typeid_t::make_string());
 
@@ -1850,10 +1850,10 @@ void floyd_host_function_1022(floyd_runtime_t* frp, runtime_value_t arg){
 
 
 
-	typedef runtime_value_t (*REDUCE_F)(floyd_runtime_t* frp, runtime_value_t acc_value, runtime_value_t element_value);
+	typedef runtime_value_t (*REDUCE_F)(floyd_runtime_t* frp, runtime_value_t acc_value, runtime_value_t element_value, runtime_value_t context);
 
-//	R map([E] elements, R init, R f(R acc, E e))
-WIDE_RETURN_T floyd_funcdef__reduce(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+//	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
+WIDE_RETURN_T floyd_funcdef__reduce(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
@@ -1862,7 +1862,7 @@ WIDE_RETURN_T floyd_funcdef__reduce(floyd_runtime_t* frp, runtime_value_t arg0_v
 
 	QUARK_ASSERT(type0.is_vector());
 	QUARK_ASSERT(type2.is_function());
-	QUARK_ASSERT(type2.get_function_args().size () == 2);
+	QUARK_ASSERT(type2.get_function_args().size () == 3);
 
 	const auto& vec = *arg0_value.vector_ptr;
 	const auto& init = arg1_value;
@@ -1874,7 +1874,7 @@ WIDE_RETURN_T floyd_funcdef__reduce(floyd_runtime_t* frp, runtime_value_t arg0_v
 
 	for(int i = 0 ; i < count ; i++){
 		const auto element_value = vec.get_element_ptr()[i];
-		const auto acc2 = (*f)(frp, acc, element_value);
+		const auto acc2 = (*f)(frp, acc, element_value, context);
 
 		release_deep(r, acc, type1);
 		acc = acc2;
@@ -2068,7 +2068,7 @@ const WIDE_RETURN_T floyd_funcdef__subset(floyd_runtime_t* frp, runtime_value_t 
 }
 
 
-typedef WIDE_RETURN_T (*map_dag_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value);
+typedef WIDE_RETURN_T (*map_dag_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value, runtime_value_t context);
 
 WIDE_RETURN_T floyd_funcdef__map_dag(
 	floyd_runtime_t* frp,
@@ -2077,7 +2077,9 @@ WIDE_RETURN_T floyd_funcdef__map_dag(
 	runtime_value_t arg1_value,
 	runtime_type_t arg1_type,
 	runtime_value_t arg2_value,
-	runtime_type_t arg2_type
+	runtime_type_t arg2_type,
+	runtime_value_t context,
+	runtime_type_t context_type
 ){
 	auto& r = get_floyd_runtime(frp);
 
@@ -2089,7 +2091,7 @@ WIDE_RETURN_T floyd_funcdef__map_dag(
 	QUARK_ASSERT(type0.is_vector());
 	QUARK_ASSERT(type1 == typeid_t::make_vector(typeid_t::make_int()));
 	QUARK_ASSERT(type2.is_function());
-	QUARK_ASSERT(type2.get_function_args().size () == 2);
+	QUARK_ASSERT(type2.get_function_args().size () == 3);
 
 	const auto& elements = arg0_value;
 	const auto& e_type = type0.get_vector_element_type();
@@ -2164,7 +2166,7 @@ WIDE_RETURN_T floyd_funcdef__map_dag(
 			}
 			runtime_value_t solved_deps3 { .vector_ptr = solved_deps2 };
 
-			const auto wide_result = (*f2)(frp, e, solved_deps3);
+			const auto wide_result = (*f2)(frp, e, solved_deps3, context);
 
 			//	Release just the vec, **not the elements**. The elements are aliases for complete-vector.
 			if(dec_rc(solved_deps2->alloc) == 0){
@@ -2227,7 +2229,6 @@ WIDE_RETURN_T floyd_funcdef__stable_sort(
 	QUARK_ASSERT(type1.get_function_args().size() == 3);
 
 	const auto& elements = arg0_value;
-	const auto& e_type = type0.get_vector_element_type();
 	const auto& f = arg1_value;
 	const auto& context = arg2_value;
 

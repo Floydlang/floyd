@@ -1974,7 +1974,9 @@ Supports mapping over
 
 This is special version of map designed to process strings.
 
-	string map_string(string s, func string(string e) f)
+```
+string map_string(string s, func string(string e, C context) f, C context)
+```
 
 The function f is called with each character in the input string, stored as a 1-character string in _e_. All the calls to f() will be appended together and returned from map_string().
 
@@ -1984,7 +1986,7 @@ The function f is called with each character in the input string, stored as a 1-
 Processes a vector of values and returns each that function f decides to include.
 
 ```
-[E] filter([E] elements, func bool (E e) f)
+[E] filter([E] elements, func bool (E e, C context) f, C context)
 ```
 
 
@@ -1993,13 +1995,15 @@ Processes a vector of values and returns each that function f decides to include
 Processes a vector or values using the supplied function. Result is *one* value.
 
 ```
-R reduce([E] elements, R accumulator_init, func R (R accumulator, E element) f)
+R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
 ```
 
 
 ### map_dag()
 
-	[R] map_dag([E] elements, [int] depends_on, func R (E, [R]) f)
+```
+[R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
+```
 
 This function runs a bunch of tasks with dependencies between them. When map_dag() returns, all tasks have been executed.
 

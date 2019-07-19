@@ -612,7 +612,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Construct value", "string()", ""){
 
 
 
-
+//??? add test for irregular dividers '
 
 
 //////////////////////////////////////////		TEST BINARY LITERALS
@@ -5050,14 +5050,15 @@ QUARK_UNIT_TEST("Floyd test suite", "map_string()", "", ""){
 
 		let a = "ABC"
 
-		func string f(string v){
+		func string f(string v, string context){
 			assert(size(v) == 1)
+			assert(context == "con")
 
 			let int ch = v[0]
 			return to_string(ch)
 		}
 
-		let result = map_string(a, f)
+		let result = map_string(a, f, "con")
 //		print(to_string(result))
 		assert(result == "656667")
 
@@ -5073,11 +5074,12 @@ QUARK_UNIT_TEST("Floyd test suite", "map_string()", "", ""){
 QUARK_UNIT_TEST("Floyd test suite", "reduce()", "int reduce([int], int, func int(int, int))", ""){
 	run_closed(R"(
 
-		func int f(int acc, int element){
+		func int f(int acc, int element, string context){
+			assert(context == "con123")
 			return acc + element * 2
 		}
 
-		let result = reduce([ 10, 11, 12 ], 2000, f)
+		let result = reduce([ 10, 11, 12 ], 2000, f, "con123")
 
 //		print(to_string(result))
 		assert(result == 2066)
@@ -5088,7 +5090,9 @@ QUARK_UNIT_TEST("Floyd test suite", "reduce()", "int reduce([int], int, func int
 QUARK_UNIT_TEST("Floyd test suite", "reduce()", "string reduce([int], string, func int(string, int))", ""){
 	run_closed(R"___(
 
-		func string f(string acc, int v){
+		func string f(string acc, int v, string context){
+			assert(context == "1234")
+
 			mutable s = acc
 			for(e in 0 ..< v){
 				s = "<" + s + ">"
@@ -5097,7 +5101,7 @@ QUARK_UNIT_TEST("Floyd test suite", "reduce()", "string reduce([int], string, fu
 			return s
 		}
 
-		let result = reduce([ 2, 4, 1 ], "O", f)
+		let result = reduce([ 2, 4, 1 ], "O", f, "1234")
 //		print(to_string(result))
 		assert(result == "(<(<<<<(<<O>>)>>>>)>)")
 
@@ -5114,11 +5118,12 @@ QUARK_UNIT_TEST("Floyd test suite", "reduce()", "string reduce([int], string, fu
 QUARK_UNIT_TEST("Floyd test suite", "filter()", "int filter([int], int, func int(int, int))", ""){
 	run_closed(R"(
 
-		func bool f(int element){
+		func bool f(int element, string context){
+			assert(context == "abcd")
 			return element % 3 == 0 ? true : false
 		}
 
-		let result = filter([ 3, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 ], f)
+		let result = filter([ 3, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 ], f, "abcd")
 
 //		print(to_string(result))
 		assert(result == [ 3, 3, 6, 9, 12 ])
@@ -5129,11 +5134,12 @@ QUARK_UNIT_TEST("Floyd test suite", "filter()", "int filter([int], int, func int
 QUARK_UNIT_TEST("Floyd test suite", "filter()", "string filter([int], string, func int(string, int))", ""){
 	run_closed(	R"___(
 
-		func bool f(string element){
+		func bool f(string element, string context){
+			assert(context == "xyz")
 			return size(element) == 3 || size(element) == 5
 		}
 
-		let result = filter([ "one", "two", "three", "four", "five", "six", "seven" ], f)
+		let result = filter([ "one", "two", "three", "four", "five", "six", "seven" ], f, "xyz")
 
 //		print(to_string(result))
 		assert(result == [ "one", "two", "three", "six", "seven" ])
@@ -5152,11 +5158,12 @@ QUARK_UNIT_TEST("Floyd test suite", "filter()", "string filter([int], string, fu
 QUARK_UNIT_TEST("Floyd test suite", "map_dag()", "No dependencies", ""){
 	run_closed(R"(
 
-		func string f(string v, [string] inputs){
+		func string f(string v, [string] inputs, string context){
+			assert(context == "iop")
 			return "[" + v + "]"
 		}
 
-		let result = map_dag([ "one", "ring", "to" ], [ -1, -1, -1 ], f)
+		let result = map_dag([ "one", "ring", "to" ], [ -1, -1, -1 ], f, "iop")
 //		print(to_string(result))
 		assert(result == [ "[one]", "[ring]", "[to]" ])
 
@@ -5166,11 +5173,12 @@ QUARK_UNIT_TEST("Floyd test suite", "map_dag()", "No dependencies", ""){
 QUARK_UNIT_TEST("Floyd test suite", "map_dag()", "No dependencies", ""){
 	run_closed(R"(
 
-		func string f(string v, [string] inputs){
+		func string f(string v, [string] inputs, string context){
+			assert(context == "qwerty")
 			return "[" + v + "]"
 		}
 
-		let result = map_dag([ "one", "ring", "to" ], [ 1, 2, -1 ], f)
+		let result = map_dag([ "one", "ring", "to" ], [ 1, 2, -1 ], f, "qwerty")
 //		print(to_string(result))
 		assert(result == [ "[one]", "[ring]", "[to]" ])
 
@@ -5180,7 +5188,8 @@ QUARK_UNIT_TEST("Floyd test suite", "map_dag()", "No dependencies", ""){
 QUARK_UNIT_TEST("Floyd test suite", "map_dag()", "complex", ""){
 	run_closed(R"(
 
-		func string f2(string acc, string element){
+		func string f2(string acc, string element, string context){
+			assert(context == "12345678")
 			if(size(acc) == 0){
 				return element
 			}
@@ -5189,12 +5198,13 @@ QUARK_UNIT_TEST("Floyd test suite", "map_dag()", "complex", ""){
 			}
 		}
 
-		func string f(string v, [string] inputs){
-			let s = reduce(inputs, "", f2)
+		func string f(string v, [string] inputs, string context){
+			assert(context == "1234")
+			let s = reduce(inputs, "", f2, context + "5678")
 			return v + "[" + s + "]"
 		}
 
-		let result = map_dag([ "D", "B", "A", "C", "E", "F" ], [ 4, 2, -1, 4, 2, 4 ], f)
+		let result = map_dag([ "D", "B", "A", "C", "E", "F" ], [ 4, 2, -1, 4, 2, 4 ], f, "1234")
 //		print(to_string(result))
 		assert(result == [ "D[]", "B[]", "A[B[], E[D[], C[], F[]]]", "C[]", "E[D[], C[], F[]]", "F[]" ])
 
