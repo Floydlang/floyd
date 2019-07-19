@@ -304,6 +304,35 @@ corecall_signature_t make_map_string_signature(){
 	};
 }
 
+typeid_t harden_map_string_func_type(const typeid_t& resolved_call_type){
+	QUARK_ASSERT(resolved_call_type.check_invariant());
+
+	const auto sign = make_map_string_signature();
+	const auto context_type = resolved_call_type.get_function_args()[2];
+
+	const auto expected = typeid_t::make_function(
+		typeid_t::make_string(),
+		{
+			typeid_t::make_string(),
+			typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_string(), context_type }, epure::pure),
+			context_type
+		},
+		epure::pure
+	);
+	return expected;
+}
+
+bool check_map_string_func_type(const typeid_t& elements, const typeid_t& f, const typeid_t& context){
+	QUARK_ASSERT(elements.is_string());
+	QUARK_ASSERT(f.is_function());
+
+	QUARK_ASSERT(f.get_function_args().size() == 2);
+	QUARK_ASSERT(f.get_function_args()[0] == typeid_t::make_string());
+	QUARK_ASSERT(f.get_function_args()[1] == context);
+	return true;
+}
+
+
 corecall_signature_t make_map_dag_signature(){
 	return { "map_dag", 1037, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::vector_of_arg2func_return) };
 }

@@ -1418,13 +1418,8 @@ std::pair<analyser_t, expression_t> analyse_corecall_map_string_expression(const
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto context_type = resolved_call.second.function_type.get_function_args()[2];
+	const auto expected = harden_map_string_func_type(resolved_call.second.function_type);
 
-	const auto expected = typeid_t::make_function(
-		typeid_t::make_string(),
-		{ typeid_t::make_string(), typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_string(), context_type }, epure::pure), context_type },
-		epure::pure
-	);
 	if(resolved_call.second.function_type != expected){
 		quark::throw_runtime_error("Call to map_string() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
 	}

@@ -124,6 +124,8 @@ typeid_t harden_map_func_type(const typeid_t& resolved_call_type);
 bool check_map_func_type(const typeid_t& elements, const typeid_t& f, const typeid_t& context);
 
 corecall_signature_t make_map_string_signature();
+typeid_t harden_map_string_func_type(const typeid_t& resolved_call_type);
+bool check_map_string_func_type(const typeid_t& elements, const typeid_t& f, const typeid_t& context);
 
 corecall_signature_t make_map_dag_signature();
 

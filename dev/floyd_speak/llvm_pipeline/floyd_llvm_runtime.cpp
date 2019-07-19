@@ -1718,6 +1718,12 @@ typedef runtime_value_t (*MAP_STRING_F)(floyd_runtime_t* frp, runtime_value_t s,
 runtime_value_t floyd_funcdef__map_string(floyd_runtime_t* frp, runtime_value_t input_string0, runtime_value_t func, runtime_type_t func_type, runtime_value_t context, runtime_type_t context_type){
 	auto& r = get_floyd_runtime(frp);
 
+	QUARK_ASSERT(check_map_string_func_type(
+		typeid_t::make_string(),
+		lookup_type(r.type_interner.interner, func_type),
+		lookup_type(r.type_interner.interner, context_type)
+	));
+
 	const auto f = reinterpret_cast<MAP_STRING_F>(func.function_ptr);
 
 	const auto input_string = from_runtime_string(r, input_string0);

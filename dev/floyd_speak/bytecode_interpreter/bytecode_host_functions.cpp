@@ -672,17 +672,12 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
-	QUARK_ASSERT(args[0]._type.is_string());
-	QUARK_ASSERT(args[1]._type.is_function());
+	QUARK_ASSERT(check_map_string_func_type(args[0]._type, args[1]._type, args[2]._type));
 
 	const auto f = args[1];
 	const auto f_arg_types = f._type.get_function_args();
 	const auto r_type = f._type.get_function_return();
 	const auto& context = args[2];
-
-	QUARK_ASSERT(f_arg_types.size() == 2);
-	QUARK_ASSERT(f_arg_types[0].is_string());
-	QUARK_ASSERT(f_arg_types[1] == args[2]._type);
 
 	const auto input_vec = args[0].get_string_value();
 	std::string vec2;
