@@ -480,10 +480,55 @@ bool check_reduce_func_type(const typeid_t& elements, const typeid_t& accumulato
 
 
 
-
+//	[T] stable_sort([T] elements, func bool (T left, T right, C context) less, C context)
 corecall_signature_t make_stable_sort_signature(){
 	return { "stable_sort", 1038, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) };
 }
+
+typeid_t harden_stable_sort_func_type(const typeid_t& resolved_call_type){
+	QUARK_ASSERT(resolved_call_type.check_invariant());
+
+	const auto sign = make_stable_sort_signature();
+
+	const auto arg1_type = resolved_call_type.get_function_args()[0];
+	if(arg1_type.is_vector() == false){
+		quark::throw_runtime_error("stable_sort() arg 1 must be a vector.");
+	}
+	const auto e_type = arg1_type.get_vector_element_type();
+
+	const auto arg2_type = resolved_call_type.get_function_args()[1];
+	if(arg2_type.is_function() == false){
+		quark::throw_runtime_error("stable_sort() arg 2 must be a function.");
+	}
+
+	const auto context_type = resolved_call_type.get_function_args()[2];
+
+	const auto expected = typeid_t::make_function(
+		arg1_type,
+		{
+			arg1_type,
+			typeid_t::make_function(typeid_t::make_bool(), { e_type, e_type, context_type }, epure::pure),
+			context_type
+		},
+		epure::pure
+	);
+	return expected;
+}
+
+bool check_stable_sort_func_type(const typeid_t& elements, const typeid_t& less, const typeid_t& context){
+	QUARK_ASSERT(elements.is_vector());
+	QUARK_ASSERT(less.is_function());
+	QUARK_ASSERT(less.get_function_args().size() == 3);
+
+	const auto& e_type = elements.get_vector_element_type();
+	QUARK_ASSERT(less.get_function_return() == typeid_t::make_bool());
+	QUARK_ASSERT(less.get_function_args()[0] == e_type);
+	QUARK_ASSERT(less.get_function_args()[1] == e_type);
+	QUARK_ASSERT(less.get_function_args()[2] == context);
+
+	return true;
+}
+
 
 
 

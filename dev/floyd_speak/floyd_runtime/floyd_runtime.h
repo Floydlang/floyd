@@ -141,6 +141,8 @@ typeid_t harden_reduce_func_type(const typeid_t& resolved_call_type);
 bool check_reduce_func_type(const typeid_t& elements, const typeid_t& accumulator_init, const typeid_t& f, const typeid_t& context);
 
 corecall_signature_t make_stable_sort_signature();
+typeid_t harden_stable_sort_func_type(const typeid_t& resolved_call_type);
+bool check_stable_sort_func_type(const typeid_t& elements, const typeid_t& less, const typeid_t& context);
 
 
 //////////////////////////////////////		IMPURE FUNCTIONS

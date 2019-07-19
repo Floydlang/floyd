@@ -112,6 +112,7 @@ void detect_leaks(const heap_t& heap){
 
 #if 1
 		if(leaks > 0){
+			QUARK_ASSERT(false);
 			throw std::exception();
 		}
 #endif

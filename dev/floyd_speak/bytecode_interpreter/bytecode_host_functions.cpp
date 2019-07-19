@@ -998,30 +998,19 @@ bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 
 
-
-
 /////////////////////////////////////////		PURE -- stable_sort()
 
 
 //	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
-
 bc_value_t host__stable_sort(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
-
-	//	Check topology.
-	QUARK_ASSERT(args[0]._type.is_vector());
-	QUARK_ASSERT(args[1]._type.is_function());
-	QUARK_ASSERT(args[1]._type.get_function_args().size() == 3);
+	QUARK_ASSERT(check_stable_sort_func_type(args[0]._type, args[1]._type, args[2]._type));
 
 	const auto& elements = args[0];
 	const auto& f = args[1];
 	const auto& e_type = elements._type.get_vector_element_type();
-
-	QUARK_ASSERT(f._type.get_function_return() == typeid_t::make_bool());
-	QUARK_ASSERT(e_type == f._type.get_function_args()[0]);
-	QUARK_ASSERT(e_type == f._type.get_function_args()[1]);
-	QUARK_ASSERT(args[2]._type == f._type.get_function_args()[2]);
+	const auto& context = args[2];
 
 	const auto input_vec = get_vector(elements);
 	std::vector<bc_value_t> mutate_inplace_elements(input_vec.begin(), input_vec.end());
@@ -1039,7 +1028,7 @@ bc_value_t host__stable_sort(interpreter_t& vm, const bc_value_t args[], int arg
 		bc_value_t f;
 	};
 
-	const sort_functor_r sort_functor { vm, args[2], args[1] };
+	const sort_functor_r sort_functor { vm, context, f };
 	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
 
 	const auto mutate_inplace_elements2 = immer::vector<bc_value_t>(mutate_inplace_elements.begin(), mutate_inplace_elements.end());

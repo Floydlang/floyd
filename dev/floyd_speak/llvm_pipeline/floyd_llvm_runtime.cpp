@@ -1974,10 +1974,7 @@ WIDE_RETURN_T floyd_funcdef__stable_sort(
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
 	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
 
-	//	Check topology.
-	QUARK_ASSERT(type0.is_vector());
-	QUARK_ASSERT(type1.is_function());
-	QUARK_ASSERT(type1.get_function_args().size() == 3);
+	QUARK_ASSERT(check_stable_sort_func_type(type0, type1, type2));
 
 	const auto& elements = arg0_value;
 	const auto& f = arg1_value;
@@ -1985,7 +1982,6 @@ WIDE_RETURN_T floyd_funcdef__stable_sort(
 
 	const auto elements2 = from_runtime_value(r, elements, type0);
 	const auto f2 = reinterpret_cast<stable_sort_F>(f.function_ptr);
-//	const auto context2 = from_runtime_value(r, context, type1);
 
 	struct sort_functor_r {
 		bool operator() (const value_t &a, const value_t &b) {
@@ -1995,7 +1991,6 @@ WIDE_RETURN_T floyd_funcdef__stable_sort(
 			uint8_t result = (*f)(frp, left, right, context);
 			return result == 1 ? true : false;
 		}
-
 
 		floyd_runtime_t* frp;
 		runtime_value_t context;
