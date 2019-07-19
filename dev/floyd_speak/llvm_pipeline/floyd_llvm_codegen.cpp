@@ -1372,10 +1372,15 @@ static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc,
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 
+
+
 	else if(details.call_name == get_opcode(make_map_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 	else if(details.call_name == get_opcode(make_map_string_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+	else if(details.call_name == get_opcode(make_map_dag_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 	else if(details.call_name == get_opcode(make_filter_signature())){
@@ -1384,14 +1389,10 @@ static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc,
 	else if(details.call_name == get_opcode(make_reduce_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
-	else if(details.call_name == get_opcode(make_map_dag_signature())){
-		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
-	}
-
-
 	else if(details.call_name == get_opcode(make_stable_sort_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
+
 
 
 	else if(details.call_name == get_opcode(make_print_signature())){

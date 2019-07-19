@@ -235,6 +235,11 @@ corecall_signature_t make_get_json_type_signature(){
 
 
 
+
+//////////////////////////////////////		HIGHER-ORDER FUNCTIONS
+
+
+
 corecall_signature_t make_map_signature(){
 	return { "map", 1033, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::vector_of_arg1func_return) };
 }
@@ -255,6 +260,9 @@ corecall_signature_t make_map_string_signature(){
 	};
 }
 
+corecall_signature_t make_map_dag_signature(){
+	return { "map_dag", 1037, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::vector_of_arg2func_return) };
+}
 
 
 
@@ -296,26 +304,18 @@ bool check_filter_func_type(const typeid_t& elements, const typeid_t& f, const t
 	return true;
 }
 
-
-
-
-
 corecall_signature_t make_reduce_signature(){
 	return { "reduce", 1035, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg1) };
 }
-
-
-
-corecall_signature_t make_map_dag_signature(){
-	return { "map_dag", 1037, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::vector_of_arg2func_return) };
-}
-
-
 
 corecall_signature_t make_stable_sort_signature(){
 	return { "stable_sort", 1038, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) };
 }
 
+
+
+
+//////////////////////////////////////		IMPURE FUNCTIONS
 
 
 
@@ -327,6 +327,8 @@ corecall_signature_t make_send_signature(){
 }
 
 
+
+//////////////////////////////////////		BITWISE
 
 
 

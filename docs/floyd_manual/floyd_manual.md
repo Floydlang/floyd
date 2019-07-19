@@ -1955,6 +1955,8 @@ Notice that the *order* of the keys is undefined and may change depending on the
 
 ## FUNCTIONAL-STYLE COLLECTION FUNCTIONS
 
+Also called "Higher-order functions".
+
 IMPORTANT: These functions replace custom loops but *also* expose parallelism opportunities that allows the Floyd runtime to process each element on a separate hardware core, like shaders works in a graphics card. The supplied function must be pure.
 
 ### map()

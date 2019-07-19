@@ -1381,6 +1381,11 @@ std::pair<analyser_t, expression_t> analyse_corecall_replace_expression(const an
 //??? pass around location_t instead of statement_t& parent!
 
 
+
+
+
+
+
 //	[R] map([E] elements, func R (E e, C context) f, C context)
 std::pair<analyser_t, expression_t> analyse_corecall_map_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
@@ -1501,52 +1506,6 @@ std::pair<analyser_t, expression_t> analyse_corecall_map_dag_expression(const an
 	};
 }
 
-//	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
-std::pair<analyser_t, expression_t> analyse_corecall_stable_sort_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
-	QUARK_ASSERT(a.check_invariant());
-	QUARK_ASSERT(parent.check_invariant());
-
-	const auto sign = make_stable_sort_signature();
-	auto a_acc = a;
-	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
-	a_acc = resolved_call.first;
-
-	const auto arg1_type = resolved_call.second.function_type.get_function_args()[0];
-	if(arg1_type.is_vector() == false){
-		quark::throw_runtime_error("stable_sort() arg 1 must be a vector.");
-	}
-	const auto e_type = arg1_type.get_vector_element_type();
-
-	const auto arg2_type = resolved_call.second.function_type.get_function_args()[1];
-	if(arg2_type.is_function() == false){
-		quark::throw_runtime_error("stable_sort() arg 2 must be a function.");
-	}
-
-	const auto context_type = resolved_call.second.function_type.get_function_args()[2];
-
-	const auto expected = typeid_t::make_function(
-		arg1_type,
-		{
-			arg1_type,
-			typeid_t::make_function(typeid_t::make_bool(), { e_type, e_type, context_type }, epure::pure),
-			context_type
-		},
-		epure::pure
-	);
-
-	if(resolved_call.second.function_type != expected){
-		quark::throw_runtime_error("Call to stable_sort() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
-	}
-
-	return {
-		a_acc,
-		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
-	};
-}
-
-
-
-
 std::pair<analyser_t, expression_t> analyse_corecall_filter_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
@@ -1612,6 +1571,51 @@ std::pair<analyser_t, expression_t> analyse_corecall_reduce_expression(const ana
 		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, call_function_type.get_function_return())
 	};
 }
+
+//	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
+std::pair<analyser_t, expression_t> analyse_corecall_stable_sort_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+	QUARK_ASSERT(a.check_invariant());
+	QUARK_ASSERT(parent.check_invariant());
+
+	const auto sign = make_stable_sort_signature();
+	auto a_acc = a;
+	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
+	a_acc = resolved_call.first;
+
+	const auto arg1_type = resolved_call.second.function_type.get_function_args()[0];
+	if(arg1_type.is_vector() == false){
+		quark::throw_runtime_error("stable_sort() arg 1 must be a vector.");
+	}
+	const auto e_type = arg1_type.get_vector_element_type();
+
+	const auto arg2_type = resolved_call.second.function_type.get_function_args()[1];
+	if(arg2_type.is_function() == false){
+		quark::throw_runtime_error("stable_sort() arg 2 must be a function.");
+	}
+
+	const auto context_type = resolved_call.second.function_type.get_function_args()[2];
+
+	const auto expected = typeid_t::make_function(
+		arg1_type,
+		{
+			arg1_type,
+			typeid_t::make_function(typeid_t::make_bool(), { e_type, e_type, context_type }, epure::pure),
+			context_type
+		},
+		epure::pure
+	);
+
+	if(resolved_call.second.function_type != expected){
+		quark::throw_runtime_error("Call to stable_sort() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
+	}
+
+	return {
+		a_acc,
+		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+	};
+}
+
+
 
 
 	
@@ -2305,11 +2309,17 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_get_json_type_signature());
 				}
 
+
+
+
 				else if(found_symbol_ptr->first == make_map_signature().name){
 					return analyse_corecall_map_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_map_string_signature().name){
 					return analyse_corecall_map_string_expression(a_acc, parent, details.args);
+				}
+				else if(found_symbol_ptr->first == make_map_dag_signature().name){
+					return analyse_corecall_map_dag_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_filter_signature().name){
 					return analyse_corecall_filter_expression(a_acc, parent, details.args);
@@ -2317,13 +2327,11 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 				else if(found_symbol_ptr->first == make_reduce_signature().name){
 					return analyse_corecall_reduce_expression(a_acc, parent, details.args);
 				}
-				else if(found_symbol_ptr->first == make_map_dag_signature().name){
-					return analyse_corecall_map_dag_expression(a_acc, parent, details.args);
-				}
-
 				else if(found_symbol_ptr->first == make_stable_sort_signature().name){
 					return analyse_corecall_stable_sort_expression(a_acc, parent, details.args);
 				}
+
+
 
 
 				else if(found_symbol_ptr->first == make_print_signature().name){

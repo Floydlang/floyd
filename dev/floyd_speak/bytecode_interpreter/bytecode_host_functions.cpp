@@ -709,92 +709,6 @@ bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_
 
 
 
-
-
-/////////////////////////////////////////		PURE -- filter()
-
-
-
-//	[E] filter([E] elements, func bool (E e, C context) f, C context)
-bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 3);
-	QUARK_ASSERT(check_filter_func_type(args[0]._type, args[1]._type, args[2]._type));
-
-	const auto& elements = args[0];
-	const auto& f = args[1];
-	const auto& e_type = elements._type.get_vector_element_type();
-	const auto& context = args[2];
-
-	const auto input_vec = get_vector(elements);
-	immer::vector<bc_value_t> vec2;
-
-	for(const auto& e: input_vec){
-		const bc_value_t f_args[] = { e, context };
-		const auto result1 = call_function_bc(vm, f, f_args, 2);
-		QUARK_ASSERT(result1._type.is_bool());
-
-		if(result1.get_bool_value()){
-			vec2 = vec2.push_back(e);
-		}
-	}
-
-	const auto result = make_vector(e_type, vec2);
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	return result;
-}
-
-
-
-
-
-/////////////////////////////////////////		PURE -- REDUCE()
-
-
-//	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
-bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 4);
-
-	//	Check topology.
-	QUARK_ASSERT(args[0]._type.is_vector());
-	QUARK_ASSERT(args[2]._type.is_function());
-	QUARK_ASSERT(args[2]._type.get_function_args().size () == 3);
-
-	const auto& elements = args[0];
-	const auto& init = args[1];
-	const auto& f = args[2];
-	const auto& context = args[3];
-
-	QUARK_ASSERT(elements._type.get_vector_element_type() == f._type.get_function_args()[1] && init._type == f._type.get_function_args()[0]);
-
-	const auto input_vec = get_vector(elements);
-
-	bc_value_t acc = init;
-	for(const auto& e: input_vec){
-		const bc_value_t f_args[] = { acc, e, context };
-		const auto result1 = call_function_bc(vm, f, f_args, 3);
-		acc = result1;
-	}
-
-	const auto result = acc;
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	return result;
-}
-
-
-
-
 /////////////////////////////////////////		PURE -- map_dag()
 
 
@@ -1026,6 +940,92 @@ bc_value_t host__map_dag2(interpreter_t& vm, const bc_value_t args[], int arg_co
 
 	return result;
 }
+
+
+
+
+/////////////////////////////////////////		PURE -- filter()
+
+
+
+//	[E] filter([E] elements, func bool (E e, C context) f, C context)
+bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 3);
+	QUARK_ASSERT(check_filter_func_type(args[0]._type, args[1]._type, args[2]._type));
+
+	const auto& elements = args[0];
+	const auto& f = args[1];
+	const auto& e_type = elements._type.get_vector_element_type();
+	const auto& context = args[2];
+
+	const auto input_vec = get_vector(elements);
+	immer::vector<bc_value_t> vec2;
+
+	for(const auto& e: input_vec){
+		const bc_value_t f_args[] = { e, context };
+		const auto result1 = call_function_bc(vm, f, f_args, 2);
+		QUARK_ASSERT(result1._type.is_bool());
+
+		if(result1.get_bool_value()){
+			vec2 = vec2.push_back(e);
+		}
+	}
+
+	const auto result = make_vector(e_type, vec2);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	return result;
+}
+
+
+
+
+
+/////////////////////////////////////////		PURE -- reduce()
+
+
+//	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
+bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 4);
+
+	//	Check topology.
+	QUARK_ASSERT(args[0]._type.is_vector());
+	QUARK_ASSERT(args[2]._type.is_function());
+	QUARK_ASSERT(args[2]._type.get_function_args().size () == 3);
+
+	const auto& elements = args[0];
+	const auto& init = args[1];
+	const auto& f = args[2];
+	const auto& context = args[3];
+
+	QUARK_ASSERT(elements._type.get_vector_element_type() == f._type.get_function_args()[1] && init._type == f._type.get_function_args()[0]);
+
+	const auto input_vec = get_vector(elements);
+
+	bc_value_t acc = init;
+	for(const auto& e: input_vec){
+		const bc_value_t f_args[] = { acc, e, context };
+		const auto result1 = call_function_bc(vm, f, f_args, 3);
+		acc = result1;
+	}
+
+	const auto result = acc;
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	return result;
+}
+
+
 
 
 

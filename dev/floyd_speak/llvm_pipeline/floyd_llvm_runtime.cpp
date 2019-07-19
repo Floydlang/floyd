@@ -1592,49 +1592,6 @@ uint32_t floyd_funcdef__exists(floyd_runtime_t* frp, runtime_value_t arg0_value,
 
 
 
-typedef runtime_value_t (*FILTER_F)(floyd_runtime_t* frp, runtime_value_t element_value, runtime_value_t context);
-
-//	[E] filter([E] elements, func bool (E e, C context) f, C context)
-WIDE_RETURN_T floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t context, runtime_type_t context_type){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
-	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
-	const auto type2 = lookup_type(r.type_interner.interner, context_type);
-
-	QUARK_ASSERT(check_filter_func_type(type0, type1, type2));
-
-	const auto& vec = *arg0_value.vector_ptr;
-	const auto f = reinterpret_cast<FILTER_F>(arg1_value.function_ptr);
-
-	auto count = vec.get_element_count();
-
-	const auto e_element_type = type0.get_vector_element_type();
-
-	std::vector<runtime_value_t> acc;
-	for(int i = 0 ; i < count ; i++){
-		const auto element_value = vec.get_element_ptr()[i];
-		const auto keep = (*f)(frp, element_value, context);
-		if(keep.bool_value != 0){
-			acc.push_back(element_value);
-
-			if(is_rc_value(e_element_type)){
-				retain_value(r, element_value, e_element_type);
-			}
-		}
-		else{
-		}
-	}
-
-	const auto count2 = (int32_t)acc.size();
-	auto result_vec = alloc_vec(r.heap, count2, count2);
-
-	if(count2 > 0){
-		//	Count > 0 required to get address to first element in acc.
-		copy_elements(result_vec->get_element_ptr(), &acc[0], count2);
-	}
-	return make_wide_return_vec(result_vec);
-}
 
 
 int64_t floyd_funcdef__find(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, const runtime_value_t arg1_value, runtime_type_t arg1_type){
@@ -1717,7 +1674,16 @@ runtime_value_t floyd_funcdef__from_json(floyd_runtime_t* frp, JSON_T* json_ptr,
 
 
 
-	typedef WIDE_RETURN_T (*MAP_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value);
+
+
+
+
+
+
+
+
+
+typedef WIDE_RETURN_T (*MAP_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value);
 
 //	[R] map([E] elements, func R (E e, C context) f, C context)
 WIDE_RETURN_T floyd_funcdef__map(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
@@ -1749,7 +1715,6 @@ WIDE_RETURN_T floyd_funcdef__map(floyd_runtime_t* frp, runtime_value_t arg0_valu
 
 
 
-
 //??? Can mutate the acc string internally.
 
 typedef runtime_value_t (*MAP_STRING_F)(floyd_runtime_t* frp, runtime_value_t s, runtime_value_t context);
@@ -1777,6 +1742,282 @@ runtime_value_t floyd_funcdef__map_string(floyd_runtime_t* frp, runtime_value_t 
 	}
 	return to_runtime_string(r, acc);
 }
+
+
+
+typedef WIDE_RETURN_T (*map_dag_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value, runtime_value_t context);
+
+WIDE_RETURN_T floyd_funcdef__map_dag(
+	floyd_runtime_t* frp,
+	runtime_value_t arg0_value,
+	runtime_type_t arg0_type,
+	runtime_value_t arg1_value,
+	runtime_type_t arg1_type,
+	runtime_value_t arg2_value,
+	runtime_type_t arg2_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
+	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
+
+	//	Check topology.
+	QUARK_ASSERT(type0.is_vector());
+	QUARK_ASSERT(type1 == typeid_t::make_vector(typeid_t::make_int()));
+	QUARK_ASSERT(type2.is_function());
+	QUARK_ASSERT(type2.get_function_args().size () == 3);
+
+	const auto& elements = arg0_value;
+	const auto& e_type = type0.get_vector_element_type();
+	const auto& parents = arg1_value;
+	const auto& f = arg2_value;
+	const auto& r_type = type2.get_function_return();
+
+	QUARK_ASSERT(e_type == type2.get_function_args()[0] && r_type == type2.get_function_args()[1].get_vector_element_type());
+
+	const auto f2 = reinterpret_cast<map_dag_F>(f.function_ptr);
+
+	const auto elements2 = elements.vector_ptr;
+	const auto parents2 = parents.vector_ptr;
+
+	if(elements2->get_element_count() != parents2->get_element_count()) {
+		quark::throw_runtime_error("map_dag() requires elements and parents be the same count.");
+	}
+
+	auto elements_todo = elements2->get_element_count();
+	std::vector<int> rcs(elements2->get_element_count(), 0);
+
+	std::vector<runtime_value_t> complete(elements2->get_element_count(), runtime_value_t());
+
+	for(int i = 0 ; i < parents2->get_element_count() ; i++){
+		const auto& e = parents2->get_element_ptr()[i];
+		const auto parent_index = e.int_value;
+
+		const auto count = static_cast<int64_t>(elements2->get_element_count());
+		QUARK_ASSERT(parent_index >= -1);
+		QUARK_ASSERT(parent_index < count);
+
+		if(parent_index != -1){
+			rcs[parent_index]++;
+		}
+	}
+
+	while(elements_todo > 0){
+		//	Find all elements that are free to process -- they are not blocked on a depenency.
+		std::vector<int> pass_ids;
+		for(int i = 0 ; i < elements2->get_element_count() ; i++){
+			const auto rc = rcs[i];
+			if(rc == 0){
+				pass_ids.push_back(i);
+				rcs[i] = -1;
+			}
+		}
+		if(pass_ids.empty()){
+			quark::throw_runtime_error("map_dag() dependency cycle error.");
+		}
+
+		for(const auto element_index: pass_ids){
+			const auto& e = elements2->get_element_ptr()[element_index];
+
+			//	Make list of the element's inputs -- they must all be complete now.
+			std::vector<runtime_value_t> solved_deps;
+			for(int element_index2 = 0 ; element_index2 < parents2->get_element_count() ; element_index2++){
+				const auto& p = parents2->get_element_ptr()[element_index2];
+				const auto parent_index = p.int_value;
+				if(parent_index == element_index){
+					QUARK_ASSERT(element_index2 != -1);
+					QUARK_ASSERT(element_index2 >= -1 && element_index2 < elements2->get_element_count());
+					QUARK_ASSERT(rcs[element_index2] == -1);
+
+					const auto& solved = complete[element_index2];
+					solved_deps.push_back(solved);
+				}
+			}
+
+			auto solved_deps2 = alloc_vec(r.heap, solved_deps.size(), solved_deps.size());
+			for(int i = 0 ; i < solved_deps.size() ; i++){
+				solved_deps2->get_element_ptr()[i] = solved_deps[i];
+			}
+			runtime_value_t solved_deps3 { .vector_ptr = solved_deps2 };
+
+			const auto wide_result = (*f2)(frp, e, solved_deps3, context);
+
+			//	Release just the vec, **not the elements**. The elements are aliases for complete-vector.
+			if(dec_rc(solved_deps2->alloc) == 0){
+				dispose_vec(*solved_deps2);
+			}
+
+			const auto result1 = wide_result.a;
+
+			const auto parent_index = parents2->get_element_ptr()[element_index].int_value;
+			if(parent_index != -1){
+				rcs[parent_index]--;
+			}
+			complete[element_index] = result1;
+			elements_todo--;
+		}
+	}
+
+	//??? No need to copy all elements -- could store them directly into the VEC_T.
+	const auto count = complete.size();
+	auto result_vec = alloc_vec(r.heap, count, count);
+	for(int i = 0 ; i < count ; i++){
+//		retain_value(r, complete[i], r_type);
+		result_vec->get_element_ptr()[i] = complete[i];
+	}
+
+#if 0
+	const auto vec_r = runtime_value_t{ .vector_ptr = result_vec };
+	const auto result_value = from_runtime_value(r, vec_r, typeid_t::make_vector(r_type));
+	const auto debug = value_and_type_to_ast_json(result_value);
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	return make_wide_return_vec(result_vec);
+}
+
+
+
+typedef runtime_value_t (*FILTER_F)(floyd_runtime_t* frp, runtime_value_t element_value, runtime_value_t context);
+
+//	[E] filter([E] elements, func bool (E e, C context) f, C context)
+WIDE_RETURN_T floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t context, runtime_type_t context_type){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
+	const auto type2 = lookup_type(r.type_interner.interner, context_type);
+
+	QUARK_ASSERT(check_filter_func_type(type0, type1, type2));
+
+	const auto& vec = *arg0_value.vector_ptr;
+	const auto f = reinterpret_cast<FILTER_F>(arg1_value.function_ptr);
+
+	auto count = vec.get_element_count();
+
+	const auto e_element_type = type0.get_vector_element_type();
+
+	std::vector<runtime_value_t> acc;
+	for(int i = 0 ; i < count ; i++){
+		const auto element_value = vec.get_element_ptr()[i];
+		const auto keep = (*f)(frp, element_value, context);
+		if(keep.bool_value != 0){
+			acc.push_back(element_value);
+
+			if(is_rc_value(e_element_type)){
+				retain_value(r, element_value, e_element_type);
+			}
+		}
+		else{
+		}
+	}
+
+	const auto count2 = (int32_t)acc.size();
+	auto result_vec = alloc_vec(r.heap, count2, count2);
+
+	if(count2 > 0){
+		//	Count > 0 required to get address to first element in acc.
+		copy_elements(result_vec->get_element_ptr(), &acc[0], count2);
+	}
+	return make_wide_return_vec(result_vec);
+}
+
+
+
+typedef runtime_value_t (*REDUCE_F)(floyd_runtime_t* frp, runtime_value_t acc_value, runtime_value_t element_value, runtime_value_t context);
+
+//	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
+WIDE_RETURN_T floyd_funcdef__reduce(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
+	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
+
+	QUARK_ASSERT(type0.is_vector());
+	QUARK_ASSERT(type2.is_function());
+	QUARK_ASSERT(type2.get_function_args().size () == 3);
+
+	const auto& vec = *arg0_value.vector_ptr;
+	const auto& init = arg1_value;
+	const auto f = reinterpret_cast<REDUCE_F>(arg2_value.function_ptr);
+
+	auto count = vec.get_element_count();
+	runtime_value_t acc = init;
+	retain_value(r, acc, type1);
+
+	for(int i = 0 ; i < count ; i++){
+		const auto element_value = vec.get_element_ptr()[i];
+		const auto acc2 = (*f)(frp, acc, element_value, context);
+
+		release_deep(r, acc, type1);
+		acc = acc2;
+	}
+	return make_wide_return_2x64(acc, {} );
+}
+
+
+
+typedef uint8_t (*stable_sort_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value, runtime_value_t arg2_value);
+
+//	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
+WIDE_RETURN_T floyd_funcdef__stable_sort(
+	floyd_runtime_t* frp,
+	runtime_value_t arg0_value,
+	runtime_type_t arg0_type,
+	runtime_value_t arg1_value,
+	runtime_type_t arg1_type,
+	runtime_value_t arg2_value,
+	runtime_type_t arg2_type
+){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
+	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
+	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
+
+	//	Check topology.
+	QUARK_ASSERT(type0.is_vector());
+	QUARK_ASSERT(type1.is_function());
+	QUARK_ASSERT(type1.get_function_args().size() == 3);
+
+	const auto& elements = arg0_value;
+	const auto& f = arg1_value;
+	const auto& context = arg2_value;
+
+	const auto elements2 = from_runtime_value(r, elements, type0);
+	const auto f2 = reinterpret_cast<stable_sort_F>(f.function_ptr);
+//	const auto context2 = from_runtime_value(r, context, type1);
+
+	struct sort_functor_r {
+		bool operator() (const value_t &a, const value_t &b) {
+			auto& r = get_floyd_runtime(frp);
+			const auto left = to_runtime_value(r, a);
+			const auto right = to_runtime_value(r, b);
+			uint8_t result = (*f)(frp, left, right, context);
+			return result == 1 ? true : false;
+		}
+
+
+		floyd_runtime_t* frp;
+		runtime_value_t context;
+		stable_sort_F f;
+	};
+
+	const sort_functor_r sort_functor { frp, context, f2 };
+
+	auto mutate_inplace_elements = elements2.get_vector_value();
+	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
+
+	const auto result = to_runtime_value(r, value_t::make_vector_value(type0, mutate_inplace_elements));
+	return make_wide_return_vec(result.vector_ptr);
+}
+
+
+
 
 
 
@@ -1847,39 +2088,6 @@ void floyd_host_function_1022(floyd_runtime_t* frp, runtime_value_t arg){
 }
 
 
-
-
-	typedef runtime_value_t (*REDUCE_F)(floyd_runtime_t* frp, runtime_value_t acc_value, runtime_value_t element_value, runtime_value_t context);
-
-//	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
-WIDE_RETURN_T floyd_funcdef__reduce(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
-	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
-	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
-
-	QUARK_ASSERT(type0.is_vector());
-	QUARK_ASSERT(type2.is_function());
-	QUARK_ASSERT(type2.get_function_args().size () == 3);
-
-	const auto& vec = *arg0_value.vector_ptr;
-	const auto& init = arg1_value;
-	const auto f = reinterpret_cast<REDUCE_F>(arg2_value.function_ptr);
-
-	auto count = vec.get_element_count();
-	runtime_value_t acc = init;
-	retain_value(r, acc, type1);
-
-	for(int i = 0 ; i < count ; i++){
-		const auto element_value = vec.get_element_ptr()[i];
-		const auto acc2 = (*f)(frp, acc, element_value, context);
-
-		release_deep(r, acc, type1);
-		acc = acc2;
-	}
-	return make_wide_return_2x64(acc, {} );
-}
 
 
 std::string floyd_funcdef__replace__string(llvm_execution_engine_t& frp, const std::string& s, std::size_t start, std::size_t end, const std::string& replace){
@@ -2066,225 +2274,6 @@ const WIDE_RETURN_T floyd_funcdef__subset(floyd_runtime_t* frp, runtime_value_t 
 	}
 }
 
-
-typedef WIDE_RETURN_T (*map_dag_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value, runtime_value_t context);
-
-WIDE_RETURN_T floyd_funcdef__map_dag(
-	floyd_runtime_t* frp,
-	runtime_value_t arg0_value,
-	runtime_type_t arg0_type,
-	runtime_value_t arg1_value,
-	runtime_type_t arg1_type,
-	runtime_value_t arg2_value,
-	runtime_type_t arg2_type,
-	runtime_value_t context,
-	runtime_type_t context_type
-){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
-	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
-	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
-
-	//	Check topology.
-	QUARK_ASSERT(type0.is_vector());
-	QUARK_ASSERT(type1 == typeid_t::make_vector(typeid_t::make_int()));
-	QUARK_ASSERT(type2.is_function());
-	QUARK_ASSERT(type2.get_function_args().size () == 3);
-
-	const auto& elements = arg0_value;
-	const auto& e_type = type0.get_vector_element_type();
-	const auto& parents = arg1_value;
-	const auto& f = arg2_value;
-	const auto& r_type = type2.get_function_return();
-
-	QUARK_ASSERT(e_type == type2.get_function_args()[0] && r_type == type2.get_function_args()[1].get_vector_element_type());
-
-	const auto f2 = reinterpret_cast<map_dag_F>(f.function_ptr);
-
-	const auto elements2 = elements.vector_ptr;
-	const auto parents2 = parents.vector_ptr;
-
-	if(elements2->get_element_count() != parents2->get_element_count()) {
-		quark::throw_runtime_error("map_dag() requires elements and parents be the same count.");
-	}
-
-	auto elements_todo = elements2->get_element_count();
-	std::vector<int> rcs(elements2->get_element_count(), 0);
-
-	std::vector<runtime_value_t> complete(elements2->get_element_count(), runtime_value_t());
-
-	for(int i = 0 ; i < parents2->get_element_count() ; i++){
-		const auto& e = parents2->get_element_ptr()[i];
-		const auto parent_index = e.int_value;
-
-		const auto count = static_cast<int64_t>(elements2->get_element_count());
-		QUARK_ASSERT(parent_index >= -1);
-		QUARK_ASSERT(parent_index < count);
-
-		if(parent_index != -1){
-			rcs[parent_index]++;
-		}
-	}
-
-	while(elements_todo > 0){
-		//	Find all elements that are free to process -- they are not blocked on a depenency.
-		std::vector<int> pass_ids;
-		for(int i = 0 ; i < elements2->get_element_count() ; i++){
-			const auto rc = rcs[i];
-			if(rc == 0){
-				pass_ids.push_back(i);
-				rcs[i] = -1;
-			}
-		}
-		if(pass_ids.empty()){
-			quark::throw_runtime_error("map_dag() dependency cycle error.");
-		}
-
-		for(const auto element_index: pass_ids){
-			const auto& e = elements2->get_element_ptr()[element_index];
-
-			//	Make list of the element's inputs -- they must all be complete now.
-			std::vector<runtime_value_t> solved_deps;
-			for(int element_index2 = 0 ; element_index2 < parents2->get_element_count() ; element_index2++){
-				const auto& p = parents2->get_element_ptr()[element_index2];
-				const auto parent_index = p.int_value;
-				if(parent_index == element_index){
-					QUARK_ASSERT(element_index2 != -1);
-					QUARK_ASSERT(element_index2 >= -1 && element_index2 < elements2->get_element_count());
-					QUARK_ASSERT(rcs[element_index2] == -1);
-
-					const auto& solved = complete[element_index2];
-					solved_deps.push_back(solved);
-				}
-			}
-
-			auto solved_deps2 = alloc_vec(r.heap, solved_deps.size(), solved_deps.size());
-			for(int i = 0 ; i < solved_deps.size() ; i++){
-				solved_deps2->get_element_ptr()[i] = solved_deps[i];
-			}
-			runtime_value_t solved_deps3 { .vector_ptr = solved_deps2 };
-
-			const auto wide_result = (*f2)(frp, e, solved_deps3, context);
-
-			//	Release just the vec, **not the elements**. The elements are aliases for complete-vector.
-			if(dec_rc(solved_deps2->alloc) == 0){
-				dispose_vec(*solved_deps2);
-			}
-
-			const auto result1 = wide_result.a;
-
-			const auto parent_index = parents2->get_element_ptr()[element_index].int_value;
-			if(parent_index != -1){
-				rcs[parent_index]--;
-			}
-			complete[element_index] = result1;
-			elements_todo--;
-		}
-	}
-
-	//??? No need to copy all elements -- could store them directly into the VEC_T.
-	const auto count = complete.size();
-	auto result_vec = alloc_vec(r.heap, count, count);
-	for(int i = 0 ; i < count ; i++){
-//		retain_value(r, complete[i], r_type);
-		result_vec->get_element_ptr()[i] = complete[i];
-	}
-
-#if 0
-	const auto vec_r = runtime_value_t{ .vector_ptr = result_vec };
-	const auto result_value = from_runtime_value(r, vec_r, typeid_t::make_vector(r_type));
-	const auto debug = value_and_type_to_ast_json(result_value);
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	return make_wide_return_vec(result_vec);
-}
-
-
-
-
-typedef uint8_t (*stable_sort_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value, runtime_value_t arg2_value);
-
-//	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
-WIDE_RETURN_T floyd_funcdef__stable_sort(
-	floyd_runtime_t* frp,
-	runtime_value_t arg0_value,
-	runtime_type_t arg0_type,
-	runtime_value_t arg1_value,
-	runtime_type_t arg1_type,
-	runtime_value_t arg2_value,
-	runtime_type_t arg2_type
-){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
-	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
-	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
-
-	//	Check topology.
-	QUARK_ASSERT(type0.is_vector());
-	QUARK_ASSERT(type1.is_function());
-	QUARK_ASSERT(type1.get_function_args().size() == 3);
-
-	const auto& elements = arg0_value;
-	const auto& f = arg1_value;
-	const auto& context = arg2_value;
-
-	const auto elements2 = from_runtime_value(r, elements, type0);
-	const auto f2 = reinterpret_cast<stable_sort_F>(f.function_ptr);
-//	const auto context2 = from_runtime_value(r, context, type1);
-
-	struct sort_functor_r {
-		bool operator() (const value_t &a, const value_t &b) {
-			auto& r = get_floyd_runtime(frp);
-			const auto left = to_runtime_value(r, a);
-			const auto right = to_runtime_value(r, b);
-			uint8_t result = (*f)(frp, left, right, context);
-			return result == 1 ? true : false;
-		}
-
-
-		floyd_runtime_t* frp;
-		runtime_value_t context;
-		stable_sort_F f;
-	};
-
-	const sort_functor_r sort_functor { frp, context, f2 };
-
-	auto mutate_inplace_elements = elements2.get_vector_value();
-	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
-
-	const auto result = to_runtime_value(r, value_t::make_vector_value(type0, mutate_inplace_elements));
-	return make_wide_return_vec(result.vector_ptr);
-}
-struct myclass {
-  bool operator() (int i,int j) { return (i<j);}
-} myobject;
-
-
-/*
-	auto& r = get_floyd_runtime(frp);
-
-	const auto value_type = lookup_type(r.type_interner.interner, type);
-
-	const auto left_value = from_runtime_value(r, lhs, value_type);
-	const auto right_value = from_runtime_value(r, rhs, value_type);
-
-	const int result = value_t::compare_value_true_deep(left_value, right_value);
-//	int result = runtime_compare_value_true_deep((const uint64_t)lhs, (const uint64_t)rhs, vector_type);
-	const auto op2 = static_cast<expression_type>(op);
-	if(op2 == expression_type::k_comparison_smaller_or_equal__2){
-		return result <= 0 ? 1 : 0;
-	}
-	else if(op2 == expression_type::k_comparison_smaller__2){
-		return result < 0 ? 1 : 0;
-	}
-	else if(op2 == expression_type::k_comparison_larger_or_equal__2){
-		return result >= 0 ? 1 : 0;
-	}
-	else if(op2 == expression_type::k_comparison_larger__2){
-*/
 
 
 
@@ -2682,10 +2671,9 @@ std::map<std::string, void*> get_c_function_ptrs(){
 
 		{ "floyd_funcdef__map", reinterpret_cast<void *>(&floyd_funcdef__map) },
 		{ "floyd_funcdef__map_string", reinterpret_cast<void *>(&floyd_funcdef__map_string) },
+		{ "floyd_funcdef__map_dag", reinterpret_cast<void *>(&floyd_funcdef__map_dag) },
 		{ "floyd_funcdef__filter", reinterpret_cast<void *>(&floyd_funcdef__filter) },
 		{ "floyd_funcdef__reduce", reinterpret_cast<void *>(&floyd_funcdef__reduce) },
-		{ "floyd_funcdef__map_dag", reinterpret_cast<void *>(&floyd_funcdef__map_dag) },
-
 		{ "floyd_funcdef__stable_sort", reinterpret_cast<void *>(&floyd_funcdef__stable_sort) },
 
 		{ "floyd_funcdef__print", reinterpret_cast<void *>(&floyd_funcdef__print) },

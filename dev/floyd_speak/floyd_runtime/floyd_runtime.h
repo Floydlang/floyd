@@ -115,22 +115,32 @@ corecall_signature_t make_get_json_type_signature();
 
 
 
+//////////////////////////////////////		HIGHER-ORDER FUNCTIONS
+
 corecall_signature_t make_map_signature();
 corecall_signature_t make_map_string_signature();
+corecall_signature_t make_map_dag_signature();
 
 corecall_signature_t make_filter_signature();
 typeid_t harden_filter_func_type(const typeid_t& resolved_call_type);
 bool check_filter_func_type(const typeid_t& elements, const typeid_t& f, const typeid_t& context);
 
 corecall_signature_t make_reduce_signature();
-corecall_signature_t make_map_dag_signature();
 
 corecall_signature_t make_stable_sort_signature();
+
+
+//////////////////////////////////////		IMPURE FUNCTIONS
 
 
 
 corecall_signature_t make_print_signature();
 corecall_signature_t make_send_signature();
+
+
+
+//////////////////////////////////////		BITWISE
+
 
 corecall_signature_t make_bw_not_signature();
 corecall_signature_t make_bw_and_signature();
