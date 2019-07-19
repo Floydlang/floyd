@@ -1765,12 +1765,7 @@ WIDE_RETURN_T floyd_funcdef__map_dag(
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
 	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
-
-	//	Check topology.
-	QUARK_ASSERT(type0.is_vector());
-	QUARK_ASSERT(type1 == typeid_t::make_vector(typeid_t::make_int()));
-	QUARK_ASSERT(type2.is_function());
-	QUARK_ASSERT(type2.get_function_args().size () == 3);
+	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type(r.type_interner.interner, context_type)));
 
 	const auto& elements = arg0_value;
 	const auto& e_type = type0.get_vector_element_type();

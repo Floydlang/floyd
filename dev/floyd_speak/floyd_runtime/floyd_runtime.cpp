@@ -333,9 +333,58 @@ bool check_map_string_func_type(const typeid_t& elements, const typeid_t& f, con
 }
 
 
+
+
+//	[R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
 corecall_signature_t make_map_dag_signature(){
 	return { "map_dag", 1037, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::vector_of_arg2func_return) };
 }
+
+typeid_t harden_map_dag_func_type(const typeid_t& resolved_call_type){
+	QUARK_ASSERT(resolved_call_type.check_invariant());
+
+	const auto sign = make_map_dag_signature();
+
+	const auto arg1_type = resolved_call_type.get_function_args()[0];
+	if(arg1_type.is_vector() == false){
+		quark::throw_runtime_error("map_dag() arg 1 must be a vector.");
+	}
+	const auto e_type = arg1_type.get_vector_element_type();
+
+	const auto arg3_type = resolved_call_type.get_function_args()[2];
+	if(arg3_type.is_function() == false){
+		quark::throw_runtime_error("map_dag() arg 3 must be a function.");
+	}
+
+	const auto r_type = arg3_type.get_function_return();
+
+	const auto context_type = resolved_call_type.get_function_args()[3];
+
+	const auto expected = typeid_t::make_function(
+		typeid_t::make_vector(r_type),
+		{
+			typeid_t::make_vector(e_type),
+			typeid_t::make_vector(typeid_t::make_int()),
+			typeid_t::make_function(r_type, { e_type, typeid_t::make_vector(r_type), context_type }, epure::pure),
+			context_type
+		},
+		epure::pure
+	);
+	return expected;
+}
+
+bool check_map_dag_func_type(const typeid_t& elements, const typeid_t& depends_on, const typeid_t& f, const typeid_t& context){
+	//	Check topology.
+	QUARK_ASSERT(elements.is_vector());
+	QUARK_ASSERT(depends_on == typeid_t::make_vector(typeid_t::make_int()));
+	QUARK_ASSERT(f.is_function() && f.get_function_args().size () == 3);
+	QUARK_ASSERT(f.get_function_args()[0] == elements.get_vector_element_type());
+	QUARK_ASSERT(f.get_function_args()[1] == typeid_t::make_vector(f.get_function_return()));
+	QUARK_ASSERT(f.get_function_args()[2] == context);
+	return true;
+}
+
+
 
 
 

@@ -1440,31 +1440,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_map_dag_expression(const an
 	const auto resolved_call = analyze_resolve_call_type(a_acc, parent, args, sign._function_type);
 	a_acc = resolved_call.first;
 
-	const auto arg1_type = resolved_call.second.function_type.get_function_args()[0];
-	if(arg1_type.is_vector() == false){
-		quark::throw_runtime_error("map_dag() arg 1 must be a vector.");
-	}
-	const auto e_type = arg1_type.get_vector_element_type();
-
-	const auto arg3_type = resolved_call.second.function_type.get_function_args()[2];
-	if(arg3_type.is_function() == false){
-		quark::throw_runtime_error("map_dag() arg 3 must be a function.");
-	}
-
-	const auto r_type = arg3_type.get_function_return();
-
-	const auto context_type = resolved_call.second.function_type.get_function_args()[3];
-
-	const auto expected = typeid_t::make_function(
-		typeid_t::make_vector(r_type),
-		{
-			typeid_t::make_vector(e_type),
-			typeid_t::make_vector(typeid_t::make_int()),
-			typeid_t::make_function(r_type, { e_type, typeid_t::make_vector(r_type), context_type }, epure::pure),
-			context_type
-		},
-		epure::pure
-	);
+	const auto expected = harden_map_dag_func_type(resolved_call.second.function_type);
 
 	if(resolved_call.second.function_type != expected){
 		quark::throw_runtime_error("Call to map_dag() uses signature \"" + typeid_to_compact_string(resolved_call.second.function_type) + "\", needs to be \"" + typeid_to_compact_string(expected) + "\".");
