@@ -1547,31 +1547,6 @@ std::pair<analyser_t, expression_t> analyse_corecall_stable_sort_expression(cons
 
 
 
-//	[E] filter([E] elements, func bool (E e, C context) f, C context)
-typeid_t harden_filter_func_type(const typeid_t& resolved_call_type){
-	QUARK_ASSERT(resolved_call_type.check_invariant());
-
-	const auto sign = make_filter_signature();
-
-	const auto arg1_type = resolved_call_type.get_function_args()[0];
-	if(arg1_type.is_vector() == false){
-		quark::throw_runtime_error("map() arg 1 must be a vector.");
-	}
-	const auto e_type = arg1_type.get_vector_element_type();
-
-	const auto context_type = resolved_call_type.get_function_args()[2];
-
-	const auto expected = typeid_t::make_function(
-		typeid_t::make_vector(e_type),
-		{
-			typeid_t::make_vector(e_type),
-			typeid_t::make_function(typeid_t::make_bool(), { e_type, context_type }, epure::pure),
-			context_type
-		},
-		epure::pure
-	);
-	return expected;
-}
 std::pair<analyser_t, expression_t> analyse_corecall_filter_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());

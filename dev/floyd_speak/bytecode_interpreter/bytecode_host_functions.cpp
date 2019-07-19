@@ -719,18 +719,12 @@ bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_
 bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
-
-	//	Check topology.
-	QUARK_ASSERT(args[0]._type.is_vector());
-	QUARK_ASSERT(args[1]._type.is_function());
-	QUARK_ASSERT(args[1]._type.get_function_args().size() == 2);
+	QUARK_ASSERT(check_filter_func_type(args[0]._type, args[1]._type, args[2]._type));
 
 	const auto& elements = args[0];
 	const auto& f = args[1];
 	const auto& e_type = elements._type.get_vector_element_type();
 	const auto& context = args[2];
-
-	QUARK_ASSERT(elements._type.get_vector_element_type() == f._type.get_function_args()[0]);
 
 	const auto input_vec = get_vector(elements);
 	immer::vector<bc_value_t> vec2;

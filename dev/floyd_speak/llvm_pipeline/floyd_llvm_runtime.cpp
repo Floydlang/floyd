@@ -1600,10 +1600,9 @@ WIDE_RETURN_T floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_v
 
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
+	const auto type2 = lookup_type(r.type_interner.interner, context_type);
 
-	QUARK_ASSERT(type0.is_vector());
-	QUARK_ASSERT(type1.is_function());
-	QUARK_ASSERT(type1.get_function_args().size() == 2);
+	QUARK_ASSERT(check_filter_func_type(type0, type1, type2));
 
 	const auto& vec = *arg0_value.vector_ptr;
 	const auto f = reinterpret_cast<FILTER_F>(arg1_value.function_ptr);

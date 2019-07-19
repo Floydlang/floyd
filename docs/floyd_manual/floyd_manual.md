@@ -1981,24 +1981,6 @@ string map_string(string s, func string(string e, C context) f, C context)
 The function f is called with each character in the input string, stored as a 1-character string in _e_. All the calls to f() will be appended together and returned from map_string().
 
 
-### filter()
-
-Processes a vector of values and returns each that function f decides to include.
-
-```
-[E] filter([E] elements, func bool (E e, C context) f, C context)
-```
-
-
-### reduce()
-
-Processes a vector or values using the supplied function. Result is *one* value.
-
-```
-R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
-```
-
-
 ### map_dag()
 
 ```
@@ -2023,6 +2005,25 @@ This function runs a bunch of tasks with dependencies between them. When map_dag
 Notice: your function f can send messages to a clock — this means another clock can start consuming results while map_dag() is still running.
 
 Notice: using this function exposes potential for parallelism.
+
+
+
+### filter()
+
+Processes a vector of values and returns each that function f decides to include.
+
+```
+[E] filter([E] elements, func bool (E e, C context) f, C context)
+```
+
+
+### reduce()
+
+Processes a vector or values using the supplied function. Result is *one* value.
+
+```
+R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
+```
 
 
 ### stable_sort()

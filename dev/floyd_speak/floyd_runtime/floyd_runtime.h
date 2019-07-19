@@ -112,9 +112,16 @@ corecall_signature_t make_from_json_signature();
 
 corecall_signature_t make_get_json_type_signature();
 
+
+
+
 corecall_signature_t make_map_signature();
 corecall_signature_t make_map_string_signature();
+
 corecall_signature_t make_filter_signature();
+typeid_t harden_filter_func_type(const typeid_t& resolved_call_type);
+bool check_filter_func_type(const typeid_t& elements, const typeid_t& f, const typeid_t& context);
+
 corecall_signature_t make_reduce_signature();
 corecall_signature_t make_map_dag_signature();
 
