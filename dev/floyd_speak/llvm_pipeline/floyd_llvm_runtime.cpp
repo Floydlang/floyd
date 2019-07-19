@@ -1934,9 +1934,7 @@ WIDE_RETURN_T floyd_funcdef__reduce(floyd_runtime_t* frp, runtime_value_t arg0_v
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
 	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
 
-	QUARK_ASSERT(type0.is_vector());
-	QUARK_ASSERT(type2.is_function());
-	QUARK_ASSERT(type2.get_function_args().size () == 3);
+	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type(r.type_interner.interner, context_type)));
 
 	const auto& vec = *arg0_value.vector_ptr;
 	const auto& init = arg1_value;

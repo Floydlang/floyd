@@ -426,9 +426,60 @@ bool check_filter_func_type(const typeid_t& elements, const typeid_t& f, const t
 	return true;
 }
 
+
+
+
 corecall_signature_t make_reduce_signature(){
 	return { "reduce", 1035, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg1) };
 }
+
+typeid_t harden_reduce_func_type(const typeid_t& resolved_call_type){
+	QUARK_ASSERT(resolved_call_type.check_invariant());
+
+	const auto call_function_arg_type = resolved_call_type.get_function_args();
+
+	const auto elements_arg_type = call_function_arg_type[0];
+	if(elements_arg_type.is_vector() == false){
+		quark::throw_runtime_error("map() arg 1 must be a vector.");
+	}
+	const auto e_type = elements_arg_type.get_vector_element_type();
+
+	const auto r_type = call_function_arg_type[1];
+
+	const auto context_type = call_function_arg_type[3];
+
+	const auto expected = typeid_t::make_function(
+		r_type,
+		{
+			typeid_t::make_vector(e_type),
+			r_type,
+			typeid_t::make_function(r_type, { r_type, e_type, context_type }, epure::pure),
+			context_type
+		},
+		epure::pure
+	);
+	return expected;
+}
+
+bool check_reduce_func_type(const typeid_t& elements, const typeid_t& accumulator_init, const typeid_t& f, const typeid_t& context){
+	QUARK_ASSERT(elements.check_invariant());
+	QUARK_ASSERT(accumulator_init.check_invariant());
+	QUARK_ASSERT(f.check_invariant());
+	QUARK_ASSERT(context.check_invariant());
+
+	QUARK_ASSERT(elements.is_vector());
+	QUARK_ASSERT(f.is_function());
+	QUARK_ASSERT(f.get_function_args().size () == 3);
+
+	QUARK_ASSERT(f.get_function_args()[1] == elements.get_vector_element_type());
+	QUARK_ASSERT(f.get_function_args()[0] == accumulator_init);
+
+	return true;
+}
+
+
+
+
 
 corecall_signature_t make_stable_sort_signature(){
 	return { "stable_sort", 1038, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) };

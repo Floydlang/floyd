@@ -700,8 +700,8 @@ bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_
 
 
 
-
 /////////////////////////////////////////		PURE -- map_dag()
+
 
 
 //	[R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
@@ -962,28 +962,20 @@ bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 
 
-
-
 /////////////////////////////////////////		PURE -- reduce()
+
 
 
 //	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
 bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 4);
-
-	//	Check topology.
-	QUARK_ASSERT(args[0]._type.is_vector());
-	QUARK_ASSERT(args[2]._type.is_function());
-	QUARK_ASSERT(args[2]._type.get_function_args().size () == 3);
+	QUARK_ASSERT(check_reduce_func_type(args[0]._type, args[1]._type, args[2]._type, args[3]._type));
 
 	const auto& elements = args[0];
 	const auto& init = args[1];
 	const auto& f = args[2];
 	const auto& context = args[3];
-
-	QUARK_ASSERT(elements._type.get_vector_element_type() == f._type.get_function_args()[1] && init._type == f._type.get_function_args()[0]);
-
 	const auto input_vec = get_vector(elements);
 
 	bc_value_t acc = init;
