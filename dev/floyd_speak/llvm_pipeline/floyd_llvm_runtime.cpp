@@ -1692,15 +1692,11 @@ WIDE_RETURN_T floyd_funcdef__map(floyd_runtime_t* frp, runtime_value_t arg0_valu
 	const auto type0 = lookup_type(r.type_interner.interner, arg0_type);
 	const auto type1 = lookup_type(r.type_interner.interner, arg1_type);
 	const auto type2 = lookup_type(r.type_interner.interner, arg2_type);
-	QUARK_ASSERT(type0.is_vector());
-	QUARK_ASSERT(type1.is_function());
+	QUARK_ASSERT(check_map_func_type(type0, type1, type2));
 
 	const auto e_type = type0.get_vector_element_type();
 	const auto f_arg_types = type1.get_function_args();
 	const auto r_type = type1.get_function_return();
-	QUARK_ASSERT(f_arg_types.size() == 2);
-	QUARK_ASSERT(f_arg_types[0] == e_type);
-	QUARK_ASSERT(f_arg_types[1] == type2);
 
 	const auto f = reinterpret_cast<MAP_F>(arg1_value.function_ptr);
 

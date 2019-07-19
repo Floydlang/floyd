@@ -243,6 +243,50 @@ corecall_signature_t make_get_json_type_signature(){
 corecall_signature_t make_map_signature(){
 	return { "map", 1033, typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::vector_of_arg1func_return) };
 }
+typeid_t harden_map_func_type(const typeid_t& resolved_call_type){
+	QUARK_ASSERT(resolved_call_type.check_invariant());
+
+	const auto sign = make_map_signature();
+
+	const auto arg1_type = resolved_call_type.get_function_args()[0];
+	if(arg1_type.is_vector() == false){
+		quark::throw_runtime_error("map() arg 1 must be a vector.");
+	}
+	const auto e_type = arg1_type.get_vector_element_type();
+
+	const auto arg2_type = resolved_call_type.get_function_args()[1];
+	if(arg2_type.is_function() == false){
+		quark::throw_runtime_error("map() arg 2 must be a function.");
+	}
+
+	const auto r_type = arg2_type.get_function_return();
+
+	const auto context_type = resolved_call_type.get_function_args()[2];
+
+	const auto expected = typeid_t::make_function(
+		typeid_t::make_vector(r_type),
+		{
+			typeid_t::make_vector(e_type),
+			typeid_t::make_function(r_type, { e_type, context_type }, epure::pure),
+			context_type
+		},
+		epure::pure
+	);
+	return expected;
+}
+
+bool check_map_func_type(const typeid_t& elements, const typeid_t& f, const typeid_t& context){
+	QUARK_ASSERT(elements.is_vector());
+	QUARK_ASSERT(f.is_function());
+
+	QUARK_ASSERT(f.get_function_args().size() == 2);
+	QUARK_ASSERT(f.get_function_args()[0] == elements.get_vector_element_type());
+	QUARK_ASSERT(f.get_function_args()[1] == context);
+	return true;
+}
+
+
+
 
 corecall_signature_t make_map_string_signature(){
 	return {

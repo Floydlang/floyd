@@ -622,6 +622,9 @@ bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], in
 	return v;
 }
 
+
+
+
 /////////////////////////////////////////		PURE -- FUNCTIONAL
 
 
@@ -634,21 +637,14 @@ bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], in
 bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
-
-	QUARK_ASSERT(args[0]._type.is_vector());
-	QUARK_ASSERT(args[1]._type.is_function());
+	QUARK_ASSERT(check_map_func_type(args[0]._type, args[1]._type, args[2]._type));
 
 	const auto e_type = args[0]._type.get_vector_element_type();
-
 	const auto f = args[1];
 	const auto f_arg_types = f._type.get_function_args();
 	const auto r_type = f._type.get_function_return();
 
 	const auto& context = args[2];
-
-	QUARK_ASSERT(f_arg_types.size() == 2);
-	QUARK_ASSERT(f_arg_types[0] == e_type);
-	QUARK_ASSERT(f_arg_types[1] == args[2]._type);
 
 	const auto input_vec = get_vector(args[0]);
 	immer::vector<bc_value_t> vec2;
@@ -670,6 +666,7 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 
 
 /////////////////////////////////////////		PURE -- map_string()
+
 
 //	string map_string(string s, func string(string e, C context) f, C context)
 bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
