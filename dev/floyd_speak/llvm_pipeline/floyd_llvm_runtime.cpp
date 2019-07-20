@@ -2789,11 +2789,11 @@ llvm_execution_engine_t::~llvm_execution_engine_t(){
 		call_floyd_runtime_deinit(*this);
 		inited = false;
 	};
-	try {
-		detect_leaks(heap);
-	}
-	catch(...){
-	}
+
+//	const auto leaks = heap.count_used();
+//	QUARK_ASSERT(leaks == 0);
+
+//	detect_leaks(heap);
 }
 
 bool llvm_execution_engine_t::check_invariant() const {
@@ -2916,6 +2916,8 @@ std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program
 	ee->inited = true;
 
 	trace_heap(ee->heap);
+//	const auto leaks = ee->heap.count_used();
+//	QUARK_ASSERT(leaks == 0);
 
 	return ee;
 }
