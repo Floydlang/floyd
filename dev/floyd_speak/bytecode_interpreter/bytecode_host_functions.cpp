@@ -682,10 +682,11 @@ bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_
 	const auto input_vec = args[0].get_string_value();
 	std::string vec2;
 	for(const auto& e: input_vec){
-		const bc_value_t f_args[] = { bc_value_t::make_string(std::string(1, e)), context };
+		const bc_value_t f_args[] = { bc_value_t::make_int(e), context };
 		const auto result1 = call_function_bc(vm, f, f_args, 2);
-		QUARK_ASSERT(result1._type.is_string());
-		vec2.append(result1.get_string_value());
+		QUARK_ASSERT(result1._type.is_int());
+		const int64_t ch = result1.get_int_value();
+		vec2.push_back(static_cast<char>(ch));
 	}
 
 	const auto result = bc_value_t::make_string(vec2);

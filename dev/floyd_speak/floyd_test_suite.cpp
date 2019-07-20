@@ -5079,7 +5079,7 @@ QUARK_UNIT_TEST	("Floyd test suite", "map()", "context struct", ""){
 }
 //??? make sure f() can't be impure!
 
-
+/*
 //////////////////////////////////////////		HIGHER-ORDER CORECALLS - map_string()
 
 
@@ -5089,12 +5089,10 @@ QUARK_UNIT_TEST("Floyd test suite", "map_string()", "", ""){
 
 		let a = "ABC"
 
-		func string f(string v, string context){
-			assert(size(v) == 1)
+		func int f(int ch, string context){
 			assert(context == "con")
 
-			let int ch = v[0]
-			return to_string(ch)
+			return ch)
 		}
 
 		let result = map_string(a, f, "con")
@@ -5103,7 +5101,7 @@ QUARK_UNIT_TEST("Floyd test suite", "map_string()", "", ""){
 
 	)");
 }
-
+*/
 
 
 //////////////////////////////////////////		HIGHER-ORDER CORECALLS - map_dag()

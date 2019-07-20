@@ -287,7 +287,7 @@ bool check_map_func_type(const typeid_t& elements, const typeid_t& f, const type
 
 
 
-
+//	string map_string(string s, func int(int e, C context) f, C context)
 corecall_signature_t make_map_string_signature(){
 	return {
 		"map_string",
@@ -314,7 +314,7 @@ typeid_t harden_map_string_func_type(const typeid_t& resolved_call_type){
 		typeid_t::make_string(),
 		{
 			typeid_t::make_string(),
-			typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_string(), context_type }, epure::pure),
+			typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), context_type }, epure::pure),
 			context_type
 		},
 		epure::pure
@@ -325,9 +325,8 @@ typeid_t harden_map_string_func_type(const typeid_t& resolved_call_type){
 bool check_map_string_func_type(const typeid_t& elements, const typeid_t& f, const typeid_t& context){
 	QUARK_ASSERT(elements.is_string());
 	QUARK_ASSERT(f.is_function());
-
 	QUARK_ASSERT(f.get_function_args().size() == 2);
-	QUARK_ASSERT(f.get_function_args()[0] == typeid_t::make_string());
+	QUARK_ASSERT(f.get_function_args()[0] == typeid_t::make_int());
 	QUARK_ASSERT(f.get_function_args()[1] == context);
 	return true;
 }
@@ -607,7 +606,7 @@ static std::vector<corecall_signature_t> get_host_function_records(){
 		make_get_json_type_signature(),
 
 		make_map_signature(),
-		make_map_string_signature(),
+//		make_map_string_signature(),
 		make_filter_signature(),
 		make_reduce_signature(),
 		make_map_dag_signature(),

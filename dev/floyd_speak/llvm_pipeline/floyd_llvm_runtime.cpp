@@ -1732,15 +1732,12 @@ runtime_value_t floyd_funcdef__map_string(floyd_runtime_t* frp, runtime_value_t 
 
 	std::string acc;
 	for(int i = 0 ; i < count ; i++){
-		const std::string  element = { input_string[i] };
-		const auto x = to_runtime_string(r, element);
-		const auto temp = (*f)(frp, x, context);
+		const int64_t ch = input_string[i];
+		const auto ch2 = make_runtime_int(ch);
+		const auto temp = (*f)(frp, ch2, context);
 
-		release_vec_deep(r, x.vector_ptr, typeid_t::make_string());
-
-		const auto temp2 = from_runtime_string(r, temp);
-		acc.insert(acc.end(), temp2.begin(), temp2.end());
-		release_vec_deep(r, temp.vector_ptr, typeid_t::make_string());
+		const auto temp2 = temp.int_value;
+		acc.push_back(static_cast<char>(temp2));
 	}
 	return to_runtime_string(r, acc);
 }

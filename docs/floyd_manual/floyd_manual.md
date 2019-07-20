@@ -1972,16 +1972,6 @@ Supports mapping over
 - characters in a string
 
 
-#### map_string()
-
-This is special version of map designed to process strings.
-
-```
-string map_string(string s, func string(string e, C context) f, C context)
-```
-
-The function f is called with each character in the input string, stored as a 1-character string in _e_. All the calls to f() will be appended together and returned from map_string().
-
 
 ### map_dag()
 
