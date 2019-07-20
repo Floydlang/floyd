@@ -615,6 +615,37 @@ QUARK_UNIT_TEST("Floyd test suite", "Construct value", "string()", ""){
 //??? add test for irregular dividers '
 
 
+//////////////////////////////////////////		TEST CHARACTER LITERALS
+
+
+QUARK_UNIT_TEST("Floyd test suite", "Character literal", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = 'A'", value_t::make_int(65));
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "Character literal", "Escape \0", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\0')___", value_t::make_int('\0'));
+}
+QUARK_UNIT_TEST("Floyd test suite", "Character literal", "Escape \t", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\t')___", value_t::make_int('\t'));
+}
+QUARK_UNIT_TEST("Floyd test suite", "Character literal", "Escape \\", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\\')___", value_t::make_int('\\'));
+}
+QUARK_UNIT_TEST("Floyd test suite", "Character literal", "Escape \n", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\n')___", value_t::make_int('\n'));
+}
+QUARK_UNIT_TEST("Floyd test suite", "Character literal", "Escape \r", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\r')___", value_t::make_int('\r'));
+}
+QUARK_UNIT_TEST("Floyd test suite", "Character literal", "Escape \"", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\"')___", value_t::make_int('\"'));
+}
+QUARK_UNIT_TEST("Floyd test suite", "Character literal", "Escape \'", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\'')___", value_t::make_int('\''));
+}
+
+
+
 //////////////////////////////////////////		TEST BINARY LITERALS
 
 

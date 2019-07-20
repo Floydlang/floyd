@@ -264,13 +264,13 @@ int64_t expand_one_char_escape(const char ch2){
 	}
 }
 
-std::pair<std::string, seq_t> parse_string_literal(const seq_t& s){
+std::pair<std::string, seq_t> parse_string_literal_internal(const seq_t& s, const char delimiter){
 	QUARK_ASSERT(!s.empty());
-	QUARK_ASSERT(s.first1_char() == '\"');
+	QUARK_ASSERT(s.first1_char() == delimiter);
 
 	auto pos = s.rest();
 	std::string result = "";
-	while(pos.empty() == false && pos.first() != "\""){
+	while(pos.empty() == false && pos.first() != std::string(1, delimiter)){
 		//	Look for escape char
 		if(pos.first1_char() == 0x5c){
 			if(pos.size() < 2){
@@ -294,10 +294,16 @@ std::pair<std::string, seq_t> parse_string_literal(const seq_t& s){
 			pos = pos.rest();
 		}
 	}
-	if(pos.first() != "\""){
-		throw_compiler_error_nopos("Incomplete string literal -- missing ending \"-character in string literal: \"" + result + "\"!");
+	if(pos.first() != std::string(1, delimiter)){
+		throw_compiler_error_nopos("Incomplete string literal -- missing ending " + std::string(1, delimiter) + "-character in string literal: \"" + result + "\"!");
 	}
 	return { result, pos.rest() };
+}
+
+
+
+std::pair<std::string, seq_t> parse_string_literal(const seq_t& s){
+	return parse_string_literal_internal(s, '\"');
 }
 
 QUARK_UNIT_TEST("parser", "parse_string_literal()", "", ""){
@@ -344,6 +350,44 @@ QUARK_UNIT_TEST("parser", "parse_string_literal()", "Escape \'", ""){
 }
 
 
+
+
+std::pair<int64_t, seq_t> parse_character_literal(const seq_t& s){
+	QUARK_ASSERT(!s.empty());
+	QUARK_ASSERT(s.first1_char() == '\'');
+
+	const auto a = parse_string_literal_internal(s, '\'');
+	if(a.first.size() != 1){
+		throw_compiler_error_nopos("Character literal must be a single character: \"" + a.first + "\"!");
+	}
+
+	const int64_t number = a.first[0];
+	QUARK_ASSERT(number >= 0 && number < 256);
+
+	return { number, a.second };
+}
+
+QUARK_UNIT_TEST("parser", "parse_character_literal()", "", ""){
+	ut_verify(QUARK_POS, parse_character_literal(seq_t(R"('A' xxx)")), std::pair<int64_t, seq_t>(65, seq_t(" xxx")));
+}
+QUARK_UNIT_TEST("parser", "parse_string_literal()", "Escape \0", ""){
+	ut_verify(QUARK_POS, parse_character_literal(seq_t(R"___('\0' xxx)___")), std::pair<int64_t, seq_t>(0x00, seq_t(" xxx")));
+}
+
+QUARK_UNIT_TEST("parser", "parse_character_literal()", "", ""){
+	try {
+		parse_character_literal(seq_t(R"('AB' xxx)"));
+		QUARK_ASSERT(false);
+	}
+	catch(const compiler_error& e){
+		const auto w = e.what();
+		ut_verify(QUARK_POS, w, R"___(Character literal must be a single character: "AB"!)___");
+	}
+}
+
+
+
+
 // [0-9] and "."  => numeric constant.
 std::pair<value_t, seq_t> parse_decimal_literal(const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
@@ -360,7 +404,7 @@ std::pair<value_t, seq_t> parse_decimal_literal(const seq_t& p) {
 		return { value_t::make_double(number), number_pos.second };
 	}
 	else{
-		int number = atoi(number_pos.first.c_str());
+		const int number = atoi(number_pos.first.c_str());
 		return { value_t::make_int(number), number_pos.second };
 	}
 }
@@ -729,6 +773,11 @@ QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
 	Constant literal or identifier.
 		3
 		3.0
+		0b00000011
+		0xffdeadbeefaa
+
+		'T'
+
 		"three"
 		true
 		false
@@ -744,6 +793,11 @@ std::pair<json_t, seq_t> parse_terminal(const seq_t& p0) {
 	if(p.first1() == "\""){
 		const auto value_pos = parse_string_literal(p);
 		const auto result = maker__make_constant(value_t::make_string(value_pos.first));
+		return { result, value_pos.second };
+	}
+	else if(p.first1() == "\'"){
+		const auto value_pos = parse_character_literal(p);
+		const auto result = maker__make_constant(value_t::make_int(value_pos.first));
 		return { result, value_pos.second };
 	}
 

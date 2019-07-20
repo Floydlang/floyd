@@ -806,12 +806,11 @@ This is a value that is fully defined directly in the code. Like the number 3.
 | [ "one", "two", "three" ] | Vector-of-strings literal
 | { "a": 100, "b": 200 } | Dictionary of string-integer literal.
 | ...			| Any literal that is compatible with json_t can be a JSON literal
-
+| 'A'			| Character literal. ASCII. This is equivalent to the number 65 (A as ASCII). Can be one character or an escape character (see string literals).
 
 Floyd supports decimal literals, as above, but also hexadecimal and binary literals.
 
 
-	
 
 
 
