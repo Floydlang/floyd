@@ -1366,20 +1366,21 @@ String literals in Floyd code cannot contain any character, because that would m
 
 You can use these escape characters in string literals by entering \n or \' or \" etc.
 
-|ESCAPE SEQUENCE	| RESULT CHARACTER, AS HEX		| ASCII MEANING
-|:---				|:---						|:---
-| \0		| 0x00	| ZERO
-| \a		| 0x07	| BEL, bell, alarm, \a
-| \b		| 0x08	| BS, backspace, \b
-| \f		| 0x0c	| FF, NP, form feed, \f
-| \n		| 0x0a	| Newline (Line Feed)
-| \r		| 0x0d	| Carriage Return
-| \t		| 0x09	| Horizontal Tab
-| \v		| 0x0b	| Vertical Tab
-| \\\\	| 0x5f	| Backslash
-| \'		| 0x27	| Single quotation mark
-| \\"	| 0x22	| Double quotation mark
-
+|ESCAPE SEQUENCE	| RESULT CHAR, AS HEX		| ASCII MEANING | JSON
+|:---				|:---						|:---			|:---
+| \0				| 0x00	| ZERO	| NO
+| \a				| 0x07	| BEL, bell, alarm, \a	| NO
+| \b				| 0x08	| BS, backspace, \b	| YES
+| \f				| 0x0c	| FF, NP, form feed, \f	| NO
+| \n				| 0x0a	| Newline (Line Feed)	| YES
+| \r				| 0x0d	| Carriage Return		| YES
+| \t				| 0x09	| Horizontal Tab		| YES
+| \v				| 0x0b	| Vertical Tab	| NO
+| \\\\				| 0x5c	| Backslash		| YES
+| \\'				| 0x27	| Single quotation mark		| NO
+| \\"				| 0x22	| Double quotation mark		| YES
+| \\/				| 0x2f	| Forward slash		| YES
+| \uABCD			| 0xabcd	| 4 hex characters => 16 bit character	| YES
 ##### EXAMPLES
 
 |CODE		| OUTPUT | NOTE

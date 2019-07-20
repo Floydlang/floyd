@@ -259,6 +259,8 @@ int64_t expand_one_char_escape(const char ch2){
 			return 0x27;
 		case '"':
 			return 0x22;
+		case '/':
+			return 0x2f;
 		default:
 			return -1;
 	}
@@ -347,6 +349,9 @@ QUARK_UNIT_TEST("parser", "parse_string_literal()", "Escape \"", ""){
 }
 QUARK_UNIT_TEST("parser", "parse_string_literal()", "Escape \'", ""){
 	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\'" xxx)___")), std::pair<std::string, seq_t>("\'", seq_t(" xxx")));
+}
+QUARK_UNIT_TEST("parser", "parse_string_literal()", "Escape \'", ""){
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\/" xxx)___")), std::pair<std::string, seq_t>("/", seq_t(" xxx")));
 }
 
 

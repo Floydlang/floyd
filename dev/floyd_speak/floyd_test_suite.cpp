@@ -643,6 +643,9 @@ QUARK_UNIT_TEST("Floyd test suite", "Character literal", "Escape \"", ""){
 QUARK_UNIT_TEST("Floyd test suite", "Character literal", "Escape \'", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\'')___", value_t::make_int('\''));
 }
+QUARK_UNIT_TEST("Floyd test suite", "Character literal", "Escape \'", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = '\/')___", value_t::make_int('/'));
+}
 
 
 
@@ -2292,6 +2295,9 @@ QUARK_UNIT_TEST("Floyd test suite", "string literal", "Escape \"", ""){
 }
 QUARK_UNIT_TEST("Floyd test suite", "string literal", "Escape \'", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\'")___", value_t::make_string("\'"));
+}
+QUARK_UNIT_TEST("Floyd test suite", "string literal", "Escape \'", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"___(let result = "\/")___", value_t::make_string("/"));
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "string =", "", ""){
