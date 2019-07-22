@@ -126,16 +126,11 @@ test_report_t test_floyd_program(const compilation_unit_t& cu, const std::vector
 }
 
 
-//??? Remove! Use test_floyd_program() directly.
-run_output_t test_run_container2(const compilation_unit_t& cu, const std::vector<std::string>& main_args, const std::string& container_key){
-	return test_floyd_program(cu, main_args).output;
-}
-
 
 //??? Remove! Use test_floyd_program() directly.
-run_output_t test_run_container2(const std::string& program, const std::vector<std::string>& args, const std::string& container_key, const std::string& source_file){
+run_output_t test_run_container3(const std::string& program, const std::vector<std::string>& args, const std::string& container_key, const std::string& source_file){
 	const auto cu = make_compilation_unit_lib(program, source_file);
-	return test_run_container2(cu, args, container_key);
+	return test_floyd_program(cu, args).output;
 }
 
 

@@ -617,7 +617,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Construct value", "string()", ""){
 //////////////////////////////////////////		TEST CHARACTER LITERALS
 
 
-QUARK_UNIT_TEST("Floyd test suite", "Character literal", "", ""){
+QUARK_UNIT_TEST_VIP("Floyd test suite", "Character literal", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = 'A'", value_t::make_int(65));
 }
 
@@ -1085,7 +1085,7 @@ QUARK_UNIT_TEST("Floyd test suite", "return", "return from within BLOCK", ""){
 
 QUARK_UNIT_TEST("Floyd test suite", "return", "Make sure returning wrong type => error", ""){
 	try {
-		test_run_container2(R"(
+		test_run_container3(R"(
 
 			func int f(){
 				return "x"
@@ -5780,7 +5780,7 @@ QUARK_UNIT_TEST("", "try calling LLVM function", "", ""){
 
 	)";
 
-	const auto result = test_run_container2(p, {}, "iphone app", "");
+	const auto result = test_run_container3(p, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result.empty());
 }
 #endif
@@ -5846,7 +5846,7 @@ QUARK_UNIT_TEST("software-system-def", "run one process", "", ""){
 
 	)";
 
-	const auto result = test_run_container2(test_ss2, {}, "iphone app", "");
+	const auto result = test_run_container3(test_ss2, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result == run_output_t());
 }
 
@@ -5932,7 +5932,7 @@ QUARK_UNIT_TEST("software-system-def", "run two unconnected processs", "", ""){
 
 	)";
 
-	const auto result = test_run_container2(test_ss3, {}, "iphone app", "");
+	const auto result = test_run_container3(test_ss3, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result == run_output_t());
 }
 
@@ -6021,7 +6021,7 @@ QUARK_UNIT_TEST("software-system-def", "run two CONNECTED processes", "", ""){
 
 	)";
 
-	const auto result = test_run_container2(test_ss3, {}, "iphone app", "");
+	const auto result = test_run_container3(test_ss3, {}, "iphone app", "");
 	QUARK_UT_VERIFY(result == run_output_t() );
 }
 
@@ -6040,7 +6040,7 @@ QUARK_UNIT_TEST("Floyd test suite", "hello_world.floyd", "", ""){
 	const auto path = get_working_dir() + "/examples/hello_world.floyd";
 	const auto program = read_text_file(path);
 
-	const auto result = test_run_container2(program, {}, "", "");
+	const auto result = test_run_container3(program, {}, "", "");
 	const run_output_t expected = {};
 	QUARK_UT_VERIFY(result == expected);
 }
@@ -6049,20 +6049,11 @@ QUARK_UNIT_TEST("Floyd test suite", "game_of_life.floyd", "", ""){
 	const auto path = get_working_dir() + "/examples/game_of_life.floyd";
 	const auto program = read_text_file(path);
 
-	const auto result = test_run_container2(program, {}, "", "");
+	const auto result = test_run_container3(program, {}, "", "");
 	const run_output_t expected = {};
 	QUARK_UT_VERIFY(result == expected);
 }
 
-#if 0
-QUARK_UNIT_TEST("Floyd test suite", "process_test1.floyd", "", ""){
-	const auto path = get_working_dir() + "/examples/process_test1.floyd";
-	const auto program = read_text_file(path);
-
-	const auto result = test_run_container2(program, {}, "iphone app", "");
-	QUARK_UT_VERIFY(result.empty());
-}
-#endif
 
 
 
@@ -6078,7 +6069,7 @@ QUARK_UNIT_TEST("Floyd test suite", "process_test1.floyd", "", ""){
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "TERNARY OPERATOR", "", ""){
-	test_run_container2(R"(
+	test_run_container3(R"(
 
 //	Snippets setup
 let b = ""
@@ -6091,7 +6082,7 @@ let a = b == "true" ? true : false
 }
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "COMMENTS", "", ""){
-	test_run_container2(R"(
+	test_run_container3(R"(
 
 /* Comment can span lines. */
 
@@ -6103,7 +6094,7 @@ let a = 10; // To end of line
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "LOCALS", "", ""){
-	test_run_container2(R"(
+	test_run_container3(R"(
 
 let a = 10
 mutable b = 10
@@ -6134,7 +6125,7 @@ while(expression){
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "FOR", "", ""){
-	test_run_container2(R"(
+	test_run_container3(R"(
 
 for (index in 1 ... 5) {
 	print(index)
@@ -6148,7 +6139,7 @@ for (index in 1  ..< 5) {
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "IF ELSE", "", ""){
-	test_run_container2(R"(
+	test_run_container3(R"(
 
 //	Snippets setup
 let a = 1000
@@ -6170,7 +6161,7 @@ else{
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "BOOL", "", ""){
-	test_run_container2(R"(
+	test_run_container3(R"(
 
 let a = true
 if(a){
@@ -6180,7 +6171,7 @@ if(a){
 }
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "STRING", "", ""){
-	test_run_container2(R"(
+	test_run_container3(R"(
 
 let s1 = "Hello, world!"
 let s2 = "Title: " + s1
@@ -6197,7 +6188,7 @@ let s4 = to_string(12003)
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "FUNCTION", "", ""){
-	test_run_container2(R"(
+	test_run_container3(R"(
 
 func string f(double a, string s){
 	return to_string(a) + ":" + s
@@ -6209,7 +6200,7 @@ let a = f(3.14, "km")
 }
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "IMPURE FUNCTION", "", ""){
-	test_run_container2(R"(
+	test_run_container3(R"(
 
 func int main([string] args) impure {
 	return 1
@@ -6221,7 +6212,7 @@ func int main([string] args) impure {
 
 
 QUARK_UNIT_TEST("QUICK REFERENCE SNIPPETS", "STRUCT", "", ""){
-	test_run_container2(R"(
+	test_run_container3(R"(
 
 struct rect {
 	double width
@@ -6246,7 +6237,7 @@ assert(b.width == 100.0)
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "VECTOR", "", ""){
-	test_run_container2(R"(
+	test_run_container3(R"(
 
 let a = [ 1, 2, 3 ]
 assert(size(a) == 3)
@@ -6274,7 +6265,7 @@ for(i in 0 ..< size(a)){
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "DICTIONARY", "", ""){
-	test_run_container2(R"(
+	test_run_container3(R"(
 
 let a = { "one": 1, "two": 2 }
 assert(a["one"] == 1)
@@ -6288,7 +6279,7 @@ assert(b == { "one": 10, "two": 2 })
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "json", "", ""){
-	test_run_container2(R"(
+	test_run_container3(R"(
 
 let json a = {
 	"one": 1,
@@ -6304,7 +6295,7 @@ let json a = {
 
 
 QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "MAP", "", ""){
-	test_run_container2(R"(
+	test_run_container3(R"(
 
 		func int f(int v){
 			return 1000 + v
@@ -6328,7 +6319,7 @@ QUICK_REFERENCE_TEST("QUICK REFERENCE SNIPPETS", "MAP", "", ""){
 #define MANUAL_SNIPPETS_TEST	QUARK_UNIT_TEST
 
 MANUAL_SNIPPETS_TEST("MANUAL SNIPPETS", "subset()", "", ""){
-	test_run_container2(R"(
+	test_run_container3(R"(
 
 		assert(subset("hello", 2, 4) == "ll")
 		assert(subset([ 10, 20, 30, 40 ], 1, 3 ) == [ 20, 30 ])
