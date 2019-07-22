@@ -43,16 +43,15 @@ unsupported syntax
 }
 */
 
-//??? Run all container2 tests for LLVM too!
 //??? Add tests for arithmetic bounds, limiting, wrapping.
 //??? Test truthness off all variable types: strings, doubles
 
 
 
-void run_closed(const std::string& program){
+void ut_run_closed_nolib(const std::string& program){
 	ut_run_closed(program, compilation_unit_mode::k_no_core_lib);
 }
-void run_closed_lib(const std::string& program){
+void ut_run_closed_lib(const std::string& program){
 	ut_run_closed(program, compilation_unit_mode::k_include_core_lib);
 }
 
@@ -740,7 +739,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Mutate", "Store to immutable", "compiler er
 
 
 QUARK_UNIT_TEST("Floyd test suite", "", "String (which requires RC)", ""){
-	run_closed(R"___(
+	ut_run_closed_nolib(R"___(
 
 		func void f(){
 			let s = "A"
@@ -751,7 +750,7 @@ QUARK_UNIT_TEST("Floyd test suite", "", "String (which requires RC)", ""){
 	)___");
 }
 QUARK_UNIT_TEST("Floyd test suite", "Mutate", "String (which requires RC)", ""){
-	run_closed(R"___(
+	ut_run_closed_nolib(R"___(
 
 		func string f(){
 			mutable s = "A"
@@ -763,7 +762,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Mutate", "String (which requires RC)", ""){
 	)___");
 }
 QUARK_UNIT_TEST("Floyd test suite", "Mutate", "String (which requires RC)", ""){
-	run_closed(R"___(
+	ut_run_closed_nolib(R"___(
 
 		func string f(){
 			mutable s = "A"
@@ -964,7 +963,7 @@ QUARK_UNIT_TEST("Floyd test suite", "func", "test function args are always immut
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "func", "Recursion: function calling itself by name", ""){
-	run_closed(R"(		func int fx(int a){ return fx(a + 1) }		)");
+	ut_run_closed_nolib(R"(		func int fx(int a){ return fx(a + 1) }		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "func", "return from void function", "error"){
@@ -982,7 +981,7 @@ QUARK_UNIT_TEST("Floyd test suite", "func", "return from void function", "error"
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "func", "void function, no return statement", ""){
-	run_closed(
+	ut_run_closed_nolib(
 		R"(
 
 			func void f (int x) impure {
@@ -1174,7 +1173,7 @@ QUARK_UNIT_TEST("Floyd test suite", "return", "return RC-value from nested block
 //		1. The impure function modifies a local value only -- cannot leak out.
 
 QUARK_UNIT_TEST("Floyd test suite", "impure", "call pure->pure", "Compiles OK"){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		func int a(int p){ return p + 1 }
 		func int b(){ return a(100) }
@@ -1182,7 +1181,7 @@ QUARK_UNIT_TEST("Floyd test suite", "impure", "call pure->pure", "Compiles OK"){
 	)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "impure", "call impure->pure", "Compiles OK"){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		func int a(int p){ return p + 1 }
 		func int b() impure { return a(100) }
@@ -1204,7 +1203,7 @@ QUARK_UNIT_TEST("Floyd test suite", "impure", "call pure->impure", "Compilation 
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "impure", "call impure->impure", "Compiles OK"){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		func int a(int p) impure { return p + 1 }
 		func int b() impure { return a(100) }
@@ -1266,11 +1265,11 @@ QUARK_UNIT_TEST("comments", "// on start of line", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "Scopes: Empty block", "", ""){
-	run_closed("{}");
+	ut_run_closed_nolib("{}");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "Scopes: Block with local variable, no shadowing", "", ""){
-	run_closed("{ let int x = 4 }");
+	ut_run_closed_nolib("{ let int x = 4 }");
 }
 
 
@@ -2301,7 +2300,7 @@ QUARK_UNIT_TEST("Floyd test suite", "string literal", "Escape \'", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "string =", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let a = "hello"
 		let b = a
@@ -2311,69 +2310,69 @@ QUARK_UNIT_TEST("Floyd test suite", "string =", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "string +", "", ""){
-	run_closed(R"(		assert("a" + "b" == "ab")		)");
+	ut_run_closed_nolib(R"(		assert("a" + "b" == "ab")		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string +", "", ""){
-	run_closed(R"(		assert("a" + "b" + "c" == "abc")		)");
+	ut_run_closed_nolib(R"(		assert("a" + "b" + "c" == "abc")		)");
 }
 
 
 
 QUARK_UNIT_TEST("Floyd test suite", "string ==", "", ""){
-	run_closed(R"(		assert(("hello" == "hello") == true)		)");
+	ut_run_closed_nolib(R"(		assert(("hello" == "hello") == true)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string ==", "", ""){
-	run_closed(R"(		assert(("hello" == "Yello") == false)		)");
+	ut_run_closed_nolib(R"(		assert(("hello" == "Yello") == false)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string !=", "", ""){
-	run_closed(R"(		assert(("hello" != "yello") == true)		)");
+	ut_run_closed_nolib(R"(		assert(("hello" != "yello") == true)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string !=", "", ""){
-	run_closed(R"(		assert(("hello" != "hello") == false)		)");
+	ut_run_closed_nolib(R"(		assert(("hello" != "hello") == false)		)");
 }
 
 
 QUARK_UNIT_TEST("Floyd test suite", "string <", "", ""){
-	run_closed(R"(		assert(("aaa" < "bbb") == true)		)");
+	ut_run_closed_nolib(R"(		assert(("aaa" < "bbb") == true)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string <", "", ""){
-	run_closed(R"(		assert(("aaa" < "aaa") == false)		)");
+	ut_run_closed_nolib(R"(		assert(("aaa" < "aaa") == false)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string <", "", ""){
-	run_closed(R"(		assert(("bbb" < "aaa") == false)		)");
+	ut_run_closed_nolib(R"(		assert(("bbb" < "aaa") == false)		)");
 }
 
 
 QUARK_UNIT_TEST("Floyd test suite", "string <=", "", ""){
-	run_closed(R"(		assert(("aaa" <= "bbb") == true)		)");
+	ut_run_closed_nolib(R"(		assert(("aaa" <= "bbb") == true)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string <=", "", ""){
-	run_closed(R"(		assert(("aaa" <= "aaa") == true)		)");
+	ut_run_closed_nolib(R"(		assert(("aaa" <= "aaa") == true)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string <=", "", ""){
-	run_closed(R"(		assert(("bbb" <= "aaa") == false)		)");
+	ut_run_closed_nolib(R"(		assert(("bbb" <= "aaa") == false)		)");
 }
 
 
 QUARK_UNIT_TEST("Floyd test suite", "string >", "", ""){
-	run_closed(R"(		assert(("bbb" > "aaa") == true)		)");
+	ut_run_closed_nolib(R"(		assert(("bbb" > "aaa") == true)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string >", "", ""){
-	run_closed(R"(		assert(("aaa" > "aaa") == false)		)");
+	ut_run_closed_nolib(R"(		assert(("aaa" > "aaa") == false)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string >", "", ""){
-	run_closed(R"(		assert(("aaa" > "bbb") == false)		)");
+	ut_run_closed_nolib(R"(		assert(("aaa" > "bbb") == false)		)");
 }
 
 
 QUARK_UNIT_TEST("Floyd test suite", "string >=", "", ""){
-	run_closed(R"(		assert(("bbb" >= "aaa") == true)		)");
+	ut_run_closed_nolib(R"(		assert(("bbb" >= "aaa") == true)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string >=", "", ""){
-	run_closed(R"(		assert(("aaa" >= "aaa") == true)		)");
+	ut_run_closed_nolib(R"(		assert(("aaa" >= "aaa") == true)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string >=", "", ""){
-	run_closed(R"(		assert(("aaa" >= "bbb") == false)		)");
+	ut_run_closed_nolib(R"(		assert(("aaa" >= "bbb") == false)		)");
 }
 
 
@@ -2425,11 +2424,11 @@ QUARK_UNIT_TEST("Floyd test suite", "string []", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "string []", "", ""){
-	run_closed(R"(		assert("hello"[0] == 104)		)");
+	ut_run_closed_nolib(R"(		assert("hello"[0] == 104)		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "string []", "", ""){
-	run_closed(R"(		assert("hello"[4] == 111)		)");
+	ut_run_closed_nolib(R"(		assert("hello"[4] == 111)		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "string", "Error: Lookup in string using non-int", "exception"){
@@ -2457,7 +2456,7 @@ replace()
 */
 
 QUARK_UNIT_TEST("Floyd test suite", "string update()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let a = update("hello", 1, 98)
 		assert(a == "hbllo")
@@ -2479,33 +2478,33 @@ QUARK_UNIT_TEST("Floyd test suite", "string update()", "error: pos > len", "exce
 
 
 QUARK_UNIT_TEST("Floyd test suite", "string size()", "", ""){
-	run_closed(R"(		assert(size("") == 0)		)");
+	ut_run_closed_nolib(R"(		assert(size("") == 0)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string size()", "", ""){
-	run_closed(R"(		assert(size("How long is this string?") == 24)		)");
+	ut_run_closed_nolib(R"(		assert(size("How long is this string?") == 24)		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "string size()", "Embeded null characters - check 8 bit clean", ""){
-	run_closed(R"(		assert(size("hello\0world\0\0") == 13)		)");
+	ut_run_closed_nolib(R"(		assert(size("hello\0world\0\0") == 13)		)");
 }
 
 
 
 //??? find() should have a start index.
 QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
-	run_closed(R"(		assert(find("hello, world", "he") == 0)		)");
+	ut_run_closed_nolib(R"(		assert(find("hello, world", "he") == 0)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
-	run_closed(R"(		assert(find("hello, world", "e") == 1)		)");
+	ut_run_closed_nolib(R"(		assert(find("hello, world", "e") == 1)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string find()", "", ""){
-	run_closed(R"(		assert(find("hello, world", "x") == -1)		)");
+	ut_run_closed_nolib(R"(		assert(find("hello, world", "x") == -1)		)");
 }
 
 
 //??? Add character-literal / type.
 QUARK_UNIT_TEST("Floyd test suite", "string push_back()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let a = push_back("one", 111)
 		assert(a == "oneo")
@@ -2516,38 +2515,38 @@ QUARK_UNIT_TEST("Floyd test suite", "string push_back()", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
-	run_closed(R"(		assert(subset("abc", 0, 3) == "abc")		)");
+	ut_run_closed_nolib(R"(		assert(subset("abc", 0, 3) == "abc")		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
-	run_closed(R"(		assert(subset("abc", 1, 3) == "bc")		)");
+	ut_run_closed_nolib(R"(		assert(subset("abc", 1, 3) == "bc")		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
-	run_closed(R"(		assert(subset("abc", 0, 0) == "")		)");
+	ut_run_closed_nolib(R"(		assert(subset("abc", 0, 0) == "")		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
-	run_closed(R"(		assert(subset("abc", 0, 10) == "abc")		)");
+	ut_run_closed_nolib(R"(		assert(subset("abc", 0, 10) == "abc")		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string subset()", "string", ""){
-	run_closed(R"(		assert(subset("abc", 2, 10) == "c")		)");
+	ut_run_closed_nolib(R"(		assert(subset("abc", 2, 10) == "c")		)");
 }
 
 
 
 
 QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", ""){
-	run_closed(R"(		assert(replace("One ring to rule them all", 4, 8, "rabbit") == "One rabbit to rule them all")		)");
+	ut_run_closed_nolib(R"(		assert(replace("One ring to rule them all", 4, 8, "rabbit") == "One rabbit to rule them all")		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", ""){
-	run_closed(R"(		assert(replace("hello", 0, 5, "goodbye") == "goodbye")		)");
+	ut_run_closed_nolib(R"(		assert(replace("hello", 0, 5, "goodbye") == "goodbye")		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", ""){
-	run_closed(R"(		assert(replace("hello", 0, 6, "goodbye") == "goodbye")		)");
+	ut_run_closed_nolib(R"(		assert(replace("hello", 0, 6, "goodbye") == "goodbye")		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", ""){
-	run_closed(R"(		assert(replace("hello", 0, 0, "goodbye") == "goodbyehello")		)");
+	ut_run_closed_nolib(R"(		assert(replace("hello", 0, 0, "goodbye") == "goodbyehello")		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", ""){
-	run_closed(R"(		assert(replace("hello", 5, 5, "goodbye") == "hellogoodbye")		)");
+	ut_run_closed_nolib(R"(		assert(replace("hello", 5, 5, "goodbye") == "hellogoodbye")		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "string replace()", "", "error"){
 	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace("hello", 5, 0, "goodbye") == "hellogoodbye")		)", "replace() requires start <= end.");
@@ -2676,7 +2675,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector +", "add empty vectors", ""){
 #if 0
 //??? This fails but should not. This code becomes a constructor call to [int] with more than 16 arguments. Byte code interpreter has 16 argument limit.
 QUARK_UNIT_TEST("Floyd test suite", "vector [] - constructor", "32 elements initialization", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let a = [ 0,0,1,1,0,0,0,0,	0,0,1,1,0,0,0,0,	0,0,1,1,1,0,0,0,	0,0,1,1,1,1,0,0 ]
 		print(a)
@@ -2719,7 +2718,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] =", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] +", "non-empty vectors", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let [string] a = ["one"] + ["two"]
 		assert(a == ["one", "two"])
@@ -2729,19 +2728,19 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] +", "non-empty vectors", ""
 
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] ==", "same values", ""){
-	run_closed(R"(		assert((["one", "two"] == ["one", "two"]) == true)		)");
+	ut_run_closed_nolib(R"(		assert((["one", "two"] == ["one", "two"]) == true)		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] ==", "different values", ""){
-	run_closed(R"(		assert((["one", "three"] == ["one", "two"]) == false)		)");
+	ut_run_closed_nolib(R"(		assert((["one", "three"] == ["one", "two"]) == false)		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] <", "same values", ""){
-	run_closed(R"(		assert((["one", "two"] < ["one", "two"]) == false)		)");
+	ut_run_closed_nolib(R"(		assert((["one", "two"] < ["one", "two"]) == false)		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] <", "different values", ""){
-	run_closed(R"(		assert((["one", "a"] < ["one", "two"]) == true)		)");
+	ut_run_closed_nolib(R"(		assert((["one", "a"] < ["one", "two"]) == true)		)");
 }
 
 
@@ -2813,7 +2812,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] update()", "", "valid vecto
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] size()", "empty", "0"){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let [string] a = []
 		assert(size(a) == 0)
@@ -2821,7 +2820,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] size()", "empty", "0"){
 	)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] size()", "2", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let [string] a = ["one", "two"]
 		assert(size(a) == 2)
@@ -2832,19 +2831,19 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] size()", "2", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] find()", "", ""){
-	run_closed(R"(		assert(find(["one", "two", "three", "four"], "one") == 0)		)");
+	ut_run_closed_nolib(R"(		assert(find(["one", "two", "three", "four"], "one") == 0)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] find()", "", ""){
-	run_closed(R"(		assert(find(["one", "two", "three", "four"], "two") == 1)		)");
+	ut_run_closed_nolib(R"(		assert(find(["one", "two", "three", "four"], "two") == 1)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] find()", "", ""){
-	run_closed(R"(		assert(find(["one", "two", "three", "four"], "five") == -1)		)");
+	ut_run_closed_nolib(R"(		assert(find(["one", "two", "three", "four"], "five") == -1)		)");
 }
 
 
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] push_back()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let [string] a = ["one"];
 		let [string] b = push_back(a, "two")
@@ -2855,7 +2854,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] push_back()", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] push_back()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let [string] a = push_back(["one"], "two")
 		assert(a == ["one", "two"])
@@ -2864,35 +2863,35 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [string] push_back()", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] subset()", "", ""){
-	run_closed(R"(		assert(subset(["one", "two", "three"], 0, 3) == ["one", "two", "three"])		)");
+	ut_run_closed_nolib(R"(		assert(subset(["one", "two", "three"], 0, 3) == ["one", "two", "three"])		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] subset()", "", ""){
-	run_closed(R"(		assert(subset(["one", "two", "three"], 1, 3) == ["two", "three"])		)");
+	ut_run_closed_nolib(R"(		assert(subset(["one", "two", "three"], 1, 3) == ["two", "three"])		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] subset()", "", ""){
-	run_closed(R"(		assert(subset(["one", "two", "three"], 0, 0) == [])		)");
+	ut_run_closed_nolib(R"(		assert(subset(["one", "two", "three"], 0, 0) == [])		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] subset()", "", ""){
-	run_closed(R"(		assert(subset(["one", "two", "three"], 0, 10) == ["one", "two", "three"])		)");
+	ut_run_closed_nolib(R"(		assert(subset(["one", "two", "three"], 0, 10) == ["one", "two", "three"])		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] subset()", "", ""){
-	run_closed(R"(		assert(subset(["one", "two", "three"], 2, 10) == ["three"])		)");
+	ut_run_closed_nolib(R"(		assert(subset(["one", "two", "three"], 2, 10) == ["three"])		)");
 }
 
 
 
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] replace()", "", ""){
-	run_closed(R"(		assert(replace(["one", "two", "three", "four", "five"], 0, 5, ["goodbye"]) == ["goodbye"])		)");
+	ut_run_closed_nolib(R"(		assert(replace(["one", "two", "three", "four", "five"], 0, 5, ["goodbye"]) == ["goodbye"])		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] replace()", "", ""){
-	run_closed(R"(		assert(replace(["one", "two", "three", "four", "five"], 0, 6, ["goodbye"]) == ["goodbye"])		)");
+	ut_run_closed_nolib(R"(		assert(replace(["one", "two", "three", "four", "five"], 0, 6, ["goodbye"]) == ["goodbye"])		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] replace()", "", ""){
-	run_closed(R"(		assert(replace(["one", "two", "three", "four", "five"], 0, 0, ["goodbye"]) == ["goodbye", "one", "two", "three", "four", "five"])		)");
+	ut_run_closed_nolib(R"(		assert(replace(["one", "two", "three", "four", "five"], 0, 0, ["goodbye"]) == ["goodbye", "one", "two", "three", "four", "five"])		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] replace()", "", ""){
-	run_closed(R"(		assert(replace(["one", "two", "three", "four", "five"], 5, 5, ["goodbye"]) == ["one", "two", "three", "four", "five", "goodbye"])		)");
+	ut_run_closed_nolib(R"(		assert(replace(["one", "two", "three", "four", "five"], 5, 5, ["goodbye"]) == ["one", "two", "three", "four", "five", "goodbye"])		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] replace()", "", "error"){
 	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace(["one", "two", "three", "four", "five"], 5, 0, ["goodbye"]) == ["hellogoodbye"])		)", "replace() requires start <= end.");
@@ -3015,13 +3014,13 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [int] size()", "2", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] find()", "", ""){
-	run_closed(R"(		assert(find([1,2,3], 4) == -1)		)");
+	ut_run_closed_nolib(R"(		assert(find([1,2,3], 4) == -1)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] find()", "", ""){
-	run_closed(R"(		assert(find([1,2,3], 1) == 0)		)");
+	ut_run_closed_nolib(R"(		assert(find([1,2,3], 1) == 0)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] find()", "", ""){
-	run_closed(R"(		assert(find([1,2,2,2,3], 2) == 1)		)");
+	ut_run_closed_nolib(R"(		assert(find([1,2,2,2,3], 2) == 1)		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] push_back()", "", ""){
@@ -3029,7 +3028,7 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [int] push_back()", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] push_back()", "", ""){
-	run_closed(
+	ut_run_closed_nolib(
 		R"(
 
 			let result = push_back([1, 2], 3)
@@ -3040,24 +3039,24 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [int] push_back()", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
-	run_closed(R"(		assert(subset([10,20,30], 0, 3) == [10,20,30])		)");
+	ut_run_closed_nolib(R"(		assert(subset([10,20,30], 0, 3) == [10,20,30])		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
-	run_closed(R"(		assert(subset([10,20,30], 1, 3) == [20,30])		)");
+	ut_run_closed_nolib(R"(		assert(subset([10,20,30], 1, 3) == [20,30])		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
-	run_closed(R"(		let result = (subset([10,20,30], 0, 0) == [])		)");
+	ut_run_closed_nolib(R"(		let result = (subset([10,20,30], 0, 0) == [])		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] subset()", "", ""){
-	run_closed(R"(		assert(subset([10,20,30], 0, 0) == [])		)");
+	ut_run_closed_nolib(R"(		assert(subset([10,20,30], 0, 0) == [])		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] replace()", "", ""){
-	run_closed(R"(		assert(replace([ 1, 2, 3, 4, 5, 6 ], 2, 5, [20, 30]) == [1, 2, 20, 30, 6])		)");
+	ut_run_closed_nolib(R"(		assert(replace([ 1, 2, 3, 4, 5, 6 ], 2, 5, [20, 30]) == [1, 2, 20, 30, 6])		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] replace()", "", ""){
-	run_closed(
+	ut_run_closed_nolib(
 		R"(
 
 			let h = replace([ 1, 2, 3, 4, 5 ], 1, 4, [ 8, 9 ])
@@ -3148,20 +3147,20 @@ QUARK_UNIT_TEST("Floyd test suite", "vector [double] push_back()", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [bool] constructor", "", ""){
-	run_closed(R"(		assert(to_string([true, false, true]) == "[true, false, true]")		)");
+	ut_run_closed_nolib(R"(		assert(to_string([true, false, true]) == "[true, false, true]")		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [int] constructor", "", ""){
-	run_closed(R"(		assert(to_string([1, 2, 3]) == "[1, 2, 3]")		)");
+	ut_run_closed_nolib(R"(		assert(to_string([1, 2, 3]) == "[1, 2, 3]")		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [double] constructor", "", ""){
-	run_closed(R"(		assert(to_string([1.0, 2.0, 3.0]) == "[1.0, 2.0, 3.0]")		)");
+	ut_run_closed_nolib(R"(		assert(to_string([1.0, 2.0, 3.0]) == "[1.0, 2.0, 3.0]")		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "vector [string] constructor", "", ""){
-	run_closed(R"(		assert(to_string(["one", "two", "three"]) == "[\"one\", \"two\", \"three\"]")		)");
+	ut_run_closed_nolib(R"(		assert(to_string(["one", "two", "three"]) == "[\"one\", \"two\", \"three\"]")		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [typeid] constructor", "", ""){
-	run_closed(R"(		assert(to_string([int, bool, string]) == "[int, bool, string]")		)");
+	ut_run_closed_nolib(R"(		assert(to_string([int, bool, string]) == "[int, bool, string]")		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "vector [typeid] constructor", "", ""){
@@ -3470,26 +3469,26 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [int] []", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "dict [int] ==", "", ""){
-	run_closed(R"(		assert(({"one": 1, "two": 2} == {"one": 1, "two": 2}) == true)		)");
+	ut_run_closed_nolib(R"(		assert(({"one": 1, "two": 2} == {"one": 1, "two": 2}) == true)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "dict [int] ==", "", ""){
-	run_closed(R"(		assert(({"one": 1, "two": 2} == {"two": 2}) == false)		)");
+	ut_run_closed_nolib(R"(		assert(({"one": 1, "two": 2} == {"two": 2}) == false)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "dict [int] ==", "", ""){
-	run_closed(R"(		assert(({"one": 2, "two": 2} == {"one": 1, "two": 2}) == false)		)");
+	ut_run_closed_nolib(R"(		assert(({"one": 2, "two": 2} == {"one": 1, "two": 2}) == false)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "dict [int] ==", "", ""){
-	run_closed(R"(		assert(({"one": 1, "two": 2} < {"one": 1, "two": 2}) == false)		)");
+	ut_run_closed_nolib(R"(		assert(({"one": 1, "two": 2} < {"one": 1, "two": 2}) == false)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "dict [int] <", "", ""){
-	run_closed(R"(		assert(({"one": 1, "two": 1} < {"one": 1, "two": 2}) == true)		)");
+	ut_run_closed_nolib(R"(		assert(({"one": 1, "two": 1} < {"one": 1, "two": 2}) == true)		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "dict [int] size()", "", "1"){
-	run_closed(R"(		assert(size({"one":1}) == 1)		)");
+	ut_run_closed_nolib(R"(		assert(size({"one":1}) == 1)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "dict [int] size()", "", "2"){
-	run_closed(R"(		assert(size({"one":1, "two":2}) == 2)		)");
+	ut_run_closed_nolib(R"(		assert(size({"one":1, "two":2}) == 2)		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "dict [int] update()", "add", "correct dict, without side effect on original dict"){
@@ -3529,7 +3528,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [int] update()", "replace element", "c
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "dict [int] exists()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let a = { "one": 1, "two": 2, "three" : 3}
 		assert(exists(a, "two") == true)
@@ -3539,7 +3538,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [int] exists()", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "dict [int] erase()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let a = { "one": 1, "two": 2, "three" : 3}
 		let b = erase(a, "one")
@@ -3584,26 +3583,26 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [string] []", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "dict [string] ==", "", ""){
-	run_closed(R"(		assert(({"one": "1000", "two": "2000"} == {"one": "1000", "two": "2000"}) == true)		)");
+	ut_run_closed_nolib(R"(		assert(({"one": "1000", "two": "2000"} == {"one": "1000", "two": "2000"}) == true)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "dict [string] ==", "", ""){
-	run_closed(R"(		assert(({"one": "1000", "two": "2000"} == {"two": "2000"}) == false)		)");
+	ut_run_closed_nolib(R"(		assert(({"one": "1000", "two": "2000"} == {"two": "2000"}) == false)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "dict [string] ==", "", ""){
-	run_closed(R"(		assert(({"one": "2000", "two": "2000"} == {"one": "1000", "two": "2000"}) == false)		)");
+	ut_run_closed_nolib(R"(		assert(({"one": "2000", "two": "2000"} == {"one": "1000", "two": "2000"}) == false)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "dict [string] ==", "", ""){
-	run_closed(R"(		assert(({"one": "1000", "two": "2000"} < {"one": "1000", "two": "2000"}) == false)		)");
+	ut_run_closed_nolib(R"(		assert(({"one": "1000", "two": "2000"} < {"one": "1000", "two": "2000"}) == false)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "dict [string] <", "", ""){
-	run_closed(R"(		assert(({"one": "1000", "two": "1000"} < {"one": "1000", "two": "2000"}) == true)		)");
+	ut_run_closed_nolib(R"(		assert(({"one": "1000", "two": "1000"} < {"one": "1000", "two": "2000"}) == true)		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "dict [string] size()", "", "1"){
-	run_closed(R"(		assert(size({"one":"1000"}) == 1)		)");
+	ut_run_closed_nolib(R"(		assert(size({"one":"1000"}) == 1)		)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "dict [string] size()", "", "2"){
-	run_closed(R"(		assert(size({"one":"1000", "two":"2000"}) == 2)		)");
+	ut_run_closed_nolib(R"(		assert(size({"one":"1000", "two":"2000"}) == 2)		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "dict [string] update()", "add", "correct dict, without side effect on original dict"){
@@ -3643,7 +3642,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [string] update()", "replace element",
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "dict [string] exists()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let a = { "one": "1000", "two": "2000", "three" : "3000"}
 		assert(exists(a, "two") == true)
@@ -3653,7 +3652,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [string] exists()", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "dict [string] erase()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let a = { "a": "1000", "b": "2000", "c" : "3000" }
 		let b = erase(a, "a")
@@ -3665,7 +3664,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [string] erase()", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let [string: int] a = {}
 		let b = get_keys(a)
@@ -3674,7 +3673,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
 	)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let a = { "a": 10 }
 		let b = get_keys(a)
@@ -3683,7 +3682,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
 	)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let a = { "a": "ten" }
 		let b = get_keys(a)
@@ -3692,7 +3691,7 @@ QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
 	)");
 }
 QUARK_UNIT_TEST("Floyd test suite", "dict [string] get_keys()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let a = { "a": 1, "b": 2, "c" : 3 }
 		let b = get_keys(a)
@@ -3920,11 +3919,11 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "update without quoting member nam
 
 
 QUARK_UNIT_TEST("Floyd test suite", "struct", "", ""){
-	run_closed(R"(		struct t {}		)");
+	ut_run_closed_nolib(R"(		struct t {}		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "struct", "", ""){
-	run_closed(R"(		struct t { int a }		)");
+	ut_run_closed_nolib(R"(		struct t { int a }		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "struct", "check struct's type", ""){
@@ -4189,7 +4188,7 @@ OFF_QUARK_UNIT_TEST("Floyd test suite", "struct", "mutate nested member", ""){
 
 //??? add more tests for struct with non-simple members
 QUARK_UNIT_TEST("Floyd test suite", "struct", "string member", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		struct context_t {
 			double a
@@ -4312,7 +4311,7 @@ QUARK_UNIT_TEST("Floyd test suite", "struct", "Error: Wrong TYPE of arguments to
 //??? document or disable using json-value directly as lookup parent.
 
 QUARK_UNIT_TEST("Floyd test suite", "json::null", "", ""){
-	run_closed(R"(		let result = null		)");
+	ut_run_closed_nolib(R"(		let result = null		)");
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "json<string> Infer json::string", "", ""){
@@ -4490,7 +4489,7 @@ QUARK_UNIT_TEST("Floyd test suite", "json<string> construct", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "json<string> size()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let json a = { "a": 1, "b": 2, "c": 3, "d": 4, "e": 5 }
 		assert(size(a) == 5)
@@ -4583,7 +4582,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "null", "7"){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "DOCUMENTATION SNIPPET", ""){
-	run_closed(R"___(
+	ut_run_closed_nolib(R"___(
 
 		func string get_name(json value){
 			let t = get_json_type(value)
@@ -4892,7 +4891,7 @@ QUARK_UNIT_TEST("Floyd test suite", "cmath_pi", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "color__black", "", ""){
-	run_closed_lib(R"(
+	ut_run_closed_lib(R"(
 
 		assert(color__black.red == 0.0)
 		assert(color__black.green == 0.0)
@@ -4904,7 +4903,7 @@ QUARK_UNIT_TEST("Floyd test suite", "color__black", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "color__black", "", ""){
-	run_closed_lib(R"(
+	ut_run_closed_lib(R"(
 
 		let r = add_colors(color_t(1.0, 2.0, 3.0, 4.0), color_t(1000.0, 2000.0, 3000.0, 4000.0))
 		assert(r.red == 1001.0)
@@ -4949,7 +4948,7 @@ QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
 //////////////////////////////////////////		HOST FUNCTION - get_time_of_day()
 
 QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let start = get_time_of_day()
 		mutable b = 0
@@ -4966,7 +4965,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let int a = get_time_of_day()
 		let int b = get_time_of_day()
@@ -4980,7 +4979,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "calc_string_sha1()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let a = calc_string_sha1("Violator is the seventh studio album by English electronic music band Depeche Mode.")
 //		print(to_string(a))
@@ -4994,7 +4993,7 @@ QUARK_UNIT_TEST("Floyd test suite", "calc_string_sha1()", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "calc_binary_sha1()", "", ""){
-	run_closed_lib(R"(
+	ut_run_closed_lib(R"(
 
 		let bin = binary_t("Violator is the seventh studio album by English electronic music band Depeche Mode.")
 		let a = calc_binary_sha1(bin)
@@ -5013,7 +5012,7 @@ QUARK_UNIT_TEST("Floyd test suite", "calc_binary_sha1()", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "map()", "map over [int]", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let a = [ 10, 11, 12 ]
 
@@ -5030,7 +5029,7 @@ QUARK_UNIT_TEST("Floyd test suite", "map()", "map over [int]", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "map()", "map over [int]", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let a = [ 10, 11, 12 ]
 
@@ -5046,7 +5045,7 @@ QUARK_UNIT_TEST("Floyd test suite", "map()", "map over [int]", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "map()", "map over [string]", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let a = [ "one", "two_", "three" ]
 
@@ -5062,7 +5061,7 @@ QUARK_UNIT_TEST("Floyd test suite", "map()", "map over [string]", ""){
 }
 
 QUARK_UNIT_TEST	("Floyd test suite", "map()", "context struct", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		struct context_t { int a string b }
 
@@ -5085,7 +5084,7 @@ QUARK_UNIT_TEST	("Floyd test suite", "map()", "context struct", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "map_string()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let a = "ABC"
 
@@ -5109,7 +5108,7 @@ QUARK_UNIT_TEST("Floyd test suite", "map_string()", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "map_dag()", "No dependencies", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		func string f(string v, [string] inputs, string context){
 			assert(context == "iop")
@@ -5124,7 +5123,7 @@ QUARK_UNIT_TEST("Floyd test suite", "map_dag()", "No dependencies", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "map_dag()", "No dependencies", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		func string f(string v, [string] inputs, string context){
 			assert(context == "qwerty")
@@ -5139,7 +5138,7 @@ QUARK_UNIT_TEST("Floyd test suite", "map_dag()", "No dependencies", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "map_dag()", "complex", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		func string f2(string acc, string element, string context){
 			assert(context == "12345678")
@@ -5171,7 +5170,7 @@ QUARK_UNIT_TEST("Floyd test suite", "map_dag()", "complex", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "reduce()", "int reduce([int], int, func int(int, int))", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		func int f(int acc, int element, string context){
 			assert(context == "con123")
@@ -5187,7 +5186,7 @@ QUARK_UNIT_TEST("Floyd test suite", "reduce()", "int reduce([int], int, func int
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "reduce()", "string reduce([int], string, func int(string, int))", ""){
-	run_closed(R"___(
+	ut_run_closed_nolib(R"___(
 
 		func string f(string acc, int v, string context){
 			assert(context == "1234")
@@ -5214,7 +5213,7 @@ QUARK_UNIT_TEST("Floyd test suite", "reduce()", "string reduce([int], string, fu
 
 
 QUARK_UNIT_TEST("Floyd test suite", "filter()", "int filter([int], int, func int(int, int))", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		func bool f(int element, string context){
 			assert(context == "abcd")
@@ -5230,7 +5229,7 @@ QUARK_UNIT_TEST("Floyd test suite", "filter()", "int filter([int], int, func int
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "filter()", "string filter([int], string, func int(string, int))", ""){
-	run_closed(	R"___(
+	ut_run_closed_nolib(	R"___(
 
 		func bool f(string element, string context){
 			assert(context == "xyz")
@@ -5335,7 +5334,7 @@ QUARK_UNIT_TEST("Floyd test suite", "stable_sort()", "[string]", ""){
 
 /*
 QUARK_UNIT_TEST("Floyd test suite", "read_text_file()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		path = get_env_path();
 		a = read_text_file(path + "/Desktop/test1.json");
@@ -5351,7 +5350,7 @@ QUARK_UNIT_TEST("Floyd test suite", "read_text_file()", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "write_text_file()", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		let path = get_fs_environment().desktop_dir
 		write_text_file(path + "/test_out.txt", "Floyd wrote this!")
@@ -5375,7 +5374,7 @@ QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
-	run_closed(R"(
+	ut_run_closed_nolib(R"(
 
 		a = instantiate_from_typeid(typeof(123), 3);
 		assert(to_string(typeof(a)) == "int");
@@ -5412,7 +5411,7 @@ QUARK_UNIT_TEST("Floyd test suite", "get_fsentries_shallow()", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "get_fsentries_deep()", "", ""){
-	run_closed(
+	ut_run_closed_nolib(
 		R"(
 
 			let result = get_fsentries_deep("/Users/marcus/Desktop/")
@@ -5521,7 +5520,7 @@ void remove_test_dir(const std::string& dir_name1, const std::string& dir_name2)
 QUARK_UNIT_TEST("Floyd test suite", "create_directory_branch()", "", ""){
 	remove_test_dir("unittest___create_directory_branch", "subdir");
 
-	run_closed(
+	ut_run_closed_nolib(
 		R"(
 
 			let path1 = get_fs_environment().desktop_dir + "/unittest___create_directory_branch"
@@ -5552,7 +5551,7 @@ QUARK_UNIT_TEST("Floyd test suite", "create_directory_branch()", "", ""){
 QUARK_UNIT_TEST("Floyd test suite", "delete_fsentry_deep()", "", ""){
 	remove_test_dir("unittest___delete_fsentry_deep", "subdir");
 
-	run_closed(
+	ut_run_closed_nolib(
 		R"(
 
 			let path1 = get_fs_environment().desktop_dir + "/unittest___delete_fsentry_deep"
@@ -5582,7 +5581,7 @@ QUARK_UNIT_TEST("Floyd test suite", "delete_fsentry_deep()", "", ""){
 
 
 QUARK_UNIT_TEST("Floyd test suite", "rename_fsentry()", "", ""){
-	run_closed(
+	ut_run_closed_nolib(
 		R"(
 
 			let dir = get_fs_environment().desktop_dir + "/unittest___rename_fsentry"
@@ -5742,7 +5741,7 @@ QUARK_UNIT_TEST("software-system-def", "parse software-system-def", "", ""){
 
 	)";
 
-	run_closed(test_ss);
+	ut_run_closed_nolib(test_ss);
 }
 
 #if 0
