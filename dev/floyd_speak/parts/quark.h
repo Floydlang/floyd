@@ -741,12 +741,11 @@ inline void ut_verify(const quark::call_context_t& context, const std::vector<st
 		if(result.size() != expected.size()){
 			QUARK_TRACE("Vector are different sizes!");
 		}
-		const auto count = std::min(result.size(), expected.size());
+		const auto count = std::max(result.size(), expected.size());
 		for(int i = 0 ; i < count ; i++){
-			QUARK_SCOPED_TRACE(std::to_string(i));
-
-			ut_verify(context, result[i], expected[i]);
-			QUARK_TRACE_SS(result[i] << "==" << expected[i]);
+			const auto result_str = (i < result.size()) ? result[i] : "---";
+			const auto expected_str = (i < expected.size()) ? expected[i] : "---";
+			QUARK_TRACE_SS(std::to_string(i) << ": \"" << result_str << "\" != \"" << expected_str << "\"");
 		}
 
 		quark::fail_test(context);

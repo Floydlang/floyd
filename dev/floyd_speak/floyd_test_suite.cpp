@@ -4605,8 +4605,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_json_type()", "", "1"){
 		QUARK_POS,
 		R"(
 
-			let result = json({ "color": "black"})
-			print(result)
+			let a = json({ "color": "black"})
+			print(a)
 
 		)",
 		{ R"xyz({ "color": "black" })xyz" }
@@ -5185,8 +5185,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "stable_sort()", "[int]", ""){
 				return left < right
 			}
 
-			let result = stable_sort([ 1, 2, 8, 4 ], less_f, "hello")
-			print(result)
+			let a = stable_sort([ 1, 2, 8, 4 ], less_f, "hello")
+			print(a)
 
 		)",
 		{ "[1, 2, 4, 8]" }
@@ -5202,8 +5202,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "stable_sort()", "[int] reverse", ""){
 				return left > right
 			}
 
-			let result = stable_sort([ 1, 2, 8, 4 ], less_f, "hello")
-			print(result)
+			let a = stable_sort([ 1, 2, 8, 4 ], less_f, "hello")
+			print(a)
 
 		)",
 		{ "[8, 4, 2, 1]" }
@@ -5244,8 +5244,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "stable_sort()", "[string]", ""){
 				return left < right
 			}
 
-			let result = stable_sort([ "1", "2", "8", "4" ], less_f, "hello")
-			print(result)
+			let a = stable_sort([ "1", "2", "8", "4" ], less_f, "hello")
+			print(a)
 
 		)",
 		{ R"___(["1", "2", "4", "8"])___" }
@@ -5464,7 +5464,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_fsentries_shallow()", "", ""){
 
 			let result0 = get_fsentries_shallow("/Users/marcus/Desktop/")
 			assert(size(result0) > 3)
-			print(to_pretty_string(result0))
+//			print(to_pretty_string(result0))
 
 			let result = typeof(result0)
 
@@ -5501,7 +5501,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_fsentry_info()", "", ""){
 		R"(
 
 			let x = get_fsentry_info("/Users/marcus/Desktop/")
-			print(to_pretty_string(x))
+//			print(to_pretty_string(x))
 			let result = typeof(x)
 
 		)",
@@ -5521,7 +5521,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_fs_environment()", "", ""){
 		R"(
 
 			let x = get_fs_environment()
-			print(to_pretty_string(x))
+//			print(to_pretty_string(x))
 			let result = typeof(x)
 
 		)",
@@ -5544,7 +5544,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "does_fsentry_exist()", "", ""){
 
 			let path = get_fs_environment().desktop_dir
 			let x = does_fsentry_exist(path)
-			print(to_pretty_string(x))
+//			print(to_pretty_string(x))
 
 			assert(x == true)
 			let result = typeof(x)
@@ -5561,7 +5561,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "does_fsentry_exist()", "", ""){
 
 			let path = get_fs_environment().desktop_dir + "xyz"
 			let result = does_fsentry_exist(path)
-			print(to_pretty_string(result))
+//			print(to_pretty_string(result))
 
 			assert(result == false)
 

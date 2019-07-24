@@ -38,6 +38,9 @@ inline bool operator==(const test_report_t& lhs, const test_report_t& rhs){
 inline test_report_t check_result(const value_t& expected){
 	return test_report_t { expected, { -1, {} }, {}, "" };
 }
+inline test_report_t check_printout(const std::vector<std::string>& print_out){
+	return test_report_t { value_t::make_undefined(), { -1, {} }, print_out, "" };
+}
 
 
 
@@ -53,7 +56,6 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 
 
 
-void ut_verify_global_result(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const value_t& expected_result);
 void ut_verify_global_result_as_json(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::string& expected_json);
 void ut_verify_global_result_as_json_nolib(const quark::call_context_t& context, const std::string& program, const std::string& expected_json);
 
@@ -61,7 +63,6 @@ void ut_verify_global_result_lib(const quark::call_context_t& context, const std
 void ut_verify_global_result_nolib(const quark::call_context_t& context, const std::string& program, const value_t& expected_result);
 
 
-void ut_verify_printout(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::vector<std::string>& printout);
 void ut_verify_printout_lib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout);
 void ut_verify_printout_nolib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout);
 
