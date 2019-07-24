@@ -56,11 +56,32 @@ unsupported syntax
 	static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(cppext_unit_test_), false); \
 	static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
 
+#define FLOYD_LANG_PROOF_VIP(class_under_test, function_under_test, scenario, expected_result) \
+	static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
+	static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(cppext_unit_test_), true); \
+	static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
+
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let int result = 123", value_t::make_int(123));
+}
+FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
+	test_floyd(
+		QUARK_POS,
+		make_compilation_unit("let int result = 123", "", compilation_unit_mode::k_no_core_lib),
+		{},
+		check_result(value_t::make_int(123))
+	);
+}
+FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
+	test_floyd(
+		QUARK_POS,
+		make_compilation_unit("let int result = 123", "", compilation_unit_mode::k_no_core_lib),
+		{},
+		check_result(value_t::make_int(123))
+	);
 }
 
 
