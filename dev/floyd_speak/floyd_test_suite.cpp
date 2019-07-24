@@ -64,28 +64,6 @@ unsupported syntax
 
 
 
-FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let int result = 123", value_t::make_int(123));
-}
-FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
-	test_floyd(
-		QUARK_POS,
-		make_compilation_unit("let int result = 123", "", compilation_unit_mode::k_no_core_lib),
-		{},
-		check_result(value_t::make_int(123))
-	);
-}
-FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
-	test_floyd(
-		QUARK_POS,
-		make_compilation_unit("let int result = 123", "", compilation_unit_mode::k_no_core_lib),
-		{},
-		check_result(value_t::make_int(123))
-	);
-}
-
-
-
 
 
 //######################################################################################################################
@@ -1144,18 +1122,17 @@ FLOYD_LANG_PROOF("Floyd test suite", "return", "return from within BLOCK", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "return", "Make sure returning wrong type => error", ""){
-	try {
-		test_run_container3(R"(
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
 
 			func int f(){
 				return "x"
 			}
 
-		)", {}, "");
-	}
-	catch(const std::runtime_error& e){
-		ut_verify(QUARK_POS, e.what(), "Expression type mismatch - cannot convert 'string' to 'int. Line: 4 \"return \"x\"\"");
-	}
+		)",
+		"Expression type mismatch - cannot convert 'string' to 'int. Line: 4 \"return \"x\"\""
+	);
 }
 
 
@@ -2745,15 +2722,13 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [] - constructor", "32 elements ini
 #endif
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] constructor expression, computed element", "", ""){
-	ut_verify_global_result_as_json_nolib(
-		QUARK_POS,
+	ut_run_closed_nolib(
 		R"(
 
 			func string get_beta(){ return "beta" }
-			let [string] result = ["alpha", get_beta()]
-
-		)",
-		R"(		[[ "vector", "^string" ], ["alpha","beta"]]		)"
+			let [string] a = ["alpha", get_beta()]
+			assert(a == ["alpha", "beta"])
+		)"
 	);
 }
 
@@ -2968,10 +2943,10 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] replace()", "", "error"){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] construct-expression", "", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] result = [true, false, true]		)",				R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
+	ut_run_closed_nolib(R"___(		let [bool] a = [true, false, true];		assert(a == [true, false, true]) )___");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] =", "copy", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let a = [true, false, true] let result = a		)",				R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
+	ut_run_closed_nolib(R"___(		let a = [true, false, true] let b = a; assert(b == [ true, false, true ])	)___");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] ==", "same values", ""){
 	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [true, false] == [true, false]		)",			R"(		[ "^bool", true]		)" );
@@ -5864,7 +5839,7 @@ FLOYD_LANG_PROOF("", "try calling LLVM function", "", ""){
 
 
 FLOYD_LANG_PROOF("software-system-def", "run one process", "", ""){
-	const auto test_ss2 = R"(
+	const auto program = R"(
 
 		software-system-def {
 			"name": "My Arcade Game",
@@ -5915,12 +5890,11 @@ FLOYD_LANG_PROOF("software-system-def", "run one process", "", ""){
 
 	)";
 
-	const auto result = test_run_container3(test_ss2, {}, "");
-	QUARK_UT_VERIFY(result == run_output_t());
+	ut_run_closed_nolib(program);
 }
 
 FLOYD_LANG_PROOF("software-system-def", "run two unconnected processs", "", ""){
-	const auto test_ss3 = R"(
+	const auto program = R"(
 
 		software-system-def {
 			"name": "My Arcade Game",
@@ -6001,12 +5975,11 @@ FLOYD_LANG_PROOF("software-system-def", "run two unconnected processs", "", ""){
 
 	)";
 
-	const auto result = test_run_container3(test_ss3, {}, "");
-	QUARK_UT_VERIFY(result == run_output_t());
+	ut_run_closed_nolib(program);
 }
 
 FLOYD_LANG_PROOF("software-system-def", "run two CONNECTED processes", "", ""){
-	const auto test_ss3 = R"(
+	const auto program = R"(
 
 		software-system-def {
 			"name": "My Arcade Game",
@@ -6090,8 +6063,7 @@ FLOYD_LANG_PROOF("software-system-def", "run two CONNECTED processes", "", ""){
 
 	)";
 
-	const auto result = test_run_container3(test_ss3, {}, "");
-	QUARK_UT_VERIFY(result == run_output_t() );
+	ut_run_closed_nolib(program);
 }
 
 

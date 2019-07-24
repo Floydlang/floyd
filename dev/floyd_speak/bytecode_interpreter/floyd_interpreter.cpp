@@ -26,6 +26,7 @@
 
 namespace floyd {
 
+static const bool k_trace_messaging = false;
 
 
 
@@ -361,7 +362,9 @@ static void send_message(bc_process_runtime_t& runtime, int process_id, const js
     {
         std::lock_guard<std::mutex> lk(process._inbox_mutex);
         process._inbox.push_front(message);
-        QUARK_TRACE("Notifying...");
+        if(k_trace_messaging){
+        	QUARK_TRACE("Notifying...");
+		}
     }
     process._inbox_condition_variable.notify_one();
 //    process._inbox_condition_variable.notify_all();
@@ -387,20 +390,28 @@ static void process_process(bc_process_runtime_t& runtime, int process_id){
 		{
 			std::unique_lock<std::mutex> lk(process._inbox_mutex);
 
-        	QUARK_TRACE_SS(thread_name << ": waiting......");
+			if(k_trace_messaging){
+				QUARK_TRACE_SS(thread_name << ": waiting......");
+			}
 			process._inbox_condition_variable.wait(lk, [&]{ return process._inbox.empty() == false; });
-        	QUARK_TRACE_SS(thread_name << ": continue");
+			if(k_trace_messaging){
+				QUARK_TRACE_SS(thread_name << ": continue");
+			}
 
 			//	Pop message.
 			QUARK_ASSERT(process._inbox.empty() == false);
 			message = process._inbox.back();
 			process._inbox.pop_back();
 		}
-		QUARK_TRACE_SS("RECEIVED: " << json_to_pretty_string(message));
+		if(k_trace_messaging){
+			QUARK_TRACE_SS("RECEIVED: " << json_to_pretty_string(message));
+		}
 
 		if(message.is_string() && message.get_string() == "stop"){
 			stop = true;
-        	QUARK_TRACE_SS(thread_name << ": STOP");
+			if(k_trace_messaging){
+        		QUARK_TRACE_SS(thread_name << ": STOP");
+			}
 		}
 		else{
 			if(process._processor){

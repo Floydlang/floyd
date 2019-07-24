@@ -27,12 +27,23 @@ struct test_report_t {
 	std::string exception_what;
 };
 
+inline bool compare(const test_report_t& lhs, const test_report_t& rhs, bool check_printout){
+	if(check_printout){
+		return
+			lhs.result_variable == rhs.result_variable
+			&& lhs.output == rhs.output
+			&& lhs.print_out == rhs.print_out
+			&& lhs.exception_what == rhs.exception_what;
+	}
+	else{
+		return
+			lhs.result_variable == rhs.result_variable
+			&& lhs.output == rhs.output
+			&& lhs.exception_what == rhs.exception_what;
+	}
+}
 inline bool operator==(const test_report_t& lhs, const test_report_t& rhs){
-	return
-		lhs.result_variable == rhs.result_variable
-		&& lhs.output == rhs.output
-		&& lhs.print_out == rhs.print_out
-		&& lhs.exception_what == rhs.exception_what;
+	return compare(lhs, rhs, true);
 }
 
 inline test_report_t check_result(const value_t& expected){
@@ -46,12 +57,10 @@ inline test_report_t check_printout(const std::vector<std::string>& print_out){
 
 void ut_verify_report(const quark::call_context_t& context, const test_report_t& result, const test_report_t& expected);
 
-test_report_t test_floyd_program(const compilation_unit_t& cu, const std::vector<std::string>& main_args);
-
 run_output_t test_run_container3(const std::string& program, const std::vector<std::string>& main_args, const std::string& source_file);
 
 
-void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const std::vector<std::string>& main_args, const test_report_t& expected);
+void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const std::vector<std::string>& main_args, const test_report_t& expected, bool check_printout);
 
 
 

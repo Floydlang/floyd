@@ -56,6 +56,9 @@
 namespace floyd {
 
 
+static const bool k_trace_messaging = false;
+
+
 static void retain_value(llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type);
 static void release_deep(llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type);
 
@@ -2166,7 +2169,9 @@ void floyd_funcdef__send(floyd_runtime_t* frp, runtime_value_t process_id0, cons
 	const auto& process_id = from_runtime_string(r, process_id0);
 	const auto& message_json = message_json_ptr->get_json();
 
-	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
+	if(k_trace_messaging){
+		QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
+	}
 
 	r._handler->on_send(process_id, message_json);
 }
@@ -2983,7 +2988,9 @@ static void send_message(llvm_process_runtime_t& runtime, int process_id, const 
     {
         std::lock_guard<std::mutex> lk(process._inbox_mutex);
         process._inbox.push_front(message);
-        QUARK_TRACE("Notifying...");
+        if(k_trace_messaging){
+        	QUARK_TRACE("Notifying...");
+		}
     }
     process._inbox_condition_variable.notify_one();
 //    process._inbox_condition_variable.notify_all();
@@ -3017,20 +3024,29 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 		{
 			std::unique_lock<std::mutex> lk(process._inbox_mutex);
 
-        	QUARK_TRACE_SS(thread_name << ": waiting......");
+			if(k_trace_messaging){
+        		QUARK_TRACE_SS(thread_name << ": waiting......");
+			}
 			process._inbox_condition_variable.wait(lk, [&]{ return process._inbox.empty() == false; });
-        	QUARK_TRACE_SS(thread_name << ": continue");
+			if(k_trace_messaging){
+        		QUARK_TRACE_SS(thread_name << ": continue");
+			}
 
 			//	Pop message.
 			QUARK_ASSERT(process._inbox.empty() == false);
 			message = process._inbox.back();
 			process._inbox.pop_back();
 		}
-		QUARK_TRACE_SS("RECEIVED: " << json_to_pretty_string(message));
+
+		if(k_trace_messaging){
+			QUARK_TRACE_SS("RECEIVED: " << json_to_pretty_string(message));
+		}
 
 		if(message.is_string() && message.get_string() == "stop"){
 			stop = true;
-        	QUARK_TRACE_SS(thread_name << ": STOP");
+			if(k_trace_messaging){
+        		QUARK_TRACE_SS(thread_name << ": STOP");
+			}
 		}
 		else{
 			if(process._processor){

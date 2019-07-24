@@ -1074,8 +1074,7 @@ bc_value_t host__send(interpreter_t& vm, const bc_value_t args[], int arg_count)
 	const auto& process_id = args[0].get_string_value();
 	const auto& message_json = args[1].get_json();
 
-	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
-
+//	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
 
 	vm._handler->on_send(process_id, message_json);
 

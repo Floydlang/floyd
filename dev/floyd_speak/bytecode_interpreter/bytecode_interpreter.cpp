@@ -1023,7 +1023,7 @@ bc_value_t update_struct_member_shallow(interpreter_t& vm, const bc_value_t& obj
 		quark::throw_runtime_error("Unknown member.");
 	}
 
-#if DEBUG
+#if DEBUG && 0
 	QUARK_TRACE(typeid_to_compact_string(new_value._type));
 	QUARK_TRACE(typeid_to_compact_string(struct_def._members[member_index]._type));
 

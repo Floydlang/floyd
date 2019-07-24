@@ -125,7 +125,7 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const s
 	}
 }
 
-test_report_t test_floyd_program(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
+static test_report_t test_floyd_program(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
 	try {
 		const auto semast = compile_to_sematic_ast__errors(cu);
 
@@ -198,17 +198,17 @@ static semantic_ast_t compile(const quark::call_context_t& context, const compil
 
 
 //??? Compile to pass3 only ONCE.
-void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const std::vector<std::string>& main_args, const test_report_t& expected){
+void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const std::vector<std::string>& main_args, const test_report_t& expected, bool check_printout){
 	const auto semast = compile(context, cu, expected);
 	const auto bc_report = run_test_program_bc(semast, main_args);
 	const auto llvm_report = run_test_program_llvm(semast, main_args);
 
-	if((bc_report == expected) == false){
+	if(compare(bc_report, expected, check_printout) == false){
 		QUARK_SCOPED_TRACE("BYTE CODE INTERPRETER FAILURE");
 		ut_verify_report(context, bc_report, expected);
 	}
 
-	if((llvm_report == expected) == false){
+	if(compare(llvm_report, expected, check_printout) == false){
 		QUARK_SCOPED_TRACE("LLVM JIT FAILURE");
 		ut_verify_report(context, llvm_report, expected);
 	}
@@ -247,11 +247,11 @@ void ut_verify_global_result_as_json_nolib(const quark::call_context_t& context,
 }
 
 void ut_verify_global_result_lib(const quark::call_context_t& context, const std::string& program, const value_t& expected_result){
-	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), {}, check_result(expected_result));
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), {}, check_result(expected_result), false);
 }
 
 void ut_verify_global_result_nolib(const quark::call_context_t& context, const std::string& program, const value_t& expected_result){
-	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), {}, check_result(expected_result));
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), {}, check_result(expected_result), false);
 }
 
 
@@ -261,10 +261,10 @@ void ut_verify_global_result_nolib(const quark::call_context_t& context, const s
 
 
 void ut_verify_printout_lib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout){
-	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), {}, check_printout(printout));
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), {}, check_printout(printout), true);
 }
 void ut_verify_printout_nolib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout){
-	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), {}, check_printout(printout));
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), {}, check_printout(printout), true);
 }
 
 
@@ -278,9 +278,12 @@ void ut_run_closed(const std::string& program, compilation_unit_mode mode){
 		std::cout << result.exception_what << std::endl;
 		throw std::exception();
 	}
+/*
 	if(result.print_out.empty() == false){
 		throw std::exception();
 	}
+*/
+
 }
 
 
