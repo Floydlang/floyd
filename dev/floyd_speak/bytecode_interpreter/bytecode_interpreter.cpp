@@ -3099,8 +3099,11 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(function_def._args.size() == callee_arg_count);
 
 			if(function_def._frame_ptr == nullptr){
-				const auto& host_function = vm._imm->_host_functions.at(function_def._function_id);
-				QUARK_ASSERT(host_function != nullptr);
+				const auto it = vm._imm->_host_functions.find(function_def._function_id);
+				if(it == vm._imm->_host_functions.end()){
+					quark::throw_runtime_error("Attempting to calling unimplemented function.");
+				}
+				const auto& host_function = it->second;
 
 				const int arg0_stack_pos = stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
 				int stack_pos = arg0_stack_pos;

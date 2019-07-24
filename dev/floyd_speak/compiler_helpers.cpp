@@ -267,15 +267,26 @@ static function_definition_t desugar_function_def(desugar_t& acc, const function
 			return function_def;
 		}
 		function_definition_t operator()(const function_definition_t::floyd_func_t& e) const{
-			const auto body = desugar_body(acc, *e._body);
-			const auto body2 = std::make_shared<body_t>(body);
-			return function_definition_t::make_floyd_func(
-				function_def._location,
-				function_def._definition_name,
-				function_def._function_type,
-				function_def._args,
-				body2
-			);
+			if(e._body){
+				const auto body = desugar_body(acc, *e._body);
+				const auto body2 = std::make_shared<body_t>(body);
+				return function_definition_t::make_floyd_func(
+					function_def._location,
+					function_def._definition_name,
+					function_def._function_type,
+					function_def._args,
+					body2
+				);
+			}
+			else{
+				return function_definition_t::make_floyd_func(
+					function_def._location,
+					function_def._definition_name,
+					function_def._function_type,
+					function_def._args,
+					{}
+				);
+			}
 		}
 		function_definition_t operator()(const function_definition_t::host_func_t& e) const{
 			return function_def;

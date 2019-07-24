@@ -359,7 +359,11 @@ void collect_used_types(type_interner_t& acc, const general_purpose_ast_t& ast){
 
 		const auto floyd_func = std::get_if<function_definition_t::floyd_func_t>(&f->_contents);
 		if(floyd_func){
-			collect_used_types_body(acc, *floyd_func->_body);
+			if(floyd_func->_body){
+				collect_used_types_body(acc, *floyd_func->_body);
+			}
+			else{
+			}
 		}
 	}
 }
@@ -1077,7 +1081,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 			}
 			const auto member_type = struct_def._members[member_index]._type;
 			if(new_value_type != member_type){
-				throw std::runtime_error("New value's type does not match struct member's type.");
+				quark::throw_runtime_error("New value's type does not match struct member's type.");
 			}
 
 			return {
@@ -1126,7 +1130,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 
 		const auto element_type = collection_type.get_vector_element_type();
 		if(element_type != new_value_type){
-			throw std::runtime_error("New value's type must match vector's element type.");
+			quark::throw_runtime_error("New value's type must match vector's element type.");
 		}
 
 		return {
@@ -1147,7 +1151,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 
 		const auto element_type = collection_type.get_dict_value_type();
 		if(element_type != new_value_type){
-			throw std::runtime_error("New value's type must match dict's value type.");
+			quark::throw_runtime_error("New value's type must match dict's value type.");
 		}
 
 		return {
@@ -2370,22 +2374,27 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 			return { a_acc, r };
 		}
 		std::pair<analyser_t, expression_t> operator()(const function_definition_t::floyd_func_t& floyd_func) const{
-			//	Make function body with arguments injected FIRST in body as local symbols.
-			auto symbol_vec = floyd_func._body->_symbol_table;
-			for(const auto& arg: args2){
-				symbol_vec._symbols.push_back({arg._name , symbol_t::make_immutable_arg(arg._type)});
+			std::shared_ptr<body_t> body_result;
+			if(floyd_func._body){
+				//	Make function body with arguments injected FIRST in body as local symbols.
+				auto symbol_vec = floyd_func._body->_symbol_table;
+				for(const auto& arg: args2){
+					symbol_vec._symbols.push_back({arg._name , symbol_t::make_immutable_arg(arg._type)});
+				}
+				const auto function_body2 = body_t(floyd_func._body->_statements, symbol_vec);
+
+				const auto function_body_pair = analyse_body(a_acc, function_body2, pure, function_type2.get_function_return());
+				a_acc = function_body_pair.first;
+				const auto function_body3 = function_body_pair.second;
+				body_result = std::make_shared<body_t>(function_body3);
 			}
-			const auto function_body2 = body_t(floyd_func._body->_statements, symbol_vec);
-
-			const auto function_body_pair = analyse_body(a_acc, function_body2, pure, function_type2.get_function_return());
-			a_acc = function_body_pair.first;
-			const auto function_body3 = function_body_pair.second;
-
+			else{
+			}
 
 			const auto definition_name = function_def->_definition_name;
 			const auto function_id = function_id_t { definition_name };
 
-			const auto function_def2 = function_definition_t::make_floyd_func(k_no_location, definition_name, function_type2, args2, make_shared<body_t>(function_body3));
+			const auto function_def2 = function_definition_t::make_floyd_func(k_no_location, definition_name, function_type2, args2, body_result);
 			QUARK_ASSERT(function_def2.check_types_resolved());
 
 			a_acc._function_defs.insert({ function_id, make_shared<function_definition_t>(function_def2) });

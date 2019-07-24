@@ -595,7 +595,7 @@ llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp){
 void hook(const std::string& s, floyd_runtime_t* frp, runtime_value_t arg){
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
-	throw std::runtime_error("HOST FUNCTION NOT IMPLEMENTED FOR LLVM");
+	quark::throw_runtime_error("HOST FUNCTION NOT IMPLEMENTED FOR LLVM");
 }
 
 
@@ -2313,7 +2313,7 @@ const WIDE_RETURN_T floyd_funcdef__update(floyd_runtime_t* frp, runtime_value_t 
 		const auto len = str.size();
 
 		if(index < 0 || index >= len){
-			throw std::runtime_error("Position argument to update() is outside collection span.");
+			quark::throw_runtime_error("Position argument to update() is outside collection span.");
 		}
 
 		auto result = str;
@@ -2331,7 +2331,7 @@ const WIDE_RETURN_T floyd_funcdef__update(floyd_runtime_t* frp, runtime_value_t 
 		QUARK_ASSERT(element_type == type2);
 
 		if(index < 0 || index >= vec->get_element_count()){
-			throw std::runtime_error("Position argument to update() is outside collection span.");
+			quark::throw_runtime_error("Position argument to update() is outside collection span.");
 		}
 
 		auto result = alloc_vec(r.heap, vec->get_element_count(), vec->get_element_count());
@@ -2768,8 +2768,7 @@ static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& cont
 int64_t floyd_funcdef__dummy(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
-	QUARK_ASSERT(false);
-	return -666;
+	quark::throw_runtime_error("Attempting to calling unimplemented function.");
 }
 
 

@@ -38,7 +38,9 @@ bool function_definition_t::check_invariant() const {
 			return true;
 		}
 		bool operator()(const floyd_func_t& e) const{
-			QUARK_ASSERT(e._body->check_invariant());
+			if(e._body){
+				QUARK_ASSERT(e._body->check_invariant());
+			}
 			return true;
 		}
 		bool operator()(const host_func_t& e) const{
@@ -71,13 +73,12 @@ json_t function_def_to_ast_json(const function_definition_t& v) {
 	auto floyd_func = std::get_if<function_definition_t::floyd_func_t>(&v._contents);
 	auto host_func = std::get_if<function_definition_t::host_func_t>(&v._contents);
 
-
 	return std::vector<json_t>{
 		typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state),
 		v._definition_name,
 		members_to_json(v._args),
 
-		floyd_func ? body_to_json(*floyd_func->_body) : json_t(),
+		floyd_func ? (floyd_func->_body ? body_to_json(*floyd_func->_body) : json_t()) : json_t(),
 
 		host_func ? json_t(host_func->_host_function_id.name) : json_t(0)
 	};
@@ -135,7 +136,12 @@ bool function_definition_t::check_types_resolved() const{
 			return true;
 		}
 		bool operator()(const floyd_func_t& e) const{
-			return e._body->check_types_resolved();
+			if(e._body){
+				return e._body->check_types_resolved();
+			}
+			else{
+				return true;
+			}
 		}
 		bool operator()(const host_func_t& e) const{
 			return true;

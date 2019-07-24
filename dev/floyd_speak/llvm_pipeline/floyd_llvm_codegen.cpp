@@ -513,8 +513,8 @@ llvm::Value* generate_constant(llvm_code_generator_t& gen_acc, llvm::Function& e
 					return e.llvm_f;
 				}
 			}
-			QUARK_ASSERT(false);
-			throw std::exception();
+			llvm::PointerType* ptr_type = llvm::cast<llvm::PointerType>(itype);
+			return llvm::ConstantPointerNull::get(ptr_type);
 		}
 		llvm::Value* operator()(const typeid_t::unresolved_t& e) const{
 			UNSUPPORTED();
@@ -2274,7 +2274,9 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 				QUARK_ASSERT(false);
 			}
 			void operator()(const function_definition_t::floyd_func_t& e) const{
-				generate_floyd_function_body(gen_acc, function_id, function_def, *e._body);
+				if(e._body){
+					generate_floyd_function_body(gen_acc, function_id, function_def, *e._body);
+				}
 			}
 			void operator()(const function_definition_t::host_func_t& e) const{
 			}

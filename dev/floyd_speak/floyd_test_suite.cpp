@@ -1009,7 +1009,6 @@ QUARK_UNIT_TEST("Floyd test suite", "Function value", "", ""){
 }
 
 
-#if 0
 QUARK_UNIT_TEST("Floyd test suite", "func", "Declaration only", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -1021,7 +1020,44 @@ QUARK_UNIT_TEST("Floyd test suite", "func", "Declaration only", ""){
 		{}
 	);
 }
-#endif
+
+QUARK_UNIT_TEST("Floyd test suite", "func", "Declaration only, get its type", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func int f()
+			print(f)
+
+		)",
+		{ "function int() pure" }
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "No statements", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+
+		)",
+		{}
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "func", "Calling function without implementation", ""){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		R"(
+
+			func int f()
+			f()
+
+		)",
+		"Attempting to calling unimplemented function."
+	);
+}
+
 
 
 

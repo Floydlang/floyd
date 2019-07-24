@@ -663,12 +663,17 @@ void bcgen_globals(bcgenerator_t& gen_acc, const body_t& globals){
 	bcgen_body_top(gen_acc, gen_acc._globals, globals);
 }
 
-bcgen_body_t bcgen_function(bcgenerator_t& gen_acc, const floyd::function_definition_t& function_def){
+static bcgen_body_t bcgen_function(bcgenerator_t& gen_acc, const floyd::function_definition_t& function_def){
 	const auto floyd_func = std::get_if<function_definition_t::floyd_func_t>(&function_def._contents);
 	if(floyd_func){
-		auto body = bcgen_body_t({}, floyd_func->_body->_symbol_table);
-		const auto body_acc = bcgen_body_top(gen_acc, body, *floyd_func->_body.get());
-		return body_acc;
+		if(floyd_func->_body){
+			auto body = bcgen_body_t({}, floyd_func->_body->_symbol_table);
+			const auto body_acc = bcgen_body_top(gen_acc, body, *floyd_func->_body.get());
+			return body_acc;
+		}
+		else{
+			return bcgen_body_t({});
+		}
 	}
 	else{
 		return bcgen_body_t({});
@@ -1824,16 +1829,27 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 				throw std::exception();
 			}
 			bc_function_definition_t operator()(const function_definition_t::floyd_func_t& e) const{
-				const auto body2 = bcgen_function(gen_acc, function_def);
+				if(e._body){
+					const auto body2 = bcgen_function(gen_acc, function_def);
 
-				const auto frame = make_frame(body2, function_def._function_type.get_function_args());
-				const auto f = bc_function_definition_t{
-					function_def._function_type,
-					function_def._args,
-					std::make_shared<bc_static_frame_t>(frame),
-					function_id_t { function_def._definition_name }
-				};
-				return f;
+					const auto frame = make_frame(body2, function_def._function_type.get_function_args());
+					const auto f = bc_function_definition_t{
+						function_def._function_type,
+						function_def._args,
+						std::make_shared<bc_static_frame_t>(frame),
+						function_id_t { function_def._definition_name }
+					};
+					return f;
+				}
+				else{
+					const auto f = bc_function_definition_t{
+						function_def._function_type,
+						function_def._args,
+						std::shared_ptr<bc_static_frame_t>(),
+						function_id_t { function_def._definition_name }
+					};
+					return f;
+				}
 			}
 			bc_function_definition_t operator()(const function_definition_t::host_func_t& e) const{
 				const auto f = bc_function_definition_t{
