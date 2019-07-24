@@ -56,6 +56,9 @@ inline test_report_t check_result(const value_t& expected){
 inline test_report_t check_printout(const std::vector<std::string>& print_out){
 	return test_report_t { value_t::make_undefined(), { -1, {} }, print_out, "" };
 }
+inline test_report_t check_main_return(int64_t main_return){
+	return test_report_t { value_t::make_undefined(), { main_return, {} }, {}, "" };
+}
 
 
 void ut_verify_report(const quark::call_context_t& context, const test_report_t& result, const test_report_t& expected);
@@ -78,7 +81,6 @@ void ut_verify_printout_nolib(const quark::call_context_t& context, const std::s
 void ut_run_closed_nolib(const std::string& program);
 void ut_run_closed_lib(const std::string& program);
 
-void ut_verify_mainfunc_return(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::vector<std::string>& args, int64_t expected_return);
 void ut_verify_mainfunc_return_nolib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& args, int64_t expected_return);
 
 void ut_verify_exception(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::string& expected_what);

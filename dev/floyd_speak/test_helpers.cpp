@@ -270,23 +270,8 @@ void ut_run_closed_lib(const std::string& program){
 
 
 
-void ut_verify_mainfunc_return(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::vector<std::string>& args, int64_t expected_return){
-	const auto result = test_floyd_program(make_compilation_unit(program, "", cu_mode), args);
-	if(result.exception_what.empty() == false){
-		std::cout << result.exception_what << std::endl;
-		throw std::exception();
-	}
-	else{
-		ut_verify_auto(
-			context,
-			result.output.main_result,
-			expected_return
-		);
-	}
-}
-
 void ut_verify_mainfunc_return_nolib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& args, int64_t expected_return){
-	ut_verify_mainfunc_return(context, program, compilation_unit_mode::k_no_core_lib, args, expected_return);
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), {}, check_main_return(expected_return), true);
 }
 
 
