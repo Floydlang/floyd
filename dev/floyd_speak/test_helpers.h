@@ -27,13 +27,12 @@ struct test_report_t {
 	std::string exception_what;
 };
 
-test_report_t make_result(const value_t& result);
 
 void ut_verify(const quark::call_context_t& context, const test_report_t& result, const test_report_t& expected);
 
 test_report_t test_floyd_program(const compilation_unit_t& cu, const std::vector<std::string>& main_args);
 
-run_output_t test_run_container3(const std::string& program, const std::vector<std::string>& main_args, const std::string& container_key, const std::string& source_file);
+run_output_t test_run_container3(const std::string& program, const std::vector<std::string>& main_args, const std::string& source_file);
 
 
 void ut_verify_global_result(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const value_t& expected_result);
@@ -54,6 +53,42 @@ inline void ut_verify_mainfunc_return_nolib(const quark::call_context_t& context
 }
 
 void ut_verify_exception(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::string& expected_what);
+
+
+
+
+
+
+
+
+
+inline void ut_run_closed_nolib(const std::string& program){
+	ut_run_closed(program, compilation_unit_mode::k_no_core_lib);
+}
+inline void ut_run_closed_lib(const std::string& program){
+	ut_run_closed(program, compilation_unit_mode::k_include_core_lib);
+}
+
+
+inline void ut_verify_printout_lib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout){
+	ut_verify_printout(context, program, compilation_unit_mode::k_include_core_lib, printout);
+}
+inline void ut_verify_printout_nolib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout){
+	ut_verify_printout(context, program, compilation_unit_mode::k_no_core_lib, printout);
+}
+
+
+inline void ut_verify_global_result_lib(const quark::call_context_t& context, const std::string& program, const value_t& expected_result){
+	ut_verify_global_result(context, program, compilation_unit_mode::k_include_core_lib, expected_result);
+}
+inline void ut_verify_global_result_nolib(const quark::call_context_t& context, const std::string& program, const value_t& expected_result){
+	ut_verify_global_result(context, program, compilation_unit_mode::k_no_core_lib, expected_result);
+}
+
+inline void ut_verify_exception_nolib(const quark::call_context_t& context, const std::string& program, const std::string& expected_what){
+	ut_verify_exception(context, program, compilation_unit_mode::k_no_core_lib, expected_what);
+}
+
 
 } // floyd
 

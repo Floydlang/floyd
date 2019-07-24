@@ -47,35 +47,23 @@ unsupported syntax
 
 
 
-void ut_run_closed_nolib(const std::string& program){
-	ut_run_closed(program, compilation_unit_mode::k_no_core_lib);
-}
-void ut_run_closed_lib(const std::string& program){
-	ut_run_closed(program, compilation_unit_mode::k_include_core_lib);
-}
+//#define FLOYD_LANG_PROOF QUARK_UNIT_TEST
 
 
-void ut_verify_printout_lib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout){
-	ut_verify_printout(context, program, compilation_unit_mode::k_include_core_lib, printout);
-}
-void ut_verify_printout_nolib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout){
-	ut_verify_printout(context, program, compilation_unit_mode::k_no_core_lib, printout);
-}
+
+#define FLOYD_LANG_PROOF(class_under_test, function_under_test, scenario, expected_result) \
+	static void QUARK_UNIQUE_LABEL(cppext_unit_test_)(); \
+	static ::quark::unit_test_rec QUARK_UNIQUE_LABEL(rec)(__FILE__, __LINE__, class_under_test, function_under_test, scenario, expected_result, QUARK_UNIQUE_LABEL(cppext_unit_test_), false); \
+	static void QUARK_UNIQUE_LABEL(cppext_unit_test_)()
 
 
-void ut_verify_global_result_lib(const quark::call_context_t& context, const std::string& program, const value_t& expected_result){
-	ut_verify_global_result(context, program, compilation_unit_mode::k_include_core_lib, expected_result);
-}
-void ut_verify_global_result_nolib(const quark::call_context_t& context, const std::string& program, const value_t& expected_result){
-	ut_verify_global_result(context, program, compilation_unit_mode::k_no_core_lib, expected_result);
-}
 
-void ut_verify_exception_nolib(const quark::call_context_t& context, const std::string& program, const std::string& expected_what){
-	ut_verify_exception(context, program, compilation_unit_mode::k_no_core_lib, expected_what);
+
+FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 123", value_t::make_int(123));
 }
 
 
-#define FLOYD_LANG_PROOF QUARK_UNIT_TEST
 
 
 
@@ -1142,7 +1130,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "return", "Make sure returning wrong type =
 				return "x"
 			}
 
-		)", {}, "", "");
+		)", {}, "");
 	}
 	catch(const std::runtime_error& e){
 		ut_verify(QUARK_POS, e.what(), "Expression type mismatch - cannot convert 'string' to 'int. Line: 4 \"return \"x\"\"");
@@ -5840,7 +5828,7 @@ FLOYD_LANG_PROOF("", "try calling LLVM function", "", ""){
 
 	)";
 
-	const auto result = test_run_container3(p, {}, "iphone app", "");
+	const auto result = test_run_container3(p, {}, "");
 	QUARK_UT_VERIFY(result.empty());
 }
 #endif
@@ -5906,7 +5894,7 @@ FLOYD_LANG_PROOF("software-system-def", "run one process", "", ""){
 
 	)";
 
-	const auto result = test_run_container3(test_ss2, {}, "iphone app", "");
+	const auto result = test_run_container3(test_ss2, {}, "");
 	QUARK_UT_VERIFY(result == run_output_t());
 }
 
@@ -5992,7 +5980,7 @@ FLOYD_LANG_PROOF("software-system-def", "run two unconnected processs", "", ""){
 
 	)";
 
-	const auto result = test_run_container3(test_ss3, {}, "iphone app", "");
+	const auto result = test_run_container3(test_ss3, {}, "");
 	QUARK_UT_VERIFY(result == run_output_t());
 }
 
@@ -6081,7 +6069,7 @@ FLOYD_LANG_PROOF("software-system-def", "run two CONNECTED processes", "", ""){
 
 	)";
 
-	const auto result = test_run_container3(test_ss3, {}, "iphone app", "");
+	const auto result = test_run_container3(test_ss3, {}, "");
 	QUARK_UT_VERIFY(result == run_output_t() );
 }
 
@@ -6100,7 +6088,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "hello_world.floyd", "", ""){
 	const auto path = get_working_dir() + "/examples/hello_world.floyd";
 	const auto program = read_text_file(path);
 
-	const auto result = test_run_container3(program, {}, "", "");
+	const auto result = test_run_container3(program, {}, "");
 	const run_output_t expected = {};
 	QUARK_UT_VERIFY(result == expected);
 }
@@ -6109,7 +6097,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "game_of_life.floyd", "", ""){
 	const auto path = get_working_dir() + "/examples/game_of_life.floyd";
 	const auto program = read_text_file(path);
 
-	const auto result = test_run_container3(program, {}, "", "");
+	const auto result = test_run_container3(program, {}, "");
 	const run_output_t expected = {};
 	QUARK_UT_VERIFY(result == expected);
 }
@@ -6137,7 +6125,7 @@ let b = ""
 
 let a = b == "true" ? true : false
 
-	)", {}, "", "");
+	)", {}, "");
 }
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "COMMENTS", "", ""){
@@ -6147,7 +6135,7 @@ FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "COMMENTS", "", ""){
 
 let a = 10; // To end of line
 
-	)", {}, "", "");
+	)", {}, "");
 }
 
 
@@ -6159,7 +6147,7 @@ let a = 10
 mutable b = 10
 b = 11
 
-	)", {}, "", "");
+	)", {}, "");
 }
 
 
@@ -6193,7 +6181,7 @@ for (index in 1  ..< 5) {
 	print(index)
 }
 
-	)", {}, "", "");
+	)", {}, "");
 }
 
 
@@ -6215,7 +6203,7 @@ else{
 	print("zero or negative")
 }
 
-	)", {}, "", "");
+	)", {}, "");
 }
 
 
@@ -6226,7 +6214,7 @@ let a = true
 if(a){
 }
 
-	)", {}, "", "");
+	)", {}, "");
 }
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "STRING", "", ""){
@@ -6240,7 +6228,7 @@ assert(size(s1) == 13)
 assert(subset(s1, 1, 4) == "ell")
 let s4 = to_string(12003)
 
-	)", {}, "", "");
+	)", {}, "");
 }
 
 
@@ -6255,7 +6243,7 @@ func string f(double a, string s){
 
 let a = f(3.14, "km")
 
-	)", {}, "", "");
+	)", {}, "");
 }
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "IMPURE FUNCTION", "", ""){
@@ -6265,7 +6253,7 @@ func int main([string] args) impure {
 	return 1
 }
 
-	)", {}, "", "");
+	)", {}, "");
 }
 
 
@@ -6291,7 +6279,7 @@ let b = update(a, width, 100.0)
 assert(a.width == 0.0)
 assert(b.width == 100.0)
 
-	)", {}, "", "");
+	)", {}, "");
 }
 
 
@@ -6319,7 +6307,7 @@ for(i in 0 ..< size(a)){
 	print(a[i])
 }
 
-	)", {}, "", "");
+	)", {}, "");
 }
 
 
@@ -6333,7 +6321,7 @@ let b = update(a, "one", 10)
 assert(a == { "one": 1, "two": 2 })
 assert(b == { "one": 10, "two": 2 })
 
-	)", {}, "", "");
+	)", {}, "");
 }
 
 
@@ -6346,7 +6334,7 @@ let json a = {
 	"five": { "A": 10, "B": 20 }
 }
 
-	)", {}, "", "");
+	)", {}, "");
 }
 
 
@@ -6362,7 +6350,7 @@ FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "MAP", "", ""){
 		let result = map([ 10, 11, 12 ], f)
 		assert(result == [ 1010, 1011, 1012 ])
 
-	)", {}, "", "");
+	)", {}, "");
 }
 
 
@@ -6382,6 +6370,6 @@ FLOYD_LANG_PROOF("MANUAL SNIPPETS", "subset()", "", ""){
 		assert(subset("hello", 2, 4) == "ll")
 		assert(subset([ 10, 20, 30, 40 ], 1, 3 ) == [ 20, 30 ])
 
-	)", {}, "", "");
+	)", {}, "");
 }
 

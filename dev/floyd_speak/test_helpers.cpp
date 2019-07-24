@@ -48,9 +48,6 @@ executor_mode g_executor = executor_mode::llvm_jit;
 #endif
 
 
-test_report_t make_result(const value_t& result){
-	return { result, run_output_t(0, {}), {}, {} };
-}
 
 void ut_verify(const quark::call_context_t& context, const test_report_t& result, const test_report_t& expected){
 	ut_verify_values(context, result.result_variable, expected.result_variable);
@@ -128,7 +125,7 @@ test_report_t test_floyd_program(const compilation_unit_t& cu, const std::vector
 
 
 //??? Remove! Use test_floyd_program() directly.
-run_output_t test_run_container3(const std::string& program, const std::vector<std::string>& args, const std::string& container_key, const std::string& source_file){
+run_output_t test_run_container3(const std::string& program, const std::vector<std::string>& args, const std::string& source_file){
 	const auto cu = make_compilation_unit_lib(program, source_file);
 	return test_floyd_program(cu, args).output;
 }
