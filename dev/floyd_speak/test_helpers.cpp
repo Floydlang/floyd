@@ -260,30 +260,11 @@ void ut_verify_printout_nolib(const quark::call_context_t& context, const std::s
 
 
 
-
-
-//	Has no output value: only compilation errors or floyd-asserts.
-void ut_run_closed(const std::string& program, compilation_unit_mode mode){
-	const auto result = test_floyd_program(make_compilation_unit(program, "", mode), {});
-	if(result.exception_what.empty() == false){
-		std::cout << result.exception_what << std::endl;
-		throw std::exception();
-	}
-/*
-	if(result.print_out.empty() == false){
-		throw std::exception();
-	}
-*/
-
-}
-
-
-
 void ut_run_closed_nolib(const std::string& program){
-	ut_run_closed(program, compilation_unit_mode::k_no_core_lib);
+	test_floyd(QUARK_POS, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), {}, check_nothing(), false);
 }
 void ut_run_closed_lib(const std::string& program){
-	ut_run_closed(program, compilation_unit_mode::k_include_core_lib);
+	test_floyd(QUARK_POS, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), {}, check_nothing(), false);
 }
 
 

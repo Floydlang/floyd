@@ -757,8 +757,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "Mutate", "String (which requires RC)", "")
 			return s
 		}
 
-		let result = f()
-		assert(result == "<A>")
+		let r = f()
+		assert(r == "<A>")
 
 	)___");
 }
@@ -3066,8 +3066,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] push_back()", "", ""){
 	ut_run_closed_nolib(
 		R"(
 
-			let result = push_back([1, 2], 3)
-			assert(result == [1, 2, 3])
+			let r = push_back([1, 2], 3)
+			assert(r == [1, 2, 3])
 
 		)"
 	);
@@ -3080,7 +3080,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] subset()", "", ""){
 	ut_run_closed_nolib(R"(		assert(subset([10,20,30], 1, 3) == [20,30])		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] subset()", "", ""){
-	ut_run_closed_nolib(R"(		let result = (subset([10,20,30], 0, 0) == [])		)");
+	ut_run_closed_nolib(R"(		let r = (subset([10,20,30], 0, 0) == [])		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] subset()", "", ""){
 	ut_run_closed_nolib(R"(		assert(subset([10,20,30], 0, 0) == [])		)");
@@ -4348,7 +4348,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Error: Wrong TYPE of arguments t
 //??? document or disable using json-value directly as lookup parent.
 
 FLOYD_LANG_PROOF("Floyd test suite", "json::null", "", ""){
-	ut_run_closed_nolib(R"(		let result = null		)");
+	ut_run_closed_nolib(R"(		let r = null		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "json<string> Infer json::string", "", ""){
@@ -4922,9 +4922,9 @@ FLOYD_LANG_PROOF("Floyd test suite", "map()", "map over [int]", ""){
 			return 1000 + v
 		}
 
-		let result = map(a, f, "some context")
+		let r = map(a, f, "some context")
 //		print(to_string(result))
-		assert(result == [ 1010, 1011, 1012 ])
+		assert(r == [ 1010, 1011, 1012 ])
 
 	)");
 }
@@ -4938,9 +4938,9 @@ FLOYD_LANG_PROOF("Floyd test suite", "map()", "map over [int]", ""){
 			return to_string(1000 + v)
 		}
 
-		let result = map(a, f, "some context")
+		let r = map(a, f, "some context")
 //		print(to_string(result))
-		assert(result == [ "1010", "1011", "1012" ])
+		assert(r == [ "1010", "1011", "1012" ])
 
 	)");
 }
@@ -4954,9 +4954,9 @@ FLOYD_LANG_PROOF("Floyd test suite", "map()", "map over [string]", ""){
 			return size(v)
 		}
 
-		let result = map(a, f, "some context")
+		let r = map(a, f, "some context")
 //		print(to_string(result))
-		assert(result == [ 3, 4, 5 ])
+		assert(r == [ 3, 4, 5 ])
 
 	)");
 }
@@ -4972,8 +4972,8 @@ FLOYD_LANG_PROOF	("Floyd test suite", "map()", "context struct", ""){
 			return context.a + v
 		}
 
-		let result = map([ 10, 11, 12 ], f, context_t( 2000, "twenty"))
-		assert(result == [ 2010, 2011, 2012 ])
+		let r = map([ 10, 11, 12 ], f, context_t( 2000, "twenty"))
+		assert(r == [ 2010, 2011, 2012 ])
 
 	)");
 }
@@ -5016,9 +5016,9 @@ FLOYD_LANG_PROOF("Floyd test suite", "map_dag()", "No dependencies", ""){
 			return "[" + v + "]"
 		}
 
-		let result = map_dag([ "one", "ring", "to" ], [ -1, -1, -1 ], f, "iop")
+		let r = map_dag([ "one", "ring", "to" ], [ -1, -1, -1 ], f, "iop")
 //		print(to_string(result))
-		assert(result == [ "[one]", "[ring]", "[to]" ])
+		assert(r == [ "[one]", "[ring]", "[to]" ])
 
 	)");
 }
@@ -5031,9 +5031,9 @@ FLOYD_LANG_PROOF("Floyd test suite", "map_dag()", "No dependencies", ""){
 			return "[" + v + "]"
 		}
 
-		let result = map_dag([ "one", "ring", "to" ], [ 1, 2, -1 ], f, "qwerty")
+		let r = map_dag([ "one", "ring", "to" ], [ 1, 2, -1 ], f, "qwerty")
 //		print(to_string(result))
-		assert(result == [ "[one]", "[ring]", "[to]" ])
+		assert(r == [ "[one]", "[ring]", "[to]" ])
 
 	)");
 }
@@ -5057,9 +5057,9 @@ FLOYD_LANG_PROOF("Floyd test suite", "map_dag()", "complex", ""){
 			return v + "[" + s + "]"
 		}
 
-		let result = map_dag([ "D", "B", "A", "C", "E", "F" ], [ 4, 2, -1, 4, 2, 4 ], f, "1234")
+		let r = map_dag([ "D", "B", "A", "C", "E", "F" ], [ 4, 2, -1, 4, 2, 4 ], f, "1234")
 //		print(to_string(result))
-		assert(result == [ "D[]", "B[]", "A[B[], E[D[], C[], F[]]]", "C[]", "E[D[], C[], F[]]", "F[]" ])
+		assert(r == [ "D[]", "B[]", "A[B[], E[D[], C[], F[]]]", "C[]", "E[D[], C[], F[]]", "F[]" ])
 
 	)");
 }
@@ -5078,10 +5078,10 @@ FLOYD_LANG_PROOF("Floyd test suite", "reduce()", "int reduce([int], int, func in
 			return acc + element * 2
 		}
 
-		let result = reduce([ 10, 11, 12 ], 2000, f, "con123")
+		let r = reduce([ 10, 11, 12 ], 2000, f, "con123")
 
 //		print(to_string(result))
-		assert(result == 2066)
+		assert(r == 2066)
 
 	)");
 }
@@ -5100,9 +5100,9 @@ FLOYD_LANG_PROOF("Floyd test suite", "reduce()", "string reduce([int], string, f
 			return s
 		}
 
-		let result = reduce([ 2, 4, 1 ], "O", f, "1234")
+		let r = reduce([ 2, 4, 1 ], "O", f, "1234")
 //		print(to_string(result))
-		assert(result == "(<(<<<<(<<O>>)>>>>)>)")
+		assert(r == "(<(<<<<(<<O>>)>>>>)>)")
 
 	)___");
 }
@@ -5121,10 +5121,10 @@ FLOYD_LANG_PROOF("Floyd test suite", "filter()", "int filter([int], int, func in
 			return element % 3 == 0 ? true : false
 		}
 
-		let result = filter([ 3, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 ], f, "abcd")
+		let r = filter([ 3, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 ], f, "abcd")
 
 //		print(to_string(result))
-		assert(result == [ 3, 3, 6, 9, 12 ])
+		assert(r == [ 3, 3, 6, 9, 12 ])
 
 	)");
 }
@@ -5137,10 +5137,10 @@ FLOYD_LANG_PROOF("Floyd test suite", "filter()", "string filter([int], string, f
 			return size(element) == 3 || size(element) == 5
 		}
 
-		let result = filter([ "one", "two", "three", "four", "five", "six", "seven" ], f, "xyz")
+		let r = filter([ "one", "two", "three", "four", "five", "six", "seven" ], f, "xyz")
 
 //		print(to_string(result))
-		assert(result == [ "one", "two", "three", "six", "seven" ])
+		assert(r == [ "one", "two", "three", "six", "seven" ])
 
 	)___");
 }
@@ -5458,8 +5458,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_fsentries_deep()", "", ""){
 	ut_run_closed_lib(
 		R"(
 
-			let result = get_fsentries_deep("/Users/marcus/Desktop/")
-			assert(size(result) > 3)
+			let r = get_fsentries_deep("/Users/marcus/Desktop/")
+			assert(size(r) > 3)
 //			print(to_pretty_string(result))
 
 		)"
@@ -5582,8 +5582,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "create_directory_branch()", "", ""){
 			assert(does_fsentry_exist(path1) == false)
 			assert(does_fsentry_exist(path2) == false)
 
-			let result = true
-
 		)"
 	);
 }
@@ -5612,8 +5610,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "delete_fsentry_deep()", "", ""){
 			delete_fsentry_deep(path1)
 			assert(does_fsentry_exist(path1) == false)
 			assert(does_fsentry_exist(path2) == false)
-
-			let result = true
 
 		)"
 	);
@@ -5650,8 +5646,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "rename_fsentry()", "", ""){
 			assert(does_fsentry_exist(file_path2) == true)
 
 			delete_fsentry_deep(dir)
-
-			let result = true
 
 		)"
 	);
@@ -6235,13 +6229,15 @@ let a = f(3.14, "km")
 }
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "IMPURE FUNCTION", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_verify_mainfunc_return_nolib(
+	QUARK_POS,
+	R"(
 
 func int main([string] args) impure {
 	return 1
 }
 
-	)");
+	)", {}, 1);
 }
 
 

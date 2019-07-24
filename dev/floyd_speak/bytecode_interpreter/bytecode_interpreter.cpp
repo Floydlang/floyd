@@ -1072,7 +1072,7 @@ bc_value_t update_string_char(interpreter_t& vm, const bc_value_t s, int64_t loo
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s._type.is_string());
 
-	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+//	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
 	std::string s2 = s.get_string_value();
 	if(lookup_index < 0 || lookup_index >= s2.size()){

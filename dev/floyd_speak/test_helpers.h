@@ -46,6 +46,10 @@ inline bool operator==(const test_report_t& lhs, const test_report_t& rhs){
 	return compare(lhs, rhs, true);
 }
 
+inline test_report_t check_nothing(){
+	return test_report_t { value_t::make_undefined(), { -1, {} }, {}, "" };
+}
+
 inline test_report_t check_result(const value_t& expected){
 	return test_report_t { expected, { -1, {} }, {}, "" };
 }
@@ -71,7 +75,6 @@ void ut_verify_printout_lib(const quark::call_context_t& context, const std::str
 void ut_verify_printout_nolib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout);
 
 //	Has no output value: only compilation errors or floyd-asserts.
-void ut_run_closed(const std::string& program, compilation_unit_mode mode);
 void ut_run_closed_nolib(const std::string& program);
 void ut_run_closed_lib(const std::string& program);
 
