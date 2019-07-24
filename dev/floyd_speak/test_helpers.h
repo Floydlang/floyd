@@ -54,15 +54,10 @@ inline test_report_t check_printout(const std::vector<std::string>& print_out){
 }
 
 
-
 void ut_verify_report(const quark::call_context_t& context, const test_report_t& result, const test_report_t& expected);
-
-run_output_t test_run_container3(const std::string& program, const std::vector<std::string>& main_args, const std::string& source_file);
 
 
 void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const std::vector<std::string>& main_args, const test_report_t& expected, bool check_printout);
-
-
 
 
 void ut_verify_global_result_as_json(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::string& expected_json);

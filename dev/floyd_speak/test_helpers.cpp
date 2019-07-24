@@ -217,15 +217,6 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 
 
 
-//??? Remove! Use test_floyd_program() directly.
-run_output_t test_run_container3(const std::string& program, const std::vector<std::string>& args, const std::string& source_file){
-	const auto cu = make_compilation_unit_lib(program, source_file);
-	return test_floyd_program(cu, args).output;
-}
-
-
-
-
 void ut_verify_global_result_as_json(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::string& expected_json){
 	const auto expected_json2 = parse_json(seq_t(expected_json)).first;
 	const auto result = test_floyd_program(make_compilation_unit(program, "", cu_mode), {});

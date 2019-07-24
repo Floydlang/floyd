@@ -47,7 +47,7 @@ unsupported syntax
 
 
 
-//#define FLOYD_LANG_PROOF QUARK_UNIT_TEST
+
 
 
 
@@ -5824,8 +5824,7 @@ FLOYD_LANG_PROOF("", "try calling LLVM function", "", ""){
 
 	)";
 
-	const auto result = test_run_container3(p, {}, "");
-	QUARK_UT_VERIFY(result.empty());
+	ut_run_closed_nolib(p);
 }
 #endif
 
@@ -6081,18 +6080,14 @@ FLOYD_LANG_PROOF("Floyd test suite", "hello_world.floyd", "", ""){
 	const auto path = get_working_dir() + "/examples/hello_world.floyd";
 	const auto program = read_text_file(path);
 
-	const auto result = test_run_container3(program, {}, "");
-	const run_output_t expected = {};
-	QUARK_UT_VERIFY(result == expected);
+	ut_run_closed_lib(program);
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "game_of_life.floyd", "", ""){
 	const auto path = get_working_dir() + "/examples/game_of_life.floyd";
 	const auto program = read_text_file(path);
 
-	const auto result = test_run_container3(program, {}, "");
-	const run_output_t expected = {};
-	QUARK_UT_VERIFY(result == expected);
+	ut_run_closed_lib(program);
 }
 
 
@@ -6109,7 +6104,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "game_of_life.floyd", "", ""){
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "TERNARY OPERATOR", "", ""){
-	test_run_container3(R"(
+	ut_run_closed_nolib(R"(
 
 //	Snippets setup
 let b = ""
@@ -6118,29 +6113,29 @@ let b = ""
 
 let a = b == "true" ? true : false
 
-	)", {}, "");
+	)");
 }
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "COMMENTS", "", ""){
-	test_run_container3(R"(
+	ut_run_closed_nolib(R"(
 
 /* Comment can span lines. */
 
 let a = 10; // To end of line
 
-	)", {}, "");
+	)");
 }
 
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "LOCALS", "", ""){
-	test_run_container3(R"(
+	ut_run_closed_nolib(R"(
 
 let a = 10
 mutable b = 10
 b = 11
 
-	)", {}, "");
+	)");
 }
 
 
@@ -6165,7 +6160,7 @@ while(expression){
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "FOR", "", ""){
-	test_run_container3(R"(
+	ut_run_closed_nolib(R"(
 
 for (index in 1 ... 5) {
 	print(index)
@@ -6174,12 +6169,12 @@ for (index in 1  ..< 5) {
 	print(index)
 }
 
-	)", {}, "");
+	)");
 }
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "IF ELSE", "", ""){
-	test_run_container3(R"(
+	ut_run_closed_nolib(R"(
 
 //	Snippets setup
 let a = 1000
@@ -6196,22 +6191,22 @@ else{
 	print("zero or negative")
 }
 
-	)", {}, "");
+	)");
 }
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "BOOL", "", ""){
-	test_run_container3(R"(
+	ut_run_closed_nolib(R"(
 
 let a = true
 if(a){
 }
 
-	)", {}, "");
+	)");
 }
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "STRING", "", ""){
-	test_run_container3(R"(
+	ut_run_closed_nolib(R"(
 
 let s1 = "Hello, world!"
 let s2 = "Title: " + s1
@@ -6221,14 +6216,14 @@ assert(size(s1) == 13)
 assert(subset(s1, 1, 4) == "ell")
 let s4 = to_string(12003)
 
-	)", {}, "");
+	)");
 }
 
 
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "FUNCTION", "", ""){
-	test_run_container3(R"(
+	ut_run_closed_nolib(R"(
 
 func string f(double a, string s){
 	return to_string(a) + ":" + s
@@ -6236,23 +6231,23 @@ func string f(double a, string s){
 
 let a = f(3.14, "km")
 
-	)", {}, "");
+	)");
 }
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "IMPURE FUNCTION", "", ""){
-	test_run_container3(R"(
+	ut_run_closed_nolib(R"(
 
 func int main([string] args) impure {
 	return 1
 }
 
-	)", {}, "");
+	)");
 }
 
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "STRUCT", "", ""){
-	test_run_container3(R"(
+	ut_run_closed_nolib(R"(
 
 struct rect {
 	double width
@@ -6272,12 +6267,12 @@ let b = update(a, width, 100.0)
 assert(a.width == 0.0)
 assert(b.width == 100.0)
 
-	)", {}, "");
+	)");
 }
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "VECTOR", "", ""){
-	test_run_container3(R"(
+	ut_run_closed_nolib(R"(
 
 let a = [ 1, 2, 3 ]
 assert(size(a) == 3)
@@ -6300,12 +6295,12 @@ for(i in 0 ..< size(a)){
 	print(a[i])
 }
 
-	)", {}, "");
+	)");
 }
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "DICTIONARY", "", ""){
-	test_run_container3(R"(
+	ut_run_closed_nolib(R"(
 
 let a = { "one": 1, "two": 2 }
 assert(a["one"] == 1)
@@ -6314,12 +6309,12 @@ let b = update(a, "one", 10)
 assert(a == { "one": 1, "two": 2 })
 assert(b == { "one": 10, "two": 2 })
 
-	)", {}, "");
+	)");
 }
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "json", "", ""){
-	test_run_container3(R"(
+	ut_run_closed_nolib(R"(
 
 let json a = {
 	"one": 1,
@@ -6327,7 +6322,7 @@ let json a = {
 	"five": { "A": 10, "B": 20 }
 }
 
-	)", {}, "");
+	)");
 }
 
 
@@ -6335,15 +6330,15 @@ let json a = {
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "MAP", "", ""){
-	test_run_container3(R"(
+	ut_run_closed_nolib(R"(
 
-		func int f(int v){
+		func int f(int v, int c){
 			return 1000 + v
 		}
-		let result = map([ 10, 11, 12 ], f)
-		assert(result == [ 1010, 1011, 1012 ])
+		let r = map([ 10, 11, 12 ], f, 0)
+		assert(r == [ 1010, 1011, 1012 ])
 
-	)", {}, "");
+	)");
 }
 
 
@@ -6358,11 +6353,11 @@ FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "MAP", "", ""){
 
 
 FLOYD_LANG_PROOF("MANUAL SNIPPETS", "subset()", "", ""){
-	test_run_container3(R"(
+	ut_run_closed_nolib(R"(
 
 		assert(subset("hello", 2, 4) == "ll")
 		assert(subset([ 10, 20, 30, 40 ], 1, 3 ) == [ 20, 30 ])
 
-	)", {}, "");
+	)");
 }
 
