@@ -15,7 +15,6 @@
 #include "utils.h"
 #include "json_support.h"
 #include "floyd_runtime.h"
-#include "floyd_filelib.h"
 
 #include "text_parser.h"
 #include "pass2.h"
@@ -55,7 +54,6 @@ struct analyzer_imm_t {
 	pass2_ast_t _ast;
 
 	std::vector<corecall_signature_t> corecall_signatures;
-	std::vector<libfunc_signature_t> filelib_signatures;
 };
 
 
@@ -2659,28 +2657,6 @@ static builtins_t generate_corecalls(analyser_t& a, const std::vector<corecall_s
 	return builtins_t{ function_defs, symbol_map };
 }
 
-static builtins_t generate_lib_calls(analyser_t& a, const std::vector<libfunc_signature_t>& host_functions){
-	std::map<function_id_t, std::shared_ptr<const function_definition_t>> function_defs;
-	std::vector<std::pair<std::string, symbol_t>> symbol_map;
-
-	for(auto signature: host_functions){
-		resolve_type(a, k_no_location, signature._function_type);
-
-		vector<member_t> args;
-		for(const auto& e: signature._function_type.get_function_args()){
-			args.push_back(member_t(e, "dummy"));
-		}
-		const auto function_id = signature._function_id;
-		const auto def = std::make_shared<function_definition_t>(function_definition_t::make_host_func(k_no_location, signature.name, signature._function_type, args, function_id));
-		const auto function_value = value_t::make_function_value(signature._function_type, function_id_t { signature.name });
-
-		function_defs.insert({ function_id, def });
-		symbol_map.push_back({ signature.name, symbol_t::make_immutable_precalc(function_value) });
-	}
-	return builtins_t{ function_defs, symbol_map };
-}
-
-
 builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	/*
 		Create built-in global symbol map: built in data types, built-in functions (host functions).
@@ -2731,11 +2707,6 @@ semantic_ast_t analyse(analyser_t& a){
 
 	std::vector<std::pair<std::string, symbol_t>> symbol_map = builtins.symbol_map;
 	std::map<function_id_t, std::shared_ptr<const function_definition_t>> function_defs = builtins.function_defs;
-
-	const auto filelib_calls = generate_lib_calls(a, a._imm->filelib_signatures);
-
-	function_defs.insert(filelib_calls.function_defs.begin(), filelib_calls.function_defs.end());
-	symbol_map.insert(symbol_map.end(), filelib_calls.symbol_map.begin(), filelib_calls.symbol_map.end());
 
 	a._function_defs.swap(function_defs);
 
@@ -2796,8 +2767,7 @@ analyser_t::analyser_t(const pass2_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	const auto corecalls = get_corecall_signatures();
-	const auto filelib_calls = get_filelib_signatures();
-	_imm = make_shared<analyzer_imm_t>(analyzer_imm_t{ ast, corecalls, filelib_calls });
+	_imm = make_shared<analyzer_imm_t>(analyzer_imm_t{ ast, corecalls });
 }
 
 #if DEBUG

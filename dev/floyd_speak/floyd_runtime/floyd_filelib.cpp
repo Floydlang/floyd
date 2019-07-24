@@ -203,6 +203,25 @@ extern const std::string k_filelib_builtin_types_and_constants = R"(
 
 		string executable_dir
 	}
+
+
+	func sha1_t calc_string_sha1(string s)
+	func sha1_t calc_binary_sha1(binary_t d)
+
+	func int get_time_of_day() impure
+
+	func string read_text_file(string abs_path) impure
+	func void write_text_file(string abs_path, string data) impure
+
+	func [fsentry_t] get_fsentries_shallow(string abs_path) impure
+	func [fsentry_t] get_fsentries_deep(string abs_path) impure
+	func fsentry_info_t get_fsentry_info(string abs_path) impure
+	func fs_environment_t get_fs_environment() impure
+	func bool does_fsentry_exist(string abs_path) impure
+	func void create_directory_branch(string abs_path) impure
+	func void delete_fsentry_deep(string abs_path) impure
+	func void rename_fsentry(string abs_path, string n) impure
+
 )";
 
 
@@ -230,8 +249,8 @@ bool is_valid_absolute_dir_path(const std::string& s){
 typeid_t make__fsentry_t__type(){
 	const auto temp = typeid_t::make_struct2({
 		{ typeid_t::make_string(), "type" },
-		{ typeid_t::make_string(), "name" },
-		{ typeid_t::make_string(), "parent_path" }
+		{ typeid_t::make_string(), "abs_parent_path" },
+		{ typeid_t::make_string(), "name" }
 	});
 	return temp;
 }
@@ -251,7 +270,7 @@ typeid_t make__fsentry_info_t__type(){
 	const auto temp = typeid_t::make_struct2({
 		{ typeid_t::make_string(), "type" },
 		{ typeid_t::make_string(), "name" },
-		{ typeid_t::make_string(), "parent_path" },
+		{ typeid_t::make_string(), "abs_parent_path" },
 
 		{ typeid_t::make_string(), "creation_date" },
 		{ typeid_t::make_string(), "modification_date" },
@@ -397,8 +416,6 @@ libfunc_signature_t make_calc_binary_sha1_signature(){
 
 
 
-
-
 static std::vector<libfunc_signature_t> get_host_function_records(){
 	const std::vector<libfunc_signature_t> result = {
 		make_get_time_of_day_signature(),
@@ -420,14 +437,6 @@ static std::vector<libfunc_signature_t> get_host_function_records(){
 	};
 	return result;
 }
-
-
-std::vector<libfunc_signature_t> get_filelib_signatures(){
-	static const auto a = get_host_function_records();
-
-	return a;
-}
-
 
 
 

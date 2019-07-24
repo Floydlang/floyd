@@ -15,7 +15,6 @@
 #include "expression.h"
 #include "json_support.h"
 #include "text_parser.h"
-#include "bytecode_host_functions.h"
 #include "file_handling.h"
 #include "compiler_helpers.h"
 #include "floyd_filelib.h"
@@ -780,10 +779,10 @@ QUARK_UNIT_TEST("Floyd test suite", "Mutate", "String (which requires RC)", ""){
 
 
 //######################################################################################################################
-//	HOST FUNCTIONS
+//	CORE CALLS
 //######################################################################################################################
 
-//////////////////////////////////////////		HOST FUNCTION - print()
+//////////////////////////////////////////		CORE CALL - print()
 
 
 
@@ -805,7 +804,7 @@ QUARK_UNIT_TEST("Floyd test suite", "print() supports ints and strings", "", "")
 }
 
 
-//////////////////////////////////////////		HOST FUNCTION - assert()
+//////////////////////////////////////////		CORE CALL - assert()
 
 //??? add file + line to Floyd's asserts
 QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
@@ -825,7 +824,7 @@ QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
 	);
 }
 
-//////////////////////////////////////////		HOST FUNCTION - to_string()
+//////////////////////////////////////////		CORE CALL - to_string()
 
 
 QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
@@ -4678,10 +4677,10 @@ QUARK_UNIT_TEST("Floyd test suite", "get_json_type()", "DOCUMENTATION SNIPPET", 
 
 
 //######################################################################################################################
-//	HOST FUNCTIONS 2
+//	CORE CALLS
 //######################################################################################################################
 
-//////////////////////////////////////////		HOST FUNCTION - typeof()
+//////////////////////////////////////////		CORE CALL - typeof()
 
 
 QUARK_UNIT_TEST("Floyd test suite", "typeof()", "", ""){
@@ -4917,142 +4916,6 @@ QUARK_UNIT_TEST("Floyd test suite", "from_json()", "point_t", ""){
 
 
 
-
-
-
-//######################################################################################################################
-//	CORE LIBRARY
-//######################################################################################################################
-
-
-
-
-
-QUARK_UNIT_TEST("Floyd test suite", "cmath_pi", "", ""){
-	ut_verify_global_result_lib(
-		QUARK_POS,
-		R"(
-
-			let x = cmath_pi
-			let result = x >= 3.14 && x < 3.15
-
-		)",
-		value_t::make_bool(true)
-	);
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "color__black", "", ""){
-	ut_run_closed_lib(R"(
-
-		assert(color__black.red == 0.0)
-		assert(color__black.green == 0.0)
-		assert(color__black.blue == 0.0)
-		assert(color__black.alpha == 1.0)
-
-	)");
-}
-
-
-QUARK_UNIT_TEST("Floyd test suite", "color__black", "", ""){
-	ut_run_closed_lib(R"(
-
-		let r = add_colors(color_t(1.0, 2.0, 3.0, 4.0), color_t(1000.0, 2000.0, 3000.0, 4000.0))
-		assert(r.red == 1001.0)
-		assert(r.green == 2002.0)
-		assert(r.blue == 3003.0)
-		assert(r.alpha == 4004.0)
-
-	)");
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "", "pixel_t()", ""){
-	const auto pixel_t__def = std::vector<member_t>{
-		member_t(typeid_t::make_int(), "red"),
-		member_t(typeid_t::make_int(), "green"),
-		member_t(typeid_t::make_int(), "blue")
-	};
-
-	ut_verify_global_result_nolib(
-		QUARK_POS,
-
-		"struct pixel_t { int red int green int blue } let result = pixel_t(1,2,3)",
-
-		value_t::make_struct_value(
-			typeid_t::make_struct2(pixel_t__def),
-			std::vector<value_t>{ value_t::make_int(1), value_t::make_int(2), value_t::make_int(3) }
-		)
-	);
-}
-
-
-
-
-QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
-	const auto a = typeid_t::make_vector(typeid_t::make_string());
-	const auto b = typeid_t::make_vector(make__fsentry_t__type());
-	ut_verify_auto(QUARK_POS, a != b, true);
-}
-
-
-
-
-//////////////////////////////////////////		HOST FUNCTION - get_time_of_day()
-
-QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
-	ut_run_closed_nolib(R"(
-
-		let start = get_time_of_day()
-		mutable b = 0
-		mutable t = [0]
-		for(i in 0...100){
-			b = b + 1
-			t = push_back(t, b)
-		}
-		let end = get_time_of_day()
-//		print("Duration: " + to_string(end - start) + ", number = " + to_string(b))
-//		print(t)
-
-	)");
-}
-
-QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
-	ut_run_closed_nolib(R"(
-
-		let int a = get_time_of_day()
-		let int b = get_time_of_day()
-		let int c = b - a
-//		print("Delta time:" + to_string(a))
-
-	)");
-}
-
-//////////////////////////////////////////		HOST FUNCTION - calc_string_sha1()
-
-
-QUARK_UNIT_TEST("Floyd test suite", "calc_string_sha1()", "", ""){
-	ut_run_closed_nolib(R"(
-
-		let a = calc_string_sha1("Violator is the seventh studio album by English electronic music band Depeche Mode.")
-//		print(to_string(a))
-		assert(a.ascii40 == "4d5a137b3b1faf855872a312a184dd9a24594387")
-
-	)");
-}
-
-
-//////////////////////////////////////////		HOST FUNCTION - calc_binary_sha1()
-
-
-QUARK_UNIT_TEST("Floyd test suite", "calc_binary_sha1()", "", ""){
-	ut_run_closed_lib(R"(
-
-		let bin = binary_t("Violator is the seventh studio album by English electronic music band Depeche Mode.")
-		let a = calc_binary_sha1(bin)
-//		print(to_string(a))
-		assert(a.ascii40 == "4d5a137b3b1faf855872a312a184dd9a24594387")
-
-	)");
-}
 
 
 
@@ -5381,7 +5244,150 @@ QUARK_UNIT_TEST("Floyd test suite", "stable_sort()", "[string]", ""){
 
 
 
-//////////////////////////////////////////		HOST FUNCTION - read_text_file()
+
+
+
+//######################################################################################################################
+//	CORE LIBRARY
+//######################################################################################################################
+
+
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "cmath_pi", "", ""){
+	ut_verify_global_result_lib(
+		QUARK_POS,
+		R"(
+
+			let x = cmath_pi
+			let result = x >= 3.14 && x < 3.15
+
+		)",
+		value_t::make_bool(true)
+	);
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "color__black", "", ""){
+	ut_run_closed_lib(R"(
+
+		assert(color__black.red == 0.0)
+		assert(color__black.green == 0.0)
+		assert(color__black.blue == 0.0)
+		assert(color__black.alpha == 1.0)
+
+	)");
+}
+
+
+QUARK_UNIT_TEST("Floyd test suite", "color__black", "", ""){
+	ut_run_closed_lib(R"(
+
+		let r = add_colors(color_t(1.0, 2.0, 3.0, 4.0), color_t(1000.0, 2000.0, 3000.0, 4000.0))
+		assert(r.red == 1001.0)
+		assert(r.green == 2002.0)
+		assert(r.blue == 3003.0)
+		assert(r.alpha == 4004.0)
+
+	)");
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "", "pixel_t()", ""){
+	const auto pixel_t__def = std::vector<member_t>{
+		member_t(typeid_t::make_int(), "red"),
+		member_t(typeid_t::make_int(), "green"),
+		member_t(typeid_t::make_int(), "blue")
+	};
+
+	ut_verify_global_result_nolib(
+		QUARK_POS,
+
+		"struct pixel_t { int red int green int blue } let result = pixel_t(1,2,3)",
+
+		value_t::make_struct_value(
+			typeid_t::make_struct2(pixel_t__def),
+			std::vector<value_t>{ value_t::make_int(1), value_t::make_int(2), value_t::make_int(3) }
+		)
+	);
+}
+
+
+
+
+QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
+	const auto a = typeid_t::make_vector(typeid_t::make_string());
+	const auto b = typeid_t::make_vector(make__fsentry_t__type());
+	ut_verify_auto(QUARK_POS, a != b, true);
+}
+
+
+
+
+
+//////////////////////////////////////////		CORE LIBRARY - get_time_of_day()
+
+QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
+	ut_run_closed_lib(R"(
+
+		let start = get_time_of_day()
+		mutable b = 0
+		mutable t = [0]
+		for(i in 0...100){
+			b = b + 1
+			t = push_back(t, b)
+		}
+		let end = get_time_of_day()
+//		print("Duration: " + to_string(end - start) + ", number = " + to_string(b))
+//		print(t)
+
+	)");
+}
+
+QUARK_UNIT_TEST("Floyd test suite", "get_time_of_day()", "", ""){
+	ut_run_closed_lib(R"(
+
+		let int a = get_time_of_day()
+		let int b = get_time_of_day()
+		let int c = b - a
+//		print("Delta time:" + to_string(a))
+
+	)");
+}
+
+//////////////////////////////////////////		CORE LIBRARY - calc_string_sha1()
+
+
+QUARK_UNIT_TEST("Floyd test suite", "calc_string_sha1()", "", ""){
+	ut_run_closed_lib(R"(
+
+		let a = calc_string_sha1("Violator is the seventh studio album by English electronic music band Depeche Mode.")
+//		print(to_string(a))
+		assert(a.ascii40 == "4d5a137b3b1faf855872a312a184dd9a24594387")
+
+	)");
+}
+
+
+//////////////////////////////////////////		CORE LIBRARY - calc_binary_sha1()
+
+
+QUARK_UNIT_TEST("Floyd test suite", "calc_binary_sha1()", "", ""){
+	ut_run_closed_lib(R"(
+
+		let bin = binary_t("Violator is the seventh studio album by English electronic music band Depeche Mode.")
+		let a = calc_binary_sha1(bin)
+//		print(to_string(a))
+		assert(a.ascii40 == "4d5a137b3b1faf855872a312a184dd9a24594387")
+
+	)");
+}
+
+
+
+
+
+
+//////////////////////////////////////////		CORE LIBRARY - read_text_file()
 
 /*
 QUARK_UNIT_TEST("Floyd test suite", "read_text_file()", "", ""){
@@ -5397,11 +5403,11 @@ QUARK_UNIT_TEST("Floyd test suite", "read_text_file()", "", ""){
 */
 
 
-//////////////////////////////////////////		HOST FUNCTION - write_text_file()
+//////////////////////////////////////////		CORE LIBRARY - write_text_file()
 
 
 QUARK_UNIT_TEST("Floyd test suite", "write_text_file()", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_lib(R"(
 
 		let path = get_fs_environment().desktop_dir
 		write_text_file(path + "/test_out.txt", "Floyd wrote this!")
@@ -5409,7 +5415,7 @@ QUARK_UNIT_TEST("Floyd test suite", "write_text_file()", "", ""){
 	)");
 }
 
-//////////////////////////////////////////		HOST FUNCTION - instantiate_from_typeid()
+//////////////////////////////////////////		CORE CALL - instantiate_from_typeid()
 
 //	instantiate_from_typeid() only works for const-symbols right now.
 /*
@@ -5436,11 +5442,11 @@ QUARK_UNIT_TEST("Floyd test suite", "", "", ""){
 */
 
 
-//////////////////////////////////////////		HOST FUNCTION - get_directory_entries()
+//////////////////////////////////////////		CORE LIBRARY - get_directory_entries()
 
 
 QUARK_UNIT_TEST("Floyd test suite", "get_fsentries_shallow()", "", ""){
-	ut_verify_global_result_nolib(
+	ut_verify_global_result_lib(
 		QUARK_POS,
 		R"(
 
@@ -5458,11 +5464,11 @@ QUARK_UNIT_TEST("Floyd test suite", "get_fsentries_shallow()", "", ""){
 }
 
 
-//////////////////////////////////////////		HOST FUNCTION - get_fsentries_deep()
+//////////////////////////////////////////		CORE LIBRARY - get_fsentries_deep()
 
 
 QUARK_UNIT_TEST("Floyd test suite", "get_fsentries_deep()", "", ""){
-	ut_run_closed_nolib(
+	ut_run_closed_lib(
 		R"(
 
 			let result = get_fsentries_deep("/Users/marcus/Desktop/")
@@ -5474,11 +5480,11 @@ QUARK_UNIT_TEST("Floyd test suite", "get_fsentries_deep()", "", ""){
 }
 
 
-//////////////////////////////////////////		HOST FUNCTION - get_fsentry_info()
+//////////////////////////////////////////		CORE LIBRARY - get_fsentry_info()
 
 
 QUARK_UNIT_TEST("Floyd test suite", "get_fsentry_info()", "", ""){
-	ut_verify_global_result_nolib(
+	ut_verify_global_result_lib(
 		QUARK_POS,
 		R"(
 
@@ -5494,11 +5500,11 @@ QUARK_UNIT_TEST("Floyd test suite", "get_fsentry_info()", "", ""){
 }
 
 
-//////////////////////////////////////////		HOST FUNCTION - get_fs_environment()
+//////////////////////////////////////////		CORE LIBRARY - get_fs_environment()
 
 
 QUARK_UNIT_TEST("Floyd test suite", "get_fs_environment()", "", ""){
-	ut_verify_global_result_nolib(
+	ut_verify_global_result_lib(
 		QUARK_POS,
 		R"(
 
@@ -5516,11 +5522,11 @@ QUARK_UNIT_TEST("Floyd test suite", "get_fs_environment()", "", ""){
 
 
 
-//////////////////////////////////////////		HOST FUNCTION - does_fsentry_exist()
+//////////////////////////////////////////		CORE LIBRARY - does_fsentry_exist()
 
 
 QUARK_UNIT_TEST("Floyd test suite", "does_fsentry_exist()", "", ""){
-	ut_verify_global_result_nolib(
+	ut_verify_global_result_lib(
 		QUARK_POS,
 		R"(
 
@@ -5537,7 +5543,7 @@ QUARK_UNIT_TEST("Floyd test suite", "does_fsentry_exist()", "", ""){
 }
 
 QUARK_UNIT_TEST("Floyd test suite", "does_fsentry_exist()", "", ""){
-	ut_verify_global_result_nolib(
+	ut_verify_global_result_lib(
 		QUARK_POS,
 		R"(
 
@@ -5565,13 +5571,13 @@ void remove_test_dir(const std::string& dir_name1, const std::string& dir_name2)
 
 
 
-//////////////////////////////////////////		HOST FUNCTION - create_directory_branch()
+//////////////////////////////////////////		CORE LIBRARY - create_directory_branch()
 
 
 QUARK_UNIT_TEST("Floyd test suite", "create_directory_branch()", "", ""){
 	remove_test_dir("unittest___create_directory_branch", "subdir");
 
-	ut_run_closed_nolib(
+	ut_run_closed_lib(
 		R"(
 
 			let path1 = get_fs_environment().desktop_dir + "/unittest___create_directory_branch"
@@ -5596,13 +5602,13 @@ QUARK_UNIT_TEST("Floyd test suite", "create_directory_branch()", "", ""){
 }
 
 
-//////////////////////////////////////////		HOST FUNCTION - delete_fsentry_deep()
+//////////////////////////////////////////		CORE LIBRARY - delete_fsentry_deep()
 
 
 QUARK_UNIT_TEST("Floyd test suite", "delete_fsentry_deep()", "", ""){
 	remove_test_dir("unittest___delete_fsentry_deep", "subdir");
 
-	ut_run_closed_nolib(
+	ut_run_closed_lib(
 		R"(
 
 			let path1 = get_fs_environment().desktop_dir + "/unittest___delete_fsentry_deep"
@@ -5628,11 +5634,11 @@ QUARK_UNIT_TEST("Floyd test suite", "delete_fsentry_deep()", "", ""){
 
 
 
-//////////////////////////////////////////		HOST FUNCTION - rename_fsentry()
+//////////////////////////////////////////		CORE LIBRARYCORE LIBRARY - rename_fsentry()
 
 
 QUARK_UNIT_TEST("Floyd test suite", "rename_fsentry()", "", ""){
-	ut_run_closed_nolib(
+	ut_run_closed_lib(
 		R"(
 
 			let dir = get_fs_environment().desktop_dir + "/unittest___rename_fsentry"
