@@ -1691,7 +1691,7 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 			*static_cast<runtime_value_t*>(value_ptr) = value;
 		}
 		void operator()(const typeid_t::typeid_type_t& e) const{
-			*static_cast<int32_t*>(value_ptr) = value.typeid_itype;
+			*static_cast<int32_t*>(value_ptr) = static_cast<int32_t>(value.typeid_itype);
 		}
 
 		void operator()(const typeid_t::struct_t& e) const{

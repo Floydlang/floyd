@@ -707,33 +707,6 @@ expression_gen_t bcgen_resolve_member_expression(bcgenerator_t& gen_acc, const v
 
 
 
-static function_id_t XXXXXXXX____get_host_function_id(bcgenerator_t& gen_acc, const expression_t::call_t& call_e){
-	QUARK_ASSERT(gen_acc.check_invariant());
-
-	const auto load2 = std::get_if<expression_t::load2_t>(&call_e.callee->_expression_variant);
-
-	if(load2 && load2->address._parent_steps == -1){
-		const auto global_index = load2->address._index;
-
-		QUARK_ASSERT(global_index >= 0 && global_index < gen_acc._globals._symbol_table._symbols.size());
-		const auto& global_symbol = gen_acc._globals._symbol_table._symbols[global_index];
-		if(global_symbol.second._init.is_function()){
-			const auto function_id = global_symbol.second._init.get_function_value();
-			const auto& function_def = gen_acc._ast_imm->_tree._function_defs[function_id];
-
-			const auto host_func = std::get<function_definition_t::host_func_t>(function_def->_contents);
-
-			return host_func._host_function_id;
-		}
-		else{
-			return -1;
-		}
-	}
-	else{
-		return -1;
-	}
-}
-
 
 //	Generates a call to the global function that implements the corecall.
 expression_gen_t bcgen_make_fallthrough_corecall(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const typeid_t& call_output_type, const expression_t::corecall_t& details, const bcgen_body_t& body){
@@ -1838,7 +1811,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 
 	bcgen_globals(a, a._ast_imm->_tree._globals);
 
-	std::vector<bc_function_definition_t> function_defs2;
+	std::map<function_id_t, bc_function_definition_t> function_defs2;
 	for(auto function_id = 0 ; function_id < ast._tree._function_defs.size() ; function_id++){
 		const auto& function_def = *ast._tree._function_defs[function_id];
 
@@ -1858,7 +1831,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 					function_def._function_type,
 					function_def._args,
 					std::make_shared<bc_static_frame_t>(frame),
-					k_no_host_function_id
+					function_id_t { function_def._definition_name }
 				};
 				return f;
 			}
@@ -1867,13 +1840,13 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 					function_def._function_type,
 					function_def._args,
 					nullptr,
-					e._host_function_id
+					function_id_t { function_def._definition_name }
 				};
 				return f;
 			}
 		};
 		const auto function_def2 = std::visit(visitor_t{ a, function_def }, function_def._contents);
-		function_defs2.push_back(function_def2);
+		function_defs2.insert({ function_def2._function_id, function_def2 });
 	}
 
 	const auto globals2 = make_frame(a._globals, {});

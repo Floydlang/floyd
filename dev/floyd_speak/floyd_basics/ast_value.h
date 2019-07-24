@@ -106,7 +106,7 @@ std::string make_value_debug_str(const value_t& v);
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
-				QUARK_ASSERT(_function_id == -1);
+				QUARK_ASSERT(_function_id == k_no_function_id);
 			}
 			else if(base_type == base_type::k_json){
 				QUARK_ASSERT(_string.empty());
@@ -115,7 +115,7 @@ std::string make_value_debug_str(const value_t& v);
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
-				QUARK_ASSERT(_function_id == -1);
+				QUARK_ASSERT(_function_id == k_no_function_id);
 
 				QUARK_ASSERT(_json->check_invariant());
 			}
@@ -127,7 +127,7 @@ std::string make_value_debug_str(const value_t& v);
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
-				QUARK_ASSERT(_function_id == -1);
+				QUARK_ASSERT(_function_id == k_no_function_id);
 
 				QUARK_ASSERT(_typeid_value.check_invariant());
 			}
@@ -138,7 +138,7 @@ std::string make_value_debug_str(const value_t& v);
 				QUARK_ASSERT(_struct != nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
-				QUARK_ASSERT(_function_id == -1);
+				QUARK_ASSERT(_function_id == k_no_function_id);
 
 				QUARK_ASSERT(_struct && _struct->check_invariant());
 			}
@@ -149,7 +149,7 @@ std::string make_value_debug_str(const value_t& v);
 				QUARK_ASSERT(_struct == nullptr);
 		//		QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
-				QUARK_ASSERT(_function_id == -1);
+				QUARK_ASSERT(_function_id == k_no_function_id);
 			}
 			else if(base_type == base_type::k_dict){
 				QUARK_ASSERT(_string.empty());
@@ -158,7 +158,7 @@ std::string make_value_debug_str(const value_t& v);
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
 		//		QUARK_ASSERT(_dict_entries.empty());
-				QUARK_ASSERT(_function_id == -1);
+				QUARK_ASSERT(_function_id == k_no_function_id);
 			}
 			else if(base_type == base_type::k_function){
 				QUARK_ASSERT(_string.empty());
@@ -167,7 +167,7 @@ std::string make_value_debug_str(const value_t& v);
 				QUARK_ASSERT(_struct == nullptr);
 				QUARK_ASSERT(_vector_elements.empty());
 				QUARK_ASSERT(_dict_entries.empty());
-				QUARK_ASSERT(_function_id != -1);
+//				QUARK_ASSERT(_function_id != k_no_function_id);
 			}
 			else {
 				QUARK_ASSERT(false);
@@ -211,7 +211,7 @@ std::string make_value_debug_str(const value_t& v);
 		public: std::shared_ptr<struct_value_t> _struct;
 		public: std::vector<value_t> _vector_elements;
 		public: std::map<std::string, value_t> _dict_entries;
-		public: function_id_t _function_id = -1;
+		public: function_id_t _function_id = k_no_function_id;
 	};
 
 
@@ -434,13 +434,13 @@ std::string make_value_debug_str(const value_t& v);
 		//------------------------------------------------		function
 
 
-		public: static value_t make_function_value(const typeid_t& function_type, function_id_t function_id);
+		public: static value_t make_function_value(const typeid_t& function_type, const function_id_t& function_id);
 		public: bool is_function() const {
 			QUARK_ASSERT(check_invariant());
 
 			return _basetype == base_type::k_function;
 		}
-		public: int get_function_value() const;
+		public: function_id_t get_function_value() const;
 
 
 		//////////////////////////////////////////////////		PUBLIC - TYPE INDEPENDANT

@@ -267,18 +267,21 @@ bc_value_t::bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t
 //////////////////////////////////////		function
 
 
-bc_value_t bc_value_t::make_function_value(const typeid_t& function_type, function_id_t function_id){
+bc_value_t bc_value_t::make_function_value(const typeid_t& function_type, const function_id_t& function_id){
 	return bc_value_t{ function_type, function_id, true };
 }
-int bc_value_t::get_function_value() const{
+function_id_t bc_value_t::get_function_value() const{
 	QUARK_ASSERT(check_invariant());
 
-	return _pod._inplace._function_id;
+	return _pod._external->_function_id;
 }
-bc_value_t::bc_value_t(const typeid_t& function_type, function_id_t function_id, bool dummy) :
+bc_value_t::bc_value_t(const typeid_t& function_type, const function_id_t& function_id, bool dummy) :
 	_type(function_type)
 {
-	_pod._inplace._function_id = function_id;
+	QUARK_ASSERT(function_type.check_invariant());
+
+	_pod._external = new bc_external_value_t(function_type, function_id);
+
 	QUARK_ASSERT(check_invariant());
 }
 
@@ -422,7 +425,7 @@ bool bc_external_handle_t::check_invariant() const {
 
 
 bool encode_as_inplace(const typeid_t& type){
-	return type.is_bool() || type.is_int() || type.is_double() || type.is_function();
+	return type.is_bool() || type.is_int() || type.is_double();
 }
 bool encode_as_vector_w_inplace_elements(const typeid_t& type){
 	return type.is_vector() && encode_as_inplace(type.get_vector_element_type());
@@ -479,7 +482,7 @@ value_encoding type_to_encoding(const typeid_t& type){
 		return value_encoding::k_external__dict;
 	}
 	else if(basetype == base_type::k_function){
-		return value_encoding::k_inplace__function;
+		return value_encoding::k_external__function;
 	}
 	else if(basetype == base_type::k_unresolved){
 	}
@@ -498,6 +501,7 @@ bool encode_as_external(value_encoding encoding){
 		|| encoding == value_encoding::k_external__vector
 		|| encoding == value_encoding::k_external__vector_pod64
 		|| encoding == value_encoding::k_external__dict
+		|| encoding == value_encoding::k_external__function
 		;
 }
 
@@ -510,6 +514,7 @@ bool encode_as_external(const typeid_t& type){
 		|| basetype == base_type::k_struct
 		|| basetype == base_type::k_vector
 		|| basetype == base_type::k_dict
+		|| basetype == base_type::k_function
 		;
 }
 
@@ -598,6 +603,15 @@ bool bc_external_value_t::check_invariant() const{
 //				QUARK_ASSERT(_dict_w_external_values.size() == 0);
 //				QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
 	}
+	else if(encoding == value_encoding::k_external__function){
+		QUARK_ASSERT(_string.empty());
+		QUARK_ASSERT(_json == nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
+		QUARK_ASSERT(_struct_members.empty());
+		QUARK_ASSERT(_vector_w_external_elements.empty());
+		QUARK_ASSERT(_dict_w_external_values.size() == 0);
+		QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
+	}
 	else {
 		QUARK_ASSERT(false);
 		quark::throw_exception();
@@ -624,6 +638,17 @@ bc_external_value_t::bc_external_value_t(const std::shared_ptr<json_t>& s) :
 	_json(s)
 {
 	QUARK_ASSERT(s->check_invariant());
+	QUARK_ASSERT(check_invariant());
+}
+
+
+bc_external_value_t::bc_external_value_t(const typeid_t& type, const function_id_t& function_id) :
+	_rc(1),
+#if DEBUG
+	_debug_type(type),
+#endif
+	_function_id(function_id)
+{
 	QUARK_ASSERT(check_invariant());
 }
 
@@ -750,7 +775,7 @@ bool check_external_deep(const typeid_t& type, const bc_external_value_t* ext){
 		}
 	}
 	else if(basetype == base_type::k_function){
-		QUARK_ASSERT(false);
+		return true;
 	}
 	else if(basetype == base_type::k_json){
 	}
@@ -1933,12 +1958,12 @@ bc_function_definition_t::bc_function_definition_t(
 	const typeid_t& function_type,
 	const std::vector<member_t>& args,
 	const std::shared_ptr<bc_static_frame_t>& frame,
-	function_id_t host_function_id
+	function_id_t function_id
 ) :
 	_function_type(function_type),
 	_args(args),
 	_frame_ptr(frame),
-	_host_function_id(host_function_id),
+	_function_id(function_id),
 	_dyn_arg_count(-1),
 	_return_is_ext(encode_as_external(_function_type.get_function_return()))
 {
@@ -2079,9 +2104,7 @@ json_t interpreter_stack_t::stack_to_json() const{
 const bc_function_definition_t& get_function_def(const interpreter_t& vm, function_id_t function_id){
 	QUARK_ASSERT(vm.check_invariant());
 
-	QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
-
-	const auto& function_def = vm._imm->_program._function_defs[function_id];
+	const auto& function_def = vm._imm->_program._function_defs.at(function_id);
 	return function_def;
 }
 
@@ -2096,11 +2119,10 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 #endif
 
 	const auto& function_def = get_function_def(vm, f.get_function_value());
-	if(function_def._host_function_id != 0){
-		const auto host_function_id = function_def._host_function_id;
-		QUARK_ASSERT(host_function_id >= 0);
+	if(function_def._frame_ptr == nullptr){
+		const auto function_id = function_def._function_id;
 
-		const auto& host_function = vm._imm->_host_functions.at(host_function_id);
+		const auto& host_function = vm._imm->_host_functions.at(function_id);
 
 		//	arity
 	//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
@@ -3063,11 +3085,11 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_function(i._b));
 
-			const function_id_t function_id = regs[i._b]._inplace._function_id;
+			const function_id_t function_id = regs[i._b]._external->_function_id;
 			const int callee_arg_count = i._c;
-			QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
+//			QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
 
-			const auto& function_def = vm._imm->_program._function_defs[function_id];
+			const auto& function_def = vm._imm->_program._function_defs.at(function_id);
 			const int function_def_dynamic_arg_count = function_def._dyn_arg_count;
 			const auto& function_return_type = function_def._function_type.get_function_return();
 
@@ -3076,8 +3098,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			QUARK_ASSERT(function_def._args.size() == callee_arg_count);
 
-			if(function_def._host_function_id != 0){
-				const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
+			if(function_def._frame_ptr == nullptr){
+				const auto& host_function = vm._imm->_host_functions.at(function_def._function_id);
 				QUARK_ASSERT(host_function != nullptr);
 
 				const int arg0_stack_pos = stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
@@ -3679,17 +3701,17 @@ json_t functiondef_to_json(const bc_function_definition_t& def){
 		json_t(typeid_to_compact_string(def._function_type)),
 		members_to_json(def._args),
 		def._frame_ptr ? frame_to_json(*def._frame_ptr) : json_t(),
-		json_t(def._host_function_id)
+		json_t(def._function_id.name)
 	});
 }
 
 json_t bcprogram_to_json(const bc_program_t& program){
 	std::vector<json_t> callstack;
 	std::vector<json_t> function_defs;
-	for(int i = 0 ; i < program._function_defs.size() ; i++){
-		const auto& function_def = program._function_defs[i];
+	for(const auto& e: program._function_defs){
+		const auto& function_def = e.second;
 		function_defs.push_back(json_t::make_array({
-			json_t(i),
+			e.second._function_id.name,
 			functiondef_to_json(function_def)
 		}));
 	}

@@ -36,7 +36,7 @@ namespace floyd {
 
 ////////////////////////////////		host_func_t
 
-
+//??? Rename to function_bind_t, link_name
 struct host_func_t {
 	std::string name_key;
 	llvm::FunctionType* function_type;
@@ -50,10 +50,10 @@ struct host_func_t {
 
 
 struct function_def_t {
-	std::string def_name;
+	std::string link_name;
 	llvm::Function* llvm_f;
 
-	function_id_t floyd_function_id;
+	function_id_t source_name;
 	function_definition_t floyd_fundef;
 };
 
@@ -133,7 +133,7 @@ typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_MESSAGE)(floyd_runtime_t* frp, r
 typedef runtime_value_t (*FLOYD_RUNTIME_F)(floyd_runtime_t* frp, const char* args);
 
 
-const function_def_t& find_function_def2(const std::vector<function_def_t>& function_defs, const std::string& function_name);
+const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const std::string& link_name);
 
 //	Cast to uint64_t* or other the required type, then access via it.
 void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name);

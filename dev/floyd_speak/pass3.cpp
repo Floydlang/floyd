@@ -87,7 +87,7 @@ struct analyser_t {
 	public: std::vector<lexical_scope_t> _lexical_scope_stack;
 
 	//	These are output functions, that have been fixed.
-	public: std::vector<std::shared_ptr<const function_definition_t>> _function_defs;
+	public: std::map<function_id_t, std::shared_ptr<const function_definition_t>> _function_defs;
 	public: type_interner_t _types;
 
 	public: software_system_t _software_system;
@@ -126,10 +126,10 @@ std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_
 
 
 
-const function_definition_t& function_id_to_def(const analyser_t& a, function_id_t function_id){
-	QUARK_ASSERT(function_id >= 0 && function_id < a._function_defs.size());
+static const function_definition_t& function_id_to_def(const analyser_t& a, const function_id_t& function_id){
+//	QUARK_ASSERT(function_id >= 0 && function_id < a._function_defs.size());
 
-	return *a._function_defs[function_id];
+	return *a._function_defs.at(function_id);
 }
 
 
@@ -2358,30 +2358,49 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	//??? Can there be a pure function inside an impure lexical scope?
 	const auto pure = function_pure;
 
+	struct visitor_t {
+		analyser_t& a_acc;
+		std::shared_ptr<const function_definition_t> function_def;
+		const typeid_t& function_type2;
+		const vector<member_t>& args2;
+		const epure pure;
 
-	const function_definition_t::floyd_func_t floyd_func = std::get<function_definition_t::floyd_func_t>(function_def->_contents);
+		std::pair<analyser_t, expression_t> operator()(const function_definition_t::empty_t& e) const{
+			const auto r = expression_t::make_literal(value_t::make_function_value(function_type2, k_no_function_id));
+			return { a_acc, r };
+		}
+		std::pair<analyser_t, expression_t> operator()(const function_definition_t::floyd_func_t& floyd_func) const{
+			//	Make function body with arguments injected FIRST in body as local symbols.
+			auto symbol_vec = floyd_func._body->_symbol_table;
+			for(const auto& arg: args2){
+				symbol_vec._symbols.push_back({arg._name , symbol_t::make_immutable_arg(arg._type)});
+			}
+			const auto function_body2 = body_t(floyd_func._body->_statements, symbol_vec);
+
+			const auto function_body_pair = analyse_body(a_acc, function_body2, pure, function_type2.get_function_return());
+			a_acc = function_body_pair.first;
+			const auto function_body3 = function_body_pair.second;
 
 
-	//	Make function body with arguments injected FIRST in body as local symbols.
-	auto symbol_vec = floyd_func._body->_symbol_table;
-	for(const auto& arg: args2){
-		symbol_vec._symbols.push_back({arg._name , symbol_t::make_immutable_arg(arg._type)});
-	}
-	const auto function_body2 = body_t(floyd_func._body->_statements, symbol_vec);
+			const auto definition_name = function_def->_definition_name;
+			const auto function_id = function_id_t { definition_name };
 
-	const auto function_body_pair = analyse_body(a_acc, function_body2, pure, function_type2.get_function_return());
-	a_acc = function_body_pair.first;
-	const auto function_body3 = function_body_pair.second;
+			const auto function_def2 = function_definition_t::make_floyd_func(k_no_location, definition_name, function_type2, args2, make_shared<body_t>(function_body3));
+			QUARK_ASSERT(function_def2.check_types_resolved());
 
-	const auto function_def2 = function_definition_t::make_floyd_func(k_no_location, function_def->_definition_name, function_type2, args2, make_shared<body_t>(function_body3));
-	QUARK_ASSERT(function_def2.check_types_resolved());
+			a_acc._function_defs.insert({ function_id, make_shared<function_definition_t>(function_def2) });
 
-	a_acc._function_defs.push_back(make_shared<function_definition_t>(function_def2));
+			const auto r = expression_t::make_literal(value_t::make_function_value(function_type2, function_id));
 
-	const function_id_t function_id = static_cast<function_id_t>(a_acc._function_defs.size() - 1);
-	const auto r = expression_t::make_literal(value_t::make_function_value(function_type2, function_id));
-
-	return {a_acc, r };
+			return { a_acc, r };
+		}
+		std::pair<analyser_t, expression_t> operator()(const function_definition_t::host_func_t& e) const{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+	};
+	const auto result = std::visit(visitor_t{ a_acc, function_def, function_type2, args2, pure }, function_def->_contents);
+	return result;
 }
 
 
@@ -2605,16 +2624,15 @@ bool check_types_resolved(const general_purpose_ast_t& ast){
 
 
 struct builtins_t {
-	std::vector<std::shared_ptr<const function_definition_t>> function_defs;
+	std::map<function_id_t, std::shared_ptr<const function_definition_t>> function_defs;
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 };
 
 
-builtins_t generate_corecalls(analyser_t& a, const std::vector<corecall_signature_t>& host_functions, function_id_t function_def_start_id){
-	std::vector<std::shared_ptr<const function_definition_t>> function_defs;
+static builtins_t generate_corecalls(analyser_t& a, const std::vector<corecall_signature_t>& host_functions){
+	std::map<function_id_t, std::shared_ptr<const function_definition_t>> function_defs;
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
-	function_id_t function_id = function_def_start_id;
 	for(auto signature: host_functions){
 		resolve_type(a, k_no_location, signature._function_type);
 
@@ -2622,21 +2640,20 @@ builtins_t generate_corecalls(analyser_t& a, const std::vector<corecall_signatur
 		for(const auto& e: signature._function_type.get_function_args()){
 			args.push_back(member_t(e, "dummy"));
 		}
-		const auto def = std::make_shared<function_definition_t>(function_definition_t::make_host_func(k_no_location, signature.name, signature._function_type, args, signature._function_id));
-		const auto function_value = value_t::make_function_value(signature._function_type, function_id);
+		const auto function_id = signature._function_id;
+		const auto def = std::make_shared<function_definition_t>(function_definition_t::make_host_func(k_no_location, signature.name, signature._function_type, args, function_id));
+		const auto function_value = value_t::make_function_value(signature._function_type, function_id_t { signature.name });
 
-		function_defs.push_back(def);
+		function_defs.insert({ function_id, def });
 		symbol_map.push_back({ signature.name, symbol_t::make_immutable_precalc(function_value) });
-		function_id++;
 	}
 	return builtins_t{ function_defs, symbol_map };
 }
 
-builtins_t generate_lib_calls(analyser_t& a, const std::vector<libfunc_signature_t>& host_functions, function_id_t function_def_start_id){
-	std::vector<std::shared_ptr<const function_definition_t>> function_defs;
+static builtins_t generate_lib_calls(analyser_t& a, const std::vector<libfunc_signature_t>& host_functions){
+	std::map<function_id_t, std::shared_ptr<const function_definition_t>> function_defs;
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
-	function_id_t function_id = function_def_start_id;
 	for(auto signature: host_functions){
 		resolve_type(a, k_no_location, signature._function_type);
 
@@ -2644,12 +2661,12 @@ builtins_t generate_lib_calls(analyser_t& a, const std::vector<libfunc_signature
 		for(const auto& e: signature._function_type.get_function_args()){
 			args.push_back(member_t(e, "dummy"));
 		}
-		const auto def = std::make_shared<function_definition_t>(function_definition_t::make_host_func(k_no_location, signature.name, signature._function_type, args, signature._function_id));
-		const auto function_value = value_t::make_function_value(signature._function_type, function_id);
+		const auto function_id = signature._function_id;
+		const auto def = std::make_shared<function_definition_t>(function_definition_t::make_host_func(k_no_location, signature.name, signature._function_type, args, function_id));
+		const auto function_value = value_t::make_function_value(signature._function_type, function_id_t { signature.name });
 
-		function_defs.push_back(def);
+		function_defs.insert({ function_id, def });
 		symbol_map.push_back({ signature.name, symbol_t::make_immutable_precalc(function_value) });
-		function_id++;
 	}
 	return builtins_t{ function_defs, symbol_map };
 }
@@ -2685,10 +2702,10 @@ builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	symbol_map.push_back({keyword_t::k_json_null, symbol_t::make_immutable_precalc(value_t::make_int(7))});
 
 
+	std::map<function_id_t, std::shared_ptr<const function_definition_t>> function_defs;
 
-	std::vector<std::shared_ptr<const function_definition_t>> function_defs;
-	const auto corecalls = generate_corecalls(a, input.corecall_signatures, static_cast<function_id_t>(function_defs.size()));
-	function_defs.insert(function_defs.end(), corecalls.function_defs.begin(), corecalls.function_defs.end());
+	const auto corecalls = generate_corecalls(a, input.corecall_signatures);
+	function_defs.insert(corecalls.function_defs.begin(), corecalls.function_defs.end());
 	symbol_map.insert(symbol_map.end(), corecalls.symbol_map.begin(), corecalls.symbol_map.end());
 	return builtins_t{ function_defs, symbol_map };
 }
@@ -2702,13 +2719,13 @@ semantic_ast_t analyse(analyser_t& a){
 	////////////////////////////////	Create built-in global symbol map: built in data types, built-in functions (host functions).
 
 	const auto builtins = generate_builtins(a, *a._imm);
-	function_id_t function_id = static_cast<function_id_t>(builtins.function_defs.size());
 
 	std::vector<std::pair<std::string, symbol_t>> symbol_map = builtins.symbol_map;
-	std::vector<std::shared_ptr<const function_definition_t>> function_defs = builtins.function_defs;
+	std::map<function_id_t, std::shared_ptr<const function_definition_t>> function_defs = builtins.function_defs;
 
-	const auto filelib_calls = generate_lib_calls(a, a._imm->filelib_signatures, function_id);
-	function_defs.insert(function_defs.end(), filelib_calls.function_defs.begin(), filelib_calls.function_defs.end());
+	const auto filelib_calls = generate_lib_calls(a, a._imm->filelib_signatures);
+
+	function_defs.insert(filelib_calls.function_defs.begin(), filelib_calls.function_defs.end());
 	symbol_map.insert(symbol_map.end(), filelib_calls.symbol_map.begin(), filelib_calls.symbol_map.end());
 
 	a._function_defs.swap(function_defs);
@@ -2731,9 +2748,14 @@ semantic_ast_t analyse(analyser_t& a){
 #endif
 
 
+	std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs_vec;
+	for(const auto& e: a._function_defs){
+		function_defs_vec.push_back(e.second);
+	}
+
 	auto gp1 = general_purpose_ast_t{
 		._globals = result. second,
-		._function_defs = result.first._function_defs,
+		._function_defs = function_defs_vec,
 		._interned_types = a._types,
 		._software_system = result.first._software_system,
 		._container_def = result.first._container_def

@@ -79,7 +79,7 @@ json_t function_def_to_ast_json(const function_definition_t& v) {
 
 		floyd_func ? body_to_json(*floyd_func->_body) : json_t(),
 
-		host_func ? json_t(host_func->_host_function_id) : json_t(0)
+		host_func ? json_t(host_func->_host_function_id.name) : json_t(0)
 	};
 }
 
@@ -112,7 +112,7 @@ function_definition_t json_to_function_def(const json_t& p){
 			definition_name1,
 			function_type1,
 			args1,
-			static_cast<int>(host_function_id0.get_number())
+			function_id_t{ host_function_id0.get_string() }
 		);
 	}
 }

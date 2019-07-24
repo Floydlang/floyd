@@ -69,8 +69,8 @@ runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t
 
 
 
-const function_def_t& find_function_def2(const std::vector<function_def_t>& function_defs, const std::string& function_name){
-	auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.def_name == function_name; } );
+const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const std::string& link_name){
+	auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.link_name == link_name; } );
 	QUARK_ASSERT(it != function_defs.end());
 
 	QUARK_ASSERT(it->llvm_f != nullptr);
@@ -111,7 +111,7 @@ std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std:
 
 	const auto f = reinterpret_cast<FLOYD_RUNTIME_F*>(get_global_function(ee, name));
 	if(f != nullptr){
-		const function_def_t def = find_function_def2(ee.function_defs, std::string() + "floyd_funcdef__" + name);
+		const auto def = find_function_def_from_link_name(ee.function_defs, std::string() + "floyd_funcdef__" + name);
 		const auto function_type = def.floyd_fundef._function_type;
 		return { f, function_type };
 	}
@@ -555,8 +555,7 @@ value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime
 			return from_runtime_dict(runtime, encoded_value, type);
 		}
 		value_t operator()(const typeid_t::function_t& e) const{
-			QUARK_ASSERT(sizeof(function_id_t) == sizeof(void*));
-			return value_t::make_function_value(type, reinterpret_cast<function_id_t>(encoded_value.function_ptr));
+			return value_t::make_function_value(type, function_id_t { "" });
 		}
 		value_t operator()(const typeid_t::unresolved_t& e) const{
 			UNSUPPORTED();

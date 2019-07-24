@@ -264,8 +264,7 @@ static function_definition_t desugar_function_def(desugar_t& acc, const function
 		const floyd::function_definition_t& function_def;
 
 		function_definition_t operator()(const function_definition_t::empty_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			return function_def;
 		}
 		function_definition_t operator()(const function_definition_t::floyd_func_t& e) const{
 			const auto body = desugar_body(acc, *e._body);

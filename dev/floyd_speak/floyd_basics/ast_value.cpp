@@ -580,7 +580,7 @@ std::string value_and_type_to_string(const value_t& value) {
 			return _value_internals._ext->_dict_entries;
 		}
 
-		int value_t::get_function_value() const{
+		function_id_t value_t::get_function_value() const{
 			QUARK_ASSERT(check_invariant());
 			if(!is_function()){
 				quark::throw_runtime_error("Type mismatch!");
@@ -983,8 +983,9 @@ value_t ast_json_to_value(const typeid_t& type, const json_t& v){
 
 	}
 	else if(type.is_function()){
-		const auto function_id = v.get_object_element("function_id").get_number();
-		return value_t::make_function_value(type, static_cast<int>(function_id));
+		const auto function_id0 = v.get_object_element("function_id").get_string();
+		const auto function_id = function_id_t { function_id0 };
+		return value_t::make_function_value(type, function_id);
 	}
 	else{
 		quark::throw_exception();
@@ -1062,7 +1063,7 @@ json_t value_to_ast_json(const value_t& v, json_tags tags){
 	else if(v.is_function()){
 		return json_t::make_object(
 			{
-				{ "function_id", v.get_function_value() }
+				{ "function_id", v.get_function_value().name }
 			}
 		);
 	}
@@ -1157,7 +1158,7 @@ value_t value_t::make_dict_value(const typeid_t& value_type, const std::map<std:
 	return value_t(value_type, entries);
 }
 
-value_t value_t::make_function_value(const typeid_t& function_type, function_id_t function_id){
+value_t value_t::make_function_value(const typeid_t& function_type, const function_id_t& function_id){
 	QUARK_ASSERT(function_type.check_invariant());
 	return value_t(function_type, function_id);
 }
@@ -1203,7 +1204,7 @@ value_t make_def(const typeid_t& type){
 	else if(bt == base_type::k_struct){
 	}
 	else if(bt == base_type::k_function){
-		return value_t::make_function_value(type, 0);
+		return value_t::make_function_value(type, function_id_t {});
 	}
 	else if(bt == base_type::k_undefined){
 		return value_t::make_undefined();

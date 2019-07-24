@@ -346,53 +346,53 @@ typeid_t make__file_pos_t__type(){
 
 
 libfunc_signature_t make_get_time_of_day_signature(){
-	return { "get_time_of_day", 1005, typeid_t::make_function(typeid_t::make_int(), {}, epure::impure) };
+	return { "get_time_of_day", "1005", typeid_t::make_function(typeid_t::make_int(), {}, epure::impure) };
 }
 
 
 libfunc_signature_t make_read_text_file_signature(){
-	return { "read_text_file", 1015, typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_string() }, epure::impure) };
+	return { "read_text_file", "1015", typeid_t::make_function(typeid_t::make_string(), { typeid_t::make_string() }, epure::impure) };
 }
 libfunc_signature_t make_write_text_file_signature(){
-	return { "write_text_file", 1016, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string(), typeid_t::make_string() }, epure::impure) };
+	return { "write_text_file", "1016", typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string(), typeid_t::make_string() }, epure::impure) };
 }
 
 
 libfunc_signature_t make_get_fsentries_shallow_signature(){
 	const auto k_fsentry_t__type = make__fsentry_t__type();
-	return { "get_fsentries_shallow", 1023, typeid_t::make_function(typeid_t::make_vector(k_fsentry_t__type), { typeid_t::make_string() }, epure::impure) };
+	return { "get_fsentries_shallow", "1023", typeid_t::make_function(typeid_t::make_vector(k_fsentry_t__type), { typeid_t::make_string() }, epure::impure) };
 }
 libfunc_signature_t make_get_fsentries_deep_signature(){
 	const auto k_fsentry_t__type = make__fsentry_t__type();
-	return { "get_fsentries_deep", 1024, typeid_t::make_function(typeid_t::make_vector(k_fsentry_t__type), { typeid_t::make_string() }, epure::impure) };
+	return { "get_fsentries_deep", "1024", typeid_t::make_function(typeid_t::make_vector(k_fsentry_t__type), { typeid_t::make_string() }, epure::impure) };
 }
 libfunc_signature_t make_get_fsentry_info_signature(){
-	return { "get_fsentry_info", 1025, typeid_t::make_function(make__fsentry_info_t__type(), { typeid_t::make_string() }, epure::impure) };
+	return { "get_fsentry_info", "1025", typeid_t::make_function(make__fsentry_info_t__type(), { typeid_t::make_string() }, epure::impure) };
 }
 libfunc_signature_t make_get_fs_environment_signature(){
-	return { "get_fs_environment", 1026, typeid_t::make_function(make__fs_environment_t__type(), {}, epure::impure) };
+	return { "get_fs_environment", "1026", typeid_t::make_function(make__fs_environment_t__type(), {}, epure::impure) };
 }
 libfunc_signature_t make_does_fsentry_exist_signature(){
-	return { "does_fsentry_exist", 1027, typeid_t::make_function(typeid_t::make_bool(), { typeid_t::make_string() }, epure::impure) };
+	return { "does_fsentry_exist", "1027", typeid_t::make_function(typeid_t::make_bool(), { typeid_t::make_string() }, epure::impure) };
 }
 libfunc_signature_t make_create_directory_branch_signature(){
-	return { "create_directory_branch", 1028, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string() }, epure::impure) };
+	return { "create_directory_branch", "1028", typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string() }, epure::impure) };
 }
 libfunc_signature_t make_delete_fsentry_deep_signature(){
-	return { "delete_fsentry_deep", 1029, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string() }, epure::impure)};
+	return { "delete_fsentry_deep", "1029", typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string() }, epure::impure)};
 }
 libfunc_signature_t make_rename_fsentry_signature(){
-	return { "rename_fsentry", 1030, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string(), typeid_t::make_string() }, epure::impure)};
+	return { "rename_fsentry", "1030", typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string(), typeid_t::make_string() }, epure::impure)};
 }
 
 
 libfunc_signature_t make_calc_string_sha1_signature(){
-	return { "calc_string_sha1", 1031, typeid_t::make_function(make__sha1_t__type(), { typeid_t::make_string() }, epure::pure) };
+	return { "calc_string_sha1", "1031", typeid_t::make_function(make__sha1_t__type(), { typeid_t::make_string() }, epure::pure) };
 }
 
 
 libfunc_signature_t make_calc_binary_sha1_signature(){
-	return { "calc_binary_sha1", 1032, typeid_t::make_function(make__sha1_t__type(), { make__binary_t__type() }, epure::pure) };
+	return { "calc_binary_sha1", "1032", typeid_t::make_function(make__sha1_t__type(), { make__binary_t__type() }, epure::pure) };
 }
 
 

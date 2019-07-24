@@ -617,7 +617,7 @@ QUARK_UNIT_TEST("Floyd test suite", "Construct value", "string()", ""){
 //////////////////////////////////////////		TEST CHARACTER LITERALS
 
 
-QUARK_UNIT_TEST_VIP("Floyd test suite", "Character literal", "", ""){
+QUARK_UNIT_TEST("Floyd test suite", "Character literal", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = 'A'", value_t::make_int(65));
 }
 
@@ -1007,6 +1007,21 @@ QUARK_UNIT_TEST("Floyd test suite", "Function value", "", ""){
 		 }
 	);
 }
+
+
+#if 0
+QUARK_UNIT_TEST("Floyd test suite", "func", "Declaration only", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			func int f()
+
+		)",
+		{}
+	);
+}
+#endif
 
 
 

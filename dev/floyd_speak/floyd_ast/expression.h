@@ -24,7 +24,6 @@ namespace floyd {
 	struct statement_t;
 	struct expression_t;
 
-	const function_id_t k_no_host_function_id = 0;
 
 
 	/*
