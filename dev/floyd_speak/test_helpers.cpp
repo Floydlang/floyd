@@ -10,6 +10,7 @@
 
 
 #include "floyd_interpreter.h"
+#include "bytecode_generator.h"
 
 #include "json_support.h"
 #include "text_parser.h"
@@ -72,9 +73,9 @@ void ut_verify_report(const quark::call_context_t& context, const test_report_t&
 }
 
 
-static test_report_t run_test_program_bc(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
+static test_report_t run_test_program_bc(const semantic_ast_t& semast, const std::vector<std::string>& main_args){
 	try {
-		const auto exe = compile_to_bytecode(cu);
+		const auto exe = generate_bytecode(semast);
 
 		//	Runs global code.
 		auto interpreter = interpreter_t(exe);
@@ -103,12 +104,10 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_UT_VERIFY(double_size == 8);
 }
 
-static test_report_t run_test_program_llvm(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
+static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const std::vector<std::string>& main_args){
 	try {
 		llvm_instance_t llvm_instance;
-
-		const auto pass3 = compile_to_sematic_ast__errors(cu);
-		auto exe = generate_llvm_ir_program(llvm_instance, pass3, cu.source_file_path);
+		auto exe = generate_llvm_ir_program(llvm_instance, semast, "");
 
 		auto ee = init_program(*exe);
 		const auto run_output = run_program(*ee, main_args);
@@ -127,14 +126,24 @@ static test_report_t run_test_program_llvm(const compilation_unit_t& cu, const s
 }
 
 test_report_t test_floyd_program(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
-	if(g_executor == executor_mode::bc_interpreter){
-		return run_test_program_bc(cu, main_args);
+	try {
+		const auto semast = compile_to_sematic_ast__errors(cu);
+
+		if(g_executor == executor_mode::bc_interpreter){
+			return run_test_program_bc(semast, main_args);
+		}
+		else if(g_executor == executor_mode::llvm_jit){
+			return run_test_program_llvm(semast, main_args);
+		}
+		else{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
 	}
-	else if(g_executor == executor_mode::llvm_jit){
-		return run_test_program_llvm(cu, main_args);
+	catch(const std::runtime_error& e){
+		return test_report_t{ {}, {}, {}, e.what() };
 	}
-	else{
-		QUARK_ASSERT(false);
+	catch(...){
 		throw std::exception();
 	}
 }
@@ -172,11 +181,27 @@ QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 }
 
 
+static semantic_ast_t compile(const quark::call_context_t& context, const compilation_unit_t& cu, const test_report_t& expected){
+	try {
+		const auto semast = compile_to_sematic_ast__errors(cu);
+		return semast;
+	}
+	catch(const std::runtime_error& e){
+		const auto result = test_report_t{ {}, {}, {}, e.what() };
+		ut_verify_report(context, result, expected);
+		throw std::exception();
+	}
+	catch(...){
+		throw std::exception();
+	}
+}
+
 
 //??? Compile to pass3 only ONCE.
 void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const std::vector<std::string>& main_args, const test_report_t& expected){
-	const auto bc_report = run_test_program_bc(cu, main_args);
-	const auto llvm_report = run_test_program_llvm(cu, main_args);
+	const auto semast = compile(context, cu, expected);
+	const auto bc_report = run_test_program_bc(semast, main_args);
+	const auto llvm_report = run_test_program_llvm(semast, main_args);
 
 	if((bc_report == expected) == false){
 		QUARK_SCOPED_TRACE("BYTE CODE INTERPRETER FAILURE");
