@@ -104,6 +104,28 @@ fsentry_info_t corelib_get_fsentry_info(const std::string& abs_path);
 value_t pack_fsentry_info(const fsentry_info_t& info);
 
 
+struct fs_environment_t {
+	std::string home_dir;
+	std::string documents_dir;
+	std::string desktop_dir;
+
+	std::string hidden_persistence_dir;
+	std::string preferences_dir;
+	std::string cache_dir;
+	std::string temp_dir;
+
+	std::string executable_dir;
+};
+
+fs_environment_t corelib_get_fs_environment();
+value_t pack_fs_environment_t(const fs_environment_t& env);
+
+bool corelib_does_fsentry_exist(const std::string& abs_path);
+void corelib_create_directory_branch(const std::string& abs_path);
+void corelib_delete_fsentry_deep(const std::string& abs_path);
+void corelib_rename_fsentry(const std::string& abs_path, const std::string& n);
+
+
 }	//	floyd
 
 

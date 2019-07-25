@@ -608,5 +608,110 @@ value_t pack_fsentry_info(const fsentry_info_t& info){
 	return result;
 }
 
+
+
+
+/*
+struct fs_environment_t {
+	std::string home_dir;
+	std::string documents_dir;
+	std::string desktop_dir;
+
+	std::string hidden_persistence_dir;
+	std::string preferences_dir;
+	std::string cache_dir;
+	std::string temp_dir;
+
+	std::string executable_dir;
+};
+*/
+
+fs_environment_t corelib_get_fs_environment(){
+	const auto dirs = GetDirectories();
+
+	const auto result = fs_environment_t {
+		dirs.home_dir,
+		dirs.documents_dir,
+		dirs.desktop_dir,
+
+		dirs.application_support,
+		dirs.preferences_dir,
+		dirs.cache_dir,
+		dirs.temp_dir,
+
+		dirs.process_dir
+	};
+	return result;
+}
+
+value_t pack_fs_environment_t(const fs_environment_t& env){
+	const auto result = value_t::make_struct_value(
+		make__fs_environment_t__type(),
+		{
+			value_t::make_string(env.home_dir),
+			value_t::make_string(env.documents_dir),
+			value_t::make_string(env.desktop_dir),
+
+			value_t::make_string(env.hidden_persistence_dir),
+			value_t::make_string(env.preferences_dir),
+			value_t::make_string(env.cache_dir),
+			value_t::make_string(env.temp_dir),
+
+			value_t::make_string(env.executable_dir)
+		}
+	);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(result);
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	return result;
+}
+
+
+
+bool corelib_does_fsentry_exist(const std::string& abs_path){
+	if(is_valid_absolute_dir_path(abs_path) == false){
+		quark::throw_runtime_error("does_fsentry_exist() illegal input path.");
+	}
+
+	bool exists = DoesEntryExist(abs_path);
+	return exists;
+}
+
+
+
+void corelib_create_directory_branch(const std::string& abs_path){
+	if(is_valid_absolute_dir_path(abs_path) == false){
+		quark::throw_runtime_error("create_directory_branch() illegal input path.");
+	}
+
+	MakeDirectoriesDeep(abs_path);
+}
+
+
+
+void corelib_delete_fsentry_deep(const std::string& abs_path){
+	if(is_valid_absolute_dir_path(abs_path) == false){
+		quark::throw_runtime_error("delete_fsentry_deep() illegal input path.");
+	}
+
+	DeleteDeep(abs_path);
+}
+
+void corelib_rename_fsentry(const std::string& abs_path, const std::string& n){
+	if(is_valid_absolute_dir_path(abs_path) == false){
+		quark::throw_runtime_error("rename_fsentry() illegal input path.");
+	}
+
+	if(n.empty()){
+		quark::throw_runtime_error("rename_fsentry() illegal input name.");
+	}
+
+	RenameEntry(abs_path, n);
+}
+
+
 }	// floyd
 

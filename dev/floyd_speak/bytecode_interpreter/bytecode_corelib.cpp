@@ -223,34 +223,13 @@ bc_value_t host__get_fs_environment(interpreter_t& vm, const bc_value_t args[], 
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
-	const auto dirs = GetDirectories();
+	const auto env = corelib_get_fs_environment();
 
-	const auto result = value_t::make_struct_value(
-		make__fs_environment_t__type(),
-		{
-			value_t::make_string(dirs.home_dir),
-			value_t::make_string(dirs.documents_dir),
-			value_t::make_string(dirs.desktop_dir),
-
-			value_t::make_string(dirs.application_support),
-			value_t::make_string(dirs.preferences_dir),
-			value_t::make_string(dirs.cache_dir),
-			value_t::make_string(dirs.temp_dir),
-
-			value_t::make_string(dirs.process_dir)
-		}
-	);
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
+	const auto result = pack_fs_environment_t(env);
 	const auto v = value_to_bc(result);
 	return v;
 }
 
-//??? refactor common code.
 
 bc_value_t host__does_fsentry_exist(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -258,11 +237,9 @@ bc_value_t host__does_fsentry_exist(interpreter_t& vm, const bc_value_t args[], 
 	QUARK_ASSERT(args[0]._type.is_string());
 
 	const string path = args[0].get_string_value();
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("does_fsentry_exist() illegal input path.");
-	}
 
-	bool exists = DoesEntryExist(path);
+	bool exists = corelib_does_fsentry_exist(path);
+
 	const auto result = value_t::make_bool(exists);
 #if 1
 	const auto debug = value_and_type_to_ast_json(result);
@@ -280,11 +257,9 @@ bc_value_t host__create_directory_branch(interpreter_t& vm, const bc_value_t arg
 	QUARK_ASSERT(args[0]._type.is_string());
 
 	const string path = args[0].get_string_value();
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("create_directory_branch() illegal input path.");
-	}
 
-	MakeDirectoriesDeep(path);
+	corelib_create_directory_branch(path);
+
 	return bc_value_t::make_void();
 }
 
@@ -294,11 +269,8 @@ bc_value_t host__delete_fsentry_deep(interpreter_t& vm, const bc_value_t args[],
 	QUARK_ASSERT(args[0]._type.is_string());
 
 	const string path = args[0].get_string_value();
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("delete_fsentry_deep() illegal input path.");
-	}
 
-	DeleteDeep(path);
+	corelib_delete_fsentry_deep(path);
 
 	return bc_value_t::make_void();
 }
@@ -311,15 +283,9 @@ bc_value_t host__rename_fsentry(interpreter_t& vm, const bc_value_t args[], int 
 	QUARK_ASSERT(args[1]._type.is_string());
 
 	const string path = args[0].get_string_value();
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("rename_fsentry() illegal input path.");
-	}
 	const string n = args[1].get_string_value();
-	if(n.empty()){
-		quark::throw_runtime_error("rename_fsentry() illegal input name.");
-	}
 
-	RenameEntry(path, n);
+	corelib_rename_fsentry(path, n);
 
 	return bc_value_t::make_void();
 }

@@ -165,29 +165,9 @@ static STRUCT_T* llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_va
 static runtime_value_t llvm_corelib__get_fs_environment(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto dirs = GetDirectories();
+	const auto env = corelib_get_fs_environment();
 
-	const auto result = value_t::make_struct_value(
-		make__fs_environment_t__type(),
-		{
-			value_t::make_string(dirs.home_dir),
-			value_t::make_string(dirs.documents_dir),
-			value_t::make_string(dirs.desktop_dir),
-
-			value_t::make_string(dirs.application_support),
-			value_t::make_string(dirs.preferences_dir),
-			value_t::make_string(dirs.cache_dir),
-			value_t::make_string(dirs.temp_dir),
-
-			value_t::make_string(dirs.process_dir)
-		}
-	);
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
+	const auto result = pack_fs_environment_t(env);
 	const auto v = to_runtime_value(r, result);
 	return v;
 }
@@ -197,15 +177,11 @@ static runtime_value_t llvm_corelib__get_fs_environment(floyd_runtime_t* frp){
 
 static uint8_t llvm_corelib__does_fsentry_exist(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
-
 	const auto path = from_runtime_string(r, path0);
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("does_fsentry_exist() illegal input path.");
-	}
 
-	bool exists = DoesEntryExist(path);
+	bool exists = corelib_does_fsentry_exist(path);
+
 	const auto result = value_t::make_bool(exists);
-
 #if 1
 	const auto debug = value_and_type_to_ast_json(result);
 	QUARK_TRACE(json_to_pretty_string(debug));
@@ -215,40 +191,25 @@ static uint8_t llvm_corelib__does_fsentry_exist(floyd_runtime_t* frp, runtime_va
 
 static void llvm_corelib__create_directory_branch(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
-
 	const auto path = from_runtime_string(r, path0);
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("create_directory_branch() illegal input path.");
-	}
 
-	MakeDirectoriesDeep(path);
+	corelib_create_directory_branch(path);
 }
 
 static void llvm_corelib__delete_fsentry_deep(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("delete_fsentry_deep() illegal input path.");
-	}
 
-	DeleteDeep(path);
+	corelib_delete_fsentry_deep(path);
 }
 
 static void llvm_corelib__rename_fsentry(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t name0){
 	auto& r = get_floyd_runtime(frp);
-
 	const auto path = from_runtime_string(r, path0);
-
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("rename_fsentry() illegal input path.");
-	}
 	const auto n = from_runtime_string(r, name0);
-	if(n.empty()){
-		quark::throw_runtime_error("rename_fsentry() illegal input name.");
-	}
 
-	RenameEntry(path, n);
+	corelib_rename_fsentry(path, n);
 }
 
 
