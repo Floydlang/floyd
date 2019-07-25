@@ -1083,8 +1083,8 @@ bc_value_t host__bw_shift_right_arithmetic(interpreter_t& vm, const bc_value_t a
 
 
 
-static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls_internal(){
-	std::vector<std::pair<corecall_signature_t, BC_HOST_FUNCTION_PTR>> log;
+static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_corecalls_internal(){
+	std::vector<std::pair<corecall_signature_t, BC_NATIVE_FUNCTION_PTR>> log;
 
 	log.push_back({ make_assert_signature(), host__assert });
 	log.push_back({ make_to_string_signature(), host__to_string });
@@ -1136,14 +1136,14 @@ static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls_internal()
 	log.push_back({ make_bw_shift_right_arithmetic_signature(), host__bw_shift_right_arithmetic });
 
 
-	std::map<function_id_t, BC_HOST_FUNCTION_PTR> result;
+	std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> result;
 	for(const auto& e: log){
 		result.insert({ function_id_t { e.first.name }, e.second });
 	}
 	return result;
 }
 
-std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls(){
+std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_corecalls(){
 	static const auto f = bc_get_corecalls_internal();
 	return f;
 }

@@ -15,7 +15,6 @@
 #include "ast_value.h"
 #include "ast_json.h"
 
-//#include <sys/time.h>
 #include <algorithm>
 
 
@@ -2125,7 +2124,7 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 	if(function_def._frame_ptr == nullptr){
 		const auto function_id = function_def._function_id;
 
-		const auto& host_function = vm._imm->_host_functions.at(function_id);
+		const auto& host_function = vm._imm->_native_functions.at(function_id);
 
 		//	arity
 	//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
@@ -3102,8 +3101,8 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(function_def._args.size() == callee_arg_count);
 
 			if(function_def._frame_ptr == nullptr){
-				const auto it = vm._imm->_host_functions.find(function_def._function_id);
-				if(it == vm._imm->_host_functions.end()){
+				const auto it = vm._imm->_native_functions.find(function_def._function_id);
+				if(it == vm._imm->_native_functions.end()){
 					quark::throw_runtime_error("Attempting to calling unimplemented function.");
 				}
 				const auto& host_function = it->second;

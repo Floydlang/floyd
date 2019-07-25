@@ -123,6 +123,8 @@
 		2CDFD5CA22EA1AD0005B002C /* bytecode_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5C822EA1AD0005B002C /* bytecode_corelib.cpp */; };
 		2CDFD5CD22EA1E1B005B002C /* floyd_llvm_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5CC22EA1E1B005B002C /* floyd_llvm_corelib.cpp */; };
 		2CDFD5CE22EA1E1B005B002C /* floyd_llvm_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5CC22EA1E1B005B002C /* floyd_llvm_corelib.cpp */; };
+		2CDFD5D222EA4C27005B002C /* bytecode_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5D022EA4C27005B002C /* bytecode_helpers.cpp */; };
+		2CDFD5D322EA4C27005B002C /* bytecode_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5D022EA4C27005B002C /* bytecode_helpers.cpp */; };
 		2CE1C35D2270C7AC007892B4 /* floyd_llvm_runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CE1C35B2270C7AC007892B4 /* floyd_llvm_runtime.cpp */; };
 		2CEB5745207106560005AC7A /* game_of_life.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB5744207106560005AC7A /* game_of_life.cpp */; };
 		2CEB57472071069B0005AC7A /* benchmark_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB57462071069B0005AC7A /* benchmark_basics.cpp */; };
@@ -584,6 +586,8 @@
 		2CDFD5CB22EA1AE2005B002C /* bytecode_corelib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bytecode_corelib.h; sourceTree = "<group>"; };
 		2CDFD5CC22EA1E1B005B002C /* floyd_llvm_corelib.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm_corelib.cpp; sourceTree = "<group>"; };
 		2CDFD5CF22EA1E29005B002C /* floyd_llvm_corelib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = floyd_llvm_corelib.h; sourceTree = "<group>"; };
+		2CDFD5D022EA4C27005B002C /* bytecode_helpers.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_helpers.cpp; sourceTree = "<group>"; };
+		2CDFD5D122EA4C27005B002C /* bytecode_helpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bytecode_helpers.h; sourceTree = "<group>"; };
 		2CE1C35B2270C7AC007892B4 /* floyd_llvm_runtime.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm_runtime.cpp; sourceTree = "<group>"; };
 		2CE1C35C2270C7AC007892B4 /* floyd_llvm_runtime.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_llvm_runtime.h; sourceTree = "<group>"; };
 		2CEB5744207106560005AC7A /* game_of_life.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = game_of_life.cpp; sourceTree = "<group>"; };
@@ -780,6 +784,8 @@
 				2CDFD5CB22EA1AE2005B002C /* bytecode_corelib.h */,
 				2C982D3520603FE2002002FF /* bytecode_generator.cpp */,
 				2C982D3720604002002002FF /* bytecode_generator.h */,
+				2CDFD5D022EA4C27005B002C /* bytecode_helpers.cpp */,
+				2CDFD5D122EA4C27005B002C /* bytecode_helpers.h */,
 				2C5372B8207A9EBA00647AD1 /* bytecode_interpreter.cpp */,
 				2C5372B7207A9EAD00647AD1 /* bytecode_interpreter.h */,
 				2C81894B1D47B62400030C96 /* floyd_interpreter.cpp */,
@@ -1497,6 +1503,7 @@
 				2C40A71F1D76E179003245E3 /* immutable_ref_value.cpp in Sources */,
 				2C5372B9207A9EBA00647AD1 /* bytecode_interpreter.cpp in Sources */,
 				2CB30739214ACF09007D2732 /* software_system.cpp in Sources */,
+				2CDFD5D222EA4C27005B002C /* bytecode_helpers.cpp in Sources */,
 				2C8C03A62221D95F0085EBBE /* csv_reporter.cc in Sources */,
 				2C180475208B939800F62480 /* floyd_parser.cpp in Sources */,
 				2C8C03AA2221D95F0085EBBE /* json_reporter.cc in Sources */,
@@ -1583,6 +1590,7 @@
 				2C8C03CA2221DBD70085EBBE /* sha1.cpp in Sources */,
 				2C8C03CD2221DBD70085EBBE /* benchmark_runner.cc in Sources */,
 				2C13DBE922A0365D00C1A54B /* floyd_highlevel.cpp in Sources */,
+				2CDFD5D322EA4C27005B002C /* bytecode_helpers.cpp in Sources */,
 				2CBD8933228C9B2900C10CDD /* os_process.cpp in Sources */,
 				2C8C04002221DC190085EBBE /* floyd_benchmark_main.cpp in Sources */,
 				2C8C03D02221DBD70085EBBE /* quark.cpp in Sources */,

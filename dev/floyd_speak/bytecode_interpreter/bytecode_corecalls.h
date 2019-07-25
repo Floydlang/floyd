@@ -23,7 +23,7 @@ namespace floyd {
 
 
 //	Create lookup from function id -> C function pointer.
-std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls();
+std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_corecalls();
 
 
 }	//	floyd

@@ -9,40 +9,14 @@
 #include "bytecode_corelib.h"
 
 #include "json_support.h"
-#include "ast_typeid_helpers.h"
-#include "floyd_interpreter.h"
+#include "ast_value.h"
 
-#include "text_parser.h"
-#include "file_handling.h"
 #include "floyd_runtime.h"
 #include "floyd_corelib.h"
-#include "ast_value.h"
-#include "ast_json.h"
-
-
-#include <algorithm>
-#include <iostream>
-#include <fstream>
-
+#include "bytecode_helpers.h"
 
 
 namespace floyd {
-
-
-//??? remove using
-using std::vector;
-using std::string;
-using std::pair;
-using std::shared_ptr;
-using std::make_shared;
-
-
-
-
-
-//######################################################################################################################
-//	CORE LIBRARY
-//######################################################################################################################
 
 
 
@@ -55,7 +29,7 @@ using std::make_shared;
 
 
 
-bc_value_t host__calc_string_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_corelib__calc_string_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
@@ -81,7 +55,7 @@ bc_value_t host__calc_string_sha1(interpreter_t& vm, const bc_value_t args[], in
 
 
 
-bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_corelib__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type == make__binary_t__type());
@@ -111,7 +85,7 @@ bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], in
 
 
 
-bc_value_t host__get_time_of_day(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_corelib__get_time_of_day(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
@@ -128,25 +102,25 @@ bc_value_t host__get_time_of_day(interpreter_t& vm, const bc_value_t args[], int
 
 
 
-bc_value_t host__read_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_corelib__read_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
 
-	const string source_path = args[0].get_string_value();
+	const std::string source_path = args[0].get_string_value();
 	std::string file_contents = corelib_read_text_file(source_path);
 	const auto v = bc_value_t::make_string(file_contents);
 	return v;
 }
 
-bc_value_t host__write_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_corelib__write_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 	QUARK_ASSERT(args[0]._type.is_string());
 	QUARK_ASSERT(args[1]._type.is_string());
 
-	const string path = args[0].get_string_value();
-	const string file_contents = args[1].get_string_value();
+	const std::string path = args[0].get_string_value();
+	const std::string file_contents = args[1].get_string_value();
 
 	corelib_write_text_file(path, file_contents);
 
@@ -158,12 +132,12 @@ bc_value_t host__write_text_file(interpreter_t& vm, const bc_value_t args[], int
 
 
 
-bc_value_t host__get_fsentries_shallow(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_corelib__get_fsentries_shallow(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
 
-	const string path = args[0].get_string_value();
+	const std::string path = args[0].get_string_value();
 
 	const auto a = corelib_get_fsentries_shallow(path);
 
@@ -181,12 +155,12 @@ bc_value_t host__get_fsentries_shallow(interpreter_t& vm, const bc_value_t args[
 	return v;
 }
 
-bc_value_t host__get_fsentries_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_corelib__get_fsentries_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
 
-	const string path = args[0].get_string_value();
+	const std::string path = args[0].get_string_value();
 
 	const auto a = corelib_get_fsentries_deep(path);
 
@@ -204,12 +178,12 @@ bc_value_t host__get_fsentries_deep(interpreter_t& vm, const bc_value_t args[], 
 	return v;
 }
 
-bc_value_t host__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_corelib__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
 
-	const string path = args[0].get_string_value();
+	const std::string path = args[0].get_string_value();
 
 	const auto info = corelib_get_fsentry_info(path);
 
@@ -219,7 +193,7 @@ bc_value_t host__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], in
 }
 
 
-bc_value_t host__get_fs_environment(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_corelib__get_fs_environment(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
@@ -231,12 +205,12 @@ bc_value_t host__get_fs_environment(interpreter_t& vm, const bc_value_t args[], 
 }
 
 
-bc_value_t host__does_fsentry_exist(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_corelib__does_fsentry_exist(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
 
-	const string path = args[0].get_string_value();
+	const std::string path = args[0].get_string_value();
 
 	bool exists = corelib_does_fsentry_exist(path);
 
@@ -251,24 +225,24 @@ bc_value_t host__does_fsentry_exist(interpreter_t& vm, const bc_value_t args[], 
 }
 
 
-bc_value_t host__create_directory_branch(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_corelib__create_directory_branch(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
 
-	const string path = args[0].get_string_value();
+	const std::string path = args[0].get_string_value();
 
 	corelib_create_directory_branch(path);
 
 	return bc_value_t::make_void();
 }
 
-bc_value_t host__delete_fsentry_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_corelib__delete_fsentry_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
 
-	const string path = args[0].get_string_value();
+	const std::string path = args[0].get_string_value();
 
 	corelib_delete_fsentry_deep(path);
 
@@ -276,14 +250,14 @@ bc_value_t host__delete_fsentry_deep(interpreter_t& vm, const bc_value_t args[],
 }
 
 
-bc_value_t host__rename_fsentry(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_corelib__rename_fsentry(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 	QUARK_ASSERT(args[0]._type.is_string());
 	QUARK_ASSERT(args[1]._type.is_string());
 
-	const string path = args[0].get_string_value();
-	const string n = args[1].get_string_value();
+	const std::string path = args[0].get_string_value();
+	const std::string n = args[1].get_string_value();
 
 	corelib_rename_fsentry(path, n);
 
@@ -292,44 +266,31 @@ bc_value_t host__rename_fsentry(interpreter_t& vm, const bc_value_t args[], int 
 
 
 
-
-
 /////////////////////////////////////////		REGISTRY
 
 
 
-static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corelib_internal(){
-	std::vector<std::pair<libfunc_signature_t, BC_HOST_FUNCTION_PTR>> log;
+std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_corelib_calls(){
 
-	log.push_back({ make_calc_string_sha1_signature(), host__calc_string_sha1 });
-	log.push_back({ make_calc_binary_sha1_signature(), host__calc_binary_sha1 });
+	const auto result = std::map<function_id_t, BC_NATIVE_FUNCTION_PTR>{
+		{ { "calc_string_sha1" }, bc_corelib__calc_string_sha1 },
+		{ { "calc_binary_sha1" }, bc_corelib__calc_binary_sha1 },
 
-	log.push_back({ make_get_time_of_day_signature(), host__get_time_of_day });
+		{ { "get_time_of_day" }, bc_corelib__get_time_of_day },
 
-	log.push_back({ make_read_text_file_signature(), host__read_text_file });
-	log.push_back({ make_write_text_file_signature(), host__write_text_file });
+		{ { "read_text_file" }, bc_corelib__read_text_file },
+		{ { "write_text_file" }, bc_corelib__write_text_file },
 
-	log.push_back({ make_get_fsentries_shallow_signature(), host__get_fsentries_shallow });
-	log.push_back({ make_get_fsentries_deep_signature(), host__get_fsentries_deep });
-	log.push_back({ make_get_fsentry_info_signature(), host__get_fsentry_info });
-	log.push_back({ make_get_fs_environment_signature(), host__get_fs_environment });
-	log.push_back({ make_does_fsentry_exist_signature(), host__does_fsentry_exist });
-	log.push_back({ make_create_directory_branch_signature(), host__create_directory_branch });
-	log.push_back({ make_delete_fsentry_deep_signature(), host__delete_fsentry_deep });
-	log.push_back({ make_rename_fsentry_signature(), host__rename_fsentry });
-
-
-	std::map<function_id_t, BC_HOST_FUNCTION_PTR> result;
-	for(const auto& e: log){
-		result.insert({ function_id_t { e.first.name }, e.second });
-	}
-
+		{ { "get_fsentries_shallow" }, bc_corelib__get_fsentries_shallow },
+		{ { "get_fsentries_deep" }, bc_corelib__get_fsentries_deep },
+		{ { "get_fsentry_info" }, bc_corelib__get_fsentry_info },
+		{ { "get_fs_environment" }, bc_corelib__get_fs_environment },
+		{ { "does_fsentry_exist" }, bc_corelib__does_fsentry_exist },
+		{ { "create_directory_branch" }, bc_corelib__create_directory_branch },
+		{ { "delete_fsentry_deep" }, bc_corelib__delete_fsentry_deep },
+		{ { "rename_fsentry" }, bc_corelib__rename_fsentry }
+	};
 	return result;
-}
-
-std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corelib_calls(){
-	static const auto f = bc_get_corelib_internal();
-	return f;
 }
 
 
