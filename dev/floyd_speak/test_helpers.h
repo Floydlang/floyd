@@ -20,6 +20,8 @@ namespace floyd {
 
 struct compilation_unit_t;
 
+
+
 struct test_report_t {
 	floyd::value_t result_variable;
 	run_output_t output;
@@ -27,24 +29,21 @@ struct test_report_t {
 	std::string exception_what;
 };
 
-inline bool compare(const test_report_t& lhs, const test_report_t& rhs, bool check_printout){
-	if(check_printout){
-		return
-			lhs.result_variable == rhs.result_variable
-			&& lhs.output == rhs.output
-			&& lhs.print_out == rhs.print_out
-			&& lhs.exception_what == rhs.exception_what;
-	}
-	else{
-		return
-			lhs.result_variable == rhs.result_variable
-			&& lhs.output == rhs.output
-			&& lhs.exception_what == rhs.exception_what;
-	}
-}
-inline bool operator==(const test_report_t& lhs, const test_report_t& rhs){
-	return compare(lhs, rhs, true);
-}
+bool compare(const test_report_t& lhs, const test_report_t& rhs, bool check_printout);
+bool operator==(const test_report_t& lhs, const test_report_t& rhs);
+
+
+void ut_verify_report(const quark::call_context_t& context, const test_report_t& result, const test_report_t& expected);
+
+void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const std::vector<std::string>& main_args, const test_report_t& expected, bool check_printout);
+
+
+
+
+//////////////////////////////////////////		SHORTCUTS
+
+
+
 
 inline test_report_t check_nothing(){
 	return test_report_t { value_t::make_undefined(), { -1, {} }, {}, "" };
@@ -64,16 +63,8 @@ inline test_report_t check_exception(const std::string& exception_what){
 }
 
 
-void ut_verify_report(const quark::call_context_t& context, const test_report_t& result, const test_report_t& expected);
-
-
-void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const std::vector<std::string>& main_args, const test_report_t& expected, bool check_printout);
-
-
-
 void ut_verify_global_result_lib(const quark::call_context_t& context, const std::string& program, const value_t& expected_result);
 void ut_verify_global_result_nolib(const quark::call_context_t& context, const std::string& program, const value_t& expected_result);
-
 
 void ut_verify_printout_lib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout);
 void ut_verify_printout_nolib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout);
