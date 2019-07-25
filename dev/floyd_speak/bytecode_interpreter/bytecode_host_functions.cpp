@@ -13,6 +13,7 @@
 
 #include "text_parser.h"
 #include "file_handling.h"
+#include "floyd_filelib.h"
 #include "sha1_class.h"
 #include "ast_value.h"
 #include "ast_json.h"
@@ -546,25 +547,6 @@ bc_value_t host__get_json_type(interpreter_t& vm, const bc_value_t args[], int a
 /////////////////////////////////////////		PURE -- SHA1
 
 
-/*
-# FUTURE -- BUILT-IN SHA1 FUNCTIONS
-```
-
-sha1_t calc_sha1(string s)
-sha1_t calc_sha1(binary_t data)
-
-//	SHA1 is 20 bytes.
-//	String representation uses hex, so is 40 characters long.
-//	"1234567890123456789012345678901234567890"
-let sha1_bytes = 20
-let sha1_chars = 40
-
-string sha1_to_string(sha1_t s)
-sha1_t sha1_from_string(string s)
-
-```
-*/
-
 
 bc_value_t host__calc_string_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -572,8 +554,7 @@ bc_value_t host__calc_string_sha1(interpreter_t& vm, const bc_value_t args[], in
 	QUARK_ASSERT(args[0]._type.is_string());
 
 	const auto& s = args[0].get_string_value();
-	const auto sha1 = CalcSHA1(s);
-	const auto ascii40 = SHA1ToStringPlain(sha1);
+	const auto ascii40 = filelib_calc_string_sha1(s);
 
 	const auto result = value_t::make_struct_value(
 		make__sha1_t__type(),
@@ -603,8 +584,7 @@ bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], in
 	QUARK_ASSERT(sha1_struct[0]._type.is_string());
 
 	const auto& sha1_string = sha1_struct[0].get_string_value();
-	const auto sha1 = CalcSHA1(sha1_string);
-	const auto ascii40 = SHA1ToStringPlain(sha1);
+	const auto ascii40 = filelib_calc_string_sha1(sha1_string);
 
 	const auto result = value_t::make_struct_value(
 		make__sha1_t__type(),

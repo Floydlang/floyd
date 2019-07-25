@@ -82,6 +82,8 @@ libfunc_signature_t make_calc_binary_sha1_signature();
 
 
 
+std::string filelib_calc_string_sha1(const std::string& s);
+
 
 }	//	floyd
 

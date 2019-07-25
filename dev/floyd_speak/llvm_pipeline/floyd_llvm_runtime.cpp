@@ -10,6 +10,7 @@
 
 #include "floyd_llvm_codegen.h"
 #include "floyd_runtime.h"
+#include "floyd_filelib.h"
 
 #include "sha1_class.h"
 #include "text_parser.h"
@@ -2424,8 +2425,7 @@ STRUCT_T* floyd_funcdef__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* binary
 	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr->get_data_ptr());
 
 	const auto& s = from_runtime_string(r, runtime_value_t { .vector_ptr = binary.ascii40 });
-	const auto sha1 = CalcSHA1(s);
-	const auto ascii40 = SHA1ToStringPlain(sha1);
+	const auto ascii40 = filelib_calc_string_sha1(s);
 
 	const auto a = value_t::make_struct_value(
 		typeid_t::make_struct2({ member_t{ typeid_t::make_string(), "ascii40" } }),
@@ -2440,8 +2440,7 @@ STRUCT_T* floyd_funcdef__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t 
 	auto& r = get_floyd_runtime(frp);
 
 	const auto& s = from_runtime_string(r, s0);
-	const auto sha1 = CalcSHA1(s);
-	const auto ascii40 = SHA1ToStringPlain(sha1);
+	const auto ascii40 = filelib_calc_string_sha1(s);
 
 	const auto a = value_t::make_struct_value(
 		typeid_t::make_struct2({ member_t{ typeid_t::make_string(), "ascii40" } }),

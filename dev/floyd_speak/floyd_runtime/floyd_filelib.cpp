@@ -11,6 +11,7 @@
 
 #include "ast_typeid.h"
 #include "floyd_runtime.h"
+#include "sha1_class.h"
 
 namespace floyd {
 
@@ -437,6 +438,22 @@ static std::vector<libfunc_signature_t> get_host_function_records(){
 	};
 	return result;
 }
+
+
+
+
+
+
+
+std::string filelib_calc_string_sha1(const std::string& s){
+	const auto sha1 = CalcSHA1(s);
+	const auto ascii40 = SHA1ToStringPlain(sha1);
+	return ascii40;
+}
+
+
+
+
 
 
 

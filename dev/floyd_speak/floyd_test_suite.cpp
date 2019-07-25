@@ -46,9 +46,25 @@ unsupported syntax
 //??? Test truthness off all variable types: strings, doubles
 
 
-
-
-
+#if 1
+#define RUN_LANG_BASIC_TESTS				true
+#define RUN_LANG_COLLECTION_TESTS			true
+#define RUN_LANG_STRUCT_TESTS				true
+#define RUN_LANG_JSON_TESTS					true
+#define RUN_LANG_CORECALL_TESTS				true
+#define RUN_CORLIB_TESTS					true
+#define RUN_CONTAINER_TESTS					true
+#define RUN_EXAMPLE_AND_DOCS_TESTS			true
+#else
+//#define RUN_LANG_BASIC_TESTS				true
+//#define RUN_LANG_COLLECTION_TESTS			true
+//#define RUN_LANG_STRUCT_TESTS				true
+//#define RUN_LANG_JSON_TESTS					true
+//#define RUN_LANG_CORECALL_TESTS				true
+#define RUN_CORLIB_TESTS					true
+//#define RUN_CONTAINER_TESTS					true
+//#define RUN_EXAMPLE_AND_DOCS_TESTS			true
+#endif
 
 
 #define FLOYD_LANG_PROOF(class_under_test, function_under_test, scenario, expected_result) \
@@ -92,7 +108,7 @@ static value_t make_double_vec(const std::vector<double>& elements){
 }
 
 
-
+#if RUN_LANG_BASIC_TESTS
 
 //######################################################################################################################
 //	DEFINE VARIABLE, SIMPLE TYPES
@@ -2624,9 +2640,10 @@ FLOYD_LANG_PROOF("Floyd test suite", "string replace()", "", "error"){
 
 
 
+#endif	//	RUN_LANG_BASIC_TESTS
 
 
-
+#if RUN_LANG_COLLECTION_TESTS
 
 //######################################################################################################################
 //	VECTOR
@@ -3951,12 +3968,12 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [json] constructor", "", ""){
 }
 
 
+#endif //	RUN_LANG_COLLECTION_TESTS
 
 
 
 
-
-
+#if RUN_LANG_STRUCT_TESTS
 //######################################################################################################################
 //	STRUCT
 //######################################################################################################################
@@ -4363,9 +4380,12 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Error: Wrong TYPE of arguments t
 	);
 }
 
+#endif	//	RUN_LANG_STRUCT_TESTS
 
 
 
+
+#if RUN_LANG_JSON_TESTS
 
 //######################################################################################################################
 //	json
@@ -4589,10 +4609,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "json", "", "error"){
 
 
 
-//######################################################################################################################
-//	TYPE INFERENCE
-//######################################################################################################################
 
+//////////////////////////////////////////		JSON TYPE INFERENCE
 
 
 
@@ -4690,9 +4708,12 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_json_type()", "DOCUMENTATION SNIPPET",
 	)___");
 }
 
+#endif	//	RUN_LANG_JSON_TESTS
 
 
 
+
+#if RUN_LANG_CORECALL_TESTS
 //######################################################################################################################
 //	CORE CALLS
 //######################################################################################################################
@@ -5258,11 +5279,13 @@ FLOYD_LANG_PROOF("Floyd test suite", "stable_sort()", "[string]", ""){
 }
 
 
+#endif	//	RUN_LANG_CORECALL_TESTS
 
 
 
 
 
+#if RUN_CORLIB_TESTS
 
 //######################################################################################################################
 //	CORE LIBRARY
@@ -5681,8 +5704,11 @@ FLOYD_LANG_PROOF("Floyd test suite", "rename_fsentry()", "", ""){
 	);
 }
 
+#endif	//	RUN_CORLIB_TESTS
 
 
+
+#if RUN_LANG_BASIC_TESTS
 
 //######################################################################################################################
 //	PARSER ERRORS
@@ -5771,12 +5797,12 @@ FLOYD_LANG_PROOF("Analyse all test programs", "", "", ""){
 #endif
 
 
+#endif	//	RUN_LANG_BASIC_TESTS
 
 
 
 
-
-
+#if RUN_CONTAINER_TESTS
 
 //######################################################################################################################
 //	SOFTWARE-SYSTEM-DEF
@@ -6090,8 +6116,13 @@ FLOYD_LANG_PROOF("software-system-def", "run two CONNECTED processes", "", ""){
 }
 
 
+#endif	//	RUN_CONTAINER_TESTS
 
 
+
+
+
+#if RUN_EXAMPLE_AND_DOCS_TESTS
 
 //######################################################################################################################
 //	RUN ALL EXAMPLE PROGRAMS -- VERIFY THEY WORK
@@ -6386,4 +6417,6 @@ FLOYD_LANG_PROOF("MANUAL SNIPPETS", "subset()", "", ""){
 
 	)");
 }
+
+#endif	//	RUN_EXAMPLE_AND_DOCS_TESTS
 
