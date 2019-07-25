@@ -15,10 +15,8 @@
 
 #include "quark.h"
 
-#include <string>
 #include <map>
-#include "floyd_runtime.h"
-#include "floyd_interpreter.h"
+#include "bytecode_interpreter.h"
 
 
 namespace floyd {

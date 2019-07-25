@@ -10,6 +10,7 @@
 
 #include "json_support.h"
 #include "ast_typeid_helpers.h"
+#include "floyd_interpreter.h"
 
 #include "text_parser.h"
 #include "file_handling.h"

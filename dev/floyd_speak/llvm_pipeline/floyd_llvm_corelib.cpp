@@ -10,15 +10,12 @@
 
 #include "floyd_llvm_runtime.h"
 
-#include "floyd_llvm_codegen.h"
 #include "floyd_runtime.h"
 #include "floyd_filelib.h"
 
 #include "text_parser.h"
 #include "file_handling.h"
 #include "os_process.h"
-#include "compiler_helpers.h"
-#include "pass3.h"
 #include "floyd_filelib.h"
 
 #include <iostream>
