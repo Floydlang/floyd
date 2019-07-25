@@ -541,5 +541,72 @@ std::vector<TDirEntry> corelib_get_fsentries_deep(const std::string& abs_path){
 
 
 
+
+
+//??? implement
+std::string posix_timespec__to__utc(const time_t& t){
+	return std::to_string(t);
+}
+
+fsentry_info_t corelib_get_fsentry_info(const std::string& abs_path){
+	if(is_valid_absolute_dir_path(abs_path) == false){
+		quark::throw_runtime_error("get_fsentry_info() illegal input path.");
+	}
+
+	TFileInfo info;
+	bool ok = GetFileInfo(abs_path, info);
+	QUARK_ASSERT(ok);
+	if(ok == false){
+		quark::throw_exception();
+	}
+
+	const auto parts = SplitPath(abs_path);
+	const auto parent = UpDir2(abs_path);
+
+	const auto type_string = info.fDirFlag ? "dir" : "string";
+	const auto name = info.fDirFlag ? parent.second : parts.fName;
+	const auto parent_path = info.fDirFlag ? parent.first : parts.fPath;
+
+	const auto creation_date = posix_timespec__to__utc(info.fCreationDate);
+	const auto modification_date = posix_timespec__to__utc(info.fModificationDate);
+	const auto file_size = info.fFileSize;
+
+	const auto result = fsentry_info_t {
+		type_string,
+		name,
+		parent_path,
+
+		creation_date,
+		modification_date,
+
+		static_cast<int64_t>(file_size)
+	};
+
+	return result;
+}
+
+value_t pack_fsentry_info(const fsentry_info_t& info){
+	const auto result = value_t::make_struct_value(
+		make__fsentry_info_t__type(),
+		{
+			value_t::make_string(info.type),
+			value_t::make_string(info.name),
+			value_t::make_string(info.abs_parent_path),
+
+			value_t::make_string(info.creation_date),
+			value_t::make_string(info.modification_date),
+
+			value_t::make_int(info.file_size)
+		}
+	);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(result);
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	return result;
+}
+
 }	// floyd
 

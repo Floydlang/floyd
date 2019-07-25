@@ -34,7 +34,6 @@ typeid_t make__fs_environment_t__type();
 bool is_valid_absolute_dir_path(const std::string& s);
 std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v);
 
-value_t impl__get_fsentry_info(const std::string& path);
 
 
 
@@ -88,6 +87,22 @@ int64_t corelib__get_time_of_day();
 
 std::vector<TDirEntry> corelib_get_fsentries_shallow(const std::string& abs_path);
 std::vector<TDirEntry> corelib_get_fsentries_deep(const std::string& abs_path);
+
+
+struct fsentry_info_t {
+	std::string type;
+	std::string name;
+	std::string abs_parent_path;
+
+	std::string creation_date;
+	std::string modification_date;
+	int64_t file_size;
+};
+
+fsentry_info_t corelib_get_fsentry_info(const std::string& abs_path);
+
+value_t pack_fsentry_info(const fsentry_info_t& info);
+
 
 }	//	floyd
 

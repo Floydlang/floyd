@@ -152,9 +152,13 @@ static VEC_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_val
 
 static STRUCT_T* llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
+	const auto path = from_runtime_string(r, path0);
 
-	const auto result = impl__get_fsentry_info(from_runtime_string(r, path0));
-	const auto v = to_runtime_value(r, result);
+	const auto info = corelib_get_fsentry_info(path);
+
+	const auto info2 = pack_fsentry_info(info);
+
+	const auto v = to_runtime_value(r, info2);
 	return v.struct_ptr;
 }
 

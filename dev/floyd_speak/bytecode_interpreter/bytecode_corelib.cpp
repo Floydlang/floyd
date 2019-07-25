@@ -204,67 +204,17 @@ bc_value_t host__get_fsentries_deep(interpreter_t& vm, const bc_value_t args[], 
 	return v;
 }
 
-
-//??? implement
-std::string posix_timespec__to__utc(const time_t& t){
-	return std::to_string(t);
-}
-
-
-value_t impl__get_fsentry_info(const std::string& path){
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("get_fsentry_info() illegal input path.");
-	}
-
-	TFileInfo info;
-	bool ok = GetFileInfo(path, info);
-	QUARK_ASSERT(ok);
-	if(ok == false){
-		quark::throw_exception();
-	}
-
-	const auto parts = SplitPath(path);
-	const auto parent = UpDir2(path);
-
-	const auto type_string = info.fDirFlag ? "dir" : "string";
-	const auto name = info.fDirFlag ? parent.second : parts.fName;
-	const auto parent_path = info.fDirFlag ? parent.first : parts.fPath;
-
-	const auto creation_date = posix_timespec__to__utc(info.fCreationDate);
-	const auto modification_date = posix_timespec__to__utc(info.fModificationDate);
-	const auto file_size = info.fFileSize;
-
-	const auto result = value_t::make_struct_value(
-		make__fsentry_info_t__type(),
-		{
-			value_t::make_string(type_string),
-			value_t::make_string(name),
-			value_t::make_string(parent_path),
-
-			value_t::make_string(creation_date),
-			value_t::make_string(modification_date),
-
-			value_t::make_int(file_size)
-		}
-	);
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	return result;
-}
-
-
 bc_value_t host__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
 
 	const string path = args[0].get_string_value();
-	const auto result = impl__get_fsentry_info(path);
-	const auto v = value_to_bc(result);
+
+	const auto info = corelib_get_fsentry_info(path);
+
+	const auto info2 = pack_fsentry_info(info);
+	const auto v = value_to_bc(info2);
 	return v;
 }
 
