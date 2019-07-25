@@ -121,6 +121,8 @@
 		2CCA88F522B6B5F100976D8E /* floyd_filelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CCA88F322B6B5F100976D8E /* floyd_filelib.cpp */; };
 		2CDFD5C922EA1AD0005B002C /* bytecode_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5C822EA1AD0005B002C /* bytecode_corelib.cpp */; };
 		2CDFD5CA22EA1AD0005B002C /* bytecode_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5C822EA1AD0005B002C /* bytecode_corelib.cpp */; };
+		2CDFD5CD22EA1E1B005B002C /* floyd_llvm_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5CC22EA1E1B005B002C /* floyd_llvm_corelib.cpp */; };
+		2CDFD5CE22EA1E1B005B002C /* floyd_llvm_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5CC22EA1E1B005B002C /* floyd_llvm_corelib.cpp */; };
 		2CE1C35D2270C7AC007892B4 /* floyd_llvm_runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CE1C35B2270C7AC007892B4 /* floyd_llvm_runtime.cpp */; };
 		2CEB5745207106560005AC7A /* game_of_life.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB5744207106560005AC7A /* game_of_life.cpp */; };
 		2CEB57472071069B0005AC7A /* benchmark_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CEB57462071069B0005AC7A /* benchmark_basics.cpp */; };
@@ -580,6 +582,8 @@
 		2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_main.cpp; sourceTree = "<group>"; };
 		2CDFD5C822EA1AD0005B002C /* bytecode_corelib.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_corelib.cpp; sourceTree = "<group>"; };
 		2CDFD5CB22EA1AE2005B002C /* bytecode_corelib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bytecode_corelib.h; sourceTree = "<group>"; };
+		2CDFD5CC22EA1E1B005B002C /* floyd_llvm_corelib.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm_corelib.cpp; sourceTree = "<group>"; };
+		2CDFD5CF22EA1E29005B002C /* floyd_llvm_corelib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = floyd_llvm_corelib.h; sourceTree = "<group>"; };
 		2CE1C35B2270C7AC007892B4 /* floyd_llvm_runtime.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm_runtime.cpp; sourceTree = "<group>"; };
 		2CE1C35C2270C7AC007892B4 /* floyd_llvm_runtime.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_llvm_runtime.h; sourceTree = "<group>"; };
 		2CEB5744207106560005AC7A /* game_of_life.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = game_of_life.cpp; sourceTree = "<group>"; };
@@ -637,6 +641,8 @@
 			children = (
 				2C5F8320224644FB009870FC /* floyd_llvm_codegen.cpp */,
 				2C5F8321224644FB009870FC /* floyd_llvm_codegen.h */,
+				2CDFD5CC22EA1E1B005B002C /* floyd_llvm_corelib.cpp */,
+				2CDFD5CF22EA1E29005B002C /* floyd_llvm_corelib.h */,
 				2C3DE25422665E7E00807701 /* floyd_llvm_helpers.cpp */,
 				2C3DE25522665E7E00807701 /* floyd_llvm_helpers.h */,
 				2C687D3622691406003AC7CE /* floyd_llvm_readme.md */,
@@ -1509,6 +1515,7 @@
 				2CB7AA6B2209E51E0011DE4B /* compiler_basics.cpp in Sources */,
 				2CC0B3E322248EBD00C9D584 /* test_helpers.cpp in Sources */,
 				2C18044B208B90E900F62480 /* utils.cpp in Sources */,
+				2CDFD5CD22EA1E1B005B002C /* floyd_llvm_corelib.cpp in Sources */,
 				2C02667C2014CAF000A82AD6 /* floyd_test_suite.cpp in Sources */,
 				2CBCA7DF1D569E07000FAE81 /* sha1.cpp in Sources */,
 				2CEB57472071069B0005AC7A /* benchmark_basics.cpp in Sources */,
@@ -1596,6 +1603,7 @@
 				2C8C03EA2221DBD70085EBBE /* test_main.floyd in Sources */,
 				2C8C03EC2221DBD70085EBBE /* string_util.cc in Sources */,
 				2C8C03ED2221DBD70085EBBE /* timers.cc in Sources */,
+				2CDFD5CE22EA1E1B005B002C /* floyd_llvm_corelib.cpp in Sources */,
 				2C8C03EE2221DBD70085EBBE /* complexity.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

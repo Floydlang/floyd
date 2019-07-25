@@ -149,6 +149,14 @@ value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t
 
 
 
+
+std::string from_runtime_string(const llvm_execution_engine_t& r, runtime_value_t encoded_value);
+runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t& value);
+runtime_value_t to_runtime_string(llvm_execution_engine_t& r, const std::string& s);
+
+
+
+
 struct llvm_bind_t {
 	std::string name;
 	void* address;
