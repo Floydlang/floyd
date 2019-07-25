@@ -12,7 +12,6 @@
 #include "floyd_runtime.h"
 #include "floyd_filelib.h"
 
-#include "sha1_class.h"
 #include "text_parser.h"
 #include "bytecode_host_functions.h"
 #include "file_handling.h"
@@ -49,7 +48,6 @@
 
 #include <thread>
 #include <deque>
-#include <future>
 #include <algorithm>
 
 #include <condition_variable>
