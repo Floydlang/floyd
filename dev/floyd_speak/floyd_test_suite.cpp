@@ -9,19 +9,7 @@
 #include "floyd_test_suite.h"
 
 #include "test_helpers.h"
-
-#include "floyd_interpreter.h"
-#include "ast_value.h"
-#include "expression.h"
-#include "json_support.h"
-#include "text_parser.h"
-#include "file_handling.h"
-#include "compiler_helpers.h"
 #include "floyd_corelib.h"
-
-#include <string>
-#include <vector>
-#include <iostream>
 
 using namespace floyd;
 
