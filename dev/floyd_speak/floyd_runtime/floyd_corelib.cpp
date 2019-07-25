@@ -423,28 +423,6 @@ libfunc_signature_t make_calc_binary_sha1_signature(){
 
 
 
-static std::vector<libfunc_signature_t> get_host_function_records(){
-	const std::vector<libfunc_signature_t> result = {
-		make_get_time_of_day_signature(),
-
-		make_read_text_file_signature(),
-		make_write_text_file_signature(),
-
-		make_get_fsentries_shallow_signature(),
-		make_get_fsentries_deep_signature(),
-		make_get_fsentry_info_signature(),
-		make_get_fs_environment_signature(),
-		make_does_fsentry_exist_signature(),
-		make_create_directory_branch_signature(),
-		make_delete_fsentry_deep_signature(),
-		make_rename_fsentry_signature(),
-
-		make_calc_string_sha1_signature(),
-		make_calc_binary_sha1_signature()
-	};
-	return result;
-}
-
 
 
 
