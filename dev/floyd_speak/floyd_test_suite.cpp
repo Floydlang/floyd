@@ -2949,35 +2949,35 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] =", "copy", ""){
 	ut_run_closed_nolib(R"___(		let a = [true, false, true] let b = a; assert(b == [ true, false, true ])	)___");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] ==", "same values", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [true, false] == [true, false]		)",			R"(		[ "^bool", true]		)" );
+	ut_run_closed_nolib(R"(		let a = [true, false] == [true, false]	; assert(a == true)	)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] ==", "different values", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [false, false] == [true, false]		)", 	R"(		[ "^bool", false]		)" );
+	ut_run_closed_nolib(R"(		let a = [false, false] == [true, false]	; assert(a == false)	)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] <", "", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [true, true] < [true, true]		)",			R"(		[ "^bool", false]	)");
+	ut_run_closed_nolib(R"(		let a = [true, true] < [true, true]	; assert(a == false)	)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] <", "different values", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [true, false] < [true, true]		)", 		R"(		[ "^bool", true]		)");
+	ut_run_closed_nolib(R"(		let a = [true, false] < [true, true]	; assert(a == true)	)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] +", "non-empty vectors", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] result = [true, false] + [true, true]		)", R"(		[[ "vector", "^bool" ], [true, false, true, true]]		)");
+	ut_run_closed_nolib(R"(		let [bool] a = [true, false] + [true, true]		; assert(a == [ true, false, true, true ])	)");
 }
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] size()", "empty", "0"){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] a = [] let result = size(a)		)",					R"(		[ "^int", 0]		)");
+	ut_run_closed_nolib(R"(		let [bool] a = [] let b = size(a)	; assert(b == 0)	)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] size()", "2", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] a = [true, false, true] let result = size(a)		)", R"(		[ "^int", 3]		)");
+	ut_run_closed_nolib(R"(		let [bool] a = [true, false, true] let b = size(a)	; assert(b == 3)	)");
 }
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] push_back()", "", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [bool] result = push_back([true, false], true)		)", R"(		[[ "vector", "^bool" ], [true, false, true]]		)");
+	ut_run_closed_nolib(R"(		let [bool] a = push_back([true, false], true)	; assert(a == [ true, false, true ])	)");
 }
 
 
@@ -2988,7 +2988,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] push_back()", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor expression", "", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [int] result = [10, 20, 30]		)",		R"(		[[ "vector", "^int" ], [10, 20, 30]]		)" );
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] result = [10, 20, 30]		)",		value_t::make_vector_value(typeid_t::make_int(), { value_t::make_int(10), value_t::make_int(20), value_t::make_int(30) }) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor", "", "3"){
 	ut_verify_global_result_nolib(
@@ -3016,35 +3016,43 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] [] lookup", "", ""){
 	);
 }
 
+static value_t make_int_vec(const std::vector<int64_t>& elements){
+	std::vector<value_t> elements2;
+	for(const auto& e: elements){
+		elements2.push_back(value_t::make_int(e));
+	}
+
+	return value_t::make_vector_value(typeid_t::make_int(), elements2);
+}
+
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] =", "copy", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let a = [10, 20, 30] let result = a;		)",	R"(		[[ "vector", "^int" ], [10, 20, 30]]		)"	);
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let a = [10, 20, 30] let result = a;		)",		make_int_vec({ 10, 20, 30 }) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] ==", "same values", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1, 2] == [1, 2]		)",		R"(		[ "^bool", true]		)");
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1, 2] == [1, 2]		)",		R"(		[ "^bool", true]		)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1, 2] == [1, 2]		)",		value_t::make_bool(true));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] ==", "different values", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1, 3] == [1, 2]		)",		R"(		[ "^bool", false]		)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1, 3] == [1, 2]		)",		value_t::make_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] <", "", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1, 2] < [1, 2]		)",		R"(		[ "^bool", false]	)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1, 2] < [1, 2]		)",		value_t::make_bool(false));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] <", "different values", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1, 2] < [1, 3]		)",		R"(		[ "^bool", true]		)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1, 2] < [1, 3]		)",		value_t::make_bool(true));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] +", "non-empty vectors", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [int] result = [1, 2] + [3, 4]		)",	R"(		[[ "vector", "^int" ], [1, 2, 3, 4]]		)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] result = [1, 2] + [3, 4]		)",		make_int_vec({ 1, 2, 3, 4 }) );
 }
 
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] size()", "empty", "0"){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [int] a = [] let result = size(a)		)",	R"(		[ "^int", 0]		)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] a = [] let result = size(a)		)",	value_t::make_int(0) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] size()", "2", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [int] a = [1, 2, 3] let result = size(a)		)",		R"(		[ "^int", 3]		)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] a = [1, 2, 3] let result = size(a)		)",		value_t::make_int(3) );
 }
 
 
@@ -3059,7 +3067,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] find()", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] push_back()", "", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [int] result = push_back([1, 2], 3)		)",		R"(		[[ "vector", "^int" ], [1, 2, 3]]		)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] result = push_back([1, 2], 3)		)",		make_int_vec({ 1, 2, 3 }) );
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] push_back()", "", ""){
