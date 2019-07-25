@@ -110,45 +110,56 @@ static void llvm_corelib__write_text_file(floyd_runtime_t* frp, runtime_value_t 
 
 
 
-
-static void llvm_corelib__create_directory_branch(floyd_runtime_t* frp, runtime_value_t path0){
+static VEC_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
 	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("create_directory_branch() illegal input path.");
+		quark::throw_runtime_error("get_fsentries_shallow() illegal input path.");
 	}
 
-	MakeDirectoriesDeep(path);
-}
-
-static void llvm_corelib__delete_fsentry_deep(floyd_runtime_t* frp, runtime_value_t path0){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto path = from_runtime_string(r, path0);
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("delete_fsentry_deep() illegal input path.");
-	}
-
-	DeleteDeep(path);
-}
-
-static uint8_t llvm_corelib__does_fsentry_exist(floyd_runtime_t* frp, runtime_value_t path0){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto path = from_runtime_string(r, path0);
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("does_fsentry_exist() illegal input path.");
-	}
-
-	bool exists = DoesEntryExist(path);
-	const auto result = value_t::make_bool(exists);
+	const auto a = GetDirItems(path);
+	const auto elements = directory_entries_to_values(a);
+	const auto k_fsentry_t__type = make__fsentry_t__type();
+	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(result);
+	const auto debug = value_and_type_to_ast_json(vec2);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
-	return exists ? 0x01 : 0x00;
+
+	const auto v = to_runtime_value(r, vec2);
+	return v.vector_ptr;
+}
+
+static VEC_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto path = from_runtime_string(r, path0);
+	if(is_valid_absolute_dir_path(path) == false){
+		quark::throw_runtime_error("get_fsentries_deep() illegal input path.");
+	}
+
+	const auto a = GetDirItemsDeep(path);
+	const auto elements = directory_entries_to_values(a);
+	const auto k_fsentry_t__type = make__fsentry_t__type();
+	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(vec2);
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	const auto v = to_runtime_value(r, vec2);
+	return v.vector_ptr;
+}
+
+static STRUCT_T* llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto result = impl__get_fsentry_info(from_runtime_string(r, path0));
+	const auto v = to_runtime_value(r, result);
+	return v.struct_ptr;
 }
 
 static runtime_value_t llvm_corelib__get_fs_environment(floyd_runtime_t* frp){
@@ -181,57 +192,47 @@ static runtime_value_t llvm_corelib__get_fs_environment(floyd_runtime_t* frp){
 	return v;
 }
 
-static VEC_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
+
+
+
+static uint8_t llvm_corelib__does_fsentry_exist(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
 	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("get_fsentries_deep() illegal input path.");
+		quark::throw_runtime_error("does_fsentry_exist() illegal input path.");
 	}
 
-	const auto a = GetDirItemsDeep(path);
-	const auto elements = directory_entries_to_values(a);
-	const auto k_fsentry_t__type = make__fsentry_t__type();
-	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
+	bool exists = DoesEntryExist(path);
+	const auto result = value_t::make_bool(exists);
 
 #if 1
-	const auto debug = value_and_type_to_ast_json(vec2);
+	const auto debug = value_and_type_to_ast_json(result);
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
-
-	const auto v = to_runtime_value(r, vec2);
-	return v.vector_ptr;
+	return exists ? 0x01 : 0x00;
 }
 
-
-static VEC_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
+static void llvm_corelib__create_directory_branch(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
 	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("get_fsentries_shallow() illegal input path.");
+		quark::throw_runtime_error("create_directory_branch() illegal input path.");
 	}
 
-	const auto a = GetDirItems(path);
-	const auto elements = directory_entries_to_values(a);
-	const auto k_fsentry_t__type = make__fsentry_t__type();
-	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(vec2);
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	const auto v = to_runtime_value(r, vec2);
-	return v.vector_ptr;
+	MakeDirectoriesDeep(path);
 }
 
-static STRUCT_T* llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
+static void llvm_corelib__delete_fsentry_deep(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto result = impl__get_fsentry_info(from_runtime_string(r, path0));
-	const auto v = to_runtime_value(r, result);
-	return v.struct_ptr;
+	const auto path = from_runtime_string(r, path0);
+	if(is_valid_absolute_dir_path(path) == false){
+		quark::throw_runtime_error("delete_fsentry_deep() illegal input path.");
+	}
+
+	DeleteDeep(path);
 }
 
 static void llvm_corelib__rename_fsentry(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t name0){
@@ -266,15 +267,15 @@ std::map<std::string, void*> get_corelib_c_function_ptrs(){
 		{ "floyd_funcdef__read_text_file", reinterpret_cast<void *>(&llvm_corelib__read_text_file) },
 		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&llvm_corelib__write_text_file) },
 
-		{ "floyd_funcdef__rename_fsentry", reinterpret_cast<void *>(&llvm_corelib__rename_fsentry) },
+		{ "floyd_funcdef__get_fsentries_shallow", reinterpret_cast<void *>(&llvm_corelib__get_fsentries_shallow) },
+		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&llvm_corelib__get_fsentries_deep) },
+		{ "floyd_funcdef__get_fsentry_info", reinterpret_cast<void *>(&llvm_corelib__get_fsentry_info) },
+		{ "floyd_funcdef__get_fs_environment", reinterpret_cast<void *>(&llvm_corelib__get_fs_environment) },
+
+		{ "floyd_funcdef__does_fsentry_exist", reinterpret_cast<void *>(&llvm_corelib__does_fsentry_exist) },
 		{ "floyd_funcdef__create_directory_branch", reinterpret_cast<void *>(&llvm_corelib__create_directory_branch) },
 		{ "floyd_funcdef__delete_fsentry_deep", reinterpret_cast<void *>(&llvm_corelib__delete_fsentry_deep) },
-		{ "floyd_funcdef__does_fsentry_exist", reinterpret_cast<void *>(&llvm_corelib__does_fsentry_exist) },
-
-		{ "floyd_funcdef__get_fs_environment", reinterpret_cast<void *>(&llvm_corelib__get_fs_environment) },
-		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&llvm_corelib__get_fsentries_deep) },
-		{ "floyd_funcdef__get_fsentries_shallow", reinterpret_cast<void *>(&llvm_corelib__get_fsentries_shallow) },
-		{ "floyd_funcdef__get_fsentry_info", reinterpret_cast<void *>(&llvm_corelib__get_fsentry_info) },
+		{ "floyd_funcdef__rename_fsentry", reinterpret_cast<void *>(&llvm_corelib__rename_fsentry) }
 	};
 	return host_functions_map;
 }

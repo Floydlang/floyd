@@ -10,10 +10,11 @@
 
 
 #include "ast_typeid.h"
+#include "ast_value.h"
 #include "floyd_runtime.h"
-
 #include "sha1_class.h"
 #include "file_handling.h"
+
 #include <iostream>
 #include <fstream>
 #include <thread>
@@ -253,6 +254,32 @@ bool is_valid_absolute_dir_path(const std::string& s){
 
 
 
+std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v){
+	const auto k_fsentry_t__type = make__fsentry_t__type();
+	const auto elements = mapf<value_t>(
+		v,
+		[&k_fsentry_t__type](const auto& e){
+//			const auto t = value_t::make_string(e.fName);
+			const auto type_string = e.fType == TDirEntry::kFile ? "file": "dir";
+			const auto t2 = value_t::make_struct_value(
+				k_fsentry_t__type,
+				{
+					value_t::make_string(type_string),
+					value_t::make_string(e.fNameOnly),
+					value_t::make_string(e.fParent)
+				}
+			);
+			return t2;
+		}
+	);
+	return elements;
+}
+
+
+
+
+
+
 typeid_t make__fsentry_t__type(){
 	const auto temp = typeid_t::make_struct2({
 		{ typeid_t::make_string(), "type" },
@@ -370,6 +397,16 @@ typeid_t make__file_pos_t__type(){
 
 
 
+libfunc_signature_t make_calc_string_sha1_signature(){
+	return { "calc_string_sha1", { "1031" }, typeid_t::make_function(make__sha1_t__type(), { typeid_t::make_string() }, epure::pure) };
+}
+
+
+libfunc_signature_t make_calc_binary_sha1_signature(){
+	return { "calc_binary_sha1", { "1032" }, typeid_t::make_function(make__sha1_t__type(), { make__binary_t__type() }, epure::pure) };
+}
+
+
 
 libfunc_signature_t make_get_time_of_day_signature(){
 	return { "get_time_of_day", { "1005" }, typeid_t::make_function(typeid_t::make_int(), {}, epure::impure) };
@@ -410,18 +447,6 @@ libfunc_signature_t make_delete_fsentry_deep_signature(){
 libfunc_signature_t make_rename_fsentry_signature(){
 	return { "rename_fsentry", { "1030" }, typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string(), typeid_t::make_string() }, epure::impure)};
 }
-
-
-libfunc_signature_t make_calc_string_sha1_signature(){
-	return { "calc_string_sha1", { "1031" }, typeid_t::make_function(make__sha1_t__type(), { typeid_t::make_string() }, epure::pure) };
-}
-
-
-libfunc_signature_t make_calc_binary_sha1_signature(){
-	return { "calc_binary_sha1", { "1032" }, typeid_t::make_function(make__sha1_t__type(), { make__binary_t__type() }, epure::pure) };
-}
-
-
 
 
 

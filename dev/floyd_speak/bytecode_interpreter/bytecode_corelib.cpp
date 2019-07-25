@@ -157,29 +157,6 @@ bc_value_t host__write_text_file(interpreter_t& vm, const bc_value_t args[], int
 
 
 
-std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v){
-	const auto k_fsentry_t__type = make__fsentry_t__type();
-	const auto elements = mapf<value_t>(
-		v,
-		[&k_fsentry_t__type](const auto& e){
-//			const auto t = value_t::make_string(e.fName);
-			const auto type_string = e.fType == TDirEntry::kFile ? "file": "dir";
-			const auto t2 = value_t::make_struct_value(
-				k_fsentry_t__type,
-				{
-					value_t::make_string(type_string),
-					value_t::make_string(e.fNameOnly),
-					value_t::make_string(e.fParent)
-				}
-			);
-			return t2;
-		}
-	);
-	return elements;
-}
-
-
-
 
 bc_value_t host__get_fsentries_shallow(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
@@ -412,6 +389,9 @@ bc_value_t host__rename_fsentry(interpreter_t& vm, const bc_value_t args[], int 
 static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corelib_internal(){
 	std::vector<std::pair<libfunc_signature_t, BC_HOST_FUNCTION_PTR>> log;
 
+	log.push_back({ make_calc_string_sha1_signature(), host__calc_string_sha1 });
+	log.push_back({ make_calc_binary_sha1_signature(), host__calc_binary_sha1 });
+
 	log.push_back({ make_get_time_of_day_signature(), host__get_time_of_day });
 
 	log.push_back({ make_read_text_file_signature(), host__read_text_file });
@@ -425,9 +405,6 @@ static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corelib_internal(){
 	log.push_back({ make_create_directory_branch_signature(), host__create_directory_branch });
 	log.push_back({ make_delete_fsentry_deep_signature(), host__delete_fsentry_deep });
 	log.push_back({ make_rename_fsentry_signature(), host__rename_fsentry });
-
-	log.push_back({ make_calc_string_sha1_signature(), host__calc_string_sha1 });
-	log.push_back({ make_calc_binary_sha1_signature(), host__calc_binary_sha1 });
 
 
 	std::map<function_id_t, BC_HOST_FUNCTION_PTR> result;
