@@ -5364,36 +5364,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
 
 
 
-//////////////////////////////////////////		CORE LIBRARY - get_time_of_day()
-
-FLOYD_LANG_PROOF("Floyd test suite", "get_time_of_day()", "", ""){
-	ut_run_closed_lib(R"(
-
-		let start = get_time_of_day()
-		mutable b = 0
-		mutable t = [0]
-		for(i in 0...100){
-			b = b + 1
-			t = push_back(t, b)
-		}
-		let end = get_time_of_day()
-//		print("Duration: " + to_string(end - start) + ", number = " + to_string(b))
-//		print(t)
-
-	)");
-}
-
-FLOYD_LANG_PROOF("Floyd test suite", "get_time_of_day()", "", ""){
-	ut_run_closed_lib(R"(
-
-		let int a = get_time_of_day()
-		let int b = get_time_of_day()
-		let int c = b - a
-//		print("Delta time:" + to_string(a))
-
-	)");
-}
-
 //////////////////////////////////////////		CORE LIBRARY - calc_string_sha1()
 
 
@@ -5423,6 +5393,36 @@ FLOYD_LANG_PROOF("Floyd test suite", "calc_binary_sha1()", "", ""){
 }
 
 
+
+//////////////////////////////////////////		CORE LIBRARY - get_time_of_day()
+
+FLOYD_LANG_PROOF("Floyd test suite", "get_time_of_day()", "", ""){
+	ut_run_closed_lib(R"(
+
+		let start = get_time_of_day()
+		mutable b = 0
+		mutable t = [0]
+		for(i in 0...100){
+			b = b + 1
+			t = push_back(t, b)
+		}
+		let end = get_time_of_day()
+//		print("Duration: " + to_string(end - start) + ", number = " + to_string(b))
+//		print(t)
+
+	)");
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "get_time_of_day()", "", ""){
+	ut_run_closed_lib(R"(
+
+		let int a = get_time_of_day()
+		let int b = get_time_of_day()
+		let int c = b - a
+//		print("Delta time:" + to_string(a))
+
+	)");
+}
 
 
 
@@ -5455,31 +5455,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "write_text_file()", "", ""){
 	)");
 }
 
-//////////////////////////////////////////		CORE CALL - instantiate_from_typeid()
-
-//	instantiate_from_typeid() only works for const-symbols right now.
-/*
-??? Support when we can make "t = typeof(1234)" a const-symbol
-FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
-	const auto result = test__run_return_result(
-		R"(
-			t = typeof(1234);
-			result = instantiate_from_typeid(t, 3);
-		)", {}
-	);
-	ut_verify_values(QUARK_POS, result, value_t::make_int(3));
-}
-
-FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
-	ut_run_closed_nolib(R"(
-
-		a = instantiate_from_typeid(typeof(123), 3);
-		assert(to_string(typeof(a)) == "int");
-		assert(a == 3);
-
-	)");
-}
-*/
 
 
 //////////////////////////////////////////		CORE LIBRARY - get_directory_entries()

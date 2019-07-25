@@ -21,8 +21,6 @@
 #include <cmath>
 #include <sys/time.h>
 
-#include <thread>
-#include <chrono>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -544,70 +542,6 @@ bc_value_t host__get_json_type(interpreter_t& vm, const bc_value_t args[], int a
 }
 
 
-/////////////////////////////////////////		PURE -- SHA1
-
-
-
-bc_value_t host__calc_string_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_string());
-
-	const auto& s = args[0].get_string_value();
-	const auto ascii40 = filelib_calc_string_sha1(s);
-
-	const auto result = value_t::make_struct_value(
-		make__sha1_t__type(),
-		{
-			value_t::make_string(ascii40)
-		}
-	);
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	const auto v = value_to_bc(result);
-	return v;
-}
-
-
-
-bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type == make__binary_t__type());
-
-	const auto& sha1_struct = args[0].get_struct_value();
-	QUARK_ASSERT(sha1_struct.size() == make__binary_t__type().get_struct()._members.size());
-	QUARK_ASSERT(sha1_struct[0]._type.is_string());
-
-	const auto& sha1_string = sha1_struct[0].get_string_value();
-	const auto ascii40 = filelib_calc_string_sha1(sha1_string);
-
-	const auto result = value_t::make_struct_value(
-		make__sha1_t__type(),
-		{
-			value_t::make_string(ascii40)
-		}
-	);
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	const auto v = value_to_bc(result);
-	return v;
-}
-
-
-
-
-/////////////////////////////////////////		PURE -- FUNCTIONAL
-
-
 
 /////////////////////////////////////////		PURE -- MAP()
 
@@ -1062,35 +996,8 @@ bc_value_t host__send(interpreter_t& vm, const bc_value_t args[], int arg_count)
 }
 
 
-bc_value_t host__get_time_of_day(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 0);
 
-	std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> elapsed_seconds = t - vm._imm->_start_time;
-	const auto ms = elapsed_seconds.count() * 1000.0;
-	const auto result = value_t::make_int(int(ms));
-	return value_to_bc(result);
-}
-
-QUARK_UNIT_TEST("sizeof(int)", "", "", ""){
-	QUARK_TRACE(std::to_string(sizeof(int)));
-	QUARK_TRACE(std::to_string(sizeof(int64_t)));
-}
-
-QUARK_UNIT_TEST("get_time_of_day_ms()", "", "", ""){
-	const auto a = std::chrono::high_resolution_clock::now();
-	std::this_thread::sleep_for(std::chrono::milliseconds(7));
-	const auto b = std::chrono::high_resolution_clock::now();
-
-	std::chrono::duration<double> elapsed_seconds = b - a;
-	const int ms = static_cast<int>((static_cast<double>(elapsed_seconds.count()) * 1000.0));
-
-	QUARK_UT_VERIFY(ms >= 7)
-}
-
-
-
+/////////////////////////////////////////		PURE BITWISE
 
 
 
@@ -1175,6 +1082,93 @@ bc_value_t host__bw_shift_right_arithmetic(interpreter_t& vm, const bc_value_t a
 
 
 
+
+
+
+
+//######################################################################################################################
+//	CORE LIBRARY
+//######################################################################################################################
+
+
+
+
+
+
+
+
+/////////////////////////////////////////		PURE -- SHA1
+
+
+
+bc_value_t host__calc_string_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type.is_string());
+
+	const auto& s = args[0].get_string_value();
+	const auto ascii40 = filelib_calc_string_sha1(s);
+
+	const auto result = value_t::make_struct_value(
+		make__sha1_t__type(),
+		{
+			value_t::make_string(ascii40)
+		}
+	);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(result);
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	const auto v = value_to_bc(result);
+	return v;
+}
+
+
+
+bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type == make__binary_t__type());
+
+	const auto& sha1_struct = args[0].get_struct_value();
+	QUARK_ASSERT(sha1_struct.size() == make__binary_t__type().get_struct()._members.size());
+	QUARK_ASSERT(sha1_struct[0]._type.is_string());
+
+	const auto& sha1_string = sha1_struct[0].get_string_value();
+	const auto ascii40 = filelib_calc_string_sha1(sha1_string);
+
+	const auto result = value_t::make_struct_value(
+		make__sha1_t__type(),
+		{
+			value_t::make_string(ascii40)
+		}
+	);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(result);
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	const auto v = value_to_bc(result);
+	return v;
+}
+
+
+
+bc_value_t host__get_time_of_day(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 0);
+
+	const auto result = filelib__get_time_of_day();
+	const auto result2 = bc_value_t::make_int(result);
+	return result2;
+}
+
+
+
+
 /////////////////////////////////////////		IMPURE -- FILE SYSTEM
 
 
@@ -1186,25 +1180,9 @@ bc_value_t host__read_text_file(interpreter_t& vm, const bc_value_t args[], int 
 	QUARK_ASSERT(args[0]._type.is_string());
 
 	const string source_path = args[0].get_string_value();
-	std::string file_contents = read_text_file(source_path);
+	std::string file_contents = filelib_read_text_file(source_path);
 	const auto v = bc_value_t::make_string(file_contents);
 	return v;
-}
-
-
-void write_text_file(const std::string& abs_path, const std::string& data){
-	const auto up = UpDir2(abs_path);
-
-	MakeDirectoriesDeep(up.first);
-
-	std::ofstream outputFile;
-	outputFile.open(abs_path);
-	if (outputFile.fail()) {
-		quark::throw_exception();
-	}
-
-	outputFile << data;
-	outputFile.close();
 }
 
 bc_value_t host__write_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
@@ -1216,10 +1194,12 @@ bc_value_t host__write_text_file(interpreter_t& vm, const bc_value_t args[], int
 	const string path = args[0].get_string_value();
 	const string file_contents = args[1].get_string_value();
 
-	write_text_file(path, file_contents);
+	filelib_write_text_file(path, file_contents);
 
 	return bc_value_t();
 }
+
+
 
 
 
@@ -1469,6 +1449,13 @@ bc_value_t host__rename_fsentry(interpreter_t& vm, const bc_value_t args[], int 
 
 
 
+
+
+/////////////////////////////////////////		REGISTRY
+
+
+
+
 static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls_internal(){
 	std::vector<std::pair<corecall_signature_t, BC_HOST_FUNCTION_PTR>> log;
 
@@ -1528,11 +1515,6 @@ static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls_internal()
 	}
 	return result;
 }
-
-
-
-
-
 
 static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_filelib_internal(){
 	std::vector<std::pair<libfunc_signature_t, BC_HOST_FUNCTION_PTR>> log;

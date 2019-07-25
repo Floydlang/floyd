@@ -2073,11 +2073,6 @@ WIDE_RETURN_T floyd_funcdef__push_back(floyd_runtime_t* frp, runtime_value_t arg
 	}
 }
 
-void floyd_host_function_1022(floyd_runtime_t* frp, runtime_value_t arg){
-	hook(__FUNCTION__, frp, arg);
-}
-
-
 
 
 std::string floyd_funcdef__replace__string(llvm_execution_engine_t& frp, const std::string& s, std::size_t start, std::size_t end, const std::string& replace){
@@ -2418,6 +2413,21 @@ JSON_T* floyd_funcdef__to_json(floyd_runtime_t* frp, runtime_value_t arg0_value,
 
 
 
+STRUCT_T* floyd_funcdef__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t s0){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto& s = from_runtime_string(r, s0);
+	const auto ascii40 = filelib_calc_string_sha1(s);
+
+	const auto a = value_t::make_struct_value(
+		typeid_t::make_struct2({ member_t{ typeid_t::make_string(), "ascii40" } }),
+		{ value_t::make_string(ascii40) }
+	);
+
+	auto result = to_runtime_value(r, a);
+	return result.struct_ptr;
+}
+
 STRUCT_T* floyd_funcdef__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* binary_ptr){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(binary_ptr != nullptr);
@@ -2436,20 +2446,35 @@ STRUCT_T* floyd_funcdef__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* binary
 	return result.struct_ptr;
 }
 
-STRUCT_T* floyd_funcdef__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t s0){
+
+
+int64_t floyd_funcdef__get_time_of_day(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto& s = from_runtime_string(r, s0);
-	const auto ascii40 = filelib_calc_string_sha1(s);
-
-	const auto a = value_t::make_struct_value(
-		typeid_t::make_struct2({ member_t{ typeid_t::make_string(), "ascii40" } }),
-		{ value_t::make_string(ascii40) }
-	);
-
-	auto result = to_runtime_value(r, a);
-	return result.struct_ptr;
+	return filelib__get_time_of_day();
 }
+
+
+
+runtime_value_t floyd_funcdef__read_text_file(floyd_runtime_t* frp, runtime_value_t arg){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto path = from_runtime_string(r, arg);
+	const auto file_contents = 	filelib_read_text_file(path);
+	return to_runtime_string(r, file_contents);
+}
+
+void floyd_funcdef__write_text_file(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t data0){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto path = from_runtime_string(r, path0);
+	const auto file_contents = from_runtime_string(r, data0);
+	filelib_write_text_file(path, file_contents);
+}
+
+
+
+
 
 void floyd_funcdef__create_directory_branch(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
@@ -2489,30 +2514,6 @@ uint8_t floyd_funcdef__does_fsentry_exist(floyd_runtime_t* frp, runtime_value_t 
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 	return exists ? 0x01 : 0x00;
-}
-
-
-	static void write_text_file(const std::string& abs_path, const std::string& data){
-		const auto up = UpDir2(abs_path);
-
-		MakeDirectoriesDeep(up.first);
-
-		std::ofstream outputFile;
-		outputFile.open(abs_path);
-		if (outputFile.fail()) {
-			quark::throw_exception();
-		}
-
-		outputFile << data;
-		outputFile.close();
-	}
-
-void floyd_funcdef__write_text_file(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t data0){
-	auto& r = get_floyd_runtime(frp);
-
-	const auto path = from_runtime_string(r, path0);
-	const auto file_contents = from_runtime_string(r, data0);
-	write_text_file(path, file_contents);
 }
 
 runtime_value_t floyd_funcdef__get_fs_environment(floyd_runtime_t* frp){
@@ -2598,15 +2599,6 @@ STRUCT_T* floyd_funcdef__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t 
 	return v.struct_ptr;
 }
 
-int64_t floyd_funcdef__get_time_of_day(floyd_runtime_t* frp){
-	auto& r = get_floyd_runtime(frp);
-
-	std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> elapsed_seconds = t - r._start_time;
-	const auto ms = elapsed_seconds.count() * 1000.0;
-	return static_cast<int64_t>(ms);
-}
-
 void floyd_funcdef__rename_fsentry(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t name0){
 	auto& r = get_floyd_runtime(frp);
 
@@ -2626,6 +2618,7 @@ void floyd_funcdef__rename_fsentry(floyd_runtime_t* frp, runtime_value_t path0, 
 
 
 
+/////////////////////////////////////////		REGISTRY
 
 
 
@@ -2682,11 +2675,15 @@ std::map<std::string, void*> get_c_function_ptrs(){
 
 		////////////////////////////////		FILE LIB
 
-		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&floyd_funcdef__write_text_file) },
-		{ "floyd_funcdef__read_text_file", reinterpret_cast<void *>(&floyd_host_function_1022) },
-		{ "floyd_funcdef__rename_fsentry", reinterpret_cast<void *>(&floyd_funcdef__rename_fsentry) },
-		{ "floyd_funcdef__calc_binary_sha1", reinterpret_cast<void *>(&floyd_funcdef__calc_binary_sha1) },
 		{ "floyd_funcdef__calc_string_sha1", reinterpret_cast<void *>(&floyd_funcdef__calc_string_sha1) },
+		{ "floyd_funcdef__calc_binary_sha1", reinterpret_cast<void *>(&floyd_funcdef__calc_binary_sha1) },
+
+		{ "floyd_funcdef__get_time_of_day", reinterpret_cast<void *>(&floyd_funcdef__get_time_of_day) },
+
+		{ "floyd_funcdef__read_text_file", reinterpret_cast<void *>(&floyd_funcdef__read_text_file) },
+		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&floyd_funcdef__write_text_file) },
+
+		{ "floyd_funcdef__rename_fsentry", reinterpret_cast<void *>(&floyd_funcdef__rename_fsentry) },
 		{ "floyd_funcdef__create_directory_branch", reinterpret_cast<void *>(&floyd_funcdef__create_directory_branch) },
 		{ "floyd_funcdef__delete_fsentry_deep", reinterpret_cast<void *>(&floyd_funcdef__delete_fsentry_deep) },
 		{ "floyd_funcdef__does_fsentry_exist", reinterpret_cast<void *>(&floyd_funcdef__does_fsentry_exist) },
@@ -2695,7 +2692,6 @@ std::map<std::string, void*> get_c_function_ptrs(){
 		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&floyd_funcdef__get_fsentries_deep) },
 		{ "floyd_funcdef__get_fsentries_shallow", reinterpret_cast<void *>(&floyd_funcdef__get_fsentries_shallow) },
 		{ "floyd_funcdef__get_fsentry_info", reinterpret_cast<void *>(&floyd_funcdef__get_fsentry_info) },
-		{ "floyd_funcdef__get_time_of_day", reinterpret_cast<void *>(&floyd_funcdef__get_time_of_day) }
 	};
 	return host_functions_map;
 }

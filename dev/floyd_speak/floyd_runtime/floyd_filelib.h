@@ -83,6 +83,11 @@ libfunc_signature_t make_calc_binary_sha1_signature();
 
 
 std::string filelib_calc_string_sha1(const std::string& s);
+std::string filelib_read_text_file(const std::string& abs_path);
+
+void filelib_write_text_file(const std::string& abs_path, const std::string& file_contents);
+
+int64_t filelib__get_time_of_day();
 
 
 }	//	floyd

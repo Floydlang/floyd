@@ -11,7 +11,13 @@
 
 #include "ast_typeid.h"
 #include "floyd_runtime.h"
+
 #include "sha1_class.h"
+#include "file_handling.h"
+#include <iostream>
+#include <fstream>
+#include <thread>
+#include <chrono>
 
 namespace floyd {
 
@@ -453,6 +459,59 @@ std::string filelib_calc_string_sha1(const std::string& s){
 
 
 
+std::string filelib_read_text_file(const std::string& abs_path){
+	return read_text_file(abs_path);
+}
+
+void filelib_write_text_file(const std::string& abs_path, const std::string& file_contents){
+	const auto up = UpDir2(abs_path);
+
+	MakeDirectoriesDeep(up.first);
+
+	std::ofstream outputFile;
+	outputFile.open(abs_path);
+	if (outputFile.fail()) {
+		quark::throw_exception();
+	}
+
+	outputFile << file_contents;
+	outputFile.close();
+}
+
+
+
+/*
+	const auto a = std::chrono::high_resolution_clock::now();
+	std::this_thread::sleep_for(std::chrono::milliseconds(7));
+	const auto b = std::chrono::high_resolution_clock::now();
+
+	std::chrono::duration<double> elapsed_seconds = b - a;
+	const int ms = static_cast<int>((static_cast<double>(elapsed_seconds.count()) * 1000.0));
+*/
+int64_t filelib__get_time_of_day(){
+	std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
+//	std::chrono::duration<double> elapsed_seconds = t - 0;
+//	const auto ms = t * 1000.0;
+	const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+	const auto result = int64_t(ms);
+	return result;
+}
+
+QUARK_UNIT_TEST("sizeof(int)", "", "", ""){
+	QUARK_TRACE(std::to_string(sizeof(int)));
+	QUARK_TRACE(std::to_string(sizeof(int64_t)));
+}
+
+QUARK_UNIT_TEST("get_time_of_day_ms()", "", "", ""){
+	const auto a = std::chrono::high_resolution_clock::now();
+	std::this_thread::sleep_for(std::chrono::milliseconds(7));
+	const auto b = std::chrono::high_resolution_clock::now();
+
+	std::chrono::duration<double> elapsed_seconds = b - a;
+	const int ms = static_cast<int>((static_cast<double>(elapsed_seconds.count()) * 1000.0));
+
+	QUARK_UT_VERIFY(ms >= 7)
+}
 
 
 
