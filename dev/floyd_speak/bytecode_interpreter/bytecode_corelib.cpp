@@ -14,7 +14,8 @@
 
 #include "text_parser.h"
 #include "file_handling.h"
-#include "floyd_filelib.h"
+#include "floyd_runtime.h"
+#include "floyd_corelib.h"
 #include "ast_value.h"
 #include "ast_json.h"
 
@@ -23,8 +24,6 @@
 #include <iostream>
 #include <fstream>
 
-#include "floyd_runtime.h"
-#include "floyd_filelib.h"
 
 
 namespace floyd {
@@ -62,7 +61,7 @@ bc_value_t host__calc_string_sha1(interpreter_t& vm, const bc_value_t args[], in
 	QUARK_ASSERT(args[0]._type.is_string());
 
 	const auto& s = args[0].get_string_value();
-	const auto ascii40 = filelib_calc_string_sha1(s);
+	const auto ascii40 = corelib_calc_string_sha1(s);
 
 	const auto result = value_t::make_struct_value(
 		make__sha1_t__type(),
@@ -92,7 +91,7 @@ bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], in
 	QUARK_ASSERT(sha1_struct[0]._type.is_string());
 
 	const auto& sha1_string = sha1_struct[0].get_string_value();
-	const auto ascii40 = filelib_calc_string_sha1(sha1_string);
+	const auto ascii40 = corelib_calc_string_sha1(sha1_string);
 
 	const auto result = value_t::make_struct_value(
 		make__sha1_t__type(),
@@ -116,7 +115,7 @@ bc_value_t host__get_time_of_day(interpreter_t& vm, const bc_value_t args[], int
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
 
-	const auto result = filelib__get_time_of_day();
+	const auto result = corelib__get_time_of_day();
 	const auto result2 = bc_value_t::make_int(result);
 	return result2;
 }
@@ -135,7 +134,7 @@ bc_value_t host__read_text_file(interpreter_t& vm, const bc_value_t args[], int 
 	QUARK_ASSERT(args[0]._type.is_string());
 
 	const string source_path = args[0].get_string_value();
-	std::string file_contents = filelib_read_text_file(source_path);
+	std::string file_contents = corelib_read_text_file(source_path);
 	const auto v = bc_value_t::make_string(file_contents);
 	return v;
 }
@@ -149,7 +148,7 @@ bc_value_t host__write_text_file(interpreter_t& vm, const bc_value_t args[], int
 	const string path = args[0].get_string_value();
 	const string file_contents = args[1].get_string_value();
 
-	filelib_write_text_file(path, file_contents);
+	corelib_write_text_file(path, file_contents);
 
 	return bc_value_t();
 }
@@ -410,7 +409,7 @@ bc_value_t host__rename_fsentry(interpreter_t& vm, const bc_value_t args[], int 
 
 
 
-static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_filelib_internal(){
+static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corelib_internal(){
 	std::vector<std::pair<libfunc_signature_t, BC_HOST_FUNCTION_PTR>> log;
 
 	log.push_back({ make_get_time_of_day_signature(), host__get_time_of_day });
@@ -439,8 +438,8 @@ static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_filelib_internal(){
 	return result;
 }
 
-std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_filelib_calls(){
-	static const auto f = bc_get_filelib_internal();
+std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corelib_calls(){
+	static const auto f = bc_get_corelib_internal();
 	return f;
 }
 

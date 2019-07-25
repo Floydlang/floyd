@@ -2309,9 +2309,9 @@ interpreter_t::interpreter_t(const bc_program_t& program, runtime_handler_i* han
 
 
 	const auto corecalls = bc_get_corecalls();
-	const auto filelib_calls = bc_get_filelib_calls();
+	const auto corelib_calls = bc_get_corelib_calls();
 	auto host_functions = corecalls;
-	host_functions.insert(filelib_calls.begin(), filelib_calls.end());
+	host_functions.insert(corelib_calls.begin(), corelib_calls.end());
 
 
 	_imm = std::make_shared<interpreter_imm_t>(interpreter_imm_t{start_time, program, host_functions });

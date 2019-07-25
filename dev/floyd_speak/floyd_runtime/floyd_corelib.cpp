@@ -1,12 +1,12 @@
 //
-//  floyd_filelib.cpp
+//  floyd_corelib.cpp
 //  floyd_speak
 //
 //  Created by Marcus Zetterquist on 2019-06-16.
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-#include "floyd_filelib.h"
+#include "floyd_corelib.h"
 
 
 #include "ast_typeid.h"
@@ -56,7 +56,7 @@ There is never a file extension. You could add one if you want too.
 
 
 
-extern const std::string k_filelib_builtin_types_and_constants = R"(
+extern const std::string k_corelib_builtin_types_and_constants = R"(
 	let double cmath_pi = 3.14159265358979323846
 
 	struct cpu_address_t {
@@ -365,7 +365,7 @@ typeid_t make__file_pos_t__type(){
 
 
 
-//////////////////////////////////////		FILELIB
+//////////////////////////////////////		CORELIB
 
 
 
@@ -451,7 +451,7 @@ static std::vector<libfunc_signature_t> get_host_function_records(){
 
 
 
-std::string filelib_calc_string_sha1(const std::string& s){
+std::string corelib_calc_string_sha1(const std::string& s){
 	const auto sha1 = CalcSHA1(s);
 	const auto ascii40 = SHA1ToStringPlain(sha1);
 	return ascii40;
@@ -459,11 +459,11 @@ std::string filelib_calc_string_sha1(const std::string& s){
 
 
 
-std::string filelib_read_text_file(const std::string& abs_path){
+std::string corelib_read_text_file(const std::string& abs_path){
 	return read_text_file(abs_path);
 }
 
-void filelib_write_text_file(const std::string& abs_path, const std::string& file_contents){
+void corelib_write_text_file(const std::string& abs_path, const std::string& file_contents){
 	const auto up = UpDir2(abs_path);
 
 	MakeDirectoriesDeep(up.first);
@@ -488,7 +488,7 @@ void filelib_write_text_file(const std::string& abs_path, const std::string& fil
 	std::chrono::duration<double> elapsed_seconds = b - a;
 	const int ms = static_cast<int>((static_cast<double>(elapsed_seconds.count()) * 1000.0));
 */
-int64_t filelib__get_time_of_day(){
+int64_t corelib__get_time_of_day(){
 	std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
 //	std::chrono::duration<double> elapsed_seconds = t - 0;
 //	const auto ms = t * 1000.0;

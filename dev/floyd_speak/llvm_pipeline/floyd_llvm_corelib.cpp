@@ -9,14 +9,11 @@
 #include "floyd_llvm_corelib.h"
 
 #include "floyd_llvm_runtime.h"
-
 #include "floyd_runtime.h"
-#include "floyd_filelib.h"
-
+#include "floyd_corelib.h"
 #include "text_parser.h"
 #include "file_handling.h"
 #include "os_process.h"
-#include "floyd_filelib.h"
 
 #include <iostream>
 #include <fstream>
@@ -44,7 +41,7 @@ struct native_sha1_t {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	FILELIB FUNCTIONS
+//	CORELIB FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -55,7 +52,7 @@ static STRUCT_T* llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runtime_va
 	auto& r = get_floyd_runtime(frp);
 
 	const auto& s = from_runtime_string(r, s0);
-	const auto ascii40 = filelib_calc_string_sha1(s);
+	const auto ascii40 = corelib_calc_string_sha1(s);
 
 	const auto a = value_t::make_struct_value(
 		typeid_t::make_struct2({ member_t{ typeid_t::make_string(), "ascii40" } }),
@@ -73,7 +70,7 @@ static STRUCT_T* llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* 
 	const auto& binary = *reinterpret_cast<const native_binary_t*>(binary_ptr->get_data_ptr());
 
 	const auto& s = from_runtime_string(r, runtime_value_t { .vector_ptr = binary.ascii40 });
-	const auto ascii40 = filelib_calc_string_sha1(s);
+	const auto ascii40 = corelib_calc_string_sha1(s);
 
 	const auto a = value_t::make_struct_value(
 		typeid_t::make_struct2({ member_t{ typeid_t::make_string(), "ascii40" } }),
@@ -89,7 +86,7 @@ static STRUCT_T* llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* 
 static int64_t llvm_corelib__get_time_of_day(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 
-	return filelib__get_time_of_day();
+	return corelib__get_time_of_day();
 }
 
 
@@ -98,7 +95,7 @@ static runtime_value_t llvm_corelib__read_text_file(floyd_runtime_t* frp, runtim
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, arg);
-	const auto file_contents = 	filelib_read_text_file(path);
+	const auto file_contents = 	corelib_read_text_file(path);
 	return to_runtime_string(r, file_contents);
 }
 
@@ -107,7 +104,7 @@ static void llvm_corelib__write_text_file(floyd_runtime_t* frp, runtime_value_t 
 
 	const auto path = from_runtime_string(r, path0);
 	const auto file_contents = from_runtime_string(r, data0);
-	filelib_write_text_file(path, file_contents);
+	corelib_write_text_file(path, file_contents);
 }
 
 

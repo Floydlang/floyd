@@ -17,7 +17,7 @@
 #include "text_parser.h"
 #include "file_handling.h"
 #include "compiler_helpers.h"
-#include "floyd_filelib.h"
+#include "floyd_corelib.h"
 
 #include <string>
 #include <vector>

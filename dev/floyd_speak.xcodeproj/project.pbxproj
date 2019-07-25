@@ -118,7 +118,7 @@
 		2CC0B3E022248E3E00C9D584 /* issue_regression_tests.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC0B3DF22248E3E00C9D584 /* issue_regression_tests.cpp */; };
 		2CC0B3E322248EBD00C9D584 /* test_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC0B3E122248EBD00C9D584 /* test_helpers.cpp */; };
 		2CC34CC121EF8882000F3CB6 /* floyd_repl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CC34CBF21EF8882000F3CB6 /* floyd_repl.cpp */; };
-		2CCA88F522B6B5F100976D8E /* floyd_filelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CCA88F322B6B5F100976D8E /* floyd_filelib.cpp */; };
+		2CCA88F522B6B5F100976D8E /* floyd_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CCA88F322B6B5F100976D8E /* floyd_corelib.cpp */; };
 		2CDFD5C922EA1AD0005B002C /* bytecode_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5C822EA1AD0005B002C /* bytecode_corelib.cpp */; };
 		2CDFD5CA22EA1AD0005B002C /* bytecode_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5C822EA1AD0005B002C /* bytecode_corelib.cpp */; };
 		2CDFD5CD22EA1E1B005B002C /* floyd_llvm_corelib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CDFD5CC22EA1E1B005B002C /* floyd_llvm_corelib.cpp */; };
@@ -576,8 +576,8 @@
 		2CC0B3E222248EBD00C9D584 /* test_helpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = test_helpers.h; sourceTree = "<group>"; };
 		2CC34CBF21EF8882000F3CB6 /* floyd_repl.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_repl.cpp; sourceTree = "<group>"; };
 		2CC34CC021EF8882000F3CB6 /* floyd_repl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_repl.h; sourceTree = "<group>"; };
-		2CCA88F322B6B5F100976D8E /* floyd_filelib.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_filelib.cpp; sourceTree = "<group>"; };
-		2CCA88F422B6B5F100976D8E /* floyd_filelib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_filelib.h; sourceTree = "<group>"; };
+		2CCA88F322B6B5F100976D8E /* floyd_corelib.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_corelib.cpp; sourceTree = "<group>"; };
+		2CCA88F422B6B5F100976D8E /* floyd_corelib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_corelib.h; sourceTree = "<group>"; };
 		2CCC0D222141DCC700788BCB /* immer-master */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "immer-master"; sourceTree = "<group>"; };
 		2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_main.cpp; sourceTree = "<group>"; };
 		2CDFD5C822EA1AD0005B002C /* bytecode_corelib.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_corelib.cpp; sourceTree = "<group>"; };
@@ -626,8 +626,8 @@
 		2C00DEC522198C4000DB322E /* floyd_runtime */ = {
 			isa = PBXGroup;
 			children = (
-				2CCA88F322B6B5F100976D8E /* floyd_filelib.cpp */,
-				2CCA88F422B6B5F100976D8E /* floyd_filelib.h */,
+				2CCA88F322B6B5F100976D8E /* floyd_corelib.cpp */,
+				2CCA88F422B6B5F100976D8E /* floyd_corelib.h */,
 				2C00DEC622198C6300DB322E /* floyd_runtime.cpp */,
 				2C00DEC722198C6300DB322E /* floyd_runtime.h */,
 				2CA1F65C221F71AC008BDBD7 /* variable_length_quantity.cpp */,
@@ -1560,7 +1560,7 @@
 				2CB7AA65220900190011DE4B /* floyd_syntax.cpp in Sources */,
 				2C8C03AD2221D95F0085EBBE /* string_util.cc in Sources */,
 				2C8C039D2221D95F0085EBBE /* timers.cc in Sources */,
-				2CCA88F522B6B5F100976D8E /* floyd_filelib.cpp in Sources */,
+				2CCA88F522B6B5F100976D8E /* floyd_corelib.cpp in Sources */,
 				2C8C03A92221D95F0085EBBE /* complexity.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

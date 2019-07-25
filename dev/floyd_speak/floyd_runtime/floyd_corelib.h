@@ -1,13 +1,13 @@
 //
-//  floyd_filelib.hpp
+//  floyd_corelib.hpp
 //  floyd_speak
 //
 //  Created by Marcus Zetterquist on 2019-06-16.
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-#ifndef floyd_filelib_hpp
-#define floyd_filelib_hpp
+#ifndef floyd_corelib_hpp
+#define floyd_corelib_hpp
 
 
 #include <string>
@@ -24,7 +24,7 @@ struct value_t;
 struct typeid_t;
 struct libfunc_signature_t;
 
-extern const std::string k_filelib_builtin_types_and_constants;
+extern const std::string k_corelib_builtin_types_and_constants;
 
 
 typeid_t make__fsentry_t__type();
@@ -55,10 +55,7 @@ typeid_t make__binary_t__type();
 
 
 
-
-
-
-//////////////////////////////////////		FILELIB
+//////////////////////////////////////		CORELIB
 
 
 
@@ -82,16 +79,16 @@ libfunc_signature_t make_calc_binary_sha1_signature();
 
 
 
-std::string filelib_calc_string_sha1(const std::string& s);
-std::string filelib_read_text_file(const std::string& abs_path);
+std::string corelib_calc_string_sha1(const std::string& s);
+std::string corelib_read_text_file(const std::string& abs_path);
 
-void filelib_write_text_file(const std::string& abs_path, const std::string& file_contents);
+void corelib_write_text_file(const std::string& abs_path, const std::string& file_contents);
 
-int64_t filelib__get_time_of_day();
+int64_t corelib__get_time_of_day();
 
 
 }	//	floyd
 
 
 
-#endif /* floyd_filelib_hpp */
+#endif /* floyd_corelib_hpp */
