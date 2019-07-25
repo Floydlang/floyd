@@ -211,27 +211,6 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 
 
 
-
-void ut_verify_global_result_as_json(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::string& expected_json){
-	const auto expected_json2 = parse_json(seq_t(expected_json)).first;
-	const auto result = test_floyd_program___DEPRECATED(make_compilation_unit(program, "", cu_mode), {});
-	if(result.exception_what.empty() == false){
-		std::cout << result.exception_what << std::endl;
-		throw std::exception();
-	}
-	else{
-		ut_verify(
-			context,
-			value_and_type_to_ast_json(result.result_variable),
-			expected_json2
-		);
-	}
-}
-
-void ut_verify_global_result_as_json_nolib(const quark::call_context_t& context, const std::string& program, const std::string& expected_json){
-	ut_verify_global_result_as_json(context, program, compilation_unit_mode::k_no_core_lib, expected_json);
-}
-
 void ut_verify_global_result_lib(const quark::call_context_t& context, const std::string& program, const value_t& expected_result){
 	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), {}, check_result(expected_result), false);
 }

@@ -70,8 +70,6 @@ void ut_verify_report(const quark::call_context_t& context, const test_report_t&
 void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const std::vector<std::string>& main_args, const test_report_t& expected, bool check_printout);
 
 
-void ut_verify_global_result_as_json(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::string& expected_json);
-void ut_verify_global_result_as_json_nolib(const quark::call_context_t& context, const std::string& program, const std::string& expected_json);
 
 void ut_verify_global_result_lib(const quark::call_context_t& context, const std::string& program, const value_t& expected_result);
 void ut_verify_global_result_nolib(const quark::call_context_t& context, const std::string& program, const value_t& expected_result);

@@ -64,6 +64,34 @@ unsupported syntax
 
 
 
+static value_t make_bool_vec(const std::vector<bool>& elements){
+	std::vector<value_t> elements2;
+	for(const auto e: elements){
+		elements2.push_back(value_t::make_bool(e));
+	}
+
+	return value_t::make_vector_value(typeid_t::make_bool(), elements2);
+}
+
+static value_t make_int_vec(const std::vector<int64_t>& elements){
+	std::vector<value_t> elements2;
+	for(const auto& e: elements){
+		elements2.push_back(value_t::make_int(e));
+	}
+
+	return value_t::make_vector_value(typeid_t::make_int(), elements2);
+}
+
+static value_t make_double_vec(const std::vector<double>& elements){
+	std::vector<value_t> elements2;
+	for(const auto& e: elements){
+		elements2.push_back(value_t::make_double(e));
+	}
+
+	return value_t::make_vector_value(typeid_t::make_double(), elements2);
+}
+
+
 
 
 //######################################################################################################################
@@ -2640,6 +2668,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [] - empty constructor", "cannot be
 
 
 
+//??? Use make_string_vec() helper and ut_verify_global_result_nolib()
+
 //////////////////////////////////////////		VECTOR STRING
 
 //	Vector-string is the first vector-type we test. It does extensive testing of type inferrence etc. Other vector-types don't need to test all that.
@@ -2938,7 +2968,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] replace()", "", "error"){
 
 
 
-
+//??? use make_bool_vec()
 //////////////////////////////////////////		vector-bool
 
 
@@ -3016,14 +3046,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] [] lookup", "", ""){
 	);
 }
 
-static value_t make_int_vec(const std::vector<int64_t>& elements){
-	std::vector<value_t> elements2;
-	for(const auto& e: elements){
-		elements2.push_back(value_t::make_int(e));
-	}
-
-	return value_t::make_vector_value(typeid_t::make_int(), elements2);
-}
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] =", "copy", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let a = [10, 20, 30] let result = a;		)",		make_int_vec({ 10, 20, 30 }) );
@@ -3119,7 +3141,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] replace()", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] constructor-expression", "", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] result = [10.5, 20.5, 30.5]		)",	R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] result = [10.5, 20.5, 30.5]		)",	make_double_vec({ 10.5, 20.5, 30.5 }) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector", "Vector can not hold elements of different types.", "exception"){
 	ut_verify_exception_nolib(QUARK_POS, R"(		let a = [3, bool]		)", "Vector of type [int] cannot hold an element of type typeid. Line: 1 \"let a = [3, bool]\"");
@@ -3143,39 +3165,39 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector", "Error: Lookup the unlookupable",
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] =", "copy", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let a = [10.5, 20.5, 30.5] let result = a		)",	R"(		[[ "vector", "^double" ], [10.5, 20.5, 30.5]]		)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let a = [10.5, 20.5, 30.5] let result = a		)", make_double_vec({ 10.5, 20.5, 30.5 }) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] ==", "same values", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] == [1.5, 2.5]		)",	R"(		[ "^bool", true]		)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] == [1.5, 2.5]		)",	value_t::make_bool(true) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] ==", "different values", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1.5, 3.5] == [1.5, 2.5]		)",	R"(		[ "^bool", false]		)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1.5, 3.5] == [1.5, 2.5]		)",	value_t::make_bool(false) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] <", "", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] < [1.5, 2.5]		)",	R"(		[ "^bool", false]	)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] < [1.5, 2.5]		)",	value_t::make_bool(false) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] <", "different values", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] < [1.5, 3.5]		)",	R"(		[ "^bool", true]		)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = [1.5, 2.5] < [1.5, 3.5]		)",	value_t::make_bool(true) );
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] +", "non-empty vectors", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] result = [1.5, 2.5] + [3.5, 4.5]		)",		R"(		[[ "vector", "^double" ], [1.5, 2.5, 3.5, 4.5]]		)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] result = [1.5, 2.5] + [3.5, 4.5]		)", make_double_vec({ 1.5, 2.5, 3.5, 4.5 }) );
 }
 
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] size()", "empty", "0"){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] a = [] let result = size(a)		)",	R"(		[ "^int", 0]		)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] a = [] let result = size(a)		)",	value_t::make_int(0) );
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] size()", "2", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] a = [1.5, 2.5, 3.5] let result = size(a)		)",	R"(		[ "^int", 3]		)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] a = [1.5, 2.5, 3.5] let result = size(a)		)",	value_t::make_int(3) );
 }
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] push_back()", "", ""){
-	ut_verify_global_result_as_json_nolib(QUARK_POS, R"(		let [double] result = push_back([1.5, 2.5], 3.5)		)",	R"(		[[ "vector", "^double" ], [1.5, 2.5, 3.5]]		)");
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let [double] result = push_back([1.5, 2.5], 3.5)		)", make_double_vec({ 1.5, 2.5, 3.5 }) );
 }
 
 
