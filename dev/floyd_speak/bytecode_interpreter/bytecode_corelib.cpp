@@ -164,11 +164,9 @@ bc_value_t host__get_fsentries_shallow(interpreter_t& vm, const bc_value_t args[
 	QUARK_ASSERT(args[0]._type.is_string());
 
 	const string path = args[0].get_string_value();
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("get_fsentries_shallow() illegal input path.");
-	}
 
-	const auto a = GetDirItems(path);
+	const auto a = corelib_get_fsentries_shallow(path);
+
 	const auto elements = directory_entries_to_values(a);
 	const auto k_fsentry_t__type = make__fsentry_t__type();
 	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
@@ -189,11 +187,9 @@ bc_value_t host__get_fsentries_deep(interpreter_t& vm, const bc_value_t args[], 
 	QUARK_ASSERT(args[0]._type.is_string());
 
 	const string path = args[0].get_string_value();
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("get_fsentries_deep() illegal input path.");
-	}
 
-	const auto a = GetDirItemsDeep(path);
+	const auto a = corelib_get_fsentries_deep(path);
+
 	const auto elements = directory_entries_to_values(a);
 	const auto k_fsentry_t__type = make__fsentry_t__type();
 	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);

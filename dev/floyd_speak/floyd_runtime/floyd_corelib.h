@@ -86,6 +86,8 @@ void corelib_write_text_file(const std::string& abs_path, const std::string& fil
 
 int64_t corelib__get_time_of_day();
 
+std::vector<TDirEntry> corelib_get_fsentries_shallow(const std::string& abs_path);
+std::vector<TDirEntry> corelib_get_fsentries_deep(const std::string& abs_path);
 
 }	//	floyd
 

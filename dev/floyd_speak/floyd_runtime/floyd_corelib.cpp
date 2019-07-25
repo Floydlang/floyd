@@ -519,6 +519,27 @@ QUARK_UNIT_TEST("get_time_of_day_ms()", "", "", ""){
 
 
 
+std::vector<TDirEntry> corelib_get_fsentries_shallow(const std::string& abs_path){
+	if(is_valid_absolute_dir_path(abs_path) == false){
+		quark::throw_runtime_error("get_fsentries_shallow() illegal input path.");
+	}
+
+	const auto a = GetDirItems(abs_path);
+	return a;
+}
+
+
+
+std::vector<TDirEntry> corelib_get_fsentries_deep(const std::string& abs_path){
+	if(is_valid_absolute_dir_path(abs_path) == false){
+		quark::throw_runtime_error("get_fsentries_deep() illegal input path.");
+	}
+
+	const auto a = GetDirItemsDeep(abs_path);
+	return a;
+}
+
+
 
 }	// floyd
 

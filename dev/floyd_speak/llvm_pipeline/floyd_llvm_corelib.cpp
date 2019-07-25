@@ -114,11 +114,9 @@ static VEC_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("get_fsentries_shallow() illegal input path.");
-	}
 
-	const auto a = GetDirItems(path);
+	const auto a = corelib_get_fsentries_shallow(path);
+
 	const auto elements = directory_entries_to_values(a);
 	const auto k_fsentry_t__type = make__fsentry_t__type();
 	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
@@ -136,11 +134,9 @@ static VEC_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_val
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("get_fsentries_deep() illegal input path.");
-	}
 
-	const auto a = GetDirItemsDeep(path);
+	const auto a = corelib_get_fsentries_deep(path);
+
 	const auto elements = directory_entries_to_values(a);
 	const auto k_fsentry_t__type = make__fsentry_t__type();
 	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
