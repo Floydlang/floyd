@@ -11,9 +11,9 @@
 #include "floyd_llvm_codegen.h"
 #include "floyd_runtime.h"
 #include "floyd_filelib.h"
+#include "floyd_llvm_corelib.h"
 
 #include "text_parser.h"
-#include "file_handling.h"
 #include "os_process.h"
 #include "compiler_helpers.h"
 #include "pass3.h"
@@ -42,18 +42,10 @@
 
 #include "llvm/Bitcode/BitstreamWriter.h"
 
-#include <iostream>
-#include <fstream>
 
 #include <thread>
 #include <deque>
-#include <algorithm>
-
 #include <condition_variable>
-
-
-
-#include "floyd_llvm_corelib.h"
 
 
 
@@ -2402,7 +2394,7 @@ JSON_T* floyd_funcdef__to_json(floyd_runtime_t* frp, runtime_value_t arg0_value,
 
 
 
-std::map<std::string, void*> get_c_function_ptrs(){
+std::map<std::string, void*> get_corecall_c_function_ptrs(){
 
 	////////////////////////////////		CORE FUNCTIONS AND HOST FUNCTIONS
 	const std::map<std::string, void*> host_functions_map = {
@@ -2450,27 +2442,6 @@ std::map<std::string, void*> get_c_function_ptrs(){
 		{ "floyd_funcdef__bw_shift_right", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
 		{ "floyd_funcdef__bw_shift_right_arithmetic", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
 */
-
-
-		////////////////////////////////		FILE LIB
-
-		{ "floyd_funcdef__calc_string_sha1", reinterpret_cast<void *>(&floyd_funcdef__calc_string_sha1) },
-		{ "floyd_funcdef__calc_binary_sha1", reinterpret_cast<void *>(&floyd_funcdef__calc_binary_sha1) },
-
-		{ "floyd_funcdef__get_time_of_day", reinterpret_cast<void *>(&floyd_funcdef__get_time_of_day) },
-
-		{ "floyd_funcdef__read_text_file", reinterpret_cast<void *>(&floyd_funcdef__read_text_file) },
-		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&floyd_funcdef__write_text_file) },
-
-		{ "floyd_funcdef__rename_fsentry", reinterpret_cast<void *>(&floyd_funcdef__rename_fsentry) },
-		{ "floyd_funcdef__create_directory_branch", reinterpret_cast<void *>(&floyd_funcdef__create_directory_branch) },
-		{ "floyd_funcdef__delete_fsentry_deep", reinterpret_cast<void *>(&floyd_funcdef__delete_fsentry_deep) },
-		{ "floyd_funcdef__does_fsentry_exist", reinterpret_cast<void *>(&floyd_funcdef__does_fsentry_exist) },
-
-		{ "floyd_funcdef__get_fs_environment", reinterpret_cast<void *>(&floyd_funcdef__get_fs_environment) },
-		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&floyd_funcdef__get_fsentries_deep) },
-		{ "floyd_funcdef__get_fsentries_shallow", reinterpret_cast<void *>(&floyd_funcdef__get_fsentries_shallow) },
-		{ "floyd_funcdef__get_fsentry_info", reinterpret_cast<void *>(&floyd_funcdef__get_fsentry_info) },
 	};
 	return host_functions_map;
 }
@@ -2534,12 +2505,14 @@ static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& cont
 	}
 
 
-	////////	Host functions
-
-	const auto host_functions_map = get_c_function_ptrs();
-
+	////////	Core calls
+	const auto host_functions_map = get_corecall_c_function_ptrs();
 	std::map<std::string, void*> function_map = runtime_functions_map;
 	function_map.insert(host_functions_map.begin(), host_functions_map.end());
+
+	////////	Corelib
+	const auto corelib_function_map = get_corelib_c_function_ptrs();
+	function_map.insert(corelib_function_map.begin(), corelib_function_map.end());
 
 	return function_map;
 }

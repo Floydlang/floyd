@@ -21,37 +21,8 @@
 #include "pass3.h"
 #include "floyd_filelib.h"
 
-#include <llvm/ADT/APInt.h>
-#include <llvm/IR/Verifier.h>
-#include <llvm/ExecutionEngine/ExecutionEngine.h>
-#include <llvm/ExecutionEngine/GenericValue.h>
-#include <llvm/ExecutionEngine/MCJIT.h>
-#include <llvm/IR/Argument.h>
-#include <llvm/IR/BasicBlock.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/DerivedTypes.h>
-#include <llvm/IR/Function.h>
-#include <llvm/IR/InstrTypes.h>
-#include <llvm/IR/Instructions.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Type.h>
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/Support/Casting.h>
-#include <llvm/Support/TargetSelect.h>
-#include <llvm/Support/raw_ostream.h>
-#include <llvm/IR/DataLayout.h>
-
-#include "llvm/Bitcode/BitstreamWriter.h"
-
 #include <iostream>
 #include <fstream>
-
-#include <thread>
-#include <deque>
-#include <algorithm>
-
-#include <condition_variable>
 
 namespace floyd {
 
@@ -83,7 +54,7 @@ struct native_sha1_t {
 
 
 
-STRUCT_T* floyd_funcdef__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t s0){
+static STRUCT_T* llvm_corelib__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t s0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto& s = from_runtime_string(r, s0);
@@ -98,7 +69,7 @@ STRUCT_T* floyd_funcdef__calc_string_sha1(floyd_runtime_t* frp, runtime_value_t 
 	return result.struct_ptr;
 }
 
-STRUCT_T* floyd_funcdef__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* binary_ptr){
+static STRUCT_T* llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* binary_ptr){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(binary_ptr != nullptr);
 
@@ -118,7 +89,7 @@ STRUCT_T* floyd_funcdef__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* binary
 
 
 
-int64_t floyd_funcdef__get_time_of_day(floyd_runtime_t* frp){
+static int64_t llvm_corelib__get_time_of_day(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 
 	return filelib__get_time_of_day();
@@ -126,7 +97,7 @@ int64_t floyd_funcdef__get_time_of_day(floyd_runtime_t* frp){
 
 
 
-runtime_value_t floyd_funcdef__read_text_file(floyd_runtime_t* frp, runtime_value_t arg){
+static runtime_value_t llvm_corelib__read_text_file(floyd_runtime_t* frp, runtime_value_t arg){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, arg);
@@ -134,7 +105,7 @@ runtime_value_t floyd_funcdef__read_text_file(floyd_runtime_t* frp, runtime_valu
 	return to_runtime_string(r, file_contents);
 }
 
-void floyd_funcdef__write_text_file(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t data0){
+static void llvm_corelib__write_text_file(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t data0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
@@ -146,7 +117,7 @@ void floyd_funcdef__write_text_file(floyd_runtime_t* frp, runtime_value_t path0,
 
 
 
-void floyd_funcdef__create_directory_branch(floyd_runtime_t* frp, runtime_value_t path0){
+static void llvm_corelib__create_directory_branch(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
@@ -157,7 +128,7 @@ void floyd_funcdef__create_directory_branch(floyd_runtime_t* frp, runtime_value_
 	MakeDirectoriesDeep(path);
 }
 
-void floyd_funcdef__delete_fsentry_deep(floyd_runtime_t* frp, runtime_value_t path0){
+static void llvm_corelib__delete_fsentry_deep(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
@@ -168,7 +139,7 @@ void floyd_funcdef__delete_fsentry_deep(floyd_runtime_t* frp, runtime_value_t pa
 	DeleteDeep(path);
 }
 
-uint8_t floyd_funcdef__does_fsentry_exist(floyd_runtime_t* frp, runtime_value_t path0){
+static uint8_t llvm_corelib__does_fsentry_exist(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
@@ -186,7 +157,7 @@ uint8_t floyd_funcdef__does_fsentry_exist(floyd_runtime_t* frp, runtime_value_t 
 	return exists ? 0x01 : 0x00;
 }
 
-runtime_value_t floyd_funcdef__get_fs_environment(floyd_runtime_t* frp){
+static runtime_value_t llvm_corelib__get_fs_environment(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto dirs = GetDirectories();
@@ -216,7 +187,7 @@ runtime_value_t floyd_funcdef__get_fs_environment(floyd_runtime_t* frp){
 	return v;
 }
 
-VEC_T* floyd_funcdef__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
+static VEC_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
@@ -239,7 +210,7 @@ VEC_T* floyd_funcdef__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t p
 }
 
 
-VEC_T* floyd_funcdef__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
+static VEC_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
@@ -261,7 +232,7 @@ VEC_T* floyd_funcdef__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_
 	return v.vector_ptr;
 }
 
-STRUCT_T* floyd_funcdef__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
+static STRUCT_T* llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto result = impl__get_fsentry_info(from_runtime_string(r, path0));
@@ -269,7 +240,7 @@ STRUCT_T* floyd_funcdef__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t 
 	return v.struct_ptr;
 }
 
-void floyd_funcdef__rename_fsentry(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t name0){
+static void llvm_corelib__rename_fsentry(floyd_runtime_t* frp, runtime_value_t path0, runtime_value_t name0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
@@ -283,6 +254,35 @@ void floyd_funcdef__rename_fsentry(floyd_runtime_t* frp, runtime_value_t path0, 
 	}
 
 	RenameEntry(path, n);
+}
+
+
+
+
+std::map<std::string, void*> get_corelib_c_function_ptrs(){
+
+	////////////////////////////////		CORE FUNCTIONS AND HOST FUNCTIONS
+	const std::map<std::string, void*> host_functions_map = {
+
+		{ "floyd_funcdef__calc_string_sha1", reinterpret_cast<void *>(&llvm_corelib__calc_string_sha1) },
+		{ "floyd_funcdef__calc_binary_sha1", reinterpret_cast<void *>(&llvm_corelib__calc_binary_sha1) },
+
+		{ "floyd_funcdef__get_time_of_day", reinterpret_cast<void *>(&llvm_corelib__get_time_of_day) },
+
+		{ "floyd_funcdef__read_text_file", reinterpret_cast<void *>(&llvm_corelib__read_text_file) },
+		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&llvm_corelib__write_text_file) },
+
+		{ "floyd_funcdef__rename_fsentry", reinterpret_cast<void *>(&llvm_corelib__rename_fsentry) },
+		{ "floyd_funcdef__create_directory_branch", reinterpret_cast<void *>(&llvm_corelib__create_directory_branch) },
+		{ "floyd_funcdef__delete_fsentry_deep", reinterpret_cast<void *>(&llvm_corelib__delete_fsentry_deep) },
+		{ "floyd_funcdef__does_fsentry_exist", reinterpret_cast<void *>(&llvm_corelib__does_fsentry_exist) },
+
+		{ "floyd_funcdef__get_fs_environment", reinterpret_cast<void *>(&llvm_corelib__get_fs_environment) },
+		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&llvm_corelib__get_fsentries_deep) },
+		{ "floyd_funcdef__get_fsentries_shallow", reinterpret_cast<void *>(&llvm_corelib__get_fsentries_shallow) },
+		{ "floyd_funcdef__get_fsentry_info", reinterpret_cast<void *>(&llvm_corelib__get_fsentry_info) },
+	};
+	return host_functions_map;
 }
 
 
