@@ -43,7 +43,6 @@
 #include <vector>
 #include <iostream>
 
-#include "bytecode_host_functions.h"
 #include "compiler_basics.h"
 #include "compiler_helpers.h"
 #include "floyd_parser.h"

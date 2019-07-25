@@ -6,7 +6,7 @@
 //  Copyright © 2018 Marcus Zetterquist. All rights reserved.
 //
 
-#include "bytecode_host_functions.h"
+#include "bytecode_corecalls.h"
 
 #include "json_support.h"
 #include "ast_typeid_helpers.h"

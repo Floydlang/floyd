@@ -42,7 +42,7 @@
 		2C530C3021EDF23F00F962FB /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C530C2E21EA1DBE00F962FB /* CoreFoundation.framework */; };
 		2C530C3121EE0D0300F962FB /* libncurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CBF330C202143BD0030AE98 /* libncurses.tbd */; };
 		2C5372B9207A9EBA00647AD1 /* bytecode_interpreter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5372B8207A9EBA00647AD1 /* bytecode_interpreter.cpp */; };
-		2C557C382040173E006F6818 /* bytecode_host_functions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C557C362040173E006F6818 /* bytecode_host_functions.cpp */; };
+		2C557C382040173E006F6818 /* bytecode_corecalls.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C557C362040173E006F6818 /* bytecode_corecalls.cpp */; };
 		2C574E4A203107D80035EA62 /* ast_typeid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C574E48203107D80035EA62 /* ast_typeid.cpp */; };
 		2C5E343C21527C6700B02262 /* hardware_caps.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5E343B21527C6700B02262 /* hardware_caps.cpp */; };
 		2C5F8322224644FB009870FC /* floyd_llvm_codegen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5F8320224644FB009870FC /* floyd_llvm_codegen.cpp */; };
@@ -208,8 +208,8 @@
 		2C530C2E21EA1DBE00F962FB /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		2C5372B7207A9EAD00647AD1 /* bytecode_interpreter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bytecode_interpreter.h; sourceTree = "<group>"; };
 		2C5372B8207A9EBA00647AD1 /* bytecode_interpreter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_interpreter.cpp; sourceTree = "<group>"; };
-		2C557C362040173E006F6818 /* bytecode_host_functions.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_host_functions.cpp; sourceTree = "<group>"; };
-		2C557C372040173E006F6818 /* bytecode_host_functions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bytecode_host_functions.h; sourceTree = "<group>"; };
+		2C557C362040173E006F6818 /* bytecode_corecalls.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_corecalls.cpp; sourceTree = "<group>"; };
+		2C557C372040173E006F6818 /* bytecode_corecalls.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bytecode_corecalls.h; sourceTree = "<group>"; };
 		2C574E48203107D80035EA62 /* ast_typeid.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ast_typeid.cpp; sourceTree = "<group>"; };
 		2C574E49203107D80035EA62 /* ast_typeid.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ast_typeid.h; sourceTree = "<group>"; };
 		2C5E343B21527C6700B02262 /* hardware_caps.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = hardware_caps.cpp; sourceTree = "<group>"; };
@@ -768,12 +768,12 @@
 		2C4699AC214EC97A007216BE /* bytecode_interpreter */ = {
 			isa = PBXGroup;
 			children = (
+				2C557C362040173E006F6818 /* bytecode_corecalls.cpp */,
+				2C557C372040173E006F6818 /* bytecode_corecalls.h */,
 				2CDFD5C822EA1AD0005B002C /* bytecode_corelib.cpp */,
 				2CDFD5CB22EA1AE2005B002C /* bytecode_corelib.h */,
 				2C982D3520603FE2002002FF /* bytecode_generator.cpp */,
 				2C982D3720604002002002FF /* bytecode_generator.h */,
-				2C557C362040173E006F6818 /* bytecode_host_functions.cpp */,
-				2C557C372040173E006F6818 /* bytecode_host_functions.h */,
 				2C5372B8207A9EBA00647AD1 /* bytecode_interpreter.cpp */,
 				2C5372B7207A9EAD00647AD1 /* bytecode_interpreter.h */,
 				2C81894B1D47B62400030C96 /* floyd_interpreter.cpp */,
@@ -1528,7 +1528,7 @@
 				2C180490208B947C00F62480 /* ast_basics.cpp in Sources */,
 				2C180477208B939800F62480 /* parse_expression.cpp in Sources */,
 				2C8C03A72221D95F0085EBBE /* benchmark_api_internal.cc in Sources */,
-				2C557C382040173E006F6818 /* bytecode_host_functions.cpp in Sources */,
+				2C557C382040173E006F6818 /* bytecode_corecalls.cpp in Sources */,
 				2C180492208B947C00F62480 /* expression.cpp in Sources */,
 				2C18047D208B939800F62480 /* parse_statement.cpp in Sources */,
 				2C81894D1D47B62400030C96 /* floyd_interpreter.cpp in Sources */,

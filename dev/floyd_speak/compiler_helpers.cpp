@@ -13,8 +13,6 @@
 
 #include "pass2.h"
 #include "pass3.h"
-#include "bytecode_host_functions.h"
-#include "bytecode_generator.h"
 #include "compiler_helpers.h"
 #include "compiler_basics.h"
 #include "floyd_filelib.h"

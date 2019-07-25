@@ -13,7 +13,6 @@
 #include "floyd_filelib.h"
 
 #include "text_parser.h"
-#include "bytecode_host_functions.h"
 #include "file_handling.h"
 #include "os_process.h"
 #include "compiler_helpers.h"

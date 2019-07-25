@@ -16,13 +16,12 @@ const bool k_trace_types = false;
 
 #include "ast_value.h"
 
-#include "bytecode_host_functions.h"
-
 #include "floyd_parser.h"
 #include "ast_json.h"
 #include "pass3.h"
 
 #include "quark.h"
+#include "floyd_runtime.h"
 
 
 #include <llvm/ADT/APInt.h>

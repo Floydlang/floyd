@@ -8,7 +8,7 @@
 
 #include "bytecode_interpreter.h"
 
-#include "bytecode_host_functions.h"
+#include "bytecode_corecalls.h"
 #include "bytecode_corelib.h"
 #include "text_parser.h"
 #include "ast_value.h"
