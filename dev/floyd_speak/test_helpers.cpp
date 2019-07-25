@@ -125,7 +125,7 @@ static test_report_t run_test_program_llvm(const semantic_ast_t& semast, const s
 	}
 }
 
-static test_report_t test_floyd_program(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
+static test_report_t test_floyd_program___DEPRECATED(const compilation_unit_t& cu, const std::vector<std::string>& main_args){
 	try {
 		const auto semast = compile_to_sematic_ast__errors(cu);
 
@@ -151,21 +151,21 @@ static test_report_t test_floyd_program(const compilation_unit_t& cu, const std:
 QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 	ut_verify_report(
 		QUARK_POS,
-		test_floyd_program(make_compilation_unit("print(\"Hello, world!\")", "", compilation_unit_mode::k_no_core_lib), {}),
+		test_floyd_program___DEPRECATED(make_compilation_unit("print(\"Hello, world!\")", "", compilation_unit_mode::k_no_core_lib), {}),
 		test_report_t{ value_t::make_undefined(), run_output_t(-1, {}), { "Hello, world!" }, ""}
 	);
 }
 QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 	ut_verify_report(
 		QUARK_POS,
-		test_floyd_program(make_compilation_unit("let result = 112", "", compilation_unit_mode::k_no_core_lib), {}),
+		test_floyd_program___DEPRECATED(make_compilation_unit("let result = 112", "", compilation_unit_mode::k_no_core_lib), {}),
 		test_report_t{ value_t::make_int(112), run_output_t(-1, {}), {}, ""}
 	);
 }
 QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 	ut_verify_report(
 		QUARK_POS,
-		test_floyd_program(
+		test_floyd_program___DEPRECATED(
 			make_compilation_unit("func int main([string] args){ return 1003 }", "", compilation_unit_mode::k_no_core_lib),
 			{ "a", "b" }
 		),
@@ -175,31 +175,26 @@ QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 	ut_verify_report(
 		QUARK_POS,
-		test_floyd_program(make_compilation_unit("print(1) print(234)", "", compilation_unit_mode::k_no_core_lib), {}),
+		test_floyd_program___DEPRECATED(make_compilation_unit("print(1) print(234)", "", compilation_unit_mode::k_no_core_lib), {}),
 		test_report_t{ value_t::make_undefined(), run_output_t(-1, {}), {"1", "234" }, ""}
 	);
 }
 
+void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const std::vector<std::string>& main_args, const test_report_t& expected, bool check_printout){
+	semantic_ast_t semast( {} );
 
-static semantic_ast_t compile(const quark::call_context_t& context, const compilation_unit_t& cu, const test_report_t& expected){
 	try {
-		const auto semast = compile_to_sematic_ast__errors(cu);
-		return semast;
+		const auto temp_semast = compile_to_sematic_ast__errors(cu);
+		semast = temp_semast;
 	}
 	catch(const std::runtime_error& e){
-		const auto result = test_report_t{ {}, {}, {}, e.what() };
-		ut_verify_report(context, result, expected);
-		throw std::exception();
+		ut_verify(context, std::string(e.what()), expected.exception_what);
+		return;
 	}
 	catch(...){
 		throw std::exception();
 	}
-}
 
-
-//??? Compile to pass3 only ONCE.
-void test_floyd(const quark::call_context_t& context, const compilation_unit_t& cu, const std::vector<std::string>& main_args, const test_report_t& expected, bool check_printout){
-	const auto semast = compile(context, cu, expected);
 	const auto bc_report = run_test_program_bc(semast, main_args);
 	const auto llvm_report = run_test_program_llvm(semast, main_args);
 
@@ -219,7 +214,7 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 
 void ut_verify_global_result_as_json(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::string& expected_json){
 	const auto expected_json2 = parse_json(seq_t(expected_json)).first;
-	const auto result = test_floyd_program(make_compilation_unit(program, "", cu_mode), {});
+	const auto result = test_floyd_program___DEPRECATED(make_compilation_unit(program, "", cu_mode), {});
 	if(result.exception_what.empty() == false){
 		std::cout << result.exception_what << std::endl;
 		throw std::exception();
@@ -278,14 +273,8 @@ void ut_verify_mainfunc_return_nolib(const quark::call_context_t& context, const
 
 
 
-void ut_verify_exception(const quark::call_context_t& context, const std::string& program, compilation_unit_mode cu_mode, const std::string& expected_what){
-	const auto cu = make_compilation_unit(program, "", cu_mode);
-	const auto result = test_floyd_program(cu, {});
-	ut_verify(context, result.exception_what, expected_what);
-}
-
 void ut_verify_exception_nolib(const quark::call_context_t& context, const std::string& program, const std::string& expected_what){
-	ut_verify_exception(context, program, compilation_unit_mode::k_no_core_lib, expected_what);
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), {}, check_exception(expected_what), false);
 }
 
 
