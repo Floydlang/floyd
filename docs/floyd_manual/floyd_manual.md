@@ -221,7 +221,7 @@ It also promotes composability since all Floyd code can rely on these types and 
 |__struct__		| Like C struct or classes or tuples. A value object.
 |__vector__		| A continuous array of elements addressed via indexes.
 |__dictionary__	| Lookup values using string keys.
-|__json_value__	| A value that holds a JSON-compatible value, can be a big JSON tree.
+|__json__	| A value that holds a JSON-compatible value, can be a big JSON tree.
 |TODO: __protocol__	| A value that hold a number of callable functions. Also called interface or abstract base class.
 |TODO: __sum-type__		| Tagged union.
 |TODO: __float__		| 32-bit floating point number
@@ -373,7 +373,7 @@ func my_gui_state_t my_gui__init(){
 	return my_gui_state_t(0	);
 }
 
-func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
+func my_gui_state_t my_gui(my_gui_state_t state, json message){
 	if(message == "inc"){
 		return update(state, _count, state._count + 1)
 	}
@@ -389,7 +389,7 @@ func my_gui_state_t my_gui(my_gui_state_t state, json_value message){
 |Part		| Details
 |:---	|:---	
 |**my\_gui\_state_t**		| this is a struct that holds the mutable memory of this process and any component instances needed by the container.
-|**my\_gui()**				| this function is specified in the software-system/"containers"/"my_iphone_app"/"clocks". The message is always a json_value. You can decide how to encode the message into that.
+|**my\_gui()**				| this function is specified in the software-system/"containers"/"my_iphone_app"/"clocks". The message is always a json. You can decide how to encode the message into that.
 |**my\_gui__init()**		| this is the init function -- it has the same name with "__init" at the end. It has no arguments and returns the initial state of the process.
 
 
@@ -485,7 +485,7 @@ Sometimes we introduce concurrency to make more parallelism possible: multithrea
 |3	| Perform non-blocking impure background calculation (auto save doc) | Copy document, create worker thread | Use process, use data directly
 |4	| Run process concurrently, like analyze game world to prefetch assets | Manually synchronize all shared data, use separate thread | Use process -- data is immutable
 |5	| Handle requests from OS quickly, like call to audio buffer switch process() | Use callback function | Use process and set its clock to sync to clock of buffer switch
-|6	| Improve performance using concurrency + parallelism / fan-in-fan-out / processing pipeline | Split work into small tasks that are independent, queue them to a thread team, resolve dependencies somehow, use end-fence with competition notification | call map() or supermap() from a process.
+|6	| Improve performance using concurrency + parallelism / fan-in-fan-out / processing pipeline | Split work into small tasks that are independent, queue them to a thread team, resolve dependencies somehow, use end-fence with competition notification | call map() or map_dag() from a process.
 |7	| Spread heavy work across time (do some processing each game frame) | Use coroutine or thread that sleeps after doing some work. Wake it next frame. | Process does work. It calls select() inside a loop to wait on next trigger to continue work.
 |8	| Do work regularly, independent of other threads (like a timer interrupt) | Call timer with callback / make thread that sleeps on event | Use process that calls post_at_time(now() + 100) to itself
 |9	| Small server | Write loop that listens to socket | Use process that waits for messages
@@ -581,13 +581,13 @@ Tweakers are inserted onto the wires and clocks and functions and expressions of
 
 In Floyd you accelerate the performance of your code by making it expose where there are dependencies between computations and where there are not. Then you can orchestrate how to best execute your container from the top level -- using tweak probes and profiling probes, affecting how the hardware is mapped to your logic.
 
-Easy ways to expose parallelism is by writing pure functions (their results can be cached or precomputed) and by using functions like map(), fold(), filter() and supermap(). These function work on individual elements of a collection and each computation is independent of the others. This lets the runtime process the different elements on parallel hardware.
+Easy ways to expose parallelism is by writing pure functions (their results can be cached or precomputed) and by using functions like map(), fold(), filter() and map_dag(). These function work on individual elements of a collection and each computation is independent of the others. This lets the runtime process the different elements on parallel hardware.
 
-The functions map() and supermap() replaces FAN-IN-FAN-OUT-mechanisms.
+The functions map() and map_dag() replaces FAN-IN-FAN-OUT-mechanisms.
 
 You can inspect in code and visually how the elements are distributed as tasks.
 
-supermap() works like map(), but each element also has dependencies to other elements in the collection.
+map_dag() works like map(), but each element also has dependencies to other elements in the collection.
 
 Accelerating computations (parallelism) is done using tweaks — a separate mechanism. It supports moving computations in time (lazy, eager, caching) and running work in parallel.
 
@@ -604,7 +604,7 @@ let image2 = map(image1, my_pixel_shader) and the pixels can be processed in par
 ???
 **Task** - this is a work item that takes usually approximately 0.5 - 10 ms to execute and has an end. The runtime generates these when it wants to run map() elements in parallel. All tasks in the entire container are scheduled together.
 
-Notice: map() and supermap() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
+Notice: map() and map_dag() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
 
 
 
@@ -622,10 +622,10 @@ You can directly embed JSON inside Floyd source code file. This is extremely sim
 Example JSON:
 
 ```
-let json_value a = 13
-let json_value b = "Hello!"
-let json_value c = { "hello": 1, "bye": 3 }
-let json_value d = { "pigcount": 3, "pigcolor": "pink" }
+let json a = 13
+let json b = "Hello!"
+let json c = { "hello": 1, "bye": 3 }
+let json d = { "pigcount": 3, "pigcolor": "pink" }
 
 assert(a == 13)
 assert(b == "Hello!")
@@ -633,7 +633,7 @@ assert(c["hello"] == 1)
 assert(c["bye"] == 3)
 assert(size(c) == 2)
 
-let test_json2 = json_value(
+let test_json2 = json(
 	{
 		"one": 1,
 		"two": 2,
@@ -713,21 +713,21 @@ Different destinations have different limitations and escape mechanisms and will
 Converting a floyd json\_value to a JSON string and back. The JSON-string can be directly read or written to a text file, sent via a protocol and so on.
 
 ```
-string jsonvalue_to_script(json_value v)
-json_value script_to_jsonvalue(string s)
+string generate_json_script(json v)
+json parse_json_script(string s)
 ```
 
-Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json\_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json\_value, using jsonvalue_to_value().
+Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json\_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json\_value, using from_json().
 
 ```
-json_value value_to_jsonvalue(any v)
-any jsonvalue_to_value(json_value v)
+json to_json(any v)
+any from_json(json v)
 ```
 
-- __jsonvalue\_to\_script()__
-- __script\_to\_jsonvalue()__
-- __value\_to\_jsonvalue()__
-- __jsonvalue\_to\_value()__
+- __generate\_json\_script()__
+- __parse\_json\_script()__
+- __to\_json()__
+- __from\_json()__
 
 
 
@@ -798,14 +798,40 @@ Comparisons are deep: for a composite value they consider all members values and
 This is a value that is fully defined directly in the code. Like the number 3.
 
 
-|OPERATOR		| EXPLANATION
+|CODE		| EXPLANATION
 |:---			|:---	
 | 0				| Integer literal
 | 0.3			| Double literal
 | "Hello, world!	| String literal
 | [ "one", "two", "three" ] | Vector-of-strings literal
 | { "a": 100, "b": 200 } | Dictionary of string-integer literal.
-| ...			| Any literal that is compatible with json_value_t can be a JSON literal
+| ...			| Any literal that is compatible with json_t can be a JSON literal
+| 'A'			| Character literal. ASCII. This is equivalent to the number 65 (A as ASCII). Can be one character or an escape character (see string literals).
+
+Floyd supports decimal literals, as above, but also hexadecimal and binary literals.
+
+
+
+
+
+|CODE		| EXPLANATION
+|:---											|:---	
+| 0x0											| Hexadecimal number 0, decimal 0
+| 0xff											| Hexadecimal number FF, decimal 255
+| 0xabcd										| Hexadecimal number ABCD, decimal 43981
+| 0xffff1111										| Hexadecimal number FFFF1111, decimal 4294906129
+| 0b00000000										| Binary number 00000000, decimal 0
+| 0b00000001										| Binary number 00000001, decimal 1
+| 0b10000000										| Binary number 10000000, decimal 128
+| 0b11111111										| Binary number 11111111, decimal 255
+| 0b11111111000000000000000011111111				| Binary number 11111111000000000000000011111111, decimal 255
+
+You can use the ' character as a dividier between groups of 8 number for both hex and binary literals. But not for decima literals. This makes longer sequences of numbers easier to read.
+
+|CODE		| EXPLANATION
+|:---											|:---	
+| 0xffff1111'00000000'00000fff'fff00000				| Hexadecimal number with separators
+| 0b11111111000000000000000011111111				| Binary number with separators
 
 
 ### VECTOR-CONSTRUCTOR
@@ -883,6 +909,22 @@ func bool is_polite(string x){
 assert(is_polite("hiya!") == false)
 assert(is_polite("hello") == true)
 ```
+
+### BITWISE OPERATORS
+
+Floyd uses explicit names for all bitwise operators, not special language operators like C does. C uses "&" for AND and "<<" for shift left. This is to make evaluation order clear and to avoid accidental mixup between logical operators and bitwise operators.
+
+|OPERATOR		| EXPLANATION
+|:---	|:---
+| int bw_not(int v)		| inverts all bits in the integer v.
+| int bw_and(int a, int b)		| ands each bit in a with the corresponding bit in b
+| int bw_or(int a, int b)		| ors each bit in a with the corresponding bit in b
+| int bw_xor(int a, int b)		| xors each bit in a with the corresponding bit in b
+| int bw_shift_left(int v, int count)		| shifts the bits in v left, the number of bits specified by count. New bits are set to 0.
+| int bw_shift_right(int v, int count)		| shifts the bits in v right, the number of bits specified by count. New bits are set to 0.
+| int bw_shift_right_arithmetic(int v, int count)		| shifts the bits in v right, the number of bits specified by count. New bits are copied from bit 63, which sign-extends the number		| it doesn't lose its negativeness.
+
+When doing bitwise manipulation it is often convenient to use binary literals or hexadecimal literals, rather than normal decimal literals.
 
 
 ### EXAMPLE EXPRESSIONS
@@ -1237,7 +1279,7 @@ The init function is called x__init() where x is a placeholder. It takes no argu
 
 The message handler is named like your process, takes two arguments: the current state of your memory, of type T and a message to process. It's am impure function. It returns the next state of it's memory. The memory type must be the same between the init and message handler functions. It's usually a struct that represents the top level of your process' entire state.
 
-The message is represented as a json_value for now. This is a workaround until there is a proper sumtype feature in Floyd.
+The message is represented as a json for now. This is a workaround until there is a proper sumtype feature in Floyd.
 
 
 ```
@@ -1250,7 +1292,7 @@ func my_gui_state_t my_gui__init() impure {
 	return my_gui_state_t(1000)
 }
 
-func my_gui_state_t my_gui(my_gui_state_t state, json_value message) impure{
+func my_gui_state_t my_gui(my_gui_state_t state, json message) impure{
 }
 ```
 
@@ -1324,20 +1366,21 @@ String literals in Floyd code cannot contain any character, because that would m
 
 You can use these escape characters in string literals by entering \n or \' or \" etc.
 
-|ESCAPE SEQUENCE	| RESULT CHARACTER, AS HEX		| ASCII MEANING
-|:---				|:---						|:---
-| \0		| 0x00	| ZERO
-| \a		| 0x07	| BEL, bell, alarm, \a
-| \b		| 0x08	| BS, backspace, \b
-| \f		| 0x0c	| FF, NP, form feed, \f
-| \n		| 0x0a	| Newline (Line Feed)
-| \r		| 0x0d	| Carriage Return
-| \t		| 0x09	| Horizontal Tab
-| \v		| 0x0b	| Vertical Tab
-| \\\\	| 0x5f	| Backslash
-| \'		| 0x27	| Single quotation mark
-| \\"	| 0x22	| Double quotation mark
-
+|ESCAPE SEQUENCE	| RESULT CHAR, AS HEX		| ASCII MEANING | JSON
+|:---				|:---						|:---			|:---
+| \0				| 0x00	| ZERO	| NO
+| \a				| 0x07	| BEL, bell, alarm, \a	| NO
+| \b				| 0x08	| BS, backspace, \b	| YES
+| \f				| 0x0c	| FF, NP, form feed, \f	| NO
+| \n				| 0x0a	| Newline (Line Feed)	| YES
+| \r				| 0x0d	| Carriage Return		| YES
+| \t				| 0x09	| Horizontal Tab		| YES
+| \v				| 0x0b	| Vertical Tab	| NO
+| \\\\				| 0x5c	| Backslash		| YES
+| \\'				| 0x27	| Single quotation mark		| NO
+| \\"				| 0x22	| Double quotation mark		| YES
+| \\/				| 0x2f	| Forward slash		| YES
+| \uABCD			| 0xabcd	| 4 hex characters => 16 bit character	| YES
 ##### EXAMPLES
 
 |CODE		| OUTPUT | NOTE
@@ -1567,7 +1610,7 @@ A typeid is a proper Floyd value: you can copy it, compare it, convert it to str
 
 
 
-## JSON_VALUE DATA TYPE
+## JSON DATA TYPE
 
 Why JSON? JSON is very central to Floyd. Floyd is based on values (simple ones or entire data models as one value) JSON is a simple and standard way to store composite values in a tree shape in a simple and standardized way. It also makes it easy to serializing any Floyd value to text and back. JSON is built directly into the language as the default serialized format for Floyd values.
 
@@ -1599,7 +1642,7 @@ Notice that json\_value can contain an entire huge JSON file, with a big tree of
 
 Returns the actual type of this value stores inside the json\_value. It can be one of the types supported by JSON.
 
-	typeid get_json_type(json_value v)
+	typeid get_json_type(json v)
 
 This needs to be queried at runtime since JSON is dynamically typed.
 
@@ -1609,10 +1652,10 @@ Many of the core functions work with json\_value, but it often depends on the ac
 
 - __get\_json\_type()__
 - __size()__
-- __jsonvalue\_to\_script()__
-- __script\_to_jsonvalue()__
-- __value\_to\_jsonvalue()__
-- __jsonvalue\_to\_value()__
+- __generate\_json\_script()__
+- __parse\_json\_script()__
+- __to\_json()__
+- __from\_json()__
 
 
 
@@ -1654,13 +1697,13 @@ This outputs one line of text to the default output of the application. It can p
 | print({string: double})						| {string:double}
 | print([7, 8, 9])								| [7, 8, 9]
 | print({"a": 1})								| {"a": 1}
-| print(json_value("b"))						| b
-| print(json_value(5.3))						| 5.3
-| print(json_value({"x": 0, "y": -1}))			| {"a": 0, "b": -1}
-| print(json_value(["q", "u", "v"]))			| ["q", "u", "v"]
-| print(json_value(true))						| true
-| print(json_value(false))						| false
-| print(json_value(null))						| null
+| print(json("b"))						| b
+| print(json(5.3))						| 5.3
+| print(json({"x": 0, "y": -1}))			| {"a": 0, "b": -1}
+| print(json(["q", "u", "v"]))			| ["q", "u", "v"]
+| print(json(true))						| true
+| print(json(false))						| false
+| print(json(null))						| null
 
 
 
@@ -1714,7 +1757,7 @@ Sends a message to the inbox of a Floyd process, possibly your own process.
 
 The process may run on a different OS thread but send() is guaranteed to be thread safe.
 
-	send(string process_key, json_value message) impure
+	send(string process_key, json message) impure
 
 The send function returns immediately.
 
@@ -1737,8 +1780,8 @@ This is how you modify a field of a struct, an element in a vector or string or 
 | vector		| update([1,2,3,4], 2, 33)		| [1,2,33,4]
 | dictionary	| update({"a": 1, "b": 2, "c": 3}, "a", 11) | {"a":11,"b":2,"c":3}
 | struct		| update(pixel, red, 123)		| pixel(123,---,---)
-| json_value:array		| 
-| json_value:object		| 
+| json:array		| 
+| json:object		| 
 
 For dictionaries it can be used to add completely new elements too.
 
@@ -1766,8 +1809,8 @@ int size(obj)
 | vector			| size([1,2,3,4])			| 4
 | dictionary		| size({"a": 1, "b": })		| 2
 | struct			|							|
-| json_value:array	| size(json_value([1,2,3])	| 3
-| json_value:object	| size(json_value({"a": 9})	| 1
+| json:array	| size(json([1,2,3])	| 3
+| json:object	| size(json({"a": 9})	| 1
 
 
 
@@ -1783,8 +1826,8 @@ Appends an element to the end of a collection. A new collection is returned, the
 | vector		| push_back([1,2,3], 7)			| [1,2,3,7]
 | dictionary	| 								|
 | struct		|								|
-| json_value:array	|							|
-| json_value:object	| 							|
+| json:array	|							|
+| json:object	| 							|
 
 
 
@@ -1809,8 +1852,8 @@ end: 0 or larger. If it is larger than the collection, it will be clipped to the
 | vector		| subset([10,20,30,40, 1, 3)	| [20,30]
 | dictionary	| 								|
 | struct		|								|
-| json_value:array	|							|
-| json_value:object	| 							|
+| json:array	|							|
+| json:object	| 							|
 
 
 
@@ -1830,8 +1873,8 @@ vector replace(vector a, int start, int end, vector new)
 | vector		|replace([1,2,3,4,5], 1, 4, [8, 9])	| [1,8,9,5]
 | dictionary	| 								|
 | struct		|								|
-| json_value:array	|							|
-| json_value:object	| 							|
+| json:array	|							|
+| json:object	| 							|
 
 
 Notice: if you use an empty collection for *new*, you will actually erase the range.
@@ -1854,8 +1897,8 @@ int find(obj, value)
 | vector		| find([10,20,30,40], 30)		| 2
 | dictionary	| 								|
 | struct		|								|
-| json_value:array	|							|
-| json_value:object	| 							|
+| json:array	|							|
+| json:object	| 							|
 
 
 
@@ -1874,8 +1917,8 @@ bool exists(dict, string key)
 | dictionary	| exists({"a":1,"b":2,"c":3), "b")	| true
 | dictionary	| exists({"a":1,"b":2,"c":3), "f")	| false
 | struct		|								|
-| json_value:array	|							|
-| json_value:object	| 							|
+| json:array	|							|
+| json:object	| 							|
 
 
 
@@ -1912,6 +1955,8 @@ Notice that the *order* of the keys is undefined and may change depending on the
 
 ## FUNCTIONAL-STYLE COLLECTION FUNCTIONS
 
+Also called "Higher-order functions".
+
 IMPORTANT: These functions replace custom loops but *also* expose parallelism opportunities that allows the Floyd runtime to process each element on a separate hardware core, like shaders works in a graphics card. The supplied function must be pure.
 
 ### map()
@@ -1919,7 +1964,7 @@ IMPORTANT: These functions replace custom loops but *also* expose parallelism op
 Processes a vector of values one by one using function f. It returns a vector of the same size, but with values of type R.
 
 ```
-[R] map([E], R f(E e))
+[R] map([E] elements, func R (E e, C context) f, C context)
 ```
 
 Supports mapping over
@@ -1927,44 +1972,20 @@ Supports mapping over
 - characters in a string
 
 
-#### map_string()
 
-This is special version of map designed to process strings.
-
-	string map_string(string in, func string(string e) f)
-
-The function f is called with each character in the input string, stored as a 1-character string in _e_. All the calls to f() will be appended together and returned from map_string().
-
-
-### filter()
-
-Processes a vector of values and returns each that function f decides to include.
+### map_dag()
 
 ```
-[E] filter([E], bool f(E e))
+[R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
 ```
 
+This function runs a bunch of tasks with dependencies between them. When map_dag() returns, all tasks have been executed.
 
-### reduce()
-
-Processes a vector or values using the supplied function. Result is *one* value.
-
-```
-R reduce([E], R init, R f(R accumulator, E element))
-```
-
-
-### supermap()
-
-	[R] supermap([E] values, [int] depends_on, R (E, [R]) f)
-
-This function runs a bunch of tasks with dependencies between them. When supermap() returns, all tasks have been executed.
-
-- Tasks can call blocking functions or impure functions. This makes the supermap() call impure too.
+- Tasks can call blocking functions or impure functions. This makes the map_dag() call impure too.
 - Tasks cannot generate new tasks.
-- A task *can* call supermap.
+- A task *can* call map_dag.
 - Task will not start until all its dependencies have been finished.
-- There is no way for any code to observe partially executed supermap(). It's done or not.
+- There is no way for any code to observe partially executed map_dag(). It's done or not.
 
 - **values**: a vector of tasks and their dependencies. A task is a value of type T. T can be an enum to allow mixing different types of tasks. Each task also has a vector of integers tell which other tasks it depends upon. The indexes are the indexes into the tasks-vector. Use index -1 to mean *depends on nothing*.
 
@@ -1973,10 +1994,37 @@ This function runs a bunch of tasks with dependencies between them. When superma
 - **result**: a vector with one element for each element in the tasks-argument. The order of the elements is the same as the input vector.
 
 
-Notice: your function f can send messages to a clock — this means another clock can start consuming results while supermap() is still running.
+Notice: your function f can send messages to a clock — this means another clock can start consuming results while map_dag() is still running.
 
 Notice: using this function exposes potential for parallelism.
 
+
+
+### filter()
+
+Processes a vector of values and returns each that function f decides to include.
+
+```
+[E] filter([E] elements, func bool (E e, C context) f, C context)
+```
+
+
+### reduce()
+
+Processes a vector or values using the supplied function. Result is *one* value.
+
+```
+R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
+```
+
+
+### stable_sort()
+
+Sort a vector and return a new sorted vector. The existing vector is unchanged.
+
+```
+[T] stable_sort([T] elements, func bool (T left, T right, C context) less, C context)
+```
 
 
 
@@ -1987,29 +2035,29 @@ Notice: using this function exposes potential for parallelism.
 
 ### get\_json_type()
 
-If you have a json_value, this is how you find out if it's a string or a number and so on. It can be one of the types supported by JSON.
+If you have a json, this is how you find out if it's a string or a number and so on. It can be one of the types supported by JSON.
 
 ```
-typeid get_json_type(json_value v)
+typeid get_json_type(json v)
 ```
 
 This is how you check the type of JSON value and reads their different values.
 
 |INPUT						| RESULT 		| INT
 |:---						|:---			|:---
-| json_value({"a": 1})		| json_object	| 1
-| json_value([1, 2, 3])		| json_array	| 2
-| json_value("hi")			| json_string	| 3
-| json_value(13)			| json_number	| 4
-| json_value(true)			| json_true		| 5
-| json_value(false)			| json_false	| 6
+| json({"a": 1})		| json_object	| 1
+| json([1, 2, 3])		| json_array	| 2
+| json("hi")			| json_string	| 3
+| json(13)			| json_number	| 4
+| json(true)			| json_true		| 5
+| json(false)			| json_false	| 6
 | 							| json_null		| 7
 
 
 Demo snippet, that checks type of a json\_value:
 
 ```
-func string get_name(json_value value){
+func string get_name(json value){
 	let t = get_json_type(value)
 	if(t == json_object){
 		return "json_object"
@@ -2037,41 +2085,41 @@ func string get_name(json_value value){
 	}
 }
 	
-assert(get_name(json_value({"a": 1, "b": 2})) == "json_object")
-assert(get_name(json_value([1,2,3])) == "json_array")
-assert(get_name(json_value("crash")) == "json_string")
-assert(get_name(json_value(0.125)) == "json_number")
-assert(get_name(json_value(true)) == "json_true")
-assert(get_name(json_value(false)) == "json_false")
+assert(get_name(json({"a": 1, "b": 2})) == "json_object")
+assert(get_name(json([1,2,3])) == "json_array")
+assert(get_name(json("crash")) == "json_string")
+assert(get_name(json(0.125)) == "json_number")
+assert(get_name(json(true)) == "json_true")
+assert(get_name(json(false)) == "json_false")
 ```
 
 
-### jsonvalue\_to\_script()
+### generate\_json\_script()
 
 Pack a JSON value to a JSON script string, ready to write to a file, send via protocol etc. The string is unescaped.
 
-	string jsonvalue_to_script(json_value v)
+	string generate_json_script(json v)
 
 The result is a valid JSON script string that can be handed to another system to be unpacked.
 
 
-### script\_to\_jsonvalue()
+### parse\_json\_script()
 
 Make a new Floyd JSON value from a JSON-script string. If the string is malformed, exceptions will be thrown. The string is unescaped.
  
-	json_value script_to_jsonvalue(string s)
+	json parse_json_script(string s)
 
 
 
-### value\_to\_jsonvalue()
+### to\_json()
 
-	json_value value_to_jsonvalue(any v)
+	json to_json(any v)
 
 
 
-### jsonvalue\_to\_value()
+### from\_json()
 
-	any jsonvalue_to_value(json_value v)
+	any from_json(json v)
 
 
 

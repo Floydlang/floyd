@@ -38,7 +38,9 @@ bool function_definition_t::check_invariant() const {
 			return true;
 		}
 		bool operator()(const floyd_func_t& e) const{
-			QUARK_ASSERT(e._body->check_invariant());
+			if(e._body){
+				QUARK_ASSERT(e._body->check_invariant());
+			}
 			return true;
 		}
 		bool operator()(const host_func_t& e) const{
@@ -71,15 +73,14 @@ json_t function_def_to_ast_json(const function_definition_t& v) {
 	auto floyd_func = std::get_if<function_definition_t::floyd_func_t>(&v._contents);
 	auto host_func = std::get_if<function_definition_t::host_func_t>(&v._contents);
 
-
 	return std::vector<json_t>{
 		typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state),
 		v._definition_name,
 		members_to_json(v._args),
 
-		floyd_func ? body_to_json(*floyd_func->_body) : json_t(),
+		floyd_func ? (floyd_func->_body ? body_to_json(*floyd_func->_body) : json_t()) : json_t(),
 
-		host_func ? json_t(host_func->_host_function_id) : json_t(0)
+		host_func ? json_t(host_func->_host_function_id.name) : json_t(0)
 	};
 }
 
@@ -112,7 +113,7 @@ function_definition_t json_to_function_def(const json_t& p){
 			definition_name1,
 			function_type1,
 			args1,
-			static_cast<int>(host_function_id0.get_number())
+			function_id_t{ host_function_id0.get_string() }
 		);
 	}
 }
@@ -135,7 +136,12 @@ bool function_definition_t::check_types_resolved() const{
 			return true;
 		}
 		bool operator()(const floyd_func_t& e) const{
-			return e._body->check_types_resolved();
+			if(e._body){
+				return e._body->check_types_resolved();
+			}
+			else{
+				return true;
+			}
 		}
 		bool operator()(const host_func_t& e) const{
 			return true;
@@ -469,6 +475,10 @@ expression_t astjson_to_expression(const json_t& e){
 		const auto type = e.get_array_n(2);
 		const auto type2 = typeid_from_ast_json(type);
 
+
+		const auto value2 = ast_json_to_value(type2, value);
+		return expression_t::make_literal(value2);
+/*
 		if(type2.is_undefined()){
 			return expression_t::make_literal_undefined();
 		}
@@ -488,6 +498,8 @@ expression_t astjson_to_expression(const json_t& e){
 			QUARK_ASSERT(false);
 			quark::throw_exception();
 		}
+*/
+
 	}
 	else if(op == expression_opcode_t::k_unary_minus){
 		QUARK_ASSERT(e.get_array_size() == 2 || e.get_array_size() == 3);

@@ -365,7 +365,10 @@ statement_t astjson_to_statement__nonlossy(const json_t& statement0){
 
 		const auto name2 = name.get_string();
 		const auto args2 = members_from_json(args);
-		const auto fstatements2 = astjson_to_statements(fstatements);
+
+		const bool is_implementation = fstatements.is_null() ? false : true;
+
+		const auto fstatements2 = is_implementation ? astjson_to_statements(fstatements) : std::vector<statement_t>();
 		const auto return_type2 = typeid_from_ast_json(return_type);
 
 		if(impure.is_true() == false && impure.is_false() == false){
@@ -373,8 +376,17 @@ statement_t astjson_to_statement__nonlossy(const json_t& statement0){
 		}
 		const auto pure = impure.is_false();
 		const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2), pure ? epure::pure : epure::impure);
-		const auto body = body_t{fstatements2};
-		const auto function_def = function_definition_t::make_floyd_func(k_no_location, name2, function_typeid, args2, make_shared<body_t>(body));
+
+		const auto body2 = is_implementation ? make_shared<body_t>(body_t{ fstatements2 }) : std::shared_ptr<body_t>();
+
+
+		const auto function_def = function_definition_t::make_floyd_func(
+			k_no_location,
+			name2,
+			function_typeid,
+			args2,
+			body2
+		);
 
 		const auto s = statement_t::define_function_statement_t{ name2, std::make_shared<function_definition_t>(function_def) };
 		return statement_t::make__define_function_statement(loc, s);

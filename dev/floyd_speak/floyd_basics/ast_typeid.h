@@ -35,7 +35,7 @@
 	int								k_int									"int"
 	double							k_double								"double"
 	string							k_string								"string"
-	json_value						k_json_value							"json_value"
+	json						k_json							"json"
 	"typeid"						k_typeid								"typeid"
 	struct red { int x;float y}		k_struct								["struct", [{"type": "in", "name": "x"}, {"type": "float", "name": "y"}]]
 	[int]							k_vector								["vector", "int"]
@@ -287,10 +287,10 @@ struct typeid_t {
 	}
 
 
-	public: static typeid_t make_json_value(){
+	public: static typeid_t make_json(){
 		return { json_type_t() };
 	}
-	public: bool is_json_value() const {
+	public: bool is_json() const {
 		QUARK_ASSERT(check_invariant());
 
 		return std::holds_alternative<json_type_t>(_contents);
@@ -454,7 +454,7 @@ struct typeid_t {
 			}
 
 			base_type operator()(const json_type_t& e) const{
-				return base_type::k_json_value;
+				return base_type::k_json;
 			}
 			base_type operator()(const typeid_type_t& e) const{
 				return base_type::k_typeid;

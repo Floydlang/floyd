@@ -54,7 +54,7 @@ inline typeid_t get_main_signature_no_arg_pure(){
 //	T x_init() impure
 typeid_t make_process_init_type(const typeid_t& t);
 
-//	T x(T state, json_value message) impure
+//	T x(T state, json message) impure
 typeid_t make_process_message_handler_type(const typeid_t& t);
 
 
@@ -105,21 +105,65 @@ corecall_signature_t make_push_back_signature();
 corecall_signature_t make_subset_signature();
 corecall_signature_t make_replace_signature();
 
-corecall_signature_t make_script_to_jsonvalue_signature();
-corecall_signature_t make_jsonvalue_to_script_signature();
-corecall_signature_t make_value_to_jsonvalue_signature();
-corecall_signature_t make_jsonvalue_to_value_signature();
+corecall_signature_t make_parse_json_script_signature();
+corecall_signature_t make_generate_json_script_signature();
+corecall_signature_t make_to_json_signature();
+corecall_signature_t make_from_json_signature();
 
 corecall_signature_t make_get_json_type_signature();
 
+
+
+
+//////////////////////////////////////		HIGHER-ORDER FUNCTIONS
+
+
+
 corecall_signature_t make_map_signature();
+typeid_t harden_map_func_type(const typeid_t& resolved_call_type);
+bool check_map_func_type(const typeid_t& elements, const typeid_t& f, const typeid_t& context);
+
 corecall_signature_t make_map_string_signature();
+typeid_t harden_map_string_func_type(const typeid_t& resolved_call_type);
+bool check_map_string_func_type(const typeid_t& elements, const typeid_t& f, const typeid_t& context);
+
+corecall_signature_t make_map_dag_signature();
+typeid_t harden_map_dag_func_type(const typeid_t& resolved_call_type);
+bool check_map_dag_func_type(const typeid_t& elements, const typeid_t& depends_on, const typeid_t& f, const typeid_t& context);
+
+
 corecall_signature_t make_filter_signature();
+typeid_t harden_filter_func_type(const typeid_t& resolved_call_type);
+bool check_filter_func_type(const typeid_t& elements, const typeid_t& f, const typeid_t& context);
+
 corecall_signature_t make_reduce_signature();
-corecall_signature_t make_supermap_signature();
+typeid_t harden_reduce_func_type(const typeid_t& resolved_call_type);
+bool check_reduce_func_type(const typeid_t& elements, const typeid_t& accumulator_init, const typeid_t& f, const typeid_t& context);
+
+corecall_signature_t make_stable_sort_signature();
+typeid_t harden_stable_sort_func_type(const typeid_t& resolved_call_type);
+bool check_stable_sort_func_type(const typeid_t& elements, const typeid_t& less, const typeid_t& context);
+
+
+//////////////////////////////////////		IMPURE FUNCTIONS
+
+
 
 corecall_signature_t make_print_signature();
 corecall_signature_t make_send_signature();
+
+
+
+//////////////////////////////////////		BITWISE
+
+
+corecall_signature_t make_bw_not_signature();
+corecall_signature_t make_bw_and_signature();
+corecall_signature_t make_bw_or_signature();
+corecall_signature_t make_bw_xor_signature();
+corecall_signature_t make_bw_shift_left_signature();
+corecall_signature_t make_bw_shift_right_signature();
+corecall_signature_t make_bw_shift_right_arithmetic_signature();
 
 std::vector<corecall_signature_t> get_corecall_signatures();
 

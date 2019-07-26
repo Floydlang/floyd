@@ -663,12 +663,17 @@ void bcgen_globals(bcgenerator_t& gen_acc, const body_t& globals){
 	bcgen_body_top(gen_acc, gen_acc._globals, globals);
 }
 
-bcgen_body_t bcgen_function(bcgenerator_t& gen_acc, const floyd::function_definition_t& function_def){
+static bcgen_body_t bcgen_function(bcgenerator_t& gen_acc, const floyd::function_definition_t& function_def){
 	const auto floyd_func = std::get_if<function_definition_t::floyd_func_t>(&function_def._contents);
 	if(floyd_func){
-		auto body = bcgen_body_t({}, floyd_func->_body->_symbol_table);
-		const auto body_acc = bcgen_body_top(gen_acc, body, *floyd_func->_body.get());
-		return body_acc;
+		if(floyd_func->_body){
+			auto body = bcgen_body_t({}, floyd_func->_body->_symbol_table);
+			const auto body_acc = bcgen_body_top(gen_acc, body, *floyd_func->_body.get());
+			return body_acc;
+		}
+		else{
+			return bcgen_body_t({});
+		}
 	}
 	else{
 		return bcgen_body_t({});
@@ -706,33 +711,6 @@ expression_gen_t bcgen_resolve_member_expression(bcgenerator_t& gen_acc, const v
 }
 
 
-
-static function_id_t XXXXXXXX____get_host_function_id(bcgenerator_t& gen_acc, const expression_t::call_t& call_e){
-	QUARK_ASSERT(gen_acc.check_invariant());
-
-	const auto load2 = std::get_if<expression_t::load2_t>(&call_e.callee->_expression_variant);
-
-	if(load2 && load2->address._parent_steps == -1){
-		const auto global_index = load2->address._index;
-
-		QUARK_ASSERT(global_index >= 0 && global_index < gen_acc._globals._symbol_table._symbols.size());
-		const auto& global_symbol = gen_acc._globals._symbol_table._symbols[global_index];
-		if(global_symbol.second._init.is_function()){
-			const auto function_id = global_symbol.second._init.get_function_value();
-			const auto& function_def = gen_acc._ast_imm->_tree._function_defs[function_id];
-
-			const auto host_func = std::get<function_definition_t::host_func_t>(function_def->_contents);
-
-			return host_func._host_function_id;
-		}
-		else{
-			return -1;
-		}
-	}
-	else{
-		return -1;
-	}
-}
 
 
 //	Generates a call to the global function that implements the corecall.
@@ -865,7 +843,7 @@ static bc_opcode convert_call_to_size_opcode(const typeid_t& arg1_type){
 	else if(arg1_type.is_string()){
 		return bc_opcode::k_get_size_string;
 	}
-	else if(arg1_type.is_json_value()){
+	else if(arg1_type.is_json()){
 		return bc_opcode::k_get_size_jsonvalue;
 	}
 	else{
@@ -932,8 +910,8 @@ expression_gen_t bcgen_lookup_element_expression(bcgenerator_t& gen_acc, const v
 		if(parent_type.is_string()){
 			return bc_opcode::k_lookup_element_string;
 		}
-		else if(parent_type.is_json_value()){
-			return bc_opcode::k_lookup_element_json_value;
+		else if(parent_type.is_json()){
+			return bc_opcode::k_lookup_element_json;
 		}
 		else if(parent_type.is_vector()){
 			if(encode_as_vector_w_inplace_elements(parent_type)){
@@ -1199,16 +1177,16 @@ static expression_gen_t bcgen_corecall_expression(bcgenerator_t& gen_acc, const 
 	}
 
 
-	else if(details.call_name == get_opcode(make_script_to_jsonvalue_signature())){
+	else if(details.call_name == get_opcode(make_parse_json_script_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_opcode(make_jsonvalue_to_script_signature())){
+	else if(details.call_name == get_opcode(make_generate_json_script_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_opcode(make_value_to_jsonvalue_signature())){
+	else if(details.call_name == get_opcode(make_to_json_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_opcode(make_jsonvalue_to_value_signature())){
+	else if(details.call_name == get_opcode(make_from_json_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
 
@@ -1224,21 +1202,48 @@ static expression_gen_t bcgen_corecall_expression(bcgenerator_t& gen_acc, const 
 	else if(details.call_name == get_opcode(make_map_string_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
+	else if(details.call_name == get_opcode(make_map_dag_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
 	else if(details.call_name == get_opcode(make_filter_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
 	else if(details.call_name == get_opcode(make_reduce_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_opcode(make_supermap_signature())){
+	else if(details.call_name == get_opcode(make_stable_sort_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
+
 
 
 	else if(details.call_name == get_opcode(make_print_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
 	else if(details.call_name == get_opcode(make_send_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+
+
+	else if(details.call_name == get_opcode(make_bw_not_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_bw_and_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_bw_or_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_bw_xor_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_bw_shift_left_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_bw_shift_right_signature())){
+		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_opcode(make_bw_shift_right_arithmetic_signature())){
 		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
 	}
 
@@ -1811,7 +1816,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 
 	bcgen_globals(a, a._ast_imm->_tree._globals);
 
-	std::vector<bc_function_definition_t> function_defs2;
+	std::map<function_id_t, bc_function_definition_t> function_defs2;
 	for(auto function_id = 0 ; function_id < ast._tree._function_defs.size() ; function_id++){
 		const auto& function_def = *ast._tree._function_defs[function_id];
 
@@ -1824,29 +1829,40 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 				throw std::exception();
 			}
 			bc_function_definition_t operator()(const function_definition_t::floyd_func_t& e) const{
-				const auto body2 = bcgen_function(gen_acc, function_def);
+				if(e._body){
+					const auto body2 = bcgen_function(gen_acc, function_def);
 
-				const auto frame = make_frame(body2, function_def._function_type.get_function_args());
-				const auto f = bc_function_definition_t{
-					function_def._function_type,
-					function_def._args,
-					std::make_shared<bc_static_frame_t>(frame),
-					k_no_host_function_id
-				};
-				return f;
+					const auto frame = make_frame(body2, function_def._function_type.get_function_args());
+					const auto f = bc_function_definition_t{
+						function_def._function_type,
+						function_def._args,
+						std::make_shared<bc_static_frame_t>(frame),
+						function_id_t { function_def._definition_name }
+					};
+					return f;
+				}
+				else{
+					const auto f = bc_function_definition_t{
+						function_def._function_type,
+						function_def._args,
+						std::shared_ptr<bc_static_frame_t>(),
+						function_id_t { function_def._definition_name }
+					};
+					return f;
+				}
 			}
 			bc_function_definition_t operator()(const function_definition_t::host_func_t& e) const{
 				const auto f = bc_function_definition_t{
 					function_def._function_type,
 					function_def._args,
 					nullptr,
-					e._host_function_id
+					function_id_t { function_def._definition_name }
 				};
 				return f;
 			}
 		};
 		const auto function_def2 = std::visit(visitor_t{ a, function_def }, function_def._contents);
-		function_defs2.push_back(function_def2);
+		function_defs2.insert({ function_def2._function_id, function_def2 });
 	}
 
 	const auto globals2 = make_frame(a._globals, {});

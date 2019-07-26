@@ -12,7 +12,7 @@ func int main([string] args) impure {
 	let s = read_text_file(input_path)
 //	print(s)
 
-	let j = script_to_jsonvalue(s)
+	let j = parse_json_script(s)
 //	print(j)
 
 	let pretty = to_pretty_string(j)

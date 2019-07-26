@@ -13,14 +13,13 @@ using namespace floyd;
 
 
 QUARK_UNIT_TEST("https://github.com/marcusz/floyd/issues/8", "", "", "") {
-	ut_verify_exception(
+	ut_verify_exception_nolib(
 		QUARK_POS,
 		
 R"(for (i in 1..5) {
   print(i)
 }
 )",
-		compilation_unit_mode::k_no_core_lib,
 		R"(For loop has illegal range syntax. Line: 1 "for (i in 1..5) {")"
 	);
 }

@@ -44,8 +44,8 @@ string base_type_to_string(const base_type t){
 	else if(t == base_type::k_string){
 		return keyword_t::k_string;
 	}
-	else if(t == base_type::k_json_value){
-		return keyword_t::k_json_value;
+	else if(t == base_type::k_json){
+		return keyword_t::k_json;
 	}
 
 	else if(t == base_type::k_typeid){
@@ -96,7 +96,7 @@ QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_string) == keyword_t::k_string);
 }
 QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_json_value) == keyword_t::k_json_value);
+	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_json) == keyword_t::k_json);
 }
 
 QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){

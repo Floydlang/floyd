@@ -18,7 +18,7 @@
 
 
 ??? remove usage of typeid_t. Use itype & types[]?
-??? All functions should be the same type of function-values: host-functions and Floyd functions: _host_function_id should be in the VALUE not function definition!
+??? All functions should be the same type of function-values: host-functions and Floyd functions: _function_id should be in the VALUE not function definition!
 ??? Less code + faster to generate increc, decref instructions instead of make *_external_value, *_internal_value opcodes.
 */
 
@@ -50,7 +50,7 @@ struct bc_external_value_t;
 struct bc_external_handle_t;
 
 
-typedef bc_value_t (*BC_HOST_FUNCTION_PTR)(interpreter_t& vm, const bc_value_t args[], int arg_count);
+typedef bc_value_t (*BC_NATIVE_FUNCTION_PTR)(interpreter_t& vm, const bc_value_t args[], int arg_count);
 typedef int16_t bc_typeid_t;
 
 
@@ -64,7 +64,6 @@ union bc_inplace_value_t {
 	int64_t _int64;
 	double _double;
 
-	function_id_t _function_id;
 	const bc_static_frame_t* _frame_ptr;
 };
 
@@ -93,7 +92,7 @@ enum class value_encoding {
 	k_inplace__int_as_uint64,
 	k_inplace__double,
 	k_external__string,
-	k_external__json_value,
+	k_external__json,
 
 	k_external__typeid,
 
@@ -101,7 +100,7 @@ enum class value_encoding {
 	k_external__vector,
 	k_external__vector_pod64,
 	k_external__dict,
-	k_inplace__function
+	k_external__function
 };
 
 bool encode_as_inplace(const typeid_t& type);
@@ -176,9 +175,9 @@ struct bc_value_t {
 	private: explicit bc_value_t(const std::string& value);
 
 
-	//////////////////////////////////////		json_value
-	public: static bc_value_t make_json_value(const json_t& v);
-	public: json_t get_json_value() const;
+	//////////////////////////////////////		json
+	public: static bc_value_t make_json(const json_t& v);
+	public: json_t get_json() const;
 	private: explicit bc_value_t(const std::shared_ptr<json_t>& value);
 
 
@@ -195,9 +194,9 @@ struct bc_value_t {
 
 
 	//////////////////////////////////////		function
-	public: static bc_value_t make_function_value(const typeid_t& function_type, function_id_t function_id);
-	public: int get_function_value() const;
-	private: explicit bc_value_t(const typeid_t& function_type, function_id_t function_id, bool dummy);
+	public: static bc_value_t make_function_value(const typeid_t& function_type, const function_id_t& function_id);
+	public: function_id_t get_function_value() const;
+	private: explicit bc_value_t(const typeid_t& function_type, const function_id_t& function_id, bool dummy);
 
 
 	//	Bumps RC if needed.
@@ -257,6 +256,8 @@ bool check_external_deep(const typeid_t& type, const bc_external_value_t* ext);
 struct bc_external_value_t {
 	public: bc_external_value_t(const std::string& s);
 	public: bc_external_value_t(const std::shared_ptr<json_t>& s);
+	public: bc_external_value_t(const typeid_t& type, const function_id_t& function_id);
+
 	public: bc_external_value_t(const typeid_t& s);
 	public: bc_external_value_t(const typeid_t& type, const std::vector<bc_value_t>& s, bool struct_tag);
 	public: bc_external_value_t(const typeid_t& type, const immer::vector<bc_external_handle_t>& s);
@@ -279,7 +280,8 @@ struct bc_external_value_t {
 	public: typeid_t _debug_type;
 #endif
 	public: std::string _string;
-	public: std::shared_ptr<json_t> _json_value;
+	public: std::shared_ptr<json_t> _json;
+	public: function_id_t _function_id;
 	public: typeid_t _typeid_value = typeid_t::make_undefined();
 	public: std::vector<bc_value_t> _struct_members;
 	public: immer::vector<bc_external_handle_t> _vector_w_external_elements;
@@ -397,11 +399,11 @@ enum class bc_opcode: uint8_t {
 
 	/*
 		A: Register: where to put result
-		B: Register: string object/vector object/json_value/dict
+		B: Register: string object/vector object/json/dict
 		C: Register: index (int)
 	*/
 	k_lookup_element_string,
-	k_lookup_element_json_value,
+	k_lookup_element_json,
 	k_lookup_element_vector_w_external_elements,
 	k_lookup_element_vector_w_inplace_elements,
 	k_lookup_element_dict_w_external_values,
@@ -773,7 +775,7 @@ struct bc_function_definition_t {
 		const typeid_t& function_type,
 		const std::vector<member_t>& args,
 		const std::shared_ptr<bc_static_frame_t>& frame,
-		function_id_t host_function_id
+		function_id_t function_id
 	);
 #if DEBUG
 	public: bool check_invariant() const;
@@ -784,7 +786,7 @@ struct bc_function_definition_t {
 	typeid_t _function_type;
 	std::vector<member_t> _args;
 	std::shared_ptr<bc_static_frame_t> _frame_ptr;
-	function_id_t _host_function_id;
+	function_id_t _function_id;
 
 	int _dyn_arg_count;
 	bool _return_is_ext;
@@ -808,7 +810,7 @@ struct bc_program_t {
 
 	//////////////////////////////////////		STATE
 	public: const bc_static_frame_t _globals;
-	public: std::vector<bc_function_definition_t> _function_defs;
+	public: std::map<function_id_t, bc_function_definition_t> _function_defs;
 	public: std::vector<typeid_t> _types;
 	public: software_system_t _software_system;
 	public: container_t _container_def;
@@ -1092,7 +1094,7 @@ struct interpreter_stack_t {
 	public: bool check_reg_json(const int reg) const{
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(check_reg(reg));
-		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_json_value());
+		QUARK_ASSERT(_current_frame_ptr->_symbols[reg].second._value_type.is_json());
 		return true;
 	}
 
@@ -1342,7 +1344,7 @@ struct interpreter_stack_t {
 struct interpreter_imm_t {
 	public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
 	public: const bc_program_t _program;
-	public: const std::map<function_id_t, BC_HOST_FUNCTION_PTR> _host_functions;
+	public: const std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> _native_functions;
 };
 
 

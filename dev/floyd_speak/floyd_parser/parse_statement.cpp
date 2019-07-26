@@ -405,7 +405,21 @@ QUARK_UNIT_TEST("", "parse_expression_statement()", "", ""){
 	);
 }
 
+
+
 //////////////////////////////////////////////////		parse_function_definition_statement()
+
+
+parse_result_t parse_optional_statement_body(const seq_t& s){
+	const auto bracket_pos = read_optional_char(skip_whitespace(s), '{');
+	if(bracket_pos.first){
+		const auto body = parse_statement_body(s);
+		return body;
+	}
+	else{
+		return { json_t(), s };
+	}
+}
 
 
 std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
@@ -416,7 +430,8 @@ std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
 	const auto args_pos = read_functiondef_arg_parantheses(skip_whitespace(function_name_pos.second));
 
 	const auto impure_pos = if_first(skip_whitespace(args_pos.second), keyword_t::k_impure);
-	const auto body = parse_statement_body(impure_pos.second);
+
+	const auto body = parse_optional_statement_body(impure_pos.second);
 
 	const auto args = members_to_json(args_pos.first);
 	const auto function_name = function_name_pos.first;

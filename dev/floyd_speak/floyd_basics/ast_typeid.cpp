@@ -213,14 +213,14 @@ QUARK_UNIT_TESTQ("typeid_t", "is_string()"){
 }
 
 
-QUARK_UNIT_TESTQ("typeid_t", "make_json_value()"){
-	QUARK_UT_VERIFY(typeid_t::make_json_value().get_base_type() == base_type::k_json_value);
+QUARK_UNIT_TESTQ("typeid_t", "make_json()"){
+	QUARK_UT_VERIFY(typeid_t::make_json().get_base_type() == base_type::k_json);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_json_value()"){
-	QUARK_UT_VERIFY(typeid_t::make_json_value().is_json_value() == true);
+QUARK_UNIT_TESTQ("typeid_t", "is_json()"){
+	QUARK_UT_VERIFY(typeid_t::make_json().is_json() == true);
 }
-QUARK_UNIT_TESTQ("typeid_t", "is_json_value()"){
-	QUARK_UT_VERIFY(typeid_t::make_bool().is_json_value() == false);
+QUARK_UNIT_TESTQ("typeid_t", "is_json()"){
+	QUARK_UT_VERIFY(typeid_t::make_bool().is_json() == false);
 }
 
 

@@ -6,28 +6,23 @@
 //  Copyright © 2018 Marcus Zetterquist. All rights reserved.
 //
 
-#include "bytecode_host_functions.h"
+#include "bytecode_corecalls.h"
 
 #include "json_support.h"
 #include "ast_typeid_helpers.h"
 
 #include "text_parser.h"
 #include "file_handling.h"
-#include "sha1_class.h"
+#include "floyd_corelib.h"
 #include "ast_value.h"
 #include "ast_json.h"
+#include "floyd_interpreter.h"
+#include "floyd_runtime.h"
 
-#include <cmath>
-#include <sys/time.h>
 
-#include <thread>
-#include <chrono>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
-
-#include "floyd_runtime.h"
-#include "floyd_filelib.h"
 
 
 namespace floyd {
@@ -44,10 +39,10 @@ using std::make_shared;
 
 
 //??? Remove usage of value_t
-value_t value_to_jsonvalue(const value_t& value){
+static value_t value_to_jsonvalue(const value_t& value){
 	const auto j = value_to_ast_json(value, json_tags::k_plain);
-	value_t json_value = value_t::make_json_value(j);
-	return json_value;
+	value_t json = value_t::make_json(j);
+	return json;
 }
 
 
@@ -121,8 +116,8 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 		const auto size = obj.get_string_value().size();
 		return bc_value_t::make_int(static_cast<int>(size));
 	}
-	else if(obj._type.is_json_value()){
-		const auto value = obj.get_json_value();
+	else if(obj._type.is_json()){
+		const auto value = obj.get_json();
 		if(value.is_object()){
 			const auto size = value.get_object_size();
 			return bc_value_t::make_int(static_cast<int>(size));
@@ -485,31 +480,31 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 	}
 }
 /*
-	Reads json from a text string, returning an unpacked json_value.
+	Reads json from a text string, returning an unpacked json.
 */
-bc_value_t host__script_to_jsonvalue(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__parse_json_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
 
 	const string s = args[0].get_string_value();
 	std::pair<json_t, seq_t> result = parse_json(seq_t(s));
-	const auto json_value = bc_value_t::make_json_value(result.first);
-	return json_value;
+	const auto json = bc_value_t::make_json(result.first);
+	return json;
 }
 
-bc_value_t host__jsonvalue_to_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__generate_json_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_json_value());
+	QUARK_ASSERT(args[0]._type.is_json());
 
-	const auto value0 = args[0].get_json_value();
+	const auto value0 = args[0].get_json();
 	const string s = json_to_compact_string(value0);
 	return bc_value_t::make_string(s);
 }
 
 
-bc_value_t host__value_to_jsonvalue(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__to_json(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -519,15 +514,15 @@ bc_value_t host__value_to_jsonvalue(interpreter_t& vm, const bc_value_t args[], 
 	return value_to_bc(result);
 }
 
-bc_value_t host__jsonvalue_to_value(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__from_json(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
-	QUARK_ASSERT(args[0]._type.is_json_value());
+	QUARK_ASSERT(args[0]._type.is_json());
 	QUARK_ASSERT(args[1]._type.is_typeid());
 
-	const auto json_value = args[0].get_json_value();
+	const auto json = args[0].get_json();
 	const auto target_type = args[1].get_typeid_value();
-	const auto result = unflatten_json_to_specific_type(json_value, target_type);
+	const auto result = unflatten_json_to_specific_type(json, target_type);
 	return value_to_bc(result);
 }
 
@@ -535,120 +530,37 @@ bc_value_t host__jsonvalue_to_value(interpreter_t& vm, const bc_value_t args[], 
 bc_value_t host__get_json_type(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_json_value());
+	QUARK_ASSERT(args[0]._type.is_json());
 
 
-	const auto json_value = args[0].get_json_value();
-	return bc_value_t::make_int(get_json_type(json_value));
+	const auto json = args[0].get_json();
+	return bc_value_t::make_int(get_json_type(json));
 }
 
 
-/////////////////////////////////////////		PURE -- SHA1
-
-
-/*
-# FUTURE -- BUILT-IN SHA1 FUNCTIONS
-```
-
-sha1_t calc_sha1(string s)
-sha1_t calc_sha1(binary_t data)
-
-//	SHA1 is 20 bytes.
-//	String representation uses hex, so is 40 characters long.
-//	"1234567890123456789012345678901234567890"
-let sha1_bytes = 20
-let sha1_chars = 40
-
-string sha1_to_string(sha1_t s)
-sha1_t sha1_from_string(string s)
-
-```
-*/
-
-
-bc_value_t host__calc_string_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_string());
-
-	const auto& s = args[0].get_string_value();
-	const auto sha1 = CalcSHA1(s);
-	const auto ascii40 = SHA1ToStringPlain(sha1);
-
-	const auto result = value_t::make_struct_value(
-		make__sha1_t__type(),
-		{
-			value_t::make_string(ascii40)
-		}
-	);
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	const auto v = value_to_bc(result);
-	return v;
-}
-
-
-
-bc_value_t host__calc_binary_sha1(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type == make__binary_t__type());
-
-	const auto& sha1_struct = args[0].get_struct_value();
-	QUARK_ASSERT(sha1_struct.size() == make__binary_t__type().get_struct()._members.size());
-	QUARK_ASSERT(sha1_struct[0]._type.is_string());
-
-	const auto& sha1_string = sha1_struct[0].get_string_value();
-	const auto sha1 = CalcSHA1(sha1_string);
-	const auto ascii40 = SHA1ToStringPlain(sha1);
-
-	const auto result = value_t::make_struct_value(
-		make__sha1_t__type(),
-		{
-			value_t::make_string(ascii40)
-		}
-	);
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	const auto v = value_to_bc(result);
-	return v;
-}
-
-/////////////////////////////////////////		PURE -- FUNCTIONAL
 
 /////////////////////////////////////////		PURE -- MAP()
 
-//	[R] map([E], R f(E e))
-//??? need to provide context property to map() and pass to f().
+
+
+//	[R] map([E] elements, func R (E e, C context) f, C context)
 bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 2);
-
-	QUARK_ASSERT(args[0]._type.is_vector());
-	QUARK_ASSERT(args[1]._type.is_function());
+	QUARK_ASSERT(arg_count == 3);
+	QUARK_ASSERT(check_map_func_type(args[0]._type, args[1]._type, args[2]._type));
 
 	const auto e_type = args[0]._type.get_vector_element_type();
-
 	const auto f = args[1];
 	const auto f_arg_types = f._type.get_function_args();
 	const auto r_type = f._type.get_function_return();
 
-	QUARK_ASSERT(f_arg_types.size() == 1);
-	QUARK_ASSERT(f_arg_types[0] == e_type);
+	const auto& context = args[2];
 
 	const auto input_vec = get_vector(args[0]);
 	immer::vector<bc_value_t> vec2;
 	for(const auto& e: input_vec){
-		const bc_value_t f_args[1] = { e };
-		const auto result1 = call_function_bc(vm, f, f_args, 1);
+		const bc_value_t f_args[] = { e, context };
+		const auto result1 = call_function_bc(vm, f, f_args, 2);
 		vec2 = vec2.push_back(result1);
 	}
 
@@ -665,28 +577,26 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 
 /////////////////////////////////////////		PURE -- map_string()
 
-//	If input collection is a string, call f() with one character at a time, output is a new string.
-//	string map(string, string f(string:char e))
+
+//	string map_string(string s, func string(string e, C context) f, C context)
 bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 2);
-	QUARK_ASSERT(args[0]._type.is_string());
-	QUARK_ASSERT(args[1]._type.is_function());
+	QUARK_ASSERT(arg_count == 3);
+	QUARK_ASSERT(check_map_string_func_type(args[0]._type, args[1]._type, args[2]._type));
 
 	const auto f = args[1];
 	const auto f_arg_types = f._type.get_function_args();
 	const auto r_type = f._type.get_function_return();
-
-	QUARK_ASSERT(f_arg_types.size() == 1);
-	QUARK_ASSERT(f_arg_types[0].is_string());
+	const auto& context = args[2];
 
 	const auto input_vec = args[0].get_string_value();
 	std::string vec2;
 	for(const auto& e: input_vec){
-		const bc_value_t f_args[1] = { bc_value_t::make_string(std::string(1, e)) };
-		const auto result1 = call_function_bc(vm, f, f_args, 1);
-		QUARK_ASSERT(result1._type.is_string());
-		vec2.append(result1.get_string_value());
+		const bc_value_t f_args[] = { bc_value_t::make_int(e), context };
+		const auto result1 = call_function_bc(vm, f, f_args, 2);
+		QUARK_ASSERT(result1._type.is_int());
+		const int64_t ch = result1.get_int_value();
+		vec2.push_back(static_cast<char>(ch));
 	}
 
 	const auto result = bc_value_t::make_string(vec2);
@@ -701,125 +611,28 @@ bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_
 
 
 
+/////////////////////////////////////////		PURE -- map_dag()
 
 
-/////////////////////////////////////////		PURE -- REDUCE()
 
-
-//	R map([E] elements, R init, R f(R acc, E e))
-bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_count){
+//	[R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
+bc_value_t host__map_dag(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 3);
-
-	//	Check topology.
-	QUARK_ASSERT(args[0]._type.is_vector());
-	QUARK_ASSERT(args[2]._type.is_function());
-	QUARK_ASSERT(args[2]._type.get_function_args().size () == 2);
-
-	const auto& elements = args[0];
-	const auto& init = args[1];
-	const auto& f = args[2];
-
-	QUARK_ASSERT(elements._type.get_vector_element_type() == f._type.get_function_args()[1] && init._type == f._type.get_function_args()[0]);
-
-	const auto input_vec = get_vector(elements);
-
-	bc_value_t acc = init;
-	for(const auto& e: input_vec){
-		const bc_value_t f_args[2] = { acc, e };
-		const auto result1 = call_function_bc(vm, f, f_args, 2);
-		acc = result1;
-	}
-
-	const auto result = acc;
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	return result;
-}
-
-
-
-
-/////////////////////////////////////////		PURE -- filter()
-
-
-
-//	[E] filter([E], bool f(E e))
-bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 2);
-
-	//	Check topology.
-	QUARK_ASSERT(args[0]._type.is_vector());
-	QUARK_ASSERT(args[1]._type.is_function());
-	QUARK_ASSERT(args[1]._type.get_function_args().size() == 1);
-
-	const auto& elements = args[0];
-	const auto& f = args[1];
-	const auto& e_type = elements._type.get_vector_element_type();
-
-	QUARK_ASSERT(elements._type.get_vector_element_type() == f._type.get_function_args()[0]);
-
-	const auto input_vec = get_vector(elements);
-	immer::vector<bc_value_t> vec2;
-
-	for(const auto& e: input_vec){
-		const bc_value_t f_args[1] = { e };
-		const auto result1 = call_function_bc(vm, f, f_args, 1);
-		QUARK_ASSERT(result1._type.is_bool());
-
-		if(result1.get_bool_value()){
-			vec2 = vec2.push_back(e);
-		}
-	}
-
-	const auto result = make_vector(e_type, vec2);
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	return result;
-}
-
-
-
-
-
-
-/////////////////////////////////////////		PURE -- SUPERMAP()
-
-
-//	[R] supermap([E] values, [int] parents, R (E, [R]) f)
-bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 3);
-
-	//	Check topology.
-	QUARK_ASSERT(args[0]._type.is_vector());
-	QUARK_ASSERT(args[1]._type == typeid_t::make_vector(typeid_t::make_int()));
-	QUARK_ASSERT(args[2]._type.is_function() && args[2]._type.get_function_args().size () == 2);
+	QUARK_ASSERT(arg_count == 4);
+	QUARK_ASSERT(check_map_dag_func_type(args[0]._type, args[1]._type, args[2]._type, args[3]._type));
 
 	const auto& elements = args[0];
 	const auto& e_type = elements._type.get_vector_element_type();
 	const auto& parents = args[1];
 	const auto& f = args[2];
 	const auto& r_type = args[2]._type.get_function_return();
-	QUARK_ASSERT(
-		e_type == f._type.get_function_args()[0]
-		&& r_type == f._type.get_function_args()[1].get_vector_element_type()
-	);
+	const auto& context = args[3];
 
 	const auto elements2 = get_vector(elements);
 	const auto parents2 = get_vector(parents);
 
 	if(elements2.size() != parents2.size()) {
-		quark::throw_runtime_error("supermap() requires elements and parents be the same count.");
+		quark::throw_runtime_error("map_dag() requires elements and parents be the same count.");
 	}
 
 	auto elements_todo = elements2.size();
@@ -850,7 +663,7 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 		}
 
 		if(pass_ids.empty()){
-			quark::throw_runtime_error("supermap() dependency cycle error.");
+			quark::throw_runtime_error("map_dag() dependency cycle error.");
 		}
 
 		for(const auto element_index: pass_ids){
@@ -871,8 +684,8 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 				}
 			}
 
-			const bc_value_t f_args[2] = { e, make_vector(r_type, solved_deps) };
-			const auto result1 = call_function_bc(vm, f, f_args, 2);
+			const bc_value_t f_args[] = { e, make_vector(r_type, solved_deps), context };
+			const auto result1 = call_function_bc(vm, f, f_args, 3);
 
 			const auto parent_index = parents2[element_index].get_int_value();
 			if(parent_index != -1){
@@ -897,40 +710,38 @@ bc_value_t host__supermap(interpreter_t& vm, const bc_value_t args[], int arg_co
 
 
 
-/////////////////////////////////////////		PURE -- SUPERMAP2()
+/////////////////////////////////////////		PURE -- map_dag2()
 
 //	Input dependencies are specified for as 1... many integers per E, in order. [-1] or [a, -1] or [a, b, -1 ] etc.
 //
-//	[R] supermap([E] values, [int] parents, R (E, [R]) f)
+//	[R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
+
 struct dep_t {
 	int64_t incomplete_count;
 	std::vector<int64_t> depends_in_element_index;
 };
 
 
-bc_value_t host__supermap2(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__map_dag2(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 3);
-
-	//	Check topology.
-	if(args[0]._type.is_vector() && args[1]._type == typeid_t::make_vector(typeid_t::make_int()) && args[2]._type.is_function() && args[2]._type.get_function_args().size () == 2){
-	}
-	else{
-		quark::throw_runtime_error("supermap() requires 3 arguments.");
-	}
+	QUARK_ASSERT(arg_count == 4);
+	QUARK_ASSERT(check_map_dag_func_type(args[0]._type, args[1]._type, args[2]._type, args[3]._type));
 
 	const auto& elements = args[0];
 	const auto& e_type = elements._type.get_vector_element_type();
 	const auto& dependencies = args[1];
 	const auto& f = args[2];
 	const auto& r_type = args[2]._type.get_function_return();
+
+	const auto& context = args[3];
+
 	if(
 		e_type == f._type.get_function_args()[0]
 		&& r_type == f._type.get_function_args()[1].get_vector_element_type()
 	){
 	}
 	else {
-		quark::throw_runtime_error("R supermap([E] elements, R init_value, R (R acc, E element) f");
+		quark::throw_runtime_error("R map_dag([E] elements, R init_value, R (R acc, E element) f");
 	}
 
 	const auto elements2 = get_vector(elements);
@@ -979,7 +790,7 @@ bc_value_t host__supermap2(interpreter_t& vm, const bc_value_t args[], int arg_c
 		}
 
 		if(pass_ids.empty()){
-			quark::throw_runtime_error("supermap() dependency cycle error.");
+			quark::throw_runtime_error("map_dag() dependency cycle error.");
 		}
 
 		for(const auto element_index: pass_ids){
@@ -991,9 +802,9 @@ bc_value_t host__supermap2(interpreter_t& vm, const bc_value_t args[], int arg_c
 				ready_elements = ready_elements.push_back(ready);
 			}
 			const auto ready_elements2 = make_vector(r_type, ready_elements);
-			const bc_value_t f_args[2] = { e, ready_elements2 };
+			const bc_value_t f_args[] = { e, ready_elements2, context };
 
-			const auto result1 = call_function_bc(vm, f, f_args, 2);
+			const auto result1 = call_function_bc(vm, f, f_args, 3);
 
 			//	Decrement incomplete_count for every element that specifies *element_index* as a input dependency.
 			for(auto& x: element_dependencies){
@@ -1022,6 +833,128 @@ bc_value_t host__supermap2(interpreter_t& vm, const bc_value_t args[], int arg_c
 
 
 
+/////////////////////////////////////////		PURE -- filter()
+
+
+
+//	[E] filter([E] elements, func bool (E e, C context) f, C context)
+bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 3);
+	QUARK_ASSERT(check_filter_func_type(args[0]._type, args[1]._type, args[2]._type));
+
+	const auto& elements = args[0];
+	const auto& f = args[1];
+	const auto& e_type = elements._type.get_vector_element_type();
+	const auto& context = args[2];
+
+	const auto input_vec = get_vector(elements);
+	immer::vector<bc_value_t> vec2;
+
+	for(const auto& e: input_vec){
+		const bc_value_t f_args[] = { e, context };
+		const auto result1 = call_function_bc(vm, f, f_args, 2);
+		QUARK_ASSERT(result1._type.is_bool());
+
+		if(result1.get_bool_value()){
+			vec2 = vec2.push_back(e);
+		}
+	}
+
+	const auto result = make_vector(e_type, vec2);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	return result;
+}
+
+
+
+/////////////////////////////////////////		PURE -- reduce()
+
+
+
+//	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
+bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 4);
+	QUARK_ASSERT(check_reduce_func_type(args[0]._type, args[1]._type, args[2]._type, args[3]._type));
+
+	const auto& elements = args[0];
+	const auto& init = args[1];
+	const auto& f = args[2];
+	const auto& context = args[3];
+	const auto input_vec = get_vector(elements);
+
+	bc_value_t acc = init;
+	for(const auto& e: input_vec){
+		const bc_value_t f_args[] = { acc, e, context };
+		const auto result1 = call_function_bc(vm, f, f_args, 3);
+		acc = result1;
+	}
+
+	const auto result = acc;
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	return result;
+}
+
+
+
+
+/////////////////////////////////////////		PURE -- stable_sort()
+
+
+//	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
+bc_value_t host__stable_sort(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 3);
+	QUARK_ASSERT(check_stable_sort_func_type(args[0]._type, args[1]._type, args[2]._type));
+
+	const auto& elements = args[0];
+	const auto& f = args[1];
+	const auto& e_type = elements._type.get_vector_element_type();
+	const auto& context = args[2];
+
+	const auto input_vec = get_vector(elements);
+	std::vector<bc_value_t> mutate_inplace_elements(input_vec.begin(), input_vec.end());
+
+	struct sort_functor_r {
+		bool operator() (const bc_value_t &a, const bc_value_t &b) {
+			const bc_value_t f_args[] = { a, b, context };
+			const auto result1 = call_function_bc(vm, f, f_args, 3);
+			QUARK_ASSERT(result1._type.is_bool());
+			return result1.get_bool_value();
+		}
+
+		interpreter_t& vm;
+		bc_value_t context;
+		bc_value_t f;
+	};
+
+	const sort_functor_r sort_functor { vm, context, f };
+	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
+
+	const auto mutate_inplace_elements2 = immer::vector<bc_value_t>(mutate_inplace_elements.begin(), mutate_inplace_elements.end());
+	const auto result = make_vector(e_type, mutate_inplace_elements2);
+
+#if 1
+	const auto debug = value_and_type_to_ast_json(bc_to_value(result));
+	QUARK_TRACE(json_to_pretty_string(debug));
+#endif
+
+	return result;
+}
+
+
+
 
 /////////////////////////////////////////		IMPURE -- MISC
 
@@ -1046,13 +979,12 @@ bc_value_t host__send(interpreter_t& vm, const bc_value_t args[], int arg_count)
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 	QUARK_ASSERT(args[0]._type.is_string());
-	QUARK_ASSERT(args[1]._type.is_json_value());
+	QUARK_ASSERT(args[1]._type.is_json());
 
 	const auto& process_id = args[0].get_string_value();
-	const auto& message_json = args[1].get_json_value();
+	const auto& message_json = args[1].get_json();
 
-	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
-
+//	QUARK_TRACE_SS("send(\"" << process_id << "\"," << json_to_pretty_string(message_json) <<")");
 
 	vm._handler->on_send(process_id, message_json);
 
@@ -1060,415 +992,159 @@ bc_value_t host__send(interpreter_t& vm, const bc_value_t args[], int arg_count)
 }
 
 
-bc_value_t host__get_time_of_day(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 0);
 
-	std::chrono::time_point<std::chrono::high_resolution_clock> t = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> elapsed_seconds = t - vm._imm->_start_time;
-	const auto ms = elapsed_seconds.count() * 1000.0;
-	const auto result = value_t::make_int(int(ms));
-	return value_to_bc(result);
-}
-
-QUARK_UNIT_TEST("sizeof(int)", "", "", ""){
-	QUARK_TRACE(std::to_string(sizeof(int)));
-	QUARK_TRACE(std::to_string(sizeof(int64_t)));
-}
-
-QUARK_UNIT_TEST("get_time_of_day_ms()", "", "", ""){
-	const auto a = std::chrono::high_resolution_clock::now();
-	std::this_thread::sleep_for(std::chrono::milliseconds(7));
-	const auto b = std::chrono::high_resolution_clock::now();
-
-	std::chrono::duration<double> elapsed_seconds = b - a;
-	const int ms = static_cast<int>((static_cast<double>(elapsed_seconds.count()) * 1000.0));
-
-	QUARK_UT_VERIFY(ms >= 7)
-}
+/////////////////////////////////////////		PURE BITWISE
 
 
 
-
-
-/////////////////////////////////////////		IMPURE -- FILE SYSTEM
-
-
-
-
-bc_value_t host__read_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__bw_not(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_string());
+	QUARK_ASSERT(args[0]._type.is_int());
 
-	const string source_path = args[0].get_string_value();
-	std::string file_contents = read_text_file(source_path);
-	const auto v = bc_value_t::make_string(file_contents);
-	return v;
+	const auto a = args[0].get_int_value();
+	const auto result = ~a;
+	return bc_value_t::make_int(result);
 }
-
-
-void write_text_file(const std::string& abs_path, const std::string& data){
-	const auto up = UpDir2(abs_path);
-
-	MakeDirectoriesDeep(up.first);
-
-	std::ofstream outputFile;
-	outputFile.open(abs_path);
-	if (outputFile.fail()) {
-		quark::throw_exception();
-	}
-
-	outputFile << data;
-	outputFile.close();
-}
-
-bc_value_t host__write_text_file(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__bw_and(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
-	QUARK_ASSERT(args[0]._type.is_string());
-	QUARK_ASSERT(args[1]._type.is_string());
+	QUARK_ASSERT(args[0]._type.is_int());
+	QUARK_ASSERT(args[1]._type.is_int());
 
-	const string path = args[0].get_string_value();
-	const string file_contents = args[1].get_string_value();
-
-	write_text_file(path, file_contents);
-
-	return bc_value_t();
+	const auto a = args[0].get_int_value();
+	const auto b = args[1].get_int_value();
+	const auto result = a & b;
+	return bc_value_t::make_int(result);
 }
-
-
-
-std::vector<value_t> directory_entries_to_values(const std::vector<TDirEntry>& v){
-	const auto k_fsentry_t__type = make__fsentry_t__type();
-	const auto elements = mapf<value_t>(
-		v,
-		[&k_fsentry_t__type](const auto& e){
-//			const auto t = value_t::make_string(e.fName);
-			const auto type_string = e.fType == TDirEntry::kFile ? "file": "dir";
-			const auto t2 = value_t::make_struct_value(
-				k_fsentry_t__type,
-				{
-					value_t::make_string(type_string),
-					value_t::make_string(e.fNameOnly),
-					value_t::make_string(e.fParent)
-				}
-			);
-			return t2;
-		}
-	);
-	return elements;
-}
-
-
-
-
-bc_value_t host__get_fsentries_shallow(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_string());
-
-	const string path = args[0].get_string_value();
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("get_fsentries_shallow() illegal input path.");
-	}
-
-	const auto a = GetDirItems(path);
-	const auto elements = directory_entries_to_values(a);
-	const auto k_fsentry_t__type = make__fsentry_t__type();
-	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(vec2);
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	const auto v = value_to_bc(vec2);
-
-	return v;
-}
-
-bc_value_t host__get_fsentries_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_string());
-
-	const string path = args[0].get_string_value();
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("get_fsentries_deep() illegal input path.");
-	}
-
-	const auto a = GetDirItemsDeep(path);
-	const auto elements = directory_entries_to_values(a);
-	const auto k_fsentry_t__type = make__fsentry_t__type();
-	const auto vec2 = value_t::make_vector_value(k_fsentry_t__type, elements);
-
-#if 0
-	const auto debug = value_and_type_to_ast_json(vec2);
-	QUARK_TRACE(json_to_pretty_string(debug._value));
-#endif
-
-	const auto v = value_to_bc(vec2);
-
-	return v;
-}
-
-
-//??? implement
-std::string posix_timespec__to__utc(const time_t& t){
-	return std::to_string(t);
-}
-
-
-value_t impl__get_fsentry_info(const std::string& path){
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("get_fsentry_info() illegal input path.");
-	}
-
-	TFileInfo info;
-	bool ok = GetFileInfo(path, info);
-	QUARK_ASSERT(ok);
-	if(ok == false){
-		quark::throw_exception();
-	}
-
-	const auto parts = SplitPath(path);
-	const auto parent = UpDir2(path);
-
-	const auto type_string = info.fDirFlag ? "dir" : "string";
-	const auto name = info.fDirFlag ? parent.second : parts.fName;
-	const auto parent_path = info.fDirFlag ? parent.first : parts.fPath;
-
-	const auto creation_date = posix_timespec__to__utc(info.fCreationDate);
-	const auto modification_date = posix_timespec__to__utc(info.fModificationDate);
-	const auto file_size = info.fFileSize;
-
-	const auto result = value_t::make_struct_value(
-		make__fsentry_info_t__type(),
-		{
-			value_t::make_string(type_string),
-			value_t::make_string(name),
-			value_t::make_string(parent_path),
-
-			value_t::make_string(creation_date),
-			value_t::make_string(modification_date),
-
-			value_t::make_int(file_size)
-		}
-	);
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	return result;
-}
-
-
-bc_value_t host__get_fsentry_info(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_string());
-
-	const string path = args[0].get_string_value();
-	const auto result = impl__get_fsentry_info(path);
-	const auto v = value_to_bc(result);
-	return v;
-}
-
-
-bc_value_t host__get_fs_environment(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 0);
-
-	const auto dirs = GetDirectories();
-
-	const auto result = value_t::make_struct_value(
-		make__fs_environment_t__type(),
-		{
-			value_t::make_string(dirs.home_dir),
-			value_t::make_string(dirs.documents_dir),
-			value_t::make_string(dirs.desktop_dir),
-
-			value_t::make_string(dirs.application_support),
-			value_t::make_string(dirs.preferences_dir),
-			value_t::make_string(dirs.cache_dir),
-			value_t::make_string(dirs.temp_dir),
-
-			value_t::make_string(dirs.process_dir)
-		}
-	);
-
-#if 1
-	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	const auto v = value_to_bc(result);
-	return v;
-}
-
-//??? refactor common code.
-
-bc_value_t host__does_fsentry_exist(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_string());
-
-	const string path = args[0].get_string_value();
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("does_fsentry_exist() illegal input path.");
-	}
-
-	bool exists = DoesEntryExist(path);
-	const auto result = value_t::make_bool(exists);
-#if 1
-	const auto debug = value_and_type_to_ast_json(result);
-	QUARK_TRACE(json_to_pretty_string(debug));
-#endif
-
-	const auto v = value_to_bc(result);
-	return v;
-}
-
-
-bc_value_t host__create_directory_branch(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_string());
-
-	const string path = args[0].get_string_value();
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("create_directory_branch() illegal input path.");
-	}
-
-	MakeDirectoriesDeep(path);
-	return bc_value_t::make_void();
-}
-
-bc_value_t host__delete_fsentry_deep(interpreter_t& vm, const bc_value_t args[], int arg_count){
-	QUARK_ASSERT(vm.check_invariant());
-	QUARK_ASSERT(arg_count == 1);
-	QUARK_ASSERT(args[0]._type.is_string());
-
-	const string path = args[0].get_string_value();
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("delete_fsentry_deep() illegal input path.");
-	}
-
-	DeleteDeep(path);
-
-	return bc_value_t::make_void();
-}
-
-
-bc_value_t host__rename_fsentry(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t host__bw_or(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
-	QUARK_ASSERT(args[0]._type.is_string());
-	QUARK_ASSERT(args[1]._type.is_string());
+	QUARK_ASSERT(args[0]._type.is_int());
+	QUARK_ASSERT(args[1]._type.is_int());
 
-	const string path = args[0].get_string_value();
-	if(is_valid_absolute_dir_path(path) == false){
-		quark::throw_runtime_error("rename_fsentry() illegal input path.");
-	}
-	const string n = args[1].get_string_value();
-	if(n.empty()){
-		quark::throw_runtime_error("rename_fsentry() illegal input name.");
-	}
+	const auto a = args[0].get_int_value();
+	const auto b = args[1].get_int_value();
+	const auto result = a | b;
+	return bc_value_t::make_int(result);
+}
+bc_value_t host__bw_xor(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 2);
+	QUARK_ASSERT(args[0]._type.is_int());
+	QUARK_ASSERT(args[1]._type.is_int());
 
-	RenameEntry(path, n);
+	const auto a = args[0].get_int_value();
+	const auto b = args[1].get_int_value();
+	const auto result = a ^ b;
+	return bc_value_t::make_int(result);
+}
+bc_value_t host__bw_shift_left(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 2);
+	QUARK_ASSERT(args[0]._type.is_int());
+	QUARK_ASSERT(args[1]._type.is_int());
 
-	return bc_value_t::make_void();
+	const auto a = args[0].get_int_value();
+	const auto count = args[1].get_int_value();
+	const auto result = a << count;
+	return bc_value_t::make_int(result);
+}
+bc_value_t host__bw_shift_right(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 2);
+	QUARK_ASSERT(args[0]._type.is_int());
+	QUARK_ASSERT(args[1]._type.is_int());
+
+	const uint64_t a = args[0].get_int_value();
+	const uint64_t count = args[1].get_int_value();
+	const auto result = a >> count;
+	return bc_value_t::make_int(result);
+}
+bc_value_t host__bw_shift_right_arithmetic(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 2);
+	QUARK_ASSERT(args[0]._type.is_int());
+	QUARK_ASSERT(args[1]._type.is_int());
+
+	const auto a = args[0].get_int_value();
+	const auto count = args[1].get_int_value();
+	const auto result = a >> count;
+	return bc_value_t::make_int(result);
 }
 
 
 
-static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls_internal(){
-	std::map<function_id_t, BC_HOST_FUNCTION_PTR> result;
 
-	const auto corecalls = get_corecall_signatures();
-	for(const auto& e: corecalls){
-		result.insert({ e._function_id, nullptr });
-	}
 
-	result.find(make_assert_signature()._function_id)->second = host__assert;
-	result.find(make_to_string_signature()._function_id)->second = host__to_string;
-	result.find(make_to_pretty_string_signature()._function_id)->second = host__to_pretty_string;
-	result.find(make_typeof_signature()._function_id)->second = host__typeof;
 
-	result.find(make_update_signature()._function_id)->second = host__update;
+/////////////////////////////////////////		REGISTRY
+
+
+
+
+static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_corecalls_internal(){
+	std::vector<std::pair<corecall_signature_t, BC_NATIVE_FUNCTION_PTR>> log;
+
+	log.push_back({ make_assert_signature(), host__assert });
+	log.push_back({ make_to_string_signature(), host__to_string });
+	log.push_back({ make_to_pretty_string_signature(), host__to_pretty_string });
+	log.push_back({ make_typeof_signature(), host__typeof });
+
+	log.push_back({ make_update_signature(), host__update });
 
 	//	size() is translated to bc_opcode::k_get_size_vector_w_external_elements() etc.
-//	result.find(make_size_signature()._function_id)->second = nullptr;
 
-	result.find(make_find_signature()._function_id)->second = host__find;
-	result.find(make_exists_signature()._function_id)->second = host__exists;
-	result.find(make_erase_signature()._function_id)->second = host__erase;
-	result.find(make_get_keys_signature()._function_id)->second = host__get_keys;
+	log.push_back({ make_find_signature(), host__find });
+	log.push_back({ make_exists_signature(), host__exists });
+	log.push_back({ make_erase_signature(), host__erase });
+	log.push_back({ make_get_keys_signature(), host__get_keys });
 
 	//	push_back() is translated to bc_opcode::k_pushback_vector_w_inplace_elements() etc.
-//	result.find(make_push_back_signature()._function_id)->second = nullptr;
 
-	result.find(make_subset_signature()._function_id)->second = host__subset;
-	result.find(make_replace_signature()._function_id)->second = host__replace;
-
-
-	result.find(make_script_to_jsonvalue_signature()._function_id)->second = host__script_to_jsonvalue;
-	result.find(make_jsonvalue_to_script_signature()._function_id)->second = host__jsonvalue_to_script;
-	result.find(make_value_to_jsonvalue_signature()._function_id)->second = host__value_to_jsonvalue;
-
-	result.find(make_jsonvalue_to_value_signature()._function_id)->second = host__jsonvalue_to_value;
-
-	result.find(make_get_json_type_signature()._function_id)->second = host__get_json_type;
-
-	result.find(make_map_signature()._function_id)->second = host__map;
-	result.find(make_map_string_signature()._function_id)->second = host__map_string;
-	result.find(make_filter_signature()._function_id)->second = host__filter;
-	result.find(make_reduce_signature()._function_id)->second = host__reduce;
-	result.find(make_supermap_signature()._function_id)->second = host__supermap;
-
-	result.find(make_print_signature()._function_id)->second = host__print;
-	result.find(make_send_signature()._function_id)->second = host__send;
-	return result;
-}
+	log.push_back({ make_subset_signature(), host__subset });
+	log.push_back({ make_replace_signature(), host__replace });
 
 
-static std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_filelib_internal(){
-	std::map<function_id_t, BC_HOST_FUNCTION_PTR> result;
+	log.push_back({ make_parse_json_script_signature(), host__parse_json_script });
+	log.push_back({ make_generate_json_script_signature(), host__generate_json_script });
+	log.push_back({ make_to_json_signature(), host__to_json });
 
-	const auto filelib_calls = get_filelib_signatures();
-	for(const auto& e: filelib_calls){
-		result.insert({ e._function_id, nullptr });
+	log.push_back({ make_from_json_signature(), host__from_json });
+
+	log.push_back({ make_get_json_type_signature(), host__get_json_type });
+
+	log.push_back({ make_map_signature(), host__map });
+	log.push_back({ make_map_string_signature(), host__map_string });
+	log.push_back({ make_filter_signature(), host__filter });
+	log.push_back({ make_reduce_signature(), host__reduce });
+	log.push_back({ make_map_dag_signature(), host__map_dag });
+
+	log.push_back({ make_stable_sort_signature(), host__stable_sort });
+
+
+	log.push_back({ make_print_signature(), host__print });
+	log.push_back({ make_send_signature(), host__send });
+
+
+	log.push_back({ make_bw_not_signature(), host__bw_not });
+	log.push_back({ make_bw_and_signature(), host__bw_and });
+	log.push_back({ make_bw_or_signature(), host__bw_or });
+	log.push_back({ make_bw_xor_signature(), host__bw_xor });
+	log.push_back({ make_bw_shift_left_signature(), host__bw_shift_left });
+	log.push_back({ make_bw_shift_right_signature(), host__bw_shift_right });
+	log.push_back({ make_bw_shift_right_arithmetic_signature(), host__bw_shift_right_arithmetic });
+
+
+	std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> result;
+	for(const auto& e: log){
+		result.insert({ function_id_t { e.first.name }, e.second });
 	}
-
-	result.find(make_get_time_of_day_signature()._function_id)->second = host__get_time_of_day;
-
-	result.find(make_read_text_file_signature()._function_id)->second = host__read_text_file;
-	result.find(make_write_text_file_signature()._function_id)->second = host__write_text_file;
-
-	result.find(make_get_fsentries_shallow_signature()._function_id)->second = host__get_fsentries_shallow;
-	result.find(make_get_fsentries_deep_signature()._function_id)->second = host__get_fsentries_deep;
-	result.find(make_get_fsentry_info_signature()._function_id)->second = host__get_fsentry_info;
-	result.find(make_get_fs_environment_signature()._function_id)->second = host__get_fs_environment;
-	result.find(make_does_fsentry_exist_signature()._function_id)->second = host__does_fsentry_exist;
-	result.find(make_create_directory_branch_signature()._function_id)->second = host__create_directory_branch;
-	result.find(make_delete_fsentry_deep_signature()._function_id)->second = host__delete_fsentry_deep;
-	result.find(make_rename_fsentry_signature()._function_id)->second = host__rename_fsentry;
-
-	result.find(make_calc_string_sha1_signature()._function_id)->second = host__calc_string_sha1;
-	result.find(make_calc_binary_sha1_signature()._function_id)->second = host__calc_binary_sha1;
-
 	return result;
 }
 
-std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_corecalls(){
+std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_corecalls(){
 	static const auto f = bc_get_corecalls_internal();
-	return f;
-}
-std::map<function_id_t, BC_HOST_FUNCTION_PTR> bc_get_filelib_calls(){
-	static const auto f = bc_get_filelib_internal();
 	return f;
 }
 

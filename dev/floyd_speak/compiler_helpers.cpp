@@ -13,11 +13,9 @@
 
 #include "pass2.h"
 #include "pass3.h"
-#include "bytecode_host_functions.h"
-#include "bytecode_generator.h"
 #include "compiler_helpers.h"
 #include "compiler_basics.h"
-#include "floyd_filelib.h"
+#include "floyd_corelib.h"
 
 #include <thread>
 #include <deque>
@@ -89,7 +87,7 @@ compilation_unit_t make_compilation_unit_nolib(const std::string& source_code, c
 
 compilation_unit_t make_compilation_unit_lib(const std::string& source_code, const std::string& source_path){
 	return compilation_unit_t{
-		.prefix_source = k_filelib_builtin_types_and_constants + "\n",
+		.prefix_source = k_corelib_builtin_types_and_constants + "\n",
 		.program_text = source_code,
 		.source_file_path = source_path
 	};
@@ -264,19 +262,29 @@ static function_definition_t desugar_function_def(desugar_t& acc, const function
 		const floyd::function_definition_t& function_def;
 
 		function_definition_t operator()(const function_definition_t::empty_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			return function_def;
 		}
 		function_definition_t operator()(const function_definition_t::floyd_func_t& e) const{
-			const auto body = desugar_body(acc, *e._body);
-			const auto body2 = std::make_shared<body_t>(body);
-			return function_definition_t::make_floyd_func(
-				function_def._location,
-				function_def._definition_name,
-				function_def._function_type,
-				function_def._args,
-				body2
-			);
+			if(e._body){
+				const auto body = desugar_body(acc, *e._body);
+				const auto body2 = std::make_shared<body_t>(body);
+				return function_definition_t::make_floyd_func(
+					function_def._location,
+					function_def._definition_name,
+					function_def._function_type,
+					function_def._args,
+					body2
+				);
+			}
+			else{
+				return function_definition_t::make_floyd_func(
+					function_def._location,
+					function_def._definition_name,
+					function_def._function_type,
+					function_def._args,
+					{}
+				);
+			}
 		}
 		function_definition_t operator()(const function_definition_t::host_func_t& e) const{
 			return function_def;

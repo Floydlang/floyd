@@ -58,7 +58,7 @@ namespace floyd {
 			k_int,
 			k_double,
 			k_string,
-			k_json_value,
+			k_json,
 
 			k_typeid,
 

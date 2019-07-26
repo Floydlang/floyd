@@ -19,6 +19,10 @@
 namespace floyd {
 
 
+static const char k_literal_divider_char = '\'';
+const std::string k_hex_chars = "0123456789abcdef";
+
+
 QUARK_UNIT_TEST("parser", "C++ operators", "", ""){
 	const int a = 2-+-2;
 	ut_verify_auto(QUARK_POS, a, 4);
@@ -255,18 +259,20 @@ int64_t expand_one_char_escape(const char ch2){
 			return 0x27;
 		case '"':
 			return 0x22;
+		case '/':
+			return 0x2f;
 		default:
 			return -1;
 	}
 }
 
-std::pair<std::string, seq_t> parse_string_literal(const seq_t& s){
+std::pair<std::string, seq_t> parse_string_literal_internal(const seq_t& s, const char delimiter){
 	QUARK_ASSERT(!s.empty());
-	QUARK_ASSERT(s.first1_char() == '\"');
+	QUARK_ASSERT(s.first1_char() == delimiter);
 
 	auto pos = s.rest();
 	std::string result = "";
-	while(pos.empty() == false && pos.first() != "\""){
+	while(pos.empty() == false && pos.first() != std::string(1, delimiter)){
 		//	Look for escape char
 		if(pos.first1_char() == 0x5c){
 			if(pos.size() < 2){
@@ -290,10 +296,16 @@ std::pair<std::string, seq_t> parse_string_literal(const seq_t& s){
 			pos = pos.rest();
 		}
 	}
-	if(pos.first() != "\""){
-		throw_compiler_error_nopos("Incomplete string literal -- missing ending \"-character in string literal: \"" + result + "\"!");
+	if(pos.first() != std::string(1, delimiter)){
+		throw_compiler_error_nopos("Incomplete string literal -- missing ending " + std::string(1, delimiter) + "-character in string literal: \"" + result + "\"!");
 	}
 	return { result, pos.rest() };
+}
+
+
+
+std::pair<std::string, seq_t> parse_string_literal(const seq_t& s){
+	return parse_string_literal_internal(s, '\"');
 }
 
 QUARK_UNIT_TEST("parser", "parse_string_literal()", "", ""){
@@ -338,10 +350,51 @@ QUARK_UNIT_TEST("parser", "parse_string_literal()", "Escape \"", ""){
 QUARK_UNIT_TEST("parser", "parse_string_literal()", "Escape \'", ""){
 	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\'" xxx)___")), std::pair<std::string, seq_t>("\'", seq_t(" xxx")));
 }
+QUARK_UNIT_TEST("parser", "parse_string_literal()", "Escape \'", ""){
+	ut_verify(QUARK_POS, parse_string_literal(seq_t(R"___("\/" xxx)___")), std::pair<std::string, seq_t>("/", seq_t(" xxx")));
+}
+
+
+
+
+std::pair<int64_t, seq_t> parse_character_literal(const seq_t& s){
+	QUARK_ASSERT(!s.empty());
+	QUARK_ASSERT(s.first1_char() == '\'');
+
+	const auto a = parse_string_literal_internal(s, '\'');
+	if(a.first.size() != 1){
+		throw_compiler_error_nopos("Character literal must be a single character: \"" + a.first + "\"!");
+	}
+
+	const int64_t number = a.first[0];
+	QUARK_ASSERT(number >= 0 && number < 256);
+
+	return { number, a.second };
+}
+
+QUARK_UNIT_TEST("parser", "parse_character_literal()", "", ""){
+	ut_verify(QUARK_POS, parse_character_literal(seq_t(R"('A' xxx)")), std::pair<int64_t, seq_t>(65, seq_t(" xxx")));
+}
+QUARK_UNIT_TEST("parser", "parse_string_literal()", "Escape \0", ""){
+	ut_verify(QUARK_POS, parse_character_literal(seq_t(R"___('\0' xxx)___")), std::pair<int64_t, seq_t>(0x00, seq_t(" xxx")));
+}
+
+QUARK_UNIT_TEST("parser", "parse_character_literal()", "", ""){
+	try {
+		parse_character_literal(seq_t(R"('AB' xxx)"));
+		QUARK_ASSERT(false);
+	}
+	catch(const compiler_error& e){
+		const auto w = e.what();
+		ut_verify(QUARK_POS, w, R"___(Character literal must be a single character: "AB"!)___");
+	}
+}
+
+
 
 
 // [0-9] and "."  => numeric constant.
-std::pair<value_t, seq_t> parse_numeric_constant(const seq_t& p) {
+std::pair<value_t, seq_t> parse_decimal_literal(const seq_t& p) {
 	QUARK_ASSERT(p.check_invariant());
 	QUARK_ASSERT(k_c99_number_chars.find(p.first()) != std::string::npos);
 
@@ -356,33 +409,380 @@ std::pair<value_t, seq_t> parse_numeric_constant(const seq_t& p) {
 		return { value_t::make_double(number), number_pos.second };
 	}
 	else{
-		int number = atoi(number_pos.first.c_str());
+		const int number = atoi(number_pos.first.c_str());
 		return { value_t::make_int(number), number_pos.second };
 	}
 }
 
-QUARK_UNIT_TEST("parser", "parse_numeric_constant()", "", ""){
-	const auto a = parse_numeric_constant(seq_t("0 xxx"));
+QUARK_UNIT_TEST("parser", "parse_decimal_literal()", "", ""){
+	const auto a = parse_decimal_literal(seq_t("0 xxx"));
 	QUARK_UT_VERIFY(a.first.get_int_value() == 0);
 	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
 }
 
-QUARK_UNIT_TEST("parser", "parse_numeric_constant()", "", ""){
-	const auto a = parse_numeric_constant(seq_t("1234 xxx"));
+QUARK_UNIT_TEST("parser", "parse_decimal_literal()", "", ""){
+	const auto a = parse_decimal_literal(seq_t("1234 xxx"));
 	QUARK_UT_VERIFY(a.first.get_int_value() == 1234);
 	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
 }
 
-QUARK_UNIT_TEST("parser", "parse_numeric_constant()", "", ""){
-	const auto a = parse_numeric_constant(seq_t("0.5 xxx"));
+QUARK_UNIT_TEST("parser", "parse_decimal_literal()", "", ""){
+	const auto a = parse_decimal_literal(seq_t("0.5 xxx"));
 	QUARK_UT_VERIFY(a.first.get_double_value() == 0.5f);
 	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
 }
+
+
+
+/*
+	Makes sure any spans dividers sit at OK positions then removes them.
+
+	If a divider exists at all, we expect the format to be like this:
+
+	"a'bbbbbbbb"
+	"aaaaaaaa'bbbbbbbb"
+	"a'bbbbbbbb'cccccccc"
+
+	A multiple of 8 characters is a span.
+	There must be a divider between each span.
+	None at the end.
+	First span can be shorted but not zero characters
+*/
+std::string strip_optional_dividers(const std::string& s){
+	std::vector<std::string> spans;
+	spans.push_back("");
+	for(auto pos = 0 ; pos < s.size() ; pos++){
+		const auto ch = s[pos];
+		if(ch == k_literal_divider_char){
+			spans.push_back("");
+		}
+		else{
+			spans.back().push_back(ch);
+		}
+	}
+
+	if(spans.size() == 1){
+		return s;
+	}
+	else{
+		for(int i = 1 ; i < spans.size() ; i++){
+			if(spans[i].size() != 8){
+				throw_compiler_error_nopos(std::string() + "Unexpected \''\' divider in literal .");
+			}
+		}
+		if(spans.front().size() > 0 && spans.front().size() <= 8){
+		}
+		else{
+			throw_compiler_error_nopos(std::string() + "Unexpected \''\' divider in literal .");
+		}
+	}
+	std::string result;
+	for(const auto& e: spans){
+		result.append(e);
+	}
+	return result;
+}
+
+QUARK_UNIT_TEST("parser", "strip_optional_dividers()", "", ""){
+	QUARK_UT_VERIFY(strip_optional_dividers("") == "");
+}
+QUARK_UNIT_TEST("parser", "strip_optional_dividers()", "", ""){
+	QUARK_UT_VERIFY(strip_optional_dividers("aaa") == "aaa");
+}
+QUARK_UNIT_TEST("parser", "strip_optional_dividers()", "", ""){
+	QUARK_UT_VERIFY(strip_optional_dividers("aa'bbbbbbbb") == "aabbbbbbbb");
+}
+QUARK_UNIT_TEST("parser", "strip_optional_dividers()", "", ""){
+	QUARK_UT_VERIFY(strip_optional_dividers("aa'bbbbbbbb'cccccccc") == "aabbbbbbbbcccccccc");
+}
+QUARK_UNIT_TEST("parser", "strip_optional_dividers()", "", ""){
+	QUARK_UT_VERIFY(strip_optional_dividers("aaaaaaaa'bbbbbbbb") == "aaaaaaaabbbbbbbb");
+}
+
+
+QUARK_UNIT_TEST("parser", "strip_optional_dividers()", "", ""){
+	try {
+		strip_optional_dividers("aaaaaaaa'");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+QUARK_UNIT_TEST("parser", "strip_optional_dividers()", "", ""){
+	try {
+		strip_optional_dividers("a'");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+QUARK_UNIT_TEST("parser", "strip_optional_dividers()", "", ""){
+	try {
+		strip_optional_dividers("a'bbbb");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+QUARK_UNIT_TEST("parser", "strip_optional_dividers()", "", ""){
+	try {
+		strip_optional_dividers("a'bbbb'cccccccc");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+QUARK_UNIT_TEST("parser", "strip_optional_dividers()", "", ""){
+	try {
+		strip_optional_dividers("a'bbbbbbbbbbbbb");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+QUARK_UNIT_TEST("parser", "strip_optional_dividers()", "", ""){
+	try {
+		strip_optional_dividers("'aaaaaaaa");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+QUARK_UNIT_TEST("parser", "strip_optional_dividers()", "", ""){
+	try {
+		strip_optional_dividers("'aaaaa");
+		QUARK_UT_VERIFY(false);
+	}
+	catch(...){
+	}
+}
+
+
+/*
+	0b0
+	0b1
+	0b00000000'11111111
+	0b0'11111111
+*/
+
+std::pair<value_t, seq_t> parse_binary_literal(const seq_t& p) {
+	QUARK_ASSERT(p.check_invariant());
+
+	const auto pos = read_required(p, "0b");
+	const auto number_pos = read_while(pos, k_c99_number_chars + k_c99_identifier_chars + std::string(1, k_literal_divider_char));
+	if(number_pos.first.empty()){
+		throw_compiler_error_nopos("Illegal binary literal.");
+	}
+
+	const auto s = strip_optional_dividers(number_pos.first);
+	if(s.size() > 64){
+		throw_compiler_error_nopos(std::string() + "Binary literal bigger than supported 64 bits.");
+	}
+
+	uint64_t acc = 0;
+	for(int i = 0 ; i < s.size() ; i++){
+		acc = acc << 1;
+
+		const auto ch = s[i];
+		if(ch == '1'){
+			acc = acc | 1;
+		}
+		else if(ch == '0'){
+		}
+		else if(ch == k_literal_divider_char){
+		}
+		else{
+			throw_compiler_error_nopos(std::string() + "Illegal character \'" +  ch + "\' in binary literal.");
+		}
+	}
+	return { value_t::make_int(acc), number_pos.second };
+}
+
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	try {
+		const auto a = parse_binary_literal(seq_t("0b xxx"));
+		QUARK_ASSERT(false);
+	}
+	catch(...){
+	}
+}
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	const auto a = parse_binary_literal(seq_t("0b0 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 0);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	const auto a = parse_binary_literal(seq_t("0b1 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 1);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	const auto a = parse_binary_literal(seq_t("0b00000000 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 0);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	const auto a = parse_binary_literal(seq_t("0b00000001 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 1);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	const auto a = parse_binary_literal(seq_t("0b10000000 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 128);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	const auto a = parse_binary_literal(seq_t("0b11111111 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 255);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	const auto a = parse_binary_literal(seq_t("0b1000000000000000000000000000000000000000000000000000000000000001 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 0b1000000000000000000000000000000000000000000000000000000000000001);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	try {
+		const auto a = parse_binary_literal(seq_t("0b000011112 xxx"));
+		QUARK_ASSERT(false);
+	}
+	catch(...){
+	}
+}
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	try {
+		const auto a = parse_binary_literal(seq_t("0b00001111a xxx"));
+		QUARK_ASSERT(false);
+	}
+	catch(...){
+	}
+}
+
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+											//   ----XXXX----XXXX----XXXX----XXXX----XXXX----XXXX----XXXX----XXXX
+	const auto a = parse_binary_literal(seq_t("0b0001001000110100010101100111100010011010101111001101111011110001 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 0x123456789abcdef1);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	const auto a = parse_binary_literal(seq_t("0b00010010'00110100'01010110'01111000'10011010'10111100'11011110'11110001 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 0x123456789abcdef1);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	const auto a = parse_binary_literal(seq_t("0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 0x8000000000000001);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	try {
+		const auto a = parse_binary_literal(seq_t("0b1'10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001 xxx"));
+		QUARK_ASSERT(false);
+	}
+	catch(...){
+	}
+}
+
+
+
+
+
+std::pair<value_t, seq_t> parse_hexadecimal_literal(const seq_t& p) {
+	QUARK_ASSERT(p.check_invariant());
+
+	const auto pos = read_required(p, "0x");
+	const auto number_pos = read_while(pos, k_c99_number_chars + k_c99_identifier_chars + k_hex_chars + std::string(1, k_literal_divider_char));
+	if(number_pos.first.empty()){
+		throw_compiler_error_nopos("Illegal hexadecimal literal.");
+	}
+
+	const auto s = strip_optional_dividers(number_pos.first);
+	if(s.size() > 16){
+		throw_compiler_error_nopos(std::string() + "Hexadecimal literal bigger than supported 64 bits.");
+	}
+
+	uint64_t acc = 0;
+	for(int i = 0 ; i < s.size() ; i++){
+		acc = acc << 4;
+
+		const auto ch0 = s[i];
+		const char ch = static_cast<char>(std::tolower(ch0));
+		const auto value = k_hex_chars.find(ch);
+		if(value != std::string::npos){
+			acc = acc | value;
+		}
+		else{
+			throw_compiler_error_nopos(std::string() + "Illegal character \'" +  ch + "\' in binary literal.");
+		}
+	}
+	return { value_t::make_int(acc), number_pos.second };
+}
+
+QUARK_UNIT_TEST("parser", "parse_hexadecimal_literal()", "", ""){
+	const auto a = parse_hexadecimal_literal(seq_t("0x00 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 0x00);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+
+QUARK_UNIT_TEST("parser", "parse_hexadecimal_literal()", "", ""){
+	const auto a = parse_hexadecimal_literal(seq_t("0x1234 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 0x1234);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+
+QUARK_UNIT_TEST("parser", "parse_hexadecimal_literal()", "", ""){
+	const auto a = parse_hexadecimal_literal(seq_t("0xabcdef0123456789 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 0xabcdef0123456789);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+
+QUARK_UNIT_TEST("parser", "parse_hexadecimal_literal()", "", ""){
+	const auto a = parse_hexadecimal_literal(seq_t("0xabcdef01'23456789 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 0xabcdef0123456789);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+
+QUARK_UNIT_TEST("parser", "parse_hexadecimal_literal()", "", ""){
+	const auto a = parse_hexadecimal_literal(seq_t("0xabcdef01'23456789 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 0xabcdef0123456789);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+QUARK_UNIT_TEST("parser", "parse_hexadecimal_literal()", "", ""){
+	const auto a = parse_hexadecimal_literal(seq_t("0x01'23456789 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 0x0123456789);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+
+QUARK_UNIT_TEST("parser", "parse_hexadecimal_literal()", "", ""){
+	const auto a = parse_hexadecimal_literal(seq_t("0xABCD xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 0xabcd);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+
+QUARK_UNIT_TEST("parser", "parse_binary_literal()", "", ""){
+	try {
+		const auto a = parse_hexadecimal_literal(seq_t("0xf'abcdef01'23456789 xxx"));
+		QUARK_ASSERT(false);
+	}
+	catch(...){
+	}
+}
+
+
+
 
 /*
 	Constant literal or identifier.
 		3
 		3.0
+		0b00000011
+		0xffdeadbeefaa
+
+		'T'
+
 		"three"
 		true
 		false
@@ -400,11 +800,27 @@ std::pair<json_t, seq_t> parse_terminal(const seq_t& p0) {
 		const auto result = maker__make_constant(value_t::make_string(value_pos.first));
 		return { result, value_pos.second };
 	}
+	else if(p.first1() == "\'"){
+		const auto value_pos = parse_character_literal(p);
+		const auto result = maker__make_constant(value_t::make_int(value_pos.first));
+		return { result, value_pos.second };
+	}
+
+	else if(is_first(p, "0b")){
+		const auto value_p = parse_binary_literal(p);
+		const auto result = maker__make_constant(value_p.first);
+		return { result, value_p.second };
+	}
+	else if(is_first(p, "0x")){
+		const auto value_p = parse_hexadecimal_literal(p);
+		const auto result = maker__make_constant(value_p.first);
+		return { result, value_p.second };
+	}
 
 	//	Number constant?
 	// [0-9] and "."  => numeric constant.
 	else if(k_c99_number_chars.find(p.first1()) != std::string::npos){
-		const auto value_p = parse_numeric_constant(p);
+		const auto value_p = parse_decimal_literal(p);
 		const auto result = maker__make_constant(value_p.first);
 		return { result, value_p.second };
 	}

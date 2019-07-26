@@ -21,7 +21,21 @@ namespace floyd {
 ////////////////////////////////////////		function_id_t
 
 
-typedef int64_t function_id_t;
+struct function_id_t {
+	std::string name;
+};
+
+inline bool operator==(const function_id_t& lhs, const function_id_t& rhs){
+	return lhs.name == rhs.name;
+}
+inline bool operator!=(const function_id_t& lhs, const function_id_t& rhs){
+	return lhs.name != rhs.name;
+}
+inline bool operator<(const function_id_t& lhs, const function_id_t& rhs){
+	return lhs.name < rhs.name;
+}
+
+const function_id_t k_no_function_id = function_id_t { "" };
 
 
 

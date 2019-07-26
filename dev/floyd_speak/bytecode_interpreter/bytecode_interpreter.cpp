@@ -8,11 +8,13 @@
 
 #include "bytecode_interpreter.h"
 
-#include "bytecode_host_functions.h"
+#include "floyd_interpreter.h"
+#include "bytecode_corecalls.h"
+#include "bytecode_corelib.h"
 #include "text_parser.h"
 #include "ast_value.h"
 #include "ast_json.h"
-#include <sys/time.h>
+
 #include <algorithm>
 
 
@@ -191,19 +193,19 @@ bc_value_t::bc_value_t(const std::string& value) :
 }
 
 
-//////////////////////////////////////		json_value
+//////////////////////////////////////		json
 
 
-bc_value_t bc_value_t::make_json_value(const json_t& v){
+bc_value_t bc_value_t::make_json(const json_t& v){
 	return bc_value_t{ std::make_shared<json_t>(v) };
 }
-json_t bc_value_t::get_json_value() const{
+json_t bc_value_t::get_json() const{
 	QUARK_ASSERT(check_invariant());
 
-	return *_pod._external->_json_value.get();
+	return *_pod._external->_json.get();
 }
 bc_value_t::bc_value_t(const std::shared_ptr<json_t>& value) :
-	_type(typeid_t::make_json_value())
+	_type(typeid_t::make_json())
 {
 	QUARK_ASSERT(value);
 	QUARK_ASSERT(value->check_invariant());
@@ -267,18 +269,21 @@ bc_value_t::bc_value_t(const typeid_t& struct_type, const std::vector<bc_value_t
 //////////////////////////////////////		function
 
 
-bc_value_t bc_value_t::make_function_value(const typeid_t& function_type, function_id_t function_id){
+bc_value_t bc_value_t::make_function_value(const typeid_t& function_type, const function_id_t& function_id){
 	return bc_value_t{ function_type, function_id, true };
 }
-int bc_value_t::get_function_value() const{
+function_id_t bc_value_t::get_function_value() const{
 	QUARK_ASSERT(check_invariant());
 
-	return _pod._inplace._function_id;
+	return _pod._external->_function_id;
 }
-bc_value_t::bc_value_t(const typeid_t& function_type, function_id_t function_id, bool dummy) :
+bc_value_t::bc_value_t(const typeid_t& function_type, const function_id_t& function_id, bool dummy) :
 	_type(function_type)
 {
-	_pod._inplace._function_id = function_id;
+	QUARK_ASSERT(function_type.check_invariant());
+
+	_pod._external = new bc_external_value_t(function_type, function_id);
+
 	QUARK_ASSERT(check_invariant());
 }
 
@@ -422,7 +427,7 @@ bool bc_external_handle_t::check_invariant() const {
 
 
 bool encode_as_inplace(const typeid_t& type){
-	return type.is_bool() || type.is_int() || type.is_double() || type.is_function();
+	return type.is_bool() || type.is_int() || type.is_double();
 }
 bool encode_as_vector_w_inplace_elements(const typeid_t& type){
 	return type.is_vector() && encode_as_inplace(type.get_vector_element_type());
@@ -457,8 +462,8 @@ value_encoding type_to_encoding(const typeid_t& type){
 	else if(basetype == base_type::k_string){
 		return value_encoding::k_external__string;
 	}
-	else if(basetype == base_type::k_json_value){
-		return value_encoding::k_external__json_value;
+	else if(basetype == base_type::k_json){
+		return value_encoding::k_external__json;
 	}
 	else if(basetype == base_type::k_typeid){
 		return value_encoding::k_external__typeid;
@@ -479,7 +484,7 @@ value_encoding type_to_encoding(const typeid_t& type){
 		return value_encoding::k_external__dict;
 	}
 	else if(basetype == base_type::k_function){
-		return value_encoding::k_inplace__function;
+		return value_encoding::k_external__function;
 	}
 	else if(basetype == base_type::k_unresolved){
 	}
@@ -492,12 +497,13 @@ value_encoding type_to_encoding(const typeid_t& type){
 bool encode_as_external(value_encoding encoding){
 	return false
 		|| encoding == value_encoding::k_external__string
-		|| encoding == value_encoding::k_external__json_value
+		|| encoding == value_encoding::k_external__json
 		|| encoding == value_encoding::k_external__typeid
 		|| encoding == value_encoding::k_external__struct
 		|| encoding == value_encoding::k_external__vector
 		|| encoding == value_encoding::k_external__vector_pod64
 		|| encoding == value_encoding::k_external__dict
+		|| encoding == value_encoding::k_external__function
 		;
 }
 
@@ -505,11 +511,12 @@ bool encode_as_external(const typeid_t& type){
 	const auto basetype = type.get_base_type();
 	return false
 		|| basetype == base_type::k_string
-		|| basetype == base_type::k_json_value
+		|| basetype == base_type::k_json
 		|| basetype == base_type::k_typeid
 		|| basetype == base_type::k_struct
 		|| basetype == base_type::k_vector
 		|| basetype == base_type::k_dict
+		|| basetype == base_type::k_function
 		;
 }
 
@@ -525,7 +532,7 @@ bool bc_external_value_t::check_invariant() const{
 	const auto encoding = type_to_encoding(_debug_type);
 	if(encoding == value_encoding::k_external__string){
 //				QUARK_ASSERT(_string);
-		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_json == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
 		QUARK_ASSERT(_vector_w_external_elements.empty());
@@ -533,9 +540,9 @@ bool bc_external_value_t::check_invariant() const{
 		QUARK_ASSERT(_dict_w_external_values.size() == 0);
 		QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
 	}
-	else if(encoding == value_encoding::k_external__json_value){
+	else if(encoding == value_encoding::k_external__json){
 		QUARK_ASSERT(_string.empty());
-		QUARK_ASSERT(_json_value != nullptr);
+		QUARK_ASSERT(_json != nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
 		QUARK_ASSERT(_vector_w_external_elements.empty());
@@ -543,11 +550,11 @@ bool bc_external_value_t::check_invariant() const{
 		QUARK_ASSERT(_dict_w_external_values.size() == 0);
 		QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
 
-		QUARK_ASSERT(_json_value->check_invariant());
+		QUARK_ASSERT(_json->check_invariant());
 	}
 	else if(encoding == value_encoding::k_external__typeid){
 		QUARK_ASSERT(_string.empty());
-		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_json == nullptr);
 //		QUARK_ASSERT(_typeid_value != typeid_t::make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
 		QUARK_ASSERT(_vector_w_external_elements.empty());
@@ -559,7 +566,7 @@ bool bc_external_value_t::check_invariant() const{
 	}
 	else if(encoding == value_encoding::k_external__struct){
 		QUARK_ASSERT(_string.empty());
-		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_json == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 //				QUARK_ASSERT(_struct != nullptr);
 		QUARK_ASSERT(_vector_w_external_elements.empty());
@@ -571,7 +578,7 @@ bool bc_external_value_t::check_invariant() const{
 	}
 	else if(encoding == value_encoding::k_external__vector){
 		QUARK_ASSERT(_string.empty());
-		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_json == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
 //		QUARK_ASSERT(_vector_w_external_elements.empty());
@@ -581,7 +588,7 @@ bool bc_external_value_t::check_invariant() const{
 	}
 	else if(encoding == value_encoding::k_external__vector_pod64){
 		QUARK_ASSERT(_string.empty());
-		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_json == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
 		QUARK_ASSERT(_vector_w_external_elements.empty());
@@ -590,13 +597,22 @@ bool bc_external_value_t::check_invariant() const{
 	}
 	else if(encoding == value_encoding::k_external__dict){
 		QUARK_ASSERT(_string.empty());
-		QUARK_ASSERT(_json_value == nullptr);
+		QUARK_ASSERT(_json == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
 		QUARK_ASSERT(_vector_w_external_elements.empty());
 		QUARK_ASSERT(_vector_w_inplace_elements.empty());
 //				QUARK_ASSERT(_dict_w_external_values.size() == 0);
 //				QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
+	}
+	else if(encoding == value_encoding::k_external__function){
+		QUARK_ASSERT(_string.empty());
+		QUARK_ASSERT(_json == nullptr);
+		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
+		QUARK_ASSERT(_struct_members.empty());
+		QUARK_ASSERT(_vector_w_external_elements.empty());
+		QUARK_ASSERT(_dict_w_external_values.size() == 0);
+		QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
 	}
 	else {
 		QUARK_ASSERT(false);
@@ -619,11 +635,22 @@ bc_external_value_t::bc_external_value_t(const std::string& s) :
 bc_external_value_t::bc_external_value_t(const std::shared_ptr<json_t>& s) :
 	_rc(1),
 #if DEBUG
-	_debug_type(typeid_t::make_json_value()),
+	_debug_type(typeid_t::make_json()),
 #endif
-	_json_value(s)
+	_json(s)
 {
 	QUARK_ASSERT(s->check_invariant());
+	QUARK_ASSERT(check_invariant());
+}
+
+
+bc_external_value_t::bc_external_value_t(const typeid_t& type, const function_id_t& function_id) :
+	_rc(1),
+#if DEBUG
+	_debug_type(type),
+#endif
+	_function_id(function_id)
+{
 	QUARK_ASSERT(check_invariant());
 }
 
@@ -750,9 +777,9 @@ bool check_external_deep(const typeid_t& type, const bc_external_value_t* ext){
 		}
 	}
 	else if(basetype == base_type::k_function){
-		QUARK_ASSERT(false);
+		return true;
 	}
-	else if(basetype == base_type::k_json_value){
+	else if(basetype == base_type::k_json){
 	}
 	else if(basetype == base_type::k_typeid){
 	}
@@ -998,7 +1025,7 @@ bc_value_t update_struct_member_shallow(interpreter_t& vm, const bc_value_t& obj
 		quark::throw_runtime_error("Unknown member.");
 	}
 
-#if DEBUG
+#if DEBUG && 0
 	QUARK_TRACE(typeid_to_compact_string(new_value._type));
 	QUARK_TRACE(typeid_to_compact_string(struct_def._members[member_index]._type));
 
@@ -1047,7 +1074,7 @@ bc_value_t update_string_char(interpreter_t& vm, const bc_value_t s, int64_t loo
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(s._type.is_string());
 
-	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
+//	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
 
 	std::string s2 = s.get_string_value();
 	if(lookup_index < 0 || lookup_index >= s2.size()){
@@ -1162,13 +1189,13 @@ bc_value_t update_element(interpreter_t& vm, const bc_value_t& obj1, const bc_va
 			}
 		}
 	}
-	else if(obj1._type.is_json_value()){
-		const auto json_value0 = obj1.get_json_value();
-		if(json_value0.is_array()){
+	else if(obj1._type.is_json()){
+		const auto json0 = obj1.get_json();
+		if(json0.is_array()){
 			QUARK_ASSERT(false);
 			throw std::exception();
 		}
-		else if(json_value0.is_object()){
+		else if(json0.is_object()){
 			QUARK_ASSERT(false);
 			throw std::exception();
 		}
@@ -1545,7 +1572,7 @@ int bc_compare_dicts_double(const immer::map<std::string, bc_inplace_value_t>& l
 	quark::throw_exception();
 }
 
-int bc_compare_json_values(const json_t& lhs, const json_t& rhs){
+int bc_compare_jsons(const json_t& lhs, const json_t& rhs){
 	if(lhs == rhs){
 		return 0;
 	}
@@ -1628,8 +1655,8 @@ int bc_compare_value_true_deep(const bc_value_t& left, const bc_value_t& right, 
 	else if(type.is_string()){
 		return bc_compare_string(left.get_string_value(), right.get_string_value());
 	}
-	else if(type.is_json_value()){
-		return bc_compare_json_values(left.get_json_value(), right.get_json_value());
+	else if(type.is_json()){
+		return bc_compare_jsons(left.get_json(), right.get_json());
 	}
 	else if(type.is_typeid()){
 		if(left.get_typeid_value() == right.get_typeid_value()){
@@ -1706,7 +1733,7 @@ extern const std::map<bc_opcode, opcode_info_t> k_opcode_info = {
 	{ bc_opcode::k_get_struct_member, { "get_struct_member", opcode_info_t::encoding::k_s_0rri } },
 
 	{ bc_opcode::k_lookup_element_string, { "lookup_element_string", opcode_info_t::encoding::k_o_0rrr } },
-	{ bc_opcode::k_lookup_element_json_value, { "lookup_element_jsonvalue", opcode_info_t::encoding::k_o_0rrr } },
+	{ bc_opcode::k_lookup_element_json, { "lookup_element_jsonvalue", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_lookup_element_vector_w_external_elements, { "lookup_element_vector_w_external_elements", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_lookup_element_vector_w_inplace_elements, { "lookup_element_vector_w_inplace_elements", opcode_info_t::encoding::k_o_0rrr } },
 	{ bc_opcode::k_lookup_element_dict_w_external_values, { "lookup_element_dict_w_external_values", opcode_info_t::encoding::k_o_0rrr } },
@@ -1933,12 +1960,12 @@ bc_function_definition_t::bc_function_definition_t(
 	const typeid_t& function_type,
 	const std::vector<member_t>& args,
 	const std::shared_ptr<bc_static_frame_t>& frame,
-	function_id_t host_function_id
+	function_id_t function_id
 ) :
 	_function_type(function_type),
 	_args(args),
 	_frame_ptr(frame),
-	_host_function_id(host_function_id),
+	_function_id(function_id),
 	_dyn_arg_count(-1),
 	_return_is_ext(encode_as_external(_function_type.get_function_return()))
 {
@@ -2079,9 +2106,7 @@ json_t interpreter_stack_t::stack_to_json() const{
 const bc_function_definition_t& get_function_def(const interpreter_t& vm, function_id_t function_id){
 	QUARK_ASSERT(vm.check_invariant());
 
-	QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
-
-	const auto& function_def = vm._imm->_program._function_defs[function_id];
+	const auto& function_def = vm._imm->_program._function_defs.at(function_id);
 	return function_def;
 }
 
@@ -2096,11 +2121,10 @@ bc_value_t call_function_bc(interpreter_t& vm, const bc_value_t& f, const bc_val
 #endif
 
 	const auto& function_def = get_function_def(vm, f.get_function_value());
-	if(function_def._host_function_id != 0){
-		const auto host_function_id = function_def._host_function_id;
-		QUARK_ASSERT(host_function_id >= 0);
+	if(function_def._frame_ptr == nullptr){
+		const auto function_id = function_def._function_id;
 
-		const auto& host_function = vm._imm->_host_functions.at(host_function_id);
+		const auto& host_function = vm._imm->_native_functions.at(function_id);
 
 		//	arity
 	//	QUARK_ASSERT(args.size() == host_function._function_type.get_function_args().size());
@@ -2176,8 +2200,8 @@ json_t bcvalue_to_json(const bc_value_t& v){
 	else if(v._type.is_string()){
 		return json_t(v.get_string_value());
 	}
-	else if(v._type.is_json_value()){
-		return v.get_json_value();
+	else if(v._type.is_json()){
+		return v.get_json();
 	}
 	else if(v._type.is_typeid()){
 		return typeid_to_ast_json(v.get_typeid_value(), json_tags::k_plain);
@@ -2284,9 +2308,9 @@ interpreter_t::interpreter_t(const bc_program_t& program, runtime_handler_i* han
 
 
 	const auto corecalls = bc_get_corecalls();
-	const auto filelib_calls = bc_get_filelib_calls();
+	const auto corelib_calls = bc_get_corelib_calls();
 	auto host_functions = corecalls;
-	host_functions.insert(filelib_calls.begin(), filelib_calls.end());
+	host_functions.insert(corelib_calls.begin(), corelib_calls.end());
 
 
 	_imm = std::make_shared<interpreter_imm_t>(interpreter_imm_t{start_time, program, host_functions });
@@ -2363,18 +2387,18 @@ void execute_new_1(interpreter_t& vm, int16_t dest_reg, int16_t target_itype, in
 			return input_value;
 		}
 
-		//	Automatically transform a json_value::string => string at runtime?
-		else if(target_type.is_string() && input_value_type.is_json_value()){
-			if(input_value.get_json_value().is_string()){
-				return bc_value_t::make_string(input_value.get_json_value().get_string());
+		//	Automatically transform a json::string => string at runtime?
+		else if(target_type.is_string() && input_value_type.is_json()){
+			if(input_value.get_json().is_string()){
+				return bc_value_t::make_string(input_value.get_json().get_string());
 			}
 			else{
 				quark::throw_runtime_error("Attempting to assign a non-string JSON to a string.");
 			}
 		}
-		else if(target_type.is_json_value()){
+		else if(target_type.is_json()){
 			const auto arg = bcvalue_to_json(input_value);
-			return bc_value_t::make_json_value(arg);
+			return bc_value_t::make_json(arg);
 		}
 		else{
 			return input_value;
@@ -2797,44 +2821,44 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 		}
 
 		//	??? Simple JSON-values should not require ext. null, int, bool, empty object, empty array.
-		case bc_opcode::k_lookup_element_json_value: {
+		case bc_opcode::k_lookup_element_json: {
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_json(i._a));
 			QUARK_ASSERT(stack.check_reg_json(i._b));
 
-			// reg c points to different types depending on the runtime-type of the json_value.
+			// reg c points to different types depending on the runtime-type of the json.
 			QUARK_ASSERT(stack.check_reg_any(i._c));
 
-			const auto& parent_json_value = regs[i._b]._external->_json_value;
+			const auto& parent_json = regs[i._b]._external->_json;
 
-			if(parent_json_value->is_object()){
+			if(parent_json->is_object()){
 				QUARK_ASSERT(stack.check_reg_string(i._c));
 
 				const auto& lookup_key = regs[i._c]._external->_string;
 
 				//	get_object_element() throws if key can't be found.
-				const auto& value = parent_json_value->get_object_element(lookup_key);
+				const auto& value = parent_json->get_object_element(lookup_key);
 
 				//??? no need to create full bc_value_t here! We only need pod.
-				const auto value2 = bc_value_t::make_json_value(value);
+				const auto value2 = bc_value_t::make_json(value);
 
 				value2._pod._external->_rc++;
 				release_pod_external(regs[i._a]);
 				regs[i._a] = value2._pod;
 			}
-			else if(parent_json_value->is_array()){
+			else if(parent_json->is_array()){
 				QUARK_ASSERT(stack.check_reg_int(i._c));
 
 				const auto lookup_index = regs[i._c]._inplace._int64;
-				if(lookup_index < 0 || lookup_index >= parent_json_value->get_array_size()){
-					quark::throw_runtime_error("Lookup in json_value array: out of bounds.");
+				if(lookup_index < 0 || lookup_index >= parent_json->get_array_size()){
+					quark::throw_runtime_error("Lookup in json array: out of bounds.");
 				}
 				else{
-					const auto& value = parent_json_value->get_array_n(lookup_index);
+					const auto& value = parent_json->get_array_n(lookup_index);
 
 					//??? value2 will soon go out of scope - avoid creating bc_value_t all together.
 					//??? no need to create full bc_value_t here! We only need pod.
-					const auto value2 = bc_value_t::make_json_value(value);
+					const auto value2 = bc_value_t::make_json(value);
 
 					value2._pod._external->_rc++;
 					release_pod_external(regs[i._a]);
@@ -2842,7 +2866,7 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 				}
 			}
 			else{
-				quark::throw_runtime_error("Lookup using [] on json_value only works on objects and arrays.");
+				quark::throw_runtime_error("Lookup using [] on json only works on objects and arrays.");
 			}
 			QUARK_ASSERT(vm.check_invariant());
 			break;
@@ -2983,15 +3007,15 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(stack.check_reg_json(i._b));
 			QUARK_ASSERT(i._c == 0);
 
-			const auto& json_value = *regs[i._b]._external->_json_value;
-			if(json_value.is_object()){
-				regs[i._a]._inplace._int64 = json_value.get_object_size();
+			const auto& json = *regs[i._b]._external->_json;
+			if(json.is_object()){
+				regs[i._a]._inplace._int64 = json.get_object_size();
 			}
-			else if(json_value.is_array()){
-				regs[i._a]._inplace._int64 = json_value.get_array_size();
+			else if(json.is_array()){
+				regs[i._a]._inplace._int64 = json.get_array_size();
 			}
-			else if(json_value.is_string()){
-				regs[i._a]._inplace._int64 = json_value.get_string().size();
+			else if(json.is_string()){
+				regs[i._a]._inplace._int64 = json.get_string().size();
 			}
 			else{
 				quark::throw_runtime_error("Calling size() on unsupported type of value.");
@@ -3063,11 +3087,11 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 			QUARK_ASSERT(vm.check_invariant());
 			QUARK_ASSERT(stack.check_reg_function(i._b));
 
-			const function_id_t function_id = regs[i._b]._inplace._function_id;
+			const function_id_t function_id = regs[i._b]._external->_function_id;
 			const int callee_arg_count = i._c;
-			QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
+//			QUARK_ASSERT(function_id >= 0 && function_id < vm._imm->_program._function_defs.size())
 
-			const auto& function_def = vm._imm->_program._function_defs[function_id];
+			const auto& function_def = vm._imm->_program._function_defs.at(function_id);
 			const int function_def_dynamic_arg_count = function_def._dyn_arg_count;
 			const auto& function_return_type = function_def._function_type.get_function_return();
 
@@ -3076,9 +3100,12 @@ std::pair<bc_typeid_t, bc_value_t> execute_instructions(interpreter_t& vm, const
 
 			QUARK_ASSERT(function_def._args.size() == callee_arg_count);
 
-			if(function_def._host_function_id != 0){
-				const auto& host_function = vm._imm->_host_functions.at(function_def._host_function_id);
-				QUARK_ASSERT(host_function != nullptr);
+			if(function_def._frame_ptr == nullptr){
+				const auto it = vm._imm->_native_functions.find(function_def._function_id);
+				if(it == vm._imm->_native_functions.end()){
+					quark::throw_runtime_error("Attempting to calling unimplemented function.");
+				}
+				const auto& host_function = it->second;
 
 				const int arg0_stack_pos = stack.size() - (function_def_dynamic_arg_count + callee_arg_count);
 				int stack_pos = arg0_stack_pos;
@@ -3679,17 +3706,17 @@ json_t functiondef_to_json(const bc_function_definition_t& def){
 		json_t(typeid_to_compact_string(def._function_type)),
 		members_to_json(def._args),
 		def._frame_ptr ? frame_to_json(*def._frame_ptr) : json_t(),
-		json_t(def._host_function_id)
+		json_t(def._function_id.name)
 	});
 }
 
 json_t bcprogram_to_json(const bc_program_t& program){
 	std::vector<json_t> callstack;
 	std::vector<json_t> function_defs;
-	for(int i = 0 ; i < program._function_defs.size() ; i++){
-		const auto& function_def = program._function_defs[i];
+	for(const auto& e: program._function_defs){
+		const auto& function_def = e.second;
 		function_defs.push_back(json_t::make_array({
-			json_t(i),
+			e.second._function_id.name,
 			functiondef_to_json(function_def)
 		}));
 	}

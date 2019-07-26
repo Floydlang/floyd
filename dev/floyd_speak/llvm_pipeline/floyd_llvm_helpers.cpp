@@ -32,6 +32,9 @@
 
 #include "llvm/Bitcode/BitstreamWriter.h"
 
+#include "immer/vector.hpp"
+#include "immer/map.hpp"
+
 
 #include <algorithm>
 #include <cstdlib>
@@ -40,7 +43,6 @@
 #include <vector>
 #include <iostream>
 
-#include "bytecode_host_functions.h"
 #include "compiler_basics.h"
 #include "compiler_helpers.h"
 #include "floyd_parser.h"
@@ -109,6 +111,7 @@ void detect_leaks(const heap_t& heap){
 
 #if 1
 		if(leaks > 0){
+			QUARK_ASSERT(false);
 			throw std::exception();
 		}
 #endif
@@ -149,16 +152,16 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count){
 
 		auto alloc = reinterpret_cast<heap_alloc_64_t*>(alloc0);
 
-		alloc->allocation_word_count = allocation_word_count;
 		alloc->rc = 1;
 		alloc->magic = ALLOC_64_MAGIC;
 
 		alloc->data_a = 0;
 		alloc->data_b = 0;
 		alloc->data_c = 0;
+		alloc->data_d = 0;
 
 		alloc->heap64 = &heap;
-		memset(&alloc->debug_info[0], 0x00, 16);
+		memset(&alloc->debug_info[0], 0x00, 8);
 
 		heap.alloc_records.push_back({ alloc });
 
@@ -178,7 +181,6 @@ QUARK_UNIT_TEST("heap_t", "alloc_64()", "", ""){
 	auto a = alloc_64(heap, 0);
 	QUARK_UT_VERIFY(a != nullptr);
 	QUARK_UT_VERIFY(a->check_invariant());
-	QUARK_UT_VERIFY(a->allocation_word_count == 0);
 	QUARK_UT_VERIFY(a->rc == 1);
 
 	//	Must release alloc or heap will detect leakage.
@@ -404,17 +406,6 @@ runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
 
 
 
-char* get_vec_chars(runtime_value_t str){
-	QUARK_ASSERT(str.vector_ptr != nullptr);
-
-	return reinterpret_cast<char*>(str.vector_ptr->get_element_ptr());
-}
-
-uint64_t get_vec_string_size(runtime_value_t str){
-	QUARK_ASSERT(str.vector_ptr != nullptr);
-
-	return str.vector_ptr->get_element_count();
-}
 
 
 
@@ -742,6 +733,7 @@ VEC_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count
 
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count);
 	alloc->data_a = element_count;
+	alloc->data_b = allocation_count;
 	alloc->debug_info[0] = 'V';
 	alloc->debug_info[1] = 'E';
 	alloc->debug_info[2] = 'C';
@@ -767,10 +759,111 @@ WIDE_RETURN_T make_wide_return_vec(VEC_T* vec){
 	return make_wide_return_2x64(runtime_value_t{.vector_ptr = vec}, runtime_value_t{.int_value = 0});
 }
 
-VEC_T* wide_return_to_vec(const WIDE_RETURN_T& ret){
-	return ret.a.vector_ptr;
+
+
+
+QUARK_UNIT_TEST("VEC_T", "", "", ""){
+	const auto vec_struct_size1 = sizeof(std::vector<int>);
+	QUARK_UT_VERIFY(vec_struct_size1 == 24);
 }
 
+QUARK_UNIT_TEST("VEC_T", "", "", ""){
+	heap_t heap;
+	detect_leaks(heap);
+
+	VEC_T* v = alloc_vec(heap, 3, 3);
+	QUARK_UT_VERIFY(v != nullptr);
+
+	if(dec_rc(v->alloc) == 0){
+		dispose_vec(*v);
+	}
+
+	QUARK_UT_VERIFY(heap.check_invariant());
+	detect_leaks(heap);
+}
+
+
+
+
+
+////////////////////////////////		VEC_HAMT_T
+
+
+
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto vec_struct_size = sizeof(std::vector<int>);
+	QUARK_UT_VERIFY(vec_struct_size == 24);
+}
+
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto wr_struct_size = sizeof(WIDE_RETURN_T);
+	QUARK_UT_VERIFY(wr_struct_size == 16);
+}
+
+
+VEC_HAMT_T::~VEC_HAMT_T(){
+	QUARK_ASSERT(check_invariant());
+}
+
+bool VEC_HAMT_T::check_invariant() const {
+	QUARK_ASSERT(this->alloc.check_invariant());
+	return true;
+}
+
+VEC_HAMT_T* alloc_vec_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count){
+	QUARK_ASSERT(heap.check_invariant());
+
+	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count);
+	alloc->data_a = element_count;
+	alloc->debug_info[0] = 'V';
+	alloc->debug_info[1] = 'H';
+	alloc->debug_info[2] = 'A';
+	alloc->debug_info[3] = 'M';
+	alloc->debug_info[4] = 'T';
+
+	auto vec = reinterpret_cast<VEC_HAMT_T*>(alloc);
+
+	QUARK_ASSERT(vec->check_invariant());
+	QUARK_ASSERT(heap.check_invariant());
+
+	return vec;
+}
+
+void dispose_vec_hamt(VEC_HAMT_T& vec){
+	QUARK_ASSERT(vec.check_invariant());
+
+	dispose_alloc(vec.alloc);
+	QUARK_ASSERT(vec.alloc.heap64->check_invariant());
+}
+
+
+
+WIDE_RETURN_T make_wide_return_vec_hamt(VEC_HAMT_T* vec){
+	return make_wide_return_2x64(runtime_value_t{.vector_hamt_ptr = vec}, runtime_value_t{.int_value = 0});
+}
+
+
+
+
+QUARK_UNIT_TEST("VEC_HAMT_T", "", "", ""){
+	const auto vec_struct_size2 = sizeof(immer::vector<int>);
+	QUARK_UT_VERIFY(vec_struct_size2 == 32);
+}
+
+QUARK_UNIT_TEST("VEC_HAMT_T", "", "", ""){
+	heap_t heap;
+	detect_leaks(heap);
+
+	VEC_HAMT_T* v = alloc_vec_hamt(heap, 3, 3);
+	QUARK_UT_VERIFY(v != nullptr);
+
+	if(dec_rc(v->alloc) == 0){
+		dispose_vec_hamt(*v);
+	}
+
+	QUARK_UT_VERIFY(heap.check_invariant());
+	detect_leaks(heap);
+}
 
 
 
@@ -1490,7 +1583,7 @@ llvm::StructType* make_struct_type(const llvm_type_interner_t& interner, const t
 
 
 bool is_rc_value(const typeid_t& type){
-	return type.is_string() || type.is_vector() || type.is_dict() || type.is_struct() || type.is_json_value();
+	return type.is_string() || type.is_vector() || type.is_dict() || type.is_struct() || type.is_json();
 }
 
 
@@ -1597,7 +1690,7 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 			*static_cast<runtime_value_t*>(value_ptr) = value;
 		}
 		void operator()(const typeid_t::typeid_type_t& e) const{
-			*static_cast<int32_t*>(value_ptr) = value.typeid_itype;
+			*static_cast<int32_t*>(value_ptr) = static_cast<int32_t>(value.typeid_itype);
 		}
 
 		void operator()(const typeid_t::struct_t& e) const{
