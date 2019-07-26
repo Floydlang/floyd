@@ -1004,10 +1004,10 @@ QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 
 
 std::pair<json_t, seq_t> parse_while_statement(const seq_t& pos){
-	std::pair<bool, seq_t> while_pos = if_first(pos, keyword_t::k_while);
-	QUARK_ASSERT(while_pos.first);
+	std::pair<bool, seq_t> pos2 = if_first(pos, keyword_t::k_while);
+	QUARK_ASSERT(pos2.first);
 
-	const auto condition = read_enclosed_in_parantheses(while_pos.second);
+	const auto condition = read_enclosed_in_parantheses(pos2.second);
 	const auto body = parse_statement_body(condition.second);
 
 	const auto condition_expr = parse_expression(seq_t(condition.first)).first;
@@ -1046,6 +1046,56 @@ QUARK_UNIT_TEST("", "parse_while_statement()", "while(){}", ""){
 		)).first
 	);
 }
+
+
+
+//////////////////////////////////////////////////		parse_benchmark_def_statement()
+
+
+
+std::pair<json_t, seq_t> parse_benchmark_def_statement(const seq_t& pos0){
+	const auto pos = skip_whitespace(pos0);
+	std::pair<bool, seq_t> pos2 = if_first(pos, keyword_t::k_benchmark_def);
+	QUARK_ASSERT(pos2.first);
+
+	const auto name = parse_expression(pos2.second);
+	const auto body = parse_statement_body(name.second);
+
+	const auto r = make_statement_n(
+		location_t(pos.pos()),
+		statement_opcode_t::k_benchmark_def,
+		{
+			name.first,
+			body.ast
+		}
+	);
+	return { r, body.pos };
+}
+
+QUARK_UNIT_TEST("", "parse_benchmark_def_statement()", "while(){}", ""){
+	ut_verify(QUARK_POS,
+		parse_benchmark_def_statement(seq_t(R"___(
+
+			benchmark-def "Linear veq 0" {
+				print(1234)
+				return 2000
+			}
+
+		)___")).first,
+		parse_json(seq_t(
+			R"(
+				[
+					5,
+					"benchmark-def",
+					["k", "Linear veq 0", "^string"],
+					[[40, "expression-statement", ["call", ["@", "print"], [["k", 1234, "^int"]]]], [56, "return", ["k", 2000, "^int"]]]
+				]
+			)"
+		)).first
+	);
+}
+
+
 
 
 //////////////////////////////////////////////////		parse_software_system_statement()

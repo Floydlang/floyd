@@ -30,9 +30,11 @@ struct parse_tree_t {
 
 
 //	"a = 1; print(a)"
+//	Returns array of statements.
 parse_result_t parse_statements_no_brackets(const seq_t& s);
 
 //	"{ a = 1; print(a) }"
+//	Returns array of statements.
 parse_result_t parse_statements_bracketted(const seq_t& s);
 
 

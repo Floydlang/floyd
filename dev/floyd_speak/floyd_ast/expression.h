@@ -386,6 +386,20 @@ namespace floyd {
 		}
 
 
+		////////////////////////////////		benchmark_expr_t
+
+		struct benchmark_expr_t {
+			std::shared_ptr<body_t> body;
+		};
+
+		public: static expression_t make_benchmark_expr(
+			const body_t& body
+		)
+		{
+			return expression_t({ benchmark_expr_t{ std::make_shared<body_t>(body) } }, std::make_shared<typeid_t>(typeid_t::make_int()));
+		}
+
+
 		////////////////////////////////			expression_t-stuff
 
 
@@ -462,7 +476,8 @@ namespace floyd {
 			resolve_member_t,
 			update_member_t,
 			lookup_t,
-			value_constructor_t
+			value_constructor_t,
+			benchmark_expr_t
 		> expression_variant_t;
 
 		private: expression_t(const expression_variant_t& contents, const std::shared_ptr<typeid_t>& output_type) :

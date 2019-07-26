@@ -1655,6 +1655,17 @@ static llvm::Value* generate_construct_value_expression(llvm_code_generator_t& g
 	}
 }
 
+
+
+static llvm::Value* generate_benchmark_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::benchmark_expr_t& details){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
+	QUARK_ASSERT(e.check_invariant());
+
+	QUARK_ASSERT(false);
+}
+
+
 static llvm::Value* generate_load2_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::load2_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
@@ -1741,6 +1752,9 @@ static llvm::Value* generate_expression(llvm_code_generator_t& gen_acc, llvm::Fu
 		}
 		llvm::Value* operator()(const expression_t::value_constructor_t& expr) const{
 			return generate_construct_value_expression(gen_acc, emit_f, e, expr);
+		}
+		llvm::Value* operator()(const expression_t::benchmark_expr_t& expr) const{
+			return generate_benchmark_expression(gen_acc, emit_f, e, expr);
 		}
 	};
 

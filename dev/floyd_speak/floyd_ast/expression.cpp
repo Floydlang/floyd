@@ -246,6 +246,9 @@ bool expression_t::check_types_resolved() const{
 		bool operator()(const value_constructor_t& e) const{
 			return check_types_resolved(e.elements);
 		}
+		bool operator()(const benchmark_expr_t& e) const{
+			return e.body->check_types_resolved();
+		}
 	};
 
 	bool result = std::visit(visitor_t{}, _expression_variant);
@@ -415,6 +418,9 @@ json_t expression_to_json_internal(const expression_t& e){
 				typeid_to_ast_json(e.value_type, json_tags::k_tag_resolve_state),
 				expressions_to_json(e.elements)
 			);
+		}
+		json_t operator()(const expression_t::benchmark_expr_t& e) const{
+			return make_expression1(expr.location, expression_opcode_t::k_benchmark, body_to_json(*e.body));
 		}
 	};
 
@@ -615,6 +621,12 @@ expression_t astjson_to_expression(const json_t& e){
 
 		return expression_t::make_construct_value_expr(value_type, args2);
 	}
+	else if(op == expression_opcode_t::k_benchmark){
+		QUARK_ASSERT(e.get_array_size() == 2);
+
+		const auto body = json_to_body(e.get_array_n(1));
+		return expression_t::make_benchmark_expr(body);
+	}
 	else{
 		quark::throw_exception();
 	}
@@ -683,6 +695,9 @@ expression_type get_opcode(const expression_t& e){
 		}
 		expression_type operator()(const expression_t::value_constructor_t& e) const{
 			return expression_type::k_value_constructor;
+		}
+		expression_type operator()(const expression_t::benchmark_expr_t& e) const{
+			return expression_type::k_benchmark;
 		}
 	};
 	return std::visit(visitor_t{}, e._expression_variant);

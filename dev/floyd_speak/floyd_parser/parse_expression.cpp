@@ -14,6 +14,7 @@
 #include "ast_value.h"
 #include "ast_typeid_helpers.h"
 #include "parser_primitives.h"
+#include "parse_statement.h"
 
 
 namespace floyd {
@@ -1197,6 +1198,13 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 		return {result, a.second };
 	}
 
+	else if(is_first(p2, keyword_t::k_benchmark)){
+		const auto pos = read_required(p2, keyword_t::k_benchmark);
+		const auto block_pos = parse_statement_body(pos);
+		const auto result = maker_benchmark_definition(block_pos.ast);
+		return { result, block_pos.pos };
+	}
+
 	//	Single constant number, string literal, function call, variable access, lookup or member access. Can be a chain.
 	//	"1234xxx" or "my_function(3)xxx"
 	else {
@@ -1214,6 +1222,7 @@ QUARK_UNIT_TEST("parser", "parse_lhs_atom()", "", ""){
 	const auto a = parse_lhs_atom(seq_t("[3]"));
 	QUARK_UT_VERIFY(a.first == maker_vector_definition("", std::vector<json_t>{maker__make_constant(value_t::make_int(3))}));
 }
+
 
 
 void ut_verify__parse_expression(const quark::call_context_t& context, const std::string& input, const std::string& expected_json_s, const std::string& expected_rest){
@@ -1382,6 +1391,16 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "dict definition", ""){
 		R"(["value-constructor", ["dict", "^**undef**"], [["k", "one", "^string"], ["k", 1, "^int"], ["k", "two", "^string"], ["k", 2, "^int"], ["k", "three", "^string"], ["k", 3, "^int"]]])", ""
 	);
 }
+
+
+//////////////////////////////////			BENCHMARK
+
+
+QUARK_UNIT_TEST_VIP("parser", "parse_expression()", "benchmark", ""){
+	ut_verify__parse_expression(QUARK_POS, "benchmark { let a = 10 }", R"___(	["benchmark", [[12, "bind", "^**undef**", "a", ["k", 10, "^int"]]]]	)___", "");
+}
+
+
 
 
 //////////////////////////////////			NEG

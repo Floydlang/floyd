@@ -2320,6 +2320,47 @@ FLOYD_LANG_PROOF("Floyd test suite", "while", "return from within while", ""){
 
 
 
+//######################################################################################################################
+//	BENCHMARK-DEF STATEMENT, BENCHMARK EXPRESSION
+//######################################################################################################################
+
+
+#if 0
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let dur = benchmark {
+				let a = [ 10, 20, 30 ]
+			}
+
+		)",
+		{ "100", "102", "104" }
+	);
+}
+
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			benchmark-def "Linear veq 0" {
+				let dur = benchmark {
+					let a = unpack_linear_veq(x)
+				}
+				return [ benchmark_t(dur, {}) ]
+			}
+
+		)",
+		{ "100", "102", "104" }
+	);
+}
+#endif
+
+
+
 //////////////////////////////////////////		TYPEID - TYPE
 
 

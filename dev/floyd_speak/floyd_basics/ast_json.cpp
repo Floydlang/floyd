@@ -125,6 +125,10 @@ json_t maker__make_constant(const value_t& value){
 	);
 }
 
+json_t maker_benchmark_definition(const json_t& body){
+	return make_expression1(floyd::k_no_location, expression_opcode_t::k_benchmark, body);
+}
+
 
 std::pair<json_t, location_t> unpack_loc(const json_t& s){
 	QUARK_ASSERT(s.is_array());

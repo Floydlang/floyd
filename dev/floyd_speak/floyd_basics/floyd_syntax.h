@@ -303,6 +303,8 @@ enum class expression_type {
 
 	//	"construct-value"
 	k_value_constructor,
+
+	k_benchmark
 };
 
 
@@ -347,9 +349,8 @@ inline bool is_simple_expression__2(const std::string& op){
 
 //	Keywords in source code.
 namespace keyword_t {
-	const std::string k_update = "update";
-	const std::string k_push_back = "push_back";
-	const std::string k_size = "size";
+//	const std::string k_update = "update";
+//	const std::string k_size = "size";
 
 	const std::string k_return = "return";
 	const std::string k_while = "while";
@@ -378,6 +379,8 @@ namespace keyword_t {
 
 	const std::string k_software_system = "software-system-def";
 	const std::string k_container_def = "container-def";
+	const std::string k_benchmark_def = "benchmark-def";
+	const std::string k_benchmark = "benchmark";
 
 	const std::string k_json_object = "json_object";
 	const std::string k_json_array = "json_array";

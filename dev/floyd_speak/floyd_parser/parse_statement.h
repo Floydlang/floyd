@@ -184,6 +184,7 @@ std::pair<json_t, seq_t> parse_for_statement(const seq_t& s);
 		[ "while", "EXPRESSION, BODY ]
 */
 std::pair<json_t, seq_t> parse_while_statement(const seq_t& s);
+std::pair<json_t, seq_t> parse_benchmark_def_statement(const seq_t& s);
 
 std::pair<json_t, seq_t> parse_software_system_def_statement(const seq_t& s);
 

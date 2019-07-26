@@ -263,6 +263,9 @@ static void collect_used_types_expression(type_interner_t& acc, const expression
 				collect_used_types_expression(acc, a);
 			}
 		}
+		void operator()(const expression_t::benchmark_expr_t& e) const{
+			collect_used_types_body(acc, *e.body);
+		}
 	};
 	std::visit(visitor_t{ acc, expression }, expression._expression_variant);
 	intern_type(acc, expression.get_output_type());
@@ -1745,6 +1748,13 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	quark::throw_exception();
 }
 
+std::pair<analyser_t, expression_t> analyse_benchmark_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::benchmark_expr_t& details, const typeid_t& target_type){
+	QUARK_ASSERT(a.check_invariant());
+
+	return { a, e };
+}
+
+
 std::pair<analyser_t, expression_t> analyse_arithmetic_unary_minus_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::unary_minus_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
@@ -2471,6 +2481,9 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 		}
 		std::pair<analyser_t, expression_t> operator()(const expression_t::value_constructor_t& expr) const{
 			return analyse_construct_value_expression(a, parent, e, expr, target_type);
+		}
+		std::pair<analyser_t, expression_t> operator()(const expression_t::benchmark_expr_t& expr) const{
+			return analyse_benchmark_expression(a, parent, e, expr, target_type);
 		}
 	};
 

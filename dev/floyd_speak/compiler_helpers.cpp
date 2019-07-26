@@ -251,6 +251,10 @@ static expression_t desugar_expression(desugar_t& acc, const expression_t& expre
 			}
 			return expression_t::make_construct_value_expr(e.value_type, elements);
 		}
+		expression_t operator()(const expression_t::benchmark_expr_t& e) const{
+			const auto body = desugar_body(acc, *e.body);
+			return expression_t::make_benchmark_expr(body);
+		}
 	};
 	const auto r = std::visit(visitor_t{ acc, expression }, expression._expression_variant);
 	return r;

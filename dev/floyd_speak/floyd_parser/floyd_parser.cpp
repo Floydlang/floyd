@@ -62,6 +62,9 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 		else if(is_first(pos, keyword_t::k_container_def)){
 			return parse_container_def_statement(pos);
 		}
+		else if(is_first(pos, keyword_t::k_benchmark_def)){
+			return parse_benchmark_def_statement(pos);
+		}
 		else {
 			//	k_assign and k_expression_statement has no prefix, we need to figure out if it's one of those.
 			return parse_prefixless_statement(pos);
@@ -122,7 +125,6 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 }
 
 
-//	"a = 1; print(a)"
 parse_result_t parse_statements_no_brackets(const seq_t& s){
 	vector<json_t> statements;
 

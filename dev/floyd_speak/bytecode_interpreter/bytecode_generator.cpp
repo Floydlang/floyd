@@ -1345,6 +1345,34 @@ expression_gen_t bcgen_construct_value_expression(bcgenerator_t& gen_acc, const 
 	return { body_acc, target_reg2, target_itype };
 }
 
+expression_gen_t bcgen_benchmark_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const expression_t& e, const expression_t::benchmark_expr_t& details, const bcgen_body_t& body){
+	QUARK_ASSERT(gen_acc.check_invariant());
+	QUARK_ASSERT(e.check_invariant());
+	QUARK_ASSERT(body.check_invariant());
+
+/*
+	const auto type = details.expr->get_output_type();
+
+	if(type.is_int()){
+		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), *details.expr, e._output_type);
+		return bcgen_expression(gen_acc, target_reg, e2, body);
+	}
+	else if(type.is_double()){
+		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_double(0), *details.expr, e._output_type);
+		return bcgen_expression(gen_acc, target_reg, e2, body);
+	}
+	else{
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+	}
+*/
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+
+}
+
+
+
 expression_gen_t bcgen_arithmetic_unary_minus_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const expression_t& e, const expression_t::unary_minus_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1700,6 +1728,9 @@ expression_gen_t bcgen_expression(bcgenerator_t& gen_acc, const variable_address
 		}
 		expression_gen_t operator()(const expression_t::value_constructor_t& expr) const{
 			return bcgen_construct_value_expression(gen_acc, target_reg, e, expr, body);
+		}
+		expression_gen_t operator()(const expression_t::benchmark_expr_t& expr) const{
+			return bcgen_benchmark_expression(gen_acc, target_reg, e, expr, body);
 		}
 	};
 

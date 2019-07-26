@@ -92,8 +92,11 @@ namespace statement_opcode_t {
 	const std::string k_while = "while";
 
 	const std::string k_expression_statement = "expression-statement";
+
 	const std::string k_software_system_def = "software-system-def";
 	const std::string k_container_def = "container-def";
+	const std::string k_benchmark_def = "benchmark-def";
+	const std::string k_benchmark = "benchmark";
 };
 
 
@@ -115,6 +118,7 @@ namespace expression_opcode_t {
 	const std::string k_function_def = "function-def";
 	const std::string k_value_constructor = "value-constructor";
 	const std::string k_lookup_element = "[]";
+	const std::string k_benchmark = "benchmark";
 };
 
 
@@ -147,6 +151,7 @@ json_t maker_vector_definition(const std::string& element_type, const std::vecto
 json_t maker_dict_definition(const std::string& value_type, const std::vector<json_t>& elements);
 json_t maker__member_access(const json_t& address, const std::string& member_name);
 json_t maker__make_constant(const value_t& value);
+json_t maker_benchmark_definition(const json_t& body);
 
 
 //	INPUT: [2, "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"]]
