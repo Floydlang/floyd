@@ -1396,7 +1396,7 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "dict definition", ""){
 //////////////////////////////////			BENCHMARK
 
 
-QUARK_UNIT_TEST_VIP("parser", "parse_expression()", "benchmark", ""){
+QUARK_UNIT_TEST("parser", "parse_expression()", "benchmark", ""){
 	ut_verify__parse_expression(QUARK_POS, "benchmark { let a = 10 }", R"___(	["benchmark", [[12, "bind", "^**undef**", "a", ["k", 10, "^int"]]]]	)___", "");
 }
 
