@@ -22,7 +22,7 @@
 ??? Less code + faster to generate increc, decref instructions instead of make *_external_value, *_internal_value opcodes.
 */
 
-#include "ast_typeid.h"
+#include "typeid.h"
 #include "json_support.h"
 #include "software_system.h"
 #include "quark.h"

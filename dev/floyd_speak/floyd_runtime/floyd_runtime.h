@@ -11,7 +11,7 @@
 
 
 #include <string>
-#include "ast_typeid.h"
+#include "typeid.h"
 #include "compiler_basics.h"
 
 struct json_t;

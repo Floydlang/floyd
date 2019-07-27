@@ -9,7 +9,6 @@
 #include "expression.h"
 
 #include "statement.h"
-#include "ast_typeid_helpers.h"
 #include "parser_primitives.h"
 
 #include "ast.h"

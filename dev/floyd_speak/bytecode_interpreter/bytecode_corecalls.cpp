@@ -9,7 +9,6 @@
 #include "bytecode_corecalls.h"
 
 #include "json_support.h"
-#include "ast_typeid_helpers.h"
 
 #include "text_parser.h"
 #include "file_handling.h"

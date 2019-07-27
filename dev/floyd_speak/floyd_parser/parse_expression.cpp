@@ -14,9 +14,8 @@
 #include "floyd_syntax.h"
 
 #include "ast_json.h"
-#include "ast_typeid.h"
+#include "typeid.h"
 #include "ast_value.h"
-#include "ast_typeid_helpers.h"
 
 
 namespace floyd {

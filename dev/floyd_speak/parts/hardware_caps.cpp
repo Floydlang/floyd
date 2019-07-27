@@ -1,5 +1,5 @@
 //
-//  ast_typeid.cpp
+//  typeid.cpp
 //  FloydSpeak
 //
 //  Created by Marcus Zetterquist on 2018-02-12.

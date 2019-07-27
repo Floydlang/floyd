@@ -39,8 +39,7 @@
 
 #include "quark.h"
 
-#include "ast_typeid.h"
-#include "ast_typeid_helpers.h"
+#include "typeid.h"
 #include "json_support.h"
 #include "compiler_basics.h"
 

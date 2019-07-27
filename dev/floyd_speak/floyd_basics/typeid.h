@@ -1,13 +1,13 @@
 //
-//  ast_typeid.hpp
+//  typeid.hpp
 //  FloydSpeak
 //
 //  Created by Marcus Zetterquist on 2018-02-12.
 //  Copyright © 2018 Marcus Zetterquist. All rights reserved.
 //
 
-#ifndef ast_typeid_hpp
-#define ast_typeid_hpp
+#ifndef typeid_hpp
+#define typeid_hpp
 
 /*
 	typeid_t
@@ -555,6 +555,37 @@ struct member_t {
 
 std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m);
 
+
+
+
+
+
+
+json_t struct_definition_to_ast_json(const struct_definition_t& v);
+
+json_t members_to_json(const std::vector<member_t>& members);
+std::vector<member_t> members_from_json(const json_t& members);
+
+
+enum class json_tags{
+	k_plain,
+
+	//	Show in the string if the type has been resolved or not. Uses "^hello" or "#world"
+	k_tag_resolve_state
+};
+const char tag_unresolved_type_char = '#';
+const char tag_resolved_type_char = '^';
+
+json_t typeid_to_ast_json(const typeid_t& t, json_tags tags);
+typeid_t typeid_from_ast_json(const json_t& t);
+
+
+void ut_verify(const quark::call_context_t& context, const typeid_t& result, const typeid_t& expected);
+
+
+
+
+
 }	//	floyd
 
-#endif /* ast_typeid_hpp */
+#endif /* typeid_hpp */

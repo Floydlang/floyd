@@ -68,7 +68,7 @@ void run_tests(){
 			"floyd_test_suite.cpp",
 			"interpretator_benchmark.cpp",
 
-			"ast_typeid.cpp",
+			"typeid.cpp",
 
 
 			"parse_statement.cpp",

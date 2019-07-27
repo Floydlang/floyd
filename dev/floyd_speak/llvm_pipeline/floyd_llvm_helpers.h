@@ -9,7 +9,7 @@
 #ifndef floyd_llvm_helpers_hpp
 #define floyd_llvm_helpers_hpp
 
-#include "ast_typeid.h"
+#include "typeid.h"
 #include "ast.h"
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>

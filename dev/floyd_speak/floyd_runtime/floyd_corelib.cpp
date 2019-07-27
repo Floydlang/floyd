@@ -9,7 +9,7 @@
 #include "floyd_corelib.h"
 
 
-#include "ast_typeid.h"
+#include "typeid.h"
 #include "ast_value.h"
 #include "floyd_runtime.h"
 #include "sha1_class.h"
