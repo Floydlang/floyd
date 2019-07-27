@@ -25,6 +25,8 @@
 namespace floyd {
 struct typeid_t;
 struct member_t;
+struct value_t;
+struct location_t;
 
 
 ////////////////////////////////		TEXT PARSING PRIMITIVES
@@ -137,6 +139,42 @@ struct parse_result_t {
 	json_t parse_tree;
 	seq_t pos;
 };
+
+
+
+
+namespace parser_expression_opcode_t {
+	const std::string k_literal = "k";
+	const std::string k_call = "call";
+	const std::string k_corecall = "corecall";
+	const std::string k_load = "@";
+	const std::string k_load2 = "@i";
+	const std::string k_resolve_member = "->";
+	const std::string k_update_member = "<-";
+	const std::string k_unary_minus = "unary-minus";
+	const std::string k_conditional_operator = "?:";
+	const std::string k_struct_def = "struct-def";
+	const std::string k_function_def = "function-def";
+	const std::string k_value_constructor = "value-constructor";
+	const std::string k_lookup_element = "[]";
+	const std::string k_benchmark = "benchmark";
+};
+
+
+json_t parser__make_ast_entry(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
+json_t parser__make_expression_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
+json_t parser__make_constant(const value_t& value);
+json_t parser__make_identifier(const std::string& s);
+json_t parser__make2(const std::string op, const json_t& lhs, const json_t& rhs);
+json_t parser__make_conditional_operator(const json_t& e1, const json_t& e2, const json_t& e3);
+json_t parser__make_unary_minus(const json_t& expr);
+
+json_t parser__make_vector_definition(const std::string& element_type, const std::vector<json_t>& elements);
+json_t parser__make_dict_definition(const std::string& value_type, const std::vector<json_t>& elements);
+json_t parser__make_benchmark_definition(const json_t& body);
+json_t parser__call(const json_t& f, const std::vector<json_t>& args);
+json_t parser__member_access(const json_t& address, const std::string& member_name);
+
 
 
 }	//	floyd

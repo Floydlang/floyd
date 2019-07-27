@@ -636,4 +636,80 @@ pair<typeid_t, seq_t> read_required_type(const seq_t& s){
 
 
 
+
+json_t parser__make_ast_entry(const location_t& location, const std::string& opcode, const std::vector<json_t>& params){
+	if(location == k_no_location){
+		std::vector<json_t> e = { json_t(opcode) };
+		e.insert(e.end(), params.begin(), params.end());
+		return json_t(e);
+	}
+	else{
+		const auto offset = static_cast<double>(location.offset);
+		std::vector<json_t> e = { json_t(offset), json_t(opcode) };
+		e.insert(e.end(), params.begin(), params.end());
+		return json_t(e);
+	}
+}
+
+json_t parser__make_expression_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params){
+	return parser__make_ast_entry(location, opcode, params);
+}
+
+json_t parser__make_constant(const value_t& value){
+	return parser__make_expression_n(
+		floyd::k_no_location,
+		parser_expression_opcode_t::k_literal,
+		{
+			value_to_ast_json(value, json_tags::k_tag_resolve_state),
+			typeid_to_ast_json(value.get_type(), json_tags::k_tag_resolve_state)
+		}
+	);
+}
+
+
+json_t parser__make_identifier(const std::string& s){
+	return parser__make_expression_n(floyd::k_no_location, parser_expression_opcode_t::k_load, { json_t(s) } );
+}
+
+
+json_t parser__make2(const std::string op, const json_t& lhs, const json_t& rhs){
+	QUARK_ASSERT(op != "");
+	return parser__make_expression_n(floyd::k_no_location, op, { lhs, rhs } );
+}
+
+json_t parser__make_conditional_operator(const json_t& e1, const json_t& e2, const json_t& e3){
+	return parser__make_expression_n(floyd::k_no_location, parser_expression_opcode_t::k_conditional_operator, { e1, e2, e3 } );
+}
+
+json_t parser__make_unary_minus(const json_t& expr){
+	return parser__make_expression_n(floyd::k_no_location, parser_expression_opcode_t::k_unary_minus, { expr } );
+}
+
+
+json_t parser__make_vector_definition(const std::string& element_type, const std::vector<json_t>& elements){
+	QUARK_ASSERT(element_type == "");
+
+	const auto element_type2 = typeid_to_ast_json(typeid_t::make_vector(typeid_t::make_undefined()), json_tags::k_tag_resolve_state);
+	return parser__make_expression_n(floyd::k_no_location, parser_expression_opcode_t::k_value_constructor, { element_type2, json_t::make_array(elements) } );
+}
+json_t parser__make_dict_definition(const std::string& value_type, const std::vector<json_t>& elements){
+	QUARK_ASSERT(value_type == "");
+
+	const auto element_type2 = typeid_to_ast_json(typeid_t::make_dict(typeid_t::make_undefined()), json_tags::k_tag_resolve_state);
+	return parser__make_expression_n(floyd::k_no_location, parser_expression_opcode_t::k_value_constructor, { element_type2, json_t::make_array(elements) } );
+}
+
+json_t parser__make_benchmark_definition(const json_t& body){
+	return parser__make_expression_n(floyd::k_no_location, parser_expression_opcode_t::k_benchmark, { body } );
+}
+
+json_t parser__call(const json_t& f, const std::vector<json_t>& args){
+	return parser__make_expression_n(floyd::k_no_location, parser_expression_opcode_t::k_call, { f, json_t::make_array(args) } );
+}
+
+
+json_t parser__member_access(const json_t& address, const std::string& member_name){
+	return parser__make_expression_n(floyd::k_no_location, parser_expression_opcode_t::k_resolve_member, { address, json_t(member_name) } );
+}
+
 }	//	floyd

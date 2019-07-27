@@ -13,7 +13,6 @@
 #include "parse_statement.h"
 #include "floyd_syntax.h"
 
-#include "ast_json.h"
 #include "typeid.h"
 #include "ast_value.h"
 
@@ -44,6 +43,10 @@ QUARK_UNIT_TEST("parser", "C++ enum class()", "", ""){
 
 
 std::pair<json_t, seq_t> parse_expression_deep(const seq_t& p, const eoperator_precedence precedence);
+
+
+
+
 
 
 std::string expr_to_string(const json_t& e){
@@ -161,7 +164,7 @@ QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
 	ut_verify_collection(
 		QUARK_POS,
 		parse_bounded_list(seq_t("(3)xyz"), "(", ")"),
-		std::pair<collection_def_t, seq_t>({false, {	{ nullptr, maker__make_constant(value_t::make_int(3)) }}}, seq_t("xyz"))
+		std::pair<collection_def_t, seq_t>({false, {	{ nullptr, parser__make_constant(value_t::make_int(3)) }}}, seq_t("xyz"))
 	);
 }
 
@@ -177,8 +180,8 @@ QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
 			{
 				false,
 				{
-					{ nullptr, maker__make_constant(value_t::make_int(1)) },
-					{ nullptr, maker__make_constant(value_t::make_int(2)) }
+					{ nullptr, parser__make_constant(value_t::make_int(1)) },
+					{ nullptr, parser__make_constant(value_t::make_int(2)) }
 				}
 			},
 			seq_t("xyz")
@@ -208,8 +211,8 @@ QUARK_UNIT_TEST("parser", "parse_bounded_list()", "two elements", ""){
 			{
 				true,
 				{
-					{ std::make_shared<json_t>(maker__make_constant(value_t::make_string("one"))), maker__make_constant(value_t::make_int(1)) },
-					{ std::make_shared<json_t>(maker__make_constant(value_t::make_string("two"))), maker__make_constant(value_t::make_int(2)) }
+					{ std::make_shared<json_t>(parser__make_constant(value_t::make_string("one"))), parser__make_constant(value_t::make_int(1)) },
+					{ std::make_shared<json_t>(parser__make_constant(value_t::make_string("two"))), parser__make_constant(value_t::make_int(2)) }
 				}
 			},
 			seq_t("xyz")
@@ -799,23 +802,23 @@ std::pair<json_t, seq_t> parse_terminal(const seq_t& p0) {
 	//	String literal?
 	if(p.first1() == "\""){
 		const auto value_pos = parse_string_literal(p);
-		const auto result = maker__make_constant(value_t::make_string(value_pos.first));
+		const auto result = parser__make_constant(value_t::make_string(value_pos.first));
 		return { result, value_pos.second };
 	}
 	else if(p.first1() == "\'"){
 		const auto value_pos = parse_character_literal(p);
-		const auto result = maker__make_constant(value_t::make_int(value_pos.first));
+		const auto result = parser__make_constant(value_t::make_int(value_pos.first));
 		return { result, value_pos.second };
 	}
 
 	else if(is_first(p, "0b")){
 		const auto value_p = parse_binary_literal(p);
-		const auto result = maker__make_constant(value_p.first);
+		const auto result = parser__make_constant(value_p.first);
 		return { result, value_p.second };
 	}
 	else if(is_first(p, "0x")){
 		const auto value_p = parse_hexadecimal_literal(p);
-		const auto result = maker__make_constant(value_p.first);
+		const auto result = parser__make_constant(value_p.first);
 		return { result, value_p.second };
 	}
 
@@ -823,17 +826,17 @@ std::pair<json_t, seq_t> parse_terminal(const seq_t& p0) {
 	// [0-9] and "."  => numeric constant.
 	else if(k_c99_number_chars.find(p.first1()) != std::string::npos){
 		const auto value_p = parse_decimal_literal(p);
-		const auto result = maker__make_constant(value_p.first);
+		const auto result = parser__make_constant(value_p.first);
 		return { result, value_p.second };
 	}
 
 	else if(if_first(p, keyword_t::k_true).first){
-		const auto result = maker__make_constant(value_t::make_bool(true));
+		const auto result = parser__make_constant(value_t::make_bool(true));
 		return { result, if_first(p, keyword_t::k_true).second };
 	}
 
 	else if(if_first(p, keyword_t::k_false).first){
-		const auto result = maker__make_constant(value_t::make_bool(false));
+		const auto result = parser__make_constant(value_t::make_bool(false));
 		return { result, if_first(p, keyword_t::k_false).second };
 	}
 
@@ -841,7 +844,7 @@ std::pair<json_t, seq_t> parse_terminal(const seq_t& p0) {
 	{
 		const auto identifier_s = read_while(p, k_c99_identifier_chars);
 		if(!identifier_s.first.empty()){
-			const auto result = maker__make_identifier(identifier_s.first);
+			const auto result = parser__make_identifier(identifier_s.first);
 			return { result, identifier_s.second };
 		}
 	}
@@ -963,7 +966,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 				}
 
 				const auto values = get_values(a_pos.first);
-				const auto call = maker__call(lhs, values);
+				const auto call = parser__call(lhs, values);
 				return parse_optional_operation_rightward(a_pos.second, call, precedence);
 			}
 
@@ -974,7 +977,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 				if(identifier_s.first.empty()){
 					throw_compiler_error_nopos("Expected ')'");
 				}
-				const auto value2 = maker__member_access(lhs, identifier_s.first);
+				const auto value2 = parser__member_access(lhs, identifier_s.first);
 
 				return parse_optional_operation_rightward(identifier_s.second, value2, precedence);
 			}
@@ -984,7 +987,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			else if(op1 == "["  && precedence > eoperator_precedence::k_lookup){
 				const auto p2 = skip_whitespace(p.rest());
 				const auto key = parse_expression_deep(p2, eoperator_precedence::k_super_weak);
-				const auto result = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_lookup), lhs, key.first);
+				const auto result = parser__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_lookup), lhs, key.first);
 				const auto p3 = skip_whitespace(key.second);
 
 				// Closing "]".
@@ -997,34 +1000,34 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	EXPRESSION "+" EXPRESSION
 			else if(op1 == "+"  && precedence > eoperator_precedence::k_add_sub){
 				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_add_sub);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_add), lhs, rhs.first);
+				const auto value2 = parser__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_add), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
 			//	EXPRESSION "-" EXPRESSION
 			else if(op1 == "-" && precedence > eoperator_precedence::k_add_sub){
 				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_add_sub);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_subtract), lhs, rhs.first);
+				const auto value2 = parser__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_subtract), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
 			//	EXPRESSION "*" EXPRESSION
 			else if(op1 == "*" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
 				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_multiply), lhs, rhs.first);
+				const auto value2 = parser__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_multiply), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 			//	EXPRESSION "/" EXPRESSION
 			else if(op1 == "/" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
 				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_divide), lhs, rhs.first);
+				const auto value2 = parser__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_divide), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
 			//	EXPRESSION "%" EXPRESSION
 			else if(op1 == "%" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
 				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_remainder), lhs, rhs.first);
+				const auto value2 = parser__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_remainder), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
@@ -1040,7 +1043,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 				}
 
 				const auto false_expr_p = parse_expression_deep(pos2.rest(), precedence);
-				const auto value2 = maker__make_conditional_operator(lhs, true_expr_p.first, false_expr_p.first);
+				const auto value2 = parser__make_conditional_operator(lhs, true_expr_p.first, false_expr_p.first);
 				return parse_optional_operation_rightward(false_expr_p.second, value2, precedence);
 			}
 
@@ -1048,13 +1051,13 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	EXPRESSION "==" EXPRESSION
 			else if(op2 == "==" && precedence > eoperator_precedence::k_equal__not_equal){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_equal__not_equal);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_logical_equal), lhs, rhs.first);
+				const auto value2 = parser__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_logical_equal), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 			//	EXPRESSION "!=" EXPRESSION
 			else if(op2 == "!=" && precedence > eoperator_precedence::k_equal__not_equal){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_equal__not_equal);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_logical_nonequal), lhs, rhs.first);
+				const auto value2 = parser__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_logical_nonequal), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
@@ -1062,14 +1065,14 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	EXPRESSION "<=" EXPRESSION
 			else if(op2 == "<=" && precedence > eoperator_precedence::k_larger_smaller){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_larger_smaller);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_smaller_or_equal), lhs, rhs.first);
+				const auto value2 = parser__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_smaller_or_equal), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
 			//	EXPRESSION "<" EXPRESSION
 			else if(op1 == "<" && precedence > eoperator_precedence::k_larger_smaller){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_larger_smaller);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_smaller), lhs, rhs.first);
+				const auto value2 = parser__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_smaller), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
@@ -1078,14 +1081,14 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	EXPRESSION ">=" EXPRESSION
 			else if(op2 == ">=" && precedence > eoperator_precedence::k_larger_smaller){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_larger_smaller);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_larger_or_equal), lhs, rhs.first);
+				const auto value2 = parser__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_larger_or_equal), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
 			//	EXPRESSION ">" EXPRESSION
 			else if(op1 == ">" && precedence > eoperator_precedence::k_larger_smaller){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_larger_smaller);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_larger), lhs, rhs.first);
+				const auto value2 = parser__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_larger), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
@@ -1093,14 +1096,14 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	EXPRESSION "&&" EXPRESSION
 			else if(op2 == "&&" && precedence > eoperator_precedence::k_logical_and){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_logical_and);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_logical_and), lhs, rhs.first);
+				const auto value2 = parser__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_logical_and), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
 			//	EXPRESSION "||" EXPRESSION
 			else if(op2 == "||" && precedence > eoperator_precedence::k_logical_or){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_logical_or);
-				const auto value2 = maker__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_logical_or), lhs, rhs.first);
+				const auto value2 = parser__make2(k_2_operator_to_string__func(syntax_expression_type::k_2_logical_or), lhs, rhs.first);
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
@@ -1140,7 +1143,7 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 	//	Negate? "-xxx"
 	if(ch1 == '-'){
 		const auto a = parse_expression_deep(p2.rest1(), eoperator_precedence::k_super_strong);
-		const auto value2 = maker__make_unary_minus(a.first);
+		const auto value2 = parser__make_unary_minus(a.first);
 		return { value2, a.second };
 	}
 	else if(ch1 == '+'){
@@ -1178,7 +1181,7 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 			throw_compiler_error(location_t(p2.pos()), "Illegal vector, use {} to make a dictionary!");
 		}
 		else{
-			const auto result = maker_vector_definition("", get_values(a.first));
+			const auto result = parser__make_vector_definition("", get_values(a.first));
 			return {result, a.second };
 		}
 	}
@@ -1195,14 +1198,14 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 			flat_dict.push_back(*b._key);
 			flat_dict.push_back(b._value);
 		}
-		const auto result = maker_dict_definition("", flat_dict);
+		const auto result = parser__make_dict_definition("", flat_dict);
 		return {result, a.second };
 	}
 
 	else if(is_first(p2, keyword_t::k_benchmark)){
 		const auto pos = read_required(p2, keyword_t::k_benchmark);
 		const auto block_pos = parse_statement_body(pos);
-		const auto result = maker_benchmark_definition(block_pos.parse_tree);
+		const auto result = parser__make_benchmark_definition(block_pos.parse_tree);
 		return { result, block_pos.pos };
 	}
 
@@ -1216,12 +1219,12 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 
 QUARK_UNIT_TEST("parser", "parse_lhs_atom()", "", ""){
 	const auto a = parse_lhs_atom(seq_t("3"));
-	QUARK_UT_VERIFY(a.first == maker__make_constant(value_t::make_int(3)));
+	QUARK_UT_VERIFY(a.first == parser__make_constant(value_t::make_int(3)));
 }
 
 QUARK_UNIT_TEST("parser", "parse_lhs_atom()", "", ""){
 	const auto a = parse_lhs_atom(seq_t("[3]"));
-	QUARK_UT_VERIFY(a.first == maker_vector_definition("", std::vector<json_t>{maker__make_constant(value_t::make_int(3))}));
+	QUARK_UT_VERIFY(a.first == parser__make_vector_definition("", std::vector<json_t>{parser__make_constant(value_t::make_int(3))}));
 }
 
 
