@@ -50,51 +50,6 @@ const std::string valid_expression_chars = k_c99_identifier_chars + k_c99_number
 
 
 
-//////////////////////////////////////		base_type
-
-/*
-	The atomic building block of all types.
-	Some of the types are ready as-is, like bool or double.
-	Some types needs further information to be 100% defined, like struct (needs its members), vector needs its element-type.
-*/
-
-enum class base_type {
-	//	k_undefined is never exposed in code, only used internally in compiler.
-	//	??? Maybe we can use void for this and remove k_undefined?
-	k_undefined,
-
-	//	Used by host functions arguments / returns to tell this is a dynamic value, not static type.
-	k_any,
-
-	//	Means no value. Used as return type for print() etc.
-	k_void,
-
-	k_bool,
-	k_int,
-	k_double,
-	k_string,
-	k_json,
-
-	//	This is a type that specifies any other type at runtime.
-	k_typeid,
-
-	k_struct,
-	k_vector,
-	k_dict,
-	k_function,
-
-	//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
-	//	Keep the identifier so it can be resolved later.
-	k_unresolved
-};
-
-std::string base_type_to_string(const base_type t);
-
-void ut_verify(const quark::call_context_t& context, const base_type& result, const base_type& expected);
-
-
-//??? use lookup for statements vs their JSON-strings: k_assign2, "assign" and "def-struct".
-
 
 
 ///////////////////////////////////			eoperator_precedence

@@ -13,6 +13,7 @@
 
 #include "ast_value.h"
 #include "json_support.h"
+#include "floyd_syntax.h"
 
 #include <string>
 #include <memory>

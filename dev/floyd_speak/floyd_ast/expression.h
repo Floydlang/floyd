@@ -11,6 +11,7 @@
 
 #include "ast_json.h"
 #include "ast_value.h"
+#include "floyd_syntax.h"
 
 #include "quark.h"
 

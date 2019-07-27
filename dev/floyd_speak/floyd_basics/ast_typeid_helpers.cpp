@@ -115,31 +115,35 @@ typeid_t typeid_from_ast_json(const json_t& t2){
 			if(s == ""){
 				return typeid_t::make_undefined();
 			}
-			else if(s == keyword_t::k_undefined){
+
+			const auto b = string_to_base_type(s);
+
+
+			if(b == base_type::k_undefined){
 				return typeid_t::make_undefined();
 			}
-			else if(s == keyword_t::k_any){
+			else if(b == base_type::k_any){
 				return typeid_t::make_any();
 			}
-			else if(s == keyword_t::k_void){
+			else if(b == base_type::k_void){
 				return typeid_t::make_void();
 			}
-			else if(s == keyword_t::k_bool){
+			else if(b == base_type::k_bool){
 				return typeid_t::make_bool();
 			}
-			else if(s == keyword_t::k_int){
+			else if(b == base_type::k_int){
 				return typeid_t::make_int();
 			}
-			else if(s == keyword_t::k_double){
+			else if(b == base_type::k_double){
 				return typeid_t::make_double();
 			}
-			else if(s == keyword_t::k_string){
+			else if(b == base_type::k_string){
 				return typeid_t::make_string();
 			}
-			else if(s == keyword_t::k_typeid){
+			else if(b == base_type::k_typeid){
 				return typeid_t::make_typeid();
 			}
-			else if(s == keyword_t::k_json){
+			else if(b == base_type::k_json){
 				return typeid_t::make_json();
 			}
 			else{
@@ -167,7 +171,7 @@ typeid_t typeid_from_ast_json(const json_t& t2){
 		}
 		else
 */
-		if(s == keyword_t::k_struct){
+		if(s == "struct"){
 			const auto struct_def_array = a[1].get_array();
 			const auto member_array = struct_def_array[0].get_array();
 

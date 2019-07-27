@@ -477,15 +477,15 @@ const std::vector<typeid_str_test_t> make_typeid_str_tests(){
 	const auto s1 = typeid_t::make_struct2({});
 
 	const auto tests = std::vector<typeid_str_test_t>{
-		{ typeid_t::make_undefined(), quote(keyword_t::k_undefined), keyword_t::k_undefined },
-		{ typeid_t::make_bool(), quote(keyword_t::k_bool), keyword_t::k_bool },
-		{ typeid_t::make_int(), quote(keyword_t::k_int), keyword_t::k_int },
-		{ typeid_t::make_double(), quote(keyword_t::k_double), keyword_t::k_double },
-		{ typeid_t::make_string(), quote(keyword_t::k_string), keyword_t::k_string},
+		{ typeid_t::make_undefined(), quote(base_type_to_string(base_type::k_undefined)), base_type_to_string(base_type::k_undefined) },
+		{ typeid_t::make_bool(), quote(base_type_to_string(base_type::k_bool)), base_type_to_string(base_type::k_bool) },
+		{ typeid_t::make_int(), quote(base_type_to_string(base_type::k_int)), base_type_to_string(base_type::k_int) },
+		{ typeid_t::make_double(), quote(base_type_to_string(base_type::k_double)), base_type_to_string(base_type::k_double) },
+		{ typeid_t::make_string(), quote(base_type_to_string(base_type::k_string)), base_type_to_string(base_type::k_string) },
 
 		//	Typeid
-		{ typeid_t::make_typeid(), quote(keyword_t::k_typeid), keyword_t::k_typeid },
-		{ typeid_t::make_typeid(), quote(keyword_t::k_typeid), keyword_t::k_typeid },
+		{ typeid_t::make_typeid(), quote(base_type_to_string(base_type::k_typeid)), base_type_to_string(base_type::k_typeid) },
+		{ typeid_t::make_typeid(), quote(base_type_to_string(base_type::k_typeid)), base_type_to_string(base_type::k_typeid) },
 
 
 //??? vector

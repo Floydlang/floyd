@@ -15,6 +15,7 @@
 #include "ast_typeid_helpers.h"
 #include "parser_primitives.h"
 #include "parse_statement.h"
+#include "floyd_syntax.h"
 
 
 namespace floyd {
