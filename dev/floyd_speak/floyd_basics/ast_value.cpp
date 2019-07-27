@@ -441,16 +441,16 @@ std::string to_compact_string2(const value_t& value) {
 
 	const auto base_type = value.get_type().get_base_type();
 	if(base_type == base_type::k_undefined){
-		return keyword_t::k_undefined;
+		return base_type_to_string(base_type);
 	}
 	else if(base_type == base_type::k_any){
-		return keyword_t::k_any;
+		return base_type_to_string(base_type);
 	}
 	else if(base_type == base_type::k_void){
-		return keyword_t::k_void;
+		return base_type_to_string(base_type);
 	}
 	else if(base_type == base_type::k_bool){
-		return value.get_bool_value() ? keyword_t::k_true : keyword_t::k_false;
+		return value.get_bool_value() ? "true" : "false";
 	}
 	else if(base_type == base_type::k_int){
 		char temp[200 + 1];//### Use C++ function instead.
@@ -785,7 +785,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - true"){
 
 	QUARK_TEST_VERIFY(a == value_t::make_bool(true));
 	QUARK_TEST_VERIFY(a != value_t::make_bool(false));
-	QUARK_TEST_VERIFY(to_compact_string2(a) == keyword_t::k_true);
+	QUARK_TEST_VERIFY(to_compact_string2(a) == "true");
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "bool: true");
 }
 
@@ -805,7 +805,7 @@ QUARK_UNIT_TESTQ("value_t()", "bool - false"){
 
 	QUARK_TEST_VERIFY(a == value_t::make_bool(false));
 	QUARK_TEST_VERIFY(a != value_t::make_bool(true));
-	QUARK_TEST_VERIFY(to_compact_string2(a) == keyword_t::k_false);
+	QUARK_TEST_VERIFY(to_compact_string2(a) == "false");
 	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "bool: false");
 }
 
