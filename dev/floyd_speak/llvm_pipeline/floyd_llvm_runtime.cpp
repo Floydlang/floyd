@@ -15,7 +15,7 @@
 #include "text_parser.h"
 #include "os_process.h"
 #include "compiler_helpers.h"
-#include "pass3.h"
+#include "semantic_analyser.h"
 
 #include <llvm/ADT/APInt.h>
 #include <llvm/IR/Verifier.h>
@@ -2915,18 +2915,18 @@ run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::str
 std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instance, const compilation_unit_t& cu){
 	QUARK_ASSERT(instance.check_invariant());
 
-	const auto pass3 = compile_to_sematic_ast__errors(cu);
-	auto bc = generate_llvm_ir_program(instance, pass3, cu.source_file_path);
+	const auto sem_ast = compile_to_sematic_ast__errors(cu);
+	auto bc = generate_llvm_ir_program(instance, sem_ast, cu.source_file_path);
 	return bc;
 }
 
 
 run_output_t run_program_helper(const std::string& program_source, const std::string& file, const std::vector<std::string>& main_args){
 	const auto cu = floyd::make_compilation_unit_nolib(program_source, file);
-	const auto pass3 = compile_to_sematic_ast__errors(cu);
+	const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
 	llvm_instance_t instance;
-	auto program = generate_llvm_ir_program(instance, pass3, file);
+	auto program = generate_llvm_ir_program(instance, sem_ast, file);
 	auto ee = init_program(*program);
 	const auto result = run_program(*ee, main_args);
 	return result;
@@ -2944,10 +2944,10 @@ run_output_t run_program_helper(const std::string& program_source, const std::st
 
 QUARK_UNIT_TEST("", "From source: Check that floyd_runtime_init() runs and sets 'result' global", "", ""){
 	const auto cu = floyd::make_compilation_unit_nolib("let int result = 1 + 2 + 3", "myfile.floyd");
-	const auto pass3 = compile_to_sematic_ast__errors(cu);
+	const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
 	floyd::llvm_instance_t instance;
-	auto program = generate_llvm_ir_program(instance, pass3, "myfile.floyd");
+	auto program = generate_llvm_ir_program(instance, sem_ast, "myfile.floyd");
 	auto ee = init_program(*program);
 
 	const auto result = *static_cast<uint64_t*>(floyd::get_global_ptr(*ee, "result"));
@@ -2959,10 +2959,10 @@ QUARK_UNIT_TEST("", "From source: Check that floyd_runtime_init() runs and sets 
 //	BROKEN!
 QUARK_UNIT_TEST("", "From JSON: Simple function call, call print() from floyd_runtime_init()", "", ""){
 	const auto cu = floyd::make_compilation_unit_nolib("print(5)", "myfile.floyd");
-	const auto pass3 = compile_to_sematic_ast__errors(cu);
+	const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
 	floyd::llvm_instance_t instance;
-	auto program = generate_llvm_ir_program(instance, pass3, "myfile.floyd");
+	auto program = generate_llvm_ir_program(instance, sem_ast, "myfile.floyd");
 	auto ee = init_program(*program);
 	QUARK_ASSERT(ee->_print_output == std::vector<std::string>{"5"});
 }

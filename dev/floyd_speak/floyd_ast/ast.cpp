@@ -254,7 +254,7 @@ json_t gp_ast_to_json(const general_purpose_ast_t& ast){
 
 general_purpose_ast_t json_to_gp_ast(const json_t& json){
 
-	//	This is a pass2 AST: it contains an array of statements, with hierachical functions and types.
+	//	This is an unchecked AST: it contains an array of statements, with hierachical functions and types.
 	if(json.is_array()){
 		const auto program_body = astjson_to_statements(json);
 		return general_purpose_ast_t{
@@ -290,6 +290,16 @@ general_purpose_ast_t json_to_gp_ast(const json_t& json){
 	}
 }
 
+
+
+
+
+
+ast_json_t unchecked_ast_to_json(const unchecked_ast_t& ast){
+	QUARK_ASSERT(ast.check_invariant());
+
+	return ast_json_t::make(gp_ast_to_json(ast._tree));
+}
 
 
 

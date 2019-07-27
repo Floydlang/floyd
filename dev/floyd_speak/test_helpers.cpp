@@ -25,7 +25,7 @@
 #include "compiler_basics.h"
 #include "compiler_helpers.h"
 #include "floyd_parser.h"
-#include "pass3.h"
+#include "semantic_analyser.h"
 #include "floyd_runtime.h"
 
 #include <string>

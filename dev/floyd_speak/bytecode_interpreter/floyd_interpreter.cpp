@@ -10,7 +10,7 @@
 
 #include "floyd_runtime.h"
 
-#include "pass3.h"
+#include "semantic_analyser.h"
 #include "bytecode_generator.h"
 #include "os_process.h"
 
@@ -69,8 +69,8 @@ value_t call_function(interpreter_t& vm, const floyd::value_t& f, const std::vec
 
 
 bc_program_t compile_to_bytecode(const compilation_unit_t& cu){
-	const auto pass3 = compile_to_sematic_ast__errors(cu);
-	const auto bc = generate_bytecode(pass3);
+	const auto sem_ast = compile_to_sematic_ast__errors(cu);
+	const auto bc = generate_bytecode(sem_ast);
 	return bc;
 }
 

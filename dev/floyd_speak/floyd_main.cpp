@@ -21,7 +21,7 @@
 #include "interpretator_benchmark.h"
 #include "file_handling.h"
 
-#include "pass3.h"
+#include "semantic_analyser.h"
 #include "compiler_helpers.h"
 #include "compiler_basics.h"
 
@@ -71,8 +71,6 @@ void run_tests(){
 
 			"ast_typeid.cpp",
 
-			"pass2.cpp",
-			"pass3.cpp",
 
 			"parse_statement.cpp",
 			"floyd_interpreter.cpp",
@@ -85,7 +83,6 @@ void run_tests(){
 			"expressions.cpp",
 			"llvm_code_gen.cpp",
 			"utils.cpp",
-			"pass3.cpp",
 			"floyd_main.cpp",
 	*/
 		},

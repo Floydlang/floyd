@@ -11,8 +11,8 @@
 #include "parser_primitives.h"
 #include "floyd_parser.h"
 
-#include "pass2.h"
-#include "pass3.h"
+#include "parse_tree_to_ast_conv.h"
+#include "semantic_analyser.h"
 #include "compiler_helpers.h"
 #include "compiler_basics.h"
 #include "floyd_corelib.h"
@@ -108,10 +108,10 @@ compilation_unit_t make_compilation_unit(const std::string& source_code, const s
 
 
 
-semantic_ast_t run_semantic_analysis__errors(const pass2_ast_t& pass2, const compilation_unit_t& cu){
+semantic_ast_t run_semantic_analysis__errors(const unchecked_ast_t& unchecked_ast, const compilation_unit_t& cu){
 	try {
-		const auto pass3 = run_semantic_analysis(pass2);
-		return pass3;
+		const auto sem_ast = run_semantic_analysis(unchecked_ast);
+		return sem_ast;
 	}
 	catch(const compiler_error& e){
 		const auto refined = refine_compiler_error_with_loc2(cu, e);
@@ -415,27 +415,26 @@ general_purpose_ast_t desugar(desugar_t& acc, const general_purpose_ast_t& ast){
 
 
 
-pass2_ast_t desugar_pass(const pass2_ast_t& pass2){
-//	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(gp_ast_to_json(pass2._tree)));
+unchecked_ast_t desugar_pass(const unchecked_ast_t& unchecked_ast){
+//	QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(gp_ast_to_json(unchecked_ast._tree)));
 
 	desugar_t acc;
-	const auto result = desugar(acc, pass2._tree);
+	const auto result = desugar(acc, unchecked_ast._tree);
 
 //	QUARK_TRACE_SS("OUTPUT:  " << json_to_pretty_string(gp_ast_to_json(result)));
-	return pass2_ast_t { result };
+	return unchecked_ast_t { result };
 }
 
 
 
 
 semantic_ast_t compile_to_sematic_ast__errors(const compilation_unit_t& cu){
-
 //	QUARK_CONTEXT_TRACE(context._tracer, json_to_pretty_string(statements_pos.first._value));
 	const auto parse_tree = parse_program__errors(cu);
-	const auto pass2 = parse_tree_to_pass2_ast(parse_tree);
-	const auto pass2b = desugar_pass(pass2);
-	const auto pass3 = run_semantic_analysis__errors(pass2b, cu);
-	return pass3;
+	const auto unchecked_ast = parse_tree_to_ast(parse_tree);
+	const auto unchecked_astb = desugar_pass(unchecked_ast);
+	const auto sem_ast = run_semantic_analysis__errors(unchecked_astb, cu);
+	return sem_ast;
 }
 
 

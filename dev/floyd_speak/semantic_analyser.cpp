@@ -1,12 +1,12 @@
-	//
-//  pass2.cpp
+//
+//  parse_tree_to_ast_conv.cpp
 //  FloydSpeak
 //
 //  Created by Marcus Zetterquist on 09/08/16.
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#include "pass3.h"
+#include "semantic_analyser.h"
 
 #include "statement.h"
 #include "ast_value.h"
@@ -17,7 +17,6 @@
 #include "floyd_runtime.h"
 
 #include "text_parser.h"
-#include "pass2.h"
 
 namespace floyd {
 
@@ -51,7 +50,7 @@ bool semantic_ast_t::check_invariant() const{
 //	Immutable data used by analyser.
 
 struct analyzer_imm_t {
-	pass2_ast_t _ast;
+	unchecked_ast_t _ast;
 
 	std::vector<corecall_signature_t> corecall_signatures;
 };
@@ -71,7 +70,7 @@ struct lexical_scope_t {
 };
 
 struct analyser_t {
-	public: analyser_t(const pass2_ast_t& ast);
+	public: analyser_t(const unchecked_ast_t& ast);
 #if DEBUG
 	public: bool check_invariant() const;
 #endif
@@ -2099,11 +2098,11 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 
 	The call will either match 100% or, if the callee has any-type as return and/or arguments, then the call will have *more* type info than callee.
 
-	After pass3 has run (or any of the analys_*() functions returns an expression), then the actual types of all call arguments/returns are 100% known.
+	After semantic analysis has run (or any of the analys_*() functions returns an expression), then the actual types of all call arguments/returns are 100% known.
 
 	callee:						void print(any)
-	pass2 call expression:		print(13)
-	pass3 call expression:		print(int)
+	BEFORE call expression:		print(13)
+	AFTER call expression:		print(int 13)
 */
 
 static std::pair<analyser_t, expression_t> analyse_corecall_fallthrough_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& call_args, const corecall_signature_t& sign){
@@ -2592,7 +2591,7 @@ std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_
 }
 
 void test__analyse_expression(const statement_t& parent, const expression_t& e, const expression_t& expected){
-	const pass2_ast_t ast;
+	const unchecked_ast_t ast;
 	const analyser_t interpreter(ast);
 	const auto e3 = analyse_expression_no_target(interpreter, parent, e);
 
@@ -2609,7 +2608,7 @@ QUARK_UNIT_TEST("analyse_expression_no_target()", "literal 1234 == 1234", "", ""
 }
 
 QUARK_UNIT_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
-	const pass2_ast_t ast;
+	const unchecked_ast_t ast;
 	const analyser_t interpreter(ast);
 	const auto e3 = analyse_expression_no_target(
 		interpreter,
@@ -2759,7 +2758,7 @@ semantic_ast_t analyse(analyser_t& a){
 	gp1._interned_types = types3;
 
 
-	const auto result_ast0 = pass2_ast_t{ gp1 };
+	const auto result_ast0 = unchecked_ast_t{ gp1 };
 
 	QUARK_ASSERT(check_types_resolved(result_ast0._tree));
 	const auto result_ast1 = semantic_ast_t(result_ast0._tree);
@@ -2776,7 +2775,7 @@ semantic_ast_t analyse(analyser_t& a){
 
 
 
-analyser_t::analyser_t(const pass2_ast_t& ast){
+analyser_t::analyser_t(const unchecked_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	const auto corecalls = get_corecall_signatures();
@@ -2794,7 +2793,7 @@ bool analyser_t::check_invariant() const {
 //////////////////////////////////////		run_semantic_analysis()
 
 
-semantic_ast_t run_semantic_analysis(const pass2_ast_t& ast){
+semantic_ast_t run_semantic_analysis(const unchecked_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	analyser_t a(ast);

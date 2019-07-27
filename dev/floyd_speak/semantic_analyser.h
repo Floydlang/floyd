@@ -1,25 +1,25 @@
 //
-//  pass2.hpp
+//  semantic_analyser_hpp
 //  FloydSpeak
 //
 //  Created by Marcus Zetterquist on 09/08/16.
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
 //
 
-#ifndef pass3_hpp
-#define pass3_hpp
+#ifndef semantic_analyser_hpp
+#define semantic_analyser_hpp
 
 /*
 	Performs semantic analysis of a Floyd program.
 
-	Converts an pass2_ast_t to a semantic_ast_t.
+	Converts an unchecked_ast_t to a semantic_ast_t.
 
 	- All language-level syntax checks passed.
 	- Builds symbol tables, resolves all symbols.
 	- Checks types.
 	- Infers types when not specified.
 	- Replaces operations with other, equivalent operations.
-	- has the pass2_ast_t and symbol tables for all lexical scopes.
+	- has the unchecked_ast_t and symbol tables for all lexical scopes.
 	- Inserts host functions.
 	- Insert built-in types.
 
@@ -35,7 +35,7 @@
 
 namespace floyd {
 
-struct pass2_ast_t;
+struct unchecked_ast_t;
 
 //////////////////////////////////////		semantic_ast_t
 
@@ -58,13 +58,13 @@ struct semantic_ast_t {
 /*
 	Semantic Analysis -> SYMBOL TABLE + annotated AST
 */
-semantic_ast_t run_semantic_analysis(const pass2_ast_t& ast);
+semantic_ast_t run_semantic_analysis(const unchecked_ast_t& ast);
 
 ast_json_t semantic_ast_to_json(const semantic_ast_t& ast);
 semantic_ast_t json_to_semantic_ast(const ast_json_t& json);
 
 
 }	// Floyd
-#endif /* pass3_hpp */
+#endif /* semantic_analyser_hpp */
 
 

@@ -22,7 +22,7 @@
 
 #include "bytecode_generator.h"
 
-#include "pass3.h"
+#include "semantic_analyser.h"
 #include "floyd_interpreter.h"
 #include "floyd_runtime.h"
 

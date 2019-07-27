@@ -18,7 +18,7 @@ const bool k_trace_types = false;
 
 #include "floyd_parser.h"
 #include "ast_json.h"
-#include "pass3.h"
+#include "semantic_analyser.h"
 
 #include "quark.h"
 #include "floyd_runtime.h"
