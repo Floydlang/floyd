@@ -9,10 +9,10 @@
 #include "parser_primitives.h"
 
 #include "text_parser.h"
-
-#include "ast_value.h"
 #include "json_support.h"
 #include "floyd_syntax.h"
+
+#include "ast_value.h"
 
 #include <string>
 #include <memory>

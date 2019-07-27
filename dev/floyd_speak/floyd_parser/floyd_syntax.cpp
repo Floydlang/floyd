@@ -16,9 +16,6 @@ using std::string;
 namespace floyd {
 
 
-
-
-
 //	WARNING: Make sure all accessed constants have already been initialized!
 static const std::map<syntax_expression_type, std::string> k_2_operator_to_string{
 //	{ syntax_expression_type::k_x_member_access, "->" },
@@ -45,10 +42,6 @@ static const std::map<syntax_expression_type, std::string> k_2_operator_to_strin
 std::string k_2_operator_to_string__func(syntax_expression_type op){
 	return k_2_operator_to_string.at(op);
 }
-
-
-
-//??? split this file into syntax.h and ast.h
 
 
 }

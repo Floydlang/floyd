@@ -659,6 +659,8 @@
 			children = (
 				2C180465208B939700F62480 /* floyd_parser.cpp */,
 				2C180466208B939700F62480 /* floyd_parser.h */,
+				2CB7AA63220900190011DE4B /* floyd_syntax.cpp */,
+				2CB7AA64220900190011DE4B /* floyd_syntax.h */,
 				2C180467208B939700F62480 /* parse_expression.cpp */,
 				2C180468208B939700F62480 /* parse_expression.h */,
 				2C18046D208B939700F62480 /* parse_statement.cpp */,
@@ -696,8 +698,6 @@
 				2C4F355E1D4794CD0061CA93 /* ast_value.h */,
 				2CB7AA692209E51E0011DE4B /* compiler_basics.cpp */,
 				2CB7AA6A2209E51E0011DE4B /* compiler_basics.h */,
-				2CB7AA63220900190011DE4B /* floyd_syntax.cpp */,
-				2CB7AA64220900190011DE4B /* floyd_syntax.h */,
 			);
 			path = floyd_basics;
 			sourceTree = "<group>";

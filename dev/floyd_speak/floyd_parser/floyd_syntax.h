@@ -21,19 +21,6 @@
 namespace floyd {
 
 /*
-	PEG
-	https://en.wikipedia.org/wiki/Parsing_expression_grammar
-	http://craftinginterpreters.com/representing-code.html
-
-	AST ABSTRACT SYNTAX TREE
-
-	https://en.wikipedia.org/wiki/Abstract_syntax_tree
-
-	https://en.wikipedia.org/wiki/Parsing_expression_grammar
-	https://en.wikipedia.org/wiki/Parsing
-*/
-
-/*
 	C99-language constants.
 	http://en.cppreference.com/w/cpp/language/operator_precedence
 */

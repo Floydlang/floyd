@@ -11,7 +11,7 @@
 
 /*
 	Parses one expression from program text. Checks syntax.
-	Returns AST for the expression, in JSON-format.
+	Returns a parse tree for the expression, in JSON-format.
 
 	Does NOT validates that called functions exists and has correct type.
 	Does NOT validates that accessed variables exists and has correct types.

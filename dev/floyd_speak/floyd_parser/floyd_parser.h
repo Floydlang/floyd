@@ -3,7 +3,7 @@
 #define floyd_parser_h
 
 /*
-	Converts source code text to an AST, encoded in a JSON.
+	Converts source code text to a parse tree, encoded in a JSON.
 	Not much validation is going on, except the syntax itself.
 	Result may contain unresolvable references to indentifers, illegal names etc.
 */

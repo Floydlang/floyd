@@ -228,3 +228,16 @@ JSON is also a built-in data type in the Floyd language - a default built in way
 
 
 
+
+
+
+	PEG
+	https://en.wikipedia.org/wiki/Parsing_expression_grammar
+	http://craftinginterpreters.com/representing-code.html
+
+	AST ABSTRACT SYNTAX TREE
+
+	https://en.wikipedia.org/wiki/Abstract_syntax_tree
+
+	https://en.wikipedia.org/wiki/Parsing_expression_grammar
+	https://en.wikipedia.org/wiki/Parsing
