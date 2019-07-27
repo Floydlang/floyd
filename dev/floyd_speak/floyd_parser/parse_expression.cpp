@@ -1202,7 +1202,7 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 	else if(is_first(p2, keyword_t::k_benchmark)){
 		const auto pos = read_required(p2, keyword_t::k_benchmark);
 		const auto block_pos = parse_statement_body(pos);
-		const auto result = maker_benchmark_definition(block_pos.ast);
+		const auto result = maker_benchmark_definition(block_pos.parse_tree);
 		return { result, block_pos.pos };
 	}
 

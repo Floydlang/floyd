@@ -185,7 +185,7 @@ parse_result_t parse_statements_bracketted(const seq_t& s){
 
 QUARK_UNIT_TEST("", "parse_statements_bracketted()", "", ""){
 	ut_verify(QUARK_POS,
-		parse_statement_body(seq_t(" { } ")).ast,
+		parse_statement_body(seq_t(" { } ")).parse_tree,
 		parse_json(seq_t(
 			R"(
 				[]
@@ -195,7 +195,7 @@ QUARK_UNIT_TEST("", "parse_statements_bracketted()", "", ""){
 }
 QUARK_UNIT_TEST("", "parse_statements_bracketted()", "", ""){
 	ut_verify(QUARK_POS,
-		parse_statement_body(seq_t(" { let int x = 1; let int y = 2; } ")).ast,
+		parse_statement_body(seq_t(" { let int x = 1; let int y = 2; } ")).parse_tree,
 		parse_json(seq_t(
 			R"(
 				[
@@ -220,7 +220,7 @@ parse_tree_t parse_program2(const string& program){
 	check_illegal_chars(pos);
 
 	const auto statements_pos = parse_statements_no_brackets(pos);
-	return parse_tree_t{ statements_pos.ast };
+	return parse_tree_t{ statements_pos.parse_tree };
 }
 
 const std::string k_test_program_0_source = "func int main(){ return 3; }";

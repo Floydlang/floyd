@@ -134,8 +134,7 @@ std::pair<std::vector<member_t>, seq_t> read_call_args(const seq_t& s);
 //	Used by the parser functions to return both its result and the pos where it stopped reading.
 
 struct parse_result_t {
-	//??? renameto parse_tree
-	json_t ast;
+	json_t parse_tree;
 	seq_t pos;
 };
 

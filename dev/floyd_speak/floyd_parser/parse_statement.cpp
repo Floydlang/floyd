@@ -31,7 +31,7 @@ parse_result_t parse_statement_body(const seq_t& s){
 
 QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 	ut_verify(QUARK_POS,
-		parse_statement_body(seq_t("{}")).ast,
+		parse_statement_body(seq_t("{}")).parse_tree,
 		parse_json(seq_t(
 			R"(
 				[]
@@ -41,7 +41,7 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 }
 QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 	ut_verify(QUARK_POS,
-		parse_statement_body(seq_t("{ let int y = 11; }")).ast,
+		parse_statement_body(seq_t("{ let int y = 11; }")).parse_tree,
 		parse_json(seq_t(
 			R"(
 				[
@@ -53,7 +53,7 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 }
 QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 	ut_verify(QUARK_POS,
-		parse_statement_body(seq_t("{ let int y = 11; print(3); }")).ast,
+		parse_statement_body(seq_t("{ let int y = 11; print(3); }")).parse_tree,
 		parse_json(seq_t(
 			R"(
 				[
@@ -68,7 +68,7 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 //### test nested blocks.
 QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 	ut_verify(QUARK_POS,
-		parse_statement_body(seq_t(" { let int x = 1; let int y = 2; } ")).ast,
+		parse_statement_body(seq_t(" { let int x = 1; let int y = 2; } ")).parse_tree,
 		parse_json(seq_t(
 			R"(
 				[
@@ -87,7 +87,7 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 std::pair<json_t, seq_t> parse_block(const seq_t& s){
 	const auto start = skip_whitespace(s);
 	const auto body = parse_statement_body(start);
-	return { make_statement1(location_t(start.pos()), statement_opcode_t::k_block, body.ast), body.pos };
+	return { make_statement1(location_t(start.pos()), statement_opcode_t::k_block, body.parse_tree), body.pos };
 }
 
 QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
@@ -441,7 +441,7 @@ std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
 		json_t::make_object({
 			{ "name", function_name },
 			{ "args", args },
-			{ "statements", body.ast },
+			{ "statements", body.parse_tree },
 			{ "return_type", typeid_to_ast_json(return_type_pos.first, json_tags::k_tag_resolve_state) },
 			{ "impure", impure_pos.first }
 		})
@@ -736,7 +736,7 @@ std::pair<json_t, seq_t> parse_if(const seq_t& pos){
 	const auto condition2 = parse_expression(seq_t(condition.first));
 
 	return {
-		make_statement2(location_t(start.pos()), statement_opcode_t::k_if, condition2.first, then_body.ast),
+		make_statement2(location_t(start.pos()), statement_opcode_t::k_if, condition2.first, then_body.parse_tree),
 		then_body.pos
 	};
 }
@@ -781,7 +781,7 @@ std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
 					statement_opcode_t::k_if,
 					if_statement2.first.get_array_n(2),
 					if_statement2.first.get_array_n(3),
-					else_body.ast
+					else_body.parse_tree
 				),
 				else_body.pos
 			};
@@ -951,7 +951,7 @@ std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
 			iterator_name.first,
 			start_expr,
 			end_expr,
-			body.ast
+			body.parse_tree
 		}
 	);
 	return { r, body.pos };
@@ -1015,7 +1015,7 @@ std::pair<json_t, seq_t> parse_while_statement(const seq_t& pos){
 		statement_opcode_t::k_while,
 		{
 			condition_expr,
-			body.ast
+			body.parse_tree
 		}
 	);
 	return { r, body.pos };
@@ -1065,7 +1065,7 @@ std::pair<json_t, seq_t> parse_benchmark_def_statement(const seq_t& pos0){
 		statement_opcode_t::k_benchmark_def,
 		{
 			name.first,
-			body.ast
+			body.parse_tree
 		}
 	);
 	return { r, body.pos };
