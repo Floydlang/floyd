@@ -22,7 +22,6 @@ namespace floyd {
 
 struct value_t;
 struct typeid_t;
-struct libfunc_signature_t;
 
 
 extern const std::string k_corelib_builtin_types_and_constants;

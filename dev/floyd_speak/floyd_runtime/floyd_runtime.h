@@ -66,16 +66,6 @@ value_t unflatten_json_to_specific_type(const json_t& v, const typeid_t& target_
 
 
 
-//////////////////////////////////////		libfunc_signature_t
-
-
-
-struct libfunc_signature_t {
-	std::string name;
-	function_id_t _function_id;
-	floyd::typeid_t _function_type;
-};
-
 
 //////////////////////////////////////		CORE CALLS
 

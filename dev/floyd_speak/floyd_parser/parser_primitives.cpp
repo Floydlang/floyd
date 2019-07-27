@@ -8,7 +8,6 @@
 
 #include "parser_primitives.h"
 
-
 #include "text_parser.h"
 
 #include "ast_value.h"
