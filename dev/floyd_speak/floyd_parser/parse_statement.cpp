@@ -14,8 +14,8 @@
 #include "json_support.h"
 #include "floyd_syntax.h"
 
-#include "ast_json.h"
 #include "typeid.h"
+
 
 namespace floyd {
 
@@ -87,7 +87,7 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 std::pair<json_t, seq_t> parse_block(const seq_t& s){
 	const auto start = skip_whitespace(s);
 	const auto body = parse_statement_body(start);
-	return { make_statement1(location_t(start.pos()), statement_opcode_t::k_block, body.parse_tree), body.pos };
+	return { parser__make_statement_n(location_t(start.pos()), parser_statement_opcode_t::k_block, { body.parse_tree } ), body.pos };
 }
 
 QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
@@ -119,7 +119,7 @@ std::pair<json_t, seq_t> parse_return_statement(const seq_t& s){
 	const auto pos2 = skip_whitespace(token_pos.second);
 	const auto expression1 = parse_expression(pos2);
 
-	const auto statement = make_statement1(location_t(start.pos()), statement_opcode_t::k_return, expression1.first);
+	const auto statement = parser__make_statement_n(location_t(start.pos()), parser_statement_opcode_t::k_return, { expression1.first } );
 	const auto pos = skip_whitespace(expression1.second.rest1());
 	return { statement, pos };
 }
@@ -200,7 +200,7 @@ std::pair<json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
 		a_result.identifier,
 		expression_pos.first,
 	};
-	const auto statement = make_statement_n(loc, statement_opcode_t::k_bind, params);
+	const auto statement = parser__make_statement_n(loc, parser_statement_opcode_t::k_bind, params);
 	return { statement, expression_pos.second };
 }
 
@@ -220,7 +220,7 @@ std::pair<json_t, seq_t> parse_mutable(const seq_t& pos, const location_t& loc){
 		expression_pos.first,
 		meta
 	};
-	const auto statement = make_statement_n(loc, statement_opcode_t::k_bind, params);
+	const auto statement = parser__make_statement_n(loc, parser_statement_opcode_t::k_bind, params);
 
 	return { statement, expression_pos.second };
 }
@@ -366,7 +366,7 @@ std::pair<json_t, seq_t> parse_assign_statement(const seq_t& s){
 	const auto rhs_seq = skip_whitespace(equal_pos);
 	const auto expression_fr = parse_expression(rhs_seq);
 
-	const auto statement = make_statement_n(location_t(start.pos()), statement_opcode_t::k_assign, { variable_pos.first, expression_fr.first });
+	const auto statement = parser__make_statement_n(location_t(start.pos()), parser_statement_opcode_t::k_assign, { variable_pos.first, expression_fr.first });
 	return { statement, expression_fr.second };
 }
 
@@ -389,7 +389,7 @@ std::pair<json_t, seq_t> parse_expression_statement(const seq_t& s){
 	const auto start = skip_whitespace(s);
 	const auto expression_fr = parse_expression(start);
 
-	const auto statement = make_statement1(location_t(start.pos()), statement_opcode_t::k_expression_statement, expression_fr.first);
+	const auto statement = parser__make_statement_n(location_t(start.pos()), parser_statement_opcode_t::k_expression_statement, { expression_fr.first } );
 	return { statement, expression_fr.second };
 }
 
@@ -435,16 +435,18 @@ std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
 	const auto args = members_to_json(args_pos.first);
 	const auto function_name = function_name_pos.first;
 
-	const auto function_def = make_statement1(
+	const auto function_def = parser__make_statement_n(
 		location_t(start.pos()),
-		statement_opcode_t::k_def_func,
-		json_t::make_object({
-			{ "name", function_name },
-			{ "args", args },
-			{ "statements", body.parse_tree },
-			{ "return_type", typeid_to_ast_json(return_type_pos.first, json_tags::k_tag_resolve_state) },
-			{ "impure", impure_pos.first }
-		})
+		parser_statement_opcode_t::k_def_func,
+		{
+			json_t::make_object({
+				{ "name", function_name },
+				{ "args", args },
+				{ "statements", body.parse_tree },
+				{ "return_type", typeid_to_ast_json(return_type_pos.first, json_tags::k_tag_resolve_state) },
+				{ "impure", impure_pos.first }
+			})
+		}
 	);
 	return { function_def, body.pos };
 }
@@ -567,13 +569,15 @@ std::pair<json_t, seq_t>  parse_struct_definition_body(const seq_t& p, const std
 	}
 	pos = read_required(pos, "}");
 
-	const auto r = make_statement1(
+	const auto r = parser__make_statement_n(
 		location,
-		statement_opcode_t::k_def_struct,
-		json_t::make_object({
-			{ "name", name },
-			{ "members", members_to_json(members) }
-		})
+		parser_statement_opcode_t::k_def_struct,
+		{
+			json_t::make_object({
+				{ "name", name },
+				{ "members", members_to_json(members) }
+			})
+		}
 	);
 	return { r, skip_whitespace(pos) };
 }
@@ -652,7 +656,7 @@ std::pair<json_t, seq_t>  parse_protocol_definition_body(const seq_t& p, const s
 
 	const auto r = make_statement1(
 		location_t(start.pos()),
-		statement_opcode_t::k_def_protocol,
+		parser_statement_opcode_t::k_def_protocol,
 		json_t::make_object({
 			{ "name", name },
 			{ "members", members_to_json(functions)
@@ -736,7 +740,7 @@ std::pair<json_t, seq_t> parse_if(const seq_t& pos){
 	const auto condition2 = parse_expression(seq_t(condition.first));
 
 	return {
-		make_statement2(location_t(start.pos()), statement_opcode_t::k_if, condition2.first, then_body.parse_tree),
+		parser__make_statement_n(location_t(start.pos()), parser_statement_opcode_t::k_if, { condition2.first, then_body.parse_tree } ),
 		then_body.pos
 	};
 }
@@ -762,12 +766,14 @@ std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
 			const auto elseif_statement2 = parse_if_statement(pos2);
 
 			return {
-				make_statement3(
+				parser__make_statement_n(
 					location_t(start.pos()),
-					statement_opcode_t::k_if,
-					if_statement2.first.get_array_n(2),
-					if_statement2.first.get_array_n(3),
-					json_t::make_array({elseif_statement2.first})
+					parser_statement_opcode_t::k_if,
+					{
+						if_statement2.first.get_array_n(2),
+						if_statement2.first.get_array_n(3),
+						json_t::make_array({elseif_statement2.first})
+					}
 				),
 				elseif_statement2.second
 			};
@@ -776,12 +782,14 @@ std::pair<json_t, seq_t> parse_if_statement(const seq_t& pos){
 			const auto else_body = parse_statement_body(pos2);
 
 			return {
-				make_statement3(
+				parser__make_statement_n(
 					location_t(start.pos()),
-					statement_opcode_t::k_if,
-					if_statement2.first.get_array_n(2),
-					if_statement2.first.get_array_n(3),
-					else_body.parse_tree
+					parser_statement_opcode_t::k_if,
+					{
+						if_statement2.first.get_array_n(2),
+						if_statement2.first.get_array_n(3),
+						else_body.parse_tree
+					}
 				),
 				else_body.pos
 			};
@@ -943,9 +951,9 @@ std::pair<json_t, seq_t> parse_for_statement(const seq_t& pos){
 	const auto start_expr = parse_expression(seq_t(start)).first;
 	const auto end_expr = parse_expression(end_pos).first;
 
-	const auto r = make_statement_n(
+	const auto r = parser__make_statement_n(
 		location_t(pos.pos()),
-		statement_opcode_t::k_for,
+		parser_statement_opcode_t::k_for,
 		{
 			range_type == "..." ? "closed-range" : "open-range",
 			iterator_name.first,
@@ -1010,9 +1018,9 @@ std::pair<json_t, seq_t> parse_while_statement(const seq_t& pos){
 	const auto body = parse_statement_body(condition.second);
 
 	const auto condition_expr = parse_expression(seq_t(condition.first)).first;
-	const auto r = make_statement_n(
+	const auto r = parser__make_statement_n(
 		location_t(pos.pos()),
-		statement_opcode_t::k_while,
+		parser_statement_opcode_t::k_while,
 		{
 			condition_expr,
 			body.parse_tree
@@ -1060,9 +1068,9 @@ std::pair<json_t, seq_t> parse_benchmark_def_statement(const seq_t& pos0){
 	const auto name = parse_expression(pos2.second);
 	const auto body = parse_statement_body(name.second);
 
-	const auto r = make_statement_n(
+	const auto r = parser__make_statement_n(
 		location_t(pos.pos()),
-		statement_opcode_t::k_benchmark_def,
+		parser_statement_opcode_t::k_benchmark_def,
 		{
 			name.first,
 			body.parse_tree
@@ -1113,7 +1121,7 @@ std::pair<json_t, seq_t> parse_software_system_def_statement(const seq_t& s){
 
 	//??? Instead of parsing a static JSON literal, we could parse a Floyd expression that results in a JSON value = use variables etc.
 	std::pair<json_t, seq_t> json_pos = parse_json(ss_pos.second);
-	const auto r = make_statement1(loc, statement_opcode_t::k_software_system_def, json_pos.first);
+	const auto r = parser__make_statement_n(loc, parser_statement_opcode_t::k_software_system_def, { json_pos.first } );
 	return { r, json_pos.second };
 }
 
@@ -1135,7 +1143,7 @@ std::pair<json_t, seq_t> parse_container_def_statement(const seq_t& s){
 	//??? Instead of parsing a static JSON literal, we could parse a Floyd expression that results in a JSON value = use variables etc.
 	std::pair<json_t, seq_t> json_pos = parse_json(ss_pos.second);
 
-	const auto r = make_statement1(loc, statement_opcode_t::k_container_def, json_pos.first);
+	const auto r = parser__make_statement_n(loc, parser_statement_opcode_t::k_container_def, { json_pos.first } );
 	return { r, json_pos.second };
 }
 

@@ -15,9 +15,11 @@
 
 #include "quark.h"
 
+struct seq_t;
+struct json_t;
+
+
 namespace floyd {
-
-
 
 
 //////////////////////////////////////		base_type
@@ -344,6 +346,13 @@ std::pair<location2_t, std::string> refine_compiler_error_with_loc2(const compil
 
 void NOT_IMPLEMENTED_YET() __dead2;
 void UNSUPPORTED() __dead2;
+
+
+
+void ut_verify_json_and_rest(const quark::call_context_t& context, const std::pair<json_t, seq_t>& result_pair, const std::string& expected_json, const std::string& expected_rest);
+
+void ut_verify(const quark::call_context_t& context, const std::pair<std::string, seq_t>& result, const std::pair<std::string, seq_t>& expected);
+
 
 
 }	// floyd

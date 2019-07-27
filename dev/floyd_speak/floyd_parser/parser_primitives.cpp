@@ -637,7 +637,7 @@ pair<typeid_t, seq_t> read_required_type(const seq_t& s){
 
 
 
-json_t parser__make_ast_entry(const location_t& location, const std::string& opcode, const std::vector<json_t>& params){
+static json_t parser__make_ast_entry(const location_t& location, const std::string& opcode, const std::vector<json_t>& params){
 	if(location == k_no_location){
 		std::vector<json_t> e = { json_t(opcode) };
 		e.insert(e.end(), params.begin(), params.end());
@@ -711,5 +711,17 @@ json_t parser__call(const json_t& f, const std::vector<json_t>& args){
 json_t parser__member_access(const json_t& address, const std::string& member_name){
 	return parser__make_expression_n(floyd::k_no_location, parser_expression_opcode_t::k_resolve_member, { address, json_t(member_name) } );
 }
+
+
+
+
+
+
+
+
+json_t parser__make_statement_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params){
+	return parser__make_ast_entry(location, opcode, params);
+}
+
 
 }	//	floyd

@@ -163,24 +163,6 @@ location_t unpack_loc2(const json_t& s){
 
 
 
-void ut_verify_json_and_rest(const quark::call_context_t& context, const std::pair<json_t, seq_t>& result_pair, const std::string& expected_json, const std::string& expected_rest){
-	ut_verify(
-		context,
-		result_pair.first,
-		parse_json(seq_t(expected_json)).first
-	);
-
-	ut_verify(context, result_pair.second.str(), expected_rest);
-}
-
-void ut_verify(const quark::call_context_t& context, const std::pair<std::string, seq_t>& result, const std::pair<std::string, seq_t>& expected){
-	if(result == expected){
-	}
-	else{
-		ut_verify(context, result.first, expected.first);
-		ut_verify(context, result.second.str(), expected.second.str());
-	}
-}
 
 
 }

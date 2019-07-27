@@ -162,12 +162,6 @@ std::pair<json_t, location_t> unpack_loc(const json_t& s);
 location_t unpack_loc2(const json_t& s);
 
 
-//??? move somewhere else
-void ut_verify_json_and_rest(const quark::call_context_t& context, const std::pair<json_t, seq_t>& result_pair, const std::string& expected_json, const std::string& expected_rest);
-
-
-void ut_verify(const quark::call_context_t& context, const std::pair<std::string, seq_t>& result, const std::pair<std::string, seq_t>& expected);
-
 
 }	//	floyd
 
