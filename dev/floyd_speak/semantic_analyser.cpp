@@ -14,8 +14,8 @@
 #include "utils.h"
 #include "json_support.h"
 #include "floyd_runtime.h"
-
 #include "text_parser.h"
+#include "floyd_syntax.h"
 
 namespace floyd {
 
