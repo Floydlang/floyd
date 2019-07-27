@@ -11,7 +11,6 @@
 
 #include "text_parser.h"
 
-#include "statement.h"
 #include "ast_value.h"
 #include "json_support.h"
 

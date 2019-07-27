@@ -2361,10 +2361,6 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 QUARK_UNIT_TEST("", "", "", ""){
-	const auto s = sizeof(variable_address_t);
-	QUARK_UT_VERIFY(s == 8);
-}
-QUARK_UNIT_TEST("", "", "", ""){
 	const auto s = sizeof(bc_value_t);
 	QUARK_UT_VERIFY(s >= 8);
 //	QUARK_UT_VERIFY(s == 16);

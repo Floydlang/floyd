@@ -720,4 +720,15 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
+
+
+
+
+
+QUARK_UNIT_TEST("", "", "", ""){
+	const floyd::variable_address_t dummy;
+	const auto copy(dummy);
+	floyd::variable_address_t b;
+	b = dummy;
+}
 }	//	floyd

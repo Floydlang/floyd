@@ -38,14 +38,15 @@
 */
 
 #include "quark.h"
-#include <vector>
-#include <string>
-#include <map>
-#include "ast_basics.h"
+
 #include "ast_typeid.h"
 #include "ast_typeid_helpers.h"
 #include "json_support.h"
 #include "compiler_basics.h"
+
+#include <vector>
+#include <string>
+#include <map>
 
 
 
