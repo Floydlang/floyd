@@ -19,6 +19,9 @@ struct seq_t;
 struct json_t;
 
 namespace floyd {
+namespace parser {
+
+
 struct parse_result_t;
 
 /*
@@ -190,6 +193,7 @@ std::pair<json_t, seq_t> parse_software_system_def_statement(const seq_t& s);
 
 std::pair<json_t, seq_t> parse_container_def_statement(const seq_t& s);
 
+}	// parser
 }	//	floyd
 
 

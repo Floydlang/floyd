@@ -18,7 +18,7 @@
 
 
 namespace floyd {
-
+namespace parser {
 
 static const char k_literal_divider_char = '\'';
 const std::string k_hex_chars = "0123456789abcdef";
@@ -1958,5 +1958,5 @@ std::pair<json_t, seq_t> parse_expression(const seq_t& p){
 	}
 }
 
-
+}	//	parser
 }	//	floyd

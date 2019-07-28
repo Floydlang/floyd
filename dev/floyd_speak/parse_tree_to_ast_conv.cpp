@@ -14,7 +14,7 @@
 namespace floyd {
 
 
-unchecked_ast_t parse_tree_to_ast(const parse_tree_t& json){
+unchecked_ast_t parse_tree_to_ast(const parser::parse_tree_t& json){
 	const auto gp_ast = json_to_gp_ast(json._value);
 	return unchecked_ast_t{ gp_ast };
 }

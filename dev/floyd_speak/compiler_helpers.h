@@ -22,7 +22,10 @@ namespace floyd {
 struct semantic_ast_t;
 struct compilation_unit_t;
 struct unchecked_ast_t;
-struct parse_tree_t;
+
+namespace parser {
+	struct parse_tree_t;
+}
 
 
 ////////////////////////////////		run_output_t
@@ -55,7 +58,7 @@ void ut_verify_run_output(const quark::call_context_t& context, const run_output
 
 
 
-parse_tree_t parse_program__errors(const compilation_unit_t& cu);
+parser::parse_tree_t parse_program__errors(const compilation_unit_t& cu);
 semantic_ast_t run_semantic_analysis__errors(const unchecked_ast_t& ast, const compilation_unit_t& cu);
 
 

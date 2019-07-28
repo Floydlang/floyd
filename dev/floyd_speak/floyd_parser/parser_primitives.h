@@ -30,6 +30,8 @@ struct value_t;
 struct location_t;
 
 
+namespace parser {
+
 ////////////////////////////////		TEXT PARSING PRIMITIVES
 
 //	Also skips
@@ -210,7 +212,7 @@ json_t make_parser_node(const location_t& location, const std::string& opcode, c
 
 json_t parser__make_constant(const value_t& value);
 
-
+}	//	 parser
 }	//	floyd
 
 

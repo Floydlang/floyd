@@ -19,6 +19,8 @@
 
 namespace floyd {
 
+namespace parser {
+
 //??? Decide policy if parse functions accept leading whitespace or asserts on there is none.
 
 
@@ -1147,4 +1149,5 @@ std::pair<json_t, seq_t> parse_container_def_statement(const seq_t& s){
 	return { r, json_pos.second };
 }
 
+}	// parser
 }	//	floyd

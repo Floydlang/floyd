@@ -23,6 +23,8 @@ namespace floyd {
 
 using namespace std;
 
+namespace parser {
+
 std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s);
 
 
@@ -489,4 +491,5 @@ QUARK_UNIT_TEST("", "parse_prefixless_statement()", "", ""){
 }
 */
 
-}	//	namespace floyd
+}	// parser
+}	// floyd

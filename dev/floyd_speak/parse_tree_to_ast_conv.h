@@ -15,9 +15,13 @@
 
 namespace floyd {
 
+namespace parser {
+	struct parse_tree_t;
+}
+
 struct parse_tree_t;
 
-unchecked_ast_t parse_tree_to_ast(const parse_tree_t& parse_tree);
+unchecked_ast_t parse_tree_to_ast(const parser::parse_tree_t& parse_tree);
 
 }	//	floyd
 

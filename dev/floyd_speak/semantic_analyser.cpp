@@ -2673,28 +2673,28 @@ builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	*/
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
-	symbol_map.push_back({keyword_t::k_void, make_type_symbol(typeid_t::make_void())});
-	symbol_map.push_back({keyword_t::k_bool, make_type_symbol(typeid_t::make_bool())});
-	symbol_map.push_back({keyword_t::k_int, make_type_symbol(typeid_t::make_int())});
-	symbol_map.push_back({keyword_t::k_double, make_type_symbol(typeid_t::make_double())});
-	symbol_map.push_back({keyword_t::k_string, make_type_symbol(typeid_t::make_string())});
-	symbol_map.push_back({keyword_t::k_typeid, make_type_symbol(typeid_t::make_typeid())});
-	symbol_map.push_back({keyword_t::k_json, make_type_symbol(typeid_t::make_json())});
+	symbol_map.push_back( { parser::keyword_t::k_void, make_type_symbol(typeid_t::make_void()) });
+	symbol_map.push_back( { parser::keyword_t::k_bool, make_type_symbol(typeid_t::make_bool()) });
+	symbol_map.push_back( { parser::keyword_t::k_int, make_type_symbol(typeid_t::make_int()) });
+	symbol_map.push_back( { parser::keyword_t::k_double, make_type_symbol(typeid_t::make_double()) });
+	symbol_map.push_back( { parser::keyword_t::k_string, make_type_symbol(typeid_t::make_string()) });
+	symbol_map.push_back( { parser::keyword_t::k_typeid, make_type_symbol(typeid_t::make_typeid()) });
+	symbol_map.push_back( { parser::keyword_t::k_json, make_type_symbol(typeid_t::make_json()) });
 
 
 	//	"null" is equivalent to json::null
-	symbol_map.push_back({"null", symbol_t::make_immutable_precalc(value_t::make_json(json_t()))});
+	symbol_map.push_back( { "null", symbol_t::make_immutable_precalc(value_t::make_json(json_t())) });
 
-	symbol_map.push_back({keyword_t::k_undefined, symbol_t::make_immutable_precalc(value_t::make_undefined())});
-	symbol_map.push_back({keyword_t::k_any, symbol_t::make_immutable_precalc(value_t::make_any())});
+	symbol_map.push_back( { parser::keyword_t::k_undefined, symbol_t::make_immutable_precalc(value_t::make_undefined()) });
+	symbol_map.push_back( { parser::keyword_t::k_any, symbol_t::make_immutable_precalc(value_t::make_any()) });
 
-	symbol_map.push_back({keyword_t::k_json_object, symbol_t::make_immutable_precalc(value_t::make_int(1))});
-	symbol_map.push_back({keyword_t::k_json_array, symbol_t::make_immutable_precalc(value_t::make_int(2))});
-	symbol_map.push_back({keyword_t::k_json_string, symbol_t::make_immutable_precalc(value_t::make_int(3))});
-	symbol_map.push_back({keyword_t::k_json_number, symbol_t::make_immutable_precalc(value_t::make_int(4))});
-	symbol_map.push_back({keyword_t::k_json_true, symbol_t::make_immutable_precalc(value_t::make_int(5))});
-	symbol_map.push_back({keyword_t::k_json_false, symbol_t::make_immutable_precalc(value_t::make_int(6))});
-	symbol_map.push_back({keyword_t::k_json_null, symbol_t::make_immutable_precalc(value_t::make_int(7))});
+	symbol_map.push_back( { parser::keyword_t::k_json_object, symbol_t::make_immutable_precalc(value_t::make_int(1)) });
+	symbol_map.push_back( { parser::keyword_t::k_json_array, symbol_t::make_immutable_precalc(value_t::make_int(2)) });
+	symbol_map.push_back( { parser::keyword_t::k_json_string, symbol_t::make_immutable_precalc(value_t::make_int(3)) });
+	symbol_map.push_back( { parser::keyword_t::k_json_number, symbol_t::make_immutable_precalc(value_t::make_int(4)) });
+	symbol_map.push_back( { parser::keyword_t::k_json_true, symbol_t::make_immutable_precalc(value_t::make_int(5)) });
+	symbol_map.push_back( { parser::keyword_t::k_json_false, symbol_t::make_immutable_precalc(value_t::make_int(6)) });
+	symbol_map.push_back( { parser::keyword_t::k_json_null, symbol_t::make_immutable_precalc(value_t::make_int(7)) });
 
 
 	std::map<function_id_t, std::shared_ptr<const function_definition_t>> function_defs;

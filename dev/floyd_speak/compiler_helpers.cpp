@@ -61,9 +61,9 @@ void ut_verify_run_output(const quark::call_context_t& context, const run_output
 
 
 
-parse_tree_t parse_program__errors(const compilation_unit_t& cu){
+parser::parse_tree_t parse_program__errors(const compilation_unit_t& cu){
 	try {
-		const auto parse_tree = parse_program2(cu.prefix_source + cu.program_text);
+		const auto parse_tree = parser::parse_program2(cu.prefix_source + cu.program_text);
 		return parse_tree;
 	}
 	catch(const compiler_error& e){

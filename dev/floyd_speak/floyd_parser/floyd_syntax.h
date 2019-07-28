@@ -21,6 +21,8 @@
 
 namespace floyd {
 
+namespace parser {
+
 /*
 	C99-language constants.
 	http://en.cppreference.com/w/cpp/language/operator_precedence
@@ -190,6 +192,7 @@ namespace keyword_t {
 };
 
 
+}	//	parser
 }	//	floyd
 
 #endif /* floyd_syntax_hpp */

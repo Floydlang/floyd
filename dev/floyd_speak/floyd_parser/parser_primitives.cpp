@@ -28,6 +28,7 @@ using std::vector;
 using std::string;
 using std::pair;
 
+namespace parser {
 
 //////////////////////////////////////////////////		Text parsing primitives
 
@@ -662,5 +663,6 @@ json_t parser__make_constant(const value_t& value){
 	);
 }
 
+}	// parser
 
 }	//	floyd

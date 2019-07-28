@@ -32,9 +32,11 @@ struct seq_t;
 struct json_t;
 
 namespace floyd {
+namespace parser {
 
 std::pair<json_t, seq_t> parse_expression(const seq_t& expression);
 
+}	//	parser
 }	//	floyd
 
 

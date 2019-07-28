@@ -17,6 +17,8 @@ struct seq_t;
 
 namespace floyd {
 
+namespace parser {
+
 struct parse_result_t;
 
 
@@ -43,6 +45,7 @@ parse_result_t parse_statements_bracketted(const seq_t& s);
 //	returns json-array of statements.
 parse_tree_t parse_program2(const std::string& program);
 
+}	// parser
 }	//	floyd
 
 

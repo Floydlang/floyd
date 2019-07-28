@@ -414,7 +414,7 @@ std::pair<location2_t, std::string> refine_compiler_error_with_loc2(const compil
 	const auto what1 = std::string(e.what());
 
 	std::stringstream what2;
-	const auto line_snippet = reverse(floyd::skip_whitespace(reverse(loc2.line)));
+	const auto line_snippet = parser::reverse(parser::skip_whitespace(parser::reverse(loc2.line)));
 	what2 << what1 << " Line: " << std::to_string(loc2.line_number + 1) << " \"" << line_snippet << "\"";
 	if(loc2.source_file_path.empty() == false){
 		what2 << " file: " << loc2.source_file_path;
@@ -444,6 +444,7 @@ void ut_verify(const quark::call_context_t& context, const std::pair<std::string
 		ut_verify(context, result.second.str(), expected.second.str());
 	}
 }
+
 
 }	// floyd
 
