@@ -55,14 +55,15 @@
 	Use read_type(), read_required_type()
 */
 
-#include <string>
-#include <vector>
-#include <variant>
-
 #include "utils.h"
 #include "compiler_basics.h"
 
 #include "quark.h"
+
+#include <string>
+#include <vector>
+#include <variant>
+
 
 struct json_t;
 

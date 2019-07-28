@@ -10,11 +10,13 @@
 
 #include "quark.h"
 #include "json_support.h"
+
 #include <string>
 
 struct seq_t;
 
 namespace floyd {
+
 struct parse_result_t;
 
 

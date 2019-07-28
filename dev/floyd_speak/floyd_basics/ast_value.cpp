@@ -7,9 +7,8 @@
 //
 
 #include "ast_value.h"
-
-#include "statement.h"
 #include "text_parser.h"
+
 #include <cinttypes>
 
 using std::string;

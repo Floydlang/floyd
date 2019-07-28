@@ -14,9 +14,10 @@
 	Keywords, the different types in the language, what special characters there are.
 */
 
+#include "quark.h"
+
 #include <string>
 #include <map>
-#include "quark.h"
 
 namespace floyd {
 

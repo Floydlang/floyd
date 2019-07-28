@@ -9,9 +9,8 @@
 #include "floyd_syntax.h"
 
 #include "quark.h"
-#include <map>
 
-using std::string;
+#include <map>
 
 namespace floyd {
 
