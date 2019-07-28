@@ -2573,7 +2573,7 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 //	QUARK_ASSERT(types.interned.size() == ast0._tree._interned_types.interned.size());
 
 	if(k_trace_input_output){
-		QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast0)._value));
+		QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast0)));
 	}
 	if(k_trace_types){
 		{

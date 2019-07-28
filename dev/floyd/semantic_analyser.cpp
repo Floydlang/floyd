@@ -2608,15 +2608,15 @@ semantic_ast_t run_semantic_analysis(const unchecked_ast_t& ast){
 
 
 
-ast_json_t semantic_ast_to_json(const semantic_ast_t& ast){
+json_t semantic_ast_to_json(const semantic_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	return ast_json_t::make(gp_ast_to_json(ast._tree));
+	return gp_ast_to_json(ast._tree);
 }
 
 
-semantic_ast_t json_to_semantic_ast(const ast_json_t& json){
-	const auto gp_ast = json_to_gp_ast(json._value);
+semantic_ast_t json_to_semantic_ast(const json_t& json){
+	const auto gp_ast = json_to_gp_ast(json);
 	bool resolved = check_types_resolved(gp_ast);
 	if(resolved == false){
 		throw std::exception();

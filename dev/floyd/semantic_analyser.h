@@ -56,8 +56,8 @@ struct semantic_ast_t {
 
 semantic_ast_t run_semantic_analysis(const unchecked_ast_t& ast);
 
-ast_json_t semantic_ast_to_json(const semantic_ast_t& ast);
-semantic_ast_t json_to_semantic_ast(const ast_json_t& json);
+json_t semantic_ast_to_json(const semantic_ast_t& ast);
+semantic_ast_t json_to_semantic_ast(const json_t& json);
 
 
 }	// Floyd

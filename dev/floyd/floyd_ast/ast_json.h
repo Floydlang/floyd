@@ -24,15 +24,6 @@
 	Then comes the statement opcode, like "return" and its parameters.
 		[ 135500, "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"] ],
 		[ "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"] ],
-
-
-	NOTICE: Right now ast_json_t is used a little sloppyly.
-
-	1. The parse tree
-	2. The input AST (no types and resolve)
-	3. The semantically correct AST
-
-	Future: make separate types, optimally separate constants for statement/expression opcodes.
 */
 
 #include <string>
@@ -47,32 +38,9 @@ namespace floyd {
 struct value_t;
 
 
-////////////////////////////////////////		ast_json_t
-
-
-struct ast_json_t {
-	private: ast_json_t(const json_t& v) :
-		_value(v)
-	{
-	}
-
-	public: static ast_json_t make(const json_t& v){
-		return { v };
-	}
-	public: static ast_json_t make(const std::vector<json_t>& v){
-		return { json_t::make_array(v) };
-	}
-
-
-	////////////////////////////////////////		STATE
-	json_t _value;
-};
-
-
-
 ////////////////////////////////////////		statement_opcode_t
 
-//	String keys use to specify statement type inside the ast_json_t.
+//	String keys used to specify statement type inside the AST JSON.
 
 namespace statement_opcode_t {
 	const std::string k_return = "return";
@@ -102,7 +70,7 @@ namespace statement_opcode_t {
 
 ////////////////////////////////////////		expression_opcode_t
 
-//	String keys use to specify statement type inside the ast_json_t.
+//	String keys used to specify statement type inside the AST JSON.
 
 namespace expression_opcode_t {
 	const std::string k_literal = "k";

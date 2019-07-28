@@ -199,7 +199,7 @@ int do_compile_command(const command_line_args_t& command_line_args){
 		const auto cu = floyd::make_compilation_unit_lib(source, source_path);
 		const auto ast = floyd::compile_to_sematic_ast__errors(cu);
 		const auto json = semantic_ast_to_json(ast);
-		std::cout << json_to_pretty_string(json._value);
+		std::cout << json_to_pretty_string(json);
 		std::cout << std::endl;
 	}
 	else{

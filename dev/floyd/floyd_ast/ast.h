@@ -17,7 +17,6 @@
 struct json_t;
 
 namespace floyd {
-	struct ast_json_t;
 
 
 //////////////////////////////////////////////////		itype_t
