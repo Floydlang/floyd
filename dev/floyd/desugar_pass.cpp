@@ -18,7 +18,6 @@ struct desugar_t {
 		return true;
 	}
 
-
 	general_purpose_ast_t tree;
 };
 

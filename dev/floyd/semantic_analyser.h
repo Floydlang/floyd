@@ -40,7 +40,7 @@ struct unchecked_ast_t;
 //////////////////////////////////////		semantic_ast_t
 
 /*
-	The semantic_ast_t is a ready-to-run program, all symbols resolved, all semantics are OK.
+	The semantic_ast_t is a correct program, all symbols resolved, all types resolved, all semantics are OK.
 */
 struct semantic_ast_t {
 	public: explicit semantic_ast_t(const general_purpose_ast_t& tree);
@@ -54,10 +54,6 @@ struct semantic_ast_t {
 	public: general_purpose_ast_t _tree;
 };
 
-
-/*
-	Semantic Analysis -> SYMBOL TABLE + annotated AST
-*/
 semantic_ast_t run_semantic_analysis(const unchecked_ast_t& ast);
 
 ast_json_t semantic_ast_to_json(const semantic_ast_t& ast);

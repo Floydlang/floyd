@@ -147,7 +147,7 @@ general_purpose_ast_t json_to_gp_ast(const json_t& json);
 //////////////////////////////////////////////////		unchecked_ast_t
 
 /*
-	The Abstract Syntax Tree. It may contain unresolved symbols.
+	An AST that may contain unresolved symbols.
 	It can optionally be annotated with all expression types OR NOT.
 	Immutable
 */
@@ -161,8 +161,6 @@ struct unchecked_ast_t {
 	/////////////////////////////		STATE
 	public: general_purpose_ast_t _tree;
 };
-
-ast_json_t unchecked_ast_to_json(const unchecked_ast_t& ast);
 
 }	//	floyd
 

@@ -252,52 +252,25 @@ json_t gp_ast_to_json(const general_purpose_ast_t& ast){
 }
 
 general_purpose_ast_t json_to_gp_ast(const json_t& json){
+	const auto globals0 = json.get_object_element("globals");
+	const auto function_defs = json.get_object_element("function_defs");
 
-	//	This is an unchecked AST: it contains an array of statements, with hierachical functions and types.
-	if(json.is_array()){
-		const auto program_body = ast_json_to_statements(json);
-		return general_purpose_ast_t{
-			body_t{ program_body },
-			{},
-			{},
-			{},
-			{}
-		};
+	body_t globals1 = json_to_body(globals0);
+
+	std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs1;
+	for(const auto& f: function_defs.get_array()){
+		const auto f1 = json_to_function_def(f);
+		const auto f2 = std::make_shared<const floyd::function_definition_t>(f1);
+		function_defs1.push_back(f2);
 	}
 
-	//	Pass 3 AST aka SAST: contains globals + function-defs.
-	else{
-		const auto globals0 = json.get_object_element("globals");
-		const auto function_defs = json.get_object_element("function_defs");
-
-		body_t globals1 = json_to_body(globals0);
-
-		std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs1;
-		for(const auto& f: function_defs.get_array()){
-			const auto f1 = json_to_function_def(f);
-			const auto f2 = std::make_shared<const floyd::function_definition_t>(f1);
-			function_defs1.push_back(f2);
-		}
-
-		return general_purpose_ast_t {
-			globals1,
-			function_defs1,
-			{},
-			software_system_t{},
-			container_t{}
-		};
-	}
-}
-
-
-
-
-
-
-ast_json_t unchecked_ast_to_json(const unchecked_ast_t& ast){
-	QUARK_ASSERT(ast.check_invariant());
-
-	return ast_json_t::make(gp_ast_to_json(ast._tree));
+	return general_purpose_ast_t {
+		globals1,
+		function_defs1,
+		{},
+		software_system_t{},
+		container_t{}
+	};
 }
 
 

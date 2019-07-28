@@ -184,15 +184,6 @@ const std::pair<std::string, symbol_t>* resolve_symbol_by_address(const analyser
 
 
 
-
-
-
-
-
-
-
-
-
 typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, const typeid_t& type){
 	QUARK_ASSERT(acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -1199,10 +1190,6 @@ std::pair<analyser_t, expression_t> analyse_corecall_replace_expression(const an
 	};
 }
 //??? pass around location_t instead of statement_t& parent!
-
-
-
-
 
 
 
@@ -2487,7 +2474,7 @@ static builtins_t generate_corecalls(analyser_t& a, const std::vector<corecall_s
 
 builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	/*
-		Create built-in global symbol map: built in data types, built-in functions (host functions).
+		Create built-in global symbol map: built in data types, built-in functions (corecalls).
 	*/
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 

@@ -10,7 +10,7 @@
 #define ast_json_h
 
 /*
-	The ast_json_t type hold an AST, encoded as a JSON.
+	The AST JSON type hold an AST, encoded as a JSON.
 
 	It's a JSON array with each program statement in order.
 	Each statement is a JSON array like this:
