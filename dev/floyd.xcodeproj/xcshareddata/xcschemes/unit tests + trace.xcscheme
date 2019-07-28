@@ -16,8 +16,8 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2C1D84DC1CA765A90042F0A8"
                BuildableName = "floyd"
-               BlueprintName = "floyd_speak"
-               ReferencedContainer = "container:floyd_speak.xcodeproj">
+               BlueprintName = "floyd"
+               ReferencedContainer = "container:floyd.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -34,8 +34,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2C1D84DC1CA765A90042F0A8"
             BuildableName = "floyd"
-            BlueprintName = "floyd_speak"
-            ReferencedContainer = "container:floyd_speak.xcodeproj">
+            BlueprintName = "floyd"
+            ReferencedContainer = "container:floyd.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
@@ -57,21 +57,17 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2C1D84DC1CA765A90042F0A8"
             BuildableName = "floyd"
-            BlueprintName = "floyd_speak"
-            ReferencedContainer = "container:floyd_speak.xcodeproj">
+            BlueprintName = "floyd"
+            ReferencedContainer = "container:floyd.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "run"
+            argument = "runtests"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-t"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "examples/process_test1.floyd"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
@@ -90,8 +86,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2C1D84DC1CA765A90042F0A8"
             BuildableName = "floyd"
-            BlueprintName = "floyd_speak"
-            ReferencedContainer = "container:floyd_speak.xcodeproj">
+            BlueprintName = "floyd"
+            ReferencedContainer = "container:floyd.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
