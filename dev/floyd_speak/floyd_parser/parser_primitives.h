@@ -168,23 +168,23 @@ namespace parse_tree_statement_opcode {
 	const std::string k_benchmark = "benchmark";
 
 
-	const std::string k_2_lookup = "[]";
+	const std::string k_lookup = "[]";
 
-	const std::string k_2_add = "+";
-	const std::string k_2_subtract = "-";
-	const std::string k_2_multiply = "*";
-	const std::string k_2_divide = "/";
-	const std::string k_2_remainder = "%";
+	const std::string k_add = "+";
+	const std::string k_subtract = "-";
+	const std::string k_multiply = "*";
+	const std::string k_divide = "/";
+	const std::string k_remainder = "%";
 
-	const std::string k_2_smaller_or_equal = "<=";
-	const std::string k_2_smaller = "<";
-	const std::string k_2_larger_or_equal = ">=";
-	const std::string k_2_larger = ">";
+	const std::string k_smaller_or_equal = "<=";
+	const std::string k_smaller = "<";
+	const std::string k_larger_or_equal = ">=";
+	const std::string k_larger = ">";
 
-	const std::string k_2_logical_equal = "==";
-	const std::string k_2_logical_nonequal = "!=";
-	const std::string k_2_logical_and = "&&";
-	const std::string k_2_logical_or = "||";
+	const std::string k_logical_equal = "==";
+	const std::string k_logical_nonequal = "!=";
+	const std::string k_logical_and = "&&";
+	const std::string k_logical_or = "||";
 
 };
 
