@@ -22,7 +22,7 @@ using std::isnan;
 
 struct seq_t;
 
-const std::string test_whitespace_chars = " \n\t\r";
+const std::string k_test_whitespace_chars = " \n\t\r";
 
 
 ///////////////////////////////		String utils

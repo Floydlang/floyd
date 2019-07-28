@@ -835,10 +835,10 @@ using std::string;
 using std::vector;
 using std::pair;
 
-	const std::string whitespace_chars = " \n\t";
+static const std::string k_json_whitespace_chars = " \n\t";
 
 seq_t skip_whitespace(const seq_t& s){
-	return read_while(s, whitespace_chars).second;
+	return read_while(s, k_json_whitespace_chars).second;
 }
 
 

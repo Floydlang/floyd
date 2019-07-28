@@ -454,23 +454,23 @@ pair<string, seq_t> read_while(const seq_t& p1, const string& chars){
 }
 
 QUARK_UNIT_TEST("", "read_while()", "", ""){
-	QUARK_TEST_VERIFY((read_while(seq_t(""), test_whitespace_chars) == pair<string, seq_t>{ "", seq_t("") }));
+	QUARK_TEST_VERIFY((read_while(seq_t(""), k_test_whitespace_chars) == pair<string, seq_t>{ "", seq_t("") }));
 }
 
 QUARK_UNIT_TEST("", "read_while()", "", ""){
-	QUARK_TEST_VERIFY((read_while(seq_t("\t"), test_whitespace_chars) == pair<string, seq_t>{ "\t", seq_t("") }));
+	QUARK_TEST_VERIFY((read_while(seq_t("\t"), k_test_whitespace_chars) == pair<string, seq_t>{ "\t", seq_t("") }));
 }
 
 QUARK_UNIT_TEST("", "read_while()", "", ""){
-	QUARK_TEST_VERIFY((read_while(seq_t("end\t"), test_whitespace_chars) == pair<string, seq_t>{ "", seq_t("end\t") }));
+	QUARK_TEST_VERIFY((read_while(seq_t("end\t"), k_test_whitespace_chars) == pair<string, seq_t>{ "", seq_t("end\t") }));
 }
 
 QUARK_UNIT_TEST("", "read_while()", "", ""){
-	QUARK_TEST_VERIFY((read_while(seq_t("\nend"), test_whitespace_chars) == pair<string, seq_t>{ "\n", seq_t("end") }));
+	QUARK_TEST_VERIFY((read_while(seq_t("\nend"), k_test_whitespace_chars) == pair<string, seq_t>{ "\n", seq_t("end") }));
 }
 
 QUARK_UNIT_TEST("", "read_while()", "", ""){
-	QUARK_TEST_VERIFY((read_while(seq_t("\n\t\rend"), test_whitespace_chars) == pair<string, seq_t>{ "\n\t\r", seq_t("end") }));
+	QUARK_TEST_VERIFY((read_while(seq_t("\n\t\rend"), k_test_whitespace_chars) == pair<string, seq_t>{ "\n\t\r", seq_t("end") }));
 }
 
 

@@ -84,7 +84,7 @@ pair<string, seq_t> skip_whitespace2(const seq_t& s){
 		const auto ch2 = p.second.first(2);
 
 		//	Whitespace?
-		if(whitespace_chars.find(p.second.first1_char()) != string::npos){
+		if(k_whitespace_chars.find(p.second.first1_char()) != string::npos){
 			p = { p.first + p.second.first(1), p.second.rest(1) };
 		}
 		else if(ch2 == "//"){
@@ -161,7 +161,7 @@ QUARK_UNIT_TEST("", "skip_whitespace2()", "/* */ -- nested", ""){
 
 
 bool is_whitespace(char ch){
-	return whitespace_chars.find(string(1, ch)) != string::npos;
+	return k_whitespace_chars.find(string(1, ch)) != string::npos;
 }
 
 QUARK_UNIT_TEST("", "is_whitespace()", "", ""){
@@ -182,7 +182,7 @@ std::string skip_whitespace_ends(const std::string& s){
 	const auto a = skip_whitespace(s);
 
 	string::size_type i = a.size();
-	while(i > 0 && whitespace_chars.find(a[i - 1]) != string::npos){
+	while(i > 0 && k_whitespace_chars.find(a[i - 1]) != string::npos){
 		i--;
 	}
 	return a.substr(0, i);
@@ -208,7 +208,7 @@ QUARK_UNIT_TEST("", "skip_whitespace_ends()", "", ""){
 std::pair<std::string, seq_t> get_balanced(const seq_t& s){
 	QUARK_ASSERT(s.size() > 0);
 
-	const auto r = read_balanced2(s, bracket_pairs);
+	const auto r = read_balanced2(s, k_bracket_pairs);
 	if(r.first == ""){
 		throw_compiler_error_nopos("unbalanced ([{< >}])");
 	}
@@ -263,7 +263,7 @@ QUARK_UNIT_TEST("", "read_enclosed_in_parantheses()", "", ""){
 }
 
 
-const auto open_close2 = deinterleave_string(bracket_pairs);
+const auto open_close2 = deinterleave_string(k_bracket_pairs);
 
 
 std::pair<string, seq_t> read_until_toplevel_match(const seq_t& s, const std::string& match_chars){
@@ -314,7 +314,7 @@ std::string reverse(const std::string& s){
 //	Returns "" if no symbol is found.
 std::pair<std::string, seq_t> read_identifier(const seq_t& s){
 	const auto a = skip_whitespace(s);
-	const auto b = read_while(a, identifier_chars);
+	const auto b = read_while(a, k_identifier_chars);
 	return b;
 }
 std::pair<std::string, seq_t> read_required_identifier(const seq_t& s){
@@ -336,7 +336,7 @@ QUARK_UNIT_TEST("read_required_identifier()", "", "", ""){
 std::pair<shared_ptr<typeid_t>, seq_t> read_basic_type(const seq_t& s){
 	const auto pos0 = skip_whitespace(s);
 
-	const auto pos1 = read_while(pos0, identifier_chars + "*");
+	const auto pos1 = read_while(pos0, k_identifier_chars + "*");
 	if(pos1.first.empty()){
 		return { nullptr, pos1.second };
 	}
@@ -410,7 +410,7 @@ QUARK_UNIT_TEST("", "parse_functiondef_arguments2()", "", ""){
 std::pair<vector<member_t>, seq_t> read_functiondef_arg_parantheses(const seq_t& s){
 	QUARK_ASSERT(s.first1() == "(");
 
-	std::pair<std::string, seq_t> args_pos = read_balanced2(s, bracket_pairs);
+	std::pair<std::string, seq_t> args_pos = read_balanced2(s, k_bracket_pairs);
 	if(args_pos.first.empty()){
 		throw_compiler_error_nopos("unbalanced ()");
 	}
@@ -422,7 +422,7 @@ std::pair<vector<member_t>, seq_t> read_functiondef_arg_parantheses(const seq_t&
 std::pair<std::vector<member_t>, seq_t> read_function_type_args(const seq_t& s){
 	QUARK_ASSERT(s.first1() == "(");
 
-	std::pair<std::string, seq_t> args_pos = read_balanced2(s, bracket_pairs);
+	std::pair<std::string, seq_t> args_pos = read_balanced2(s, k_bracket_pairs);
 	if(args_pos.first.empty()){
 		throw_compiler_error_nopos("unbalanced ()");
 	}
@@ -660,11 +660,6 @@ json_t parser__make_constant(const value_t& value){
 			typeid_to_ast_json(value.get_type(), json_tags::k_tag_resolve_state)
 		}
 	);
-}
-
-
-json_t parser__make_statement_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params){
-	return make_parser_node(location, opcode, params);
 }
 
 

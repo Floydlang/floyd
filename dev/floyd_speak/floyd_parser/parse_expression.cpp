@@ -1934,7 +1934,7 @@ std::pair<json_t, seq_t> parse_expression_deep(const seq_t& p, const eoperator_p
 
 std::pair<json_t, seq_t> parse_expression(const seq_t& p){
 #if DEBUG
-	const auto illegal_char = read_while(p, valid_expression_chars);
+	const auto illegal_char = read_while(p, k_valid_expression_chars);
 	QUARK_ASSERT(illegal_char.second.empty());
 #endif
 
