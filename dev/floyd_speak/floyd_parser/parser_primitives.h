@@ -141,17 +141,13 @@ struct parse_result_t {
 };
 
 
-
-
-
-
 namespace parser_statement_opcode_t {
 	const std::string k_return = "return";
 
 	const std::string k_bind = "bind";
 	const std::string k_assign = "assign";
-	const std::string k_assign2 = "assign2";
-	const std::string k_init2 = "init2";
+//	const std::string k_assign2 = "assign2";
+//	const std::string k_init2 = "init2";
 	const std::string k_block = "block";
 
 	const std::string k_def_struct = "def-struct";
@@ -170,22 +166,20 @@ namespace parser_statement_opcode_t {
 	const std::string k_benchmark = "benchmark";
 };
 
-
-
 namespace parser_expression_opcode_t {
 	const std::string k_literal = "k";
 	const std::string k_call = "call";
-	const std::string k_corecall = "corecall";
+//	const std::string k_corecall = "corecall";
 	const std::string k_load = "@";
-	const std::string k_load2 = "@i";
+//	const std::string k_load2 = "@i";
 	const std::string k_resolve_member = "->";
 	const std::string k_update_member = "<-";
 	const std::string k_unary_minus = "unary-minus";
 	const std::string k_conditional_operator = "?:";
-	const std::string k_struct_def = "struct-def";
-	const std::string k_function_def = "function-def";
+//	const std::string k_struct_def = "struct-def";
+//	const std::string k_function_def = "function-def";
 	const std::string k_value_constructor = "value-constructor";
-	const std::string k_lookup_element = "[]";
+//	const std::string k_lookup_element = "[]";
 	const std::string k_benchmark = "benchmark";
 };
 

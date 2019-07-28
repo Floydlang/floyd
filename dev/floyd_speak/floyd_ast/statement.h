@@ -137,7 +137,7 @@ namespace floyd {
 	const floyd::symbol_t& find_symbol_required(const symbol_table_t& symbol_table, const std::string& name);
 
 	std::vector<json_t> symbols_to_json(const symbol_table_t& symbols);
-	symbol_table_t astjson_to_symbols(const json_t& p);
+	symbol_table_t ast_json_to_symbols(const json_t& p);
 
 
 
@@ -530,7 +530,7 @@ namespace floyd {
 	}
 
 
-const std::vector<statement_t> astjson_to_statements(const json_t& p);
+const std::vector<statement_t> ast_json_to_statements(const json_t& p);
 json_t statement_to_json(const statement_t& e);
 
 

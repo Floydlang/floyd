@@ -464,7 +464,7 @@ std::shared_ptr<typeid_t> get_optional_typeid(const json_t& json_array, int opti
 
 
 //??? loses output-type for some expressions. Make it nonlossy!
-expression_t astjson_to_expression(const json_t& e){
+expression_t ast_json_to_expression(const json_t& e){
 	QUARK_ASSERT(e.check_invariant());
 
 	const auto op = e.get_array_n(0).get_string();
@@ -509,7 +509,7 @@ expression_t astjson_to_expression(const json_t& e){
 	else if(op == expression_opcode_t::k_unary_minus){
 		QUARK_ASSERT(e.get_array_size() == 2 || e.get_array_size() == 3);
 
-		const auto expr = astjson_to_expression(e.get_array_n(1));
+		const auto expr = ast_json_to_expression(e.get_array_n(1));
 		const auto annotated_type = get_optional_typeid(e, 2);
 		return expression_t::make_unary_minus(expr, annotated_type);
 	}
@@ -517,8 +517,8 @@ expression_t astjson_to_expression(const json_t& e){
 		QUARK_ASSERT(e.get_array_size() == 3 || e.get_array_size() == 4);
 
 		const auto op2 = token_to_expression_type(op);
-		const auto lhs_expr = astjson_to_expression(e.get_array_n(1));
-		const auto rhs_expr = astjson_to_expression(e.get_array_n(2));
+		const auto lhs_expr = ast_json_to_expression(e.get_array_n(1));
+		const auto rhs_expr = ast_json_to_expression(e.get_array_n(2));
 		const auto annotated_type = get_optional_typeid(e, 3);
 		if(is_arithmetic_expression(op2)){
 			return expression_t::make_arithmetic(op2, lhs_expr, rhs_expr, annotated_type);
@@ -533,20 +533,20 @@ expression_t astjson_to_expression(const json_t& e){
 	else if(op == expression_opcode_t::k_conditional_operator){
 		QUARK_ASSERT(e.get_array_size() == 4 || e.get_array_size() == 5);
 
-		const auto condition_expr = astjson_to_expression(e.get_array_n(1));
-		const auto a_expr = astjson_to_expression(e.get_array_n(2));
-		const auto b_expr = astjson_to_expression(e.get_array_n(3));
+		const auto condition_expr = ast_json_to_expression(e.get_array_n(1));
+		const auto a_expr = ast_json_to_expression(e.get_array_n(2));
+		const auto b_expr = ast_json_to_expression(e.get_array_n(3));
 		const auto annotated_type = get_optional_typeid(e, 4);
 		return expression_t::make_conditional_operator(condition_expr, a_expr, b_expr, annotated_type);
 	}
 	else if(op == expression_opcode_t::k_call){
 		QUARK_ASSERT(e.get_array_size() == 3 || e.get_array_size() == 4);
 
-		const auto function_expr = astjson_to_expression(e.get_array_n(1));
+		const auto function_expr = ast_json_to_expression(e.get_array_n(1));
 		const auto args = e.get_array_n(2);
 		vector<expression_t> args2;
 		for(const auto& arg: args.get_array()){
-			args2.push_back(astjson_to_expression(arg));
+			args2.push_back(ast_json_to_expression(arg));
 		}
 
 		const auto annotated_type = get_optional_typeid(e, 3);
@@ -560,7 +560,7 @@ expression_t astjson_to_expression(const json_t& e){
 		const auto args = e.get_array_n(2);
 		vector<expression_t> args2;
 		for(const auto& arg: args.get_array()){
-			args2.push_back(astjson_to_expression(arg));
+			args2.push_back(ast_json_to_expression(arg));
 		}
 
 		const auto annotated_type = get_optional_typeid(e, 3);
@@ -570,7 +570,7 @@ expression_t astjson_to_expression(const json_t& e){
 	else if(op == expression_opcode_t::k_resolve_member){
 		QUARK_ASSERT(e.get_array_size() == 3 || e.get_array_size() == 4);
 
-		const auto base_expr = astjson_to_expression(e.get_array_n(1));
+		const auto base_expr = ast_json_to_expression(e.get_array_n(1));
 		const auto member = e.get_array_n(2).get_string();
 		const auto annotated_type = get_optional_typeid(e, 3);
 		return expression_t::make_resolve_member(base_expr, member, annotated_type);
@@ -578,9 +578,9 @@ expression_t astjson_to_expression(const json_t& e){
 	else if(op == expression_opcode_t::k_update_member){
 		QUARK_ASSERT(e.get_array_size() == 4 || e.get_array_size() == 5);
 
-		const auto base_expr = astjson_to_expression(e.get_array_n(1));
+		const auto base_expr = ast_json_to_expression(e.get_array_n(1));
 		const auto member_index = e.get_array_n(2).get_number();
-		const auto new_value_expr = astjson_to_expression(e.get_array_n(3));
+		const auto new_value_expr = ast_json_to_expression(e.get_array_n(3));
 		const auto annotated_type = get_optional_typeid(e, 4);
 		return expression_t::make_update_member(base_expr, (int)member_index, new_value_expr, annotated_type);
 	}
@@ -602,8 +602,8 @@ expression_t astjson_to_expression(const json_t& e){
 	else if(op == expression_opcode_t::k_lookup_element){
 		QUARK_ASSERT(e.get_array_size() == 3 || e.get_array_size() == 4);
 
-		const auto parent_address_expr = astjson_to_expression(e.get_array_n(1));
-		const auto lookup_key_expr = astjson_to_expression(e.get_array_n(2));
+		const auto parent_address_expr = ast_json_to_expression(e.get_array_n(1));
+		const auto lookup_key_expr = ast_json_to_expression(e.get_array_n(2));
 		const auto annotated_type = get_optional_typeid(e, 3);
 		return expression_t::make_lookup(parent_address_expr, lookup_key_expr, annotated_type);
 	}
@@ -615,7 +615,7 @@ expression_t astjson_to_expression(const json_t& e){
 
 		std::vector<expression_t> args2;
 		for(const auto& m: args){
-			args2.push_back(astjson_to_expression(m));
+			args2.push_back(ast_json_to_expression(m));
 		}
 
 		return expression_t::make_construct_value_expr(value_type, args2);

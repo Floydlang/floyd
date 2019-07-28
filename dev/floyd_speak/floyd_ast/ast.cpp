@@ -255,7 +255,7 @@ general_purpose_ast_t json_to_gp_ast(const json_t& json){
 
 	//	This is an unchecked AST: it contains an array of statements, with hierachical functions and types.
 	if(json.is_array()){
-		const auto program_body = astjson_to_statements(json);
+		const auto program_body = ast_json_to_statements(json);
 		return general_purpose_ast_t{
 			body_t{ program_body },
 			{},
