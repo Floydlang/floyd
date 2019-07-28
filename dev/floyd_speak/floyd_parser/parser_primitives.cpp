@@ -663,11 +663,6 @@ json_t parser__make_constant(const value_t& value){
 }
 
 
-json_t parser__make2(const std::string op, const json_t& lhs, const json_t& rhs){
-	QUARK_ASSERT(op != "");
-	return make_parser_node(floyd::k_no_location, op, { lhs, rhs } );
-}
-
 json_t parser__make_statement_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params){
 	return make_parser_node(location, opcode, params);
 }
