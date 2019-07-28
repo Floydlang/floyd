@@ -190,19 +190,12 @@ namespace parser_expression_opcode_t {
 };
 
 
+json_t make_parser_node(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
 
-json_t parser__make_expression_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
 json_t parser__make_constant(const value_t& value);
-json_t parser__make_identifier(const std::string& s);
 json_t parser__make2(const std::string op, const json_t& lhs, const json_t& rhs);
-json_t parser__make_conditional_operator(const json_t& e1, const json_t& e2, const json_t& e3);
-json_t parser__make_unary_minus(const json_t& expr);
 
-json_t parser__make_vector_definition(const std::string& element_type, const std::vector<json_t>& elements);
 json_t parser__make_dict_definition(const std::string& value_type, const std::vector<json_t>& elements);
-json_t parser__make_benchmark_definition(const json_t& body);
-json_t parser__call(const json_t& f, const std::vector<json_t>& args);
-json_t parser__member_access(const json_t& address, const std::string& member_name);
 
 
 json_t parser__make_statement_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
