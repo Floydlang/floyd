@@ -654,7 +654,7 @@ json_t make_parser_node(const location_t& location, const std::string& opcode, c
 json_t parser__make_constant(const value_t& value){
 	return make_parser_node(
 		floyd::k_no_location,
-		parser_expression_opcode_t::k_literal,
+		parse_tree_expression_opcode_t::k_literal,
 		{
 			value_to_ast_json(value, json_tags::k_tag_resolve_state),
 			typeid_to_ast_json(value.get_type(), json_tags::k_tag_resolve_state)
@@ -667,19 +667,6 @@ json_t parser__make2(const std::string op, const json_t& lhs, const json_t& rhs)
 	QUARK_ASSERT(op != "");
 	return make_parser_node(floyd::k_no_location, op, { lhs, rhs } );
 }
-
-
-json_t parser__make_dict_definition(const std::string& value_type, const std::vector<json_t>& elements){
-	QUARK_ASSERT(value_type == "");
-
-	const auto element_type2 = typeid_to_ast_json(typeid_t::make_dict(typeid_t::make_undefined()), json_tags::k_tag_resolve_state);
-	return make_parser_node(floyd::k_no_location, parser_expression_opcode_t::k_value_constructor, { element_type2, json_t::make_array(elements) } );
-}
-
-
-
-
-
 
 json_t parser__make_statement_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params){
 	return make_parser_node(location, opcode, params);

@@ -19,9 +19,6 @@ const location_t k_no_location(std::numeric_limits<std::size_t>::max());
 
 
 
-
-
-
 using std::string;
 
 
@@ -191,8 +188,6 @@ void ut_verify(const quark::call_context_t& context, const base_type& result, co
 
 
 
-
-
 //	WARNING: Make sure all accessed constants have already been initialized!
 static std::map<expression_type, string> operation_to_string_lookup = {
 	{ expression_type::k_arithmetic_add__2, "+" },
@@ -230,9 +225,6 @@ static std::map<expression_type, string> operation_to_string_lookup = {
 	{ expression_type::k_function_def, "def-func" },
 	{ expression_type::k_value_constructor, "construct-value" }
 };
-
-
-
 
 
 
@@ -453,5 +445,5 @@ void ut_verify(const quark::call_context_t& context, const std::pair<std::string
 	}
 }
 
-}
+}	// floyd
 

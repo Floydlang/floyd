@@ -162,7 +162,4 @@ location_t unpack_loc2(const json_t& s){
 }
 
 
-
-
-
-}
+}	// floyd

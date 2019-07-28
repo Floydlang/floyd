@@ -261,6 +261,6 @@ void floyd_benchmark(){
 
 	}
 
-}
+}	// floyd
 
 

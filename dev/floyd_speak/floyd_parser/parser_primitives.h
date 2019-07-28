@@ -23,6 +23,7 @@
 #include <algorithm>
 
 namespace floyd {
+
 struct typeid_t;
 struct member_t;
 struct value_t;
@@ -140,8 +141,9 @@ struct parse_result_t {
 	seq_t pos;
 };
 
+////////////////////////////////		parse_tree_statement_opcode
 
-namespace parser_statement_opcode_t {
+namespace parse_tree_statement_opcode {
 	const std::string k_return = "return";
 
 	const std::string k_bind = "bind";
@@ -164,9 +166,29 @@ namespace parser_statement_opcode_t {
 	const std::string k_container_def = "container-def";
 	const std::string k_benchmark_def = "benchmark-def";
 	const std::string k_benchmark = "benchmark";
+
+
+	const std::string k_2_lookup = "[]";
+
+	const std::string k_2_add = "+";
+	const std::string k_2_subtract = "-";
+	const std::string k_2_multiply = "*";
+	const std::string k_2_divide = "/";
+	const std::string k_2_remainder = "%";
+
+	const std::string k_2_smaller_or_equal = "<=";
+	const std::string k_2_smaller = "<";
+	const std::string k_2_larger_or_equal = ">=";
+	const std::string k_2_larger = ">";
+
+	const std::string k_2_logical_equal = "==";
+	const std::string k_2_logical_nonequal = "!=";
+	const std::string k_2_logical_and = "&&";
+	const std::string k_2_logical_or = "||";
+
 };
 
-namespace parser_expression_opcode_t {
+namespace parse_tree_expression_opcode_t {
 	const std::string k_literal = "k";
 	const std::string k_call = "call";
 //	const std::string k_corecall = "corecall";
@@ -188,10 +210,6 @@ json_t make_parser_node(const location_t& location, const std::string& opcode, c
 
 json_t parser__make_constant(const value_t& value);
 json_t parser__make2(const std::string op, const json_t& lhs, const json_t& rhs);
-
-json_t parser__make_dict_definition(const std::string& value_type, const std::vector<json_t>& elements);
-
-
 json_t parser__make_statement_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
 
 

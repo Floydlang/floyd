@@ -1009,4 +1009,5 @@ void ut_verify(const quark::call_context_t& context, const typeid_t& result, con
 		typeid_to_ast_json(expected, json_tags::k_plain)
 	);
 }
+
 }	//	floyd
