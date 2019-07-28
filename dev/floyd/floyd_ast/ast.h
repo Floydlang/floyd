@@ -39,37 +39,7 @@ struct itype_t {
 //	This allows us to describe a type using a single 32 bit integer (compact, fast to copy around).
 //	Each type has exactly ONE ID.
 
-
-
-/*
-
-	enum class base_type {
-		k_undefined,
-
-		k_any,
-
-		k_void,
-
-		k_bool,
-		k_int,
-		k_double,
-		k_string,
-		k_json,
-
-		k_typeid,
-
-		k_struct,
-		k_vector,
-		k_dict,
-		k_function,
-
-		k_unresolved
-	};
-
-
-*/
-
-// Automaticall insert all basetype-types so they ALWAYS have EXPLICIT integer IDs as itypes.
+// Automatically insert all basetype-types so they ALWAYS have EXPLICIT integer IDs as itypes.
 
 struct type_interner_t {
 	type_interner_t();

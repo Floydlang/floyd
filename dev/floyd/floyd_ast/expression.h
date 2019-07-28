@@ -68,13 +68,6 @@ inline bool operator==(const variable_address_t& lhs, const variable_address_t& 
 }
 
 
-
-
-
-/*
-	An expression is a json array where entries may be other json arrays.
-	["+", ["+", 1, 2], ["k", 10]]
-*/
 json_t expression_to_json(const expression_t& e);
 
 std::string expression_to_json_string(const expression_t& e);
