@@ -878,7 +878,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 		//	The key needs to be the name of an identifier. It's a compile-time constant.
 		//	It's encoded as a load which is confusing.
 
-		if(get_opcode(key) == expression_type::k_load){
+		if(get_expression_opcode(key) == expression_type::k_load){
 			const auto member_name = std::get<expression_t::load_t>(key._expression_variant).variable_name;
 			int member_index = find_struct_member_index(struct_def, member_name);
 			if(member_index == -1){
@@ -921,7 +921,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 
 		return {
 			a_acc,
-			expression_t::make_corecall(get_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
+			expression_t::make_corecall(get_corecall_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
 		};
 	}
 	else if(collection_type.is_vector()){
@@ -942,7 +942,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 
 		return {
 			a_acc,
-			expression_t::make_corecall(get_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
+			expression_t::make_corecall(get_corecall_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
 		};
 	}
 	else if(collection_type.is_dict()){
@@ -963,7 +963,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 
 		return {
 			a_acc,
-			expression_t::make_corecall(get_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
+			expression_t::make_corecall(get_corecall_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
 		};
 	}
 
@@ -1007,7 +1007,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_push_back_expression(const 
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, parent_type)
+		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, parent_type)
 	};
 }
 
@@ -1031,7 +1031,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_size_expression(const analy
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
@@ -1065,7 +1065,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_find_expression(const analy
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
@@ -1090,7 +1090,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_exists_expression(const ana
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
@@ -1115,7 +1115,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_erase_expression(const anal
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
@@ -1138,7 +1138,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_get_keys_expression(const a
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
@@ -1160,7 +1160,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_subset_expression(const ana
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
@@ -1186,7 +1186,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_replace_expression(const an
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 //??? pass around location_t instead of statement_t& parent!
@@ -1211,7 +1211,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_map_expression(const analys
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
@@ -1233,7 +1233,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_map_string_expression(const
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
@@ -1255,7 +1255,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_map_dag_expression(const an
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
@@ -1276,7 +1276,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_filter_expression(const ana
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
@@ -1298,7 +1298,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_reduce_expression(const ana
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
@@ -1320,7 +1320,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_stable_sort_expression(cons
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
@@ -1919,7 +1919,7 @@ static std::pair<analyser_t, expression_t> analyse_corecall_fallthrough_expressi
 	return {
 		a_acc,
 		expression_t::make_corecall(
-			get_opcode(sign),
+			get_corecall_opcode(sign),
 			resolved_call.second.args,
 			resolved_call.second.function_type.get_function_return()
 		)
@@ -2341,7 +2341,7 @@ expression_t auto_cast_expression_type(const expression_t& e, const typeid_t& wa
 }
 
 std::string get_expression_name(const expression_t& e){
-	const expression_type op = get_opcode(e);
+	const expression_type op = get_expression_opcode(e);
 	return expression_type_to_token(op);
 }
 

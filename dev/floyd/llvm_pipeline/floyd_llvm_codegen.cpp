@@ -1315,115 +1315,115 @@ static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc,
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 	QUARK_ASSERT(e.check_invariant());
 
-	if(details.call_name == get_opcode(make_assert_signature())){
+	if(details.call_name == get_corecall_opcode(make_assert_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
-	else if(details.call_name == get_opcode(make_to_string_signature())){
+	else if(details.call_name == get_corecall_opcode(make_to_string_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
-	else if(details.call_name == get_opcode(make_to_pretty_string_signature())){
-		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
-	}
-
-	else if(details.call_name == get_opcode(make_typeof_signature())){
+	else if(details.call_name == get_corecall_opcode(make_to_pretty_string_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 
-	else if(details.call_name == get_opcode(make_update_signature())){
-		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
-	}
-	else if(details.call_name == get_opcode(make_size_signature())){
-		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
-	}
-	else if(details.call_name == get_opcode(make_find_signature())){
-		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
-	}
-	else if(details.call_name == get_opcode(make_exists_signature())){
-		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
-	}
-	else if(details.call_name == get_opcode(make_erase_signature())){
-		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
-	}
-	else if(details.call_name == get_opcode(make_get_keys_signature())){
-		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
-	}
-	else if(details.call_name == get_opcode(make_push_back_signature())){
-		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
-	}
-	else if(details.call_name == get_opcode(make_subset_signature())){
-		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
-	}
-	else if(details.call_name == get_opcode(make_replace_signature())){
+	else if(details.call_name == get_corecall_opcode(make_typeof_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 
-	else if(details.call_name == get_opcode(make_parse_json_script_signature())){
+	else if(details.call_name == get_corecall_opcode(make_update_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
-	else if(details.call_name == get_opcode(make_generate_json_script_signature())){
+	else if(details.call_name == get_corecall_opcode(make_size_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
-	else if(details.call_name == get_opcode(make_to_json_signature())){
+	else if(details.call_name == get_corecall_opcode(make_find_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
-	else if(details.call_name == get_opcode(make_from_json_signature())){
+	else if(details.call_name == get_corecall_opcode(make_exists_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+	else if(details.call_name == get_corecall_opcode(make_erase_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+	else if(details.call_name == get_corecall_opcode(make_get_keys_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+	else if(details.call_name == get_corecall_opcode(make_push_back_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+	else if(details.call_name == get_corecall_opcode(make_subset_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+	else if(details.call_name == get_corecall_opcode(make_replace_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 
-	else if(details.call_name == get_opcode(make_get_json_type_signature())){
+	else if(details.call_name == get_corecall_opcode(make_parse_json_script_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+	else if(details.call_name == get_corecall_opcode(make_generate_json_script_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+	else if(details.call_name == get_corecall_opcode(make_to_json_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+	else if(details.call_name == get_corecall_opcode(make_from_json_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 
-
-
-	else if(details.call_name == get_opcode(make_map_signature())){
-		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
-	}
-	else if(details.call_name == get_opcode(make_map_string_signature())){
-		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
-	}
-	else if(details.call_name == get_opcode(make_map_dag_signature())){
-		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
-	}
-	else if(details.call_name == get_opcode(make_filter_signature())){
-		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
-	}
-	else if(details.call_name == get_opcode(make_reduce_signature())){
-		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
-	}
-	else if(details.call_name == get_opcode(make_stable_sort_signature())){
+	else if(details.call_name == get_corecall_opcode(make_get_json_type_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 
 
 
-	else if(details.call_name == get_opcode(make_print_signature())){
+	else if(details.call_name == get_corecall_opcode(make_map_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
-	else if(details.call_name == get_opcode(make_send_signature())){
+	else if(details.call_name == get_corecall_opcode(make_map_string_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+	else if(details.call_name == get_corecall_opcode(make_map_dag_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+	else if(details.call_name == get_corecall_opcode(make_filter_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+	else if(details.call_name == get_corecall_opcode(make_reduce_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+	else if(details.call_name == get_corecall_opcode(make_stable_sort_signature())){
 		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
 	}
 
 
-	else if(details.call_name == get_opcode(make_bw_not_signature())){
+
+	else if(details.call_name == get_corecall_opcode(make_print_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+	else if(details.call_name == get_corecall_opcode(make_send_signature())){
+		return generate_fallthrough_corecall(gen_acc, emit_f, e, details);
+	}
+
+
+	else if(details.call_name == get_corecall_opcode(make_bw_not_signature())){
 		return generate_bitwize_expression(gen_acc, emit_f, bitwize_operator::bw_not, e, details.args);
 	}
-	else if(details.call_name == get_opcode(make_bw_and_signature())){
+	else if(details.call_name == get_corecall_opcode(make_bw_and_signature())){
 		return generate_bitwize_expression(gen_acc, emit_f, bitwize_operator::bw_and, e, details.args);
 	}
-	else if(details.call_name == get_opcode(make_bw_or_signature())){
+	else if(details.call_name == get_corecall_opcode(make_bw_or_signature())){
 		return generate_bitwize_expression(gen_acc, emit_f, bitwize_operator::bw_or, e, details.args);
 	}
-	else if(details.call_name == get_opcode(make_bw_xor_signature())){
+	else if(details.call_name == get_corecall_opcode(make_bw_xor_signature())){
 		return generate_bitwize_expression(gen_acc, emit_f, bitwize_operator::bw_xor, e, details.args);
 	}
-	else if(details.call_name == get_opcode(make_bw_shift_left_signature())){
+	else if(details.call_name == get_corecall_opcode(make_bw_shift_left_signature())){
 		return generate_bitwize_expression(gen_acc, emit_f, bitwize_operator::bw_shift_left, e, details.args);
 	}
-	else if(details.call_name == get_opcode(make_bw_shift_right_signature())){
+	else if(details.call_name == get_corecall_opcode(make_bw_shift_right_signature())){
 		return generate_bitwize_expression(gen_acc, emit_f, bitwize_operator::bw_shift_right, e, details.args);
 	}
-	else if(details.call_name == get_opcode(make_bw_shift_right_arithmetic_signature())){
+	else if(details.call_name == get_corecall_opcode(make_bw_shift_right_arithmetic_signature())){
 		return generate_bitwize_expression(gen_acc, emit_f, bitwize_operator::bw_shift_right_arithmetic, e, details.args);
 	}
 

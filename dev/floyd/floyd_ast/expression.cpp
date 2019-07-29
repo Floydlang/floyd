@@ -13,15 +13,59 @@
 
 #include "ast.h"
 
+
 namespace floyd {
 
 using namespace std;
 
-	json_t expressions_to_json(const std::vector<expression_t> v);
+json_t expressions_to_json(const std::vector<expression_t> v);
+
 
 
 
 //////////////////////////////////////////////////		function_definition_t
+
+
+
+bool function_definition_t::check_types_resolved() const{
+	bool result = _function_type.check_types_resolved();
+	if(result == false){
+		return false;
+	}
+
+	for(const auto& e: _args){
+		bool result2 = e._type.check_types_resolved();
+		if(result2 == false){
+			return false;
+		}
+	}
+
+	struct visitor_t {
+		bool operator()(const empty_t& e) const{
+			return true;
+		}
+		bool operator()(const floyd_func_t& e) const{
+			if(e._body){
+				return e._body->check_types_resolved();
+			}
+			else{
+				return true;
+			}
+		}
+		bool operator()(const host_func_t& e) const{
+			return true;
+		}
+	};
+	bool result3 = std::visit(visitor_t{}, _contents);
+	if(result3 == false){
+		return false;
+	}
+	return true;
+}
+
+bool function_definition_t::floyd_func_t::operator==(const floyd_func_t& other) const{
+	return compare_shared_values(_body, other._body);
+}
 
 bool function_definition_t::check_invariant() const {
 	QUARK_ASSERT(_function_type.is_function());
@@ -61,6 +105,9 @@ bool operator==(const function_definition_t& lhs, const function_definition_t& r
 		&& lhs._contents == rhs._contents
 		;
 }
+
+
+
 
 const typeid_t& get_function_type(const function_definition_t& f){
 	return f._function_type;
@@ -117,45 +164,16 @@ function_definition_t json_to_function_def(const json_t& p){
 	}
 }
 
-bool function_definition_t::check_types_resolved() const{
-	bool result = _function_type.check_types_resolved();
-	if(result == false){
-		return false;
-	}
-
-	for(const auto& e: _args){
-		bool result2 = e._type.check_types_resolved();
-		if(result2 == false){
-			return false;
-		}
-	}
-
-	struct visitor_t {
-		bool operator()(const empty_t& e) const{
-			return true;
-		}
-		bool operator()(const floyd_func_t& e) const{
-			if(e._body){
-				return e._body->check_types_resolved();
-			}
-			else{
-				return true;
-			}
-		}
-		bool operator()(const host_func_t& e) const{
-			return true;
-		}
-	};
-	bool result3 = std::visit(visitor_t{}, _contents);
-	if(result3 == false){
-		return false;
-	}
-	return true;
+json_t function_def_expression_to_ast_json(const function_definition_t& v) {
+	typeid_t function_type = get_function_type(v);
+	return make_expression_n(
+		v._location,
+		expression_opcode_t::k_function_def,
+		function_def_to_ast_json(v).get_array()
+	);
 }
 
-bool function_definition_t::floyd_func_t::operator==(const floyd_func_t& other) const{
-	return compare_shared_values(_body, other._body);
-}
+
 
 
 
@@ -256,7 +274,21 @@ bool expression_t::check_types_resolved() const{
 
 
 
-////////////////////////////////////////////		JSON SUPPORT
+
+expression_t::expression_t(const expression_variant_t& contents, const std::shared_ptr<typeid_t>& output_type) :
+#if DEBUG
+	_debug(""),
+#endif
+	location(k_no_location),
+	_expression_variant(contents),
+	_output_type(output_type)
+{
+#if DEBUG
+	_debug = expression_to_json_string(*this);
+#endif
+}
+
+
 
 
 
@@ -314,15 +346,6 @@ QUARK_UNIT_TEST("expression_t", "expression_to_json()", "lookup", ""){
 			)
 		),
 		R"(["[]", ["@", "hello"], ["k", "xyz", "^string"]])"
-	);
-}
-
-json_t function_def_expression_to_ast_json(const function_definition_t& v) {
-	typeid_t function_type = get_function_type(v);
-	return make_expression_n(
-		v._location,
-		expression_opcode_t::k_function_def,
-		function_def_to_ast_json(v).get_array()
 	);
 }
 
@@ -644,7 +667,7 @@ std::string expression_to_json_string(const expression_t& e){
 
 
 
-expression_type get_opcode(const expression_t& e){
+expression_type get_expression_opcode(const expression_t& e){
 	struct visitor_t {
 		expression_type operator()(const expression_t::literal_exp_t& e) const{
 			return expression_type::k_literal;

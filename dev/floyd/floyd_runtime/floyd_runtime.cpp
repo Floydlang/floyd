@@ -576,7 +576,7 @@ corecall_signature_t make_bw_shift_right_arithmetic_signature(){
 
 
 
-std::string get_opcode(const corecall_signature_t& signature){
+std::string get_corecall_opcode(const corecall_signature_t& signature){
 	return std::string() + "$" + signature.name;
 }
 

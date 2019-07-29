@@ -27,7 +27,6 @@ struct expression_t;
 
 
 
-
 //////////////////////////////////////		variable_address_t
 
 
@@ -66,11 +65,6 @@ struct variable_address_t {
 inline bool operator==(const variable_address_t& lhs, const variable_address_t& rhs){
 	return lhs._parent_steps == rhs._parent_steps && lhs._index == rhs._index;
 }
-
-
-json_t expression_to_json(const expression_t& e);
-
-std::string expression_to_json_string(const expression_t& e);
 
 
 
@@ -147,12 +141,16 @@ struct function_definition_t {
 };
 
 bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);
-json_t function_def_to_ast_json(const function_definition_t& v);
-function_definition_t json_to_function_def(const json_t& p);
+
 const typeid_t& get_function_type(const function_definition_t& f);
 
+json_t function_def_to_ast_json(const function_definition_t& v);
+function_definition_t json_to_function_def(const json_t& p);
 
 json_t function_def_expression_to_ast_json(const function_definition_t& v);
+
+
+
 
 
 
@@ -518,18 +516,8 @@ struct expression_t {
 		benchmark_expr_t
 	> expression_variant_t;
 
-	private: expression_t(const expression_variant_t& contents, const std::shared_ptr<typeid_t>& output_type) :
-#if DEBUG
-		_debug(""),
-#endif
-		location(k_no_location),
-		_expression_variant(contents),
-		_output_type(output_type)
-	{
-	#if DEBUG
-		_debug = expression_to_json_string(*this);
-	#endif
-	}
+	private: expression_t(const expression_variant_t& contents, const std::shared_ptr<typeid_t>& output_type);
+
 
 	//////////////////////////		STATE
 #if DEBUG
@@ -540,9 +528,14 @@ struct expression_t {
 	public: std::shared_ptr<typeid_t> _output_type;
 };
 
+
+json_t expression_to_json(const expression_t& e);
 expression_t ast_json_to_expression(const json_t& e);
 
-expression_type get_opcode(const expression_t& e);
+std::string expression_to_json_string(const expression_t& e);
+
+expression_type get_expression_opcode(const expression_t& e);
+
 
 }	//	floyd
 

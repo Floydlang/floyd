@@ -77,7 +77,7 @@ struct corecall_signature_t {
 	function_id_t _function_id;
 	floyd::typeid_t _function_type;
 };
-std::string get_opcode(const corecall_signature_t& signature);
+std::string get_corecall_opcode(const corecall_signature_t& signature);
 
 corecall_signature_t make_assert_signature();
 corecall_signature_t make_to_string_signature();
