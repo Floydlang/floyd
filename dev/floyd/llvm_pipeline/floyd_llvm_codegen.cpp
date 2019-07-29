@@ -832,22 +832,22 @@ static llvm::Value* generate_arithmetic_expression(llvm_code_generator_t& gen_ac
 	auto rhs_temp = generate_expression(gen_acc, emit_f, *details.rhs);
 
 	if(type.is_bool()){
-		if(details.op == expression_type::k_arithmetic_add__2){
+		if(details.op == expression_type::k_arithmetic_add){
 			return gen_acc.builder.CreateOr(lhs_temp, rhs_temp, "logical_or_tmp");
 		}
-		else if(details.op == expression_type::k_arithmetic_subtract__2){
+		else if(details.op == expression_type::k_arithmetic_subtract){
 		}
-		else if(details.op == expression_type::k_arithmetic_multiply__2){
+		else if(details.op == expression_type::k_arithmetic_multiply){
 		}
-		else if(details.op == expression_type::k_arithmetic_divide__2){
+		else if(details.op == expression_type::k_arithmetic_divide){
 		}
-		else if(details.op == expression_type::k_arithmetic_remainder__2){
+		else if(details.op == expression_type::k_arithmetic_remainder){
 		}
 
-		else if(details.op == expression_type::k_logical_and__2){
+		else if(details.op == expression_type::k_logical_and){
 			return gen_acc.builder.CreateAnd(lhs_temp, rhs_temp, "logical_and_tmp");
 		}
-		else if(details.op == expression_type::k_logical_or__2){
+		else if(details.op == expression_type::k_logical_or){
 			return gen_acc.builder.CreateOr(lhs_temp, rhs_temp, "logical_or_tmp");
 		}
 		else{
@@ -855,26 +855,26 @@ static llvm::Value* generate_arithmetic_expression(llvm_code_generator_t& gen_ac
 		}
 	}
 	else if(type.is_int()){
-		if(details.op == expression_type::k_arithmetic_add__2){
+		if(details.op == expression_type::k_arithmetic_add){
 			return gen_acc.builder.CreateAdd(lhs_temp, rhs_temp, "add_tmp");
 		}
-		else if(details.op == expression_type::k_arithmetic_subtract__2){
+		else if(details.op == expression_type::k_arithmetic_subtract){
 			return gen_acc.builder.CreateSub(lhs_temp, rhs_temp, "subtract_tmp");
 		}
-		else if(details.op == expression_type::k_arithmetic_multiply__2){
+		else if(details.op == expression_type::k_arithmetic_multiply){
 			return gen_acc.builder.CreateMul(lhs_temp, rhs_temp, "mult_tmp");
 		}
-		else if(details.op == expression_type::k_arithmetic_divide__2){
+		else if(details.op == expression_type::k_arithmetic_divide){
 			return gen_acc.builder.CreateSDiv(lhs_temp, rhs_temp, "divide_tmp");
 		}
-		else if(details.op == expression_type::k_arithmetic_remainder__2){
+		else if(details.op == expression_type::k_arithmetic_remainder){
 			return gen_acc.builder.CreateSRem(lhs_temp, rhs_temp, "reminder_tmp");
 		}
 
-		else if(details.op == expression_type::k_logical_and__2){
+		else if(details.op == expression_type::k_logical_and){
 			return gen_acc.builder.CreateAnd(lhs_temp, rhs_temp, "logical_and_tmp");
 		}
-		else if(details.op == expression_type::k_logical_or__2){
+		else if(details.op == expression_type::k_logical_or){
 			return gen_acc.builder.CreateOr(lhs_temp, rhs_temp, "logical_or_tmp");
 		}
 		else{
@@ -882,25 +882,25 @@ static llvm::Value* generate_arithmetic_expression(llvm_code_generator_t& gen_ac
 		}
 	}
 	else if(type.is_double()){
-		if(details.op == expression_type::k_arithmetic_add__2){
+		if(details.op == expression_type::k_arithmetic_add){
 			return gen_acc.builder.CreateFAdd(lhs_temp, rhs_temp, "add_tmp");
 		}
-		else if(details.op == expression_type::k_arithmetic_subtract__2){
+		else if(details.op == expression_type::k_arithmetic_subtract){
 			return gen_acc.builder.CreateFSub(lhs_temp, rhs_temp, "subtract_tmp");
 		}
-		else if(details.op == expression_type::k_arithmetic_multiply__2){
+		else if(details.op == expression_type::k_arithmetic_multiply){
 			return gen_acc.builder.CreateFMul(lhs_temp, rhs_temp, "mult_tmp");
 		}
-		else if(details.op == expression_type::k_arithmetic_divide__2){
+		else if(details.op == expression_type::k_arithmetic_divide){
 			return gen_acc.builder.CreateFDiv(lhs_temp, rhs_temp, "divide_tmp");
 		}
-		else if(details.op == expression_type::k_arithmetic_remainder__2){
+		else if(details.op == expression_type::k_arithmetic_remainder){
 			UNSUPPORTED();
 		}
-		else if(details.op == expression_type::k_logical_and__2){
+		else if(details.op == expression_type::k_logical_and){
 			UNSUPPORTED();
 		}
-		else if(details.op == expression_type::k_logical_or__2){
+		else if(details.op == expression_type::k_logical_or){
 			UNSUPPORTED();
 		}
 		else{
@@ -909,7 +909,7 @@ static llvm::Value* generate_arithmetic_expression(llvm_code_generator_t& gen_ac
 	}
 	else if(type.is_string() || type.is_vector()){
 		//	Only add supported. Future: don't use arithmetic add to concat collections!
-		QUARK_ASSERT(details.op == expression_type::k_arithmetic_add__2);
+		QUARK_ASSERT(details.op == expression_type::k_arithmetic_add);
 
 		const auto def = find_function_def_from_link_name(gen_acc, "floyd_runtime__concatunate_vectors");
 		std::vector<llvm::Value*> args2 = {
@@ -986,13 +986,13 @@ static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_ac
 			ICMP_SLE   = 41,  ///< signed less or equal
 		*/
 		static const std::map<expression_type, llvm::CmpInst::Predicate> conv_opcode_int = {
-			{ expression_type::k_comparison_smaller_or_equal__2,			llvm::CmpInst::Predicate::ICMP_SLE },
-			{ expression_type::k_comparison_smaller__2,						llvm::CmpInst::Predicate::ICMP_SLT },
-			{ expression_type::k_comparison_larger_or_equal__2,				llvm::CmpInst::Predicate::ICMP_SGE },
-			{ expression_type::k_comparison_larger__2,						llvm::CmpInst::Predicate::ICMP_SGT },
+			{ expression_type::k_comparison_smaller_or_equal,			llvm::CmpInst::Predicate::ICMP_SLE },
+			{ expression_type::k_comparison_smaller,						llvm::CmpInst::Predicate::ICMP_SLT },
+			{ expression_type::k_comparison_larger_or_equal,				llvm::CmpInst::Predicate::ICMP_SGE },
+			{ expression_type::k_comparison_larger,						llvm::CmpInst::Predicate::ICMP_SGT },
 
-			{ expression_type::k_logical_equal__2,							llvm::CmpInst::Predicate::ICMP_EQ },
-			{ expression_type::k_logical_nonequal__2,						llvm::CmpInst::Predicate::ICMP_NE }
+			{ expression_type::k_logical_equal,							llvm::CmpInst::Predicate::ICMP_EQ },
+			{ expression_type::k_logical_nonequal,						llvm::CmpInst::Predicate::ICMP_NE }
 		};
 		const auto pred = conv_opcode_int.at(details.op);
 		return gen_acc.builder.CreateICmp(pred, lhs_temp, rhs_temp);
@@ -1012,13 +1012,13 @@ static llvm::Value* generate_comparison_expression(llvm_code_generator_t& gen_ac
 			FCMP_ORD   =  7,  ///< 0 1 1 1    True if ordered (no nans)
 		*/
 		static const std::map<expression_type, llvm::CmpInst::Predicate> conv_opcode_int = {
-			{ expression_type::k_comparison_smaller_or_equal__2,			llvm::CmpInst::Predicate::FCMP_OLE },
-			{ expression_type::k_comparison_smaller__2,						llvm::CmpInst::Predicate::FCMP_OLT },
-			{ expression_type::k_comparison_larger_or_equal__2,				llvm::CmpInst::Predicate::FCMP_OGE },
-			{ expression_type::k_comparison_larger__2,						llvm::CmpInst::Predicate::FCMP_OGT },
+			{ expression_type::k_comparison_smaller_or_equal,			llvm::CmpInst::Predicate::FCMP_OLE },
+			{ expression_type::k_comparison_smaller,						llvm::CmpInst::Predicate::FCMP_OLT },
+			{ expression_type::k_comparison_larger_or_equal,				llvm::CmpInst::Predicate::FCMP_OGE },
+			{ expression_type::k_comparison_larger,						llvm::CmpInst::Predicate::FCMP_OGT },
 
-			{ expression_type::k_logical_equal__2,							llvm::CmpInst::Predicate::FCMP_OEQ },
-			{ expression_type::k_logical_nonequal__2,						llvm::CmpInst::Predicate::FCMP_ONE }
+			{ expression_type::k_logical_equal,							llvm::CmpInst::Predicate::FCMP_OEQ },
+			{ expression_type::k_logical_nonequal,						llvm::CmpInst::Predicate::FCMP_ONE }
 		};
 		const auto pred = conv_opcode_int.at(details.op);
 		return gen_acc.builder.CreateFCmp(pred, lhs_temp, rhs_temp);
@@ -1126,11 +1126,11 @@ static llvm::Value* generate_arithmetic_unary_minus_expression(llvm_code_generat
 
 	const auto type = details.expr->get_output_type();
 	if(type.is_int()){
-		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), *details.expr, e._output_type);
+		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract, expression_t::make_literal_int(0), *details.expr, e._output_type);
 		return generate_expression(gen_acc, emit_f, e2);
 	}
 	else if(type.is_double()){
-		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_double(0), *details.expr, e._output_type);
+		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract, expression_t::make_literal_double(0), *details.expr, e._output_type);
 		return generate_expression(gen_acc, emit_f, e2);
 	}
 	else{

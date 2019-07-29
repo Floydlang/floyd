@@ -87,6 +87,24 @@ namespace expression_opcode_t {
 	const std::string k_value_constructor = "value-constructor";
 	const std::string k_lookup_element = "[]";
 	const std::string k_benchmark = "benchmark";
+
+
+	const std::string k_arithmetic_add = "+";
+	const std::string k_arithmetic_subtract = "-";
+	const std::string k_arithmetic_multiply = "*";
+	const std::string k_arithmetic_divide = "/";
+	const std::string k_arithmetic_remainder = "%";
+
+	const std::string k_logical_and = "&&";
+	const std::string k_logical_or = "||";
+
+	const std::string k_comparison_smaller_or_equal = "<=";
+	const std::string k_comparison_smaller = "<";
+	const std::string k_comparison_larger_or_equal = ">=";
+	const std::string k_comparison_larger = ">";
+
+	const std::string k_logical_equal = "==";
+	const std::string k_logical_nonequal = "!=";
 };
 
 

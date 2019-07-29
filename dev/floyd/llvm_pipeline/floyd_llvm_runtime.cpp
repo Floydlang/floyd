@@ -1315,23 +1315,23 @@ int8_t floyd_runtime__compare_values(floyd_runtime_t* frp, int64_t op, const run
 	const int result = value_t::compare_value_true_deep(left_value, right_value);
 //	int result = runtime_compare_value_true_deep((const uint64_t)lhs, (const uint64_t)rhs, vector_type);
 	const auto op2 = static_cast<expression_type>(op);
-	if(op2 == expression_type::k_comparison_smaller_or_equal__2){
+	if(op2 == expression_type::k_comparison_smaller_or_equal){
 		return result <= 0 ? 1 : 0;
 	}
-	else if(op2 == expression_type::k_comparison_smaller__2){
+	else if(op2 == expression_type::k_comparison_smaller){
 		return result < 0 ? 1 : 0;
 	}
-	else if(op2 == expression_type::k_comparison_larger_or_equal__2){
+	else if(op2 == expression_type::k_comparison_larger_or_equal){
 		return result >= 0 ? 1 : 0;
 	}
-	else if(op2 == expression_type::k_comparison_larger__2){
+	else if(op2 == expression_type::k_comparison_larger){
 		return result > 0 ? 1 : 0;
 	}
 
-	else if(op2 == expression_type::k_logical_equal__2){
+	else if(op2 == expression_type::k_logical_equal){
 		return result == 0 ? 1 : 0;
 	}
-	else if(op2 == expression_type::k_logical_nonequal__2){
+	else if(op2 == expression_type::k_logical_nonequal){
 		return result != 0 ? 1 : 0;
 	}
 	else{
@@ -1605,7 +1605,7 @@ int64_t floyd_funcdef__find(floyd_runtime_t* frp, runtime_value_t arg0_value, ru
 			vec->get_element_ptr(),
 			vec->get_element_ptr() + vec->get_element_count(),
 			[&] (const runtime_value_t& e) {
-				return floyd_runtime__compare_values(frp, static_cast<int64_t>(expression_type::k_logical_equal__2), arg1_type, e, arg1_value) == 1;
+				return floyd_runtime__compare_values(frp, static_cast<int64_t>(expression_type::k_logical_equal), arg1_type, e, arg1_value) == 1;
 			}
 		);
 		if(it == vec->get_element_ptr() + vec->get_element_count()){

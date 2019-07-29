@@ -22,6 +22,75 @@ json_t expressions_to_json(const std::vector<expression_t> v);
 
 
 
+//////////////////////////////////////////////////		expression_type
+
+
+
+
+//	WARNING: Make sure all accessed constants have already been initialized!
+static std::map<expression_type, string> k_expression_to_opcode = {
+	{ expression_type::k_arithmetic_add, expression_opcode_t::k_arithmetic_add },
+	{ expression_type::k_arithmetic_subtract, expression_opcode_t::k_arithmetic_subtract },
+	{ expression_type::k_arithmetic_multiply, expression_opcode_t::k_arithmetic_multiply },
+	{ expression_type::k_arithmetic_divide, expression_opcode_t::k_arithmetic_divide },
+	{ expression_type::k_arithmetic_remainder, expression_opcode_t::k_arithmetic_remainder },
+
+	{ expression_type::k_logical_and, expression_opcode_t::k_logical_and },
+	{ expression_type::k_logical_or, expression_opcode_t::k_logical_or },
+
+	{ expression_type::k_comparison_smaller_or_equal, expression_opcode_t::k_comparison_smaller_or_equal },
+	{ expression_type::k_comparison_smaller, expression_opcode_t::k_comparison_smaller },
+	{ expression_type::k_comparison_larger_or_equal, expression_opcode_t::k_comparison_larger_or_equal },
+	{ expression_type::k_comparison_larger, expression_opcode_t::k_comparison_larger },
+
+	{ expression_type::k_logical_equal, expression_opcode_t::k_logical_equal },
+	{ expression_type::k_logical_nonequal, expression_opcode_t::k_logical_nonequal },
+
+
+	{ expression_type::k_literal, expression_opcode_t::k_literal },
+
+	{ expression_type::k_arithmetic_unary_minus, expression_opcode_t::k_unary_minus },
+
+	{ expression_type::k_conditional_operator, expression_opcode_t::k_conditional_operator },
+	{ expression_type::k_call, expression_opcode_t::k_call },
+
+	{ expression_type::k_load, expression_opcode_t::k_load },
+	{ expression_type::k_load2, expression_opcode_t::k_load2 },
+	{ expression_type::k_resolve_member, expression_opcode_t::k_resolve_member },
+	{ expression_type::k_update_member, expression_opcode_t::k_update_member },
+
+	{ expression_type::k_lookup_element, expression_opcode_t::k_lookup_element },
+
+	{ expression_type::k_struct_def, expression_opcode_t::k_struct_def },
+	{ expression_type::k_function_def, expression_opcode_t::k_function_def },
+	{ expression_type::k_value_constructor, expression_opcode_t::k_value_constructor }
+};
+
+
+
+
+static std::map<string, expression_type> make_reverse(const std::map<expression_type, string>& m){
+	std::map<string, expression_type> temp;
+	for(const auto& e: m){
+		temp[e.second] = e.first;
+	}
+	return temp;
+}
+
+static std::map<string, expression_type> string_to_operation_lookup = make_reverse(k_expression_to_opcode);
+
+string expression_type_to_opcode(const expression_type& op){
+	const auto r = k_expression_to_opcode.find(op);
+	QUARK_ASSERT(r != k_expression_to_opcode.end());
+	return r->second;
+}
+
+expression_type opcode_to_expression_type(const string& op){
+	const auto r = string_to_operation_lookup.find(op);
+	QUARK_ASSERT(r != string_to_operation_lookup.end());
+	return r->second;
+}
+
 
 //////////////////////////////////////////////////		function_definition_t
 
@@ -313,7 +382,7 @@ QUARK_UNIT_TEST("expression_t", "expression_to_json()", "math2", ""){
 		QUARK_POS,
 		expression_to_json_string(
 			expression_t::make_arithmetic(
-				expression_type::k_arithmetic_add__2, expression_t::make_literal_int(2), expression_t::make_literal_int(3), nullptr)
+				expression_type::k_arithmetic_add, expression_t::make_literal_int(2), expression_t::make_literal_int(3), nullptr)
 			),
 		R"(["+", ["k", 2, "^int"], ["k", 3, "^int"]])"
 	);
@@ -512,28 +581,6 @@ expression_t ast_json_to_expression(const json_t& e){
 
 		const auto value2 = ast_json_to_value(type2, value);
 		return expression_t::make_literal(value2);
-/*
-		if(type2.is_undefined()){
-			return expression_t::make_literal_undefined();
-		}
-		else if(type2.get_base_type() == base_type::k_bool){
-			return expression_t::make_literal_bool(value.is_false() ? false : true);
-		}
-		else if(type2.get_base_type() == base_type::k_int){
-			return expression_t::make_literal_int((int)value.get_number());
-		}
-		else if(type2.get_base_type() == base_type::k_double){
-			return expression_t::make_literal_double((double)value.get_number());
-		}
-		else if(type2.get_base_type() == base_type::k_string){
-			return expression_t::make_literal_string(value.get_string());
-		}
-		else{
-			QUARK_ASSERT(false);
-			quark::throw_exception();
-		}
-*/
-
 	}
 	else if(op == expression_opcode_t::k_unary_minus){
 		QUARK_ASSERT(e.get_array_size() == 2 || e.get_array_size() == 3);
@@ -542,22 +589,23 @@ expression_t ast_json_to_expression(const json_t& e){
 		const auto annotated_type = get_optional_typeid(e, 2);
 		return expression_t::make_unary_minus(expr, annotated_type);
 	}
-	else if(is_simple_expression__2(op)){
+	else if(is_opcode_arithmetic_expression(op)){
 		QUARK_ASSERT(e.get_array_size() == 3 || e.get_array_size() == 4);
 
 		const auto op2 = opcode_to_expression_type(op);
 		const auto lhs_expr = ast_json_to_expression(e.get_array_n(1));
 		const auto rhs_expr = ast_json_to_expression(e.get_array_n(2));
 		const auto annotated_type = get_optional_typeid(e, 3);
-		if(is_arithmetic_expression(op2)){
-			return expression_t::make_arithmetic(op2, lhs_expr, rhs_expr, annotated_type);
-		}
-		else if(is_comparison_expression(op2)){
-			return expression_t::make_comparison(op2, lhs_expr, rhs_expr, annotated_type);
-		}
-		else{
-			throw std::exception();
-		}
+		return expression_t::make_arithmetic(op2, lhs_expr, rhs_expr, annotated_type);
+	}
+	else if(is_opcode_comparison_expression(op)){
+		QUARK_ASSERT(e.get_array_size() == 3 || e.get_array_size() == 4);
+
+		const auto op2 = opcode_to_expression_type(op);
+		const auto lhs_expr = ast_json_to_expression(e.get_array_n(1));
+		const auto rhs_expr = ast_json_to_expression(e.get_array_n(2));
+		const auto annotated_type = get_optional_typeid(e, 3);
+		return expression_t::make_comparison(op2, lhs_expr, rhs_expr, annotated_type);
 	}
 	else if(op == expression_opcode_t::k_conditional_operator){
 		QUARK_ASSERT(e.get_array_size() == 4 || e.get_array_size() == 5);
@@ -685,10 +733,10 @@ expression_type get_expression_opcode(const expression_t& e){
 			return e.op;
 		}
 		expression_type operator()(const expression_t::unary_minus_t& e) const{
-			return expression_type::k_arithmetic_unary_minus__1;
+			return expression_type::k_arithmetic_unary_minus;
 		}
 		expression_type operator()(const expression_t::conditional_t& e) const{
-			return expression_type::k_conditional_operator3;
+			return expression_type::k_conditional_operator;
 		}
 
 		expression_type operator()(const expression_t::call_t& e) const{

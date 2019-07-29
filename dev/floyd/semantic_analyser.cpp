@@ -1642,18 +1642,18 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 	else{
 		const auto shared_type = lhs_type;
 
-		if(op == expression_type::k_comparison_smaller_or_equal__2){
+		if(op == expression_type::k_comparison_smaller_or_equal){
 		}
-		else if(op == expression_type::k_comparison_smaller__2){
+		else if(op == expression_type::k_comparison_smaller){
 		}
-		else if(op == expression_type::k_comparison_larger_or_equal__2){
+		else if(op == expression_type::k_comparison_larger_or_equal){
 		}
-		else if(op == expression_type::k_comparison_larger__2){
+		else if(op == expression_type::k_comparison_larger){
 		}
 
-		else if(op == expression_type::k_logical_equal__2){
+		else if(op == expression_type::k_logical_equal){
 		}
-		else if(op == expression_type::k_logical_nonequal__2){
+		else if(op == expression_type::k_logical_nonequal){
 		}
 		else{
 			quark::throw_exception();
@@ -1698,24 +1698,24 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 
 		//	bool
 		if(shared_type.is_bool()){
-			if(op == expression_type::k_arithmetic_add__2){
+			if(op == expression_type::k_arithmetic_add){
 			}
-			else if(op == expression_type::k_arithmetic_subtract__2){
+			else if(op == expression_type::k_arithmetic_subtract){
 				throw_compiler_error(parent.location, "Operation not allowed on bool.");
 			}
-			else if(op == expression_type::k_arithmetic_multiply__2){
+			else if(op == expression_type::k_arithmetic_multiply){
 				throw_compiler_error(parent.location, "Operation not allowed on bool.");
 			}
-			else if(op == expression_type::k_arithmetic_divide__2){
+			else if(op == expression_type::k_arithmetic_divide){
 				throw_compiler_error(parent.location, "Operation not allowed on bool.");
 			}
-			else if(op == expression_type::k_arithmetic_remainder__2){
+			else if(op == expression_type::k_arithmetic_remainder){
 				throw_compiler_error(parent.location, "Operation not allowed on bool.");
 			}
 
-			else if(op == expression_type::k_logical_and__2){
+			else if(op == expression_type::k_logical_and){
 			}
-			else if(op == expression_type::k_logical_or__2){
+			else if(op == expression_type::k_logical_or){
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -1727,20 +1727,20 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 
 		//	int
 		else if(shared_type.is_int()){
-			if(op == expression_type::k_arithmetic_add__2){
+			if(op == expression_type::k_arithmetic_add){
 			}
-			else if(op == expression_type::k_arithmetic_subtract__2){
+			else if(op == expression_type::k_arithmetic_subtract){
 			}
-			else if(op == expression_type::k_arithmetic_multiply__2){
+			else if(op == expression_type::k_arithmetic_multiply){
 			}
-			else if(op == expression_type::k_arithmetic_divide__2){
+			else if(op == expression_type::k_arithmetic_divide){
 			}
-			else if(op == expression_type::k_arithmetic_remainder__2){
+			else if(op == expression_type::k_arithmetic_remainder){
 			}
 
-			else if(op == expression_type::k_logical_and__2){
+			else if(op == expression_type::k_logical_and){
 			}
-			else if(op == expression_type::k_logical_or__2){
+			else if(op == expression_type::k_logical_or){
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -1752,21 +1752,21 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 
 		//	double
 		else if(shared_type.is_double()){
-			if(op == expression_type::k_arithmetic_add__2){
+			if(op == expression_type::k_arithmetic_add){
 			}
-			else if(op == expression_type::k_arithmetic_subtract__2){
+			else if(op == expression_type::k_arithmetic_subtract){
 			}
-			else if(op == expression_type::k_arithmetic_multiply__2){
+			else if(op == expression_type::k_arithmetic_multiply){
 			}
-			else if(op == expression_type::k_arithmetic_divide__2){
+			else if(op == expression_type::k_arithmetic_divide){
 			}
-			else if(op == expression_type::k_arithmetic_remainder__2){
+			else if(op == expression_type::k_arithmetic_remainder){
 				throw_compiler_error(parent.location, "Modulo operation on double not supported.");
 			}
 
-			else if(op == expression_type::k_logical_and__2){
+			else if(op == expression_type::k_logical_and){
 			}
-			else if(op == expression_type::k_logical_or__2){
+			else if(op == expression_type::k_logical_or){
 			}
 			else{
 				QUARK_ASSERT(false);
@@ -1778,26 +1778,26 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 
 		//	string
 		else if(shared_type.is_string()){
-			if(op == expression_type::k_arithmetic_add__2){
+			if(op == expression_type::k_arithmetic_add){
 			}
 
-			else if(op == expression_type::k_arithmetic_subtract__2){
+			else if(op == expression_type::k_arithmetic_subtract){
 				throw_compiler_error(parent.location, "Operation not allowed on string.");
 			}
-			else if(op == expression_type::k_arithmetic_multiply__2){
+			else if(op == expression_type::k_arithmetic_multiply){
 				throw_compiler_error(parent.location, "Operation not allowed on string.");
 			}
-			else if(op == expression_type::k_arithmetic_divide__2){
+			else if(op == expression_type::k_arithmetic_divide){
 				throw_compiler_error(parent.location, "Operation not allowed on string.");
 			}
-			else if(op == expression_type::k_arithmetic_remainder__2){
+			else if(op == expression_type::k_arithmetic_remainder){
 				throw_compiler_error(parent.location, "Operation not allowed on string.");
 			}
 
-			else if(op == expression_type::k_logical_and__2){
+			else if(op == expression_type::k_logical_and){
 				throw_compiler_error(parent.location, "Operation not allowed on string.");
 			}
-			else if(op == expression_type::k_logical_or__2){
+			else if(op == expression_type::k_logical_or){
 				throw_compiler_error(parent.location, "Operation not allowed on string.");
 			}
 			else{
@@ -1812,26 +1812,26 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 		else if(shared_type.is_struct()){
 			//	Structs must be exactly the same type to match.
 
-			if(op == expression_type::k_arithmetic_add__2){
+			if(op == expression_type::k_arithmetic_add){
 				throw_compiler_error(parent.location, "Operation not allowed on structs.");
 			}
-			else if(op == expression_type::k_arithmetic_subtract__2){
+			else if(op == expression_type::k_arithmetic_subtract){
 				throw_compiler_error(parent.location, "Operation not allowed on structs.");
 			}
-			else if(op == expression_type::k_arithmetic_multiply__2){
+			else if(op == expression_type::k_arithmetic_multiply){
 				throw_compiler_error(parent.location, "Operation not allowed on structs.");
 			}
-			else if(op == expression_type::k_arithmetic_divide__2){
+			else if(op == expression_type::k_arithmetic_divide){
 				throw_compiler_error(parent.location, "Operation not allowed on structs.");
 			}
-			else if(op == expression_type::k_arithmetic_remainder__2){
+			else if(op == expression_type::k_arithmetic_remainder){
 				throw_compiler_error(parent.location, "Operation not allowed on structs.");
 			}
 
-			else if(op == expression_type::k_logical_and__2){
+			else if(op == expression_type::k_logical_and){
 				throw_compiler_error(parent.location, "Operation not allowed on structs.");
 			}
-			else if(op == expression_type::k_logical_or__2){
+			else if(op == expression_type::k_logical_or){
 				throw_compiler_error(parent.location, "Operation not allowed on structs.");
 			}
 			else{
@@ -1845,27 +1845,27 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 		//	vector
 		else if(shared_type.is_vector()){
 			const auto element_type = shared_type.get_vector_element_type();
-			if(op == expression_type::k_arithmetic_add__2){
+			if(op == expression_type::k_arithmetic_add){
 			}
 
-			else if(op == expression_type::k_arithmetic_subtract__2){
+			else if(op == expression_type::k_arithmetic_subtract){
 				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
 			}
-			else if(op == expression_type::k_arithmetic_multiply__2){
+			else if(op == expression_type::k_arithmetic_multiply){
 				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
 			}
-			else if(op == expression_type::k_arithmetic_divide__2){
+			else if(op == expression_type::k_arithmetic_divide){
 				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
 			}
-			else if(op == expression_type::k_arithmetic_remainder__2){
+			else if(op == expression_type::k_arithmetic_remainder){
 				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
 			}
 
 
-			else if(op == expression_type::k_logical_and__2){
+			else if(op == expression_type::k_logical_and){
 				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
 			}
-			else if(op == expression_type::k_logical_or__2){
+			else if(op == expression_type::k_logical_or){
 				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
 			}
 			else{
@@ -2417,7 +2417,7 @@ QUARK_UNIT_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 		interpreter,
 		statement_t::make__bind_local(k_no_location, "xyz", typeid_t::make_string(), expression_t::make_literal_string("abc"), statement_t::bind_local_t::mutable_mode::k_immutable),
 		expression_t::make_arithmetic(
-			expression_type::k_arithmetic_add__2,
+			expression_type::k_arithmetic_add,
 			expression_t::make_literal_int(1),
 			expression_t::make_literal_int(2),
 			nullptr

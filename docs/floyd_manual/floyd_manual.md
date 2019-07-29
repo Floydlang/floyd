@@ -601,7 +601,6 @@ To make something like a software graphics shaders, you would do
 let image2 = map(image1, my_pixel_shader) and the pixels can be processed in parallel.
 
 
-???
 **Task** - this is a work item that takes usually approximately 0.5 - 10 ms to execute and has an end. The runtime generates these when it wants to run map() elements in parallel. All tasks in the entire container are scheduled together.
 
 Notice: map() and map_dag() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.

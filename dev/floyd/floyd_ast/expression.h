@@ -27,6 +27,152 @@ struct expression_t;
 
 
 
+
+//////////////////////////////////////		expression_type
+
+
+
+//??? Split and categories better. Logic vs equality vs math.
+
+//	Number at end of name tells number of input expressions operation has.
+enum class expression_type {
+
+	//	c99: a + b			token: "+"
+	k_arithmetic_add = 10,
+
+	//	c99: a - b			token: "-"
+	k_arithmetic_subtract,
+
+	//	c99: a * b			token: "*"
+	k_arithmetic_multiply,
+
+	//	c99: a / b			token: "/"
+	k_arithmetic_divide,
+
+	//	c99: a % b			token: "%"
+	k_arithmetic_remainder,
+
+
+	//	c99: a <= b			token: "<="
+	k_comparison_smaller_or_equal,
+
+	//	c99: a < b			token: "<"
+	k_comparison_smaller,
+
+	//	c99: a >= b			token: ">="
+	k_comparison_larger_or_equal,
+
+	//	c99: a > b			token: ">"
+	k_comparison_larger,
+
+
+	//	c99: a == b			token: "=="
+	k_logical_equal,
+
+	//	c99: a != b			token: "!="
+	k_logical_nonequal,
+
+
+	//	c99: a && b			token: "&&"
+	k_logical_and,
+
+	//	c99: a || b			token: "||"
+	k_logical_or,
+
+	//	c99: !a				token: "!"
+//			k_logical_not,
+
+	//	c99: 13				token: "k"
+	k_literal,
+
+	//	c99: -a				token: "unary-minus"
+	k_arithmetic_unary_minus,
+
+	//	c99: cond ? a : b	token: "?:"
+	k_conditional_operator,
+
+	//	c99: a(b, c)		token: "call"
+	k_call,
+
+	k_corecall,
+
+	//	c99: a				token: "@"
+	k_load,
+
+	//	c99: a				token: "@i"
+	k_load2,
+
+	//	c99: a.b			token: "->"
+	k_resolve_member,
+
+	//						token: "<-"
+	k_update_member,
+
+	//	c99: a[b]			token: "[]"
+	k_lookup_element,
+
+	//	"def-struct"
+	k_struct_def,
+
+	//???	use k_literal for function values?
+	//	"def-func"
+	k_function_def,
+
+	//	"construct-value"
+	k_value_constructor,
+
+	k_benchmark
+};
+
+
+
+inline bool is_arithmetic_expression(expression_type op){
+	return false
+		|| op == expression_type::k_arithmetic_add
+		|| op == expression_type::k_arithmetic_subtract
+		|| op == expression_type::k_arithmetic_multiply
+		|| op == expression_type::k_arithmetic_divide
+		|| op == expression_type::k_arithmetic_remainder
+
+		|| op == expression_type::k_logical_and
+		|| op == expression_type::k_logical_or
+		;
+}
+
+inline bool is_comparison_expression(expression_type op){
+	return false
+		|| op == expression_type::k_comparison_smaller_or_equal
+		|| op == expression_type::k_comparison_smaller
+		|| op == expression_type::k_comparison_larger_or_equal
+		|| op == expression_type::k_comparison_larger
+
+		|| op == expression_type::k_logical_equal
+		|| op == expression_type::k_logical_nonequal
+		;
+}
+
+//	Opcode = as in the AST.
+expression_type opcode_to_expression_type(const std::string& op);
+std::string expression_type_to_opcode(const expression_type& op);
+
+
+//??? Use constants!
+inline bool is_opcode_arithmetic_expression(const std::string& op){
+	return
+		op == "+" || op == "-" || op == "*" || op == "/" || op == "%"
+		|| op == "&&" || op == "||"
+		;
+}
+
+inline bool is_opcode_comparison_expression(const std::string& op){
+	return
+		op == "<=" || op == "<" || op == ">=" || op == ">"
+		|| op == "==" || op == "!="
+		;
+}
+
+
+
 //////////////////////////////////////		variable_address_t
 
 
@@ -65,6 +211,7 @@ struct variable_address_t {
 inline bool operator==(const variable_address_t& lhs, const variable_address_t& rhs){
 	return lhs._parent_steps == rhs._parent_steps && lhs._index == rhs._index;
 }
+
 
 
 

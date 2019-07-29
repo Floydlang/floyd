@@ -1359,11 +1359,11 @@ expression_gen_t bcgen_benchmark_expression(bcgenerator_t& gen_acc, const variab
 	const auto type = details.expr->get_output_type();
 
 	if(type.is_int()){
-		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), *details.expr, e._output_type);
+		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract, expression_t::make_literal_int(0), *details.expr, e._output_type);
 		return bcgen_expression(gen_acc, target_reg, e2, body);
 	}
 	else if(type.is_double()){
-		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_double(0), *details.expr, e._output_type);
+		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract, expression_t::make_literal_double(0), *details.expr, e._output_type);
 		return bcgen_expression(gen_acc, target_reg, e2, body);
 	}
 	else{
@@ -1386,11 +1386,11 @@ expression_gen_t bcgen_arithmetic_unary_minus_expression(bcgenerator_t& gen_acc,
 	const auto type = details.expr->get_output_type();
 
 	if(type.is_int()){
-		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_int(0), *details.expr, e._output_type);
+		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract, expression_t::make_literal_int(0), *details.expr, e._output_type);
 		return bcgen_expression(gen_acc, target_reg, e2, body);
 	}
 	else if(type.is_double()){
-		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract__2, expression_t::make_literal_double(0), *details.expr, e._output_type);
+		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract, expression_t::make_literal_double(0), *details.expr, e._output_type);
 		return bcgen_expression(gen_acc, target_reg, e2, body);
 	}
 	else{
@@ -1493,13 +1493,13 @@ expression_gen_t bcgen_comparison_expression(bcgenerator_t& gen_acc, const varia
 
 		//	Bool tells if to flip left / right.
 		static const std::map<expression_type, std::pair<bool, bc_opcode>> conv_opcode_int = {
-			{ expression_type::k_comparison_smaller_or_equal__2,			{ false, bc_opcode::k_comparison_smaller_or_equal_int } },
-			{ expression_type::k_comparison_smaller__2,						{ false, bc_opcode::k_comparison_smaller_int } },
-			{ expression_type::k_comparison_larger_or_equal__2,				{ true, bc_opcode::k_comparison_smaller_or_equal_int } },
-			{ expression_type::k_comparison_larger__2,						{ true, bc_opcode::k_comparison_smaller_int } },
+			{ expression_type::k_comparison_smaller_or_equal,			{ false, bc_opcode::k_comparison_smaller_or_equal_int } },
+			{ expression_type::k_comparison_smaller,						{ false, bc_opcode::k_comparison_smaller_int } },
+			{ expression_type::k_comparison_larger_or_equal,				{ true, bc_opcode::k_comparison_smaller_or_equal_int } },
+			{ expression_type::k_comparison_larger,						{ true, bc_opcode::k_comparison_smaller_int } },
 
-			{ expression_type::k_logical_equal__2,							{ false, bc_opcode::k_logical_equal_int } },
-			{ expression_type::k_logical_nonequal__2,						{ false, bc_opcode::k_logical_nonequal_int } }
+			{ expression_type::k_logical_equal,							{ false, bc_opcode::k_logical_equal_int } },
+			{ expression_type::k_logical_nonequal,						{ false, bc_opcode::k_logical_nonequal_int } }
 		};
 
 		const auto result = conv_opcode_int.at(details.op);
@@ -1514,13 +1514,13 @@ expression_gen_t bcgen_comparison_expression(bcgenerator_t& gen_acc, const varia
 
 		//	Bool tells if to flip left / right.
 		static const std::map<expression_type, std::pair<bool, bc_opcode>> conv_opcode = {
-			{ expression_type::k_comparison_smaller_or_equal__2,			{ false, bc_opcode::k_comparison_smaller_or_equal } },
-			{ expression_type::k_comparison_smaller__2,						{ false, bc_opcode::k_comparison_smaller } },
-			{ expression_type::k_comparison_larger_or_equal__2,				{ true, bc_opcode::k_comparison_smaller_or_equal } },
-			{ expression_type::k_comparison_larger__2,						{ true, bc_opcode::k_comparison_smaller } },
+			{ expression_type::k_comparison_smaller_or_equal,			{ false, bc_opcode::k_comparison_smaller_or_equal } },
+			{ expression_type::k_comparison_smaller,						{ false, bc_opcode::k_comparison_smaller } },
+			{ expression_type::k_comparison_larger_or_equal,				{ true, bc_opcode::k_comparison_smaller_or_equal } },
+			{ expression_type::k_comparison_larger,						{ true, bc_opcode::k_comparison_smaller } },
 
-			{ expression_type::k_logical_equal__2,							{ false, bc_opcode::k_logical_equal } },
-			{ expression_type::k_logical_nonequal__2,						{ false, bc_opcode::k_logical_nonequal } }
+			{ expression_type::k_logical_equal,							{ false, bc_opcode::k_logical_equal } },
+			{ expression_type::k_logical_nonequal,						{ false, bc_opcode::k_logical_nonequal } }
 		};
 
 		const auto result = conv_opcode.at(details.op);
@@ -1557,80 +1557,80 @@ expression_gen_t bcgen_arithmetic_expression(bcgenerator_t& gen_acc, const varia
 	const auto opcode = [&type, &e, &details]{
 		if(type.is_bool()){
 			static const std::map<expression_type, bc_opcode> conv_opcode = {
-				{ expression_type::k_arithmetic_add__2, bc_opcode::k_add_bool },
-				{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
+				{ expression_type::k_arithmetic_add, bc_opcode::k_add_bool },
+				{ expression_type::k_arithmetic_subtract, bc_opcode::k_nop },
+				{ expression_type::k_arithmetic_multiply, bc_opcode::k_nop },
+				{ expression_type::k_arithmetic_divide, bc_opcode::k_nop },
+				{ expression_type::k_arithmetic_remainder, bc_opcode::k_nop },
 
-				{ expression_type::k_logical_and__2, bc_opcode::k_logical_and_bool },
-				{ expression_type::k_logical_or__2, bc_opcode::k_logical_or_bool }
+				{ expression_type::k_logical_and, bc_opcode::k_logical_and_bool },
+				{ expression_type::k_logical_or, bc_opcode::k_logical_or_bool }
 			};
 			return conv_opcode.at(details.op);
 		}
 		else if(type.is_int()){
 			static const std::map<expression_type, bc_opcode> conv_opcode = {
-				{ expression_type::k_arithmetic_add__2, bc_opcode::k_add_int },
-				{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_subtract_int },
-				{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_multiply_int },
-				{ expression_type::k_arithmetic_divide__2, bc_opcode::k_divide_int },
-				{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_remainder_int },
+				{ expression_type::k_arithmetic_add, bc_opcode::k_add_int },
+				{ expression_type::k_arithmetic_subtract, bc_opcode::k_subtract_int },
+				{ expression_type::k_arithmetic_multiply, bc_opcode::k_multiply_int },
+				{ expression_type::k_arithmetic_divide, bc_opcode::k_divide_int },
+				{ expression_type::k_arithmetic_remainder, bc_opcode::k_remainder_int },
 
-				{ expression_type::k_logical_and__2, bc_opcode::k_logical_and_int },
-				{ expression_type::k_logical_or__2, bc_opcode::k_logical_or_int }
+				{ expression_type::k_logical_and, bc_opcode::k_logical_and_int },
+				{ expression_type::k_logical_or, bc_opcode::k_logical_or_int }
 			};
 			return conv_opcode.at(details.op);
 		}
 		else if(type.is_double()){
 			static const std::map<expression_type, bc_opcode> conv_opcode = {
-				{ expression_type::k_arithmetic_add__2, bc_opcode::k_add_double },
-				{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_subtract_double },
-				{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_multiply_double },
-				{ expression_type::k_arithmetic_divide__2, bc_opcode::k_divide_double },
-				{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
+				{ expression_type::k_arithmetic_add, bc_opcode::k_add_double },
+				{ expression_type::k_arithmetic_subtract, bc_opcode::k_subtract_double },
+				{ expression_type::k_arithmetic_multiply, bc_opcode::k_multiply_double },
+				{ expression_type::k_arithmetic_divide, bc_opcode::k_divide_double },
+				{ expression_type::k_arithmetic_remainder, bc_opcode::k_nop },
 
-				{ expression_type::k_logical_and__2, bc_opcode::k_logical_and_double },
-				{ expression_type::k_logical_or__2, bc_opcode::k_logical_or_double }
+				{ expression_type::k_logical_and, bc_opcode::k_logical_and_double },
+				{ expression_type::k_logical_or, bc_opcode::k_logical_or_double }
 			};
 			return conv_opcode.at(details.op);
 		}
 		else if(type.is_string()){
 			static const std::map<expression_type, bc_opcode> conv_opcode = {
-				{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_strings },
-				{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
-				{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
+				{ expression_type::k_arithmetic_add, bc_opcode::k_concat_strings },
+				{ expression_type::k_arithmetic_subtract, bc_opcode::k_nop },
+				{ expression_type::k_arithmetic_multiply, bc_opcode::k_nop },
+				{ expression_type::k_arithmetic_divide, bc_opcode::k_nop },
+				{ expression_type::k_arithmetic_remainder, bc_opcode::k_nop },
 
-				{ expression_type::k_logical_and__2, bc_opcode::k_nop },
-				{ expression_type::k_logical_or__2, bc_opcode::k_nop }
+				{ expression_type::k_logical_and, bc_opcode::k_nop },
+				{ expression_type::k_logical_or, bc_opcode::k_nop }
 			};
 			return conv_opcode.at(details.op);
 		}
 		else if(type.is_vector()){
 			if(encode_as_vector_w_inplace_elements(type)){
 				static const std::map<expression_type, bc_opcode> conv_opcode = {
-					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_w_inplace_elements },
-					{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
+					{ expression_type::k_arithmetic_add, bc_opcode::k_concat_vectors_w_inplace_elements },
+					{ expression_type::k_arithmetic_subtract, bc_opcode::k_nop },
+					{ expression_type::k_arithmetic_multiply, bc_opcode::k_nop },
+					{ expression_type::k_arithmetic_divide, bc_opcode::k_nop },
+					{ expression_type::k_arithmetic_remainder, bc_opcode::k_nop },
 
-					{ expression_type::k_logical_and__2, bc_opcode::k_nop },
-					{ expression_type::k_logical_or__2, bc_opcode::k_nop }
+					{ expression_type::k_logical_and, bc_opcode::k_nop },
+					{ expression_type::k_logical_or, bc_opcode::k_nop }
 				};
 				return conv_opcode.at(details.op);
 			}
 			else{
 				static const std::map<expression_type, bc_opcode> conv_opcode = {
-					{ expression_type::k_arithmetic_add__2, bc_opcode::k_concat_vectors_w_external_elements },
-					{ expression_type::k_arithmetic_subtract__2, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_multiply__2, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_divide__2, bc_opcode::k_nop },
-					{ expression_type::k_arithmetic_remainder__2, bc_opcode::k_nop },
+					{ expression_type::k_arithmetic_add, bc_opcode::k_concat_vectors_w_external_elements },
+					{ expression_type::k_arithmetic_subtract, bc_opcode::k_nop },
+					{ expression_type::k_arithmetic_multiply, bc_opcode::k_nop },
+					{ expression_type::k_arithmetic_divide, bc_opcode::k_nop },
+					{ expression_type::k_arithmetic_remainder, bc_opcode::k_nop },
 
-					{ expression_type::k_logical_and__2, bc_opcode::k_nop },
-					{ expression_type::k_logical_or__2, bc_opcode::k_nop }
+					{ expression_type::k_logical_and, bc_opcode::k_nop },
+					{ expression_type::k_logical_or, bc_opcode::k_nop }
 				};
 				return conv_opcode.at(details.op);
 			}
