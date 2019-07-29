@@ -92,6 +92,67 @@ expression_type opcode_to_expression_type(const string& op){
 }
 
 
+
+
+bool is_arithmetic_expression(expression_type op){
+	return false
+		|| op == expression_type::k_arithmetic_add
+		|| op == expression_type::k_arithmetic_subtract
+		|| op == expression_type::k_arithmetic_multiply
+		|| op == expression_type::k_arithmetic_divide
+		|| op == expression_type::k_arithmetic_remainder
+
+		|| op == expression_type::k_logical_and
+		|| op == expression_type::k_logical_or
+		;
+}
+
+bool is_comparison_expression(expression_type op){
+	return false
+		|| op == expression_type::k_comparison_smaller_or_equal
+		|| op == expression_type::k_comparison_smaller
+		|| op == expression_type::k_comparison_larger_or_equal
+		|| op == expression_type::k_comparison_larger
+
+		|| op == expression_type::k_logical_equal
+		|| op == expression_type::k_logical_nonequal
+		;
+}
+
+//	Opcode = as in the AST.
+expression_type opcode_to_expression_type(const std::string& op);
+std::string expression_type_to_opcode(const expression_type& op);
+
+
+bool is_opcode_arithmetic_expression(const std::string& op){
+	return false
+		|| op == expression_opcode_t::k_arithmetic_add
+		|| op == expression_opcode_t::k_arithmetic_subtract
+		|| op == expression_opcode_t::k_arithmetic_multiply
+		|| op == expression_opcode_t::k_arithmetic_divide
+		|| op == expression_opcode_t::k_arithmetic_remainder
+
+		|| op == expression_opcode_t::k_logical_and
+		|| op == expression_opcode_t::k_logical_or
+		;
+}
+
+bool is_opcode_comparison_expression(const std::string& op){
+	return false
+		|| op == expression_opcode_t::k_comparison_smaller_or_equal
+		|| op == expression_opcode_t::k_comparison_smaller
+		|| op == expression_opcode_t::k_comparison_larger_or_equal
+		|| op == expression_opcode_t::k_comparison_larger
+
+		|| op == expression_opcode_t::k_logical_equal
+		|| op == expression_opcode_t::k_logical_nonequal
+		;
+}
+
+
+
+
+
 //////////////////////////////////////////////////		function_definition_t
 
 

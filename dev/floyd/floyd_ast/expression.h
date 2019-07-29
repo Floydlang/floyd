@@ -126,51 +126,16 @@ enum class expression_type {
 
 
 
-inline bool is_arithmetic_expression(expression_type op){
-	return false
-		|| op == expression_type::k_arithmetic_add
-		|| op == expression_type::k_arithmetic_subtract
-		|| op == expression_type::k_arithmetic_multiply
-		|| op == expression_type::k_arithmetic_divide
-		|| op == expression_type::k_arithmetic_remainder
-
-		|| op == expression_type::k_logical_and
-		|| op == expression_type::k_logical_or
-		;
-}
-
-inline bool is_comparison_expression(expression_type op){
-	return false
-		|| op == expression_type::k_comparison_smaller_or_equal
-		|| op == expression_type::k_comparison_smaller
-		|| op == expression_type::k_comparison_larger_or_equal
-		|| op == expression_type::k_comparison_larger
-
-		|| op == expression_type::k_logical_equal
-		|| op == expression_type::k_logical_nonequal
-		;
-}
+bool is_arithmetic_expression(expression_type op);
+bool is_comparison_expression(expression_type op);
 
 //	Opcode = as in the AST.
 expression_type opcode_to_expression_type(const std::string& op);
 std::string expression_type_to_opcode(const expression_type& op);
 
 
-//??? Use constants!
-inline bool is_opcode_arithmetic_expression(const std::string& op){
-	return
-		op == "+" || op == "-" || op == "*" || op == "/" || op == "%"
-		|| op == "&&" || op == "||"
-		;
-}
-
-inline bool is_opcode_comparison_expression(const std::string& op){
-	return
-		op == "<=" || op == "<" || op == ">=" || op == ">"
-		|| op == "==" || op == "!="
-		;
-}
-
+bool is_opcode_arithmetic_expression(const std::string& op);
+bool is_opcode_comparison_expression(const std::string& op);
 
 
 //////////////////////////////////////		variable_address_t
