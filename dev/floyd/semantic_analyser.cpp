@@ -1636,7 +1636,7 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 
 	if(lhs_type != rhs_type || (lhs_type.is_undefined() == true || rhs_type.is_undefined() == true)){
 		std::stringstream what;
-		what << "Left and right expressions must be same type in comparison, " << typeid_to_compact_string(lhs_type) << " " << expression_type_to_token(op) << typeid_to_compact_string(rhs_type) << ".";
+		what << "Left and right expressions must be same type in comparison, " << typeid_to_compact_string(lhs_type) << " " << expression_type_to_opcode(op) << typeid_to_compact_string(rhs_type) << ".";
 		throw_compiler_error(parent.location, what.str());
 	}
 	else{
@@ -2342,7 +2342,7 @@ expression_t auto_cast_expression_type(const expression_t& e, const typeid_t& wa
 
 std::string get_expression_name(const expression_t& e){
 	const expression_type op = get_expression_opcode(e);
-	return expression_type_to_token(op);
+	return expression_type_to_opcode(op);
 }
 
 

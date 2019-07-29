@@ -242,13 +242,13 @@ static std::map<string, expression_type> string_to_operation_lookup = make_rever
 
 
 
-string expression_type_to_token(const expression_type& op){
+string expression_type_to_opcode(const expression_type& op){
 	const auto r = operation_to_string_lookup.find(op);
 	QUARK_ASSERT(r != operation_to_string_lookup.end());
 	return r->second;
 }
 
-expression_type token_to_expression_type(const string& op){
+expression_type opcode_to_expression_type(const string& op){
 	const auto r = string_to_operation_lookup.find(op);
 	QUARK_ASSERT(r != string_to_operation_lookup.end());
 	return r->second;

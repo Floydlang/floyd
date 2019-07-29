@@ -193,8 +193,8 @@ inline bool is_comparison_expression(expression_type op){
 }
 
 //	Token = as in the source code syntax.
-expression_type token_to_expression_type(const std::string& op);
-std::string expression_type_to_token(const expression_type& op);
+expression_type opcode_to_expression_type(const std::string& op);
+std::string expression_type_to_opcode(const expression_type& op);
 
 
 //	"+", "<=", "&&" etc.

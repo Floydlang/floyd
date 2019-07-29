@@ -359,7 +359,7 @@ json_t expression_to_json_internal(const expression_t& e){
 		json_t operator()(const expression_t::arithmetic_t& e) const{
 			return make_expression2(
 				expr.location,
-				expression_type_to_token(e.op),
+				expression_type_to_opcode(e.op),
 				expression_to_json(*e.lhs),
 				expression_to_json(*e.rhs)
 			);
@@ -367,7 +367,7 @@ json_t expression_to_json_internal(const expression_t& e){
 		json_t operator()(const expression_t::comparison_t& e) const{
 			return make_expression2(
 				expr.location,
-				expression_type_to_token(e.op),
+				expression_type_to_opcode(e.op),
 				expression_to_json(*e.lhs),
 				expression_to_json(*e.rhs)
 			);
@@ -545,7 +545,7 @@ expression_t ast_json_to_expression(const json_t& e){
 	else if(is_simple_expression__2(op)){
 		QUARK_ASSERT(e.get_array_size() == 3 || e.get_array_size() == 4);
 
-		const auto op2 = token_to_expression_type(op);
+		const auto op2 = opcode_to_expression_type(op);
 		const auto lhs_expr = ast_json_to_expression(e.get_array_n(1));
 		const auto rhs_expr = ast_json_to_expression(e.get_array_n(2));
 		const auto annotated_type = get_optional_typeid(e, 3);
