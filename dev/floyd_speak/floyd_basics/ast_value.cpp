@@ -440,13 +440,13 @@ std::string to_compact_string2(const value_t& value) {
 
 	const auto base_type = value.get_type().get_base_type();
 	if(base_type == base_type::k_undefined){
-		return base_type_to_string(base_type);
+		return base_type_to_opcode(base_type);
 	}
 	else if(base_type == base_type::k_any){
-		return base_type_to_string(base_type);
+		return base_type_to_opcode(base_type);
 	}
 	else if(base_type == base_type::k_void){
-		return base_type_to_string(base_type);
+		return base_type_to_opcode(base_type);
 	}
 	else if(base_type == base_type::k_bool){
 		return value.get_bool_value() ? "true" : "false";

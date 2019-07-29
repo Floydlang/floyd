@@ -26,7 +26,7 @@ using std::string;
 //////////////////////////////////////////////////		base_type
 
 
-string base_type_to_string(const base_type t){
+string base_type_to_opcode(const base_type t){
 	if(t == base_type::k_undefined){
 		return "**undef**";
 	}
@@ -78,54 +78,54 @@ string base_type_to_string(const base_type t){
 	}
 }
 
-QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_undefined) == "**undef**");
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_undefined) == "**undef**");
 }
-QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_any) == "any");
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_any) == "any");
 }
-QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_void) == "void");
-}
-
-QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_bool) == "bool");
-}
-QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_int) == "int");
-}
-QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_double) == "double");
-}
-QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_string) == "string");
-}
-QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_json) == "json");
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_void) == "void");
 }
 
-QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_typeid) == "typeid");
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_bool) == "bool");
+}
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_int) == "int");
+}
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_double) == "double");
+}
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_string) == "string");
+}
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_json) == "json");
 }
 
-QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_struct) == "struct");
-}
-QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_vector) == "vector");
-}
-QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_dict) == "dict");
-}
-QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_function) == "func");
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_typeid) == "typeid");
 }
 
-QUARK_UNIT_TEST("", "base_type_to_string(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_string(base_type::k_unresolved) == "**unknown-identifier**");
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_struct) == "struct");
+}
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_vector) == "vector");
+}
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_dict) == "dict");
+}
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_function) == "func");
 }
 
-base_type string_to_base_type(const std::string& s){
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_unresolved) == "**unknown-identifier**");
+}
+
+base_type opcode_to_base_type(const std::string& s){
 	QUARK_ASSERT(s != "");
 
 	if(s == "**undef**"){
@@ -181,8 +181,8 @@ base_type string_to_base_type(const std::string& s){
 void ut_verify(const quark::call_context_t& context, const base_type& result, const base_type& expected){
 	ut_verify(
 		context,
-		base_type_to_string(result),
-		base_type_to_string(expected)
+		base_type_to_opcode(result),
+		base_type_to_opcode(expected)
 	);
 }
 

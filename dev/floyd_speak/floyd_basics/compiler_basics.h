@@ -60,8 +60,8 @@ enum class base_type {
 	k_unresolved
 };
 
-std::string base_type_to_string(const base_type t);
-base_type string_to_base_type(const std::string& s);
+std::string base_type_to_opcode(const base_type t);
+base_type opcode_to_base_type(const std::string& s);
 
 void ut_verify(const quark::call_context_t& context, const base_type& result, const base_type& expected);
 
