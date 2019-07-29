@@ -16,7 +16,7 @@
 namespace floyd {
 
 
-json_t make_ast_entry(const location_t& location, const std::string& opcode, const std::vector<json_t>& params){
+json_t make_ast_node(const location_t& location, const std::string& opcode, const std::vector<json_t>& params){
 	if(location == k_no_location){
 		std::vector<json_t> e = { json_t(opcode) };
 		e.insert(e.end(), params.begin(), params.end());
@@ -30,71 +30,42 @@ json_t make_ast_entry(const location_t& location, const std::string& opcode, con
 	}
 }
 
-json_t make_statement_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params){
-	return make_ast_entry(location, opcode, params);
-}
-QUARK_UNIT_TEST("", "make_statement_n()", "", ""){
-	const auto r = make_statement_n(location_t(1234), "def-struct", std::vector<json_t>{});
+QUARK_UNIT_TEST("", "make_ast_node()", "", ""){
+	const auto r = make_ast_node(location_t(1234), "def-struct", std::vector<json_t>{});
 
 	ut_verify(QUARK_POS, r, json_t::make_array({ 1234.0, "def-struct" }));
 }
 
 json_t make_statement1(const location_t& location, const std::string& opcode, const json_t& params){
-	return make_statement_n(location, opcode, { params });
+	return make_ast_node(location, opcode, { params });
 }
 json_t make_statement2(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2){
-	return make_statement_n(location, opcode, { param1, param2 });
-}
-json_t make_statement3(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3){
-	return make_statement_n(location, opcode, { param1, param2, param3 });
-}
-json_t make_statement4(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3, const json_t& param4){
-	return make_statement_n(location, opcode, { param1, param2, param3, param4 });
+	return make_ast_node(location, opcode, { param1, param2 });
 }
 
 
 
 
-
-json_t make_expression_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params){
-	return make_ast_entry(location, opcode, params);
-}
 
 json_t make_expression1(const location_t& location, const std::string& opcode, const json_t& param){
-	return make_expression_n(location, opcode, { param });
+	return make_ast_node(location, opcode, { param });
 }
 
 json_t make_expression2(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2){
-	return make_expression_n(location, opcode, { param1, param2 });
-}
-json_t make_expression3(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3){
-	return make_expression_n(location, opcode, { param1, param2, param3 });
+	return make_ast_node(location, opcode, { param1, param2 });
 }
 
 
 
 
 
-json_t maker__make_identifier(const std::string& s){
-	return make_expression1(floyd::k_no_location, expression_opcode_t::k_load, json_t(s));
-}
-
-json_t maker__make_unary_minus(const json_t& expr){
-	return make_expression1(floyd::k_no_location, expression_opcode_t::k_unary_minus, expr);
-}
 
 json_t maker__make2(const std::string op, const json_t& lhs, const json_t& rhs){
 	QUARK_ASSERT(op != "");
 	return make_expression2(floyd::k_no_location, op, lhs, rhs);
 }
 
-json_t maker__make_conditional_operator(const json_t& e1, const json_t& e2, const json_t& e3){
-	return make_expression3(floyd::k_no_location, expression_opcode_t::k_conditional_operator, e1, e2, e3);
-}
 
-json_t maker__call(const json_t& f, const std::vector<json_t>& args){
-	return make_expression2(floyd::k_no_location, expression_opcode_t::k_call, f, json_t::make_array(args));
-}
 json_t maker__corecall(const std::string& name, const std::vector<json_t>& args){
 	return make_expression2(floyd::k_no_location, expression_opcode_t::k_corecall, name, json_t::make_array(args));
 }

@@ -166,7 +166,7 @@ function_definition_t json_to_function_def(const json_t& p){
 
 json_t function_def_expression_to_ast_json(const function_definition_t& v) {
 	typeid_t function_type = get_function_type(v);
-	return make_expression_n(
+	return make_ast_node(
 		v._location,
 		expression_opcode_t::k_function_def,
 		function_def_to_ast_json(v).get_array()
@@ -373,13 +373,17 @@ json_t expression_to_json_internal(const expression_t& e){
 			);
 		}
 		json_t operator()(const expression_t::unary_minus_t& e) const{
-			return maker__make_unary_minus(expression_to_json(*e.expr));
+			return make_ast_node(floyd::k_no_location, expression_opcode_t::k_unary_minus, { expression_to_json(*e.expr) } );
 		}
 		json_t operator()(const expression_t::conditional_t& e) const{
-			const auto a = maker__make_conditional_operator(
-				expression_to_json(*e.condition),
-				expression_to_json(*e.a),
-				expression_to_json(*e.b)
+			const auto a = make_ast_node(
+				floyd::k_no_location,
+				expression_opcode_t::k_conditional_operator,
+				{
+					expression_to_json(*e.condition),
+					expression_to_json(*e.a),
+					expression_to_json(*e.b)
+				}
 			);
 			return a;
 		}
@@ -389,7 +393,7 @@ json_t expression_to_json_internal(const expression_t& e){
 			for(const auto& m: e.args){
 				args.push_back(expression_to_json(m));
 			}
-			return maker__call(expression_to_json(*e.callee), args);
+			return make_ast_node(floyd::k_no_location, expression_opcode_t::k_call, { expression_to_json(*e.callee), json_t::make_array(args) } );
 		}
 		json_t operator()(const expression_t::corecall_t& e) const{
 			vector<json_t> args;
@@ -417,12 +421,14 @@ json_t expression_to_json_internal(const expression_t& e){
 			return make_expression2(expr.location, expression_opcode_t::k_resolve_member, expression_to_json(*e.parent_address), json_t(e.member_name));
 		}
 		json_t operator()(const expression_t::update_member_t& e) const{
-			return make_expression3(
+			return make_ast_node(
 				expr.location,
 				expression_opcode_t::k_update_member,
-				expression_to_json(*e.parent_address),
-				json_t(e.member_index),
-				expression_to_json(*e.new_value)
+				{
+					expression_to_json(*e.parent_address),
+					json_t(e.member_index),
+					expression_to_json(*e.new_value)
+				}
 			);
 		}
 		json_t operator()(const expression_t::lookup_t& e) const{

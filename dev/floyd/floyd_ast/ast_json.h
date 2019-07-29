@@ -97,23 +97,16 @@ namespace expression_opcode_t {
 
 //	Creates json values for different AST constructs like expressions and statements.
 
-json_t make_statement_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
+json_t make_ast_node(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
+
 json_t make_statement1(const location_t& location, const std::string& opcode, const json_t& params);
 json_t make_statement2(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2);
-json_t make_statement3(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3);
-json_t make_statement4(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3, const json_t& param4);
 
-json_t make_expression_n(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
 json_t make_expression1(const location_t& location, const std::string& opcode, const json_t& param);
 json_t make_expression2(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2);
-json_t make_expression3(const location_t& location, const std::string& opcode, const json_t& param1, const json_t& param2, const json_t& param3);
 
 
-json_t maker__make_identifier(const std::string& s);
-json_t maker__make_unary_minus(const json_t& expr);
 json_t maker__make2(const std::string op, const json_t& lhs, const json_t& rhs);
-json_t maker__make_conditional_operator(const json_t& e1, const json_t& e2, const json_t& e3);
-json_t maker__call(const json_t& f, const std::vector<json_t>& args);
 json_t maker__corecall(const std::string& name, const std::vector<json_t>& args);
 json_t maker_vector_definition(const std::string& element_type, const std::vector<json_t>& elements);
 json_t maker_dict_definition(const std::string& value_type, const std::vector<json_t>& elements);
