@@ -20,14 +20,10 @@
 
 namespace floyd {
 
-struct value_t;
-struct statement_t;
-struct expression_t;
-
-
 
 
 ////////////////////////////////////////		expression_opcode_t
+
 
 //	String keys used to specify statement type inside the AST JSON.
 
@@ -72,98 +68,39 @@ namespace expression_opcode_t {
 
 
 
-//??? Split and categories better. Logic vs equality vs math.
-
-//	Number at end of name tells number of input expressions operation has.
 enum class expression_type {
-
-	//	c99: a + b			token: "+"
 	k_arithmetic_add = 10,
-
-	//	c99: a - b			token: "-"
 	k_arithmetic_subtract,
-
-	//	c99: a * b			token: "*"
 	k_arithmetic_multiply,
-
-	//	c99: a / b			token: "/"
 	k_arithmetic_divide,
-
-	//	c99: a % b			token: "%"
 	k_arithmetic_remainder,
 
-
-	//	c99: a <= b			token: "<="
 	k_comparison_smaller_or_equal,
-
-	//	c99: a < b			token: "<"
 	k_comparison_smaller,
-
-	//	c99: a >= b			token: ">="
 	k_comparison_larger_or_equal,
-
-	//	c99: a > b			token: ">"
 	k_comparison_larger,
 
-
-	//	c99: a == b			token: "=="
 	k_logical_equal,
-
-	//	c99: a != b			token: "!="
 	k_logical_nonequal,
 
-
-	//	c99: a && b			token: "&&"
 	k_logical_and,
-
-	//	c99: a || b			token: "||"
 	k_logical_or,
 
-	//	c99: !a				token: "!"
-//			k_logical_not,
-
-	//	c99: 13				token: "k"
 	k_literal,
-
-	//	c99: -a				token: "unary-minus"
 	k_arithmetic_unary_minus,
-
-	//	c99: cond ? a : b	token: "?:"
 	k_conditional_operator,
-
-	//	c99: a(b, c)		token: "call"
 	k_call,
-
 	k_corecall,
-
-	//	c99: a				token: "@"
 	k_load,
-
-	//	c99: a				token: "@i"
 	k_load2,
-
-	//	c99: a.b			token: "->"
 	k_resolve_member,
-
-	//						token: "<-"
 	k_update_member,
-
-	//	c99: a[b]			token: "[]"
 	k_lookup_element,
-
-	//	"def-struct"
 	k_struct_def,
-
-	//???	use k_literal for function values?
-	//	"def-func"
 	k_function_def,
-
-	//	"construct-value"
 	k_value_constructor,
-
 	k_benchmark
 };
-
 
 
 bool is_arithmetic_expression(expression_type op);
@@ -176,6 +113,7 @@ std::string expression_type_to_opcode(const expression_type& op);
 
 bool is_opcode_arithmetic_expression(const std::string& op);
 bool is_opcode_comparison_expression(const std::string& op);
+
 
 
 //////////////////////////////////////		variable_address_t
@@ -277,8 +215,8 @@ struct function_definition_t {
 	public: bool check_types_resolved() const;
 
 
-	////////////////////////////////	STATE
 
+	////////////////////////////////	STATE
 
 	location_t _location;
 
@@ -646,8 +584,8 @@ struct expression_t {
 	public: bool check_types_resolved() const;
 
 
-	//////////////////////////		INTERNALS
 
+	//////////////////////////		INTERNALS
 
 	typedef std::variant<
 		corecall_t,
@@ -686,7 +624,7 @@ expression_t ast_json_to_expression(const json_t& e);
 
 std::string expression_to_json_string(const expression_t& e);
 
-expression_type get_expression_opcode(const expression_t& e);
+expression_type get_expression_type(const expression_t& e);
 
 
 }	//	floyd

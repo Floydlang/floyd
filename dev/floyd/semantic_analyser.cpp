@@ -878,7 +878,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 		//	The key needs to be the name of an identifier. It's a compile-time constant.
 		//	It's encoded as a load which is confusing.
 
-		if(get_expression_opcode(key) == expression_type::k_load){
+		if(get_expression_type(key) == expression_type::k_load){
 			const auto member_name = std::get<expression_t::load_t>(key._expression_variant).variable_name;
 			int member_index = find_struct_member_index(struct_def, member_name);
 			if(member_index == -1){
@@ -2341,7 +2341,7 @@ expression_t auto_cast_expression_type(const expression_t& e, const typeid_t& wa
 }
 
 std::string get_expression_name(const expression_t& e){
-	const expression_type op = get_expression_opcode(e);
+	const expression_type op = get_expression_type(e);
 	return expression_type_to_opcode(op);
 }
 

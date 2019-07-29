@@ -16,21 +16,9 @@ using std::vector;
 
 
 
-bool operator==(const body_t& lhs, const body_t& rhs){
-	return
-		lhs._statements == rhs._statements
-		&& lhs._symbol_table == rhs._symbol_table;
-}
-
-bool body_t::check_invariant() const {
-	for(const auto& i: _statements){
-		QUARK_ASSERT(i.check_invariant());
-	};
-	return true;
-}
 
 
-////////////////////////////////////////////		SYMBOL
+////////////////////////////////////////////		symbol_t
 
 
 symbol_t make_type_symbol(const floyd::typeid_t& t){
@@ -81,7 +69,7 @@ symbol_t json_to_symbol(const json_t& e){
 
 
 
-////////////////////////////////////////////		SYMBOLS
+////////////////////////////////////////////		symbol_table_t
 
 
 
@@ -146,6 +134,15 @@ symbol_table_t ast_json_to_symbols(const json_t& p){
 
 
 
+
+bool body_t::check_invariant() const {
+	for(const auto& i: _statements){
+		QUARK_ASSERT(i.check_invariant());
+	};
+	return true;
+}
+
+
 json_t body_to_json(const body_t& e){
 	std::vector<json_t> statements;
 	for(const auto& i: e._statements){
@@ -170,11 +167,17 @@ body_t json_to_body(const json_t& json){
 	return body_t(statements1, symbols1);
 }
 
+bool operator==(const body_t& lhs, const body_t& rhs){
+	return
+		lhs._statements == rhs._statements
+		&& lhs._symbol_table == rhs._symbol_table;
+}
 
 
 
 
 ////////////////////////////////////////////		statement_t
+
 
 
 bool statement_t::check_types_resolved(const std::vector<std::shared_ptr<statement_t>>& s){
@@ -254,12 +257,7 @@ bool statement_t::check_types_resolved() const{
 	return std::visit(visitor_t{}, _contents);
 }
 
-
-
-
-
-
-statement_t ast_json_to_statement__nonlossy(const json_t& statement0){
+static statement_t ast_json_to_statement(const json_t& statement0){
 	QUARK_ASSERT(statement0.check_invariant());
 	QUARK_ASSERT(statement0.is_array());
 
@@ -471,7 +469,7 @@ const std::vector<statement_t> ast_json_to_statements(const json_t& p){
 
 	vector<statement_t> statements2;
 	for(const auto& statement: p.get_array()){
-		const auto s2 = ast_json_to_statement__nonlossy(statement);
+		const auto s2 = ast_json_to_statement(statement);
 		statements2.push_back(s2);
 	}
 	return statements2;
@@ -624,8 +622,6 @@ json_t statement_to_json(const statement_t& e){
 
 	return std::visit(visitor_t{ e }, e._contents);
 }
-
-
 
 
 

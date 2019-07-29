@@ -807,7 +807,7 @@ std::string expression_to_json_string(const expression_t& e){
 
 
 
-expression_type get_expression_opcode(const expression_t& e){
+expression_type get_expression_type(const expression_t& e){
 	struct visitor_t {
 		expression_type operator()(const expression_t::literal_exp_t& e) const{
 			return expression_type::k_literal;
