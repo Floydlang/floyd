@@ -656,14 +656,16 @@ std::pair<json_t, seq_t>  parse_protocol_definition_body(const seq_t& p, const s
 		functions.push_back(f);
 	}
 
-	const auto r = make_statement1(
+	const auto r = make_ast_node(
 		location_t(start.pos()),
 		parse_tree_statement_opcode::k_def_protocol,
-		json_t::make_object({
-			{ "name", name },
-			{ "members", members_to_json(functions)
-			}
-		})
+		{
+			json_t::make_object({
+				{ "name", name },
+				{ "members", members_to_json(functions)
+				}
+			})
+		}
 	);
 	return { r, skip_whitespace(body_pos.second) };
 }

@@ -13,7 +13,6 @@
 #include "bytecode_corelib.h"
 #include "text_parser.h"
 #include "ast_value.h"
-#include "ast_json.h"
 
 #include <algorithm>
 

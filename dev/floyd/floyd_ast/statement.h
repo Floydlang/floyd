@@ -25,6 +25,40 @@ struct expression_t;
 
 
 
+////////////////////////////////////////		statement_opcode_t
+
+
+
+//	String keys used to specify statement type inside the AST JSON.
+
+namespace statement_opcode_t {
+	const std::string k_return = "return";
+
+	const std::string k_bind = "bind";
+	const std::string k_assign = "assign";
+	const std::string k_assign2 = "assign2";
+	const std::string k_init2 = "init2";
+	const std::string k_block = "block";
+
+	const std::string k_def_struct = "def-struct";
+	const std::string k_def_func = "def-func";
+
+
+	const std::string k_if = "if";
+	const std::string k_for = "for";
+	const std::string k_while = "while";
+
+	const std::string k_expression_statement = "expression-statement";
+
+	const std::string k_software_system_def = "software-system-def";
+	const std::string k_container_def = "container-def";
+	const std::string k_benchmark_def = "benchmark-def";
+	const std::string k_benchmark = "benchmark";
+};
+
+
+
+
 //////////////////////////////////////		symbol_t
 
 /*

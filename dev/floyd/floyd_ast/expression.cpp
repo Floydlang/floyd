@@ -479,27 +479,40 @@ QUARK_UNIT_TEST("expression_t", "expression_to_json()", "lookup", ""){
 	);
 }
 
-json_t expression_to_json_internal(const expression_t& e){
+static json_t expression_to_json_internal(const expression_t& e){
 	struct visitor_t {
 		const expression_t& expr;
 
 		json_t operator()(const expression_t::literal_exp_t& e) const{
-			return maker__make_constant(e.value);
+			return make_ast_node(
+				floyd::k_no_location,
+				expression_opcode_t::k_literal,
+				{
+					value_to_ast_json(e.value, json_tags::k_tag_resolve_state),
+					typeid_to_ast_json(e.value.get_type(), json_tags::k_tag_resolve_state)
+				}
+			);
+
+
 		}
 		json_t operator()(const expression_t::arithmetic_t& e) const{
-			return make_expression2(
+			return make_ast_node(
 				expr.location,
 				expression_type_to_opcode(e.op),
-				expression_to_json(*e.lhs),
-				expression_to_json(*e.rhs)
+				{
+					expression_to_json(*e.lhs),
+					expression_to_json(*e.rhs)
+				}
 			);
 		}
 		json_t operator()(const expression_t::comparison_t& e) const{
-			return make_expression2(
+			return make_ast_node(
 				expr.location,
 				expression_type_to_opcode(e.op),
-				expression_to_json(*e.lhs),
-				expression_to_json(*e.rhs)
+				{
+					expression_to_json(*e.lhs),
+					expression_to_json(*e.rhs)
+				}
 			);
 		}
 		json_t operator()(const expression_t::unary_minus_t& e) const{
@@ -530,25 +543,33 @@ json_t expression_to_json_internal(const expression_t& e){
 			for(const auto& m: e.args){
 				args.push_back(expression_to_json(m));
 			}
-			return maker__corecall(e.call_name, args);
+			return make_ast_node(floyd::k_no_location, expression_opcode_t::k_corecall, { e.call_name, args } );
 		}
 
 
 		json_t operator()(const expression_t::struct_definition_expr_t& e) const{
-			return make_expression1(expr.location, expression_opcode_t::k_struct_def, struct_definition_to_ast_json(*e.def));
+			return make_ast_node(expr.location, expression_opcode_t::k_struct_def, { struct_definition_to_ast_json(*e.def) } );
 		}
 		json_t operator()(const expression_t::function_definition_expr_t& e) const{
 			return function_def_expression_to_ast_json(*e.def);
 		}
 		json_t operator()(const expression_t::load_t& e) const{
-			return make_expression1(expr.location, expression_opcode_t::k_load, json_t(e.variable_name));
+			return make_ast_node(expr.location, expression_opcode_t::k_load, { json_t(e.variable_name) } );
 		}
 		json_t operator()(const expression_t::load2_t& e) const{
-			return make_expression2(expr.location, expression_opcode_t::k_load2, json_t(e.address._parent_steps), json_t(e.address._index));
+			return make_ast_node(
+				expr.location,
+				expression_opcode_t::k_load2,
+				{ json_t(e.address._parent_steps), json_t(e.address._index) }
+			);
 		}
 
 		json_t operator()(const expression_t::resolve_member_t& e) const{
-			return make_expression2(expr.location, expression_opcode_t::k_resolve_member, expression_to_json(*e.parent_address), json_t(e.member_name));
+			return make_ast_node(
+				expr.location,
+				expression_opcode_t::k_resolve_member,
+				{ expression_to_json(*e.parent_address), json_t(e.member_name) }
+			);
 		}
 		json_t operator()(const expression_t::update_member_t& e) const{
 			return make_ast_node(
@@ -562,23 +583,27 @@ json_t expression_to_json_internal(const expression_t& e){
 			);
 		}
 		json_t operator()(const expression_t::lookup_t& e) const{
-			return make_expression2(
+			return make_ast_node(
 				expr.location,
 				expression_opcode_t::k_lookup_element,
-				expression_to_json(*e.parent_address),
-				expression_to_json(*e.lookup_key)
+				{
+					expression_to_json(*e.parent_address),
+					expression_to_json(*e.lookup_key)
+				}
 			);
 		}
 		json_t operator()(const expression_t::value_constructor_t& e) const{
-			return make_expression2(
+			return make_ast_node(
 				expr.location,
 				expression_opcode_t::k_value_constructor,
-				typeid_to_ast_json(e.value_type, json_tags::k_tag_resolve_state),
-				expressions_to_json(e.elements)
+				{
+					typeid_to_ast_json(e.value_type, json_tags::k_tag_resolve_state),
+					expressions_to_json(e.elements)
+				}
 			);
 		}
 		json_t operator()(const expression_t::benchmark_expr_t& e) const{
-			return make_expression1(expr.location, expression_opcode_t::k_benchmark, body_to_json(*e.body));
+			return make_ast_node(expr.location, expression_opcode_t::k_benchmark, { body_to_json(*e.body) } );
 		}
 	};
 

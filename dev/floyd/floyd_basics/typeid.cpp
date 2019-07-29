@@ -9,7 +9,6 @@
 #include "typeid.h"
 
 #include "parser_primitives.h"
-#include "ast_json.h"
 #include "json_support.h"
 #include "utils.h"
 

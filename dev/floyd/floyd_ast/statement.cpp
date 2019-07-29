@@ -484,10 +484,17 @@ json_t statement_to_json(const statement_t& e){
 		const statement_t& statement;
 
 		json_t operator()(const statement_t::return_statement_t& s) const{
-			return make_statement1(k_no_location, statement_opcode_t::k_return, expression_to_json(s._expression));
+			return make_ast_node(k_no_location, statement_opcode_t::k_return, { expression_to_json(s._expression) });
 		}
 		json_t operator()(const statement_t::define_struct_statement_t& s) const{
-			return make_statement2(k_no_location, statement_opcode_t::k_def_struct, json_t(s._name), struct_definition_to_ast_json(*s._def));
+			return make_ast_node(
+				k_no_location,
+				statement_opcode_t::k_def_struct,
+				{
+					json_t(s._name),
+					struct_definition_to_ast_json(*s._def)
+				}
+			);
 		}
 		json_t operator()(const statement_t::define_function_statement_t& s) const{
 			return make_ast_node(
@@ -521,11 +528,13 @@ json_t statement_to_json(const statement_t& e){
 			);
 		}
 		json_t operator()(const statement_t::assign_t& s) const{
-			return make_statement2(
+			return make_ast_node(
 				statement.location,
 				statement_opcode_t::k_assign,
-				s._local_name,
-				expression_to_json(s._expression)
+				{
+					s._local_name,
+					expression_to_json(s._expression)
+				}
 			);
 		}
 		json_t operator()(const statement_t::assign2_t& s) const{
@@ -551,7 +560,7 @@ json_t statement_to_json(const statement_t& e){
 			);
 		}
 		json_t operator()(const statement_t::block_statement_t& s) const{
-			return make_statement1(k_no_location, statement_opcode_t::k_block, body_to_json(s._body));
+			return make_ast_node(k_no_location, statement_opcode_t::k_block, { body_to_json(s._body) } );
 		}
 
 		json_t operator()(const statement_t::ifelse_statement_t& s) const{
@@ -579,34 +588,36 @@ json_t statement_to_json(const statement_t& e){
 			);
 		}
 		json_t operator()(const statement_t::while_statement_t& s) const{
-			return make_statement2(
+			return make_ast_node(
 				statement.location,
 				statement_opcode_t::k_while,
-				expression_to_json(s._condition),
-				body_to_json(s._body)
+				{
+					expression_to_json(s._condition),
+					body_to_json(s._body)
+				}
 			);
 		}
 
 
 		json_t operator()(const statement_t::expression_statement_t& s) const{
-			return make_statement1(
+			return make_ast_node(
 				statement.location,
 				statement_opcode_t::k_expression_statement,
-				expression_to_json(s._expression)
+				{ expression_to_json(s._expression) }
 			);
 		}
 		json_t operator()(const statement_t::software_system_statement_t& s) const{
-			return make_statement1(
+			return make_ast_node(
 				statement.location,
 				statement_opcode_t::k_software_system_def,
-				s._json_data
+				{ s._json_data }
 			);
 		}
 		json_t operator()(const statement_t::container_def_statement_t& s) const{
-			return make_statement1(
+			return make_ast_node(
 				statement.location,
 				statement_opcode_t::k_container_def,
-				s._json_data
+				{ s._json_data }
 			);
 		}
 	};

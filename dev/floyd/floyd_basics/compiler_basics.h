@@ -140,6 +140,15 @@ struct location2_t {
 };
 
 
+//	INPUT: [2, "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"]]
+std::pair<json_t, location_t> unpack_loc(const json_t& s);
+
+//	Reads a location_t from a statement, if one exists. Else it returns k_no_location.
+//	INPUT: [2, "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"]]
+location_t unpack_loc2(const json_t& s);
+
+
+
 ////////////////////////////////////////		compilation_unit_t
 
 
@@ -214,6 +223,18 @@ void UNSUPPORTED() __dead2;
 void ut_verify_json_and_rest(const quark::call_context_t& context, const std::pair<json_t, seq_t>& result_pair, const std::string& expected_json, const std::string& expected_rest);
 
 void ut_verify(const quark::call_context_t& context, const std::pair<std::string, seq_t>& result, const std::pair<std::string, seq_t>& expected);
+
+
+
+
+////////////////////////////////	make_ast_node()
+
+
+
+
+//	Creates json values for different AST constructs like expressions and statements.
+
+json_t make_ast_node(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
 
 
 

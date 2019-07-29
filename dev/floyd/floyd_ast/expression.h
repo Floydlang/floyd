@@ -9,7 +9,6 @@
 #ifndef expressions_hpp
 #define expressions_hpp
 
-#include "ast_json.h"
 #include "ast_value.h"
 
 #include "quark.h"
@@ -25,6 +24,47 @@ struct value_t;
 struct statement_t;
 struct expression_t;
 
+
+
+
+////////////////////////////////////////		expression_opcode_t
+
+//	String keys used to specify statement type inside the AST JSON.
+
+namespace expression_opcode_t {
+	const std::string k_literal = "k";
+	const std::string k_call = "call";
+	const std::string k_corecall = "corecall";
+	const std::string k_load = "@";
+	const std::string k_load2 = "@i";
+	const std::string k_resolve_member = "->";
+	const std::string k_update_member = "<-";
+	const std::string k_unary_minus = "unary-minus";
+	const std::string k_conditional_operator = "?:";
+	const std::string k_struct_def = "struct-def";
+	const std::string k_function_def = "function-def";
+	const std::string k_value_constructor = "value-constructor";
+	const std::string k_lookup_element = "[]";
+	const std::string k_benchmark = "benchmark";
+
+
+	const std::string k_arithmetic_add = "+";
+	const std::string k_arithmetic_subtract = "-";
+	const std::string k_arithmetic_multiply = "*";
+	const std::string k_arithmetic_divide = "/";
+	const std::string k_arithmetic_remainder = "%";
+
+	const std::string k_logical_and = "&&";
+	const std::string k_logical_or = "||";
+
+	const std::string k_comparison_smaller_or_equal = "<=";
+	const std::string k_comparison_smaller = "<";
+	const std::string k_comparison_larger_or_equal = ">=";
+	const std::string k_comparison_larger = ">";
+
+	const std::string k_logical_equal = "==";
+	const std::string k_logical_nonequal = "!=";
+};
 
 
 
