@@ -1,6 +1,6 @@
 //
 //  immutable_ref_value.hpp
-//  FloydSpeak
+//  Floyd
 //
 //  Created by Marcus Zetterquist on 31/08/16.
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.

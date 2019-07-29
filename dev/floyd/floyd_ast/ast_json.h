@@ -1,6 +1,6 @@
 //
 //  floyd_basics.hpp
-//  FloydSpeak
+//  Floyd
 //
 //  Created by Marcus Zetterquist on 2017-08-09.
 //  Copyright © 2017 Marcus Zetterquist. All rights reserved.

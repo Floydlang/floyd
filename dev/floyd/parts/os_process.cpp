@@ -1,6 +1,6 @@
 //
 //  os_process.cpp
-//  floyd_speak
+//  Floyd
 //
 //  Created by Marcus Zetterquist on 2019-05-15.
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.

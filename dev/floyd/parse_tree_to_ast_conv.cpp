@@ -1,6 +1,6 @@
 //
 //  parse_tree_to_ast_conv.cpp
-//  floyd_speak
+//  Floyd
 //
 //  Created by Marcus Zetterquist on 2019-04-13.
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.

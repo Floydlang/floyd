@@ -1,4 +1,4 @@
-# FLOYD SPEAK CORE LIBRARY
+# FLOYD CORE LIBRARY
 
 This is a small set of functions and types you can rely on always being available to your Floyd programs.
 

@@ -115,7 +115,7 @@ There is no compiled distribution of Floyd yet. You need to clone the github rep
 
 3. In your terminal, run "brew install llvm@8.0.0" -- this installs the LLVM library on your Mac. It's installed in "/usr/local/Cellar/llvm/8.0.0_1" - so it won't conflict with Xcode or other versions of LLVM.
 
-4. Open the Floyd xcode project: Floyd/dev/floyd_speak.xcodeproj
+4. Open the Floyd xcode project: Floyd/dev/floyd.xcodeproj
 
 5. Make sure the current xcode scheme is "unit tests". Select from the top-left popup menu, looking like a stop-button.
 
@@ -134,7 +134,7 @@ Cmake is used to build floyd
 
 1. Install llvm, sudo pacman -Sy llvm
 
-2. cd floyd/dev/floyd_speak
+2. cd floyd/dev/floyd
 
 3. mkdir build;cd build
 

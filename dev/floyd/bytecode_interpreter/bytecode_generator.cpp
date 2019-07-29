@@ -1,6 +1,6 @@
 //
 //  parser_evaluator.cpp
-//  FloydSpeak
+//  Floyd
 //
 //  Created by Marcus Zetterquist on 26/07/16.
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.

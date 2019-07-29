@@ -1,6 +1,6 @@
 //
 //  floyd_llvm_codegen.cpp
-//  floyd_speak
+//  Floyd
 //
 //  Created by Marcus Zetterquist on 2019-03-23.
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.

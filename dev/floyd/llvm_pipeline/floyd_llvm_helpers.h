@@ -1,6 +1,6 @@
 //
 //  floyd_llvm_helpers.hpp
-//  floyd_speak
+//  Floyd
 //
 //  Created by Marcus Zetterquist on 2019-04-16.
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.

@@ -1,6 +1,6 @@
 //
 //  floyd_test_suite.cpp
-//  FloydSpeak
+//  Floyd
 //
 //  Created by Marcus Zetterquist on 2018-01-21.
 //  Copyright © 2018 Marcus Zetterquist. All rights reserved.

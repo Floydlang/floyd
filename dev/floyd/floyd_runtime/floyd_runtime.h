@@ -1,6 +1,6 @@
 //
 //  floyd_runtime.hpp
-//  floyd_speak
+//  Floyd
 //
 //  Created by Marcus Zetterquist on 2019-02-17.
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.

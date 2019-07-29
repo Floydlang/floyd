@@ -1,6 +1,6 @@
 //
 //  issue_regression_tests.cpp
-//  floyd_speak
+//  Floyd
 //
 //  Created by Marcus Zetterquist on 2019-02-25.
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.

@@ -1,6 +1,6 @@
 //
 //  typeid.hpp
-//  FloydSpeak
+//  Floyd
 //
 //  Created by Marcus Zetterquist on 2018-02-12.
 //  Copyright © 2018 Marcus Zetterquist. All rights reserved.

@@ -1,6 +1,6 @@
 //
 //  floyd_main.cpp
-//  FloydSpeak
+//  Floyd
 //
 //  Created by Marcus Zetterquist on 10/04/16.
 //  Copyright © 2016 Marcus Zetterquist. All rights reserved.
@@ -176,7 +176,7 @@ void run_benchmark(){
 
 //	Print usage instructions to stdio.
 void help(){
-std::cout << "Floyd Speak Programming Language " << floyd_version_string << " MIT." <<
+std::cout << "Floyd Programming Language " << floyd_version_string << " MIT." <<
 	
 R"(
 Usage:

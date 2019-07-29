@@ -1,6 +1,6 @@
 //
 //  bytecode_corecalls_h
-//  FloydSpeak
+//  Floyd
 //
 //  Created by Marcus Zetterquist on 2018-02-23.
 //  Copyright © 2018 Marcus Zetterquist. All rights reserved.

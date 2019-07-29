@@ -1,6 +1,6 @@
 //
 //  hardware_caps.h
-//  floyd_speak
+//  Floyd
 //
 //  Created by Marcus Zetterquist on 2018-09-19.
 //  Copyright © 2018 Marcus Zetterquist. All rights reserved.
