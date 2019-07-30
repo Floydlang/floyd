@@ -10,6 +10,7 @@
 #define expressions_hpp
 
 #include "ast_value.h"
+#include "compiler_basics.h"
 
 #include "quark.h"
 

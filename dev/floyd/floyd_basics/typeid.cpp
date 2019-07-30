@@ -16,6 +16,176 @@
 
 namespace floyd {
 
+using std::string;
+
+
+
+
+
+//////////////////////////////////////////////////		base_type
+
+
+string base_type_to_opcode(const base_type t){
+	if(t == base_type::k_undefined){
+		return "**undef**";
+	}
+	else if(t == base_type::k_any){
+		return "any";
+	}
+
+	else if(t == base_type::k_void){
+		return "void";
+	}
+	else if(t == base_type::k_bool){
+		return "bool";
+	}
+	else if(t == base_type::k_int){
+		return "int";
+	}
+	else if(t == base_type::k_double){
+		return "double";
+	}
+	else if(t == base_type::k_string){
+		return "string";
+	}
+	else if(t == base_type::k_json){
+		return "json";
+	}
+
+	else if(t == base_type::k_typeid){
+		return "typeid";
+	}
+
+	else if(t == base_type::k_struct){
+		return "struct";
+	}
+	else if(t == base_type::k_vector){
+		return "vector";
+	}
+	else if(t == base_type::k_dict){
+		return "dict";
+	}
+	else if(t == base_type::k_function){
+		return "func";
+	}
+	else if(t == base_type::k_unresolved){
+		return "**unknown-identifier**";
+	}
+	else{
+		QUARK_ASSERT(false);
+		quark::throw_exception();
+	}
+}
+
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_undefined) == "**undef**");
+}
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_any) == "any");
+}
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_void) == "void");
+}
+
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_bool) == "bool");
+}
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_int) == "int");
+}
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_double) == "double");
+}
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_string) == "string");
+}
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_json) == "json");
+}
+
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_typeid) == "typeid");
+}
+
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_struct) == "struct");
+}
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_vector) == "vector");
+}
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_dict) == "dict");
+}
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_function) == "func");
+}
+
+QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_unresolved) == "**unknown-identifier**");
+}
+
+base_type opcode_to_base_type(const std::string& s){
+	QUARK_ASSERT(s != "");
+
+	if(s == "**undef**"){
+		return base_type::k_undefined;
+	}
+	else if(s == "any"){
+		return base_type::k_any;
+	}
+	else if(s == "void"){
+		return base_type::k_void;
+	}
+	else if(s == "bool"){
+		return base_type::k_bool;
+	}
+	else if(s == "int"){
+		return base_type::k_int;
+	}
+	else if(s == "double"){
+		return base_type::k_double;
+	}
+	else if(s == "string"){
+		return base_type::k_string;
+	}
+	else if(s == "typeid"){
+		return base_type::k_typeid;
+	}
+	else if(s == "json"){
+		return base_type::k_json;
+	}
+
+	else if(s == "struct"){
+		return base_type::k_struct;
+	}
+	else if(s == "vector"){
+		return base_type::k_vector;
+	}
+	else if(s == "dict"){
+		return base_type::k_dict;
+	}
+	else if(s == "func"){
+		return base_type::k_function;
+	}
+	else if(s == "**unknown-identifier**"){
+		return base_type::k_unresolved;
+	}
+
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+
+void ut_verify(const quark::call_context_t& context, const base_type& result, const base_type& expected){
+	ut_verify(
+		context,
+		base_type_to_opcode(result),
+		base_type_to_opcode(expected)
+	);
+}
+
+
 
 //////////////////////////////////////////////////		get_json_type()
 

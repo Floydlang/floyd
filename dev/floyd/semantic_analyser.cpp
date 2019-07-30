@@ -60,7 +60,8 @@ struct analyzer_imm_t {
 //////////////////////////////////////		analyser_t
 
 /*
-	Value object (MUTABLE!) that represents one step of the semantic analysis. It is passed around.
+	Value object (MUTABLE!).
+	Represents a node in the lexical scope tree.
 */
 
 struct lexical_scope_t {
@@ -80,6 +81,7 @@ struct analyser_t {
 	public: std::shared_ptr<const analyzer_imm_t> _imm;
 
 	//	Non-constant. Last scope is the current one. First scope is the root.
+	//	This is ONE branch through the three of lexical scopes of the program.
 	public: std::vector<lexical_scope_t> _lexical_scope_stack;
 
 	//	These are output functions, that have been fixed.
@@ -95,23 +97,9 @@ struct analyser_t {
 //////////////////////////////////////		forward
 
 
-std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const typeid_t& return_type);
 semantic_ast_t analyse(const analyser_t& a);
-
-/*
-	Return value:
-		null = statements were all executed through.
-		value = return statement returned a value.
-*/
+std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const typeid_t& return_type);
 std::pair<analyser_t, std::vector<std::shared_ptr<statement_t>> > analyse_statements(const analyser_t& a, const std::vector<std::shared_ptr<statement_t>>& statements, const typeid_t& return_type);
-
-
-
-/*
-	analyses an expression as far as possible.
-	return == _constant != nullptr:	the expression was completely analysed and resulted in a constant value.
-	return == _constant == nullptr: the expression was partially analyse.
-*/
 std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type);
 std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_t& a, const statement_t& parent, const expression_t& e);
 
@@ -130,7 +118,7 @@ static const function_definition_t& function_id_to_def(const analyser_t& a, cons
 
 
 
-/////////////////////////////////////////			TYPES AND SYMBOLS
+/////////////////////////////////////////			RESOLVE SYMBOL USING LEXICAL SCOPE PATH
 
 
 
@@ -167,7 +155,11 @@ std::pair<const symbol_t*, variable_address_t> find_symbol_by_name(const analyse
 }
 
 bool does_symbol_exist_shallow(const analyser_t& a, const std::string& s){
-    const auto it = std::find_if(a._lexical_scope_stack.back().symbols._symbols.begin(), a._lexical_scope_stack.back().symbols._symbols.end(),  [&s](const std::pair<std::string, symbol_t>& e) { return e.first == s; });
+    const auto it = std::find_if(
+    	a._lexical_scope_stack.back().symbols._symbols.begin(),
+    	a._lexical_scope_stack.back().symbols._symbols.end(),
+    	[&s](const std::pair<std::string, symbol_t>& e) { return e.first == s; }
+	);
 	return it != a._lexical_scope_stack.back().symbols._symbols.end();
 }
 
@@ -182,6 +174,7 @@ const std::pair<std::string, symbol_t>* resolve_symbol_by_address(const analyser
 
 
 
+/////////////////////////////////////////			RESOLVE typeid_t::unresolved_t USING LEXICAL SCOPE PATH
 
 
 typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, const typeid_t& type){
@@ -436,7 +429,7 @@ std::pair<analyser_t, body_t > analyse_body(const analyser_t& a, const body_t& b
 	auto a_acc = a;
 
 	auto new_environment = symbol_table_t{ body._symbol_table };
-	const auto lexical_scope = lexical_scope_t{new_environment, pure};
+	const auto lexical_scope = lexical_scope_t{ new_environment, pure };
 	a_acc._lexical_scope_stack.push_back(lexical_scope);
 
 	const auto result = analyse_statements(a_acc, body._statements, return_type);
@@ -512,7 +505,6 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	//	If lhs may be
 	//		(1) undefined, if input is "let a = 10" for example. Then we need to infer its type.
 	//		(2) have a type, but it might not be fully resolved yet.
-//	const auto lhs_type = (lhs_type0.check_types_resolved() == false && lhs_type0.is_undefined() == false) ? resolve_type(a_acc, s.location, lhs_type0) : lhs_type0;
 	const auto lhs_type = lhs_type0.is_undefined() ? lhs_type0 : resolve_type(a_acc, s.location, lhs_type0);
 
 	const auto mutable_flag = statement._locals_mutable_mode == statement_t::bind_local_t::k_mutable;
@@ -1616,7 +1608,6 @@ std::pair<analyser_t, expression_t> analyse_conditional_operator_expression(cons
 	}
 }
 
-//	Term: Type inference
 
 std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser_t& a, const statement_t& parent, expression_type op, const expression_t& e, const expression_t::comparison_t& details){
 	QUARK_ASSERT(a.check_invariant());
@@ -1698,114 +1689,39 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 
 		//	bool
 		if(shared_type.is_bool()){
-			if(op == expression_type::k_arithmetic_add){
+			if(
+				op == expression_type::k_arithmetic_add
+				|| op == expression_type::k_logical_and
+				|| op == expression_type::k_logical_or
+			){
+				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 			}
-			else if(op == expression_type::k_arithmetic_subtract){
+			else {
 				throw_compiler_error(parent.location, "Operation not allowed on bool.");
 			}
-			else if(op == expression_type::k_arithmetic_multiply){
-				throw_compiler_error(parent.location, "Operation not allowed on bool.");
-			}
-			else if(op == expression_type::k_arithmetic_divide){
-				throw_compiler_error(parent.location, "Operation not allowed on bool.");
-			}
-			else if(op == expression_type::k_arithmetic_remainder){
-				throw_compiler_error(parent.location, "Operation not allowed on bool.");
-			}
-
-			else if(op == expression_type::k_logical_and){
-			}
-			else if(op == expression_type::k_logical_or){
-			}
-			else{
-				QUARK_ASSERT(false);
-				quark::throw_exception();
-			}
-
-			return {a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	int
 		else if(shared_type.is_int()){
-			if(op == expression_type::k_arithmetic_add){
-			}
-			else if(op == expression_type::k_arithmetic_subtract){
-			}
-			else if(op == expression_type::k_arithmetic_multiply){
-			}
-			else if(op == expression_type::k_arithmetic_divide){
-			}
-			else if(op == expression_type::k_arithmetic_remainder){
-			}
-
-			else if(op == expression_type::k_logical_and){
-			}
-			else if(op == expression_type::k_logical_or){
-			}
-			else{
-				QUARK_ASSERT(false);
-				quark::throw_exception();
-			}
-
-			return {a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	double
 		else if(shared_type.is_double()){
-			if(op == expression_type::k_arithmetic_add){
-			}
-			else if(op == expression_type::k_arithmetic_subtract){
-			}
-			else if(op == expression_type::k_arithmetic_multiply){
-			}
-			else if(op == expression_type::k_arithmetic_divide){
-			}
-			else if(op == expression_type::k_arithmetic_remainder){
+			if(op == expression_type::k_arithmetic_remainder){
 				throw_compiler_error(parent.location, "Modulo operation on double not supported.");
 			}
-
-			else if(op == expression_type::k_logical_and){
-			}
-			else if(op == expression_type::k_logical_or){
-			}
-			else{
-				QUARK_ASSERT(false);
-				quark::throw_exception();
-			}
-
-			return {a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	string
 		else if(shared_type.is_string()){
 			if(op == expression_type::k_arithmetic_add){
-			}
-
-			else if(op == expression_type::k_arithmetic_subtract){
-				throw_compiler_error(parent.location, "Operation not allowed on string.");
-			}
-			else if(op == expression_type::k_arithmetic_multiply){
-				throw_compiler_error(parent.location, "Operation not allowed on string.");
-			}
-			else if(op == expression_type::k_arithmetic_divide){
-				throw_compiler_error(parent.location, "Operation not allowed on string.");
-			}
-			else if(op == expression_type::k_arithmetic_remainder){
-				throw_compiler_error(parent.location, "Operation not allowed on string.");
-			}
-
-			else if(op == expression_type::k_logical_and){
-				throw_compiler_error(parent.location, "Operation not allowed on string.");
-			}
-			else if(op == expression_type::k_logical_or){
-				throw_compiler_error(parent.location, "Operation not allowed on string.");
+				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 			}
 			else{
-				QUARK_ASSERT(false);
-				quark::throw_exception();
+				throw_compiler_error(parent.location, "Operation not allowed on string.");
 			}
-
-			return {a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	struct
@@ -1834,45 +1750,19 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 			else if(op == expression_type::k_logical_or){
 				throw_compiler_error(parent.location, "Operation not allowed on structs.");
 			}
-			else{
-				QUARK_ASSERT(false);
-				quark::throw_exception();
-			}
 
-			return {a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
+			return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	vector
 		else if(shared_type.is_vector()){
 			const auto element_type = shared_type.get_vector_element_type();
 			if(op == expression_type::k_arithmetic_add){
-			}
-
-			else if(op == expression_type::k_arithmetic_subtract){
-				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
-			}
-			else if(op == expression_type::k_arithmetic_multiply){
-				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
-			}
-			else if(op == expression_type::k_arithmetic_divide){
-				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
-			}
-			else if(op == expression_type::k_arithmetic_remainder){
-				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
-			}
-
-
-			else if(op == expression_type::k_logical_and){
-				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
-			}
-			else if(op == expression_type::k_logical_or){
-				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
+				return { a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 			}
 			else{
-				QUARK_ASSERT(false);
-				quark::throw_exception();
+				throw_compiler_error(parent.location, "Operation not allowed on vectors.");
 			}
-			return {a_acc, expression_t::make_arithmetic(op, left_expr.second, right_expr.second, make_shared<typeid_t>(shared_type)) };
 		}
 
 		//	function
@@ -2135,6 +2025,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 
 
 std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const analyser_t& a, const statement_t& parent, const expression_t& e0, const expression_t::struct_definition_expr_t& details){
+	QUARK_ASSERT(false);
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -2345,7 +2236,7 @@ std::string get_expression_name(const expression_t& e){
 	return expression_type_to_opcode(op);
 }
 
-
+//	Return new expression where all types have been resolved. The target-type is used as a hint for type inference
 //	Returned expression is guaranteed to be deep-resolved.
 std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type){
 	QUARK_ASSERT(a.check_invariant());

@@ -12,6 +12,8 @@
 /*
 	Infrastructure primitives under the compiler.
 */
+#include "typeid.h"
+#include "ast_value.h"
 
 #include "quark.h"
 
@@ -22,72 +24,129 @@ struct json_t;
 namespace floyd {
 
 
-//////////////////////////////////////		base_type
+////////////////////////////////////////		main() init() and message handler
 
-/*
-	The atomic building block of all types.
-	Some of the types are ready as-is, like bool or double.
-	Some types needs further information to be 100% defined, like struct (needs its members), vector needs its element-type.
-*/
 
-enum class base_type {
-	//	k_undefined is never exposed in code, only used internally in compiler.
-	//	??? Maybe we can use void for this and remove k_undefined?
-	k_undefined,
+inline typeid_t get_main_signature_arg_impure(){
+	return typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_vector(typeid_t::make_string()) }, epure::impure);
+}
 
-	//	Used by host functions arguments / returns to tell this is a dynamic value, not static type.
-	k_any,
+inline typeid_t get_main_signature_no_arg_impure(){
+ 	return typeid_t::make_function(typeid_t::make_int(), { }, epure::impure);
+}
 
-	//	Means no value. Used as return type for print() etc.
-	k_void,
 
-	k_bool,
-	k_int,
-	k_double,
-	k_string,
-	k_json,
+inline typeid_t get_main_signature_arg_pure(){
+	return typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_vector(typeid_t::make_string()) }, epure::pure);
+}
 
-	//	This is a type that specifies any other type at runtime.
-	k_typeid,
+inline typeid_t get_main_signature_no_arg_pure(){
+	return typeid_t::make_function(typeid_t::make_int(), { }, epure::pure);
+}
 
-	k_struct,
-	k_vector,
-	k_dict,
-	k_function,
+//	T x_init() impure
+typeid_t make_process_init_type(const typeid_t& t);
 
-	//	We have an identifier, like "pixel" or "print" but haven't resolved it to an actual type yet.
-	//	Keep the identifier so it can be resolved later.
-	k_unresolved
-};
-
-std::string base_type_to_opcode(const base_type t);
-base_type opcode_to_base_type(const std::string& s);
-
-void ut_verify(const quark::call_context_t& context, const base_type& result, const base_type& expected);
+//	T x(T state, json message) impure
+typeid_t make_process_message_handler_type(const typeid_t& t);
 
 
 
 
 
 
-////////////////////////////////////////		function_id_t
+
+//////////////////////////////////////		CORE CALLS
 
 
-struct function_id_t {
+//??? move to compiler_basics
+
+struct corecall_signature_t {
 	std::string name;
+	function_id_t _function_id;
+	floyd::typeid_t _function_type;
 };
+std::string get_corecall_opcode(const corecall_signature_t& signature);
 
-inline bool operator==(const function_id_t& lhs, const function_id_t& rhs){
-	return lhs.name == rhs.name;
-}
-inline bool operator!=(const function_id_t& lhs, const function_id_t& rhs){
-	return lhs.name != rhs.name;
-}
-inline bool operator<(const function_id_t& lhs, const function_id_t& rhs){
-	return lhs.name < rhs.name;
-}
+corecall_signature_t make_assert_signature();
+corecall_signature_t make_to_string_signature();
+corecall_signature_t make_to_pretty_string_signature();
 
-const function_id_t k_no_function_id = function_id_t { "" };
+corecall_signature_t make_typeof_signature();
+
+corecall_signature_t make_update_signature();
+corecall_signature_t make_size_signature();
+corecall_signature_t make_find_signature();
+corecall_signature_t make_exists_signature();
+corecall_signature_t make_erase_signature();
+corecall_signature_t make_get_keys_signature();
+corecall_signature_t make_push_back_signature();
+corecall_signature_t make_subset_signature();
+corecall_signature_t make_replace_signature();
+
+corecall_signature_t make_parse_json_script_signature();
+corecall_signature_t make_generate_json_script_signature();
+corecall_signature_t make_to_json_signature();
+corecall_signature_t make_from_json_signature();
+
+corecall_signature_t make_get_json_type_signature();
+
+
+
+
+//////////////////////////////////////		HIGHER-ORDER CORE CALLS
+
+
+
+corecall_signature_t make_map_signature();
+typeid_t harden_map_func_type(const typeid_t& resolved_call_type);
+bool check_map_func_type(const typeid_t& elements, const typeid_t& f, const typeid_t& context);
+
+corecall_signature_t make_map_string_signature();
+typeid_t harden_map_string_func_type(const typeid_t& resolved_call_type);
+bool check_map_string_func_type(const typeid_t& elements, const typeid_t& f, const typeid_t& context);
+
+corecall_signature_t make_map_dag_signature();
+typeid_t harden_map_dag_func_type(const typeid_t& resolved_call_type);
+bool check_map_dag_func_type(const typeid_t& elements, const typeid_t& depends_on, const typeid_t& f, const typeid_t& context);
+
+
+corecall_signature_t make_filter_signature();
+typeid_t harden_filter_func_type(const typeid_t& resolved_call_type);
+bool check_filter_func_type(const typeid_t& elements, const typeid_t& f, const typeid_t& context);
+
+corecall_signature_t make_reduce_signature();
+typeid_t harden_reduce_func_type(const typeid_t& resolved_call_type);
+bool check_reduce_func_type(const typeid_t& elements, const typeid_t& accumulator_init, const typeid_t& f, const typeid_t& context);
+
+corecall_signature_t make_stable_sort_signature();
+typeid_t harden_stable_sort_func_type(const typeid_t& resolved_call_type);
+bool check_stable_sort_func_type(const typeid_t& elements, const typeid_t& less, const typeid_t& context);
+
+
+//////////////////////////////////////		IMPURE FUNCTIONS
+
+
+
+corecall_signature_t make_print_signature();
+corecall_signature_t make_send_signature();
+
+
+
+//////////////////////////////////////		BITWISE
+
+
+corecall_signature_t make_bw_not_signature();
+corecall_signature_t make_bw_and_signature();
+corecall_signature_t make_bw_or_signature();
+corecall_signature_t make_bw_xor_signature();
+corecall_signature_t make_bw_shift_left_signature();
+corecall_signature_t make_bw_shift_right_signature();
+corecall_signature_t make_bw_shift_right_arithmetic_signature();
+
+std::vector<corecall_signature_t> get_corecall_signatures();
+
+
 
 
 

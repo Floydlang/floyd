@@ -9,6 +9,7 @@
 #include "parse_expression.h"
 
 #include "json_support.h"
+#include "compiler_basics.h"
 #include "parser_primitives.h"
 #include "parse_statement.h"
 #include "floyd_syntax.h"

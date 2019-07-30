@@ -41,7 +41,6 @@
 
 #include "typeid.h"
 #include "json_support.h"
-#include "compiler_basics.h"
 
 #include <vector>
 #include <string>
@@ -59,6 +58,32 @@ struct value_ext_t;
 #if DEBUG
 std::string make_value_debug_str(const value_t& v);
 #endif
+
+
+
+
+
+
+////////////////////////////////////////		function_id_t
+
+
+struct function_id_t {
+	std::string name;
+};
+
+inline bool operator==(const function_id_t& lhs, const function_id_t& rhs){
+	return lhs.name == rhs.name;
+}
+inline bool operator!=(const function_id_t& lhs, const function_id_t& rhs){
+	return lhs.name != rhs.name;
+}
+inline bool operator<(const function_id_t& lhs, const function_id_t& rhs){
+	return lhs.name < rhs.name;
+}
+
+const function_id_t k_no_function_id = function_id_t { "" };
+
+
 
 
 

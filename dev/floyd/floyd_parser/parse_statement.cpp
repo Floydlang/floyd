@@ -13,6 +13,7 @@
 #include "floyd_parser.h"
 #include "json_support.h"
 #include "floyd_syntax.h"
+#include "compiler_basics.h"
 
 #include "typeid.h"
 
