@@ -363,7 +363,7 @@ QUARK_UNIT_TEST("expression_t", "expression_to_json()", "lookup", ""){
 	);
 }
 
-static json_t expression_to_json_internal(const expression_t& e){
+json_t expression_to_json(const expression_t& e){
 	struct visitor_t {
 		const expression_t& expr;
 
@@ -491,8 +491,19 @@ static json_t expression_to_json_internal(const expression_t& e){
 		}
 	};
 
-	const json_t result = std::visit(visitor_t{e}, e._expression_variant);
-	return result;
+	const json_t result0 = std::visit(visitor_t{e}, e._expression_variant);
+
+	//	Add annotated-type element to json?
+	if(e.is_annotated_shallow() && e.has_builtin_type() == false){
+		const auto t = e.get_output_type();
+		auto a2 = result0.get_array();
+		const auto type_json = typeid_to_ast_json(t, json_tags::k_tag_resolve_state);
+		a2.push_back(type_json);
+		return json_t::make_array(a2);
+	}
+	else{
+		return result0;
+	}
 }
 
 json_t expressions_to_json(const std::vector<expression_t> v){
@@ -501,22 +512,6 @@ json_t expressions_to_json(const std::vector<expression_t> v){
 		r.push_back(expression_to_json(e));
 	}
 	return json_t::make_array(r);
-}
-
-json_t expression_to_json(const expression_t& e){
-	const auto a = expression_to_json_internal(e);
-
-	//	Add annotated-type element to json?
-	if(e.is_annotated_shallow() && e.has_builtin_type() == false){
-		const auto t = e.get_output_type();
-		auto a2 = a.get_array();
-		const auto type_json = typeid_to_ast_json(t, json_tags::k_tag_resolve_state);
-		a2.push_back(type_json);
-		return json_t::make_array(a2);
-	}
-	else{
-		return a;
-	}
 }
 
 
