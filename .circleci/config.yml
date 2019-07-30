@@ -29,9 +29,6 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install llvm dev files
-          command: 'brew install llvm@8.0.0'
-      - run:
           name: ls
           command: 'pwd && ls && ls /root/project'
       - run:
@@ -43,6 +40,9 @@ jobs:
       - run:
           name: Compress app  and result for storage
           command: zip -r floyd.zip build/Release/floyd.app
+      #- run:
+      #    name: Install llvm dev files
+      #    command: 'brew install llvm@8.0.0'
       - store_artifacts:
           path: floyd.zip
           destination: floyd
