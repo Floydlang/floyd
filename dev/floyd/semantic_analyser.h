@@ -36,51 +36,51 @@
 	DETAILED OPERATIONS
 
 
-	Resolve identifer in lexical scope (and parent scopes). Replace load with load2.
+	- Resolve identifer in lexical scope (and parent scopes). Replace load with load2.
 
-	Resolve typeid_t::unresolved_t in lexical scope (and parent scopes).
+	- Resolve typeid_t::unresolved_t in lexical scope (and parent scopes).
 
-	Compute ANY return type from the call's actual argument types.
+	- Compute ANY return type from the call's actual argument types.
 
-	assign -> assign2
-	bind -> init2, create local symbol
+	- assign -> assign2
+	- bind -> init2, create local symbol
 
 
-	define_struct_statement_t ->
+	- define_struct_statement_t ->
 		make symbol containing struct-type.
 
 
-	define_function_statement_t ->
-		bind_local(function_def_expr
+	- define_function_statement_t ->
+		bind_local(function_def_expr)
 
 
-	analyse_for_statement
+	- analyse_for_statement
 		insert loop-iterator as first symbol of loop-body
 
 
 
-	resolve_member_expression
+	- resolve_member_expression
 
-	corecalls--update
+	- corecalls--update
 		make_update_member()
 		OR
 		make_corecall()
 
 
-	analyse_construct_value_expression
+	- analyse_construct_value_expression
 		tricks for JSON targets, auto convert
 
 
-	call
-		handle corecalls
-		convert call-to-type -> make_construct_value_expr()
+	- call
+		Handle corecalls
+		Convert call-to-type -> make_construct_value_expr()
+		Make call-expression
+
+	- Automatically insert make_construct_value_expr() to convert int/double(string/bool -> JSON and convert vector->json,dict -> json
 
 
-	Automatically insert make_construct_value_expr() to convert int/double(string/bool -> JSON and convert vector->json,dict -> json
-
-
-	Insert types & builtin values into globoal symbol table. Corecalls too.
-	Check all types resolved
+	- Insert builtin types, corecalls and constants into globoal symbol table.
+	- Check that all types are resolved
 
 
 	??? Rename load and load2 to load_names, load_resolved
