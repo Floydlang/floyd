@@ -34,7 +34,10 @@ jobs:
           command: 'pwd && ls'
       - run:
           name: Brew update
-          command: 'brew update'   
+          command: 'brew update'
+      - run:
+          name: Brew upgrade
+          command: 'brew upgrade'   
       - run:
           name: Brew install llvm
           command: 'brew install llvm@8.0.0'
