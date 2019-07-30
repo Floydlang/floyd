@@ -187,14 +187,12 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 	const auto statement = statement1.first;
 	const std::string type = statement.get_array_n(0).get_string();
 
-	//	[ "return", [ "k", 3, "int" ] ]
 	if(type == statement_opcode_t::k_return){
 		QUARK_ASSERT(statement.get_array_size() == 2);
 		const auto expr = ast_json_to_expression(statement.get_array_n(1));
 		return statement_t::make__return_statement(loc, expr);
 	}
 
-	//	[ "bind", "double", "x", EXPRESSION, {} ]
 	//	Last element is a list of meta info, like "mutable" etc.
 	else if(type == statement_opcode_t::k_bind){
 		QUARK_ASSERT(statement.get_array_size() == 4 || statement.get_array_size() == 5);
@@ -211,7 +209,6 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		return statement_t::make__bind_local(loc, name2, bind_type2, expr2, mutable_mode);
 	}
 
-	//	[ "assign", "x", EXPRESSION ]
 	else if(type == statement_opcode_t::k_assign){
 		QUARK_ASSERT(statement.get_array_size() == 3);
 		const auto name = statement.get_array_n(1);
@@ -222,7 +219,6 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		return statement_t::make__assign(loc, name2, expr2);
 	}
 
-	//	[ "assign2", parent_index, variable_index, EXPRESSION ]
 	else if(type == statement_opcode_t::k_assign2){
 		QUARK_ASSERT(statement.get_array_size() == 4);
 		const auto parent_index = (int)statement.get_array_n(1).get_number();
@@ -233,7 +229,6 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		return statement_t::make__assign2(loc, variable_address_t::make_variable_address(parent_index, variable_index), expr2);
 	}
 
-	//	[ "init2", parent_index, variable_index, EXPRESSION ]
 	else if(type == statement_opcode_t::k_init2){
 		QUARK_ASSERT(statement.get_array_size() == 4);
 		const auto parent_index = (int)statement.get_array_n(1).get_number();
@@ -244,7 +239,6 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		return statement_t::make__init2(loc, variable_address_t::make_variable_address(parent_index, variable_index), expr2);
 	}
 
-	//	[ "block", [ STATEMENTS ] ]
 	else if(type == statement_opcode_t::k_block){
 		QUARK_ASSERT(statement.get_array_size() == 2);
 
@@ -289,10 +283,13 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 			quark::throw_exception();
 		}
 		const auto pure = impure.is_false();
-		const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2), pure ? epure::pure : epure::impure);
+		const auto function_typeid = typeid_t::make_function(
+			return_type2,
+			get_member_types(args2),
+			pure ? epure::pure : epure::impure
+		);
 
 		const auto body2 = is_implementation ? std::make_shared<body_t>(body_t{ fstatements2 }) : std::shared_ptr<body_t>();
-
 
 		const auto function_def = function_definition_t::make_floyd_func(
 			k_no_location,
@@ -306,8 +303,6 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		return statement_t::make__define_function_statement(loc, s);
 	}
 
-	//	[ "if", CONDITION_EXPR, THEN_STATEMENTS, ELSE_STATEMENTS ]
-	//	Else is optional.
 	else if(type == statement_opcode_t::k_if){
 		QUARK_ASSERT(statement.get_array_size() == 3 || statement.get_array_size() == 4);
 		const auto condition_expression = statement.get_array_n(1);
@@ -358,7 +353,6 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		return statement_t::make__while_statement(loc, expression2, body_t{body_statements2});
 	}
 
-	//	[ "expression-statement", EXPRESSION ]
 	else if(type == statement_opcode_t::k_expression_statement){
 		QUARK_ASSERT(statement.get_array_size() == 2);
 		const auto expr = statement.get_array_n(1);
@@ -497,9 +491,8 @@ json_t statement_to_json(const statement_t& e){
 			return make_ast_node(
 				statement.location,
 				statement_opcode_t::k_for,
-				//??? open_range?
 				{
-					json_t("closed_range"),
+					s._range_type == statement_t::for_statement_t::k_open_range ? json_t("open_range") : json_t("closed_range"),
 					expression_to_json(s._start_expression),
 					expression_to_json(s._end_expression),
 					body_to_json(s._body)

@@ -14,29 +14,21 @@
 
 namespace floyd {
 
-
+//	NOTICE: Implementation rigth now works because parse-tree JSON uses same scheme as
+//	AST tree = shaky. Better to manually create a unchecked_ast_t from the parse tree JSON.
 unchecked_ast_t parse_tree_to_ast(const parser::parse_tree_t& parse_tree){
 	//	Parse tree contains an array of statements, with hierachical functions and types.
-	if(parse_tree._value.is_array()){
-		const auto program_body = ast_json_to_statements(parse_tree._value);
-		const auto gp_ast = general_purpose_ast_t{
-			body_t{ program_body },
-			{},
-			{},
-			{},
-			{}
-		};
-		return unchecked_ast_t{ gp_ast };
-	}
-	else{
-		QUARK_ASSERT(false);
-		throw std::exception();
-	}
+	QUARK_ASSERT(parse_tree._value.is_array());
 
-
-
-//	const auto gp_ast = json_to_gp_ast(json._value);
-//	return unchecked_ast_t{ gp_ast };
+	const auto program_body = ast_json_to_statements(parse_tree._value);
+	const auto gp_ast = general_purpose_ast_t{
+		body_t{ program_body },
+		{},
+		{},
+		{},
+		{}
+	};
+	return unchecked_ast_t{ gp_ast };
 }
 
 
