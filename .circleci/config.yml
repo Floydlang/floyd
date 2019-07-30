@@ -33,6 +33,12 @@ jobs:
           name: ls
           command: 'pwd && ls'
       - run:
+          name: Brew update
+          command: 'brew update'	  	  
+      - run:
+          name: Brew install llvm
+          command: 'brew install llvm@8.0.0
+      - run:
            name: Creating Application
            command: 'cd dev && xcodebuild'
       - run:
@@ -41,9 +47,6 @@ jobs:
       - run:
           name: Compress app  and result for storage
           command: zip -r floyd.zip build/Release/floyd.app
-      #- run:
-      #    name: Install llvm dev files
-      #    command: 'brew install llvm@8.0.0'
       - store_artifacts:
           path: floyd.zip
           destination: floyd
