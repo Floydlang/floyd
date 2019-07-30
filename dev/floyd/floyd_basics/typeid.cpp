@@ -751,16 +751,6 @@ bool struct_definition_t::operator==(const struct_definition_t& other) const{
 	return _members == other._members;
 }
 
-bool struct_definition_t::check_types_resolved() const{
-	for(const auto& e: _members){
-		bool result = e._type.check_types_resolved();
-		if(result == false){
-			return false;
-		}
-	}
-	return true;
-}
-
 
 std::string to_compact_string(const struct_definition_t& v){
 	auto s = std::string() + "struct {";
@@ -828,69 +818,6 @@ std::vector<floyd::typeid_t> get_member_types(const std::vector<member_t>& m){
 
 ////////////////////////			typeid_t
 
-
-
-bool check_types_resolved_int(const std::vector<typeid_t>& elements){
-	for(const auto& e: elements){
-		if(e.check_types_resolved() == false){
-			return false;
-		}
-	}
-	return true;
-}
-
-bool typeid_t::check_types_resolved() const{
-	QUARK_ASSERT(check_invariant());
-
-	struct visitor_t {
-		bool operator()(const undefined_t& e) const{
-			return false;
-		}
-		bool operator()(const any_t& e) const{
-			return true;
-		}
-
-		bool operator()(const void_t& e) const{
-			return true;
-		}
-		bool operator()(const bool_t& e) const{
-			return true;
-		}
-		bool operator()(const int_t& e) const{
-			return true;
-		}
-		bool operator()(const double_t& e) const{
-			return true;
-		}
-		bool operator()(const string_t& e) const{
-			return true;
-		}
-
-		bool operator()(const json_type_t& e) const{
-			return true;
-		}
-		bool operator()(const typeid_type_t& e) const{
-			return true;
-		}
-
-		bool operator()(const struct_t& e) const{
-			return e._struct_def->check_types_resolved();
-		}
-		bool operator()(const vector_t& e) const{
-			return check_types_resolved_int(e._parts);
-		}
-		bool operator()(const dict_t& e) const{
-			return check_types_resolved_int(e._parts);
-		}
-		bool operator()(const function_t& e) const{
-			return check_types_resolved_int(e._parts);
-		}
-		bool operator()(const unresolved_t& e) const{
-			return false;
-		}
-	};
-	return std::visit(visitor_t{}, _contents);
-}
 
 
 int count_function_dynamic_args(const std::vector<typeid_t>& args){

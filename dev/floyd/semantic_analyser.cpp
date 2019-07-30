@@ -267,7 +267,7 @@ typeid_t resolve_type_internal(analyser_t& acc, const location_t& loc, const typ
 
 typeid_t resolve_type(analyser_t& acc, const location_t& loc, const typeid_t& type){
 	const auto result = resolve_type_internal(acc, loc, type);
-	if(result.check_types_resolved() == false){
+	if(check_types_resolved(result) == false){
 		throw_compiler_error(loc, "Cannot resolve type");
 	}
 	return result;
@@ -416,7 +416,7 @@ std::pair<analyser_t, vector<statement_t>> analyse_statements(const analyser_t& 
 		a_acc = r.first;
 
 		if(r.second){
-			QUARK_ASSERT(r.second->check_types_resolved());
+			QUARK_ASSERT(floyd::check_types_resolved(*r.second));
 			statements2.push_back(*r.second);
 		}
 		statement_index++;
@@ -460,7 +460,7 @@ std::pair<analyser_t, statement_t> analyse_assign_statement(const analyser_t& a,
 		}
 		else{
 			const auto lhs_type = existing_value_deep_ptr.first->get_type();
-			QUARK_ASSERT(lhs_type.check_types_resolved());
+			QUARK_ASSERT(check_types_resolved(lhs_type));
 
 			const auto rhs_expr2 = analyse_expression_to_target(a_acc, s, statement._expression, lhs_type);
 			a_acc = rhs_expr2.first;
@@ -739,7 +739,7 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::return_statement_t& s) const{
 			const auto e = analyse_return_statement(a, statement, return_type);
-			QUARK_ASSERT(e.second.check_types_resolved());
+			QUARK_ASSERT(check_types_resolved(e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::define_struct_statement_t& s) const{
@@ -753,12 +753,12 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::bind_local_t& s) const{
 			const auto e = analyse_bind_local_statement(a, statement);
-			QUARK_ASSERT(e.second.check_types_resolved());
+			QUARK_ASSERT(check_types_resolved(e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::assign_t& s) const{
 			const auto e = analyse_assign_statement(a, statement);
-			QUARK_ASSERT(e.second.check_types_resolved());
+			QUARK_ASSERT(check_types_resolved(e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::assign2_t& s) const{
@@ -771,30 +771,30 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 		}
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::block_statement_t& s) const{
 			const auto e = analyse_block_statement(a, statement, return_type);
-			QUARK_ASSERT(e.second.check_types_resolved());
+			QUARK_ASSERT(check_types_resolved(e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::ifelse_statement_t& s) const{
 			const auto e = analyse_ifelse_statement(a, statement, return_type);
-			QUARK_ASSERT(e.second.check_types_resolved());
+			QUARK_ASSERT(check_types_resolved(e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::for_statement_t& s) const{
 			const auto e = analyse_for_statement(a, statement, return_type);
-			QUARK_ASSERT(e.second.check_types_resolved());
+			QUARK_ASSERT(check_types_resolved(e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::while_statement_t& s) const{
 			const auto e = analyse_while_statement(a, statement, return_type);
-			QUARK_ASSERT(e.second.check_types_resolved());
+			QUARK_ASSERT(check_types_resolved(e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 
 
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::expression_statement_t& s) const{
 			const auto e = analyse_expression_statement(a, statement);
-			QUARK_ASSERT(e.second.check_types_resolved());
+			QUARK_ASSERT(check_types_resolved(e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::software_system_statement_t& s) const{
@@ -1428,7 +1428,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 				elements2.push_back(element_expr.second);
 			}
 			const auto result_type = typeid_t::make_vector(typeid_t::make_json());
-			if(result_type.check_types_resolved() == false){
+			if(check_types_resolved(result_type) == false){
 				std::stringstream what;
 				what << "Cannot infer vector element type, add explicit type.";
 				throw_compiler_error(parent.location, what.str());
@@ -1452,9 +1452,9 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 
 			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? elements2[0].get_output_type() : element_type;
 			const auto result_type0 = typeid_t::make_vector(element_type2);
-			const auto result_type1 = result_type0.check_types_resolved() == false && target_type.is_any() == false ? target_type : result_type0;
+			const auto result_type1 = check_types_resolved(result_type0) == false && target_type.is_any() == false ? target_type : result_type0;
 
-			if(result_type1.check_types_resolved() == false){
+			if(check_types_resolved(result_type1) == false){
 				std::stringstream what;
 				what << "Cannot infer vector element type, add explicit type.";
 				throw_compiler_error(parent.location, what.str());
@@ -1469,7 +1469,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 					throw_compiler_error(parent.location, what.str());
 				}
 			}
-			QUARK_ASSERT(result_type.check_types_resolved());
+			QUARK_ASSERT(check_types_resolved(result_type));
 			return { a_acc, expression_t::make_construct_value_expr(result_type, elements2) };
 		}
 	}
@@ -1492,7 +1492,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			}
 
 			const auto result_type = typeid_t::make_dict(typeid_t::make_json());
-			if(result_type.check_types_resolved() == false){
+			if(check_types_resolved(result_type) == false){
 				std::stringstream what;
 				what << "Cannot infer dictionary element type, add explicit type.";
 				throw_compiler_error(parent.location, what.str());
@@ -1523,7 +1523,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			//	Infer type of dictionary based on first value.
 			const auto element_type2 = element_type.is_undefined() && elements2.size() > 0 ? elements2[0 * 2 + 1].get_output_type() : element_type;
 			const auto result_type0 = typeid_t::make_dict(element_type2);
-			const auto result_type = result_type0.check_types_resolved() == false && target_type.is_any() == false ? target_type : result_type0;
+			const auto result_type = check_types_resolved(result_type0) == false && target_type.is_any() == false ? target_type : result_type0;
 
 			//	Make sure all elements have the correct type.
 			for(int i = 0 ; i < elements2.size() / 2 ; i++){
@@ -2244,7 +2244,7 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 	QUARK_ASSERT(parent.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(target_type.is_void() == false && target_type.is_undefined() == false);
-	QUARK_ASSERT(target_type.check_types_resolved());
+	QUARK_ASSERT(check_types_resolved(target_type));
 
 	auto a_acc = a;
 	const auto e2_pair = analyse_expression__operation_specific(a_acc, parent, e, target_type);
@@ -2324,7 +2324,7 @@ QUARK_UNIT_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 
 
 bool check_types_resolved(const general_purpose_ast_t& ast){
-	if(ast._globals.check_types_resolved() == false){
+	if(check_types_resolved(ast._globals) == false){
 		return false;
 	}
 	for(const auto& e: ast._function_defs){

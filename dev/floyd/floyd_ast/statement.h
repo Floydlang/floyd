@@ -193,7 +193,6 @@ struct body_t {
 		_symbol_table(symbols)
 	{
 	}
-	bool check_types_resolved() const;
 
 	bool check_invariant() const;
 
@@ -544,11 +543,6 @@ struct statement_t {
 		return true;
 	}
 
-	//??? make into free function
-	public: static bool check_types_resolved(const std::vector<std::shared_ptr<statement_t>>& s);
-
-	public: bool check_types_resolved() const;
-
 
 	//////////////////////////////////////		STATE
 
@@ -564,25 +558,6 @@ static bool operator==(const statement_t& lhs, const statement_t& rhs){
 
 const std::vector<statement_t> ast_json_to_statements(const json_t& p);
 json_t statement_to_json(const statement_t& e);
-
-
-
-inline bool body_t::check_types_resolved() const{
-	for(const auto& e: _statements){
-		if(e.check_types_resolved() == false){
-			return false;
-		}
-	}
-	for(const auto& s: _symbol_table._symbols){
-		if(s.first != "**undef**" && s.second._value_type.check_types_resolved() == false){
-			return false;
-		}
-		if(s.first != "**undef**" && s.second._init.is_undefined() == false && s.second._init.get_type().check_types_resolved() == false){
-			return false;
-		}
-	}
-	return true;
-}
 
 
 

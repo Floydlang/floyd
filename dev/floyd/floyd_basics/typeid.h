@@ -150,7 +150,6 @@ struct struct_definition_t {
 	}
 	public: bool check_invariant() const;
 	public: bool operator==(const struct_definition_t& other) const;
-	public: bool check_types_resolved() const;
 
 
 	////////////////////////////////////////		STATE
@@ -533,8 +532,6 @@ struct typeid_t {
 		};
 		return std::visit(visitor_t{}, _contents);
 	}
-
-	public: bool check_types_resolved() const;
 
 	public: bool operator==(const typeid_t& other) const{
 		QUARK_ASSERT(check_invariant());
