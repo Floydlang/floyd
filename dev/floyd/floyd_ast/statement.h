@@ -23,6 +23,7 @@ namespace floyd {
 struct statement_t;
 struct expression_t;
 
+json_t statement_to_json(const statement_t& e);
 
 
 ////////////////////////////////////////		statement_opcode_t
@@ -181,10 +182,6 @@ struct body_t {
 	body_t(){
 	}
 
-//		body_t(const body_t& oth) = default;
-//		body_t& operator=(const body_t& oth) = default;
-
-
 	body_t(const std::vector<statement_t>& s) :
 		_statements(s),
 		_symbol_table{}
@@ -213,7 +210,11 @@ json_t body_to_json(const body_t& e);
 body_t json_to_body(const json_t& json);
 
 
+
+
+
 //////////////////////////////////////		statement_t
+
 
 /*
 	Defines a statement, like "return" including any needed expression trees for the statement.
@@ -535,9 +536,8 @@ struct statement_t {
 		location(location),
 		_contents(contents)
 	{
-//			const auto json = statement_to_json(*this);
-//			debug_string = json_to_compact_string(json);
-
+		const auto json = statement_to_json(*this);
+		debug_string = json_to_compact_string(json);
 	}
 
 	bool check_invariant() const {
