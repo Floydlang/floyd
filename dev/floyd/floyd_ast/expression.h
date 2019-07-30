@@ -581,8 +581,6 @@ struct expression_t {
 	//??? Change this to a free function
 	public: static bool check_types_resolved(const std::vector<expression_t>& expressions);
 
-	//??? Change this to a free function
-	public: bool check_types_resolved() const;
 
 
 

@@ -8,12 +8,13 @@
 
 #include "statement.h"
 
+#include "ast_helpers.h"
+
 
 namespace floyd {
 
 using std::make_shared;
 using std::vector;
-
 
 
 
@@ -194,7 +195,7 @@ bool statement_t::check_types_resolved() const{
 
 	struct visitor_t {
 		bool operator()(const return_statement_t& s) const{
-			return s._expression.check_types_resolved();
+			return floyd::check_types_resolved(s._expression);
 		}
 		bool operator()(const define_struct_statement_t& s) const{
 			return s._def->check_types_resolved();
@@ -206,17 +207,17 @@ bool statement_t::check_types_resolved() const{
 		bool operator()(const bind_local_t& s) const{
 			return true
 				&& s._bindtype.check_types_resolved()
-				&& s._expression.check_types_resolved()
+				&& floyd::check_types_resolved(s._expression)
 				;
 		}
 		bool operator()(const assign_t& s) const{
-			return s._expression.check_types_resolved();
+			return floyd::check_types_resolved(s._expression);
 		}
 		bool operator()(const assign2_t& s) const{
-			return s._expression.check_types_resolved();
+			return floyd::check_types_resolved(s._expression);
 		}
 		bool operator()(const init2_t& s) const{
-			return s._expression.check_types_resolved();
+			return floyd::check_types_resolved(s._expression);
 		}
 		bool operator()(const block_statement_t& s) const{
 			return s._body.check_types_resolved();
@@ -224,27 +225,27 @@ bool statement_t::check_types_resolved() const{
 
 		bool operator()(const ifelse_statement_t& s) const{
 			return true
-				&& s._condition.check_types_resolved()
+				&& floyd::check_types_resolved(s._condition)
 				&& s._then_body.check_types_resolved()
 				&& s._else_body.check_types_resolved()
 				;
 		}
 		bool operator()(const for_statement_t& s) const{
 			return true
-				&& s._start_expression.check_types_resolved()
-				&& s._end_expression.check_types_resolved()
+				&& floyd::check_types_resolved(s._start_expression)
+				&& floyd::check_types_resolved(s._end_expression)
 				&& s._body.check_types_resolved()
 				;
 		}
 		bool operator()(const while_statement_t& s) const{
 			return true
-				&& s._condition.check_types_resolved()
+				&& floyd::check_types_resolved(s._condition)
 				&& s._body.check_types_resolved()
 				;
 		}
 
 		bool operator()(const expression_statement_t& s) const{
-			return s._expression.check_types_resolved();
+			return floyd::check_types_resolved(s._expression);
 		}
 		bool operator()(const software_system_statement_t& s) const{
 			return true;

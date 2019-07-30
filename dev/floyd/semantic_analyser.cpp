@@ -10,6 +10,7 @@
 
 #include "statement.h"
 #include "ast_value.h"
+#include "ast_helpers.h"
 #include "utils.h"
 #include "json_support.h"
 #include "floyd_runtime.h"
@@ -2184,7 +2185,7 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 
 	//	Record all output type, if there is one.
 	auto a_acc = result.first;
-	if(result.second.check_types_resolved()){
+	if(check_types_resolved(result.second)){
 		resolve_type(a_acc, parent.location, result.second.get_output_type());
 	}
 	return { a_acc, result.second };
@@ -2249,7 +2250,7 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 	const auto e2_pair = analyse_expression__operation_specific(a_acc, parent, e, target_type);
 	a_acc = e2_pair.first;
 	const auto e2b = e2_pair.second;
-	if(e2b.check_types_resolved() == false){
+	if(floyd::check_types_resolved(e2b) == false){
 		std::stringstream what;
 		what << "Cannot infer type in " << get_expression_name(e2b) << "-expression.";
 		throw_compiler_error(parent.location, what.str());
@@ -2272,10 +2273,10 @@ std::pair<analyser_t, expression_t> analyse_expression_to_target(const analyser_
 		throw_compiler_error(parent.location, what.str());
 	}
 
-	if(e3.check_types_resolved() == false){
+	if(floyd::check_types_resolved(e3) == false){
 		throw_compiler_error(parent.location, "Cannot resolve type.");
 	}
-	QUARK_ASSERT(e3.check_types_resolved());
+	QUARK_ASSERT(floyd::check_types_resolved(e3));
 	return { a_acc, e3 };
 }
 

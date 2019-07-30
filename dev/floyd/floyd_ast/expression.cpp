@@ -9,9 +9,9 @@
 #include "expression.h"
 
 #include "statement.h"
-#include "parser_primitives.h"
+#include "ast_helpers.h"
 
-#include "ast.h"
+#include "text_parser.h"
 
 
 namespace floyd {
@@ -327,79 +327,11 @@ QUARK_UNIT_TEST("", "", "", ""){
 //??? Change this to a free function
 bool expression_t::check_types_resolved(const std::vector<expression_t>& expressions){
 	for(const auto& e: expressions){
-		if(e.check_types_resolved() == false){
+		if(floyd::check_types_resolved(e) == false){
 			return false;
 		}
 	}
 	return true;
-}
-
-
-//??? Change this to a free function
-bool expression_t::check_types_resolved() const{
-	QUARK_ASSERT(check_invariant());
-
-	if(_output_type == nullptr || _output_type->check_types_resolved() == false){
-		return false;
-	}
-
-	struct visitor_t {
-		bool operator()(const literal_exp_t& e) const{
-			return e.value.get_type().check_types_resolved();
-		}
-		bool operator()(const arithmetic_t& e) const{
-			return e.lhs->check_types_resolved() && e.rhs->check_types_resolved();
-		}
-		bool operator()(const comparison_t& e) const{
-			return e.lhs->check_types_resolved() && e.rhs->check_types_resolved();
-		}
-		bool operator()(const unary_minus_t& e) const{
-			return e.expr->check_types_resolved();
-		}
-		bool operator()(const conditional_t& e) const{
-			return e.condition->check_types_resolved() && e.a->check_types_resolved() && e.b->check_types_resolved();
-		}
-
-		bool operator()(const call_t& e) const{
-			return e.callee->check_types_resolved() && check_types_resolved(e.args);
-		}
-		bool operator()(const corecall_t& e) const{
-			return check_types_resolved(e.args);
-		}
-
-
-		bool operator()(const struct_definition_expr_t& e) const{
-			return e.def->check_types_resolved();
-		}
-		bool operator()(const function_definition_expr_t& e) const{
-			return e.def->check_types_resolved();
-		}
-		bool operator()(const load_t& e) const{
-			return false;
-		}
-		bool operator()(const load2_t& e) const{
-			return true;
-		}
-
-		bool operator()(const resolve_member_t& e) const{
-			return e.parent_address->check_types_resolved();
-		}
-		bool operator()(const update_member_t& e) const{
-			return e.parent_address->check_types_resolved();
-		}
-		bool operator()(const lookup_t& e) const{
-			return e.parent_address->check_types_resolved() && e.lookup_key->check_types_resolved();
-		}
-		bool operator()(const value_constructor_t& e) const{
-			return check_types_resolved(e.elements);
-		}
-		bool operator()(const benchmark_expr_t& e) const{
-			return e.body->check_types_resolved();
-		}
-	};
-
-	bool result = std::visit(visitor_t{}, _expression_variant);
-	return result;
 }
 
 
