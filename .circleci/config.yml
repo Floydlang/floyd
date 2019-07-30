@@ -45,4 +45,10 @@ jobs:
           command: zip -r floyd.zip build/Release/floyd.app
       - store_artifacts:
           path: floyd.zip
-          destination: floyd	   
+          destination: floyd
+workflows:
+  version: 2
+  workflow:
+    jobs:
+    - build
+    - build-mac    
