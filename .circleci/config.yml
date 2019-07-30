@@ -34,7 +34,7 @@ jobs:
           command: 'pwd && ls'
       - run:
            name: Creating Application
-           command: 'xcodebuild floyd_speak.xcodeproj'
+           command: 'cd dev && xcodebuild'
       - run:
            name: floyd Unit Testing
            command: 'build/Release/floydut runtests'
