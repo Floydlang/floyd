@@ -16,8 +16,6 @@
 
 namespace floyd {
 
-using std::string;
-
 
 
 
@@ -25,7 +23,7 @@ using std::string;
 //////////////////////////////////////////////////		base_type
 
 
-string base_type_to_opcode(const base_type t){
+std::string base_type_to_opcode(const base_type t){
 	if(t == base_type::k_undefined){
 		return "**undef**";
 	}

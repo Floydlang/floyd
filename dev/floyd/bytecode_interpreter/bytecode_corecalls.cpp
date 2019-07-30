@@ -26,14 +26,6 @@
 namespace floyd {
 
 
-//??? remove using
-using std::vector;
-using std::string;
-using std::pair;
-using std::shared_ptr;
-using std::make_shared;
-
-
 
 
 //??? Remove usage of value_t
@@ -369,7 +361,7 @@ bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_coun
 		const auto start2 = std::min(start, static_cast<int64_t>(str.size()));
 		const auto end2 = std::min(end, static_cast<int64_t>(str.size()));
 
-		string str2;
+		std::string str2;
 		for(auto i = start2 ; i < end2 ; i++){
 			str2.push_back(str[i]);
 		}
@@ -433,7 +425,7 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 		const auto end2 = std::min(end, static_cast<int64_t>(str.size()));
 		const auto new_bits = args[3].get_string_value();
 
-		string str2 = str.substr(0, start2) + new_bits + str.substr(end2);
+		std::string str2 = str.substr(0, start2) + new_bits + str.substr(end2);
 		const auto v = bc_value_t::make_string(str2);
 		return v;
 	}
@@ -485,7 +477,7 @@ bc_value_t host__parse_json_script(interpreter_t& vm, const bc_value_t args[], i
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
 
-	const string s = args[0].get_string_value();
+	const auto s = args[0].get_string_value();
 	std::pair<json_t, seq_t> result = parse_json(seq_t(s));
 	const auto json = bc_value_t::make_json(result.first);
 	return json;
@@ -497,7 +489,7 @@ bc_value_t host__generate_json_script(interpreter_t& vm, const bc_value_t args[]
 	QUARK_ASSERT(args[0]._type.is_json());
 
 	const auto value0 = args[0].get_json();
-	const string s = json_to_compact_string(value0);
+	const auto s = json_to_compact_string(value0);
 	return bc_value_t::make_string(s);
 }
 

@@ -16,7 +16,7 @@
 
 namespace floyd {
 
-using namespace std;
+
 
 json_t expressions_to_json(const std::vector<expression_t> v);
 
@@ -28,7 +28,7 @@ json_t expressions_to_json(const std::vector<expression_t> v);
 
 
 //	WARNING: Make sure all accessed constants have already been initialized!
-static std::map<expression_type, string> k_expression_to_opcode = {
+static std::map<expression_type, std::string> k_expression_to_opcode = {
 	{ expression_type::k_arithmetic_add, expression_opcode_t::k_arithmetic_add },
 	{ expression_type::k_arithmetic_subtract, expression_opcode_t::k_arithmetic_subtract },
 	{ expression_type::k_arithmetic_multiply, expression_opcode_t::k_arithmetic_multiply },
@@ -69,23 +69,23 @@ static std::map<expression_type, string> k_expression_to_opcode = {
 
 
 
-static std::map<string, expression_type> make_reverse(const std::map<expression_type, string>& m){
-	std::map<string, expression_type> temp;
+static std::map<std::string, expression_type> make_reverse(const std::map<expression_type, std::string>& m){
+	std::map<std::string, expression_type> temp;
 	for(const auto& e: m){
 		temp[e.second] = e.first;
 	}
 	return temp;
 }
 
-static std::map<string, expression_type> string_to_operation_lookup = make_reverse(k_expression_to_opcode);
+static std::map<std::string, expression_type> string_to_operation_lookup = make_reverse(k_expression_to_opcode);
 
-string expression_type_to_opcode(const expression_type& op){
+std::string expression_type_to_opcode(const expression_type& op){
 	const auto r = k_expression_to_opcode.find(op);
 	QUARK_ASSERT(r != k_expression_to_opcode.end());
 	return r->second;
 }
 
-expression_type opcode_to_expression_type(const string& op){
+expression_type opcode_to_expression_type(const std::string& op){
 	const auto r = string_to_operation_lookup.find(op);
 	QUARK_ASSERT(r != string_to_operation_lookup.end());
 	return r->second;
@@ -416,14 +416,14 @@ json_t expression_to_json(const expression_t& e){
 		}
 
 		json_t operator()(const expression_t::call_t& e) const{
-			vector<json_t> args;
+			std::vector<json_t> args;
 			for(const auto& m: e.args){
 				args.push_back(expression_to_json(m));
 			}
 			return make_ast_node(floyd::k_no_location, expression_opcode_t::k_call, { expression_to_json(*e.callee), json_t::make_array(args) } );
 		}
 		json_t operator()(const expression_t::corecall_t& e) const{
-			vector<json_t> args;
+			std::vector<json_t> args;
 			for(const auto& m: e.args){
 				args.push_back(expression_to_json(m));
 			}
@@ -586,7 +586,7 @@ expression_t ast_json_to_expression(const json_t& e){
 
 		const auto function_expr = ast_json_to_expression(e.get_array_n(1));
 		const auto args = e.get_array_n(2);
-		vector<expression_t> args2;
+		std::vector<expression_t> args2;
 		for(const auto& arg: args.get_array()){
 			args2.push_back(ast_json_to_expression(arg));
 		}
@@ -600,7 +600,7 @@ expression_t ast_json_to_expression(const json_t& e){
 
 		const auto function_name = e.get_array_n(1).get_string();
 		const auto args = e.get_array_n(2);
-		vector<expression_t> args2;
+		std::vector<expression_t> args2;
 		for(const auto& arg: args.get_array()){
 			args2.push_back(ast_json_to_expression(arg));
 		}

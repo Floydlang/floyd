@@ -21,7 +21,6 @@
 namespace floyd {
 
 
-using namespace std;
 
 namespace parser {
 
@@ -128,7 +127,7 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 
 
 parse_result_t parse_statements_no_brackets(const seq_t& s){
-	vector<json_t> statements;
+	std::vector<json_t> statements;
 
 	auto pos = skip_whitespace(s);
 
@@ -154,7 +153,7 @@ parse_result_t parse_statements_no_brackets(const seq_t& s){
 
 //	"{ a = 1; print(a) }"
 parse_result_t parse_statements_bracketted(const seq_t& s){
-	vector<json_t> statements;
+	std::vector<json_t> statements;
 
 	auto pos = skip_whitespace(s);
 	pos = read_required(pos, "{");
@@ -217,7 +216,7 @@ void check_illegal_chars(const seq_t& p){
 	}
 }
 
-parse_tree_t parse_program2(const string& program){
+parse_tree_t parse_program2(const std::string& program){
 	const auto pos = seq_t(program);
 	check_illegal_chars(pos);
 

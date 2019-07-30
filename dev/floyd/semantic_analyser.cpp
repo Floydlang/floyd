@@ -22,7 +22,6 @@ namespace floyd {
 
 using namespace std;
 
-bool check_types_resolved(const general_purpose_ast_t& ast);
 
 
 
@@ -2322,19 +2321,6 @@ QUARK_UNIT_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 	);
 }
 
-
-bool check_types_resolved(const general_purpose_ast_t& ast){
-	if(check_types_resolved(ast._globals) == false){
-		return false;
-	}
-	for(const auto& e: ast._function_defs){
-		const auto result = check_types_resolved(*e);
-		if(result == false){
-			return false;
-		}
-	}
-	return true;
-}
 
 
 struct builtins_t {

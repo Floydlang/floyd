@@ -13,9 +13,6 @@
 
 namespace floyd {
 
-using std::make_shared;
-using std::vector;
-
 
 
 
@@ -294,7 +291,7 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		const auto pure = impure.is_false();
 		const auto function_typeid = typeid_t::make_function(return_type2, get_member_types(args2), pure ? epure::pure : epure::impure);
 
-		const auto body2 = is_implementation ? make_shared<body_t>(body_t{ fstatements2 }) : std::shared_ptr<body_t>();
+		const auto body2 = is_implementation ? std::make_shared<body_t>(body_t{ fstatements2 }) : std::shared_ptr<body_t>();
 
 
 		const auto function_def = function_definition_t::make_floyd_func(
@@ -391,7 +388,7 @@ const std::vector<statement_t> ast_json_to_statements(const json_t& p){
 	QUARK_ASSERT(p.check_invariant());
 	QUARK_ASSERT(p.is_array());
 
-	vector<statement_t> statements2;
+	std::vector<statement_t> statements2;
 	for(const auto& statement: p.get_array()){
 		const auto s2 = ast_json_to_statement(statement);
 		statements2.push_back(s2);

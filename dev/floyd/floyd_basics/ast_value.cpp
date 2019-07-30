@@ -11,8 +11,6 @@
 
 #include <cinttypes>
 
-using std::string;
-using std::make_shared;
 
 namespace floyd {
 
@@ -1016,7 +1014,7 @@ json_t value_to_ast_json(const value_t& v, json_tags tags){
 	else if(v.is_int()){
 		const auto i = v.get_int_value();
 		if(store_as_big_int(i)){
-			std::map<string, json_t> result;
+			std::map<std::string, json_t> result;
 			result["big-int"] = json_t(64);
 			result["value"] = std::to_string(i);
 			return result;
@@ -1039,7 +1037,7 @@ json_t value_to_ast_json(const value_t& v, json_tags tags){
 	}
 	else if(v.is_struct()){
 		const auto& struct_value = v.get_struct_value();
-		std::map<string, json_t> obj2;
+		std::map<std::string, json_t> obj2;
 		for(int i = 0 ; i < struct_value->_def->_members.size() ; i++){
 			const auto& member = struct_value->_def->_members[i];
 			const auto& key = member._name;
@@ -1055,7 +1053,7 @@ json_t value_to_ast_json(const value_t& v, json_tags tags){
 	}
 	else if(v.is_dict()){
 		const auto entries = v.get_dict_value();
-		std::map<string, json_t> result;
+		std::map<std::string, json_t> result;
 		for(const auto& e: entries){
 			result[e.first] = value_to_ast_json(e.second, tags);
 		}

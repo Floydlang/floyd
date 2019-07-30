@@ -8,6 +8,7 @@
 
 #include "ast_helpers.h"
 
+#include "ast.h"
 #include "expression.h"
 #include "statement.h"
 
@@ -310,6 +311,20 @@ bool check_types_resolved(const typeid_t& t){
 		}
 	};
 	return std::visit(visitor_t{}, t._contents);
+}
+
+
+bool check_types_resolved(const general_purpose_ast_t& ast){
+	if(check_types_resolved(ast._globals) == false){
+		return false;
+	}
+	for(const auto& e: ast._function_defs){
+		const auto result = check_types_resolved(*e);
+		if(result == false){
+			return false;
+		}
+	}
+	return true;
 }
 
 

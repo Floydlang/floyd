@@ -9,10 +9,12 @@
 #ifndef parser_ast_hpp
 #define parser_ast_hpp
 
-#include <vector>
-#include "quark.h"
 #include "statement.h"
 #include "software_system.h"
+
+#include "quark.h"
+
+#include <vector>
 
 struct json_t;
 

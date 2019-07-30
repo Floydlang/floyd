@@ -13,6 +13,7 @@
 
 namespace floyd {
 
+struct general_purpose_ast_t;
 struct function_definition_t;
 struct expression_t;
 struct statement_t;
@@ -33,6 +34,9 @@ bool check_types_resolved(const std::vector<std::shared_ptr<statement_t>>& s);
 bool check_types_resolved(const struct_definition_t& s);
 bool check_types_resolved_int(const std::vector<typeid_t>& elements);
 bool check_types_resolved(const typeid_t& t);
+
+bool check_types_resolved(const general_purpose_ast_t& ast);
+
 
 
 }	//	floyd

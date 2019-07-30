@@ -22,8 +22,6 @@
 
 namespace floyd {
 
-using namespace std;
-
 
 
 
