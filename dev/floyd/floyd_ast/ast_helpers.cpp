@@ -47,10 +47,10 @@ bool check_types_resolved(const expression_t& e){
 		}
 
 		bool operator()(const expression_t::call_t& e) const{
-			return check_types_resolved(*e.callee) && expression_t::check_types_resolved(e.args);
+			return check_types_resolved(*e.callee) && check_types_resolved(e.args);
 		}
 		bool operator()(const expression_t::corecall_t& e) const{
-			return expression_t::check_types_resolved(e.args);
+			return check_types_resolved(e.args);
 		}
 
 
@@ -58,7 +58,7 @@ bool check_types_resolved(const expression_t& e){
 			return e.def->check_types_resolved();
 		}
 		bool operator()(const expression_t::function_definition_expr_t& e) const{
-			return e.def->check_types_resolved();
+			return check_types_resolved(*e.def);
 		}
 		bool operator()(const expression_t::load_t& e) const{
 			return false;
@@ -77,7 +77,7 @@ bool check_types_resolved(const expression_t& e){
 			return check_types_resolved(*e.parent_address) && check_types_resolved(*e.lookup_key);
 		}
 		bool operator()(const expression_t::value_constructor_t& e) const{
-			return expression_t::check_types_resolved(e.elements);
+			return check_types_resolved(e.elements);
 		}
 		bool operator()(const expression_t::benchmark_expr_t& e) const{
 			return e.body->check_types_resolved();
@@ -88,6 +88,51 @@ bool check_types_resolved(const expression_t& e){
 	return result;
 }
 
+bool check_types_resolved(const std::vector<expression_t>& expressions){
+	for(const auto& e: expressions){
+		if(floyd::check_types_resolved(e) == false){
+			return false;
+		}
+	}
+	return true;
+}
+
+
+bool check_types_resolved(const function_definition_t& def){
+	bool result = def._function_type.check_types_resolved();
+	if(result == false){
+		return false;
+	}
+
+	for(const auto& e: def._args){
+		bool result2 = e._type.check_types_resolved();
+		if(result2 == false){
+			return false;
+		}
+	}
+
+	struct visitor_t {
+		bool operator()(const function_definition_t::empty_t& e) const{
+			return true;
+		}
+		bool operator()(const function_definition_t::floyd_func_t& e) const{
+			if(e._body){
+				return e._body->check_types_resolved();
+			}
+			else{
+				return true;
+			}
+		}
+		bool operator()(const function_definition_t::host_func_t& e) const{
+			return true;
+		}
+	};
+	bool result3 = std::visit(visitor_t{}, def._contents);
+	if(result3 == false){
+		return false;
+	}
+	return true;
+}
 
 
 

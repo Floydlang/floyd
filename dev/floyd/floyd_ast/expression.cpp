@@ -157,41 +157,6 @@ bool is_opcode_comparison_expression(const std::string& op){
 
 
 
-bool function_definition_t::check_types_resolved() const{
-	bool result = _function_type.check_types_resolved();
-	if(result == false){
-		return false;
-	}
-
-	for(const auto& e: _args){
-		bool result2 = e._type.check_types_resolved();
-		if(result2 == false){
-			return false;
-		}
-	}
-
-	struct visitor_t {
-		bool operator()(const empty_t& e) const{
-			return true;
-		}
-		bool operator()(const floyd_func_t& e) const{
-			if(e._body){
-				return e._body->check_types_resolved();
-			}
-			else{
-				return true;
-			}
-		}
-		bool operator()(const host_func_t& e) const{
-			return true;
-		}
-	};
-	bool result3 = std::visit(visitor_t{}, _contents);
-	if(result3 == false){
-		return false;
-	}
-	return true;
-}
 
 bool function_definition_t::floyd_func_t::operator==(const floyd_func_t& other) const{
 	return compare_shared_values(_body, other._body);
@@ -320,19 +285,6 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 ////////////////////////////////////////////		expression_t
 
-
-
-
-
-//??? Change this to a free function
-bool expression_t::check_types_resolved(const std::vector<expression_t>& expressions){
-	for(const auto& e: expressions){
-		if(floyd::check_types_resolved(e) == false){
-			return false;
-		}
-	}
-	return true;
-}
 
 
 

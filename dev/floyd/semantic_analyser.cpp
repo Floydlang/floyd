@@ -2097,7 +2097,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 			const auto function_id = function_id_t { definition_name };
 
 			const auto function_def2 = function_definition_t::make_floyd_func(k_no_location, definition_name, function_type2, args2, body_result);
-			QUARK_ASSERT(function_def2.check_types_resolved());
+			QUARK_ASSERT(check_types_resolved(function_def2));
 
 			a_acc._function_defs.insert({ function_id, make_shared<function_definition_t>(function_def2) });
 
@@ -2328,7 +2328,7 @@ bool check_types_resolved(const general_purpose_ast_t& ast){
 		return false;
 	}
 	for(const auto& e: ast._function_defs){
-		const auto result = e->check_types_resolved();
+		const auto result = check_types_resolved(*e);
 		if(result == false){
 			return false;
 		}

@@ -201,7 +201,7 @@ bool statement_t::check_types_resolved() const{
 			return s._def->check_types_resolved();
 		}
 		bool operator()(const define_function_statement_t& s) const{
-			return s._def->check_types_resolved();
+			return floyd::check_types_resolved(*s._def);
 		}
 
 		bool operator()(const bind_local_t& s) const{

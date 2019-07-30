@@ -213,8 +213,6 @@ struct function_definition_t {
 
 	public: bool check_invariant() const;
 
-	public: bool check_types_resolved() const;
-
 
 
 	////////////////////////////////	STATE
@@ -576,12 +574,6 @@ struct expression_t {
 			|| std::holds_alternative<value_constructor_t>(_expression_variant)
 			;
 	}
-
-
-	//??? Change this to a free function
-	public: static bool check_types_resolved(const std::vector<expression_t>& expressions);
-
-
 
 
 	//////////////////////////		INTERNALS
