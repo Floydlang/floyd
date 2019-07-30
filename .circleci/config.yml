@@ -8,7 +8,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Installing dev
+          name: Installing dev env
           command: 'pacman -Sy --noconfirm && pacman -S --noconfirm git gcc make cmake llvm'
       - run:
           name: ls
@@ -22,3 +22,27 @@ jobs:
       - run:
            name: floyd Unit Testing
            command: './floydut runtests'
+
+  build-mac:
+    macos:
+       xcode: "10.0.0"
+    steps:
+      - checkout
+      - run:
+          name: Install llvm dev files
+          command: 'brew install llvm@8.0.0'
+      - run:
+          name: ls
+          command: 'pwd && ls && ls /root/project'
+      - run:
+           name: Creating Application
+           command: 'xcodebuild /root/project/dev/floyd_speak.xcodeproj'
+      - run:
+           name: floyd Unit Testing
+           command: 'build/Release/floydut runtests'
+      - run:
+          name: Compress app  and result for storage
+          command: zip -r floyd.zip build/Release/floyd.app
+      - store_artifacts:
+          path: floyd.zip
+          destination: floyd	   
