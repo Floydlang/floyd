@@ -143,20 +143,54 @@ struct parse_result_t {
 	seq_t pos;
 };
 
+
+////////////////////////////////		parse_tree_expression_opcode_t
+
+
+namespace parse_tree_expression_opcode_t {
+	const std::string k_literal = "k";
+	const std::string k_call = "call";
+	const std::string k_load = "@";
+	const std::string k_resolve_member = "->";
+	const std::string k_arithmetic_unary_minus = "unary-minus";
+	const std::string k_conditional_operator = "?:";
+	const std::string k_value_constructor = "value-constructor";
+	const std::string k_lookup_element = "[]";
+	const std::string k_benchmark = "benchmark";
+
+
+	const std::string k_arithmetic_add = "+";
+	const std::string k_arithmetic_subtract = "-";
+	const std::string k_arithmetic_multiply = "*";
+	const std::string k_arithmetic_divide = "/";
+	const std::string k_arithmetic_remainder = "%";
+
+	const std::string k_logical_and = "&&";
+	const std::string k_logical_or = "||";
+
+	const std::string k_comparison_smaller_or_equal = "<=";
+	const std::string k_comparison_smaller = "<";
+	const std::string k_comparison_larger_or_equal = ">=";
+	const std::string k_comparison_larger = ">";
+
+	const std::string k_logical_equal = "==";
+	const std::string k_logical_nonequal = "!=";
+};
+
+
 ////////////////////////////////		parse_tree_statement_opcode
+
 
 namespace parse_tree_statement_opcode {
 	const std::string k_return = "return";
 
-	const std::string k_bind = "bind";
+	//??? Make init-local-const, init-local-mut
+	const std::string k_init_local = "init-local";
 	const std::string k_assign = "assign";
-//	const std::string k_assign2 = "assign2";
-//	const std::string k_init2 = "init2";
 	const std::string k_block = "block";
 
 	const std::string k_def_struct = "def-struct";
 	const std::string k_def_func = "def-func";
-
 
 	const std::string k_if = "if";
 	const std::string k_for = "for";
@@ -167,45 +201,8 @@ namespace parse_tree_statement_opcode {
 	const std::string k_software_system_def = "software-system-def";
 	const std::string k_container_def = "container-def";
 	const std::string k_benchmark_def = "benchmark-def";
-	const std::string k_benchmark = "benchmark";
-
-
-	const std::string k_lookup = "[]";
-
-	const std::string k_add = "+";
-	const std::string k_subtract = "-";
-	const std::string k_multiply = "*";
-	const std::string k_divide = "/";
-	const std::string k_remainder = "%";
-
-	const std::string k_smaller_or_equal = "<=";
-	const std::string k_smaller = "<";
-	const std::string k_larger_or_equal = ">=";
-	const std::string k_larger = ">";
-
-	const std::string k_logical_equal = "==";
-	const std::string k_logical_nonequal = "!=";
-	const std::string k_logical_and = "&&";
-	const std::string k_logical_or = "||";
-
 };
 
-namespace parse_tree_expression_opcode_t {
-	const std::string k_literal = "k";
-	const std::string k_call = "call";
-//	const std::string k_corecall = "corecall";
-	const std::string k_load = "@";
-//	const std::string k_load2 = "@i";
-	const std::string k_resolve_member = "->";
-	const std::string k_update_member = "<-";
-	const std::string k_unary_minus = "unary-minus";
-	const std::string k_conditional_operator = "?:";
-//	const std::string k_struct_def = "struct-def";
-//	const std::string k_function_def = "function-def";
-	const std::string k_value_constructor = "value-constructor";
-//	const std::string k_lookup_element = "[]";
-	const std::string k_benchmark = "benchmark";
-};
 
 
 json_t make_parser_node(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);

@@ -2,71 +2,90 @@
 
 This is the data outputted by the Floyd parser. It is a JSON tree like this:
 
-//	Array of statements. Each statement in an array.
+Array of statements. Each statement in an array.
+```
 [
-	[ loc, statement-type-string, optional data ],
-	[ loc, statement-type-string, optional data ],
-	[ loc, statement-type-string, optional data ]
+	[ LOCATION, STATEMENT-OPCODE, STATEMENT-ARG* ],
+	[ LOCATION, STATEMENT-OPCODE, STATEMENT-ARG* ],
+	[ LOCATION, STATEMENT-OPCODE, STATEMENT-ARG* ]
 ]
+```
 
+Here is the complete syntax:
+```
+PARSE_TREE:	STATEMENTS
 
-PARSE_TREE:		STATEMENTS
-STATEMENTS:	[ STATEMENT ]
+STATEMENT: [ LOCATION, STATEMENT-OPCODE, * ]
+	[ LOCATION, "return", EXPRESSION ]
 
-STATEMENT:		[ loc, STATEMENT_TYPE, OPTIONAL_DATA ]
+	[ LOCATION, "init-local", [ TYPE, IDENTIFIER, EXPRESSION, { "mutable": true }* ] ]
+	[ LOCATION, "assign", [ TYPE, IDENTIFIER, EXPRESSION ] ]
+	[ LOCATION, "block", STATEMENTS ]
+	[ LOCATION, "def-struct", { "name": NAME, "members": [ STRUCT-MEMBER ]* } ]
+	[ LOCATION, "def-func", [ { "name": NAME, "args": ARGS, "statements": STATEMENTS, "return_type": TYPE, "impure": BOOL ] ]
 
+	[ LOCATION, "if", EXPRESSION, STATEMENTS, STATEMENTS ]
+	[ LOCATION, "for", "closed-range" / "open-range", IDENTIFIER, EXPRESSION, EXPRESSION, STATEMENTS ]
+	[ LOCATION, "while", EXPRESSION, STATEMENTS ]
 
-[ loc, "block", STATEMENTS ]
-[ loc, "return", EXPRESSION ]
+	[ LOCATION, "expression-statement", EXPRESSION ]
 
+	[ LOCATION, "software-system-def", JSON ]
+	[ LOCATION, "container-def", JSON ]
+	[ LOCATION, "benchmark-def", STATEMENTS ]
 
-EXPRESSION:	[ loc, EXPRESSION_TYPE, OPTIONAL_DATA ]
+EXPRESSION:	[ LOCATION, EXPRESSION-OPCODE, * ]
+	[ LOCATION, "k", VALUE, TYPE ]
+	[ LOCATION, "call", EXPRESSION, [ EXPRESSION ] ]
+	[ LOCATION, "@", IDENTIFIER ]			//	load = access variable using name
+	[ LOCATION, "->", EXPRESSION, IDENTIFIER ]	//	member_access, address, member_name
+	[ LOCATION, "unary-minus", EXPRESSION ]
+	[ LOCATION, "?:", EXPRESSION, EXPRESSION, EXPRESSION ]	//	conditional_operator(condition, a, b)
+	[ LOCATION, "value-constructor", EXPRESSION, ELEMENT-TYPE, [ EXPRESSION ] ]
+	[ LOCATION, "[]", EXPRESSION, EXPRESSION ] 	//	lookup_member(object, key)
+	[ LOCATION, "benchmark", EXPRESSION, STATEMENTS ] ]
 
-[ loc, "unary-minus", EXPRESSION ]
-[ loc, "value-constructor", EXPRESSION, ELEMENT_TYPE, [ EXPRESSION ] ]
-[ loc, "benchmark", EXPRESSION, STATEMENTS ] ]
-[ loc, "k", VALUE, TYPE ]
-[ loc, "@", IDENTIFIER_STRING ]			//	load = access variable using name
-[ loc, "@i", IDENTIFIER_STRING ]			//	load2 = access variable using index
-[ loc, "call", EXPRESSION, [ EXPRESSION ] ]
+	[ LOCATION, "+", EXPRESSION, EXPRESSION ]
+	[ LOCATION, "-", EXPRESSION, EXPRESSION ]
+	[ LOCATION, "*", EXPRESSION, EXPRESSION ]
+	[ LOCATION, "/", EXPRESSION, EXPRESSION ]
+	[ LOCATION, "%", EXPRESSION, EXPRESSION ]
+	[ LOCATION, "%", EXPRESSION, EXPRESSION ]
 
+	[ LOCATION, "&&", EXPRESSION, EXPRESSION ]
+	[ LOCATION, "||", EXPRESSION, EXPRESSION ]
 
-[ loc, "->", EXPRESSION, IDENTIFIER ]	//	member_access, address, member_name
-[ loc, "[]", EXPRESSION, EXPRESSION ] 	//	lookup_member(object, key)
+	[ LOCATION, "<=", EXPRESSION, EXPRESSION ]
+	[ LOCATION, "<", EXPRESSION, EXPRESSION ]
+	[ LOCATION, ">=", EXPRESSION, EXPRESSION ]
+	[ LOCATION, ">", EXPRESSION, EXPRESSION ]
 
-[ loc, "+", EXPRESSION, EXPRESSION ]
-[ loc, "-", EXPRESSION, EXPRESSION ]
-[ loc, "*", EXPRESSION, EXPRESSION ]
-[ loc, "/", EXPRESSION, EXPRESSION ]
-[ loc, "%", EXPRESSION, EXPRESSION ]
-[ loc, "%", EXPRESSION, EXPRESSION ]
+	[ LOCATION, "==", EXPRESSION, EXPRESSION ]
+	[ LOCATION, "!=", EXPRESSION, EXPRESSION ]
 
-[ loc, "?:", EXPRESSION, EXPRESSION, EXPRESSION ]	//	conditional_operator(condition, a, b)
+LOCATION: integer
+STATEMENT-OPCODE: string
+STATEMENTS: [ STATEMENT ]*
 
-[ loc, "%", EXPRESSION, EXPRESSION ]
+EXPRESSION-OPCODE: string
+IDENTIFIER: string
 
-[ loc, "==", EXPRESSION, EXPRESSION ]
-[ loc, "!=", EXPRESSION, EXPRESSION ]
-[ loc, "<=", EXPRESSION, EXPRESSION ]
-[ loc, "<", EXPRESSION, EXPRESSION ]
-[ loc, ">=", EXPRESSION, EXPRESSION ]
-[ loc, ">", EXPRESSION, EXPRESSION ]
-[ loc, "&&", EXPRESSION, EXPRESSION ]
-[ loc, "||", EXPRESSION, EXPRESSION ]
+STRUCT-MEMBER: { "type": TYPE, "name": IDENTIFIER }
+STRUCT-MEMBERS: [ STRUCT-MEMBER]*
 
+ARG: { "type": TYPE, "name": IDENTIFIER }
+ARGS: [ ARG ]*
+BOOL: true OR false
 
-ELEMENT_TYPE: TYPE
+ELEMENT-TYPE: TYPE
 TYPE:
 	"undefined",
 	"any",
 	"void",
 	"bool", "int", "double", "string", json","typeid",
-	[ "struct", [ MEMBER ] ]
-	[ "vector", ELEMENT_TYPE ]
-	[ "dict", ELEMENT_TYPE ]
-	[ "func", ELEMENT_TYPE, [ ELEMENT_TYPE ], true / false ]
+	[ "struct", STRUCT-MEMBERS ]
+	[ "vector", ELEMENT-TYPE ]
+	[ "dict", ELEMENT-TYPE ]
+	[ "func", ELEMENT-TYPE, [ ELEMENT-TYPE ], true / false ]
 	"#ABC*"
-
-
-CORECALLS
-
+```

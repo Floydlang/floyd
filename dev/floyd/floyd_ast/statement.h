@@ -35,10 +35,10 @@ json_t statement_to_json(const statement_t& e);
 namespace statement_opcode_t {
 	const std::string k_return = "return";
 
-	const std::string k_bind = "bind";
+	const std::string k_init_local = "init-local";
+	const std::string k_init_local2 = "init-local2";
 	const std::string k_assign = "assign";
 	const std::string k_assign2 = "assign2";
-	const std::string k_init2 = "init2";
 	const std::string k_block = "block";
 
 	const std::string k_def_struct = "def-struct";
@@ -54,7 +54,6 @@ namespace statement_opcode_t {
 	const std::string k_software_system_def = "software-system-def";
 	const std::string k_container_def = "container-def";
 	const std::string k_benchmark_def = "benchmark-def";
-	const std::string k_benchmark = "benchmark";
 };
 
 

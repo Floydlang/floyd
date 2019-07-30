@@ -16,7 +16,6 @@
 struct seq_t;
 
 namespace floyd {
-
 namespace parser {
 
 struct parse_result_t;

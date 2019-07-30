@@ -70,11 +70,30 @@ namespace expression_opcode_t {
 
 
 enum class expression_type {
-	k_arithmetic_add = 10,
+	k_literal,
+	k_call,
+	k_corecall,
+	k_load,
+	k_load2,
+	k_resolve_member,
+	k_update_member,
+	k_arithmetic_unary_minus,
+
+	k_conditional_operator,
+	k_struct_def,
+	k_function_def,
+	k_value_constructor,
+	k_lookup_element,
+	k_benchmark,
+
+	k_arithmetic_add,
 	k_arithmetic_subtract,
 	k_arithmetic_multiply,
 	k_arithmetic_divide,
 	k_arithmetic_remainder,
+
+	k_logical_and,
+	k_logical_or,
 
 	k_comparison_smaller_or_equal,
 	k_comparison_smaller,
@@ -82,25 +101,8 @@ enum class expression_type {
 	k_comparison_larger,
 
 	k_logical_equal,
-	k_logical_nonequal,
+	k_logical_nonequal
 
-	k_logical_and,
-	k_logical_or,
-
-	k_literal,
-	k_arithmetic_unary_minus,
-	k_conditional_operator,
-	k_call,
-	k_corecall,
-	k_load,
-	k_load2,
-	k_resolve_member,
-	k_update_member,
-	k_lookup_element,
-	k_struct_def,
-	k_function_def,
-	k_value_constructor,
-	k_benchmark
 };
 
 

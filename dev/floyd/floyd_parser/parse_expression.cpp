@@ -989,7 +989,7 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			else if(op1 == "["  && precedence > eoperator_precedence::k_lookup){
 				const auto p2 = skip_whitespace(p.rest());
 				const auto key = parse_expression_deep(p2, eoperator_precedence::k_super_weak);
-				const auto result = make_parser_node(floyd::k_no_location, parse_tree_statement_opcode::k_lookup, { lhs, key.first } );
+				const auto result = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_lookup_element, { lhs, key.first } );
 				const auto p3 = skip_whitespace(key.second);
 
 				// Closing "]".
@@ -1002,34 +1002,34 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	EXPRESSION "+" EXPRESSION
 			else if(op1 == "+"  && precedence > eoperator_precedence::k_add_sub){
 				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_add_sub);
-				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_statement_opcode::k_add, { lhs, rhs.first } );
+				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_arithmetic_add, { lhs, rhs.first } );
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
 			//	EXPRESSION "-" EXPRESSION
 			else if(op1 == "-" && precedence > eoperator_precedence::k_add_sub){
 				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_add_sub);
-				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_statement_opcode::k_subtract, { lhs, rhs.first } );
+				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_arithmetic_subtract, { lhs, rhs.first } );
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
 			//	EXPRESSION "*" EXPRESSION
 			else if(op1 == "*" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
 				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_statement_opcode::k_multiply, { lhs, rhs.first } );
+				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_arithmetic_multiply, { lhs, rhs.first } );
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 			//	EXPRESSION "/" EXPRESSION
 			else if(op1 == "/" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
 				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_statement_opcode::k_divide, { lhs, rhs.first } );
+				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_arithmetic_divide, { lhs, rhs.first } );
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
 			//	EXPRESSION "%" EXPRESSION
 			else if(op1 == "%" && precedence > eoperator_precedence::k_multiply_divider_remainder) {
 				const auto rhs = parse_expression_deep(p.rest(), eoperator_precedence::k_multiply_divider_remainder);
-				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_statement_opcode::k_remainder, { lhs, rhs.first } );
+				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_arithmetic_remainder, { lhs, rhs.first } );
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
@@ -1053,13 +1053,13 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	EXPRESSION "==" EXPRESSION
 			else if(op2 == "==" && precedence > eoperator_precedence::k_equal__not_equal){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_equal__not_equal);
-				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_statement_opcode::k_logical_equal, { lhs, rhs.first } );
+				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_logical_equal, { lhs, rhs.first } );
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 			//	EXPRESSION "!=" EXPRESSION
 			else if(op2 == "!=" && precedence > eoperator_precedence::k_equal__not_equal){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_equal__not_equal);
-				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_statement_opcode::k_logical_nonequal, { lhs, rhs.first } );
+				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_logical_nonequal, { lhs, rhs.first } );
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
@@ -1067,14 +1067,14 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	EXPRESSION "<=" EXPRESSION
 			else if(op2 == "<=" && precedence > eoperator_precedence::k_larger_smaller){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_larger_smaller);
-				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_statement_opcode::k_smaller_or_equal, { lhs, rhs.first } );
+				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_comparison_smaller_or_equal, { lhs, rhs.first } );
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
 			//	EXPRESSION "<" EXPRESSION
 			else if(op1 == "<" && precedence > eoperator_precedence::k_larger_smaller){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_larger_smaller);
-				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_statement_opcode::k_smaller, { lhs, rhs.first } );
+				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_comparison_smaller, { lhs, rhs.first } );
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
@@ -1083,14 +1083,14 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	EXPRESSION ">=" EXPRESSION
 			else if(op2 == ">=" && precedence > eoperator_precedence::k_larger_smaller){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_larger_smaller);
-				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_statement_opcode::k_larger_or_equal, { lhs, rhs.first } );
+				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_comparison_larger_or_equal, { lhs, rhs.first } );
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
 			//	EXPRESSION ">" EXPRESSION
 			else if(op1 == ">" && precedence > eoperator_precedence::k_larger_smaller){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_larger_smaller);
-				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_statement_opcode::k_larger, { lhs, rhs.first } );
+				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_comparison_larger, { lhs, rhs.first } );
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
@@ -1098,14 +1098,14 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 			//	EXPRESSION "&&" EXPRESSION
 			else if(op2 == "&&" && precedence > eoperator_precedence::k_logical_and){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_logical_and);
-				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_statement_opcode::k_logical_and, { lhs, rhs.first } );
+				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_logical_and, { lhs, rhs.first } );
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
 			//	EXPRESSION "||" EXPRESSION
 			else if(op2 == "||" && precedence > eoperator_precedence::k_logical_or){
 				const auto rhs = parse_expression_deep(p.rest(2), eoperator_precedence::k_logical_or);
-				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_statement_opcode::k_logical_or, { lhs, rhs.first } );
+				const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_logical_or, { lhs, rhs.first } );
 				return parse_optional_operation_rightward(rhs.second, value2, precedence);
 			}
 
@@ -1145,7 +1145,7 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 	//	Negate? "-xxx"
 	if(ch1 == '-'){
 		const auto a = parse_expression_deep(p2.rest1(), eoperator_precedence::k_super_strong);
-		const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_unary_minus, { a.first } );
+		const auto value2 = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_arithmetic_unary_minus, { a.first } );
 		return { value2, a.second };
 	}
 	else if(ch1 == '+'){
@@ -1417,7 +1417,7 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "dict definition", ""){
 
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "benchmark", ""){
-	ut_verify__parse_expression(QUARK_POS, "benchmark { let a = 10 }", R"___(	["benchmark", [[12, "bind", "^**undef**", "a", ["k", 10, "^int"]]]]	)___", "");
+	ut_verify__parse_expression(QUARK_POS, "benchmark { let a = 10 }", R"___(	["benchmark", [[12, "init-local", "^**undef**", "a", ["k", 10, "^int"]]]]	)___", "");
 }
 
 

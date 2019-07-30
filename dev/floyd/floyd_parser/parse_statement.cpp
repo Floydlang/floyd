@@ -19,7 +19,6 @@
 
 
 namespace floyd {
-
 namespace parser {
 
 //??? Decide policy if parse functions accept leading whitespace or asserts on there is none.
@@ -42,13 +41,13 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 		)).first
 	);
 }
-QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
+QUARK_UNIT_TEST_VIP("", "parse_statement_body()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_statement_body(seq_t("{ let int y = 11; }")).parse_tree,
 		parse_json(seq_t(
 			R"(
 				[
-					[2, "bind","^int","y",["k",11,"^int"]]
+					[2, "init-local","^int","y",["k",11,"^int"]]
 				]
 			)"
 		)).first
@@ -60,7 +59,7 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					[2, "bind","^int","y",["k",11,"^int"]],
+					[2, "init-local","^int","y",["k",11,"^int"]],
 					[18, "expression-statement", ["call",["@", "print"],[["k",3, "^int"]]] ]
 				]
 			)"
@@ -75,8 +74,8 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					[3, "bind","^int","x",["k",1,"^int"]],
-					[18, "bind","^int","y",["k",2,"^int"]]
+					[3, "init-local","^int","x",["k",1,"^int"]],
+					[18, "init-local","^int","y",["k",2,"^int"]]
 				]
 			)"
 		)).first
@@ -102,8 +101,8 @@ QUARK_UNIT_TEST("", "parse_block()", "Block with two binds", ""){
 					1,
 					"block",
 					[
-						[3, "bind","^int","x",["k",1,"^int"]],
-						[18, "bind","^int","y",["k",2,"^int"]]
+						[3, "init-local","^int","x",["k",1,"^int"]],
+						[18, "init-local","^int","y",["k",2,"^int"]]
 					]
 				]
 			)"
@@ -203,7 +202,7 @@ std::pair<json_t, seq_t> parse_let(const seq_t& pos, const location_t& loc){
 		a_result.identifier,
 		expression_pos.first,
 	};
-	const auto statement = make_parser_node(loc, parse_tree_statement_opcode::k_bind, params);
+	const auto statement = make_parser_node(loc, parse_tree_statement_opcode::k_init_local, params);
 	return { statement, expression_pos.second };
 }
 
@@ -223,7 +222,7 @@ std::pair<json_t, seq_t> parse_mutable(const seq_t& pos, const location_t& loc){
 		expression_pos.first,
 		meta
 	};
-	const auto statement = make_parser_node(loc, parse_tree_statement_opcode::k_bind, params);
+	const auto statement = make_parser_node(loc, parse_tree_statement_opcode::k_init_local, params);
 
 	return { statement, expression_pos.second };
 }
@@ -272,7 +271,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 			QUARK_POS,
 			parse_bind_statement(seq_t(input)),
 			R"(
-				[ 0, "bind", "^int", "test", ["k", 123, "^int"]]
+				[ 0, "init-local", "^int", "test", ["k", 123, "^int"]]
 			)",
 			" let int a = 4 "
 		);
@@ -290,7 +289,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 		QUARK_POS,
 		parse_bind_statement(seq_t("let int test = 123 let int a = 4 ")),
 		R"(
-			[ 0, "bind", "^int", "test", ["k", 123, "^int"]]
+			[ 0, "init-local", "^int", "test", ["k", 123, "^int"]]
 		)",
 		" let int a = 4 "
 	);
@@ -303,7 +302,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 		parse_bind_statement(seq_t("let bool bb = true")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "bind", "^bool", "bb", ["k", true, "^bool"]]
+				[ 0, "init-local", "^bool", "bb", ["k", true, "^bool"]]
 			)"
 		)).first
 	);
@@ -313,7 +312,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 		parse_bind_statement(seq_t("let int hello = 3")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "bind", "^int", "hello", ["k", 3, "^int"]]
+				[ 0, "init-local", "^int", "hello", ["k", 3, "^int"]]
 			)"
 		)).first
 	);
@@ -324,7 +323,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 		parse_bind_statement(seq_t("mutable int a = 14")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "bind", "^int", "a", ["k", 14, "^int"], { "mutable": true }]
+				[ 0, "init-local", "^int", "a", ["k", 14, "^int"], { "mutable": true }]
 			)"
 		)).first
 	);
@@ -335,7 +334,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 		parse_bind_statement(seq_t("mutable hello = 3")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "bind", "^**undef**", "hello", ["k", 3, "^int"], { "mutable": true }]
+				[ 0, "init-local", "^**undef**", "hello", ["k", 3, "^int"], { "mutable": true }]
 			)"
 		)).first
 	);
@@ -346,7 +345,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 		QUARK_POS,
 		parse_bind_statement(seq_t("let int (double, [string]) test = 123 let int a = 4 ")),
 		R"(
-			[0, "bind", ["func", "^int", ["^double", ["vector", "^string"]], true], "test", ["k", 123, "^int"]]
+			[0, "init-local", ["func", "^int", ["^double", ["vector", "^string"]], true], "test", ["k", 123, "^int"]]
 		)",
 		" let int a = 4 "
 	);
@@ -983,7 +982,7 @@ QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 					["k",1,"^int"],
 					["k",5,"^int"],
 					[
-						[25, "bind","^int","y",["k",11,"^int"]]
+						[25, "init-local","^int","y",["k",11,"^int"]]
 					]
 				]
 			)"
@@ -1003,7 +1002,7 @@ QUARK_UNIT_TEST("", "parse_for_statement()", "for(){}", ""){
 					["k",1,"^int"],
 					["k",5,"^int"],
 					[
-						[25, "bind","^int","y",["k",11,"^int"]]
+						[25, "init-local","^int","y",["k",11,"^int"]]
 					]
 				]
 			)"

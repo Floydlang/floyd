@@ -258,5 +258,4 @@ JSON is also a built-in data type in the Floyd language - a default built in way
 
 	https://en.wikipedia.org/wiki/Abstract_syntax_tree
 
-	https://en.wikipedia.org/wiki/Parsing_expression_grammar
 	https://en.wikipedia.org/wiki/Parsing

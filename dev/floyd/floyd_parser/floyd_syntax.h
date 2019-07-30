@@ -41,7 +41,6 @@ const std::string k_valid_expression_chars = k_c99_identifier_chars + k_c99_numb
 
 
 
-
 ///////////////////////////////////			eoperator_precedence
 
 
@@ -87,12 +86,11 @@ enum class eoperator_precedence {
 
 
 
+///////////////////////////////////			keyword_t
+
 
 //	Keywords in source code.
 namespace keyword_t {
-//	const std::string k_update = "update";
-//	const std::string k_size = "size";
-
 	const std::string k_return = "return";
 	const std::string k_while = "while";
 	const std::string k_for = "for";
@@ -130,7 +128,9 @@ namespace keyword_t {
 	const std::string k_json_true = "json_true";
 	const std::string k_json_false = "json_false";
 	const std::string k_json_null = "json_null";
+};
 
+//	Future keywords?
 /*
 	"assert",
 	"print",
@@ -189,7 +189,6 @@ namespace keyword_t {
 	"seq",
 	typedef",
 */
-};
 
 
 }	//	parser

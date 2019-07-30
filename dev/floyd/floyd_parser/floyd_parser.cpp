@@ -93,7 +93,7 @@ std::pair<json_t, seq_t> parse_statement(const seq_t& s){
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_statement(seq_t("let int x = 10;")).first,
-		parse_json(seq_t(R"([0, "bind", "^int", "x", ["k", 10, "^int"]])")).first
+		parse_json(seq_t(R"([0, "init-local", "^int", "x", ["k", 10, "^int"]])")).first
 	);
 }
 
@@ -121,7 +121,7 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_statement(seq_t("let int x = f(3);")).first,
-		parse_json(seq_t(R"([0, "bind", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first
+		parse_json(seq_t(R"([0, "init-local", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first
 	);
 }
 
@@ -200,8 +200,8 @@ QUARK_UNIT_TEST("", "parse_statements_bracketted()", "", ""){
 		parse_json(seq_t(
 			R"(
 				[
-					[3, "bind", "^int", "x", ["k", 1, "^int"]],
-					[18, "bind", "^int", "y", ["k", 2, "^int"]]
+					[3, "init-local", "^int", "x", ["k", 1, "^int"]],
+					[18, "init-local", "^int", "y", ["k", 2, "^int"]]
 				]
 			)"
 		)).first
@@ -330,7 +330,7 @@ const char k_test_program_100_parserout[] = R"(
 				"statements": [
 					[
 						169,
-						"bind",
+						"init-local",
 						"#pixel",
 						"p",
 						["call", ["@", "pixel"], [["k", 1, "^int"], ["k", 0, "^int"], ["k", 0, "^int"]]]
@@ -485,7 +485,7 @@ std::pair<json_t, seq_t> parse_prefixless_statement(const seq_t& s){
 QUARK_UNIT_TEST("", "parse_prefixless_statement()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_prefixless_statement(seq_t("x = f(3);")).first._value,
-		parse_json(seq_t(R"(["bind", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first
+		parse_json(seq_t(R"(["init-local", "^int", "x", ["call", ["@", "f"], [["k", 3, "^int"]]]])")).first
 	);
 }
 */

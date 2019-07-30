@@ -194,7 +194,7 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 	}
 
 	//	Last element is a list of meta info, like "mutable" etc.
-	else if(type == statement_opcode_t::k_bind){
+	else if(type == statement_opcode_t::k_init_local){
 		QUARK_ASSERT(statement.get_array_size() == 4 || statement.get_array_size() == 5);
 		const auto bind_type = statement.get_array_n(1);
 		const auto name = statement.get_array_n(2);
@@ -229,7 +229,7 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		return statement_t::make__assign2(loc, variable_address_t::make_variable_address(parent_index, variable_index), expr2);
 	}
 
-	else if(type == statement_opcode_t::k_init2){
+	else if(type == statement_opcode_t::k_init_local2){
 		QUARK_ASSERT(statement.get_array_size() == 4);
 		const auto parent_index = (int)statement.get_array_n(1).get_number();
 		const auto variable_index = (int)statement.get_array_n(2).get_number();
@@ -431,7 +431,7 @@ json_t statement_to_json(const statement_t& e){
 
 			return make_ast_node(
 				statement.location,
-				statement_opcode_t::k_bind,
+				statement_opcode_t::k_init_local,
 				{
 					s._new_local_name,
 					typeid_to_ast_json(s._bindtype, json_tags::k_tag_resolve_state),
@@ -464,7 +464,7 @@ json_t statement_to_json(const statement_t& e){
 		json_t operator()(const statement_t::init2_t& s) const{
 			return make_ast_node(
 				statement.location,
-				statement_opcode_t::k_init2,
+				statement_opcode_t::k_init_local2,
 				{
 					s._dest_variable._parent_steps,
 					s._dest_variable._index,
