@@ -12,7 +12,7 @@ jobs:
           command: 'pacman -Sy --noconfirm && pacman -S --noconfirm git gcc make cmake llvm'
       - run:
           name: ls
-          command: 'pwd && ls && ls /root/project'
+          command: 'pwd && ls'
       - run:
           name: Creating Build Files
           command: 'cmake /root/project/dev/floyd_speak/'
@@ -30,10 +30,10 @@ jobs:
       - checkout
       - run:
           name: ls
-          command: 'pwd && ls && ls /root/project'
+          command: 'pwd && ls'
       - run:
            name: Creating Application
-           command: 'xcodebuild /root/project/dev/floyd_speak.xcodeproj'
+           command: 'xcodebuild /Users/distiller/project/dev/floyd_speak.xcodeproj'
       - run:
            name: floyd Unit Testing
            command: 'build/Release/floydut runtests'
