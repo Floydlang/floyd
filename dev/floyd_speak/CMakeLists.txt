@@ -35,7 +35,9 @@ benchmark_basics.cpp
 compiler_helpers.cpp
 pass2.cpp
 #benchmark_game_of_life.cpp
-bytecode_interpreter/bytecode_host_functions.cpp
+bytecode_interpreter/bytecode_corecalls.cpp
+bytecode_interpreter/bytecode_corelib.cpp
+bytecode_interpreter/bytecode_helpers.cpp
 bytecode_interpreter/bytecode_generator.cpp
 bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/floyd_interpreter.cpp
@@ -74,17 +76,19 @@ parts/utils.cpp
 parts/file_handling.cpp
 pass3.cpp
 software_system.cpp
+floyd_runtime/floyd_corelib.cpp
 #floyd_runtime/floyd_runtime.cpp
 #floyd_runtime/variable_length_quantity.cpp
-floyd_runtime/floyd_filelib.cpp
-floyd_runtime/floyd_filelib.h
+#floyd_runtime/floyd_filelib.cpp
+#floyd_runtime/floyd_filelib.h
 floyd_runtime/floyd_runtime.cpp
 floyd_runtime/floyd_runtime.h
 floyd_runtime/variable_length_quantity.cpp
 floyd_runtime/variable_length_quantity.h
-#llvm_pipeline/floyd_llvm.cpp  
+llvm_pipeline/floyd_llvm_runtime.cpp  
 llvm_pipeline/floyd_llvm_codegen.cpp  
-llvm_pipeline/floyd_llvm_helpers.cpp  
+llvm_pipeline/floyd_llvm_helpers.cpp
+llvm_pipeline/floyd_llvm_corelib.cpp
 llvm_pipeline/floyd_llvm_runtime.cpp
 )
 
