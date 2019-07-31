@@ -39,8 +39,11 @@ jobs:
           name: Brew upgrade
           command: 'brew upgrade'   
       - run:
+          name: Brew info llvm
+          command: 'brew info llvm'
+      - run:
           name: Brew install llvm
-          command: 'brew install llvm@8.0.0'
+          command: 'brew install llvm@8'
       - run:
            name: Creating Application
            command: 'cd dev && xcodebuild'
