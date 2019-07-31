@@ -2351,16 +2351,16 @@ static function_definition_t make_dummy_function_definition(){
 }
 
 //	Create llvm function prototypes for each function.
-static function_def_t generate_c_prototype(llvm::Module& module, const host_func_t& host_function){
+static function_def_t generate_c_prototype(llvm::Module& module, const function_bind_t& bind){
 	QUARK_ASSERT(check_invariant__module(&module));
-//	QUARK_TRACE_SS(print_type(host_function.function_type));
+//	QUARK_TRACE_SS(print_type(bind.function_type));
 
 //	QUARK_TRACE_SS(print_module(module));
-	auto f = module.getOrInsertFunction(host_function.name_key, host_function.function_type);
+	auto f = module.getOrInsertFunction(bind.link_name, bind.function_type);
 
 //	QUARK_TRACE_SS(print_module(module));
 
-	const auto result = function_def_t{ host_function.name_key, llvm::cast<llvm::Function>(f), function_id_t { "xxaaaxxx" }, make_dummy_function_definition() };
+	const auto result = function_def_t{ bind.link_name, llvm::cast<llvm::Function>(f), function_id_t { "xxaaaxxx" }, make_dummy_function_definition() };
 
 //	QUARK_TRACE_SS(print_module(module));
 

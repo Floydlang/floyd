@@ -34,11 +34,10 @@ namespace floyd {
 	struct run_output_t;
 
 
-////////////////////////////////		host_func_t
+////////////////////////////////		function_bind_t
 
-//??? Rename to function_bind_t, link_name
-struct host_func_t {
-	std::string name_key;
+struct function_bind_t {
+	std::string link_name;
 	llvm::FunctionType* function_type;
 	void* implementation_f;
 };
@@ -163,7 +162,7 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const std::string& name)
 
 
 //	These are the support function built into the runtime, like RC primitives.
-std::vector<host_func_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_interner_t& interner);
+std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_interner_t& interner);
 std::map<std::string, void*> get_c_function_ptrs();
 
 uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee);
