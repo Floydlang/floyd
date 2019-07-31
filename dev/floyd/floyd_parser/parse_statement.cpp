@@ -41,7 +41,7 @@ QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 		)).first
 	);
 }
-QUARK_UNIT_TEST_VIP("", "parse_statement_body()", "", ""){
+QUARK_UNIT_TEST("", "parse_statement_body()", "", ""){
 	ut_verify(QUARK_POS,
 		parse_statement_body(seq_t("{ let int y = 11; }")).parse_tree,
 		parse_json(seq_t(

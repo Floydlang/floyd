@@ -2325,7 +2325,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "while", "return from within while", ""){
 //######################################################################################################################
 
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark", "", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2348,7 +2348,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 			}
 
 		)",
-		{ "100", "102", "104" }
+		{ }
 	);
 }
 

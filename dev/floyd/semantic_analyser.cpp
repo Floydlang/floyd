@@ -1524,6 +1524,7 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			const auto result_type0 = typeid_t::make_dict(element_type2);
 			const auto result_type = check_types_resolved(result_type0) == false && target_type.is_any() == false ? target_type : result_type0;
 
+
 			//	Make sure all elements have the correct type.
 			for(int i = 0 ; i < elements2.size() / 2 ; i++){
 				const auto element_type0 = elements2[i * 2 + 1].get_output_type();
@@ -1545,7 +1546,13 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 std::pair<analyser_t, expression_t> analyse_benchmark_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::benchmark_expr_t& details, const typeid_t& target_type){
 	QUARK_ASSERT(a.check_invariant());
 
-	return { a, e };
+//std::pair<analyser_t, body_t > analyse_body(const analyser_t& a, const body_t& body, epure pure, const typeid_t& return_type){
+	auto acc = a;
+	const auto body_pair = analyse_body(acc, *details.body, epure::impure, typeid_t::make_void());
+	acc = body_pair.first;
+
+	const auto e2 = expression_t::make_benchmark_expr(body_pair.second);
+	return { acc, e2 };
 }
 
 

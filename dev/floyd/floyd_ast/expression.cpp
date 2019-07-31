@@ -63,7 +63,9 @@ static std::map<expression_type, std::string> k_expression_to_opcode = {
 
 	{ expression_type::k_struct_def, expression_opcode_t::k_struct_def },
 	{ expression_type::k_function_def, expression_opcode_t::k_function_def },
-	{ expression_type::k_value_constructor, expression_opcode_t::k_value_constructor }
+	{ expression_type::k_value_constructor, expression_opcode_t::k_value_constructor },
+
+	{ expression_type::k_benchmark, expression_opcode_t::k_benchmark }
 };
 
 
