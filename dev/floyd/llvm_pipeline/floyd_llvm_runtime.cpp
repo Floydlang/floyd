@@ -1450,6 +1450,29 @@ function_bind_t fr_update_struct_member__make(llvm::LLVMContext& context, const 
 
 
 
+int64_t fr_get_profile_time(floyd_runtime_t* frp){
+	auto& r = get_floyd_runtime(frp);
+
+	const std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
+	const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
+	const auto result = int64_t(ns);
+	return result;
+}
+
+function_bind_t fr_get_profile_time__make(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getInt64Ty(context),
+		{
+			make_frp_type(interner),
+		},
+		false
+	);
+	return { "fr_get_profile_time", function_type, reinterpret_cast<void*>(fr_get_profile_time) };
+}
+
+
+
+
 
 std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_interner_t& interner){
 	std::vector<function_bind_t> result = {
@@ -1477,7 +1500,9 @@ std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, c
 		floyd_runtime__compare_values__make(context, interner),
 		floyd_runtime__allocate_struct__make(context, interner),
 
-		fr_update_struct_member__make(context, interner)
+		fr_update_struct_member__make(context, interner),
+
+		fr_get_profile_time__make(context, interner)
 	};
 	return result;
 }

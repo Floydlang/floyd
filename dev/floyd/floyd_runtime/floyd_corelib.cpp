@@ -433,7 +433,7 @@ void corelib_write_text_file(const std::string& abs_path, const std::string& fil
 	const int ms = static_cast<int>((static_cast<double>(elapsed_seconds.count()) * 1000.0));
 */
 int64_t corelib__get_time_of_day(){
-	std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
+	const std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
 //	std::chrono::duration<double> elapsed_seconds = t - 0;
 //	const auto ms = t * 1000.0;
 	const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();

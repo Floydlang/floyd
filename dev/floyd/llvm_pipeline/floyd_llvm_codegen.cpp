@@ -1661,7 +1661,16 @@ static llvm::Value* generate_benchmark_expression(llvm_code_generator_t& gen_acc
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 	QUARK_ASSERT(e.check_invariant());
 
-	return generate_constant(gen_acc, emit_f, value_t::make_int(404));
+	const auto get_profile_time_f = find_function_def_from_link_name(gen_acc, "fr_get_profile_time");
+
+	auto& builder = gen_acc.builder;
+	auto start_time_reg = builder.CreateCall(get_profile_time_f.llvm_f, { get_callers_fcp(gen_acc.interner, emit_f) }, "");
+
+	function_return_mode block = generate_block(gen_acc, emit_f, *details.body);
+
+	auto end_time_reg = builder.CreateCall(get_profile_time_f.llvm_f, { get_callers_fcp(gen_acc.interner, emit_f) }, "");
+	auto duration_reg = gen_acc.builder.CreateSub(end_time_reg, start_time_reg, "calc dur");
+	return duration_reg;
 }
 
 

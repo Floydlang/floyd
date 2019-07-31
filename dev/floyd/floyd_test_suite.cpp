@@ -2338,6 +2338,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 		{ "404" }
 	);
 }
+
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -2352,8 +2353,38 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 	);
 }
 
-#if 0
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
+	ut_run_closed_nolib(
+		R"___(
 
+			for(run in 0 ... 50){
+				let dur = benchmark {
+				}
+				print(dur)
+			}
+
+		)___"
+	);
+}
+
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark", "", ""){
+	ut_run_closed_nolib(
+		R"___(
+
+			for(run in 0 ... 20){
+				let dur = benchmark {
+					for(e in 0 ... 50){
+						let a = "hello, world!"
+					}
+				}
+				print(dur)
+			}
+
+		)___"
+	);
+}
+
+#if 0
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
