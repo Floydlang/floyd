@@ -2325,7 +2325,19 @@ FLOYD_LANG_PROOF("Floyd test suite", "while", "return from within while", ""){
 //######################################################################################################################
 
 
-#if 0
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let dur = benchmark {
+			}
+			print(dur)
+
+		)",
+		{ "404" }
+	);
+}
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -2340,6 +2352,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 	);
 }
 
+#if 0
 
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
 	ut_verify_printout_nolib(

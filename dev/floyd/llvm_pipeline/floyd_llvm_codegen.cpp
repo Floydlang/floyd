@@ -1661,7 +1661,7 @@ static llvm::Value* generate_benchmark_expression(llvm_code_generator_t& gen_acc
 	QUARK_ASSERT(check_emitting_function(gen_acc.interner, emit_f));
 	QUARK_ASSERT(e.check_invariant());
 
-	QUARK_ASSERT(false);
+	return generate_constant(gen_acc, emit_f, value_t::make_int(404));
 }
 
 

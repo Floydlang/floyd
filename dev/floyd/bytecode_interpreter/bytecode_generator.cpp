@@ -1355,25 +1355,7 @@ expression_gen_t bcgen_benchmark_expression(bcgenerator_t& gen_acc, const variab
 	QUARK_ASSERT(e.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-/*
-	const auto type = details.expr->get_output_type();
-
-	if(type.is_int()){
-		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract, expression_t::make_literal_int(0), *details.expr, e._output_type);
-		return bcgen_expression(gen_acc, target_reg, e2, body);
-	}
-	else if(type.is_double()){
-		const auto e2 = expression_t::make_arithmetic(expression_type::k_arithmetic_subtract, expression_t::make_literal_double(0), *details.expr, e._output_type);
-		return bcgen_expression(gen_acc, target_reg, e2, body);
-	}
-	else{
-		QUARK_ASSERT(false);
-		quark::throw_exception();
-	}
-*/
-		QUARK_ASSERT(false);
-		quark::throw_exception();
-
+	return bcgen_expression(gen_acc, target_reg, expression_t::make_literal_int(404), body);
 }
 
 

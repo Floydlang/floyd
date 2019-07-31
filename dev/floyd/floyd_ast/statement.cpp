@@ -140,7 +140,6 @@ bool body_t::check_invariant() const {
 	return true;
 }
 
-
 json_t body_to_json(const body_t& e){
 	std::vector<json_t> statements;
 	for(const auto& i: e._statements){
@@ -348,9 +347,9 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		const auto body_statements = statement.get_array_n(2);
 
 		const auto expression2 = ast_json_to_expression(expression);
-		const auto body_statements2 = ast_json_to_statements(body_statements);
+		const auto body_statements2 = ast_json_to_statements(body_statements);//??? should use json_to_body()!?
 
-		return statement_t::make__while_statement(loc, expression2, body_t{body_statements2});
+		return statement_t::make__while_statement(loc, expression2, body_t{ body_statements2 });
 	}
 
 	else if(type == statement_opcode_t::k_expression_statement){

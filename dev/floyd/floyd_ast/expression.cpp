@@ -665,7 +665,10 @@ expression_t ast_json_to_expression(const json_t& e){
 	else if(op == expression_opcode_t::k_benchmark){
 		QUARK_ASSERT(e.get_array_size() == 2);
 
-		const auto body = json_to_body(e.get_array_n(1));
+		//??? should use json_to_body()!?
+		const auto body_statements2 = ast_json_to_statements(e.get_array_n(1));
+		const auto body = body_t{ body_statements2 };
+//		const auto body_statements2 = json_to_body(e.get_array_n(1));
 		return expression_t::make_benchmark_expr(body);
 	}
 	else{
