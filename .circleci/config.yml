@@ -25,7 +25,7 @@ jobs:
 
   build-mac:
     macos:
-       xcode: "10.0.0"
+       xcode: "10.3.0"
     workDir: /Users/distiller/project/dev/ 
     steps:
       - checkout
