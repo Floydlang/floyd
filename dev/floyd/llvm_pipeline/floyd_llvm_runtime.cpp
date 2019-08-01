@@ -472,7 +472,7 @@ runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t
 		}
 		runtime_value_t operator()(const typeid_t::typeid_type_t& e) const{
 			const auto t0 = value.get_typeid_value();
-			const auto t1 = lookup_runtime_type(runtime.type_interner.interner, t0);
+			const auto t1 = lookup_runtime_type(runtime.type_interner, t0);
 			return make_runtime_typeid(t1);
 		}
 

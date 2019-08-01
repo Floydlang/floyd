@@ -58,6 +58,14 @@ llvm::Type* make_runtime_value_type(llvm::LLVMContext& context);
 
 //	One element for each LLVM argument.
 struct llvm_arg_mapping_t {
+	bool check_invariant() const {
+		QUARK_ASSERT(llvm_type != nullptr);
+		QUARK_ASSERT(floyd_name.empty() == false);
+		QUARK_ASSERT(floyd_arg_index >= 0);
+		return true;
+	}
+
+
 	llvm::Type* llvm_type;
 
 	std::string floyd_name;
@@ -74,6 +82,13 @@ struct llvm_arg_mapping_t {
 //	Describes a complete LLVM function signature.
 
 struct llvm_function_def_t {
+	bool check_invariant() const {
+		QUARK_ASSERT(return_type != nullptr);
+		QUARK_ASSERT(args.size() == llvm_args.size());
+		return true;
+	}
+
+
 	llvm::Type* return_type;
 	std::vector<llvm_arg_mapping_t> args;
 	std::vector<llvm::Type*> llvm_args;
@@ -141,10 +156,9 @@ llvm::Type* make_frp_type(const llvm_type_interner_t& interner);
 ////////////////////////////////	type_interner_t helpers
 
 
-base_type get_base_type(const type_interner_t& interner, const runtime_type_t& type);
-
-typeid_t lookup_type(const type_interner_t& interner, const runtime_type_t& type);
-runtime_type_t lookup_runtime_type(const type_interner_t& interner, const typeid_t& type);
+//base_type get_base_type(const type_interner_t& interner, const runtime_type_t& type);
+//typeid_t lookup_type(const type_interner_t& interner, const runtime_type_t& type);
+runtime_type_t lookup_runtime_type(const llvm_type_interner_t& interner, const typeid_t& type);
 
 
 }	// floyd

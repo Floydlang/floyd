@@ -33,6 +33,7 @@ llvm::Type* deref_ptr(llvm::Type* type){
 
 
 static llvm::StructType* make_exact_struct_type(llvm::LLVMContext& context, const llvm_type_interner_t& interner, const typeid_t& type){
+	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.is_struct());
 
 	std::vector<llvm::Type*> members;
@@ -72,6 +73,8 @@ llvm::Type* make_runtime_value_type(llvm::LLVMContext& context){
 
 
 llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<member_t>& args){
+	QUARK_ASSERT(def.check_invariant());
+
 	if(args.empty()){
 		QUARK_ASSERT(def.args.size() == 1);
 		return def;
@@ -135,6 +138,7 @@ static llvm::Type* make_function_type_internal(llvm::LLVMContext& context, const
 	return function_pointer_type;
 }
 static llvm::Type* make_exact_type_internal(llvm::LLVMContext& context, llvm_type_interner_t& interner, const typeid_t& type){
+	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
 	struct visitor_t {
@@ -266,6 +270,8 @@ static llvm::StructType* make_generic_struct_type_internal(llvm::LLVMContext& co
 
 //??? Doesn't work if a type references a type later in the interner vector.
 llvm_type_interner_t::llvm_type_interner_t(llvm::LLVMContext& context, const type_interner_t& i){
+	QUARK_ASSERT(i.check_invariant());
+
 	generic_vec_type = make_generic_vec_type_internal(context);
 	generic_dict_type = make_generic_dict_type_internal(context);
 	json_type = make_json_type_internal(context);
@@ -284,7 +290,7 @@ llvm_type_interner_t::llvm_type_interner_t(llvm::LLVMContext& context, const typ
 
 bool llvm_type_interner_t::check_invariant() const {
 	QUARK_ASSERT(interner.check_invariant());
-	QUARK_ASSERT(interner.interned.size() == exact_llvm_types.size());
+//	QUARK_ASSERT(interner.interned.size() == exact_llvm_types.size());
 
 	QUARK_ASSERT(generic_vec_type != nullptr);
 	QUARK_ASSERT(generic_dict_type != nullptr);
@@ -297,6 +303,7 @@ bool llvm_type_interner_t::check_invariant() const {
 
 //??? Make get_exact_llvm_type() return vector, struct etc. directly, not getPointerTo().
 llvm::StructType* get_exact_struct_type(const llvm_type_interner_t& i, const typeid_t& type){
+	QUARK_ASSERT(i.check_invariant());
 	QUARK_ASSERT(type.is_struct());
 
 	const auto it = std::find_if(i.interner.interned.begin(), i.interner.interned.end(), [&](const std::pair<itype_t, typeid_t>& e){ return e.second == type; });
@@ -319,6 +326,9 @@ llvm::StructType* get_exact_struct_type(const llvm_type_interner_t& i, const typ
 }
 
 llvm::Type* get_exact_llvm_type(const llvm_type_interner_t& i, const typeid_t& type){
+	QUARK_ASSERT(i.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
 	if(type.is_vector()){
 		return i.generic_vec_type->getPointerTo();
 	}
@@ -340,30 +350,44 @@ llvm::Type* get_exact_llvm_type(const llvm_type_interner_t& i, const typeid_t& t
 }
 
 llvm::Type* make_function_type(const llvm_type_interner_t& interner, const typeid_t& function_type){
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(function_type.check_invariant());
+
 	return get_exact_llvm_type(interner, function_type);
 }
 
 llvm::StructType* make_wide_return_type(const llvm_type_interner_t& interner){
+	QUARK_ASSERT(interner.check_invariant());
+
 	return interner.wide_return_type;
 }
 
 llvm::Type* make_generic_vec_type(const llvm_type_interner_t& interner){
+	QUARK_ASSERT(interner.check_invariant());
+
 	return interner.generic_vec_type;
 }
 
 llvm::Type* make_generic_dict_type(const llvm_type_interner_t& interner){
+	QUARK_ASSERT(interner.check_invariant());
+
 	return interner.generic_dict_type;
 }
 
 llvm::Type* make_json_type(const llvm_type_interner_t& interner){
+	QUARK_ASSERT(interner.check_invariant());
+
 	return interner.json_type;
 }
 
 llvm::Type* get_generic_struct_type(const llvm_type_interner_t& interner){
+	QUARK_ASSERT(interner.check_invariant());
+
 	return interner.generic_struct_type;
 }
 
 llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const llvm_type_interner_t& interner, const floyd::typeid_t& function_type){
+	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(function_type.is_function());
 
 	const auto ret = function_type.get_function_return();
@@ -402,6 +426,8 @@ llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const llv
 
 
 llvm::Type* make_frp_type(const llvm_type_interner_t& interner){
+	QUARK_ASSERT(interner.check_invariant());
+
 	return interner.runtime_ptr_type;
 }
 
@@ -544,7 +570,7 @@ QUARK_UNIT_TEST
 
 
 
-
+/*
 base_type get_base_type(const type_interner_t& interner, const runtime_type_t& type){
 	const auto a = lookup_type(interner, type);
 	const auto a_basetype = a.get_base_type();
@@ -561,9 +587,12 @@ typeid_t lookup_type(const type_interner_t& interner, const runtime_type_t& type
 	}
 	throw std::exception();
 }
+*/
+runtime_type_t lookup_runtime_type(const llvm_type_interner_t& interner, const typeid_t& type){
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
 
-runtime_type_t lookup_runtime_type(const type_interner_t& interner, const typeid_t& type){
-	const auto a = lookup_itype(interner, type);
+	const auto a = lookup_itype(interner.interner, type);
 	return make_runtime_type(a.itype);
 }
 
