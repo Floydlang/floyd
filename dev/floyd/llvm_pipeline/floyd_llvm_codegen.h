@@ -42,9 +42,9 @@ struct llvm_ir_program_t {
 	llvm_ir_program_t(const llvm_ir_program_t& other) = delete;
 	llvm_ir_program_t& operator=(const llvm_ir_program_t& other) = delete;
 
-	explicit llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const llvm_type_interner_t& interner, const symbol_table_t& globals, const std::vector<function_def_t>& function_defs) :
+	explicit llvm_ir_program_t(llvm_instance_t* instance, std::unique_ptr<llvm::Module>& module2_swap, const llvm_type_lookup& type_lookup, const symbol_table_t& globals, const std::vector<function_def_t>& function_defs) :
 		instance(instance),
-		type_interner(interner),
+		type_lookup(type_lookup),
 		debug_globals(globals),
 		function_defs(function_defs)
 	{
@@ -68,7 +68,7 @@ struct llvm_ir_program_t {
 	//	Module must sit in a unique_ptr<> because llvm::EngineBuilder needs that.
 	std::unique_ptr<llvm::Module> module;
 
-	llvm_type_interner_t type_interner;
+	llvm_type_lookup type_lookup;
 	symbol_table_t debug_globals;
 	std::vector<function_def_t> function_defs;
 

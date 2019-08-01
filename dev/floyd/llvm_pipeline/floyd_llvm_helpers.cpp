@@ -627,25 +627,25 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b){
 
 
 
-bool check_callers_fcp(const llvm_type_interner_t& interner, llvm::Function& emit_f){
-	QUARK_ASSERT(interner.check_invariant());
+bool check_callers_fcp(const llvm_type_lookup& type_lookup, llvm::Function& emit_f){
+	QUARK_ASSERT(type_lookup.check_invariant());
 
 	auto args = emit_f.args();
 	QUARK_ASSERT((args.end() - args.begin()) >= 1);
 	auto floyd_context_arg_ptr = args.begin();
-	QUARK_ASSERT(floyd_context_arg_ptr->getType() == make_frp_type(interner));
+	QUARK_ASSERT(floyd_context_arg_ptr->getType() == make_frp_type(type_lookup));
 	return true;
 }
 
-bool check_emitting_function(const llvm_type_interner_t& interner, llvm::Function& emit_f){
-	QUARK_ASSERT(interner.check_invariant());
+bool check_emitting_function(const llvm_type_lookup& type_lookup, llvm::Function& emit_f){
+	QUARK_ASSERT(type_lookup.check_invariant());
 
-	QUARK_ASSERT(check_callers_fcp(interner, emit_f));
+	QUARK_ASSERT(check_callers_fcp(type_lookup, emit_f));
 	return true;
 }
 
-llvm::Value* get_callers_fcp(const llvm_type_interner_t& interner, llvm::Function& emit_f){
-	QUARK_ASSERT(check_callers_fcp(interner, emit_f));
+llvm::Value* get_callers_fcp(const llvm_type_lookup& type_lookup, llvm::Function& emit_f){
+	QUARK_ASSERT(check_callers_fcp(type_lookup, emit_f));
 
 	auto args = emit_f.args();
 	QUARK_ASSERT((args.end() - args.begin()) >= 1);
@@ -1234,14 +1234,14 @@ llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, llvm::V
 	return std::visit(visitor_t{ context, builder, value }, floyd_type._contents);
 }
 
-llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_interner_t& interner, llvm::Value& runtime_value_reg, const typeid_t& type){
+llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& runtime_value_reg, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	auto& context = builder.getContext();
 
 	struct visitor_t {
 		llvm::IRBuilder<>& builder;
-		const llvm_type_interner_t& interner;
+		const llvm_type_lookup& type_lookup;
 		llvm::LLVMContext& context;
 		llvm::Value& runtime_value_reg;
 		const typeid_t& type;
@@ -1266,33 +1266,33 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 			return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &runtime_value_reg, llvm::Type::getDoubleTy(context), "");
 		}
 		llvm::Value* operator()(const typeid_t::string_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_vec_type(interner)->getPointerTo(), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_vec_type(type_lookup)->getPointerTo(), "");
 		}
 
 		llvm::Value* operator()(const typeid_t::json_type_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_json_type(interner)->getPointerTo(), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_json_type(type_lookup)->getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::typeid_type_t& e) const{
 			return builder.CreateCast(llvm::Instruction::CastOps::Trunc, &runtime_value_reg, llvm::Type::getInt32Ty(context), "");
 		}
 
 		llvm::Value* operator()(const typeid_t::struct_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_generic_struct_type(interner)->getPointerTo(), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_generic_struct_type(type_lookup)->getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::vector_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_vec_type(interner)->getPointerTo(), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_vec_type(type_lookup)->getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::dict_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_dict_type(interner)->getPointerTo(), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_dict_type(type_lookup)->getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::function_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_exact_llvm_type(interner, type), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_exact_llvm_type(type_lookup, type), "");
 		}
 		llvm::Value* operator()(const typeid_t::unresolved_t& e) const{
 			UNSUPPORTED();
 		}
 	};
-	return std::visit(visitor_t{ builder, interner, context, runtime_value_reg, type }, type._contents);
+	return std::visit(visitor_t{ builder, type_lookup, context, runtime_value_reg, type }, type._contents);
 }
 
 

@@ -100,7 +100,7 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 
 
 
-////////////////////////////////		llvm_type_interner_t()
+////////////////////////////////		llvm_type_lookup
 
 /*
 	LLVM Type interner: keeps a list of ALL types used statically in the program, their itype, their LLVM type and their Floyd type.
@@ -110,8 +110,8 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 	heap_alloc_64_t.
 */
 
-struct llvm_type_interner_t {
-	llvm_type_interner_t(llvm::LLVMContext& context, const type_interner_t& interner);
+struct llvm_type_lookup {
+	llvm_type_lookup(llvm::LLVMContext& context, const type_interner_t& interner);
 	bool check_invariant() const;
 
 
@@ -129,23 +129,23 @@ struct llvm_type_interner_t {
 };
 
 //	Returns the exact LLVM struct layout that maps to the struct members, without any alloc-64 header. Not a pointer.
-llvm::StructType* get_exact_struct_type(const llvm_type_interner_t& interner, const typeid_t& type);
+llvm::StructType* get_exact_struct_type(const llvm_type_lookup& type_lookup, const typeid_t& type);
 
 //	Returns the LLVM type used to pass this type of value around. It uses generic types for vector, dict and struct.
-llvm::Type* get_exact_llvm_type(const llvm_type_interner_t& interner, const typeid_t& type);
+llvm::Type* get_exact_llvm_type(const llvm_type_lookup& type_lookup, const typeid_t& type);
 
 
 
 //	Returns generic types.
-llvm::Type* make_generic_vec_type(const llvm_type_interner_t& interner);
-llvm::Type* make_generic_dict_type(const llvm_type_interner_t& interner);
-llvm::Type* get_generic_struct_type(const llvm_type_interner_t& interner);
+llvm::Type* make_generic_vec_type(const llvm_type_lookup& type_lookup);
+llvm::Type* make_generic_dict_type(const llvm_type_lookup& type_lookup);
+llvm::Type* get_generic_struct_type(const llvm_type_lookup& type_lookup);
 
-llvm::Type* make_json_type(const llvm_type_interner_t& interner);
+llvm::Type* make_json_type(const llvm_type_lookup& type_lookup);
 
-llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const llvm_type_interner_t& interner, const floyd::typeid_t& function_type);
+llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const floyd::typeid_t& function_type);
 
-llvm::Type* make_frp_type(const llvm_type_interner_t& interner);
+llvm::Type* make_frp_type(const llvm_type_lookup& type_lookup);
 
 
 
@@ -155,7 +155,7 @@ llvm::Type* make_frp_type(const llvm_type_interner_t& interner);
 
 //base_type get_base_type(const type_interner_t& interner, const runtime_type_t& type);
 //typeid_t lookup_type(const type_interner_t& interner, const runtime_type_t& type);
-runtime_type_t lookup_runtime_type(const llvm_type_interner_t& interner, const typeid_t& type);
+runtime_type_t lookup_runtime_type(const llvm_type_lookup& type_lookup, const typeid_t& type);
 
 
 }	// floyd

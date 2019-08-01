@@ -80,7 +80,7 @@ struct llvm_execution_engine_t {
 
 	llvm_instance_t* instance;
 	std::shared_ptr<llvm::ExecutionEngine> ee;
-	llvm_type_interner_t type_interner;
+	llvm_type_lookup type_lookup;
 	symbol_table_t global_symbols;
 	std::vector<function_def_t> function_defs;
 	public: std::vector<std::string> _print_output;
@@ -163,7 +163,7 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const std::string& name)
 
 
 //	These are the support function built into the runtime, like RC primitives.
-std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_interner_t& interner);
+std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup);
 std::map<std::string, void*> get_c_function_ptrs();
 
 uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee);

@@ -31,7 +31,7 @@ struct DICT_T;
 struct JSON_T;
 struct STRUCT_T;
 struct type_interner_t;
-struct llvm_type_interner_t;
+struct llvm_type_lookup;
 
 
 ////////////////////////////////		heap_t
@@ -253,9 +253,9 @@ struct floyd_runtime_t {
 
 //	This pointer is passed as argument 0 to all compiled floyd functions and all runtime functions.
 
-bool check_callers_fcp(const llvm_type_interner_t& interner, llvm::Function& emit_f);
-bool check_emitting_function(const llvm_type_interner_t& interner, llvm::Function& emit_f);
-llvm::Value* get_callers_fcp(const llvm_type_interner_t& interner, llvm::Function& emit_f);
+bool check_callers_fcp(const llvm_type_lookup& type_lookup, llvm::Function& emit_f);
+bool check_emitting_function(const llvm_type_lookup& type_lookup, llvm::Function& emit_f);
+llvm::Value* get_callers_fcp(const llvm_type_lookup& type_lookup, llvm::Function& emit_f);
 
 
 
@@ -539,10 +539,6 @@ STRUCT_T* wide_return_to_struct(const WIDE_RETURN_T& ret);
 
 
 
-//llvm::StructType* make_exact_struct_type(llvm::LLVMContext& context, const llvm_type_interner_t& interner, const typeid_t& type);
-
-
-
 
 ////////////////////////////////		HELPERS
 
@@ -571,7 +567,7 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, llvm::Value& value, const typeid_t& floyd_type);
 
 //	Returns the specific LLVM type for the value, like VEC_T* etc.
-llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_interner_t& interner, llvm::Value& runtime_value_reg, const typeid_t& type);
+llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& runtime_value_reg, const typeid_t& type);
 
 
 }	//	floyd
