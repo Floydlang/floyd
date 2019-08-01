@@ -232,6 +232,9 @@ bool check_types_resolved(const statement_t& s){
 		bool operator()(const statement_t::container_def_statement_t& s) const{
 			return true;
 		}
+		bool operator()(const statement_t::benchmark_def_statement_t& s) const{
+			return check_types_resolved(s._body);
+		}
 	};
 
 	return std::visit(visitor_t {}, s._contents);

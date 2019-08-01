@@ -34,6 +34,8 @@ struct json_t;
 namespace floyd {
 namespace parser {
 
+std::pair<std::string, seq_t> parse_string_literal(const seq_t& s);
+
 std::pair<json_t, seq_t> parse_expression(const seq_t& expression);
 
 }	//	parser

@@ -20,8 +20,10 @@
 
 namespace floyd {
 
-using namespace std;
+static const bool k_trace_io_flag = false;
 
+//???? remove!!
+using namespace std;
 
 
 
@@ -723,6 +725,56 @@ std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t
 	return { a_acc, statement_t::make__expression_statement(s.location, expr2.second) };
 }
 
+//	Make new global function containing the body of the benchmark-def.
+//	Add the function as an entry in the global benchmark registry.
+static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
+	QUARK_ASSERT(a.check_invariant());
+
+	const auto statement = std::get<statement_t::benchmark_def_statement_t>(s._contents);
+	auto a_acc = a;
+
+	const auto test_name = statement.name;
+	const auto function_link_name = "benchmark__" + test_name;
+
+	const auto benchmark_t_struct = make_benchmark_t();
+	const auto benchmark_function_t = make_benchmark_function_t();
+
+
+	auto& globals = a_acc._lexical_scope_stack.front();
+    auto it = std::find_if(
+    	globals.symbols._symbols.begin(),
+    	globals.symbols._symbols.end(),
+    	[&s](std::pair<std::string, symbol_t>& e) { return e.first == k_global_benchmark_registry; }
+	);
+	QUARK_ASSERT(it != globals.symbols._symbols.end());
+	QUARK_ASSERT(it->second._init.get_type().get_vector_element_type() == benchmark_t_struct);
+
+
+	const auto body_pair = analyse_body(a_acc, statement._body, epure::pure, benchmark_function_t.get_function_return());
+	a_acc = body_pair.first;
+
+	const auto function_id = function_id_t { function_link_name };
+
+	const auto function_def2 = function_definition_t::make_floyd_func(k_no_location, function_link_name, benchmark_function_t, {}, std::make_shared<body_t>(body_pair.second));
+	QUARK_ASSERT(check_types_resolved(function_def2));
+
+	a_acc._function_defs.insert({ function_id, std::make_shared<function_definition_t>(function_def2) });
+
+	const auto f = value_t::make_function_value(benchmark_function_t, function_id);
+	const auto new_record = value_t::make_struct_value(benchmark_t_struct, { value_t::make_string(test_name), f } );
+	
+	auto reg_copy = it->second._init.get_vector_value();
+	reg_copy.push_back(new_record);
+
+	const auto reg2 = value_t::make_vector_value(benchmark_t_struct, reg_copy);
+	it->second._init = reg2;
+
+	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, return_type);
+	a_acc = body2.first;
+
+	return a_acc;
+}
+
 //	Output is the RETURN VALUE of the analysed statement, if any.
 std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_t& a, const statement_t& statement, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
@@ -805,6 +857,11 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 			analyser_t temp = a;
 			temp._container_def = parse_container_def_json(s._json_data);
 			return { temp, {} };
+		}
+		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::benchmark_def_statement_t& s) const{
+			const auto e = analyse_benchmark_def_statement(a, statement, return_type);
+//			QUARK_ASSERT(check_types_resolved(e.second));
+			return { e, {} };
 		}
 	};
 
@@ -2091,9 +2148,9 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 				}
 				const auto function_body2 = body_t(floyd_func._body->_statements, symbol_vec);
 
-				const auto function_body_pair = analyse_body(a_acc, function_body2, pure, function_type2.get_function_return());
-				a_acc = function_body_pair.first;
-				const auto function_body3 = function_body_pair.second;
+				const auto body_pair = analyse_body(a_acc, function_body2, pure, function_type2.get_function_return());
+				a_acc = body_pair.first;
+				const auto function_body3 = body_pair.second;
 				body_result = std::make_shared<body_t>(function_body3);
 			}
 			else{
@@ -2357,7 +2414,7 @@ static builtins_t generate_corecalls(analyser_t& a, const std::vector<corecall_s
 	return builtins_t{ function_defs, symbol_map };
 }
 
-builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
+static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	/*
 		Create built-in global symbol map: built in data types, built-in functions (corecalls).
 	*/
@@ -2386,6 +2443,18 @@ builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	symbol_map.push_back( { "json_false", symbol_t::make_immutable_precalc(value_t::make_int(6)) });
 	symbol_map.push_back( { "json_null", symbol_t::make_immutable_precalc(value_t::make_int(7)) });
 
+#if 0
+	{
+		const auto benchmark_t_struct = make_benchmark_t();
+		const auto benchmark_registry = value_t::make_vector_value(benchmark_t_struct, {});
+		symbol_map.push_back(
+			{
+				k_global_benchmark_registry,
+				symbol_t::make_immutable_precalc(benchmark_registry)
+			}
+		);
+	}
+#endif
 
 	std::map<function_id_t, std::shared_ptr<const function_definition_t>> function_defs;
 
@@ -2482,11 +2551,32 @@ bool analyser_t::check_invariant() const {
 
 
 semantic_ast_t run_semantic_analysis(const unchecked_ast_t& ast){
+	QUARK_SCOPED_TRACE("run_semantic_analysis()");
+
 	QUARK_ASSERT(ast.check_invariant());
+
+	if(k_trace_io_flag){
+		QUARK_SCOPED_TRACE("OUTPUT AST");
+		QUARK_TRACE(json_to_pretty_string(gp_ast_to_json(ast._tree)));
+	}
 
 	analyser_t a(ast);
 
 	const auto result = analyse(a);
+
+	if(k_trace_io_flag){
+		{
+			QUARK_SCOPED_TRACE("OUTPUT AST");
+			QUARK_TRACE(json_to_pretty_string(gp_ast_to_json(result._tree)));
+		}
+		{
+			QUARK_SCOPED_TRACE("OUTPUT TYPES");
+			for(const auto& e: result._tree._interned_types.interned){
+				QUARK_TRACE_SS(e.first.itype << ": " << typeid_to_compact_string(e.second));
+			}
+		}
+	}
+
 	return result;
 }
 

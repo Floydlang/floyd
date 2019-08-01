@@ -1466,7 +1466,7 @@ static llvm_type_interner_t make_basic_interner(llvm::LLVMContext& context){
 	return llvm_type_interner_t(context, temp);
 }
 
-
+//??? Doesn't work if a type references a type later in the interner vector.
 llvm_type_interner_t::llvm_type_interner_t(llvm::LLVMContext& context, const type_interner_t& i){
 	generic_vec_type = make_generic_vec_type_internal(context);
 	generic_dict_type = make_generic_dict_type_internal(context);

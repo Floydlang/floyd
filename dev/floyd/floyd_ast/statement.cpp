@@ -372,6 +372,15 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		return statement_t::make__container_def_statement(loc, json_data);
 	}
 
+	else if(type == statement_opcode_t::k_benchmark_def){
+		QUARK_ASSERT(statement.get_array_size() == 3);
+		const auto name = statement.get_array_n(1);
+		const auto body = statement.get_array_n(2);
+		const auto body_statements2 = ast_json_to_statements(body);//??? should use json_to_body()!?
+
+		return statement_t::make__benchmark_def_statement(loc, name.get_string(), body_t { body_statements2 } );
+	}
+
 	else{
 		quark::throw_runtime_error("Illegal statement.");
 	}
@@ -529,6 +538,13 @@ json_t statement_to_json(const statement_t& e){
 				statement.location,
 				statement_opcode_t::k_container_def,
 				{ s._json_data }
+			);
+		}
+		json_t operator()(const statement_t::benchmark_def_statement_t& s) const{
+			return make_ast_node(
+				statement.location,
+				statement_opcode_t::k_benchmark_def,
+				{ s.name, body_to_json(s._body) }
 			);
 		}
 	};

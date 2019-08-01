@@ -249,6 +249,9 @@ static statement_t desugar_statement(desugar_t& acc, const statement_t& statemen
 		statement_t operator()(const statement_t::container_def_statement_t& s) const{
 			return statement;
 		}
+		statement_t operator()(const statement_t::benchmark_def_statement_t& s) const{
+			return statement;
+		}
 	};
 
 	return std::visit(visitor_t{ acc, statement }, statement._contents);

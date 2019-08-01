@@ -1069,14 +1069,15 @@ std::pair<json_t, seq_t> parse_benchmark_def_statement(const seq_t& pos0){
 	std::pair<bool, seq_t> pos2 = if_first(pos, keyword_t::k_benchmark_def);
 	QUARK_ASSERT(pos2.first);
 
-	const auto name = parse_expression(pos2.second);
-	const auto body = parse_statement_body(name.second);
+//	const auto name = parse_expression(pos2.second);
+	const auto name_pos = parse_string_literal(skip_whitespace(pos2.second));
+	const auto body = parse_statement_body(name_pos.second);
 
 	const auto r = make_parser_node(
 		location_t(pos.pos()),
 		parse_tree_statement_opcode::k_benchmark_def,
 		{
-			name.first,
+			name_pos.first,
 			body.parse_tree
 		}
 	);
@@ -1098,7 +1099,7 @@ QUARK_UNIT_TEST("", "parse_benchmark_def_statement()", "while(){}", ""){
 				[
 					5,
 					"benchmark-def",
-					["k", "Linear veq 0", "^string"],
+					"Linear veq 0",
 					[[40, "expression-statement", ["call", ["@", "print"], [["k", 1234, "^int"]]]], [56, "return", ["k", 2000, "^int"]]]
 				]
 			)"

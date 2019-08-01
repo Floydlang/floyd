@@ -2103,6 +2103,9 @@ static function_return_mode generate_statement(llvm_code_generator_t& gen_acc, l
 		function_return_mode operator()(const statement_t::container_def_statement_t& s) const{
 			UNSUPPORTED();
 		}
+		function_return_mode operator()(const statement_t::benchmark_def_statement_t& s) const{
+			UNSUPPORTED();
+		}
 	};
 
 	return std::visit(visitor_t{ gen_acc, emit_f }, statement._contents);
@@ -2598,7 +2601,6 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 			}
 		}
 */
-
 	}
 
 	auto ast = ast0;

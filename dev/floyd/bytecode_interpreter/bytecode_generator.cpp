@@ -623,6 +623,9 @@ bcgen_body_t bcgen_body_block_statements(bcgenerator_t& gen_acc, const bcgen_bod
 				bcgen_body_t operator()(const statement_t::container_def_statement_t& s) const{
 					return body_acc;
 				}
+				bcgen_body_t operator()(const statement_t::benchmark_def_statement_t& s) const{
+					return body_acc;
+				}
 			};
 
 			body_acc = std::visit(visitor_t{gen_acc, body_acc}, statement._contents);

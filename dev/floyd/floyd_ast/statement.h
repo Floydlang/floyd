@@ -471,6 +471,27 @@ struct statement_t {
 	}
 
 
+	//////////////////////////////////////		benchmark_def_statement_t
+
+
+	struct benchmark_def_statement_t {
+		bool operator==(const benchmark_def_statement_t& other) const {
+			return _body == other._body;
+		}
+
+		std::string name;
+		body_t _body;
+	};
+
+	public: static statement_t make__benchmark_def_statement(
+		const location_t& location,
+		const std::string& name,
+		const body_t& body
+	){
+		return statement_t(location, { benchmark_def_statement_t{ name, body } });
+	}
+
+
 	//////////////////////////////////////		while_statement_t
 
 
@@ -526,7 +547,8 @@ struct statement_t {
 		while_statement_t,
 		expression_statement_t,
 		software_system_statement_t,
-		container_def_statement_t
+		container_def_statement_t,
+		benchmark_def_statement_t
 	> statement_variant_t;
 
 	statement_t(const location_t& location, const statement_variant_t& contents) :

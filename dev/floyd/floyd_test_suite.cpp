@@ -2326,16 +2326,14 @@ FLOYD_LANG_PROOF("Floyd test suite", "while", "return from within while", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
+	ut_run_closed_nolib(
 		R"(
 
 			let dur = benchmark {
 			}
 			print(dur)
 
-		)",
-		{ "404" }
+		)"
 	);
 }
 
@@ -2367,7 +2365,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 	);
 }
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark", "", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 	ut_run_closed_nolib(
 		R"___(
 
@@ -2384,7 +2382,35 @@ FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark", "", ""){
 	);
 }
 
+
+
 #if 0
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark-def", "", ""){
+	ut_run_closed_nolib(
+		R"(
+
+			benchmark-def "ABC" {
+				print("Running benchmark ABC")
+			}
+
+		)"
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
+	ut_run_closed_nolib(
+		R"(
+
+			benchmark-def "ABC" {
+				return 1002
+			}
+
+			let report = run_benchmark("ABC")
+			assert(report == json([ 1002]) )
+		)"
+	);
+}
+
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -2402,7 +2428,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
 	);
 }
 #endif
-
 
 
 //////////////////////////////////////////		TYPEID - TYPE

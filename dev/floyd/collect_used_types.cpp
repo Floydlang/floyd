@@ -163,6 +163,9 @@ static void collect_used_types(type_interner_t& acc, const statement_t& statemen
 		}
 		void operator()(const statement_t::container_def_statement_t& s) const{
 		}
+		void operator()(const statement_t::benchmark_def_statement_t& s) const{
+			collect_used_types_body(acc, s._body);
+		}
 	};
 
 	std::visit(visitor_t{ acc, statement }, statement._contents);
