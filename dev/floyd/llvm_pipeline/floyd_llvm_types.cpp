@@ -32,31 +32,9 @@ llvm::Type* deref_ptr(llvm::Type* type){
 ////////////////////////////////	runtime_type_t
 
 
-static llvm::StructType* make_exact_struct_type(llvm::LLVMContext& context, const llvm_type_interner_t& interner, const typeid_t& type){
-	QUARK_ASSERT(interner.check_invariant());
-	QUARK_ASSERT(type.is_struct());
-
-	std::vector<llvm::Type*> members;
-	for(const auto& m: type.get_struct_ref()->_members){
-		const auto m2 = get_exact_llvm_type(interner, m._type);
-		members.push_back(m2);
-	}
-	llvm::StructType* s = llvm::StructType::get(context, members, false);
-	return s;
-}
-
-
 
 llvm::Type* make_runtime_type_type(llvm::LLVMContext& context){
 	return llvm::Type::getInt64Ty(context);
-/*
-	std::vector<llvm::Type*> members = {
-		llvm::Type::getInt32Ty(context)
-	};
-	llvm::StructType* s = llvm::StructType::get(context, members, false);
-	return s;
-*/
-
 }
 
 runtime_type_t make_runtime_type(int32_t itype){
@@ -125,6 +103,18 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 
 
 
+static llvm::StructType* make_exact_struct_type(llvm::LLVMContext& context, const llvm_type_interner_t& interner, const typeid_t& type){
+	QUARK_ASSERT(interner.check_invariant());
+	QUARK_ASSERT(type.is_struct());
+
+	std::vector<llvm::Type*> members;
+	for(const auto& m: type.get_struct_ref()->_members){
+		const auto m2 = get_exact_llvm_type(interner, m._type);
+		members.push_back(m2);
+	}
+	llvm::StructType* s = llvm::StructType::get(context, members, false);
+	return s;
+}
 
 //	Function-types are always returned as pointer-to-function types.
 static llvm::Type* make_function_type_internal(llvm::LLVMContext& context, const llvm_type_interner_t& interner, const typeid_t& function_type){
@@ -137,6 +127,7 @@ static llvm::Type* make_function_type_internal(llvm::LLVMContext& context, const
 	auto function_pointer_type = function_type2->getPointerTo();
 	return function_pointer_type;
 }
+
 static llvm::Type* make_exact_type_internal(llvm::LLVMContext& context, llvm_type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -195,7 +186,6 @@ static llvm::Type* make_exact_type_internal(llvm::LLVMContext& context, llvm_typ
 	};
 	return std::visit(visitor_t{ context, interner, type }, type._contents);
 }
-
 
 static llvm::StructType* make_wide_return_type_internal(llvm::LLVMContext& context){
 	std::vector<llvm::Type*> members = {
@@ -265,9 +255,6 @@ static llvm::StructType* make_generic_struct_type_internal(llvm::LLVMContext& co
 }
 
 
-
-
-
 //??? Doesn't work if a type references a type later in the interner vector.
 llvm_type_interner_t::llvm_type_interner_t(llvm::LLVMContext& context, const type_interner_t& i){
 	QUARK_ASSERT(i.check_invariant());
@@ -300,7 +287,6 @@ bool llvm_type_interner_t::check_invariant() const {
 	return true;
 }
 
-
 //??? Make get_exact_llvm_type() return vector, struct etc. directly, not getPointerTo().
 llvm::StructType* get_exact_struct_type(const llvm_type_interner_t& i, const typeid_t& type){
 	QUARK_ASSERT(i.check_invariant());
@@ -316,13 +302,6 @@ llvm::StructType* get_exact_struct_type(const llvm_type_interner_t& i, const typ
 
 	auto result2 = deref_ptr(result);
 	return llvm::cast<llvm::StructType>(result2);
-//	return make_exact_struct_type(context, interner, type)->getPointerTo();
-
-/*
-	auto result = get_exact_llvm_type(interner, type);
-	auto result2 = deref_ptr(result);
-	return llvm::cast<llvm::StructType>(result2);
-*/
 }
 
 llvm::Type* get_exact_llvm_type(const llvm_type_interner_t& i, const typeid_t& type){
@@ -415,8 +394,6 @@ llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const llv
 
 	return llvm_function_def_t { return_type, arg_results, llvm_args };
 }
-
-
 
 llvm::Type* make_frp_type(const llvm_type_interner_t& interner){
 	QUARK_ASSERT(interner.check_invariant());
@@ -558,29 +535,10 @@ QUARK_UNIT_TEST
 
 
 
-
 ////////////////////////////////	type_interner_t helpers
 
 
 
-/*
-base_type get_base_type(const type_interner_t& interner, const runtime_type_t& type){
-	const auto a = lookup_type(interner, type);
-	const auto a_basetype = a.get_base_type();
-
-	//??? We know ranges where type.itype maps to base_type -- no need to look up in type_interner.
-	return a_basetype;
-}
-
-
-typeid_t lookup_type(const type_interner_t& interner, const runtime_type_t& type){
-	const auto it = std::find_if(interner.interned.begin(), interner.interned.end(), [&](const std::pair<itype_t, typeid_t>& e){ return e.first.itype == type; });
-	if(it != interner.interned.end()){
-		return it->second;
-	}
-	throw std::exception();
-}
-*/
 runtime_type_t lookup_runtime_type(const llvm_type_interner_t& interner, const typeid_t& type){
 	QUARK_ASSERT(interner.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
