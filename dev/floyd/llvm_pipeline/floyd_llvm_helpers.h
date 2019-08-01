@@ -564,7 +564,7 @@ runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type);
 void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t& value);
 
 //	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value.
-llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, llvm::Value& value, const typeid_t& floyd_type);
+llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& value, const typeid_t& floyd_type);
 
 //	Returns the specific LLVM type for the value, like VEC_T* etc.
 llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& runtime_value_reg, const typeid_t& type);

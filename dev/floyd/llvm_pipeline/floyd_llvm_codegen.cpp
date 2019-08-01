@@ -213,7 +213,7 @@ static llvm::Value* generate_cast_to_runtime_value(llvm_code_generator_t& gen_ac
 	QUARK_ASSERT(floyd_type.check_invariant());
 
 	auto& builder = gen_acc.builder;
-	return generate_cast_to_runtime_value2(builder, value, floyd_type);
+	return generate_cast_to_runtime_value2(builder, gen_acc.type_lookup, value, floyd_type);
 }
 
 static llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_acc, llvm::Value& runtime_value_reg, const typeid_t& type){
@@ -277,9 +277,8 @@ llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, co
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	auto& context = gen_acc.instance->context;
 	auto itype = pack_itype(gen_acc, type);
-	auto t = make_runtime_type_type(context);
+	auto t = make_runtime_type_type(gen_acc.type_lookup);
  	return llvm::ConstantInt::get(t, itype);
 }
 
@@ -1205,7 +1204,6 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 	QUARK_ASSERT(check_emitting_function(gen_acc.type_lookup, emit_f));
 	QUARK_ASSERT(e0.check_invariant());
 
-	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
 	const auto callee_function_type = details.callee->get_output_type();
@@ -1215,7 +1213,7 @@ static llvm::Value* generate_call_expression(llvm_code_generator_t& gen_acc, llv
 
 	const auto actual_call_arguments = mapf<typeid_t>(details.args, [](auto& e){ return e.get_output_type(); });
 
-	const auto llvm_mapping = map_function_arguments(context, gen_acc.type_lookup, callee_function_type);
+	const auto llvm_mapping = map_function_arguments(gen_acc.type_lookup, callee_function_type);
 
 	//	Verify that the actual argument expressions, their count and output types -- all match callee_function_type.
 	QUARK_ASSERT(details.args.size() == callee_function_type.get_function_args().size());
@@ -1481,7 +1479,7 @@ static llvm::Value* generate_construct_vector(llvm_code_generator_t& gen_acc, ll
 		int element_index = 0;
 		for(const auto& arg: details.elements){
 			llvm::Value* element0_reg = generate_expression(gen_acc, emit_f, arg);
-			auto element_value_reg = builder.CreateCast(llvm::Instruction::CastOps::ZExt, element0_reg, make_runtime_value_type(context), "");
+			auto element_value_reg = builder.CreateCast(llvm::Instruction::CastOps::ZExt, element0_reg, make_runtime_value_type(gen_acc.type_lookup), "");
 			generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
 			element_index++;
 		}
@@ -1666,7 +1664,7 @@ static llvm::Value* generate_benchmark_expression(llvm_code_generator_t& gen_acc
 	auto& builder = gen_acc.builder;
 	auto start_time_reg = builder.CreateCall(get_profile_time_f.llvm_f, { get_callers_fcp(gen_acc.type_lookup, emit_f) }, "");
 
-	function_return_mode block = generate_block(gen_acc, emit_f, *details.body);
+	generate_block(gen_acc, emit_f, *details.body);
 
 	auto end_time_reg = builder.CreateCall(get_profile_time_f.llvm_f, { get_callers_fcp(gen_acc.type_lookup, emit_f) }, "");
 	auto duration_reg = gen_acc.builder.CreateSub(end_time_reg, start_time_reg, "calc dur");
@@ -2136,13 +2134,11 @@ std::vector<resolved_symbol_t> generate_function_local_symbols(llvm_code_generat
 	QUARK_ASSERT(function_def.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.type_lookup, emit_f));
 
-	auto& context = gen_acc.module->getContext();
-
 	const auto floyd_func = std::get<function_definition_t::floyd_func_t>(function_def._contents);
 
 	const symbol_table_t& symbol_table = floyd_func._body->_symbol_table;
 
-	const auto mapping0 = map_function_arguments(context, gen_acc.type_lookup, function_def._function_type);
+	const auto mapping0 = map_function_arguments(gen_acc.type_lookup, function_def._function_type);
 	const auto mapping = name_args(mapping0, function_def._args);
 
 	//	Make a resolved_symbol_t for each element in the symbol table. Some are local variables, some are arguments.
@@ -2318,8 +2314,6 @@ static llvm::Function* generate_function_prototype(llvm::Module& module, const l
 	QUARK_ASSERT(type_lookup.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
 
-	auto& context = module.getContext();
-
 	const auto function_type = function_def._function_type;
 	const auto link_name = generate_link_name(function_id, function_def);
 
@@ -2327,7 +2321,7 @@ static llvm::Function* generate_function_prototype(llvm::Module& module, const l
 	QUARK_ASSERT(existing_f == nullptr);
 
 
-	const auto mapping0 = map_function_arguments(context, type_lookup, function_type);
+	const auto mapping0 = map_function_arguments(type_lookup, function_type);
 	const auto mapping = name_args(mapping0, function_def._args);
 
 	llvm::Type* function_ptr_type = get_exact_llvm_type(type_lookup, function_type);

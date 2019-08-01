@@ -43,12 +43,9 @@ llvm::Type* deref_ptr(llvm::Type* type);
 
 typedef int32_t runtime_type_t;
 
-llvm::Type* make_runtime_type_type(llvm::LLVMContext& context);
-
 runtime_type_t make_runtime_type(int32_t itype);
 
-//	A type. It's encoded as a 64 bit integer in our LLVM code.
-llvm::Type* make_runtime_value_type(llvm::LLVMContext& context);
+
 
 
 
@@ -136,7 +133,14 @@ struct llvm_type_lookup {
 	public: llvm::StructType* json_type;
 	public: llvm::StructType* wide_return_type;
 	public: llvm::Type* runtime_ptr_type;
+
+
+	public: llvm::Type* runtime_type_type;
+	public: llvm::Type* runtime_value_type;
 };
+
+llvm::Type* make_runtime_type_type(const llvm_type_lookup& type_lookup);
+llvm::Type* make_runtime_value_type(const llvm_type_lookup& type_lookup);
 
 typeid_t lookup_type(const llvm_type_lookup& type_lookup, const itype_t& type);
 itype_t lookup_itype(const llvm_type_lookup& type_lookup, const typeid_t& type);
@@ -157,7 +161,7 @@ llvm::Type* get_generic_struct_type(const llvm_type_lookup& type_lookup);
 
 llvm::Type* make_json_type(const llvm_type_lookup& type_lookup);
 
-llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup, const floyd::typeid_t& function_type);
+llvm_function_def_t map_function_arguments(const llvm_type_lookup& type_lookup, const floyd::typeid_t& function_type);
 
 llvm::Type* make_frp_type(const llvm_type_lookup& type_lookup);
 

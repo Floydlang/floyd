@@ -764,7 +764,7 @@ function_bind_t fr_retain_vec__make(llvm::LLVMContext& context, const llvm_type_
 		{
 			make_frp_type(type_lookup),
 			make_generic_vec_type(type_lookup)->getPointerTo(),
-			make_runtime_type_type(context)
+			make_runtime_type_type(type_lookup)
 		},
 		false
 	);
@@ -790,7 +790,7 @@ function_bind_t fr_release_vec__make(llvm::LLVMContext& context, const llvm_type
 		{
 			make_frp_type(type_lookup),
 			make_generic_vec_type(type_lookup)->getPointerTo(),
-			make_runtime_type_type(context)
+			make_runtime_type_type(type_lookup)
 		},
 		false
 	);
@@ -821,7 +821,7 @@ function_bind_t fr_retain_dict__make(llvm::LLVMContext& context, const llvm_type
 		{
 			make_frp_type(type_lookup),
 			make_generic_dict_type(type_lookup)->getPointerTo(),
-			make_runtime_type_type(context)
+			make_runtime_type_type(type_lookup)
 		},
 		false
 	);
@@ -848,7 +848,7 @@ function_bind_t fr_release_dict__make(llvm::LLVMContext& context, const llvm_typ
 		{
 			make_frp_type(type_lookup),
 			make_generic_dict_type(type_lookup)->getPointerTo(),
-			make_runtime_type_type(context)
+			make_runtime_type_type(type_lookup)
 		},
 		false
 	);
@@ -881,7 +881,7 @@ function_bind_t fr_retain_json__make(llvm::LLVMContext& context, const llvm_type
 		{
 			make_frp_type(type_lookup),
 			get_exact_llvm_type(type_lookup, typeid_t::make_json()),
-			make_runtime_type_type(context)
+			make_runtime_type_type(type_lookup)
 		},
 		false
 	);
@@ -914,7 +914,7 @@ function_bind_t fr_release_json__make(llvm::LLVMContext& context, const llvm_typ
 		{
 			make_frp_type(type_lookup),
 			get_exact_llvm_type(type_lookup, typeid_t::make_json()),
-			make_runtime_type_type(context)
+			make_runtime_type_type(type_lookup)
 		},
 		false
 	);
@@ -949,7 +949,7 @@ function_bind_t fr_retain_struct__make(llvm::LLVMContext& context, const llvm_ty
 		{
 			make_frp_type(type_lookup),
 			get_generic_struct_type(type_lookup)->getPointerTo(),
-			make_runtime_type_type(context)
+			make_runtime_type_type(type_lookup)
 		},
 		false
 	);
@@ -975,7 +975,7 @@ function_bind_t fr_release_struct__make(llvm::LLVMContext& context, const llvm_t
 		{
 			make_frp_type(type_lookup),
 			get_generic_struct_type(type_lookup)->getPointerTo(),
-			make_runtime_type_type(context)
+			make_runtime_type_type(type_lookup)
 		},
 		false
 	);
@@ -1088,7 +1088,7 @@ function_bind_t floyd_runtime__concatunate_vectors__make(llvm::LLVMContext& cont
 		make_generic_vec_type(type_lookup)->getPointerTo(),
 		{
 			make_frp_type(type_lookup),
-			make_runtime_type_type(context),
+			make_runtime_type_type(type_lookup),
 			make_generic_vec_type(type_lookup)->getPointerTo(),
 			make_generic_vec_type(type_lookup)->getPointerTo()
 		},
@@ -1141,8 +1141,8 @@ function_bind_t floyd_runtime__store_dict_mutable__make(llvm::LLVMContext& conte
 			make_frp_type(type_lookup),
 			make_generic_dict_type(type_lookup)->getPointerTo(),
 			get_exact_llvm_type(type_lookup, typeid_t::make_string()),
-			make_runtime_value_type(context),
-			make_runtime_type_type(context)
+			make_runtime_value_type(type_lookup),
+			make_runtime_type_type(type_lookup)
 		},
 		false
 	);
@@ -1170,7 +1170,7 @@ runtime_value_t floyd_runtime__lookup_dict(floyd_runtime_t* frp, DICT_T* dict, r
 
 function_bind_t floyd_runtime__lookup_dict__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
-		make_runtime_value_type(context),
+		make_runtime_value_type(type_lookup),
 		{
 			make_frp_type(type_lookup),
 			make_generic_dict_type(type_lookup)->getPointerTo(),
@@ -1204,8 +1204,8 @@ function_bind_t floyd_runtime__allocate_json__make(llvm::LLVMContext& context, c
 		get_exact_llvm_type(type_lookup, typeid_t::make_json()),
 		{
 			make_frp_type(type_lookup),
-			make_runtime_value_type(context),
-			make_runtime_type_type(context)
+			make_runtime_value_type(type_lookup),
+			make_runtime_type_type(type_lookup)
 		},
 		false
 	);
@@ -1254,8 +1254,8 @@ function_bind_t floyd_runtime__lookup_json__make(llvm::LLVMContext& context, con
 		{
 			make_frp_type(type_lookup),
 			get_exact_llvm_type(type_lookup, typeid_t::make_json()),
-			make_runtime_value_type(context),
-			make_runtime_type_type(context)
+			make_runtime_value_type(type_lookup),
+			make_runtime_type_type(type_lookup)
 		},
 		false
 	);
@@ -1346,9 +1346,9 @@ function_bind_t floyd_runtime__compare_values__make(llvm::LLVMContext& context, 
 		{
 			make_frp_type(type_lookup),
 			llvm::Type::getInt64Ty(context),
-			make_runtime_type_type(context),
-			make_runtime_value_type(context),
-			make_runtime_value_type(context)
+			make_runtime_type_type(type_lookup),
+			make_runtime_value_type(type_lookup),
+			make_runtime_value_type(type_lookup)
 		},
 		false
 	);
@@ -1438,10 +1438,10 @@ function_bind_t fr_update_struct_member__make(llvm::LLVMContext& context, const 
 		{
 			make_frp_type(type_lookup),
 			get_generic_struct_type(type_lookup)->getPointerTo(),
-			make_runtime_type_type(context),
+			make_runtime_type_type(type_lookup),
 			llvm::Type::getInt64Ty(context),
-			make_runtime_value_type(context),
-			make_runtime_type_type(context)
+			make_runtime_value_type(type_lookup),
+			make_runtime_type_type(type_lookup)
 		},
 		false
 	);
