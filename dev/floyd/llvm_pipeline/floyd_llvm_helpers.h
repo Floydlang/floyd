@@ -11,12 +11,15 @@
 
 #include "typeid.h"
 #include "ast.h"
+#include "floyd_llvm_types.h"
+
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 
-#include <atomic>
 #include "immer/vector.hpp"
 #include "immer/map.hpp"
+
+#include <atomic>
 
 struct json_t;
 
@@ -29,7 +32,6 @@ struct JSON_T;
 struct STRUCT_T;
 struct type_interner_t;
 struct llvm_type_interner_t;
-
 
 
 ////////////////////////////////		heap_t
@@ -144,27 +146,6 @@ void dispose_alloc(heap_alloc_64_t& alloc);
 
 
 
-////////////////////////////////	runtime_type_t
-
-/*
-	An integer that specifies a unique type a type interner. Use this to specify types in running program.
-	Avoid using floyd::typeid_t
-*/
-
-typedef int64_t runtime_type_t;
-
-llvm::Type* make_runtime_type_type(llvm::LLVMContext& context);
-
-runtime_type_t make_runtime_type(int32_t itype);
-
-
-base_type get_base_type(const type_interner_t& interner, const runtime_type_t& type);
-
-typeid_t lookup_type(const type_interner_t& interner, const runtime_type_t& type);
-runtime_type_t lookup_runtime_type(const type_interner_t& interner, const typeid_t& type);
-
-
-
 
 ////////////////////////////////	native_value_t
 
@@ -199,7 +180,6 @@ union runtime_value_t {
 };
 
 
-llvm::Type* make_runtime_value_type(llvm::LLVMContext& context);
 
 runtime_value_t make_blank_runtime_value();
 
@@ -216,11 +196,6 @@ DICT_T* unpack_dict_arg(const type_interner_t& types, runtime_value_t arg_value,
 
 
 
-
-
-
-
-
 //	Must LLVMContext be kept while using the execution engine? Yes!
 struct llvm_instance_t {
 	bool check_invariant() const {
@@ -229,7 +204,6 @@ struct llvm_instance_t {
 
 	llvm::LLVMContext context;
 };
-
 
 
 /*
@@ -282,7 +256,6 @@ struct floyd_runtime_t {
 bool check_callers_fcp(const llvm_type_interner_t& interner, llvm::Function& emit_f);
 bool check_emitting_function(const llvm_type_interner_t& interner, llvm::Function& emit_f);
 llvm::Value* get_callers_fcp(const llvm_type_interner_t& interner, llvm::Function& emit_f);
-llvm::Type* make_frp_type(const llvm_type_interner_t& interner);
 
 
 
@@ -575,98 +548,19 @@ STRUCT_T* wide_return_to_struct(const WIDE_RETURN_T& ret);
 
 
 
-
 void generate_array_element_store(llvm::IRBuilder<>& builder, llvm::Value& array_ptr_reg, uint64_t element_index, llvm::Value& element_reg);
 
-llvm::Type* deref_ptr(llvm::Type* type);
 
-
-
-////////////////////////////////		llvm_arg_mapping_t
-
-
-//	One element for each LLVM argument.
-struct llvm_arg_mapping_t {
-	llvm::Type* llvm_type;
-
-	std::string floyd_name;
-	typeid_t floyd_type;
-	int floyd_arg_index;	//-1 is none. Several elements can specify the same Floyd arg index, since dynamic value use two.
-	enum class map_type { k_floyd_runtime_ptr, k_known_value_type, k_dyn_value, k_dyn_type } map_type;
-};
-
-struct llvm_function_def_t {
-	llvm::Type* return_type;
-	std::vector<llvm_arg_mapping_t> args;
-	std::vector<llvm::Type*> llvm_args;
-};
-
-llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<member_t>& args);
-
-llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const llvm_type_interner_t& interner, const floyd::typeid_t& function_type);
 
 
 
 llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& symbol_name, llvm::Type& itype, llvm::Constant* init_or_nullptr);
 
 
-////////////////////////////////		get_exact_llvm_type()
 
-/*
-	Type interner: keeps a list of all types used statically in the program, their itype, their LLVM type and their Floyd type.
-
-	Generic-type: vector (and string), dictionary, json and struct are passed around as 4 different types,
-	not one for each vector type, struct type etc. These generic types are 64 bytes big, the same size as heap_alloc_64_t.
-*/
-
-struct llvm_type_interner_t {
-	llvm_type_interner_t(llvm::LLVMContext& context, const type_interner_t& interner);
-	bool check_invariant() const;
-
-
-	////////////////////////////////		STATE
-	//	Notice: we match indexes of the lookup vectors between interner.interned and exact_llvm_types.
-	type_interner_t interner;
-	std::vector<llvm::Type*> exact_llvm_types;
-
-	llvm::StructType* generic_vec_type;
-	llvm::StructType* generic_dict_type;
-	llvm::StructType* json_type;
-	llvm::StructType* generic_struct_type;
-	llvm::StructType* wide_return_type;
-	llvm::Type* runtime_ptr_type;
-};
-
-//	Returns the LLVM type used to pass this type of value around. It uses generic types for vector, dict and struct.
-llvm::Type* get_exact_llvm_type(const llvm_type_interner_t& interner, const typeid_t& type);
-
-//	Returns the exact LLVM struct layout that maps to the struct members, without any alloc-64 header. Not a pointer.
-llvm::StructType* get_exact_struct_type(const llvm_type_interner_t& interner, const typeid_t& type);
-
-llvm::StructType* make_wide_return_type(const llvm_type_interner_t& interner);
-
-//	Returns generic types.
-llvm::Type* make_generic_vec_type(const llvm_type_interner_t& interner);
-llvm::Type* make_generic_dict_type(const llvm_type_interner_t& interner);
-llvm::Type* make_json_type(const llvm_type_interner_t& interner);
-llvm::Type* get_generic_struct_type(const llvm_type_interner_t& interner);
-
-
-llvm::Type* make_function_type(const llvm_type_interner_t& interner, const typeid_t& function_type);
 
 
 bool is_rc_value(const typeid_t& type);
-
-
-/*
-	floyd			C++			runtime_value_t			native func arg/return
-	--------------------------------------------------------------------------------------------------------------------
-	bool			bool		uint8					uint1
-	int							int64_t					int64
-	string			string		char*					char*
-	vector[T]		vector<T>	VEC_T*					VEC_T*
-	json_t			json_t		json_t*					int16*
-*/
 
 
 
