@@ -1286,7 +1286,7 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_dict_type(interner)->getPointerTo(), "");
 		}
 		llvm::Value* operator()(const typeid_t::function_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_function_type(interner, type), "");
+			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_exact_llvm_type(interner, type), "");
 		}
 		llvm::Value* operator()(const typeid_t::unresolved_t& e) const{
 			UNSUPPORTED();

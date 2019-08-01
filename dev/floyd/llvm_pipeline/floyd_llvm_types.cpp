@@ -349,13 +349,6 @@ llvm::Type* get_exact_llvm_type(const llvm_type_interner_t& i, const typeid_t& t
 	}
 }
 
-llvm::Type* make_function_type(const llvm_type_interner_t& interner, const typeid_t& function_type){
-	QUARK_ASSERT(interner.check_invariant());
-	QUARK_ASSERT(function_type.check_invariant());
-
-	return get_exact_llvm_type(interner, function_type);
-}
-
 llvm::StructType* make_wide_return_type(const llvm_type_interner_t& interner){
 	QUARK_ASSERT(interner.check_invariant());
 

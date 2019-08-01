@@ -134,8 +134,6 @@ llvm::StructType* get_exact_struct_type(const llvm_type_interner_t& interner, co
 //	Returns the LLVM type used to pass this type of value around. It uses generic types for vector, dict and struct.
 llvm::Type* get_exact_llvm_type(const llvm_type_interner_t& interner, const typeid_t& type);
 
-llvm::Type* make_function_type(const llvm_type_interner_t& interner, const typeid_t& function_type);
-
 
 
 llvm::StructType* make_wide_return_type(const llvm_type_interner_t& interner);
