@@ -32,7 +32,7 @@ llvm::Type* deref_ptr(llvm::Type* type){
 ////////////////////////////////	runtime_type_t
 
 
-
+//??? Make as member of llvm_type_lookup
 llvm::Type* make_runtime_type_type(llvm::LLVMContext& context){
 	return llvm::Type::getInt64Ty(context);
 }
@@ -40,7 +40,7 @@ llvm::Type* make_runtime_type_type(llvm::LLVMContext& context){
 runtime_type_t make_runtime_type(int32_t itype){
 	return runtime_type_t{ itype };
 }
-
+//??? Make as member of llvm_type_lookup
 llvm::Type* make_runtime_value_type(llvm::LLVMContext& context){
 	return llvm::Type::getInt64Ty(context);
 }
@@ -268,17 +268,36 @@ llvm_type_lookup::llvm_type_lookup(llvm::LLVMContext& context, const type_intern
 
 	for(const auto& e: i.interned){
 		const auto llvm_type = make_exact_type_internal(context, *this, e.second);
-		intern_type(interner, e.second);
-		exact_llvm_types.push_back(llvm_type);
+
+		llvm::Type* llvm_generic_type = nullptr;
+		if(e.second.is_vector()){
+			llvm_generic_type = generic_vec_type->getPointerTo();
+		}
+		else if(e.second.is_dict()){
+			llvm_generic_type = generic_dict_type->getPointerTo();
+		}
+		else if(e.second.is_struct()){
+			llvm_generic_type = generic_struct_type->getPointerTo();
+		}
+		else{
+			llvm_generic_type = nullptr;
+		}
+
+
+		const auto entry = type_entry_t{
+			e.first,
+			e.second,
+			llvm_type,
+			llvm_generic_type
+		};
+
+		types.push_back(entry);
 	}
 
 	QUARK_ASSERT(check_invariant());
 }
 
 bool llvm_type_lookup::check_invariant() const {
-	QUARK_ASSERT(interner.check_invariant());
-//	QUARK_ASSERT(interner.interned.size() == exact_llvm_types.size());
-
 	QUARK_ASSERT(generic_vec_type != nullptr);
 	QUARK_ASSERT(generic_dict_type != nullptr);
 	QUARK_ASSERT(json_type != nullptr);
@@ -287,17 +306,38 @@ bool llvm_type_lookup::check_invariant() const {
 	return true;
 }
 
+const type_entry_t& llvm_type_lookup::find_from_type(const typeid_t& type) const {
+	QUARK_ASSERT(check_invariant());
+
+	const auto it = std::find_if(types.begin(), types.end(), [&](const type_entry_t& e){ return e.type == type; });
+	if(it == types.end()){
+		throw std::exception();
+	}
+	return *it;
+}
+
+const type_entry_t& llvm_type_lookup::find_from_itype(const itype_t& itype) const {
+	QUARK_ASSERT(check_invariant());
+
+	const auto it = std::find_if(types.begin(), types.end(), [&](const type_entry_t& e){ return e.itype.itype == itype.itype; });
+	if(it == types.end()){
+		throw std::exception();
+	}
+	return *it;
+}
+
+
+
 typeid_t lookup_type(const llvm_type_lookup& type_lookup, const itype_t& type){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	const auto& interner = type_lookup.get_interner();
-	return lookup_type(interner, type);
+	return type_lookup.find_from_itype(type).type;
 }
 
 itype_t lookup_itype(const llvm_type_lookup& type_lookup, const typeid_t& type){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
-	return lookup_itype(type_lookup.get_interner(), type);
+	return type_lookup.find_from_type(type).itype;
 }
 
 
@@ -307,15 +347,8 @@ llvm::StructType* get_exact_struct_type(const llvm_type_lookup& i, const typeid_
 	QUARK_ASSERT(i.check_invariant());
 	QUARK_ASSERT(type.is_struct());
 
-	const auto& interner = i.get_interner();
-	const auto it = std::find_if(interner.interned.begin(), interner.interned.end(), [&](const std::pair<itype_t, typeid_t>& e){ return e.second == type; });
-	if(it == interner.interned.end()){
-		throw std::exception();
-	}
-	const auto index = it - interner.interned.begin();
-	QUARK_ASSERT(index >= 0 && index < i.exact_llvm_types.size());
-	auto result = i.exact_llvm_types[index];
-
+	const auto& entry = i.find_from_type(type);
+	auto result = entry.llvm_type_specific;
 	auto result2 = deref_ptr(result);
 	return llvm::cast<llvm::StructType>(result2);
 }
@@ -324,25 +357,12 @@ llvm::Type* get_exact_llvm_type(const llvm_type_lookup& i, const typeid_t& type)
 	QUARK_ASSERT(i.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto& interner = i.get_interner();
-
-	if(type.is_vector()){
-		return i.generic_vec_type->getPointerTo();
-	}
-	else if(type.is_dict()){
-		return i.generic_dict_type->getPointerTo();
-	}
-	else if(type.is_struct()){
-		return i.generic_struct_type->getPointerTo();
+	const auto& entry = i.find_from_type(type);
+	if(entry.llvm_type_generic != nullptr){
+		return entry.llvm_type_generic;
 	}
 	else{
-		const auto it = std::find_if(interner.interned.begin(), interner.interned.end(), [&](const std::pair<itype_t, typeid_t>& e){ return e.second == type; });
-		if(it == interner.interned.end()){
-			throw std::exception();
-		}
-		const auto index = it - interner.interned.begin();
-		QUARK_ASSERT(index >= 0 && index < i.exact_llvm_types.size());
-		return i.exact_llvm_types[index];
+		return entry.llvm_type_specific;
 	}
 }
 
@@ -561,8 +581,7 @@ runtime_type_t lookup_runtime_type(const llvm_type_lookup& type_lookup, const ty
 	QUARK_ASSERT(type_lookup.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto& interner = type_lookup.get_interner();
-	const auto a = lookup_itype(interner, type);
+	const auto a = lookup_itype(type_lookup, type);
 	return make_runtime_type(a.itype);
 }
 

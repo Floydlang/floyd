@@ -110,21 +110,30 @@ llvm_function_def_t name_args(const llvm_function_def_t& def, const std::vector<
 	heap_alloc_64_t.
 */
 
+struct type_entry_t {
+	itype_t itype;
+	typeid_t type;
+	llvm::Type* llvm_type_specific;
+	llvm::Type* llvm_type_generic;
+};
+
 struct llvm_type_lookup {
 	llvm_type_lookup(llvm::LLVMContext& context, const type_interner_t& interner);
 	bool check_invariant() const;
 
-	const type_interner_t& get_interner() const { return interner; }
+	const type_entry_t& find_from_type(const typeid_t& type) const;
+	const type_entry_t& find_from_itype(const itype_t& itype) const;
+
 
 	////////////////////////////////		STATE
-	//	Notice: we match indexes of the lookup vectors between interner.interned and exact_llvm_types.
-	private: type_interner_t interner;
-	public: std::vector<llvm::Type*> exact_llvm_types;
+
+	public: std::vector<type_entry_t> types;
 
 	public: llvm::StructType* generic_vec_type;
 	public: llvm::StructType* generic_dict_type;
-	public: llvm::StructType* json_type;
 	public: llvm::StructType* generic_struct_type;
+
+	public: llvm::StructType* json_type;
 	public: llvm::StructType* wide_return_type;
 	public: llvm::Type* runtime_ptr_type;
 };
