@@ -14,7 +14,7 @@ cmake_minimum_required (VERSION 3.4)
 #SET (CMAKE_BUILD_TYPE Release)
 SET (CMAKE_BUILD_TYPE Debug)
 
-include_directories(parts /usr/include floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
+include_directories(parts /usr/include libs/benchmark/include libs/benchmark/googletest/googlemock/ libs/benchmark/googletest/googlemock/include floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
 
 # for newer cmake 
 #add_compile_definitions(DEBUG)
@@ -27,58 +27,78 @@ set(CMAKE_CXX_FLAGS "-std=c++17 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_
 #set(CMAKE_CXX_FLAGS "--closure 1 -std=c++1z -s USE_PTHREADS=1 -Os -s WASM=0 -s ASSERTIONS=1 -s DISABLE_EXCEPTION_CATCHING=0 --bind")
 
 set( FLOYD_SOURCES
-floyd_basics/ast_json.cpp
-floyd_basics/ast_typeid.cpp
-floyd_basics/ast_typeid_helpers.cpp
-floyd_basics/ast_value.cpp
 benchmark_basics.cpp
-compiler_helpers.cpp
-pass2.cpp
-#benchmark_game_of_life.cpp
+bytecode_interpreter/bytecode_corecalls.cpp
+bytecode_interpreter/bytecode_corelib.cpp
 bytecode_interpreter/bytecode_generator.cpp
+bytecode_interpreter/bytecode_helpers.cpp
 bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/floyd_interpreter.cpp
-bytecode_interpreter/host_functions.cpp
+collect_used_types.cpp
+compiler_helpers.cpp
 cpp_experiments.cpp
-floyd_basics/compiler_basics.cpp
+desugar_pass.cpp
+#floyd/examples/game_of_life.cpp
+#floyd/examples/process_test1.floyd
+#floyd/examples/test_main.floyd
 floyd_ast/ast.cpp
-floyd_ast/ast_basics.cpp
+floyd_ast/ast_helpers.cpp
+floyd_ast/ast_visitor.cpp
 floyd_ast/expression.cpp
 floyd_ast/statement.cpp
-#floyd_basics.cpp
+floyd_basics/ast_value.cpp
+floyd_basics/compiler_basics.cpp
+floyd_basics/typeid.cpp
 floyd_main.cpp
-floyd_basics/floyd_syntax.cpp
 floyd_parser/floyd_parser.cpp
+floyd_parser/floyd_syntax.cpp
 floyd_parser/parse_expression.cpp
-#floyd_parser/parse_function_def.cpp
-#floyd_parser/parse_prefixless_statement.cpp
-#floyd_parser/parse_protocol_def.cpp
 floyd_parser/parse_statement.cpp
-#floyd_parser/parse_struct_def.cpp
-#floyd_parser/parser2.cpp
 floyd_parser/parser_primitives.cpp
-#floyd_speak/example.floydsys
-parts/hardware_caps.cpp
+floyd_repl.cpp
+floyd_runtime/floyd_corelib.cpp
+floyd_runtime/floyd_runtime.cpp
+floyd_runtime/variable_length_quantity.cpp
+floyd_test_suite.cpp
 interpretator_benchmark.cpp
+issue_regression_tests.cpp
+#libs/benchmark/googletest/googlemock/src/gmock-all.cc
+#libs/benchmark/googletest/googletest/src/gtest-all.cc
+libs/benchmark/src/benchmark.cc
+libs/benchmark/src/benchmark_api_internal.cc
+libs/benchmark/src/benchmark_register.cc
+libs/benchmark/src/benchmark_runner.cc
+libs/benchmark/src/colorprint.cc
+libs/benchmark/src/commandlineflags.cc
+libs/benchmark/src/complexity.cc
+libs/benchmark/src/console_reporter.cc
+libs/benchmark/src/counter.cc
+libs/benchmark/src/csv_reporter.cc
+libs/benchmark/src/json_reporter.cc
+libs/benchmark/src/reporter.cc
+libs/benchmark/src/sleep.cc
+libs/benchmark/src/statistics.cc
+libs/benchmark/src/string_util.cc
+libs/benchmark/src/sysinfo.cc
+libs/benchmark/src/timers.cc
+llvm_pipeline/floyd_llvm_codegen.cpp
+llvm_pipeline/floyd_llvm_corelib.cpp
+llvm_pipeline/floyd_llvm_helpers.cpp
+llvm_pipeline/floyd_llvm_runtime.cpp
+parse_tree_to_ast_conv.cpp
+parts/file_handling.cpp
+parts/hardware_caps.cpp
 parts/immutable_ref_value.cpp
-parts/os_process.cpp
-#parts/json_parser.cpp
 parts/json_support.cpp
-#parts/json_writer.cpp
+parts/os_process.cpp
 parts/quark.cpp
 parts/sha1/sha1.cpp
 parts/sha1_class.cpp
 parts/text_parser.cpp
 parts/utils.cpp
-parts/file_handling.cpp
-pass3.cpp
+semantic_analyser.cpp
 software_system.cpp
-floyd_runtime/floyd_runtime.cpp
-floyd_runtime/variable_length_quantity.cpp 
-llvm_pipeline/floyd_llvm.cpp  
-llvm_pipeline/floyd_llvm_codegen.cpp  
-llvm_pipeline/floyd_llvm_helpers.cpp  
-llvm_pipeline/floyd_llvm_runtime.cpp
+test_helpers.cpp
 )
 
 # llvm-config --cxxflags --ldflags --system-libs --libs engine interpreter
@@ -105,6 +125,46 @@ set( FLOYD_SPEAK_STATIC_DEPENDENCIES
 set( FLOYD_SPEAK_DEPENDENCIES
 )
 
+set( BENCHMARK_SOURCES
+bytecode_interpreter/bytecode_corelib.cpp
+bytecode_interpreter/bytecode_helpers.cpp
+collect_used_types.cpp
+compiler_helpers.cpp
+compressed_vector_benchmark.cpp
+examples/process_test1.floyd
+examples/test_main.floyd
+floyd_ast/ast_helpers.cpp
+floyd_benchmark_main.cpp
+floyd_runtime/floyd_runtime.cpp
+floyd_runtime/variable_length_quantity.cpp
+libs/benchmark/googletest/googlemock/src/gmock-all.cc
+libs/benchmark/googletest/googletest/src/gtest-all.cc
+libs/benchmark/src/benchmark.cc
+libs/benchmark/src/benchmark_api_internal.cc
+libs/benchmark/src/benchmark_register.cc
+libs/benchmark/src/benchmark_runner.cc
+libs/benchmark/src/colorprint.cc
+libs/benchmark/src/commandlineflags.cc
+libs/benchmark/src/complexity.cc
+libs/benchmark/src/console_reporter.cc
+libs/benchmark/src/counter.cc
+libs/benchmark/src/csv_reporter.cc
+libs/benchmark/src/json_reporter.cc
+libs/benchmark/src/reporter.cc
+libs/benchmark/src/sleep.cc
+libs/benchmark/src/statistics.cc
+libs/benchmark/src/string_util.cc
+libs/benchmark/src/sysinfo.cc
+libs/benchmark/src/timers.cc
+llvm_pipeline/floyd_llvm_codegen.cpp
+llvm_pipeline/floyd_llvm_corelib.cpp
+parse_tree_to_ast_conv.cpp
+parts/hardware_caps.cpp
+parts/os_process.cpp
+parts/quark.cpp
+parts/sha1/sha1.cpp
+parts/utils.cpp
+)
 
 ##
 ## floyd_speak UT Files
@@ -142,7 +202,7 @@ target_include_directories( floyd
 
 target_link_libraries( floyd
 ${FLOYD_SPEAK_STATIC_DEPENDENCIES}
-${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM-8
+${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM-8 readline
 )
 
 
@@ -168,5 +228,15 @@ target_include_directories( floydut
 
 target_link_libraries( floydut
 ${FLOYD_SPEAK__UT_STATIC_DEPENDENCIES}
-${FLOYD_SPEAK__UT_DEPENDENCIES} pthread LLVM-8
+${FLOYD_SPEAK__UT_DEPENDENCIES} pthread LLVM-8 readline
 )
+
+
+##
+## benchmark
+##
+
+# Does not currently compile
+#add_executable( benchmark MACOSX_BUNDLE
+#${BENCHMARK_SOURCES}
+#)

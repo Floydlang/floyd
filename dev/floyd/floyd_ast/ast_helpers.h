@@ -10,6 +10,7 @@
 #define ast_helpers_hpp
 
 #include <vector>
+#include <memory>
 
 namespace floyd {
 
