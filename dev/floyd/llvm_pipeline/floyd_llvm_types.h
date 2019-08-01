@@ -41,7 +41,7 @@ llvm::Type* deref_ptr(llvm::Type* type);
 	Avoid using floyd::typeid_t
 */
 
-typedef int64_t runtime_type_t;
+typedef int32_t runtime_type_t;
 
 llvm::Type* make_runtime_type_type(llvm::LLVMContext& context);
 
@@ -136,13 +136,12 @@ llvm::Type* get_exact_llvm_type(const llvm_type_interner_t& interner, const type
 
 
 
-llvm::StructType* make_wide_return_type(const llvm_type_interner_t& interner);
-
 //	Returns generic types.
 llvm::Type* make_generic_vec_type(const llvm_type_interner_t& interner);
 llvm::Type* make_generic_dict_type(const llvm_type_interner_t& interner);
-llvm::Type* make_json_type(const llvm_type_interner_t& interner);
 llvm::Type* get_generic_struct_type(const llvm_type_interner_t& interner);
+
+llvm::Type* make_json_type(const llvm_type_interner_t& interner);
 
 llvm_function_def_t map_function_arguments(llvm::LLVMContext& context, const llvm_type_interner_t& interner, const floyd::typeid_t& function_type);
 
