@@ -114,19 +114,24 @@ struct llvm_type_lookup {
 	llvm_type_lookup(llvm::LLVMContext& context, const type_interner_t& interner);
 	bool check_invariant() const;
 
+	const type_interner_t& get_interner() const { return interner; }
 
 	////////////////////////////////		STATE
 	//	Notice: we match indexes of the lookup vectors between interner.interned and exact_llvm_types.
-	type_interner_t interner;
-	std::vector<llvm::Type*> exact_llvm_types;
+	private: type_interner_t interner;
+	public: std::vector<llvm::Type*> exact_llvm_types;
 
-	llvm::StructType* generic_vec_type;
-	llvm::StructType* generic_dict_type;
-	llvm::StructType* json_type;
-	llvm::StructType* generic_struct_type;
-	llvm::StructType* wide_return_type;
-	llvm::Type* runtime_ptr_type;
+	public: llvm::StructType* generic_vec_type;
+	public: llvm::StructType* generic_dict_type;
+	public: llvm::StructType* json_type;
+	public: llvm::StructType* generic_struct_type;
+	public: llvm::StructType* wide_return_type;
+	public: llvm::Type* runtime_ptr_type;
 };
+
+typeid_t lookup_type(const llvm_type_lookup& type_lookup, const itype_t& type);
+itype_t lookup_itype(const llvm_type_lookup& type_lookup, const typeid_t& type);
+
 
 //	Returns the exact LLVM struct layout that maps to the struct members, without any alloc-64 header. Not a pointer.
 llvm::StructType* get_exact_struct_type(const llvm_type_lookup& type_lookup, const typeid_t& type);

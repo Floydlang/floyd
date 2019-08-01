@@ -387,10 +387,11 @@ runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
 
 
 
-VEC_T* unpack_vec_arg(const type_interner_t& types, runtime_value_t arg_value, runtime_type_t arg_type){
+VEC_T* unpack_vec_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type){
 #if DEBUG
-	const auto type = lookup_type(types, arg_type);
+	const auto type = lookup_type(type_lookup, arg_type);
 #endif
+	QUARK_ASSERT(type_lookup.check_invariant());
 	QUARK_ASSERT(type.is_vector());
 	QUARK_ASSERT(arg_value.vector_ptr != nullptr);
 	QUARK_ASSERT(arg_value.vector_ptr->check_invariant());
@@ -398,10 +399,11 @@ VEC_T* unpack_vec_arg(const type_interner_t& types, runtime_value_t arg_value, r
 	return arg_value.vector_ptr;
 }
 
-DICT_T* unpack_dict_arg(const type_interner_t& types, runtime_value_t arg_value, runtime_type_t arg_type){
+DICT_T* unpack_dict_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type){
 #if DEBUG
-	const auto type = lookup_type(types, arg_type);
+	const auto type = lookup_type(type_lookup, arg_type);
 #endif
+	QUARK_ASSERT(type_lookup.check_invariant());
 	QUARK_ASSERT(type.is_dict());
 	QUARK_ASSERT(arg_value.dict_ptr != nullptr);
 

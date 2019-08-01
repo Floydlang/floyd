@@ -189,8 +189,8 @@ runtime_value_t make_runtime_typeid(runtime_type_t type);
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr);
 
 
-VEC_T* unpack_vec_arg(const type_interner_t& types, runtime_value_t arg_value, runtime_type_t arg_type);
-DICT_T* unpack_dict_arg(const type_interner_t& types, runtime_value_t arg_value, runtime_type_t arg_type);
+VEC_T* unpack_vec_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type);
+DICT_T* unpack_dict_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type);
 
 
 

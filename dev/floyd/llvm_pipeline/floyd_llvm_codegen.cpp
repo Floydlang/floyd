@@ -263,14 +263,14 @@ typeid_t unpack_itype(const llvm_code_generator_t& gen_acc, int64_t itype){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
 	const itype_t t(static_cast<uint32_t>(itype));
-	return lookup_type(gen_acc.type_lookup.interner, t);
+	return lookup_type(gen_acc.type_lookup,  t);
 }
 
 int64_t pack_itype(const llvm_code_generator_t& gen_acc, const typeid_t& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	return lookup_itype(gen_acc.type_lookup.interner, type).itype;
+	return lookup_itype(gen_acc.type_lookup, type).itype;
 }
 
 llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, const typeid_t& type){
