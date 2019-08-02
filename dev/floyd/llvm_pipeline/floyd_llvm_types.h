@@ -112,6 +112,22 @@ struct type_entry_t {
 	typeid_t type;
 	llvm::Type* llvm_type_specific;
 	llvm::Type* llvm_type_generic;
+	std::shared_ptr<const llvm_function_def_t> optional_function_def;
+};
+
+//	You must create structs *once* in LLVM. Several identical struct types won't match up.
+struct state_t {
+	public: llvm::StructType* generic_vec_type;
+	public: llvm::StructType* generic_dict_type;
+	public: llvm::StructType* generic_struct_type;
+	public: llvm::StructType* json_type;
+
+	public: llvm::StructType* wide_return_type;
+	public: llvm::Type* runtime_ptr_type;
+	public: llvm::Type* runtime_type_type;
+	public: llvm::Type* runtime_value_type;
+
+	public: std::vector<type_entry_t> types;
 };
 
 struct llvm_type_lookup {
@@ -124,19 +140,8 @@ struct llvm_type_lookup {
 
 	////////////////////////////////		STATE
 
-	public: std::vector<type_entry_t> types;
 
-	public: llvm::StructType* generic_vec_type;
-	public: llvm::StructType* generic_dict_type;
-	public: llvm::StructType* generic_struct_type;
-
-	public: llvm::StructType* json_type;
-	public: llvm::StructType* wide_return_type;
-	public: llvm::Type* runtime_ptr_type;
-
-
-	public: llvm::Type* runtime_type_type;
-	public: llvm::Type* runtime_value_type;
+	public: state_t state;
 };
 
 llvm::Type* make_runtime_type_type(const llvm_type_lookup& type_lookup);

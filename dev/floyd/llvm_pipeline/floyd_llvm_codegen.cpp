@@ -1177,6 +1177,9 @@ static llvm::Value* generate_conditional_operator_expression(llvm_code_generator
 	llvm::BasicBlock* else_bb2 = builder.GetInsertBlock();
 
 
+	QUARK_ASSERT(result_itype == then_reg->getType());
+	QUARK_ASSERT(result_itype == else_reg->getType());
+
 	// Emit join block.
 	parent_function->getBasicBlockList().push_back(join_bb);
 	builder.SetInsertPoint(join_bb);
