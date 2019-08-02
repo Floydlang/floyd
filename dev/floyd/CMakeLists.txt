@@ -9,6 +9,9 @@ project( floyd_speak)
 
 cmake_minimum_required (VERSION 3.4)
 
+IF(MSVC)
+    SET(CMAKE_CXX_FLAGS "/EHsc")
+ENDIF(MSVC)
 #add_subdirectory(libs/Celero-master)
 
 #SET (CMAKE_BUILD_TYPE Release)
@@ -19,6 +22,10 @@ include_directories(parts /usr/include libs/benchmark/include libs/benchmark/goo
 # for newer cmake 
 #add_compile_definitions(DEBUG)
 add_definitions(-DDEBUG)
+
+#add_definitions(-DQUARK_ASSERT_ON true)
+#add_definitions(-DQUARK_TRACE_ON true)
+#add_definitions(-DQUARK_UNIT_TESTS_ON true)
 
 # -fno-exceptions
 set(CMAKE_CXX_FLAGS "-std=c++17 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
@@ -85,6 +92,7 @@ llvm_pipeline/floyd_llvm_codegen.cpp
 llvm_pipeline/floyd_llvm_corelib.cpp
 llvm_pipeline/floyd_llvm_helpers.cpp
 llvm_pipeline/floyd_llvm_runtime.cpp
+llvm_pipeline/floyd_llvm_types.cpp
 parse_tree_to_ast_conv.cpp
 parts/file_handling.cpp
 parts/hardware_caps.cpp
@@ -230,6 +238,9 @@ target_link_libraries( floydut
 ${FLOYD_SPEAK__UT_STATIC_DEPENDENCIES}
 ${FLOYD_SPEAK__UT_DEPENDENCIES} pthread LLVM-8 readline
 )
+set_property(TARGET floyd PROPERTY CXX_STANDARD 17)
+
+set_property(TARGET floydut PROPERTY CXX_STANDARD 17)
 
 
 ##
