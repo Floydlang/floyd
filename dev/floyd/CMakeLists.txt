@@ -219,28 +219,28 @@ ${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM-8 readline
 ##
 
 
-add_executable( floydut MACOSX_BUNDLE
-${FLOYD_SOURCES}
-${FLOYD_SPEAK__UT_SOURCES}
-${FLOYD_SPEAK__UT_PUBLIC_HEADERS}
-${FLOYD_SPEAK__UT_PROJECT_HEADERS}
-${FLOYD_SPEAK__UT_PRIVATE_HEADERS}
-${FLOYD_SPEAK__UT_RESOURCES}
-)
+#add_executable( floydut MACOSX_BUNDLE
+#${FLOYD_SOURCES}
+#${FLOYD_SPEAK__UT_SOURCES}
+#${FLOYD_SPEAK__UT_PUBLIC_HEADERS}
+#${FLOYD_SPEAK__UT_PROJECT_HEADERS}
+#${FLOYD_SPEAK__UT_PRIVATE_HEADERS}
+#${FLOYD_SPEAK__UT_RESOURCES}
+#)
 
-target_compile_definitions(floydut PRIVATE DEBUG=1)
+#target_compile_definitions(floydut PRIVATE DEBUG=1)
 
-target_include_directories( floydut
-   PUBLIC
-)
+#target_include_directories( floydut
+#   PUBLIC
+#)
 
-target_link_libraries( floydut
-${FLOYD_SPEAK__UT_STATIC_DEPENDENCIES}
-${FLOYD_SPEAK__UT_DEPENDENCIES} pthread LLVM-8 readline
-)
+#target_link_libraries( floydut
+#${FLOYD_SPEAK__UT_STATIC_DEPENDENCIES}
+#${FLOYD_SPEAK__UT_DEPENDENCIES} pthread LLVM-8 readline
+#)
 set_property(TARGET floyd PROPERTY CXX_STANDARD 17)
 
-set_property(TARGET floydut PROPERTY CXX_STANDARD 17)
+#set_property(TARGET floydut PROPERTY CXX_STANDARD 17)
 
 
 ##
