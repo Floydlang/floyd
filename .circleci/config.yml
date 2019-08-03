@@ -44,6 +44,9 @@ jobs:
       - run:
            name: Creating Application
            command: 'cd dev && xcodebuild'
+      - run:
+           name: List options
+           command: 'cd dev && xcodebuild -list -project floyd.xcodeproj'
       #- run:
       #     name: floyd Unit Testing
       #     command: 'build/Release/floydut runtests'
