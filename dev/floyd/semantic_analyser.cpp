@@ -20,7 +20,7 @@
 
 namespace floyd {
 
-static const bool k_trace_io_flag = false;
+static const bool k_trace_io_flag = true;
 
 //???? remove!!
 using namespace std;
@@ -93,7 +93,7 @@ struct analyser_t {
 	public: software_system_t _software_system;
 	public: container_t _container_def;
 
-	public: std::vector<value_t> benchmark_defs;
+	public: std::vector<expression_t> benchmark_defs;
 };
 
 
@@ -753,7 +753,6 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 	a_acc._function_defs.insert({ function_id, std::make_shared<function_definition_t>(function_def2) });
 
 	const auto f = value_t::make_function_value(benchmark_function_t, function_id);
-	const auto new_record = value_t::make_struct_value(benchmark_t_struct, { value_t::make_string(test_name), f } );
 
 	//	Add benchmark-def record to global list.
 #if 0
@@ -775,6 +774,14 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 	}
 #else
 	{
+//		const auto new_record = value_t::make_struct_value(benchmark_t_struct, { value_t::make_string(test_name), f } );
+		const auto new_record = expression_t::make_construct_value_expr(
+			benchmark_t_struct,
+			{
+				expression_t::make_literal_string(test_name),
+				expression_t::make_literal(f)
+			}
+		);
 		a_acc.benchmark_defs.push_back(new_record);
 	}
 #endif
@@ -2468,14 +2475,14 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	symbol_map.push_back( { "json_false", symbol_t::make_immutable_precalc(value_t::make_int(6)) });
 	symbol_map.push_back( { "json_null", symbol_t::make_immutable_precalc(value_t::make_int(7)) });
 
-#if 0
+#if 1
 	{
 		const auto benchmark_t_struct = make_benchmark_t();
-		const auto benchmark_registry = value_t::make_vector_value(benchmark_t_struct, {});
+		const auto benchmark_registry_type = typeid_t::make_vector(benchmark_t_struct);
 		symbol_map.push_back(
 			{
 				k_global_benchmark_registry,
-				symbol_t::make_immutable_precalc(benchmark_registry)
+				symbol_t::make_immutable_reserve(benchmark_registry_type)
 			}
 		);
 	}
@@ -2510,33 +2517,29 @@ semantic_ast_t analyse(analyser_t& a){
 	const auto global_body = body_t(a._imm->_ast._tree._globals._statements, symbol_table_t{ symbol_map });
 	auto global_body2_pair = analyse_body(a, global_body, epure::impure, typeid_t::make_void());
 	a = global_body2_pair.first;
+	auto global_body3 = global_body2_pair.second;
 
 
-#if 0
-	//	Add global list of benchmark-def:s.
+	//	Add Init benchmark-def:s.
 	{
 		const auto benchmark_t_struct = make_benchmark_t();
 		const auto t = typeid_t::make_vector(benchmark_t_struct);
-		const auto benchmark_registry = value_t::make_vector_value(benchmark_t_struct, a.benchmark_defs);
-		global_body2_pair.second._symbol_table._symbols.push_back(
-			{
-				k_global_benchmark_registry,
-				symbol_t::make_immutable_reserve(t)
-			}
-		);
 
-		std::vector<expression_t> elements;
-		for(const auto& e: a.benchmark_defs){
-			elements.push_back(expression_t::make_construct_value_expr(benchmark_t_struct, { e } ));
-		}
+		const auto it = std::find_if(
+			global_body3._symbol_table._symbols.begin(),
+			global_body3._symbol_table._symbols.end(),
+			[&](const std::pair<std::string, symbol_t>& e) { return e.first == k_global_benchmark_registry; }
+		);
+		QUARK_ASSERT(it != global_body3._symbol_table._symbols.end());
+//		QUARK_ASSERT(sym.second._init.get_type().get_vector_element_type() == benchmark_t_struct);
+		const auto index = static_cast<int>(it - global_body3._symbol_table._symbols.begin());
 		const auto s = statement_t::make__init2(
 			k_no_location,
-			variable_address_t::make_variable_address(0, global_body2_pair.second._symbol_table._symbols.size() - 1),
-			expression_t::make_construct_value_expr(t, elements)
+			variable_address_t::make_variable_address(variable_address_t::k_global_scope, index),
+			expression_t::make_construct_value_expr(t, a.benchmark_defs)
 		);
-		global_body2_pair.second._statements.push_back(s);
+		global_body3._statements.insert(global_body3._statements.begin(), s);
 	}
-#endif
 
 
 
@@ -2555,7 +2558,7 @@ semantic_ast_t analyse(analyser_t& a){
 	}
 
 	auto gp1 = general_purpose_ast_t{
-		._globals = global_body2_pair. second,
+		._globals = global_body3,
 		._function_defs = function_defs_vec,
 		._interned_types = a._types,
 		._software_system = global_body2_pair.first._software_system,
