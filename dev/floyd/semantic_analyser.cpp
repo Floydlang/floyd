@@ -1618,7 +1618,6 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 std::pair<analyser_t, expression_t> analyse_benchmark_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::benchmark_expr_t& details, const typeid_t& target_type){
 	QUARK_ASSERT(a.check_invariant());
 
-//std::pair<analyser_t, body_t > analyse_body(const analyser_t& a, const body_t& body, epure pure, const typeid_t& return_type){
 	auto acc = a;
 	const auto body_pair = analyse_body(acc, *details.body, epure::impure, typeid_t::make_void());
 	acc = body_pair.first;
@@ -2469,7 +2468,6 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	symbol_map.push_back( { "benchmark_result_t", make_type_symbol(make_benchmark_result_t()) } );
 
 	//	Reserve a symbol table entry for benchmark_registry instance.
-/*
 	{
 		const auto benchmark_def_t_struct = make_benchmark_def_t();
 		const auto benchmark_registry_type = typeid_t::make_vector(benchmark_def_t_struct);
@@ -2480,7 +2478,6 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 			}
 		);
 	}
-*/
 
 	std::map<function_id_t, std::shared_ptr<const function_definition_t>> function_defs;
 
@@ -2513,7 +2510,6 @@ semantic_ast_t analyse(analyser_t& a){
 	a = global_body2_pair.first;
 	auto global_body3 = global_body2_pair.second;
 
-/*
 	//	Add Init benchmark_registry.
 	{
 		const auto benchmark_def_t_struct = make_benchmark_def_t();
@@ -2532,9 +2528,10 @@ semantic_ast_t analyse(analyser_t& a){
 			variable_address_t::make_variable_address(variable_address_t::k_global_scope, index),
 			expression_t::make_construct_value_expr(t, a.benchmark_defs)
 		);
-		global_body3._statements.insert(global_body3._statements.begin(), s);
+		global_body3._statements.push_back(s);
+//		global_body3._statements.insert(global_body3._statements.begin(), s);
 	}
-*/
+
 
 
 	////////////////////////////////	Make AST
