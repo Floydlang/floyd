@@ -2086,19 +2086,9 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 
 			//	Convert calls to struct-type into construct-value expression.
 			if(construct_value_type.is_struct()){
-/*
 				const auto construct_value_expr = expression_t::make_construct_value_expr(construct_value_type, details.args);
 				const auto result_pair = analyse_expression_to_target(a_acc, parent, construct_value_expr, construct_value_type);
 				return { result_pair.first, result_pair.second };
-*/
-				const auto& def = construct_value_type.get_struct();
-
-				//	This looks funky but isn't. The struct automatically supports a contruct_value-expression where the arguments are its member values.
-				const auto struct_constructor_callee_type = typeid_t::make_function(construct_value_type, get_member_types(def._members), epure::pure);
-				const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, struct_constructor_callee_type);
-				a_acc = resolved_call.first;
-
-				return { a_acc, expression_t::make_construct_value_expr(construct_value_type, resolved_call.second.args) };
 			}
 
 			//	One argument for primitive types.
