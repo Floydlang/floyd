@@ -2393,6 +2393,7 @@ const WIDE_RETURN_T floyd_funcdef__update(floyd_runtime_t* frp, runtime_value_t 
 		//	No other types allowed.
 		UNSUPPORTED();
 	}
+	throw std::exception();
 }
 
 JSON_T* floyd_funcdef__to_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){

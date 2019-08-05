@@ -2233,6 +2233,7 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 		}
 		std::pair<analyser_t, expression_t> operator()(const expression_t::corecall_t& expr) const{
 			QUARK_ASSERT(false);
+			throw std::exception();
 		}
 
 

@@ -1115,6 +1115,7 @@ static llvm::Value* generate_bitwize_expression(llvm_code_generator_t& gen_acc, 
 	else{
 		QUARK_ASSERT(false);
 	}
+	throw std::exception();
 }
 
 static llvm::Value* generate_arithmetic_unary_minus_expression(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const expression_t& e, const expression_t::unary_minus_t& details){
@@ -1431,6 +1432,7 @@ static llvm::Value* generate_corecall_expression(llvm_code_generator_t& gen_acc,
 	else{
 		QUARK_ASSERT(false);
 	}
+	throw std::exception();
 }
 
 

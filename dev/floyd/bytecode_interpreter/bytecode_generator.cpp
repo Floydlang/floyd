@@ -1259,6 +1259,7 @@ static expression_gen_t bcgen_corecall_expression(bcgenerator_t& gen_acc, const 
 	else{
 		QUARK_ASSERT(false);
 	}
+	throw std::exception();
 }
 
 
