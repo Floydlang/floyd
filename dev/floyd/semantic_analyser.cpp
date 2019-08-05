@@ -1596,18 +1596,23 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 	else if(current_type.is_struct()){
 		const auto construct_value_type = details.value_type;
 		const auto& def = construct_value_type.get_struct();
-
-		//	This looks funky but isn't. The struct automatically supports a contruct_value-expression where the arguments are its member values.
 		const auto struct_constructor_callee_type = typeid_t::make_function(construct_value_type, get_member_types(def._members), epure::pure);
 		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, struct_constructor_callee_type);
 		a_acc = resolved_call.first;
-
 		return { a_acc, expression_t::make_construct_value_expr(construct_value_type, resolved_call.second.args) };
 	}
 	else{
-		QUARK_ASSERT(false);
+		if(details.elements.size() != 1){
+			std::stringstream what;
+			what << "Construct value of primitive type requires exactly 1 argument.";
+			throw_compiler_error(parent.location, what.str());
+		}
+		const auto construct_value_type = details.value_type;
+		const auto struct_constructor_callee_type = typeid_t::make_function(construct_value_type, { construct_value_type }, epure::pure);
+		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, struct_constructor_callee_type);
+		a_acc = resolved_call.first;
+		return { a_acc, expression_t::make_construct_value_expr(construct_value_type, resolved_call.second.args) };
 	}
-	quark::throw_exception();
 }
 
 std::pair<analyser_t, expression_t> analyse_benchmark_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::benchmark_expr_t& details, const typeid_t& target_type){
@@ -2093,10 +2098,16 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 
 			//	One argument for primitive types.
 			else{
-				const auto primitive_constructor_callee_type = typeid_t::make_function(construct_value_type, { construct_value_type }, epure::pure);
+				const auto construct_value_expr = expression_t::make_construct_value_expr(construct_value_type, details.args);
+				const auto result_pair = analyse_expression_to_target(a_acc, parent, construct_value_expr, construct_value_type);
+				return { result_pair.first, result_pair.second };
+/*
+ 				const auto primitive_constructor_callee_type = typeid_t::make_function(construct_value_type, { construct_value_type }, epure::pure);
 				const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, primitive_constructor_callee_type);
 				a_acc = resolved_call.first;
 				return { a_acc, expression_t::make_construct_value_expr(construct_value_type, resolved_call.second.args) };
+*/
+
 			}
 		}
 	}

@@ -313,7 +313,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "int", "Wrong number of arguments to int-co
 			let a = int()
 
 		)",
-		"Wrong number of arguments in function call, got 0, expected 1. Line: 3 \"let a = int()\""
+		"Construct value of primitive type requires exactly 1 argument. Line: 3 \"let a = int()\""
 	);
 }
 
@@ -621,7 +621,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "Construct value", "double()", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "Construct value", "string()", ""){
-	ut_verify_exception_nolib(QUARK_POS, "let result = string()", "Wrong number of arguments in function call, got 0, expected 1. Line: 1 \"let result = string()\"");
+	ut_verify_exception_nolib(QUARK_POS, "let result = string()", "Construct value of primitive type requires exactly 1 argument. Line: 1 \"let result = string()\"");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "Construct value", "string()", ""){
