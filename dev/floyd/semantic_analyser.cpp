@@ -754,6 +754,7 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 
 	const auto f = value_t::make_function_value(benchmark_function_t, function_id);
 
+#if 1
 	//	Add benchmark-def record to global list.
 	{
 		const auto new_record = expression_t::make_construct_value_expr(
@@ -765,6 +766,21 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 		);
 		a_acc.benchmark_defs.push_back(new_record);
 	}
+#else
+	//	Add benchmark-def record to global list.
+	{
+		const auto new_record_expr = expression_t::make_construct_value_expr(
+			benchmark_def_t_struct,
+			{
+				expression_t::make_literal_string(test_name),
+				expression_t::make_literal(f)
+			}
+		);
+		const auto new_record_expr3_pair = analyse_expression_to_target(a_acc, s, new_record_expr, benchmark_def_t_struct);
+		a_acc = new_record_expr3_pair.first;
+		a_acc.benchmark_defs.push_back(new_record_expr3_pair.second);
+	}
+#endif
 
 	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, return_type);
 	a_acc = body2.first;
@@ -1591,6 +1607,17 @@ std::pair<analyser_t, expression_t> analyse_construct_value_expression(const ana
 			return {a_acc, expression_t::make_construct_value_expr(result_type, elements2)};
 		}
 	}
+	else if(current_type.is_struct()){
+		const auto construct_value_type = details.value_type;
+		const auto& def = construct_value_type.get_struct();
+
+		//	This looks funky but isn't. The struct automatically supports a contruct_value-expression where the arguments are its member values.
+		const auto struct_constructor_callee_type = typeid_t::make_function(construct_value_type, get_member_types(def._members), epure::pure);
+		const auto resolved_call = analyze_resolve_call_type(a_acc, parent, details.elements, struct_constructor_callee_type);
+		a_acc = resolved_call.first;
+
+		return { a_acc, expression_t::make_construct_value_expr(construct_value_type, resolved_call.second.args) };
+	}
 	else{
 		QUARK_ASSERT(false);
 	}
@@ -2058,6 +2085,7 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 		return { a_acc, expression_t::make_call(callee_expr, resolved_call.second.args, make_shared<typeid_t>(resolved_call.second.function_type.get_function_return())) };
 	}
 
+	//	Desugar!
 	//	Attempting to call a TYPE? Then this may be a constructor call.
 	//	Converts these calls to construct-value-expressions.
 	else if(callee_type.is_typeid() && callee_expr_load2){
@@ -2072,6 +2100,11 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 
 			//	Convert calls to struct-type into construct-value expression.
 			if(construct_value_type.is_struct()){
+/*
+				const auto construct_value_expr = expression_t::make_construct_value_expr(construct_value_type, details.args);
+				const auto result_pair = analyse_expression_to_target(a_acc, parent, construct_value_expr, construct_value_type);
+				return { result_pair.first, result_pair.second };
+*/
 				const auto& def = construct_value_type.get_struct();
 
 				//	This looks funky but isn't. The struct automatically supports a contruct_value-expression where the arguments are its member values.
@@ -2452,7 +2485,10 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	symbol_map.push_back( { "json_false", symbol_t::make_immutable_precalc(value_t::make_int(6)) });
 	symbol_map.push_back( { "json_null", symbol_t::make_immutable_precalc(value_t::make_int(7)) });
 
-	//	Reserve a symbol table entry for benchmark_registry.
+//	symbol_map.push_back( { "benchmark_def_t", make_type_symbol(make_benchmark_def_t()) } );
+//	symbol_map.push_back( { "benchmark_result_t", make_type_symbol(make_benchmark_result_t()) } );
+
+	//	Reserve a symbol table entry for benchmark_registry instance.
 /*
 	{
 		const auto benchmark_def_t_struct = make_benchmark_def_t();

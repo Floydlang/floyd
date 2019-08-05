@@ -58,6 +58,20 @@ typeid_t make_process_message_handler_type(const typeid_t& t);
 //////////////////////////////////////		BENCHMARK SUPPORT
 
 
+
+inline typeid_t make_benchmark_result_t(){
+	const auto x = typeid_t::make_struct2( {
+		member_t{ typeid_t::make_int(), "dur" },
+		member_t{ typeid_t::make_json(), "more" }
+	} );
+	return x;
+}
+
+/*
+inline typeid_t make_benchmark_function_t(){
+	return typeid_t::make_function(typeid_t::make_vector(make_benchmark_result_t()), {}, epure::pure);
+}
+*/
 inline typeid_t make_benchmark_function_t(){
 	return typeid_t::make_function(typeid_t::make_void(), {}, epure::pure);
 }
