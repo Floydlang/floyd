@@ -754,19 +754,6 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 
 	const auto f = value_t::make_function_value(benchmark_function_t, function_id);
 
-#if 1
-	//	Add benchmark-def record to global list.
-	{
-		const auto new_record = expression_t::make_construct_value_expr(
-			benchmark_def_t_struct,
-			{
-				expression_t::make_literal_string(test_name),
-				expression_t::make_literal(f)
-			}
-		);
-		a_acc.benchmark_defs.push_back(new_record);
-	}
-#else
 	//	Add benchmark-def record to global list.
 	{
 		const auto new_record_expr = expression_t::make_construct_value_expr(
@@ -780,7 +767,6 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 		a_acc = new_record_expr3_pair.first;
 		a_acc.benchmark_defs.push_back(new_record_expr3_pair.second);
 	}
-#endif
 
 	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, return_type);
 	a_acc = body2.first;
