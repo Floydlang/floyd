@@ -2101,13 +2101,6 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 				const auto construct_value_expr = expression_t::make_construct_value_expr(construct_value_type, details.args);
 				const auto result_pair = analyse_expression_to_target(a_acc, parent, construct_value_expr, construct_value_type);
 				return { result_pair.first, result_pair.second };
-/*
- 				const auto primitive_constructor_callee_type = typeid_t::make_function(construct_value_type, { construct_value_type }, epure::pure);
-				const auto resolved_call = analyze_resolve_call_type(a_acc, parent, call_args, primitive_constructor_callee_type);
-				a_acc = resolved_call.first;
-				return { a_acc, expression_t::make_construct_value_expr(construct_value_type, resolved_call.second.args) };
-*/
-
 			}
 		}
 	}
