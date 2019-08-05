@@ -3,6 +3,8 @@
 
 **PLEASE PLAY AROUND WITH FLOYD**
 
+[![CircleCI](https://circleci.com/gh/Floydlang/floyd/tree/dev.svg?style=svg)](https://circleci.com/gh/Floydlang/floyd/tree/dev)
+
 
 # TL;DR
 **WHAT:** General-purpose programming language with a unique take on programming and performance.

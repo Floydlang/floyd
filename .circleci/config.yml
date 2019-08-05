@@ -46,7 +46,7 @@ jobs:
            command: 'cd dev && xcodebuild -list -project floyd.xcodeproj' 
       - run:
            name: Creating Application
-           command: 'cd dev && xcodebuild'
+           command: 'cd dev && xcodebuild -scheme distributable build'
       #- run:
       #     name: floyd Unit Testing
       #     command: 'build/Release/floydut runtests'
