@@ -221,7 +221,7 @@ reg_t flatten_reg(const reg_t& r, int offset){
 	else if(r._parent_steps == 0){
 		return reg_t::make_variable_address(0, r._index + offset);
 	}
-	else if(r._parent_steps == -1){
+	else if(r._parent_steps == variable_address_t::k_global_scope){
 		return r;
 	}
 	else{
@@ -234,7 +234,7 @@ bool check_register(const reg_t& reg, bool is_reg){
 		QUARK_ASSERT(reg._parent_steps != 666);
 	}
 	else{
-		QUARK_ASSERT(reg._parent_steps == 666 || (reg._parent_steps == -1 && reg._index == -1));
+		QUARK_ASSERT(reg._parent_steps == 666 || reg.is_empty());
 	}
 	return true;
 }
@@ -242,10 +242,10 @@ bool check_register(const reg_t& reg, bool is_reg){
 bool check_register_nonlocal(const reg_t& reg, bool is_reg){
 	if(is_reg){
 		//	Must not be a global -- those should have been turned to global-access opcodes.
-		QUARK_ASSERT(reg._parent_steps != -1);
+		QUARK_ASSERT(reg._parent_steps != variable_address_t::k_global_scope);
 	}
 	else{
-		QUARK_ASSERT(reg._parent_steps == 666 || (reg._parent_steps == -1 && reg._index == -1));
+		QUARK_ASSERT(reg._parent_steps == 666 || reg.is_empty());
 	}
 	return true;
 }
@@ -253,10 +253,10 @@ bool check_register_nonlocal(const reg_t& reg, bool is_reg){
 bool check_register__local(const reg_t& reg, bool is_reg){
 	if(is_reg){
 		//	Must not be a global -- those should have been turned to global-access opcodes.
-		QUARK_ASSERT(reg._parent_steps != -1);
+		QUARK_ASSERT(reg._parent_steps != variable_address_t::k_global_scope);
 	}
 	else{
-		QUARK_ASSERT(reg._parent_steps == 666 || (reg._parent_steps == -1 && reg._index == -1));
+		QUARK_ASSERT(reg._parent_steps == 666 || reg.is_empty());
 	}
 	return true;
 }
@@ -352,18 +352,18 @@ bcgen_body_t copy_value(const typeid_t& type, const reg_t& dest_reg, const reg_t
 
 
 	//	global <= global
-	if(dest_reg._parent_steps == -1 && source_reg._parent_steps == -1){
+	if(dest_reg._parent_steps == variable_address_t::k_global_scope && source_reg._parent_steps == variable_address_t::k_global_scope){
 		QUARK_ASSERT(false);
 		quark::throw_exception();
 //		body_acc._instrs.push_back(bcgen_instruction_t(is_ext ? bc_opcode::k_load_global_external_value : bc_opcode::k_load_global_inplace_value, dest_reg, make_imm_int(source_reg._index), {}));
 	}
 
 	//	global <= local
-	else if(dest_reg._parent_steps == -1 && source_reg._parent_steps != -1){
+	else if(dest_reg._parent_steps == variable_address_t::k_global_scope && source_reg._parent_steps != variable_address_t::k_global_scope){
 		body_acc._instrs.push_back(bcgen_instruction_t(is_ext ? bc_opcode::k_store_global_external_value : bc_opcode::k_store_global_inplace_value, make_imm_int(dest_reg._index), source_reg, {}));
 	}
 	//	local <= global
-	else if(dest_reg._parent_steps != -1 && source_reg._parent_steps == -1){
+	else if(dest_reg._parent_steps != variable_address_t::k_global_scope && source_reg._parent_steps == variable_address_t::k_global_scope){
 		body_acc._instrs.push_back(bcgen_instruction_t(is_ext ? bc_opcode::k_load_global_external_value : bc_opcode::k_load_global_inplace_value, dest_reg, make_imm_int(source_reg._index), {}));
 	}
 	//	local <= local
@@ -388,7 +388,7 @@ bcgen_body_t bcgen_assign2_statement(bcgenerator_t& gen_acc, const statement_t::
 	auto body_acc = body;
 
 	//	Shortcut: if destination is a local variable, have the expression write directly to that register.
-	if(statement._dest_variable._parent_steps != -1){
+	if(statement._dest_variable._parent_steps != variable_address_t::k_global_scope){
 		const auto expr = bcgen_expression(gen_acc, statement._dest_variable, statement._expression, body_acc);
 		body_acc = expr._body;
 		QUARK_ASSERT(body_acc.check_invariant());
@@ -739,7 +739,7 @@ expression_gen_t bcgen_make_fallthrough_corecall(bcgenerator_t& gen_acc, const v
 	int global_index = static_cast<int>(it - symbols.begin());
 
 	const auto call_details = expression_t::call_t {
-		std::make_shared<expression_t>(expression_t::make_load2(variable_address_t::make_variable_address(-1, global_index), function_type)),
+		std::make_shared<expression_t>(expression_t::make_load2(variable_address_t::make_variable_address(variable_address_t::k_global_scope, global_index), function_type)),
 		details.args
 	};
 
@@ -965,7 +965,7 @@ expression_gen_t bcgen_load2_expression(bcgenerator_t& gen_acc, const variable_a
 	const auto result_type = e.get_output_type();
 
 	//	Shortcut: If we're loading a local-variable and are free from putting it in target_reg -- just access the register where it sits = no instruction!
-	if(target_reg.is_empty() && details.address._parent_steps != -1){
+	if(target_reg.is_empty() && details.address._parent_steps != variable_address_t::k_global_scope){
 		QUARK_ASSERT(body_acc.check_invariant());
 		return { body_acc, details.address, intern_type(gen_acc, result_type) };
 	}
@@ -1778,9 +1778,9 @@ bool bcgenerator_t::check_invariant() const {
 bc_instruction_t squeeze_instruction(const bcgen_instruction_t& instruction){
 	QUARK_ASSERT(instruction.check_invariant());
 
-	QUARK_ASSERT(instruction._reg_a._parent_steps == 0 || instruction._reg_a._parent_steps == -1 || instruction._reg_a._parent_steps == 666);
-	QUARK_ASSERT(instruction._reg_b._parent_steps == 0 || instruction._reg_b._parent_steps == -1 || instruction._reg_b._parent_steps == 666);
-	QUARK_ASSERT(instruction._reg_c._parent_steps == 0 || instruction._reg_c._parent_steps == -1 || instruction._reg_c._parent_steps == 666);
+	QUARK_ASSERT(instruction._reg_a._parent_steps == 0 || instruction._reg_a._parent_steps == variable_address_t::k_global_scope || instruction._reg_a._parent_steps == 666);
+	QUARK_ASSERT(instruction._reg_b._parent_steps == 0 || instruction._reg_b._parent_steps == variable_address_t::k_global_scope || instruction._reg_b._parent_steps == 666);
+	QUARK_ASSERT(instruction._reg_c._parent_steps == 0 || instruction._reg_c._parent_steps == variable_address_t::k_global_scope || instruction._reg_c._parent_steps == 666);
 	QUARK_ASSERT(instruction._reg_a._index >= INT16_MIN && instruction._reg_a._index <= INT16_MAX);
 	QUARK_ASSERT(instruction._reg_b._index >= INT16_MIN && instruction._reg_b._index <= INT16_MAX);
 	QUARK_ASSERT(instruction._reg_c._index >= INT16_MIN && instruction._reg_c._index <= INT16_MAX);

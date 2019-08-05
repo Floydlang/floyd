@@ -33,7 +33,7 @@ namespace parser {
 //??? Use enum to tell if output is for main/processes/none
 struct run_output_t {
 	run_output_t() :
-		main_result(-1)
+		main_result(0)
 	{}
 
 	run_output_t(int64_t main_result, std::map<std::string, value_t> process_results) :

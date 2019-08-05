@@ -363,7 +363,7 @@ run_output_t run_program_bc(interpreter_t& vm, const std::vector<std::string>& m
 	else{
 		const auto output = run_floyd_processes(vm, main_args);
 		print_vm_printlog(vm);
-		return run_output_t(-1, output);
+		return run_output_t(0, output);
 	}
 }
 

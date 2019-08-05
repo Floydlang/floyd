@@ -180,12 +180,13 @@ std::cout << "Floyd Programming Language " << floyd_version_string << " MIT." <<
 	
 R"(
 Usage:
-floyd run mygame.floyd		- compile and run the floyd program "mygame.floyd"
-floyd compile mygame.floyd	- compile the floyd program "mygame.floyd" to an AST, in JSON format
-floyd help					- Show built in help for command line tool
-floyd runtests				- Runs Floyds internal unit tests
-floyd benchmark 			- Runs Floyd built in suite of benchmark tests and prints the results.
-floyd run -t mygame.floyd	- the -t turns on tracing, which shows Floyd compilation steps and internal states
+| floyd run mygame.floyd		| compile and run the floyd program "mygame.floyd" using native exection
+| floyd run_bc mygame.floyd		| compile and run the floyd program "mygame.floyd" using the Floyd byte code interpreter
+| floyd compile mygame.floyd	| compile the floyd program "mygame.floyd" to an AST, in JSON format
+| floyd help					| Show built in help for command line tool
+| floyd runtests				| Runs Floyds internal unit tests
+| floyd benchmark 				| Runs Floyd built in suite of benchmark tests and prints the results.
+| floyd run -t mygame.floyd		| the -t turns on tracing, which shows Floyd compilation steps and internal states
 )";
 }
 
@@ -248,7 +249,7 @@ int do_run_llvm_command(const command_line_args_t& command_line_args){
 			return static_cast<int>(run_results.main_result);
 		}
 		else{
-			return -1;
+			return EXIT_SUCCESS;
 		}
 	}
 	else{
@@ -281,10 +282,10 @@ int run_command(const std::vector<std::string>& args){
 	else if(command_line_args.subcommand == "compile"){
 		return do_compile_command(command_line_args);
 	}
-	else if(command_line_args.subcommand == "run"){
+	else if(command_line_args.subcommand == "run_bc"){
 		return do_run_command(command_line_args);
 	}
-	else if(command_line_args.subcommand == "run_llvm"){
+	else if(command_line_args.subcommand == "run" || command_line_args.subcommand == "run_llvm"){
 		return do_run_llvm_command(command_line_args);
 	}
 	else{

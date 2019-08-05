@@ -123,14 +123,26 @@ bool is_opcode_comparison_expression(const std::string& op);
 
 
 struct variable_address_t {
+	/*
+		0: current stack frame
+		1: previous stack frame
+		2: previous-previous stack frame
+		-1: global stack frame
+	*/
+	enum scope_index_t {
+		k_current_scope = 0,
+		k_global_scope = -1
+	};
+
+
 	public: variable_address_t() :
-		_parent_steps(-1),
+		_parent_steps(k_global_scope),
 		_index(-1)
 	{
 	}
 
 	public: bool is_empty() const {
-		return _parent_steps == -1 && _index == -1;
+		return _parent_steps == variable_address_t::k_global_scope && _index == -1;
 	}
 	public: bool check_invariant() const {
 		return true;
@@ -144,12 +156,6 @@ struct variable_address_t {
 	{
 	}
 
-	/*
-		0: current stack frame
-		1: previous stack frame
-		2: previous-previous stack frame
-		-1: global stack frame
-	*/
 	public: int _parent_steps;
 	public: int _index;
 };

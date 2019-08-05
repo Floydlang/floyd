@@ -2129,12 +2129,13 @@ Make a new Floyd JSON value from a JSON-script string. If the string is malforme
 
 |COMMAND		  	| MEANING
 |:---				|:---	
-| floyd run mygame.floyd | compile and run the floyd program "mygame.floyd"
-| floyd compile mygame.floyd | compile the floyd program "mygame.floyd" to an AST, in JSON format
-| floyd help		| Show built in help for command line tool
-| floyd runtests	| Runs Floyds internal unit tests
-| floyd benchmark 		| Runs Floyd built in suite of benchmark tests and prints the results.
-| floyd -t mygame.floyd		| the -t turns on tracing, which shows Floyd compilation steps and internal states
+| floyd run mygame.floyd		| compile and run the floyd program "mygame.floyd" using native exection
+| floyd run_bc mygame.floyd		| compile and run the floyd program "mygame.floyd" using the Floyd byte code interpreter
+| floyd compile mygame.floyd	| compile the floyd program "mygame.floyd" to an AST, in JSON format
+| floyd help					| Show built in help for command line tool
+| floyd runtests				| Runs Floyds internal unit tests
+| floyd benchmark 				| Runs Floyd built in suite of benchmark tests and prints the results.
+| floyd run -t mygame.floyd		| the -t turns on tracing, which shows Floyd compilation steps and internal states
 
 
 

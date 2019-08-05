@@ -2926,7 +2926,7 @@ run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::str
 	}
 	else{
 		const auto result = run_processes(ee);
-		return { -1, result };
+		return { 0, result };
 	}
 }
 
