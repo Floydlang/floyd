@@ -646,7 +646,9 @@ json_t make_parser_node(const location_t& location, const std::string& opcode, c
 	}
 }
 
-json_t parser__make_constant(const value_t& value){
+json_t parser__make_literal(const value_t& value){
+	QUARK_ASSERT(is_floyd_literal(value.get_type()));
+
 	return make_parser_node(
 		floyd::k_no_location,
 		parse_tree_expression_opcode_t::k_literal,

@@ -132,6 +132,8 @@ struct symbol_t {
 	}
 
 	public: static symbol_t make_immutable_precalc(const floyd::value_t& init_value){
+		QUARK_ASSERT(is_floyd_literal(init_value.get_type()));
+
 		return symbol_t{ mutable_mode::immutable, init_value.get_type(), init_value };
 	}
 

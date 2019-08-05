@@ -21,6 +21,7 @@
 
 namespace floyd {
 
+bool is_floyd_literal(const typeid_t& type);
 
 
 ////////////////////////////////////////		expression_opcode_t
@@ -296,18 +297,11 @@ struct expression_t {
 		value_t value;
 	};
 	public: static expression_t make_literal(const value_t& value){
+		QUARK_ASSERT(is_floyd_literal(value.get_type()));
+
 		return expression_t({ literal_exp_t{ value } }, std::make_shared<typeid_t>(value.get_type()));
 	}
 
-	public: static expression_t make_literal_undefined(){
-		return make_literal(value_t::make_undefined());
-	}
-	public: static expression_t make_literal_internal_dynamic(){
-		return make_literal(value_t::make_any());
-	}
-	public: static expression_t make_literal_void(){
-		return make_literal(value_t::make_void());
-	}
 	public: static expression_t make_literal_int(const int i){
 		return make_literal(value_t::make_int(i));
 	}

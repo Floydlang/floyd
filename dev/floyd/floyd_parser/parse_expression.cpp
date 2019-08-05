@@ -165,7 +165,7 @@ QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
 	ut_verify_collection(
 		QUARK_POS,
 		parse_bounded_list(seq_t("(3)xyz"), "(", ")"),
-		std::pair<collection_def_t, seq_t>({false, {	{ nullptr, parser__make_constant(value_t::make_int(3)) }}}, seq_t("xyz"))
+		std::pair<collection_def_t, seq_t>({false, {	{ nullptr, parser__make_literal(value_t::make_int(3)) }}}, seq_t("xyz"))
 	);
 }
 
@@ -181,8 +181,8 @@ QUARK_UNIT_TEST("parser", "parse_bounded_list()", "", ""){
 			{
 				false,
 				{
-					{ nullptr, parser__make_constant(value_t::make_int(1)) },
-					{ nullptr, parser__make_constant(value_t::make_int(2)) }
+					{ nullptr, parser__make_literal(value_t::make_int(1)) },
+					{ nullptr, parser__make_literal(value_t::make_int(2)) }
 				}
 			},
 			seq_t("xyz")
@@ -212,8 +212,8 @@ QUARK_UNIT_TEST("parser", "parse_bounded_list()", "two elements", ""){
 			{
 				true,
 				{
-					{ std::make_shared<json_t>(parser__make_constant(value_t::make_string("one"))), parser__make_constant(value_t::make_int(1)) },
-					{ std::make_shared<json_t>(parser__make_constant(value_t::make_string("two"))), parser__make_constant(value_t::make_int(2)) }
+					{ std::make_shared<json_t>(parser__make_literal(value_t::make_string("one"))), parser__make_literal(value_t::make_int(1)) },
+					{ std::make_shared<json_t>(parser__make_literal(value_t::make_string("two"))), parser__make_literal(value_t::make_int(2)) }
 				}
 			},
 			seq_t("xyz")
@@ -803,23 +803,23 @@ std::pair<json_t, seq_t> parse_terminal(const seq_t& p0) {
 	//	String literal?
 	if(p.first1() == "\""){
 		const auto value_pos = parse_string_literal(p);
-		const auto result = parser__make_constant(value_t::make_string(value_pos.first));
+		const auto result = parser__make_literal(value_t::make_string(value_pos.first));
 		return { result, value_pos.second };
 	}
 	else if(p.first1() == "\'"){
 		const auto value_pos = parse_character_literal(p);
-		const auto result = parser__make_constant(value_t::make_int(value_pos.first));
+		const auto result = parser__make_literal(value_t::make_int(value_pos.first));
 		return { result, value_pos.second };
 	}
 
 	else if(is_first(p, "0b")){
 		const auto value_p = parse_binary_literal(p);
-		const auto result = parser__make_constant(value_p.first);
+		const auto result = parser__make_literal(value_p.first);
 		return { result, value_p.second };
 	}
 	else if(is_first(p, "0x")){
 		const auto value_p = parse_hexadecimal_literal(p);
-		const auto result = parser__make_constant(value_p.first);
+		const auto result = parser__make_literal(value_p.first);
 		return { result, value_p.second };
 	}
 
@@ -827,17 +827,17 @@ std::pair<json_t, seq_t> parse_terminal(const seq_t& p0) {
 	// [0-9] and "."  => numeric constant.
 	else if(k_c99_number_chars.find(p.first1()) != std::string::npos){
 		const auto value_p = parse_decimal_literal(p);
-		const auto result = parser__make_constant(value_p.first);
+		const auto result = parser__make_literal(value_p.first);
 		return { result, value_p.second };
 	}
 
 	else if(if_first(p, keyword_t::k_true).first){
-		const auto result = parser__make_constant(value_t::make_bool(true));
+		const auto result = parser__make_literal(value_t::make_bool(true));
 		return { result, if_first(p, keyword_t::k_true).second };
 	}
 
 	else if(if_first(p, keyword_t::k_false).first){
-		const auto result = parser__make_constant(value_t::make_bool(false));
+		const auto result = parser__make_literal(value_t::make_bool(false));
 		return { result, if_first(p, keyword_t::k_false).second };
 	}
 
@@ -1228,7 +1228,7 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 
 QUARK_UNIT_TEST("parser", "parse_lhs_atom()", "", ""){
 	const auto a = parse_lhs_atom(seq_t("3"));
-	QUARK_UT_VERIFY(a.first == parser__make_constant(value_t::make_int(3)));
+	QUARK_UT_VERIFY(a.first == parser__make_literal(value_t::make_int(3)));
 }
 
 QUARK_UNIT_TEST("parser", "parse_lhs_atom()", "", ""){
@@ -1238,7 +1238,7 @@ QUARK_UNIT_TEST("parser", "parse_lhs_atom()", "", ""){
 		parse_tree_expression_opcode_t::k_value_constructor,
 		{
 			typeid_to_ast_json(typeid_t::make_vector(typeid_t::make_undefined()), json_tags::k_tag_resolve_state),
-			std::vector<json_t>{ parser__make_constant(value_t::make_int(3)) }
+			std::vector<json_t>{ parser__make_literal(value_t::make_int(3)) }
 		}
 	));
 }

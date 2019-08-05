@@ -24,6 +24,9 @@ struct json_t;
 namespace floyd {
 
 
+
+bool is_floyd_literal(const typeid_t& type);
+
 ////////////////////////////////////////		main() init() and message handler
 
 

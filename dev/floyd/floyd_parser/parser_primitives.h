@@ -207,7 +207,7 @@ namespace parse_tree_statement_opcode {
 
 json_t make_parser_node(const location_t& location, const std::string& opcode, const std::vector<json_t>& params);
 
-json_t parser__make_constant(const value_t& value);
+json_t parser__make_literal(const value_t& value);
 
 }	//	 parser
 }	//	floyd

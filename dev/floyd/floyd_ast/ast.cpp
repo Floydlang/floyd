@@ -221,7 +221,6 @@ typeid_t lookup_type(const type_interner_t& interner, const itype_t& type){
 
 
 
-
 //////////////////////////////////////////////////		general_purpose_ast_t
 
 

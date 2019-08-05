@@ -2457,8 +2457,8 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	//	"null" is equivalent to json::null
 	symbol_map.push_back( { "null", symbol_t::make_immutable_precalc(value_t::make_json(json_t())) });
 
-	symbol_map.push_back( { base_type_to_opcode(base_type::k_undefined), symbol_t::make_immutable_precalc(value_t::make_undefined()) });
-	symbol_map.push_back( { base_type_to_opcode(base_type::k_any), symbol_t::make_immutable_precalc(value_t::make_any()) });
+//	symbol_map.push_back( { base_type_to_opcode(base_type::k_undefined), symbol_t::make_immutable_precalc(value_t::make_undefined()) });
+//	symbol_map.push_back( { base_type_to_opcode(base_type::k_any), symbol_t::make_immutable_precalc(value_t::make_any()) });
 
 	symbol_map.push_back( { "json_object", symbol_t::make_immutable_precalc(value_t::make_int(1)) });
 	symbol_map.push_back( { "json_array", symbol_t::make_immutable_precalc(value_t::make_int(2)) });
