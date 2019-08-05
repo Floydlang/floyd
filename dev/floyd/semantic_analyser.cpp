@@ -2485,8 +2485,8 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	symbol_map.push_back( { "json_false", symbol_t::make_immutable_precalc(value_t::make_int(6)) });
 	symbol_map.push_back( { "json_null", symbol_t::make_immutable_precalc(value_t::make_int(7)) });
 
-//	symbol_map.push_back( { "benchmark_def_t", make_type_symbol(make_benchmark_def_t()) } );
-//	symbol_map.push_back( { "benchmark_result_t", make_type_symbol(make_benchmark_result_t()) } );
+	symbol_map.push_back( { "benchmark_def_t", make_type_symbol(make_benchmark_def_t()) } );
+	symbol_map.push_back( { "benchmark_result_t", make_type_symbol(make_benchmark_result_t()) } );
 
 	//	Reserve a symbol table entry for benchmark_registry instance.
 /*
