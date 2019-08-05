@@ -2384,8 +2384,8 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 
 
 
-#if 1
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark-def", "", ""){
+#if 0
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
 	ut_run_closed_nolib(
 		R"(
 
@@ -2394,6 +2394,49 @@ FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark-def", "", ""){
 			}
 
 			print(benchmark_registry)
+
+		)"
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
+	ut_run_closed_nolib(
+		R"(
+
+			benchmark-def "ABC" {
+				print("Running benchmark ABC")
+			}
+
+			print(benchmark_registry)
+
+			for(i in 0 ..< size(benchmark_registry)){
+				let e = benchmark_registry[i]
+//				print("Running test: " + e.name)
+				e.f()
+			}
+
+		)"
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
+	ut_run_closed_nolib(
+		R"(
+
+			benchmark-def "AAA" {
+				print("Running benchmark AAA")
+			}
+			benchmark-def "BBB" {
+				print("Running benchmark BBB")
+			}
+
+			print(benchmark_registry)
+
+			for(i in 0 ..< size(benchmark_registry)){
+				let e = benchmark_registry[i]
+//				print("Running test: " + e.name)
+				e.f()
+			}
 
 		)"
 	);

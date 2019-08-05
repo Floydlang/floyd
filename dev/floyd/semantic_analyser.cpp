@@ -20,7 +20,7 @@
 
 namespace floyd {
 
-static const bool k_trace_io_flag = true;
+static const bool k_trace_io_flag = false;
 
 //???? remove!!
 using namespace std;
@@ -739,7 +739,7 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 	const auto test_name = statement.name;
 	const auto function_link_name = "benchmark__" + test_name;
 
-	const auto benchmark_t_struct = make_benchmark_t();
+	const auto benchmark_def_t_struct = make_benchmark_def_t();
 	const auto benchmark_function_t = make_benchmark_function_t();
 
 	const auto body_pair = analyse_body(a_acc, statement._body, epure::pure, benchmark_function_t.get_function_return());
@@ -755,28 +755,9 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 	const auto f = value_t::make_function_value(benchmark_function_t, function_id);
 
 	//	Add benchmark-def record to global list.
-#if 0
 	{
-		auto& globals = a_acc._lexical_scope_stack.front();
-		auto it = std::find_if(
-			globals.symbols._symbols.begin(),
-			globals.symbols._symbols.end(),
-			[&s](std::pair<std::string, symbol_t>& e) { return e.first == k_global_benchmark_registry; }
-		);
-		QUARK_ASSERT(it != globals.symbols._symbols.end());
-		QUARK_ASSERT(it->second._init.get_type().get_vector_element_type() == benchmark_t_struct);
-
-		auto reg_copy = it->second._init.get_vector_value();
-		reg_copy.push_back(new_record);
-
-		const auto reg2 = value_t::make_vector_value(benchmark_t_struct, reg_copy);
-		it->second._init = reg2;
-	}
-#else
-	{
-//		const auto new_record = value_t::make_struct_value(benchmark_t_struct, { value_t::make_string(test_name), f } );
 		const auto new_record = expression_t::make_construct_value_expr(
-			benchmark_t_struct,
+			benchmark_def_t_struct,
 			{
 				expression_t::make_literal_string(test_name),
 				expression_t::make_literal(f)
@@ -784,7 +765,6 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 		);
 		a_acc.benchmark_defs.push_back(new_record);
 	}
-#endif
 
 	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, return_type);
 	a_acc = body2.first;
@@ -2464,9 +2444,6 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	//	"null" is equivalent to json::null
 	symbol_map.push_back( { "null", symbol_t::make_immutable_precalc(value_t::make_json(json_t())) });
 
-//	symbol_map.push_back( { base_type_to_opcode(base_type::k_undefined), symbol_t::make_immutable_precalc(value_t::make_undefined()) });
-//	symbol_map.push_back( { base_type_to_opcode(base_type::k_any), symbol_t::make_immutable_precalc(value_t::make_any()) });
-
 	symbol_map.push_back( { "json_object", symbol_t::make_immutable_precalc(value_t::make_int(1)) });
 	symbol_map.push_back( { "json_array", symbol_t::make_immutable_precalc(value_t::make_int(2)) });
 	symbol_map.push_back( { "json_string", symbol_t::make_immutable_precalc(value_t::make_int(3)) });
@@ -2475,10 +2452,11 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	symbol_map.push_back( { "json_false", symbol_t::make_immutable_precalc(value_t::make_int(6)) });
 	symbol_map.push_back( { "json_null", symbol_t::make_immutable_precalc(value_t::make_int(7)) });
 
-#if 1
+	//	Reserve a symbol table entry for benchmark_registry.
+/*
 	{
-		const auto benchmark_t_struct = make_benchmark_t();
-		const auto benchmark_registry_type = typeid_t::make_vector(benchmark_t_struct);
+		const auto benchmark_def_t_struct = make_benchmark_def_t();
+		const auto benchmark_registry_type = typeid_t::make_vector(benchmark_def_t_struct);
 		symbol_map.push_back(
 			{
 				k_global_benchmark_registry,
@@ -2486,7 +2464,7 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 			}
 		);
 	}
-#endif
+*/
 
 	std::map<function_id_t, std::shared_ptr<const function_definition_t>> function_defs;
 
@@ -2519,11 +2497,11 @@ semantic_ast_t analyse(analyser_t& a){
 	a = global_body2_pair.first;
 	auto global_body3 = global_body2_pair.second;
 
-
-	//	Add Init benchmark-def:s.
+/*
+	//	Add Init benchmark_registry.
 	{
-		const auto benchmark_t_struct = make_benchmark_t();
-		const auto t = typeid_t::make_vector(benchmark_t_struct);
+		const auto benchmark_def_t_struct = make_benchmark_def_t();
+		const auto t = typeid_t::make_vector(benchmark_def_t_struct);
 
 		const auto it = std::find_if(
 			global_body3._symbol_table._symbols.begin(),
@@ -2531,7 +2509,7 @@ semantic_ast_t analyse(analyser_t& a){
 			[&](const std::pair<std::string, symbol_t>& e) { return e.first == k_global_benchmark_registry; }
 		);
 		QUARK_ASSERT(it != global_body3._symbol_table._symbols.end());
-//		QUARK_ASSERT(sym.second._init.get_type().get_vector_element_type() == benchmark_t_struct);
+//		QUARK_ASSERT(sym.second._init.get_type().get_vector_element_type() == benchmark_def_t_struct);
 		const auto index = static_cast<int>(it - global_body3._symbol_table._symbols.begin());
 		const auto s = statement_t::make__init2(
 			k_no_location,
@@ -2540,7 +2518,7 @@ semantic_ast_t analyse(analyser_t& a){
 		);
 		global_body3._statements.insert(global_body3._statements.begin(), s);
 	}
-
+*/
 
 
 	////////////////////////////////	Make AST
