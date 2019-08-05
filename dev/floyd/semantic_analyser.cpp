@@ -20,7 +20,7 @@
 
 namespace floyd {
 
-static const bool k_trace_io_flag = true;
+static const bool k_trace_io_flag = false;
 
 //???? remove!!
 using namespace std;
@@ -2453,6 +2453,7 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	symbol_map.push_back( { "json_null", symbol_t::make_immutable_precalc(value_t::make_int(7)) });
 
 	//	Reserve a symbol table entry for benchmark_registry.
+/*
 	{
 		const auto benchmark_def_t_struct = make_benchmark_def_t();
 		const auto benchmark_registry_type = typeid_t::make_vector(benchmark_def_t_struct);
@@ -2463,6 +2464,7 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 			}
 		);
 	}
+*/
 
 	std::map<function_id_t, std::shared_ptr<const function_definition_t>> function_defs;
 
@@ -2495,7 +2497,7 @@ semantic_ast_t analyse(analyser_t& a){
 	a = global_body2_pair.first;
 	auto global_body3 = global_body2_pair.second;
 
-
+/*
 	//	Add Init benchmark_registry.
 	{
 		const auto benchmark_def_t_struct = make_benchmark_def_t();
@@ -2516,7 +2518,7 @@ semantic_ast_t analyse(analyser_t& a){
 		);
 		global_body3._statements.insert(global_body3._statements.begin(), s);
 	}
-
+*/
 
 
 	////////////////////////////////	Make AST
