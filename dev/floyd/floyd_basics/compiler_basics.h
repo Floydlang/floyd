@@ -61,7 +61,7 @@ typeid_t make_process_message_handler_type(const typeid_t& t);
 inline typeid_t make_benchmark_function_t(){
 	return typeid_t::make_function(typeid_t::make_void(), {}, epure::pure);
 }
-inline typeid_t make_benchmark_t(){
+inline typeid_t make_benchmark_def_t(){
 	const auto x = typeid_t::make_struct2( {
 		member_t{ typeid_t::make_string(), "name" },
 		member_t{ make_benchmark_function_t(), "f" }
