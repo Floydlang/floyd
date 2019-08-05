@@ -181,7 +181,7 @@ QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 		QUARK_POS,
 		make_compilation_unit("let result = 112", "", compilation_unit_mode::k_no_core_lib),
 		{},
-		test_report_t{ value_t::make_int(112), run_output_t(-1, {}), {}, "" },
+		test_report_t{ value_t::make_int(112), run_output_t( k_default_main_result, {}), {}, "" },
 		false
 	);
 }
@@ -200,7 +200,7 @@ QUARK_UNIT_TEST("test_helpers", "run_program()", "", ""){
 		QUARK_POS,
 		make_compilation_unit("print(1) print(234)", "", compilation_unit_mode::k_no_core_lib),
 		{},
-		test_report_t{ value_t::make_undefined(), run_output_t(-1, {}), {"1", "234" }, "" },
+		test_report_t{ value_t::make_undefined(), run_output_t(k_default_main_result, {}), {"1", "234" }, "" },
 		false
 	);
 }

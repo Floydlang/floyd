@@ -43,23 +43,24 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 //////////////////////////////////////////		SHORTCUTS
 
 
+const int k_default_main_result = 0;
 
 
 inline test_report_t check_nothing(){
-	return test_report_t { value_t::make_undefined(), { -1, {} }, {}, "" };
+	return test_report_t { value_t::make_undefined(), { k_default_main_result, {} }, {}, "" };
 }
 
 inline test_report_t check_result(const value_t& expected){
-	return test_report_t { expected, { -1, {} }, {}, "" };
+	return test_report_t { expected, { k_default_main_result, {} }, {}, "" };
 }
 inline test_report_t check_printout(const std::vector<std::string>& print_out){
-	return test_report_t { value_t::make_undefined(), { -1, {} }, print_out, "" };
+	return test_report_t { value_t::make_undefined(), { k_default_main_result, {} }, print_out, "" };
 }
 inline test_report_t check_main_return(int64_t main_return){
 	return test_report_t { value_t::make_undefined(), { main_return, {} }, {}, "" };
 }
 inline test_report_t check_exception(const std::string& exception_what){
-	return test_report_t { value_t::make_undefined(), { -1, {} }, {}, exception_what };
+	return test_report_t { value_t::make_undefined(), { k_default_main_result, {} }, {}, exception_what };
 }
 
 
