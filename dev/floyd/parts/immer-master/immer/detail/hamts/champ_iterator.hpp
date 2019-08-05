@@ -1,21 +1,9 @@
 //
-// immer - immutable data structures for C++
-// Copyright (C) 2016, 2017 Juan Pedro Bolivar Puente
+// immer: immutable data structures for C++
+// Copyright (C) 2016, 2017, 2018 Juan Pedro Bolivar Puente
 //
-// This file is part of immer.
-//
-// immer is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// immer is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with immer.  If not, see <http://www.gnu.org/licenses/>.
+// This software is distributed under the Boost Software License, Version 1.0.
+// See accompanying file LICENSE or copy at http://boost.org/LICENSE_1_0.txt
 //
 
 #pragma once
@@ -32,7 +20,9 @@ struct champ_iterator
     : iterator_facade<champ_iterator<T, Hash, Eq, MP, B>,
                       std::forward_iterator_tag,
                       T,
-                      const T&>
+                      const T&,
+                      std::ptrdiff_t,
+                      const T*>
 {
     using tree_t = champ<T, Hash, Eq, MP, B>;
     using node_t = typename tree_t::node_t;
@@ -42,10 +32,14 @@ struct champ_iterator
     champ_iterator() = default;
 
     champ_iterator(const tree_t& v)
-        : cur_   { v.root->values()  }
-        , end_   { v.root->values() + popcount(v.root->datamap()) }
-        , depth_ { 0 }
+        : depth_ { 0 }
     {
+        if (v.root->datamap()) {
+            cur_ = v.root->values();
+            end_ = v.root->values() + popcount(v.root->datamap());
+        } else {
+            cur_ = end_ = nullptr;
+        }
         path_[0] = &v.root;
         ensure_valid_();
     }
@@ -89,8 +83,10 @@ private:
                 path_[depth_] = parent->children();
                 auto child = *path_[depth_];
                 if (depth_ < max_depth<B>) {
-                    cur_ = child->values();
-                    end_ = cur_ + popcount(child->datamap());
+                    if (child->datamap()) {
+                        cur_ = child->values();
+                        end_ = cur_ + popcount(child->datamap());
+                    }
                 } else {
                     cur_ = child->collisions();
                     end_ = cur_ + child->collision_count();
@@ -111,8 +107,10 @@ private:
                 path_[depth_] = next;
                 auto child = *path_[depth_];
                 if (depth_ < max_depth<B>) {
-                    cur_ = child->values();
-                    end_ = cur_ + popcount(child->datamap());
+                    if (child->datamap()) {
+                        cur_ = child->values();
+                        end_ = cur_ + popcount(child->datamap());
+                    }
                 } else {
                     cur_ = child->collisions();
                     end_ = cur_ + child->collision_count();

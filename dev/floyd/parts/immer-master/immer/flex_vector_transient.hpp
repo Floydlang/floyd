@@ -1,21 +1,9 @@
 //
-// immer - immutable data structures for C++
-// Copyright (C) 2016, 2017 Juan Pedro Bolivar Puente
+// immer: immutable data structures for C++
+// Copyright (C) 2016, 2017, 2018 Juan Pedro Bolivar Puente
 //
-// This file is part of immer.
-//
-// immer is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// immer is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with immer.  If not, see <http://www.gnu.org/licenses/>.
+// This software is distributed under the Boost Software License, Version 1.0.
+// See accompanying file LICENSE or copy at http://boost.org/LICENSE_1_0.txt
 //
 
 #pragma once
@@ -98,39 +86,39 @@ public:
      * collection. It does not allocate memory and its complexity is
      * @f$ O(1) @f$.
      */
-    iterator begin() const { return {impl_}; }
+    IMMER_NODISCARD iterator begin() const { return {impl_}; }
 
     /*!
      * Returns an iterator pointing just after the last element of the
      * collection. It does not allocate and its complexity is @f$ O(1) @f$.
      */
-    iterator end()   const { return {impl_, typename iterator::end_t{}}; }
+    IMMER_NODISCARD iterator end()   const { return {impl_, typename iterator::end_t{}}; }
 
     /*!
      * Returns an iterator that traverses the collection backwards,
      * pointing at the first element of the reversed collection. It
      * does not allocate memory and its complexity is @f$ O(1) @f$.
      */
-    reverse_iterator rbegin() const { return reverse_iterator{end()}; }
+    IMMER_NODISCARD reverse_iterator rbegin() const { return reverse_iterator{end()}; }
 
     /*!
      * Returns an iterator that traverses the collection backwards,
      * pointing after the last element of the reversed collection. It
      * does not allocate memory and its complexity is @f$ O(1) @f$.
      */
-    reverse_iterator rend()   const { return reverse_iterator{begin()}; }
+    IMMER_NODISCARD reverse_iterator rend()   const { return reverse_iterator{begin()}; }
 
     /*!
      * Returns the number of elements in the container.  It does
      * not allocate memory and its complexity is @f$ O(1) @f$.
      */
-    size_type size() const { return impl_.size; }
+    IMMER_NODISCARD size_type size() const { return impl_.size; }
 
     /*!
      * Returns `true` if there are no elements in the container.  It
      * does not allocate memory and its complexity is @f$ O(1) @f$.
      */
-    bool empty() const { return impl_.size == 0; }
+    IMMER_NODISCARD bool empty() const { return impl_.size == 0; }
 
     /*!
      * Returns a `const` reference to the element at position `index`.
@@ -194,18 +182,6 @@ public:
     { impl_.drop_mut(*this, elems); }
 
     /*!
-     * Returns an @a immutable form of this container, an
-     * `immer::flex_vector`.
-     */
-    persistent_type persistent() &
-    {
-        this->owner_t::operator=(owner_t{});
-        return persistent_type{ impl_ };
-    }
-    persistent_type persistent() &&
-    { return persistent_type{ std::move(impl_) }; }
-
-    /*!
      * Appends the contents of the `r` at the end.  It may allocate
      * memory and its complexity is:
      * @f$ O(log(max(size_r, size_l))) @f$
@@ -231,6 +207,18 @@ public:
     void prepend(flex_vector_transient&& l)
     { concat_mut_lr_r(l.impl_, l, impl_, *this); }
 
+    /*!
+     * Returns an @a immutable form of this container, an
+     * `immer::flex_vector`.
+     */
+    IMMER_NODISCARD persistent_type persistent() &
+    {
+        this->owner_t::operator=(owner_t{});
+        return persistent_type{ impl_ };
+    }
+    IMMER_NODISCARD persistent_type persistent() &&
+    { return persistent_type{ std::move(impl_) }; }
+
 private:
     friend persistent_type;
 
@@ -238,7 +226,7 @@ private:
         : impl_(std::move(impl))
     {}
 
-    impl_t  impl_  = impl_t::empty;
+    impl_t  impl_  = impl_t::empty();
 };
 
 } // namespace immer

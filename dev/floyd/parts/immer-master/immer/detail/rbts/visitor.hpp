@@ -1,24 +1,14 @@
 //
-// immer - immutable data structures for C++
-// Copyright (C) 2016, 2017 Juan Pedro Bolivar Puente
+// immer: immutable data structures for C++
+// Copyright (C) 2016, 2017, 2018 Juan Pedro Bolivar Puente
 //
-// This file is part of immer.
-//
-// immer is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// immer is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with immer.  If not, see <http://www.gnu.org/licenses/>.
+// This software is distributed under the Boost Software License, Version 1.0.
+// See accompanying file LICENSE or copy at http://boost.org/LICENSE_1_0.txt
 //
 
 #pragma once
+
+#include <immer/config.hpp>
 
 #include <tuple>
 #include <utility>
@@ -27,68 +17,39 @@ namespace immer {
 namespace detail {
 namespace rbts {
 
-struct visitor_tag {};
-
-template <typename... Fns>
-using fn_visitor = std::tuple<visitor_tag, Fns...>;
-
-template <typename... Fns>
-auto make_visitor(Fns&& ...fns)
+template <typename Deriv>
+struct visitor_base
 {
-    return std::make_tuple(visitor_tag{}, std::forward<Fns>(fns)...);
-}
+    template <typename... Args>
+    static decltype(auto) visit_node(Args&& ...args)
+    {
+        IMMER_UNREACHABLE;
+    }
 
-template <typename FnR, typename FnI, typename FnL, typename... Args>
-decltype(auto) visit_relaxed(fn_visitor<FnR, FnI, FnL> v, Args&& ...args)
-{ return std::get<1>(v)(v, std::forward<Args>(args)...); }
+    template <typename... Args>
+    static decltype(auto) visit_relaxed(Args&& ...args)
+    {
+        return Deriv::visit_inner(std::forward<Args>(args)...);
+    }
 
-template <typename FnR, typename FnI, typename FnL, typename... Args>
-decltype(auto) visit_regular(fn_visitor<FnR, FnI, FnL> v, Args&& ...args)
-{ return std::get<2>(v)(v, std::forward<Args>(args)...); }
+    template <typename... Args>
+    static decltype(auto) visit_regular(Args&& ...args)
+    {
+        return Deriv::visit_inner(std::forward<Args>(args)...);
+    }
 
-template <typename FnR, typename FnI, typename FnL, typename... Args>
-decltype(auto) visit_leaf(fn_visitor<FnR, FnI, FnL> v, Args&& ...args)
-{ return std::get<3>(v)(v, std::forward<Args>(args)...); }
+    template <typename... Args>
+    static decltype(auto) visit_inner(Args&& ...args)
+    {
+        return Deriv::visit_node(std::forward<Args>(args)...);
+    }
 
-template <typename FnI, typename FnL, typename... Args>
-decltype(auto) visit_inner(fn_visitor<FnI, FnL> v, Args&& ...args)
-{ return std::get<1>(v)(v, std::forward<Args>(args)...); }
-
-template <typename FnI, typename FnL, typename... Args>
-decltype(auto) visit_leaf(fn_visitor<FnI, FnL> v, Args&& ...args)
-{ return std::get<2>(v)(v, std::forward<Args>(args)...); }
-
-template <typename Fn, typename... Args>
-decltype(auto) visit_node(fn_visitor<Fn> v, Args&& ...args)
-{ return std::get<1>(v)(v, std::forward<Args>(args)...); }
-
-template <typename Visitor, typename... Args>
-decltype(auto) visit_relaxed(Visitor&& v, Args&& ...args)
-{
-    return visit_inner(std::forward<Visitor>(v),
-                       std::forward<Args>(args)...);
-}
-
-template <typename Visitor, typename... Args>
-decltype(auto) visit_regular(Visitor&& v, Args&& ...args)
-{
-    return visit_inner(std::forward<Visitor>(v),
-                       std::forward<Args>(args)...);
-}
-
-template <typename Visitor, typename... Args>
-decltype(auto) visit_inner(Visitor&& v, Args&& ...args)
-{
-    return visit_node(std::forward<Visitor>(v),
-                      std::forward<Args>(args)...);
-}
-
-template <typename Visitor, typename... Args>
-decltype(auto) visit_leaf(Visitor&& v, Args&& ...args)
-{
-    return visit_node(std::forward<Visitor>(v),
-                      std::forward<Args>(args)...);
-}
+    template <typename... Args>
+    static decltype(auto) visit_leaf(Args&& ...args)
+    {
+        return Deriv::visit_node(std::forward<Args>(args)...);
+    }
+};
 
 } // namespace rbts
 } // namespace detail
