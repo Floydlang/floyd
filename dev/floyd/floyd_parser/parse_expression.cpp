@@ -1119,6 +1119,12 @@ std::pair<json_t, seq_t> parse_optional_operation_rightward(const seq_t& p0, con
 }
 
 
+static bool is_identifier(const seq_t& p, const std::string identifier){
+	const auto pos = read_identifier(p);
+	return pos.first == identifier;
+}
+
+
 /*
 	Atom = standalone expression, like a constant, a function call.
 	It can be composed of subexpressions
@@ -1211,9 +1217,9 @@ std::pair<json_t, seq_t> parse_lhs_atom(const seq_t& p){
 		return {result, a.second };
 	}
 
-	else if(is_first(p2, keyword_t::k_benchmark)){
-		const auto pos = read_required(p2, keyword_t::k_benchmark);
-		const auto block_pos = parse_statement_body(pos);
+	else if(is_identifier(p2, keyword_t::k_benchmark)){
+		const auto pos = read_identifier(p2);
+		const auto block_pos = parse_statement_body(pos.second);
 		const auto result = make_parser_node(floyd::k_no_location, parse_tree_expression_opcode_t::k_benchmark, { block_pos.parse_tree } );
 		return { result, block_pos.pos };
 	}

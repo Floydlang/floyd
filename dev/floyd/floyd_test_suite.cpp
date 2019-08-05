@@ -2384,7 +2384,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 
 
 
-#if 0
+#if 1
 FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark-def", "", ""){
 	ut_run_closed_nolib(
 		R"(
@@ -2392,6 +2392,8 @@ FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark-def", "", ""){
 			benchmark-def "ABC" {
 				print("Running benchmark ABC")
 			}
+
+			print(benchmark_registry)
 
 		)"
 	);
