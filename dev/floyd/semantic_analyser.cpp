@@ -92,6 +92,8 @@ struct analyser_t {
 
 	public: software_system_t _software_system;
 	public: container_t _container_def;
+
+	public: std::vector<value_t> benchmark_defs;
 };
 
 
@@ -425,7 +427,7 @@ std::pair<analyser_t, vector<statement_t>> analyse_statements(const analyser_t& 
 	return { a_acc, statements2 };
 }
 
-std::pair<analyser_t, body_t > analyse_body(const analyser_t& a, const body_t& body, epure pure, const typeid_t& return_type){
+std::pair<analyser_t, body_t> analyse_body(const analyser_t& a, const body_t& body, epure pure, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
@@ -522,7 +524,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 	//	Notice: the final type may not be correct yet, but for function definitions it is.
 	//	This logic should be available for infered binds too, in analyse_assign_statement().
 
-	const auto new_symbol = mutable_flag ? symbol_t::make_mutable(lhs_type) : symbol_t::make_immutable(lhs_type);
+	const auto new_symbol = mutable_flag ? symbol_t::make_mutable(lhs_type) : symbol_t::make_immutable_reserve(lhs_type);
 	a_acc._lexical_scope_stack.back().symbols._symbols.push_back({ new_local_name, new_symbol });
 	const auto local_name_index = a_acc._lexical_scope_stack.back().symbols._symbols.size() - 1;
 
@@ -545,7 +547,7 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 		}
 		else{
 			//	Replace the temporary symbol with the real function defintion.
-			const auto symbol2 = mutable_flag ? symbol_t::make_mutable(lhs_type2) : symbol_t::make_immutable(lhs_type2);
+			const auto symbol2 = mutable_flag ? symbol_t::make_mutable(lhs_type2) : symbol_t::make_immutable_reserve(lhs_type2);
 			a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
 			resolve_type(a_acc, s.location, rhs_expr_pair.second.get_output_type());
 
@@ -687,7 +689,7 @@ std::pair<analyser_t, statement_t> analyse_for_statement(const analyser_t& a, co
 		throw_compiler_error(s.location, what.str());
 	}
 
-	const auto iterator_symbol = symbol_t::make_immutable(typeid_t::make_int());
+	const auto iterator_symbol = symbol_t::make_immutable_reserve(typeid_t::make_int());
 
 	//	Add the iterator as a symbol to the body of the for-loop.
 	auto symbols = statement._body._symbol_table;
@@ -725,6 +727,7 @@ std::pair<analyser_t, statement_t> analyse_expression_statement(const analyser_t
 	return { a_acc, statement_t::make__expression_statement(s.location, expr2.second) };
 }
 
+
 //	Make new global function containing the body of the benchmark-def.
 //	Add the function as an entry in the global benchmark registry.
 static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
@@ -739,17 +742,6 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 	const auto benchmark_t_struct = make_benchmark_t();
 	const auto benchmark_function_t = make_benchmark_function_t();
 
-
-	auto& globals = a_acc._lexical_scope_stack.front();
-    auto it = std::find_if(
-    	globals.symbols._symbols.begin(),
-    	globals.symbols._symbols.end(),
-    	[&s](std::pair<std::string, symbol_t>& e) { return e.first == k_global_benchmark_registry; }
-	);
-	QUARK_ASSERT(it != globals.symbols._symbols.end());
-	QUARK_ASSERT(it->second._init.get_type().get_vector_element_type() == benchmark_t_struct);
-
-
 	const auto body_pair = analyse_body(a_acc, statement._body, epure::pure, benchmark_function_t.get_function_return());
 	a_acc = body_pair.first;
 
@@ -762,12 +754,30 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 
 	const auto f = value_t::make_function_value(benchmark_function_t, function_id);
 	const auto new_record = value_t::make_struct_value(benchmark_t_struct, { value_t::make_string(test_name), f } );
-	
-	auto reg_copy = it->second._init.get_vector_value();
-	reg_copy.push_back(new_record);
 
-	const auto reg2 = value_t::make_vector_value(benchmark_t_struct, reg_copy);
-	it->second._init = reg2;
+	//	Add benchmark-def record to global list.
+#if 0
+	{
+		auto& globals = a_acc._lexical_scope_stack.front();
+		auto it = std::find_if(
+			globals.symbols._symbols.begin(),
+			globals.symbols._symbols.end(),
+			[&s](std::pair<std::string, symbol_t>& e) { return e.first == k_global_benchmark_registry; }
+		);
+		QUARK_ASSERT(it != globals.symbols._symbols.end());
+		QUARK_ASSERT(it->second._init.get_type().get_vector_element_type() == benchmark_t_struct);
+
+		auto reg_copy = it->second._init.get_vector_value();
+		reg_copy.push_back(new_record);
+
+		const auto reg2 = value_t::make_vector_value(benchmark_t_struct, reg_copy);
+		it->second._init = reg2;
+	}
+#else
+	{
+		a_acc.benchmark_defs.push_back(new_record);
+	}
+#endif
 
 	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, return_type);
 	a_acc = body2.first;
@@ -1725,6 +1735,20 @@ std::pair<analyser_t, expression_t> analyse_comparison_expression(const analyser
 	}
 }
 
+
+
+//??? What is difference between literal_exp_t and value_constructor_t?
+// Literals: Only a few built-in types can be initialized as immediates in the code and via code segment, the rest needs to be reserved and explicitly initialised at runtime.
+
+std::pair<analyser_t, expression_t> analyse_literal_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::literal_exp_t& details){
+	QUARK_ASSERT(a.check_invariant());
+
+	return { a,e };
+}
+
+
+
+
 std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser_t& a, const statement_t& parent, expression_type op, const expression_t& e, const expression_t::arithmetic_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
@@ -2189,7 +2213,7 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 		const typeid_t& target_type;
 
 		std::pair<analyser_t, expression_t> operator()(const expression_t::literal_exp_t& expr) const{
-			return { a, e };
+			return analyse_literal_expression(a, parent, e, expr);
 		}
 		std::pair<analyser_t, expression_t> operator()(const expression_t::arithmetic_t& expr) const{
 			return analyse_arithmetic_expression(a, parent, expr.op, e, expr);
@@ -2482,9 +2506,36 @@ semantic_ast_t analyse(analyser_t& a){
 
 
 	////////////////////////////////	Analyze global namespace, including all Floyd functions defined there.
-	const auto body = body_t(a._imm->_ast._tree._globals._statements, symbol_table_t{ symbol_map });
-	const auto result = analyse_body(a, body, epure::impure, typeid_t::make_void());
-	a = result.first;
+	const auto global_body = body_t(a._imm->_ast._tree._globals._statements, symbol_table_t{ symbol_map });
+	auto global_body2_pair = analyse_body(a, global_body, epure::impure, typeid_t::make_void());
+	a = global_body2_pair.first;
+
+
+#if 0
+	//	Add global list of benchmark-def:s.
+	{
+		const auto benchmark_t_struct = make_benchmark_t();
+		const auto t = typeid_t::make_vector(benchmark_t_struct);
+		const auto benchmark_registry = value_t::make_vector_value(benchmark_t_struct, a.benchmark_defs);
+		global_body2_pair.second._symbol_table._symbols.push_back(
+			{
+				k_global_benchmark_registry,
+				symbol_t::make_immutable_reserve(t)
+			}
+		);
+
+		std::vector<expression_t> elements;
+		for(const auto& e: a.benchmark_defs){
+			elements.push_back(expression_t::make_construct_value_expr(benchmark_t_struct, { e } ));
+		}
+		const auto s = statement_t::make__init2(
+			k_no_location,
+			variable_address_t::make_variable_address(0, global_body2_pair.second._symbol_table._symbols.size() - 1),
+			expression_t::make_construct_value_expr(t, elements)
+		);
+		global_body2_pair.second._statements.push_back(s);
+	}
+#endif
 
 
 
@@ -2503,11 +2554,11 @@ semantic_ast_t analyse(analyser_t& a){
 	}
 
 	auto gp1 = general_purpose_ast_t{
-		._globals = result. second,
+		._globals = global_body2_pair. second,
 		._function_defs = function_defs_vec,
 		._interned_types = a._types,
-		._software_system = result.first._software_system,
-		._container_def = result.first._container_def
+		._software_system = global_body2_pair.first._software_system,
+		._container_def = global_body2_pair.first._container_def
 	};
 
 	type_interner_t types3 = a._types;

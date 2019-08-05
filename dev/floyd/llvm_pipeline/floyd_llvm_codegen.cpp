@@ -435,7 +435,7 @@ llvm::Value* generate_constant_string(llvm_code_generator_t& gen_acc, llvm::Func
 
 
 //	Makes constant from a Floyd value. The constant may go in code segment or be computed at app init-time.
-llvm::Value* generate_constant(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const value_t& value){
+static llvm::Value* generate_constant(llvm_code_generator_t& gen_acc, llvm::Function& emit_f, const value_t& value){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 

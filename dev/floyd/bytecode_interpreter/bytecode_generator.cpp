@@ -161,7 +161,7 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const vari
 
 
 static int add_temp(symbol_table_t& symbols, const std::string& name, const floyd::typeid_t& value_type){
-	const auto s = symbol_t::make_immutable(value_type);
+	const auto s = symbol_t::make_immutable_reserve(value_type);
 	symbols._symbols.push_back(std::pair<std::string, symbol_t>(name, s));
 	return static_cast<int>(symbols._symbols.size() - 1);
 }

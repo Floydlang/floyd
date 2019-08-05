@@ -119,7 +119,7 @@ struct symbol_t {
 		return _value_type;
 	}
 
-	public: static symbol_t make_immutable(const floyd::typeid_t& value_type){
+	public: static symbol_t make_immutable_reserve(const floyd::typeid_t& value_type){
 		return symbol_t{ mutable_mode::immutable, value_type, {} };
 	}
 
