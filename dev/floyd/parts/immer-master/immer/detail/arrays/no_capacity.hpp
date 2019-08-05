@@ -1,25 +1,14 @@
 //
-// immer - immutable data structures for C++
-// Copyright (C) 2016, 2017 Juan Pedro Bolivar Puente
+// immer: immutable data structures for C++
+// Copyright (C) 2016, 2017, 2018 Juan Pedro Bolivar Puente
 //
-// This file is part of immer.
-//
-// immer is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// immer is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with immer.  If not, see <http://www.gnu.org/licenses/>.
+// This software is distributed under the Boost Software License, Version 1.0.
+// See accompanying file LICENSE or copy at http://boost.org/LICENSE_1_0.txt
 //
 
 #pragma once
 
+#include <immer/algorithm.hpp>
 #include <immer/detail/arrays/node.hpp>
 
 namespace immer {
@@ -36,7 +25,14 @@ struct no_capacity
     node_t* ptr;
     size_t  size;
 
-    static const no_capacity empty;
+    static const no_capacity& empty()
+    {
+        static const no_capacity empty_ {
+            node_t::make_n(0),
+            0,
+        };
+        return empty_;
+    }
 
     no_capacity(node_t* p, size_t s)
         : ptr{p}, size{s}
@@ -49,7 +45,7 @@ struct no_capacity
     }
 
     no_capacity(no_capacity&& other)
-        : no_capacity{empty}
+        : no_capacity{empty()}
     {
         swap(*this, other);
     }
@@ -95,10 +91,13 @@ struct no_capacity
     T* data() { return ptr->data(); }
     const T* data() const { return ptr->data(); }
 
-    template <typename Iter>
-    static no_capacity from_range(Iter first, Iter last)
+    template <typename Iter, typename Sent,
+              std::enable_if_t
+              <is_forward_iterator_v<Iter> 
+	       && compatible_sentinel_v<Iter, Sent>, bool> = true>
+    static no_capacity from_range(Iter first, Sent last)
     {
-        auto count = static_cast<size_t>(std::distance(first, last));
+        auto count = static_cast<size_t>(distance(first, last));
         return {
             node_t::copy_n(count, first, last),
             count,
@@ -191,12 +190,6 @@ struct no_capacity
         auto p = node_t::copy_n(sz, ptr, sz);
         return { p, sz };
     }
-};
-
-template <typename T, typename MP>
-const no_capacity<T, MP> no_capacity<T, MP>::empty = {
-    node_t::make_n(0),
-    0,
 };
 
 } // namespace arrays

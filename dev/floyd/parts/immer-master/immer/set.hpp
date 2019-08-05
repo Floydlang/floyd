@@ -1,21 +1,9 @@
 //
-// immer - immutable data structures for C++
-// Copyright (C) 2016, 2017 Juan Pedro Bolivar Puente
+// immer: immutable data structures for C++
+// Copyright (C) 2016, 2017, 2018 Juan Pedro Bolivar Puente
 //
-// This file is part of immer.
-//
-// immer is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// immer is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with immer.  If not, see <http://www.gnu.org/licenses/>.
+// This software is distributed under the Boost Software License, Version 1.0.
+// See accompanying file LICENSE or copy at http://boost.org/LICENSE_1_0.txt
 //
 
 #pragma once
@@ -66,9 +54,9 @@ class set_transient;
  *
  */
 template <typename T,
-          typename Hash          = std::hash<T>,
-          typename Equal         = std::equal_to<T>,
-          typename MemoryPolicy  = default_memory_policy,
+          typename Hash           = std::hash<T>,
+          typename Equal          = std::equal_to<T>,
+          typename MemoryPolicy   = default_memory_policy,
           detail::hamts::bits_t B = default_bits>
 class set
 {
@@ -101,35 +89,35 @@ public:
      * collection. It does not allocate memory and its complexity is
      * @f$ O(1) @f$.
      */
-    iterator begin() const { return {impl_}; }
+    IMMER_NODISCARD iterator begin() const { return {impl_}; }
 
     /*!
      * Returns an iterator pointing just after the last element of the
      * collection. It does not allocate and its complexity is @f$ O(1) @f$.
      */
-    iterator end() const { return {impl_, typename iterator::end_t{}}; }
+    IMMER_NODISCARD iterator end() const { return {impl_, typename iterator::end_t{}}; }
 
     /*!
      * Returns the number of elements in the container.  It does
      * not allocate memory and its complexity is @f$ O(1) @f$.
      */
-    size_type size() const { return impl_.size; }
+    IMMER_NODISCARD size_type size() const { return impl_.size; }
 
     /*!
      * Returns `1` when `value` is contained in the set or `0`
      * otherwise. It won't allocate memory and its complexity is
      * *effectively* @f$ O(1) @f$.
      */
-    size_type count(const T& value) const
+    IMMER_NODISCARD size_type count(const T& value) const
     { return impl_.template get<detail::constantly<size_type, 1>,
                                 detail::constantly<size_type, 0>>(value); }
 
     /*!
      * Returns whether the sets are equal.
      */
-    bool operator==(const set& other) const
+    IMMER_NODISCARD bool operator==(const set& other) const
     { return impl_.equals(other.impl_); }
-    bool operator!=(const set& other) const
+    IMMER_NODISCARD bool operator!=(const set& other) const
     { return !(*this == other); }
 
     /*!
@@ -137,7 +125,7 @@ public:
      * the set, it returns the same set.  It may allocate memory and
      * its complexity is *effectively* @f$ O(1) @f$.
      */
-    set insert(T value) const
+    IMMER_NODISCARD set insert(T value) const
     { return impl_.add(std::move(value)); }
 
     /*!
@@ -145,16 +133,16 @@ public:
      * set it returns the same set.  It may allocate memory and its
      * complexity is *effectively* @f$ O(1) @f$.
      */
-    set erase(const T& value) const
+    IMMER_NODISCARD set erase(const T& value) const
     { return impl_.sub(value); }
 
     /*!
      * Returns an @a transient form of this container, a
      * `immer::set_transient`.
      */
-    transient_type transient() const&
+    IMMER_NODISCARD transient_type transient() const&
     { return transient_type{ impl_ }; }
-    transient_type transient() &&
+    IMMER_NODISCARD transient_type transient() &&
     { return transient_type{ std::move(impl_) }; }
 
     // Semi-private
@@ -167,7 +155,7 @@ private:
         : impl_(std::move(impl))
     {}
 
-    impl_t impl_ = impl_t::empty;
+    impl_t impl_ = impl_t::empty();
 };
 
 } // namespace immer

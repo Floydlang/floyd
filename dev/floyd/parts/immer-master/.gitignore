@@ -1,7 +1,10 @@
+bazel-*
 build/
+build-*/
 reports/
 doc/_build
 doc/_doxygen
+bazel-*
 
 tools/travis/ssh-key
 tools/clojure/target/

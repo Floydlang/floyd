@@ -1,21 +1,9 @@
 //
-// immer - immutable data structures for C++
-// Copyright (C) 2016, 2017 Juan Pedro Bolivar Puente
+// immer: immutable data structures for C++
+// Copyright (C) 2016, 2017, 2018 Juan Pedro Bolivar Puente
 //
-// This file is part of immer.
-//
-// immer is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// immer is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with immer.  If not, see <http://www.gnu.org/licenses/>.
+// This software is distributed under the Boost Software License, Version 1.0.
+// See accompanying file LICENSE or copy at http://boost.org/LICENSE_1_0.txt
 //
 
 #include "test/util.hpp"
@@ -28,7 +16,10 @@
 
 #include <algorithm>
 #include <numeric>
+#include <string>
 #include <vector>
+
+using namespace std::string_literals;
 
 #ifndef VECTOR_T
 #error "define the vector template to use in VECTOR_T"
@@ -48,18 +39,30 @@ struct big_object
     std::array<std::size_t, 42> v;
 };
 
+struct string_sentinel {};
+
+bool operator==(const char16_t* i, string_sentinel ){
+  return *i == '\0';
+}
+
+bool operator!=(const char16_t* i, string_sentinel ){
+  return *i != '\0';
+}
+
 TEST_CASE("instantiation")
 {
     SECTION("default")
     {
         auto v = VECTOR_T<int>{};
         CHECK(v.size() == 0u);
+        CHECK(v.empty());
     }
 
     SECTION("initializer list")
     {
         auto v = VECTOR_T<unsigned>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
         CHECK_VECTOR_EQUALS(v, boost::irange(0u, 10u));
+        CHECK(!v.empty());
     }
 
     SECTION("big object")
@@ -75,11 +78,19 @@ TEST_CASE("instantiation")
         CHECK_VECTOR_EQUALS(v, boost::irange(0u, 10u));
     }
 
+    SECTION("iterator/sentinel")
+    {
+        auto r = u"012345678";
+        string_sentinel s;
+        auto v = VECTOR_T<unsigned>{r, s};
+        CHECK_VECTOR_EQUALS(v, boost::irange(u'0', u'9'));
+    }
+
     SECTION("fill")
     {
         auto v1 = VECTOR_T<int>(4);
         CHECK(v1.size() == 4);
-        auto v2 = VECTOR_T<int>(size_t{4}, 42);
+        auto v2 = VECTOR_T<int>(4, 42);
         CHECK(v2.size() == 4);
         CHECK(v2[2] == 42);
     }

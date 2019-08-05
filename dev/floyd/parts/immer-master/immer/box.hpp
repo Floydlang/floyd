@@ -1,21 +1,9 @@
 //
-// immer - immutable data structures for C++
-// Copyright (C) 2016, 2017 Juan Pedro Bolivar Puente
+// immer: immutable data structures for C++
+// Copyright (C) 2016, 2017, 2018 Juan Pedro Bolivar Puente
 //
-// This file is part of immer.
-//
-// immer is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// immer is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with immer.  If not, see <http://www.gnu.org/licenses/>.
+// This software is distributed under the Boost Software License, Version 1.0.
+// See accompanying file LICENSE or copy at http://boost.org/LICENSE_1_0.txt
 //
 
 #pragma once
@@ -25,6 +13,16 @@
 
 namespace immer {
 
+namespace detail {
+
+template <typename U, typename MP>
+struct gc_atom_impl;
+
+template <typename U, typename MP>
+struct refcount_atom_impl;
+
+} // namespace detail
+
 /*!
  * Immutable box for a single value of type `T`.
  *
@@ -33,9 +31,12 @@ namespace immer {
  * moving just copy the underlying pointers.
  */
 template <typename T,
-          typename MemoryPolicy   = default_memory_policy>
+          typename MemoryPolicy = default_memory_policy>
 class box
 {
+    friend struct detail::gc_atom_impl<T, MemoryPolicy>;
+    friend struct detail::refcount_atom_impl<T, MemoryPolicy>;
+
     struct holder : MemoryPolicy::refcount
     {
         T value;
@@ -101,7 +102,7 @@ public:
     }
 
     /*! Query the current value. */
-    const T& get() const { return impl_->value; }
+    IMMER_NODISCARD const T& get() const { return impl_->value; }
 
     /*! Conversion to the boxed type. */
     operator const T&() const { return get(); }
@@ -113,15 +114,15 @@ public:
     const T* operator-> () const { return &get(); }
 
     /*! Comparison. */
-    bool operator==(detail::exact_t<const box&> other) const
+    IMMER_NODISCARD bool operator==(detail::exact_t<const box&> other) const
     { return impl_ == other.value.impl_ || get() == other.value.get(); }
     // Note that the `exact_t` disambiguates comparisons against `T{}`
     // directly.  In that case we want to use `operator T&` and
     // compare directly.  We definitely never want to convert a value
     // to a box (which causes an allocation) just to compare it.
-    bool operator!=(detail::exact_t<const box&> other) const
+    IMMER_NODISCARD bool operator!=(detail::exact_t<const box&> other) const
     { return !(*this == other.value); }
-    bool operator<(detail::exact_t<const box&> other) const
+    IMMER_NODISCARD bool operator<(detail::exact_t<const box&> other) const
     { return get() < other.value.get(); }
 
     /*!
@@ -140,12 +141,12 @@ public:
      * @endrst
      */
     template <typename Fn>
-    box update(Fn&& fn) const&
+    IMMER_NODISCARD box update(Fn&& fn) const&
     {
         return std::forward<Fn>(fn)(get());
     }
     template <typename Fn>
-    box&& update(Fn&& fn) &&
+    IMMER_NODISCARD box&& update(Fn&& fn) &&
     {
         if (impl_->unique())
             impl_->value = std::forward<Fn>(fn)(std::move(impl_->value));

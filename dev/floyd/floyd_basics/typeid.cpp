@@ -73,6 +73,7 @@ std::string base_type_to_opcode(const base_type t){
 		QUARK_ASSERT(false);
 		quark::throw_exception();
 	}
+	return "**impossible**";
 }
 
 QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
@@ -172,6 +173,7 @@ base_type opcode_to_base_type(const std::string& s){
 	else{
 		QUARK_ASSERT(false);
 	}
+	return base_type::k_unresolved;
 }
 
 
@@ -216,6 +218,7 @@ int get_json_type(const json_t& value){
 		QUARK_ASSERT(false);
 		quark::throw_exception();
 	}
+	return 0;
 }
 
 
@@ -924,6 +927,7 @@ json_t typeid_to_ast_json(const typeid_t& t, json_tags tags){
 		QUARK_ASSERT(false);
 		quark::throw_logic_error();
 	}
+	return basetype_str_tagged;
 }
 
 std::string strip_resolve_tag(const std::string& s){
@@ -1045,6 +1049,7 @@ typeid_t typeid_from_ast_json(const json_t& t2){
 	else{
 		quark::throw_runtime_error("Invalid typeid-json.");
 	}
+	return typeid_t::make_undefined();
 }
 
 

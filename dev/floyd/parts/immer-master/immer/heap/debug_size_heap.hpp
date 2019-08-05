@@ -1,28 +1,17 @@
 //
-// immer - immutable data structures for C++
-// Copyright (C) 2016, 2017 Juan Pedro Bolivar Puente
+// immer: immutable data structures for C++
+// Copyright (C) 2016, 2017, 2018 Juan Pedro Bolivar Puente
 //
-// This file is part of immer.
-//
-// immer is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// immer is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with immer.  If not, see <http://www.gnu.org/licenses/>.
+// This software is distributed under the Boost Software License, Version 1.0.
+// See accompanying file LICENSE or copy at http://boost.org/LICENSE_1_0.txt
 //
 
 #pragma once
 
+#include <cassert>
+#include <cstddef>
 #include <immer/config.hpp>
 #include <immer/heap/identity_heap.hpp>
-#include <cassert>
 
 namespace immer {
 
@@ -35,20 +24,33 @@ namespace immer {
 template <typename Base>
 struct debug_size_heap
 {
+#if defined(__MINGW32__) && !defined(__MINGW64__)
+    // There is a bug in MinGW 32bit: https://sourceforge.net/p/mingw-w64/bugs/778/
+    // It causes different versions of std::max_align_t to be defined, depending on inclusion order of stddef.h
+    // and stdint.h. As we have no control over the inclusion order here (as it might be set in stone by the outside
+    // world), we can't easily pin it to one of both versions of std::max_align_t. This means, we have to hardcode
+    // extra_size for MinGW 32bit builds until the mentioned bug is fixed.
+    constexpr static auto extra_size = 8;
+#else
+    constexpr static auto extra_size = sizeof(
+        std::aligned_storage_t<sizeof(std::size_t),
+                               alignof(std::max_align_t)>);
+#endif
+
     template <typename... Tags>
     static void* allocate(std::size_t size, Tags... tags)
     {
-        auto p = (std::size_t*) Base::allocate(size + sizeof(std::size_t), tags...);
-        *p = size;
-        return p + 1;
+        auto p = (std::size_t*) Base::allocate(size + extra_size, tags...);
+        new (p) std::size_t{ size };
+        return ((char*)p) + extra_size;
     }
 
     template <typename... Tags>
     static void deallocate(std::size_t size, void* data, Tags... tags)
     {
-        auto p = ((std::size_t*) data) - 1;
+        auto p = (std::size_t*) (((char*) data) - extra_size);
         assert(*p == size);
-        Base::deallocate(size + sizeof(std::size_t), p, tags...);
+        Base::deallocate(size + extra_size, p, tags...);
     }
 };
 
