@@ -861,7 +861,7 @@ inline bool run_test(const unit_test_def& test, bool oneline){
 			return true;
 		}
 		else{
-			QUARK_SCOPED_TRACE(testInfo.str());
+			::quark::scoped_trace tracer(testInfo.str(), quark::get_trace());
 			test._test_f();
 			return true;
 		}
