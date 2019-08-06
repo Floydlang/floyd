@@ -329,10 +329,10 @@ struct value_t {
 			quark::throw_runtime_error("Type mismatch!");
 		}
 
-		return _value_internals._bool;
+		return _value_internals.bool_value;
 	}
 	public: bool get_bool_value_quick() const{
-		return _value_internals._bool;
+		return _value_internals.bool_value;
 	}
 
 
@@ -552,7 +552,7 @@ struct value_t {
 			return true;
 		}
 		else if(_basetype == base_type::k_bool){
-			return _value_internals._bool == other._value_internals._bool;
+			return _value_internals.bool_value == other._value_internals.bool_value;
 		}
 		else if(_basetype == base_type::k_int){
 			return _value_internals._int == other._value_internals._int;
@@ -605,7 +605,7 @@ struct value_t {
 	private: explicit value_t(bool value) :
 		_basetype(base_type::k_bool)
 	{
-		_value_internals._bool = value;
+		_value_internals.bool_value = value;
 #if DEBUG
 		DEBUG_STR = make_value_debug_str(*this);
 #endif
@@ -649,7 +649,7 @@ struct value_t {
 	//////////////////////////////////////////////////		STATE
 
 	private: union value_internals_t {
-		bool _bool;
+		bool bool_value;
 		int64_t _int;
 		double _double;
 		value_ext_t* _ext;

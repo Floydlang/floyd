@@ -189,7 +189,7 @@ case bc_opcode::k_add_int: {
 	ASSERT(stack.check_reg_int(i._b));
 	ASSERT(stack.check_reg_int(i._c));
 
-	regs[i._a]._pod64._int64 = regs[i._b]._pod64._int64 + regs[i._c]._pod64._int64;
+	regs[i._a]._pod64.int64_value = regs[i._b]._pod64.int64_value + regs[i._c]._pod64.int64_value;
 	break;
 }
 ```

@@ -63,9 +63,9 @@ typedef int16_t bc_typeid_t;
 //	These values are always pods and can be copied, no referencing counting required.
 
 union bc_inplace_value_t {
-	bool _bool;
-	int64_t _int64;
-	double _double;
+	bool bool_value;
+	int64_t int64_value;
+	double double_value;
 
 	const bc_static_frame_t* _frame_ptr;
 };
@@ -1173,7 +1173,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(check_invariant());
 		QUARK_ASSERT(_stack_size >= k_frame_overhead);
 
-		const auto frame_pos = _entries[_stack_size - k_frame_overhead + 0]._inplace._int64;
+		const auto frame_pos = _entries[_stack_size - k_frame_overhead + 0]._inplace.int64_value;
 		const auto frame_ptr = _entries[_stack_size - k_frame_overhead + 1]._inplace._frame_ptr;
 		_stack_size -= k_frame_overhead;
 #if DEBUG
@@ -1239,7 +1239,7 @@ struct interpreter_stack_t {
 		QUARK_ASSERT(pos >= 0 && pos < _stack_size);
 		QUARK_ASSERT(_debug_types[pos].is_int());
 
-		return _entries[pos]._inplace._int64;
+		return _entries[pos]._inplace.int64_value;
 	}
 
 	public: inline void replace_inplace_value(int pos, const bc_value_t& value){
