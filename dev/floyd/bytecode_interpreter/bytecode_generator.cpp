@@ -468,13 +468,15 @@ bcgen_body_t bcgen_ifelse_statement(bcgenerator_t& gen_acc, const statement_t::i
 }
 
 /*
+	... previous instructions in input-body
+
 	count_reg = start-expression
 	end-expression
 
 	B:
 	k_branch_smaller_or_equal_int / k_branch_smaller_int FALSE, A
 
-	BODY
+	FOR-BODY-INSTRUCTIONS
 
 	k_add_int
 	k_branch_smaller_or_equal_int / k_branch_smaller_int, B TRUE
@@ -489,6 +491,8 @@ bcgen_body_t bcgen_for_statement(bcgenerator_t& gen_acc, const statement_t::for_
 	QUARK_ASSERT(body.check_invariant());
 
 	auto body_acc = body;
+
+	const auto existing_instructions = get_count(body._instrs);
 
 	const auto start_expr = bcgen_expression(gen_acc, {}, statement._start_expression, body_acc);
 	body_acc = start_expr._body;
@@ -514,7 +518,7 @@ bcgen_body_t bcgen_for_statement(bcgenerator_t& gen_acc, const statement_t::for_
 
 	// Reuse start value as our counter.
 	// Notice: we need to store iterator value in body's first register.
-	int leave_pc = 1 + body_instr_count + 2;
+	int leave_pc = existing_instructions + 1 + body_instr_count + 2;
 
 	//	Skip entire loop?
 	body_acc._instrs.push_back(bcgen_instruction_t(condition_opcode1, end_expr._out, counter_reg, make_imm_int(leave_pc - get_count(body_acc._instrs))));

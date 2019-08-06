@@ -2528,8 +2528,8 @@ semantic_ast_t analyse(analyser_t& a){
 			variable_address_t::make_variable_address(variable_address_t::k_global_scope, index),
 			expression_t::make_construct_value_expr(t, a.benchmark_defs)
 		);
-		global_body3._statements.push_back(s);
-//		global_body3._statements.insert(global_body3._statements.begin(), s);
+//		global_body3._statements.push_back(s);
+		global_body3._statements.insert(global_body3._statements.begin(), s);
 	}
 
 

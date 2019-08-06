@@ -2013,6 +2013,16 @@ FLOYD_LANG_PROOF("Floyd test suite", "for", "0 ... 3", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "for", "1 ... 0", ""){
+	ut_run_closed_nolib(
+		R"(
+
+			for (i in 1 ... 0) {
+			}
+
+		)"
+	);
+}
+FLOYD_LANG_PROOF("Floyd test suite", "for", "1 ... 0", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -2384,7 +2394,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 
 
 
-#if 0
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
 	ut_run_closed_nolib(
 		R"(
@@ -2442,6 +2451,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
 	);
 }
 
+#if 0
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
 	ut_run_closed_nolib(
 		R"(
