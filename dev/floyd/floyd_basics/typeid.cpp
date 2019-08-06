@@ -296,7 +296,7 @@ void typeid_t::swap(typeid_t& other){
 	QUARK_ASSERT(check_invariant());
 
 #if DEBUG
-	std::swap(_DEBUG, other._DEBUG);
+	std::swap(_DEBUG_string, other._DEBUG_string);
 #endif
 	std::swap(_contents, other._contents);
 
