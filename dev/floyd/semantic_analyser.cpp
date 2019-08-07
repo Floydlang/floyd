@@ -20,7 +20,7 @@
 
 namespace floyd {
 
-static const bool k_trace_io_flag = false;
+static const bool k_trace_io_flag = true;
 
 //???? remove!!
 using namespace std;

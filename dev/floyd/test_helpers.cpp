@@ -33,6 +33,8 @@
 #include <iostream>
 
 
+static const bool k_run_bc = true;
+static const bool k_run_llvm = true;
 
 namespace floyd {
 
@@ -152,17 +154,22 @@ void test_floyd(const quark::call_context_t& context, const compilation_unit_t& 
 		throw std::exception();
 	}
 
-	const auto bc_report = run_test_program_bc(semast, main_args);
-	const auto llvm_report = run_test_program_llvm(semast, main_args);
 
-	if(compare(bc_report, expected, check_printout) == false){
-		QUARK_SCOPED_TRACE("BYTE CODE INTERPRETER FAILURE");
-		ut_verify_report(context, bc_report, expected);
+	if(k_run_bc){
+		const auto bc_report = run_test_program_bc(semast, main_args);
+		if(compare(bc_report, expected, check_printout) == false){
+			QUARK_SCOPED_TRACE("BYTE CODE INTERPRETER FAILURE");
+			ut_verify_report(context, bc_report, expected);
+		}
 	}
 
-	if(compare(llvm_report, expected, check_printout) == false){
-		QUARK_SCOPED_TRACE("LLVM JIT FAILURE");
-		ut_verify_report(context, llvm_report, expected);
+	if(k_run_llvm){
+		const auto llvm_report = run_test_program_llvm(semast, main_args);
+
+		if(compare(llvm_report, expected, check_printout) == false){
+			QUARK_SCOPED_TRACE("LLVM JIT FAILURE");
+			ut_verify_report(context, llvm_report, expected);
+		}
 	}
 }
 

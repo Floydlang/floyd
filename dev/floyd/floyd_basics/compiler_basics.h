@@ -67,14 +67,10 @@ inline typeid_t make_benchmark_result_t(){
 	return x;
 }
 
-/*
 inline typeid_t make_benchmark_function_t(){
 	return typeid_t::make_function(typeid_t::make_vector(make_benchmark_result_t()), {}, epure::pure);
 }
-*/
-inline typeid_t make_benchmark_function_t(){
-	return typeid_t::make_function(typeid_t::make_void(), {}, epure::pure);
-}
+
 inline typeid_t make_benchmark_def_t(){
 	const auto x = typeid_t::make_struct2( {
 		member_t{ typeid_t::make_string(), "name" },

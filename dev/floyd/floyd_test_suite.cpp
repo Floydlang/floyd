@@ -2393,7 +2393,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 }
 
 
-
+#if 0
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
 	ut_run_closed_nolib(
 		R"(
@@ -2450,14 +2450,30 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
 		)"
 	);
 }
+#endif
 
 #if 0
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark-def", "", ""){
+	ut_run_closed_nolib(
+		R"(
+
+			benchmark-def "ABC" {
+				return [
+					benchmark_result_t(200, json ("0 eleements")),
+					benchmark_result_t(300, json ("1 eleement"))
+				]
+			}
+
+		)"
+	);
+}
+
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
 	ut_run_closed_nolib(
 		R"(
 
 			benchmark-def "ABC" {
-				return 1002
+				return [benchmark_t()]
 			}
 
 			let report = run_benchmark("ABC")
@@ -2483,6 +2499,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
 	);
 }
 #endif
+
 
 
 //////////////////////////////////////////		TYPEID - TYPE
