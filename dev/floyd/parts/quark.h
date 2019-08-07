@@ -21,6 +21,7 @@
 #ifndef quark_h
 #define quark_h
 
+#include <algorithm>
 #include <memory>
 #ifndef __APPLE__
 #define	__dead2

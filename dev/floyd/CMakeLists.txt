@@ -10,7 +10,7 @@ project( floyd_speak)
 cmake_minimum_required (VERSION 3.4)
 
 IF(MSVC)
-    SET(CMAKE_CXX_FLAGS "/EHsc")
+    SET(CMAKE_CXX_FLAGS "/EHsc /Za")
 ENDIF(MSVC)
 #add_subdirectory(libs/Celero-master)
 
@@ -18,6 +18,33 @@ ENDIF(MSVC)
 SET (CMAKE_BUILD_TYPE Debug)
 
 include_directories(parts /usr/include libs/benchmark/include libs/benchmark/googletest/googlemock/ libs/benchmark/googletest/googlemock/include floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
+
+if (MSVC)  # - Microsoft Visual C++
+set (PROJECTNAME_ARCHITECTURE "x64")
+endif()
+message("WTF")
+
+if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    set(CMAKE_TOOLCHAIN_FILE "ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"                                            
+    CACHE STRING "")
+    message(" [INFO] VCPKG CMAKE_TOOLCHAIN_FILE = ${CMAKE_TOOLCHAIN_FILE}")
+	set (VCPKG_ROOT ENV{VCPKG_ROOT})
+else()
+  set (VCPKG_ROOT "C:/work/FloydLang/vcpkg")
+  set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/../../../vcpkg/scripts/buildsystems/vcpkg.cmake"                                            
+    CACHE STRING "")
+    message(" [INFO] VCPKG CMAKE_TOOLCHAIN_FILE = ${CMAKE_TOOLCHAIN_FILE}")
+endif()
+
+#message(" [INFO] VCPKG CMAKE_TOOLCHAIN_FILE = ${CMAKE_TOOLCHAIN_FILE}")
+#find_package(LLVM  REQUIRED) 
+
+# TODO, use find()
+include_directories(${VCPKG_ROOT}/packages/llvm_x64-windows/include)
+include_directories(${VCPKG_ROOT}/packages/readline-win32_x64-windows/include)
+include_directories(${VCPKG_ROOT}/packages/pthreads_x64-windows/include)
+include_directories(${VCPKG_ROOT}/packages/dirent_x64-windows/include)
+#essage(${VCPKG_ROOT}/packages/llvm_x64-windows/include)
 
 # for newer cmake 
 #add_compile_definitions(DEBUG)
@@ -28,7 +55,7 @@ add_definitions(-DDEBUG)
 #add_definitions(-DQUARK_UNIT_TESTS_ON true)
 
 # -fno-exceptions
-set(CMAKE_CXX_FLAGS "-std=c++17 -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
+set(CMAKE_CXX_FLAGS "-D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
 
 #Options for emscripten
 #set(CMAKE_CXX_FLAGS "--closure 1 -std=c++1z -s USE_PTHREADS=1 -Os -s WASM=0 -s ASSERTIONS=1 -s DISABLE_EXCEPTION_CATCHING=0 --bind")
@@ -238,7 +265,25 @@ ${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM-8 readline
 #${FLOYD_SPEAK__UT_STATIC_DEPENDENCIES}
 #${FLOYD_SPEAK__UT_DEPENDENCIES} pthread LLVM-8 readline
 #)
+IF(MSVC)
+    SET(CMAKE_CXX_FLAGS "/EHsc /Za")
+	add_compile_options("/std:c++latest")
+	add_definitions(-D_USE_MATH_DEFINES)	 
+	target_compile_features(floyd PUBLIC cxx_std_20)
+ELSE(MSVC)
 set_property(TARGET floyd PROPERTY CXX_STANDARD 17)
+set_property(TARGET floyd PROPERTY CXX_STANDARD_REQUIRED ON)
+ENDIF(MSVC)
+
+#The package llvm:x64-windows provides CMake targets:
+
+#   find_package(Clang CONFIG REQUIRED)
+    # Note: 27 target(s) were omitted.
+#    target_link_libraries(main PRIVATE clangAST clangLex libclang clangEdit)
+
+#    find_package(LLVM CONFIG REQUIRED)
+    # Note: 62 target(s) were omitted.
+#    target_link_libraries(main PRIVATE LTO LLVMMC ${name} LLVMLTO)
 
 #set_property(TARGET floydut PROPERTY CXX_STANDARD 17)
 
