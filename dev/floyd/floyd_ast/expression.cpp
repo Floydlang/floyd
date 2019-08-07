@@ -260,13 +260,6 @@ function_definition_t json_to_function_def(const json_t& p){
 	}
 }
 
-json_t function_def_expression_to_ast_json(const function_definition_t& v) {
-	return make_ast_node(
-		v._location,
-		expression_opcode_t::k_function_def,
-		function_def_to_ast_json(v).get_array()
-	);
-}
 
 
 
@@ -435,7 +428,11 @@ json_t expression_to_json(const expression_t& e){
 			return make_ast_node(expr.location, expression_opcode_t::k_struct_def, { struct_definition_to_ast_json(*e.def) } );
 		}
 		json_t operator()(const expression_t::function_definition_expr_t& e) const{
-			return function_def_expression_to_ast_json(e.def);
+			return make_ast_node(
+				e.def._location,
+				expression_opcode_t::k_function_def,
+				function_def_to_ast_json(e.def).get_array()
+			);
 		}
 		json_t operator()(const expression_t::load_t& e) const{
 			return make_ast_node(expr.location, expression_opcode_t::k_load, { json_t(e.variable_name) } );
