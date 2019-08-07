@@ -58,7 +58,6 @@ const bool k_trace_types = false;
 //http://releases.llvm.org/2.6/docs/tutorial/JITTutorial2.html
 
 
-typedef std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs_t;
 
 
 /*
@@ -2306,7 +2305,7 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 			void operator()(const function_definition_t::host_func_t& e) const{
 			}
 		};
-		std::visit(visitor_t{ gen_acc, function_id_t { function_def->_definition_name }, *function_def }, function_def->_contents);
+		std::visit(visitor_t{ gen_acc, function_id_t { function_def._definition_name }, function_def }, function_def._contents);
 	}
 }
 
@@ -2381,7 +2380,7 @@ static function_def_t generate_c_prototype(llvm::Module& module, const function_
 }
 
 //	Make LLVM functions -- runtime, floyd host functions, floyd functions.
-static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, const llvm_type_lookup& type_lookup, const function_defs_t& defs){
+static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& defs){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
 	std::vector<function_def_t> result;
@@ -2426,9 +2425,9 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 
 	{
 		for(const auto& function_def: defs){
-			const auto function_id = function_def->_definition_name;
-			auto f = generate_function_prototype(module, type_lookup, *function_def, function_id_t { function_id });
-			result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), {function_id}, *function_def });
+			const auto function_id = function_def._definition_name;
+			auto f = generate_function_prototype(module, type_lookup, function_def, function_id_t { function_id });
+			result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), { function_id }, function_def });
 		}
 	}
 	return result;

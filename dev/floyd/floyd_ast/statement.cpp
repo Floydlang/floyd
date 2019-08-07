@@ -298,7 +298,7 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 			body2
 		);
 
-		const auto s = statement_t::define_function_statement_t{ name2, std::make_shared<function_definition_t>(function_def) };
+		const auto s = statement_t::define_function_statement_t{ name2, function_definition_t(function_def) };
 		return statement_t::make__define_function_statement(loc, s);
 	}
 
@@ -423,8 +423,8 @@ json_t statement_to_json(const statement_t& e){
 				statement_opcode_t::k_def_func,
 				{
 					json_t(s._name),
-					function_def_expression_to_ast_json(*s._def),
-					s._def->_function_type.get_function_pure() == epure::impure ? true : false
+					function_def_expression_to_ast_json(s._def),
+					s._def._function_type.get_function_pure() == epure::impure ? true : false
 				}
 			);
 		}

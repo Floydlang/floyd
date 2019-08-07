@@ -435,7 +435,7 @@ json_t expression_to_json(const expression_t& e){
 			return make_ast_node(expr.location, expression_opcode_t::k_struct_def, { struct_definition_to_ast_json(*e.def) } );
 		}
 		json_t operator()(const expression_t::function_definition_expr_t& e) const{
-			return function_def_expression_to_ast_json(*e.def);
+			return function_def_expression_to_ast_json(e.def);
 		}
 		json_t operator()(const expression_t::load_t& e) const{
 			return make_ast_node(expr.location, expression_opcode_t::k_load, { json_t(e.variable_name) } );
@@ -669,7 +669,7 @@ expression_t ast_json_to_expression(const json_t& e){
 			named_args,
 			body1
 		);
-		return expression_t::make_function_definition(std::make_shared<function_definition_t>(def));
+		return expression_t::make_function_definition(def);
 
 
 /*

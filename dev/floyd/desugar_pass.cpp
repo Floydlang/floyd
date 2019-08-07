@@ -101,8 +101,8 @@ static expression_t desugar_expression(desugar_t& acc, const expression_t& expre
 			throw std::exception();
 		}
 		expression_t operator()(const expression_t::function_definition_expr_t& e) const{
-			const auto a = desugar_function_def(acc, *e.def);
-			return expression_t::make_function_definition(std::make_shared<function_definition_t>(a));
+			const auto a = desugar_function_def(acc, e.def);
+			return expression_t::make_function_definition(a);
 		}
 		expression_t operator()(const expression_t::load_t& e) const{
 			return expression;
@@ -196,9 +196,8 @@ static statement_t desugar_statement(desugar_t& acc, const statement_t& statemen
 			return statement;
 		}
 		statement_t operator()(const statement_t::define_function_statement_t& s) const{
-			auto f2 = desugar_function_def(acc, *s._def);
-			const auto f3 = std::make_shared<function_definition_t>(f2);
-			return statement_t::make__define_function_statement(statement.location, statement_t::define_function_statement_t{ s._name, f3 });
+			auto f2 = desugar_function_def(acc, s._def);
+			return statement_t::make__define_function_statement(statement.location, statement_t::define_function_statement_t{ s._name, f2 });
 		}
 
 		statement_t operator()(const statement_t::bind_local_t& s) const{
@@ -281,11 +280,10 @@ general_purpose_ast_t desugar(desugar_t& acc, const general_purpose_ast_t& ast){
 
 	result._globals = desugar_body(acc, ast._globals);
 
-	std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs;
+	std::vector<floyd::function_definition_t> function_defs;
 	for(const auto& f: ast._function_defs){
-		const auto f2 = desugar_function_def(acc, *f);
-		const auto f3 = std::make_shared<function_definition_t>(f2);
-		function_defs.push_back(f3);
+		const auto f2 = desugar_function_def(acc, f);
+		function_defs.push_back(f2);
 	}
 	result._function_defs = function_defs;
 

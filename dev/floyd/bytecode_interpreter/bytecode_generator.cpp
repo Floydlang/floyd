@@ -1844,7 +1844,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 
 	std::map<function_id_t, bc_function_definition_t> function_defs2;
 	for(auto function_id = 0 ; function_id < ast._tree._function_defs.size() ; function_id++){
-		const auto& function_def = *ast._tree._function_defs[function_id];
+		const auto& function_def = ast._tree._function_defs[function_id];
 
 		struct visitor_t {
 			bcgenerator_t& gen_acc;

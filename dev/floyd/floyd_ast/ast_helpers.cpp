@@ -59,7 +59,7 @@ bool check_types_resolved(const expression_t& e){
 			return check_types_resolved(*e.def);
 		}
 		bool operator()(const expression_t::function_definition_expr_t& e) const{
-			return check_types_resolved(*e.def);
+			return check_types_resolved(e.def);
 		}
 		bool operator()(const expression_t::load_t& e) const{
 			return false;
@@ -180,7 +180,7 @@ bool check_types_resolved(const statement_t& s){
 			return check_types_resolved(*s._def);
 		}
 		bool operator()(const statement_t::define_function_statement_t& s) const{
-			return floyd::check_types_resolved(*s._def);
+			return floyd::check_types_resolved(s._def);
 		}
 
 		bool operator()(const statement_t::bind_local_t& s) const{
@@ -322,7 +322,7 @@ bool check_types_resolved(const general_purpose_ast_t& ast){
 		return false;
 	}
 	for(const auto& e: ast._function_defs){
-		const auto result = check_types_resolved(*e);
+		const auto result = check_types_resolved(e);
 		if(result == false){
 			return false;
 		}

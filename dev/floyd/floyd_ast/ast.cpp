@@ -232,7 +232,7 @@ json_t gp_ast_to_json(const general_purpose_ast_t& ast){
 
 	std::vector<json_t> fds;
 	for(const auto& e: ast._function_defs){
-		const auto fd = function_def_to_ast_json(*e);
+		const auto fd = function_def_to_ast_json(e);
 		fds.push_back(fd);
 	}
 
@@ -253,11 +253,10 @@ general_purpose_ast_t json_to_gp_ast(const json_t& json){
 
 	body_t globals1 = json_to_body(globals0);
 
-	std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs1;
+	std::vector<floyd::function_definition_t> function_defs1;
 	for(const auto& f: function_defs.get_array()){
 		const auto f1 = json_to_function_def(f);
-		const auto f2 = std::make_shared<const floyd::function_definition_t>(f1);
-		function_defs1.push_back(f2);
+		function_defs1.push_back(f1);
 	}
 
 	return general_purpose_ast_t {

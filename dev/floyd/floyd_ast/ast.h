@@ -100,7 +100,7 @@ struct general_purpose_ast_t {
 
 	/////////////////////////////		STATE
 	public: body_t _globals;
-	public: std::vector<std::shared_ptr<const floyd::function_definition_t>> _function_defs;
+	public: std::vector<floyd::function_definition_t> _function_defs;
 	public: type_interner_t _interned_types;
 	public: software_system_t _software_system;
 	public: container_t _container_def;

@@ -263,7 +263,7 @@ struct statement_t {
 		}
 
 		std::string _name;
-		std::shared_ptr<const function_definition_t> _def;
+		function_definition_t _def;
 	};
 	public: static statement_t make__define_function_statement(const location_t& location, const define_function_statement_t& value){
 		return statement_t(location, { define_function_statement_t{ value } });

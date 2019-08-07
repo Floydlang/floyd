@@ -185,9 +185,8 @@ static statement_t visit_ast_statement(visit_ast_t& acc, const statement_t& stat
 			return statement;
 		}
 		statement_t operator()(const statement_t::define_function_statement_t& s) const{
-			auto f2 = visit_ast_function_def(acc, *s._def);
-			const auto f3 = std::make_shared<function_definition_t>(f2);
-			return statement_t::make__define_function_statement(statement.location, statement_t::define_function_statement_t{ s._name, f3 });
+			auto f2 = visit_ast_function_def(acc, s._def);
+			return statement_t::make__define_function_statement(statement.location, statement_t::define_function_statement_t{ s._name, f2 });
 		}
 
 		statement_t operator()(const statement_t::bind_local_t& s) const{
@@ -270,11 +269,10 @@ general_purpose_ast_t visit_ast(visit_ast_t& acc, const general_purpose_ast_t& a
 
 	result._globals = visit_ast_body(acc, ast._globals);
 
-	std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs;
+	std::vector<floyd::function_definition_t> function_defs;
 	for(const auto& f: ast._function_defs){
-		const auto f2 = visit_ast_function_def(acc, *f);
-		const auto f3 = std::make_shared<function_definition_t>(f2);
-		function_defs.push_back(f3);
+		const auto f2 = visit_ast_function_def(acc, f);
+		function_defs.push_back(f2);
 	}
 	result._function_defs = function_defs;
 

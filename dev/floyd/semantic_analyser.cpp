@@ -87,7 +87,7 @@ struct analyser_t {
 	public: std::vector<lexical_scope_t> _lexical_scope_stack;
 
 	//	These are output functions, that have been fixed.
-	public: std::map<function_id_t, std::shared_ptr<const function_definition_t>> _function_defs;
+	public: std::map<function_id_t, function_definition_t> _function_defs;
 	public: type_interner_t _types;
 
 	public: software_system_t _software_system;
@@ -117,7 +117,7 @@ std::pair<analyser_t, expression_t> analyse_expression_no_target(const analyser_
 static const function_definition_t& function_id_to_def(const analyser_t& a, const function_id_t& function_id){
 //	QUARK_ASSERT(function_id >= 0 && function_id < a._function_defs.size());
 
-	return *a._function_defs.at(function_id);
+	return a._function_defs.at(function_id);
 }
 
 
@@ -638,7 +638,7 @@ QUARK_ASSERT(false);
 	const auto& s2 = statement_t::make__bind_local(
 		s.location,
 		statement._name,
-		resolve_type(a_acc, k_no_location, statement._def->_function_type),
+		resolve_type(a_acc, k_no_location, statement._def._function_type),
 		function_def_expr,
 		statement_t::bind_local_t::k_immutable
 	);
@@ -755,7 +755,7 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 	const auto function_def2 = function_definition_t::make_floyd_func(k_no_location, function_link_name, benchmark_function_t, {}, std::make_shared<body_t>(body_pair.second));
 	QUARK_ASSERT(check_types_resolved(function_def2));
 
-	a_acc._function_defs.insert({ function_id, std::make_shared<function_definition_t>(function_def2) });
+	a_acc._function_defs.insert({ function_id, function_definition_t(function_def2) });
 
 	const auto f = value_t::make_function_value(benchmark_function_t, function_id);
 
@@ -800,7 +800,7 @@ static analyser_t analyse_benchmark_def_statement2(const analyser_t& a, const st
 
 	const auto function_id = function_id_t { function_link_name };
 	const auto function_def2 = function_definition_t::make_floyd_func(k_no_location, function_link_name, benchmark_function_t, {}, std::make_shared<body_t>(statement._body));
-	const auto func_def_expr = expression_t::make_function_definition(std::make_shared<function_definition_t>(function_def2));
+	const auto func_def_expr = expression_t::make_function_definition(function_def2);
 
 	const auto expr2_pair = analyse_expression_to_target(a_acc, s, func_def_expr, benchmark_function_t);
 	QUARK_ASSERT(check_types_resolved(expr2_pair.second));
@@ -2196,11 +2196,11 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	auto a_acc = analyser;
 
 	const auto function_def = details.def;
-	const auto function_type2 = resolve_type(a_acc, parent.location, function_def->_function_type);
+	const auto function_type2 = resolve_type(a_acc, parent.location, function_def._function_type);
 	const auto function_pure = function_type2.get_function_pure();
 
 	vector<member_t> args2;
-	for(const auto& arg: function_def->_named_args){
+	for(const auto& arg: function_def._named_args){
 		const auto arg_type2 = resolve_type(a_acc, parent.location, arg._type);
 		args2.push_back(member_t(arg_type2, arg._name));
 	}
@@ -2210,7 +2210,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 
 	struct visitor_t {
 		analyser_t& a_acc;
-		std::shared_ptr<const function_definition_t> function_def;
+		const function_definition_t& function_def;
 		const typeid_t& function_type2;
 		const vector<member_t>& args2;
 		const epure pure;
@@ -2237,13 +2237,13 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 			else{
 			}
 
-			const auto definition_name = function_def->_definition_name;
+			const auto definition_name = function_def._definition_name;
 			const auto function_id = function_id_t { definition_name };
 
 			const auto function_def2 = function_definition_t::make_floyd_func(k_no_location, definition_name, function_type2, args2, body_result);
 			QUARK_ASSERT(check_types_resolved(function_def2));
 
-			a_acc._function_defs.insert({ function_id, make_shared<function_definition_t>(function_def2) });
+			a_acc._function_defs.insert({ function_id, function_def2 });
 
 			const auto r = expression_t::make_literal(value_t::make_function_value(function_type2, function_id));
 
@@ -2253,7 +2253,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 			UNSUPPORTED();
 		}
 	};
-	const auto result = std::visit(visitor_t{ a_acc, function_def, function_type2, args2, pure }, function_def->_contents);
+	const auto result = std::visit(visitor_t{ a_acc, function_def, function_type2, args2, pure }, function_def._contents);
 	return result;
 }
 
@@ -2279,7 +2279,7 @@ static std::pair<analyser_t, expression_t> analyse_function_definition_expressio
 		}
 		std::pair<analyser_t, expression_t> operator()(const function_definition_t::floyd_func_t& floyd_func) const{
 			const auto function_type = expr.get_output_type();
-			const auto r = expression_t::make_literal(value_t::make_function_value(function_type, function_id_t { details.def->_definition_name } ));
+			const auto r = expression_t::make_literal(value_t::make_function_value(function_type, function_id_t { details.def._definition_name } ));
 			return { a_acc, r };
 		}
 		std::pair<analyser_t, expression_t> operator()(const function_definition_t::host_func_t& e) const{
@@ -2287,7 +2287,7 @@ static std::pair<analyser_t, expression_t> analyse_function_definition_expressio
 			throw std::exception();
 		}
 	};
-	const auto result = std::visit(visitor_t{ a_acc, func_def_expr.second, *func_def_expr2 }, func_def_expr2->def->_contents);
+	const auto result = std::visit(visitor_t{ a_acc, func_def_expr.second, *func_def_expr2 }, func_def_expr2->def._contents);
 	return result;
 }
 
@@ -2502,13 +2502,13 @@ QUARK_UNIT_TEST("analyse_expression_no_target()", "1 + 2 == 3", "", "") {
 
 
 struct builtins_t {
-	std::map<function_id_t, std::shared_ptr<const function_definition_t>> function_defs;
+	std::map<function_id_t, function_definition_t> function_defs;
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 };
 
 
 static builtins_t generate_corecalls(analyser_t& a, const std::vector<corecall_signature_t>& host_functions){
-	std::map<function_id_t, std::shared_ptr<const function_definition_t>> function_defs;
+	std::map<function_id_t, function_definition_t> function_defs;
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
 	for(auto signature: host_functions){
@@ -2519,7 +2519,7 @@ static builtins_t generate_corecalls(analyser_t& a, const std::vector<corecall_s
 			args.push_back(member_t(e, "dummy"));
 		}
 		const auto function_id = signature._function_id;
-		const auto def = std::make_shared<function_definition_t>(function_definition_t::make_host_func(k_no_location, signature._function_id.name, signature._function_type, args));
+		const auto def = function_definition_t::make_host_func(k_no_location, signature._function_id.name, signature._function_type, args);
 		const auto function_value = value_t::make_function_value(signature._function_type, function_id_t { signature.name });
 
 		function_defs.insert({ function_id, def });
@@ -2569,7 +2569,7 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 		);
 	}
 
-	std::map<function_id_t, std::shared_ptr<const function_definition_t>> function_defs;
+	std::map<function_id_t, function_definition_t> function_defs;
 
 	const auto corecalls = generate_corecalls(a, input.corecall_signatures);
 	function_defs.insert(corecalls.function_defs.begin(), corecalls.function_defs.end());
@@ -2588,7 +2588,7 @@ semantic_ast_t analyse(analyser_t& a){
 	const auto builtins = generate_builtins(a, *a._imm);
 
 	std::vector<std::pair<std::string, symbol_t>> symbol_map = builtins.symbol_map;
-	std::map<function_id_t, std::shared_ptr<const function_definition_t>> function_defs = builtins.function_defs;
+	std::map<function_id_t, function_definition_t> function_defs = builtins.function_defs;
 
 	a._function_defs.swap(function_defs);
 
@@ -2633,7 +2633,7 @@ semantic_ast_t analyse(analyser_t& a){
 #endif
 
 
-	std::vector<std::shared_ptr<const floyd::function_definition_t>> function_defs_vec;
+	std::vector<floyd::function_definition_t> function_defs_vec;
 	for(const auto& e: a._function_defs){
 		function_defs_vec.push_back(e.second);
 	}

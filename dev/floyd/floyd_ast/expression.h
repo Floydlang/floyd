@@ -408,11 +408,11 @@ struct expression_t {
 	////////////////////////////////		function_definition_expr_t
 
 	struct function_definition_expr_t {
-		std::shared_ptr<const function_definition_t> def;
+		function_definition_t def;
 	};
 
-	public: static expression_t make_function_definition(const std::shared_ptr<const function_definition_t>& def){
-		return expression_t({ function_definition_expr_t{ def } }, std::make_shared<typeid_t>(def->_function_type));
+	public: static expression_t make_function_definition(const function_definition_t& def){
+		return expression_t({ function_definition_expr_t{ def } }, std::make_shared<typeid_t>(def._function_type));
 	}
 
 
