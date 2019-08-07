@@ -17,6 +17,7 @@
 #include "compiler_basics.h"
 #include "typeid.h"
 
+static const bool k_trace_parse_tree_flag = false;
 
 namespace floyd {
 
@@ -103,16 +104,16 @@ QUARK_UNIT_TEST("", "parse_statement()", "", ""){
 		parse_json(seq_t(R"(
 			[
 				0,
-				"def-func",
-				{
-					"args": [{ "name": "name", "type": "^string" }],
-					"name": "f",
-					"return_type": "^int",
-					"statements": [
-						[25, "return", ["k", 13, "^int"]]
-					],
-					"impure": false
-				}
+				"init-local",
+				["func", "^int", ["^string"], true],
+				"f",
+				[
+					"function-def",
+					["func", "^int", ["^string"], true],
+					"f",
+					[{ "name": "name", "type": "^string" }],
+					{ "statements": [[25, "return", ["k", 13, "^int"]]], "symbols": null }
+				]
 			]
 		)")).first
 	);
@@ -221,7 +222,14 @@ parse_tree_t parse_program2(const std::string& program){
 	check_illegal_chars(pos);
 
 	const auto statements_pos = parse_statements_no_brackets(pos);
-	return parse_tree_t{ statements_pos.parse_tree };
+	const auto p = parse_tree_t{ statements_pos.parse_tree };
+
+	if(k_trace_parse_tree_flag){
+		QUARK_SCOPED_TRACE("Parser tree output");
+		QUARK_TRACE(json_to_pretty_string(p._value));
+	}
+
+	return p;
 }
 
 const std::string k_test_program_0_source = "func int main(){ return 3; }";
@@ -229,16 +237,10 @@ const std::string k_test_program_0_parserout = R"(
 	[
 		[
 			0,
-			"def-func",
-			{
-				"args": [],
-				"name": "main",
-				"return_type": "^int",
-				"statements": [
-					[ 17, "return", [ "k", 3, "^int" ] ]
-				],
-				"impure": false
-			}
+			"init-local",
+			["func", "^int", [], true],
+			"main",
+			["function-def", ["func", "^int", [], true], "main", [], { "statements": [[17, "return", ["k", 3, "^int"]]], "symbols": null }]
 		]
 	]
 )";
@@ -258,18 +260,16 @@ const std::string k_test_program_1_parserout = R"(
 	[
 		[
 			0,
-			"def-func",
-			{
-				"args": [
-					{ "name": "args", "type": "^string" }
-				],
-				"name": "main",
-				"return_type": "^int",
-				"statements": [
-					[ 29, "return", [ "k", 3, "^int" ] ]
-				],
-				"impure": false
-			}
+			"init-local",
+			["func", "^int", ["^string"], true],
+			"main",
+			[
+				"function-def",
+				["func", "^int", ["^string"], true],
+				"main",
+				[{ "name": "args", "type": "^string" }],
+				{ "statements": [[29, "return", ["k", 3, "^int"]]], "symbols": null }
+			]
 		]
 	]
 )";
@@ -286,59 +286,44 @@ const char k_test_program_100_parserout[] = R"(
 		[
 			5,
 			"def-struct",
-			{
-				"members": [
-					{ "name": "red", "type": "^double" },
-					{ "name": "green", "type": "^double" },
-					{ "name": "blue", "type": "^double" }
-				],
-				"name": "pixel"
-			}
+			{ "members": [{ "name": "red", "type": "^double" }, { "name": "green", "type": "^double" }, { "name": "blue", "type": "^double" }], "name": "pixel" }
 		],
 		[
 			65,
-			"def-func",
-			{
-				"args": [{ "name": "p", "type": "#pixel" }],
-				"name": "get_grey",
-				"return_type": "^double",
-				"statements": [
-					[
-						96,
-						"return",
-						[
-							"/",
-							[
-								"+",
-								["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]],
-								["->", ["@", "p"], "blue"]
-							],
-							["k", 3.0, "^double"]
-						]
-					]
-				],
-				"impure": false
-			}
+			"init-local",
+			["func", "^double", ["#pixel"], true],
+			"get_grey",
+			[
+				"function-def",
+				["func", "^double", ["#pixel"], true],
+				"get_grey",
+				[{ "name": "p", "type": "#pixel" }],
+				{
+					"statements": [
+						[96, "return", ["/", ["+", ["+", ["->", ["@", "p"], "red"], ["->", ["@", "p"], "green"]], ["->", ["@", "p"], "blue"]], ["k", 3, "^double"]]]
+					],
+					"symbols": null
+				}
+			]
 		],
 		[
 			144,
-			"def-func",
-			{
-				"args": [],
-				"name": "main",
-				"return_type": "^double",
-				"statements": [
-					[
-						169,
-						"init-local",
-						"#pixel",
-						"p",
-						["call", ["@", "pixel"], [["k", 1, "^int"], ["k", 0, "^int"], ["k", 0, "^int"]]]
+			"init-local",
+			["func", "^double", [], true],
+			"main",
+			[
+				"function-def",
+				["func", "^double", [], true],
+				"main",
+				[],
+				{
+					"statements": [
+						[169, "init-local", "#pixel", "p", ["call", ["@", "pixel"], [["k", 1, "^int"], ["k", 0, "^int"], ["k", 0, "^int"]]]],
+						[204, "return", ["call", ["@", "get_grey"], [["@", "p"]]]]
 					],
-					[204, "return", ["call", ["@", "get_grey"], [["@", "p"]]]]
-				],
-				"impure": false
-			}
+					"symbols": null
+				}
+			]
 		]
 	]
 )";

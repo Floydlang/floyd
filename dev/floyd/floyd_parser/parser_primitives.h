@@ -154,6 +154,7 @@ namespace parse_tree_expression_opcode_t {
 	const std::string k_resolve_member = "->";
 	const std::string k_arithmetic_unary_minus = "unary-minus";
 	const std::string k_conditional_operator = "?:";
+	const std::string k_function_def = "function-def";
 	const std::string k_value_constructor = "value-constructor";
 	const std::string k_lookup_element = "[]";
 	const std::string k_benchmark = "benchmark";
@@ -190,7 +191,6 @@ namespace parse_tree_statement_opcode {
 	const std::string k_block = "block";
 
 	const std::string k_def_struct = "def-struct";
-	const std::string k_def_func = "def-func";
 
 	const std::string k_if = "if";
 	const std::string k_for = "for";

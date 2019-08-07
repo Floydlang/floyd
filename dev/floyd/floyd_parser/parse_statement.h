@@ -76,18 +76,7 @@ std::pair<json_t, seq_t> parse_assign_statement(const seq_t& s);
 std::pair<json_t, seq_t> parse_expression_statement(const seq_t& s);
 
 /*
-	OUTPUT:
-		[
-			"def-func",
-			{
-				"name": "main",
-				"args": [],
-				"return_type": "int",
-				"statements": [
-					[ "return", [ "k", 3, "int" ]]
-				]
-			}
-		]
+	Output is a bind of a variable with a function_def expression
 */
 std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& s);
 

@@ -166,11 +166,11 @@ bool function_definition_t::floyd_func_t::operator==(const floyd_func_t& other) 
 
 bool function_definition_t::check_invariant() const {
 	QUARK_ASSERT(_function_type.is_function());
-	QUARK_ASSERT(_function_type.get_function_args().size() == _args.size());
+	QUARK_ASSERT(_function_type.get_function_args().size() == _named_args.size());
 
 	const auto args0 = _function_type.get_function_args();
 	for(int i = 0 ; i < args0.size(); i++){
-		QUARK_ASSERT(args0[i] == _args[i]._type);
+		QUARK_ASSERT(args0[i] == _named_args[i]._type);
 	}
 
 	struct visitor_t {
@@ -198,7 +198,7 @@ bool operator==(const function_definition_t& lhs, const function_definition_t& r
 		&& lhs._location == rhs._location
 		&& lhs._definition_name == rhs._definition_name
 		&& lhs._function_type == rhs._function_type
-		&& lhs._args == rhs._args
+		&& lhs._named_args == rhs._named_args
 		&& lhs._contents == rhs._contents
 		;
 }
@@ -219,7 +219,7 @@ json_t function_def_to_ast_json(const function_definition_t& v) {
 	return std::vector<json_t>{
 		typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state),
 		v._definition_name,
-		members_to_json(v._args),
+		members_to_json(v._named_args),
 
 		floyd_func ? (floyd_func->_body ? body_to_json(*floyd_func->_body) : json_t()) : json_t(),
 
@@ -233,7 +233,7 @@ function_definition_t json_to_function_def(const json_t& p){
 	const auto definition_name0 = p.get_array_n(1);
 	const auto args0 = p.get_array_n(2);
 	const auto body0 = p.get_array_n(3);
-	const auto host_function_id0 = p.get_array_n(4);
+//	const auto host_function_id0 = p.get_array_n(4);
 
 	const location_t location1 = k_no_location;
 	const std::string definition_name1 = definition_name0.get_string();
@@ -255,14 +255,12 @@ function_definition_t json_to_function_def(const json_t& p){
 			location1,
 			definition_name1,
 			function_type1,
-			args1,
-			function_id_t{ host_function_id0.get_string() }
+			args1
 		);
 	}
 }
 
 json_t function_def_expression_to_ast_json(const function_definition_t& v) {
-	typeid_t function_type = get_function_type(v);
 	return make_ast_node(
 		v._location,
 		expression_opcode_t::k_function_def,
@@ -277,7 +275,7 @@ json_t function_def_expression_to_ast_json(const function_definition_t& v) {
 QUARK_UNIT_TEST("", "", "", ""){
 	
 	const auto a = function_definition_t::make_floyd_func(k_no_location, "definition_name", typeid_t::make_function(typeid_t::make_string(), {}, epure::pure), {}, std::make_shared<body_t>());
-	QUARK_UT_VERIFY(a._args.empty());
+	QUARK_UT_VERIFY(a._named_args.empty());
 
 
 	QUARK_UT_VERIFY(a == a);
@@ -650,6 +648,47 @@ expression_t ast_json_to_expression(const json_t& e){
 		const auto lookup_key_expr = ast_json_to_expression(e.get_array_n(2));
 		const auto annotated_type = get_optional_typeid(e, 3);
 		return expression_t::make_lookup(parent_address_expr, lookup_key_expr, annotated_type);
+	}
+	else if(op == expression_opcode_t::k_function_def){
+		QUARK_ASSERT(e.get_array_size() == 5);
+
+		const auto function_type = typeid_from_ast_json(e.get_array_n(1));
+		const auto function_name = e.get_array_n(2).get_string();
+		const auto named_args = members_from_json(e.get_array_n(3));
+
+		//	Null or BODY as an object. Null: this is a declaration only.
+		const auto body0 = e.get_array_n(4);
+
+		const std::shared_ptr<body_t> body1 = body0.is_null() ? std::shared_ptr<body_t>() : std::make_shared<body_t>(json_to_body(body0));
+
+
+		auto def = function_definition_t::make_floyd_func(
+			k_no_location,
+			function_name,
+			function_type,
+			named_args,
+			body1
+		);
+		return expression_t::make_function_definition(std::make_shared<function_definition_t>(def));
+
+
+/*
+		if(body1){
+			auto def = function_definition_t::make_floyd_func(
+				k_no_location,
+				function_name,
+				function_type,
+				named_args,
+				body1
+			);
+			return expression_t::make_function_definition(std::make_shared<function_definition_t>(def));
+		}
+		else{
+			auto def = function_definition_t::make_host_func(k_no_location, function_name, function_type, named_args);
+			return expression_t::make_function_definition(std::make_shared<function_definition_t>(def));
+		}
+*/
+
 	}
 	else if(op == expression_opcode_t::k_value_constructor){
 		QUARK_ASSERT(e.get_array_size() == 3);

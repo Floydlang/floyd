@@ -1861,7 +1861,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 					const auto frame = make_frame(body2, function_def._function_type.get_function_args());
 					const auto f = bc_function_definition_t{
 						function_def._function_type,
-						function_def._args,
+						function_def._named_args,
 						std::make_shared<bc_static_frame_t>(frame),
 						function_id_t { function_def._definition_name }
 					};
@@ -1870,7 +1870,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 				else{
 					const auto f = bc_function_definition_t{
 						function_def._function_type,
-						function_def._args,
+						function_def._named_args,
 						std::shared_ptr<bc_static_frame_t>(),
 						function_id_t { function_def._definition_name }
 					};
@@ -1880,7 +1880,7 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 			bc_function_definition_t operator()(const function_definition_t::host_func_t& e) const{
 				const auto f = bc_function_definition_t{
 					function_def._function_type,
-					function_def._args,
+					function_def._named_args,
 					nullptr,
 					function_id_t { function_def._definition_name }
 				};

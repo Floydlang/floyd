@@ -107,7 +107,7 @@ bool check_types_resolved(const function_definition_t& def){
 		return false;
 	}
 
-	for(const auto& e: def._args){
+	for(const auto& e: def._named_args){
 		bool result2 = floyd::check_types_resolved(e._type);
 		if(result2 == false){
 			return false;

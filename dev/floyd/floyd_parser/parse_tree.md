@@ -22,7 +22,6 @@ STATEMENT: [ LOCATION, STATEMENT-OPCODE, * ]
 	[ LOCATION, "assign", [ TYPE, IDENTIFIER, EXPRESSION ] ]
 	[ LOCATION, "block", STATEMENTS ]
 	[ LOCATION, "def-struct", { "name": NAME, "members": [ STRUCT-MEMBER ]* } ]
-	[ LOCATION, "def-func", [ { "name": NAME, "args": ARGS, "statements": STATEMENTS, "return_type": TYPE, "impure": BOOL ] ]
 
 	[ LOCATION, "if", EXPRESSION, STATEMENTS, STATEMENTS ]
 	[ LOCATION, "for", "closed-range" / "open-range", IDENTIFIER, EXPRESSION, EXPRESSION, STATEMENTS ]
@@ -41,6 +40,9 @@ EXPRESSION:	[ LOCATION, EXPRESSION-OPCODE, * ]
 	[ LOCATION, "->", EXPRESSION, IDENTIFIER ]	//	member_access, address, member_name
 	[ LOCATION, "unary-minus", EXPRESSION ]
 	[ LOCATION, "?:", EXPRESSION, EXPRESSION, EXPRESSION ]	//	conditional_operator(condition, a, b)
+
+	[ LOCATION, "function-def", FUNCTION-TYPE, IDENTIFIER, ARGS, BODY ]
+
 	[ LOCATION, "value-constructor", EXPRESSION, ELEMENT-TYPE, [ EXPRESSION ] ]
 	[ LOCATION, "[]", EXPRESSION, EXPRESSION ] 	//	lookup_member(object, key)
 	[ LOCATION, "benchmark", EXPRESSION, STATEMENTS ] ]
@@ -88,4 +90,9 @@ TYPE:
 	[ "dict", ELEMENT-TYPE ]
 	[ "func", ELEMENT-TYPE, [ ELEMENT-TYPE ], true / false ]
 	"#ABC*"
+
+FUNCTION-TYPE: TYPE
+
+??? Parser should not know about bodies and symbols: move to AST instead!
+BODY: { "statements": STATEMENTS, "symbols": SYMBOLS }
 ```

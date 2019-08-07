@@ -428,29 +428,49 @@ std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& pos){
 	const auto func_pos = read_required(start, keyword_t::k_func);
 	const auto return_type_pos = read_required_type(func_pos);
 	const auto function_name_pos = read_required_identifier(return_type_pos.second);
-	const auto args_pos = read_functiondef_arg_parantheses(skip_whitespace(function_name_pos.second));
+	const auto named_args_pos = read_functiondef_arg_parantheses(skip_whitespace(function_name_pos.second));
 
-	const auto impure_pos = if_first(skip_whitespace(args_pos.second), keyword_t::k_impure);
+	const auto impure_pos = if_first(skip_whitespace(named_args_pos.second), keyword_t::k_impure);
 
 	const auto body = parse_optional_statement_body(impure_pos.second);
 
-	const auto args = members_to_json(args_pos.first);
+	const auto named_args = members_to_json(named_args_pos.first);
 	const auto function_name = function_name_pos.first;
 
-	const auto function_def = make_parser_node(
-		location_t(start.pos()),
-		parse_tree_statement_opcode::k_def_func,
+	const auto body_json = body.parse_tree.is_null()
+	? json_t()
+	: json_t::make_object({
+		{ "statements", body.parse_tree },
+		{ "symbols", {} }
+	});
+
+	std::vector<typeid_t> arg_types;
+	for(const auto& e: named_args_pos.first){
+		arg_types.push_back(e._type);
+	}
+
+	const auto function_type = typeid_t::make_function(return_type_pos.first, arg_types, impure_pos.first ? epure::impure : epure::pure);
+	const auto func_def_expr = make_parser_node(
+		location_t(k_no_location),
+		parse_tree_expression_opcode_t::k_function_def,
 		{
-			json_t::make_object({
-				{ "name", function_name },
-				{ "args", args },
-				{ "statements", body.parse_tree },
-				{ "return_type", typeid_to_ast_json(return_type_pos.first, json_tags::k_tag_resolve_state) },
-				{ "impure", impure_pos.first }
-			})
+			typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state),
+			function_name,
+			named_args,
+			body_json
 		}
 	);
-	return { function_def, body.pos };
+
+	const auto s = make_parser_node(
+		location_t(start.pos()),
+		parse_tree_statement_opcode::k_init_local,
+		{
+			typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state),
+			function_name,
+			func_def_expr
+		}
+	);
+	return { s, body.pos };
 }
 
 struct test {
@@ -464,95 +484,116 @@ QUARK_UNIT_TEST("", "parse_function_definition_statement()", "Minimal function I
 	const std::string expected = R"(
 		[
 			0,
-			"def-func",
-			{ "args": [], "name": "f", "return_type": "^int", "statements": [[21, "return", ["k", 3, "^int"]]], "impure": true }
+			"init-local",
+			["func", "^int", [], false],
+			"f",
+			["function-def", ["func", "^int", [], false], "f", [], { "statements": [[21, "return", ["k", 3, "^int"]]], "symbols": null }]
 		]
 	)";
 	ut_verify(QUARK_POS, parse_function_definition_statement(seq_t(input)).first, parse_json(seq_t(expected)).first);
 }
 
-const std::vector<test> testsxyz = {
-	{
-		"Minimal function",
-		"func int f(){ return 3; }",
 
-		R"(
-			[
-				0,
-				"def-func",
-				{ "args": [], "name": "f", "return_type": "^int", "statements": [[14, "return", ["k", 3, "^int"]]], "impure": false }
-			]
-		)"
-	},
-	{
-		"3 args of different types",
-		"func int printf(string a, double barry, int c){ return 3; }",
-		R"(
-			[
-				0,
-				"def-func",
-				{
-					"args": [
-						{ "name": "a", "type": "^string" },
-						{ "name": "barry", "type": "^double" },
-						{ "name": "c", "type": "^int" },
-					],
-					"name": "printf",
-					"return_type": "^int",
-					"statements": [[48, "return", ["k", 3, "^int"]]],
-					"impure": false
-				}
-			]
-		)"
-	},
-	{
-		"Max whitespace",
-		" func  \t int \t printf( \t string \t a \t , \t double \t b \t ){ \t return \t 3 \t ; \t } \t ",
-		R"(
-			[
-				1,
-				"def-func",
-				{
-					"args": [
-						{ "name": "a", "type": "^string" },
-						{ "name": "b", "type": "^double" }
-					],
-					"name": "printf",
-					"return_type": "^int",
-					"statements": [[60, "return", ["k", 3, "^int"]]],
-					"impure": false
-				}
-			]
-		)"
-	},
-	{
-		"Min whitespace",
-		"func int printf(string a,double b){return 3;}",
-		R"(
-			[
-				0,
-				"def-func",
-				{
-					"args": [
-						{ "name": "a", "type": "^string" },
-						{ "name": "b", "type": "^double" }
-					],
-					"name": "printf",
-					"return_type": "^int",
-					"statements": [[35, "return", ["k", 3, "^int"]]],
-					"impure": false
-				}
-			]
-		)"
-	}
-};
+QUARK_UNIT_TEST("", "parse_function_definition_statement()", "function", "Correct output JSON"){
+	ut_verify(
+		QUARK_POS,
+		parse_function_definition_statement(seq_t("func int f(){ return 3; }")).first,
+		parse_json(seq_t(
+			R"___(
 
-QUARK_UNIT_TEST("", "parse_function_definition_statement()", "BATCH", "Correct output JSON"){
-	for(const auto& e: testsxyz){
-		QUARK_SCOPED_TRACE(e.desc);
-		ut_verify(QUARK_POS, parse_function_definition_statement(seq_t(e.input)).first, parse_json(seq_t(e.output)).first);
-	}
+				[
+					0,
+					"init-local",
+					["func", "^int", [], true],
+					"f",
+					["function-def", ["func", "^int", [], true], "f", [], { "statements": [[14, "return", ["k", 3, "^int"]]], "symbols": null }]
+				]
+
+			)___"
+		)).first
+	);
 }
+
+
+QUARK_UNIT_TEST("", "parse_function_definition_statement()", "3 args of different types", "Correct output JSON"){
+	ut_verify(
+		QUARK_POS,
+		parse_function_definition_statement(seq_t("func int printf(string a, double barry, int c){ return 3; }")).first,
+		parse_json(seq_t(
+			R"___(
+
+				[
+					0,
+					"init-local",
+					["func", "^int", ["^string", "^double", "^int"], true],
+					"printf",
+					[
+						"function-def",
+						["func", "^int", ["^string", "^double", "^int"], true],
+						"printf",
+						[{ "name": "a", "type": "^string" }, { "name": "barry", "type": "^double" }, { "name": "c", "type": "^int" }],
+						{ "statements": [[48, "return", ["k", 3, "^int"]]], "symbols": null }
+					]
+				]
+
+			)___"
+		)).first
+	);
+}
+
+
+QUARK_UNIT_TEST("", "parse_function_definition_statement()", "Max whitespace", "Correct output JSON"){
+	ut_verify(
+		QUARK_POS,
+		parse_function_definition_statement(seq_t(" func  \t int \t printf( \t string \t a \t , \t double \t b \t ){ \t return \t 3 \t ; \t } \t ")).first,
+		parse_json(seq_t(
+			R"___(
+
+				[
+					1,
+					"init-local",
+					["func", "^int", ["^string", "^double"], true],
+					"printf",
+					[
+						"function-def",
+						["func", "^int", ["^string", "^double"], true],
+						"printf",
+						[{ "name": "a", "type": "^string" }, { "name": "b", "type": "^double" }],
+						{ "statements": [[60, "return", ["k", 3, "^int"]]], "symbols": null }
+					]
+				]
+
+			)___"
+		)).first
+	);
+}
+
+QUARK_UNIT_TEST("", "parse_function_definition_statement()", "Min whitespace", "Correct output JSON"){
+	ut_verify(
+		QUARK_POS,
+		parse_function_definition_statement(seq_t("func int printf(string a,double b){return 3;}")).first,
+		parse_json(seq_t(
+			R"___(
+
+				[
+					0,
+					"init-local",
+					["func", "^int", ["^string", "^double"], true],
+					"printf",
+					[
+						"function-def",
+						["func", "^int", ["^string", "^double"], true],
+						"printf",
+						[{ "name": "a", "type": "^string" }, { "name": "b", "type": "^double" }],
+						{ "statements": [[35, "return", ["k", 3, "^int"]]], "symbols": null }
+					]
+				]
+
+			)___"
+		)).first
+	);
+}
+
 
 
 //////////////////////////////////////////////////		parse_struct_definition_statement()

@@ -26,6 +26,7 @@ void intern_type(desugar_t& acc, const typeid_t& type){
 
 
 static body_t desugar_body(desugar_t& acc, const body_t& body);
+static function_definition_t desugar_function_def(desugar_t& acc, const function_definition_t& def);
 
 
 static expression_t desugar_expression(desugar_t& acc, const expression_t& expression){
@@ -100,8 +101,8 @@ static expression_t desugar_expression(desugar_t& acc, const expression_t& expre
 			throw std::exception();
 		}
 		expression_t operator()(const expression_t::function_definition_expr_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			const auto a = desugar_function_def(acc, *e.def);
+			return expression_t::make_function_definition(std::make_shared<function_definition_t>(a));
 		}
 		expression_t operator()(const expression_t::load_t& e) const{
 			return expression;
@@ -156,7 +157,7 @@ static function_definition_t desugar_function_def(desugar_t& acc, const function
 					function_def._location,
 					function_def._definition_name,
 					function_def._function_type,
-					function_def._args,
+					function_def._named_args,
 					body2
 				);
 			}
@@ -165,7 +166,7 @@ static function_definition_t desugar_function_def(desugar_t& acc, const function
 					function_def._location,
 					function_def._definition_name,
 					function_def._function_type,
-					function_def._args,
+					function_def._named_args,
 					{}
 				);
 			}

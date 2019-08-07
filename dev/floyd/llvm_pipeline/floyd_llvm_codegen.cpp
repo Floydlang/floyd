@@ -2144,7 +2144,7 @@ std::vector<resolved_symbol_t> generate_function_local_symbols(llvm_code_generat
 	const symbol_table_t& symbol_table = floyd_func._body->_symbol_table;
 
 	const auto mapping0 = map_function_arguments(gen_acc.type_lookup, function_def._function_type);
-	const auto mapping = name_args(mapping0, function_def._args);
+	const auto mapping = name_args(mapping0, function_def._named_args);
 
 	//	Make a resolved_symbol_t for each element in the symbol table. Some are local variables, some are arguments.
 	std::vector<resolved_symbol_t> result;
@@ -2327,7 +2327,7 @@ static llvm::Function* generate_function_prototype(llvm::Module& module, const l
 
 
 	const auto mapping0 = map_function_arguments(type_lookup, function_type);
-	const auto mapping = name_args(mapping0, function_def._args);
+	const auto mapping = name_args(mapping0, function_def._named_args);
 
 	llvm::Type* function_ptr_type = get_exact_llvm_type(type_lookup, function_type);
 	const auto function_byvalue_type = deref_ptr(function_ptr_type);

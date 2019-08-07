@@ -146,7 +146,7 @@ static function_definition_t visit_ast_function_def(visit_ast_t& acc, const func
 					function_def._location,
 					function_def._definition_name,
 					function_def._function_type,
-					function_def._args,
+					function_def._named_args,
 					body2
 				);
 			}
@@ -155,7 +155,7 @@ static function_definition_t visit_ast_function_def(visit_ast_t& acc, const func
 					function_def._location,
 					function_def._definition_name,
 					function_def._function_type,
-					function_def._args,
+					function_def._named_args,
 					{}
 				);
 			}

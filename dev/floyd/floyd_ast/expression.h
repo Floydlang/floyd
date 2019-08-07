@@ -201,22 +201,22 @@ struct function_definition_t {
 		};
 	}
 
-	static function_definition_t make_floyd_func(const location_t& location, const std::string& definition_name, const typeid_t& function_type, const std::vector<member_t>& args, const std::shared_ptr<body_t>& body){
+	static function_definition_t make_floyd_func(const location_t& location, const std::string& definition_name, const typeid_t& function_type, const std::vector<member_t>& named_args, const std::shared_ptr<body_t>& body){
 		return {
 			location,
 			definition_name,
 			function_type,
-			args,
+			named_args,
 			floyd_func_t{ body }
 		};
 	}
-	static function_definition_t make_host_func(const location_t& location, const std::string& definition_name, const typeid_t& function_type, const std::vector<member_t>& args, function_id_t host_function_id){
+	static function_definition_t make_host_func(const location_t& location, const std::string& definition_name, const typeid_t& function_type, const std::vector<member_t>& named_args){
 		return {
 			location,
 			definition_name,
 			function_type,
-			args,
-			host_func_t{ host_function_id }
+			named_args,
+			host_func_t{ definition_name }
 		};
 	}
 
@@ -233,7 +233,7 @@ struct function_definition_t {
 	typeid_t _function_type;
 
 	//	Same types as in _function_type, but augumented with argument names.
-	std::vector<member_t> _args;
+	std::vector<member_t> _named_args;
 
 	function_def_variant_t _contents;
 };

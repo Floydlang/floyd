@@ -20,7 +20,7 @@
 
 namespace floyd {
 
-static const bool k_trace_io_flag = true;
+static const bool k_trace_io_flag = false;
 
 //???? remove!!
 using namespace std;
@@ -626,6 +626,8 @@ analyser_t analyse_def_struct_statement(const analyser_t& a, const statement_t& 
 
 std::pair<analyser_t, statement_t> analyse_def_function_statement(const analyser_t& a, const statement_t& s){
 	QUARK_ASSERT(a.check_invariant());
+
+QUARK_ASSERT(false);
 
 	const auto statement = std::get<statement_t::define_function_statement_t>(s._contents);
 
@@ -2198,7 +2200,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	const auto function_pure = function_type2.get_function_pure();
 
 	vector<member_t> args2;
-	for(const auto& arg: function_def->_args){
+	for(const auto& arg: function_def->_named_args){
 		const auto arg_type2 = resolve_type(a_acc, parent.location, arg._type);
 		args2.push_back(member_t(arg_type2, arg._name));
 	}
@@ -2248,8 +2250,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 			return { a_acc, r };
 		}
 		std::pair<analyser_t, expression_t> operator()(const function_definition_t::host_func_t& e) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
+			UNSUPPORTED();
 		}
 	};
 	const auto result = std::visit(visitor_t{ a_acc, function_def, function_type2, args2, pure }, function_def->_contents);
@@ -2518,7 +2519,7 @@ static builtins_t generate_corecalls(analyser_t& a, const std::vector<corecall_s
 			args.push_back(member_t(e, "dummy"));
 		}
 		const auto function_id = signature._function_id;
-		const auto def = std::make_shared<function_definition_t>(function_definition_t::make_host_func(k_no_location, signature.name, signature._function_type, args, function_id));
+		const auto def = std::make_shared<function_definition_t>(function_definition_t::make_host_func(k_no_location, signature._function_id.name, signature._function_type, args));
 		const auto function_value = value_t::make_function_value(signature._function_type, function_id_t { signature.name });
 
 		function_defs.insert({ function_id, def });

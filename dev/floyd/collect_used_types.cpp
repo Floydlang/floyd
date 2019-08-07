@@ -192,7 +192,7 @@ void collect_used_types(type_interner_t& acc, const general_purpose_ast_t& ast){
 	collect_used_types_body(acc, ast._globals);
 	for(const auto& f: ast._function_defs){
 		intern_type(acc, f->_function_type);
-		for(const auto& m: f->_args){
+		for(const auto& m: f->_named_args){
 			intern_type(acc, m._type);
 		}
 
