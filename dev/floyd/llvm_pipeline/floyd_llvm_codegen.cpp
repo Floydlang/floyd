@@ -2061,10 +2061,10 @@ static function_return_mode generate_statement(llvm_code_generator_t& gen_acc, l
 			return function_return_mode::return_executed;
 		}
 		function_return_mode operator()(const statement_t::define_struct_statement_t& s) const{
-			NOT_IMPLEMENTED_YET();
+			UNSUPPORTED();
 		}
 		function_return_mode operator()(const statement_t::define_function_statement_t& s) const{
-			NOT_IMPLEMENTED_YET();
+			UNSUPPORTED();
 		}
 
 		function_return_mode operator()(const statement_t::bind_local_t& s) const{
