@@ -631,7 +631,7 @@ std::pair<analyser_t, statement_t> analyse_def_function_statement(const analyser
 
 	auto a_acc = a;
 
-	//	Translates into:  bind-local, "myfunc", function_definition_expr_t
+	//	DESUGAR: Translates into:  bind-local, "myfunc", function_definition_expr_t
 	const auto function_def_expr = expression_t::make_function_definition(statement._def);
 	const auto& s2 = statement_t::make__bind_local(
 		s.location,
@@ -742,6 +742,9 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 	const auto benchmark_def_t_struct = make_benchmark_def_t();
 	const auto benchmark_function_t = make_benchmark_function_t();
 
+
+	//	Make a function def expression for the new benchmark function.
+
 	const auto body_pair = analyse_body(a_acc, statement._body, epure::pure, benchmark_function_t.get_function_return());
 	a_acc = body_pair.first;
 
@@ -754,7 +757,9 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 
 	const auto f = value_t::make_function_value(benchmark_function_t, function_id);
 
-	//	Add benchmark-def record to global list.
+
+	//	Add benchmark-def record to benchmark_defs.
+
 	{
 		const auto new_record_expr = expression_t::make_construct_value_expr(
 			benchmark_def_t_struct,
@@ -770,6 +775,57 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 
 	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, return_type);
 	a_acc = body2.first;
+
+	return a_acc;
+}
+
+//	Make new global function containing the body of the benchmark-def.
+//	Add the function as an entry in the global benchmark registry.
+static analyser_t analyse_benchmark_def_statement2(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
+	QUARK_ASSERT(a.check_invariant());
+
+	const auto statement = std::get<statement_t::benchmark_def_statement_t>(s._contents);
+	auto a_acc = a;
+
+	const auto test_name = statement.name;
+	const auto function_link_name = "benchmark__" + test_name;
+
+	const auto benchmark_def_t_struct = make_benchmark_def_t();
+	const auto benchmark_function_t = make_benchmark_function_t();
+
+
+	//	Make a function def expression for the new benchmark function.
+
+	const auto function_id = function_id_t { function_link_name };
+	const auto function_def2 = function_definition_t::make_floyd_func(k_no_location, function_link_name, benchmark_function_t, {}, std::make_shared<body_t>(statement._body));
+	const auto func_def_expr = expression_t::make_function_definition(std::make_shared<function_definition_t>(function_def2));
+
+	const auto expr2_pair = analyse_expression_to_target(a_acc, s, func_def_expr, benchmark_function_t);
+	QUARK_ASSERT(check_types_resolved(expr2_pair.second));
+
+
+	//	Insert the new function def into _function_defs
+
+	auto expr3 = std::get_if<expression_t::function_definition_expr_t>(&expr2_pair.second._expression_variant);
+	a_acc._function_defs.insert({ function_id, expr3->def });
+
+
+
+	//	Add benchmark-def record to benchmark_defs.
+	{
+		const auto f = value_t::make_function_value(benchmark_function_t, function_id);
+
+		const auto new_record_expr = expression_t::make_construct_value_expr(
+			benchmark_def_t_struct,
+			{
+				expression_t::make_literal_string(test_name),
+				expression_t::make_literal(f)
+			}
+		);
+		const auto new_record_expr3_pair = analyse_expression_to_target(a_acc, s, new_record_expr, benchmark_def_t_struct);
+		a_acc = new_record_expr3_pair.first;
+		a_acc.benchmark_defs.push_back(new_record_expr3_pair.second);
+	}
 
 	return a_acc;
 }
@@ -2131,11 +2187,11 @@ std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const a
 	return {a_acc, expression_t::make_struct_definition(resolved_struct_def) };
 }
 
-// ??? Check that function returns a value, if so specified.
-std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const expression_t::function_definition_expr_t& details){
-	QUARK_ASSERT(a.check_invariant());
+// ??? Check that function returns always returns a value, if it has a return-type.
+std::pair<analyser_t, expression_t> analyse_function_definition_expression(const analyser_t& analyser, const statement_t& parent, const expression_t& e, const expression_t::function_definition_expr_t& details){
+	QUARK_ASSERT(analyser.check_invariant());
 
-	auto a_acc = a;
+	auto a_acc = analyser;
 
 	const auto function_def = details.def;
 	const auto function_type2 = resolve_type(a_acc, parent.location, function_def->_function_type);
@@ -2200,6 +2256,39 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	return result;
 }
 
+//	Create a global function-def record, return a function-value.
+static std::pair<analyser_t, expression_t> analyse_function_definition_expression2(const analyser_t& analyser, const statement_t& parent, const expression_t& e, const expression_t::function_definition_expr_t& details){
+	QUARK_ASSERT(analyser.check_invariant());
+
+	auto a_acc = analyser;
+
+	const auto func_def_expr = analyse_function_definition_expression(a_acc, parent, e, details);
+	const auto func_def_expr2 = std::get_if<expression_t::function_definition_expr_t>(&func_def_expr.second._expression_variant);
+	QUARK_ASSERT(func_def_expr2 != nullptr);
+
+	struct visitor_t {
+		analyser_t& a_acc;
+		const expression_t& expr;
+		const expression_t::function_definition_expr_t& details;
+
+		std::pair<analyser_t, expression_t> operator()(const function_definition_t::empty_t& e) const{
+			const auto function_type = expr.get_output_type();
+			const auto r = expression_t::make_literal(value_t::make_function_value(function_type, k_no_function_id));
+			return { a_acc, r };
+		}
+		std::pair<analyser_t, expression_t> operator()(const function_definition_t::floyd_func_t& floyd_func) const{
+			const auto function_type = expr.get_output_type();
+			const auto r = expression_t::make_literal(value_t::make_function_value(function_type, function_id_t { details.def->_definition_name } ));
+			return { a_acc, r };
+		}
+		std::pair<analyser_t, expression_t> operator()(const function_definition_t::host_func_t& e) const{
+			QUARK_ASSERT(false);
+			throw std::exception();
+		}
+	};
+	const auto result = std::visit(visitor_t{ a_acc, func_def_expr.second, *func_def_expr2 }, func_def_expr2->def->_contents);
+	return result;
+}
 
 std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type){
 	QUARK_ASSERT(a.check_invariant());
@@ -2602,7 +2691,7 @@ semantic_ast_t run_semantic_analysis(const unchecked_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
 	if(k_trace_io_flag){
-		QUARK_SCOPED_TRACE("OUTPUT AST");
+		QUARK_SCOPED_TRACE("INPUT AST");
 		QUARK_TRACE(json_to_pretty_string(gp_ast_to_json(ast._tree)));
 	}
 
