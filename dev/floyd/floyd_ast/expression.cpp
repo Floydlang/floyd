@@ -670,25 +670,6 @@ expression_t ast_json_to_expression(const json_t& e){
 			body1
 		);
 		return expression_t::make_function_definition(def);
-
-
-/*
-		if(body1){
-			auto def = function_definition_t::make_floyd_func(
-				k_no_location,
-				function_name,
-				function_type,
-				named_args,
-				body1
-			);
-			return expression_t::make_function_definition(std::make_shared<function_definition_t>(def));
-		}
-		else{
-			auto def = function_definition_t::make_host_func(k_no_location, function_name, function_type, named_args);
-			return expression_t::make_function_definition(std::make_shared<function_definition_t>(def));
-		}
-*/
-
 	}
 	else if(op == expression_opcode_t::k_value_constructor){
 		QUARK_ASSERT(e.get_array_size() == 3);

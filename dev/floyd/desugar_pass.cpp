@@ -195,10 +195,6 @@ static statement_t desugar_statement(desugar_t& acc, const statement_t& statemen
 		statement_t operator()(const statement_t::define_struct_statement_t& s) const{
 			return statement;
 		}
-		statement_t operator()(const statement_t::define_function_statement_t& s) const{
-			auto f2 = desugar_function_def(acc, s._def);
-			return statement_t::make__define_function_statement(statement.location, statement_t::define_function_statement_t{ s._name, f2 });
-		}
 
 		statement_t operator()(const statement_t::bind_local_t& s) const{
 			const auto e = desugar_expression(acc, s._expression);

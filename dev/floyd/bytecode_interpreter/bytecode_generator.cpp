@@ -584,10 +584,6 @@ bcgen_body_t bcgen_body_block_statements(bcgenerator_t& gen_acc, const bcgen_bod
 					QUARK_ASSERT(false);
 					quark::throw_exception();
 				}
-				bcgen_body_t operator()(const statement_t::define_function_statement_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
-				}
 
 				bcgen_body_t operator()(const statement_t::bind_local_t& s) const{
 					QUARK_ASSERT(false);

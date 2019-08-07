@@ -42,7 +42,6 @@ namespace statement_opcode_t {
 	const std::string k_block = "block";
 
 	const std::string k_def_struct = "def-struct";
-	const std::string k_def_func = "def-func";
 
 
 	const std::string k_if = "if";
@@ -251,22 +250,6 @@ struct statement_t {
 	};
 	public: static statement_t make__define_struct_statement(const location_t& location, const define_struct_statement_t& value){
 		return statement_t(location, { define_struct_statement_t{ value } });
-	}
-
-
-	//////////////////////////////////////		define_function_statement_t
-
-
-	struct define_function_statement_t {
-		bool operator==(const define_function_statement_t& other) const {
-			return _name == other._name && _def == other._def;
-		}
-
-		std::string _name;
-		function_definition_t _def;
-	};
-	public: static statement_t make__define_function_statement(const location_t& location, const define_function_statement_t& value){
-		return statement_t(location, { define_function_statement_t{ value } });
 	}
 
 
@@ -538,7 +521,6 @@ struct statement_t {
 	typedef std::variant<
 		return_statement_t,
 		define_struct_statement_t,
-		define_function_statement_t,
 		bind_local_t,
 		assign_t,
 		assign2_t,

@@ -261,47 +261,6 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		return statement_t::make__define_struct_statement(loc, s);
 	}
 
-	else if(type == statement_opcode_t::k_def_func){
-		QUARK_ASSERT(statement.get_array_size() == 2);
-		const auto def = statement.get_array_n(1);
-		const auto name = def.get_object_element("name");
-		const auto args = def.get_object_element("args");
-		const auto fstatements = def.get_object_element("statements");
-		const auto return_type = def.get_object_element("return_type");
-		const auto impure = def.get_object_element("impure");
-
-		const auto name2 = name.get_string();
-		const auto args2 = members_from_json(args);
-
-		const bool is_implementation = fstatements.is_null() ? false : true;
-
-		const auto fstatements2 = is_implementation ? ast_json_to_statements(fstatements) : std::vector<statement_t>();
-		const auto return_type2 = typeid_from_ast_json(return_type);
-
-		if(impure.is_true() == false && impure.is_false() == false){
-			quark::throw_exception();
-		}
-		const auto pure = impure.is_false();
-		const auto function_typeid = typeid_t::make_function(
-			return_type2,
-			get_member_types(args2),
-			pure ? epure::pure : epure::impure
-		);
-
-		const auto body2 = is_implementation ? std::make_shared<body_t>(body_t{ fstatements2 }) : std::shared_ptr<body_t>();
-
-		const auto function_def = function_definition_t::make_floyd_func(
-			k_no_location,
-			name2,
-			function_typeid,
-			args2,
-			body2
-		);
-
-		const auto s = statement_t::define_function_statement_t{ name2, function_definition_t(function_def) };
-		return statement_t::make__define_function_statement(loc, s);
-	}
-
 	else if(type == statement_opcode_t::k_if){
 		QUARK_ASSERT(statement.get_array_size() == 3 || statement.get_array_size() == 4);
 		const auto condition_expression = statement.get_array_n(1);
@@ -414,17 +373,6 @@ json_t statement_to_json(const statement_t& e){
 				{
 					json_t(s._name),
 					struct_definition_to_ast_json(*s._def)
-				}
-			);
-		}
-		json_t operator()(const statement_t::define_function_statement_t& s) const{
-			return make_ast_node(
-				statement.location,
-				statement_opcode_t::k_def_func,
-				{
-					json_t(s._name),
-					function_def_expression_to_ast_json(s._def),
-					s._def._function_type.get_function_pure() == epure::impure ? true : false
 				}
 			);
 		}

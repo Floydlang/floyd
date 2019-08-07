@@ -179,9 +179,6 @@ bool check_types_resolved(const statement_t& s){
 		bool operator()(const statement_t::define_struct_statement_t& s) const{
 			return check_types_resolved(*s._def);
 		}
-		bool operator()(const statement_t::define_function_statement_t& s) const{
-			return floyd::check_types_resolved(s._def);
-		}
 
 		bool operator()(const statement_t::bind_local_t& s) const{
 			return true

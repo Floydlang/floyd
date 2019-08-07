@@ -50,9 +50,6 @@
 		make symbol containing struct-type.
 
 
-	- define_function_statement_t ->
-		bind_local(function_def_expr)
-
 
 	- analyse_for_statement
 		insert loop-iterator as first symbol of loop-body

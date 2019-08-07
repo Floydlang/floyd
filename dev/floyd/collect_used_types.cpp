@@ -119,10 +119,6 @@ static void collect_used_types(type_interner_t& acc, const statement_t& statemen
 			QUARK_ASSERT(false);
 			throw std::exception();
 		}
-		void operator()(const statement_t::define_function_statement_t& s) const{
-			QUARK_ASSERT(false);
-			throw std::exception();
-		}
 
 		void operator()(const statement_t::bind_local_t& s) const{
 			intern_type(acc, s._bindtype);

@@ -624,28 +624,6 @@ analyser_t analyse_def_struct_statement(const analyser_t& a, const statement_t& 
 	return a_acc;
 }
 
-std::pair<analyser_t, statement_t> analyse_def_function_statement(const analyser_t& a, const statement_t& s){
-	QUARK_ASSERT(a.check_invariant());
-
-QUARK_ASSERT(false);
-
-	const auto statement = std::get<statement_t::define_function_statement_t>(s._contents);
-
-	auto a_acc = a;
-
-	//	DESUGAR: Translates into:  bind-local, "myfunc", function_definition_expr_t
-	const auto function_def_expr = expression_t::make_function_definition(statement._def);
-	const auto& s2 = statement_t::make__bind_local(
-		s.location,
-		statement._name,
-		resolve_type(a_acc, k_no_location, statement._def._function_type),
-		function_def_expr,
-		statement_t::bind_local_t::k_immutable
-	);
-	const auto s3 = analyse_bind_local_statement(a_acc, s2);
-	return s3;
-}
-
 std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
 	QUARK_ASSERT(a.check_invariant());
 
@@ -853,10 +831,6 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::define_struct_statement_t& s) const{
 			const auto e = analyse_def_struct_statement(a, statement);
 			return { e, {} };
-		}
-		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::define_function_statement_t& s) const{
-			const auto e = analyse_def_function_statement(a, statement);
-			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
 
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::bind_local_t& s) const{
