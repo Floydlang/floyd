@@ -10,6 +10,7 @@
 #define floyd_llvm_corelib_hpp
 
 #include <map>
+#include <string>
 
 namespace floyd {
 

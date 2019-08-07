@@ -266,9 +266,9 @@ ${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM-8 readline
 #${FLOYD_SPEAK__UT_DEPENDENCIES} pthread LLVM-8 readline
 #)
 IF(MSVC)
-    SET(CMAKE_CXX_FLAGS "/EHsc /Za")
+    SET(CMAKE_CXX_FLAGS "/EHsc")
 	add_compile_options("/std:c++latest")
-	add_definitions(-D_USE_MATH_DEFINES)	 
+	add_definitions(-D_USE_MATH_DEFINES -D BENCHMARK_OS_WINDOWS)	 
 	target_compile_features(floyd PUBLIC cxx_std_20)
 ELSE(MSVC)
 set_property(TARGET floyd PROPERTY CXX_STANDARD 17)
