@@ -2283,7 +2283,7 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 	//	We have already generate the LLVM function-prototypes for the global functions in generate_module().
 	for(const auto& function_def: semantic_ast._tree._function_defs){
 		if(function_def._optional_body){
-			generate_floyd_function_body(gen_acc, function_id_t { function_def._definition_name }, function_def, *function_def._optional_body);
+			generate_floyd_function_body(gen_acc, function_id_t { function_def._definition_name }, function_def, *function_def._optional_body);
 		}
 	}
 }
