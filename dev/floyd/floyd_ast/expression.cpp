@@ -159,10 +159,11 @@ bool is_opcode_comparison_expression(const std::string& op){
 
 
 
-
+/*
 bool function_definition_t::floyd_func_t::operator==(const floyd_func_t& other) const{
 	return compare_shared_values(_body, other._body);
 }
+*/
 
 bool function_definition_t::check_invariant() const {
 	QUARK_ASSERT(_function_type.is_function());
@@ -173,22 +174,9 @@ bool function_definition_t::check_invariant() const {
 		QUARK_ASSERT(args0[i] == _named_args[i]._type);
 	}
 
-	struct visitor_t {
-		bool operator()(const empty_t& e) const{
-			return true;
-		}
-		bool operator()(const floyd_func_t& e) const{
-			if(e._body){
-				QUARK_ASSERT(e._body->check_invariant());
-			}
-			return true;
-		}
-		bool operator()(const host_func_t& e) const{
-			return true;
-		}
-	};
-	bool result3 = std::visit(visitor_t{}, _contents);
-	QUARK_ASSERT(result3);
+	if(_optional_body){
+		QUARK_ASSERT(_optional_body->check_invariant());
+	}
 
 	return true;
 }
@@ -199,7 +187,7 @@ bool operator==(const function_definition_t& lhs, const function_definition_t& r
 		&& lhs._definition_name == rhs._definition_name
 		&& lhs._function_type == rhs._function_type
 		&& lhs._named_args == rhs._named_args
-		&& lhs._contents == rhs._contents
+		&& compare_shared_values(lhs._optional_body, rhs._optional_body)
 		;
 }
 
@@ -213,28 +201,25 @@ const typeid_t& get_function_type(const function_definition_t& f){
 json_t function_def_to_ast_json(const function_definition_t& v) {
 	typeid_t function_type = get_function_type(v);
 
-	auto floyd_func = std::get_if<function_definition_t::floyd_func_t>(&v._contents);
-	auto host_func = std::get_if<function_definition_t::host_func_t>(&v._contents);
-	QUARK_ASSERT(host_func == nullptr);
-
-	return std::vector<json_t>{
+	auto result = std::vector<json_t>{
 		typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state),
 		v._definition_name,
-		members_to_json(v._named_args),
-
-		floyd_func ? (floyd_func->_body ? body_to_json(*floyd_func->_body) : json_t()) : json_t(),
-
-		host_func ? json_t(host_func->_host_function_id.name) : json_t(0)
+		members_to_json(v._named_args)
 	};
+	if(v._optional_body){
+		result.push_back(body_to_json(*v._optional_body));
+	}
+	else{
+		result.push_back(json_t());
+	}
+	return result;
 }
-
 
 function_definition_t json_to_function_def(const json_t& p){
 	const auto function_type0 = p.get_array_n(0);
 	const auto definition_name0 = p.get_array_n(1);
 	const auto args0 = p.get_array_n(2);
 	const auto body0 = p.get_array_n(3);
-//	const auto host_function_id0 = p.get_array_n(4);
 
 	const location_t location1 = k_no_location;
 	const std::string definition_name1 = definition_name0.get_string();

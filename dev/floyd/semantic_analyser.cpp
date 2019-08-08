@@ -2160,55 +2160,37 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	//??? Can there be a pure function inside an impure lexical scope?
 	const auto pure = function_pure;
 
-	struct visitor_t {
-		analyser_t& a_acc;
-		const function_definition_t& function_def;
-		const typeid_t& function_type2;
-		const vector<member_t>& args2;
-		const epure pure;
-
-		std::pair<analyser_t, expression_t> operator()(const function_definition_t::empty_t& e) const{
-			const auto r = expression_t::make_literal(value_t::make_function_value(function_type2, k_no_function_id));
-			return { a_acc, r };
+	std::shared_ptr<body_t> body_result;
+	if(function_def._optional_body){
+		//	Make function body with arguments injected FIRST in body as local symbols.
+		auto symbol_vec = function_def._optional_body->_symbol_table;
+		for(const auto& arg: args2){
+			symbol_vec._symbols.push_back({arg._name , symbol_t::make_immutable_arg(arg._type)});
 		}
-		std::pair<analyser_t, expression_t> operator()(const function_definition_t::floyd_func_t& floyd_func) const{
-			std::shared_ptr<body_t> body_result;
-			if(floyd_func._body){
-				//	Make function body with arguments injected FIRST in body as local symbols.
-				auto symbol_vec = floyd_func._body->_symbol_table;
-				for(const auto& arg: args2){
-					symbol_vec._symbols.push_back({arg._name , symbol_t::make_immutable_arg(arg._type)});
-				}
-				const auto function_body2 = body_t(floyd_func._body->_statements, symbol_vec);
+		const auto function_body2 = body_t(function_def._optional_body->_statements, symbol_vec);
 
-				const auto body_pair = analyse_body(a_acc, function_body2, pure, function_type2.get_function_return());
-				a_acc = body_pair.first;
-				const auto function_body3 = body_pair.second;
-				body_result = std::make_shared<body_t>(function_body3);
-			}
-			else{
-			}
+		const auto body_pair = analyse_body(a_acc, function_body2, pure, function_type2.get_function_return());
+		a_acc = body_pair.first;
+		const auto function_body3 = body_pair.second;
+		body_result = std::make_shared<body_t>(function_body3);
+	}
+	else{
+	}
 
-			const auto definition_name = function_def._definition_name;
-			const auto function_id = function_id_t { definition_name };
+	const auto definition_name = function_def._definition_name;
+	const auto function_id = function_id_t { definition_name };
 
-			const auto function_def2 = function_definition_t::make_floyd_func(k_no_location, definition_name, function_type2, args2, body_result);
-			QUARK_ASSERT(check_types_resolved(function_def2));
+	const auto function_def2 = function_definition_t::make_floyd_func(k_no_location, definition_name, function_type2, args2, body_result);
+	QUARK_ASSERT(check_types_resolved(function_def2));
 
-			a_acc._function_defs.insert({ function_id, function_def2 });
+	a_acc._function_defs.insert({ function_id, function_def2 });
 
-			const auto r = expression_t::make_literal(value_t::make_function_value(function_type2, function_id));
+	const auto r = expression_t::make_literal(value_t::make_function_value(function_type2, function_id));
 
-			return { a_acc, r };
-		}
-		std::pair<analyser_t, expression_t> operator()(const function_definition_t::host_func_t& e) const{
-			UNSUPPORTED();
-		}
-	};
-	const auto result = std::visit(visitor_t{ a_acc, function_def, function_type2, args2, pure }, function_def._contents);
-	return result;
+	return { a_acc, r };
 }
 
+/*
 //	Create a global function-def record, return a function-value.
 static std::pair<analyser_t, expression_t> analyse_function_definition_expression2(const analyser_t& analyser, const statement_t& parent, const expression_t& e, const expression_t::function_definition_expr_t& details){
 	QUARK_ASSERT(analyser.check_invariant());
@@ -2242,6 +2224,7 @@ static std::pair<analyser_t, expression_t> analyse_function_definition_expressio
 	const auto result = std::visit(visitor_t{ a_acc, func_def_expr.second, *func_def_expr2 }, func_def_expr2->def._contents);
 	return result;
 }
+*/
 
 std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const analyser_t& a, const statement_t& parent, const expression_t& e, const typeid_t& target_type){
 	QUARK_ASSERT(a.check_invariant());

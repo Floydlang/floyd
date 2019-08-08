@@ -114,26 +114,12 @@ bool check_types_resolved(const function_definition_t& def){
 		}
 	}
 
-	struct visitor_t {
-		bool operator()(const function_definition_t::empty_t& e) const{
-			return true;
+	if(def._optional_body){
+		if(check_types_resolved(*def._optional_body) == false){
+			return false;
 		}
-		bool operator()(const function_definition_t::floyd_func_t& e) const{
-			if(e._body){
-				return check_types_resolved(*e._body);
-			}
-			else{
-				return true;
-			}
-		}
-		bool operator()(const function_definition_t::host_func_t& e) const{
-			return true;
-		}
-	};
-	bool result3 = std::visit(visitor_t{}, def._contents);
-	if(result3 == false){
-		return false;
 	}
+
 	return true;
 }
 

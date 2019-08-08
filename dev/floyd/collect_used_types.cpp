@@ -188,13 +188,10 @@ void collect_used_types(type_interner_t& acc, const general_purpose_ast_t& ast){
 			intern_type(acc, m._type);
 		}
 
-		const auto floyd_func = std::get_if<function_definition_t::floyd_func_t>(&f._contents);
-		if(floyd_func){
-			if(floyd_func->_body){
-				collect_used_types_body(acc, *floyd_func->_body);
-			}
-			else{
-			}
+		if(f._optional_body){
+			collect_used_types_body(acc, *f._optional_body);
+		}
+		else{
 		}
 	}
 }

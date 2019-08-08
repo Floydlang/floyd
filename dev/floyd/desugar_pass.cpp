@@ -97,7 +97,6 @@ static expression_t desugar_expression(desugar_t& acc, const expression_t& expre
 
 		expression_t operator()(const expression_t::struct_definition_expr_t& e) const{
 			return expression_t::make_struct_definition(e.name, e.def);
-			throw std::exception();
 		}
 		expression_t operator()(const expression_t::function_definition_expr_t& e) const{
 			const auto a = desugar_function_def(acc, e.def);
@@ -141,41 +140,26 @@ static expression_t desugar_expression(desugar_t& acc, const expression_t& expre
 }
 
 static function_definition_t desugar_function_def(desugar_t& acc, const function_definition_t& def){
-	struct visitor_t {
-		desugar_t& acc;
-		const floyd::function_definition_t& function_def;
-
-		function_definition_t operator()(const function_definition_t::empty_t& e) const{
-			return function_def;
-		}
-		function_definition_t operator()(const function_definition_t::floyd_func_t& e) const{
-			if(e._body){
-				const auto body = desugar_body(acc, *e._body);
-				const auto body2 = std::make_shared<body_t>(body);
-				return function_definition_t::make_floyd_func(
-					function_def._location,
-					function_def._definition_name,
-					function_def._function_type,
-					function_def._named_args,
-					body2
-				);
-			}
-			else{
-				return function_definition_t::make_floyd_func(
-					function_def._location,
-					function_def._definition_name,
-					function_def._function_type,
-					function_def._named_args,
-					{}
-				);
-			}
-		}
-		function_definition_t operator()(const function_definition_t::host_func_t& e) const{
-			return function_def;
-		}
-	};
-	const auto f2 = std::visit(visitor_t{ acc, def }, def._contents);
-	return f2;
+	if(def._optional_body){
+		const auto body = desugar_body(acc, *def._optional_body);
+		const auto body2 = std::make_shared<body_t>(body);
+		return function_definition_t::make_floyd_func(
+			def._location,
+			def._definition_name,
+			def._function_type,
+			def._named_args,
+			body2
+		);
+	}
+	else{
+		return function_definition_t::make_floyd_func(
+			def._location,
+			def._definition_name,
+			def._function_type,
+			def._named_args,
+			{}
+		);
+	}
 }
 
 static statement_t desugar_statement(desugar_t& acc, const statement_t& statement){

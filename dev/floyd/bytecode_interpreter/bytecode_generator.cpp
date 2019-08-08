@@ -668,16 +668,10 @@ void bcgen_globals(bcgenerator_t& gen_acc, const body_t& globals){
 }
 
 static bcgen_body_t bcgen_function(bcgenerator_t& gen_acc, const floyd::function_definition_t& function_def){
-	const auto floyd_func = std::get_if<function_definition_t::floyd_func_t>(&function_def._contents);
-	if(floyd_func){
-		if(floyd_func->_body){
-			auto body = bcgen_body_t({}, floyd_func->_body->_symbol_table);
-			const auto body_acc = bcgen_body_top(gen_acc, body, *floyd_func->_body.get());
-			return body_acc;
-		}
-		else{
-			return bcgen_body_t({});
-		}
+	if(function_def._optional_body){
+		auto body = bcgen_body_t({}, function_def._optional_body->_symbol_table);
+		const auto body_acc = bcgen_body_top(gen_acc, body, *function_def._optional_body.get());
+		return body_acc;
 	}
 	else{
 		return bcgen_body_t({});
@@ -1838,50 +1832,28 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 	for(auto function_id = 0 ; function_id < ast._tree._function_defs.size() ; function_id++){
 		const auto& function_def = ast._tree._function_defs[function_id];
 
-		struct visitor_t {
-			bcgenerator_t& gen_acc;
-			const floyd::function_definition_t& function_def;
+		if(function_def._optional_body){
+			const auto body2 = bcgen_function(a, function_def);
 
-			bc_function_definition_t operator()(const function_definition_t::empty_t& e) const{
-				QUARK_ASSERT(false);
-				throw std::exception();
-			}
-			bc_function_definition_t operator()(const function_definition_t::floyd_func_t& e) const{
-				if(e._body){
-					const auto body2 = bcgen_function(gen_acc, function_def);
-
-					const auto frame = make_frame(body2, function_def._function_type.get_function_args());
-					const auto f = bc_function_definition_t{
-						function_def._function_type,
-						function_def._named_args,
-						std::make_shared<bc_static_frame_t>(frame),
-						function_id_t { function_def._definition_name }
-					};
-					return f;
-				}
-				else{
-					const auto f = bc_function_definition_t{
-						function_def._function_type,
-						function_def._named_args,
+			const auto frame = make_frame(body2, function_def._function_type.get_function_args());
+			const auto f = bc_function_definition_t{
+				function_def._function_type,
+				function_def._named_args,
+				std::make_shared<bc_static_frame_t>(frame),
+				function_id_t { function_def._definition_name }
+			};
+			function_defs2.insert({ f._function_id, f });
+		}
+		else{
+			const auto f = bc_function_definition_t{
+				function_def._function_type,
+				function_def._named_args,
 //						std::shared_ptr<bc_static_frame_t>(),
-						nullptr,
-						function_id_t { function_def._definition_name }
-					};
-					return f;
-				}
-			}
-			bc_function_definition_t operator()(const function_definition_t::host_func_t& e) const{
-				const auto f = bc_function_definition_t{
-					function_def._function_type,
-					function_def._named_args,
-					nullptr,
-					function_id_t { function_def._definition_name }
-				};
-				return f;
-			}
-		};
-		const auto function_def2 = std::visit(visitor_t{ a, function_def }, function_def._contents);
-		function_defs2.insert({ function_def2._function_id, function_def2 });
+				nullptr,
+				function_id_t { function_def._definition_name }
+			};
+			function_defs2.insert({ f._function_id, f });
+		}
 	}
 
 	const auto globals2 = make_frame(a._globals, {});

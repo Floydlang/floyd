@@ -2132,9 +2132,8 @@ std::vector<resolved_symbol_t> generate_function_local_symbols(llvm_code_generat
 	QUARK_ASSERT(function_def.check_invariant());
 	QUARK_ASSERT(check_emitting_function(gen_acc.type_lookup, emit_f));
 
-	const auto floyd_func = std::get<function_definition_t::floyd_func_t>(function_def._contents);
-
-	const symbol_table_t& symbol_table = floyd_func._body->_symbol_table;
+	QUARK_ASSERT(function_def._optional_body);
+	const symbol_table_t& symbol_table = function_def._optional_body->_symbol_table;
 
 	const auto mapping0 = map_function_arguments(gen_acc.type_lookup, function_def._function_type);
 	const auto mapping = name_args(mapping0, function_def._named_args);
@@ -2283,23 +2282,9 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 
 	//	We have already generate the LLVM function-prototypes for the global functions in generate_module().
 	for(const auto& function_def: semantic_ast._tree._function_defs){
-		struct visitor_t {
-			llvm_code_generator_t& gen_acc;
-			const function_id_t function_id;
-			const function_definition_t& function_def;
-
-			void operator()(const function_definition_t::empty_t& e) const{
-				QUARK_ASSERT(false);
-			}
-			void operator()(const function_definition_t::floyd_func_t& e) const{
-				if(e._body){
-					generate_floyd_function_body(gen_acc, function_id, function_def, *e._body);
-				}
-			}
-			void operator()(const function_definition_t::host_func_t& e) const{
-			}
-		};
-		std::visit(visitor_t{ gen_acc, function_id_t { function_def._definition_name }, function_def }, function_def._contents);
+		if(function_def._optional_body){
+			generate_floyd_function_body(gen_acc, function_id_t { function_def._definition_name }, function_def, *function_def._optional_body);
+		}
 	}
 }
 
@@ -2351,7 +2336,7 @@ static llvm::Function* generate_function_prototype(llvm::Module& module, const l
 
 //??? have better mechanism to register these.
 static function_definition_t make_dummy_function_definition(){
-	return function_definition_t::make_empty();
+	return function_definition_t::make_placeholder();
 }
 
 //	Create llvm function prototypes for each function.

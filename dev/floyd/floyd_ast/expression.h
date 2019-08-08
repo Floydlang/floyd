@@ -172,32 +172,14 @@ inline bool operator==(const variable_address_t& lhs, const variable_address_t& 
 
 
 struct function_definition_t {
-	struct empty_t {
-		bool operator==(const empty_t& other) const{ return true; };
 
-	};
-	struct floyd_func_t {
-		bool operator==(const floyd_func_t& other) const;
-
-		std::shared_ptr<const body_t> _body;
-	};
-	struct host_func_t {
-		bool operator==(const host_func_t& other) const { return _host_function_id == other._host_function_id; };
-
-		function_id_t _host_function_id;
-	};
-
-	typedef std::variant<empty_t, floyd_func_t, host_func_t> function_def_variant_t;
-
-
-	//	Placeholder.
-	static function_definition_t make_empty(){
+	static function_definition_t make_placeholder(){
 		return {
 			k_no_location,
 			"",
 			typeid_t::make_function(typeid_t::make_void(), {}, epure::pure),
 			{},
-			empty_t{ }
+			{}
 		};
 	}
 
@@ -207,7 +189,7 @@ struct function_definition_t {
 			definition_name,
 			function_type,
 			named_args,
-			floyd_func_t{ body }
+			body
 		};
 	}
 	static function_definition_t make_host_func(const location_t& location, const std::string& definition_name, const typeid_t& function_type, const std::vector<member_t>& named_args){
@@ -216,7 +198,7 @@ struct function_definition_t {
 			definition_name,
 			function_type,
 			named_args,
-			host_func_t{ definition_name }
+			{}
 		};
 	}
 
@@ -233,9 +215,14 @@ struct function_definition_t {
 	typeid_t _function_type;
 
 	//	Same types as in _function_type, but augumented with argument names.
+	//??? Remove. Instead have vector of just the argument names. Or update typeid_t to contain the argument names of functions!?
 	std::vector<member_t> _named_args;
 
-	function_def_variant_t _contents;
+
+	//	Contains body if this function is implemented using Floyd code.
+	//	Else the implementation needs to be linked in.
+	std::shared_ptr<const body_t> _optional_body;
+//	function_id_t _host_function_id;
 };
 
 bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);

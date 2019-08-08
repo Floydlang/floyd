@@ -131,41 +131,26 @@ static expression_t visit_ast_expression(visit_ast_t& acc, const expression_t& e
 }
 
 static function_definition_t visit_ast_function_def(visit_ast_t& acc, const function_definition_t& def){
-	struct visitor_t {
-		visit_ast_t& acc;
-		const floyd::function_definition_t& function_def;
-
-		function_definition_t operator()(const function_definition_t::empty_t& e) const{
-			return function_def;
-		}
-		function_definition_t operator()(const function_definition_t::floyd_func_t& e) const{
-			if(e._body){
-				const auto body = visit_ast_body(acc, *e._body);
-				const auto body2 = std::make_shared<body_t>(body);
-				return function_definition_t::make_floyd_func(
-					function_def._location,
-					function_def._definition_name,
-					function_def._function_type,
-					function_def._named_args,
-					body2
-				);
-			}
-			else{
-				return function_definition_t::make_floyd_func(
-					function_def._location,
-					function_def._definition_name,
-					function_def._function_type,
-					function_def._named_args,
-					{}
-				);
-			}
-		}
-		function_definition_t operator()(const function_definition_t::host_func_t& e) const{
-			return function_def;
-		}
-	};
-	const auto f2 = std::visit(visitor_t{ acc, def }, def._contents);
-	return f2;
+	if(def._optional_body){
+		const auto body = visit_ast_body(acc, *def._optional_body);
+		const auto body2 = std::make_shared<body_t>(body);
+		return function_definition_t::make_floyd_func(
+			def._location,
+			def._definition_name,
+			def._function_type,
+			def._named_args,
+			body2
+		);
+	}
+	else{
+		return function_definition_t::make_floyd_func(
+			def._location,
+			def._definition_name,
+			def._function_type,
+			def._named_args,
+			{}
+		);
+	}
 }
 
 static statement_t visit_ast_statement(visit_ast_t& acc, const statement_t& statement){
