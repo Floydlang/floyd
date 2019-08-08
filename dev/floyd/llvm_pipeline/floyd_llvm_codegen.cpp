@@ -2266,7 +2266,7 @@ static void generate_floyd_function_body(llvm_code_generator_t& gen_acc, functio
 
 	//	Not all paths returns a value!
 	if(return_mode == function_return_mode::some_path_not_returned && function_def._function_type.get_function_return().is_void() == false){
-		throw std::exception();
+		throw std::runtime_error("Not all function paths returns a value!");
 	}
 
 	if(function_def._function_type.get_function_return().is_void()){

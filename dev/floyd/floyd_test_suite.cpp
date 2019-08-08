@@ -2394,19 +2394,23 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 
 
 #if 0
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
-	ut_run_closed_nolib(
+
+/*
+//	??? Semantic analyser doesn't yet catch this problem. LLVM codegen does.
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark-def", "Must return", ""){
+	ut_verify_exception_nolib(
+		QUARK_POS,
 		R"(
 
 			benchmark-def "ABC" {
 				print("Running benchmark ABC")
 			}
 
-			print(benchmark_registry)
-
-		)"
+		)",
+		""
 	);
 }
+*/
 
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
 	ut_run_closed_nolib(
