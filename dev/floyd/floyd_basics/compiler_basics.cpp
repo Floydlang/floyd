@@ -31,6 +31,18 @@ bool is_floyd_literal(const typeid_t& type){
 	}
 }
 
+bool is_preinitliteral(const typeid_t& type){
+	QUARK_ASSERT(type.check_invariant());
+
+	//??? json is allowed but only for json::null. We should have a null-type instead.
+	if(type.is_int() || type.is_double() || type.is_bool() || type.is_typeid() || type.is_any() || type.is_function()){
+		return true;
+	}
+	else{
+		return false;
+	}
+}
+
 
 ////////////////////////////////////////		main() init() and message handler
 

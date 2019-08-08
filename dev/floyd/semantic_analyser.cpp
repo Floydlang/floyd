@@ -280,8 +280,6 @@ typeid_t resolve_type(analyser_t& acc, const location_t& loc, const typeid_t& ty
 
 
 
-
-
 //	When callee has "any" as return type, we need to figure out its return type using its algorithm and the actual types
 static const typeid_t figure_out_callee_return_type(const analyser_t& a, const statement_t& parent, const typeid_t& callee_type, const std::vector<expression_t>& call_args){
 	const auto callee_return_type = callee_type.get_function_return();
@@ -497,7 +495,7 @@ Ex:
 	mutable a = 10
 	mutable = 10
 */
-std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t& a, const statement_t& s){
+std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement(const analyser_t& a, const statement_t& s){
 	QUARK_ASSERT(a.check_invariant());
 
 	const auto statement = std::get<statement_t::bind_local_t>(s._contents);
@@ -534,8 +532,6 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 			: analyse_expression_to_target(a_acc, s, statement._expression, lhs_type);
 		a_acc = rhs_expr_pair.first;
 
-		//??? if expression is a k_define_struct, k_define_function -- make it a constant in symbol table and emit no assign-statement!
-
 		const auto rhs_type = rhs_expr_pair.second.get_output_type();
 		const auto lhs_type2 = lhs_type.is_undefined() ? rhs_type : lhs_type;
 
@@ -546,19 +542,35 @@ std::pair<analyser_t, statement_t> analyse_bind_local_statement(const analyser_t
 			throw_compiler_error(s.location, what.str());
 		}
 		else{
-			//	Replace the temporary symbol with the real function defintion.
-			const auto symbol2 = mutable_flag ? symbol_t::make_mutable(lhs_type2) : symbol_t::make_immutable_reserve(lhs_type2);
-			a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
-			resolve_type(a_acc, s.location, rhs_expr_pair.second.get_output_type());
+			//	Replace the temporary symbol with the complete symbol.
 
-			return {
-				a_acc,
-				statement_t::make__init2(
-					s.location,
-					variable_address_t::make_variable_address(0, (int)local_name_index),
-					rhs_expr_pair.second
-				)
-			};
+			//	If symbol can be initilzed directly, use make_immutable_precalc(). Else reserve it and create an init2-statement to set it up at runtime.
+			//	??? Better to always initialise it, even if it's a complex value. Codegen then decides if to translate to a reserve + init. BUT PROBLEM: we lose info *when* to init the value.
+			if(is_preinitliteral(lhs_type2) && mutable_flag == false && get_expression_type(rhs_expr_pair.second) == expression_type::k_literal){
+
+				const auto symbol2 = symbol_t::make_immutable_precalc(rhs_expr_pair.second.get_literal());
+				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
+				resolve_type(a_acc, s.location, rhs_expr_pair.second.get_output_type());
+				return { a_acc, {} };
+
+			}
+			else{
+
+				const auto symbol2 = mutable_flag ? symbol_t::make_mutable(lhs_type2) : symbol_t::make_immutable_reserve(lhs_type2);
+				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
+				resolve_type(a_acc, s.location, rhs_expr_pair.second.get_output_type());
+
+				return {
+					a_acc,
+					std::make_shared<statement_t>(
+						statement_t::make__init2(
+							s.location,
+							variable_address_t::make_variable_address(0, (int)local_name_index),
+							rhs_expr_pair.second
+						)
+					)
+				};
+			}
 		}
 	}
 	catch(...){
@@ -599,29 +611,6 @@ std::pair<analyser_t, statement_t> analyse_return_statement(const analyser_t& a,
 	//	Check that return value's type matches function's return type. Cannot be done here since we don't know who called us.
 	//	Instead calling code must check.
 	return { a_acc, statement_t::make__return_statement(s.location, result.second) };
-}
-
-analyser_t analyse_def_struct_statement(const analyser_t& a, const statement_t& s){
-	QUARK_ASSERT(a.check_invariant());
-
-	const auto statement = std::get<statement_t::define_struct_statement_t>(s._contents);
-	auto a_acc = a;
-	const auto struct_name = statement._name;
-	if(does_symbol_exist_shallow(a_acc, struct_name)){
-		std::stringstream what;
-		what << "Name \"" << struct_name << "\" already used in current lexical scope.";
-		throw_compiler_error(s.location, what.str());
-	}
-
-	const auto struct_typeid1 = typeid_t::make_struct2(statement._def->_members);
-	const auto struct_typeid2 = resolve_type(a_acc, s.location, struct_typeid1);
-	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
-
-	//	Record the struct type as a typeid-symbol in the current lexical scope.
-	// ??? Alternative solution is to use assign2 to write constant into global.
-	a_acc._lexical_scope_stack.back().symbols._symbols.push_back( {struct_name, symbol_t::make_immutable_precalc(struct_typeid_value) } );
-
-	return a_acc;
 }
 
 std::pair<analyser_t, statement_t> analyse_ifelse_statement(const analyser_t& a, const statement_t& s, const typeid_t& return_type){
@@ -828,15 +817,13 @@ std::pair<analyser_t, shared_ptr<statement_t>> analyse_statement(const analyser_
 			QUARK_ASSERT(check_types_resolved(e.second));
 			return { e.first, std::make_shared<statement_t>(e.second) };
 		}
-		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::define_struct_statement_t& s) const{
-			const auto e = analyse_def_struct_statement(a, statement);
-			return { e, {} };
-		}
 
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::bind_local_t& s) const{
 			const auto e = analyse_bind_local_statement(a, statement);
-			QUARK_ASSERT(check_types_resolved(e.second));
-			return { e.first, std::make_shared<statement_t>(e.second) };
+			if(e.second){
+				QUARK_ASSERT(check_types_resolved(*e.second));
+			}
+			return { e.first, e.second };
 		}
 		std::pair<analyser_t, shared_ptr<statement_t>> operator()(const statement_t::assign_t& s) const{
 			const auto e = analyse_assign_statement(a, statement);
@@ -1940,7 +1927,6 @@ static std::pair<analyser_t, expression_t> analyse_corecall_fallthrough_expressi
 	};
 }
 
-//??? Cleanup and simplify call, callee, matching with ANY etc.
 /*
 	There are several types of calls in the input AST.
 
@@ -2142,25 +2128,17 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 	}
 }
 
-
-std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const analyser_t& a, const statement_t& parent, const expression_t& e0, const expression_t::struct_definition_expr_t& details){
-	QUARK_ASSERT(false);
+static std::pair<analyser_t, expression_t> analyse_struct_definition_expression(const analyser_t& a, const statement_t& parent, const expression_t& e0, const expression_t::struct_definition_expr_t& details){
 	QUARK_ASSERT(a.check_invariant());
 
 	auto a_acc = a;
 	const auto& struct_def = *details.def;
 
-	//	Resolve member types in this scope.
-	std::vector<member_t> members2;
-	for(const auto& e: struct_def._members){
-		const auto name = e._name;
-		const auto type = e._type;
-		const auto type2 = resolve_type(a_acc, parent.location, type);
-		const auto e2 = member_t(type2, name);
-		members2.push_back(e2);
-	}
-	const auto resolved_struct_def = std::make_shared<struct_definition_t>(struct_definition_t(members2));
-	return {a_acc, expression_t::make_struct_definition(resolved_struct_def) };
+	const auto struct_typeid1 = typeid_t::make_struct2(struct_def._members);
+	const auto struct_typeid2 = resolve_type(a_acc, parent.location, struct_typeid1);
+	const auto struct_typeid_value = value_t::make_typeid_value(struct_typeid2);
+	const auto r = expression_t::make_literal(struct_typeid_value);
+	return { a_acc, r };
 }
 
 // ??? Check that function returns always returns a value, if it has a return-type.
@@ -2689,7 +2667,6 @@ semantic_ast_t run_semantic_analysis(const unchecked_ast_t& ast){
 
 	return result;
 }
-
 
 
 

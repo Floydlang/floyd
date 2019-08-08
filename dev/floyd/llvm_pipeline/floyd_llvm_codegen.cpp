@@ -2059,9 +2059,6 @@ static function_return_mode generate_statement(llvm_code_generator_t& gen_acc, l
 			generate_return_statement(acc0, emit_f, s);
 			return function_return_mode::return_executed;
 		}
-		function_return_mode operator()(const statement_t::define_struct_statement_t& s) const{
-			UNSUPPORTED();
-		}
 
 		function_return_mode operator()(const statement_t::bind_local_t& s) const{
 			UNSUPPORTED();

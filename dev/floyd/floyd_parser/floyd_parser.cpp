@@ -284,9 +284,11 @@ QUARK_UNIT_TEST("", "parse_program2()", "k_test_program_1_source", ""){
 const char k_test_program_100_parserout[] = R"(
 	[
 		[
-			5,
-			"def-struct",
-			{ "members": [{ "name": "red", "type": "^double" }, { "name": "green", "type": "^double" }, { "name": "blue", "type": "^double" }], "name": "pixel" }
+			18,
+			"init-local",
+			"^typeid",
+			"pixel",
+			["struct-def", "pixel", [{ "name": "red", "type": "^double" }, { "name": "green", "type": "^double" }, { "name": "blue", "type": "^double" }]]
 		],
 		[
 			65,

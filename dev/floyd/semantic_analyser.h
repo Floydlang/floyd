@@ -46,8 +46,6 @@
 	- bind -> init2, create local symbol
 
 
-	- define_struct_statement_t ->
-		make symbol containing struct-type.
 
 
 

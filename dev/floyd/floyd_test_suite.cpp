@@ -4463,7 +4463,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Error: Define struct with collid
 			struct a { int x }
 
 		)",
-		"Name \"a\" already used in current lexical scope. Line: 4 \"struct a { int x }\""
+		R"___(Local identifier "a" already exists. Line: 4 "struct a { int x }")___"
 	);
 }
 

@@ -41,8 +41,6 @@ namespace statement_opcode_t {
 	const std::string k_assign2 = "assign2";
 	const std::string k_block = "block";
 
-	const std::string k_def_struct = "def-struct";
-
 
 	const std::string k_if = "if";
 	const std::string k_for = "for";
@@ -126,6 +124,7 @@ struct symbol_t {
 		return symbol_t{ mutable_mode::immutable, value_type, {} };
 	}
 
+	//??? Mutable could support init-value too!?
 	public: static symbol_t make_mutable(const floyd::typeid_t& value_type){
 		return symbol_t{ mutable_mode::mutable1, value_type, {} };
 	}
@@ -234,22 +233,6 @@ struct statement_t {
 	};
 	public: static statement_t make__return_statement(const location_t& location, const expression_t& expression){
 		return statement_t(location, { return_statement_t{ expression } });
-	}
-
-
-	//////////////////////////////////////		define_struct_statement_t
-
-
-	struct define_struct_statement_t {
-		bool operator==(const define_struct_statement_t& other) const {
-			return _name == other._name && _def == other._def;
-		}
-
-		std::string _name;
-		std::shared_ptr<const struct_definition_t> _def;
-	};
-	public: static statement_t make__define_struct_statement(const location_t& location, const define_struct_statement_t& value){
-		return statement_t(location, { define_struct_statement_t{ value } });
 	}
 
 
@@ -520,7 +503,6 @@ struct statement_t {
 
 	typedef std::variant<
 		return_statement_t,
-		define_struct_statement_t,
 		bind_local_t,
 		assign_t,
 		assign2_t,

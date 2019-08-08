@@ -181,9 +181,6 @@ static statement_t visit_ast_statement(visit_ast_t& acc, const statement_t& stat
 			const auto e = visit_ast_expression(acc, s._expression);
 			return statement_t::make__return_statement(statement.location, e);
 		}
-		statement_t operator()(const statement_t::define_struct_statement_t& s) const{
-			return statement;
-		}
 
 		statement_t operator()(const statement_t::bind_local_t& s) const{
 			const auto e = visit_ast_expression(acc, s._expression);

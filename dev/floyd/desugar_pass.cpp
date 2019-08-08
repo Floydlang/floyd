@@ -95,9 +95,8 @@ static expression_t desugar_expression(desugar_t& acc, const expression_t& expre
 			return expression_t::make_corecall(e.call_name, args, expression._output_type);
 		}
 
-
 		expression_t operator()(const expression_t::struct_definition_expr_t& e) const{
-			QUARK_ASSERT(false);
+			return expression_t::make_struct_definition(e.name, e.def);
 			throw std::exception();
 		}
 		expression_t operator()(const expression_t::function_definition_expr_t& e) const{
@@ -191,9 +190,6 @@ static statement_t desugar_statement(desugar_t& acc, const statement_t& statemen
 		statement_t operator()(const statement_t::return_statement_t& s) const{
 			const auto e = desugar_expression(acc, s._expression);
 			return statement_t::make__return_statement(statement.location, e);
-		}
-		statement_t operator()(const statement_t::define_struct_statement_t& s) const{
-			return statement;
 		}
 
 		statement_t operator()(const statement_t::bind_local_t& s) const{

@@ -425,7 +425,7 @@ json_t expression_to_json(const expression_t& e){
 
 
 		json_t operator()(const expression_t::struct_definition_expr_t& e) const{
-			return make_ast_node(expr.location, expression_opcode_t::k_struct_def, { struct_definition_to_ast_json(*e.def) } );
+			return make_ast_node(expr.location, expression_opcode_t::k_struct_def, { e.name, struct_definition_to_ast_json(*e.def) } );
 		}
 		json_t operator()(const expression_t::function_definition_expr_t& e) const{
 			return make_ast_node(
@@ -645,6 +645,13 @@ expression_t ast_json_to_expression(const json_t& e){
 		const auto lookup_key_expr = ast_json_to_expression(e.get_array_n(2));
 		const auto annotated_type = get_optional_typeid(e, 3);
 		return expression_t::make_lookup(parent_address_expr, lookup_key_expr, annotated_type);
+	}
+	else if(op == expression_opcode_t::k_struct_def){
+		QUARK_ASSERT(e.get_array_size() == 3);
+
+		const auto struct_name = e.get_array_n(1).get_string();
+		const auto members = members_from_json(e.get_array_n(2));
+		return expression_t::make_struct_definition(struct_name, std::make_shared<struct_definition_t>(members));
 	}
 	else if(op == expression_opcode_t::k_function_def){
 		QUARK_ASSERT(e.get_array_size() == 5);

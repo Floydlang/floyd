@@ -80,23 +80,8 @@ std::pair<json_t, seq_t> parse_expression_statement(const seq_t& s);
 */
 std::pair<json_t, seq_t> parse_function_definition_statement(const seq_t& s);
 
-/*
-	OUTPUT
-
-	[
-		"def-struct",
-		{
-			"name": "pixel",
-			"members": [
-				{ "name": "s", "type": "string" }
-			],
-		}
-	]
-*/
 std::pair<json_t, seq_t> parse_struct_definition_statement(const seq_t& s);
 
-//	Parses only the "{ MEMBERS }" part of the struct.
-std::pair<json_t, seq_t>  parse_struct_definition_body(const seq_t& s, const std::string& name);
 
 
 /*

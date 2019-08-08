@@ -21,7 +21,6 @@ STATEMENT: [ LOCATION, STATEMENT-OPCODE, * ]
 	[ LOCATION, "init-local", [ TYPE, IDENTIFIER, EXPRESSION, { "mutable": true }* ] ]
 	[ LOCATION, "assign", [ TYPE, IDENTIFIER, EXPRESSION ] ]
 	[ LOCATION, "block", STATEMENTS ]
-	[ LOCATION, "def-struct", { "name": NAME, "members": [ STRUCT-MEMBER ]* } ]
 
 	[ LOCATION, "if", EXPRESSION, STATEMENTS, STATEMENTS ]
 	[ LOCATION, "for", "closed-range" / "open-range", IDENTIFIER, EXPRESSION, EXPRESSION, STATEMENTS ]
@@ -41,6 +40,7 @@ EXPRESSION:	[ LOCATION, EXPRESSION-OPCODE, * ]
 	[ LOCATION, "unary-minus", EXPRESSION ]
 	[ LOCATION, "?:", EXPRESSION, EXPRESSION, EXPRESSION ]	//	conditional_operator(condition, a, b)
 
+	[ LOCATION, "struct-def", [ NAME, [ STRUCT-MEMBER ]* ] ]
 	[ LOCATION, "function-def", FUNCTION-TYPE, IDENTIFIER, ARGS, BODY ]
 
 	[ LOCATION, "value-constructor", EXPRESSION, ELEMENT-TYPE, [ EXPRESSION ] ]

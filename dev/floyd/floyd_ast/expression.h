@@ -396,11 +396,12 @@ struct expression_t {
 	////////////////////////////////		struct_definition_expr_t
 
 	struct struct_definition_expr_t {
+		std::string name;
 		std::shared_ptr<const struct_definition_t> def;
 	};
 
-	public: static expression_t make_struct_definition(const std::shared_ptr<const struct_definition_t>& def){
-		return expression_t({ struct_definition_expr_t{ def } }, std::make_shared<typeid_t>(typeid_t::make_struct1(def)));
+	public: static expression_t make_struct_definition(const std::string& name, const std::shared_ptr<const struct_definition_t>& def){
+		return expression_t({ struct_definition_expr_t{ name, def } }, std::make_shared<typeid_t>(typeid_t::make_struct1(def)));
 	}
 
 

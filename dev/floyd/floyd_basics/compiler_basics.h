@@ -26,6 +26,8 @@ namespace floyd {
 
 
 bool is_floyd_literal(const typeid_t& type);
+bool is_preinitliteral(const typeid_t& type);
+
 
 ////////////////////////////////////////		main() init() and message handler
 

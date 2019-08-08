@@ -580,10 +580,6 @@ bcgen_body_t bcgen_body_block_statements(bcgenerator_t& gen_acc, const bcgen_bod
 				bcgen_body_t operator()(const statement_t::return_statement_t& s) const{
 					return bcgen_return_statement(_gen_acc, s, body_acc);
 				}
-				bcgen_body_t operator()(const statement_t::define_struct_statement_t& s) const{
-					QUARK_ASSERT(false);
-					quark::throw_exception();
-				}
 
 				bcgen_body_t operator()(const statement_t::bind_local_t& s) const{
 					QUARK_ASSERT(false);

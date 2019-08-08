@@ -248,19 +248,6 @@ static statement_t ast_json_to_statement(const json_t& statement0){
 		return statement_t::make__block_statement(loc, body);
 	}
 
-	else if(type == statement_opcode_t::k_def_struct){
-		QUARK_ASSERT(statement.get_array_size() == 2);
-		const auto struct_def = statement.get_array_n(1);
-		const auto name = struct_def.get_object_element("name").get_string();
-		const auto members = struct_def.get_object_element("members").get_array();
-
-		const auto members2 = members_from_json(members);
-		const auto struct_def2 = struct_definition_t(members2);
-
-		const auto s = statement_t::define_struct_statement_t{ name, std::make_shared<struct_definition_t>(struct_def2) };
-		return statement_t::make__define_struct_statement(loc, s);
-	}
-
 	else if(type == statement_opcode_t::k_if){
 		QUARK_ASSERT(statement.get_array_size() == 3 || statement.get_array_size() == 4);
 		const auto condition_expression = statement.get_array_n(1);
@@ -365,16 +352,6 @@ json_t statement_to_json(const statement_t& e){
 
 		json_t operator()(const statement_t::return_statement_t& s) const{
 			return make_ast_node(k_no_location, statement_opcode_t::k_return, { expression_to_json(s._expression) });
-		}
-		json_t operator()(const statement_t::define_struct_statement_t& s) const{
-			return make_ast_node(
-				k_no_location,
-				statement_opcode_t::k_def_struct,
-				{
-					json_t(s._name),
-					struct_definition_to_ast_json(*s._def)
-				}
-			);
 		}
 
 		json_t operator()(const statement_t::bind_local_t& s) const{

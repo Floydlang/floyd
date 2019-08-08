@@ -601,6 +601,7 @@ QUARK_UNIT_TEST("", "parse_function_definition_statement()", "Min whitespace", "
 
 std::pair<json_t, seq_t>  parse_struct_definition_body(const seq_t& p, const std::string& name, const location_t& location){
 	const auto s2 = skip_whitespace(p);
+	const auto start = s2;
 	auto pos = read_required_char(s2, '{');
 	std::vector<member_t> members;
 	while(!pos.empty() && pos.first() != "}"){
@@ -612,17 +613,27 @@ std::pair<json_t, seq_t>  parse_struct_definition_body(const seq_t& p, const std
 	}
 	pos = read_required(pos, "}");
 
-	const auto r = make_parser_node(
-		location,
-		parse_tree_statement_opcode::k_def_struct,
+	const auto struct_def_expr = make_parser_node(
+		location_t(k_no_location),
+		parse_tree_expression_opcode_t::k_struct_def,
 		{
-			json_t::make_object({
-				{ "name", name },
-				{ "members", members_to_json(members) }
-			})
+			name,
+			members_to_json(members)
 		}
 	);
-	return { r, skip_whitespace(pos) };
+
+	const auto struct_type = typeid_t::make_struct2(members);
+	const auto s = make_parser_node(
+		location_t(start.pos()),
+		parse_tree_statement_opcode::k_init_local,
+		{
+			typeid_to_ast_json(typeid_t::make_typeid(), json_tags::k_tag_resolve_state),
+			name,
+			struct_def_expr
+		}
+	);
+	return { s, pos };
+
 }
 
 std::pair<json_t, seq_t>  parse_struct_definition_statement(const seq_t& pos0){
@@ -638,27 +649,22 @@ std::pair<json_t, seq_t>  parse_struct_definition_statement(const seq_t& pos0){
 }
 
 
-const std::string k_test_struct0 = "struct a {int x; string y; double z;}";
-
 QUARK_UNIT_TEST("parser", "parse_struct_definition_statement", "", ""){
-	const auto r = parse_struct_definition_statement(seq_t(k_test_struct0));
+	const auto r = parse_struct_definition_statement(seq_t("struct a {int x; string y; double z;}"));
 
-	const auto expected =
-	json_t::make_array({
-		json_t(0),
-		"def-struct",
-		json_t::make_object({
-			{ "name", "a" },
-			{
-				"members",
-				json_t::make_array({
-					json_t::make_object({ { "name", "x"}, { "type", "^int"} }),
-					json_t::make_object({ { "name", "y"}, { "type", "^string"} }),
-					json_t::make_object({ { "name", "z"}, { "type", "^double"} })
-				})
-			},
-		})
-	});
+	const auto expected = parse_json(seq_t(
+		R"___(
+
+			[
+				9,
+				"init-local",
+				"^typeid",
+				"a",
+				["struct-def", "a", [{ "name": "x", "type": "^int" }, { "name": "y", "type": "^string" }, { "name": "z", "type": "^double" }]]
+			]
+
+		)___"
+	)).first;
 
 	ut_verify(QUARK_POS, r.first, expected);
 	ut_verify(QUARK_POS, r.second.str(), "");
