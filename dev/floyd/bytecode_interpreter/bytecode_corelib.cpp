@@ -21,6 +21,21 @@ namespace floyd {
 
 
 
+bc_value_t bc_corelib__detect_hardware_caps(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 0);
+
+	const std::vector<std::pair<std::string, json_t>> caps = corelib_detect_hardware_caps();
+
+	std::map<std::string, value_t> caps_map;
+	for(const auto& e: caps){
+  		caps_map.insert({ e.first, value_t::make_json(e.second) });
+	}
+	
+	const auto result = value_t::make_dict_value(typeid_t::make_json(), caps_map);
+	return value_to_bc(result);
+}
+
 
 
 
@@ -273,6 +288,9 @@ bc_value_t bc_corelib__rename_fsentry(interpreter_t& vm, const bc_value_t args[]
 std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_corelib_calls(){
 
 	const auto result = std::map<function_id_t, BC_NATIVE_FUNCTION_PTR>{
+		{ { "detect_hardware_caps" }, bc_corelib__detect_hardware_caps },
+
+
 		{ { "calc_string_sha1" }, bc_corelib__calc_string_sha1 },
 		{ { "calc_binary_sha1" }, bc_corelib__calc_binary_sha1 },
 

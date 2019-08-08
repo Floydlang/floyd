@@ -725,10 +725,42 @@ Output from running a test
 These built-in features lets you see what kind of CPU and memory system your program is currently running on. This is important when recording and understanding microbenchmark results.
 
 ```
-{ string: json } detect_hardware_caps()
+[string: json] detect_hardware_caps()
 ```
+Output is something similar to this:
 
-
+```
+{
+	"availcpu" : 0,
+	"bus_freq_hz" : 100000000,
+	"byteorder" : 1234,
+	"cacheline_size" : 64,
+	"cpu_freq_hz" : 4000000000,
+	"cpu_type" : 7,
+	"cpu_type_subtype" : 8,
+	"epoch" : 0,
+	"floatingpoint" : 0,
+	"l1_data_cache_size" : 32768,
+	"l1_instruction_cache_size" : 32768,
+	"l2_cache_size" : 262144,
+	"l3_cache_size" : 8388610,
+	"logical_processor_count" : 8,
+	"machdep_cpu_brand_string" : "Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz",
+	"machine" : "x86_64",
+	"machinearch" : "",
+	"mem_size" : 17179900000,
+	"model" : "iMac15,1",
+	"ncpu" : 8,
+	"packaged" : 1,
+	"page_size" : 4096,
+	"physical_processor_count" : 4,
+	"physmem" : 2147480000,
+	"scalar_align" : 16,
+	"tbfrequency" : 1000000000,
+	"usermem" : 4214070000,
+	"vectorunit" : 1
+}
+```
 
 
 ## TODO: PROBES

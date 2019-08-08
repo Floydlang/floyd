@@ -404,13 +404,25 @@ value_t from_runtime_vector(const llvm_execution_engine_t& runtime, const runtim
 	return val;
 }
 
-runtime_value_t to_runtime_dict(const llvm_execution_engine_t& runtime, const typeid_t::dict_t& exact_type, const value_t& value){
-	QUARK_ASSERT(runtime.check_invariant());
+runtime_value_t to_runtime_dict(llvm_execution_engine_t& r, const typeid_t::dict_t& exact_type, const value_t& value){
+	QUARK_ASSERT(r.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value.get_type().is_dict());
 
-	NOT_IMPLEMENTED_YET();
-	return runtime_value_t{ .vector_ptr = nullptr };
+	const auto& v0 = value.get_dict_value();
+
+	auto v = alloc_dict(r.heap);
+	auto result = runtime_value_t{ .dict_ptr = v };
+
+	const auto element_type = value.get_type().get_dict_value_type();
+	auto& m = v->get_map_mut();
+	for(const auto& e: v0){
+		const auto a = to_runtime_value(r, e.second);
+
+
+		m.insert({ e.first, a });
+	}
+	return result;
 }
 
 value_t from_runtime_dict(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){

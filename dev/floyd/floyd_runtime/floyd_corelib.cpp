@@ -14,6 +14,7 @@
 #include "floyd_runtime.h"
 #include "sha1_class.h"
 #include "file_handling.h"
+#include "hardware_caps.h"
 
 #include <iostream>
 #include <fstream>
@@ -125,7 +126,7 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 		return acc
 	}
 
-//	{ string: json } detect_hardware_caps()
+	func [string: json] detect_hardware_caps()
 
 
 
@@ -307,6 +308,64 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 
 
 
+static json_t json_from_uint64(uint64_t v){
+	const int64_t a = v;
+	return json_t(a);
+}
+
+
+
+std::vector<std::pair<std::string, json_t>> corelib_detect_hardware_caps(){
+	const auto caps = read_hardware_caps();
+	const auto result = std::vector<std::pair<std::string, json_t>> {
+		{ "machdep_cpu_brand_string", json_t(caps._machdep_cpu_brand_string) },
+
+		{ "machine", json_t(caps._hw_machine) },
+		{ "model", json_t(caps._hw_model) },
+		{ "ncpu", json_from_uint64(caps._hw_ncpu) },
+
+		{ "byteorder", json_from_uint64(caps._hw_byteorder) },
+		{ "physmem", json_from_uint64(caps._hw_physmem) },
+		{ "usermem", json_from_uint64(caps._hw_usermem) },
+
+
+		{ "epoch", json_from_uint64(caps._hw_epoch) },
+		{ "floatingpoint", json_from_uint64(caps._hw_floatingpoint) },
+		{ "machinearch", json_t(caps._hw_machinearch) },
+
+		{ "vectorunit", json_from_uint64(caps._hw_vectorunit) },
+		{ "tbfrequency", json_from_uint64(caps._hw_tbfrequency) },
+		{ "availcpu", json_from_uint64(caps._hw_availcpu) },
+
+
+		{ "cpu_type", json_from_uint64(caps._hw_cpu_type) },
+		{ "cpu_type_subtype", json_from_uint64(caps._hw_cpu_type_subtype) },
+
+		{ "packaged", json_from_uint64(caps._hw_packaged) },
+
+		{ "physical_processor_count", json_from_uint64(caps._hw_physical_processor_count) },
+
+
+		{ "logical_processor_count", json_from_uint64(caps._hw_logical_processor_count) },
+
+
+		{ "cpu_freq_hz", json_from_uint64(caps._hw_cpu_freq_hz) },
+		{ "bus_freq_hz", json_from_uint64(caps._hw_bus_freq_hz) },
+
+		{ "mem_size", json_from_uint64(caps._hw_mem_size) },
+		{ "page_size", json_from_uint64(caps._hw_page_size) },
+		{ "cacheline_size", json_from_uint64(caps._hw_cacheline_size) },
+
+
+		{ "scalar_align", json_from_uint64(caps._hw_scalar_align) },
+
+		{ "l1_data_cache_size", json_from_uint64(caps._hw_l1_data_cache_size) },
+		{ "l1_instruction_cache_size", json_from_uint64(caps._hw_l1_instruction_cache_size) },
+		{ "l2_cache_size", json_from_uint64(caps._hw_l2_cache_size) },
+		{ "l3_cache_size", json_from_uint64(caps._hw_l3_cache_size) }
+	};
+	return result;
+}
 
 
 

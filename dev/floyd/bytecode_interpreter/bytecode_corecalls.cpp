@@ -38,7 +38,6 @@ static value_t value_to_jsonvalue(const value_t& value){
 
 
 
-
 bc_value_t host__assert(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);

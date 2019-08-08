@@ -40,7 +40,7 @@ unsupported syntax
 #define RUN_LANG_STRUCT_TESTS				true
 #define RUN_LANG_JSON_TESTS					true
 #define RUN_LANG_CORECALL_TESTS				true
-#define RUN_CORLIB_TESTS					true
+#define RUN_CORELIB_TESTS					true
 #define RUN_CONTAINER_TESTS					true
 #define RUN_EXAMPLE_AND_DOCS_TESTS			true
 #else
@@ -49,7 +49,7 @@ unsupported syntax
 //#define RUN_LANG_STRUCT_TESTS				true
 //#define RUN_LANG_JSON_TESTS					true
 //#define RUN_LANG_CORECALL_TESTS				true
-#define RUN_CORLIB_TESTS					true
+#define RUN_CORELIB_TESTS					true
 //#define RUN_CONTAINER_TESTS					true
 //#define RUN_EXAMPLE_AND_DOCS_TESTS			true
 #endif
@@ -5635,13 +5635,26 @@ FLOYD_LANG_PROOF("Floyd test suite", "stable_sort()", "[string]", ""){
 
 
 
-#if RUN_CORLIB_TESTS
+#if RUN_CORELIB_TESTS
 
 //######################################################################################################################
 //	CORE LIBRARY
 //######################################################################################################################
 
 
+
+
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "detect_hardware_caps()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let caps = detect_hardware_caps()
+			print(to_pretty_string(caps))
+
+		)"
+	);
+}
 
 
 
@@ -6053,7 +6066,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "rename_fsentry()", "", ""){
 	);
 }
 
-#endif	//	RUN_CORLIB_TESTS
+#endif	//	RUN_CORELIB_TESTS
 
 
 

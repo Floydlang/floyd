@@ -37,6 +37,21 @@ struct native_sha1_t {
 
 
 
+static DICT_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
+	auto& r = get_floyd_runtime(frp);
+
+	const std::vector<std::pair<std::string, json_t>> caps = corelib_detect_hardware_caps();
+
+	std::map<std::string, value_t> caps_map;
+	for(const auto& e: caps){
+  		caps_map.insert({ e.first, value_t::make_json(e.second) });
+	}
+
+	const auto a = value_t::make_dict_value(typeid_t::make_json(), caps_map);
+	auto result = to_runtime_value(r, a);
+	return result.dict_ptr;
+}
+
 
 
 
@@ -211,6 +226,8 @@ std::map<std::string, void*> get_corelib_c_function_ptrs(){
 
 	////////////////////////////////		CORE FUNCTIONS AND HOST FUNCTIONS
 	const std::map<std::string, void*> host_functions_map = {
+
+		{ "floyd_funcdef__detect_hardware_caps", reinterpret_cast<void *>(&llvm_corelib__detect_hardware_caps) },
 
 		{ "floyd_funcdef__calc_string_sha1", reinterpret_cast<void *>(&llvm_corelib__calc_string_sha1) },
 		{ "floyd_funcdef__calc_binary_sha1", reinterpret_cast<void *>(&llvm_corelib__calc_binary_sha1) },

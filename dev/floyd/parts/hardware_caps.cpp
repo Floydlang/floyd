@@ -230,32 +230,32 @@ machdep.cpu.extfeatures
 
 		._hw_machinearch = sysctlbyname_string_def("hw.machinearch", ""),
 
-		._hw_vectorunit = sysctlbyname_uint32_def("hw.vectorunit", -1),
-		._hw_tbfrequency = sysctlbyname_uint32_def("hw.tbfrequency", -1),
-		._hw_availcpu = sysctlbyname_uint32_def("hw.availcpu", -1),
+		._hw_vectorunit = sysctlbyname_uint32_def("hw.vectorunit", 0),
+		._hw_tbfrequency = sysctlbyname_uint32_def("hw.tbfrequency", 0),
+		._hw_availcpu = sysctlbyname_uint32_def("hw.availcpu", 0),
 
 
-		._hw_cpu_type = sysctlbyname_uint32_def("hw.cputype", -1),
+		._hw_cpu_type = sysctlbyname_uint32_def("hw.cputype", 0),
 
-		._hw_cpu_type_subtype = sysctlbyname_uint32_def("hw.cpusubtype", -1),
+		._hw_cpu_type_subtype = sysctlbyname_uint32_def("hw.cpusubtype", 0),
 
-		._hw_packaged = sysctlbyname_uint32_def("hw.packages", -1),
+		._hw_packaged = sysctlbyname_uint32_def("hw.packages", 0),
 
-		._hw_physical_processor_count = sysctlbyname_uint32_def("hw.physicalcpu_max", -1),
-		._hw_logical_processor_count = sysctlbyname_uint32_def("hw.logicalcpu_max", -1),
+		._hw_physical_processor_count = sysctlbyname_uint32_def("hw.physicalcpu_max", 0),
+		._hw_logical_processor_count = sysctlbyname_uint32_def("hw.logicalcpu_max", 0),
 
-		._hw_cpu_freq_hz = sysctlbyname_uint64_def("hw.cpufrequency", -1),
-		._hw_bus_freq_hz = sysctlbyname_uint64_def("hw.busfrequency", -1),
+		._hw_cpu_freq_hz = sysctlbyname_uint64_def("hw.cpufrequency", 0),
+		._hw_bus_freq_hz = sysctlbyname_uint64_def("hw.busfrequency", 0),
 
-		._hw_mem_size = sysctlbyname_uint64_def("hw.memsize", -1),
-		._hw_page_size = sysctlbyname_uint64_def("hw.pagesize", -1),
-		._hw_cacheline_size = sysctlbyname_uint64_def("hw.cachelinesize", -1),
+		._hw_mem_size = sysctlbyname_uint64_def("hw.memsize", 0),
+		._hw_page_size = sysctlbyname_uint64_def("hw.pagesize", 0),
+		._hw_cacheline_size = sysctlbyname_uint64_def("hw.cachelinesize", 0),
 		._hw_scalar_align = alignof(std::max_align_t),
 
-		._hw_l1_data_cache_size = sysctlbyname_uint64_def("hw.l1dcachesize", -1),
-		._hw_l1_instruction_cache_size = sysctlbyname_uint64_def("hw.l1icachesize", -1),
-		._hw_l2_cache_size = sysctlbyname_uint64_def("hw.l2cachesize", -1),
-		._hw_l3_cache_size = sysctlbyname_uint64_def("hw.l3cachesize", -1)
+		._hw_l1_data_cache_size = sysctlbyname_uint64_def("hw.l1dcachesize", 0),
+		._hw_l1_instruction_cache_size = sysctlbyname_uint64_def("hw.l1icachesize", 0),
+		._hw_l2_cache_size = sysctlbyname_uint64_def("hw.l2cachesize", 0),
+		._hw_l3_cache_size = sysctlbyname_uint64_def("hw.l3cachesize", 0)
 
 	};
 }
