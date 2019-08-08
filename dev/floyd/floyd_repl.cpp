@@ -28,8 +28,11 @@
 
 #if true
 
+#ifndef _MSC_VER
 #include <editline/readline.h>
-
+#else
+#include <readline/readline.h>
+#endif
 void init_terminal(){
 }
 
@@ -44,7 +47,9 @@ std::string get_command(){
 			line_read = nullptr;
 		}
 	}
+#ifndef _MSC_VER
 	add_history (result.c_str());
+#endif
 	return result;
 }
 

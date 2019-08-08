@@ -125,12 +125,6 @@ There is no compiled distribution of Floyd yet. You need to clone the github rep
 
 	This builds the project and runs the unit tests. Output in the Xcode console.
 	
-#### UNIX
-
-Cmake is used to build floyd 
-
-
-
 
 ##### Building with arch linux
 
@@ -144,7 +138,7 @@ Cmake is used to build floyd
 
 5. make
 
-##### Builing quicker with ninja
+##### Builing quicker with ninja.
  
  0. sudo pacman -Sy ninja
 
@@ -154,9 +148,76 @@ Cmake is used to build floyd
 
  5. ninja
 
+#### UNIX (ubuntu)
+
+1. Install llvm,  sudo apt-get install -qq  cmake llvm-8-dev
+
+2. cd floyd/dev/floyd
+
+3. mkdir build;cd build
+
+4. cmake ..
+
+5. make
+
+#### UNIX (generic)
+
+This procedure is not tested, but is a good starting point
+
+0. In a directory parrallell to where floyd, was checked out do 
+
+1.  git clone https://github.com/Microsoft/vcpkg
+
+2.  cd vcpkg
+
+2.  ./bootstrap-vcpkg.sh
+
+3.  ./vcpkg install llvm
+
+4. Modify CMakelists.txt to find llvm libaraies in ../vcpkg/packages
+
+5. cd floyd/dev/floyd; mkdir build; cd build ; cmake .. ; make
+
+
 #### WINDOWS
 
-TBD
+This describes how to compile for Visual Studio Code 2019 
+ 
+Note that it is also possible to install vcpkg to other location.
+Then you have to set the environment variable VCPKG_ROOT.
+Go to control panel -> system -> environment variables
+NOTE that the path have to be short to make i.e. QT Happy, i.e. D:\vcpkg
+This also works, Windows+R
+    rundll32.exe sysdm.cpl,EditEnvironmentVariables
+
+If you do not set this the CMAkeLists.txt expects vcpkg in a parallell directory
+    set (VCPKG_ROOT "${CMAKE_SOURCE_DIR}/../../../vcpkg/")
+
+It is also possible to open CMakefiles directly within visual studio,
+https://docs.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio?view=vs-2019
+Currently the code does not compile correctly.
+
+0. In a directory parrallell to where floyd, was checked out do 
+
+1.  git clone https://github.com/Microsoft/vcpkg
+
+2.  cd vcpkg
+
+2.  ./bootstrap-vcpkg.bat
+
+3.  ./vcpkg.exe install llvm:x64-windows
+    ./vcpkg.exe install readline:x64-windows
+    ./vcpkg.exe install pthreads:x64-windows
+    ./vcpkg.exe install dirent:x64-windows
+Note that building llvm takes a very long time to build > 4 hours on a slower machine
+ 
+4. Run cmake from cmake.org put the build files in a dir in a directory parallell to the rest, it should look like this,    
+    > ls 
+	  floyd
+	  vcpkg
+	  build
+
+5. Compile 
 
 
 # STATUS
