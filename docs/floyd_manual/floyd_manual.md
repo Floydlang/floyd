@@ -560,6 +560,168 @@ TODO: Also draw computing power.
 TOD: Fact check stats.
 
 
+## ABOUT MICRO BENCHMARKS
+
+Floyd is about engineering programs for fast execution. To aid in this, Floyd has built-in features to benchmark your code so you know the actual performance.
+
+```
+benchmark-def "Linear veq 0" {
+	let dur = benchmark {
+		let a = unpack_linear_veq(x)
+	}
+	return [ benchmark_result_t(dur, {}) ]
+}
+```
+
+The Floyd micro benchmark features give you a simple way to measure the performance of a snippet of code on a specific computer and get statistics on how it performs for different data sets.
+
+>NOTICE: Micro benchmarking is not the same as profiling with a Profiler. Profiling is used on an entire program and helps you *find* hotspots. Micro benchmarking just looks at a small code snippet.
+
+You can add a micro benchmark anywhere in a source file using the benchmark-def statement and the benchmark expression, ideally right next the function to measure. The micro benchmarks are not automatically run, you need to request that, either from the floyd command line tool or via your own code. You are in control over which tests to run and can control how to present the output.
+
+You leave the micro benchmarks in your code. They can be stripped out when compiling.
+
+The term **benchmark** in Floyd means **one explictly defined task that performs the exact same instructs every time over the exact same data**. Floyd will run it many times to get better precision of the measurement, called "runs". Often you want to run a benchmark for several different sized data sets. Floyd allows you to make several **benchmark instances** from the same benchmark definition. This results in several benchmarks but you only need to define it once.
+
+
+The benchmark features have been designed to:
+- Give you a built-in simple way to measure performance
+- Let you control which tests to run and when
+- Let you keep the tests next to the function under test 
+- Let you control how to use the measurements, even from code.
+
+
+
+### BENCHMARK WITH 10 INSTANCES
+
+```
+benchmark-def "Linear veq" {
+	let t = my_setup_fix()
+	[benchmark_result_t] result
+	for([ 0, 1, 2, 3, 4, 10, 20, 100, 1000, 10000 ]){
+		let x = .... setup from instance
+		let r = benchmark {
+			let a = unpack_linear_veq(x)
+		}
+		result = result.push_back(bench(r, json( "Work bytes/sec": test_param / 8 ))
+	}
+	return result
+}
+```
+
+
+### RUNNING MICRO BENCHMARKS FROM TOOL
+
+Run all micro benchmarks in your program:
+
+```
+floyd bench mygame.floyd
+```
+
+This results in a printout something like this:
+
+```
+| Test          | Params    | Duration s    | Work bytes/sec
+|---            |---        |---            |---
+| Linear veq    | 0         | 0.000000 s    | 0
+| Linear veq    | 1         | 0.000000 s    | 1
+| Linear veq    | 2         | 0.000000 s    | 1
+| Linear veq    | 1000      | 0.0022000 s   | 2.000
+| Linear veq    | 10000     | 0.003200 s    | 40.000
+```
+
+
+Runs all micro benchmarks in the image_processing library and the blur_helpers module:
+
+```
+floyd bench --module img_lib blur
+```
+
+Runs specific tests in specific modules:
+
+```
+floyd bench "img_lib:Linear veq" "img_lib:Smart tiling" "blur:blur1" "blur:b2"
+```
+
+The output will be formatted and sent to stdout. Use --json to instead print the test output as json-data (see json format for micro benchmarks).
+
+When you run a benchmark, all/any of its instances are always run.
+
+### RUNNING MICRO BENCHMARKS FROM CODE
+
+You can also write code that queries and runs your tests using built-in functions:
+
+```
+struct microbench_def_t {
+	string name
+	func json(T) f
+}
+
+[string] get_link_modules()
+
+[microbench_def_t] get_microbenchmarks(string module)
+json run_benchmark(microbench_def_t m)
+
+[json] run_benchmarks([microbench_def_t] m)
+[json] run_benchmarks()
+```
+
+The output from benchmark is a JSON with the timing, the name of the test and the data set used with the test.
+
+This lets you write your own code to mangle the test output.
+
+You can also use the trace_benchmark() that prints a nice diagram in the console:
+
+	trace_benchmark(json j)
+
+
+Output from running a test
+
+```
+pass_output = json(
+	"Duration s": 0.003200,
+	"Work bytes/sec": 40000,
+)
+
+microbench_result = json(
+	"test_set": [ 0, 1, 2, 3, 4, 10, 20, 100, 1000, 10000 ],
+
+	[
+		{ "Duration s": 0.000000, "Work bytes/sec": 0 },
+		{ "Duration s": 0.000000, "Work bytes/sec": 1 },
+		{ "Duration s": 0.000000, "Work bytes/sec": 1 },
+		{ "Duration s": 0.000190, "Work bytes/sec": 2000 },
+		{ "Duration s": 0.003200, "Work bytes/sec": 40000 }
+	]
+)
+
+```
+
+
+| Test | Params | Duration s | Work bytes/sec
+|--- |--- |--- |---
+| Linear veq | 0		|	0.000000 s	| 0
+| Linear veq | 1		|	0.000000 s	| 1
+| Linear veq | 2		|	0.000000 s	| 1
+| Linear veq | 1000		|	0.0022000 s	| 2.000
+| Linear veq | 10000	|	0.003200 s	| 40.000
+
+
+
+
+### HARDWARE CAPS
+
+These built-in features lets you see what kind of CPU and memory system your program is currently running on. This is important when recording and understanding microbenchmark results.
+
+const auto caps = floyd::read_hardware_caps();
+const auto caps_string = get_hardware_caps_string(caps);
+
+??? Get caps as JSON.
+
+
+
+
+
 
 
 
@@ -996,7 +1158,7 @@ mutable hello = "Greeting message."
 
 
 
-## FUNC (FUNCTION) DEFINITION STATEMENT
+### FUNC (FUNCTION) DEFINITION STATEMENT
 
 ```
 func int hello(string s){
@@ -1015,7 +1177,7 @@ This defines a new function value and gives it a name in the current scope.
 
 
 
-## STRUCT DEFINITION STATEMENTS
+### STRUCT DEFINITION STATEMENTS
 
 This defines a new struct-type and gives it a name in the current scope.
 
@@ -1144,7 +1306,7 @@ The return statement aborts the execution of the current function as the functio
 
 
 
-## SOFTWARE-SYSTEM-DEF STATEMENT
+### SOFTWARE-SYSTEM-DEF STATEMENT
 
 This is a dedicated keyword for defining software systems: **software-system-def**. Its contents is encoded as a JSON object and designed to be either hand-coded or processed by tools. You only have one of these in a software system.
 
@@ -1196,7 +1358,7 @@ This is an object where each key is the name of a persona and a short descriptio
 
 
 
-## CONTAINER-DEF STATEMENT
+### CONTAINER-DEF STATEMENT
 
 This is a dedicated keyword. It defines *one* container, its name, its internal processes and how they interact.
 
@@ -1299,6 +1461,86 @@ func my_gui_state_t my_gui(my_gui_state_t state, json message) impure{
 ### TODO: SWITCH STATEMENT
 
 TODO POC
+
+
+
+
+
+
+
+## BENCHMARK-DEF STATEMENT
+
+Defines a benchmark (optionally with several instances) so it's available to Floyd.
+
+- **name**: A human readable name for what you are measuring
+- **f**: A function that runs a benchmark. The function signature must be [benchmark_result_t] f(). Each entry in the vector represents a separate instance of the benchmark. If you only want to measure one thing, return a vector with a single element.
+
+Your test will be run for each test in the set. Usually you want to measure for some small numbers and for some bigger numbers. Example: blurring an image. This matters because the hardware has overheads and memory cache system. This is a vector of tests to run.
+
+You can use built-in resources (because those functions are pure) but not load any file.
+
+### ADVANCED
+
+This is what really happens when you use benchmark-def:
+
+```
+benchmark-def "ABC" {
+	let dur = benchmark {}
+		print("ABC")
+	}
+	return [ benchmark_result_t(dur, {}) ]
+}
+benchmark-def "XYZ" {
+	let dur = benchmark {}
+		print("ABC")
+	}
+	return [ benchmark_result_t(dur, {}) ]
+}
+```
+
+Turns to:
+
+```
+func [benchmark_result_t] benchmark__ABC(){
+	let dur = benchmark {}
+		print("ABC")
+	}
+	return [ benchmark_result_t(dur, {}) ]
+}
+
+func [benchmark_result_t] benchmark__XYZ(){
+	let dur = benchmark {}
+		print("ABC")
+	}
+	return [ benchmark_result_t(dur, {}) ]
+}
+
+struct benchmark_def_t {
+	string name
+	func [benchmark_result_t] () f
+}
+
+let [benchmark_def_t] benchmark_registry = [ benchmark_def_t("ABC", benchmark__ABC), benchmark_def_t("XYZ", benchmark__XYZ) ]
+
+```
+
+This means you can write code that explores the benchmark_registry vector and its contents, and even run tests using code.
+
+??? TODO: There are also corelib functions that let you do this.
+
+
+### BENCHMARK EXPRESSION
+
+This is a Floyd expression you use to wrap the statements to measure. Only the statements inside the brackets are measured, no code outside.
+
+The compiler's dead-code elimination is disabled inside the brackets to not trip up the measurement. The result of the benchmark expression is a value that tells how long the bracketed statements took to execute.
+
+Floyd will execute the bracketed statements many times: both to warm up the computer caches before measuring, then to get a statistically safe number -- to reduce the error caused by the OS or hardware doing other things.
+
+
+```
+let dur = benchmark { STATEMENTS }
+```
 
 
 

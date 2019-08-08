@@ -237,11 +237,11 @@ void ut_verify_printout_nolib(const quark::call_context_t& context, const std::s
 
 
 
-void ut_run_closed_nolib(const std::string& program){
-	test_floyd(QUARK_POS, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), {}, check_nothing(), false);
+void ut_run_closed_nolib(const quark::call_context_t& context, const std::string& program){
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_no_core_lib), {}, check_nothing(), false);
 }
-void ut_run_closed_lib(const std::string& program){
-	test_floyd(QUARK_POS, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), {}, check_nothing(), false);
+void ut_run_closed_lib(const quark::call_context_t& context, const std::string& program){
+	test_floyd(context, make_compilation_unit(program, "", compilation_unit_mode::k_include_core_lib), {}, check_nothing(), false);
 }
 
 

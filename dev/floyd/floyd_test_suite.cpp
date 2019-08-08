@@ -758,18 +758,23 @@ FLOYD_LANG_PROOF("Floyd test suite", "Mutate", "Store to immutable", "compiler e
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "String (which requires RC)", ""){
-	ut_run_closed_nolib(R"___(
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"___(
 
-		func void f(){
-			let s = "A"
-		}
+			func void f(){
+				let s = "A"
+			}
 
-		f()
+			f()
 
-	)___");
+		)___"
+	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Mutate", "String (which requires RC)", ""){
-	ut_run_closed_nolib(R"___(
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"___(
 
 		func string f(){
 			mutable s = "A"
@@ -778,21 +783,25 @@ FLOYD_LANG_PROOF("Floyd test suite", "Mutate", "String (which requires RC)", "")
 
 		f()
 
-	)___");
+		)___"
+	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "Mutate", "String (which requires RC)", ""){
-	ut_run_closed_nolib(R"___(
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"___(
 
-		func string f(){
-			mutable s = "A"
-			s = "<" + s + ">"
-			return s
-		}
+			func string f(){
+				mutable s = "A"
+				s = "<" + s + ">"
+				return s
+			}
 
-		let r = f()
-		assert(r == "<A>")
+			let r = f()
+			assert(r == "<A>")
 
-	)___");
+		)___"
+	);
 }
 
 
@@ -982,7 +991,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "func", "test function args are always immu
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "func", "Recursion: function calling itself by name", ""){
-	ut_run_closed_nolib(R"(		func int fx(int a){ return fx(a + 1) }		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		func int fx(int a){ return fx(a + 1) }		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "func", "return from void function", "error"){
@@ -1001,6 +1010,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "func", "return from void function", "error
 
 FLOYD_LANG_PROOF("Floyd test suite", "func", "void function, no return statement", ""){
 	ut_run_closed_nolib(
+		QUARK_POS,
 		R"(
 
 			func void f (int x) impure {
@@ -1242,20 +1252,26 @@ FLOYD_LANG_PROOF("Floyd test suite", "return", "return RC-value from nested bloc
 //		1. The impure function modifies a local value only -- cannot leak out.
 
 FLOYD_LANG_PROOF("Floyd test suite", "impure", "call pure->pure", "Compiles OK"){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"(
 
-		func int a(int p){ return p + 1 }
-		func int b(){ return a(100) }
+			func int a(int p){ return p + 1 }
+			func int b(){ return a(100) }
 
-	)");
+		)"
+	);
 }
 FLOYD_LANG_PROOF("Floyd test suite", "impure", "call impure->pure", "Compiles OK"){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"(
 
-		func int a(int p){ return p + 1 }
-		func int b() impure { return a(100) }
+			func int a(int p){ return p + 1 }
+			func int b() impure { return a(100) }
 
-	)");
+		)"
+	);
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "impure", "call pure->impure", "Compilation error"){
@@ -1272,12 +1288,15 @@ FLOYD_LANG_PROOF("Floyd test suite", "impure", "call pure->impure", "Compilation
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "impure", "call impure->impure", "Compiles OK"){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"(
 
-		func int a(int p) impure { return p + 1 }
-		func int b() impure { return a(100) }
+			func int a(int p) impure { return p + 1 }
+			func int b() impure { return a(100) }
 
-	)");
+		)"
+	);
 }
 
 
@@ -1334,11 +1353,11 @@ FLOYD_LANG_PROOF("comments", "// on start of line", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "Scopes: Empty block", "", ""){
-	ut_run_closed_nolib("{}");
+	ut_run_closed_nolib(QUARK_POS, "{}");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "Scopes: Block with local variable, no shadowing", "", ""){
-	ut_run_closed_nolib("{ let int x = 4 }");
+	ut_run_closed_nolib(QUARK_POS, "{ let int x = 4 }");
 }
 
 
@@ -2014,6 +2033,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "for", "0 ... 3", ""){
 
 FLOYD_LANG_PROOF("Floyd test suite", "for", "1 ... 0", ""){
 	ut_run_closed_nolib(
+		QUARK_POS,
 		R"(
 
 			for (i in 1 ... 0) {
@@ -2337,6 +2357,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "while", "return from within while", ""){
 
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 	ut_run_closed_nolib(
+		QUARK_POS,
 		R"(
 
 			let dur = benchmark {
@@ -2363,6 +2384,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 	ut_run_closed_nolib(
+		QUARK_POS,
 		R"___(
 
 			for(run in 0 ... 50){
@@ -2377,6 +2399,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 	ut_run_closed_nolib(
+		QUARK_POS,
 		R"___(
 
 			for(run in 0 ... 20){
@@ -2413,6 +2436,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Must return", ""){
 
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Make sure def compiles", ""){
 	ut_run_closed_nolib(
+		QUARK_POS,
 		R"(
 
 			benchmark-def "ABC" {
@@ -2444,6 +2468,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Access benchmark registry
 #if 0
 FLOYD_LANG_PROOF("Floyd test suite", "for", "Make sure loop variable is hidden outside of for-body", ""){
 	ut_run_closed_nolib(
+		QUARK_POS,
 		R"(
 
 			for(i in 0 ..< 1){
@@ -2548,6 +2573,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running benchmark_de
 
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
 	ut_run_closed_nolib(
+		QUARK_POS,
 		R"(
 
 			benchmark-def "ABC" {
@@ -2629,79 +2655,82 @@ FLOYD_LANG_PROOF("Floyd test suite", "string literal", "Escape \'", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "string =", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(
+		QUARK_POS,
+		R"(
 
-		let a = "hello"
-		let b = a
-		assert(b == "hello")
+			let a = "hello"
+			let b = a
+			assert(b == "hello")
 
-	)");
+		)"
+	);
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "string +", "", ""){
-	ut_run_closed_nolib(R"(		assert("a" + "b" == "ab")		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert("a" + "b" == "ab")		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string +", "", ""){
-	ut_run_closed_nolib(R"(		assert("a" + "b" + "c" == "abc")		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert("a" + "b" + "c" == "abc")		)");
 }
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "string ==", "", ""){
-	ut_run_closed_nolib(R"(		assert(("hello" == "hello") == true)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(("hello" == "hello") == true)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string ==", "", ""){
-	ut_run_closed_nolib(R"(		assert(("hello" == "Yello") == false)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(("hello" == "Yello") == false)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string !=", "", ""){
-	ut_run_closed_nolib(R"(		assert(("hello" != "yello") == true)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(("hello" != "yello") == true)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string !=", "", ""){
-	ut_run_closed_nolib(R"(		assert(("hello" != "hello") == false)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(("hello" != "hello") == false)		)");
 }
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "string <", "", ""){
-	ut_run_closed_nolib(R"(		assert(("aaa" < "bbb") == true)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(("aaa" < "bbb") == true)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string <", "", ""){
-	ut_run_closed_nolib(R"(		assert(("aaa" < "aaa") == false)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(("aaa" < "aaa") == false)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string <", "", ""){
-	ut_run_closed_nolib(R"(		assert(("bbb" < "aaa") == false)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(("bbb" < "aaa") == false)		)");
 }
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "string <=", "", ""){
-	ut_run_closed_nolib(R"(		assert(("aaa" <= "bbb") == true)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(("aaa" <= "bbb") == true)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string <=", "", ""){
-	ut_run_closed_nolib(R"(		assert(("aaa" <= "aaa") == true)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(("aaa" <= "aaa") == true)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string <=", "", ""){
-	ut_run_closed_nolib(R"(		assert(("bbb" <= "aaa") == false)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(("bbb" <= "aaa") == false)		)");
 }
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "string >", "", ""){
-	ut_run_closed_nolib(R"(		assert(("bbb" > "aaa") == true)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(("bbb" > "aaa") == true)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string >", "", ""){
-	ut_run_closed_nolib(R"(		assert(("aaa" > "aaa") == false)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(("aaa" > "aaa") == false)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string >", "", ""){
-	ut_run_closed_nolib(R"(		assert(("aaa" > "bbb") == false)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(("aaa" > "bbb") == false)		)");
 }
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "string >=", "", ""){
-	ut_run_closed_nolib(R"(		assert(("bbb" >= "aaa") == true)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(("bbb" >= "aaa") == true)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string >=", "", ""){
-	ut_run_closed_nolib(R"(		assert(("aaa" >= "aaa") == true)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(("aaa" >= "aaa") == true)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string >=", "", ""){
-	ut_run_closed_nolib(R"(		assert(("aaa" >= "bbb") == false)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(("aaa" >= "bbb") == false)		)");
 }
 
 
@@ -2753,11 +2782,11 @@ FLOYD_LANG_PROOF("Floyd test suite", "string []", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "string []", "", ""){
-	ut_run_closed_nolib(R"(		assert("hello"[0] == 104)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert("hello"[0] == 104)		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "string []", "", ""){
-	ut_run_closed_nolib(R"(		assert("hello"[4] == 111)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert("hello"[4] == 111)		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "string", "Error: Lookup in string using non-int", "exception"){
@@ -2785,7 +2814,7 @@ replace()
 */
 
 FLOYD_LANG_PROOF("Floyd test suite", "string update()", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let a = update("hello", 1, 98)
 		assert(a == "hbllo")
@@ -2807,33 +2836,33 @@ FLOYD_LANG_PROOF("Floyd test suite", "string update()", "error: pos > len", "exc
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "string size()", "", ""){
-	ut_run_closed_nolib(R"(		assert(size("") == 0)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(size("") == 0)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string size()", "", ""){
-	ut_run_closed_nolib(R"(		assert(size("How long is this string?") == 24)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(size("How long is this string?") == 24)		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "string size()", "Embeded null characters - check 8 bit clean", ""){
-	ut_run_closed_nolib(R"(		assert(size("hello\0world\0\0") == 13)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(size("hello\0world\0\0") == 13)		)");
 }
 
 
 
 //??? find() should have a start index.
 FLOYD_LANG_PROOF("Floyd test suite", "string find()", "", ""){
-	ut_run_closed_nolib(R"(		assert(find("hello, world", "he") == 0)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(find("hello, world", "he") == 0)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string find()", "", ""){
-	ut_run_closed_nolib(R"(		assert(find("hello, world", "e") == 1)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(find("hello, world", "e") == 1)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string find()", "", ""){
-	ut_run_closed_nolib(R"(		assert(find("hello, world", "x") == -1)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(find("hello, world", "x") == -1)		)");
 }
 
 
 //??? Add character-literal / type.
 FLOYD_LANG_PROOF("Floyd test suite", "string push_back()", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let a = push_back("one", 111)
 		assert(a == "oneo")
@@ -2844,38 +2873,38 @@ FLOYD_LANG_PROOF("Floyd test suite", "string push_back()", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "string subset()", "string", ""){
-	ut_run_closed_nolib(R"(		assert(subset("abc", 0, 3) == "abc")		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(subset("abc", 0, 3) == "abc")		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string subset()", "string", ""){
-	ut_run_closed_nolib(R"(		assert(subset("abc", 1, 3) == "bc")		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(subset("abc", 1, 3) == "bc")		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string subset()", "string", ""){
-	ut_run_closed_nolib(R"(		assert(subset("abc", 0, 0) == "")		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(subset("abc", 0, 0) == "")		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string subset()", "string", ""){
-	ut_run_closed_nolib(R"(		assert(subset("abc", 0, 10) == "abc")		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(subset("abc", 0, 10) == "abc")		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string subset()", "string", ""){
-	ut_run_closed_nolib(R"(		assert(subset("abc", 2, 10) == "c")		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(subset("abc", 2, 10) == "c")		)");
 }
 
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "string replace()", "", ""){
-	ut_run_closed_nolib(R"(		assert(replace("One ring to rule them all", 4, 8, "rabbit") == "One rabbit to rule them all")		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(replace("One ring to rule them all", 4, 8, "rabbit") == "One rabbit to rule them all")		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string replace()", "", ""){
-	ut_run_closed_nolib(R"(		assert(replace("hello", 0, 5, "goodbye") == "goodbye")		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(replace("hello", 0, 5, "goodbye") == "goodbye")		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string replace()", "", ""){
-	ut_run_closed_nolib(R"(		assert(replace("hello", 0, 6, "goodbye") == "goodbye")		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(replace("hello", 0, 6, "goodbye") == "goodbye")		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string replace()", "", ""){
-	ut_run_closed_nolib(R"(		assert(replace("hello", 0, 0, "goodbye") == "goodbyehello")		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(replace("hello", 0, 0, "goodbye") == "goodbyehello")		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string replace()", "", ""){
-	ut_run_closed_nolib(R"(		assert(replace("hello", 5, 5, "goodbye") == "hellogoodbye")		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(replace("hello", 5, 5, "goodbye") == "hellogoodbye")		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "string replace()", "", "error"){
 	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace("hello", 5, 0, "goodbye") == "hellogoodbye")		)", "replace() requires start <= end.");
@@ -3007,7 +3036,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector +", "add empty vectors", ""){
 #if 0
 //??? This fails but should not. This code becomes a constructor call to [int] with more than 16 arguments. Byte code interpreter has 16 argument limit.
 FLOYD_LANG_PROOF("Floyd test suite", "vector [] - constructor", "32 elements initialization", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let a = [ 0,0,1,1,0,0,0,0,	0,0,1,1,0,0,0,0,	0,0,1,1,1,0,0,0,	0,0,1,1,1,1,0,0 ]
 		print(a)
@@ -3017,7 +3046,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [] - constructor", "32 elements ini
 #endif
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] constructor expression, computed element", "", ""){
-	ut_run_closed_nolib(
+	ut_run_closed_nolib(QUARK_POS,
 		R"(
 
 			func string get_beta(){ return "beta" }
@@ -3048,7 +3077,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] =", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] +", "non-empty vectors", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let [string] a = ["one"] + ["two"]
 		assert(a == ["one", "two"])
@@ -3058,19 +3087,19 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] +", "non-empty vectors", "
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] ==", "same values", ""){
-	ut_run_closed_nolib(R"(		assert((["one", "two"] == ["one", "two"]) == true)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert((["one", "two"] == ["one", "two"]) == true)		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] ==", "different values", ""){
-	ut_run_closed_nolib(R"(		assert((["one", "three"] == ["one", "two"]) == false)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert((["one", "three"] == ["one", "two"]) == false)		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] <", "same values", ""){
-	ut_run_closed_nolib(R"(		assert((["one", "two"] < ["one", "two"]) == false)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert((["one", "two"] < ["one", "two"]) == false)		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] <", "different values", ""){
-	ut_run_closed_nolib(R"(		assert((["one", "a"] < ["one", "two"]) == true)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert((["one", "a"] < ["one", "two"]) == true)		)");
 }
 
 
@@ -3142,7 +3171,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] update()", "", "valid vect
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] size()", "empty", "0"){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let [string] a = []
 		assert(size(a) == 0)
@@ -3150,7 +3179,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] size()", "empty", "0"){
 	)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] size()", "2", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let [string] a = ["one", "two"]
 		assert(size(a) == 2)
@@ -3161,19 +3190,19 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] size()", "2", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] find()", "", ""){
-	ut_run_closed_nolib(R"(		assert(find(["one", "two", "three", "four"], "one") == 0)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(find(["one", "two", "three", "four"], "one") == 0)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] find()", "", ""){
-	ut_run_closed_nolib(R"(		assert(find(["one", "two", "three", "four"], "two") == 1)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(find(["one", "two", "three", "four"], "two") == 1)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] find()", "", ""){
-	ut_run_closed_nolib(R"(		assert(find(["one", "two", "three", "four"], "five") == -1)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(find(["one", "two", "three", "four"], "five") == -1)		)");
 }
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] push_back()", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let [string] a = ["one"];
 		let [string] b = push_back(a, "two")
@@ -3184,7 +3213,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] push_back()", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] push_back()", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let [string] a = push_back(["one"], "two")
 		assert(a == ["one", "two"])
@@ -3193,35 +3222,35 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] push_back()", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] subset()", "", ""){
-	ut_run_closed_nolib(R"(		assert(subset(["one", "two", "three"], 0, 3) == ["one", "two", "three"])		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(subset(["one", "two", "three"], 0, 3) == ["one", "two", "three"])		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] subset()", "", ""){
-	ut_run_closed_nolib(R"(		assert(subset(["one", "two", "three"], 1, 3) == ["two", "three"])		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(subset(["one", "two", "three"], 1, 3) == ["two", "three"])		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] subset()", "", ""){
-	ut_run_closed_nolib(R"(		assert(subset(["one", "two", "three"], 0, 0) == [])		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(subset(["one", "two", "three"], 0, 0) == [])		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] subset()", "", ""){
-	ut_run_closed_nolib(R"(		assert(subset(["one", "two", "three"], 0, 10) == ["one", "two", "three"])		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(subset(["one", "two", "three"], 0, 10) == ["one", "two", "three"])		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] subset()", "", ""){
-	ut_run_closed_nolib(R"(		assert(subset(["one", "two", "three"], 2, 10) == ["three"])		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(subset(["one", "two", "three"], 2, 10) == ["three"])		)");
 }
 
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] replace()", "", ""){
-	ut_run_closed_nolib(R"(		assert(replace(["one", "two", "three", "four", "five"], 0, 5, ["goodbye"]) == ["goodbye"])		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(replace(["one", "two", "three", "four", "five"], 0, 5, ["goodbye"]) == ["goodbye"])		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] replace()", "", ""){
-	ut_run_closed_nolib(R"(		assert(replace(["one", "two", "three", "four", "five"], 0, 6, ["goodbye"]) == ["goodbye"])		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(replace(["one", "two", "three", "four", "five"], 0, 6, ["goodbye"]) == ["goodbye"])		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] replace()", "", ""){
-	ut_run_closed_nolib(R"(		assert(replace(["one", "two", "three", "four", "five"], 0, 0, ["goodbye"]) == ["goodbye", "one", "two", "three", "four", "five"])		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(replace(["one", "two", "three", "four", "five"], 0, 0, ["goodbye"]) == ["goodbye", "one", "two", "three", "four", "five"])		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] replace()", "", ""){
-	ut_run_closed_nolib(R"(		assert(replace(["one", "two", "three", "four", "five"], 5, 5, ["goodbye"]) == ["one", "two", "three", "four", "five", "goodbye"])		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(replace(["one", "two", "three", "four", "five"], 5, 5, ["goodbye"]) == ["one", "two", "three", "four", "five", "goodbye"])		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] replace()", "", "error"){
 	ut_verify_exception_nolib(QUARK_POS, R"(		assert(replace(["one", "two", "three", "four", "five"], 5, 0, ["goodbye"]) == ["hellogoodbye"])		)", "replace() requires start <= end.");
@@ -3238,41 +3267,41 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] replace()", "", "error"){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] construct-expression", "", ""){
-	ut_run_closed_nolib(R"___(		let [bool] a = [true, false, true];		assert(a == [true, false, true]) )___");
+	ut_run_closed_nolib(QUARK_POS, R"___(		let [bool] a = [true, false, true];		assert(a == [true, false, true]) )___");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] =", "copy", ""){
-	ut_run_closed_nolib(R"___(		let a = [true, false, true] let b = a; assert(b == [ true, false, true ])	)___");
+	ut_run_closed_nolib(QUARK_POS, R"___(		let a = [true, false, true] let b = a; assert(b == [ true, false, true ])	)___");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] ==", "same values", ""){
-	ut_run_closed_nolib(R"(		let a = [true, false] == [true, false]	; assert(a == true)	)");
+	ut_run_closed_nolib(QUARK_POS, R"(		let a = [true, false] == [true, false]	; assert(a == true)	)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] ==", "different values", ""){
-	ut_run_closed_nolib(R"(		let a = [false, false] == [true, false]	; assert(a == false)	)");
+	ut_run_closed_nolib(QUARK_POS, R"(		let a = [false, false] == [true, false]	; assert(a == false)	)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] <", "", ""){
-	ut_run_closed_nolib(R"(		let a = [true, true] < [true, true]	; assert(a == false)	)");
+	ut_run_closed_nolib(QUARK_POS, R"(		let a = [true, true] < [true, true]	; assert(a == false)	)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] <", "different values", ""){
-	ut_run_closed_nolib(R"(		let a = [true, false] < [true, true]	; assert(a == true)	)");
+	ut_run_closed_nolib(QUARK_POS, R"(		let a = [true, false] < [true, true]	; assert(a == true)	)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] +", "non-empty vectors", ""){
-	ut_run_closed_nolib(R"(		let [bool] a = [true, false] + [true, true]		; assert(a == [ true, false, true, true ])	)");
+	ut_run_closed_nolib(QUARK_POS, R"(		let [bool] a = [true, false] + [true, true]		; assert(a == [ true, false, true, true ])	)");
 }
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] size()", "empty", "0"){
-	ut_run_closed_nolib(R"(		let [bool] a = [] let b = size(a)	; assert(b == 0)	)");
+	ut_run_closed_nolib(QUARK_POS, R"(		let [bool] a = [] let b = size(a)	; assert(b == 0)	)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] size()", "2", ""){
-	ut_run_closed_nolib(R"(		let [bool] a = [true, false, true] let b = size(a)	; assert(b == 3)	)");
+	ut_run_closed_nolib(QUARK_POS, R"(		let [bool] a = [true, false, true] let b = size(a)	; assert(b == 3)	)");
 }
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] push_back()", "", ""){
-	ut_run_closed_nolib(R"(		let [bool] a = push_back([true, false], true)	; assert(a == [ true, false, true ])	)");
+	ut_run_closed_nolib(QUARK_POS, R"(		let [bool] a = push_back([true, false], true)	; assert(a == [ true, false, true ])	)");
 }
 
 
@@ -3344,13 +3373,13 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] size()", "2", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] find()", "", ""){
-	ut_run_closed_nolib(R"(		assert(find([1,2,3], 4) == -1)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(find([1,2,3], 4) == -1)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] find()", "", ""){
-	ut_run_closed_nolib(R"(		assert(find([1,2,3], 1) == 0)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(find([1,2,3], 1) == 0)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] find()", "", ""){
-	ut_run_closed_nolib(R"(		assert(find([1,2,2,2,3], 2) == 1)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(find([1,2,2,2,3], 2) == 1)		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] push_back()", "", ""){
@@ -3358,7 +3387,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] push_back()", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] push_back()", "", ""){
-	ut_run_closed_nolib(
+	ut_run_closed_nolib(QUARK_POS,
 		R"(
 
 			let r = push_back([1, 2], 3)
@@ -3369,24 +3398,24 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] push_back()", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] subset()", "", ""){
-	ut_run_closed_nolib(R"(		assert(subset([10,20,30], 0, 3) == [10,20,30])		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(subset([10,20,30], 0, 3) == [10,20,30])		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] subset()", "", ""){
-	ut_run_closed_nolib(R"(		assert(subset([10,20,30], 1, 3) == [20,30])		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(subset([10,20,30], 1, 3) == [20,30])		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] subset()", "", ""){
-	ut_run_closed_nolib(R"(		let r = (subset([10,20,30], 0, 0) == [])		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		let r = (subset([10,20,30], 0, 0) == [])		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] subset()", "", ""){
-	ut_run_closed_nolib(R"(		assert(subset([10,20,30], 0, 0) == [])		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(subset([10,20,30], 0, 0) == [])		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] replace()", "", ""){
-	ut_run_closed_nolib(R"(		assert(replace([ 1, 2, 3, 4, 5, 6 ], 2, 5, [20, 30]) == [1, 2, 20, 30, 6])		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(replace([ 1, 2, 3, 4, 5, 6 ], 2, 5, [20, 30]) == [1, 2, 20, 30, 6])		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] replace()", "", ""){
-	ut_run_closed_nolib(
+	ut_run_closed_nolib(QUARK_POS,
 		R"(
 
 			let h = replace([ 1, 2, 3, 4, 5 ], 1, 4, [ 8, 9 ])
@@ -3477,20 +3506,20 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [double] push_back()", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] constructor", "", ""){
-	ut_run_closed_nolib(R"(		assert(to_string([true, false, true]) == "[true, false, true]")		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(to_string([true, false, true]) == "[true, false, true]")		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor", "", ""){
-	ut_run_closed_nolib(R"(		assert(to_string([1, 2, 3]) == "[1, 2, 3]")		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(to_string([1, 2, 3]) == "[1, 2, 3]")		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [double] constructor", "", ""){
-	ut_run_closed_nolib(R"(		assert(to_string([1.0, 2.0, 3.0]) == "[1.0, 2.0, 3.0]")		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(to_string([1.0, 2.0, 3.0]) == "[1.0, 2.0, 3.0]")		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] constructor", "", ""){
-	ut_run_closed_nolib(R"(		assert(to_string(["one", "two", "three"]) == "[\"one\", \"two\", \"three\"]")		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(to_string(["one", "two", "three"]) == "[\"one\", \"two\", \"three\"]")		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [typeid] constructor", "", ""){
-	ut_run_closed_nolib(R"(		assert(to_string([int, bool, string]) == "[int, bool, string]")		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(to_string([int, bool, string]) == "[int, bool, string]")		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [typeid] constructor", "", ""){
@@ -3799,26 +3828,26 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [int] []", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict [int] ==", "", ""){
-	ut_run_closed_nolib(R"(		assert(({"one": 1, "two": 2} == {"one": 1, "two": 2}) == true)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(({"one": 1, "two": 2} == {"one": 1, "two": 2}) == true)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "dict [int] ==", "", ""){
-	ut_run_closed_nolib(R"(		assert(({"one": 1, "two": 2} == {"two": 2}) == false)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(({"one": 1, "two": 2} == {"two": 2}) == false)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "dict [int] ==", "", ""){
-	ut_run_closed_nolib(R"(		assert(({"one": 2, "two": 2} == {"one": 1, "two": 2}) == false)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(({"one": 2, "two": 2} == {"one": 1, "two": 2}) == false)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "dict [int] ==", "", ""){
-	ut_run_closed_nolib(R"(		assert(({"one": 1, "two": 2} < {"one": 1, "two": 2}) == false)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(({"one": 1, "two": 2} < {"one": 1, "two": 2}) == false)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "dict [int] <", "", ""){
-	ut_run_closed_nolib(R"(		assert(({"one": 1, "two": 1} < {"one": 1, "two": 2}) == true)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(({"one": 1, "two": 1} < {"one": 1, "two": 2}) == true)		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict [int] size()", "", "1"){
-	ut_run_closed_nolib(R"(		assert(size({"one":1}) == 1)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(size({"one":1}) == 1)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "dict [int] size()", "", "2"){
-	ut_run_closed_nolib(R"(		assert(size({"one":1, "two":2}) == 2)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(size({"one":1, "two":2}) == 2)		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict [int] update()", "add", "correct dict, without side effect on original dict"){
@@ -3858,7 +3887,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [int] update()", "replace element", "
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict [int] exists()", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let a = { "one": 1, "two": 2, "three" : 3}
 		assert(exists(a, "two") == true)
@@ -3868,7 +3897,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [int] exists()", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict [int] erase()", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let a = { "one": 1, "two": 2, "three" : 3}
 		let b = erase(a, "one")
@@ -3913,26 +3942,26 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [string] []", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict [string] ==", "", ""){
-	ut_run_closed_nolib(R"(		assert(({"one": "1000", "two": "2000"} == {"one": "1000", "two": "2000"}) == true)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(({"one": "1000", "two": "2000"} == {"one": "1000", "two": "2000"}) == true)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "dict [string] ==", "", ""){
-	ut_run_closed_nolib(R"(		assert(({"one": "1000", "two": "2000"} == {"two": "2000"}) == false)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(({"one": "1000", "two": "2000"} == {"two": "2000"}) == false)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "dict [string] ==", "", ""){
-	ut_run_closed_nolib(R"(		assert(({"one": "2000", "two": "2000"} == {"one": "1000", "two": "2000"}) == false)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(({"one": "2000", "two": "2000"} == {"one": "1000", "two": "2000"}) == false)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "dict [string] ==", "", ""){
-	ut_run_closed_nolib(R"(		assert(({"one": "1000", "two": "2000"} < {"one": "1000", "two": "2000"}) == false)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(({"one": "1000", "two": "2000"} < {"one": "1000", "two": "2000"}) == false)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "dict [string] <", "", ""){
-	ut_run_closed_nolib(R"(		assert(({"one": "1000", "two": "1000"} < {"one": "1000", "two": "2000"}) == true)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(({"one": "1000", "two": "1000"} < {"one": "1000", "two": "2000"}) == true)		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict [string] size()", "", "1"){
-	ut_run_closed_nolib(R"(		assert(size({"one":"1000"}) == 1)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(size({"one":"1000"}) == 1)		)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "dict [string] size()", "", "2"){
-	ut_run_closed_nolib(R"(		assert(size({"one":"1000", "two":"2000"}) == 2)		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		assert(size({"one":"1000", "two":"2000"}) == 2)		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict [string] update()", "add", "correct dict, without side effect on original dict"){
@@ -3972,7 +4001,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [string] update()", "replace element"
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict [string] exists()", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let a = { "one": "1000", "two": "2000", "three" : "3000"}
 		assert(exists(a, "two") == true)
@@ -3982,7 +4011,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [string] exists()", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict [string] erase()", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let a = { "a": "1000", "b": "2000", "c" : "3000" }
 		let b = erase(a, "a")
@@ -3994,7 +4023,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [string] erase()", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "dict [string] get_keys()", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let [string: int] a = {}
 		let b = get_keys(a)
@@ -4003,7 +4032,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [string] get_keys()", "", ""){
 	)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "dict [string] get_keys()", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let a = { "a": 10 }
 		let b = get_keys(a)
@@ -4012,7 +4041,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [string] get_keys()", "", ""){
 	)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "dict [string] get_keys()", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let a = { "a": "ten" }
 		let b = get_keys(a)
@@ -4021,7 +4050,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [string] get_keys()", "", ""){
 	)");
 }
 FLOYD_LANG_PROOF("Floyd test suite", "dict [string] get_keys()", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let a = { "a": 1, "b": 2, "c" : 3 }
 		let b = get_keys(a)
@@ -4249,11 +4278,11 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "update without quoting member na
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "", ""){
-	ut_run_closed_nolib(R"(		struct t {}		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		struct t {}		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "", ""){
-	ut_run_closed_nolib(R"(		struct t { int a }		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		struct t { int a }		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "check struct's type", ""){
@@ -4520,7 +4549,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "mutate nested member", ""){
 
 //??? add more tests for struct with non-simple members
 FLOYD_LANG_PROOF("Floyd test suite", "struct", "string member", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		struct context_t {
 			double a
@@ -4646,7 +4675,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "struct", "Error: Wrong TYPE of arguments t
 //??? document or disable using json-value directly as lookup parent.
 
 FLOYD_LANG_PROOF("Floyd test suite", "json::null", "", ""){
-	ut_run_closed_nolib(R"(		let r = null		)");
+	ut_run_closed_nolib(QUARK_POS, R"(		let r = null		)");
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "json<string> Infer json::string", "", ""){
@@ -4824,7 +4853,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "json<string> construct", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "json<string> size()", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let json a = { "a": 1, "b": 2, "c": 3, "d": 4, "e": 5 }
 		assert(size(a) == 5)
@@ -4915,7 +4944,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_json_type()", "null", "7"){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "get_json_type()", "DOCUMENTATION SNIPPET", ""){
-	ut_run_closed_nolib(R"___(
+	ut_run_closed_nolib(QUARK_POS, R"___(
 
 		func string get_name(json value){
 			let t = get_json_type(value)
@@ -5212,7 +5241,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "point_t", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "map()", "map over [int]", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let a = [ 10, 11, 12 ]
 
@@ -5229,7 +5258,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map()", "map over [int]", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "map()", "map over [int]", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let a = [ 10, 11, 12 ]
 
@@ -5245,7 +5274,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map()", "map over [int]", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "map()", "map over [string]", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let a = [ "one", "two_", "three" ]
 
@@ -5261,7 +5290,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map()", "map over [string]", ""){
 }
 
 FLOYD_LANG_PROOF	("Floyd test suite", "map()", "context struct", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		struct context_t { int a string b }
 
@@ -5284,7 +5313,7 @@ FLOYD_LANG_PROOF	("Floyd test suite", "map()", "context struct", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "map_string()", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		let a = "ABC"
 
@@ -5308,7 +5337,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map_string()", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "map_dag()", "No dependencies", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		func string f(string v, [string] inputs, string context){
 			assert(context == "iop")
@@ -5323,7 +5352,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map_dag()", "No dependencies", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "map_dag()", "No dependencies", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		func string f(string v, [string] inputs, string context){
 			assert(context == "qwerty")
@@ -5338,7 +5367,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map_dag()", "No dependencies", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "map_dag()", "complex", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		func string f2(string acc, string element, string context){
 			assert(context == "12345678")
@@ -5370,7 +5399,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map_dag()", "complex", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "reduce()", "int reduce([int], int, func int(int, int))", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		func int f(int acc, int element, string context){
 			assert(context == "con123")
@@ -5386,7 +5415,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "reduce()", "int reduce([int], int, func in
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "reduce()", "string reduce([int], string, func int(string, int))", ""){
-	ut_run_closed_nolib(R"___(
+	ut_run_closed_nolib(QUARK_POS, R"___(
 
 		func string f(string acc, int v, string context){
 			assert(context == "1234")
@@ -5413,7 +5442,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "reduce()", "string reduce([int], string, f
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "filter()", "int filter([int], int, func int(int, int))", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		func bool f(int element, string context){
 			assert(context == "abcd")
@@ -5429,7 +5458,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "filter()", "int filter([int], int, func in
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "filter()", "string filter([int], string, func int(string, int))", ""){
-	ut_run_closed_nolib(	R"___(
+	ut_run_closed_nolib(QUARK_POS, R"___(
 
 		func bool f(string element, string context){
 			assert(context == "xyz")
@@ -5557,7 +5586,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "cmath_pi", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "color__black", "", ""){
-	ut_run_closed_lib(R"(
+	ut_run_closed_lib(QUARK_POS, R"(
 
 		assert(color__black.red == 0.0)
 		assert(color__black.green == 0.0)
@@ -5569,7 +5598,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "color__black", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "color__black", "", ""){
-	ut_run_closed_lib(R"(
+	ut_run_closed_lib(QUARK_POS, R"(
 
 		let r = add_colors(color_t(1.0, 2.0, 3.0, 4.0), color_t(1000.0, 2000.0, 3000.0, 4000.0))
 		assert(r.red == 1001.0)
@@ -5616,7 +5645,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "calc_string_sha1()", "", ""){
-	ut_run_closed_lib(R"(
+	ut_run_closed_lib(QUARK_POS, R"(
 
 		let a = calc_string_sha1("Violator is the seventh studio album by English electronic music band Depeche Mode.")
 //		print(to_string(a))
@@ -5630,7 +5659,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "calc_string_sha1()", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "calc_binary_sha1()", "", ""){
-	ut_run_closed_lib(R"(
+	ut_run_closed_lib(QUARK_POS, R"(
 
 		let bin = binary_t("Violator is the seventh studio album by English electronic music band Depeche Mode.")
 		let a = calc_binary_sha1(bin)
@@ -5645,7 +5674,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "calc_binary_sha1()", "", ""){
 //////////////////////////////////////////		CORE LIBRARY - get_time_of_day()
 
 FLOYD_LANG_PROOF("Floyd test suite", "get_time_of_day()", "", ""){
-	ut_run_closed_lib(R"(
+	ut_run_closed_lib(QUARK_POS, R"(
 
 		let start = get_time_of_day()
 		mutable b = 0
@@ -5662,7 +5691,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_time_of_day()", "", ""){
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "get_time_of_day()", "", ""){
-	ut_run_closed_lib(R"(
+	ut_run_closed_lib(QUARK_POS, R"(
 
 		let int a = get_time_of_day()
 		let int b = get_time_of_day()
@@ -5679,7 +5708,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_time_of_day()", "", ""){
 
 /*
 FLOYD_LANG_PROOF("Floyd test suite", "read_text_file()", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		path = get_env_path();
 		a = read_text_file(path + "/Desktop/test1.json");
@@ -5695,7 +5724,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "read_text_file()", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "write_text_file()", "", ""){
-	ut_run_closed_lib(R"(
+	ut_run_closed_lib(QUARK_POS, R"(
 
 		let path = get_fs_environment().desktop_dir
 		write_text_file(path + "/test_out.txt", "Floyd wrote this!")
@@ -5731,7 +5760,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_fsentries_shallow()", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "get_fsentries_deep()", "", ""){
-	ut_run_closed_lib(
+	ut_run_closed_lib(QUARK_POS,
 		R"(
 
 			let r = get_fsentries_deep("/Users/marcus/Desktop/")
@@ -5840,7 +5869,7 @@ void remove_test_dir(const std::string& dir_name1, const std::string& dir_name2)
 FLOYD_LANG_PROOF("Floyd test suite", "create_directory_branch()", "", ""){
 	remove_test_dir("unittest___create_directory_branch", "subdir");
 
-	ut_run_closed_lib(
+	ut_run_closed_lib(QUARK_POS,
 		R"(
 
 			let path1 = get_fs_environment().desktop_dir + "/unittest___create_directory_branch"
@@ -5869,7 +5898,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "create_directory_branch()", "", ""){
 FLOYD_LANG_PROOF("Floyd test suite", "delete_fsentry_deep()", "", ""){
 	remove_test_dir("unittest___delete_fsentry_deep", "subdir");
 
-	ut_run_closed_lib(
+	ut_run_closed_lib(QUARK_POS,
 		R"(
 
 			let path1 = get_fs_environment().desktop_dir + "/unittest___delete_fsentry_deep"
@@ -5897,7 +5926,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "delete_fsentry_deep()", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "rename_fsentry()", "", ""){
-	ut_run_closed_lib(
+	ut_run_closed_lib(QUARK_POS,
 		R"(
 
 			let dir = get_fs_environment().desktop_dir + "/unittest___rename_fsentry"
@@ -6058,7 +6087,7 @@ FLOYD_LANG_PROOF("software-system-def", "parse software-system-def", "", ""){
 
 	)";
 
-	ut_run_closed_nolib(test_ss);
+	ut_run_closed_nolib(QUARK_POS, test_ss);
 }
 
 #if 0
@@ -6097,7 +6126,7 @@ FLOYD_LANG_PROOF("", "try calling LLVM function", "", ""){
 
 	)";
 
-	ut_run_closed_nolib(p);
+	ut_run_closed_nolib(QUARK_POS, p);
 }
 #endif
 
@@ -6162,7 +6191,7 @@ FLOYD_LANG_PROOF("software-system-def", "run one process", "", ""){
 
 	)";
 
-	ut_run_closed_nolib(program);
+	ut_run_closed_nolib(QUARK_POS, program);
 }
 
 FLOYD_LANG_PROOF("software-system-def", "run two unconnected processs", "", ""){
@@ -6247,7 +6276,7 @@ FLOYD_LANG_PROOF("software-system-def", "run two unconnected processs", "", ""){
 
 	)";
 
-	ut_run_closed_nolib(program);
+	ut_run_closed_nolib(QUARK_POS, program);
 }
 
 FLOYD_LANG_PROOF("software-system-def", "run two CONNECTED processes", "", ""){
@@ -6335,7 +6364,7 @@ FLOYD_LANG_PROOF("software-system-def", "run two CONNECTED processes", "", ""){
 
 	)";
 
-	ut_run_closed_nolib(program);
+	ut_run_closed_nolib(QUARK_POS, program);
 }
 
 
@@ -6358,14 +6387,14 @@ FLOYD_LANG_PROOF("Floyd test suite", "hello_world.floyd", "", ""){
 	const auto path = get_working_dir() + "/examples/hello_world.floyd";
 	const auto program = read_text_file(path);
 
-	ut_run_closed_lib(program);
+	ut_run_closed_lib(QUARK_POS, program);
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "game_of_life.floyd", "", ""){
 	const auto path = get_working_dir() + "/examples/game_of_life.floyd";
 	const auto program = read_text_file(path);
 
-	ut_run_closed_lib(program);
+	ut_run_closed_lib(QUARK_POS, program);
 }
 
 
@@ -6382,7 +6411,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "game_of_life.floyd", "", ""){
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "TERNARY OPERATOR", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 //	Snippets setup
 let b = ""
@@ -6395,7 +6424,7 @@ let a = b == "true" ? true : false
 }
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "COMMENTS", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 /* Comment can span lines. */
 
@@ -6407,7 +6436,7 @@ let a = 10; // To end of line
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "LOCALS", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 let a = 10
 mutable b = 10
@@ -6438,7 +6467,7 @@ while(expression){
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "FOR", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 for (index in 1 ... 5) {
 	print(index)
@@ -6452,7 +6481,7 @@ for (index in 1  ..< 5) {
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "IF ELSE", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 //	Snippets setup
 let a = 1000
@@ -6474,7 +6503,7 @@ else{
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "BOOL", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 let a = true
 if(a){
@@ -6484,7 +6513,7 @@ if(a){
 }
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "STRING", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 let s1 = "Hello, world!"
 let s2 = "Title: " + s1
@@ -6501,7 +6530,7 @@ let s4 = to_string(12003)
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "FUNCTION", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 func string f(double a, string s){
 	return to_string(a) + ":" + s
@@ -6527,7 +6556,7 @@ func int main([string] args) impure {
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "STRUCT", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 struct rect {
 	double width
@@ -6552,7 +6581,7 @@ assert(b.width == 100.0)
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "VECTOR", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 let a = [ 1, 2, 3 ]
 assert(size(a) == 3)
@@ -6580,7 +6609,7 @@ for(i in 0 ..< size(a)){
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "DICTIONARY", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 let a = { "one": 1, "two": 2 }
 assert(a["one"] == 1)
@@ -6594,7 +6623,7 @@ assert(b == { "one": 10, "two": 2 })
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "json", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 let json a = {
 	"one": 1,
@@ -6610,7 +6639,7 @@ let json a = {
 
 
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "MAP", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		func int f(int v, int c){
 			return 1000 + v
@@ -6633,7 +6662,7 @@ FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "MAP", "", ""){
 
 
 FLOYD_LANG_PROOF("MANUAL SNIPPETS", "subset()", "", ""){
-	ut_run_closed_nolib(R"(
+	ut_run_closed_nolib(QUARK_POS, R"(
 
 		assert(subset("hello", 2, 4) == "ll")
 		assert(subset([ 10, 20, 30, 40 ], 1, 3 ) == [ 20, 30 ])

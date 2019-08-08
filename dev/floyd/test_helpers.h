@@ -71,8 +71,8 @@ void ut_verify_printout_lib(const quark::call_context_t& context, const std::str
 void ut_verify_printout_nolib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& printout);
 
 //	Has no output value: only compilation errors or floyd-asserts.
-void ut_run_closed_nolib(const std::string& program);
-void ut_run_closed_lib(const std::string& program);
+void ut_run_closed_nolib(const quark::call_context_t& context, const std::string& program);
+void ut_run_closed_lib(const quark::call_context_t& context, const std::string& program);
 
 void ut_verify_mainfunc_return_nolib(const quark::call_context_t& context, const std::string& program, const std::vector<std::string>& args, int64_t expected_return);
 
