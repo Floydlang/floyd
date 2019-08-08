@@ -2459,11 +2459,11 @@ struct builtins_t {
 };
 
 
-static builtins_t generate_corecalls(analyser_t& a, const std::vector<corecall_signature_t>& host_functions){
+static builtins_t generate_corecalls(analyser_t& a, const std::vector<corecall_signature_t>& corecalls){
 	std::map<function_id_t, function_definition_t> function_defs;
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
-	for(auto signature: host_functions){
+	for(auto signature: corecalls){
 		resolve_type(a, k_no_location, signature._function_type);
 
 		vector<member_t> args;

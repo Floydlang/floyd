@@ -215,6 +215,7 @@ json_t function_def_to_ast_json(const function_definition_t& v) {
 
 	auto floyd_func = std::get_if<function_definition_t::floyd_func_t>(&v._contents);
 	auto host_func = std::get_if<function_definition_t::host_func_t>(&v._contents);
+	QUARK_ASSERT(host_func == nullptr);
 
 	return std::vector<json_t>{
 		typeid_to_ast_json(function_type, json_tags::k_tag_resolve_state),

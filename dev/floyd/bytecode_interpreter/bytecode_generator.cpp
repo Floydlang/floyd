@@ -1863,7 +1863,8 @@ bc_program_t generate_bytecode(const semantic_ast_t& ast){
 					const auto f = bc_function_definition_t{
 						function_def._function_type,
 						function_def._named_args,
-						std::shared_ptr<bc_static_frame_t>(),
+//						std::shared_ptr<bc_static_frame_t>(),
+						nullptr,
 						function_id_t { function_def._definition_name }
 					};
 					return f;
