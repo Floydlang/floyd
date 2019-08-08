@@ -10,7 +10,7 @@ project( floyd_speak)
 cmake_minimum_required (VERSION 3.4)
 
 IF(MSVC)
-    SET(CMAKE_CXX_FLAGS "/EHsc /Za")
+    SET(CMAKE_CXX_FLAGS "/EHsc ")
 ENDIF(MSVC)
 #add_subdirectory(libs/Celero-master)
 
@@ -30,7 +30,8 @@ if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     message(" [INFO] VCPKG CMAKE_TOOLCHAIN_FILE = ${CMAKE_TOOLCHAIN_FILE}")
 	set (VCPKG_ROOT ENV{VCPKG_ROOT})
 else()
-  set (VCPKG_ROOT "C:/work/FloydLang/vcpkg")
+  #set (VCPKG_ROOT "C:/work/FloydLang/vcpkg")
+  set (VCPKG_ROOT "${CMAKE_SOURCE_DIR}/../../../vcpkg/")
   set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/../../../vcpkg/scripts/buildsystems/vcpkg.cmake"                                            
     CACHE STRING "")
     message(" [INFO] VCPKG CMAKE_TOOLCHAIN_FILE = ${CMAKE_TOOLCHAIN_FILE}")
@@ -44,9 +45,9 @@ include_directories(${VCPKG_ROOT}/packages/llvm_x64-windows/include)
 include_directories(${VCPKG_ROOT}/packages/readline-win32_x64-windows/include)
 include_directories(${VCPKG_ROOT}/packages/pthreads_x64-windows/include)
 include_directories(${VCPKG_ROOT}/packages/dirent_x64-windows/include)
-include_directories(${VCPKG_ROOT}/packages/getopt-win32_x64-windows/include)
-#essage(${VCPKG_ROOT}/packages/llvm_x64-windows/include)
-
+include_directories(${VCPKG_ROOT}/packages/getopt-win32_x64-windows/include) 
+#message(${VCPKG_ROOT}/packages/llvm_x64-windows/include)
+ 
 # for newer cmake 
 #add_compile_definitions(DEBUG)
 add_definitions(-DDEBUG)
@@ -235,11 +236,17 @@ target_include_directories( floyd
 )
 
 
-
+IF(MSVC)
+  target_link_libraries( floyd
+  ${FLOYD_SPEAK_STATIC_DEPENDENCIES}
+  ${FLOYD_SPEAK_DEPENDENCIES} pthread LTO LLVMMC LLVMLTO Shlwapi)
+  target_link_libraries(floyd )
+  target_link_libraries(floyd  LTO LLVMMC LLVMLTO)
+ELSE()
 target_link_libraries( floyd
 ${FLOYD_SPEAK_STATIC_DEPENDENCIES}
-${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM-8 readline
-)
+${FLOYD_SPEAK_DEPENDENCIES} pthread LLVM-8 readline)
+ENDIF()
 
 
 ##
