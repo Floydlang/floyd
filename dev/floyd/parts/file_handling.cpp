@@ -1,10 +1,15 @@
 #include "file_handling.h"
 
 #include "quark.h"
+#define MAX(a,b)            (((a) > (b)) ? (a) : (b))
 #ifndef _MSC_VER
 #include <unistd.h>
-#include <getopt.h>
+#else
+#include <direct.h> 
 #endif
+#include <getopt.h>
+#include <algorithm>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -310,10 +315,12 @@ std::string get_process_path (int process_id){
 		return std::string(pathbuf);
 	}
 #else
+#ifndef _MSC_VER
      pid_t pid; int ret;
 	 char pathbuf[512]; /* /proc/<pid>/exe */
 	 snprintf(pathbuf, sizeof(pathbuf), "/proc/%i/exe", pid);
 	 return std::string(pathbuf);
+#endif
 #endif
 }
 
@@ -681,7 +688,7 @@ bool GetFileInfo(const std::string& completePath, TFileInfo& outInfo){
 	time_t dataChange = theStat.st_mtime;
 	time_t statusChange = theStat.st_ctime;
 	off_t size = theStat.st_size;
-	result.fModificationDate = std::max(dataChange, statusChange);
+	result.fModificationDate = MAX(dataChange, statusChange);
 #ifdef __APPLE__
 	result.fCreationDate = theStat.st_birthtimespec.tv_sec;
 #endif
@@ -779,7 +786,11 @@ void MakeDirectoriesDeep(const std::string& path){
 		}
 	}
 
+#if defined(_WIN32)
+	int error = _mkdir(temp.c_str());
+#else
 	int error = ::mkdir(temp.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+#endif
 	if(error != 0){
 		const auto err = get_error();
 		if(err == EEXIST){

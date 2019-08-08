@@ -44,6 +44,7 @@ include_directories(${VCPKG_ROOT}/packages/llvm_x64-windows/include)
 include_directories(${VCPKG_ROOT}/packages/readline-win32_x64-windows/include)
 include_directories(${VCPKG_ROOT}/packages/pthreads_x64-windows/include)
 include_directories(${VCPKG_ROOT}/packages/dirent_x64-windows/include)
+include_directories(${VCPKG_ROOT}/packages/getopt-win32_x64-windows/include)
 #essage(${VCPKG_ROOT}/packages/llvm_x64-windows/include)
 
 # for newer cmake 
