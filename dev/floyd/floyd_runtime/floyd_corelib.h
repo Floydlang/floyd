@@ -14,6 +14,7 @@
 #include <map>
 #include <vector>
 
+#include "compiler_basics.h"
 #include "file_handling.h"
 
 
@@ -49,6 +50,21 @@ typeid_t make__sha1_t__type();
 */
 typeid_t make__binary_t__type();
 
+
+
+struct benchmark_id_t {
+	std::string module;
+	std::string test;
+};
+
+
+struct benchmark_result2_t {
+	benchmark_id_t test_id;
+	benchmark_result_t result;
+};
+
+
+std::vector<std::pair<std::string, json_t>> corelib_detect_hardware_caps();
 
 
 

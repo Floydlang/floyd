@@ -7,7 +7,7 @@
 //
 
 const bool k_trace_input_output = false;
-const bool k_trace_types = false;
+const bool k_trace_types = k_trace_input_output;
 
 #include "floyd_llvm_codegen.h"
 

@@ -58,6 +58,79 @@ There is never a file extension. You could add one if you want too.
 
 
 extern const std::string k_corelib_builtin_types_and_constants = R"(
+
+	struct benchmark_id_t {
+		string module
+		string test
+	}
+
+	struct benchmark_result2_t {
+		benchmark_id_t test_id
+		benchmark_result_t result
+	}
+
+
+
+
+	func benchmark_id_t get_benchmarks_f(benchmark_def_t def, int c){
+		return benchmark_id_t( "module x", def.name)
+	}
+
+	func [benchmark_id_t] get_benchmarks(){
+		return map(benchmark_registry, get_benchmarks_f, 0)
+	}
+
+
+
+
+	//[E] filter([E] elements, func bool (E e, C context) f, C context)
+	func bool run_benchmarks_f(benchmark_def_t def, string wanted_name){
+		return def.name == wanted_name
+	}
+
+	func [benchmark_result2_t] run_benchmarks([benchmark_id_t] m){
+		mutable [benchmark_result2_t] out = []
+
+		for(i in 0 ..< size(m)){
+			let id = m[i]
+
+			let m = filter(benchmark_registry, run_benchmarks_f, id.test)
+			assert(size(m) == 0 || size(m) == 1)
+
+			if(size(m) == 1){
+				let e = m[0]
+				let benchmark_result = e.f()
+				for(v in 0 ..< size(benchmark_result)){
+					out = push_back(out, benchmark_result2_t(id, benchmark_result[v]))
+				}
+			}
+		}
+		return out
+	}
+
+
+
+
+	//[R] map([E] elements, func R (E e, C context) f, C context)
+	func string trace_benchmarks_f(benchmark_result2_t r, int c){
+		return "(" + r.test_id.module + ":" + r.test_id.test + "): dur: " + to_string(r.result.dur) + ", more: " + to_pretty_string(r.result.more)
+	}
+
+	func string trace_benchmarks([benchmark_result2_t] r){
+		let s = map(r, trace_benchmarks_f, 0)
+		mutable acc = ""
+		for(i in 0 ..< size(s)){
+			acc = acc + s[i] + "\n"
+		}
+		return acc
+	}
+
+//	{ string: json } detect_hardware_caps()
+
+
+
+
+
 	let double cmath_pi = 3.14159265358979323846
 
 	struct cpu_address_t {
@@ -231,6 +304,8 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 	func void rename_fsentry(string abs_path, string n) impure
 
 )";
+
+
 
 
 

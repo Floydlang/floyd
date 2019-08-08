@@ -60,6 +60,10 @@ typeid_t make_process_message_handler_type(const typeid_t& t);
 //////////////////////////////////////		BENCHMARK SUPPORT
 
 
+struct benchmark_result_t {
+	int64_t dur;
+	json_t more;
+};
 
 inline typeid_t make_benchmark_result_t(){
 	const auto x = typeid_t::make_struct2( {

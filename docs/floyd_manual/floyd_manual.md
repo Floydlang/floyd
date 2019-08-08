@@ -654,53 +654,59 @@ When you run a benchmark, all/any of its instances are always run.
 
 ### RUNNING MICRO BENCHMARKS FROM FLOYD CODE
 
-You can also write code that queries and runs your tests using built-in functions:
+
+This snippets runs all registered benchmarks, formats their output and prints to the terminal:
+```
+print(trace_benchmarks(run_benchmarks(get_benchmarks())))
+```
+
+You can write code that run only some benchmark and uses the output in some other way.
+
+
 
 ```
 struct microbench_def_t {
 	string name
 	func json(T) f
 }
-
-[string] get_link_modules()
-
-[microbench_def_t] get_microbenchmarks(string module)
-json run_benchmark(microbench_def_t m)
-
-[json] run_benchmarks([microbench_def_t] m)
-[json] run_benchmarks()
 ```
 
-The output from benchmark is a JSON with the timing, the name of the test and the data set used with the test.
+```
+struct benchmark_id_t {
+	string module
+	string test
+}
+```
 
-This lets you write your own code to mangle the test output.
+```
+struct benchmark_result2_t {
+	benchmark_id_t test_id
+	benchmark_result_t result
+}
+```
+
+
+Get all benchmarks in the program, as defined using benchmark-def statements:
+```
+func [benchmark_id_t] get_benchmarks(){
+```
+
+This is how you run one or many benchmarks:
+```
+[benchmark_result2_t] run_benchmarks([benchmark_id_t] m)
+```
+
+??? example output
+
+
 
 You can also use the trace_benchmark() that prints a nice diagram in the console:
 
-	trace_benchmark(json j)
-
+```
+string trace_benchmarks([benchmark_result2_t] r)
+```
 
 Output from running a test
-
-```
-pass_output = json(
-	"Duration s": 0.003200,
-	"Work bytes/sec": 40000,
-)
-
-microbench_result = json(
-	"test_set": [ 0, 1, 2, 3, 4, 10, 20, 100, 1000, 10000 ],
-
-	[
-		{ "Duration s": 0.000000, "Work bytes/sec": 0 },
-		{ "Duration s": 0.000000, "Work bytes/sec": 1 },
-		{ "Duration s": 0.000000, "Work bytes/sec": 1 },
-		{ "Duration s": 0.000190, "Work bytes/sec": 2000 },
-		{ "Duration s": 0.003200, "Work bytes/sec": 40000 }
-	]
-)
-
-```
 
 
 | Test | Params | Duration s | Work bytes/sec
@@ -718,14 +724,9 @@ microbench_result = json(
 
 These built-in features lets you see what kind of CPU and memory system your program is currently running on. This is important when recording and understanding microbenchmark results.
 
-const auto caps = floyd::read_hardware_caps();
-const auto caps_string = get_hardware_caps_string(caps);
-
-??? Get caps as JSON.
-
-
-
-
+```
+{ string: json } detect_hardware_caps()
+```
 
 
 

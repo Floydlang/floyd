@@ -2609,6 +2609,76 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Example", ""){
 
 
 
+
+FLOYD_LANG_PROOF("Floyd test suite", "get_benchmarks()", "", ""){
+	ut_verify_printout_lib(
+		QUARK_POS,
+		R"(
+
+			benchmark-def "AAA" {
+				return [ benchmark_result_t(200, json("0 eleements")) ]
+			}
+			benchmark-def "BBB" {
+				return [ benchmark_result_t(300, json("3 monkeys")) ]
+			}
+
+
+			print(get_benchmarks())
+		)",
+		{
+			R"___([{module="module x", test="AAA"}, {module="module x", test="BBB"}])___",
+		}
+	);
+}
+
+
+
+FLOYD_LANG_PROOF("Floyd test suite", "run_benchmarks()", "", ""){
+	ut_verify_printout_lib(
+		QUARK_POS,
+		R"(
+
+			benchmark-def "AAA" {
+				return [ benchmark_result_t(200, json("0 eleements")) ]
+			}
+			benchmark-def "BBB" {
+				return [ benchmark_result_t(300, json("3 monkeys")) ]
+			}
+
+			print(run_benchmarks(get_benchmarks()))
+		)",
+		{
+			R"___([{test_id={module="module x", test="AAA"}, result={dur=200, more="0 eleements"}}, {test_id={module="module x", test="BBB"}, result={dur=300, more="3 monkeys"}}])___",
+		}
+	);
+}
+
+
+FLOYD_LANG_PROOF("Floyd test suite", "run_benchmarks()", "", ""){
+	ut_verify_printout_lib(
+		QUARK_POS,
+		R"(
+
+			benchmark-def "AAA" {
+				return [ benchmark_result_t(200, json("0 eleements")) ]
+			}
+			benchmark-def "BBB" {
+				return [ benchmark_result_t(300, json("3 monkeys")) ]
+			}
+
+			print(trace_benchmarks(run_benchmarks(get_benchmarks())))
+		)",
+		{
+			R"___((module x:AAA): dur: 200, more: "0 eleements")___"  "\n"
+			R"___((module x:BBB): dur: 300, more: "3 monkeys")___" "\n"
+		}
+	);
+}
+
+
+
+
+
 //////////////////////////////////////////		TYPEID - TYPE
 
 
@@ -5570,6 +5640,30 @@ FLOYD_LANG_PROOF("Floyd test suite", "stable_sort()", "[string]", ""){
 //######################################################################################################################
 //	CORE LIBRARY
 //######################################################################################################################
+
+
+
+
+
+#if 0
+??? Fails in llvm codegen. Detect in semana and give error. Or support.
+
+FLOYD_LANG_PROOF("Floyd test suite", "local function", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			for(i in 0 ..< 2){
+				func bool f(int def, int wanted_name){
+					return false
+				}
+
+			}
+
+		)"
+	);
+}
+#endif
 
 
 

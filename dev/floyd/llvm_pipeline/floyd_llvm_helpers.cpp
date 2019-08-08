@@ -488,7 +488,7 @@ bool check_invariant__function(const llvm::Function* f){
 		f->print(stream2);
 
 		QUARK_TRACE_SS("================================================================================");
-		QUARK_TRACE_SS("\n" << dump);
+		QUARK_TRACE_SS("\n" << stream2.str());
 
 		QUARK_ASSERT(false);
 	}
@@ -502,7 +502,7 @@ bool check_invariant__module(llvm::Module* module){
 	llvm::raw_string_ostream stream2(dump);
 	bool module_errors_flag = llvm::verifyModule(*module, &stream2, nullptr);
 	if(module_errors_flag){
-		QUARK_TRACE_SS(dump);
+		QUARK_TRACE_SS(stream2.str());
 
 		const auto& functions = module->getFunctionList();
 		for(const auto& e: functions){
@@ -555,7 +555,7 @@ std::string print_module(llvm::Module& module){
 		index++;
 	}
 
-	return dump;
+	return stream2.str();
 }
 
 
@@ -568,7 +568,7 @@ std::string print_type(llvm::Type* type){
 		llvm::raw_string_ostream rso(s);
 		type->print(rso);
 //		std::cout<<rso.str();
-		return s;
+		return rso.str();
 	}
 }
 
@@ -596,7 +596,7 @@ std::string print_value0(llvm::Value* value){
 		llvm::raw_string_ostream rso(s);
 		value->print(rso);
 //		std::cout<<rso.str();
-		return s;
+		return rso.str();
 	}
 }
 std::string print_value(llvm::Value* value){
