@@ -615,7 +615,7 @@ benchmark-def "Linear veq" {
 ```
 
 
-### RUNNING MICRO BENCHMARKS FROM TOOL
+### RUNNING MICRO BENCHMARKS FROM COMMAND LINE TOOL
 
 Run all micro benchmarks in your program:
 
@@ -652,7 +652,7 @@ The output will be formatted and sent to stdout. Use --json to instead print the
 
 When you run a benchmark, all/any of its instances are always run.
 
-### RUNNING MICRO BENCHMARKS FROM CODE
+### RUNNING MICRO BENCHMARKS FROM FLOYD CODE
 
 You can also write code that queries and runs your tests using built-in functions:
 
