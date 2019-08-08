@@ -2566,43 +2566,46 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running benchmark_de
 }
 
 
-
-//??? Make real tests that uses benchmark-def AND benchmark {}
-//??? Test library functions for working with benchmarks
-#if 0
-
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Example", ""){
 	ut_run_closed_nolib(
 		QUARK_POS,
 		R"(
 
-			benchmark-def "ABC" {
-				return [benchmark_t()]
+			benchmark-def "Linear veq" {
+				mutable [benchmark_result_t] results = []
+				let instances = [ 0, 1, 2, 3, 4, 10, 20, 100, 1000, 10000, 100000 ]
+				for(i in 0 ..< size(instances)){
+					let x = instances[i]
+					mutable acc = 0
+
+					let r = benchmark {
+						//	The work to measure
+						for(a in 0 ..< x){
+							acc = acc + 1
+						}
+					}
+					results = push_back(results, benchmark_result_t(r, json( { "Count": x } )))
+				}
+				return results
 			}
 
-			let report = run_benchmark("ABC")
-			assert(report == json([ 1002]) )
+			func void run_benchmarks() impure {
+				for(i in 0 ..< size(benchmark_registry)){
+					let e = benchmark_registry[i]
+					let benchmark_result = e.f()
+					for(v in 0 ..< size(benchmark_result)){
+						print(e.name + ": " + to_string(v) + ": dur: " + to_string(benchmark_result[v].dur) + ", more: " + to_pretty_string(benchmark_result[v].more) )
+					}
+				}
+			}
+
+			run_benchmarks()
 		)"
 	);
 }
 
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
-	ut_verify_printout_nolib(
-		QUARK_POS,
-		R"(
 
-			benchmark-def "Linear veq 0" {
-				let dur = benchmark {
-					let a = unpack_linear_veq(x)
-				}
-				return [ benchmark_t(dur, {}) ]
-			}
 
-		)",
-		{ "100", "102", "104" }
-	);
-}
-#endif
 
 
 

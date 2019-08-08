@@ -592,20 +592,25 @@ The benchmark features have been designed to:
 
 
 
-### BENCHMARK WITH 10 INSTANCES
+### BENCHMARK WITH 11 INSTANCES
 
 ```
 benchmark-def "Linear veq" {
-	let t = my_setup_fix()
-	[benchmark_result_t] result
-	for([ 0, 1, 2, 3, 4, 10, 20, 100, 1000, 10000 ]){
-		let x = .... setup from instance
+	mutable [benchmark_result_t] results = []
+	let instances = [ 0, 1, 2, 3, 4, 10, 20, 100, 1000, 10000, 100000 ]
+	for(i in 0 ..< size(instances)){
+		let x = instances[i]
+		mutable acc = 0
+
 		let r = benchmark {
-			let a = unpack_linear_veq(x)
+			//	The work to measure
+			for(a in 0 ..< x){
+				acc = acc + 1
+			}
 		}
-		result = result.push_back(bench(r, json( "Work bytes/sec": test_param / 8 ))
+		results = push_back(results, benchmark_result_t(r, json( { "Count": x } )))
 	}
-	return result
+	return results
 }
 ```
 
