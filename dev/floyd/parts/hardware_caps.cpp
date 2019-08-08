@@ -13,11 +13,13 @@
 #include <string>
 #include <thread>
 #include <cmath>
+#ifndef _MSC_VER
 #include <cpuid.h>
+#include <sys/sysctl.h>
+#endif
 
 #include <stdio.h>
 #include <sys/types.h>
-#include <sys/sysctl.h>
 
 using namespace std;
 

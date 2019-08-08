@@ -1,8 +1,10 @@
 #include "file_handling.h"
 
 #include "quark.h"
+#ifndef _MSC_VER
 #include <unistd.h>
 #include <getopt.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
