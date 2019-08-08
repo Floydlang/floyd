@@ -2393,11 +2393,10 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 }
 
 
-#if 0
 
 /*
 //	??? Semantic analyser doesn't yet catch this problem. LLVM codegen does.
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark-def", "Must return", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Must return", ""){
 	ut_verify_exception_nolib(
 		QUARK_POS,
 		R"(
@@ -2412,65 +2411,140 @@ FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark-def", "Must return", ""){
 }
 */
 
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Make sure def compiles", ""){
 	ut_run_closed_nolib(
 		R"(
 
 			benchmark-def "ABC" {
-				print("Running benchmark ABC")
-			}
-
-			print(benchmark_registry)
-
-			for(i in 0 ..< size(benchmark_registry)){
-				let e = benchmark_registry[i]
-//				print("Running test: " + e.name)
-				e.f()
+				return [ benchmark_result_t(200, json("0 eleements")) ]
 			}
 
 		)"
 	);
 }
 
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
-	ut_run_closed_nolib(
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Access benchmark registry", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
 		R"(
 
-			benchmark-def "AAA" {
-				print("Running benchmark AAA")
-			}
-			benchmark-def "BBB" {
-				print("Running benchmark BBB")
+			benchmark-def "ABC" {
+				return [ benchmark_result_t(200, json("0 eleements")) ]
 			}
 
 			print(benchmark_registry)
 
-			for(i in 0 ..< size(benchmark_registry)){
-				let e = benchmark_registry[i]
-//				print("Running test: " + e.name)
-				e.f()
-			}
+		)",
+		{
+			R"___([{name="ABC", f=function [struct {int dur;json more;}]() pure}])___"
+		}
+	);
+}
 
+#if 0
+FLOYD_LANG_PROOF("Floyd test suite", "for", "Make sure loop variable is hidden outside of for-body", ""){
+	ut_run_closed_nolib(
+		R"(
+
+			for(i in 0 ..< 1){
+				let result = 3
+			}
+			assert(result)
 		)"
 	);
 }
 #endif
 
-#if 0
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark-def", "", ""){
-	ut_run_closed_nolib(
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running more than one simple benchmark_def", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
 		R"(
 
-			benchmark-def "ABC" {
+			benchmark-def "AAA" {
+				return [ benchmark_result_t(200, json("0 eleements")) ]
+			}
+			benchmark-def "BBB" {
+				return [ benchmark_result_t(300, json("3 monkeys")) ]
+			}
+
+			for(i in 0 ..< size(benchmark_registry)){
+				let e = benchmark_registry[i]
+				let benchmark_result = e.f()
+				for(v in 0 ..< size(benchmark_result)){
+					print(e.name + ": " + to_string(v) + ": dur: " + to_string(benchmark_result[v].dur) + ", more: " + to_pretty_string(benchmark_result[v].more) )
+				}
+			}
+
+		)",
+		{
+			R"___(AAA: 0: dur: 200, more: "0 eleements")___",
+			R"___(BBB: 0: dur: 300, more: "3 monkeys")___"
+		}
+	);
+}
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running benchmark_def with variants", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			benchmark-def "AAA" {
 				return [
-					benchmark_result_t(200, json ("0 eleements")),
-					benchmark_result_t(300, json ("1 eleement"))
+					benchmark_result_t(1111, json("ONE")),
+					benchmark_result_t(2222, json("TWO")),
+					benchmark_result_t(3333, json("THREE"))
 				]
 			}
 
-		)"
+			for(i in 0 ..< size(benchmark_registry)){
+				let e = benchmark_registry[i]
+				let benchmark_result = e.f()
+				for(v in 0 ..< size(benchmark_result)){
+					print(e.name + ": " + to_string(v) + ": dur: " + to_string(benchmark_result[v].dur) + ", more: " + to_pretty_string(benchmark_result[v].more) )
+				}
+			}
+
+		)",
+		{
+			R"___(AAA: 0: dur: 1111, more: "ONE")___",
+			R"___(AAA: 1: dur: 2222, more: "TWO")___",
+			R"___(AAA: 2: dur: 3333, more: "THREE")___"
+		}
 	);
 }
+
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running benchmark_def with complex 'more'", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			benchmark-def "AAA" {
+				return [
+					benchmark_result_t(1111, json("ONE")),
+					benchmark_result_t(2222, json( { "elements": 10, "copies": 20 } ))
+				]
+			}
+
+			for(i in 0 ..< size(benchmark_registry)){
+				let e = benchmark_registry[i]
+				let benchmark_result = e.f()
+				for(v in 0 ..< size(benchmark_result)){
+					print(e.name + ": " + to_string(v) + ": dur: " + to_string(benchmark_result[v].dur) + ", more: " + to_pretty_string(benchmark_result[v].more) )
+				}
+			}
+
+		)",
+		{
+			R"___(AAA: 0: dur: 1111, more: "ONE")___",
+			R"___(AAA: 1: dur: 2222, more: { "copies": 20, "elements": 10 })___",
+		}
+	);
+}
+
+
+
+//??? Make real tests that uses benchmark-def AND benchmark {}
+//??? Test library functions for working with benchmarks
+#if 0
 
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "", ""){
 	ut_run_closed_nolib(

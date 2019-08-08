@@ -104,12 +104,14 @@ std::pair<std::shared_ptr<interpreter_t>, value_t> run_main(const compilation_un
 void print_vm_printlog(const interpreter_t& vm){
 	QUARK_ASSERT(vm.check_invariant());
 
+#if 0
 	if(vm._print_output.empty() == false){
 		QUARK_SCOPED_TRACE("print output:");
 		for(const auto& line: vm._print_output){
 			QUARK_TRACE_SS(line);
 		}
 	}
+#endif
 }
 
 
