@@ -484,6 +484,7 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpu_size,
 
 hardware_caps_t read_caps_linux()
 {
+	hardware_caps_t ret;
 	std::ifstream fileStat("/proc/cpuinfo");
 
 	std::string line;
@@ -516,6 +517,7 @@ hardware_caps_t read_caps_linux()
 #endif
 		}
 
+ return ret;
 }
 
 
