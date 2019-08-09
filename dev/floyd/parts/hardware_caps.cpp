@@ -21,7 +21,7 @@
 #include <cpuid.h>
 #include <sys/types.h>
 #include <sys/sysctl.h>
-#include <linux/sysctl.h>
+// #include <linux/sysctl.h>
 #endif
 
 #include <stdio.h>
