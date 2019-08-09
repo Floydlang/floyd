@@ -5,6 +5,7 @@
 //  Created by Marcus Zetterquist on 2019-08-09.
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
+//	WHY: Parses floyd command line input and returns the exact operations to run.
 
 #ifndef floyd_command_line_parser_hpp
 #define floyd_command_line_parser_hpp

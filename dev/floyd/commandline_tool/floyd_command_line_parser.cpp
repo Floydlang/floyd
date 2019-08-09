@@ -130,7 +130,7 @@ command_t parse_command(const std::vector<std::string>& args){
 		throw std::runtime_error("Cannot parse command line");
 	}
 }
-//??? move impure command to separate file
+
 //??? Move all command line parsing to separate file
 //??? test all exampels from help
 QUARK_UNIT_TEST("", "parse_command()", "", ""){
