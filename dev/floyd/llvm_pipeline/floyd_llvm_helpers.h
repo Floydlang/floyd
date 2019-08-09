@@ -20,6 +20,7 @@
 #include "immer/map.hpp"
 
 #include <atomic>
+#include <mutex> 
 
 struct json_t;
 

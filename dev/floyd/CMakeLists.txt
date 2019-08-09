@@ -17,13 +17,14 @@ ENDIF(MSVC)
 #SET (CMAKE_BUILD_TYPE Release)
 SET (CMAKE_BUILD_TYPE Debug)
 
-include_directories(parts /usr/include libs/benchmark/include libs/benchmark/googletest/googlemock/ libs/benchmark/googletest/googlemock/include floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
+include_directories(parts /usr/include benchmark_internals libs/benchmark/include libs/benchmark/googletest/googlemock/ libs/benchmark/googletest/googlemock/include floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
 
 if (MSVC)  # - Microsoft Visual C++
 set (PROJECTNAME_ARCHITECTURE "x64")
 endif()
 message("WTF")
 
+if (MSVC)  # - Microsoft Visual C++
 if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(CMAKE_TOOLCHAIN_FILE "ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"                                            
     CACHE STRING "")
@@ -36,6 +37,7 @@ else()
     CACHE STRING "")
     message(" [INFO] VCPKG CMAKE_TOOLCHAIN_FILE = ${CMAKE_TOOLCHAIN_FILE}")
 endif()
+endif(MSVC)
 
 #message(" [INFO] VCPKG CMAKE_TOOLCHAIN_FILE = ${CMAKE_TOOLCHAIN_FILE}")
 #find_package(LLVM  REQUIRED) 
@@ -62,6 +64,7 @@ set(CMAKE_CXX_FLAGS "-D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACR
 #Options for emscripten
 #set(CMAKE_CXX_FLAGS "--closure 1 -std=c++1z -s USE_PTHREADS=1 -Os -s WASM=0 -s ASSERTIONS=1 -s DISABLE_EXCEPTION_CATCHING=0 --bind")
 
+
 set( FLOYD_SOURCES
 benchmark_basics.cpp
 bytecode_interpreter/bytecode_corecalls.cpp
@@ -70,6 +73,8 @@ bytecode_interpreter/bytecode_generator.cpp
 bytecode_interpreter/bytecode_helpers.cpp
 bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/floyd_interpreter.cpp
+commandline_tool/command_line_parser.cpp
+#commandline_tool/command_line_parser.h
 collect_used_types.cpp
 compiler_helpers.cpp
 cpp_experiments.cpp
@@ -85,18 +90,18 @@ floyd_ast/statement.cpp
 floyd_basics/ast_value.cpp
 floyd_basics/compiler_basics.cpp
 floyd_basics/typeid.cpp
-floyd_main.cpp
+commandline_tool/floyd_main.cpp
 floyd_parser/floyd_parser.cpp
 floyd_parser/floyd_syntax.cpp
 floyd_parser/parse_expression.cpp
 floyd_parser/parse_statement.cpp
 floyd_parser/parser_primitives.cpp
-floyd_repl.cpp
+commandline_tool/floyd_repl.cpp
 floyd_runtime/floyd_corelib.cpp
 floyd_runtime/floyd_runtime.cpp
 floyd_runtime/variable_length_quantity.cpp
 floyd_test_suite.cpp
-interpretator_benchmark.cpp
+benchmark_internals/interpretator_benchmark.cpp
 issue_regression_tests.cpp
 #libs/benchmark/googletest/googlemock/src/gmock-all.cc
 #libs/benchmark/googletest/googletest/src/gtest-all.cc
@@ -167,11 +172,11 @@ bytecode_interpreter/bytecode_corelib.cpp
 bytecode_interpreter/bytecode_helpers.cpp
 collect_used_types.cpp
 compiler_helpers.cpp
-compressed_vector_benchmark.cpp
+benchmark_internals/compressed_vector_benchmark.cpp
 examples/process_test1.floyd
 examples/test_main.floyd
 floyd_ast/ast_helpers.cpp
-floyd_benchmark_main.cpp
+benchmark_internals/floyd_benchmark_main.cpp
 floyd_runtime/floyd_runtime.cpp
 floyd_runtime/variable_length_quantity.cpp
 libs/benchmark/googletest/googlemock/src/gmock-all.cc

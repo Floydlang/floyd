@@ -13,9 +13,15 @@
 #include <string>
 #include <thread>
 #include <cmath>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+
 #ifndef _MSC_VER
 #include <cpuid.h>
+#include <sys/types.h>
 #include <sys/sysctl.h>
+// #include <linux/sysctl.h>
 #endif
 
 #include <stdio.h>
@@ -27,11 +33,14 @@ using namespace std;
 
 
 #ifdef __APPLE__
-
 #include <mach/machine.h>
-
+#else
+#include <unistd.h>
+#endif
 
 namespace floyd {
+
+hardware_caps_t read_caps_linux();
 
 
 /*
@@ -67,10 +76,12 @@ https://ark.intel.com/products/80807/Intel-Core-i7-4790K-Processor-8M-Cache-up-t
 */
 
 
+#ifdef __APPLE__
 
 uint64_t sysctlbyname_uint64(const std::string& key){
 	uint64_t result = -1;
 	size_t size = -1;
+
 	int error = sysctlbyname(key.c_str(), &result, &size, NULL, 0);
 	if(error != 0){
 		quark::throw_exception();
@@ -139,7 +150,7 @@ std::string sysctlbyname_string_def(const std::string& key, const std::string& d
 	}
 }
 
-
+#endif
 
 
 
@@ -208,6 +219,7 @@ void test(){
 
 
 hardware_caps_t read_hardware_caps(){
+#ifdef __APPLE__
 	return {
 		._machdep_cpu_brand_string = sysctlbyname_string_def("machdep.cpu.brand_string", ""),
 
@@ -258,6 +270,61 @@ machdep.cpu.extfeatures
 		._hw_l3_cache_size = sysctlbyname_uint64_def("hw.l3cachesize", 0)
 
 	};
+	#else 
+  	    hardware_caps_t test=read_caps_linux();
+
+		return {
+
+		//._machdep_cpu_brand_string = sysctlbyname_string_def("machdep.cpu.brand_string", ""),
+
+/*
+machdep.cpu.features
+machdep.cpu.leaf7_features
+machdep.cpu.extfeatures
+*/
+/* 
+		._hw_machine = sysctlbyname_string_def("hw.machine", ""),
+		._hw_model = sysctlbyname_string_def("hw.model", ""),
+		._hw_ncpu = sysctlbyname_uint32_def("hw.ncpu", -1),
+
+		._hw_byteorder = sysctlbyname_uint32_def("hw.byteorder", 0),
+		._hw_physmem = sysctlbyname_uint32_def("hw.physmem", 0),
+		._hw_usermem = sysctlbyname_uint32_def("hw.usermem", 0),
+
+		._hw_epoch = sysctlbyname_uint32_def("hw.epoch", -1),
+		._hw_floatingpoint = sysctlbyname_uint32_def("hw.floatingpoint", 0),
+
+		._hw_machinearch = sysctlbyname_string_def("hw.machinearch", ""),
+
+		._hw_vectorunit = sysctlbyname_uint32_def("hw.vectorunit", 0),
+		._hw_tbfrequency = sysctlbyname_uint32_def("hw.tbfrequency", 0),
+		._hw_availcpu = sysctlbyname_uint32_def("hw.availcpu", 0),
+
+
+		._hw_cpu_type = sysctlbyname_uint32_def("hw.cputype", 0),
+
+		._hw_cpu_type_subtype = sysctlbyname_uint32_def("hw.cpusubtype", 0),
+
+		._hw_packaged = sysctlbyname_uint32_def("hw.packages", 0),
+
+		._hw_physical_processor_count = sysctlbyname_uint32_def("hw.physicalcpu_max", 0),
+		._hw_logical_processor_count = sysctlbyname_uint32_def("hw.logicalcpu_max", 0),
+
+		._hw_cpu_freq_hz = sysctlbyname_uint64_def("hw.cpufrequency", 0),
+		._hw_bus_freq_hz = sysctlbyname_uint64_def("hw.busfrequency", 0),
+
+		._hw_mem_size = sysctlbyname_uint64_def("hw.memsize", 0),
+		._hw_page_size = sysctlbyname_uint64_def("hw.pagesize", 0),
+		._hw_cacheline_size = sysctlbyname_uint64_def("hw.cachelinesize", 0),
+		._hw_scalar_align = alignof(std::max_align_t),
+
+		._hw_l1_data_cache_size = sysctlbyname_uint64_def("hw.l1dcachesize", 0),
+		._hw_l1_instruction_cache_size = sysctlbyname_uint64_def("hw.l1icachesize", 0),
+		._hw_l2_cache_size = sysctlbyname_uint64_def("hw.l2cachesize", 0),
+		._hw_l3_cache_size = sysctlbyname_uint64_def("hw.l3cachesize", 0)
+*/
+	};
+	#endif
 }
 
 QUARK_UNIT_TEST("","", "", ""){
@@ -363,7 +430,7 @@ QUARK_UNIT_TEST("","", "", ""){
 
 ////////////////////////////////		AFFINITY
 
-
+#ifdef __APPLE__
 
 #define SYSCTL_CORE_COUNT   "machdep.cpu.core_count"
 
@@ -393,6 +460,7 @@ int sched_getaffinity(pid_t pid, size_t cpu_size, cpu_set_t *cpu_set){
   return 0;
 }
 
+#endif
 /*
 int pthread_setaffinity_np(pthread_t thread, size_t cpu_size,
                            cpu_set_t *cpu_set)
@@ -412,6 +480,46 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpu_size,
 }
 */
 
-}
+
+
+hardware_caps_t read_caps_linux()
+{
+	hardware_caps_t ret;
+	std::ifstream fileStat("/proc/cpuinfo");
+
+	std::string line;
+
+	const std::string STR_CPU("cpu");
+	const std::size_t LEN_STR_CPU = STR_CPU.size();
+	const std::string STR_TOT("tot");
+	while(std::getline(fileStat, line))
+	{
+		// cpu stats line found
+#if 0
+		if(!line.compare(0, LEN_STR_CPU, STR_CPU))
+		{
+			std::istringstream ss(line);
+
+			// store entry
+			entries.emplace_back(CPUData());
+			CPUData & entry = entries.back();
+
+			// read cpu label
+			ss >> entry.cpu;
+
+			// remove "cpu" from the label when it's a processor number
+			if(entry.cpu.size() > LEN_STR_CPU)
+				entry.cpu.erase(0, LEN_STR_CPU);
+			// replace "cpu" with "tot" when it's total values
+			else
+				entry.cpu = STR_TOT;
 
 #endif
+		}
+
+ return ret;
+}
+
+
+}
+
