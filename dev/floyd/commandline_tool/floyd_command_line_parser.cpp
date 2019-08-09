@@ -131,11 +131,23 @@ command_t parse_command(const std::vector<std::string>& args){
 	}
 }
 
+
 //??? test all examples from help
+
+QUARK_UNIT_TEST_VIP("", "parse_command()", "", ""){
+	const auto r = parse_command(string_to_args("floyd run mygame.floyd"));
+	QUARK_UT_VERIFY(r.subcommand == command_t::subcommand::compile_and_run_llvm);
+	QUARK_UT_VERIFY(r.command_line_args.command == "floyd");
+	QUARK_UT_VERIFY(r.command_line_args.subcommand == "run");
+	QUARK_UT_VERIFY(r.command_line_args.flags.empty());
+	QUARK_UT_VERIFY(r.command_line_args.extra_arguments == (std::vector<std::string>{ "mygame.floyd" }) );
+}
+
 QUARK_UNIT_TEST("", "parse_command()", "", ""){
 	const auto r = parse_command(string_to_args("floyd run examples/test_main.floyd"));
 	QUARK_UT_VERIFY(true);
 }
+
 
 
 
