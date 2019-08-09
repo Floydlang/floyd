@@ -17,6 +17,29 @@
 
 namespace floyd {
 
+
+enum class backend {
+	llvm,
+	bytecode
+};
+
+struct help_command_t {
+};
+
+struct compile_and_run_command_t {
+	std::vector<std::string> sources;
+	backend backend;
+	bool trace;
+};
+
+struct bench_command_t {
+	std::vector<std::string> sources;
+	std::vector<std::string> optional_benchmark_keys;
+	backend backend;
+	bool trace;
+};
+
+
 struct command_t {
 	enum class subcommand {
 		compile_and_run_llvm,

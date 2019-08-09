@@ -131,12 +131,13 @@ command_t parse_command(const std::vector<std::string>& args){
 	}
 }
 
-//??? Move all command line parsing to separate file
-//??? test all exampels from help
+//??? test all examples from help
 QUARK_UNIT_TEST("", "parse_command()", "", ""){
 	const auto r = parse_command(string_to_args("floyd run examples/test_main.floyd"));
 	QUARK_UT_VERIFY(true);
 }
+
+
 
 
 }	// floyd
