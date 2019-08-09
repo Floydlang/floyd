@@ -164,10 +164,27 @@ static void run_benchmark(){
 }
 
 
+
+
+
+/*
+	git commit -m "Commit message"
+		command: "git"
+		subcommand: "commit"
+		flags
+			m: ""
+		extra_arguments
+			"Commit message"
+
+
+floyd bench mygame.floyd
+floyd bench --module img_lib blur
+floyd bench "img_lib:Linear veq" "img_lib:Smart tiling" "blur:blur1" "blur:b2"
+*/
+
 //	Print usage instructions to stdio.
 static void help(){
 std::cout << "Floyd Programming Language " << floyd_version_string << " MIT." <<
-	
 R"(
 Usage:
 | floyd run mygame.floyd		| compile and run the floyd program "mygame.floyd" using native exection
@@ -175,7 +192,11 @@ Usage:
 | floyd compile mygame.floyd	| compile the floyd program "mygame.floyd" to an AST, in JSON format
 | floyd help					| Show built in help for command line tool
 | floyd runtests				| Runs Floyds internal unit tests
-| floyd benchmark 				| Runs Floyd built in suite of benchmark tests and prints the results.
+| floyd benchmark_internal		| Runs Floyd built in suite of benchmark tests and prints the results.
+
+| floyd bench mygame.floyd		| Runs all benchmarks, as defined by benchmark-def statements in Floyd program.
+| floyd bench -t --mygame.floyd -		| Runs specified benchmarks, as defined by benchmark-def statements in Floyd program.
+
 | floyd run -t mygame.floyd		| the -t turns on tracing, which shows Floyd compilation steps and internal states
 )";
 }
@@ -186,7 +207,8 @@ struct command_t {
 		compile_and_run_bc,
 		compile_to_ast,
 		help,
-		benchmark,
+		benchmark_internals,
+		run_user_benchmarks,
 		run_tests
 	};
 
@@ -194,6 +216,85 @@ struct command_t {
 	command_line_args_t command_line_args;
 	bool trace_on;
 };
+
+
+std::vector<std::string> string_to_args(const std::string& s){
+	std::stringstream ss(s);
+	std::string segment;
+	std::vector<std::string> seglist;
+
+	while(std::getline(ss, segment, ' ')){
+		if(segment != ""){
+			seglist.push_back(segment);
+		}
+	}
+	return seglist;
+}
+
+QUARK_UNIT_TEST("", "string_to_args()", "", ""){
+	const auto r = string_to_args("");
+	QUARK_UT_VERIFY(r == std::vector<std::string>{});
+}
+QUARK_UNIT_TEST("", "string_to_args()", "", ""){
+	const auto r = string_to_args("one");
+	QUARK_UT_VERIFY(r == std::vector<std::string>{"one"});
+}
+QUARK_UNIT_TEST("", "string_to_args()", "", ""){
+	const auto r = string_to_args("one two");
+	QUARK_UT_VERIFY(r == (std::vector<std::string>{"one", "two"}));
+}
+
+QUARK_UNIT_TEST("", "string_to_args()", "", ""){
+	const auto r = string_to_args(" one two");
+	QUARK_UT_VERIFY(r == (std::vector<std::string>{"one", "two"}));
+}
+QUARK_UNIT_TEST("", "string_to_args()", "", ""){
+	const auto r = string_to_args("one  two");
+	QUARK_UT_VERIFY(r == (std::vector<std::string>{"one", "two"}));
+}
+QUARK_UNIT_TEST("", "string_to_args()", "", ""){
+	const auto r = string_to_args("one two ");
+	QUARK_UT_VERIFY(r == (std::vector<std::string>{"one", "two"}));
+}
+
+
+
+static command_t parse_command(const std::vector<std::string>& args){
+	const auto command_line_args = parse_command_line_args_subcommands(args, "t");
+	const auto path_parts = SplitPath(command_line_args.command);
+	QUARK_ASSERT(path_parts.fName == "floyd" || path_parts.fName == "floydut");
+	const bool trace_on = command_line_args.flags.find("t") != command_line_args.flags.end() ? true : false;
+
+	if(command_line_args.subcommand == "runtests"){
+		return command_t{ command_t::subcommand::run_tests, command_line_args, trace_on };
+	}
+	else if(command_line_args.subcommand == "benchmark_internal"){
+		return command_t{ command_t::subcommand::benchmark_internals, command_line_args, trace_on };
+	}
+	else if(command_line_args.subcommand == "help"){
+		return command_t{ command_t::subcommand::help, command_line_args, trace_on };
+	}
+	else if(command_line_args.subcommand == "compile"){
+		return command_t{ command_t::subcommand::compile_to_ast, command_line_args, trace_on };
+	}
+	else if(command_line_args.subcommand == "run_bc"){
+		return command_t{ command_t::subcommand::compile_and_run_bc, command_line_args, trace_on };
+	}
+	else if(command_line_args.subcommand == "run" || command_line_args.subcommand == "run_llvm"){
+		return command_t{ command_t::subcommand::compile_and_run_llvm, command_line_args, trace_on };
+	}
+	else{
+		throw std::runtime_error("Cannot parse command line");
+	}
+}
+//??? move impure command to separate file
+//??? Move all command line parsing to separate file
+//??? test all exampels from help
+QUARK_UNIT_TEST("", "parse_command()", "", ""){
+	const auto r = parse_command(string_to_args("floyd run examples/test_main.floyd"));
+	QUARK_UT_VERIFY(true);
+}
+
 
 
 
@@ -211,14 +312,6 @@ static int do_compile_command(const command_line_args_t& command_line_args){
 	}
 	return EXIT_SUCCESS;
 }
-
-
-/*
-floyd bench mygame.floyd
-floyd bench --module img_lib blur
-floyd bench "img_lib:Linear veq" "img_lib:Smart tiling" "blur:blur1" "blur:b2"
-*/
-
 
 static int do_run_command(const command_line_args_t& command_line_args){
 	//	Run provided script file.
@@ -269,36 +362,6 @@ static int do_run_llvm_command(const command_line_args_t& command_line_args){
 	}
 }
 
-
-static command_t parse_command(const std::vector<std::string>& args){
-	const auto command_line_args = parse_command_line_args_subcommands(args, "t");
-	const auto path_parts = SplitPath(command_line_args.command);
-	QUARK_ASSERT(path_parts.fName == "floyd" || path_parts.fName == "floydut");
-	const bool trace_on = command_line_args.flags.find("t") != command_line_args.flags.end() ? true : false;
-
-	if(command_line_args.subcommand == "runtests"){
-		return command_t{ command_t::subcommand::run_tests, command_line_args, trace_on };
-	}
-	else if(command_line_args.subcommand == "benchmark"){
-		return command_t{ command_t::subcommand::benchmark, command_line_args, trace_on };
-	}
-	else if(command_line_args.subcommand == "help"){
-		return command_t{ command_t::subcommand::help, command_line_args, trace_on };
-	}
-	else if(command_line_args.subcommand == "compile"){
-		return command_t{ command_t::subcommand::compile_to_ast, command_line_args, trace_on };
-	}
-	else if(command_line_args.subcommand == "run_bc"){
-		return command_t{ command_t::subcommand::compile_and_run_bc, command_line_args, trace_on };
-	}
-	else if(command_line_args.subcommand == "run" || command_line_args.subcommand == "run_llvm"){
-		return command_t{ command_t::subcommand::compile_and_run_llvm, command_line_args, trace_on };
-	}
-	else{
-		throw std::runtime_error("Cannot parse command line");
-	}
-}
-
 //	Runs one of the commands, args depends on which command.
 static int run_command(const command_t command){
 	g_trace_on = command.trace_on;
@@ -307,7 +370,7 @@ static int run_command(const command_t command){
 		run_tests();
 		return EXIT_SUCCESS;
 	}
-	else if(command.subcommand == command_t::subcommand::benchmark){
+	else if(command.subcommand == command_t::subcommand::benchmark_internals){
 		run_benchmark();
 		return EXIT_SUCCESS;
 	}
@@ -351,18 +414,6 @@ static int main_internal(int argc, const char * argv[]) {
 	}
 	return EXIT_SUCCESS;
 }
-
-/*
-|COMMAND		  	| MEANING
-|:---				|:---
-| floyd run mygame.floyd		| compile and run the floyd program "mygame.floyd" using native exection
-| floyd run_bc mygame.floyd		| compile and run the floyd program "mygame.floyd" using the Floyd byte code interpreter
-| floyd compile mygame.floyd	| compile the floyd program "mygame.floyd" to an AST, in JSON format
-| floyd help					| Show built in help for command line tool
-| floyd runtests				| Runs Floyds internal unit tests
-| floyd benchmark 				| Runs Floyd built in suite of benchmark tests and prints the results.
-| floyd run -t mygame.floyd		| the -t turns on tracing, which shows Floyd compilation steps and internal states
-*/
 
 /*
 QUARK_UNIT_TEST_VIP("", "main_internal()", "", ""){
