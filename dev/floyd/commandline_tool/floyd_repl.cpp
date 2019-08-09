@@ -16,7 +16,7 @@
 #include <string>
 
 #include "floyd_interpreter.h"
-#include "floyd_parser/floyd_parser.h"
+#include "floyd_parser.h"
 #include "ast_value.h"
 #include "compiler_helpers.h"
 #include "compiler_basics.h"
