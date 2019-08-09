@@ -59,7 +59,9 @@ struct json_t {
 		_type(k_object),
 		_object(object)
 	{
+#if DEBUG_DEEP
 		__debug = json_to_compact_string(*this);
+#endif
 		QUARK_ASSERT(check_invariant());
 	}
 
@@ -67,7 +69,9 @@ struct json_t {
 		_type(k_array),
 		_array(array)
 	{
+#if DEBUG_DEEP
 		__debug = json_to_compact_string(*this);
+#endif
 		QUARK_ASSERT(check_invariant());
 	}
 
@@ -75,7 +79,9 @@ struct json_t {
 		_type(k_string),
 		_string(s)
 	{
+#if DEBUG_DEEP
 		__debug = json_to_compact_string(*this);
+#endif
 		QUARK_ASSERT(check_invariant());
 	}
 
@@ -84,7 +90,9 @@ struct json_t {
 		_string(std::string(s))
 	{
 		QUARK_ASSERT(s != nullptr);
+#if DEBUG_DEEP
 		__debug = json_to_compact_string(*this);
+#endif
 		QUARK_ASSERT(check_invariant());
 	}
 
@@ -92,7 +100,9 @@ struct json_t {
 		_type(k_number),
 		_number(number)
 	{
+#if DEBUG_DEEP
 		__debug = json_to_compact_string(*this);
+#endif
 		QUARK_ASSERT(check_invariant());
 	}
 
@@ -100,28 +110,36 @@ struct json_t {
 		_type(k_number),
 		_number((double)number)
 	{
+#if DEBUG_DEEP
 		__debug = json_to_compact_string(*this);
+#endif
 		QUARK_ASSERT(check_invariant());
 	}
 	public: json_t(int64_t number) :
 		_type(k_number),
 		_number((double)number)
 	{
+#if DEBUG_DEEP
 		__debug = json_to_compact_string(*this);
+#endif
 		QUARK_ASSERT(check_invariant());
 	}
 
 	public: json_t(bool value) :
 		_type(value ? k_true : k_false)
 	{
+#if DEBUG_DEEP
 		__debug = json_to_compact_string(*this);
+#endif
 		QUARK_ASSERT(check_invariant());
 	}
 
 	public: json_t() :
 		_type(k_null)
 	{
+#if DEBUG_DEEP
 		__debug = json_to_compact_string(*this);
+#endif
 		QUARK_ASSERT(check_invariant());
 	}
 
@@ -311,7 +329,9 @@ struct json_t {
 	/////////////////////////////////////		STATE
 	//	??? Make this fast to copy = move map/ vector into shared_ptr.
 	//	??? Should use std::variant.
+#if DEBUG_DEEP
 	private: std::string __debug;
+#endif
 	private: etype _type = k_null;
 	private: std::map<std::string, json_t> _object;
 	private: std::vector<json_t> _array;

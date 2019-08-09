@@ -269,14 +269,14 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 
 expression_t::expression_t(const expression_variant_t& contents, const std::shared_ptr<typeid_t>& output_type) :
-#if DEBUG
+#if DEBUG_DEEP
 	_debug(""),
 #endif
 	location(k_no_location),
 	_expression_variant(contents),
 	_output_type(output_type)
 {
-#if DEBUG
+#if DEBUG_DEEP
 	_debug = expression_to_json_string(*this);
 #endif
 }

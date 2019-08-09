@@ -14,46 +14,68 @@
 
 #include <vector>
 #include <string>
+#include <variant>
 
 namespace floyd {
 
 
-enum class backend {
+enum class ebackend {
 	llvm,
 	bytecode
 };
 
-struct help_command_t {
-};
-
-struct compile_and_run_command_t {
-	std::vector<std::string> sources;
-	backend backend;
-	bool trace;
-};
-
-struct bench_command_t {
-	std::vector<std::string> sources;
-	std::vector<std::string> optional_benchmark_keys;
-	backend backend;
-	bool trace;
-};
-
+//??? Add command for running AOT (ahead of time compiled) code.
 
 struct command_t {
-	enum class subcommand {
-		compile_and_run_llvm,
-		compile_and_run_bc,
-		compile_to_ast,
-		help,
-		benchmark_internals,
-		run_user_benchmarks,
-		run_tests
+	struct help_t {
 	};
 
-	subcommand subcommand;
-	command_line_args_t command_line_args;
-	bool trace_on;
+	struct compile_and_run_t {
+		std::string source_path;
+		std::vector<std::string> floyd_main_args;
+		ebackend backend;
+		bool trace;
+	};
+
+/*	inline public: bool operator==(const compile_and_run_t& lhs, const compile_and_run_t& rhs){
+		return lhs.source_path == rhs.source_path
+			&& lhs.floyd_main_args == rhs.floyd_main_args
+			&& lhs.ebackend == rhs.ebackend
+			&& lhs.trace == rhs.trace
+	}
+*/
+	struct compile_to_ast_t {
+		std::string source_path;
+		bool trace;
+	};
+
+	struct run_user_benchmarks_t {
+		std::string source_path;
+		std::vector<std::string> optional_benchmark_keys;
+		ebackend backend;
+	};
+
+	struct benchmark_internals_t {
+		bool trace;
+	};
+	struct runtests_internals_t {
+		bool trace;
+	};
+
+
+
+	////////////////////////////////////////
+
+	std::variant<
+		help_t,
+
+		compile_and_run_t,
+		compile_to_ast_t,
+		run_user_benchmarks_t,
+
+		benchmark_internals_t,
+		runtests_internals_t
+	> _contents;
 };
 
 //	Parses Floyd command lines.

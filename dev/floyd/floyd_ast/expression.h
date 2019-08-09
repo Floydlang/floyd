@@ -531,7 +531,7 @@ struct expression_t {
 		QUARK_ASSERT(other.check_invariant());
 
 		return true
-#if DEBUG
+#if DEBUG_DEEP
 			&& _debug == other._debug
 #endif
 			&& location == other.location
@@ -590,7 +590,7 @@ struct expression_t {
 
 
 	//////////////////////////		STATE
-#if DEBUG
+#if DEBUG_DEEP
 	public: std::string _debug;
 #endif
 	public: location_t location;

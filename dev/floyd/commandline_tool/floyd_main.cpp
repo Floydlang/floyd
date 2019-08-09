@@ -166,38 +166,36 @@ static void run_benchmark(){
 	floyd_benchmark();
 }
 
-
-
-
-static int do_compile_command(const command_line_args_t& command_line_args){
-	if(command_line_args.extra_arguments.size() == 1){
-		const auto source_path = command_line_args.extra_arguments[0];
-		const auto source = read_text_file(source_path);
-		const auto cu = floyd::make_compilation_unit_lib(source, source_path);
-		const auto ast = floyd::compile_to_sematic_ast__errors(cu);
-		const auto json = semantic_ast_to_json(ast);
-		std::cout << json_to_pretty_string(json);
-		std::cout << std::endl;
-	}
-	else{
-	}
+static int do_compile_command(const command_t& command, const command_t::compile_to_ast_t& command2){
+	const auto source = read_text_file(command2.source_path);
+	const auto cu = floyd::make_compilation_unit_lib(source, command2.source_path);
+	const auto ast = floyd::compile_to_sematic_ast__errors(cu);
+	const auto json = semantic_ast_to_json(ast);
+	std::cout << json_to_pretty_string(json);
+	std::cout << std::endl;
 	return EXIT_SUCCESS;
 }
 
-static int do_run_command(const command_line_args_t& command_line_args){
-	//	Run provided script file.
-	if(command_line_args.extra_arguments.size() >= 1){
-//			const auto floyd_args = std::vector<std::string>(command_line_args.extra_arguments.begin() + 1, command_line_args.extra_arguments.end());
-		const auto floyd_args = command_line_args.extra_arguments;
 
-		const auto source_path = floyd_args[0];
-		const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
+static int do_run(const command_t& command, const command_t::compile_and_run_t& command2){
+	g_trace_on = command2.trace;
 
-		const auto source = read_text_file(source_path);
-		const auto cu = floyd::make_compilation_unit_lib(source, source_path);
+	const auto source = read_text_file(command2.source_path);
+
+	if(command2.backend == ebackend::llvm){
+		const auto run_results = floyd::run_program_helper(source, command2.source_path, command2.floyd_main_args);
+		if(run_results.process_results.empty()){
+			return static_cast<int>(run_results.main_result);
+		}
+		else{
+			return EXIT_SUCCESS;
+		}
+	}
+	if(command2.backend == ebackend::bytecode){
+		const auto cu = floyd::make_compilation_unit_lib(source, command2.source_path);
 		auto program = floyd::compile_to_bytecode(cu);
 		auto interpreter = floyd::interpreter_t(program);
-		const auto result = floyd::run_program_bc(interpreter, args2);
+		const auto result = floyd::run_program_bc(interpreter, command2.floyd_main_args);
 		if(result.process_results.size() == 0){
 			return static_cast<int>(result.main_result);
 		}
@@ -206,69 +204,66 @@ static int do_run_command(const command_line_args_t& command_line_args){
 		}
 	}
 	else{
-		std::cout << get_help();
-		return EXIT_SUCCESS;
+		throw std::runtime_error("");
 	}
 }
 
-static int do_run_llvm_command(const command_line_args_t& command_line_args){
-	//	Run provided script file.
-	if(command_line_args.extra_arguments.size() >= 1){
-		const auto floyd_args = command_line_args.extra_arguments;
-		const auto source_path = floyd_args[0];
-		const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
+static int do_run_user_benchmarks(const command_t& command, const command_t::run_user_benchmarks_t& command2){
+	g_trace_on = false;
 
-		const auto source = read_text_file(source_path);
-		const auto run_results = floyd::run_program_helper(source, source_path, args2);
-		if(run_results.process_results.empty()){
-			return static_cast<int>(run_results.main_result);
-		}
-		else{
-			return EXIT_SUCCESS;
-		}
+	const auto program_source = read_text_file(command2.source_path);
+
+	if(command2.backend == ebackend::llvm){
+		run_benchmarks(program_source, command2.source_path, {});
+		return EXIT_SUCCESS;
 	}
 	else{
-		std::cout << get_help();
-		return EXIT_SUCCESS;
+		throw std::runtime_error("");
 	}
 }
 
 //	Runs one of the commands, args depends on which command.
-static int run_command(const command_t command){
-	g_trace_on = command.trace_on;
+static int do_command(const command_t& command){
+	struct visitor_t {
+		const command_t& command;
 
-	if(command.subcommand == command_t::subcommand::run_tests){
-		run_tests();
-		return EXIT_SUCCESS;
-	}
-	else if(command.subcommand == command_t::subcommand::benchmark_internals){
-		run_benchmark();
-		return EXIT_SUCCESS;
-	}
-	else if(command.subcommand == command_t::subcommand::help){
-		std::cout << get_help();
-		return EXIT_SUCCESS;
-	}
-	else if(command.subcommand == command_t::subcommand::compile_to_ast){
-		return do_compile_command(command.command_line_args);
-	}
-	else if(command.subcommand == command_t::subcommand::compile_and_run_bc){
-		return do_run_command(command.command_line_args);
-	}
-	else if(command.subcommand == command_t::subcommand::compile_and_run_llvm){
-		return do_run_llvm_command(command.command_line_args);
-	}
-	else{
-		std::cout << get_help();
-		return EXIT_SUCCESS;
-	}
+		int operator()(const command_t::help_t& command2) const{
+			std::cout << get_help();
+			return EXIT_SUCCESS;
+		}
+
+		int operator()(const command_t::compile_and_run_t& command2) const{
+			return do_run(command, command2);
+		}
+
+		int operator()(const command_t::compile_to_ast_t& command2) const{
+			return do_compile_command(command, command2);
+		}
+
+		int operator()(const command_t::run_user_benchmarks_t& command2) const{
+			return do_run_user_benchmarks(command, command2);
+		}
+
+
+		int operator()(const command_t::benchmark_internals_t& command2) const{
+			run_benchmark();
+			return EXIT_SUCCESS;
+		}
+		int operator()(const command_t::runtests_internals_t& command2) const{
+			run_tests();
+			return EXIT_SUCCESS;
+		}
+	};
+
+	const auto result = std::visit(visitor_t { command }, command._contents);
+	return result;
 }
 
 static int main_internal(int argc, const char * argv[]) {
 	const auto args = args_to_vector(argc, argv);
 	try{
 		const auto command = parse_command(args);
-		const int result = run_command(command);
+		const int result = do_command(command);
 		return result;
 	}
 	catch(const std::runtime_error& e){

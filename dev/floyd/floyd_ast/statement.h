@@ -518,12 +518,17 @@ struct statement_t {
 	> statement_variant_t;
 
 	statement_t(const location_t& location, const statement_variant_t& contents) :
+#if DEBUG_DEEP
 		debug_string(""),
+#endif
 		location(location),
 		_contents(contents)
 	{
 		const auto json = statement_to_json(*this);
+#if DEBUG_DEEP
 		debug_string = json_to_compact_string(json);
+#endif
+
 	}
 
 	bool check_invariant() const {
@@ -533,7 +538,9 @@ struct statement_t {
 
 	//////////////////////////////////////		STATE
 
+#if DEBUG_DEEP
 	std::string debug_string;
+#endif
 	location_t location;
 	statement_variant_t _contents;
 };

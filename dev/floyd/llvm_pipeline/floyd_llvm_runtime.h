@@ -187,6 +187,7 @@ std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instanc
 //	Compiles and runs the program. Returns results.
 run_output_t run_program_helper(const std::string& program_source, const std::string& file, const std::vector<std::string>& main_args);
 
+void run_benchmarks(const std::string& program_source, const std::string& file, const std::vector<std::string>& tests);
 
 
 }	//	namespace floyd

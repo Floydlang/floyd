@@ -2970,6 +2970,17 @@ run_output_t run_program_helper(const std::string& program_source, const std::st
 	return result;
 }
 
+void run_benchmarks(const std::string& program_source, const std::string& file, const std::vector<std::string>& tests){
+	const auto cu = floyd::make_compilation_unit_nolib(program_source, file);
+	const auto sem_ast = compile_to_sematic_ast__errors(cu);
+
+	llvm_instance_t instance;
+	auto program = generate_llvm_ir_program(instance, sem_ast, file);
+	auto ee = init_program(*program);
+
+	const auto result = run_program(*ee, {});
+}
+
 
 }	//	namespace floyd
 
