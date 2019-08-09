@@ -74,16 +74,6 @@ void run_tests(){
 			"parse_statement.cpp",
 			"floyd_interpreter.cpp",
 
-			//	Core libs
-	/*
-			"parser_ast.cpp",
-			"ast_utils.cpp",
-			"experimental_runtime.cpp",
-			"expressions.cpp",
-			"llvm_code_gen.cpp",
-			"utils.cpp",
-			"floyd_main.cpp",
-	*/
 		},
 		trace_on ? false: true
 	);
@@ -169,13 +159,13 @@ void floyd_quark_runtime::runtime_i__on_unit_test_failed(const quark::source_cod
 
 
 
-void run_benchmark(){
+static void run_benchmark(){
 	floyd_benchmark();
 }
 
 
 //	Print usage instructions to stdio.
-void help(){
+static void help(){
 std::cout << "Floyd Programming Language " << floyd_version_string << " MIT." <<
 	
 R"(
@@ -193,7 +183,7 @@ Usage:
 
 
 
-int do_compile_command(const command_line_args_t& command_line_args){
+static int do_compile_command(const command_line_args_t& command_line_args){
 	if(command_line_args.extra_arguments.size() == 1){
 		const auto source_path = command_line_args.extra_arguments[0];
 		const auto source = read_text_file(source_path);
@@ -209,7 +199,7 @@ int do_compile_command(const command_line_args_t& command_line_args){
 }
 
 
-int do_run_command(const command_line_args_t& command_line_args){
+static int do_run_command(const command_line_args_t& command_line_args){
 	//	Run provided script file.
 	if(command_line_args.extra_arguments.size() >= 1){
 //			const auto floyd_args = std::vector<std::string>(command_line_args.extra_arguments.begin() + 1, command_line_args.extra_arguments.end());
@@ -236,7 +226,7 @@ int do_run_command(const command_line_args_t& command_line_args){
 	}
 }
 
-int do_run_llvm_command(const command_line_args_t& command_line_args){
+static int do_run_llvm_command(const command_line_args_t& command_line_args){
 	//	Run provided script file.
 	if(command_line_args.extra_arguments.size() >= 1){
 		const auto floyd_args = command_line_args.extra_arguments;
@@ -259,9 +249,8 @@ int do_run_llvm_command(const command_line_args_t& command_line_args){
 }
 
 
-
 //	Runs one of the commands, args depends on which command.
-int run_command(const std::vector<std::string>& args){
+static int run_command(const std::vector<std::string>& args){
 	const auto command_line_args = parse_command_line_args_subcommands(args, "t");
 	const auto path_parts = SplitPath(command_line_args.command);
 	QUARK_ASSERT(path_parts.fName == "floyd" || path_parts.fName == "floydut");
@@ -321,23 +310,6 @@ int main(int argc, const char * argv[]) {
 	return EXIT_SUCCESS;
 }
 
-
-#if 0
-
-
-//CELERO_MAIN
-int main(int argc, const char * argv[]) {
-	const auto dirs = GetDirectories();
-	const std::vector<std::string> inputs = {
-		"myapp",
-		std::string() + "--outputTable",
-		dirs.desktop_dir + "/bench.txt"
-	};
-
-	celero_run(inputs);
-}
-
-#endif
 
 
 /*
