@@ -2970,6 +2970,12 @@ run_output_t run_program_helper(const std::string& program_source, const std::st
 	return result;
 }
 
+/*
+std::vector<std::string> 
+std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name);
+value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v);
+*/
+
 void run_benchmarks(const std::string& program_source, const std::string& file, const std::vector<std::string>& tests){
 	const auto cu = floyd::make_compilation_unit_nolib(program_source, file);
 	const auto sem_ast = compile_to_sematic_ast__errors(cu);
@@ -2978,7 +2984,25 @@ void run_benchmarks(const std::string& program_source, const std::string& file, 
 	auto program = generate_llvm_ir_program(instance, sem_ast, file);
 	auto ee = init_program(*program);
 
-	const auto result = run_program(*ee, {});
+//	const auto result = run_program(*ee, {});
+}
+
+
+QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
+	run_benchmarks(
+		R"(
+
+			benchmark-def "AAA" {
+				return [ benchmark_result_t(200, json("0 eleements")) ]
+			}
+			benchmark-def "BBB" {
+				return [ benchmark_result_t(300, json("3 monkeys")) ]
+			}
+		)",
+		"myfile.floyd",
+		{ }
+	);
+	QUARK_UT_VERIFY(true);
 }
 
 

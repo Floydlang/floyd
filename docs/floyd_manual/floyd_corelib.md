@@ -4,11 +4,142 @@ This is a small set of functions and types you can rely on always being availabl
 
 
 
+# MICRO BENCHMARKING FEATURES
+
+## microbench\_def\_t, benchmark\_id\_t, benchmark\_result2\_t
+
+```
+struct microbench_def_t {
+	string name
+	func json(T) f
+}
+```
+
+```
+struct benchmark_id_t {
+	string module
+	string test
+}
+```
+
+```
+struct benchmark_result2_t {
+	benchmark_id_t test_id
+	benchmark_result_t result
+}
+```
+
+
+## get\_benchmarks()
+
+Get all benchmarks in the program, as defined using benchmark-def statements:
+```
+func [benchmark_id_t] get_benchmarks(){
+```
+
+
+## run\_benchmarks()
+
+This is how you run one or many benchmarks:
+```
+[benchmark_result2_t] run_benchmarks([benchmark_id_t] m)
+```
+
+
+## trace\_benchmarks()
+
+You can also use the trace_benchmark() that prints a nice diagram in the console:
+
+```
+string trace_benchmarks([benchmark_result2_t] r)
+```
+
+Output from running a test:
+
+```
+| Linear veq | 0		|	0.000000 s	| 0
+| Linear veq | 1		|	0.000000 s	| 1
+| Linear veq | 2		|	0.000000 s	| 1
+| Linear veq | 1000		|	0.0022000 s	| 2.000
+| Linear veq | 10000	|	0.003200 s	| 40.000
+```
+
+
+## make\_benchmark\_report()
+
+This function let's you control the formatting of benchmark reports:
+
+```
+let report = make_benchmark_report(test_results, [ -1, -1, -1, -1 ])
+for(i in 0 ..< size(report)){
+	print(report[i])
+}
+```
+
+|MODULE |TEST    |DUR        |       |
+|-------|--------|-----------|-------|
+|mod1   |my      |240 ns     |""     |
+|mod1   |my      |3000 ns    |""     |
+|mod1   |my      |100000 ns  |"kb/s" |
+|mod1   |my      |1200000 ns |"mb/s" |
+|mod1   |baggins |5000 ns    |"mb/s" |
+|mod1   |baggins |7000 ns    |"mb/s" |
+|mod1   |baggins |8000 ns    |"mb/s" |
+|mod1   |baggins |80000 ns   |"mb/s" |
+
+
+
+# HARDWARE CAPS
+
+These built-in features lets you see what kind of CPU and memory system your program is currently running on. This is often useful when testing, optimising and debugging - both for your own computer and for a tester or user's computer.
+
+
+## detect\_hardware\_caps()
+```
+[string: json] detect_hardware_caps()
+```
+Output is something similar to this:
+
+```
+{
+	"availcpu" : 0,
+	"bus_freq_hz" : 100000000,
+	"byteorder" : 1234,
+	"cacheline_size" : 64,
+	"cpu_freq_hz" : 4000000000,
+	"cpu_type" : 7,
+	"cpu_type_subtype" : 8,
+	"epoch" : 0,
+	"floatingpoint" : 0,
+	"l1_data_cache_size" : 32768,
+	"l1_instruction_cache_size" : 32768,
+	"l2_cache_size" : 262144,
+	"l3_cache_size" : 8388610,
+	"logical_processor_count" : 8,
+	"machdep_cpu_brand_string" : "Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz",
+	"machine" : "x86_64",
+	"machinearch" : "",
+	"mem_size" : 17179900000,
+	"model" : "iMac15,1",
+	"ncpu" : 8,
+	"packaged" : 1,
+	"page_size" : 4096,
+	"physical_processor_count" : 4,
+	"physmem" : 2147480000,
+	"scalar_align" : 16,
+	"tbfrequency" : 1000000000,
+	"usermem" : 4214070000,
+	"vectorunit" : 1
+}
+```
+
+
+
 # WORKING WITH HASHES - SHA1
 
 
 
-# calc\_string\_sha1()
+## calc\_string\_sha1()
 
 Calculates a SHA1 hash for the contents in a string.
 
@@ -16,7 +147,7 @@ Calculates a SHA1 hash for the contents in a string.
 sha1_t calc_string_sha1(string s)
 ```
 
-# calc\_binary\_sha1()
+## calc\_binary\_sha1()
 
 Calculates a SHA1 hash for a block binary data.
 
