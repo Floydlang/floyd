@@ -33,7 +33,7 @@ std::string floyd_version_string = "0.3";
 
 
 
-bool trace_on = true;
+bool g_trace_on = true;
 
 
 void run_tests(){
@@ -75,7 +75,7 @@ void run_tests(){
 			"floyd_interpreter.cpp",
 
 		},
-		trace_on ? false: true
+		g_trace_on ? false: true
 	);
 }
 
@@ -100,19 +100,19 @@ floyd_tracer::floyd_tracer(){
 }
 
 void floyd_tracer::trace_i__trace(const char s[]) const {
-	if(trace_on){
+	if(g_trace_on){
 		def.trace_i__trace(s);
 	}
 }
 
 void floyd_tracer::trace_i__open_scope(const char s[]) const {
-	if(trace_on){
+	if(g_trace_on){
 		def.trace_i__open_scope(s);
 	}
 }
 
 void floyd_tracer::trace_i__close_scope(const char s[]) const{
-	if(trace_on){
+	if(g_trace_on){
 		def.trace_i__close_scope(s);
 	}
 }
@@ -180,6 +180,20 @@ Usage:
 )";
 }
 
+struct command_t {
+	enum class subcommand {
+		compile_and_run_llvm,
+		compile_and_run_bc,
+		compile_to_ast,
+		help,
+		benchmark,
+		run_tests
+	};
+
+	subcommand subcommand;
+	command_line_args_t command_line_args;
+	bool trace_on;
+};
 
 
 
@@ -197,6 +211,13 @@ static int do_compile_command(const command_line_args_t& command_line_args){
 	}
 	return EXIT_SUCCESS;
 }
+
+
+/*
+floyd bench mygame.floyd
+floyd bench --module img_lib blur
+floyd bench "img_lib:Linear veq" "img_lib:Smart tiling" "blur:blur1" "blur:b2"
+*/
 
 
 static int do_run_command(const command_line_args_t& command_line_args){
@@ -249,33 +270,59 @@ static int do_run_llvm_command(const command_line_args_t& command_line_args){
 }
 
 
-//	Runs one of the commands, args depends on which command.
-static int run_command(const std::vector<std::string>& args){
+static command_t parse_command(const std::vector<std::string>& args){
 	const auto command_line_args = parse_command_line_args_subcommands(args, "t");
 	const auto path_parts = SplitPath(command_line_args.command);
 	QUARK_ASSERT(path_parts.fName == "floyd" || path_parts.fName == "floydut");
-	trace_on = command_line_args.flags.find("t") != command_line_args.flags.end() ? true : false;
+	const bool trace_on = command_line_args.flags.find("t") != command_line_args.flags.end() ? true : false;
 
 	if(command_line_args.subcommand == "runtests"){
+		return command_t{ command_t::subcommand::run_tests, command_line_args, trace_on };
+	}
+	else if(command_line_args.subcommand == "benchmark"){
+		return command_t{ command_t::subcommand::benchmark, command_line_args, trace_on };
+	}
+	else if(command_line_args.subcommand == "help"){
+		return command_t{ command_t::subcommand::help, command_line_args, trace_on };
+	}
+	else if(command_line_args.subcommand == "compile"){
+		return command_t{ command_t::subcommand::compile_to_ast, command_line_args, trace_on };
+	}
+	else if(command_line_args.subcommand == "run_bc"){
+		return command_t{ command_t::subcommand::compile_and_run_bc, command_line_args, trace_on };
+	}
+	else if(command_line_args.subcommand == "run" || command_line_args.subcommand == "run_llvm"){
+		return command_t{ command_t::subcommand::compile_and_run_llvm, command_line_args, trace_on };
+	}
+	else{
+		throw std::runtime_error("Cannot parse command line");
+	}
+}
+
+//	Runs one of the commands, args depends on which command.
+static int run_command(const command_t command){
+	g_trace_on = command.trace_on;
+
+	if(command.subcommand == command_t::subcommand::run_tests){
 		run_tests();
 		return EXIT_SUCCESS;
 	}
-	else if(command_line_args.subcommand == "benchmark"){
+	else if(command.subcommand == command_t::subcommand::benchmark){
 		run_benchmark();
 		return EXIT_SUCCESS;
 	}
-	else if(command_line_args.subcommand == "help"){
+	else if(command.subcommand == command_t::subcommand::help){
 		help();
 		return EXIT_SUCCESS;
 	}
-	else if(command_line_args.subcommand == "compile"){
-		return do_compile_command(command_line_args);
+	else if(command.subcommand == command_t::subcommand::compile_to_ast){
+		return do_compile_command(command.command_line_args);
 	}
-	else if(command_line_args.subcommand == "run_bc"){
-		return do_run_command(command_line_args);
+	else if(command.subcommand == command_t::subcommand::compile_and_run_bc){
+		return do_run_command(command.command_line_args);
 	}
-	else if(command_line_args.subcommand == "run" || command_line_args.subcommand == "run_llvm"){
-		return do_run_llvm_command(command_line_args);
+	else if(command.subcommand == command_t::subcommand::compile_and_run_llvm){
+		return do_run_llvm_command(command.command_line_args);
 	}
 	else{
 		help();
@@ -283,16 +330,11 @@ static int run_command(const std::vector<std::string>& args){
 	}
 }
 
-int main(int argc, const char * argv[]) {
-	floyd_quark_runtime q("");
-	quark::set_runtime(&q);
-
-	floyd_tracer tracer;
-	quark::set_trace(&tracer);
-
+static int main_internal(int argc, const char * argv[]) {
 	const auto args = args_to_vector(argc, argv);
 	try{
-		const int result = run_command(args);
+		const auto command = parse_command(args);
+		const int result = run_command(command);
 		return result;
 	}
 	catch(const std::runtime_error& e){
@@ -309,6 +351,40 @@ int main(int argc, const char * argv[]) {
 	}
 	return EXIT_SUCCESS;
 }
+
+/*
+|COMMAND		  	| MEANING
+|:---				|:---
+| floyd run mygame.floyd		| compile and run the floyd program "mygame.floyd" using native exection
+| floyd run_bc mygame.floyd		| compile and run the floyd program "mygame.floyd" using the Floyd byte code interpreter
+| floyd compile mygame.floyd	| compile the floyd program "mygame.floyd" to an AST, in JSON format
+| floyd help					| Show built in help for command line tool
+| floyd runtests				| Runs Floyds internal unit tests
+| floyd benchmark 				| Runs Floyd built in suite of benchmark tests and prints the results.
+| floyd run -t mygame.floyd		| the -t turns on tracing, which shows Floyd compilation steps and internal states
+*/
+
+/*
+QUARK_UNIT_TEST_VIP("", "main_internal()", "", ""){
+	const char* args[] = { "floyd", "run", "examples/test_main.floyd" };
+	const auto result = main_internal(3, args);
+	QUARK_UT_VERIFY(result == 0);
+}
+*/
+
+
+int main(int argc, const char * argv[]) {
+	floyd_quark_runtime q("");
+	quark::set_runtime(&q);
+
+	floyd_tracer tracer;
+	quark::set_trace(&tracer);
+
+	return main_internal(argc, argv);
+}
+
+
+
 
 
 
