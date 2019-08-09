@@ -6,38 +6,18 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-#include "command_line_parser.h"
+#include "floyd_command_line_parser.h"
 
+#include "file_handling.h"
+#include "quark.h"
 
-
-
-
-#include <stdio.h>
-#include <iostream>
-#include <fstream>
 #include <vector>
 #include <string>
+#include <sstream>
 
-#include "floyd_interpreter.h"
-#include "floyd_parser.h"
-#include "ast_value.h"
-#include "json_support.h"
-#include "text_parser.h"
-#include "interpretator_benchmark.h"
-
-#include "semantic_analyser.h"
-#include "compiler_helpers.h"
-#include "compiler_basics.h"
-
-#include "command_line_parser.h"
-
-#include "floyd_llvm_runtime.h"
-
-
+namespace floyd {
 
 std::string floyd_version_string = "0.3";
-
-
 
 
 /*
@@ -159,3 +139,4 @@ QUARK_UNIT_TEST("", "parse_command()", "", ""){
 }
 
 
+}	// floyd

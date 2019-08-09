@@ -127,7 +127,7 @@ struct value_ext_t {
 		if(base_type == base_type::k_string){
 //				QUARK_ASSERT(_string);
 			QUARK_ASSERT(_json == nullptr);
-			QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
+			QUARK_ASSERT(_typeid_value.is_undefined());
 			QUARK_ASSERT(_struct == nullptr);
 			QUARK_ASSERT(_vector_elements.empty());
 			QUARK_ASSERT(_dict_entries.empty());
@@ -136,7 +136,7 @@ struct value_ext_t {
 		else if(base_type == base_type::k_json){
 			QUARK_ASSERT(_string.empty());
 			QUARK_ASSERT(_json != nullptr);
-			QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
+			QUARK_ASSERT(_typeid_value.is_undefined());
 			QUARK_ASSERT(_struct == nullptr);
 			QUARK_ASSERT(_vector_elements.empty());
 			QUARK_ASSERT(_dict_entries.empty());
@@ -159,7 +159,7 @@ struct value_ext_t {
 		else if(base_type == base_type::k_struct){
 			QUARK_ASSERT(_string.empty());
 			QUARK_ASSERT(_json == nullptr);
-			QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
+			QUARK_ASSERT(_typeid_value.is_undefined());
 			QUARK_ASSERT(_struct != nullptr);
 			QUARK_ASSERT(_vector_elements.empty());
 			QUARK_ASSERT(_dict_entries.empty());
@@ -170,7 +170,7 @@ struct value_ext_t {
 		else if(base_type == base_type::k_vector){
 			QUARK_ASSERT(_string.empty());
 			QUARK_ASSERT(_json == nullptr);
-			QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
+			QUARK_ASSERT(_typeid_value.is_undefined());
 			QUARK_ASSERT(_struct == nullptr);
 	//		QUARK_ASSERT(_vector_elements.empty());
 			QUARK_ASSERT(_dict_entries.empty());
@@ -179,7 +179,7 @@ struct value_ext_t {
 		else if(base_type == base_type::k_dict){
 			QUARK_ASSERT(_string.empty());
 			QUARK_ASSERT(_json == nullptr);
-			QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
+			QUARK_ASSERT(_typeid_value.is_undefined());
 			QUARK_ASSERT(_struct == nullptr);
 			QUARK_ASSERT(_vector_elements.empty());
 	//		QUARK_ASSERT(_dict_entries.empty());
@@ -188,7 +188,7 @@ struct value_ext_t {
 		else if(base_type == base_type::k_function){
 			QUARK_ASSERT(_string.empty());
 			QUARK_ASSERT(_json == nullptr);
-			QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
+			QUARK_ASSERT(_typeid_value.is_undefined());
 			QUARK_ASSERT(_struct == nullptr);
 			QUARK_ASSERT(_vector_elements.empty());
 			QUARK_ASSERT(_dict_entries.empty());

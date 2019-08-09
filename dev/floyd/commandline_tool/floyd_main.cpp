@@ -24,11 +24,13 @@
 #include "compiler_helpers.h"
 #include "compiler_basics.h"
 
-#include "command_line_parser.h"
+#include "floyd_command_line_parser.h"
 
 #include "floyd_llvm_runtime.h"
 
 
+
+using namespace floyd;
 
 //////////////////////////////////////////////////		main()
 

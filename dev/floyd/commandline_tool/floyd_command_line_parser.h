@@ -6,13 +6,15 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-#ifndef command_line_parser_hpp
-#define command_line_parser_hpp
+#ifndef floyd_command_line_parser_hpp
+#define floyd_command_line_parser_hpp
 
-#include "file_handling.h"
+#include "command_line_parser.h"
 
 #include <vector>
 #include <string>
+
+namespace floyd {
 
 struct command_t {
 	enum class subcommand {
@@ -38,4 +40,6 @@ command_t parse_command(const std::vector<std::string>& args);
 std::string get_help();
 
 
-#endif /* command_line_parser_hpp */
+}	// floyd
+
+#endif /* floyd_command_line_parser_hpp */
