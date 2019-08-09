@@ -2680,15 +2680,10 @@ FLOYD_LANG_PROOF("Floyd test suite", "run_benchmarks()", "", ""){
 
 
 
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark-def", "Example", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Example", ""){
 	ut_run_closed_lib(
 		QUARK_POS,
 		R"(
-
-
-			func int max(int a, int b){
-				return a > b ? a : b
-			}
 
 			let test_results = [
 				benchmark_result2_t(benchmark_id_t("mod1", "my"), benchmark_result_t(240, "")),
@@ -2701,96 +2696,11 @@ FLOYD_LANG_PROOF_VIP("Floyd test suite", "benchmark-def", "Example", ""){
 				benchmark_result2_t(benchmark_id_t("mod1", "baggins"), benchmark_result_t(80000, "mb/s"))
 			]
 
-			struct line_t {
-				[string] columns
+			let report = make_benchmark_report(test_results, [ -1, -1, -1, -1 ])
+			for(i in 0 ..< size(report)){
+				print(report[i])
 			}
 
-
-
-			//[R] map([E] elements, func R (E e, C context) f, C context)
-			func line_t table_f(benchmark_result2_t r, int c){
-				let columns = [
-					r.test_id.module,
-					r.test_id.test,
-					to_string(r.result.dur),
-					to_pretty_string(r.result.more)
-				]
-				return line_t(columns)
-			}
-			let table0 = map(test_results, table_f, 0)
-
-
-
-
-			struct widths_t {
-				[int] column_widths
-			}
-
-			//	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
-			func widths_t calc_width_f(widths_t acc, line_t line, int c){
-				return widths_t(
-					[
-						max(acc.column_widths[0], size(line.columns[0])),
-						max(acc.column_widths[1], size(line.columns[1])),
-						max(acc.column_widths[2], size(line.columns[2])),
-						max(acc.column_widths[3], size(line.columns[3]))
-					]
-				)
-			}
-			let table1 = reduce(table0, widths_t([0, 0, 0, 0]), calc_width_f, 0)
-
-
-			
-
-
-
-			mutable module_width = 0
-			mutable test_width = 0
-			mutable dur_width = 0
-			mutable more1_width = 0
-
-
-			for(i in 0 ..< size(test_results)){
-				let r = test_results[i]
-				module_width = max(module_width, size(r.test_id.module))
-				test_width = max(test_width, size(r.test_id.test))
-
-				dur_width = max(dur_width, size(to_string(r.result.dur)))
-
-				let type = get_json_type(r.result.more)
-				if(type == json_object){
-				}
-				else if(type == json_array){
-				}
-				else if(type == json_string){
-				}
-				else if(type == json_number){
-				}
-				else if(type == json_true){
-				}
-				else if(type == json_false){
-				}
-				else if(type == json_null){
-				}
-				else{
-					assert(false)
-				}
-
-				let more_string = to_string(r.result.more)
-				
-				let mode1_width = max(dur_width, size(to_string(r.result.dur)))
-
-
-
-				let s = "(" + r.test_id.module + ":" + r.test_id.test + "): dur: " + to_string(r.result.dur) + ", more: " + to_pretty_string(r.result.more)
-				print(s)
-			}
-
-			for(i in 0 ..< size(test_results)){
-				let r = test_results[i]
-				let s = "(" + r.test_id.module + ":" + r.test_id.test + "): dur: " + to_string(r.result.dur) + ", more: " + to_pretty_string(r.result.more)
-				print(s)
-			}
 		)"
 	);
 }

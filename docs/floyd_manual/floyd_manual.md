@@ -4,8 +4,9 @@ TODO: Make more meaty examples, with structs and actual data and "objects".
 
 # INTRODUCTION
 
-Floyd is programming language as an alternative to Java and C++, JavaScript and Python. When you write Floyd programs you write functions and complex data structures. You setup your program's concurrency and parallelism and how it communicate with the world around it.
+Floyd is programming language that aims to compete with languages like Java, C++, Rust, Go, Javascript and Python. When you write Floyd programs you write functions and complex data structures. You use the built in features to setup your program's concurrency and parallelism and how the program communicate with the world around it.
 
+Floyd generates native machine code but also comes with a byte code interpeter.
 
 
 # CONTENTS
@@ -105,7 +106,7 @@ Limit the amount of impure code!
 
 This is a type of function that *has side effects or state* -- but the calling functions cannot observe this so from their perspective it is pure. Examples are memory allocators and memory pools and logging program execution.
 
-Why is the OK? Well to be picky there are no pure functions, since calling a pure function makes your CPU emit more heat and consumes real-world time, makes other programs run slower, consumes memory bandwidth. But a pure function cannot observe those side effects either.
+Why is this OK? Well to be picky there are no pure functions, since calling a pure function makes your CPU emit more heat and consumes real-world time, makes other programs run slower, consumes memory bandwidth. But a pure function cannot observe those side effects either.
 
 
 ## VALUES, VARIABLES
@@ -709,14 +710,35 @@ string trace_benchmarks([benchmark_result2_t] r)
 Output from running a test
 
 
-| Test | Params | Duration s | Work bytes/sec
-|--- |--- |--- |---
 | Linear veq | 0		|	0.000000 s	| 0
 | Linear veq | 1		|	0.000000 s	| 1
 | Linear veq | 2		|	0.000000 s	| 1
 | Linear veq | 1000		|	0.0022000 s	| 2.000
 | Linear veq | 10000	|	0.003200 s	| 40.000
 
+
+
+
+#### make_benchmark_report()
+
+This function let's you control the formatting of the report
+```
+let report = make_benchmark_report(test_results, [ -1, -1, -1, -1 ])
+for(i in 0 ..< size(report)){
+	print(report[i])
+}
+```
+
+|MODULE |TEST    |DUR        |       |
+|-------|--------|-----------|-------|
+|mod1   |my      |240 ns     |""     |
+|mod1   |my      |3000 ns    |""     |
+|mod1   |my      |100000 ns  |"kb/s" |
+|mod1   |my      |1200000 ns |"mb/s" |
+|mod1   |baggins |5000 ns    |"mb/s" |
+|mod1   |baggins |7000 ns    |"mb/s" |
+|mod1   |baggins |8000 ns    |"mb/s" |
+|mod1   |baggins |80000 ns   |"mb/s" |
 
 
 
@@ -1025,7 +1047,7 @@ Floyd supports decimal literals, as above, but also hexadecimal and binary liter
 | 0b11111111										| Binary number 11111111, decimal 255
 | 0b11111111000000000000000011111111				| Binary number 11111111000000000000000011111111, decimal 255
 
-You can use the ' character as a dividier between groups of 8 number for both hex and binary literals. But not for decima literals. This makes longer sequences of numbers easier to read.
+You can use the ' character as a dividier between groups of 8 number for both hex and binary literals. But not for decimal literals. This makes longer sequences of numbers easier to read.
 
 |CODE		| EXPLANATION
 |:---											|:---	

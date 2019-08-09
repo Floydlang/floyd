@@ -111,7 +111,6 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 
 
 
-
 	//[R] map([E] elements, func R (E e, C context) f, C context)
 	func string trace_benchmarks_f(benchmark_result2_t r, int c){
 		return "(" + r.test_id.module + ":" + r.test_id.test + "): dur: " + to_string(r.result.dur) + ", more: " + to_pretty_string(r.result.more)
@@ -126,7 +125,142 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 		return acc
 	}
 
+
+
+	func int max(int a, int b){
+		return a > b ? a : b
+	}
+
+
+	func string repeat(int count, int pad_char){
+		mutable a = ""
+		for(i in 0 ..< count){
+			a = push_back(a, pad_char)
+		}
+		return a
+	}
+
+	struct line_t {
+		[string] columns
+	}
+
+	func string gen_line(line_t line, [int] widths, [int] align, int pad_char){
+		mutable acc = "|"
+		for(c in 0 ..< size(line.columns)){
+			let s = line.columns[c]
+			let wanted_width = widths[c] + 1
+
+			let pad_count = wanted_width - size(s)
+			let pad_string = repeat(pad_count, pad_char)
+
+			let s2 = align[c] == 0 ? s : (align[c] < 0 ? s + pad_string : pad_string + s)
+
+			acc = acc + s2 + "|"
+		}
+		return acc
+	}
+
+
+	//[R] map([E] elements, func R (E e, C context) f, C context)
+	func line_t table_f(benchmark_result2_t r, int c){
+		let columns = [
+			r.test_id.module,
+			r.test_id.test,
+			to_string(r.result.dur) + " ns",
+			to_pretty_string(r.result.more)
+		]
+		return line_t(columns)
+	}
+
+	//	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
+	func [int] calc_width_f([int] acc, line_t line, int c){
+		return [
+			max(acc[0], size(line.columns[0])),
+			max(acc[1], size(line.columns[1])),
+			max(acc[2], size(line.columns[2])),
+			max(acc[3], size(line.columns[3]))
+		]
+	}
+
+	func [string] make_benchmark_report([benchmark_result2_t] test_results, [int] align){
+		let headings = line_t([ "MODULE", "TEST", "DUR", ""])
+		let table = map(test_results, table_f, 0)
+		let widths = reduce([headings] + table, [0, 0, 0, 0], calc_width_f, 0)
+
+		mutable [string] report = [
+			gen_line(headings, widths, [ -1, -1, -1, -1 ], ' '),
+			gen_line(line_t([ "", "", "", ""]), widths, [ -1, -1, -1, -1 ], '-')
+		]
+
+		for(i in 0 ..< size(table)){
+			let line = table[i]
+			let line2 = gen_line(line, widths, align, ' ')
+			report = push_back(report, line2)
+		}
+		return report
+	}
+
+/*
+	if(false){
+		mutable module_width = 0
+		mutable test_width = 0
+		mutable dur_width = 0
+		mutable more1_width = 0
+
+
+		for(i in 0 ..< size(test_results)){
+			let r = test_results[i]
+			module_width = max(module_width, size(r.test_id.module))
+			test_width = max(test_width, size(r.test_id.test))
+
+			dur_width = max(dur_width, size(to_string(r.result.dur)))
+
+			let type = get_json_type(r.result.more)
+			if(type == json_object){
+			}
+			else if(type == json_array){
+			}
+			else if(type == json_string){
+			}
+			else if(type == json_number){
+			}
+			else if(type == json_true){
+			}
+			else if(type == json_false){
+			}
+			else if(type == json_null){
+			}
+			else{
+				assert(false)
+			}
+
+			let more_string = to_string(r.result.more)
+			
+			let mode1_width = max(dur_width, size(to_string(r.result.dur)))
+
+
+
+			let s = "(" + r.test_id.module + ":" + r.test_id.test + "): dur: " + to_string(r.result.dur) + ", more: " + to_pretty_string(r.result.more)
+			print(s)
+		}
+
+		for(i in 0 ..< size(test_results)){
+			let r = test_results[i]
+			let s = "(" + r.test_id.module + ":" + r.test_id.test + "): dur: " + to_string(r.result.dur) + ", more: " + to_pretty_string(r.result.more)
+			print(s)
+		}
+	}
+*/
+
+
+
+
+
+
+
+
 	func [string: json] detect_hardware_caps()
+
 
 
 
