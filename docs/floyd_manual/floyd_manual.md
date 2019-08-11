@@ -11,16 +11,6 @@ Floyd generates native machine code but also comes with a byte code interpeter.
 This document assumes the reader knows basic programming concepts like variables, functions and types. It comes in two parts. The first is the user’s guide which explains how to use Floyd to build programs, the unique features of Floyd and its most important concepts. The second part is the reference manual that goes through every feature and explains in detail how they work.
 
 
-# CONTENTS
-
-
-1. BASIC CONCEPTS
-2. THE LANGUAGE
-3. CORE FUNCTIONS
-4. COMMAND LINE TOOL
-5. REFERENCE
-
-
 
 # QUICK REFERENCE
 
@@ -29,7 +19,127 @@ This document assumes the reader knows basic programming concepts like variables
 
 
 
-# FUNCTIONS, 
+## VALUES, VARIABLES
+
+### IMMUTABLE VALUES VS VARIABLES
+
+All values in Floyd are immutable -- you make new values based on previous values, but you don't directly modify old values. Internally Floyd uses clever mechanisms to make this fast and avoids copying data too much. It's perfectly good to replace a character in a 3 GB long string and get a new 3 GB string as a result. Almost all of the characters will be stored only once.
+
+The only exception is local variables that can be forced to be mutable.
+
+(Also, each green-process has one mutable value too.)
+
+
+- Function arguments
+- Function local variables
+- Member variables of structs.
+
+When defining a variable, you can often skip telling which type it is, since the type can be inferred by the Floyd compiler.
+
+Explicit
+
+```
+let int x = 10
+```
+
+Implicit
+
+```
+let y = 11
+```
+
+
+Example:
+
+```
+int main(){
+	let a = "hello"
+	a = "goodbye"	//	Error - you cannot change variable a.
+	return 3
+}
+```
+
+You can use "mutable" to make a local variable changeable.
+
+```
+int main(){
+	mutable a = "hello"
+	a = "goodbye"	//	Changes variable a to "goodbye".
+	return 3
+}
+```
+
+## EXPRESSIONS
+
+Floyd has a normal set of built in expressions, like
+These are features built into every type: integer, string, struct, dictionary:
+
+|EXPRESSION		| EXPLANATION
+|:---				|:---	
+|__a = b__ 		| This true-deep copies the value b to the new name a.
+|__a == b__		| a exactly the same as b
+|__a != b__		| a different to b
+|__a < b__		| a smaller than b
+|__a <= b__ 		| a smaller or equal to b
+|__a > b__ 		| a larger than b
+|__a >= b__ 		| a larger or equal to b
+
+This also goes for print(), map(), to\_string() and send() etc.
+
+
+## DEEP BY VALUE
+
+All values and aggregated members values are always considered in operations in any type of nesting of structs and values and collections. This includes equality checks or assignment for example.
+
+The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
+
+Example: your application's entire state may be stored in *one* value in a struct containing other structs and vectors and so on. This value can still be copied around quickly, it is automatically sortable, convertible to JSON or whatever.
+
+
+## VALUE ORIENTED, NO POINTERS
+
+There are no pointers or references in Floyd. You copy values around deeply instead. Even a big value like your game's entire world or your word processor's entire document. Behind the curtains Floyd uses pointers extensively to make this fast.
+
+Removing the concept of pointers makes programming easier. There are no dangling pointers, aliasing problems or defensive copying and other classic problems. It also makes it simpler for the runtime and compiler to generate extremely fast code.
+
+## STATIC TYPING, INFERRED
+
+Every value and variable and identifier have a static type: a type that is defined at compile time, before the program runs. This is how Java, C++ and Swift works. Javascript, Python and Ruby does not use static typing.
+
+You can often leave out the actual type from the code, when the compiler already knows the type.
+
+
+
+## DATA TYPES
+
+These are the primitive data types built into the language itself. The building blocks of all values and data in Floyd.
+
+The goal is that all the basics you need are already there in the language and the core library. This makes it easy to start making meaningful programs.
+
+It also promotes composability since all Floyd code can rely on these types and communicate between themselves using these types. This greatly reduces the need to write glue code that converts between different library's string classes and logging and so on.
+
+|TYPE		  	| USE
+|:---				|:---	
+|__bool__			|__true__ or __false__
+|__int__			| Signed 64 bit integer
+|__double__		| 64-bit floating point number
+|__string__		| Built-in string type. 8-bit pure (supports embedded zeros). Use for machine strings, basic UI. Not localizable. Typically used for Windows Latin1, UTF-8 or ASCII.
+|__typeid__		| Describes the *type* of a value.
+|__function__	| A function value. Functions can be Floyd functions or C functions. They are callable.
+|__struct__		| Like C struct or classes or tuples. A value object.
+|__vector__		| A continuous array of elements addressed via indexes.
+|__dictionary__	| Lookup values using string keys.
+|__json__	| A value that holds a JSON-compatible value, can be a big JSON tree.
+|TODO: __protocol__	| A value that hold a number of callable functions. Also called interface or abstract base class.
+|TODO: __sum-type__		| Tagged union.
+|TODO: __float__		| 32-bit floating point number
+|TODO: __int8__		| 8-bit signed integer
+|TODO: __int16__		| 16-bit signed integer
+|TODO: __int32__		| 32-bit signed integer
+
+Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [], etc.
+
+
 
 
 ## FUNCTIONS (PURE AND IMPURE)
@@ -111,123 +221,172 @@ This is a type of function that *has side effects or state* -- but the calling f
 Why is this OK? Well to be picky there are no pure functions, since calling a pure function makes your CPU emit more heat and consumes real-world time, makes other programs run slower, consumes memory bandwidth. But a pure function cannot observe those side effects either.
 
 
-## VALUES, VARIABLES
-
-### IMMUTABLE VALUES VS VARIABLES
-
-All values in Floyd are immutable -- you make new values based on previous values, but you don't directly modify old values. Internally Floyd uses clever mechanisms to make this fast and avoids copying data too much. It's perfectly good to replace a character in a 3 GB long string and get a new 3 GB string as a result. Almost all of the characters will be stored only once.
-
-The only exception is local variables that can be forced to be mutable.
-
-(Also, each green-process has one mutable value too.)
 
 
-- Function arguments
-- Function local variables
-- Member variables of structs.
 
-When defining a variable, you can often skip telling which type it is, since the type can be inferred by the Floyd compiler.
 
-Explicit
+
+
+
+## JSON LITERALS
+
+You can directly embed JSON inside Floyd source code file. This is extremely simple - no escaping needed - just paste a snippet into the Floyd source code. Use this for test values. Round trip. The Floyd parser will create Floyd strings, dictionaries and so on for the JSON data. Then it will create a json\_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown.
+
+Example JSON:
 
 ```
-let int x = 10
+let json a = 13
+let json b = "Hello!"
+let json c = { "hello": 1, "bye": 3 }
+let json d = { "pigcount": 3, "pigcolor": "pink" }
+
+assert(a == 13)
+assert(b == "Hello!")
+assert(c["hello"] == 1)
+assert(c["bye"] == 3)
+assert(size(c) == 2)
+
+let test_json2 = json(
+	{
+		"one": 1,
+		"two": 2,
+		"three": "three",
+		"four": [ 1, 2, 3, 4 ],
+		"five": { "alpha": 1000, "beta": 2000 },
+		"six": true,
+		"seven": false,
+	}
+)
 ```
 
-Implicit
+Notice that JSON objects are laxer than other Floyd values: you can mix different types of values in the same object or array. Floyd is stricter: a vector can only hold one type of element, same with dictionaries.
+
+
+
+## GLOBAL SCOPE
+
+Here you normally define functions, structs and global constants. The global scope can have almost any statement and they execute at program start. Simple programs can do without defining any functions at all.
+
+
+
+## COMMENTS AND DOCUMENTATION
+
+Use comments to write documentation, notes or explanations in the code. Comments are not executed or compiled -- they are only for humans. You often use the comment features to disable / hide code from the compiler.
+
+Two types of comments:
+
+
+You can wrap many lines with "/\*" and "\*/" to make a big section of documentation or to disable many lines of code. You can nest comments, for example wrap a lot of code that already contains comments using /* ... */.
 
 ```
-let y = 11
+/*	This is a comment */
 ```
 
 
-Example:
+Everything between // and newline is a comment:
 
 ```
-int main(){
-	let a = "hello"
-	a = "goodbye"	//	Error - you cannot change variable a.
-	return 3
+//	This is an end-of line comment
+let a = "hello" //	This is an end of line comment.
+```
+
+
+
+
+
+## AUTOMATIC SERIALIZATION
+
+Serializing any Floyd value is a built-in mechanism. It is always true-deep.
+
+**This is very central to Floyd -- values are core and they can easily be passed around, sent as messages, stored in files, copy-pasted from log or debugger into the source code.**
+
+
+##### JSON DATA SHAPES, ESCAPING
+
+These are the different shapes a JSON can have in Floyd:
+
+1. Floyd value: a normal Floyd value - struct or a vector or a number etc. Stored in RAM.
+
+2. json\_value: data is JSON compatible, stored in RAM the 7 different value types supported by json\_value. It holds one JSON value or a JSON object or a JSON array, that in turn can hold other json\_value:s.
+
+3. JSON-script string: JSON data encoded as a string of characters, as stored in a text file.
+
+	Example string: {"name":"John", "age":31, "city":"New York"}
+
+	It contains quotation characters, question mark characters, new lines etc.
+
+4. Escaped string: the string is simplified to be stuffed as a string snippet into some restricted format, like inside a parameter in a URL, as a string-literal inside another JSON or inside a REST command.
+
+	Example string: {\\"name\":\\"John\", \\"age\\":31, \\"city\\":\\"New York\\"}
+
+Different destinations have different limitations and escape mechanisms and will need different escape functions. This is not really a JSON-related issue, more a URL, REST question.
+
+
+#### FUNCTIONS
+Converting a floyd json\_value to a JSON string and back. The JSON-string can be directly read or written to a text file, sent via a protocol and so on.
+
+```
+string generate_json_script(json v)
+json parse_json_script(string s)
+```
+
+Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json\_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json\_value, using from_json().
+
+```
+json to_json(any v)
+any from_json(json v)
+```
+
+- __generate\_json\_script()__
+- __parse\_json\_script()__
+- __to\_json()__
+- __from\_json()__
+
+
+
+
+## MAIN()
+
+You can implement a function called "main" that will called by the Floyd runtime after all global statements have been executed. The main() function is optional, but the only way to get command line arguments and return a command line error code. Main can have two different forms:
+- int main(){} -- which uses no input arguments or
+- int main([string] args){} -- that receives command line input.
+
+
+```
+func int main([string] args){
+	print(args)
+	assert(args == ["-a", "output.txt"])
+
+	return 42
 }
 ```
 
-You can use "mutable" to make a local variable changeable.
+>floyd run my_program.floyd -a output.txt
 
-```
-int main(){
-	mutable a = "hello"
-	a = "goodbye"	//	Changes variable a to "goodbye".
-	return 3
-}
-```
+...will call your main() function with ["-a", "output.txt"]
 
 
-### DEEP BY VALUE
-
-All values and aggregated members values are always considered in operations in any type of nesting of structs and values and collections. This includes equality checks or assignment for example.
-
-The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
-
-These are features built into every type: integer, string, struct, dictionary:
-
-|EXPRESSION		| EXPLANATION
-|:---				|:---	
-|__a = b__ 		| This true-deep copies the value b to the new name a.
-|__a == b__		| a exactly the same as b
-|__a != b__		| a different to b
-|__a < b__		| a smaller than b
-|__a <= b__ 		| a smaller or equal to b
-|__a > b__ 		| a larger than b
-|__a >= b__ 		| a larger or equal to b
-
-This also goes for print(), map(), to\_string(), value\_to\_jsonvalue(), send() etc.
-
-Example: your application's entire state may be stored in *one* value in a struct containing other structs and vectors and so on. This value can still be copied around quickly, it is automatically sortable, convertible to JSON or whatever.
+## EXECUTING CODE: MAIN(), PROCESS, GLOBAL STATEMENTS AND COMPILE TIME
 
 
-### NO POINTERS
+These are the steps used by the Floyd runtime to executing a Floyd program that has a main() function
 
-There are no pointers or references in Floyd. You copy values around deeply instead. Even a big value like your game's entire world or your word processor's entire document. Behind the curtains Floyd uses pointers extensively to make this fast.
+1. Main thread initialises all globals and constants
+2. Main thread executes all global statements 
+3. Main thread calls main()
+4. When main() returns, the runtime is taken down and the OS executable is exited
 
-Removing the concept of pointers makes programming easier. There are no dangling pointers, aliasing problems or defensive copying and other classic problems. It also makes it simpler for the runtime and compiler to generate extremely fast code.
+These are the steps used by the Floyd runtime to executing a Floyd program that has no main() function
 
-### STATIC TYPING, INFERRED
+1. Main thread initialises all globals and constants
+2. Main thread executes all global statements 
+3. Main thread starts all floyd processes in separate threads. How they execute is undefined here but under your control
+4. When all floyd processs have exited, the runtime is taken down and the OS executable is exited.
 
-Every value and variable and identifier have a static type: a type that is defined at compile time, before the program runs. This is how Java, C++ and Swift works. Javascript, Python and Ruby does not use static typing.
-
-You can often leave out the actual type from the code, when the compiler already knows the type.
+A Floyd program either has a main() function or processes.
 
 
 
-
-## DATA TYPES
-
-These are the primitive data types built into the language itself. The building blocks of all values and data in Floyd.
-
-The goal is that all the basics you need are already there in the language and the core library. This makes it easy to start making meaningful programs.
-
-It also promotes composability since all Floyd code can rely on these types and communicate between themselves using these types. This greatly reduces the need to write glue code that converts between different library's string classes and logging and so on.
-
-|TYPE		  	| USE
-|:---				|:---	
-|__bool__			|__true__ or __false__
-|__int__			| Signed 64 bit integer
-|__double__		| 64-bit floating point number
-|__string__		| Built-in string type. 8-bit pure (supports embedded zeros). Use for machine strings, basic UI. Not localizable. Typically used for Windows Latin1, UTF-8 or ASCII.
-|__typeid__		| Describes the *type* of a value.
-|__function__	| A function value. Functions can be Floyd functions or C functions. They are callable.
-|__struct__		| Like C struct or classes or tuples. A value object.
-|__vector__		| A continuous array of elements addressed via indexes.
-|__dictionary__	| Lookup values using string keys.
-|__json__	| A value that holds a JSON-compatible value, can be a big JSON tree.
-|TODO: __protocol__	| A value that hold a number of callable functions. Also called interface or abstract base class.
-|TODO: __sum-type__		| Tagged union.
-|TODO: __float__		| 32-bit floating point number
-|TODO: __int8__		| 8-bit signed integer
-|TODO: __int16__		| 16-bit signed integer
-|TODO: __int32__		| 32-bit signed integer
-
-Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [], etc.
 
 
 
@@ -829,166 +988,6 @@ Notice: map() and map_dag() shares threads with other mechanisms in the Floyd ru
 
 
 
-
-
-
-
-## JSON LITERALS
-
-You can directly embed JSON inside Floyd source code file. This is extremely simple - no escaping needed - just paste a snippet into the Floyd source code. Use this for test values. Round trip. The Floyd parser will create Floyd strings, dictionaries and so on for the JSON data. Then it will create a json\_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown.
-
-Example JSON:
-
-```
-let json a = 13
-let json b = "Hello!"
-let json c = { "hello": 1, "bye": 3 }
-let json d = { "pigcount": 3, "pigcolor": "pink" }
-
-assert(a == 13)
-assert(b == "Hello!")
-assert(c["hello"] == 1)
-assert(c["bye"] == 3)
-assert(size(c) == 2)
-
-let test_json2 = json(
-	{
-		"one": 1,
-		"two": 2,
-		"three": "three",
-		"four": [ 1, 2, 3, 4 ],
-		"five": { "alpha": 1000, "beta": 2000 },
-		"six": true,
-		"seven": false,
-	}
-)
-```
-
-Notice that JSON objects are laxer than other Floyd values: you can mix different types of values in the same object or array. Floyd is stricter: a vector can only hold one type of element, same with dictionaries.
-
-
-
-## GLOBAL SCOPE
-
-Here you normally define functions, structs and global constants. The global scope can have almost any statement and they execute at program start. Simple programs can do without defining any functions at all.
-
-
-
-## COMMENTS AND DOCUMENTATION
-
-Use comments to write documentation, notes or explanations in the code. Comments are not executed or compiled -- they are only for humans. You often use the comment features to disable / hide code from the compiler.
-
-Two types of comments:
-
-
-You can wrap many lines with "/\*" and "\*/" to make a big section of documentation or to disable many lines of code. You can nest comments, for example wrap a lot of code that already contains comments using /* ... */.
-
-```
-/*	This is a comment */
-```
-
-
-Everything between // and newline is a comment:
-
-```
-//	This is an end-of line comment
-let a = "hello" //	This is an end of line comment.
-```
-
-
-
-
-
-## AUTOMATIC SERIALIZATION
-
-Serializing any Floyd value is a built-in mechanism. It is always true-deep.
-
-**This is very central to Floyd -- values are core and they can easily be passed around, sent as messages, stored in files, copy-pasted from log or debugger into the source code.**
-
-
-##### JSON DATA SHAPES, ESCAPING
-
-These are the different shapes a JSON can have in Floyd:
-
-1. Floyd value: a normal Floyd value - struct or a vector or a number etc. Stored in RAM.
-
-2. json\_value: data is JSON compatible, stored in RAM the 7 different value types supported by json\_value. It holds one JSON value or a JSON object or a JSON array, that in turn can hold other json\_value:s.
-
-3. JSON-script string: JSON data encoded as a string of characters, as stored in a text file.
-
-	Example string: {"name":"John", "age":31, "city":"New York"}
-
-	It contains quotation characters, question mark characters, new lines etc.
-
-4. Escaped string: the string is simplified to be stuffed as a string snippet into some restricted format, like inside a parameter in a URL, as a string-literal inside another JSON or inside a REST command.
-
-	Example string: {\\"name\":\\"John\", \\"age\\":31, \\"city\\":\\"New York\\"}
-
-Different destinations have different limitations and escape mechanisms and will need different escape functions. This is not really a JSON-related issue, more a URL, REST question.
-
-
-#### FUNCTIONS
-Converting a floyd json\_value to a JSON string and back. The JSON-string can be directly read or written to a text file, sent via a protocol and so on.
-
-```
-string generate_json_script(json v)
-json parse_json_script(string s)
-```
-
-Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json\_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json\_value, using from_json().
-
-```
-json to_json(any v)
-any from_json(json v)
-```
-
-- __generate\_json\_script()__
-- __parse\_json\_script()__
-- __to\_json()__
-- __from\_json()__
-
-
-
-
-## MAIN()
-
-You can implement a function called "main" that will called by the Floyd runtime after all global statements have been executed. The main() function is optional, but the only way to get command line arguments and return a command line error code. Main can have two different forms:
-- int main(){} -- which uses no input arguments or
-- int main([string] args){} -- that receives command line input.
-
-
-```
-func int main([string] args){
-	print(args)
-	assert(args == ["-a", "output.txt"])
-
-	return 42
-}
-```
-
->floyd run my_program.floyd -a output.txt
-
-...will call your main() function with ["-a", "output.txt"]
-
-
-## EXECUTING CODE: MAIN(), PROCESS, GLOBAL STATEMENTS AND COMPILE TIME
-
-
-These are the steps used by the Floyd runtime to executing a Floyd program that has a main() function
-
-1. Main thread initialises all globals and constants
-2. Main thread executes all global statements 
-3. Main thread calls main()
-4. When main() returns, the runtime is taken down and the OS executable is exited
-
-These are the steps used by the Floyd runtime to executing a Floyd program that has no main() function
-
-1. Main thread initialises all globals and constants
-2. Main thread executes all global statements 
-3. Main thread starts all floyd processes in separate threads. How they execute is undefined here but under your control
-4. When all floyd processs have exited, the runtime is taken down and the OS executable is exited.
-
-A Floyd program either has a main() function or processes.
 
 
 # 2. THE LANGUAGE REFERENCE
