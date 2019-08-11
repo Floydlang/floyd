@@ -4,9 +4,11 @@ TODO: Make more meaty examples, with structs and actual data and "objects".
 
 # INTRODUCTION
 
-Floyd is programming language that aims to compete with languages like Java, C++, Rust, Go, Javascript and Python. When you write Floyd programs you write functions and complex data structures. You use the built in features to setup your program's concurrency and parallelism and how the program communicate with the world around it.
+Floyd is programming language that aims to compete with languages like Java, C++, Rust, Go, Javascript and Python. Floyd cares about low level things like micro benchmarks and CPU memory hardware as well as high level things like APIs, components, containers and virtual processes.
 
 Floyd generates native machine code but also comes with a byte code interpeter.
+
+This document assumes the reader knows basic programming concepts like variables, functions and types. It comes in two parts. The first is the user’s guide which explains how to use Floyd to build programs, the unique features of Floyd and its most important concepts. The second part is the reference manual that goes through every feature and explains in detail how they work.
 
 
 # CONTENTS
@@ -27,16 +29,14 @@ Floyd generates native machine code but also comes with a byte code interpeter.
 
 
 
-# 1. BASIC CONCEPTS
+# FUNCTIONS, 
 
 
 ## FUNCTIONS (PURE AND IMPURE)
 
-Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants, never read or modify anything: not global variables, not by calling another, impure function.
+Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants. They cannot modify global variables or affect the outside work via communication or files.
 
-It's not possible to call a pure function with a set of arguments and later call it again with the same arguments and get a different result.
-
-A function like get_time() is impure.
+> When you call a pure function with a set of arguments you *always get the same result back*.
 
 While a function executes, it perceives the outside world to stand still.
 
@@ -101,6 +101,8 @@ This mean the function has side effects or gets information somewhere that can c
 
 Limit the amount of impure code!
 
+A number of impure functions are built into the language and its core library.
+
 
 ### GRAY PURE FUNCTIONS
 
@@ -138,18 +140,13 @@ Implicit
 let y = 11
 ```
 
-You can even leave out "let" to define a new variable, if that local variable does not yet exist:
-
-```
-y = 12
-```
 
 Example:
 
 ```
 int main(){
 	let a = "hello"
-	a = "goodbye"	//	Runtime error - you cannot change variable a.
+	a = "goodbye"	//	Error - you cannot change variable a.
 	return 3
 }
 ```
