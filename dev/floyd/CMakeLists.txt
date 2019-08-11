@@ -73,8 +73,9 @@ bytecode_interpreter/bytecode_generator.cpp
 bytecode_interpreter/bytecode_helpers.cpp
 bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/floyd_interpreter.cpp
-commandline_tool/command_line_parser.cpp
-#commandline_tool/command_line_parser.h
+parts/command_line_parser.cpp
+commandline_tool/floyd_command_line_parser.cpp
+#parts/command_line_parser.h
 collect_used_types.cpp
 compiler_helpers.cpp
 cpp_experiments.cpp
