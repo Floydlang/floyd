@@ -538,7 +538,7 @@ struct typeid_t {
 		QUARK_ASSERT(other.check_invariant());
 
 		return true
-#if DEBUG
+#if DEBUG_DEEP
 			&& _DEBUG_string == other._DEBUG_string
 #endif
 			&& _contents == other._contents;
@@ -555,7 +555,7 @@ struct typeid_t {
 		_contents(contents)
 	{
 
-#if DEBUG
+#if DEBUG_DEEP
 		_DEBUG_string = typeid_to_compact_string(*this);
 #endif
 		QUARK_ASSERT(check_invariant());
@@ -563,7 +563,7 @@ struct typeid_t {
 
 
 	////////////////////////////////////////		STATE
-#if DEBUG
+#if DEBUG_DEEP
 	private: std::string _DEBUG_string;
 #endif
 	public: type_variant_t _contents;

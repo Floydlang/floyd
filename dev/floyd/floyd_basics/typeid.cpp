@@ -226,6 +226,7 @@ int get_json_type(const json_t& value){
 
 
 bool typeid_t::check_invariant() const{
+#if DEBUG_DEEP
 	struct visitor_t {
 		bool operator()(const undefined_t& e) const{
 			return true;
@@ -289,13 +290,16 @@ bool typeid_t::check_invariant() const{
 		}
 	};
 	return std::visit(visitor_t{}, _contents);
+#else
+	return true;
+#endif
 }
 
 void typeid_t::swap(typeid_t& other){
 	QUARK_ASSERT(other.check_invariant());
 	QUARK_ASSERT(check_invariant());
 
-#if DEBUG
+#if DEBUG_DEEP
 	std::swap(_DEBUG_string, other._DEBUG_string);
 #endif
 	std::swap(_contents, other._contents);

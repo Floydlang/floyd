@@ -251,7 +251,7 @@ struct value_t {
 		_basetype(base_type::k_undefined)
 	{
 		_value_internals._int = 0xdeadbeef;
-#if DEBUG
+#if DEBUG_DEEP
 		DEBUG_STR = make_value_debug_str(*this);
 #endif
 
@@ -261,7 +261,7 @@ struct value_t {
 		_basetype(type)
 	{
 		_value_internals._int = 0xdeadbeef;
-#if DEBUG
+#if DEBUG_DEEP
 		DEBUG_STR = make_value_debug_str(*this);
 #endif
 
@@ -503,7 +503,7 @@ struct value_t {
 			_value_internals._ext->_rc++;
 		}
 
-#if DEBUG
+#if DEBUG_DEEP
 		DEBUG_STR = make_value_debug_str(*this);
 #endif
 
@@ -586,7 +586,7 @@ struct value_t {
 		QUARK_ASSERT(other.check_invariant());
 		QUARK_ASSERT(check_invariant());
 
-#if DEBUG
+#if DEBUG_DEEP
 		std::swap(DEBUG_STR, other.DEBUG_STR);
 #endif
 
@@ -606,7 +606,7 @@ struct value_t {
 		_basetype(base_type::k_bool)
 	{
 		_value_internals.bool_value = value;
-#if DEBUG
+#if DEBUG_DEEP
 		DEBUG_STR = make_value_debug_str(*this);
 #endif
 
@@ -617,7 +617,7 @@ struct value_t {
 		_basetype(base_type::k_int)
 	{
 		_value_internals._int = value;
-#if DEBUG
+#if DEBUG_DEEP
 		DEBUG_STR = make_value_debug_str(*this);
 #endif
 
@@ -628,7 +628,7 @@ struct value_t {
 		_basetype(base_type::k_double)
 	{
 		_value_internals._double = value;
-#if DEBUG
+#if DEBUG_DEEP
 		DEBUG_STR = make_value_debug_str(*this);
 #endif
 
@@ -655,7 +655,7 @@ struct value_t {
 		value_ext_t* _ext;
 	};
 
-#if DEBUG
+#if DEBUG_DEEP
 	private: std::string DEBUG_STR;
 #endif
 	private: base_type _basetype;

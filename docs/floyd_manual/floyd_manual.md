@@ -1,5 +1,3 @@
-TODO: Make more meaty examples, with structs and actual data and "objects".
-
 ![](floyd_logo_banner.png)
 
 # INTRODUCTION
@@ -730,18 +728,25 @@ benchmark-def "Linear veq 0" {
 }
 ```
 
+The snippet above measures how long the statement "let a = unpack_linear_veq(x)" takes to execute.
+
 The Floyd micro benchmark features give you a simple way to measure the performance of a snippet of code on a specific computer and get statistics on how it performs for different data sets.
 
->NOTICE: Micro benchmarking is not the same as profiling with a Profiler. Profiling is used on an entire program and helps you *find* hotspots. Micro benchmarking just looks at a small code snippet.
+> NOTICE: Micro benchmarking is not the same as profiling with a profiler. Profiling is used on an entire program and helps you *find* hotspots. Micro benchmarking just looks at a small code snippet.
 
 You can add a micro benchmark anywhere in a source file using the benchmark-def statement and the benchmark expression, ideally right next the function to measure. The micro benchmarks are not automatically run, you need to request that, either from the floyd command line tool or via your own code. You are in control over which tests to run and can control how to present the output.
 
 You leave the micro benchmarks in your code. They can be stripped out when compiling.
 
-The term **benchmark** in Floyd means **one explictly defined task that performs the exact same instructs every time over the exact same data**. Floyd will run it many times to get better precision of the measurement, called "runs". Often you want to run a benchmark for several different sized data sets. Floyd allows you to make several **benchmark instances** from the same benchmark definition. This results in several benchmarks but you only need to define it once.
+> TERM **benchmark**: in Floyd benchmark means **one explictly defined task that performs the exact same instructs every time over the exact same data**.
+
+> TERM **run**: Floyd will run a benchmark many times to get better precision of the measurement. These are called "runs".
+
+> TERM **benchmark instance**: Often you want to run a benchmark for several different sized data sets. Floyd allows you to make several **benchmark instances** from the same benchmark definition. This results in several measurements but you only need to define it once.
 
 
 The benchmark features have been designed to:
+
 - Give you a built-in simple way to measure performance
 - Let you control which tests to run and when
 - Let you keep the tests next to the function under test 
@@ -809,6 +814,7 @@ The output will be formatted and sent to stdout. Use --json to instead print the
 
 When you run a benchmark, all/any of its instances are always run.
 
+
 ### RUNNING MICRO BENCHMARKS FROM FLOYD CODE
 
 
@@ -817,84 +823,7 @@ This snippets runs all registered benchmarks, formats their output and prints to
 print(trace_benchmarks(run_benchmarks(get_benchmarks())))
 ```
 
-You can write code that run only some benchmark and uses the output in some other way.
-
-
-
-```
-struct microbench_def_t {
-	string name
-	func json(T) f
-}
-```
-
-```
-struct benchmark_id_t {
-	string module
-	string test
-}
-```
-
-```
-struct benchmark_result2_t {
-	benchmark_id_t test_id
-	benchmark_result_t result
-}
-```
-
-
-Get all benchmarks in the program, as defined using benchmark-def statements:
-```
-func [benchmark_id_t] get_benchmarks(){
-```
-
-This is how you run one or many benchmarks:
-```
-[benchmark_result2_t] run_benchmarks([benchmark_id_t] m)
-```
-
-??? example output
-
-
-
-You can also use the trace_benchmark() that prints a nice diagram in the console:
-
-```
-string trace_benchmarks([benchmark_result2_t] r)
-```
-
-Output from running a test
-
-
-| Linear veq | 0		|	0.000000 s	| 0
-| Linear veq | 1		|	0.000000 s	| 1
-| Linear veq | 2		|	0.000000 s	| 1
-| Linear veq | 1000		|	0.0022000 s	| 2.000
-| Linear veq | 10000	|	0.003200 s	| 40.000
-
-
-
-
-#### make_benchmark_report()
-
-This function let's you control the formatting of the report
-```
-let report = make_benchmark_report(test_results, [ -1, -1, -1, -1 ])
-for(i in 0 ..< size(report)){
-	print(report[i])
-}
-```
-
-|MODULE |TEST    |DUR        |       |
-|-------|--------|-----------|-------|
-|mod1   |my      |240 ns     |""     |
-|mod1   |my      |3000 ns    |""     |
-|mod1   |my      |100000 ns  |"kb/s" |
-|mod1   |my      |1200000 ns |"mb/s" |
-|mod1   |baggins |5000 ns    |"mb/s" |
-|mod1   |baggins |7000 ns    |"mb/s" |
-|mod1   |baggins |8000 ns    |"mb/s" |
-|mod1   |baggins |80000 ns   |"mb/s" |
+You can write code that run only some benchmark and uses the output in some other way or special formats.
 
 
 

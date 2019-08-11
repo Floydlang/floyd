@@ -596,7 +596,7 @@ value_t::value_t(const char s[]) :
 
 	_value_internals._ext = new value_ext_t{std::string(s)};
 	QUARK_ASSERT(_value_internals._ext->_rc == 1);
-#if DEBUG
+#if DEBUG_DEEP
 	DEBUG_STR = make_value_debug_str(*this);
 #endif
 
@@ -609,7 +609,7 @@ value_t::value_t(const std::string& s) :
 	_value_internals._ext = new value_ext_t{std::string(s)};
 	QUARK_ASSERT(_value_internals._ext->_rc == 1);
 
-#if DEBUG
+#if DEBUG_DEEP
 	DEBUG_STR = make_value_debug_str(*this);
 #endif
 
@@ -624,7 +624,7 @@ value_t::value_t(const std::shared_ptr<json_t>& s) :
 	_value_internals._ext = new value_ext_t{s};
 	QUARK_ASSERT(_value_internals._ext->_rc == 1);
 
-#if DEBUG
+#if DEBUG_DEEP
 	DEBUG_STR = make_value_debug_str(*this);
 #endif
 
@@ -639,7 +639,7 @@ value_t::value_t(const typeid_t& type) :
 	_value_internals._ext = new value_ext_t{type};
 	QUARK_ASSERT(_value_internals._ext->_rc == 1);
 
-#if DEBUG
+#if DEBUG_DEEP
 	DEBUG_STR = make_value_debug_str(*this);
 #endif
 
@@ -655,7 +655,7 @@ value_t::value_t(const typeid_t& struct_type, std::shared_ptr<struct_value_t>& i
 	_value_internals._ext = new value_ext_t{struct_type, instance};
 	QUARK_ASSERT(_value_internals._ext->_rc == 1);
 
-#if DEBUG
+#if DEBUG_DEEP
 	DEBUG_STR = make_value_debug_str(*this);
 #endif
 
@@ -669,7 +669,7 @@ value_t::value_t(const typeid_t& element_type, const std::vector<value_t>& eleme
 	_value_internals._ext = new value_ext_t{typeid_t::make_vector(element_type), elements};
 	QUARK_ASSERT(_value_internals._ext->_rc == 1);
 
-#if DEBUG
+#if DEBUG_DEEP
 	DEBUG_STR = make_value_debug_str(*this);
 #endif
 
@@ -682,7 +682,7 @@ value_t::value_t(const typeid_t& value_type, const std::map<std::string, value_t
 	_value_internals._ext = new value_ext_t{typeid_t::make_dict(value_type), entries};
 	QUARK_ASSERT(_value_internals._ext->_rc == 1);
 
-#if DEBUG
+#if DEBUG_DEEP
 	DEBUG_STR = make_value_debug_str(*this);
 #endif
 
@@ -695,7 +695,7 @@ value_t::value_t(const typeid_t& type, function_id_t function_id) :
 	_value_internals._ext = new value_ext_t{type, function_id};
 	QUARK_ASSERT(_value_internals._ext->_rc == 1);
 
-#if DEBUG
+#if DEBUG_DEEP
 	DEBUG_STR = make_value_debug_str(*this);
 #endif
 

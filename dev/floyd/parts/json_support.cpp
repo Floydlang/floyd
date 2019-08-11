@@ -101,7 +101,9 @@ bool json_t::check_invariant() const {
 }
 
 json_t::json_t(const json_t& other) :
+#if DEBUG_DEEP
 	__debug(other.__debug),
+#endif
 	_type(other._type),
 	_object(other._object),
 	_array(other._array),
@@ -129,7 +131,9 @@ void json_t::swap(json_t& other){
 	QUARK_ASSERT(check_invariant());
 	QUARK_ASSERT(other.check_invariant());
 
+#if DEBUG_DEEP
 	std::swap(__debug, other.__debug);
+#endif
 	std::swap(_type, other._type);
 	_object.swap(other._object);
 	_array.swap(other._array);
@@ -266,7 +270,7 @@ QUARK_UNIT_TESTQ("json_t()", ""){
 }
 
 /*
-QUARK_UNIT_TEST_VIP("json_t", "json_t()", "", ""){
+QUARK_UNIT_TEST("json_t", "json_t()", "", ""){
 	const uint64_t k = 0b1000000000000000000000000000000000000000000000000000000000000001;
 	const auto a = json_t((int64_t)k);
 	const auto d = a.get_number();
