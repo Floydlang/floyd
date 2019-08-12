@@ -2360,12 +2360,12 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 
 		const auto def0 = function_definition_t::make_func(k_no_location, name, typeid_t::make_void(), {}, {});
 		const auto def = function_def_t{ e.link_name, llvm::cast<llvm::Function>(f), function_id_t { "xxaaaxxx" }, def0 };
-//		const auto def = function_def_t{ e.link_name, llvm::cast<llvm::Function>(f), function_id_t { "xxaaaxxx" }, function_definition_t::make_placeholder() };
 		result.push_back(def);
 	}
 
 	//	floyd_runtime_init()
 	{
+		const std::string name = "floyd_runtime_init";
 		llvm::FunctionType* function_type = llvm::FunctionType::get(
 			llvm::Type::getInt64Ty(context),
 			{
@@ -2373,13 +2373,15 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 			},
 			false
 		);
-		auto f = module.getOrInsertFunction("floyd_runtime_init", function_type);
-		const auto def = function_def_t{ f->getName(), llvm::cast<llvm::Function>(f), {"floyd_runtime_init"}, function_definition_t::make_placeholder() };
+		auto f = module.getOrInsertFunction(name, function_type);
+		const auto def0 = function_definition_t::make_func(k_no_location, name, typeid_t::make_void(), {}, {});
+		const auto def = function_def_t{ f->getName(), llvm::cast<llvm::Function>(f), { name }, def0 };
 		result.push_back(def);
 	}
 
 	//	floyd_runtime_deinit()
 	{
+		const std::string name = "floyd_runtime_deinit";
 		llvm::FunctionType* function_type = llvm::FunctionType::get(
 			llvm::Type::getInt64Ty(context),
 			{
@@ -2387,8 +2389,9 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 			},
 			false
 		);
-		auto f = module.getOrInsertFunction("floyd_runtime_deinit", function_type);
-		const auto def = function_def_t{ f->getName(), llvm::cast<llvm::Function>(f), {"floyd_runtime_deinit"}, function_definition_t::make_placeholder() };
+		auto f = module.getOrInsertFunction(name, function_type);
+		const auto def0 = function_definition_t::make_func(k_no_location, name, typeid_t::make_void(), {}, {});
+		const auto def = function_def_t{ f->getName(), llvm::cast<llvm::Function>(f), { name }, def0 };
 		result.push_back(def);
 	}
 
