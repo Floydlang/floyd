@@ -179,6 +179,24 @@ This procedure is not tested, but is a good starting point
 
 #### WINDOWS
 
+##### The easy way
+
+Enable the windows subsystem for linux on Windows 10, 
+https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux
+As admin in power shell, 
+```
+Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
+```
+Install i.e. arch linux  
+
+https://github.com/yuk7/ArchWSL
+
+
+
+Then follow the instructions above.
+
+##### The hard way
+
 This describes how to compile for Visual Studio Code 2019 
  
 Note that it is also possible to install vcpkg to other location.
