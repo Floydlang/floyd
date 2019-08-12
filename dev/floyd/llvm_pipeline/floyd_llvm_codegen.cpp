@@ -2502,7 +2502,7 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> gen
 
 	llvm_code_generator_t gen_acc(instance, module.get(), semantic_ast._tree._interned_types);
 
-	//	Generate all LLVM nodes: functions and globals.
+	//	Generate all LLVM nodes: functions (without implementation) and globals.
 	//	This lets all other code reference them, even if they're not filled up with code yet.
 	{
 		const auto funcs = make_all_function_prototypes(*module, gen_acc.type_lookup, semantic_ast._tree._function_defs);
@@ -2523,20 +2523,15 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> gen
 		}
 	}
 
-/*
-	{
-		QUARK_SCOPED_TRACE("prototypes");
-		QUARK_TRACE_SS(floyd::print_gen(gen_acc));
-	}
-*/
-
 //	QUARK_TRACE_SS("result = " << floyd::print_gen(gen_acc));
 	QUARK_ASSERT(gen_acc.check_invariant());
 
-	generate_all_floyd_function_bodies(gen_acc, semantic_ast);
-
-	generate_floyd_runtime_init(gen_acc, semantic_ast._tree._globals);
-	generate_floyd_runtime_deinit(gen_acc, semantic_ast._tree._globals);
+	//	Generate bodies of functions.
+	{
+		generate_all_floyd_function_bodies(gen_acc, semantic_ast);
+		generate_floyd_runtime_init(gen_acc, semantic_ast._tree._globals);
+		generate_floyd_runtime_deinit(gen_acc, semantic_ast._tree._globals);
+	}
 
 	return { std::move(module), gen_acc.function_defs };
 }
@@ -2546,10 +2541,6 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> gen
 std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& instance, const semantic_ast_t& ast0, const std::string& module_name){
 	QUARK_ASSERT(instance.check_invariant());
 	QUARK_ASSERT(ast0.check_invariant());
-//	QUARK_ASSERT(module_name.empty() == false);
-
-//	type_interner_t types = collect_used_types(ast0._tree);
-//	QUARK_ASSERT(types.interned.size() == ast0._tree._interned_types.interned.size());
 
 	if(k_trace_input_output){
 		QUARK_TRACE_SS("INPUT:  " << json_to_pretty_string(semantic_ast_to_json(ast0)));
@@ -2561,14 +2552,6 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 				QUARK_TRACE_SS(e.first.itype << ": " << typeid_to_compact_string(e.second));
 			}
 		}
-/*
-		{
-			QUARK_SCOPED_TRACE("collected types");
-			for(const auto& e: types.interned){
-				QUARK_TRACE_SS(e.first.itype << ": " << typeid_to_compact_string(e.second));
-			}
-		}
-*/
 	}
 
 	auto ast = ast0;
