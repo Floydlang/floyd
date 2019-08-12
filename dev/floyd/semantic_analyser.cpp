@@ -712,72 +712,37 @@ static analyser_t analyse_benchmark_def_statement(const analyser_t& a, const sta
 	const auto benchmark_function_t = make_benchmark_function_t();
 	const auto function_id = function_id_t { function_link_name };
 
-	if(true){
-		//	Make a function def expression for the new benchmark function.
+	//	Make a function def expression for the new benchmark function.
 
-		const auto body_pair = analyse_body(a_acc, statement._body, epure::pure, benchmark_function_t.get_function_return());
-		a_acc = body_pair.first;
-
-
-		const auto function_def2 = function_definition_t::make_floyd_func(k_no_location, function_link_name, benchmark_function_t, {}, std::make_shared<body_t>(body_pair.second));
-		QUARK_ASSERT(check_types_resolved(function_def2));
-
-		a_acc._function_defs.insert({ function_id, function_definition_t(function_def2) });
-
-		const auto f = value_t::make_function_value(benchmark_function_t, function_id);
+	const auto body_pair = analyse_body(a_acc, statement._body, epure::pure, benchmark_function_t.get_function_return());
+	a_acc = body_pair.first;
 
 
-		//	Add benchmark-def record to benchmark_defs.
+	const auto function_def2 = function_definition_t::make_func(k_no_location, function_link_name, benchmark_function_t, {}, std::make_shared<body_t>(body_pair.second));
+	QUARK_ASSERT(check_types_resolved(function_def2));
 
-		{
-			const auto new_record_expr = expression_t::make_construct_value_expr(
-				benchmark_def_t_struct,
-				{
-					expression_t::make_literal_string(test_name),
-					expression_t::make_literal(f)
-				}
-			);
-			const auto new_record_expr3_pair = analyse_expression_to_target(a_acc, s, new_record_expr, benchmark_def_t_struct);
-			a_acc = new_record_expr3_pair.first;
-			a_acc.benchmark_defs.push_back(new_record_expr3_pair.second);
-		}
+	a_acc._function_defs.insert({ function_id, function_definition_t(function_def2) });
 
-		const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, benchmark_function_t.get_function_return());
-		a_acc = body2.first;
+	const auto f = value_t::make_function_value(benchmark_function_t, function_id);
+
+
+	//	Add benchmark-def record to benchmark_defs.
+
+	{
+		const auto new_record_expr = expression_t::make_construct_value_expr(
+			benchmark_def_t_struct,
+			{
+				expression_t::make_literal_string(test_name),
+				expression_t::make_literal(f)
+			}
+		);
+		const auto new_record_expr3_pair = analyse_expression_to_target(a_acc, s, new_record_expr, benchmark_def_t_struct);
+		a_acc = new_record_expr3_pair.first;
+		a_acc.benchmark_defs.push_back(new_record_expr3_pair.second);
 	}
-	else {
-		//	Make a function def expression for the new benchmark function.
 
-		const auto function_def2 = function_definition_t::make_floyd_func(k_no_location, function_link_name, benchmark_function_t, {}, std::make_shared<body_t>(statement._body));
-		const auto func_def_expr = expression_t::make_function_definition(function_def2);
-
-		const auto expr2_pair = analyse_expression_to_target(a_acc, s, func_def_expr, benchmark_function_t);
-		QUARK_ASSERT(check_types_resolved(expr2_pair.second));
-
-
-		//	Insert the new function def into _function_defs
-
-		auto expr3 = std::get_if<expression_t::function_definition_expr_t>(&expr2_pair.second._expression_variant);
-		a_acc._function_defs.insert({ function_id, expr3->def });
-
-
-
-		//	Add benchmark-def record to benchmark_defs.
-		{
-			const auto f = value_t::make_function_value(benchmark_function_t, function_id);
-
-			const auto new_record_expr = expression_t::make_construct_value_expr(
-				benchmark_def_t_struct,
-				{
-					expression_t::make_literal_string(test_name),
-					expression_t::make_literal(f)
-				}
-			);
-			const auto new_record_expr3_pair = analyse_expression_to_target(a_acc, s, new_record_expr, benchmark_def_t_struct);
-			a_acc = new_record_expr3_pair.first;
-			a_acc.benchmark_defs.push_back(new_record_expr3_pair.second);
-		}
-	}
+	const auto body2 = analyse_body(a_acc, statement._body, a._lexical_scope_stack.back().pure, benchmark_function_t.get_function_return());
+	a_acc = body2.first;
 	return a_acc;
 }
 
@@ -2162,7 +2127,7 @@ std::pair<analyser_t, expression_t> analyse_function_definition_expression(const
 	const auto definition_name = function_def._definition_name;
 	const auto function_id = function_id_t { definition_name };
 
-	const auto function_def2 = function_definition_t::make_floyd_func(k_no_location, definition_name, function_type2, args2, body_result);
+	const auto function_def2 = function_definition_t::make_func(k_no_location, definition_name, function_type2, args2, body_result);
 	QUARK_ASSERT(check_types_resolved(function_def2));
 
 	a_acc._function_defs.insert({ function_id, function_def2 });
@@ -2436,7 +2401,7 @@ static builtins_t generate_corecalls(analyser_t& a, const std::vector<corecall_s
 			args.push_back(member_t(e, "dummy"));
 		}
 		const auto function_id = signature._function_id;
-		const auto def = function_definition_t::make_floyd_func(k_no_location, signature._function_id.name, signature._function_type, args, {});
+		const auto def = function_definition_t::make_func(k_no_location, signature._function_id.name, signature._function_type, args, {});
 		const auto function_value = value_t::make_function_value(signature._function_type, function_id_t { signature.name });
 
 		function_defs.insert({ function_id, def });

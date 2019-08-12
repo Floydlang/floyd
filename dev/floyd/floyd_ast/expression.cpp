@@ -227,24 +227,13 @@ function_definition_t json_to_function_def(const json_t& p){
 	const std::vector<member_t> args1 = members_from_json(args0);
 	const std::shared_ptr<body_t> body1 = body0.is_null() ? std::shared_ptr<body_t>() : std::make_shared<body_t>(json_to_body(body0));
 
-	if(body1){
-		return function_definition_t::make_floyd_func(
-			location1,
-			definition_name1,
-			function_type1,
-			args1,
-			body1
-		);
-	}
-	else{
-		return function_definition_t::make_floyd_func(
-			location1,
-			definition_name1,
-			function_type1,
-			args1,
-			{}
-		);
-	}
+	return function_definition_t::make_func(
+		location1,
+		definition_name1,
+		function_type1,
+		args1,
+		body1
+	);
 }
 
 
@@ -254,7 +243,7 @@ function_definition_t json_to_function_def(const json_t& p){
 
 QUARK_UNIT_TEST("", "", "", ""){
 	
-	const auto a = function_definition_t::make_floyd_func(k_no_location, "definition_name", typeid_t::make_function(typeid_t::make_string(), {}, epure::pure), {}, std::make_shared<body_t>());
+	const auto a = function_definition_t::make_func(k_no_location, "definition_name", typeid_t::make_function(typeid_t::make_string(), {}, epure::pure), {}, std::make_shared<body_t>());
 	QUARK_UT_VERIFY(a._named_args.empty());
 
 
@@ -652,8 +641,7 @@ expression_t ast_json_to_expression(const json_t& e){
 
 		const std::shared_ptr<body_t> body1 = body0.is_null() ? std::shared_ptr<body_t>() : std::make_shared<body_t>(json_to_body(body0));
 
-
-		auto def = function_definition_t::make_floyd_func(
+		auto def = function_definition_t::make_func(
 			k_no_location,
 			function_name,
 			function_type,

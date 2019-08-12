@@ -143,7 +143,7 @@ static function_definition_t desugar_function_def(desugar_t& acc, const function
 	if(def._optional_body){
 		const auto body = desugar_body(acc, *def._optional_body);
 		const auto body2 = std::make_shared<body_t>(body);
-		return function_definition_t::make_floyd_func(
+		return function_definition_t::make_func(
 			def._location,
 			def._definition_name,
 			def._function_type,
@@ -152,7 +152,7 @@ static function_definition_t desugar_function_def(desugar_t& acc, const function
 		);
 	}
 	else{
-		return function_definition_t::make_floyd_func(
+		return function_definition_t::make_func(
 			def._location,
 			def._definition_name,
 			def._function_type,

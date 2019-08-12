@@ -134,7 +134,7 @@ static function_definition_t visit_ast_function_def(visit_ast_t& acc, const func
 	if(def._optional_body){
 		const auto body = visit_ast_body(acc, *def._optional_body);
 		const auto body2 = std::make_shared<body_t>(body);
-		return function_definition_t::make_floyd_func(
+		return function_definition_t::make_func(
 			def._location,
 			def._definition_name,
 			def._function_type,
@@ -143,7 +143,7 @@ static function_definition_t visit_ast_function_def(visit_ast_t& acc, const func
 		);
 	}
 	else{
-		return function_definition_t::make_floyd_func(
+		return function_definition_t::make_func(
 			def._location,
 			def._definition_name,
 			def._function_type,
