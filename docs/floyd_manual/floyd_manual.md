@@ -105,20 +105,7 @@ The trinary comparison operator is also supported:
 let direction = x > 0 ? -1 : +1
 ```
 
-Notice that floyd has no special operator syntax for bitwise operations the way C has. Instead Floyd has explicitly named operators for these operations. This:
-
-1) allows us to have more and more specific operators, like several types of shift operations
-2) avoid accidentally mixing && with &.
-3) forces explicit evaluation order
-
-Use these instead of C-style & and | operators:
-
-```
-int bw_and(int a, int b)
-int bw_or(int a, int b)
-```
-
-They are real operators and translate to machine instructions, they just don't have any special syntax in the language.
+Notice that floyd has no special operator syntax for bitwise operations the way C has.
 
 
 
@@ -1161,6 +1148,8 @@ func int main([string] args){
 
 These functions are built into the language itself and are always available to your code. They are all pure unless except print() and send(). The have special code generation algorithms. Many of these functions are generic -- they work on many different types.
 
+COMPLETE LIST OF CORECALLS:
+
 | CORECALLS: BASICS	  				| USE | Example
 |:---								|:---	|:---
 | print() -- IMPURE					| Prints a value to standard output
@@ -1332,10 +1321,143 @@ These are the data types built into the language itself:
 | func bool (int (double a) b)				| function returns bool and takes an argument of type: function that returns in and take double-argument.
 
 
+### BOOL DATA TYPE
+
+The bool type in Floyd can only be true or false.
+
+```
+let a = false
+assert(a == false)
+assert(a != true)
+```
+You can use it to store flags. It is also the output of all comparison operators.
+
+
+### INT DATA TYPE
+
+Floyd integers are 64 bit signed. All normal expressions and comparisons work on them, like + - and so on.
+
+Here we make a new variable containing an integer:
+
+```
+let a = 1003
+```
+
+The "1003" above is an integer literal. There are several ways you can type an integer literal:
+
+- decimal number
+- hexadecimal
+- binary number
+- an ASCII character, including escape code (see string literal section)
+
+Example: ASCII character
+```
+let b ='X'
+
+assert(b == 88) // 88 is the ASCII code for uppercase A.
+```
+
+Hexadecimal integer literals
+
+|CODE		| EXPLANATION
+|:---							|:---
+| 0x0							| Hexadecimal number 0, decimal 0
+| 0xff							| Hexadecimal number FF, decimal 255
+| 0xabcd						| Hexadecimal number ABCD, decimal 43981
+| 0xffff1111					| Hexadecimal number FFFF1111, decimal 4294906129
+
+
+Binary integer literals:
+
+|CODE		| EXPLANATION
+|:---		|:---
+| 0b000										| Binary number 000, decimal 0
+| 0b00000000								| Binary number 00000000, decimal 0
+| 0b00000001								| Binary number 00000001, decimal 1
+| 0b10000000								| Binary number 10000000, decimal 128
+| 0b11111111								| Binary number 11111111, decimal 255
+| 0b11111111000000000000000011111111		| Binary number 11111111000000000000000011111111, decimal 4278190335
+
+
+**Divider:** you can use the ' character as a divider between groups of 8 number for both hex and binary literals (but not for decimal literals). This makes longer sequences of numbers easier to read.
+
+|CODE		| EXPLANATION
+|:---											|:---
+| 0xffff1111'00000000'00000fff'fff00000		| Hexadecimal number with separators
+| 0b11111111'00000000'00000000'11111111		| Binary number with separators
+
+
+#### BITWISE OPERATORS
+
+Notice that floyd has no special operator syntax for bitwise operations the way C has. Instead Floyd has explicitly named operators for these operations. This:
+
+1) allows us to have more and more specific operators, like several types of shift operations
+2) avoid accidentally mixing && with &.
+3) forces explicit evaluation order
+
+They are real operators and translate to machine instructions, they just don't have any special syntax in the language.
+
+|OPERATOR		| EXPLANATION
+|:---	|:---
+| int bw\_not(int v)		| inverts all bits in the integer v.
+| int bw\_and(int a, int b)		| and:s each bit in a with the corresponding bit in b
+| int bw\_or(int a, int b)		| or:s each bit in a with the corresponding bit in b
+| int bw\_xor(int a, int b)		| xor:s each bit in a with the corresponding bit in b
+| int bw\_shift\_left(int v, int count)		| shifts the bits in v left, the number of bits specified by count. New bits are set to 0.
+| int bw\_shift\_right(int v, int count)		| shifts the bits in v right, the number of bits specified by count. New bits are set to 0.
+| int bw\_shift\_right\_arithmetic(int v, int count)		| shifts the bits in v right, the number of bits specified by count. New bits are copied from bit 63, which sign-extends the number		| it doesn't lose its negativeness.
+
+When doing bitwise manipulation it is often convenient to use binary literals or hexadecimal literals, rather than normal decimal literals.
+
+
+
+### DOUBLE DATA TYPE
+
+This is a 64 bit floating point number. It's literals looks like this:
+
+```
+let a = 3.14
+```
+You need to include the "." or the literal will be interpreted as an integer.
+
+
 
 ### STRING DATA TYPE
 
-This is a pure 8-bit string type. It is immutable. The encoding of the characters in the string is undefined. You can put 7-bit ASCII in them or UTF-8 or something else. You can also use them as fast arrays of bytes.
+This is a pure 8-bit string type. It is immutable. The encoding of the characters in the string is undefined. You can put 7-bit ASCII in them or UTF-8 or something else. You can also use them as fast arrays of bytes. When you access individual elements in the string you use the int-type, which is a 64 bit signed type. There is no equivalent to C-lang "char" type.
+
+Here we make a simple string:
+
+```
+let a = "hello, world!"
+```
+
+You need to wrap string literals in quote characters. Some characters cannot be entered directly into string literals - you need to use special trick, called an escape sequence. You can use these escape characters inside string literals by entering \n or \' or \" etc.
+
+|ESCAPE SEQUENCE	| RESULT CHAR, AS HEX		| ASCII MEANING | JSON
+|:---	|:---		|:---	|:---
+| \0		| 0x00	| ZERO	| NO
+| \a		| 0x07	| BEL, bell, alarm, \a	| NO
+| \b		| 0x08	| BS, backspace, \b	| YES
+| \f		| 0x0c	| FF, NP, form feed, \f	| NO
+| \n		| 0x0a	| Newline (Line Feed)	| YES
+| \r		| 0x0d	| Carriage Return		| YES
+| \t		| 0x09	| Horizontal Tab		| YES
+| \v		| 0x0b	| Vertical Tab	| NO
+| \\\\		| 0x5c	| Backslash		| YES
+| \\'		| 0x27	| Single quotation mark		| NO
+| \\"		| 0x22	| Double quotation mark		| YES
+| \\/		| 0x2f	| Forward slash		| YES
+
+Notice: Floyd string literals do not support insert hex sequences or Unicode code points.
+
+Example: escape sequences
+
+```
+print("hello") //	pPrints: hello
+
+print("What does \\"blob\\" mean?")	//	Prints: What does "blob" mean?
+```
 
 You can access a random character in the string, using its integer position, where element 0 is the first character, 1 the second etc.
 
@@ -1409,6 +1531,10 @@ You can make a new vector and specify its elements directly, like this:
 ```
 let a = [ 1, 2, 3]
 ```
+
+This is called the vector constructor. It lets you create a new vector value anywhere an expression can be put. This expression supports non-constant elements of the constructor.
+
+
 
 Notice: You cannot modify the vector using [], only read. Use update() to change an element.
 
@@ -1552,6 +1678,8 @@ You make a new dictionary and specify its values like this:
 ```
 b = { "red": 0, "blue": 100, "green": 255 }
 ```
+
+This is called the dictionary-constructor and it lets you create a new dictionary value anywhere an expression can be typed. This expression supports non-constant elements of the constructor.
 
 Dictionaries always use string-keys. When you specify the type of dictionary you must always include "string". In the future other types of keys may be supported.
 
@@ -1697,8 +1825,8 @@ Floyd has support for JSON literals: you can put JSON data directly into a Floyd
 
 This value can contain any of the 7 JSON-compatible types:
 
-| JSON TYPE  	| EXAMPLE | FLOYD TYPE NAME | VALUE
-|:---			|:--- |:---
+| JSON TYPE  	| EXAMPLE CODE | FLOYD CONSTANT NAME | FLOYD CONSTANT VALUE | FLOYD TYPE
+|:---			|:--- |:--- |:--- |:---
 | object		| json({ "a": 1 })	| json_object | 1 | dictionary
 | array			| json([1, 2, 3])	| json_array | 2 | vector
 | string		| json("hi!")	| json_string	| 3 | string
@@ -1779,98 +1907,7 @@ assert(get_name(json(true)) == "json_true")
 assert(get_name(json(false)) == "json_false")
 ```
 
-
-
-
-### TODO: PROTOCOL DATA TYPE
-
-TODO 1.0
-
-This defines a set of functions that several clients can implement differently. This introduced polymorphism into Floyd. Equivalent to interface classes in other languages.
-
-Protocol member functions can be tagged "impure" which allows it to be implemented so it saves or uses state, modifies the world. There is no way to do these things in the implementation of pure protocol function members.
-
-
-
-
-
-## EXPRESSIONS
-
-An expression is how you calculate new values. The output of an expression is always another value.
-
-Comparisons are deep: for a composite value they consider all members values and their member values. This goes for struct members and collections.
-
-
-
-### LITERALS
-
-This is a value that is fully defined directly in the code. Like the number 3.
-
-
-|CODE		| EXPLANATION
-|:---			|:---	
-| 0				| Integer literal
-| 0.3			| Double literal
-| "Hello, world!	| String literal
-| [ "one", "two", "three" ] | Vector-of-strings literal
-| { "a": 100, "b": 200 } | Dictionary of string-integer literal.
-| ...			| Any literal that is compatible with json_t can be a JSON literal
-| 'A'			| Character literal. ASCII. This is equivalent to the number 65 (A as ASCII). Can be one character or an escape character (see string literals).
-
-
-Floyd supports decimal literals, as above, but also **hexadecimal** and **binary** literals:
-
-|CODE		| EXPLANATION
-|:---											|:---	
-| 0x0											| Hexadecimal number 0, decimal 0
-| 0xff											| Hexadecimal number FF, decimal 255
-| 0xabcd										| Hexadecimal number ABCD, decimal 43981
-| 0xffff1111										| Hexadecimal number FFFF1111, decimal 4294906129
-| 0b00000000										| Binary number 00000000, decimal 0
-| 0b00000001										| Binary number 00000001, decimal 1
-| 0b10000000										| Binary number 10000000, decimal 128
-| 0b11111111										| Binary number 11111111, decimal 255
-| 0b11111111000000000000000011111111				| Binary number 11111111000000000000000011111111, decimal 255
-
-**Divider:** you can use the ' character as a divider between groups of 8 number for both hex and binary literals (but not for decimal literals). This makes longer sequences of numbers easier to read.
-
-|CODE		| EXPLANATION
-|:---											|:---	
-| 0xffff1111'00000000'00000fff'fff00000				| Hexadecimal number with separators
-| 0b11111111000000000000000011111111				| Binary number with separators
-
-
-
-### STRING AND CHARACTER LITERALS - ESCAPE SEQUENCES
-
-Some characters cannot be entered directly into string literals - you need to use an escape sequence. You can use these escape characters inside string literals by entering \n or \' or \" etc.
-
-|ESCAPE SEQUENCE	| RESULT CHAR, AS HEX		| ASCII MEANING | JSON
-|:---				|:---						|:---			|:---
-| \0				| 0x00	| ZERO	| NO
-| \a				| 0x07	| BEL, bell, alarm, \a	| NO
-| \b				| 0x08	| BS, backspace, \b	| YES
-| \f				| 0x0c	| FF, NP, form feed, \f	| NO
-| \n				| 0x0a	| Newline (Line Feed)	| YES
-| \r				| 0x0d	| Carriage Return		| YES
-| \t				| 0x09	| Horizontal Tab		| YES
-| \v				| 0x0b	| Vertical Tab	| NO
-| \\\\				| 0x5c	| Backslash		| YES
-| \\'				| 0x27	| Single quotation mark		| NO
-| \\"				| 0x22	| Double quotation mark		| YES
-| \\/				| 0x2f	| Forward slash		| YES
-| \uABCD			| 0xabcd	| 4 hex characters => 16 bit character	| YES
-##### EXAMPLES
-
-|CODE		| OUTPUT | NOTE
-|:---			|:--- |:---
-| print("hello") | hello
-| print("What does \\"blob\\" mean?") | What does "blob" mean? | Allows you to insert a double quotation mark into your string literal without ending the string literal itself.
-
-
-Floyd string literals do not support insert hex sequences or Unicode code points.
-
-### JSON literals
+#### JSON literals
 
 You can directly embed JSON inside Floyd source code file. This is extremely simple - no escaping needed - just paste a snippet into the Floyd source code.
 
@@ -1923,16 +1960,43 @@ These are the different shapes a JSON can have in Floyd:
 Different destinations have different limitations and escape mechanisms and will need different escape functions. This is not really a JSON-related issue, more a URL, REST question.
 
 
+
+
+### TODO: PROTOCOL DATA TYPE
+
+TODO 1.0
+
+This defines a set of functions that several clients can implement differently. This introduced polymorphism into Floyd. Equivalent to interface classes in other languages.
+
+Protocol member functions can be tagged "impure" which allows it to be implemented so it saves or uses state, modifies the world. There is no way to do these things in the implementation of pure protocol function members.
+
+
+
+
+
+## EXPRESSIONS
+
+An expression is how you calculate new values. The output of an expression is always another value.
+
+Comparisons are deep: for a composite value they consider all members values and their member values. This goes for struct members and collections.
+
+
+
+### LITERALS
+
+This is a value that is fully defined directly in the code. Like the number 3. See each data type for its literals work.
+
+
 ### VECTOR-CONSTRUCTOR
 
 This lets you create a new vector value anywhere an expression can be put. This expression supports non-constant elements of the constructor.
-TODO: More text.
+Read more in the vector data type text.
 
 
 ### DICTIONARY-CONSTRUCTOR
 
 This lets you create a new dictionary value anywhere an expression can be typed. This expression supports non-constant elements of the constructor.
-TODO: More text.
+Read more in the dictionary data type text.
 
 ### FUNCTION CALL
 
@@ -2003,17 +2067,7 @@ assert(is_polite("hello") == true)
 
 Floyd uses explicit names for all bitwise operators, not special language operators like C does. C uses "&" for AND and "<<" for shift left. This is to make evaluation order clear and to avoid accidental mixup between logical operators and bitwise operators.
 
-|OPERATOR		| EXPLANATION
-|:---	|:---
-| int bw\_not(int v)		| inverts all bits in the integer v.
-| int bw\_and(int a, int b)		| and:s each bit in a with the corresponding bit in b
-| int bw\_or(int a, int b)		| or:s each bit in a with the corresponding bit in b
-| int bw\_xor(int a, int b)		| xor:s each bit in a with the corresponding bit in b
-| int bw\_shift\_left(int v, int count)		| shifts the bits in v left, the number of bits specified by count. New bits are set to 0.
-| int bw\_shift\_right(int v, int count)		| shifts the bits in v right, the number of bits specified by count. New bits are set to 0.
-| int bw\_shift\_right\_arithmetic(int v, int count)		| shifts the bits in v right, the number of bits specified by count. New bits are copied from bit 63, which sign-extends the number		| it doesn't lose its negativeness.
-
-When doing bitwise manipulation it is often convenient to use binary literals or hexadecimal literals, rather than normal decimal literals.
+Read more about this in the int data type section.
 
 
 
