@@ -1,6 +1,106 @@
+<!---
+Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
+-->
+
+
 ![](floyd_logo_banner.png)
 
-# FLOYD USER'S MANUAL INTRODUCTION
+# TABLE OF CONTENTS
+
+<!-- MarkdownTOC autolink="true" levels="1, 2, 3" autolink="true" autoanchor="true"  -->
+
+- [1 FLOYD USER'S MANUAL](#1-floyd-users-manual)
+	- [1.1 GETTING STARTED](#11-getting-started)
+	- [1.2 COMMAND LINE TOOL](#12-command-line-tool)
+	- [1.3 GLOBAL SCOPE AND MAIN FUNCTION](#13-global-scope-and-main-function)
+	- [1.4 DATA TYPES](#14-data-types)
+	- [1.5 OPERATORS AND EXPRESSIONS](#15-operators-and-expressions)
+	- [1.6 STRING DATA TYPE](#16-string-data-type)
+	- [1.7 VECTOR DATA TYPE](#17-vector-data-type)
+	- [1.8 DICTIONARY DATA TYPE](#18-dictionary-data-type)
+	- [1.9 STRUCT DATA TYPE](#19-struct-data-type)
+	- [1.10 VALUES, VARIABLES](#110-values-variables)
+		- [IMMUTABLE VALUES VS VARIABLES](#immutable-values-vs-variables)
+		- [DEEP BY VALUE](#deep-by-value)
+		- [VALUE ORIENTED, NO POINTERS](#value-oriented-no-pointers)
+		- [STATIC TYPING, INFERRED](#static-typing-inferred)
+	- [1.11 FUNCTIONS \(PURE AND IMPURE\)](#111-functions-pure-and-impure)
+		- [IMPURE FUNCTIONS](#impure-functions)
+		- [GRAY PURE FUNCTIONS](#gray-pure-functions)
+	- [1.12 COMMENTS AND DOCUMENTATION](#112-comments-and-documentation)
+	- [1.13 JSON AND AUTOMATIC SERIALIZATION](#113-json-and-automatic-serialization)
+	- [1.14 FLOYD PROCESSES - TALKING TO THE REAL WORLD](#114-floyd-processes---talking-to-the-real-world)
+		- [GAIN PERFORMANCE VIA CONCURRENCY](#gain-performance-via-concurrency)
+		- [CONCURRENCY SCENARIOS](#concurrency-scenarios)
+		- [EXAMPLE: SIMPLE CONSOLE PROGRAM](#example-simple-console-program)
+		- [EXAMPLE: PACMAN IPHONE](#example-pacman-iphone)
+	- [1.15 SYSTEM ARCHITECTURE](#115-system-architecture)
+		- [DIAGRAMS](#diagrams)
+	- [1.16 TODO: EXCEPTIONS](#116-todo-exceptions)
+	- [1.17 ABOUT PERFORMANCE](#117-about-performance)
+	- [1.18 ABOUT MICRO BENCHMARKS](#118-about-micro-benchmarks)
+		- [BENCHMARK WITH 11 INSTANCES](#benchmark-with-11-instances)
+		- [RUNNING MICRO BENCHMARKS FROM COMMAND LINE TOOL](#running-micro-benchmarks-from-command-line-tool)
+		- [RUNNING MICRO BENCHMARKS FROM FLOYD CODE](#running-micro-benchmarks-from-floyd-code)
+		- [HARDWARE CAPS](#hardware-caps)
+	- [1.19 ABOUT PARALLELISM](#119-about-parallelism)
+	- [1.20 TODO: PROBES](#120-todo-probes)
+	- [1.21 TODO: TWEAKERS](#121-todo-tweakers)
+- [2 REFERENCE MANUAL](#2-reference-manual)
+	- [2.1 SOURCE CODE FILES](#21-source-code-files)
+	- [2.2 MAIN\(\) & EXECUTING PROGRAMS](#22-main--executing-programs)
+	- [2.3 CORECALLS - AKA INTRINSICS, OPERATORS](#23-corecalls---aka-intrinsics-operators)
+		- [print\(\) -- IMPURE](#print----impure)
+		- [send\(\) -- IMPURE](#send----impure)
+		- [assert\(\)](#assert)
+		- [to_string\(\)](#to_string)
+		- [to\_pretty\_string\(\)](#toprettystring)
+		- [typeof\(\)](#typeof)
+	- [2.4 DATA TYPES](#24-data-types)
+		- [EXAMPLE TYPE DECLARATIONS](#example-type-declarations)
+		- [BOOL](#bool)
+		- [INT](#int)
+		- [DOUBLE](#double)
+		- [STRING](#string)
+		- [VECTOR](#vector)
+		- [DICTIONARY](#dictionary)
+		- [STRUCT](#struct)
+		- [TYPEID](#typeid)
+		- [JSON](#json)
+		- [TODO: PROTOCOL](#todo-protocol)
+	- [2.5 EXPRESSIONS](#25-expressions)
+		- [LITERALS](#literals)
+		- [VECTOR-CONSTRUCTOR](#vector-constructor)
+		- [DICTIONARY-CONSTRUCTOR](#dictionary-constructor)
+		- [FUNCTION CALL](#function-call)
+		- [ARITHMETIC OPERATORS](#arithmetic-operators)
+		- [RELATIONAL OPERATORS](#relational-operators)
+		- [LOGICAL OPERATORS](#logical-operators)
+		- [CONDITIONAL OPERATOR](#conditional-operator)
+		- [BITWISE OPERATORS](#bitwise-operators)
+		- [BENCHMARK EXPRESSION](#benchmark-expression)
+		- [EXAMPLE EXPRESSIONS](#example-expressions)
+	- [2.6 STATEMENTS](#26-statements)
+		- [LET STATEMENT](#let-statement)
+		- [MUTABLE STATEMENT](#mutable-statement)
+		- [FUNCTION DEFINITION STATEMENT](#function-definition-statement)
+		- [STRUCT DEFINITION STATEMENTS](#struct-definition-statements)
+		- [IF - THEN - ELSE STATEMENT](#if---then---else-statement)
+		- [FOR LOOP STATEMENT](#for-loop-statement)
+		- [WHILE STATEMENT](#while-statement)
+		- [RETURN STATEMENT](#return-statement)
+		- [SOFTWARE-SYSTEM-DEF STATEMENT](#software-system-def-statement)
+		- [CONTAINER-DEF STATEMENT](#container-def-statement)
+		- [TODO: SWITCH STATEMENT](#todo-switch-statement)
+		- [BENCHMARK-DEF STATEMENT](#benchmark-def-statement)
+		- [ADVANCED](#advanced)
+	- [2.7 EXAMPLE SOFTWARE SYSTEM FILE](#27-example-software-system-file)
+	- [2.8 FLOYD SYNTAX](#28-floyd-syntax)
+
+<!-- /MarkdownTOC -->
+
+<a id="1-floyd-users-manual"></a>
+# 1 FLOYD USER'S MANUAL
 
 Floyd is a programming language that aims to compete with languages like Java, C++, Rust, Go, Javascript and Python. Floyd cares about low level things like CPU memory hardware as well as high level things like software systems, containers, components, APIs and virtual processes.
 
@@ -10,17 +110,16 @@ This document assumes the reader knows basic programming concepts like variables
 
 
 
-# QUICK REFERENCE
+<a id="11-getting-started"></a>
+## 1.1 GETTING STARTED
 
 
  ![](floyd_quick_reference.png)
 
 
 
-
-
-
-## COMMAND LINE TOOL
+<a id="12-command-line-tool"></a>
+## 1.2 COMMAND LINE TOOL
 
 |COMMAND		  	| MEANING
 |:---				|:---	
@@ -35,7 +134,8 @@ This document assumes the reader knows basic programming concepts like variables
 
 
 
-## GLOBAL SCOPE AND MAIN FUNCTION
+<a id="13-global-scope-and-main-function"></a>
+## 1.3 GLOBAL SCOPE AND MAIN FUNCTION
 
 The global scope is the top level of you source file: statements that are not inside any function. Here you normally define functions, structs and global constants. The global scope can have almost any statement and they execute at program start. Simple programs can do without defining any functions at all.
 
@@ -55,7 +155,9 @@ func int main([string] args){
 ...will call your main() function with ["-a", "output.txt"] and your executable will return 42.
 
 
-## DATA TYPES
+
+<a id="14-data-types"></a>
+## 1.4 DATA TYPES
 
 These are the primitive data types built into the language itself. The building blocks of all values and data in Floyd.
 One of Floyd's goals is that all the basics you need are already there in the language and the core library. This makes it easy to start making meaningful programs. It also promotes composability since all Floyd code can rely on these types and communicate between themselves using these types. This greatly reduces the need to write glue code that converts between different library's string classes and logging and so on.
@@ -79,11 +181,14 @@ The core library has more common types, like sha1_t, uuid_t, url_t, date_t, bina
 
 
 
-## OPERATORS AND EXPRESSIONS
+<a id="15-operators-and-expressions"></a>
+## 1.5 OPERATORS AND EXPRESSIONS
 
 There are operators for comparing values: <, >, <=, >=, == (equal), != (not equal).
 Logical operators && (and) and || (or).
 There are arithmetic operators like +, -, *, / and %.
+
+
 The trinary comparison operator is also supported:
 
 ```
@@ -94,7 +199,8 @@ Notice that floyd has no special operator syntax for bitwise operations the way 
 
 
 
-## STRING DATA TYPE
+<a id="16-string-data-type"></a>
+## 1.6 STRING DATA TYPE
 
 Floyd has a built-in 8-bit string type. As all data types in Floyd, the string type is immutable. You can also use them as fast and compact arrays of bytes since there are no other 8 bit types in Floyd. You can make string literals directly in the source code like this: ``` let a = "Hello, world!" ```
 
@@ -112,7 +218,8 @@ assert(a == "e")
 Notice: a special mechansim for Unicode is planned, using another data type: "text".
 
 
-## VECTOR DATA TYPE
+<a id="17-vector-data-type"></a>
+## 1.7 VECTOR DATA TYPE
 
 A vector is a collection of values where you look up the values using an index between 0 and (vector size - 1). The items in a vector are called "elements". The elements are ordered. Finding an element at an index uses constant time. In other languages vectors are called "arrays" or even "lists". Floyd vectors can have any size - the number of elements is not part of the type.
 
@@ -149,7 +256,8 @@ assert(a == [ 10, 20, 30, 40, 50 ])
 ```
 
 
-## DICTIONARY DATA TYPE
+<a id="18-dictionary-data-type"></a>
+## 1.8 DICTIONARY DATA TYPE
 
 A collection of values where you identify the values using string keys. In C++ you would use a std::map. When you specify the type of dictionary you must always include "string". You can put any type of value into the dictionary (but not mix inside the same dictionary).
 
@@ -172,7 +280,8 @@ You copy dictionaries using = and all comparison expressions work, just like wit
 
 
 
-## STRUCT DATA TYPE
+<a id="19-struct-data-type"></a>
+## 1.9 STRUCT DATA TYPE
 
 Structs are the central building block for composing data in Floyd. They are used in place of classes in other programming languages. Structs are always values and immutable. They are very fast and compact: behind the curtains copied structs shares state between them, even when partially modified.
 
@@ -253,8 +362,10 @@ assert(b.size.x == 100)
 ```
 
 
-## VALUES, VARIABLES
+<a id="110-values-variables"></a>
+## 1.10 VALUES, VARIABLES
 
+<a id="immutable-values-vs-variables"></a>
 ### IMMUTABLE VALUES VS VARIABLES
 
 All values in Floyd are immutable -- you make new values based on previous values, but you don't directly modify old values. Internally Floyd uses clever mechanisms to make this fast and avoids copying data too much. It's perfectly good to replace a character in a 3 GB long string and get a new 3 GB string as a result. Almost all of the characters will be stored only once.
@@ -295,7 +406,8 @@ mutable a = "hello"
 a = "goodbye"	//	Changes variable a to "goodbye".
 ```
 
-## DEEP BY VALUE
+<a id="deep-by-value"></a>
+### DEEP BY VALUE
 
 All values and aggregated members values are always considered in operations in any type of nesting of structs and values and collections. This includes equality checks or assignment for example.
 
@@ -304,14 +416,16 @@ The order of the members inside the struct (or collection) is important for sort
 Example: your application's entire state may be stored in *one* value in a struct containing other structs and vectors and so on. This value can still be copied around quickly, it is automatically sortable, convertible to JSON or whatever.
 
 
-## VALUE ORIENTED, NO POINTERS
+<a id="value-oriented-no-pointers"></a>
+### VALUE ORIENTED, NO POINTERS
 
 There are no pointers or references in Floyd. You copy values around deeply instead. Even a big value like your game's entire world or your word processor's entire document. Behind the curtains Floyd uses pointers extensively to make this fast.
 
 Removing the concept of pointers makes programming easier. There are no dangling pointers, aliasing problems or defensive copying and other classic problems. It also makes it simpler for the runtime and compiler to generate extremely fast code.
 
 
-## STATIC TYPING, INFERRED
+<a id="static-typing-inferred"></a>
+### STATIC TYPING, INFERRED
 
 Floyd is strongly typed language. Every variable, argument, return value and struct member has a defined type. If you make a vector of elements, you need to decide on one type of elements to store in the vector.
 
@@ -322,7 +436,8 @@ Javascript, Python and Ruby does not use static typing.
 You can often leave out the actual type from the code, when the compiler already knows the type - the compiler can often guess = infer the type.
 
 
-## FUNCTIONS (PURE AND IMPURE)
+<a id="111-functions-pure-and-impure"></a>
+## 1.11 FUNCTIONS (PURE AND IMPURE)
 
 Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants. They cannot modify global variables or affect the outside work via communication or files.
 
@@ -374,6 +489,7 @@ func bool (string, string) f5(int x)
 All arguments to a function are read-only -- you cannot modify the arguments or anything they refer too. There are no output parameters in Floyd.
 
 
+<a id="impure-functions"></a>
 ### IMPURE FUNCTIONS
 
 You can tag a function to be impure using the "impure" keyword.
@@ -394,6 +510,7 @@ Limit the amount of impure code!
 A number of impure functions are built into the language and its core library.
 
 
+<a id="gray-pure-functions"></a>
 ### GRAY PURE FUNCTIONS
 
 This is a type of function that *has side effects or state* -- but the calling functions cannot observe this so from their perspective it is pure. Examples are memory allocators and memory pools and logging program execution.
@@ -403,7 +520,8 @@ Why is this OK? Well to be picky there are no pure functions, since calling a pu
 
 
 
-## COMMENTS AND DOCUMENTATION
+<a id="112-comments-and-documentation"></a>
+## 1.12 COMMENTS AND DOCUMENTATION
 
 Use comments to write documentation, notes or explanations in the code. Comments are not executed or compiled -- they are only for humans. You often use the comment features to disable / hide code from the compiler.
 
@@ -424,7 +542,8 @@ Everything between // and newline is a comment:
 let a = "hello" //	This is an end of line comment.
 ```
 
-## JSON AND AUTOMATIC SERIALIZATION
+<a id="113-json-and-automatic-serialization"></a>
+## 1.13 JSON AND AUTOMATIC SERIALIZATION
 
 Serializing any Floyd value is a built-in mechanism. It is always true-deep.
 
@@ -468,7 +587,8 @@ let test_json2 = json(
 
 
 
-## FLOYD PROCESSES - TALKING TO THE REAL WORLD
+<a id="114-floyd-processes---talking-to-the-real-world"></a>
+## 1.14 FLOYD PROCESSES - TALKING TO THE REAL WORLD
 
 Floyd processes is how you express the passing of time, updating state (mutation) and handling concurrency in Floyd. These concepts are tied together.
 
@@ -602,12 +722,14 @@ Synced processes still have their own state and can be used as controllers / med
 
 
 
+<a id="gain-performance-via-concurrency"></a>
 ### GAIN PERFORMANCE VIA CONCURRENCY
 
 Sometimes we introduce concurrency to make more parallelism possible: multithreading a game engine is taking a non-concurrent design and making it concurrent to be able to improve throughput by running many tasks in parallel. This is different to using concurrency to model real-world concurrency like UI vs background cloud com vs real-time audio processing.
 
 
 
+<a id="concurrency-scenarios"></a>
 ### CONCURRENCY SCENARIOS
 
 |#	|Need		|Traditional	|Floyd
@@ -625,12 +747,14 @@ Sometimes we introduce concurrency to make more parallelism possible: multithrea
 
 
 
+<a id="example-simple-console-program"></a>
 ### EXAMPLE: SIMPLE CONSOLE PROGRAM
 
 This is a basic command line app. It doesn't need a Floyd process at all, it's just a function. It gets its input values from the command line arguments, calls some pure Floyd functions on the arguments, reads and writes to the world, then finally return an integer result. 
 
 
 
+<a id="example-pacman-iphone"></a>
 ### EXAMPLE: PACMAN IPHONE
 
 ![Pacman](floyd_pacman.png)
@@ -653,7 +777,8 @@ https://www.youtube.com/watch?v=v2Q_zHG3vqg
 
 
 
-## SYSTEM ARCHITECTURE
+<a id="115-system-architecture"></a>
+## 1.15 SYSTEM ARCHITECTURE
 
 Floyd uses the C4 model to navigate and present your code and for its terminology. It's completely optional to use these features. They give you a very fast and lightweight way method to think about your system and to automatically generate a few great diagrams that helps you reason about it.
 
@@ -711,7 +836,8 @@ software-system-def {
 }
 ```
 
-# DIAGRAMS
+<a id="diagrams"></a>
+### DIAGRAMS
 
 ##### LEVEL 1 - SYSTEM CONTEXT DIAGRAM
 
@@ -755,14 +881,16 @@ TODO: support connections between components inside containers.
 
 
 
-## TODO: EXCEPTIONS
+<a id="116-todo-exceptions"></a>
+## 1.16 TODO: EXCEPTIONS
 
 Throw exception. Built in types, free noun. Refine, final.
 
 
 
 
-## ABOUT PERFORMANCE
+<a id="117-about-performance"></a>
+## 1.17 ABOUT PERFORMANCE
 
 Chandler Carruth:
 
@@ -798,7 +926,8 @@ TODO: Also draw computing power.
 TOD: Fact check stats.
 
 
-## ABOUT MICRO BENCHMARKS
+<a id="118-about-micro-benchmarks"></a>
+## 1.18 ABOUT MICRO BENCHMARKS
 
 Floyd is about engineering programs for fast execution. To aid in this, Floyd has built-in features to benchmark your code so you know the actual performance.
 
@@ -837,6 +966,7 @@ The benchmark features have been designed to:
 
 
 
+<a id="benchmark-with-11-instances"></a>
 ### BENCHMARK WITH 11 INSTANCES
 
 ```
@@ -860,6 +990,7 @@ benchmark-def "Linear veq" {
 ```
 
 
+<a id="running-micro-benchmarks-from-command-line-tool"></a>
 ### RUNNING MICRO BENCHMARKS FROM COMMAND LINE TOOL
 
 Run all micro benchmarks in your program:
@@ -898,6 +1029,7 @@ The output will be formatted and sent to stdout. Use --json to instead print the
 When you run a benchmark, all/any of its instances are always run.
 
 
+<a id="running-micro-benchmarks-from-floyd-code"></a>
 ### RUNNING MICRO BENCHMARKS FROM FLOYD CODE
 
 
@@ -910,6 +1042,7 @@ You can write code that run only some benchmark and uses the output in some othe
 
 
 
+<a id="hardware-caps"></a>
 ### HARDWARE CAPS
 
 These built-in features lets you see what kind of CPU and memory system your program is currently running on. This is important when recording and understanding microbenchmark results.
@@ -954,7 +1087,8 @@ Output is something similar to this:
 
 
 
-## ABOUT PARALLELISM
+<a id="119-about-parallelism"></a>
+## 1.19 ABOUT PARALLELISM
 
 Parallelism is about finishing a task faster by using more of the available hardware.
 
@@ -977,14 +1111,16 @@ Notice: map() and map_dag() shares threads with other mechanisms in the Floyd ru
 
 
 
-## TODO: PROBES
+<a id="120-todo-probes"></a>
+## 1.20 TODO: PROBES
 
 You add probes to wires, processes and individual functions and expressions. They gather intel on how your program runs on the hardware, let's you explore your running code and profile its hardware use.
 
 
 
 
-## TODO: TWEAKERS
+<a id="121-todo-tweakers"></a>
+## 1.21 TODO: TWEAKERS
 
 Tweakers are inserted onto the wires and clocks and functions and expressions of the code and affect how the runtime and language executes that code, without changing its logic. Caching, batching, pre-calculation, parallelization, hardware allocation, collection-type selection are examples of what's possible.
 
@@ -1022,18 +1158,21 @@ Tweakers are inserted onto the wires and clocks and functions and expressions of
 
 
 
-# REFERENCE MANUAL
+<a id="2-reference-manual"></a>
+# 2 REFERENCE MANUAL
 
 
 
 
-## SOURCE CODE FILES
+<a id="21-source-code-files"></a>
+## 2.1 SOURCE CODE FILES
 
 Floyd files are always utf-8 files with no BOM. Their extension is ".floyd".
 
 
 
-## MAIN() & EXECUTING PROGRAMS
+<a id="22-main--executing-programs"></a>
+## 2.2 MAIN() & EXECUTING PROGRAMS
 
 These are the steps used by the Floyd runtime to executing a Floyd program that has a main() function
 
@@ -1080,7 +1219,8 @@ func int main([string] args){
 ...will call your main() function with ["-a", "output.txt"] and your executable will return 42.
 
 
-## CORECALLS - AKA INTRINSICS, OPERATORS
+<a id="23-corecalls---aka-intrinsics-operators"></a>
+## 2.3 CORECALLS - AKA INTRINSICS, OPERATORS
 
 These functions are built into the language itself and are always available to your code. They are all pure unless except print() and send(). The have special code generation algorithms. Many of these functions are generic -- they work on many different types.
 
@@ -1125,6 +1265,7 @@ COMPLETE LIST OF CORECALLS:
 | bw_shift_right_arithmetic()		| Bitwise shift right with sign extension for signed values
 
 
+<a id="print----impure"></a>
 ### print() -- IMPURE
 
 ** IMPURE FUNCTION **
@@ -1153,6 +1294,7 @@ This outputs one line of text to the default output of the application. It can p
 
 
 
+<a id="send----impure"></a>
 ### send() -- IMPURE
 
 Sends a message to the inbox of a Floyd process, possibly your own process.
@@ -1165,6 +1307,7 @@ The send function returns immediately.
 
 
 
+<a id="assert"></a>
 ### assert()
 
 Used this to check your code for programming errors, and check the inputs of your function for misuse by its callers.
@@ -1182,6 +1325,7 @@ func f(int x){
 ```
 
 
+<a id="to_string"></a>
 ### to_string()
 
 Converts its input to a string. This works with any type of values. It also works with types themselves, which is useful for debugging.
@@ -1192,12 +1336,14 @@ You often use this function to convert numbers to strings.
 
 
 
+<a id="toprettystring"></a>
 ### to\_pretty\_string()
 
 Converts its input to a string of JSON data that is formatted nicely with indentations. It works with any Floyd value.
 
 
 
+<a id="typeof"></a>
 ### typeof()
 
 Return the type of its input value. The returned typeid-value is a complete Floyd type and can be stored, compared and so on. The type is resolved at compile time so the same source code line will always return the same type. 
@@ -1212,7 +1358,8 @@ typeid typeof(any)
 
 
 
-## DATA TYPES
+<a id="24-data-types"></a>
+## 2.4 DATA TYPES
 
 These are the data types built into the language itself:
 
@@ -1237,6 +1384,7 @@ These are the data types built into the language itself:
 
 
 
+<a id="example-type-declarations"></a>
 ### EXAMPLE TYPE DECLARATIONS
 
 |SOURCE		| MEANING
@@ -1257,7 +1405,8 @@ These are the data types built into the language itself:
 | func bool (int (double a) b)				| function returns bool and takes an argument of type: function that returns in and take double-argument.
 
 
-### BOOL DATA TYPE
+<a id="bool"></a>
+### BOOL
 
 The bool type in Floyd can only be true or false.
 
@@ -1269,7 +1418,8 @@ assert(a != true)
 You can use it to store flags. It is also the output of all comparison operators.
 
 
-### INT DATA TYPE
+<a id="int"></a>
+### INT
 
 Floyd integers are 64 bit signed. All normal expressions and comparisons work on them, like + - and so on.
 
@@ -1347,7 +1497,8 @@ When doing bitwise manipulation it is often convenient to use binary literals or
 
 
 
-### DOUBLE DATA TYPE
+<a id="double"></a>
+### DOUBLE
 
 This is a 64 bit floating point number. It's literals looks like this:
 
@@ -1358,7 +1509,8 @@ You need to include the "." or the literal will be interpreted as an integer.
 
 
 
-### STRING DATA TYPE
+<a id="string"></a>
+### STRING
 
 This is a pure 8-bit string type. It is immutable. The encoding of the characters in the string is undefined. You can put 7-bit ASCII in them or UTF-8 or something else. You can also use them as fast arrays of bytes. When you access individual elements in the string you use the int-type, which is a 64 bit signed type. There is no equivalent to C-lang "char" type.
 
@@ -1458,7 +1610,8 @@ Example: push_back()
 assert(push_back("hello", 'x') == hellox)
 ```
 
-### VECTOR DATA TYPE
+<a id="vector"></a>
+### VECTOR
 
 A vector is a collection of values where you look up the values using an index between 0 and (vector size - 1). Finding an element at an index uses constant time.
 
@@ -1605,7 +1758,8 @@ Sort a vector and return a new sorted vector. The existing vector is unchanged.
 
 
 
-### DICTIONARY DATA TYPE
+<a id="dictionary"></a>
+### DICTIONARY
 
 A collection of values where you identify the values using string keys. Internally it is represented as a hash table. It is not sorted.
 
@@ -1668,7 +1822,8 @@ assert(exists({ "a": 1, "b": 2, "c": 3 }, "f")	== false)
 ```
 
 
-### STRUCT DATA TYPE
+<a id="struct"></a>
+### STRUCT
 
 Structs are aggregate types. The members have name and type. They replace struct and class of other languages. Structs are always values and immutable. They are very fast and compact: behind the curtains copied structs shares state between them, even when partially modified.
 
@@ -1718,7 +1873,8 @@ assert(c == point(123, 20))
 
 
 
-### TYPEID DATA TYPE
+<a id="typeid"></a>
+### TYPEID
 
 A typeid is tells the type of a value.
 
@@ -1743,7 +1899,8 @@ A typeid is a proper Floyd value: you can copy it, compare it, convert it to str
 - Arithmetic:
 
 
-### JSON DATA TYPE
+<a id="json"></a>
+### JSON
 
 Why JSON? JSON is very central to Floyd. Floyd is based on values (simple ones or entire data models as one value) JSON is a simple and standard way to store composite values in a tree shape in a simple and standardized way. It also makes it easy to serializing any Floyd value to text and back. JSON is built directly into the language as the default serialized format for Floyd values.
 
@@ -1898,7 +2055,8 @@ Different destinations have different limitations and escape mechanisms and will
 
 
 
-### TODO: PROTOCOL DATA TYPE
+<a id="todo-protocol"></a>
+### TODO: PROTOCOL
 
 TODO 1.0
 
@@ -1910,7 +2068,8 @@ Protocol member functions can be tagged "impure" which allows it to be implement
 
 
 
-## EXPRESSIONS
+<a id="25-expressions"></a>
+## 2.5 EXPRESSIONS
 
 An expression is how you calculate new values. The output of an expression is always another value.
 
@@ -1918,22 +2077,26 @@ Comparisons are deep: for a composite value they consider all members values and
 
 
 
+<a id="literals"></a>
 ### LITERALS
 
 This is a value that is fully defined directly in the code. Like the number 3. See each data type for its literals work.
 
 
+<a id="vector-constructor"></a>
 ### VECTOR-CONSTRUCTOR
 
 This lets you create a new vector value anywhere an expression can be put. This expression supports non-constant elements of the constructor.
 Read more in the vector data type text.
 
 
+<a id="dictionary-constructor"></a>
 ### DICTIONARY-CONSTRUCTOR
 
 This lets you create a new dictionary value anywhere an expression can be typed. This expression supports non-constant elements of the constructor.
 Read more in the dictionary data type text.
 
+<a id="function-call"></a>
 ### FUNCTION CALL
 
 ```
@@ -1944,6 +2107,7 @@ Anywhere an expression can be put, so can a function call be put. Notice that th
 
 
 
+<a id="arithmetic-operators"></a>
 ### ARITHMETIC OPERATORS
 
 How to add and combine values:
@@ -1957,6 +2121,7 @@ How to add and combine values:
 |%	|Modulus Operator returns remainder after an integer division: "a = b / c", "a = b / c / d"
 
 
+<a id="relational-operators"></a>
 ### RELATIONAL OPERATORS
 
 Used to compare two values. The result is true or false:
@@ -1971,6 +2136,7 @@ Used to compare two values. The result is true or false:
 |	a <= b	|	true if a is less than or equal to b
 
 
+<a id="logical-operators"></a>
 ### LOGICAL OPERATORS
 
 Used to compare two values. The result is true or false:
@@ -1981,6 +2147,7 @@ Used to compare two values. The result is true or false:
 | a \|\| b		|	true if a is true or b is true
 
 
+<a id="conditional-operator"></a>
 ### CONDITIONAL OPERATOR
 
 When the condition is true, this entire expression has the value of a. Else it has the value of b. Also called ternary operator, because it has three parts.
@@ -1999,6 +2166,7 @@ assert(is_polite("hiya!") == false)
 assert(is_polite("hello") == true)
 ```
 
+<a id="bitwise-operators"></a>
 ### BITWISE OPERATORS
 
 Floyd uses explicit names for all bitwise operators, not special language operators like C does. C uses "&" for AND and "<<" for shift left. This is to make evaluation order clear and to avoid accidental mixup between logical operators and bitwise operators.
@@ -2007,6 +2175,7 @@ Read more about this in the int data type section.
 
 
 
+<a id="benchmark-expression"></a>
 ### BENCHMARK EXPRESSION
 
 ```
@@ -2023,6 +2192,7 @@ Floyd will execute the bracketed statements many times: both to warm up the comp
 
 
 
+<a id="example-expressions"></a>
 ### EXAMPLE EXPRESSIONS
 
 |SOURCE		| MEANING
@@ -2055,9 +2225,11 @@ Floyd will execute the bracketed statements many times: both to warm up the comp
 
 
 
-## STATEMENTS
+<a id="26-statements"></a>
+## 2.6 STATEMENTS
 
 
+<a id="let-statement"></a>
 ### LET STATEMENT
 
 Makes a new constant with a name and a value. The value cannot be changed.
@@ -2078,6 +2250,7 @@ let hello = "Greeting message."
 
 
 
+<a id="mutable-statement"></a>
 ### MUTABLE STATEMENT
 
 Makes a new local variable with a name, calculated from the expression. The variable can be changed to hold another value of the same type.
@@ -2096,6 +2269,7 @@ mutable hello = "Greeting message."
 
 
 
+<a id="function-definition-statement"></a>
 ### FUNCTION DEFINITION STATEMENT
 
 ```
@@ -2114,6 +2288,7 @@ This defines a new function value and gives it a name in the current scope. If y
 
 
 
+<a id="struct-definition-statements"></a>
 ### STRUCT DEFINITION STATEMENTS
 
 This defines a new struct-type and gives it a name in the current scope.
@@ -2138,6 +2313,7 @@ struct my_struct_t {
 
 
 
+<a id="if---then---else-statement"></a>
 ### IF - THEN - ELSE STATEMENT
 
 This is a normal if-elseif-else feature, like in most languages. Brackets are required always.
@@ -2185,6 +2361,7 @@ In each body you can write any statements. There is no "break" keyword.
 
 
 
+<a id="for-loop-statement"></a>
 ### FOR LOOP STATEMENT
 
 For loops are used to execute a body of statements many times. The number of times is calculated *before* the first time the body is called. Many other languages evaluate the condition for each loop iteration. In Floyd you use a while-loop for that.
@@ -2216,6 +2393,7 @@ for (tickMark in a ..< string.size()) {
 
 Notice: prefer to use map(), filter() and reduce() instead of for-loops whenever possible. This makes cleaner code and more optimisation opportunities.
 
+<a id="while-statement"></a>
 ### WHILE STATEMENT
 
 Perform the loop body while the expression is true.
@@ -2229,6 +2407,7 @@ The condition is executed each time before body is executed. If the condition is
 
 
 
+<a id="return-statement"></a>
 ### RETURN STATEMENT
 
 The return statement aborts the execution of the current function as the function will have the return statement's expression as its return value.
@@ -2243,6 +2422,7 @@ The return statement aborts the execution of the current function as the functio
 
 
 
+<a id="software-system-def-statement"></a>
 ### SOFTWARE-SYSTEM-DEF STATEMENT
 
 This is a dedicated keyword for defining software systems: **software-system-def**. Its contents is encoded as a JSON object and designed to be either hand-coded or processed by tools. You only have one of these in a software system.
@@ -2295,6 +2475,7 @@ This is an object where each key is the name of a persona and a short descriptio
 
 
 
+<a id="container-def-statement"></a>
 ### CONTAINER-DEF STATEMENT
 
 This is a dedicated keyword. It defines *one* container, its name, its internal processes and how they interact.
@@ -2395,6 +2576,7 @@ func my_gui_state_t my_gui(my_gui_state_t state, json message) impure{
 ```
 
 
+<a id="todo-switch-statement"></a>
 ### TODO: SWITCH STATEMENT
 
 TODO POC
@@ -2404,6 +2586,7 @@ TODO POC
 
 
 
+<a id="benchmark-def-statement"></a>
 ### BENCHMARK-DEF STATEMENT
 
 Defines a benchmark (optionally with several instances) so it's available to Floyd.
@@ -2415,6 +2598,7 @@ Your test will be run for each test in the set. Usually you want to measure for 
 
 You can use built-in resources (because those functions are pure) but not load any file.
 
+<a id="advanced"></a>
 ### ADVANCED
 
 This is what really happens when you use benchmark-def:
@@ -2471,7 +2655,8 @@ This means you can write code that explores the benchmark_registry vector and it
 
 
 
-## EXAMPLE SOFTWARE SYSTEM FILE
+<a id="27-example-software-system-file"></a>
+## 2.7 EXAMPLE SOFTWARE SYSTEM FILE
 
 
 ```
@@ -2537,7 +2722,8 @@ func string my_gui__init() impure {
 }
 
 ```
-## FLOYD SYNTAX
+<a id="28-floyd-syntax"></a>
+## 2.8 FLOYD SYNTAX
 
 Here is the DAG for the complete syntax of Floyd.
 
