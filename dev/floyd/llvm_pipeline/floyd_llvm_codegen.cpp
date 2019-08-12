@@ -2250,11 +2250,12 @@ static std::vector<resolved_symbol_t> generate_globals_from_ast(llvm_code_genera
 }
 
 //	NOTICE: Fills-in the body of an existing LLVM function prototype.
-static void generate_floyd_function_body(llvm_code_generator_t& gen_acc, function_id_t function_id, const floyd::function_definition_t& function_def, const body_t& body){
+static void generate_floyd_function_body(llvm_code_generator_t& gen_acc, const floyd::function_definition_t& function_def, const body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
+	const auto function_id = function_id_t { function_def._definition_name };
 	const auto link_name = generate_link_name(function_id, function_def);
 
 	auto f = gen_acc.module->getFunction(link_name);
@@ -2287,7 +2288,7 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 	//	We have already generate the LLVM function-prototypes for the global functions in generate_module().
 	for(const auto& function_def: semantic_ast._tree._function_defs){
 		if(function_def._optional_body){
-			generate_floyd_function_body(gen_acc, function_id_t { function_def._definition_name }, function_def, *function_def._optional_body);
+			generate_floyd_function_body(gen_acc, function_def, *function_def._optional_body);
 		}
 	}
 }
@@ -2296,11 +2297,12 @@ static void generate_all_floyd_function_bodies(llvm_code_generator_t& gen_acc, c
 //	The AST contains statements that initializes the global variables, including global functions.
 
 //	Function prototype must NOT EXIST already.
-static llvm::Function* generate_function_prototype(llvm::Module& module, const llvm_type_lookup& type_lookup, const function_definition_t& function_def, function_id_t function_id){
+static llvm::Function* generate_function_prototype(llvm::Module& module, const llvm_type_lookup& type_lookup, const function_definition_t& function_def){
 	QUARK_ASSERT(check_invariant__module(&module));
 	QUARK_ASSERT(type_lookup.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
 
+	const auto function_id = function_id_t { function_def._definition_name };
 	const auto function_type = function_def._function_type;
 	const auto link_name = generate_link_name(function_id, function_def);
 
@@ -2394,8 +2396,8 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 	//	Make function prototypes for all floyd functions.
 	{
 		for(const auto& function_def: defs){
-			const auto function_id = function_def._definition_name;
-			auto f = generate_function_prototype(module, type_lookup, function_def, function_id_t { function_id });
+			const auto function_id = function_id_t { function_def._definition_name };
+			auto f = generate_function_prototype(module, type_lookup, function_def);
 			const auto def = function_def_t{ f->getName(), llvm::cast<llvm::Function>(f), { function_id }, function_def };
 			result.push_back(def);
 		}
