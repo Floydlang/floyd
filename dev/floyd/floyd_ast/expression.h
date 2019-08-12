@@ -210,7 +210,7 @@ struct function_definition_t {
 
 	location_t _location;
 
-	//	This is optional and may be different than the function name in the code. It's a hint only.
+	//	This is optional and may be different than the function name in the code.
 	std::string _definition_name;
 	typeid_t _function_type;
 
@@ -218,11 +218,9 @@ struct function_definition_t {
 	//??? Remove. Instead have vector of just the argument names. Or update typeid_t to contain the argument names of functions!?
 	std::vector<member_t> _named_args;
 
-
 	//	Contains body if this function is implemented using Floyd code.
 	//	Else the implementation needs to be linked in.
 	std::shared_ptr<const body_t> _optional_body;
-//	function_id_t _host_function_id;
 };
 
 bool operator==(const function_definition_t& lhs, const function_definition_t& rhs);

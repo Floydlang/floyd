@@ -571,6 +571,18 @@ llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const l
 llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& runtime_value_reg, const typeid_t& type);
 
 
+
+
+//	"hello" => "floydf_hello"
+link_name_t make_floyd_func_link_name(const std::string& name);
+std::string unpack_floyd_func_link_name(const link_name_t& name);
+
+
+//	"hello" => "floydrt_hello"
+link_name_t make_runtime_func_link_name(const std::string& name);
+std::string unpack_runtime_func_link_name(const link_name_t& name);
+
+
 }	//	floyd
 
 #endif /* floyd_llvm_helpers_hpp */

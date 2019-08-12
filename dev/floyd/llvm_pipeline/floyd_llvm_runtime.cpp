@@ -566,7 +566,7 @@ std::string native_func_ptr_to_link_name(const llvm_execution_engine_t& runtime,
 			symbols.begin(),
 			symbols.end(),
 			[&] (const runtime_value_t& e) {
-				return floyd_runtime__compare_values(frp, static_cast<int64_t>(expression_type::k_logical_equal), arg1_type, e, arg1_value) == 1;
+				return floydrt_compare_values(frp, static_cast<int64_t>(expression_type::k_logical_equal), arg1_type, e, arg1_value) == 1;
 			}
 		);
 		if(it == vec->get_element_ptr() + vec->get_element_count()){
@@ -830,10 +830,10 @@ static void release_struct_deep(llvm_execution_engine_t& runtime, STRUCT_T* s, c
 ////////////////////////////////////////////////////////////////////////////////
 
 
-////////////////////////////////		fr_retain_vec()
+////////////////////////////////		floydrt_retain_vec()
 
 
-void fr_retain_vec(floyd_runtime_t* frp, VEC_T* vec, runtime_type_t type0){
+void floydrt_retain_vec(floyd_runtime_t* frp, VEC_T* vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	QUARK_ASSERT(vec != nullptr);
@@ -845,7 +845,7 @@ void fr_retain_vec(floyd_runtime_t* frp, VEC_T* vec, runtime_type_t type0){
 	inc_rc(vec->alloc);
 }
 
-function_bind_t fr_retain_vec__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_retain_vec__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
@@ -855,14 +855,14 @@ function_bind_t fr_retain_vec__make(llvm::LLVMContext& context, const llvm_type_
 		},
 		false
 	);
-	return { "fr_retain_vec", function_type, reinterpret_cast<void*>(fr_retain_vec) };
+	return { "floydrt_retain_vec", function_type, reinterpret_cast<void*>(floydrt_retain_vec) };
 }
 
 
-////////////////////////////////		fr_release_vec()
+////////////////////////////////		floydrt_release_vec()
 
 
-void fr_release_vec(floyd_runtime_t* frp, VEC_T* vec, runtime_type_t type0){
+void floydrt_release_vec(floyd_runtime_t* frp, VEC_T* vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(vec != nullptr);
 	const auto type = lookup_type(r.type_lookup, type0);
@@ -871,7 +871,7 @@ void fr_release_vec(floyd_runtime_t* frp, VEC_T* vec, runtime_type_t type0){
 	release_vec_deep(r, vec, type);
 }
 
-function_bind_t fr_release_vec__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_release_vec__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
@@ -881,17 +881,17 @@ function_bind_t fr_release_vec__make(llvm::LLVMContext& context, const llvm_type
 		},
 		false
 	);
-	return { "fr_release_vec", function_type, reinterpret_cast<void*>(fr_release_vec) };
+	return { "floydrt_release_vec", function_type, reinterpret_cast<void*>(floydrt_release_vec) };
 }
 
 
 
 
 
-////////////////////////////////		fr_retain_dict()
+////////////////////////////////		floydrt_retain_dict()
 
 
-void fr_retain_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_type_t type0){
+void floydrt_retain_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(dict != nullptr);
 	const auto type = lookup_type(r.type_lookup, type0);
@@ -902,7 +902,7 @@ void fr_retain_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_type_t type0){
 	inc_rc(dict->alloc);
 }
 
-function_bind_t fr_retain_dict__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_retain_dict__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
@@ -912,15 +912,15 @@ function_bind_t fr_retain_dict__make(llvm::LLVMContext& context, const llvm_type
 		},
 		false
 	);
-	return { "fr_retain_dict", function_type, reinterpret_cast<void*>(fr_retain_dict) };
+	return { "floydrt_retain_dict", function_type, reinterpret_cast<void*>(floydrt_retain_dict) };
 }
 
 
-////////////////////////////////		fr_release_dict()
+////////////////////////////////		floydrt_release_dict()
 
 
 
-void fr_release_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_type_t type0){
+void floydrt_release_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(dict != nullptr);
 	const auto type = lookup_type(r.type_lookup, type0);
@@ -929,7 +929,7 @@ void fr_release_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_type_t type0){
 	release_dict_deep(r, dict, type);
 }
 
-function_bind_t fr_release_dict__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_release_dict__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
@@ -939,14 +939,14 @@ function_bind_t fr_release_dict__make(llvm::LLVMContext& context, const llvm_typ
 		},
 		false
 	);
-	return { "fr_release_dict", function_type, reinterpret_cast<void*>(fr_release_dict) };
+	return { "floydrt_release_dict", function_type, reinterpret_cast<void*>(floydrt_release_dict) };
 }
 
 
-////////////////////////////////		fr_retain_json()
+////////////////////////////////		floydrt_retain_json()
 
 
-void fr_retain_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
+void floydrt_retain_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type = lookup_type(r.type_lookup, type0);
@@ -962,7 +962,7 @@ void fr_retain_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
 	}
 }
 
-function_bind_t fr_retain_json__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_retain_json__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
@@ -972,14 +972,14 @@ function_bind_t fr_retain_json__make(llvm::LLVMContext& context, const llvm_type
 		},
 		false
 	);
-	return { "fr_retain_json", function_type, reinterpret_cast<void*>(fr_retain_json) };
+	return { "floydrt_retain_json", function_type, reinterpret_cast<void*>(floydrt_retain_json) };
 }
 
 
-////////////////////////////////		fr_release_json()
+////////////////////////////////		floydrt_release_json()
 
 
-void fr_release_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
+void floydrt_release_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	const auto type = lookup_type(r.type_lookup, type0);
 	QUARK_ASSERT(type.is_json());
@@ -995,7 +995,7 @@ void fr_release_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
 	}
 }
 
-function_bind_t fr_release_json__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_release_json__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
@@ -1005,7 +1005,7 @@ function_bind_t fr_release_json__make(llvm::LLVMContext& context, const llvm_typ
 		},
 		false
 	);
-	return { "fr_release_json", function_type, reinterpret_cast<void*>(fr_release_json) };
+	return { "floydrt_release_json", function_type, reinterpret_cast<void*>(floydrt_release_json) };
 }
 
 
@@ -1017,10 +1017,10 @@ function_bind_t fr_release_json__make(llvm::LLVMContext& context, const llvm_typ
 
 
 
-////////////////////////////////		fr_retain_struct()
+////////////////////////////////		floydrt_retain_struct()
 
 
-void fr_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_type_t type0){
+void floydrt_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type = lookup_type(r.type_lookup, type0);
@@ -1030,7 +1030,7 @@ void fr_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_type_t type0){
 	inc_rc(v->alloc);
 }
 
-function_bind_t fr_retain_struct__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_retain_struct__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
@@ -1040,14 +1040,14 @@ function_bind_t fr_retain_struct__make(llvm::LLVMContext& context, const llvm_ty
 		},
 		false
 	);
-	return { "fr_retain_struct", function_type, reinterpret_cast<void*>(fr_retain_struct) };
+	return { "floydrt_retain_struct", function_type, reinterpret_cast<void*>(floydrt_retain_struct) };
 }
 
 
-////////////////////////////////		fr_release_struct()
+////////////////////////////////		floydrt_release_struct()
 
 
-void fr_release_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_type_t type0){
+void floydrt_release_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	const auto type = lookup_type(r.type_lookup, type0);
 	QUARK_ASSERT(type.is_struct());
@@ -1056,7 +1056,7 @@ void fr_release_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_type_t type0){
 	release_struct_deep(r, v, type);
 }
 
-function_bind_t fr_release_struct__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_release_struct__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
@@ -1066,7 +1066,7 @@ function_bind_t fr_release_struct__make(llvm::LLVMContext& context, const llvm_t
 		},
 		false
 	);
-	return { "fr_release_struct", function_type, reinterpret_cast<void*>(fr_release_struct) };
+	return { "floydrt_release_struct", function_type, reinterpret_cast<void*>(floydrt_release_struct) };
 }
 
 
@@ -1076,14 +1076,14 @@ function_bind_t fr_release_struct__make(llvm::LLVMContext& context, const llvm_t
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-VEC_T* floyd_runtime__allocate_vector(floyd_runtime_t* frp, uint64_t element_count){
+VEC_T* floydrt_allocate_vector(floyd_runtime_t* frp, uint64_t element_count){
 	auto& r = get_floyd_runtime(frp);
 
 	auto v = alloc_vec(r.heap, element_count, element_count);
 	return v;
 }
 
-function_bind_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_allocate_vector__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_generic_vec_type(type_lookup)->getPointerTo(),
 		{
@@ -1092,7 +1092,7 @@ function_bind_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context,
 		},
 		false
 	);
-	return { "floyd_runtime__allocate_vector", function_type, reinterpret_cast<void*>(floyd_runtime__allocate_vector) };
+	return { "floydrt_allocate_vector", function_type, reinterpret_cast<void*>(floydrt_allocate_vector) };
 }
 
 
@@ -1100,14 +1100,14 @@ function_bind_t floyd_runtime__allocate_vector__make(llvm::LLVMContext& context,
 
 
 //	Creates a new VEC_T with the contents of the string. Caller owns the result.
-VEC_T* fr_alloc_kstr(floyd_runtime_t* frp, const char* s, uint64_t size){
+VEC_T* floydrt_alloc_kstr(floyd_runtime_t* frp, const char* s, uint64_t size){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto a = to_runtime_string(r, std::string(s, s + size));
 	return a.vector_ptr;
 }
 
-function_bind_t fr_alloc_kstr__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_alloc_kstr__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_generic_vec_type(type_lookup)->getPointerTo(),
 		{
@@ -1117,14 +1117,14 @@ function_bind_t fr_alloc_kstr__make(llvm::LLVMContext& context, const llvm_type_
 		},
 		false
 	);
-	return { "fr_alloc_kstr", function_type, reinterpret_cast<void*>(fr_alloc_kstr) };
+	return { "floydrt_alloc_kstr", function_type, reinterpret_cast<void*>(floydrt_alloc_kstr) };
 }
 
 
-////////////////////////////////		floyd_runtime__concatunate_vectors()
+////////////////////////////////		floydrt_concatunate_vectors()
 
 
-VEC_T* floyd_runtime__concatunate_vectors(floyd_runtime_t* frp, runtime_type_t type, VEC_T* lhs, VEC_T* rhs){
+VEC_T* floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime_type_t type, VEC_T* lhs, VEC_T* rhs){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(lhs != nullptr);
 	QUARK_ASSERT(lhs->check_invariant());
@@ -1170,7 +1170,7 @@ VEC_T* floyd_runtime__concatunate_vectors(floyd_runtime_t* frp, runtime_type_t t
 	}
 }
 
-function_bind_t floyd_runtime__concatunate_vectors__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_concatunate_vectors__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_generic_vec_type(type_lookup)->getPointerTo(),
 		{
@@ -1181,7 +1181,7 @@ function_bind_t floyd_runtime__concatunate_vectors__make(llvm::LLVMContext& cont
 		},
 		false
 	);
-	return { "floyd_runtime__concatunate_vectors", function_type, reinterpret_cast<void*>(floyd_runtime__concatunate_vectors) };
+	return { "floydrt_concatunate_vectors", function_type, reinterpret_cast<void*>(floydrt_concatunate_vectors) };
 }
 
 
@@ -1190,14 +1190,14 @@ function_bind_t floyd_runtime__concatunate_vectors__make(llvm::LLVMContext& cont
 ////////////////////////////////		allocate_dict()
 
 
-void* floyd_runtime__allocate_dict(floyd_runtime_t* frp){
+void* floydrt_allocate_dict(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 
 	auto v = alloc_dict(r.heap);
 	return v;
 }
 
-function_bind_t floyd_runtime__allocate_dict__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_allocate_dict__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_generic_dict_type(type_lookup)->getPointerTo(),
 		{
@@ -1205,7 +1205,7 @@ function_bind_t floyd_runtime__allocate_dict__make(llvm::LLVMContext& context, c
 		},
 		false
 	);
-	return { "floyd_runtime__allocate_dict", function_type, reinterpret_cast<void*>(floyd_runtime__allocate_dict) };
+	return { "floydrt_allocate_dict", function_type, reinterpret_cast<void*>(floydrt_allocate_dict) };
 }
 
 
@@ -1213,7 +1213,7 @@ function_bind_t floyd_runtime__allocate_dict__make(llvm::LLVMContext& context, c
 ////////////////////////////////		store_dict()
 
 
-void floyd_runtime__store_dict_mutable(floyd_runtime_t* frp, DICT_T* dict, runtime_value_t key, runtime_value_t element_value, runtime_type_t element_type){
+void floydrt_store_dict_mutable(floyd_runtime_t* frp, DICT_T* dict, runtime_value_t key, runtime_value_t element_value, runtime_type_t element_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto key_string = from_runtime_string(r, key);
@@ -1221,7 +1221,7 @@ void floyd_runtime__store_dict_mutable(floyd_runtime_t* frp, DICT_T* dict, runti
 	dict->get_map_mut().insert_or_assign(key_string, element_value);
 }
 
-function_bind_t floyd_runtime__store_dict_mutable__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_store_dict_mutable__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getVoidTy(context),
 		{
@@ -1233,7 +1233,7 @@ function_bind_t floyd_runtime__store_dict_mutable__make(llvm::LLVMContext& conte
 		},
 		false
 	);
-	return { "floyd_runtime__store_dict_mutable", function_type, reinterpret_cast<void*>(floyd_runtime__store_dict_mutable) };
+	return { "floydrt_store_dict_mutable", function_type, reinterpret_cast<void*>(floydrt_store_dict_mutable) };
 }
 
 
@@ -1241,7 +1241,7 @@ function_bind_t floyd_runtime__store_dict_mutable__make(llvm::LLVMContext& conte
 ////////////////////////////////		lookup_dict()
 
 
-runtime_value_t floyd_runtime__lookup_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_value_t s){
+runtime_value_t floydrt_lookup_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_value_t s){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto& m = dict->get_map();
@@ -1255,7 +1255,7 @@ runtime_value_t floyd_runtime__lookup_dict(floyd_runtime_t* frp, DICT_T* dict, r
 	}
 }
 
-function_bind_t floyd_runtime__lookup_dict__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_lookup_dict__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_runtime_value_type(type_lookup),
 		{
@@ -1265,7 +1265,7 @@ function_bind_t floyd_runtime__lookup_dict__make(llvm::LLVMContext& context, con
 		},
 		false
 	);
-	return { "floyd_runtime__lookup_dict", function_type, reinterpret_cast<void*>(floyd_runtime__lookup_dict) };
+	return { "floydrt_lookup_dict", function_type, reinterpret_cast<void*>(floydrt_lookup_dict) };
 }
 
 
@@ -1275,7 +1275,7 @@ function_bind_t floyd_runtime__lookup_dict__make(llvm::LLVMContext& context, con
 
 //??? Make named types for all function-argument / return types, like: typedef int16_t* native_json_ptr
 
-JSON_T* floyd_runtime__allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+JSON_T* floydrt_allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_lookup, arg0_type);
@@ -1286,7 +1286,7 @@ JSON_T* floyd_runtime__allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_
 	return result;
 }
 
-function_bind_t floyd_runtime__allocate_json__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_allocate_json__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		get_exact_llvm_type(type_lookup, typeid_t::make_json()),
 		{
@@ -1296,7 +1296,7 @@ function_bind_t floyd_runtime__allocate_json__make(llvm::LLVMContext& context, c
 		},
 		false
 	);
-	return { "floyd_runtime__allocate_json", function_type, reinterpret_cast<void*>(floyd_runtime__allocate_json) };
+	return { "floydrt_allocate_json", function_type, reinterpret_cast<void*>(floydrt_allocate_json) };
 }
 
 
@@ -1306,7 +1306,7 @@ function_bind_t floyd_runtime__allocate_json__make(llvm::LLVMContext& context, c
 
 
 
-JSON_T* floyd_runtime__lookup_json(floyd_runtime_t* frp, JSON_T* json_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
+JSON_T* floydrt_lookup_json(floyd_runtime_t* frp, JSON_T* json_ptr, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto& json = json_ptr->get_json();
@@ -1335,7 +1335,7 @@ JSON_T* floyd_runtime__lookup_json(floyd_runtime_t* frp, JSON_T* json_ptr, runti
 	}
 }
 
-function_bind_t floyd_runtime__lookup_json__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_lookup_json__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		get_exact_llvm_type(type_lookup, typeid_t::make_json()),
 		{
@@ -1346,7 +1346,7 @@ function_bind_t floyd_runtime__lookup_json__make(llvm::LLVMContext& context, con
 		},
 		false
 	);
-	return { "floyd_runtime__lookup_json", function_type, reinterpret_cast<void*>(floyd_runtime__lookup_json) };
+	return { "floydrt_lookup_json", function_type, reinterpret_cast<void*>(floydrt_lookup_json) };
 }
 
 
@@ -1358,7 +1358,7 @@ function_bind_t floyd_runtime__lookup_json__make(llvm::LLVMContext& context, con
 ////////////////////////////////		json_to_string()
 
 
-runtime_value_t floyd_runtime__json_to_string(floyd_runtime_t* frp, JSON_T* json_ptr){
+runtime_value_t floydrt_json_to_string(floyd_runtime_t* frp, JSON_T* json_ptr){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto& json = json_ptr->get_json();
@@ -1371,7 +1371,7 @@ runtime_value_t floyd_runtime__json_to_string(floyd_runtime_t* frp, JSON_T* json
 	}
 }
 
-function_bind_t floyd_runtime__json_to_string__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_json_to_string__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		get_exact_llvm_type(type_lookup, typeid_t::make_string()),
 		{
@@ -1380,7 +1380,7 @@ function_bind_t floyd_runtime__json_to_string__make(llvm::LLVMContext& context, 
 		},
 		false
 	);
-	return { "floyd_runtime__json_to_string", function_type, reinterpret_cast<void*>(floyd_runtime__json_to_string) };
+	return { "floydrt_json_to_string", function_type, reinterpret_cast<void*>(floydrt_json_to_string) };
 }
 
 
@@ -1391,7 +1391,7 @@ function_bind_t floyd_runtime__json_to_string__make(llvm::LLVMContext& context, 
 ////////////////////////////////		compare_values()
 
 
-int8_t floyd_runtime__compare_values(floyd_runtime_t* frp, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
+int8_t floydrt_compare_values(floyd_runtime_t* frp, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto value_type = lookup_type(r.type_lookup, type);
@@ -1427,7 +1427,7 @@ int8_t floyd_runtime__compare_values(floyd_runtime_t* frp, int64_t op, const run
 	}
 }
 
-function_bind_t floyd_runtime__compare_values__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_compare_values__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getInt1Ty(context),
 		{
@@ -1439,7 +1439,7 @@ function_bind_t floyd_runtime__compare_values__make(llvm::LLVMContext& context, 
 		},
 		false
 	);
-	return { "floyd_runtime__compare_values", function_type, reinterpret_cast<void*>(floyd_runtime__compare_values) };
+	return { "floydrt_compare_values", function_type, reinterpret_cast<void*>(floydrt_compare_values) };
 }
 
 
@@ -1447,14 +1447,14 @@ function_bind_t floyd_runtime__compare_values__make(llvm::LLVMContext& context, 
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-STRUCT_T* floyd_runtime__allocate_struct(floyd_runtime_t* frp, uint64_t size){
+STRUCT_T* floydrt_allocate_struct(floyd_runtime_t* frp, uint64_t size){
 	auto& r = get_floyd_runtime(frp);
 
 	auto v = alloc_struct(r.heap, size);
 	return v;
 }
 
-function_bind_t floyd_runtime__allocate_struct__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_allocate_struct__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		get_generic_struct_type(type_lookup)->getPointerTo(),
 		{
@@ -1463,7 +1463,7 @@ function_bind_t floyd_runtime__allocate_struct__make(llvm::LLVMContext& context,
 		},
 		false
 	);
-	return { "floyd_runtime__allocate_struct", function_type, reinterpret_cast<void*>(floyd_runtime__allocate_struct) };
+	return { "floydrt_allocate_struct", function_type, reinterpret_cast<void*>(floydrt_allocate_struct) };
 }
 
 
@@ -1471,7 +1471,7 @@ function_bind_t floyd_runtime__allocate_struct__make(llvm::LLVMContext& context,
 
 //??? optimize for speed. Most things can be precalculated.
 //??? Generate an add_ref-function for each struct type.
-const WIDE_RETURN_T fr_update_struct_member(floyd_runtime_t* frp, STRUCT_T* s, runtime_type_t struct_type, int64_t member_index, runtime_value_t new_value, runtime_type_t new_value_type){
+const WIDE_RETURN_T floydrt_update_struct_member(floyd_runtime_t* frp, STRUCT_T* s, runtime_type_t struct_type, int64_t member_index, runtime_value_t new_value, runtime_type_t new_value_type){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(s != nullptr);
 	QUARK_ASSERT(member_index != -1);
@@ -1519,7 +1519,7 @@ const WIDE_RETURN_T fr_update_struct_member(floyd_runtime_t* frp, STRUCT_T* s, r
 
 	return make_wide_return_structptr(struct_ptr);
 }
-function_bind_t fr_update_struct_member__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_update_struct_member__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		get_generic_struct_type(type_lookup)->getPointerTo(),
 		{
@@ -1532,12 +1532,12 @@ function_bind_t fr_update_struct_member__make(llvm::LLVMContext& context, const 
 		},
 		false
 	);
-	return { "fr_update_struct_member", function_type, reinterpret_cast<void*>(fr_update_struct_member) };
+	return { "floydrt_update_struct_member", function_type, reinterpret_cast<void*>(floydrt_update_struct_member) };
 }
 
 
 
-int64_t fr_get_profile_time(floyd_runtime_t* frp){
+int64_t floydrt_get_profile_time(floyd_runtime_t* frp){
 	get_floyd_runtime(frp);
 
 	const std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
@@ -1546,7 +1546,7 @@ int64_t fr_get_profile_time(floyd_runtime_t* frp){
 	return result;
 }
 
-function_bind_t fr_get_profile_time__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+function_bind_t floydrt_get_profile_time__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		llvm::Type::getInt64Ty(context),
 		{
@@ -1554,7 +1554,7 @@ function_bind_t fr_get_profile_time__make(llvm::LLVMContext& context, const llvm
 		},
 		false
 	);
-	return { "fr_get_profile_time", function_type, reinterpret_cast<void*>(fr_get_profile_time) };
+	return { "floydrt_get_profile_time", function_type, reinterpret_cast<void*>(floydrt_get_profile_time) };
 }
 
 
@@ -1563,33 +1563,33 @@ function_bind_t fr_get_profile_time__make(llvm::LLVMContext& context, const llvm
 
 std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	std::vector<function_bind_t> result = {
-		fr_retain_vec__make(context, type_lookup),
-		fr_release_vec__make(context, type_lookup),
+		floydrt_retain_vec__make(context, type_lookup),
+		floydrt_release_vec__make(context, type_lookup),
 
-		fr_retain_dict__make(context, type_lookup),
-		fr_release_dict__make(context, type_lookup),
+		floydrt_retain_dict__make(context, type_lookup),
+		floydrt_release_dict__make(context, type_lookup),
 
-		fr_retain_json__make(context, type_lookup),
-		fr_release_json__make(context, type_lookup),
+		floydrt_retain_json__make(context, type_lookup),
+		floydrt_release_json__make(context, type_lookup),
 
-		fr_retain_struct__make(context, type_lookup),
-		fr_release_struct__make(context, type_lookup),
+		floydrt_retain_struct__make(context, type_lookup),
+		floydrt_release_struct__make(context, type_lookup),
 
-		floyd_runtime__allocate_vector__make(context, type_lookup),
-		fr_alloc_kstr__make(context, type_lookup),
-		floyd_runtime__concatunate_vectors__make(context, type_lookup),
-		floyd_runtime__allocate_dict__make(context, type_lookup),
-		floyd_runtime__store_dict_mutable__make(context, type_lookup),
-		floyd_runtime__lookup_dict__make(context, type_lookup),
-		floyd_runtime__allocate_json__make(context, type_lookup),
-		floyd_runtime__lookup_json__make(context, type_lookup),
-		floyd_runtime__json_to_string__make(context, type_lookup),
-		floyd_runtime__compare_values__make(context, type_lookup),
-		floyd_runtime__allocate_struct__make(context, type_lookup),
+		floydrt_allocate_vector__make(context, type_lookup),
+		floydrt_alloc_kstr__make(context, type_lookup),
+		floydrt_concatunate_vectors__make(context, type_lookup),
+		floydrt_allocate_dict__make(context, type_lookup),
+		floydrt_store_dict_mutable__make(context, type_lookup),
+		floydrt_lookup_dict__make(context, type_lookup),
+		floydrt_allocate_json__make(context, type_lookup),
+		floydrt_lookup_json__make(context, type_lookup),
+		floydrt_json_to_string__make(context, type_lookup),
+		floydrt_compare_values__make(context, type_lookup),
+		floydrt_allocate_struct__make(context, type_lookup),
 
-		fr_update_struct_member__make(context, type_lookup),
+		floydrt_update_struct_member__make(context, type_lookup),
 
-		fr_get_profile_time__make(context, type_lookup)
+		floydrt_get_profile_time__make(context, type_lookup)
 	};
 	return result;
 }
@@ -1717,7 +1717,7 @@ int64_t floyd_funcdef__find(floyd_runtime_t* frp, runtime_value_t arg0_value, ru
 			vec->get_element_ptr(),
 			vec->get_element_ptr() + vec->get_element_count(),
 			[&] (const runtime_value_t& e) {
-				return floyd_runtime__compare_values(frp, static_cast<int64_t>(expression_type::k_logical_equal), arg1_type, e, arg1_value) == 1;
+				return floydrt_compare_values(frp, static_cast<int64_t>(expression_type::k_logical_equal), arg1_type, e, arg1_value) == 1;
 			}
 		);
 		if(it == vec->get_element_ptr() + vec->get_element_count()){
@@ -2140,7 +2140,7 @@ WIDE_RETURN_T floyd_funcdef__push_back(floyd_runtime_t* frp, runtime_value_t arg
 		const auto element = arg1_value;
 		const auto element_type = type1;
 
-		auto v2 = floyd_runtime__allocate_vector(frp, vs->get_element_count() + 1);
+		auto v2 = floydrt_allocate_vector(frp, vs->get_element_count() + 1);
 
 		auto dest_ptr = v2->get_element_ptr();
 		auto source_ptr = vs->get_element_ptr();

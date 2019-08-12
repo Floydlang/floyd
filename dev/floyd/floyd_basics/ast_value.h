@@ -62,6 +62,26 @@ std::string make_value_debug_str(const value_t& v);
 
 
 
+////////////////////////////////////////		link_name_t
+
+
+struct link_name_t {
+	std::string name;
+};
+
+inline bool operator==(const link_name_t& lhs, const link_name_t& rhs){
+	return lhs.name == rhs.name;
+}
+inline bool operator!=(const link_name_t& lhs, const link_name_t& rhs){
+	return lhs.name != rhs.name;
+}
+inline bool operator<(const link_name_t& lhs, const link_name_t& rhs){
+	return lhs.name < rhs.name;
+}
+
+const link_name_t k_no_link_name = link_name_t { "" };
+
+
 
 
 ////////////////////////////////////////		function_id_t
