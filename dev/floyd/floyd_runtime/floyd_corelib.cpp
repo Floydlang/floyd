@@ -268,21 +268,18 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 
 	let double cmath_pi = 3.14159265358979323846
 
-	struct cpu_address_t {
-		int address
-	}
-
-	struct size_t {
-		int address
-	}
-
-	struct file_pos_t {
-		int pos
-	}
 
 	struct time_ms_t {
 		int pos
 	}
+
+	struct date_t {
+		string utc_date
+	}
+
+
+
+
 
 	struct uuid_t {
 		int high64
@@ -308,39 +305,25 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 		int port
 	}
 
+
+
+
 	struct quick_hash_t {
 		int hash
-	}
-
-	struct key_t {
-		quick_hash_t hash
-	}
-
-	struct date_t {
-		string utc_date
 	}
 
 	struct sha1_t {
 		string ascii40
 	}
 
-
-	struct relative_path_t {
-		string relative_path
+	struct key_t {
+		quick_hash_t hash
 	}
 
-	struct absolute_path_t {
-		string absolute_path
-	}
+
 
 	struct binary_t {
 		string bytes
-	}
-
-	struct text_location_t {
-		absolute_path_t source_file
-		int line_number
-		int pos_in_line
 	}
 
 	struct seq_t {

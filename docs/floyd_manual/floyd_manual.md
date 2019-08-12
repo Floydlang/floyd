@@ -87,6 +87,47 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 		- [TODO: SWITCH](#todo-switch)
 	- [2.7 EXAMPLE SOFTWARE SYSTEM FILE](#27-example-software-system-file)
 	- [2.8 FLOYD SYNTAX](#28-floyd-syntax)
+- [3 CORE LIBRARY](#3-core-library)
+- [3.1 MICRO BENCHMARKING FEATURES](#31-micro-benchmarking-features)
+	- [microbench\_def\_t, benchmark\_id\_t, benchmark\_result2\_t](#microbenchdef_t-benchmark_id_t-benchmark_result2t)
+	- [get\_benchmarks\(\)](#get_benchmarks)
+	- [run\_benchmarks\(\)](#run_benchmarks)
+	- [trace\_benchmarks\(\)](#trace_benchmarks)
+	- [make\_benchmark\_report\(\)](#makebenchmarkreport)
+- [3.2 HARDWARE CAPS](#32-hardware-caps)
+	- [detect\_hardware\_caps\(\)](#detecthardwarecaps)
+- [3.3 WORKING WITH HASHES - SHA1](#33-working-with-hashes---sha1)
+	- [quick\_hash\_t](#quickhasht)
+	- [sha1_t](#sha1_t)
+	- [calc\_string\_sha1\(\)](#calcstringsha1)
+	- [calc\_binary\_sha1\(\)](#calcbinarysha1)
+- [3.4 DATE AND TIME](#34-date-and-time)
+	- [time\_ms\_t](#timemst)
+	- [date_t](#date_t)
+	- [get\_time\_of\_day\(\)](#gettime_ofday)
+- [3.5 FILE SYSTEM FEATURES](#35-file-system-features)
+	- [read\_text\_file\(\)](#readtextfile)
+	- [write\_text\_file\(\)](#writetextfile)
+	- [get\_fsentries_shallow\(\) and get\_fsentries\_deep\(\)](#getfsentries_shallow-and-get_fsentriesdeep)
+	- [get\_fsentry\_info\(\)](#getfsentryinfo)
+	- [get\_fs\_environment\(\)](#getfsenvironment)
+	- [does\_fsentry\_exist\(\)](#doesfsentryexist)
+	- [create\_directory\_branch\(\)](#createdirectorybranch)
+	- [delete\_fsentry\_deep\(\)](#deletefsentrydeep)
+	- [rename\_fsentry\(\)](#rename_fsentry)
+- [3.6 CORE TYPES](#36-core-types)
+	- [uuid_t](#uuid_t)
+	- [ip\_address\_t](#ipaddresst)
+	- [url_t](#url_t)
+	- [url\_parts\_t {}](#urlpartst-)
+	- [key_t](#key_t)
+	- [binary_t](#binary_t)
+	- [seq_t](#seq_t)
+	- [text_t](#text_t)
+	- [text\_resource\_id](#textresourceid)
+	- [image\_id\_t](#imageidt)
+	- [color_t](#color_t)
+	- [vector2_t](#vector2_t)
 
 <!-- /MarkdownTOC -->
 
@@ -1243,6 +1284,8 @@ COMPLETE LIST OF CORECALLS:
 | to_string()						| Converts any value to a string
 | to_pretty_string()				| Converts value to an exploded multi-line string
 | typeof()							| Return the type of its input value
+| probe()							| TODO: Expose variable to test and performance tools
+| select()							| TODO: Called from a process function to read its inbox. It will block until a message is received or it times out
 
 | CORECALLS: FOR SOME TYPES ONLY  	| USE | Example
 |:---								|:---	|:---
@@ -1272,6 +1315,8 @@ COMPLETE LIST OF CORECALLS:
 | bw_shift_left()					| Bitwise shift left
 | bw_shift_right()					| Bitwise shift right (logical)
 | bw_shift_right_arithmetic()		| Bitwise shift right with sign extension for signed values
+
+
 
 
 <a id="print----impure"></a>
@@ -2810,5 +2855,622 @@ Here is the DAG for the complete syntax of Floyd.
  		ASSIGNMENT	 				IDENTIFIER "=" EXPRESSION
 		SOFTWARE-SYSTEM-DEF				"software-system-def" JSON_BODY
 		COMPONENT-DEF					"component-def" JSON_BODY
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<a id="3-core-library"></a>
+#3 CORE LIBRARY
+
+This is a small set of functions and types you can rely on always being available to your Floyd programs. There are features for working with benchmarks, sha1 hashes, time and the file system.
+There is also a set of data types that gives code a common way to talk about dates, binary data and so forth.
+
+
+<a id="31-micro-benchmarking-features"></a>
+#3.1 MICRO BENCHMARKING FEATURES
+
+<a id="microbenchdef_t-benchmark_id_t-benchmark_result2t"></a>
+## microbench\_def\_t, benchmark\_id\_t, benchmark\_result2\_t
+
+```
+struct microbench_def_t {
+	string name
+	func json(T) f
+}
+```
+
+```
+struct benchmark_id_t {
+	string module
+	string test
+}
+```
+
+```
+struct benchmark_result2_t {
+	benchmark_id_t test_id
+	benchmark_result_t result
+}
+```
+
+
+<a id="get_benchmarks"></a>
+## get\_benchmarks()
+
+Get all benchmarks in the program, as defined using benchmark-def statements:
+```
+func [benchmark_id_t] get_benchmarks(){
+```
+
+
+<a id="run_benchmarks"></a>
+## run\_benchmarks()
+
+This is how you run one or many benchmarks:
+```
+[benchmark_result2_t] run_benchmarks([benchmark_id_t] m)
+```
+
+
+<a id="trace_benchmarks"></a>
+## trace\_benchmarks()
+
+You can also use the trace_benchmark() that prints a nice diagram in the console:
+
+```
+string trace_benchmarks([benchmark_result2_t] r)
+```
+
+Output from running a test:
+
+```
+| Linear veq | 0		|	0.000000 s	| 0
+| Linear veq | 1		|	0.000000 s	| 1
+| Linear veq | 2		|	0.000000 s	| 1
+| Linear veq | 1000		|	0.0022000 s	| 2.000
+| Linear veq | 10000	|	0.003200 s	| 40.000
+```
+
+
+<a id="makebenchmarkreport"></a>
+## make\_benchmark\_report()
+
+This function let's you control the formatting of benchmark reports:
+
+```
+let report = make_benchmark_report(test_results, [ -1, -1, -1, -1 ])
+for(i in 0 ..< size(report)){
+	print(report[i])
+}
+```
+
+|MODULE |TEST    |DUR        |       |
+|-------|--------|-----------|-------|
+|mod1   |my      |240 ns     |""     |
+|mod1   |my      |3000 ns    |""     |
+|mod1   |my      |100000 ns  |"kb/s" |
+|mod1   |my      |1200000 ns |"mb/s" |
+|mod1   |baggins |5000 ns    |"mb/s" |
+|mod1   |baggins |7000 ns    |"mb/s" |
+|mod1   |baggins |8000 ns    |"mb/s" |
+|mod1   |baggins |80000 ns   |"mb/s" |
+
+
+
+<a id="32-hardware-caps"></a>
+#3.2 HARDWARE CAPS
+
+These built-in features lets you see what kind of CPU and memory system your program is currently running on. This is often useful when testing, optimising and debugging - both for your own computer and for a tester or user's computer.
+
+
+<a id="detecthardwarecaps"></a>
+## detect\_hardware\_caps()
+```
+[string: json] detect_hardware_caps()
+```
+Output is something similar to this:
+
+```
+{
+	"availcpu" : 0,
+	"bus_freq_hz" : 100000000,
+	"byteorder" : 1234,
+	"cacheline_size" : 64,
+	"cpu_freq_hz" : 4000000000,
+	"cpu_type" : 7,
+	"cpu_type_subtype" : 8,
+	"epoch" : 0,
+	"floatingpoint" : 0,
+	"l1_data_cache_size" : 32768,
+	"l1_instruction_cache_size" : 32768,
+	"l2_cache_size" : 262144,
+	"l3_cache_size" : 8388610,
+	"logical_processor_count" : 8,
+	"machdep_cpu_brand_string" : "Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz",
+	"machine" : "x86_64",
+	"machinearch" : "",
+	"mem_size" : 17179900000,
+	"model" : "iMac15,1",
+	"ncpu" : 8,
+	"packaged" : 1,
+	"page_size" : 4096,
+	"physical_processor_count" : 4,
+	"physmem" : 2147480000,
+	"scalar_align" : 16,
+	"tbfrequency" : 1000000000,
+	"usermem" : 4214070000,
+	"vectorunit" : 1
+}
+```
+
+
+
+<a id="33-working-with-hashes---sha1"></a>
+#3.3 WORKING WITH HASHES - SHA1
+
+
+<a id="quickhasht"></a>
+## quick\_hash\_t
+
+64-bit hash value used to speed up lookups and comparisons.
+
+	struct quick_hash_t {
+		int hash
+	}
+
+
+
+<a id="sha1_t"></a>
+## sha1_t
+
+128-bit SHA1 hash number.
+
+	struct sha1_t {
+		string ascii40
+	}
+
+
+
+<a id="calcstringsha1"></a>
+## calc\_string\_sha1()
+
+Calculates a SHA1 hash for the contents in a string.
+
+```
+sha1_t calc_string_sha1(string s)
+```
+
+<a id="calcbinarysha1"></a>
+## calc\_binary\_sha1()
+
+Calculates a SHA1 hash for a block binary data.
+
+```
+sha1_t calc_binary_sha1(binary_t d)
+```
+
+
+
+
+<a id="34-date-and-time"></a>
+# 3.4 DATE AND TIME
+
+
+
+<a id="timemst"></a>
+## time\_ms\_t
+
+64-bit integer counting miliseconds.
+
+	typedef int64_t time_ms_t
+
+
+<a id="date_t"></a>
+## date_t
+
+Stores a UDT.
+
+	struct date_t {
+		string utc_date
+	}
+
+<a id="gettime_ofday"></a>
+## get\_time\_of\_day()
+
+Returns the computer's realtime clock, expressed in the number of milliseconds since system start. Useful to measure program execution. Sample get_time_of_day() before and after execution and compare them to see duration.
+
+	int get_time_of_day() impure
+
+
+
+
+<a id="35-file-system-features"></a>
+# 3.5 FILE SYSTEM FEATURES
+
+These functions allow you to access the OS file system. They are all impure.
+
+Floyd uses unix-style paths in all its APIs. It will convert these to native paths with accessing the OS.
+
+fsentry = File System Entry. This is a node in the file system's graph of files and directories. It can either be a file or a directory.
+
+
+<a id="readtextfile"></a>
+## read\_text\_file()
+
+Reads a text file from the file system and returns it as a string.
+
+	string read_text_file(string abs_path) impure
+
+Throws exception if file cannot be found or read.
+
+
+
+<a id="writetextfile"></a>
+## write\_text\_file()
+
+Write a string to the file system as a text file. Will create any missing directories in the absolute path.
+
+	void write_text_file(string abs_path, string data) impure
+
+
+
+<a id="getfsentries_shallow-and-get_fsentriesdeep"></a>
+## get\_fsentries_shallow() and get\_fsentries\_deep()
+
+Returns a vector of all the files and directories found at the absolute path.
+
+	struct fsentry_t {
+		string type
+		string name
+		string abs_parent_path
+	}
+	
+	[fsentry_t] get_fsentries_shallow(string abs_path) impure
+
+- type: either "file" or "dir".
+- name: name of the leaf directory or file.
+- abs\_parent\_path: the path to the entires parent.
+
+get_fsentries_deep() works the same way, but will also traverse each found directory. Contents of sub-directories will be also be prefixed by the sub-directory names. All path names are relative to the input directory - not absolute to file system.
+
+	[fsentry_t] get_fsentries_deep(string abs_path) impure
+
+
+
+<a id="getfsentryinfo"></a>
+## get\_fsentry\_info()
+
+Information about an entry in the file system. Can be a file or a directory.
+
+	struct fsentry_info_t {
+		string type
+		string name
+		string abs_parent_path
+
+		string creation_date
+		string modification_date
+		int file_size
+	}
+	
+	fsentry_info_t get_fsentry_info(string abs_path) impure
+
+- type: either "file" or "dir".
+- name: name of the leaf directory or file.
+- abs\_parent\_path: the path to the entires parent.
+- creation_date: creation date of the entry.
+- modification_date: latest modification date of the entry.
+- file_size: size of the file or directory.
+
+
+<a id="getfsenvironment"></a>
+## get\_fs\_environment()
+
+Returns important root locations in the host computer's file system.
+
+Notice: some of these directories can change while your program runs.
+
+```
+	struct fs_environment_t {
+		string home_dir
+		string documents_dir
+		string desktop_dir
+
+		string hidden_persistence_dir
+		string preferences_dir
+		string cache_dir
+		string temp_dir
+
+		string executable_dir
+	}
+```
+
+```
+fs_environment_t get_fs_environment() impure
+```
+
+
+##### home_dir
+User's home directory. You don't normally store anything in this directory, but in one of the sub directories.
+
+Example: "/Users/bob"
+
+- User sees these files.
+
+##### documents_dir
+User's documents directory.
+
+Example: "/Users/bob/Documents"
+
+- User sees these files.
+
+##### desktop_dir
+User's desktop directory.
+
+Example: "/Users/bob/Desktop"
+
+- User sees these files.
+
+##### hidden\_persistence\_dir
+Current logged-in user's Application Support directory.
+App creates data here and manages it on behalf of the user and can include files that contain user data.
+
+Example: "/Users/marcus/Library/Application Support"
+
+- Notice that this points to a directory shared by many applications: store your data in a sub directory!
+- User don't see these files.
+
+##### preferences_dir
+Current logged-in user's preference directory.
+
+Example: "/Users/marcus/Library/Preferences"
+
+- Notice that this points to a directory shared by many applications: store your data in a sub directory!
+- User don't see these files.
+
+##### cache_dir
+Current logged-in user's cache directory.
+
+Example: "/Users/marcus/Library/Caches"
+
+- Notice that this points to a directory shared by many applications: store your data in a sub directory!
+- User don't see these files.
+
+##### temp_dir
+Temporary directory. Will be erased soon. Don't expect to find your files here next time your program starts or in 3 minutes.
+
+- Notice that this points to a directory shared by many applications: store your data in a sub directory!
+- User don't see these files.
+
+##### executable_dir
+Directory where your executable or bundle lives. This is usually read-only - you can't modify anything in this directory. You might use this path to read resources built into your executable or Mac bundle.
+
+Example: "/Users/bob/Applications/MyApp.app/"
+
+
+
+<a id="doesfsentryexist"></a>
+## does\_fsentry\_exist()
+
+Checks if there is a file or directory at specified path.
+
+	bool does_fsentry_exist(string abs_path) impure
+
+
+<a id="createdirectorybranch"></a>
+## create\_directory\_branch()
+
+Creates a directory at specified path. If the parents directories don't exist, then those will be created too.
+
+	void create_directory_branch(string abs_path) impure
+
+
+<a id="deletefsentrydeep"></a>
+## delete\_fsentry\_deep()
+
+Deletes a file or directory. If the entry has children those are deleted too - delete folder also deletes is contents.
+
+	void delete_fsentry_deep(string abs_path) impure
+
+
+<a id="rename_fsentry"></a>
+## rename\_fsentry()
+
+Renames a file or directory. If it is a directory, its contents is unchanged.
+After this call completes, abs_path no longer references an entry.
+
+	void rename_fsentry(string abs_path, string n) impure
+
+Example:
+
+Before:
+	In the file system: "/Users/bob/Desktop/original_name.txt"
+	abs_path: "/Users/bob/Desktop/original_name.txt"
+	n: "name_name.txt"
+
+After:
+	world: "/Users/bob/Desktop/name_name.txt"
+
+
+
+
+
+
+
+
+
+
+
+<a id="36-core-types"></a>
+# 3.6 CORE TYPES
+A bunch of common data types are built into Floyd. This is to make composition easier and avoid the noise of converting all simple types between different component's own versions.
+
+
+
+
+
+
+<a id="uuid_t"></a>
+## uuid_t
+
+A universally unique identifier (UUID) is a 128-bit number used to identify information in computer systems. The term globaly unique identifier (GUID) is also used.
+
+	struct uuid_t {
+		int high64
+		int low64
+	}
+
+
+<a id="ipaddresst"></a>
+## ip\_address\_t
+
+Internet IP adress in using IPv6 128-bit number.
+
+	struct ip_address_t {
+		int high64
+		int low_64_bits
+	}
+
+
+<a id="url_t"></a>
+## url_t
+
+Internet URL.
+
+	struct url_t {
+		string absolute_url
+	}
+
+
+<a id="urlpartst-"></a>
+## url\_parts\_t {}
+
+This struct contains an URL separate to its components.
+
+	struct url_parts_t {
+		string protocol
+		string domain
+		string path
+		[string:string] query_strings
+		int port
+	}
+
+Example 1:
+
+	url_parts_t("http", "example.com", "path/to/page", {"name": "ferret", "color": "purple"})
+
+	Output: "http://example.com/path/to/page?name=ferret&color=purple"
+
+
+
+
+
+
+<a id="key_t"></a>
+## key_t
+
+Efficent keying using 64-bit hash instead of a string. Hash can often be computed from string key at compile time.
+
+	struct key_t {
+		quick_hash_t hash
+	}
+
+
+
+
+<a id="binary_t"></a>
+## binary_t
+
+Raw binary data, 8bit per byte.
+
+	struct binary_t {
+		string bytes
+	}
+
+
+
+<a id="seq_t"></a>
+## seq_t
+
+This is the neatest way to parse strings without using an iterator or indexes.
+
+	struct seq_t {
+		string str
+		size_t pos
+	}
+
+When you consume data at start of seq_t you get a *new* seq_t that holds
+the rest of the string. No side effects.
+
+This is a magic string were you can easily peek into the beginning and also get a new string
+without the first character(s).
+
+It shares the actual string data behind the curtains so is efficent.
+
+
+
+<a id="text_t"></a>
+## text_t
+
+Unicode text. Opaque data -- only use library functions to process text_t. Think of text_t and Uncode text more like a PDF.
+
+	struct text_t {
+		binary_t data
+	}
+
+
+<a id="textresourceid"></a>
+## text\_resource\_id
+
+How you specify text resources.
+
+	struct text_resource_id {
+		quick_hash_t id
+	}
+
+
+<a id="imageidt"></a>
+## image\_id\_t
+
+How you specify image resources.
+
+	struct image_id_t {
+		int id
+	}
+
+
+<a id="color_t"></a>
+## color_t
+
+Color. If you don't need alpha, set it to 1.0. Components are normally min 0.0 -- max 1.0 but you can use other ranges.
+
+	struct color_t {
+		float red
+		float green
+		float blue
+		float alpha
+	}
+
+
+<a id="vector2_t"></a>
+## vector2_t
+
+2D position in cartesian coordinate system. Use to specify position on the screen and similar.
+
+	struct vector2_t {
+		float x
+		float y
+	}
+
+
 
 
