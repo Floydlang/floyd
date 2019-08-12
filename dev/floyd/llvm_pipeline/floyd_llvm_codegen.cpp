@@ -2356,7 +2356,11 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 		auto f = module.getOrInsertFunction(e.link_name, e.function_type);
 		QUARK_ASSERT(check_invariant__module(&module));
 
-		const auto def = function_def_t{ e.link_name, llvm::cast<llvm::Function>(f), function_id_t { "xxaaaxxx" }, function_definition_t::make_placeholder() };
+		const auto name = unpack_runtime_func_link_name(link_name_t{ e.link_name });
+
+		const auto def0 = function_definition_t::make_func(k_no_location, name, typeid_t::make_void(), {}, {});
+		const auto def = function_def_t{ e.link_name, llvm::cast<llvm::Function>(f), function_id_t { "xxaaaxxx" }, def0 };
+//		const auto def = function_def_t{ e.link_name, llvm::cast<llvm::Function>(f), function_id_t { "xxaaaxxx" }, function_definition_t::make_placeholder() };
 		result.push_back(def);
 	}
 
