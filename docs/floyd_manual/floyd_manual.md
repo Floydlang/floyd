@@ -9,7 +9,7 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 
 <!-- MarkdownTOC autolink="true" levels="1, 2, 3" autolink="true" autoanchor="true"  -->
 
-- [1 FLOYD USER'S MANUAL](#1-floyd-users-manual)
+- [1 FLOYD LANGUAGE USER'S MANUAL](#1-floyd-language-users-manual)
 	- [1.1 GETTING STARTED](#11-getting-started)
 	- [1.2 COMMAND LINE TOOL](#12-command-line-tool)
 	- [1.3 GLOBAL SCOPE AND MAIN FUNCTION](#13-global-scope-and-main-function)
@@ -44,7 +44,7 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 	- [1.19 ABOUT PARALLELISM](#119-about-parallelism)
 	- [1.20 TODO: PROBES](#120-todo-probes)
 	- [1.21 TODO: TWEAKERS](#121-todo-tweakers)
-- [2 REFERENCE MANUAL](#2-reference-manual)
+- [2 FLOYD LANGUAGE REFERENCE MANUAL](#2-floyd-language-reference-manual)
 	- [2.1 SOURCE CODE FILES](#21-source-code-files)
 	- [2.2 MAIN\(\) & EXECUTING PROGRAMS](#22-main--executing-programs)
 	- [2.3 CORECALLS - AKA INTRINSICS, OPERATORS](#23-corecalls---aka-intrinsics-operators)
@@ -87,52 +87,52 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 		- [TODO: SWITCH](#todo-switch)
 	- [2.7 EXAMPLE SOFTWARE SYSTEM FILE](#27-example-software-system-file)
 	- [2.8 FLOYD SYNTAX](#28-floyd-syntax)
-- [3 CORE LIBRARY](#3-core-library)
-- [3.1 MICRO BENCHMARKING FEATURES](#31-micro-benchmarking-features)
-	- [microbench\_def\_t, benchmark\_id\_t, benchmark\_result2\_t](#microbenchdef_t-benchmark_id_t-benchmark_result2t)
-	- [get\_benchmarks\(\)](#get_benchmarks)
-	- [run\_benchmarks\(\)](#run_benchmarks)
-	- [trace\_benchmarks\(\)](#trace_benchmarks)
-	- [make\_benchmark\_report\(\)](#makebenchmarkreport)
-- [3.2 HARDWARE CAPS](#32-hardware-caps)
-	- [detect\_hardware\_caps\(\)](#detecthardwarecaps)
-- [3.3 WORKING WITH HASHES - SHA1](#33-working-with-hashes---sha1)
-	- [quick\_hash\_t](#quickhasht)
-	- [sha1_t](#sha1_t)
-	- [calc\_string\_sha1\(\)](#calcstringsha1)
-	- [calc\_binary\_sha1\(\)](#calcbinarysha1)
-- [3.4 DATE AND TIME](#34-date-and-time)
-	- [time\_ms\_t](#timemst)
-	- [date_t](#date_t)
-	- [get\_time\_of\_day\(\)](#gettime_ofday)
-- [3.5 FILE SYSTEM FEATURES](#35-file-system-features)
-	- [read\_text\_file\(\)](#readtextfile)
-	- [write\_text\_file\(\)](#writetextfile)
-	- [get\_fsentries_shallow\(\) and get\_fsentries\_deep\(\)](#getfsentries_shallow-and-get_fsentriesdeep)
-	- [get\_fsentry\_info\(\)](#getfsentryinfo)
-	- [get\_fs\_environment\(\)](#getfsenvironment)
-	- [does\_fsentry\_exist\(\)](#doesfsentryexist)
-	- [create\_directory\_branch\(\)](#createdirectorybranch)
-	- [delete\_fsentry\_deep\(\)](#deletefsentrydeep)
-	- [rename\_fsentry\(\)](#rename_fsentry)
-- [3.6 CORE TYPES](#36-core-types)
-	- [uuid_t](#uuid_t)
-	- [ip\_address\_t](#ipaddresst)
-	- [url_t](#url_t)
-	- [url\_parts\_t {}](#urlpartst-)
-	- [key_t](#key_t)
-	- [binary_t](#binary_t)
-	- [seq_t](#seq_t)
-	- [text_t](#text_t)
-	- [text\_resource\_id](#textresourceid)
-	- [image\_id\_t](#imageidt)
-	- [color_t](#color_t)
-	- [vector2_t](#vector2_t)
+- [3 STANDARD LIBRARY](#3-standard-library)
+	- [3.1 MICRO BENCHMARKING FEATURES](#31-micro-benchmarking-features)
+		- [microbench\_def\_t, benchmark\_id\_t, benchmark\_result2\_t](#microbenchdef_t-benchmark_id_t-benchmark_result2t)
+		- [get\_benchmarks\(\)](#get_benchmarks)
+		- [run\_benchmarks\(\)](#run_benchmarks)
+		- [trace\_benchmarks\(\)](#trace_benchmarks)
+		- [make\_benchmark\_report\(\)](#makebenchmarkreport)
+	- [3.2 HARDWARE CAPS](#32-hardware-caps)
+		- [detect\_hardware\_caps\(\)](#detecthardwarecaps)
+	- [3.3 WORKING WITH HASHES - SHA1](#33-working-with-hashes---sha1)
+		- [quick\_hash\_t](#quickhasht)
+		- [sha1_t](#sha1_t)
+		- [calc\_string\_sha1\(\)](#calcstringsha1)
+		- [calc\_binary\_sha1\(\)](#calcbinarysha1)
+	- [3.4 DATE AND TIME](#34-date-and-time)
+		- [time\_ms\_t](#timemst)
+		- [date_t](#date_t)
+		- [get\_time\_of\_day\(\)](#gettime_ofday)
+	- [3.5 FILE SYSTEM FEATURES](#35-file-system-features)
+		- [read\_text\_file\(\)](#readtextfile)
+		- [write\_text\_file\(\)](#writetextfile)
+		- [get\_fsentries_shallow\(\) and get\_fsentries\_deep\(\)](#getfsentries_shallow-and-get_fsentriesdeep)
+		- [get\_fsentry\_info\(\)](#getfsentryinfo)
+		- [get\_fs\_environment\(\)](#getfsenvironment)
+		- [does\_fsentry\_exist\(\)](#doesfsentryexist)
+		- [create\_directory\_branch\(\)](#createdirectorybranch)
+		- [delete\_fsentry\_deep\(\)](#deletefsentrydeep)
+		- [rename\_fsentry\(\)](#rename_fsentry)
+	- [3.6 STANDARD TYPES](#36-standard-types)
+		- [uuid_t](#uuid_t)
+		- [ip\_address\_t](#ipaddresst)
+		- [url_t](#url_t)
+		- [url\_parts\_t {}](#urlpartst-)
+		- [key_t](#key_t)
+		- [binary_t](#binary_t)
+		- [seq_t](#seq_t)
+		- [text_t](#text_t)
+		- [text\_resource\_id](#textresourceid)
+		- [image\_id\_t](#imageidt)
+		- [color_t](#color_t)
+		- [vector2_t](#vector2_t)
 
 <!-- /MarkdownTOC -->
 
-<a id="1-floyd-users-manual"></a>
-# 1 FLOYD USER'S MANUAL
+<a id="1-floyd-language-users-manual"></a>
+# 1 FLOYD LANGUAGE USER'S MANUAL
 
 Floyd is a programming language that aims to compete with languages like Java, C++, Rust, Go, Javascript and Python. Floyd cares about low level things like CPU memory hardware as well as high level things like software systems, containers, components, APIs and virtual processes.
 
@@ -192,7 +192,7 @@ func int main([string] args){
 ## 1.4 DATA TYPES
 
 These are the primitive data types built into the language itself. The building blocks of all values and data in Floyd.
-One of Floyd's goals is that all the basics you need are already there in the language and the core library. This makes it easy to start making meaningful programs. It also promotes composability since all Floyd code can rely on these types and communicate between themselves using these types. This greatly reduces the need to write glue code that converts between different library's string classes and logging and so on.
+One of Floyd's goals is that all the basics you need are already there in the language and the standard library. This makes it easy to start making meaningful programs. It also promotes composability since all Floyd code can rely on these types and communicate between themselves using these types. This greatly reduces the need to write glue code that converts between different library's string classes and logging and so on.
 
 |TYPE		  	| USE
 |:---				|:---	
@@ -209,7 +209,7 @@ One of Floyd's goals is that all the basics you need are already there in the la
 
 Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [], etc.
 
-The core library has more common types, like sha1_t, uuid_t, url_t, date_t, binary_t and text_t.
+The standard library has more common types, like sha1_t, uuid_t, url_t, date_t, binary_t and text_t.
 
 
 
@@ -576,7 +576,7 @@ This means the function has side effects or gets information somewhere that can 
 
 Limit the amount of impure code!
 
-A number of impure functions are built into the language and its core library.
+A number of impure functions are built into the language and its standard library.
 
 
 <a id="gray-pure-functions"></a>
@@ -1208,8 +1208,8 @@ Tweakers are inserted onto the wires and clocks and functions and expressions of
 
 
 
-<a id="2-reference-manual"></a>
-# 2 REFERENCE MANUAL
+<a id="2-floyd-language-reference-manual"></a>
+# 2 FLOYD LANGUAGE REFERENCE MANUAL
 
 
 
@@ -1274,10 +1274,10 @@ func int main([string] args){
 
 These functions are built into the language itself and are always available to your code. They are all pure unless except print() and send(). The have special code generation algorithms. Many of these functions are generic -- they work on many different types.
 
-COMPLETE LIST OF CORECALLS:
+**COMPLETE LIST OF CORECALLS:**
 
-| CORECALLS: BASICS	  				| USE | Example
-|:---								|:---	|:---
+| CORECALLS: BASICS	  				| USE
+|:---								|:---
 | print() -- IMPURE					| Prints a value to standard output
 | send() -- IMPURE 					| Posts a message to a process
 | assert()							| Halts program on false
@@ -1287,8 +1287,8 @@ COMPLETE LIST OF CORECALLS:
 | probe()							| TODO: Expose variable to test and performance tools
 | select()							| TODO: Called from a process function to read its inbox. It will block until a message is received or it times out
 
-| CORECALLS: FOR SOME TYPES ONLY  	| USE | Example
-|:---								|:---	|:---
+| CORECALLS: FOR SOME TYPES ONLY  	| USE
+|:---								|:---
 | update() 							| Replace an element in a vector, string, dictionary or struct
 | size()							| Returns number of elements in a collection or string
 | find()							| Find index of value in a vector or string
@@ -1322,10 +1322,11 @@ COMPLETE LIST OF CORECALLS:
 <a id="print----impure"></a>
 #### print() -- IMPURE
 
-** IMPURE FUNCTION **
 This outputs one line of text to the default output of the application. It can print any type of value. If you want to compose output of many parts you need to convert them to strings and add them. Also works with types, like a struct-type.
 
-	print(any)
+```
+print(any)
+```
 
 
 | Example										| Result |
@@ -1366,7 +1367,9 @@ The send function returns immediately.
 
 Used this to check your code for programming errors, and check the inputs of your function for misuse by its callers.
 
-	assert(bool)
+```
+assert(bool)
+```
 
 If the expression evaluates to false, the program will log to the output, then be aborted via an exception.
 
@@ -1384,7 +1387,9 @@ func f(int x){
 
 Converts its input to a string. This works with any type of values. It also works with types themselves, which is useful for debugging.
 
-	string to_string(any)
+```
+string to_string(any)
+```
 
 You often use this function to convert numbers to strings.
 
@@ -1947,10 +1952,11 @@ assert(to_string(typeid([ 1, 2, 3 ])) == "[int]")
 A typeid is a proper Floyd value: you can copy it, compare it, convert it to strings, store it in dictionaries or whatever. Since to_string() supports typeid, you can easily print out the exact layout of any type, including complex ones with nested structs and vectors etc.
 
 
-##### CORE FUNCTIONS
+| FEATURE  	| SIGNATURE | DESCRIPTION
+|:---		|:---	|:---
+| < > <= >= == != && || Compares dictionaries, element by element
 
-- Comparison operators: < > <= >= == != && ||
-- Arithmetic:
+
 
 
 <a id="json"></a>
@@ -2691,9 +2697,7 @@ let [benchmark_def_t] benchmark_registry = [ benchmark_def_t("ABC", benchmark__A
 
 ```
 
-This means you can write code that explores the benchmark_registry vector and its contents, and even run tests using code.
-
-??? TODO: There are also corelib functions that let you do this.
+This means you can write code that explores the benchmark_registry vector and its contents, and even run tests using code. There are also standard library functions that helps you do this.
 
 
 
@@ -2869,18 +2873,18 @@ Here is the DAG for the complete syntax of Floyd.
 
 
 
-<a id="3-core-library"></a>
-#3 CORE LIBRARY
+<a id="3-standard-library"></a>
+#3 STANDARD LIBRARY
 
 This is a small set of functions and types you can rely on always being available to your Floyd programs. There are features for working with benchmarks, sha1 hashes, time and the file system.
 There is also a set of data types that gives code a common way to talk about dates, binary data and so forth.
 
 
 <a id="31-micro-benchmarking-features"></a>
-#3.1 MICRO BENCHMARKING FEATURES
+##3.1 MICRO BENCHMARKING FEATURES
 
 <a id="microbenchdef_t-benchmark_id_t-benchmark_result2t"></a>
-## microbench\_def\_t, benchmark\_id\_t, benchmark\_result2\_t
+### microbench\_def\_t, benchmark\_id\_t, benchmark\_result2\_t
 
 ```
 struct microbench_def_t {
@@ -2905,7 +2909,7 @@ struct benchmark_result2_t {
 
 
 <a id="get_benchmarks"></a>
-## get\_benchmarks()
+### get\_benchmarks()
 
 Get all benchmarks in the program, as defined using benchmark-def statements:
 ```
@@ -2914,7 +2918,7 @@ func [benchmark_id_t] get_benchmarks(){
 
 
 <a id="run_benchmarks"></a>
-## run\_benchmarks()
+### run\_benchmarks()
 
 This is how you run one or many benchmarks:
 ```
@@ -2923,7 +2927,7 @@ This is how you run one or many benchmarks:
 
 
 <a id="trace_benchmarks"></a>
-## trace\_benchmarks()
+### trace\_benchmarks()
 
 You can also use the trace_benchmark() that prints a nice diagram in the console:
 
@@ -2943,7 +2947,7 @@ Output from running a test:
 
 
 <a id="makebenchmarkreport"></a>
-## make\_benchmark\_report()
+### make\_benchmark\_report()
 
 This function let's you control the formatting of benchmark reports:
 
@@ -2968,13 +2972,13 @@ for(i in 0 ..< size(report)){
 
 
 <a id="32-hardware-caps"></a>
-#3.2 HARDWARE CAPS
+##3.2 HARDWARE CAPS
 
 These built-in features lets you see what kind of CPU and memory system your program is currently running on. This is often useful when testing, optimising and debugging - both for your own computer and for a tester or user's computer.
 
 
 <a id="detecthardwarecaps"></a>
-## detect\_hardware\_caps()
+### detect\_hardware\_caps()
 ```
 [string: json] detect_hardware_caps()
 ```
@@ -3016,11 +3020,11 @@ Output is something similar to this:
 
 
 <a id="33-working-with-hashes---sha1"></a>
-#3.3 WORKING WITH HASHES - SHA1
+##3.3 WORKING WITH HASHES - SHA1
 
 
 <a id="quickhasht"></a>
-## quick\_hash\_t
+### quick\_hash\_t
 
 64-bit hash value used to speed up lookups and comparisons.
 
@@ -3031,7 +3035,7 @@ Output is something similar to this:
 
 
 <a id="sha1_t"></a>
-## sha1_t
+### sha1_t
 
 128-bit SHA1 hash number.
 
@@ -3042,7 +3046,7 @@ Output is something similar to this:
 
 
 <a id="calcstringsha1"></a>
-## calc\_string\_sha1()
+### calc\_string\_sha1()
 
 Calculates a SHA1 hash for the contents in a string.
 
@@ -3051,7 +3055,7 @@ sha1_t calc_string_sha1(string s)
 ```
 
 <a id="calcbinarysha1"></a>
-## calc\_binary\_sha1()
+### calc\_binary\_sha1()
 
 Calculates a SHA1 hash for a block binary data.
 
@@ -3063,12 +3067,12 @@ sha1_t calc_binary_sha1(binary_t d)
 
 
 <a id="34-date-and-time"></a>
-# 3.4 DATE AND TIME
+## 3.4 DATE AND TIME
 
 
 
 <a id="timemst"></a>
-## time\_ms\_t
+### time\_ms\_t
 
 64-bit integer counting miliseconds.
 
@@ -3076,7 +3080,7 @@ sha1_t calc_binary_sha1(binary_t d)
 
 
 <a id="date_t"></a>
-## date_t
+### date_t
 
 Stores a UDT.
 
@@ -3085,7 +3089,7 @@ Stores a UDT.
 	}
 
 <a id="gettime_ofday"></a>
-## get\_time\_of\_day()
+### get\_time\_of\_day()
 
 Returns the computer's realtime clock, expressed in the number of milliseconds since system start. Useful to measure program execution. Sample get_time_of_day() before and after execution and compare them to see duration.
 
@@ -3095,7 +3099,7 @@ Returns the computer's realtime clock, expressed in the number of milliseconds s
 
 
 <a id="35-file-system-features"></a>
-# 3.5 FILE SYSTEM FEATURES
+## 3.5 FILE SYSTEM FEATURES
 
 These functions allow you to access the OS file system. They are all impure.
 
@@ -3105,7 +3109,7 @@ fsentry = File System Entry. This is a node in the file system's graph of files 
 
 
 <a id="readtextfile"></a>
-## read\_text\_file()
+### read\_text\_file()
 
 Reads a text file from the file system and returns it as a string.
 
@@ -3116,7 +3120,7 @@ Throws exception if file cannot be found or read.
 
 
 <a id="writetextfile"></a>
-## write\_text\_file()
+### write\_text\_file()
 
 Write a string to the file system as a text file. Will create any missing directories in the absolute path.
 
@@ -3125,7 +3129,7 @@ Write a string to the file system as a text file. Will create any missing direct
 
 
 <a id="getfsentries_shallow-and-get_fsentriesdeep"></a>
-## get\_fsentries_shallow() and get\_fsentries\_deep()
+### get\_fsentries_shallow() and get\_fsentries\_deep()
 
 Returns a vector of all the files and directories found at the absolute path.
 
@@ -3148,7 +3152,7 @@ get_fsentries_deep() works the same way, but will also traverse each found direc
 
 
 <a id="getfsentryinfo"></a>
-## get\_fsentry\_info()
+### get\_fsentry\_info()
 
 Information about an entry in the file system. Can be a file or a directory.
 
@@ -3173,7 +3177,7 @@ Information about an entry in the file system. Can be a file or a directory.
 
 
 <a id="getfsenvironment"></a>
-## get\_fs\_environment()
+### get\_fs\_environment()
 
 Returns important root locations in the host computer's file system.
 
@@ -3259,7 +3263,7 @@ Example: "/Users/bob/Applications/MyApp.app/"
 
 
 <a id="doesfsentryexist"></a>
-## does\_fsentry\_exist()
+### does\_fsentry\_exist()
 
 Checks if there is a file or directory at specified path.
 
@@ -3267,7 +3271,7 @@ Checks if there is a file or directory at specified path.
 
 
 <a id="createdirectorybranch"></a>
-## create\_directory\_branch()
+### create\_directory\_branch()
 
 Creates a directory at specified path. If the parents directories don't exist, then those will be created too.
 
@@ -3275,7 +3279,7 @@ Creates a directory at specified path. If the parents directories don't exist, t
 
 
 <a id="deletefsentrydeep"></a>
-## delete\_fsentry\_deep()
+### delete\_fsentry\_deep()
 
 Deletes a file or directory. If the entry has children those are deleted too - delete folder also deletes is contents.
 
@@ -3283,7 +3287,7 @@ Deletes a file or directory. If the entry has children those are deleted too - d
 
 
 <a id="rename_fsentry"></a>
-## rename\_fsentry()
+### rename\_fsentry()
 
 Renames a file or directory. If it is a directory, its contents is unchanged.
 After this call completes, abs_path no longer references an entry.
@@ -3310,8 +3314,8 @@ After:
 
 
 
-<a id="36-core-types"></a>
-# 3.6 CORE TYPES
+<a id="36-standard-types"></a>
+## 3.6 STANDARD TYPES
 A bunch of common data types are built into Floyd. This is to make composition easier and avoid the noise of converting all simple types between different component's own versions.
 
 
@@ -3320,7 +3324,7 @@ A bunch of common data types are built into Floyd. This is to make composition e
 
 
 <a id="uuid_t"></a>
-## uuid_t
+### uuid_t
 
 A universally unique identifier (UUID) is a 128-bit number used to identify information in computer systems. The term globaly unique identifier (GUID) is also used.
 
@@ -3331,7 +3335,7 @@ A universally unique identifier (UUID) is a 128-bit number used to identify info
 
 
 <a id="ipaddresst"></a>
-## ip\_address\_t
+### ip\_address\_t
 
 Internet IP adress in using IPv6 128-bit number.
 
@@ -3342,7 +3346,7 @@ Internet IP adress in using IPv6 128-bit number.
 
 
 <a id="url_t"></a>
-## url_t
+### url_t
 
 Internet URL.
 
@@ -3352,7 +3356,7 @@ Internet URL.
 
 
 <a id="urlpartst-"></a>
-## url\_parts\_t {}
+### url\_parts\_t {}
 
 This struct contains an URL separate to its components.
 
@@ -3376,7 +3380,7 @@ Example 1:
 
 
 <a id="key_t"></a>
-## key_t
+### key_t
 
 Efficent keying using 64-bit hash instead of a string. Hash can often be computed from string key at compile time.
 
@@ -3388,7 +3392,7 @@ Efficent keying using 64-bit hash instead of a string. Hash can often be compute
 
 
 <a id="binary_t"></a>
-## binary_t
+### binary_t
 
 Raw binary data, 8bit per byte.
 
@@ -3399,7 +3403,7 @@ Raw binary data, 8bit per byte.
 
 
 <a id="seq_t"></a>
-## seq_t
+### seq_t
 
 This is the neatest way to parse strings without using an iterator or indexes.
 
@@ -3419,7 +3423,7 @@ It shares the actual string data behind the curtains so is efficent.
 
 
 <a id="text_t"></a>
-## text_t
+### text_t
 
 Unicode text. Opaque data -- only use library functions to process text_t. Think of text_t and Uncode text more like a PDF.
 
@@ -3429,7 +3433,7 @@ Unicode text. Opaque data -- only use library functions to process text_t. Think
 
 
 <a id="textresourceid"></a>
-## text\_resource\_id
+### text\_resource\_id
 
 How you specify text resources.
 
@@ -3439,7 +3443,7 @@ How you specify text resources.
 
 
 <a id="imageidt"></a>
-## image\_id\_t
+### image\_id\_t
 
 How you specify image resources.
 
@@ -3449,7 +3453,7 @@ How you specify image resources.
 
 
 <a id="color_t"></a>
-## color_t
+### color_t
 
 Color. If you don't need alpha, set it to 1.0. Components are normally min 0.0 -- max 1.0 but you can use other ranges.
 
@@ -3462,7 +3466,7 @@ Color. If you don't need alpha, set it to 1.0. Components are normally min 0.0 -
 
 
 <a id="vector2_t"></a>
-## vector2_t
+### vector2_t
 
 2D position in cartesian coordinate system. Use to specify position on the screen and similar.
 
