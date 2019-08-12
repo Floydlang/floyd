@@ -546,10 +546,10 @@ FLOYD_LANG_PROOF("Floyd test suite", "", "bw_shift_right()", ""){
 
 
 
-FLOYD_LANG_PROOF("Floyd test suite", "", "floyd_funcdef__bw_shift_right_arithmetic()", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "", "bw_shift_right_arithmetic()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_right_arithmetic(7, 1)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011));
 }
-FLOYD_LANG_PROOF("Floyd test suite", "", "floyd_funcdef__bw_shift_right_arithmetic()", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "", "bw_shift_right_arithmetic()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_right_arithmetic(-2, 1)", value_t::make_int(-1));
 }
 

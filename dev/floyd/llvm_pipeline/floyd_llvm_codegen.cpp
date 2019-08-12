@@ -6,7 +6,7 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-const bool k_trace_input_output = true;
+const bool k_trace_input_output = false;
 const bool k_trace_types = k_trace_input_output;
 
 #include "floyd_llvm_codegen.h"
@@ -283,7 +283,10 @@ llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, co
 
 static std::string generate_link_name(function_id_t function_id, const function_definition_t& def){
 	const auto def_name = def._definition_name;
+
 	QUARK_ASSERT(def_name.empty() == false);
+	QUARK_ASSERT(def_name == function_id.name);
+
 	const auto link_name = def_name.empty() ? std::string() + "floyd_unnamed_function_" + function_id.name : std::string("floyd_funcdef__") + def_name;
 	return link_name;
 }
