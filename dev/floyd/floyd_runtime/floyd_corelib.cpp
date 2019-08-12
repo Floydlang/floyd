@@ -328,7 +328,7 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 
 	struct seq_t {
 		string str
-		size_t pos
+		int pos
 	}
 
 	struct text_t {

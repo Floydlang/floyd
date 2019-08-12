@@ -74,6 +74,12 @@ const function_def_t& find_function_def_from_link_name(const std::vector<functio
 	return *it;
 }
 
+const function_def_t& find_from_link_name_native_function_ptr(const std::vector<function_def_t>& function_defs, void* ptr){
+	auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.llvm_f == ptr; } );
+	QUARK_ASSERT(it != function_defs.end());
+	return *it;
+}
+
 
 void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint64_t count){
 	for(auto i = 0 ; i < count ; i++){
@@ -93,7 +99,7 @@ void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name){
 	return  (void*)addr;
 }
 
-void* get_global_function(llvm_execution_engine_t& ee, const std::string& name){
+void* get_global_function(const llvm_execution_engine_t& ee, const std::string& name){
 	QUARK_ASSERT(ee.check_invariant());
 	QUARK_ASSERT(name.empty() == false);
 
@@ -508,6 +514,74 @@ runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t
 	return std::visit(visitor_t{ runtime, value }, type._contents);
 }
 
+
+std::vector<std::pair<std::string, void*>> function_link_name_to_ptr(const llvm_execution_engine_t& runtime){
+	std::vector<std::pair<std::string, void*>> result;
+	for(const auto& e: runtime.function_defs){
+		auto f = get_global_function(runtime, e.link_name);
+		result.push_back({ e.link_name, f });
+	}
+
+	if(k_trace_messaging){
+		QUARK_SCOPED_TRACE("linked functions");
+		for(const auto& e: result){
+			QUARK_TRACE_SS(e.first << " = " << (e.second == nullptr ? "nullptr" : ptr_to_hexstring(e.second)));
+		}
+	}
+
+	return result;
+}
+//??? LLVM codegen unlinks functions not called: need to mark functions external.
+
+
+
+std::string native_func_ptr_to_link_name(const llvm_execution_engine_t& runtime, void* f){
+//	const llvm::GlobalValue* gv = runtime.ee->getGlobalValueAtAddress(f);
+
+	const auto function_vec = function_link_name_to_ptr(runtime);
+	const auto it = std::find_if(
+		function_vec.begin(),
+		function_vec.end(),
+		[&] (auto& e) {
+			return f == e.second;
+		}
+	);
+	if(it != function_vec.end()){
+		return it->first;
+	}
+	else{
+		return "";
+	}
+
+
+#if 0
+	const function_def_t& function_def = find_from_link_name_native_function_ptr(runtime.function_defs, f);
+	return function_def.link_name;
+
+		const auto symbols = runtime.global_symbols._symbols;
+
+		const floyd::symbol_t& s = find_symbol_required(const symbol_table_t& symbol_table, e);
+
+		const auto it = std::find_if(
+			symbols.begin(),
+			symbols.end(),
+			[&] (const runtime_value_t& e) {
+				return floyd_runtime__compare_values(frp, static_cast<int64_t>(expression_type::k_logical_equal), arg1_type, e, arg1_value) == 1;
+			}
+		);
+		if(it == vec->get_element_ptr() + vec->get_element_count()){
+			return -1;
+		}
+
+
+
+		return value_t::make_function_value(type, encoded_value.function_ptr function_id_t { "" });
+	}
+#endif
+
+}
+
+
 value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
@@ -564,7 +638,8 @@ value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime
 			return from_runtime_dict(runtime, encoded_value, type);
 		}
 		value_t operator()(const typeid_t::function_t& e) const{
-			return value_t::make_function_value(type, function_id_t { "" });
+			const auto link_name = native_func_ptr_to_link_name(runtime, encoded_value.function_ptr);
+			return value_t::make_function_value(type, function_id_t { link_name });
 		}
 		value_t operator()(const typeid_t::unresolved_t& e) const{
 			UNSUPPORTED();
@@ -1463,7 +1538,7 @@ function_bind_t fr_update_struct_member__make(llvm::LLVMContext& context, const 
 
 
 int64_t fr_get_profile_time(floyd_runtime_t* frp){
-	auto& r = get_floyd_runtime(frp);
+	get_floyd_runtime(frp);
 
 	const std::chrono::time_point<std::chrono::high_resolution_clock> now = std::chrono::high_resolution_clock::now();
 	const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
@@ -2970,11 +3045,6 @@ run_output_t run_program_helper(const std::string& program_source, const std::st
 	return result;
 }
 
-/*
-std::vector<std::string> 
-std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name);
-value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v);
-*/
 
 void run_benchmarks(const std::string& program_source, const std::string& file, const std::vector<std::string>& tests){
 	const auto cu = floyd::make_compilation_unit_nolib(program_source, file);
@@ -2984,7 +3054,41 @@ void run_benchmarks(const std::string& program_source, const std::string& file, 
 	auto program = generate_llvm_ir_program(instance, sem_ast, file);
 	auto ee = init_program(*program);
 
-//	const auto result = run_program(*ee, {});
+	std::pair<void*, typeid_t> benchmark_registry_bind = bind_global(*ee, k_global_benchmark_registry);
+	QUARK_ASSERT(benchmark_registry_bind.first != nullptr);
+	QUARK_ASSERT(benchmark_registry_bind.second == typeid_t::make_vector(make_benchmark_def_t()));
+
+	const value_t reg = load_global(*ee, benchmark_registry_bind);
+	const auto v = reg.get_vector_value();
+	for(const auto& e: v){
+		const auto s = e.get_struct_value();
+		const auto name = s->_member_values[0].get_string_value();
+		const auto f_link_name = s->_member_values[1].get_function_value().name;
+
+		const auto prefix = std::string("floyd_funcdef__benchmark__");
+		const auto left = f_link_name.substr(0, prefix.size());
+		const auto right = f_link_name.substr(prefix.size(), std::string::npos);
+		QUARK_ASSERT(left == prefix);
+
+		const auto it = std::find(tests.begin(), tests.end(), right);
+		if(it != tests.end()){
+			const std::pair<void*, typeid_t> f_bind = bind_function(*ee, f_link_name);
+
+			typedef runtime_value_t (*benchmark_f)();
+			auto f2 = reinterpret_cast<benchmark_f>(f_bind.first);
+			const auto bench_result = f2();
+
+			const auto result2 = from_runtime_value(*ee, bench_result, typeid_t::make_vector(make_benchmark_result_t()));
+			
+
+			QUARK_TRACE(value_and_type_to_string(result2));
+
+		}
+		else{
+		}
+	}
+
+	//	const auto result = run_program(*ee, {});
 }
 
 

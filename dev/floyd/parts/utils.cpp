@@ -9,6 +9,8 @@
 #include "utils.h"
 #include "quark.h"
 #include <string>
+#include <sstream>
+#include <iomanip>
 
 
 using std::vector;
@@ -159,5 +161,20 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 #endif
 
+
+
+
+std::string ptr_to_hexstring(const void* ptr){
+	const auto v = reinterpret_cast<std::size_t>(ptr);
+	std::stringstream ss;
+	ss << "0x" /*<< std::showbase*/ << std::hex << std::setfill('0') << std::setw(sizeof(void*) * 2) << v;
+
+	return ss.str();
+}
+
+QUARK_UNIT_TEST("", "ptr_to_hexstring()", "", "") {
+	const auto s = ptr_to_hexstring((void*)0xdeadbeef);
+	QUARK_UT_VERIFY(s == "0x00000000deadbeef");
+}
 
 #include <sstream>

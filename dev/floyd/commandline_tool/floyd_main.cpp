@@ -208,19 +208,32 @@ static int do_run(const command_t& command, const command_t::compile_and_run_t& 
 	}
 }
 
-static int do_run_user_benchmarks(const command_t& command, const command_t::run_user_benchmarks_t& command2){
-	g_trace_on = false;
-
-	const auto program_source = read_text_file(command2.source_path);
-
+static int do_run_user_benchmarks(const command_t& command, const command_t::run_user_benchmarks_t& command2, const std::string& program_source){
 	if(command2.backend == ebackend::llvm){
-		run_benchmarks(program_source, command2.source_path, {});
+		run_benchmarks(program_source, command2.source_path, { "" });
 		return EXIT_SUCCESS;
 	}
 	else{
 		throw std::runtime_error("");
 	}
 }
+
+QUARK_UNIT_TEST("", "main_internal()", "", ""){
+	g_trace_on = true;
+	const auto program_source =
+	R"(
+
+		benchmark-def "ABC" {
+			return [ benchmark_result_t(200, json("0 eleements")) ]
+		}
+
+	)";
+
+	const auto c = command_t { command_t::run_user_benchmarks_t { "", {}, ebackend::llvm } };
+	const auto result = do_run_user_benchmarks(c, std::get<command_t::run_user_benchmarks_t>(c._contents), program_source);
+	QUARK_UT_VERIFY(result == 0);
+}
+
 
 //	Runs one of the commands, args depends on which command.
 static int do_command(const command_t& command){
@@ -241,7 +254,9 @@ static int do_command(const command_t& command){
 		}
 
 		int operator()(const command_t::run_user_benchmarks_t& command2) const{
-			return do_run_user_benchmarks(command, command2);
+			const auto program_source = read_text_file(command2.source_path);
+			g_trace_on = false;
+			return do_run_user_benchmarks(command, command2, program_source);
 		}
 
 

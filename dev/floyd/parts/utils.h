@@ -104,4 +104,10 @@ VALUE reduce(COLLECTION col, const VALUE& init, const BINARY_OPERATION op) {
 	return acc;
 }
 
+
+
+
+std::string ptr_to_hexstring(const void* ptr);
+
+
 #endif /* utils_hpp */

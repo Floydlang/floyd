@@ -130,12 +130,13 @@ typedef runtime_value_t (*FLOYD_RUNTIME_F)(floyd_runtime_t* frp, const char* arg
 
 
 const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const std::string& link_name);
+const function_def_t& find_from_link_name_native_function_ptr(const std::vector<function_def_t>& function_defs, void* ptr);
 
 //	Cast to uint64_t* or other the required type, then access via it.
 void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name);
 
 
-void* get_global_function(llvm_execution_engine_t& ee, const std::string& name);
+void* get_global_function(const llvm_execution_engine_t& ee, const std::string& name);
 
 std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std::string& name);
 
@@ -145,9 +146,10 @@ value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t
 
 
 
+value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type);
+runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t& value);
 
 std::string from_runtime_string(const llvm_execution_engine_t& r, runtime_value_t encoded_value);
-runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t& value);
 runtime_value_t to_runtime_string(llvm_execution_engine_t& r, const std::string& s);
 
 

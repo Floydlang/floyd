@@ -3409,7 +3409,7 @@ This is the neatest way to parse strings without using an iterator or indexes.
 
 	struct seq_t {
 		string str
-		size_t pos
+		int pos
 	}
 
 When you consume data at start of seq_t you get a *new* seq_t that holds
