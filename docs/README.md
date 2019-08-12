@@ -1,8 +1,6 @@
 ![](floyd_logo_banner.png)
 
 
-**PLEASE PLAY AROUND WITH FLOYD**
-
 [![CircleCI](https://circleci.com/gh/Floydlang/floyd/tree/dev.svg?style=svg)](https://circleci.com/gh/Floydlang/floyd/tree/dev)
 
 
@@ -17,7 +15,7 @@
 
 **2019:** 1) first generation of Injector (optimiser), 2) Flesh out language, approx 15% more features.
 
-[**[FLOYD BLOG]**](https://medium.com/floyd-programming-language "Floyd Blog") - [**[ROADMAP]**](https://github.com/marcusz/floyd/projects/1 "Floyd Roadmap") - [**[CURRENT MILESTONE]**](https://github.com/marcusz/floyd/projects/4 "Milestone") - [**[MANUAL]**](floyd_manual/floyd_manual.md "Manual") - [**[LIBRARY]**](floyd_manual/floyd_corelib.md "Core library")
+[**[FLOYD BLOG]**](https://medium.com/floyd-programming-language "Floyd Blog") - [**[ROADMAP]**](https://github.com/marcusz/floyd/projects/1 "Floyd Roadmap") - [**[CURRENT MILESTONE]**](https://github.com/marcusz/floyd/projects/4 "Milestone") - [**[MANUAL]**](floyd_manual/floyd_manual.md "Manual")
 
 
 
@@ -232,7 +230,6 @@ A handful features are needed for a satisfying 1.0: rounding out the language fe
 |Item				| Feature	
 |:---				|:---
 | [Floyd Manual](floyd_manual/floyd_manual.md) | Programming language manual
-| [Core Library Manual](floyd_manual/floyd_corelib.md) | File system access, hashing, time & date etc.
 | **Floyd compiler** | Compiles Floyd source code
 | **Floyd LLVM backend**	| Optimises your Floyd program and generates native code x86 / x64 code
 | **Floyd byte code compiler & interpreter**	| Runs your program in the byte code interpeter
@@ -244,6 +241,3 @@ A handful features are needed for a satisfying 1.0: rounding out the language fe
 [ROADMAP](https://github.com/marcusz/floyd/projects/1 "Floyd Roadmap")
 
 [CURRENT MILESTONE](https://github.com/marcusz/floyd/projects/4 "Milestone 2")
-
-
-**PLEASE PLAY AROUND WITH FLOYD**
