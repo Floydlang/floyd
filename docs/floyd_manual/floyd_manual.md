@@ -21,13 +21,11 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 		- [VALUE ORIENTED, NO POINTERS](#value-oriented-no-pointers)
 		- [STATIC TYPING, INFERRED](#static-typing-inferred)
 	- [1.7 COMMENTS AND DOCUMENTATION](#17-comments-and-documentation)
-	- [1.8 STRING DATA TYPE](#18-string-data-type)
-	- [1.9 VECTOR DATA TYPE](#19-vector-data-type)
-	- [1.10 DICTIONARY DATA TYPE](#110-dictionary-data-type)
-	- [1.11 STRUCT DATA TYPE](#111-struct-data-type)
-	- [1.12 FUNCTIONS \(PURE AND IMPURE\)](#112-functions-pure-and-impure)
-		- [IMPURE FUNCTIONS](#impure-functions)
-		- [GRAY PURE FUNCTIONS](#gray-pure-functions)
+	- [1.8 STRING](#18-string)
+	- [1.9 VECTOR](#19-vector)
+	- [1.10 DICTIONARY](#110-dictionary)
+	- [1.11 STRUCT](#111-struct)
+	- [1.12 FUNCTION](#112-function)
 	- [1.13 JSON AND AUTOMATIC SERIALIZATION](#113-json-and-automatic-serialization)
 	- [1.14 FLOYD PROCESSES - TALKING TO THE REAL WORLD](#114-floyd-processes---talking-to-the-real-world)
 		- [GAIN PERFORMANCE VIA CONCURRENCY](#gain-performance-via-concurrency)
@@ -64,8 +62,8 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 		- [TODO: PROTOCOL](#todo-protocol)
 	- [2.5 EXPRESSIONS](#25-expressions)
 		- [LITERALS](#literals)
-		- [VECTOR-CONSTRUCTOR](#vector-constructor)
-		- [DICTIONARY-CONSTRUCTOR](#dictionary-constructor)
+		- [VECTOR CONSTRUCTOR](#vector-constructor)
+		- [DICTIONARY CONSTRUCTOR](#dictionary-constructor)
 		- [FUNCTION CALL](#function-call)
 		- [ARITHMETIC OPERATORS](#arithmetic-operators)
 		- [RELATIONAL OPERATORS](#relational-operators)
@@ -85,9 +83,8 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 		- [RETURN](#return)
 		- [SOFTWARE-SYSTEM-DEF](#software-system-def)
 		- [CONTAINER-DEF](#container-def)
-		- [TODO: SWITCH](#todo-switch)
 		- [BENCHMARK-DEF](#benchmark-def)
-		- [ADVANCED](#advanced)
+		- [TODO: SWITCH](#todo-switch)
 	- [2.7 EXAMPLE SOFTWARE SYSTEM FILE](#27-example-software-system-file)
 	- [2.8 FLOYD SYNTAX](#28-floyd-syntax)
 
@@ -300,8 +297,8 @@ let a = "hello" //	This is an end of line comment.
 
 
 
-<a id="18-string-data-type"></a>
-## 1.8 STRING DATA TYPE
+<a id="18-string"></a>
+## 1.8 STRING
 
 Floyd has a built-in 8-bit string type. As all data types in Floyd, the string type is immutable. You can also use them as fast and compact arrays of bytes since there are no other 8 bit types in Floyd. You can make string literals directly in the source code like this: ``` let a = "Hello, world!" ```
 
@@ -319,8 +316,8 @@ assert(a == "e")
 Notice: a special mechansim for Unicode is planned, using another data type: "text".
 
 
-<a id="19-vector-data-type"></a>
-## 1.9 VECTOR DATA TYPE
+<a id="19-vector"></a>
+## 1.9 VECTOR
 
 A vector is a collection of values where you look up the values using an index between 0 and (vector size - 1). The items in a vector are called "elements". The elements are ordered. Finding an element at an index uses constant time. In other languages vectors are called "arrays" or even "lists". Floyd vectors can have any size - the number of elements is not part of the type.
 
@@ -357,8 +354,8 @@ assert(a == [ 10, 20, 30, 40, 50 ])
 ```
 
 
-<a id="110-dictionary-data-type"></a>
-## 1.10 DICTIONARY DATA TYPE
+<a id="110-dictionary"></a>
+## 1.10 DICTIONARY
 
 A collection of values where you identify the values using string keys. In C++ you would use a std::map. When you specify the type of dictionary you must always include "string". You can put any type of value into the dictionary (but not mix inside the same dictionary).
 
@@ -381,8 +378,8 @@ You copy dictionaries using = and all comparison expressions work, just like wit
 
 
 
-<a id="111-struct-data-type"></a>
-## 1.11 STRUCT DATA TYPE
+<a id="111-struct"></a>
+## 1.11 STRUCT
 
 Structs are the central building block for composing data in Floyd. They are used in place of classes in other programming languages. Structs are always values and immutable. They are very fast and compact: behind the curtains copied structs shares state between them, even when partially modified.
 
@@ -465,8 +462,8 @@ assert(b.size.x == 100)
 
 
 
-<a id="112-functions-pure-and-impure"></a>
-## 1.12 FUNCTIONS (PURE AND IMPURE)
+<a id="112-function"></a>
+## 1.12 FUNCTION
 
 Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants. They cannot modify global variables or affect the outside work via communication or files.
 
@@ -518,8 +515,10 @@ func bool (string, string) f5(int x)
 All arguments to a function are read-only -- you cannot modify the arguments or anything they refer too. There are no output parameters in Floyd.
 
 
+
+
 <a id="impure-functions"></a>
-### IMPURE FUNCTIONS
+#### IMPURE FUNCTIONS
 
 You can tag a function to be impure using the "impure" keyword.
 
@@ -540,7 +539,7 @@ A number of impure functions are built into the language and its core library.
 
 
 <a id="gray-pure-functions"></a>
-### GRAY PURE FUNCTIONS
+#### GRAY PURE FUNCTIONS
 
 This is a type of function that *has side effects or state* -- but the calling functions cannot observe this so from their perspective it is pure. Examples are memory allocators and memory pools and logging program execution.
 
@@ -2094,14 +2093,14 @@ This is a value that is fully defined directly in the code. Like the number 3. S
 
 
 <a id="vector-constructor"></a>
-### VECTOR-CONSTRUCTOR
+### VECTOR CONSTRUCTOR
 
 This lets you create a new vector value anywhere an expression can be put. This expression supports non-constant elements of the constructor.
 Read more in the vector data type text.
 
 
 <a id="dictionary-constructor"></a>
-### DICTIONARY-CONSTRUCTOR
+### DICTIONARY CONSTRUCTOR
 
 This lets you create a new dictionary value anywhere an expression can be typed. This expression supports non-constant elements of the constructor.
 Read more in the dictionary data type text.
@@ -2586,13 +2585,6 @@ func my_gui_state_t my_gui(my_gui_state_t state, json message) impure{
 ```
 
 
-<a id="todo-switch"></a>
-### TODO: SWITCH
-
-TODO POC
-
-
-
 
 
 
@@ -2609,7 +2601,7 @@ Your test will be run for each test in the set. Usually you want to measure for 
 You can use built-in resources (because those functions are pure) but not load any file.
 
 <a id="advanced"></a>
-### ADVANCED
+#### ADVANCED
 
 This is what really happens when you use benchmark-def:
 
@@ -2658,6 +2650,13 @@ This means you can write code that explores the benchmark_registry vector and it
 
 ??? TODO: There are also corelib functions that let you do this.
 
+
+
+
+<a id="todo-switch"></a>
+### TODO: SWITCH
+
+TODO POC
 
 
 
