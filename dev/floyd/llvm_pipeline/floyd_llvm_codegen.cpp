@@ -2343,26 +2343,8 @@ static function_definition_t make_dummy_function_definition(){
 	return function_definition_t::make_placeholder();
 }
 
-//	Create llvm function prototypes for each function.
-static function_def_t generate_c_prototype(llvm::Module& module, const function_bind_t& bind){
-	QUARK_ASSERT(check_invariant__module(&module));
-//	QUARK_TRACE_SS(print_type(bind.function_type));
-
-//	QUARK_TRACE_SS(print_module(module));
-	auto f = module.getOrInsertFunction(bind.link_name, bind.function_type);
-
-//	QUARK_TRACE_SS(print_module(module));
-
-	const auto result = function_def_t{ bind.link_name, llvm::cast<llvm::Function>(f), function_id_t { "xxaaaxxx" }, make_dummy_function_definition() };
-
-//	QUARK_TRACE_SS(print_module(module));
-
-	QUARK_ASSERT(check_invariant__module(&module));
-
-	return result;
-}
-
 //	Make LLVM functions -- runtime, floyd host functions, floyd functions.
+//	host functions are later linked by LLVM execution engine, by matching the function names.
 static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& module, const llvm_type_lookup& type_lookup, const std::vector<floyd::function_definition_t>& defs){
 	QUARK_ASSERT(type_lookup.check_invariant());
 
@@ -2370,15 +2352,16 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 
 	auto& context = module.getContext();
 
+	//	Make prototypes for all runtime functions, like floydrt_retain_vec().
 	const auto runtime_functions = get_runtime_functions(context, type_lookup);
 	for(const auto& e: runtime_functions){
-		result.push_back(generate_c_prototype(module, e));
+
+		auto f = module.getOrInsertFunction(e.link_name, e.function_type);
+		QUARK_ASSERT(check_invariant__module(&module));
+
+		const auto def = function_def_t{ e.link_name, llvm::cast<llvm::Function>(f), function_id_t { "xxaaaxxx" }, make_dummy_function_definition() };
+		result.push_back(def);
 	}
-
-
-	//	Register all function defs as LLVM function prototypes.
-	//	host functions are later linked by LLVM execution engine, by matching the function names.
-	//	Floyd functions are later filled with instructions.
 
 	//	floyd_runtime_init()
 	{
@@ -2390,7 +2373,8 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 			false
 		);
 		auto f = module.getOrInsertFunction("floyd_runtime_init", function_type);
-		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), {"floyd_runtime_init"}, make_dummy_function_definition()});
+		const auto def = function_def_t{ f->getName(), llvm::cast<llvm::Function>(f), {"floyd_runtime_init"}, make_dummy_function_definition() };
+		result.push_back(def);
 	}
 
 	//	floyd_runtime_deinit()
@@ -2403,14 +2387,17 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 			false
 		);
 		auto f = module.getOrInsertFunction("floyd_runtime_deinit", function_type);
-		result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), {"floyd_runtime_deinit"}, make_dummy_function_definition()});
+		const auto def = function_def_t{ f->getName(), llvm::cast<llvm::Function>(f), {"floyd_runtime_deinit"}, make_dummy_function_definition() };
+		result.push_back(def);
 	}
 
+	//	Make function prototypes for all floyd functions.
 	{
 		for(const auto& function_def: defs){
 			const auto function_id = function_def._definition_name;
 			auto f = generate_function_prototype(module, type_lookup, function_def, function_id_t { function_id });
-			result.push_back({ f->getName(), llvm::cast<llvm::Function>(f), { function_id }, function_def });
+			const auto def = function_def_t{ f->getName(), llvm::cast<llvm::Function>(f), { function_id }, function_def };
+			result.push_back(def);
 		}
 	}
 	return result;
