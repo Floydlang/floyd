@@ -15,19 +15,19 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 	- [1.3 GLOBAL SCOPE AND MAIN FUNCTION](#13-global-scope-and-main-function)
 	- [1.4 DATA TYPES](#14-data-types)
 	- [1.5 OPERATORS AND EXPRESSIONS](#15-operators-and-expressions)
-	- [1.6 STRING DATA TYPE](#16-string-data-type)
-	- [1.7 VECTOR DATA TYPE](#17-vector-data-type)
-	- [1.8 DICTIONARY DATA TYPE](#18-dictionary-data-type)
-	- [1.9 STRUCT DATA TYPE](#19-struct-data-type)
-	- [1.10 VALUES, VARIABLES](#110-values-variables)
+	- [1.6 VALUES, VARIABLES](#16-values-variables)
 		- [IMMUTABLE VALUES VS VARIABLES](#immutable-values-vs-variables)
 		- [DEEP BY VALUE](#deep-by-value)
 		- [VALUE ORIENTED, NO POINTERS](#value-oriented-no-pointers)
 		- [STATIC TYPING, INFERRED](#static-typing-inferred)
-	- [1.11 FUNCTIONS \(PURE AND IMPURE\)](#111-functions-pure-and-impure)
+	- [1.7 COMMENTS AND DOCUMENTATION](#17-comments-and-documentation)
+	- [1.8 STRING DATA TYPE](#18-string-data-type)
+	- [1.9 VECTOR DATA TYPE](#19-vector-data-type)
+	- [1.10 DICTIONARY DATA TYPE](#110-dictionary-data-type)
+	- [1.11 STRUCT DATA TYPE](#111-struct-data-type)
+	- [1.12 FUNCTIONS \(PURE AND IMPURE\)](#112-functions-pure-and-impure)
 		- [IMPURE FUNCTIONS](#impure-functions)
 		- [GRAY PURE FUNCTIONS](#gray-pure-functions)
-	- [1.12 COMMENTS AND DOCUMENTATION](#112-comments-and-documentation)
 	- [1.13 JSON AND AUTOMATIC SERIALIZATION](#113-json-and-automatic-serialization)
 	- [1.14 FLOYD PROCESSES - TALKING TO THE REAL WORLD](#114-floyd-processes---talking-to-the-real-world)
 		- [GAIN PERFORMANCE VIA CONCURRENCY](#gain-performance-via-concurrency)
@@ -50,12 +50,6 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 	- [2.1 SOURCE CODE FILES](#21-source-code-files)
 	- [2.2 MAIN\(\) & EXECUTING PROGRAMS](#22-main--executing-programs)
 	- [2.3 CORECALLS - AKA INTRINSICS, OPERATORS](#23-corecalls---aka-intrinsics-operators)
-		- [print\(\) -- IMPURE](#print----impure)
-		- [send\(\) -- IMPURE](#send----impure)
-		- [assert\(\)](#assert)
-		- [to_string\(\)](#to_string)
-		- [to\_pretty\_string\(\)](#toprettystring)
-		- [typeof\(\)](#typeof)
 	- [2.4 DATA TYPES](#24-data-types)
 		- [EXAMPLE TYPE DECLARATIONS](#example-type-declarations)
 		- [BOOL](#bool)
@@ -78,21 +72,21 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 		- [LOGICAL OPERATORS](#logical-operators)
 		- [CONDITIONAL OPERATOR](#conditional-operator)
 		- [BITWISE OPERATORS](#bitwise-operators)
-		- [BENCHMARK EXPRESSION](#benchmark-expression)
+		- [BENCHMARK](#benchmark)
 		- [EXAMPLE EXPRESSIONS](#example-expressions)
 	- [2.6 STATEMENTS](#26-statements)
-		- [LET STATEMENT](#let-statement)
-		- [MUTABLE STATEMENT](#mutable-statement)
-		- [FUNCTION DEFINITION STATEMENT](#function-definition-statement)
-		- [STRUCT DEFINITION STATEMENTS](#struct-definition-statements)
-		- [IF - THEN - ELSE STATEMENT](#if---then---else-statement)
-		- [FOR LOOP STATEMENT](#for-loop-statement)
-		- [WHILE STATEMENT](#while-statement)
-		- [RETURN STATEMENT](#return-statement)
-		- [SOFTWARE-SYSTEM-DEF STATEMENT](#software-system-def-statement)
-		- [CONTAINER-DEF STATEMENT](#container-def-statement)
-		- [TODO: SWITCH STATEMENT](#todo-switch-statement)
-		- [BENCHMARK-DEF STATEMENT](#benchmark-def-statement)
+		- [LET](#let)
+		- [MUTABLE](#mutable)
+		- [FUNCTION DEFINITION](#function-definition)
+		- [STRUCT DEFINITION](#struct-definition)
+		- [IF - THEN - ELSE](#if---then---else)
+		- [FOR LOOP](#for-loop)
+		- [WHILE](#while)
+		- [RETURN](#return)
+		- [SOFTWARE-SYSTEM-DEF](#software-system-def)
+		- [CONTAINER-DEF](#container-def)
+		- [TODO: SWITCH](#todo-switch)
+		- [BENCHMARK-DEF](#benchmark-def)
 		- [ADVANCED](#advanced)
 	- [2.7 EXAMPLE SOFTWARE SYSTEM FILE](#27-example-software-system-file)
 	- [2.8 FLOYD SYNTAX](#28-floyd-syntax)
@@ -199,8 +193,115 @@ Notice that floyd has no special operator syntax for bitwise operations the way 
 
 
 
-<a id="16-string-data-type"></a>
-## 1.6 STRING DATA TYPE
+
+
+
+<a id="16-values-variables"></a>
+## 1.6 VALUES, VARIABLES
+
+<a id="immutable-values-vs-variables"></a>
+### IMMUTABLE VALUES VS VARIABLES
+
+All values in Floyd are immutable -- you make new values based on previous values, but you don't directly modify old values. Internally Floyd uses clever mechanisms to make this fast and avoids copying data too much. It's perfectly good to replace a character in a 3 GB long string and get a new 3 GB string as a result. Almost all of the characters will be stored only once.
+The only exception is local variables that can be forced to be mutable.
+
+(Also, each green-process has one mutable value too.)
+
+- Function arguments
+- Function local variables
+- Member variables of structs.
+
+When defining a variable, you can often skip telling which type it is, since the type can be inferred by the Floyd compiler.
+
+Explicit
+
+```
+let int x = 10
+```
+
+Implicit
+
+```
+let y = 11
+```
+
+
+Example:
+
+```
+let a = "hello"
+a = "goodbye"	//	Error - you cannot change variable a.
+```
+
+You can use "mutable" to make a variable changeable.
+
+```
+mutable a = "hello"
+a = "goodbye"	//	Changes variable a to "goodbye".
+```
+
+<a id="deep-by-value"></a>
+### DEEP BY VALUE
+
+All values and aggregated members values are always considered in operations in any type of nesting of structs and values and collections. This includes equality checks or assignment for example.
+
+The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
+
+Example: your application's entire state may be stored in *one* value in a struct containing other structs and vectors and so on. This value can still be copied around quickly, it is automatically sortable, convertible to JSON or whatever.
+
+
+<a id="value-oriented-no-pointers"></a>
+### VALUE ORIENTED, NO POINTERS
+
+There are no pointers or references in Floyd. You copy values around deeply instead. Even a big value like your game's entire world or your word processor's entire document. Behind the curtains Floyd uses pointers extensively to make this fast.
+
+Removing the concept of pointers makes programming easier. There are no dangling pointers, aliasing problems or defensive copying and other classic problems. It also makes it simpler for the runtime and compiler to generate extremely fast code.
+
+
+<a id="static-typing-inferred"></a>
+### STATIC TYPING, INFERRED
+
+Floyd is strongly typed language. Every variable, argument, return value and struct member has a defined type. If you make a vector of elements, you need to decide on one type of elements to store in the vector.
+
+All types are defined at compile time, before the program runs. This is how Java, C++ and Swift works.
+
+Javascript, Python and Ruby does not use static typing.
+
+You can often leave out the actual type from the code, when the compiler already knows the type - the compiler can often guess = infer the type.
+
+
+
+
+
+
+<a id="17-comments-and-documentation"></a>
+## 1.7 COMMENTS AND DOCUMENTATION
+
+Use comments to write documentation, notes or explanations in the code. Comments are not executed or compiled -- they are only for humans. You often use the comment features to disable / hide code from the compiler.
+
+Two types of comments:
+
+
+You can wrap many lines with "/\*" and "\*/" to make a big section of documentation or to disable many lines of code. You can nest comments, for example wrap a lot of code that already contains comments using /* ... */.
+
+```
+/*	This is a comment */
+```
+
+
+Everything between // and newline is a comment:
+
+```
+//	This is an end-of line comment
+let a = "hello" //	This is an end of line comment.
+```
+
+
+
+
+
+<a id="18-string-data-type"></a>
+## 1.8 STRING DATA TYPE
 
 Floyd has a built-in 8-bit string type. As all data types in Floyd, the string type is immutable. You can also use them as fast and compact arrays of bytes since there are no other 8 bit types in Floyd. You can make string literals directly in the source code like this: ``` let a = "Hello, world!" ```
 
@@ -218,8 +319,8 @@ assert(a == "e")
 Notice: a special mechansim for Unicode is planned, using another data type: "text".
 
 
-<a id="17-vector-data-type"></a>
-## 1.7 VECTOR DATA TYPE
+<a id="19-vector-data-type"></a>
+## 1.9 VECTOR DATA TYPE
 
 A vector is a collection of values where you look up the values using an index between 0 and (vector size - 1). The items in a vector are called "elements". The elements are ordered. Finding an element at an index uses constant time. In other languages vectors are called "arrays" or even "lists". Floyd vectors can have any size - the number of elements is not part of the type.
 
@@ -256,8 +357,8 @@ assert(a == [ 10, 20, 30, 40, 50 ])
 ```
 
 
-<a id="18-dictionary-data-type"></a>
-## 1.8 DICTIONARY DATA TYPE
+<a id="110-dictionary-data-type"></a>
+## 1.10 DICTIONARY DATA TYPE
 
 A collection of values where you identify the values using string keys. In C++ you would use a std::map. When you specify the type of dictionary you must always include "string". You can put any type of value into the dictionary (but not mix inside the same dictionary).
 
@@ -280,8 +381,8 @@ You copy dictionaries using = and all comparison expressions work, just like wit
 
 
 
-<a id="19-struct-data-type"></a>
-## 1.9 STRUCT DATA TYPE
+<a id="111-struct-data-type"></a>
+## 1.11 STRUCT DATA TYPE
 
 Structs are the central building block for composing data in Floyd. They are used in place of classes in other programming languages. Structs are always values and immutable. They are very fast and compact: behind the curtains copied structs shares state between them, even when partially modified.
 
@@ -362,82 +463,10 @@ assert(b.size.x == 100)
 ```
 
 
-<a id="110-values-variables"></a>
-## 1.10 VALUES, VARIABLES
-
-<a id="immutable-values-vs-variables"></a>
-### IMMUTABLE VALUES VS VARIABLES
-
-All values in Floyd are immutable -- you make new values based on previous values, but you don't directly modify old values. Internally Floyd uses clever mechanisms to make this fast and avoids copying data too much. It's perfectly good to replace a character in a 3 GB long string and get a new 3 GB string as a result. Almost all of the characters will be stored only once.
-The only exception is local variables that can be forced to be mutable.
-
-(Also, each green-process has one mutable value too.)
-
-- Function arguments
-- Function local variables
-- Member variables of structs.
-
-When defining a variable, you can often skip telling which type it is, since the type can be inferred by the Floyd compiler.
-
-Explicit
-
-```
-let int x = 10
-```
-
-Implicit
-
-```
-let y = 11
-```
 
 
-Example:
-
-```
-let a = "hello"
-a = "goodbye"	//	Error - you cannot change variable a.
-```
-
-You can use "mutable" to make a variable changeable.
-
-```
-mutable a = "hello"
-a = "goodbye"	//	Changes variable a to "goodbye".
-```
-
-<a id="deep-by-value"></a>
-### DEEP BY VALUE
-
-All values and aggregated members values are always considered in operations in any type of nesting of structs and values and collections. This includes equality checks or assignment for example.
-
-The order of the members inside the struct (or collection) is important for sorting since those are done member by member from top to bottom.
-
-Example: your application's entire state may be stored in *one* value in a struct containing other structs and vectors and so on. This value can still be copied around quickly, it is automatically sortable, convertible to JSON or whatever.
-
-
-<a id="value-oriented-no-pointers"></a>
-### VALUE ORIENTED, NO POINTERS
-
-There are no pointers or references in Floyd. You copy values around deeply instead. Even a big value like your game's entire world or your word processor's entire document. Behind the curtains Floyd uses pointers extensively to make this fast.
-
-Removing the concept of pointers makes programming easier. There are no dangling pointers, aliasing problems or defensive copying and other classic problems. It also makes it simpler for the runtime and compiler to generate extremely fast code.
-
-
-<a id="static-typing-inferred"></a>
-### STATIC TYPING, INFERRED
-
-Floyd is strongly typed language. Every variable, argument, return value and struct member has a defined type. If you make a vector of elements, you need to decide on one type of elements to store in the vector.
-
-All types are defined at compile time, before the program runs. This is how Java, C++ and Swift works.
-
-Javascript, Python and Ruby does not use static typing.
-
-You can often leave out the actual type from the code, when the compiler already knows the type - the compiler can often guess = infer the type.
-
-
-<a id="111-functions-pure-and-impure"></a>
-## 1.11 FUNCTIONS (PURE AND IMPURE)
+<a id="112-functions-pure-and-impure"></a>
+## 1.12 FUNCTIONS (PURE AND IMPURE)
 
 Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants. They cannot modify global variables or affect the outside work via communication or files.
 
@@ -520,27 +549,8 @@ Why is this OK? Well to be picky there are no pure functions, since calling a pu
 
 
 
-<a id="112-comments-and-documentation"></a>
-## 1.12 COMMENTS AND DOCUMENTATION
-
-Use comments to write documentation, notes or explanations in the code. Comments are not executed or compiled -- they are only for humans. You often use the comment features to disable / hide code from the compiler.
-
-Two types of comments:
 
 
-You can wrap many lines with "/\*" and "\*/" to make a big section of documentation or to disable many lines of code. You can nest comments, for example wrap a lot of code that already contains comments using /* ... */.
-
-```
-/*	This is a comment */
-```
-
-
-Everything between // and newline is a comment:
-
-```
-//	This is an end-of line comment
-let a = "hello" //	This is an end of line comment.
-```
 
 <a id="113-json-and-automatic-serialization"></a>
 ## 1.13 JSON AND AUTOMATIC SERIALIZATION
@@ -1266,7 +1276,7 @@ COMPLETE LIST OF CORECALLS:
 
 
 <a id="print----impure"></a>
-### print() -- IMPURE
+#### print() -- IMPURE
 
 ** IMPURE FUNCTION **
 This outputs one line of text to the default output of the application. It can print any type of value. If you want to compose output of many parts you need to convert them to strings and add them. Also works with types, like a struct-type.
@@ -1295,7 +1305,7 @@ This outputs one line of text to the default output of the application. It can p
 
 
 <a id="send----impure"></a>
-### send() -- IMPURE
+#### send() -- IMPURE
 
 Sends a message to the inbox of a Floyd process, possibly your own process.
 
@@ -1308,7 +1318,7 @@ The send function returns immediately.
 
 
 <a id="assert"></a>
-### assert()
+#### assert()
 
 Used this to check your code for programming errors, and check the inputs of your function for misuse by its callers.
 
@@ -1326,7 +1336,7 @@ func f(int x){
 
 
 <a id="to_string"></a>
-### to_string()
+#### to_string()
 
 Converts its input to a string. This works with any type of values. It also works with types themselves, which is useful for debugging.
 
@@ -1337,14 +1347,14 @@ You often use this function to convert numbers to strings.
 
 
 <a id="toprettystring"></a>
-### to\_pretty\_string()
+#### to\_pretty\_string()
 
 Converts its input to a string of JSON data that is formatted nicely with indentations. It works with any Floyd value.
 
 
 
 <a id="typeof"></a>
-### typeof()
+#### typeof()
 
 Return the type of its input value. The returned typeid-value is a complete Floyd type and can be stored, compared and so on. The type is resolved at compile time so the same source code line will always return the same type. 
 
@@ -2000,7 +2010,7 @@ assert(get_name(json(true)) == "json_true")
 assert(get_name(json(false)) == "json_false")
 ```
 
-#### JSON literals
+#### JSON LITERALS
 
 You can directly embed JSON inside Floyd source code file. This is extremely simple - no escaping needed - just paste a snippet into the Floyd source code.
 
@@ -2175,8 +2185,8 @@ Read more about this in the int data type section.
 
 
 
-<a id="benchmark-expression"></a>
-### BENCHMARK EXPRESSION
+<a id="benchmark"></a>
+### BENCHMARK
 
 ```
 int benchmark { ... }
@@ -2229,8 +2239,8 @@ Floyd will execute the bracketed statements many times: both to warm up the comp
 ## 2.6 STATEMENTS
 
 
-<a id="let-statement"></a>
-### LET STATEMENT
+<a id="let"></a>
+### LET
 
 Makes a new constant with a name and a value. The value cannot be changed.
 
@@ -2250,8 +2260,8 @@ let hello = "Greeting message."
 
 
 
-<a id="mutable-statement"></a>
-### MUTABLE STATEMENT
+<a id="mutable"></a>
+### MUTABLE
 
 Makes a new local variable with a name, calculated from the expression. The variable can be changed to hold another value of the same type.
 
@@ -2269,8 +2279,8 @@ mutable hello = "Greeting message."
 
 
 
-<a id="function-definition-statement"></a>
-### FUNCTION DEFINITION STATEMENT
+<a id="function-definition"></a>
+### FUNCTION DEFINITION
 
 ```
 func int hello(string s){
@@ -2288,8 +2298,8 @@ This defines a new function value and gives it a name in the current scope. If y
 
 
 
-<a id="struct-definition-statements"></a>
-### STRUCT DEFINITION STATEMENTS
+<a id="struct-definition"></a>
+### STRUCT DEFINITION
 
 This defines a new struct-type and gives it a name in the current scope.
 
@@ -2313,8 +2323,8 @@ struct my_struct_t {
 
 
 
-<a id="if---then---else-statement"></a>
-### IF - THEN - ELSE STATEMENT
+<a id="if---then---else"></a>
+### IF - THEN - ELSE
 
 This is a normal if-elseif-else feature, like in most languages. Brackets are required always.
 
@@ -2361,8 +2371,8 @@ In each body you can write any statements. There is no "break" keyword.
 
 
 
-<a id="for-loop-statement"></a>
-### FOR LOOP STATEMENT
+<a id="for-loop"></a>
+### FOR LOOP
 
 For loops are used to execute a body of statements many times. The number of times is calculated *before* the first time the body is called. Many other languages evaluate the condition for each loop iteration. In Floyd you use a while-loop for that.
 
@@ -2393,8 +2403,8 @@ for (tickMark in a ..< string.size()) {
 
 Notice: prefer to use map(), filter() and reduce() instead of for-loops whenever possible. This makes cleaner code and more optimisation opportunities.
 
-<a id="while-statement"></a>
-### WHILE STATEMENT
+<a id="while"></a>
+### WHILE
 
 Perform the loop body while the expression is true.
 
@@ -2407,8 +2417,8 @@ The condition is executed each time before body is executed. If the condition is
 
 
 
-<a id="return-statement"></a>
-### RETURN STATEMENT
+<a id="return"></a>
+### RETURN
 
 The return statement aborts the execution of the current function as the function will have the return statement's expression as its return value.
 
@@ -2422,8 +2432,8 @@ The return statement aborts the execution of the current function as the functio
 
 
 
-<a id="software-system-def-statement"></a>
-### SOFTWARE-SYSTEM-DEF STATEMENT
+<a id="software-system-def"></a>
+### SOFTWARE-SYSTEM-DEF
 
 This is a dedicated keyword for defining software systems: **software-system-def**. Its contents is encoded as a JSON object and designed to be either hand-coded or processed by tools. You only have one of these in a software system.
 
@@ -2475,8 +2485,8 @@ This is an object where each key is the name of a persona and a short descriptio
 
 
 
-<a id="container-def-statement"></a>
-### CONTAINER-DEF STATEMENT
+<a id="container-def"></a>
+### CONTAINER-DEF
 
 This is a dedicated keyword. It defines *one* container, its name, its internal processes and how they interact.
 
@@ -2576,8 +2586,8 @@ func my_gui_state_t my_gui(my_gui_state_t state, json message) impure{
 ```
 
 
-<a id="todo-switch-statement"></a>
-### TODO: SWITCH STATEMENT
+<a id="todo-switch"></a>
+### TODO: SWITCH
 
 TODO POC
 
@@ -2586,8 +2596,8 @@ TODO POC
 
 
 
-<a id="benchmark-def-statement"></a>
-### BENCHMARK-DEF STATEMENT
+<a id="benchmark-def"></a>
+### BENCHMARK-DEF
 
 Defines a benchmark (optionally with several instances) so it's available to Floyd.
 
