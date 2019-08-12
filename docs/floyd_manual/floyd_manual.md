@@ -17,9 +17,6 @@ This document assumes the reader knows basic programming concepts like variables
 
 
 
-## QUICK START
-
-??? mini program + run via command line
 
 
 
@@ -40,21 +37,9 @@ This document assumes the reader knows basic programming concepts like variables
 
 ## GLOBAL SCOPE AND MAIN FUNCTION
 
-The global scope is the top level of you source file: not inside a function. Here you normally define functions, structs and global constants. The global scope can have almost any statement and they execute at program start. Simple programs can do without defining any functions at all.
+The global scope is the top level of you source file: statements that are not inside any function. Here you normally define functions, structs and global constants. The global scope can have almost any statement and they execute at program start. Simple programs can do without defining any functions at all.
 
-You can implement a function called "main" that will be called by the Floyd runtime after all global statements have been executed. The main() function is optional, but the only way to get command line arguments and return a command line error code. Main can have two different forms:
-
-Main-function with no command line arguments:
-
-```
-int main(){ }
-```
-
-Main-function that receives a vector of command line arguments:
-
-```
-int main([string] args){ }
-```
+You can implement a function called "main" that will be called by the Floyd runtime after all global statements have been executed. The main() function is optional, but the only way to get command line arguments and return a command line error code. Main-function that receives a vector of command line arguments:
 
 ```
 func int main([string] args){
@@ -80,13 +65,13 @@ One of Floyd's goals is that all the basics you need are already there in the la
 |__bool__			|__true__ or __false__
 |__int__			| Signed 64 bit integer
 |__double__		| 64-bit floating point number
-|__string__		| Built-in string type. 8-bit pure (supports embedded zeros). Use for machine strings, basic UI. Not localizable. Typically used for Windows Latin1, UTF-8 or ASCII.
-|__typeid__		| Describes the *type* of a value.
-|__function__	| A function value. Functions can be Floyd functions or C functions. They are callable.
-|__struct__		| Like C struct or classes or tuples. A value object.
-|__vector__		| A continuous array of elements addressed via indexes.
-|__dictionary__	| Lookup values using string keys.
-|__json__	| A value that holds a JSON-compatible value, can be a big JSON tree.
+|__string__		| Built-in string type
+|__typeid__		| Describes the *type* of a value
+|__function__	| A function value. Functions can be Floyd functions or C functions. They are callable
+|__struct__		| Like C struct or classes or tuples. A value object
+|__vector__		| A continuous array of elements addressed via indexes
+|__dictionary__	| Lookup values using string keys
+|__json__	| A value that holds a JSON-compatible value, can be a big JSON tree
 
 Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [], etc.
 
@@ -109,73 +94,27 @@ Notice that floyd has no special operator syntax for bitwise operations the way 
 
 
 
-## LITERALS AND CONSTRUCTORS
-
-A literal is a constant value that lives in the source code, like this:
-
-```
-let a = 404
-```
-
-The number 404 is a literal.
-
-In Floyd you can use literals for several different data types:
-
-```
-let a = 10
-let b = 3.14
-let c = "hello, world!"
-let d = 'F'
-```
-
-You can use literals anywhere in the code where an expression is allowed, like this:
-```
-test_gadget(10, 3.14, "hello")
-```
-
-When you 
-
-You can make a new vector and specify its elements directly, like this:
-
-```
-let a = [ 1, 2, 3]
-```
-
-
-
 ## STRING DATA TYPE
 
-As all data types in Floyd, the string type is immutable. The encoding of the characters in the string is undefined. You can put 7-bit ASCII in them or UTF-8 or something else. You can also use them as fast arrays of bytes.
+Floyd has a built-in 8-bit string type. As all data types in Floyd, the string type is immutable. You can also use them as fast and compact arrays of bytes since there are no other 8 bit types in Floyd. You can make string literals directly in the source code like this: ``` let a = "Hello, world!" ```
 
-You can make string literals directly in the source code like this:
-
-```
-let a = "Hello, world!"
-```
-
-All comparison expressions work, like a == b, a < b, a >= b, a != b and so on.
-
-You can access a random character in the string, using its integer position, where element 0 is the first character, 1 the second etc.
+All comparison expressions work, like a == b, a < b, a >= b, a != b and so on. You can access a random character in the string, using its integer position, where element 0 is the first character, 1 the second etc. You can append two strings together using the + operation.
 
 ```
 let a = "Hello"[1]
 assert(a == "e")
 ```
 
-Notice 1: You cannot modify the string using [], only read. Use update() to change a character.
-Notice 2: Floyd returns the character as an int, which is 64 bit signed.
+**Notice 1**: You cannot modify the string using [], only read. Use update() to change a character.
 
-You can append two strings together using the + operation, like this:
+**Notice 2**: Floyd returns the character as an int, which is 64 bit signed integer.
 
-```
-let a = "Hello" + ", world!"
-assert(a == "Hello, world!")
-```
+Notice: a special mechansim for Unicode is planned, using another data type: "text".
 
 
 ## VECTOR DATA TYPE
 
-A vector is a collection of values where you look up the values using an index between 0 and (vector size - 1). The items in a vector are called "elements". The elements are ordered. Finding an element at an index uses constant time. In other languages vectors are called "arrays" or even "lists".
+A vector is a collection of values where you look up the values using an index between 0 and (vector size - 1). The items in a vector are called "elements". The elements are ordered. Finding an element at an index uses constant time. In other languages vectors are called "arrays" or even "lists". Floyd vectors can have any size - the number of elements is not part of the type.
 
 You can make a new vector and specify its elements directly, like this:
 
@@ -186,12 +125,12 @@ let a = [ 1, 2, 3]
 You can also calculate its elements, they don't need to be constants:
 
 ```
-let a = [ calc_pi(4), 2.1, calc_bounds() ]
+let a = [ calc_pi(4), 2.1, size([ 20, 21 ]) ]
 ```
 
-You can put ANY type of value into a vector: integers, doubles, strings, structs, other vectors and so on. But all elements must be the same type inside a specific vector.
+You can put any type of value into a vector: integers, doubles, strings, structs, other vectors and so on. All elements must be the *same type* inside a specific vector.
 
-You can copy vectors using =. All comparison expressions work, like a == b, a < b, a >= b, a != b and similar. Comparisons will compare each element of the two vectors.
+You can copy vectors using = operator. All comparison expressions work, like a == b, a < b, a >= b, a != b and similar. Comparisons will compare each element of the two vectors.
 
 This lets you access a random element in the vector, using its integer position.
 
@@ -200,7 +139,7 @@ let a = [10, 20, 30][1]
 assert(a == 20)
 ```
 
-Notice: You cannot modify the vector using [], only read. Use update() to change an element.
+**Notice:** You cannot modify the vector using [], only read. Use update() to change an element.
 
 You can append two vectors together using the + operation.
 
@@ -212,7 +151,8 @@ assert(a == [ 10, 20, 30, 40, 50 ])
 
 ## DICTIONARY DATA TYPE
 
-A collection of values where you identify the values using string keys. In C++ you would use a std::map. 
+A collection of values where you identify the values using string keys. In C++ you would use a std::map. When you specify the type of dictionary you must always include "string". You can put any type of value into the dictionary (but not mix inside the same dictionary).
+
 
 You make a new dictionary and specify its values like this:
 
@@ -225,10 +165,6 @@ or shorter:
 ```
 b = { "red": 0, "blue": 100, "green": 255 }
 ```
-
-Dictionaries always use string-keys. When you specify the type of dictionary you must always include "string".
-
-You can put any type of value into the dictionary (but not mix inside the same dictionary).
 
 Use [] to look up values using a key. It throws an exception is the key not found. If you want to avoid that. check with exists() first.
 
