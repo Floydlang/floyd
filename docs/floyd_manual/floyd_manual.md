@@ -38,14 +38,42 @@ This document assumes the reader knows basic programming concepts like variables
 
 
 
+## GLOBAL SCOPE AND MAIN FUNCTION
+
+The global scope is the top level of you source file: not inside a function. Here you normally define functions, structs and global constants. The global scope can have almost any statement and they execute at program start. Simple programs can do without defining any functions at all.
+
+You can implement a function called "main" that will be called by the Floyd runtime after all global statements have been executed. The main() function is optional, but the only way to get command line arguments and return a command line error code. Main can have two different forms:
+
+Main-function with no command line arguments:
+
+```
+int main(){ }
+```
+
+Main-function that receives a vector of command line arguments:
+
+```
+int main([string] args){ }
+```
+
+```
+func int main([string] args){
+	print(args)
+	assert(args == ["-a", "output.txt"])
+
+	return 42
+}
+```
+
+>floyd run my_program.floyd -a output.txt
+
+...will call your main() function with ["-a", "output.txt"] and your executable will return 42.
 
 
 ## DATA TYPES
 
 These are the primitive data types built into the language itself. The building blocks of all values and data in Floyd.
-The goal is that all the basics you need are already there in the language and the core library. This makes it easy to start making meaningful programs.
-
-It also promotes composability since all Floyd code can rely on these types and communicate between themselves using these types. This greatly reduces the need to write glue code that converts between different library's string classes and logging and so on.
+One of Floyd's goals is that all the basics you need are already there in the language and the core library. This makes it easy to start making meaningful programs. It also promotes composability since all Floyd code can rely on these types and communicate between themselves using these types. This greatly reduces the need to write glue code that converts between different library's string classes and logging and so on.
 
 |TYPE		  	| USE
 |:---				|:---	
@@ -63,7 +91,6 @@ It also promotes composability since all Floyd code can rely on these types and 
 Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [], etc.
 
 The core library has more common types, like sha1_t, uuid_t, url_t, date_t, binary_t and text_t.
-
 
 
 
@@ -92,6 +119,7 @@ int bw_or(int a, int b)
 ```
 
 They are real operators and translate to machine instructions, they just don't have any special syntax in the language.
+
 
 
 ## LITERALS AND CONSTRUCTORS
@@ -371,7 +399,6 @@ Javascript, Python and Ruby does not use static typing.
 You can often leave out the actual type from the code, when the compiler already knows the type - the compiler can often guess = infer the type.
 
 
-
 ## FUNCTIONS (PURE AND IMPURE)
 
 Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants. They cannot modify global variables or affect the outside work via communication or files.
@@ -453,13 +480,6 @@ Why is this OK? Well to be picky there are no pure functions, since calling a pu
 
 
 
-
-## GLOBAL SCOPE
-
-Here you normally define functions, structs and global constants. The global scope can have almost any statement and they execute at program start. Simple programs can do without defining any functions at all.
-
-
-
 ## COMMENTS AND DOCUMENTATION
 
 Use comments to write documentation, notes or explanations in the code. Comments are not executed or compiled -- they are only for humans. You often use the comment features to disable / hide code from the compiler.
@@ -521,35 +541,6 @@ let test_json2 = json(
 )
 ```
 
-## MAIN()
-
-You can implement a function called "main" that will be called by the Floyd runtime after all global statements have been executed. The main() function is optional, but the only way to get command line arguments and return a command line error code. Main can have two different forms:
-
-
-Main-function with no command line arguments:
-
-```
-int main(){ }
-```
-
-Main-function that receives a vector of command line arguments:
-
-```
-int main([string] args){ }
-```
-
-```
-func int main([string] args){
-	print(args)
-	assert(args == ["-a", "output.txt"])
-
-	return 42
-}
-```
-
->floyd run my_program.floyd -a output.txt
-
-...will call your main() function with ["-a", "output.txt"] and your executable will return 42.
 
 
 
