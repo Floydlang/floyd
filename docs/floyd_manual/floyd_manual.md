@@ -1,10 +1,10 @@
 ![](floyd_logo_banner.png)
 
-# INTRODUCTION
+# FLOYD USER'S MANUAL INTRODUCTION
 
-Floyd is programming language that aims to compete with languages like Java, C++, Rust, Go, Javascript and Python. Floyd cares about low level things like micro benchmarks and CPU memory hardware as well as high level things like APIs, components, containers and virtual processes.
+Floyd is a programming language that aims to compete with languages like Java, C++, Rust, Go, Javascript and Python. Floyd cares about low level things like CPU memory hardware as well as high level things like software systems, containers, components, APIs and virtual processes.
 
-Floyd generates native machine code but also comes with a byte code interpeter.
+Floyd generates native machine code but also comes with a bytecode interpreter.
 
 This document assumes the reader knows basic programming concepts like variables, functions and types. It comes in two parts. The first is the user’s guide which explains how to use Floyd to build programs, the unique features of Floyd and its most important concepts. The second part is the reference manual that goes through every feature and explains in detail how they work.
 
@@ -17,16 +17,299 @@ This document assumes the reader knows basic programming concepts like variables
 
 
 
+## QUICK START
+
+??? mini program + run via command line
+
+
+
+## COMMAND LINE TOOL
+
+|COMMAND		  	| MEANING
+|:---				|:---	
+| floyd run mygame.floyd		| compile and run the floyd program "mygame.floyd" using native execution
+| floyd run_bc mygame.floyd		| compile and run the floyd program "mygame.floyd" using the Floyd byte code interpreter
+| floyd compile mygame.floyd	| compile the floyd program "mygame.floyd" to an AST, in JSON format
+| floyd help					| Show built in help for command line tool
+| floyd runtests				| Runs Floyds internal unit tests
+| floyd benchmark 				| Runs Floyd built in suite of benchmark tests and prints the results.
+| floyd run -t mygame.floyd		| the -t turns on tracing, which shows Floyd compilation steps and internal states
+
+
+
+
+
+
+## DATA TYPES
+
+These are the primitive data types built into the language itself. The building blocks of all values and data in Floyd.
+The goal is that all the basics you need are already there in the language and the core library. This makes it easy to start making meaningful programs.
+
+It also promotes composability since all Floyd code can rely on these types and communicate between themselves using these types. This greatly reduces the need to write glue code that converts between different library's string classes and logging and so on.
+
+|TYPE		  	| USE
+|:---				|:---	
+|__bool__			|__true__ or __false__
+|__int__			| Signed 64 bit integer
+|__double__		| 64-bit floating point number
+|__string__		| Built-in string type. 8-bit pure (supports embedded zeros). Use for machine strings, basic UI. Not localizable. Typically used for Windows Latin1, UTF-8 or ASCII.
+|__typeid__		| Describes the *type* of a value.
+|__function__	| A function value. Functions can be Floyd functions or C functions. They are callable.
+|__struct__		| Like C struct or classes or tuples. A value object.
+|__vector__		| A continuous array of elements addressed via indexes.
+|__dictionary__	| Lookup values using string keys.
+|__json__	| A value that holds a JSON-compatible value, can be a big JSON tree.
+
+Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [], etc.
+
+The core library has more common types, like sha1_t, uuid_t, url_t, date_t, binary_t and text_t.
+
+
+
+
+## OPERATORS AND EXPRESSIONS
+
+There are operators for comparing values: <, >, <=, >=, == (equal), != (not equal).
+Logical operators && (and) and || (or).
+There are arithmetic operators like +, -, *, / and %.
+The trinary comparison operator is also supported:
+
+```
+let direction = x > 0 ? -1 : +1
+```
+
+Notice that floyd has no special operator syntax for bitwise operations the way C has. Instead Floyd has explicitly named operators for these operations. This:
+
+1) allows us to have more and more specific operators, like several types of shift operations
+2) avoid accidentally mixing && with &.
+3) forces explicit evaluation order
+
+Use these instead of C-style & and | operators:
+
+```
+int bw_and(int a, int b)
+int bw_or(int a, int b)
+```
+
+They are real operators and translate to machine instructions, they just don't have any special syntax in the language.
+
+
+## LITERALS AND CONSTRUCTORS
+
+A literal is a constant value that lives in the source code, like this:
+
+```
+let a = 404
+```
+
+The number 404 is a literal.
+
+In Floyd you can use literals for several different data types:
+
+```
+let a = 10
+let b = 3.14
+let c = "hello, world!"
+let d = 'F'
+```
+
+You can use literals anywhere in the code where an expression is allowed, like this:
+```
+test_gadget(10, 3.14, "hello")
+```
+
+When you 
+
+You can make a new vector and specify its elements directly, like this:
+
+```
+let a = [ 1, 2, 3]
+```
+
+
+
+## STRING DATA TYPE
+
+As all data types in Floyd, the string type is immutable. The encoding of the characters in the string is undefined. You can put 7-bit ASCII in them or UTF-8 or something else. You can also use them as fast arrays of bytes.
+
+You can make string literals directly in the source code like this:
+
+```
+let a = "Hello, world!"
+```
+
+All comparison expressions work, like a == b, a < b, a >= b, a != b and so on.
+
+You can access a random character in the string, using its integer position, where element 0 is the first character, 1 the second etc.
+
+```
+let a = "Hello"[1]
+assert(a == "e")
+```
+
+Notice 1: You cannot modify the string using [], only read. Use update() to change a character.
+Notice 2: Floyd returns the character as an int, which is 64 bit signed.
+
+You can append two strings together using the + operation, like this:
+
+```
+let a = "Hello" + ", world!"
+assert(a == "Hello, world!")
+```
+
+
+## VECTOR DATA TYPE
+
+A vector is a collection of values where you look up the values using an index between 0 and (vector size - 1). The items in a vector are called "elements". The elements are ordered. Finding an element at an index uses constant time. In other languages vectors are called "arrays" or even "lists".
+
+You can make a new vector and specify its elements directly, like this:
+
+```
+let a = [ 1, 2, 3]
+```
+
+You can also calculate its elements, they don't need to be constants:
+
+```
+let a = [ calc_pi(4), 2.1, calc_bounds() ]
+```
+
+You can put ANY type of value into a vector: integers, doubles, strings, structs, other vectors and so on. But all elements must be the same type inside a specific vector.
+
+You can copy vectors using =. All comparison expressions work, like a == b, a < b, a >= b, a != b and similar. Comparisons will compare each element of the two vectors.
+
+This lets you access a random element in the vector, using its integer position.
+
+```
+let a = [10, 20, 30][1]
+assert(a == 20)
+```
+
+Notice: You cannot modify the vector using [], only read. Use update() to change an element.
+
+You can append two vectors together using the + operation.
+
+```
+let a = [ 10, 20, 30 ] + [ 40, 50 ]
+assert(a == [ 10, 20, 30, 40, 50 ])
+```
+
+
+## DICTIONARY DATA TYPE
+
+A collection of values where you identify the values using string keys. In C++ you would use a std::map. 
+
+You make a new dictionary and specify its values like this:
+
+```
+let [string: int] a = { "red": 0, "blue": 100, "green": 255 }
+```
+
+or shorter:
+
+```
+b = { "red": 0, "blue": 100, "green": 255 }
+```
+
+Dictionaries always use string-keys. When you specify the type of dictionary you must always include "string".
+
+You can put any type of value into the dictionary (but not mix inside the same dictionary).
+
+Use [] to look up values using a key. It throws an exception is the key not found. If you want to avoid that. check with exists() first.
+
+You copy dictionaries using = and all comparison expressions work, just like with strings and vectors.
+
+
+
+## STRUCT DATA TYPE
+
+Structs are the central building block for composing data in Floyd. They are used in place of classes in other programming languages. Structs are always values and immutable. They are very fast and compact: behind the curtains copied structs shares state between them, even when partially modified.
+
+Every struct type automatically gets a constructor function with the same name. It is the only function that can create a value of the struct. Its arguments match the struct's members.
+
+Usually you create some functions that makes instancing a struct convenient, like make_black_color(), make_empty() etc.
+
+All comparison operators: == != < > <= >= always work.
+
+There is no concept of pointers or references or shared structs so there are no problems with aliasing or side effects caused by several clients modifying the same struct.
+
+
+Example:
+
+```
+//	Make simple, ready-for use struct.
+struct point {
+	double x
+	double y
+}
+
+//	Try the new struct:
+
+let a = point(0, 3)
+assert(a.x == 0)
+assert(a.y == 3)
+
+let b = point(0, 3)
+let c = point(1, 3)
+
+assert(a == a)
+assert(a == b)
+assert(a != c)
+assert(c > a)
+```
+
+
+UPDATE()
+
+let b = update(a, member, value)
+
+```
+//	Make simple, ready-for use struct.
+struct point {
+	double x
+	double y
+}
+
+let a = point(0, 3)
+
+//	Nothing happens! Setting width to 100 returns us a new point but we don't keep it.
+update(a, x, 100)
+assert(a.x == 0)
+
+//	Modifying a member creates a new instance, we assign it to b
+let b = update(a, x, 100)
+
+//	Now we have the original, unmodified a and the new, updated b.
+assert(a.x == 0)
+assert(b.x == 100)
+```
+
+This works with nested values too:
+
+
+```
+//	Define an image-struct that holds some stuff, including a pixel struct.
+struct image { string name; point size }
+
+let a = image("Cat image.png", point(512, 256))
+
+assert(a.size.x == 512)
+
+//	Update the width-member inside the image's size-member. The result is a brand-new image, b!
+let b = update(a, size.x, 100)
+assert(a.size.x == 512)
+assert(b.size.x == 100)
+```
+
+
 ## VALUES, VARIABLES
 
 ### IMMUTABLE VALUES VS VARIABLES
 
 All values in Floyd are immutable -- you make new values based on previous values, but you don't directly modify old values. Internally Floyd uses clever mechanisms to make this fast and avoids copying data too much. It's perfectly good to replace a character in a 3 GB long string and get a new 3 GB string as a result. Almost all of the characters will be stored only once.
-
 The only exception is local variables that can be forced to be mutable.
 
 (Also, each green-process has one mutable value too.)
-
 
 - Function arguments
 - Function local variables
@@ -50,40 +333,16 @@ let y = 11
 Example:
 
 ```
-int main(){
-	let a = "hello"
-	a = "goodbye"	//	Error - you cannot change variable a.
-	return 3
-}
+let a = "hello"
+a = "goodbye"	//	Error - you cannot change variable a.
 ```
 
-You can use "mutable" to make a local variable changeable.
+You can use "mutable" to make a variable changeable.
 
 ```
-int main(){
-	mutable a = "hello"
-	a = "goodbye"	//	Changes variable a to "goodbye".
-	return 3
-}
+mutable a = "hello"
+a = "goodbye"	//	Changes variable a to "goodbye".
 ```
-
-## EXPRESSIONS
-
-Floyd has a normal set of built in expressions, like
-These are features built into every type: integer, string, struct, dictionary:
-
-|EXPRESSION		| EXPLANATION
-|:---				|:---	
-|__a = b__ 		| This true-deep copies the value b to the new name a.
-|__a == b__		| a exactly the same as b
-|__a != b__		| a different to b
-|__a < b__		| a smaller than b
-|__a <= b__ 		| a smaller or equal to b
-|__a > b__ 		| a larger than b
-|__a >= b__ 		| a larger or equal to b
-
-This also goes for print(), map(), to\_string() and send() etc.
-
 
 ## DEEP BY VALUE
 
@@ -100,43 +359,16 @@ There are no pointers or references in Floyd. You copy values around deeply inst
 
 Removing the concept of pointers makes programming easier. There are no dangling pointers, aliasing problems or defensive copying and other classic problems. It also makes it simpler for the runtime and compiler to generate extremely fast code.
 
+
 ## STATIC TYPING, INFERRED
 
-Every value and variable and identifier have a static type: a type that is defined at compile time, before the program runs. This is how Java, C++ and Swift works. Javascript, Python and Ruby does not use static typing.
+Floyd is strongly typed language. Every variable, argument, return value and struct member has a defined type. If you make a vector of elements, you need to decide on one type of elements to store in the vector.
 
-You can often leave out the actual type from the code, when the compiler already knows the type.
+All types are defined at compile time, before the program runs. This is how Java, C++ and Swift works.
 
+Javascript, Python and Ruby does not use static typing.
 
-
-## DATA TYPES
-
-These are the primitive data types built into the language itself. The building blocks of all values and data in Floyd.
-
-The goal is that all the basics you need are already there in the language and the core library. This makes it easy to start making meaningful programs.
-
-It also promotes composability since all Floyd code can rely on these types and communicate between themselves using these types. This greatly reduces the need to write glue code that converts between different library's string classes and logging and so on.
-
-|TYPE		  	| USE
-|:---				|:---	
-|__bool__			|__true__ or __false__
-|__int__			| Signed 64 bit integer
-|__double__		| 64-bit floating point number
-|__string__		| Built-in string type. 8-bit pure (supports embedded zeros). Use for machine strings, basic UI. Not localizable. Typically used for Windows Latin1, UTF-8 or ASCII.
-|__typeid__		| Describes the *type* of a value.
-|__function__	| A function value. Functions can be Floyd functions or C functions. They are callable.
-|__struct__		| Like C struct or classes or tuples. A value object.
-|__vector__		| A continuous array of elements addressed via indexes.
-|__dictionary__	| Lookup values using string keys.
-|__json__	| A value that holds a JSON-compatible value, can be a big JSON tree.
-|TODO: __protocol__	| A value that hold a number of callable functions. Also called interface or abstract base class.
-|TODO: __sum-type__		| Tagged union.
-|TODO: __float__		| 32-bit floating point number
-|TODO: __int8__		| 8-bit signed integer
-|TODO: __int16__		| 16-bit signed integer
-|TODO: __int32__		| 32-bit signed integer
-
-Notice that string has many qualities of an array of characters. You can ask for its size, access characters via [], etc.
-
+You can often leave out the actual type from the code, when the compiler already knows the type - the compiler can often guess = infer the type.
 
 
 
@@ -202,7 +434,7 @@ func int f1(string x) impure {
 }
 ```
 
-This mean the function has side effects or gets information somewhere that can change over time.
+This means the function has side effects or gets information somewhere that can change over time.
 
 - A pure function cannot call any impure functions!
 - An impure function can call both pure and impure functions.
@@ -219,45 +451,6 @@ This is a type of function that *has side effects or state* -- but the calling f
 Why is this OK? Well to be picky there are no pure functions, since calling a pure function makes your CPU emit more heat and consumes real-world time, makes other programs run slower, consumes memory bandwidth. But a pure function cannot observe those side effects either.
 
 
-
-
-
-
-
-
-
-## JSON LITERALS
-
-You can directly embed JSON inside Floyd source code file. This is extremely simple - no escaping needed - just paste a snippet into the Floyd source code. Use this for test values. Round trip. The Floyd parser will create Floyd strings, dictionaries and so on for the JSON data. Then it will create a json\_value from that data. This will validate that this indeed is correct JSON data or an exception is thrown.
-
-Example JSON:
-
-```
-let json a = 13
-let json b = "Hello!"
-let json c = { "hello": 1, "bye": 3 }
-let json d = { "pigcount": 3, "pigcolor": "pink" }
-
-assert(a == 13)
-assert(b == "Hello!")
-assert(c["hello"] == 1)
-assert(c["bye"] == 3)
-assert(size(c) == 2)
-
-let test_json2 = json(
-	{
-		"one": 1,
-		"two": 2,
-		"three": "three",
-		"four": [ 1, 2, 3, 4 ],
-		"five": { "alpha": 1000, "beta": 2000 },
-		"six": true,
-		"seven": false,
-	}
-)
-```
-
-Notice that JSON objects are laxer than other Floyd values: you can mix different types of values in the same object or array. Floyd is stricter: a vector can only hold one type of element, same with dictionaries.
 
 
 
@@ -288,67 +481,62 @@ Everything between // and newline is a comment:
 let a = "hello" //	This is an end of line comment.
 ```
 
-
-
-
-
-## AUTOMATIC SERIALIZATION
+## JSON AND AUTOMATIC SERIALIZATION
 
 Serializing any Floyd value is a built-in mechanism. It is always true-deep.
 
-**This is very central to Floyd -- values are core and they can easily be passed around, sent as messages, stored in files, copy-pasted from log or debugger into the source code.**
+>*This is very important in Floyd since values are central to Floyd's design. The JSON features allows any value to be easily passed around, sent as messages, stored in files, copy-pasted from log or debugger into the source code and so on.**
 
-
-##### JSON DATA SHAPES, ESCAPING
-
-These are the different shapes a JSON can have in Floyd:
-
-1. Floyd value: a normal Floyd value - struct or a vector or a number etc. Stored in RAM.
-
-2. json\_value: data is JSON compatible, stored in RAM the 7 different value types supported by json\_value. It holds one JSON value or a JSON object or a JSON array, that in turn can hold other json\_value:s.
-
-3. JSON-script string: JSON data encoded as a string of characters, as stored in a text file.
-
-	Example string: {"name":"John", "age":31, "city":"New York"}
-
-	It contains quotation characters, question mark characters, new lines etc.
-
-4. Escaped string: the string is simplified to be stuffed as a string snippet into some restricted format, like inside a parameter in a URL, as a string-literal inside another JSON or inside a REST command.
-
-	Example string: {\\"name\":\\"John\", \\"age\\":31, \\"city\\":\\"New York\\"}
-
-Different destinations have different limitations and escape mechanisms and will need different escape functions. This is not really a JSON-related issue, more a URL, REST question.
-
-
-#### FUNCTIONS
-Converting a floyd json\_value to a JSON string and back. The JSON-string can be directly read or written to a text file, sent via a protocol and so on.
+There are built in functions for a floyd json to a JSON string and back. The JSON-string can be directly read or written to a text file, sent via a protocol and so on.
 
 ```
 string generate_json_script(json v)
 json parse_json_script(string s)
 ```
 
-Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json\_value, storing enough info so the original Floyd value can be reconstructed at a later time from the json\_value, using from_json().
+Converts any Floyd value, (including any type of nesting of custom structs, collections and primitives) into a json, storing enough info so the original Floyd value can be reconstructed at a later time from the json, using from_json().
 
 ```
 json to_json(any v)
 any from_json(json v)
 ```
 
-- __generate\_json\_script()__
-- __parse\_json\_script()__
-- __to\_json()__
-- __from\_json()__
+There is also direct support for JSON literals in your program source code, like this:
 
+```
+let json d = { "pigcount": 3, "pigcolor": "pink" }
+```
 
-
+```
+let test_json2 = json(
+	{
+		"one": 1,
+		"two": 2,
+		"three": "three",
+		"four": [ 1, 2, 3, 4 ],
+		"five": { "alpha": 1000, "beta": 2000 },
+		"six": true,
+		"seven": false,
+	}
+)
+```
 
 ## MAIN()
 
-You can implement a function called "main" that will called by the Floyd runtime after all global statements have been executed. The main() function is optional, but the only way to get command line arguments and return a command line error code. Main can have two different forms:
-- int main(){} -- which uses no input arguments or
-- int main([string] args){} -- that receives command line input.
+You can implement a function called "main" that will be called by the Floyd runtime after all global statements have been executed. The main() function is optional, but the only way to get command line arguments and return a command line error code. Main can have two different forms:
 
+
+Main-function with no command line arguments:
+
+```
+int main(){ }
+```
+
+Main-function that receives a vector of command line arguments:
+
+```
+int main([string] args){ }
+```
 
 ```
 func int main([string] args){
@@ -361,147 +549,35 @@ func int main([string] args){
 
 >floyd run my_program.floyd -a output.txt
 
-...will call your main() function with ["-a", "output.txt"]
+...will call your main() function with ["-a", "output.txt"] and your executable will return 42.
 
 
-## EXECUTING CODE: MAIN(), PROCESS, GLOBAL STATEMENTS AND COMPILE TIME
 
 
-These are the steps used by the Floyd runtime to executing a Floyd program that has a main() function
+## FLOYD PROCESSES - TALKING TO THE REAL WORLD
 
-1. Main thread initialises all globals and constants
-2. Main thread executes all global statements 
-3. Main thread calls main()
-4. When main() returns, the runtime is taken down and the OS executable is exited
+Floyd processes is how you express the passing of time, updating state (mutation) and handling concurrency in Floyd. These concepts are tied together.
 
-These are the steps used by the Floyd runtime to executing a Floyd program that has no main() function
+The goal with Floyd's concurrency model is:
 
-1. Main thread initialises all globals and constants
-2. Main thread executes all global statements 
-3. Main thread starts all floyd processes in separate threads. How they execute is undefined here but under your control
-4. When all floyd processs have exited, the runtime is taken down and the OS executable is exited.
+1. Built-in mechanisms for real-world concurrency need. Avoid general-purpose primitives.
+2. Simple and robust.
+3. Composable.
+4. Allow you to make a *static design* of your program and its concurrency and state.
+5. Separate out parallelism into a separate mechanism.
+6. Avoid problematic constructs like threads, locks, callback hell, nested futures and await/async -- dead ends of concurrency.
+7. Let you control/tune how many threads and cores to use for what parts of the system, independently of the actual code.
 
-A Floyd program either has a main() function or processes.
+Inspirations for Floyd's concurrency model are CSP, Erlang, Go routines and channels and Clojure Core.Async.
 
 
-
-
-
-
-
-
-
-
-## SOFTWARE SYSTEM - C4
-
-Floyd uses the C4 model to navigate and present your code. It's completely optional to use this feature. The C4 features gives you a very fast and lightweight way method to think about your system and to automatically generate a few great diagrams that helps you reason about it.
-
-Read more here: https://c4model.com/
-
-The C4 diagrams lets you have a complete overview over your entire system and how users interact with it, then drill down to individual containers and further down to components and the code itself.
-
-In Floyd you describe your system using the keywords **software-system-def** and **container-def**, which use C4 terminology.
-
-![Software Systems](floyd_systems_software_system.png)
-
-
-### PERSON
-
-Represents various human users of your software system. They access the system through some sort of user interface. For example, a UI on an iPhone.
-
-
-### LEVEL 1 - SYSTEM CONTEXT DIAGRAM
-
-This describes the entire software system you are building -- something that delivers value to its users, whether they are human or not. It can be composed of many computers, servers and apps working together -- or just one, like an iPhone app.
-
-![Level1](floyd_systems_level1_diagram.png)
-
-
-### LEVEL 2 - CONTAINER DIAGRAM
-
-Zooms into your software system and shows the different containers (apps) that makes up the system.
-
-You can use a mix of your own custom containers and proxy-containers for things like Amazon S3 or an email server. They are all part of the diagram.
-
-![Level2](floyd_systems_level2_diagram.png)
-
-
-### CONTAINERS
-
-A container is a thing that needs to be running in order for the overall software system to work. A mobile app, a server-side web application, a client-side web application, a micro service.
-
-A container is usually a single OS-process. It looks for resources and knows how to string things together inside the container, does its own processing of events and so forth, has its own state and handles runtimer errors. Sockets, file systems, concurrency, messages and screens are handled here.
-
-A container's design is usually a one-off and not reusable.
-
-![](floyd_container_example.png)
-
-In Floyd, containers are defined using container-def, which lists the components it needs, which internal Floyd processes it runs and which impure Floyd functions that run those processes.
-
-
-### LEVEL 3 - COMPONENT DIAGRAM
-
-This diagram zooms into an individual container to show the components inside.
-
-![Level3](floyd_systems_level3_diagram.png)
-
-
-### COMPONENTS
-
-A component is the same as a library, package or module. It's a group of related features encapsulated behind a well-defined API. You can make your own components, use built-in component and get 3rd party components.
-
-Examples: JPEG library, JSON lib. Custom component for syncing with your server. Amazon S3 library, socket library.
-
-
-### LEVEL 4 - CODE DIAGRAM
-
-Classes. Instance diagram. Examples. Passive. You often use a simple UML diagram here.
-
-![Level3](floyd_systems_level4_diagram.png)
-
-
-TODO: Make script that generates diagrams from software-system-def JSON.
-
-
-### EXAMPLE SOFTWARE SYSTEM STATEMENT
-
-
-```
-software-system-def {
-	"name": "My Arcade Game",
-	"desc": "Space shooter for mobile devices, with connection to a server.",
-
-	"people": {
-		"Gamer": "Plays the game on one of the mobile apps",
-		"Curator": "Updates achievements, competitions, make custom on-off maps",
-		"Admin": "Keeps the system running"
-	},
-	"connections": [
-		{ "source": "Game", "dest": "iphone app", "interaction": "plays", "tech": "" }
-	],
-	"containers": [
-		"gmail mail server",
-		"iphone app",
-		"Android app"
-	]
-}
-```
-
-TODO: support proxy software-systems
-TODO: support connections between components inside containers.
-
-
-
-
-## FLOYD PROCESSES - CONCURRENCY, TIME, STATE, COMMUNICATION
-
-Floyd processes lives inside a Floyd container and are very light weight. They are not the same as OS-processes. They *are* sandboxed from their sibbling processes. They can be run in their own OS-threads or share OS-thread with other Floyd processes.
+Floyd processes lives inside a Floyd container and are very light weight. They are not the same as OS-processes. They *are* sandboxed from their sibling processes. They can be run in their own OS-threads or share OS-thread with other Floyd processes.
 
 A process is defined by:
 
 1. a value **M** for its memory / state -- usually a struct
 
-2. an initialisation function that instantiates needed components and returns the intial state
+2. an initialisation function that instantiates needed components and returns the initial state
 
 3. a process function **f** that repeatedly handles messages. It can make impure calls, send messages to other processes and block for a long time. The process function ends each call by returning an updated version of its state - this is the only mutable memory in Floyd.
 
@@ -525,7 +601,7 @@ struct my_gui_state_t {
 func my_gui_state_t my_gui__init(){
 	send("a", "dec")
 
-	return my_gui_state_t(0	);
+	return my_gui_state_t(0	)
 }
 
 func my_gui_state_t my_gui(my_gui_state_t state, json message){
@@ -548,25 +624,12 @@ func my_gui_state_t my_gui(my_gui_state_t state, json message){
 |**my\_gui__init()**		| this is the init function -- it has the same name with "__init" at the end. It has no arguments and returns the initial state of the process.
 
 
-This is how you express time / mutation / concurrency in Floyd. These concepts are related, and they are all setup at the top level of a container. In fact, this is the main **purpose** of a container.
-
-The goal with Floyd's concurrency model is:
-
-1. Simple and robust pre-made mechanisms for real-world concurrency need. Avoid general-purpose primitives, instead have a ready-made solution that works.
-2. Composable.
-3. Allow you to make a *static design* of your container and its concurrency and state.
-4. Separate out parallelism into a separate mechanism.
-5. Avoid problematic constructs like threads, locks, callback hell, nested futures and await/async -- dead ends of concurrency.
-6. Let you control/tune how many threads and cores to use for what parts of the system, independently of the actual code.
-
-Inspirations for Floyd's concurrency model are CSP, Erlang, Go routines and channels and Clojure Core.Async.
-
 
 ##### PROCESSES: INBOX, STATE, PROCESSING FUNCTION
 
 For each independent mutable state and/or "thread" you want in your container, you need to insert a process. Processes are statically instantiated in a container -- you cannot allocate them at runtime.
 
-The process represents a little standalone program with its own call stack that listens to messages from other processes. When a process receives a message in its inbox, its function is called (now or some time later) with the message and the process's previous state. The process does some work - something simple or a maybe call a big call tree or do blocking calls to the file system, and then it ends by returning its new state, which completes the message handling.
+The process represents a little standalone program with its own call stack that listens to messages from other processes. When a process receives a message in its inbox, its function is called (now or some time later) with the message and the process's previous state. The process does some work - something simple or maybe call a big call tree or do blocking calls to the file system, and then it ends by returning its new state, which completes the message handling.
 
 **The process feature is the only way to keep state in Floyd.**
 
@@ -636,12 +699,12 @@ Sometimes we introduce concurrency to make more parallelism possible: multithrea
 |#	|Need		|Traditional	|Floyd
 |---	|---			|---			|---
 |1	| Make a REST request	| Block entire thread / nested callbacks / futures / async-await | Just block. Make call from process to keep caller running
-|2	| Make a sequence of back and forth communication with a REST server | Make separate thread and block on each step then notify main thread on completion / nested futures or callbacks / await-async | Make an process that makes blocking calls
+|2	| Make a sequence of back and forth communication with a REST server | Make separate thread and block on each step then notify main thread on completion / nested futures or callbacks / await-async | Make a process that makes blocking calls
 |3	| Perform non-blocking impure background calculation (auto save doc) | Copy document, create worker thread | Use process, use data directly
 |4	| Run process concurrently, like analyze game world to prefetch assets | Manually synchronize all shared data, use separate thread | Use process -- data is immutable
 |5	| Handle requests from OS quickly, like call to audio buffer switch process() | Use callback function | Use process and set its clock to sync to clock of buffer switch
 |6	| Improve performance using concurrency + parallelism / fan-in-fan-out / processing pipeline | Split work into small tasks that are independent, queue them to a thread team, resolve dependencies somehow, use end-fence with competition notification | call map() or map_dag() from a process.
-|7	| Spread heavy work across time (do some processing each game frame) | Use coroutine or thread that sleeps after doing some work. Wake it next frame. | Process does work. It calls select() inside a loop to wait on next trigger to continue work.
+|7	| Spread heavy work across time (do some processing each game frame) | Use coroutine or thread that sleeps after doing some work. Wake it next frame. | Process does work. It calls select() inside a loop to wait for next trigger to continue work.
 |8	| Do work regularly, independent of other threads (like a timer interrupt) | Call timer with callback / make thread that sleeps on event | Use process that calls post_at_time(now() + 100) to itself
 |9	| Small server | Write loop that listens to socket | Use process that waits for messages
 
@@ -660,7 +723,7 @@ This is a basic command line app. It doesn't need a Floyd process at all, it's j
 
 TODO: make example of *all* the diagrams, including Software System diagram.
 
-A complex gamewill have many clocks, both to model concurreny and to allow parallelism. When simulation has been run, it can hand of a copy of the game world for renderer to work on in parallel.
+A complex game will have many clocks, both to model concurrency and to allow parallelism. When simulation has been run, it can hand of a copy of the game world for renderer to work on in parallel.
 
 - UI event loop clock
 - Prefetch assets clock
@@ -670,6 +733,112 @@ A complex gamewill have many clocks, both to model concurreny and to allow paral
 - Audio streaming clock
 
 https://www.youtube.com/watch?v=v2Q_zHG3vqg
+
+
+
+
+
+
+## SYSTEM ARCHITECTURE
+
+Floyd uses the C4 model to navigate and present your code and for its terminology. It's completely optional to use these features. They give you a very fast and lightweight way method to think about your system and to automatically generate a few great diagrams that helps you reason about it.
+
+Read more here: https://c4model.com/
+
+The C4 diagrams lets you have a complete overview over your entire system and how users interact with it, then drill down to individual containers and further down to components and the code itself.
+
+In Floyd you describe your system using the keywords **software-system-def** and **container-def**, which use C4 terminology.
+
+![Software Systems](floyd_systems_software_system.png)
+
+**PERSON**: Represents various human users of your software system. They access the system through some sort of user interface. For example, a UI on an iPhone.
+
+**SOFTWARE SYSTEM:** This describes the entire software system you are building -- something that delivers value to its users, whether they are human or not. It can be composed of many computers, servers and apps working together -- or just one, like an iPhone app.
+
+**CONTAINER:** A container is a thing that needs to be running in order for the overall software system to work. A mobile app, a server-side web application, a client-side web application, a micro service.
+
+A container is usually a single OS-process. It looks for resources and knows how to string things together inside the container, does its own processing of events and so forth, has its own state and handles runtimer errors. Sockets, file systems, concurrency, messages and screens are handled here.
+
+A container's design is usually a one-off and not reusable.
+
+![](floyd_container_example.png)
+
+In Floyd, containers are defined using container-def, which lists the components it needs, which internal Floyd processes it runs and which impure Floyd functions that run those processes.
+
+
+
+**COMPONENT:** A component is the same as a library, package or module. It's a group of related features encapsulated behind a well-defined API. You can make your own components, use built-in component and get 3rd party components.
+
+Examples: JPEG library, JSON lib. Custom component for syncing with your server. Amazon S3 library, socket library.
+
+**CODE:** These are the source files and functions that makes up a component.
+
+Example software system statement:
+
+
+```
+software-system-def {
+	"name": "My Arcade Game",
+	"desc": "Space shooter for mobile devices with connection to a server.",
+
+	"people": {
+		"Gamer": "Plays the game on one of the mobile apps",
+		"Curator": "Updates achievements, competitions, make custom on-off maps",
+		"Admin": "Keeps the system running"
+	},
+	"connections": [
+		{ "source": "Game", "dest": "iphone app", "interaction": "plays", "tech": "" }
+	],
+	"containers": [
+		"gmail mail server",
+		"iphone app",
+		"Android app"
+	]
+}
+```
+
+# DIAGRAMS
+
+##### LEVEL 1 - SYSTEM CONTEXT DIAGRAM
+
+
+![Level1](floyd_systems_level1_diagram.png)
+
+
+##### LEVEL 2 - CONTAINER DIAGRAM
+
+Zooms into your software system and shows the different containers (apps) that makes up the system.
+
+You can use a mix of your own custom containers and proxy-containers for things like Amazon S3 or an email server. They are all part of the diagram.
+
+![Level2](floyd_systems_level2_diagram.png)
+
+
+
+##### LEVEL 3 - COMPONENT DIAGRAM
+
+This diagram zooms into an individual container to show the components inside.
+
+![Level3](floyd_systems_level3_diagram.png)
+
+
+##### LEVEL 4 - CODE DIAGRAM
+
+Classes. Instance diagram. Examples. Passive. You often use a simple UML diagram here.
+
+![Level3](floyd_systems_level4_diagram.png)
+
+
+TODO: Make script that generates diagrams from software-system-def JSON.
+
+
+
+
+TODO: support proxy software-systems
+TODO: support connections between components inside containers.
+
+
+
 
 
 ## TODO: EXCEPTIONS
@@ -734,11 +903,11 @@ The Floyd micro benchmark features give you a simple way to measure the performa
 
 > NOTICE: Micro benchmarking is not the same as profiling with a profiler. Profiling is used on an entire program and helps you *find* hotspots. Micro benchmarking just looks at a small code snippet.
 
-You can add a micro benchmark anywhere in a source file using the benchmark-def statement and the benchmark expression, ideally right next the function to measure. The micro benchmarks are not automatically run, you need to request that, either from the floyd command line tool or via your own code. You are in control over which tests to run and can control how to present the output.
+You can add a micro benchmark anywhere in a source file using the **benchmark-def statement** and the **benchmark expression**, ideally right next the function to measure. The micro benchmarks are not automatically run, you need to request that, either from the floyd command line tool or via your own code. You are in control over which tests to run and can control how to present the output.
 
 You leave the micro benchmarks in your code. They can be stripped out when compiling.
 
-> TERM **benchmark**: in Floyd benchmark means **one explictly defined task that performs the exact same instructs every time over the exact same data**.
+> TERM **benchmark**: in Floyd benchmark means **one explicitly defined task that performs the exact same instructs every time over the exact same data**.
 
 > TERM **run**: Floyd will run a benchmark many times to get better precision of the measurement. These are called "runs".
 
@@ -870,6 +1039,30 @@ Output is something similar to this:
 ```
 
 
+
+## ABOUT PARALLELISM
+
+Parallelism is about finishing a task faster by using more of the available hardware.
+
+In Floyd you parallelize your code by write the code so it expose where there are dependencies between computations and where there are not. Then you can orchestrate how to best execute your program from the top level -- using tweak probes and profiling probes. This lets you control how the hardware is mapped to your logic.
+
+Easy ways to expose parallelism is by writing pure functions (their results can be cached or precomputed) and by using functions like map(), fold(), filter() and map_dag(). These function work on individual elements of a collection and each computation is independent of the others. This lets the runtime process the different elements on parallel hardware.
+
+The functions map() and map_dag() replaces FAN-IN-FAN-OUT-mechanisms.
+
+map_dag() works like map(), but each element also has dependencies to other elements in the collection.
+
+Accelerating computations (parallelism) is done using tweaks — a separate mechanism. It supports moving computations in time (lazy, eager, caching) and running work in parallel.
+
+The optimizations using tweaks in no way affect the logic of your program, only the timing and order where those don't matter.
+
+**Task** - this is a work item that ideally takes 0.5 - 100 ms to execute and has an end. The runtime generates these when it wants to run map() elements in parallel. All tasks in the entire container are scheduled together.
+
+Notice: map() and map_dag() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
+
+
+
+
 ## TODO: PROBES
 
 You add probes to wires, processes and individual functions and expressions. They gather intel on how your program runs on the hardware, let's you explore your running code and profile its hardware use.
@@ -884,33 +1077,6 @@ Tweakers are inserted onto the wires and clocks and functions and expressions of
 
 
 
-## ABOUT PARALLELISM
-
-In Floyd you accelerate the performance of your code by making it expose where there are dependencies between computations and where there are not. Then you can orchestrate how to best execute your container from the top level -- using tweak probes and profiling probes, affecting how the hardware is mapped to your logic.
-
-Easy ways to expose parallelism is by writing pure functions (their results can be cached or precomputed) and by using functions like map(), fold(), filter() and map_dag(). These function work on individual elements of a collection and each computation is independent of the others. This lets the runtime process the different elements on parallel hardware.
-
-The functions map() and map_dag() replaces FAN-IN-FAN-OUT-mechanisms.
-
-You can inspect in code and visually how the elements are distributed as tasks.
-
-map_dag() works like map(), but each element also has dependencies to other elements in the collection.
-
-Accelerating computations (parallelism) is done using tweaks — a separate mechanism. It supports moving computations in time (lazy, eager, caching) and running work in parallel.
-
-
-Often processes and concurrency is introduced into a system to *expose opportunity* for parallelism.
-
-The optimizations using tweaks in no way affect the logic of your program, only the timing and order where those don't matter.
-
-To make something like a software graphics shaders, you would do
-
-let image2 = map(image1, my_pixel_shader) and the pixels can be processed in parallel.
-
-
-**Task** - this is a work item that takes usually approximately 0.5 - 10 ms to execute and has an end. The runtime generates these when it wants to run map() elements in parallel. All tasks in the entire container are scheduled together.
-
-Notice: map() and map_dag() shares threads with other mechanisms in the Floyd runtime. This mean that even if your tasks cannot be distributed to all execution units, other things going on can fill those execution gaps with other work.
 
 
 
@@ -919,8 +1085,30 @@ Notice: map() and map_dag() shares threads with other mechanisms in the Floyd ru
 
 
 
-# 2. THE LANGUAGE REFERENCE
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# REFERENCE MANUAL
 
 
 
@@ -928,6 +1116,318 @@ Notice: map() and map_dag() shares threads with other mechanisms in the Floyd ru
 ## SOURCE CODE FILES
 
 Floyd files are always utf-8 files with no BOM. Their extension is ".floyd".
+
+
+
+## MAIN() & EXECUTING PROGRAMS
+
+These are the steps used by the Floyd runtime to executing a Floyd program that has a main() function
+
+1. Main thread initialises all globals and constants
+2. Main thread executes all global statements 
+3. Main thread calls main()
+4. When main() returns, the runtime is taken down and the OS executable is exited
+
+These are the steps used by the Floyd runtime to executing a Floyd program that has no main() function
+
+1. Main thread initialises all globals and constants
+2. Main thread executes all global statements 
+3. Main thread starts all floyd processes in separate threads. How they execute is undefined here but under your control
+4. When all floyd processes have exited, the runtime is taken down and the OS executable is exited.
+
+A Floyd program either has a main() function or processes.
+
+Main-function with no command line arguments:
+
+```
+int main(){ }
+```
+
+Main-function that receives a vector of command line arguments:
+
+```
+int main([string] args){ }
+```
+
+
+Example:
+
+```
+func int main([string] args){
+	print(args)
+	assert(args == ["-a", "output.txt"])
+
+	return 42
+}
+```
+
+>floyd run my_program.floyd -a output.txt
+
+...will call your main() function with ["-a", "output.txt"] and your executable will return 42.
+
+
+
+
+## DATA TYPES
+
+These are the data types built into the language itself:
+
+|TYPE		  	| USE
+|:---				|:---	
+|__bool__			|__true__ or __false__
+|__int__			| Signed 64 bit integer
+|__double__		| 64-bit floating point number
+|__string__		| Built-in string type. 8-bit pure (supports embedded zeros). Use for machine strings, basic UI. Not localizable. Typically used for Windows Latin1, UTF-8 or ASCII.
+|__typeid__		| Describes the *type* of a value.
+|__function__	| A function value. Functions can be Floyd functions or C functions. They are callable.
+|__struct__		| Like C struct or classes or tuples. A value object.
+|__vector__		| A continuous array of elements addressed via indexes.
+|__dictionary__	| Lookup values using string keys.
+|__json__	| A value that holds a JSON-compatible value, can be a big JSON tree.
+|**protocol**	| **TODO:** A value that holds a number of callable functions. Also called interface or abstract base class.
+|**sum-type**	| **TODO:** Tagged union
+|**float**		| **TODO:** 32-bit floating point number
+|**int8**		| **TODO:** 8-bit signed integer
+|**int16**		| **TODO:** 16-bit signed integer
+|**int32**		| **TODO:** 32-bit signed integer
+
+
+
+### EXAMPLE TYPE DECLARATIONS
+
+|SOURCE		| MEANING
+|:---	|:---	
+| bool								| Bool type: **true** or **false**
+| int								| Int type
+| string								| String type
+| [int]								| Vector of ints
+| [[int]]								| Vector of int-vectors
+| [string:int]						| Dictionary of ints
+| func int ()								| Function returning int, no arguments
+| func int (double a, string b)				| Function returning int, arguments are double and string
+| [func int (double a, string b)]			| vector of functions, were functions return int and takes double and string arg.
+| func int (double a) ()					| Function A with no arguments that returns a function B. B returns int and has a double argument.
+| my_global							| name of custom type
+| [my_global]							| vector of custom type
+| func mything (mything a, mything b)			| function returning mything-type, with two mything arguments
+| func bool (int (double a) b)				| function returns bool and takes an argument of type: function that returns in and take double-argument.
+
+
+
+
+### STRING DATA TYPE
+
+This is a pure 8-bit string type. It is immutable. The encoding of the characters in the string is undefined. You can put 7-bit ASCII in them or UTF-8 or something else. You can also use them as fast arrays of bytes.
+
+You can access a random character in the string, using its integer position, where element 0 is the first character, 1 the second etc.
+
+```
+let a = "Hello"[1]
+assert(a == "e")
+```
+
+Notice 1: You cannot modify the string using [], only read. Use update() to change a character.
+Notice 2: Floyd returns the character as an int, which is 64 bit signed.
+
+##### CORE FUNCTIONS
+
+- Comparison operators: < > <= >= == != && ||
+- Arithmetic: +
+- __print()__: prints a string to the default output of the app
+- __update()__: changes one character of the string and returns a new string
+- __size()__: returns the number of characters in the string, as an integer
+- __find()__: searches from left to right after a substring and returns its index or -1
+- __push_back()__: appends a character or string to the right side of the string. The character is stored in an int
+- __subset()__: extracts a range of characters from the string, as specified by start and end indexes. aka substr()
+- __replace()__: replaces a range of a string with another string. Can also be used to erase or insert
+
+
+
+### VECTOR DATA TYPE
+
+A vector is a collection of values where you look up the values using an index between 0 and (vector size - 1). Finding an element at an index uses constant time.
+
+You can make a new vector and specify its elements directly, like this:
+
+```
+let a = [ 1, 2, 3]
+```
+
+Notice: You cannot modify the vector using [], only read. Use update() to change an element.
+
+You can append two vectors together using the + operation.
+
+##### CORE FUNCTIONS
+
+- Comparison operators: < > <= >= == != && ||
+- Arithmetic: +
+- __print()__: prints a vector to the default output of the app
+- __update()__: changes one element of the vector and returns a new vector
+- __size()__: returns the number of elements in the vector, as an integer
+- __find()__: searches from left to right after an element and returns its index or -1
+- __push_back()__: appends an element to the right side of the vector
+- __subset()__: extracts a range of elements from the vector, as specified by start and end indexes
+- __replace()__: replaces a range of a vector with another vector. Can also be used to erase or insert
+
+
+
+### DICTIONARY DATA TYPE
+
+A collection of values where you identify the values using string keys. Internally it is represented as a hash table. It is not sorted.
+
+You make a new dictionary and specify its values like this:
+
+```
+b = { "red": 0, "blue": 100, "green": 255 }
+```
+
+Dictionaries always use string-keys. When you specify the type of dictionary you must always include "string". In the future other types of keys may be supported.
+
+Use [] to look up values using a key. It throws an exception is the key not found. If you want to avoid that. check with exists() first.
+
+
+##### CORE FUNCTIONS
+
+- Comparison operators: < > <= >= == != && ||
+- Arithmetic:
+- __print()__: prints a vector to the default output of the app
+- __update()__: changes one value of the dictionary and returns a new dictionary
+- __size()__: returns the number of values in the dictionary, as an integer
+- __exists()__: checks to see if the dictionary holds a specific key
+- __erase()__: erase a specific key from the dictionary and returns a new dictionary
+
+
+
+### STRUCT DATA TYPE
+
+Structs are aggregate types. The members have name and type. They replace struct and class of other languages. Structs are always values and immutable. They are very fast and compact: behind the curtains copied structs shares state between them, even when partially modified.
+
+A struct type automatically gets a construction function with the same name as the struct. This is the only function that can create a value of the struct from scratch. It's arguments match the struct members and are in the order they are listed in the struct definition.
+
+There are no destructors.
+Comparison operators: == != < > <= >= (this allows sorting too) automatically works for every struct.
+
+NOT POSSIBLE:
+
+- You cannot make constructors. There is only *one* way to initialize the members, via the constructor, which always takes *all* members
+- There is no way to directly initialize a member when defining the struct.
+- There is no way to have several different constructors, instead create explicit functions like make_square().
+- If you want a default constructor, implement one yourself: ```func rect make_zero_rect(){ return rect(0, 0) }```.
+- Unlike struct in the C language, Floyd's struct has an undefined layout so you cannot use them to do byte-level mapping like you often do in C. Floyd is free to store members in any way it wants too - pack or reorder in any way.
+
+
+Example:
+
+```
+//	Make simple, ready-for use struct.
+struct point {
+	double x
+	double y
+}
+
+//	Try the new struct:
+
+let a = point(0, 3)
+assert(a.x == 0)
+assert(a.y == 3)
+```
+
+##### CORE FUNCTIONS
+
+- Comparison operators: < > <= >= == != && ||
+- Arithmetic:
+- __print()__: prints a struct to the default output of the app.
+- __update()__: replaces one value of the struct and returns a new struct.
+
+
+
+### TYPEID DATA TYPE
+
+A typeid is tells the type of a value.
+
+When you reference one of the built-in primitive types by name, you are accessing a variable of type typeid.
+
+- bool
+- int
+- double
+- string
+
+```
+assert(typeid("hello") == string)
+assert(to_string(typeid([1,2,3])) == "[int]")
+```
+
+A typeid is a proper Floyd value: you can copy it, compare it, convert it to strings, store it in dictionaries or whatever. Since to_string() supports typeid, you can easily print out the exact layout of any type, including complex ones with nested structs and vectors etc.
+
+
+##### CORE FUNCTIONS
+
+- Comparison operators: < > <= >= == != && ||
+- Arithmetic:
+
+
+### JSON DATA TYPE
+
+Why JSON? JSON is very central to Floyd. Floyd is based on values (simple ones or entire data models as one value) JSON is a simple and standard way to store composite values in a tree shape in a simple and standardized way. It also makes it easy to serializing any Floyd value to text and back. JSON is built directly into the language as the default serialized format for Floyd values.
+
+It can be used for custom file format and protocol and to interface with other JSON-based systems. All structs also automatically are serializable to and from JSON automatically.
+
+JSON format is also used by the compiler and language itself to store intermediate Floyd program code, for all logging and for debugging features.
+
+- Floyd has built in support for JSON in the language. It has a JSON type called __json__ and functions to pack & unpack strings / JSON files into the JSON type.
+
+- Floyd has support for JSON literals: you can put JSON data directly into a Floyd file. Great for copy-pasting snippets for tests.
+
+Read more about JSON here: www.json.org
+
+
+This value can contain any of the 7 JSON-compatible types:
+
+- **string**, **number**, **object**, **array**, **true**, **false**, **null**
+
+Notice: This is the only situation were Floyd supports null. Floyd things null is a concept to avoid when possible.
+
+Notice that Floyd stores true/false as a bool type with the values true / false, not as two types called "true" and "false".
+
+__json__: 	This is an immutable value containing any JSON. You can query it for its contents and alter it (you get new values).
+
+Notice that json can contain an entire huge JSON file, with a big tree of JSON objects and arrays and so on. A json can also contain just a string or a number or a single JSON array of strings. The json is used for every node in the json tree.
+
+
+##### __get\_json\_type()__:
+
+Returns the actual type of this value stores inside the json. It can be one of the types supported by JSON.
+
+	typeid get_json_type(json v)
+
+This needs to be queried at runtime since JSON is dynamically typed.
+
+##### CORE FUNCTIONS
+
+Many of the core functions work with json, but it often depends on the actual type of json. Example: size() works for strings, arrays and object only.
+
+- Comparison operators: < > <= >= == != && ||
+- Arithmetic:
+- __get\_json\_type()__
+- __size()__
+- __generate\_json\_script()__
+- __parse\_json\_script()__
+- __to\_json()__
+- __from\_json()__
+
+
+
+
+
+### TODO: PROTOCOL DATA TYPE
+
+TODO 1.0
+
+This defines a set of functions that several clients can implement differently. This introduced polymorphism into Floyd. Equivalent to interface classes in other languages.
+
+Protocol member functions can be tagged "impure" which allows it to be implemented so it saves or uses state, modifies the world. There is no way to do these things in the implementation of pure protocol function members.
+
+
 
 
 
@@ -954,11 +1454,8 @@ This is a value that is fully defined directly in the code. Like the number 3.
 | ...			| Any literal that is compatible with json_t can be a JSON literal
 | 'A'			| Character literal. ASCII. This is equivalent to the number 65 (A as ASCII). Can be one character or an escape character (see string literals).
 
-Floyd supports decimal literals, as above, but also hexadecimal and binary literals.
 
-
-
-
+Floyd supports decimal literals, as above, but also **hexadecimal** and **binary** literals:
 
 |CODE		| EXPLANATION
 |:---											|:---	
@@ -972,12 +1469,95 @@ Floyd supports decimal literals, as above, but also hexadecimal and binary liter
 | 0b11111111										| Binary number 11111111, decimal 255
 | 0b11111111000000000000000011111111				| Binary number 11111111000000000000000011111111, decimal 255
 
-You can use the ' character as a dividier between groups of 8 number for both hex and binary literals. But not for decimal literals. This makes longer sequences of numbers easier to read.
+**Divider:** you can use the ' character as a divider between groups of 8 number for both hex and binary literals (but not for decimal literals). This makes longer sequences of numbers easier to read.
 
 |CODE		| EXPLANATION
 |:---											|:---	
 | 0xffff1111'00000000'00000fff'fff00000				| Hexadecimal number with separators
 | 0b11111111000000000000000011111111				| Binary number with separators
+
+
+
+### STRING AND CHARACTER LITERALS - ESCAPE SEQUENCES
+
+Some characters cannot be entered directly into string literals - you need to use an escape sequence. You can use these escape characters inside string literals by entering \n or \' or \" etc.
+
+|ESCAPE SEQUENCE	| RESULT CHAR, AS HEX		| ASCII MEANING | JSON
+|:---				|:---						|:---			|:---
+| \0				| 0x00	| ZERO	| NO
+| \a				| 0x07	| BEL, bell, alarm, \a	| NO
+| \b				| 0x08	| BS, backspace, \b	| YES
+| \f				| 0x0c	| FF, NP, form feed, \f	| NO
+| \n				| 0x0a	| Newline (Line Feed)	| YES
+| \r				| 0x0d	| Carriage Return		| YES
+| \t				| 0x09	| Horizontal Tab		| YES
+| \v				| 0x0b	| Vertical Tab	| NO
+| \\\\				| 0x5c	| Backslash		| YES
+| \\'				| 0x27	| Single quotation mark		| NO
+| \\"				| 0x22	| Double quotation mark		| YES
+| \\/				| 0x2f	| Forward slash		| YES
+| \uABCD			| 0xabcd	| 4 hex characters => 16 bit character	| YES
+##### EXAMPLES
+
+|CODE		| OUTPUT | NOTE
+|:---			|:--- |:---
+| print("hello") | hello
+| print("What does \\"blob\\" mean?") | What does "blob" mean? | Allows you to insert a double quotation mark into your string literal without ending the string literal itself.
+
+
+Floyd string literals do not support insert hex sequences or Unicode code points.
+
+### JSON literals
+
+You can directly embed JSON inside Floyd source code file. This is extremely simple - no escaping needed - just paste a snippet into the Floyd source code.
+
+Example JSON:
+
+```
+let json a = 13
+let json b = "Hello!"
+let json c = { "hello": 1, "bye": 3 }
+let json d = { "pigcount": 3, "pigcolor": "pink" }
+
+assert(a == 13)
+assert(b == "Hello!")
+assert(c["hello"] == 1)
+assert(c["bye"] == 3)
+assert(size(c) == 2)
+
+let test_json2 = json(
+	{
+		"one": 1,
+		"two": 2,
+		"three": "three",
+		"four": [ 1, 2, 3, 4 ],
+		"five": { "alpha": 1000, "beta": 2000 },
+		"six": true,
+		"seven": false,
+	}
+)
+```
+
+Notice that JSON objects are laxer than other Floyd values: you can mix different types of values in the same object or array. Floyd is stricter: a vector can only hold one type of element, same with dictionaries. If your code makes an invalid JSON you get an error.
+
+
+These are the different shapes a JSON can have in Floyd:
+
+1. Floyd value: a normal Floyd value - struct or a vector or a number etc. Stored in RAM.
+
+2. json: data is JSON compatible, stored in RAM the 7 different value types supported by json. It holds one JSON value or a JSON object or a JSON array, that in turn can hold other json:s.
+
+3. JSON-script string: JSON data encoded as a string of characters, as stored in a text file.
+
+	Example string: {"name":"John", "age":31, "city":"New York"}
+
+	It contains quotation characters, question mark characters, new lines etc.
+
+4. Escaped string: the string is simplified to be stuffed as a string snippet into some restricted format, like inside a parameter in a URL, as a string-literal inside another JSON or inside a REST command.
+
+	Example string: {\\"name\":\\"John\", \\"age\\":31, \\"city\\":\\"New York\\"}
+
+Different destinations have different limitations and escape mechanisms and will need different escape functions. This is not really a JSON-related issue, more a URL, REST question.
 
 
 ### VECTOR-CONSTRUCTOR
@@ -1011,7 +1591,7 @@ How to add and combine values:
 |−	|Subtracts second operand from the first. "a = b - c", "a = b - c - d"
 |*	|Multiplies both operands: "a = b * c", "a = b * c * d"
 |/	|Divides numerator by de-numerator: "a = b / c", "a = b / c / d"
-|%	|Modulus Operator and remainder of after an integer division: "a = b / c", "a = b / c / d"
+|%	|Modulus Operator returns remainder after an integer division: "a = b / c", "a = b / c / d"
 
 
 ### RELATIONAL OPERATORS
@@ -1062,15 +1642,32 @@ Floyd uses explicit names for all bitwise operators, not special language operat
 
 |OPERATOR		| EXPLANATION
 |:---	|:---
-| int bw_not(int v)		| inverts all bits in the integer v.
-| int bw_and(int a, int b)		| ands each bit in a with the corresponding bit in b
-| int bw_or(int a, int b)		| ors each bit in a with the corresponding bit in b
-| int bw_xor(int a, int b)		| xors each bit in a with the corresponding bit in b
-| int bw_shift_left(int v, int count)		| shifts the bits in v left, the number of bits specified by count. New bits are set to 0.
-| int bw_shift_right(int v, int count)		| shifts the bits in v right, the number of bits specified by count. New bits are set to 0.
-| int bw_shift_right_arithmetic(int v, int count)		| shifts the bits in v right, the number of bits specified by count. New bits are copied from bit 63, which sign-extends the number		| it doesn't lose its negativeness.
+| int bw\_not(int v)		| inverts all bits in the integer v.
+| int bw\_and(int a, int b)		| and:s each bit in a with the corresponding bit in b
+| int bw\_or(int a, int b)		| or:s each bit in a with the corresponding bit in b
+| int bw\_xor(int a, int b)		| xor:s each bit in a with the corresponding bit in b
+| int bw\_shift\_left(int v, int count)		| shifts the bits in v left, the number of bits specified by count. New bits are set to 0.
+| int bw\_shift\_right(int v, int count)		| shifts the bits in v right, the number of bits specified by count. New bits are set to 0.
+| int bw\_shift\_right\_arithmetic(int v, int count)		| shifts the bits in v right, the number of bits specified by count. New bits are copied from bit 63, which sign-extends the number		| it doesn't lose its negativeness.
 
 When doing bitwise manipulation it is often convenient to use binary literals or hexadecimal literals, rather than normal decimal literals.
+
+
+
+### BENCHMARK EXPRESSION
+
+```
+int benchmark { ... }
+```
+
+You use this expression to wrap a code snippet to measure. Only the statements inside the brackets are measured, no code outside.
+
+The expression returns the duration
+
+The compiler's dead-code elimination is disabled inside the brackets to not trip up the measurement. The result of the benchmark expression is a value that tells how long the bracketed statements took to execute.
+
+Floyd will execute the bracketed statements many times: both to warm up the computer caches before measuring, then to get a statistically safe number -- to reduce the error caused by the OS or hardware doing other things.
+
 
 
 ### EXAMPLE EXPRESSIONS
@@ -1096,9 +1693,12 @@ When doing bitwise manipulation it is often convenient to use binary literals or
 | print("Hello, World!" + f(3) == 2)				|
 | (my\_fun1("hello, 3) + 4) * my_fun2(10))		|	
 | hello[\"troll\"].kitty[10].cat					|
-| condition_expr ? yesexpr : noexpr				|
-| condition_expr ? yesexpr : noexpr				|
+| condition_expr ? yes_expr : no_expr				|
+| condition_expr ? yes_expr : no_expr				|
 | a == 1 ? "one" : ”some other number"			|
+
+
+
 
 
 
@@ -1143,21 +1743,20 @@ mutable hello = "Greeting message."
 
 
 
-### FUNC (FUNCTION) DEFINITION STATEMENT
+### FUNCTION DEFINITION STATEMENT
 
 ```
 func int hello(string s){
 	...
 }
 ```
-This defines a new function value and gives it a name in the current scope.
+This defines a new function value and gives it a name in the current scope. If you don't include the { ... } body you get a *function declaration*, you tell the compiler this function exists but is implemented elsewhere.
 
 |SOURCE		| MEANING
 |:---	|:---	
-| func int f(string name){ return 13 |
-| func int print(float a) { ... }			|
-| func int print (float a) { ... }			|
-| func int f(string name)					|
+| func int f(string name){ return 13 | Function **f** returns int, accepts a string input.
+| func int print(float a) { ... }			| Function **print** returns int, accepts float argument
+| func int f(string name)					| Function declaration (without body) |
 
 
 
@@ -1264,7 +1863,7 @@ for (tickMark in a ..< string.size()) {
 
 Notice: prefer to use map(), filter() and reduce() instead of for-loops whenever possible. This makes cleaner code and more optimisation opportunities.
 
-### WHILE LOOP STATEMENT
+### WHILE STATEMENT
 
 Perform the loop body while the expression is true.
 
@@ -1399,7 +1998,7 @@ container-def {
 
 ##### PROXY CONTAINER
 
-If you use an external component or software system, like for example gmail, you list it here so we can represent it, as a proxy.
+If you use an external component or software system, like for example gmail, you list it here so we can represent it via a proxy container.
 
 ```
 container-def {
@@ -1419,7 +2018,7 @@ container-def {
 
 ##### CONTAINER CODE
 
-For each floyd process you've listed under "clocks", ("my_gui", "iphone-ux", "server_com" and "renderer" in example above) you need to implement two functions. The init-function and the message handler. These functions are named based on the process.
+For each floyd process you've listed under "clocks", ("my_gui", "iphone-ux", "server_com" and "renderer" in the example above) you need to implement two functions. The init-function and the message handler. These functions are named based on the process.
 
 The init function is called x__init() where x is a placeholder. It takes no arguments, is impure and returns a value of type of your choice. This type is your process' memory slot -- the only mutable state your process has access to.
 
@@ -1452,8 +2051,7 @@ TODO POC
 
 
 
-
-## BENCHMARK-DEF STATEMENT
+### BENCHMARK-DEF STATEMENT
 
 Defines a benchmark (optionally with several instances) so it's available to Floyd.
 
@@ -1514,393 +2112,14 @@ This means you can write code that explores the benchmark_registry vector and it
 ??? TODO: There are also corelib functions that let you do this.
 
 
-### BENCHMARK EXPRESSION
 
-This is a Floyd expression you use to wrap the statements to measure. Only the statements inside the brackets are measured, no code outside.
 
-The compiler's dead-code elimination is disabled inside the brackets to not trip up the measurement. The result of the benchmark expression is a value that tells how long the bracketed statements took to execute.
 
-Floyd will execute the bracketed statements many times: both to warm up the computer caches before measuring, then to get a statistically safe number -- to reduce the error caused by the OS or hardware doing other things.
 
 
-```
-let dur = benchmark { STATEMENTS }
-```
 
 
-
-# DATA TYPES
-
-## EXAMPLE TYPE DECLARATIONS
-
-|SOURCE		| MEANING
-|:---	|:---	
-| bool								| Bool type
-| int								| Int type
-| string								| String type
-| [int]								| Vector of ints
-| [[int]]								| Vector of int-vectors
-| [string:int]						| Dictionary of ints
-| int ()								| Function returning int, no arguments
-| int (double a, string b)				| Function returning int, arguments are double and string
-| [int (double a, string b)]			| vector of functions, were function returns int and takes double and string arg.
-| int (double a) ()					| Function A with no arguments, that returns a function B. B returns int and has a double argument.
-| my_global							| name of custom type
-| [my_global]							| vector of custom type
-| mything (mything a, mything b)			| function returning mything-type, with two mything arguments
-| bool (int (double a) b)				| function returns bool and takes argument of type: function that returns in and take double-argument.
-
-
-
-
-
-
-## STRING DATA TYPE
-
-This is a pure 8-bit string type. It is immutable. You can compare with other strings, copy it using = and so on. There is a small kit of functions for changing and processing strings.
-
-The encoding of the characters in the string is undefined. You can put 7-bit ASCII in them or UTF-8 or something else. You can also use them as fast arrays of bytes.
-
-You can make string literals directly in the source code like this:
-
-```
-let a = "Hello, world!"
-```
-
-All comparison expressions work, like a == b, a < b, a >= b, a != b and so on.
-
-You can access a random character in the string, using its integer position, where element 0 is the first character, 1 the second etc.
-
-```
-let a = "Hello"[1]
-assert(a == "e")
-```
-
-Notice 1: You cannot modify the string using [], only read. Use update() to change a character.
-Notice 2: Floyd returns the character as an int, which is 64 bit signed.
-
-You can append two strings together using the + operation.
-
-```
-let a = "Hello" + ", world!"
-assert(a == "Hello, world!")
-```
-
-### ESCAPE SEQUENCES
-
-String literals in Floyd code cannot contain any character, because that would make it impossible for the compiler to understand what is part of the string and what is the program code. Some special characters cannot be entered directly into string literals and you need to use a special trick, an escape sequence.
-
-You can use these escape characters in string literals by entering \n or \' or \" etc.
-
-|ESCAPE SEQUENCE	| RESULT CHAR, AS HEX		| ASCII MEANING | JSON
-|:---				|:---						|:---			|:---
-| \0				| 0x00	| ZERO	| NO
-| \a				| 0x07	| BEL, bell, alarm, \a	| NO
-| \b				| 0x08	| BS, backspace, \b	| YES
-| \f				| 0x0c	| FF, NP, form feed, \f	| NO
-| \n				| 0x0a	| Newline (Line Feed)	| YES
-| \r				| 0x0d	| Carriage Return		| YES
-| \t				| 0x09	| Horizontal Tab		| YES
-| \v				| 0x0b	| Vertical Tab	| NO
-| \\\\				| 0x5c	| Backslash		| YES
-| \\'				| 0x27	| Single quotation mark		| NO
-| \\"				| 0x22	| Double quotation mark		| YES
-| \\/				| 0x2f	| Forward slash		| YES
-| \uABCD			| 0xabcd	| 4 hex characters => 16 bit character	| YES
-##### EXAMPLES
-
-|CODE		| OUTPUT | NOTE
-|:---			|:--- |:---
-| print("hello") | hello
-| print("What does \\"blob\\" mean?") | What does "blob" mean? | Allows you to insert a double quotation mark into your string literal without ending the string literal itself.
-
-
-Floyd string literals do not support insert hex sequences or Unicode code points.
-
-
-##### CORE FUNCTIONS
-
-- __print()__: prints a string to the default output of the app.
-- __update()__: changes one character of the string and returns a new string.
-- __size()__: returns the number of characters in the string, as an integer.
-- __find()__: searches from left to right after a substring and returns its index or -1
-- __push_back()__: appends a character or string to the right side of the string. The character is stored in an int.
-- __subset()__: extracts a range of characters from the string, as specified by start and end indexes. aka substr()
-- __replace()__: replaces a range of a string with another string. Can also be used to erase or insert.
-
-
-
-## VECTOR DATA TYPE
-
-A vector is a collection of values where you look up the values using an index between 0 and (vector size - 1). The items in a vector are called "elements". The elements are ordered. Finding an element at an index uses constant time. In other languages vectors are called "arrays" or even "lists".
-
-
-You can make a new vector and specify its elements directly, like this:
-
-```
-let a = [ 1, 2, 3]
-```
-
-You can also calculate its elements, they don't need to be constants:
-
-```
-let a = [ calc_pi(4), 2.1, calc_bounds() ]
-```
-
-You can put ANY type of value into a vector: integers, doubles, strings, structs, other vectors and so on. But all elements must be the same type inside a specific vector.
-
-You can copy vectors using =. All comparison expressions work, like a == b, a < b, a >= b, a != b and similar. Comparisons will compare each element of the two vectors.
-
-This lets you access a random element in the vector, using its integer position.
-
-```
-let a = [10, 20, 30][1]
-assert(a == 20)
-```
-
-Notice: You cannot modify the vector using [], only read. Use update() to change an element.
-
-You can append two vectors together using the + operation.
-
-```
-let a = [ 10, 20, 30 ] + [ 40, 50 ]
-assert(a == [ 10, 20, 30, 40, 50 ])
-```
-
-##### CORE FUNCTIONS
-
-- __print()__: prints a vector to the default output of the app.
-- __update()__: changes one element of the vector and returns a new vector.
-- __size()__: returns the number of elements in the vector, as an integer.
-- __find()__: searches from left to right after a element and returns its index or -1
-- __push_back()__: appends an element to the right side of the vector.
-- __subset()__: extracts a range of elements from the vector, as specified by start and end indexes.
-- __replace()__: replaces a range of a vector with another vector. Can also be used to erase or insert.
-
-
-
-## DICTIONARY DATA TYPE
-
-A collection of values where you identify the values using string keys. It is not sorted. In C++ you would use a std::map. 
-
-You make a new dictionary and specify its values like this:
-
-```
-let [string: int] a = {"red": 0, "blue": 100,"green": 255}
-```
-
-or shorter:
-
-```
-b = {"red": 0, "blue": 100,"green": 255}
-```
-
-Dictionaries always use string-keys. When you specify the type of dictionary you must always include "string". In the future other types of keys may be supported.
-
-```
-struct test {
-	[string: int] _my_dict
-}
-```
-
-You can put any type of value into the dictionary (but not mix inside the same dictionary).
-
-Use [] to look up values using a key. It throws an exception is the key not found. If you want to avoid that. check with exists() first.
-
-You copy dictionaries using = and all comparison expressions work, just like with strings and vectors.
-
-
-##### CORE FUNCTIONS
-
-- __print()__: prints a vector to the default output of the app.
-- __update()__: changes one value of the dictionary and returns a new dictionary
-- __size()__: returns the number of values in the dictionary, as an integer.
-- __exists()__: checks to see if the dictionary holds a specific key
-- __erase()__: erase a specific key from the dictionary and returns a new dictionary
-
-
-
-## STRUCT DATA TYPE
-
-Structs are the central building block for composing data in Floyd. They are used in place of classes in other programming languages. Structs are always values and immutable. They are very fast and compact: behind the curtains copied structs shares state between them, even when partially modified.
-
-##### AUTOMATIC FEATURES OF EVERY STRUCT
-
-- constructor -- this is the only function that can create a value of the struct. It always requires every struct member, in the order they are listed in the struct definition. Usually you create some functions that makes instancing a struct convenient, like make_black_color(), make_empty() etc.
-- destructor -- will destroy the value including member values, when no longer needed. There are no custom destructors.
-- Comparison operators: == != < > <= >= (this allows sorting too).
-- Reading member values.
-- Modify member values.
-
-There is no concept of pointers or references or shared structs so there are no problems with aliasing or side effects caused by several clients modifying the same struct.
-
-This all makes simple structs extremely simple to create and use.
-
-##### NOT POSSIBLE
-
-- You cannot make constructors. There is only *one* way to initialize the members, via the constructor, which always takes *all* members
-- There is no way to directly initialize a member when defining the struct.
-- There is no way to have several different constructors, instead create explicit functions like make_square().
-- If you want a default constructor, implement one yourself: ```rect make_zero_rect(){ return rect(0, 0) }```.
-- There is no aliasing of structs -- changing a struct is always invisible to all other code that has copies of that struct.
-- Unlink struct in the C language, Floyd's struct has an undefined layout so you cannot use them to do byte-level mapping like you often do in C. Floyd is free to store members in any way it wants too - pack or reorder in any way.
-
-
-Example:
-
-```
-//	Make simple, ready-for use struct.
-struct point {
-	double x
-	double y
-}
-
-//	Try the new struct:
-
-let a = point(0, 3)
-assert(a.x == 0)
-assert(a.y == 3)
-
-let b = point(0, 3)
-let c = point(1, 3)
-
-assert(a == a)
-assert(a == b)
-assert(a != c)
-assert(c > a)
-```
-
-A simple struct works almost like a collection with fixed number of named elements. It is only possible to make new instances by specifying every member or copying / modifying an existing one.
-
-
-##### UPDATE()
-
-let b = update(a, member, value)
-
-```
-//	Make simple, ready-for use struct.
-struct point {
-	double x
-	double y
-}
-
-let a = point(0, 3)
-
-//	Nothing happens! Setting width to 100 returns us a new point but we don't keep it.
-update(a, x, 100)
-assert(a.x == 0)
-
-//	Modifying a member creates a new instance, we assign it to b
-let b = update(a, x, 100)
-
-//	Now we have the original, unmodified a and the new, updated b.
-assert(a.x == 0)
-assert(b.x == 100)
-```
-
-This works with nested values too:
-
-
-```
-//	Define an image-struct that holds some stuff, including a pixel struct.
-struct image { string name; point size }
-
-let a = image("Cat image.png", point(512, 256))
-
-assert(a.size.x == 512)
-
-//	Update the width-member inside the image's size-member. The result is a brand-new image, b!
-let b = update(a, size.x, 100)
-assert(a.size.x == 512)
-assert(b.size.x == 100)
-```
-
-
-## TYPEID DATA TYPE
-
-A typeid is tells the type of a value.
-
-When you reference one of the built-in primitive types by name, you are accessing a variable of type typeid.
-
-- bool
-- int
-- double
-- string
-
-```
-assert(typeid("hello") == string)
-assert(to_string(typeid([1,2,3])) == "[int]")
-```
-
-A typeid is a proper Floyd value: you can copy it, compare it, convert it to strings, store it in dictionaries or whatever. Since to_string() supports typeid, you can easily print out the exact layout of any type, including complex ones with nested structs and vectors etc.
-
-
-
-## JSON DATA TYPE
-
-Why JSON? JSON is very central to Floyd. Floyd is based on values (simple ones or entire data models as one value) JSON is a simple and standard way to store composite values in a tree shape in a simple and standardized way. It also makes it easy to serializing any Floyd value to text and back. JSON is built directly into the language as the default serialized format for Floyd values.
-
-It can be used for custom file format and protocol and to interface with other JSON-based systems. All structs also automatically are serializable to and from JSON automatically.
-
-JSON format is also used by the compiler and language itself to store intermediate Floyd program code, for all logging and for debugging features.
-
-- Floyd has built in support for JSON in the language. It has a JSON type called __json\_value__ and functions to pack & unpack strings / JSON files into the JSON type.
-
-- Floyd has support for JSON literals: you can put JSON data directly into a Floyd file. Great for copy-pasting snippets for tests.
-
-Read more about JSON here: www.json.org
-
-
-This value can contain any of the 7 JSON-compatible types:
-
-- **string**, **number**, **object**, **array**, **true**, **false**, **null**
-
-Notice: This is the only situation were Floyd supports null. Floyd things null is a concept to avoid when possible.
-
-Notice that Floyd stores true/false as a bool type with the values true / false, not as two types called "true" and "false".
-
-__json\_value__: 	This is an immutable value containing any JSON. You can query it for its contents and alter it (you get new values).
-
-Notice that json\_value can contain an entire huge JSON file, with a big tree of JSON objects and arrays and so on. A json\_value can also contain just a string or a number or a single JSON array of strings. The json\_value is used for every node in the json\_value tree.
-
-
-##### __get\_json\_type()__:
-
-Returns the actual type of this value stores inside the json\_value. It can be one of the types supported by JSON.
-
-	typeid get_json_type(json v)
-
-This needs to be queried at runtime since JSON is dynamically typed.
-
-##### CORE FUNCTIONS
-
-Many of the core functions work with json\_value, but it often depends on the actual type of json\_value. Example: size() works for strings, arrays and object only.
-
-- __get\_json\_type()__
-- __size()__
-- __generate\_json\_script()__
-- __parse\_json\_script()__
-- __to\_json()__
-- __from\_json()__
-
-
-
-
-
-## TODO: PROTOCOL DATA TYPE
-
-TODO 1.0
-
-This defines a set of functions that several clients can implement differently. This introduced polymorphism into Floyd. Equivalent to interface classes in other languages.
-
-Protocol member functions can be tagged "impure" which allows it to be implemented so it saves or uses state, modifies the world. There is no way to do these things in the implementation of pure protocol function members.
-
-
-
-
-
-
-# 3. CORE FUNCTIONS
+## CORE FUNCTIONS
 
 These functions are built into the language itself and are always available to your code. They are all pure unless explicitly specified to be impure.
 
@@ -1990,6 +2209,8 @@ The send function returns immediately.
 
 
 
+
+??? Move these to each collection type instead!
 
 ## WORKING WITH COLLECTIONS
 
@@ -2280,7 +2501,7 @@ This is how you check the type of JSON value and reads their different values.
 | 							| json_null		| 7
 
 
-Demo snippet, that checks type of a json\_value:
+Demo snippet, that checks type of a json:
 
 ```
 func string get_name(json value){
@@ -2352,33 +2573,13 @@ Make a new Floyd JSON value from a JSON-script string. If the string is malforme
 
 
 
-# 4. COMMAND LINE TOOL
-
-|COMMAND		  	| MEANING
-|:---				|:---	
-| floyd run mygame.floyd		| compile and run the floyd program "mygame.floyd" using native exection
-| floyd run_bc mygame.floyd		| compile and run the floyd program "mygame.floyd" using the Floyd byte code interpreter
-| floyd compile mygame.floyd	| compile the floyd program "mygame.floyd" to an AST, in JSON format
-| floyd help					| Show built in help for command line tool
-| floyd runtests				| Runs Floyds internal unit tests
-| floyd benchmark 				| Runs Floyd built in suite of benchmark tests and prints the results.
-| floyd run -t mygame.floyd		| the -t turns on tracing, which shows Floyd compilation steps and internal states
-
-
-
-
-
-# 5. REFERENCE
-
-
-
-### EXAMPLE SOFTWARE SYSTEM FILE
+## EXAMPLE SOFTWARE SYSTEM FILE
 
 
 ```
 software-system-def {
 	"name": "My Arcade Game",
-	"desc": "Space shooter for mobile devices, with connection to a server.",
+	"desc": "Space shooter for mobile devices with connection to a server.",
 
 	"people": {
 		"Gamer": "Plays the game on one of the mobile apps",
