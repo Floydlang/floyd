@@ -2340,10 +2340,6 @@ static llvm::Function* generate_function_prototype(llvm::Module& module, const l
 
 
 
-//??? have better mechanism to register these.
-static function_definition_t make_dummy_function_definition(){
-	return function_definition_t::make_placeholder();
-}
 
 //	Make LLVM functions -- runtime, floyd host functions, floyd functions.
 //	host functions are later linked by LLVM execution engine, by matching the function names.
@@ -2357,11 +2353,10 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 	//	Make prototypes for all runtime functions, like floydrt_retain_vec().
 	const auto runtime_functions = get_runtime_functions(context, type_lookup);
 	for(const auto& e: runtime_functions){
-
 		auto f = module.getOrInsertFunction(e.link_name, e.function_type);
 		QUARK_ASSERT(check_invariant__module(&module));
 
-		const auto def = function_def_t{ e.link_name, llvm::cast<llvm::Function>(f), function_id_t { "xxaaaxxx" }, make_dummy_function_definition() };
+		const auto def = function_def_t{ e.link_name, llvm::cast<llvm::Function>(f), function_id_t { "xxaaaxxx" }, function_definition_t::make_placeholder() };
 		result.push_back(def);
 	}
 
@@ -2375,7 +2370,7 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 			false
 		);
 		auto f = module.getOrInsertFunction("floyd_runtime_init", function_type);
-		const auto def = function_def_t{ f->getName(), llvm::cast<llvm::Function>(f), {"floyd_runtime_init"}, make_dummy_function_definition() };
+		const auto def = function_def_t{ f->getName(), llvm::cast<llvm::Function>(f), {"floyd_runtime_init"}, function_definition_t::make_placeholder() };
 		result.push_back(def);
 	}
 
@@ -2389,7 +2384,7 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 			false
 		);
 		auto f = module.getOrInsertFunction("floyd_runtime_deinit", function_type);
-		const auto def = function_def_t{ f->getName(), llvm::cast<llvm::Function>(f), {"floyd_runtime_deinit"}, make_dummy_function_definition() };
+		const auto def = function_def_t{ f->getName(), llvm::cast<llvm::Function>(f), {"floyd_runtime_deinit"}, function_definition_t::make_placeholder() };
 		result.push_back(def);
 	}
 
