@@ -2436,7 +2436,7 @@ static builtins_t generate_corecalls(analyser_t& a, const std::vector<corecall_s
 			args.push_back(member_t(e, "dummy"));
 		}
 		const auto function_id = signature._function_id;
-		const auto def = function_definition_t::make_host_func(k_no_location, signature._function_id.name, signature._function_type, args);
+		const auto def = function_definition_t::make_floyd_func(k_no_location, signature._function_id.name, signature._function_type, args, {});
 		const auto function_value = value_t::make_function_value(signature._function_type, function_id_t { signature.name });
 
 		function_defs.insert({ function_id, def });

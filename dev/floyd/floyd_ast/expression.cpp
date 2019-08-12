@@ -237,11 +237,12 @@ function_definition_t json_to_function_def(const json_t& p){
 		);
 	}
 	else{
-		return function_definition_t::make_host_func(
+		return function_definition_t::make_floyd_func(
 			location1,
 			definition_name1,
 			function_type1,
-			args1
+			args1,
+			{}
 		);
 	}
 }
