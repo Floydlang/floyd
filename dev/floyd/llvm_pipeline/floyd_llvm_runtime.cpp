@@ -3039,7 +3039,7 @@ std::vector<benchmark_id_t> collect_benchmarks(const std::string& program_source
 	for(const auto& e: v){
 		const auto s = e.get_struct_value();
 		const auto name = s->_member_values[0].get_string_value();
-		result.push_back(benchmark_id_t { "module xyz", name });
+		result.push_back(benchmark_id_t { file, name });
 	}
 
 	return result;
@@ -3099,7 +3099,7 @@ std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_sourc
 					struct_result->_member_values[0].get_int_value(),
 					struct_result->_member_values[1].get_json()
 				};
-				const auto x = benchmark_result2_t { benchmark_id_t { "module xyz", name }, result3 };
+				const auto x = benchmark_result2_t { benchmark_id_t { file, name }, result3 };
 				test_result.push_back(x);
 			}
 			result = concat(result, test_result);
