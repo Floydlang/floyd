@@ -114,7 +114,7 @@ std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std:
 
 	const auto f = reinterpret_cast<FLOYD_RUNTIME_F*>(get_global_function(ee, name));
 	if(f != nullptr){
-		const auto def = find_function_def_from_link_name(ee.function_defs, std::string() + "floyd_funcdef__" + name);
+		const auto def = find_function_def_from_link_name(ee.function_defs, generate_link_name(name));
 		const auto function_type = def.floyd_fundef._function_type;
 		return { f, function_type };
 	}
@@ -855,7 +855,7 @@ function_bind_t floydrt_retain_vec__make(llvm::LLVMContext& context, const llvm_
 		},
 		false
 	);
-	return { "floydrt_retain_vec", function_type, reinterpret_cast<void*>(floydrt_retain_vec) };
+	return { "retain_vec", function_type, reinterpret_cast<void*>(floydrt_retain_vec) };
 }
 
 
@@ -881,7 +881,7 @@ function_bind_t floydrt_release_vec__make(llvm::LLVMContext& context, const llvm
 		},
 		false
 	);
-	return { "floydrt_release_vec", function_type, reinterpret_cast<void*>(floydrt_release_vec) };
+	return { "release_vec", function_type, reinterpret_cast<void*>(floydrt_release_vec) };
 }
 
 
@@ -912,7 +912,7 @@ function_bind_t floydrt_retain_dict__make(llvm::LLVMContext& context, const llvm
 		},
 		false
 	);
-	return { "floydrt_retain_dict", function_type, reinterpret_cast<void*>(floydrt_retain_dict) };
+	return { "retain_dict", function_type, reinterpret_cast<void*>(floydrt_retain_dict) };
 }
 
 
@@ -939,7 +939,7 @@ function_bind_t floydrt_release_dict__make(llvm::LLVMContext& context, const llv
 		},
 		false
 	);
-	return { "floydrt_release_dict", function_type, reinterpret_cast<void*>(floydrt_release_dict) };
+	return { "release_dict", function_type, reinterpret_cast<void*>(floydrt_release_dict) };
 }
 
 
@@ -972,7 +972,7 @@ function_bind_t floydrt_retain_json__make(llvm::LLVMContext& context, const llvm
 		},
 		false
 	);
-	return { "floydrt_retain_json", function_type, reinterpret_cast<void*>(floydrt_retain_json) };
+	return { "retain_json", function_type, reinterpret_cast<void*>(floydrt_retain_json) };
 }
 
 
@@ -1005,7 +1005,7 @@ function_bind_t floydrt_release_json__make(llvm::LLVMContext& context, const llv
 		},
 		false
 	);
-	return { "floydrt_release_json", function_type, reinterpret_cast<void*>(floydrt_release_json) };
+	return { "release_json", function_type, reinterpret_cast<void*>(floydrt_release_json) };
 }
 
 
@@ -1040,7 +1040,7 @@ function_bind_t floydrt_retain_struct__make(llvm::LLVMContext& context, const ll
 		},
 		false
 	);
-	return { "floydrt_retain_struct", function_type, reinterpret_cast<void*>(floydrt_retain_struct) };
+	return { "retain_struct", function_type, reinterpret_cast<void*>(floydrt_retain_struct) };
 }
 
 
@@ -1066,7 +1066,7 @@ function_bind_t floydrt_release_struct__make(llvm::LLVMContext& context, const l
 		},
 		false
 	);
-	return { "floydrt_release_struct", function_type, reinterpret_cast<void*>(floydrt_release_struct) };
+	return { "release_struct", function_type, reinterpret_cast<void*>(floydrt_release_struct) };
 }
 
 
@@ -1092,7 +1092,7 @@ function_bind_t floydrt_allocate_vector__make(llvm::LLVMContext& context, const 
 		},
 		false
 	);
-	return { "floydrt_allocate_vector", function_type, reinterpret_cast<void*>(floydrt_allocate_vector) };
+	return { "allocate_vector", function_type, reinterpret_cast<void*>(floydrt_allocate_vector) };
 }
 
 
@@ -1117,7 +1117,7 @@ function_bind_t floydrt_alloc_kstr__make(llvm::LLVMContext& context, const llvm_
 		},
 		false
 	);
-	return { "floydrt_alloc_kstr", function_type, reinterpret_cast<void*>(floydrt_alloc_kstr) };
+	return { "alloc_kstr", function_type, reinterpret_cast<void*>(floydrt_alloc_kstr) };
 }
 
 
@@ -1181,7 +1181,7 @@ function_bind_t floydrt_concatunate_vectors__make(llvm::LLVMContext& context, co
 		},
 		false
 	);
-	return { "floydrt_concatunate_vectors", function_type, reinterpret_cast<void*>(floydrt_concatunate_vectors) };
+	return { "concatunate_vectors", function_type, reinterpret_cast<void*>(floydrt_concatunate_vectors) };
 }
 
 
@@ -1205,7 +1205,7 @@ function_bind_t floydrt_allocate_dict__make(llvm::LLVMContext& context, const ll
 		},
 		false
 	);
-	return { "floydrt_allocate_dict", function_type, reinterpret_cast<void*>(floydrt_allocate_dict) };
+	return { "allocate_dict", function_type, reinterpret_cast<void*>(floydrt_allocate_dict) };
 }
 
 
@@ -1233,7 +1233,7 @@ function_bind_t floydrt_store_dict_mutable__make(llvm::LLVMContext& context, con
 		},
 		false
 	);
-	return { "floydrt_store_dict_mutable", function_type, reinterpret_cast<void*>(floydrt_store_dict_mutable) };
+	return { "store_dict_mutable", function_type, reinterpret_cast<void*>(floydrt_store_dict_mutable) };
 }
 
 
@@ -1265,7 +1265,7 @@ function_bind_t floydrt_lookup_dict__make(llvm::LLVMContext& context, const llvm
 		},
 		false
 	);
-	return { "floydrt_lookup_dict", function_type, reinterpret_cast<void*>(floydrt_lookup_dict) };
+	return { "lookup_dict", function_type, reinterpret_cast<void*>(floydrt_lookup_dict) };
 }
 
 
@@ -1296,7 +1296,7 @@ function_bind_t floydrt_allocate_json__make(llvm::LLVMContext& context, const ll
 		},
 		false
 	);
-	return { "floydrt_allocate_json", function_type, reinterpret_cast<void*>(floydrt_allocate_json) };
+	return { "allocate_json", function_type, reinterpret_cast<void*>(floydrt_allocate_json) };
 }
 
 
@@ -1346,7 +1346,7 @@ function_bind_t floydrt_lookup_json__make(llvm::LLVMContext& context, const llvm
 		},
 		false
 	);
-	return { "floydrt_lookup_json", function_type, reinterpret_cast<void*>(floydrt_lookup_json) };
+	return { "lookup_json", function_type, reinterpret_cast<void*>(floydrt_lookup_json) };
 }
 
 
@@ -1380,7 +1380,7 @@ function_bind_t floydrt_json_to_string__make(llvm::LLVMContext& context, const l
 		},
 		false
 	);
-	return { "floydrt_json_to_string", function_type, reinterpret_cast<void*>(floydrt_json_to_string) };
+	return { "json_to_string", function_type, reinterpret_cast<void*>(floydrt_json_to_string) };
 }
 
 
@@ -1439,7 +1439,7 @@ function_bind_t floydrt_compare_values__make(llvm::LLVMContext& context, const l
 		},
 		false
 	);
-	return { "floydrt_compare_values", function_type, reinterpret_cast<void*>(floydrt_compare_values) };
+	return { "compare_values", function_type, reinterpret_cast<void*>(floydrt_compare_values) };
 }
 
 
@@ -1463,7 +1463,7 @@ function_bind_t floydrt_allocate_struct__make(llvm::LLVMContext& context, const 
 		},
 		false
 	);
-	return { "floydrt_allocate_struct", function_type, reinterpret_cast<void*>(floydrt_allocate_struct) };
+	return { "allocate_struct", function_type, reinterpret_cast<void*>(floydrt_allocate_struct) };
 }
 
 
@@ -1532,7 +1532,7 @@ function_bind_t floydrt_update_struct_member__make(llvm::LLVMContext& context, c
 		},
 		false
 	);
-	return { "floydrt_update_struct_member", function_type, reinterpret_cast<void*>(floydrt_update_struct_member) };
+	return { "update_struct_member", function_type, reinterpret_cast<void*>(floydrt_update_struct_member) };
 }
 
 
@@ -1554,13 +1554,12 @@ function_bind_t floydrt_get_profile_time__make(llvm::LLVMContext& context, const
 		},
 		false
 	);
-	return { "floydrt_get_profile_time", function_type, reinterpret_cast<void*>(floydrt_get_profile_time) };
+	return { "get_profile_time", function_type, reinterpret_cast<void*>(floydrt_get_profile_time) };
 }
 
 
 
-
-
+//??? Keep typeid_t for each, then convert to LLVM type. Can't go the other way.
 std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	std::vector<function_bind_t> result = {
 		floydrt_retain_vec__make(context, type_lookup),
@@ -2609,10 +2608,10 @@ static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& cont
 	////////	Functions to support the runtime
 
 	const auto runtime_functions = get_runtime_functions(context, type_lookup);
-
 	std::map<std::string, void*> runtime_functions_map;
 	for(const auto& e: runtime_functions){
-		const auto e2 = std::pair<std::string, void*>(e.link_name, e.implementation_f);
+		const auto link_name = make_runtime_func_link_name(e.name).name;
+		const auto e2 = std::pair<std::string, void*>(link_name, e.implementation_f);
 		runtime_functions_map.insert(e2);
 	}
 

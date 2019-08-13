@@ -2340,13 +2340,12 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 	//	Make prototypes for all runtime functions, like floydrt_retain_vec().
 	const auto runtime_functions = get_runtime_functions(context, type_lookup);
 	for(const auto& e: runtime_functions){
-		auto f = module.getOrInsertFunction(e.link_name, e.function_type);
+		const auto link_name = make_runtime_func_link_name(e.name);
+		auto f = module.getOrInsertFunction(link_name.name, e.function_type);
 		QUARK_ASSERT(check_invariant__module(&module));
 
-		const auto name = unpack_runtime_func_link_name(link_name_t{ e.link_name });
-
-		const auto def0 = function_definition_t::make_func(k_no_location, name, typeid_t::make_void(), {}, {});
-		const auto def = function_def_t{ e.link_name, llvm::cast<llvm::Function>(f), function_id_t { "xxaaaxxx" }, def0 };
+		const auto def0 = function_definition_t::make_func(k_no_location, e.name, typeid_t::make_void(), {}, {});
+		const auto def = function_def_t{ link_name.name, llvm::cast<llvm::Function>(f), function_id_t { "xxaaaxxx" }, def0 };
 		result.push_back(def);
 	}
 

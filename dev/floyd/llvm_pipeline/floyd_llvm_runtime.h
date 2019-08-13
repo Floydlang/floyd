@@ -38,7 +38,7 @@ namespace floyd {
 ////////////////////////////////		function_bind_t
 
 struct function_bind_t {
-	std::string link_name;
+	std::string name;
 	llvm::FunctionType* function_type;
 	void* implementation_f;
 };
