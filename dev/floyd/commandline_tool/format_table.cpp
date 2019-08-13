@@ -17,7 +17,8 @@ std::string generate_line(const line_t& line, const std::vector<column_t>& colum
 
 	std::string acc = "|";
 	for(int c = 0 ; c < line.columns.size() ; c++){
-		const auto s = line.columns[c];
+		const auto s0 = line.columns[c];
+		const auto s = std::string(columns[c].margin, line.pad_char) + s0 + std::string(columns[c].margin, line.pad_char);
 		const auto wanted_width = columns[c].width + 1;
 
 		const auto pad_count = wanted_width - size(s);
@@ -36,7 +37,7 @@ std::vector<column_t> fit_column(const std::vector<column_t>& start, const line_
 
 	for(int column = 0 ; column < acc.size() ; column++){
 		const auto acc_width = acc[column].width;
-		const auto table_width = (int)row.columns[column].size();
+		const auto table_width = (int)row.columns[column].size() + start[column].margin * 2;
 		acc[column].width = std::max(acc_width, table_width);
 	}
 	return acc;

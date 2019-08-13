@@ -226,7 +226,7 @@ std::vector<std::string> make_benchmark_report(const std::vector<benchmark_resul
 		table.push_back(line_t{ columns, ' ' });
 	}
 
-	const auto columns0 = fit_column(std::vector<column_t>{ { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } }, headings);
+	const auto columns0 = fit_column(std::vector<column_t>{ { 0, 0, 1 }, { 0, 0, 1 }, { 0, 0, 1 }, { 0, 0, 1 } }, headings);
 	const auto columns = fit_columns(columns0, table);
 
 	std::vector<line_t> header_rows = {
@@ -263,7 +263,7 @@ static std::string do_user_benchmarks_run_all(const std::string& program_source,
 	return ss.str();
 }
 
-QUARK_UNIT_TEST("", "do_user_benchmarks_run_all()", "", ""){
+QUARK_UNIT_TEST_VIP("", "do_user_benchmarks_run_all()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(

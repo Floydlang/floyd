@@ -16,6 +16,7 @@
 struct column_t {
 	int width;
 	int align;
+	int margin;
 };
 
 struct line_t {
