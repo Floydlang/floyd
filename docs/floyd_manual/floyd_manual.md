@@ -610,7 +610,7 @@ Converts any Floyd value, (including any type of nesting of custom structs, coll
 
 ```
 json to_json(any v)
-any from_json(json v)
+any from_json(json v, typeid target_type)
 ```
 
 There is also direct support for JSON literals in your program source code, like this:
