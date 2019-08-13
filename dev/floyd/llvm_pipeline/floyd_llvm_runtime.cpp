@@ -75,7 +75,7 @@ const function_def_t& find_function_def_from_link_name(const std::vector<functio
 }
 
 
-void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint64_t count){
+static void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint64_t count){
 	for(auto i = 0 ; i < count ; i++){
 		dest[i] = source[i];
 	}
@@ -2540,29 +2540,6 @@ std::map<std::string, void*> get_corecall_c_function_ptrs(){
 	return host_functions_map;
 }
 
-uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee){
-	QUARK_ASSERT(ee.check_invariant());
-
-	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, encode_runtime_func_link_name("init")));
-	QUARK_ASSERT(a_func != nullptr);
-
-	int64_t a_result = (*a_func)(reinterpret_cast<floyd_runtime_t*>(&ee));
-	QUARK_ASSERT(a_result == 667);
-	return a_result;
-}
-
-uint64_t call_floyd_runtime_deinit(llvm_execution_engine_t& ee){
-	QUARK_ASSERT(ee.check_invariant());
-
-	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, encode_runtime_func_link_name("deinit")));
-	QUARK_ASSERT(a_func != nullptr);
-
-	int64_t a_result = (*a_func)(reinterpret_cast<floyd_runtime_t*>(&ee));
-	QUARK_ASSERT(a_result == 668);
-	return a_result;
-}
-
-
 
 #if DEBUG && 1
 //	Verify that all global functions can be accessed. If *one* is unresolved, then all return NULL!?
@@ -2635,8 +2612,14 @@ int64_t floyd_funcdef__dummy(floyd_runtime_t* frp){
 
 
 llvm_execution_engine_t::~llvm_execution_engine_t(){
+	QUARK_ASSERT(check_invariant());
+
 	if(inited){
-		call_floyd_runtime_deinit(*this);
+		auto f = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(*this, encode_runtime_func_link_name("deinit")));
+		QUARK_ASSERT(f != nullptr);
+
+		int64_t result = (*f)(reinterpret_cast<floyd_runtime_t*>(this));
+		QUARK_ASSERT(result == 668);
 		inited = false;
 	};
 
@@ -2761,7 +2744,13 @@ std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program
 
 	ee->main_function = bind_function(*ee, encode_floyd_func_link_name("main"));
 
-	const auto init_result = call_floyd_runtime_init(*ee);
+	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(*ee, encode_runtime_func_link_name("init")));
+	QUARK_ASSERT(a_func != nullptr);
+
+	int64_t init_result = (*a_func)(reinterpret_cast<floyd_runtime_t*>(ee.get()));
+	QUARK_ASSERT(init_result == 667);
+
+
 	QUARK_ASSERT(init_result == 667);
 	ee->inited = true;
 

@@ -167,9 +167,6 @@ llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name)
 std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup);
 std::map<std::string, void*> get_c_function_ptrs();
 
-uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee);
-uint64_t call_floyd_runtime_deinit(llvm_execution_engine_t& ee);
-
 int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f, const std::vector<std::string>& main_args);
 
 
