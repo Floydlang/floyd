@@ -232,8 +232,7 @@ QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
 	const auto result = run_benchmarks(program_source, "module1", { "ABC" });
 
 	QUARK_UT_VERIFY(result.size() == 1);
-	const auto t = benchmark_result2_t { benchmark_id_t{ "module1", "ABC" }, benchmark_result_t { 200, json_t("0 elements") } };
-	QUARK_UT_VERIFY(result[0] == t);
+	QUARK_UT_VERIFY(result[0] == (benchmark_result2_t { benchmark_id_t{ "", "ABC" }, benchmark_result_t { 200, json_t("0 elements") } }));
 }
 
 QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
@@ -259,14 +258,14 @@ QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
 
 	)";
 
-	const auto result = run_benchmarks(program_source, "game-module", { "abc", "def", "g" });
+	const auto result = run_benchmarks(program_source, "", { "abc", "def", "g" });
 
 	QUARK_UT_VERIFY(result.size() == 5);
-	QUARK_UT_VERIFY(result[0] == (benchmark_result2_t { benchmark_id_t{ "game-module", "abc" }, benchmark_result_t { 200, json_t("0 elements") } }));
-	QUARK_UT_VERIFY(result[1] == (benchmark_result2_t { benchmark_id_t{ "game-module", "def" }, benchmark_result_t { 1, json_t("first") } }));
-	QUARK_UT_VERIFY(result[2] == (benchmark_result2_t { benchmark_id_t{ "game-module", "def" }, benchmark_result_t { 2, json_t("second") } }));
-	QUARK_UT_VERIFY(result[3] == (benchmark_result2_t { benchmark_id_t{ "game-module", "def" }, benchmark_result_t { 3, json_t("third") } }));
-	QUARK_UT_VERIFY(result[4] == (benchmark_result2_t { benchmark_id_t{ "game-module", "g" }, benchmark_result_t { 300, json_t("bytes/s") } }));
+	QUARK_UT_VERIFY(result[0] == (benchmark_result2_t { benchmark_id_t{ "", "abc" }, benchmark_result_t { 200, json_t("0 elements") } }));
+	QUARK_UT_VERIFY(result[1] == (benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 1, json_t("first") } }));
+	QUARK_UT_VERIFY(result[2] == (benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 2, json_t("second") } }));
+	QUARK_UT_VERIFY(result[3] == (benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 3, json_t("third") } }));
+	QUARK_UT_VERIFY(result[4] == (benchmark_result2_t { benchmark_id_t{ "", "g" }, benchmark_result_t { 300, json_t("bytes/s") } }));
 }
 
 
@@ -296,9 +295,9 @@ QUARK_UNIT_TEST("", "collect_benchmarks()", "", ""){
 	const auto result = collect_benchmarks(program_source, "mymodule");
 
 	QUARK_UT_VERIFY(result.size() == 3);
-	QUARK_UT_VERIFY(result[0] == (benchmark_id_t{ "mymodule", "abc" }));
-	QUARK_UT_VERIFY(result[1] == (benchmark_id_t{ "mymodule", "def" }));
-	QUARK_UT_VERIFY(result[2] == (benchmark_id_t{ "mymodule", "g" }));
+	QUARK_UT_VERIFY(result[0] == (bench_t{ benchmark_id_t{ "", "abc" }, link_name_t{"floydf_benchmark__abc" } }));
+	QUARK_UT_VERIFY(result[1] == (bench_t{ benchmark_id_t{ "", "def" }, link_name_t{"floydf_benchmark__def" } }));
+	QUARK_UT_VERIFY(result[2] == (bench_t{ benchmark_id_t{ "", "g" }, link_name_t{ "floydf_benchmark__g" } }));
 }
 
 

@@ -81,12 +81,12 @@ void for_each_col(COLLECTION col, UNARY_OPERATION op){
 //	Functional map()-function. Returns new collection.
 
 template <typename DEST_ELEMENT_TYPE, typename COLLECTION, typename UNARY_OPERATION>
-std::vector<DEST_ELEMENT_TYPE> mapf(const COLLECTION& col, const UNARY_OPERATION& operation) {
+std::vector<DEST_ELEMENT_TYPE> mapf(const COLLECTION& col, const UNARY_OPERATION& op) {
 	std::vector<DEST_ELEMENT_TYPE> result;
 	result.reserve(col.size());
 
 	//	Notice that transform() *writes* to output collection, it doesn't append.
-	std::transform(col.begin(), col.end(), std::back_inserter(result), operation);
+	std::transform(col.begin(), col.end(), std::back_inserter(result), op);
 	return result;
 }
 
@@ -104,6 +104,22 @@ VALUE reduce(COLLECTION col, const VALUE& init, const BINARY_OPERATION op) {
 	return acc;
 }
 
+////////////////////////////////		filterf()
+
+
+
+template <typename DEST_ELEMENT_TYPE, typename COLLECTION, typename UNARY_OPERATION>
+std::vector<DEST_ELEMENT_TYPE> filterf(const COLLECTION& col, const UNARY_OPERATION& op) {
+	std::vector<DEST_ELEMENT_TYPE> result;
+	result.reserve(col.size());
+
+	for(const auto& e: col){
+		if(op(e)){
+			result.push_back(e);
+		}
+	}
+	return result;
+}
 
 
 

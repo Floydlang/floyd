@@ -192,12 +192,16 @@ std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instanc
 run_output_t run_program_helper(const std::string& program_source, const std::string& file, const std::vector<std::string>& main_args);
 
 
+
+
 struct bench_t {
 	benchmark_id_t benchmark_id;
 	link_name_t f;
 };
-std::vector<bench_t> collect_benchmarks(const llvm_execution_engine_t& ee, const std::string& file);
-std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, const std::string& file, const std::vector<std::string>& tests);
+inline bool operator==(const bench_t& lhs, const bench_t& rhs){ return lhs.benchmark_id == rhs.benchmark_id && lhs.f == rhs.f; }
+
+std::vector<bench_t> collect_benchmarks(const llvm_execution_engine_t& ee);
+std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, const std::vector<bench_t>& tests);
 
 
 
@@ -206,7 +210,7 @@ std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, con
 
 
 
-std::vector<benchmark_id_t> collect_benchmarks(const std::string& program_source, const std::string& file);
+std::vector<bench_t> collect_benchmarks(const std::string& program_source, const std::string& file);
 std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_source, const std::string& file, const std::vector<std::string>& tests);
 
 

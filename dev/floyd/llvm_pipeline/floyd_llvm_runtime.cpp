@@ -3023,7 +3023,9 @@ run_output_t run_program_helper(const std::string& program_source, const std::st
 
 
 
-std::vector<bench_t> collect_benchmarks(const llvm_execution_engine_t& ee, const std::string& file){
+
+
+std::vector<bench_t> collect_benchmarks(const llvm_execution_engine_t& ee){
 	std::pair<void*, typeid_t> benchmark_registry_bind = bind_global(ee, k_global_benchmark_registry);
 	QUARK_ASSERT(benchmark_registry_bind.first != nullptr);
 	QUARK_ASSERT(benchmark_registry_bind.second == typeid_t::make_vector(make_benchmark_def_t()));
@@ -3037,63 +3039,43 @@ std::vector<bench_t> collect_benchmarks(const llvm_execution_engine_t& ee, const
 		const auto name = s->_member_values[0].get_string_value();
 		const auto f_link_name_str = s->_member_values[1].get_function_value().name;
 		const auto f_link_name = link_name_t{ f_link_name_str };
-		result.push_back(bench_t{ benchmark_id_t { file, name }, f_link_name });
+		result.push_back(bench_t{ benchmark_id_t { "", name }, f_link_name });
 	}
 	return result;
 }
 
-
-/*
-		const auto name2 = decode_floyd_func_link_name(f_link_name);
-
-		const auto prefix = std::string("benchmark__");
-		const auto left = name2.substr(0, prefix.size());
-		const auto benchmark_name = name2.substr(prefix.size(), std::string::npos);
-		QUARK_ASSERT(left == prefix);
-*/
-
-
-std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, const std::string& file, const std::vector<std::string>& tests){
-	const auto benchmarks = collect_benchmarks(ee, file);
+std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, const std::vector<bench_t>& tests){
 	std::vector<benchmark_result2_t> result;
-	for(const auto& e: benchmarks){
-		const auto name = e.benchmark_id.test;
-		const auto f_link_name = e.f;
+	for(const auto& b: tests){
+		const auto name = b.benchmark_id.test;
+		const auto f_link_name = b.f;
 
-		const auto it = std::find(tests.begin(), tests.end(), name);
-		if(it != tests.end()){
-			const auto f_bind = bind_function2(ee, f_link_name);
-			QUARK_ASSERT(f_bind.address != nullptr);
-			auto f2 = reinterpret_cast<FLOYD_BENCHMARK_F>(f_bind.address);
-			const auto bench_result = (*f2)(make_runtime_ptr(&ee));
-			const auto result2 = from_runtime_value(ee, bench_result, typeid_t::make_vector(make_benchmark_result_t()));
+		const auto f_bind = bind_function2(ee, f_link_name);
+		QUARK_ASSERT(f_bind.address != nullptr);
+		auto f2 = reinterpret_cast<FLOYD_BENCHMARK_F>(f_bind.address);
+		const auto bench_result = (*f2)(make_runtime_ptr(&ee));
+		const auto result2 = from_runtime_value(ee, bench_result, typeid_t::make_vector(make_benchmark_result_t()));
 
 //			QUARK_TRACE(value_and_type_to_string(result2));
 
-			std::vector<benchmark_result2_t> test_result;
-			const auto& vec_result = result2.get_vector_value();
-			for(const auto& m: vec_result){
-				const auto& struct_result = m.get_struct_value();
-				const auto result3 = benchmark_result_t {
-					struct_result->_member_values[0].get_int_value(),
-					struct_result->_member_values[1].get_json()
-				};
-				const auto x = benchmark_result2_t { benchmark_id_t { file, name }, result3 };
-				test_result.push_back(x);
-			}
-			result = concat(result, test_result);
+		std::vector<benchmark_result2_t> test_result;
+		const auto& vec_result = result2.get_vector_value();
+		for(const auto& m: vec_result){
+			const auto& struct_result = m.get_struct_value();
+			const auto result3 = benchmark_result_t {
+				struct_result->_member_values[0].get_int_value(),
+				struct_result->_member_values[1].get_json()
+			};
+			const auto x = benchmark_result2_t { b.benchmark_id, result3 };
+			test_result.push_back(x);
 		}
-		else{
-		}
+		result = concat(result, test_result);
 	}
 
 	return result;
 }
 
-
-
-
-std::vector<benchmark_id_t> collect_benchmarks(const std::string& program_source, const std::string& file){
+std::vector<bench_t> collect_benchmarks(const std::string& program_source, const std::string& file){
 	const auto cu = floyd::make_compilation_unit_nolib(program_source, file);
 	const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
@@ -3101,12 +3083,23 @@ std::vector<benchmark_id_t> collect_benchmarks(const std::string& program_source
 	auto program = generate_llvm_ir_program(instance, sem_ast, file);
 	auto ee = init_program(*program);
 
-	std::vector<bench_t> b = collect_benchmarks(*ee, file);
-	const auto result = mapf<benchmark_id_t>(b, [](auto& e){ return e.benchmark_id; });
-	return result;
+	std::vector<bench_t> b = collect_benchmarks(*ee);
+	return b;
+//	const auto result = mapf<benchmark_id_t>(b, [](auto& e){ return e.benchmark_id; });
 }
 
-//??? Run tests in tests-order and detect missing tests.
+std::vector<bench_t> filter_benchmarks(const std::vector<bench_t>& b, const std::vector<std::string>& run_tests){
+	std::vector<bench_t> filtered;
+	for(const auto& wanted_test: run_tests){
+		const auto it = std::find_if(b.begin(), b.end(), [&] (const bench_t& b2) { return b2.benchmark_id.test == wanted_test; } );
+		if(it != b.end()){
+			filtered.push_back(*it);
+		}
+	}
+
+	return filtered;
+}
+
 std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_source, const std::string& file, const std::vector<std::string>& tests){
 	const auto cu = floyd::make_compilation_unit_nolib(program_source, file);
 	const auto sem_ast = compile_to_sematic_ast__errors(cu);
@@ -3115,8 +3108,17 @@ std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_sourc
 	auto program = generate_llvm_ir_program(instance, sem_ast, file);
 	auto ee = init_program(*program);
 
-	return run_benchmarks(*ee, file, tests);
+	const auto b = collect_benchmarks(*ee);
+	const auto b2 = filter_benchmarks(b, tests);
+	if(b2.size() != b.size()){
+		QUARK_TRACE("Some specified tests were not found");
+	}
+
+	std::vector<benchmark_result2_t> b3 = run_benchmarks(*ee, b2);
+
+	return b3;
 }
+
 
 
 QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
