@@ -3074,7 +3074,7 @@ void run_benchmarks(const std::string& program_source, const std::string& file, 
 		const auto f_link_name = s->_member_values[1].get_function_value().name;
 
 
-		const auto f_link_name2 = unpack_link_name(link_name_t{ f_link_name });
+		const auto f_link_name2 = unpack_floyd_func_link_name(link_name_t{ f_link_name });
 		const auto prefix = std::string("benchmark__");
 		const auto left = f_link_name2.substr(0, prefix.size());
 		const auto right = f_link_name2.substr(prefix.size(), std::string::npos);

@@ -1318,10 +1318,6 @@ std::string unpack_floyd_func_link_name(const link_name_t& name){
 	return right;
 }
 
-std::string unpack_link_name(const link_name_t& name){
-	return unpack_floyd_func_link_name(name);
-}
-
 
 static const std::string k_runtime_func_link_prefix = "floydrt_";
 
