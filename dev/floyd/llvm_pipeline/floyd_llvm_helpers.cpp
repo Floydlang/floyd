@@ -1318,6 +1318,12 @@ std::string unpack_floyd_func_link_name(const link_name_t& name){
 	return right;
 }
 
+std::string unpack_link_name(const link_name_t& name){
+	const auto left = name.name.substr(0, k_floyd_func_link_prefix.size());
+	const auto right = name.name.substr(k_floyd_func_link_prefix.size(), std::string::npos);
+	QUARK_ASSERT(left == k_floyd_func_link_prefix);
+	return right;
+}
 
 
 static const std::string k_runtime_func_link_prefix = "floydrt_";
@@ -1336,20 +1342,8 @@ std::string unpack_runtime_func_link_name(const link_name_t& name){
 
 
 
-static const std::string k_linkname_prefix = "floydf_";
 
-std::string generate_link_name(const std::string& name){
-	QUARK_ASSERT(name.empty() == false);
 
-	return k_linkname_prefix + name;
-}
-
-std::string unpack_link_name(const link_name_t& name){
-	const auto left = name.name.substr(0, k_linkname_prefix.size());
-	const auto right = name.name.substr(k_linkname_prefix.size(), std::string::npos);
-	QUARK_ASSERT(left == k_linkname_prefix);
-	return right;
-}
 
 }	//	floyd
 

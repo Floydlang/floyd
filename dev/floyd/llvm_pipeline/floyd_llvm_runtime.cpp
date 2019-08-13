@@ -114,7 +114,7 @@ std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std:
 
 	const auto f = reinterpret_cast<FLOYD_RUNTIME_F*>(get_global_function(ee, name));
 	if(f != nullptr){
-		const auto def = find_function_def_from_link_name(ee.function_defs, generate_link_name(name));
+		const auto def = find_function_def_from_link_name(ee.function_defs, make_floyd_func_link_name(name).name);
 		const auto function_type = def.floyd_fundef._function_type;
 		return { f, function_type };
 	}
@@ -2621,7 +2621,7 @@ static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& cont
 	const auto corecalls0 = get_corecall_c_function_ptrs();
 	std::map<std::string, void*> corecalls;
 	for(const auto& e: corecalls0){
-		corecalls.insert({ generate_link_name(e.first), e.second });
+		corecalls.insert({ make_floyd_func_link_name(e.first).name, e.second });
 	}
 	function_map.insert(corecalls.begin(), corecalls.end());
 
@@ -2629,7 +2629,7 @@ static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& cont
 	const auto corelib_function_map0 = get_corelib_c_function_ptrs();
 	std::map<std::string, void*> corelib_function_map;
 	for(const auto& e: corelib_function_map0){
-		corelib_function_map.insert({ generate_link_name(e.first), e.second });
+		corelib_function_map.insert({ make_floyd_func_link_name(e.first).name, e.second });
 	}
 	function_map.insert(corelib_function_map.begin(), corelib_function_map.end());
 

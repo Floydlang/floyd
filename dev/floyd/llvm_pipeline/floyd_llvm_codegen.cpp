@@ -2244,7 +2244,7 @@ static void generate_floyd_function_body(llvm_code_generator_t& gen_acc, const f
 	QUARK_ASSERT(function_def.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	const auto link_name = generate_link_name(function_def._definition_name);
+	const auto link_name = make_floyd_func_link_name(function_def._definition_name).name;
 
 	auto f = gen_acc.module->getFunction(link_name);
 	QUARK_ASSERT(check_invariant__function(f));
@@ -2291,7 +2291,7 @@ static llvm::Function* generate_function_prototype(llvm::Module& module, const l
 	QUARK_ASSERT(function_def.check_invariant());
 
 	const auto function_type = function_def._function_type;
-	const auto link_name = generate_link_name(function_def._definition_name);
+	const auto link_name = make_floyd_func_link_name(function_def._definition_name).name;
 
 	auto existing_f = module.getFunction(link_name);
 	QUARK_ASSERT(existing_f == nullptr);

@@ -583,7 +583,6 @@ link_name_t make_runtime_func_link_name(const std::string& name);
 std::string unpack_runtime_func_link_name(const link_name_t& name);
 
 
-std::string generate_link_name(const std::string& name);
 std::string unpack_link_name(const link_name_t& name);
 
 
