@@ -2238,20 +2238,13 @@ static std::vector<resolved_symbol_t> generate_globals_from_ast(llvm_code_genera
 	return result;
 }
 
-static std::string generate_link_name(const function_definition_t& def){
-	QUARK_ASSERT(def._definition_name.empty() == false);
-
-	return std::string("floyd_funcdef__") + def._definition_name;
-}
-
-
 //	NOTICE: Fills-in the body of an existing LLVM function prototype.
 static void generate_floyd_function_body(llvm_code_generator_t& gen_acc, const floyd::function_definition_t& function_def, const body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(function_def.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	const auto link_name = generate_link_name(function_def);
+	const auto link_name = generate_link_name(function_def._definition_name);
 
 	auto f = gen_acc.module->getFunction(link_name);
 	QUARK_ASSERT(check_invariant__function(f));
@@ -2298,7 +2291,7 @@ static llvm::Function* generate_function_prototype(llvm::Module& module, const l
 	QUARK_ASSERT(function_def.check_invariant());
 
 	const auto function_type = function_def._function_type;
-	const auto link_name = generate_link_name(function_def);
+	const auto link_name = generate_link_name(function_def._definition_name);
 
 	auto existing_f = module.getFunction(link_name);
 	QUARK_ASSERT(existing_f == nullptr);

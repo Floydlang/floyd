@@ -2512,46 +2512,46 @@ std::map<std::string, void*> get_corecall_c_function_ptrs(){
 
 		////////////////////////////////		CORECALLS
 
-		{ "floyd_funcdef__assert", reinterpret_cast<void *>(&floyd_funcdef__assert) },
-		{ "floyd_funcdef__to_string", reinterpret_cast<void *>(&floyd_host__to_string) },
-		{ "floyd_funcdef__to_pretty_string", reinterpret_cast<void *>(&floyd_funcdef__to_pretty_string) },
-		{ "floyd_funcdef__typeof", reinterpret_cast<void *>(&floyd_host__typeof) },
+		{ "assert", reinterpret_cast<void *>(&floyd_funcdef__assert) },
+		{ "to_string", reinterpret_cast<void *>(&floyd_host__to_string) },
+		{ "to_pretty_string", reinterpret_cast<void *>(&floyd_funcdef__to_pretty_string) },
+		{ "typeof", reinterpret_cast<void *>(&floyd_host__typeof) },
 
-		{ "floyd_funcdef__update", reinterpret_cast<void *>(&floyd_funcdef__update) },
-		{ "floyd_funcdef__size", reinterpret_cast<void *>(&floyd_funcdef__size) },
-		{ "floyd_funcdef__find", reinterpret_cast<void *>(&floyd_funcdef__find) },
-		{ "floyd_funcdef__exists", reinterpret_cast<void *>(&floyd_funcdef__exists) },
-		{ "floyd_funcdef__erase", reinterpret_cast<void *>(&floyd_host_function__erase) },
-		{ "floyd_funcdef__get_keys", reinterpret_cast<void *>(&floyd_host_function__get_keys) },
-		{ "floyd_funcdef__push_back", reinterpret_cast<void *>(&floyd_funcdef__push_back) },
-		{ "floyd_funcdef__subset", reinterpret_cast<void *>(&floyd_funcdef__subset) },
-		{ "floyd_funcdef__replace", reinterpret_cast<void *>(&floyd_funcdef__replace) },
+		{ "update", reinterpret_cast<void *>(&floyd_funcdef__update) },
+		{ "size", reinterpret_cast<void *>(&floyd_funcdef__size) },
+		{ "find", reinterpret_cast<void *>(&floyd_funcdef__find) },
+		{ "exists", reinterpret_cast<void *>(&floyd_funcdef__exists) },
+		{ "erase", reinterpret_cast<void *>(&floyd_host_function__erase) },
+		{ "get_keys", reinterpret_cast<void *>(&floyd_host_function__get_keys) },
+		{ "push_back", reinterpret_cast<void *>(&floyd_funcdef__push_back) },
+		{ "subset", reinterpret_cast<void *>(&floyd_funcdef__subset) },
+		{ "replace", reinterpret_cast<void *>(&floyd_funcdef__replace) },
 
-		{ "floyd_funcdef__generate_json_script", reinterpret_cast<void *>(&floyd_funcdef__generate_json_script) },
-		{ "floyd_funcdef__from_json", reinterpret_cast<void *>(&floyd_funcdef__from_json) },
-		{ "floyd_funcdef__parse_json_script", reinterpret_cast<void *>(&floyd_funcdef__parse_json_script) },
-		{ "floyd_funcdef__to_json", reinterpret_cast<void *>(&floyd_funcdef__to_json) },
+		{ "generate_json_script", reinterpret_cast<void *>(&floyd_funcdef__generate_json_script) },
+		{ "from_json", reinterpret_cast<void *>(&floyd_funcdef__from_json) },
+		{ "parse_json_script", reinterpret_cast<void *>(&floyd_funcdef__parse_json_script) },
+		{ "to_json", reinterpret_cast<void *>(&floyd_funcdef__to_json) },
 
-		{ "floyd_funcdef__get_json_type", reinterpret_cast<void *>(&floyd_host_function__get_json_type) },
+		{ "get_json_type", reinterpret_cast<void *>(&floyd_host_function__get_json_type) },
 
-		{ "floyd_funcdef__map", reinterpret_cast<void *>(&floyd_funcdef__map) },
-		{ "floyd_funcdef__map_string", reinterpret_cast<void *>(&floyd_funcdef__map_string) },
-		{ "floyd_funcdef__map_dag", reinterpret_cast<void *>(&floyd_funcdef__map_dag) },
-		{ "floyd_funcdef__filter", reinterpret_cast<void *>(&floyd_funcdef__filter) },
-		{ "floyd_funcdef__reduce", reinterpret_cast<void *>(&floyd_funcdef__reduce) },
-		{ "floyd_funcdef__stable_sort", reinterpret_cast<void *>(&floyd_funcdef__stable_sort) },
+		{ "map", reinterpret_cast<void *>(&floyd_funcdef__map) },
+		{ "map_string", reinterpret_cast<void *>(&floyd_funcdef__map_string) },
+		{ "map_dag", reinterpret_cast<void *>(&floyd_funcdef__map_dag) },
+		{ "filter", reinterpret_cast<void *>(&floyd_funcdef__filter) },
+		{ "reduce", reinterpret_cast<void *>(&floyd_funcdef__reduce) },
+		{ "stable_sort", reinterpret_cast<void *>(&floyd_funcdef__stable_sort) },
 
-		{ "floyd_funcdef__print", reinterpret_cast<void *>(&floyd_funcdef__print) },
-		{ "floyd_funcdef__send", reinterpret_cast<void *>(&floyd_funcdef__send) },
+		{ "print", reinterpret_cast<void *>(&floyd_funcdef__print) },
+		{ "send", reinterpret_cast<void *>(&floyd_funcdef__send) },
 
 /*
-		{ "floyd_funcdef__bw_not", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
-		{ "floyd_funcdef__bw_and", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
-		{ "floyd_funcdef__bw_or", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
-		{ "floyd_funcdef__bw_xor", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
-		{ "floyd_funcdef__bw_shift_left", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
-		{ "floyd_funcdef__bw_shift_right", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
-		{ "floyd_funcdef__bw_shift_right_arithmetic", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
+		{ "bw_not", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
+		{ "bw_and", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
+		{ "bw_or", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
+		{ "bw_xor", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
+		{ "bw_shift_left", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
+		{ "bw_shift_right", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
+		{ "bw_shift_right_arithmetic", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
 */
 	};
 	return host_functions_map;
@@ -2605,6 +2605,7 @@ void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
 #endif
 
 static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+
 	////////	Functions to support the runtime
 
 	const auto runtime_functions = get_runtime_functions(context, type_lookup);
@@ -2615,14 +2616,22 @@ static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& cont
 		runtime_functions_map.insert(e2);
 	}
 
+	std::map<std::string, void*> function_map = runtime_functions_map;
 
 	////////	Core calls
-	const auto host_functions_map = get_corecall_c_function_ptrs();
-	std::map<std::string, void*> function_map = runtime_functions_map;
-	function_map.insert(host_functions_map.begin(), host_functions_map.end());
+	const auto corecalls0 = get_corecall_c_function_ptrs();
+	std::map<std::string, void*> corecalls;
+	for(const auto& e: corecalls0){
+		corecalls.insert({ std::string("floyd_funcdef__") + e.first, e.second });
+	}
+	function_map.insert(corecalls.begin(), corecalls.end());
 
 	////////	Corelib
-	const auto corelib_function_map = get_corelib_c_function_ptrs();
+	const auto corelib_function_map0 = get_corelib_c_function_ptrs();
+	std::map<std::string, void*> corelib_function_map;
+	for(const auto& e: corelib_function_map0){
+		corelib_function_map.insert({ std::string("floyd_funcdef__") + e.first, e.second });
+	}
 	function_map.insert(corelib_function_map.begin(), corelib_function_map.end());
 
 	return function_map;

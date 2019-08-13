@@ -227,25 +227,25 @@ std::map<std::string, void*> get_corelib_c_function_ptrs(){
 	////////////////////////////////		CORE FUNCTIONS AND HOST FUNCTIONS
 	const std::map<std::string, void*> host_functions_map = {
 
-		{ "floyd_funcdef__detect_hardware_caps", reinterpret_cast<void *>(&llvm_corelib__detect_hardware_caps) },
+		{ "detect_hardware_caps", reinterpret_cast<void *>(&llvm_corelib__detect_hardware_caps) },
 
-		{ "floyd_funcdef__calc_string_sha1", reinterpret_cast<void *>(&llvm_corelib__calc_string_sha1) },
-		{ "floyd_funcdef__calc_binary_sha1", reinterpret_cast<void *>(&llvm_corelib__calc_binary_sha1) },
+		{ "calc_string_sha1", reinterpret_cast<void *>(&llvm_corelib__calc_string_sha1) },
+		{ "calc_binary_sha1", reinterpret_cast<void *>(&llvm_corelib__calc_binary_sha1) },
 
-		{ "floyd_funcdef__get_time_of_day", reinterpret_cast<void *>(&llvm_corelib__get_time_of_day) },
+		{ "get_time_of_day", reinterpret_cast<void *>(&llvm_corelib__get_time_of_day) },
 
-		{ "floyd_funcdef__read_text_file", reinterpret_cast<void *>(&llvm_corelib__read_text_file) },
-		{ "floyd_funcdef__write_text_file", reinterpret_cast<void *>(&llvm_corelib__write_text_file) },
+		{ "read_text_file", reinterpret_cast<void *>(&llvm_corelib__read_text_file) },
+		{ "write_text_file", reinterpret_cast<void *>(&llvm_corelib__write_text_file) },
 
-		{ "floyd_funcdef__get_fsentries_shallow", reinterpret_cast<void *>(&llvm_corelib__get_fsentries_shallow) },
-		{ "floyd_funcdef__get_fsentries_deep", reinterpret_cast<void *>(&llvm_corelib__get_fsentries_deep) },
-		{ "floyd_funcdef__get_fsentry_info", reinterpret_cast<void *>(&llvm_corelib__get_fsentry_info) },
-		{ "floyd_funcdef__get_fs_environment", reinterpret_cast<void *>(&llvm_corelib__get_fs_environment) },
+		{ "get_fsentries_shallow", reinterpret_cast<void *>(&llvm_corelib__get_fsentries_shallow) },
+		{ "get_fsentries_deep", reinterpret_cast<void *>(&llvm_corelib__get_fsentries_deep) },
+		{ "get_fsentry_info", reinterpret_cast<void *>(&llvm_corelib__get_fsentry_info) },
+		{ "get_fs_environment", reinterpret_cast<void *>(&llvm_corelib__get_fs_environment) },
 
-		{ "floyd_funcdef__does_fsentry_exist", reinterpret_cast<void *>(&llvm_corelib__does_fsentry_exist) },
-		{ "floyd_funcdef__create_directory_branch", reinterpret_cast<void *>(&llvm_corelib__create_directory_branch) },
-		{ "floyd_funcdef__delete_fsentry_deep", reinterpret_cast<void *>(&llvm_corelib__delete_fsentry_deep) },
-		{ "floyd_funcdef__rename_fsentry", reinterpret_cast<void *>(&llvm_corelib__rename_fsentry) }
+		{ "does_fsentry_exist", reinterpret_cast<void *>(&llvm_corelib__does_fsentry_exist) },
+		{ "create_directory_branch", reinterpret_cast<void *>(&llvm_corelib__create_directory_branch) },
+		{ "delete_fsentry_deep", reinterpret_cast<void *>(&llvm_corelib__delete_fsentry_deep) },
+		{ "rename_fsentry", reinterpret_cast<void *>(&llvm_corelib__rename_fsentry) }
 	};
 	return host_functions_map;
 }

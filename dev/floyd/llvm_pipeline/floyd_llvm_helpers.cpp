@@ -1329,6 +1329,12 @@ std::string unpack_runtime_func_link_name(const link_name_t& name){
 }
 
 
+std::string generate_link_name(const std::string& name){
+	QUARK_ASSERT(name.empty() == false);
+
+	return std::string("floyd_funcdef__") + name;
+}
+
 
 }	//	floyd
 

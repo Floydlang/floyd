@@ -583,6 +583,9 @@ link_name_t make_runtime_func_link_name(const std::string& name);
 std::string unpack_runtime_func_link_name(const link_name_t& name);
 
 
+std::string generate_link_name(const std::string& name);
+
+
 }	//	floyd
 
 #endif /* floyd_llvm_helpers_hpp */
