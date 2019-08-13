@@ -64,7 +64,6 @@ const bool k_trace_types = k_trace_input_output;
 TODO ???:
 
 - Pass llvm::Value* for the runtime-pointer instead of emit_f?
-- Make nicer mechanism to register all host functions, types and key-strings.
 - Store explicit members like assert_f instead of search on string.
 */
 
@@ -945,9 +944,6 @@ static llvm::Value* generate_compare_values(llvm_code_generator_t& gen_acc, llvm
 		generate_cast_to_runtime_value(gen_acc, rhs_reg, type)
 	};
 	auto result = gen_acc.builder.CreateCall(def.llvm_codegen_f, args, "");
-
-	//??? Return i1 directly, no need to compare again.
-//	auto result2 = gen_acc.builder.CreateICmp(llvm::CmpInst::Predicate::ICMP_NE, result, llvm::ConstantInt::get(gen_acc.builder.getInt32Ty(), 0));
 
 	QUARK_ASSERT(gen_acc.check_invariant());
 	return result;
@@ -2333,7 +2329,6 @@ static llvm::Function* generate_function_prototype(llvm::Module& module, const l
 
 
 
-///??? clean up link_name_t usage
 //??? Generate all llvm function prototypes from Floyd prototypes using unified system: including init() and deinit().
 //	Make LLVM functions -- runtime, floyd host functions, floyd functions.
 //	host functions are later linked by LLVM execution engine, by matching the function names.
@@ -2359,7 +2354,6 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 	//	init()
 	{
 		const auto link_name = encode_runtime_func_link_name("init");
-		const auto link_name_str = link_name.s;
 		llvm::FunctionType* function_type = llvm::FunctionType::get(
 			llvm::Type::getInt64Ty(context),
 			{
@@ -2367,16 +2361,15 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 			},
 			false
 		);
-		auto f = module.getOrInsertFunction(link_name_str, function_type);
-		const auto def0 = function_definition_t::make_func(k_no_location, link_name_str, typeid_t::make_void(), {}, {});
-		const auto def = function_def_t{ link_name_t{ f->getName() }, llvm::cast<llvm::Function>(f), { link_name_str }, def0 };
+		auto f = module.getOrInsertFunction(link_name.s, function_type);
+		const auto def0 = function_definition_t::make_func(k_no_location, link_name.s, typeid_t::make_void(), {}, {});
+		const auto def = function_def_t{ link_name, llvm::cast<llvm::Function>(f), { link_name.s }, def0 };
 		result.push_back(def);
 	}
 
 	//	deinit()
 	{
 		const auto link_name = encode_runtime_func_link_name("deinit");
-		const auto link_name_str = link_name.s;
 		llvm::FunctionType* function_type = llvm::FunctionType::get(
 			llvm::Type::getInt64Ty(context),
 			{
@@ -2384,9 +2377,9 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 			},
 			false
 		);
-		auto f = module.getOrInsertFunction(link_name_str, function_type);
-		const auto def0 = function_definition_t::make_func(k_no_location, link_name_str, typeid_t::make_void(), {}, {});
-		const auto def = function_def_t{ link_name_t { f->getName() }, llvm::cast<llvm::Function>(f), { link_name_str }, def0 };
+		auto f = module.getOrInsertFunction(link_name.s, function_type);
+		const auto def0 = function_definition_t::make_func(k_no_location, link_name.s, typeid_t::make_void(), {}, {});
+		const auto def = function_def_t{ link_name, llvm::cast<llvm::Function>(f), { link_name.s }, def0 };
 		result.push_back(def);
 	}
 
