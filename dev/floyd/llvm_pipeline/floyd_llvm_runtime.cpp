@@ -3020,7 +3020,42 @@ run_output_t run_program_helper(const std::string& program_source, const std::st
 	return result;
 }
 
+std::vector<benchmark_id_t> collect_benchmarks(const std::string& program_source, const std::string& file){
+	const auto cu = floyd::make_compilation_unit_nolib(program_source, file);
+	const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
+	llvm_instance_t instance;
+	auto program = generate_llvm_ir_program(instance, sem_ast, file);
+	auto ee = init_program(*program);
+
+	std::pair<void*, typeid_t> benchmark_registry_bind = bind_global(*ee, k_global_benchmark_registry);
+	QUARK_ASSERT(benchmark_registry_bind.first != nullptr);
+	QUARK_ASSERT(benchmark_registry_bind.second == typeid_t::make_vector(make_benchmark_def_t()));
+
+	const value_t reg = load_global(*ee, benchmark_registry_bind);
+	const auto v = reg.get_vector_value();
+
+	std::vector<benchmark_id_t> result;
+	for(const auto& e: v){
+		const auto s = e.get_struct_value();
+		const auto name = s->_member_values[0].get_string_value();
+		result.push_back(benchmark_id_t { "module xyz", name });
+	}
+
+	return result;
+}
+
+/*
+		const auto name2 = decode_floyd_func_link_name(f_link_name);
+
+		const auto prefix = std::string("benchmark__");
+		const auto left = name2.substr(0, prefix.size());
+		const auto benchmark_name = name2.substr(prefix.size(), std::string::npos);
+		QUARK_ASSERT(left == prefix);
+*/
+
+
+//??? Run tests in tests-order and detect missing tests.
 std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_source, const std::string& file, const std::vector<std::string>& tests){
 	const auto cu = floyd::make_compilation_unit_nolib(program_source, file);
 	const auto sem_ast = compile_to_sematic_ast__errors(cu);
@@ -3041,16 +3076,9 @@ std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_sourc
 		const auto s = e.get_struct_value();
 		const auto name = s->_member_values[0].get_string_value();
 		const auto f_link_name_str = s->_member_values[1].get_function_value().name;
-
 		const auto f_link_name = link_name_t{ f_link_name_str };
-		const auto name2 = decode_floyd_func_link_name(f_link_name);
 
-		const auto prefix = std::string("benchmark__");
-		const auto left = name2.substr(0, prefix.size());
-		const auto benchmark_name = name2.substr(prefix.size(), std::string::npos);
-		QUARK_ASSERT(left == prefix);
-
-		const auto it = std::find(tests.begin(), tests.end(), benchmark_name);
+		const auto it = std::find(tests.begin(), tests.end(), name);
 		if(it != tests.end()){
 			const auto f_bind = bind_function2(*ee, f_link_name);
 			QUARK_ASSERT(f_bind.address != nullptr);
@@ -3071,7 +3099,7 @@ std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_sourc
 					struct_result->_member_values[0].get_int_value(),
 					struct_result->_member_values[1].get_json()
 				};
-				const auto x = benchmark_result2_t { benchmark_id_t { "module xyz", benchmark_name }, result3 };
+				const auto x = benchmark_result2_t { benchmark_id_t { "module xyz", name }, result3 };
 				test_result.push_back(x);
 			}
 			result = concat(result, test_result);

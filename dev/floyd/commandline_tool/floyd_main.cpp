@@ -218,7 +218,7 @@ static int do_run_user_benchmarks(const command_t& command, const command_t::run
 	}
 }
 
-QUARK_UNIT_TEST("", "do_run_user_benchmarks()", "", ""){
+QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -235,6 +235,34 @@ QUARK_UNIT_TEST("", "do_run_user_benchmarks()", "", ""){
 	const auto t = benchmark_result2_t { benchmark_id_t{ "module xyz", "ABC" }, benchmark_result_t { 200, json_t("0 eleements") } };
 	QUARK_UT_VERIFY(result[0] == t);
 }
+
+QUARK_UNIT_TEST("", "collect_benchmarks()", "", ""){
+	g_trace_on = true;
+	const auto program_source =
+	R"(
+
+		benchmark-def "abc" {
+			return [ benchmark_result_t(200, json("0 eleements")) ]
+		}
+
+		benchmark-def "def" {
+			return [ benchmark_result_t(300, json("bytes/s")) ]
+		}
+
+		benchmark-def "g" {
+			return [ benchmark_result_t(300, json("bytes/s")) ]
+		}
+
+	)";
+
+	const auto result = collect_benchmarks(program_source, "");
+
+	QUARK_UT_VERIFY(result.size() == 3);
+	QUARK_UT_VERIFY(result[0] == (benchmark_id_t{ "module xyz", "abc" }));
+	QUARK_UT_VERIFY(result[1] == (benchmark_id_t{ "module xyz", "def" }));
+	QUARK_UT_VERIFY(result[2] == (benchmark_id_t{ "module xyz", "g" }));
+}
+
 
 
 //	Runs one of the commands, args depends on which command.
