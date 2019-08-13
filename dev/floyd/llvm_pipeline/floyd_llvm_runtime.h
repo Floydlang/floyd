@@ -51,7 +51,9 @@ struct function_bind_t {
 
 struct function_def_t {
 	std::string link_name;
-	llvm::Function* llvm_f;	//	Only valid during codegen
+
+	//	Only valid during codegen
+	llvm::Function* llvm_codegen_f;
 
 	function_id_t source_name;
 	function_definition_t floyd_fundef;

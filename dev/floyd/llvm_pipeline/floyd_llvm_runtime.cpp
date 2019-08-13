@@ -70,7 +70,7 @@ const function_def_t& find_function_def_from_link_name(const std::vector<functio
 	auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.link_name == link_name; } );
 	QUARK_ASSERT(it != function_defs.end());
 
-	QUARK_ASSERT(it->llvm_f != nullptr);
+	QUARK_ASSERT(it->llvm_codegen_f != nullptr);
 	return *it;
 }
 
