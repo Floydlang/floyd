@@ -63,7 +63,6 @@ struct function_def_t {
 	//	Only valid during codegen
 	llvm::Function* llvm_codegen_f;
 
-	function_id_t source_name;
 	function_definition_t floyd_fundef;
 };
 

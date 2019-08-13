@@ -2347,13 +2347,14 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 		QUARK_ASSERT(check_invariant__module(&module));
 
 		const auto def0 = function_definition_t::make_func(k_no_location, e.name, typeid_t::make_void(), {}, {});
-		const auto def = function_def_t{ link_name, llvm::cast<llvm::Function>(f), function_id_t { "xxaaaxxx" }, def0 };
+		const auto def = function_def_t{ link_name, llvm::cast<llvm::Function>(f), def0 };
 		result.push_back(def);
 	}
 
 	//	init()
 	{
-		const auto link_name = encode_runtime_func_link_name("init");
+		const auto name = "init";
+		const auto link_name = encode_runtime_func_link_name(name);
 		llvm::FunctionType* function_type = llvm::FunctionType::get(
 			llvm::Type::getInt64Ty(context),
 			{
@@ -2362,14 +2363,15 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 			false
 		);
 		auto f = module.getOrInsertFunction(link_name.s, function_type);
-		const auto def0 = function_definition_t::make_func(k_no_location, link_name.s, typeid_t::make_void(), {}, {});
-		const auto def = function_def_t{ link_name, llvm::cast<llvm::Function>(f), { link_name.s }, def0 };
+		const auto def0 = function_definition_t::make_func(k_no_location, name, typeid_t::make_void(), {}, {});
+		const auto def = function_def_t{ link_name, llvm::cast<llvm::Function>(f), def0 };
 		result.push_back(def);
 	}
 
 	//	deinit()
 	{
-		const auto link_name = encode_runtime_func_link_name("deinit");
+		const auto name = "deinit";
+		const auto link_name = encode_runtime_func_link_name(name);
 		llvm::FunctionType* function_type = llvm::FunctionType::get(
 			llvm::Type::getInt64Ty(context),
 			{
@@ -2378,17 +2380,16 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 			false
 		);
 		auto f = module.getOrInsertFunction(link_name.s, function_type);
-		const auto def0 = function_definition_t::make_func(k_no_location, link_name.s, typeid_t::make_void(), {}, {});
-		const auto def = function_def_t{ link_name, llvm::cast<llvm::Function>(f), { link_name.s }, def0 };
+		const auto def0 = function_definition_t::make_func(k_no_location, name, typeid_t::make_void(), {}, {});
+		const auto def = function_def_t{ link_name, llvm::cast<llvm::Function>(f), def0 };
 		result.push_back(def);
 	}
 
 	//	Make function prototypes for all floyd functions.
 	{
 		for(const auto& function_def: defs){
-			const auto function_id = function_id_t { function_def._definition_name };
 			auto f = generate_function_prototype(module, type_lookup, function_def);
-			const auto def = function_def_t{ link_name_t{ f->getName() }, llvm::cast<llvm::Function>(f), { function_id }, function_def };
+			const auto def = function_def_t{ encode_floyd_func_link_name(function_def._definition_name), llvm::cast<llvm::Function>(f), function_def };
 			result.push_back(def);
 		}
 	}
