@@ -50,9 +50,17 @@ struct command_t {
 	};
 
 	struct run_user_benchmarks_t {
+		enum class mode {
+			run_all,
+			run_specified,
+			list
+		};
+
+		mode mode;
 		std::string source_path;
 		std::vector<std::string> optional_benchmark_keys;
 		ebackend backend;
+		bool trace;
 	};
 
 	struct benchmark_internals_t {

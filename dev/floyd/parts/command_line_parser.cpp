@@ -162,6 +162,8 @@ command_line_args_t parse_command_line_args(const std::vector<std::string>& args
 	return { args[0], "", flags2, extras };
 }
 
+//	The shell actually strips the quotes, not C or C++.
+
 command_line_args_t parse_command_line_args_subcommands(const std::vector<std::string>& args, const std::string& flags){
 	const auto a = parse_command_line_args({ args.begin() + 1, args.end()}, flags);
 	return { args[0], a.command, a.flags, a.extra_arguments };

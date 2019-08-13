@@ -18,6 +18,7 @@
 
 
 std::vector<std::string> args_to_vector(int argc, const char * argv[]);
+std::vector<std::string> split_command_line(const std::string& s);
 
 //	Flags: x: means x supports parameter.
 struct command_line_args_t {
@@ -35,13 +36,21 @@ struct command_line_args_t {
 command_line_args_t parse_command_line_args(const std::vector<std::string>& args, const std::string& flags);
 
 /*
-	git commit -m "Commit message"
+	Example:
+	INPUT: git commit -m "Commit message"
+	RESULT:
 		command: "git"
 		subcommand: "commit"
 		flags
 			m: ""
 		extra_arguments
 			"Commit message"
+
+	flags: specify each flag character to support, like "xit" to support -x, -i, -t.
+	Parser supports merged flags, like -xi
+
+	Does NOT support long flags, like --key. Future: use getopt_long()
+	Supports flags with arguments, like -a:hello
 */
 command_line_args_t parse_command_line_args_subcommands(const std::vector<std::string>& args, const std::string& flags);
 

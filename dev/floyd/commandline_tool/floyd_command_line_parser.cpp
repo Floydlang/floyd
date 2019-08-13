@@ -9,6 +9,7 @@
 #include "floyd_command_line_parser.h"
 
 #include "file_handling.h"
+#include "text_parser.h"
 #include "quark.h"
 
 #include <vector>
@@ -50,7 +51,7 @@ Usage:
 | floyd run_bc mygame.floyd					| compile and run the floyd program "mygame.floyd" using the Floyd byte code interpreter
 | floyd compile mygame.floyd				| compile the floyd program "mygame.floyd" to an AST, in JSON format
 | floyd bench mygame.floyd					| Runs all benchmarks, as defined by benchmark-def statements in Floyd program
-| floyd bench -t --mygame.floyd -			| Runs specified benchmarks, as defined by benchmark-def statements
+| floyd bench -t mygame.floyd -			| Runs specified benchmarks, as defined by benchmark-def statements
 
 | floyd benchmark_internal					| Runs Floyd built in suite of benchmark tests and prints the results
 | floyd runtests							| Runs Floyd built internal unit tests
@@ -59,18 +60,50 @@ return ss.str();
 }
 
 
-
+//	Supports args with spaces if you quote them.
 std::vector<std::string> string_to_args(const std::string& s){
-	std::stringstream ss(s);
-	std::string segment;
-	std::vector<std::string> seglist;
+	const auto start = seq_t(s);
 
-	while(std::getline(ss, segment, ' ')){
-		if(segment != ""){
-			seglist.push_back(segment);
+	std::vector<std::string> result;
+
+	auto pos = start;
+	std::string acc;
+	bool in_quote = false;
+	while(pos.empty() == false){
+		const auto ch = pos.first1();
+		if(ch == "\""){
+			if(in_quote){
+				if(acc.empty() == false){
+					result.push_back(acc);
+					acc = "";
+				}
+				in_quote = false;
+			}
+			else{
+				in_quote = true;
+			}
 		}
+		else if(ch == " "){
+			if(in_quote){
+				acc = acc + ch;
+			}
+			else{
+				if(acc.empty() == false){
+					result.push_back(acc);
+					acc = "";
+				}
+			}
+		}
+		else{
+			acc = acc + ch;
+		}
+		pos = pos.rest();
 	}
-	return seglist;
+	if(acc.empty() == false){
+		result.push_back(acc);
+		acc = "";
+	}
+	return result;
 }
 
 QUARK_UNIT_TEST("", "string_to_args()", "", ""){
@@ -99,10 +132,15 @@ QUARK_UNIT_TEST("", "string_to_args()", "", ""){
 	QUARK_UT_VERIFY(r == (std::vector<std::string>{"one", "two"}));
 }
 
+QUARK_UNIT_TEST("", "string_to_args()", "", ""){
+	const auto r = string_to_args("one \"two 2\" three ");
+	QUARK_UT_VERIFY(r == (std::vector<std::string>{"one", "two 2", "three"}));
+}
+
 
 
 command_t parse_command(const std::vector<std::string>& args){
-	const auto command_line_args = parse_command_line_args_subcommands(args, "t");
+	const auto command_line_args = parse_command_line_args_subcommands(args, "tl");
 	const auto path_parts = SplitPath(command_line_args.command);
 	QUARK_ASSERT(path_parts.fName == "floyd" || path_parts.fName == "floydut");
 	const bool trace_on = command_line_args.flags.find("t") != command_line_args.flags.end() ? true : false;
@@ -146,7 +184,18 @@ command_t parse_command(const std::vector<std::string>& args){
 		const auto source_path = floyd_args[0];
 		const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
 
-		return command_t { command_t::run_user_benchmarks_t { source_path, args2, backend } };
+		const bool list_mode = command_line_args.flags.find("l") != command_line_args.flags.end() ? true : false;
+		if(list_mode){
+			return command_t { command_t::run_user_benchmarks_t { command_t::run_user_benchmarks_t::mode::list, source_path, args2, backend, trace_on } };
+		}
+		else{
+			if(args2.size() == 0){
+				return command_t { command_t::run_user_benchmarks_t { command_t::run_user_benchmarks_t::mode::run_all, source_path, {}, backend, trace_on } };
+			}
+			else{
+				return command_t { command_t::run_user_benchmarks_t { command_t::run_user_benchmarks_t::mode::run_specified, source_path, args2, backend, trace_on } };
+			}
+		}
 	}
 
 
@@ -244,34 +293,46 @@ QUARK_UNIT_TEST("", "parse_command()", "floyd runtests", ""){
 
 
 
-QUARK_UNIT_TEST("", "parse_command()", "floyd bench mygame.floyd", ""){
+QUARK_UNIT_TEST_VIP("", "parse_command()", "floyd bench mygame.floyd", ""){
 	const auto r = parse_command(string_to_args("floyd bench mygame.floyd"));
 	const auto& r2 = std::get<command_t::run_user_benchmarks_t>(r._contents);
+	QUARK_UT_VERIFY(r2.mode == command_t::run_user_benchmarks_t::mode::run_all);
 	QUARK_UT_VERIFY(r2.source_path == "mygame.floyd");
 	QUARK_UT_VERIFY(r2.optional_benchmark_keys == (std::vector<std::string>{}));
 	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_UT_VERIFY(r2.trace == false);
 }
 
-QUARK_UNIT_TEST("", "parse_command()", "floyd bench mygame.floyd quicksort1 merge-sort", ""){
-	const auto r = parse_command(string_to_args("floyd bench mygame.floyd quicksort1 merge-sort"));
+QUARK_UNIT_TEST_VIP("", "parse_command()", "floyd bench -t mygame.floyd quicksort1 merge-sort", ""){
+	const auto r = parse_command(string_to_args("floyd bench -t mygame.floyd quicksort1 \"merge sort\""));
 	const auto& r2 = std::get<command_t::run_user_benchmarks_t>(r._contents);
-	QUARK_UT_VERIFY(r2.source_path == "mygame.floyd");
-	QUARK_UT_VERIFY(r2.optional_benchmark_keys == (std::vector<std::string>{ "quicksort1", "merge-sort" }));
-	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
-}
-
-//	??? Add support for quoted optional_benchmark_keys, like "sort empty".
-#if 0
-QUARK_UNIT_TEST("", "parse_command()", "floyd bench mygame.floyd quicksort1 merge-sort", ""){
-	const auto r = parse_command(string_to_args("floyd bench mygame.floyd quicksort1 \"merge sort\""));
-	const auto& r2 = std::get<command_t::run_user_benchmarks_t>(r._contents);
+	QUARK_UT_VERIFY(r2.mode == command_t::run_user_benchmarks_t::mode::run_specified);
 	QUARK_UT_VERIFY(r2.source_path == "mygame.floyd");
 	QUARK_UT_VERIFY(r2.optional_benchmark_keys == (std::vector<std::string>{ "quicksort1", "merge sort" }));
 	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_UT_VERIFY(r2.trace == true);
 }
-#endif
 
 
+QUARK_UNIT_TEST_VIP("", "parse_command()", "floyd bench -t --list mygame.floyd quicksort1 merge-sort", ""){
+	const auto r = parse_command(string_to_args("floyd bench -tl mygame.floyd"));
+	const auto& r2 = std::get<command_t::run_user_benchmarks_t>(r._contents);
+	QUARK_UT_VERIFY(r2.mode == command_t::run_user_benchmarks_t::mode::list);
+	QUARK_UT_VERIFY(r2.source_path == "mygame.floyd");
+	QUARK_UT_VERIFY(r2.optional_benchmark_keys == (std::vector<std::string>{}));
+	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
+	QUARK_UT_VERIFY(r2.trace == true);
+}
+
+
+
+
+
+
+QUARK_UNIT_TEST("", "parse_command()", "ld -o output /lib/crt0.o hello.o -lc", ""){
+	const auto r = parse_command_line_args_subcommands(string_to_args("ld -o output /lib/crt0.o hello.o -lc"), "olc");
+	QUARK_UT_VERIFY(r.command == "ld");
+}
 
 
 }	// floyd
