@@ -155,13 +155,16 @@ This document assumes the reader knows basic programming concepts like variables
 
 |COMMAND		  	| MEANING
 |:---				|:---	
-| floyd run mygame.floyd		| compile and run the floyd program "mygame.floyd" using native execution
-| floyd run_bc mygame.floyd		| compile and run the floyd program "mygame.floyd" using the Floyd byte code interpreter
-| floyd compile mygame.floyd	| compile the floyd program "mygame.floyd" to an AST, in JSON format
-| floyd help					| Show built in help for command line tool
-| floyd runtests				| Runs Floyds internal unit tests
-| floyd benchmark 				| Runs Floyd built in suite of benchmark tests and prints the results.
-| floyd run -t mygame.floyd		| the -t turns on tracing, which shows Floyd compilation steps and internal states
+| floyd help								| Show built in help for command line tool
+| floyd run mygame.floyd [arg1 arg2]		| compile and run the floyd program "mygame.floyd" using native exection
+| floyd run -t mygame.floyd					| -t turns on tracing, which shows compilation steps
+| floyd run_bc mygame.floyd					| compile and run the floyd program "mygame.floyd" using the Floyd byte code interpreter
+| floyd compile mygame.floyd				| compile the floyd program "mygame.floyd" to an AST, in JSON format
+| floyd bench mygame.floyd					| Runs all benchmarks, as defined by benchmark-def statements in Floyd program
+| floyd bench mygame.floyd rle game_loop	| Runs specified benchmarks "rle" and "game_loop"
+| floyd bench -l mygame.floyd				| Returns list of benchmarks
+| floyd benchmark_internal					| Runs Floyd built in suite of benchmark tests and prints the results
+| floyd runtests							| Runs Floyd built internal unit tests
 
 
 

@@ -208,7 +208,10 @@ static int do_run(const command_t& command, const command_t::compile_and_run_t& 
 	}
 }
 
-static int do_run_user_benchmarks(const command_t& command, const command_t::run_user_benchmarks_t& command2, const std::string& program_source){
+static int do_run_user_benchmarks(const command_t& command, const command_t::run_user_benchmarks_t& command2){
+	g_trace_on = false;
+
+	const auto program_source = read_text_file(command2.source_path);
 	if(command2.backend == ebackend::llvm){
 		run_benchmarks(program_source, command2.source_path, command2.optional_benchmark_keys);
 		return EXIT_SUCCESS;
@@ -321,9 +324,7 @@ static int do_command(const command_t& command){
 		}
 
 		int operator()(const command_t::run_user_benchmarks_t& command2) const{
-			const auto program_source = read_text_file(command2.source_path);
-			g_trace_on = false;
-			return do_run_user_benchmarks(command, command2, program_source);
+			return do_run_user_benchmarks(command, command2);
 		}
 
 

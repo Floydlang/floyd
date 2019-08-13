@@ -42,6 +42,8 @@ std::string get_help(){
 //	 ss << x; ::quark::quark_trace_func(ss, quark::get_trace());}
 
 
+//??? Use -b to run bytecode interpreter
+
 ss << "Floyd Programming Language " << floyd_version_string << " MIT." <<
 R"(
 Usage:
@@ -51,8 +53,8 @@ Usage:
 | floyd run_bc mygame.floyd					| compile and run the floyd program "mygame.floyd" using the Floyd byte code interpreter
 | floyd compile mygame.floyd				| compile the floyd program "mygame.floyd" to an AST, in JSON format
 | floyd bench mygame.floyd					| Runs all benchmarks, as defined by benchmark-def statements in Floyd program
-| floyd bench -t mygame.floyd -			| Runs specified benchmarks, as defined by benchmark-def statements
-
+| floyd bench mygame.floyd rle game_loop	| Runs specified benchmarks "rle" and "game_loop"
+| floyd bench -l mygame.floyd				| Returns list of benchmarks
 | floyd benchmark_internal					| Runs Floyd built in suite of benchmark tests and prints the results
 | floyd runtests							| Runs Floyd built internal unit tests
 )";
@@ -293,7 +295,7 @@ QUARK_UNIT_TEST("", "parse_command()", "floyd runtests", ""){
 
 
 
-QUARK_UNIT_TEST_VIP("", "parse_command()", "floyd bench mygame.floyd", ""){
+QUARK_UNIT_TEST("", "parse_command()", "floyd bench mygame.floyd", ""){
 	const auto r = parse_command(string_to_args("floyd bench mygame.floyd"));
 	const auto& r2 = std::get<command_t::run_user_benchmarks_t>(r._contents);
 	QUARK_UT_VERIFY(r2.mode == command_t::run_user_benchmarks_t::mode::run_all);
@@ -303,7 +305,7 @@ QUARK_UNIT_TEST_VIP("", "parse_command()", "floyd bench mygame.floyd", ""){
 	QUARK_UT_VERIFY(r2.trace == false);
 }
 
-QUARK_UNIT_TEST_VIP("", "parse_command()", "floyd bench -t mygame.floyd quicksort1 merge-sort", ""){
+QUARK_UNIT_TEST("", "parse_command()", "floyd bench -t mygame.floyd quicksort1 merge-sort", ""){
 	const auto r = parse_command(string_to_args("floyd bench -t mygame.floyd quicksort1 \"merge sort\""));
 	const auto& r2 = std::get<command_t::run_user_benchmarks_t>(r._contents);
 	QUARK_UT_VERIFY(r2.mode == command_t::run_user_benchmarks_t::mode::run_specified);
@@ -314,7 +316,7 @@ QUARK_UNIT_TEST_VIP("", "parse_command()", "floyd bench -t mygame.floyd quicksor
 }
 
 
-QUARK_UNIT_TEST_VIP("", "parse_command()", "floyd bench -t --list mygame.floyd quicksort1 merge-sort", ""){
+QUARK_UNIT_TEST("", "parse_command()", "floyd bench -tl mygame.floyd", ""){
 	const auto r = parse_command(string_to_args("floyd bench -tl mygame.floyd"));
 	const auto& r2 = std::get<command_t::run_user_benchmarks_t>(r._contents);
 	QUARK_UT_VERIFY(r2.mode == command_t::run_user_benchmarks_t::mode::list);
