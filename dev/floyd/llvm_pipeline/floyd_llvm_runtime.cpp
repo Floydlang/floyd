@@ -529,7 +529,7 @@ static std::vector<std::pair<link_name_t, void*>> collection_native_func_ptrs(co
 
 
 
-static std::string native_func_ptr_to_link_name(const llvm_execution_engine_t& runtime, void* f){
+static link_name_t native_func_ptr_to_link_name(const llvm_execution_engine_t& runtime, void* f){
 //	const llvm::GlobalValue* gv = runtime.ee->getGlobalValueAtAddress(f);
 
 	const auto function_vec = collection_native_func_ptrs(runtime);
@@ -541,10 +541,10 @@ static std::string native_func_ptr_to_link_name(const llvm_execution_engine_t& r
 		}
 	);
 	if(it != function_vec.end()){
-		return it->first.s;
+		return it->first;
 	}
 	else{
-		return "";
+		return link_name_t { "" };
 	}
 
 
@@ -633,7 +633,7 @@ value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime
 		}
 		value_t operator()(const typeid_t::function_t& e) const{
 			const auto link_name = native_func_ptr_to_link_name(runtime, encoded_value.function_ptr);
-			return value_t::make_function_value(type, function_id_t { link_name });
+			return value_t::make_function_value(type, function_id_t { link_name.s });
 		}
 		value_t operator()(const typeid_t::unresolved_t& e) const{
 			UNSUPPORTED();
@@ -2597,33 +2597,33 @@ void check_nulls(llvm_execution_engine_t& ee2, const llvm_ir_program_t& p){
 }
 #endif
 
-static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+static std::map<link_name_t, void*> register_c_functions(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 
 	////////	Functions to support the runtime
 
 	const auto runtime_functions = get_runtime_functions(context, type_lookup);
-	std::map<std::string, void*> runtime_functions_map;
+	std::map<link_name_t, void*> runtime_functions_map;
 	for(const auto& e: runtime_functions){
-		const auto link_name = encode_runtime_func_link_name(e.name).s;
-		const auto e2 = std::pair<std::string, void*>(link_name, e.implementation_f);
+		const auto link_name = encode_runtime_func_link_name(e.name);
+		const auto e2 = std::pair<link_name_t, void*>(link_name, e.implementation_f);
 		runtime_functions_map.insert(e2);
 	}
 
-	std::map<std::string, void*> function_map = runtime_functions_map;
+	std::map<link_name_t, void*> function_map = runtime_functions_map;
 
 	////////	Core calls
 	const auto corecalls0 = get_corecall_c_function_ptrs();
-	std::map<std::string, void*> corecalls;
+	std::map<link_name_t, void*> corecalls;
 	for(const auto& e: corecalls0){
-		corecalls.insert({ encode_floyd_func_link_name(e.first).s, e.second });
+		corecalls.insert({ encode_floyd_func_link_name(e.first), e.second });
 	}
 	function_map.insert(corecalls.begin(), corecalls.end());
 
 	////////	Corelib
 	const auto corelib_function_map0 = get_corelib_c_function_ptrs();
-	std::map<std::string, void*> corelib_function_map;
+	std::map<link_name_t, void*> corelib_function_map;
 	for(const auto& e: corelib_function_map0){
-		corelib_function_map.insert({ encode_floyd_func_link_name(e.first).s, e.second });
+		corelib_function_map.insert({ encode_floyd_func_link_name(e.first), e.second });
 	}
 	function_map.insert(corelib_function_map.begin(), corelib_function_map.end());
 
@@ -2718,7 +2718,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			QUARK_ASSERT(s[0] == '_');
 			const auto s2 = s.substr(1);
 
-			const auto it = function_map.find(s2);
+			const auto it = function_map.find(link_name_t{ s2 });
 			if(it != function_map.end()){
 				return it->second;
 			}
