@@ -2351,7 +2351,7 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 
 	//	floyd_runtime_init()
 	{
-		const std::string name = "floyd_runtime_init";
+		const std::string name = make_runtime_func_link_name("init").name;
 		llvm::FunctionType* function_type = llvm::FunctionType::get(
 			llvm::Type::getInt64Ty(context),
 			{
@@ -2367,7 +2367,7 @@ static std::vector<function_def_t> make_all_function_prototypes(llvm::Module& mo
 
 	//	floyd_runtime_deinit()
 	{
-		const std::string name = "floyd_runtime_deinit";
+		const std::string name = make_runtime_func_link_name("deinit").name;
 		llvm::FunctionType* function_type = llvm::FunctionType::get(
 			llvm::Type::getInt64Ty(context),
 			{
@@ -2404,7 +2404,7 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const bo
 	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
-	const auto def = find_function_def_from_link_name(gen_acc, "floyd_runtime_init");
+	const auto def = find_function_def_from_link_name(gen_acc, make_runtime_func_link_name("init").name);
 	llvm::Function* f = def.llvm_f;
 	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(context, "entry", f);
 	llvm::BasicBlock* destructBB = llvm::BasicBlock::Create(context, "destruct", f);
@@ -2445,7 +2445,7 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 	auto& context = gen_acc.instance->context;
 	auto& builder = gen_acc.builder;
 
-	const auto def = find_function_def_from_link_name(gen_acc, "floyd_runtime_deinit");
+	const auto def = find_function_def_from_link_name(gen_acc, make_runtime_func_link_name("deinit").name);
 	llvm::Function* f = def.llvm_f;
 	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(context, "entry", f);
 
@@ -2500,7 +2500,7 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> gen
 
 		//	Global variables.
 		{
-			const auto def = find_function_def_from_link_name(gen_acc, "floyd_runtime_init");
+			const auto def = find_function_def_from_link_name(gen_acc, make_runtime_func_link_name("init").name);
 			llvm::Function* f = def.llvm_f;
 
 			std::vector<resolved_symbol_t> globals = generate_globals_from_ast(

@@ -1300,8 +1300,11 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 }
 
 
+
+
+
+
 static const std::string k_floyd_func_link_prefix = "floydf_";
-static const std::string k_runtime_func_link_prefix = "floydrt_";
 
 
 //	"hello" => "floyd_f_hello"
@@ -1316,6 +1319,9 @@ std::string unpack_floyd_func_link_name(const link_name_t& name){
 }
 
 
+
+static const std::string k_runtime_func_link_prefix = "floydrt_";
+
 //	"hello" => "floyd_rt_hello"
 link_name_t make_runtime_func_link_name(const std::string& name){
 	return link_name_t { k_runtime_func_link_prefix + name };
@@ -1327,8 +1333,6 @@ std::string unpack_runtime_func_link_name(const link_name_t& name){
 	QUARK_ASSERT(left == k_runtime_func_link_prefix);
 	return right;
 }
-
-
 
 
 
