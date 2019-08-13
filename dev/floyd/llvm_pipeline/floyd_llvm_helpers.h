@@ -574,13 +574,13 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 
 
 //	"hello" => "floydf_hello"
-link_name_t make_floyd_func_link_name(const std::string& name);
-std::string unpack_floyd_func_link_name(const link_name_t& name);
+link_name_t encode_floyd_func_link_name(const std::string& name);
+std::string decode_floyd_func_link_name(const link_name_t& name);
 
 
 //	"hello" => "floydrt_hello"
-link_name_t make_runtime_func_link_name(const std::string& name);
-std::string unpack_runtime_func_link_name(const link_name_t& name);
+link_name_t encode_runtime_func_link_name(const std::string& name);
+std::string decode_runtime_func_link_name(const link_name_t& name);
 
 
 }	//	floyd

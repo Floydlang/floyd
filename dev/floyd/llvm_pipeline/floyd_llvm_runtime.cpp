@@ -67,7 +67,7 @@ runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t
 
 
 const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const std::string& link_name){
-	auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.link_name.name == link_name; } );
+	auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.link_name.s == link_name; } );
 	QUARK_ASSERT(it != function_defs.end());
 
 	QUARK_ASSERT(it->llvm_codegen_f != nullptr);
@@ -108,7 +108,7 @@ std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std:
 
 	const auto f = reinterpret_cast<FLOYD_RUNTIME_F*>(get_global_function(ee, name));
 	if(f != nullptr){
-		const auto def = find_function_def_from_link_name(ee.function_defs, make_floyd_func_link_name(name).name);
+		const auto def = find_function_def_from_link_name(ee.function_defs, encode_floyd_func_link_name(name).s);
 		const auto function_type = def.floyd_fundef._function_type;
 		return { f, function_type };
 	}
@@ -512,8 +512,8 @@ runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t
 static std::vector<std::pair<std::string, void*>> collection_native_func_ptrs(const llvm_execution_engine_t& runtime){
 	std::vector<std::pair<std::string, void*>> result;
 	for(const auto& e: runtime.function_defs){
-		auto f = get_global_function(runtime, e.link_name.name);
-		result.push_back({ e.link_name.name, f });
+		auto f = get_global_function(runtime, e.link_name.s);
+		result.push_back({ e.link_name.s, f });
 	}
 
 	if(k_trace_messaging){
@@ -2553,7 +2553,7 @@ std::map<std::string, void*> get_corecall_c_function_ptrs(){
 uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee){
 	QUARK_ASSERT(ee.check_invariant());
 
-	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, make_runtime_func_link_name("init").name));
+	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, encode_runtime_func_link_name("init").s));
 	QUARK_ASSERT(a_func != nullptr);
 
 	int64_t a_result = (*a_func)(reinterpret_cast<floyd_runtime_t*>(&ee));
@@ -2564,7 +2564,7 @@ uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee){
 uint64_t call_floyd_runtime_deinit(llvm_execution_engine_t& ee){
 	QUARK_ASSERT(ee.check_invariant());
 
-	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, make_runtime_func_link_name("deinit").name));
+	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, encode_runtime_func_link_name("deinit").s));
 	QUARK_ASSERT(a_func != nullptr);
 
 	int64_t a_result = (*a_func)(reinterpret_cast<floyd_runtime_t*>(&ee));
@@ -2604,7 +2604,7 @@ static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& cont
 	const auto runtime_functions = get_runtime_functions(context, type_lookup);
 	std::map<std::string, void*> runtime_functions_map;
 	for(const auto& e: runtime_functions){
-		const auto link_name = make_runtime_func_link_name(e.name).name;
+		const auto link_name = encode_runtime_func_link_name(e.name).s;
 		const auto e2 = std::pair<std::string, void*>(link_name, e.implementation_f);
 		runtime_functions_map.insert(e2);
 	}
@@ -2615,7 +2615,7 @@ static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& cont
 	const auto corecalls0 = get_corecall_c_function_ptrs();
 	std::map<std::string, void*> corecalls;
 	for(const auto& e: corecalls0){
-		corecalls.insert({ make_floyd_func_link_name(e.first).name, e.second });
+		corecalls.insert({ encode_floyd_func_link_name(e.first).s, e.second });
 	}
 	function_map.insert(corecalls.begin(), corecalls.end());
 
@@ -2623,7 +2623,7 @@ static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& cont
 	const auto corelib_function_map0 = get_corelib_c_function_ptrs();
 	std::map<std::string, void*> corelib_function_map;
 	for(const auto& e: corelib_function_map0){
-		corelib_function_map.insert({ make_floyd_func_link_name(e.first).name, e.second });
+		corelib_function_map.insert({ encode_floyd_func_link_name(e.first).s, e.second });
 	}
 	function_map.insert(corelib_function_map.begin(), corelib_function_map.end());
 
@@ -3068,7 +3068,7 @@ void run_benchmarks(const std::string& program_source, const std::string& file, 
 		const auto f_link_name = s->_member_values[1].get_function_value().name;
 
 
-		const auto f_link_name2 = unpack_floyd_func_link_name(link_name_t{ f_link_name });
+		const auto f_link_name2 = decode_floyd_func_link_name(link_name_t{ f_link_name });
 		const auto prefix = std::string("benchmark__");
 		const auto left = f_link_name2.substr(0, prefix.size());
 		const auto right = f_link_name2.substr(prefix.size(), std::string::npos);

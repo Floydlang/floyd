@@ -66,17 +66,17 @@ std::string make_value_debug_str(const value_t& v);
 
 
 struct link_name_t {
-	std::string name;
+	std::string s;
 };
 
 inline bool operator==(const link_name_t& lhs, const link_name_t& rhs){
-	return lhs.name == rhs.name;
+	return lhs.s == rhs.s;
 }
 inline bool operator!=(const link_name_t& lhs, const link_name_t& rhs){
-	return lhs.name != rhs.name;
+	return lhs.s != rhs.s;
 }
 inline bool operator<(const link_name_t& lhs, const link_name_t& rhs){
-	return lhs.name < rhs.name;
+	return lhs.s < rhs.s;
 }
 
 const link_name_t k_no_link_name = link_name_t { "" };
