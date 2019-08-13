@@ -208,16 +208,258 @@ static int do_run(const command_t& command, const command_t::compile_and_run_t& 
 	}
 }
 
-static int do_run_user_benchmarks(const command_t& command, const command_t::run_user_benchmarks_t& command2){
+
+
+
+
+
+struct line_t {
+	std::vector<std::string> columns;
+};
+
+std::string gen_line(const line_t& line, const std::vector<size_t>& widths, const std::vector<int>& align, int pad_char){
+	std::string acc = "|";
+	for(int c = 0 ; c < line.columns.size() ; c++){
+		const auto s = line.columns[c];
+		const auto wanted_width = widths[c] + 1;
+
+		const auto pad_count = wanted_width - size(s);
+		const auto pad_string = std::string(pad_count, (char)pad_char);
+
+		const auto s2 = align[c] == 0 ? s : (align[c] < 0 ? s + pad_string : pad_string + s);
+
+		acc = acc + s2 + "|";
+	}
+	return acc;
+}
+
+
+line_t table_f(benchmark_result2_t r, int c){
+	const auto columns = std::vector<std::string>{
+		r.test_id.module,
+		r.test_id.test,
+		std::to_string(r.result.dur) + " ns",
+		json_to_pretty_string(r.result.more)
+	};
+	return line_t{ columns };
+}
+
+std::vector<size_t> calc_width_f(const std::vector<size_t>& acc, const line_t& line, int c){
+	return std::vector<size_t>{
+		std::max(acc[0], line.columns[0].size()),
+		std::max(acc[1], line.columns[1].size()),
+		std::max(acc[2], line.columns[2].size()),
+		std::max(acc[3], line.columns[3].size())
+	};
+}
+
+std::vector<std::string> make_benchmark_report(const std::vector<benchmark_result2_t>& test_results, const std::vector<int>& align){
+	const auto headings = line_t{{ "MODULE", "TEST", "DUR", "" }};
+
+
+	std::vector<line_t> table;
+	for(const auto& e: test_results){
+		table.push_back(table_f(e, 0));
+	}
+
+
+	std::vector<size_t> widths = calc_width_f({ 0, 0, 0, 0 }, headings, 0);
+	for(const auto& e: table){
+		widths = calc_width_f(widths, e, 0);
+	}
+
+	std::vector<std::string> report = {
+		gen_line(headings, widths, { -1, -1, -1, -1 }, ' '),
+		gen_line(line_t{{ "", "", "", "" }}, widths, { -1, -1, -1, -1 }, '-')
+	};
+
+	for(int i = 0 ; i < table.size() ; i++){
+		const auto& line = table[i];
+		const auto& line2 = gen_line(line, widths, align, ' ');
+		report.push_back(line2);
+	}
+	return report;
+}
+
+
+
+
+
+
+
+static std::string do_user_benchmarks_run_all(const std::string& program_source, const std::string& source_path){
+	const auto b = collect_benchmarks(program_source, source_path);
+	const auto b2 = mapf<std::string>(b, [](const bench_t& e){ return e.benchmark_id.test; });
+	std::vector<benchmark_result2_t> results = run_benchmarks(program_source, source_path, b2);
+
+
+
+	const auto report_strs = make_benchmark_report(results, { -1 , -1 , -1, -1 });
+	std::stringstream ss;
+	for(const auto& e: report_strs){
+		ss << e << std::endl;
+	}
+
+/*
+	for(const auto& e: report_strs){
+		ss << "| " << e.test_id.test << "\t| " << e.result.dur << "\t| " << json_to_compact_string(e.result.more) << "|" << std::endl;
+	}
+*/
+	return ss.str();
+}
+
+QUARK_UNIT_TEST_VIP("", "do_user_benchmarks_run_all()", "", ""){
+	g_trace_on = true;
+	const auto program_source =
+	R"(
+
+		benchmark-def "abc" {
+			return [ benchmark_result_t(200, json("0 elements")) ]
+		}
+
+		benchmark-def "def" {
+			return [
+				benchmark_result_t(1, json("first")),
+				benchmark_result_t(2, json("second")),
+				benchmark_result_t(3, json("third"))
+			]
+		}
+
+		benchmark-def "g" {
+			return [ benchmark_result_t(300, json("bytes/s")) ]
+		}
+
+	)";
+
+	const auto result = do_user_benchmarks_run_all(program_source, "");
+	std::cout << result;
+
+	std::stringstream expected;
+//	expected << "Benchmarks registry:" << std::endl;
+
+//	ut_verify(QUARK_POS, result, expected.str());
+
+/*
+	QUARK_UT_VERIFY(result.size() == 5);
+	QUARK_UT_VERIFY(result[0] == (benchmark_result2_t { benchmark_id_t{ "", "abc" }, benchmark_result_t { 200, json_t("0 elements") } }));
+	QUARK_UT_VERIFY(result[1] == (benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 1, json_t("first") } }));
+	QUARK_UT_VERIFY(result[2] == (benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 2, json_t("second") } }));
+	QUARK_UT_VERIFY(result[3] == (benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 3, json_t("third") } }));
+	QUARK_UT_VERIFY(result[4] == (benchmark_result2_t { benchmark_id_t{ "", "g" }, benchmark_result_t { 300, json_t("bytes/s") } }));
+*/
+
+}
+
+
+
+static std::string do_user_benchmarks_run_specified(const std::string& program_source, const std::string& source_path, const std::vector<std::string>& tests){
+	const auto b = collect_benchmarks(program_source, source_path);
+	const auto c = filter_benchmarks(b, tests);
+	const auto b2 = mapf<std::string>(c, [](const bench_t& e){ return e.benchmark_id.test; });
+	run_benchmarks(program_source, source_path, b2);
+	return EXIT_SUCCESS;
+}
+
+/*
+QUARK_UNIT_TEST("", "do_user_benchmarks_run_specified()", "", ""){
+	g_trace_on = true;
+	const auto program_source =
+	R"(
+
+		benchmark-def "abc" {
+			return [ benchmark_result_t(200, json("0 elements")) ]
+		}
+
+		benchmark-def "def" {
+			return [
+				benchmark_result_t(1, json("first")),
+				benchmark_result_t(2, json("second")),
+				benchmark_result_t(3, json("third"))
+			]
+		}
+
+		benchmark-def "g" {
+			return [ benchmark_result_t(300, json("bytes/s")) ]
+		}
+
+	)";
+
+	const auto result = do_user_benchmarks_run_specified(program_source, "", { "abc", "def", "g" });
+
+	QUARK_UT_VERIFY(result.size() == 5);
+	QUARK_UT_VERIFY(result[0] == (benchmark_result2_t { benchmark_id_t{ "", "abc" }, benchmark_result_t { 200, json_t("0 elements") } }));
+	QUARK_UT_VERIFY(result[1] == (benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 1, json_t("first") } }));
+	QUARK_UT_VERIFY(result[2] == (benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 2, json_t("second") } }));
+	QUARK_UT_VERIFY(result[3] == (benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 3, json_t("third") } }));
+	QUARK_UT_VERIFY(result[4] == (benchmark_result2_t { benchmark_id_t{ "", "g" }, benchmark_result_t { 300, json_t("bytes/s") } }));
+}
+*/
+
+
+static std::string do_user_benchmarks_list(const std::string& program_source, const std::string& source_path){
+	const auto b = collect_benchmarks(program_source, source_path);
+
+	std::stringstream ss;
+
+	ss << "Benchmarks registry:" << std::endl;
+	for(const auto& e: b){
+		ss << e.benchmark_id.test << std::endl;
+	}
+	return ss.str();
+}
+
+QUARK_UNIT_TEST("", "do_user_benchmarks_list()", "", ""){
+	g_trace_on = true;
+	const auto program_source =
+	R"(
+
+		benchmark-def "abc" {
+			return [ benchmark_result_t(200, json("0 elements")) ]
+		}
+
+		benchmark-def "def" {
+			return [ benchmark_result_t(200, json("0 elements")) ]
+		}
+
+		benchmark-def "g" {
+			return [ benchmark_result_t(300, json("bytes/s")) ]
+		}
+
+	)";
+
+	const auto result = do_user_benchmarks_list(program_source, "module1");
+	std::cout << result;
+//	ut_verify(QUARK_POS, result, "\"\": \"abc\"\n\"\": \"def\"\n\"\": \"g\"\n");
+	ut_verify(QUARK_POS, result, "Benchmarks registry:\n" "abc\n" "def\n" "g\n");
+}
+
+
+static int do_user_benchmarks(const command_t& command, const command_t::user_benchmarks_t& command2){
 	g_trace_on = false;
 
+	if(command2.backend != ebackend::llvm){
+		throw std::runtime_error("");
+	}
+
 	const auto program_source = read_text_file(command2.source_path);
-	if(command2.backend == ebackend::llvm){
-		run_benchmarks(program_source, command2.source_path, command2.optional_benchmark_keys);
+
+	if(command2.mode == command_t::user_benchmarks_t::mode::run_all){
+		const auto s = do_user_benchmarks_run_all(program_source, command2.source_path);
+		std::cout << s;
+		return EXIT_SUCCESS;
+	}
+	else if(command2.mode == command_t::user_benchmarks_t::mode::run_specified){
+		const auto s = do_user_benchmarks_run_specified(program_source, command2.source_path, command2.optional_benchmark_keys);
+		std::cout << s;
+		return EXIT_SUCCESS;
+	}
+	else if(command2.mode == command_t::user_benchmarks_t::mode::list){
+		const auto s = do_user_benchmarks_list(program_source, command2.source_path);
+		std::cout << s;
 		return EXIT_SUCCESS;
 	}
 	else{
-		throw std::runtime_error("");
+		QUARK_ASSERT(false);
 	}
 }
 
@@ -323,8 +565,8 @@ static int do_command(const command_t& command){
 			return do_compile_command(command, command2);
 		}
 
-		int operator()(const command_t::run_user_benchmarks_t& command2) const{
-			return do_run_user_benchmarks(command, command2);
+		int operator()(const command_t::user_benchmarks_t& command2) const{
+			return do_user_benchmarks(command, command2);
 		}
 
 

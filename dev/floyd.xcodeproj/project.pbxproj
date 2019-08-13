@@ -36,6 +36,7 @@
 		2C4574D622493DA2008A55B0 /* compiler_helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4574D322493DA2008A55B0 /* compiler_helpers.cpp */; };
 		2C486C7E22EE4F8B00E44B3B /* collect_used_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C486C7C22EE4F8B00E44B3B /* collect_used_types.cpp */; };
 		2C486C7F22EE4F8B00E44B3B /* collect_used_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C486C7C22EE4F8B00E44B3B /* collect_used_types.cpp */; };
+		2C4DA09223035A0100190C37 /* format_table.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4DA09023035A0100190C37 /* format_table.cpp */; };
 		2C4F355F1D4794CD0061CA93 /* ast_value.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C4F355D1D4794CD0061CA93 /* ast_value.cpp */; };
 		2C530C3021EDF23F00F962FB /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C530C2E21EA1DBE00F962FB /* CoreFoundation.framework */; };
 		2C530C3121EE0D0300F962FB /* libncurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CBF330C202143BD0030AE98 /* libncurses.tbd */; };
@@ -211,6 +212,8 @@
 		2C4574D422493DA2008A55B0 /* compiler_helpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = compiler_helpers.h; sourceTree = "<group>"; };
 		2C486C7C22EE4F8B00E44B3B /* collect_used_types.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = collect_used_types.cpp; sourceTree = "<group>"; };
 		2C486C7D22EE4F8B00E44B3B /* collect_used_types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = collect_used_types.h; sourceTree = "<group>"; };
+		2C4DA09023035A0100190C37 /* format_table.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = format_table.cpp; sourceTree = "<group>"; };
+		2C4DA09123035A0100190C37 /* format_table.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = format_table.h; sourceTree = "<group>"; };
 		2C4F355D1D4794CD0061CA93 /* ast_value.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ast_value.cpp; sourceTree = "<group>"; };
 		2C4F355E1D4794CD0061CA93 /* ast_value.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ast_value.h; sourceTree = "<group>"; };
 		2C530C2E21EA1DBE00F962FB /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
@@ -1379,6 +1382,8 @@
 				2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */,
 				2CC34CBF21EF8882000F3CB6 /* floyd_repl.cpp */,
 				2CC34CC021EF8882000F3CB6 /* floyd_repl.h */,
+				2C4DA09023035A0100190C37 /* format_table.cpp */,
+				2C4DA09123035A0100190C37 /* format_table.h */,
 			);
 			path = commandline_tool;
 			sourceTree = "<group>";
@@ -1579,6 +1584,7 @@
 				2CB30736214A9B35007D2732 /* process_test1.floyd in Sources */,
 				2C8C03A52221D95F0085EBBE /* sysinfo.cc in Sources */,
 				2C18048E208B947C00F62480 /* ast.cpp in Sources */,
+				2C4DA09223035A0100190C37 /* format_table.cpp in Sources */,
 				2C6CDA9522FD92FD008F65C7 /* floyd_command_line_parser.cpp in Sources */,
 				2C180477208B939800F62480 /* parse_expression.cpp in Sources */,
 				2C8C03A72221D95F0085EBBE /* benchmark_api_internal.cc in Sources */,

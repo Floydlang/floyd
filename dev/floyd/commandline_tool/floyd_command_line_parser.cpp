@@ -188,14 +188,14 @@ command_t parse_command(const std::vector<std::string>& args){
 
 		const bool list_mode = command_line_args.flags.find("l") != command_line_args.flags.end() ? true : false;
 		if(list_mode){
-			return command_t { command_t::run_user_benchmarks_t { command_t::run_user_benchmarks_t::mode::list, source_path, args2, backend, trace_on } };
+			return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::list, source_path, args2, backend, trace_on } };
 		}
 		else{
 			if(args2.size() == 0){
-				return command_t { command_t::run_user_benchmarks_t { command_t::run_user_benchmarks_t::mode::run_all, source_path, {}, backend, trace_on } };
+				return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::run_all, source_path, {}, backend, trace_on } };
 			}
 			else{
-				return command_t { command_t::run_user_benchmarks_t { command_t::run_user_benchmarks_t::mode::run_specified, source_path, args2, backend, trace_on } };
+				return command_t { command_t::user_benchmarks_t { command_t::user_benchmarks_t::mode::run_specified, source_path, args2, backend, trace_on } };
 			}
 		}
 	}
@@ -297,8 +297,8 @@ QUARK_UNIT_TEST("", "parse_command()", "floyd runtests", ""){
 
 QUARK_UNIT_TEST("", "parse_command()", "floyd bench mygame.floyd", ""){
 	const auto r = parse_command(string_to_args("floyd bench mygame.floyd"));
-	const auto& r2 = std::get<command_t::run_user_benchmarks_t>(r._contents);
-	QUARK_UT_VERIFY(r2.mode == command_t::run_user_benchmarks_t::mode::run_all);
+	const auto& r2 = std::get<command_t::user_benchmarks_t>(r._contents);
+	QUARK_UT_VERIFY(r2.mode == command_t::user_benchmarks_t::mode::run_all);
 	QUARK_UT_VERIFY(r2.source_path == "mygame.floyd");
 	QUARK_UT_VERIFY(r2.optional_benchmark_keys == (std::vector<std::string>{}));
 	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
@@ -307,8 +307,8 @@ QUARK_UNIT_TEST("", "parse_command()", "floyd bench mygame.floyd", ""){
 
 QUARK_UNIT_TEST("", "parse_command()", "floyd bench -t mygame.floyd quicksort1 merge-sort", ""){
 	const auto r = parse_command(string_to_args("floyd bench -t mygame.floyd quicksort1 \"merge sort\""));
-	const auto& r2 = std::get<command_t::run_user_benchmarks_t>(r._contents);
-	QUARK_UT_VERIFY(r2.mode == command_t::run_user_benchmarks_t::mode::run_specified);
+	const auto& r2 = std::get<command_t::user_benchmarks_t>(r._contents);
+	QUARK_UT_VERIFY(r2.mode == command_t::user_benchmarks_t::mode::run_specified);
 	QUARK_UT_VERIFY(r2.source_path == "mygame.floyd");
 	QUARK_UT_VERIFY(r2.optional_benchmark_keys == (std::vector<std::string>{ "quicksort1", "merge sort" }));
 	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);
@@ -318,8 +318,8 @@ QUARK_UNIT_TEST("", "parse_command()", "floyd bench -t mygame.floyd quicksort1 m
 
 QUARK_UNIT_TEST("", "parse_command()", "floyd bench -tl mygame.floyd", ""){
 	const auto r = parse_command(string_to_args("floyd bench -tl mygame.floyd"));
-	const auto& r2 = std::get<command_t::run_user_benchmarks_t>(r._contents);
-	QUARK_UT_VERIFY(r2.mode == command_t::run_user_benchmarks_t::mode::list);
+	const auto& r2 = std::get<command_t::user_benchmarks_t>(r._contents);
+	QUARK_UT_VERIFY(r2.mode == command_t::user_benchmarks_t::mode::list);
 	QUARK_UT_VERIFY(r2.source_path == "mygame.floyd");
 	QUARK_UT_VERIFY(r2.optional_benchmark_keys == (std::vector<std::string>{}));
 	QUARK_UT_VERIFY(r2.backend == ebackend::llvm);

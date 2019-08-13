@@ -202,6 +202,7 @@ inline bool operator==(const bench_t& lhs, const bench_t& rhs){ return lhs.bench
 
 std::vector<bench_t> collect_benchmarks(const llvm_execution_engine_t& ee);
 std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, const std::vector<bench_t>& tests);
+std::vector<bench_t> filter_benchmarks(const std::vector<bench_t>& b, const std::vector<std::string>& run_tests);
 
 
 

@@ -49,7 +49,7 @@ struct command_t {
 		bool trace;
 	};
 
-	struct run_user_benchmarks_t {
+	struct user_benchmarks_t {
 		enum class mode {
 			run_all,
 			run_specified,
@@ -79,7 +79,7 @@ struct command_t {
 
 		compile_and_run_t,
 		compile_to_ast_t,
-		run_user_benchmarks_t,
+		user_benchmarks_t,
 
 		benchmark_internals_t,
 		runtests_internals_t
