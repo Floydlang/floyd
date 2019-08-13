@@ -223,7 +223,7 @@ static llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_
 static const function_def_t& find_function_def_from_link_name(llvm_code_generator_t& gen_acc, const link_name_t& link_name){
 	QUARK_ASSERT(gen_acc.check_invariant());
 
-	return find_function_def_from_link_name(gen_acc.function_defs, link_name.s);
+	return find_function_def_from_link_name(gen_acc.function_defs, link_name);
 }
 
 static const function_def_t& find_runtime_func_from_name(llvm_code_generator_t& gen_acc, const std::string& name){
