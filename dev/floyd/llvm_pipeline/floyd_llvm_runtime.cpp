@@ -102,7 +102,7 @@ static void* get_global_function(const llvm_execution_engine_t& ee, const link_n
 }
 
 
-std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const link_name_t& name){
+static std::pair<void*, typeid_t> bind_function0(llvm_execution_engine_t& ee, const link_name_t& name){
 	QUARK_ASSERT(ee.check_invariant());
 	QUARK_ASSERT(name.s.empty() == false);
 
@@ -163,20 +163,20 @@ void store_via_ptr(llvm_execution_engine_t& runtime, const typeid_t& member_type
 
 
 llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name){
-	std::pair<void*, typeid_t> a = bind_function(ee, name);
+	std::pair<void*, typeid_t> a = bind_function0(ee, name);
 	return llvm_bind_t {
-		name.s,
+		name,
 		a.first,
 		a.second
 	};
 }
 
-int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f, const std::vector<std::string>& main_args){
-	QUARK_ASSERT(f.first != nullptr);
+int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const std::vector<std::string>& main_args){
+	QUARK_ASSERT(f.address != nullptr);
 
 	//??? Check this earlier.
-	if(f.second == get_main_signature_arg_impure() || f.second == get_main_signature_arg_pure()){
-		const auto f2 = reinterpret_cast<FLOYD_RUNTIME_MAIN_ARGS_IMPURE>(f.first);
+	if(f.type == get_main_signature_arg_impure() || f.type == get_main_signature_arg_pure()){
+		const auto f2 = reinterpret_cast<FLOYD_RUNTIME_MAIN_ARGS_IMPURE>(f.address);
 
 		//??? Slow path via value_t
 		std::vector<value_t> main_args2;
@@ -189,8 +189,8 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typei
 		release_deep(ee, main_args4, typeid_t::make_vector(typeid_t::make_string()));
 		return main_result_int;
 	}
-	else if(f.second == get_main_signature_no_arg_impure() || f.second == get_main_signature_no_arg_pure()){
-		const auto f2 = reinterpret_cast<FLOYD_RUNTIME_MAIN_NO_ARGS_IMPURE>(f.first);
+	else if(f.type == get_main_signature_no_arg_impure() || f.type == get_main_signature_no_arg_pure()){
+		const auto f2 = reinterpret_cast<FLOYD_RUNTIME_MAIN_NO_ARGS_IMPURE>(f.address);
 		const auto main_result_int = (*f2)(reinterpret_cast<floyd_runtime_t*>(&ee));
 		return main_result_int;
 	}
@@ -2675,7 +2675,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 			nullptr,
 			start_time,
 			{},
-			{ nullptr, typeid_t::make_undefined() },
+			llvm_bind_t{ link_name_t {}, nullptr, typeid_t::make_undefined() },
 			false
 		}
 	);
@@ -2742,7 +2742,7 @@ std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program
 	}
 #endif
 
-	ee->main_function = bind_function(*ee, encode_floyd_func_link_name("main"));
+	ee->main_function = bind_function2(*ee, encode_floyd_func_link_name("main"));
 
 	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(*ee, encode_runtime_func_link_name("init")));
 	QUARK_ASSERT(a_func != nullptr);
@@ -2988,7 +2988,7 @@ static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee)
 
 
 run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::string>& main_args){
-	if(ee.main_function.first != nullptr){
+	if(ee.main_function.address != nullptr){
 		const auto main_result_int = llvm_call_main(ee, ee.main_function, main_args);
 		return { main_result_int, {} };
 	}
@@ -3055,10 +3055,10 @@ void run_benchmarks(const std::string& program_source, const std::string& file, 
 
 		const auto it = std::find(tests.begin(), tests.end(), right);
 		if(it != tests.end()){
-			const std::pair<void*, typeid_t> f_bind = bind_function(*ee, encode_floyd_func_link_name(f_link_name));
+			const auto f_bind = bind_function2(*ee, encode_floyd_func_link_name(f_link_name));
 
 			typedef runtime_value_t (*benchmark_f)();
-			auto f2 = reinterpret_cast<benchmark_f>(f_bind.first);
+			auto f2 = reinterpret_cast<benchmark_f>(f_bind.address);
 			const auto bench_result = f2();
 
 			const auto result2 = from_runtime_value(*ee, bench_result, typeid_t::make_vector(make_benchmark_result_t()));

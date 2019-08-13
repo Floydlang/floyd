@@ -44,6 +44,14 @@ struct function_bind_t {
 };
 
 
+////////////////////////////////		llvm_bind_t
+
+struct llvm_bind_t {
+	link_name_t link_name;
+	void* address;
+	typeid_t type;
+};
+
 
 ////////////////////////////////		function_def_t
 
@@ -92,7 +100,7 @@ struct llvm_execution_engine_t {
 	public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
 	public: heap_t heap;
 
-	std::pair<void*, typeid_t> main_function;
+	llvm_bind_t main_function;
 	bool inited;
 };
 
@@ -100,8 +108,6 @@ struct llvm_execution_engine_t {
 typedef int64_t (*FLOYD_RUNTIME_INIT)(floyd_runtime_t* frp);
 typedef int64_t (*FLOYD_RUNTIME_DEINIT)(floyd_runtime_t* frp);
 typedef void (*FLOYD_RUNTIME_HOST_FUNCTION)(floyd_runtime_t* frp, int64_t arg);
-
-
 
 
 //	func int main([string] args) impure
@@ -117,8 +123,6 @@ typedef int64_t (*FLOYD_RUNTIME_MAIN_ARGS_PURE)(floyd_runtime_t* frp, runtime_va
 typedef int64_t (*FLOYD_RUNTIME_MAIN_NO_ARGS_PURE)(floyd_runtime_t* frp);
 
 
-
-
 //		func my_gui_state_t my_gui__init() impure { }
 typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_INIT)(floyd_runtime_t* frp);
 
@@ -126,18 +130,11 @@ typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_INIT)(floyd_runtime_t* frp);
 typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_MESSAGE)(floyd_runtime_t* frp, runtime_value_t state, runtime_value_t message);
 
 
-
-
-typedef runtime_value_t (*FLOYD_RUNTIME_F)(floyd_runtime_t* frp, const char* args);
-
-
 const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const link_name_t& link_name);
 
 //	Cast to uint64_t* or other the required type, then access via it.
 void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name);
 
-
-std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const link_name_t& name);
 
 std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name);
 value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v);
@@ -154,20 +151,14 @@ runtime_value_t to_runtime_string(llvm_execution_engine_t& r, const std::string&
 
 
 
-struct llvm_bind_t {
-	std::string name;
-	void* address;
-	typeid_t type;
-};
 
 llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name);
 
 
 //	These are the support function built into the runtime, like RC primitives.
 std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup);
-std::map<std::string, void*> get_c_function_ptrs();
 
-int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f, const std::vector<std::string>& main_args);
+int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const std::vector<std::string>& main_args);
 
 
 
