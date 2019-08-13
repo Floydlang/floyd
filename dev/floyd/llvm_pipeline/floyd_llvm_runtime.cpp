@@ -162,24 +162,14 @@ void store_via_ptr(llvm_execution_engine_t& runtime, const typeid_t& member_type
 
 
 
-llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const std::string& name){
-	std::pair<void*, typeid_t> a = bind_function(ee, encode_floyd_func_link_name(name));
+llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name){
+	std::pair<void*, typeid_t> a = bind_function(ee, name);
 	return llvm_bind_t {
-		name,
+		name.s,
 		a.first,
 		a.second
 	};
 }
-
-/*
-value_t call_function(llvm_execution_engine_t& ee, llvm_bind_t& f){
-	//value_t call_function(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f);
-
-	const auto result = call_function(ee, std::pair<void*, typeid_t>(f.address, f.type));
-	return result;
-}
-*/
-
 
 int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& f, const std::vector<std::string>& main_args){
 	QUARK_ASSERT(f.first != nullptr);
@@ -2972,8 +2962,8 @@ static std::map<std::string, value_t> run_processes(llvm_execution_engine_t& ee)
 			process->_function_key = t.second;
 	//		process->_interpreter = std::make_shared<interpreter_t>(program, &my_interpreter_handler);
 
-			process->_init_function = std::make_shared<llvm_bind_t>(bind_function2(*runtime.ee, t.second + "__init"));
-			process->_process_function = std::make_shared<llvm_bind_t>(bind_function2(*runtime.ee, t.second));
+			process->_init_function = std::make_shared<llvm_bind_t>(bind_function2(*runtime.ee, encode_floyd_func_link_name(t.second + "__init")));
+			process->_process_function = std::make_shared<llvm_bind_t>(bind_function2(*runtime.ee, encode_floyd_func_link_name(t.second)));
 
 			runtime._processes.push_back(process);
 		}

@@ -160,7 +160,7 @@ struct llvm_bind_t {
 	typeid_t type;
 };
 
-llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const std::string& name);
+llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name);
 
 
 //	These are the support function built into the runtime, like RC primitives.
