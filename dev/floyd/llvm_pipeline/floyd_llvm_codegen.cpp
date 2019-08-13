@@ -503,7 +503,7 @@ static llvm::Value* generate_constant(llvm_code_generator_t& gen_acc, llvm::Func
 		llvm::Value* operator()(const typeid_t::function_t& e2) const{
 			const auto function_id = value.get_function_value();
 			for(const auto& e: gen_acc.function_defs){
-				if(e.source_name == function_id){
+				if(e.floyd_fundef._definition_name == function_id.name){
 					return e.llvm_codegen_f;
 				}
 			}
