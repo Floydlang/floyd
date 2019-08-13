@@ -23,9 +23,6 @@ namespace floyd {
 
 
 
-llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp);
-
-
 
 struct native_binary_t {
 	VEC_T* ascii40;

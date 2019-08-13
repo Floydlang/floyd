@@ -68,7 +68,9 @@ struct function_def_t {
 };
 
 
+
 ////////////////////////////////		llvm_execution_engine_t
+
 
 
 //https://en.wikipedia.org/wiki/Hexspeak
@@ -105,8 +107,14 @@ struct llvm_execution_engine_t {
 };
 
 
+
+////////////////////////////////		FUNCTION POINTERS
+
+
 typedef int64_t (*FLOYD_RUNTIME_INIT)(floyd_runtime_t* frp);
 typedef int64_t (*FLOYD_RUNTIME_DEINIT)(floyd_runtime_t* frp);
+
+//??? remove
 typedef void (*FLOYD_RUNTIME_HOST_FUNCTION)(floyd_runtime_t* frp, int64_t arg);
 
 
@@ -130,15 +138,23 @@ typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_INIT)(floyd_runtime_t* frp);
 typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_MESSAGE)(floyd_runtime_t* frp, runtime_value_t state, runtime_value_t message);
 
 
+
+////////////////////////////////		ENGINE GLOBALS
+
+
+
 const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const link_name_t& link_name);
-
-//	Cast to uint64_t* or other the required type, then access via it.
-void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name);
-
 
 std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name);
 value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v);
 
+llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name);
+
+
+llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp);
+
+
+////////////////////////////////		VALUES
 
 
 
@@ -149,10 +165,8 @@ std::string from_runtime_string(const llvm_execution_engine_t& r, runtime_value_
 runtime_value_t to_runtime_string(llvm_execution_engine_t& r, const std::string& s);
 
 
+////////////////////////////////		HIGH LEVEL
 
-
-
-llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name);
 
 
 //	These are the support function built into the runtime, like RC primitives.

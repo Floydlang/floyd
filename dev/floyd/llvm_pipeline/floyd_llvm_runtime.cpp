@@ -53,16 +53,15 @@ namespace floyd {
 static const bool k_trace_messaging = false;
 
 
+static void release_dict_deep(llvm_execution_engine_t& runtime, DICT_T* dict, const typeid_t& type);
+static void release_vec_deep(llvm_execution_engine_t& runtime, VEC_T* vec, const typeid_t& type);
+static void release_struct_deep(llvm_execution_engine_t& runtime, STRUCT_T* s, const typeid_t& type);
 static void retain_value(llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type);
 static void release_deep(llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type);
 
 
 
 
-llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp);
-
-value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type);
-runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t& value);
 
 
 
@@ -85,7 +84,7 @@ static void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint
 
 
 
-void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name){
+static void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name){
 	QUARK_ASSERT(ee.check_invariant());
 	QUARK_ASSERT(name.empty() == false);
 
@@ -93,7 +92,7 @@ void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name){
 	return  (void*)addr;
 }
 
-static void* get_global_function(const llvm_execution_engine_t& ee, const link_name_t& name){
+static void* get_function_ptr(const llvm_execution_engine_t& ee, const link_name_t& name){
 	QUARK_ASSERT(ee.check_invariant());
 	QUARK_ASSERT(name.s.empty() == false);
 
@@ -101,21 +100,6 @@ static void* get_global_function(const llvm_execution_engine_t& ee, const link_n
 	return (void*)addr;
 }
 
-
-static std::pair<void*, typeid_t> bind_function0(llvm_execution_engine_t& ee, const link_name_t& name){
-	QUARK_ASSERT(ee.check_invariant());
-	QUARK_ASSERT(name.s.empty() == false);
-
-	const auto f = get_global_function(ee, name);
-	if(f != nullptr){
-		const auto def = find_function_def_from_link_name(ee.function_defs, name);
-		const auto function_type = def.floyd_fundef._function_type;
-		return { f, function_type };
-	}
-	else{
-		return { nullptr, typeid_t::make_undefined() };
-	}
-}
 
 std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name){
 	QUARK_ASSERT(ee.check_invariant());
@@ -133,7 +117,7 @@ std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::s
 	}
 }
 
-value_t load_via_ptr(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type){
+static value_t load_via_ptr(const llvm_execution_engine_t& runtime, const void* value_ptr, const typeid_t& type){
 	QUARK_ASSERT(runtime.check_invariant());
 	QUARK_ASSERT(value_ptr != nullptr);
 	QUARK_ASSERT(type.check_invariant());
@@ -150,7 +134,7 @@ value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t
 	return load_via_ptr(ee, v.first, v.second);
 }
 
-void store_via_ptr(llvm_execution_engine_t& runtime, const typeid_t& member_type, void* value_ptr, const value_t& value){
+static void store_via_ptr(llvm_execution_engine_t& runtime, const typeid_t& member_type, void* value_ptr, const value_t& value){
 	QUARK_ASSERT(runtime.check_invariant());
 	QUARK_ASSERT(member_type.check_invariant());
 	QUARK_ASSERT(value_ptr != nullptr);
@@ -161,14 +145,27 @@ void store_via_ptr(llvm_execution_engine_t& runtime, const typeid_t& member_type
 }
 
 
-
 llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name){
-	std::pair<void*, typeid_t> a = bind_function0(ee, name);
-	return llvm_bind_t {
-		name,
-		a.first,
-		a.second
-	};
+	QUARK_ASSERT(ee.check_invariant());
+	QUARK_ASSERT(name.s.empty() == false);
+
+	const auto f = get_function_ptr(ee, name);
+	if(f != nullptr){
+		const auto def = find_function_def_from_link_name(ee.function_defs, name);
+		const auto function_type = def.floyd_fundef._function_type;
+		return llvm_bind_t {
+			name,
+			f,
+			function_type
+		};
+	}
+	else{
+		return llvm_bind_t {
+			name,
+			nullptr,
+			typeid_t::make_undefined()
+		};
+	}
 }
 
 int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const std::vector<std::string>& main_args){
@@ -200,8 +197,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 }
 
 
-//	TO RUNTIME_VALUE_T AND BACK
-///////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////		VALUES
 
 
 
@@ -214,7 +210,7 @@ static uint64_t get_vec_string_size(runtime_value_t str){
 
 
 
-runtime_value_t to_runtime_string0(heap_t& heap, const std::string& s){
+static runtime_value_t to_runtime_string0(heap_t& heap, const std::string& s){
 	QUARK_ASSERT(heap.check_invariant());
 
 	const auto count = static_cast<uint64_t>(s.size());
@@ -264,7 +260,7 @@ runtime_value_t to_runtime_string(llvm_execution_engine_t& r, const std::string&
 
 
 
-std::string from_runtime_string0(runtime_value_t encoded_value){
+static std::string from_runtime_string0(runtime_value_t encoded_value){
 	QUARK_ASSERT(encoded_value.vector_ptr != nullptr);
 
 	const size_t size = get_vec_string_size(encoded_value);
@@ -305,7 +301,7 @@ std::string from_runtime_string(const llvm_execution_engine_t& r, runtime_value_
 
 
 
-runtime_value_t to_runtime_struct(llvm_execution_engine_t& runtime, const typeid_t::struct_t& exact_type, const value_t& value){
+static runtime_value_t to_runtime_struct(llvm_execution_engine_t& runtime, const typeid_t::struct_t& exact_type, const value_t& value){
 	QUARK_ASSERT(runtime.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
@@ -330,7 +326,7 @@ runtime_value_t to_runtime_struct(llvm_execution_engine_t& runtime, const typeid
 	return make_runtime_struct(s);
 }
 
-value_t from_runtime_struct(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
+static value_t from_runtime_struct(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto& struct_def = type.get_struct();
@@ -353,7 +349,7 @@ value_t from_runtime_struct(const llvm_execution_engine_t& runtime, const runtim
 }
 
 
-runtime_value_t to_runtime_vector(llvm_execution_engine_t& r, const value_t& value){
+static runtime_value_t to_runtime_vector(llvm_execution_engine_t& r, const value_t& value){
 	QUARK_ASSERT(r.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value.get_type().is_vector());
@@ -375,7 +371,7 @@ runtime_value_t to_runtime_vector(llvm_execution_engine_t& r, const value_t& val
 	return result;
 }
 
-value_t from_runtime_vector(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
+static value_t from_runtime_vector(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
 	QUARK_ASSERT(runtime.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -394,7 +390,7 @@ value_t from_runtime_vector(const llvm_execution_engine_t& runtime, const runtim
 	return val;
 }
 
-runtime_value_t to_runtime_dict(llvm_execution_engine_t& r, const typeid_t::dict_t& exact_type, const value_t& value){
+static runtime_value_t to_runtime_dict(llvm_execution_engine_t& r, const typeid_t::dict_t& exact_type, const value_t& value){
 	QUARK_ASSERT(r.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value.get_type().is_dict());
@@ -415,7 +411,7 @@ runtime_value_t to_runtime_dict(llvm_execution_engine_t& r, const typeid_t::dict
 	return result;
 }
 
-value_t from_runtime_dict(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
+static value_t from_runtime_dict(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
 	QUARK_ASSERT(runtime.check_invariant());
 	QUARK_ASSERT(encoded_value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -498,11 +494,11 @@ runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t
 	return std::visit(visitor_t{ runtime, value }, type._contents);
 }
 
-
+//??? Do this onces and store in llvm_execution_engine_t.
 static std::vector<std::pair<link_name_t, void*>> collection_native_func_ptrs(const llvm_execution_engine_t& runtime){
 	std::vector<std::pair<link_name_t, void*>> result;
 	for(const auto& e: runtime.function_defs){
-		auto f = get_global_function(runtime, e.link_name);
+		auto f = get_function_ptr(runtime, e.link_name);
 		result.push_back({ e.link_name, f });
 	}
 
@@ -660,15 +656,16 @@ llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp){
 	return *ptr;
 }
 
-void hook(const std::string& s, floyd_runtime_t* frp, runtime_value_t arg){
-	auto& r = get_floyd_runtime(frp);
-	(void)r;
-	quark::throw_runtime_error("HOST FUNCTION NOT IMPLEMENTED FOR LLVM");
-}
 
 
 
-std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value_t arg_value, runtime_type_t arg_type){
+
+
+
+
+
+
+static std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value_t arg_value, runtime_type_t arg_type){
 	QUARK_ASSERT(runtime.check_invariant());
 
 	const auto type = lookup_type(runtime.type_lookup, arg_type);
@@ -676,8 +673,6 @@ std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value_t arg_
 	const auto a = to_compact_string2(value);
 	return a;
 }
-
-
 
 
 
@@ -703,11 +698,6 @@ static void retain_value(llvm_execution_engine_t& runtime, runtime_value_t value
 		}
 	}
 }
-
-
-static void release_dict_deep(llvm_execution_engine_t& runtime, DICT_T* dict, const typeid_t& type);
-static void release_vec_deep(llvm_execution_engine_t& runtime, VEC_T* vec, const typeid_t& type);
-static void release_struct_deep(llvm_execution_engine_t& runtime, STRUCT_T* s, const typeid_t& type);
 
 static void release_deep(llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type){
 	if(is_rc_value(type)){
@@ -817,7 +807,7 @@ static void release_struct_deep(llvm_execution_engine_t& runtime, STRUCT_T* s, c
 ////////////////////////////////		floydrt_retain_vec()
 
 
-void floydrt_retain_vec(floyd_runtime_t* frp, VEC_T* vec, runtime_type_t type0){
+static void floydrt_retain_vec(floyd_runtime_t* frp, VEC_T* vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	QUARK_ASSERT(vec != nullptr);
@@ -1108,7 +1098,7 @@ function_bind_t floydrt_alloc_kstr__make(llvm::LLVMContext& context, const llvm_
 ////////////////////////////////		floydrt_concatunate_vectors()
 
 
-VEC_T* floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime_type_t type, VEC_T* lhs, VEC_T* rhs){
+static VEC_T* floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime_type_t type, VEC_T* lhs, VEC_T* rhs){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(lhs != nullptr);
 	QUARK_ASSERT(lhs->check_invariant());
@@ -2615,7 +2605,7 @@ llvm_execution_engine_t::~llvm_execution_engine_t(){
 	QUARK_ASSERT(check_invariant());
 
 	if(inited){
-		auto f = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(*this, encode_runtime_func_link_name("deinit")));
+		auto f = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_function_ptr(*this, encode_runtime_func_link_name("deinit")));
 		QUARK_ASSERT(f != nullptr);
 
 		int64_t result = (*f)(reinterpret_cast<floyd_runtime_t*>(this));
@@ -2744,7 +2734,7 @@ std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program
 
 	ee->main_function = bind_function2(*ee, encode_floyd_func_link_name("main"));
 
-	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(*ee, encode_runtime_func_link_name("init")));
+	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_function_ptr(*ee, encode_runtime_func_link_name("init")));
 	QUARK_ASSERT(a_func != nullptr);
 
 	int64_t init_result = (*a_func)(reinterpret_cast<floyd_runtime_t*>(ee.get()));
