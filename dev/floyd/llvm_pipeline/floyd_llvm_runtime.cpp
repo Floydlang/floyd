@@ -102,15 +102,13 @@ static void* get_global_function(const llvm_execution_engine_t& ee, const link_n
 }
 
 
-std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std::string& name){
+std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const link_name_t& name){
 	QUARK_ASSERT(ee.check_invariant());
-	QUARK_ASSERT(name.empty() == false);
+	QUARK_ASSERT(name.s.empty() == false);
 
-	const auto link_name = encode_floyd_func_link_name(name);
-
-	const auto f = reinterpret_cast<FLOYD_RUNTIME_F*>(get_global_function(ee, link_name));
+	const auto f = get_global_function(ee, name);
 	if(f != nullptr){
-		const auto def = find_function_def_from_link_name(ee.function_defs, link_name);
+		const auto def = find_function_def_from_link_name(ee.function_defs, name);
 		const auto function_type = def.floyd_fundef._function_type;
 		return { f, function_type };
 	}
@@ -165,7 +163,7 @@ void store_via_ptr(llvm_execution_engine_t& runtime, const typeid_t& member_type
 
 
 llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const std::string& name){
-	std::pair<void*, typeid_t> a = bind_function(ee, name);
+	std::pair<void*, typeid_t> a = bind_function(ee, encode_floyd_func_link_name(name));
 	return llvm_bind_t {
 		name,
 		a.first,
@@ -188,7 +186,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typei
 
 	//??? Check this earlier.
 	if(f.second == get_main_signature_arg_impure() || f.second == get_main_signature_arg_pure()){
-		const auto f2 = *reinterpret_cast<FLOYD_RUNTIME_MAIN_ARGS_IMPURE*>(f.first);
+		const auto f2 = reinterpret_cast<FLOYD_RUNTIME_MAIN_ARGS_IMPURE>(f.first);
 
 		//??? Slow path via value_t
 		std::vector<value_t> main_args2;
@@ -2771,7 +2769,7 @@ std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program
 	}
 #endif
 
-	ee->main_function = bind_function(*ee, "main");
+	ee->main_function = bind_function(*ee, encode_floyd_func_link_name("main"));
 
 	const auto init_result = call_floyd_runtime_init(*ee);
 	QUARK_ASSERT(init_result == 667);
@@ -2876,7 +2874,7 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 			quark::throw_runtime_error("Invalid function prototype for process-init");
 		}
 
-		auto f = *reinterpret_cast<FLOYD_RUNTIME_PROCESS_INIT*>(process._init_function->address);
+		auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_INIT>(process._init_function->address);
 		const auto result = (*f)(reinterpret_cast<floyd_runtime_t*>(runtime.ee));
 		process._process_state = from_runtime_value(*runtime.ee, result, process._init_function->type.get_function_return());
 	}
@@ -2921,7 +2919,7 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 					quark::throw_runtime_error("Invalid function prototype for process message handler");
 				}
 
-				auto f = *reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE*>(process._process_function->address);
+				auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE>(process._process_function->address);
 				const auto state2 = to_runtime_value(*runtime.ee, process._process_state);
 				const auto message2 = to_runtime_value(*runtime.ee, value_t::make_json(message));
 				const auto result = (*f)(reinterpret_cast<floyd_runtime_t*>(runtime.ee), state2, message2);
@@ -3078,7 +3076,7 @@ void run_benchmarks(const std::string& program_source, const std::string& file, 
 
 		const auto it = std::find(tests.begin(), tests.end(), right);
 		if(it != tests.end()){
-			const std::pair<void*, typeid_t> f_bind = bind_function(*ee, f_link_name);
+			const std::pair<void*, typeid_t> f_bind = bind_function(*ee, encode_floyd_func_link_name(f_link_name));
 
 			typedef runtime_value_t (*benchmark_f)();
 			auto f2 = reinterpret_cast<benchmark_f>(f_bind.first);
