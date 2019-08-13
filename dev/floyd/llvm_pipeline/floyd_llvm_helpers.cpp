@@ -1329,12 +1329,23 @@ std::string unpack_runtime_func_link_name(const link_name_t& name){
 }
 
 
+
+
+
+static const std::string k_linkname_prefix = "floyd_funcdef__";
+
 std::string generate_link_name(const std::string& name){
 	QUARK_ASSERT(name.empty() == false);
 
-	return std::string("floyd_funcdef__") + name;
+	return k_linkname_prefix + name;
 }
 
+std::string unpack_link_name(const link_name_t& name){
+	const auto left = name.name.substr(0, k_linkname_prefix.size());
+	const auto right = name.name.substr(k_linkname_prefix.size(), std::string::npos);
+	QUARK_ASSERT(left == k_linkname_prefix);
+	return right;
+}
 
 }	//	floyd
 

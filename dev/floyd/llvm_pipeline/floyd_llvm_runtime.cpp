@@ -2621,7 +2621,7 @@ static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& cont
 	const auto corecalls0 = get_corecall_c_function_ptrs();
 	std::map<std::string, void*> corecalls;
 	for(const auto& e: corecalls0){
-		corecalls.insert({ std::string("floyd_funcdef__") + e.first, e.second });
+		corecalls.insert({ generate_link_name(e.first), e.second });
 	}
 	function_map.insert(corecalls.begin(), corecalls.end());
 
@@ -2629,7 +2629,7 @@ static std::map<std::string, void*> register_c_functions(llvm::LLVMContext& cont
 	const auto corelib_function_map0 = get_corelib_c_function_ptrs();
 	std::map<std::string, void*> corelib_function_map;
 	for(const auto& e: corelib_function_map0){
-		corelib_function_map.insert({ std::string("floyd_funcdef__") + e.first, e.second });
+		corelib_function_map.insert({ generate_link_name(e.first), e.second });
 	}
 	function_map.insert(corelib_function_map.begin(), corelib_function_map.end());
 
@@ -3073,9 +3073,11 @@ void run_benchmarks(const std::string& program_source, const std::string& file, 
 		const auto name = s->_member_values[0].get_string_value();
 		const auto f_link_name = s->_member_values[1].get_function_value().name;
 
-		const auto prefix = std::string("floyd_funcdef__benchmark__");
-		const auto left = f_link_name.substr(0, prefix.size());
-		const auto right = f_link_name.substr(prefix.size(), std::string::npos);
+
+		const auto f_link_name2 = unpack_link_name(link_name_t{ f_link_name });
+		const auto prefix = std::string("benchmark__");
+		const auto left = f_link_name2.substr(0, prefix.size());
+		const auto right = f_link_name2.substr(prefix.size(), std::string::npos);
 		QUARK_ASSERT(left == prefix);
 
 		const auto it = std::find(tests.begin(), tests.end(), right);
