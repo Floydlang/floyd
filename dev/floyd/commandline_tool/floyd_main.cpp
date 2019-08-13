@@ -11,6 +11,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <set>
 
 #include "floyd_interpreter.h"
 #include "floyd_parser.h"
@@ -209,34 +210,117 @@ static int do_run(const command_t& command, const command_t::compile_and_run_t& 
 	}
 }
 
+//	Only does this at top level, not for member strings.
+std::string json_to_pretty_string_no_quotes(const json_t& j){
+	if(j.is_string()){
+		return j.get_string();
+	}
+	else{
+		return json_to_pretty_string(j);
+	}
+}
 
 
+std::vector<std::string> make_benchmark_report(const std::vector<benchmark_result2_t>& test_results){
+	const auto fixed_headings = std::vector<std::string>{ "MODULE", "TEST", "DUR" };
 
-std::vector<std::string> make_benchmark_report(const std::vector<benchmark_result2_t>& test_results, const std::vector<int>& align){
-	const auto headings = line_t{{ "MODULE", "TEST", "DUR", "" }, ' '};
+	const int fixed_column_count = (int)fixed_headings.size();
+
+	std::set<std::string> meta_columns;
+	for(const auto& e: test_results){
+		if(e.result.more.is_object()){
+			for(const auto& m: e.result.more.get_object()){
+				meta_columns.insert(m.first);
+			}
+		}
+		else if(e.result.more.is_null() == false){
+				meta_columns.insert("");
+		}
+		else{
+		}
+	}
+	const std::vector<std::string> meta_columns2(meta_columns.begin(), meta_columns.end());
+	const int column_count = fixed_column_count + (int)meta_columns.size();
+
+
+	std::vector<std::string> uppercase_meta_titles;
+	for(const auto& e: meta_columns2){
+		auto s = e;
+		std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+		uppercase_meta_titles.push_back(s);
+	}
+
+	const auto headings = line_t{ concat(fixed_headings, uppercase_meta_titles), ' '};
 
 	std::vector<line_t> table;
 	for(const auto& e: test_results){
 		const auto columns = std::vector<std::string>{
 			e.test_id.module,
 			e.test_id.test,
-			std::to_string(e.result.dur) + " ns",
-			json_to_pretty_string(e.result.more)
+			std::to_string(e.result.dur) + " ns"
 		};
-		table.push_back(line_t{ columns, ' ' });
+
+		const auto& more = e.result.more;
+
+		std::vector<std::string> meta;
+		for(const auto& m: meta_columns2){
+			if(m == ""){
+				if(more.is_object()){
+					meta.push_back("");
+				}
+				else{
+					meta.push_back(json_to_pretty_string_no_quotes(more));
+				}
+			}
+			else {
+				if(more.is_object() && more.does_object_element_exist(m)){
+					meta.push_back(json_to_pretty_string_no_quotes(more.get_object_element(m)));
+				}
+				else if(e.result.more.is_null() == false){
+					meta.push_back("");
+				}
+				else{
+					meta.push_back("");
+				}
+			}
+		}
+
+		table.push_back(line_t{ concat(columns, meta), ' ' });
 	}
 
-	const auto columns0 = fit_column(std::vector<column_t>{ { 0, 0, 1 }, { 0, 0, 1 }, { 0, 0, 1 }, { 0, 0, 1 } }, headings);
+	const auto default_column = column_t{ 0, 0, 1 };
+	const auto start_columns = concat(
+		std::vector<column_t>{ default_column, default_column, { 0, 1, 0 } },
+		std::vector<column_t>(column_count - fixed_column_count, default_column)
+	);
+	const auto columns0 = fit_column(start_columns, headings);
 	const auto columns = fit_columns(columns0, table);
 
 	std::vector<line_t> header_rows = {
 		headings,
-		line_t{{ "", "", "", "" }, '-' }
+		line_t{ std::vector<std::string>(column_count, ""), '-' }
 	};
 	return generate_table(concat(header_rows, table), columns);
 }
 
 
+QUARK_UNIT_TEST_VIP("", "make_benchmark_report()", "", ""){
+	const auto test = std::vector<benchmark_result2_t> {
+		benchmark_result2_t { benchmark_id_t{ "", "g" }, benchmark_result_t { 2, json_t::make_object({ { "rate", "===========" }, { "wind", 14 } } ) } },
+		benchmark_result2_t { benchmark_id_t{ "", "abc" }, benchmark_result_t { 2000, json_t("0 elements") } },
+		benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 1, json_t("third") } },
+		benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 2, json_t::make_object({ { "rate", 20 }, { "wind", 12 } } ) } },
+		benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 3, json_t("third") } },
+		benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 3, json_t::make_array( { "ett", "fyra" }) } },
+		benchmark_result2_t { benchmark_id_t{ "", "g" }, benchmark_result_t { 2, json_t::make_object({ { "rate", 21 }, { "wind", 13 } } ) } },
+		benchmark_result2_t { benchmark_id_t{ "", "g" }, benchmark_result_t { 300, json_t("bytes/s") } }
+	};
+
+	const auto result = make_benchmark_report(test);
+	for(const auto& e: result){
+		std::cout << e << std::endl;
+	}
+}
 
 
 
@@ -247,9 +331,7 @@ static std::string do_user_benchmarks_run_all(const std::string& program_source,
 	const auto b2 = mapf<std::string>(b, [](const bench_t& e){ return e.benchmark_id.test; });
 	std::vector<benchmark_result2_t> results = run_benchmarks(program_source, source_path, b2);
 
-
-
-	const auto report_strs = make_benchmark_report(results, { -1 , -1 , -1, -1 });
+	const auto report_strs = make_benchmark_report(results);
 	std::stringstream ss;
 	for(const auto& e: report_strs){
 		ss << e << std::endl;
@@ -263,7 +345,7 @@ static std::string do_user_benchmarks_run_all(const std::string& program_source,
 	return ss.str();
 }
 
-QUARK_UNIT_TEST_VIP("", "do_user_benchmarks_run_all()", "", ""){
+QUARK_UNIT_TEST("", "do_user_benchmarks_run_all()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
