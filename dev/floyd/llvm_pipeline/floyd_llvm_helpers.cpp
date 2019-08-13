@@ -1336,7 +1336,7 @@ std::string unpack_runtime_func_link_name(const link_name_t& name){
 
 
 
-static const std::string k_linkname_prefix = "floyd_funcdef__";
+static const std::string k_linkname_prefix = "floydf_";
 
 std::string generate_link_name(const std::string& name){
 	QUARK_ASSERT(name.empty() == false);
