@@ -146,8 +146,8 @@ typedef runtime_value_t (*FLOYD_BENCHMARK_F)(floyd_runtime_t* frp);
 
 const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const link_name_t& link_name);
 
-std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name);
-value_t load_global(llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v);
+std::pair<void*, typeid_t> bind_global(const llvm_execution_engine_t& ee, const std::string& name);
+value_t load_global(const llvm_execution_engine_t& ee, const std::pair<void*, typeid_t>& v);
 
 llvm_bind_t bind_function2(llvm_execution_engine_t& ee, const link_name_t& name);
 
@@ -190,6 +190,20 @@ std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instanc
 
 //	Compiles and runs the program. Returns results.
 run_output_t run_program_helper(const std::string& program_source, const std::string& file, const std::vector<std::string>& main_args);
+
+
+struct bench_t {
+	benchmark_id_t benchmark_id;
+	link_name_t f;
+};
+std::vector<bench_t> collect_benchmarks(const llvm_execution_engine_t& ee, const std::string& file);
+std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, const std::string& file, const std::vector<std::string>& tests);
+
+
+
+
+////////////////////////////////		HELPERS
+
 
 
 std::vector<benchmark_id_t> collect_benchmarks(const std::string& program_source, const std::string& file);
