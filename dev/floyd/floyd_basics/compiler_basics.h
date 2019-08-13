@@ -64,6 +64,9 @@ struct benchmark_result_t {
 	int64_t dur;
 	json_t more;
 };
+inline bool operator==(const benchmark_result_t& lhs, const benchmark_result_t& rhs){
+	return lhs.dur == rhs.dur && lhs.more == rhs.more;
+}
 
 inline typeid_t make_benchmark_result_t(){
 	const auto x = typeid_t::make_struct2( {
@@ -84,6 +87,7 @@ inline typeid_t make_benchmark_def_t(){
 	} );
 	return x;
 }
+
 
 const std::string k_global_benchmark_registry = "benchmark_registry";
 

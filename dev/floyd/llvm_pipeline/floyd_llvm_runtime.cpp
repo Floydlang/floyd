@@ -63,6 +63,33 @@ static void release_deep(llvm_execution_engine_t& runtime, runtime_value_t value
 
 
 
+/*
+@variable = global i32 21
+define i32 @main() {
+%1 = load i32, i32* @variable ; load the global variable
+%2 = mul i32 %1, 2
+store i32 %2, i32* @variable ; store instruction to write to global variable
+ret i32 %2
+}
+*/
+
+llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp){
+	QUARK_ASSERT(frp != nullptr);
+
+	auto ptr = reinterpret_cast<llvm_execution_engine_t*>(frp);
+	QUARK_ASSERT(ptr != nullptr);
+	QUARK_ASSERT(ptr->debug_magic == k_debug_magic);
+	QUARK_ASSERT(ptr->check_invariant());
+	return *ptr;
+}
+
+static floyd_runtime_t* make_runtime_ptr(llvm_execution_engine_t* ee){
+	return reinterpret_cast<floyd_runtime_t*>(ee);
+}
+
+
+
+
 
 
 const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const link_name_t& link_name){
@@ -182,13 +209,13 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 		}
 		const auto main_args3 = value_t::make_vector_value(typeid_t::make_string(), main_args2);
 		const auto main_args4 = to_runtime_value(ee, main_args3);
-		const auto main_result_int = (*f2)(reinterpret_cast<floyd_runtime_t*>(&ee), main_args4);
+		const auto main_result_int = (*f2)(make_runtime_ptr(&ee), main_args4);
 		release_deep(ee, main_args4, typeid_t::make_vector(typeid_t::make_string()));
 		return main_result_int;
 	}
 	else if(f.type == get_main_signature_no_arg_impure() || f.type == get_main_signature_no_arg_pure()){
 		const auto f2 = reinterpret_cast<FLOYD_RUNTIME_MAIN_NO_ARGS_IMPURE>(f.address);
-		const auto main_result_int = (*f2)(reinterpret_cast<floyd_runtime_t*>(&ee));
+		const auto main_result_int = (*f2)(make_runtime_ptr(&ee));
 		return main_result_int;
 	}
 	else{
@@ -632,29 +659,6 @@ value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime
 
 
 ////////////////////////////////	HELPERS FOR RUNTIME CALLBACKS
-
-
-
-
-/*
-@variable = global i32 21
-define i32 @main() {
-%1 = load i32, i32* @variable ; load the global variable
-%2 = mul i32 %1, 2
-store i32 %2, i32* @variable ; store instruction to write to global variable
-ret i32 %2
-}
-*/
-
-llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp){
-	QUARK_ASSERT(frp != nullptr);
-
-	auto ptr = reinterpret_cast<llvm_execution_engine_t*>(frp);
-	QUARK_ASSERT(ptr != nullptr);
-	QUARK_ASSERT(ptr->debug_magic == k_debug_magic);
-	QUARK_ASSERT(ptr->check_invariant());
-	return *ptr;
-}
 
 
 
@@ -2608,7 +2612,7 @@ llvm_execution_engine_t::~llvm_execution_engine_t(){
 		auto f = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_function_ptr(*this, encode_runtime_func_link_name("deinit")));
 		QUARK_ASSERT(f != nullptr);
 
-		int64_t result = (*f)(reinterpret_cast<floyd_runtime_t*>(this));
+		int64_t result = (*f)(make_runtime_ptr(this));
 		QUARK_ASSERT(result == 668);
 		inited = false;
 	};
@@ -2737,7 +2741,7 @@ std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program
 	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_function_ptr(*ee, encode_runtime_func_link_name("init")));
 	QUARK_ASSERT(a_func != nullptr);
 
-	int64_t init_result = (*a_func)(reinterpret_cast<floyd_runtime_t*>(ee.get()));
+	int64_t init_result = (*a_func)(make_runtime_ptr(ee.get()));
 	QUARK_ASSERT(init_result == 667);
 
 
@@ -2844,7 +2848,7 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 		}
 
 		auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_INIT>(process._init_function->address);
-		const auto result = (*f)(reinterpret_cast<floyd_runtime_t*>(runtime.ee));
+		const auto result = (*f)(make_runtime_ptr(runtime.ee));
 		process._process_state = from_runtime_value(*runtime.ee, result, process._init_function->type.get_function_return());
 	}
 
@@ -2891,7 +2895,7 @@ static void run_process(llvm_process_runtime_t& runtime, int process_id){
 				auto f = reinterpret_cast<FLOYD_RUNTIME_PROCESS_MESSAGE>(process._process_function->address);
 				const auto state2 = to_runtime_value(*runtime.ee, process._process_state);
 				const auto message2 = to_runtime_value(*runtime.ee, value_t::make_json(message));
-				const auto result = (*f)(reinterpret_cast<floyd_runtime_t*>(runtime.ee), state2, message2);
+				const auto result = (*f)(make_runtime_ptr(runtime.ee), state2, message2);
 				process._process_state = from_runtime_value(*runtime.ee, result, process._process_function->type.get_function_return());
 			}
 		}
@@ -3017,7 +3021,7 @@ run_output_t run_program_helper(const std::string& program_source, const std::st
 }
 
 
-void run_benchmarks(const std::string& program_source, const std::string& file, const std::vector<std::string>& tests){
+std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_source, const std::string& file, const std::vector<std::string>& tests){
 	const auto cu = floyd::make_compilation_unit_nolib(program_source, file);
 	const auto sem_ast = compile_to_sematic_ast__errors(cu);
 
@@ -3031,37 +3035,53 @@ void run_benchmarks(const std::string& program_source, const std::string& file, 
 
 	const value_t reg = load_global(*ee, benchmark_registry_bind);
 	const auto v = reg.get_vector_value();
+
+	std::vector<benchmark_result2_t> result;
 	for(const auto& e: v){
 		const auto s = e.get_struct_value();
 		const auto name = s->_member_values[0].get_string_value();
-		const auto f_link_name = s->_member_values[1].get_function_value().name;
+		const auto f_link_name_str = s->_member_values[1].get_function_value().name;
 
+		const auto f_link_name = link_name_t{ f_link_name_str };
+		const auto name2 = decode_floyd_func_link_name(f_link_name);
 
-		const auto f_link_name2 = decode_floyd_func_link_name(link_name_t{ f_link_name });
 		const auto prefix = std::string("benchmark__");
-		const auto left = f_link_name2.substr(0, prefix.size());
-		const auto right = f_link_name2.substr(prefix.size(), std::string::npos);
+		const auto left = name2.substr(0, prefix.size());
+		const auto benchmark_name = name2.substr(prefix.size(), std::string::npos);
 		QUARK_ASSERT(left == prefix);
 
-		const auto it = std::find(tests.begin(), tests.end(), right);
+		const auto it = std::find(tests.begin(), tests.end(), benchmark_name);
 		if(it != tests.end()){
-			const auto f_bind = bind_function2(*ee, encode_floyd_func_link_name(f_link_name));
-
-			typedef runtime_value_t (*benchmark_f)();
-			auto f2 = reinterpret_cast<benchmark_f>(f_bind.address);
-			const auto bench_result = f2();
-
+			const auto f_bind = bind_function2(*ee, f_link_name);
+			QUARK_ASSERT(f_bind.address != nullptr);
+			auto f2 = reinterpret_cast<FLOYD_BENCHMARK_F>(f_bind.address);
+			const auto bench_result = (*f2)(make_runtime_ptr(ee.get()));
 			const auto result2 = from_runtime_value(*ee, bench_result, typeid_t::make_vector(make_benchmark_result_t()));
-			
 
 			QUARK_TRACE(value_and_type_to_string(result2));
 
+
+
+			std::vector<benchmark_result2_t> test_result;
+
+			const auto& vec_result = result2.get_vector_value();
+			for(const auto& m: vec_result){
+				const auto& struct_result = m.get_struct_value();
+				const auto result3 = benchmark_result_t {
+					struct_result->_member_values[0].get_int_value(),
+					struct_result->_member_values[1].get_json()
+				};
+				const auto x = benchmark_result2_t { benchmark_id_t { "module xyz", benchmark_name }, result3 };
+				test_result.push_back(x);
+			}
+			result = concat(result, test_result);
 		}
 		else{
 		}
 	}
 
 	//	const auto result = run_program(*ee, {});
+	return result;
 }
 
 

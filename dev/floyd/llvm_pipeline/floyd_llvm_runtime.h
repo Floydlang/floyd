@@ -12,6 +12,7 @@
 #include "ast_value.h"
 #include "floyd_llvm_helpers.h"
 #include "floyd_llvm_types.h"
+#include "floyd_corelib.h"
 #include "ast.h"
 
 #include <llvm/IR/LLVMContext.h>
@@ -136,6 +137,7 @@ typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_INIT)(floyd_runtime_t* frp);
 //		func my_gui_state_t my_gui(my_gui_state_t state, json message) impure{
 typedef runtime_value_t (*FLOYD_RUNTIME_PROCESS_MESSAGE)(floyd_runtime_t* frp, runtime_value_t state, runtime_value_t message);
 
+typedef runtime_value_t (*FLOYD_BENCHMARK_F)(floyd_runtime_t* frp);
 
 
 ////////////////////////////////		ENGINE GLOBALS
@@ -189,7 +191,7 @@ std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instanc
 //	Compiles and runs the program. Returns results.
 run_output_t run_program_helper(const std::string& program_source, const std::string& file, const std::vector<std::string>& main_args);
 
-void run_benchmarks(const std::string& program_source, const std::string& file, const std::vector<std::string>& tests);
+std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_source, const std::string& file, const std::vector<std::string>& tests);
 
 
 }	//	namespace floyd

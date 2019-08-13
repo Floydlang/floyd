@@ -210,7 +210,7 @@ static int do_run(const command_t& command, const command_t::compile_and_run_t& 
 
 static int do_run_user_benchmarks(const command_t& command, const command_t::run_user_benchmarks_t& command2, const std::string& program_source){
 	if(command2.backend == ebackend::llvm){
-		run_benchmarks(program_source, command2.source_path, { "" });
+		run_benchmarks(program_source, command2.source_path, command2.optional_benchmark_keys);
 		return EXIT_SUCCESS;
 	}
 	else{
@@ -218,7 +218,7 @@ static int do_run_user_benchmarks(const command_t& command, const command_t::run
 	}
 }
 
-QUARK_UNIT_TEST("", "main_internal()", "", ""){
+QUARK_UNIT_TEST("", "do_run_user_benchmarks()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
@@ -229,9 +229,11 @@ QUARK_UNIT_TEST("", "main_internal()", "", ""){
 
 	)";
 
-	const auto c = command_t { command_t::run_user_benchmarks_t { "", {}, ebackend::llvm } };
-	const auto result = do_run_user_benchmarks(c, std::get<command_t::run_user_benchmarks_t>(c._contents), program_source);
-	QUARK_UT_VERIFY(result == 0);
+	const auto result = run_benchmarks(program_source, "", { "ABC" });
+
+	QUARK_UT_VERIFY(result.size() == 1);
+	const auto t = benchmark_result2_t { benchmark_id_t{ "module xyz", "ABC" }, benchmark_result_t { 200, json_t("0 eleements") } };
+	QUARK_UT_VERIFY(result[0] == t);
 }
 
 

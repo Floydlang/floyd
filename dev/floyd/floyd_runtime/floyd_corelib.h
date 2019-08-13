@@ -56,12 +56,19 @@ struct benchmark_id_t {
 	std::string module;
 	std::string test;
 };
+inline bool operator==(const benchmark_id_t& lhs, const benchmark_id_t& rhs){
+	return lhs.module == rhs.module && lhs.test == rhs.test;
+}
 
 
 struct benchmark_result2_t {
 	benchmark_id_t test_id;
 	benchmark_result_t result;
 };
+
+inline bool operator==(const benchmark_result2_t& lhs, const benchmark_result2_t& rhs){
+	return lhs.test_id == rhs.test_id && lhs.result == rhs.result;
+}
 
 
 std::vector<std::pair<std::string, json_t>> corelib_detect_hardware_caps();
