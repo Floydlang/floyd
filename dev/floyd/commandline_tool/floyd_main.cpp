@@ -19,6 +19,7 @@
 #include "text_parser.h"
 #include "interpretator_benchmark.h"
 #include "file_handling.h"
+#include "format_table.h"
 
 #include "semantic_analyser.h"
 #include "compiler_helpers.h"
@@ -211,74 +212,28 @@ static int do_run(const command_t& command, const command_t::compile_and_run_t& 
 
 
 
-
-
-struct line_t {
-	std::vector<std::string> columns;
-};
-
-std::string gen_line(const line_t& line, const std::vector<size_t>& widths, const std::vector<int>& align, int pad_char){
-	std::string acc = "|";
-	for(int c = 0 ; c < line.columns.size() ; c++){
-		const auto s = line.columns[c];
-		const auto wanted_width = widths[c] + 1;
-
-		const auto pad_count = wanted_width - size(s);
-		const auto pad_string = std::string(pad_count, (char)pad_char);
-
-		const auto s2 = align[c] == 0 ? s : (align[c] < 0 ? s + pad_string : pad_string + s);
-
-		acc = acc + s2 + "|";
-	}
-	return acc;
-}
-
-
-line_t table_f(benchmark_result2_t r, int c){
-	const auto columns = std::vector<std::string>{
-		r.test_id.module,
-		r.test_id.test,
-		std::to_string(r.result.dur) + " ns",
-		json_to_pretty_string(r.result.more)
-	};
-	return line_t{ columns };
-}
-
-std::vector<size_t> calc_width_f(const std::vector<size_t>& acc, const line_t& line, int c){
-	return std::vector<size_t>{
-		std::max(acc[0], line.columns[0].size()),
-		std::max(acc[1], line.columns[1].size()),
-		std::max(acc[2], line.columns[2].size()),
-		std::max(acc[3], line.columns[3].size())
-	};
-}
-
 std::vector<std::string> make_benchmark_report(const std::vector<benchmark_result2_t>& test_results, const std::vector<int>& align){
-	const auto headings = line_t{{ "MODULE", "TEST", "DUR", "" }};
-
+	const auto headings = line_t{{ "MODULE", "TEST", "DUR", "" }, ' '};
 
 	std::vector<line_t> table;
 	for(const auto& e: test_results){
-		table.push_back(table_f(e, 0));
+		const auto columns = std::vector<std::string>{
+			e.test_id.module,
+			e.test_id.test,
+			std::to_string(e.result.dur) + " ns",
+			json_to_pretty_string(e.result.more)
+		};
+		table.push_back(line_t{ columns, ' ' });
 	}
 
+	const auto columns0 = fit_column(std::vector<column_t>{ { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } }, headings);
+	const auto columns = fit_columns(columns0, table);
 
-	std::vector<size_t> widths = calc_width_f({ 0, 0, 0, 0 }, headings, 0);
-	for(const auto& e: table){
-		widths = calc_width_f(widths, e, 0);
-	}
-
-	std::vector<std::string> report = {
-		gen_line(headings, widths, { -1, -1, -1, -1 }, ' '),
-		gen_line(line_t{{ "", "", "", "" }}, widths, { -1, -1, -1, -1 }, '-')
+	std::vector<line_t> header_rows = {
+		headings,
+		line_t{{ "", "", "", "" }, '-' }
 	};
-
-	for(int i = 0 ; i < table.size() ; i++){
-		const auto& line = table[i];
-		const auto& line2 = gen_line(line, widths, align, ' ');
-		report.push_back(line2);
-	}
-	return report;
+	return generate_table(concat(header_rows, table), columns);
 }
 
 
@@ -308,7 +263,7 @@ static std::string do_user_benchmarks_run_all(const std::string& program_source,
 	return ss.str();
 }
 
-QUARK_UNIT_TEST_VIP("", "do_user_benchmarks_run_all()", "", ""){
+QUARK_UNIT_TEST("", "do_user_benchmarks_run_all()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
