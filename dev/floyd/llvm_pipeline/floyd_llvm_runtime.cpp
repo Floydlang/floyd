@@ -93,7 +93,7 @@ void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name){
 	return  (void*)addr;
 }
 
-void* get_global_function(const llvm_execution_engine_t& ee, const link_name_t& name){
+static void* get_global_function(const llvm_execution_engine_t& ee, const link_name_t& name){
 	QUARK_ASSERT(ee.check_invariant());
 	QUARK_ASSERT(name.s.empty() == false);
 
@@ -106,9 +106,11 @@ std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std:
 	QUARK_ASSERT(ee.check_invariant());
 	QUARK_ASSERT(name.empty() == false);
 
-	const auto f = reinterpret_cast<FLOYD_RUNTIME_F*>(get_global_function(ee, link_name_t { name }));
+	const auto link_name = encode_floyd_func_link_name(name);
+
+	const auto f = reinterpret_cast<FLOYD_RUNTIME_F*>(get_global_function(ee, link_name));
 	if(f != nullptr){
-		const auto def = find_function_def_from_link_name(ee.function_defs, encode_floyd_func_link_name(name));
+		const auto def = find_function_def_from_link_name(ee.function_defs, link_name);
 		const auto function_type = def.floyd_fundef._function_type;
 		return { f, function_type };
 	}
@@ -200,7 +202,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const std::pair<void*, typei
 		return main_result_int;
 	}
 	else if(f.second == get_main_signature_no_arg_impure() || f.second == get_main_signature_no_arg_pure()){
-		const auto f2 = *reinterpret_cast<FLOYD_RUNTIME_MAIN_NO_ARGS_IMPURE*>(f.first);
+		const auto f2 = reinterpret_cast<FLOYD_RUNTIME_MAIN_NO_ARGS_IMPURE>(f.first);
 		const auto main_result_int = (*f2)(reinterpret_cast<floyd_runtime_t*>(&ee));
 		return main_result_int;
 	}

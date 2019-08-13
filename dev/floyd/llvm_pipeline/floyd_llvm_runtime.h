@@ -137,8 +137,6 @@ const function_def_t& find_function_def_from_link_name(const std::vector<functio
 void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name);
 
 
-void* get_global_function(const llvm_execution_engine_t& ee, const link_name_t& name);
-
 std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std::string& name);
 
 std::pair<void*, typeid_t> bind_global(llvm_execution_engine_t& ee, const std::string& name);

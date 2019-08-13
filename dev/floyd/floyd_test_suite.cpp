@@ -874,7 +874,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
 //######################################################################################################################
 
 
-FLOYD_LANG_PROOF("Floyd test suite", "main() - Can make and read global int", "", ""){
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "main() - Can make and read global int", "", ""){
 	ut_verify_mainfunc_return_nolib(
 		QUARK_POS,
 		R"(
