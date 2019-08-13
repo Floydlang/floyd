@@ -67,7 +67,7 @@ runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t
 
 
 const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const std::string& link_name){
-	auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.link_name == link_name; } );
+	auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.link_name.name == link_name; } );
 	QUARK_ASSERT(it != function_defs.end());
 
 	QUARK_ASSERT(it->llvm_codegen_f != nullptr);
@@ -512,8 +512,8 @@ runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t
 static std::vector<std::pair<std::string, void*>> collection_native_func_ptrs(const llvm_execution_engine_t& runtime){
 	std::vector<std::pair<std::string, void*>> result;
 	for(const auto& e: runtime.function_defs){
-		auto f = get_global_function(runtime, e.link_name);
-		result.push_back({ e.link_name, f });
+		auto f = get_global_function(runtime, e.link_name.name);
+		result.push_back({ e.link_name.name, f });
 	}
 
 	if(k_trace_messaging){

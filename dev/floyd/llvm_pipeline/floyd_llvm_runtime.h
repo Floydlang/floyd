@@ -50,7 +50,7 @@ struct function_bind_t {
 
 
 struct function_def_t {
-	std::string link_name;
+	link_name_t link_name;
 
 	//	Only valid during codegen
 	llvm::Function* llvm_codegen_f;
