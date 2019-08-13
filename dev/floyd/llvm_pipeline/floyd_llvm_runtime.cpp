@@ -93,11 +93,11 @@ void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name){
 	return  (void*)addr;
 }
 
-void* get_global_function(const llvm_execution_engine_t& ee, const std::string& name){
+void* get_global_function(const llvm_execution_engine_t& ee, const link_name_t& name){
 	QUARK_ASSERT(ee.check_invariant());
-	QUARK_ASSERT(name.empty() == false);
+	QUARK_ASSERT(name.s.empty() == false);
 
-	const auto addr = ee.ee->getFunctionAddress(name);
+	const auto addr = ee.ee->getFunctionAddress(name.s);
 	return (void*)addr;
 }
 
@@ -106,7 +106,7 @@ std::pair<void*, typeid_t> bind_function(llvm_execution_engine_t& ee, const std:
 	QUARK_ASSERT(ee.check_invariant());
 	QUARK_ASSERT(name.empty() == false);
 
-	const auto f = reinterpret_cast<FLOYD_RUNTIME_F*>(get_global_function(ee, name));
+	const auto f = reinterpret_cast<FLOYD_RUNTIME_F*>(get_global_function(ee, link_name_t { name }));
 	if(f != nullptr){
 		const auto def = find_function_def_from_link_name(ee.function_defs, encode_floyd_func_link_name(name));
 		const auto function_type = def.floyd_fundef._function_type;
@@ -512,7 +512,7 @@ runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t
 static std::vector<std::pair<link_name_t, void*>> collection_native_func_ptrs(const llvm_execution_engine_t& runtime){
 	std::vector<std::pair<link_name_t, void*>> result;
 	for(const auto& e: runtime.function_defs){
-		auto f = get_global_function(runtime, e.link_name.s);
+		auto f = get_global_function(runtime, e.link_name);
 		result.push_back({ e.link_name, f });
 	}
 
@@ -2553,7 +2553,7 @@ std::map<std::string, void*> get_corecall_c_function_ptrs(){
 uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee){
 	QUARK_ASSERT(ee.check_invariant());
 
-	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, encode_runtime_func_link_name("init").s));
+	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, encode_runtime_func_link_name("init")));
 	QUARK_ASSERT(a_func != nullptr);
 
 	int64_t a_result = (*a_func)(reinterpret_cast<floyd_runtime_t*>(&ee));
@@ -2564,7 +2564,7 @@ uint64_t call_floyd_runtime_init(llvm_execution_engine_t& ee){
 uint64_t call_floyd_runtime_deinit(llvm_execution_engine_t& ee){
 	QUARK_ASSERT(ee.check_invariant());
 
-	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, encode_runtime_func_link_name("deinit").s));
+	auto a_func = reinterpret_cast<FLOYD_RUNTIME_INIT>(get_global_function(ee, encode_runtime_func_link_name("deinit")));
 	QUARK_ASSERT(a_func != nullptr);
 
 	int64_t a_result = (*a_func)(reinterpret_cast<floyd_runtime_t*>(&ee));
