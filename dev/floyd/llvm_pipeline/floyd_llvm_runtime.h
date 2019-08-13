@@ -51,7 +51,7 @@ struct function_bind_t {
 
 struct function_def_t {
 	std::string link_name;
-	llvm::Function* llvm_f;
+	llvm::Function* llvm_f;	//	Only valid during codegen
 
 	function_id_t source_name;
 	function_definition_t floyd_fundef;
@@ -130,7 +130,6 @@ typedef runtime_value_t (*FLOYD_RUNTIME_F)(floyd_runtime_t* frp, const char* arg
 
 
 const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const std::string& link_name);
-const function_def_t& find_from_link_name_native_function_ptr(const std::vector<function_def_t>& function_defs, void* ptr);
 
 //	Cast to uint64_t* or other the required type, then access via it.
 void* get_global_ptr(llvm_execution_engine_t& ee, const std::string& name);

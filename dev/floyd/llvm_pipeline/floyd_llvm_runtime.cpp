@@ -74,12 +74,6 @@ const function_def_t& find_function_def_from_link_name(const std::vector<functio
 	return *it;
 }
 
-const function_def_t& find_from_link_name_native_function_ptr(const std::vector<function_def_t>& function_defs, void* ptr){
-	auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.llvm_f == ptr; } );
-	QUARK_ASSERT(it != function_defs.end());
-	return *it;
-}
-
 
 void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint64_t count){
 	for(auto i = 0 ; i < count ; i++){
@@ -515,7 +509,7 @@ runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t
 }
 
 
-std::vector<std::pair<std::string, void*>> function_link_name_to_ptr(const llvm_execution_engine_t& runtime){
+static std::vector<std::pair<std::string, void*>> collection_native_func_ptrs(const llvm_execution_engine_t& runtime){
 	std::vector<std::pair<std::string, void*>> result;
 	for(const auto& e: runtime.function_defs){
 		auto f = get_global_function(runtime, e.link_name);
@@ -535,10 +529,10 @@ std::vector<std::pair<std::string, void*>> function_link_name_to_ptr(const llvm_
 
 
 
-std::string native_func_ptr_to_link_name(const llvm_execution_engine_t& runtime, void* f){
+static std::string native_func_ptr_to_link_name(const llvm_execution_engine_t& runtime, void* f){
 //	const llvm::GlobalValue* gv = runtime.ee->getGlobalValueAtAddress(f);
 
-	const auto function_vec = function_link_name_to_ptr(runtime);
+	const auto function_vec = collection_native_func_ptrs(runtime);
 	const auto it = std::find_if(
 		function_vec.begin(),
 		function_vec.end(),
