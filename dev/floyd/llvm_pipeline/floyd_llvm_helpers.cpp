@@ -1319,10 +1319,7 @@ std::string unpack_floyd_func_link_name(const link_name_t& name){
 }
 
 std::string unpack_link_name(const link_name_t& name){
-	const auto left = name.name.substr(0, k_floyd_func_link_prefix.size());
-	const auto right = name.name.substr(k_floyd_func_link_prefix.size(), std::string::npos);
-	QUARK_ASSERT(left == k_floyd_func_link_prefix);
-	return right;
+	return unpack_floyd_func_link_name(name);
 }
 
 
