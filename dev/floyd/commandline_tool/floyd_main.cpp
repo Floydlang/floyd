@@ -268,6 +268,9 @@ std::vector<std::string> make_benchmark_report(const std::vector<benchmark_resul
 				if(more.is_object()){
 					meta.push_back("");
 				}
+				else if(more.is_null()){
+					meta.push_back("");
+				}
 				else{
 					meta.push_back(json_to_pretty_string_no_quotes(more));
 				}
@@ -304,16 +307,34 @@ std::vector<std::string> make_benchmark_report(const std::vector<benchmark_resul
 }
 
 
-QUARK_UNIT_TEST_VIP("", "make_benchmark_report()", "", ""){
+QUARK_UNIT_TEST("", "make_benchmark_report()", "", ""){
 	const auto test = std::vector<benchmark_result2_t> {
 		benchmark_result2_t { benchmark_id_t{ "", "g" }, benchmark_result_t { 2, json_t::make_object({ { "rate", "===========" }, { "wind", 14 } } ) } },
 		benchmark_result2_t { benchmark_id_t{ "", "abc" }, benchmark_result_t { 2000, json_t("0 elements") } },
 		benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 1, json_t("third") } },
 		benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 2, json_t::make_object({ { "rate", 20 }, { "wind", 12 } } ) } },
 		benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 3, json_t("third") } },
+		benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 3, json_t() } },
 		benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 3, json_t::make_array( { "ett", "fyra" }) } },
 		benchmark_result2_t { benchmark_id_t{ "", "g" }, benchmark_result_t { 2, json_t::make_object({ { "rate", 21 }, { "wind", 13 } } ) } },
 		benchmark_result2_t { benchmark_id_t{ "", "g" }, benchmark_result_t { 300, json_t("bytes/s") } }
+	};
+
+	const auto result = make_benchmark_report(test);
+	for(const auto& e: result){
+		std::cout << e << std::endl;
+	}
+}
+
+//	Generate demo reports
+QUARK_UNIT_TEST("", "make_benchmark_report()", "Demo", ""){
+	const auto test = std::vector<benchmark_result2_t> {
+		benchmark_result2_t { benchmark_id_t{ "", "pack_png()" }, benchmark_result_t { 1800, json_t::make_object({ { "kb/s", 670000 }, { "out size", 14014 } } ) } },
+		benchmark_result2_t { benchmark_id_t{ "", "pack_png()" }, benchmark_result_t { 2023, json_t("alpha") } },
+		benchmark_result2_t { benchmark_id_t{ "", "pack_png()" }, benchmark_result_t { 2980, json_t() } },
+		benchmark_result2_t { benchmark_id_t{ "", "zip()" }, benchmark_result_t { 4030, json_t::make_object({ { "kb/s", 503000 }, { "out size", 12030 } } ) } },
+		benchmark_result2_t { benchmark_id_t{ "", "zip()" }, benchmark_result_t { 5113, json_t("alpha") } },
+		benchmark_result2_t { benchmark_id_t{ "", "pack_jpeg()" }, benchmark_result_t { 2029, json_t::make_array( { "1024", "1024" }) } }
 	};
 
 	const auto result = make_benchmark_report(test);
@@ -444,6 +465,30 @@ static std::string do_user_benchmarks_list(const std::string& program_source, co
 	}
 	return ss.str();
 }
+
+QUARK_UNIT_TEST_VIP("", "do_user_benchmarks_list()", "", ""){
+	g_trace_on = true;
+	const auto program_source =
+	R"(
+
+		benchmark-def "pack_png 1" {
+			return [ benchmark_result_t(200, json("0 elements")) ]
+		}
+
+		benchmark-def "pack_png 2" {
+			return [ benchmark_result_t(200, json("0 elements")) ]
+		}
+
+		benchmark-def "pack_png no compress" {
+			return [ benchmark_result_t(300, json("bytes/s")) ]
+		}
+
+	)";
+
+	const auto result = do_user_benchmarks_list(program_source, "module1");
+	std::cout << result;
+}
+
 
 QUARK_UNIT_TEST("", "do_user_benchmarks_list()", "", ""){
 	g_trace_on = true;

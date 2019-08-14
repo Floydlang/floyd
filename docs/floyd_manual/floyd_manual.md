@@ -1052,29 +1052,30 @@ Run all micro benchmarks in your program:
 floyd bench mygame.floyd
 ```
 
-This results in a printout something like this:
+This results in a print out something like this:
 
 ```
-| Test          | Params    | Duration s    | Work bytes/sec
-|---            |---        |---            |---
-| Linear veq    | 0         | 0.000000 s    | 0
-| Linear veq    | 1         | 0.000000 s    | 1
-| Linear veq    | 2         | 0.000000 s    | 1
-| Linear veq    | 1000      | 0.0022000 s   | 2.000
-| Linear veq    | 10000     | 0.003200 s    | 40.000
+| MODULE  | TEST         |     DUR|                   | KB/S    | OUT SIZE  |
+|---------|--------------|--------|-------------------|---------|-----------|
+|         | pack_png()   | 1800 ns|                   | 670000  | 14014     |
+|         | pack_png()   | 2023 ns| alpha             |         |           |
+|         | pack_png()   | 2980 ns| null              |         |           |
+|         | zip()        | 4030 ns|                   | 503000  | 12030     |
+|         | zip()        | 5113 ns| alpha             |         |           |
+|         | pack_jpeg()  | 2029 ns| ["1024", "1024"]  |         |           |
 ```
 
 
-Runs all micro benchmarks in the image_processing library and the blur_helpers module:
+Runs all micro benchmarks in the image processing library:
 
 ```
-floyd bench --module img_lib blur
+floyd bench img_lib.floyd
 ```
 
 Runs specific tests in specific modules:
 
 ```
-floyd bench "img_lib:Linear veq" "img_lib:Smart tiling" "blur:blur1" "blur:b2"
+floyd bench img_lib.floyd "Linear veq" "Smart tiling" blur1 blur_b2
 ```
 
 The output will be formatted and sent to stdout. Use --json to instead print the test output as json-data (see json format for micro benchmarks).
@@ -1082,11 +1083,28 @@ The output will be formatted and sent to stdout. Use --json to instead print the
 When you run a benchmark, all/any of its instances are always run.
 
 
+You can also list all benchmarks in your program:
+
+```
+floyd bench -l mygame.floyd
+```
+
+This prints something like this to standard output:
+
+```
+Benchmarks registry:
+pack_png 1
+pack_png 2
+pack_png no compress
+```
+
+
 <a id="running-micro-benchmarks-from-floyd-code"></a>
 ### RUNNING MICRO BENCHMARKS FROM FLOYD CODE
 
 
 This snippets runs all registered benchmarks, formats their output and prints to the terminal:
+
 ```
 print(trace_benchmarks(run_benchmarks(get_benchmarks())))
 ```
