@@ -543,6 +543,7 @@ static int do_user_benchmarks(const command_t& command, const command_t::user_be
 	else{
 		QUARK_ASSERT(false);
 	}
+	return EXIT_FAILURE;
 }
 
 QUARK_UNIT_TEST("", "run_benchmarks()", "", ""){
