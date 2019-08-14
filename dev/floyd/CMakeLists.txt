@@ -75,6 +75,7 @@ bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/floyd_interpreter.cpp
 parts/command_line_parser.cpp
 commandline_tool/floyd_command_line_parser.cpp
+commandline_tool/format_table.cpp
 #parts/command_line_parser.h
 collect_used_types.cpp
 compiler_helpers.cpp
