@@ -525,7 +525,7 @@ QUARK_UNIT_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(read_type(seq_t("-3")).first == nullptr);
 }
 QUARK_UNIT_TEST("", "read_type()", "", ""){
-	QUARK_TEST_VERIFY(*read_type(seq_t("**undef**")).first == typeid_t::make_undefined());
+	QUARK_TEST_VERIFY(*read_type(seq_t("undef")).first == typeid_t::make_undefined());
 }
 QUARK_UNIT_TEST("", "read_type()", "", ""){
 	QUARK_TEST_VERIFY(*read_type(seq_t("any")).first == typeid_t::make_any());

@@ -1393,11 +1393,11 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "parantheses", ""){
 
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "vector", ""){
-	ut_verify__parse_expression(QUARK_POS, "[]", R"(["value-constructor", ["vector", "^**undef**"], []])", "");
+	ut_verify__parse_expression(QUARK_POS, "[]", R"(["value-constructor", ["vector", "^undef"], []])", "");
 }
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "vector", ""){
-	ut_verify__parse_expression(QUARK_POS, "[1,2,3]", R"(["value-constructor", ["vector", "^**undef**"], [["k", 1, "^int"], ["k", 2, "^int"], ["k", 3, "^int"]]])", "");
+	ut_verify__parse_expression(QUARK_POS, "[1,2,3]", R"(["value-constructor", ["vector", "^undef"], [["k", 1, "^int"], ["k", 2, "^int"], ["k", 3, "^int"]]])", "");
 }
 
 
@@ -1405,16 +1405,16 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "vector", ""){
 //////////////////////////////////			DICTIONARIES
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "dict", ""){
-	ut_verify__parse_expression(QUARK_POS, "{:}", R"(["value-constructor", ["dict", "^**undef**"], []])", "");
+	ut_verify__parse_expression(QUARK_POS, "{:}", R"(["value-constructor", ["dict", "^undef"], []])", "");
 }
 QUARK_UNIT_TEST("parser", "parse_expression()", "dict", ""){
-	ut_verify__parse_expression(QUARK_POS, "{}", R"(["value-constructor", ["dict", "^**undef**"], []])", "");
+	ut_verify__parse_expression(QUARK_POS, "{}", R"(["value-constructor", ["dict", "^undef"], []])", "");
 }
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "dict definition", ""){
 	ut_verify__parse_expression(QUARK_POS,
 		R"({"one": 1, "two": 2, "three": 3})",
-		R"(["value-constructor", ["dict", "^**undef**"], [["k", "one", "^string"], ["k", 1, "^int"], ["k", "two", "^string"], ["k", 2, "^int"], ["k", "three", "^string"], ["k", 3, "^int"]]])", ""
+		R"(["value-constructor", ["dict", "^undef"], [["k", "one", "^string"], ["k", 1, "^int"], ["k", "two", "^string"], ["k", 2, "^int"], ["k", "three", "^string"], ["k", 3, "^int"]]])", ""
 	);
 }
 
@@ -1423,7 +1423,7 @@ QUARK_UNIT_TEST("parser", "parse_expression()", "dict definition", ""){
 
 
 QUARK_UNIT_TEST("parser", "parse_expression()", "benchmark", ""){
-	ut_verify__parse_expression(QUARK_POS, "benchmark { let a = 10 }", R"___(	["benchmark", [[12, "init-local", "^**undef**", "a", ["k", 10, "^int"]]]]	)___", "");
+	ut_verify__parse_expression(QUARK_POS, "benchmark { let a = 10 }", R"___(	["benchmark", [[12, "init-local", "^undef", "a", ["k", 10, "^int"]]]]	)___", "");
 }
 
 

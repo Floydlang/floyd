@@ -132,10 +132,10 @@ bool check_types_resolved(const body_t& body){
 		}
 	}
 	for(const auto& s: body._symbol_table._symbols){
-		if(s.first != "**undef**" && check_types_resolved(s.second._value_type) == false){
+		if(s.first != "undef" && check_types_resolved(s.second._value_type) == false){
 			return false;
 		}
-		if(s.first != "**undef**" && s.second._init.is_undefined() == false && check_types_resolved(s.second._init.get_type()) == false){
+		if(s.first != "undef" && s.second._init.is_undefined() == false && check_types_resolved(s.second._init.get_type()) == false){
 			return false;
 		}
 	}

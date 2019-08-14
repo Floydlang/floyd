@@ -705,7 +705,7 @@ value_t::value_t(const typeid_t& type, function_id_t function_id) :
 
 //??? swap(), operator=, copy-constructor.
 
-QUARK_UNIT_TESTQ("value_t::make_undefined()", "**undef**"){
+QUARK_UNIT_TESTQ("value_t::make_undefined()", "undef"){
 	const auto a = value_t::make_undefined();
 	QUARK_TEST_VERIFY(a.is_undefined());
 	QUARK_TEST_VERIFY(!a.is_any());
@@ -721,8 +721,8 @@ QUARK_UNIT_TESTQ("value_t::make_undefined()", "**undef**"){
 
 	QUARK_TEST_VERIFY(a == value_t::make_undefined());
 	QUARK_TEST_VERIFY(a != value_t::make_string("test"));
-	QUARK_TEST_VERIFY(to_compact_string2(a) == "**undef**");
-	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "**undef**");
+	QUARK_TEST_VERIFY(to_compact_string2(a) == "undef");
+	QUARK_TEST_VERIFY(value_and_type_to_string(a) == "undef");
 }
 
 

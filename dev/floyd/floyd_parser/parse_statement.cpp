@@ -334,7 +334,7 @@ QUARK_UNIT_TEST("parse_bind_statement", "", "", ""){
 		parse_bind_statement(seq_t("mutable hello = 3")).first,
 		parse_json(seq_t(
 			R"(
-				[ 0, "init-local", "^**undef**", "hello", ["k", 3, "^int"], { "mutable": true }]
+				[ 0, "init-local", "^undef", "hello", ["k", 3, "^int"], { "mutable": true }]
 			)"
 		)).first
 	);

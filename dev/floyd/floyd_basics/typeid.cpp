@@ -25,7 +25,7 @@ namespace floyd {
 
 std::string base_type_to_opcode(const base_type t){
 	if(t == base_type::k_undefined){
-		return "**undef**";
+		return "undef";
 	}
 	else if(t == base_type::k_any){
 		return "any";
@@ -67,7 +67,7 @@ std::string base_type_to_opcode(const base_type t){
 		return "func";
 	}
 	else if(t == base_type::k_unresolved){
-		return "**unknown-identifier**";
+		return "unknown-identifier";
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -77,7 +77,7 @@ std::string base_type_to_opcode(const base_type t){
 }
 
 QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_undefined) == "**undef**");
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_undefined) == "undef");
 }
 QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
 	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_any) == "any");
@@ -120,13 +120,13 @@ QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
 }
 
 QUARK_UNIT_TEST("", "base_type_to_opcode(base_type)", "", ""){
-	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_unresolved) == "**unknown-identifier**");
+	QUARK_TEST_VERIFY(base_type_to_opcode(base_type::k_unresolved) == "unknown-identifier");
 }
 
 base_type opcode_to_base_type(const std::string& s){
 	QUARK_ASSERT(s != "");
 
-	if(s == "**undef**"){
+	if(s == "undef"){
 		return base_type::k_undefined;
 	}
 	else if(s == "any"){
@@ -166,7 +166,7 @@ base_type opcode_to_base_type(const std::string& s){
 	else if(s == "func"){
 		return base_type::k_function;
 	}
-	else if(s == "**unknown-identifier**"){
+	else if(s == "unknown-identifier"){
 		return base_type::k_unresolved;
 	}
 
@@ -1041,7 +1041,7 @@ typeid_t typeid_from_ast_json(const json_t& t2){
 			const bool pure = a[3].is_true();
 			return typeid_t::make_function(ret_type, arg_types, pure ? epure::pure : epure::impure);
 		}
-		else if(s == "**unknown-identifier**"){
+		else if(s == "unknown-identifier"){
 			QUARK_ASSERT(false);
 			quark::throw_exception();
 		}

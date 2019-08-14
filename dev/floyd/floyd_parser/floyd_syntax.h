@@ -99,7 +99,7 @@ namespace keyword_t {
 	const std::string k_func = "func";
 	const std::string k_impure = "impure";
 
-	const std::string k_undefined = "**undef**";
+	const std::string k_undefined = "undef";
 	const std::string k_any = "any";
 	const std::string k_void = "void";
 	const std::string k_false = "false";
