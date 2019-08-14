@@ -1078,7 +1078,7 @@ Runs specific tests in specific modules:
 floyd bench img_lib.floyd "Linear veq" "Smart tiling" blur1 blur_b2
 ```
 
-The output will be formatted and sent to stdout. Use --json to instead print the test output as json-data (see json format for micro benchmarks).
+The output will be formatted and sent to stdout.
 
 When you run a benchmark, all/any of its instances are always run.
 
@@ -1224,6 +1224,7 @@ Tweakers are inserted onto the wires and clocks and functions and expressions of
 
 
 
+![](floyd_logo_banner.png)
 
 
 
