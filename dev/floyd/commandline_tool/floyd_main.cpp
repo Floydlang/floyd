@@ -466,7 +466,7 @@ static std::string do_user_benchmarks_list(const std::string& program_source, co
 	return ss.str();
 }
 
-QUARK_UNIT_TEST_VIP("", "do_user_benchmarks_list()", "", ""){
+QUARK_UNIT_TEST("", "do_user_benchmarks_list()", "", ""){
 	g_trace_on = true;
 	const auto program_source =
 	R"(
