@@ -989,7 +989,14 @@ TOD: Fact check stats.
 
 <a id="about-micro-benchmarks"></a>
 ### ABOUT MICRO BENCHMARKS
-Floyd is about engineering programs for fast execution. To aid in this, Floyd has built-in features to benchmark your code so you know the actual performance.
+Floyd is about engineering programs for fast execution. To aid in this, Floyd has built-in features to benchmark your code so you know the actual performance in a scientific away.
+
+The benchmark features have been designed to:
+
+- Give you a *built-in* and *simple* way to measure performance
+- Let you control which tests to run and when
+- Let you keep the tests next to the function under test 
+- Let you control how to use the measurements, even from code.
 
 ```
 benchmark-def "Linear veq 0" {
@@ -1006,20 +1013,15 @@ The Floyd micro benchmark features give you a simple way to measure the performa
 
 > NOTICE: Micro benchmarking is not the same as profiling with a profiler. Profiling is used on an entire program and helps you *find* hotspots. Micro benchmarking just looks at a small code snippet.
 
-You can add a micro benchmark anywhere in a source file (at the top level) using the **benchmark-def statement**, ideally right next the function to measure. The micro benchmarks are not automatically run, you need to request that, either from the floyd command line tool or via your own code. You are in control over which tests to run and can control how to present the output. To actual measure the time you use the benchmark-expression. You leave the micro benchmarks in your code. They can be stripped out when compiling.
+You can add a micro benchmark anywhere in a source file (at the top level) using the **benchmark-def statement**. It's recommended your put your benchmark-defs right after the function it measures. The micro benchmarks are not automatically run, you need to request that, either from the floyd command line tool or via your own code. You are in control over which tests to run and can control how to present the output. You leave the micro benchmarks in your code. They can be stripped out when compiling.
 
-> TERM **benchmark**: in Floyd benchmark means **one explicitly defined task that performs the exact same instructs every time over the exact same data**.
+To make the actual measurement you use the benchmark-expression which runs your code and measures the time.
 
-> TERM **run**: Floyd will run a benchmark many times to get better precision of the measurement. These are called "runs".
+> TERM **benchmark**: in Floyd benchmark means **one explicitly defined task that performs the exact same code snippet every time over the exact same data**.
 
-> TERM **benchmark instance**: Often you want to run a benchmark for several different sized data sets. Floyd allows you to make several **benchmark instances** from the same benchmark definition. This results in several measurements but you only need to define one benchmark-def and it can share the same setup aka fixtures.
+> TERM **run**: Floyd will run a benchmark many times to get better precision of the measurement. These are called "runs". The number of runs is controlled by Floyd.
 
-The benchmark features have been designed to:
-
-- Give you a built-in simple way to measure performance
-- Let you control which tests to run and when
-- Let you keep the tests next to the function under test 
-- Let you control how to use the measurements, even from code.
+> TERM **benchmark instance**: Often you want to benchmark code for several different sized data sets. Floyd allows you to make several **benchmark instances** from within same benchmark definition. This results in several measurements (you return several benchmark_result_t  values from your benchmark-def) but you only need to define one benchmark-def and it can share the same code and the same setup.
 
 
 
@@ -1071,19 +1073,13 @@ This results in a print out something like this:
 |         | pack_jpeg()  | 2029 ns| ["1024", "1024"]  |         |           |
 ```
 
-
-Runs all micro benchmarks in the image processing library:
-
-```
-floyd bench img_lib.floyd
-```
-
 Runs specific tests in specific modules:
 
 ```
-floyd bench img_lib.floyd "Linear veq" "Smart tiling" blur1 blur_b2
+floyd bench mygame.floyd "Linear veq" "Smart tiling" blur1 blur_b2
 ```
 
+This will run 4 different benchmarks, called "Linear veq", "Smart tiling", "blur1" and blur_b2
 The output will be formatted and sent to stdout.
 
 When you run a benchmark, all/any of its instances are always run.
@@ -1103,7 +1099,7 @@ pack_png 1
 pack_png 2
 pack_png no compress
 ```
-
+This lets you first list all benchmark, filter out some of them, then run just those benchmarks.
 
 <a id="running-micro-benchmarks-from-floyd-code"></a>
 ### RUNNING MICRO BENCHMARKS FROM FLOYD CODE
