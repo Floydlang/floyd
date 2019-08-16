@@ -90,7 +90,7 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 	- [2.8 FLOYD SYNTAX](#28-floyd-syntax)
 - [3 STANDARD LIBRARY](#3-standard-library)
 	- [3.1 MICRO BENCHMARKING FEATURES](#31-micro-benchmarking-features)
-		- [microbench\_def\_t, benchmark\_id\_t, benchmark\_result2\_t](#microbenchdef_t-benchmark_id_t-benchmark_result2t)
+		- [benchmark\_id\_t and benchmark\_result2\_t](#benchmarkid_t-and-benchmark_result2t)
 		- [get\_benchmarks\(\)](#get_benchmarks)
 		- [run\_benchmarks\(\)](#run_benchmarks)
 		- [trace\_benchmarks\(\)](#trace_benchmarks)
@@ -2676,10 +2676,18 @@ Defines a benchmark so it's available to Floyd. All benchmark-defs in your progr
 The benchmark registry is available to your code as a global immutable vector, like this:
 
 ```
-	let [benchmark_def_t] benchmark_registry
+struct benchmark_def {
+	string name
+	func [ benchmar_result_t] f()
+}
+
+let [ benchmark_def_t ] benchmark_registry
 ```
 
 This means you can write code that explores the benchmark_registry vector and its contents, and even run tests. There are also standard library functions that helps you do this easily. See the standard library section. Normally you run benchmarks using the features in the floyd command line tool.
+
+
+
 
 The return from benchmark-def is a vector of benchmark_result_t:s. One for each "benchmark instance". But often you use a single benchmark_result_t.
 
@@ -2925,16 +2933,11 @@ There is also a set of data types that gives code a common way to talk about dat
 <a id="31-micro-benchmarking-features"></a>
 ## 3.1 MICRO BENCHMARKING FEATURES
 
-<a id="microbenchdef_t-benchmark_id_t-benchmark_result2t"></a>
-### microbench\_def\_t, benchmark\_id\_t, benchmark\_result2\_t
+<a id="benchmarkid_t-and-benchmark_result2t"></a>
+### benchmark\_id\_t and benchmark\_result2\_t
 
-```
-struct microbench_def_t {
-	string name
-	func json(T) f
-}
-```
 
+Specifies a benchmark using the module it's defined in (currently always "") and the name given to it using the benchmark-def statement.
 ```
 struct benchmark_id_t {
 	string module
@@ -2942,6 +2945,7 @@ struct benchmark_id_t {
 }
 ```
 
+Used to store benchmark results from many different benchmarks. It stores *which* benchmark and its result.
 ```
 struct benchmark_result2_t {
 	benchmark_id_t test_id
@@ -2971,7 +2975,7 @@ This is how you run one or many benchmarks:
 <a id="trace_benchmarks"></a>
 ### trace\_benchmarks()
 
-You can also use the trace_benchmark() that prints a nice diagram in the console:
+The trace_benchmark() function prints a nice diagram in the console:
 
 ```
 string trace_benchmarks([benchmark_result2_t] r)
