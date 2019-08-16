@@ -523,6 +523,29 @@ QUARK_UNIT_TEST("", "do_user_benchmarks_list()", "", ""){
 }
 
 
+
+/*
+    auto start = std::chrono::system_clock::now();
+    // Some computation here
+    auto end = std::chrono::system_clock::now();
+
+    std::chrono::duration<double> elapsed_seconds = end-start;
+    std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+
+    std::cout << "finished computation at " << std::ctime(&end_time)
+              << "elapsed time: " << elapsed_seconds.count() << "s\n";
+*/
+std::string get_current_date_and_time_string(){
+	const auto now = std::chrono::system_clock::now();
+	const std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+	const auto s = std::string(std::ctime(&now_time));
+
+	//	Remove trailing '\n'.
+	return s.substr(0, s.size() - 1);
+}
+
+
+
 static int do_user_benchmarks(const command_t& command, const command_t::user_benchmarks_t& command2){
 	g_trace_on = false;
 
@@ -534,11 +557,15 @@ static int do_user_benchmarks(const command_t& command, const command_t::user_be
 
 	if(command2.mode == command_t::user_benchmarks_t::mode::run_all){
 		const auto s = do_user_benchmarks_run_all(program_source, command2.source_path);
+		std::cout << get_current_date_and_time_string() << std::endl;
+		std::cout << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
 		std::cout << s;
 		return EXIT_SUCCESS;
 	}
 	else if(command2.mode == command_t::user_benchmarks_t::mode::run_specified){
 		const auto s = do_user_benchmarks_run_specified(program_source, command2.source_path, command2.optional_benchmark_keys);
+		std::cout << get_current_date_and_time_string() << std::endl;
+		std::cout << corelib_make_hardware_caps_report_brief(corelib_detect_hardware_caps()) << std::endl;
 		std::cout << s;
 		return EXIT_SUCCESS;
 	}

@@ -485,9 +485,91 @@ std::vector<std::pair<std::string, json_t>> corelib_detect_hardware_caps(){
 }
 
 
+/*
+{
+	"availcpu": 0,
+	"bus_freq_hz": 1e+08,
+	"byteorder": 1234,
+	"cacheline_size": 64,
+	"cpu_freq_hz": 4e+09,
+	"cpu_type": 7,
+	"cpu_type_subtype": 8,
+	"epoch": 0,
+	"floatingpoint": 0,
+	"l1_data_cache_size": 32768,
+	"l1_instruction_cache_size": 32768,
+	"l2_cache_size": 262144,
+	"l3_cache_size": 8.38861e+06,
+	"logical_processor_count": 8,
+	"machdep_cpu_brand_string": "Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz",
+	"machine": "x86_64",
+	"machinearch": "",
+	"mem_size": 1.71799e+10,
+	"model": "iMac15,1",
+	"ncpu": 8,
+	"packaged": 1,
+	"page_size": 4096,
+	"physical_processor_count": 4,
+	"physmem": 2.14748e+09,
+	"scalar_align": 16,
+	"tbfrequency": 1e+09,
+	"usermem": 3.95551e+09,
+	"vectorunit": 1
+}
 
 
-	//??? check path is valid dir
+
+
+
+*/
+std::string corelib_make_hardware_caps_report(const std::vector<std::pair<std::string, json_t>>& caps){
+	return "";
+}
+
+std::string simplify_mem_size(int64_t value){
+	const int64_t gb_k = 1024 * 1024 * 1024;
+	const int64_t gb = value / gb_k;
+	const int64_t gb_rem = value % gb_k;
+
+	if(gb_rem == 0){
+		return std::to_string(gb) + " GB";
+	}
+	else{
+		return std::to_string(value) + " B";
+	}
+}
+
+
+//	"Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz"	mem_size: 1.71799e+10,	logical_processor_count: 8,
+//	Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz  16 GB DRAM  8 cores
+std::string corelib_make_hardware_caps_report_brief(const std::vector<std::pair<std::string, json_t>>& caps){
+	const auto m = std::map<std::string, json_t>(caps.begin(), caps.end());
+
+	std::stringstream r;
+	const auto machdep_cpu_brand_string = m.at("machdep_cpu_brand_string").get_string();
+	const auto mem_size = m.at("mem_size").get_number();
+	const auto logical_processor_count = m.at("logical_processor_count").get_number();
+
+	const auto mem_str = simplify_mem_size(static_cast<int64_t>(mem_size));
+
+	r << machdep_cpu_brand_string << "  " << mem_str << " DRAM  " << logical_processor_count << " cores";
+	return r.str();
+}
+
+QUARK_UNIT_TEST_VIP("", "corelib_make_hardware_caps_report_brief()", "", ""){
+	const std::vector<std::pair<std::string, json_t>> caps = {
+		{ "machdep_cpu_brand_string", json_t("Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz") },
+		{ "logical_processor_count", json_t(8) },
+		{ "mem_size", json_t((int64_t)17179869184) }
+	};
+
+//	const auto caps = corelib_detect_hardware_caps();
+	const auto r = corelib_make_hardware_caps_report_brief(caps);
+	QUARK_UT_VERIFY(r == "Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz  16 GB DRAM  8 cores");
+}
+
+
+//??? check path is valid dir
 bool is_valid_absolute_dir_path(const std::string& s){
 	if(s.empty()){
 		return false;
