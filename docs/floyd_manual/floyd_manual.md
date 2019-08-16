@@ -1025,8 +1025,7 @@ To make the actual measurement you use the benchmark-expression which runs your 
 
 
 
-<a id="benchmark-with-11-instances"></a>
-#### BENCHMARK WITH 11 INSTANCES
+BENCHMARK WITH 11 INSTANCES:
 
 ```
 benchmark-def "Linear veq" {
@@ -1048,13 +1047,14 @@ benchmark-def "Linear veq" {
 }
 ```
 
-Floyd's design lets you make short benchmark-defs, it lets you add more data to the benchmarks and get new columns to the benchmark ouput, for example record bandwith and show in "KB/s" column. It lets you write benchmark-def that builds for example a big image, then runs a number of benchmark instances on that image. It lets you record custom data and make your own analysis of that data and output it as CSV data to examin in Excel and so on.
+
+Floyd's design lets you make short benchmark-defs, it lets you add more data to the benchmarks and get new columns to the benchmark ouput, for example record bandwith and show in "KB/s" column. It lets you write benchmark-def that builds for example a big image, then runs a number of benchmark instances on that image. It lets you record custom data and make your own analysis of that data and output it as CSV data to examin in Excel and so on. Read more in the reference section.
 
 
 <a id="running-micro-benchmarks-from-command-line-tool"></a>
 ### RUNNING MICRO BENCHMARKS FROM COMMAND LINE TOOL
 
-Run all micro benchmarks in your program:
+Run all micro benchmarks in your program mygame.floyd:
 
 ```
 floyd bench mygame.floyd
@@ -1073,7 +1073,7 @@ This results in a print out something like this:
 |         | pack_jpeg()  | 2029 ns| ["1024", "1024"]  |         |           |
 ```
 
-Runs specific tests in specific modules:
+Ususally you run one or two specific tests again and again while optimising. This is how you run specific tests:
 
 ```
 floyd bench mygame.floyd "Linear veq" "Smart tiling" blur1 blur_b2
@@ -1082,7 +1082,7 @@ floyd bench mygame.floyd "Linear veq" "Smart tiling" blur1 blur_b2
 This will run 4 different benchmarks, called "Linear veq", "Smart tiling", "blur1" and blur_b2
 The output will be formatted and sent to stdout.
 
-When you run a benchmark, all/any of its instances are always run.
+Notive: when you run a benchmark, all/any of its instances are always run.
 
 
 You can also list all benchmarks in your program:
@@ -1111,7 +1111,7 @@ This snippets runs all registered benchmarks, formats their output and prints to
 print(trace_benchmarks(run_benchmarks(get_benchmarks())))
 ```
 
-You can write code that run only some benchmark and uses the output in some other way or special formats.
+You can write code that run only some benchmark and uses the output in some other way or special formats. There is a number of function in the standard library for working like this.
 
 
 
@@ -1158,6 +1158,7 @@ Output is something similar to this:
 }
 ```
 
+This is important information when understanding benchmark results and comparing benchmarks across different computers.
 
 
 <a id="120-about-parallelism"></a>
@@ -2268,10 +2269,11 @@ int benchmark { ... }
 
 You use this expression to wrap a code snippet to measure. Only the statements inside the brackets are measured, no code outside.
 
-The expression returns the duration it takes the run the body. The compiler's dead-code elimination is disabled inside the brackets to not trip up the measurement. The result of the benchmark expression is a value that tells how long the bracketed statements took to execute. Floyd will execute the bracketed statements many times: both to warm up the computer caches before measuring, then to get a statistically safe number -- to reduce the error caused by the OS or hardware doing other things.
+The expression returns the duration it takes the run the body. The compiler's dead-code elimination is disabled inside the brackets to not trip up the measurement. The result of the benchmark expression is a value that tells how long the bracketed statements took to execute. Floyd will execute the bracketed statements many times (called runs): both to warm up the computer caches before measuring, then to get a statistically safe number -- to reduce the error caused by the OS or hardware doing other things.
 
 The returned value is the measured time, in nanoseconds.
 
+Notice: compiler's dead-code elimination is NOT currently disabled correctly.
 
 
 
@@ -2665,7 +2667,7 @@ func my_gui_state_t my_gui(my_gui_state_t state, json message) impure{
 <a id="benchmark-def"></a>
 ### BENCHMARK-DEF
 
-Defines a benchmark (optionally with several instances) so it's available to Floyd. All benchmark-defs in your program is collected in a registry but are not automatically run. The name-string is used to reference the benchmark.
+Defines a benchmark so it's available to Floyd. All benchmark-defs in your program are collected in a registry but are not automatically run. The name-string is used to reference the benchmark.
 
 ```
 [ benchmark_result_t ]benchmark-def "name" { ... }
@@ -2676,37 +2678,40 @@ The benchmark registry is available to your code as a global immutable vector, l
 ```
 	let [benchmark_def_t] benchmark_registry
 ```
-This means you can write code that explores the benchmark_registry vector and its contents, and even run tests using code. There are also standard library functions that helps you do this.
 
-The return from benchmark-def is a vector of benchmark_result_t:s. One for each "benchmark instance". Often you use a single benchmark_result_t.
+This means you can write code that explores the benchmark_registry vector and its contents, and even run tests. There are also standard library functions that helps you do this easily. See the standard library section. Normally you run benchmarks using the features in the floyd command line tool.
+
+The return from benchmark-def is a vector of benchmark_result_t:s. One for each "benchmark instance". But often you use a single benchmark_result_t.
 
 ```
 benchmark_result_t(int dur, json more)
 ```
-The dur is how long the benchmark took to run in nanoseconds. The second argument, more, is optionally more information about your benchmark. If you don't have more info, just pass null.
+
+The dur (duration) is how long the benchmark took to run in nanoseconds. The second argument, *more*, is optionally more information about your benchmark. If you don't have more info, just pass null.
 
 
 #### more
 This is a way to record additional information about your benchmark. It can be more output values from computations, like the memory usage, the output result of the computations or it can be annotations and analysis data, like turning the dur and the amount of work into "1100 pixels/s" etc.
 
-You can just pass a string with that information, like "max detected" or "bandwidth = 120 MB/s"
+You can just pass a string with that information (will become a JSON string), like "max detected" or "bandwidth = 120 MB/s"
 
-A more advanced way is to pass a json dictionary because it gives you the names of properties and the values separately as numbers.
+A more advanced technique is to pass a JSON dictionary because it lets you name properties and specify the properties using number or other JSON values - no need to make everything into strings.
 
-benchmark_result_t(int dur, { "note": "max_detected", "bandwidth MB/s": 120, "pixels/s": 1100)
+```
+benchmark_result_t(int dur, { "note": "max_detected", "bandwidth MB/s": 120, "pixels/s": 1100 })
+```
 
 They you can write your own code to make more advanced reports.
 
 
-Floyd's command line supports these types printouts:
+Floyd's command line supports a few useful features for using the more data:
 
 |More value		| Meaning
 |:---	|:---	
-|null		| no additional data
-|string		| Show in unnamed column
-|dict		| Make a column for each dict key. These are shared for all dicts with those keys, effectively letting you make your own columns
-|any		| Show in the unnamed column, print as compacted json string. A short array becomes "[ 10, 20, 30]" and so forth.
-
+|null		| no additional printout
+|string		| Show the string in the unnamed column
+|dict		| Make a new column for each dict key. These are shared for all dicts with those keys, effectively letting you make your own columns
+|any		| Show more value in the unnamed column, printed as compacted JSON string. A short array becomes "[ 10, 20, 30]" and so forth.
 
 Example:
 
@@ -2719,6 +2724,7 @@ Example:
 "pack_jpeg()": benchmark_result_t { 2029, [ "1024", "1024" ] }
 ```
 
+Is printed like this:
 ```
 | MODULE  | TEST         |     DUR|                   | KB/S    | OUT SIZE  |
 |---------|--------------|--------|-------------------|---------|-----------|
@@ -2732,8 +2738,8 @@ Example:
 
 Notice:
 
-- how we get a blank column where all misc printouts are shown
-- Two tests return a dictionary with a "kb/s" key -- they create a new column and both are shown in that column. Same for "out size".
+- We get a blank column where all misc printouts are shown
+- Two tests return a dictionary with a "kb/s" key -- they create a new column and both benchmarks show there data in that column. Same for "out size".
 - The pack_jpeg-line shows a compact JSON: an array with two strings.
 
 
@@ -2909,17 +2915,15 @@ Here is the DAG for the complete syntax of Floyd.
 
 
 
-
-
 <a id="3-standard-library"></a>
-#3 STANDARD LIBRARY
+# 3 STANDARD LIBRARY
 
 This is a small set of functions and types you can rely on always being available to your Floyd programs. There are features for working with benchmarks, sha1 hashes, time and the file system.
 There is also a set of data types that gives code a common way to talk about dates, binary data and so forth.
 
 
 <a id="31-micro-benchmarking-features"></a>
-##3.1 MICRO BENCHMARKING FEATURES
+## 3.1 MICRO BENCHMARKING FEATURES
 
 <a id="microbenchdef_t-benchmark_id_t-benchmark_result2t"></a>
 ### microbench\_def\_t, benchmark\_id\_t, benchmark\_result2\_t
@@ -3010,7 +3014,7 @@ for(i in 0 ..< size(report)){
 
 
 <a id="32-hardware-caps"></a>
-##3.2 HARDWARE CAPS
+## 3.2 HARDWARE CAPS
 
 These built-in features lets you see what kind of CPU and memory system your program is currently running on. This is often useful when testing, optimising and debugging - both for your own computer and for a tester or user's computer.
 
@@ -3058,7 +3062,7 @@ Output is something similar to this:
 
 
 <a id="33-working-with-hashes---sha1"></a>
-##3.3 WORKING WITH HASHES - SHA1
+## 3.3 WORKING WITH HASHES - SHA1
 
 
 <a id="quickhasht"></a>
