@@ -2355,7 +2355,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "while", "return from within while", ""){
 //######################################################################################################################
 
 
-FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "empty body", "overflows max samples"){
 	ut_run_closed_nolib(
 		QUARK_POS,
 		R"(

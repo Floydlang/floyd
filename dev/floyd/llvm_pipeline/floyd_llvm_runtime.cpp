@@ -1537,6 +1537,57 @@ static function_bind_t floydrt_get_profile_time__make(llvm::LLVMContext& context
 
 
 
+//	Use subset of samples -- assume first sample is warm-up.
+int64_t analyse_samples(const int64_t* samples, int64_t count){
+	const auto use_ptr = &samples[1];
+	const auto use_count = count - 1;
+
+	auto smallest_acc = use_ptr[0];
+	auto largest_acc = use_ptr[0];
+	for(int64_t i = 0 ; i < use_count ; i++){
+		const auto value = use_ptr[i];
+		if(value < smallest_acc){
+			smallest_acc = value;
+		}
+		if(value > largest_acc){
+			largest_acc = value;
+		}
+	}
+//	std::cout << "smallest: " << smallest_acc << std::endl;
+//	std::cout << "largest: " << largest_acc << std::endl;
+	return smallest_acc;
+}
+
+static int64_t floydrt_analyse_benchmark_samples(floyd_runtime_t* frp, const int64_t* samples, int64_t index){
+	const bool trace_flag = false;
+
+	get_floyd_runtime(frp);
+
+	QUARK_ASSERT(index >= 2);
+	if(trace_flag){
+		for(int64_t i = 0 ; i < index ; i++){
+			std::cout << samples[i] << std::endl;
+		}
+	}
+
+	const auto result = analyse_samples(samples, index);
+	return result;
+}
+static function_bind_t floydrt_analyse_benchmark_samples__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		llvm::Type::getInt64Ty(context),
+		{
+			make_frp_type(type_lookup),
+			llvm::Type::getInt64Ty(context)->getPointerTo(),
+			llvm::Type::getInt64Ty(context)
+		},
+		false
+	);
+	return { "analyse_benchmark_samples", function_type, reinterpret_cast<void*>(floydrt_analyse_benchmark_samples) };
+}
+
+
+
 //??? Keep typeid_t for each, then convert to LLVM type. Can't go the other way.
 std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	std::vector<function_bind_t> result = {
@@ -1566,7 +1617,8 @@ std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, c
 
 		floydrt_update_struct_member__make(context, type_lookup),
 
-		floydrt_get_profile_time__make(context, type_lookup)
+		floydrt_get_profile_time__make(context, type_lookup),
+		floydrt_analyse_benchmark_samples__make(context, type_lookup)
 	};
 	return result;
 }
