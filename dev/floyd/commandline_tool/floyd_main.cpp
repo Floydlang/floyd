@@ -350,7 +350,7 @@ QUARK_UNIT_TEST("", "make_benchmark_report()", "Demo", ""){
 static std::string do_user_benchmarks_run_all(const std::string& program_source, const std::string& source_path){
 	const auto b = collect_benchmarks(program_source, source_path);
 	const auto b2 = mapf<std::string>(b, [](const bench_t& e){ return e.benchmark_id.test; });
-	std::vector<benchmark_result2_t> results = run_benchmarks(program_source, source_path, b2);
+	const auto results = run_benchmarks(program_source, source_path, b2);
 
 	const auto report_strs = make_benchmark_report(results);
 	std::stringstream ss;
@@ -414,8 +414,15 @@ static std::string do_user_benchmarks_run_specified(const std::string& program_s
 	const auto b = collect_benchmarks(program_source, source_path);
 	const auto c = filter_benchmarks(b, tests);
 	const auto b2 = mapf<std::string>(c, [](const bench_t& e){ return e.benchmark_id.test; });
-	run_benchmarks(program_source, source_path, b2);
-	return EXIT_SUCCESS;
+	const auto results = run_benchmarks(program_source, source_path, b2);
+
+	const auto report_strs = make_benchmark_report(results);
+	std::stringstream ss;
+	for(const auto& e: report_strs){
+		ss << e << std::endl;
+	}
+
+	return ss.str();
 }
 
 /*
