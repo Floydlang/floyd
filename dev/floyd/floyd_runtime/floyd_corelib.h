@@ -76,6 +76,10 @@ std::vector<std::string> corelib_make_hardware_caps_report(const std::vector<std
 std::string corelib_make_hardware_caps_report_brief(const std::vector<std::pair<std::string, json_t>>& caps);
 
 
+std::vector<std::string> make_benchmark_report(const std::vector<benchmark_result2_t>& test_results);
+
+std::string get_current_date_and_time_string();
+
 
 std::string corelib_calc_string_sha1(const std::string& s);
 std::string corelib_read_text_file(const std::string& abs_path);

@@ -11,7 +11,6 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include <set>
 
 #include "floyd_interpreter.h"
 #include "floyd_parser.h"
@@ -20,7 +19,7 @@
 #include "text_parser.h"
 #include "interpretator_benchmark.h"
 #include "file_handling.h"
-#include "format_table.h"
+#include "floyd_corelib.h"
 
 #include "semantic_analyser.h"
 #include "compiler_helpers.h"
@@ -210,139 +209,6 @@ static int do_run(const command_t& command, const command_t::compile_and_run_t& 
 	}
 }
 
-//	Only does this at top level, not for member strings.
-std::string json_to_pretty_string_no_quotes(const json_t& j){
-	if(j.is_string()){
-		return j.get_string();
-	}
-	else{
-		return json_to_pretty_string(j);
-	}
-}
-
-
-std::vector<std::string> make_benchmark_report(const std::vector<benchmark_result2_t>& test_results){
-	const auto fixed_headings = std::vector<std::string>{ "MODULE", "TEST", "DUR" };
-
-	const int fixed_column_count = (int)fixed_headings.size();
-
-	std::set<std::string> meta_columns;
-	for(const auto& e: test_results){
-		if(e.result.more.is_object()){
-			for(const auto& m: e.result.more.get_object()){
-				meta_columns.insert(m.first);
-			}
-		}
-		else if(e.result.more.is_null() == false){
-				meta_columns.insert("");
-		}
-		else{
-		}
-	}
-	const std::vector<std::string> meta_columns2(meta_columns.begin(), meta_columns.end());
-	const int column_count = fixed_column_count + (int)meta_columns.size();
-
-
-	std::vector<std::string> uppercase_meta_titles;
-	for(const auto& e: meta_columns2){
-		auto s = e;
-		std::transform(s.begin(), s.end(), s.begin(), ::toupper);
-		uppercase_meta_titles.push_back(s);
-	}
-
-	const auto headings = line_t{ concat(fixed_headings, uppercase_meta_titles) };
-
-	std::vector<line_t> table;
-	for(const auto& e: test_results){
-		const auto columns = std::vector<std::string>{
-			e.test_id.module,
-			e.test_id.test,
-			std::to_string(e.result.dur) + " ns"
-		};
-
-		const auto& more = e.result.more;
-
-		std::vector<std::string> meta;
-		for(const auto& m: meta_columns2){
-			if(m == ""){
-				if(more.is_object()){
-					meta.push_back("");
-				}
-				else if(more.is_null()){
-					meta.push_back("");
-				}
-				else{
-					meta.push_back(json_to_pretty_string_no_quotes(more));
-				}
-			}
-			else {
-				if(more.is_object() && more.does_object_element_exist(m)){
-					meta.push_back(json_to_pretty_string_no_quotes(more.get_object_element(m)));
-				}
-				else if(e.result.more.is_null() == false){
-					meta.push_back("");
-				}
-				else{
-					meta.push_back("");
-				}
-			}
-		}
-
-		table.push_back(line_t{ concat(columns, meta) });
-	}
-
-	const auto default_column = column_t{ 0, 0, 1 };
-	const auto start_columns = concat(
-		std::vector<column_t>{ default_column, default_column, { 0, 1, 0 } },
-		std::vector<column_t>(column_count - fixed_column_count, default_column)
-	);
-	const auto columns0 = fit_column(start_columns, headings);
-	const auto columns = fit_columns(columns0, table);
-
-	std::vector<line_t> header_rows = {
-		headings,
-		line_t::make_pad( std::vector<std::string>(column_count, ""), '-' )
-	};
-	return generate_table(concat(header_rows, table), columns);
-}
-
-
-QUARK_UNIT_TEST("", "make_benchmark_report()", "", ""){
-	const auto test = std::vector<benchmark_result2_t> {
-		benchmark_result2_t { benchmark_id_t{ "", "g" }, benchmark_result_t { 2, json_t::make_object({ { "rate", "===========" }, { "wind", 14 } } ) } },
-		benchmark_result2_t { benchmark_id_t{ "", "abc" }, benchmark_result_t { 2000, json_t("0 elements") } },
-		benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 1, json_t("third") } },
-		benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 2, json_t::make_object({ { "rate", 20 }, { "wind", 12 } } ) } },
-		benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 3, json_t("third") } },
-		benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 3, json_t() } },
-		benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 3, json_t::make_array( { "ett", "fyra" }) } },
-		benchmark_result2_t { benchmark_id_t{ "", "g" }, benchmark_result_t { 2, json_t::make_object({ { "rate", 21 }, { "wind", 13 } } ) } },
-		benchmark_result2_t { benchmark_id_t{ "", "g" }, benchmark_result_t { 300, json_t("bytes/s") } }
-	};
-
-	const auto result = make_benchmark_report(test);
-	for(const auto& e: result){
-		std::cout << e << std::endl;
-	}
-}
-
-//	Generate demo reports
-QUARK_UNIT_TEST("", "make_benchmark_report()", "Demo", ""){
-	const auto test = std::vector<benchmark_result2_t> {
-		benchmark_result2_t { benchmark_id_t{ "", "pack_png()" }, benchmark_result_t { 1800, json_t::make_object({ { "kb/s", 670000 }, { "out size", 14014 } } ) } },
-		benchmark_result2_t { benchmark_id_t{ "", "pack_png()" }, benchmark_result_t { 2023, json_t("alpha") } },
-		benchmark_result2_t { benchmark_id_t{ "", "pack_png()" }, benchmark_result_t { 2980, json_t() } },
-		benchmark_result2_t { benchmark_id_t{ "", "zip()" }, benchmark_result_t { 4030, json_t::make_object({ { "kb/s", 503000 }, { "out size", 12030 } } ) } },
-		benchmark_result2_t { benchmark_id_t{ "", "zip()" }, benchmark_result_t { 5113, json_t("alpha") } },
-		benchmark_result2_t { benchmark_id_t{ "", "pack_jpeg()" }, benchmark_result_t { 2029, json_t::make_array( { "1024", "1024" }) } }
-	};
-
-	const auto result = make_benchmark_report(test);
-	for(const auto& e: result){
-		std::cout << e << std::endl;
-	}
-}
-
 
 
 
@@ -405,7 +271,6 @@ QUARK_UNIT_TEST("", "do_user_benchmarks_run_all()", "", ""){
 	QUARK_UT_VERIFY(result[3] == (benchmark_result2_t { benchmark_id_t{ "", "def" }, benchmark_result_t { 3, json_t("third") } }));
 	QUARK_UT_VERIFY(result[4] == (benchmark_result2_t { benchmark_id_t{ "", "g" }, benchmark_result_t { 300, json_t("bytes/s") } }));
 */
-
 }
 
 
@@ -523,26 +388,6 @@ QUARK_UNIT_TEST("", "do_user_benchmarks_list()", "", ""){
 }
 
 
-
-/*
-    auto start = std::chrono::system_clock::now();
-    // Some computation here
-    auto end = std::chrono::system_clock::now();
-
-    std::chrono::duration<double> elapsed_seconds = end-start;
-    std::time_t end_time = std::chrono::system_clock::to_time_t(end);
-
-    std::cout << "finished computation at " << std::ctime(&end_time)
-              << "elapsed time: " << elapsed_seconds.count() << "s\n";
-*/
-std::string get_current_date_and_time_string(){
-	const auto now = std::chrono::system_clock::now();
-	const std::time_t now_time = std::chrono::system_clock::to_time_t(now);
-	const auto s = std::string(std::ctime(&now_time));
-
-	//	Remove trailing '\n'.
-	return s.substr(0, s.size() - 1);
-}
 
 
 
