@@ -142,10 +142,20 @@ QUARK_UNIT_TEST("", "string_to_args()", "", ""){
 
 
 command_t parse_command(const std::vector<std::string>& args){
+#if DEBUG && 0
+	for(const auto& e: args){
+		std::cout << "\"" << e << "\"" << std::endl;
+	}
+#endif
+
 	const auto command_line_args = parse_command_line_args_subcommands(args, "tl");
 	const auto path_parts = SplitPath(command_line_args.command);
 	QUARK_ASSERT(path_parts.fName == "floyd" || path_parts.fName == "floydut");
 	const bool trace_on = command_line_args.flags.find("t") != command_line_args.flags.end() ? true : false;
+
+#if DEBUG && 0
+	std::cout << command_line_args.subcommand << std::endl;
+#endif
 
 	if(command_line_args.subcommand == "help"){
 		return command_t { command_t::help_t { } };

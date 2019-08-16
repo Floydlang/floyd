@@ -1,0 +1,45 @@
+
+benchmark-def "AAA" {
+	return [ benchmark_result_t(200, json("0 eleements")) ]
+}
+
+benchmark-def "BBB" {
+	return [ benchmark_result_t(300, json("3 monkeys")) ]
+}
+
+
+
+
+func void hello_test(int count){
+	for(e in 0 ... count){
+		let a = "hello, world!"
+	}
+}
+
+benchmark-def "hello" {
+	let dur = benchmark {
+		hello_test(100)
+	}
+	return [ benchmark_result_t(dur, {}) ]
+}
+
+
+
+benchmark-def "Linear veq" {
+	mutable [benchmark_result_t] results = []
+	let instances = [ 0, 1, 2, 3, 4, 10, 20, 100, 1000, 10000, 100000 ]
+	for(i in 0 ..< size(instances)){
+		let x = instances[i]
+		mutable acc = 0
+
+		let r = benchmark {
+			//	The work to measure
+			for(a in 0 ..< x){
+				acc = acc + 1
+			}
+		}
+		results = push_back(results, benchmark_result_t(r, json( { "Count": x } )))
+	}
+	return results
+}
+
