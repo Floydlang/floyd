@@ -15,7 +15,10 @@
 std::string generate_line(const line_t& line, const std::vector<column_t>& columns){
 	QUARK_ASSERT(columns.size() == line.columns.size());
 
-	std::string acc = "|";
+	const auto bar_char = line.bar_char == 0x00 ? std::string("") : std::string(1, line.bar_char);
+
+
+	std::string acc = bar_char;
 	for(int c = 0 ; c < line.columns.size() ; c++){
 		const auto s0 = line.columns[c];
 		const auto s = std::string(columns[c].margin, line.pad_char) + s0 + std::string(columns[c].margin, line.pad_char);
@@ -26,7 +29,7 @@ std::string generate_line(const line_t& line, const std::vector<column_t>& colum
 
 		const auto s2 = columns[c].align <= 0 ? s + pad_string : pad_string + s;
 
-		acc = acc + s2 + "|";
+		acc = acc + s2 + bar_char;
 	}
 	return acc;
 }

@@ -63,6 +63,9 @@ struct command_t {
 		bool trace;
 	};
 
+	struct hwcaps_t {
+		bool trace;
+	};
 	struct benchmark_internals_t {
 		bool trace;
 	};
@@ -80,6 +83,7 @@ struct command_t {
 		compile_and_run_t,
 		compile_to_ast_t,
 		user_benchmarks_t,
+		hwcaps_t,
 
 		benchmark_internals_t,
 		runtests_internals_t

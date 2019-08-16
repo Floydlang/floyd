@@ -167,6 +167,7 @@ Floyd generates native machine code but also comes with a bytecode interpreter.
 | floyd bench mygame.floyd					| Runs all benchmarks, as defined by benchmark-def statements in Floyd program
 | floyd bench mygame.floyd rle game_loop	| Runs specified benchmarks "rle" and "game_loop"
 | floyd bench -l mygame.floyd				| Returns list of benchmarks
+| floyd hwcaps								| Outputs hardware capabilities
 | floyd benchmark_internal					| Runs Floyd built in suite of benchmark tests and prints the results
 | floyd runtests							| Runs Floyd built internal unit tests
 
@@ -1159,6 +1160,36 @@ Output is something similar to this:
 ```
 
 This is important information when understanding benchmark results and comparing benchmarks across different computers.
+
+You can also request this using the command line tool:
+
+```
+floyd hwcaps
+```
+
+Prints something like this:
+
+```
+Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz  16 GB DRAM  8 cores
+PROCESSOR                                                       
+----------------------------------------------------------------
+Model          iMac15,1              ncpu                 8     
+Machine        x86_64                Phys Processor Count 4     
+CPU Freq       4 GHz                                            
+CPU Type       7                     Vector unit          yes   
+CPU Sub type   8                     Floatingpoint        no    
+                                                                
+MEMORY                                                          
+----------------------------------------------------------------
+Bus freq       100 MHz               Page size            4 kB  
+User mem       3887240 kB            Scalar align         16 B  
+Physical mem   2 GB                  Byte order           1234  
+Cacheline size 64 B                                             
+L1 data        32 kB                 L1 instructions      32 kB 
+L2             256 kB                L3                   8 MB  
+```
+
+
 
 
 <a id="120-about-parallelism"></a>

@@ -20,8 +20,27 @@ struct column_t {
 };
 
 struct line_t {
+	static line_t make_pad(const std::vector<std::string>& columns, char pad_char){
+		return line_t(columns, pad_char, '|');
+	}
+
+	line_t(const std::vector<std::string>& columns) :
+		columns(columns),
+		pad_char(' '),
+		bar_char(' ')
+	{
+	}
+
+	line_t(const std::vector<std::string> columns, char pad_char, char bar_char) :
+		columns(columns),
+		pad_char(pad_char),
+		bar_char(bar_char)
+	{
+	}
+
 	std::vector<std::string> columns;
 	char pad_char;
+	char bar_char;
 };
 
 

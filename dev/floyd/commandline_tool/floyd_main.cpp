@@ -250,7 +250,7 @@ std::vector<std::string> make_benchmark_report(const std::vector<benchmark_resul
 		uppercase_meta_titles.push_back(s);
 	}
 
-	const auto headings = line_t{ concat(fixed_headings, uppercase_meta_titles), ' '};
+	const auto headings = line_t{ concat(fixed_headings, uppercase_meta_titles) };
 
 	std::vector<line_t> table;
 	for(const auto& e: test_results){
@@ -288,7 +288,7 @@ std::vector<std::string> make_benchmark_report(const std::vector<benchmark_resul
 			}
 		}
 
-		table.push_back(line_t{ concat(columns, meta), ' ' });
+		table.push_back(line_t{ concat(columns, meta) });
 	}
 
 	const auto default_column = column_t{ 0, 0, 1 };
@@ -301,7 +301,7 @@ std::vector<std::string> make_benchmark_report(const std::vector<benchmark_resul
 
 	std::vector<line_t> header_rows = {
 		headings,
-		line_t{ std::vector<std::string>(column_count, ""), '-' }
+		line_t::make_pad( std::vector<std::string>(column_count, ""), '-' )
 	};
 	return generate_table(concat(header_rows, table), columns);
 }
@@ -663,6 +663,16 @@ QUARK_UNIT_TEST("", "collect_benchmarks()", "", ""){
 }
 
 
+static void do_hardware_caps(){
+	const auto caps = corelib_detect_hardware_caps();
+	const auto r = corelib_make_hardware_caps_report(caps);
+
+	std::cout << get_current_date_and_time_string() << std::endl;
+	for(const auto& e: r){
+		std::cout << e << std::endl;
+	}
+}
+
 
 //	Runs one of the commands, args depends on which command.
 static int do_command(const command_t& command){
@@ -686,6 +696,10 @@ static int do_command(const command_t& command){
 			return do_user_benchmarks(command, command2);
 		}
 
+		int operator()(const command_t::hwcaps_t& command2) const{
+			do_hardware_caps();
+			return EXIT_SUCCESS;
+		}
 
 		int operator()(const command_t::benchmark_internals_t& command2) const{
 			run_benchmark();

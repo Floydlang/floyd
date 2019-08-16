@@ -72,7 +72,7 @@ inline bool operator==(const benchmark_result2_t& lhs, const benchmark_result2_t
 
 
 std::vector<std::pair<std::string, json_t>> corelib_detect_hardware_caps();
-//std::string corelib_make_hardware_caps_report(const std::vector<std::pair<std::string, json_t>>& caps);
+std::vector<std::string> corelib_make_hardware_caps_report(const std::vector<std::pair<std::string, json_t>>& caps);
 std::string corelib_make_hardware_caps_report_brief(const std::vector<std::pair<std::string, json_t>>& caps);
 
 

@@ -15,6 +15,7 @@
 #include "sha1_class.h"
 #include "file_handling.h"
 #include "hardware_caps.h"
+#include "format_table.h"
 
 #include <iostream>
 #include <fstream>
@@ -522,22 +523,120 @@ std::vector<std::pair<std::string, json_t>> corelib_detect_hardware_caps(){
 
 
 */
-std::string corelib_make_hardware_caps_report(const std::vector<std::pair<std::string, json_t>>& caps){
-	return "";
-}
 
 std::string simplify_mem_size(int64_t value){
-	const int64_t gb_k = 1024 * 1024 * 1024;
-	const int64_t gb = value / gb_k;
-	const int64_t gb_rem = value % gb_k;
+	const int64_t k = 1024;
 
-	if(gb_rem == 0){
-		return std::to_string(gb) + " GB";
+	if((value % (k * k * k)) == 0){
+		return std::to_string(value / (k * k * k)) + " GB";
+	}
+	else if((value % (k * k)) == 0){
+		return std::to_string(value / (k * k)) + " MB";
+	}
+	else if((value % (k)) == 0){
+		return std::to_string(value / (k)) + " kB";
 	}
 	else{
 		return std::to_string(value) + " B";
 	}
 }
+
+QUARK_UNIT_TEST("", "corelib_make_hardware_caps_report()", "", ""){
+	const auto r = simplify_mem_size(3943120896);
+//	QUARK_UT_VERIFY(r == "4 GB");
+}
+
+
+
+
+std::string simplify_freq(int64_t freq){
+	if((freq % 1000000000) == 0){
+		return std::to_string(freq / 1000000000) + " GHz";
+	}
+	else if((freq % 1000000) == 0){
+		return std::to_string(freq / 1000000) + " MHz";
+	}
+	else if((freq % 1000) == 0){
+		return std::to_string(freq / 1000) + " kHz";
+	}
+	else{
+		return std::to_string(freq) + " Hz";
+	}
+}
+
+
+
+std::vector<std::string> corelib_make_hardware_caps_report(const std::vector<std::pair<std::string, json_t>>& caps){
+	const auto m = std::map<std::string, json_t>(caps.begin(), caps.end());
+//	const auto machdep_cpu_brand = m.at("machdep_cpu_brand_string").get_string();
+	const auto machine = m.at("machine").get_string();
+	const auto model = m.at("model").get_string();
+	const auto cpu_freq_hz = m.at("cpu_freq_hz").get_number();
+	const auto cpu_type = m.at("cpu_type").get_number();
+	const auto cpu_type_subtype = m.at("cpu_type_subtype").get_number();
+	const auto floatingpoint = m.at("floatingpoint").get_number();
+//	const auto logical_processor_count = m.at("logical_processor_count").get_number();
+	const auto machinearch = m.at("machinearch").get_string();
+	const auto vectorunit = m.at("vectorunit").get_number();
+
+	const auto ncpu = m.at("ncpu").get_number();
+	const auto physical_processor_count = m.at("physical_processor_count").get_number();
+
+
+//	const auto mem_size = m.at("mem_size").get_number();
+	const auto bus_freq_hz = m.at("bus_freq_hz").get_number();
+	const auto usermem = m.at("usermem").get_number();
+	const auto physmem = m.at("physmem").get_number();
+	const auto cacheline_size = m.at("cacheline_size").get_number();
+	const auto scalar_align = m.at("scalar_align").get_number();
+	const auto byteorder = m.at("byteorder").get_number();
+	const auto page_size = m.at("page_size").get_number();
+
+	const auto l1_data_cache_size = m.at("l1_data_cache_size").get_number();
+	const auto l1_instruction_cache_size = m.at("l1_instruction_cache_size").get_number();
+	const auto l2_cache_size = m.at("l2_cache_size").get_number();
+	const auto l3_cache_size = m.at("l3_cache_size").get_number();
+
+
+
+	std::vector<line_t> table = {
+		line_t( { "PROCESSOR", "",												"",		"", "" }, ' ', 0x00),
+		line_t( { "", "",														"",		"", "" }, '-', 0x00),
+		line_t( { "Model", model,												"",		"ncpu", std::to_string((int)ncpu) }, ' ', 0x00),
+		line_t( { "Machine", machine,											"",		"Phys Processor Count", std::to_string((int64_t)physical_processor_count) }, ' ', 0x00),
+		line_t( { "CPU Freq", simplify_freq((int64_t)cpu_freq_hz),				"",		"","" }, ' ', 0x00),
+		line_t( { "CPU Type", std::to_string((int)cpu_type),					"",		"Vector unit", vectorunit == 1 ? "yes" : "no" }, ' ', 0x00),
+		line_t( { "CPU Sub type", std::to_string((int)cpu_type_subtype),		"",		"Floatingpoint", floatingpoint == 1 ? "yes" : "no" }, ' ', 0x00),
+		line_t( { "", "",														"",		"","" }, ' ', 0x00),
+		line_t( { "MEMORY", "",			"",		"", "" }, ' ', 0x00),
+		line_t( { "", "",														"",		"", "" }, '-', 0x00),
+		line_t( { "Bus freq", simplify_freq((int64_t)bus_freq_hz),				"",		"Page size", simplify_mem_size((int64_t)page_size) }, ' ', 0x00),
+		line_t( { "User mem", simplify_mem_size((int64_t)usermem),				"",		"Scalar align", simplify_mem_size((int64_t)scalar_align) }, ' ', 0x00),
+		line_t( { "Physical mem", simplify_mem_size((int64_t)physmem),			"",		"Byte order", std::to_string((int)byteorder) }, ' ', 0x00),
+		line_t( { "Cacheline size", simplify_mem_size((int64_t)cacheline_size),		"", "", "" }, ' ', 0x00),
+		line_t( { "L1 data", simplify_mem_size((int64_t)l1_data_cache_size),	"",		"L1 instructions", simplify_mem_size((int64_t)l1_instruction_cache_size) }, ' ', 0x00),
+		line_t( { "L2", simplify_mem_size((int64_t)l2_cache_size),				"",		"L3", simplify_mem_size((int64_t)l3_cache_size) }, ' ', 0x00)
+	};
+
+	const auto default_column = column_t{ 0, -1, 0 };
+	const auto columns0 = std::vector<column_t>{ default_column, default_column, column_t{ 10, -1, 0 }, default_column, default_column };
+	const auto columns = fit_columns(columns0, table);
+	const auto table2 = generate_table(table, columns);
+	const auto r = concat(std::vector<std::string>{ corelib_make_hardware_caps_report_brief(caps), "" }, table2);
+	return r;
+}
+
+
+
+QUARK_UNIT_TEST_VIP("", "corelib_make_hardware_caps_report()", "", ""){
+	const auto caps = corelib_detect_hardware_caps();
+	const auto r = corelib_make_hardware_caps_report(caps);
+	for(const auto& e: r){
+		std::cout << e << std::endl;
+	}
+//	QUARK_UT_VERIFY(r == "Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz  16 GB DRAM  8 cores");
+}
+
 
 
 //	"Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz"	mem_size: 1.71799e+10,	logical_processor_count: 8,
@@ -556,7 +655,7 @@ std::string corelib_make_hardware_caps_report_brief(const std::vector<std::pair<
 	return r.str();
 }
 
-QUARK_UNIT_TEST_VIP("", "corelib_make_hardware_caps_report_brief()", "", ""){
+QUARK_UNIT_TEST("", "corelib_make_hardware_caps_report_brief()", "", ""){
 	const std::vector<std::pair<std::string, json_t>> caps = {
 		{ "machdep_cpu_brand_string", json_t("Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz") },
 		{ "logical_processor_count", json_t(8) },

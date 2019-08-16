@@ -218,6 +218,8 @@ void test(){
 #endif
 
 
+//	https://opensource.apple.com/source/xnu/xnu-792/libkern/libkern/sysctl.h
+
 hardware_caps_t read_hardware_caps(){
 #ifdef __APPLE__
 	return {
