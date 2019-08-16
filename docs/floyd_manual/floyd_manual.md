@@ -10,40 +10,41 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 <!-- MarkdownTOC autolink="true" levels="1, 2, 3" autolink="true" autoanchor="true"  -->
 
 - [1 FLOYD LANGUAGE USER'S MANUAL](#1-floyd-language-users-manual)
-	- [1.1 GETTING STARTED](#11-getting-started)
-	- [1.2 COMMAND LINE TOOL](#12-command-line-tool)
-	- [1.3 GLOBAL SCOPE AND MAIN FUNCTION](#13-global-scope-and-main-function)
-	- [1.4 DATA TYPES](#14-data-types)
-	- [1.5 OPERATORS AND EXPRESSIONS](#15-operators-and-expressions)
-	- [1.6 VALUES, VARIABLES](#16-values-variables)
+	- [1.1 ABOUT FLOYD](#11-about-floyd)
+	- [1.2 GETTING STARTED](#12-getting-started)
+	- [1.3 COMMAND LINE TOOL](#13-command-line-tool)
+	- [1.4 GLOBAL SCOPE AND MAIN FUNCTION](#14-global-scope-and-main-function)
+	- [1.5 DATA TYPES](#15-data-types)
+	- [1.6 OPERATORS AND EXPRESSIONS](#16-operators-and-expressions)
+	- [1.7 VALUES, VARIABLES](#17-values-variables)
 		- [IMMUTABLE VALUES VS VARIABLES](#immutable-values-vs-variables)
 		- [DEEP BY VALUE](#deep-by-value)
 		- [VALUE ORIENTED, NO POINTERS](#value-oriented-no-pointers)
 		- [STATIC TYPING, INFERRED](#static-typing-inferred)
-	- [1.7 COMMENTS AND DOCUMENTATION](#17-comments-and-documentation)
-	- [1.8 STRING](#18-string)
-	- [1.9 VECTOR](#19-vector)
-	- [1.10 DICTIONARY](#110-dictionary)
-	- [1.11 STRUCT](#111-struct)
-	- [1.12 FUNCTION](#112-function)
-	- [1.13 JSON AND AUTOMATIC SERIALIZATION](#113-json-and-automatic-serialization)
-	- [1.14 FLOYD PROCESSES - TALKING TO THE REAL WORLD](#114-floyd-processes---talking-to-the-real-world)
+	- [1.8 COMMENTS AND DOCUMENTATION](#18-comments-and-documentation)
+	- [1.9 STRING](#19-string)
+	- [1.10 VECTOR](#110-vector)
+	- [1.11 DICTIONARY](#111-dictionary)
+	- [1.12 STRUCT](#112-struct)
+	- [1.13 FUNCTION](#113-function)
+	- [1.14 JSON AND AUTOMATIC SERIALIZATION](#114-json-and-automatic-serialization)
+	- [1.15 FLOYD PROCESSES - TALKING TO THE REAL WORLD](#115-floyd-processes---talking-to-the-real-world)
 		- [GAIN PERFORMANCE VIA CONCURRENCY](#gain-performance-via-concurrency)
 		- [CONCURRENCY SCENARIOS](#concurrency-scenarios)
 		- [EXAMPLE: SIMPLE CONSOLE PROGRAM](#example-simple-console-program)
 		- [EXAMPLE: PACMAN IPHONE](#example-pacman-iphone)
-	- [1.15 SYSTEM ARCHITECTURE](#115-system-architecture)
+	- [1.16 SYSTEM ARCHITECTURE](#116-system-architecture)
 		- [DIAGRAMS](#diagrams)
-	- [1.16 TODO: EXCEPTIONS](#116-todo-exceptions)
-	- [1.17 ABOUT PERFORMANCE](#117-about-performance)
-	- [1.18 ABOUT MICRO BENCHMARKS](#118-about-micro-benchmarks)
-		- [BENCHMARK WITH 11 INSTANCES](#benchmark-with-11-instances)
+	- [1.17 TODO: EXCEPTIONS](#117-todo-exceptions)
+	- [1.18 ABOUT PERFORMANCE](#118-about-performance)
+	- [1.19 MICRO BENCHMARKS](#119-micro-benchmarks)
+		- [ABOUT MICRO BENCHMARKS](#about-micro-benchmarks)
 		- [RUNNING MICRO BENCHMARKS FROM COMMAND LINE TOOL](#running-micro-benchmarks-from-command-line-tool)
 		- [RUNNING MICRO BENCHMARKS FROM FLOYD CODE](#running-micro-benchmarks-from-floyd-code)
 		- [HARDWARE CAPS](#hardware-caps)
-	- [1.19 ABOUT PARALLELISM](#119-about-parallelism)
-	- [1.20 TODO: PROBES](#120-todo-probes)
-	- [1.21 TODO: TWEAKERS](#121-todo-tweakers)
+	- [1.20 ABOUT PARALLELISM](#120-about-parallelism)
+	- [1.21 TODO: PROBES](#121-todo-probes)
+	- [1.22 TODO: TWEAKERS](#122-todo-tweakers)
 - [2 FLOYD LANGUAGE REFERENCE MANUAL](#2-floyd-language-reference-manual)
 	- [2.1 SOURCE CODE FILES](#21-source-code-files)
 	- [2.2 MAIN\(\) & EXECUTING PROGRAMS](#22-main--executing-programs)
@@ -134,24 +135,27 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 <a id="1-floyd-language-users-manual"></a>
 # 1 FLOYD LANGUAGE USER'S MANUAL
 
+This document assumes the reader knows basic programming concepts like variables, functions and types. It comes in two parts. The first is the user’s guide which explains how to use Floyd to build programs, the unique features of Floyd and its most important concepts. The second part is the reference manual that goes through every feature and explains in detail how they work.
+
+<a id="11-about-floyd"></a>
+## 1.1 ABOUT FLOYD
 Floyd is a programming language that aims to compete with languages like Java, C++, Rust, Go, Javascript and Python. Floyd cares about low level things like CPU memory hardware as well as high level things like software systems, containers, components, APIs and virtual processes.
 
 Floyd generates native machine code but also comes with a bytecode interpreter.
 
-This document assumes the reader knows basic programming concepts like variables, functions and types. It comes in two parts. The first is the user’s guide which explains how to use Floyd to build programs, the unique features of Floyd and its most important concepts. The second part is the reference manual that goes through every feature and explains in detail how they work.
 
 
 
-<a id="11-getting-started"></a>
-## 1.1 GETTING STARTED
+<a id="12-getting-started"></a>
+## 1.2 GETTING STARTED
 
 
  ![](floyd_quick_reference.png)
 
 
 
-<a id="12-command-line-tool"></a>
-## 1.2 COMMAND LINE TOOL
+<a id="13-command-line-tool"></a>
+## 1.3 COMMAND LINE TOOL
 
 |COMMAND		  	| MEANING
 |:---				|:---	
@@ -169,8 +173,8 @@ This document assumes the reader knows basic programming concepts like variables
 
 
 
-<a id="13-global-scope-and-main-function"></a>
-## 1.3 GLOBAL SCOPE AND MAIN FUNCTION
+<a id="14-global-scope-and-main-function"></a>
+## 1.4 GLOBAL SCOPE AND MAIN FUNCTION
 
 The global scope is the top level of you source file: statements that are not inside any function. Here you normally define functions, structs and global constants. The global scope can have almost any statement and they execute at program start. Simple programs can do without defining any functions at all.
 
@@ -191,8 +195,8 @@ func int main([string] args){
 
 
 
-<a id="14-data-types"></a>
-## 1.4 DATA TYPES
+<a id="15-data-types"></a>
+## 1.5 DATA TYPES
 
 These are the primitive data types built into the language itself. The building blocks of all values and data in Floyd.
 One of Floyd's goals is that all the basics you need are already there in the language and the standard library. This makes it easy to start making meaningful programs. It also promotes composability since all Floyd code can rely on these types and communicate between themselves using these types. This greatly reduces the need to write glue code that converts between different library's string classes and logging and so on.
@@ -216,8 +220,8 @@ The standard library has more common types, like sha1_t, uuid_t, url_t, date_t, 
 
 
 
-<a id="15-operators-and-expressions"></a>
-## 1.5 OPERATORS AND EXPRESSIONS
+<a id="16-operators-and-expressions"></a>
+## 1.6 OPERATORS AND EXPRESSIONS
 
 There are operators for comparing values: <, >, <=, >=, == (equal), != (not equal).
 Logical operators && (and) and || (or).
@@ -237,8 +241,8 @@ Notice that floyd has no special operator syntax for bitwise operations the way 
 
 
 
-<a id="16-values-variables"></a>
-## 1.6 VALUES, VARIABLES
+<a id="17-values-variables"></a>
+## 1.7 VALUES, VARIABLES
 
 <a id="immutable-values-vs-variables"></a>
 ### IMMUTABLE VALUES VS VARIABLES
@@ -315,8 +319,8 @@ You can often leave out the actual type from the code, when the compiler already
 
 
 
-<a id="17-comments-and-documentation"></a>
-## 1.7 COMMENTS AND DOCUMENTATION
+<a id="18-comments-and-documentation"></a>
+## 1.8 COMMENTS AND DOCUMENTATION
 
 Use comments to write documentation, notes or explanations in the code. Comments are not executed or compiled -- they are only for humans. You often use the comment features to disable / hide code from the compiler.
 
@@ -341,8 +345,8 @@ let a = "hello" //	This is an end of line comment.
 
 
 
-<a id="18-string"></a>
-## 1.8 STRING
+<a id="19-string"></a>
+## 1.9 STRING
 
 Floyd has a built-in 8-bit string type. As all data types in Floyd, the string type is immutable. You can also use them as fast and compact arrays of bytes since there are no other 8 bit types in Floyd. You can make string literals directly in the source code like this: ``` let a = "Hello, world!" ```
 
@@ -360,8 +364,8 @@ assert(a == "e")
 Notice: a special mechansim for Unicode is planned, using another data type: "text".
 
 
-<a id="19-vector"></a>
-## 1.9 VECTOR
+<a id="110-vector"></a>
+## 1.10 VECTOR
 
 A vector is a collection of values where you look up the values using an index between 0 and (vector size - 1). The items in a vector are called "elements". The elements are ordered. Finding an element at an index uses constant time. In other languages vectors are called "arrays" or even "lists". Floyd vectors can have any size - the number of elements is not part of the type.
 
@@ -398,8 +402,8 @@ assert(a == [ 10, 20, 30, 40, 50 ])
 ```
 
 
-<a id="110-dictionary"></a>
-## 1.10 DICTIONARY
+<a id="111-dictionary"></a>
+## 1.11 DICTIONARY
 
 A collection of values where you identify the values using string keys. In C++ you would use a std::map. When you specify the type of dictionary you must always include "string". You can put any type of value into the dictionary (but not mix inside the same dictionary).
 
@@ -422,8 +426,8 @@ You copy dictionaries using = and all comparison expressions work, just like wit
 
 
 
-<a id="111-struct"></a>
-## 1.11 STRUCT
+<a id="112-struct"></a>
+## 1.12 STRUCT
 
 Structs are the central building block for composing data in Floyd. They are used in place of classes in other programming languages. Structs are always values and immutable. They are very fast and compact: behind the curtains copied structs shares state between them, even when partially modified.
 
@@ -506,8 +510,8 @@ assert(b.size.x == 100)
 
 
 
-<a id="112-function"></a>
-## 1.12 FUNCTION
+<a id="113-function"></a>
+## 1.13 FUNCTION
 
 Functions in Floyd are by default *pure*, or *referential transparent*. This means they can only read their input arguments and constants. They cannot modify global variables or affect the outside work via communication or files.
 
@@ -595,8 +599,8 @@ Why is this OK? Well to be picky there are no pure functions, since calling a pu
 
 
 
-<a id="113-json-and-automatic-serialization"></a>
-## 1.13 JSON AND AUTOMATIC SERIALIZATION
+<a id="114-json-and-automatic-serialization"></a>
+## 1.14 JSON AND AUTOMATIC SERIALIZATION
 
 Serializing any Floyd value is a built-in mechanism. It is always true-deep.
 
@@ -640,8 +644,8 @@ let test_json2 = json(
 
 
 
-<a id="114-floyd-processes---talking-to-the-real-world"></a>
-## 1.14 FLOYD PROCESSES - TALKING TO THE REAL WORLD
+<a id="115-floyd-processes---talking-to-the-real-world"></a>
+## 1.15 FLOYD PROCESSES - TALKING TO THE REAL WORLD
 
 Floyd processes is how you express the passing of time, updating state (mutation) and handling concurrency in Floyd. These concepts are tied together.
 
@@ -830,8 +834,8 @@ https://www.youtube.com/watch?v=v2Q_zHG3vqg
 
 
 
-<a id="115-system-architecture"></a>
-## 1.15 SYSTEM ARCHITECTURE
+<a id="116-system-architecture"></a>
+## 1.16 SYSTEM ARCHITECTURE
 
 Floyd uses the C4 model to navigate and present your code and for its terminology. It's completely optional to use these features. They give you a very fast and lightweight way method to think about your system and to automatically generate a few great diagrams that helps you reason about it.
 
@@ -934,16 +938,16 @@ TODO: support connections between components inside containers.
 
 
 
-<a id="116-todo-exceptions"></a>
-## 1.16 TODO: EXCEPTIONS
+<a id="117-todo-exceptions"></a>
+## 1.17 TODO: EXCEPTIONS
 
 Throw exception. Built in types, free noun. Refine, final.
 
 
 
 
-<a id="117-about-performance"></a>
-## 1.17 ABOUT PERFORMANCE
+<a id="118-about-performance"></a>
+## 1.18 ABOUT PERFORMANCE
 
 Chandler Carruth:
 
@@ -979,9 +983,12 @@ TODO: Also draw computing power.
 TOD: Fact check stats.
 
 
-<a id="118-about-micro-benchmarks"></a>
-## 1.18 ABOUT MICRO BENCHMARKS
+<a id="119-micro-benchmarks"></a>
+## 1.19 MICRO BENCHMARKS
 
+
+<a id="about-micro-benchmarks"></a>
+### ABOUT MICRO BENCHMARKS
 Floyd is about engineering programs for fast execution. To aid in this, Floyd has built-in features to benchmark your code so you know the actual performance.
 
 ```
@@ -999,16 +1006,13 @@ The Floyd micro benchmark features give you a simple way to measure the performa
 
 > NOTICE: Micro benchmarking is not the same as profiling with a profiler. Profiling is used on an entire program and helps you *find* hotspots. Micro benchmarking just looks at a small code snippet.
 
-You can add a micro benchmark anywhere in a source file using the **benchmark-def statement** and the **benchmark expression**, ideally right next the function to measure. The micro benchmarks are not automatically run, you need to request that, either from the floyd command line tool or via your own code. You are in control over which tests to run and can control how to present the output.
-
-You leave the micro benchmarks in your code. They can be stripped out when compiling.
+You can add a micro benchmark anywhere in a source file (at the top level) using the **benchmark-def statement**, ideally right next the function to measure. The micro benchmarks are not automatically run, you need to request that, either from the floyd command line tool or via your own code. You are in control over which tests to run and can control how to present the output. To actual measure the time you use the benchmark-expression. You leave the micro benchmarks in your code. They can be stripped out when compiling.
 
 > TERM **benchmark**: in Floyd benchmark means **one explicitly defined task that performs the exact same instructs every time over the exact same data**.
 
 > TERM **run**: Floyd will run a benchmark many times to get better precision of the measurement. These are called "runs".
 
-> TERM **benchmark instance**: Often you want to run a benchmark for several different sized data sets. Floyd allows you to make several **benchmark instances** from the same benchmark definition. This results in several measurements but you only need to define it once.
-
+> TERM **benchmark instance**: Often you want to run a benchmark for several different sized data sets. Floyd allows you to make several **benchmark instances** from the same benchmark definition. This results in several measurements but you only need to define one benchmark-def and it can share the same setup aka fixtures.
 
 The benchmark features have been designed to:
 
@@ -1020,7 +1024,7 @@ The benchmark features have been designed to:
 
 
 <a id="benchmark-with-11-instances"></a>
-### BENCHMARK WITH 11 INSTANCES
+#### BENCHMARK WITH 11 INSTANCES
 
 ```
 benchmark-def "Linear veq" {
@@ -1041,6 +1045,8 @@ benchmark-def "Linear veq" {
 	return results
 }
 ```
+
+Floyd's design lets you make short benchmark-defs, it lets you add more data to the benchmarks and get new columns to the benchmark ouput, for example record bandwith and show in "KB/s" column. It lets you write benchmark-def that builds for example a big image, then runs a number of benchmark instances on that image. It lets you record custom data and make your own analysis of that data and output it as CSV data to examin in Excel and so on.
 
 
 <a id="running-micro-benchmarks-from-command-line-tool"></a>
@@ -1158,8 +1164,8 @@ Output is something similar to this:
 
 
 
-<a id="119-about-parallelism"></a>
-## 1.19 ABOUT PARALLELISM
+<a id="120-about-parallelism"></a>
+## 1.20 ABOUT PARALLELISM
 
 Parallelism is about finishing a task faster by using more of the available hardware.
 
@@ -1182,16 +1188,16 @@ Notice: map() and map_dag() shares threads with other mechanisms in the Floyd ru
 
 
 
-<a id="120-todo-probes"></a>
-## 1.20 TODO: PROBES
+<a id="121-todo-probes"></a>
+## 1.21 TODO: PROBES
 
 You add probes to wires, processes and individual functions and expressions. They gather intel on how your program runs on the hardware, let's you explore your running code and profile its hardware use.
 
 
 
 
-<a id="121-todo-tweakers"></a>
-## 1.21 TODO: TWEAKERS
+<a id="122-todo-tweakers"></a>
+## 1.22 TODO: TWEAKERS
 
 Tweakers are inserted onto the wires and clocks and functions and expressions of the code and affect how the runtime and language executes that code, without changing its logic. Caching, batching, pre-calculation, parallelization, hardware allocation, collection-type selection are examples of what's possible.
 
@@ -2266,11 +2272,10 @@ int benchmark { ... }
 
 You use this expression to wrap a code snippet to measure. Only the statements inside the brackets are measured, no code outside.
 
-The expression returns the duration
+The expression returns the duration it takes the run the body. The compiler's dead-code elimination is disabled inside the brackets to not trip up the measurement. The result of the benchmark expression is a value that tells how long the bracketed statements took to execute. Floyd will execute the bracketed statements many times: both to warm up the computer caches before measuring, then to get a statistically safe number -- to reduce the error caused by the OS or hardware doing other things.
 
-The compiler's dead-code elimination is disabled inside the brackets to not trip up the measurement. The result of the benchmark expression is a value that tells how long the bracketed statements took to execute.
+The returned value is the measured time, in nanoseconds.
 
-Floyd will execute the bracketed statements many times: both to warm up the computer caches before measuring, then to get a statistically safe number -- to reduce the error caused by the OS or hardware doing other things.
 
 
 
@@ -2664,62 +2669,77 @@ func my_gui_state_t my_gui(my_gui_state_t state, json message) impure{
 <a id="benchmark-def"></a>
 ### BENCHMARK-DEF
 
-Defines a benchmark (optionally with several instances) so it's available to Floyd.
-
-- **name**: A human readable name for what you are measuring
-- **f**: A function that runs a benchmark. The function signature must be [benchmark_result_t] f(). Each entry in the vector represents a separate instance of the benchmark. If you only want to measure one thing, return a vector with a single element.
-
-Your test will be run for each test in the set. Usually you want to measure for some small numbers and for some bigger numbers. Example: blurring an image. This matters because the hardware has overheads and memory cache system. This is a vector of tests to run.
-
-You can use built-in resources (because those functions are pure) but not load any file.
-
-<a id="advanced"></a>
-#### ADVANCED
-
-This is what really happens when you use benchmark-def:
+Defines a benchmark (optionally with several instances) so it's available to Floyd. All benchmark-defs in your program is collected in a registry but are not automatically run. The name-string is used to reference the benchmark.
 
 ```
-benchmark-def "ABC" {
-	let dur = benchmark {}
-		print("ABC")
-	}
-	return [ benchmark_result_t(dur, {}) ]
-}
-benchmark-def "XYZ" {
-	let dur = benchmark {}
-		print("ABC")
-	}
-	return [ benchmark_result_t(dur, {}) ]
-}
+[ benchmark_result_t ]benchmark-def "name" { ... }
 ```
 
-Turns to:
+The benchmark registry is available to your code as a global immutable vector, like this:
 
 ```
-func [benchmark_result_t] benchmark__ABC(){
-	let dur = benchmark {}
-		print("ABC")
-	}
-	return [ benchmark_result_t(dur, {}) ]
-}
-
-func [benchmark_result_t] benchmark__XYZ(){
-	let dur = benchmark {}
-		print("ABC")
-	}
-	return [ benchmark_result_t(dur, {}) ]
-}
-
-struct benchmark_def_t {
-	string name
-	func [benchmark_result_t] () f
-}
-
-let [benchmark_def_t] benchmark_registry = [ benchmark_def_t("ABC", benchmark__ABC), benchmark_def_t("XYZ", benchmark__XYZ) ]
-
+	let [benchmark_def_t] benchmark_registry
 ```
-
 This means you can write code that explores the benchmark_registry vector and its contents, and even run tests using code. There are also standard library functions that helps you do this.
+
+The return from benchmark-def is a vector of benchmark_result_t:s. One for each "benchmark instance". Often you use a single benchmark_result_t.
+
+```
+benchmark_result_t(int dur, json more)
+```
+The dur is how long the benchmark took to run in nanoseconds. The second argument, more, is optionally more information about your benchmark. If you don't have more info, just pass null.
+
+
+#### more
+This is a way to record additional information about your benchmark. It can be more output values from computations, like the memory usage, the output result of the computations or it can be annotations and analysis data, like turning the dur and the amount of work into "1100 pixels/s" etc.
+
+You can just pass a string with that information, like "max detected" or "bandwidth = 120 MB/s"
+
+A more advanced way is to pass a json dictionary because it gives you the names of properties and the values separately as numbers.
+
+benchmark_result_t(int dur, { "note": "max_detected", "bandwidth MB/s": 120, "pixels/s": 1100)
+
+They you can write your own code to make more advanced reports.
+
+
+Floyd's command line supports these types printouts:
+
+|More value		| Meaning
+|:---	|:---	
+|null		| no additional data
+|string		| Show in unnamed column
+|dict		| Make a column for each dict key. These are shared for all dicts with those keys, effectively letting you make your own columns
+|any		| Show in the unnamed column, print as compacted json string. A short array becomes "[ 10, 20, 30]" and so forth.
+
+
+Example:
+
+```
+"pack_png()": benchmark_result_t { 1800, { "kb/s": 670000, "out size": 14014 } }
+"pack_png()": benchmark_result_t { 2023, "alpha" },
+"pack_png()": benchmark_result_t { 2980, json() } },
+"zip()": benchmark_result_t { 4030, { "kb/s": 503000 , "out size": 12030 } },
+"zip()": benchmark_result_t { 5113, "alpha" },
+"pack_jpeg()": benchmark_result_t { 2029, [ "1024", "1024" ] }
+```
+
+```
+| MODULE  | TEST         |     DUR|                   | KB/S    | OUT SIZE  |
+|---------|--------------|--------|-------------------|---------|-----------|
+|         | pack_png()   | 1800 ns|                   | 670000  | 14014     |
+|         | pack_png()   | 2023 ns| alpha             |         |           |
+|         | pack_png()   | 2980 ns|                   |         |           |
+|         | zip()        | 4030 ns|                   | 503000  | 12030     |
+|         | zip()        | 5113 ns| alpha             |         |           |
+|         | pack_jpeg()  | 2029 ns| ["1024", "1024"]  |         |           |
+```
+
+Notice:
+
+- how we get a blank column where all misc printouts are shown
+- Two tests return a dictionary with a "kb/s" key -- they create a new column and both are shown in that column. Same for "out size".
+- The pack_jpeg-line shows a compact JSON: an array with two strings.
+
 
 
 
