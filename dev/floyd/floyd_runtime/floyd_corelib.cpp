@@ -628,7 +628,7 @@ std::vector<std::string> corelib_make_hardware_caps_report(const std::vector<std
 
 
 
-QUARK_UNIT_TEST_VIP("", "corelib_make_hardware_caps_report()", "", ""){
+QUARK_UNIT_TEST("", "corelib_make_hardware_caps_report()", "", ""){
 	const auto caps = corelib_detect_hardware_caps();
 	const auto r = corelib_make_hardware_caps_report(caps);
 	for(const auto& e: r){
