@@ -378,7 +378,7 @@ static int do_user_benchmarks(const command_t& command, const command_t::user_be
 	g_trace_on = false;
 
 	if(command2.backend != ebackend::llvm){
-		throw std::runtime_error("");
+		throw std::runtime_error("Command requires LLVM backend.");
 	}
 
 	const auto program_source = read_text_file(command2.source_path);

@@ -46,6 +46,7 @@ struct command_t {
 */
 	struct compile_to_ast_t {
 		std::string source_path;
+		ebackend backend;
 		bool trace;
 	};
 

@@ -164,7 +164,6 @@ Floyd generates native machine code but also comes with a bytecode interpreter.
 | floyd help								| Show built in help for command line tool
 | floyd run mygame.floyd [arg1 arg2]		| compile and run the floyd program "mygame.floyd" using native exection
 | floyd run -t mygame.floyd					| -t turns on tracing, which shows compilation steps
-| floyd run_bc mygame.floyd					| compile and run the floyd program "mygame.floyd" using the Floyd byte code interpreter
 | floyd compile mygame.floyd				| compile the floyd program "mygame.floyd" to an AST, in JSON format
 | floyd bench mygame.floyd					| Runs all benchmarks, as defined by benchmark-def statements in Floyd program
 | floyd bench mygame.floyd rle game_loop	| Runs specified benchmarks "rle" and "game_loop"
@@ -172,6 +171,8 @@ Floyd generates native machine code but also comes with a bytecode interpreter.
 | floyd hwcaps								| Outputs hardware capabilities
 | floyd benchmark_internal					| Runs Floyd built in suite of benchmark tests and prints the results
 | floyd runtests							| Runs Floyd built internal unit tests
+| Flag t									| Verbose tracing
+| Flag b									| Use Floyd's bytecode backend (compiler, bytecode ISA and interpreter) rather than the default, LLVM
 
 
 
@@ -1114,7 +1115,7 @@ This snippets runs all registered benchmarks, formats their output and prints to
 print(make_benchmark_report(run_benchmarks(get_benchmarks())))
 ```
 
-You can write code that run only some benchmark and uses the output in some other way or special formats. There is a number of function in the standard library for working like this.
+You can write code that run only some benchmark and uses the output in some other way. There is a number of function in the standard library for working like this.
 
 
 

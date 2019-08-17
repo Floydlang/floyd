@@ -44,13 +44,14 @@ std::string get_help(){
 
 //??? Use -b to run bytecode interpreter
 
-ss << "Floyd Programming Language " << floyd_version_string << " MIT." <<
-R"(
+ss << "Floyd Programming Language "
+<< floyd_version_string << " MIT."
+<<
+R"___(
 Usage:
 | floyd help								| Show built in help for command line tool
 | floyd run mygame.floyd [arg1 arg2]		| compile and run the floyd program "mygame.floyd" using native exection
 | floyd run -t mygame.floyd					| -t turns on tracing, which shows compilation steps
-| floyd run_bc mygame.floyd					| compile and run the floyd program "mygame.floyd" using the Floyd byte code interpreter
 | floyd compile mygame.floyd				| compile the floyd program "mygame.floyd" to an AST, in JSON format
 | floyd bench mygame.floyd					| Runs all benchmarks, as defined by benchmark-def statements in Floyd program
 | floyd bench mygame.floyd rle game_loop	| Runs specified benchmarks "rle" and "game_loop"
@@ -58,7 +59,9 @@ Usage:
 | floyd hwcaps								| Outputs hardware capabilities
 | floyd benchmark_internal					| Runs Floyd built in suite of benchmark tests and prints the results
 | floyd runtests							| Runs Floyd built internal unit tests
-)";
+| Flag t									| Verbose tracing
+| Flag b									| Use Floyd's bytecode backend (compiler, bytecode ISA and interpreter) rather than the default, LLVM
+)___";
 return ss.str();
 }
 
@@ -153,6 +156,8 @@ command_t parse_command(const std::vector<std::string>& args){
 	const auto path_parts = SplitPath(command_line_args.command);
 	QUARK_ASSERT(path_parts.fName == "floyd" || path_parts.fName == "floydut");
 	const bool trace_on = command_line_args.flags.find("t") != command_line_args.flags.end() ? true : false;
+	const bool bytecode_on = command_line_args.flags.find("b") != command_line_args.flags.end() ? true : false;
+	const ebackend backend = bytecode_on ? ebackend::bytecode : ebackend::llvm;
 
 #if DEBUG && 0
 	std::cout << command_line_args.subcommand << std::endl;
@@ -161,12 +166,11 @@ command_t parse_command(const std::vector<std::string>& args){
 	if(command_line_args.subcommand == "help"){
 		return command_t { command_t::help_t { } };
 	}
-	else if(command_line_args.subcommand == "run" || command_line_args.subcommand == "run_bc" || command_line_args.subcommand == "run_llvm"){
+	else if(command_line_args.subcommand == "run"){
 		if(command_line_args.extra_arguments.size() == 0){
 			throw std::runtime_error("Command requires source file name.");
 		}
 
-		const ebackend backend = command_line_args.subcommand == "run_bc" ? ebackend::bytecode : ebackend::llvm;
 		const auto floyd_args = command_line_args.extra_arguments;
 
 		const auto source_path = floyd_args[0];
@@ -184,14 +188,12 @@ command_t parse_command(const std::vector<std::string>& args){
 		const auto source_path = floyd_args[0];
 		const std::vector<std::string> args2(floyd_args.begin() + 1, floyd_args.end());
 
-		return command_t { command_t::compile_to_ast_t { source_path, trace_on } };
+		return command_t { command_t::compile_to_ast_t { source_path, backend, trace_on } };
 	}
 	else if(command_line_args.subcommand == "bench"){
 		if(command_line_args.extra_arguments.size() == 0){
 			throw std::runtime_error("Command requires source file name.");
 		}
-
-		const ebackend backend = ebackend::llvm;
 		const auto floyd_args = command_line_args.extra_arguments;
 
 		const auto source_path = floyd_args[0];
@@ -255,20 +257,12 @@ QUARK_UNIT_TEST("", "parse_command()", "floyd run", ""){
 	QUARK_UT_VERIFY(r2.trace == false);
 }
 QUARK_UNIT_TEST("", "parse_command()", "floyd run", ""){
-	const auto r = parse_command(string_to_args("floyd run_bc mygame.floyd"));
+	const auto r = parse_command(string_to_args("floyd run -b mygame.floyd"));
 	const auto& r2 = std::get<command_t::compile_and_run_t>(r._contents);
 	QUARK_UT_VERIFY(r2.source_path == "mygame.floyd");
 	QUARK_UT_VERIFY(r2.floyd_main_args == (std::vector<std::string>{}));
 	QUARK_UT_VERIFY(r2.backend == ebackend::bytecode);
 	QUARK_UT_VERIFY(r2.trace == false);
-}
-QUARK_UNIT_TEST("", "parse_command()", "floyd run", ""){
-	const auto r = parse_command(string_to_args("floyd run_bc -t mygame.floyd"));
-	const auto& r2 = std::get<command_t::compile_and_run_t>(r._contents);
-	QUARK_UT_VERIFY(r2.source_path == "mygame.floyd");
-	QUARK_UT_VERIFY(r2.floyd_main_args == (std::vector<std::string>{}));
-	QUARK_UT_VERIFY(r2.backend == ebackend::bytecode);
-	QUARK_UT_VERIFY(r2.trace == true);
 }
 
 
