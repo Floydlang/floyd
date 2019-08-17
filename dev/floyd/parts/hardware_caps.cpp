@@ -329,6 +329,7 @@ machdep.cpu.extfeatures
 	#endif
 }
 
+//QUARK_UNIT_TEST_VIP
 QUARK_UNIT_TEST("","", "", ""){
 	const auto a = read_hardware_caps();
 	QUARK_UT_VERIFY(a._hw_cacheline_size >= 16);
@@ -482,22 +483,136 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpu_size,
 }
 */
 
+#ifndef __APPLE__
+// https://software.intel.com/en-us/articles/intel-64-architecture-processor-topology-enumeration/
+// https://docs.microsoft.com/en-us/cpp/intrinsics/cpuid-cpuidex?view=vs-2019
+// We are mostly interested in cache size
+
+/* 
 
 
+   Return cpuid data for requested cpuid level, as found in returned
+   eax, ebx, ecx and edx registers.  The function checks if cpuid is
+   supported and returns 1 for valid cpuid information or 0 for
+   unsupported cpuid level.  All pointers are required to be non-null.  
+
+int __get_cpuid (unsigned int __level,
+    unsigned int *__eax, unsigned int *__ebx,
+    unsigned int *__ecx, unsigned int *__edx)
+  */
+
+
+// https://en.wikipedia.org/wiki/CPUID#Calling_CPUID
+int GetCacheSize(int cache_level)  
+{
+    // Intel stores it's cache information in eax4, with ecx as index
+    // The information received is as following:
+    // ebx[31:22] = Ways of associativity
+    // ebx[21:12] = Physical line partitions
+    // ebx[11: 0] = Line size
+    unsigned int cpu_info[4];
+    // Windows counterpart
+    //__cpuidex(cpu_info, 4, cache_level); // Index 0 is L1 data cache
+
+    cpu_info[0]=0;
+    __get_cpuid (0,
+		 &cpu_info[0],&cpu_info[1],&cpu_info[2],&cpu_info[3]);
+
+
+    if (cpu_info[0]<4) {
+      return 0;
+    }
+    
+
+    // 
+    cpu_info[0]=4;
+    cpu_info[2]=cache_level;
+    __get_cpuid (4,
+		 &cpu_info[0],&cpu_info[1],&cpu_info[2],&cpu_info[3]);
+    
+    int ways = cpu_info[1] & 0xffc00000; // This receives bit 22 to 31 from the ebx register
+    ways >>= 22; // Bitshift it 22 bits to get the real value, since we started reading from bit 22
+    int partitions = cpu_info[1] & 0x3ff800; // This receives bit 12 to 21
+    partitions >>= 12; // Same here, bitshift 12 bits
+    int line_size = cpu_info[1] & 0x7ff; // This receives bit 0 to 11
+    int sets = cpu_info[2]; // The sets are the value of the ecx register
+    // All of these values needs one appended to them to get the real value
+    return (ways + 1) * (partitions + 1) * (line_size + 1) * (sets + 1); // Calculate the cache size by multiplying the values
+}
+#endif
+
+
+// Easier to use this
+// /sys/devices/system/cpu/cpu0/cache/index0/size
 hardware_caps_t read_caps_linux()
 {
 	hardware_caps_t ret;
-	std::ifstream fileStat("/proc/cpuinfo");
+	//std::ifstream fileStat("/proc/cpuinfo");
+	std::ifstream fileStat("/sys/devices/system/cpu/cpu0/cache/index0/size");
 
+	
 	std::string line;
 
-	const std::string STR_CPU("cpu");
+	// Does not work properly :-(
+	//ret._hw_cacheline_size = GetCacheSize(0);  
+	//ret._hw_l2_cache_size = GetCacheSize(1);  
+	//ret._hw_l3_cache_size = GetCacheSize(2);
+	ret._hw_cacheline_size = 32000;   // "32K" 
+	ret._hw_scalar_align = alignof(std::max_align_t);
+
+
+#if 0	
+	const std::string STR_CPU("cache size");
 	const std::size_t LEN_STR_CPU = STR_CPU.size();
 	const std::string STR_TOT("tot");
 	while(std::getline(fileStat, line))
 	{
 		// cpu stats line found
-#if 0
+
+	  /*
+	r << "cacheline_size" << ":\t" << caps._hw_cacheline_size << std::endl;
+
+
+	r << "scalar_align" << ":\t" << caps._hw_scalar_align << std::endl;
+
+	r << "l1_data_cache_size" << ":\t" << caps._hw_l1_data_cache_size << std::endl;
+	r << "l1_instruction_cache_size" << ":\t" << caps._hw_l1_instruction_cache_size << std::endl;
+	r << "l2_cache_size" << ":\t" << caps._hw_l2_cache_size << std::endl;
+	r << "l3_cache_size" << ":\t" << caps._hw_l3_cache_size << std::endl;
+	  */
+	  
+	  /*
+getconf -a | grep CACHE_SIZE
+
+cat /proc/cpuinfo
+
+processor	: 0
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 42
+model name	: Intel(R) Core(TM) i7-2620M CPU @ 2.70GHz
+stepping	: 7
+microcode	: 0x1a
+cpu MHz		: 1162.745
+cache size	: 4096 KB
+physical id	: 0
+siblings	: 4
+core id		: 0
+cpu cores	: 2
+apicid		: 0
+initial apicid	: 0
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx rdtscp lm constant_tsc arch_perfmon pebs bts nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic popcnt tsc_deadline_timer aes xsave avx lahf_lm epb pti tpr_shadow vnmi flexpriority ept vpid xsaveopt dtherm ida arat pln pts
+bugs		: cpu_meltdown spectre_v1 spectre_v2 spec_store_bypass l1tf mds swapgs
+bogomips	: 5389.17
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 36 bits physical, 48 bits virtual
+power management:
+	  */
 		if(!line.compare(0, LEN_STR_CPU, STR_CPU))
 		{
 			std::istringstream ss(line);
@@ -516,9 +631,10 @@ hardware_caps_t read_caps_linux()
 			else
 				entry.cpu = STR_TOT;
 
-#endif
 		}
+#endif
 
+		
  return ret;
 }
 
