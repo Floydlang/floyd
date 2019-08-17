@@ -41,6 +41,25 @@ Turns the JSON into internal AST C++ types, see "floyd_ast" directory.
 Pass2 code also support converting the AST types *back* to JSON for round-tripping the AST! This is great for debugging and tracing. It also makes tools simple. Pretty printer, code generator, optimizer, templates.
 
 
+## AST
+
+The AST JSON type hold an AST, encoded as a JSON.
+
+It's a JSON array with each program statement in order.
+Each statement is a JSON array like this:
+
+	["return", EXPRESSION_JSON_OBJECT ]
+	["bind", "string", "local_name", EXPRESSION_JSON_OBJECT ]
+	["def_struct", STRUCT_DEF_JSON_OBJECT ]
+	["define_function", FUNCTION_DEF_JSON_OBJECT ]
+
+The first element, element 0, of each statement is optionally a byte-offset where this statement is defined in the source text.
+Then comes the statement opcode, like "return" and its parameters.
+	[ 135500, "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"] ],
+	[ "bind", "^double", "cmath_pi", ["k", 3.14159, "^double"] ],
+
+
+
 ## PASS 3 - SEMANTIC ANALYSIS
 
 Checks every detail of the AST for errors, resolves all names, infers all implicit types.
@@ -170,7 +189,7 @@ case bc_opcode::k_add_int: {
 	ASSERT(stack.check_reg_int(i._b));
 	ASSERT(stack.check_reg_int(i._c));
 
-	regs[i._a]._pod64._int64 = regs[i._b]._pod64._int64 + regs[i._c]._pod64._int64;
+	regs[i._a]._pod64.int64_value = regs[i._b]._pod64.int64_value + regs[i._c]._pod64.int64_value;
 	break;
 }
 ```
@@ -228,3 +247,15 @@ JSON is also a built-in data type in the Floyd language - a default built in way
 
 
 
+
+
+
+	PEG
+	https://en.wikipedia.org/wiki/Parsing_expression_grammar
+	http://craftinginterpreters.com/representing-code.html
+
+	AST ABSTRACT SYNTAX TREE
+
+	https://en.wikipedia.org/wiki/Abstract_syntax_tree
+
+	https://en.wikipedia.org/wiki/Parsing

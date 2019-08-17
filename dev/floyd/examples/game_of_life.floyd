@@ -1,0 +1,162 @@
+//
+//  Floyd
+//
+//  Created by Marcus Zetterquist on 26/07/16.
+//  Copyright (c) 2016 Marcus Zetterquist. All rights reserved.
+//
+
+
+//////////////////////////////////////////		GAME OF LIFE - FLOYD
+
+//	https://www.cs.utexas.edu/users/djimenez/utsa/cs1713-3/c/life.txt
+
+/*
+ * The Game of Life
+ *
+ * a cell is born, if it has exactly three neighbours
+ * a cell dies of loneliness, if it has less than two neighbours
+ * a cell dies of overcrowding, if it has more than three neighbours
+ * a cell survives to the next generation, if it does not die of loneliness
+ * or overcrowding
+ *
+ * In my version, a 2D array of ints is used.  A 1 cell is on, a 0 cell is off.
+ * The game plays 100 rounds, printing to the screen each time.  'x' printed
+ * means on, space means 0.
+ *
+	(copied this from some web page, hence the English spellings...)
+
+	1.STASIS : If, for a given cell, the number of on neighbours is
+	exactly two, the cell maintains its status quo into the next
+	generation. If the cell is on, it stays on, if it is off, it stays off.
+
+	2.GROWTH : If the number of on neighbours is exactly three, the cell
+	will be on in the next generation. This is regardless of the cell's
+	current state.
+
+	3.DEATH : If the number of on neighbours is 0, 1, 4-8, the cell will
+	be off in the next generation.
+*/
+
+/* dimensions of the screen */
+
+let BOARD_WIDTH = 79
+let BOARD_HEIGHT = 24
+
+/* set everthing to zero */
+
+func [[int]] initialize_board() {
+	mutable [[int]] board = []
+
+	mutable [int] column = []
+	for (j in 0 ..< BOARD_HEIGHT) {
+		column = push_back(column, 0)
+	}
+	for (i in 0 ..< BOARD_WIDTH) {
+		board = push_back(board, column)
+	}
+	return board
+}
+
+/* add to a width index, wrapping around like a cylinder */
+
+func int xadd (int i0, int a) {
+	mutable i = i0 + a
+	while (i < 0){ i = i + BOARD_WIDTH }
+	while (i >= BOARD_WIDTH){ i = i - BOARD_WIDTH }
+	return i
+}
+
+/* add to a height index, wrapping around */
+
+func int yadd (int i0, int a) {
+	mutable i = i0 + a
+	while (i < 0){ i = i + BOARD_HEIGHT }
+	while (i >= BOARD_HEIGHT){ i = i - BOARD_HEIGHT }
+	return i
+}
+
+/* return the number of on cells adjacent to the i,j cell */
+
+func int adjacent_to ([[int]] board, int i, int j) {
+	mutable count = 0
+
+	/* go around the cell */
+
+	for (k in -1 ... 1){
+		for (l in -1 ... 1){
+
+			/* only count if at least one of k, l isn't zero */
+
+			if (k != 0 || l != 0){
+				if (board[xadd(i, k)][yadd(j, l)] != 0){
+					count = count + 1
+				}
+			}
+		}
+	}
+	return count
+}
+
+func [[int]] play ([[int]] board) {
+	mutable newboard = board
+
+	/* for each cell, apply the rules of Life */
+
+	for (i in 0 ..< BOARD_WIDTH){
+		for (j in 0 ..< BOARD_HEIGHT) {
+			let a = adjacent_to (board, i, j)
+			mutable int v = board[i][j]
+//			if (a == 2){ v = v }
+			if (a == 3){ v = 1 }
+			if (a < 2){ v = 0 }
+			if (a > 3){ v = 0 }
+			newboard = update(newboard, i, update(newboard[i], j, v))
+		}
+	}
+
+	return newboard
+}
+
+/* print the life board */
+
+func void print_board ([[int]] board) impure {
+	/* for each row */
+
+	for (j in 0 ..< BOARD_HEIGHT) {
+
+		/* print each column position... */
+
+		mutable string row = ""
+		for (i in 0 ..< BOARD_WIDTH) {
+			row = push_back(row, board[i][j] != 0 ? 120 : 45)
+		}
+		print(row)
+	}
+}
+
+/* main program */
+
+func int test_main ([string] args) impure {
+	mutable board = initialize_board ()
+
+	board = update(board, 0 + BOARD_WIDTH / 2, update(board[0 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
+	board = update(board, 1 + BOARD_WIDTH / 2, update(board[1 + BOARD_WIDTH / 2], 1 + BOARD_HEIGHT / 2, 120))
+	board = update(board, 1 + BOARD_WIDTH / 2, update(board[1 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
+	board = update(board, 2 + BOARD_WIDTH / 2, update(board[2 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
+	board = update(board, 2 + BOARD_WIDTH / 2, update(board[2 + BOARD_WIDTH / 2], 1 + BOARD_HEIGHT / 2, 120))
+	board = update(board, 3 + BOARD_WIDTH / 2, update(board[3 + BOARD_WIDTH / 2], 0 + BOARD_HEIGHT / 2, 120))
+	board = update(board, 3 + BOARD_WIDTH / 2, update(board[3 + BOARD_WIDTH / 2], 1 + BOARD_HEIGHT / 2, 120))
+
+	/* play game of life 5 times */
+
+	for (i in 0 ..< 2) {
+		print(to_string(i) + ":")
+		print_board(board)
+		board = play(board)
+	}
+	return 0
+}
+
+
+test_main([])
+

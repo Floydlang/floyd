@@ -2,7 +2,7 @@
 version: 2
 
 jobs:
-  build:
+  build-arch:
     docker:
        - image: "archlinux/base"
     steps:
@@ -15,13 +15,13 @@ jobs:
           command: 'pwd && ls'
       - run:
           name: Creating Build Files
-          command: 'cmake /root/project/dev/floyd_speak/'
+          command: 'cmake /root/project/dev/floyd/'
       - run:
            name: Creating Binary Files
            command: 'make'
-      - run:
-           name: floyd Unit Testing
-           command: './floydut runtests'
+      #- run:
+      #     name: floyd Unit Testing
+      #     command: './floydut runtests'
 
   build-mac:
     macos:
@@ -29,9 +29,6 @@ jobs:
     workDir: /Users/distiller/project/dev/ 
     steps:
       - checkout
-      - run:
-          name: ls
-          command: 'pwd && ls'
       - run:
           name: Brew update
           command: 'brew update'
@@ -45,20 +42,23 @@ jobs:
           name: Brew install llvm
           command: 'brew install llvm@8'
       - run:
+           name: List options
+           command: 'cd dev && xcodebuild -list -project floyd.xcodeproj && ln -s  /usr/local/Cellar/llvm/8.0.1 /usr/local/Cellar/llvm/8.0.0_1' 
+      - run:
            name: Creating Application
-           command: 'cd dev && xcodebuild'
-      - run:
-           name: floyd Unit Testing
-           command: 'build/Release/floydut runtests'
-      - run:
-          name: Compress app  and result for storage
-          command: zip -r floyd.zip build/Release/floyd.app
-      - store_artifacts:
-          path: floyd.zip
-          destination: floyd
+           command: 'cd dev && xcodebuild -scheme distributable build'
+      #- run:
+      #     name: floyd Unit Testing
+      #     command: 'build/Release/floydut runtests'
+      #- run:
+      #    name: Compress app  and result for storage
+      #    command: zip -r floyd.zip build/Release/floyd.app
+      #- store_artifacts:
+      #    path: floyd.zip
+      #    destination: floyd
 workflows:
   version: 2
   workflow:
     jobs:
-    - build
+    - build-arch
     - build-mac    
