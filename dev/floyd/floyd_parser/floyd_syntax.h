@@ -36,7 +36,7 @@ const std::string k_whitespace_chars = " \n\t";
 const std::string k_identifier_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
 const std::string k_bracket_pairs = "(){}[]";
 
-const std::string k_valid_expression_chars = k_c99_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[](){}.?:=!<>&,|#$\\;\'";
+const std::string k_valid_expression_chars = k_c99_identifier_chars + k_c99_number_chars + k_c99_whitespace_chars + "+-*/%" + "\"[](){}.?:=!<>&,|#$\\;\'" + "@";
 
 
 

@@ -415,7 +415,7 @@ std::pair<value_t, seq_t> parse_decimal_literal(const seq_t& p) {
 		return { value_t::make_double(number), number_pos.second };
 	}
 	else{
-		const int number = atoi(number_pos.first.c_str());
+		const int64_t number = std::atoll(number_pos.first.c_str());
 		return { value_t::make_int(number), number_pos.second };
 	}
 }
@@ -435,6 +435,12 @@ QUARK_UNIT_TEST("parser", "parse_decimal_literal()", "", ""){
 QUARK_UNIT_TEST("parser", "parse_decimal_literal()", "", ""){
 	const auto a = parse_decimal_literal(seq_t("0.5 xxx"));
 	QUARK_UT_VERIFY(a.first.get_double_value() == 0.5f);
+	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+
+QUARK_UNIT_TEST("parser", "parse_decimal_literal()", "", ""){
+	const auto a = parse_decimal_literal(seq_t("17179869184 xxx"));
+	QUARK_UT_VERIFY(a.first.get_int_value() == 17179869184);
 	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
 }
 

@@ -93,10 +93,12 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 		- [benchmark\_id\_t and benchmark\_result2\_t](#benchmarkid_t-and-benchmark_result2t)
 		- [get\_benchmarks\(\)](#get_benchmarks)
 		- [run\_benchmarks\(\)](#run_benchmarks)
-		- [trace\_benchmarks\(\)](#trace_benchmarks)
 		- [make\_benchmark\_report\(\)](#makebenchmarkreport)
 	- [3.2 HARDWARE CAPS](#32-hardware-caps)
 		- [detect\_hardware\_caps\(\)](#detecthardwarecaps)
+		- [make\_hardware\_caps\_report\(\)](#makehardware_capsreport)
+		- [make\_hardware\_caps\_report\_brief\(\)](#makehardware_caps_reportbrief)
+		- [get\_current\_date\_and\_time\_string\(\)](#getcurrent_date_and_timestring)
 	- [3.3 WORKING WITH HASHES - SHA1](#33-working-with-hashes---sha1)
 		- [quick\_hash\_t](#quickhasht)
 		- [sha1_t](#sha1_t)
@@ -1171,22 +1173,23 @@ Prints something like this:
 
 ```
 Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz  16 GB DRAM  8 cores
-PROCESSOR                                                       
-----------------------------------------------------------------
-Model          iMac15,1              ncpu                 8     
-Machine        x86_64                Phys Processor Count 4     
-CPU Freq       4 GHz                                            
-CPU Type       7                     Vector unit          yes   
-CPU Sub type   8                     Floatingpoint        no    
-                                                                
-MEMORY                                                          
-----------------------------------------------------------------
-Bus freq       100 MHz               Page size            4 kB  
-User mem       3887240 kB            Scalar align         16 B  
-Physical mem   2 GB                  Byte order           1234  
-Cacheline size 64 B                                             
-L1 data        32 kB                 L1 instructions      32 kB 
-L2             256 kB                L3                   8 MB  
+
+PROCESSOR                                                     
+--------------------------------------------------------------
+Model          iMac15,1            ncpu                 8     
+Machine        x86_64              Phys Processor Count 4     
+CPU Freq       4 GHz                                          
+CPU Type       7                   Vector unit          yes   
+CPU Sub type   8                   Floatingpoint        no    
+                                                              
+MEMORY                                                        
+--------------------------------------------------------------
+Bus freq       100 MHz             Page size            4 kB  
+User mem       85860 kB            Scalar align         16 B  
+Physical mem   2 GB                Byte order           1234  
+Cacheline size 64 B                                           
+L1 data        32 kB               L1 instructions      32 kB 
+L2             256 kB              L3                   8 MB  
 ```
 
 
@@ -2948,9 +2951,10 @@ func [benchmark_id_t] get_benchmarks(){
 This is how you run one or many benchmarks:
 
 ```
-func [benchmark_result2_t] run_benchmarks([benchmark_id_t] m)
+func [benchmark_result2_t] run_benchmarks([benchmark_id_t] m) impure
 ```
 
+It is an impure function since it gets different results each time it is run.
 
 
 <a id="makebenchmarkreport"></a>
@@ -3084,6 +3088,69 @@ Output is something similar to this:
 }
 ```
 
+
+<a id="makehardware_capsreport"></a>
+### make\_hardware\_caps\_report()
+
+Generates a multi-line table (as a string) suitable to be printed to the terminal.
+
+```
+func string make_hardware_caps_report([string: json] caps)
+```
+
+The output will be something like this:
+
+```
+Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz  16 GB DRAM  8 cores
+
+PROCESSOR                                                     
+--------------------------------------------------------------
+Model          iMac15,1            ncpu                 8     
+Machine        x86_64              Phys Processor Count 4     
+CPU Freq       4 GHz                                          
+CPU Type       7                   Vector unit          yes   
+CPU Sub type   8                   Floatingpoint        no    
+                                                              
+MEMORY                                                        
+--------------------------------------------------------------
+Bus freq       100 MHz             Page size            4 kB  
+User mem       85860 kB            Scalar align         16 B  
+Physical mem   2 GB                Byte order           1234  
+Cacheline size 64 B                                           
+L1 data        32 kB               L1 instructions      32 kB 
+L2             256 kB              L3                   8 MB  
+```
+
+
+<a id="makehardware_caps_reportbrief"></a>
+### make\_hardware\_caps\_report\_brief()
+
+Generates a short string summing up the the hardware your program is running on:
+
+```
+func string make_hardware_caps_report_brief([string: json] caps)
+```
+
+Example output:
+
+```
+"Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz  16 GB DRAM  8 cores"
+```
+
+<a id="getcurrent_date_and_timestring"></a>
+### get\_current\_date\_and\_time\_string()
+
+Returns a string telling the current date and time. It is used to stamp a printout with when it was done.
+
+```
+func string get_current_date_and_time_string() impure
+```
+
+Example output:
+
+```
+Sat Aug 17 04:20:30 2019
+```
 
 
 <a id="33-working-with-hashes---sha1"></a>

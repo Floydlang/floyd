@@ -507,15 +507,20 @@ FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "||", ""){
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_not()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(0)", value_t::make_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111));
 }
-FLOYD_LANG_PROOF("Floyd test suite", "", "bw_not()", ""){
+
+#if 0
+FLOYD_LANG_PROOF_VIP("Floyd test suite", "", "bw_not()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(18446744073709551615)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000));
 }
+#endif
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_not()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(1)", value_t::make_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111110));
 }
+#if 0
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_not()", ""){
 	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(9223372036854775808)", value_t::make_int(0));
 }
+#endif
 
 
 
@@ -5705,6 +5710,62 @@ FLOYD_LANG_PROOF("Floyd test suite", "local function", "", ""){
 	);
 }
 #endif
+
+FLOYD_LANG_PROOF("Floyd test suite", "make_hardware_caps_report()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+		)"
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "make_hardware_caps_report_brief()", "", ""){
+	ut_verify_printout_lib(
+		QUARK_POS,
+		R"(
+
+			let caps = {
+				"machdep_cpu_brand_string": json("Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz"),
+				"logical_processor_count": json(8),
+				"mem_size": json(17179869184)
+			};
+
+			let r = make_hardware_caps_report_brief(caps);
+			print(r)
+
+		)",
+		{ "Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz  16 GB DRAM  8 cores" }
+	);
+}
+
+
+
+
+FLOYD_LANG_PROOF("Floyd test suite", "make_hardware_caps_report()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let caps = detect_hardware_caps()
+			let r = make_hardware_caps_report(caps);
+			print(r)
+
+		)"
+	);
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "make_hardware_caps_report()", "", ""){
+	ut_run_closed_lib(
+		QUARK_POS,
+		R"(
+
+			let s = get_current_date_and_time_string()
+			print(s)
+
+		)"
+	);
+}
 
 
 

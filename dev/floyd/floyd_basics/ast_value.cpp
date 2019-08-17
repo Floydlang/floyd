@@ -991,10 +991,34 @@ value_t ast_json_to_value(const typeid_t& type, const json_t& v){
 	}
 }
 
-bool store_as_big_int(int64_t value){
+
+//	Anything less than 2^53 can be stored, with 52 bits explicitly stored in the mantissa, and then the exponent in effect giving you another one.
+//	 (9,007,199,254,740,991 or ~9 quadrillion). The reasoning behind that number is that JavaScript uses double-precision floating-point format numbers as specified in IEEE 754 and can only safely represent numbers between -(253 - 1) and 253 - 1.
+#define MAX_SAFE_INTEGER 9007199254740991
+
+
+static bool safe_via_double(int64_t value){
+#if 1
+	const int64_t max_value = MAX_SAFE_INTEGER;
+	const bool safe_in_double = value < max_value && value > -max_value;
+#else
 	uint64_t u = value;
 	uint64_t high = u & 0xffffffff'00000000;
-	return (high == 0xffffffff'00000000 || high == 0x00000000'00000000) ? false : true;
+	const bool safe_in_double = (high == 0xffffffff'00000000 || high == 0x00000000'00000000) ? true : false;
+#endif
+
+	if(safe_in_double){
+		//	Double-check that this value can be stored non-lossy in a double.
+#if DEBUG
+		const double d = (double)value;
+		const int64_t back = (int64_t)d;
+		QUARK_ASSERT(back == value);
+#endif
+		return true;
+	}
+	else{
+		return false;
+	}
 }
 
 
@@ -1013,14 +1037,14 @@ json_t value_to_ast_json(const value_t& v, json_tags tags){
 	}
 	else if(v.is_int()){
 		const auto i = v.get_int_value();
-		if(store_as_big_int(i)){
+		if(safe_via_double(i)){
+			return json_t(static_cast<double>(i));
+		}
+		else{
 			std::map<std::string, json_t> result;
 			result["big-int"] = json_t(64);
 			result["value"] = std::to_string(i);
 			return result;
-		}
-		else{
-			return json_t(static_cast<double>(i));
 		}
 	}
 	else if(v.is_double()){

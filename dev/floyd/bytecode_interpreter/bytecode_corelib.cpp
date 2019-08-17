@@ -53,6 +53,46 @@ bc_value_t bc_corelib__detect_hardware_caps(interpreter_t& vm, const bc_value_t 
 
 
 
+bc_value_t bc_corelib__make_hardware_caps_report(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type == typeid_t::make_dict(typeid_t::make_json()));
+
+	const auto b2 = bc_to_value(args[0]);
+	const auto m = b2.get_dict_value();
+	std::vector<std::pair<std::string, json_t>> caps;
+	for(const auto& e: m){
+		caps.push_back({ e.first, e.second.get_json() });
+	}
+	const auto s = corelib_make_hardware_caps_report(caps);
+	return value_to_bc(value_t::make_string(s));
+}
+bc_value_t bc_corelib__make_hardware_caps_report_brief(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type == typeid_t::make_dict(typeid_t::make_json()));
+
+	const auto b2 = bc_to_value(args[0]);
+	const auto m = b2.get_dict_value();
+	std::vector<std::pair<std::string, json_t>> caps;
+	for(const auto& e: m){
+		caps.push_back({ e.first, e.second.get_json() });
+	}
+	const auto s = corelib_make_hardware_caps_report_brief(caps);
+	return value_to_bc(value_t::make_string(s));
+}
+bc_value_t bc_corelib__get_current_date_and_time_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 0);
+
+	const auto s = get_current_date_and_time_string();
+	return value_to_bc(value_t::make_string(s));
+}
+
+
+
+
+
 
 
 /////////////////////////////////////////		PURE -- SHA1
@@ -306,7 +346,9 @@ std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_corelib_calls(){
 		{ { "make_benchmark_report" }, bc_corelib__make_benchmark_report },
 
 		{ { "detect_hardware_caps" }, bc_corelib__detect_hardware_caps },
-
+		{ { "make_hardware_caps_report" }, bc_corelib__make_hardware_caps_report },
+		{ { "make_hardware_caps_report_brief" }, bc_corelib__make_hardware_caps_report_brief },
+		{ { "get_current_date_and_time_string" }, bc_corelib__get_current_date_and_time_string },
 
 		{ { "calc_string_sha1" }, bc_corelib__calc_string_sha1 },
 		{ { "calc_binary_sha1" }, bc_corelib__calc_binary_sha1 },

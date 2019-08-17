@@ -90,7 +90,7 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 		return def.name == wanted_name
 	}
 
-	func [benchmark_result2_t] run_benchmarks([benchmark_id_t] m){
+	func [benchmark_result2_t] run_benchmarks([benchmark_id_t] m) impure {
 		mutable [benchmark_result2_t] out = []
 
 		for(i in 0 ..< size(m)){
@@ -258,8 +258,15 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 
 	func string make_benchmark_report([benchmark_result2_t] results)
 
+
+
+
 	func [string: json] detect_hardware_caps()
 
+
+	func string make_hardware_caps_report([string: json] caps)
+	func string make_hardware_caps_report_brief([string: json] caps)
+	func string get_current_date_and_time_string() impure
 
 
 
@@ -647,10 +654,7 @@ std::string corelib_make_hardware_caps_report(const std::vector<std::pair<std::s
 QUARK_UNIT_TEST("", "corelib_make_hardware_caps_report()", "", ""){
 	const auto caps = corelib_detect_hardware_caps();
 	const auto r = corelib_make_hardware_caps_report(caps);
-	for(const auto& e: r){
-		std::cout << e << std::endl;
-	}
-//	QUARK_UT_VERIFY(r == "Intel(R) Core(TM) i7-4790K CPU @ 4.00GHz  16 GB DRAM  8 cores");
+	std::cout << r << std::endl;
 }
 
 
@@ -808,9 +812,7 @@ QUARK_UNIT_TEST("", "make_benchmark_report()", "", ""){
 	};
 
 	const auto result = make_benchmark_report(test);
-	for(const auto& e: result){
-		std::cout << e << std::endl;
-	}
+	std::cout << result << std::endl;
 }
 
 //	Generate demo reports
@@ -825,9 +827,7 @@ QUARK_UNIT_TEST("", "make_benchmark_report()", "Demo", ""){
 	};
 
 	const auto result = make_benchmark_report(test);
-	for(const auto& e: result){
-		std::cout << e << std::endl;
-	}
+	std::cout << result << std::endl;
 }
 
 

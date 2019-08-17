@@ -62,6 +62,41 @@ static DICT_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
 	return result.dict_ptr;
 }
 
+runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, runtime_value_t caps0){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto b2 = from_runtime_value(r, caps0, typeid_t::make_dict(typeid_t::make_json()));
+	const auto m = b2.get_dict_value();
+	std::vector<std::pair<std::string, json_t>> caps;
+	for(const auto& e: m){
+		caps.push_back({ e.first, e.second.get_json() });
+	}
+	const auto s = corelib_make_hardware_caps_report(caps);
+	return to_runtime_string(r, s);
+}
+runtime_value_t llvm_corelib__make_hardware_caps_report_brief(floyd_runtime_t* frp, runtime_value_t caps0){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto b2 = from_runtime_value(r, caps0, typeid_t::make_dict(typeid_t::make_json()));
+	const auto m = b2.get_dict_value();
+	std::vector<std::pair<std::string, json_t>> caps;
+	for(const auto& e: m){
+		caps.push_back({ e.first, e.second.get_json() });
+	}
+	const auto s = corelib_make_hardware_caps_report_brief(caps);
+	return to_runtime_string(r, s);
+}
+runtime_value_t llvm_corelib__get_current_date_and_time_string(floyd_runtime_t* frp){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto s = get_current_date_and_time_string();
+	return to_runtime_string(r, s);
+}
+
+
+
+
+
 
 
 
@@ -101,7 +136,7 @@ static STRUCT_T* llvm_corelib__calc_binary_sha1(floyd_runtime_t* frp, STRUCT_T* 
 
 
 static int64_t llvm_corelib__get_time_of_day(floyd_runtime_t* frp){
-	auto& r = get_floyd_runtime(frp);
+	get_floyd_runtime(frp);
 
 	return corelib__get_time_of_day();
 }
@@ -239,6 +274,9 @@ std::map<std::string, void*> get_corelib_c_function_ptrs(){
 		{ "make_benchmark_report", reinterpret_cast<void *>(&llvm_corelib__make_benchmark_report) },
 
 		{ "detect_hardware_caps", reinterpret_cast<void *>(&llvm_corelib__detect_hardware_caps) },
+		{ "make_hardware_caps_report", reinterpret_cast<void *>(&llvm_corelib__make_hardware_caps_report) },
+		{ "make_hardware_caps_report_brief", reinterpret_cast<void *>(&llvm_corelib__make_hardware_caps_report_brief) },
+		{ "get_current_date_and_time_string", reinterpret_cast<void *>(&llvm_corelib__get_current_date_and_time_string) },
 
 		{ "calc_string_sha1", reinterpret_cast<void *>(&llvm_corelib__calc_string_sha1) },
 		{ "calc_binary_sha1", reinterpret_cast<void *>(&llvm_corelib__calc_binary_sha1) },
