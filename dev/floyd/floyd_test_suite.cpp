@@ -2507,6 +2507,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running more than on
 		}
 	);
 }
+
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running benchmark_def with variants", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -2565,7 +2566,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Test running benchmark_de
 	);
 }
 
-
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Example", ""){
 	ut_run_closed_nolib(
 		QUARK_POS,
@@ -2604,12 +2604,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Example", ""){
 	);
 }
 
-
-
-
-
-
-
 FLOYD_LANG_PROOF("Floyd test suite", "get_benchmarks()", "", ""){
 	ut_verify_printout_lib(
 		QUARK_POS,
@@ -2631,8 +2625,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_benchmarks()", "", ""){
 	);
 }
 
-
-
 FLOYD_LANG_PROOF("Floyd test suite", "run_benchmarks()", "", ""){
 	ut_verify_printout_lib(
 		QUARK_POS,
@@ -2652,7 +2644,6 @@ FLOYD_LANG_PROOF("Floyd test suite", "run_benchmarks()", "", ""){
 		}
 	);
 }
-
 
 FLOYD_LANG_PROOF("Floyd test suite", "run_benchmarks()", "", ""){
 	ut_verify_printout_lib(
@@ -2677,11 +2668,6 @@ R"___(| MODULE    | TEST  |    DUR|              |
 		}
 	);
 }
-
-
-
-
-
 
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Example", ""){
 	ut_verify_printout_lib(

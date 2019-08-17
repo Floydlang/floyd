@@ -52,16 +52,18 @@ typeid_t make__binary_t__type();
 
 
 
+std::string make_benchmark_report(const std::vector<benchmark_result2_t>& test_results);
 
 
 std::vector<std::pair<std::string, json_t>> corelib_detect_hardware_caps();
-std::vector<std::string> corelib_make_hardware_caps_report(const std::vector<std::pair<std::string, json_t>>& caps);
+std::string corelib_make_hardware_caps_report(const std::vector<std::pair<std::string, json_t>>& caps);
 std::string corelib_make_hardware_caps_report_brief(const std::vector<std::pair<std::string, json_t>>& caps);
 
 
-std::string make_benchmark_report(const std::vector<benchmark_result2_t>& test_results);
 
 std::string get_current_date_and_time_string();
+
+
 
 
 std::string corelib_calc_string_sha1(const std::string& s);

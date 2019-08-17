@@ -218,18 +218,7 @@ static std::string do_user_benchmarks_run_all(const std::string& program_source,
 	const auto b2 = mapf<std::string>(b, [](const bench_t& e){ return e.benchmark_id.test; });
 	const auto results = run_benchmarks(program_source, source_path, b2);
 
-	const auto report_strs = make_benchmark_report(results);
-	std::stringstream ss;
-	for(const auto& e: report_strs){
-		ss << e << std::endl;
-	}
-
-/*
-	for(const auto& e: report_strs){
-		ss << "| " << e.test_id.test << "\t| " << e.result.dur << "\t| " << json_to_compact_string(e.result.more) << "|" << std::endl;
-	}
-*/
-	return ss.str();
+	return make_benchmark_report(results);
 }
 
 QUARK_UNIT_TEST("", "do_user_benchmarks_run_all()", "", ""){
@@ -281,13 +270,7 @@ static std::string do_user_benchmarks_run_specified(const std::string& program_s
 	const auto b2 = mapf<std::string>(c, [](const bench_t& e){ return e.benchmark_id.test; });
 	const auto results = run_benchmarks(program_source, source_path, b2);
 
-	const auto report_strs = make_benchmark_report(results);
-	std::stringstream ss;
-	for(const auto& e: report_strs){
-		ss << e << std::endl;
-	}
-
-	return ss.str();
+	return make_benchmark_report(results);
 }
 
 /*
@@ -513,9 +496,7 @@ static void do_hardware_caps(){
 	const auto r = corelib_make_hardware_caps_report(caps);
 
 	std::cout << get_current_date_and_time_string() << std::endl;
-	for(const auto& e: r){
-		std::cout << e << std::endl;
-	}
+	std::cout << r << std::endl;
 }
 
 

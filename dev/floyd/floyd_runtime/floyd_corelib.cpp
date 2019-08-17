@@ -578,7 +578,7 @@ std::string simplify_freq(int64_t freq){
 
 
 
-std::vector<std::string> corelib_make_hardware_caps_report(const std::vector<std::pair<std::string, json_t>>& caps){
+std::string corelib_make_hardware_caps_report(const std::vector<std::pair<std::string, json_t>>& caps){
 	const auto m = std::map<std::string, json_t>(caps.begin(), caps.end());
 //	const auto machdep_cpu_brand = m.at("machdep_cpu_brand_string").get_string();
 	const auto machine = m.at("machine").get_string();
@@ -633,7 +633,13 @@ std::vector<std::string> corelib_make_hardware_caps_report(const std::vector<std
 	const auto columns = fit_columns(columns0, table);
 	const auto table2 = generate_table(table, columns);
 	const auto r = concat(std::vector<std::string>{ corelib_make_hardware_caps_report_brief(caps), "" }, table2);
-	return r;
+
+
+	std::stringstream ss;
+	for(const auto& e: r){
+		ss << e << std::endl;
+	}
+	return ss.str();
 }
 
 
