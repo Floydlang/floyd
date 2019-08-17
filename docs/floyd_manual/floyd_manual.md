@@ -1109,7 +1109,7 @@ This lets you first list all benchmark, filter out some of them, then run just t
 This snippets runs all registered benchmarks, formats their output and prints to the terminal:
 
 ```
-print(trace_benchmarks(run_benchmarks(get_benchmarks())))
+print(make_benchmark_report(run_benchmarks(get_benchmarks())))
 ```
 
 You can write code that run only some benchmark and uses the output in some other way or special formats. There is a number of function in the standard library for working like this.
@@ -2726,62 +2726,7 @@ The return from benchmark-def is a vector of benchmark_result_t:s. One for each 
 benchmark_result_t(int dur, json more)
 ```
 
-The dur (duration) is how long the benchmark took to run in nanoseconds. The second argument, *more*, is optionally more information about your benchmark. If you don't have more info, just pass null.
-
-
-#### more
-This is a way to record additional information about your benchmark. It can be more output values from computations, like the memory usage, the output result of the computations or it can be annotations and analysis data, like turning the dur and the amount of work into "1100 pixels/s" etc.
-
-You can just pass a string with that information (will become a JSON string), like "max detected" or "bandwidth = 120 MB/s"
-
-A more advanced technique is to pass a JSON dictionary because it lets you name properties and specify the properties using number or other JSON values - no need to make everything into strings.
-
-```
-benchmark_result_t(int dur, { "note": "max_detected", "bandwidth MB/s": 120, "pixels/s": 1100 })
-```
-
-They you can write your own code to make more advanced reports.
-
-
-Floyd's command line supports a few useful features for using the more data:
-
-|More value		| Meaning
-|:---	|:---	
-|null		| no additional printout
-|string		| Show the string in the unnamed column
-|dict		| Make a new column for each dict key. These are shared for all dicts with those keys, effectively letting you make your own columns
-|any		| Show more value in the unnamed column, printed as compacted JSON string. A short array becomes "[ 10, 20, 30]" and so forth.
-
-Example:
-
-```
-"pack_png()": benchmark_result_t { 1800, { "kb/s": 670000, "out size": 14014 } }
-"pack_png()": benchmark_result_t { 2023, "alpha" },
-"pack_png()": benchmark_result_t { 2980, json() } },
-"zip()": benchmark_result_t { 4030, { "kb/s": 503000 , "out size": 12030 } },
-"zip()": benchmark_result_t { 5113, "alpha" },
-"pack_jpeg()": benchmark_result_t { 2029, [ "1024", "1024" ] }
-```
-
-Is printed like this:
-```
-| MODULE  | TEST         |     DUR|                   | KB/S    | OUT SIZE  |
-|---------|--------------|--------|-------------------|---------|-----------|
-|         | pack_png()   | 1800 ns|                   | 670000  | 14014     |
-|         | pack_png()   | 2023 ns| alpha             |         |           |
-|         | pack_png()   | 2980 ns|                   |         |           |
-|         | zip()        | 4030 ns|                   | 503000  | 12030     |
-|         | zip()        | 5113 ns| alpha             |         |           |
-|         | pack_jpeg()  | 2029 ns| ["1024", "1024"]  |         |           |
-```
-
-Notice:
-
-- We get a blank column where all misc printouts are shown
-- Two tests return a dictionary with a "kb/s" key -- they create a new column and both benchmarks show there data in that column. Same for "out size".
-- The pack_jpeg-line shows a compact JSON: an array with two strings.
-
-
+The dur (duration) is how long the benchmark took to run in nanoseconds. The second argument, *more*, is optionally more information about your benchmark. If you don't have more info, just pass null. See make_benchmark_report() and how it supports *more*.
 
 
 
@@ -2969,6 +2914,7 @@ There is also a set of data types that gives code a common way to talk about dat
 
 
 Specifies a benchmark using the module it's defined in (currently always "") and the name given to it using the benchmark-def statement.
+
 ```
 struct benchmark_id_t {
 	string module
@@ -2977,6 +2923,7 @@ struct benchmark_id_t {
 ```
 
 Used to store benchmark results from many different benchmarks. It stores *which* benchmark and its result.
+
 ```
 struct benchmark_result2_t {
 	benchmark_id_t test_id
@@ -2989,6 +2936,7 @@ struct benchmark_result2_t {
 ### get\_benchmarks()
 
 Get all benchmarks in the program, as defined using benchmark-def statements:
+
 ```
 func [benchmark_id_t] get_benchmarks(){
 ```
@@ -2998,43 +2946,29 @@ func [benchmark_id_t] get_benchmarks(){
 ### run\_benchmarks()
 
 This is how you run one or many benchmarks:
-```
-[benchmark_result2_t] run_benchmarks([benchmark_id_t] m)
-```
-
-
-<a id="trace_benchmarks"></a>
-### trace\_benchmarks()
-
-The trace_benchmark() function prints a nice diagram in the console:
 
 ```
-string trace_benchmarks([benchmark_result2_t] r)
+func [benchmark_result2_t] run_benchmarks([benchmark_id_t] m)
 ```
 
-Output from running a test:
-
-```
-| Linear veq | 0		|	0.000000 s	| 0
-| Linear veq | 1		|	0.000000 s	| 1
-| Linear veq | 2		|	0.000000 s	| 1
-| Linear veq | 1000		|	0.0022000 s	| 2.000
-| Linear veq | 10000	|	0.003200 s	| 40.000
-```
 
 
 <a id="makebenchmarkreport"></a>
 ### make\_benchmark\_report()
 
-This function let's you control the formatting of benchmark reports:
+This function generates a nice output table from benchmark results:
 
 ```
-let report = make_benchmark_report(test_results, [ -1, -1, -1, -1 ])
-for(i in 0 ..< size(report)){
-	print(report[i])
-}
+func string make_benchmark_report([benchmark_result2_t] results)
 ```
 
+```
+print(make_benchmark_report(test_results))
+```
+
+Example print out:
+
+```
 |MODULE |TEST    |DUR        |       |
 |-------|--------|-----------|-------|
 |mod1   |my      |240 ns     |""     |
@@ -3045,6 +2979,61 @@ for(i in 0 ..< size(report)){
 |mod1   |baggins |7000 ns    |"mb/s" |
 |mod1   |baggins |8000 ns    |"mb/s" |
 |mod1   |baggins |80000 ns   |"mb/s" |
+```
+
+
+#### more
+This is a way to record additional information about your benchmark. It can be more output values from computations, like the memory usage, the output result of the computations or it can be annotations and analysis data, like turning the dur and the amount of work into "1100 pixels/s" etc.
+
+You can just pass a string with that information (will become a JSON string), like "max detected" or "bandwidth = 120 MB/s"
+
+A more advanced technique is to pass a JSON dictionary because it lets you name properties and specify the properties using number or other JSON values - no need to make everything into strings.
+
+```
+benchmark_result_t(int dur, { "note": "max_detected", "bandwidth MB/s": 120, "pixels/s": 1100 })
+```
+
+They you can write your own code to make more advanced reports.
+
+
+Floyd's command line supports a few useful features for using the more data:
+
+|More value		| Meaning
+|:---	|:---	
+|null		| no additional printout
+|string		| Show the string in the unnamed column
+|dict		| Make a new column for each dict key. These are shared for all dicts with those keys, effectively letting you make your own columns
+|any		| Show more value in the unnamed column, printed as compacted JSON string. A short array becomes "[ 10, 20, 30]" and so forth.
+
+Example:
+
+```
+"pack_png()": benchmark_result_t { 1800, { "kb/s": 670000, "out size": 14014 } }
+"pack_png()": benchmark_result_t { 2023, "alpha" },
+"pack_png()": benchmark_result_t { 2980, json() } },
+"zip()": benchmark_result_t { 4030, { "kb/s": 503000 , "out size": 12030 } },
+"zip()": benchmark_result_t { 5113, "alpha" },
+"pack_jpeg()": benchmark_result_t { 2029, [ "1024", "1024" ] }
+```
+
+Is printed like this:
+```
+| MODULE  | TEST         |     DUR|                   | KB/S    | OUT SIZE  |
+|---------|--------------|--------|-------------------|---------|-----------|
+|         | pack_png()   | 1800 ns|                   | 670000  | 14014     |
+|         | pack_png()   | 2023 ns| alpha             |         |           |
+|         | pack_png()   | 2980 ns|                   |         |           |
+|         | zip()        | 4030 ns|                   | 503000  | 12030     |
+|         | zip()        | 5113 ns| alpha             |         |           |
+|         | pack_jpeg()  | 2029 ns| ["1024", "1024"]  |         |           |
+```
+
+Notice:
+
+- We get a blank column where all misc printouts are shown
+- Two tests return a dictionary with a "kb/s" key -- they create a new column and both benchmarks show there data in that column. Same for "out size".
+- The pack_jpeg-line shows a compact JSON: an array with two strings.
+
 
 
 
@@ -3056,8 +3045,9 @@ These built-in features lets you see what kind of CPU and memory system your pro
 
 <a id="detecthardwarecaps"></a>
 ### detect\_hardware\_caps()
+
 ```
-[string: json] detect_hardware_caps()
+func [string: json] detect_hardware_caps()
 ```
 Output is something similar to this:
 
@@ -3105,10 +3095,11 @@ Output is something similar to this:
 
 64-bit hash value used to speed up lookups and comparisons.
 
-	struct quick_hash_t {
-		int hash
-	}
-
+```
+struct quick_hash_t {
+	int hash
+}
+```
 
 
 <a id="sha1_t"></a>
@@ -3116,10 +3107,11 @@ Output is something similar to this:
 
 128-bit SHA1 hash number.
 
-	struct sha1_t {
-		string ascii40
-	}
-
+```
+struct sha1_t {
+	string ascii40
+}
+```
 
 
 <a id="calcstringsha1"></a>

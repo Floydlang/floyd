@@ -16,6 +16,7 @@
 #include "ast_value.h"
 #include "floyd_interpreter.h"
 #include "floyd_runtime.h"
+#include "bytecode_helpers.h"
 
 
 #include <algorithm>

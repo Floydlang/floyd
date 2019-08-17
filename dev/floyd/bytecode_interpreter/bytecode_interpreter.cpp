@@ -8,11 +8,11 @@
 
 #include "bytecode_interpreter.h"
 
-#include "floyd_interpreter.h"
 #include "bytecode_corecalls.h"
 #include "bytecode_corelib.h"
 #include "text_parser.h"
 #include "ast_value.h"
+#include "bytecode_helpers.h"
 
 #include <algorithm>
 

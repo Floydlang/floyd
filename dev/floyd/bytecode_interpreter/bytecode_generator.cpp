@@ -23,7 +23,8 @@
 #include "bytecode_generator.h"
 
 #include "semantic_analyser.h"
-#include "floyd_interpreter.h"
+#include "bytecode_helpers.h"
+#include "bytecode_interpreter.h"
 #include "floyd_runtime.h"
 
 #include <cmath>

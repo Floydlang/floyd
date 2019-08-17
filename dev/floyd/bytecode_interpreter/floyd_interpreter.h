@@ -27,11 +27,6 @@ struct value_t;
 struct semantic_ast_t;
 struct compilation_unit_t;
 
-//////////////////////////////////////		Helpers for values.
-
-
-value_t bc_to_value(const bc_value_t& value);
-bc_value_t value_to_bc(const value_t& value);
 
 
 //////////////////////////////////////		Free functions

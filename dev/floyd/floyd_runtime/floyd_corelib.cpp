@@ -59,7 +59,6 @@ There is never a file extension. You could add one if you want too.
 
 
 
-
 extern const std::string k_corelib_builtin_types_and_constants = R"(
 
 	struct benchmark_id_t {
@@ -112,6 +111,7 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 	}
 
 
+/*
 
 	//[R] map([E] elements, func R (E e, C context) f, C context)
 	func string trace_benchmarks_f(benchmark_result2_t r, int c){
@@ -201,6 +201,7 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 		}
 		return report
 	}
+*/
 
 /*
 	if(false){
@@ -255,14 +256,9 @@ extern const std::string k_corelib_builtin_types_and_constants = R"(
 */
 
 
-
-
-
-
-
+	func string make_benchmark_report([benchmark_result2_t] results)
 
 	func [string: json] detect_hardware_caps()
-
 
 
 
@@ -507,7 +503,6 @@ std::vector<std::pair<std::string, json_t>> corelib_detect_hardware_caps(){
 	return result;
 }
 
-
 /*
 {
 	"availcpu": 0,
@@ -539,11 +534,6 @@ std::vector<std::pair<std::string, json_t>> corelib_detect_hardware_caps(){
 	"usermem": 3.95551e+09,
 	"vectorunit": 1
 }
-
-
-
-
-
 */
 
 std::string simplify_mem_size(int64_t value){
@@ -618,8 +608,6 @@ std::vector<std::string> corelib_make_hardware_caps_report(const std::vector<std
 	const auto l1_instruction_cache_size = m.at("l1_instruction_cache_size").get_number();
 	const auto l2_cache_size = m.at("l2_cache_size").get_number();
 	const auto l3_cache_size = m.at("l3_cache_size").get_number();
-
-
 
 	std::vector<line_t> table = {
 		line_t( { "PROCESSOR", "",												"",		"", "" }, ' ', 0x00),
@@ -708,7 +696,7 @@ static std::string json_to_pretty_string_no_quotes(const json_t& j){
 }
 
 
-std::vector<std::string> make_benchmark_report(const std::vector<benchmark_result2_t>& test_results){
+std::string make_benchmark_report(const std::vector<benchmark_result2_t>& test_results){
 	const auto fixed_headings = std::vector<std::string>{ "MODULE", "TEST", "DUR" };
 
 	const int fixed_column_count = (int)fixed_headings.size();
@@ -790,7 +778,13 @@ std::vector<std::string> make_benchmark_report(const std::vector<benchmark_resul
 		headings,
 		line_t::make_pad( std::vector<std::string>(column_count, ""), '-' )
 	};
-	return generate_table(concat(header_rows, table), columns);
+	const auto r = generate_table(concat(header_rows, table), columns);
+
+	std::stringstream ss;
+	for(const auto& e: r){
+		ss << e << std::endl;
+	}
+	return ss.str();
 }
 
 

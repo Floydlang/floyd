@@ -34,6 +34,19 @@ struct native_sha1_t {
 
 
 
+static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp, const runtime_value_t b){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto b2 = from_runtime_value(r, b, typeid_t::make_vector(make_benchmark_result2_t()));
+	const auto test_results = unpack_vec_benchmark_result2_t(b2);
+	const auto report = make_benchmark_report(test_results);
+	auto result = to_runtime_string(r, report);
+	return result;
+}
+
+
+
+
 static DICT_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 
@@ -223,6 +236,7 @@ std::map<std::string, void*> get_corelib_c_function_ptrs(){
 
 	////////////////////////////////		CORE FUNCTIONS AND HOST FUNCTIONS
 	const std::map<std::string, void*> host_functions_map = {
+		{ "make_benchmark_report", reinterpret_cast<void *>(&llvm_corelib__make_benchmark_report) },
 
 		{ "detect_hardware_caps", reinterpret_cast<void *>(&llvm_corelib__detect_hardware_caps) },
 

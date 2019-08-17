@@ -21,6 +21,21 @@ namespace floyd {
 
 
 
+
+bc_value_t bc_corelib__make_benchmark_report(interpreter_t& vm, const bc_value_t args[], int arg_count){
+	QUARK_ASSERT(vm.check_invariant());
+	QUARK_ASSERT(arg_count == 1);
+	QUARK_ASSERT(args[0]._type == typeid_t::make_vector(make_benchmark_result2_t()));
+
+	const auto b2 = bc_to_value(args[0]);
+	const auto test_results = unpack_vec_benchmark_result2_t(b2);
+	const auto report = make_benchmark_report(test_results);
+	return value_to_bc(value_t::make_string(report));
+}
+
+
+
+
 bc_value_t bc_corelib__detect_hardware_caps(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 0);
@@ -288,6 +303,8 @@ bc_value_t bc_corelib__rename_fsentry(interpreter_t& vm, const bc_value_t args[]
 std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_corelib_calls(){
 
 	const auto result = std::map<function_id_t, BC_NATIVE_FUNCTION_PTR>{
+		{ { "make_benchmark_report" }, bc_corelib__make_benchmark_report },
+
 		{ { "detect_hardware_caps" }, bc_corelib__detect_hardware_caps },
 
 

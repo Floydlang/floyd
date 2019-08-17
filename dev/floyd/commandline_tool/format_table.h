@@ -27,7 +27,7 @@ struct line_t {
 	line_t(const std::vector<std::string>& columns) :
 		columns(columns),
 		pad_char(' '),
-		bar_char(' ')
+		bar_char('|')
 	{
 	}
 

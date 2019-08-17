@@ -19,6 +19,33 @@ const location_t k_no_location(std::numeric_limits<std::size_t>::max());
 
 
 
+
+
+
+std::vector<benchmark_result2_t> unpack_vec_benchmark_result2_t(const value_t& value){
+	QUARK_ASSERT(value.get_type() == typeid_t::make_vector(make_benchmark_result2_t()));
+
+	std::vector<benchmark_result2_t> test_results;
+	for(const auto& e: value.get_vector_value()){
+		const auto& f = e.get_struct_value();
+
+		const auto& test_id = f->_member_values[0].get_struct_value();
+		const auto& result = f->_member_values[1].get_struct_value();
+
+		const auto module = test_id->_member_values[0].get_string_value();
+		const auto test = test_id->_member_values[1].get_string_value();
+
+		const auto dur = result->_member_values[0].get_int_value();
+		const auto more = result->_member_values[1].get_json();
+
+		const auto r = benchmark_result2_t { benchmark_id_t { module, test }, benchmark_result_t { dur, more } };
+		test_results.push_back(r);
+	}
+	return test_results;
+}
+
+
+
 bool is_floyd_literal(const typeid_t& type){
 	QUARK_ASSERT(type.check_invariant());
 

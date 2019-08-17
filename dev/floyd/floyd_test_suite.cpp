@@ -2666,11 +2666,14 @@ FLOYD_LANG_PROOF("Floyd test suite", "run_benchmarks()", "", ""){
 				return [ benchmark_result_t(300, json("3 monkeys")) ]
 			}
 
-			print(trace_benchmarks(run_benchmarks(get_benchmarks())))
+			print(make_benchmark_report(run_benchmarks(get_benchmarks())))
 		)",
 		{
-			R"___((module x:AAA): dur: 200, more: "0 eleements")___"  "\n"
-			R"___((module x:BBB): dur: 300, more: "3 monkeys")___" "\n"
+R"___(| MODULE    | TEST  |    DUR|              |
+|-----------|-------|-------|--------------|
+| module x  | AAA   | 200 ns| 0 eleements  |
+| module x  | BBB   | 300 ns| 3 monkeys    |
+)___"
 		}
 	);
 }
@@ -2681,7 +2684,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "run_benchmarks()", "", ""){
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Example", ""){
-	ut_run_closed_lib(
+	ut_verify_printout_lib(
 		QUARK_POS,
 		R"(
 
@@ -2696,12 +2699,22 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Example", ""){
 				benchmark_result2_t(benchmark_id_t("mod1", "baggins"), benchmark_result_t(80000, "mb/s"))
 			]
 
-			let report = make_benchmark_report(test_results, [ -1, -1, -1, -1 ])
-			for(i in 0 ..< size(report)){
-				print(report[i])
-			}
+			print(make_benchmark_report(test_results))
 
-		)"
+		)",
+		{
+R"___(| MODULE  | TEST     |        DUR|       |
+|---------|----------|-----------|-------|
+| mod1    | my       |     240 ns|       |
+| mod1    | my       |    3000 ns|       |
+| mod1    | my       |  100000 ns| kb/s  |
+| mod1    | my       | 1200000 ns| mb/s  |
+| mod1    | baggins  |    5000 ns| mb/s  |
+| mod1    | baggins  |    7000 ns| mb/s  |
+| mod1    | baggins  |    8000 ns| mb/s  |
+| mod1    | baggins  |   80000 ns| mb/s  |
+)___"
+		}
 	);
 }
 

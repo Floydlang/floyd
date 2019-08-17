@@ -13,6 +13,7 @@
 #include "semantic_analyser.h"
 #include "bytecode_generator.h"
 #include "os_process.h"
+#include "bytecode_helpers.h"
 
 #include <thread>
 #include <deque>

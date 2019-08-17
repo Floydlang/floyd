@@ -10,6 +10,7 @@
 
 
 #include "floyd_interpreter.h"
+#include "bytecode_helpers.h"
 #include "bytecode_generator.h"
 
 #include "json_support.h"
