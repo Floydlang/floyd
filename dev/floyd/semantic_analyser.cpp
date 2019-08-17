@@ -547,15 +547,12 @@ std::pair<analyser_t, std::shared_ptr<statement_t>> analyse_bind_local_statement
 			//	If symbol can be initilzed directly, use make_immutable_precalc(). Else reserve it and create an init2-statement to set it up at runtime.
 			//	??? Better to always initialise it, even if it's a complex value. Codegen then decides if to translate to a reserve + init. BUT PROBLEM: we lose info *when* to init the value.
 			if(is_preinitliteral(lhs_type2) && mutable_flag == false && get_expression_type(rhs_expr_pair.second) == expression_type::k_literal){
-
 				const auto symbol2 = symbol_t::make_immutable_precalc(rhs_expr_pair.second.get_literal());
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
 				resolve_type(a_acc, s.location, rhs_expr_pair.second.get_output_type());
 				return { a_acc, {} };
-
 			}
 			else{
-
 				const auto symbol2 = mutable_flag ? symbol_t::make_mutable(lhs_type2) : symbol_t::make_immutable_reserve(lhs_type2);
 				a_acc._lexical_scope_stack.back().symbols._symbols[local_name_index] = { new_local_name, symbol2 };
 				resolve_type(a_acc, s.location, rhs_expr_pair.second.get_output_type());

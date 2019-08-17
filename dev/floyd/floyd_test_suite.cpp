@@ -528,6 +528,14 @@ FLOYD_LANG_PROOF("Floyd test suite", "int range", "Init with unsigned literal", 
 	ut_verify_global_result_nolib(QUARK_POS, "let int result = 18446744073709551615", value_t::make_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111));
 }
 
+FLOYD_LANG_PROOF("Floyd test suite", "int range", "Init with unsigned literal", ""){
+	ut_verify_exception_nolib(
+		QUARK_POS,
+		"let int result = 618446744073709551615",
+		R"___(Integer literal "618446744073709551615" larger than maxium allowed, which is 18446744073709551615 aka 0x7fffffff'ffffffff - maxium for an unsigned 64-bit integer. Line: 1 "let int result = 618446744073709551615")___"
+	);
+}
+
 //////////////////////////////////////////		BASIC EXPRESSIONS - BITWISE OPERATORS
 
 

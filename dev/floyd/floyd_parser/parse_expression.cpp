@@ -417,12 +417,30 @@ std::pair<value_t, seq_t> parse_decimal_literal(const seq_t& p) {
 	}
 	else{
 //		const int64_t number = std::atoll(number_pos.first.c_str());
-		unsigned long long int number = std::strtoull(number_pos.first.c_str(), nullptr, 10);
+		char* end_ptr = nullptr;
 
+		//	Important. Since strtoul() can legitimately return 0 or ULONG_MAX (ULLONG_MAX for strtoull()) on both success and failure, the calling program should set errno to 0 before the call, and then determine if an error occurred by checking whether errno has a nonzero value after the call.
+		errno = 0;
+
+		const unsigned long long int number = std::strtoull(number_pos.first.c_str(), &end_ptr, 10);
+		const auto error = errno;
+		if (error == ERANGE){
+			const std::string number_str(number_pos.first.c_str(), (const char*)end_ptr);
+			throw_compiler_error_nopos(std::string() + "Integer literal \"" + number_str + "\" larger than maxium allowed, which is " + std::to_string(k_floyd_uint64_max) + " aka 0x7fffffff'ffffffff - maxium for an unsigned 64-bit integer.");
+		}
 
 		return { value_t::make_int(number), number_pos.second };
 	}
 }
+
+QUARK_UNIT_TEST("parser", "std::strtoull()", "", ""){
+	const char* start = "6669223372036854775807";
+	char* end_ptr = nullptr;
+	unsigned long long int number = std::strtoull(start, &end_ptr, 10);
+	const auto error = errno;
+	QUARK_UT_VERIFY(error == ERANGE);
+}
+
 
 QUARK_UNIT_TEST("parser", "parse_decimal_literal()", "", ""){
 	const auto a = parse_decimal_literal(seq_t("0 xxx"));
@@ -455,13 +473,22 @@ QUARK_UNIT_TEST("parser", "parse_decimal_literal()", "", ""){
 }
 QUARK_UNIT_TEST("parser", "parse_decimal_literal()", "", ""){
 	const auto a = parse_decimal_literal(seq_t("9223372036854775808 xxx"));
-	QUARK_UT_VERIFY(a.first.get_int_value() == 9223372036854775808);
+	QUARK_UT_VERIFY((uint64_t)a.first.get_int_value() == 9223372036854775808ull);
 	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
 }
 QUARK_UNIT_TEST("parser", "parse_decimal_literal()", "", ""){
 	const auto a = parse_decimal_literal(seq_t("18446744073709551615 xxx"));
 	QUARK_UT_VERIFY(a.first.get_int_value() == k_floyd_uint64_max);
 	QUARK_UT_VERIFY(a.second.get_s() == " xxx");
+}
+
+QUARK_UNIT_TEST("parser", "parse_decimal_literal()", "", ""){
+	try {
+		parse_decimal_literal(seq_t("618446744073709551615 xxx"));
+	}
+	catch(const std::runtime_error& e){
+		QUARK_UT_VERIFY(std::string(e.what()) == "Integer literal \"618446744073709551615\" larger than maxium allowed, which is 18446744073709551615 aka 0x7fffffff'ffffffff - maxium for an unsigned 64-bit integer.");
+	}
 }
 
 
