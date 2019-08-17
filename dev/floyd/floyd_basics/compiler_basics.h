@@ -25,6 +25,20 @@ namespace floyd {
 
 
 
+
+/*
+	int64_max	9223372036854775807		(2 ^ 63 - 1)	0b01111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111	0x7fffffff'ffffffff
+	int64_min	-9223372036854775808	(2 ^ 63)		0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000	0x80000000'00000000
+
+	uint64_max	18446744073709551615	(2 ^ 64 - 1)	0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111	0xffffffff'ffffffff
+*/
+
+const uint64_t k_floyd_int64_max =	0x7fffffff'ffffffff;
+const uint64_t k_floyd_int64_min =	0x80000000'00000000;
+const uint64_t k_floyd_uint64_max =	0xffffffff'ffffffff;
+
+
+
 bool is_floyd_literal(const typeid_t& type);
 bool is_preinitliteral(const typeid_t& type);
 

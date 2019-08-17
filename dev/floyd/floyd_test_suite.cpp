@@ -30,12 +30,13 @@ unsupported syntax
 }
 */
 
-//??? Add tests for arithmetic bounds, limiting, wrapping.
+
 //??? Test truthness off all variable types: strings, doubles
 
 
 #if 1
-#define RUN_LANG_BASIC_TESTS				true
+#define RUN_LANG_BASIC_TESTS1				true
+#define RUN_LANG_BASIC_TESTS2				true
 #define RUN_LANG_COLLECTION_TESTS			true
 #define RUN_LANG_STRUCT_TESTS				true
 #define RUN_LANG_JSON_TESTS					true
@@ -44,12 +45,13 @@ unsupported syntax
 #define RUN_CONTAINER_TESTS					true
 #define RUN_EXAMPLE_AND_DOCS_TESTS			true
 #else
-//#define RUN_LANG_BASIC_TESTS				true
+#define RUN_LANG_BASIC_TESTS1				true
+//#define RUN_LANG_BASIC_TESTS2				true
 //#define RUN_LANG_COLLECTION_TESTS			true
 //#define RUN_LANG_STRUCT_TESTS				true
 //#define RUN_LANG_JSON_TESTS					true
 //#define RUN_LANG_CORECALL_TESTS				true
-#define RUN_CORELIB_TESTS					true
+//#define RUN_CORELIB_TESTS					true
 //#define RUN_CONTAINER_TESTS					true
 //#define RUN_EXAMPLE_AND_DOCS_TESTS			true
 #endif
@@ -96,7 +98,7 @@ static value_t make_double_vec(const std::vector<double>& elements){
 }
 
 
-#if RUN_LANG_BASIC_TESTS
+#if RUN_LANG_BASIC_TESTS1
 
 //######################################################################################################################
 //	DEFINE VARIABLE, SIMPLE TYPES
@@ -498,64 +500,87 @@ FLOYD_LANG_PROOF("Floyd test suite", "execute_expression()", "||", ""){
 
 
 
+
+//////////////////////////////////////////		BASIC EXPRESSIONS - INTEGER RANGE
+
+/*
+	int64_max		9223372036854775807		(2 ^ 63 - 1)	0b01111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111	0x7fffffff'ffffffff
+	int64_min		-9223372036854775808	(2 ^ 63)		0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000	0x80000000'00000000
+	int64_minus1	18446744073709551615	(2 ^ 64 - 1)	0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111	0xffffffff'ffffffff
+
+	uint64_max		18446744073709551615	(2 ^ 64 - 1)	0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111	0xffffffff'ffffffff
+
+const uint64_t k_floyd_int64_max =	0x7fffffff'ffffffff;
+const uint64_t k_floyd_int64_min =	0x80000000'00000000;
+const uint64_t k_floyd_uint64_max =	0xffffffff'ffffffff;
+
+*/
+
+FLOYD_LANG_PROOF("Floyd test suite", "int range", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 9223372036854775807", value_t::make_int(0b01111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111));
+}
+FLOYD_LANG_PROOF("Floyd test suite", "int range", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = -9223372036854775808", value_t::make_int(0b10000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000));
+}
+
+
+FLOYD_LANG_PROOF("Floyd test suite", "int range", "Init with unsigned literal", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let int result = 18446744073709551615", value_t::make_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111));
+}
+
 //////////////////////////////////////////		BASIC EXPRESSIONS - BITWISE OPERATORS
 
 
-//	2^63: 9223372036854775808
-//	2^64: 18446744073709551616
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_not()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(0)", value_t::make_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000)", value_t::make_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111));
 }
 
-#if 0
-FLOYD_LANG_PROOF_VIP("Floyd test suite", "", "bw_not()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(18446744073709551615)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000));
-}
-#endif
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_not()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(1)", value_t::make_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111110));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000000));
 }
-#if 0
+
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_not()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(9223372036854775808)", value_t::make_int(0));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", value_t::make_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111110));
 }
-#endif
+FLOYD_LANG_PROOF("Floyd test suite", "", "bw_not()", ""){
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_not(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111)", value_t::make_int(0));
+}
 
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_and()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_and(3, 1)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_and(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001));
 }
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_or()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_or(2, 1)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_or(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000010, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011));
 }
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_xor()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_xor(3, 1)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000010));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_xor(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000010));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_shift_left()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_left(3, 1)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_left(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000110));
 }
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_shift_right()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_right(3, 1)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_right(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011, 0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000001));
 }
 
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_shift_right_arithmetic()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_right_arithmetic(7, 1)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_right_arithmetic(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000111, 1)", value_t::make_int(0b00000000'00000000'00000000'00000000'00000000'00000000'00000000'00000011));
 }
 FLOYD_LANG_PROOF("Floyd test suite", "", "bw_shift_right_arithmetic()", ""){
-	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_right_arithmetic(-2, 1)", value_t::make_int(-1));
+	ut_verify_global_result_nolib(QUARK_POS, "let result = bw_shift_right_arithmetic(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111110, 1)", value_t::make_int(0b11111111'11111111'11111111'11111111'11111111'11111111'11111111'11111111));
 }
 
 
@@ -1719,7 +1744,10 @@ FLOYD_LANG_PROOF("Floyd test suite", "Scopes: All block scopes, shadowing or not
 }
 
 
+#endif	//	RUN_LANG_BASIC_TESTS1
 
+
+#if RUN_LANG_BASIC_TESTS2
 //######################################################################################################################
 //	IF STATEMENT
 //######################################################################################################################
@@ -2423,7 +2451,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 
 
 /*
-//	??? Semantic analyser doesn't yet catch this problem. LLVM codegen does.
+//	??? Semantic analyser doesn't yet catch this problem. LLVM codegen does. Function doesnt return in all paths
 FLOYD_LANG_PROOF("Floyd test suite", "benchmark-def", "Must return", ""){
 	ut_verify_exception_nolib(
 		QUARK_POS,
@@ -2966,7 +2994,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "string find()", "", ""){
 }
 
 
-//??? Add character-literal / type.
+
 FLOYD_LANG_PROOF("Floyd test suite", "string push_back()", "", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
@@ -3023,7 +3051,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "string replace()", "", "error"){
 
 
 
-#endif	//	RUN_LANG_BASIC_TESTS
+#endif	//	RUN_LANG_BASIC_TESTS2
 
 
 #if RUN_LANG_COLLECTION_TESTS

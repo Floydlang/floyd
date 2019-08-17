@@ -329,7 +329,6 @@ machdep.cpu.extfeatures
 	#endif
 }
 
-//QUARK_UNIT_TEST_VIP
 QUARK_UNIT_TEST("","", "", ""){
 	const auto a = read_hardware_caps();
 	QUARK_UT_VERIFY(a._hw_cacheline_size >= 16);

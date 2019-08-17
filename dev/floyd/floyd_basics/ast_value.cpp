@@ -8,11 +8,99 @@
 
 #include "ast_value.h"
 #include "text_parser.h"
+#include "compiler_basics.h"
 
 #include <cinttypes>
 
 
 namespace floyd {
+
+
+
+//////////////////////////////////////////////////		big-int
+
+
+/*
+	Why: we cannot store a full 64-bit integer in a double without losing information.
+	For value_t we detect this and store big integers as a string inside and object instead.
+
+	Example: number 9223372036854775807 is encoded as { "big-int": 64, "value": "9223372036854775807" }
+*/
+
+
+
+//	Anything less than 2^53 can be stored, with 52 bits explicitly stored in the mantissa, and then the exponent in effect giving you another one.
+//	 (9,007,199,254,740,991 or ~9 quadrillion). The reasoning behind that number is that JavaScript uses double-precision floating-point format numbers as specified in IEEE 754 and can only safely represent numbers between -(253 - 1) and 253 - 1.
+#define MAX_SAFE_INTEGER 9007199254740991
+#define MIN_SAFE_INTEGER -9007199254740991
+
+
+static std::pair<std::string, int64_t> encode_big_int(int64_t value){
+#if 1
+	const bool safe_in_double = value <= MAX_SAFE_INTEGER && value >= -MAX_SAFE_INTEGER;
+#else
+	uint64_t u = value;
+	uint64_t high = u & 0xffffffff'00000000;
+	const bool safe_in_double = (high == 0xffffffff'00000000 || high == 0x00000000'00000000) ? true : false;
+#endif
+
+
+	if(safe_in_double){
+		//	Double-check that this value can be stored non-lossy in a double.
+#if DEBUG
+		const double d = (double)value;
+		const int64_t back = (int64_t)d;
+		QUARK_ASSERT(back == value);
+#endif
+		return { "", value };
+	}
+	else{
+		const auto s = std::to_string(value);
+		return { s, -1 };
+	}
+}
+
+static int64_t decode_big_int(const std::string& s){
+	const auto i = std::stol(s);
+	return i;
+}
+
+QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+	QUARK_UT_VERIFY(encode_big_int(0) == (std::pair<std::string, int64_t>("", 0)));
+}
+
+QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+	QUARK_UT_VERIFY(encode_big_int(-1) == (std::pair<std::string, int64_t>("", -1)));
+}
+
+QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+	QUARK_UT_VERIFY(encode_big_int(k_floyd_int64_max) == (std::pair<std::string, int64_t>("9223372036854775807", -1)));
+}
+
+QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+	QUARK_UT_VERIFY(encode_big_int(k_floyd_int64_min) == (std::pair<std::string, int64_t>("-9223372036854775808", -1)));
+}
+
+QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+	QUARK_UT_VERIFY(encode_big_int(k_floyd_int64_max) == (std::pair<std::string, int64_t>("9223372036854775807", -1)));
+}
+
+QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+	QUARK_UT_VERIFY(encode_big_int(MIN_SAFE_INTEGER) == (std::pair<std::string, int64_t>("", MIN_SAFE_INTEGER)));
+}
+QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+	QUARK_UT_VERIFY(encode_big_int(MAX_SAFE_INTEGER) == (std::pair<std::string, int64_t>("", MAX_SAFE_INTEGER)));
+}
+
+QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+	QUARK_UT_VERIFY(encode_big_int(MIN_SAFE_INTEGER - 1) == (std::pair<std::string, int64_t>("-9007199254740992", -1)));
+}
+QUARK_UNIT_TEST("", "encode_big_int()", "", ""){
+	QUARK_UT_VERIFY(encode_big_int(MAX_SAFE_INTEGER + 1) == (std::pair<std::string, int64_t>("9007199254740992", -1)));
+}
+
+
+
 
 
 //////////////////////////////////////////////////		struct_value_t
@@ -919,7 +1007,7 @@ value_t ast_json_to_value(const typeid_t& type, const json_t& v){
 		if(v.is_object()){
 			const auto tag = v.get_object_element("big-int");
 			const auto value = v.get_object_element("value").get_string();
-  			const auto i = std::stol(value);
+  			const auto i = decode_big_int(value);
   			return value_t::make_int(i);
 		}
 		else if(v.is_number()){
@@ -992,34 +1080,6 @@ value_t ast_json_to_value(const typeid_t& type, const json_t& v){
 }
 
 
-//	Anything less than 2^53 can be stored, with 52 bits explicitly stored in the mantissa, and then the exponent in effect giving you another one.
-//	 (9,007,199,254,740,991 or ~9 quadrillion). The reasoning behind that number is that JavaScript uses double-precision floating-point format numbers as specified in IEEE 754 and can only safely represent numbers between -(253 - 1) and 253 - 1.
-#define MAX_SAFE_INTEGER 9007199254740991
-
-
-static bool safe_via_double(int64_t value){
-#if 1
-	const int64_t max_value = MAX_SAFE_INTEGER;
-	const bool safe_in_double = value < max_value && value > -max_value;
-#else
-	uint64_t u = value;
-	uint64_t high = u & 0xffffffff'00000000;
-	const bool safe_in_double = (high == 0xffffffff'00000000 || high == 0x00000000'00000000) ? true : false;
-#endif
-
-	if(safe_in_double){
-		//	Double-check that this value can be stored non-lossy in a double.
-#if DEBUG
-		const double d = (double)value;
-		const int64_t back = (int64_t)d;
-		QUARK_ASSERT(back == value);
-#endif
-		return true;
-	}
-	else{
-		return false;
-	}
-}
 
 
 json_t value_to_ast_json(const value_t& v, json_tags tags){
@@ -1037,13 +1097,12 @@ json_t value_to_ast_json(const value_t& v, json_tags tags){
 	}
 	else if(v.is_int()){
 		const auto i = v.get_int_value();
-		if(safe_via_double(i)){
-			return json_t(static_cast<double>(i));
+		const std::pair<std::string, int64_t> big_int = encode_big_int(i);
+		if(big_int.first.empty()){
+			return json_t(static_cast<double>(big_int.second));
 		}
 		else{
-			std::map<std::string, json_t> result;
-			result["big-int"] = json_t(64);
-			result["value"] = std::to_string(i);
+			std::map<std::string, json_t> result = { { "big-int", json_t(64) }, { "value", big_int.first } };
 			return result;
 		}
 	}
