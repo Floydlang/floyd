@@ -437,6 +437,7 @@ QUARK_UNIT_TEST("parser", "std::strtoull()", "", ""){
 	const char* start = "6669223372036854775807";
 	char* end_ptr = nullptr;
 	unsigned long long int number = std::strtoull(start, &end_ptr, 10);
+	(void)number;
 	const auto error = errno;
 	QUARK_UT_VERIFY(error == ERANGE);
 }

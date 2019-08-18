@@ -1759,7 +1759,6 @@
 			buildSettings = {
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/Cellar/llvm/8.0.0_1/lib,
 					"$(PROJECT_DIR)",
 					/usr/local/Cellar/llvm/8.0.1/lib,
 				);
@@ -1896,7 +1895,6 @@
 			buildSettings = {
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/Cellar/llvm/8.0.0_1/lib,
 					"$(PROJECT_DIR)",
 					/usr/local/Cellar/llvm/8.0.1/lib,
 				);
@@ -1909,7 +1907,6 @@
 			buildSettings = {
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/Cellar/llvm/8.0.0_1/lib,
 					"$(PROJECT_DIR)",
 					/usr/local/Cellar/llvm/8.0.1/lib,
 				);
@@ -1922,7 +1919,6 @@
 			buildSettings = {
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/Cellar/llvm/8.0.0_1/lib,
 					"$(PROJECT_DIR)",
 					/usr/local/Cellar/llvm/8.0.1/lib,
 				);
@@ -1935,7 +1931,6 @@
 			buildSettings = {
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/Cellar/llvm/8.0.0_1/lib,
 					"$(PROJECT_DIR)",
 					/usr/local/Cellar/llvm/8.0.1/lib,
 				);
@@ -1948,7 +1943,6 @@
 			buildSettings = {
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/usr/local/Cellar/llvm/8.0.0_1/lib,
 					"$(PROJECT_DIR)",
 					/usr/local/Cellar/llvm/8.0.1/lib,
 				);
