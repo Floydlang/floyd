@@ -86,14 +86,14 @@ typeid_t make_process_message_handler_type(const typeid_t& t){
 
 
 
-//////////////////////////////////////		CORE CALLS
+//////////////////////////////////////		INTRINSICS
 
 
 
 
 #define ANY_TYPE typeid_t::make_any()
 
-static corecall_signature_t make_corecall(
+static intrinsic_signature_t make_intrinsic(
 	const std::string& name,
 	floyd::typeid_t function_type
 ){
@@ -101,89 +101,89 @@ static corecall_signature_t make_corecall(
 }
 
 
-corecall_signature_t make_assert_signature(){
-	return make_corecall("assert", typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_bool() }, epure::pure) );
+intrinsic_signature_t make_assert_signature(){
+	return make_intrinsic("assert", typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_bool() }, epure::pure) );
 }
-corecall_signature_t make_to_string_signature(){
-	return make_corecall("to_string", typeid_t::make_function(typeid_t::make_string(), { ANY_TYPE }, epure::pure) );
-}
-
-corecall_signature_t make_to_pretty_string_signature(){
-	return make_corecall("to_pretty_string", typeid_t::make_function(typeid_t::make_string(), { ANY_TYPE }, epure::pure) );
-}
-corecall_signature_t make_typeof_signature(){
-	return make_corecall("typeof", typeid_t::make_function(typeid_t::make_typeid(), { ANY_TYPE }, epure::pure) );
+intrinsic_signature_t make_to_string_signature(){
+	return make_intrinsic("to_string", typeid_t::make_function(typeid_t::make_string(), { ANY_TYPE }, epure::pure) );
 }
 
-
-corecall_signature_t make_update_signature(){
-	return make_corecall("update", typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) );
+intrinsic_signature_t make_to_pretty_string_signature(){
+	return make_intrinsic("to_pretty_string", typeid_t::make_function(typeid_t::make_string(), { ANY_TYPE }, epure::pure) );
 }
-
-corecall_signature_t make_size_signature(){
-	return make_corecall("size", typeid_t::make_function(typeid_t::make_int(), { ANY_TYPE }, epure::pure) );
+intrinsic_signature_t make_typeof_signature(){
+	return make_intrinsic("typeof", typeid_t::make_function(typeid_t::make_typeid(), { ANY_TYPE }, epure::pure) );
 }
 
 
-corecall_signature_t make_find_signature(){
-	return make_corecall("find", typeid_t::make_function(typeid_t::make_int(), { ANY_TYPE, ANY_TYPE }, epure::pure) );
-}
-corecall_signature_t make_exists_signature(){
-	return make_corecall("exists", typeid_t::make_function(typeid_t::make_bool(), { ANY_TYPE, ANY_TYPE }, epure::pure) );
+intrinsic_signature_t make_update_signature(){
+	return make_intrinsic("update", typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) );
 }
 
-corecall_signature_t make_erase_signature(){
-	return make_corecall("erase", typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) );
-}
-corecall_signature_t make_get_keys_signature(){
-	return make_corecall("get_keys", typeid_t::make_function(typeid_t::make_vector(typeid_t::make_string()), { ANY_TYPE }, epure::pure) );
+intrinsic_signature_t make_size_signature(){
+	return make_intrinsic("size", typeid_t::make_function(typeid_t::make_int(), { ANY_TYPE }, epure::pure) );
 }
 
 
-corecall_signature_t make_push_back_signature(){
-	return make_corecall("push_back", typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) );
+intrinsic_signature_t make_find_signature(){
+	return make_intrinsic("find", typeid_t::make_function(typeid_t::make_int(), { ANY_TYPE, ANY_TYPE }, epure::pure) );
+}
+intrinsic_signature_t make_exists_signature(){
+	return make_intrinsic("exists", typeid_t::make_function(typeid_t::make_bool(), { ANY_TYPE, ANY_TYPE }, epure::pure) );
 }
 
-corecall_signature_t make_subset_signature(){
-	return make_corecall("subset", typeid_t::make_function_dyn_return({ ANY_TYPE, typeid_t::make_int(), typeid_t::make_int() }, epure::pure, typeid_t::return_dyn_type::arg0) );
+intrinsic_signature_t make_erase_signature(){
+	return make_intrinsic("erase", typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) );
 }
-corecall_signature_t make_replace_signature(){
-	return make_corecall("replace", typeid_t::make_function_dyn_return({ ANY_TYPE, typeid_t::make_int(), typeid_t::make_int(), ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) );
-}
-
-corecall_signature_t make_parse_json_script_signature(){
-	return make_corecall("parse_json_script", typeid_t::make_function(typeid_t::make_json(), { typeid_t::make_string() }, epure::pure) );
-}
-
-corecall_signature_t make_generate_json_script_signature(){
-	return make_corecall("generate_json_script", typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json() }, epure::pure) );
+intrinsic_signature_t make_get_keys_signature(){
+	return make_intrinsic("get_keys", typeid_t::make_function(typeid_t::make_vector(typeid_t::make_string()), { ANY_TYPE }, epure::pure) );
 }
 
 
-corecall_signature_t make_to_json_signature(){
-	return make_corecall("to_json", typeid_t::make_function(typeid_t::make_json(), { ANY_TYPE }, epure::pure) );
+intrinsic_signature_t make_push_back_signature(){
+	return make_intrinsic("push_back", typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) );
+}
+
+intrinsic_signature_t make_subset_signature(){
+	return make_intrinsic("subset", typeid_t::make_function_dyn_return({ ANY_TYPE, typeid_t::make_int(), typeid_t::make_int() }, epure::pure, typeid_t::return_dyn_type::arg0) );
+}
+intrinsic_signature_t make_replace_signature(){
+	return make_intrinsic("replace", typeid_t::make_function_dyn_return({ ANY_TYPE, typeid_t::make_int(), typeid_t::make_int(), ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) );
+}
+
+intrinsic_signature_t make_parse_json_script_signature(){
+	return make_intrinsic("parse_json_script", typeid_t::make_function(typeid_t::make_json(), { typeid_t::make_string() }, epure::pure) );
+}
+
+intrinsic_signature_t make_generate_json_script_signature(){
+	return make_intrinsic("generate_json_script", typeid_t::make_function(typeid_t::make_string(), {typeid_t::make_json() }, epure::pure) );
 }
 
 
-corecall_signature_t make_from_json_signature(){
+intrinsic_signature_t make_to_json_signature(){
+	return make_intrinsic("to_json", typeid_t::make_function(typeid_t::make_json(), { ANY_TYPE }, epure::pure) );
+}
+
+
+intrinsic_signature_t make_from_json_signature(){
 	//	??? Tricky. How to we compute the return type from the input arguments?
-	return make_corecall("from_json", typeid_t::make_function_dyn_return({ typeid_t::make_json(), typeid_t::make_typeid() }, epure::pure, typeid_t::return_dyn_type::arg1_typeid_constant_type) );
+	return make_intrinsic("from_json", typeid_t::make_function_dyn_return({ typeid_t::make_json(), typeid_t::make_typeid() }, epure::pure, typeid_t::return_dyn_type::arg1_typeid_constant_type) );
 }
 
 
-corecall_signature_t make_get_json_type_signature(){
-	return make_corecall("get_json_type", typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_json() }, epure::pure) );
+intrinsic_signature_t make_get_json_type_signature(){
+	return make_intrinsic("get_json_type", typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_json() }, epure::pure) );
 }
 
 
 
 
-//////////////////////////////////////		HIGHER-ORDER CORE CALLS
+//////////////////////////////////////		HIGHER-ORDER INTRINSICS
 
 
 
-corecall_signature_t make_map_signature(){
-	return make_corecall("map", typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::vector_of_arg1func_return) );
+intrinsic_signature_t make_map_signature(){
+	return make_intrinsic("map", typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::vector_of_arg1func_return) );
 }
 typeid_t harden_map_func_type(const typeid_t& resolved_call_type){
 	QUARK_ASSERT(resolved_call_type.check_invariant());
@@ -230,7 +230,7 @@ bool check_map_func_type(const typeid_t& elements, const typeid_t& f, const type
 
 
 //	string map_string(string s, func int(int e, C context) f, C context)
-corecall_signature_t make_map_string_signature(){
+intrinsic_signature_t make_map_string_signature(){
 	return {
 		"map_string",
 		{"1034"},
@@ -277,8 +277,8 @@ bool check_map_string_func_type(const typeid_t& elements, const typeid_t& f, con
 
 
 //	[R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
-corecall_signature_t make_map_dag_signature(){
-	return make_corecall("map_dag", typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::vector_of_arg2func_return) );
+intrinsic_signature_t make_map_dag_signature(){
+	return make_intrinsic("map_dag", typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::vector_of_arg2func_return) );
 }
 
 typeid_t harden_map_dag_func_type(const typeid_t& resolved_call_type){
@@ -330,8 +330,8 @@ bool check_map_dag_func_type(const typeid_t& elements, const typeid_t& depends_o
 
 
 //	[E] filter([E] elements, func bool (E e, C context) f, C context)
-corecall_signature_t make_filter_signature(){
-	return make_corecall("filter", typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) );
+intrinsic_signature_t make_filter_signature(){
+	return make_intrinsic("filter", typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) );
 }
 typeid_t harden_filter_func_type(const typeid_t& resolved_call_type){
 	QUARK_ASSERT(resolved_call_type.check_invariant());
@@ -370,8 +370,8 @@ bool check_filter_func_type(const typeid_t& elements, const typeid_t& f, const t
 
 
 
-corecall_signature_t make_reduce_signature(){
-	return make_corecall("reduce", typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg1) );
+intrinsic_signature_t make_reduce_signature(){
+	return make_intrinsic("reduce", typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg1) );
 }
 
 typeid_t harden_reduce_func_type(const typeid_t& resolved_call_type){
@@ -422,8 +422,8 @@ bool check_reduce_func_type(const typeid_t& elements, const typeid_t& accumulato
 
 
 //	[T] stable_sort([T] elements, func bool (T left, T right, C context) less, C context)
-corecall_signature_t make_stable_sort_signature(){
-	return make_corecall("stable_sort", typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) );
+intrinsic_signature_t make_stable_sort_signature(){
+	return make_intrinsic("stable_sort", typeid_t::make_function_dyn_return({ ANY_TYPE, ANY_TYPE, ANY_TYPE }, epure::pure, typeid_t::return_dyn_type::arg0) );
 }
 
 typeid_t harden_stable_sort_func_type(const typeid_t& resolved_call_type){
@@ -478,11 +478,11 @@ bool check_stable_sort_func_type(const typeid_t& elements, const typeid_t& less,
 
 
 
-corecall_signature_t make_print_signature(){
-	return make_corecall("print", typeid_t::make_function(typeid_t::make_void(), { ANY_TYPE }, epure::pure) );
+intrinsic_signature_t make_print_signature(){
+	return make_intrinsic("print", typeid_t::make_function(typeid_t::make_void(), { ANY_TYPE }, epure::pure) );
 }
-corecall_signature_t make_send_signature(){
-	return make_corecall("send", typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string(), typeid_t::make_json() }, epure::impure) );
+intrinsic_signature_t make_send_signature(){
+	return make_intrinsic("send", typeid_t::make_function(typeid_t::make_void(), { typeid_t::make_string(), typeid_t::make_json() }, epure::impure) );
 }
 
 
@@ -491,26 +491,26 @@ corecall_signature_t make_send_signature(){
 
 
 
-corecall_signature_t make_bw_not_signature(){
-	return make_corecall("bw_not", typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int() }, epure::pure) );
+intrinsic_signature_t make_bw_not_signature(){
+	return make_intrinsic("bw_not", typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int() }, epure::pure) );
 }
-corecall_signature_t make_bw_and_signature(){
-	return make_corecall("bw_and", typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) );
+intrinsic_signature_t make_bw_and_signature(){
+	return make_intrinsic("bw_and", typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) );
 }
-corecall_signature_t make_bw_or_signature(){
-	return make_corecall("bw_or", typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) );
+intrinsic_signature_t make_bw_or_signature(){
+	return make_intrinsic("bw_or", typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) );
 }
-corecall_signature_t make_bw_xor_signature(){
-	return make_corecall("bw_xor", typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) );
+intrinsic_signature_t make_bw_xor_signature(){
+	return make_intrinsic("bw_xor", typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) );
 }
-corecall_signature_t make_bw_shift_left_signature(){
-	return make_corecall("bw_shift_left", typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) );
+intrinsic_signature_t make_bw_shift_left_signature(){
+	return make_intrinsic("bw_shift_left", typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) );
 }
-corecall_signature_t make_bw_shift_right_signature(){
-	return make_corecall("bw_shift_right", typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) );
+intrinsic_signature_t make_bw_shift_right_signature(){
+	return make_intrinsic("bw_shift_right", typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) );
 }
-corecall_signature_t make_bw_shift_right_arithmetic_signature(){
-	return make_corecall("bw_shift_right_arithmetic", typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) );
+intrinsic_signature_t make_bw_shift_right_arithmetic_signature(){
+	return make_intrinsic("bw_shift_right_arithmetic", typeid_t::make_function(typeid_t::make_int(), { typeid_t::make_int(), typeid_t::make_int() }, epure::pure) );
 }
 
 
@@ -519,12 +519,12 @@ corecall_signature_t make_bw_shift_right_arithmetic_signature(){
 
 
 
-std::string get_corecall_opcode(const corecall_signature_t& signature){
+std::string get_intrinsic_opcode(const intrinsic_signature_t& signature){
 	return std::string() + "$" + signature.name;
 }
 
-static std::vector<corecall_signature_t> get_host_function_records(){
-	const std::vector<corecall_signature_t> result = {
+static std::vector<intrinsic_signature_t> get_host_function_records(){
+	const std::vector<intrinsic_signature_t> result = {
 		make_assert_signature(),
 		make_to_string_signature(),
 		make_to_pretty_string_signature(),
@@ -569,7 +569,7 @@ static std::vector<corecall_signature_t> get_host_function_records(){
 	return result;
 }
 
-std::vector<corecall_signature_t> get_corecall_signatures(){
+std::vector<intrinsic_signature_t> get_intrinsic_signatures(){
 	static const auto a = get_host_function_records();
 
 	return a;

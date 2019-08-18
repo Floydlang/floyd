@@ -52,10 +52,10 @@
 
 	- resolve_member_expression
 
-	- corecalls--update
+	- intrinsics--update
 		make_update_member()
 		OR
-		make_corecall()
+		make_intrinsic()
 
 
 	- analyse_construct_value_expression
@@ -63,14 +63,14 @@
 
 
 	- call
-		Handle corecalls
+		Handle intrinsics
 		Convert call-to-type -> make_construct_value_expr()
 		Make call-expression
 
 	- Automatically insert make_construct_value_expr() to convert int/double(string/bool -> JSON and convert vector->json,dict -> json
 
 
-	- Insert builtin types, corecalls and constants into globoal symbol table.
+	- Insert builtin types, intrinsics and constants into globoal symbol table.
 	- Check that all types are resolved
 
 
@@ -78,7 +78,7 @@
 	??? Rename assign and assign2 to assign_name, assign_resolved
 	??? Rename assign and assign2 to assign_name, assign_resolved
 	??? Rename bind_local_t -> init_local
-	??? Make pass that punches out specialised calls for corecalls, comparisons etc instead of having ONE.
+	??? Make pass that punches out specialised calls for intrinsics, comparisons etc instead of having ONE.
 */
 
 namespace floyd {

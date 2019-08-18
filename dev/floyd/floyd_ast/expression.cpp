@@ -389,12 +389,12 @@ json_t expression_to_json(const expression_t& e){
 			}
 			return make_ast_node(floyd::k_no_location, expression_opcode_t::k_call, { expression_to_json(*e.callee), json_t::make_array(args) } );
 		}
-		json_t operator()(const expression_t::corecall_t& e) const{
+		json_t operator()(const expression_t::intrinsic_t& e) const{
 			std::vector<json_t> args;
 			for(const auto& m: e.args){
 				args.push_back(expression_to_json(m));
 			}
-			return make_ast_node(floyd::k_no_location, expression_opcode_t::k_corecall, { e.call_name, args } );
+			return make_ast_node(floyd::k_no_location, expression_opcode_t::k_intrinsic, { e.call_name, args } );
 		}
 
 
@@ -566,7 +566,7 @@ expression_t ast_json_to_expression(const json_t& e){
 
 		return expression_t::make_call(function_expr, args2, annotated_type);
 	}
-	else if(op == expression_opcode_t::k_corecall){
+	else if(op == expression_opcode_t::k_intrinsic){
 		QUARK_ASSERT(e.get_array_size() == 3 || e.get_array_size() == 4);
 
 		const auto function_name = e.get_array_n(1).get_string();
@@ -578,7 +578,7 @@ expression_t ast_json_to_expression(const json_t& e){
 
 		const auto annotated_type = get_optional_typeid(e, 3);
 
-		return expression_t::make_corecall(function_name, args2, annotated_type);
+		return expression_t::make_intrinsic(function_name, args2, annotated_type);
 	}
 	else if(op == expression_opcode_t::k_resolve_member){
 		QUARK_ASSERT(e.get_array_size() == 3 || e.get_array_size() == 4);
@@ -709,8 +709,8 @@ expression_type get_expression_type(const expression_t& e){
 		expression_type operator()(const expression_t::call_t& e) const{
 			return expression_type::k_call;
 		}
-		expression_type operator()(const expression_t::corecall_t& e) const{
-			return expression_type::k_corecall;
+		expression_type operator()(const expression_t::intrinsic_t& e) const{
+			return expression_type::k_intrinsic;
 		}
 
 
@@ -773,5 +773,6 @@ QUARK_UNIT_TEST("", "", "", ""){
 	const auto copy(dummy);
 	floyd::variable_address_t b;
 	b = dummy;
+	(void)copy;
 }
 }	//	floyd

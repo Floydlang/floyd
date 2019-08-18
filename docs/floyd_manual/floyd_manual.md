@@ -48,7 +48,7 @@ Building TOC and links using Sublime Text 3, Markdowntoc and Markdown preview
 - [2 FLOYD LANGUAGE REFERENCE MANUAL](#2-floyd-language-reference-manual)
 	- [2.1 SOURCE CODE FILES](#21-source-code-files)
 	- [2.2 MAIN\(\) & EXECUTING PROGRAMS](#22-main--executing-programs)
-	- [2.3 CORECALLS - AKA INTRINSICS, OPERATORS](#23-corecalls---aka-intrinsics-operators)
+	- [2.3 COMPILER INTRINSICS](#23-compiler-intrinsics)
 	- [2.4 DATA TYPES](#24-data-types)
 		- [EXAMPLE TYPE DECLARATIONS](#example-type-declarations)
 		- [BOOL](#bool)
@@ -1329,14 +1329,14 @@ func int main([string] args){
 ...will call your main() function with ["-a", "output.txt"] and your executable will return 42.
 
 
-<a id="23-corecalls---aka-intrinsics-operators"></a>
-## 2.3 CORECALLS - AKA INTRINSICS, OPERATORS
+<a id="23-compiler-intrinsics"></a>
+## 2.3 COMPILER INTRINSICS
 
 These functions are built into the language itself and are always available to your code. They are all pure unless except print() and send(). The have special code generation algorithms. Many of these functions are generic -- they work on many different types.
 
-**COMPLETE LIST OF CORECALLS:**
+**COMPLETE LIST OF INTRINSICS:**
 
-| CORECALLS: BASICS	  				| USE
+| INTRINSICS: BASICS	  			| USE
 |:---								|:---
 | print() -- IMPURE					| Prints a value to standard output
 | send() -- IMPURE 					| Posts a message to a process
@@ -1347,7 +1347,7 @@ These functions are built into the language itself and are always available to y
 | probe()							| TODO: Expose variable to test and performance tools
 | select()							| TODO: Called from a process function to read its inbox. It will block until a message is received or it times out
 
-| CORECALLS: FOR SOME TYPES ONLY  	| USE
+| INTRINSICS: FOR SOME TYPES ONLY  | USE
 |:---								|:---
 | update() 							| Replace an element in a vector, string, dictionary or struct
 | size()							| Returns number of elements in a collection or string
@@ -1366,7 +1366,7 @@ These functions are built into the language itself and are always available to y
 | get_json_type()					| Get which value sits in a json value. It can be one of the 8 types supported by JSON
 | generate_json_script()			| Convert json value to a JSON-compatible string
 | parse_json_script()				| Parse a JSON string and create a json-value
-| json to_json(any)							| Convert any Floyd value to a json-value
+| json to_json(any)					| Convert any Floyd value to a json-value
 | from_json()						| Convert a json-value to a specific Floyd type
 | bw_not()							| Bitwise not operation
 | bw_and()							| Bitwise and operation
@@ -1594,7 +1594,7 @@ Binary integer literals:
 
 #### BITWISE OPERATORS
 
-Notice that floyd has no special operator syntax for bitwise operations the way C has. Instead Floyd has explicitly named operators for these operations. This:
+Notice that floyd has no special operator syntax for bitwise operations the way C has. Instead Floyd has explicitly named intrinsics for these operations. This:
 
 1) allows us to have more and more specific operators, like several types of shift operations
 2) avoid accidentally mixing && with &.

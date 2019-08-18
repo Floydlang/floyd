@@ -712,8 +712,8 @@ expression_gen_t bcgen_resolve_member_expression(bcgenerator_t& gen_acc, const v
 
 
 
-//	Generates a call to the global function that implements the corecall.
-expression_gen_t bcgen_make_fallthrough_corecall(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const typeid_t& call_output_type, const expression_t::corecall_t& details, const bcgen_body_t& body){
+//	Generates a call to the global function that implements the intrinsic.
+expression_gen_t bcgen_make_fallthrough_intrinsic(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const typeid_t& call_output_type, const expression_t::intrinsic_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(target_reg.check_invariant());
 	QUARK_ASSERT(call_output_type.check_invariant());
@@ -753,12 +753,12 @@ expression_gen_t make_update_call(bcgenerator_t& gen_acc, const variable_address
 	QUARK_ASSERT(new_value.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
-	const auto corecall_details = expression_t::corecall_t {
-		get_corecall_opcode(make_update_signature()),
+	const auto intrinsic_details = expression_t::intrinsic_t {
+		get_intrinsic_opcode(make_update_signature()),
 		{ parent, key, new_value }
 	};
 
-	return bcgen_make_fallthrough_corecall(gen_acc, target_reg, output_type, corecall_details, body);
+	return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, output_type, intrinsic_details, body);
 }
 
 static bc_opcode convert_call_to_pushback_opcode(const typeid_t& arg1_type){
@@ -780,7 +780,7 @@ static bc_opcode convert_call_to_pushback_opcode(const typeid_t& arg1_type){
 	}
 }
 
-static expression_gen_t bcgen_corecall_push_back_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const typeid_t& call_output_type, const expression_t::corecall_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_intrinsic_push_back_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const typeid_t& call_output_type, const expression_t::intrinsic_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(target_reg.check_invariant());
 	QUARK_ASSERT(call_output_type.check_invariant());
@@ -850,7 +850,7 @@ static bc_opcode convert_call_to_size_opcode(const typeid_t& arg1_type){
 	}
 }
 
-static expression_gen_t bcgen_corecall_size_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const typeid_t& call_output_type, const expression_t::corecall_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_intrinsic_size_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const typeid_t& call_output_type, const expression_t::intrinsic_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(target_reg.check_invariant());
 	QUARK_ASSERT(call_output_type.check_invariant());
@@ -878,7 +878,7 @@ static expression_gen_t bcgen_corecall_size_expression(bcgenerator_t& gen_acc, c
 
 
 
-//	Converts expression to a call to corecall() function.
+//	Converts expression to a call to intrinsic() function.
 expression_gen_t bcgen_update_member_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const expression_t& e, const expression_t::update_member_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(details.parent_address->get_output_type().is_struct());
@@ -1124,126 +1124,126 @@ static expression_gen_t bcgen_call_expression(bcgenerator_t& gen_acc, const vari
 
 
 
-static expression_gen_t bcgen_corecall_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const typeid_t& call_output_type, const expression_t::corecall_t& details, const bcgen_body_t& body){
+static expression_gen_t bcgen_intrinsic_expression(bcgenerator_t& gen_acc, const variable_address_t& target_reg, const typeid_t& call_output_type, const expression_t::intrinsic_t& details, const bcgen_body_t& body){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(target_reg.check_invariant());
 	QUARK_ASSERT(call_output_type.check_invariant());
 	QUARK_ASSERT(body.check_invariant());
 
 
-	if(details.call_name == get_corecall_opcode(make_assert_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	if(details.call_name == get_intrinsic_opcode(make_assert_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_corecall_opcode(make_to_string_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_to_string_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_corecall_opcode(make_to_pretty_string_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
-	}
-
-
-	else if(details.call_name == get_corecall_opcode(make_typeof_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_to_pretty_string_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
 
 
-	else if(details.call_name == get_corecall_opcode(make_update_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
-	}
-	else if(details.call_name == get_corecall_opcode(make_size_signature())){
-		return bcgen_corecall_size_expression(gen_acc, target_reg, call_output_type, details, body);
-	}
-	else if(details.call_name == get_corecall_opcode(make_find_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
-	}
-	else if(details.call_name == get_corecall_opcode(make_exists_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
-	}
-	else if(details.call_name == get_corecall_opcode(make_erase_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
-	}
-	else if(details.call_name == get_corecall_opcode(make_get_keys_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
-	}
-	else if(details.call_name == get_corecall_opcode(make_push_back_signature())){
-		return bcgen_corecall_push_back_expression(gen_acc, target_reg, call_output_type, details, body);
-	}
-	else if(details.call_name == get_corecall_opcode(make_subset_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
-	}
-	else if(details.call_name == get_corecall_opcode(make_replace_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_typeof_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
 
 
-	else if(details.call_name == get_corecall_opcode(make_parse_json_script_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_update_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_corecall_opcode(make_generate_json_script_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_size_signature())){
+		return bcgen_intrinsic_size_expression(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_corecall_opcode(make_to_json_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_find_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_corecall_opcode(make_from_json_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_exists_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-
-
-	else if(details.call_name == get_corecall_opcode(make_get_json_type_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_erase_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-
-
-	else if(details.call_name == get_corecall_opcode(make_map_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_get_keys_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_corecall_opcode(make_map_string_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_push_back_signature())){
+		return bcgen_intrinsic_push_back_expression(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_corecall_opcode(make_map_dag_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_subset_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_corecall_opcode(make_filter_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
-	}
-	else if(details.call_name == get_corecall_opcode(make_reduce_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
-	}
-	else if(details.call_name == get_corecall_opcode(make_stable_sort_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_replace_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
 
 
+	else if(details.call_name == get_intrinsic_opcode(make_parse_json_script_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_generate_json_script_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_to_json_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_from_json_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
 
-	else if(details.call_name == get_corecall_opcode(make_print_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
-	}
-	else if(details.call_name == get_corecall_opcode(make_send_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+
+	else if(details.call_name == get_intrinsic_opcode(make_get_json_type_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
 
 
-	else if(details.call_name == get_corecall_opcode(make_bw_not_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_map_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_corecall_opcode(make_bw_and_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_map_string_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_corecall_opcode(make_bw_or_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_map_dag_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_corecall_opcode(make_bw_xor_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_filter_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_corecall_opcode(make_bw_shift_left_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_reduce_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_corecall_opcode(make_bw_shift_right_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+	else if(details.call_name == get_intrinsic_opcode(make_stable_sort_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
-	else if(details.call_name == get_corecall_opcode(make_bw_shift_right_arithmetic_signature())){
-		return bcgen_make_fallthrough_corecall(gen_acc, target_reg, call_output_type, details, body);
+
+
+
+	else if(details.call_name == get_intrinsic_opcode(make_print_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_send_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
+
+
+	else if(details.call_name == get_intrinsic_opcode(make_bw_not_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_bw_and_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_bw_or_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_bw_xor_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_bw_shift_left_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_bw_shift_right_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_bw_shift_right_arithmetic_signature())){
+		return bcgen_make_fallthrough_intrinsic(gen_acc, target_reg, call_output_type, details, body);
 	}
 
 
@@ -1679,8 +1679,8 @@ expression_gen_t bcgen_expression(bcgenerator_t& gen_acc, const variable_address
 		expression_gen_t operator()(const expression_t::call_t& expr) const{
 			return bcgen_call_expression(gen_acc, target_reg, e.get_output_type(), expr, body);
 		}
-		expression_gen_t operator()(const expression_t::corecall_t& expr) const{
-			return bcgen_corecall_expression(gen_acc, target_reg, e.get_output_type(), expr, body);
+		expression_gen_t operator()(const expression_t::intrinsic_t& expr) const{
+			return bcgen_intrinsic_expression(gen_acc, target_reg, e.get_output_type(), expr, body);
 		}
 
 		expression_gen_t operator()(const expression_t::struct_definition_expr_t& expr) const{

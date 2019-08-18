@@ -32,7 +32,7 @@ bool is_floyd_literal(const typeid_t& type);
 namespace expression_opcode_t {
 	const std::string k_literal = "k";
 	const std::string k_call = "call";
-	const std::string k_corecall = "corecall";
+	const std::string k_intrinsic = "intrinsic";
 	const std::string k_load = "@";
 	const std::string k_load2 = "@i";
 	const std::string k_resolve_member = "->";
@@ -73,7 +73,7 @@ namespace expression_opcode_t {
 enum class expression_type {
 	k_literal,
 	k_call,
-	k_corecall,
+	k_intrinsic,
 	k_load,
 	k_load2,
 	k_resolve_member,
@@ -223,30 +223,30 @@ function_definition_t json_to_function_def(const json_t& p);
 */
 struct expression_t {
 
-	////////////////////////////////		corecall_t
+	////////////////////////////////		intrinsic_t
 
-	struct corecall_t {
+	struct intrinsic_t {
 		std::string call_name;
 		std::vector<expression_t> args;
 	};
 
-	public: static expression_t make_corecall(
+	public: static expression_t make_intrinsic(
 		const std::string& call_name,
 		const std::vector<expression_t>& args,
 		const std::shared_ptr<typeid_t>& annotated_type
 	){
 		return expression_t(
-			{ corecall_t { call_name, args } },
+			{ intrinsic_t { call_name, args } },
 			annotated_type
 		);
 	}
-	public: static expression_t make_corecall(
+	public: static expression_t make_intrinsic(
 		const std::string& call_name,
 		const std::vector<expression_t>& args,
 		const typeid_t& annotated_type
 	){
 		return expression_t(
-			{ corecall_t { call_name, args } },
+			{ intrinsic_t { call_name, args } },
 			std::make_shared<typeid_t>(annotated_type)
 		);
 	}
@@ -546,7 +546,7 @@ struct expression_t {
 	//////////////////////////		INTERNALS
 
 	typedef std::variant<
-		corecall_t,
+		intrinsic_t,
 		literal_exp_t,
 		arithmetic_t,
 		comparison_t,

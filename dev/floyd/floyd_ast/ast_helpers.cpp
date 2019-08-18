@@ -50,7 +50,7 @@ bool check_types_resolved(const expression_t& e){
 		bool operator()(const expression_t::call_t& e) const{
 			return check_types_resolved(*e.callee) && check_types_resolved(e.args);
 		}
-		bool operator()(const expression_t::corecall_t& e) const{
+		bool operator()(const expression_t::intrinsic_t& e) const{
 			return check_types_resolved(e.args);
 		}
 

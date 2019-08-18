@@ -8,7 +8,7 @@
 
 #include "bytecode_interpreter.h"
 
-#include "bytecode_corecalls.h"
+#include "bytecode_intrinsics.h"
 #include "bytecode_corelib.h"
 #include "text_parser.h"
 #include "ast_value.h"
@@ -971,6 +971,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_ASSERT(value_object_size >= 8);
 
 	const auto bcvalue_size = sizeof(bc_value_t);
+	(void)bcvalue_size;
 //	QUARK_ASSERT(bcvalue_size == 72);
 
 	struct mockup_value_t {
@@ -2306,9 +2307,9 @@ interpreter_t::interpreter_t(const bc_program_t& program, runtime_handler_i* han
 	const auto start_time = std::chrono::high_resolution_clock::now();
 
 
-	const auto corecalls = bc_get_corecalls();
+	const auto intrinsics = bc_get_intrinsics();
 	const auto corelib_calls = bc_get_corelib_calls();
-	auto host_functions = corecalls;
+	auto host_functions = intrinsics;
 	host_functions.insert(corelib_calls.begin(), corelib_calls.end());
 
 

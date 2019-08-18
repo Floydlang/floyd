@@ -37,7 +37,7 @@ using namespace std;
 struct analyzer_imm_t {
 	unchecked_ast_t _ast;
 
-	std::vector<corecall_signature_t> corecall_signatures;
+	std::vector<intrinsic_signature_t> intrinsic_signatures;
 };
 
 
@@ -849,7 +849,7 @@ std::pair<analyser_t, expression_t> analyse_resolve_member_expression(const anal
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_intrinsic_update_expression(const analyser_t& a, const statement_t& parent, const expression_t& e, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 
 	const auto sign = make_update_signature();
@@ -916,7 +916,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 
 		return {
 			a_acc,
-			expression_t::make_corecall(get_corecall_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
+			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
 		};
 	}
 	else if(collection_type.is_vector()){
@@ -937,7 +937,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 
 		return {
 			a_acc,
-			expression_t::make_corecall(get_corecall_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
+			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
 		};
 	}
 	else if(collection_type.is_dict()){
@@ -958,7 +958,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 
 		return {
 			a_acc,
-			expression_t::make_corecall(get_corecall_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
+			expression_t::make_intrinsic(get_intrinsic_opcode(sign), { collection_expr.second, key_expr.second, new_value_expr.second }, collection_type)
 		};
 	}
 
@@ -969,7 +969,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_update_expression(const ana
 	}
 }
 
-std::pair<analyser_t, expression_t> analyse_corecall_push_back_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_intrinsic_push_back_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 
 	const auto sign = make_push_back_signature();
@@ -1002,11 +1002,11 @@ std::pair<analyser_t, expression_t> analyse_corecall_push_back_expression(const 
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, parent_type)
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, parent_type)
 	};
 }
 
-std::pair<analyser_t, expression_t> analyse_corecall_size_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_intrinsic_size_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1026,11 +1026,11 @@ std::pair<analyser_t, expression_t> analyse_corecall_size_expression(const analy
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
-std::pair<analyser_t, expression_t> analyse_corecall_find_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_intrinsic_find_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1060,11 +1060,11 @@ std::pair<analyser_t, expression_t> analyse_corecall_find_expression(const analy
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
-std::pair<analyser_t, expression_t> analyse_corecall_exists_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_intrinsic_exists_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1085,11 +1085,11 @@ std::pair<analyser_t, expression_t> analyse_corecall_exists_expression(const ana
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
-std::pair<analyser_t, expression_t> analyse_corecall_erase_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_intrinsic_erase_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1110,13 +1110,13 @@ std::pair<analyser_t, expression_t> analyse_corecall_erase_expression(const anal
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
 //??? const statement_t& parent == very confusing. Rename parent => statement!
 
-std::pair<analyser_t, expression_t> analyse_corecall_get_keys_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_intrinsic_get_keys_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1133,11 +1133,11 @@ std::pair<analyser_t, expression_t> analyse_corecall_get_keys_expression(const a
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
-std::pair<analyser_t, expression_t> analyse_corecall_subset_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_intrinsic_subset_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1155,11 +1155,11 @@ std::pair<analyser_t, expression_t> analyse_corecall_subset_expression(const ana
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
-std::pair<analyser_t, expression_t> analyse_corecall_replace_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_intrinsic_replace_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1181,7 +1181,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_replace_expression(const an
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 //??? pass around location_t instead of statement_t& parent!
@@ -1189,7 +1189,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_replace_expression(const an
 
 
 //	[R] map([E] elements, func R (E e, C context) f, C context)
-std::pair<analyser_t, expression_t> analyse_corecall_map_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_intrinsic_map_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1206,12 +1206,12 @@ std::pair<analyser_t, expression_t> analyse_corecall_map_expression(const analys
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
 //	string map_string(string s, func string(string e, C context) f, C context)
-std::pair<analyser_t, expression_t> analyse_corecall_map_string_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_intrinsic_map_string_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1228,12 +1228,12 @@ std::pair<analyser_t, expression_t> analyse_corecall_map_string_expression(const
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
 //	[R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
-std::pair<analyser_t, expression_t> analyse_corecall_map_dag_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_intrinsic_map_dag_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1250,11 +1250,11 @@ std::pair<analyser_t, expression_t> analyse_corecall_map_dag_expression(const an
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
-std::pair<analyser_t, expression_t> analyse_corecall_filter_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_intrinsic_filter_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1271,12 +1271,12 @@ std::pair<analyser_t, expression_t> analyse_corecall_filter_expression(const ana
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
 //	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
-std::pair<analyser_t, expression_t> analyse_corecall_reduce_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_intrinsic_reduce_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1293,12 +1293,12 @@ std::pair<analyser_t, expression_t> analyse_corecall_reduce_expression(const ana
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
 //	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
-std::pair<analyser_t, expression_t> analyse_corecall_stable_sort_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
+std::pair<analyser_t, expression_t> analyse_intrinsic_stable_sort_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& args){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1315,7 +1315,7 @@ std::pair<analyser_t, expression_t> analyse_corecall_stable_sort_expression(cons
 
 	return {
 		a_acc,
-		expression_t::make_corecall(get_corecall_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
+		expression_t::make_intrinsic(get_intrinsic_opcode(sign), resolved_call.second.args, resolved_call.second.function_type.get_function_return())
 	};
 }
 
@@ -1817,7 +1817,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 
 
 /*
-	FUNCTION CALLS, CORECALLS
+	FUNCTION CALLS, INTRINSICS
 
 	"call" = the expression that wants to make a call. It needs to tell will callee (the target function value) it wants to call. It includes arguments to pass to the call.
 
@@ -1837,7 +1837,7 @@ std::pair<analyser_t, expression_t> analyse_arithmetic_expression(const analyser
 	AFTER call expression:		print(int 13)
 */
 
-static std::pair<analyser_t, expression_t> analyse_corecall_fallthrough_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& call_args, const corecall_signature_t& sign){
+static std::pair<analyser_t, expression_t> analyse_intrinsic_fallthrough_expression(const analyser_t& a, const statement_t& parent, const std::vector<expression_t>& call_args, const intrinsic_signature_t& sign){
 	QUARK_ASSERT(a.check_invariant());
 	QUARK_ASSERT(parent.check_invariant());
 
@@ -1847,8 +1847,8 @@ static std::pair<analyser_t, expression_t> analyse_corecall_fallthrough_expressi
 	a_acc = resolved_call.first;
 	return {
 		a_acc,
-		expression_t::make_corecall(
-			get_corecall_opcode(sign),
+		expression_t::make_intrinsic(
+			get_intrinsic_opcode(sign),
 			resolved_call.second.args,
 			resolved_call.second.function_type.get_function_return()
 		)
@@ -1860,8 +1860,8 @@ static std::pair<analyser_t, expression_t> analyse_corecall_fallthrough_expressi
 
 	1. Normal function call: via a function value. Supports any-type.
 
-	2. Corecalls: like assert() and update(). Those calls are intercepted and converted from function calls to
-		corecall-expressions. Each corecall has its own special type checking. Supports any-type in its callee function type.
+	2. intrinsics: like assert() and update(). Those calls are intercepted and converted from function calls to
+		intrinsic-expressions. Each intrinsic has its own special type checking. Supports any-type in its callee function type.
 
 	3. Callee is a type: Example: my_color_t(0, 0, 255). This call is converted to a construct-value expression.
 */
@@ -1889,124 +1889,124 @@ std::pair<analyser_t, expression_t> analyse_call_expression(const analyser_t& a0
 			throw_compiler_error(parent.location, "Cannot call impure function from a pure function.");
 		}
 
-		//	Detect use of corecalls.
+		//	Detect use of intrinsics.
 		if(callee_expr_load2){
 			const auto found_symbol_ptr = resolve_symbol_by_address(a_acc, callee_expr_load2->address);
 			if(found_symbol_ptr != nullptr){
 				if(found_symbol_ptr->first == make_assert_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_assert_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_assert_signature());
 				}
 				else if(found_symbol_ptr->first == make_to_string_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_to_string_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_to_string_signature());
 				}
 				else if(found_symbol_ptr->first == make_to_pretty_string_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_to_pretty_string_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_to_pretty_string_signature());
 				}
 
 				else if(found_symbol_ptr->first == make_typeof_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_typeof_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_typeof_signature());
 				}
 
 				else if(found_symbol_ptr->first == make_update_signature().name){
-					return analyse_corecall_update_expression(a_acc, parent, e, details.args);
+					return analyse_intrinsic_update_expression(a_acc, parent, e, details.args);
 				}
 				else if(found_symbol_ptr->first == make_size_signature().name){
-					return analyse_corecall_size_expression(a_acc, parent, details.args);
+					return analyse_intrinsic_size_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_find_signature().name){
-					return analyse_corecall_find_expression(a_acc, parent, details.args);
+					return analyse_intrinsic_find_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_exists_signature().name){
-					return analyse_corecall_exists_expression(a_acc, parent, details.args);
+					return analyse_intrinsic_exists_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_erase_signature().name){
-					return analyse_corecall_erase_expression(a_acc, parent, details.args);
+					return analyse_intrinsic_erase_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_get_keys_signature().name){
-					return analyse_corecall_get_keys_expression(a_acc, parent, details.args);
+					return analyse_intrinsic_get_keys_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_push_back_signature().name){
-					return analyse_corecall_push_back_expression(a_acc, parent, details.args);
+					return analyse_intrinsic_push_back_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_subset_signature().name){
-					return analyse_corecall_subset_expression(a_acc, parent, details.args);
+					return analyse_intrinsic_subset_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_replace_signature().name){
-					return analyse_corecall_replace_expression(a_acc, parent, details.args);
+					return analyse_intrinsic_replace_expression(a_acc, parent, details.args);
 				}
 
 
 				else if(found_symbol_ptr->first == make_parse_json_script_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_parse_json_script_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_parse_json_script_signature());
 				}
 				else if(found_symbol_ptr->first == make_generate_json_script_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_generate_json_script_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_generate_json_script_signature());
 				}
 				else if(found_symbol_ptr->first == make_to_json_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_to_json_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_to_json_signature());
 				}
 				else if(found_symbol_ptr->first == make_from_json_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_from_json_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_from_json_signature());
 				}
 
 				else if(found_symbol_ptr->first == make_get_json_type_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_get_json_type_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_get_json_type_signature());
 				}
 
 
 
 
 				else if(found_symbol_ptr->first == make_map_signature().name){
-					return analyse_corecall_map_expression(a_acc, parent, details.args);
+					return analyse_intrinsic_map_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_map_string_signature().name){
-					return analyse_corecall_map_string_expression(a_acc, parent, details.args);
+					return analyse_intrinsic_map_string_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_map_dag_signature().name){
-					return analyse_corecall_map_dag_expression(a_acc, parent, details.args);
+					return analyse_intrinsic_map_dag_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_filter_signature().name){
-					return analyse_corecall_filter_expression(a_acc, parent, details.args);
+					return analyse_intrinsic_filter_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_reduce_signature().name){
-					return analyse_corecall_reduce_expression(a_acc, parent, details.args);
+					return analyse_intrinsic_reduce_expression(a_acc, parent, details.args);
 				}
 				else if(found_symbol_ptr->first == make_stable_sort_signature().name){
-					return analyse_corecall_stable_sort_expression(a_acc, parent, details.args);
+					return analyse_intrinsic_stable_sort_expression(a_acc, parent, details.args);
 				}
 
 
 
 
 				else if(found_symbol_ptr->first == make_print_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_print_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_print_signature());
 				}
 				else if(found_symbol_ptr->first == make_send_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_send_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_send_signature());
 				}
 
 
 
 				else if(found_symbol_ptr->first == make_bw_not_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_bw_not_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_bw_not_signature());
 				}
 				else if(found_symbol_ptr->first == make_bw_and_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_bw_and_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_bw_and_signature());
 				}
 				else if(found_symbol_ptr->first == make_bw_or_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_bw_or_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_bw_or_signature());
 				}
 				else if(found_symbol_ptr->first == make_bw_xor_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_bw_xor_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_bw_xor_signature());
 				}
 				else if(found_symbol_ptr->first == make_bw_shift_left_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_bw_shift_left_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_bw_shift_left_signature());
 				}
 				else if(found_symbol_ptr->first == make_bw_shift_right_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_bw_shift_right_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_bw_shift_right_signature());
 				}
 				else if(found_symbol_ptr->first == make_bw_shift_right_arithmetic_signature().name){
-					return analyse_corecall_fallthrough_expression(a_acc, parent, details.args, make_bw_shift_right_arithmetic_signature());
+					return analyse_intrinsic_fallthrough_expression(a_acc, parent, details.args, make_bw_shift_right_arithmetic_signature());
 				}
 
 				else{
@@ -2183,7 +2183,7 @@ std::pair<analyser_t, expression_t> analyse_expression__operation_specific(const
 		std::pair<analyser_t, expression_t> operator()(const expression_t::call_t& expr) const{
 			return analyse_call_expression(a, parent, e, expr);
 		}
-		std::pair<analyser_t, expression_t> operator()(const expression_t::corecall_t& expr) const{
+		std::pair<analyser_t, expression_t> operator()(const expression_t::intrinsic_t& expr) const{
 			QUARK_ASSERT(false);
 			throw std::exception();
 		}
@@ -2370,11 +2370,11 @@ struct builtins_t {
 };
 
 
-static builtins_t generate_corecalls(analyser_t& a, const std::vector<corecall_signature_t>& corecalls){
+static builtins_t generate_intrinsics(analyser_t& a, const std::vector<intrinsic_signature_t>& intrinsics){
 	std::map<function_id_t, function_definition_t> function_defs;
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
-	for(auto signature: corecalls){
+	for(auto signature: intrinsics){
 		resolve_type(a, k_no_location, signature._function_type);
 
 		vector<member_t> args;
@@ -2393,7 +2393,7 @@ static builtins_t generate_corecalls(analyser_t& a, const std::vector<corecall_s
 
 static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 	/*
-		Create built-in global symbol map: built in data types, built-in functions (corecalls).
+		Create built-in global symbol map: built in data types, built-in functions (intrinsics).
 	*/
 	std::vector<std::pair<std::string, symbol_t>> symbol_map;
 
@@ -2434,9 +2434,9 @@ static builtins_t generate_builtins(analyser_t& a, const analyzer_imm_t& input){
 
 	std::map<function_id_t, function_definition_t> function_defs;
 
-	const auto corecalls = generate_corecalls(a, input.corecall_signatures);
-	function_defs.insert(corecalls.function_defs.begin(), corecalls.function_defs.end());
-	symbol_map.insert(symbol_map.end(), corecalls.symbol_map.begin(), corecalls.symbol_map.end());
+	const auto intrinsics = generate_intrinsics(a, input.intrinsic_signatures);
+	function_defs.insert(intrinsics.function_defs.begin(), intrinsics.function_defs.end());
+	symbol_map.insert(symbol_map.end(), intrinsics.symbol_map.begin(), intrinsics.symbol_map.end());
 	return builtins_t{ function_defs, symbol_map };
 }
 
@@ -2534,8 +2534,8 @@ semantic_ast_t analyse(analyser_t& a){
 analyser_t::analyser_t(const unchecked_ast_t& ast){
 	QUARK_ASSERT(ast.check_invariant());
 
-	const auto corecalls = get_corecall_signatures();
-	_imm = make_shared<analyzer_imm_t>(analyzer_imm_t{ ast, corecalls });
+	const auto intrinsics = get_intrinsic_signatures();
+	_imm = make_shared<analyzer_imm_t>(analyzer_imm_t{ ast, intrinsics });
 }
 
 #if DEBUG

@@ -6,7 +6,7 @@
 //  Copyright © 2018 Marcus Zetterquist. All rights reserved.
 //
 
-#include "bytecode_corecalls.h"
+#include "bytecode_intrinsics.h"
 
 #include "json_support.h"
 
@@ -612,7 +612,7 @@ bc_value_t host__map_dag(interpreter_t& vm, const bc_value_t args[], int arg_cou
 	QUARK_ASSERT(check_map_dag_func_type(args[0]._type, args[1]._type, args[2]._type, args[3]._type));
 
 	const auto& elements = args[0];
-	const auto& e_type = elements._type.get_vector_element_type();
+//	const auto& e_type = elements._type.get_vector_element_type();
 	const auto& parents = args[1];
 	const auto& f = args[2];
 	const auto& r_type = args[2]._type.get_function_return();
@@ -1073,8 +1073,8 @@ bc_value_t host__bw_shift_right_arithmetic(interpreter_t& vm, const bc_value_t a
 
 
 
-static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_corecalls_internal(){
-	std::vector<std::pair<corecall_signature_t, BC_NATIVE_FUNCTION_PTR>> log;
+static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics_internal(){
+	std::vector<std::pair<intrinsic_signature_t, BC_NATIVE_FUNCTION_PTR>> log;
 
 	log.push_back({ make_assert_signature(), host__assert });
 	log.push_back({ make_to_string_signature(), host__to_string });
@@ -1133,8 +1133,8 @@ static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_corecalls_internal
 	return result;
 }
 
-std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_corecalls(){
-	static const auto f = bc_get_corecalls_internal();
+std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics(){
+	static const auto f = bc_get_intrinsics_internal();
 	return f;
 }
 

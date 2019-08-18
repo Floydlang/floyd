@@ -163,70 +163,70 @@ const std::string k_global_benchmark_registry = "benchmark_registry";
 
 
 
-//////////////////////////////////////		CORE CALLS
+//////////////////////////////////////		INTRINSICS
 
 
 //??? move to compiler_basics
 
-struct corecall_signature_t {
+struct intrinsic_signature_t {
 	std::string name;
 	function_id_t _function_id;
 	floyd::typeid_t _function_type;
 };
-std::string get_corecall_opcode(const corecall_signature_t& signature);
+std::string get_intrinsic_opcode(const intrinsic_signature_t& signature);
 
-corecall_signature_t make_assert_signature();
-corecall_signature_t make_to_string_signature();
-corecall_signature_t make_to_pretty_string_signature();
+intrinsic_signature_t make_assert_signature();
+intrinsic_signature_t make_to_string_signature();
+intrinsic_signature_t make_to_pretty_string_signature();
 
-corecall_signature_t make_typeof_signature();
+intrinsic_signature_t make_typeof_signature();
 
-corecall_signature_t make_update_signature();
-corecall_signature_t make_size_signature();
-corecall_signature_t make_find_signature();
-corecall_signature_t make_exists_signature();
-corecall_signature_t make_erase_signature();
-corecall_signature_t make_get_keys_signature();
-corecall_signature_t make_push_back_signature();
-corecall_signature_t make_subset_signature();
-corecall_signature_t make_replace_signature();
+intrinsic_signature_t make_update_signature();
+intrinsic_signature_t make_size_signature();
+intrinsic_signature_t make_find_signature();
+intrinsic_signature_t make_exists_signature();
+intrinsic_signature_t make_erase_signature();
+intrinsic_signature_t make_get_keys_signature();
+intrinsic_signature_t make_push_back_signature();
+intrinsic_signature_t make_subset_signature();
+intrinsic_signature_t make_replace_signature();
 
-corecall_signature_t make_parse_json_script_signature();
-corecall_signature_t make_generate_json_script_signature();
-corecall_signature_t make_to_json_signature();
-corecall_signature_t make_from_json_signature();
+intrinsic_signature_t make_parse_json_script_signature();
+intrinsic_signature_t make_generate_json_script_signature();
+intrinsic_signature_t make_to_json_signature();
+intrinsic_signature_t make_from_json_signature();
 
-corecall_signature_t make_get_json_type_signature();
-
-
-
-
-//////////////////////////////////////		HIGHER-ORDER CORE CALLS
+intrinsic_signature_t make_get_json_type_signature();
 
 
 
-corecall_signature_t make_map_signature();
+
+//////////////////////////////////////		HIGHER-ORDER INTRINSICS
+
+
+
+intrinsic_signature_t make_map_signature();
 typeid_t harden_map_func_type(const typeid_t& resolved_call_type);
 bool check_map_func_type(const typeid_t& elements, const typeid_t& f, const typeid_t& context);
 
-corecall_signature_t make_map_string_signature();
+intrinsic_signature_t make_map_string_signature();
 typeid_t harden_map_string_func_type(const typeid_t& resolved_call_type);
 bool check_map_string_func_type(const typeid_t& elements, const typeid_t& f, const typeid_t& context);
 
-corecall_signature_t make_map_dag_signature();
+intrinsic_signature_t make_map_dag_signature();
 typeid_t harden_map_dag_func_type(const typeid_t& resolved_call_type);
 bool check_map_dag_func_type(const typeid_t& elements, const typeid_t& depends_on, const typeid_t& f, const typeid_t& context);
 
 
-corecall_signature_t make_filter_signature();
+intrinsic_signature_t make_filter_signature();
 typeid_t harden_filter_func_type(const typeid_t& resolved_call_type);
 bool check_filter_func_type(const typeid_t& elements, const typeid_t& f, const typeid_t& context);
 
-corecall_signature_t make_reduce_signature();
+intrinsic_signature_t make_reduce_signature();
 typeid_t harden_reduce_func_type(const typeid_t& resolved_call_type);
 bool check_reduce_func_type(const typeid_t& elements, const typeid_t& accumulator_init, const typeid_t& f, const typeid_t& context);
 
-corecall_signature_t make_stable_sort_signature();
+intrinsic_signature_t make_stable_sort_signature();
 typeid_t harden_stable_sort_func_type(const typeid_t& resolved_call_type);
 bool check_stable_sort_func_type(const typeid_t& elements, const typeid_t& less, const typeid_t& context);
 
@@ -235,23 +235,23 @@ bool check_stable_sort_func_type(const typeid_t& elements, const typeid_t& less,
 
 
 
-corecall_signature_t make_print_signature();
-corecall_signature_t make_send_signature();
+intrinsic_signature_t make_print_signature();
+intrinsic_signature_t make_send_signature();
 
 
 
 //////////////////////////////////////		BITWISE
 
 
-corecall_signature_t make_bw_not_signature();
-corecall_signature_t make_bw_and_signature();
-corecall_signature_t make_bw_or_signature();
-corecall_signature_t make_bw_xor_signature();
-corecall_signature_t make_bw_shift_left_signature();
-corecall_signature_t make_bw_shift_right_signature();
-corecall_signature_t make_bw_shift_right_arithmetic_signature();
+intrinsic_signature_t make_bw_not_signature();
+intrinsic_signature_t make_bw_and_signature();
+intrinsic_signature_t make_bw_or_signature();
+intrinsic_signature_t make_bw_xor_signature();
+intrinsic_signature_t make_bw_shift_left_signature();
+intrinsic_signature_t make_bw_shift_right_signature();
+intrinsic_signature_t make_bw_shift_right_arithmetic_signature();
 
-std::vector<corecall_signature_t> get_corecall_signatures();
+std::vector<intrinsic_signature_t> get_intrinsic_signatures();
 
 
 

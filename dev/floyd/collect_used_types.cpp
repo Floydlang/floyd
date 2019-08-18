@@ -57,7 +57,7 @@ static void collect_used_types_expression(type_interner_t& acc, const expression
 				collect_used_types_expression(acc, a);
 			}
 		}
-		void operator()(const expression_t::corecall_t& e) const{
+		void operator()(const expression_t::intrinsic_t& e) const{
 			for(const auto& a: e.args){
 				collect_used_types_expression(acc, a);
 			}

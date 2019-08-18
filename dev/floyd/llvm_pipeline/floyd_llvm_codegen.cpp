@@ -1346,8 +1346,8 @@ static llvm::Value* generate_call_expression(llvm_function_generator_t& gen_acc,
 }
 
 
-//	Generates a call to the global function that implements the corecall.
-static llvm::Value* generate_fallthrough_corecall(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::corecall_t& details){
+//	Generates a call to the global function that implements the intrinsic.
+static llvm::Value* generate_fallthrough_intrinsic(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
@@ -1368,119 +1368,119 @@ static llvm::Value* generate_fallthrough_corecall(llvm_function_generator_t& gen
 }
 
 
-static llvm::Value* generate_corecall_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::corecall_t& details){
+static llvm::Value* generate_intrinsic_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::intrinsic_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	if(details.call_name == get_corecall_opcode(make_assert_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
+	if(details.call_name == get_intrinsic_opcode(make_assert_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-	else if(details.call_name == get_corecall_opcode(make_to_string_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
+	else if(details.call_name == get_intrinsic_opcode(make_to_string_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-	else if(details.call_name == get_corecall_opcode(make_to_pretty_string_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
-	}
-
-	else if(details.call_name == get_corecall_opcode(make_typeof_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
+	else if(details.call_name == get_intrinsic_opcode(make_to_pretty_string_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
 
-	else if(details.call_name == get_corecall_opcode(make_update_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
-	}
-	else if(details.call_name == get_corecall_opcode(make_size_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
-	}
-	else if(details.call_name == get_corecall_opcode(make_find_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
-	}
-	else if(details.call_name == get_corecall_opcode(make_exists_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
-	}
-	else if(details.call_name == get_corecall_opcode(make_erase_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
-	}
-	else if(details.call_name == get_corecall_opcode(make_get_keys_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
-	}
-	else if(details.call_name == get_corecall_opcode(make_push_back_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
-	}
-	else if(details.call_name == get_corecall_opcode(make_subset_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
-	}
-	else if(details.call_name == get_corecall_opcode(make_replace_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
+	else if(details.call_name == get_intrinsic_opcode(make_typeof_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
 
-	else if(details.call_name == get_corecall_opcode(make_parse_json_script_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
+	else if(details.call_name == get_intrinsic_opcode(make_update_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-	else if(details.call_name == get_corecall_opcode(make_generate_json_script_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
+	else if(details.call_name == get_intrinsic_opcode(make_size_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-	else if(details.call_name == get_corecall_opcode(make_to_json_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
+	else if(details.call_name == get_intrinsic_opcode(make_find_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-	else if(details.call_name == get_corecall_opcode(make_from_json_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
+	else if(details.call_name == get_intrinsic_opcode(make_exists_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_erase_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_get_keys_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_push_back_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_subset_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_replace_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
 
-	else if(details.call_name == get_corecall_opcode(make_get_json_type_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
+	else if(details.call_name == get_intrinsic_opcode(make_parse_json_script_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_generate_json_script_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_to_json_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_from_json_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
 
-
-
-	else if(details.call_name == get_corecall_opcode(make_map_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
-	}
-	else if(details.call_name == get_corecall_opcode(make_map_string_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
-	}
-	else if(details.call_name == get_corecall_opcode(make_map_dag_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
-	}
-	else if(details.call_name == get_corecall_opcode(make_filter_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
-	}
-	else if(details.call_name == get_corecall_opcode(make_reduce_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
-	}
-	else if(details.call_name == get_corecall_opcode(make_stable_sort_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
+	else if(details.call_name == get_intrinsic_opcode(make_get_json_type_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
 
 
 
-	else if(details.call_name == get_corecall_opcode(make_print_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
+	else if(details.call_name == get_intrinsic_opcode(make_map_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
-	else if(details.call_name == get_corecall_opcode(make_send_signature())){
-		return generate_fallthrough_corecall(gen_acc, e, details);
+	else if(details.call_name == get_intrinsic_opcode(make_map_string_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_map_dag_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_filter_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_reduce_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_stable_sort_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
 	}
 
 
-	else if(details.call_name == get_corecall_opcode(make_bw_not_signature())){
+
+	else if(details.call_name == get_intrinsic_opcode(make_print_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+	else if(details.call_name == get_intrinsic_opcode(make_send_signature())){
+		return generate_fallthrough_intrinsic(gen_acc, e, details);
+	}
+
+
+	else if(details.call_name == get_intrinsic_opcode(make_bw_not_signature())){
 		return generate_bitwize_expression(gen_acc, bitwize_operator::bw_not, e, details.args);
 	}
-	else if(details.call_name == get_corecall_opcode(make_bw_and_signature())){
+	else if(details.call_name == get_intrinsic_opcode(make_bw_and_signature())){
 		return generate_bitwize_expression(gen_acc, bitwize_operator::bw_and, e, details.args);
 	}
-	else if(details.call_name == get_corecall_opcode(make_bw_or_signature())){
+	else if(details.call_name == get_intrinsic_opcode(make_bw_or_signature())){
 		return generate_bitwize_expression(gen_acc, bitwize_operator::bw_or, e, details.args);
 	}
-	else if(details.call_name == get_corecall_opcode(make_bw_xor_signature())){
+	else if(details.call_name == get_intrinsic_opcode(make_bw_xor_signature())){
 		return generate_bitwize_expression(gen_acc, bitwize_operator::bw_xor, e, details.args);
 	}
-	else if(details.call_name == get_corecall_opcode(make_bw_shift_left_signature())){
+	else if(details.call_name == get_intrinsic_opcode(make_bw_shift_left_signature())){
 		return generate_bitwize_expression(gen_acc, bitwize_operator::bw_shift_left, e, details.args);
 	}
-	else if(details.call_name == get_corecall_opcode(make_bw_shift_right_signature())){
+	else if(details.call_name == get_intrinsic_opcode(make_bw_shift_right_signature())){
 		return generate_bitwize_expression(gen_acc, bitwize_operator::bw_shift_right, e, details.args);
 	}
-	else if(details.call_name == get_corecall_opcode(make_bw_shift_right_arithmetic_signature())){
+	else if(details.call_name == get_intrinsic_opcode(make_bw_shift_right_arithmetic_signature())){
 		return generate_bitwize_expression(gen_acc, bitwize_operator::bw_shift_right_arithmetic, e, details.args);
 	}
 
@@ -1614,6 +1614,7 @@ static llvm::Value* generate_construct_struct(llvm_function_generator_t& gen_acc
 
 	int member_index = 0;
 	for(const auto& m: struct_def._members){
+		(void)m;
 		const auto& arg = details.elements[member_index];
 		llvm::Value* member_value_reg = generate_expression(gen_acc, arg);
 
@@ -1903,8 +1904,8 @@ static llvm::Value* generate_expression(llvm_function_generator_t& gen_acc, cons
 		llvm::Value* operator()(const expression_t::call_t& expr) const{
 			return generate_call_expression(gen_acc, e, expr);
 		}
-		llvm::Value* operator()(const expression_t::corecall_t& expr) const{
-			return generate_corecall_expression(gen_acc, e, expr);
+		llvm::Value* operator()(const expression_t::intrinsic_t& expr) const{
+			return generate_intrinsic_expression(gen_acc, e, expr);
 		}
 
 

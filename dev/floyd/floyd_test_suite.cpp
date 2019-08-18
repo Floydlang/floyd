@@ -40,7 +40,7 @@ unsupported syntax
 #define RUN_LANG_COLLECTION_TESTS			true
 #define RUN_LANG_STRUCT_TESTS				true
 #define RUN_LANG_JSON_TESTS					true
-#define RUN_LANG_CORECALL_TESTS				true
+#define RUN_LANG_INTRINSICS_TESTS			true
 #define RUN_CORELIB_TESTS					true
 #define RUN_CONTAINER_TESTS					true
 #define RUN_EXAMPLE_AND_DOCS_TESTS			true
@@ -50,7 +50,7 @@ unsupported syntax
 //#define RUN_LANG_COLLECTION_TESTS			true
 //#define RUN_LANG_STRUCT_TESTS				true
 //#define RUN_LANG_JSON_TESTS					true
-//#define RUN_LANG_CORECALL_TESTS				true
+//#define RUN_LANG_INTRINSICS_TESTS			true
 //#define RUN_CORELIB_TESTS					true
 //#define RUN_CONTAINER_TESTS					true
 //#define RUN_EXAMPLE_AND_DOCS_TESTS			true
@@ -846,10 +846,10 @@ FLOYD_LANG_PROOF("Floyd test suite", "Mutate", "String (which requires RC)", "")
 
 
 //######################################################################################################################
-//	CORE CALLS
+//	INTRINSICS
 //######################################################################################################################
 
-//////////////////////////////////////////		CORE CALL - print()
+//////////////////////////////////////////		INTRINSIC - print()
 
 
 
@@ -871,7 +871,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "print() supports ints and strings", "", ""
 }
 
 
-//////////////////////////////////////////		CORE CALL - assert()
+//////////////////////////////////////////		INTRINSIC - assert()
 
 //??? add file + line to Floyd's asserts
 FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
@@ -891,7 +891,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
 	);
 }
 
-//////////////////////////////////////////		CORE CALL - to_string()
+//////////////////////////////////////////		INTRINSIC - to_string()
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "", "", ""){
@@ -5132,12 +5132,12 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_json_type()", "DOCUMENTATION SNIPPET",
 
 
 
-#if RUN_LANG_CORECALL_TESTS
+#if RUN_LANG_INTRINSICS_TESTS
 //######################################################################################################################
-//	CORE CALLS
+//	INTRINSICS
 //######################################################################################################################
 
-//////////////////////////////////////////		CORE CALL - typeof()
+//////////////////////////////////////////		INTRINSIC - typeof()
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "typeof()", "", ""){
@@ -5378,7 +5378,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "point_t", ""){
 
 
 
-//////////////////////////////////////////		HIGHER-ORDER CORECALLS - map()
+//////////////////////////////////////////		HIGHER-ORDER INTRINSICSS - map()
 
 
 
@@ -5450,7 +5450,7 @@ FLOYD_LANG_PROOF	("Floyd test suite", "map()", "context struct", ""){
 //??? make sure f() can't be impure!
 
 /*
-//////////////////////////////////////////		HIGHER-ORDER CORECALLS - map_string()
+//////////////////////////////////////////		HIGHER-ORDER INTRINSICSS - map_string()
 
 
 
@@ -5474,7 +5474,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map_string()", "", ""){
 */
 
 
-//////////////////////////////////////////		HIGHER-ORDER CORECALLS - map_dag()
+//////////////////////////////////////////		HIGHER-ORDER INTRINSICSS - map_dag()
 
 
 
@@ -5536,7 +5536,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map_dag()", "complex", ""){
 
 
 
-//////////////////////////////////////////		HIGHER-ORDER CORECALLS - reduce()
+//////////////////////////////////////////		HIGHER-ORDER INTRINSICSS - reduce()
 
 
 
@@ -5579,7 +5579,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "reduce()", "string reduce([int], string, f
 
 
 
-//////////////////////////////////////////		HIGHER-ORDER CORECALLS - filter()
+//////////////////////////////////////////		HIGHER-ORDER INTRINSICSS - filter()
 
 
 
@@ -5617,7 +5617,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "filter()", "string filter([int], string, f
 
 
 
-//////////////////////////////////////////		HIGHER-ORDER CORECALLS - stable_sort()
+//////////////////////////////////////////		HIGHER-ORDER INTRINSICSS - stable_sort()
 
 
 
@@ -5698,7 +5698,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "stable_sort()", "[string]", ""){
 }
 
 
-#endif	//	RUN_LANG_CORECALL_TESTS
+#endif	//	RUN_LANG_INTRINSICS_TESTS
 
 
 

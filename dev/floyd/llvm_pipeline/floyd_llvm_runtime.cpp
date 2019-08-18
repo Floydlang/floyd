@@ -1430,7 +1430,7 @@ static function_bind_t floydrt_allocate_struct__make(llvm::LLVMContext& context,
 }
 
 
-//??? Split all corecalls into dedicated for each type, even RC/vs simple types.
+//??? Split all intrinsics into dedicated for each type, even RC/vs simple types.
 
 //??? optimize for speed. Most things can be precalculated.
 //??? Generate an add_ref-function for each struct type.
@@ -1615,7 +1615,7 @@ std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, c
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	CORE CALLS
+//	INTRINSICS
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -2519,12 +2519,12 @@ static JSON_T* floyd_funcdef__to_json(floyd_runtime_t* frp, runtime_value_t arg0
 
 
 
-static std::map<std::string, void*> get_corecall_c_function_ptrs(){
+static std::map<std::string, void*> get_intrinsic_c_function_ptrs(){
 
 	////////////////////////////////		CORE FUNCTIONS AND HOST FUNCTIONS
 	const std::map<std::string, void*> host_functions_map = {
 
-		////////////////////////////////		CORECALLS
+		////////////////////////////////		INTRINSICS
 
 		{ "assert", reinterpret_cast<void *>(&floyd_funcdef__assert) },
 		{ "to_string", reinterpret_cast<void *>(&floyd_host__to_string) },
@@ -2609,13 +2609,13 @@ static std::map<link_name_t, void*> register_c_functions(llvm::LLVMContext& cont
 
 	std::map<link_name_t, void*> function_map = runtime_functions_map;
 
-	////////	Core calls
-	const auto corecalls0 = get_corecall_c_function_ptrs();
-	std::map<link_name_t, void*> corecalls;
-	for(const auto& e: corecalls0){
-		corecalls.insert({ encode_floyd_func_link_name(e.first), e.second });
+	////////	intrinsics
+	const auto intrinsics0 = get_intrinsic_c_function_ptrs();
+	std::map<link_name_t, void*> intrinsics;
+	for(const auto& e: intrinsics0){
+		intrinsics.insert({ encode_floyd_func_link_name(e.first), e.second });
 	}
-	function_map.insert(corecalls.begin(), corecalls.end());
+	function_map.insert(intrinsics.begin(), intrinsics.end());
 
 	////////	Corelib
 	const auto corelib_function_map0 = get_corelib_c_function_ptrs();

@@ -318,6 +318,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 	y = a;
 
 	runtime_value_t c(y);
+	(void)c;
 }
 
 
