@@ -60,13 +60,6 @@ const bool k_trace_types = k_trace_input_output;
 
 
 
-/*
-TODO ???:
-
-- Pass llvm::Value* for the runtime-pointer instead of emit_f?
-- Store explicit members like assert_f instead of search on string.
-*/
-
 namespace floyd {
 
 
@@ -104,6 +97,10 @@ struct llvm_code_generator_t {
 		type_lookup(type_lookup),
 		function_defs(function_defs),
 
+		floydrt_init(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("init"))),
+		floydrt_deinit(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("deinit"))),
+
+
 		floydrt_retain_vec(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("retain_vec"))),
 		floydrt_retain_dict(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("retain_dict"))),
 		floydrt_retain_json(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("retain_json"))),
@@ -112,7 +109,22 @@ struct llvm_code_generator_t {
 		floydrt_release_vec(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("release_vec"))),
 		floydrt_release_dict(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("release_dict"))),
 		floydrt_release_json(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("release_json"))),
-		floydrt_release_struct(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("release_struct")))
+		floydrt_release_struct(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("release_struct"))),
+
+		floydrt_alloc_kstr(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("alloc_kstr"))),
+		floydrt_update_struct_member(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("update_struct_member"))),
+		floydrt_lookup_json(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("lookup_json"))),
+		floydrt_lookup_dict(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("lookup_dict"))),
+		floydrt_concatunate_vectors(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("concatunate_vectors"))),
+		floydrt_compare_values(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("compare_values"))),
+		floydrt_allocate_vector(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_vector"))),
+		floydrt_allocate_dict(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_dict"))),
+		floydrt_store_dict_mutable(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("store_dict_mutable"))),
+		floydrt_allocate_struct(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_struct"))),
+		floydrt_json_to_string(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("json_to_string"))),
+		floydrt_allocate_json(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_json"))),
+		floydrt_get_profile_time(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("get_profile_time"))),
+		floydrt_analyse_benchmark_samples(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("analyse_benchmark_samples")))
 	{
 		QUARK_ASSERT(instance.check_invariant());
 
@@ -154,6 +166,9 @@ struct llvm_code_generator_t {
 	//	One element for each global symbol in AST. Same indexes as in symbol table.
 	std::vector<std::vector<resolved_symbol_t>> scope_path;
 
+	const function_def_t& floydrt_init;
+	const function_def_t& floydrt_deinit;
+
 	const function_def_t& floydrt_retain_vec;
 	const function_def_t& floydrt_retain_dict;
 	const function_def_t& floydrt_retain_json;
@@ -163,41 +178,22 @@ struct llvm_code_generator_t {
 	const function_def_t& floydrt_release_dict;
 	const function_def_t& floydrt_release_json;
 	const function_def_t& floydrt_release_struct;
+
+	const function_def_t& floydrt_alloc_kstr;
+	const function_def_t& floydrt_update_struct_member;
+	const function_def_t& floydrt_lookup_json;
+	const function_def_t& floydrt_lookup_dict;
+	const function_def_t& floydrt_concatunate_vectors;
+	const function_def_t& floydrt_compare_values;
+	const function_def_t& floydrt_allocate_vector;
+	const function_def_t& floydrt_allocate_dict;
+	const function_def_t& floydrt_store_dict_mutable;
+	const function_def_t& floydrt_allocate_struct;
+	const function_def_t& floydrt_json_to_string;
+	const function_def_t& floydrt_allocate_json;
+	const function_def_t& floydrt_get_profile_time;
+	const function_def_t& floydrt_analyse_benchmark_samples;
 };
-
-/*
-static const function_def_t& find_runtime_func_from_name(llvm_code_generator_t& gen_acc, const std::string& name){
-	QUARK_ASSERT(gen_acc.check_invariant());
-
-	return find_function_def_from_link_name(gen_acc, encode_runtime_func_link_name(name));
-}
-
-const auto f = find_runtime_func_from_name(gen_acc.gen, "retain_vec");
-const auto f = find_runtime_func_from_name(gen_acc.gen, "retain_dict");
-const auto f = find_runtime_func_from_name(gen_acc.gen, "retain_json");
-const auto f = find_runtime_func_from_name(gen_acc.gen, "retain_struct");
-
-const auto f = find_runtime_func_from_name(gen_acc.gen, "release_vec");
-const auto f = find_runtime_func_from_name(gen_acc.gen, "release_dict");
-const auto f = find_runtime_func_from_name(gen_acc.gen, "release_json");
-const auto f = find_runtime_func_from_name(gen_acc.gen, "release_struct");
-
-const auto f = find_runtime_func_from_name(gen_acc.gen, "alloc_kstr");
-};	const auto f = find_runtime_func_from_name(gen_acc.gen, "update_struct_member");
-const auto f = find_runtime_func_from_name(gen_acc.gen, "lookup_json");
-const auto f = find_runtime_func_from_name(gen_acc.gen, "lookup_dict");
-const auto def = find_runtime_func_from_name(gen_acc.gen, "concatunate_vectors");
-const auto def = find_runtime_func_from_name(gen_acc.gen, "compare_values");
-const auto f = find_runtime_func_from_name(gen_acc.gen, "allocate_vector");
-const auto f = find_runtime_func_from_name(gen_acc.gen, "allocate_dict");
-const auto f2 = find_runtime_func_from_name(gen_acc.gen, "store_dict_mutable");
-const auto f = find_runtime_func_from_name(gen_acc.gen, "allocate_struct");
-const auto f = find_runtime_func_from_name(gen_acc.gen, "json_to_string");
-const auto f = find_runtime_func_from_name(gen_acc.gen, "allocate_json");
-const auto get_profile_time_f = find_runtime_func_from_name(gen_acc.gen, "get_profile_time");
-const auto analyse_benchmark_samples_f = find_runtime_func_from_name(gen_acc.gen, "analyse_benchmark_samples");
-const auto get_profile_time_f = find_runtime_func_from_name(gen_acc.gen, "get_profile_time");
-*/
 
 
 
@@ -326,17 +322,7 @@ static llvm::Value* generate_cast_from_runtime_value(llvm_code_generator_t& gen_
 	return generate_cast_from_runtime_value2(builder, gen_acc.type_lookup, runtime_value_reg, type);
 }
 
-static const function_def_t& find_function_def_from_link_name(llvm_code_generator_t& gen_acc, const link_name_t& link_name){
-	QUARK_ASSERT(gen_acc.check_invariant());
 
-	return find_function_def_from_link_name(gen_acc.function_defs, link_name);
-}
-
-static const function_def_t& find_runtime_func_from_name(llvm_code_generator_t& gen_acc, const std::string& name){
-	QUARK_ASSERT(gen_acc.check_invariant());
-
-	return find_function_def_from_link_name(gen_acc, encode_runtime_func_link_name(name));
-}
 
 resolved_symbol_t make_resolved_symbol(llvm::Value* value_ptr, std::string debug_str, resolved_symbol_t::esymtype t, const std::string& symbol_name, const symbol_t& symbol){
 	QUARK_ASSERT(value_ptr != nullptr);
@@ -515,13 +501,12 @@ llvm::Value* generate_constant_string(llvm_function_generator_t& gen_acc, const 
 	llvm::Constant* str_ptr = builder.CreateGlobalStringPtr(s);
 	llvm::Constant* str_size = llvm::ConstantInt::get(builder.getInt64Ty(), s.size());
 
-	const auto f = find_runtime_func_from_name(gen_acc.gen, "alloc_kstr");
 	std::vector<llvm::Value*> args = {
 		gen_acc.get_callers_fcp(),
 		str_ptr,
 		str_size
 	};
-	auto string_vec_ptr_reg = builder.CreateCall(f.llvm_codegen_f, args, "string literal");
+	auto string_vec_ptr_reg = builder.CreateCall(gen_acc.gen.floydrt_alloc_kstr.llvm_codegen_f, args, "string literal");
 	return string_vec_ptr_reg;
 };
 
@@ -785,8 +770,6 @@ static llvm::Value* generate_update_member_expression(llvm_function_generator_t&
 	auto member_index_reg = llvm::ConstantInt::get(builder.getInt64Ty(), details.member_index);
 	const auto member_type = details.new_value->get_output_type();
 
-	const auto f = find_runtime_func_from_name(gen_acc.gen, "update_struct_member");
-
 	std::vector<llvm::Value*> args2 = {
 		gen_acc.get_callers_fcp(),
 
@@ -798,7 +781,7 @@ static llvm::Value* generate_update_member_expression(llvm_function_generator_t&
 		generate_cast_to_runtime_value(gen_acc.gen, *new_value_reg, member_type),
 		generate_itype_constant(gen_acc.gen, member_type)
 	};
-	auto struct2_ptr_reg = builder.CreateCall(f.llvm_codegen_f, args2, "");
+	auto struct2_ptr_reg = builder.CreateCall(gen_acc.gen.floydrt_update_struct_member.llvm_codegen_f, args2, "");
 
 	generate_release(gen_acc, *new_value_reg, member_type);
 	generate_release(gen_acc, *parent_struct_ptr_reg, struct_type);
@@ -841,15 +824,13 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 		//	Notice that we only know at RUNTIME if the json can be looked up: it needs to be json-object or a
 		//	json-array. The key is either a string or an integer.
 
-		const auto f = find_runtime_func_from_name(gen_acc.gen, "lookup_json");
-
 		std::vector<llvm::Value*> args = {
 			gen_acc.get_callers_fcp(),
 			parent_reg,
 			generate_cast_to_runtime_value(gen_acc.gen, *key_reg, key_type),
 			generate_itype_constant(gen_acc.gen, key_type)
 		};
-		auto result = builder.CreateCall(f.llvm_codegen_f, args, "");
+		auto result = builder.CreateCall(gen_acc.gen.floydrt_lookup_json.llvm_codegen_f, args, "");
 
 		generate_release(gen_acc, *parent_reg, parent_type);
 		generate_release(gen_acc, *key_reg, key_type);
@@ -877,14 +858,12 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 
 		const auto element_type0 = parent_type.get_dict_value_type();
 
-		const auto f = find_runtime_func_from_name(gen_acc.gen, "lookup_dict");
-
 		std::vector<llvm::Value*> args2 = {
 			gen_acc.get_callers_fcp(),
 			parent_reg,
 			key_reg
 		};
-		auto element_value_uint64_reg = builder.CreateCall(f.llvm_codegen_f, args2, "");
+		auto element_value_uint64_reg = builder.CreateCall(gen_acc.gen.floydrt_lookup_dict.llvm_codegen_f, args2, "");
 		auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
 
 		generate_retain(gen_acc, *result_reg, element_type0);
@@ -990,14 +969,13 @@ static llvm::Value* generate_arithmetic_expression(llvm_function_generator_t& ge
 		//	Only add supported. Future: don't use arithmetic add to concat collections!
 		QUARK_ASSERT(details.op == expression_type::k_arithmetic_add);
 
-		const auto def = find_runtime_func_from_name(gen_acc.gen, "concatunate_vectors");
 		std::vector<llvm::Value*> args2 = {
 			gen_acc.get_callers_fcp(),
 			generate_itype_constant(gen_acc.gen, type),
 			lhs_temp,
 			rhs_temp
 		};
-		auto result = gen_acc.get_builder().CreateCall(def.llvm_codegen_f, args2, "");
+		auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.floydrt_concatunate_vectors.llvm_codegen_f, args2, "");
 		generate_release(gen_acc, *lhs_temp, *details.lhs->_output_type);
 		generate_release(gen_acc, *rhs_temp, *details.rhs->_output_type);
 		return result;
@@ -1016,7 +994,6 @@ static llvm::Value* generate_compare_values(llvm_function_generator_t& gen_acc, 
 
 	auto& builder = gen_acc.get_builder();
 
-	const auto def = find_runtime_func_from_name(gen_acc.gen, "compare_values");
 	llvm::Value* op_reg = llvm::ConstantInt::get(builder.getInt64Ty(), static_cast<int64_t>(op));
 
 	std::vector<llvm::Value*> args = {
@@ -1026,7 +1003,7 @@ static llvm::Value* generate_compare_values(llvm_function_generator_t& gen_acc, 
 		generate_cast_to_runtime_value(gen_acc.gen, lhs_reg, type),
 		generate_cast_to_runtime_value(gen_acc.gen, rhs_reg, type)
 	};
-	auto result = gen_acc.get_builder().CreateCall(def.llvm_codegen_f, args, "");
+	auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.floydrt_compare_values.llvm_codegen_f, args, "");
 
 	QUARK_ASSERT(gen_acc.check_invariant());
 	return result;
@@ -1538,9 +1515,8 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 	const auto element_type0 = details.value_type.get_vector_element_type();
 	auto& element_type1 = *get_exact_llvm_type(gen_acc.gen.type_lookup, element_type0);
 
-	const auto f = find_runtime_func_from_name(gen_acc.gen, "allocate_vector");
 	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), element_count);
-	auto vec_ptr_reg = builder.CreateCall(f.llvm_codegen_f, { gen_acc.get_callers_fcp(), element_count_reg }, "");
+	auto vec_ptr_reg = builder.CreateCall(gen_acc.gen.floydrt_allocate_vector.llvm_codegen_f, { gen_acc.get_callers_fcp(), element_count_reg }, "");
 	auto ptr_reg = generate_get_vec_element_ptr_needs_cast(gen_acc, *vec_ptr_reg);
 
 	if(element_type0.is_bool()){
@@ -1572,8 +1548,7 @@ static llvm::Value* generate_construct_dict(llvm_function_generator_t& gen_acc, 
 
 	const auto element_type0 = details.value_type.get_dict_value_type();
 
-	const auto f = find_runtime_func_from_name(gen_acc.gen, "allocate_dict");
-	auto dict_acc_ptr_reg = builder.CreateCall(f.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
+	auto dict_acc_ptr_reg = builder.CreateCall(gen_acc.gen.floydrt_allocate_dict.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
 
 	//	Elements are stored as pairs.
 	QUARK_ASSERT((details.elements.size() & 1) == 0);
@@ -1583,7 +1558,6 @@ static llvm::Value* generate_construct_dict(llvm_function_generator_t& gen_acc, 
 		llvm::Value* key0_reg = generate_expression(gen_acc, details.elements[element_index * 2 + 0]);
 		llvm::Value* element0_reg = generate_expression(gen_acc, details.elements[element_index * 2 + 1]);
 
-		const auto f2 = find_runtime_func_from_name(gen_acc.gen, "store_dict_mutable");
 		std::vector<llvm::Value*> args2 = {
 			gen_acc.get_callers_fcp(),
 			dict_acc_ptr_reg,
@@ -1591,7 +1565,7 @@ static llvm::Value* generate_construct_dict(llvm_function_generator_t& gen_acc, 
 			generate_cast_to_runtime_value(gen_acc.gen, *element0_reg, element_type0),
 			generate_itype_constant(gen_acc.gen, element_type0)
 		};
-		builder.CreateCall(f2.llvm_codegen_f, args2, "");
+		builder.CreateCall(gen_acc.gen.floydrt_store_dict_mutable.llvm_codegen_f, args2, "");
 
 		generate_release(gen_acc, *key0_reg, typeid_t::make_string());
 	}
@@ -1617,15 +1591,13 @@ static llvm::Value* generate_construct_struct(llvm_function_generator_t& gen_acc
 	const llvm::StructLayout* layout = data_layout.getStructLayout(&exact_struct_type);
 	const auto struct_bytes = layout->getSizeInBytes();
 
-
-	const auto f = find_runtime_func_from_name(gen_acc.gen, "allocate_struct");
 	const auto size_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), struct_bytes);
 	std::vector<llvm::Value*> args2 = {
 		gen_acc.get_callers_fcp(),
 		size_reg
 	};
 	//	Returns STRUCT_T*.
-	auto generic_struct_ptr_reg = gen_acc.get_builder().CreateCall(f.llvm_codegen_f, args2, "");
+	auto generic_struct_ptr_reg = gen_acc.get_builder().CreateCall(gen_acc.gen.floydrt_allocate_struct.llvm_codegen_f, args2, "");
 
 
 	//!!! We basically inline the entire constructor here -- bad idea? Maybe generate a construction function and call it.
@@ -1673,25 +1645,23 @@ static llvm::Value* generate_construct_primitive(llvm_function_generator_t& gen_
 
 	//	Automatically transform a json::string => string at runtime?
 	else if(target_type.is_string() && input_value_type.is_json()){
-		const auto f = find_runtime_func_from_name(gen_acc.gen, "json_to_string");
 		std::vector<llvm::Value*> args = {
 			gen_acc.get_callers_fcp(),
 			element0_reg
 		};
-		auto result = gen_acc.get_builder().CreateCall(f.llvm_codegen_f, args, "");
+		auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.floydrt_json_to_string.llvm_codegen_f, args, "");
 
 		generate_release(gen_acc, *element0_reg, input_value_type);
 		return result;
 	}
 	else if(target_type.is_json()){
 		//	Put a value_t into a json
-		const auto f = find_runtime_func_from_name(gen_acc.gen, "allocate_json");
 		std::vector<llvm::Value*> args2 = {
 			gen_acc.get_callers_fcp(),
 			generate_cast_to_runtime_value(gen_acc.gen, *element0_reg, input_value_type),
 			generate_itype_constant(gen_acc.gen, input_value_type)
 		};
-		auto result = gen_acc.get_builder().CreateCall(f.llvm_codegen_f, args2, "");
+		auto result = gen_acc.get_builder().CreateCall(gen_acc.gen.floydrt_allocate_json.llvm_codegen_f, args2, "");
 
 		generate_release(gen_acc, *element0_reg, input_value_type);
 		return result;
@@ -1766,8 +1736,8 @@ static llvm::Value* generate_benchmark_expression(llvm_function_generator_t& gen
 	auto& builder = gen_acc.get_builder();
 	auto& context = builder.getContext();
 
-	const auto get_profile_time_f = find_runtime_func_from_name(gen_acc.gen, "get_profile_time");
-	const auto analyse_benchmark_samples_f = find_runtime_func_from_name(gen_acc.gen, "analyse_benchmark_samples");
+	const auto& get_profile_time_def = gen_acc.gen.floydrt_get_profile_time;
+	const auto& analyse_benchmark_samples_def = gen_acc.gen.floydrt_analyse_benchmark_samples;
 
 
 	llvm::Function* parent_function = builder.GetInsertBlock()->getParent();
@@ -1803,7 +1773,7 @@ static llvm::Value* generate_benchmark_expression(llvm_function_generator_t& gen
 	builder.CreateStore(zero_int_reg, index_ptr_reg);
 	auto min_count_reg = generate_constant(gen_acc, value_t::make_int(2));
 
-	auto start_time_reg = builder.CreateCall(get_profile_time_f.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
+	auto start_time_reg = builder.CreateCall(get_profile_time_def.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
 
 	auto length_ns_reg = generate_constant(gen_acc, value_t::make_int(1000000000));
 	auto end_time_reg = builder.CreateAdd(start_time_reg, length_ns_reg);
@@ -1822,7 +1792,7 @@ static llvm::Value* generate_benchmark_expression(llvm_function_generator_t& gen
 	
 	////////	while_cond2_bb: minimum 1 second = 1000000000 ns
 	builder.SetInsertPoint(while_cond2_bb);
-	auto cur_time_reg = builder.CreateCall(get_profile_time_f.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
+	auto cur_time_reg = builder.CreateCall(get_profile_time_def.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
 	auto test3_reg = builder.CreateICmp(llvm::CmpInst::Predicate::ICMP_SLT, cur_time_reg, end_time_reg);
 	builder.CreateCondBr(test3_reg, while_loop_bb, while_join_bb);
 
@@ -1833,10 +1803,10 @@ static llvm::Value* generate_benchmark_expression(llvm_function_generator_t& gen
 	////////	while_loop_bb
 
 	builder.SetInsertPoint(while_loop_bb);
-	auto a_time_reg = builder.CreateCall(get_profile_time_f.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
+	auto a_time_reg = builder.CreateCall(get_profile_time_def.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
 	generate_block(gen_acc, *details.body);
 
-	auto b_time_reg = builder.CreateCall(get_profile_time_f.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
+	auto b_time_reg = builder.CreateCall(get_profile_time_def.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
 	auto duration_reg = builder.CreateSub(b_time_reg, a_time_reg, "calc dur");
 
 	auto index_reg = builder.CreateLoad(index_ptr_reg);
@@ -1861,7 +1831,7 @@ static llvm::Value* generate_benchmark_expression(llvm_function_generator_t& gen
 
 	builder.SetInsertPoint(while_join_bb);
 	auto index5_reg = builder.CreateLoad(index_ptr_reg);
-	auto best_dur_reg = builder.CreateCall(analyse_benchmark_samples_f.llvm_codegen_f, { gen_acc.get_callers_fcp(), samples_ptr_reg, index5_reg }, "");
+	auto best_dur_reg = builder.CreateCall(analyse_benchmark_samples_def.llvm_codegen_f, { gen_acc.get_callers_fcp(), samples_ptr_reg, index5_reg }, "");
 
 	return best_dur_reg;
 }
@@ -1871,7 +1841,7 @@ static llvm::Value* generate_benchmark_expression(llvm_function_generator_t& gen
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
 
-	const auto get_profile_time_f = find_runtime_func_from_name(gen_acc.gen, "get_profile_time");
+	const auto get_profile_time_f = gen_acc.gen.floydrt_get_profile_time.llvm_codegen_f
 
 	auto& builder = gen_acc.get_builder();
 	auto start_time_reg = builder.CreateCall(get_profile_time_f.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
@@ -2625,8 +2595,7 @@ static void generate_floyd_runtime_init(llvm_code_generator_t& gen_acc, const bo
 	auto& builder = gen_acc.get_builder();
 	auto& context = builder.getContext();
 
-	const auto def = find_function_def_from_link_name(gen_acc, encode_runtime_func_link_name("init"));
-	llvm::Function* f = def.llvm_codegen_f;
+	llvm::Function* f = gen_acc.floydrt_init.llvm_codegen_f;
 	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(context, "entry", f);
 	llvm::BasicBlock* destructBB = llvm::BasicBlock::Create(context, "destruct", f);
 
@@ -2668,8 +2637,7 @@ static void generate_floyd_runtime_deinit(llvm_code_generator_t& gen_acc, const 
 	auto& builder = gen_acc.get_builder();
 	auto& context = builder.getContext();
 
-	const auto def = find_function_def_from_link_name(gen_acc, encode_runtime_func_link_name("deinit"));
-	llvm::Function* f = def.llvm_codegen_f;
+	llvm::Function* f = gen_acc.floydrt_deinit.llvm_codegen_f;
 	llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(context, "entry", f);
 
 	{
@@ -2726,9 +2694,7 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> gen
 
 	//	Global variables.
 	{
-		const auto def = find_function_def_from_link_name(gen_acc, encode_runtime_func_link_name("init"));
-
-		llvm_function_generator_t function_gen_acc(gen_acc, *def.llvm_codegen_f);
+		llvm_function_generator_t function_gen_acc(gen_acc, *gen_acc.floydrt_init.llvm_codegen_f);
 
 		std::vector<resolved_symbol_t> globals = generate_globals_from_ast(
 			function_gen_acc,
