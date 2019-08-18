@@ -69,6 +69,10 @@ TODO ???:
 
 namespace floyd {
 
+struct llvm_code_generator_t;
+static const function_def_t& find_function_def_from_link_name(llvm_code_generator_t& gen_acc, const link_name_t& link_name);
+
+
 
 
 ////////////////////////////////		resolved_symbol_t
@@ -100,6 +104,7 @@ struct llvm_code_generator_t {
 		module(module),
 		builder(instance.context),
 		type_lookup(instance.context, interner)
+//		floydrt_retain_vec(find_function_def_from_link_name(
 	{
 		QUARK_ASSERT(instance.check_invariant());
 
@@ -140,9 +145,42 @@ struct llvm_code_generator_t {
 	*/
 	//	One element for each global symbol in AST. Same indexes as in symbol table.
 	std::vector<std::vector<resolved_symbol_t>> scope_path;
+
+//	function_def_t& floydrt_retain_vec;
+
 };
 
+/*
+static const function_def_t& find_runtime_func_from_name(llvm_code_generator_t& gen_acc, const std::string& name){
+	QUARK_ASSERT(gen_acc.check_invariant());
 
+	return find_function_def_from_link_name(gen_acc, encode_runtime_func_link_name(name));
+}
+
+const auto f = find_runtime_func_from_name(gen_acc.gen, "retain_vec");
+const auto f = find_runtime_func_from_name(gen_acc.gen, "retain_dict");
+const auto f = find_runtime_func_from_name(gen_acc.gen, "retain_json");
+const auto f = find_runtime_func_from_name(gen_acc.gen, "retain_struct");
+const auto f = find_runtime_func_from_name(gen_acc.gen, "release_vec");
+const auto f = find_runtime_func_from_name(gen_acc.gen, "release_dict");
+const auto f = find_runtime_func_from_name(gen_acc.gen, "release_json");
+const auto f = find_runtime_func_from_name(gen_acc.gen, "release_struct");
+const auto f = find_runtime_func_from_name(gen_acc.gen, "alloc_kstr");
+};	const auto f = find_runtime_func_from_name(gen_acc.gen, "update_struct_member");
+const auto f = find_runtime_func_from_name(gen_acc.gen, "lookup_json");
+const auto f = find_runtime_func_from_name(gen_acc.gen, "lookup_dict");
+const auto def = find_runtime_func_from_name(gen_acc.gen, "concatunate_vectors");
+const auto def = find_runtime_func_from_name(gen_acc.gen, "compare_values");
+const auto f = find_runtime_func_from_name(gen_acc.gen, "allocate_vector");
+const auto f = find_runtime_func_from_name(gen_acc.gen, "allocate_dict");
+const auto f2 = find_runtime_func_from_name(gen_acc.gen, "store_dict_mutable");
+const auto f = find_runtime_func_from_name(gen_acc.gen, "allocate_struct");
+const auto f = find_runtime_func_from_name(gen_acc.gen, "json_to_string");
+const auto f = find_runtime_func_from_name(gen_acc.gen, "allocate_json");
+const auto get_profile_time_f = find_runtime_func_from_name(gen_acc.gen, "get_profile_time");
+const auto analyse_benchmark_samples_f = find_runtime_func_from_name(gen_acc.gen, "analyse_benchmark_samples");
+const auto get_profile_time_f = find_runtime_func_from_name(gen_acc.gen, "get_profile_time");
+*/
 
 
 
