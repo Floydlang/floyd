@@ -172,17 +172,6 @@ inline bool operator==(const variable_address_t& lhs, const variable_address_t& 
 
 
 struct function_definition_t {
-
-	static function_definition_t make_placeholder(){
-		return {
-			k_no_location,
-			"",
-			typeid_t::make_function(typeid_t::make_void(), {}, epure::pure),
-			{},
-			{}
-		};
-	}
-
 	static function_definition_t make_func(const location_t& location, const std::string& definition_name, const typeid_t& function_type, const std::vector<member_t>& named_args, const std::shared_ptr<body_t>& body){
 		return {
 			location,

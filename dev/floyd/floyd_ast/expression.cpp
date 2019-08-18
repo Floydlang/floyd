@@ -345,8 +345,6 @@ json_t expression_to_json(const expression_t& e){
 					typeid_to_ast_json(e.value.get_type(), json_tags::k_tag_resolve_state)
 				}
 			);
-
-
 		}
 		json_t operator()(const expression_t::arithmetic_t& e) const{
 			return make_ast_node(
