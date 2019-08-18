@@ -14,17 +14,11 @@
 #include "parse_tree_to_ast_conv.h"
 #include "desugar_pass.h"
 #include "semantic_analyser.h"
+#include "semantic_ast.h"
 
 #include "compiler_helpers.h"
 #include "compiler_basics.h"
 #include "floyd_corelib.h"
-
-#include <thread>
-#include <deque>
-#include <future>
-
-#include <pthread.h>
-#include <condition_variable>
 
 namespace floyd {
 

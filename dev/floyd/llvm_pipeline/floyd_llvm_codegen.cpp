@@ -18,7 +18,7 @@ const bool k_use_hamt_vector = true;
 
 #include "ast_value.h"
 
-#include "semantic_analyser.h"
+#include "semantic_ast.h"
 
 #include "quark.h"
 #include "floyd_runtime.h"

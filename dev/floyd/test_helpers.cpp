@@ -28,6 +28,7 @@
 #include "floyd_parser.h"
 #include "semantic_analyser.h"
 #include "floyd_runtime.h"
+#include "semantic_ast.h"
 
 #include <string>
 #include <vector>

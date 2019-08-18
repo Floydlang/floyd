@@ -22,10 +22,10 @@
 
 #include "bytecode_generator.h"
 
-#include "semantic_analyser.h"
 #include "bytecode_helpers.h"
 #include "bytecode_interpreter.h"
 #include "floyd_runtime.h"
+#include "semantic_ast.h"
 
 #include <cmath>
 #include <algorithm>

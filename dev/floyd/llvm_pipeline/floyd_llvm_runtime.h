@@ -9,17 +9,7 @@
 #ifndef floyd_llvm_runtime_hpp
 #define floyd_llvm_runtime_hpp
 
-#include "ast_value.h"
-#include "floyd_llvm_helpers.h"
-#include "floyd_llvm_types.h"
 #include "floyd_llvm_values.h"
-#include "floyd_corelib.h"
-#include "ast.h"
-
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Function.h>
-#include <llvm/IR/Verifier.h>
 
 #include <string>
 #include <vector>
@@ -31,10 +21,12 @@ namespace llvm {
 //??? make floyd_llvm-namespace. Reduces collisions with byte code interpreter.
 
 namespace floyd {
-	struct semantic_ast_t;
-	struct llvm_ir_program_t;
-	struct runtime_handler_i;
-	struct run_output_t;
+
+struct llvm_ir_program_t;
+struct runtime_handler_i;
+struct run_output_t;
+struct floyd_runtime_t;
+struct llvm_instance_t;
 
 
 ////////////////////////////////		function_bind_t
@@ -144,6 +136,7 @@ typedef runtime_value_t (*FLOYD_BENCHMARK_F)(floyd_runtime_t* frp);
 ////////////////////////////////		ENGINE GLOBALS
 
 
+void* get_global_ptr(const llvm_execution_engine_t& ee, const std::string& name);
 
 const function_def_t& find_function_def_from_link_name(const std::vector<function_def_t>& function_defs, const link_name_t& link_name);
 
@@ -186,14 +179,6 @@ std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program
 run_output_t run_program(llvm_execution_engine_t& ee, const std::vector<std::string>& main_args);
 
 
-//	Helper that goes directly from source to LLVM IR code.
-std::unique_ptr<llvm_ir_program_t> compile_to_ir_helper(llvm_instance_t& instance, const compilation_unit_t& cu);
-
-//	Compiles and runs the program. Returns results.
-run_output_t run_program_helper(const std::string& program_source, const std::string& file, const std::vector<std::string>& main_args);
-
-
-
 
 struct bench_t {
 	benchmark_id_t benchmark_id;
@@ -204,16 +189,6 @@ inline bool operator==(const bench_t& lhs, const bench_t& rhs){ return lhs.bench
 std::vector<bench_t> collect_benchmarks(const llvm_execution_engine_t& ee);
 std::vector<benchmark_result2_t> run_benchmarks(llvm_execution_engine_t& ee, const std::vector<bench_t>& tests);
 std::vector<bench_t> filter_benchmarks(const std::vector<bench_t>& b, const std::vector<std::string>& run_tests);
-
-
-
-
-////////////////////////////////		HELPERS
-
-
-
-std::vector<bench_t> collect_benchmarks(const std::string& program_source, const std::string& file);
-std::vector<benchmark_result2_t> run_benchmarks(const std::string& program_source, const std::string& file, const std::vector<std::string>& tests);
 
 
 }	//	namespace floyd

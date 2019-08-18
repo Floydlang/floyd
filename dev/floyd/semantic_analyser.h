@@ -29,10 +29,6 @@
 
 
 
-
-
-
-
 	DETAILED OPERATIONS
 
 
@@ -85,39 +81,15 @@
 	??? Make pass that punches out specialised calls for corecalls, comparisons etc instead of having ONE.
 */
 
-#include "quark.h"
-
-#include <string>
-#include "ast.h"
-
 namespace floyd {
 
+struct semantic_ast_t;
 struct unchecked_ast_t;
-
-//////////////////////////////////////		semantic_ast_t
-
-/*
-	The semantic_ast_t is a correct program, all symbols resolved, all types resolved, all semantics are OK.
-*/
-struct semantic_ast_t {
-	public: explicit semantic_ast_t(const general_purpose_ast_t& tree);
-
-#if DEBUG
-	public: bool check_invariant() const;
-#endif
-
-
-	////////////////////////////////	STATE
-	public: general_purpose_ast_t _tree;
-};
 
 semantic_ast_t run_semantic_analysis(const unchecked_ast_t& ast);
 
-json_t semantic_ast_to_json(const semantic_ast_t& ast);
-semantic_ast_t json_to_semantic_ast(const json_t& json);
-
-
 }	// Floyd
+
 #endif /* semantic_analyser_hpp */
 
 

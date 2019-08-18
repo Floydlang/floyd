@@ -13,7 +13,10 @@
 #include <string>
 
 #include "floyd_interpreter.h"
-#include "floyd_parser.h"
+
+#include "floyd_llvm.h"
+#include "floyd_llvm_runtime.h"
+
 #include "ast_value.h"
 #include "json_support.h"
 #include "text_parser.h"
@@ -23,11 +26,10 @@
 
 #include "semantic_analyser.h"
 #include "compiler_helpers.h"
-#include "compiler_basics.h"
+#include "semantic_ast.h"
 
 #include "floyd_command_line_parser.h"
 
-#include "floyd_llvm_runtime.h"
 
 
 

@@ -17,6 +17,8 @@
 #include "text_parser.h"
 #include "floyd_syntax.h"
 #include "collect_used_types.h"
+#include "semantic_ast.h"
+
 
 namespace floyd {
 
@@ -25,24 +27,6 @@ static const bool k_trace_io_flag = false;
 //???? remove!!
 using namespace std;
 
-
-
-//////////////////////////////////////		semantic_ast_t
-
-semantic_ast_t::semantic_ast_t(const general_purpose_ast_t& tree){
-	QUARK_ASSERT(tree.check_invariant());
-	QUARK_ASSERT(check_types_resolved(tree));
-
-	_tree = tree;
-}
-
-#if DEBUG
-bool semantic_ast_t::check_invariant() const{
-	QUARK_ASSERT(_tree.check_invariant());
-	QUARK_ASSERT(check_types_resolved(_tree));
-	return true;
-}
-#endif
 
 
 
@@ -2605,21 +2589,6 @@ semantic_ast_t run_semantic_analysis(const unchecked_ast_t& ast){
 }
 
 
-json_t semantic_ast_to_json(const semantic_ast_t& ast){
-	QUARK_ASSERT(ast.check_invariant());
-
-	return gp_ast_to_json(ast._tree);
-}
-
-
-semantic_ast_t json_to_semantic_ast(const json_t& json){
-	const auto gp_ast = json_to_gp_ast(json);
-	bool resolved = check_types_resolved(gp_ast);
-	if(resolved == false){
-		throw std::exception();
-	}
-	return semantic_ast_t{ gp_ast };
-}
 
 
 }	//	floyd
