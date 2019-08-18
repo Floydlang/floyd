@@ -18,18 +18,17 @@ const bool k_use_hamt_vector = true;
 
 #include "ast_value.h"
 
-#include "floyd_parser.h"
 #include "semantic_analyser.h"
 
 #include "quark.h"
 #include "floyd_runtime.h"
 
 
-#include <llvm/ADT/APInt.h>
-#include <llvm/IR/Verifier.h>
-#include <llvm/ExecutionEngine/ExecutionEngine.h>
-#include <llvm/ExecutionEngine/GenericValue.h>
-#include <llvm/ExecutionEngine/MCJIT.h>
+//#include <llvm/ADT/APInt.h>
+//#include <llvm/IR/Verifier.h>
+//#include <llvm/ExecutionEngine/ExecutionEngine.h>
+//#include <llvm/ExecutionEngine/GenericValue.h>
+//#include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/IR/Argument.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Constants.h>
