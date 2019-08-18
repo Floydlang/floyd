@@ -99,11 +99,12 @@ struct llvm_code_generator_t;
 
 
 struct llvm_code_generator_t {
-	public: llvm_code_generator_t(llvm_instance_t& instance, llvm::Module* module, const type_interner_t& interner) :
+	public: llvm_code_generator_t(llvm_instance_t& instance, llvm::Module* module, const type_interner_t& interner, const llvm_type_lookup& type_lookup, const std::vector<function_def_t>& function_defs) :
 		instance(&instance),
 		module(module),
 		builder(instance.context),
-		type_lookup(instance.context, interner)
+		type_lookup(type_lookup),
+		function_defs(function_defs)
 //		floydrt_retain_vec(find_function_def_from_link_name(
 	{
 		QUARK_ASSERT(instance.check_invariant());
@@ -2708,31 +2709,32 @@ static std::pair<std::unique_ptr<llvm::Module>, std::vector<function_def_t>> gen
 	//	Module must sit in a unique_ptr<> because llvm::EngineBuilder needs that.
 	auto module = std::make_unique<llvm::Module>(module_name.c_str(), instance.context);
 
-	llvm_code_generator_t gen_acc(instance, module.get(), semantic_ast._tree._interned_types);
+	llvm_type_lookup type_lookup(instance.context, semantic_ast._tree._interned_types);
 
 	//	Generate all LLVM nodes: functions (without implementation) and globals.
 	//	This lets all other code reference them, even if they're not filled up with code yet.
+
+	const auto funcs = make_all_function_prototypes(*module, type_lookup, semantic_ast._tree._function_defs);
+
+	llvm_code_generator_t gen_acc(instance, module.get(), semantic_ast._tree._interned_types, type_lookup, funcs);
+
+	//	Global variables.
 	{
-		const auto funcs = make_all_function_prototypes(*module, gen_acc.type_lookup, semantic_ast._tree._function_defs);
-		gen_acc.function_defs = funcs;
+		const auto def = find_function_def_from_link_name(gen_acc, encode_runtime_func_link_name("init"));
 
-		//	Global variables.
-		{
-			const auto def = find_function_def_from_link_name(gen_acc, encode_runtime_func_link_name("init"));
+		llvm_function_generator_t function_gen_acc(gen_acc, *def.llvm_codegen_f);
 
-			llvm_function_generator_t function_gen_acc(gen_acc, *def.llvm_codegen_f);
-
-			std::vector<resolved_symbol_t> globals = generate_globals_from_ast(
-				function_gen_acc,
-				semantic_ast,
-				semantic_ast._tree._globals._symbol_table
-			);
-			gen_acc.scope_path = { globals };
-		}
+		std::vector<resolved_symbol_t> globals = generate_globals_from_ast(
+			function_gen_acc,
+			semantic_ast,
+			semantic_ast._tree._globals._symbol_table
+		);
+		gen_acc.scope_path = { globals };
 	}
 
 //	QUARK_TRACE_SS("result = " << floyd::print_gen(gen_acc));
 	QUARK_ASSERT(gen_acc.check_invariant());
+
 
 	//	Generate bodies of functions.
 	{
@@ -2755,8 +2757,7 @@ std::unique_ptr<llvm_ir_program_t> generate_llvm_ir_program(llvm_instance_t& ins
 	}
 	if(k_trace_types){
 		{
-			QUARK_SCOPED_TRACE("ast0 types");
-			for(const auto& e: ast0._tree._interned_types.interned){
+			QUARK_SCOPED_TRACE("ast0 types");			for(const auto& e: ast0._tree._interned_types.interned){
 				QUARK_TRACE_SS(e.first.itype << ": " << typeid_to_compact_string(e.second));
 			}
 		}
