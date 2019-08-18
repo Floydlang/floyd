@@ -9,11 +9,8 @@
 #ifndef floyd_llvm_values_hpp
 #define floyd_llvm_values_hpp
 
-#include "typeid.h"
-#include "ast.h"
 #include "floyd_llvm_types.h"
 
-#include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 
 #include "immer/vector.hpp"
@@ -21,6 +18,8 @@
 
 #include <atomic>
 #include <mutex>
+
+#include "quark.h"
 
 struct json_t;
 

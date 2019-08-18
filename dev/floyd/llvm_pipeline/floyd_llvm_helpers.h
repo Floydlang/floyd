@@ -9,24 +9,14 @@
 #ifndef floyd_llvm_helpers_hpp
 #define floyd_llvm_helpers_hpp
 
-#include "typeid.h"
-#include "ast.h"
-#include "floyd_llvm_types.h"
-
-#include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 
-#include "immer/vector.hpp"
-#include "immer/map.hpp"
-
-#include <atomic>
-#include <mutex> 
 
 
 namespace floyd {
 
 struct llvm_type_lookup;
-
+struct link_name_t;
 
 
 //	Must LLVMContext be kept while using the execution engine? Yes!
@@ -49,7 +39,6 @@ std::string print_function(const llvm::Function* f);
 std::string print_value(llvm::Value* value);
 
 
-
 ////////////////////////////////	floyd_runtime_ptr
 
 
@@ -69,15 +58,17 @@ llvm::Value* get_callers_fcp(const llvm_type_lookup& type_lookup, llvm::Function
 
 
 
-
-
-////////////////////////////////		HELPERS
+////////////////////////////////		CODEGEN
 
 
 void generate_array_element_store(llvm::IRBuilder<>& builder, llvm::Value& array_ptr_reg, uint64_t element_index, llvm::Value& element_reg);
 
 
 llvm::GlobalVariable* generate_global0(llvm::Module& module, const std::string& symbol_name, llvm::Type& itype, llvm::Constant* init_or_nullptr);
+
+
+
+////////////////////////////////		ENCODE / DECODE LLVM LINK NAMES
 
 
 
