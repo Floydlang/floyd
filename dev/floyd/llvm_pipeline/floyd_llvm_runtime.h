@@ -12,6 +12,7 @@
 #include "ast_value.h"
 #include "floyd_llvm_helpers.h"
 #include "floyd_llvm_types.h"
+#include "floyd_llvm_values.h"
 #include "floyd_corelib.h"
 #include "ast.h"
 
