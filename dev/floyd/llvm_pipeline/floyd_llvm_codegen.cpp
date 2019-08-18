@@ -9,6 +9,8 @@
 const bool k_trace_input_output = false;
 const bool k_trace_types = k_trace_input_output;
 
+const bool k_use_hamt_vector = true;
+
 #include "floyd_llvm_codegen.h"
 
 #include "floyd_llvm_runtime.h"
@@ -102,11 +104,13 @@ struct llvm_code_generator_t {
 
 
 		floydrt_retain_vec(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("retain_vec"))),
+//		floydrt_retain_hamt_vec(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("retain_hamt_vec"))),
 		floydrt_retain_dict(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("retain_dict"))),
 		floydrt_retain_json(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("retain_json"))),
 		floydrt_retain_struct(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("retain_struct"))),
 
 		floydrt_release_vec(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("release_vec"))),
+//		floydrt_release_hamt_vec(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("release_hamt_vec"))),
 		floydrt_release_dict(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("release_dict"))),
 		floydrt_release_json(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("release_json"))),
 		floydrt_release_struct(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("release_struct"))),
@@ -116,8 +120,10 @@ struct llvm_code_generator_t {
 		floydrt_lookup_json(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("lookup_json"))),
 		floydrt_lookup_dict(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("lookup_dict"))),
 		floydrt_concatunate_vectors(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("concatunate_vectors"))),
+//		floydrt_concatunate_hamt_vectors(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("concatunate_hamt_vectors"))),
 		floydrt_compare_values(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("compare_values"))),
 		floydrt_allocate_vector(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_vector"))),
+//		floydrt_allocate_hamt_vector(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_hamt_vector"))),
 		floydrt_allocate_dict(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_dict"))),
 		floydrt_store_dict_mutable(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("store_dict_mutable"))),
 		floydrt_allocate_struct(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_struct"))),
@@ -170,11 +176,13 @@ struct llvm_code_generator_t {
 	const function_def_t& floydrt_deinit;
 
 	const function_def_t& floydrt_retain_vec;
+//	const function_def_t& floydrt_retain_hamt_vec;
 	const function_def_t& floydrt_retain_dict;
 	const function_def_t& floydrt_retain_json;
 	const function_def_t& floydrt_retain_struct;
 
 	const function_def_t& floydrt_release_vec;
+//	const function_def_t& floydrt_release_hamt_vec;
 	const function_def_t& floydrt_release_dict;
 	const function_def_t& floydrt_release_json;
 	const function_def_t& floydrt_release_struct;
@@ -184,8 +192,10 @@ struct llvm_code_generator_t {
 	const function_def_t& floydrt_lookup_json;
 	const function_def_t& floydrt_lookup_dict;
 	const function_def_t& floydrt_concatunate_vectors;
+//	const function_def_t& floydrt_concatunate_hamt_vectors;
 	const function_def_t& floydrt_compare_values;
 	const function_def_t& floydrt_allocate_vector;
+//	const function_def_t& floydrt_allocate_hamt_vector;
 	const function_def_t& floydrt_allocate_dict;
 	const function_def_t& floydrt_store_dict_mutable;
 	const function_def_t& floydrt_allocate_struct;
