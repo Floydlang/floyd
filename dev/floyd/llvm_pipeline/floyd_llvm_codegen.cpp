@@ -69,8 +69,6 @@ TODO ???:
 
 namespace floyd {
 
-struct llvm_code_generator_t;
-static const function_def_t& find_function_def_from_link_name(llvm_code_generator_t& gen_acc, const link_name_t& link_name);
 
 
 
@@ -104,8 +102,8 @@ struct llvm_code_generator_t {
 		module(module),
 		builder(instance.context),
 		type_lookup(type_lookup),
-		function_defs(function_defs)
-//		floydrt_retain_vec(find_function_def_from_link_name(
+		function_defs(function_defs),
+		floydrt_retain_vec(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("retain_vec")))
 	{
 		QUARK_ASSERT(instance.check_invariant());
 
@@ -147,8 +145,7 @@ struct llvm_code_generator_t {
 	//	One element for each global symbol in AST. Same indexes as in symbol table.
 	std::vector<std::vector<resolved_symbol_t>> scope_path;
 
-//	function_def_t& floydrt_retain_vec;
-
+	const function_def_t& floydrt_retain_vec;
 };
 
 /*
@@ -387,13 +384,12 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 	auto& builder = gen_acc.get_builder();
 	if(is_rc_value(type)){
 		if(type.is_string() || type.is_vector()){
-			const auto f = find_runtime_func_from_name(gen_acc.gen, "retain_vec");
 			std::vector<llvm::Value*> args = {
 				gen_acc.get_callers_fcp(),
 				&value_reg,
 				generate_itype_constant(gen_acc.gen, type)
 			};
-			builder.CreateCall(f.llvm_codegen_f, args, "");
+			builder.CreateCall(gen_acc.gen.floydrt_retain_vec.llvm_codegen_f, args, "");
 		}
 		else if(type.is_dict()){
 			const auto f = find_runtime_func_from_name(gen_acc.gen, "retain_dict");
