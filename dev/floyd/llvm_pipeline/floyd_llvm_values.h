@@ -188,6 +188,9 @@ runtime_value_t make_runtime_bool(bool value);
 runtime_value_t make_runtime_int(int64_t value);
 runtime_value_t make_runtime_typeid(runtime_type_t type);
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr);
+runtime_value_t make_runtime_vector(VEC_T* vector_ptr);
+runtime_value_t make_runtime_vector_hamt(VEC_HAMT_T* vector_hamt_ptr);
+runtime_value_t make_runtime_dict(DICT_T* dict_ptr);
 
 
 VEC_T* unpack_vec_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type);

@@ -21,9 +21,6 @@ namespace floyd {
 
 
 
-runtime_value_t make_runtime_typeid(runtime_type_t type){
-	return { .typeid_itype = type };
-}
 
 
 #if 0
@@ -329,20 +326,31 @@ runtime_value_t make_blank_runtime_value(){
 }
 
 runtime_value_t make_runtime_bool(bool value){
-	return { .bool_value = value };
+	return { .bool_value = (uint8_t)(value ? 1 : 0) };
 }
 
 runtime_value_t make_runtime_int(int64_t value){
 	return { .int_value = value };
 }
-runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
-	runtime_value_t tmp;
-	tmp.struct_ptr = struct_ptr;
-	return   tmp;
-	//return { .struct_ptr = struct_ptr };
+
+runtime_value_t make_runtime_typeid(runtime_type_t type){
+	return { .typeid_itype = type };
 }
 
+runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
+	return { .struct_ptr = struct_ptr };
+}
 
+runtime_value_t make_runtime_vector(VEC_T* vector_ptr){
+	return { .vector_ptr = vector_ptr };
+}
+runtime_value_t make_runtime_vector_hamt(VEC_HAMT_T* vector_hamt_ptr){
+	return { .vector_hamt_ptr = vector_hamt_ptr };
+}
+
+runtime_value_t make_runtime_dict(DICT_T* dict_ptr){
+	return { .dict_ptr = dict_ptr };
+}
 
 
 
@@ -444,7 +452,7 @@ void dispose_vec(VEC_T& vec){
 
 
 WIDE_RETURN_T make_wide_return_vec(VEC_T* vec){
-	return make_wide_return_2x64(runtime_value_t{.vector_ptr = vec}, runtime_value_t{.int_value = 0});
+	return make_wide_return_2x64(runtime_value_t{.vector_ptr = vec}, make_runtime_int(0));
 }
 
 
@@ -527,7 +535,7 @@ void dispose_vec_hamt(VEC_HAMT_T& vec){
 
 
 WIDE_RETURN_T make_wide_return_vec_hamt(VEC_HAMT_T* vec){
-	return make_wide_return_2x64(runtime_value_t{.vector_hamt_ptr = vec}, runtime_value_t{.int_value = 0});
+	return make_wide_return_2x64(runtime_value_t{.vector_hamt_ptr = vec}, make_runtime_int(0));
 }
 
 
@@ -611,7 +619,7 @@ void dispose_dict(DICT_T& dict){
 WIDE_RETURN_T make_wide_return_dict(DICT_T* dict){
 	runtime_value_t tmp;
 	tmp.dict_ptr=dict;
-	return make_wide_return_2x64(tmp, { .int_value = 0 });
+	return make_wide_return_2x64(tmp, make_runtime_int(0));
 	//return make_wide_return_2x64({ .dict_ptr = dict }, { .int_value = 0 });
 }
 
@@ -712,7 +720,7 @@ void dispose_struct(STRUCT_T& s){
 
 
 WIDE_RETURN_T make_wide_return_structptr(STRUCT_T* s){
-	return WIDE_RETURN_T{ { .struct_ptr = s }, { .int_value = 0 } };
+	return WIDE_RETURN_T{ { .struct_ptr = s }, make_runtime_int(0) };
 }
 
 STRUCT_T* wide_return_to_struct(const WIDE_RETURN_T& ret){
@@ -749,7 +757,7 @@ runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type){
 		}
 		runtime_value_t operator()(const typeid_t::bool_t& e) const{
 			const auto temp = *static_cast<const uint8_t*>(value_ptr);
-			return runtime_value_t{ .bool_value = temp };
+			return make_runtime_bool(temp == 0 ? false : true);
 		}
 		runtime_value_t operator()(const typeid_t::int_t& e) const{
 			const auto temp = *static_cast<const uint64_t*>(value_ptr);
@@ -768,7 +776,7 @@ runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type){
 		}
 		runtime_value_t operator()(const typeid_t::typeid_type_t& e) const{
 			const auto value = *static_cast<const int32_t*>(value_ptr);
-			return runtime_value_t{ .typeid_itype = value };
+			return make_runtime_typeid(value);
 		}
 
 		runtime_value_t operator()(const typeid_t::struct_t& e) const{

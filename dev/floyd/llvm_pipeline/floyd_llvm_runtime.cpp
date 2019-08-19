@@ -240,7 +240,7 @@ static runtime_value_t to_runtime_string0(heap_t& heap, const std::string& s){
 		char_pos++;
 
 		if(((char_pos & 7) == 0) || (char_pos == s.size())){
-			v->store(element_index, runtime_value_t{ .int_value = static_cast<int64_t>(acc) });
+			v->store(element_index, make_runtime_int(static_cast<int64_t>(acc)));
 			element_index = element_index + 1;
 			acc = 0;
 		}
@@ -462,10 +462,10 @@ runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t
 			UNSUPPORTED();
 		}
 		runtime_value_t operator()(const typeid_t::bool_t& e) const{
-			return { .bool_value = (uint8_t)(value.get_bool_value() ? 1 : 0) };
+			return make_runtime_bool(value.get_bool_value());
 		}
 		runtime_value_t operator()(const typeid_t::int_t& e) const{
-			return { .int_value = value.get_int_value() };
+			return make_runtime_int(value.get_int_value());
 		}
 		runtime_value_t operator()(const typeid_t::double_t& e) const{
 			return { .double_value = value.get_double_value() };
