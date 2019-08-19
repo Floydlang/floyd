@@ -523,7 +523,7 @@ std::string get_intrinsic_opcode(const intrinsic_signature_t& signature){
 	return std::string() + "$" + signature.name;
 }
 
-static std::vector<intrinsic_signature_t> get_host_function_records(){
+std::vector<intrinsic_signature_t> get_intrinsic_signatures(){
 	const std::vector<intrinsic_signature_t> result = {
 		make_assert_signature(),
 		make_to_string_signature(),
@@ -569,11 +569,6 @@ static std::vector<intrinsic_signature_t> get_host_function_records(){
 	return result;
 }
 
-std::vector<intrinsic_signature_t> get_intrinsic_signatures(){
-	static const auto a = get_host_function_records();
-
-	return a;
-}
 
 
 

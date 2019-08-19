@@ -93,7 +93,7 @@ enum class base_type {
 	//	??? Maybe we can use void for this and remove k_undefined?
 	k_undefined,
 
-	//	Used by host functions arguments / returns to tell this is a dynamic value, not static type.
+	//	Used as function return/args to tell this is a dynamic value, not static type.
 	k_any,
 
 	//	Means no value. Used as return type for print() etc.
@@ -577,7 +577,7 @@ std::string typeid_to_compact_string(const typeid_t& t);
 
 //////////////////////////////////////		dynamic function
 
-//	Dynamic values are "fat" values that also keep their type. This is used right now for Floyd's host functions
+//	Dynamic values are "fat" values that also keep their type. This is used right now for Floyd's instrinsic functions
 //	that accepts many/any type of arguments. Like size().
 //	A dynamic function has one or several arguments of type k_any.
 //	The argument types for k_any arguments must be supplied for each function invocation.

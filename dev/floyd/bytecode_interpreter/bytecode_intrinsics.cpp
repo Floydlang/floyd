@@ -1,5 +1,5 @@
 //
-//  host_functions.cpp
+//  bytecode_intrinsics.cpp
 //  Floyd
 //
 //  Created by Marcus Zetterquist on 2018-02-23.
@@ -39,7 +39,7 @@ static value_t value_to_jsonvalue(const value_t& value){
 
 
 
-bc_value_t host__assert(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__assert(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_bool());
@@ -54,7 +54,7 @@ bc_value_t host__assert(interpreter_t& vm, const bc_value_t args[], int arg_coun
 }
 
 //	string to_string(value_t)
-bc_value_t host__to_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__to_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -62,7 +62,7 @@ bc_value_t host__to_string(interpreter_t& vm, const bc_value_t args[], int arg_c
 	const auto a = to_compact_string2(bc_to_value(value));
 	return bc_value_t::make_string(a);
 }
-bc_value_t host__to_pretty_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__to_pretty_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -72,7 +72,7 @@ bc_value_t host__to_pretty_string(interpreter_t& vm, const bc_value_t args[], in
 	return bc_value_t::make_string(s);
 }
 
-bc_value_t host__typeof(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__typeof(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -84,7 +84,7 @@ bc_value_t host__typeof(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 
 
-bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__update(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
 //	QUARK_TRACE(json_to_pretty_string(interpreter_to_json(vm)));
@@ -95,7 +95,7 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	return update_element(vm, obj1, lookup_key, new_value);
 }
 
-/*bc_value_t host__size(interpreter_t& vm, const bc_value_t args[], int arg_count){
+/*bc_value_t bc_intrinsic__size(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -150,7 +150,7 @@ bc_value_t host__update(interpreter_t& vm, const bc_value_t args[], int arg_coun
 }
 */
 
-bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__find(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
@@ -218,7 +218,7 @@ bc_value_t host__find(interpreter_t& vm, const bc_value_t args[], int arg_count)
 //??? user function type overloading and create several different functions, depending on the DYN argument.
 
 
-bc_value_t host__exists(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__exists(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
@@ -241,7 +241,7 @@ bc_value_t host__exists(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	}
 }
 
-bc_value_t host__erase(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__erase(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
@@ -267,7 +267,7 @@ bc_value_t host__erase(interpreter_t& vm, const bc_value_t args[], int arg_count
 	}
 }
 
-bc_value_t host__get_keys(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__get_keys(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -302,7 +302,7 @@ bc_value_t host__get_keys(interpreter_t& vm, const bc_value_t args[], int arg_co
 
 /*
 //	assert(push_back(["one","two"], "three") == ["one","two","three"])
-bc_value_t host__push_back(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__push_back(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 
@@ -341,7 +341,7 @@ bc_value_t host__push_back(interpreter_t& vm, const bc_value_t args[], int arg_c
 */
 
 //	assert(subset("abc", 1, 3) == "bc");
-bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__subset(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
 	QUARK_ASSERT(args[1]._type.is_int());
@@ -401,7 +401,7 @@ bc_value_t host__subset(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 
 //	assert(replace("One ring to rule them all", 4, 7, "rabbit") == "One rabbit to rule them all");
-bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__replace(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 4);
 	QUARK_ASSERT(args[1]._type.is_int());
@@ -472,7 +472,7 @@ bc_value_t host__replace(interpreter_t& vm, const bc_value_t args[], int arg_cou
 /*
 	Reads json from a text string, returning an unpacked json.
 */
-bc_value_t host__parse_json_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__parse_json_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_string());
@@ -483,7 +483,7 @@ bc_value_t host__parse_json_script(interpreter_t& vm, const bc_value_t args[], i
 	return json;
 }
 
-bc_value_t host__generate_json_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__generate_json_script(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_json());
@@ -494,7 +494,7 @@ bc_value_t host__generate_json_script(interpreter_t& vm, const bc_value_t args[]
 }
 
 
-bc_value_t host__to_json(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__to_json(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 
@@ -504,7 +504,7 @@ bc_value_t host__to_json(interpreter_t& vm, const bc_value_t args[], int arg_cou
 	return value_to_bc(result);
 }
 
-bc_value_t host__from_json(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__from_json(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 	QUARK_ASSERT(args[0]._type.is_json());
@@ -517,7 +517,7 @@ bc_value_t host__from_json(interpreter_t& vm, const bc_value_t args[], int arg_c
 }
 
 
-bc_value_t host__get_json_type(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__get_json_type(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_json());
@@ -534,7 +534,7 @@ bc_value_t host__get_json_type(interpreter_t& vm, const bc_value_t args[], int a
 
 
 //	[R] map([E] elements, func R (E e, C context) f, C context)
-bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
 	QUARK_ASSERT(check_map_func_type(args[0]._type, args[1]._type, args[2]._type));
@@ -569,7 +569,7 @@ bc_value_t host__map(interpreter_t& vm, const bc_value_t args[], int arg_count){
 
 
 //	string map_string(string s, func string(string e, C context) f, C context)
-bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__map_string(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
 	QUARK_ASSERT(check_map_string_func_type(args[0]._type, args[1]._type, args[2]._type));
@@ -606,7 +606,7 @@ bc_value_t host__map_string(interpreter_t& vm, const bc_value_t args[], int arg_
 
 
 //	[R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
-bc_value_t host__map_dag(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__map_dag(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 4);
 	QUARK_ASSERT(check_map_dag_func_type(args[0]._type, args[1]._type, args[2]._type, args[3]._type));
@@ -712,7 +712,7 @@ struct dep_t {
 };
 
 
-bc_value_t host__map_dag2(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__map_dag2(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 4);
 	QUARK_ASSERT(check_map_dag_func_type(args[0]._type, args[1]._type, args[2]._type, args[3]._type));
@@ -828,7 +828,7 @@ bc_value_t host__map_dag2(interpreter_t& vm, const bc_value_t args[], int arg_co
 
 
 //	[E] filter([E] elements, func bool (E e, C context) f, C context)
-bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__filter(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
 	QUARK_ASSERT(check_filter_func_type(args[0]._type, args[1]._type, args[2]._type));
@@ -868,7 +868,7 @@ bc_value_t host__filter(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 
 //	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
-bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__reduce(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 4);
 	QUARK_ASSERT(check_reduce_func_type(args[0]._type, args[1]._type, args[2]._type, args[3]._type));
@@ -903,7 +903,7 @@ bc_value_t host__reduce(interpreter_t& vm, const bc_value_t args[], int arg_coun
 
 
 //	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
-bc_value_t host__stable_sort(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__stable_sort(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 3);
 	QUARK_ASSERT(check_stable_sort_func_type(args[0]._type, args[1]._type, args[2]._type));
@@ -953,7 +953,7 @@ bc_value_t host__stable_sort(interpreter_t& vm, const bc_value_t args[], int arg
 
 //	print = impure!
 //	Records all output to interpreter
-bc_value_t host__print(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__print(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 //	QUARK_ASSERT(args[0]._type.is_string());
@@ -965,7 +965,7 @@ bc_value_t host__print(interpreter_t& vm, const bc_value_t args[], int arg_count
 
 	return bc_value_t::make_undefined();
 }
-bc_value_t host__send(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__send(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 	QUARK_ASSERT(args[0]._type.is_string());
@@ -987,7 +987,7 @@ bc_value_t host__send(interpreter_t& vm, const bc_value_t args[], int arg_count)
 
 
 
-bc_value_t host__bw_not(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__bw_not(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 1);
 	QUARK_ASSERT(args[0]._type.is_int());
@@ -996,7 +996,7 @@ bc_value_t host__bw_not(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	const auto result = ~a;
 	return bc_value_t::make_int(result);
 }
-bc_value_t host__bw_and(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__bw_and(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 	QUARK_ASSERT(args[0]._type.is_int());
@@ -1007,7 +1007,7 @@ bc_value_t host__bw_and(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	const auto result = a & b;
 	return bc_value_t::make_int(result);
 }
-bc_value_t host__bw_or(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__bw_or(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 	QUARK_ASSERT(args[0]._type.is_int());
@@ -1018,7 +1018,7 @@ bc_value_t host__bw_or(interpreter_t& vm, const bc_value_t args[], int arg_count
 	const auto result = a | b;
 	return bc_value_t::make_int(result);
 }
-bc_value_t host__bw_xor(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__bw_xor(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 	QUARK_ASSERT(args[0]._type.is_int());
@@ -1029,7 +1029,7 @@ bc_value_t host__bw_xor(interpreter_t& vm, const bc_value_t args[], int arg_coun
 	const auto result = a ^ b;
 	return bc_value_t::make_int(result);
 }
-bc_value_t host__bw_shift_left(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__bw_shift_left(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 	QUARK_ASSERT(args[0]._type.is_int());
@@ -1040,7 +1040,7 @@ bc_value_t host__bw_shift_left(interpreter_t& vm, const bc_value_t args[], int a
 	const auto result = a << count;
 	return bc_value_t::make_int(result);
 }
-bc_value_t host__bw_shift_right(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__bw_shift_right(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 	QUARK_ASSERT(args[0]._type.is_int());
@@ -1051,7 +1051,7 @@ bc_value_t host__bw_shift_right(interpreter_t& vm, const bc_value_t args[], int 
 	const auto result = a >> count;
 	return bc_value_t::make_int(result);
 }
-bc_value_t host__bw_shift_right_arithmetic(interpreter_t& vm, const bc_value_t args[], int arg_count){
+bc_value_t bc_intrinsic__bw_shift_right_arithmetic(interpreter_t& vm, const bc_value_t args[], int arg_count){
 	QUARK_ASSERT(vm.check_invariant());
 	QUARK_ASSERT(arg_count == 2);
 	QUARK_ASSERT(args[0]._type.is_int());
@@ -1076,54 +1076,54 @@ bc_value_t host__bw_shift_right_arithmetic(interpreter_t& vm, const bc_value_t a
 static std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> bc_get_intrinsics_internal(){
 	std::vector<std::pair<intrinsic_signature_t, BC_NATIVE_FUNCTION_PTR>> log;
 
-	log.push_back({ make_assert_signature(), host__assert });
-	log.push_back({ make_to_string_signature(), host__to_string });
-	log.push_back({ make_to_pretty_string_signature(), host__to_pretty_string });
-	log.push_back({ make_typeof_signature(), host__typeof });
+	log.push_back({ make_assert_signature(), bc_intrinsic__assert });
+	log.push_back({ make_to_string_signature(), bc_intrinsic__to_string });
+	log.push_back({ make_to_pretty_string_signature(), bc_intrinsic__to_pretty_string });
+	log.push_back({ make_typeof_signature(), bc_intrinsic__typeof });
 
-	log.push_back({ make_update_signature(), host__update });
+	log.push_back({ make_update_signature(), bc_intrinsic__update });
 
 	//	size() is translated to bc_opcode::k_get_size_vector_w_external_elements() etc.
 
-	log.push_back({ make_find_signature(), host__find });
-	log.push_back({ make_exists_signature(), host__exists });
-	log.push_back({ make_erase_signature(), host__erase });
-	log.push_back({ make_get_keys_signature(), host__get_keys });
+	log.push_back({ make_find_signature(), bc_intrinsic__find });
+	log.push_back({ make_exists_signature(), bc_intrinsic__exists });
+	log.push_back({ make_erase_signature(), bc_intrinsic__erase });
+	log.push_back({ make_get_keys_signature(), bc_intrinsic__get_keys });
 
 	//	push_back() is translated to bc_opcode::k_pushback_vector_w_inplace_elements() etc.
 
-	log.push_back({ make_subset_signature(), host__subset });
-	log.push_back({ make_replace_signature(), host__replace });
+	log.push_back({ make_subset_signature(), bc_intrinsic__subset });
+	log.push_back({ make_replace_signature(), bc_intrinsic__replace });
 
 
-	log.push_back({ make_parse_json_script_signature(), host__parse_json_script });
-	log.push_back({ make_generate_json_script_signature(), host__generate_json_script });
-	log.push_back({ make_to_json_signature(), host__to_json });
+	log.push_back({ make_parse_json_script_signature(), bc_intrinsic__parse_json_script });
+	log.push_back({ make_generate_json_script_signature(), bc_intrinsic__generate_json_script });
+	log.push_back({ make_to_json_signature(), bc_intrinsic__to_json });
 
-	log.push_back({ make_from_json_signature(), host__from_json });
+	log.push_back({ make_from_json_signature(), bc_intrinsic__from_json });
 
-	log.push_back({ make_get_json_type_signature(), host__get_json_type });
+	log.push_back({ make_get_json_type_signature(), bc_intrinsic__get_json_type });
 
-	log.push_back({ make_map_signature(), host__map });
-	log.push_back({ make_map_string_signature(), host__map_string });
-	log.push_back({ make_filter_signature(), host__filter });
-	log.push_back({ make_reduce_signature(), host__reduce });
-	log.push_back({ make_map_dag_signature(), host__map_dag });
+	log.push_back({ make_map_signature(), bc_intrinsic__map });
+	log.push_back({ make_map_string_signature(), bc_intrinsic__map_string });
+	log.push_back({ make_filter_signature(), bc_intrinsic__filter });
+	log.push_back({ make_reduce_signature(), bc_intrinsic__reduce });
+	log.push_back({ make_map_dag_signature(), bc_intrinsic__map_dag });
 
-	log.push_back({ make_stable_sort_signature(), host__stable_sort });
-
-
-	log.push_back({ make_print_signature(), host__print });
-	log.push_back({ make_send_signature(), host__send });
+	log.push_back({ make_stable_sort_signature(), bc_intrinsic__stable_sort });
 
 
-	log.push_back({ make_bw_not_signature(), host__bw_not });
-	log.push_back({ make_bw_and_signature(), host__bw_and });
-	log.push_back({ make_bw_or_signature(), host__bw_or });
-	log.push_back({ make_bw_xor_signature(), host__bw_xor });
-	log.push_back({ make_bw_shift_left_signature(), host__bw_shift_left });
-	log.push_back({ make_bw_shift_right_signature(), host__bw_shift_right });
-	log.push_back({ make_bw_shift_right_arithmetic_signature(), host__bw_shift_right_arithmetic });
+	log.push_back({ make_print_signature(), bc_intrinsic__print });
+	log.push_back({ make_send_signature(), bc_intrinsic__send });
+
+
+	log.push_back({ make_bw_not_signature(), bc_intrinsic__bw_not });
+	log.push_back({ make_bw_and_signature(), bc_intrinsic__bw_and });
+	log.push_back({ make_bw_or_signature(), bc_intrinsic__bw_or });
+	log.push_back({ make_bw_xor_signature(), bc_intrinsic__bw_xor });
+	log.push_back({ make_bw_shift_left_signature(), bc_intrinsic__bw_shift_left });
+	log.push_back({ make_bw_shift_right_signature(), bc_intrinsic__bw_shift_right });
+	log.push_back({ make_bw_shift_right_arithmetic_signature(), bc_intrinsic__bw_shift_right_arithmetic });
 
 
 	std::map<function_id_t, BC_NATIVE_FUNCTION_PTR> result;
