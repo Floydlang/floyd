@@ -393,6 +393,19 @@ DICT_T* unpack_dict_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg
 }
 
 
+uint64_t get_vec_string_size(runtime_value_t str){
+	QUARK_ASSERT(str.vector_ptr != nullptr);
+
+	return str.vector_ptr->get_element_count();
+}
+
+void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint64_t count){
+	for(auto i = 0 ; i < count ; i++){
+		dest[i] = source[i];
+	}
+}
+
+
 
 
 
@@ -955,6 +968,8 @@ llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const
 	};
 	return std::visit(visitor_t{ builder, type_lookup, context, runtime_value_reg, type }, type._contents);
 }
+
+
 
 
 

@@ -86,12 +86,6 @@ const function_def_t& find_function_def_from_link_name(const std::vector<functio
 }
 
 
-static void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint64_t count){
-	for(auto i = 0 ; i < count ; i++){
-		dest[i] = source[i];
-	}
-}
-
 
 
 
@@ -209,439 +203,6 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 }
 
 
-////////////////////////////////		VALUES
-
-
-
-static uint64_t get_vec_string_size(runtime_value_t str){
-	QUARK_ASSERT(str.vector_ptr != nullptr);
-
-	return str.vector_ptr->get_element_count();
-}
-
-
-
-
-static runtime_value_t to_runtime_string0(heap_t& heap, const std::string& s){
-	QUARK_ASSERT(heap.check_invariant());
-
-	const auto count = static_cast<uint64_t>(s.size());
-	const auto allocation_count = size_to_allocation_blocks(s.size());
-	auto v = alloc_vec(heap, allocation_count, count);
-	auto result = make_runtime_string(v);
-
-	size_t char_pos = 0;
-	int element_index = 0;
-	uint64_t acc = 0;
-	while(char_pos < s.size()){
-		const uint64_t ch = s[char_pos];
-		const auto x = (char_pos & 7) * 8;
-		acc = acc | (ch << x);
-		char_pos++;
-
-		if(((char_pos & 7) == 0) || (char_pos == s.size())){
-			v->store(element_index, make_runtime_int(static_cast<int64_t>(acc)));
-			element_index = element_index + 1;
-			acc = 0;
-		}
-	}
-	return result;
-}
-
-
-QUARK_UNIT_TEST("VEC_T", "", "", ""){
-	heap_t heap;
-	const auto a = to_runtime_string0(heap, "hello, world!");
-
-	QUARK_UT_VERIFY(a.vector_ptr->get_element_count() == 13);
-
-	//	int64_t	'hello, w'
-//	QUARK_UT_VERIFY(a.vector_ptr->operator[](0).int_value == 0x68656c6c6f2c2077);
-	QUARK_UT_VERIFY(a.vector_ptr->operator[](0).int_value == 0x77202c6f6c6c6568);
-
-	//int_value	int64_t	'orld!\0\0\0'
-//	QUARK_UT_VERIFY(a.vector_ptr->operator[](1).int_value == 0x6f726c6421000000);
-	QUARK_UT_VERIFY(a.vector_ptr->operator[](1).int_value == 0x00000021646c726f);
-}
-
-runtime_value_t to_runtime_string(llvm_execution_engine_t& r, const std::string& s){
-	QUARK_ASSERT(r.check_invariant());
-
-	return to_runtime_string0(r.heap, s);
-}
-
-
-
-static std::string from_runtime_string0(runtime_value_t encoded_value){
-	QUARK_ASSERT(encoded_value.vector_ptr != nullptr);
-
-	const size_t size = get_vec_string_size(encoded_value);
-
-	std::string result;
-
-	//	Read 8 characters at a time.
-	size_t char_pos = 0;
-	const auto begin0 = encoded_value.vector_ptr->begin();
-	const auto end0 = encoded_value.vector_ptr->end();
-	for(auto it = begin0 ; it != end0 ; it++){
-		const size_t copy_chars = std::min(size - char_pos, (size_t)8);
-		const uint64_t element = it->int_value;
-		for(int i = 0 ; i < copy_chars ; i++){
-			const uint64_t x = i * 8;
-			const uint64_t ch = (element >> x) & 0xff;
-			result.push_back(static_cast<char>(ch));
-		}
-		char_pos += copy_chars;
-	}
-
-	QUARK_ASSERT(result.size() == size);
-	return result;
-}
-
-QUARK_UNIT_TEST("VEC_T", "", "", ""){
-	heap_t heap;
-	const auto a = to_runtime_string0(heap, "hello, world!");
-
-	const auto r = from_runtime_string0(a);
-	QUARK_UT_VERIFY(r == "hello, world!");
-}
-
-std::string from_runtime_string(const llvm_execution_engine_t& r, runtime_value_t encoded_value){
-	return from_runtime_string0(encoded_value);
-}
-
-
-
-
-static runtime_value_t to_runtime_struct(llvm_execution_engine_t& runtime, const typeid_t::struct_t& exact_type, const value_t& value){
-	QUARK_ASSERT(runtime.check_invariant());
-	QUARK_ASSERT(value.check_invariant());
-
-	const llvm::DataLayout& data_layout = runtime.ee->getDataLayout();
-	auto t2 = get_exact_struct_type(runtime.type_lookup, value.get_type());
-	const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
-
-	const auto struct_bytes = layout->getSizeInBytes();
-
-	auto s = alloc_struct(runtime.heap, struct_bytes);
-	const auto struct_base_ptr = s->get_data_ptr();
-
-	int member_index = 0;
-	const auto& struct_data = value.get_struct_value();
-
-	for(const auto& e: struct_data->_member_values){
-		const auto offset = layout->getElementOffset(member_index);
-		const auto member_ptr = reinterpret_cast<void*>(struct_base_ptr + offset);
-		store_via_ptr(runtime, e.get_type(), member_ptr, e);
-		member_index++;
-	}
-	return make_runtime_struct(s);
-}
-
-static value_t from_runtime_struct(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
-	QUARK_ASSERT(type.check_invariant());
-
-	const auto& struct_def = type.get_struct();
-	const auto struct_base_ptr = encoded_value.struct_ptr->get_data_ptr();
-
-	const llvm::DataLayout& data_layout = runtime.ee->getDataLayout();
-	auto t2 = get_exact_struct_type(runtime.type_lookup, type);
-	const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
-
-	std::vector<value_t> members;
-	int member_index = 0;
-	for(const auto& e: struct_def._members){
-		const auto offset = layout->getElementOffset(member_index);
-		const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
-		const auto member_value = from_runtime_value(runtime, *member_ptr, e._type);
-		members.push_back(member_value);
-		member_index++;
-	}
-	return value_t::make_struct_value(type, members);
-}
-
-
-static runtime_value_t to_runtime_vector(llvm_execution_engine_t& r, const value_t& value){
-	QUARK_ASSERT(r.check_invariant());
-	QUARK_ASSERT(value.check_invariant());
-	QUARK_ASSERT(value.get_type().is_vector());
-
-	const auto& v0 = value.get_vector_value();
-
-	const auto count = v0.size();
-	auto v = alloc_vec(r.heap, count, count);
-	auto result = make_runtime_string(v);
-
-	const auto element_type = value.get_type().get_vector_element_type();
-	auto p = v->get_element_ptr();
-	for(int i = 0 ; i < count ; i++){
-		const auto& e = v0[i];
-		const auto a = to_runtime_value(r, e);
-//		retain_value(r, a, element_type);
-		p[i] = a;
-	}
-	return result;
-}
-
-static value_t from_runtime_vector(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
-	QUARK_ASSERT(runtime.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	const auto element_type = type.get_vector_element_type();
-	const auto vec = encoded_value.vector_ptr;
-
-	std::vector<value_t> elements;
-	const auto count = vec->get_element_count();
-	auto p = vec->get_element_ptr();
-	for(int i = 0 ; i < count ; i++){
-		const auto value_encoded = p[i];
-		const auto value = from_runtime_value(runtime, value_encoded, element_type);
-		elements.push_back(value);
-	}
-	const auto val = value_t::make_vector_value(element_type, elements);
-	return val;
-}
-
-static runtime_value_t to_runtime_dict(llvm_execution_engine_t& r, const typeid_t::dict_t& exact_type, const value_t& value){
-	QUARK_ASSERT(r.check_invariant());
-	QUARK_ASSERT(value.check_invariant());
-	QUARK_ASSERT(value.get_type().is_dict());
-
-	const auto& v0 = value.get_dict_value();
-
-	auto v = alloc_dict(r.heap);
-	auto result = runtime_value_t{ .dict_ptr = v };
-
-	const auto element_type = value.get_type().get_dict_value_type();
-	auto& m = v->get_map_mut();
-	for(const auto& e: v0){
-		const auto a = to_runtime_value(r, e.second);
-
-
-		m.insert({ e.first, a });
-	}
-	return result;
-}
-
-static value_t from_runtime_dict(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
-	QUARK_ASSERT(runtime.check_invariant());
-	QUARK_ASSERT(encoded_value.check_invariant());
-	QUARK_ASSERT(type.check_invariant());
-
-	const auto value_type = type.get_dict_value_type();
-	const auto dict = encoded_value.dict_ptr;
-
-	std::map<std::string, value_t> values;
-	const auto& map2 = dict->get_map();
-	for(const auto& e: map2){
-		const auto value = from_runtime_value(runtime, e.second, value_type);
-		values.insert({ e.first, value} );
-	}
-	const auto val = value_t::make_dict_value(type, values);
-	return val;
-}
-
-runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t& value){
-	QUARK_ASSERT(runtime.check_invariant());
-	QUARK_ASSERT(value.check_invariant());
-
-	const auto type = value.get_type();
-
-	struct visitor_t {
-		llvm_execution_engine_t& runtime;
-		const value_t& value;
-
-		runtime_value_t operator()(const typeid_t::undefined_t& e) const{
-			UNSUPPORTED();
-		}
-		runtime_value_t operator()(const typeid_t::any_t& e) const{
-			UNSUPPORTED();
-		}
-
-		runtime_value_t operator()(const typeid_t::void_t& e) const{
-			UNSUPPORTED();
-		}
-		runtime_value_t operator()(const typeid_t::bool_t& e) const{
-			return make_runtime_bool(value.get_bool_value());
-		}
-		runtime_value_t operator()(const typeid_t::int_t& e) const{
-			return make_runtime_int(value.get_int_value());
-		}
-		runtime_value_t operator()(const typeid_t::double_t& e) const{
-			return make_runtime_double(value.get_double_value());
-		}
-		runtime_value_t operator()(const typeid_t::string_t& e) const{
-			return to_runtime_string(runtime, value.get_string_value());
-		}
-
-		runtime_value_t operator()(const typeid_t::json_type_t& e) const{
-//			auto result = new json_t(value.get_json());
-//			return runtime_value_t { .json_ptr = result };
-			auto result = alloc_json(runtime.heap, value.get_json());
-			return runtime_value_t { .json_ptr = result };
-		}
-		runtime_value_t operator()(const typeid_t::typeid_type_t& e) const{
-			const auto t0 = value.get_typeid_value();
-			const auto t1 = lookup_runtime_type(runtime.type_lookup, t0);
-			return make_runtime_typeid(t1);
-		}
-
-		runtime_value_t operator()(const typeid_t::struct_t& e) const{
-			return to_runtime_struct(runtime, e, value);
-		}
-		runtime_value_t operator()(const typeid_t::vector_t& e) const{
-			return to_runtime_vector(runtime, value);
-		}
-		runtime_value_t operator()(const typeid_t::dict_t& e) const{
-			return to_runtime_dict(runtime, e, value);
-		}
-		runtime_value_t operator()(const typeid_t::function_t& e) const{
-			NOT_IMPLEMENTED_YET();
-			QUARK_ASSERT(false);
-		}
-		runtime_value_t operator()(const typeid_t::unresolved_t& e) const{
-			UNSUPPORTED();
-		}
-	};
-	return std::visit(visitor_t{ runtime, value }, type._contents);
-}
-
-//??? Do this onces and store in llvm_execution_engine_t.
-static std::vector<std::pair<link_name_t, void*>> collection_native_func_ptrs(const llvm_execution_engine_t& runtime){
-	std::vector<std::pair<link_name_t, void*>> result;
-	for(const auto& e: runtime.function_defs){
-		auto f = get_function_ptr(runtime, e.link_name);
-		result.push_back({ e.link_name, f });
-	}
-
-	if(k_trace_messaging){
-		QUARK_SCOPED_TRACE("linked functions");
-		for(const auto& e: result){
-			QUARK_TRACE_SS(e.first.s << " = " << (e.second == nullptr ? "nullptr" : ptr_to_hexstring(e.second)));
-		}
-	}
-
-	return result;
-}
-//??? LLVM codegen unlinks functions not called: need to mark functions external.
-
-
-
-static link_name_t native_func_ptr_to_link_name(const llvm_execution_engine_t& runtime, void* f){
-//	const llvm::GlobalValue* gv = runtime.ee->getGlobalValueAtAddress(f);
-
-	const auto function_vec = collection_native_func_ptrs(runtime);
-	const auto it = std::find_if(
-		function_vec.begin(),
-		function_vec.end(),
-		[&] (auto& e) {
-			return f == e.second;
-		}
-	);
-	if(it != function_vec.end()){
-		return it->first;
-	}
-	else{
-		return link_name_t { "" };
-	}
-
-
-#if 0
-	const function_def_t& function_def = find_from_link_name_native_function_ptr(runtime.function_defs, f);
-	return function_def.link_name;
-
-		const auto symbols = runtime.global_symbols._symbols;
-
-		const floyd::symbol_t& s = find_symbol_required(const symbol_table_t& symbol_table, e);
-
-		const auto it = std::find_if(
-			symbols.begin(),
-			symbols.end(),
-			[&] (const runtime_value_t& e) {
-				return floydrt_compare_values(frp, static_cast<int64_t>(expression_type::k_logical_equal), arg1_type, e, arg1_value) == 1;
-			}
-		);
-		if(it == vec->get_element_ptr() + vec->get_element_count()){
-			return -1;
-		}
-
-
-
-		return value_t::make_function_value(type, encoded_value.function_ptr function_id_t { "" });
-	}
-#endif
-
-}
-
-
-value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
-	QUARK_ASSERT(type.check_invariant());
-
-	struct visitor_t {
-		const llvm_execution_engine_t& runtime;
-		const runtime_value_t& encoded_value;
-		const typeid_t& type;
-
-		value_t operator()(const typeid_t::undefined_t& e) const{
-			UNSUPPORTED();
-		}
-		value_t operator()(const typeid_t::any_t& e) const{
-			UNSUPPORTED();
-		}
-
-		value_t operator()(const typeid_t::void_t& e) const{
-			UNSUPPORTED();
-		}
-		value_t operator()(const typeid_t::bool_t& e) const{
-			return value_t::make_bool(encoded_value.bool_value == 0 ? false : true);
-		}
-		value_t operator()(const typeid_t::int_t& e) const{
-			return value_t::make_int(encoded_value.int_value);
-		}
-		value_t operator()(const typeid_t::double_t& e) const{
-			return value_t::make_double(encoded_value.double_value);
-		}
-		value_t operator()(const typeid_t::string_t& e) const{
-			return value_t::make_string(from_runtime_string(runtime, encoded_value));
-		}
-
-		value_t operator()(const typeid_t::json_type_t& e) const{
-			if(encoded_value.json_ptr == nullptr){
-				return value_t::make_json(json_t());
-			}
-			else{
-				const auto& j = encoded_value.json_ptr->get_json();
-				return value_t::make_json(j);
-			}
-		}
-		value_t operator()(const typeid_t::typeid_type_t& e) const{
-			const auto type1 = lookup_type(runtime.type_lookup, encoded_value.typeid_itype);
-			const auto type2 = value_t::make_typeid_value(type1);
-			return type2;
-		}
-
-		value_t operator()(const typeid_t::struct_t& e) const{
-			return from_runtime_struct(runtime, encoded_value, type);
-		}
-		value_t operator()(const typeid_t::vector_t& e) const{
-			return from_runtime_vector(runtime, encoded_value, type);
-		}
-		value_t operator()(const typeid_t::dict_t& e) const{
-			return from_runtime_dict(runtime, encoded_value, type);
-		}
-		value_t operator()(const typeid_t::function_t& e) const{
-			const auto link_name = native_func_ptr_to_link_name(runtime, encoded_value.function_ptr);
-			return value_t::make_function_value(type, function_id_t { link_name.s });
-		}
-		value_t operator()(const typeid_t::unresolved_t& e) const{
-			UNSUPPORTED();
-		}
-	};
-	return std::visit(visitor_t{ runtime, encoded_value, type }, type._contents);
-}
-
-
-
 
 ////////////////////////////////	HELPERS FOR RUNTIME CALLBACKS
 
@@ -657,7 +218,7 @@ value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime
 static std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value_t arg_value, runtime_type_t arg_type){
 	QUARK_ASSERT(runtime.check_invariant());
 
-	const auto type = lookup_type(runtime.type_lookup, arg_type);
+	const auto type = lookup_type(runtime.value_mgr.type_lookup, arg_type);
 	const auto value = from_runtime_value(runtime, arg_value, type);
 	const auto a = to_compact_string2(value);
 	return a;
@@ -766,7 +327,7 @@ static void release_struct_deep(llvm_execution_engine_t& runtime, STRUCT_T* s, c
 		const auto struct_base_ptr = s->get_data_ptr();
 
 		const llvm::DataLayout& data_layout = runtime.ee->getDataLayout();
-		auto t2 = get_exact_struct_type(runtime.type_lookup, type);
+		auto t2 = get_exact_struct_type(runtime.value_mgr.type_lookup, type);
 		const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
 
 		int member_index = 0;
@@ -800,7 +361,7 @@ static void floydrt_retain_vec(floyd_runtime_t* frp, VEC_T* vec, runtime_type_t 
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	QUARK_ASSERT(vec != nullptr);
-	const auto type = lookup_type(r.type_lookup, type0);
+	const auto type = lookup_type(r.value_mgr.type_lookup, type0);
 	QUARK_ASSERT(type.is_string() || type.is_vector());
 	QUARK_ASSERT(is_rc_value(type));
 #endif
@@ -828,7 +389,7 @@ static function_bind_t floydrt_retain_vec__make(llvm::LLVMContext& context, cons
 static void floydrt_release_vec(floyd_runtime_t* frp, VEC_T* vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(vec != nullptr);
-	const auto type = lookup_type(r.type_lookup, type0);
+	const auto type = lookup_type(r.value_mgr.type_lookup, type0);
 	QUARK_ASSERT(type.is_string() || type.is_vector());
 
 	release_vec_deep(r, vec, type);
@@ -857,7 +418,7 @@ static function_bind_t floydrt_release_vec__make(llvm::LLVMContext& context, con
 static void floydrt_retain_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(dict != nullptr);
-	const auto type = lookup_type(r.type_lookup, type0);
+	const auto type = lookup_type(r.value_mgr.type_lookup, type0);
 	QUARK_ASSERT(is_rc_value(type));
 
 	QUARK_ASSERT(type.is_dict());
@@ -886,7 +447,7 @@ static function_bind_t floydrt_retain_dict__make(llvm::LLVMContext& context, con
 static void floydrt_release_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(dict != nullptr);
-	const auto type = lookup_type(r.type_lookup, type0);
+	const auto type = lookup_type(r.value_mgr.type_lookup, type0);
 	QUARK_ASSERT(type.is_dict());
 
 	release_dict_deep(r, dict, type);
@@ -912,7 +473,7 @@ static function_bind_t floydrt_release_dict__make(llvm::LLVMContext& context, co
 static void floydrt_retain_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type = lookup_type(r.type_lookup, type0);
+	const auto type = lookup_type(r.value_mgr.type_lookup, type0);
 	QUARK_ASSERT(is_rc_value(type));
 
 	//	NOTICE: Floyd runtime() init will destruct globals, including json::null.
@@ -944,7 +505,7 @@ static function_bind_t floydrt_retain_json__make(llvm::LLVMContext& context, con
 
 static void floydrt_release_json(floyd_runtime_t* frp, JSON_T* json, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
-	const auto type = lookup_type(r.type_lookup, type0);
+	const auto type = lookup_type(r.value_mgr.type_lookup, type0);
 	QUARK_ASSERT(type.is_json());
 
 	//	NOTICE: Floyd runtime() init will destruct globals, including json::null.
@@ -986,7 +547,7 @@ static function_bind_t floydrt_release_json__make(llvm::LLVMContext& context, co
 static void floydrt_retain_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type = lookup_type(r.type_lookup, type0);
+	const auto type = lookup_type(r.value_mgr.type_lookup, type0);
 	QUARK_ASSERT(is_rc_value(type));
 	QUARK_ASSERT(type.is_struct());
 
@@ -1012,7 +573,7 @@ static function_bind_t floydrt_retain_struct__make(llvm::LLVMContext& context, c
 
 static void floydrt_release_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
-	const auto type = lookup_type(r.type_lookup, type0);
+	const auto type = lookup_type(r.value_mgr.type_lookup, type0);
 	QUARK_ASSERT(type.is_struct());
 
 	QUARK_ASSERT(v != nullptr);
@@ -1042,7 +603,7 @@ static function_bind_t floydrt_release_struct__make(llvm::LLVMContext& context, 
 static VEC_T* floydrt_allocate_vector(floyd_runtime_t* frp, uint64_t element_count){
 	auto& r = get_floyd_runtime(frp);
 
-	auto v = alloc_vec(r.heap, element_count, element_count);
+	auto v = alloc_vec(r.value_mgr.heap, element_count, element_count);
 	return v;
 }
 
@@ -1094,7 +655,7 @@ static VEC_T* floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime_type_t t
 	QUARK_ASSERT(rhs != nullptr);
 	QUARK_ASSERT(rhs->check_invariant());
 
-	const auto type0 = lookup_type(r.type_lookup, type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, type);
 	if(type0.is_string()){
 		const auto result = from_runtime_string(r, make_runtime_string(lhs)) + from_runtime_string(r, make_runtime_string(rhs) );
 		return to_runtime_string(r, result).vector_ptr;
@@ -1102,7 +663,7 @@ static VEC_T* floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime_type_t t
 	else{
 		auto count2 = lhs->get_element_count() + rhs->get_element_count();
 
-		auto result = alloc_vec(r.heap, count2, count2);
+		auto result = alloc_vec(r.value_mgr.heap, count2, count2);
 
 		const auto element_type = type0.get_vector_element_type();
 
@@ -1156,7 +717,7 @@ static function_bind_t floydrt_concatunate_vectors__make(llvm::LLVMContext& cont
 static void* floydrt_allocate_dict(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 
-	auto v = alloc_dict(r.heap);
+	auto v = alloc_dict(r.value_mgr.heap);
 	return v;
 }
 
@@ -1241,11 +802,11 @@ static function_bind_t floydrt_lookup_dict__make(llvm::LLVMContext& context, con
 static JSON_T* floydrt_allocate_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
 	const auto value = from_runtime_value(r, arg0_value, type0);
 
 	const auto a = value_to_ast_json(value, json_tags::k_plain);
-	auto result = alloc_json(r.heap, a);
+	auto result = alloc_json(r.value_mgr.heap, a);
 	return result;
 }
 
@@ -1273,7 +834,7 @@ static JSON_T* floydrt_lookup_json(floyd_runtime_t* frp, JSON_T* json_ptr, runti
 	auto& r = get_floyd_runtime(frp);
 
 	const auto& json = json_ptr->get_json();
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
 	const auto value = from_runtime_value(r, arg0_value, type0);
 
 	if(json.is_object()){
@@ -1282,7 +843,7 @@ static JSON_T* floydrt_lookup_json(floyd_runtime_t* frp, JSON_T* json_ptr, runti
 		}
 
 		const auto result = json.get_object_element(value.get_string_value());
-		return alloc_json(r.heap, result);
+		return alloc_json(r.value_mgr.heap, result);
 	}
 	else if(json.is_array()){
 		if(type0.is_int() == false){
@@ -1290,7 +851,7 @@ static JSON_T* floydrt_lookup_json(floyd_runtime_t* frp, JSON_T* json_ptr, runti
 		}
 
 		const auto result = json.get_array_n(value.get_int_value());
-		auto result2 = alloc_json(r.heap, result);
+		auto result2 = alloc_json(r.value_mgr.heap, result);
 		return result2;
 	}
 	else{
@@ -1357,7 +918,7 @@ static function_bind_t floydrt_json_to_string__make(llvm::LLVMContext& context, 
 static int8_t floydrt_compare_values(floyd_runtime_t* frp, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto value_type = lookup_type(r.type_lookup, type);
+	const auto value_type = lookup_type(r.value_mgr.type_lookup, type);
 
 	const auto left_value = from_runtime_value(r, lhs, value_type);
 	const auto right_value = from_runtime_value(r, rhs, value_type);
@@ -1413,7 +974,7 @@ static function_bind_t floydrt_compare_values__make(llvm::LLVMContext& context, 
 static STRUCT_T* floydrt_allocate_struct(floyd_runtime_t* frp, uint64_t size){
 	auto& r = get_floyd_runtime(frp);
 
-	auto v = alloc_struct(r.heap, size);
+	auto v = alloc_struct(r.value_mgr.heap, size);
 	return v;
 }
 
@@ -1439,8 +1000,8 @@ static const STRUCT_T* floydrt_update_struct_member(floyd_runtime_t* frp, STRUCT
 	QUARK_ASSERT(s != nullptr);
 	QUARK_ASSERT(member_index != -1);
 
-	const auto type0 = lookup_type(r.type_lookup, struct_type);
-	const auto new_value_type0 = lookup_type(r.type_lookup, new_value_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, struct_type);
+	const auto new_value_type0 = lookup_type(r.value_mgr.type_lookup, new_value_type);
 	QUARK_ASSERT(type0.is_struct());
 
 	const auto source_struct_ptr = s;
@@ -1452,14 +1013,14 @@ static const STRUCT_T* floydrt_update_struct_member(floyd_runtime_t* frp, STRUCT
 
 	//	Make copy of struct, overwrite member in copy.
 
-	auto& struct_type_llvm = *get_exact_struct_type(r.type_lookup, type0);
+	auto& struct_type_llvm = *get_exact_struct_type(r.value_mgr.type_lookup, type0);
 
 	const llvm::DataLayout& data_layout = r.ee->getDataLayout();
 	const llvm::StructLayout* layout = data_layout.getStructLayout(&struct_type_llvm);
 	const auto struct_bytes = layout->getSizeInBytes();
 
 	//??? Touches memory twice.
-	auto struct_ptr = alloc_struct(r.heap, struct_bytes);
+	auto struct_ptr = alloc_struct(r.value_mgr.heap, struct_bytes);
 	auto struct_base_ptr = struct_ptr->get_data_ptr();
 	std::memcpy(struct_base_ptr, source_struct_ptr->get_data_ptr(), struct_bytes);
 
@@ -1637,18 +1198,18 @@ static void floyd_funcdef__assert(floyd_runtime_t* frp, runtime_value_t arg){
 static DICT_T* floyd_host_function__erase(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
-	const auto type1 = lookup_type(r.type_lookup, arg1_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(r.value_mgr.type_lookup, arg1_type);
 
 	QUARK_ASSERT(type0.is_dict());
 	QUARK_ASSERT(type1.is_string());
 
-	const auto& dict = unpack_dict_arg(r.type_lookup, arg0_value, arg0_type);
+	const auto& dict = unpack_dict_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 
 	const auto value_type = type0.get_dict_value_type();
 
 	//	Deep copy dict.
-	auto dict2 = alloc_dict(r.heap);
+	auto dict2 = alloc_dict(r.value_mgr.heap);
 	auto& m = dict2->get_map_mut();
 	m = dict->get_map();
 
@@ -1667,15 +1228,15 @@ static DICT_T* floyd_host_function__erase(floyd_runtime_t* frp, runtime_value_t 
 static VEC_T* floyd_host_function__get_keys(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
 
 	QUARK_ASSERT(type0.is_dict());
 
-	const auto& dict = unpack_dict_arg(r.type_lookup, arg0_value, arg0_type);
+	const auto& dict = unpack_dict_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 	auto& m = dict->get_map();
 	const auto count = (int32_t)m.size();
 
-	auto result_vec = alloc_vec(r.heap, count, count);
+	auto result_vec = alloc_vec(r.value_mgr.heap, count, count);
 
 	int index = 0;
 	for(const auto& e: m){
@@ -1690,11 +1251,11 @@ static VEC_T* floyd_host_function__get_keys(floyd_runtime_t* frp, runtime_value_
 static uint32_t floyd_funcdef__exists(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
-	const auto type1 = lookup_type(r.type_lookup, arg1_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(r.value_mgr.type_lookup, arg1_type);
 	QUARK_ASSERT(type0.is_dict());
 
-	const auto& dict = unpack_dict_arg(r.type_lookup, arg0_value, arg0_type);
+	const auto& dict = unpack_dict_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 	const auto key_string = from_runtime_string(r, arg1_value);
 
 	const auto& m = dict->get_map();
@@ -1709,8 +1270,8 @@ static uint32_t floyd_funcdef__exists(floyd_runtime_t* frp, runtime_value_t arg0
 static int64_t floyd_funcdef__find(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, const runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
-	const auto type1 = lookup_type(r.type_lookup, arg1_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(r.value_mgr.type_lookup, arg1_type);
 
 	if(type0.is_string()){
 		QUARK_ASSERT(type1.is_string());
@@ -1724,7 +1285,7 @@ static int64_t floyd_funcdef__find(floyd_runtime_t* frp, runtime_value_t arg0_va
 	else if(type0.is_vector()){
 		QUARK_ASSERT(type1 == type0.get_vector_element_type());
 
-		const auto vec = unpack_vec_arg(r.type_lookup, arg0_value, arg0_type);
+		const auto vec = unpack_vec_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 
 //		auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.def_name == function_name; } );
 		const auto it = std::find_if(
@@ -1774,7 +1335,7 @@ static runtime_value_t floyd_funcdef__from_json(floyd_runtime_t* frp, JSON_T* js
 	QUARK_ASSERT(json_ptr != nullptr);
 
 	const auto& json = json_ptr->get_json();
-	const auto target_type2 = lookup_type(r.type_lookup, target_type);
+	const auto target_type2 = lookup_type(r.value_mgr.type_lookup, target_type);
 
 	const auto result = unflatten_json_to_specific_type(json, target_type2);
 	const auto result2 = to_runtime_value(r, result);
@@ -1801,9 +1362,9 @@ typedef runtime_value_t (*MAP_F)(floyd_runtime_t* frp, runtime_value_t arg0_valu
 static VEC_T* floyd_funcdef__map(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
-	const auto type1 = lookup_type(r.type_lookup, arg1_type);
-	const auto type2 = lookup_type(r.type_lookup, arg2_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(r.value_mgr.type_lookup, arg1_type);
+	const auto type2 = lookup_type(r.value_mgr.type_lookup, arg2_type);
 	QUARK_ASSERT(check_map_func_type(type0, type1, type2));
 
 	const auto e_type = type0.get_vector_element_type();
@@ -1813,7 +1374,7 @@ static VEC_T* floyd_funcdef__map(floyd_runtime_t* frp, runtime_value_t arg0_valu
 	const auto f = reinterpret_cast<MAP_F>(arg1_value.function_ptr);
 
 	const auto count = arg0_value.vector_ptr->get_element_count();
-	auto result_vec = alloc_vec(r.heap, count, count);
+	auto result_vec = alloc_vec(r.value_mgr.heap, count, count);
 	for(int i = 0 ; i < count ; i++){
 		const auto a = (*f)(frp, arg0_value.vector_ptr->get_element_ptr()[i], arg2_value);
 		result_vec->get_element_ptr()[i] = a;
@@ -1832,8 +1393,8 @@ static runtime_value_t floyd_funcdef__map_string(floyd_runtime_t* frp, runtime_v
 
 	QUARK_ASSERT(check_map_string_func_type(
 		typeid_t::make_string(),
-		lookup_type(r.type_lookup, func_type),
-		lookup_type(r.type_lookup, context_type)
+		lookup_type(r.value_mgr.type_lookup, func_type),
+		lookup_type(r.value_mgr.type_lookup, context_type)
 	));
 
 	const auto f = reinterpret_cast<MAP_STRING_F>(func.function_ptr);
@@ -1871,10 +1432,10 @@ static VEC_T* floyd_funcdef__map_dag(
 ){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
-	const auto type1 = lookup_type(r.type_lookup, arg1_type);
-	const auto type2 = lookup_type(r.type_lookup, arg2_type);
-	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type(r.type_lookup, context_type)));
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(r.value_mgr.type_lookup, arg1_type);
+	const auto type2 = lookup_type(r.value_mgr.type_lookup, arg2_type);
+	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type(r.value_mgr.type_lookup, context_type)));
 
 	const auto& elements = arg0_value;
 	const auto& e_type = type0.get_vector_element_type();
@@ -1943,7 +1504,7 @@ static VEC_T* floyd_funcdef__map_dag(
 				}
 			}
 
-			auto solved_deps2 = alloc_vec(r.heap, solved_deps.size(), solved_deps.size());
+			auto solved_deps2 = alloc_vec(r.value_mgr.heap, solved_deps.size(), solved_deps.size());
 			for(int i = 0 ; i < solved_deps.size() ; i++){
 				solved_deps2->get_element_ptr()[i] = solved_deps[i];
 			}
@@ -1967,7 +1528,7 @@ static VEC_T* floyd_funcdef__map_dag(
 
 	//??? No need to copy all elements -- could store them directly into the VEC_T.
 	const auto count = complete.size();
-	auto result_vec = alloc_vec(r.heap, count, count);
+	auto result_vec = alloc_vec(r.value_mgr.heap, count, count);
 	for(int i = 0 ; i < count ; i++){
 //		retain_value(r, complete[i], r_type);
 		result_vec->get_element_ptr()[i] = complete[i];
@@ -1991,9 +1552,9 @@ typedef runtime_value_t (*FILTER_F)(floyd_runtime_t* frp, runtime_value_t elemen
 static VEC_T* floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t context, runtime_type_t context_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
-	const auto type1 = lookup_type(r.type_lookup, arg1_type);
-	const auto type2 = lookup_type(r.type_lookup, context_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(r.value_mgr.type_lookup, arg1_type);
+	const auto type2 = lookup_type(r.value_mgr.type_lookup, context_type);
 
 	QUARK_ASSERT(check_filter_func_type(type0, type1, type2));
 
@@ -2020,7 +1581,7 @@ static VEC_T* floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_v
 	}
 
 	const auto count2 = (int32_t)acc.size();
-	auto result_vec = alloc_vec(r.heap, count2, count2);
+	auto result_vec = alloc_vec(r.value_mgr.heap, count2, count2);
 
 	if(count2 > 0){
 		//	Count > 0 required to get address to first element in acc.
@@ -2037,11 +1598,11 @@ typedef runtime_value_t (*REDUCE_F)(floyd_runtime_t* frp, runtime_value_t acc_va
 static VEC_T* floyd_funcdef__reduce(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
-	const auto type1 = lookup_type(r.type_lookup, arg1_type);
-	const auto type2 = lookup_type(r.type_lookup, arg2_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(r.value_mgr.type_lookup, arg1_type);
+	const auto type2 = lookup_type(r.value_mgr.type_lookup, arg2_type);
 
-	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type(r.type_lookup, context_type)));
+	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type(r.value_mgr.type_lookup, context_type)));
 
 	const auto& vec = *arg0_value.vector_ptr;
 	const auto& init = arg1_value;
@@ -2077,9 +1638,9 @@ static VEC_T* floyd_funcdef__stable_sort(
 ){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
-	const auto type1 = lookup_type(r.type_lookup, arg1_type);
-	const auto type2 = lookup_type(r.type_lookup, arg2_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(r.value_mgr.type_lookup, arg1_type);
+	const auto type2 = lookup_type(r.value_mgr.type_lookup, arg2_type);
 
 	QUARK_ASSERT(check_stable_sort_func_type(type0, type1, type2));
 
@@ -2133,8 +1694,8 @@ void floyd_funcdef__print(floyd_runtime_t* frp, runtime_value_t arg0_value, runt
 static VEC_T* floyd_funcdef__push_back(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
-	const auto type1 = lookup_type(r.type_lookup, arg1_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(r.value_mgr.type_lookup, arg1_type);
 	if(type0.is_string()){
 		auto value = from_runtime_string(r, arg0_value);
 
@@ -2145,7 +1706,7 @@ static VEC_T* floyd_funcdef__push_back(floyd_runtime_t* frp, runtime_value_t arg
 		return result2.vector_ptr;
 	}
 	else if(type0.is_vector()){
-		const auto vs = unpack_vec_arg(r.type_lookup, arg0_value, arg0_type);
+		const auto vs = unpack_vec_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 
 		QUARK_ASSERT(type1 == type0.get_vector_element_type());
 
@@ -2209,8 +1770,8 @@ static const VEC_T* floyd_funcdef__replace(floyd_runtime_t* frp, runtime_value_t
 		quark::throw_runtime_error("replace() requires start <= end.");
 	}
 
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
-	const auto type3 = lookup_type(r.type_lookup, arg3_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
+	const auto type3 = lookup_type(r.value_mgr.type_lookup, arg3_type);
 
 	QUARK_ASSERT(type3 == type0);
 
@@ -2224,8 +1785,8 @@ static const VEC_T* floyd_funcdef__replace(floyd_runtime_t* frp, runtime_value_t
 	else if(type0.is_vector()){
 		const auto element_type = type0.get_vector_element_type();
 
-		const auto vec = unpack_vec_arg(r.type_lookup, arg0_value, arg0_type);
-		const auto replace_vec = unpack_vec_arg(r.type_lookup, arg3_value, arg3_type);
+		const auto vec = unpack_vec_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
+		const auto replace_vec = unpack_vec_arg(r.value_mgr.type_lookup, arg3_value, arg3_type);
 
 		auto end2 = std::min(end, vec->get_element_count());
 		auto start2 = std::min(start, end2);
@@ -2235,7 +1796,7 @@ static const VEC_T* floyd_funcdef__replace(floyd_runtime_t* frp, runtime_value_t
 		const auto section3_len = vec->get_element_count() - end2;
 
 		const auto len2 = section1_len + section2_len + section3_len;
-		auto vec2 = alloc_vec(r.heap, len2, len2);
+		auto vec2 = alloc_vec(r.value_mgr.heap, len2, len2);
 		copy_elements(&vec2->get_element_ptr()[0], &vec->get_element_ptr()[0], section1_len);
 		copy_elements(&vec2->get_element_ptr()[section1_len], &replace_vec->get_element_ptr()[0], section2_len);
 		copy_elements(&vec2->get_element_ptr()[section1_len + section2_len], &vec->get_element_ptr()[end2], section3_len);
@@ -2260,7 +1821,7 @@ static JSON_T* floyd_funcdef__parse_json_script(floyd_runtime_t* frp, runtime_va
 	const auto string_s = from_runtime_string(r, string_s0);
 
 	std::pair<json_t, seq_t> result0 = parse_json(seq_t(string_s));
-	auto result = alloc_json(r.heap, result0.first);
+	auto result = alloc_json(r.value_mgr.heap, result0.first);
 	return result;
 }
 
@@ -2282,7 +1843,7 @@ static void floyd_funcdef__send(floyd_runtime_t* frp, runtime_value_t process_id
 static int64_t floyd_funcdef__size(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
 
 	if(type0.is_string()){
 		return get_vec_string_size(arg0_value);
@@ -2304,11 +1865,11 @@ static int64_t floyd_funcdef__size(floyd_runtime_t* frp, runtime_value_t arg0_va
 		}
 	}
 	else if(type0.is_vector()){
-		const auto vs = unpack_vec_arg(r.type_lookup, arg0_value, arg0_type);
+		const auto vs = unpack_vec_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 		return vs->get_element_count();
 	}
 	else if(type0.is_dict()){
-		DICT_T* dict = unpack_dict_arg(r.type_lookup, arg0_value, arg0_type);
+		DICT_T* dict = unpack_dict_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 		return dict->size();
 	}
 	else{
@@ -2324,7 +1885,7 @@ static const VEC_T* floyd_funcdef__subset(floyd_runtime_t* frp, runtime_value_t 
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
 
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
 	if(type0.is_string()){
 		const auto value = from_runtime_string(r, arg0_value);
 
@@ -2339,7 +1900,7 @@ static const VEC_T* floyd_funcdef__subset(floyd_runtime_t* frp, runtime_value_t 
 	}
 	else if(type0.is_vector()){
 		const auto element_type = type0.get_vector_element_type();
-		const auto vec = unpack_vec_arg(r.type_lookup, arg0_value, arg0_type);
+		const auto vec = unpack_vec_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 
 		const auto end2 = std::min(end, vec->get_element_count());
 		const auto start2 = std::min(start, end2);
@@ -2348,7 +1909,7 @@ static const VEC_T* floyd_funcdef__subset(floyd_runtime_t* frp, runtime_value_t 
 		if(len2 >= INT32_MAX){
 			throw std::exception();
 		}
-		VEC_T* vec2 = alloc_vec(r.heap, len2, len2);
+		VEC_T* vec2 = alloc_vec(r.value_mgr.heap, len2, len2);
 		if(is_rc_value(element_type)){
 			for(int i = 0 ; i < len2 ; i++){
 				vec2->get_element_ptr()[i] = vec->get_element_ptr()[start2 + i];
@@ -2375,7 +1936,7 @@ static const VEC_T* floyd_funcdef__subset(floyd_runtime_t* frp, runtime_value_t 
 static runtime_value_t floyd_funcdef__to_pretty_string(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
 	const auto& value = from_runtime_value(r, arg0_value, type0);
 	const auto json = value_to_ast_json(value, json_tags::k_plain);
 	const auto s = json_to_pretty_string(json, 0, pretty_t{ 80, 4 });
@@ -2395,7 +1956,7 @@ static runtime_type_t floyd_host__typeof(floyd_runtime_t* frp, runtime_value_t a
 	auto& r = get_floyd_runtime(frp);
 
 #if DEBUG
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
 	QUARK_ASSERT(type0.check_invariant());
 #endif
 	return arg0_type;
@@ -2407,9 +1968,9 @@ static runtime_type_t floyd_host__typeof(floyd_runtime_t* frp, runtime_value_t a
 static const runtime_value_t floyd_funcdef__update(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
-	const auto type1 = lookup_type(r.type_lookup, arg1_type);
-	const auto type2 = lookup_type(r.type_lookup, arg2_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(r.value_mgr.type_lookup, arg1_type);
+	const auto type2 = lookup_type(r.value_mgr.type_lookup, arg2_type);
 	if(type0.is_string()){
 		QUARK_ASSERT(type1.is_int());
 		QUARK_ASSERT(type2.is_int());
@@ -2432,7 +1993,7 @@ static const runtime_value_t floyd_funcdef__update(floyd_runtime_t* frp, runtime
 	else if(type0.is_vector()){
 		QUARK_ASSERT(type1.is_int());
 
-		const auto vec = unpack_vec_arg(r.type_lookup, arg0_value, arg0_type);
+		const auto vec = unpack_vec_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 		const auto element_type = type0.get_vector_element_type();
 		const auto index = arg1_value.int_value;
 
@@ -2442,7 +2003,7 @@ static const runtime_value_t floyd_funcdef__update(floyd_runtime_t* frp, runtime
 			quark::throw_runtime_error("Position argument to update() is outside collection span.");
 		}
 
-		auto result = alloc_vec(r.heap, vec->get_element_count(), vec->get_element_count());
+		auto result = alloc_vec(r.value_mgr.heap, vec->get_element_count(), vec->get_element_count());
 		auto dest_ptr = result->get_element_ptr();
 		auto source_ptr = vec->get_element_ptr();
 		if(is_rc_value(element_type)){
@@ -2468,11 +2029,11 @@ static const runtime_value_t floyd_funcdef__update(floyd_runtime_t* frp, runtime
 		QUARK_ASSERT(type1.is_string());
 
 		const auto key = from_runtime_string(r, arg1_value);
-		const auto dict = unpack_dict_arg(r.type_lookup, arg0_value, arg0_type);
+		const auto dict = unpack_dict_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 		const auto value_type = type0.get_dict_value_type();
 
 		//	Deep copy dict.
-		auto dict2 = alloc_dict(r.heap);
+		auto dict2 = alloc_dict(r.value_mgr.heap);
 		dict2->get_map_mut() = dict->get_map();
 
 		dict2->get_map_mut().insert_or_assign(key, arg2_value);
@@ -2498,10 +2059,10 @@ static const runtime_value_t floyd_funcdef__update(floyd_runtime_t* frp, runtime
 static JSON_T* floyd_funcdef__to_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
-	const auto type0 = lookup_type(r.type_lookup, arg0_type);
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
 	const auto value0 = from_runtime_value(r, arg0_value, type0);
 	const auto j = value_to_ast_json(value0, json_tags::k_plain);
-	auto result = alloc_json(r.heap, j);
+	auto result = alloc_json(r.value_mgr.heap, j);
 	return result;
 }
 
@@ -2660,10 +2221,31 @@ llvm_execution_engine_t::~llvm_execution_engine_t(){
 
 bool llvm_execution_engine_t::check_invariant() const {
 	QUARK_ASSERT(ee);
-	QUARK_ASSERT(heap.check_invariant());
+	QUARK_ASSERT(value_mgr.check_invariant());
 	return true;
 }
 
+
+
+//??? Do this onces and store in llvm_execution_engine_t.
+static std::vector<std::pair<link_name_t, void*>> collection_native_func_ptrs(llvm::ExecutionEngine& ee, const std::vector<function_def_t>& function_defs){
+	std::vector<std::pair<link_name_t, void*>> result;
+	for(const auto& e: function_defs){
+		const auto f = (void*)ee.getFunctionAddress(e.link_name.s);
+//		auto f = get_function_ptr(runtime, e.link_name);
+		result.push_back({ e.link_name, f });
+	}
+
+	if(k_trace_messaging){
+		QUARK_SCOPED_TRACE("linked functions");
+		for(const auto& e: result){
+			QUARK_TRACE_SS(e.first.s << " = " << (e.second == nullptr ? "nullptr" : ptr_to_hexstring(e.second)));
+		}
+	}
+
+	return result;
+}
+//??? LLVM codegen unlinks functions not called: need to mark functions external.
 
 
 //	Destroys program, can only run it once!
@@ -2691,24 +2273,6 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 	const auto start_time = std::chrono::high_resolution_clock::now();
 
 	auto ee1 = std::shared_ptr<llvm::ExecutionEngine>(exeEng);
-	auto ee2 = std::unique_ptr<llvm_execution_engine_t>(
-		new llvm_execution_engine_t{
-			k_debug_magic,
-			program_breaks.container_def,
-			&instance,
-			ee1,
-			program_breaks.type_lookup,
-			program_breaks.debug_globals,
-			program_breaks.function_defs,
-			{},
-			nullptr,
-			start_time,
-			{},
-			llvm_bind_t{ link_name_t {}, nullptr, typeid_t::make_undefined() },
-			false
-		}
-	);
-	QUARK_ASSERT(ee2->check_invariant());
 
 	auto function_map = register_c_functions(instance.context, program_breaks.type_lookup);
 
@@ -2734,13 +2298,36 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 		std::function<void*(const std::string&)> on_lazy_function_creator2 = lambda;
 
 		//	NOTICE! Patch during finalizeObject() only, then restore!
-		ee2->ee->InstallLazyFunctionCreator(on_lazy_function_creator2);
-		ee2->ee->finalizeObject();
-		ee2->ee->InstallLazyFunctionCreator(nullptr);
+		ee1->InstallLazyFunctionCreator(on_lazy_function_creator2);
+		ee1->finalizeObject();
+		ee1->InstallLazyFunctionCreator(nullptr);
 
 	//	ee2.ee->DisableGVCompilation(false);
 	//	ee2.ee->DisableSymbolSearching(false);
 	}
+
+	auto ee2 = std::unique_ptr<llvm_execution_engine_t>(
+		new llvm_execution_engine_t{
+			k_debug_magic,
+			value_mgr_t{
+				program_breaks.type_lookup,
+				ee1->getDataLayout(),
+				heap_t {},
+				collection_native_func_ptrs(*ee1, program_breaks.function_defs)
+			},
+			program_breaks.container_def,
+			&instance,
+			ee1,
+			program_breaks.debug_globals,
+			program_breaks.function_defs,
+			{},
+			nullptr,
+			start_time,
+			llvm_bind_t{ link_name_t {}, nullptr, typeid_t::make_undefined() },
+			false
+		}
+	);
+	QUARK_ASSERT(ee2->check_invariant());
 
 #if DEBUG
 	check_nulls(*ee2, program_breaks);
@@ -2757,7 +2344,7 @@ std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program
 
 	auto ee = make_engine_no_init(*program_breaks.instance, program_breaks);
 
-	trace_heap(ee->heap);
+	trace_heap(ee->value_mgr.heap);
 
 	//	Make sure linking went well - test that by trying to resolve a function we know exists.
 #if DEBUG
@@ -2783,7 +2370,7 @@ std::unique_ptr<llvm_execution_engine_t> init_program(llvm_ir_program_t& program
 	QUARK_ASSERT(init_result == 667);
 	ee->inited = true;
 
-	trace_heap(ee->heap);
+	trace_heap(ee->value_mgr.heap);
 //	const auto leaks = ee->heap.count_used();
 //	QUARK_ASSERT(leaks == 0);
 

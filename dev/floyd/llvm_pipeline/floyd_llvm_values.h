@@ -199,7 +199,9 @@ VEC_T* unpack_vec_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_v
 DICT_T* unpack_dict_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type);
 
 
+uint64_t get_vec_string_size(runtime_value_t str);
 
+void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint64_t count);
 
 
 
@@ -509,6 +511,7 @@ llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const l
 
 //	Returns the specific LLVM type for the value, like VEC_T* etc.
 llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& runtime_value_reg, const typeid_t& type);
+
 
 
 

@@ -10,6 +10,7 @@
 #define floyd_llvm_runtime_hpp
 
 #include "floyd_llvm_values.h"
+#include "floyd_llvm_value_thunking.h"
 
 #include <string>
 #include <vector>
@@ -62,6 +63,7 @@ struct function_def_t {
 
 
 
+
 ////////////////////////////////		llvm_execution_engine_t
 
 
@@ -81,11 +83,12 @@ struct llvm_execution_engine_t {
 	//	Must be first member, checked by LLVM code.
 	uint64_t debug_magic;
 
+	value_mgr_t value_mgr;
+
 	container_t container_def;
 
 	llvm_instance_t* instance;
 	std::shared_ptr<llvm::ExecutionEngine> ee;
-	llvm_type_lookup type_lookup;
 	symbol_table_t global_symbols;
 	std::vector<function_def_t> function_defs;
 	public: std::vector<std::string> _print_output;
@@ -93,7 +96,7 @@ struct llvm_execution_engine_t {
 	public: runtime_handler_i* _handler;
 
 	public: const std::chrono::time_point<std::chrono::high_resolution_clock> _start_time;
-	public: heap_t heap;
+
 
 	llvm_bind_t main_function;
 	bool inited;
@@ -153,11 +156,20 @@ llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp);
 
 
 
-value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type);
-runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t& value);
+inline value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
+	return from_runtime_value2(runtime.value_mgr, encoded_value, type);
+}
 
-std::string from_runtime_string(const llvm_execution_engine_t& r, runtime_value_t encoded_value);
-runtime_value_t to_runtime_string(llvm_execution_engine_t& r, const std::string& s);
+inline runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t& value){
+	return to_runtime_value2(runtime.value_mgr, value);
+}
+
+inline std::string from_runtime_string(const llvm_execution_engine_t& runtime, runtime_value_t encoded_value){
+	return from_runtime_string2(runtime.value_mgr, encoded_value);
+}
+inline runtime_value_t to_runtime_string(llvm_execution_engine_t& runtime, const std::string& s){
+	return to_runtime_string2(runtime.value_mgr, s);
+}
 
 
 ////////////////////////////////		HIGH LEVEL
