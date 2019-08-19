@@ -528,6 +528,12 @@ bool bc_external_value_t::check_invariant() const{
 
 	QUARK_ASSERT(check_external_deep(_debug_type, this));
 
+	QUARK_ASSERT(_vector_w_external_elements.impl().check_tree());
+	QUARK_ASSERT(_vector_w_inplace_elements.impl().check_tree());
+
+//	QUARK_ASSERT(_dict_w_external_values.impl().check_tree());
+//	QUARK_ASSERT(_dict_w_inplace_values.impl().check_tree());
+
 	const auto encoding = type_to_encoding(_debug_type);
 	if(encoding == value_encoding::k_external__string){
 //				QUARK_ASSERT(_string);
@@ -573,27 +579,38 @@ bool bc_external_value_t::check_invariant() const{
 		QUARK_ASSERT(_dict_w_external_values.size() == 0);
 		QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
 
-//				QUARK_ASSERT(_struct && _struct->check_invariant());
+		for(const auto& e: _struct_members){
+			QUARK_ASSERT(e.check_invariant());
+		}
 	}
 	else if(encoding == value_encoding::k_external__vector){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
-//		QUARK_ASSERT(_vector_w_external_elements.empty());
+
+		for(const auto& e: _vector_w_external_elements){
+			QUARK_ASSERT(e.check_invariant());
+		}
+
 		QUARK_ASSERT(_vector_w_inplace_elements.empty());
 		QUARK_ASSERT(_dict_w_external_values.size() == 0);
 		QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
 	}
+
 	else if(encoding == value_encoding::k_external__vector_pod64){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json == nullptr);
 		QUARK_ASSERT(_typeid_value == typeid_t::make_undefined());
 		QUARK_ASSERT(_struct_members.empty());
 		QUARK_ASSERT(_vector_w_external_elements.empty());
+
 		QUARK_ASSERT(_dict_w_external_values.size() == 0);
 		QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
 	}
+
+	//???	Notice: dicts only have external values right now.
+	//??? remove term "pod64" -- use
 	else if(encoding == value_encoding::k_external__dict){
 		QUARK_ASSERT(_string.empty());
 		QUARK_ASSERT(_json == nullptr);
@@ -601,8 +618,12 @@ bool bc_external_value_t::check_invariant() const{
 		QUARK_ASSERT(_struct_members.empty());
 		QUARK_ASSERT(_vector_w_external_elements.empty());
 		QUARK_ASSERT(_vector_w_inplace_elements.empty());
-//				QUARK_ASSERT(_dict_w_external_values.size() == 0);
-//				QUARK_ASSERT(_dict_w_inplace_values.size() == 0);
+
+		for(const auto& e: _dict_w_external_values){
+			QUARK_ASSERT(e.second.check_invariant());
+		}
+		for(const auto& e: _dict_w_inplace_values){
+		}
 	}
 	else if(encoding == value_encoding::k_external__function){
 		QUARK_ASSERT(_string.empty());

@@ -2747,7 +2747,6 @@ R"___(| MODULE  | TEST     |        DUR|       |
 
 
 
-
 //////////////////////////////////////////		TYPEID - TYPE
 
 
@@ -3928,6 +3927,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [int] construct", "", ""){
 		{ R"___({"one": 1, "two": 2})___" }
 	);
 }
+
 FLOYD_LANG_PROOF("Floyd test suite", "dict [int] construct", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
@@ -5378,8 +5378,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "from_json()", "point_t", ""){
 
 
 
-//////////////////////////////////////////		HIGHER-ORDER INTRINSICSS - map()
-
+//////////////////////////////////////////		HIGHER-ORDER INTRINSICS - map()
 
 
 FLOYD_LANG_PROOF("Floyd test suite", "map()", "map over [int]", ""){
@@ -5431,7 +5430,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map()", "map over [string]", ""){
 	)");
 }
 
-FLOYD_LANG_PROOF	("Floyd test suite", "map()", "context struct", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "map()", "context struct", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
 		struct context_t { int a string b }
@@ -5450,7 +5449,7 @@ FLOYD_LANG_PROOF	("Floyd test suite", "map()", "context struct", ""){
 //??? make sure f() can't be impure!
 
 /*
-//////////////////////////////////////////		HIGHER-ORDER INTRINSICSS - map_string()
+//////////////////////////////////////////		HIGHER-ORDER INTRINSICS - map_string()
 
 
 
@@ -5474,7 +5473,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map_string()", "", ""){
 */
 
 
-//////////////////////////////////////////		HIGHER-ORDER INTRINSICSS - map_dag()
+//////////////////////////////////////////		HIGHER-ORDER INTRINSICS - map_dag()
 
 
 
@@ -5535,8 +5534,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "map_dag()", "complex", ""){
 }
 
 
-
-//////////////////////////////////////////		HIGHER-ORDER INTRINSICSS - reduce()
+//////////////////////////////////////////		HIGHER-ORDER INTRINSICS - reduce()
 
 
 
@@ -5579,7 +5577,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "reduce()", "string reduce([int], string, f
 
 
 
-//////////////////////////////////////////		HIGHER-ORDER INTRINSICSS - filter()
+//////////////////////////////////////////		HIGHER-ORDER INTRINSICS - filter()
 
 
 
@@ -5617,7 +5615,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "filter()", "string filter([int], string, f
 
 
 
-//////////////////////////////////////////		HIGHER-ORDER INTRINSICSS - stable_sort()
+//////////////////////////////////////////		HIGHER-ORDER INTRINSICS - stable_sort()
 
 
 
@@ -6246,44 +6244,6 @@ FLOYD_LANG_PROOF("Parser error", "", "", ""){
 	);
 }
 
-
-
-
-
-
-#if 0
-FLOYD_LANG_PROOF("Analyse all test programs", "", "", ""){
-	int instruction_count_total = 0;
-	int symbol_count_total = 0;
-
-	for(const auto& s: program_recording){
-		try{
-		const auto bc = test_compile_to_bytecode(s, "");
-		int instruction_count_sum = static_cast<int>(bc._globals._instructions.size());
-		int symbol_count_sum = static_cast<int>(bc._globals._symbols.size());
-
-		for(const auto& f: bc._function_defs){
-			if(f._frame_ptr != nullptr){
-				const auto instruction_count = f._frame_ptr->_instructions.size();
-				const auto symbol_count = f._frame_ptr->_symbols.size();
-				instruction_count_sum += instruction_count;
-				symbol_count_sum += symbol_count;
-			}
-		}
-
-		instruction_count_total += instruction_count_sum;
-		symbol_count_total += symbol_count_sum;
-		QUARK_TRACE_SS(instruction_count_sum << "\t" <<symbol_count_sum);
-		}
-		catch(...){
-		}
-	}
-
-	QUARK_TRACE_SS("TOTAL: " << instruction_count_total << "\t" <<symbol_count_total);
-}
-#endif
-
-
 #endif	//	RUN_LANG_BASIC_TESTS
 
 
@@ -6872,7 +6832,6 @@ let json a = {
 
 
 
-
 FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "MAP", "", ""){
 	ut_run_closed_nolib(QUARK_POS, R"(
 
@@ -6884,7 +6843,6 @@ FLOYD_LANG_PROOF("QUICK REFERENCE SNIPPETS", "MAP", "", ""){
 
 	)");
 }
-
 
 
 

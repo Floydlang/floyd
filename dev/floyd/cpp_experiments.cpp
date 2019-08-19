@@ -201,7 +201,7 @@ image make_image(int width, int height){
 		for(auto x = 0 ; x < width ; x++){
 			float s = std::sin(static_cast<float>(M_PI) * 2.0f * (float)x);
 			pixel p(0.5f + s, 0.5f, 0.0f, 1.0f);
-			pixels.push_back(p);
+			pixels = pixels.push_back(p);
 		}
 	}
 	
@@ -246,7 +246,7 @@ void example8(){
 		pixel._red = 1.0f - pixel._red;
 		b._pixels = b._pixels.set(i, pixel);
 	}
-	
+
 	//    Block on worker finishing.
 	image c = future.get();
 	
@@ -265,6 +265,27 @@ QUARK_UNIT_TEST("","", "", ""){
 	example8();
 }
 
+
+/*
+	asserts inside immer:
+
+    relaxed_t* relaxed()
+    {
+        assert(kind() == kind_t::inner);
+        return impl.d.data.inner.relaxed;
+    }
+*/
+
+#if 0
+QUARK_UNIT_TEST("", "", "", ""){
+	immer::vector<int> pixels;
+	pixels = pixels.push_back(600);
+}
+#endif
+
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto a = make_image(700, 700);
+}
 
 static const int k_hardware_thread_count = 8;
 
