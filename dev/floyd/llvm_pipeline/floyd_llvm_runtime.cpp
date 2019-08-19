@@ -1434,7 +1434,7 @@ static function_bind_t floydrt_allocate_struct__make(llvm::LLVMContext& context,
 
 //??? optimize for speed. Most things can be precalculated.
 //??? Generate an add_ref-function for each struct type.
-static const WIDE_RETURN_T floydrt_update_struct_member(floyd_runtime_t* frp, STRUCT_T* s, runtime_type_t struct_type, int64_t member_index, runtime_value_t new_value, runtime_type_t new_value_type){
+static const STRUCT_T* floydrt_update_struct_member(floyd_runtime_t* frp, STRUCT_T* s, runtime_type_t struct_type, int64_t member_index, runtime_value_t new_value, runtime_type_t new_value_type){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(s != nullptr);
 	QUARK_ASSERT(member_index != -1);
@@ -1480,7 +1480,7 @@ static const WIDE_RETURN_T floydrt_update_struct_member(floyd_runtime_t* frp, ST
 		}
 	}
 
-	return make_wide_return_structptr(struct_ptr);
+	return struct_ptr;
 }
 static function_bind_t floydrt_update_struct_member__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
@@ -1634,7 +1634,7 @@ static void floyd_funcdef__assert(floyd_runtime_t* frp, runtime_value_t arg){
 }
 
 
-static WIDE_RETURN_T floyd_host_function__erase(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
+static DICT_T* floyd_host_function__erase(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_lookup, arg0_type);
@@ -1661,10 +1661,10 @@ static WIDE_RETURN_T floyd_host_function__erase(floyd_runtime_t* frp, runtime_va
 		}
 	}
 
-	return make_wide_return_dict(dict2);
+	return dict2;
 }
 
-static WIDE_RETURN_T floyd_host_function__get_keys(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+static VEC_T* floyd_host_function__get_keys(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_lookup, arg0_type);
@@ -1684,7 +1684,7 @@ static WIDE_RETURN_T floyd_host_function__get_keys(floyd_runtime_t* frp, runtime
 		result_vec->get_element_ptr()[index] = key;
 		index++;
 	}
-	return make_wide_return_vec(result_vec);
+	return result_vec;
 }
 
 static uint32_t floyd_funcdef__exists(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
@@ -1795,10 +1795,10 @@ static runtime_value_t floyd_funcdef__from_json(floyd_runtime_t* frp, JSON_T* js
 
 
 
-typedef WIDE_RETURN_T (*MAP_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value);
+typedef runtime_value_t (*MAP_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value);
 
 //	[R] map([E] elements, func R (E e, C context) f, C context)
-static WIDE_RETURN_T floyd_funcdef__map(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+static VEC_T* floyd_funcdef__map(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_lookup, arg0_type);
@@ -1815,10 +1815,10 @@ static WIDE_RETURN_T floyd_funcdef__map(floyd_runtime_t* frp, runtime_value_t ar
 	const auto count = arg0_value.vector_ptr->get_element_count();
 	auto result_vec = alloc_vec(r.heap, count, count);
 	for(int i = 0 ; i < count ; i++){
-		const auto wide_result1 = (*f)(frp, arg0_value.vector_ptr->get_element_ptr()[i], arg2_value);
-		result_vec->get_element_ptr()[i] = wide_result1.a;
+		const auto a = (*f)(frp, arg0_value.vector_ptr->get_element_ptr()[i], arg2_value);
+		result_vec->get_element_ptr()[i] = a;
 	}
-	return make_wide_return_vec(result_vec);
+	return result_vec;
 }
 
 
@@ -1856,9 +1856,9 @@ static runtime_value_t floyd_funcdef__map_string(floyd_runtime_t* frp, runtime_v
 
 
 
-typedef WIDE_RETURN_T (*map_dag_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value, runtime_value_t context);
+typedef runtime_value_t (*map_dag_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value, runtime_value_t context);
 
-static WIDE_RETURN_T floyd_funcdef__map_dag(
+static VEC_T* floyd_funcdef__map_dag(
 	floyd_runtime_t* frp,
 	runtime_value_t arg0_value,
 	runtime_type_t arg0_type,
@@ -1949,14 +1949,12 @@ static WIDE_RETURN_T floyd_funcdef__map_dag(
 			}
 			runtime_value_t solved_deps3 { .vector_ptr = solved_deps2 };
 
-			const auto wide_result = (*f2)(frp, e, solved_deps3, context);
+			const auto result1 = (*f2)(frp, e, solved_deps3, context);
 
 			//	Release just the vec, **not the elements**. The elements are aliases for complete-vector.
 			if(dec_rc(solved_deps2->alloc) == 0){
 				dispose_vec(*solved_deps2);
 			}
-
-			const auto result1 = wide_result.a;
 
 			const auto parent_index = parents2->get_element_ptr()[element_index].int_value;
 			if(parent_index != -1){
@@ -1982,7 +1980,7 @@ static WIDE_RETURN_T floyd_funcdef__map_dag(
 	QUARK_TRACE(json_to_pretty_string(debug));
 #endif
 
-	return make_wide_return_vec(result_vec);
+	return result_vec;
 }
 
 
