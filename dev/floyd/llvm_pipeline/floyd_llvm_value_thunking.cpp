@@ -48,26 +48,26 @@ static runtime_value_t to_runtime_string0(heap_t& heap, const std::string& s){
 }
 
 
-QUARK_UNIT_TEST("VEC_T", "", "", ""){
+QUARK_UNIT_TEST("SIMPLE_VECTOR_T", "", "", ""){
 	heap_t heap;
 	const auto a = to_runtime_string0(heap, "hello, world!");
 
-	QUARK_UT_VERIFY(a.vector_ptr->get_element_count() == 13);
+	QUARK_UT_VERIFY(a.simple_vector_ptr->get_element_count() == 13);
 
 	//	int64_t	'hello, w'
-//	QUARK_UT_VERIFY(a.vector_ptr->operator[](0).int_value == 0x68656c6c6f2c2077);
-	QUARK_UT_VERIFY(a.vector_ptr->operator[](0).int_value == 0x77202c6f6c6c6568);
+//	QUARK_UT_VERIFY(a.simple_vector_ptr->operator[](0).int_value == 0x68656c6c6f2c2077);
+	QUARK_UT_VERIFY(a.simple_vector_ptr->operator[](0).int_value == 0x77202c6f6c6c6568);
 
 	//int_value	int64_t	'orld!\0\0\0'
-//	QUARK_UT_VERIFY(a.vector_ptr->operator[](1).int_value == 0x6f726c6421000000);
-	QUARK_UT_VERIFY(a.vector_ptr->operator[](1).int_value == 0x00000021646c726f);
+//	QUARK_UT_VERIFY(a.simple_vector_ptr->operator[](1).int_value == 0x6f726c6421000000);
+	QUARK_UT_VERIFY(a.simple_vector_ptr->operator[](1).int_value == 0x00000021646c726f);
 }
 
 
 
 static std::string from_runtime_string0(runtime_value_t encoded_value){
 	QUARK_ASSERT(encoded_value.check_invariant());
-	QUARK_ASSERT(encoded_value.vector_ptr != nullptr);
+	QUARK_ASSERT(encoded_value.string_ptr != nullptr);
 
 	const size_t size = get_vec_string_size(encoded_value);
 
@@ -75,8 +75,8 @@ static std::string from_runtime_string0(runtime_value_t encoded_value){
 
 	//	Read 8 characters at a time.
 	size_t char_pos = 0;
-	const auto begin0 = encoded_value.vector_ptr->begin();
-	const auto end0 = encoded_value.vector_ptr->end();
+	const auto begin0 = encoded_value.string_ptr->begin();
+	const auto end0 = encoded_value.string_ptr->end();
 	for(auto it = begin0 ; it != end0 ; it++){
 		const size_t copy_chars = std::min(size - char_pos, (size_t)8);
 		const uint64_t element = it->int_value;
@@ -92,7 +92,7 @@ static std::string from_runtime_string0(runtime_value_t encoded_value){
 	return result;
 }
 
-QUARK_UNIT_TEST("VEC_T", "", "", ""){
+QUARK_UNIT_TEST("SIMPLE_VECTOR_T", "", "", ""){
 	heap_t heap;
 	const auto a = to_runtime_string0(heap, "hello, world!");
 
@@ -196,7 +196,7 @@ static value_t from_runtime_vector(const value_mgr_t& value_mgr, const runtime_v
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto element_type = type.get_vector_element_type();
-	const auto vec = encoded_value.vector_ptr;
+	const auto vec = encoded_value.simple_vector_ptr;
 
 	std::vector<value_t> elements;
 	const auto count = vec->get_element_count();
@@ -436,10 +436,10 @@ void retain_value(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t&
 
 	if(is_rc_value(type)){
 		if(type.is_string()){
-			inc_rc(value.vector_ptr->alloc);
+			inc_rc(value.string_ptr->alloc);
 		}
 		else if(type.is_vector()){
-			inc_rc(value.vector_ptr->alloc);
+			inc_rc(value.simple_vector_ptr->alloc);
 		}
 		else if(type.is_dict()){
 			inc_rc(value.dict_ptr->alloc);
@@ -463,10 +463,10 @@ void release_deep(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t&
 
 	if(is_rc_value(type)){
 		if(type.is_string()){
-			release_vec_deep(value_mgr, value.vector_ptr, type);
+			release_vec_deep(value_mgr, value.string_ptr, type);
 		}
 		else if(type.is_vector()){
-			release_vec_deep(value_mgr, value.vector_ptr, type);
+			release_vec_deep(value_mgr, value.simple_vector_ptr, type);
 		}
 		else if(type.is_dict()){
 			release_dict_deep(value_mgr, value.dict_ptr, type);
@@ -504,7 +504,7 @@ void release_dict_deep(value_mgr_t& value_mgr, DICT_T* dict, const typeid_t& typ
 	}
 }
 
-void release_vec_deep(value_mgr_t& value_mgr, VEC_T* vec, const typeid_t& type){
+void release_vec_deep(value_mgr_t& value_mgr, SIMPLE_VECTOR_T* vec, const typeid_t& type){
 	QUARK_ASSERT(value_mgr.check_invariant());
 	QUARK_ASSERT(vec != nullptr);
 	QUARK_ASSERT(type.is_string() || type.is_vector());
