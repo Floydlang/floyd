@@ -214,8 +214,8 @@ static llvm_function_def_t map_function_arguments_internal(builder_t& builder, c
 
 	const auto ret = function_type.get_function_return();
 
-	//??? Notice: we always resolve the return type in semantic analysis -- no need to use WIDE_RETURN and provide a dynamic type.
-	llvm::Type* return_type = ret.is_any() ? builder.acc.wide_return_type : touch_get_exact_llvm_type(builder, ret);
+	// Notice: we always resolve the return type in semantic analysis -- no need to use WIDE_RETURN and provide a dynamic type. We use int64 here and cast it when calling.
+	llvm::Type* return_type = ret.is_any() ? llvm::Type::getInt64Ty(builder.context) : touch_get_exact_llvm_type(builder, ret);
 
 	const auto args = function_type.get_function_args();
 	std::vector<llvm_arg_mapping_t> arg_results;

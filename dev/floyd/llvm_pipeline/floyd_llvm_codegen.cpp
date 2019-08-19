@@ -1322,7 +1322,7 @@ static llvm::Value* generate_call_expression(llvm_function_generator_t& gen_acc,
 		}
 	}
 	QUARK_ASSERT(arg_regs.size() == llvm_mapping.args.size());
-	auto result0 = builder.CreateCall(callee0_reg, arg_regs, callee_function_type.get_function_return().is_void() ? "" : "");
+	auto result0_reg = builder.CreateCall(callee0_reg, arg_regs, callee_function_type.get_function_return().is_void() ? "" : "");
 
 	for(const auto& m: destroy){
 		generate_release(gen_acc, *m.first, m.second);
@@ -1330,19 +1330,17 @@ static llvm::Value* generate_call_expression(llvm_function_generator_t& gen_acc,
 	//	Release callee?
 
 
-	//	If the return type is dynamic, cast the returned int64 to the correct type.
+	//	If the return type is dynamic, cast the returned runtime_value_t to the correct type.
 	//	It must be retained already.
-	llvm::Value* result = result0;
+	llvm::Value* result_reg = result0_reg;
 	if(callee_function_type.get_function_return().is_any()){
-		//??? Notice: we always resolve the return type in semantic analysis -- no need to use WIDE_RETURN and provide a dynamic type.
-		auto wide_return_a_reg = builder.CreateExtractValue(result, { static_cast<int>(WIDE_RETURN_MEMBERS::a) });
-		result = generate_cast_from_runtime_value(gen_acc.gen, *wide_return_a_reg, resolved_call_return_type);
+		result_reg = generate_cast_from_runtime_value(gen_acc.gen, *result0_reg, resolved_call_return_type);
 	}
 	else{
 	}
 
 	QUARK_ASSERT(gen_acc.check_invariant());
-	return result;
+	return result_reg;
 }
 
 
