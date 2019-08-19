@@ -2443,9 +2443,9 @@ FLOYD_LANG_PROOF("Floyd test suite", "benchmark", "", ""){
 		QUARK_POS,
 		R"___(
 
-			for(run in 0 ... 20){
+			for(instance in 0 ... 3){
 				let dur = benchmark {
-					for(e in 0 ... 50){
+					for(e in 0 ... 2){
 						let a = "hello, world!"
 					}
 				}

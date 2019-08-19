@@ -1988,7 +1988,7 @@ static VEC_T* floyd_funcdef__map_dag(
 typedef runtime_value_t (*FILTER_F)(floyd_runtime_t* frp, runtime_value_t element_value, runtime_value_t context);
 
 //	[E] filter([E] elements, func bool (E e, C context) f, C context)
-static WIDE_RETURN_T floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t context, runtime_type_t context_type){
+static VEC_T* floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t context, runtime_type_t context_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_lookup, arg0_type);
@@ -2026,7 +2026,7 @@ static WIDE_RETURN_T floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t
 		//	Count > 0 required to get address to first element in acc.
 		copy_elements(result_vec->get_element_ptr(), &acc[0], count2);
 	}
-	return make_wide_return_vec(result_vec);
+	return result_vec;
 }
 
 
@@ -2034,7 +2034,7 @@ static WIDE_RETURN_T floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t
 typedef runtime_value_t (*REDUCE_F)(floyd_runtime_t* frp, runtime_value_t acc_value, runtime_value_t element_value, runtime_value_t context);
 
 //	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
-static WIDE_RETURN_T floyd_funcdef__reduce(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
+static VEC_T* floyd_funcdef__reduce(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_lookup, arg0_type);
@@ -2058,7 +2058,7 @@ static WIDE_RETURN_T floyd_funcdef__reduce(floyd_runtime_t* frp, runtime_value_t
 		release_deep(r, acc, type1);
 		acc = acc2;
 	}
-	return make_wide_return_2x64(acc, {} );
+	return acc.vector_ptr;
 }
 
 
@@ -2066,7 +2066,7 @@ static WIDE_RETURN_T floyd_funcdef__reduce(floyd_runtime_t* frp, runtime_value_t
 typedef uint8_t (*stable_sort_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value, runtime_value_t arg2_value);
 
 //	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
-static WIDE_RETURN_T floyd_funcdef__stable_sort(
+static VEC_T* floyd_funcdef__stable_sort(
 	floyd_runtime_t* frp,
 	runtime_value_t arg0_value,
 	runtime_type_t arg0_type,
@@ -2110,7 +2110,7 @@ static WIDE_RETURN_T floyd_funcdef__stable_sort(
 	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
 
 	const auto result = to_runtime_value(r, value_t::make_vector_value(type0, mutate_inplace_elements));
-	return make_wide_return_vec(result.vector_ptr);
+	return result.vector_ptr;
 }
 
 
@@ -2130,7 +2130,7 @@ void floyd_funcdef__print(floyd_runtime_t* frp, runtime_value_t arg0_value, runt
 
 
 
-static WIDE_RETURN_T floyd_funcdef__push_back(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
+static VEC_T* floyd_funcdef__push_back(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_lookup, arg0_type);
@@ -2142,7 +2142,7 @@ static WIDE_RETURN_T floyd_funcdef__push_back(floyd_runtime_t* frp, runtime_valu
 
 		value.push_back((char)arg1_value.int_value);
 		const auto result2 = to_runtime_string(r, value);
-		return make_wide_return_1x64(result2);
+		return result2.vector_ptr;
 	}
 	else if(type0.is_vector()){
 		const auto vs = unpack_vec_arg(r.type_lookup, arg0_value, arg0_type);
@@ -2172,7 +2172,7 @@ static WIDE_RETURN_T floyd_funcdef__push_back(floyd_runtime_t* frp, runtime_valu
 			}
 			dest_ptr[vs->get_element_count()] = element;
 		}
-		return make_wide_return_vec(v2);
+		return v2;
 	}
 	else{
 		//	No other types allowed.
@@ -2199,7 +2199,7 @@ static std::string floyd_funcdef__replace__string(llvm_execution_engine_t& frp, 
 	return result;
 }
 
-static const WIDE_RETURN_T floyd_funcdef__replace(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
+static const VEC_T* floyd_funcdef__replace(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
 	auto& r = get_floyd_runtime(frp);
 
 	if(start < 0 || end < 0){
@@ -2219,7 +2219,7 @@ static const WIDE_RETURN_T floyd_funcdef__replace(floyd_runtime_t* frp, runtime_
 		const auto replace = from_runtime_string(r, arg3_value);
 		auto ret = floyd_funcdef__replace__string(r, s, (std::size_t)start, (std::size_t)end, replace);
 		const auto result2 = to_runtime_string(r, ret);
-		return make_wide_return_1x64(result2);
+		return result2.vector_ptr;
 	}
 	else if(type0.is_vector()){
 		const auto element_type = type0.get_vector_element_type();
@@ -2246,7 +2246,7 @@ static const WIDE_RETURN_T floyd_funcdef__replace(floyd_runtime_t* frp, runtime_
 			}
 		}
 
-		return make_wide_return_vec(vec2);
+		return vec2;
 	}
 	else{
 		//	No other types allowed.
@@ -2317,7 +2317,7 @@ static int64_t floyd_funcdef__size(floyd_runtime_t* frp, runtime_value_t arg0_va
 	}
 }
 
-static const WIDE_RETURN_T floyd_funcdef__subset(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
+static const VEC_T* floyd_funcdef__subset(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
 	auto& r = get_floyd_runtime(frp);
 
 	if(start < 0 || end < 0){
@@ -2335,7 +2335,7 @@ static const WIDE_RETURN_T floyd_funcdef__subset(floyd_runtime_t* frp, runtime_v
 
 		const auto s = std::string(&value[start2], &value[start2 + len2]);
 		const auto result = to_runtime_string(r, s);
-		return make_wide_return_1x64(result);
+		return result.vector_ptr;
 	}
 	else if(type0.is_vector()){
 		const auto element_type = type0.get_vector_element_type();
@@ -2360,7 +2360,7 @@ static const WIDE_RETURN_T floyd_funcdef__subset(floyd_runtime_t* frp, runtime_v
 				vec2->get_element_ptr()[i] = vec->get_element_ptr()[start2 + i];
 			}
 		}
-		return make_wide_return_vec(vec2);
+		return vec2;
 	}
 	else{
 		//	No other types allowed.
@@ -2404,7 +2404,7 @@ static runtime_type_t floyd_host__typeof(floyd_runtime_t* frp, runtime_value_t a
 
 
 //??? Split into string/vector/dict versions.
-static const WIDE_RETURN_T floyd_funcdef__update(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+static const runtime_value_t floyd_funcdef__update(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.type_lookup, arg0_type);
@@ -2427,7 +2427,7 @@ static const WIDE_RETURN_T floyd_funcdef__update(floyd_runtime_t* frp, runtime_v
 		auto result = str;
 		result[index] = new_char;
 		const auto result2 = to_runtime_string(r, result);
-		return make_wide_return_1x64(result2);
+		return result2;
 	}
 	else if(type0.is_vector()){
 		QUARK_ASSERT(type1.is_int());
@@ -2462,7 +2462,7 @@ static const WIDE_RETURN_T floyd_funcdef__update(floyd_runtime_t* frp, runtime_v
 			dest_ptr[index] = arg2_value;
 		}
 
-		return make_wide_return_vec(result);
+		return runtime_value_t{ .vector_ptr = result };
 	}
 	else if(type0.is_dict()){
 		QUARK_ASSERT(type1.is_string());
@@ -2483,7 +2483,7 @@ static const WIDE_RETURN_T floyd_funcdef__update(floyd_runtime_t* frp, runtime_v
 			}
 		}
 
-		return make_wide_return_dict(dict2);
+		return runtime_value_t{ .dict_ptr = dict2 };
 	}
 	else if(type0.is_struct()){
 		QUARK_ASSERT(false);
