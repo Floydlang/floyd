@@ -133,6 +133,7 @@ llvm_pipeline/floyd_llvm_runtime.cpp
 llvm_pipeline/floyd_llvm_types.cpp
 llvm_pipeline/floyd_llvm.cpp
 llvm_pipeline/floyd_llvm_values.cpp
+llvm_pipeline/floyd_llvm_value_thunking.cpp
 parse_tree_to_ast_conv.cpp
 parts/file_handling.cpp
 #parts/cacheinfo.cpp
