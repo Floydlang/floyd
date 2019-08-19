@@ -66,8 +66,10 @@ set(CMAKE_CXX_FLAGS "-D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACR
 
 
 set( FLOYD_SOURCES
+semantic_ast.cpp
 benchmark_basics.cpp
-bytecode_interpreter/bytecode_corecalls.cpp
+#bytecode_interpreter/bytecode_corecalls.cpp
+bytecode_interpreter/bytecode_intrinsics.cpp
 bytecode_interpreter/bytecode_corelib.cpp
 bytecode_interpreter/bytecode_generator.cpp
 bytecode_interpreter/bytecode_helpers.cpp
@@ -129,8 +131,11 @@ llvm_pipeline/floyd_llvm_corelib.cpp
 llvm_pipeline/floyd_llvm_helpers.cpp
 llvm_pipeline/floyd_llvm_runtime.cpp
 llvm_pipeline/floyd_llvm_types.cpp
+llvm_pipeline/floyd_llvm.cpp
+llvm_pipeline/floyd_llvm_values.cpp
 parse_tree_to_ast_conv.cpp
 parts/file_handling.cpp
+#parts/cacheinfo.cpp
 parts/hardware_caps.cpp
 parts/immutable_ref_value.cpp
 parts/json_support.cpp
