@@ -344,17 +344,16 @@ void dispose_vec(VEC_T& vec);
 
 	Embeds immer::vector<runtime_value_t> in data_a, data_b, data_c, data_d.
 */
-typedef immer::vector<runtime_value_t> VEC_HAMT_IMPL_T;
 
 struct VEC_HAMT_T {
 	~VEC_HAMT_T();
 	bool check_invariant() const;
 
-	const VEC_HAMT_IMPL_T& get_vecref() const {
-		return *reinterpret_cast<const VEC_HAMT_IMPL_T*>(&alloc.data_a);
+	const immer::vector<runtime_value_t>& get_vecref() const {
+		return *reinterpret_cast<const immer::vector<runtime_value_t>*>(&alloc.data_a);
 	}
-	VEC_HAMT_IMPL_T& get_vecref_mut(){
-		return *reinterpret_cast<VEC_HAMT_IMPL_T*>(&alloc.data_a);
+	immer::vector<runtime_value_t>& get_vecref_mut(){
+		return *reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc.data_a);
 	}
 
 	inline uint64_t get_element_count() const{
@@ -364,13 +363,13 @@ struct VEC_HAMT_T {
 		return vecref.size();
 	}
 
-	inline VEC_HAMT_IMPL_T::const_iterator begin() const {
+	inline immer::vector<runtime_value_t>::const_iterator begin() const {
 		QUARK_ASSERT(check_invariant());
 
 		const auto vecref = get_vecref();
 		return vecref.begin();
 	}
-	inline VEC_HAMT_IMPL_T::const_iterator end() const {
+	inline immer::vector<runtime_value_t>::const_iterator end() const {
 		QUARK_ASSERT(check_invariant());
 
 		const auto vecref = get_vecref();
@@ -399,7 +398,7 @@ struct VEC_HAMT_T {
 	heap_alloc_64_t alloc;
 };
 
-VEC_HAMT_T* alloc_vec_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count);
+VEC_HAMT_T* alloc_vec_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count);
 void dispose_vec_hamt(VEC_HAMT_T& vec);
 
 

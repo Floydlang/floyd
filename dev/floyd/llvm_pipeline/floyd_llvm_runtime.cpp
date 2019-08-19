@@ -1183,7 +1183,7 @@ std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, c
 
 
 
-static void floyd_funcdef__assert(floyd_runtime_t* frp, runtime_value_t arg){
+static void floyd_llvm_intrinsic__assert(floyd_runtime_t* frp, runtime_value_t arg){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(arg.bool_value == 0 || arg.bool_value == 1);
 
@@ -1195,7 +1195,7 @@ static void floyd_funcdef__assert(floyd_runtime_t* frp, runtime_value_t arg){
 }
 
 
-static DICT_T* floyd_host_function__erase(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
+static DICT_T* floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1225,7 +1225,7 @@ static DICT_T* floyd_host_function__erase(floyd_runtime_t* frp, runtime_value_t 
 	return dict2;
 }
 
-static VEC_T* floyd_host_function__get_keys(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+static VEC_T* floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1248,7 +1248,7 @@ static VEC_T* floyd_host_function__get_keys(floyd_runtime_t* frp, runtime_value_
 	return result_vec;
 }
 
-static uint32_t floyd_funcdef__exists(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
+static uint32_t floyd_llvm_intrinsic__exists(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1267,7 +1267,7 @@ static uint32_t floyd_funcdef__exists(floyd_runtime_t* frp, runtime_value_t arg0
 
 
 
-static int64_t floyd_funcdef__find(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, const runtime_value_t arg1_value, runtime_type_t arg1_type){
+static int64_t floyd_llvm_intrinsic__find(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, const runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1309,7 +1309,7 @@ static int64_t floyd_funcdef__find(floyd_runtime_t* frp, runtime_value_t arg0_va
 	}
 }
 
-static int64_t floyd_host_function__get_json_type(floyd_runtime_t* frp, JSON_T* json_ptr){
+static int64_t floyd_llvm_intrinsic__get_json_type(floyd_runtime_t* frp, JSON_T* json_ptr){
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
 	QUARK_ASSERT(json_ptr != nullptr);
@@ -1320,7 +1320,7 @@ static int64_t floyd_host_function__get_json_type(floyd_runtime_t* frp, JSON_T* 
 }
 
 
-static runtime_value_t floyd_funcdef__generate_json_script(floyd_runtime_t* frp, JSON_T* json_ptr){
+static runtime_value_t floyd_llvm_intrinsic__generate_json_script(floyd_runtime_t* frp, JSON_T* json_ptr){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(json_ptr != nullptr);
 
@@ -1330,7 +1330,7 @@ static runtime_value_t floyd_funcdef__generate_json_script(floyd_runtime_t* frp,
 	return to_runtime_string(r, s);
 }
 
-static runtime_value_t floyd_funcdef__from_json(floyd_runtime_t* frp, JSON_T* json_ptr, runtime_type_t target_type){
+static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, JSON_T* json_ptr, runtime_type_t target_type){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(json_ptr != nullptr);
 
@@ -1359,7 +1359,7 @@ static runtime_value_t floyd_funcdef__from_json(floyd_runtime_t* frp, JSON_T* js
 typedef runtime_value_t (*MAP_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value);
 
 //	[R] map([E] elements, func R (E e, C context) f, C context)
-static VEC_T* floyd_funcdef__map(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+static VEC_T* floyd_llvm_intrinsic__map(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1388,7 +1388,7 @@ static VEC_T* floyd_funcdef__map(floyd_runtime_t* frp, runtime_value_t arg0_valu
 
 typedef runtime_value_t (*MAP_STRING_F)(floyd_runtime_t* frp, runtime_value_t s, runtime_value_t context);
 
-static runtime_value_t floyd_funcdef__map_string(floyd_runtime_t* frp, runtime_value_t input_string0, runtime_value_t func, runtime_type_t func_type, runtime_value_t context, runtime_type_t context_type){
+static runtime_value_t floyd_llvm_intrinsic__map_string(floyd_runtime_t* frp, runtime_value_t input_string0, runtime_value_t func, runtime_type_t func_type, runtime_value_t context, runtime_type_t context_type){
 	auto& r = get_floyd_runtime(frp);
 
 	QUARK_ASSERT(check_map_string_func_type(
@@ -1419,7 +1419,7 @@ static runtime_value_t floyd_funcdef__map_string(floyd_runtime_t* frp, runtime_v
 
 typedef runtime_value_t (*map_dag_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value, runtime_value_t context);
 
-static VEC_T* floyd_funcdef__map_dag(
+static VEC_T* floyd_llvm_intrinsic__map_dag(
 	floyd_runtime_t* frp,
 	runtime_value_t arg0_value,
 	runtime_type_t arg0_type,
@@ -1549,7 +1549,7 @@ static VEC_T* floyd_funcdef__map_dag(
 typedef runtime_value_t (*FILTER_F)(floyd_runtime_t* frp, runtime_value_t element_value, runtime_value_t context);
 
 //	[E] filter([E] elements, func bool (E e, C context) f, C context)
-static VEC_T* floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t context, runtime_type_t context_type){
+static VEC_T* floyd_llvm_intrinsic__filter(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t context, runtime_type_t context_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1595,7 +1595,7 @@ static VEC_T* floyd_funcdef__filter(floyd_runtime_t* frp, runtime_value_t arg0_v
 typedef runtime_value_t (*REDUCE_F)(floyd_runtime_t* frp, runtime_value_t acc_value, runtime_value_t element_value, runtime_value_t context);
 
 //	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
-static VEC_T* floyd_funcdef__reduce(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
+static VEC_T* floyd_llvm_intrinsic__reduce(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1627,7 +1627,7 @@ static VEC_T* floyd_funcdef__reduce(floyd_runtime_t* frp, runtime_value_t arg0_v
 typedef uint8_t (*stable_sort_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value, runtime_value_t arg2_value);
 
 //	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
-static VEC_T* floyd_funcdef__stable_sort(
+static VEC_T* floyd_llvm_intrinsic__stable_sort(
 	floyd_runtime_t* frp,
 	runtime_value_t arg0_value,
 	runtime_type_t arg0_type,
@@ -1680,7 +1680,7 @@ static VEC_T* floyd_funcdef__stable_sort(
 
 
 
-void floyd_funcdef__print(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto s = gen_to_string(r, arg0_value, arg0_type);
@@ -1691,7 +1691,7 @@ void floyd_funcdef__print(floyd_runtime_t* frp, runtime_value_t arg0_value, runt
 
 
 
-static VEC_T* floyd_funcdef__push_back(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
+static VEC_T* floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1743,7 +1743,7 @@ static VEC_T* floyd_funcdef__push_back(floyd_runtime_t* frp, runtime_value_t arg
 
 
 
-static std::string floyd_funcdef__replace__string(llvm_execution_engine_t& frp, const std::string& s, std::size_t start, std::size_t end, const std::string& replace){
+static std::string floyd_llvm_intrinsic__replace__string(llvm_execution_engine_t& frp, const std::string& s, std::size_t start, std::size_t end, const std::string& replace){
 	auto s_len = s.size();
 	auto replace_len = replace.size();
 
@@ -1760,7 +1760,7 @@ static std::string floyd_funcdef__replace__string(llvm_execution_engine_t& frp, 
 	return result;
 }
 
-static const VEC_T* floyd_funcdef__replace(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
+static const VEC_T* floyd_llvm_intrinsic__replace(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
 	auto& r = get_floyd_runtime(frp);
 
 	if(start < 0 || end < 0){
@@ -1778,7 +1778,7 @@ static const VEC_T* floyd_funcdef__replace(floyd_runtime_t* frp, runtime_value_t
 	if(type0.is_string()){
 		const auto s = from_runtime_string(r, arg0_value);
 		const auto replace = from_runtime_string(r, arg3_value);
-		auto ret = floyd_funcdef__replace__string(r, s, (std::size_t)start, (std::size_t)end, replace);
+		auto ret = floyd_llvm_intrinsic__replace__string(r, s, (std::size_t)start, (std::size_t)end, replace);
 		const auto result2 = to_runtime_string(r, ret);
 		return result2.vector_ptr;
 	}
@@ -1815,7 +1815,7 @@ static const VEC_T* floyd_funcdef__replace(floyd_runtime_t* frp, runtime_value_t
 	}
 }
 
-static JSON_T* floyd_funcdef__parse_json_script(floyd_runtime_t* frp, runtime_value_t string_s0){
+static JSON_T* floyd_llvm_intrinsic__parse_json_script(floyd_runtime_t* frp, runtime_value_t string_s0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto string_s = from_runtime_string(r, string_s0);
@@ -1825,7 +1825,7 @@ static JSON_T* floyd_funcdef__parse_json_script(floyd_runtime_t* frp, runtime_va
 	return result;
 }
 
-static void floyd_funcdef__send(floyd_runtime_t* frp, runtime_value_t process_id0, const JSON_T* message_json_ptr){
+static void floyd_llvm_intrinsic__send(floyd_runtime_t* frp, runtime_value_t process_id0, const JSON_T* message_json_ptr){
 	auto& r = get_floyd_runtime(frp);
 
 	QUARK_ASSERT(message_json_ptr != nullptr);
@@ -1840,7 +1840,7 @@ static void floyd_funcdef__send(floyd_runtime_t* frp, runtime_value_t process_id
 	r._handler->on_send(process_id, message_json);
 }
 
-static int64_t floyd_funcdef__size(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+static int64_t floyd_llvm_intrinsic__size(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1878,7 +1878,7 @@ static int64_t floyd_funcdef__size(floyd_runtime_t* frp, runtime_value_t arg0_va
 	}
 }
 
-static const VEC_T* floyd_funcdef__subset(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
+static const VEC_T* floyd_llvm_intrinsic__subset(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
 	auto& r = get_floyd_runtime(frp);
 
 	if(start < 0 || end < 0){
@@ -1933,7 +1933,7 @@ static const VEC_T* floyd_funcdef__subset(floyd_runtime_t* frp, runtime_value_t 
 
 
 
-static runtime_value_t floyd_funcdef__to_pretty_string(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+static runtime_value_t floyd_llvm_intrinsic__to_pretty_string(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1943,7 +1943,7 @@ static runtime_value_t floyd_funcdef__to_pretty_string(floyd_runtime_t* frp, run
 	return to_runtime_string(r, s);
 }
 
-static runtime_value_t floyd_host__to_string(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+static runtime_value_t floyd_llvm_intrinsic__to_string(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto s = gen_to_string(r, arg0_value, arg0_type);
@@ -1952,7 +1952,7 @@ static runtime_value_t floyd_host__to_string(floyd_runtime_t* frp, runtime_value
 
 
 
-static runtime_type_t floyd_host__typeof(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+static runtime_type_t floyd_llvm_intrinsic__typeof(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
 #if DEBUG
@@ -1965,7 +1965,7 @@ static runtime_type_t floyd_host__typeof(floyd_runtime_t* frp, runtime_value_t a
 
 
 //??? Split into string/vector/dict versions.
-static const runtime_value_t floyd_funcdef__update(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -2056,7 +2056,7 @@ static const runtime_value_t floyd_funcdef__update(floyd_runtime_t* frp, runtime
 	throw std::exception();
 }
 
-static JSON_T* floyd_funcdef__to_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+static JSON_T* floyd_llvm_intrinsic__to_json(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -2085,46 +2085,46 @@ static std::map<std::string, void*> get_intrinsic_c_function_ptrs(){
 
 		////////////////////////////////		INTRINSICS
 
-		{ "assert", reinterpret_cast<void *>(&floyd_funcdef__assert) },
-		{ "to_string", reinterpret_cast<void *>(&floyd_host__to_string) },
-		{ "to_pretty_string", reinterpret_cast<void *>(&floyd_funcdef__to_pretty_string) },
-		{ "typeof", reinterpret_cast<void *>(&floyd_host__typeof) },
+		{ "assert", reinterpret_cast<void *>(&floyd_llvm_intrinsic__assert) },
+		{ "to_string", reinterpret_cast<void *>(&floyd_llvm_intrinsic__to_string) },
+		{ "to_pretty_string", reinterpret_cast<void *>(&floyd_llvm_intrinsic__to_pretty_string) },
+		{ "typeof", reinterpret_cast<void *>(&floyd_llvm_intrinsic__typeof) },
 
-		{ "update", reinterpret_cast<void *>(&floyd_funcdef__update) },
-		{ "size", reinterpret_cast<void *>(&floyd_funcdef__size) },
-		{ "find", reinterpret_cast<void *>(&floyd_funcdef__find) },
-		{ "exists", reinterpret_cast<void *>(&floyd_funcdef__exists) },
-		{ "erase", reinterpret_cast<void *>(&floyd_host_function__erase) },
-		{ "get_keys", reinterpret_cast<void *>(&floyd_host_function__get_keys) },
-		{ "push_back", reinterpret_cast<void *>(&floyd_funcdef__push_back) },
-		{ "subset", reinterpret_cast<void *>(&floyd_funcdef__subset) },
-		{ "replace", reinterpret_cast<void *>(&floyd_funcdef__replace) },
+		{ "update", reinterpret_cast<void *>(&floyd_llvm_intrinsic__update) },
+		{ "size", reinterpret_cast<void *>(&floyd_llvm_intrinsic__size) },
+		{ "find", reinterpret_cast<void *>(&floyd_llvm_intrinsic__find) },
+		{ "exists", reinterpret_cast<void *>(&floyd_llvm_intrinsic__exists) },
+		{ "erase", reinterpret_cast<void *>(&floyd_llvm_intrinsic__erase) },
+		{ "get_keys", reinterpret_cast<void *>(&floyd_llvm_intrinsic__get_keys) },
+		{ "push_back", reinterpret_cast<void *>(&floyd_llvm_intrinsic__push_back) },
+		{ "subset", reinterpret_cast<void *>(&floyd_llvm_intrinsic__subset) },
+		{ "replace", reinterpret_cast<void *>(&floyd_llvm_intrinsic__replace) },
 
-		{ "generate_json_script", reinterpret_cast<void *>(&floyd_funcdef__generate_json_script) },
-		{ "from_json", reinterpret_cast<void *>(&floyd_funcdef__from_json) },
-		{ "parse_json_script", reinterpret_cast<void *>(&floyd_funcdef__parse_json_script) },
-		{ "to_json", reinterpret_cast<void *>(&floyd_funcdef__to_json) },
+		{ "generate_json_script", reinterpret_cast<void *>(&floyd_llvm_intrinsic__generate_json_script) },
+		{ "from_json", reinterpret_cast<void *>(&floyd_llvm_intrinsic__from_json) },
+		{ "parse_json_script", reinterpret_cast<void *>(&floyd_llvm_intrinsic__parse_json_script) },
+		{ "to_json", reinterpret_cast<void *>(&floyd_llvm_intrinsic__to_json) },
 
-		{ "get_json_type", reinterpret_cast<void *>(&floyd_host_function__get_json_type) },
+		{ "get_json_type", reinterpret_cast<void *>(&floyd_llvm_intrinsic__get_json_type) },
 
-		{ "map", reinterpret_cast<void *>(&floyd_funcdef__map) },
-		{ "map_string", reinterpret_cast<void *>(&floyd_funcdef__map_string) },
-		{ "map_dag", reinterpret_cast<void *>(&floyd_funcdef__map_dag) },
-		{ "filter", reinterpret_cast<void *>(&floyd_funcdef__filter) },
-		{ "reduce", reinterpret_cast<void *>(&floyd_funcdef__reduce) },
-		{ "stable_sort", reinterpret_cast<void *>(&floyd_funcdef__stable_sort) },
+		{ "map", reinterpret_cast<void *>(&floyd_llvm_intrinsic__map) },
+		{ "map_string", reinterpret_cast<void *>(&floyd_llvm_intrinsic__map_string) },
+		{ "map_dag", reinterpret_cast<void *>(&floyd_llvm_intrinsic__map_dag) },
+		{ "filter", reinterpret_cast<void *>(&floyd_llvm_intrinsic__filter) },
+		{ "reduce", reinterpret_cast<void *>(&floyd_llvm_intrinsic__reduce) },
+		{ "stable_sort", reinterpret_cast<void *>(&floyd_llvm_intrinsic__stable_sort) },
 
-		{ "print", reinterpret_cast<void *>(&floyd_funcdef__print) },
-		{ "send", reinterpret_cast<void *>(&floyd_funcdef__send) },
+		{ "print", reinterpret_cast<void *>(&floyd_llvm_intrinsic__print) },
+		{ "send", reinterpret_cast<void *>(&floyd_llvm_intrinsic__send) },
 
 /*
-		{ "bw_not", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
-		{ "bw_and", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
-		{ "bw_or", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
-		{ "bw_xor", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
-		{ "bw_shift_left", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
-		{ "bw_shift_right", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
-		{ "bw_shift_right_arithmetic", reinterpret_cast<void *>(&floyd_funcdef__dummy) },
+		{ "bw_not", reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy) },
+		{ "bw_and", reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy) },
+		{ "bw_or", reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy) },
+		{ "bw_xor", reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy) },
+		{ "bw_shift_left", reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy) },
+		{ "bw_shift_right", reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy) },
+		{ "bw_shift_right_arithmetic", reinterpret_cast<void *>(&floyd_llvm_intrinsic__dummy) },
 */
 	};
 	return host_functions_map;
@@ -2187,7 +2187,7 @@ static std::map<link_name_t, void*> register_c_functions(llvm::LLVMContext& cont
 	return function_map;
 }
 
-static int64_t floyd_funcdef__dummy(floyd_runtime_t* frp){
+static int64_t floyd_llvm_intrinsic__dummy(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
 	quark::throw_runtime_error("Attempting to calling unimplemented function.");
@@ -2289,7 +2289,7 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 				return it->second;
 			}
 			else{
-				return (void*)&floyd_funcdef__dummy;
+				return (void*)&floyd_llvm_intrinsic__dummy;
 //				throw std::exception();
 			}
 

@@ -521,14 +521,18 @@ VEC_HAMT_T::~VEC_HAMT_T(){
 
 bool VEC_HAMT_T::check_invariant() const {
 	QUARK_ASSERT(this->alloc.check_invariant());
+
+	const auto& vec = get_vecref();
+	QUARK_ASSERT(vec.impl().shift == 5);
+	QUARK_ASSERT(vec.impl().check_tree());
 	return true;
 }
 
-VEC_HAMT_T* alloc_vec_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count){
+VEC_HAMT_T* alloc_vec_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count){
 	QUARK_ASSERT(heap.check_invariant());
+	QUARK_ASSERT(elements != nullptr);
 
-	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count);
-	alloc->data_a = element_count;
+	heap_alloc_64_t* alloc = alloc_64(heap, 0);
 	alloc->debug_info[0] = 'V';
 	alloc->debug_info[1] = 'H';
 	alloc->debug_info[2] = 'A';
@@ -536,6 +540,10 @@ VEC_HAMT_T* alloc_vec_hamt(heap_t& heap, uint64_t allocation_count, uint64_t ele
 	alloc->debug_info[4] = 'T';
 
 	auto vec = reinterpret_cast<VEC_HAMT_T*>(alloc);
+
+	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data_a);
+    auto vec2 = new (buffer_ptr) immer::vector<runtime_value_t>(&elements[0], &elements[element_count]);
+	QUARK_ASSERT(vec2 == buffer_ptr);
 
 	QUARK_ASSERT(vec->check_invariant());
 	QUARK_ASSERT(heap.check_invariant());
@@ -545,6 +553,10 @@ VEC_HAMT_T* alloc_vec_hamt(heap_t& heap, uint64_t allocation_count, uint64_t ele
 
 void dispose_vec_hamt(VEC_HAMT_T& vec){
 	QUARK_ASSERT(vec.check_invariant());
+
+	auto vec2 = &vec.get_vecref_mut();
+
+	vec2->~vector<runtime_value_t>();
 
 	dispose_alloc(vec.alloc);
 	QUARK_ASSERT(vec.alloc.heap64->check_invariant());
@@ -563,8 +575,14 @@ QUARK_UNIT_TEST("VEC_HAMT_T", "", "", ""){
 	heap_t heap;
 	detect_leaks(heap);
 
-	VEC_HAMT_T* v = alloc_vec_hamt(heap, 3, 3);
+	const runtime_value_t a[] = { make_runtime_int(1000), make_runtime_int(2000), make_runtime_int(3000) };
+	VEC_HAMT_T* v = alloc_vec_hamt(heap, a, 3);
 	QUARK_UT_VERIFY(v != nullptr);
+
+	QUARK_UT_VERIFY(v->get_element_count() == 3);
+	QUARK_UT_VERIFY(v->operator[](0).int_value == 1000);
+	QUARK_UT_VERIFY(v->operator[](1).int_value == 2000);
+	QUARK_UT_VERIFY(v->operator[](2).int_value == 3000);
 
 	if(dec_rc(v->alloc) == 0){
 		dispose_vec_hamt(*v);
@@ -573,6 +591,7 @@ QUARK_UNIT_TEST("VEC_HAMT_T", "", "", ""){
 	QUARK_UT_VERIFY(heap.check_invariant());
 	detect_leaks(heap);
 }
+
 
 
 
