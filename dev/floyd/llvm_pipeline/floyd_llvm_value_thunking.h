@@ -40,6 +40,17 @@ runtime_value_t to_runtime_value2(value_mgr_t& value_mgr, const value_t& value);
 value_t from_runtime_value2(const value_mgr_t& value_mgr, const runtime_value_t encoded_value, const typeid_t& type);
 
 
+
+
+
+
+void retain_value(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t& type);
+void release_deep(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t& type);
+void release_dict_deep(value_mgr_t& value_mgr, DICT_T* dict, const typeid_t& type);
+void release_vec_deep(value_mgr_t& value_mgr, VEC_T* vec, const typeid_t& type);
+void release_struct_deep(value_mgr_t& value_mgr, STRUCT_T* s, const typeid_t& type);
+
+
 }	// floyd
 
 #endif /* floyd_llvm_value_thunking_hpp */

@@ -38,14 +38,6 @@ namespace floyd {
 static const bool k_trace_messaging = false;
 
 
-static void release_dict_deep(llvm_execution_engine_t& runtime, DICT_T* dict, const typeid_t& type);
-static void release_vec_deep(llvm_execution_engine_t& runtime, VEC_T* vec, const typeid_t& type);
-static void release_struct_deep(llvm_execution_engine_t& runtime, STRUCT_T* s, const typeid_t& type);
-static void retain_value(llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type);
-static void release_deep(llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type);
-
-
-
 
 
 /*
@@ -189,7 +181,7 @@ int64_t llvm_call_main(llvm_execution_engine_t& ee, const llvm_bind_t& f, const 
 		const auto main_args3 = value_t::make_vector_value(typeid_t::make_string(), main_args2);
 		const auto main_args4 = to_runtime_value(ee, main_args3);
 		const auto main_result_int = (*f2)(make_runtime_ptr(&ee), main_args4);
-		release_deep(ee, main_args4, typeid_t::make_vector(typeid_t::make_string()));
+		release_deep(ee.value_mgr, main_args4, typeid_t::make_vector(typeid_t::make_string()));
 		return main_result_int;
 	}
 	else if(f.type == get_main_signature_no_arg_impure() || f.type == get_main_signature_no_arg_pure()){
@@ -223,126 +215,6 @@ static std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value
 	const auto a = to_compact_string2(value);
 	return a;
 }
-
-
-
-static void retain_value(llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type){
-	if(is_rc_value(type)){
-		if(type.is_string()){
-			inc_rc(value.vector_ptr->alloc);
-		}
-		else if(type.is_vector()){
-			inc_rc(value.vector_ptr->alloc);
-		}
-		else if(type.is_dict()){
-			inc_rc(value.dict_ptr->alloc);
-		}
-		else if(type.is_json()){
-			inc_rc(value.json_ptr->alloc);
-		}
-		else if(type.is_struct()){
-			inc_rc(value.struct_ptr->alloc);
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-}
-
-static void release_deep(llvm_execution_engine_t& runtime, runtime_value_t value, const typeid_t& type){
-	if(is_rc_value(type)){
-		if(type.is_string()){
-			release_vec_deep(runtime, value.vector_ptr, type);
-		}
-		else if(type.is_vector()){
-			release_vec_deep(runtime, value.vector_ptr, type);
-		}
-		else if(type.is_dict()){
-			release_dict_deep(runtime, value.dict_ptr, type);
-		}
-		else if(type.is_json()){
-			if(dec_rc(value.json_ptr->alloc) == 0){
-				dispose_json(*value.json_ptr);
-			}
-		}
-		else if(type.is_struct()){
-			release_struct_deep(runtime, value.struct_ptr, type);
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-	}
-}
-
-static void release_dict_deep(llvm_execution_engine_t& runtime, DICT_T* dict, const typeid_t& type){
-	QUARK_ASSERT(dict != nullptr);
-	QUARK_ASSERT(type.is_dict());
-
-	if(dec_rc(dict->alloc) == 0){
-
-		//	Release all elements.
-		const auto element_type = type.get_dict_value_type();
-		if(is_rc_value(element_type)){
-			auto m = dict->get_map();
-			for(const auto& e: m){
-				release_deep(runtime, e.second, element_type);
-			}
-		}
-		dispose_dict(*dict);
-	}
-}
-
-static void release_vec_deep(llvm_execution_engine_t& runtime, VEC_T* vec, const typeid_t& type){
-	QUARK_ASSERT(vec != nullptr);
-	QUARK_ASSERT(type.is_string() || type.is_vector());
-
-	if(dec_rc(vec->alloc) == 0){
-		if(type.is_string()){
-			//	String has no elements to release.
-		}
-		else if(type.is_vector()){
-			//	Release all elements.
-			const auto element_type = type.get_vector_element_type();
-			if(is_rc_value(element_type)){
-				auto element_ptr = vec->get_element_ptr();
-				for(int i = 0 ; i < vec->get_element_count() ; i++){
-					const auto& element = element_ptr[i];
-					release_deep(runtime, element, element_type);
-				}
-			}
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
-		dispose_vec(*vec);
-	}
-}
-
-
-static void release_struct_deep(llvm_execution_engine_t& runtime, STRUCT_T* s, const typeid_t& type){
-	QUARK_ASSERT(s != nullptr);
-
-	if(dec_rc(s->alloc) == 0){
-		const auto& struct_def = type.get_struct();
-		const auto struct_base_ptr = s->get_data_ptr();
-
-		const llvm::DataLayout& data_layout = runtime.ee->getDataLayout();
-		auto t2 = get_exact_struct_type(runtime.value_mgr.type_lookup, type);
-		const llvm::StructLayout* layout = data_layout.getStructLayout(t2);
-
-		int member_index = 0;
-		for(const auto& e: struct_def._members){
-			if(is_rc_value(e._type)){
-				const auto offset = layout->getElementOffset(member_index);
-				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
-				release_deep(runtime, *member_ptr, e._type);
-			}
-			member_index++;
-		}
-		dispose_struct(*s);
-	}
-}
-
 
 
 
@@ -392,7 +264,7 @@ static void floydrt_release_vec(floyd_runtime_t* frp, VEC_T* vec, runtime_type_t
 	const auto type = lookup_type(r.value_mgr.type_lookup, type0);
 	QUARK_ASSERT(type.is_string() || type.is_vector());
 
-	release_vec_deep(r, vec, type);
+	release_vec_deep(r.value_mgr, vec, type);
 }
 
 static function_bind_t floydrt_release_vec__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -450,7 +322,7 @@ static void floydrt_release_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_typ
 	const auto type = lookup_type(r.value_mgr.type_lookup, type0);
 	QUARK_ASSERT(type.is_dict());
 
-	release_dict_deep(r, dict, type);
+	release_dict_deep(r.value_mgr, dict, type);
 }
 
 static function_bind_t floydrt_release_dict__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -577,7 +449,7 @@ static void floydrt_release_struct(floyd_runtime_t* frp, STRUCT_T* v, runtime_ty
 	QUARK_ASSERT(type.is_struct());
 
 	QUARK_ASSERT(v != nullptr);
-	release_struct_deep(r, v, type);
+	release_struct_deep(r.value_mgr, v, type);
 }
 
 static function_bind_t floydrt_release_struct__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -674,11 +546,11 @@ static VEC_T* floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime_type_t t
 
 		if(is_rc_value(element_type)){
 			for(int i = 0 ; i < lhs->get_element_count() ; i++){
-				retain_value(r, lhs_ptr[i], element_type);
+				retain_value(r.value_mgr, lhs_ptr[i], element_type);
 				dest_ptr[i] = lhs_ptr[i];
 			}
 			for(int i = 0 ; i < rhs->get_element_count() ; i++){
-				retain_value(r, rhs_ptr[i], element_type);
+				retain_value(r.value_mgr, rhs_ptr[i], element_type);
 				dest_ptr2[i] = rhs_ptr[i];
 			}
 		}
@@ -1035,7 +907,7 @@ static const STRUCT_T* floydrt_update_struct_member(floyd_runtime_t* frp, STRUCT
 			if(is_rc_value(e._type)){
 				const auto offset = layout->getElementOffset(i);
 				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
-				retain_value(r, *member_ptr, e._type);
+				retain_value(r.value_mgr, *member_ptr, e._type);
 			}
 			i++;
 		}
@@ -1218,7 +1090,7 @@ static DICT_T* floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime_value_t
 
 	if(is_rc_value(value_type)){
 		for(auto& e: m){
-			retain_value(r, e.second, value_type);
+			retain_value(r.value_mgr, e.second, value_type);
 		}
 	}
 
@@ -1573,7 +1445,7 @@ static VEC_T* floyd_llvm_intrinsic__filter(floyd_runtime_t* frp, runtime_value_t
 			acc.push_back(element_value);
 
 			if(is_rc_value(e_element_type)){
-				retain_value(r, element_value, e_element_type);
+				retain_value(r.value_mgr, element_value, e_element_type);
 			}
 		}
 		else{
@@ -1610,13 +1482,13 @@ static VEC_T* floyd_llvm_intrinsic__reduce(floyd_runtime_t* frp, runtime_value_t
 
 	auto count = vec.get_element_count();
 	runtime_value_t acc = init;
-	retain_value(r, acc, type1);
+	retain_value(r.value_mgr, acc, type1);
 
 	for(int i = 0 ; i < count ; i++){
 		const auto element_value = vec.get_element_ptr()[i];
 		const auto acc2 = (*f)(frp, acc, element_value, context);
 
-		release_deep(r, acc, type1);
+		release_deep(r.value_mgr, acc, type1);
 		acc = acc2;
 	}
 	return acc.vector_ptr;
@@ -1719,10 +1591,10 @@ static VEC_T* floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, runtime_valu
 		auto source_ptr = vs->get_element_ptr();
 
 		if(is_rc_value(element_type)){
-			retain_value(r, element, element_type);
+			retain_value(r.value_mgr, element, element_type);
 
 			for(int i = 0 ; i < vs->get_element_count() ; i++){
-				retain_value(r, source_ptr[i], element_type);
+				retain_value(r.value_mgr, source_ptr[i], element_type);
 				dest_ptr[i] = source_ptr[i];
 			}
 			dest_ptr[vs->get_element_count()] = element;
@@ -1803,7 +1675,7 @@ static const VEC_T* floyd_llvm_intrinsic__replace(floyd_runtime_t* frp, runtime_
 
 		if(is_rc_value(element_type)){
 			for(int i = 0 ; i < len2 ; i++){
-				retain_value(r, vec2->get_element_ptr()[i], element_type);
+				retain_value(r.value_mgr, vec2->get_element_ptr()[i], element_type);
 			}
 		}
 
@@ -1913,7 +1785,7 @@ static const VEC_T* floyd_llvm_intrinsic__subset(floyd_runtime_t* frp, runtime_v
 		if(is_rc_value(element_type)){
 			for(int i = 0 ; i < len2 ; i++){
 				vec2->get_element_ptr()[i] = vec->get_element_ptr()[start2 + i];
-				retain_value(r, vec2->get_element_ptr()[i], element_type);
+				retain_value(r.value_mgr, vec2->get_element_ptr()[i], element_type);
 			}
 		}
 		else{
@@ -2007,13 +1879,13 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 		auto dest_ptr = result->get_element_ptr();
 		auto source_ptr = vec->get_element_ptr();
 		if(is_rc_value(element_type)){
-			retain_value(r, arg2_value, element_type);
+			retain_value(r.value_mgr, arg2_value, element_type);
 			for(int i = 0 ; i < result->get_element_count() ; i++){
-				retain_value(r, source_ptr[i], element_type);
+				retain_value(r.value_mgr, source_ptr[i], element_type);
 				dest_ptr[i] = source_ptr[i];
 			}
 
-			release_vec_deep(r, dest_ptr[index].vector_ptr, element_type);
+			release_vec_deep(r.value_mgr, dest_ptr[index].vector_ptr, element_type);
 			dest_ptr[index] = arg2_value;
 		}
 		else{
@@ -2040,7 +1912,7 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 
 		if(is_rc_value(value_type)){
 			for(const auto& e: dict2->get_map()){
-				retain_value(r, e.second, value_type);
+				retain_value(r.value_mgr, e.second, value_type);
 			}
 		}
 

@@ -416,4 +416,149 @@ value_t from_runtime_value2(const value_mgr_t& value_mgr, const runtime_value_t 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+void retain_value(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t& type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	if(is_rc_value(type)){
+		if(type.is_string()){
+			inc_rc(value.vector_ptr->alloc);
+		}
+		else if(type.is_vector()){
+			inc_rc(value.vector_ptr->alloc);
+		}
+		else if(type.is_dict()){
+			inc_rc(value.dict_ptr->alloc);
+		}
+		else if(type.is_json()){
+			inc_rc(value.json_ptr->alloc);
+		}
+		else if(type.is_struct()){
+			inc_rc(value.struct_ptr->alloc);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+}
+
+void release_deep(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t& type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	if(is_rc_value(type)){
+		if(type.is_string()){
+			release_vec_deep(value_mgr, value.vector_ptr, type);
+		}
+		else if(type.is_vector()){
+			release_vec_deep(value_mgr, value.vector_ptr, type);
+		}
+		else if(type.is_dict()){
+			release_dict_deep(value_mgr, value.dict_ptr, type);
+		}
+		else if(type.is_json()){
+			if(dec_rc(value.json_ptr->alloc) == 0){
+				dispose_json(*value.json_ptr);
+			}
+		}
+		else if(type.is_struct()){
+			release_struct_deep(value_mgr, value.struct_ptr, type);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+}
+
+void release_dict_deep(value_mgr_t& value_mgr, DICT_T* dict, const typeid_t& type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(dict != nullptr);
+	QUARK_ASSERT(type.is_dict());
+
+	if(dec_rc(dict->alloc) == 0){
+
+		//	Release all elements.
+		const auto element_type = type.get_dict_value_type();
+		if(is_rc_value(element_type)){
+			auto m = dict->get_map();
+			for(const auto& e: m){
+				release_deep(value_mgr, e.second, element_type);
+			}
+		}
+		dispose_dict(*dict);
+	}
+}
+
+void release_vec_deep(value_mgr_t& value_mgr, VEC_T* vec, const typeid_t& type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(vec != nullptr);
+	QUARK_ASSERT(type.is_string() || type.is_vector());
+
+	if(dec_rc(vec->alloc) == 0){
+		if(type.is_string()){
+			//	String has no elements to release.
+		}
+		else if(type.is_vector()){
+			//	Release all elements.
+			const auto element_type = type.get_vector_element_type();
+			if(is_rc_value(element_type)){
+				auto element_ptr = vec->get_element_ptr();
+				for(int i = 0 ; i < vec->get_element_count() ; i++){
+					const auto& element = element_ptr[i];
+					release_deep(value_mgr, element, element_type);
+				}
+			}
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+		dispose_vec(*vec);
+	}
+}
+
+
+void release_struct_deep(value_mgr_t& value_mgr, STRUCT_T* s, const typeid_t& type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(s != nullptr);
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(type.is_struct());
+
+	if(dec_rc(s->alloc) == 0){
+		const auto& struct_def = type.get_struct();
+		const auto struct_base_ptr = s->get_data_ptr();
+
+		auto t2 = get_exact_struct_type(value_mgr.type_lookup, type);
+		const llvm::StructLayout* layout = value_mgr.data_layout.getStructLayout(t2);
+
+		int member_index = 0;
+		for(const auto& e: struct_def._members){
+			if(is_rc_value(e._type)){
+				const auto offset = layout->getElementOffset(member_index);
+				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
+				release_deep(value_mgr, *member_ptr, e._type);
+			}
+			member_index++;
+		}
+		dispose_struct(*s);
+	}
+}
+
+
+
+
 }	// floyd
