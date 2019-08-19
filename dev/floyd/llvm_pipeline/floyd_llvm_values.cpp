@@ -333,8 +333,16 @@ runtime_value_t make_runtime_int(int64_t value){
 	return { .int_value = value };
 }
 
+runtime_value_t make_runtime_double(double value){
+	return { .double_value = value };
+}
+
 runtime_value_t make_runtime_typeid(runtime_type_t type){
 	return { .typeid_itype = type };
+}
+
+runtime_value_t make_runtime_string(VEC_T* string_ptr){
+	return { .vector_ptr = string_ptr };
 }
 
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
@@ -451,9 +459,6 @@ void dispose_vec(VEC_T& vec){
 
 
 
-WIDE_RETURN_T make_wide_return_vec(VEC_T* vec){
-	return make_wide_return_2x64(runtime_value_t{.vector_ptr = vec}, make_runtime_int(0));
-}
 
 
 
@@ -534,11 +539,6 @@ void dispose_vec_hamt(VEC_HAMT_T& vec){
 
 
 
-WIDE_RETURN_T make_wide_return_vec_hamt(VEC_HAMT_T* vec){
-	return make_wide_return_2x64(runtime_value_t{.vector_hamt_ptr = vec}, make_runtime_int(0));
-}
-
-
 
 
 QUARK_UNIT_TEST("VEC_HAMT_T", "", "", ""){
@@ -615,17 +615,6 @@ void dispose_dict(DICT_T& dict){
 }
 
 
-
-WIDE_RETURN_T make_wide_return_dict(DICT_T* dict){
-	runtime_value_t tmp;
-	tmp.dict_ptr=dict;
-	return make_wide_return_2x64(tmp, make_runtime_int(0));
-	//return make_wide_return_2x64({ .dict_ptr = dict }, { .int_value = 0 });
-}
-
-DICT_T* wide_return_to_dict(const WIDE_RETURN_T& ret){
-	return ret.a.dict_ptr;
-}
 
 
 
@@ -719,15 +708,6 @@ void dispose_struct(STRUCT_T& s){
 
 
 
-WIDE_RETURN_T make_wide_return_structptr(STRUCT_T* s){
-	return WIDE_RETURN_T{ { .struct_ptr = s }, make_runtime_int(0) };
-}
-
-STRUCT_T* wide_return_to_struct(const WIDE_RETURN_T& ret){
-	return ret.a.struct_ptr;
-}
-
-
 
 
 
@@ -765,7 +745,7 @@ runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type){
 		}
 		runtime_value_t operator()(const typeid_t::double_t& e) const{
 			const auto temp = *static_cast<const double*>(value_ptr);
-			return runtime_value_t{ .double_value = temp };
+			return make_runtime_double(temp);
 		}
 		runtime_value_t operator()(const typeid_t::string_t& e) const{
 			return *static_cast<const runtime_value_t*>(value_ptr);

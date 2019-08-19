@@ -186,7 +186,9 @@ runtime_value_t make_blank_runtime_value();
 
 runtime_value_t make_runtime_bool(bool value);
 runtime_value_t make_runtime_int(int64_t value);
+runtime_value_t make_runtime_double(double value);
 runtime_value_t make_runtime_typeid(runtime_type_t type);
+runtime_value_t make_runtime_string(VEC_T* string_ptr);
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr);
 runtime_value_t make_runtime_vector(VEC_T* vector_ptr);
 runtime_value_t make_runtime_vector_hamt(VEC_HAMT_T* vector_hamt_ptr);
@@ -225,11 +227,11 @@ The non-first-class types are:
 
 
 
+
 ////////////////////////////////		WIDE_RETURN_T
 
 
-//	Used to return structs and bigger chunks of data from LLVM functions.
-//	Can only be two members in LLVM struct, each a word wide.
+//	LLVM has a limitation on return values. It can only be two members in LLVM struct, each a word wide.
 
 
 //	### Also use for arguments, not only return.
@@ -244,10 +246,6 @@ enum class WIDE_RETURN_MEMBERS {
 };
 
 WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
-inline WIDE_RETURN_T make_wide_return_1x64(runtime_value_t a){
-	return make_wide_return_2x64(a, make_blank_runtime_value());
-}
-WIDE_RETURN_T make_wide_return_structptr(STRUCT_T* s);
 
 
 
@@ -326,7 +324,6 @@ struct VEC_T {
 VEC_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count);
 void dispose_vec(VEC_T& vec);
 
-WIDE_RETURN_T make_wide_return_vec(VEC_T* vec);
 
 
 
@@ -403,7 +400,6 @@ struct VEC_HAMT_T {
 VEC_HAMT_T* alloc_vec_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count);
 void dispose_vec_hamt(VEC_HAMT_T& vec);
 
-WIDE_RETURN_T make_wide_return_vec_hamt(VEC_HAMT_T* vec);
 
 
 
@@ -436,10 +432,6 @@ struct DICT_T {
 
 DICT_T* alloc_dict(heap_t& heap);
 void dispose_dict(DICT_T& vec);
-
-WIDE_RETURN_T make_wide_return_dict(DICT_T* dict);
-DICT_T* wide_return_to_dict(const WIDE_RETURN_T& ret);
-
 
 
 
@@ -500,8 +492,6 @@ struct STRUCT_T {
 STRUCT_T* alloc_struct(heap_t& heap, std::size_t size);
 void dispose_struct(STRUCT_T& v);
 
-WIDE_RETURN_T make_wide_return_struct(STRUCT_T* v);
-STRUCT_T* wide_return_to_struct(const WIDE_RETURN_T& ret);
 
 
 

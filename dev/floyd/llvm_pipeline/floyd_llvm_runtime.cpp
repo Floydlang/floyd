@@ -228,7 +228,7 @@ static runtime_value_t to_runtime_string0(heap_t& heap, const std::string& s){
 	const auto count = static_cast<uint64_t>(s.size());
 	const auto allocation_count = size_to_allocation_blocks(s.size());
 	auto v = alloc_vec(heap, allocation_count, count);
-	auto result = runtime_value_t{ .vector_ptr = v };
+	auto result = make_runtime_string(v);
 
 	size_t char_pos = 0;
 	int element_index = 0;
@@ -370,7 +370,7 @@ static runtime_value_t to_runtime_vector(llvm_execution_engine_t& r, const value
 
 	const auto count = v0.size();
 	auto v = alloc_vec(r.heap, count, count);
-	auto result = runtime_value_t{ .vector_ptr = v };
+	auto result = make_runtime_string(v);
 
 	const auto element_type = value.get_type().get_vector_element_type();
 	auto p = v->get_element_ptr();
@@ -468,7 +468,7 @@ runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t
 			return make_runtime_int(value.get_int_value());
 		}
 		runtime_value_t operator()(const typeid_t::double_t& e) const{
-			return { .double_value = value.get_double_value() };
+			return make_runtime_double(value.get_double_value());
 		}
 		runtime_value_t operator()(const typeid_t::string_t& e) const{
 			return to_runtime_string(runtime, value.get_string_value());
@@ -1096,7 +1096,7 @@ static VEC_T* floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime_type_t t
 
 	const auto type0 = lookup_type(r.type_lookup, type);
 	if(type0.is_string()){
-		const auto result = from_runtime_string(r, runtime_value_t{ .vector_ptr = lhs }) + from_runtime_string(r, runtime_value_t{ .vector_ptr = rhs } );
+		const auto result = from_runtime_string(r, make_runtime_string(lhs)) + from_runtime_string(r, make_runtime_string(rhs) );
 		return to_runtime_string(r, result).vector_ptr;
 	}
 	else{
@@ -1947,7 +1947,7 @@ static VEC_T* floyd_funcdef__map_dag(
 			for(int i = 0 ; i < solved_deps.size() ; i++){
 				solved_deps2->get_element_ptr()[i] = solved_deps[i];
 			}
-			runtime_value_t solved_deps3 { .vector_ptr = solved_deps2 };
+			runtime_value_t solved_deps3 = make_runtime_vector(solved_deps2);
 
 			const auto result1 = (*f2)(frp, e, solved_deps3, context);
 
@@ -2462,7 +2462,7 @@ static const runtime_value_t floyd_funcdef__update(floyd_runtime_t* frp, runtime
 			dest_ptr[index] = arg2_value;
 		}
 
-		return runtime_value_t{ .vector_ptr = result };
+		return make_runtime_vector(result);
 	}
 	else if(type0.is_dict()){
 		QUARK_ASSERT(type1.is_string());

@@ -1334,6 +1334,7 @@ static llvm::Value* generate_call_expression(llvm_function_generator_t& gen_acc,
 	//	It must be retained already.
 	llvm::Value* result = result0;
 	if(callee_function_type.get_function_return().is_any()){
+		//??? Notice: we always resolve the return type in semantic analysis -- no need to use WIDE_RETURN and provide a dynamic type.
 		auto wide_return_a_reg = builder.CreateExtractValue(result, { static_cast<int>(WIDE_RETURN_MEMBERS::a) });
 		result = generate_cast_from_runtime_value(gen_acc.gen, *wide_return_a_reg, resolved_call_return_type);
 	}

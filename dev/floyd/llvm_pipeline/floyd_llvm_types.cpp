@@ -213,6 +213,8 @@ static llvm_function_def_t map_function_arguments_internal(builder_t& builder, c
 	QUARK_ASSERT(function_type.is_function());
 
 	const auto ret = function_type.get_function_return();
+
+	//??? Notice: we always resolve the return type in semantic analysis -- no need to use WIDE_RETURN and provide a dynamic type.
 	llvm::Type* return_type = ret.is_any() ? builder.acc.wide_return_type : touch_get_exact_llvm_type(builder, ret);
 
 	const auto args = function_type.get_function_args();
