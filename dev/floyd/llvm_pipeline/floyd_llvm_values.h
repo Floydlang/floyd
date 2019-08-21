@@ -25,7 +25,7 @@ struct json_t;
 
 namespace floyd {
 
-struct SIMPLE_VECTOR_T;
+struct VECTOR_ARRAY_T;
 struct VEC_HAMT_T;
 struct DICT_T;
 struct JSON_T;
@@ -166,9 +166,9 @@ union runtime_value_t {
 	double double_value;
 
 	//	Strings are encoded as vector.
-	SIMPLE_VECTOR_T* string_ptr;
+	VECTOR_ARRAY_T* string_ptr;
 
-	SIMPLE_VECTOR_T* simple_vector_ptr;
+	VECTOR_ARRAY_T* vector_array_ptr;
 	VEC_HAMT_T* hamt_vector_ptr;
 	DICT_T* dict_ptr;
 	JSON_T* json_ptr;
@@ -188,14 +188,14 @@ runtime_value_t make_runtime_bool(bool value);
 runtime_value_t make_runtime_int(int64_t value);
 runtime_value_t make_runtime_double(double value);
 runtime_value_t make_runtime_typeid(runtime_type_t type);
-runtime_value_t make_runtime_string(SIMPLE_VECTOR_T* string_ptr);
+runtime_value_t make_runtime_string(VECTOR_ARRAY_T* string_ptr);
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr);
-runtime_value_t make_runtime_vector(SIMPLE_VECTOR_T* vector_ptr);
+runtime_value_t make_runtime_vector(VECTOR_ARRAY_T* vector_ptr);
 runtime_value_t make_runtime_vector_hamt(VEC_HAMT_T* hamt_vector_ptr);
 runtime_value_t make_runtime_dict(DICT_T* dict_ptr);
 
 
-SIMPLE_VECTOR_T* unpack_vec_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type);
+VECTOR_ARRAY_T* unpack_vec_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type);
 DICT_T* unpack_dict_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type);
 
 
@@ -252,7 +252,7 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
 
 
 
-////////////////////////////////		SIMPLE_VECTOR_T
+////////////////////////////////		VECTOR_ARRAY_T
 
 
 /*
@@ -266,8 +266,8 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
 
 	Store element count in data_a.
 */
-struct SIMPLE_VECTOR_T {
-	~SIMPLE_VECTOR_T();
+struct VECTOR_ARRAY_T {
+	~VECTOR_ARRAY_T();
 	bool check_invariant() const;
 
 	inline uint64_t get_allocation_count() const{
@@ -323,8 +323,8 @@ struct SIMPLE_VECTOR_T {
 	heap_alloc_64_t alloc;
 };
 
-SIMPLE_VECTOR_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count);
-void dispose_vec(SIMPLE_VECTOR_T& vec);
+VECTOR_ARRAY_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count);
+void dispose_vec(VECTOR_ARRAY_T& vec);
 
 
 
@@ -508,7 +508,7 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 //	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value.
 llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& value, const typeid_t& floyd_type);
 
-//	Returns the specific LLVM type for the value, like SIMPLE_VECTOR_T* etc.
+//	Returns the specific LLVM type for the value, like VECTOR_ARRAY_T* etc.
 llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& runtime_value_reg, const typeid_t& type);
 
 
