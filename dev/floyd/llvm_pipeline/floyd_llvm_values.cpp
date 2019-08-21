@@ -531,11 +531,35 @@ bool VECTOR_HAMT_T::check_invariant() const {
 	return true;
 }
 
+runtime_value_t alloc_vector_hamt2(heap_t& heap, uint64_t allocation_count, uint64_t element_count){
+	QUARK_ASSERT(heap.check_invariant());
+
+	heap_alloc_64_t* alloc = alloc_64(heap, 0);
+	alloc->data_d = element_count;
+	alloc->debug_info[0] = 'V';
+	alloc->debug_info[1] = 'H';
+	alloc->debug_info[2] = 'A';
+	alloc->debug_info[3] = 'M';
+	alloc->debug_info[4] = 'T';
+
+	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
+
+	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data_a);
+    auto vec2 = new (buffer_ptr) immer::vector<runtime_value_t>(allocation_count, runtime_value_t{ .int_value = (int64_t)0xdeadbeef12345678 } );
+	QUARK_ASSERT(vec2 == buffer_ptr);
+
+	QUARK_ASSERT(vec->check_invariant());
+	QUARK_ASSERT(heap.check_invariant());
+
+	return { .vector_hamt_ptr = vec };
+}
+
 runtime_value_t alloc_vector_hamt2(heap_t& heap, const runtime_value_t elements[], uint64_t element_count){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(elements != nullptr);
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0);
+	alloc->data_d = element_count;
 	alloc->debug_info[0] = 'V';
 	alloc->debug_info[1] = 'H';
 	alloc->debug_info[2] = 'A';

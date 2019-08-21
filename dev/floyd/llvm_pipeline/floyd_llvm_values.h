@@ -278,7 +278,8 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
 	Invariant:
 		alloc_count = roundup(element_count * element_bits, 64) / 64
 
-	Store element count in data_a.
+	data_a: element count
+	data_b: allocation count
 */
 struct VECTOR_CPPVECTOR_T {
 	~VECTOR_CPPVECTOR_T();
@@ -356,7 +357,12 @@ void dispose_vector_cppvector(runtime_value_t& value);
 	Invariant:
 		alloc_count = roundup(element_count * element_bits, 64) / 64
 
-	Embeds immer::vector<runtime_value_t> in data_a, data_b, data_c, data_d.
+
+
+	data_a: embeds immer::vector<runtime_value_t> in data_a, data_b, data_c.
+	data_b
+	data_c
+	data_d: element_count
 */
 
 struct VECTOR_HAMT_T {
@@ -370,12 +376,21 @@ struct VECTOR_HAMT_T {
 		return *reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc.data_a);
 	}
 
+	inline uint64_t get_allocation_count() const{
+		QUARK_ASSERT(check_invariant());
+
+		return alloc.data_d;
+	}
+
 	inline uint64_t get_element_count() const{
 		QUARK_ASSERT(check_invariant());
 
 		const auto vecref = get_vecref();
 		return vecref.size();
 	}
+
+
+
 
 	inline immer::vector<runtime_value_t>::const_iterator begin() const {
 		QUARK_ASSERT(check_invariant());
@@ -412,6 +427,7 @@ struct VECTOR_HAMT_T {
 	heap_alloc_64_t alloc;
 };
 
+runtime_value_t alloc_vector_hamt2(heap_t& heap, uint64_t allocation_count, uint64_t element_count);
 runtime_value_t alloc_vector_hamt2(heap_t& heap, const runtime_value_t elements[], uint64_t element_count);
 void dispose_vector_hamt(runtime_value_t& vec);
 

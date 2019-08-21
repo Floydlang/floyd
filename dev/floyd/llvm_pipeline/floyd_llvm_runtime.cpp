@@ -476,8 +476,14 @@ static function_bind_t floydrt_release_struct__make(llvm::LLVMContext& context, 
 static VECTOR_CPPVECTOR_T* floydrt_allocate_vector(floyd_runtime_t* frp, uint64_t element_count){
 	auto& r = get_floyd_runtime(frp);
 
-	auto v = alloc_vector_ccpvector2(r.value_mgr.heap, element_count, element_count).vector_cppvector_ptr;
-	return v;
+	if(k_global_vector_type == vector_backend::cppvector){
+		return alloc_vector_ccpvector2(r.value_mgr.heap, element_count, element_count).vector_cppvector_ptr;
+	}
+	else if(k_global_vector_type == vector_backend::hamt){
+		return alloc_vector_hamt2(r.value_mgr.heap, element_count, element_count).vector_cppvector_ptr;
+	}
+	else{
+	}
 }
 
 static function_bind_t floydrt_allocate_vector__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
