@@ -29,6 +29,7 @@
 #include <thread>
 #include <deque>
 #include <condition_variable>
+#include <iostream>
 
 
 
@@ -2146,9 +2147,12 @@ static std::unique_ptr<llvm_execution_engine_t> make_engine_no_init(llvm_instanc
 		//	https://stackoverflow.com/questions/33328562/add-mapping-to-c-lambda-from-llvm
 		auto lambda = [&](const std::string& s) -> void* {
 			QUARK_ASSERT(s.empty() == false);
-			QUARK_ASSERT(s[0] == '_');
+			//QUARK_ASSERT(s[0] == '_');
+#ifndef __APPLE__
+			const auto s2 = s; //s.substr(1);
+#else
 			const auto s2 = s.substr(1);
-
+#endif
 			const auto it = function_map.find(link_name_t{ s2 });
 			if(it != function_map.end()){
 				return it->second;

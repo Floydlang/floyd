@@ -24,7 +24,7 @@
 #include <algorithm>
 #include <memory>
 #ifndef __APPLE__
-#define	__dead2
+#define	__dead2 __attribute__((__noreturn__))
 #endif
 
 /*
@@ -250,7 +250,6 @@ Add mechanism for unit tests to get to test files.
 #include <sstream>
 #include <cstring>
 #include <iostream>
-
 
 #ifndef QUARK_ASSERT_ON
 	#define QUARK_ASSERT_ON 1
