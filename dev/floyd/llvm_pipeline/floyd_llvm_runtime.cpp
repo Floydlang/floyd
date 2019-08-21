@@ -476,7 +476,7 @@ static function_bind_t floydrt_release_struct__make(llvm::LLVMContext& context, 
 static VECTOR_CPPVECTOR_T* floydrt_allocate_vector(floyd_runtime_t* frp, uint64_t element_count){
 	auto& r = get_floyd_runtime(frp);
 
-	auto v = alloc_vector_ccpvector(r.value_mgr.heap, element_count, element_count);
+	auto v = alloc_vector_ccpvector2(r.value_mgr.heap, element_count, element_count).vector_cppvector_ptr;
 	return v;
 }
 
@@ -536,11 +536,11 @@ static VECTOR_CPPVECTOR_T* floydrt_concatunate_vectors(floyd_runtime_t* frp, run
 	else{
 		auto count2 = lhs->get_element_count() + rhs->get_element_count();
 
-		auto result = alloc_vector_ccpvector(r.value_mgr.heap, count2, count2);
+		auto result = alloc_vector_ccpvector2(r.value_mgr.heap, count2, count2);
 
 		const auto element_type = type0.get_vector_element_type();
 
-		auto dest_ptr = result->get_element_ptr();
+		auto dest_ptr = result.vector_cppvector_ptr->get_element_ptr();
 		auto dest_ptr2 = dest_ptr + lhs->get_element_count();
 		auto lhs_ptr = lhs->get_element_ptr();
 		auto rhs_ptr = rhs->get_element_ptr();
@@ -563,7 +563,7 @@ static VECTOR_CPPVECTOR_T* floydrt_concatunate_vectors(floyd_runtime_t* frp, run
 				dest_ptr2[i] = rhs_ptr[i];
 			}
 		}
-		return result;
+		return result.vector_cppvector_ptr;
 	}
 }
 
@@ -1109,16 +1109,16 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, 
 	auto& m = dict->get_map();
 	const auto count = (int32_t)m.size();
 
-	auto result_vec = alloc_vector_ccpvector(r.value_mgr.heap, count, count);
+	auto result_vec = alloc_vector_ccpvector2(r.value_mgr.heap, count, count);
 
 	int index = 0;
 	for(const auto& e: m){
 		//	Notice that the internal representation of dictionary keys are std::string, not floyd-strings, so we need to create new key-strings from scratch.
 		const auto key = to_runtime_string(r, e.first);
-		result_vec->get_element_ptr()[index] = key;
+		result_vec.vector_cppvector_ptr->get_element_ptr()[index] = key;
 		index++;
 	}
-	return result_vec;
+	return result_vec.vector_cppvector_ptr;
 }
 
 static uint32_t floyd_llvm_intrinsic__exists(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
@@ -1247,12 +1247,12 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map(floyd_runtime_t* frp, runti
 	const auto f = reinterpret_cast<MAP_F>(arg1_value.function_ptr);
 
 	const auto count = arg0_value.vector_cppvector_ptr->get_element_count();
-	auto result_vec = alloc_vector_ccpvector(r.value_mgr.heap, count, count);
+	auto result_vec = alloc_vector_ccpvector2(r.value_mgr.heap, count, count);
 	for(int i = 0 ; i < count ; i++){
 		const auto a = (*f)(frp, arg0_value.vector_cppvector_ptr->get_element_ptr()[i], arg2_value);
-		result_vec->get_element_ptr()[i] = a;
+		result_vec.vector_cppvector_ptr->get_element_ptr()[i] = a;
 	}
-	return result_vec;
+	return result_vec.vector_cppvector_ptr;
 }
 
 
@@ -1377,17 +1377,17 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map_dag(
 				}
 			}
 
-			auto solved_deps2 = alloc_vector_ccpvector(r.value_mgr.heap, solved_deps.size(), solved_deps.size());
+			auto solved_deps2 = alloc_vector_ccpvector2(r.value_mgr.heap, solved_deps.size(), solved_deps.size());
 			for(int i = 0 ; i < solved_deps.size() ; i++){
-				solved_deps2->get_element_ptr()[i] = solved_deps[i];
+				solved_deps2.vector_cppvector_ptr->get_element_ptr()[i] = solved_deps[i];
 			}
-			runtime_value_t solved_deps3 = make_runtime_vector_cppvector(solved_deps2);
+			runtime_value_t solved_deps3 = solved_deps2;
 
 			const auto result1 = (*f2)(frp, e, solved_deps3, context);
 
 			//	Release just the vec, **not the elements**. The elements are aliases for complete-vector.
-			if(dec_rc(solved_deps2->alloc) == 0){
-				dispose_vector_cppvector(*solved_deps2);
+			if(dec_rc(solved_deps2.vector_cppvector_ptr->alloc) == 0){
+				dispose_vector_cppvector(solved_deps2);
 			}
 
 			const auto parent_index = parents2->get_element_ptr()[element_index].int_value;
@@ -1401,13 +1401,13 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map_dag(
 
 	//??? No need to copy all elements -- could store them directly into the VEC_T.
 	const auto count = complete.size();
-	auto result_vec = alloc_vector_ccpvector(r.value_mgr.heap, count, count);
+	auto result_vec = alloc_vector_ccpvector2(r.value_mgr.heap, count, count);
 	for(int i = 0 ; i < count ; i++){
 //		retain_value(r, complete[i], r_type);
-		result_vec->get_element_ptr()[i] = complete[i];
+		result_vec.vector_cppvector_ptr->get_element_ptr()[i] = complete[i];
 	}
 
-	return result_vec;
+	return result_vec.vector_cppvector_ptr;
 }
 
 
@@ -1447,13 +1447,13 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__filter(floyd_runtime_t* frp, ru
 	}
 
 	const auto count2 = (int32_t)acc.size();
-	auto result_vec = alloc_vector_ccpvector(r.value_mgr.heap, count2, count2);
+	auto result_vec = alloc_vector_ccpvector2(r.value_mgr.heap, count2, count2);
 
 	if(count2 > 0){
 		//	Count > 0 required to get address to first element in acc.
-		copy_elements(result_vec->get_element_ptr(), &acc[0], count2);
+		copy_elements(result_vec.vector_cppvector_ptr->get_element_ptr(), &acc[0], count2);
 	}
-	return result_vec;
+	return result_vec.vector_cppvector_ptr;
 }
 
 
@@ -1662,18 +1662,18 @@ static const VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__replace(floyd_runtime_t* 
 		const auto section3_len = vec->get_element_count() - end2;
 
 		const auto len2 = section1_len + section2_len + section3_len;
-		auto vec2 = alloc_vector_ccpvector(r.value_mgr.heap, len2, len2);
-		copy_elements(&vec2->get_element_ptr()[0], &vec->get_element_ptr()[0], section1_len);
-		copy_elements(&vec2->get_element_ptr()[section1_len], &replace_vec->get_element_ptr()[0], section2_len);
-		copy_elements(&vec2->get_element_ptr()[section1_len + section2_len], &vec->get_element_ptr()[end2], section3_len);
+		auto vec2 = alloc_vector_ccpvector2(r.value_mgr.heap, len2, len2);
+		copy_elements(&vec2.vector_cppvector_ptr->get_element_ptr()[0], &vec->get_element_ptr()[0], section1_len);
+		copy_elements(&vec2.vector_cppvector_ptr->get_element_ptr()[section1_len], &replace_vec->get_element_ptr()[0], section2_len);
+		copy_elements(&vec2.vector_cppvector_ptr->get_element_ptr()[section1_len + section2_len], &vec->get_element_ptr()[end2], section3_len);
 
 		if(is_rc_value(element_type)){
 			for(int i = 0 ; i < len2 ; i++){
-				retain_value(r.value_mgr, vec2->get_element_ptr()[i], element_type);
+				retain_value(r.value_mgr, vec2.vector_cppvector_ptr->get_element_ptr()[i], element_type);
 			}
 		}
 
-		return vec2;
+		return vec2.vector_cppvector_ptr;
 	}
 	else{
 		//	No other types allowed.
@@ -1775,19 +1775,19 @@ static const VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__subset(floyd_runtime_t* f
 		if(len2 >= INT32_MAX){
 			throw std::exception();
 		}
-		VECTOR_CPPVECTOR_T* vec2 = alloc_vector_ccpvector(r.value_mgr.heap, len2, len2);
+		auto vec2 = alloc_vector_ccpvector2(r.value_mgr.heap, len2, len2);
 		if(is_rc_value(element_type)){
 			for(int i = 0 ; i < len2 ; i++){
-				vec2->get_element_ptr()[i] = vec->get_element_ptr()[start2 + i];
-				retain_value(r.value_mgr, vec2->get_element_ptr()[i], element_type);
+				vec2.vector_cppvector_ptr->get_element_ptr()[i] = vec->get_element_ptr()[start2 + i];
+				retain_value(r.value_mgr, vec2.vector_cppvector_ptr->get_element_ptr()[i], element_type);
 			}
 		}
 		else{
 			for(int i = 0 ; i < len2 ; i++){
-				vec2->get_element_ptr()[i] = vec->get_element_ptr()[start2 + i];
+				vec2.vector_cppvector_ptr->get_element_ptr()[i] = vec->get_element_ptr()[start2 + i];
 			}
 		}
-		return vec2;
+		return vec2.vector_cppvector_ptr;
 	}
 	else{
 		//	No other types allowed.
@@ -1869,12 +1869,12 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 			quark::throw_runtime_error("Position argument to update() is outside collection span.");
 		}
 
-		auto result = alloc_vector_ccpvector(r.value_mgr.heap, vec->get_element_count(), vec->get_element_count());
-		auto dest_ptr = result->get_element_ptr();
+		auto result = alloc_vector_ccpvector2(r.value_mgr.heap, vec->get_element_count(), vec->get_element_count());
+		auto dest_ptr = result.vector_cppvector_ptr->get_element_ptr();
 		auto source_ptr = vec->get_element_ptr();
 		if(is_rc_value(element_type)){
 			retain_value(r.value_mgr, arg2_value, element_type);
-			for(int i = 0 ; i < result->get_element_count() ; i++){
+			for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
 				retain_value(r.value_mgr, source_ptr[i], element_type);
 				dest_ptr[i] = source_ptr[i];
 			}
@@ -1883,13 +1883,13 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 			dest_ptr[index] = arg2_value;
 		}
 		else{
-			for(int i = 0 ; i < result->get_element_count() ; i++){
+			for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
 				dest_ptr[i] = source_ptr[i];
 			}
 			dest_ptr[index] = arg2_value;
 		}
 
-		return make_runtime_vector_cppvector(result);
+		return result;
 	}
 	else if(type0.is_dict()){
 		QUARK_ASSERT(type1.is_string());

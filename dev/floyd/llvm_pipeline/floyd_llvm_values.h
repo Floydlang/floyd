@@ -34,10 +34,18 @@ struct type_interner_t;
 struct llvm_type_lookup;
 
 
-//	Temporary flag that switches between array-based vector backened and HAMT-based vector.
+
+enum vector_backend {
+	cppvector,
+	hamt
+};
+
+//	Temporary *global* constant that switches between array-based vector backened and HAMT-based vector.
 //	The string always uses array-based vector.
 //	There is still only one typeid_t/itype for vector.
-const bool k_use_hamt_vector = true;
+//	Future: make this flag a per-vector setting.
+
+const vector_backend k_global_vector_type = vector_backend::cppvector;
 
 
 ////////////////////////////////		heap_t
@@ -329,8 +337,8 @@ struct VECTOR_CPPVECTOR_T {
 	heap_alloc_64_t alloc;
 };
 
-VECTOR_CPPVECTOR_T* alloc_vector_ccpvector(heap_t& heap, uint64_t allocation_count, uint64_t element_count);
-void dispose_vector_cppvector(VECTOR_CPPVECTOR_T& vec);
+runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count, uint64_t element_count);
+void dispose_vector_cppvector(runtime_value_t& value);
 
 
 
@@ -405,6 +413,7 @@ struct VECTOR_HAMT_T {
 };
 
 VECTOR_HAMT_T* alloc_vecctor_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count);
+runtime_value_t alloc_vecctor_hamt2(heap_t& heap, const runtime_value_t elements[], uint64_t element_count);
 void dispose_vecctor_hamt(VECTOR_HAMT_T& vec);
 
 

@@ -445,7 +445,7 @@ bool VECTOR_CPPVECTOR_T::check_invariant() const {
 	return true;
 }
 
-VECTOR_CPPVECTOR_T* alloc_vector_ccpvector(heap_t& heap, uint64_t allocation_count, uint64_t element_count){
+runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count, uint64_t element_count){
 	QUARK_ASSERT(heap.check_invariant());
 
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count);
@@ -460,14 +460,15 @@ VECTOR_CPPVECTOR_T* alloc_vector_ccpvector(heap_t& heap, uint64_t allocation_cou
 	QUARK_ASSERT(vec->check_invariant());
 	QUARK_ASSERT(heap.check_invariant());
 
-	return vec;
+	return { .vector_cppvector_ptr = vec };
 }
 
-void dispose_vector_cppvector(VECTOR_CPPVECTOR_T& vec){
-	QUARK_ASSERT(vec.check_invariant());
 
-	dispose_alloc(vec.alloc);
-	QUARK_ASSERT(vec.alloc.heap64->check_invariant());
+void dispose_vector_cppvector(runtime_value_t& value){
+	QUARK_ASSERT(value.check_invariant());
+
+	dispose_alloc(value.vector_cppvector_ptr->alloc);
+	QUARK_ASSERT(value.vector_cppvector_ptr->alloc.heap64->check_invariant());
 }
 
 
@@ -485,11 +486,11 @@ QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
 	heap_t heap;
 	detect_leaks(heap);
 
-	VECTOR_CPPVECTOR_T* v = alloc_vector_ccpvector(heap, 3, 3);
-	QUARK_UT_VERIFY(v != nullptr);
+	auto v = alloc_vector_ccpvector2(heap, 3, 3);
+	QUARK_UT_VERIFY(v.vector_cppvector_ptr != nullptr);
 
-	if(dec_rc(v->alloc) == 0){
-		dispose_vector_cppvector(*v);
+	if(dec_rc(v.vector_cppvector_ptr->alloc) == 0){
+		dispose_vector_cppvector(v);
 	}
 
 	QUARK_UT_VERIFY(heap.check_invariant());
@@ -549,6 +550,14 @@ VECTOR_HAMT_T* alloc_vecctor_hamt(heap_t& heap, const runtime_value_t elements[]
 	QUARK_ASSERT(heap.check_invariant());
 
 	return vec;
+}
+
+runtime_value_t alloc_vecctor_hamt2(heap_t& heap, const runtime_value_t elements[], uint64_t element_count){
+	QUARK_ASSERT(heap.check_invariant());
+	QUARK_ASSERT(elements != nullptr);
+
+	auto temp = alloc_vecctor_hamt(heap, elements, element_count);
+	return { .vector_hamt_ptr = temp };
 }
 
 void dispose_vecctor_hamt(VECTOR_HAMT_T& vec){

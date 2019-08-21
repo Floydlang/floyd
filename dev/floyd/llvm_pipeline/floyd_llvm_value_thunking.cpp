@@ -26,8 +26,7 @@ static runtime_value_t to_runtime_string0(heap_t& heap, const std::string& s){
 
 	const auto count = static_cast<uint64_t>(s.size());
 	const auto allocation_count = size_to_allocation_blocks(s.size());
-	auto v = alloc_vector_ccpvector(heap, allocation_count, count);
-	auto result = make_runtime_string(v);
+	auto result = alloc_vector_ccpvector2(heap, allocation_count, count);
 
 	size_t char_pos = 0;
 	int element_index = 0;
@@ -39,7 +38,7 @@ static runtime_value_t to_runtime_string0(heap_t& heap, const std::string& s){
 		char_pos++;
 
 		if(((char_pos & 7) == 0) || (char_pos == s.size())){
-			v->store(element_index, make_runtime_int(static_cast<int64_t>(acc)));
+			result.vector_cppvector_ptr->store(element_index, make_runtime_int(static_cast<int64_t>(acc)));
 			element_index = element_index + 1;
 			acc = 0;
 		}
@@ -174,26 +173,34 @@ static runtime_value_t to_runtime_vector(value_mgr_t& value_mgr, const value_t& 
 	QUARK_ASSERT(value.get_type().is_vector());
 
 	const auto& v0 = value.get_vector_value();
-
 	const auto count = v0.size();
 
-	if(k_use_hamt_vector){
+	if(k_global_vector_type == vector_backend::cppvector){
+		auto result = alloc_vector_ccpvector2(value_mgr.heap, count, count);
+
+		const auto element_type = value.get_type().get_vector_element_type();
+		auto p = result.vector_cppvector_ptr->get_element_ptr();
+		for(int i = 0 ; i < count ; i++){
+			const auto& e = v0[i];
+			const auto a = to_runtime_value2(value_mgr, e);
+	//		retain_value(r, a, element_type);
+			p[i] = a;
+		}
+		return result;
+	}
+	else if(k_global_vector_type == vector_backend::hamt){
+		std::vector<runtime_value_t> temp;
+		for(int i = 0 ; i < count ; i++){
+			const auto& e = v0[i];
+			const auto a = to_runtime_value2(value_mgr, e);
+			temp.push_back(a);
+		}
+
+		QUARK_ASSERT(false);
 	}
 	else{
+		QUARK_ASSERT(false);
 	}
-
-	auto v = alloc_vector_ccpvector(value_mgr.heap, count, count);
-	auto result = make_runtime_vector_cppvector(v);
-
-	const auto element_type = value.get_type().get_vector_element_type();
-	auto p = v->get_element_ptr();
-	for(int i = 0 ; i < count ; i++){
-		const auto& e = v0[i];
-		const auto a = to_runtime_value2(value_mgr, e);
-//		retain_value(r, a, element_type);
-		p[i] = a;
-	}
-	return result;
 }
 
 static value_t from_runtime_vector(const value_mgr_t& value_mgr, const runtime_value_t encoded_value, const typeid_t& type){
@@ -533,7 +540,8 @@ void release_vec_deep(value_mgr_t& value_mgr, VECTOR_CPPVECTOR_T* vec, const typ
 		else{
 			QUARK_ASSERT(false);
 		}
-		dispose_vector_cppvector(*vec);
+		auto temp = make_runtime_vector_cppvector(vec);
+		dispose_vector_cppvector(temp);
 	}
 }
 
