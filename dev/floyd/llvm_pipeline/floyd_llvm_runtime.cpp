@@ -259,9 +259,8 @@ static function_bind_t floydrt_retain_vec__make(llvm::LLVMContext& context, cons
 ////////////////////////////////		floydrt_release_vec()
 
 
-static void floydrt_release_vec(floyd_runtime_t* frp, VECTOR_CPPVECTOR_T* vec, runtime_type_t type0){
+static void floydrt_release_vec(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
-	QUARK_ASSERT(vec != nullptr);
 	const auto type = lookup_type(r.value_mgr.type_lookup, type0);
 	QUARK_ASSERT(type.is_string() || type.is_vector());
 
@@ -507,7 +506,7 @@ static VECTOR_CPPVECTOR_T* floydrt_alloc_kstr(floyd_runtime_t* frp, const char* 
 	auto& r = get_floyd_runtime(frp);
 
 	const auto a = to_runtime_string(r, std::string(s, s + size));
-	return a.string_cppvector_ptr;
+	return a.vector_cppvector_ptr;
 }
 
 static function_bind_t floydrt_alloc_kstr__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -1553,7 +1552,7 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp,
 
 		value.push_back((char)arg1_value.int_value);
 		const auto result2 = to_runtime_string(r, value);
-		return result2.string_cppvector_ptr;
+		return result2.vector_cppvector_ptr;
 	}
 	else if(type0.is_vector()){
 		const auto vs = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
@@ -1630,7 +1629,7 @@ static const VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__replace(floyd_runtime_t* 
 		const auto replace = from_runtime_string(r, arg3_value);
 		auto ret = floyd_llvm_intrinsic__replace__string(r, s, (std::size_t)start, (std::size_t)end, replace);
 		const auto result2 = to_runtime_string(r, ret);
-		return result2.string_cppvector_ptr;
+		return result2.vector_cppvector_ptr;
 	}
 	else if(type0.is_vector()){
 		const auto element_type = type0.get_vector_element_type();
@@ -1746,7 +1745,7 @@ static const VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__subset(floyd_runtime_t* f
 
 		const auto s = std::string(&value[start2], &value[start2 + len2]);
 		const auto result = to_runtime_string(r, s);
-		return result.string_cppvector_ptr;
+		return result.vector_cppvector_ptr;
 	}
 	else if(type0.is_vector()){
 		const auto element_type = type0.get_vector_element_type();
@@ -1864,7 +1863,7 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 					dest_ptr[i] = source_ptr[i];
 				}
 
-				release_vec_deep(r.value_mgr, dest_ptr[index].vector_cppvector_ptr, element_type);
+				release_vec_deep(r.value_mgr, dest_ptr[index], element_type);
 				dest_ptr[index] = arg2_value;
 			}
 			else{

@@ -342,7 +342,7 @@ runtime_value_t make_runtime_typeid(runtime_type_t type){
 }
 
 runtime_value_t make_runtime_string(VECTOR_CPPVECTOR_T* string_cppvector_ptr){
-	return { .string_cppvector_ptr = string_cppvector_ptr };
+	return { .vector_cppvector_ptr = string_cppvector_ptr };
 }
 
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
@@ -394,9 +394,9 @@ DICT_CPPMAP_T* unpack_dict_cppmap_arg(const llvm_type_lookup& type_lookup, runti
 
 
 uint64_t get_vec_string_size(runtime_value_t str){
-	QUARK_ASSERT(str.string_cppvector_ptr != nullptr);
+	QUARK_ASSERT(str.vector_cppvector_ptr != nullptr);
 
-	return str.string_cppvector_ptr->get_element_count();
+	return str.vector_cppvector_ptr->get_element_count();
 }
 
 void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint64_t count){

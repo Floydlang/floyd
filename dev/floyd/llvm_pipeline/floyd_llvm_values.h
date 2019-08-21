@@ -46,6 +46,7 @@ enum vector_backend {
 //	Future: make this flag a per-vector setting.
 
 const vector_backend k_global_vector_type = vector_backend::cppvector;
+//const vector_backend k_global_vector_type = vector_backend::hamt;
 
 
 ////////////////////////////////		heap_t
@@ -180,7 +181,7 @@ union runtime_value_t {
 	double double_value;
 
 	//	Strings are encoded as vector.
-	VECTOR_CPPVECTOR_T* string_cppvector_ptr;
+//	VECTOR_CPPVECTOR_T* string_cppvector_ptr;
 
 	VECTOR_CPPVECTOR_T* vector_cppvector_ptr;
 	VECTOR_HAMT_T* vector_hamt_ptr;

@@ -66,7 +66,7 @@ QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
 
 static std::string from_runtime_string0(runtime_value_t encoded_value){
 	QUARK_ASSERT(encoded_value.check_invariant());
-	QUARK_ASSERT(encoded_value.string_cppvector_ptr != nullptr);
+	QUARK_ASSERT(encoded_value.vector_cppvector_ptr != nullptr);
 
 	const size_t size = get_vec_string_size(encoded_value);
 
@@ -74,8 +74,8 @@ static std::string from_runtime_string0(runtime_value_t encoded_value){
 
 	//	Read 8 characters at a time.
 	size_t char_pos = 0;
-	const auto begin0 = encoded_value.string_cppvector_ptr->begin();
-	const auto end0 = encoded_value.string_cppvector_ptr->end();
+	const auto begin0 = encoded_value.vector_cppvector_ptr->begin();
+	const auto end0 = encoded_value.vector_cppvector_ptr->end();
 	for(auto it = begin0 ; it != end0 ; it++){
 		const size_t copy_chars = std::min(size - char_pos, (size_t)8);
 		const uint64_t element = it->int_value;
@@ -446,10 +446,18 @@ void retain_value(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t&
 
 	if(is_rc_value(type)){
 		if(type.is_string()){
-			inc_rc(value.string_cppvector_ptr->alloc);
+			inc_rc(value.vector_cppvector_ptr->alloc);
 		}
 		else if(type.is_vector()){
-			inc_rc(value.vector_cppvector_ptr->alloc);
+			if(k_global_vector_type == vector_backend::cppvector){
+				inc_rc(value.vector_cppvector_ptr->alloc);
+			}
+			else if(k_global_vector_type == vector_backend::hamt){
+				inc_rc(value.vector_hamt_ptr->alloc);
+			}
+			else{
+				QUARK_ASSERT(false);
+			}
 		}
 		else if(type.is_dict()){
 			inc_rc(value.dict_cppmap_ptr->alloc);
@@ -473,10 +481,10 @@ void release_deep(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t&
 
 	if(is_rc_value(type)){
 		if(type.is_string()){
-			release_vec_deep(value_mgr, value.string_cppvector_ptr, type);
+			release_vec_deep(value_mgr, value, type);
 		}
 		else if(type.is_vector()){
-			release_vec_deep(value_mgr, value.vector_cppvector_ptr, type);
+			release_vec_deep(value_mgr, value, type);
 		}
 		else if(type.is_dict()){
 			release_dict_deep(value_mgr, value.dict_cppmap_ptr, type);
@@ -515,33 +523,64 @@ void release_dict_deep(value_mgr_t& value_mgr, DICT_CPPMAP_T* dict, const typeid
 	}
 }
 
-void release_vec_deep(value_mgr_t& value_mgr, VECTOR_CPPVECTOR_T* vec, const typeid_t& type){
+
+void release_vec_deep(value_mgr_t& value_mgr, runtime_value_t& vec, const typeid_t& type){
 	QUARK_ASSERT(value_mgr.check_invariant());
-	QUARK_ASSERT(vec != nullptr);
+	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.is_string() || type.is_vector());
 
-	if(dec_rc(vec->alloc) == 0){
-		if(type.is_string()){
+	if(type.is_string()){
+		if(dec_rc(vec.vector_cppvector_ptr->alloc) == 0){
 			//	String has no elements to release.
+
+			dispose_vector_cppvector(vec);
 		}
-		else if(type.is_vector()){
-			//	Release all elements.
-			const auto element_type = type.get_vector_element_type();
-			if(is_rc_value(element_type)){
-				auto element_ptr = vec->get_element_ptr();
-				for(int i = 0 ; i < vec->get_element_count() ; i++){
-					const auto& element = element_ptr[i];
-					release_deep(value_mgr, element, element_type);
+	}
+	else if(type.is_vector()){
+		if(k_global_vector_type == vector_backend::cppvector){
+			if(dec_rc(vec.vector_cppvector_ptr->alloc) == 0){
+				//	Release all elements.
+				{
+					const auto element_type = type.get_vector_element_type();
+					if(is_rc_value(element_type)){
+						auto element_ptr = vec.vector_cppvector_ptr->get_element_ptr();
+						for(int i = 0 ; i < vec.vector_cppvector_ptr->get_element_count() ; i++){
+							const auto& element = element_ptr[i];
+							release_deep(value_mgr, element, element_type);
+						}
+					}
 				}
+				dispose_vector_cppvector(vec);
+			}
+		}
+		else if(k_global_vector_type == vector_backend::hamt){
+			if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
+				//	Release all elements.
+				{
+					const auto element_type = type.get_vector_element_type();
+					if(is_rc_value(element_type)){
+						for(int i = 0 ; i < vec.vector_hamt_ptr->get_element_count() ; i++){
+							const auto& element = vec.vector_hamt_ptr->operator[](i);
+							release_deep(value_mgr, element, element_type);
+						}
+					}
+				}
+				dispose_vector_hamt(vec);
 			}
 		}
 		else{
 			QUARK_ASSERT(false);
 		}
-		auto temp = make_runtime_vector_cppvector(vec);
-		dispose_vector_cppvector(temp);
+	}
+	else{
+		QUARK_ASSERT(false);
 	}
 }
+
+
+
+
+
 
 
 void release_struct_deep(value_mgr_t& value_mgr, STRUCT_T* s, const typeid_t& type){
