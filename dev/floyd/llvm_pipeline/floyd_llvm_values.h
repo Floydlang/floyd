@@ -412,9 +412,8 @@ struct VECTOR_HAMT_T {
 	heap_alloc_64_t alloc;
 };
 
-VECTOR_HAMT_T* alloc_vecctor_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count);
-runtime_value_t alloc_vecctor_hamt2(heap_t& heap, const runtime_value_t elements[], uint64_t element_count);
-void dispose_vecctor_hamt(VECTOR_HAMT_T& vec);
+runtime_value_t alloc_vector_hamt2(heap_t& heap, const runtime_value_t elements[], uint64_t element_count);
+void dispose_vector_hamt(runtime_value_t& vec);
 
 
 
@@ -446,8 +445,8 @@ struct DICT_CPPMAP_T {
 	heap_alloc_64_t alloc;
 };
 
-DICT_CPPMAP_T* alloc_dict_cppmap(heap_t& heap);
-void dispose_dict_cppmap(DICT_CPPMAP_T& vec);
+runtime_value_t alloc_dict_cppmap2(heap_t& heap);
+void dispose_dict_cppmap(runtime_value_t& vec);
 
 
 

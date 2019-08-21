@@ -587,11 +587,11 @@ static function_bind_t floydrt_concatunate_vectors__make(llvm::LLVMContext& cont
 ////////////////////////////////		allocate_dict()
 
 
-static void* floydrt_allocate_dict(floyd_runtime_t* frp){
+static DICT_CPPMAP_T* floydrt_allocate_dict(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 
-	auto v = alloc_dict_cppmap(r.value_mgr.heap);
-	return v;
+	auto v = alloc_dict_cppmap2(r.value_mgr.heap);
+	return v.dict_cppmap_ptr;
 }
 
 static function_bind_t floydrt_allocate_dict__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -1082,8 +1082,8 @@ static DICT_CPPMAP_T* floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime_
 	const auto value_type = type0.get_dict_value_type();
 
 	//	Deep copy dict.
-	auto dict2 = alloc_dict_cppmap(r.value_mgr.heap);
-	auto& m = dict2->get_map_mut();
+	auto dict2 = alloc_dict_cppmap2(r.value_mgr.heap);
+	auto& m = dict2.dict_cppmap_ptr->get_map_mut();
 	m = dict->get_map();
 
 	const auto key_string = from_runtime_string(r, arg1_value);
@@ -1095,7 +1095,7 @@ static DICT_CPPMAP_T* floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime_
 		}
 	}
 
-	return dict2;
+	return dict2.dict_cppmap_ptr;
 }
 
 static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
@@ -1899,18 +1899,18 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 		const auto value_type = type0.get_dict_value_type();
 
 		//	Deep copy dict.
-		auto dict2 = alloc_dict_cppmap(r.value_mgr.heap);
-		dict2->get_map_mut() = dict->get_map();
+		auto dict2 = alloc_dict_cppmap2(r.value_mgr.heap);
+		dict2.dict_cppmap_ptr->get_map_mut() = dict->get_map();
 
-		dict2->get_map_mut().insert_or_assign(key, arg2_value);
+		dict2.dict_cppmap_ptr->get_map_mut().insert_or_assign(key, arg2_value);
 
 		if(is_rc_value(value_type)){
-			for(const auto& e: dict2->get_map()){
+			for(const auto& e: dict2.dict_cppmap_ptr->get_map()){
 				retain_value(r.value_mgr, e.second, value_type);
 			}
 		}
 
-		return make_runtime_dict_cppmap(dict2);
+		return dict2;
 	}
 	else if(type0.is_struct()){
 		QUARK_ASSERT(false);

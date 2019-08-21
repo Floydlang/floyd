@@ -230,15 +230,12 @@ static runtime_value_t to_runtime_dict(value_mgr_t& value_mgr, const typeid_t::d
 
 	const auto& v0 = value.get_dict_value();
 
-	auto v = alloc_dict_cppmap(value_mgr.heap);
-	auto result = make_runtime_dict_cppmap(v);
+	auto result = alloc_dict_cppmap2(value_mgr.heap);
 
 	const auto element_type = value.get_type().get_dict_value_type();
-	auto& m = v->get_map_mut();
+	auto& m = result.dict_cppmap_ptr->get_map_mut();
 	for(const auto& e: v0){
 		const auto a = to_runtime_value2(value_mgr, e.second);
-
-
 		m.insert({ e.first, a });
 	}
 	return result;
@@ -513,7 +510,8 @@ void release_dict_deep(value_mgr_t& value_mgr, DICT_CPPMAP_T* dict, const typeid
 				release_deep(value_mgr, e.second, element_type);
 			}
 		}
-		dispose_dict_cppmap(*dict);
+		auto temp = make_runtime_dict_cppmap(dict);
+		dispose_dict_cppmap(temp);
 	}
 }
 
