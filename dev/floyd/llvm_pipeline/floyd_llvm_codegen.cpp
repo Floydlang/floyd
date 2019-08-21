@@ -121,6 +121,7 @@ struct llvm_code_generator_t {
 //		floydrt_concatunate_hamt_vectors(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("concatunate_hamt_vectors"))),
 		floydrt_compare_values(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("compare_values"))),
 		floydrt_allocate_vector(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_vector"))),
+		floydrt_allocate_fill_vector(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_vector_fill"))),
 //		floydrt_allocate_hamt_vector(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_hamt_vector"))),
 		floydrt_allocate_dict(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_dict"))),
 		floydrt_store_dict_mutable(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("store_dict_mutable"))),
@@ -193,6 +194,7 @@ struct llvm_code_generator_t {
 //	const function_def_t& floydrt_concatunate_hamt_vectors;
 	const function_def_t& floydrt_compare_values;
 	const function_def_t& floydrt_allocate_vector;
+	const function_def_t& floydrt_allocate_fill_vector;
 //	const function_def_t& floydrt_allocate_hamt_vector;
 	const function_def_t& floydrt_allocate_dict;
 	const function_def_t& floydrt_store_dict_mutable;
@@ -678,6 +680,8 @@ static function_return_mode generate_block(llvm_function_generator_t& gen_acc, c
 	return return_mode;
 }
 
+
+//??? assumes elements are in lineary array (not a HAMT etc):
 //	Returns pointer to first element of data after the alloc64. The returned pointer-type is struct { unit64_t x 8 }, so it needs to be cast to an element-ptr.
 static llvm::Value* generate_get_vec_element_ptr_needs_cast(llvm_function_generator_t& gen_acc, llvm::Value& vec_ptr_reg){
 	QUARK_ASSERT(gen_acc.check_invariant());
@@ -847,19 +851,28 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 	else if(parent_type.is_vector()){
 		QUARK_ASSERT(key_type.is_int());
 
-		const auto element_type0 = parent_type.get_vector_element_type();
-		auto ptr_reg = generate_get_vec_element_ptr_needs_cast(gen_acc, *parent_reg);
-		auto int64_ptr_reg = gen_acc.get_builder().CreateCast(llvm::Instruction::CastOps::BitCast, ptr_reg, builder.getInt64Ty()->getPointerTo(), "");
+		if(k_global_vector_type == vector_backend::cppvector){
+			const auto element_type0 = parent_type.get_vector_element_type();
 
-		const auto gep = std::vector<llvm::Value*>{ key_reg };
-		llvm::Value* element_addr_reg = builder.CreateGEP(builder.getInt64Ty(), int64_ptr_reg, gep, "element_addr");
-		llvm::Value* element_value_uint64_reg = builder.CreateLoad(element_addr_reg, "element_tmp");
-		auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
+			auto ptr_reg = generate_get_vec_element_ptr_needs_cast(gen_acc, *parent_reg);
+			auto int64_ptr_reg = gen_acc.get_builder().CreateCast(llvm::Instruction::CastOps::BitCast, ptr_reg, builder.getInt64Ty()->getPointerTo(), "");
 
-		generate_retain(gen_acc, *result_reg, element_type0);
-		generate_release(gen_acc, *parent_reg, parent_type);
+			const auto gep = std::vector<llvm::Value*>{ key_reg };
+			llvm::Value* element_addr_reg = builder.CreateGEP(builder.getInt64Ty(), int64_ptr_reg, gep, "element_addr");
+			llvm::Value* element_value_uint64_reg = builder.CreateLoad(element_addr_reg, "element_tmp");
+			auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
 
-		return result_reg;
+			generate_retain(gen_acc, *result_reg, element_type0);
+			generate_release(gen_acc, *parent_reg, parent_type);
+
+			return result_reg;
+		}
+		if(k_global_vector_type == vector_backend::cppvector){
+			QUARK_ASSERT(false);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
 	}
 	else if(parent_type.is_dict()){
 		QUARK_ASSERT(key_type.is_string());
@@ -1491,26 +1504,15 @@ static llvm::Value* generate_intrinsic_expression(llvm_function_generator_t& gen
 
 
 
-//	Evaluate each element and store it directly into the array.
-static void generate_fill_array(llvm_function_generator_t& gen_acc, llvm::Value& element_ptr_reg, llvm::Type& element_type, const std::vector<expression_t>& elements){
-	QUARK_ASSERT(gen_acc.check_invariant());
-
-	auto& builder = gen_acc.get_builder();
-
-	auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, &element_ptr_reg, element_type.getPointerTo(), "");
-
-	int element_index = 0;
-	for(const auto& element_value: elements){
-
-		//	Move ownwership from temp to member element, no need for retain-release.
-
-		llvm::Value* element_value_reg = generate_expression(gen_acc, element_value);
-		generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
-		element_index++;
+/*	if(k_global_vector_type == vector_backend::cppvector){
 	}
-}
-
-
+	else if(k_global_vector_type == vector_backend::hamt){
+		QUARK_ASSERT(false);
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+*/
 static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(details.value_type.is_vector());
@@ -1542,7 +1544,18 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 		return vec_ptr_reg;
 	}
 	else{
-		generate_fill_array(gen_acc, *ptr_reg, element_type1, details.elements);
+		//	Evaluate each element and store it directly into the array.
+		auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, ptr_reg, element_type1.getPointerTo(), "");
+
+		int element_index = 0;
+		for(const auto& element_value: details.elements){
+
+			//	Move ownwership from temp to member element, no need for retain-release.
+
+			llvm::Value* element_value_reg = generate_expression(gen_acc, element_value);
+			generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
+			element_index++;
+		}
 		return vec_ptr_reg;
 	}
 }
@@ -1736,7 +1749,6 @@ end_bb:
 //??? Could be performed in semantic analysis pass, by inserting statements around the generate_block(). Problem is mutating samples-array.
 //??? Measured body needs access to all function's locals -- cannot easily put body into separate function.
 
-#if 1
 static llvm::Value* generate_benchmark_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::benchmark_expr_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(e.check_invariant());
@@ -1843,24 +1855,6 @@ static llvm::Value* generate_benchmark_expression(llvm_function_generator_t& gen
 
 	return best_dur_reg;
 }
-#endif
-#if 0
-static llvm::Value* generate_benchmark_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::benchmark_expr_t& details){
-	QUARK_ASSERT(gen_acc.check_invariant());
-	QUARK_ASSERT(e.check_invariant());
-
-	const auto get_profile_time_f = gen_acc.gen.floydrt_get_profile_time.llvm_codegen_f
-
-	auto& builder = gen_acc.get_builder();
-	auto start_time_reg = builder.CreateCall(get_profile_time_f.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
-
-	generate_block(gen_acc, *details.body);
-
-	auto end_time_reg = builder.CreateCall(get_profile_time_f.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
-	auto duration_reg = gen_acc.get_builder().CreateSub(end_time_reg, start_time_reg, "calc dur");
-	return duration_reg;
-}
-#endif
 
 static llvm::Value* generate_load2_expression(llvm_function_generator_t& gen_acc, const expression_t& e, const expression_t::load2_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());

@@ -472,14 +472,14 @@ static function_bind_t floydrt_release_struct__make(llvm::LLVMContext& context, 
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-static VECTOR_CPPVECTOR_T* floydrt_allocate_vector(floyd_runtime_t* frp, uint64_t element_count){
+static runtime_value_t floydrt_allocate_vector(floyd_runtime_t* frp, uint64_t element_count){
 	auto& r = get_floyd_runtime(frp);
 
 	if(k_global_vector_type == vector_backend::cppvector){
-		return alloc_vector_ccpvector2(r.value_mgr.heap, element_count, element_count).vector_cppvector_ptr;
+		return alloc_vector_ccpvector2(r.value_mgr.heap, element_count, element_count);
 	}
 	else if(k_global_vector_type == vector_backend::hamt){
-		return alloc_vector_hamt2(r.value_mgr.heap, element_count, element_count).vector_cppvector_ptr;
+		return alloc_vector_hamt2(r.value_mgr.heap, element_count, element_count);
 	}
 	else{
 	}
@@ -495,6 +495,34 @@ static function_bind_t floydrt_allocate_vector__make(llvm::LLVMContext& context,
 		false
 	);
 	return { "allocate_vector", function_type, reinterpret_cast<void*>(floydrt_allocate_vector) };
+}
+
+
+////////////////////////////////		allocate_vector_fill()
+
+static runtime_value_t floydrt_allocate_vector_fill(floyd_runtime_t* frp, uint64_t element_count){
+	auto& r = get_floyd_runtime(frp);
+
+	if(k_global_vector_type == vector_backend::cppvector){
+		return alloc_vector_ccpvector2(r.value_mgr.heap, element_count, element_count);
+	}
+	else if(k_global_vector_type == vector_backend::hamt){
+		return alloc_vector_hamt2(r.value_mgr.heap, element_count, element_count);
+	}
+	else{
+	}
+}
+
+static function_bind_t floydrt_allocate_vector_fill__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		make_generic_vec_type(type_lookup)->getPointerTo(),
+		{
+			make_frp_type(type_lookup),
+			llvm::Type::getInt64Ty(context)
+		},
+		false
+	);
+	return { "allocate_vector_fill", function_type, reinterpret_cast<void*>(floydrt_allocate_vector_fill) };
 }
 
 
@@ -823,7 +851,7 @@ static function_bind_t floydrt_compare_values__make(llvm::LLVMContext& context, 
 }
 
 
-////////////////////////////////		allocate_vector()
+////////////////////////////////		allocate_struct()
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
@@ -1006,6 +1034,7 @@ std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, c
 		floydrt_release_struct__make(context, type_lookup),
 
 		floydrt_allocate_vector__make(context, type_lookup),
+		floydrt_allocate_vector_fill__make(context, type_lookup),
 		floydrt_alloc_kstr__make(context, type_lookup),
 		floydrt_concatunate_vectors__make(context, type_lookup),
 		floydrt_allocate_dict__make(context, type_lookup),
@@ -1564,7 +1593,7 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp,
 
 		auto v2 = floydrt_allocate_vector(frp, vs->get_element_count() + 1);
 
-		auto dest_ptr = v2->get_element_ptr();
+		auto dest_ptr = v2.vector_cppvector_ptr->get_element_ptr();
 		auto source_ptr = vs->get_element_ptr();
 
 		if(is_rc_value(element_type)){
@@ -1582,7 +1611,7 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp,
 			}
 			dest_ptr[vs->get_element_count()] = element;
 		}
-		return v2;
+		return v2.vector_cppvector_ptr;
 	}
 	else{
 		//	No other types allowed.

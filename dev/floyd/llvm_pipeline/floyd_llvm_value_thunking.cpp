@@ -209,18 +209,36 @@ static value_t from_runtime_vector(const value_mgr_t& value_mgr, const runtime_v
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto element_type = type.get_vector_element_type();
-	const auto vec = encoded_value.vector_cppvector_ptr;
+	if(k_global_vector_type == vector_backend::cppvector){
+		const auto vec = encoded_value.vector_cppvector_ptr;
 
-	std::vector<value_t> elements;
-	const auto count = vec->get_element_count();
-	auto p = vec->get_element_ptr();
-	for(int i = 0 ; i < count ; i++){
-		const auto value_encoded = p[i];
-		const auto value = from_runtime_value2(value_mgr, value_encoded, element_type);
-		elements.push_back(value);
+		std::vector<value_t> elements;
+		const auto count = vec->get_element_count();
+		auto p = vec->get_element_ptr();
+		for(int i = 0 ; i < count ; i++){
+			const auto value_encoded = p[i];
+			const auto value = from_runtime_value2(value_mgr, value_encoded, element_type);
+			elements.push_back(value);
+		}
+		const auto val = value_t::make_vector_value(element_type, elements);
+		return val;
 	}
-	const auto val = value_t::make_vector_value(element_type, elements);
-	return val;
+	else if(k_global_vector_type == vector_backend::hamt){
+		const auto vec = encoded_value.vector_hamt_ptr;
+
+		std::vector<value_t> elements;
+		const auto count = vec->get_element_count();
+		for(int i = 0 ; i < count ; i++){
+			const auto& value_encoded = vec->operator[](i);
+			const auto value = from_runtime_value2(value_mgr, value_encoded, element_type);
+			elements.push_back(value);
+		}
+		const auto val = value_t::make_vector_value(element_type, elements);
+		return val;
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
 }
 
 static runtime_value_t to_runtime_dict(value_mgr_t& value_mgr, const typeid_t::dict_t& exact_type, const value_t& value){

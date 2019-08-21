@@ -37,6 +37,7 @@ unsupported syntax
 #if 1
 #define RUN_LANG_BASIC_TESTS1				true
 #define RUN_LANG_BASIC_TESTS2				true
+#define RUN_LANG_VECTOR_TESTS				true
 #define RUN_LANG_COLLECTION_TESTS			true
 #define RUN_LANG_STRUCT_TESTS				true
 #define RUN_LANG_JSON_TESTS					true
@@ -45,9 +46,10 @@ unsupported syntax
 #define RUN_CONTAINER_TESTS					true
 #define RUN_EXAMPLE_AND_DOCS_TESTS			true
 #else
-#define RUN_LANG_BASIC_TESTS1				true
+//#define RUN_LANG_BASIC_TESTS1				true
 //#define RUN_LANG_BASIC_TESTS2				true
 //#define RUN_LANG_COLLECTION_TESTS			true
+#define RUN_LANG_VECTOR_TESTS				true
 //#define RUN_LANG_STRUCT_TESTS				true
 //#define RUN_LANG_JSON_TESTS					true
 //#define RUN_LANG_INTRINSICS_TESTS			true
@@ -3061,7 +3063,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "string replace()", "", "error"){
 #endif	//	RUN_LANG_BASIC_TESTS2
 
 
-#if RUN_LANG_COLLECTION_TESTS
+#if RUN_LANG_VECTOR_TESTS
 
 //######################################################################################################################
 //	VECTOR
@@ -3451,6 +3453,11 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [bool] push_back()", "", ""){
 
 //////////////////////////////////////////		vector-int
 
+//#define FLOYD_LANG_PROOF FLOYD_LANG_PROOF_VIP
+
+FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor expression", "", ""){
+	ut_verify_global_result_nolib(QUARK_POS, R"(		let result = 404		)",		value_t::make_int(404));
+}
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor expression", "", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] result = [10, 20, 30]		)",		value_t::make_vector_value(typeid_t::make_int(), { value_t::make_int(10), value_t::make_int(20), value_t::make_int(30) }) );
@@ -3809,6 +3816,11 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [json] constructor", "", ""){
 }
 
 
+#endif	//	RUN_LANG_VECTOR_TESTS
+
+
+
+#if RUN_LANG_COLLECTION_TESTS
 
 
 //######################################################################################################################
