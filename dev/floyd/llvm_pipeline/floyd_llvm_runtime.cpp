@@ -1077,7 +1077,7 @@ static DICT_CPPMAP_T* floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime_
 	QUARK_ASSERT(type0.is_dict());
 	QUARK_ASSERT(type1.is_string());
 
-	const auto& dict = unpack_dict_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
+	const auto& dict = unpack_dict_cppmap_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 
 	const auto value_type = type0.get_dict_value_type();
 
@@ -1105,7 +1105,7 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, 
 
 	QUARK_ASSERT(type0.is_dict());
 
-	const auto& dict = unpack_dict_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
+	const auto& dict = unpack_dict_cppmap_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 	auto& m = dict->get_map();
 	const auto count = (int32_t)m.size();
 
@@ -1128,7 +1128,7 @@ static uint32_t floyd_llvm_intrinsic__exists(floyd_runtime_t* frp, runtime_value
 	const auto type1 = lookup_type(r.value_mgr.type_lookup, arg1_type);
 	QUARK_ASSERT(type0.is_dict());
 
-	const auto& dict = unpack_dict_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
+	const auto& dict = unpack_dict_cppmap_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 	const auto key_string = from_runtime_string(r, arg1_value);
 
 	const auto& m = dict->get_map();
@@ -1158,7 +1158,7 @@ static int64_t floyd_llvm_intrinsic__find(floyd_runtime_t* frp, runtime_value_t 
 	else if(type0.is_vector()){
 		QUARK_ASSERT(type1 == type0.get_vector_element_type());
 
-		const auto vec = unpack_vec_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
+		const auto vec = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 
 //		auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.def_name == function_name; } );
 		const auto it = std::find_if(
@@ -1572,7 +1572,7 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp,
 		return result2.string_cppvector_ptr;
 	}
 	else if(type0.is_vector()){
-		const auto vs = unpack_vec_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
+		const auto vs = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 
 		QUARK_ASSERT(type1 == type0.get_vector_element_type());
 
@@ -1651,8 +1651,8 @@ static const VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__replace(floyd_runtime_t* 
 	else if(type0.is_vector()){
 		const auto element_type = type0.get_vector_element_type();
 
-		const auto vec = unpack_vec_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
-		const auto replace_vec = unpack_vec_arg(r.value_mgr.type_lookup, arg3_value, arg3_type);
+		const auto vec = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
+		const auto replace_vec = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg3_value, arg3_type);
 
 		auto end2 = std::min(end, vec->get_element_count());
 		auto start2 = std::min(start, end2);
@@ -1731,11 +1731,11 @@ static int64_t floyd_llvm_intrinsic__size(floyd_runtime_t* frp, runtime_value_t 
 		}
 	}
 	else if(type0.is_vector()){
-		const auto vs = unpack_vec_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
+		const auto vs = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 		return vs->get_element_count();
 	}
 	else if(type0.is_dict()){
-		DICT_CPPMAP_T* dict = unpack_dict_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
+		DICT_CPPMAP_T* dict = unpack_dict_cppmap_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 		return dict->size();
 	}
 	else{
@@ -1766,7 +1766,7 @@ static const VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__subset(floyd_runtime_t* f
 	}
 	else if(type0.is_vector()){
 		const auto element_type = type0.get_vector_element_type();
-		const auto vec = unpack_vec_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
+		const auto vec = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 
 		const auto end2 = std::min(end, vec->get_element_count());
 		const auto start2 = std::min(start, end2);
@@ -1859,7 +1859,7 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 	else if(type0.is_vector()){
 		QUARK_ASSERT(type1.is_int());
 
-		const auto vec = unpack_vec_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
+		const auto vec = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 		const auto element_type = type0.get_vector_element_type();
 		const auto index = arg1_value.int_value;
 
@@ -1895,7 +1895,7 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 		QUARK_ASSERT(type1.is_string());
 
 		const auto key = from_runtime_string(r, arg1_value);
-		const auto dict = unpack_dict_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
+		const auto dict = unpack_dict_cppmap_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 		const auto value_type = type0.get_dict_value_type();
 
 		//	Deep copy dict.

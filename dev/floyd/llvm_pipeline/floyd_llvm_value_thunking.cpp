@@ -176,8 +176,14 @@ static runtime_value_t to_runtime_vector(value_mgr_t& value_mgr, const value_t& 
 	const auto& v0 = value.get_vector_value();
 
 	const auto count = v0.size();
+
+	if(k_use_hamt_vector){
+	}
+	else{
+	}
+
 	auto v = alloc_vector_ccpvector(value_mgr.heap, count, count);
-	auto result = make_runtime_string(v);
+	auto result = make_runtime_vector_cppvector(v);
 
 	const auto element_type = value.get_type().get_vector_element_type();
 	auto p = v->get_element_ptr();

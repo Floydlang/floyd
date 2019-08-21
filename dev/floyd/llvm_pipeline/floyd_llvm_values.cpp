@@ -367,7 +367,7 @@ runtime_value_t make_runtime_dict_cppmap(DICT_CPPMAP_T* dict_cppmap_ptr){
 
 
 
-VECTOR_CPPVECTOR_T* unpack_vec_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type){
+VECTOR_CPPVECTOR_T* unpack_vector_cppvector_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type){
 #if DEBUG
 	const auto type = lookup_type(type_lookup, arg_type);
 #endif
@@ -379,7 +379,7 @@ VECTOR_CPPVECTOR_T* unpack_vec_arg(const llvm_type_lookup& type_lookup, runtime_
 	return arg_value.vector_cppvector_ptr;
 }
 
-DICT_CPPMAP_T* unpack_dict_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type){
+DICT_CPPMAP_T* unpack_dict_cppmap_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type){
 #if DEBUG
 	const auto type = lookup_type(type_lookup, arg_type);
 #endif

@@ -68,7 +68,10 @@ struct llvm_arg_mapping_t {
 
 	std::string floyd_name;
 	typeid_t floyd_type;
-	int floyd_arg_index;	//-1 is none. Several elements can specify the same Floyd arg index, since dynamic value use two.
+
+	// -1 is none. Several elements can specify the same Floyd arg index, since dynamic value use two.
+	int floyd_arg_index;
+
 	enum class map_type { k_floyd_runtime_ptr, k_known_value_type, k_dyn_value, k_dyn_type } map_type;
 };
 
