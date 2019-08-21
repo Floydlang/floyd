@@ -230,7 +230,7 @@ static std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value
 ////////////////////////////////		floydrt_retain_vec()
 
 
-static void floydrt_retain_vec(floyd_runtime_t* frp, VECTOR_ARRAY_T* vec, runtime_type_t type0){
+static void floydrt_retain_vec(floyd_runtime_t* frp, VECTOR_CPPVECTOR_T* vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 #if DEBUG
 	QUARK_ASSERT(vec != nullptr);
@@ -259,7 +259,7 @@ static function_bind_t floydrt_retain_vec__make(llvm::LLVMContext& context, cons
 ////////////////////////////////		floydrt_release_vec()
 
 
-static void floydrt_release_vec(floyd_runtime_t* frp, VECTOR_ARRAY_T* vec, runtime_type_t type0){
+static void floydrt_release_vec(floyd_runtime_t* frp, VECTOR_CPPVECTOR_T* vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(vec != nullptr);
 	const auto type = lookup_type(r.value_mgr.type_lookup, type0);
@@ -473,7 +473,7 @@ static function_bind_t floydrt_release_struct__make(llvm::LLVMContext& context, 
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-static VECTOR_ARRAY_T* floydrt_allocate_vector(floyd_runtime_t* frp, uint64_t element_count){
+static VECTOR_CPPVECTOR_T* floydrt_allocate_vector(floyd_runtime_t* frp, uint64_t element_count){
 	auto& r = get_floyd_runtime(frp);
 
 	auto v = alloc_vec(r.value_mgr.heap, element_count, element_count);
@@ -497,11 +497,11 @@ static function_bind_t floydrt_allocate_vector__make(llvm::LLVMContext& context,
 
 
 //	Creates a new VEC_T with the contents of the string. Caller owns the result.
-static VECTOR_ARRAY_T* floydrt_alloc_kstr(floyd_runtime_t* frp, const char* s, uint64_t size){
+static VECTOR_CPPVECTOR_T* floydrt_alloc_kstr(floyd_runtime_t* frp, const char* s, uint64_t size){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto a = to_runtime_string(r, std::string(s, s + size));
-	return a.string_ptr;
+	return a.string_cppvector_ptr;
 }
 
 static function_bind_t floydrt_alloc_kstr__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -521,7 +521,7 @@ static function_bind_t floydrt_alloc_kstr__make(llvm::LLVMContext& context, cons
 ////////////////////////////////		floydrt_concatunate_vectors()
 
 
-static VECTOR_ARRAY_T* floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime_type_t type, VECTOR_ARRAY_T* lhs, VECTOR_ARRAY_T* rhs){
+static VECTOR_CPPVECTOR_T* floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime_type_t type, VECTOR_CPPVECTOR_T* lhs, VECTOR_CPPVECTOR_T* rhs){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(lhs != nullptr);
 	QUARK_ASSERT(lhs->check_invariant());
@@ -531,7 +531,7 @@ static VECTOR_ARRAY_T* floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, type);
 	if(type0.is_string()){
 		const auto result = from_runtime_string(r, make_runtime_string(lhs)) + from_runtime_string(r, make_runtime_string(rhs) );
-		return to_runtime_string(r, result).string_ptr;
+		return to_runtime_string(r, result).string_cppvector_ptr;
 	}
 	else{
 		auto count2 = lhs->get_element_count() + rhs->get_element_count();
@@ -1098,7 +1098,7 @@ static DICT_CPPMAP_T* floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime_
 	return dict2;
 }
 
-static VECTOR_ARRAY_T* floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1232,7 +1232,7 @@ static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, JSO
 typedef runtime_value_t (*MAP_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value);
 
 //	[R] map([E] elements, func R (E e, C context) f, C context)
-static VECTOR_ARRAY_T* floyd_llvm_intrinsic__map(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1246,10 +1246,10 @@ static VECTOR_ARRAY_T* floyd_llvm_intrinsic__map(floyd_runtime_t* frp, runtime_v
 
 	const auto f = reinterpret_cast<MAP_F>(arg1_value.function_ptr);
 
-	const auto count = arg0_value.vector_array_ptr->get_element_count();
+	const auto count = arg0_value.vector_cppvector_ptr->get_element_count();
 	auto result_vec = alloc_vec(r.value_mgr.heap, count, count);
 	for(int i = 0 ; i < count ; i++){
-		const auto a = (*f)(frp, arg0_value.vector_array_ptr->get_element_ptr()[i], arg2_value);
+		const auto a = (*f)(frp, arg0_value.vector_cppvector_ptr->get_element_ptr()[i], arg2_value);
 		result_vec->get_element_ptr()[i] = a;
 	}
 	return result_vec;
@@ -1292,7 +1292,7 @@ static runtime_value_t floyd_llvm_intrinsic__map_string(floyd_runtime_t* frp, ru
 
 typedef runtime_value_t (*map_dag_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value, runtime_value_t context);
 
-static VECTOR_ARRAY_T* floyd_llvm_intrinsic__map_dag(
+static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map_dag(
 	floyd_runtime_t* frp,
 	runtime_value_t arg0_value,
 	runtime_type_t arg0_type,
@@ -1320,8 +1320,8 @@ static VECTOR_ARRAY_T* floyd_llvm_intrinsic__map_dag(
 
 	const auto f2 = reinterpret_cast<map_dag_F>(f.function_ptr);
 
-	const auto elements2 = elements.vector_array_ptr;
-	const auto parents2 = parents.vector_array_ptr;
+	const auto elements2 = elements.vector_cppvector_ptr;
+	const auto parents2 = parents.vector_cppvector_ptr;
 
 	if(elements2->get_element_count() != parents2->get_element_count()) {
 		quark::throw_runtime_error("map_dag() requires elements and parents be the same count.");
@@ -1415,7 +1415,7 @@ static VECTOR_ARRAY_T* floyd_llvm_intrinsic__map_dag(
 typedef runtime_value_t (*FILTER_F)(floyd_runtime_t* frp, runtime_value_t element_value, runtime_value_t context);
 
 //	[E] filter([E] elements, func bool (E e, C context) f, C context)
-static VECTOR_ARRAY_T* floyd_llvm_intrinsic__filter(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t context, runtime_type_t context_type){
+static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__filter(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t context, runtime_type_t context_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1424,7 +1424,7 @@ static VECTOR_ARRAY_T* floyd_llvm_intrinsic__filter(floyd_runtime_t* frp, runtim
 
 	QUARK_ASSERT(check_filter_func_type(type0, type1, type2));
 
-	const auto& vec = *arg0_value.vector_array_ptr;
+	const auto& vec = *arg0_value.vector_cppvector_ptr;
 	const auto f = reinterpret_cast<FILTER_F>(arg1_value.function_ptr);
 
 	auto count = vec.get_element_count();
@@ -1461,7 +1461,7 @@ static VECTOR_ARRAY_T* floyd_llvm_intrinsic__filter(floyd_runtime_t* frp, runtim
 typedef runtime_value_t (*REDUCE_F)(floyd_runtime_t* frp, runtime_value_t acc_value, runtime_value_t element_value, runtime_value_t context);
 
 //	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
-static VECTOR_ARRAY_T* floyd_llvm_intrinsic__reduce(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
+static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__reduce(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1470,7 +1470,7 @@ static VECTOR_ARRAY_T* floyd_llvm_intrinsic__reduce(floyd_runtime_t* frp, runtim
 
 	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type(r.value_mgr.type_lookup, context_type)));
 
-	const auto& vec = *arg0_value.vector_array_ptr;
+	const auto& vec = *arg0_value.vector_cppvector_ptr;
 	const auto& init = arg1_value;
 	const auto f = reinterpret_cast<REDUCE_F>(arg2_value.function_ptr);
 
@@ -1485,7 +1485,7 @@ static VECTOR_ARRAY_T* floyd_llvm_intrinsic__reduce(floyd_runtime_t* frp, runtim
 		release_deep(r.value_mgr, acc, type1);
 		acc = acc2;
 	}
-	return acc.vector_array_ptr;
+	return acc.vector_cppvector_ptr;
 }
 
 
@@ -1493,7 +1493,7 @@ static VECTOR_ARRAY_T* floyd_llvm_intrinsic__reduce(floyd_runtime_t* frp, runtim
 typedef uint8_t (*stable_sort_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value, runtime_value_t arg2_value);
 
 //	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
-static VECTOR_ARRAY_T* floyd_llvm_intrinsic__stable_sort(
+static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__stable_sort(
 	floyd_runtime_t* frp,
 	runtime_value_t arg0_value,
 	runtime_type_t arg0_type,
@@ -1537,7 +1537,7 @@ static VECTOR_ARRAY_T* floyd_llvm_intrinsic__stable_sort(
 	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
 
 	const auto result = to_runtime_value(r, value_t::make_vector_value(type0, mutate_inplace_elements));
-	return result.vector_array_ptr;
+	return result.vector_cppvector_ptr;
 }
 
 
@@ -1557,7 +1557,7 @@ void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t arg0_valu
 
 
 
-static VECTOR_ARRAY_T* floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
+static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1569,7 +1569,7 @@ static VECTOR_ARRAY_T* floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 
 		value.push_back((char)arg1_value.int_value);
 		const auto result2 = to_runtime_string(r, value);
-		return result2.string_ptr;
+		return result2.string_cppvector_ptr;
 	}
 	else if(type0.is_vector()){
 		const auto vs = unpack_vec_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
@@ -1626,7 +1626,7 @@ static std::string floyd_llvm_intrinsic__replace__string(llvm_execution_engine_t
 	return result;
 }
 
-static const VECTOR_ARRAY_T* floyd_llvm_intrinsic__replace(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
+static const VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__replace(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
 	auto& r = get_floyd_runtime(frp);
 
 	if(start < 0 || end < 0){
@@ -1646,7 +1646,7 @@ static const VECTOR_ARRAY_T* floyd_llvm_intrinsic__replace(floyd_runtime_t* frp,
 		const auto replace = from_runtime_string(r, arg3_value);
 		auto ret = floyd_llvm_intrinsic__replace__string(r, s, (std::size_t)start, (std::size_t)end, replace);
 		const auto result2 = to_runtime_string(r, ret);
-		return result2.string_ptr;
+		return result2.string_cppvector_ptr;
 	}
 	else if(type0.is_vector()){
 		const auto element_type = type0.get_vector_element_type();
@@ -1744,7 +1744,7 @@ static int64_t floyd_llvm_intrinsic__size(floyd_runtime_t* frp, runtime_value_t 
 	}
 }
 
-static const VECTOR_ARRAY_T* floyd_llvm_intrinsic__subset(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
+static const VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__subset(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
 	auto& r = get_floyd_runtime(frp);
 
 	if(start < 0 || end < 0){
@@ -1762,7 +1762,7 @@ static const VECTOR_ARRAY_T* floyd_llvm_intrinsic__subset(floyd_runtime_t* frp, 
 
 		const auto s = std::string(&value[start2], &value[start2 + len2]);
 		const auto result = to_runtime_string(r, s);
-		return result.string_ptr;
+		return result.string_cppvector_ptr;
 	}
 	else if(type0.is_vector()){
 		const auto element_type = type0.get_vector_element_type();
@@ -1775,7 +1775,7 @@ static const VECTOR_ARRAY_T* floyd_llvm_intrinsic__subset(floyd_runtime_t* frp, 
 		if(len2 >= INT32_MAX){
 			throw std::exception();
 		}
-		VECTOR_ARRAY_T* vec2 = alloc_vec(r.value_mgr.heap, len2, len2);
+		VECTOR_CPPVECTOR_T* vec2 = alloc_vec(r.value_mgr.heap, len2, len2);
 		if(is_rc_value(element_type)){
 			for(int i = 0 ; i < len2 ; i++){
 				vec2->get_element_ptr()[i] = vec->get_element_ptr()[start2 + i];
@@ -1879,7 +1879,7 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 				dest_ptr[i] = source_ptr[i];
 			}
 
-			release_vec_deep(r.value_mgr, dest_ptr[index].vector_array_ptr, element_type);
+			release_vec_deep(r.value_mgr, dest_ptr[index].vector_cppvector_ptr, element_type);
 			dest_ptr[index] = arg2_value;
 		}
 		else{

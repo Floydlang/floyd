@@ -341,16 +341,16 @@ runtime_value_t make_runtime_typeid(runtime_type_t type){
 	return { .typeid_itype = type };
 }
 
-runtime_value_t make_runtime_string(VECTOR_ARRAY_T* string_ptr){
-	return { .string_ptr = string_ptr };
+runtime_value_t make_runtime_string(VECTOR_CPPVECTOR_T* string_cppvector_ptr){
+	return { .string_cppvector_ptr = string_cppvector_ptr };
 }
 
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
 	return { .struct_ptr = struct_ptr };
 }
 
-runtime_value_t make_runtime_vector(VECTOR_ARRAY_T* vector_ptr){
-	return { .vector_array_ptr = vector_ptr };
+runtime_value_t make_runtime_vector(VECTOR_CPPVECTOR_T* vector_ptr){
+	return { .vector_cppvector_ptr = vector_ptr };
 }
 runtime_value_t make_runtime_vector_hamt(VECTOR_HAMT_T* vector_hamt_ptr){
 	return { .vector_hamt_ptr = vector_hamt_ptr };
@@ -367,16 +367,16 @@ runtime_value_t make_runtime_dict(DICT_CPPMAP_T* dict_cppmap_ptr){
 
 
 
-VECTOR_ARRAY_T* unpack_vec_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type){
+VECTOR_CPPVECTOR_T* unpack_vec_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type){
 #if DEBUG
 	const auto type = lookup_type(type_lookup, arg_type);
 #endif
 	QUARK_ASSERT(type_lookup.check_invariant());
 	QUARK_ASSERT(type.is_vector());
-	QUARK_ASSERT(arg_value.vector_array_ptr != nullptr);
-	QUARK_ASSERT(arg_value.vector_array_ptr->check_invariant());
+	QUARK_ASSERT(arg_value.vector_cppvector_ptr != nullptr);
+	QUARK_ASSERT(arg_value.vector_cppvector_ptr->check_invariant());
 
-	return arg_value.vector_array_ptr;
+	return arg_value.vector_cppvector_ptr;
 }
 
 DICT_CPPMAP_T* unpack_dict_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type){
@@ -394,9 +394,9 @@ DICT_CPPMAP_T* unpack_dict_arg(const llvm_type_lookup& type_lookup, runtime_valu
 
 
 uint64_t get_vec_string_size(runtime_value_t str){
-	QUARK_ASSERT(str.string_ptr != nullptr);
+	QUARK_ASSERT(str.string_cppvector_ptr != nullptr);
 
-	return str.string_ptr->get_element_count();
+	return str.string_cppvector_ptr->get_element_count();
 }
 
 void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint64_t count){
@@ -421,7 +421,7 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b){
 
 
 
-////////////////////////////////		VECTOR_ARRAY_T
+////////////////////////////////		VECTOR_CPPVECTOR_T
 
 
 
@@ -436,16 +436,16 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
-VECTOR_ARRAY_T::~VECTOR_ARRAY_T(){
+VECTOR_CPPVECTOR_T::~VECTOR_CPPVECTOR_T(){
 	QUARK_ASSERT(check_invariant());
 }
 
-bool VECTOR_ARRAY_T::check_invariant() const {
+bool VECTOR_CPPVECTOR_T::check_invariant() const {
 	QUARK_ASSERT(this->alloc.check_invariant());
 	return true;
 }
 
-VECTOR_ARRAY_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count){
+VECTOR_CPPVECTOR_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count){
 	QUARK_ASSERT(heap.check_invariant());
 
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count);
@@ -455,7 +455,7 @@ VECTOR_ARRAY_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t elem
 	alloc->debug_info[1] = 'E';
 	alloc->debug_info[2] = 'C';
 
-	auto vec = reinterpret_cast<VECTOR_ARRAY_T*>(alloc);
+	auto vec = reinterpret_cast<VECTOR_CPPVECTOR_T*>(alloc);
 
 	QUARK_ASSERT(vec->check_invariant());
 	QUARK_ASSERT(heap.check_invariant());
@@ -463,7 +463,7 @@ VECTOR_ARRAY_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t elem
 	return vec;
 }
 
-void dispose_vec(VECTOR_ARRAY_T& vec){
+void dispose_vec(VECTOR_CPPVECTOR_T& vec){
 	QUARK_ASSERT(vec.check_invariant());
 
 	dispose_alloc(vec.alloc);
@@ -476,16 +476,16 @@ void dispose_vec(VECTOR_ARRAY_T& vec){
 
 
 
-QUARK_UNIT_TEST("VECTOR_ARRAY_T", "", "", ""){
+QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
 	const auto vec_struct_size1 = sizeof(std::vector<int>);
 	QUARK_UT_VERIFY(vec_struct_size1 == 24);
 }
 
-QUARK_UNIT_TEST("VECTOR_ARRAY_T", "", "", ""){
+QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
 	heap_t heap;
 	detect_leaks(heap);
 
-	VECTOR_ARRAY_T* v = alloc_vec(heap, 3, 3);
+	VECTOR_CPPVECTOR_T* v = alloc_vec(heap, 3, 3);
 	QUARK_UT_VERIFY(v != nullptr);
 
 	if(dec_rc(v->alloc) == 0){

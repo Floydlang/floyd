@@ -25,11 +25,11 @@ namespace floyd {
 
 
 struct native_binary_t {
-	VECTOR_ARRAY_T* ascii40;
+	VECTOR_CPPVECTOR_T* ascii40;
 };
 
 struct native_sha1_t {
-	VECTOR_ARRAY_T* ascii40;
+	VECTOR_CPPVECTOR_T* ascii40;
 };
 
 
@@ -162,7 +162,7 @@ static void llvm_corelib__write_text_file(floyd_runtime_t* frp, runtime_value_t 
 
 
 
-static VECTOR_ARRAY_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
+static VECTOR_CPPVECTOR_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
@@ -179,10 +179,10 @@ static VECTOR_ARRAY_T* llvm_corelib__get_fsentries_shallow(floyd_runtime_t* frp,
 #endif
 
 	const auto v = to_runtime_value(r, vec2);
-	return v.vector_array_ptr;
+	return v.vector_cppvector_ptr;
 }
 
-static VECTOR_ARRAY_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
+static VECTOR_CPPVECTOR_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, runtime_value_t path0){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto path = from_runtime_string(r, path0);
@@ -199,7 +199,7 @@ static VECTOR_ARRAY_T* llvm_corelib__get_fsentries_deep(floyd_runtime_t* frp, ru
 #endif
 
 	const auto v = to_runtime_value(r, vec2);
-	return v.vector_array_ptr;
+	return v.vector_cppvector_ptr;
 }
 
 static STRUCT_T* llvm_corelib__get_fsentry_info(floyd_runtime_t* frp, runtime_value_t path0){
