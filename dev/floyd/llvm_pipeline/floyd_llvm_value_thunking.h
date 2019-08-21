@@ -64,8 +64,6 @@ runtime_value_t concat_vector_hamt(value_mgr_t& value_mgr, const typeid_t& type,
 
 	vector_hamt_pod
 	vector_hamt_rc
-
-
 */
 
 inline bool is_vector_cppvector(const typeid_t& t){

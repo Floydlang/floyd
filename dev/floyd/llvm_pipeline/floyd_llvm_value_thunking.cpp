@@ -200,6 +200,7 @@ static runtime_value_t to_runtime_vector(value_mgr_t& value_mgr, const value_t& 
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
 }
 

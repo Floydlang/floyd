@@ -121,7 +121,9 @@ struct llvm_code_generator_t {
 //		floydrt_concatunate_hamt_vectors(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("concatunate_hamt_vectors"))),
 		floydrt_compare_values(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("compare_values"))),
 		floydrt_allocate_vector(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_vector"))),
-		floydrt_allocate_fill_vector(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_vector_fill"))),
+		floydrt_allocate_vector_fill(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_vector_fill"))),
+		floydrt_store_vector_element_mutable(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("store_vector_element_mutable"))),
+	
 //		floydrt_allocate_hamt_vector(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_hamt_vector"))),
 		floydrt_allocate_dict(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_dict"))),
 		floydrt_store_dict_mutable(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("store_dict_mutable"))),
@@ -194,7 +196,9 @@ struct llvm_code_generator_t {
 //	const function_def_t& floydrt_concatunate_hamt_vectors;
 	const function_def_t& floydrt_compare_values;
 	const function_def_t& floydrt_allocate_vector;
-	const function_def_t& floydrt_allocate_fill_vector;
+	const function_def_t& floydrt_allocate_vector_fill;
+	const function_def_t& floydrt_store_vector_element_mutable;
+	
 //	const function_def_t& floydrt_allocate_hamt_vector;
 	const function_def_t& floydrt_allocate_dict;
 	const function_def_t& floydrt_store_dict_mutable;
@@ -1545,7 +1549,26 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 		}
 	}
 	else if(is_vector_hamt(details.value_type)){
-		QUARK_ASSERT(false);
+		auto vec_ptr_reg = builder.CreateCall(gen_acc.gen.floydrt_allocate_vector.llvm_codegen_f, { gen_acc.get_callers_fcp(), element_count_reg }, "");
+
+		auto vec_type_reg = generate_itype_constant(gen_acc.gen, details.value_type);
+
+		if(element_type0.is_bool()){
+			QUARK_ASSERT(false);
+		}
+		else{
+
+			int element_index = 0;
+			for(const auto& element_value: details.elements){
+				auto index_reg = generate_constant(gen_acc, value_t::make_int(element_index));
+				auto element_value_reg = generate_expression(gen_acc, element_value);
+
+				//	Move ownwership from temp to member element, no need for retain-release.
+				builder.CreateCall(gen_acc.gen.floydrt_store_vector_element_mutable.llvm_codegen_f, { gen_acc.get_callers_fcp(), vec_type_reg, index_reg, element_value_reg }, "");
+				element_index++;
+			}
+			return vec_ptr_reg;
+		}
 	}
 	else{
 		QUARK_ASSERT(false);
