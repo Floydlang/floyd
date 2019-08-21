@@ -24,7 +24,7 @@
 #include <algorithm>
 #include <memory>
 #ifndef __APPLE__
-#define	__dead2
+#define	__dead2 __attribute__((__noreturn__))
 #endif
 
 /*
