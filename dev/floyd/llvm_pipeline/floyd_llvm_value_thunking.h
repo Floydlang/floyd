@@ -51,6 +51,12 @@ void release_vec_deep(value_mgr_t& value_mgr, VECTOR_CPPVECTOR_T* vec, const typ
 void release_struct_deep(value_mgr_t& value_mgr, STRUCT_T* s, const typeid_t& type);
 
 
+
+runtime_value_t concat_strings(value_mgr_t& value_mgr, const runtime_value_t& lhs, const runtime_value_t& rhs);
+runtime_value_t concat_vector_cppvector(value_mgr_t& value_mgr, const typeid_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs);
+runtime_value_t concat_vector_hamt(value_mgr_t& value_mgr, const typeid_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs);
+
+
 }	// floyd
 
 #endif /* floyd_llvm_value_thunking_hpp */

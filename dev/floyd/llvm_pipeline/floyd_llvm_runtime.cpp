@@ -527,49 +527,27 @@ static function_bind_t floydrt_alloc_kstr__make(llvm::LLVMContext& context, cons
 ////////////////////////////////		floydrt_concatunate_vectors()
 
 
-static VECTOR_CPPVECTOR_T* floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime_type_t type, VECTOR_CPPVECTOR_T* lhs, VECTOR_CPPVECTOR_T* rhs){
+
+
+static runtime_value_t floydrt_concatunate_vectors(floyd_runtime_t* frp, runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
 	auto& r = get_floyd_runtime(frp);
-	QUARK_ASSERT(lhs != nullptr);
-	QUARK_ASSERT(lhs->check_invariant());
-	QUARK_ASSERT(rhs != nullptr);
-	QUARK_ASSERT(rhs->check_invariant());
+	QUARK_ASSERT(lhs.check_invariant());
+	QUARK_ASSERT(rhs.check_invariant());
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, type);
 	if(type0.is_string()){
-		const auto result = from_runtime_string(r, make_runtime_string(lhs)) + from_runtime_string(r, make_runtime_string(rhs) );
-		return to_runtime_string(r, result).string_cppvector_ptr;
+		return concat_strings(r.value_mgr, lhs, rhs);
 	}
 	else{
-		auto count2 = lhs->get_element_count() + rhs->get_element_count();
-
-		auto result = alloc_vector_ccpvector2(r.value_mgr.heap, count2, count2);
-
-		const auto element_type = type0.get_vector_element_type();
-
-		auto dest_ptr = result.vector_cppvector_ptr->get_element_ptr();
-		auto dest_ptr2 = dest_ptr + lhs->get_element_count();
-		auto lhs_ptr = lhs->get_element_ptr();
-		auto rhs_ptr = rhs->get_element_ptr();
-
-		if(is_rc_value(element_type)){
-			for(int i = 0 ; i < lhs->get_element_count() ; i++){
-				retain_value(r.value_mgr, lhs_ptr[i], element_type);
-				dest_ptr[i] = lhs_ptr[i];
-			}
-			for(int i = 0 ; i < rhs->get_element_count() ; i++){
-				retain_value(r.value_mgr, rhs_ptr[i], element_type);
-				dest_ptr2[i] = rhs_ptr[i];
-			}
+		if(k_global_vector_type == vector_backend::cppvector){
+			return concat_vector_cppvector(r.value_mgr, type0, lhs, rhs);
+		}
+		else if(k_global_vector_type == vector_backend::hamt){
+			return concat_vector_hamt(r.value_mgr, type0, lhs, rhs);
 		}
 		else{
-			for(int i = 0 ; i < lhs->get_element_count() ; i++){
-				dest_ptr[i] = lhs_ptr[i];
-			}
-			for(int i = 0 ; i < rhs->get_element_count() ; i++){
-				dest_ptr2[i] = rhs_ptr[i];
-			}
+			QUARK_ASSERT(false);
 		}
-		return result.vector_cppvector_ptr;
 	}
 }
 
@@ -1865,37 +1843,45 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 	else if(type0.is_vector()){
 		QUARK_ASSERT(type1.is_int());
 
-		const auto vec = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
-		const auto element_type = type0.get_vector_element_type();
-		const auto index = arg1_value.int_value;
+		if(k_global_vector_type == vector_backend::cppvector){
+			const auto vec = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
+			const auto element_type = type0.get_vector_element_type();
+			const auto index = arg1_value.int_value;
 
-		QUARK_ASSERT(element_type == type2);
+			QUARK_ASSERT(element_type == type2);
 
-		if(index < 0 || index >= vec->get_element_count()){
-			quark::throw_runtime_error("Position argument to update() is outside collection span.");
-		}
-
-		auto result = alloc_vector_ccpvector2(r.value_mgr.heap, vec->get_element_count(), vec->get_element_count());
-		auto dest_ptr = result.vector_cppvector_ptr->get_element_ptr();
-		auto source_ptr = vec->get_element_ptr();
-		if(is_rc_value(element_type)){
-			retain_value(r.value_mgr, arg2_value, element_type);
-			for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
-				retain_value(r.value_mgr, source_ptr[i], element_type);
-				dest_ptr[i] = source_ptr[i];
+			if(index < 0 || index >= vec->get_element_count()){
+				quark::throw_runtime_error("Position argument to update() is outside collection span.");
 			}
 
-			release_vec_deep(r.value_mgr, dest_ptr[index].vector_cppvector_ptr, element_type);
-			dest_ptr[index] = arg2_value;
+			auto result = alloc_vector_ccpvector2(r.value_mgr.heap, vec->get_element_count(), vec->get_element_count());
+			auto dest_ptr = result.vector_cppvector_ptr->get_element_ptr();
+			auto source_ptr = vec->get_element_ptr();
+			if(is_rc_value(element_type)){
+				retain_value(r.value_mgr, arg2_value, element_type);
+				for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
+					retain_value(r.value_mgr, source_ptr[i], element_type);
+					dest_ptr[i] = source_ptr[i];
+				}
+
+				release_vec_deep(r.value_mgr, dest_ptr[index].vector_cppvector_ptr, element_type);
+				dest_ptr[index] = arg2_value;
+			}
+			else{
+				for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
+					dest_ptr[i] = source_ptr[i];
+				}
+				dest_ptr[index] = arg2_value;
+			}
+
+			return result;
+		}
+		else if(k_global_vector_type == vector_backend::hamt){
+			QUARK_ASSERT(false);
 		}
 		else{
-			for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
-				dest_ptr[i] = source_ptr[i];
-			}
-			dest_ptr[index] = arg2_value;
+			QUARK_ASSERT(false);
 		}
-
-		return result;
 	}
 	else if(type0.is_dict()){
 		QUARK_ASSERT(type1.is_string());
