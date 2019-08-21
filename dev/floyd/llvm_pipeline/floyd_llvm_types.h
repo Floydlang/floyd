@@ -17,10 +17,6 @@
 namespace floyd {
 
 
-//	Temporary flag that switches between array-based vector backened and HAMT-based vector.
-//	The string always uses array-based vector.
-//	There is still only one typeid_t/itype for vector.
-const bool k_use_hamt_vector = true;
 
 llvm::Type* deref_ptr(llvm::Type* type);
 

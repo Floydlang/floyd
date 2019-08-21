@@ -26,7 +26,7 @@ static runtime_value_t to_runtime_string0(heap_t& heap, const std::string& s){
 
 	const auto count = static_cast<uint64_t>(s.size());
 	const auto allocation_count = size_to_allocation_blocks(s.size());
-	auto v = alloc_vec(heap, allocation_count, count);
+	auto v = alloc_vector_ccpvector(heap, allocation_count, count);
 	auto result = make_runtime_string(v);
 
 	size_t char_pos = 0;
@@ -176,7 +176,7 @@ static runtime_value_t to_runtime_vector(value_mgr_t& value_mgr, const value_t& 
 	const auto& v0 = value.get_vector_value();
 
 	const auto count = v0.size();
-	auto v = alloc_vec(value_mgr.heap, count, count);
+	auto v = alloc_vector_ccpvector(value_mgr.heap, count, count);
 	auto result = make_runtime_string(v);
 
 	const auto element_type = value.get_type().get_vector_element_type();
@@ -217,8 +217,8 @@ static runtime_value_t to_runtime_dict(value_mgr_t& value_mgr, const typeid_t::d
 
 	const auto& v0 = value.get_dict_value();
 
-	auto v = alloc_dict(value_mgr.heap);
-	auto result = runtime_value_t{ .dict_cppmap_ptr = v };
+	auto v = alloc_dict_cppmap(value_mgr.heap);
+	auto result = make_runtime_dict_cppmap(v);
 
 	const auto element_type = value.get_type().get_dict_value_type();
 	auto& m = v->get_map_mut();
@@ -500,7 +500,7 @@ void release_dict_deep(value_mgr_t& value_mgr, DICT_CPPMAP_T* dict, const typeid
 				release_deep(value_mgr, e.second, element_type);
 			}
 		}
-		dispose_dict(*dict);
+		dispose_dict_cppmap(*dict);
 	}
 }
 
@@ -527,7 +527,7 @@ void release_vec_deep(value_mgr_t& value_mgr, VECTOR_CPPVECTOR_T* vec, const typ
 		else{
 			QUARK_ASSERT(false);
 		}
-		dispose_vec(*vec);
+		dispose_vector_cppvector(*vec);
 	}
 }
 

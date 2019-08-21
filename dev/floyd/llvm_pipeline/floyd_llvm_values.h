@@ -34,6 +34,12 @@ struct type_interner_t;
 struct llvm_type_lookup;
 
 
+//	Temporary flag that switches between array-based vector backened and HAMT-based vector.
+//	The string always uses array-based vector.
+//	There is still only one typeid_t/itype for vector.
+const bool k_use_hamt_vector = true;
+
+
 ////////////////////////////////		heap_t
 
 /*
@@ -148,7 +154,7 @@ void dispose_alloc(heap_alloc_64_t& alloc);
 
 
 
-////////////////////////////////	native_value_t
+////////////////////////////////	runtime_value_t
 
 
 /*
@@ -190,9 +196,9 @@ runtime_value_t make_runtime_double(double value);
 runtime_value_t make_runtime_typeid(runtime_type_t type);
 runtime_value_t make_runtime_string(VECTOR_CPPVECTOR_T* string_cppvector_ptr);
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr);
-runtime_value_t make_runtime_vector(VECTOR_CPPVECTOR_T* vector_ptr);
+runtime_value_t make_runtime_vector_cppvector(VECTOR_CPPVECTOR_T* vector_ptr);
 runtime_value_t make_runtime_vector_hamt(VECTOR_HAMT_T* vector_hamt_ptr);
-runtime_value_t make_runtime_dict(DICT_CPPMAP_T* dict_cppmap_ptr);
+runtime_value_t make_runtime_dict_cppmap(DICT_CPPMAP_T* dict_cppmap_ptr);
 
 
 VECTOR_CPPVECTOR_T* unpack_vec_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type);
@@ -323,8 +329,8 @@ struct VECTOR_CPPVECTOR_T {
 	heap_alloc_64_t alloc;
 };
 
-VECTOR_CPPVECTOR_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count);
-void dispose_vec(VECTOR_CPPVECTOR_T& vec);
+VECTOR_CPPVECTOR_T* alloc_vector_ccpvector(heap_t& heap, uint64_t allocation_count, uint64_t element_count);
+void dispose_vector_cppvector(VECTOR_CPPVECTOR_T& vec);
 
 
 
@@ -398,8 +404,8 @@ struct VECTOR_HAMT_T {
 	heap_alloc_64_t alloc;
 };
 
-VECTOR_HAMT_T* alloc_vec_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count);
-void dispose_vec_hamt(VECTOR_HAMT_T& vec);
+VECTOR_HAMT_T* alloc_vecctor_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count);
+void dispose_vecctor_hamt(VECTOR_HAMT_T& vec);
 
 
 
@@ -431,8 +437,8 @@ struct DICT_CPPMAP_T {
 	heap_alloc_64_t alloc;
 };
 
-DICT_CPPMAP_T* alloc_dict(heap_t& heap);
-void dispose_dict(DICT_CPPMAP_T& vec);
+DICT_CPPMAP_T* alloc_dict_cppmap(heap_t& heap);
+void dispose_dict_cppmap(DICT_CPPMAP_T& vec);
 
 
 
@@ -510,9 +516,6 @@ llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const l
 
 //	Returns the specific LLVM type for the value, like VECTOR_CPPVECTOR_T* etc.
 llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& runtime_value_reg, const typeid_t& type);
-
-
-
 
 
 

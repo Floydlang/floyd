@@ -476,7 +476,7 @@ static function_bind_t floydrt_release_struct__make(llvm::LLVMContext& context, 
 static VECTOR_CPPVECTOR_T* floydrt_allocate_vector(floyd_runtime_t* frp, uint64_t element_count){
 	auto& r = get_floyd_runtime(frp);
 
-	auto v = alloc_vec(r.value_mgr.heap, element_count, element_count);
+	auto v = alloc_vector_ccpvector(r.value_mgr.heap, element_count, element_count);
 	return v;
 }
 
@@ -536,7 +536,7 @@ static VECTOR_CPPVECTOR_T* floydrt_concatunate_vectors(floyd_runtime_t* frp, run
 	else{
 		auto count2 = lhs->get_element_count() + rhs->get_element_count();
 
-		auto result = alloc_vec(r.value_mgr.heap, count2, count2);
+		auto result = alloc_vector_ccpvector(r.value_mgr.heap, count2, count2);
 
 		const auto element_type = type0.get_vector_element_type();
 
@@ -590,7 +590,7 @@ static function_bind_t floydrt_concatunate_vectors__make(llvm::LLVMContext& cont
 static void* floydrt_allocate_dict(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 
-	auto v = alloc_dict(r.value_mgr.heap);
+	auto v = alloc_dict_cppmap(r.value_mgr.heap);
 	return v;
 }
 
@@ -1082,7 +1082,7 @@ static DICT_CPPMAP_T* floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime_
 	const auto value_type = type0.get_dict_value_type();
 
 	//	Deep copy dict.
-	auto dict2 = alloc_dict(r.value_mgr.heap);
+	auto dict2 = alloc_dict_cppmap(r.value_mgr.heap);
 	auto& m = dict2->get_map_mut();
 	m = dict->get_map();
 
@@ -1109,7 +1109,7 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, 
 	auto& m = dict->get_map();
 	const auto count = (int32_t)m.size();
 
-	auto result_vec = alloc_vec(r.value_mgr.heap, count, count);
+	auto result_vec = alloc_vector_ccpvector(r.value_mgr.heap, count, count);
 
 	int index = 0;
 	for(const auto& e: m){
@@ -1247,7 +1247,7 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map(floyd_runtime_t* frp, runti
 	const auto f = reinterpret_cast<MAP_F>(arg1_value.function_ptr);
 
 	const auto count = arg0_value.vector_cppvector_ptr->get_element_count();
-	auto result_vec = alloc_vec(r.value_mgr.heap, count, count);
+	auto result_vec = alloc_vector_ccpvector(r.value_mgr.heap, count, count);
 	for(int i = 0 ; i < count ; i++){
 		const auto a = (*f)(frp, arg0_value.vector_cppvector_ptr->get_element_ptr()[i], arg2_value);
 		result_vec->get_element_ptr()[i] = a;
@@ -1377,17 +1377,17 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map_dag(
 				}
 			}
 
-			auto solved_deps2 = alloc_vec(r.value_mgr.heap, solved_deps.size(), solved_deps.size());
+			auto solved_deps2 = alloc_vector_ccpvector(r.value_mgr.heap, solved_deps.size(), solved_deps.size());
 			for(int i = 0 ; i < solved_deps.size() ; i++){
 				solved_deps2->get_element_ptr()[i] = solved_deps[i];
 			}
-			runtime_value_t solved_deps3 = make_runtime_vector(solved_deps2);
+			runtime_value_t solved_deps3 = make_runtime_vector_cppvector(solved_deps2);
 
 			const auto result1 = (*f2)(frp, e, solved_deps3, context);
 
 			//	Release just the vec, **not the elements**. The elements are aliases for complete-vector.
 			if(dec_rc(solved_deps2->alloc) == 0){
-				dispose_vec(*solved_deps2);
+				dispose_vector_cppvector(*solved_deps2);
 			}
 
 			const auto parent_index = parents2->get_element_ptr()[element_index].int_value;
@@ -1401,7 +1401,7 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map_dag(
 
 	//??? No need to copy all elements -- could store them directly into the VEC_T.
 	const auto count = complete.size();
-	auto result_vec = alloc_vec(r.value_mgr.heap, count, count);
+	auto result_vec = alloc_vector_ccpvector(r.value_mgr.heap, count, count);
 	for(int i = 0 ; i < count ; i++){
 //		retain_value(r, complete[i], r_type);
 		result_vec->get_element_ptr()[i] = complete[i];
@@ -1447,7 +1447,7 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__filter(floyd_runtime_t* frp, ru
 	}
 
 	const auto count2 = (int32_t)acc.size();
-	auto result_vec = alloc_vec(r.value_mgr.heap, count2, count2);
+	auto result_vec = alloc_vector_ccpvector(r.value_mgr.heap, count2, count2);
 
 	if(count2 > 0){
 		//	Count > 0 required to get address to first element in acc.
@@ -1662,7 +1662,7 @@ static const VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__replace(floyd_runtime_t* 
 		const auto section3_len = vec->get_element_count() - end2;
 
 		const auto len2 = section1_len + section2_len + section3_len;
-		auto vec2 = alloc_vec(r.value_mgr.heap, len2, len2);
+		auto vec2 = alloc_vector_ccpvector(r.value_mgr.heap, len2, len2);
 		copy_elements(&vec2->get_element_ptr()[0], &vec->get_element_ptr()[0], section1_len);
 		copy_elements(&vec2->get_element_ptr()[section1_len], &replace_vec->get_element_ptr()[0], section2_len);
 		copy_elements(&vec2->get_element_ptr()[section1_len + section2_len], &vec->get_element_ptr()[end2], section3_len);
@@ -1775,7 +1775,7 @@ static const VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__subset(floyd_runtime_t* f
 		if(len2 >= INT32_MAX){
 			throw std::exception();
 		}
-		VECTOR_CPPVECTOR_T* vec2 = alloc_vec(r.value_mgr.heap, len2, len2);
+		VECTOR_CPPVECTOR_T* vec2 = alloc_vector_ccpvector(r.value_mgr.heap, len2, len2);
 		if(is_rc_value(element_type)){
 			for(int i = 0 ; i < len2 ; i++){
 				vec2->get_element_ptr()[i] = vec->get_element_ptr()[start2 + i];
@@ -1869,7 +1869,7 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 			quark::throw_runtime_error("Position argument to update() is outside collection span.");
 		}
 
-		auto result = alloc_vec(r.value_mgr.heap, vec->get_element_count(), vec->get_element_count());
+		auto result = alloc_vector_ccpvector(r.value_mgr.heap, vec->get_element_count(), vec->get_element_count());
 		auto dest_ptr = result->get_element_ptr();
 		auto source_ptr = vec->get_element_ptr();
 		if(is_rc_value(element_type)){
@@ -1889,7 +1889,7 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 			dest_ptr[index] = arg2_value;
 		}
 
-		return make_runtime_vector(result);
+		return make_runtime_vector_cppvector(result);
 	}
 	else if(type0.is_dict()){
 		QUARK_ASSERT(type1.is_string());
@@ -1899,7 +1899,7 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 		const auto value_type = type0.get_dict_value_type();
 
 		//	Deep copy dict.
-		auto dict2 = alloc_dict(r.value_mgr.heap);
+		auto dict2 = alloc_dict_cppmap(r.value_mgr.heap);
 		dict2->get_map_mut() = dict->get_map();
 
 		dict2->get_map_mut().insert_or_assign(key, arg2_value);
@@ -1910,7 +1910,7 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 			}
 		}
 
-		return runtime_value_t{ .dict_cppmap_ptr = dict2 };
+		return make_runtime_dict_cppmap(dict2);
 	}
 	else if(type0.is_struct()){
 		QUARK_ASSERT(false);

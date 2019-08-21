@@ -349,14 +349,14 @@ runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
 	return { .struct_ptr = struct_ptr };
 }
 
-runtime_value_t make_runtime_vector(VECTOR_CPPVECTOR_T* vector_ptr){
+runtime_value_t make_runtime_vector_cppvector(VECTOR_CPPVECTOR_T* vector_ptr){
 	return { .vector_cppvector_ptr = vector_ptr };
 }
 runtime_value_t make_runtime_vector_hamt(VECTOR_HAMT_T* vector_hamt_ptr){
 	return { .vector_hamt_ptr = vector_hamt_ptr };
 }
 
-runtime_value_t make_runtime_dict(DICT_CPPMAP_T* dict_cppmap_ptr){
+runtime_value_t make_runtime_dict_cppmap(DICT_CPPMAP_T* dict_cppmap_ptr){
 	return { .dict_cppmap_ptr = dict_cppmap_ptr };
 }
 
@@ -445,7 +445,7 @@ bool VECTOR_CPPVECTOR_T::check_invariant() const {
 	return true;
 }
 
-VECTOR_CPPVECTOR_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t element_count){
+VECTOR_CPPVECTOR_T* alloc_vector_ccpvector(heap_t& heap, uint64_t allocation_count, uint64_t element_count){
 	QUARK_ASSERT(heap.check_invariant());
 
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count);
@@ -463,7 +463,7 @@ VECTOR_CPPVECTOR_T* alloc_vec(heap_t& heap, uint64_t allocation_count, uint64_t 
 	return vec;
 }
 
-void dispose_vec(VECTOR_CPPVECTOR_T& vec){
+void dispose_vector_cppvector(VECTOR_CPPVECTOR_T& vec){
 	QUARK_ASSERT(vec.check_invariant());
 
 	dispose_alloc(vec.alloc);
@@ -485,11 +485,11 @@ QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
 	heap_t heap;
 	detect_leaks(heap);
 
-	VECTOR_CPPVECTOR_T* v = alloc_vec(heap, 3, 3);
+	VECTOR_CPPVECTOR_T* v = alloc_vector_ccpvector(heap, 3, 3);
 	QUARK_UT_VERIFY(v != nullptr);
 
 	if(dec_rc(v->alloc) == 0){
-		dispose_vec(*v);
+		dispose_vector_cppvector(*v);
 	}
 
 	QUARK_UT_VERIFY(heap.check_invariant());
@@ -528,7 +528,7 @@ bool VECTOR_HAMT_T::check_invariant() const {
 	return true;
 }
 
-VECTOR_HAMT_T* alloc_vec_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count){
+VECTOR_HAMT_T* alloc_vecctor_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(elements != nullptr);
 
@@ -551,7 +551,7 @@ VECTOR_HAMT_T* alloc_vec_hamt(heap_t& heap, const runtime_value_t elements[], ui
 	return vec;
 }
 
-void dispose_vec_hamt(VECTOR_HAMT_T& vec){
+void dispose_vecctor_hamt(VECTOR_HAMT_T& vec){
 	QUARK_ASSERT(vec.check_invariant());
 
 	auto vec2 = &vec.get_vecref_mut();
@@ -576,7 +576,7 @@ QUARK_UNIT_TEST("VECTOR_HAMT_T", "", "", ""){
 	detect_leaks(heap);
 
 	const runtime_value_t a[] = { make_runtime_int(1000), make_runtime_int(2000), make_runtime_int(3000) };
-	VECTOR_HAMT_T* v = alloc_vec_hamt(heap, a, 3);
+	VECTOR_HAMT_T* v = alloc_vecctor_hamt(heap, a, 3);
 	QUARK_UT_VERIFY(v != nullptr);
 
 	QUARK_UT_VERIFY(v->get_element_count() == 3);
@@ -585,7 +585,7 @@ QUARK_UNIT_TEST("VECTOR_HAMT_T", "", "", ""){
 	QUARK_UT_VERIFY(v->operator[](2).int_value == 3000);
 
 	if(dec_rc(v->alloc) == 0){
-		dispose_vec_hamt(*v);
+		dispose_vecctor_hamt(*v);
 	}
 
 	QUARK_UT_VERIFY(heap.check_invariant());
@@ -618,7 +618,7 @@ uint64_t DICT_CPPMAP_T::size() const {
 	return d.size();
 }
 
-DICT_CPPMAP_T* alloc_dict(heap_t& heap){
+DICT_CPPMAP_T* alloc_dict_cppmap(heap_t& heap){
 	QUARK_ASSERT(heap.check_invariant());
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0);
@@ -638,7 +638,7 @@ DICT_CPPMAP_T* alloc_dict(heap_t& heap){
 	return dict;
 }
 
-void dispose_dict(DICT_CPPMAP_T& dict){
+void dispose_dict_cppmap(DICT_CPPMAP_T& dict){
 	QUARK_ASSERT(dict.check_invariant());
 
 	dict.get_map_mut().~STDMAP();
