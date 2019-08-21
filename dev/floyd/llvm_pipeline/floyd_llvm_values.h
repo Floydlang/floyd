@@ -26,7 +26,7 @@ struct json_t;
 namespace floyd {
 
 struct VECTOR_ARRAY_T;
-struct VEC_HAMT_T;
+struct VECTOR_HAMT_T;
 struct DICT_T;
 struct JSON_T;
 struct STRUCT_T;
@@ -169,7 +169,7 @@ union runtime_value_t {
 	VECTOR_ARRAY_T* string_ptr;
 
 	VECTOR_ARRAY_T* vector_array_ptr;
-	VEC_HAMT_T* hamt_vector_ptr;
+	VECTOR_HAMT_T* vector_hamt_ptr;
 	DICT_T* dict_ptr;
 	JSON_T* json_ptr;
 	STRUCT_T* struct_ptr;
@@ -191,7 +191,7 @@ runtime_value_t make_runtime_typeid(runtime_type_t type);
 runtime_value_t make_runtime_string(VECTOR_ARRAY_T* string_ptr);
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr);
 runtime_value_t make_runtime_vector(VECTOR_ARRAY_T* vector_ptr);
-runtime_value_t make_runtime_vector_hamt(VEC_HAMT_T* hamt_vector_ptr);
+runtime_value_t make_runtime_vector_hamt(VECTOR_HAMT_T* vector_hamt_ptr);
 runtime_value_t make_runtime_dict(DICT_T* dict_ptr);
 
 
@@ -330,7 +330,7 @@ void dispose_vec(VECTOR_ARRAY_T& vec);
 
 
 
-////////////////////////////////		VEC_HAMT_T
+////////////////////////////////		VECTOR_HAMT_T
 
 
 /*
@@ -345,8 +345,8 @@ void dispose_vec(VECTOR_ARRAY_T& vec);
 	Embeds immer::vector<runtime_value_t> in data_a, data_b, data_c, data_d.
 */
 
-struct VEC_HAMT_T {
-	~VEC_HAMT_T();
+struct VECTOR_HAMT_T {
+	~VECTOR_HAMT_T();
 	bool check_invariant() const;
 
 	const immer::vector<runtime_value_t>& get_vecref() const {
@@ -384,7 +384,7 @@ struct VEC_HAMT_T {
 		return temp;
 	}
 
-	//	Mutates the VEC_HAMT_T implace -- only OK while constructing it when no other observers exists.
+	//	Mutates the VECTOR_HAMT_T implace -- only OK while constructing it when no other observers exists.
 	inline void store(const uint64_t index, runtime_value_t value){
 		QUARK_ASSERT(check_invariant());
 
@@ -398,8 +398,8 @@ struct VEC_HAMT_T {
 	heap_alloc_64_t alloc;
 };
 
-VEC_HAMT_T* alloc_vec_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count);
-void dispose_vec_hamt(VEC_HAMT_T& vec);
+VECTOR_HAMT_T* alloc_vec_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count);
+void dispose_vec_hamt(VECTOR_HAMT_T& vec);
 
 
 

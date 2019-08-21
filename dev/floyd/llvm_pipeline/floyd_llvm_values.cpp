@@ -352,8 +352,8 @@ runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr){
 runtime_value_t make_runtime_vector(VECTOR_ARRAY_T* vector_ptr){
 	return { .vector_array_ptr = vector_ptr };
 }
-runtime_value_t make_runtime_vector_hamt(VEC_HAMT_T* hamt_vector_ptr){
-	return { .hamt_vector_ptr = hamt_vector_ptr };
+runtime_value_t make_runtime_vector_hamt(VECTOR_HAMT_T* vector_hamt_ptr){
+	return { .vector_hamt_ptr = vector_hamt_ptr };
 }
 
 runtime_value_t make_runtime_dict(DICT_T* dict_ptr){
@@ -500,7 +500,7 @@ QUARK_UNIT_TEST("VECTOR_ARRAY_T", "", "", ""){
 
 
 
-////////////////////////////////		VEC_HAMT_T
+////////////////////////////////		VECTOR_HAMT_T
 
 
 
@@ -515,11 +515,11 @@ QUARK_UNIT_TEST("", "", "", ""){
 }
 
 
-VEC_HAMT_T::~VEC_HAMT_T(){
+VECTOR_HAMT_T::~VECTOR_HAMT_T(){
 	QUARK_ASSERT(check_invariant());
 }
 
-bool VEC_HAMT_T::check_invariant() const {
+bool VECTOR_HAMT_T::check_invariant() const {
 	QUARK_ASSERT(this->alloc.check_invariant());
 
 	const auto& vec = get_vecref();
@@ -528,7 +528,7 @@ bool VEC_HAMT_T::check_invariant() const {
 	return true;
 }
 
-VEC_HAMT_T* alloc_vec_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count){
+VECTOR_HAMT_T* alloc_vec_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(elements != nullptr);
 
@@ -539,7 +539,7 @@ VEC_HAMT_T* alloc_vec_hamt(heap_t& heap, const runtime_value_t elements[], uint6
 	alloc->debug_info[3] = 'M';
 	alloc->debug_info[4] = 'T';
 
-	auto vec = reinterpret_cast<VEC_HAMT_T*>(alloc);
+	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
 
 	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data_a);
     auto vec2 = new (buffer_ptr) immer::vector<runtime_value_t>(&elements[0], &elements[element_count]);
@@ -551,7 +551,7 @@ VEC_HAMT_T* alloc_vec_hamt(heap_t& heap, const runtime_value_t elements[], uint6
 	return vec;
 }
 
-void dispose_vec_hamt(VEC_HAMT_T& vec){
+void dispose_vec_hamt(VECTOR_HAMT_T& vec){
 	QUARK_ASSERT(vec.check_invariant());
 
 	auto vec2 = &vec.get_vecref_mut();
@@ -566,17 +566,17 @@ void dispose_vec_hamt(VEC_HAMT_T& vec){
 
 
 
-QUARK_UNIT_TEST("VEC_HAMT_T", "", "", ""){
+QUARK_UNIT_TEST("VECTOR_HAMT_T", "", "", ""){
 	const auto vec_struct_size2 = sizeof(immer::vector<int>);
 	QUARK_UT_VERIFY(vec_struct_size2 == 32);
 }
 
-QUARK_UNIT_TEST("VEC_HAMT_T", "", "", ""){
+QUARK_UNIT_TEST("VECTOR_HAMT_T", "", "", ""){
 	heap_t heap;
 	detect_leaks(heap);
 
 	const runtime_value_t a[] = { make_runtime_int(1000), make_runtime_int(2000), make_runtime_int(3000) };
-	VEC_HAMT_T* v = alloc_vec_hamt(heap, a, 3);
+	VECTOR_HAMT_T* v = alloc_vec_hamt(heap, a, 3);
 	QUARK_UT_VERIFY(v != nullptr);
 
 	QUARK_UT_VERIFY(v->get_element_count() == 3);
