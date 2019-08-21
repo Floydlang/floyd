@@ -207,9 +207,10 @@ static value_t from_runtime_vector(const value_mgr_t& value_mgr, const runtime_v
 	QUARK_ASSERT(value_mgr.check_invariant());
 	QUARK_ASSERT(encoded_value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(type.is_vector());
 
 	const auto element_type = type.get_vector_element_type();
-	if(k_global_vector_type == vector_backend::cppvector){
+	if(is_vector_cppvector(type)){
 		const auto vec = encoded_value.vector_cppvector_ptr;
 
 		std::vector<value_t> elements;
@@ -223,7 +224,7 @@ static value_t from_runtime_vector(const value_mgr_t& value_mgr, const runtime_v
 		const auto val = value_t::make_vector_value(element_type, elements);
 		return val;
 	}
-	else if(k_global_vector_type == vector_backend::hamt){
+	else if(is_vector_hamt(type)){
 		const auto vec = encoded_value.vector_hamt_ptr;
 
 		std::vector<value_t> elements;
