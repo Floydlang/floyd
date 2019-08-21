@@ -218,7 +218,7 @@ static runtime_value_t to_runtime_dict(value_mgr_t& value_mgr, const typeid_t::d
 	const auto& v0 = value.get_dict_value();
 
 	auto v = alloc_dict(value_mgr.heap);
-	auto result = runtime_value_t{ .dict_ptr = v };
+	auto result = runtime_value_t{ .dict_cppmap_ptr = v };
 
 	const auto element_type = value.get_type().get_dict_value_type();
 	auto& m = v->get_map_mut();
@@ -237,7 +237,7 @@ static value_t from_runtime_dict(const value_mgr_t& value_mgr, const runtime_val
 	QUARK_ASSERT(type.check_invariant());
 
 	const auto value_type = type.get_dict_value_type();
-	const auto dict = encoded_value.dict_ptr;
+	const auto dict = encoded_value.dict_cppmap_ptr;
 
 	std::map<std::string, value_t> values;
 	const auto& map2 = dict->get_map();
@@ -442,7 +442,7 @@ void retain_value(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t&
 			inc_rc(value.vector_array_ptr->alloc);
 		}
 		else if(type.is_dict()){
-			inc_rc(value.dict_ptr->alloc);
+			inc_rc(value.dict_cppmap_ptr->alloc);
 		}
 		else if(type.is_json()){
 			inc_rc(value.json_ptr->alloc);
@@ -469,7 +469,7 @@ void release_deep(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t&
 			release_vec_deep(value_mgr, value.vector_array_ptr, type);
 		}
 		else if(type.is_dict()){
-			release_dict_deep(value_mgr, value.dict_ptr, type);
+			release_dict_deep(value_mgr, value.dict_cppmap_ptr, type);
 		}
 		else if(type.is_json()){
 			if(dec_rc(value.json_ptr->alloc) == 0){
@@ -485,7 +485,7 @@ void release_deep(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t&
 	}
 }
 
-void release_dict_deep(value_mgr_t& value_mgr, DICT_T* dict, const typeid_t& type){
+void release_dict_deep(value_mgr_t& value_mgr, DICT_CPPMAP_T* dict, const typeid_t& type){
 	QUARK_ASSERT(value_mgr.check_invariant());
 	QUARK_ASSERT(dict != nullptr);
 	QUARK_ASSERT(type.is_dict());

@@ -27,7 +27,7 @@ namespace floyd {
 
 struct VECTOR_ARRAY_T;
 struct VECTOR_HAMT_T;
-struct DICT_T;
+struct DICT_CPPMAP_T;
 struct JSON_T;
 struct STRUCT_T;
 struct type_interner_t;
@@ -170,7 +170,7 @@ union runtime_value_t {
 
 	VECTOR_ARRAY_T* vector_array_ptr;
 	VECTOR_HAMT_T* vector_hamt_ptr;
-	DICT_T* dict_ptr;
+	DICT_CPPMAP_T* dict_cppmap_ptr;
 	JSON_T* json_ptr;
 	STRUCT_T* struct_ptr;
 	void* function_ptr;
@@ -192,11 +192,11 @@ runtime_value_t make_runtime_string(VECTOR_ARRAY_T* string_ptr);
 runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr);
 runtime_value_t make_runtime_vector(VECTOR_ARRAY_T* vector_ptr);
 runtime_value_t make_runtime_vector_hamt(VECTOR_HAMT_T* vector_hamt_ptr);
-runtime_value_t make_runtime_dict(DICT_T* dict_ptr);
+runtime_value_t make_runtime_dict(DICT_CPPMAP_T* dict_cppmap_ptr);
 
 
 VECTOR_ARRAY_T* unpack_vec_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type);
-DICT_T* unpack_dict_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type);
+DICT_CPPMAP_T* unpack_dict_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type);
 
 
 uint64_t get_vec_string_size(runtime_value_t str);
@@ -405,7 +405,7 @@ void dispose_vec_hamt(VECTOR_HAMT_T& vec);
 
 
 
-////////////////////////////////		DICT_T
+////////////////////////////////		DICT_CPPMAP_T
 
 
 
@@ -415,7 +415,7 @@ void dispose_vec_hamt(VECTOR_HAMT_T& vec);
 
 typedef std::map<std::string, runtime_value_t> STDMAP;
 
-struct DICT_T {
+struct DICT_CPPMAP_T {
 	bool check_invariant() const;
 	uint64_t size() const;
 
@@ -431,8 +431,8 @@ struct DICT_T {
 	heap_alloc_64_t alloc;
 };
 
-DICT_T* alloc_dict(heap_t& heap);
-void dispose_dict(DICT_T& vec);
+DICT_CPPMAP_T* alloc_dict(heap_t& heap);
+void dispose_dict(DICT_CPPMAP_T& vec);
 
 
 

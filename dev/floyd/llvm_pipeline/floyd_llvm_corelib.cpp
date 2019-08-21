@@ -47,7 +47,7 @@ static runtime_value_t llvm_corelib__make_benchmark_report(floyd_runtime_t* frp,
 
 
 
-static DICT_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
+static DICT_CPPMAP_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 
 	const std::vector<std::pair<std::string, json_t>> caps = corelib_detect_hardware_caps();
@@ -59,7 +59,7 @@ static DICT_T* llvm_corelib__detect_hardware_caps(floyd_runtime_t* frp){
 
 	const auto a = value_t::make_dict_value(typeid_t::make_json(), caps_map);
 	auto result = to_runtime_value(r, a);
-	return result.dict_ptr;
+	return result.dict_cppmap_ptr;
 }
 
 runtime_value_t llvm_corelib__make_hardware_caps_report(floyd_runtime_t* frp, runtime_value_t caps0){

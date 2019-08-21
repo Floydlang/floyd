@@ -288,7 +288,7 @@ static function_bind_t floydrt_release_vec__make(llvm::LLVMContext& context, con
 ////////////////////////////////		floydrt_retain_dict()
 
 
-static void floydrt_retain_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_type_t type0){
+static void floydrt_retain_dict(floyd_runtime_t* frp, DICT_CPPMAP_T* dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(dict != nullptr);
 	const auto type = lookup_type(r.value_mgr.type_lookup, type0);
@@ -317,7 +317,7 @@ static function_bind_t floydrt_retain_dict__make(llvm::LLVMContext& context, con
 
 
 
-static void floydrt_release_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_type_t type0){
+static void floydrt_release_dict(floyd_runtime_t* frp, DICT_CPPMAP_T* dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
 	QUARK_ASSERT(dict != nullptr);
 	const auto type = lookup_type(r.value_mgr.type_lookup, type0);
@@ -610,7 +610,7 @@ static function_bind_t floydrt_allocate_dict__make(llvm::LLVMContext& context, c
 ////////////////////////////////		store_dict()
 
 
-static void floydrt_store_dict_mutable(floyd_runtime_t* frp, DICT_T* dict, runtime_value_t key, runtime_value_t element_value, runtime_type_t element_type){
+static void floydrt_store_dict_mutable(floyd_runtime_t* frp, DICT_CPPMAP_T* dict, runtime_value_t key, runtime_value_t element_value, runtime_type_t element_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto key_string = from_runtime_string(r, key);
@@ -638,7 +638,7 @@ static function_bind_t floydrt_store_dict_mutable__make(llvm::LLVMContext& conte
 ////////////////////////////////		lookup_dict()
 
 
-static runtime_value_t floydrt_lookup_dict(floyd_runtime_t* frp, DICT_T* dict, runtime_value_t s){
+static runtime_value_t floydrt_lookup_dict(floyd_runtime_t* frp, DICT_CPPMAP_T* dict, runtime_value_t s){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto& m = dict->get_map();
@@ -1068,7 +1068,7 @@ static void floyd_llvm_intrinsic__assert(floyd_runtime_t* frp, runtime_value_t a
 }
 
 
-static DICT_T* floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
+static DICT_CPPMAP_T* floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1735,7 +1735,7 @@ static int64_t floyd_llvm_intrinsic__size(floyd_runtime_t* frp, runtime_value_t 
 		return vs->get_element_count();
 	}
 	else if(type0.is_dict()){
-		DICT_T* dict = unpack_dict_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
+		DICT_CPPMAP_T* dict = unpack_dict_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 		return dict->size();
 	}
 	else{
@@ -1910,7 +1910,7 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 			}
 		}
 
-		return runtime_value_t{ .dict_ptr = dict2 };
+		return runtime_value_t{ .dict_cppmap_ptr = dict2 };
 	}
 	else if(type0.is_struct()){
 		QUARK_ASSERT(false);

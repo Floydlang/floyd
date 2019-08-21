@@ -356,8 +356,8 @@ runtime_value_t make_runtime_vector_hamt(VECTOR_HAMT_T* vector_hamt_ptr){
 	return { .vector_hamt_ptr = vector_hamt_ptr };
 }
 
-runtime_value_t make_runtime_dict(DICT_T* dict_ptr){
-	return { .dict_ptr = dict_ptr };
+runtime_value_t make_runtime_dict(DICT_CPPMAP_T* dict_cppmap_ptr){
+	return { .dict_cppmap_ptr = dict_cppmap_ptr };
 }
 
 
@@ -379,17 +379,17 @@ VECTOR_ARRAY_T* unpack_vec_arg(const llvm_type_lookup& type_lookup, runtime_valu
 	return arg_value.vector_array_ptr;
 }
 
-DICT_T* unpack_dict_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type){
+DICT_CPPMAP_T* unpack_dict_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type){
 #if DEBUG
 	const auto type = lookup_type(type_lookup, arg_type);
 #endif
 	QUARK_ASSERT(type_lookup.check_invariant());
 	QUARK_ASSERT(type.is_dict());
-	QUARK_ASSERT(arg_value.dict_ptr != nullptr);
+	QUARK_ASSERT(arg_value.dict_cppmap_ptr != nullptr);
 
-	QUARK_ASSERT(arg_value.dict_ptr->check_invariant());
+	QUARK_ASSERT(arg_value.dict_cppmap_ptr->check_invariant());
 
-	return arg_value.dict_ptr;
+	return arg_value.dict_cppmap_ptr;
 }
 
 
@@ -597,7 +597,7 @@ QUARK_UNIT_TEST("VECTOR_HAMT_T", "", "", ""){
 
 
 
-////////////////////////////////		DICT_T
+////////////////////////////////		DICT_CPPMAP_T
 
 
 
@@ -606,23 +606,23 @@ QUARK_UNIT_TEST("", "", "", ""){
 	QUARK_ASSERT(size == 24);
 }
 
-bool DICT_T::check_invariant() const{
+bool DICT_CPPMAP_T::check_invariant() const{
 	QUARK_ASSERT(alloc.check_invariant());
 	return true;
 }
 
-uint64_t DICT_T::size() const {
+uint64_t DICT_CPPMAP_T::size() const {
 	QUARK_ASSERT(check_invariant());
 
 	const auto& d = get_map();
 	return d.size();
 }
 
-DICT_T* alloc_dict(heap_t& heap){
+DICT_CPPMAP_T* alloc_dict(heap_t& heap){
 	QUARK_ASSERT(heap.check_invariant());
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0);
-	auto dict = reinterpret_cast<DICT_T*>(alloc);
+	auto dict = reinterpret_cast<DICT_CPPMAP_T*>(alloc);
 
 	alloc->debug_info[0] = 'D';
 	alloc->debug_info[1] = 'I';
@@ -638,7 +638,7 @@ DICT_T* alloc_dict(heap_t& heap){
 	return dict;
 }
 
-void dispose_dict(DICT_T& dict){
+void dispose_dict(DICT_CPPMAP_T& dict){
 	QUARK_ASSERT(dict.check_invariant());
 
 	dict.get_map_mut().~STDMAP();
