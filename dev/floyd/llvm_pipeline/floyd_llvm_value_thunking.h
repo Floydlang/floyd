@@ -57,6 +57,27 @@ runtime_value_t concat_vector_cppvector(value_mgr_t& value_mgr, const typeid_t& 
 runtime_value_t concat_vector_hamt(value_mgr_t& value_mgr, const typeid_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs);
 
 
+
+/*
+	vector_cppvector_pod
+	vector_cppvector_rc
+
+	vector_hamt_pod
+	vector_hamt_rc
+
+
+*/
+
+inline bool is_vector_cppvector(const typeid_t& t){
+	return t.is_vector() && k_global_vector_type == vector_backend::cppvector;
+}
+inline bool is_vector_hamt(const typeid_t& t){
+	return t.is_vector() && k_global_vector_type == vector_backend::hamt;
+}
+
+
+
+
 }	// floyd
 
 #endif /* floyd_llvm_value_thunking_hpp */

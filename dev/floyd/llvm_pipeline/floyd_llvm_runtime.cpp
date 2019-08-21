@@ -1167,7 +1167,7 @@ static int64_t floyd_llvm_intrinsic__find(floyd_runtime_t* frp, runtime_value_t 
 		const auto result = pos == std::string::npos ? -1 : static_cast<int64_t>(pos);
 		return result;
 	}
-	else if(type0.is_vector()){
+	else if(is_vector_cppvector(type0)){
 		QUARK_ASSERT(type1 == type0.get_vector_element_type());
 
 		const auto vec = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
@@ -1187,6 +1187,9 @@ static int64_t floyd_llvm_intrinsic__find(floyd_runtime_t* frp, runtime_value_t 
 			const auto pos = it - vec->get_element_ptr();
 			return pos;
 		}
+	}
+	else if(is_vector_hamt(type0)){
+		UNSUPPORTED();
 	}
 	else{
 		//	No other types allowed.
@@ -1583,7 +1586,7 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp,
 		const auto result2 = to_runtime_string(r, value);
 		return result2.vector_cppvector_ptr;
 	}
-	else if(type0.is_vector()){
+	else if(is_vector_cppvector(type0)){
 		const auto vs = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 
 		QUARK_ASSERT(type1 == type0.get_vector_element_type());
@@ -1612,6 +1615,9 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp,
 			dest_ptr[vs->get_element_count()] = element;
 		}
 		return v2.vector_cppvector_ptr;
+	}
+	else if(is_vector_hamt(type0)){
+		QUARK_ASSERT(false);
 	}
 	else{
 		//	No other types allowed.
@@ -1660,7 +1666,7 @@ static const VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__replace(floyd_runtime_t* 
 		const auto result2 = to_runtime_string(r, ret);
 		return result2.vector_cppvector_ptr;
 	}
-	else if(type0.is_vector()){
+	else if(is_vector_cppvector(type0)){
 		const auto element_type = type0.get_vector_element_type();
 
 		const auto vec = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
@@ -1686,6 +1692,9 @@ static const VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__replace(floyd_runtime_t* 
 		}
 
 		return vec2.vector_cppvector_ptr;
+	}
+	else if(is_vector_hamt(type0)){
+		QUARK_ASSERT(false);
 	}
 	else{
 		//	No other types allowed.
@@ -1742,9 +1751,12 @@ static int64_t floyd_llvm_intrinsic__size(floyd_runtime_t* frp, runtime_value_t 
 			quark::throw_runtime_error("Calling size() on unsupported type of value.");
 		}
 	}
-	else if(type0.is_vector()){
+	else if(is_vector_cppvector(type0)){
 		const auto vs = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 		return vs->get_element_count();
+	}
+	else if(is_vector_hamt(type0)){
+		QUARK_ASSERT(false);
 	}
 	else if(type0.is_dict()){
 		DICT_CPPMAP_T* dict = unpack_dict_cppmap_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
@@ -1776,7 +1788,7 @@ static const VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__subset(floyd_runtime_t* f
 		const auto result = to_runtime_string(r, s);
 		return result.vector_cppvector_ptr;
 	}
-	else if(type0.is_vector()){
+	else if(is_vector_cppvector(type0)){
 		const auto element_type = type0.get_vector_element_type();
 		const auto vec = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
 
@@ -1800,6 +1812,9 @@ static const VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__subset(floyd_runtime_t* f
 			}
 		}
 		return vec2.vector_cppvector_ptr;
+	}
+	else if(is_vector_hamt(type0)){
+		QUARK_ASSERT(false);
 	}
 	else{
 		//	No other types allowed.
@@ -1868,48 +1883,43 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 		const auto result2 = to_runtime_string(r, result);
 		return result2;
 	}
-	else if(type0.is_vector()){
+	else if(is_vector_cppvector(type0)){
 		QUARK_ASSERT(type1.is_int());
 
-		if(k_global_vector_type == vector_backend::cppvector){
-			const auto vec = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
-			const auto element_type = type0.get_vector_element_type();
-			const auto index = arg1_value.int_value;
+		const auto vec = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
+		const auto element_type = type0.get_vector_element_type();
+		const auto index = arg1_value.int_value;
 
-			QUARK_ASSERT(element_type == type2);
+		QUARK_ASSERT(element_type == type2);
 
-			if(index < 0 || index >= vec->get_element_count()){
-				quark::throw_runtime_error("Position argument to update() is outside collection span.");
-			}
-
-			auto result = alloc_vector_ccpvector2(r.value_mgr.heap, vec->get_element_count(), vec->get_element_count());
-			auto dest_ptr = result.vector_cppvector_ptr->get_element_ptr();
-			auto source_ptr = vec->get_element_ptr();
-			if(is_rc_value(element_type)){
-				retain_value(r.value_mgr, arg2_value, element_type);
-				for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
-					retain_value(r.value_mgr, source_ptr[i], element_type);
-					dest_ptr[i] = source_ptr[i];
-				}
-
-				release_vec_deep(r.value_mgr, dest_ptr[index], element_type);
-				dest_ptr[index] = arg2_value;
-			}
-			else{
-				for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
-					dest_ptr[i] = source_ptr[i];
-				}
-				dest_ptr[index] = arg2_value;
-			}
-
-			return result;
+		if(index < 0 || index >= vec->get_element_count()){
+			quark::throw_runtime_error("Position argument to update() is outside collection span.");
 		}
-		else if(k_global_vector_type == vector_backend::hamt){
-			QUARK_ASSERT(false);
+
+		auto result = alloc_vector_ccpvector2(r.value_mgr.heap, vec->get_element_count(), vec->get_element_count());
+		auto dest_ptr = result.vector_cppvector_ptr->get_element_ptr();
+		auto source_ptr = vec->get_element_ptr();
+		if(is_rc_value(element_type)){
+			retain_value(r.value_mgr, arg2_value, element_type);
+			for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
+				retain_value(r.value_mgr, source_ptr[i], element_type);
+				dest_ptr[i] = source_ptr[i];
+			}
+
+			release_vec_deep(r.value_mgr, dest_ptr[index], element_type);
+			dest_ptr[index] = arg2_value;
 		}
 		else{
-			QUARK_ASSERT(false);
+			for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
+				dest_ptr[i] = source_ptr[i];
+			}
+			dest_ptr[index] = arg2_value;
 		}
+
+		return result;
+	}
+	else if(is_vector_hamt(type0)){
+		QUARK_ASSERT(false);
 	}
 	else if(type0.is_dict()){
 		QUARK_ASSERT(type1.is_string());

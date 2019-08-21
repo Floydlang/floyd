@@ -389,9 +389,6 @@ llvm::Constant* generate_itype_constant(const llvm_code_generator_t& gen_acc, co
  	return llvm::ConstantInt::get(t, itype);
 }
 
-
-
-
 void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -438,6 +435,7 @@ void generate_retain(llvm_function_generator_t& gen_acc, llvm::Value& value_reg,
 	else{
 	}
 }
+
 void generate_release(llvm_function_generator_t& gen_acc, llvm::Value& value_reg, const typeid_t& type){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
@@ -848,31 +846,27 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 		generate_release(gen_acc, *key_reg, key_type);
 		return result;
 	}
-	else if(parent_type.is_vector()){
+	else if(is_vector_cppvector(parent_type)){
 		QUARK_ASSERT(key_type.is_int());
 
-		if(k_global_vector_type == vector_backend::cppvector){
-			const auto element_type0 = parent_type.get_vector_element_type();
+		const auto element_type0 = parent_type.get_vector_element_type();
 
-			auto ptr_reg = generate_get_vec_element_ptr_needs_cast(gen_acc, *parent_reg);
-			auto int64_ptr_reg = gen_acc.get_builder().CreateCast(llvm::Instruction::CastOps::BitCast, ptr_reg, builder.getInt64Ty()->getPointerTo(), "");
+		auto ptr_reg = generate_get_vec_element_ptr_needs_cast(gen_acc, *parent_reg);
+		auto int64_ptr_reg = gen_acc.get_builder().CreateCast(llvm::Instruction::CastOps::BitCast, ptr_reg, builder.getInt64Ty()->getPointerTo(), "");
 
-			const auto gep = std::vector<llvm::Value*>{ key_reg };
-			llvm::Value* element_addr_reg = builder.CreateGEP(builder.getInt64Ty(), int64_ptr_reg, gep, "element_addr");
-			llvm::Value* element_value_uint64_reg = builder.CreateLoad(element_addr_reg, "element_tmp");
-			auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
+		const auto gep = std::vector<llvm::Value*>{ key_reg };
+		llvm::Value* element_addr_reg = builder.CreateGEP(builder.getInt64Ty(), int64_ptr_reg, gep, "element_addr");
+		llvm::Value* element_value_uint64_reg = builder.CreateLoad(element_addr_reg, "element_tmp");
+		auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
 
-			generate_retain(gen_acc, *result_reg, element_type0);
-			generate_release(gen_acc, *parent_reg, parent_type);
+		generate_retain(gen_acc, *result_reg, element_type0);
+		generate_release(gen_acc, *parent_reg, parent_type);
 
-			return result_reg;
-		}
-		if(k_global_vector_type == vector_backend::cppvector){
-			QUARK_ASSERT(false);
-		}
-		else{
-			QUARK_ASSERT(false);
-		}
+		return result_reg;
+	}
+	else if(is_vector_hamt(parent_type)){
+		QUARK_ASSERT(key_type.is_int());
+		QUARK_ASSERT(false);
 	}
 	else if(parent_type.is_dict()){
 		QUARK_ASSERT(key_type.is_string());
@@ -1502,17 +1496,6 @@ static llvm::Value* generate_intrinsic_expression(llvm_function_generator_t& gen
 	throw std::exception();
 }
 
-
-
-/*	if(k_global_vector_type == vector_backend::cppvector){
-	}
-	else if(k_global_vector_type == vector_backend::hamt){
-		QUARK_ASSERT(false);
-	}
-	else{
-		QUARK_ASSERT(false);
-	}
-*/
 static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc, const expression_t::value_constructor_t& details){
 	QUARK_ASSERT(gen_acc.check_invariant());
 	QUARK_ASSERT(details.value_type.is_vector());
@@ -1525,38 +1508,47 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 	auto& element_type1 = *get_exact_llvm_type(gen_acc.gen.type_lookup, element_type0);
 
 	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), element_count);
-	auto vec_ptr_reg = builder.CreateCall(gen_acc.gen.floydrt_allocate_vector.llvm_codegen_f, { gen_acc.get_callers_fcp(), element_count_reg }, "");
-	auto ptr_reg = generate_get_vec_element_ptr_needs_cast(gen_acc, *vec_ptr_reg);
 
-	if(element_type0.is_bool()){
-		//	Each bool element is a uint64_t ???
-		auto element_type = llvm::Type::getInt64Ty(context);
-		auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, ptr_reg, element_type->getPointerTo(), "");
+	if(is_vector_cppvector(details.value_type)){
+		auto vec_ptr_reg = builder.CreateCall(gen_acc.gen.floydrt_allocate_vector.llvm_codegen_f, { gen_acc.get_callers_fcp(), element_count_reg }, "");
+		auto ptr_reg = generate_get_vec_element_ptr_needs_cast(gen_acc, *vec_ptr_reg);
 
-		//	Evaluate each element and store it directly into the the vector.
-		int element_index = 0;
-		for(const auto& arg: details.elements){
-			llvm::Value* element0_reg = generate_expression(gen_acc, arg);
-			auto element_value_reg = builder.CreateCast(llvm::Instruction::CastOps::ZExt, element0_reg, make_runtime_value_type(gen_acc.gen.type_lookup), "");
-			generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
-			element_index++;
+		if(element_type0.is_bool()){
+			//	Each bool element is a uint64_t ???
+			auto element_type = llvm::Type::getInt64Ty(context);
+			auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, ptr_reg, element_type->getPointerTo(), "");
+
+			//	Evaluate each element and store it directly into the the vector.
+			int element_index = 0;
+			for(const auto& arg: details.elements){
+				llvm::Value* element0_reg = generate_expression(gen_acc, arg);
+				auto element_value_reg = builder.CreateCast(llvm::Instruction::CastOps::ZExt, element0_reg, make_runtime_value_type(gen_acc.gen.type_lookup), "");
+				generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
+				element_index++;
+			}
+			return vec_ptr_reg;
 		}
-		return vec_ptr_reg;
+		else{
+			//	Evaluate each element and store it directly into the array.
+			auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, ptr_reg, element_type1.getPointerTo(), "");
+
+			int element_index = 0;
+			for(const auto& element_value: details.elements){
+
+				//	Move ownwership from temp to member element, no need for retain-release.
+
+				llvm::Value* element_value_reg = generate_expression(gen_acc, element_value);
+				generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
+				element_index++;
+			}
+			return vec_ptr_reg;
+		}
+	}
+	else if(is_vector_hamt(details.value_type)){
+		QUARK_ASSERT(false);
 	}
 	else{
-		//	Evaluate each element and store it directly into the array.
-		auto array_ptr_reg = builder.CreateCast(llvm::Instruction::CastOps::BitCast, ptr_reg, element_type1.getPointerTo(), "");
-
-		int element_index = 0;
-		for(const auto& element_value: details.elements){
-
-			//	Move ownwership from temp to member element, no need for retain-release.
-
-			llvm::Value* element_value_reg = generate_expression(gen_acc, element_value);
-			generate_array_element_store(builder, *array_ptr_reg, element_index, *element_value_reg);
-			element_index++;
-		}
-		return vec_ptr_reg;
+		QUARK_ASSERT(false);
 	}
 }
 
