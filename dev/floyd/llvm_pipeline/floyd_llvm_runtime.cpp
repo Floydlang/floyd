@@ -1963,53 +1963,102 @@ static int64_t floyd_llvm_intrinsic__size(floyd_runtime_t* frp, runtime_value_t 
 	}
 }
 
-static const VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__subset(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
-	auto& r = get_floyd_runtime(frp);
 
+
+
+static const runtime_value_t subset__string(floyd_runtime_t* frp, value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
 	if(start < 0 || end < 0){
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
 
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	const auto value = from_runtime_string2(value_mgr, arg0_value);
+	const auto len = get_vec_string_size(arg0_value);
+	const auto end2 = std::min(end, len);
+	const auto start2 = std::min(start, end2);
+	const auto len2 = end2 - start2;
+
+	const auto s = std::string(&value[start2], &value[start2 + len2]);
+	const auto result = to_runtime_string2(value_mgr, s);
+	return result;
+}
+
+static const runtime_value_t subset__cppvector(floyd_runtime_t* frp, value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
+	if(start < 0 || end < 0){
+		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
+	}
+
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	const auto element_type = type0.get_vector_element_type();
+	const auto vec = unpack_vector_cppvector_arg(value_mgr.type_lookup, arg0_value, arg0_type);
+	const auto end2 = std::min(end, vec->get_element_count());
+	const auto start2 = std::min(start, end2);
+	const auto len2 = end2 - start2;
+	if(len2 >= INT64_MAX){
+		throw std::exception();
+	}
+
+	auto vec2 = alloc_vector_ccpvector2(value_mgr.heap, len2, len2);
+	if(is_rc_value(element_type)){
+		for(int i = 0 ; i < len2 ; i++){
+			const auto& value = vec->get_element_ptr()[start2 + i];
+			vec2.vector_cppvector_ptr->get_element_ptr()[i] = value;
+			retain_value(value_mgr, value, element_type);
+		}
+	}
+	else{
+		for(int i = 0 ; i < len2 ; i++){
+			const auto& value = vec->get_element_ptr()[start2 + i];
+			vec2.vector_cppvector_ptr->get_element_ptr()[i] = value;
+		}
+	}
+	return vec2;
+}
+
+static const runtime_value_t subset__hamt(floyd_runtime_t* frp, value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
+	if(start < 0 || end < 0){
+		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
+	}
+
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	const auto element_type = type0.get_vector_element_type();
+	const auto& vec = *arg0_value.vector_hamt_ptr;
+	const auto end2 = std::min(end, vec.get_element_count());
+	const auto start2 = std::min(start, end2);
+	const auto len2 = end2 - start2;
+	if(len2 >= INT64_MAX){
+		throw std::exception();
+	}
+
+	auto vec2 = alloc_vector_hamt2(value_mgr.heap, len2, len2);
+	if(is_rc_value(element_type)){
+		for(int i = 0 ; i < len2 ; i++){
+			const auto& value = vec.operator[](start2 + i);
+			vec2.vector_hamt_ptr->store_mutate(i, value);
+			retain_value(value_mgr, value, element_type);
+		}
+	}
+	else{
+		for(int i = 0 ; i < len2 ; i++){
+			const auto& value = vec.operator[](start2 + i);
+			vec2.vector_hamt_ptr->store_mutate(i, value);
+		}
+	}
+	return vec2;
+}
+
+static const runtime_value_t floyd_llvm_intrinsic__subset(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
+	auto& r = get_floyd_runtime(frp);
+
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
 	if(type0.is_string()){
-		const auto value = from_runtime_string(r, arg0_value);
-
-		const auto len = get_vec_string_size(arg0_value);
-		const auto end2 = std::min(end, len);
-		const auto start2 = std::min(start, end2);
-		const auto len2 = end2 - start2;
-
-		const auto s = std::string(&value[start2], &value[start2 + len2]);
-		const auto result = to_runtime_string(r, s);
-		return result.vector_cppvector_ptr;
+		return subset__string(frp, r.value_mgr, arg0_value, arg0_type, start, end);
 	}
 	else if(is_vector_cppvector(type0)){
-		const auto element_type = type0.get_vector_element_type();
-		const auto vec = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
-
-		const auto end2 = std::min(end, vec->get_element_count());
-		const auto start2 = std::min(start, end2);
-		const auto len2 = end2 - start2;
-
-		if(len2 >= INT32_MAX){
-			throw std::exception();
-		}
-		auto vec2 = alloc_vector_ccpvector2(r.value_mgr.heap, len2, len2);
-		if(is_rc_value(element_type)){
-			for(int i = 0 ; i < len2 ; i++){
-				vec2.vector_cppvector_ptr->get_element_ptr()[i] = vec->get_element_ptr()[start2 + i];
-				retain_value(r.value_mgr, vec2.vector_cppvector_ptr->get_element_ptr()[i], element_type);
-			}
-		}
-		else{
-			for(int i = 0 ; i < len2 ; i++){
-				vec2.vector_cppvector_ptr->get_element_ptr()[i] = vec->get_element_ptr()[start2 + i];
-			}
-		}
-		return vec2.vector_cppvector_ptr;
+		return subset__cppvector(frp, r.value_mgr, arg0_value, arg0_type, start, end);
 	}
 	else if(is_vector_hamt(type0)){
-		QUARK_ASSERT(false);
+		return subset__hamt(frp, r.value_mgr, arg0_value, arg0_type, start, end);
 	}
 	else{
 		//	No other types allowed.
