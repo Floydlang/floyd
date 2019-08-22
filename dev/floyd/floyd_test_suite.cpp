@@ -3292,6 +3292,18 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [string] print()", "2 elements", ""
 	);
 }
 
+FLOYD_LANG_PROOF("Floyd test suite", "vector [string] update()", "", "no assert"){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = [ "one", "two", "three"]
+			let b = update(a, 1, "zwei")
+		)",
+		{
+		}
+	);
+}
 
 FLOYD_LANG_PROOF("Floyd test suite", "vector [string] update()", "", "valid vector, without side effect on original vector"){
 	ut_verify_printout_nolib(
@@ -3474,7 +3486,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] constructor", "", "3"){
 		value_t::make_int(3)
 	);
 }
-FLOYD_LANG_PROOF("Floyd test suite", "vector [string] [] lookup", "", ""){
+FLOYD_LANG_PROOF("Floyd test suite", "vector [int] [] lookup", "", ""){
 	ut_verify_printout_nolib(
 		QUARK_POS,
 		R"(
@@ -3517,6 +3529,26 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] size()", "empty", "0"){
 }
 FLOYD_LANG_PROOF("Floyd test suite", "vector [int] size()", "2", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] a = [1, 2, 3] let result = size(a)		)",		value_t::make_int(3) );
+}
+
+FLOYD_LANG_PROOF("Floyd test suite", "vector [int] update()", "", "valid vector, without side effect on original vector"){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = [ 1, 2, 3 ]
+			let b = update(a, 1, 2000)
+			assert(a == [ 1, 2, 3 ])
+			assert(b == [ 1, 2000, 3 ])
+			print(a)
+			print(b)
+
+		)",
+		{
+			R"([1, 2, 3])",
+			R"([1, 2000, 3])"
+		}
+	);
 }
 
 

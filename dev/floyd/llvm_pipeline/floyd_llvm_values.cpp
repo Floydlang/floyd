@@ -201,7 +201,7 @@ bool heap_alloc_64_t::check_invariant() const{
 	return true;
 }
 
-int32_t dec_rc(heap_alloc_64_t& alloc){
+int32_t dec_rc(const heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
 
 	const auto prev_rc = std::atomic_fetch_sub_explicit(&alloc.rc, 1, std::memory_order_relaxed);
@@ -214,7 +214,7 @@ int32_t dec_rc(heap_alloc_64_t& alloc){
 
 	return rc2;
 }
-int32_t inc_rc(heap_alloc_64_t& alloc){
+int32_t inc_rc(const heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
 
 	const auto prev_rc = std::atomic_fetch_add_explicit(&alloc.rc, 1, std::memory_order_relaxed);
@@ -464,7 +464,7 @@ runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count,
 }
 
 
-void dispose_vector_cppvector(runtime_value_t& value){
+void dispose_vector_cppvector(const runtime_value_t& value){
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value.vector_cppvector_ptr != nullptr);
 	QUARK_ASSERT(value.vector_cppvector_ptr->check_invariant());
@@ -578,16 +578,44 @@ runtime_value_t alloc_vector_hamt2(heap_t& heap, const runtime_value_t elements[
 	return { .vector_hamt_ptr = vec };
 }
 
-void dispose_vector_hamt(runtime_value_t& vec){
+void dispose_vector_hamt(const runtime_value_t& vec){
 	QUARK_ASSERT(vec.vector_hamt_ptr != nullptr);
 	QUARK_ASSERT(vec.vector_hamt_ptr->check_invariant());
 
-	auto vec2 = &vec.vector_hamt_ptr->get_vecref_mut();
+	auto& vec2 = vec.vector_hamt_ptr->get_vecref_mut();
 
-	vec2->~vector<runtime_value_t>();
+	vec2.~vector<runtime_value_t>();
 
 	dispose_alloc(vec.vector_hamt_ptr->alloc);
 	QUARK_ASSERT(vec.vector_hamt_ptr->alloc.heap64->check_invariant());
+}
+
+runtime_value_t store_immutable(const runtime_value_t& vec0, const uint64_t index, runtime_value_t value){
+	QUARK_ASSERT(vec0.check_invariant());
+	const auto& vec1 = *vec0.vector_hamt_ptr;
+	QUARK_ASSERT(index < vec1.get_element_count());
+	auto& heap = *vec1.alloc.heap64;
+
+	heap_alloc_64_t* alloc = alloc_64(heap, 0);
+	alloc->data_d = vec1.get_element_count();
+	alloc->debug_info[0] = 'V';
+	alloc->debug_info[1] = 'H';
+	alloc->debug_info[2] = 'A';
+	alloc->debug_info[3] = 'M';
+	alloc->debug_info[4] = 'T';
+
+	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
+
+	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data_a);
+    auto vec2 = new (buffer_ptr) immer::vector<runtime_value_t>();
+
+	const auto& v2 = vec1.get_vecref().set(index, value);
+	*vec2 = v2;
+
+	QUARK_ASSERT(vec->check_invariant());
+	QUARK_ASSERT(heap.check_invariant());
+
+	return { .vector_hamt_ptr = vec };
 }
 
 

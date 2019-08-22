@@ -1509,7 +1509,7 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 
 	const auto element_count = details.elements.size();
 	const auto element_type0 = details.value_type.get_vector_element_type();
-	auto& element_type1 = *get_exact_llvm_type(gen_acc.gen.type_lookup, element_type0);
+	const auto& element_type1 = *get_exact_llvm_type(gen_acc.gen.type_lookup, element_type0);
 
 	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), element_count);
 
@@ -1562,9 +1562,10 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 			for(const auto& element_value: details.elements){
 				auto index_reg = generate_constant(gen_acc, value_t::make_int(element_index));
 				auto element_value_reg = generate_expression(gen_acc, element_value);
+				auto element_value2_reg = generate_cast_to_runtime_value(gen_acc.gen, *element_value_reg, element_type0);
 
 				//	Move ownwership from temp to member element, no need for retain-release.
-				builder.CreateCall(gen_acc.gen.floydrt_store_vector_element_mutable.llvm_codegen_f, { gen_acc.get_callers_fcp(), vec_type_reg, index_reg, element_value_reg }, "");
+				builder.CreateCall(gen_acc.gen.floydrt_store_vector_element_mutable.llvm_codegen_f, { gen_acc.get_callers_fcp(), vec_ptr_reg, vec_type_reg, index_reg, element_value2_reg }, "");
 				element_index++;
 			}
 			return vec_ptr_reg;

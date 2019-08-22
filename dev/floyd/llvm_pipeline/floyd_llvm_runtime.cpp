@@ -531,7 +531,7 @@ static function_bind_t floydrt_allocate_vector_fill__make(llvm::LLVMContext& con
 
 ////////////////////////////////		store_vector_element_mutable()
 
-static void floydrt_store_vector_element_mutable(floyd_runtime_t* frp, runtime_type_t type, uint64_t index, runtime_value_t element){
+static void floydrt_store_vector_element_mutable(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type, uint64_t index, runtime_value_t element){
 	auto& r = get_floyd_runtime(frp);
 	(void)r;
 
@@ -539,7 +539,7 @@ static void floydrt_store_vector_element_mutable(floyd_runtime_t* frp, runtime_t
 		QUARK_ASSERT(false);
 	}
 	else if(k_global_vector_type == vector_backend::hamt){
-		QUARK_ASSERT(false);
+		vec.vector_hamt_ptr->store_mutate(index, element);
 	}
 	else{
 	}
@@ -550,6 +550,7 @@ static function_bind_t floydrt_store_vector_element_mutable__make(llvm::LLVMCont
 		llvm::Type::getVoidTy(context),
 		{
 			make_frp_type(type_lookup),
+			make_generic_vec_type(type_lookup)->getPointerTo(),
 			make_runtime_type_type(type_lookup),
 			llvm::Type::getInt64Ty(context),
 			make_runtime_value_type(type_lookup)
@@ -633,7 +634,7 @@ static function_bind_t floydrt_concatunate_vectors__make(llvm::LLVMContext& cont
 ////////////////////////////////		allocate_dict()
 
 
-static DICT_CPPMAP_T* floydrt_allocate_dict(floyd_runtime_t* frp){
+static const DICT_CPPMAP_T* floydrt_allocate_dict(floyd_runtime_t* frp){
 	auto& r = get_floyd_runtime(frp);
 
 	auto v = alloc_dict_cppmap2(r.value_mgr.heap);
@@ -653,7 +654,7 @@ static function_bind_t floydrt_allocate_dict__make(llvm::LLVMContext& context, c
 
 
 
-////////////////////////////////		store_dict()
+////////////////////////////////		store_dict_mutable()
 
 
 static void floydrt_store_dict_mutable(floyd_runtime_t* frp, DICT_CPPMAP_T* dict, runtime_value_t key, runtime_value_t element_value, runtime_type_t element_type){
@@ -1803,7 +1804,7 @@ static int64_t floyd_llvm_intrinsic__size(floyd_runtime_t* frp, runtime_value_t 
 		return vs->get_element_count();
 	}
 	else if(is_vector_hamt(type0)){
-		QUARK_ASSERT(false);
+		return arg0_value.vector_hamt_ptr->get_element_count();
 	}
 	else if(type0.is_dict()){
 		DICT_CPPMAP_T* dict = unpack_dict_cppmap_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
@@ -1903,7 +1904,7 @@ static runtime_type_t floyd_llvm_intrinsic__typeof(floyd_runtime_t* frp, runtime
 }
 
 
-
+//??? Move implementation elsewhere.
 //??? Split into string/vector/dict versions.
 static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(frp);
@@ -1966,7 +1967,29 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 		return result;
 	}
 	else if(is_vector_hamt(type0)){
-		QUARK_ASSERT(false);
+		QUARK_ASSERT(type1.is_int());
+
+		const auto vec = arg0_value.vector_hamt_ptr;
+		const auto element_type = type0.get_vector_element_type();
+		const auto index = arg1_value.int_value;
+
+		QUARK_ASSERT(element_type == type2);
+
+		if(index < 0 || index >= vec->get_element_count()){
+			quark::throw_runtime_error("Position argument to update() is outside collection span.");
+		}
+
+		if(is_rc_value(element_type)){
+			const auto result = store_immutable(arg0_value, index, arg2_value);
+			for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
+				auto v = result.vector_hamt_ptr->operator[](i);
+				retain_value(r.value_mgr, v, element_type);
+			}
+			return result;
+		}
+		else{
+			return store_immutable(arg0_value, index, arg2_value);
+		}
 	}
 	else if(type0.is_dict()){
 		QUARK_ASSERT(type1.is_string());

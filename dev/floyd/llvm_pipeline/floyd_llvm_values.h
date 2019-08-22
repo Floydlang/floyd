@@ -45,8 +45,11 @@ enum vector_backend {
 //	There is still only one typeid_t/itype for vector.
 //	Future: make this flag a per-vector setting.
 
+#if 1
 const vector_backend k_global_vector_type = vector_backend::cppvector;
-//const vector_backend k_global_vector_type = vector_backend::hamt;
+#else
+const vector_backend k_global_vector_type = vector_backend::hamt;
+#endif
 
 
 ////////////////////////////////		heap_t
@@ -82,7 +85,7 @@ struct heap_alloc_64_t {
 
 	////////////////////////////////		STATE
 
-	std::atomic<int32_t> rc;
+	mutable std::atomic<int32_t> rc;
 	uint32_t magic;
 
 	//	 data_*: 5 x 8 bytes.
@@ -154,8 +157,8 @@ uint64_t size_to_allocation_blocks(std::size_t size);
 
 //	Returns updated RC, no need to atomically read it yourself.
 //	If returned RC is 0, there is no way for any other client to bump it up again.
-int32_t dec_rc(heap_alloc_64_t& alloc);
-int32_t inc_rc(heap_alloc_64_t& alloc);
+int32_t dec_rc(const heap_alloc_64_t& alloc);
+int32_t inc_rc(const heap_alloc_64_t& alloc);
 
 void dispose_alloc(heap_alloc_64_t& alloc);
 
@@ -340,7 +343,7 @@ struct VECTOR_CPPVECTOR_T {
 };
 
 runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count, uint64_t element_count);
-void dispose_vector_cppvector(runtime_value_t& value);
+void dispose_vector_cppvector(const runtime_value_t& value);
 
 
 
@@ -386,7 +389,7 @@ struct VECTOR_HAMT_T {
 	inline uint64_t get_element_count() const{
 		QUARK_ASSERT(check_invariant());
 
-		const auto vecref = get_vecref();
+		const auto& vecref = get_vecref();
 		return vecref.size();
 	}
 
@@ -396,29 +399,30 @@ struct VECTOR_HAMT_T {
 	inline immer::vector<runtime_value_t>::const_iterator begin() const {
 		QUARK_ASSERT(check_invariant());
 
-		const auto vecref = get_vecref();
+		const auto& vecref = get_vecref();
 		return vecref.begin();
 	}
 	inline immer::vector<runtime_value_t>::const_iterator end() const {
 		QUARK_ASSERT(check_invariant());
 
-		const auto vecref = get_vecref();
+		const auto& vecref = get_vecref();
 		return vecref.end();
 	}
 
 	inline runtime_value_t operator[](const uint64_t index) const {
 		QUARK_ASSERT(check_invariant());
 
-		const auto vecref = get_vecref();
+		const auto& vecref = get_vecref();
 		const auto temp = vecref[index];
 		return temp;
 	}
 
 	//	Mutates the VECTOR_HAMT_T implace -- only OK while constructing it when no other observers exists.
-	inline void store(const uint64_t index, runtime_value_t value){
+	inline void store_mutate(const uint64_t index, runtime_value_t value){
 		QUARK_ASSERT(check_invariant());
+		QUARK_ASSERT(index < get_vecref().size());
 
-		const auto vecref = get_vecref();
+		const auto& vecref = get_vecref();
 		const auto v2 = vecref.set(index, value);
 		get_vecref_mut() = v2;
 	}
@@ -430,8 +434,9 @@ struct VECTOR_HAMT_T {
 
 runtime_value_t alloc_vector_hamt2(heap_t& heap, uint64_t allocation_count, uint64_t element_count);
 runtime_value_t alloc_vector_hamt2(heap_t& heap, const runtime_value_t elements[], uint64_t element_count);
-void dispose_vector_hamt(runtime_value_t& vec);
+void dispose_vector_hamt(const runtime_value_t& vec);
 
+runtime_value_t store_immutable(const runtime_value_t& vec, const uint64_t index, runtime_value_t value);
 
 
 

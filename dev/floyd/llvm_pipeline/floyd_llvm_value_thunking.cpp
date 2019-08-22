@@ -696,22 +696,22 @@ runtime_value_t concat_vector_hamt(value_mgr_t& value_mgr, const typeid_t& type,
 		for(int i = 0 ; i < lhs_count ; i++){
 			auto value = lhs.vector_hamt_ptr->operator[](i);
 			retain_value(value_mgr, value, element_type);
-			result.vector_hamt_ptr->store(i, value);
+			result.vector_hamt_ptr->store_mutate(i, value);
 		}
 		for(int i = 0 ; i < rhs_count ; i++){
 			auto value = rhs.vector_hamt_ptr->operator[](i);
 			retain_value(value_mgr, value, element_type);
-			result.vector_hamt_ptr->store(lhs_count + i, value);
+			result.vector_hamt_ptr->store_mutate(lhs_count + i, value);
 		}
 	}
 	else{
 		for(int i = 0 ; i < lhs_count ; i++){
 			auto value = lhs.vector_hamt_ptr->operator[](i);
-			result.vector_hamt_ptr->store(i, value);
+			result.vector_hamt_ptr->store_mutate(i, value);
 		}
 		for(int i = 0 ; i < rhs_count ; i++){
 			auto value = rhs.vector_hamt_ptr->operator[](i);
-			result.vector_hamt_ptr->store(lhs_count + i, value);
+			result.vector_hamt_ptr->store_mutate(lhs_count + i, value);
 		}
 	}
 	return result;
