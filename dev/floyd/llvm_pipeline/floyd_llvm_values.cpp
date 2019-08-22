@@ -618,6 +618,33 @@ runtime_value_t store_immutable(const runtime_value_t& vec0, const uint64_t inde
 	return { .vector_hamt_ptr = vec };
 }
 
+runtime_value_t push_back_immutable(const runtime_value_t& vec0, runtime_value_t value){
+	QUARK_ASSERT(vec0.check_invariant());
+	const auto& vec1 = *vec0.vector_hamt_ptr;
+	auto& heap = *vec1.alloc.heap64;
+
+	heap_alloc_64_t* alloc = alloc_64(heap, 0);
+	alloc->data_d = vec1.get_element_count() + 1;
+	alloc->debug_info[0] = 'V';
+	alloc->debug_info[1] = 'H';
+	alloc->debug_info[2] = 'A';
+	alloc->debug_info[3] = 'M';
+	alloc->debug_info[4] = 'T';
+
+	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
+
+	auto buffer_ptr = reinterpret_cast<immer::vector<runtime_value_t>*>(&alloc->data_a);
+    auto vec2 = new (buffer_ptr) immer::vector<runtime_value_t>();
+
+	const auto& v2 = vec1.get_vecref().push_back(value);
+	*vec2 = v2;
+
+	QUARK_ASSERT(vec->check_invariant());
+	QUARK_ASSERT(heap.check_invariant());
+
+	return { .vector_hamt_ptr = vec };
+}
+
 
 
 

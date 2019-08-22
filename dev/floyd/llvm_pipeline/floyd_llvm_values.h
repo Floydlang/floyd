@@ -437,6 +437,7 @@ runtime_value_t alloc_vector_hamt2(heap_t& heap, const runtime_value_t elements[
 void dispose_vector_hamt(const runtime_value_t& vec);
 
 runtime_value_t store_immutable(const runtime_value_t& vec, const uint64_t index, runtime_value_t value);
+runtime_value_t push_back_immutable(const runtime_value_t& vec0, runtime_value_t value);
 
 
 

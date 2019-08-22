@@ -1666,7 +1666,7 @@ void floyd_llvm_intrinsic__print(floyd_runtime_t* frp, runtime_value_t arg0_valu
 
 
 
-static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
+static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1678,7 +1678,7 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp,
 
 		value.push_back((char)arg1_value.int_value);
 		const auto result2 = to_runtime_string(r, value);
-		return result2.vector_cppvector_ptr;
+		return result2;
 	}
 	else if(is_vector_cppvector(type0)){
 		const auto vs = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
@@ -1710,37 +1710,22 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp,
 			}
 			dest_ptr[vs->get_element_count()] = element;
 		}
-		return v2.vector_cppvector_ptr;
+		return v2;
 	}
 	else if(is_vector_hamt(type0)){
-		const auto vs = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
-
 		QUARK_ASSERT(type1 == type0.get_vector_element_type());
 
-		const auto element = arg1_value;
 		const auto element_type = type1;
 
-		auto v2 = floydrt_allocate_vector(frp, vs->get_element_count() + 1);
-
-		auto dest_ptr = v2.vector_cppvector_ptr->get_element_ptr();
-		auto source_ptr = vs->get_element_ptr();
+		runtime_value_t vec2 = push_back_immutable(arg0_value, arg1_value);
 
 		if(is_rc_value(element_type)){
-			retain_value(r.value_mgr, element, element_type);
-
-			for(int i = 0 ; i < vs->get_element_count() ; i++){
-				retain_value(r.value_mgr, source_ptr[i], element_type);
-				dest_ptr[i] = source_ptr[i];
+			for(int i = 0 ; i < vec2.vector_hamt_ptr->get_element_count() ; i++){
+				const auto& value = vec2.vector_hamt_ptr->operator[](i);
+				retain_value(r.value_mgr, value, element_type);
 			}
-			dest_ptr[vs->get_element_count()] = element;
 		}
-		else{
-			for(int i = 0 ; i < vs->get_element_count() ; i++){
-				dest_ptr[i] = source_ptr[i];
-			}
-			dest_ptr[vs->get_element_count()] = element;
-		}
-		return v2.vector_cppvector_ptr;
+		return vec2;
 	}
 	else{
 		//	No other types allowed.
