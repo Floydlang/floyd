@@ -1568,26 +1568,19 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 	}
 	else if(is_vector_hamt(details.value_type)){
 		auto vec_ptr_reg = builder.CreateCall(gen_acc.gen.floydrt_allocate_vector.llvm_codegen_f, { gen_acc.get_callers_fcp(), element_count_reg }, "");
-
 		auto vec_type_reg = generate_itype_constant(gen_acc.gen, details.value_type);
 
-		if(element_type0.is_bool()){
-			QUARK_ASSERT(false);
-		}
-		else{
+		int element_index = 0;
+		for(const auto& element_value: details.elements){
+			auto index_reg = generate_constant(gen_acc, value_t::make_int(element_index));
+			auto element_value_reg = generate_expression(gen_acc, element_value);
+			auto element_value2_reg = generate_cast_to_runtime_value(gen_acc.gen, *element_value_reg, element_type0);
 
-			int element_index = 0;
-			for(const auto& element_value: details.elements){
-				auto index_reg = generate_constant(gen_acc, value_t::make_int(element_index));
-				auto element_value_reg = generate_expression(gen_acc, element_value);
-				auto element_value2_reg = generate_cast_to_runtime_value(gen_acc.gen, *element_value_reg, element_type0);
-
-				//	Move ownwership from temp to member element, no need for retain-release.
-				builder.CreateCall(gen_acc.gen.floydrt_store_vector_element_mutable.llvm_codegen_f, { gen_acc.get_callers_fcp(), vec_ptr_reg, vec_type_reg, index_reg, element_value2_reg }, "");
-				element_index++;
-			}
-			return vec_ptr_reg;
+			//	Move ownwership from temp to member element, no need for retain-release.
+			builder.CreateCall(gen_acc.gen.floydrt_store_vector_element_mutable.llvm_codegen_f, { gen_acc.get_callers_fcp(), vec_ptr_reg, vec_type_reg, index_reg, element_value2_reg }, "");
+			element_index++;
 		}
+		return vec_ptr_reg;
 	}
 	else{
 		QUARK_ASSERT(false);
