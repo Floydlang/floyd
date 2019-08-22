@@ -43,7 +43,7 @@
 		2C5372B9207A9EBA00647AD1 /* bytecode_interpreter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5372B8207A9EBA00647AD1 /* bytecode_interpreter.cpp */; };
 		2C557C382040173E006F6818 /* bytecode_intrinsics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C557C362040173E006F6818 /* bytecode_intrinsics.cpp */; };
 		2C574E4A203107D80035EA62 /* typeid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C574E48203107D80035EA62 /* typeid.cpp */; };
-		2C5E343C21527C6700B02262 /* hardware_caps.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5E343B21527C6700B02262 /* hardware_caps.cpp */; };
+		2C5E343C21527C6700B02262 /* hardware_caps_macos.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5E343B21527C6700B02262 /* hardware_caps_macos.cpp */; };
 		2C5F8322224644FB009870FC /* floyd_llvm_codegen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5F8320224644FB009870FC /* floyd_llvm_codegen.cpp */; };
 		2C5F8323224644FB009870FC /* floyd_llvm_codegen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5F8320224644FB009870FC /* floyd_llvm_codegen.cpp */; };
 		2C64578F2021E32E003625C8 /* libedit.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C64578E2021E32E003625C8 /* libedit.tbd */; };
@@ -75,7 +75,7 @@
 		2C8C03AD2221D95F0085EBBE /* string_util.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2C69C5F92221D47800E9D03E /* string_util.cc */; };
 		2C8C03AF2221D9990085EBBE /* benchmark.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2C69C5FC2221D47800E9D03E /* benchmark.cc */; };
 		2C8C03B12221DA9B0085EBBE /* floyd_main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CCD83361CBA5BA3006033E4 /* floyd_main.cpp */; };
-		2C8C03B42221DBD70085EBBE /* hardware_caps.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5E343B21527C6700B02262 /* hardware_caps.cpp */; };
+		2C8C03B42221DBD70085EBBE /* hardware_caps_macos.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C5E343B21527C6700B02262 /* hardware_caps_macos.cpp */; };
 		2C8C03B52221DBD70085EBBE /* gmock-all.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2C69C5D22221D47800E9D03E /* gmock-all.cc */; };
 		2C8C03B92221DBD70085EBBE /* csv_reporter.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2C69C5EC2221D47800E9D03E /* csv_reporter.cc */; };
 		2C8C03BB2221DBD70085EBBE /* json_reporter.cc in Sources */ = {isa = PBXBuildFile; fileRef = 2C69C5F12221D47800E9D03E /* json_reporter.cc */; };
@@ -113,6 +113,7 @@
 		2CB2A516203D642B0001A19E /* semantic_analyser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB2A515203D642B0001A19E /* semantic_analyser.cpp */; };
 		2CB30736214A9B35007D2732 /* process_test1.floyd in Sources */ = {isa = PBXBuildFile; fileRef = 2CB30735214A9B35007D2732 /* process_test1.floyd */; };
 		2CB30739214ACF09007D2732 /* software_system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB30737214ACF09007D2732 /* software_system.cpp */; };
+		2CB460BD230ECADD00F664B9 /* hardware_caps.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB460BC230ECADD00F664B9 /* hardware_caps.cpp */; };
 		2CB7AA65220900190011DE4B /* floyd_syntax.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB7AA63220900190011DE4B /* floyd_syntax.cpp */; };
 		2CB7AA6B2209E51E0011DE4B /* compiler_basics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CB7AA692209E51E0011DE4B /* compiler_basics.cpp */; };
 		2CBCA7DE1D569E04000FAE81 /* sha1_class.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CBCA7DC1D569C6D000FAE81 /* sha1_class.cpp */; };
@@ -231,7 +232,7 @@
 		2C557C372040173E006F6818 /* bytecode_intrinsics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bytecode_intrinsics.h; sourceTree = "<group>"; };
 		2C574E48203107D80035EA62 /* typeid.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = typeid.cpp; sourceTree = "<group>"; };
 		2C574E49203107D80035EA62 /* typeid.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = typeid.h; sourceTree = "<group>"; };
-		2C5E343B21527C6700B02262 /* hardware_caps.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = hardware_caps.cpp; sourceTree = "<group>"; };
+		2C5E343B21527C6700B02262 /* hardware_caps_macos.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = hardware_caps_macos.cpp; sourceTree = "<group>"; };
 		2C5E343E21527C8B00B02262 /* hardware_caps.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hardware_caps.h; sourceTree = "<group>"; };
 		2C5F8320224644FB009870FC /* floyd_llvm_codegen.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm_codegen.cpp; sourceTree = "<group>"; };
 		2C5F8321224644FB009870FC /* floyd_llvm_codegen.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_llvm_codegen.h; sourceTree = "<group>"; };
@@ -589,6 +590,9 @@
 		2CB30735214A9B35007D2732 /* process_test1.floyd */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = process_test1.floyd; sourceTree = "<group>"; };
 		2CB30737214ACF09007D2732 /* software_system.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = software_system.cpp; sourceTree = "<group>"; };
 		2CB30738214ACF09007D2732 /* software_system.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = software_system.h; sourceTree = "<group>"; };
+		2CB460B8230EC8DA00F664B9 /* hardware_caps_linux.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = hardware_caps_linux.cpp; sourceTree = "<group>"; };
+		2CB460BA230EC8F000F664B9 /* hardware_caps_windows.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = hardware_caps_windows.cpp; sourceTree = "<group>"; };
+		2CB460BC230ECADD00F664B9 /* hardware_caps.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = hardware_caps.cpp; sourceTree = "<group>"; };
 		2CB7AA63220900190011DE4B /* floyd_syntax.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_syntax.cpp; sourceTree = "<group>"; };
 		2CB7AA64220900190011DE4B /* floyd_syntax.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_syntax.h; sourceTree = "<group>"; };
 		2CB7AA692209E51E0011DE4B /* compiler_basics.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = compiler_basics.cpp; sourceTree = "<group>"; };
@@ -1446,7 +1450,10 @@
 				2C6CDA9722FD969B008F65C7 /* command_line_parser.h */,
 				2C7200B321E8FB750013003B /* file_handling.cpp */,
 				2C7200B221E8FB750013003B /* file_handling.h */,
-				2C5E343B21527C6700B02262 /* hardware_caps.cpp */,
+				2C5E343B21527C6700B02262 /* hardware_caps_macos.cpp */,
+				2CB460BA230EC8F000F664B9 /* hardware_caps_windows.cpp */,
+				2CB460B8230EC8DA00F664B9 /* hardware_caps_linux.cpp */,
+				2CB460BC230ECADD00F664B9 /* hardware_caps.cpp */,
 				2C5E343E21527C8B00B02262 /* hardware_caps.h */,
 				2CCC0D222141DCC700788BCB /* immer-master */,
 				2C40A71D1D76E179003245E3 /* immutable_ref_value.cpp */,
@@ -1564,7 +1571,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2C5E343C21527C6700B02262 /* hardware_caps.cpp in Sources */,
+				2C5E343C21527C6700B02262 /* hardware_caps_macos.cpp in Sources */,
 				2C8C039C2221D9120085EBBE /* gmock-all.cc in Sources */,
 				2CE1C35D2270C7AC007892B4 /* floyd_llvm_runtime.cpp in Sources */,
 				2C40A71F1D76E179003245E3 /* immutable_ref_value.cpp in Sources */,
@@ -1618,6 +1625,7 @@
 				2C4DA09223035A0100190C37 /* format_table.cpp in Sources */,
 				2C6CDA9522FD92FD008F65C7 /* floyd_command_line_parser.cpp in Sources */,
 				2C180477208B939800F62480 /* parse_expression.cpp in Sources */,
+				2CB460BD230ECADD00F664B9 /* hardware_caps.cpp in Sources */,
 				2C8C03A72221D95F0085EBBE /* benchmark_api_internal.cc in Sources */,
 				2C557C382040173E006F6818 /* bytecode_intrinsics.cpp in Sources */,
 				2C180492208B947C00F62480 /* expression.cpp in Sources */,
@@ -1653,7 +1661,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2C8C03B42221DBD70085EBBE /* hardware_caps.cpp in Sources */,
+				2C8C03B42221DBD70085EBBE /* hardware_caps_macos.cpp in Sources */,
 				2C8C03B52221DBD70085EBBE /* gmock-all.cc in Sources */,
 				2C8C03B92221DBD70085EBBE /* csv_reporter.cc in Sources */,
 				2C3174AD2262125F0004E086 /* parse_tree_to_ast_conv.cpp in Sources */,
