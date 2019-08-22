@@ -1332,7 +1332,7 @@ static runtime_value_t floyd_llvm_intrinsic__from_json(floyd_runtime_t* frp, JSO
 typedef runtime_value_t (*MAP_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value);
 
 //	[R] map([E] elements, func R (E e, C context) f, C context)
-static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+static runtime_value_t floyd_llvm_intrinsic__map(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1343,19 +1343,30 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map(floyd_runtime_t* frp, runti
 	const auto e_type = type0.get_vector_element_type();
 	const auto f_arg_types = type1.get_function_args();
 	const auto r_type = type1.get_function_return();
+		const auto f = reinterpret_cast<MAP_F>(arg1_value.function_ptr);
 
-	QUARK_ASSERT(is_vector_cppvector(typeid_t::make_vector(e_type)));
-	QUARK_ASSERT(is_vector_cppvector(typeid_t::make_vector(r_type)));
-
-	const auto f = reinterpret_cast<MAP_F>(arg1_value.function_ptr);
-
-	const auto count = arg0_value.vector_cppvector_ptr->get_element_count();
-	auto result_vec = alloc_vector_ccpvector2(r.value_mgr.heap, count, count);
-	for(int i = 0 ; i < count ; i++){
-		const auto a = (*f)(frp, arg0_value.vector_cppvector_ptr->get_element_ptr()[i], arg2_value);
-		result_vec.vector_cppvector_ptr->get_element_ptr()[i] = a;
+	if(is_vector_cppvector(type0)){
+		const auto count = arg0_value.vector_cppvector_ptr->get_element_count();
+		auto result_vec = alloc_vector_ccpvector2(r.value_mgr.heap, count, count);
+		for(int i = 0 ; i < count ; i++){
+			const auto a = (*f)(frp, arg0_value.vector_cppvector_ptr->get_element_ptr()[i], arg2_value);
+			result_vec.vector_cppvector_ptr->get_element_ptr()[i] = a;
+		}
+		return result_vec;
 	}
-	return result_vec.vector_cppvector_ptr;
+	else if(is_vector_hamt(type0)){
+		const auto count = arg0_value.vector_hamt_ptr->get_element_count();
+		auto result_vec = alloc_vector_hamt2(r.value_mgr.heap, count, count);
+		for(int i = 0 ; i < count ; i++){
+			const auto& element = arg0_value.vector_hamt_ptr->operator[](i);
+			const auto a = (*f)(frp, element, arg2_value);
+			result_vec.vector_hamt_ptr->store_mutate(i, a);
+		}
+		return result_vec;
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
 }
 
 
