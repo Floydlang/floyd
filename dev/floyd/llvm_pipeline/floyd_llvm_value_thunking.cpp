@@ -202,7 +202,7 @@ static runtime_value_t to_runtime_vector(value_mgr_t& value_mgr, const value_t& 
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
-	__dead2
+	__dead2;
 }
 
 static value_t from_runtime_vector(const value_mgr_t& value_mgr, const runtime_value_t encoded_value, const typeid_t& type){
