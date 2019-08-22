@@ -536,7 +536,7 @@ const struct cpu_features *get_cpu_features (void)
    if (!initated) {
 	   initated=true;
 	   init_cpu_features(&CF);
-	   init_cacheinfo();
+	   //init_cacheinfo();
    }
 
    return (&CF);

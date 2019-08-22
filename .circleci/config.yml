@@ -21,7 +21,7 @@ jobs:
            command: 'make'
       - run:
            name: floyd Hardware caps
-           command: '/floyd hwcaps'
+           command: './floyd hwcaps'
       #- run:
       #     name: floyd Unit Testing
       #     command: './floydut runtests'

@@ -516,7 +516,7 @@ void
 __attribute__((constructor))
 init_cacheinfo (void)
 {
-  printf("Initated \n");
+  //printf("Initated \n");
   /* Find out what brand of processor.  */
   unsigned int eax;
   unsigned int ebx;
