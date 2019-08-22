@@ -8,29 +8,17 @@
 
 #include "hardware_caps.h"
 
-#include <memory>
 #include <cstddef>
 #include <string>
-#include <thread>
-#include <cmath>
-#include <fstream>
-#include <iostream>
+//#include <thread>
 #include <sstream>
 
-
-#include <stdio.h>
-
-#include <sys/types.h>
-#include <cpuid.h>
-#include <sys/types.h>
+//#include <sys/types.h>
+//#include <cpuid.h>
 #include <sys/sysctl.h>
-
-using namespace std;
-
-#include "quark.h"
-
 #include <mach/machine.h>
 
+#include "quark.h"
 
 
 /*
@@ -40,7 +28,6 @@ std::hardware_destructive_interference_size, std::hardware_constructive_interfer
 https://www.unix.com/man-page/osx/3/sysconf/
 
 https://www.freebsd.org/cgi/man.cgi?query=sysctlbyname&apropos=0&sektion=0&manpath=FreeBSD+10.1-RELEASE&arch=default&format=html
-
 
 Model Name:	iMac
 Model Identifier:	iMac15,1
@@ -67,7 +54,7 @@ https://ark.intel.com/products/80807/Intel-Core-i7-4790K-Processor-8M-Cache-up-t
 
 
 
-uint64_t sysctlbyname_uint64(const std::string& key){
+static uint64_t sysctlbyname_uint64(const std::string& key){
 	uint64_t result = -1;
 	size_t size = -1;
 
@@ -79,7 +66,7 @@ uint64_t sysctlbyname_uint64(const std::string& key){
 	return result;
 }
 
-uint64_t sysctlbyname_uint64_def(const std::string& key, uint64_t def){
+static uint64_t sysctlbyname_uint64_def(const std::string& key, uint64_t def){
 	try{
 		return sysctlbyname_uint64(key);
 	}
@@ -88,7 +75,7 @@ uint64_t sysctlbyname_uint64_def(const std::string& key, uint64_t def){
 	}
 }
 
-uint32_t sysctlbyname_uint32(const std::string& key){
+static uint32_t sysctlbyname_uint32(const std::string& key){
 	//	Reserve 8 bytes here.
 	uint64_t result = -1;
 
@@ -109,7 +96,7 @@ uint32_t sysctlbyname_uint32(const std::string& key){
 	}
 }
 
-uint32_t sysctlbyname_uint32_def(const std::string& key, uint32_t def){
+static uint32_t sysctlbyname_uint32_def(const std::string& key, uint32_t def){
 	try{
 		return sysctlbyname_uint32(key);
 	}
@@ -118,7 +105,7 @@ uint32_t sysctlbyname_uint32_def(const std::string& key, uint32_t def){
 	}
 }
 
-std::string sysctlbyname_string(const std::string& key){
+static std::string sysctlbyname_string(const std::string& key){
 	std::vector<char> temp(200, 'x');
 	size_t out_size = temp.size();
 	int error = sysctlbyname(key.c_str(), &temp[0], &out_size, nullptr, 0);
@@ -130,7 +117,7 @@ std::string sysctlbyname_string(const std::string& key){
 	return result;
 }
 
-std::string sysctlbyname_string_def(const std::string& key, const std::string& def){
+static std::string sysctlbyname_string_def(const std::string& key, const std::string& def){
 	try{
 		return sysctlbyname_string(key);
 	}
