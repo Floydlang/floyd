@@ -24,7 +24,15 @@
 #include <algorithm>
 #include <memory>
 #ifndef __APPLE__
+#ifdef _MSC_VER
+#define	__dead2 
+#define NO_RETURN __declspec(noreturn)
+#pragma warning(default:4716)
+#else
 #define	__dead2 __attribute__((__noreturn__))
+#endif
+#else
+#define NO_RETURN
 #endif
 
 /*

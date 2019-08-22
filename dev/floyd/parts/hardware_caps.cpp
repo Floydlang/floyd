@@ -35,7 +35,9 @@ using namespace std;
 #ifdef __APPLE__
 #include <mach/machine.h>
 #else
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #endif
 
 namespace floyd {
@@ -395,6 +397,7 @@ void trace_hardware_caps(const hardware_caps_t& caps){
 }
 
 
+#ifndef _MSC_VER
 
 //	Experiement.
 QUARK_UNIT_TEST("","", "", ""){
@@ -427,7 +430,7 @@ QUARK_UNIT_TEST("","", "", ""){
 	QUARK_UT_VERIFY(num_cpus > 0);
 }
 
-
+#endif
 
 
 ////////////////////////////////		AFFINITY
@@ -483,6 +486,8 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpu_size,
 */
 
 #ifndef __APPLE__
+#ifndef _MSC_VER
+
 // https://software.intel.com/en-us/articles/intel-64-architecture-processor-topology-enumeration/
 // https://docs.microsoft.com/en-us/cpp/intrinsics/cpuid-cpuidex?view=vs-2019
 // We are mostly interested in cache size
@@ -631,6 +636,7 @@ power management:
 				entry.cpu = STR_TOT;
 
 		}
+#endif
 #endif
 
 		
