@@ -65,7 +65,7 @@ set(CMAKE_CXX_FLAGS "-D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACR
 #set(CMAKE_CXX_FLAGS "--closure 1 -std=c++1z -s USE_PTHREADS=1 -Os -s WASM=0 -s ASSERTIONS=1 -s DISABLE_EXCEPTION_CATCHING=0 --bind")
 
 
-set( FLOYD_SOURCES
+set(FLOYD_SOURCES
 semantic_ast.cpp
 benchmark_basics.cpp
 #bytecode_interpreter/bytecode_corecalls.cpp
@@ -136,7 +136,8 @@ llvm_pipeline/floyd_llvm_values.cpp
 llvm_pipeline/floyd_llvm_value_thunking.cpp
 parse_tree_to_ast_conv.cpp
 parts/file_handling.cpp
-#parts/cacheinfo.cpp
+parts/hardware_cacheinfo.cpp
+parts/cpu_features.cpp
 parts/hardware_caps.cpp
 parts/immutable_ref_value.cpp
 parts/json_support.cpp
@@ -149,6 +150,11 @@ parts/utils.cpp
 semantic_analyser.cpp
 software_system.cpp
 test_helpers.cpp
+)
+
+set(FLOYD_SOURCES
+${FLOYD_SOURCES}
+parts/hardware_caps_linux.cpp
 )
 
 # llvm-config --cxxflags --ldflags --system-libs --libs engine interpreter

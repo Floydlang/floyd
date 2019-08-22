@@ -7,6 +7,8 @@
 //
 
 #include "hardware_caps.h"
+//#include "bits/confname.h"
+#include "cpu_features.h"
 
 #include <memory>
 #include <cstddef>
@@ -39,6 +41,8 @@ static hardware_caps_t read_caps_linux();
 
 hardware_caps_t read_hardware_caps(){
 	hardware_caps_t test = read_caps_linux();
+
+	return test;
 
 	return {
 		//._machdep_cpu_brand_string = sysctlbyname_string_def("machdep.cpu.brand_string", ""),
@@ -166,24 +170,91 @@ int GetCacheSize(int cache_level)
     return (ways + 1) * (partitions + 1) * (line_size + 1) * (sets + 1); // Calculate the cache size by multiplying the values
 }
 
+// _SC_LEVEL1_ICACHE_SIZE
 
-// Easier to use this
+
+uint64_t value(std::string in_string) {
+
+	auto res=in_string.find(":");
+	std::string val=in_string.substr(res+1);
+	return (std::stoll(val));
+
+}
+
+std::string str_value(std::string in_string) {
+	auto res=in_string.find(":");
+	std::string val=in_string.substr(res+1);
+	return (val);
+}
+
+// cache size
 // /sys/devices/system/cpu/cpu0/cache/index0/size
 static hardware_caps_t read_caps_linux()
 {
 	hardware_caps_t ret;
-	//std::ifstream fileStat("/proc/cpuinfo");
-	std::ifstream fileStat("/sys/devices/system/cpu/cpu0/cache/index0/size");
-
+	std::ifstream fileStat("/proc/cpuinfo");
+	//std::ifstream fileStat("/sys/devices/system/cpu/cpu0/cache/index0/size");
 
 	std::string line;
 
-	// Does not work properly :-(
-	//ret._hw_cacheline_size = GetCacheSize(0);  
-	//ret._hw_l2_cache_size = GetCacheSize(1);  
-	//ret._hw_l3_cache_size = GetCacheSize(2);
-	ret._hw_cacheline_size = 32000;   // "32K" 
-	ret._hw_scalar_align = alignof(std::max_align_t);
+  // cpu family
+
+    const std::string MHZ("cpu MHz");
+	const std::size_t LEN_STR_MHZ = MHZ.size();
+
+    const std::string ALIGNMENT("cache_alignment");
+	const std::size_t LEN_STR_ALIGNMENT = ALIGNMENT.size();
+
+    const std::string MODEL("model name");
+	const std::size_t LEN_STR_MODEL= MODEL.size();
+
+    const std::string CORES("cpu cores");
+	const std::size_t LEN_STR_CORES= CORES.size();
+
+
+    while(std::getline(fileStat, line)) {
+		if(!line.compare(0, LEN_STR_CORES, CORES))
+		{
+			ret._hw_cpu_freq_hz=1000*1000*value(line);
+		}
+
+
+		if(!line.compare(0, LEN_STR_MHZ, MHZ))
+		{
+			ret._hw_cpu_freq_hz=1000*1000*value(line);
+		}
+
+		if(!line.compare(0, LEN_STR_ALIGNMENT, ALIGNMENT))
+		{
+			ret._hw_scalar_align=value(line);
+		}
+
+		if(!line.compare(0, LEN_STR_MODEL, MODEL))
+		{
+			ret._hw_model=str_value(line);
+		}
+	}
+
+
+	// lscpu, reports double size here....
+	ret._hw_l1_data_cache_size = __cache_sysconf(_SC_LEVEL1_DCACHE_SIZE); 
+	ret._hw_l1_instruction_cache_size = __cache_sysconf(_SC_LEVEL1_ICACHE_SIZE);
+
+	ret._hw_l2_cache_size = __cache_sysconf(_SC_LEVEL2_CACHE_SIZE);    
+	ret._hw_l3_cache_size = __cache_sysconf(_SC_LEVEL3_CACHE_SIZE);
+	ret._hw_cacheline_size = __cache_sysconf(_SC_LEVEL1_ICACHE_SIZE);   // "32K" 
+
+	ret._hw_ncpu =sysconf(_SC_NPROCESSORS_CONF);
+	ret._hw_cacheline_size =sysconf(_SC_LEVEL1_ICACHE_SIZE);   // "32K" 
+
+
+    long pages = sysconf(_SC_PHYS_PAGES);
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    ret._hw_mem_size= pages * page_size;
+	ret._hw_page_size= sysconf(_SC_PAGE_SIZE);
+	ret._hw_physical_processor_count=sysconf(_SC_NPROCESSORS_ONLN);
+
+	//ret._hw_scalar_align = alignof(std::max_align_t);
 
 #if 0	
 	const std::string STR_CPU("cache size");
