@@ -123,7 +123,8 @@ struct llvm_code_generator_t {
 		floydrt_allocate_vector(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_vector"))),
 		floydrt_allocate_vector_fill(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_vector_fill"))),
 		floydrt_store_vector_element_mutable(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("store_vector_element_mutable"))),
-	
+		floydrt_load_vector_element(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("load_vector_element"))),
+
 //		floydrt_allocate_hamt_vector(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_hamt_vector"))),
 		floydrt_allocate_dict(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("allocate_dict"))),
 		floydrt_store_dict_mutable(find_function_def_from_link_name(function_defs, encode_runtime_func_link_name("store_dict_mutable"))),
@@ -198,7 +199,8 @@ struct llvm_code_generator_t {
 	const function_def_t& floydrt_allocate_vector;
 	const function_def_t& floydrt_allocate_vector_fill;
 	const function_def_t& floydrt_store_vector_element_mutable;
-	
+	const function_def_t& floydrt_load_vector_element;
+
 //	const function_def_t& floydrt_allocate_hamt_vector;
 	const function_def_t& floydrt_allocate_dict;
 	const function_def_t& floydrt_store_dict_mutable;
@@ -870,7 +872,23 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 	}
 	else if(is_vector_hamt(parent_type)){
 		QUARK_ASSERT(key_type.is_int());
-		QUARK_ASSERT(false);
+
+		const auto element_type0 = parent_type.get_vector_element_type();
+
+		std::vector<llvm::Value*> args2 = {
+			gen_acc.get_callers_fcp(),
+			parent_reg,
+			generate_itype_constant(gen_acc.gen, parent_type),
+			generate_cast_to_runtime_value(gen_acc.gen, *key_reg, key_type),
+		};
+		auto element_value_uint64_reg = builder.CreateCall(gen_acc.gen.floydrt_load_vector_element.llvm_codegen_f, args2, "");
+		auto result_reg = generate_cast_from_runtime_value(gen_acc.gen, *element_value_uint64_reg, element_type0);
+
+		generate_retain(gen_acc, *result_reg, element_type0);
+		generate_release(gen_acc, *parent_reg, parent_type);
+		generate_release(gen_acc, *key_reg, key_type);
+
+		return result_reg;
 	}
 	else if(parent_type.is_dict()){
 		QUARK_ASSERT(key_type.is_string());

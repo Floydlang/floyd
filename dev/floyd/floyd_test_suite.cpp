@@ -3521,6 +3521,20 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [int] +", "non-empty vectors", ""){
 	ut_verify_global_result_nolib(QUARK_POS, R"(		let [int] result = [1, 2] + [3, 4]		)",		make_int_vec({ 1, 2, 3, 4 }) );
 }
 
+FLOYD_LANG_PROOF("Floyd test suite", "vector [int] [] lookup", "", ""){
+	ut_verify_printout_nolib(
+		QUARK_POS,
+		R"(
+
+			let a = [ 1, 2, 3 ]
+			print(a[0])
+			print(a[1])
+			print(a[2])
+
+		)",
+		{ "1", "2", "3" }
+	);
+}
 
 
 

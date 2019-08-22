@@ -562,6 +562,52 @@ static function_bind_t floydrt_store_vector_element_mutable__make(llvm::LLVMCont
 
 
 
+////////////////////////////////		load_vector_element()
+
+static runtime_value_t floydrt_load_vector_element(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type, uint64_t index){
+	auto& r = get_floyd_runtime(frp);
+	(void)r;
+
+	if(k_global_vector_type == vector_backend::cppvector){
+		QUARK_ASSERT(false);
+	}
+	else if(k_global_vector_type == vector_backend::hamt){
+		return vec.vector_hamt_ptr->operator[](index);
+	}
+	else{
+	}
+}
+
+/*
+static function_bind_t floydrt_lookup_dict__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		make_runtime_value_type(type_lookup),
+		{
+			make_frp_type(type_lookup),
+			make_generic_dict_type(type_lookup)->getPointerTo(),
+			get_exact_llvm_type(type_lookup, typeid_t::make_string())
+		},
+		false
+	);
+	return { "lookup_dict", function_type, reinterpret_cast<void*>(floydrt_lookup_dict) };
+}
+*/
+static function_bind_t floydrt_load_vector_element__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
+	llvm::FunctionType* function_type = llvm::FunctionType::get(
+		make_runtime_value_type(type_lookup),
+		{
+			make_frp_type(type_lookup),
+			make_generic_vec_type(type_lookup)->getPointerTo(),
+			make_runtime_type_type(type_lookup),
+			llvm::Type::getInt64Ty(context)
+		},
+		false
+	);
+	return { "load_vector_element", function_type, reinterpret_cast<void*>(floydrt_load_vector_element) };
+}
+
+
+
 ////////////////////////////////		allocate_string_from_strptr()
 
 
@@ -1072,6 +1118,7 @@ std::vector<function_bind_t> get_runtime_functions(llvm::LLVMContext& context, c
 		floydrt_allocate_vector__make(context, type_lookup),
 		floydrt_allocate_vector_fill__make(context, type_lookup),
 		floydrt_store_vector_element_mutable__make(context, type_lookup),
+		floydrt_load_vector_element__make(context, type_lookup),
 		floydrt_alloc_kstr__make(context, type_lookup),
 		floydrt_concatunate_vectors__make(context, type_lookup),
 		floydrt_allocate_dict__make(context, type_lookup),
@@ -1642,7 +1689,8 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp,
 		const auto element = arg1_value;
 		const auto element_type = type1;
 
-		auto v2 = floydrt_allocate_vector(frp, vs->get_element_count() + 1);
+		const auto element_count2 = vs->get_element_count() + 1;
+		auto v2 = alloc_vector_ccpvector2(r.value_mgr.heap, element_count2, element_count2);
 
 		auto dest_ptr = v2.vector_cppvector_ptr->get_element_ptr();
 		auto source_ptr = vs->get_element_ptr();
@@ -1665,7 +1713,34 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp,
 		return v2.vector_cppvector_ptr;
 	}
 	else if(is_vector_hamt(type0)){
-		QUARK_ASSERT(false);
+		const auto vs = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
+
+		QUARK_ASSERT(type1 == type0.get_vector_element_type());
+
+		const auto element = arg1_value;
+		const auto element_type = type1;
+
+		auto v2 = floydrt_allocate_vector(frp, vs->get_element_count() + 1);
+
+		auto dest_ptr = v2.vector_cppvector_ptr->get_element_ptr();
+		auto source_ptr = vs->get_element_ptr();
+
+		if(is_rc_value(element_type)){
+			retain_value(r.value_mgr, element, element_type);
+
+			for(int i = 0 ; i < vs->get_element_count() ; i++){
+				retain_value(r.value_mgr, source_ptr[i], element_type);
+				dest_ptr[i] = source_ptr[i];
+			}
+			dest_ptr[vs->get_element_count()] = element;
+		}
+		else{
+			for(int i = 0 ; i < vs->get_element_count() ; i++){
+				dest_ptr[i] = source_ptr[i];
+			}
+			dest_ptr[vs->get_element_count()] = element;
+		}
+		return v2.vector_cppvector_ptr;
 	}
 	else{
 		//	No other types allowed.
