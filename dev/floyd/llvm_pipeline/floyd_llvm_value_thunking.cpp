@@ -241,6 +241,11 @@ static value_t from_runtime_vector(const value_mgr_t& value_mgr, const runtime_v
 	else{
 		QUARK_ASSERT(false);
 	}
+	// This is unreachable, or dangling else?? This is to make circleCi happy 
+	const auto et = type.get_vector_element_type();
+	std::vector<value_t> elements;
+	const auto val = value_t::make_vector_value(et, elements);
+	return val;
 }
 
 static runtime_value_t to_runtime_dict(value_mgr_t& value_mgr, const typeid_t::dict_t& exact_type, const value_t& value){
