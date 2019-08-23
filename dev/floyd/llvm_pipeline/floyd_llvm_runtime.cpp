@@ -1200,29 +1200,74 @@ static DICT_CPPMAP_T* floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime_
 	return dict2.dict_cppmap_ptr;
 }
 
-static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
+
+
+static runtime_value_t get_keys__cppvector(value_mgr_t& value_mgr, runtime_value_t dict_value, runtime_type_t dict_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
+	const auto type0 = lookup_type(value_mgr.type_lookup, dict_type);
+
+	QUARK_ASSERT(type0.is_dict());
+
+	const auto& dict = unpack_dict_cppmap_arg(value_mgr.type_lookup, dict_value, dict_type);
+	auto& m = dict->get_map();
+	const auto count = (uint64_t)m.size();
+
+	auto result_vec = alloc_vector_ccpvector2(value_mgr.heap, count, count);
+
+	int index = 0;
+	for(const auto& e: m){
+		//	Notice that the internal representation of dictionary keys are std::string, not floyd-strings,
+		//	so we need to create new key-strings from scratch.
+		const auto key = to_runtime_string2(value_mgr, e.first);
+		result_vec.vector_cppvector_ptr->get_element_ptr()[index] = key;
+		index++;
+	}
+	return result_vec;
+}
+static runtime_value_t get_keys__hamt(value_mgr_t& value_mgr, runtime_value_t dict_value, runtime_type_t dict_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
+	const auto type0 = lookup_type(value_mgr.type_lookup, dict_type);
+
+	QUARK_ASSERT(type0.is_dict());
+
+	const auto& dict = unpack_dict_cppmap_arg(value_mgr.type_lookup, dict_value, dict_type);
+	auto& m = dict->get_map();
+	const auto count = (uint64_t)m.size();
+
+	auto result_vec = alloc_vector_hamt2(value_mgr.heap, count, count);
+
+	int index = 0;
+	for(const auto& e: m){
+		//	Notice that the internal representation of dictionary keys are std::string, not floyd-strings,
+		//	so we need to create new key-strings from scratch.
+		const auto key = to_runtime_string2(value_mgr, e.first);
+		result_vec.vector_hamt_ptr->store_mutate(index, key);
+		index++;
+	}
+	return result_vec;
+}
+
+//??? We need to figure out the return type *again*, knowledge we have already in semast.
+static runtime_value_t floyd_llvm_intrinsic__get_keys(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
 
 	QUARK_ASSERT(type0.is_dict());
-	QUARK_ASSERT(is_vector_cppvector(typeid_t::make_vector(typeid_t::make_string())));
 
-	const auto& dict = unpack_dict_cppmap_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
-	auto& m = dict->get_map();
-	const auto count = (int32_t)m.size();
-
-	auto result_vec = alloc_vector_ccpvector2(r.value_mgr.heap, count, count);
-
-	int index = 0;
-	for(const auto& e: m){
-		//	Notice that the internal representation of dictionary keys are std::string, not floyd-strings, so we need to create new key-strings from scratch.
-		const auto key = to_runtime_string(r, e.first);
-		result_vec.vector_cppvector_ptr->get_element_ptr()[index] = key;
-		index++;
+	if(k_global_vector_type == vector_backend::cppvector){
+		return get_keys__cppvector(r.value_mgr, arg0_value, arg0_type);
 	}
-	return result_vec.vector_cppvector_ptr;
+	else if(k_global_vector_type == vector_backend::hamt){
+		return get_keys__hamt(r.value_mgr, arg0_value, arg0_type);
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
 }
+
 
 static uint32_t floyd_llvm_intrinsic__exists(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
