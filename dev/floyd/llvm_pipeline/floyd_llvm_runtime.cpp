@@ -1556,6 +1556,8 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map_dag(
 typedef runtime_value_t (*FILTER_F)(floyd_runtime_t* frp, runtime_value_t element_value, runtime_value_t context);
 
 static runtime_value_t filter__cppvector(floyd_runtime_t* frp, value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t context, runtime_type_t context_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1598,6 +1600,8 @@ static runtime_value_t filter__cppvector(floyd_runtime_t* frp, value_mgr_t& valu
 }
 
 static runtime_value_t filter__hamt(floyd_runtime_t* frp, value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t context, runtime_type_t context_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
@@ -1966,7 +1970,9 @@ static int64_t floyd_llvm_intrinsic__size(floyd_runtime_t* frp, runtime_value_t 
 
 
 
-static const runtime_value_t subset__string(floyd_runtime_t* frp, value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
+static const runtime_value_t subset__string(value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
 	if(start < 0 || end < 0){
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
@@ -1983,7 +1989,9 @@ static const runtime_value_t subset__string(floyd_runtime_t* frp, value_mgr_t& v
 	return result;
 }
 
-static const runtime_value_t subset__cppvector(floyd_runtime_t* frp, value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
+static const runtime_value_t subset__cppvector(value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
 	if(start < 0 || end < 0){
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
@@ -2015,7 +2023,9 @@ static const runtime_value_t subset__cppvector(floyd_runtime_t* frp, value_mgr_t
 	return vec2;
 }
 
-static const runtime_value_t subset__hamt(floyd_runtime_t* frp, value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
+static const runtime_value_t subset__hamt(value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
 	if(start < 0 || end < 0){
 		quark::throw_runtime_error("subset() requires start and end to be non-negative.");
 	}
@@ -2052,13 +2062,13 @@ static const runtime_value_t floyd_llvm_intrinsic__subset(floyd_runtime_t* frp, 
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
 	if(type0.is_string()){
-		return subset__string(frp, r.value_mgr, arg0_value, arg0_type, start, end);
+		return subset__string(r.value_mgr, arg0_value, arg0_type, start, end);
 	}
 	else if(is_vector_cppvector(type0)){
-		return subset__cppvector(frp, r.value_mgr, arg0_value, arg0_type, start, end);
+		return subset__cppvector(r.value_mgr, arg0_value, arg0_type, start, end);
 	}
 	else if(is_vector_hamt(type0)){
-		return subset__hamt(frp, r.value_mgr, arg0_value, arg0_type, start, end);
+		return subset__hamt(r.value_mgr, arg0_value, arg0_type, start, end);
 	}
 	else{
 		//	No other types allowed.
@@ -2100,8 +2110,139 @@ static runtime_type_t floyd_llvm_intrinsic__typeof(floyd_runtime_t* frp, runtime
 }
 
 
+
+
+
+
+static const runtime_value_t update__string(value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(value_mgr.type_lookup, arg1_type);
+	const auto type2 = lookup_type(value_mgr.type_lookup, arg2_type);
+
+	QUARK_ASSERT(type1.is_int());
+	QUARK_ASSERT(type2.is_int());
+
+	const auto str = from_runtime_string2(value_mgr, arg0_value);
+	const auto index = arg1_value.int_value;
+	const auto new_char = (char)arg2_value.int_value;
+
+	const auto len = str.size();
+
+	if(index < 0 || index >= len){
+		quark::throw_runtime_error("Position argument to update() is outside collection span.");
+	}
+
+	auto result = str;
+	result[index] = new_char;
+	const auto result2 = to_runtime_string2(value_mgr, result);
+	return result2;
+}
+
+static const runtime_value_t update__cppvector(value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(value_mgr.type_lookup, arg1_type);
+	const auto type2 = lookup_type(value_mgr.type_lookup, arg2_type);
+
+	QUARK_ASSERT(type1.is_int());
+
+	const auto vec = unpack_vector_cppvector_arg(value_mgr.type_lookup, arg0_value, arg0_type);
+	const auto element_type = type0.get_vector_element_type();
+	const auto index = arg1_value.int_value;
+
+	QUARK_ASSERT(element_type == type2);
+
+	if(index < 0 || index >= vec->get_element_count()){
+		quark::throw_runtime_error("Position argument to update() is outside collection span.");
+	}
+
+	auto result = alloc_vector_ccpvector2(value_mgr.heap, vec->get_element_count(), vec->get_element_count());
+	auto dest_ptr = result.vector_cppvector_ptr->get_element_ptr();
+	auto source_ptr = vec->get_element_ptr();
+	if(is_rc_value(element_type)){
+		retain_value(value_mgr, arg2_value, element_type);
+		for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
+			retain_value(value_mgr, source_ptr[i], element_type);
+			dest_ptr[i] = source_ptr[i];
+		}
+
+		release_vec_deep(value_mgr, dest_ptr[index], element_type);
+		dest_ptr[index] = arg2_value;
+	}
+	else{
+		for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
+			dest_ptr[i] = source_ptr[i];
+		}
+		dest_ptr[index] = arg2_value;
+	}
+
+	return result;
+}
+
+static const runtime_value_t update__hamt(value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(value_mgr.type_lookup, arg1_type);
+	const auto type2 = lookup_type(value_mgr.type_lookup, arg2_type);
+
+	QUARK_ASSERT(type1.is_int());
+
+	const auto vec = arg0_value.vector_hamt_ptr;
+	const auto element_type = type0.get_vector_element_type();
+	const auto index = arg1_value.int_value;
+
+	QUARK_ASSERT(element_type == type2);
+
+	if(index < 0 || index >= vec->get_element_count()){
+		quark::throw_runtime_error("Position argument to update() is outside collection span.");
+	}
+
+	if(is_rc_value(element_type)){
+		const auto result = store_immutable(arg0_value, index, arg2_value);
+		for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
+			auto v = result.vector_hamt_ptr->operator[](i);
+			retain_value(value_mgr, v, element_type);
+		}
+		return result;
+	}
+	else{
+		return store_immutable(arg0_value, index, arg2_value);
+	}
+}
+
+static const runtime_value_t update__dict(value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(value_mgr.type_lookup, arg1_type);
+	const auto type2 = lookup_type(value_mgr.type_lookup, arg2_type);
+
+	QUARK_ASSERT(type1.is_string());
+
+	const auto key = from_runtime_string2(value_mgr, arg1_value);
+	const auto dict = unpack_dict_cppmap_arg(value_mgr.type_lookup, arg0_value, arg0_type);
+	const auto value_type = type0.get_dict_value_type();
+
+	//	Deep copy dict.
+	auto dict2 = alloc_dict_cppmap2(value_mgr.heap);
+	dict2.dict_cppmap_ptr->get_map_mut() = dict->get_map();
+
+	dict2.dict_cppmap_ptr->get_map_mut().insert_or_assign(key, arg2_value);
+
+	if(is_rc_value(value_type)){
+		for(const auto& e: dict2.dict_cppmap_ptr->get_map()){
+			retain_value(value_mgr, e.second, value_type);
+		}
+	}
+
+	return dict2;
+}
+
 //??? Move implementation elsewhere.
-//??? Split into string/vector/dict versions.
 static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type){
 	auto& r = get_floyd_runtime(frp);
 
@@ -2109,104 +2250,16 @@ static const runtime_value_t floyd_llvm_intrinsic__update(floyd_runtime_t* frp, 
 	const auto type1 = lookup_type(r.value_mgr.type_lookup, arg1_type);
 	const auto type2 = lookup_type(r.value_mgr.type_lookup, arg2_type);
 	if(type0.is_string()){
-		QUARK_ASSERT(type1.is_int());
-		QUARK_ASSERT(type2.is_int());
-
-		const auto str = from_runtime_string(r, arg0_value);
-		const auto index = arg1_value.int_value;
-		const auto new_char = (char)arg2_value.int_value;
-
-		const auto len = str.size();
-
-		if(index < 0 || index >= len){
-			quark::throw_runtime_error("Position argument to update() is outside collection span.");
-		}
-
-		auto result = str;
-		result[index] = new_char;
-		const auto result2 = to_runtime_string(r, result);
-		return result2;
+		return update__string(r.value_mgr, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
 	}
 	else if(is_vector_cppvector(type0)){
-		QUARK_ASSERT(type1.is_int());
-
-		const auto vec = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
-		const auto element_type = type0.get_vector_element_type();
-		const auto index = arg1_value.int_value;
-
-		QUARK_ASSERT(element_type == type2);
-
-		if(index < 0 || index >= vec->get_element_count()){
-			quark::throw_runtime_error("Position argument to update() is outside collection span.");
-		}
-
-		auto result = alloc_vector_ccpvector2(r.value_mgr.heap, vec->get_element_count(), vec->get_element_count());
-		auto dest_ptr = result.vector_cppvector_ptr->get_element_ptr();
-		auto source_ptr = vec->get_element_ptr();
-		if(is_rc_value(element_type)){
-			retain_value(r.value_mgr, arg2_value, element_type);
-			for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
-				retain_value(r.value_mgr, source_ptr[i], element_type);
-				dest_ptr[i] = source_ptr[i];
-			}
-
-			release_vec_deep(r.value_mgr, dest_ptr[index], element_type);
-			dest_ptr[index] = arg2_value;
-		}
-		else{
-			for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
-				dest_ptr[i] = source_ptr[i];
-			}
-			dest_ptr[index] = arg2_value;
-		}
-
-		return result;
+		return update__cppvector(r.value_mgr, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
 	}
 	else if(is_vector_hamt(type0)){
-		QUARK_ASSERT(type1.is_int());
-
-		const auto vec = arg0_value.vector_hamt_ptr;
-		const auto element_type = type0.get_vector_element_type();
-		const auto index = arg1_value.int_value;
-
-		QUARK_ASSERT(element_type == type2);
-
-		if(index < 0 || index >= vec->get_element_count()){
-			quark::throw_runtime_error("Position argument to update() is outside collection span.");
-		}
-
-		if(is_rc_value(element_type)){
-			const auto result = store_immutable(arg0_value, index, arg2_value);
-			for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
-				auto v = result.vector_hamt_ptr->operator[](i);
-				retain_value(r.value_mgr, v, element_type);
-			}
-			return result;
-		}
-		else{
-			return store_immutable(arg0_value, index, arg2_value);
-		}
+		return update__hamt(r.value_mgr, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
 	}
 	else if(type0.is_dict()){
-		QUARK_ASSERT(type1.is_string());
-
-		const auto key = from_runtime_string(r, arg1_value);
-		const auto dict = unpack_dict_cppmap_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
-		const auto value_type = type0.get_dict_value_type();
-
-		//	Deep copy dict.
-		auto dict2 = alloc_dict_cppmap2(r.value_mgr.heap);
-		dict2.dict_cppmap_ptr->get_map_mut() = dict->get_map();
-
-		dict2.dict_cppmap_ptr->get_map_mut().insert_or_assign(key, arg2_value);
-
-		if(is_rc_value(value_type)){
-			for(const auto& e: dict2.dict_cppmap_ptr->get_map()){
-				retain_value(r.value_mgr, e.second, value_type);
-			}
-		}
-
-		return dict2;
+		return update__dict(r.value_mgr, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
 	}
 	else if(type0.is_struct()){
 		QUARK_ASSERT(false);
