@@ -1,13 +1,13 @@
 //
-//  floyd_llvm_values.hpp
+//  value_backend.hpp
 //  floyd
 //
 //  Created by Marcus Zetterquist on 2019-08-18.
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-#ifndef floyd_llvm_values_hpp
-#define floyd_llvm_values_hpp
+#ifndef value_backend_hpp
+#define value_backend_hpp
 
 #include "immer/vector.hpp"
 #include "immer/map.hpp"
@@ -545,4 +545,4 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 
 }	// floyd
 
-#endif /* floyd_llvm_values_hpp */
+#endif /* value_backend_hpp */

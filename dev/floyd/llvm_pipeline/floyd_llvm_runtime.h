@@ -9,7 +9,7 @@
 #ifndef floyd_llvm_runtime_hpp
 #define floyd_llvm_runtime_hpp
 
-#include "floyd_llvm_values.h"
+#include "value_backend.h"
 #include "floyd_llvm_value_thunking.h"
 
 #include <string>
