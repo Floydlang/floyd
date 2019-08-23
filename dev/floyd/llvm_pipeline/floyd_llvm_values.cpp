@@ -556,7 +556,7 @@ runtime_value_t alloc_vector_hamt2(heap_t& heap, uint64_t allocation_count, uint
 
 runtime_value_t alloc_vector_hamt2(heap_t& heap, const runtime_value_t elements[], uint64_t element_count){
 	QUARK_ASSERT(heap.check_invariant());
-	QUARK_ASSERT(elements != nullptr);
+	QUARK_ASSERT(element_count == 0 || elements != nullptr);
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0);
 	alloc->data_d = element_count;
