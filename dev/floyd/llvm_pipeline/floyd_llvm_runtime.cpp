@@ -1778,11 +1778,13 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__reduce(floyd_runtime_t* frp, ru
 
 
 
+
+
 typedef uint8_t (*stable_sort_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value, runtime_value_t arg2_value);
 
-//	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
-static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__stable_sort(
+static runtime_value_t stable_sort__cppvector(
 	floyd_runtime_t* frp,
+	value_mgr_t& value_mgr,
 	runtime_value_t arg0_value,
 	runtime_type_t arg0_type,
 	runtime_value_t arg1_value,
@@ -1790,11 +1792,12 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__stable_sort(
 	runtime_value_t arg2_value,
 	runtime_type_t arg2_type
 ){
-	auto& r = get_floyd_runtime(frp);
+	QUARK_ASSERT(frp != nullptr);
+	QUARK_ASSERT(value_mgr.check_invariant());
 
-	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
-	const auto type1 = lookup_type(r.value_mgr.type_lookup, arg1_type);
-	const auto type2 = lookup_type(r.value_mgr.type_lookup, arg2_type);
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(value_mgr.type_lookup, arg1_type);
+	const auto type2 = lookup_type(value_mgr.type_lookup, arg2_type);
 
 	QUARK_ASSERT(check_stable_sort_func_type(type0, type1, type2));
 	QUARK_ASSERT(is_vector_cppvector(type0));
@@ -1803,7 +1806,7 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__stable_sort(
 	const auto& f = arg1_value;
 	const auto& context = arg2_value;
 
-	const auto elements2 = from_runtime_value(r, elements, type0);
+	const auto elements2 = from_runtime_value2(value_mgr, elements, type0);
 	const auto f2 = reinterpret_cast<stable_sort_F>(f.function_ptr);
 
 	struct sort_functor_r {
@@ -1825,9 +1828,84 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__stable_sort(
 	auto mutate_inplace_elements = elements2.get_vector_value();
 	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
 
-	const auto result = to_runtime_value(r, value_t::make_vector_value(type0, mutate_inplace_elements));
-	return result.vector_cppvector_ptr;
+	const auto result = to_runtime_value2(value_mgr, value_t::make_vector_value(type0, mutate_inplace_elements));
+	return result;
 }
+
+static runtime_value_t stable_sort__hamt(
+	floyd_runtime_t* frp,
+	value_mgr_t& value_mgr,
+	runtime_value_t arg0_value,
+	runtime_type_t arg0_type,
+	runtime_value_t arg1_value,
+	runtime_type_t arg1_type,
+	runtime_value_t arg2_value,
+	runtime_type_t arg2_type
+){
+	QUARK_ASSERT(frp != nullptr);
+	QUARK_ASSERT(value_mgr.check_invariant());
+
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(value_mgr.type_lookup, arg1_type);
+	const auto type2 = lookup_type(value_mgr.type_lookup, arg2_type);
+
+	QUARK_ASSERT(check_stable_sort_func_type(type0, type1, type2));
+	QUARK_ASSERT(is_vector_hamt(type0));
+
+	const auto& elements = arg0_value;
+	const auto& f = arg1_value;
+	const auto& context = arg2_value;
+
+	const auto elements2 = from_runtime_value2(value_mgr, elements, type0);
+	const auto f2 = reinterpret_cast<stable_sort_F>(f.function_ptr);
+
+	struct sort_functor_r {
+		bool operator() (const value_t &a, const value_t &b) {
+			auto& r = get_floyd_runtime(frp);
+			const auto left = to_runtime_value(r, a);
+			const auto right = to_runtime_value(r, b);
+			uint8_t result = (*f)(frp, left, right, context);
+			return result == 1 ? true : false;
+		}
+
+		floyd_runtime_t* frp;
+		runtime_value_t context;
+		stable_sort_F f;
+	};
+
+	const sort_functor_r sort_functor { frp, context, f2 };
+
+	auto mutate_inplace_elements = elements2.get_vector_value();
+	std::stable_sort(mutate_inplace_elements.begin(), mutate_inplace_elements.end(), sort_functor);
+
+	const auto result = to_runtime_value2(value_mgr, value_t::make_vector_value(type0, mutate_inplace_elements));
+	return result;
+}
+
+//	[T] stable_sort([T] elements, bool less(T left, T right, C context), C context)
+static runtime_value_t floyd_llvm_intrinsic__stable_sort(
+	floyd_runtime_t* frp,
+	runtime_value_t arg0_value,
+	runtime_type_t arg0_type,
+	runtime_value_t arg1_value,
+	runtime_type_t arg1_type,
+	runtime_value_t arg2_value,
+	runtime_type_t arg2_type
+){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
+	if(is_vector_cppvector(type0)){
+		return stable_sort__cppvector(frp, r.value_mgr, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	}
+	else if(is_vector_hamt(type0)){
+		return stable_sort__hamt(frp, r.value_mgr, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type);
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
 
 
 
