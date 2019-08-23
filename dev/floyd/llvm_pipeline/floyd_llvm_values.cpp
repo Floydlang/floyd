@@ -8,11 +8,12 @@
 
 #include "floyd_llvm_values.h"
 
-#include <llvm/IR/IRBuilder.h>
-
 #include <string>
 #include <vector>
 
+#include "typeid.h"
+#include "json_support.h"
+#include "compiler_basics.h"
 #include "quark.h"
 
 
@@ -296,6 +297,14 @@ uint64_t size_to_allocation_blocks(std::size_t size){
 }
 
 
+////////////////////////////////	runtime_type_t
+
+
+
+runtime_type_t make_runtime_type(int32_t itype){
+	return runtime_type_t{ itype };
+}
+
 
 
 ////////////////////////////////	runtime_value_t
@@ -364,33 +373,6 @@ runtime_value_t make_runtime_dict_cppmap(DICT_CPPMAP_T* dict_cppmap_ptr){
 
 
 
-
-
-
-VECTOR_CPPVECTOR_T* unpack_vector_cppvector_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type){
-#if DEBUG
-	const auto type = lookup_type(type_lookup, arg_type);
-#endif
-	QUARK_ASSERT(type_lookup.check_invariant());
-	QUARK_ASSERT(type.is_vector());
-	QUARK_ASSERT(arg_value.vector_cppvector_ptr != nullptr);
-	QUARK_ASSERT(arg_value.vector_cppvector_ptr->check_invariant());
-
-	return arg_value.vector_cppvector_ptr;
-}
-
-DICT_CPPMAP_T* unpack_dict_cppmap_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type){
-#if DEBUG
-	const auto type = lookup_type(type_lookup, arg_type);
-#endif
-	QUARK_ASSERT(type_lookup.check_invariant());
-	QUARK_ASSERT(type.is_dict());
-	QUARK_ASSERT(arg_value.dict_cppmap_ptr != nullptr);
-
-	QUARK_ASSERT(arg_value.dict_cppmap_ptr->check_invariant());
-
-	return arg_value.dict_cppmap_ptr;
-}
 
 
 uint64_t get_vec_string_size(runtime_value_t str){
@@ -951,133 +933,6 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 	};
 	std::visit(visitor_t{ value_ptr, value }, type._contents);
 }
-
-llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& value, const typeid_t& floyd_type){
-	QUARK_ASSERT(type_lookup.check_invariant());
-	QUARK_ASSERT(floyd_type.check_invariant());
-
-	auto& context = builder.getContext();
-
-	struct visitor_t {
-		llvm::IRBuilder<>& builder;
-		llvm::LLVMContext& context;
-		const llvm_type_lookup& type_lookup;
-		llvm::Value& value;
-
-		llvm::Value* operator()(const typeid_t::undefined_t& e) const{
-			UNSUPPORTED();
-		}
-		llvm::Value* operator()(const typeid_t::any_t& e) const{
-			UNSUPPORTED();
-		}
-
-		llvm::Value* operator()(const typeid_t::void_t& e) const{
-			UNSUPPORTED();
-		}
-		llvm::Value* operator()(const typeid_t::bool_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, make_runtime_value_type(type_lookup), "");
-		}
-		llvm::Value* operator()(const typeid_t::int_t& e) const{
-			return &value;
-		}
-		llvm::Value* operator()(const typeid_t::double_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &value, make_runtime_value_type(type_lookup), "");
-		}
-		llvm::Value* operator()(const typeid_t::string_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(type_lookup), "");
-		}
-
-		llvm::Value* operator()(const typeid_t::json_type_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(type_lookup), "");
-		}
-		llvm::Value* operator()(const typeid_t::typeid_type_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::ZExt, &value, make_runtime_value_type(type_lookup), "");
-		}
-
-		llvm::Value* operator()(const typeid_t::struct_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(type_lookup), "");
-		}
-		llvm::Value* operator()(const typeid_t::vector_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(type_lookup), "");
-		}
-		llvm::Value* operator()(const typeid_t::dict_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(type_lookup), "");
-		}
-		llvm::Value* operator()(const typeid_t::function_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::PtrToInt, &value, make_runtime_value_type(type_lookup), "");
-		}
-		llvm::Value* operator()(const typeid_t::unresolved_t& e) const{
-			UNSUPPORTED();
-		}
-	};
-	return std::visit(visitor_t{ builder, context, type_lookup, value }, floyd_type._contents);
-}
-
-llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& runtime_value_reg, const typeid_t& type){
-	QUARK_ASSERT(type.check_invariant());
-
-	auto& context = builder.getContext();
-
-	struct visitor_t {
-		llvm::IRBuilder<>& builder;
-		const llvm_type_lookup& type_lookup;
-		llvm::LLVMContext& context;
-		llvm::Value& runtime_value_reg;
-		const typeid_t& type;
-
-		llvm::Value* operator()(const typeid_t::undefined_t& e) const{
-			UNSUPPORTED();
-		}
-		llvm::Value* operator()(const typeid_t::any_t& e) const{
-			UNSUPPORTED();
-		}
-
-		llvm::Value* operator()(const typeid_t::void_t& e) const{
-			UNSUPPORTED();
-		}
-		llvm::Value* operator()(const typeid_t::bool_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::Trunc, &runtime_value_reg, llvm::Type::getInt1Ty(context), "");
-		}
-		llvm::Value* operator()(const typeid_t::int_t& e) const{
-			return &runtime_value_reg;
-		}
-		llvm::Value* operator()(const typeid_t::double_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::BitCast, &runtime_value_reg, llvm::Type::getDoubleTy(context), "");
-		}
-		llvm::Value* operator()(const typeid_t::string_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_vec_type(type_lookup)->getPointerTo(), "");
-		}
-
-		llvm::Value* operator()(const typeid_t::json_type_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_json_type(type_lookup)->getPointerTo(), "");
-		}
-		llvm::Value* operator()(const typeid_t::typeid_type_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::Trunc, &runtime_value_reg, llvm::Type::getInt32Ty(context), "");
-		}
-
-		llvm::Value* operator()(const typeid_t::struct_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_generic_struct_type(type_lookup)->getPointerTo(), "");
-		}
-		llvm::Value* operator()(const typeid_t::vector_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_vec_type(type_lookup)->getPointerTo(), "");
-		}
-		llvm::Value* operator()(const typeid_t::dict_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, make_generic_dict_type(type_lookup)->getPointerTo(), "");
-		}
-		llvm::Value* operator()(const typeid_t::function_t& e) const{
-			return builder.CreateCast(llvm::Instruction::CastOps::IntToPtr, &runtime_value_reg, get_exact_llvm_type(type_lookup, type), "");
-		}
-		llvm::Value* operator()(const typeid_t::unresolved_t& e) const{
-			UNSUPPORTED();
-		}
-	};
-	return std::visit(visitor_t{ builder, type_lookup, context, runtime_value_reg, type }, type._contents);
-}
-
-
-
-
-
 
 }	//	floyd
 

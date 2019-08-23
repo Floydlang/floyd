@@ -9,7 +9,11 @@
 #ifndef floyd_llvm_helpers_hpp
 #define floyd_llvm_helpers_hpp
 
+//#include "floyd_llvm_types.h"
+#include "floyd_llvm_values.h"
+
 #include <llvm/IR/IRBuilder.h>
+
 
 
 
@@ -80,6 +84,21 @@ std::string decode_floyd_func_link_name(const link_name_t& name);
 //	"hello" => "floydrt_hello"
 link_name_t encode_runtime_func_link_name(const std::string& name);
 std::string decode_runtime_func_link_name(const link_name_t& name);
+
+
+
+
+////////////////////////////////		VALUES
+
+
+VECTOR_CPPVECTOR_T* unpack_vector_cppvector_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type);
+DICT_CPPMAP_T* unpack_dict_cppmap_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type);
+
+//	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value.
+llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& value, const typeid_t& floyd_type);
+
+//	Returns the specific LLVM type for the value, like VECTOR_CPPVECTOR_T* etc.
+llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& runtime_value_reg, const typeid_t& type);
 
 
 }	//	floyd

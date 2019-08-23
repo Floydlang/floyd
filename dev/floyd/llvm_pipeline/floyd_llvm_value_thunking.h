@@ -11,6 +11,7 @@
 
 
 #include "floyd_llvm_values.h"
+#include "floyd_llvm_types.h"
 
 
 namespace floyd {

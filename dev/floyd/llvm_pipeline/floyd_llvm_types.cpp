@@ -33,14 +33,6 @@ llvm::Type* deref_ptr(llvm::Type* type){
 }
 
 
-////////////////////////////////	runtime_type_t
-
-
-
-runtime_type_t make_runtime_type(int32_t itype){
-	return runtime_type_t{ itype };
-}
-
 
 ////////////////////////////////		llvm_function_def_t
 

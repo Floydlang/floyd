@@ -10,6 +10,7 @@
 #define floyd_llvm_types_hpp
 
 #include "ast.h"
+#include "floyd_llvm_values.h"
 
 #include <llvm/IR/Function.h>
 
@@ -32,19 +33,6 @@ llvm::Type* deref_ptr(llvm::Type* type);
 	vector[T]		vector<T>	VEC_T*					VEC_T*
 	json_t			json_t		json_t*					int16*
 */
-
-
-
-////////////////////////////////	runtime_type_t
-
-/*
-	An integer that specifies a unique type a type interner. Use this to specify types in running program.
-	Avoid using floyd::typeid_t
-*/
-
-typedef int32_t runtime_type_t;
-
-runtime_type_t make_runtime_type(int32_t itype);
 
 
 

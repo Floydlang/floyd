@@ -8,7 +8,10 @@
 
 #include "floyd_llvm_value_thunking.h"
 
+#include "floyd_llvm_helpers.h"
+#include "floyd_llvm_values.h"
 
+#include <llvm/IR/IRBuilder.h>
 
 
 namespace floyd {
@@ -457,13 +460,6 @@ value_t from_runtime_value2(const value_mgr_t& value_mgr, const runtime_value_t 
 
 
 
-
-
-
-
-
-
-
 void retain_value(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t& type){
 	QUARK_ASSERT(value_mgr.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
@@ -721,8 +717,5 @@ runtime_value_t concat_vector_hamt(value_mgr_t& value_mgr, const typeid_t& type,
 	}
 	return result;
 }
-
-
-
 
 }	// floyd

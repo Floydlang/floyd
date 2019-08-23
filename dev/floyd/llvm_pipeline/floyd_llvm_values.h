@@ -9,14 +9,11 @@
 #ifndef floyd_llvm_values_hpp
 #define floyd_llvm_values_hpp
 
-#include "floyd_llvm_types.h"
-
-#include <llvm/IR/IRBuilder.h>
-
 #include "immer/vector.hpp"
 #include "immer/map.hpp"
 
 #include <atomic>
+#include <map>
 #include <mutex>
 
 #include "quark.h"
@@ -24,6 +21,8 @@
 struct json_t;
 
 namespace floyd {
+
+struct typeid_t;
 
 struct VECTOR_CPPVECTOR_T;
 struct VECTOR_HAMT_T;
@@ -166,6 +165,20 @@ void dispose_alloc(heap_alloc_64_t& alloc);
 
 
 
+////////////////////////////////	runtime_type_t
+
+/*
+	An integer that specifies a unique type a type interner. Use this to specify types in running program.
+	Avoid using floyd::typeid_t
+*/
+
+typedef int32_t runtime_type_t;
+
+runtime_type_t make_runtime_type(int32_t itype);
+
+
+
+
 ////////////////////////////////	runtime_value_t
 
 
@@ -211,11 +224,6 @@ runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr);
 runtime_value_t make_runtime_vector_cppvector(VECTOR_CPPVECTOR_T* vector_ptr);
 runtime_value_t make_runtime_vector_hamt(VECTOR_HAMT_T* vector_hamt_ptr);
 runtime_value_t make_runtime_dict_cppmap(DICT_CPPMAP_T* dict_cppmap_ptr);
-
-
-VECTOR_CPPVECTOR_T* unpack_vector_cppvector_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type);
-DICT_CPPMAP_T* unpack_dict_cppmap_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type);
-
 
 uint64_t get_vec_string_size(runtime_value_t str);
 
@@ -348,7 +356,6 @@ void dispose_vector_cppvector(const runtime_value_t& value);
 
 
 
-
 ////////////////////////////////		VECTOR_HAMT_T
 
 
@@ -392,8 +399,6 @@ struct VECTOR_HAMT_T {
 		const auto& vecref = get_vecref();
 		return vecref.size();
 	}
-
-
 
 
 	inline immer::vector<runtime_value_t>::const_iterator begin() const {
@@ -441,9 +446,7 @@ runtime_value_t push_back_immutable(const runtime_value_t& vec0, runtime_value_t
 
 
 
-
 ////////////////////////////////		DICT_CPPMAP_T
-
 
 
 /*
@@ -473,7 +476,6 @@ void dispose_dict_cppmap(runtime_value_t& vec);
 
 
 
-
 ////////////////////////////////		JSON_T
 
 
@@ -497,7 +499,6 @@ struct JSON_T {
 
 JSON_T* alloc_json(heap_t& heap, const json_t& init);
 void dispose_json(JSON_T& vec);
-
 
 
 
@@ -532,7 +533,6 @@ void dispose_struct(STRUCT_T& v);
 
 
 
-
 ////////////////////////////////		HELPERS
 
 
@@ -541,13 +541,6 @@ bool is_rc_value(const typeid_t& type);
 
 runtime_value_t load_via_ptr2(const void* value_ptr, const typeid_t& type);
 void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t& value);
-
-//	Converts the LLVM value into a uint64_t for storing vector, pass as DYN value.
-llvm::Value* generate_cast_to_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& value, const typeid_t& floyd_type);
-
-//	Returns the specific LLVM type for the value, like VECTOR_CPPVECTOR_T* etc.
-llvm::Value* generate_cast_from_runtime_value2(llvm::IRBuilder<>& builder, const llvm_type_lookup& type_lookup, llvm::Value& runtime_value_reg, const typeid_t& type);
-
 
 
 }	// floyd
