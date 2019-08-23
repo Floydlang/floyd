@@ -1915,7 +1915,28 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 
 
 
-static std::string floyd_llvm_intrinsic__replace__string(llvm_execution_engine_t& frp, const std::string& s, std::size_t start, std::size_t end, const std::string& replace){
+
+static void check_replace_indexes(std::size_t start, std::size_t end){
+	if(start < 0 || end < 0){
+		quark::throw_runtime_error("replace() requires start and end to be non-negative.");
+	}
+	if(start > end){
+		quark::throw_runtime_error("replace() requires start <= end.");
+	}
+}
+
+static const runtime_value_t replace__string(value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, size_t start, size_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
+	check_replace_indexes(start, end);
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	const auto type3 = lookup_type(value_mgr.type_lookup, arg3_type);
+
+	QUARK_ASSERT(type3 == type0);
+
+	const auto s = from_runtime_string2(value_mgr, arg0_value);
+	const auto replace = from_runtime_string2(value_mgr, arg3_value);
+
 	auto s_len = s.size();
 	auto replace_len = replace.size();
 
@@ -1928,19 +1949,92 @@ static std::string floyd_llvm_intrinsic__replace__string(llvm_execution_engine_t
 	std::memcpy(&s2[start2], &replace[0], replace_len);
 	std::memcpy(&s2[start2 + replace_len], &s[end2], s_len - end2);
 
-	const std::string result(s2, &s2[start2 + replace_len + (s_len - end2)]);
-	return result;
+	const std::string ret(s2, &s2[start2 + replace_len + (s_len - end2)]);
+	const auto result2 = to_runtime_string2(value_mgr, ret);
+	return result2;
 }
 
-static const VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__replace(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
-	auto& r = get_floyd_runtime(frp);
+static const runtime_value_t replace__cppvector(value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, size_t start, size_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
 
-	if(start < 0 || end < 0){
-		quark::throw_runtime_error("replace() requires start and end to be non-negative.");
+	check_replace_indexes(start, end);
+
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	QUARK_ASSERT(lookup_type(value_mgr.type_lookup, arg3_type) == type0);
+
+	const auto element_type = type0.get_vector_element_type();
+
+	const auto vec = unpack_vector_cppvector_arg(value_mgr.type_lookup, arg0_value, arg0_type);
+	const auto replace_vec = unpack_vector_cppvector_arg(value_mgr.type_lookup, arg3_value, arg3_type);
+
+	auto end2 = std::min(end, (size_t)vec->get_element_count());
+	auto start2 = std::min(start, end2);
+
+	const auto section1_len = start2;
+	const auto section2_len = replace_vec->get_element_count();
+	const auto section3_len = vec->get_element_count() - end2;
+
+	const auto len2 = section1_len + section2_len + section3_len;
+	auto vec2 = alloc_vector_ccpvector2(value_mgr.heap, len2, len2);
+	copy_elements(&vec2.vector_cppvector_ptr->get_element_ptr()[0], &vec->get_element_ptr()[0], section1_len);
+	copy_elements(&vec2.vector_cppvector_ptr->get_element_ptr()[section1_len], &replace_vec->get_element_ptr()[0], section2_len);
+	copy_elements(&vec2.vector_cppvector_ptr->get_element_ptr()[section1_len + section2_len], &vec->get_element_ptr()[end2], section3_len);
+
+	if(is_rc_value(element_type)){
+		for(int i = 0 ; i < len2 ; i++){
+			retain_value(value_mgr, vec2.vector_cppvector_ptr->get_element_ptr()[i], element_type);
+		}
 	}
-	if(start > end){
-		quark::throw_runtime_error("replace() requires start <= end.");
+
+	return vec2;
+}
+static const runtime_value_t replace__hamt(value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, size_t start, size_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
+	check_replace_indexes(start, end);
+
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	QUARK_ASSERT(lookup_type(value_mgr.type_lookup, arg3_type) == type0);
+
+	const auto element_type = type0.get_vector_element_type();
+
+	const auto& vec = *arg0_value.vector_hamt_ptr;
+	const auto& replace_vec = *arg3_value.vector_hamt_ptr;
+
+	auto end2 = std::min(end, (size_t)vec.get_element_count());
+	auto start2 = std::min(start, end2);
+
+	const auto section1_len = start2;
+	const auto section2_len = replace_vec.get_element_count();
+	const auto section3_len = vec.get_element_count() - end2;
+
+	const auto len2 = section1_len + section2_len + section3_len;
+	auto vec2 = alloc_vector_hamt2(value_mgr.heap, len2, len2);
+	for(size_t i = 0 ; i < section1_len ; i++){
+		const auto& value = vec.operator[](0 + i);
+		vec2.vector_hamt_ptr->store_mutate(0 + i, value);
 	}
+	for(size_t i = 0 ; i < section2_len ; i++){
+		const auto& value = replace_vec.operator[](0 + i);
+		vec2.vector_hamt_ptr->store_mutate(section1_len + i, value);
+	}
+	for(size_t i = 0 ; i < section3_len ; i++){
+		const auto& value = vec.operator[](end2 + i);
+		vec2.vector_hamt_ptr->store_mutate(section1_len + section2_len + i, value);
+	}
+
+	if(is_rc_value(element_type)){
+		for(int i = 0 ; i < len2 ; i++){
+			retain_value(value_mgr, vec2.vector_hamt_ptr->operator[](i), element_type);
+		}
+	}
+
+	return vec2;
+}
+
+
+static const runtime_value_t floyd_llvm_intrinsic__replace(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, uint64_t start, uint64_t end, runtime_value_t arg3_value, runtime_type_t arg3_type){
+	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
 	const auto type3 = lookup_type(r.value_mgr.type_lookup, arg3_type);
@@ -1948,47 +2042,22 @@ static const VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__replace(floyd_runtime_t* 
 	QUARK_ASSERT(type3 == type0);
 
 	if(type0.is_string()){
-		const auto s = from_runtime_string(r, arg0_value);
-		const auto replace = from_runtime_string(r, arg3_value);
-		auto ret = floyd_llvm_intrinsic__replace__string(r, s, (std::size_t)start, (std::size_t)end, replace);
-		const auto result2 = to_runtime_string(r, ret);
-		return result2.vector_cppvector_ptr;
+		return replace__string(r.value_mgr, arg0_value, arg0_type, start, end, arg3_value, arg3_type);
 	}
 	else if(is_vector_cppvector(type0)){
-		const auto element_type = type0.get_vector_element_type();
-
-		const auto vec = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
-		const auto replace_vec = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg3_value, arg3_type);
-
-		auto end2 = std::min(end, vec->get_element_count());
-		auto start2 = std::min(start, end2);
-
-		const auto section1_len = start2;
-		const auto section2_len = replace_vec->get_element_count();
-		const auto section3_len = vec->get_element_count() - end2;
-
-		const auto len2 = section1_len + section2_len + section3_len;
-		auto vec2 = alloc_vector_ccpvector2(r.value_mgr.heap, len2, len2);
-		copy_elements(&vec2.vector_cppvector_ptr->get_element_ptr()[0], &vec->get_element_ptr()[0], section1_len);
-		copy_elements(&vec2.vector_cppvector_ptr->get_element_ptr()[section1_len], &replace_vec->get_element_ptr()[0], section2_len);
-		copy_elements(&vec2.vector_cppvector_ptr->get_element_ptr()[section1_len + section2_len], &vec->get_element_ptr()[end2], section3_len);
-
-		if(is_rc_value(element_type)){
-			for(int i = 0 ; i < len2 ; i++){
-				retain_value(r.value_mgr, vec2.vector_cppvector_ptr->get_element_ptr()[i], element_type);
-			}
-		}
-
-		return vec2.vector_cppvector_ptr;
+		return replace__cppvector(r.value_mgr, arg0_value, arg0_type, start, end, arg3_value, arg3_type);
 	}
 	else if(is_vector_hamt(type0)){
-		QUARK_ASSERT(false);
+		return replace__hamt(r.value_mgr, arg0_value, arg0_type, start, end, arg3_value, arg3_type);
 	}
 	else{
 		//	No other types allowed.
 		UNSUPPORTED();
 	}
 }
+
+
+
 
 static JSON_T* floyd_llvm_intrinsic__parse_json_script(floyd_runtime_t* frp, runtime_value_t string_s0){
 	auto& r = get_floyd_runtime(frp);
