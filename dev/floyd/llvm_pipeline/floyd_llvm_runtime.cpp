@@ -1516,10 +1516,15 @@ static runtime_value_t floyd_llvm_intrinsic__map_string(floyd_runtime_t* frp, ru
 
 
 
+
+
+// [R] map_dag([E] elements, [int] depends_on, func R (E, [R], C context) f, C context)
+
 typedef runtime_value_t (*map_dag_F)(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_value_t arg1_value, runtime_value_t context);
 
-static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map_dag(
+static runtime_value_t map_dag__cppvector(
 	floyd_runtime_t* frp,
+	value_mgr_t& value_mgr,
 	runtime_value_t arg0_value,
 	runtime_type_t arg0_type,
 	runtime_value_t arg1_value,
@@ -1529,12 +1534,13 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map_dag(
 	runtime_value_t context,
 	runtime_type_t context_type
 ){
-	auto& r = get_floyd_runtime(frp);
+	QUARK_ASSERT(frp != nullptr);
+	QUARK_ASSERT(value_mgr.check_invariant());
 
-	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
-	const auto type1 = lookup_type(r.value_mgr.type_lookup, arg1_type);
-	const auto type2 = lookup_type(r.value_mgr.type_lookup, arg2_type);
-	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type(r.value_mgr.type_lookup, context_type)));
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(value_mgr.type_lookup, arg1_type);
+	const auto type2 = lookup_type(value_mgr.type_lookup, arg2_type);
+	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type(value_mgr.type_lookup, context_type)));
 
 	const auto& elements = arg0_value;
 	const auto& e_type = type0.get_vector_element_type();
@@ -1562,7 +1568,7 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map_dag(
 	std::vector<runtime_value_t> complete(elements2->get_element_count(), runtime_value_t());
 
 	for(int i = 0 ; i < parents2->get_element_count() ; i++){
-		const auto& e = parents2->get_element_ptr()[i];
+		const auto& e = parents2->operator[](i);
 		const auto parent_index = e.int_value;
 
 		const auto count = static_cast<int64_t>(elements2->get_element_count());
@@ -1589,12 +1595,12 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map_dag(
 		}
 
 		for(const auto element_index: pass_ids){
-			const auto& e = elements2->get_element_ptr()[element_index];
+			const auto& e = elements2->operator[](element_index);
 
 			//	Make list of the element's inputs -- they must all be complete now.
 			std::vector<runtime_value_t> solved_deps;
 			for(int element_index2 = 0 ; element_index2 < parents2->get_element_count() ; element_index2++){
-				const auto& p = parents2->get_element_ptr()[element_index2];
+				const auto& p = parents2->operator[](element_index2);
 				const auto parent_index = p.int_value;
 				if(parent_index == element_index){
 					QUARK_ASSERT(element_index2 != -1);
@@ -1606,9 +1612,9 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map_dag(
 				}
 			}
 
-			auto solved_deps2 = alloc_vector_ccpvector2(r.value_mgr.heap, solved_deps.size(), solved_deps.size());
+			auto solved_deps2 = alloc_vector_ccpvector2(value_mgr.heap, solved_deps.size(), solved_deps.size());
 			for(int i = 0 ; i < solved_deps.size() ; i++){
-				solved_deps2.vector_cppvector_ptr->get_element_ptr()[i] = solved_deps[i];
+				solved_deps2.vector_cppvector_ptr->store(i, solved_deps[i]);
 			}
 			runtime_value_t solved_deps3 = solved_deps2;
 
@@ -1619,7 +1625,7 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map_dag(
 				dispose_vector_cppvector(solved_deps2);
 			}
 
-			const auto parent_index = parents2->get_element_ptr()[element_index].int_value;
+			const auto parent_index = parents2->operator[](element_index).int_value;
 			if(parent_index != -1){
 				rcs[parent_index]--;
 			}
@@ -1630,14 +1636,166 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__map_dag(
 
 	//??? No need to copy all elements -- could store them directly into the VEC_T.
 	const auto count = complete.size();
-	auto result_vec = alloc_vector_ccpvector2(r.value_mgr.heap, count, count);
+	auto result_vec = alloc_vector_ccpvector2(value_mgr.heap, count, count);
 	for(int i = 0 ; i < count ; i++){
 //		retain_value(r, complete[i], r_type);
-		result_vec.vector_cppvector_ptr->get_element_ptr()[i] = complete[i];
+		result_vec.vector_cppvector_ptr->store(i, complete[i]);
 	}
 
-	return result_vec.vector_cppvector_ptr;
+	return result_vec;
 }
+
+static runtime_value_t map_dag__hamt(
+	floyd_runtime_t* frp,
+	value_mgr_t& value_mgr,
+	runtime_value_t arg0_value,
+	runtime_type_t arg0_type,
+	runtime_value_t arg1_value,
+	runtime_type_t arg1_type,
+	runtime_value_t arg2_value,
+	runtime_type_t arg2_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+){
+	QUARK_ASSERT(frp != nullptr);
+	QUARK_ASSERT(value_mgr.check_invariant());
+
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(value_mgr.type_lookup, arg1_type);
+	const auto type2 = lookup_type(value_mgr.type_lookup, arg2_type);
+	QUARK_ASSERT(check_map_dag_func_type(type0, type1, type2, lookup_type(value_mgr.type_lookup, context_type)));
+
+	const auto& elements = arg0_value;
+	const auto& e_type = type0.get_vector_element_type();
+	const auto& parents = arg1_value;
+	const auto& f = arg2_value;
+	const auto& r_type = type2.get_function_return();
+
+	QUARK_ASSERT(e_type == type2.get_function_args()[0] && r_type == type2.get_function_args()[1].get_vector_element_type());
+
+	QUARK_ASSERT(is_vector_hamt(typeid_t::make_vector(e_type)));
+	QUARK_ASSERT(is_vector_hamt(typeid_t::make_vector(r_type)));
+
+	const auto f2 = reinterpret_cast<map_dag_F>(f.function_ptr);
+
+	const auto elements2 = elements.vector_hamt_ptr;
+	const auto parents2 = parents.vector_hamt_ptr;
+
+	if(elements2->get_element_count() != parents2->get_element_count()) {
+		quark::throw_runtime_error("map_dag() requires elements and parents be the same count.");
+	}
+
+	auto elements_todo = elements2->get_element_count();
+	std::vector<int> rcs(elements2->get_element_count(), 0);
+
+	std::vector<runtime_value_t> complete(elements2->get_element_count(), runtime_value_t());
+
+	for(int i = 0 ; i < parents2->get_element_count() ; i++){
+		const auto& e = parents2->operator[](i);
+		const auto parent_index = e.int_value;
+
+		//??? remove cast? static_cast<int64_t>()
+		const auto count = static_cast<int64_t>(elements2->get_element_count());
+		QUARK_ASSERT(parent_index >= -1);
+		QUARK_ASSERT(parent_index < count);
+
+		if(parent_index != -1){
+			rcs[parent_index]++;
+		}
+	}
+
+	while(elements_todo > 0){
+		//	Find all elements that are free to process -- they are not blocked on a depenency.
+		std::vector<int> pass_ids;
+		for(int i = 0 ; i < elements2->get_element_count() ; i++){
+			const auto rc = rcs[i];
+			if(rc == 0){
+				pass_ids.push_back(i);
+				rcs[i] = -1;
+			}
+		}
+		if(pass_ids.empty()){
+			quark::throw_runtime_error("map_dag() dependency cycle error.");
+		}
+
+		for(const auto element_index: pass_ids){
+			const auto& e = elements2->operator[](element_index);
+
+			//	Make list of the element's inputs -- they must all be complete now.
+			std::vector<runtime_value_t> solved_deps;
+			for(int element_index2 = 0 ; element_index2 < parents2->get_element_count() ; element_index2++){
+				const auto& p = parents2->operator[](element_index2);
+				const auto parent_index = p.int_value;
+				if(parent_index == element_index){
+					QUARK_ASSERT(element_index2 != -1);
+					QUARK_ASSERT(element_index2 >= -1 && element_index2 < elements2->get_element_count());
+					QUARK_ASSERT(rcs[element_index2] == -1);
+
+					const auto& solved = complete[element_index2];
+					solved_deps.push_back(solved);
+				}
+			}
+
+			auto solved_deps2 = alloc_vector_hamt2(value_mgr.heap, solved_deps.size(), solved_deps.size());
+			for(int i = 0 ; i < solved_deps.size() ; i++){
+				solved_deps2.vector_hamt_ptr->store_mutate(i, solved_deps[i]);
+			}
+			runtime_value_t solved_deps3 = solved_deps2;
+
+			const auto result1 = (*f2)(frp, e, solved_deps3, context);
+
+			//	Release just the vec, **not the elements**. The elements are aliases for complete-vector.
+			if(dec_rc(solved_deps2.vector_hamt_ptr->alloc) == 0){
+				dispose_vector_hamt(solved_deps2);
+			}
+
+			const auto parent_index = parents2->operator[](element_index).int_value;
+			if(parent_index != -1){
+				rcs[parent_index]--;
+			}
+			complete[element_index] = result1;
+			elements_todo--;
+		}
+	}
+
+	//??? No need to copy all elements -- could store them directly into the VEC_T.
+	const auto count = complete.size();
+	auto result_vec = alloc_vector_hamt2(value_mgr.heap, count, count);
+	for(int i = 0 ; i < count ; i++){
+//		retain_value(r, complete[i], r_type);
+		result_vec.vector_hamt_ptr->store_mutate(i, complete[i]);
+	}
+
+	return result_vec;
+}
+
+static runtime_value_t floyd_llvm_intrinsic__map_dag(
+	floyd_runtime_t* frp,
+	runtime_value_t arg0_value,
+	runtime_type_t arg0_type,
+	runtime_value_t arg1_value,
+	runtime_type_t arg1_type,
+	runtime_value_t arg2_value,
+	runtime_type_t arg2_type,
+	runtime_value_t context,
+	runtime_type_t context_type
+){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
+	if(is_vector_cppvector(type0)){
+		return map_dag__cppvector(frp, r.value_mgr, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type, context, context_type);
+	}
+	else if(is_vector_hamt(type0)){
+		return map_dag__hamt(frp, r.value_mgr, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type, context, context_type);
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+
+
 
 
 
