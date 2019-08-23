@@ -1905,16 +1905,15 @@ static runtime_value_t floyd_llvm_intrinsic__filter(floyd_runtime_t* frp, runtim
 
 typedef runtime_value_t (*REDUCE_F)(floyd_runtime_t* frp, runtime_value_t acc_value, runtime_value_t element_value, runtime_value_t context);
 
-//	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
-static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__reduce(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
-	auto& r = get_floyd_runtime(frp);
+static runtime_value_t reduce__cppvector(floyd_runtime_t* frp, value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
 
-	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
-	const auto type1 = lookup_type(r.value_mgr.type_lookup, arg1_type);
-	const auto type2 = lookup_type(r.value_mgr.type_lookup, arg2_type);
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(value_mgr.type_lookup, arg1_type);
+	const auto type2 = lookup_type(value_mgr.type_lookup, arg2_type);
 
-	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type(r.value_mgr.type_lookup, context_type)));
-	QUARK_ASSERT(is_vector_cppvector(typeid_t::make_vector(type0)));
+	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type(value_mgr.type_lookup, context_type)));
+	QUARK_ASSERT(is_vector_cppvector(type0));
 
 	const auto& vec = *arg0_value.vector_cppvector_ptr;
 	const auto& init = arg1_value;
@@ -1922,16 +1921,60 @@ static VECTOR_CPPVECTOR_T* floyd_llvm_intrinsic__reduce(floyd_runtime_t* frp, ru
 
 	auto count = vec.get_element_count();
 	runtime_value_t acc = init;
-	retain_value(r.value_mgr, acc, type1);
+	retain_value(value_mgr, acc, type1);
 
 	for(int i = 0 ; i < count ; i++){
 		const auto element_value = vec.get_element_ptr()[i];
 		const auto acc2 = (*f)(frp, acc, element_value, context);
 
-		release_deep(r.value_mgr, acc, type1);
+		release_deep(value_mgr, acc, type1);
 		acc = acc2;
 	}
-	return acc.vector_cppvector_ptr;
+	return acc;
+}
+
+static runtime_value_t reduce__hamt(floyd_runtime_t* frp, value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(value_mgr.type_lookup, arg1_type);
+	const auto type2 = lookup_type(value_mgr.type_lookup, arg2_type);
+
+	QUARK_ASSERT(check_reduce_func_type(type0, type1, type2, lookup_type(value_mgr.type_lookup, context_type)));
+	QUARK_ASSERT(is_vector_hamt(type0));
+
+	const auto& vec = *arg0_value.vector_hamt_ptr;
+	const auto& init = arg1_value;
+	const auto f = reinterpret_cast<REDUCE_F>(arg2_value.function_ptr);
+
+	auto count = vec.get_element_count();
+	runtime_value_t acc = init;
+	retain_value(value_mgr, acc, type1);
+
+	for(int i = 0 ; i < count ; i++){
+		const auto element_value = vec.operator[](i);
+		const auto acc2 = (*f)(frp, acc, element_value, context);
+
+		release_deep(value_mgr, acc, type1);
+		acc = acc2;
+	}
+	return acc;
+}
+
+//	R reduce([E] elements, R accumulator_init, func R (R accumulator, E element, C context) f, C context)
+static runtime_value_t floyd_llvm_intrinsic__reduce(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, runtime_value_t arg1_value, runtime_type_t arg1_type, runtime_value_t arg2_value, runtime_type_t arg2_type, runtime_value_t context, runtime_type_t context_type){
+	auto& r = get_floyd_runtime(frp);
+
+	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
+	if(is_vector_cppvector(type0)){
+		return reduce__cppvector(frp, r.value_mgr, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type, context, context_type);
+	}
+	else if(is_vector_hamt(type0)){
+		return reduce__hamt(frp, r.value_mgr, arg0_value, arg0_type, arg1_value, arg1_type, arg2_value, arg2_type, context, context_type);
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
 }
 
 
