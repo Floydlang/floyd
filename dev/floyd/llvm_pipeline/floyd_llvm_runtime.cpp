@@ -881,13 +881,14 @@ static function_bind_t floydrt_json_to_string__make(llvm::LLVMContext& context, 
 ////////////////////////////////		compare_values()
 
 
-static int8_t floydrt_compare_values(floyd_runtime_t* frp, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
-	auto& r = get_floyd_runtime(frp);
 
-	const auto value_type = lookup_type(r.value_mgr.type_lookup, type);
+static int compare_values(value_mgr_t& value_mgr, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
+	QUARK_ASSERT(value_mgr.check_invariant());
 
-	const auto left_value = from_runtime_value(r, lhs, value_type);
-	const auto right_value = from_runtime_value(r, rhs, value_type);
+	const auto value_type = lookup_type(value_mgr.type_lookup, type);
+
+	const auto left_value = from_runtime_value2(value_mgr, lhs, value_type);
+	const auto right_value = from_runtime_value2(value_mgr, rhs, value_type);
 
 	const int result = value_t::compare_value_true_deep(left_value, right_value);
 //	int result = runtime_compare_value_true_deep((const uint64_t)lhs, (const uint64_t)rhs, vector_type);
@@ -915,6 +916,11 @@ static int8_t floydrt_compare_values(floyd_runtime_t* frp, int64_t op, const run
 		QUARK_ASSERT(false);
 		throw std::exception();
 	}
+}
+
+static int8_t floydrt_compare_values(floyd_runtime_t* frp, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
+	auto& r = get_floyd_runtime(frp);
+	return compare_values(r.value_mgr, op, type, lhs, rhs);
 }
 
 static function_bind_t floydrt_compare_values__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -1237,44 +1243,82 @@ static uint32_t floyd_llvm_intrinsic__exists(floyd_runtime_t* frp, runtime_value
 
 
 
+static int64_t find__string(value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, const runtime_value_t arg1_value, runtime_type_t arg1_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(value_mgr.type_lookup, arg1_type);
+
+	QUARK_ASSERT(type1.is_string());
+
+	const auto str = from_runtime_string2(value_mgr, arg0_value);
+	const auto wanted2 = from_runtime_string2(value_mgr, arg1_value);
+	const auto pos = str.find(wanted2);
+	const auto result = pos == std::string::npos ? -1 : static_cast<int64_t>(pos);
+	return result;
+}
+static int64_t find__cppvector(value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, const runtime_value_t arg1_value, runtime_type_t arg1_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(value_mgr.type_lookup, arg1_type);
+
+	QUARK_ASSERT(type1 == type0.get_vector_element_type());
+
+	const auto vec = unpack_vector_cppvector_arg(value_mgr.type_lookup, arg0_value, arg0_type);
+
+//		auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.def_name == function_name; } );
+	const auto it = std::find_if(
+		vec->get_element_ptr(),
+		vec->get_element_ptr() + vec->get_element_count(),
+		[&] (const runtime_value_t& e) {
+			return compare_values(value_mgr, static_cast<int64_t>(expression_type::k_logical_equal), arg1_type, e, arg1_value) == 1;
+		}
+	);
+	if(it == vec->get_element_ptr() + vec->get_element_count()){
+		return -1;
+	}
+	else{
+		const auto pos = it - vec->get_element_ptr();
+		return pos;
+	}
+}
+static int64_t find__hamt(value_mgr_t& value_mgr, runtime_value_t arg0_value, runtime_type_t arg0_type, const runtime_value_t arg1_value, runtime_type_t arg1_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
+	const auto type0 = lookup_type(value_mgr.type_lookup, arg0_type);
+	const auto type1 = lookup_type(value_mgr.type_lookup, arg1_type);
+
+	QUARK_ASSERT(type1 == type0.get_vector_element_type());
+
+	const auto& vec = *arg0_value.vector_hamt_ptr;
+	QUARK_ASSERT(vec.check_invariant());
+
+	const auto count = vec.get_element_count();
+	int64_t index = 0;
+	while(index < count && compare_values(value_mgr, static_cast<int64_t>(expression_type::k_logical_equal), arg1_type, vec.operator[](index), arg1_value) != 1){
+		index++;
+	}
+	if(index == count){
+		return -1;
+	}
+	else{
+		return index;
+	}
+}
+
 static int64_t floyd_llvm_intrinsic__find(floyd_runtime_t* frp, runtime_value_t arg0_value, runtime_type_t arg0_type, const runtime_value_t arg1_value, runtime_type_t arg1_type){
 	auto& r = get_floyd_runtime(frp);
 
 	const auto type0 = lookup_type(r.value_mgr.type_lookup, arg0_type);
-	const auto type1 = lookup_type(r.value_mgr.type_lookup, arg1_type);
-
 	if(type0.is_string()){
-		QUARK_ASSERT(type1.is_string());
-
-		const auto str = from_runtime_string(r, arg0_value);
-		const auto wanted2 = from_runtime_string(r, arg1_value);
-		const auto pos = str.find(wanted2);
-		const auto result = pos == std::string::npos ? -1 : static_cast<int64_t>(pos);
-		return result;
+		return find__string(r.value_mgr, arg0_value, arg0_type, arg1_value, arg1_type);
 	}
 	else if(is_vector_cppvector(type0)){
-		QUARK_ASSERT(type1 == type0.get_vector_element_type());
-
-		const auto vec = unpack_vector_cppvector_arg(r.value_mgr.type_lookup, arg0_value, arg0_type);
-
-//		auto it = std::find_if(function_defs.begin(), function_defs.end(), [&] (const function_def_t& e) { return e.def_name == function_name; } );
-		const auto it = std::find_if(
-			vec->get_element_ptr(),
-			vec->get_element_ptr() + vec->get_element_count(),
-			[&] (const runtime_value_t& e) {
-				return floydrt_compare_values(frp, static_cast<int64_t>(expression_type::k_logical_equal), arg1_type, e, arg1_value) == 1;
-			}
-		);
-		if(it == vec->get_element_ptr() + vec->get_element_count()){
-			return -1;
-		}
-		else{
-			const auto pos = it - vec->get_element_ptr();
-			return pos;
-		}
+		return find__cppvector(r.value_mgr, arg0_value, arg0_type, arg1_value, arg1_type);
 	}
 	else if(is_vector_hamt(type0)){
-		QUARK_ASSERT(false);
+		return find__hamt(r.value_mgr, arg0_value, arg0_type, arg1_value, arg1_type);
 	}
 	else{
 		//	No other types allowed.

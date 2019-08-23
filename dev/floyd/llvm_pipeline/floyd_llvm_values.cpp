@@ -524,7 +524,7 @@ VECTOR_HAMT_T::~VECTOR_HAMT_T(){
 
 bool VECTOR_HAMT_T::check_invariant() const {
 	QUARK_ASSERT(this->alloc.check_invariant());
-
+	QUARK_ASSERT(std::string(&alloc.debug_info[0], &alloc.debug_info[5]) == "VHAMT");
 	const auto& vec = get_vecref();
 	QUARK_ASSERT(vec.impl().shift == 5);
 	QUARK_ASSERT(vec.impl().check_tree());
