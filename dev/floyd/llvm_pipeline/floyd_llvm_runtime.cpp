@@ -572,7 +572,7 @@ static runtime_value_t floydrt_load_vector_element(floyd_runtime_t* frp, runtime
 		QUARK_ASSERT(false);
 	}
 	else if(k_global_vector_type == vector_backend::hamt){
-		return vec.vector_hamt_ptr->operator[](index);
+		return vec.vector_hamt_ptr->load_element(index);
 	}
 	else{
 	}
@@ -920,7 +920,7 @@ static int compare_values(value_mgr_t& value_mgr, int64_t op, const runtime_type
 
 static int8_t floydrt_compare_values(floyd_runtime_t* frp, int64_t op, const runtime_type_t type, runtime_value_t lhs, runtime_value_t rhs){
 	auto& r = get_floyd_runtime(frp);
-	return compare_values(r.value_mgr, op, type, lhs, rhs);
+	return (int8_t)compare_values(r.value_mgr, op, type, lhs, rhs);
 }
 
 static function_bind_t floydrt_compare_values__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -1341,7 +1341,7 @@ static int64_t find__hamt(value_mgr_t& value_mgr, runtime_value_t arg0_value, ru
 
 	const auto count = vec.get_element_count();
 	int64_t index = 0;
-	while(index < count && compare_values(value_mgr, static_cast<int64_t>(expression_type::k_logical_equal), arg1_type, vec.operator[](index), arg1_value) != 1){
+	while(index < count && compare_values(value_mgr, static_cast<int64_t>(expression_type::k_logical_equal), arg1_type, vec.load_element(index), arg1_value) != 1){
 		index++;
 	}
 	if(index == count){
@@ -1458,7 +1458,7 @@ static runtime_value_t map__hamt(floyd_runtime_t* frp, value_mgr_t& value_mgr, r
 	const auto count = elements_vec.vector_hamt_ptr->get_element_count();
 	auto result_vec = alloc_vector_hamt2(value_mgr.heap, count, count);
 	for(int i = 0 ; i < count ; i++){
-		const auto& element = elements_vec.vector_hamt_ptr->operator[](i);
+		const auto& element = elements_vec.vector_hamt_ptr->load_element(i);
 		const auto a = (*f)(frp, element, context_value);
 		result_vec.vector_hamt_ptr->store_mutate(i, a);
 	}
@@ -1568,7 +1568,7 @@ static runtime_value_t map_dag__cppvector(
 	std::vector<runtime_value_t> complete(elements2->get_element_count(), runtime_value_t());
 
 	for(int i = 0 ; i < parents2->get_element_count() ; i++){
-		const auto& e = parents2->operator[](i);
+		const auto& e = parents2->load_element(i);
 		const auto parent_index = e.int_value;
 
 		const auto count = static_cast<int64_t>(elements2->get_element_count());
@@ -1595,12 +1595,12 @@ static runtime_value_t map_dag__cppvector(
 		}
 
 		for(const auto element_index: pass_ids){
-			const auto& e = elements2->operator[](element_index);
+			const auto& e = elements2->load_element(element_index);
 
 			//	Make list of the element's inputs -- they must all be complete now.
 			std::vector<runtime_value_t> solved_deps;
 			for(int element_index2 = 0 ; element_index2 < parents2->get_element_count() ; element_index2++){
-				const auto& p = parents2->operator[](element_index2);
+				const auto& p = parents2->load_element(element_index2);
 				const auto parent_index = p.int_value;
 				if(parent_index == element_index){
 					QUARK_ASSERT(element_index2 != -1);
@@ -1625,7 +1625,7 @@ static runtime_value_t map_dag__cppvector(
 				dispose_vector_cppvector(solved_deps2);
 			}
 
-			const auto parent_index = parents2->operator[](element_index).int_value;
+			const auto parent_index = parents2->load_element(element_index).int_value;
 			if(parent_index != -1){
 				rcs[parent_index]--;
 			}
@@ -1691,7 +1691,7 @@ static runtime_value_t map_dag__hamt(
 	std::vector<runtime_value_t> complete(elements2->get_element_count(), runtime_value_t());
 
 	for(int i = 0 ; i < parents2->get_element_count() ; i++){
-		const auto& e = parents2->operator[](i);
+		const auto& e = parents2->load_element(i);
 		const auto parent_index = e.int_value;
 
 		//??? remove cast? static_cast<int64_t>()
@@ -1719,12 +1719,12 @@ static runtime_value_t map_dag__hamt(
 		}
 
 		for(const auto element_index: pass_ids){
-			const auto& e = elements2->operator[](element_index);
+			const auto& e = elements2->load_element(element_index);
 
 			//	Make list of the element's inputs -- they must all be complete now.
 			std::vector<runtime_value_t> solved_deps;
 			for(int element_index2 = 0 ; element_index2 < parents2->get_element_count() ; element_index2++){
-				const auto& p = parents2->operator[](element_index2);
+				const auto& p = parents2->load_element(element_index2);
 				const auto parent_index = p.int_value;
 				if(parent_index == element_index){
 					QUARK_ASSERT(element_index2 != -1);
@@ -1749,7 +1749,7 @@ static runtime_value_t map_dag__hamt(
 				dispose_vector_hamt(solved_deps2);
 			}
 
-			const auto parent_index = parents2->operator[](element_index).int_value;
+			const auto parent_index = parents2->load_element(element_index).int_value;
 			if(parent_index != -1){
 				rcs[parent_index]--;
 			}
@@ -1867,7 +1867,7 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, value_mgr_t& value_mgr
 
 	std::vector<runtime_value_t> acc;
 	for(int i = 0 ; i < count ; i++){
-		const auto element_value = vec.operator[](i);
+		const auto element_value = vec.load_element(i);
 		const auto keep = (*f)(frp, element_value, context);
 		if(keep.bool_value != 0){
 			acc.push_back(element_value);
@@ -1952,7 +1952,7 @@ static runtime_value_t reduce__hamt(floyd_runtime_t* frp, value_mgr_t& value_mgr
 	retain_value(value_mgr, acc, type1);
 
 	for(int i = 0 ; i < count ; i++){
-		const auto element_value = vec.operator[](i);
+		const auto element_value = vec.load_element(i);
 		const auto acc2 = (*f)(frp, acc, element_value, context);
 
 		release_deep(value_mgr, acc, type1);
@@ -2180,7 +2180,7 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 
 		if(is_rc_value(element_type)){
 			for(int i = 0 ; i < vec2.vector_hamt_ptr->get_element_count() ; i++){
-				const auto& value = vec2.vector_hamt_ptr->operator[](i);
+				const auto& value = vec2.vector_hamt_ptr->load_element(i);
 				retain_value(r.value_mgr, value, element_type);
 			}
 		}
@@ -2290,21 +2290,21 @@ static const runtime_value_t replace__hamt(value_mgr_t& value_mgr, runtime_value
 	const auto len2 = section1_len + section2_len + section3_len;
 	auto vec2 = alloc_vector_hamt2(value_mgr.heap, len2, len2);
 	for(size_t i = 0 ; i < section1_len ; i++){
-		const auto& value = vec.operator[](0 + i);
+		const auto& value = vec.load_element(0 + i);
 		vec2.vector_hamt_ptr->store_mutate(0 + i, value);
 	}
 	for(size_t i = 0 ; i < section2_len ; i++){
-		const auto& value = replace_vec.operator[](0 + i);
+		const auto& value = replace_vec.load_element(0 + i);
 		vec2.vector_hamt_ptr->store_mutate(section1_len + i, value);
 	}
 	for(size_t i = 0 ; i < section3_len ; i++){
-		const auto& value = vec.operator[](end2 + i);
+		const auto& value = vec.load_element(end2 + i);
 		vec2.vector_hamt_ptr->store_mutate(section1_len + section2_len + i, value);
 	}
 
 	if(is_rc_value(element_type)){
 		for(int i = 0 ; i < len2 ; i++){
-			retain_value(value_mgr, vec2.vector_hamt_ptr->operator[](i), element_type);
+			retain_value(value_mgr, vec2.vector_hamt_ptr->load_element(i), element_type);
 		}
 	}
 
@@ -2480,14 +2480,14 @@ static const runtime_value_t subset__hamt(value_mgr_t& value_mgr, runtime_value_
 	auto vec2 = alloc_vector_hamt2(value_mgr.heap, len2, len2);
 	if(is_rc_value(element_type)){
 		for(int i = 0 ; i < len2 ; i++){
-			const auto& value = vec.operator[](start2 + i);
+			const auto& value = vec.load_element(start2 + i);
 			vec2.vector_hamt_ptr->store_mutate(i, value);
 			retain_value(value_mgr, value, element_type);
 		}
 	}
 	else{
 		for(int i = 0 ; i < len2 ; i++){
-			const auto& value = vec.operator[](start2 + i);
+			const auto& value = vec.load_element(start2 + i);
 			vec2.vector_hamt_ptr->store_mutate(i, value);
 		}
 	}
@@ -2641,7 +2641,7 @@ static const runtime_value_t update__hamt(value_mgr_t& value_mgr, runtime_value_
 	if(is_rc_value(element_type)){
 		const auto result = store_immutable(arg0_value, index, arg2_value);
 		for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
-			auto v = result.vector_hamt_ptr->operator[](i);
+			auto v = result.vector_hamt_ptr->load_element(i);
 			retain_value(value_mgr, v, element_type);
 		}
 		return result;

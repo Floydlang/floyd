@@ -645,9 +645,9 @@ QUARK_UNIT_TEST("VECTOR_HAMT_T", "", "", ""){
 	QUARK_UT_VERIFY(v.vector_hamt_ptr != nullptr);
 
 	QUARK_UT_VERIFY(v.vector_hamt_ptr->get_element_count() == 3);
-	QUARK_UT_VERIFY(v.vector_hamt_ptr->operator[](0).int_value == 1000);
-	QUARK_UT_VERIFY(v.vector_hamt_ptr->operator[](1).int_value == 2000);
-	QUARK_UT_VERIFY(v.vector_hamt_ptr->operator[](2).int_value == 3000);
+	QUARK_UT_VERIFY(v.vector_hamt_ptr->load_element(0).int_value == 1000);
+	QUARK_UT_VERIFY(v.vector_hamt_ptr->load_element(1).int_value == 2000);
+	QUARK_UT_VERIFY(v.vector_hamt_ptr->load_element(2).int_value == 3000);
 
 	if(dec_rc(v.vector_hamt_ptr->alloc) == 0){
 		dispose_vector_hamt(v);

@@ -330,7 +330,7 @@ struct VECTOR_CPPVECTOR_T {
 		return p;
 	}
 
-	inline runtime_value_t operator[](const uint64_t index) const {
+	inline runtime_value_t load_element(const uint64_t index) const {
 		QUARK_ASSERT(check_invariant());
 
 		auto p = static_cast<const runtime_value_t*>(get_alloc_ptr(alloc));
@@ -414,7 +414,7 @@ struct VECTOR_HAMT_T {
 		return vecref.end();
 	}
 
-	inline runtime_value_t operator[](const uint64_t index) const {
+	inline runtime_value_t load_element(const uint64_t index) const {
 		QUARK_ASSERT(check_invariant());
 
 		const auto& vecref = get_vecref();

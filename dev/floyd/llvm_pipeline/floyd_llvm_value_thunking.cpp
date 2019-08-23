@@ -57,12 +57,12 @@ QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
 	QUARK_UT_VERIFY(a.vector_cppvector_ptr->get_element_count() == 13);
 
 	//	int64_t	'hello, w'
-//	QUARK_UT_VERIFY(a.vector_cppvector_ptr->operator[](0).int_value == 0x68656c6c6f2c2077);
-	QUARK_UT_VERIFY(a.vector_cppvector_ptr->operator[](0).int_value == 0x77202c6f6c6c6568);
+//	QUARK_UT_VERIFY(a.vector_cppvector_ptr->load_element(0).int_value == 0x68656c6c6f2c2077);
+	QUARK_UT_VERIFY(a.vector_cppvector_ptr->load_element(0).int_value == 0x77202c6f6c6c6568);
 
 	//int_value	int64_t	'orld!\0\0\0'
-//	QUARK_UT_VERIFY(a.vector_cppvector_ptr->operator[](1).int_value == 0x6f726c6421000000);
-	QUARK_UT_VERIFY(a.vector_cppvector_ptr->operator[](1).int_value == 0x00000021646c726f);
+//	QUARK_UT_VERIFY(a.vector_cppvector_ptr->load_element(1).int_value == 0x6f726c6421000000);
+	QUARK_UT_VERIFY(a.vector_cppvector_ptr->load_element(1).int_value == 0x00000021646c726f);
 }
 
 
@@ -234,7 +234,7 @@ static value_t from_runtime_vector(const value_mgr_t& value_mgr, const runtime_v
 		std::vector<value_t> elements;
 		const auto count = vec->get_element_count();
 		for(int i = 0 ; i < count ; i++){
-			const auto& value_encoded = vec->operator[](i);
+			const auto& value_encoded = vec->load_element(i);
 			const auto value = from_runtime_value2(value_mgr, value_encoded, element_type);
 			elements.push_back(value);
 		}
@@ -575,7 +575,7 @@ void release_vec_deep(value_mgr_t& value_mgr, runtime_value_t& vec, const typeid
 				const auto element_type = type.get_vector_element_type();
 				if(is_rc_value(element_type)){
 					for(int i = 0 ; i < vec.vector_hamt_ptr->get_element_count() ; i++){
-						const auto& element = vec.vector_hamt_ptr->operator[](i);
+						const auto& element = vec.vector_hamt_ptr->load_element(i);
 						release_deep(value_mgr, element, element_type);
 					}
 				}
@@ -695,23 +695,23 @@ runtime_value_t concat_vector_hamt(value_mgr_t& value_mgr, const typeid_t& type,
 	//??? Causes a full path copy for EACH ELEMENT = slow. better to make new hamt in one go.
 	if(is_rc_value(element_type)){
 		for(int i = 0 ; i < lhs_count ; i++){
-			auto value = lhs.vector_hamt_ptr->operator[](i);
+			auto value = lhs.vector_hamt_ptr->load_element(i);
 			retain_value(value_mgr, value, element_type);
 			result.vector_hamt_ptr->store_mutate(i, value);
 		}
 		for(int i = 0 ; i < rhs_count ; i++){
-			auto value = rhs.vector_hamt_ptr->operator[](i);
+			auto value = rhs.vector_hamt_ptr->load_element(i);
 			retain_value(value_mgr, value, element_type);
 			result.vector_hamt_ptr->store_mutate(lhs_count + i, value);
 		}
 	}
 	else{
 		for(int i = 0 ; i < lhs_count ; i++){
-			auto value = lhs.vector_hamt_ptr->operator[](i);
+			auto value = lhs.vector_hamt_ptr->load_element(i);
 			result.vector_hamt_ptr->store_mutate(i, value);
 		}
 		for(int i = 0 ; i < rhs_count ; i++){
-			auto value = rhs.vector_hamt_ptr->operator[](i);
+			auto value = rhs.vector_hamt_ptr->load_element(i);
 			result.vector_hamt_ptr->store_mutate(lhs_count + i, value);
 		}
 	}
