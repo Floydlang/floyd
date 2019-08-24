@@ -231,16 +231,15 @@ static std::string gen_to_string(llvm_execution_engine_t& runtime, runtime_value
 ////////////////////////////////		floydrt_retain_vec()
 
 
-static void floydrt_retain_vec(floyd_runtime_t* frp, VECTOR_CPPVECTOR_T* vec, runtime_type_t type0){
+static void floydrt_retain_vec(floyd_runtime_t* frp, runtime_value_t vec, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
-#if DEBUG
-	QUARK_ASSERT(vec != nullptr);
 	const auto type = lookup_type(r.backend, type0);
+#if DEBUG
 	QUARK_ASSERT(type.is_string() || type.is_vector());
 	QUARK_ASSERT(is_rc_value(type));
 #endif
 
-	inc_rc(vec->alloc);
+	retain_value(r.backend, vec, type);
 }
 
 static function_bind_t floydrt_retain_vec__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -288,15 +287,13 @@ static function_bind_t floydrt_release_vec__make(llvm::LLVMContext& context, con
 ////////////////////////////////		floydrt_retain_dict()
 
 
-static void floydrt_retain_dict(floyd_runtime_t* frp, DICT_CPPMAP_T* dict, runtime_type_t type0){
+static void floydrt_retain_dict(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
-	QUARK_ASSERT(dict != nullptr);
 	const auto type = lookup_type(r.backend, type0);
 	QUARK_ASSERT(is_rc_value(type));
-
 	QUARK_ASSERT(type.is_dict());
 
-	inc_rc(dict->alloc);
+	retain_value(r.backend, dict, type);
 }
 
 static function_bind_t floydrt_retain_dict__make(llvm::LLVMContext& context, const llvm_type_lookup& type_lookup){
@@ -317,9 +314,8 @@ static function_bind_t floydrt_retain_dict__make(llvm::LLVMContext& context, con
 
 
 
-static void floydrt_release_dict(floyd_runtime_t* frp, DICT_CPPMAP_T* dict, runtime_type_t type0){
+static void floydrt_release_dict(floyd_runtime_t* frp, runtime_value_t dict, runtime_type_t type0){
 	auto& r = get_floyd_runtime(frp);
-	QUARK_ASSERT(dict != nullptr);
 	const auto type = lookup_type(r.backend, type0);
 	QUARK_ASSERT(type.is_dict());
 

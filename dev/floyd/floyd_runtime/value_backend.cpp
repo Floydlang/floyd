@@ -99,6 +99,24 @@ heap_t::~heap_t(){
 
 
 
+void set_debug_info(heap_alloc_64_t& info, const std::string& s){
+	const auto debug_bytes = sizeof(info.debug_info);
+	QUARK_ASSERT(s.size() < debug_bytes);
+
+	memset(&info.debug_info[0], 0x00, debug_bytes);
+
+	auto copy_count = std::min(debug_bytes - 1, s.size());
+	for(auto i = 0 ; i < copy_count ; i++){
+		info.debug_info[i] = s[i];
+	}
+}
+
+std::string get_debug_info(const heap_alloc_64_t& info){
+	return std::string(&info.debug_info[0]);
+}
+
+
+
 heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count){
 	QUARK_ASSERT(heap.check_invariant());
 
@@ -126,7 +144,8 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count){
 		alloc->data_d = 0;
 
 		alloc->heap64 = &heap;
-		memset(&alloc->debug_info[0], 0x00, 8);
+		set_debug_info(*alloc, "alloc");
+//		memset(&alloc->debug_info[0], 0x00, 8);
 
 		heap.alloc_records.push_back({ alloc });
 
@@ -367,6 +386,10 @@ runtime_value_t make_runtime_vector_hamt(VECTOR_HAMT_T* vector_hamt_ptr){
 
 runtime_value_t make_runtime_dict_cppmap(DICT_CPPMAP_T* dict_cppmap_ptr){
 	return { .dict_cppmap_ptr = dict_cppmap_ptr };
+}
+
+runtime_value_t make_runtime_dict_hamr(DICT_HAMT_T* dict_hamt_ptr){
+	return { .dict_hamt_ptr = dict_hamt_ptr };
 }
 
 
@@ -713,6 +736,66 @@ void dispose_dict_cppmap(runtime_value_t& d){
 	dispose_alloc(dict.alloc);
 	QUARK_ASSERT(dict.alloc.heap64->check_invariant());
 }
+
+
+
+
+
+
+////////////////////////////////		DICT_HAMT_T
+
+
+
+QUARK_UNIT_TEST("", "", "", ""){
+	const auto size = sizeof(HAMT_MAP);
+	QUARK_ASSERT(size == 16);
+}
+
+bool DICT_HAMT_T::check_invariant() const{
+	QUARK_ASSERT(alloc.check_invariant());
+	return true;
+}
+
+uint64_t DICT_HAMT_T::size() const {
+	QUARK_ASSERT(check_invariant());
+
+	const auto& d = get_map();
+	return d.size();
+}
+
+runtime_value_t alloc_dict_hamt(heap_t& heap){
+	QUARK_ASSERT(heap.check_invariant());
+
+	heap_alloc_64_t* alloc = alloc_64(heap, 0);
+	auto dict = reinterpret_cast<DICT_HAMT_T*>(alloc);
+
+	alloc->debug_info[0] = 'H';
+	alloc->debug_info[1] = 'D';
+	alloc->debug_info[2] = 'I';
+	alloc->debug_info[3] = 'C';
+
+	auto& m = dict->get_map_mut();
+    new (&m) DICT_HAMT_T();
+
+	QUARK_ASSERT(heap.check_invariant());
+	QUARK_ASSERT(dict->check_invariant());
+
+	return runtime_value_t { .dict_hamt_ptr = dict };
+}
+
+void dispose_dict_hamt(runtime_value_t& d){
+	QUARK_ASSERT(d.dict_hamt_ptr != nullptr);
+	auto& dict = *d.dict_hamt_ptr;
+
+	QUARK_ASSERT(dict.check_invariant());
+
+	dict.get_map_mut().~HAMT_MAP();
+	dispose_alloc(dict.alloc);
+	QUARK_ASSERT(dict.alloc.heap64->check_invariant());
+}
+
+
+
 
 
 
@@ -1106,8 +1189,11 @@ void retain_value(value_backend_t& backend, runtime_value_t value, const typeid_
 		else if(is_vector_hamt(type)){
 			inc_rc(value.vector_hamt_ptr->alloc);
 		}
-		else if(type.is_dict()){
+		else if(is_dict_cppmap(type)){
 			inc_rc(value.dict_cppmap_ptr->alloc);
+		}
+		else if(is_dict_hamt(type)){
+			inc_rc(value.dict_hamt_ptr->alloc);
 		}
 		else if(type.is_json()){
 			inc_rc(value.json_ptr->alloc);
@@ -1134,7 +1220,7 @@ void release_deep(value_backend_t& backend, runtime_value_t value, const typeid_
 			release_vec_deep(backend, value, type);
 		}
 		else if(type.is_dict()){
-			release_dict_deep(backend, value.dict_cppmap_ptr, type);
+			release_dict_deep(backend, value, type);
 		}
 		else if(type.is_json()){
 			if(dec_rc(value.json_ptr->alloc) == 0){
@@ -1150,28 +1236,47 @@ void release_deep(value_backend_t& backend, runtime_value_t value, const typeid_
 	}
 }
 
-void release_dict_deep(value_backend_t& backend, DICT_CPPMAP_T* dict, const typeid_t& type){
+void release_dict_deep(value_backend_t& backend, runtime_value_t dict0, const typeid_t& type){
 	QUARK_ASSERT(backend.check_invariant());
-	QUARK_ASSERT(dict != nullptr);
+	QUARK_ASSERT(dict0.check_invariant());
 	QUARK_ASSERT(type.is_dict());
 
-	if(dec_rc(dict->alloc) == 0){
+	if(is_dict_cppmap(type)){
+		auto& dict = *dict0.dict_cppmap_ptr;
+		if(dec_rc(dict.alloc) == 0){
 
-		//	Release all elements.
-		const auto element_type = type.get_dict_value_type();
-		if(is_rc_value(element_type)){
-			auto m = dict->get_map();
-			for(const auto& e: m){
-				release_deep(backend, e.second, element_type);
+			//	Release all elements.
+			const auto element_type = type.get_dict_value_type();
+			if(is_rc_value(element_type)){
+				auto m = dict.get_map();
+				for(const auto& e: m){
+					release_deep(backend, e.second, element_type);
+				}
 			}
+			dispose_dict_cppmap(dict0);
 		}
-		auto temp = make_runtime_dict_cppmap(dict);
-		dispose_dict_cppmap(temp);
+	}
+	else if(is_dict_hamt(type)){
+		auto& dict = *dict0.dict_hamt_ptr;
+		if(dec_rc(dict.alloc) == 0){
+
+			//	Release all elements.
+			const auto element_type = type.get_dict_value_type();
+			if(is_rc_value(element_type)){
+				auto m = dict.get_map();
+				for(const auto& e: m){
+					release_deep(backend, e.second, element_type);
+				}
+			}
+			dispose_dict_cppmap(dict0);
+		}
+	}
+	else{
+		QUARK_ASSERT(false);
 	}
 }
 
-
-void release_vec_deep(value_backend_t& backend, runtime_value_t& vec, const typeid_t& type){
+void release_vec_deep(value_backend_t& backend, runtime_value_t vec, const typeid_t& type){
 	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.is_string() || type.is_vector());

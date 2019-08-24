@@ -28,9 +28,9 @@ struct typeid_t;
 struct VECTOR_CPPVECTOR_T;
 struct VECTOR_HAMT_T;
 struct DICT_CPPMAP_T;
+struct DICT_HAMT_T;
 struct JSON_T;
 struct STRUCT_T;
-struct type_interner_t;
 
 
 
@@ -45,7 +45,7 @@ enum vector_backend {
 //	There is still only one typeid_t/itype for vector.
 //	Future: make this flag a per-vector setting.
 
-#if 0
+#if 1
 const vector_backend k_global_vector_type = vector_backend::cppvector;
 #else
 const vector_backend k_global_vector_type = vector_backend::hamt;
@@ -98,6 +98,9 @@ struct heap_alloc_64_t {
 	heap_t* heap64;
 	char debug_info[8];
 };
+
+void set_debug_info(heap_alloc_64_t& info, const std::string& s);
+std::string get_debug_info(const heap_alloc_64_t& info);
 
 
 struct heap_rec_t {
@@ -202,7 +205,10 @@ union runtime_value_t {
 
 	VECTOR_CPPVECTOR_T* vector_cppvector_ptr;
 	VECTOR_HAMT_T* vector_hamt_ptr;
+
 	DICT_CPPMAP_T* dict_cppmap_ptr;
+	DICT_HAMT_T* dict_hamt_ptr;
+
 	JSON_T* json_ptr;
 	STRUCT_T* struct_ptr;
 	void* function_ptr;
@@ -225,6 +231,7 @@ runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr);
 runtime_value_t make_runtime_vector_cppvector(VECTOR_CPPVECTOR_T* vector_ptr);
 runtime_value_t make_runtime_vector_hamt(VECTOR_HAMT_T* vector_hamt_ptr);
 runtime_value_t make_runtime_dict_cppmap(DICT_CPPMAP_T* dict_cppmap_ptr);
+runtime_value_t make_runtime_dict_hamr(DICT_HAMT_T* dict_hamt_ptr);
 
 uint64_t get_vec_string_size(runtime_value_t str);
 
@@ -447,7 +454,10 @@ runtime_value_t push_back_immutable(const runtime_value_t& vec0, runtime_value_t
 
 
 /*
-	A std::map<> is stored inplace into alloc.data_a / alloc.data_b / alloc.data-c.
+	A std::map<> is stored inplace:
+	data_a: embeds std::map<std::string, runtime_value_t>
+	data_b: - " -
+	data_c - " -
 */
 
 typedef std::map<std::string, runtime_value_t> STDMAP;
@@ -470,6 +480,37 @@ struct DICT_CPPMAP_T {
 
 runtime_value_t alloc_dict_cppmap2(heap_t& heap);
 void dispose_dict_cppmap(runtime_value_t& vec);
+
+
+
+////////////////////////////////		DICT_HAMT_T
+
+
+/*
+	A std::map<> is stored inplace:
+	data_a: embeds std::map<std::string, runtime_value_t>
+	data_b: - " -
+*/
+typedef immer::map<std::string, runtime_value_t> HAMT_MAP;
+
+struct DICT_HAMT_T {
+	bool check_invariant() const;
+	uint64_t size() const;
+
+	const HAMT_MAP& get_map() const {
+		return *reinterpret_cast<const HAMT_MAP*>(&alloc.data_a);
+	}
+	HAMT_MAP& get_map_mut(){
+		return *reinterpret_cast<HAMT_MAP*>(&alloc.data_a);
+	}
+
+
+	////////////////////////////////		STATE
+	heap_alloc_64_t alloc;
+};
+
+runtime_value_t alloc_dict_hamt(heap_t& heap);
+void dispose_dict_hamt(runtime_value_t& vec);
 
 
 
@@ -605,8 +646,8 @@ const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_backe
 
 void retain_value(value_backend_t& backend, runtime_value_t value, const typeid_t& type);
 void release_deep(value_backend_t& backend, runtime_value_t value, const typeid_t& type);
-void release_dict_deep(value_backend_t& backend, DICT_CPPMAP_T* dict, const typeid_t& type);
-void release_vec_deep(value_backend_t& backend, runtime_value_t& vec, const typeid_t& type);
+void release_dict_deep(value_backend_t& backend, runtime_value_t dict, const typeid_t& type);
+void release_vec_deep(value_backend_t& backend, runtime_value_t vec, const typeid_t& type);
 void release_struct_deep(value_backend_t& backend, STRUCT_T* s, const typeid_t& type);
 
 
@@ -623,6 +664,15 @@ inline bool is_vector_cppvector(const typeid_t& t){
 }
 inline bool is_vector_hamt(const typeid_t& t){
 	return t.is_vector() && k_global_vector_type == vector_backend::hamt;
+}
+
+inline bool is_dict_cppmap(const typeid_t& t){
+//	return t.is_dict() && k_global_vector_type == vector_backend::cppvector;
+	return t.is_dict();
+}
+inline bool is_dict_hamt(const typeid_t& t){
+//	return t.is_dict() && k_global_vector_type == vector_backend::hamt;
+	return false;
 }
 
 
