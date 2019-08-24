@@ -10,7 +10,10 @@
 #define floyd_llvm_runtime_hpp
 
 #include "value_backend.h"
+#include "ast.h"
+#include "floyd_llvm_types.h"
 #include "floyd_llvm_value_thunking.h"
+#include <llvm/IR/IRBuilder.h>
 
 #include <string>
 #include <vector>
@@ -77,13 +80,13 @@ struct llvm_execution_engine_t {
 	bool check_invariant() const;
 
 
-
 	////////////////////////////////		STATE
 
 	//	Must be first member, checked by LLVM code.
 	uint64_t debug_magic;
 
 	value_mgr_t value_mgr;
+	llvm_type_lookup type_lookup;
 
 	container_t container_def;
 

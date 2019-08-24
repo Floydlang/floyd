@@ -8,13 +8,31 @@
 
 #include "floyd_llvm_value_thunking.h"
 
-#include "floyd_llvm_helpers.h"
 #include "value_backend.h"
-
-#include <llvm/IR/IRBuilder.h>
+#include "compiler_basics.h"
 
 
 namespace floyd {
+
+
+runtime_type_t lookup_runtime_type(const value_mgr_t& value_mgr, const typeid_t& type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	for(const auto& e: value_mgr.itype_to_typeid){
+		if(e.second == type){
+			return e.first;
+		}
+	}
+	throw std::exception();
+}
+
+typeid_t lookup_type(const value_mgr_t& value_mgr, runtime_type_t itype){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
+	const auto type = value_mgr.itype_to_typeid.at(itype);
+	return type;
+}
 
 
 
@@ -121,24 +139,41 @@ std::string from_runtime_string2(const value_mgr_t& value_mgr, runtime_value_t e
 	return from_runtime_string0(encoded_value);
 }
 
+const std::pair<typeid_t, struct_layout_t>* find_struct_layout(const value_mgr_t& value_mgr, const typeid_t& type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto& vec = value_mgr.struct_layouts;
+	const auto it = std::find_if(
+		vec.begin(),
+		vec.end(),
+		[&] (auto& e) {
+			return e.first == type;
+		}
+	);
+	if(it != vec.end()){
+		return &*it;
+	}
+	else{
+		return nullptr;
+	}
+}
 
 static runtime_value_t to_runtime_struct(value_mgr_t& value_mgr, const typeid_t::struct_t& exact_type, const value_t& value){
 	QUARK_ASSERT(value_mgr.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 
-	auto t2 = get_exact_struct_type(value_mgr.type_lookup, value.get_type());
-	const llvm::StructLayout* layout = value_mgr.data_layout.getStructLayout(t2);
+	const auto struct_layout = find_struct_layout(value_mgr, value.get_type());
+	QUARK_ASSERT(struct_layout != nullptr);
 
-	const auto struct_bytes = layout->getSizeInBytes();
-
-	auto s = alloc_struct(value_mgr.heap, struct_bytes);
+	auto s = alloc_struct(value_mgr.heap, struct_layout->second.size);
 	const auto struct_base_ptr = s->get_data_ptr();
 
 	int member_index = 0;
 	const auto& struct_data = value.get_struct_value();
 
 	for(const auto& e: struct_data->_member_values){
-		const auto offset = layout->getElementOffset(member_index);
+		const auto offset = struct_layout->second.offsets[member_index];
 		const auto member_ptr = reinterpret_cast<void*>(struct_base_ptr + offset);
 		store_via_ptr2(member_ptr, e.get_type(), to_runtime_value2(value_mgr, e));
 		member_index++;
@@ -151,16 +186,16 @@ static value_t from_runtime_struct(const value_mgr_t& value_mgr, const runtime_v
 	QUARK_ASSERT(encoded_value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
+	const auto struct_layout = find_struct_layout(value_mgr, type);
+	QUARK_ASSERT(struct_layout != nullptr);
+
 	const auto& struct_def = type.get_struct();
 	const auto struct_base_ptr = encoded_value.struct_ptr->get_data_ptr();
-
-	auto t2 = get_exact_struct_type(value_mgr.type_lookup, type);
-	const llvm::StructLayout* layout = value_mgr.data_layout.getStructLayout(t2);
 
 	std::vector<value_t> members;
 	int member_index = 0;
 	for(const auto& e: struct_def._members){
-		const auto offset = layout->getElementOffset(member_index);
+		const auto offset = struct_layout->second.offsets[member_index];
 		const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
 		const auto member_value = from_runtime_value2(value_mgr, *member_ptr, e._type);
 		members.push_back(member_value);
@@ -328,7 +363,7 @@ runtime_value_t to_runtime_value2(value_mgr_t& value_mgr, const value_t& value){
 		}
 		runtime_value_t operator()(const typeid_t::typeid_type_t& e) const{
 			const auto t0 = value.get_typeid_value();
-			const auto t1 = lookup_runtime_type(value_mgr.type_lookup, t0);
+			const auto t1 = lookup_runtime_type(value_mgr, t0);
 			return make_runtime_typeid(t1);
 		}
 
@@ -427,7 +462,7 @@ value_t from_runtime_value2(const value_mgr_t& value_mgr, const runtime_value_t 
 			}
 		}
 		value_t operator()(const typeid_t::typeid_type_t& e) const{
-			const auto type1 = lookup_type(value_mgr.type_lookup, encoded_value.typeid_itype);
+			const auto type1 = lookup_type(value_mgr, encoded_value.typeid_itype);
 			const auto type2 = value_t::make_typeid_value(type1);
 			return type2;
 		}
@@ -604,13 +639,13 @@ void release_struct_deep(value_mgr_t& value_mgr, STRUCT_T* s, const typeid_t& ty
 		const auto& struct_def = type.get_struct();
 		const auto struct_base_ptr = s->get_data_ptr();
 
-		auto t2 = get_exact_struct_type(value_mgr.type_lookup, type);
-		const llvm::StructLayout* layout = value_mgr.data_layout.getStructLayout(t2);
+		const auto struct_layout = find_struct_layout(value_mgr, type);
+		QUARK_ASSERT(struct_layout != nullptr);
 
 		int member_index = 0;
 		for(const auto& e: struct_def._members){
 			if(is_rc_value(e._type)){
-				const auto offset = layout->getElementOffset(member_index);
+				const auto offset = struct_layout->second.offsets[member_index];
 				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
 				release_deep(value_mgr, *member_ptr, e._type);
 			}

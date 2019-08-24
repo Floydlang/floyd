@@ -11,27 +11,56 @@
 
 
 #include "value_backend.h"
-#include "floyd_llvm_types.h"
+#include "ast_value.h"
 
 
 namespace floyd {
 
+
+////////////////////////////////		struct_layout_t
+
+
+struct struct_layout_t {
+	std::vector<size_t> offsets;
+	size_t size;
+};
+
+
+
 ////////////////////////////////		value_mgr_t
 
 
+
 struct value_mgr_t {
+	value_mgr_t(
+		const std::vector<std::pair<link_name_t, void*>>& native_func_lookup,
+		const std::vector<std::pair<typeid_t, struct_layout_t>>& struct_layouts,
+		const std::map<runtime_type_t, typeid_t>& itype_to_typeid
+	) :
+		heap(),
+		itype_to_typeid(itype_to_typeid),
+		native_func_lookup(native_func_lookup),
+		struct_layouts(struct_layouts)
+	{
+	}
+
 	bool check_invariant() const {
-		QUARK_ASSERT(type_lookup.check_invariant());
 		QUARK_ASSERT(heap.check_invariant());
 		return true;
 	}
 
-	
-	llvm_type_lookup type_lookup;
-	const llvm::DataLayout& data_layout;
+
+	////////////////////////////////		STATE
+
 	heap_t heap;
+	std::map<runtime_type_t, typeid_t> itype_to_typeid;
 	std::vector<std::pair<link_name_t, void*>> native_func_lookup;
+	std::vector<std::pair<typeid_t, struct_layout_t>> struct_layouts;
 };
+
+
+runtime_type_t lookup_runtime_type(const value_mgr_t& value_mgr, const typeid_t& type);
+typeid_t lookup_type(const value_mgr_t& value_mgr, runtime_type_t itype);
 
 
 runtime_value_t to_runtime_string2(value_mgr_t& value_mgr, const std::string& s);

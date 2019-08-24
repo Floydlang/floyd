@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "floyd_llvm_types.h"
+#include "floyd_llvm_value_thunking.h"
 
 #include "quark.h"
 
@@ -324,11 +325,11 @@ std::string decode_runtime_func_link_name(const link_name_t& name){
 
 
 
-VECTOR_CPPVECTOR_T* unpack_vector_cppvector_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type){
+VECTOR_CPPVECTOR_T* unpack_vector_cppvector_arg(const value_mgr_t& value_mgr, runtime_value_t arg_value, runtime_type_t arg_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
 #if DEBUG
-	const auto type = lookup_type(type_lookup, arg_type);
+	const auto type = lookup_type(value_mgr, arg_type);
 #endif
-	QUARK_ASSERT(type_lookup.check_invariant());
 	QUARK_ASSERT(type.is_vector());
 	QUARK_ASSERT(arg_value.vector_cppvector_ptr != nullptr);
 	QUARK_ASSERT(arg_value.vector_cppvector_ptr->check_invariant());
@@ -336,11 +337,11 @@ VECTOR_CPPVECTOR_T* unpack_vector_cppvector_arg(const llvm_type_lookup& type_loo
 	return arg_value.vector_cppvector_ptr;
 }
 
-DICT_CPPMAP_T* unpack_dict_cppmap_arg(const llvm_type_lookup& type_lookup, runtime_value_t arg_value, runtime_type_t arg_type){
+DICT_CPPMAP_T* unpack_dict_cppmap_arg(const value_mgr_t& value_mgr, runtime_value_t arg_value, runtime_type_t arg_type){
+	QUARK_ASSERT(value_mgr.check_invariant());
 #if DEBUG
-	const auto type = lookup_type(type_lookup, arg_type);
+	const auto type = lookup_type(value_mgr, arg_type);
 #endif
-	QUARK_ASSERT(type_lookup.check_invariant());
 	QUARK_ASSERT(type.is_dict());
 	QUARK_ASSERT(arg_value.dict_cppmap_ptr != nullptr);
 
