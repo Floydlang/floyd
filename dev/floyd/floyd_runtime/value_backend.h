@@ -607,21 +607,11 @@ std::string from_runtime_string2(const value_mgr_t& value_mgr, runtime_value_t e
 const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_mgr_t& value_mgr, const typeid_t& type);
 
 
-
-
-
 void retain_value(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t& type);
 void release_deep(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t& type);
 void release_dict_deep(value_mgr_t& value_mgr, DICT_CPPMAP_T* dict, const typeid_t& type);
 void release_vec_deep(value_mgr_t& value_mgr, runtime_value_t& vec, const typeid_t& type);
 void release_struct_deep(value_mgr_t& value_mgr, STRUCT_T* s, const typeid_t& type);
-
-
-
-runtime_value_t concat_strings(value_mgr_t& value_mgr, const runtime_value_t& lhs, const runtime_value_t& rhs);
-runtime_value_t concat_vector_cppvector(value_mgr_t& value_mgr, const typeid_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs);
-runtime_value_t concat_vector_hamt(value_mgr_t& value_mgr, const typeid_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs);
-
 
 
 /*
@@ -638,7 +628,6 @@ inline bool is_vector_cppvector(const typeid_t& t){
 inline bool is_vector_hamt(const typeid_t& t){
 	return t.is_vector() && k_global_vector_type == vector_backend::hamt;
 }
-
 
 
 
