@@ -35,8 +35,17 @@ else()
   set (VCPKG_ROOT "${CMAKE_SOURCE_DIR}/../../../vcpkg/")
   set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/../../../vcpkg/scripts/buildsystems/vcpkg.cmake"                                            
     CACHE STRING "")
+  #set(CMAKE_TOOLCHAIN_FILE "C:/work/FloydLang/vcpkg/scripts/buildsystems/vcpkg.cmake"                                            
+  #  CACHE STRING "")
+
     message(" [INFO] VCPKG CMAKE_TOOLCHAIN_FILE = ${CMAKE_TOOLCHAIN_FILE}")
 endif()
+
+find_package(Threads REQUIRED)
+find_package(LLVM  REQUIRED PATHS  "${CMAKE_SOURCE_DIR}/../../../vcpkg/packages/llvm_x64-windows/share/llvm/")
+#find_package(readline REQUIRED)
+
+
 endif(MSVC)
 
 #message(" [INFO] VCPKG CMAKE_TOOLCHAIN_FILE = ${CMAKE_TOOLCHAIN_FILE}")
@@ -156,8 +165,6 @@ if (MSVC)  # - Microsoft Visual C++
 set(FLOYD_SOURCES
 ${FLOYD_SOURCES}
 parts/hardware_caps_windows.cpp
-parts/hardware_cacheinfo.cpp
-parts/cpu_features.cpp
 )
 else()
 set(FLOYD_SOURCES
@@ -266,12 +273,15 @@ target_include_directories( floyd
 )
 
 
-IF(MSVC)
+IF(MSVC)   
+
+  link_directories("${CMAKE_SOURCE_DIR}/../../../vcpkg/installed/x64-windows/debug/lib/")
+  #find_library(READLINE_LIBRARY readline)
+
   target_link_libraries( floyd
   ${FLOYD_SPEAK_STATIC_DEPENDENCIES}
-  ${FLOYD_SPEAK_DEPENDENCIES} pthread LTO LLVMMC LLVMLTO Shlwapi)
-  target_link_libraries(floyd )
-  target_link_libraries(floyd  LTO LLVMMC LLVMLTO)
+  ${FLOYD_SPEAK_DEPENDENCIES} ${CMAKE_THREAD_LIBS_INIT} Threads::Threads  LLVMMC LLVMLTO Shlwapi)
+  # ${CMAKE_SOURCE_DIR}/../../../vcpkg/installed/x64-windows/debug/lib/readline.lib
 ELSE()
 target_link_libraries( floyd
 ${FLOYD_SPEAK_STATIC_DEPENDENCIES}
