@@ -132,12 +132,10 @@ llvm_pipeline/floyd_llvm_helpers.cpp
 llvm_pipeline/floyd_llvm_runtime.cpp
 llvm_pipeline/floyd_llvm_types.cpp
 llvm_pipeline/floyd_llvm.cpp
-llvm_pipeline/floyd_llvm_values.cpp
+floyd_runtime/value_backend.cpp
 llvm_pipeline/floyd_llvm_value_thunking.cpp
 parse_tree_to_ast_conv.cpp
 parts/file_handling.cpp
-parts/hardware_cacheinfo.cpp
-parts/cpu_features.cpp
 parts/hardware_caps.cpp
 parts/immutable_ref_value.cpp
 parts/json_support.cpp
@@ -152,10 +150,21 @@ software_system.cpp
 test_helpers.cpp
 )
 
+if (MSVC)  # - Microsoft Visual C++
+set(FLOYD_SOURCES
+${FLOYD_SOURCES}
+parts/hardware_caps_windows.cpp
+parts/hardware_cacheinfo.cpp
+parts/cpu_features.cpp
+)
+else()
 set(FLOYD_SOURCES
 ${FLOYD_SOURCES}
 parts/hardware_caps_linux.cpp
+parts/hardware_cacheinfo.cpp
+parts/cpu_features.cpp
 )
+endif()
 
 # llvm-config --cxxflags --ldflags --system-libs --libs engine interpreter
 #
