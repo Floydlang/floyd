@@ -6,7 +6,7 @@
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-#include "floyd_llvm_value_thunking.h"
+#include "value_thunking.h"
 
 #include "value_backend.h"
 #include "compiler_basics.h"

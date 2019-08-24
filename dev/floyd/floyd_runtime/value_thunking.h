@@ -1,13 +1,13 @@
 //
-//  floyd_llvm_value_thunking.hpp
+//  value_thunking.hpp
 //  floyd
 //
 //  Created by Marcus Zetterquist on 2019-08-19.
 //  Copyright © 2019 Marcus Zetterquist. All rights reserved.
 //
 
-#ifndef floyd_llvm_value_thunking_hpp
-#define floyd_llvm_value_thunking_hpp
+#ifndef value_thunking_hpp
+#define value_thunking_hpp
 
 
 #include "value_backend.h"
@@ -22,4 +22,4 @@ value_t from_runtime_value2(const value_mgr_t& value_mgr, const runtime_value_t 
 
 }	// floyd
 
-#endif /* floyd_llvm_value_thunking_hpp */
+#endif /* value_thunking_hpp */

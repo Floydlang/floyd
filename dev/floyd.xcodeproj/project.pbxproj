@@ -49,7 +49,7 @@
 		2C64578F2021E32E003625C8 /* libedit.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C64578E2021E32E003625C8 /* libedit.tbd */; };
 		2C674F99230A0CF800838CCF /* semantic_ast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C674F97230A0CF800838CCF /* semantic_ast.cpp */; };
 		2C674F9C230A100B00838CCF /* floyd_llvm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C674F9A230A100B00838CCF /* floyd_llvm.cpp */; };
-		2C674F9F230ABCE300838CCF /* floyd_llvm_value_thunking.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C674F9D230ABCE300838CCF /* floyd_llvm_value_thunking.cpp */; };
+		2C674F9F230ABCE300838CCF /* value_thunking.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C674F9D230ABCE300838CCF /* value_thunking.cpp */; };
 		2C6CDA8F22FD90C4008F65C7 /* floyd_benchmark_main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C69C49D2221D39B00E9D03E /* floyd_benchmark_main.cpp */; };
 		2C6CDA9522FD92FD008F65C7 /* floyd_command_line_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C6CDA9322FD92FD008F65C7 /* floyd_command_line_parser.cpp */; };
 		2C6CDA9822FD969B008F65C7 /* command_line_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C6CDA9622FD969B008F65C7 /* command_line_parser.cpp */; };
@@ -242,8 +242,8 @@
 		2C674F98230A0CF800838CCF /* semantic_ast.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = semantic_ast.h; sourceTree = "<group>"; };
 		2C674F9A230A100B00838CCF /* floyd_llvm.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm.cpp; sourceTree = "<group>"; };
 		2C674F9B230A100B00838CCF /* floyd_llvm.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_llvm.h; sourceTree = "<group>"; };
-		2C674F9D230ABCE300838CCF /* floyd_llvm_value_thunking.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm_value_thunking.cpp; sourceTree = "<group>"; };
-		2C674F9E230ABCE300838CCF /* floyd_llvm_value_thunking.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = floyd_llvm_value_thunking.h; sourceTree = "<group>"; };
+		2C674F9D230ABCE300838CCF /* value_thunking.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = value_thunking.cpp; sourceTree = "<group>"; };
+		2C674F9E230ABCE300838CCF /* value_thunking.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = value_thunking.h; sourceTree = "<group>"; };
 		2C687D3622691406003AC7CE /* floyd_llvm_readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = floyd_llvm_readme.md; sourceTree = "<group>"; };
 		2C69C49D2221D39B00E9D03E /* floyd_benchmark_main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_benchmark_main.cpp; sourceTree = "<group>"; };
 		2C69C4A12221D47800E9D03E /* strip_asm.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = strip_asm.py; sourceTree = "<group>"; };
@@ -670,8 +670,6 @@
 		2C00DEC522198C4000DB322E /* floyd_runtime */ = {
 			isa = PBXGroup;
 			children = (
-				2C674F9D230ABCE300838CCF /* floyd_llvm_value_thunking.cpp */,
-				2C674F9E230ABCE300838CCF /* floyd_llvm_value_thunking.h */,
 				2CCA88F322B6B5F100976D8E /* floyd_corelib.cpp */,
 				2CCA88F422B6B5F100976D8E /* floyd_corelib.h */,
 				2C00DEC622198C6300DB322E /* floyd_runtime.cpp */,
@@ -680,6 +678,8 @@
 				2CAC5B8F230FFC8800F89608 /* quadratic_probing_hash_table.h */,
 				2CC9B79D2309FD1D00B195C8 /* value_backend.cpp */,
 				2CC9B79E2309FD1D00B195C8 /* value_backend.h */,
+				2C674F9D230ABCE300838CCF /* value_thunking.cpp */,
+				2C674F9E230ABCE300838CCF /* value_thunking.h */,
 				2CA1F65C221F71AC008BDBD7 /* variable_length_quantity.cpp */,
 				2CA1F65D221F71AC008BDBD7 /* variable_length_quantity.h */,
 			);
@@ -1583,7 +1583,7 @@
 				2C5372B9207A9EBA00647AD1 /* bytecode_interpreter.cpp in Sources */,
 				2CB30739214ACF09007D2732 /* software_system.cpp in Sources */,
 				2C674F9C230A100B00838CCF /* floyd_llvm.cpp in Sources */,
-				2C674F9F230ABCE300838CCF /* floyd_llvm_value_thunking.cpp in Sources */,
+				2C674F9F230ABCE300838CCF /* value_thunking.cpp in Sources */,
 				2CDFD5D222EA4C27005B002C /* bytecode_helpers.cpp in Sources */,
 				2C8C03A62221D95F0085EBBE /* csv_reporter.cc in Sources */,
 				2C180475208B939800F62480 /* floyd_parser.cpp in Sources */,

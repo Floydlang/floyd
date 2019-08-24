@@ -12,7 +12,7 @@
 #include "value_backend.h"
 #include "ast.h"
 #include "floyd_llvm_types.h"
-#include "floyd_llvm_value_thunking.h"
+#include "value_thunking.h"
 #include <llvm/IR/IRBuilder.h>
 
 #include <string>
