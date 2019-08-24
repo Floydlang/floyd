@@ -133,7 +133,9 @@ llvm_pipeline/floyd_llvm_runtime.cpp
 llvm_pipeline/floyd_llvm_types.cpp
 llvm_pipeline/floyd_llvm.cpp
 floyd_runtime/value_backend.cpp
-llvm_pipeline/floyd_llvm_value_thunking.cpp
+#llvm_pipeline/floyd_llvm_value_thunking.cpp
+floyd_runtime/value_thunking.cpp
+floyd_runtime/value_features.cpp
 parse_tree_to_ast_conv.cpp
 parts/file_handling.cpp
 parts/hardware_caps.cpp
