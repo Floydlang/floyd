@@ -232,6 +232,9 @@ void copy_elements(runtime_value_t dest[], runtime_value_t source[], uint64_t co
 
 
 
+////////////////////////////////		WIDE_RETURN_T
+
+
 /*
 First-class values
 
@@ -253,13 +256,6 @@ The non-first-class types are:
   8. Void
   9. Label
 */
-
-
-
-
-////////////////////////////////		WIDE_RETURN_T
-
-
 //	LLVM has a limitation on return values. It can only be two members in LLVM struct, each a word wide.
 
 
@@ -283,7 +279,7 @@ WIDE_RETURN_T make_wide_return_2x64(runtime_value_t a, runtime_value_t b);
 
 
 /*
-	A fixed-size immutable vector with RC.
+	A fixed-size immutable vector with RC. Deep copy everytime = expensive to mutate.
 
 	- Mutation = copy entire vector every time.
 	- Elements are always runtime_value_t. You need to pack and address other types of data manually.
@@ -361,7 +357,7 @@ void dispose_vector_cppvector(const runtime_value_t& value);
 
 
 /*
-	A fixed-size immutable vector with RC.
+	A fixed-size immutable vector with RC. Use HAMT.
 
 	- Mutation = copy entire vector every time.
 	- Elements are always runtime_value_t. You need to pack and address other types of data manually.

@@ -10,11 +10,13 @@
 #define value_thunking_hpp
 
 
-#include "value_backend.h"
-#include "ast_value.h"
-
 
 namespace floyd {
+
+struct value_backend_t;
+struct value_t;
+union runtime_value_t;
+struct typeid_t;
 
 runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value);
 value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_t encoded_value, const typeid_t& type);

@@ -49,26 +49,6 @@ struct type_interner_t {
 	bool check_invariant() const;
 
 
-
-	bool is_simple(itype_t type){
-		return type.itype >= 0 && type.itype < 100000000;
-	}
-	bool is_struct(itype_t type){
-		return type.itype >= 100000000 && type.itype < 200000000;
-	}
-	bool is_vector(itype_t type){
-		return type.itype >= 200000000 && type.itype < 300000000;
-	}
-	bool is_dict(itype_t type){
-		return type.itype >= 300000000 && type.itype < 400000000;
-	}
-	bool is_function(itype_t type){
-		return type.itype >= 400000000;
-	}
-
-
-
-
 	////////////////////////////////	STATE
 	std::vector<std::pair<itype_t, typeid_t>> interned;
 
@@ -84,6 +64,25 @@ std::pair<itype_t, typeid_t> intern_type(type_interner_t& interner, const typeid
 itype_t lookup_itype(const type_interner_t& interner, const typeid_t& type);
 typeid_t lookup_type(const type_interner_t& interner, const itype_t& type);
 
+inline bool is_simple(itype_t type){
+	return type.itype >= 0 && type.itype < 100000000;
+}
+
+inline bool is_struct(itype_t type){
+	return type.itype >= 100000000 && type.itype < 200000000;
+}
+
+inline bool is_vector(itype_t type){
+	return type.itype >= 200000000 && type.itype < 300000000;
+}
+
+inline bool is_dict(itype_t type){
+	return type.itype >= 300000000 && type.itype < 400000000;
+}
+
+inline bool is_function(itype_t type){
+	return type.itype >= 400000000;
+}
 
 
 
