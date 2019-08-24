@@ -106,6 +106,7 @@
 		2C915FDB2308722700BFD5F9 /* libLLVM.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C915FDA2308722700BFD5F9 /* libLLVM.dylib */; };
 		2C915FDC2308722700BFD5F9 /* libLLVM.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C915FDA2308722700BFD5F9 /* libLLVM.dylib */; };
 		2C982D3620603FE2002002FF /* bytecode_generator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C982D3520603FE2002002FF /* bytecode_generator.cpp */; };
+		2C9FC7C52310C25E00CF8F02 /* value_features.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C9FC7C32310C25E00CF8F02 /* value_features.cpp */; };
 		2CA1F65E221F71AC008BDBD7 /* variable_length_quantity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA1F65C221F71AC008BDBD7 /* variable_length_quantity.cpp */; };
 		2CA2D86522F347FC00B45098 /* floyd_llvm_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2D86322F347FC00B45098 /* floyd_llvm_types.cpp */; };
 		2CA2D86622F347FC00B45098 /* floyd_llvm_types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CA2D86322F347FC00B45098 /* floyd_llvm_types.cpp */; };
@@ -578,6 +579,8 @@
 		2C915FDA2308722700BFD5F9 /* libLLVM.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libLLVM.dylib; path = ../../../../../../usr/local/Cellar/llvm/8.0.1/lib/libLLVM.dylib; sourceTree = "<group>"; };
 		2C982D3520603FE2002002FF /* bytecode_generator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bytecode_generator.cpp; sourceTree = "<group>"; };
 		2C982D3720604002002002FF /* bytecode_generator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bytecode_generator.h; sourceTree = "<group>"; };
+		2C9FC7C32310C25E00CF8F02 /* value_features.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = value_features.cpp; sourceTree = "<group>"; };
+		2C9FC7C42310C25E00CF8F02 /* value_features.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = value_features.h; sourceTree = "<group>"; };
 		2CA1F65C221F71AC008BDBD7 /* variable_length_quantity.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = variable_length_quantity.cpp; sourceTree = "<group>"; };
 		2CA1F65D221F71AC008BDBD7 /* variable_length_quantity.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = variable_length_quantity.h; sourceTree = "<group>"; };
 		2CA2D86322F347FC00B45098 /* floyd_llvm_types.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = floyd_llvm_types.cpp; sourceTree = "<group>"; };
@@ -682,6 +685,8 @@
 				2C674F9E230ABCE300838CCF /* value_thunking.h */,
 				2CA1F65C221F71AC008BDBD7 /* variable_length_quantity.cpp */,
 				2CA1F65D221F71AC008BDBD7 /* variable_length_quantity.h */,
+				2C9FC7C32310C25E00CF8F02 /* value_features.cpp */,
+				2C9FC7C42310C25E00CF8F02 /* value_features.h */,
 			);
 			path = floyd_runtime;
 			sourceTree = "<group>";
@@ -1577,6 +1582,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2C5E343C21527C6700B02262 /* hardware_caps_macos.cpp in Sources */,
+				2C9FC7C52310C25E00CF8F02 /* value_features.cpp in Sources */,
 				2C8C039C2221D9120085EBBE /* gmock-all.cc in Sources */,
 				2CE1C35D2270C7AC007892B4 /* floyd_llvm_runtime.cpp in Sources */,
 				2C40A71F1D76E179003245E3 /* immutable_ref_value.cpp in Sources */,
