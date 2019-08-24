@@ -172,7 +172,7 @@ const runtime_value_t update__hamt(value_backend_t& backend, runtime_value_t arg
 
 	if(is_rc_value(element_type)){
 		const auto result = store_immutable(arg0, index, arg2);
-		for(int i = 0 ; i < result.vector_cppvector_ptr->get_element_count() ; i++){
+		for(int i = 0 ; i < result.vector_hamt_ptr->get_element_count() ; i++){
 			auto v = result.vector_hamt_ptr->load_element(i);
 			retain_value(backend, v, element_type);
 		}

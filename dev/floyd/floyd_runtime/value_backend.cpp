@@ -45,7 +45,7 @@ void trace_alloc(const heap_rec_t& e){
 	QUARK_TRACE_SS(""
 //		<< "used: " << e.in_use
 		<< " rc: " << e.alloc_ptr->rc
-		<< " debug[0]: " << e.alloc_ptr->debug_info[0]
+		<< " debug_info: " << get_debug_info(*e.alloc_ptr)
 		<< " data_a: " << e.alloc_ptr->data_a
 	);
 }
@@ -145,7 +145,6 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count){
 
 		alloc->heap64 = &heap;
 		set_debug_info(*alloc, "alloc");
-//		memset(&alloc->debug_info[0], 0x00, 8);
 
 		heap.alloc_records.push_back({ alloc });
 
@@ -447,6 +446,7 @@ VECTOR_CPPVECTOR_T::~VECTOR_CPPVECTOR_T(){
 
 bool VECTOR_CPPVECTOR_T::check_invariant() const {
 	QUARK_ASSERT(this->alloc.check_invariant());
+	QUARK_ASSERT(get_debug_info(alloc) == "cppvec");
 	return true;
 }
 
@@ -456,9 +456,7 @@ runtime_value_t alloc_vector_ccpvector2(heap_t& heap, uint64_t allocation_count,
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count);
 	alloc->data_a = element_count;
 	alloc->data_b = allocation_count;
-	alloc->debug_info[0] = 'V';
-	alloc->debug_info[1] = 'E';
-	alloc->debug_info[2] = 'C';
+	set_debug_info(*alloc, "cppvec");
 
 	auto vec = reinterpret_cast<VECTOR_CPPVECTOR_T*>(alloc);
 
@@ -529,7 +527,7 @@ VECTOR_HAMT_T::~VECTOR_HAMT_T(){
 
 bool VECTOR_HAMT_T::check_invariant() const {
 	QUARK_ASSERT(this->alloc.check_invariant());
-	QUARK_ASSERT(std::string(&alloc.debug_info[0], &alloc.debug_info[5]) == "VHAMT");
+	QUARK_ASSERT(get_debug_info(alloc) == "vechamt");
 	const auto& vec = get_vecref();
 	QUARK_ASSERT(vec.impl().shift == 5);
 	QUARK_ASSERT(vec.impl().check_tree());
@@ -541,11 +539,7 @@ runtime_value_t alloc_vector_hamt2(heap_t& heap, uint64_t allocation_count, uint
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0);
 	alloc->data_d = element_count;
-	alloc->debug_info[0] = 'V';
-	alloc->debug_info[1] = 'H';
-	alloc->debug_info[2] = 'A';
-	alloc->debug_info[3] = 'M';
-	alloc->debug_info[4] = 'T';
+	set_debug_info(*alloc, "vechamt");
 
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
 
@@ -565,11 +559,7 @@ runtime_value_t alloc_vector_hamt2(heap_t& heap, const runtime_value_t elements[
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0);
 	alloc->data_d = element_count;
-	alloc->debug_info[0] = 'V';
-	alloc->debug_info[1] = 'H';
-	alloc->debug_info[2] = 'A';
-	alloc->debug_info[3] = 'M';
-	alloc->debug_info[4] = 'T';
+	set_debug_info(*alloc, "vechamt");
 
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
 
@@ -603,11 +593,7 @@ runtime_value_t store_immutable(const runtime_value_t& vec0, const uint64_t inde
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0);
 	alloc->data_d = vec1.get_element_count();
-	alloc->debug_info[0] = 'V';
-	alloc->debug_info[1] = 'H';
-	alloc->debug_info[2] = 'A';
-	alloc->debug_info[3] = 'M';
-	alloc->debug_info[4] = 'T';
+	set_debug_info(*alloc, "vechamt");
 
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
 
@@ -630,11 +616,7 @@ runtime_value_t push_back_immutable(const runtime_value_t& vec0, runtime_value_t
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0);
 	alloc->data_d = vec1.get_element_count() + 1;
-	alloc->debug_info[0] = 'V';
-	alloc->debug_info[1] = 'H';
-	alloc->debug_info[2] = 'A';
-	alloc->debug_info[3] = 'M';
-	alloc->debug_info[4] = 'T';
+	set_debug_info(*alloc, "vechamt");
 
 	auto vec = reinterpret_cast<VECTOR_HAMT_T*>(alloc);
 
@@ -696,6 +678,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 bool DICT_CPPMAP_T::check_invariant() const{
 	QUARK_ASSERT(alloc.check_invariant());
+	QUARK_ASSERT(get_debug_info(alloc) == "cppdict");
 	return true;
 }
 
@@ -711,11 +694,7 @@ runtime_value_t alloc_dict_cppmap2(heap_t& heap){
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0);
 	auto dict = reinterpret_cast<DICT_CPPMAP_T*>(alloc);
-
-	alloc->debug_info[0] = 'D';
-	alloc->debug_info[1] = 'I';
-	alloc->debug_info[2] = 'C';
-	alloc->debug_info[3] = 'T';
+	set_debug_info(*alloc, "cppdict");
 
 	auto& m = dict->get_map_mut();
     new (&m) STDMAP();
@@ -753,6 +732,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 bool DICT_HAMT_T::check_invariant() const{
 	QUARK_ASSERT(alloc.check_invariant());
+	QUARK_ASSERT(get_debug_info(alloc) == "hamtdic");
 	return true;
 }
 
@@ -768,11 +748,7 @@ runtime_value_t alloc_dict_hamt(heap_t& heap){
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0);
 	auto dict = reinterpret_cast<DICT_HAMT_T*>(alloc);
-
-	alloc->debug_info[0] = 'H';
-	alloc->debug_info[1] = 'D';
-	alloc->debug_info[2] = 'I';
-	alloc->debug_info[3] = 'C';
+	set_debug_info(*alloc, "hamtdic");
 
 	auto& m = dict->get_map_mut();
     new (&m) DICT_HAMT_T();
@@ -814,6 +790,7 @@ QUARK_UNIT_TEST("", "", "", ""){
 
 bool JSON_T::check_invariant() const{
 	QUARK_ASSERT(alloc.check_invariant());
+	QUARK_ASSERT(get_debug_info(alloc) == "JSON");
 	QUARK_ASSERT(get_json().check_invariant());
 	return true;
 }
@@ -823,11 +800,7 @@ JSON_T* alloc_json(heap_t& heap, const json_t& init){
 	QUARK_ASSERT(init.check_invariant());
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0);
-
-	alloc->debug_info[0] = 'J';
-	alloc->debug_info[1] = 'S';
-	alloc->debug_info[2] = 'O';
-	alloc->debug_info[3] = 'N';
+	set_debug_info(*alloc, "JSON");
 
 	auto json = reinterpret_cast<JSON_T*>(alloc);
 	auto copy = new json_t(init);
@@ -863,6 +836,7 @@ STRUCT_T::~STRUCT_T(){
 
 bool STRUCT_T::check_invariant() const {
 	QUARK_ASSERT(this->alloc.check_invariant());
+	QUARK_ASSERT(get_debug_info(alloc) == "struct");
 	return true;
 }
 
@@ -870,12 +844,7 @@ STRUCT_T* alloc_struct(heap_t& heap, std::size_t size){
 	const auto allocation_count = size_to_allocation_blocks(size);
 
 	heap_alloc_64_t* alloc = alloc_64(heap, allocation_count);
-	alloc->debug_info[0] = 'S';
-	alloc->debug_info[1] = 'T';
-	alloc->debug_info[2] = 'R';
-	alloc->debug_info[3] = 'U';
-	alloc->debug_info[4] = 'C';
-	alloc->debug_info[5] = 'T';
+	set_debug_info(*alloc, "struct");
 
 	auto vec = reinterpret_cast<STRUCT_T*>(alloc);
 	return vec;
