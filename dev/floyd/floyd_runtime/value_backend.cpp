@@ -943,11 +943,11 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 
 
 
-runtime_type_t lookup_runtime_type(const value_mgr_t& value_mgr, const typeid_t& type){
-	QUARK_ASSERT(value_mgr.check_invariant());
+runtime_type_t lookup_runtime_type(const value_backend_t& backend, const typeid_t& type){
+	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	for(const auto& e: value_mgr.itype_to_typeid){
+	for(const auto& e: backend.itype_to_typeid){
 		if(e.second == type){
 			return e.first;
 		}
@@ -955,10 +955,10 @@ runtime_type_t lookup_runtime_type(const value_mgr_t& value_mgr, const typeid_t&
 	throw std::exception();
 }
 
-typeid_t lookup_type(const value_mgr_t& value_mgr, runtime_type_t itype){
-	QUARK_ASSERT(value_mgr.check_invariant());
+typeid_t lookup_type(const value_backend_t& backend, runtime_type_t itype){
+	QUARK_ASSERT(backend.check_invariant());
 
-	const auto type = value_mgr.itype_to_typeid.at(itype);
+	const auto type = backend.itype_to_typeid.at(itype);
 	return type;
 }
 
@@ -1052,26 +1052,26 @@ QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
 
 
 
-runtime_value_t to_runtime_string2(value_mgr_t& value_mgr, const std::string& s){
-	QUARK_ASSERT(value_mgr.check_invariant());
+runtime_value_t to_runtime_string2(value_backend_t& backend, const std::string& s){
+	QUARK_ASSERT(backend.check_invariant());
 
-	return to_runtime_string0(value_mgr.heap, s);
+	return to_runtime_string0(backend.heap, s);
 }
 
 
 
-std::string from_runtime_string2(const value_mgr_t& value_mgr, runtime_value_t encoded_value){
-	QUARK_ASSERT(value_mgr.check_invariant());
+std::string from_runtime_string2(const value_backend_t& backend, runtime_value_t encoded_value){
+	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(encoded_value.check_invariant());
 
 	return from_runtime_string0(encoded_value);
 }
 
-const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_mgr_t& value_mgr, const typeid_t& type){
-	QUARK_ASSERT(value_mgr.check_invariant());
+const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, const typeid_t& type){
+	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto& vec = value_mgr.struct_layouts;
+	const auto& vec = backend.struct_layouts;
 	const auto it = std::find_if(
 		vec.begin(),
 		vec.end(),
@@ -1091,8 +1091,8 @@ const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_mgr_t
 
 
 
-void retain_value(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t& type){
-	QUARK_ASSERT(value_mgr.check_invariant());
+void retain_value(value_backend_t& backend, runtime_value_t value, const typeid_t& type){
+	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
@@ -1121,20 +1121,20 @@ void retain_value(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t&
 	}
 }
 
-void release_deep(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t& type){
-	QUARK_ASSERT(value_mgr.check_invariant());
+void release_deep(value_backend_t& backend, runtime_value_t value, const typeid_t& type){
+	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
 	if(is_rc_value(type)){
 		if(type.is_string()){
-			release_vec_deep(value_mgr, value, type);
+			release_vec_deep(backend, value, type);
 		}
 		else if(type.is_vector()){
-			release_vec_deep(value_mgr, value, type);
+			release_vec_deep(backend, value, type);
 		}
 		else if(type.is_dict()){
-			release_dict_deep(value_mgr, value.dict_cppmap_ptr, type);
+			release_dict_deep(backend, value.dict_cppmap_ptr, type);
 		}
 		else if(type.is_json()){
 			if(dec_rc(value.json_ptr->alloc) == 0){
@@ -1142,7 +1142,7 @@ void release_deep(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t&
 			}
 		}
 		else if(type.is_struct()){
-			release_struct_deep(value_mgr, value.struct_ptr, type);
+			release_struct_deep(backend, value.struct_ptr, type);
 		}
 		else{
 			QUARK_ASSERT(false);
@@ -1150,8 +1150,8 @@ void release_deep(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t&
 	}
 }
 
-void release_dict_deep(value_mgr_t& value_mgr, DICT_CPPMAP_T* dict, const typeid_t& type){
-	QUARK_ASSERT(value_mgr.check_invariant());
+void release_dict_deep(value_backend_t& backend, DICT_CPPMAP_T* dict, const typeid_t& type){
+	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(dict != nullptr);
 	QUARK_ASSERT(type.is_dict());
 
@@ -1162,7 +1162,7 @@ void release_dict_deep(value_mgr_t& value_mgr, DICT_CPPMAP_T* dict, const typeid
 		if(is_rc_value(element_type)){
 			auto m = dict->get_map();
 			for(const auto& e: m){
-				release_deep(value_mgr, e.second, element_type);
+				release_deep(backend, e.second, element_type);
 			}
 		}
 		auto temp = make_runtime_dict_cppmap(dict);
@@ -1171,8 +1171,8 @@ void release_dict_deep(value_mgr_t& value_mgr, DICT_CPPMAP_T* dict, const typeid
 }
 
 
-void release_vec_deep(value_mgr_t& value_mgr, runtime_value_t& vec, const typeid_t& type){
-	QUARK_ASSERT(value_mgr.check_invariant());
+void release_vec_deep(value_backend_t& backend, runtime_value_t& vec, const typeid_t& type){
+	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(vec.check_invariant());
 	QUARK_ASSERT(type.is_string() || type.is_vector());
 
@@ -1192,7 +1192,7 @@ void release_vec_deep(value_mgr_t& value_mgr, runtime_value_t& vec, const typeid
 					auto element_ptr = vec.vector_cppvector_ptr->get_element_ptr();
 					for(int i = 0 ; i < vec.vector_cppvector_ptr->get_element_count() ; i++){
 						const auto& element = element_ptr[i];
-						release_deep(value_mgr, element, element_type);
+						release_deep(backend, element, element_type);
 					}
 				}
 			}
@@ -1207,7 +1207,7 @@ void release_vec_deep(value_mgr_t& value_mgr, runtime_value_t& vec, const typeid
 				if(is_rc_value(element_type)){
 					for(int i = 0 ; i < vec.vector_hamt_ptr->get_element_count() ; i++){
 						const auto& element = vec.vector_hamt_ptr->load_element(i);
-						release_deep(value_mgr, element, element_type);
+						release_deep(backend, element, element_type);
 					}
 				}
 			}
@@ -1225,8 +1225,8 @@ void release_vec_deep(value_mgr_t& value_mgr, runtime_value_t& vec, const typeid
 
 
 
-void release_struct_deep(value_mgr_t& value_mgr, STRUCT_T* s, const typeid_t& type){
-	QUARK_ASSERT(value_mgr.check_invariant());
+void release_struct_deep(value_backend_t& backend, STRUCT_T* s, const typeid_t& type){
+	QUARK_ASSERT(backend.check_invariant());
 	QUARK_ASSERT(s != nullptr);
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(type.is_struct());
@@ -1235,14 +1235,14 @@ void release_struct_deep(value_mgr_t& value_mgr, STRUCT_T* s, const typeid_t& ty
 		const auto& struct_def = type.get_struct();
 		const auto struct_base_ptr = s->get_data_ptr();
 
-		const auto& struct_layout = find_struct_layout(value_mgr, type);
+		const auto& struct_layout = find_struct_layout(backend, type);
 
 		int member_index = 0;
 		for(const auto& e: struct_def._members){
 			if(is_rc_value(e._type)){
 				const auto offset = struct_layout.second.offsets[member_index];
 				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
-				release_deep(value_mgr, *member_ptr, e._type);
+				release_deep(backend, *member_ptr, e._type);
 			}
 			member_index++;
 		}

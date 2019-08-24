@@ -84,7 +84,7 @@ struct llvm_execution_engine_t {
 	//	Must be first member, checked by LLVM code.
 	uint64_t debug_magic;
 
-	value_mgr_t value_mgr;
+	value_backend_t backend;
 	llvm_type_lookup type_lookup;
 
 	container_t container_def;
@@ -159,18 +159,18 @@ llvm_execution_engine_t& get_floyd_runtime(floyd_runtime_t* frp);
 
 
 inline value_t from_runtime_value(const llvm_execution_engine_t& runtime, const runtime_value_t encoded_value, const typeid_t& type){
-	return from_runtime_value2(runtime.value_mgr, encoded_value, type);
+	return from_runtime_value2(runtime.backend, encoded_value, type);
 }
 
 inline runtime_value_t to_runtime_value(llvm_execution_engine_t& runtime, const value_t& value){
-	return to_runtime_value2(runtime.value_mgr, value);
+	return to_runtime_value2(runtime.backend, value);
 }
 
 inline std::string from_runtime_string(const llvm_execution_engine_t& runtime, runtime_value_t encoded_value){
-	return from_runtime_string2(runtime.value_mgr, encoded_value);
+	return from_runtime_string2(runtime.backend, encoded_value);
 }
 inline runtime_value_t to_runtime_string(llvm_execution_engine_t& runtime, const std::string& s){
-	return to_runtime_string2(runtime.value_mgr, s);
+	return to_runtime_string2(runtime.backend, s);
 }
 
 

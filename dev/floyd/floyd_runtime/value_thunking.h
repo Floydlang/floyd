@@ -16,8 +16,8 @@
 
 namespace floyd {
 
-runtime_value_t to_runtime_value2(value_mgr_t& value_mgr, const value_t& value);
-value_t from_runtime_value2(const value_mgr_t& value_mgr, const runtime_value_t encoded_value, const typeid_t& type);
+runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value);
+value_t from_runtime_value2(const value_backend_t& backend, const runtime_value_t encoded_value, const typeid_t& type);
 
 
 }	// floyd

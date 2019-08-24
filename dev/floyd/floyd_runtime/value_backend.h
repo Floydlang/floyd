@@ -564,12 +564,12 @@ struct struct_layout_t {
 
 
 
-////////////////////////////////		value_mgr_t
+////////////////////////////////		value_backend_t
 
 
 
-struct value_mgr_t {
-	value_mgr_t(
+struct value_backend_t {
+	value_backend_t(
 		const std::vector<std::pair<link_name_t, void*>>& native_func_lookup,
 		const std::vector<std::pair<typeid_t, struct_layout_t>>& struct_layouts,
 		const std::map<runtime_type_t, typeid_t>& itype_to_typeid
@@ -596,22 +596,22 @@ struct value_mgr_t {
 };
 
 
-runtime_type_t lookup_runtime_type(const value_mgr_t& value_mgr, const typeid_t& type);
-typeid_t lookup_type(const value_mgr_t& value_mgr, runtime_type_t itype);
+runtime_type_t lookup_runtime_type(const value_backend_t& backend, const typeid_t& type);
+typeid_t lookup_type(const value_backend_t& backend, runtime_type_t itype);
 
 
-runtime_value_t to_runtime_string2(value_mgr_t& value_mgr, const std::string& s);
-std::string from_runtime_string2(const value_mgr_t& value_mgr, runtime_value_t encoded_value);
+runtime_value_t to_runtime_string2(value_backend_t& backend, const std::string& s);
+std::string from_runtime_string2(const value_backend_t& backend, runtime_value_t encoded_value);
 
 
-const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_mgr_t& value_mgr, const typeid_t& type);
+const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_backend_t& backend, const typeid_t& type);
 
 
-void retain_value(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t& type);
-void release_deep(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t& type);
-void release_dict_deep(value_mgr_t& value_mgr, DICT_CPPMAP_T* dict, const typeid_t& type);
-void release_vec_deep(value_mgr_t& value_mgr, runtime_value_t& vec, const typeid_t& type);
-void release_struct_deep(value_mgr_t& value_mgr, STRUCT_T* s, const typeid_t& type);
+void retain_value(value_backend_t& backend, runtime_value_t value, const typeid_t& type);
+void release_deep(value_backend_t& backend, runtime_value_t value, const typeid_t& type);
+void release_dict_deep(value_backend_t& backend, DICT_CPPMAP_T* dict, const typeid_t& type);
+void release_vec_deep(value_backend_t& backend, runtime_value_t& vec, const typeid_t& type);
+void release_struct_deep(value_backend_t& backend, STRUCT_T* s, const typeid_t& type);
 
 
 /*
