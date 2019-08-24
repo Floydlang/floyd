@@ -934,5 +934,420 @@ void store_via_ptr2(void* value_ptr, const typeid_t& type, const runtime_value_t
 	std::visit(visitor_t{ value_ptr, value }, type._contents);
 }
 
+
+
+
+
+
+
+
+
+
+runtime_type_t lookup_runtime_type(const value_mgr_t& value_mgr, const typeid_t& type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	for(const auto& e: value_mgr.itype_to_typeid){
+		if(e.second == type){
+			return e.first;
+		}
+	}
+	throw std::exception();
+}
+
+typeid_t lookup_type(const value_mgr_t& value_mgr, runtime_type_t itype){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
+	const auto type = value_mgr.itype_to_typeid.at(itype);
+	return type;
+}
+
+
+
+
+////////////////////////////////		VALUES
+
+
+
+
+static runtime_value_t to_runtime_string0(heap_t& heap, const std::string& s){
+	QUARK_ASSERT(heap.check_invariant());
+
+	const auto count = static_cast<uint64_t>(s.size());
+	const auto allocation_count = size_to_allocation_blocks(s.size());
+	auto result = alloc_vector_ccpvector2(heap, allocation_count, count);
+
+	size_t char_pos = 0;
+	int element_index = 0;
+	uint64_t acc = 0;
+	while(char_pos < s.size()){
+		const uint64_t ch = s[char_pos];
+		const auto x = (char_pos & 7) * 8;
+		acc = acc | (ch << x);
+		char_pos++;
+
+		if(((char_pos & 7) == 0) || (char_pos == s.size())){
+			result.vector_cppvector_ptr->store(element_index, make_runtime_int(static_cast<int64_t>(acc)));
+			element_index = element_index + 1;
+			acc = 0;
+		}
+	}
+	return result;
+}
+
+
+QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
+	heap_t heap;
+	const auto a = to_runtime_string0(heap, "hello, world!");
+
+	QUARK_UT_VERIFY(a.vector_cppvector_ptr->get_element_count() == 13);
+
+	//	int64_t	'hello, w'
+//	QUARK_UT_VERIFY(a.vector_cppvector_ptr->load_element(0).int_value == 0x68656c6c6f2c2077);
+	QUARK_UT_VERIFY(a.vector_cppvector_ptr->load_element(0).int_value == 0x77202c6f6c6c6568);
+
+	//int_value	int64_t	'orld!\0\0\0'
+//	QUARK_UT_VERIFY(a.vector_cppvector_ptr->load_element(1).int_value == 0x6f726c6421000000);
+	QUARK_UT_VERIFY(a.vector_cppvector_ptr->load_element(1).int_value == 0x00000021646c726f);
+}
+
+
+
+static std::string from_runtime_string0(runtime_value_t encoded_value){
+	QUARK_ASSERT(encoded_value.check_invariant());
+	QUARK_ASSERT(encoded_value.vector_cppvector_ptr != nullptr);
+
+	const size_t size = get_vec_string_size(encoded_value);
+
+	std::string result;
+
+	//	Read 8 characters at a time.
+	size_t char_pos = 0;
+	const auto begin0 = encoded_value.vector_cppvector_ptr->begin();
+	const auto end0 = encoded_value.vector_cppvector_ptr->end();
+	for(auto it = begin0 ; it != end0 ; it++){
+		const size_t copy_chars = std::min(size - char_pos, (size_t)8);
+		const uint64_t element = it->int_value;
+		for(int i = 0 ; i < copy_chars ; i++){
+			const uint64_t x = i * 8;
+			const uint64_t ch = (element >> x) & 0xff;
+			result.push_back(static_cast<char>(ch));
+		}
+		char_pos += copy_chars;
+	}
+
+	QUARK_ASSERT(result.size() == size);
+	return result;
+}
+
+QUARK_UNIT_TEST("VECTOR_CPPVECTOR_T", "", "", ""){
+	heap_t heap;
+	const auto a = to_runtime_string0(heap, "hello, world!");
+
+	const auto r = from_runtime_string0(a);
+	QUARK_UT_VERIFY(r == "hello, world!");
+}
+
+
+
+
+
+runtime_value_t to_runtime_string2(value_mgr_t& value_mgr, const std::string& s){
+	QUARK_ASSERT(value_mgr.check_invariant());
+
+	return to_runtime_string0(value_mgr.heap, s);
+}
+
+
+
+std::string from_runtime_string2(const value_mgr_t& value_mgr, runtime_value_t encoded_value){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(encoded_value.check_invariant());
+
+	return from_runtime_string0(encoded_value);
+}
+
+const std::pair<typeid_t, struct_layout_t>& find_struct_layout(const value_mgr_t& value_mgr, const typeid_t& type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	const auto& vec = value_mgr.struct_layouts;
+	const auto it = std::find_if(
+		vec.begin(),
+		vec.end(),
+		[&] (auto& e) {
+			return e.first == type;
+		}
+	);
+	if(it != vec.end()){
+		return *it;
+	}
+	else{
+		throw std::exception();
+	}
+}
+
+
+
+
+
+void retain_value(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t& type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	if(is_rc_value(type)){
+		if(type.is_string()){
+			inc_rc(value.vector_cppvector_ptr->alloc);
+		}
+		else if(is_vector_cppvector(type)){
+			inc_rc(value.vector_cppvector_ptr->alloc);
+		}
+		else if(is_vector_hamt(type)){
+			inc_rc(value.vector_hamt_ptr->alloc);
+		}
+		else if(type.is_dict()){
+			inc_rc(value.dict_cppmap_ptr->alloc);
+		}
+		else if(type.is_json()){
+			inc_rc(value.json_ptr->alloc);
+		}
+		else if(type.is_struct()){
+			inc_rc(value.struct_ptr->alloc);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+}
+
+void release_deep(value_mgr_t& value_mgr, runtime_value_t value, const typeid_t& type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(value.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+
+	if(is_rc_value(type)){
+		if(type.is_string()){
+			release_vec_deep(value_mgr, value, type);
+		}
+		else if(type.is_vector()){
+			release_vec_deep(value_mgr, value, type);
+		}
+		else if(type.is_dict()){
+			release_dict_deep(value_mgr, value.dict_cppmap_ptr, type);
+		}
+		else if(type.is_json()){
+			if(dec_rc(value.json_ptr->alloc) == 0){
+				dispose_json(*value.json_ptr);
+			}
+		}
+		else if(type.is_struct()){
+			release_struct_deep(value_mgr, value.struct_ptr, type);
+		}
+		else{
+			QUARK_ASSERT(false);
+		}
+	}
+}
+
+void release_dict_deep(value_mgr_t& value_mgr, DICT_CPPMAP_T* dict, const typeid_t& type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(dict != nullptr);
+	QUARK_ASSERT(type.is_dict());
+
+	if(dec_rc(dict->alloc) == 0){
+
+		//	Release all elements.
+		const auto element_type = type.get_dict_value_type();
+		if(is_rc_value(element_type)){
+			auto m = dict->get_map();
+			for(const auto& e: m){
+				release_deep(value_mgr, e.second, element_type);
+			}
+		}
+		auto temp = make_runtime_dict_cppmap(dict);
+		dispose_dict_cppmap(temp);
+	}
+}
+
+
+void release_vec_deep(value_mgr_t& value_mgr, runtime_value_t& vec, const typeid_t& type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(vec.check_invariant());
+	QUARK_ASSERT(type.is_string() || type.is_vector());
+
+	if(type.is_string()){
+		if(dec_rc(vec.vector_cppvector_ptr->alloc) == 0){
+			//	String has no elements to release.
+
+			dispose_vector_cppvector(vec);
+		}
+	}
+	else if(is_vector_cppvector(type)){
+		if(dec_rc(vec.vector_cppvector_ptr->alloc) == 0){
+			//	Release all elements.
+			{
+				const auto element_type = type.get_vector_element_type();
+				if(is_rc_value(element_type)){
+					auto element_ptr = vec.vector_cppvector_ptr->get_element_ptr();
+					for(int i = 0 ; i < vec.vector_cppvector_ptr->get_element_count() ; i++){
+						const auto& element = element_ptr[i];
+						release_deep(value_mgr, element, element_type);
+					}
+				}
+			}
+			dispose_vector_cppvector(vec);
+		}
+	}
+	else if(is_vector_hamt(type)){
+		if(dec_rc(vec.vector_hamt_ptr->alloc) == 0){
+			//	Release all elements.
+			{
+				const auto element_type = type.get_vector_element_type();
+				if(is_rc_value(element_type)){
+					for(int i = 0 ; i < vec.vector_hamt_ptr->get_element_count() ; i++){
+						const auto& element = vec.vector_hamt_ptr->load_element(i);
+						release_deep(value_mgr, element, element_type);
+					}
+				}
+			}
+			dispose_vector_hamt(vec);
+		}
+	}
+	else{
+		QUARK_ASSERT(false);
+	}
+}
+
+
+
+
+
+
+
+void release_struct_deep(value_mgr_t& value_mgr, STRUCT_T* s, const typeid_t& type){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(s != nullptr);
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(type.is_struct());
+
+	if(dec_rc(s->alloc) == 0){
+		const auto& struct_def = type.get_struct();
+		const auto struct_base_ptr = s->get_data_ptr();
+
+		const auto& struct_layout = find_struct_layout(value_mgr, type);
+
+		int member_index = 0;
+		for(const auto& e: struct_def._members){
+			if(is_rc_value(e._type)){
+				const auto offset = struct_layout.second.offsets[member_index];
+				const auto member_ptr = reinterpret_cast<const runtime_value_t*>(struct_base_ptr + offset);
+				release_deep(value_mgr, *member_ptr, e._type);
+			}
+			member_index++;
+		}
+		dispose_struct(*s);
+	}
+}
+
+
+
+
+
+
+
+runtime_value_t concat_strings(value_mgr_t& value_mgr, const runtime_value_t& lhs, const runtime_value_t& rhs){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(lhs.check_invariant());
+	QUARK_ASSERT(rhs.check_invariant());
+
+	const auto result = from_runtime_string2(value_mgr, lhs) + from_runtime_string2(value_mgr, rhs);
+	return to_runtime_string2(value_mgr, result);
+}
+
+runtime_value_t concat_vector_cppvector(value_mgr_t& value_mgr, const typeid_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(lhs.check_invariant());
+	QUARK_ASSERT(rhs.check_invariant());
+
+	const auto count2 = lhs.vector_cppvector_ptr->get_element_count() + rhs.vector_cppvector_ptr->get_element_count();
+
+	auto result = alloc_vector_ccpvector2(value_mgr.heap, count2, count2);
+
+	//??? warning: assumes element = allocation.
+
+	const auto element_type = type.get_vector_element_type();
+
+	auto dest_ptr = result.vector_cppvector_ptr->get_element_ptr();
+	auto dest_ptr2 = dest_ptr + lhs.vector_cppvector_ptr->get_element_count();
+	auto lhs_ptr = lhs.vector_cppvector_ptr->get_element_ptr();
+	auto rhs_ptr = rhs.vector_cppvector_ptr->get_element_ptr();
+
+	if(is_rc_value(element_type)){
+		for(int i = 0 ; i < lhs.vector_cppvector_ptr->get_element_count() ; i++){
+			retain_value(value_mgr, lhs_ptr[i], element_type);
+			dest_ptr[i] = lhs_ptr[i];
+		}
+		for(int i = 0 ; i < rhs.vector_cppvector_ptr->get_element_count() ; i++){
+			retain_value(value_mgr, rhs_ptr[i], element_type);
+			dest_ptr2[i] = rhs_ptr[i];
+		}
+	}
+	else{
+		for(int i = 0 ; i < lhs.vector_cppvector_ptr->get_element_count() ; i++){
+			dest_ptr[i] = lhs_ptr[i];
+		}
+		for(int i = 0 ; i < rhs.vector_cppvector_ptr->get_element_count() ; i++){
+			dest_ptr2[i] = rhs_ptr[i];
+		}
+	}
+	return result;
+}
+
+runtime_value_t concat_vector_hamt(value_mgr_t& value_mgr, const typeid_t& type, const runtime_value_t& lhs, const runtime_value_t& rhs){
+	QUARK_ASSERT(value_mgr.check_invariant());
+	QUARK_ASSERT(type.check_invariant());
+	QUARK_ASSERT(lhs.check_invariant());
+	QUARK_ASSERT(rhs.check_invariant());
+
+	const auto lhs_count = lhs.vector_hamt_ptr->get_element_count();
+	const auto rhs_count = rhs.vector_hamt_ptr->get_element_count();
+
+	const auto count2 = lhs_count + rhs_count;
+
+	auto result = alloc_vector_hamt2(value_mgr.heap, count2, count2);
+
+	//??? warning: assumes element = allocation.
+
+	const auto element_type = type.get_vector_element_type();
+
+	//??? Causes a full path copy for EACH ELEMENT = slow. better to make new hamt in one go.
+	if(is_rc_value(element_type)){
+		for(int i = 0 ; i < lhs_count ; i++){
+			auto value = lhs.vector_hamt_ptr->load_element(i);
+			retain_value(value_mgr, value, element_type);
+			result.vector_hamt_ptr->store_mutate(i, value);
+		}
+		for(int i = 0 ; i < rhs_count ; i++){
+			auto value = rhs.vector_hamt_ptr->load_element(i);
+			retain_value(value_mgr, value, element_type);
+			result.vector_hamt_ptr->store_mutate(lhs_count + i, value);
+		}
+	}
+	else{
+		for(int i = 0 ; i < lhs_count ; i++){
+			auto value = lhs.vector_hamt_ptr->load_element(i);
+			result.vector_hamt_ptr->store_mutate(i, value);
+		}
+		for(int i = 0 ; i < rhs_count ; i++){
+			auto value = rhs.vector_hamt_ptr->load_element(i);
+			result.vector_hamt_ptr->store_mutate(lhs_count + i, value);
+		}
+	}
+	return result;
+}
+
+
 }	//	floyd
 

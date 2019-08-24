@@ -670,6 +670,8 @@
 		2C00DEC522198C4000DB322E /* floyd_runtime */ = {
 			isa = PBXGroup;
 			children = (
+				2C674F9D230ABCE300838CCF /* floyd_llvm_value_thunking.cpp */,
+				2C674F9E230ABCE300838CCF /* floyd_llvm_value_thunking.h */,
 				2CCA88F322B6B5F100976D8E /* floyd_corelib.cpp */,
 				2CCA88F422B6B5F100976D8E /* floyd_corelib.h */,
 				2C00DEC622198C6300DB322E /* floyd_runtime.cpp */,
@@ -698,8 +700,6 @@
 				2CE1C35C2270C7AC007892B4 /* floyd_llvm_runtime.h */,
 				2CA2D86322F347FC00B45098 /* floyd_llvm_types.cpp */,
 				2CA2D86422F347FC00B45098 /* floyd_llvm_types.h */,
-				2C674F9D230ABCE300838CCF /* floyd_llvm_value_thunking.cpp */,
-				2C674F9E230ABCE300838CCF /* floyd_llvm_value_thunking.h */,
 				2C674F9A230A100B00838CCF /* floyd_llvm.cpp */,
 				2C674F9B230A100B00838CCF /* floyd_llvm.h */,
 			);
