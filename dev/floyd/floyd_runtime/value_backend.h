@@ -81,7 +81,6 @@ static const uint64_t ALLOC_64_MAGIC = 0xa110a11c;
 //	allocation and stuff its pointer into data1.
 //	Designed to be 64 bytes = 1 cacheline.
 struct heap_alloc_64_t {
-//	public: virtual ~heap_alloc_64_t(){};
 	public: bool check_invariant() const;
 
 
@@ -101,8 +100,58 @@ struct heap_alloc_64_t {
 	char debug_info[8];
 };
 
+#if 0
+struct heap_alloc_64_t {
+	heap_alloc_64_t(heap_t* heap, uint64_t allocation_word_count, const typeid_t& debug_value_type) :
+		rc(1),
+		magic(ALLOC_64_MAGIC),
+		data_a(0x00000000),
+		data_b(0x00000000),
+		data_c(0x00000000),
+		data_d(0x00000000),
+		data_e(0x00000000),
+		heap(heap),
+		debug_value_type(debug_value_type),
+		debug_allocation_word_count(allocation_word_count)
+	{
+		QUARK_ASSERT(heap != nullptr);
+		QUARK_ASSERT(debug_value_type.check_invariant());
+
+		QUARK_ASSERT(check_invariant());
+	}
+
+
+	public: bool check_invariant() const;
+
+
+	////////////////////////////////		STATE
+
+	mutable std::atomic<int32_t> rc;
+	uint32_t magic;
+
+	//	 data_*: 5 x 8 bytes.
+	uint64_t data_a;
+	uint64_t data_b;
+	uint64_t data_c;
+	uint64_t data_d;
+	uint64_t data_e;
+
+	heap_t* heap;
+
+#if DEBUG
+	typeid_t debug_value_type;
+	uint64_t debug_allocation_word_count;
+#endif
+};
+#endif
+
+
 void set_debug_info(heap_alloc_64_t& info, const std::string& s);
 std::string get_debug_info(const heap_alloc_64_t& info);
+
+
+
+
 
 
 struct heap_rec_t {

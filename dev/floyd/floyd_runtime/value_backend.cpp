@@ -142,6 +142,7 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, const ty
 		alloc->data_b = 0;
 		alloc->data_c = 0;
 		alloc->data_d = 0;
+//		alloc->data_e = 0;
 
 		alloc->heap64 = &heap;
 		set_debug_info(*alloc, "alloc");
@@ -153,6 +154,32 @@ heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, const ty
 		return alloc;
 	}
 }
+
+#if 0
+heap_alloc_64_t* alloc_64(heap_t& heap, uint64_t allocation_word_count, const typeid_t& debug_value_type){
+	QUARK_ASSERT(heap.check_invariant());
+	QUARK_ASSERT(debug_value_type.check_invariant());
+
+	const auto header_size = sizeof(heap_alloc_64_t);
+
+	std::lock_guard<std::recursive_mutex> guard(*heap.alloc_records_mutex);
+
+	const auto malloc_size = header_size + allocation_word_count * sizeof(uint64_t);
+	void* alloc0 = std::malloc(malloc_size);
+	if(alloc0 == nullptr){
+		throw std::exception();
+	}
+
+	auto alloc = new (alloc0 ) heap_alloc_64_t(&heap, allocation_word_count, debug_value_type);
+	QUARK_ASSERT(alloc->rc == 1);
+	QUARK_ASSERT(alloc->check_invariant());
+	heap.alloc_records.push_back({ alloc });
+
+	QUARK_ASSERT(alloc->check_invariant());
+	QUARK_ASSERT(heap.check_invariant());
+	return alloc;
+}
+#endif
 
 QUARK_UNIT_TEST("heap_t", "alloc_64()", "", ""){
 	heap_t heap;
@@ -529,7 +556,7 @@ bool VECTOR_HAMT_T::check_invariant() const {
 	QUARK_ASSERT(this->alloc.check_invariant());
 	QUARK_ASSERT(get_debug_info(alloc) == "vechamt");
 	const auto& vec = get_vecref();
-	QUARK_ASSERT(vec.impl().shift == 5);
+//	QUARK_ASSERT(vec.impl().shift == 5);
 	QUARK_ASSERT(vec.impl().check_tree());
 	return true;
 }
