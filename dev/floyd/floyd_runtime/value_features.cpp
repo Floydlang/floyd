@@ -151,7 +151,7 @@ const runtime_value_t update__cppvector(value_backend_t& backend, runtime_value_
 	return result;
 }
 
-const runtime_value_t update__hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type){
+const runtime_value_t update__vector_hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto type0 = lookup_type(backend, arg0_type);
@@ -183,7 +183,7 @@ const runtime_value_t update__hamt(value_backend_t& backend, runtime_value_t arg
 	}
 }
 
-const runtime_value_t update__dict(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type){
+const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto type0 = lookup_type(backend, arg0_type);
@@ -204,6 +204,34 @@ const runtime_value_t update__dict(value_backend_t& backend, runtime_value_t arg
 
 	if(is_rc_value(value_type)){
 		for(const auto& e: dict2.dict_cppmap_ptr->get_map()){
+			retain_value(backend, e.second, value_type);
+		}
+	}
+
+	return dict2;
+}
+
+const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type){
+	QUARK_ASSERT(backend.check_invariant());
+
+	const auto type0 = lookup_type(backend, arg0_type);
+	const auto type1 = lookup_type(backend, arg1_type);
+	const auto type2 = lookup_type(backend, arg2_type);
+
+	QUARK_ASSERT(type1.is_string());
+
+	const auto key = from_runtime_string2(backend, arg1);
+	const auto dict = arg0.dict_hamt_ptr;
+	const auto value_type = type0.get_dict_value_type();
+
+	//	Deep copy dict.
+	auto dict2 = alloc_dict_hamt(backend.heap, type0);
+	dict2.dict_hamt_ptr->get_map_mut() = dict->get_map();
+
+	dict2.dict_hamt_ptr->get_map_mut() = dict2.dict_hamt_ptr->get_map_mut().set(key, arg2);
+
+	if(is_rc_value(value_type)){
+		for(const auto& e: dict2.dict_hamt_ptr->get_map()){
 			retain_value(backend, e.second, value_type);
 		}
 	}
@@ -507,7 +535,7 @@ int64_t find__hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_
 
 
 
-runtime_value_t get_keys__cppvector(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type){
+runtime_value_t get_keys__cppmap_cppvector(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto type0 = lookup_type(backend, dict_type);
@@ -515,7 +543,7 @@ runtime_value_t get_keys__cppvector(value_backend_t& backend, runtime_value_t di
 	QUARK_ASSERT(type0.is_dict());
 
 	const auto& dict = unpack_dict_cppmap_arg(backend, dict_value, dict_type);
-	auto& m = dict->get_map();
+	const auto& m = dict->get_map();
 	const auto count = (uint64_t)m.size();
 
 	auto result_vec = alloc_vector_ccpvector2(backend.heap, count, count, typeid_t::make_vector(typeid_t::make_string()));
@@ -530,7 +558,7 @@ runtime_value_t get_keys__cppvector(value_backend_t& backend, runtime_value_t di
 	}
 	return result_vec;
 }
-runtime_value_t get_keys__hamt(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type){
+runtime_value_t get_keys__cppmap_hamt(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type){
 	QUARK_ASSERT(backend.check_invariant());
 
 	const auto type0 = lookup_type(backend, dict_type);
@@ -538,7 +566,7 @@ runtime_value_t get_keys__hamt(value_backend_t& backend, runtime_value_t dict_va
 	QUARK_ASSERT(type0.is_dict());
 
 	const auto& dict = unpack_dict_cppmap_arg(backend, dict_value, dict_type);
-	auto& m = dict->get_map();
+	const auto& m = dict->get_map();
 	const auto count = (uint64_t)m.size();
 
 	auto result_vec = alloc_vector_hamt2(backend.heap, count, count, typeid_t::make_vector(typeid_t::make_string()));
@@ -553,6 +581,57 @@ runtime_value_t get_keys__hamt(value_backend_t& backend, runtime_value_t dict_va
 	}
 	return result_vec;
 }
+
+
+runtime_value_t get_keys__hamtmap_cppvector(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type){
+	QUARK_ASSERT(backend.check_invariant());
+
+	const auto type0 = lookup_type(backend, dict_type);
+
+	QUARK_ASSERT(type0.is_dict());
+
+	const auto& dict = dict_value.dict_hamt_ptr;
+	const auto& m = dict->get_map();
+	const auto count = (uint64_t)m.size();
+
+	auto result_vec = alloc_vector_ccpvector2(backend.heap, count, count, typeid_t::make_vector(typeid_t::make_string()));
+
+	int index = 0;
+	for(const auto& e: m){
+		//	Notice that the internal representation of dictionary keys are std::string, not floyd-strings,
+		//	so we need to create new key-strings from scratch.
+		const auto key = to_runtime_string2(backend, e.first);
+		result_vec.vector_cppvector_ptr->get_element_ptr()[index] = key;
+		index++;
+	}
+	return result_vec;
+}
+runtime_value_t get_keys__hamtmap_hamt(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type){
+	QUARK_ASSERT(backend.check_invariant());
+
+	const auto type0 = lookup_type(backend, dict_type);
+
+	QUARK_ASSERT(type0.is_dict());
+
+	const auto& dict = dict_value.dict_hamt_ptr;
+	const auto& m = dict->get_map();
+	const auto count = (uint64_t)m.size();
+
+	auto result_vec = alloc_vector_hamt2(backend.heap, count, count, typeid_t::make_vector(typeid_t::make_string()));
+
+	int index = 0;
+	for(const auto& e: m){
+		//	Notice that the internal representation of dictionary keys are std::string, not floyd-strings,
+		//	so we need to create new key-strings from scratch.
+		const auto key = to_runtime_string2(backend, e.first);
+		result_vec.vector_hamt_ptr->store_mutate(index, key);
+		index++;
+	}
+	return result_vec;
+}
+
+
+
 
 
 

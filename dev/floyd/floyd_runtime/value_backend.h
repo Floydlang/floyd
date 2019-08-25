@@ -51,7 +51,7 @@ const vector_backend k_global_vector_type = vector_backend::cppvector;
 const vector_backend k_global_vector_type = vector_backend::hamt;
 #endif
 
-const bool k_global_dict_is_hamt = false;
+const bool k_global_dict_is_hamt = true;
 
 
 ////////////////////////////////		heap_t
@@ -233,7 +233,7 @@ runtime_value_t make_runtime_struct(STRUCT_T* struct_ptr);
 runtime_value_t make_runtime_vector_cppvector(VECTOR_CPPVECTOR_T* vector_ptr);
 runtime_value_t make_runtime_vector_hamt(VECTOR_HAMT_T* vector_hamt_ptr);
 runtime_value_t make_runtime_dict_cppmap(DICT_CPPMAP_T* dict_cppmap_ptr);
-runtime_value_t make_runtime_dict_hamr(DICT_HAMT_T* dict_hamt_ptr);
+runtime_value_t make_runtime_dict_hamt(DICT_HAMT_T* dict_hamt_ptr);
 
 uint64_t get_vec_string_size(runtime_value_t str);
 

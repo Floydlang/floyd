@@ -387,7 +387,7 @@ runtime_value_t make_runtime_dict_cppmap(DICT_CPPMAP_T* dict_cppmap_ptr){
 	return { .dict_cppmap_ptr = dict_cppmap_ptr };
 }
 
-runtime_value_t make_runtime_dict_hamr(DICT_HAMT_T* dict_hamt_ptr){
+runtime_value_t make_runtime_dict_hamt(DICT_HAMT_T* dict_hamt_ptr){
 	return { .dict_hamt_ptr = dict_hamt_ptr };
 }
 
@@ -751,7 +751,7 @@ runtime_value_t alloc_dict_hamt(heap_t& heap, const typeid_t& value_type){
 	set_debug_info(*alloc, "hamtdic");
 
 	auto& m = dict->get_map_mut();
-    new (&m) DICT_HAMT_T();
+    new (&m) HAMT_MAP();
 
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(dict->check_invariant());
@@ -1237,7 +1237,7 @@ void release_dict_deep(value_backend_t& backend, runtime_value_t dict0, const ty
 					release_deep(backend, e.second, element_type);
 				}
 			}
-			dispose_dict_cppmap(dict0);
+			dispose_dict_hamt(dict0);
 		}
 	}
 	else{

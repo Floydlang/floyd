@@ -886,14 +886,16 @@ static llvm::Value* generate_lookup_element_expression(llvm_function_generator_t
 
 		return result_reg;
 	}
-	else if(parent_type.is_dict()){
+	else if(is_dict_cppmap(parent_type) || is_dict_hamt(parent_type)){
 		QUARK_ASSERT(key_type.is_string());
 
 		const auto element_type0 = parent_type.get_dict_value_type();
+		const auto dict_type_reg = generate_itype_constant(gen_acc.gen, parent_type);
 
 		std::vector<llvm::Value*> args2 = {
 			gen_acc.get_callers_fcp(),
 			parent_reg,
+			dict_type_reg,
 			key_reg
 		};
 		auto element_value_uint64_reg = builder.CreateCall(gen_acc.gen.floydrt_lookup_dict.llvm_codegen_f, args2, "");
@@ -1608,9 +1610,9 @@ static llvm::Value* generate_construct_dict(llvm_function_generator_t& gen_acc, 
 		std::vector<llvm::Value*> args2 = {
 			gen_acc.get_callers_fcp(),
 			dict_acc_ptr_reg,
+			generate_itype_constant(gen_acc.gen, details.value_type),
 			key0_reg,
-			generate_cast_to_runtime_value(gen_acc.gen, *element0_reg, element_type0),
-			generate_itype_constant(gen_acc.gen, element_type0)
+			generate_cast_to_runtime_value(gen_acc.gen, *element0_reg, element_type0)
 		};
 		builder.CreateCall(gen_acc.gen.floydrt_store_dict_mutable.llvm_codegen_f, args2, "");
 

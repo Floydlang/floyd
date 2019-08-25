@@ -28,9 +28,10 @@ const runtime_value_t update__string(value_backend_t& backend, runtime_value_t a
 
 const runtime_value_t update__cppvector(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type);
 
-const runtime_value_t update__hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type);
+const runtime_value_t update__vector_hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type);
 
-const runtime_value_t update__dict(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type);
+const runtime_value_t update__dict_cppmap(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type);
+const runtime_value_t update__dict_hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, runtime_value_t arg1, runtime_type_t arg1_type, runtime_value_t arg2, runtime_type_t arg2_type);
 
 
 
@@ -55,9 +56,12 @@ int64_t find__cppvector(value_backend_t& backend, runtime_value_t arg0, runtime_
 int64_t find__hamt(value_backend_t& backend, runtime_value_t arg0, runtime_type_t arg0_type, const runtime_value_t arg1, runtime_type_t arg1_type);
 
 
+///??? Split into two passes so we don't get 2 x 2. Generate code mixup? Have one function with two checks?
+runtime_value_t get_keys__cppmap_cppvector(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type);
+runtime_value_t get_keys__cppmap_hamt(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type);
 
-runtime_value_t get_keys__cppvector(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type);
-runtime_value_t get_keys__hamt(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type);
+runtime_value_t get_keys__hamtmap_cppvector(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type);
+runtime_value_t get_keys__hamtmap_hamt(value_backend_t& backend, runtime_value_t dict_value, runtime_type_t dict_type);
 
 
 //	Use subset of samples -- assume first sample is warm-up.

@@ -103,8 +103,8 @@ static value_t from_runtime_vector(const value_backend_t& backend, const runtime
 	QUARK_ASSERT(type.check_invariant());
 	QUARK_ASSERT(type.is_vector());
 
-	const auto element_type = type.get_vector_element_type();
 	if(is_vector_cppvector(type)){
+		const auto element_type = type.get_vector_element_type();
 		const auto vec = encoded_value.vector_cppvector_ptr;
 
 		std::vector<value_t> elements;
@@ -119,6 +119,7 @@ static value_t from_runtime_vector(const value_backend_t& backend, const runtime
 		return val;
 	}
 	else if(is_vector_hamt(type)){
+		const auto element_type = type.get_vector_element_type();
 		const auto vec = encoded_value.vector_hamt_ptr;
 
 		std::vector<value_t> elements;
@@ -133,12 +134,8 @@ static value_t from_runtime_vector(const value_backend_t& backend, const runtime
 	}
 	else{
 		QUARK_ASSERT(false);
+		throw std::exception();
 	}
-	// This is unreachable, or dangling else?? This is to make circleCi happy
-	const auto et = type.get_vector_element_type();
-	std::vector<value_t> elements;
-	const auto val = value_t::make_vector_value(et, elements);
-	return val;
 }
 
 static runtime_value_t to_runtime_dict(value_backend_t& backend, const typeid_t::dict_t& exact_type, const value_t& value){
@@ -146,17 +143,36 @@ static runtime_value_t to_runtime_dict(value_backend_t& backend, const typeid_t:
 	QUARK_ASSERT(value.check_invariant());
 	QUARK_ASSERT(value.get_type().is_dict());
 
-	const auto& v0 = value.get_dict_value();
+	if(is_dict_cppmap(value.get_type())){
+		const auto& v0 = value.get_dict_value();
 
-	auto result = alloc_dict_cppmap2(backend.heap, value.get_type());
+		auto result = alloc_dict_cppmap2(backend.heap, value.get_type());
 
-	const auto element_type = value.get_type().get_dict_value_type();
-	auto& m = result.dict_cppmap_ptr->get_map_mut();
-	for(const auto& e: v0){
-		const auto a = to_runtime_value2(backend, e.second);
-		m.insert({ e.first, a });
+		const auto element_type = value.get_type().get_dict_value_type();
+		auto& m = result.dict_cppmap_ptr->get_map_mut();
+		for(const auto& e: v0){
+			const auto a = to_runtime_value2(backend, e.second);
+			m.insert({ e.first, a });
+		}
+		return result;
 	}
-	return result;
+	else if(is_dict_hamt(value.get_type())){
+		const auto& v0 = value.get_dict_value();
+
+		auto result = alloc_dict_hamt(backend.heap, value.get_type());
+
+		const auto element_type = value.get_type().get_dict_value_type();
+		auto& m = result.dict_hamt_ptr->get_map_mut();
+		for(const auto& e: v0){
+			const auto a = to_runtime_value2(backend, e.second);
+			m = m.set(e.first, a);
+		}
+		return result;
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
 }
 
 static value_t from_runtime_dict(const value_backend_t& backend, const runtime_value_t encoded_value, const typeid_t& type){
@@ -164,17 +180,36 @@ static value_t from_runtime_dict(const value_backend_t& backend, const runtime_v
 	QUARK_ASSERT(encoded_value.check_invariant());
 	QUARK_ASSERT(type.check_invariant());
 
-	const auto value_type = type.get_dict_value_type();
-	const auto dict = encoded_value.dict_cppmap_ptr;
+	if(is_dict_cppmap(type)){
+		const auto value_type = type.get_dict_value_type();
+		const auto dict = encoded_value.dict_cppmap_ptr;
 
-	std::map<std::string, value_t> values;
-	const auto& map2 = dict->get_map();
-	for(const auto& e: map2){
-		const auto value = from_runtime_value2(backend, e.second, value_type);
-		values.insert({ e.first, value} );
+		std::map<std::string, value_t> values;
+		const auto& map2 = dict->get_map();
+		for(const auto& e: map2){
+			const auto value = from_runtime_value2(backend, e.second, value_type);
+			values.insert({ e.first, value} );
+		}
+		const auto val = value_t::make_dict_value(type, values);
+		return val;
 	}
-	const auto val = value_t::make_dict_value(type, values);
-	return val;
+	else if(is_dict_hamt(type)){
+		const auto value_type = type.get_dict_value_type();
+		const auto dict = encoded_value.dict_hamt_ptr;
+
+		std::map<std::string, value_t> values;
+		const auto& map2 = dict->get_map();
+		for(const auto& e: map2){
+			const auto value = from_runtime_value2(backend, e.second, value_type);
+			values.insert({ e.first, value} );
+		}
+		const auto val = value_t::make_dict_value(type, values);
+		return val;
+	}
+	else{
+		QUARK_ASSERT(false);
+		throw std::exception();
+	}
 }
 
 runtime_value_t to_runtime_value2(value_backend_t& backend, const value_t& value){

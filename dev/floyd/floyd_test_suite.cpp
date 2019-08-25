@@ -38,7 +38,7 @@ unsupported syntax
 #define RUN_LANG_BASIC_TESTS1				true
 #define RUN_LANG_BASIC_TESTS2				true
 #define RUN_LANG_VECTOR_TESTS				true
-#define RUN_LANG_COLLECTION_TESTS			true
+#define RUN_LANG_DICT_TESTS					true
 #define RUN_LANG_STRUCT_TESTS				true
 #define RUN_LANG_JSON_TESTS					true
 #define RUN_LANG_INTRINSICS_TESTS			true
@@ -48,8 +48,8 @@ unsupported syntax
 #else
 //#define RUN_LANG_BASIC_TESTS1				true
 //#define RUN_LANG_BASIC_TESTS2				true
-//#define RUN_LANG_COLLECTION_TESTS			true
-#define RUN_LANG_VECTOR_TESTS				true
+//#define RUN_LANG_VECTOR_TESTS				true
+#define RUN_LANG_DICT_TESTS					true
 //#define RUN_LANG_STRUCT_TESTS				true
 //#define RUN_LANG_JSON_TESTS					true
 //#define RUN_LANG_INTRINSICS_TESTS			true
@@ -3866,8 +3866,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "vector [json] constructor", "", ""){
 
 
 
-#if RUN_LANG_COLLECTION_TESTS
-
+#if RUN_LANG_DICT_TESTS
 
 //######################################################################################################################
 //	DICT
@@ -4445,7 +4444,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "dict [json] constructor", "", ""){
 }
 
 
-#endif //	RUN_LANG_COLLECTION_TESTS
+#endif //	RUN_LANG_DICT_TESTS
 
 
 
