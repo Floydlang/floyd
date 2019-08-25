@@ -274,7 +274,7 @@ static runtime_value_t floydrt_allocate_vector(floyd_runtime_t* frp, runtime_typ
 		return alloc_vector_ccpvector2(r.backend.heap, element_count, element_count, type1);
 	}
 	else if(is_vector_hamt(type1)){
-		return alloc_vector_hamt2(r.backend.heap, element_count, element_count, type1);
+		return alloc_vector_hamt(r.backend.heap, element_count, element_count, type1);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -308,7 +308,7 @@ static runtime_value_t floydrt_allocate_vector_fill(floyd_runtime_t* frp, runtim
 		return alloc_vector_ccpvector2(r.backend.heap, element_count, element_count, type1);
 	}
 	else if(is_vector_hamt(type1)){
-		return alloc_vector_hamt2(r.backend.heap, element_count, element_count, type1);
+		return alloc_vector_hamt(r.backend.heap, element_count, element_count, type1);
 	}
 	else{
 		QUARK_ASSERT(false);
@@ -520,7 +520,7 @@ static const runtime_value_t floydrt_allocate_dict(floyd_runtime_t* frp, runtime
 
 	const auto type0 = lookup_type(r.backend, type);
 	if(is_dict_cppmap(type0)){
-		return alloc_dict_cppmap2(r.backend.heap, type0);
+		return alloc_dict_cppmap(r.backend.heap, type0);
 	}
 	else if(is_dict_hamt(type0)){
 		return alloc_dict_hamt(r.backend.heap, type0);
@@ -1228,7 +1228,7 @@ static runtime_value_t floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime
 		const auto value_type = type0.get_dict_value_type();
 
 		//	Deep copy dict.
-		auto dict2 = alloc_dict_cppmap2(r.backend.heap, type0);
+		auto dict2 = alloc_dict_cppmap(r.backend.heap, type0);
 		auto& m = dict2.dict_cppmap_ptr->get_map_mut();
 		m = dict->get_map();
 
@@ -1442,7 +1442,7 @@ static runtime_value_t map__hamt(floyd_runtime_t* frp, value_backend_t& backend,
 
 	const auto return_type = typeid_t::make_vector(r_type);
 	const auto count = elements_vec.vector_hamt_ptr->get_element_count();
-	auto result_vec = alloc_vector_hamt2(backend.heap, count, count, return_type);
+	auto result_vec = alloc_vector_hamt(backend.heap, count, count, return_type);
 	for(int i = 0 ; i < count ; i++){
 		const auto& element = elements_vec.vector_hamt_ptr->load_element(i);
 		const auto a = (*f)(frp, element, context_value);
@@ -1726,7 +1726,7 @@ static runtime_value_t map_dag__hamt(
 				}
 			}
 
-			auto solved_deps2 = alloc_vector_hamt2(backend.heap, solved_deps.size(), solved_deps.size(), return_type);
+			auto solved_deps2 = alloc_vector_hamt(backend.heap, solved_deps.size(), solved_deps.size(), return_type);
 			for(int i = 0 ; i < solved_deps.size() ; i++){
 				solved_deps2.vector_hamt_ptr->store_mutate(i, solved_deps[i]);
 			}
@@ -1750,7 +1750,7 @@ static runtime_value_t map_dag__hamt(
 
 	//??? No need to copy all elements -- could store them directly into the VEC_T.
 	const auto count = complete.size();
-	auto result_vec = alloc_vector_hamt2(backend.heap, count, count, return_type);
+	auto result_vec = alloc_vector_hamt(backend.heap, count, count, return_type);
 	for(int i = 0 ; i < count ; i++){
 //		retain_value(r, complete[i], r_type);
 		result_vec.vector_hamt_ptr->store_mutate(i, complete[i]);
@@ -1873,7 +1873,7 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, value_backend_t& backe
 	}
 
 	const auto count2 = acc.size();
-	auto result_vec = alloc_vector_hamt2(r.backend.heap, &acc[0], count2, return_type);
+	auto result_vec = alloc_vector_hamt(r.backend.heap, &acc[0], count2, return_type);
 	return result_vec;
 }
 

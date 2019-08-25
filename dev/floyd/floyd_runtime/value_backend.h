@@ -443,8 +443,8 @@ struct VECTOR_HAMT_T {
 	heap_alloc_64_t alloc;
 };
 
-runtime_value_t alloc_vector_hamt2(heap_t& heap, uint64_t allocation_count, uint64_t element_count, const typeid_t& value_type);
-runtime_value_t alloc_vector_hamt2(heap_t& heap, const runtime_value_t elements[], uint64_t element_count, const typeid_t& value_type);
+runtime_value_t alloc_vector_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count, const typeid_t& value_type);
+runtime_value_t alloc_vector_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count, const typeid_t& value_type);
 void dispose_vector_hamt(const runtime_value_t& vec);
 
 runtime_value_t store_immutable(const runtime_value_t& vec, const uint64_t index, runtime_value_t value);
@@ -462,17 +462,17 @@ runtime_value_t push_back_immutable(const runtime_value_t& vec0, runtime_value_t
 	data_c - " -
 */
 
-typedef std::map<std::string, runtime_value_t> STDMAP;
+typedef std::map<std::string, runtime_value_t> CPPMAP;
 
 struct DICT_CPPMAP_T {
 	bool check_invariant() const;
 	uint64_t size() const;
 
-	const STDMAP& get_map() const {
-		return *reinterpret_cast<const STDMAP*>(&alloc.data_a);
+	const CPPMAP& get_map() const {
+		return *reinterpret_cast<const CPPMAP*>(&alloc.data_a);
 	}
-	STDMAP& get_map_mut(){
-		return *reinterpret_cast<STDMAP*>(&alloc.data_a);
+	CPPMAP& get_map_mut(){
+		return *reinterpret_cast<CPPMAP*>(&alloc.data_a);
 	}
 
 
@@ -480,7 +480,7 @@ struct DICT_CPPMAP_T {
 	heap_alloc_64_t alloc;
 };
 
-runtime_value_t alloc_dict_cppmap2(heap_t& heap, const typeid_t& value_type);
+runtime_value_t alloc_dict_cppmap(heap_t& heap, const typeid_t& value_type);
 void dispose_dict_cppmap(runtime_value_t& vec);
 
 
@@ -523,7 +523,7 @@ void dispose_dict_hamt(runtime_value_t& vec);
 	Store a json_t* in data_a. It need to be new/deletes via C++.
 */
 
-typedef std::map<std::string, runtime_value_t> STDMAP;
+typedef std::map<std::string, runtime_value_t> CPPMAP;
 
 struct JSON_T {
 	bool check_invariant() const;

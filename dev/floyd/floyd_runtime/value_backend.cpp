@@ -534,7 +534,7 @@ bool VECTOR_HAMT_T::check_invariant() const {
 	return true;
 }
 
-runtime_value_t alloc_vector_hamt2(heap_t& heap, uint64_t allocation_count, uint64_t element_count, const typeid_t& value_type){
+runtime_value_t alloc_vector_hamt(heap_t& heap, uint64_t allocation_count, uint64_t element_count, const typeid_t& value_type){
 	QUARK_ASSERT(heap.check_invariant());
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0, value_type);
@@ -553,7 +553,7 @@ runtime_value_t alloc_vector_hamt2(heap_t& heap, uint64_t allocation_count, uint
 	return { .vector_hamt_ptr = vec };
 }
 
-runtime_value_t alloc_vector_hamt2(heap_t& heap, const runtime_value_t elements[], uint64_t element_count, const typeid_t& value_type){
+runtime_value_t alloc_vector_hamt(heap_t& heap, const runtime_value_t elements[], uint64_t element_count, const typeid_t& value_type){
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(element_count == 0 || elements != nullptr);
 
@@ -646,7 +646,7 @@ QUARK_UNIT_TEST("VECTOR_HAMT_T", "", "", ""){
 	detect_leaks(heap);
 
 	const runtime_value_t a[] = { make_runtime_int(1000), make_runtime_int(2000), make_runtime_int(3000) };
-	auto v = alloc_vector_hamt2(heap, a, 3, typeid_t::make_vector(typeid_t::make_int()));
+	auto v = alloc_vector_hamt(heap, a, 3, typeid_t::make_vector(typeid_t::make_int()));
 	QUARK_UT_VERIFY(v.vector_hamt_ptr != nullptr);
 
 	QUARK_UT_VERIFY(v.vector_hamt_ptr->get_element_count() == 3);
@@ -672,7 +672,7 @@ QUARK_UNIT_TEST("VECTOR_HAMT_T", "", "", ""){
 
 
 QUARK_UNIT_TEST("", "", "", ""){
-	const auto size = sizeof(STDMAP);
+	const auto size = sizeof(CPPMAP);
 	QUARK_ASSERT(size == 24);
 }
 
@@ -689,7 +689,7 @@ uint64_t DICT_CPPMAP_T::size() const {
 	return d.size();
 }
 
-runtime_value_t alloc_dict_cppmap2(heap_t& heap, const typeid_t& value_type){
+runtime_value_t alloc_dict_cppmap(heap_t& heap, const typeid_t& value_type){
 	QUARK_ASSERT(heap.check_invariant());
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0, value_type);
@@ -697,7 +697,7 @@ runtime_value_t alloc_dict_cppmap2(heap_t& heap, const typeid_t& value_type){
 	set_debug_info(*alloc, "cppdict");
 
 	auto& m = dict->get_map_mut();
-    new (&m) STDMAP();
+    new (&m) CPPMAP();
 
 	QUARK_ASSERT(heap.check_invariant());
 	QUARK_ASSERT(dict->check_invariant());
@@ -711,7 +711,7 @@ void dispose_dict_cppmap(runtime_value_t& d){
 
 	QUARK_ASSERT(dict.check_invariant());
 
-	dict.get_map_mut().~STDMAP();
+	dict.get_map_mut().~CPPMAP();
 	dispose_alloc(dict.alloc);
 	QUARK_ASSERT(dict.alloc.heap64->check_invariant());
 }
@@ -782,11 +782,6 @@ void dispose_dict_hamt(runtime_value_t& d){
 ////////////////////////////////		JSON_T
 
 
-
-QUARK_UNIT_TEST("", "", "", ""){
-	const auto size = sizeof(STDMAP);
-	QUARK_ASSERT(size == 24);
-}
 
 bool JSON_T::check_invariant() const{
 	QUARK_ASSERT(alloc.check_invariant());
