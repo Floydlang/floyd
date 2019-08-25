@@ -1530,9 +1530,14 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 	const auto& element_type1 = *get_exact_llvm_type(gen_acc.gen.type_lookup, element_type0);
 
 	const auto element_count_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), element_count);
+	auto vec_type_reg = generate_itype_constant(gen_acc.gen, details.value_type);
 
 	if(is_vector_cppvector(details.value_type)){
-		auto vec_ptr_reg = builder.CreateCall(gen_acc.gen.floydrt_allocate_vector.llvm_codegen_f, { gen_acc.get_callers_fcp(), element_count_reg }, "");
+		auto vec_ptr_reg = builder.CreateCall(
+			gen_acc.gen.floydrt_allocate_vector.llvm_codegen_f,
+			{ gen_acc.get_callers_fcp(), vec_type_reg, element_count_reg },
+			""
+		);
 		auto ptr_reg = generate_get_vec_element_ptr_needs_cast(gen_acc, *vec_ptr_reg);
 
 		if(element_type0.is_bool()){
@@ -1567,8 +1572,7 @@ static llvm::Value* generate_construct_vector(llvm_function_generator_t& gen_acc
 		}
 	}
 	else if(is_vector_hamt(details.value_type)){
-		auto vec_ptr_reg = builder.CreateCall(gen_acc.gen.floydrt_allocate_vector.llvm_codegen_f, { gen_acc.get_callers_fcp(), element_count_reg }, "");
-		auto vec_type_reg = generate_itype_constant(gen_acc.gen, details.value_type);
+		auto vec_ptr_reg = builder.CreateCall(gen_acc.gen.floydrt_allocate_vector.llvm_codegen_f, { gen_acc.get_callers_fcp(), vec_type_reg, element_count_reg }, "");
 
 		int element_index = 0;
 		for(const auto& element_value: details.elements){
@@ -1594,8 +1598,8 @@ static llvm::Value* generate_construct_dict(llvm_function_generator_t& gen_acc, 
 	auto& builder = gen_acc.get_builder();
 
 	const auto element_type0 = details.value_type.get_dict_value_type();
-
-	auto dict_acc_ptr_reg = builder.CreateCall(gen_acc.gen.floydrt_allocate_dict.llvm_codegen_f, { gen_acc.get_callers_fcp() }, "");
+	auto dict_type_reg = generate_itype_constant(gen_acc.gen, details.value_type);
+	auto dict_acc_ptr_reg = builder.CreateCall(gen_acc.gen.floydrt_allocate_dict.llvm_codegen_f, { gen_acc.get_callers_fcp(), dict_type_reg }, "");
 
 	//	Elements are stored as pairs.
 	QUARK_ASSERT((details.elements.size() & 1) == 0);
@@ -1638,9 +1642,11 @@ static llvm::Value* generate_construct_struct(llvm_function_generator_t& gen_acc
 	const llvm::StructLayout* layout = data_layout.getStructLayout(&exact_struct_type);
 	const auto struct_bytes = layout->getSizeInBytes();
 
+	auto struct_type_reg = generate_itype_constant(gen_acc.gen, details.value_type);
 	const auto size_reg = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), struct_bytes);
 	std::vector<llvm::Value*> args2 = {
 		gen_acc.get_callers_fcp(),
+		struct_type_reg,
 		size_reg
 	};
 	//	Returns STRUCT_T*.

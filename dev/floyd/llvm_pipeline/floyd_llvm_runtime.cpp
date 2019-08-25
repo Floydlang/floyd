@@ -469,16 +469,18 @@ static function_bind_t floydrt_release_struct__make(llvm::LLVMContext& context, 
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-static runtime_value_t floydrt_allocate_vector(floyd_runtime_t* frp, uint64_t element_count){
+static runtime_value_t floydrt_allocate_vector(floyd_runtime_t* frp, runtime_type_t type, uint64_t element_count){
 	auto& r = get_floyd_runtime(frp);
 
-	if(k_global_vector_type == vector_backend::cppvector){
-		return alloc_vector_ccpvector2(r.backend.heap, element_count, element_count);
+	const auto type1 = lookup_type(r.backend, type);
+	if(is_vector_cppvector(type1)){
+		return alloc_vector_ccpvector2(r.backend.heap, element_count, element_count, type1);
 	}
-	else if(k_global_vector_type == vector_backend::hamt){
-		return alloc_vector_hamt2(r.backend.heap, element_count, element_count);
+	else if(is_vector_hamt(type1)){
+		return alloc_vector_hamt2(r.backend.heap, element_count, element_count, type1);
 	}
 	else{
+		QUARK_ASSERT(false);
 	}
 }
 
@@ -487,6 +489,7 @@ static function_bind_t floydrt_allocate_vector__make(llvm::LLVMContext& context,
 		make_generic_vec_type(type_lookup)->getPointerTo(),
 		{
 			make_frp_type(type_lookup),
+			make_runtime_type_type(type_lookup),
 			llvm::Type::getInt64Ty(context)
 		},
 		false
@@ -500,13 +503,15 @@ static function_bind_t floydrt_allocate_vector__make(llvm::LLVMContext& context,
 static runtime_value_t floydrt_allocate_vector_fill(floyd_runtime_t* frp, runtime_type_t type, runtime_value_t* elements, uint64_t element_count){
 	auto& r = get_floyd_runtime(frp);
 
-	if(k_global_vector_type == vector_backend::cppvector){
-		return alloc_vector_ccpvector2(r.backend.heap, element_count, element_count);
+	const auto type1 = lookup_type(r.backend, type);
+	if(is_vector_cppvector(type1)){
+		return alloc_vector_ccpvector2(r.backend.heap, element_count, element_count, type1);
 	}
-	else if(k_global_vector_type == vector_backend::hamt){
-		return alloc_vector_hamt2(r.backend.heap, element_count, element_count);
+	else if(is_vector_hamt(type1)){
+		return alloc_vector_hamt2(r.backend.heap, element_count, element_count, type1);
 	}
 	else{
+		QUARK_ASSERT(false);
 	}
 }
 
@@ -664,10 +669,11 @@ static function_bind_t floydrt_concatunate_vectors__make(llvm::LLVMContext& cont
 ////////////////////////////////		allocate_dict()
 
 
-static const DICT_CPPMAP_T* floydrt_allocate_dict(floyd_runtime_t* frp){
+static const DICT_CPPMAP_T* floydrt_allocate_dict(floyd_runtime_t* frp, runtime_type_t type){
 	auto& r = get_floyd_runtime(frp);
 
-	auto v = alloc_dict_cppmap2(r.backend.heap);
+	const auto type0 = lookup_type(r.backend, type);
+	auto v = alloc_dict_cppmap2(r.backend.heap, type0);
 	return v.dict_cppmap_ptr;
 }
 
@@ -675,7 +681,8 @@ static function_bind_t floydrt_allocate_dict__make(llvm::LLVMContext& context, c
 	llvm::FunctionType* function_type = llvm::FunctionType::get(
 		make_generic_dict_type(type_lookup)->getPointerTo(),
 		{
-			make_frp_type(type_lookup)
+			make_frp_type(type_lookup),
+			make_runtime_type_type(type_lookup),
 		},
 		false
 	);
@@ -892,10 +899,11 @@ static function_bind_t floydrt_compare_values__make(llvm::LLVMContext& context, 
 
 
 //	Creates a new VEC_T with element_count. All elements are blank. Caller owns the result.
-static STRUCT_T* floydrt_allocate_struct(floyd_runtime_t* frp, uint64_t size){
+static STRUCT_T* floydrt_allocate_struct(floyd_runtime_t* frp, const runtime_type_t type, uint64_t size){
 	auto& r = get_floyd_runtime(frp);
 
-	auto v = alloc_struct(r.backend.heap, size);
+	const auto type0 = lookup_type(r.backend, type);
+	auto v = alloc_struct(r.backend.heap, size, type0);
 	return v;
 }
 
@@ -904,6 +912,7 @@ static function_bind_t floydrt_allocate_struct__make(llvm::LLVMContext& context,
 		get_generic_struct_type(type_lookup)->getPointerTo(),
 		{
 			make_frp_type(type_lookup),
+			make_runtime_type_type(type_lookup),
 			llvm::Type::getInt64Ty(context)
 		},
 		false
@@ -940,7 +949,7 @@ static const STRUCT_T* floydrt_update_struct_member(floyd_runtime_t* frp, STRUCT
 	const auto struct_bytes = layout->getSizeInBytes();
 
 	//??? Touches memory twice.
-	auto struct_ptr = alloc_struct(r.backend.heap, struct_bytes);
+	auto struct_ptr = alloc_struct(r.backend.heap, struct_bytes, type0);
 	auto struct_base_ptr = struct_ptr->get_data_ptr();
 	std::memcpy(struct_base_ptr, source_struct_ptr->get_data_ptr(), struct_bytes);
 
@@ -1112,7 +1121,7 @@ static DICT_CPPMAP_T* floyd_llvm_intrinsic__erase(floyd_runtime_t* frp, runtime_
 	const auto value_type = type0.get_dict_value_type();
 
 	//	Deep copy dict.
-	auto dict2 = alloc_dict_cppmap2(r.backend.heap);
+	auto dict2 = alloc_dict_cppmap2(r.backend.heap, type0);
 	auto& m = dict2.dict_cppmap_ptr->get_map_mut();
 	m = dict->get_map();
 
@@ -1249,8 +1258,9 @@ static runtime_value_t map__cppvector(floyd_runtime_t* frp, value_backend_t& bac
 	const auto r_type = type1.get_function_return();
 	const auto f = reinterpret_cast<MAP_F>(f_value.function_ptr);
 
+	const auto return_type = typeid_t::make_vector(r_type);
 	const auto count = elements_vec.vector_cppvector_ptr->get_element_count();
-	auto result_vec = alloc_vector_ccpvector2(backend.heap, count, count);
+	auto result_vec = alloc_vector_ccpvector2(backend.heap, count, count, return_type);
 	for(int i = 0 ; i < count ; i++){
 		const auto a = (*f)(frp, elements_vec.vector_cppvector_ptr->get_element_ptr()[i], context_value);
 		result_vec.vector_cppvector_ptr->get_element_ptr()[i] = a;
@@ -1271,8 +1281,9 @@ static runtime_value_t map__hamt(floyd_runtime_t* frp, value_backend_t& backend,
 	const auto r_type = type1.get_function_return();
 	const auto f = reinterpret_cast<MAP_F>(f_value.function_ptr);
 
+	const auto return_type = typeid_t::make_vector(r_type);
 	const auto count = elements_vec.vector_hamt_ptr->get_element_count();
-	auto result_vec = alloc_vector_hamt2(backend.heap, count, count);
+	auto result_vec = alloc_vector_hamt2(backend.heap, count, count, return_type);
 	for(int i = 0 ; i < count ; i++){
 		const auto& element = elements_vec.vector_hamt_ptr->load_element(i);
 		const auto a = (*f)(frp, element, context_value);
@@ -1369,6 +1380,8 @@ static runtime_value_t map_dag__cppvector(
 	QUARK_ASSERT(is_vector_cppvector(typeid_t::make_vector(e_type)));
 	QUARK_ASSERT(is_vector_cppvector(typeid_t::make_vector(r_type)));
 
+	const auto return_type = typeid_t::make_vector(r_type);
+
 	const auto f2 = reinterpret_cast<map_dag_F>(f.function_ptr);
 
 	const auto elements2 = elements.vector_cppvector_ptr;
@@ -1428,7 +1441,7 @@ static runtime_value_t map_dag__cppvector(
 				}
 			}
 
-			auto solved_deps2 = alloc_vector_ccpvector2(backend.heap, solved_deps.size(), solved_deps.size());
+			auto solved_deps2 = alloc_vector_ccpvector2(backend.heap, solved_deps.size(), solved_deps.size(), return_type);
 			for(int i = 0 ; i < solved_deps.size() ; i++){
 				solved_deps2.vector_cppvector_ptr->store(i, solved_deps[i]);
 			}
@@ -1452,7 +1465,7 @@ static runtime_value_t map_dag__cppvector(
 
 	//??? No need to copy all elements -- could store them directly into the VEC_T.
 	const auto count = complete.size();
-	auto result_vec = alloc_vector_ccpvector2(backend.heap, count, count);
+	auto result_vec = alloc_vector_ccpvector2(backend.heap, count, count, return_type);
 	for(int i = 0 ; i < count ; i++){
 //		retain_value(r, complete[i], r_type);
 		result_vec.vector_cppvector_ptr->store(i, complete[i]);
@@ -1491,6 +1504,8 @@ static runtime_value_t map_dag__hamt(
 
 	QUARK_ASSERT(is_vector_hamt(typeid_t::make_vector(e_type)));
 	QUARK_ASSERT(is_vector_hamt(typeid_t::make_vector(r_type)));
+
+	const auto return_type = typeid_t::make_vector(r_type);
 
 	const auto f2 = reinterpret_cast<map_dag_F>(f.function_ptr);
 
@@ -1552,7 +1567,7 @@ static runtime_value_t map_dag__hamt(
 				}
 			}
 
-			auto solved_deps2 = alloc_vector_hamt2(backend.heap, solved_deps.size(), solved_deps.size());
+			auto solved_deps2 = alloc_vector_hamt2(backend.heap, solved_deps.size(), solved_deps.size(), return_type);
 			for(int i = 0 ; i < solved_deps.size() ; i++){
 				solved_deps2.vector_hamt_ptr->store_mutate(i, solved_deps[i]);
 			}
@@ -1576,7 +1591,7 @@ static runtime_value_t map_dag__hamt(
 
 	//??? No need to copy all elements -- could store them directly into the VEC_T.
 	const auto count = complete.size();
-	auto result_vec = alloc_vector_hamt2(backend.heap, count, count);
+	auto result_vec = alloc_vector_hamt2(backend.heap, count, count, return_type);
 	for(int i = 0 ; i < count ; i++){
 //		retain_value(r, complete[i], r_type);
 		result_vec.vector_hamt_ptr->store_mutate(i, complete[i]);
@@ -1626,6 +1641,7 @@ static runtime_value_t filter__cppvector(floyd_runtime_t* frp, value_backend_t& 
 	const auto type0 = lookup_type(r.backend, arg0_type);
 	const auto type1 = lookup_type(r.backend, arg1_type);
 	const auto type2 = lookup_type(r.backend, context_type);
+	const auto return_type = type0;
 
 	QUARK_ASSERT(check_filter_func_type(type0, type1, type2));
 	QUARK_ASSERT(is_vector_cppvector(type0));
@@ -1653,7 +1669,7 @@ static runtime_value_t filter__cppvector(floyd_runtime_t* frp, value_backend_t& 
 	}
 
 	const auto count2 = acc.size();
-	auto result_vec = alloc_vector_ccpvector2(r.backend.heap, count2, count2);
+	auto result_vec = alloc_vector_ccpvector2(r.backend.heap, count2, count2, return_type);
 
 	if(count2 > 0){
 		//	Count > 0 required to get address to first element in acc.
@@ -1670,6 +1686,7 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, value_backend_t& backe
 	const auto type0 = lookup_type(r.backend, arg0_type);
 	const auto type1 = lookup_type(r.backend, arg1_type);
 	const auto type2 = lookup_type(r.backend, context_type);
+	const auto return_type = type0;
 
 	QUARK_ASSERT(check_filter_func_type(type0, type1, type2));
 	QUARK_ASSERT(is_vector_hamt(type0));
@@ -1697,7 +1714,7 @@ static runtime_value_t filter__hamt(floyd_runtime_t* frp, value_backend_t& backe
 	}
 
 	const auto count2 = acc.size();
-	auto result_vec = alloc_vector_hamt2(r.backend.heap, &acc[0], count2);
+	auto result_vec = alloc_vector_hamt2(r.backend.heap, &acc[0], count2, return_type);
 	return result_vec;
 }
 
@@ -1946,6 +1963,7 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 
 	const auto type0 = lookup_type(r.backend, arg0_type);
 	const auto type1 = lookup_type(r.backend, arg1_type);
+	const auto return_type = type0;
 	if(type0.is_string()){
 		auto value = from_runtime_string(r, arg0_value);
 
@@ -1965,7 +1983,7 @@ static runtime_value_t floyd_llvm_intrinsic__push_back(floyd_runtime_t* frp, run
 		const auto element_type = type1;
 
 		const auto element_count2 = vs->get_element_count() + 1;
-		auto v2 = alloc_vector_ccpvector2(r.backend.heap, element_count2, element_count2);
+		auto v2 = alloc_vector_ccpvector2(r.backend.heap, element_count2, element_count2, return_type);
 
 		auto dest_ptr = v2.vector_cppvector_ptr->get_element_ptr();
 		auto source_ptr = vs->get_element_ptr();
