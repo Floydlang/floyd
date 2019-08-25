@@ -45,11 +45,13 @@ enum vector_backend {
 //	There is still only one typeid_t/itype for vector.
 //	Future: make this flag a per-vector setting.
 
-#if 1
+#if 0
 const vector_backend k_global_vector_type = vector_backend::cppvector;
 #else
 const vector_backend k_global_vector_type = vector_backend::hamt;
 #endif
+
+const bool k_global_dict_is_hamt = false;
 
 
 ////////////////////////////////		heap_t
@@ -667,12 +669,10 @@ inline bool is_vector_hamt(const typeid_t& t){
 }
 
 inline bool is_dict_cppmap(const typeid_t& t){
-//	return t.is_dict() && k_global_vector_type == vector_backend::cppvector;
-	return t.is_dict();
+	return t.is_dict() && (k_global_dict_is_hamt == false);
 }
 inline bool is_dict_hamt(const typeid_t& t){
-//	return t.is_dict() && k_global_vector_type == vector_backend::hamt;
-	return false;
+	return t.is_dict() && (k_global_dict_is_hamt == true);
 }
 
 
