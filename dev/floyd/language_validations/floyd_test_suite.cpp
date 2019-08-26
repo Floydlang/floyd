@@ -6002,7 +6002,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "write_text_file()", "", ""){
 
 //////////////////////////////////////////		CORE LIBRARY - get_directory_entries()
 
-
+#if 0
 FLOYD_LANG_PROOF("Floyd test suite", "get_fsentries_shallow()", "", ""){
 	ut_verify_global_result_lib(
 		QUARK_POS,
@@ -6020,11 +6020,12 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_fsentries_shallow()", "", ""){
 		)
 	);
 }
+#endif
 
 
 //////////////////////////////////////////		CORE LIBRARY - get_fsentries_deep()
 
-
+#if 0
 FLOYD_LANG_PROOF("Floyd test suite", "get_fsentries_deep()", "", ""){
 	ut_run_closed_lib(QUARK_POS,
 		R"(
@@ -6036,11 +6037,11 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_fsentries_deep()", "", ""){
 		)"
 	);
 }
-
+#endif
 
 //////////////////////////////////////////		CORE LIBRARY - get_fsentry_info()
 
-
+#if 0
 FLOYD_LANG_PROOF("Floyd test suite", "get_fsentry_info()", "", ""){
 	ut_verify_global_result_lib(
 		QUARK_POS,
@@ -6056,7 +6057,7 @@ FLOYD_LANG_PROOF("Floyd test suite", "get_fsentry_info()", "", ""){
 		)
 	);
 }
-
+#endif
 
 //////////////////////////////////////////		CORE LIBRARY - get_fs_environment()
 
