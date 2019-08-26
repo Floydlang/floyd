@@ -54,6 +54,9 @@ jobs:
       - run:
            name: floyd Hwcaps
            command: 'ls /Users/distiller/Library/Developer/Xcode/DerivedData &&  cd  /Users/distiller/Library/Developer/Xcode/DerivedData/floyd-*/Build/Products/Release;./floyd hwcaps'
+      - run:
+           name: floyd Unit test
+           command: 'ls /Users/distiller/Library/Developer/Xcode/DerivedData &&  cd  /Users/distiller/Library/Developer/Xcode/DerivedData/floyd-*/Build/Products/Release;./floyd runtests'
       #- run:
       #    name: Compress app  and result for storage
       #    command: zip -r floyd.zip build/Release/floyd.app
