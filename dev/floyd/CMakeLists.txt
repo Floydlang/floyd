@@ -17,7 +17,7 @@ ENDIF(MSVC)
 #SET (CMAKE_BUILD_TYPE Release)
 SET (CMAKE_BUILD_TYPE Debug)
 
-include_directories(parts commandline_tool  /usr/include benchmark_internals libs/benchmark/include libs/benchmark/googletest/googlemock/ libs/benchmark/googletest/googlemock/include floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
+include_directories(passes parts target_commandline_tool  /usr/include target_benchmark_internals libs/benchmark/include libs/benchmark/googletest/googlemock/ libs/benchmark/googletest/googlemock/include floyd_runtime floyd_basics floyd_ast bytecode_interpreter  parts/immer-master floyd_parser parts/sha1 llvm_pipeline  .)
 
 if (MSVC)  # - Microsoft Visual C++
 set (PROJECTNAME_ARCHITECTURE "x64")
@@ -76,7 +76,7 @@ set(CMAKE_CXX_FLAGS "-D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACR
 
 set(FLOYD_SOURCES
 semantic_ast.cpp
-benchmark_basics.cpp
+target_benchmark_internals/benchmark_basics.cpp
 #bytecode_interpreter/bytecode_corecalls.cpp
 bytecode_interpreter/bytecode_intrinsics.cpp
 bytecode_interpreter/bytecode_corelib.cpp
@@ -85,37 +85,37 @@ bytecode_interpreter/bytecode_helpers.cpp
 bytecode_interpreter/bytecode_interpreter.cpp
 bytecode_interpreter/floyd_interpreter.cpp
 parts/command_line_parser.cpp
-commandline_tool/floyd_command_line_parser.cpp
-commandline_tool/format_table.cpp
+target_commandline_tool/floyd_command_line_parser.cpp
+target_commandline_tool/format_table.cpp
 #parts/command_line_parser.h
-collect_used_types.cpp
-compiler_helpers.cpp
+passes/collect_used_types.cpp
+floyd_basics/compiler_helpers.cpp
 cpp_experiments.cpp
-desugar_pass.cpp
+passes/desugar_pass.cpp
 #floyd/examples/game_of_life.cpp
 #floyd/examples/process_test1.floyd
 #floyd/examples/test_main.floyd
 floyd_ast/ast.cpp
-floyd_ast/ast_helpers.cpp
+passes/ast_helpers.cpp
 floyd_ast/ast_visitor.cpp
 floyd_ast/expression.cpp
 floyd_ast/statement.cpp
 floyd_basics/ast_value.cpp
 floyd_basics/compiler_basics.cpp
 floyd_basics/typeid.cpp
-commandline_tool/floyd_main.cpp
+target_commandline_tool/floyd_main.cpp
 floyd_parser/floyd_parser.cpp
 floyd_parser/floyd_syntax.cpp
 floyd_parser/parse_expression.cpp
 floyd_parser/parse_statement.cpp
 floyd_parser/parser_primitives.cpp
-commandline_tool/floyd_repl.cpp
+target_commandline_tool/floyd_repl.cpp
 floyd_runtime/floyd_corelib.cpp
 floyd_runtime/floyd_runtime.cpp
 floyd_runtime/variable_length_quantity.cpp
-floyd_test_suite.cpp
-benchmark_internals/interpretator_benchmark.cpp
-issue_regression_tests.cpp
+language_validations/floyd_test_suite.cpp
+target_benchmark_internals/interpretator_benchmark.cpp
+language_validations/issue_regression_tests.cpp
 #libs/benchmark/googletest/googlemock/src/gmock-all.cc
 #libs/benchmark/googletest/googletest/src/gtest-all.cc
 libs/benchmark/src/benchmark.cc
@@ -145,7 +145,7 @@ floyd_runtime/value_backend.cpp
 #llvm_pipeline/floyd_llvm_value_thunking.cpp
 floyd_runtime/value_thunking.cpp
 floyd_runtime/value_features.cpp
-parse_tree_to_ast_conv.cpp
+passes/parse_tree_to_ast_conv.cpp
 parts/file_handling.cpp
 parts/hardware_caps.cpp
 parts/immutable_ref_value.cpp
@@ -156,9 +156,9 @@ parts/sha1/sha1.cpp
 parts/sha1_class.cpp
 parts/text_parser.cpp
 parts/utils.cpp
-semantic_analyser.cpp
+passes/semantic_analyser.cpp
 software_system.cpp
-test_helpers.cpp
+language_validations/test_helpers.cpp
 )
 
 if (MSVC)  # - Microsoft Visual C++
@@ -204,11 +204,11 @@ bytecode_interpreter/bytecode_corelib.cpp
 bytecode_interpreter/bytecode_helpers.cpp
 collect_used_types.cpp
 compiler_helpers.cpp
-benchmark_internals/compressed_vector_benchmark.cpp
+target_benchmark_internals/compressed_vector_benchmark.cpp
 examples/process_test1.floyd
 examples/test_main.floyd
-floyd_ast/ast_helpers.cpp
-benchmark_internals/floyd_benchmark_main.cpp
+passes/ast_helpers.cpp
+target_benchmark_internals/floyd_benchmark_main.cpp
 floyd_runtime/floyd_runtime.cpp
 floyd_runtime/variable_length_quantity.cpp
 libs/benchmark/googletest/googlemock/src/gmock-all.cc
