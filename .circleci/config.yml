@@ -53,7 +53,7 @@ jobs:
            command: 'cd dev && xcodebuild -scheme distributable build'
       - run:
            name: floyd Hwcaps
-           command: 'build/Release/floyd hwcaps'
+           command: 'ls /Users/distiller/Library/Developer/Xcode/DerivedData &&  cd  /Users/distiller/Library/Developer/Xcode/DerivedData/floyd-*/Build/Products/Release;./floyd hwcaps'
       #- run:
       #    name: Compress app  and result for storage
       #    command: zip -r floyd.zip build/Release/floyd.app
