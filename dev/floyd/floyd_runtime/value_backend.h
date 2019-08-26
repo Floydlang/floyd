@@ -92,7 +92,7 @@ struct heap_alloc_64_t {
 		data_b(0x00000000),
 		data_c(0x00000000),
 		data_d(0x00000000),
-		heap64(heap),
+		heap(heap),
 		allocation_word_count_x(allocation_word_count)
 	{
 		QUARK_ASSERT(heap != nullptr);
@@ -115,7 +115,7 @@ struct heap_alloc_64_t {
 	uint64_t data_d;
 	uint64_t allocation_word_count_x;
 
-	heap_t* heap64;
+	heap_t* heap;
 	char debug_info[8];
 
 #if DEBUG && 0

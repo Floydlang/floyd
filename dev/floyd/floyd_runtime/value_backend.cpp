@@ -198,11 +198,11 @@ const void* get_alloc_ptr(const heap_alloc_64_t& alloc){
 
 bool heap_alloc_64_t::check_invariant() const{
 	QUARK_ASSERT(magic == ALLOC_64_MAGIC);
-	QUARK_ASSERT(heap64 != nullptr);
-	QUARK_ASSERT(heap64->magic == HEAP_MAGIC);
+	QUARK_ASSERT(heap != nullptr);
+	QUARK_ASSERT(heap->magic == HEAP_MAGIC);
 
-//	auto it = std::find_if(heap64->alloc_records.begin(), heap64->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == this; });
-//	QUARK_ASSERT(it != heap64->alloc_records.end());
+//	auto it = std::find_if(heap->alloc_records.begin(), heap->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == this; });
+//	QUARK_ASSERT(it != heap->alloc_records.end());
 
 	return true;
 }
@@ -238,10 +238,10 @@ void add_ref(heap_alloc_64_t& alloc){
 void dispose_alloc(heap_alloc_64_t& alloc){
 	QUARK_ASSERT(alloc.check_invariant());
 
-	std::lock_guard<std::recursive_mutex> guard(*alloc.heap64->alloc_records_mutex);
+	std::lock_guard<std::recursive_mutex> guard(*alloc.heap->alloc_records_mutex);
 
-	auto it = std::find_if(alloc.heap64->alloc_records.begin(), alloc.heap64->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == &alloc; });
-	QUARK_ASSERT(it != alloc.heap64->alloc_records.end());
+	auto it = std::find_if(alloc.heap->alloc_records.begin(), alloc.heap->alloc_records.end(), [&](heap_rec_t& e){ return e.alloc_ptr == &alloc; });
+	QUARK_ASSERT(it != alloc.heap->alloc_records.end());
 
 //	QUARK_ASSERT(it->in_use);
 //	it->in_use = false;
@@ -263,7 +263,7 @@ bool heap_t::check_invariant() const{
 #if 0
 	for(const auto& e: alloc_records){
 		QUARK_ASSERT(e.alloc_ptr != nullptr);
-		QUARK_ASSERT(e.alloc_ptr->heap64 == this);
+		QUARK_ASSERT(e.alloc_ptr->heap == this);
 		QUARK_ASSERT(e.alloc_ptr->check_invariant());
 
 /*
@@ -462,7 +462,7 @@ void dispose_vector_cppvector(const runtime_value_t& value){
 	QUARK_ASSERT(value.vector_cppvector_ptr->check_invariant());
 
 	dispose_alloc(value.vector_cppvector_ptr->alloc);
-	QUARK_ASSERT(value.vector_cppvector_ptr->alloc.heap64->check_invariant());
+	QUARK_ASSERT(value.vector_cppvector_ptr->alloc.heap->check_invariant());
 }
 
 
@@ -571,14 +571,14 @@ void dispose_vector_hamt(const runtime_value_t& vec){
 	vec2.~vector<runtime_value_t>();
 
 	dispose_alloc(vec.vector_hamt_ptr->alloc);
-	QUARK_ASSERT(vec.vector_hamt_ptr->alloc.heap64->check_invariant());
+	QUARK_ASSERT(vec.vector_hamt_ptr->alloc.heap->check_invariant());
 }
 
 runtime_value_t store_immutable(const runtime_value_t& vec0, const uint64_t index, runtime_value_t value){
 	QUARK_ASSERT(vec0.check_invariant());
 	const auto& vec1 = *vec0.vector_hamt_ptr;
 	QUARK_ASSERT(index < vec1.get_element_count());
-	auto& heap = *vec1.alloc.heap64;
+	auto& heap = *vec1.alloc.heap;
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0, typeid_t::make_undefined());
 	alloc->data_d = vec1.get_element_count();
@@ -601,7 +601,7 @@ runtime_value_t store_immutable(const runtime_value_t& vec0, const uint64_t inde
 runtime_value_t push_back_immutable(const runtime_value_t& vec0, runtime_value_t value){
 	QUARK_ASSERT(vec0.check_invariant());
 	const auto& vec1 = *vec0.vector_hamt_ptr;
-	auto& heap = *vec1.alloc.heap64;
+	auto& heap = *vec1.alloc.heap;
 
 	heap_alloc_64_t* alloc = alloc_64(heap, 0, typeid_t::make_undefined());
 	alloc->data_d = vec1.get_element_count() + 1;
@@ -702,7 +702,7 @@ void dispose_dict_cppmap(runtime_value_t& d){
 
 	dict.get_map_mut().~CPPMAP();
 	dispose_alloc(dict.alloc);
-	QUARK_ASSERT(dict.alloc.heap64->check_invariant());
+	QUARK_ASSERT(dict.alloc.heap->check_invariant());
 }
 
 
@@ -756,7 +756,7 @@ void dispose_dict_hamt(runtime_value_t& d){
 
 	dict.get_map_mut().~HAMT_MAP();
 	dispose_alloc(dict.alloc);
-	QUARK_ASSERT(dict.alloc.heap64->check_invariant());
+	QUARK_ASSERT(dict.alloc.heap->check_invariant());
 }
 
 
@@ -802,7 +802,7 @@ void dispose_json(JSON_T& json){
 	json.alloc.data_a = 666;
 	dispose_alloc(json.alloc);
 
-	QUARK_ASSERT(json.alloc.heap64->check_invariant());
+	QUARK_ASSERT(json.alloc.heap->check_invariant());
 }
 
 
@@ -839,7 +839,7 @@ void dispose_struct(STRUCT_T& s){
 
 	dispose_alloc(s.alloc);
 
-	QUARK_ASSERT(s.alloc.heap64->check_invariant());
+	QUARK_ASSERT(s.alloc.heap->check_invariant());
 }
 
 
