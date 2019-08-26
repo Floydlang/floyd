@@ -775,8 +775,6 @@
 		2C180485208B947C00F62480 /* floyd_ast */ = {
 			isa = PBXGroup;
 			children = (
-				2C42609522F06B9400ECF817 /* ast_helpers.cpp */,
-				2C42609622F06B9400ECF817 /* ast_helpers.h */,
 				2C3D2D9522EF869B00B808AA /* ast_visitor.cpp */,
 				2C3D2D9622EF869B00B808AA /* ast_visitor.h */,
 				2C180486208B947C00F62480 /* ast.cpp */,
@@ -800,6 +798,33 @@
 				2CB7AA6A2209E51E0011DE4B /* compiler_basics.h */,
 			);
 			path = floyd_basics;
+			sourceTree = "<group>";
+		};
+		2C1CEFD02314116400DE9A77 /* passes */ = {
+			isa = PBXGroup;
+			children = (
+				2C42609522F06B9400ECF817 /* ast_helpers.cpp */,
+				2C42609622F06B9400ECF817 /* ast_helpers.h */,
+				2C486C7C22EE4F8B00E44B3B /* collect_used_types.cpp */,
+				2C486C7D22EE4F8B00E44B3B /* collect_used_types.h */,
+				2CE0FE7622EE54B100018A96 /* desugar_pass.cpp */,
+				2CE0FE7722EE54B100018A96 /* desugar_pass.h */,
+				2C3174AA2262125F0004E086 /* parse_tree_to_ast_conv.cpp */,
+				2C3174AB2262125F0004E086 /* parse_tree_to_ast_conv.h */,
+				2CB2A515203D642B0001A19E /* semantic_analyser.cpp */,
+				2CB2A514203D64210001A19E /* semantic_analyser.h */,
+			);
+			path = passes;
+			sourceTree = "<group>";
+		};
+		2C1CEFD1231411A600DE9A77 /* language_validations */ = {
+			isa = PBXGroup;
+			children = (
+				2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */,
+				2C02667B2014CAF000A82AD6 /* floyd_test_suite.h */,
+				2CC0B3DF22248E3E00C9D584 /* issue_regression_tests.cpp */,
+			);
+			path = language_validations;
 			sourceTree = "<group>";
 		};
 		2C1D84D41CA765A90042F0A8 = {
@@ -827,32 +852,21 @@
 		2C1D84DF1CA765A90042F0A8 /* floyd */ = {
 			isa = PBXGroup;
 			children = (
-				2CEB57462071069B0005AC7A /* benchmark_basics.cpp */,
-				2CEB5748207106C60005AC7A /* benchmark_basics.h */,
 				2C6CDA9122FD9108008F65C7 /* benchmark_internals */,
 				2C4699AC214EC97A007216BE /* bytecode_interpreter */,
-				2C486C7C22EE4F8B00E44B3B /* collect_used_types.cpp */,
-				2C486C7D22EE4F8B00E44B3B /* collect_used_types.h */,
 				2C6CDA8E22FD9079008F65C7 /* commandline_tool */,
 				2C4574D322493DA2008A55B0 /* compiler_helpers.cpp */,
 				2C4574D422493DA2008A55B0 /* compiler_helpers.h */,
 				2C00BC411F2428FF0087B8BB /* cpp_experiments.cpp */,
-				2CE0FE7622EE54B100018A96 /* desugar_pass.cpp */,
-				2CE0FE7722EE54B100018A96 /* desugar_pass.h */,
 				2C180485208B947C00F62480 /* floyd_ast */,
 				2C182F20220BCD410003FC1F /* floyd_basics */,
 				2C180464208B939700F62480 /* floyd_parser */,
 				2C00DEC522198C4000DB322E /* floyd_runtime */,
-				2C02667A2014CAF000A82AD6 /* floyd_test_suite.cpp */,
-				2C02667B2014CAF000A82AD6 /* floyd_test_suite.h */,
-				2CC0B3DF22248E3E00C9D584 /* issue_regression_tests.cpp */,
+				2C1CEFD1231411A600DE9A77 /* language_validations */,
 				2C00DE2222198B0300DB322E /* libs */,
 				2C09395E2245022600383AA9 /* llvm_pipeline */,
-				2C3174AA2262125F0004E086 /* parse_tree_to_ast_conv.cpp */,
-				2C3174AB2262125F0004E086 /* parse_tree_to_ast_conv.h */,
 				2CBCA7D81D569C6D000FAE81 /* parts */,
-				2CB2A515203D642B0001A19E /* semantic_analyser.cpp */,
-				2CB2A514203D64210001A19E /* semantic_analyser.h */,
+				2C1CEFD02314116400DE9A77 /* passes */,
 				2C674F97230A0CF800838CCF /* semantic_ast.cpp */,
 				2C674F98230A0CF800838CCF /* semantic_ast.h */,
 				2CB30737214ACF09007D2732 /* software_system.cpp */,
@@ -1473,6 +1487,8 @@
 		2C6CDA9122FD9108008F65C7 /* benchmark_internals */ = {
 			isa = PBXGroup;
 			children = (
+				2CEB57462071069B0005AC7A /* benchmark_basics.cpp */,
+				2CEB5748207106C60005AC7A /* benchmark_basics.h */,
 				2CC0B3DD2224232700C9D584 /* compressed_vector_benchmark.cpp */,
 				2CB2A511203C4AA80001A19E /* interpretator_benchmark.cpp */,
 				2CB2A513203C4ACB0001A19E /* interpretator_benchmark.h */,
