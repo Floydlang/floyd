@@ -51,9 +51,9 @@ jobs:
       - run:
            name: Creating Application
            command: 'cd dev && xcodebuild -scheme distributable build'
-      #- run:
-      #     name: floyd Unit Testing
-      #     command: 'build/Release/floydut runtests'
+      - run:
+           name: floyd Hwcaps
+           command: 'build/Release/floyd hwcaps'
       #- run:
       #    name: Compress app  and result for storage
       #    command: zip -r floyd.zip build/Release/floyd.app
